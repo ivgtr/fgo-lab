@@ -100,14 +100,15 @@ export const servantMasterSchema = z.object({
 });
 export type ServantMaster = z.infer<typeof servantMasterSchema>;
 
-export function deriveNpSpecialMultiplier(
+export function deriveNpSpecialMultipliers(
   servant: Pick<ServantMaster, 'npSpecialAttack'>,
-  npLevel: number,
   overcharge: number,
-): number {
-  return (
-    servant.npSpecialAttack?.multipliersByNpLevelAndOvercharge[npLevel - 1]?.[overcharge - 1] ?? 1
-  );
+): [number, number, number, number, number] {
+  return [0, 1, 2, 3, 4].map(
+    (npLevelIndex) =>
+      servant.npSpecialAttack?.multipliersByNpLevelAndOvercharge[npLevelIndex]?.[overcharge - 1] ??
+      1,
+  ) as [number, number, number, number, number];
 }
 export const craftEssenceMasterSchema = z.object({
   id: z.string(),
@@ -170,8 +171,11 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
   for (const servant of parsed.data.servants) {
     if (ids.has(servant.id)) errors.push(`duplicate servant:${servant.id}`);
     ids.add(servant.id);
-    if (servant.attackNpFunctionType === 'damageNpStateIndividualFix' && !servant.npSpecialAttack)
-      errors.push(`missing state-individual NP condition:${servant.id}`);
+    if (
+      ['damageNpIndividual', 'damageNpStateIndividualFix'].includes(servant.attackNpFunctionType) &&
+      !servant.npSpecialAttack
+    )
+      errors.push(`missing special NP condition:${servant.id}`);
   }
   const unknownAttackFunctions = [
     ...new Set(

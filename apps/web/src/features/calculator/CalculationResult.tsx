@@ -5,6 +5,7 @@ import type {
   CalculationSelection,
   CalculationShareSnapshot,
 } from '@fgo-lab/schema';
+import { SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
@@ -37,7 +38,7 @@ export function CalculationResult({
   const resultCardRef = useRef<HTMLElement>(null);
   const snapshot = {
     kind: 'fgo-lab-calculation-share',
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
     sharedAt: new Date().toISOString(),
     input,
     result,

@@ -11,3 +11,4 @@ ADRは採用時点の判断を記録する。状態は`accepted`、重要な契�
 | 005 | Atlas由来データ・画像と画像単独停止           |
 | 006 | backupと匿名share snapshotの分離              |
 | 007 | GitHub Pages base pathとhash routing          |
+| 008 | 現行要件へ収束させるリファクタリング契約    |

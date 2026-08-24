@@ -757,15 +757,19 @@ export function Calculator({
                 </label>
               ))}
               <label>
-                特攻宝具倍率（%）
+                NP{input.npLevel} 特攻宝具倍率（%）
                 <input
                   type="number"
                   min="0"
                   step="10"
-                  value={input.npSpecialMultiplier * 100}
-                  onChange={(event) =>
-                    change({ npSpecialMultiplier: Number(event.target.value) / 100 })
-                  }
+                  value={(input.npSpecialMultipliers[input.npLevel - 1] ?? 1) * 100}
+                  onChange={(event) => {
+                    const multipliers = [
+                      ...input.npSpecialMultipliers,
+                    ] as CalcInput['npSpecialMultipliers'];
+                    multipliers[input.npLevel - 1] = Number(event.target.value) / 100;
+                    change({ npSpecialMultipliers: multipliers });
+                  }}
                 />
               </label>
               <label>

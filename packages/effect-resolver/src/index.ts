@@ -1,5 +1,5 @@
 import {
-  deriveNpSpecialMultiplier,
+  deriveNpSpecialMultipliers,
   type CraftEssenceMaster,
   type MasterEffect,
   type ServantMaster,
@@ -353,12 +353,18 @@ export function resolveNpEffects(
   );
   const special = servant.npSpecialAttack;
   if (!special) return resolved;
-  const multiplier = deriveNpSpecialMultiplier(servant, baseInput.npLevel, baseInput.overcharge);
+  const multipliers = deriveNpSpecialMultipliers(servant, baseInput.overcharge);
+  const selectedMultiplier = multipliers[baseInput.npLevel - 1] ?? 1;
   const matched = matchesTraitCondition(special.targetCondition, baseInput.target.traits);
   return {
     ...resolved,
     input: matched
-      ? { ...resolved.input, npSpecialMultiplier: resolved.input.npSpecialMultiplier * multiplier }
+      ? {
+          ...resolved.input,
+          npSpecialMultipliers: resolved.input.npSpecialMultipliers.map(
+            (baseMultiplier, index) => baseMultiplier * (multipliers[index] ?? 1),
+          ) as CalcInput['npSpecialMultipliers'],
+        }
       : resolved.input,
     effects: [
       ...resolved.effects,
@@ -370,7 +376,7 @@ export function resolveNpEffects(
         skillName: '特攻宝具',
         effectId: `np-special:${servant.id}`,
         label: `${special.targetCondition.anyOf.join('・')}特攻`,
-        value: multiplier,
+        value: selectedMultiplier,
         kind: null,
         damageTraitCondition: { kind: 'npSpecial', condition: special.targetCondition },
         requiredFieldTraits: [],

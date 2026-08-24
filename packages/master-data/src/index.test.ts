@@ -32,6 +32,18 @@ describe('master validation', () => {
         ],
       }),
     ).toMatchObject({ valid: true, unknownAttackFunctions: [] }));
+  it('rejects an exact special NP function without its condition and level multipliers', () =>
+    expect(
+      validateMasterSnapshot({
+        ...fixture,
+        servants: [
+          {
+            ...fixture.servants[0],
+            attackNpFunctionType: 'damageNpIndividual',
+          },
+        ],
+      }),
+    ).toMatchObject({ valid: false, errors: ['missing special NP condition:fixture-saber'] }));
   it('derives CE attack and rejects levels over the limit', () => {
     expect(deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 1, 0)).toBe(0);
     expect(() => deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 21, 0)).toThrow(RangeError);

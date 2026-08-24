@@ -24,7 +24,7 @@ const input = {
   npResistance: 0,
   powerMod: 0,
   eventDamageBuff: 0,
-  npSpecialMultiplier: 1,
+  npSpecialMultipliers: [1, 1, 1, 1, 1],
   specialDamageBuff: 0,
   specialResistance: 0,
   flatDamage: 0,
@@ -33,9 +33,9 @@ const input = {
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies CalcInput;
 const versions = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   masterDataVersion: 'fixture-1',
-  engineVersion: '1.0.0',
+  engineVersion: '1.3.0',
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',

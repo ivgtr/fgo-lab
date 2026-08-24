@@ -8,9 +8,8 @@ import {
   classAttackRate,
   damageAtRandom,
   f32Add,
-  matchTraits,
   ATTACK_NP_FUNCTION_TYPES,
-  resolveAttackNpFunction,
+  classifyAttackNpFunction,
 } from './index';
 
 const input: CalcInput = {
@@ -35,7 +34,7 @@ const input: CalcInput = {
   npResistance: 0,
   powerMod: 0,
   eventDamageBuff: 0,
-  npSpecialMultiplier: 1,
+  npSpecialMultipliers: [1, 1, 1, 1, 1],
   specialDamageBuff: 0,
   specialResistance: 0,
   flatDamage: 0,
@@ -44,9 +43,9 @@ const input: CalcInput = {
   target: { classId: 'lancer', attribute: 'earth', traits: ['dragon', 'male'] },
 };
 const versions: VersionContext = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   masterDataVersion: 'fixture-1',
-  engineVersion: '1.0.0',
+  engineVersion: '1.3.0',
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
@@ -112,19 +111,17 @@ describe('float32 NP damage kernel', () => {
   it('is deterministic', () =>
     expect(calculateNpDamage(input, versions)).toEqual(calculateNpDamage(input, versions)));
   it('fails closed for unknown functions', () =>
-    expect(resolveAttackNpFunction('futureDamage', {}).precision).toBe('unsupported'));
+    expect(classifyAttackNpFunction('futureDamage').precision).toBe('unsupported'));
   it.each(ATTACK_NP_FUNCTION_TYPES)('classifies the registered %s handler', (type) => {
-    const resolved = resolveAttackNpFunction(type, {
-      hpRatio: 0.5,
-      battlePointPhase: 1,
-    });
-    expect(resolved.precision).not.toBe('unsupported');
+    const resolved = classifyAttackNpFunction(type);
     if (
       ['damageNp', 'damageNpIndividual', 'damageNpPierce', 'damageNpStateIndividualFix'].includes(
         type,
       )
     )
       expect(resolved.precision).toBe('exact');
+    else if (['damageNpHpratioLow', 'damageNpBattlePointPhase'].includes(type))
+      expect(resolved.precision).toBe('unsupported');
     else expect(resolved.precision).toBe('approximate');
   });
   it('ignores enemy defense for a defense-piercing NP', () => {
@@ -143,23 +140,44 @@ describe('float32 NP damage kernel', () => {
     ).toMatchObject({ precision: 'unsupported', warnings: ['missing_hp_ratio'] });
   });
   it('requires conditional inputs instead of silently using base damage', () => {
-    expect(resolveAttackNpFunction('damageNpHpratioLow', {})).toMatchObject({
+    expect(classifyAttackNpFunction('damageNpHpratioLow')).toMatchObject({
       precision: 'unsupported',
       warning: 'missing_hp_ratio',
     });
-    expect(resolveAttackNpFunction('damageNpBattlePointPhase', {})).toMatchObject({
+    expect(classifyAttackNpFunction('damageNpBattlePointPhase')).toMatchObject({
       precision: 'unsupported',
       warning: 'missing_battle_point_phase',
     });
   });
-  it('evaluates AND/OR trait expressions', () =>
-    expect(
-      matchTraits(['dragon', 'male'], {
-        type: 'and',
-        items: [
-          { type: 'trait', trait: 'dragon' },
-          { type: 'trait', trait: 'male' },
-        ],
-      }).matches,
-    ).toBe(true));
+  it('uses the special NP multiplier belonging to each result row', () => {
+    const rowSpecific = {
+      ...input,
+      npMultipliers: [100, 100, 100, 100, 100] as CalcInput['npMultipliers'],
+      npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as CalcInput['npSpecialMultipliers'],
+    };
+    const result = calculateNpDamage(rowSpecific, versions);
+    expect(result.results[1]!.average / result.results[0]!.average).toBeCloseTo(1.5, 3);
+    expect(result.results[4]!.average / result.results[0]!.average).toBeCloseTo(3, 3);
+  });
+  it('keeps additive and multiplicative modifier groups in the documented order', () => {
+    const composed: CalcInput = {
+      ...input,
+      attackerAtk: 10_000,
+      fouAtk: 0,
+      craftEssenceAtk: 0,
+      npMultipliers: [100, 100, 100, 100, 100],
+      cardType: 'arts',
+      classAttackRate: 1,
+      classAffinity: 1,
+      attributeAffinity: 1,
+      attackBuff: 0.2,
+      cardBuff: 0,
+      npDamageBuff: 0.3,
+      powerMod: 0.5,
+      specialDamageBuff: 0.2,
+      npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
+      flatDamage: 175,
+    };
+    expect(damageAtRandom(composed, 1, 1000)).toBe(9_117);
+  });
 });

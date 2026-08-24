@@ -31,6 +31,7 @@ import {
   calculateResolvedDamage,
   completeCalculationSelection,
   createDefaultCalcInput,
+  resolveCalculationInput,
 } from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { DataPage } from '../features/data/DataPage';
@@ -462,20 +463,31 @@ export function App() {
           <Ranking
             candidates={currentMaster.servants
               .filter((candidate) => candidate.hasAttackNp)
-              .map((candidate) => ({
-                servantId: candidate.id,
-                name: candidate.name,
-                input: createDefaultCalcInput(
+              .map((candidate) => {
+                const input = createDefaultCalcInput(
                   currentMaster,
                   profile.servantBuilds[candidate.id],
                   candidate,
-                ),
-                classId: candidate.classId,
-                rarity: candidate.rarity,
-                npCard: candidate.npCard,
-                npTarget: candidate.npTarget,
-                owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
-              }))}
+                );
+                const resolved = resolveCalculationInput(
+                  input,
+                  { attackerSource: 'master', attackerSkills: [], craftEssence: null },
+                  undefined,
+                  currentMaster,
+                );
+                return {
+                  servantId: candidate.id,
+                  name: candidate.name,
+                  input: resolved.input,
+                  resolutionPrecision: resolved.precision,
+                  resolutionWarnings: resolved.warnings,
+                  classId: candidate.classId,
+                  rarity: candidate.rarity,
+                  npCard: candidate.npCard,
+                  npTarget: candidate.npTarget,
+                  owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
+                };
+              })}
             versions={versions}
           />
         )}{' '}

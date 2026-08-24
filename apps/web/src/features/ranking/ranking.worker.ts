@@ -6,6 +6,8 @@ export interface RankingCandidate {
   servantId: string;
   name: string;
   input: CalcInput;
+  resolutionPrecision: 'exact' | 'approximate' | 'unsupported';
+  resolutionWarnings: string[];
   classId: string;
   rarity: number;
   npCard: string;
@@ -41,11 +43,11 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
   const unsupported: RankingResponse['unsupported'] = [];
   for (const candidate of event.data.candidates) {
     const result = calculateNpDamage(candidate.input, event.data.versions);
-    if (result.precision === 'unsupported') {
+    if (result.precision === 'unsupported' || candidate.resolutionPrecision === 'unsupported') {
       unsupported.push({
         servantId: candidate.servantId,
         name: candidate.name,
-        reason: result.warnings.join(',') || 'unsupported',
+        reason: [...result.warnings, ...candidate.resolutionWarnings].join(',') || 'unsupported',
       });
       continue;
     }
@@ -57,7 +59,10 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
       average: current.average,
       minimum: current.minimum,
       maximum: current.maximum,
-      precision: 'approximate',
+      precision:
+        result.precision === 'approximate' || candidate.resolutionPrecision === 'approximate'
+          ? 'approximate'
+          : 'exact',
       classId: candidate.classId,
       rarity: candidate.rarity,
       npCard: candidate.npCard,

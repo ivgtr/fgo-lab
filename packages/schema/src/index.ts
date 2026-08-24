@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 1 as const;
-export const ENGINE_VERSION = '1.2.0' as const;
+export const SCHEMA_VERSION = 2 as const;
+export const ENGINE_VERSION = '1.3.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -85,7 +85,13 @@ export const calcInputSchema = z.object({
   npResistance: z.number().min(-5).max(5).default(0),
   powerMod: z.number().min(-1).max(10),
   eventDamageBuff: z.number().min(-1).max(10).default(0),
-  npSpecialMultiplier: z.number().min(0).max(20),
+  npSpecialMultipliers: z.tuple([
+    z.number().min(0).max(20),
+    z.number().min(0).max(20),
+    z.number().min(0).max(20),
+    z.number().min(0).max(20),
+    z.number().min(0).max(20),
+  ]),
   specialDamageBuff: z.number().min(-1).max(20).default(0),
   specialResistance: z.number().min(-5).max(5),
   flatDamage: z.number().int().min(-100000).max(100000),

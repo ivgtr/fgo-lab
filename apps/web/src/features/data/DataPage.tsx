@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react';
-import { APP_VERSION, type ProfileCollection, type UserDataBackup } from '@fgo-lab/schema';
+import {
+  APP_VERSION,
+  SCHEMA_VERSION,
+  type ProfileCollection,
+  type UserDataBackup,
+} from '@fgo-lab/schema';
 import { clearUserData } from '../../adapters/repository';
 import { exportBackup, importBackup } from '../../adapters/share';
 import './data.css';
@@ -19,7 +24,7 @@ export function DataPage({
   const backup = useMemo<UserDataBackup>(
     () => ({
       kind: 'fgo-lab-user-backup',
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       appVersion: APP_VERSION,
       profiles,
@@ -59,7 +64,7 @@ export function DataPage({
         </div>
         <div>
           <dt>schema版</dt>
-          <dd>1</dd>
+          <dd>{SCHEMA_VERSION}</dd>
         </div>
       </dl>
       <button className="primary" onClick={download}>

@@ -7,6 +7,7 @@ import type {
   ServantTarget,
   SupportTemplate,
 } from '@fgo-lab/schema';
+import { SCHEMA_VERSION } from '@fgo-lab/schema';
 
 export interface Clock {
   now(): Date;
@@ -27,7 +28,7 @@ export function createProfileCollection(
   const profileId = ids.next();
   const timestamp = clock.now().toISOString();
   return {
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
     activeProfileId: profileId,
     profiles: [
       {

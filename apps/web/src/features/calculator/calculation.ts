@@ -18,38 +18,19 @@ import type {
   VersionContext,
 } from '@fgo-lab/schema';
 
-function includeResolution(
-  result: ReturnType<typeof calculateNpDamage>,
-  resolution: ResolvedSupportTemplate | undefined,
-  traceStep: string,
-) {
-  if (!resolution) return result;
-  return {
-    ...result,
-    precision:
-      resolution.precision === 'unsupported'
-        ? ('unsupported' as const)
-        : resolution.precision === 'approximate' || result.precision === 'approximate'
-          ? ('approximate' as const)
-          : result.precision,
-    warnings: [...result.warnings, ...resolution.warnings],
-    trace: [
-      ...result.trace,
-      ...resolution.effects.map((effect) => ({
-        step: traceStep,
-        detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
-      })),
-    ],
-  };
+export interface ResolvedCalculationInput {
+  input: CalcInput;
+  precision: ResolvedSupportTemplate['precision'];
+  warnings: string[];
+  trace: { step: string; detail: string }[];
 }
 
-export function calculateResolvedDamage(
+export function resolveCalculationInput(
   baseInput: CalcInput,
   selection: CalculationSelection,
   supportTemplate: SupportTemplate | undefined,
   master: MasterDataSnapshot,
-  versions: VersionContext,
-) {
+): ResolvedCalculationInput {
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
   const craftEssence = selection.craftEssence
     ? master.craftEssences.find(
@@ -72,19 +53,52 @@ export function calculateResolvedDamage(
     ? resolveSupportTemplate(attackerSkills.input, supportTemplate, master.servants)
     : undefined;
   const np = resolveNpEffects(support?.input ?? attackerSkills.input, attacker);
-  const resolutions = [
+  const resolutions: [string, ResolvedSupportTemplate][] = [
     ['passive-effect', passive],
     ['craft-essence-effect', craftEssenceResolution],
     ['attacker-effect', attackerSkills],
-    ['support-effect', support],
-    ['np-effect', np],
-  ] as const;
+  ];
+  if (support) resolutions.push(['support-effect', support]);
+  resolutions.push(['np-effect', np]);
   return {
     input: np.input,
-    result: resolutions.reduce(
-      (result, [traceStep, resolution]) => includeResolution(result, resolution, traceStep),
-      calculateNpDamage(np.input, versions),
+    precision: resolutions.some(([, resolution]) => resolution.precision === 'unsupported')
+      ? 'unsupported'
+      : resolutions.some(([, resolution]) => resolution.precision === 'approximate')
+        ? 'approximate'
+        : 'exact',
+    warnings: resolutions.flatMap(([, resolution]) => resolution.warnings),
+    trace: resolutions.flatMap(([traceStep, resolution]) =>
+      resolution.effects.map((effect) => ({
+        step: traceStep,
+        detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
+      })),
     ),
+  };
+}
+
+export function calculateResolvedDamage(
+  baseInput: CalcInput,
+  selection: CalculationSelection,
+  supportTemplate: SupportTemplate | undefined,
+  master: MasterDataSnapshot,
+  versions: VersionContext,
+) {
+  const resolved = resolveCalculationInput(baseInput, selection, supportTemplate, master);
+  const calculation = calculateNpDamage(resolved.input, versions);
+  return {
+    input: resolved.input,
+    result: {
+      ...calculation,
+      precision:
+        resolved.precision === 'unsupported'
+          ? ('unsupported' as const)
+          : resolved.precision === 'approximate' || calculation.precision === 'approximate'
+            ? ('approximate' as const)
+            : calculation.precision,
+      warnings: [...calculation.warnings, ...resolved.warnings],
+      trace: [...calculation.trace, ...resolved.trace],
+    },
   };
 }
 
@@ -116,7 +130,7 @@ export function createDefaultCalcInput(
     npResistance: 0,
     powerMod: 0,
     eventDamageBuff: 0,
-    npSpecialMultiplier: 1,
+    npSpecialMultipliers: [1, 1, 1, 1, 1],
     specialDamageBuff: 0,
     specialResistance: 0,
     flatDamage: 0,

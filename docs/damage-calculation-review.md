@@ -109,11 +109,11 @@ FGO LabではAtlasの文書とデータから独立実装し、Chaldeaは入力�
 
 通常、個別特攻、防御無視以外にも44 entryがあり、単一の標準式と手入力の特攻checkboxだけでは網羅できない。
 
-サーヴァントIDの条件分岐ではなく、Function種別をキーとしたhandler registryを使う。データ取込時に全攻撃宝具をFunction種別へ分類し、次を必須にする。
+サーヴァントIDの条件分岐ではなく、Function種別をキーとして計算可否を分類する。計算に必要な値を内部モデルへ正規化できるFunctionだけを`exact`とし、現在の入力モデルで表現できないFunctionへ空のhandlerを作らない。データ取込時に全攻撃宝具をFunction種別へ分類し、次を必須にする。
 
 - 未分類Function数が0件である。
-- 対応済みhandlerには最低一件の専用golden testがある。
-- 未対応Functionは0扱いにせず、`unsupported`または`approximate`を返す。
+- `exact`とするFunctionには最低一件の専用golden testがある。
+- 未対応Functionは標準宝具として黙って扱わず、`unsupported`または`approximate`を返す。
 - 火力ランキングでは`unsupported`を通常順位へ混ぜず、除外理由を別枠で表示する。
 
 ### 3.4 効果の発動順
@@ -142,13 +142,14 @@ Atlas raw snapshot
 CalculationScenario
   -> effect resolver（対象・条件・順序）
   -> buff aggregator（BuffAction別の集約・上限）
-  -> damage kernel（float32・式・乱数）
+  -> damage formula（1宝具Lv・1乱数点のfloat32純粋計算）
+  -> result evaluator（NP1〜5・乱数分布・精度分類）
   -> CalcResult + Breakdown + Assumptions + Warnings + Trace
 ```
 
 - `damage kernel`はUI、DB、HTTP、サーヴァントIDへ依存しない。
 - `effect resolver`はマスターのFunctionを解釈する。
-- ゲーム固有の例外はhandler registryへ隔離する。
+- ゲーム固有のFunction差は正規化と精度分類へ隔離し、サーヴァントID分岐を計算式へ持ち込まない。
 - 火力ランキングも単発計算と同じscenario resolverとkernelを使い、別の簡易式を持たない。
 - Rawレスポンスはチェックサム付きで保存し、正規化データとの対応を追跡する。
 
