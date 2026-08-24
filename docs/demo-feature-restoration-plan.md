@@ -209,6 +209,7 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 - `d0ea993 docs: plan restoration of adopted demo features`
 - `52dea7a feat(calc): add fail-closed support effect resolver`
 - `5fe7d4d feat(calculator): apply saved support templates`
+- `64d8390 feat(calculator): restore attacker and CE pickers`
 
 ## 8. 次の作業
 
