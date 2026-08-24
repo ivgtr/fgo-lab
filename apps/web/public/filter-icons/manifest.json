@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "retrievedAt": "2026-08-24T13:40:00.000Z",
+  "sources": {
+    "classIcons": {
+      "name": "Atlas Academy JP static assets",
+      "dataVersion": "24b14f",
+      "urlPattern": "https://static.atlasacademy.io/JP/ClassIcons/class3_{id}.png"
+    },
+    "cardIcons": {
+      "name": "Atlas Academy DB assets",
+      "revision": "a596decc0a0f8cb4556dcf7fc59fa53e3916faa1",
+      "urlPattern": "https://raw.githubusercontent.com/atlasacademy/apps/{revision}/packages/db/src/Assets/card_txt_{card}.png"
+    }
+  },
+  "files": [
+    {
+      "file": "class/saber.png",
+      "bytes": 7034,
+      "sha256": "768ad6fbe73b4c9c10b41b9cc873a0c00b0ab326687d040cc71079a94865d249"
+    },
+    {
+      "file": "class/archer.png",
+      "bytes": 7624,
+      "sha256": "ce6973638ce24682c207f247843cd93e886dea3a09a2436c1a25b4fa93440b6a"
+    },
+    {
+      "file": "class/lancer.png",
+      "bytes": 7680,
+      "sha256": "c608623eba3d52297400b1bd5516f6b600826c62672ce10f772dd6f7620ae645"
+    },
+    {
+      "file": "class/rider.png",
+      "bytes": 7581,
+      "sha256": "6ea39bb6bbd80cef4053b10914957d5ad35a13c64dc45958b45cafc263d66454"
+    },
+    {
+      "file": "class/caster.png",
+      "bytes": 7820,
+      "sha256": "cdc9e7f6c1fb8ddf331bd10be387ca8347c02b2db79121aac669015877dc1628"
+    },
+    {
+      "file": "class/assassin.png",
+      "bytes": 7087,
+      "sha256": "d9e41ec465f2c24dcbaaaf437c61faf555fcae674c1ff9c0b3204afd6f1b46ef"
+    },
+    {
+      "file": "class/berserker.png",
+      "bytes": 7215,
+      "sha256": "024ff1f245d0343445431f2db176ad7c031e88d35a0fadbb608d09e9311d8d01"
+    },
+    {
+      "file": "class/shielder.png",
+      "bytes": 7285,
+      "sha256": "45e85f55ca38ee9084d841650637fda8d70903a0da4b2517792c8c3b06a1d973"
+    },
+    {
+      "file": "class/ruler.png",
+      "bytes": 7753,
+      "sha256": "cec1f6184f84b84c6d2b00d2f13e6ae8b3df824af4a73371ca0665f47b1d20c4"
+    },
+    {
+      "file": "class/alter-ego.png",
+      "bytes": 7930,
+      "sha256": "b4834f9c8f484c57a8f8f1e156228c478f3f5ea3d5893365c602b0d930f11d56"
+    },
+    {
+      "file": "class/avenger.png",
+      "bytes": 7491,
+      "sha256": "899e34f4e7bf4541afdcd4eb95ecd09f558dd2c215c4e86f35f9122adc47d9ab"
+    },
+    {
+      "file": "class/moon-cancer.png",
+      "bytes": 7098,
+      "sha256": "b15702c72befe3eb50277d4a88db39afd229a45538a8c77a8cba18d82b8553a2"
+    },
+    {
+      "file": "class/foreigner.png",
+      "bytes": 8581,
+      "sha256": "560a179c328cf7a13621ba93842b0fce64778cf316299ac3d2283ea8a150d5f0"
+    },
+    {
+      "file": "class/pretender.png",
+      "bytes": 7822,
+      "sha256": "40d2bce465f66a36a961f73ad86efbfef8a50419279b2f451089e874b5377595"
+    },
+    {
+      "file": "class/beast.png",
+      "bytes": 10152,
+      "sha256": "dbb88615b936d8bd02f312fe7bb6109f7c42cff8bd723ff4eb14490618dc8f23"
+    },
+    {
+      "file": "card/arts.png",
+      "bytes": 5853,
+      "sha256": "9a356e8a94fbc2c0c20b01ac5239e76605df4bec1385520453c10670d98dd7c2"
+    },
+    {
+      "file": "card/buster.png",
+      "bytes": 6249,
+      "sha256": "da241d4510271baee9597d5d8a3ff7c71c83e8021d5d9a0a82e2d94f60a99f3c"
+    },
+    {
+      "file": "card/quick.png",
+      "bytes": 7317,
+      "sha256": "489437dae42f8c50a1093989bd06cdfc506c1691a09b8eca1ae3ce25074d0a4e"
+    }
+  ]
+}

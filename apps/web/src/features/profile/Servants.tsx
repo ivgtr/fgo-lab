@@ -1,8 +1,70 @@
-import { useState } from 'react';
+import { useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { ServantBuild, ServantTarget } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
+import {
+  ServantAdvancedFilterFields,
+  ServantClassQuickFilter,
+  ServantFilterChips,
+} from '../../ui/ServantFilters';
+import {
+  clearServantFilterDetails,
+  countActiveServantFilterGroups,
+  createEmptyServantFilters,
+  filterServants,
+  toggleFilterValue,
+} from '../../ui/servantFilters';
 import './profile.css';
+
+type Scope = 'all' | 'owned' | 'unowned';
+type PlanStatus = 'unplanned' | 'gap' | 'achieved';
+type SortOrder = 'master' | 'updated' | 'level';
+
+function hasGrowthGap(build: ServantBuild | undefined, target: ServantTarget | undefined) {
+  if (!target?.planned) return false;
+  if (target.level > (build?.level ?? 1)) return true;
+  if (target.ascension > (build?.ascension ?? 0)) return true;
+  if (target.fouAtk > (build?.fouAtk ?? 0)) return true;
+  for (const slot of ['1', '2', '3']) {
+    if ((target.skills[slot] ?? 1) > (build?.skills[slot] ?? 1)) return true;
+  }
+  for (const slot of ['1', '2', '3', '4', '5']) {
+    if ((target.appends[slot] ?? 0) > (build?.appends[slot] ?? 0)) return true;
+  }
+  return false;
+}
+
+function getPlanStatus(
+  build: ServantBuild | undefined,
+  target: ServantTarget | undefined,
+): PlanStatus {
+  if (!target?.planned) return 'unplanned';
+  return hasGrowthGap(build, target) ? 'gap' : 'achieved';
+}
+
+function trapDialogKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: () => void) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    close();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = Array.from(
+    event.currentTarget.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (!first || !last) return;
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 export function Servants({
   servants,
@@ -17,43 +79,197 @@ export function Servants({
   onChange: (servantId: string, patch: Partial<ServantBuild>) => Promise<void>;
   onTargetChange: (servantId: string, patch: Partial<ServantTarget>) => Promise<void>;
 }) {
+  const generatedId = useId();
   const [tab, setTab] = useState<'current' | 'target'>('current');
   const [search, setSearch] = useState('');
-  const [scope, setScope] = useState<'all' | 'owned' | 'unowned'>('all');
+  const [scope, setScope] = useState<Scope>('all');
+  const [filters, setFilters] = useState(createEmptyServantFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [planStatuses, setPlanStatuses] = useState<Set<PlanStatus>>(() => new Set());
+  const [sortOrder, setSortOrder] = useState<SortOrder>('master');
   const [selectedId, setSelectedId] = useState(servants[0]?.id ?? '');
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
-  const visible = servants.filter((candidate) => {
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const planFiltered = servants.filter(
+    (candidate) =>
+      planStatuses.size === 0 ||
+      planStatuses.has(getPlanStatus(builds[candidate.id], targets[candidate.id])),
+  );
+  const filteredWithoutScope = filterServants(planFiltered, filters, search);
+  const scoped = filteredWithoutScope.filter((candidate) => {
     const owned = (builds[candidate.id]?.npLevel ?? 0) > 0;
-    const normalizedSearch = search.toLocaleLowerCase('ja');
-    return (
-      (candidate.name.toLocaleLowerCase('ja').includes(normalizedSearch) ||
-        candidate.classId.toLocaleLowerCase('ja').includes(normalizedSearch)) &&
-      (scope === 'all' || (scope === 'owned' ? owned : !owned))
-    );
+    return scope === 'all' || (scope === 'owned' ? owned : !owned);
   });
-  const selected = servants.find((candidate) => candidate.id === selectedId) ?? visible[0];
+  const visible = [...scoped].sort((left, right) => {
+    if (sortOrder === 'level') {
+      return (builds[right.id]?.level ?? 0) - (builds[left.id]?.level ?? 0);
+    }
+    if (sortOrder === 'updated') {
+      return (builds[right.id]?.updatedAt ?? '').localeCompare(builds[left.id]?.updatedAt ?? '');
+    }
+    return 0;
+  });
+  const selected = visible.find((candidate) => candidate.id === selectedId) ?? visible[0];
   const build = selected ? builds[selected.id] : undefined;
   const target = selected ? targets[selected.id] : undefined;
+  const ownershipCounts = filteredWithoutScope.reduce(
+    (counts, candidate) => {
+      if ((builds[candidate.id]?.npLevel ?? 0) > 0) counts.owned += 1;
+      else counts.unowned += 1;
+      return counts;
+    },
+    { owned: 0, unowned: 0 },
+  );
+  const activeDetailFilterCount =
+    countActiveServantFilterGroups(filters) -
+    (filters.classId === null ? 0 : 1) +
+    (planStatuses.size > 0 ? 1 : 0);
+  const clearDetailFilters = () => {
+    setFilters((current) => clearServantFilterDetails(current));
+    setPlanStatuses(new Set());
+  };
+  const closeFilters = () => {
+    setFiltersOpen(false);
+    window.requestAnimationFrame(() => filterButtonRef.current?.focus());
+  };
   return (
     <div className={`master-detail${mobileDetailOpen ? ' mobile-detail-open' : ''}`}>
       <section className="overview-pane">
-        <label>
-          検索
-          <input
-            type="search"
-            placeholder="名称・クラス"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
-        <div className="toolbar" aria-label="所持状態フィルター">
-          {(['all', 'owned', 'unowned'] as const).map((value) => (
-            <button key={value} aria-pressed={scope === value} onClick={() => setScope(value)}>
-              {value === 'all' ? '全件' : value === 'owned' ? '所持のみ' : '未所持のみ'}
-            </button>
-          ))}
+        <div className="profile-servant-search-row">
+          <label>
+            <span className="visually-hidden">名前で検索</span>
+            <input
+              type="search"
+              placeholder="名前で検索"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            ref={filterButtonRef}
+            className="profile-detail-filter-button"
+            aria-haspopup="dialog"
+            onClick={() => setFiltersOpen(true)}
+          >
+            絞り込み
+            {activeDetailFilterCount > 0 ? <span>{activeDetailFilterCount}</span> : null}
+          </button>
         </div>
-        <p>{visible.length}騎</p>
+        <div className="profile-scope-filter" aria-label="所持状態フィルター">
+          {(['all', 'owned', 'unowned'] as const).map((value) => {
+            const count =
+              value === 'all'
+                ? filteredWithoutScope.length
+                : value === 'owned'
+                  ? ownershipCounts.owned
+                  : ownershipCounts.unowned;
+            return (
+              <button
+                type="button"
+                key={value}
+                aria-label={
+                  value === 'all' ? '全件' : value === 'owned' ? '所持のみ' : '未所持のみ'
+                }
+                aria-pressed={scope === value}
+                onClick={() => setScope(value)}
+              >
+                <span>{value === 'all' ? '全' : value === 'owned' ? '所持' : '未所持'}</span>
+                <strong>{count}</strong>
+              </button>
+            );
+          })}
+        </div>
+        <ServantClassQuickFilter
+          classId={filters.classId}
+          onChange={(classId) => setFilters((current) => ({ ...current, classId }))}
+        />
+        <ServantFilterChips filters={filters} onChange={setFilters} showNpFilters>
+          {planStatuses.size > 0 ? (
+            <button type="button" onClick={() => setPlanStatuses(new Set())}>
+              育成状況 <span aria-hidden="true">×</span>
+            </button>
+          ) : null}
+        </ServantFilterChips>
+        <div className="profile-list-summary">
+          <p>{visible.length}騎</p>
+          <div>
+            <select
+              aria-label="並び順"
+              value={sortOrder}
+              onChange={(event) => setSortOrder(event.target.value as SortOrder)}
+            >
+              <option value="master">実装順</option>
+              <option value="updated">更新が新しい順</option>
+              <option value="level">レベルが高い順</option>
+            </select>
+          </div>
+        </div>
+        {filtersOpen ? (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${generatedId}-filter-title`}
+            className="profile-filter-dialog"
+            onKeyDown={(event) => trapDialogKeyboard(event, closeFilters)}
+          >
+            <div className="profile-filter-panel">
+              <div className="profile-filter-heading">
+                <div>
+                  <h2 id={`${generatedId}-filter-title`}>詳細な絞り込み</h2>
+                  <p>項目内は複数選択できます</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeFilters}
+                  autoFocus
+                  aria-label="絞り込みを閉じる"
+                >
+                  閉じる
+                </button>
+              </div>
+              <div className="profile-filter-body">
+                <ServantAdvancedFilterFields filters={filters} onChange={setFilters} showNpFilters>
+                  <fieldset className="servant-advanced-filter-group">
+                    <legend>育成状況</legend>
+                    <div className="servant-advanced-filter-options">
+                      {(
+                        [
+                          ['unplanned', '予定なし'],
+                          ['gap', '育成差分あり'],
+                          ['achieved', '目標達成'],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <button
+                          type="button"
+                          key={value}
+                          aria-pressed={planStatuses.has(value)}
+                          onClick={() =>
+                            setPlanStatuses((current) => toggleFilterValue(current, value))
+                          }
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                </ServantAdvancedFilterFields>
+              </div>
+              <div className="profile-filter-actions">
+                <button
+                  type="button"
+                  onClick={clearDetailFilters}
+                  disabled={activeDetailFilterCount === 0}
+                >
+                  条件をクリア
+                </button>
+                <button type="button" className="primary" onClick={closeFilters}>
+                  {visible.length}騎を表示
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="servant-list" role="list" aria-label="サーヴァント一覧">
           {visible.map((candidate) => (
             <button
@@ -85,6 +301,15 @@ export function Servants({
                     ? `Lv.${String(builds[candidate.id]?.level)}`
                     : '未所持'}
                 </small>
+                {targets[candidate.id]?.planned ? (
+                  <em
+                    className={`growth-status ${hasGrowthGap(builds[candidate.id], targets[candidate.id]) ? 'gap' : 'achieved'}`}
+                  >
+                    {hasGrowthGap(builds[candidate.id], targets[candidate.id])
+                      ? '育成差分'
+                      : '目標達成'}
+                  </em>
+                ) : null}
               </span>
             </button>
           ))}

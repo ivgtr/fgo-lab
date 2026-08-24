@@ -1,0 +1,5 @@
+.filter-icon-fallback {
+  place-items: center;
+  color: var(--muted);
+  font-weight: 800;
+}

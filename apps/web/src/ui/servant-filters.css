@@ -1,0 +1,134 @@
+.servant-class-quick-filter {
+  padding-block: 0.55rem;
+  border-block: 1px solid var(--line);
+}
+
+.servant-class-quick-row {
+  display: flex;
+  gap: 0.32rem;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.servant-class-quick-row.extra {
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--line);
+}
+
+.servant-class-button,
+.servant-class-all {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  padding: 0.2rem;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.servant-class-button[aria-pressed='true'],
+.servant-class-all[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--soft-accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.servant-class-icon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.servant-class-icon.filter-icon-fallback {
+  display: grid;
+  color: #705b22;
+  font-size: 0.72rem;
+}
+
+.servant-extra-toggle {
+  min-height: 38px;
+  flex: 0 0 auto;
+  padding-inline: 0.55rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.servant-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding-top: 0.6rem;
+}
+
+.servant-filter-chips button {
+  min-height: 30px;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border-color: #d9b9bc;
+  background: #fff7f7;
+  color: #744147;
+  font-size: 0.72rem;
+}
+
+.servant-advanced-filter-group {
+  margin: 0;
+  padding: 0.9rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.servant-advanced-filter-group legend {
+  margin-bottom: 0.55rem;
+  color: #40495b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.servant-advanced-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.servant-advanced-filter-options button {
+  min-width: 76px;
+  min-height: 40px;
+  background: #fff;
+}
+
+.servant-advanced-filter-options button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--soft-accent);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.servant-advanced-filter-options.rarity button {
+  min-width: 58px;
+}
+
+.servant-advanced-filter-options.cards button {
+  min-width: 86px;
+}
+
+.servant-card-filter-icon {
+  display: block;
+  width: 68px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.servant-card-filter-icon.filter-icon-fallback {
+  display: grid;
+}
+
+@media (max-width: 760px) {
+  .servant-class-quick-row {
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+}
