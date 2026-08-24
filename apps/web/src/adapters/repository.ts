@@ -48,7 +48,7 @@ async function sha256(value: string): Promise<string> {
 }
 export async function fetchMasterCandidate(
   baseUrl: string,
-): Promise<{ manifest: MasterManifest; snapshot: MasterDataSnapshot }> {
+): Promise<{ manifest: MasterManifest; snapshot: MasterDataSnapshot; fromOfflineCache: boolean }> {
   const manifestResponse = await fetch(`${baseUrl}master/manifest.json`, { cache: 'no-store' });
   if (!manifestResponse.ok) throw new Error('master_manifest_download_failed');
   const manifest = masterManifestSchema.parse(await manifestResponse.json());
@@ -60,7 +60,13 @@ export async function fetchMasterCandidate(
   if (new TextEncoder().encode(content).byteLength !== masterFile.bytes)
     throw new Error('master_bytes_mismatch');
   if ((await sha256(content)) !== masterFile.sha256) throw new Error('master_checksum_mismatch');
-  return { manifest, snapshot: masterSnapshotSchema.parse(JSON.parse(content)) };
+  return {
+    manifest,
+    snapshot: masterSnapshotSchema.parse(JSON.parse(content)),
+    fromOfflineCache:
+      manifestResponse.headers.get('X-Fgo-Lab-Cache') === 'offline' ||
+      dataResponse.headers.get('X-Fgo-Lab-Cache') === 'offline',
+  };
 }
 export async function loadActiveMaster(): Promise<ActiveMaster | undefined> {
   const value = await (await database()).get('master', 'active');

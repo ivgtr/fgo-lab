@@ -1,0 +1,11 @@
+{
+  "name": "FGO Lab",
+  "short_name": "FGO Lab",
+  "description": "FGOの宝具ダメージと育成を端末内で管理する非公式ツール",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#18233a"
+}

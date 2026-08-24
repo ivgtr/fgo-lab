@@ -27,6 +27,27 @@ test('works at 320px without horizontal document overflow', async ({ page }) => 
   expect(overflow).toBe(false);
 });
 
+test('reopens saved local data while offline', async ({ page, context, isMobile }) => {
+  test.skip(isMobile, 'One browser project is sufficient for the service worker offline drill');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await context.setOffline(true);
+  try {
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+    await expect(page.getByText(/端末内に自動保存・オフライン/)).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
 test('autosaves and restores a directly edited calculation draft', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation exposes the persistent undo status');
   await page.goto('/');

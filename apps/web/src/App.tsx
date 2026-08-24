@@ -157,6 +157,7 @@ export function App() {
   const [undoSnapshot, setUndoSnapshot] = useState<ProfileCollection>();
   const [calculatorInput, setCalculatorInput] = useState<CalcInput>();
   const [sharedSnapshot, setSharedSnapshot] = useState<CalculationShareSnapshot>();
+  const [online, setOnline] = useState(navigator.onLine);
   const [calculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
@@ -165,6 +166,7 @@ export function App() {
       if (active) {
         try {
           const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
+          if (candidate.fromOfflineCache) setOnline(false);
           if (!import.meta.env.DEV && candidate.manifest.artifactKind === 'diagnostic')
             throw new Error('diagnostic_fixture_cannot_be_activated');
           if (candidate.manifest.masterDataVersion !== active.manifest.masterDataVersion)
@@ -194,6 +196,15 @@ export function App() {
       setLoading(false);
     }
     void bootstrap();
+  }, []);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    addEventListener('online', update);
+    addEventListener('offline', update);
+    return () => {
+      removeEventListener('online', update);
+      removeEventListener('offline', update);
+    };
   }, []);
   async function persist(next: ProfileCollection, rememberForUndo = true) {
     await repository.replace(next);
@@ -496,7 +507,7 @@ export function App() {
         <p className="utility">
           DB {currentMaster.version}
           <br />
-          端末内に自動保存
+          端末内に自動保存・{online ? 'オンライン' : 'オフライン'}
           {startupWarning && (
             <>
               <br />
