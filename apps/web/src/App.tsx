@@ -30,6 +30,7 @@ import {
 } from './adapters/repository';
 import { createShareFragment, exportBackup, importBackup, resultCardPng } from './adapters/share';
 import { numberFormatter, t } from './i18n';
+import { useRanking } from './useRanking';
 
 type Page = 'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
 const nav: readonly [Page, ReturnType<typeof t>][] = [
@@ -378,7 +379,12 @@ export function App() {
         {page === 'support' && (
           <SupportTemplates templates={profile.supportTemplates} onAdd={addSupportTemplate} />
         )}{' '}
-        {page === 'ranking' && <Ranking name={servant.name} average={result.results[0]!.average} />}{' '}
+        {page === 'ranking' && (
+          <Ranking
+            candidates={[{ servantId: servant.id, name: servant.name, input }]}
+            versions={versions}
+          />
+        )}{' '}
         {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
         {page === 'data' && (
           <DataPage
@@ -682,7 +688,14 @@ function SupportTemplates({
     </section>
   );
 }
-function Ranking({ name, average }: { name: string; average: number }) {
+function Ranking({
+  candidates,
+  versions,
+}: {
+  candidates: { servantId: string; name: string; input: CalcInput }[];
+  versions: Parameters<typeof calculateNpDamage>[1];
+}) {
+  const ranking = useRanking(candidates, versions);
   return (
     <section>
       <div className="toolbar">
@@ -712,16 +725,20 @@ function Ranking({ name, average }: { name: string; average: number }) {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <th>{name}</th>
-            <td className="average">{numberFormatter.format(average)}</td>
-            <td>exact</td>
-          </tr>
+          {ranking.rows.map((row, index) => (
+            <tr key={row.servantId}>
+              <td>{index + 1}</td>
+              <th>{row.name}</th>
+              <td className="average">{numberFormatter.format(row.average)}</td>
+              <td>{row.precision}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
-      <p className="notice">
-        production masterではWorkerで全攻撃宝具を計算し、unsupportedを別枠にします。
+      <p role="status" className="notice">
+        {ranking.loading
+          ? 'Workerで計算中…'
+          : `${String(ranking.rows.length)}件をWorkerで計算・unsupported ${String(ranking.unsupported.length)}件`}
       </p>
     </section>
   );

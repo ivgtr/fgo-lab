@@ -84,3 +84,15 @@ test('finalizes one deduplicated history entry per calculation input', async ({
   };
   expect(backup.profiles.profiles[0]?.history).toHaveLength(1);
 });
+
+test('calculates ranking in a worker', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop navigation exposes the ranking page');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: '火力ランキング' }).click();
+  await expect(page.getByRole('status')).toContainText('1件をWorkerで計算');
+  await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
+    '検証用セイバー',
+  );
+});
