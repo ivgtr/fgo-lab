@@ -9,6 +9,7 @@ import {
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
 import { calculateNpDamage } from '@fgo-lab/calc-core';
+import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalcInput,
   CraftEssenceCopy,
@@ -137,6 +138,7 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
   const [page, setPage] = useState<Page>('home');
+  const [calculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
       let active = await loadActiveMaster();
@@ -282,6 +284,28 @@ export function App() {
       supportTemplates: [...profile.supportTemplates, template],
     });
   }
+  async function finalizeCurrentCalculation() {
+    const fingerprint = await inputFingerprint(
+      input,
+      currentMaster.version,
+      ENGINE_VERSION,
+      async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+    );
+    await replaceProfile(
+      finalizeHistory(profile, {
+        sessionId: calculationSessionId,
+        input,
+        result,
+        fingerprint,
+        now: new Date().toISOString(),
+        historyId: crypto.randomUUID(),
+      }),
+    );
+  }
+  async function navigate(nextPage: Page) {
+    if (page === 'calculate' && nextPage !== 'calculate') await finalizeCurrentCalculation();
+    setPage(nextPage);
+  }
   return (
     <div className="shell">
       <a className="skip" href="#main">
@@ -296,7 +320,10 @@ export function App() {
           <ul>
             {nav.map(([id, label]) => (
               <li key={id}>
-                <button aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}>
+                <button
+                  aria-current={page === id ? 'page' : undefined}
+                  onClick={() => void navigate(id)}
+                >
                   {label}
                 </button>
               </li>
@@ -324,10 +351,13 @@ export function App() {
           <Home
             result={result.results[input.npLevel - 1]?.average ?? 0}
             owned={build?.npLevel ? 1 : 0}
-            onNavigate={setPage}
+            hasHistory={profile.history.length > 0}
+            onNavigate={(next) => void navigate(next)}
           />
         )}{' '}
-        {page === 'calculate' && <Calculator input={input} result={result} />}{' '}
+        {page === 'calculate' && (
+          <Calculator input={input} result={result} onFinalize={finalizeCurrentCalculation} />
+        )}{' '}
         {page === 'servants' && (
           <Servants
             name={servant.name}
@@ -358,26 +388,28 @@ export function App() {
           />
         )}{' '}
       </main>
-      <BottomNav page={page} setPage={setPage} />
+      <BottomNav page={page} setPage={(next) => void navigate(next)} />
     </div>
   );
 }
 function Home({
   result,
   owned,
+  hasHistory,
   onNavigate,
 }: {
   result: number;
   owned: number;
+  hasHistory: boolean;
   onNavigate: (page: Page) => void;
 }) {
   return (
     <div className="home-grid">
       <section className="primary-module">
         <p className="eyebrow">PRIMARY</p>
-        <h2>前回の計算</h2>
+        <h2>{hasHistory ? '前回の計算' : '最初の計算を始める'}</h2>
         <p className="hero-number">{numberFormatter.format(result)}</p>
-        <p>検証用セイバー・NP1平均</p>
+        <p>{hasHistory ? '保存済みの最終条件' : '検証用セイバー・NP1の初期条件'}</p>
         <button className="primary" onClick={() => onNavigate('calculate')}>
           条件を開く
         </button>
@@ -398,9 +430,11 @@ function Home({
 function Calculator({
   input,
   result,
+  onFinalize,
 }: {
   input: CalcInput;
   result: ReturnType<typeof calculateNpDamage>;
+  onFinalize: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const snapshot = {
@@ -412,6 +446,7 @@ function Calculator({
   };
   async function copyUrl() {
     try {
+      await onFinalize();
       const url = new URL(location.href);
       url.hash = createShareFragment(snapshot);
       await navigator.clipboard.writeText(url.toString());
@@ -426,6 +461,7 @@ function Calculator({
   }
   async function saveImage() {
     try {
+      await onFinalize();
       const url = URL.createObjectURL(await resultCardPng(snapshot));
       const link = document.createElement('a');
       link.href = url;

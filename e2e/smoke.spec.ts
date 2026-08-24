@@ -59,3 +59,28 @@ test('persists servant, target, CE copies, and support templates', async ({ page
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
   ).toHaveCount(2);
 });
+
+test('finalizes one deduplicated history entry per calculation input', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop navigation exercises history and backup together');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  for (let index = 0; index < 2; index += 1) {
+    await page.getByRole('button', { name: 'ダメージ計算' }).click();
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+    await page.getByRole('button', { name: 'ホーム' }).click();
+  }
+  await page.getByRole('button', { name: 'データ管理' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '全データをバックアップ' }).click();
+  const stream = await (await downloadPromise).createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  const backup = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
+    profiles: { profiles: { history: unknown[] }[] };
+  };
+  expect(backup.profiles.profiles[0]?.history).toHaveLength(1);
+});
