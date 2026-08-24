@@ -204,4 +204,16 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 
 - `d0ea993 docs: plan restoration of adopted demo features`
 - `52dea7a feat(calc): add fail-closed support effect resolver`
-- `feat(calculator): apply saved support templates`（この更新と同じコミット）
+- `5fe7d4d feat(calculator): apply saved support templates`
+
+## 8. 次の作業
+
+### Slice 2: 攻撃役・概念礼装の共通選択
+
+状態: 未着手
+
+1. サーヴァント検索モーダルを所持／全DBのsource切替付きで実装する。
+2. 礼装検索モーダルを登録済みコピー／全DBのsource切替付きで実装する。
+3. 保存値の読込、一時上書き、保存値へ戻す操作を追加する。
+4. 計算draftと共有snapshotで、選択元と仮想状態の境界を検証する。
+5. SP、キーボード、画像fallbackをE2Eで検証する。
