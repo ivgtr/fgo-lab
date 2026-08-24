@@ -21,12 +21,17 @@ import {
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
 import { calculateNpDamage } from '@fgo-lab/calc-core';
-import { resolveSupportTemplate, type ResolvedSupportTemplate } from '@fgo-lab/effect-resolver';
+import {
+  resolveAttackerSkills,
+  resolveSupportTemplate,
+  type ResolvedSupportTemplate,
+} from '@fgo-lab/effect-resolver';
 import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalcInput,
   CalculationSelection,
   CalculationShareSnapshot,
+  AttackerSkillSelection,
   CraftEssenceCopy,
   LocalProfile,
   ProfileCollection,
@@ -93,9 +98,10 @@ function handleModalKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: (
   }
 }
 
-function withSupportResolution(
+function withEffectResolution(
   result: ReturnType<typeof calculateNpDamage>,
   resolution: ResolvedSupportTemplate | undefined,
+  traceStep: 'attacker-effect' | 'support-effect',
 ) {
   if (!resolution) return result;
   return {
@@ -110,11 +116,23 @@ function withSupportResolution(
     trace: [
       ...result.trace,
       ...resolution.effects.map((effect) => ({
-        step: 'support-effect',
+        step: traceStep,
         detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
       })),
     ],
   };
+}
+
+function initialAttackerSkills(
+  servant: ServantMaster | undefined,
+  source: CalculationSelection['attackerSource'],
+  build: ServantBuild | undefined,
+): AttackerSkillSelection[] {
+  return (servant?.skills ?? []).slice(0, 3).map((skill, index) => ({
+    skillId: skill.id,
+    skillLevel: source === 'owned' ? (build?.skills[String(index + 1)] ?? 1) : 10,
+    enabled: false,
+  }));
 }
 
 function Setup({
@@ -321,12 +339,25 @@ export function App() {
   const servant = currentMaster.servants[0]!;
   const build = profile.servantBuilds[servant.id];
   const baseInput = calculatorInput ?? calcInput(currentMaster, build);
-  const currentSelection =
+  const selectionBase =
     calculationSelection ??
     ({
       attackerSource: profile.servantBuilds[baseInput.attackerId]?.npLevel ? 'owned' : 'master',
       craftEssence: null,
     } satisfies CalculationSelection);
+  const selectedAttacker = currentMaster.servants.find(
+    (candidate) => candidate.id === baseInput.attackerId,
+  );
+  const currentSelection: CalculationSelection = {
+    ...selectionBase,
+    attackerSkills:
+      selectionBase.attackerSkills ??
+      initialAttackerSkills(
+        selectedAttacker,
+        selectionBase.attackerSource,
+        profile.servantBuilds[baseInput.attackerId],
+      ),
+  };
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -335,13 +366,23 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
+  const attackerSkillResolution = resolveAttackerSkills(
+    baseInput,
+    currentSelection.attackerSkills ?? [],
+    currentMaster.servants,
+  );
   const supportResolution = selectedSupport
-    ? resolveSupportTemplate(baseInput, selectedSupport, currentMaster.servants)
+    ? resolveSupportTemplate(attackerSkillResolution.input, selectedSupport, currentMaster.servants)
     : undefined;
-  const input = supportResolution?.input ?? baseInput;
-  const calculatedResult = withSupportResolution(
-    calculateNpDamage(input, versions),
+  const input = supportResolution?.input ?? attackerSkillResolution.input;
+  const calculatedResult = withEffectResolution(
+    withEffectResolution(
+      calculateNpDamage(input, versions),
+      attackerSkillResolution,
+      'attacker-effect',
+    ),
     supportResolution,
+    'support-effect',
   );
   const compatibleSharedSnapshot =
     sharedSnapshot?.result.versions.masterDataVersion === currentMaster.version &&
@@ -522,12 +563,27 @@ export function App() {
     setSelectedSupport(supportTemplate);
     setSharedSnapshot(undefined);
     const nextResolution = supportTemplate
-      ? resolveSupportTemplate(nextInput, supportTemplate, currentMaster.servants)
+      ? resolveSupportTemplate(
+          resolveAttackerSkills(nextInput, selection.attackerSkills ?? [], currentMaster.servants)
+            .input,
+          supportTemplate,
+          currentMaster.servants,
+        )
       : undefined;
-    const resolvedInput = nextResolution?.input ?? nextInput;
-    const nextCalculated = withSupportResolution(
-      calculateNpDamage(resolvedInput, versions),
+    const nextAttackerResolution = resolveAttackerSkills(
+      nextInput,
+      selection.attackerSkills ?? [],
+      currentMaster.servants,
+    );
+    const resolvedInput = nextResolution?.input ?? nextAttackerResolution.input;
+    const nextCalculated = withEffectResolution(
+      withEffectResolution(
+        calculateNpDamage(resolvedInput, versions),
+        nextAttackerResolution,
+        'attacker-effect',
+      ),
       nextResolution,
+      'support-effect',
     );
     const nextResult = !ENGINE_RELEASE_VALIDATED
       ? {
@@ -872,6 +928,11 @@ function Calculator({
   const selectedSupportResolution = selectedSupport
     ? resolveSupportTemplate(input, selectedSupport, servants)
     : undefined;
+  const selectedAttackerSkillResolution = resolveAttackerSkills(
+    input,
+    selection.attackerSkills ?? [],
+    servants,
+  );
   const visibleSupportTemplates = supportTemplates.filter((template) => {
     const sourceNames = template.effects.map(
       (effect) => servants.find((servant) => servant.id === effect.sourceId)?.name ?? '',
@@ -899,7 +960,11 @@ function Calculator({
         npMultipliers: candidate.npMultipliers,
         cardType: candidate.npCard,
       },
-      { ...selection, attackerSource: source },
+      {
+        ...selection,
+        attackerSource: source,
+        attackerSkills: initialAttackerSkills(candidate, source, saved),
+      },
     );
     closeAttackerDialog();
   }
@@ -950,6 +1015,15 @@ function Calculator({
       { ...input, craftEssenceId: null, craftEssenceAtk: 0 },
       { ...selection, craftEssence: null },
     );
+  }
+  function changeAttackerSkill(
+    skillId: string,
+    patch: Partial<Pick<AttackerSkillSelection, 'enabled' | 'skillLevel'>>,
+  ) {
+    const attackerSkills = (selection.attackerSkills ?? []).map((skill) =>
+      skill.skillId === skillId ? { ...skill, ...patch } : skill,
+    );
+    void onCompositionChange(input, { ...selection, attackerSkills });
   }
   function closeAttackerDialog() {
     setAttackerDialogOpen(false);
@@ -1266,6 +1340,129 @@ function Calculator({
               </label>
             ))}
         </div>
+        <section className="attacker-skills" aria-label="攻撃役の自身スキル">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow">SELF SKILLS</p>
+              <h3>攻撃役の自身スキル</h3>
+            </div>
+            <small>変更はこの計算だけ</small>
+          </div>
+          {(selection.attackerSkills ?? []).length === 0 ? (
+            <p className="notice">展開できる自身スキルがありません。</p>
+          ) : (
+            <ul className="plain-list attacker-skill-list">
+              {(selection.attackerSkills ?? []).map((selectedSkill, index) => {
+                const skill = attacker?.skills.find(
+                  (candidate) => candidate.id === selectedSkill.skillId,
+                );
+                if (!skill) return null;
+                const savedLevel =
+                  selection.attackerSource === 'owned'
+                    ? (builds[input.attackerId]?.skills[String(index + 1)] ?? 1)
+                    : 10;
+                const modified = selectedSkill.skillLevel !== savedLevel;
+                const effects = selectedAttackerSkillResolution.effects.filter(
+                  (effect) => effect.skillId === skill.id,
+                );
+                return (
+                  <li key={skill.id} className="attacker-skill-card">
+                    <div className="skill-card-head">
+                      <span className="field-identity">
+                        <MasterImage
+                          src={skill.imageKey}
+                          alt=""
+                          fallback={skill.name}
+                          className="skill-icon"
+                        />
+                        <span>
+                          <strong>{skill.name}</strong>
+                          <small>
+                            {modified
+                              ? 'modified'
+                              : selection.attackerSource === 'owned'
+                                ? 'saved'
+                                : 'added'}
+                          </small>
+                        </span>
+                      </span>
+                      <label className="skill-toggle">
+                        <input
+                          type="checkbox"
+                          checked={selectedSkill.enabled}
+                          onChange={(event) =>
+                            changeAttackerSkill(skill.id, { enabled: event.target.checked })
+                          }
+                          aria-label={`${skill.name}を使用`}
+                        />
+                        使用
+                      </label>
+                    </div>
+                    <div className="skill-card-controls">
+                      <label>
+                        スキルLv
+                        <select
+                          value={selectedSkill.skillLevel}
+                          onChange={(event) =>
+                            changeAttackerSkill(skill.id, {
+                              skillLevel: Number(event.target.value),
+                            })
+                          }
+                          aria-label={`${skill.name}のスキルレベル`}
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                            <option key={value} value={value}>
+                              Lv{value}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {modified ? (
+                        <button
+                          type="button"
+                          onClick={() => changeAttackerSkill(skill.id, { skillLevel: savedLevel })}
+                        >
+                          保存値へ戻す
+                        </button>
+                      ) : null}
+                    </div>
+                    <ul className="skill-effect-summary">
+                      {skill.effects.map((effect) => {
+                        const resolved = effects.find(
+                          (candidate) => candidate.effectId === effect.id,
+                        );
+                        return (
+                          <li key={effect.id}>
+                            <span>{effect.label}</span>
+                            <small>
+                              {!selectedSkill.enabled
+                                ? '未使用'
+                                : resolved?.applied && resolved.value !== null
+                                  ? `適用 ${resolved.value.toLocaleString('ja-JP', {
+                                      style: 'percent',
+                                      maximumFractionDigits: 1,
+                                    })}`
+                                  : resolved?.reason === 'not_np_damage_relevant'
+                                    ? '宝具火力外'
+                                    : resolved?.reason === 'card_type_mismatch'
+                                      ? 'カード不一致'
+                                      : '未対応'}
+                            </small>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {selectedAttackerSkillResolution.warnings.map((warning) => (
+            <p className="notice" key={warning}>
+              未解決: {warning}
+            </p>
+          ))}
+        </section>
         <section className="support-composition" aria-label="支援・バフ">
           <div className="section-heading compact-heading">
             <div>

@@ -91,8 +91,16 @@ export const calcInputSchema = z.object({
 });
 export type CalcInput = z.infer<typeof calcInputSchema>;
 
+export const attackerSkillSelectionSchema = z.object({
+  skillId: z.string().min(1).max(80),
+  skillLevel: z.number().int().min(1).max(10),
+  enabled: z.boolean(),
+});
+export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema>;
+
 export const calculationSelectionSchema = z.object({
   attackerSource: z.enum(['owned', 'master']),
+  attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
   craftEssence: z
     .object({
       source: z.enum(['registered', 'master']),

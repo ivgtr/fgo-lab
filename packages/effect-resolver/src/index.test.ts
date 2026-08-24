@@ -1,7 +1,7 @@
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { CalcInput, SupportTemplate } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { resolveSupportTemplate } from './index';
+import { resolveAttackerSkills, resolveSupportTemplate } from './index';
 
 const input: CalcInput = {
   attackerId: 'attacker',
@@ -153,5 +153,32 @@ describe('resolveSupportTemplate', () => {
       applied: false,
       reason: 'damage_effect_not_supported',
     });
+  });
+});
+
+describe('resolveAttackerSkills', () => {
+  const attacker: ServantMaster = { ...source, id: input.attackerId, name: '攻撃役' };
+
+  it('applies enabled self skills without mutating the base input', () => {
+    const result = resolveAttackerSkills(
+      input,
+      [{ skillId: 'skill', skillLevel: 10, enabled: true }],
+      [attacker],
+    );
+    expect(result.input.attackBuff).toBeCloseTo(0.3);
+    expect(result.input.cardBuff).toBeCloseTo(0.5);
+    expect(result.input.npDamageBuff).toBeCloseTo(0.3);
+    expect(result.effects.every((effect) => effect.origin === 'attacker')).toBe(true);
+    expect(input).toMatchObject({ attackBuff: 0.1, cardBuff: 0, npDamageBuff: 0 });
+  });
+
+  it('does not apply disabled self skills', () => {
+    const result = resolveAttackerSkills(
+      input,
+      [{ skillId: 'skill', skillLevel: 10, enabled: false }],
+      [attacker],
+    );
+    expect(result.input).toEqual(input);
+    expect(result.effects).toEqual([]);
   });
 });

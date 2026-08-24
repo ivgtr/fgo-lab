@@ -275,6 +275,67 @@ h3 {
   margin-top: 1.25rem;
   border-top: 1px solid var(--line);
 }
+.attacker-skills {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.attacker-skill-list > .attacker-skill-card {
+  display: grid;
+  align-items: stretch;
+  gap: 0.65rem;
+  padding: 0.85rem 0;
+}
+.skill-card-head,
+.skill-card-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.skill-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.skill-toggle input {
+  width: 22px;
+  min-height: 22px;
+}
+.skill-card-controls {
+  justify-content: flex-start;
+}
+.skill-card-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.skill-card-controls select {
+  width: 6rem;
+}
+.skill-effect-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  background: var(--soft-blue);
+}
+.skill-effect-summary li {
+  display: flex;
+  min-height: 0;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 0;
+  padding: 0.2rem 0;
+  font-size: 0.78rem;
+}
+.skill-effect-summary small {
+  color: var(--muted);
+  text-align: right;
+}
 .selected-support-head {
   display: flex;
   align-items: center;

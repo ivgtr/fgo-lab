@@ -1,9 +1,10 @@
 import type { ServantMaster } from '@fgo-lab/master-data';
-import type { CalcInput, SupportTemplate } from '@fgo-lab/schema';
+import type { AttackerSkillSelection, CalcInput, SupportTemplate } from '@fgo-lab/schema';
 
 export type ResolvedBuffKind = 'attackBuff' | 'cardBuff' | 'npDamageBuff';
 
 export interface ResolvedSupportEffect {
+  origin: 'attacker' | 'support';
   sourceId: string;
   sourceName: string;
   skillId: string;
@@ -21,6 +22,14 @@ export interface ResolvedSupportTemplate {
   effects: ResolvedSupportEffect[];
   precision: 'exact' | 'approximate' | 'unsupported';
   warnings: string[];
+}
+
+interface SkillSelection {
+  sourceId: string;
+  skillId: string;
+  skillLevel: number;
+  enabled: boolean;
+  order: number;
 }
 
 const CARD_LABELS: Record<string, CalcInput['cardType']> = {
@@ -51,10 +60,11 @@ function isPotentiallyDamageRelevant(label: string): boolean {
   );
 }
 
-export function resolveSupportTemplate(
+function resolveSkillSelections(
   baseInput: CalcInput,
-  template: SupportTemplate,
+  selectedSkills: readonly SkillSelection[],
   servants: readonly ServantMaster[],
+  origin: ResolvedSupportEffect['origin'],
 ): ResolvedSupportTemplate {
   const nextInput = { ...baseInput };
   const effects: ResolvedSupportEffect[] = [];
@@ -62,13 +72,13 @@ export function resolveSupportTemplate(
   let precision: ResolvedSupportTemplate['precision'] = 'exact';
   const servantById = new Map(servants.map((servant) => [servant.id, servant]));
 
-  for (const selected of [...template.effects].sort((a, b) => a.order - b.order)) {
+  for (const selected of [...selectedSkills].sort((a, b) => a.order - b.order)) {
     if (!selected.enabled) continue;
     const source = servantById.get(selected.sourceId);
-    const skill = source?.skills.find((candidate) => candidate.id === selected.effectId);
+    const skill = source?.skills.find((candidate) => candidate.id === selected.skillId);
     if (!source || !skill) {
       precision = 'unsupported';
-      warnings.push(`support_effect_missing:${selected.sourceId}:${selected.effectId}`);
+      warnings.push(`${origin}_effect_missing:${selected.sourceId}:${selected.skillId}`);
       continue;
     }
     for (const effect of skill.effects) {
@@ -76,8 +86,9 @@ export function resolveSupportTemplate(
       const kind = buffKind(effect.label);
       if (rawValue === undefined) {
         precision = 'unsupported';
-        warnings.push(`support_effect_level_missing:${source.id}:${skill.id}:${effect.id}`);
+        warnings.push(`${origin}_effect_level_missing:${source.id}:${skill.id}:${effect.id}`);
         effects.push({
+          origin,
           sourceId: source.id,
           sourceName: source.name,
           skillId: skill.id,
@@ -95,6 +106,7 @@ export function resolveSupportTemplate(
       const cardType = CARD_LABELS[effect.label];
       if (kind === 'cardBuff' && cardType !== baseInput.cardType) {
         effects.push({
+          origin,
           sourceId: source.id,
           sourceName: source.name,
           skillId: skill.id,
@@ -111,6 +123,7 @@ export function resolveSupportTemplate(
       if (kind) {
         nextInput[kind] += value;
         effects.push({
+          origin,
           sourceId: source.id,
           sourceName: source.name,
           skillId: skill.id,
@@ -127,9 +140,10 @@ export function resolveSupportTemplate(
       const damageRelevant = isPotentiallyDamageRelevant(effect.label);
       if (damageRelevant) {
         if (precision === 'exact') precision = 'approximate';
-        warnings.push(`support_effect_not_resolved:${source.id}:${skill.id}:${effect.id}`);
+        warnings.push(`${origin}_effect_not_resolved:${source.id}:${skill.id}:${effect.id}`);
       }
       effects.push({
+        origin,
         sourceId: source.id,
         sourceName: source.name,
         skillId: skill.id,
@@ -145,4 +159,42 @@ export function resolveSupportTemplate(
   }
 
   return { input: nextInput, effects, precision, warnings };
+}
+
+export function resolveSupportTemplate(
+  baseInput: CalcInput,
+  template: SupportTemplate,
+  servants: readonly ServantMaster[],
+): ResolvedSupportTemplate {
+  return resolveSkillSelections(
+    baseInput,
+    template.effects.map((effect) => ({
+      sourceId: effect.sourceId,
+      skillId: effect.effectId,
+      skillLevel: effect.skillLevel,
+      enabled: effect.enabled,
+      order: effect.order,
+    })),
+    servants,
+    'support',
+  );
+}
+
+export function resolveAttackerSkills(
+  baseInput: CalcInput,
+  selections: readonly AttackerSkillSelection[],
+  servants: readonly ServantMaster[],
+): ResolvedSupportTemplate {
+  return resolveSkillSelections(
+    baseInput,
+    selections.map((selection, order) => ({
+      sourceId: baseInput.attackerId,
+      skillId: selection.skillId,
+      skillLevel: selection.skillLevel,
+      enabled: selection.enabled,
+      order,
+    })),
+    servants,
+    'attacker',
+  );
 }

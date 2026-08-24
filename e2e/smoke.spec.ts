@@ -130,14 +130,20 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
+  await page.getByLabel('カリスマ Bを使用').check();
+  const sharedDamage = await currentDamage.textContent();
   await page.getByLabel('敵クラス').fill('berserker');
   await page.getByRole('button', { name: 'URLをコピー' }).click();
   await expect(page.getByText('共有URLをコピーしました')).toBeVisible();
   const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
   expect(sharedUrl).toContain('#share=');
+  await page.goto('about:blank');
   await page.goto(sharedUrl);
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
   await expect(page.getByLabel('敵クラス')).toHaveValue('berserker');
+  await expect(currentDamage).toHaveText(sharedDamage ?? '');
+  await expect(page.getByLabel('カリスマ Bを使用')).not.toBeChecked();
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '共有専用JSONを保存' }).click();
@@ -149,6 +155,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   expect(sharedJson).not.toContain('profileId');
   expect(sharedJson).not.toContain('servantBuilds');
   expect(sharedJson).not.toContain('copyId');
+  expect(sharedJson).not.toContain('attackerSkills');
 });
 
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
@@ -223,6 +230,14 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await expect(page.getByRole('button', { name: '攻撃役を変更' })).toContainText(
     '所持・育成管理の保存値',
   );
+  const selfSkillRegion = page.getByLabel('攻撃役の自身スキル');
+  const damageBeforeSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  await expect(selfSkillRegion).toContainText('saved');
+  await selfSkillRegion.getByLabel('カリスマ Bのスキルレベル').selectOption('8');
+  await expect(selfSkillRegion).toContainText('modified');
+  await selfSkillRegion.getByLabel('カリスマ Bを使用').check();
+  const damageWithSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  expect(damageWithSelfSkill).toBeGreaterThan(damageBeforeSelfSkill);
   await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
   const calculatorCeDialog = page.getByRole('dialog', { name: '概念礼装を選択' });
   await expect(calculatorCeDialog.getByRole('tab', { name: '登録済みコピー' })).toHaveAttribute(
@@ -256,6 +271,8 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
+  await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
+  await expect(page.getByLabel('カリスマ Bのスキルレベル')).toHaveValue('8');
   await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
     '登録コピー・Lv20',
   );
@@ -268,6 +285,8 @@ test('persists servant, target, CE copies, and support templates', async ({ page
     .getByLabel('カレイドスコープのレベル');
   await expect(restoredCopyLevels.nth(0)).toHaveValue('1');
   await expect(restoredCopyLevels.nth(1)).toHaveValue('1');
+  await page.getByRole('button', { name: '所持・育成' }).click();
+  await expect(page.getByLabel('スキル1')).toHaveValue('1');
   await page.getByRole('button', { name: '支援条件' }).click();
   await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
   await expect(page.getByLabel('カリスマ Bのスキルレベル')).toHaveValue('8');
