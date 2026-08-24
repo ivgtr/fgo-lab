@@ -331,6 +331,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     expect(missed.effects.at(-1)).toMatchObject({
       applied: false,
       reason: 'target_trait_mismatch',
+      damageTraitCondition: { kind: 'npSpecial', traits: ['dragon'] },
     });
   });
 
@@ -363,6 +364,11 @@ describe('automatic equipment, passive, and NP effects', () => {
         [attacker],
       ).input.powerMod,
     ).toBe(0.5);
-    expect(resolveAttackerSkills(input, selection, [attacker]).input.powerMod).toBe(0);
+    const missed = resolveAttackerSkills(input, selection, [attacker]);
+    expect(missed.input.powerMod).toBe(0);
+    expect(missed.effects[0]?.damageTraitCondition).toEqual({
+      kind: 'powerMod',
+      traits: ['dragon'],
+    });
   });
 });

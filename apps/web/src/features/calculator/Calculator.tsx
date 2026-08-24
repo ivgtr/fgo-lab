@@ -26,6 +26,11 @@ import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
 import { AttackerPicker, CraftEssencePicker, SupportTemplatePicker } from './CalculatorPickers';
 import { collectSpecialTraitCandidates } from './specialTraits';
+import {
+  specialTraitLabel,
+  specialTraitSourceLabel,
+  specialTraitValueLabel,
+} from './specialTraitPresentation';
 import { CalculationResult } from './CalculationResult';
 import './calculator.css';
 
@@ -98,13 +103,14 @@ export function Calculator({
     ...npEffectResolution.effects,
   ];
   const specialTraitCandidates = collectSpecialTraitCandidates({
-    input,
-    attacker,
-    craftEssence: selectedCraftEssence,
-    selection,
-    support: selectedSupport,
+    effects: [
+      ...selectedAttackerSkillResolution.effects,
+      ...automaticEffects,
+      ...(selectedSupportResolution?.effects ?? []),
+    ],
     servants,
-  });
+    craftEssence: selectedCraftEssence,
+  }).sort((left, right) => specialTraitLabel(left).localeCompare(specialTraitLabel(right), 'ja'));
   const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
   const classSituationLabel =
     input.classAffinity === 2
@@ -572,9 +578,10 @@ export function Calculator({
               <ul className="plain-list special-trait-list">
                 {specialTraitCandidates.map((candidate) => {
                   const enabled = input.target.traits.includes(candidate.trait);
+                  const label = specialTraitLabel(candidate);
                   return (
                     <li key={candidate.trait} data-enabled={enabled}>
-                      <label title={`${candidate.label}特攻を${enabled ? '無効' : '有効'}化`}>
+                      <label title={`${label}特攻を${enabled ? '無効' : '有効'}化`}>
                         <input
                           type="checkbox"
                           checked={enabled}
@@ -592,10 +599,10 @@ export function Calculator({
                           }
                         />
                         <span className="special-trait-copy">
-                          <strong>{candidate.label}特攻</strong>
+                          <strong>{label}特攻</strong>
                           <small>
                             {enabled ? '適用中' : '対象外'}・
-                            {candidate.sources.map((source) => source.valueLabel).join(' / ')}
+                            {candidate.sources.map(specialTraitValueLabel).join(' / ')}
                           </small>
                         </span>
                         <span className="special-trait-sources" aria-label="付与元">
@@ -603,13 +610,13 @@ export function Calculator({
                             <span
                               className="special-trait-source"
                               key={source.key}
-                              title={`${source.name} ${source.valueLabel}`}
-                              aria-label={`${source.name} ${source.valueLabel}`}
+                              title={`${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`}
+                              aria-label={`${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`}
                             >
                               <MasterImage
                                 src={source.imageKey}
                                 alt=""
-                                fallback={source.name}
+                                fallback={specialTraitSourceLabel(source)}
                                 className="special-trait-icon"
                               />
                             </span>
@@ -893,7 +900,7 @@ export function Calculator({
                   <span>{effect.label}</span>
                   <b className={effect.applied ? 'effect-applied' : 'effect-inactive'}>
                     {effect.applied && effect.value !== null
-                      ? effect.reason === 'target_trait_matched' && effect.skillName === '特攻宝具'
+                      ? effect.damageTraitCondition?.kind === 'npSpecial'
                         ? `${effect.value.toFixed(2)}倍`
                         : effect.value.toLocaleString('ja-JP', {
                             style: 'percent',

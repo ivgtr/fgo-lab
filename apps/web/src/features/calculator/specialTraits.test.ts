@@ -1,72 +1,83 @@
 import { describe, expect, it } from 'vitest';
-import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { createDefaultCalcInput } from './calculation';
+import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
 import { collectSpecialTraitCandidates } from './specialTraits';
 
-const master = masterSnapshotSchema.parse(fixture);
+function resolvedEffect(patch: Partial<ResolvedSupportEffect> = {}): ResolvedSupportEffect {
+  return {
+    origin: 'attacker',
+    sourceId: 'servant-1',
+    sourceName: '攻撃役',
+    skillId: 'skill-1',
+    skillName: '竜特攻付与',
+    effectId: 'dragon-power',
+    label: '威力アップ・対竜',
+    value: 0.3,
+    kind: 'powerMod',
+    damageTraitCondition: { kind: 'powerMod', traits: ['dragon'] },
+    applied: false,
+    reason: 'target_trait_mismatch',
+    ...patch,
+  };
+}
 
 describe('special trait candidates', () => {
-  it('combines resolvable sources and hides internal trait markers', () => {
-    const base = master.servants[0]!;
-    const attacker = {
-      ...base,
-      skills: [
-        {
-          id: 'skill-1',
-          slot: 1,
-          priority: 0,
-          name: '竜特攻付与',
-          detail: '',
-          imageKey: null,
-          effects: [
-            {
-              id: 'dragon-power',
-              type: 'buff',
-              target: 'self',
-              label: '威力アップ・対竜',
-              values: [300],
-              targetTraits: ['dragon'],
-              buffTypes: ['upDamage'],
-            },
-            {
-              id: 'internal',
-              type: 'buff',
-              target: 'self',
-              label: '内部条件',
-              values: [100],
-              targetTraits: ['trait:internal'],
-              buffTypes: ['upDamage'],
-            },
-          ],
-        },
-      ],
-    };
+  it('collects resolved damage conditions without reinterpreting selections or levels', () => {
     const candidates = collectSpecialTraitCandidates({
-      input: createDefaultCalcInput(master, undefined, attacker),
-      attacker,
+      effects: [
+        resolvedEffect(),
+        resolvedEffect(),
+        resolvedEffect({
+          effectId: 'internal',
+          damageTraitCondition: { kind: 'powerMod', traits: ['trait:internal'] },
+        }),
+      ],
+      servants: [],
       craftEssence: undefined,
-      selection: {
-        attackerSource: 'master',
-        craftEssence: null,
-        attackerSkills: [{ skillId: 'skill-1', skillLevel: 1, enabled: true }],
-      },
-      support: undefined,
-      servants: [attacker],
     });
+
     expect(candidates).toEqual([
       {
         trait: 'dragon',
-        label: '竜',
         sources: [
           {
-            key: 'attacker:skill-1:dragon-power',
-            name: '竜特攻付与',
+            key: 'attacker:servant-1:skill-1:dragon-power',
+            origin: 'attacker',
+            sourceName: '攻撃役',
+            effectName: '竜特攻付与',
             imageKey: null,
-            valueLabel: '+30%',
+            effectLabel: '威力アップ・対竜',
+            value: 0.3,
+            modifierKind: 'powerMod',
           },
         ],
       },
     ]);
+  });
+
+  it('exposes every alternative trait from a multi-trait damage condition', () => {
+    const candidates = collectSpecialTraitCandidates({
+      effects: [
+        resolvedEffect({
+          damageTraitCondition: {
+            kind: 'powerMod',
+            traits: ['classSaber', 'classArcher'],
+          },
+        }),
+      ],
+      servants: [],
+      craftEssence: undefined,
+    });
+
+    expect(candidates.map((candidate) => candidate.trait)).toEqual(['classSaber', 'classArcher']);
+  });
+
+  it('omits a condition when its buff cannot affect the selected attacker', () => {
+    const candidates = collectSpecialTraitCandidates({
+      effects: [resolvedEffect({ reason: 'attacker_trait_mismatch' })],
+      servants: [],
+      craftEssence: undefined,
+    });
+
+    expect(candidates).toEqual([]);
   });
 });

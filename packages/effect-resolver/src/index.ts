@@ -9,6 +9,11 @@ import type { AttackerSkillSelection, CalcInput, SupportTemplate } from '@fgo-la
 export type ResolvedBuffKind =
   'attackBuff' | 'cardBuff' | 'npDamageBuff' | 'eventDamageBuff' | 'specialDamageBuff' | 'powerMod';
 
+export interface DamageTraitCondition {
+  kind: 'powerMod' | 'npSpecial';
+  traits: readonly string[];
+}
+
 export interface ResolvedSupportEffect {
   origin: 'attacker' | 'support' | 'craftEssence' | 'passive' | 'np';
   sourceId: string;
@@ -19,6 +24,7 @@ export interface ResolvedSupportEffect {
   label: string;
   value: number | null;
   kind: ResolvedBuffKind | null;
+  damageTraitCondition: DamageTraitCondition | null;
   applied: boolean;
   reason: string;
 }
@@ -101,19 +107,26 @@ function resolveEffects(
   for (const item of items) {
     const { effect, rawValue } = item;
     const kind = effectBuffKind(effect);
+    const effectIdentity = {
+      origin,
+      sourceId: item.sourceId,
+      sourceName: item.sourceName,
+      skillId: item.skillId,
+      skillName: item.skillName,
+      effectId: effect.id,
+      label: effect.label,
+      kind,
+      damageTraitCondition:
+        kind === 'powerMod' && effect.targetTraits?.length
+          ? ({ kind: 'powerMod', traits: effect.targetTraits } satisfies DamageTraitCondition)
+          : null,
+    };
     if (rawValue === undefined) {
       precision = 'unsupported';
       warnings.push(`${origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`);
       effects.push({
-        origin,
-        sourceId: item.sourceId,
-        sourceName: item.sourceName,
-        skillId: item.skillId,
-        skillName: item.skillName,
-        effectId: effect.id,
-        label: effect.label,
+        ...effectIdentity,
         value: null,
-        kind,
         applied: false,
         reason: 'level_value_missing',
       });
@@ -125,15 +138,8 @@ function resolveEffects(
       !effect.recipientTraits?.some((trait) => recipientTraits.includes(trait))
     ) {
       effects.push({
-        origin,
-        sourceId: item.sourceId,
-        sourceName: item.sourceName,
-        skillId: item.skillId,
-        skillName: item.skillName,
-        effectId: effect.id,
-        label: effect.label,
+        ...effectIdentity,
         value,
-        kind,
         applied: false,
         reason: 'attacker_trait_mismatch',
       });
@@ -144,15 +150,8 @@ function resolveEffects(
       !effect.targetTraits?.some((trait) => baseInput.target.traits.includes(trait))
     ) {
       effects.push({
-        origin,
-        sourceId: item.sourceId,
-        sourceName: item.sourceName,
-        skillId: item.skillId,
-        skillName: item.skillName,
-        effectId: effect.id,
-        label: effect.label,
+        ...effectIdentity,
         value,
-        kind,
         applied: false,
         reason: 'target_trait_mismatch',
       });
@@ -161,15 +160,8 @@ function resolveEffects(
     const cardType = CARD_LABELS[effect.label];
     if (kind === 'cardBuff' && cardType !== baseInput.cardType) {
       effects.push({
-        origin,
-        sourceId: item.sourceId,
-        sourceName: item.sourceName,
-        skillId: item.skillId,
-        skillName: item.skillName,
-        effectId: effect.id,
-        label: effect.label,
+        ...effectIdentity,
         value,
-        kind,
         applied: false,
         reason: 'card_type_mismatch',
       });
@@ -178,15 +170,8 @@ function resolveEffects(
     if (kind) {
       nextInput[kind] += value;
       effects.push({
-        origin,
-        sourceId: item.sourceId,
-        sourceName: item.sourceName,
-        skillId: item.skillId,
-        skillName: item.skillName,
-        effectId: effect.id,
-        label: effect.label,
+        ...effectIdentity,
         value,
-        kind,
         applied: true,
         reason: item.appliedReason,
       });
@@ -198,13 +183,7 @@ function resolveEffects(
       warnings.push(`${origin}_effect_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`);
     }
     effects.push({
-      origin,
-      sourceId: item.sourceId,
-      sourceName: item.sourceName,
-      skillId: item.skillId,
-      skillName: item.skillName,
-      effectId: effect.id,
-      label: effect.label,
+      ...effectIdentity,
       value,
       kind: null,
       applied: false,
@@ -355,6 +334,7 @@ export function resolveNpEffects(
         label: `${special.targetTraits.join('・')}特攻`,
         value: multiplier,
         kind: null,
+        damageTraitCondition: { kind: 'npSpecial', traits: special.targetTraits },
         applied: matched,
         reason: matched ? 'target_trait_matched' : 'target_trait_mismatch',
       },
