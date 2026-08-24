@@ -6,6 +6,7 @@ import {
   damageAtRandom,
   f32Add,
   matchTraits,
+  ATTACK_NP_FUNCTION_TYPES,
   resolveAttackNpFunction,
 } from './index';
 
@@ -73,6 +74,31 @@ describe('float32 NP damage kernel', () => {
       resolveAttackNpFunction('futureDamage', { baseMultiplier: 1, matchedTraitCount: 0 })
         .precision,
     ).toBe('unsupported'));
+  it.each(ATTACK_NP_FUNCTION_TYPES)('classifies the registered %s handler', (type) => {
+    const resolved = resolveAttackNpFunction(type, {
+      baseMultiplier: 1,
+      matchedTraitCount: 2,
+      hpRatio: 0.5,
+      battlePointPhase: 1,
+    });
+    expect(resolved.precision).not.toBe('unsupported');
+    if (type === 'damageNp') expect(resolved.precision).toBe('exact');
+    else expect(resolved.precision).toBe('approximate');
+  });
+  it('requires conditional inputs instead of silently using base damage', () => {
+    expect(
+      resolveAttackNpFunction('damageNpHpratioLow', {
+        baseMultiplier: 1,
+        matchedTraitCount: 0,
+      }),
+    ).toMatchObject({ precision: 'unsupported', warning: 'missing_hp_ratio' });
+    expect(
+      resolveAttackNpFunction('damageNpBattlePointPhase', {
+        baseMultiplier: 1,
+        matchedTraitCount: 0,
+      }),
+    ).toMatchObject({ precision: 'unsupported', warning: 'missing_battle_point_phase' });
+  });
   it('evaluates AND/OR trait expressions', () =>
     expect(
       matchTraits(['dragon', 'male'], {

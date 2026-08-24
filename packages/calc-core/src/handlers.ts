@@ -29,16 +29,24 @@ const exactBase: Handler = ({ baseMultiplier }) => ({
   multiplier: baseMultiplier,
   precision: 'exact',
 });
+const pendingDifferential =
+  (warning: string): Handler =>
+  ({ baseMultiplier }) => ({
+    multiplier: baseMultiplier,
+    precision: 'approximate',
+    warning,
+  });
 
 export const attackNpHandlers: Readonly<Record<AttackNpFunctionType, Handler>> = {
   damageNp: exactBase,
-  damageNpIndividual: exactBase,
-  damageNpPierce: exactBase,
+  damageNpIndividual: pendingDifferential('individual_trait_parameters_not_resolved'),
+  damageNpPierce: pendingDifferential('defense_ignore_trace_not_resolved'),
   damageNpIndividualSum: ({ baseMultiplier, matchedTraitCount }) => ({
     multiplier: baseMultiplier * Math.max(1, matchedTraitCount),
-    precision: 'exact',
+    precision: 'approximate',
+    warning: 'individual_sum_parameters_require_differential_validation',
   }),
-  damageNpStateIndividualFix: exactBase,
+  damageNpStateIndividualFix: pendingDifferential('state_individual_parameters_not_resolved'),
   damageNpHpratioLow: ({ baseMultiplier, hpRatio }) =>
     hpRatio === undefined
       ? { multiplier: baseMultiplier, precision: 'unsupported', warning: 'missing_hp_ratio' }
@@ -59,8 +67,8 @@ export const attackNpHandlers: Readonly<Record<AttackNpFunctionType, Handler>> =
           precision: 'approximate',
           warning: 'battle_point_parameters_required',
         },
-  damageNpRare: exactBase,
-  damageNpAndOrCheckIndividuality: exactBase,
+  damageNpRare: pendingDifferential('rarity_condition_parameters_not_resolved'),
+  damageNpAndOrCheckIndividuality: pendingDifferential('and_or_parameters_not_resolved'),
 };
 
 export function resolveAttackNpFunction(
