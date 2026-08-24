@@ -88,9 +88,17 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '支援条件' }).click();
   await page.getByRole('button', { name: '支援条件を作成' }).click();
-  await expect(
-    page.getByRole('list', { name: '保存済み支援条件' }).getByRole('listitem'),
-  ).toContainText('支援条件 1');
+  await expect(page.getByLabel('保存済み支援条件')).toContainText('支援条件 1');
+  await page.getByRole('button', { name: '支援元を追加' }).click();
+  const supportDialog = page.getByRole('dialog', { name: '支援元サーヴァントを検索' });
+  await supportDialog.getByLabel('サーヴァント名').fill('アルトリア・ペンドラゴン');
+  await supportDialog.getByRole('button', { name: '追加', exact: true }).first().click();
+  await page.getByLabel('カリスマ Bを使用').click();
+  await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
+  await page.getByLabel('カリスマ Bのスキルレベル').selectOption('8');
+  await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText(
+    '使用中 1スキル',
+  );
 
   await page.getByRole('button', { name: '育成計画' }).click();
   await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('剣の輝石');
@@ -101,6 +109,9 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await expect(
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
   ).toHaveCount(2);
+  await page.getByRole('button', { name: '支援条件' }).click();
+  await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
+  await expect(page.getByLabel('カリスマ Bのスキルレベル')).toHaveValue('8');
 });
 
 test('finalizes one deduplicated history entry per calculation input', async ({

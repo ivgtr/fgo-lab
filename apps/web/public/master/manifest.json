@@ -1,11 +1,11 @@
 {
   "manifestVersion": 1,
-  "masterDataVersion": "2026-08-24-atlas-jp-full",
-  "createdAt": "2026-08-24T04:32:51.997Z",
+  "masterDataVersion": "2026-08-24-atlas-jp-skills",
+  "createdAt": "2026-08-24T04:38:07.769Z",
   "source": {
     "name": "Atlas Academy",
     "region": "JP",
-    "retrievedAt": "2026-08-24T04:32:51.997Z"
+    "retrievedAt": "2026-08-24T04:38:07.769Z"
   },
   "artifactKind": "production",
   "minimalAppVersion": "0.1.0",
@@ -14,8 +14,8 @@
     {
       "key": "master",
       "file": "master.json",
-      "bytes": 6156696,
-      "sha256": "465de4e7ae85689f4026c0443cd33010b1d36f0aaf87934686584f3a92b82d35",
+      "bytes": 7530618,
+      "sha256": "d96fdf76c91458cc1631bcade6b5c8212de06ee7a959e85af80a3821b5f628a0",
       "required": true
     }
   ],

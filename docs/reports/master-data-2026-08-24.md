@@ -1,13 +1,14 @@
-# Master data validation report: 2026-08-24-atlas-jp-full
+# Master data validation report: 2026-08-24-atlas-jp-skills
 
-- Retrieved: 2026-08-24T04:32:51.997Z
+- Retrieved: 2026-08-24T04:38:07.769Z
 - Source: Atlas Academy JP static exports
 - Normalized playable servants: 469
 - Normalized servants with an attack NP: 420
 - Normalized craft essences: 2,700
 - Normalized growth materials: 152
-- Normalized artifact bytes: 6,156,696
-- Artifact SHA-256: `465de4e7ae85689f4026c0443cd33010b1d36f0aaf87934686584f3a92b82d35`
+- Normalized active skill summaries: 1,770
+- Normalized artifact bytes: 7,530,618
+- Artifact SHA-256: `d96fdf76c91458cc1631bcade6b5c8212de06ee7a959e85af80a3821b5f628a0`
 - Schema/reference validation errors: 0
 
 Raw checksums:

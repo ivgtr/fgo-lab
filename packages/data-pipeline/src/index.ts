@@ -129,6 +129,19 @@ type AtlasServant = {
   rarity?: number;
   atkGrowth?: number[];
   traits?: { name?: string }[];
+  skills?: {
+    id?: number;
+    name?: string;
+    detail?: string;
+    icon?: string;
+    functions?: {
+      funcId?: number;
+      funcType?: string;
+      funcTargetType?: string;
+      funcPopupText?: string;
+      svals?: { Value?: number; Rate?: number }[];
+    }[];
+  }[];
   noblePhantasms?: AtlasNp[];
   extraAssets?: { faces?: { ascension?: Record<string, string> } };
   ascensionMaterials?: AtlasMaterialStep;
@@ -229,6 +242,33 @@ export function normalizeAtlasSnapshot(input: {
         attackNpFunctionType: attack?.fn.funcType ?? 'none',
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
         imageKey: image,
+        skills: (servant.skills ?? []).flatMap((skill) =>
+          typeof skill.id === 'number' && skill.name
+            ? [
+                {
+                  id: String(skill.id),
+                  name: skill.name,
+                  detail: skill.detail ?? '',
+                  imageKey: skill.icon ?? null,
+                  effects: (skill.functions ?? []).flatMap((fn) =>
+                    typeof fn.funcId === 'number'
+                      ? [
+                          {
+                            id: String(fn.funcId),
+                            type: fn.funcType ?? 'unknown',
+                            target: fn.funcTargetType ?? 'unknown',
+                            label: fn.funcPopupText ?? fn.funcType ?? '効果',
+                            values: (fn.svals ?? [])
+                              .slice(0, 10)
+                              .map((value) => value.Value ?? value.Rate ?? 0),
+                          },
+                        ]
+                      : [],
+                  ),
+                },
+              ]
+            : [],
+        ),
         growth: [
           ...growthSteps(servant.ascensionMaterials, 'ascension'),
           ...growthSteps(servant.skillMaterials, 'skill', 3),

@@ -37,6 +37,25 @@ export const servantMasterSchema = z.object({
   attackNpFunctionType: z.string(),
   traits: z.array(z.string()),
   imageKey: z.string().nullable(),
+  skills: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        detail: z.string(),
+        imageKey: z.string().nullable(),
+        effects: z.array(
+          z.object({
+            id: z.string(),
+            type: z.string(),
+            target: z.string(),
+            label: z.string(),
+            values: z.array(z.number()).max(10),
+          }),
+        ),
+      }),
+    )
+    .default([]),
   growth: z.array(
     z.object({
       from: z.string(),

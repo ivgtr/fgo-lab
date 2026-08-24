@@ -36,6 +36,7 @@ describe('profile domain', () => {
         attackNpFunctionType: 'damageNp',
         traits: [],
         imageKey: null,
+        skills: [],
         growth: [{ from: 'skill:1:1', to: 'skill:1:2', materialId: 'm', amount: 5, qp: 10 }],
       },
     ];
