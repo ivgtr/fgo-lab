@@ -15,11 +15,15 @@ function labelFromEffect(effectLabel: string): string | null {
 }
 
 export function specialTraitLabel(candidate: SpecialTraitCandidate): string {
-  return (
+  const label =
     TRAIT_LABELS[candidate.trait] ??
     candidate.sources.map((source) => labelFromEffect(source.effectLabel)).find(Boolean) ??
-    `特殊条件（${candidate.trait}）`
-  );
+    `特殊条件（${candidate.trait}）`;
+  return candidate.matchesWhenPresent ? label : `非${label}`;
+}
+
+export function traitLabel(trait: string): string {
+  return TRAIT_LABELS[trait] ?? `特殊条件（${trait}）`;
 }
 
 export function specialTraitValueLabel(source: SpecialTraitSource): string {

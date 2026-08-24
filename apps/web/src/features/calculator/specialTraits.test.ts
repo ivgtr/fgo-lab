@@ -13,7 +13,11 @@ function resolvedEffect(patch: Partial<ResolvedSupportEffect> = {}): ResolvedSup
     label: '威力アップ・対竜',
     value: 0.3,
     kind: 'powerMod',
-    damageTraitCondition: { kind: 'powerMod', traits: ['dragon'] },
+    damageTraitCondition: {
+      kind: 'powerMod',
+      condition: { anyOf: ['dragon'], noneOf: [] },
+    },
+    requiredFieldTraits: [],
     applied: false,
     reason: 'target_trait_mismatch',
     ...patch,
@@ -28,7 +32,10 @@ describe('special trait candidates', () => {
         resolvedEffect(),
         resolvedEffect({
           effectId: 'internal',
-          damageTraitCondition: { kind: 'powerMod', traits: ['trait:internal'] },
+          damageTraitCondition: {
+            kind: 'powerMod',
+            condition: { anyOf: ['trait:internal'], noneOf: [] },
+          },
         }),
       ],
       servants: [],
@@ -38,6 +45,7 @@ describe('special trait candidates', () => {
     expect(candidates).toEqual([
       {
         trait: 'dragon',
+        matchesWhenPresent: true,
         sources: [
           {
             key: 'attacker:servant-1:skill-1:dragon-power',
@@ -60,7 +68,7 @@ describe('special trait candidates', () => {
         resolvedEffect({
           damageTraitCondition: {
             kind: 'powerMod',
-            traits: ['classSaber', 'classArcher'],
+            condition: { anyOf: ['classSaber', 'classArcher'], noneOf: [] },
           },
         }),
       ],
@@ -69,6 +77,23 @@ describe('special trait candidates', () => {
     });
 
     expect(candidates.map((candidate) => candidate.trait)).toEqual(['classSaber', 'classArcher']);
+  });
+
+  it('exposes an excluded trait as a condition that matches when absent', () => {
+    const candidates = collectSpecialTraitCandidates({
+      effects: [
+        resolvedEffect({
+          damageTraitCondition: {
+            kind: 'powerMod',
+            condition: { anyOf: [], noneOf: ['superGiant'] },
+          },
+        }),
+      ],
+      servants: [],
+      craftEssence: undefined,
+    });
+
+    expect(candidates[0]).toMatchObject({ trait: 'superGiant', matchesWhenPresent: false });
   });
 
   it('omits a condition when its buff cannot affect the selected attacker', () => {

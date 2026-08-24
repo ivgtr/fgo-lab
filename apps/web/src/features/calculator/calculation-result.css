@@ -1,0 +1,137 @@
+.result-column {
+  min-width: 0;
+  position: sticky;
+  top: 1rem;
+}
+.result-card {
+  overflow: hidden;
+  border: 1px solid #98a4a8;
+  background: white;
+}
+.result-card-head {
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+}
+.result-card-title {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+.result-card-title .eyebrow,
+.result-card-title h2 {
+  margin: 0;
+}
+.result-card-title span,
+.result-subject small,
+.result-card-foot small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.result-subject {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.result-subject > span:last-child {
+  display: grid;
+}
+.result-conditions {
+  margin: 0;
+  padding-inline: 0.95rem;
+  background: #fafaf8;
+}
+.result-conditions > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e1e4e3;
+}
+.result-conditions dt,
+.result-conditions dd {
+  margin: 0;
+  font-size: 0.7rem;
+}
+.result-conditions dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+.result-conditions dd {
+  overflow-wrap: anywhere;
+  font-weight: 650;
+}
+.np-result-table th,
+.np-result-table td {
+  padding: 0.7rem 0.45rem;
+  white-space: nowrap;
+}
+.np-result-table thead th {
+  background: #f3f3ef;
+  font-size: 0.68rem;
+}
+.np-result-table tbody th {
+  padding-left: 0.75rem;
+}
+.np-result-table tbody th small {
+  display: inline-block;
+  margin-left: 0.3rem;
+  color: var(--accent);
+  font-size: 0.62rem;
+}
+.np-result-table td {
+  color: #4e586a;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+.np-result-table .average {
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 850;
+}
+.result-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+}
+.precision {
+  font:
+    750 0.65rem ui-monospace,
+    monospace;
+}
+.precision-exact {
+  color: #285c3e;
+}
+.precision-approximate {
+  color: #805718;
+}
+.precision-unsupported {
+  color: #881c2e;
+}
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+.result-actions button:last-child {
+  grid-column: 1 / -1;
+}
+.result-details {
+  margin-top: 0.55rem;
+}
+
+@media (max-width: 760px) {
+  .result-column {
+    position: static;
+  }
+  .result-conditions > div {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+  .np-result-table .average {
+    font-size: 0.9rem;
+  }
+}

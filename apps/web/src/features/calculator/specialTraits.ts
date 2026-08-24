@@ -14,6 +14,7 @@ export interface SpecialTraitSource {
 
 export interface SpecialTraitCandidate {
   trait: string;
+  matchesWhenPresent: boolean;
   sources: SpecialTraitSource[];
 }
 
@@ -45,9 +46,20 @@ export function collectSpecialTraitCandidates({
 
   for (const effect of effects) {
     if (!effect.damageTraitCondition || effect.reason === 'attacker_trait_mismatch') continue;
-    for (const trait of effect.damageTraitCondition.traits) {
+    const conditionedTraits = [
+      ...effect.damageTraitCondition.condition.anyOf.map((trait) => ({
+        trait,
+        matchesWhenPresent: true,
+      })),
+      ...effect.damageTraitCondition.condition.noneOf.map((trait) => ({
+        trait,
+        matchesWhenPresent: false,
+      })),
+    ];
+    for (const { trait, matchesWhenPresent } of conditionedTraits) {
       if (trait.startsWith('trait:')) continue;
-      const candidate = candidates.get(trait) ?? { trait, sources: [] };
+      const candidateKey = `${matchesWhenPresent ? 'has' : 'not'}:${trait}`;
+      const candidate = candidates.get(candidateKey) ?? { trait, matchesWhenPresent, sources: [] };
       const key = `${effect.origin}:${effect.sourceId}:${effect.skillId}:${effect.effectId}`;
       if (!candidate.sources.some((source) => source.key === key)) {
         candidate.sources.push({
@@ -61,7 +73,7 @@ export function collectSpecialTraitCandidates({
           modifierKind: effect.damageTraitCondition.kind,
         });
       }
-      candidates.set(trait, candidate);
+      candidates.set(candidateKey, candidate);
     }
   }
 

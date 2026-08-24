@@ -40,6 +40,7 @@ const input: CalcInput = {
   specialResistance: 0,
   flatDamage: 0,
   damageCut: 0,
+  fieldTraits: [],
   target: { classId: 'lancer', attribute: 'earth', traits: ['dragon', 'male'] },
 };
 const versions: VersionContext = {
@@ -111,19 +112,18 @@ describe('float32 NP damage kernel', () => {
   it('is deterministic', () =>
     expect(calculateNpDamage(input, versions)).toEqual(calculateNpDamage(input, versions)));
   it('fails closed for unknown functions', () =>
-    expect(
-      resolveAttackNpFunction('futureDamage', { baseMultiplier: 1, matchedTraitCount: 0 })
-        .precision,
-    ).toBe('unsupported'));
+    expect(resolveAttackNpFunction('futureDamage', {}).precision).toBe('unsupported'));
   it.each(ATTACK_NP_FUNCTION_TYPES)('classifies the registered %s handler', (type) => {
     const resolved = resolveAttackNpFunction(type, {
-      baseMultiplier: 1,
-      matchedTraitCount: 2,
       hpRatio: 0.5,
       battlePointPhase: 1,
     });
     expect(resolved.precision).not.toBe('unsupported');
-    if (['damageNp', 'damageNpIndividual', 'damageNpPierce'].includes(type))
+    if (
+      ['damageNp', 'damageNpIndividual', 'damageNpPierce', 'damageNpStateIndividualFix'].includes(
+        type,
+      )
+    )
       expect(resolved.precision).toBe('exact');
     else expect(resolved.precision).toBe('approximate');
   });
@@ -143,18 +143,14 @@ describe('float32 NP damage kernel', () => {
     ).toMatchObject({ precision: 'unsupported', warnings: ['missing_hp_ratio'] });
   });
   it('requires conditional inputs instead of silently using base damage', () => {
-    expect(
-      resolveAttackNpFunction('damageNpHpratioLow', {
-        baseMultiplier: 1,
-        matchedTraitCount: 0,
-      }),
-    ).toMatchObject({ precision: 'unsupported', warning: 'missing_hp_ratio' });
-    expect(
-      resolveAttackNpFunction('damageNpBattlePointPhase', {
-        baseMultiplier: 1,
-        matchedTraitCount: 0,
-      }),
-    ).toMatchObject({ precision: 'unsupported', warning: 'missing_battle_point_phase' });
+    expect(resolveAttackNpFunction('damageNpHpratioLow', {})).toMatchObject({
+      precision: 'unsupported',
+      warning: 'missing_hp_ratio',
+    });
+    expect(resolveAttackNpFunction('damageNpBattlePointPhase', {})).toMatchObject({
+      precision: 'unsupported',
+      warning: 'missing_battle_point_phase',
+    });
   });
   it('evaluates AND/OR trait expressions', () =>
     expect(

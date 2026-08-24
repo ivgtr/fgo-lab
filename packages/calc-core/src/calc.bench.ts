@@ -29,6 +29,7 @@ const input = {
   specialResistance: 0,
   flatDamage: 0,
   damageCut: 0,
+  fieldTraits: [],
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies CalcInput;
 const versions = {

@@ -1,0 +1,33 @@
+.picker-dialog-panel > label {
+  display: grid;
+  gap: 0.35rem;
+  color: #40495b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.source-tabs {
+  display: flex;
+  margin-bottom: 0.85rem;
+}
+.source-tabs button {
+  flex: 1;
+  border-radius: 0;
+}
+.source-tabs button[aria-selected='true'] {
+  border-color: var(--accent);
+  background: var(--soft-accent);
+  color: var(--accent);
+}
+.picker-result-list {
+  max-height: min(52vh, 520px);
+  overflow: auto;
+}
+.picker-result-list li {
+  padding: 0;
+}
+.picker-result-list .list-row {
+  min-height: 64px;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding: 0.55rem;
+}

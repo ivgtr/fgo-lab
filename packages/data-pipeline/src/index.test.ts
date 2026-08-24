@@ -123,7 +123,7 @@ describe('immutable publish pipeline', () => {
       npEffects: [{ id: '11', timing: 'beforeDamage' }],
       npMultipliers: [300, 400, 450, 475, 500],
       npSpecialAttack: {
-        targetTraits: ['dragon'],
+        targetCondition: { anyOf: ['dragon'], noneOf: [] },
         multipliersByNpLevelAndOvercharge: [
           [1.5, 1.6, 1.7, 1.8, 1.9],
           [1.75, 1.85, 1.95, 2.05, 2.15],
@@ -134,5 +134,125 @@ describe('immutable publish pipeline', () => {
       },
     });
     expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({ values: [600, 800] });
+  });
+
+  it('normalizes card enums and explicit Atlas conditions without label parsing', () => {
+    const snapshot = normalizeAtlasSnapshot({
+      version: 'conditions',
+      servants: [
+        {
+          id: 405900,
+          collectionNo: 458,
+          type: 'normal',
+          name: '水着リリス',
+          className: 'rider',
+          attribute: 'earth',
+          rarity: 5,
+          atkGrowth: [1000],
+          traits: [],
+          skills: [
+            {
+              id: 1,
+              num: 1,
+              name: '条件スキル',
+              functions: [
+                {
+                  funcId: 10,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  funcPopupText: '任意の文言',
+                  funcquestTvals: [{ id: 2884, name: 'fieldDarkness' }],
+                  buffs: [
+                    {
+                      type: 'upDamage',
+                      ckOpIndv: [{ id: 2076, name: 'superGiant', negative: true }],
+                    },
+                  ],
+                  svals: Array(10).fill({ Value: 500 }),
+                },
+                {
+                  funcId: 11,
+                  funcType: 'addState',
+                  funcTargetType: 'enemy',
+                  funcPopupText: '魅了',
+                  script: { funcIndividuality: [{ id: 3012, name: 'buffCharm' }] },
+                  buffs: [{ type: 'charm', vals: [{ id: 3012, name: 'buffCharm' }] }],
+                  svals: [{ Value: 0 }],
+                },
+              ],
+            },
+          ],
+          noblePhantasms: [
+            {
+              card: '3',
+              priority: 1,
+              functions: [
+                {
+                  funcId: 12,
+                  funcType: 'damageNpStateIndividualFix',
+                  funcTargetType: 'enemy',
+                  svals: [
+                    { Value: 6000, Target: 3012, Correction: 1500 },
+                    { Value: 8000, Target: 3012, Correction: 1500 },
+                    { Value: 9000, Target: 3012, Correction: 1500 },
+                    { Value: 9500, Target: 3012, Correction: 1500 },
+                    { Value: 10000, Target: 3012, Correction: 1500 },
+                  ],
+                  svals2: Array(5).fill({ Correction: 1625 }),
+                  svals3: Array(5).fill({ Correction: 1750 }),
+                  svals4: Array(5).fill({ Correction: 1875 }),
+                  svals5: Array(5).fill({ Correction: 2000 }),
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 1,
+          collectionNo: 1,
+          type: 'normal',
+          name: 'Arts確認',
+          className: 'caster',
+          attribute: 'human',
+          rarity: 1,
+          atkGrowth: [1],
+          noblePhantasms: [
+            {
+              card: '1',
+              functions: [
+                {
+                  funcId: 1,
+                  funcType: 'damageNp',
+                  funcTargetType: 'enemy',
+                  svals: Array(5).fill({ Value: 1000 }),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      equips: [],
+      items: [],
+    });
+
+    const lilith = snapshot.servants.find((servant) => servant.id === '405900');
+    expect(lilith).toMatchObject({
+      npCard: 'quick',
+      npSpecialAttack: {
+        targetCondition: { anyOf: ['buffCharm'], noneOf: [] },
+        multipliersByNpLevelAndOvercharge: [
+          [1.5, 1.625, 1.75, 1.875, 2],
+          [1.5, 1.625, 1.75, 1.875, 2],
+          [1.5, 1.625, 1.75, 1.875, 2],
+          [1.5, 1.625, 1.75, 1.875, 2],
+          [1.5, 1.625, 1.75, 1.875, 2],
+        ],
+      },
+    });
+    expect(lilith?.skills[0]?.effects[0]).toMatchObject({
+      targetCondition: { anyOf: [], noneOf: ['superGiant'] },
+      requiredFieldTraits: ['fieldDarkness'],
+    });
+    expect(snapshot.servants.find((servant) => servant.id === '1')?.npCard).toBe('arts');
   });
 });

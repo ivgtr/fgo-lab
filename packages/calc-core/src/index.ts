@@ -51,10 +51,7 @@ export function damageAtRandom(input: CalcInput, npLevel: number, randomPermille
 
 export function calculateNpDamage(rawInput: CalcInput, versions: VersionContext): CalcResult {
   const input = calcInputSchema.parse(rawInput);
-  const attackFunction = resolveAttackNpFunction(input.attackNpFunctionType ?? 'damageNp', {
-    baseMultiplier: 1,
-    matchedTraitCount: input.target.traits.length,
-  });
+  const attackFunction = resolveAttackNpFunction(input.attackNpFunctionType ?? 'damageNp', {});
   const results = ([1, 2, 3, 4, 5] as const).map((npLevel) => {
     const distribution = Array.from({ length: 200 }, (_, index) =>
       damageAtRandom(input, npLevel, 900 + index),

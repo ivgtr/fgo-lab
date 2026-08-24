@@ -18,11 +18,17 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
 export type MasterManifest = z.infer<typeof masterManifestSchema>;
+
+export const traitConditionSchema = z.object({
+  anyOf: z.array(z.string()),
+  noneOf: z.array(z.string()),
+});
+export type TraitCondition = z.infer<typeof traitConditionSchema>;
 
 const masterEffectSchema = z.object({
   id: z.string(),
@@ -31,7 +37,8 @@ const masterEffectSchema = z.object({
   label: z.string(),
   values: z.array(z.number()).max(10),
   recipientTraits: z.array(z.string()).optional(),
-  targetTraits: z.array(z.string()).optional(),
+  targetCondition: traitConditionSchema.optional(),
+  requiredFieldTraits: z.array(z.string()).optional(),
   buffTypes: z.array(z.string()).optional(),
 });
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
@@ -70,7 +77,7 @@ export const servantMasterSchema = z.object({
     .default([]),
   npSpecialAttack: z
     .object({
-      targetTraits: z.array(z.string()).min(1),
+      targetCondition: traitConditionSchema,
       multipliersByNpLevelAndOvercharge: z.tuple([
         fiveNumberTupleSchema,
         fiveNumberTupleSchema,
@@ -163,6 +170,8 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
   for (const servant of parsed.data.servants) {
     if (ids.has(servant.id)) errors.push(`duplicate servant:${servant.id}`);
     ids.add(servant.id);
+    if (servant.attackNpFunctionType === 'damageNpStateIndividualFix' && !servant.npSpecialAttack)
+      errors.push(`missing state-individual NP condition:${servant.id}`);
   }
   const unknownAttackFunctions = [
     ...new Set(

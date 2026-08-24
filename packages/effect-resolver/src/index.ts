@@ -3,15 +3,22 @@ import {
   type CraftEssenceMaster,
   type MasterEffect,
   type ServantMaster,
+  type TraitCondition,
 } from '@fgo-lab/master-data';
 import type { AttackerSkillSelection, CalcInput, SupportTemplate } from '@fgo-lab/schema';
 
 export type ResolvedBuffKind =
-  'attackBuff' | 'cardBuff' | 'npDamageBuff' | 'eventDamageBuff' | 'specialDamageBuff' | 'powerMod';
+  | 'attackBuff'
+  | 'cardBuff'
+  | 'npDamageBuff'
+  | 'eventDamageBuff'
+  | 'specialDamageBuff'
+  | 'powerMod'
+  | 'flatDamage';
 
 export interface DamageTraitCondition {
   kind: 'powerMod' | 'npSpecial';
-  traits: readonly string[];
+  condition: TraitCondition;
 }
 
 export interface ResolvedSupportEffect {
@@ -25,6 +32,7 @@ export interface ResolvedSupportEffect {
   value: number | null;
   kind: ResolvedBuffKind | null;
   damageTraitCondition: DamageTraitCondition | null;
+  requiredFieldTraits: readonly string[];
   applied: boolean;
   reason: string;
 }
@@ -63,17 +71,31 @@ function buffKind(label: string): ResolvedBuffKind | null {
   if (label === '宝具威力アップ' || label === '宝具耐性ダウン') return 'npDamageBuff';
   if (label === 'イベント攻撃威力アップ') return 'eventDamageBuff';
   if (label === '特殊威力アップ') return 'specialDamageBuff';
+  if (label === 'アタックプラス') return 'flatDamage';
   if (label in CARD_LABELS) return 'cardBuff';
   return null;
 }
 
 function effectBuffKind(effect: MasterEffect): ResolvedBuffKind | null {
+  if (effect.buffTypes?.includes('addDamage')) return 'flatDamage';
   if ((effect.buffTypes ?? []).some((type) => type.toLowerCase().startsWith('updamage')))
     return 'powerMod';
   return buffKind(effect.label);
 }
 
-function isPotentiallyDamageRelevant(label: string): boolean {
+function matchesTraitCondition(condition: TraitCondition | undefined, traits: readonly string[]) {
+  if (!condition) return true;
+  return (
+    (condition.anyOf.length === 0 || condition.anyOf.some((trait) => traits.includes(trait))) &&
+    condition.noneOf.every((trait) => !traits.includes(trait))
+  );
+}
+
+const NON_NP_DAMAGE_BUFF_TYPES = new Set(['upCriticaldamage', 'upExtraattack']);
+
+function isPotentiallyDamageRelevant(effect: MasterEffect): boolean {
+  if ((effect.buffTypes ?? []).some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return false;
+  const { label } = effect;
   return (
     KNOWN_UNSUPPORTED_DAMAGE_LABELS.has(label) ||
     label.includes('威力アップ') ||
@@ -117,9 +139,15 @@ function resolveEffects(
       label: effect.label,
       kind,
       damageTraitCondition:
-        kind === 'powerMod' && effect.targetTraits?.length
-          ? ({ kind: 'powerMod', traits: effect.targetTraits } satisfies DamageTraitCondition)
+        kind === 'powerMod' &&
+        effect.targetCondition &&
+        (effect.targetCondition.anyOf.length > 0 || effect.targetCondition.noneOf.length > 0)
+          ? ({
+              kind: 'powerMod',
+              condition: effect.targetCondition,
+            } satisfies DamageTraitCondition)
           : null,
+      requiredFieldTraits: effect.requiredFieldTraits ?? [],
     };
     if (rawValue === undefined) {
       precision = 'unsupported';
@@ -132,7 +160,7 @@ function resolveEffects(
       });
       continue;
     }
-    const value = rawValue / 1000;
+    const value = kind === 'flatDamage' ? rawValue : rawValue / 1000;
     if (
       (effect.recipientTraits?.length ?? 0) > 0 &&
       !effect.recipientTraits?.some((trait) => recipientTraits.includes(trait))
@@ -145,15 +173,24 @@ function resolveEffects(
       });
       continue;
     }
-    if (
-      (effect.targetTraits?.length ?? 0) > 0 &&
-      !effect.targetTraits?.some((trait) => baseInput.target.traits.includes(trait))
-    ) {
+    if (!matchesTraitCondition(effect.targetCondition, baseInput.target.traits)) {
       effects.push({
         ...effectIdentity,
         value,
         applied: false,
         reason: 'target_trait_mismatch',
+      });
+      continue;
+    }
+    if (
+      (effect.requiredFieldTraits?.length ?? 0) > 0 &&
+      !effect.requiredFieldTraits?.every((trait) => baseInput.fieldTraits.includes(trait))
+    ) {
+      effects.push({
+        ...effectIdentity,
+        value,
+        applied: false,
+        reason: 'field_trait_mismatch',
       });
       continue;
     }
@@ -168,7 +205,8 @@ function resolveEffects(
       continue;
     }
     if (kind) {
-      nextInput[kind] += value;
+      if (kind === 'flatDamage') nextInput.flatDamage += rawValue;
+      else nextInput[kind] += value;
       effects.push({
         ...effectIdentity,
         value,
@@ -177,7 +215,7 @@ function resolveEffects(
       });
       continue;
     }
-    const damageRelevant = isPotentiallyDamageRelevant(effect.label);
+    const damageRelevant = isPotentiallyDamageRelevant(effect);
     if (damageRelevant) {
       if (precision === 'exact') precision = 'approximate';
       warnings.push(`${origin}_effect_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`);
@@ -316,7 +354,7 @@ export function resolveNpEffects(
   const special = servant.npSpecialAttack;
   if (!special) return resolved;
   const multiplier = deriveNpSpecialMultiplier(servant, baseInput.npLevel, baseInput.overcharge);
-  const matched = special.targetTraits.some((trait) => baseInput.target.traits.includes(trait));
+  const matched = matchesTraitCondition(special.targetCondition, baseInput.target.traits);
   return {
     ...resolved,
     input: matched
@@ -331,10 +369,11 @@ export function resolveNpEffects(
         skillId: `np:${servant.id}:special`,
         skillName: '特攻宝具',
         effectId: `np-special:${servant.id}`,
-        label: `${special.targetTraits.join('・')}特攻`,
+        label: `${special.targetCondition.anyOf.join('・')}特攻`,
         value: multiplier,
         kind: null,
-        damageTraitCondition: { kind: 'npSpecial', traits: special.targetTraits },
+        damageTraitCondition: { kind: 'npSpecial', condition: special.targetCondition },
+        requiredFieldTraits: [],
         applied: matched,
         reason: matched ? 'target_trait_matched' : 'target_trait_mismatch',
       },

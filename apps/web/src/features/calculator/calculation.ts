@@ -121,6 +121,7 @@ export function createDefaultCalcInput(
     specialResistance: 0,
     flatDamage: 0,
     damageCut: 0,
+    fieldTraits: [],
     target: { classId: 'affinity:2', attribute: 'unknown', traits: [] },
   };
 }

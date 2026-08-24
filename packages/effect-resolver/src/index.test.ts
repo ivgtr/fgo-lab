@@ -36,6 +36,7 @@ const input: CalcInput = {
   specialResistance: 0,
   flatDamage: 0,
   damageCut: 0,
+  fieldTraits: [],
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 };
 
@@ -282,6 +283,66 @@ describe('automatic equipment, passive, and NP effects', () => {
     expect(resolveServantPassives(input, attacker).input.cardBuff).toBe(0.08);
   });
 
+  it('adds fixed damage without treating it as a percentage', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      passives: [
+        {
+          id: 'divinity',
+          slot: 0,
+          priority: 0,
+          name: '神性',
+          detail: '',
+          imageKey: null,
+          effects: [
+            {
+              id: 'flat',
+              type: 'addStateShort',
+              target: 'self',
+              label: 'アタックプラス',
+              values: [175],
+              buffTypes: ['addDamage'],
+            },
+          ],
+        },
+      ],
+    };
+    const resolved = resolveServantPassives(input, attacker);
+    expect(resolved.input.flatDamage).toBe(175);
+    expect(resolved.effects[0]).toMatchObject({ kind: 'flatDamage', value: 175, applied: true });
+  });
+
+  it('requires explicit field state for field-limited buffs', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              id: 'darkness-attack',
+              type: 'addStateShort',
+              target: 'ptAll',
+              label: '攻撃力アップ',
+              values: Array(10).fill(200) as number[],
+              requiredFieldTraits: ['fieldDarkness'],
+            },
+          ],
+        },
+      ],
+    };
+    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    const missed = resolveAttackerSkills(input, selection, [attacker]);
+    expect(missed.input.attackBuff).toBe(0.1);
+    expect(missed.effects[0]).toMatchObject({ applied: false, reason: 'field_trait_mismatch' });
+    expect(
+      resolveAttackerSkills({ ...input, fieldTraits: ['fieldDarkness'] }, selection, [attacker])
+        .input.attackBuff,
+    ).toBeCloseTo(0.3);
+  });
+
   it('uses OC for a damage-relevant effect before the NP function', () => {
     const attacker: ServantMaster = {
       ...source,
@@ -305,7 +366,7 @@ describe('automatic equipment, passive, and NP effects', () => {
       ...source,
       id: input.attackerId,
       npSpecialAttack: {
-        targetTraits: ['dragon'],
+        targetCondition: { anyOf: ['dragon'], noneOf: [] },
         multipliersByNpLevelAndOvercharge: [
           [1.5, 1.6, 1.7, 1.8, 1.9],
           [1.75, 1.85, 1.95, 2.05, 2.15],
@@ -331,7 +392,10 @@ describe('automatic equipment, passive, and NP effects', () => {
     expect(missed.effects.at(-1)).toMatchObject({
       applied: false,
       reason: 'target_trait_mismatch',
-      damageTraitCondition: { kind: 'npSpecial', traits: ['dragon'] },
+      damageTraitCondition: {
+        kind: 'npSpecial',
+        condition: { anyOf: ['dragon'], noneOf: [] },
+      },
     });
   });
 
@@ -349,7 +413,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               target: 'self',
               label: '威力アップ・対竜',
               values: Array(10).fill(500) as number[],
-              targetTraits: ['dragon'],
+              targetCondition: { anyOf: ['dragon'], noneOf: [] },
               buffTypes: ['upDamage'],
             },
           ],
@@ -368,7 +432,39 @@ describe('automatic equipment, passive, and NP effects', () => {
     expect(missed.input.powerMod).toBe(0);
     expect(missed.effects[0]?.damageTraitCondition).toEqual({
       kind: 'powerMod',
-      traits: ['dragon'],
+      condition: { anyOf: ['dragon'], noneOf: [] },
     });
+  });
+
+  it('applies an excluded-trait modifier only while that trait is absent', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              id: 'not-super-giant',
+              type: 'addStateShort',
+              target: 'self',
+              label: '威力アップ・対非超巨大',
+              values: Array(10).fill(500) as number[],
+              targetCondition: { anyOf: [], noneOf: ['superGiant'] },
+              buffTypes: ['upDamage'],
+            },
+          ],
+        },
+      ],
+    };
+    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    expect(resolveAttackerSkills(input, selection, [attacker]).input.powerMod).toBe(0.5);
+    expect(
+      resolveAttackerSkills(
+        { ...input, target: { ...input.target, traits: ['superGiant'] } },
+        selection,
+        [attacker],
+      ).input.powerMod,
+    ).toBe(0);
   });
 });

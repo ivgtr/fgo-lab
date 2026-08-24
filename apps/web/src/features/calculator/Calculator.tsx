@@ -30,6 +30,7 @@ import {
   specialTraitLabel,
   specialTraitSourceLabel,
   specialTraitValueLabel,
+  traitLabel,
 } from './specialTraitPresentation';
 import { CalculationResult } from './CalculationResult';
 import './calculator.css';
@@ -111,6 +112,15 @@ export function Calculator({
     servants,
     craftEssence: selectedCraftEssence,
   }).sort((left, right) => specialTraitLabel(left).localeCompare(specialTraitLabel(right), 'ja'));
+  const fieldTraitCandidates = [
+    ...new Set(
+      [
+        ...selectedAttackerSkillResolution.effects,
+        ...automaticEffects,
+        ...(selectedSupportResolution?.effects ?? []),
+      ].flatMap((effect) => effect.requiredFieldTraits),
+    ),
+  ].sort((left, right) => traitLabel(left).localeCompare(traitLabel(right), 'ja'));
   const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
   const classSituationLabel =
     input.classAffinity === 2
@@ -131,7 +141,9 @@ export function Calculator({
           ? '等倍'
           : '直接入力';
   const targetSummary = `クラス${classSituationLabel}（${input.classAffinity.toFixed(2)}倍）・属性${attributeSituationLabel}（${input.attributeAffinity.toFixed(2)}倍）${
-    input.target.traits.length ? `・特攻 ${input.target.traits.join('・')}` : ''
+    input.target.traits.length ? `・対象状態 ${input.target.traits.map(traitLabel).join('・')}` : ''
+  }${
+    input.fieldTraits.length ? `・フィールド ${input.fieldTraits.map(traitLabel).join('・')}` : ''
   }`;
   const craftEssenceSummary =
     selectedCraftEssence && selection.craftEssence
@@ -577,10 +589,14 @@ export function Calculator({
               <legend>特攻条件</legend>
               <ul className="plain-list special-trait-list">
                 {specialTraitCandidates.map((candidate) => {
-                  const enabled = input.target.traits.includes(candidate.trait);
+                  const traitPresent = input.target.traits.includes(candidate.trait);
+                  const enabled = candidate.matchesWhenPresent ? traitPresent : !traitPresent;
                   const label = specialTraitLabel(candidate);
                   return (
-                    <li key={candidate.trait} data-enabled={enabled}>
+                    <li
+                      key={`${candidate.matchesWhenPresent ? 'has' : 'not'}:${candidate.trait}`}
+                      data-enabled={enabled}
+                    >
                       <label title={`${label}特攻を${enabled ? '無効' : '有効'}化`}>
                         <input
                           type="checkbox"
@@ -589,11 +605,12 @@ export function Calculator({
                             change({
                               target: {
                                 ...input.target,
-                                traits: event.target.checked
-                                  ? [...new Set([...input.target.traits, candidate.trait])]
-                                  : input.target.traits.filter(
-                                      (trait) => trait !== candidate.trait,
-                                    ),
+                                traits:
+                                  event.target.checked === candidate.matchesWhenPresent
+                                    ? [...new Set([...input.target.traits, candidate.trait])]
+                                    : input.target.traits.filter(
+                                        (trait) => trait !== candidate.trait,
+                                      ),
                               },
                             })
                           }
@@ -621,6 +638,37 @@ export function Calculator({
                               />
                             </span>
                           ))}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </fieldset>
+          ) : null}
+          {fieldTraitCandidates.length ? (
+            <fieldset className="special-trait-controls form-grid-wide">
+              <legend>フィールド条件</legend>
+              <ul className="plain-list special-trait-list">
+                {fieldTraitCandidates.map((trait) => {
+                  const enabled = input.fieldTraits.includes(trait);
+                  return (
+                    <li key={trait} data-enabled={enabled}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={enabled}
+                          onChange={(event) =>
+                            change({
+                              fieldTraits: event.target.checked
+                                ? [...new Set([...input.fieldTraits, trait])]
+                                : input.fieldTraits.filter((candidate) => candidate !== trait),
+                            })
+                          }
+                        />
+                        <span className="special-trait-copy">
+                          <strong>{traitLabel(trait)}フィールド</strong>
+                          <small>{enabled ? '条件成立' : '条件不成立'}</small>
                         </span>
                       </label>
                     </li>
@@ -902,20 +950,24 @@ export function Calculator({
                     {effect.applied && effect.value !== null
                       ? effect.damageTraitCondition?.kind === 'npSpecial'
                         ? `${effect.value.toFixed(2)}倍`
-                        : effect.value.toLocaleString('ja-JP', {
-                            style: 'percent',
-                            signDisplay: 'always',
-                            maximumFractionDigits: 1,
-                          })
+                        : effect.kind === 'flatDamage'
+                          ? `+${effect.value.toLocaleString('ja-JP')}`
+                          : effect.value.toLocaleString('ja-JP', {
+                              style: 'percent',
+                              signDisplay: 'always',
+                              maximumFractionDigits: 1,
+                            })
                       : effect.reason === 'card_type_mismatch'
                         ? 'カード不一致'
                         : effect.reason === 'attacker_trait_mismatch'
                           ? '攻撃役の特性不一致'
                           : effect.reason === 'target_trait_mismatch'
                             ? '対象特性なし'
-                            : effect.reason === 'not_np_damage_relevant'
-                              ? '宝具火力外'
-                              : '未対応'}
+                            : effect.reason === 'field_trait_mismatch'
+                              ? 'フィールド不一致'
+                              : effect.reason === 'not_np_damage_relevant'
+                                ? '宝具火力外'
+                                : '未対応'}
                   </b>
                 </li>
               ))}

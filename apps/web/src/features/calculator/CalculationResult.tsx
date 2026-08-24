@@ -8,6 +8,7 @@ import type {
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
+import './calculation-result.css';
 
 export function CalculationResult({
   input,

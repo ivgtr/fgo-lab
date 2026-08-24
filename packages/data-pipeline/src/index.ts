@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 1,
+    schemaVersion: 2,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -120,6 +120,29 @@ type AtlasMaterialStep = Record<
   string,
   { items?: { item?: { id?: number }; amount?: number }[]; qp?: number }
 >;
+type AtlasTraitRef = { id?: number; name?: string; negative?: boolean };
+type AtlasBuff = {
+  type?: string;
+  vals?: AtlasTraitRef[];
+  tvals?: AtlasTraitRef[];
+  ckSelfIndv?: AtlasTraitRef[];
+  ckOpIndv?: AtlasTraitRef[];
+};
+type AtlasFunction = {
+  funcId?: number;
+  funcType?: string;
+  funcTargetType?: string;
+  funcPopupText?: string;
+  functvals?: AtlasTraitRef[];
+  funcquestTvals?: AtlasTraitRef[];
+  script?: { funcIndividuality?: AtlasTraitRef[] };
+  buffs?: AtlasBuff[];
+  svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
+  svals2?: { Correction?: number }[];
+  svals3?: { Correction?: number }[];
+  svals4?: { Correction?: number }[];
+  svals5?: { Correction?: number }[];
+};
 type AtlasServant = {
   id?: number;
   collectionNo?: number;
@@ -137,18 +160,7 @@ type AtlasServant = {
     name?: string;
     detail?: string;
     icon?: string;
-    functions?: {
-      funcId?: number;
-      funcType?: string;
-      funcTargetType?: string;
-      funcPopupText?: string;
-      functvals?: { id?: number; name?: string; negative?: boolean }[];
-      buffs?: {
-        type?: string;
-        ckOpIndv?: { id?: number; name?: string }[];
-      }[];
-      svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
-    }[];
+    functions?: AtlasFunction[];
   }[];
   classPassive?: AtlasServant['skills'];
   noblePhantasms?: AtlasNp[];
@@ -160,19 +172,7 @@ type AtlasServant = {
 type AtlasNp = {
   card?: string;
   priority?: number;
-  functions?: {
-    funcId?: number;
-    funcType?: string;
-    funcTargetType?: string;
-    funcPopupText?: string;
-    functvals?: { id?: number; name?: string; negative?: boolean }[];
-    buffs?: { type?: string; ckOpIndv?: { id?: number; name?: string }[] }[];
-    svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
-    svals2?: { Correction?: number }[];
-    svals3?: { Correction?: number }[];
-    svals4?: { Correction?: number }[];
-    svals5?: { Correction?: number }[];
-  }[];
+  functions?: AtlasFunction[];
 };
 type AtlasEquip = {
   id?: number;
@@ -185,15 +185,7 @@ type AtlasEquip = {
     id?: number;
     condLimitCount?: number;
     priority?: number;
-    functions?: {
-      funcId?: number;
-      funcType?: string;
-      funcTargetType?: string;
-      funcPopupText?: string;
-      functvals?: { id?: number; name?: string; negative?: boolean }[];
-      buffs?: { type?: string; ckOpIndv?: { id?: number; name?: string }[] }[];
-      svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
-    }[];
+    functions?: AtlasFunction[];
   }[];
   extraAssets?: { equipFace?: { equip?: Record<string, string> } };
 };
@@ -205,21 +197,9 @@ type AtlasItem = {
   icon?: string;
   uses?: string[];
 };
-const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = { 1: 'quick', 2: 'buster', 3: 'arts' };
+const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = { 1: 'arts', 2: 'buster', 3: 'quick' };
 
-function normalizeFunctions(
-  functions:
-    | {
-        funcId?: number;
-        funcType?: string;
-        funcTargetType?: string;
-        funcPopupText?: string;
-        functvals?: { id?: number; name?: string; negative?: boolean }[];
-        buffs?: { type?: string; ckOpIndv?: { id?: number; name?: string }[] }[];
-        svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
-      }[]
-    | undefined,
-) {
+function normalizeFunctions(functions: AtlasFunction[] | undefined) {
   return (functions ?? []).flatMap((fn) =>
     typeof fn.funcId === 'number'
       ? [
@@ -232,8 +212,20 @@ function normalizeFunctions(
             recipientTraits: (fn.functvals ?? []).flatMap((trait) =>
               trait.name && !trait.negative ? [trait.name] : [],
             ),
-            targetTraits: (fn.buffs ?? []).flatMap((buff) =>
-              (buff.ckOpIndv ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
+            targetCondition: {
+              anyOf: (fn.buffs ?? []).flatMap((buff) =>
+                (buff.ckOpIndv ?? []).flatMap((trait) =>
+                  trait.name && !trait.negative ? [trait.name] : [],
+                ),
+              ),
+              noneOf: (fn.buffs ?? []).flatMap((buff) =>
+                (buff.ckOpIndv ?? []).flatMap((trait) =>
+                  trait.name && trait.negative ? [trait.name] : [],
+                ),
+              ),
+            },
+            requiredFieldTraits: (fn.funcquestTvals ?? []).flatMap((trait) =>
+              trait.name ? [trait.name] : [],
             ),
             buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
           },
@@ -262,6 +254,43 @@ function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repe
   }
   return result;
 }
+
+function collectFunctionTraitNames(functions: readonly AtlasFunction[] | undefined) {
+  return (functions ?? []).flatMap((fn) => [
+    ...(fn.functvals ?? []),
+    ...(fn.funcquestTvals ?? []),
+    ...(fn.script?.funcIndividuality ?? []),
+    ...(fn.buffs ?? []).flatMap((buff) => [
+      ...(buff.vals ?? []),
+      ...(buff.tvals ?? []),
+      ...(buff.ckSelfIndv ?? []),
+      ...(buff.ckOpIndv ?? []),
+    ]),
+  ]);
+}
+
+function collectTraitNameById(servants: readonly AtlasServant[], equips: readonly AtlasEquip[]) {
+  const traits = [
+    ...servants.flatMap((servant) => [
+      ...(servant.traits ?? []),
+      ...[...(servant.skills ?? []), ...(servant.classPassive ?? [])].flatMap((skill) =>
+        collectFunctionTraitNames(skill.functions),
+      ),
+      ...(servant.noblePhantasms ?? []).flatMap((np) => collectFunctionTraitNames(np.functions)),
+    ]),
+    ...equips.flatMap((equip) =>
+      (equip.skills ?? []).flatMap((skill) => collectFunctionTraitNames(skill.functions)),
+    ),
+  ];
+  return new Map(
+    traits.flatMap((trait) =>
+      typeof trait.id === 'number' && trait.name && trait.name !== 'unknown'
+        ? ([[trait.id, trait.name]] as const)
+        : [],
+    ),
+  );
+}
+
 export function normalizeAtlasSnapshot(input: {
   version: string;
   servants: unknown;
@@ -270,14 +299,10 @@ export function normalizeAtlasSnapshot(input: {
 }): MasterDataSnapshot {
   if (!Array.isArray(input.servants) || !Array.isArray(input.equips) || !Array.isArray(input.items))
     throw new TypeError('atlas_exports_must_be_arrays');
-  const traitNameById = new Map(
-    (input.servants as AtlasServant[]).flatMap((candidate) =>
-      (candidate.traits ?? []).flatMap((trait) =>
-        typeof trait.id === 'number' && trait.name ? [[trait.id, trait.name] as const] : [],
-      ),
-    ),
-  );
-  const servants = (input.servants as AtlasServant[]).flatMap((servant) => {
+  const atlasServants = input.servants as AtlasServant[];
+  const atlasEquips = input.equips as AtlasEquip[];
+  const traitNameById = collectTraitNameById(atlasServants, atlasEquips);
+  const servants = atlasServants.flatMap((servant) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
     const attacks = (servant.noblePhantasms ?? [])
       .flatMap((np) =>
@@ -376,9 +401,13 @@ export function normalizeAtlasSnapshot(input: {
               })),
         ),
         npSpecialAttack:
-          attack?.fn.funcType === 'damageNpIndividual' && specialTargetName
+          ['damageNpIndividual', 'damageNpStateIndividualFix'].includes(
+            attack?.fn.funcType ?? '',
+          ) &&
+          specialTargetName &&
+          specialMultipliers.some((row) => row.some((multiplier) => multiplier !== 1))
             ? {
-                targetTraits: [specialTargetName],
+                targetCondition: { anyOf: [specialTargetName], noneOf: [] },
                 multipliersByNpLevelAndOvercharge: specialMultipliers as [
                   [number, number, number, number, number],
                   [number, number, number, number, number],
@@ -396,7 +425,7 @@ export function normalizeAtlasSnapshot(input: {
       },
     ];
   });
-  const craftEssences = (input.equips as AtlasEquip[]).flatMap((equip) => {
+  const craftEssences = atlasEquips.flatMap((equip) => {
     if (
       !equip.collectionNo ||
       typeof equip.id !== 'number' ||

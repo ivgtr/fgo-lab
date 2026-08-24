@@ -90,6 +90,7 @@ export const calcInputSchema = z.object({
   specialResistance: z.number().min(-5).max(5),
   flatDamage: z.number().int().min(-100000).max(100000),
   damageCut: z.number().int().min(0).max(100000).default(0),
+  fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
   target: z.object({
     classId: z.string().min(1).max(40),
     attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
