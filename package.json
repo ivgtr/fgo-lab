@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test --grep @a11y",
-    "validate:master": "vitest run packages/master-data packages/data-pipeline",
+    "validate:master": "pnpm --filter @fgo-lab/data-pipeline validate && vitest run packages/master-data packages/data-pipeline",
     "benchmark:calc": "vitest bench --run packages/calc-core"
   },
   "dependencies": {

@@ -1,0 +1,17 @@
+{
+  "name": "@fgo-lab/data-pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "tsx src/cli.ts validate",
+    "inventory": "tsx src/cli.ts inventory"
+  },
+  "dependencies": {
+    "@fgo-lab/master-data": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.20.5"
+  },
+  "exports": "./src/index.ts"
+}

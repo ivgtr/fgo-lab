@@ -40,6 +40,28 @@ export interface ActiveMaster {
   snapshot: MasterDataSnapshot;
   activatedAt: string;
 }
+async function sha256(value: string): Promise<string> {
+  const digest = new Uint8Array(
+    await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)),
+  );
+  return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+export async function fetchMasterCandidate(
+  baseUrl: string,
+): Promise<{ manifest: MasterManifest; snapshot: MasterDataSnapshot }> {
+  const manifestResponse = await fetch(`${baseUrl}master/manifest.json`, { cache: 'no-store' });
+  if (!manifestResponse.ok) throw new Error('master_manifest_download_failed');
+  const manifest = masterManifestSchema.parse(await manifestResponse.json());
+  const masterFile = manifest.files.find((file) => file.key === 'master' && file.required);
+  if (!masterFile) throw new Error('required_master_file_missing');
+  const dataResponse = await fetch(`${baseUrl}master/${masterFile.file}`, { cache: 'no-store' });
+  if (!dataResponse.ok) throw new Error('master_data_download_failed');
+  const content = await dataResponse.text();
+  if (new TextEncoder().encode(content).byteLength !== masterFile.bytes)
+    throw new Error('master_bytes_mismatch');
+  if ((await sha256(content)) !== masterFile.sha256) throw new Error('master_checksum_mismatch');
+  return { manifest, snapshot: masterSnapshotSchema.parse(JSON.parse(content)) };
+}
 export async function loadActiveMaster(): Promise<ActiveMaster | undefined> {
   const value = await (await database()).get('master', 'active');
   if (value === undefined) return undefined;

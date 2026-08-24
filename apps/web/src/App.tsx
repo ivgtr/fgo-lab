@@ -14,6 +14,7 @@ import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   IndexedDbProfileRepository,
   clearUserData,
+  fetchMasterCandidate,
   loadActiveMaster,
   stageAndActivate,
 } from './adapters/repository';
@@ -46,19 +47,14 @@ function Setup({
     setState('running');
     setError('');
     try {
-      const base = import.meta.env.BASE_URL;
-      const [manifestResponse, dataResponse] = await Promise.all([
-        fetch(`${base}master/manifest.json`, { cache: 'no-store' }),
-        fetch(`${base}master/fixture.json`, { cache: 'no-store' }),
-      ]);
-      if (!manifestResponse.ok || !dataResponse.ok) throw new Error('master_download_failed');
-      const manifest: unknown = await manifestResponse.json();
+      const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
+      const manifest = candidate.manifest;
       if (
         !import.meta.env.DEV &&
         (manifest as { artifactKind?: string }).artifactKind === 'diagnostic'
       )
         throw new Error('diagnostic_fixture_cannot_be_activated');
-      const master = await stageAndActivate(manifest, await dataResponse.json(), new Date());
+      const master = await stageAndActivate(manifest, candidate.snapshot, new Date());
       const profiles = (await repository.load()) ?? createProfileCollection('マスター', clock, ids);
       await repository.replace(profiles);
       onComplete(master.snapshot, profiles);
@@ -130,15 +126,32 @@ export function App() {
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [profiles, setProfiles] = useState<ProfileCollection>();
   const [loading, setLoading] = useState(true);
+  const [startupWarning, setStartupWarning] = useState('');
   const [page, setPage] = useState<Page>('home');
   useEffect(() => {
-    void Promise.all([loadActiveMaster(), repository.load()]).then(([active, saved]) => {
+    async function bootstrap() {
+      let active = await loadActiveMaster();
+      const saved = await repository.load();
+      if (active) {
+        try {
+          const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
+          if (!import.meta.env.DEV && candidate.manifest.artifactKind === 'diagnostic')
+            throw new Error('diagnostic_fixture_cannot_be_activated');
+          if (candidate.manifest.masterDataVersion !== active.manifest.masterDataVersion)
+            active = await stageAndActivate(candidate.manifest, candidate.snapshot, new Date());
+        } catch (cause) {
+          setStartupWarning(
+            `更新に失敗したため互換性確認済みの ${active.manifest.masterDataVersion} を使用中: ${cause instanceof Error ? cause.message : String(cause)}`,
+          );
+        }
+      }
       if (active && saved) {
         setMaster(active.snapshot);
         setProfiles(saved);
       }
       setLoading(false);
-    });
+    }
+    void bootstrap();
   }, []);
   async function persist(next: ProfileCollection) {
     setProfiles(next);
@@ -219,6 +232,12 @@ export function App() {
           DB {currentMaster.version}
           <br />
           端末内に自動保存
+          {startupWarning && (
+            <>
+              <br />
+              {startupWarning}
+            </>
+          )}
         </p>
       </aside>
       <main id="main">

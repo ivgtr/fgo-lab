@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/schema" },
     { "path": "packages/master-data" },
+    { "path": "packages/data-pipeline" },
     { "path": "packages/calc-core" },
     { "path": "packages/profile-domain" },
     { "path": "packages/workspace-domain" },

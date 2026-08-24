@@ -11,8 +11,8 @@
     {
       "key": "master",
       "file": "fixture.json",
-      "bytes": 0,
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 1031,
+      "sha256": "fd9d47aa9b37cbf78b29c0fc7e479df38b2c62cd8e80c5c345b2a8c3cd4a9623",
       "required": true
     }
   ]
