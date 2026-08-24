@@ -532,6 +532,8 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await expect(specialConditions).not.toContainText('竜殺し A++');
   await expect(specialConditions.locator('.modifier-chip-icon')).toHaveCount(2);
   const dragonTrait = specialConditions.getByRole('button', { name: /竜特攻/ });
+  await expect(specialConditions.getByRole('list')).toHaveCSS('border-top-width', '0px');
+  await expect(specialConditions.getByRole('listitem')).toHaveCSS('border-bottom-width', '0px');
   await expect(dragonTrait).toHaveCSS('border-radius', '0px');
   await expect(dragonTrait).toHaveAttribute('aria-pressed', 'false');
   await dragonTrait.click();

@@ -594,7 +594,7 @@ export function Calculator({
           {mode === 'quick' && specialTraitCandidates.length ? (
             <fieldset className="modifier-group form-grid-wide">
               <legend>特攻条件</legend>
-              <ul className="plain-list modifier-chip-list">
+              <ul className="modifier-chip-list">
                 {specialTraitCandidates.map((candidate) => {
                   const traitPresent = input.target.traits.includes(candidate.trait);
                   const enabled = candidate.matchesWhenPresent ? traitPresent : !traitPresent;
@@ -632,7 +632,7 @@ export function Calculator({
           {mode === 'quick' && fieldTraitCandidates.length ? (
             <fieldset className="modifier-group form-grid-wide">
               <legend>フィールド条件</legend>
-              <ul className="plain-list modifier-chip-list">
+              <ul className="modifier-chip-list">
                 {fieldTraitCandidates.map((trait) => {
                   const enabled = input.fieldTraits.includes(trait);
                   return (
@@ -979,7 +979,7 @@ export function Calculator({
           {mode === 'quick' && damageEffectStacks.length ? (
             <fieldset className="modifier-group">
               <legend>火力効果</legend>
-              <ul className="plain-list modifier-chip-list">
+              <ul className="modifier-chip-list">
                 {damageEffectStacks.map((stack) => (
                   <ModifierChip
                     key={stack.kind}
