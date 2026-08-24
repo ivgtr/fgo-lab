@@ -72,6 +72,8 @@ const source: ServantMaster = {
           target: 'ptAll',
           label: '攻撃力アップ',
           values: [100, 110, 120, 130, 140, 150, 160, 170, 180, 200],
+          buffTypes: ['upAtk'],
+          cardTypes: [],
         },
         {
           id: 'buster',
@@ -79,6 +81,8 @@ const source: ServantMaster = {
           target: 'ptOne',
           label: 'バスターアップ',
           values: [300, 320, 340, 360, 380, 400, 420, 440, 460, 500],
+          buffTypes: ['upCommandall'],
+          cardTypes: ['buster'],
         },
         {
           id: 'np',
@@ -86,6 +90,8 @@ const source: ServantMaster = {
           target: 'ptAll',
           label: '宝具威力アップ',
           values: [200, 210, 220, 230, 240, 250, 260, 270, 280, 300],
+          buffTypes: ['upNpdamage'],
+          cardTypes: [],
         },
         {
           id: 'charge',
@@ -93,6 +99,7 @@ const source: ServantMaster = {
           target: 'ptAll',
           label: 'NP増加',
           values: Array(10).fill(2000) as number[],
+          cardTypes: [],
         },
       ],
     },
@@ -140,6 +147,26 @@ describe('resolveSupportTemplate', () => {
     });
   });
 
+  it('classifies damage buffs from structured metadata instead of display labels', () => {
+    const renamed: ServantMaster = {
+      ...source,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: source.skills[0]!.effects.map((effect) => ({
+            ...effect,
+            label: `変更された表示名 ${effect.id}`,
+          })),
+        },
+      ],
+    };
+    const result = resolveSupportTemplate(input, template(), [renamed]);
+
+    expect(result.input.attackBuff).toBeCloseTo(0.3);
+    expect(result.input.cardBuff).toBeCloseTo(0.5);
+    expect(result.input.npDamageBuff).toBeCloseTo(0.3);
+  });
+
   it('fails closed when the saved source cannot be resolved', () => {
     const result = resolveSupportTemplate(input, template(), []);
     expect(result.precision).toBe('unsupported');
@@ -160,6 +187,8 @@ describe('resolveSupportTemplate', () => {
               target: 'ptOne',
               label: '宝具威力アップブースト',
               values: Array(10).fill(1000) as number[],
+              buffTypes: ['buffRate'],
+              cardTypes: [],
             },
           ],
         },
@@ -171,6 +200,48 @@ describe('resolveSupportTemplate', () => {
       applied: false,
       reason: 'damage_effect_not_supported',
     });
+  });
+
+  it('does not misclassify NP gain when damaged as outgoing damage', () => {
+    const defensive: ServantMaster = {
+      ...source,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              id: 'gain-np-when-damaged',
+              type: 'addStateShort',
+              target: 'ptOne',
+              label: '被ダメージ時NP獲得量アップ',
+              values: Array(10).fill(1000) as number[],
+              buffTypes: ['upDamagedropnp'],
+              cardTypes: [],
+            },
+            {
+              id: 'extra-attack',
+              type: 'addStateShort',
+              target: 'ptOne',
+              label: 'Extra Attackアップ',
+              values: Array(10).fill(1000) as number[],
+              buffTypes: ['upCommandall'],
+              cardTypes: [],
+            },
+          ],
+        },
+      ],
+    };
+    const result = resolveSupportTemplate(input, template(), [defensive]);
+
+    expect(result.input.powerMod).toBe(0);
+    expect(result.precision).toBe('exact');
+    expect(result.effects).toHaveLength(2);
+    expect(
+      result.effects.every(
+        (effect) =>
+          effect.kind === null && !effect.applied && effect.reason === 'not_np_damage_relevant',
+      ),
+    ).toBe(true);
   });
 });
 
@@ -215,6 +286,8 @@ describe('resolveAttackerSkills', () => {
               label: '攻撃力アップ',
               values: Array(10).fill(200) as number[],
               recipientTraits: ['knightsOfTheRound'],
+              buffTypes: ['upAtk'],
+              cardTypes: [],
             },
           ],
         },
@@ -249,6 +322,8 @@ describe('automatic equipment, passive, and NP effects', () => {
           target: 'self',
           label: '宝具威力アップ',
           values: [600, 800],
+          buffTypes: ['upNpdamage'],
+          cardTypes: [],
         },
       ],
     };
@@ -275,6 +350,8 @@ describe('automatic equipment, passive, and NP effects', () => {
               target: 'self',
               label: 'バスターアップ',
               values: Array(10).fill(80) as number[],
+              buffTypes: ['upCommandall'],
+              cardTypes: ['buster'],
             },
           ],
         },
@@ -303,6 +380,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               label: 'アタックプラス',
               values: [175],
               buffTypes: ['addDamage'],
+              cardTypes: [],
             },
           ],
         },
@@ -328,6 +406,8 @@ describe('automatic equipment, passive, and NP effects', () => {
               label: '攻撃力アップ',
               values: Array(10).fill(200) as number[],
               requiredFieldTraits: ['fieldDarkness'],
+              buffTypes: ['upAtk'],
+              cardTypes: [],
             },
           ],
         },
@@ -355,6 +435,8 @@ describe('automatic equipment, passive, and NP effects', () => {
           label: '攻撃力アップ',
           values: [100, 200, 300, 400, 500],
           timing: 'beforeDamage',
+          buffTypes: ['upAtk'],
+          cardTypes: [],
         },
       ],
     };
@@ -419,6 +501,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               values: Array(10).fill(500) as number[],
               targetCondition: { anyOf: ['dragon'], noneOf: [] },
               buffTypes: ['upDamage'],
+              cardTypes: [],
             },
           ],
         },
@@ -456,6 +539,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               values: Array(10).fill(500) as number[],
               targetCondition: { anyOf: [], noneOf: ['superGiant'] },
               buffTypes: ['upDamage'],
+              cardTypes: [],
             },
           ],
         },

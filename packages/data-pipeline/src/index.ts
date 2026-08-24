@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 2,
+    schemaVersion: 3,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -198,6 +198,11 @@ type AtlasItem = {
   uses?: string[];
 };
 const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = { 1: 'arts', 2: 'buster', 3: 'quick' };
+const cardTypeByTrait: Record<string, 'buster' | 'arts' | 'quick'> = {
+  cardArts: 'arts',
+  cardBuster: 'buster',
+  cardQuick: 'quick',
+};
 
 function normalizeFunctions(functions: AtlasFunction[] | undefined) {
   return (functions ?? []).flatMap((fn) =>
@@ -228,6 +233,15 @@ function normalizeFunctions(functions: AtlasFunction[] | undefined) {
               trait.name ? [trait.name] : [],
             ),
             buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
+            cardTypes: [
+              ...new Set(
+                (fn.buffs ?? []).flatMap((buff) =>
+                  [...(buff.tvals ?? []), ...(buff.ckSelfIndv ?? [])].flatMap((trait) =>
+                    trait.name && cardTypeByTrait[trait.name] ? [cardTypeByTrait[trait.name]] : [],
+                  ),
+                ),
+              ),
+            ],
           },
         ]
       : [],
@@ -453,10 +467,13 @@ export function normalizeAtlasSnapshot(input: {
         atkMin: equip.atkBase ?? 0,
         atkMax: equip.atkMax ?? 0,
         imageKey: equip.extraAssets?.equipFace?.equip?.[String(equip.id)] ?? null,
-        effects: normalEffects.map((effect) => {
-          const limitBreakEffect = limitBreakEffects.find(
-            (candidate) => candidate.id === effect.id && candidate.label === effect.label,
-          );
+        effects: normalEffects.map((effect, index) => {
+          const occurrence = normalEffects
+            .slice(0, index)
+            .filter((candidate) => candidate.id === effect.id).length;
+          const limitBreakEffect = limitBreakEffects.filter(
+            (candidate) => candidate.id === effect.id,
+          )[occurrence];
           return {
             ...effect,
             values: [

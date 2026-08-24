@@ -110,7 +110,7 @@ describe('immutable publish pipeline', () => {
           atkMax: 2000,
           skills: [
             { condLimitCount: 0, priority: 1, functions: [effect(20, '宝具威力アップ', 600)] },
-            { condLimitCount: 4, priority: 2, functions: [effect(20, '宝具威力アップ', 800)] },
+            { condLimitCount: 4, priority: 2, functions: [effect(20, '変更後の表示名', 800)] },
           ],
         },
       ],
@@ -178,6 +178,20 @@ describe('immutable publish pipeline', () => {
                   script: { funcIndividuality: [{ id: 3012, name: 'buffCharm' }] },
                   buffs: [{ type: 'charm', vals: [{ id: 3012, name: 'buffCharm' }] }],
                   svals: [{ Value: 0 }],
+                },
+                {
+                  funcId: 13,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  funcPopupText: '表示名に依存しない色バフ',
+                  buffs: [
+                    {
+                      type: 'upCommandall',
+                      tvals: [{ id: 4002, name: 'cardBuster' }],
+                      ckSelfIndv: [{ id: 4002, name: 'cardBuster' }],
+                    },
+                  ],
+                  svals: Array(10).fill({ Value: 500 }),
                 },
               ],
             },
@@ -252,6 +266,11 @@ describe('immutable publish pipeline', () => {
     expect(lilith?.skills[0]?.effects[0]).toMatchObject({
       targetCondition: { anyOf: [], noneOf: ['superGiant'] },
       requiredFieldTraits: ['fieldDarkness'],
+    });
+    expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '13')).toMatchObject({
+      label: '表示名に依存しない色バフ',
+      buffTypes: ['upCommandall'],
+      cardTypes: ['buster'],
     });
     expect(snapshot.servants.find((servant) => servant.id === '1')?.npCard).toBe('arts');
   });

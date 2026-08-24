@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -40,6 +40,7 @@ const masterEffectSchema = z.object({
   targetCondition: traitConditionSchema.optional(),
   requiredFieldTraits: z.array(z.string()).optional(),
   buffTypes: z.array(z.string()).optional(),
+  cardTypes: z.array(z.enum(['buster', 'arts', 'quick'])).max(3),
 });
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
 

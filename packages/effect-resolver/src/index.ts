@@ -52,35 +52,26 @@ interface SkillSelection {
   order: number;
 }
 
-const CARD_LABELS: Record<string, CalcInput['cardType']> = {
-  バスターアップ: 'buster',
-  アーツアップ: 'arts',
-  クイックアップ: 'quick',
-  バスター耐性ダウン: 'buster',
-  アーツ耐性ダウン: 'arts',
-  クイック耐性ダウン: 'quick',
-};
-
-const KNOWN_UNSUPPORTED_DAMAGE_LABELS = new Set([
-  '宝具威力アップブースト',
-  'イベント攻撃威力アップ',
-]);
-
-function buffKind(label: string): ResolvedBuffKind | null {
-  if (label === '攻撃力アップ' || label === '防御力ダウン') return 'attackBuff';
-  if (label === '宝具威力アップ' || label === '宝具耐性ダウン') return 'npDamageBuff';
-  if (label === 'イベント攻撃威力アップ') return 'eventDamageBuff';
-  if (label === '特殊威力アップ') return 'specialDamageBuff';
-  if (label === 'アタックプラス') return 'flatDamage';
-  if (label in CARD_LABELS) return 'cardBuff';
-  return null;
-}
-
 function effectBuffKind(effect: MasterEffect): ResolvedBuffKind | null {
-  if (effect.buffTypes?.includes('addDamage')) return 'flatDamage';
-  if ((effect.buffTypes ?? []).some((type) => type.toLowerCase().startsWith('updamage')))
+  const buffTypes = effect.buffTypes ?? [];
+  if (buffTypes.includes('addDamage')) return 'flatDamage';
+  if (
+    buffTypes.some((type) =>
+      ['upDamage', 'upDamageIndividuality', 'upDamageIndividualityActiveonly'].includes(type),
+    )
+  )
     return 'powerMod';
-  return buffKind(effect.label);
+  if (buffTypes.some((type) => type === 'upAtk' || type === 'downDefence')) return 'attackBuff';
+  if (buffTypes.some((type) => type === 'upNpdamage' || type === 'downDefenceNpdamage'))
+    return 'npDamageBuff';
+  if (
+    effect.cardTypes.length > 0 &&
+    buffTypes.some((type) =>
+      ['upCommandall', 'upCommandatk', 'downDefencecommandall'].includes(type),
+    )
+  )
+    return 'cardBuff';
+  return null;
 }
 
 function matchesTraitCondition(condition: TraitCondition | undefined, traits: readonly string[]) {
@@ -92,17 +83,12 @@ function matchesTraitCondition(condition: TraitCondition | undefined, traits: re
 }
 
 const NON_NP_DAMAGE_BUFF_TYPES = new Set(['upCriticaldamage', 'upExtraattack']);
+const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set(['buffRate']);
 
 function isPotentiallyDamageRelevant(effect: MasterEffect): boolean {
-  if ((effect.buffTypes ?? []).some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return false;
-  const { label } = effect;
-  return (
-    KNOWN_UNSUPPORTED_DAMAGE_LABELS.has(label) ||
-    label.includes('威力アップ') ||
-    label.includes('特攻') ||
-    label.includes('防御力ダウン') ||
-    label.includes('耐性ダウン')
-  );
+  const buffTypes = effect.buffTypes ?? [];
+  if (buffTypes.some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return false;
+  return buffTypes.some((type) => UNSUPPORTED_NP_DAMAGE_BUFF_TYPES.has(type));
 }
 
 interface ResolvableEffect {
@@ -194,8 +180,7 @@ function resolveEffects(
       });
       continue;
     }
-    const cardType = CARD_LABELS[effect.label];
-    if (kind === 'cardBuff' && cardType !== baseInput.cardType) {
+    if (kind === 'cardBuff' && !effect.cardTypes.includes(baseInput.cardType)) {
       effects.push({
         ...effectIdentity,
         value,
