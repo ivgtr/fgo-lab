@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calculationShareCompositionSchema,
   calculationShareSnapshotSchema,
+  calculationSelectionSchema,
   calcInputSchema,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
@@ -33,6 +34,12 @@ describe('portable schema boundaries', () => {
     expect(calcInputSchema.shape.npSpecialMultipliers.safeParse(1.5)).toMatchObject({
       success: false,
     });
+  });
+
+  it('normalizes stored selections to the resolved effect mode', () => {
+    expect(
+      calculationSelectionSchema.parse({ attackerSource: 'master', craftEssence: null }),
+    ).toEqual({ attackerSource: 'master', effectMode: 'resolved', craftEssence: null });
   });
 
   it('upgrades v1 profiles once while discarding incompatible calculation snapshots', () => {

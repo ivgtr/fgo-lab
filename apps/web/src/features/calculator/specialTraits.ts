@@ -1,5 +1,6 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { DamageTraitCondition, ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
+import { effectSourceImage } from './effectSourcePresentation';
 
 export interface SpecialTraitSource {
   key: string;
@@ -16,21 +17,6 @@ export interface SpecialTraitCandidate {
   trait: string;
   matchesWhenPresent: boolean;
   sources: SpecialTraitSource[];
-}
-
-function sourceImage(
-  effect: ResolvedSupportEffect,
-  servants: readonly ServantMaster[],
-  craftEssence: CraftEssenceMaster | undefined,
-): string | null {
-  if (effect.origin === 'craftEssence') return craftEssence?.imageKey ?? null;
-  const servant = servants.find((candidate) => candidate.id === effect.sourceId);
-  if (effect.origin === 'np') return servant?.imageKey ?? null;
-  return (
-    [...(servant?.skills ?? []), ...(servant?.passives ?? [])].find(
-      (skill) => skill.id === effect.skillId,
-    )?.imageKey ?? null
-  );
 }
 
 export function collectSpecialTraitCandidates({
@@ -67,7 +53,7 @@ export function collectSpecialTraitCandidates({
           origin: effect.origin,
           sourceName: effect.sourceName,
           effectName: effect.skillName,
-          imageKey: sourceImage(effect, servants, craftEssence),
+          imageKey: effectSourceImage(effect, servants, craftEssence),
           effectLabel: effect.label,
           value: effect.value,
           modifierKind: effect.damageTraitCondition.kind,

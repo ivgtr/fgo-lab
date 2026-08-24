@@ -38,7 +38,7 @@ describe('calculation application logic', () => {
     const input = createDefaultCalcInput(master, undefined);
     const result = calculateResolvedDamage(
       input,
-      { attackerSource: 'master', craftEssence: null },
+      { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
       undefined,
       master,
       versions,
@@ -59,6 +59,7 @@ describe('calculation application logic', () => {
     } satisfies CalculationShareSnapshot;
     expect(selectionFromShare(shared)).toEqual({
       attackerSource: 'master',
+      effectMode: 'manual',
       craftEssence: {
         source: 'master',
         craftEssenceId: 'fixture-ce',
@@ -66,6 +67,28 @@ describe('calculation application logic', () => {
         level: 1,
         limitBreak: 0,
       },
+    });
+  });
+
+  it('uses manual values as the final calculation input without effect resolution', () => {
+    const input = {
+      ...createDefaultCalcInput(master, undefined),
+      cardBuff: 0.32,
+      npDamageBuff: 0.8,
+      flatDamage: 0,
+    };
+    const calculation = calculateResolvedDamage(
+      input,
+      { attackerSource: 'master', effectMode: 'manual', craftEssence: null },
+      undefined,
+      master,
+      versions,
+    );
+    expect(calculation.input).toEqual(input);
+    expect(calculation.effects).toEqual([]);
+    expect(calculation.result.trace).toContainEqual({
+      step: 'input-mode',
+      detail: 'manual_final_values',
     });
   });
 
@@ -97,7 +120,7 @@ describe('calculation application logic', () => {
     };
     const calculation = calculateResolvedDamage(
       input,
-      { attackerSource: 'master', craftEssence: null },
+      { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
       undefined,
       specialMaster,
       { ...versions, masterDataVersion: specialMaster.version },

@@ -35,7 +35,7 @@ const input = {
 const versions = {
   schemaVersion: 2,
   masterDataVersion: 'fixture-1',
-  engineVersion: '1.3.0',
+  engineVersion: '1.4.0',
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',

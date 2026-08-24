@@ -5,6 +5,7 @@ import {
   resolveNpEffects,
   resolveServantPassives,
   resolveSupportTemplate,
+  type ResolvedSupportEffect,
   type ResolvedSupportTemplate,
 } from '@fgo-lab/effect-resolver';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
@@ -23,6 +24,7 @@ export interface ResolvedCalculationInput {
   precision: ResolvedSupportTemplate['precision'];
   warnings: string[];
   trace: { step: string; detail: string }[];
+  effects: ResolvedSupportEffect[];
 }
 
 export function resolveCalculationInput(
@@ -31,6 +33,14 @@ export function resolveCalculationInput(
   supportTemplate: SupportTemplate | undefined,
   master: MasterDataSnapshot,
 ): ResolvedCalculationInput {
+  if (selection.effectMode === 'manual')
+    return {
+      input: baseInput,
+      precision: 'exact',
+      warnings: [],
+      trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
+      effects: [],
+    };
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
   const craftEssence = selection.craftEssence
     ? master.craftEssences.find(
@@ -68,6 +78,7 @@ export function resolveCalculationInput(
         ? 'approximate'
         : 'exact',
     warnings: resolutions.flatMap(([, resolution]) => resolution.warnings),
+    effects: resolutions.flatMap(([, resolution]) => resolution.effects),
     trace: resolutions.flatMap(([traceStep, resolution]) =>
       resolution.effects.map((effect) => ({
         step: traceStep,
@@ -88,6 +99,8 @@ export function calculateResolvedDamage(
   const calculation = calculateNpDamage(resolved.input, versions);
   return {
     input: resolved.input,
+    effects: resolved.effects,
+    effectWarnings: resolved.warnings,
     result: {
       ...calculation,
       precision:
@@ -149,6 +162,7 @@ export function completeCalculationSelection(
     selection ??
     ({
       attackerSource: build?.npLevel ? 'owned' : 'master',
+      effectMode: 'resolved',
       craftEssence: null,
     } satisfies CalculationSelection);
   const attackerSkills =
@@ -172,6 +186,7 @@ export function selectionFromShare(shared: CalculationShareSnapshot): Calculatio
   const craftEssence = shared.composition?.craftEssence;
   return {
     attackerSource: 'master',
+    effectMode: 'manual',
     craftEssence: craftEssence ? { ...craftEssence, source: 'master', copyId: null } : null,
   };
 }

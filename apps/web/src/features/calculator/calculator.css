@@ -77,21 +77,6 @@
 .automatic-modifiers dd {
   font-weight: 800;
 }
-.automatic-effect-list li {
-  display: grid;
-  grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.7rem;
-  border-bottom: 1px solid var(--line);
-  padding: 0.55rem 0;
-  font-size: 0.75rem;
-}
-.automatic-effect-list li > span:first-child {
-  display: grid;
-}
-.automatic-effect-list small {
-  color: var(--muted);
-}
 .attacker-skills {
   margin-top: 1.25rem;
   border-top: 1px solid var(--line);
@@ -201,43 +186,6 @@
 .effect-inactive {
   white-space: nowrap;
 }
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem 1rem;
-  margin-top: 1rem;
-}
-.form-grid > label {
-  display: grid;
-  align-content: start;
-  gap: 0.35rem;
-  color: #40495b;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-.quick-value-presets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-}
-.quick-value-presets.level-presets {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-.quick-value-presets button {
-  min-height: 32px;
-  padding: 0.3rem;
-  border-color: #cfd4d8;
-  background: #f7f7f4;
-  color: var(--muted);
-  font-size: 0.7rem;
-}
-.quick-value-presets button[aria-pressed='true'],
-.quick-value-presets button:not(:disabled):active {
-  border-color: var(--accent);
-  background: #f6ece8;
-  color: var(--accent);
-  font-weight: 800;
-}
 .special-trait-controls {
   min-width: 0;
   margin: 0;
@@ -259,7 +207,8 @@
 .special-trait-list li {
   min-width: 0;
 }
-.special-trait-list label {
+.special-trait-list label,
+.damage-effect-stack {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -271,7 +220,12 @@
   background: #fafaf7;
   cursor: pointer;
 }
-.special-trait-list li[data-enabled='true'] label {
+.damage-effect-stack {
+  grid-template-columns: minmax(0, 1fr) auto;
+  cursor: default;
+}
+.special-trait-list li[data-enabled='true'] label,
+.damage-effect-stack-list li[data-enabled='true'] .damage-effect-stack {
   border-color: #7d9a87;
   background: #f1f7f2;
 }
@@ -316,95 +270,17 @@
   background: var(--soft-blue);
 }
 
-.form-grid-wide {
-  grid-column: 1 / -1;
-}
-.direct-input-summary {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  border-block: 1px solid var(--line);
-  background: #fafaf8;
-  padding: 0.7rem;
-}
-.direct-input-summary > span {
-  display: grid;
-}
-.direct-input-summary small,
-.form-grid label > small {
-  color: var(--muted);
-  font-size: 0.68rem;
-}
-.direct-input-summary strong {
-  font-size: 1.2rem;
-  font-variant-numeric: tabular-nums;
-}
-.picker-field {
-  display: grid;
-  gap: 0.35rem;
-  color: #40495b;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-.empty-picker {
-  border-style: dashed;
-  color: var(--muted);
-  text-align: left;
-}
-.selected-equipment {
-  display: grid;
-  gap: 0.65rem;
-  border: 1px solid var(--line);
-  padding: 0.75rem;
-}
-.selected-equipment .entity-summary {
-  margin: 0;
-}
-.equipment-controls {
-  display: flex;
-  align-items: end;
-  gap: 0.55rem;
-  flex-wrap: wrap;
-}
-.equipment-controls label {
-  display: grid;
-  gap: 0.25rem;
-  min-width: 7rem;
-}
-.entity-picker-trigger {
-  width: 100%;
-  justify-content: flex-start;
-  border-width: 0 0 1px;
-  border-radius: 0;
-  background: transparent;
-  text-align: left;
-}
-
-.entity-picker-trigger .picker-action {
-  margin-left: auto;
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
 @media (max-width: 760px) {
   .special-trait-list {
     grid-template-columns: 1fr;
   }
 
-  .worksheet,
-  .form-grid {
+  .worksheet {
     grid-template-columns: 1fr;
   }
 
   .worksheet > section {
     padding: 0.85rem;
-  }
-
-  .equipment-controls > label,
-  .equipment-controls > button {
-    flex: 1 1 8rem;
   }
 
   .attacker-skill-list > .attacker-skill-row {
@@ -419,15 +295,6 @@
   .automatic-modifiers > div + div {
     border-top: 1px solid var(--line);
     border-left: 0;
-  }
-
-  .automatic-effect-list li {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .automatic-effect-list li > span:nth-child(2) {
-    grid-column: 1 / -1;
-    grid-row: 2;
   }
 
   .attacker-skill-row > .image-frame {

@@ -415,6 +415,8 @@ export function App() {
           <Calculator
             input={baseInput}
             resolvedInput={input}
+            resolvedEffects={resolvedCalculation.effects}
+            effectWarnings={resolvedCalculation.effectWarnings}
             result={result}
             servants={currentMaster.servants}
             builds={profile.servantBuilds}
@@ -471,7 +473,12 @@ export function App() {
                 );
                 const resolved = resolveCalculationInput(
                   input,
-                  { attackerSource: 'master', attackerSkills: [], craftEssence: null },
+                  {
+                    attackerSource: 'master',
+                    effectMode: 'resolved',
+                    attackerSkills: [],
+                    craftEssence: null,
+                  },
                   undefined,
                   currentMaster,
                 );

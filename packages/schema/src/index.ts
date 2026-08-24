@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SCHEMA_VERSION = 2 as const;
-export const ENGINE_VERSION = '1.3.0' as const;
+export const ENGINE_VERSION = '1.4.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -114,6 +114,7 @@ export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema
 
 export const calculationSelectionSchema = z.object({
   attackerSource: z.enum(['owned', 'master']),
+  effectMode: z.enum(['resolved', 'manual']).default('resolved'),
   attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
   manualOverrides: z
     .array(

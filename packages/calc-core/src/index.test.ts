@@ -45,7 +45,7 @@ const input: CalcInput = {
 const versions: VersionContext = {
   schemaVersion: 2,
   masterDataVersion: 'fixture-1',
-  engineVersion: '1.3.0',
+  engineVersion: '1.4.0',
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
@@ -180,13 +180,13 @@ describe('float32 NP damage kernel', () => {
     };
     expect(damageAtRandom(composed, 1, 1000)).toBe(9_117);
   });
-  it('matches AppMedia random endpoints for the Water Lilith default inputs', () => {
+  it('matches AppMedia random endpoints for the reported Water Lilith inputs', () => {
     const waterLilith: CalcInput = {
       ...input,
       attackerId: '405900',
-      attackerAtk: 11_971,
-      fouAtk: 1_000,
-      craftEssenceAtk: 0,
+      attackerAtk: 15_381,
+      fouAtk: 3_000,
+      craftEssenceAtk: 2_400,
       npLevel: 5,
       npMultipliers: [600, 800, 900, 950, 1_000],
       attackNpFunctionType: 'damageNpStateIndividualFix',
@@ -195,14 +195,14 @@ describe('float32 NP damage kernel', () => {
       classAffinity: 1,
       attributeAffinity: 1,
       attackBuff: 0,
-      cardBuff: 0.32,
-      npDamageBuff: 0.2,
-      powerMod: 0.5,
-      npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
-      flatDamage: 175,
+      cardBuff: 0,
+      npDamageBuff: 0.8,
+      powerMod: 0,
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
+      flatDamage: 0,
     };
     const result = calculateNpDamage(waterLilith, versions).results[4]!;
-    expect(result.minimum).toBe(72_476);
-    expect(result.maximum).toBe(88_463);
+    expect(result.minimum).toBe(61_944);
+    expect(result.maximum).toBe(75_640);
   });
 });

@@ -29,7 +29,7 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
     'true',
   );
   await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('33,713');
-  await expect(page.getByLabel('自動適用される能力')).toContainText('クラス相性2.00倍');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('クラス相性2.00倍');
   await expect(page.getByLabel('攻撃役の自身スキル')).toContainText('理想郷の騎士 EX');
   await expect(page.getByRole('group', { name: '特攻条件' })).toHaveCount(0);
 });
@@ -402,13 +402,11 @@ test('autosaves and restores a directly edited calculation draft', async ({ page
   await page.getByRole('tab', { name: '直接入力' }).click();
   await expect(page.getByLabel('攻撃バフ（%）')).toHaveValue('20');
   await page.getByRole('tab', { name: 'クイック操作' }).click();
-  await expect(page.getByRole('status')).toContainText(
-    '直接入力の補正が計算に残っています：攻撃バフ',
-  );
-  await page.getByRole('button', { name: '手動補正をすべて解除' }).click();
-  await expect(page.getByRole('status')).toHaveCount(0);
   await page.getByRole('tab', { name: '直接入力' }).click();
   await expect(page.getByLabel('攻撃バフ（%）')).toHaveValue('0');
+  await expect(
+    page.getByText('直接入力ではパッシブ・スキル・礼装効果を自動加算しません。'),
+  ).toBeVisible();
 });
 
 test('edits Fou ATK from quick controls and shares the value with direct input', async ({
@@ -439,6 +437,12 @@ test('edits Fou ATK from quick controls and shares the value with direct input',
   await expect(page.getByLabel('ATKフォウ')).toHaveValue('2000');
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await expect(page.getByRole('tab', { name: '直接入力' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByLabel('ATKフォウ')).toHaveValue('2000');
+  await page.getByRole('tab', { name: 'クイック操作' }).click();
   await expect(page.getByLabel('ATKフォウ（加算）')).toHaveValue('2000');
 });
 
@@ -461,7 +465,7 @@ test('uses quick servant level presets and resets only the level', async ({ page
   await expect(level).toHaveValue('120');
 });
 
-test('restores complete direct inputs, CE effects, and trait special NP resolution', async ({
+test('separates final direct inputs from resolved CE and trait effects', async ({
   page,
   isMobile,
 }) => {
@@ -504,8 +508,13 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
     .getByRole('button', { name: /黒の聖杯/ })
     .first()
     .click();
-  await expect(page.getByLabel('自動適用される能力')).toContainText('宝具威力アップ');
-  await expect(page.getByLabel('自動適用される能力')).toContainText('+60%');
+  await expect(
+    page.getByText('直接入力ではパッシブ・スキル・礼装効果を自動加算しません。'),
+  ).toBeVisible();
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('宝具威力／耐性0.0%');
+  await page.getByRole('tab', { name: 'クイック操作' }).click();
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('宝具威力アップ');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('+60%');
 
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
@@ -515,7 +524,7 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
   await page.getByLabel('竜殺し A++を使用').check();
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
-  await expect(page.getByLabel('自動適用される能力')).toContainText('対象特性なし');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('対象特性なし');
   const specialConditions = page.getByRole('group', { name: '特攻条件' });
   await expect(specialConditions.getByRole('listitem')).toHaveCount(1);
   await expect(specialConditions).toContainText('竜特攻');
@@ -523,7 +532,7 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
   await expect(specialConditions).not.toContainText('竜殺し A++');
   await expect(specialConditions.locator('.special-trait-icon')).toHaveCount(2);
   await specialConditions.getByRole('checkbox', { name: /竜特攻/ }).check();
-  await expect(page.getByLabel('自動適用される能力')).toContainText('1.50倍');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('1.50倍');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
 
@@ -537,7 +546,46 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
   await expect(specialConditions).toContainText('混沌特攻');
   await expect(specialConditions).toContainText('200%');
   await specialConditions.getByRole('checkbox', { name: /混沌特攻/ }).check();
-  await expect(page.getByLabel('自動適用される能力')).toContainText('2.00倍');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('2.00倍');
+});
+
+test('matches the reported Water Lilith inputs and exposes passive damage stacks', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers the full direct input comparison');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前・クラス').fill('リリス');
+  await attackerDialog.getByRole('button', { name: /リリス rider・Lv90/ }).click();
+  await page.getByRole('spinbutton', { name: 'サーヴァントLv', exact: true }).fill('120');
+  await page.getByRole('tab', { name: '直接入力' }).click();
+  await page.getByLabel('ATKフォウ').fill('3000');
+  await page.getByLabel('礼装ATK').fill('2400');
+  await page.getByLabel('宝具Lv').selectOption('5');
+  await page.getByRole('spinbutton', { name: /^クラス相性/ }).fill('1');
+  await page.getByRole('spinbutton', { name: /^属性相性/ }).fill('1');
+  await page.getByLabel('宝具威力（%）').fill('80');
+
+  const np5 = page.getByRole('row', { name: /NP5.*現在/ });
+  await expect(np5).toContainText('61,944');
+  await expect(np5).toContainText('75,640');
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await expect(effectiveInput).toContainText('QUICK性能／耐性0.0%');
+  await expect(effectiveInput).toContainText('固定ダメージ／軽減0／0');
+
+  await page.getByRole('tab', { name: 'クイック操作' }).click();
+  const damageEffects = page.getByRole('group', { name: '火力効果' });
+  await expect(damageEffects).toContainText('クイックアップ +12%');
+  await expect(damageEffects).toContainText('アタックプラス +175');
+  await expect(damageEffects.getByLabel(/リリス・騎乗 EX \+12%/)).toBeVisible();
+  await expect(damageEffects.getByLabel(/リリス・神性 B \+175/)).toBeVisible();
 });
 
 test('round-trips an allowlisted calculation share', async ({ page, context, isMobile }) => {

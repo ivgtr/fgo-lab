@@ -5,13 +5,7 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import {
-  resolveAttackerSkills,
-  resolveCraftEssenceEffects,
-  resolveNpEffects,
-  resolveServantPassives,
-  resolveSupportTemplate,
-} from '@fgo-lab/effect-resolver';
+import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
 import type {
   AttackerSkillSelection,
   CalcInput,
@@ -33,11 +27,15 @@ import {
   traitLabel,
 } from './specialTraitPresentation';
 import { CalculationResult } from './CalculationResult';
+import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffectStacks';
 import './calculator.css';
+import './calculator-form.css';
 
 export function Calculator({
   input,
   resolvedInput,
+  resolvedEffects,
+  effectWarnings,
   result,
   servants,
   builds,
@@ -54,6 +52,8 @@ export function Calculator({
 }: {
   input: CalcInput;
   resolvedInput: CalcInput;
+  resolvedEffects: readonly ResolvedSupportEffect[];
+  effectWarnings: readonly string[];
   result: CalcResult;
   servants: ServantMaster[];
   builds: Record<string, ServantBuild>;
@@ -68,7 +68,7 @@ export function Calculator({
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onFinalize: (input: CalcInput, result: CalcResult) => Promise<void>;
 }) {
-  const [mode, setMode] = useState<'quick' | 'direct'>('quick');
+  const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [attackerDialogOpen, setAttackerDialogOpen] = useState(false);
   const [craftEssenceDialogOpen, setCraftEssenceDialogOpen] = useState(false);
@@ -82,62 +82,22 @@ export function Calculator({
   const selectedCraftEssenceCopy = selection.craftEssence?.copyId
     ? craftEssenceCopies.find((copy) => copy.copyId === selection.craftEssence?.copyId)
     : undefined;
-  const selectedSupportResolution = selectedSupport
-    ? resolveSupportTemplate(input, selectedSupport, servants)
-    : undefined;
-  const selectedAttackerSkillResolution = resolveAttackerSkills(
-    input,
-    selection.attackerSkills ?? [],
-    servants,
-  );
-  const passiveResolution = resolveServantPassives(input, attacker);
-  const craftEssenceEffectResolution = resolveCraftEssenceEffects(
-    input,
-    selectedCraftEssence,
-    selection.craftEssence?.limitBreak ?? 0,
-    attacker?.traits ?? [],
-  );
-  const npEffectResolution = resolveNpEffects(input, attacker);
-  const automaticEffects = [
-    ...passiveResolution.effects,
-    ...craftEssenceEffectResolution.effects,
-    ...npEffectResolution.effects,
-  ];
+  const attackerSkillEffects = resolvedEffects.filter((effect) => effect.origin === 'attacker');
+  const supportEffects = resolvedEffects.filter((effect) => effect.origin === 'support');
   const specialTraitCandidates = collectSpecialTraitCandidates({
-    effects: [
-      ...selectedAttackerSkillResolution.effects,
-      ...automaticEffects,
-      ...(selectedSupportResolution?.effects ?? []),
-    ],
+    effects: resolvedEffects,
     servants,
     craftEssence: selectedCraftEssence,
   }).sort((left, right) => specialTraitLabel(left).localeCompare(specialTraitLabel(right), 'ja'));
+  const damageEffectStacks = collectDamageEffectStacks({
+    effects: resolvedEffects,
+    servants,
+    craftEssence: selectedCraftEssence,
+  });
   const fieldTraitCandidates = [
-    ...new Set(
-      [
-        ...selectedAttackerSkillResolution.effects,
-        ...automaticEffects,
-        ...(selectedSupportResolution?.effects ?? []),
-      ].flatMap((effect) => effect.requiredFieldTraits),
-    ),
+    ...new Set(resolvedEffects.flatMap((effect) => effect.requiredFieldTraits)),
   ].sort((left, right) => traitLabel(left).localeCompare(traitLabel(right), 'ja'));
   const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
-  const hiddenManualModifiers = [
-    ['攻撃バフ', input.attackBuff, 0],
-    ['敵防御力', input.defenseBuff, 0],
-    ['カード性能', input.cardBuff, 0],
-    ['カード耐性', input.cardResistance, 0],
-    ['宝具威力', input.npDamageBuff, 0],
-    ['宝具耐性', input.npResistance, 0],
-    ['特攻状態', input.powerMod, 0],
-    ['イベント特攻', input.eventDamageBuff, 0],
-    ['特殊威力', input.specialDamageBuff, 0],
-    ['特殊耐性', input.specialResistance, 0],
-    ['固定ダメージ', input.flatDamage, 0],
-    ['固定ダメージ軽減', input.damageCut, 0],
-  ].flatMap(([label, value, neutral]) => (value === neutral ? [] : [label as string]));
-  if (input.npSpecialMultipliers.some((multiplier) => multiplier !== 1))
-    hiddenManualModifiers.push('特攻宝具倍率');
   const classSituationLabel =
     input.classAffinity === 2
       ? '有利'
@@ -233,22 +193,27 @@ export function Calculator({
       { ...selection, manualOverrides: [] },
     );
   }
-  function clearManualDamageModifiers() {
-    change({
-      attackBuff: 0,
-      defenseBuff: 0,
-      cardBuff: 0,
-      cardResistance: 0,
-      npDamageBuff: 0,
-      npResistance: 0,
-      powerMod: 0,
-      eventDamageBuff: 0,
-      npSpecialMultipliers: [1, 1, 1, 1, 1],
-      specialDamageBuff: 0,
-      specialResistance: 0,
-      flatDamage: 0,
-      damageCut: 0,
-    });
+  function changeEffectMode(effectMode: 'resolved' | 'manual') {
+    const nextInput =
+      effectMode === 'resolved'
+        ? {
+            ...input,
+            attackBuff: 0,
+            defenseBuff: 0,
+            cardBuff: 0,
+            cardResistance: 0,
+            npDamageBuff: 0,
+            npResistance: 0,
+            powerMod: 0,
+            eventDamageBuff: 0,
+            npSpecialMultipliers: [1, 1, 1, 1, 1] as CalcInput['npSpecialMultipliers'],
+            specialDamageBuff: 0,
+            specialResistance: 0,
+            flatDamage: 0,
+            damageCut: 0,
+          }
+        : input;
+    void onCompositionChange(nextInput, { ...selection, effectMode });
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
@@ -385,22 +350,22 @@ export function Calculator({
           <span className="picker-action">変更</span>
         </button>
         <div role="tablist" aria-label="入力方法">
-          <button role="tab" aria-selected={mode === 'quick'} onClick={() => setMode('quick')}>
+          <button
+            role="tab"
+            aria-selected={mode === 'quick'}
+            onClick={() => changeEffectMode('resolved')}
+          >
             クイック操作
           </button>
-          <button role="tab" aria-selected={mode === 'direct'} onClick={() => setMode('direct')}>
+          <button
+            role="tab"
+            aria-selected={mode === 'direct'}
+            onClick={() => changeEffectMode('manual')}
+          >
             直接入力
           </button>
         </div>
         <div className="form-grid">
-          {mode === 'quick' && hiddenManualModifiers.length ? (
-            <div className="notice form-grid-wide" role="status">
-              <p>直接入力の補正が計算に残っています：{hiddenManualModifiers.join('・')}</p>
-              <button type="button" onClick={clearManualDamageModifiers}>
-                手動補正をすべて解除
-              </button>
-            </div>
-          ) : null}
           <label>
             サーヴァントLv
             <input
@@ -625,7 +590,7 @@ export function Calculator({
               ) : null}
             </select>
           </label>
-          {specialTraitCandidates.length ? (
+          {mode === 'quick' && specialTraitCandidates.length ? (
             <fieldset className="special-trait-controls form-grid-wide">
               <legend>特攻条件</legend>
               <ul className="plain-list special-trait-list">
@@ -669,6 +634,7 @@ export function Calculator({
                               className="special-trait-source"
                               key={source.key}
                               title={`${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`}
+                              role="img"
                               aria-label={`${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`}
                             >
                               <MasterImage
@@ -687,7 +653,7 @@ export function Calculator({
               </ul>
             </fieldset>
           ) : null}
-          {fieldTraitCandidates.length ? (
+          {mode === 'quick' && fieldTraitCandidates.length ? (
             <fieldset className="special-trait-controls form-grid-wide">
               <legend>フィールド条件</legend>
               <ul className="plain-list special-trait-list">
@@ -835,7 +801,11 @@ export function Calculator({
             </>
           )}
         </div>
-        <section className="attacker-skills" aria-label="攻撃役の自身スキル">
+        <section
+          className="attacker-skills"
+          aria-label="攻撃役の自身スキル"
+          hidden={mode === 'direct'}
+        >
           <div className="section-heading compact-heading">
             <div>
               <p className="eyebrow">SELF SKILLS</p>
@@ -857,7 +827,7 @@ export function Calculator({
                     ? (builds[input.attackerId]?.skills[String(index + 1)] ?? 1)
                     : 10;
                 const modified = selectedSkill.skillLevel !== savedLevel;
-                const effects = selectedAttackerSkillResolution.effects.filter(
+                const effects = attackerSkillEffects.filter(
                   (effect) => effect.skillId === skill.id,
                 );
                 const state = modified
@@ -948,19 +918,21 @@ export function Calculator({
               })}
             </ul>
           )}
-          {selectedAttackerSkillResolution.warnings.map((warning) => (
-            <p className="notice" key={warning}>
-              未解決: {warning}
-            </p>
-          ))}
+          {effectWarnings
+            .filter((warning) => warning.startsWith('attacker_'))
+            .map((warning) => (
+              <p className="notice" key={warning}>
+                未解決: {warning}
+              </p>
+            ))}
         </section>
-        <section className="automatic-abilities" aria-label="自動適用される能力">
+        <section className="automatic-abilities" aria-label="計算に使用する最終値">
           <div className="section-heading compact-heading">
             <div>
-              <p className="eyebrow">AUTOMATIC</p>
-              <h3>自動適用される能力</h3>
+              <p className="eyebrow">EFFECTIVE INPUT</p>
+              <h3>計算に使用する最終値</h3>
             </div>
-            <small>マスターと対象から解決</small>
+            <small>{mode === 'quick' ? 'マスターと対象から解決' : '入力値をそのまま使用'}</small>
           </div>
           <dl className="automatic-modifiers">
             <div>
@@ -1034,52 +1006,56 @@ export function Calculator({
               </dd>
             </div>
           </dl>
-          {automaticEffects.length ? (
-            <ul className="plain-list automatic-effect-list">
-              {automaticEffects.map((effect) => (
-                <li key={`${effect.origin}:${effect.skillId}:${effect.effectId}`}>
-                  <span>
-                    <strong>{effect.sourceName}</strong>
-                    <small>
-                      {effect.origin === 'passive'
-                        ? 'パッシブ'
-                        : effect.origin === 'craftEssence'
-                          ? '概念礼装'
-                          : '宝具前効果'}
-                    </small>
-                  </span>
-                  <span>{effect.label}</span>
-                  <b className={effect.applied ? 'effect-applied' : 'effect-inactive'}>
-                    {effect.applied && effect.value !== null
-                      ? effect.damageTraitCondition?.kind === 'npSpecial'
-                        ? `${effect.value.toFixed(2)}倍`
-                        : effect.kind === 'flatDamage'
-                          ? `+${effect.value.toLocaleString('ja-JP')}`
-                          : effect.value.toLocaleString('ja-JP', {
-                              style: 'percent',
-                              signDisplay: 'always',
-                              maximumFractionDigits: 1,
-                            })
-                      : effect.reason === 'card_type_mismatch'
-                        ? 'カード不一致'
-                        : effect.reason === 'attacker_trait_mismatch'
-                          ? '攻撃役の特性不一致'
-                          : effect.reason === 'target_trait_mismatch'
-                            ? '対象特性なし'
-                            : effect.reason === 'field_trait_mismatch'
-                              ? 'フィールド不一致'
-                              : effect.reason === 'not_np_damage_relevant'
-                                ? '宝具火力外'
-                                : '未対応'}
-                  </b>
-                </li>
-              ))}
-            </ul>
-          ) : (
+          {mode === 'quick' && damageEffectStacks.length ? (
+            <fieldset className="special-trait-controls">
+              <legend>火力効果</legend>
+              <ul className="plain-list special-trait-list damage-effect-stack-list">
+                {damageEffectStacks.map((stack) => (
+                  <li
+                    key={stack.kind}
+                    data-enabled={stack.sources.some((source) => source.applied)}
+                  >
+                    <div className="damage-effect-stack">
+                      <span className="special-trait-copy">
+                        <strong>{stack.label}</strong>
+                        <small>
+                          {stack.sources
+                            .map(
+                              (source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`,
+                            )
+                            .join('・')}
+                        </small>
+                      </span>
+                      <span className="special-trait-sources" aria-label="付与元">
+                        {stack.sources.map((source) => (
+                          <span
+                            className="special-trait-source"
+                            key={source.key}
+                            title={`${source.sourceName}・${source.effectName}: ${source.effectLabel} ${damageEffectStateLabel(source)}`}
+                            role="img"
+                            aria-label={`${source.sourceName}・${source.effectName} ${damageEffectStateLabel(source)}`}
+                          >
+                            <MasterImage
+                              src={source.imageKey}
+                              alt=""
+                              fallback={source.sourceName}
+                              className="special-trait-icon"
+                            />
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          ) : mode === 'quick' ? (
             <p className="notice">自動適用される宝具火力能力はありません。</p>
+          ) : (
+            <p className="notice">直接入力ではパッシブ・スキル・礼装効果を自動加算しません。</p>
           )}
         </section>
-        <section className="support-composition" aria-label="支援・バフ">
+        <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>
           <div className="section-heading compact-heading">
             <div>
               <p className="eyebrow">SUPPORT</p>
@@ -1099,7 +1075,7 @@ export function Calculator({
                 <button onClick={() => void onSupportSelect(undefined)}>解除</button>
               </div>
               <ul className="plain-list support-effect-list">
-                {selectedSupportResolution?.effects.map((effect) => (
+                {supportEffects.map((effect) => (
                   <li key={`${effect.sourceId}:${effect.skillId}:${effect.effectId}`}>
                     <span className="list-row-main">
                       <strong>
@@ -1126,11 +1102,13 @@ export function Calculator({
                   </li>
                 ))}
               </ul>
-              {selectedSupportResolution?.warnings.map((warning) => (
-                <p className="notice" key={warning}>
-                  未解決: {warning}
-                </p>
-              ))}
+              {effectWarnings
+                .filter((warning) => warning.startsWith('support_'))
+                .map((warning) => (
+                  <p className="notice" key={warning}>
+                    未解決: {warning}
+                  </p>
+                ))}
             </>
           )}
         </section>
