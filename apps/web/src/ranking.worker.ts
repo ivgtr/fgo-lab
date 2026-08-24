@@ -47,7 +47,7 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
       average: current.average,
       minimum: current.minimum,
       maximum: current.maximum,
-      precision: result.precision,
+      precision: 'approximate',
     });
   }
   rows.sort(

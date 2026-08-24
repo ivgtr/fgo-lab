@@ -4,3 +4,4 @@ dist
 coverage
 playwright-report
 test-results
+apps/web/public/master/master.json

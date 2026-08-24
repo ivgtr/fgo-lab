@@ -44,6 +44,7 @@ const nav: readonly [Page, ReturnType<typeof t>][] = [
   ['data', t('nav.data')],
 ];
 const repository = new IndexedDbProfileRepository();
+const ENGINE_RELEASE_VALIDATED = import.meta.env['VITE_ENGINE_RELEASE_VALIDATED'] === 'true';
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
 
@@ -98,9 +99,7 @@ function Setup({
             {t('setup.error')}: {error}
           </p>
         )}
-        <small>
-          開発buildでは診断fixtureを使用します。本番buildはproduction masterがない限り進みません。
-        </small>
+        <small>取得した版はchecksum・schema・参照整合性の検証後にだけ有効化します。</small>
       </section>
     </main>
   );
@@ -199,7 +198,7 @@ export function App() {
     masterDataLocale: 'ja-JP' as const,
   };
   const calculatedResult = calculateNpDamage(input, versions);
-  const result = currentMaster.version.startsWith('fixture-')
+  const result = !ENGINE_RELEASE_VALIDATED
     ? {
         ...calculatedResult,
         precision: 'approximate' as const,
@@ -351,13 +350,19 @@ export function App() {
         {page === 'home' && (
           <Home
             result={result.results[input.npLevel - 1]?.average ?? 0}
+            attackerName={servant.name}
             owned={build?.npLevel ? 1 : 0}
             hasHistory={profile.history.length > 0}
             onNavigate={(next) => void navigate(next)}
           />
         )}{' '}
         {page === 'calculate' && (
-          <Calculator input={input} result={result} onFinalize={finalizeCurrentCalculation} />
+          <Calculator
+            input={input}
+            result={result}
+            attackerName={servant.name}
+            onFinalize={finalizeCurrentCalculation}
+          />
         )}{' '}
         {page === 'servants' && (
           <Servants
@@ -400,11 +405,13 @@ export function App() {
 }
 function Home({
   result,
+  attackerName,
   owned,
   hasHistory,
   onNavigate,
 }: {
   result: number;
+  attackerName: string;
   owned: number;
   hasHistory: boolean;
   onNavigate: (page: Page) => void;
@@ -415,7 +422,9 @@ function Home({
         <p className="eyebrow">PRIMARY</p>
         <h2>{hasHistory ? '前回の計算' : '最初の計算を始める'}</h2>
         <p className="hero-number">{numberFormatter.format(result)}</p>
-        <p>{hasHistory ? '保存済みの最終条件' : '検証用セイバー・NP1の初期条件'}</p>
+        <p>
+          {hasHistory ? `${attackerName}・保存済みの最終条件` : `${attackerName}・NP1の初期条件`}
+        </p>
         <button className="primary" onClick={() => onNavigate('calculate')}>
           条件を開く
         </button>
@@ -436,10 +445,12 @@ function Home({
 function Calculator({
   input,
   result,
+  attackerName,
   onFinalize,
 }: {
   input: CalcInput;
   result: ReturnType<typeof calculateNpDamage>;
+  attackerName: string;
   onFinalize: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
@@ -486,7 +497,9 @@ function Calculator({
         <dl className="input-list">
           <div>
             <dt>攻撃役</dt>
-            <dd>検証用セイバー Lv.{input.attackerLevel}</dd>
+            <dd>
+              {attackerName} Lv.{input.attackerLevel}
+            </dd>
           </div>
           <div>
             <dt>攻撃対象</dt>
@@ -500,7 +513,7 @@ function Calculator({
           </div>
         </dl>
         <p className="notice">
-          診断fixtureの標準式です。production masterが揃うまでexactとして公開しません。
+          特殊Functionの差分検証が完了するまで、結果精度はapproximateとして表示します。
         </p>
       </section>
       <section data-share-card>

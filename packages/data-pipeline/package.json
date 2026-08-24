@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "validate": "tsx src/cli.ts validate",
-    "inventory": "tsx src/cli.ts inventory"
+    "inventory": "tsx src/cli.ts inventory",
+    "normalize": "tsx src/cli.ts normalize"
   },
   "dependencies": {
     "@fgo-lab/master-data": "workspace:*"

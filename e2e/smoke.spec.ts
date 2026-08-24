@@ -35,7 +35,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '所持・育成' }).click();
   await page.getByLabel('宝具Lv').selectOption('1');
-  await expect(page.getByRole('button', { name: /検証用セイバー.*NP1/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /アルトリア・ペンドラゴン.*NP1/ })).toBeVisible();
   await page.getByRole('tab', { name: '育成目標' }).click();
   await page.getByLabel('レベル').fill('90');
   await page.getByLabel('育成計画へ含める').check();
@@ -93,6 +93,6 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.getByRole('button', { name: '火力ランキング' }).click();
   await expect(page.getByRole('status')).toContainText('1件をWorkerで計算');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
-    '検証用セイバー',
+    'アルトリア・ペンドラゴン',
   );
 });

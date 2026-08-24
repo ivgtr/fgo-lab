@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
-import type { MasterManifest } from '@fgo-lab/master-data';
-import { masterManifestSchema, validateMasterSnapshot } from '@fgo-lab/master-data';
+import type { MasterDataSnapshot, MasterManifest } from '@fgo-lab/master-data';
+import {
+  masterManifestSchema,
+  masterSnapshotSchema,
+  validateMasterSnapshot,
+} from '@fgo-lab/master-data';
 
 export function sha256(data: Uint8Array | string): string {
   return createHash('sha256').update(data).digest('hex');
@@ -110,4 +114,160 @@ export function validatePublishedArtifact(
     }
   }
   return { valid: errors.length === 0, errors };
+}
+
+type AtlasMaterialStep = Record<
+  string,
+  { items?: { item?: { id?: number }; amount?: number }[]; qp?: number }
+>;
+type AtlasServant = {
+  id?: number;
+  collectionNo?: number;
+  type?: string;
+  name?: string;
+  className?: string;
+  rarity?: number;
+  atkGrowth?: number[];
+  traits?: { name?: string }[];
+  noblePhantasms?: AtlasNp[];
+  extraAssets?: { faces?: { ascension?: Record<string, string> } };
+  ascensionMaterials?: AtlasMaterialStep;
+  skillMaterials?: AtlasMaterialStep;
+  appendSkillMaterials?: AtlasMaterialStep;
+};
+type AtlasNp = {
+  card?: string;
+  priority?: number;
+  functions?: { funcType?: string; funcTargetType?: string; svals?: { Value?: number }[] }[];
+};
+type AtlasEquip = {
+  id?: number;
+  collectionNo?: number;
+  name?: string;
+  lvMax?: number;
+  atkBase?: number;
+  atkMax?: number;
+  extraAssets?: { equipFace?: { equip?: Record<string, string> } };
+};
+type AtlasItem = {
+  id?: number;
+  name?: string;
+  type?: string;
+  priority?: number;
+  icon?: string;
+  uses?: string[];
+};
+const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = { 1: 'quick', 2: 'buster', 3: 'arts' };
+
+function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
+  const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
+  if (!source) return result;
+  for (const [level, step] of Object.entries(source)) {
+    const from = Number(level);
+    if (!Number.isInteger(from)) continue;
+    for (let slot = 1; slot <= repeat; slot += 1)
+      for (const item of step.items ?? []) {
+        if (typeof item.item?.id !== 'number' || typeof item.amount !== 'number') continue;
+        result.push({
+          from: `${prefix}:${String(slot)}:${String(from)}`,
+          to: `${prefix}:${String(slot)}:${String(from + 1)}`,
+          materialId: String(item.item.id),
+          amount: item.amount,
+          qp: step.qp ?? 0,
+        });
+      }
+  }
+  return result;
+}
+export function normalizeAtlasSnapshot(input: {
+  version: string;
+  servants: unknown;
+  equips: unknown;
+  items: unknown;
+}): MasterDataSnapshot {
+  if (!Array.isArray(input.servants) || !Array.isArray(input.equips) || !Array.isArray(input.items))
+    throw new TypeError('atlas_exports_must_be_arrays');
+  const servants = (input.servants as AtlasServant[]).flatMap((servant) => {
+    if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
+    const attacks = (servant.noblePhantasms ?? [])
+      .flatMap((np) =>
+        (np.functions ?? [])
+          .filter((fn) => typeof fn.funcType === 'string' && fn.funcType.startsWith('damageNp'))
+          .map((fn) => ({ np, fn })),
+      )
+      .sort((a, b) => (b.np.priority ?? 0) - (a.np.priority ?? 0));
+    const attack = attacks[0];
+    if (
+      !attack ||
+      typeof servant.id !== 'number' ||
+      !servant.name ||
+      !servant.className ||
+      typeof servant.rarity !== 'number'
+    )
+      return [];
+    const values = attack.fn.svals?.slice(0, 5).map((value) => (value.Value ?? 0) / 10);
+    if (!values || values.length !== 5 || values.some((value) => value <= 0)) return [];
+    const image = servant.extraAssets?.faces?.ascension?.['1'] ?? null;
+    return [
+      {
+        id: String(servant.id),
+        name: servant.name,
+        classId: servant.className,
+        rarity: servant.rarity,
+        npCard: cardMap[attack.np.card ?? ''] ?? 'buster',
+        npTarget: attack.fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
+        atkByLevel: Object.fromEntries(
+          (servant.atkGrowth ?? []).map((atk, index) => [String(index + 1), atk]),
+        ),
+        npMultipliers: values as [number, number, number, number, number],
+        attackNpFunctionType: attack.fn.funcType!,
+        traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
+        imageKey: image,
+        growth: [
+          ...growthSteps(servant.ascensionMaterials, 'ascension'),
+          ...growthSteps(servant.skillMaterials, 'skill', 3),
+          ...growthSteps(servant.appendSkillMaterials, 'append', 5),
+        ],
+      },
+    ];
+  });
+  const craftEssences = (input.equips as AtlasEquip[]).flatMap((equip) => {
+    if (
+      !equip.collectionNo ||
+      typeof equip.id !== 'number' ||
+      !equip.name ||
+      typeof equip.lvMax !== 'number'
+    )
+      return [];
+    const initial = Math.min(20, equip.lvMax);
+    const increment = (equip.lvMax - initial) / 4;
+    return [
+      {
+        id: String(equip.id),
+        name: equip.name,
+        maxLevelByLimitBreak: [0, 1, 2, 3, 4].map((index) =>
+          Math.round(initial + increment * index),
+        ) as [number, number, number, number, number],
+        atkMin: equip.atkBase ?? 0,
+        atkMax: equip.atkMax ?? 0,
+        imageKey: equip.extraAssets?.equipFace?.equip?.[String(equip.id)] ?? null,
+      },
+    ];
+  });
+  const materials = (input.items as AtlasItem[]).flatMap((item) =>
+    typeof item.id === 'number' &&
+    item.name &&
+    item.uses?.some((use) => ['ascension', 'skill', 'appendSkill'].includes(use))
+      ? [
+          {
+            id: String(item.id),
+            name: item.name,
+            category: item.type ?? 'material',
+            sortOrder: item.priority ?? item.id,
+            imageKey: item.icon ?? null,
+          },
+        ]
+      : [],
+  );
+  return masterSnapshotSchema.parse({ version: input.version, servants, craftEssences, materials });
 }
