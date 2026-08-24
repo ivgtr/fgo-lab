@@ -933,6 +933,17 @@ function Calculator({
     selection.attackerSkills ?? [],
     servants,
   );
+  const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
+  const targetSummary = [input.target.classId, input.target.attribute, ...input.target.traits].join(
+    '・',
+  );
+  const craftEssenceSummary =
+    selectedCraftEssence && selection.craftEssence
+      ? `${selectedCraftEssence.name} Lv.${selection.craftEssence.level}`
+      : '礼装なし';
+  const supportSummary = selectedSupport
+    ? `${selectedSupport.name}（${selectedSupport.effects.filter((effect) => effect.enabled).length}スキル）`
+    : '支援なし';
   const visibleSupportTemplates = supportTemplates.filter((template) => {
     const sourceNames = template.effects.map(
       (effect) => servants.find((servant) => servant.id === effect.sourceId)?.name ?? '',
@@ -1365,93 +1376,85 @@ function Calculator({
                 const effects = selectedAttackerSkillResolution.effects.filter(
                   (effect) => effect.skillId === skill.id,
                 );
+                const state = modified
+                  ? 'modified'
+                  : selection.attackerSource === 'owned'
+                    ? 'saved'
+                    : 'added';
+                const stateLabel =
+                  state === 'modified' ? '一時変更' : state === 'saved' ? '保存値' : '仮想値';
+                const effectSummary = skill.effects.map((effect) => {
+                  const resolved = effects.find((candidate) => candidate.effectId === effect.id);
+                  if (!selectedSkill.enabled) return effect.label;
+                  if (resolved?.applied && resolved.value !== null)
+                    return `${effect.label} ${resolved.value.toLocaleString('ja-JP', {
+                      style: 'percent',
+                      signDisplay: 'always',
+                      maximumFractionDigits: 1,
+                    })}`;
+                  if (resolved?.reason === 'not_np_damage_relevant')
+                    return `${effect.label}（宝具火力外）`;
+                  if (resolved?.reason === 'card_type_mismatch')
+                    return `${effect.label}（カード不一致）`;
+                  return `${effect.label}（未対応）`;
+                });
                 return (
-                  <li key={skill.id} className="attacker-skill-card">
-                    <div className="skill-card-head">
-                      <span className="field-identity">
-                        <MasterImage
-                          src={skill.imageKey}
-                          alt=""
-                          fallback={skill.name}
-                          className="skill-icon"
-                        />
-                        <span>
-                          <strong>{skill.name}</strong>
-                          <small>
-                            {modified
-                              ? 'modified'
-                              : selection.attackerSource === 'owned'
-                                ? 'saved'
-                                : 'added'}
-                          </small>
-                        </span>
-                      </span>
-                      <label className="skill-toggle">
-                        <input
-                          type="checkbox"
-                          checked={selectedSkill.enabled}
-                          onChange={(event) =>
-                            changeAttackerSkill(skill.id, { enabled: event.target.checked })
-                          }
-                          aria-label={`${skill.name}を使用`}
-                        />
-                        使用
-                      </label>
-                    </div>
-                    <div className="skill-card-controls">
-                      <label>
-                        スキルLv
-                        <select
-                          value={selectedSkill.skillLevel}
-                          onChange={(event) =>
-                            changeAttackerSkill(skill.id, {
-                              skillLevel: Number(event.target.value),
-                            })
-                          }
-                          aria-label={`${skill.name}のスキルレベル`}
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                            <option key={value} value={value}>
-                              Lv{value}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                  <li key={skill.id} className="attacker-skill-row" data-state={state}>
+                    <MasterImage
+                      src={skill.imageKey}
+                      alt=""
+                      fallback={skill.name}
+                      className="skill-icon"
+                    />
+                    <div className="attacker-skill-copy">
+                      <div>
+                        <strong>
+                          スキル{index + 1}：{skill.name}
+                        </strong>
+                        <small className={`skill-state skill-state-${state}`}>{stateLabel}</small>
+                      </div>
+                      <p>{effectSummary.join('・')}</p>
                       {modified ? (
                         <button
                           type="button"
+                          className="skill-reset"
                           onClick={() => changeAttackerSkill(skill.id, { skillLevel: savedLevel })}
                         >
-                          保存値へ戻す
+                          {selection.attackerSource === 'owned'
+                            ? `保存Lv${savedLevel}へ戻す`
+                            : `既定Lv${savedLevel}へ戻す`}
                         </button>
                       ) : null}
                     </div>
-                    <ul className="skill-effect-summary">
-                      {skill.effects.map((effect) => {
-                        const resolved = effects.find(
-                          (candidate) => candidate.effectId === effect.id,
-                        );
-                        return (
-                          <li key={effect.id}>
-                            <span>{effect.label}</span>
-                            <small>
-                              {!selectedSkill.enabled
-                                ? '未使用'
-                                : resolved?.applied && resolved.value !== null
-                                  ? `適用 ${resolved.value.toLocaleString('ja-JP', {
-                                      style: 'percent',
-                                      maximumFractionDigits: 1,
-                                    })}`
-                                  : resolved?.reason === 'not_np_damage_relevant'
-                                    ? '宝具火力外'
-                                    : resolved?.reason === 'card_type_mismatch'
-                                      ? 'カード不一致'
-                                      : '未対応'}
-                            </small>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <label className="skill-level-control">
+                      <span>Lv</span>
+                      <select
+                        value={selectedSkill.skillLevel}
+                        onChange={(event) =>
+                          changeAttackerSkill(skill.id, {
+                            skillLevel: Number(event.target.value),
+                          })
+                        }
+                        aria-label={`${skill.name}のスキルレベル`}
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="skill-toggle">
+                      <input
+                        type="checkbox"
+                        checked={selectedSkill.enabled}
+                        onChange={(event) =>
+                          changeAttackerSkill(skill.id, { enabled: event.target.checked })
+                        }
+                        aria-label={`${skill.name}を使用`}
+                      />
+                      適用
+                    </label>
                   </li>
                 );
               })}
@@ -1521,7 +1524,7 @@ function Calculator({
           特殊Functionの差分検証が完了するまで、結果精度はapproximateとして表示します。
         </p>
       </section>
-      <section data-share-card>
+      <section className="result-pane" aria-label="宝具レベル別ダメージ比較">
         <div className="section-heading">
           <div>
             <p className="eyebrow">RESULT</p>
@@ -1529,41 +1532,86 @@ function Calculator({
           </div>
           <small>平均を主表示</small>
         </div>
-        <table>
-          <caption>宝具レベル別のダメージ</caption>
-          <thead>
-            <tr>
-              <th>宝具Lv</th>
-              <th>平均</th>
-              <th>最低</th>
-              <th>最大</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result.results.map((row) => (
-              <tr
-                key={row.npLevel}
-                aria-current={row.npLevel === input.npLevel ? 'true' : undefined}
-              >
-                <th>
-                  NP{row.npLevel}
-                  {row.npLevel === input.npLevel && <small> 現在</small>}
-                </th>
-                <td className="average">{numberFormatter.format(row.average)}</td>
-                <td>{numberFormatter.format(row.minimum)}</td>
-                <td>{numberFormatter.format(row.maximum)}</td>
+        <article className="result-card" data-share-card aria-label="共有対象の計算結果">
+          <header className="result-card-head">
+            <div className="result-card-title">
+              <h3>宝具ダメージ目安</h3>
+              <span>平均・最低・最大</span>
+            </div>
+            <div className="result-subject">
+              <MasterImage
+                src={attacker?.imageKey ?? null}
+                alt=""
+                fallback={attacker?.name ?? input.attackerId}
+              />
+              <span>
+                <strong>{attacker?.name ?? input.attackerId}</strong>
+                <small>
+                  Lv.{input.attackerLevel}・NP{input.npLevel}・{craftEssenceSummary}
+                </small>
+              </span>
+            </div>
+          </header>
+          <dl className="result-conditions">
+            <div>
+              <dt>攻撃対象</dt>
+              <dd>{targetSummary}</dd>
+            </div>
+            <div>
+              <dt>自身スキル</dt>
+              <dd>
+                {enabledAttackerSkills.length ? `${enabledAttackerSkills.length}件適用` : 'なし'}
+              </dd>
+            </div>
+            <div>
+              <dt>支援</dt>
+              <dd>{supportSummary}</dd>
+            </div>
+          </dl>
+          <table className="np-result-table">
+            <caption className="visually-hidden">宝具レベル別のダメージ</caption>
+            <thead>
+              <tr>
+                <th>宝具Lv</th>
+                <th className="average">平均</th>
+                <th>最低</th>
+                <th>最大</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="toolbar">
+            </thead>
+            <tbody>
+              {result.results.map((row) => (
+                <tr
+                  key={row.npLevel}
+                  aria-current={row.npLevel === input.npLevel ? 'true' : undefined}
+                >
+                  <th>
+                    NP{row.npLevel}
+                    {row.npLevel === input.npLevel && <small>現在</small>}
+                  </th>
+                  <td className="average">{numberFormatter.format(row.average)}</td>
+                  <td>{numberFormatter.format(row.minimum)}</td>
+                  <td>{numberFormatter.format(row.maximum)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <footer className="result-card-foot">
+            <span className={`precision precision-${result.precision}`}>{result.precision}</span>
+            <small>FGO Lab・DB {result.versions.masterDataVersion}</small>
+          </footer>
+        </article>
+        <div className="result-actions">
+          <button className="primary" onClick={() => void copyUrl()}>
+            URLをコピー
+          </button>
           <button onClick={() => void saveImage()}>画像として保存</button>
-          <button onClick={() => void copyUrl()}>URLをコピー</button>
-          <button onClick={saveShareJson}>共有専用JSONを保存</button>
+          <button aria-label="共有専用JSONを保存" onClick={saveShareJson}>
+            共有専用JSON
+          </button>
         </div>
         <p aria-live="polite">{message}</p>
-        <details>
-          <summary>計算内訳・仮定</summary>
+        <details className="result-details">
+          <summary>計算内訳・仮定・警告</summary>
           <ul>
             {result.assumptions.map((item) => (
               <li key={item}>{item}</li>

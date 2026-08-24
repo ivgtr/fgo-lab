@@ -279,18 +279,58 @@ h3 {
   margin-top: 1.25rem;
   border-top: 1px solid var(--line);
 }
-.attacker-skill-list > .attacker-skill-card {
+.attacker-skill-list > .attacker-skill-row {
   display: grid;
-  align-items: stretch;
-  gap: 0.65rem;
-  padding: 0.85rem 0;
-}
-.skill-card-head,
-.skill-card-controls {
-  display: flex;
+  grid-template-columns: 36px minmax(0, 1fr) 78px auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  min-height: 62px;
+  padding: 0.55rem 0;
+}
+.attacker-skill-copy {
+  min-width: 0;
+}
+.attacker-skill-copy > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.attacker-skill-copy strong {
+  font-size: 0.82rem;
+}
+.attacker-skill-copy p {
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.skill-state {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+.skill-state-saved {
+  color: #285c3e;
+}
+.skill-state-modified {
+  color: #805718;
+}
+.skill-state-added {
+  color: var(--accent);
+}
+.skill-level-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.skill-level-control select {
+  min-height: 38px;
+  padding: 0.35rem;
 }
 .skill-toggle {
   display: flex;
@@ -303,38 +343,14 @@ h3 {
   width: 22px;
   min-height: 22px;
 }
-.skill-card-controls {
-  justify-content: flex-start;
-}
-.skill-card-controls label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-.skill-card-controls select {
-  width: 6rem;
-}
-.skill-effect-summary {
-  list-style: none;
-  margin: 0;
-  padding: 0.5rem 0.65rem;
-  background: var(--soft-blue);
-}
-.skill-effect-summary li {
-  display: flex;
-  min-height: 0;
-  justify-content: space-between;
-  gap: 0.75rem;
+.skill-reset {
+  min-height: 26px;
+  margin-top: 0.15rem;
   border: 0;
-  padding: 0.2rem 0;
-  font-size: 0.78rem;
-}
-.skill-effect-summary small {
-  color: var(--muted);
-  text-align: right;
+  background: transparent;
+  color: var(--accent);
+  padding: 0;
+  font-size: 0.65rem;
 }
 .selected-support-head {
   display: flex;
@@ -457,6 +473,137 @@ tbody tr[aria-current='true'] {
 td.average {
   font-weight: 800;
   color: #16233b;
+}
+.result-pane {
+  background: #f7f7f4 !important;
+}
+.result-card {
+  overflow: hidden;
+  border: 1px solid #98a4a8;
+  background: white;
+}
+.result-card-head {
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+}
+.result-card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+.result-card-title h3 {
+  margin: 0;
+}
+.result-card-title span,
+.result-subject small,
+.result-card-foot small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.result-subject {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.result-subject > span:last-child {
+  display: grid;
+}
+.result-conditions {
+  margin: 0;
+  padding-inline: 0.95rem;
+  background: #fafaf8;
+}
+.result-conditions > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e1e4e3;
+}
+.result-conditions dt,
+.result-conditions dd {
+  margin: 0;
+  font-size: 0.7rem;
+}
+.result-conditions dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+.result-conditions dd {
+  overflow-wrap: anywhere;
+  font-weight: 650;
+}
+.np-result-table th,
+.np-result-table td {
+  padding: 0.7rem 0.45rem;
+  white-space: nowrap;
+}
+.np-result-table thead th {
+  background: #f3f3ef;
+  font-size: 0.68rem;
+}
+.np-result-table tbody th {
+  padding-left: 0.75rem;
+}
+.np-result-table tbody th small {
+  display: inline-block;
+  margin-left: 0.3rem;
+  color: var(--accent);
+  font-size: 0.62rem;
+}
+.np-result-table td {
+  color: #4e586a;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+.np-result-table .average {
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 850;
+}
+.result-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+}
+.precision {
+  font:
+    750 0.65rem ui-monospace,
+    monospace;
+}
+.precision-exact {
+  color: #285c3e;
+}
+.precision-approximate {
+  color: #805718;
+}
+.precision-unsupported {
+  color: #881c2e;
+}
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+.result-actions button:last-child {
+  grid-column: 1 / -1;
+}
+.result-details {
+  margin-top: 0.55rem;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .master-detail {
   display: grid;
@@ -826,12 +973,39 @@ td.average {
   .equipment-controls > button {
     flex: 1 1 8rem;
   }
+  .attacker-skill-list > .attacker-skill-row {
+    grid-template-columns: 36px minmax(0, 1fr) 68px;
+    align-items: start;
+  }
+  .attacker-skill-row > .image-frame {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  .attacker-skill-copy {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .skill-level-control {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .skill-toggle {
+    grid-column: 3;
+    grid-row: 2;
+    min-height: 28px;
+  }
+  .result-conditions > div {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
   .worksheet table {
     font-size: 0.82rem;
   }
   .worksheet th,
   .worksheet td {
     padding: 0.65rem 0.25rem;
+  }
+  .np-result-table .average {
+    font-size: 0.9rem;
   }
   .bottom-nav {
     position: fixed;

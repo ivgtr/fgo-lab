@@ -10,6 +10,11 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
     .first()
     .click();
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  const resultCard = page.getByLabel('共有対象の計算結果');
+  await expect(resultCard).toContainText('アルトリア・ペンドラゴン');
+  await expect(resultCard).toContainText('lancer・earth');
+  await expect(resultCard).toContainText('支援なし');
+  await expect(page.getByLabel('攻撃役の自身スキル').getByRole('listitem')).toHaveCount(3);
   await expect(page.getByRole('row', { name: /NP1.*現在/ })).toHaveAttribute(
     'aria-current',
     'true',
@@ -232,9 +237,9 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   );
   const selfSkillRegion = page.getByLabel('攻撃役の自身スキル');
   const damageBeforeSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
-  await expect(selfSkillRegion).toContainText('saved');
+  await expect(selfSkillRegion).toContainText('保存値');
   await selfSkillRegion.getByLabel('カリスマ Bのスキルレベル').selectOption('8');
-  await expect(selfSkillRegion).toContainText('modified');
+  await expect(selfSkillRegion).toContainText('一時変更');
   await selfSkillRegion.getByLabel('カリスマ Bを使用').check();
   const damageWithSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(damageWithSelfSkill).toBeGreaterThan(damageBeforeSelfSkill);
@@ -260,6 +265,9 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await templateDialog.getByRole('button', { name: '呼び出す' }).click();
   await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
   await expect(page.getByLabel('支援・バフ')).toContainText('+15.3%');
+  await expect(page.getByLabel('共有対象の計算結果')).toContainText('カレイドスコープ Lv.20');
+  await expect(page.getByLabel('共有対象の計算結果')).toContainText('自身スキル1件適用');
+  await expect(page.getByLabel('共有対象の計算結果')).toContainText('支援条件 1（1スキル）');
   const supportedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(supportedDamage).toBeGreaterThan(baseDamage);
 
