@@ -47,6 +47,8 @@ const masterSkillSchema = z.object({
 });
 export type MasterSkill = z.infer<typeof masterSkillSchema>;
 
+const fiveNumberTupleSchema = z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]);
+
 export const servantMasterSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -69,12 +71,12 @@ export const servantMasterSchema = z.object({
   npSpecialAttack: z
     .object({
       targetTraits: z.array(z.string()).min(1),
-      multipliersByOvercharge: z.tuple([
-        z.number(),
-        z.number(),
-        z.number(),
-        z.number(),
-        z.number(),
+      multipliersByNpLevelAndOvercharge: z.tuple([
+        fiveNumberTupleSchema,
+        fiveNumberTupleSchema,
+        fiveNumberTupleSchema,
+        fiveNumberTupleSchema,
+        fiveNumberTupleSchema,
       ]),
     })
     .nullable()
@@ -90,6 +92,16 @@ export const servantMasterSchema = z.object({
   ),
 });
 export type ServantMaster = z.infer<typeof servantMasterSchema>;
+
+export function deriveNpSpecialMultiplier(
+  servant: Pick<ServantMaster, 'npSpecialAttack'>,
+  npLevel: number,
+  overcharge: number,
+): number {
+  return (
+    servant.npSpecialAttack?.multipliersByNpLevelAndOvercharge[npLevel - 1]?.[overcharge - 1] ?? 1
+  );
+}
 export const craftEssenceMasterSchema = z.object({
   id: z.string(),
   name: z.string(),

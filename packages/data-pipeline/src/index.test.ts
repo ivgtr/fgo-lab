@@ -52,6 +52,12 @@ describe('immutable publish pipeline', () => {
       funcPopupText: label,
       svals: [{ Value: value }],
     });
+    const specialValues = (corrections: readonly number[]) =>
+      [3000, 4000, 4500, 4750, 5000].map((Value, index) => ({
+        Value,
+        Target: 2002,
+        Correction: corrections[index],
+      }));
     const snapshot = normalizeAtlasSnapshot({
       version: 'test',
       servants: [
@@ -83,11 +89,11 @@ describe('immutable publish pipeline', () => {
                   funcType: 'damageNpIndividual',
                   funcTargetType: 'enemyAll',
                   funcPopupText: 'なし',
-                  svals: [3000, 4000, 4500, 4750, 5000].map((Value) => ({
-                    Value,
-                    Target: 2002,
-                    Correction: 1500,
-                  })),
+                  svals: specialValues([1500, 1750, 1875, 1938, 2000]),
+                  svals2: specialValues([1600, 1850, 1975, 2038, 2100]),
+                  svals3: specialValues([1700, 1950, 2075, 2138, 2200]),
+                  svals4: specialValues([1800, 2050, 2175, 2238, 2300]),
+                  svals5: specialValues([1900, 2150, 2275, 2338, 2400]),
                 },
               ],
             },
@@ -118,7 +124,13 @@ describe('immutable publish pipeline', () => {
       npMultipliers: [300, 400, 450, 475, 500],
       npSpecialAttack: {
         targetTraits: ['dragon'],
-        multipliersByOvercharge: [1.5, 1, 1, 1, 1],
+        multipliersByNpLevelAndOvercharge: [
+          [1.5, 1.6, 1.7, 1.8, 1.9],
+          [1.75, 1.85, 1.95, 2.05, 2.15],
+          [1.875, 1.975, 2.075, 2.175, 2.275],
+          [1.938, 2.038, 2.138, 2.238, 2.338],
+          [2, 2.1, 2.2, 2.3, 2.4],
+        ],
       },
     });
     expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({ values: [600, 800] });

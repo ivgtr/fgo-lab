@@ -1,4 +1,9 @@
-import type { CraftEssenceMaster, MasterEffect, ServantMaster } from '@fgo-lab/master-data';
+import {
+  deriveNpSpecialMultiplier,
+  type CraftEssenceMaster,
+  type MasterEffect,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import type { AttackerSkillSelection, CalcInput, SupportTemplate } from '@fgo-lab/schema';
 
 export type ResolvedBuffKind =
@@ -331,7 +336,7 @@ export function resolveNpEffects(
   );
   const special = servant.npSpecialAttack;
   if (!special) return resolved;
-  const multiplier = special.multipliersByOvercharge[baseInput.overcharge - 1] ?? 1;
+  const multiplier = deriveNpSpecialMultiplier(servant, baseInput.npLevel, baseInput.overcharge);
   const matched = special.targetTraits.some((trait) => baseInput.target.traits.includes(trait));
   return {
     ...resolved,

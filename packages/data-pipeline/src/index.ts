@@ -314,8 +314,8 @@ export function normalizeAtlasSnapshot(input: {
       attack?.fn.svals4,
       attack?.fn.svals5,
     ];
-    const specialCorrections = correctionSources.map(
-      (source) => (source?.[0]?.Correction ?? 1000) / 1000,
+    const specialMultipliers = [0, 1, 2, 3, 4].map((npLevelIndex) =>
+      correctionSources.map((source) => (source?.[npLevelIndex]?.Correction ?? 1000) / 1000),
     );
     const damageFunctionIndex = representativeNp?.functions?.findIndex((fn) =>
       fn.funcType?.startsWith('damageNp'),
@@ -379,12 +379,12 @@ export function normalizeAtlasSnapshot(input: {
           attack?.fn.funcType === 'damageNpIndividual' && specialTargetName
             ? {
                 targetTraits: [specialTargetName],
-                multipliersByOvercharge: specialCorrections as [
-                  number,
-                  number,
-                  number,
-                  number,
-                  number,
+                multipliersByNpLevelAndOvercharge: specialMultipliers as [
+                  [number, number, number, number, number],
+                  [number, number, number, number, number],
+                  [number, number, number, number, number],
+                  [number, number, number, number, number],
+                  [number, number, number, number, number],
                 ],
               }
             : null,

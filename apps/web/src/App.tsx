@@ -7,6 +7,7 @@ import {
 } from 'react';
 import {
   deriveCraftEssenceAtk,
+  deriveNpSpecialMultiplier,
   type CraftEssenceMaster,
   type MasterDataSnapshot,
   type MasterEffect,
@@ -1118,9 +1119,7 @@ function Calculator({
         key: `np-special:${attacker.id}:${trait}`,
         name: '特攻宝具',
         imageKey: attacker.imageKey,
-        valueLabel: `×${(
-          attacker.npSpecialAttack.multipliersByOvercharge[input.overcharge - 1] ?? 1
-        ).toFixed(2)}`,
+        valueLabel: `${(deriveNpSpecialMultiplier(attacker, input.npLevel, input.overcharge) * 100).toLocaleString('ja-JP', { maximumFractionDigits: 1 })}%`,
       });
   if (selectedCraftEssence)
     addEffectCandidates(

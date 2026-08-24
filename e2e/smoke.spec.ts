@@ -255,13 +255,25 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
   const specialConditions = page.getByRole('group', { name: '特攻条件' });
   await expect(specialConditions.getByRole('listitem')).toHaveCount(1);
   await expect(specialConditions).toContainText('竜特攻');
-  await expect(specialConditions).toContainText('+80% / ×1.50');
+  await expect(specialConditions).toContainText('+80% / 150%');
   await expect(specialConditions).not.toContainText('竜殺し A++');
   await expect(specialConditions.locator('.special-trait-icon')).toHaveCount(2);
   await specialConditions.getByRole('checkbox', { name: /竜特攻/ }).check();
   await expect(page.getByLabel('自動適用される能力')).toContainText('1.50倍');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前・クラス').fill('アーキタイプ：アース');
+  await attackerDialog
+    .getByRole('button', { name: /アーキタイプ：アース moonCancer・Lv90/ })
+    .click();
+  await page.getByLabel('宝具Lv').selectOption('5');
+  await expect(specialConditions).toContainText('混沌特攻');
+  await expect(specialConditions).toContainText('200%');
+  await specialConditions.getByRole('checkbox', { name: /混沌特攻/ }).check();
+  await expect(page.getByLabel('自動適用される能力')).toContainText('2.00倍');
 });
 
 test('round-trips an allowlisted calculation share', async ({ page, context, isMobile }) => {

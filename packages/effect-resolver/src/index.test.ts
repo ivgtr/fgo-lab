@@ -306,14 +306,25 @@ describe('automatic equipment, passive, and NP effects', () => {
       id: input.attackerId,
       npSpecialAttack: {
         targetTraits: ['dragon'],
-        multipliersByOvercharge: [1.5, 1.625, 1.75, 1.875, 2],
+        multipliersByNpLevelAndOvercharge: [
+          [1.5, 1.6, 1.7, 1.8, 1.9],
+          [1.75, 1.85, 1.95, 2.05, 2.15],
+          [1.875, 1.975, 2.075, 2.175, 2.275],
+          [1.938, 2.038, 2.138, 2.238, 2.338],
+          [2, 2.1, 2.2, 2.3, 2.4],
+        ],
       },
     };
     const matched = resolveNpEffects(
-      { ...input, overcharge: 2, target: { ...input.target, traits: ['dragon'] } },
+      {
+        ...input,
+        npLevel: 5,
+        overcharge: 3,
+        target: { ...input.target, traits: ['dragon'] },
+      },
       attacker,
     );
-    expect(matched.input.npSpecialMultiplier).toBe(1.625);
+    expect(matched.input.npSpecialMultiplier).toBe(2.2);
     expect(matched.effects.at(-1)).toMatchObject({ applied: true, reason: 'target_trait_matched' });
     const missed = resolveNpEffects(input, attacker);
     expect(missed.input.npSpecialMultiplier).toBe(1);
