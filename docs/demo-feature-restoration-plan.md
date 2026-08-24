@@ -213,6 +213,7 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 - `52dea7a feat(calc): add fail-closed support effect resolver`
 - `5fe7d4d feat(calculator): apply saved support templates`
 - `64d8390 feat(calculator): restore attacker and CE pickers`
+- `a334bf3 feat(calculator): apply attacker self skills`
 
 ## 8. 次の作業
 
