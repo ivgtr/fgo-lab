@@ -4,9 +4,9 @@ import {
   resolveCraftEssenceEffects,
   resolveNpEffects,
   resolveServantPassives,
-  resolveSupportTemplate,
+  resolveSupportComposition,
   type ResolvedSupportEffect,
-  type ResolvedSupportTemplate,
+  type ResolvedEffectSet,
 } from '@fgo-lab/effect-resolver';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type {
@@ -15,13 +15,12 @@ import type {
   CalculationSelection,
   CalculationShareSnapshot,
   ServantBuild,
-  SupportTemplate,
   VersionContext,
 } from '@fgo-lab/schema';
 
 export interface ResolvedCalculationInput {
   input: CalcInput;
-  precision: ResolvedSupportTemplate['precision'];
+  precision: ResolvedEffectSet['precision'];
   warnings: string[];
   trace: { step: string; detail: string }[];
   effects: ResolvedSupportEffect[];
@@ -30,7 +29,6 @@ export interface ResolvedCalculationInput {
 export function resolveCalculationInput(
   baseInput: CalcInput,
   selection: CalculationSelection,
-  supportTemplate: SupportTemplate | undefined,
   master: MasterDataSnapshot,
 ): ResolvedCalculationInput {
   if (selection.effectMode === 'manual')
@@ -62,11 +60,16 @@ export function resolveCalculationInput(
     master.servants,
     { ...resolveOptions, defaultEnabled: false },
   );
-  const support = supportTemplate
-    ? resolveSupportTemplate(attackerSkills.input, supportTemplate, master.servants, resolveOptions)
+  const support = selection.support
+    ? resolveSupportComposition(
+        attackerSkills.input,
+        selection.support.composition,
+        master.servants,
+        {},
+      )
     : undefined;
   const np = resolveNpEffects(support?.input ?? attackerSkills.input, attacker, resolveOptions);
-  const resolutions: [string, ResolvedSupportTemplate][] = [
+  const resolutions: [string, ResolvedEffectSet][] = [
     ['passive-effect', passive],
     ['craft-essence-effect', craftEssenceResolution],
     ['attacker-effect', attackerSkills],
@@ -105,12 +108,11 @@ export function resolveCalculationInput(
 export function calculateResolvedDamage(
   baseInput: CalcInput,
   selection: CalculationSelection,
-  supportTemplate: SupportTemplate | undefined,
   master: MasterDataSnapshot,
   versions: VersionContext,
   options: { releaseValidated: boolean },
 ) {
-  const resolved = resolveCalculationInput(baseInput, selection, supportTemplate, master);
+  const resolved = resolveCalculationInput(baseInput, selection, master);
   const calculation = calculateNpDamage(resolved.input, versions);
   const result = {
     ...calculation,

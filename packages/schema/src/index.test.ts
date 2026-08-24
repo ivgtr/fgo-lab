@@ -43,30 +43,32 @@ describe('portable schema boundaries', () => {
     ).toEqual({ attackerSource: 'master', effectMode: 'resolved', craftEssence: null });
   });
 
-  it('normalizes legacy support effects into one virtual source instance', () => {
+  it('stores support sources, skill levels, and selected effects separately', () => {
     const template = supportTemplateSchema.parse({
       templateId: crypto.randomUUID(),
       name: '旧形式',
       masterDataVersion: 'test',
-      effects: [
-        {
-          sourceType: 'servant',
-          sourceId: 'support-1',
-          effectId: 'skill-1',
-          skillLevel: 10,
-          targetRole: 'ATTACKER',
-          enabled: true,
-          order: 0,
-        },
-      ],
+      composition: {
+        sources: [
+          {
+            sourceInstanceId: 'support-instance-1',
+            servantId: 'support-1',
+            skills: [{ skillId: 'skill-1', skillLevel: 10 }],
+          },
+        ],
+        selectedEffects: [
+          {
+            sourceInstanceId: 'support-instance-1',
+            skillId: 'skill-1',
+            effectId: 'attack-up',
+          },
+        ],
+      },
       updatedAt: '2026-08-24T00:00:00.000Z',
       lastUsedAt: null,
     });
 
-    expect(template.effects[0]).toMatchObject({
-      sourceInstanceId: 'legacy:servant:support-1',
-      ownership: 'virtual',
-    });
+    expect(template.composition.selectedEffects).toHaveLength(1);
   });
 
   it('upgrades v1 profiles once while discarding incompatible calculation snapshots', () => {

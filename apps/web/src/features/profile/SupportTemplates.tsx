@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { ServantMaster } from '@fgo-lab/master-data';
-import type { ServantBuild, SupportEffect, SupportTemplate } from '@fgo-lab/schema';
+import type { ServantBuild, SupportEffectRef, SupportTemplate } from '@fgo-lab/schema';
 import { ServantPicker } from '../../ui/ServantPicker';
 import { SupportSourceCard } from '../support/SupportSourceCard';
+import { SupportEffectSelector } from '../support/SupportEffectSelector';
 import { SupportTemplateRow } from '../support/SupportTemplateRow';
 import {
   createServantMap,
@@ -22,34 +23,30 @@ export function SupportTemplates({
   onUpdateTemplate,
   onRemoveTemplate,
   onRemoveSource,
-  onUpdateSource,
-  onUpdateEffect,
+  onUpdateSkill,
+  onToggleEffect,
 }: {
   templates: SupportTemplate[];
   servants: ServantMaster[];
   builds: Record<string, ServantBuild>;
   onAdd: () => Promise<string>;
-  onAddSource: (
-    templateId: string,
-    servantId: string,
-    ownership: SupportEffect['ownership'],
-  ) => Promise<void>;
+  onAddSource: (templateId: string, servantId: string) => Promise<void>;
   onUpdateTemplate: (
     templateId: string,
     patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt'>>,
   ) => Promise<void>;
   onRemoveTemplate: (templateId: string) => Promise<void>;
   onRemoveSource: (templateId: string, sourceInstanceId: string) => Promise<void>;
-  onUpdateSource: (
+  onUpdateSkill: (
     templateId: string,
     sourceInstanceId: string,
-    ownership: SupportEffect['ownership'],
+    skillId: string,
+    skillLevel: number,
   ) => Promise<void>;
-  onUpdateEffect: (
+  onToggleEffect: (
     templateId: string,
-    sourceInstanceId: string,
-    effectId: string,
-    patch: Partial<Pick<SupportEffect, 'enabled' | 'skillLevel'>>,
+    effect: SupportEffectRef,
+    selected: boolean,
   ) => Promise<void>;
 }) {
   const [selectedId, setSelectedId] = useState(templates[0]?.templateId ?? '');
@@ -179,41 +176,38 @@ export function SupportTemplates({
               />
             </label>
             <p className="support-template-summary">
-              支援元 {sources.length}騎・使用中{' '}
-              {selected.effects.filter((effect) => effect.enabled).length}スキル
+              支援元 {sources.length}騎・選択中 {selected.composition.selectedEffects.length}効果
             </p>
 
             <div className="support-source-stack">
               {sources.map((sourceGroup) => {
-                const servant = servantById.get(sourceGroup.sourceId);
+                const servant = servantById.get(sourceGroup.servantId);
                 const duplicateCount = sources.filter(
-                  (candidate) => candidate.sourceId === sourceGroup.sourceId,
+                  (candidate) => candidate.servantId === sourceGroup.servantId,
                 ).length;
                 const duplicateIndex =
                   sources
-                    .filter((candidate) => candidate.sourceId === sourceGroup.sourceId)
+                    .filter((candidate) => candidate.servantId === sourceGroup.servantId)
                     .findIndex(
                       (candidate) => candidate.sourceInstanceId === sourceGroup.sourceInstanceId,
                     ) + 1;
-                const sourceName = servant?.name ?? sourceGroup.sourceId;
+                const sourceName = servant?.name ?? sourceGroup.servantId;
                 return (
                   <SupportSourceCard
                     key={sourceGroup.sourceInstanceId}
-                    group={sourceGroup}
+                    source={sourceGroup}
                     servant={servant}
                     displayName={`${sourceName}${duplicateCount > 1 ? ` ${String(duplicateIndex)}` : ''}`}
-                    onOwnershipChange={(ownership) =>
-                      void onUpdateSource(
-                        selected.templateId,
-                        sourceGroup.sourceInstanceId,
-                        ownership,
-                      )
-                    }
                     onRemove={() =>
                       void onRemoveSource(selected.templateId, sourceGroup.sourceInstanceId)
                     }
-                    onEffectChange={(sourceInstanceId, effectId, patch) =>
-                      void onUpdateEffect(selected.templateId, sourceInstanceId, effectId, patch)
+                    onSkillLevelChange={(skillId, skillLevel) =>
+                      void onUpdateSkill(
+                        selected.templateId,
+                        sourceGroup.sourceInstanceId,
+                        skillId,
+                        skillLevel,
+                      )
                     }
                   />
                 );
@@ -224,33 +218,13 @@ export function SupportTemplates({
               ＋ 支援元を追加
             </button>
 
-            <details className="support-effect-summary">
-              <summary>適用効果の概要</summary>
-              {selected.effects.some((effect) => effect.enabled) ? (
-                <ul>
-                  {sources.flatMap((sourceGroup) => {
-                    const servant = servantById.get(sourceGroup.sourceId);
-                    return sourceGroup.effects.flatMap((effect) => {
-                      if (!effect.enabled) return [];
-                      const skill = servant?.skills.find(
-                        (candidate) => candidate.id === effect.effectId,
-                      );
-                      return (skill?.effects ?? []).map((item) => (
-                        <li key={`${sourceGroup.sourceInstanceId}:${effect.effectId}:${item.id}`}>
-                          <strong>{item.label}</strong>
-                          <span>
-                            {servant?.name ?? sourceGroup.sourceId}・
-                            {skill?.name ?? effect.effectId}
-                          </span>
-                        </li>
-                      ));
-                    });
-                  })}
-                </ul>
-              ) : (
-                <p>使用中のスキルはありません。</p>
-              )}
-            </details>
+            <SupportEffectSelector
+              composition={selected.composition}
+              servants={servants}
+              onToggle={(effect, active) =>
+                void onToggleEffect(selected.templateId, effect, active)
+              }
+            />
 
             <p aria-live="polite" className="support-save-state">
               妥当な変更は端末内へ自動保存されます。
@@ -281,12 +255,8 @@ export function SupportTemplates({
               ? `保存スキルLv ${servant.skills.map((skill) => String(builds[servant.id]?.skills[String(skill.slot)] ?? 1)).join('/')}`
               : `${String(servant.skills.length)}スキル・フレンドとして追加`
           }
-          onSelect={(servant, sourceId) => {
-            void onAddSource(
-              selected.templateId,
-              servant.id,
-              sourceId === 'owned' ? 'owned' : 'friend',
-            );
+          onSelect={(servant) => {
+            void onAddSource(selected.templateId, servant.id);
             setSourceDialogOpen(false);
           }}
           onClose={() => setSourceDialogOpen(false)}

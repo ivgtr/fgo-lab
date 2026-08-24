@@ -12,8 +12,8 @@ import {
   updateCraftEssenceCopy,
   updateServantBuild as patchServantBuild,
   updateServantTarget as patchServantTarget,
-  updateSupportEffect as patchSupportEffect,
-  updateSupportSource as patchSupportSource,
+  toggleSupportEffect as patchSupportEffect,
+  updateSupportSkill as patchSupportSkill,
   updateSupportTemplate as patchSupportTemplate,
   type Clock,
   type IdGenerator,
@@ -26,7 +26,7 @@ import type {
   CraftEssenceCopy,
   ServantBuild,
   ServantTarget,
-  SupportEffect,
+  SupportEffectRef,
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -68,7 +68,6 @@ const ids: IdGenerator = { next: () => crypto.randomUUID() };
 interface CalculationWorkspace {
   input: CalcInput | undefined;
   selection: CalculationSelection | undefined;
-  support: SupportTemplate | undefined;
   shared: CalculationShareSnapshot | undefined;
 }
 
@@ -144,7 +143,6 @@ export function App() {
   const [calculation, setCalculation] = useState<CalculationWorkspace>({
     input: undefined,
     selection: undefined,
-    support: undefined,
     shared: undefined,
   });
   const [rankingSupportId, setRankingSupportId] = useState<string | null>(null);
@@ -214,6 +212,9 @@ export function App() {
     selectedAttacker,
     profile.servantBuilds[baseInput.attackerId],
   );
+  const calculationSupportTemplate = profile.supportTemplates.find(
+    (template) => template.templateId === currentSelection.support?.sourceTemplateId,
+  );
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -225,7 +226,6 @@ export function App() {
   const resolvedCalculation = calculateResolvedDamage(
     baseInput,
     currentSelection,
-    calculation.support,
     currentMaster,
     versions,
     { releaseValidated: ENGINE_RELEASE_VALIDATED },
@@ -277,11 +277,7 @@ export function App() {
     );
     return templateId;
   }
-  async function addSupportSource(
-    templateId: string,
-    servantId: string,
-    ownership: SupportEffect['ownership'],
-  ) {
+  async function addSupportSource(templateId: string, servantId: string) {
     const source = currentMaster.servants.find((candidate) => candidate.id === servantId);
     if (!source) return;
     const now = new Date().toISOString();
@@ -292,26 +288,35 @@ export function App() {
         templateId,
         source,
         sourceInstanceId,
-        ownership,
-        ownership === 'owned' ? (current.servantBuilds[servantId]?.skills ?? {}) : {},
+        current.servantBuilds[servantId]?.skills ?? {},
         now,
       ),
     );
   }
-  async function updateSupportEffect(
+  async function updateSupportSkill(
     templateId: string,
     sourceInstanceId: string,
-    effectId: string,
-    patch: Partial<Pick<SupportEffect, 'enabled' | 'skillLevel'>>,
+    skillId: string,
+    skillLevel: number,
   ) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) =>
-      patchSupportEffect(current, templateId, sourceInstanceId, effectId, patch, now),
+      patchSupportSkill(current, templateId, sourceInstanceId, skillId, skillLevel, now),
+    );
+  }
+  async function updateSupportEffect(
+    templateId: string,
+    effect: SupportEffectRef,
+    selected: boolean,
+  ) {
+    const now = new Date().toISOString();
+    await updateActiveProfile((current) =>
+      patchSupportEffect(current, templateId, effect, selected, now),
     );
   }
   async function updateSupportTemplate(
     templateId: string,
-    patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt'>>,
+    patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt' | 'composition'>>,
   ) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) => patchSupportTemplate(current, templateId, patch, now));
@@ -325,30 +330,11 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function updateSupportSource(
-    templateId: string,
-    sourceInstanceId: string,
-    ownership: SupportEffect['ownership'],
-  ) {
-    const now = new Date().toISOString();
-    await updateActiveProfile((current) =>
-      patchSupportSource(current, templateId, sourceInstanceId, { ownership }, now),
-    );
-  }
-  async function saveCalculationDraft(
-    nextInput: CalcInput,
-    supportTemplate = calculation.support,
-    selection = currentSelection,
-  ) {
-    setCalculation({ input: nextInput, selection, support: supportTemplate, shared: undefined });
-    const nextCalculation = calculateResolvedDamage(
-      nextInput,
-      selection,
-      supportTemplate,
-      currentMaster,
-      versions,
-      { releaseValidated: ENGINE_RELEASE_VALIDATED },
-    );
+  async function saveCalculationDraft(nextInput: CalcInput, selection = currentSelection) {
+    setCalculation({ input: nextInput, selection, shared: undefined });
+    const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions, {
+      releaseValidated: ENGINE_RELEASE_VALIDATED,
+    });
     const resolvedInput = nextCalculation.input;
     const fingerprint = await inputFingerprint(
       resolvedInput,
@@ -365,7 +351,6 @@ export function App() {
         input: nextInput,
         result: nextCalculation.result,
         inputFingerprint: fingerprint,
-        supportTemplate: supportTemplate ?? null,
         selection,
         updatedAt: now,
       },
@@ -462,20 +447,52 @@ export function App() {
             craftEssences={currentMaster.craftEssences}
             selection={currentSelection}
             supportTemplates={profile.supportTemplates}
-            selectedSupport={calculation.support}
+            selectedSupport={calculationSupportTemplate}
             sharedVersionMismatch={Boolean(calculation.shared && !compatibleSharedSnapshot)}
             onInputChange={saveCalculationDraft}
             onCompositionChange={(nextInput, nextSelection) =>
-              saveCalculationDraft(nextInput, calculation.support, nextSelection)
+              saveCalculationDraft(nextInput, nextSelection)
             }
             onSupportSelect={async (template) => {
               if (!template) {
-                await saveCalculationDraft(baseInput, undefined);
+                await saveCalculationDraft(baseInput, {
+                  ...currentSelection,
+                  support: null,
+                });
                 return;
               }
               const lastUsedAt = new Date().toISOString();
               await updateSupportTemplate(template.templateId, { lastUsedAt });
-              await saveCalculationDraft(baseInput, { ...template, lastUsedAt });
+              await saveCalculationDraft(baseInput, {
+                ...currentSelection,
+                support: {
+                  sourceTemplateId: template.templateId,
+                  composition: structuredClone(template.composition),
+                },
+              });
+            }}
+            onSupportSave={async (mode) => {
+              if (!currentSelection.support) return;
+              if (mode === 'source' && currentSelection.support.sourceTemplateId) {
+                await updateSupportTemplate(currentSelection.support.sourceTemplateId, {
+                  composition: structuredClone(currentSelection.support.composition),
+                });
+                return;
+              }
+              const templateId = crypto.randomUUID();
+              const now = new Date().toISOString();
+              await updateActiveProfile((current) =>
+                patchSupportTemplate(
+                  appendSupportTemplate(current, currentMaster.version, templateId, now),
+                  templateId,
+                  { composition: structuredClone(currentSelection.support!.composition) },
+                  now,
+                ),
+              );
+              await saveCalculationDraft(baseInput, {
+                ...currentSelection,
+                support: { ...currentSelection.support, sourceTemplateId: templateId },
+              });
             }}
             onFinalize={finalizeCurrentCalculation}
           />
@@ -508,8 +525,8 @@ export function App() {
             onUpdateTemplate={updateSupportTemplate}
             onRemoveTemplate={removeSupportTemplate}
             onRemoveSource={removeSupportSource}
-            onUpdateSource={updateSupportSource}
-            onUpdateEffect={updateSupportEffect}
+            onUpdateSkill={updateSupportSkill}
+            onToggleEffect={updateSupportEffect}
           />
         )}{' '}
         {page === 'ranking' && (
@@ -529,8 +546,13 @@ export function App() {
                     effectMode: 'resolved',
                     attackerSkills: [],
                     craftEssence: null,
+                    support: rankingSupport
+                      ? {
+                          sourceTemplateId: rankingSupport.templateId,
+                          composition: rankingSupport.composition,
+                        }
+                      : null,
                   },
-                  rankingSupport,
                   currentMaster,
                 );
                 return {

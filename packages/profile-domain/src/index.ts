@@ -5,7 +5,7 @@ import type {
   ProfileCollection,
   ServantBuild,
   ServantTarget,
-  SupportEffect,
+  SupportEffectRef,
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -174,7 +174,7 @@ export function addSupportTemplate(
     templateId,
     name: `支援条件 ${String(profile.supportTemplates.length + 1)}`,
     masterDataVersion,
-    effects: [],
+    composition: { sources: [], selectedEffects: [] },
     updatedAt: now,
     lastUsedAt: null,
   };
@@ -190,7 +190,6 @@ export function addSupportServant(
   templateId: string,
   source: ServantMaster,
   sourceInstanceId: string,
-  ownership: SupportEffect['ownership'],
   skillLevels: Readonly<Record<string, number>>,
   now: string,
 ): LocalProfile {
@@ -198,20 +197,28 @@ export function addSupportServant(
     ...profile,
     supportTemplates: profile.supportTemplates.map((template) => {
       if (template.templateId !== templateId) return template;
-      if (template.effects.some((effect) => effect.sourceInstanceId === sourceInstanceId))
+      if (
+        template.composition.sources.some(
+          (candidate) => candidate.sourceInstanceId === sourceInstanceId,
+        )
+      )
         return template;
-      const additions: SupportEffect[] = source.skills.map((skill, index) => ({
+      const addition = {
         sourceInstanceId,
-        sourceType: 'servant',
-        sourceId: source.id,
-        ownership,
-        effectId: skill.id,
-        skillLevel: Math.min(10, Math.max(1, skillLevels[String(skill.slot)] ?? 10)),
-        targetRole: 'ATTACKER',
-        enabled: false,
-        order: template.effects.length + index,
-      }));
-      return { ...template, effects: [...template.effects, ...additions], updatedAt: now };
+        servantId: source.id,
+        skills: source.skills.map((skill) => ({
+          skillId: skill.id,
+          skillLevel: Math.min(10, Math.max(1, skillLevels[String(skill.slot)] ?? 10)),
+        })),
+      };
+      return {
+        ...template,
+        composition: {
+          ...template.composition,
+          sources: [...template.composition.sources, addition],
+        },
+        updatedAt: now,
+      };
     }),
     updatedAt: now,
   };
@@ -220,7 +227,7 @@ export function addSupportServant(
 export function updateSupportTemplate(
   profile: LocalProfile,
   templateId: string,
-  patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt'>>,
+  patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt' | 'composition'>>,
   now: string,
 ): LocalProfile {
   return {
@@ -253,9 +260,14 @@ export function removeSupportSource(
       template.templateId === templateId
         ? {
             ...template,
-            effects: template.effects.filter(
-              (effect) => effect.sourceInstanceId !== sourceInstanceId,
-            ),
+            composition: {
+              sources: template.composition.sources.filter(
+                (source) => source.sourceInstanceId !== sourceInstanceId,
+              ),
+              selectedEffects: template.composition.selectedEffects.filter(
+                (effect) => effect.sourceInstanceId !== sourceInstanceId,
+              ),
+            },
             updatedAt: now,
           }
         : template,
@@ -264,11 +276,12 @@ export function removeSupportSource(
   };
 }
 
-export function updateSupportSource(
+export function updateSupportSkill(
   profile: LocalProfile,
   templateId: string,
   sourceInstanceId: string,
-  patch: Pick<Partial<SupportEffect>, 'ownership'>,
+  skillId: string,
+  skillLevel: number,
   now: string,
 ): LocalProfile {
   return {
@@ -277,9 +290,19 @@ export function updateSupportSource(
       template.templateId === templateId
         ? {
             ...template,
-            effects: template.effects.map((effect) =>
-              effect.sourceInstanceId === sourceInstanceId ? { ...effect, ...patch } : effect,
-            ),
+            composition: {
+              ...template.composition,
+              sources: template.composition.sources.map((source) =>
+                source.sourceInstanceId === sourceInstanceId
+                  ? {
+                      ...source,
+                      skills: source.skills.map((skill) =>
+                        skill.skillId === skillId ? { ...skill, skillLevel } : skill,
+                      ),
+                    }
+                  : source,
+              ),
+            },
             updatedAt: now,
           }
         : template,
@@ -288,12 +311,11 @@ export function updateSupportSource(
   };
 }
 
-export function updateSupportEffect(
+export function toggleSupportEffect(
   profile: LocalProfile,
   templateId: string,
-  sourceInstanceId: string,
-  effectId: string,
-  patch: Partial<Pick<SupportEffect, 'enabled' | 'skillLevel'>>,
+  effect: SupportEffectRef,
+  selected: boolean,
   now: string,
 ): LocalProfile {
   return {
@@ -302,11 +324,24 @@ export function updateSupportEffect(
       template.templateId === templateId
         ? {
             ...template,
-            effects: template.effects.map((effect) =>
-              effect.sourceInstanceId === sourceInstanceId && effect.effectId === effectId
-                ? { ...effect, ...patch }
-                : effect,
-            ),
+            composition: {
+              ...template.composition,
+              selectedEffects: selected
+                ? template.composition.selectedEffects.some(
+                    (candidate) =>
+                      candidate.sourceInstanceId === effect.sourceInstanceId &&
+                      candidate.skillId === effect.skillId &&
+                      candidate.effectId === effect.effectId,
+                  )
+                  ? template.composition.selectedEffects
+                  : [...template.composition.selectedEffects, effect]
+                : template.composition.selectedEffects.filter(
+                    (candidate) =>
+                      candidate.sourceInstanceId !== effect.sourceInstanceId ||
+                      candidate.skillId !== effect.skillId ||
+                      candidate.effectId !== effect.effectId,
+                  ),
+            },
             updatedAt: now,
           }
         : template,

@@ -43,7 +43,7 @@ const input: CalcInput = {
   target: { classId: 'lancer', attribute: 'earth', traits: ['dragon', 'male'] },
 };
 const versions: VersionContext = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   masterDataVersion: 'fixture-1',
   engineVersion: '1.4.0',
   appVersion: '0.1.0',

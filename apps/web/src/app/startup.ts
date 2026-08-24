@@ -6,7 +6,7 @@ import {
   type IdGenerator,
   type ProfileRepository,
 } from '@fgo-lab/profile-domain';
-import type { CalculationShareSnapshot, ProfileCollection, SupportTemplate } from '@fgo-lab/schema';
+import type { CalculationShareSnapshot, ProfileCollection } from '@fgo-lab/schema';
 import {
   fetchMasterCandidate,
   loadActiveMaster,
@@ -27,7 +27,6 @@ interface StartupBase {
   calculation: {
     input: CalculationShareSnapshot['input'] | undefined;
     selection: ReturnType<typeof selectionFromShare> | undefined;
-    support: SupportTemplate | undefined;
     shared: CalculationShareSnapshot | undefined;
   };
   warning: string;
@@ -70,7 +69,8 @@ export async function bootstrapApplication(
     const profilesLoad = await profilesRepository.load();
     const profiles = profilesLoad.state === 'ready' ? profilesLoad.collection : undefined;
     if (profilesLoad.state === 'ready' && profilesLoad.discardedCalculationSnapshots)
-      warning = '保存済みの育成データを引き継ぎ、旧形式の計算下書きと履歴を削除しました。';
+      warning =
+        '保存済みの育成データを引き継ぎ、旧形式の支援条件・計算下書き・履歴を削除しました。';
     if (activeLoad.state === 'discarded') {
       try {
         const current = await activateCurrentMaster(options);
@@ -107,7 +107,6 @@ export async function bootstrapApplication(
       calculation: {
         input: shared?.input ?? profile.draft?.input,
         selection: shared ? selectionFromShare(shared) : profile.draft?.selection,
-        support: shared ? undefined : (profile.draft?.supportTemplate ?? undefined),
         shared: shared ?? undefined,
       },
       warning,
@@ -136,7 +135,7 @@ export async function setupApplication(
   await profilesRepository.replace(profiles);
   let warning =
     profilesLoad.state === 'ready' && profilesLoad.discardedCalculationSnapshots
-      ? '保存済みの育成データを引き継ぎ、旧形式の計算下書きと履歴を削除しました。'
+      ? '保存済みの育成データを引き継ぎ、旧形式の支援条件・計算下書き・履歴を削除しました。'
       : '';
   let shared: CalculationShareSnapshot | null = null;
   try {
@@ -152,7 +151,6 @@ export async function setupApplication(
     calculation: {
       input: shared?.input ?? profile.draft?.input,
       selection: shared ? selectionFromShare(shared) : profile.draft?.selection,
-      support: shared ? undefined : (profile.draft?.supportTemplate ?? undefined),
       shared: shared ?? undefined,
     },
     warning,
@@ -173,7 +171,7 @@ function emptyResult(warning: string, offline: boolean): StartupResult {
     state: 'setup-required',
     master: undefined,
     profiles: undefined,
-    calculation: { input: undefined, selection: undefined, support: undefined, shared: undefined },
+    calculation: { input: undefined, selection: undefined, shared: undefined },
     warning,
     offline,
   };

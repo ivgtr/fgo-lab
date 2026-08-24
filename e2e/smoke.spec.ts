@@ -54,6 +54,58 @@ test('works at 320px without horizontal document overflow', async ({ page }) => 
   expect(overflow).toBe(false);
 });
 
+test('adds a support servant directly and optionally saves the composition', async ({ page }) => {
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+
+  const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
+  const before = Number((await damage.textContent())?.replaceAll(',', ''));
+  await page.getByRole('button', { name: '＋ 支援役を追加' }).click();
+  const dialog = page.getByRole('dialog', { name: '支援サーヴァントを追加' });
+  await dialog.getByRole('tab', { name: '全DB' }).click();
+  await dialog.getByLabel('名前で検索').fill('アルトリア・キャスター');
+  await dialog
+    .getByRole('button', { name: /アルトリア・キャスター/ })
+    .first()
+    .click();
+
+  const support = page.getByLabel('支援・バフ');
+  await expect(support).toContainText('未保存の構成');
+  await expect(support).toContainText('選択中0効果');
+  const attackEffect = support
+    .getByRole('group', { name: /支援の適用内容/ })
+    .getByRole('button', { name: /攻撃力アップ.*アルトリア・キャスター/ })
+    .first();
+  await expect(attackEffect).toHaveAttribute('aria-pressed', 'false');
+  await attackEffect.click();
+  await expect(attackEffect).toHaveAttribute('aria-pressed', 'true');
+  await expect
+    .poll(async () => Number((await damage.textContent())?.replaceAll(',', '')))
+    .toBeGreaterThan(before);
+
+  await support.getByRole('button', { name: '別名で保存' }).click();
+  await expect(support.getByLabel('現在の支援構成')).toContainText('支援条件 1');
+  await expect(support.getByLabel('現在の支援構成')).toContainText('選択中1効果');
+
+  await page.reload();
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await expect(page.getByLabel('支援・バフ')).toContainText('アルトリア・キャスター');
+  await expect(
+    page
+      .getByLabel('支援・バフ')
+      .getByRole('button', { name: /攻撃力アップ.*アルトリア・キャスター/ })
+      .first(),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('mobile servant editor moves between list and detail', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Mobile layout uses list-to-detail navigation');
   await page.goto('/');
@@ -519,7 +571,9 @@ test('upgrades v1 profiles without blocking startup', async ({ page, isMobile })
   await page.reload();
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
   await expect(
-    page.getByText('保存済みの育成データを引き継ぎ、旧形式の計算下書きと履歴を削除しました。'),
+    page.getByText(
+      '保存済みの育成データを引き継ぎ、旧形式の支援条件・計算下書き・履歴を削除しました。',
+    ),
   ).toBeVisible();
   const recovered = await page.evaluate(
     () =>
@@ -557,7 +611,7 @@ test('upgrades v1 profiles without blocking startup', async ({ page, isMobile })
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: 2, npLevel: 1, draft: null, historyLength: 0 });
+  expect(recovered).toEqual({ schemaVersion: 3, npLevel: 1, draft: null, historyLength: 0 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 
@@ -905,20 +959,21 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await supportDialog
     .getByRole('button', { name: /^アルトリア・ペンドラゴン ★5・セイバー/ })
     .click();
-  await page.getByLabel('理想郷の騎士 EXを使用').click();
-  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
   await page.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
-  await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText(
-    '使用中 1スキル',
-  );
+  const presetAttackEffect = page
+    .getByRole('region', { name: '支援条件の編集' })
+    .getByRole('button', { name: /攻撃力アップ/ })
+    .first();
+  await presetAttackEffect.click();
+  await expect(presetAttackEffect).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText('選択中 1効果');
   await page.getByRole('button', { name: /支援元を追加/ }).click();
   await supportDialog.getByLabel('名前で検索').fill('アルトリア・ペンドラゴン');
   await supportDialog
     .getByRole('button', { name: /^アルトリア・ペンドラゴン ★5・セイバー/ })
     .click();
   await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText('支援元 2騎');
-  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toHaveCount(2);
-  await expect(page.getByLabel('理想郷の騎士 EXを使用').nth(1)).not.toBeChecked();
+  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveCount(2);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const unequippedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
@@ -962,7 +1017,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   const equippedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(equippedDamage).toBeGreaterThan(unequippedDamage);
   const baseDamage = equippedDamage;
-  await page.getByRole('button', { name: '支援条件を呼び出す' }).click();
+  await page.getByRole('button', { name: '保存セットを呼び出す' }).click();
   const templateDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await templateDialog.getByRole('button', { name: '呼び出す' }).click();
   const calculatorSupport = page.getByLabel('支援・バフ');
@@ -984,7 +1039,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await supportAttackEffect.click();
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('カレイドスコープ Lv.20');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('自身スキル1件適用');
-  await expect(page.getByLabel('共有対象の計算結果')).toContainText('周回支援（1スキル）');
+  await expect(page.getByLabel('共有対象の計算結果')).toContainText('周回支援（1効果）');
   const supportedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(supportedDamage).toBeGreaterThan(baseDamage);
 
@@ -1001,7 +1056,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await rankingCondition.getByRole('button', { name: '選択' }).click();
   const rankingSupportDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await rankingSupportDialog.getByRole('button', { name: '呼び出す' }).click();
-  await expect(rankingCondition).toContainText('周回支援・使用1スキル');
+  await expect(rankingCondition).toContainText('周回支援・選択中1効果');
   await expect
     .poll(async () =>
       Number((await rankingRow.locator('td.average').textContent())?.replaceAll(',', '')),
@@ -1022,7 +1077,9 @@ test('persists servant, target, CE copies, and support templates', async ({ page
       .getByRole('button', { name: /攻撃力アップ.*理想郷の騎士 EX/ })
       .first(),
   ).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
+  await expect(
+    page.getByLabel('攻撃役の自身スキル').getByLabel('理想郷の騎士 EXのスキルレベル'),
+  ).toHaveValue('8');
   await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
     '登録コピー・Lv20',
   );
@@ -1038,7 +1095,12 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.getByRole('button', { name: '所持・育成' }).click();
   await expect(page.getByLabel('スキル1')).toHaveValue('1');
   await page.getByRole('button', { name: '支援条件' }).click();
-  await expect(page.getByLabel('理想郷の騎士 EXを使用').first()).toBeChecked();
+  await expect(
+    page
+      .getByRole('region', { name: '支援条件の編集' })
+      .getByRole('button', { name: /攻撃力アップ/ })
+      .first(),
+  ).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル').first()).toHaveValue('8');
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'この支援条件を削除' }).click();

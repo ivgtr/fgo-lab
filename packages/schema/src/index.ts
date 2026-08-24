@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 2 as const;
+export const SCHEMA_VERSION = 3 as const;
 export const ENGINE_VERSION = '1.4.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
@@ -43,28 +43,37 @@ export const craftEssenceCopySchema = z.object({
 });
 export type CraftEssenceCopy = z.infer<typeof craftEssenceCopySchema>;
 
-export const supportEffectSchema = z
-  .object({
-    sourceInstanceId: z.string().min(1).max(160).optional(),
-    sourceType: z.enum(['servant', 'craftEssence', 'mysticCode', 'custom']),
-    sourceId: z.string().min(1).max(80),
-    ownership: z.enum(['owned', 'friend', 'virtual']).default('virtual'),
-    effectId: z.string().min(1).max(80),
-    skillLevel: z.number().int().min(1).max(10),
-    targetRole: z.literal('ATTACKER'),
-    enabled: z.boolean(),
-    order: z.number().int().nonnegative(),
-  })
-  .transform((effect) => ({
-    ...effect,
-    sourceInstanceId: effect.sourceInstanceId ?? `legacy:${effect.sourceType}:${effect.sourceId}`,
-  }));
-export type SupportEffect = z.infer<typeof supportEffectSchema>;
+export const supportSkillSchema = z.object({
+  skillId: z.string().min(1).max(80),
+  skillLevel: z.number().int().min(1).max(10),
+});
+export type SupportSkill = z.infer<typeof supportSkillSchema>;
+
+export const supportSourceSchema = z.object({
+  sourceInstanceId: z.string().min(1).max(160),
+  servantId: z.string().min(1).max(80),
+  skills: z.array(supportSkillSchema).max(20),
+});
+export type SupportSource = z.infer<typeof supportSourceSchema>;
+
+export const supportEffectRefSchema = z.object({
+  sourceInstanceId: z.string().min(1).max(160),
+  skillId: z.string().min(1).max(80),
+  effectId: z.string().min(1).max(80),
+});
+export type SupportEffectRef = z.infer<typeof supportEffectRefSchema>;
+
+export const supportCompositionSchema = z.object({
+  sources: z.array(supportSourceSchema).max(20),
+  selectedEffects: z.array(supportEffectRefSchema).max(200),
+});
+export type SupportComposition = z.infer<typeof supportCompositionSchema>;
+
 export const supportTemplateSchema = z.object({
   templateId: z.uuid(),
   name: z.string().trim().min(1).max(80),
   masterDataVersion: z.string().min(1),
-  effects: z.array(supportEffectSchema).max(100),
+  composition: supportCompositionSchema,
   updatedAt: z.iso.datetime(),
   lastUsedAt: z.iso.datetime().nullable(),
 });
@@ -124,6 +133,13 @@ export const calculationSelectionSchema = z.object({
   effectMode: z.enum(['resolved', 'manual']).default('resolved'),
   attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
   effectOverrides: z.record(z.string(), z.boolean()).optional(),
+  support: z
+    .object({
+      sourceTemplateId: z.uuid().nullable(),
+      composition: supportCompositionSchema,
+    })
+    .nullable()
+    .optional(),
   manualOverrides: z
     .array(
       z.enum([
@@ -172,7 +188,6 @@ export const calculationDraftSchema = z.object({
   input: calcInputSchema,
   result: calcResultSchema,
   inputFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
-  supportTemplate: supportTemplateSchema.nullable().optional(),
   selection: calculationSelectionSchema.optional(),
   updatedAt: z.iso.datetime(),
 });
@@ -209,19 +224,20 @@ export function parseStoredProfileCollection(value: unknown): {
 } {
   const current = profileCollectionSchema.safeParse(value);
   if (current.success) return { collection: current.data, upgraded: false };
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    (value as Record<string, unknown>)['schemaVersion'] !== 1
-  )
-    throw current.error;
+  if (!value || typeof value !== 'object') throw current.error;
 
   const stored = value as Record<string, unknown>;
+  if (![1, 2].includes(Number(stored['schemaVersion']))) throw current.error;
   const storedProfiles: unknown = stored['profiles'];
   const profiles = Array.isArray(storedProfiles)
     ? (storedProfiles as unknown[]).map((profile) =>
         profile && typeof profile === 'object'
-          ? { ...(profile as Record<string, unknown>), draft: null, history: [] }
+          ? {
+              ...(profile as Record<string, unknown>),
+              supportTemplates: [],
+              draft: null,
+              history: [],
+            }
           : profile,
       )
     : storedProfiles;

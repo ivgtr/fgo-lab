@@ -33,7 +33,7 @@ const input = {
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies CalcInput;
 const versions = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   masterDataVersion: 'fixture-1',
   engineVersion: '1.4.0',
   appVersion: '0.1.0',

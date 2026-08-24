@@ -1,12 +1,13 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { CalcInput, SupportTemplate } from '@fgo-lab/schema';
+import type { CalcInput, SupportComposition } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import {
+  isDamageRelevantEffect,
   resolveAttackerSkills,
   resolveCraftEssenceEffects,
   resolveNpEffects,
   resolveServantPassives,
-  resolveSupportTemplate,
+  resolveSupportComposition,
 } from './index';
 
 const input: CalcInput = {
@@ -106,33 +107,70 @@ const source: ServantMaster = {
   ],
 };
 
-function template(patch: Partial<SupportTemplate> = {}): SupportTemplate {
+function compositionFor(servant: ServantMaster = source): SupportComposition {
   return {
-    templateId: '00000000-0000-4000-8000-000000000001',
-    name: 'テスト支援',
-    masterDataVersion: 'test',
-    effects: [
+    sources: [
       {
         sourceInstanceId: 'support-instance-1',
-        sourceType: 'servant',
-        sourceId: source.id,
-        ownership: 'virtual',
-        effectId: 'skill',
-        skillLevel: 10,
-        targetRole: 'ATTACKER',
-        enabled: true,
-        order: 0,
+        servantId: servant.id,
+        skills: servant.skills.map((skill) => ({ skillId: skill.id, skillLevel: 10 })),
       },
     ],
-    updatedAt: '2026-08-24T00:00:00.000Z',
-    lastUsedAt: null,
-    ...patch,
+    selectedEffects: servant.skills.flatMap((skill) =>
+      skill.effects.map((effect) => ({
+        sourceInstanceId: 'support-instance-1',
+        skillId: skill.id,
+        effectId: effect.id,
+      })),
+    ),
   };
 }
 
-describe('resolveSupportTemplate', () => {
+describe('resolveSupportComposition', () => {
+  it('applies only effects explicitly selected in the composition', () => {
+    const composition = compositionFor();
+    composition.selectedEffects = composition.selectedEffects.filter(
+      (effect) => effect.effectId === 'attack',
+    );
+
+    const result = resolveSupportComposition(input, composition, [source]);
+
+    expect(result.input.attackBuff).toBeCloseTo(0.3);
+    expect(result.input.cardBuff).toBe(0);
+    expect(result.input.npDamageBuff).toBe(0);
+    expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
+      applied: false,
+      reason: 'calculation_effect_disabled',
+    });
+  });
+
+  it('excludes critical and Extra Attack buffs from NP damage controls', () => {
+    expect(
+      isDamageRelevantEffect({
+        id: 'extra',
+        type: 'addStateShort',
+        target: 'self',
+        label: 'Extra Attackアップ',
+        values: Array(10).fill(1000) as number[],
+        buffTypes: ['upExtraattack', 'upCommandall'],
+        cardTypes: ['buster'],
+      }),
+    ).toBe(false);
+    expect(
+      isDamageRelevantEffect({
+        id: 'unsupported-rate',
+        type: 'addStateShort',
+        target: 'self',
+        label: '対象不明のブースト',
+        values: Array(10).fill(1000) as number[],
+        buffTypes: ['buffRate'],
+        cardTypes: [],
+      }),
+    ).toBe(false);
+  });
+
   it('adds unconditional damage buffs at the selected skill level', () => {
-    const result = resolveSupportTemplate(input, template(), [source]);
+    const result = resolveSupportComposition(input, compositionFor(), [source]);
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
     expect(result.input.npDamageBuff).toBeCloseTo(0.3);
@@ -147,7 +185,9 @@ describe('resolveSupportTemplate', () => {
   });
 
   it('does not apply a card buff to a different NP card', () => {
-    const result = resolveSupportTemplate({ ...input, cardType: 'arts' }, template(), [source]);
+    const result = resolveSupportComposition({ ...input, cardType: 'arts' }, compositionFor(), [
+      source,
+    ]);
     expect(result.input.cardBuff).toBe(0);
     expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
       applied: false,
@@ -168,7 +208,7 @@ describe('resolveSupportTemplate', () => {
         },
       ],
     };
-    const result = resolveSupportTemplate(input, template(), [renamed]);
+    const result = resolveSupportComposition(input, compositionFor(renamed), [renamed]);
 
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
@@ -176,7 +216,7 @@ describe('resolveSupportTemplate', () => {
   });
 
   it('fails closed when the saved source cannot be resolved', () => {
-    const result = resolveSupportTemplate(input, template(), []);
+    const result = resolveSupportComposition(input, compositionFor(), []);
     expect(result.precision).toBe('unsupported');
     expect(result.input).toEqual(input);
     expect(result.warnings).toEqual(['support_effect_missing:support:skill']);
@@ -213,7 +253,7 @@ describe('resolveSupportTemplate', () => {
         },
       ],
     };
-    const result = resolveSupportTemplate(input, template(), [boosted]);
+    const result = resolveSupportComposition(input, compositionFor(boosted), [boosted]);
     expect(result.precision).toBe('exact');
     expect(result.npDamageBuffRate).toBe(1);
     expect(result.effects[0]).toMatchObject({
@@ -243,7 +283,7 @@ describe('resolveSupportTemplate', () => {
         },
       ],
     };
-    const result = resolveSupportTemplate(input, template(), [boosted]);
+    const result = resolveSupportComposition(input, compositionFor(boosted), [boosted]);
     expect(result.precision).toBe('approximate');
     expect(result.effects[0]).toMatchObject({
       applied: false,
@@ -280,7 +320,7 @@ describe('resolveSupportTemplate', () => {
         },
       ],
     };
-    const result = resolveSupportTemplate(input, template(), [defensive]);
+    const result = resolveSupportComposition(input, compositionFor(defensive), [defensive]);
 
     expect(result.input.powerMod).toBe(0);
     expect(result.precision).toBe('exact');

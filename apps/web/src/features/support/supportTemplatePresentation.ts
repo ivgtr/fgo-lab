@@ -1,31 +1,15 @@
 import type { ServantMaster } from '@fgo-lab/master-data';
-import type { SupportEffect, SupportTemplate } from '@fgo-lab/schema';
+import type { SupportSource, SupportTemplate } from '@fgo-lab/schema';
+import { isDamageRelevantEffect } from '@fgo-lab/effect-resolver';
 
-export interface SupportSourceGroup {
-  sourceInstanceId: string;
-  sourceId: string;
-  ownership: SupportEffect['ownership'];
-  effects: SupportEffect[];
-}
+export type SupportSourceGroup = SupportSource;
 
 export function createServantMap(servants: readonly ServantMaster[]) {
   return new Map(servants.map((servant) => [servant.id, servant]));
 }
 
 export function groupSupportSources(template: SupportTemplate): SupportSourceGroup[] {
-  const groups = new Map<string, SupportSourceGroup>();
-  for (const effect of [...template.effects].sort((left, right) => left.order - right.order)) {
-    const current = groups.get(effect.sourceInstanceId);
-    if (current) current.effects.push(effect);
-    else
-      groups.set(effect.sourceInstanceId, {
-        sourceInstanceId: effect.sourceInstanceId,
-        sourceId: effect.sourceId,
-        ownership: effect.ownership,
-        effects: [effect],
-      });
-  }
-  return [...groups.values()];
+  return template.composition.sources;
 }
 
 export function supportTemplateSearchText(
@@ -34,10 +18,15 @@ export function supportTemplateSearchText(
 ) {
   return [
     template.name,
-    ...template.effects.flatMap((effect) => {
-      const servant = servantById.get(effect.sourceId);
-      const skill = servant?.skills.find((candidate) => candidate.id === effect.effectId);
-      return [servant?.name, skill?.name, ...(skill?.effects.map((item) => item.label) ?? [])];
+    ...template.composition.sources.flatMap((source) => {
+      const servant = servantById.get(source.servantId);
+      return [
+        servant?.name,
+        ...source.skills.flatMap((selection) => {
+          const skill = servant?.skills.find((candidate) => candidate.id === selection.skillId);
+          return [skill?.name, ...(skill?.effects.map((item) => item.label) ?? [])];
+        }),
+      ];
     }),
   ]
     .filter(Boolean)
@@ -59,6 +48,7 @@ export function relativeSupportUsage(value: string | null): string {
 export function supportSkillSummary(servant: ServantMaster | undefined, effectId: string) {
   const skill = servant?.skills.find((candidate) => candidate.id === effectId);
   return (skill?.effects ?? [])
+    .filter(isDamageRelevantEffect)
     .map((effect) => effect.label)
     .filter((label, index, labels) => labels.indexOf(label) === index)
     .join('・');

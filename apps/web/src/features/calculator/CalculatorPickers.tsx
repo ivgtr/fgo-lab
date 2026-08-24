@@ -77,6 +77,42 @@ export function AttackerPicker({
   );
 }
 
+export function SupportServantPicker({
+  servants,
+  builds,
+  onSelect,
+  onClose,
+}: {
+  servants: ServantMaster[];
+  builds: Record<string, ServantBuild>;
+  onSelect: (servant: ServantMaster) => void;
+  onClose: () => void;
+}) {
+  return (
+    <ServantPicker
+      purpose="support"
+      title="支援サーヴァントを追加"
+      servants={servants.filter((servant) => servant.skills.length > 0)}
+      sources={[
+        {
+          id: 'owned',
+          label: '所持・育成管理',
+          includes: (candidate) => Boolean(builds[candidate.id]?.npLevel),
+        },
+        { id: 'master', label: '全DB', includes: () => true },
+      ]}
+      initialSourceId="owned"
+      description={(candidate, source) =>
+        source === 'owned'
+          ? `保存スキルLv ${candidate.skills.map((skill) => String(builds[candidate.id]?.skills[String(skill.slot)] ?? 1)).join('/')}`
+          : 'スキルLv10（仮想）'
+      }
+      onSelect={(candidate) => onSelect(candidate)}
+      onClose={onClose}
+    />
+  );
+}
+
 export function CraftEssencePicker({
   copies,
   masters,

@@ -18,13 +18,19 @@ import type {
 import { selectCalculationAttacker, setCalculationEffectMode } from './calculation';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
-import { AttackerPicker, CraftEssencePicker, SupportTemplatePicker } from './CalculatorPickers';
+import {
+  AttackerPicker,
+  CraftEssencePicker,
+  SupportServantPicker,
+  SupportTemplatePicker,
+} from './CalculatorPickers';
 import { traitLabel } from './traitPresentation';
 import { CalculationResult } from './CalculationResult';
 import { collectDamageEffectStacks } from './damageEffectStacks';
 import { AttackerSkills } from './AttackerSkills';
 import { AppliedEffects } from './AppliedEffects';
 import { EffectiveInputDetails } from './EffectiveInputDetails';
+import { SupportSourceCard } from '../support/SupportSourceCard';
 import './calculator.css';
 import './calculator-form.css';
 
@@ -45,6 +51,7 @@ export function Calculator({
   onInputChange,
   onCompositionChange,
   onSupportSelect,
+  onSupportSave,
   onFinalize,
 }: {
   input: CalcInput;
@@ -63,10 +70,12 @@ export function Calculator({
   onInputChange: (input: CalcInput) => Promise<void>;
   onCompositionChange: (input: CalcInput, selection: CalculationSelection) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
+  onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: (input: CalcInput, result: CalcResult) => Promise<void>;
 }) {
   const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const [supportServantDialogOpen, setSupportServantDialogOpen] = useState(false);
   const [attackerDialogOpen, setAttackerDialogOpen] = useState(false);
   const [craftEssenceDialogOpen, setCraftEssenceDialogOpen] = useState(false);
   const attackerTriggerRef = useRef<HTMLButtonElement>(null);
@@ -81,18 +90,14 @@ export function Calculator({
     : undefined;
   const ownEffects = resolvedEffects.filter((effect) => effect.origin !== 'support');
   const supportEffects = resolvedEffects.filter((effect) => effect.origin === 'support');
-  const supportSources = selectedSupport
-    ? [
-        ...new Map(
-          [...selectedSupport.effects]
-            .sort((left, right) => left.order - right.order)
-            .map((effect) => [effect.sourceInstanceId, effect.sourceId]),
-        ).values(),
-      ]
-    : [];
-  const enabledSupportSkillCount = selectedSupport?.effects.filter(
-    (effect) => effect.enabled,
-  ).length;
+  const supportComposition = selection.support?.composition;
+  const supportSources = supportComposition?.sources ?? [];
+  const selectedSupportEffectCount = supportComposition?.selectedEffects.length ?? 0;
+  const supportModified = Boolean(
+    selectedSupport &&
+    supportComposition &&
+    JSON.stringify(selectedSupport.composition) !== JSON.stringify(supportComposition),
+  );
   const damageEffectStacks = collectDamageEffectStacks({
     effects: resolvedEffects,
     servants,
@@ -131,8 +136,10 @@ export function Calculator({
       ? `${selectedCraftEssence.name} Lv.${selection.craftEssence.level}`
       : '礼装なし';
   const supportSummary = selectedSupport
-    ? `${selectedSupport.name}（${selectedSupport.effects.filter((effect) => effect.enabled).length}スキル）`
-    : '支援なし';
+    ? `${selectedSupport.name}（${selectedSupportEffectCount}効果）`
+    : supportSources.length
+      ? `未保存の支援構成（${selectedSupportEffectCount}効果）`
+      : '支援なし';
   function change(patch: Partial<CalcInput>) {
     void onInputChange({ ...input, ...patch });
   }
@@ -271,9 +278,102 @@ export function Calculator({
     void onCompositionChange(input, { ...selection, attackerSkills });
   }
   function changeEffect(effectKey: string, active: boolean) {
+    const effect = resolvedEffects.find((candidate) => candidate.effectKey === effectKey);
+    if (effect?.origin === 'support' && selection.support) {
+      const ref = {
+        sourceInstanceId: effect.sourceInstanceId,
+        skillId: effect.skillId,
+        effectId: effect.effectId,
+      };
+      const current = selection.support.composition.selectedEffects;
+      const matches = (candidate: typeof ref) =>
+        candidate.sourceInstanceId === ref.sourceInstanceId &&
+        candidate.skillId === ref.skillId &&
+        candidate.effectId === ref.effectId;
+      void onCompositionChange(input, {
+        ...selection,
+        support: {
+          ...selection.support,
+          composition: {
+            ...selection.support.composition,
+            selectedEffects: active
+              ? current.some(matches)
+                ? current
+                : [...current, ref]
+              : current.filter((candidate) => !matches(candidate)),
+          },
+        },
+      });
+      return;
+    }
     void onCompositionChange(input, {
       ...selection,
       effectOverrides: { ...selection.effectOverrides, [effectKey]: active },
+    });
+  }
+  function addSupportServant(servant: ServantMaster) {
+    const sourceInstanceId = crypto.randomUUID();
+    const savedLevels = builds[servant.id]?.skills ?? {};
+    const composition = supportComposition ?? { sources: [], selectedEffects: [] };
+    void onCompositionChange(input, {
+      ...selection,
+      support: {
+        sourceTemplateId: selection.support?.sourceTemplateId ?? null,
+        composition: {
+          ...composition,
+          sources: [
+            ...composition.sources,
+            {
+              sourceInstanceId,
+              servantId: servant.id,
+              skills: servant.skills.map((skill) => ({
+                skillId: skill.id,
+                skillLevel: savedLevels[String(skill.slot)] ?? 10,
+              })),
+            },
+          ],
+        },
+      },
+    });
+    setSupportServantDialogOpen(false);
+  }
+  function removeCalculationSupportSource(sourceInstanceId: string) {
+    if (!selection.support) return;
+    void onCompositionChange(input, {
+      ...selection,
+      support: {
+        ...selection.support,
+        composition: {
+          sources: selection.support.composition.sources.filter(
+            (source) => source.sourceInstanceId !== sourceInstanceId,
+          ),
+          selectedEffects: selection.support.composition.selectedEffects.filter(
+            (effect) => effect.sourceInstanceId !== sourceInstanceId,
+          ),
+        },
+      },
+    });
+  }
+  function changeSupportSkillLevel(sourceInstanceId: string, skillId: string, skillLevel: number) {
+    if (!selection.support) return;
+    void onCompositionChange(input, {
+      ...selection,
+      support: {
+        ...selection.support,
+        composition: {
+          ...selection.support.composition,
+          sources: selection.support.composition.sources.map((source) =>
+            source.sourceInstanceId === sourceInstanceId
+              ? {
+                  ...source,
+                  skills: source.skills.map((skill) =>
+                    skill.skillId === skillId ? { ...skill, skillLevel } : skill,
+                  ),
+                }
+              : source,
+          ),
+        },
+      },
     });
   }
   function closeAttackerDialog() {
@@ -693,23 +793,34 @@ export function Calculator({
               <p className="eyebrow">SUPPORT</p>
               <h3>支援・バフ</h3>
             </div>
-            <small>保存した構成を計算へ反映</small>
+            <small>この計算だけの支援構成</small>
           </div>
-          <button
-            type="button"
-            className="support-template-trigger"
-            aria-label={
-              selectedSupport ? `支援条件を変更: ${selectedSupport.name}` : '支援条件を呼び出す'
-            }
-            onClick={() => setSupportDialogOpen(true)}
-          >
+          <div className="calculator-support-actions">
+            <button type="button" onClick={() => setSupportServantDialogOpen(true)}>
+              ＋ 支援役を追加
+            </button>
+            <button type="button" onClick={() => setSupportDialogOpen(true)}>
+              保存セットを呼び出す
+            </button>
+            {supportSources.length ? (
+              <button type="button" onClick={() => void onSupportSave('new')}>
+                別名で保存
+              </button>
+            ) : null}
+            {selectedSupport && supportModified ? (
+              <button type="button" onClick={() => void onSupportSave('source')}>
+                保存元を更新
+              </button>
+            ) : null}
+          </div>
+          <div className="calculator-support-summary" aria-label="現在の支援構成">
             <span className="calculator-support-faces" aria-hidden="true">
               {supportSources.length ? (
-                supportSources.slice(0, 3).map((sourceId, index) => {
-                  const source = servants.find((servant) => servant.id === sourceId);
+                supportSources.slice(0, 3).map((supportSource, index) => {
+                  const source = servants.find((servant) => servant.id === supportSource.servantId);
                   return (
                     <MasterImage
-                      key={`${sourceId}:${String(index)}`}
+                      key={`${supportSource.sourceInstanceId}:${String(index)}`}
                       src={source?.imageKey ?? null}
                       alt=""
                       fallback={source?.name ?? '?'}
@@ -720,19 +831,52 @@ export function Calculator({
                 <span className="support-empty-icon">+</span>
               )}
             </span>
-            <span className="support-template-trigger-copy">
-              <small>{selectedSupport ? '使用中の支援条件' : '支援なし'}</small>
-              <strong>{selectedSupport?.name ?? '保存済みの支援条件から選択'}</strong>
-              <span>
+            <span className="calculator-support-summary-copy">
+              <small>{selectedSupport ? '保存セットから開始' : '現在の支援構成'}</small>
+              <strong>
                 {selectedSupport
-                  ? `${String(supportSources.length)}騎・使用${String(enabledSupportSkillCount ?? 0)}スキル`
-                  : '呼び出すと、登録済みの効果をまとめて適用します'}
+                  ? `${selectedSupport.name}${supportModified ? '・変更あり' : ''}`
+                  : supportSources.length
+                    ? '未保存の構成'
+                    : '支援なし'}
+              </strong>
+              <span>
+                {supportSources.length
+                  ? `${String(supportSources.length)}騎・選択中${String(selectedSupportEffectCount)}効果`
+                  : '支援役を直接追加するか、保存セットを呼び出します'}
               </span>
             </span>
-            <span className="picker-action">{selectedSupport ? '変更' : '呼び出す'}</span>
-          </button>
-          {selectedSupport ? (
+          </div>
+          {supportComposition ? (
             <>
+              <div className="calculator-support-source-stack">
+                {supportSources.map((supportSource) => {
+                  const servant = servants.find(
+                    (candidate) => candidate.id === supportSource.servantId,
+                  );
+                  const duplicates = supportSources.filter(
+                    (candidate) => candidate.servantId === supportSource.servantId,
+                  );
+                  const suffix =
+                    duplicates.length > 1
+                      ? ` ${String(duplicates.findIndex((candidate) => candidate.sourceInstanceId === supportSource.sourceInstanceId) + 1)}`
+                      : '';
+                  return (
+                    <SupportSourceCard
+                      key={supportSource.sourceInstanceId}
+                      source={supportSource}
+                      servant={servant}
+                      displayName={`${servant?.name ?? supportSource.servantId}${suffix}`}
+                      onRemove={() =>
+                        removeCalculationSupportSource(supportSource.sourceInstanceId)
+                      }
+                      onSkillLevelChange={(skillId, skillLevel) =>
+                        changeSupportSkillLevel(supportSource.sourceInstanceId, skillId, skillLevel)
+                      }
+                    />
+                  );
+                })}
+              </div>
               <AppliedEffects
                 title="支援の適用内容"
                 effects={supportEffects}
@@ -745,7 +889,7 @@ export function Calculator({
                     className="quiet"
                     onClick={() => void onSupportSelect(undefined)}
                   >
-                    支援を解除
+                    構成を空にする
                   </button>
                 }
               />
@@ -811,6 +955,14 @@ export function Calculator({
             setSupportDialogOpen(false);
           }}
           onClose={() => setSupportDialogOpen(false)}
+        />
+      )}
+      {supportServantDialogOpen && (
+        <SupportServantPicker
+          servants={servants}
+          builds={builds}
+          onSelect={addSupportServant}
+          onClose={() => setSupportServantDialogOpen(false)}
         />
       )}
     </div>

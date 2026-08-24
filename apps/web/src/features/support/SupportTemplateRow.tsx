@@ -18,7 +18,7 @@ export function SupportTemplateRow({
   onSelect: () => void;
 }) {
   const sources = groupSupportSources(template);
-  const enabledCount = template.effects.filter((effect) => effect.enabled).length;
+  const selectedCount = template.composition.selectedEffects.length;
   return (
     <button
       type="button"
@@ -28,7 +28,7 @@ export function SupportTemplateRow({
     >
       <span className="support-face-stack" aria-hidden="true">
         {(sources.length ? sources.slice(0, 3) : [null]).map((source, index) => {
-          const servant = source ? servantById.get(source.sourceId) : undefined;
+          const servant = source ? servantById.get(source.servantId) : undefined;
           return (
             <MasterImage
               key={source?.sourceInstanceId ?? `empty:${String(index)}`}
@@ -42,7 +42,7 @@ export function SupportTemplateRow({
       <span className="list-row-main">
         <strong>{template.name}</strong>
         <small>
-          {sources.length}騎・使用{enabledCount}スキル
+          {sources.length}騎・選択中{selectedCount}効果
         </small>
       </span>
       <span className="support-template-row-trailing">

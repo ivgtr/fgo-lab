@@ -14,7 +14,8 @@ import {
   updateCraftEssenceCopy,
   updateServantBuild,
   updateServantTarget,
-  updateSupportSource,
+  toggleSupportEffect,
+  updateSupportSkill,
   updateSupportTemplate,
 } from './index';
 
@@ -154,7 +155,6 @@ describe('profile domain', () => {
       templateId,
       supportServant,
       'support-instance-1',
-      'owned',
       { '1': 8 },
       clock.now().toISOString(),
     );
@@ -163,7 +163,6 @@ describe('profile domain', () => {
       templateId,
       supportServant,
       'support-instance-1',
-      'owned',
       { '1': 8 },
       clock.now().toISOString(),
     );
@@ -172,21 +171,18 @@ describe('profile domain', () => {
       templateId,
       supportServant,
       'support-instance-2',
-      'friend',
       {},
       clock.now().toISOString(),
     );
-    expect(twice.supportTemplates[0]?.effects).toHaveLength(2);
-    expect(twice.supportTemplates[0]?.effects).toEqual([
+    expect(twice.supportTemplates[0]?.composition.sources).toHaveLength(2);
+    expect(twice.supportTemplates[0]?.composition.sources).toEqual([
       expect.objectContaining({
         sourceInstanceId: 'support-instance-1',
-        ownership: 'owned',
-        skillLevel: 8,
+        skills: [expect.objectContaining({ skillLevel: 8 })],
       }),
       expect.objectContaining({
         sourceInstanceId: 'support-instance-2',
-        ownership: 'friend',
-        skillLevel: 10,
+        skills: [expect.objectContaining({ skillLevel: 10 })],
       }),
     ]);
 
@@ -196,26 +192,49 @@ describe('profile domain', () => {
       { name: '周回支援' },
       clock.now().toISOString(),
     );
-    const changedOwnership = updateSupportSource(
+    const changedLevel = updateSupportSkill(
       renamed,
       templateId,
       'support-instance-2',
-      { ownership: 'virtual' },
+      'skill-1',
+      7,
+      clock.now().toISOString(),
+    );
+    const selected = toggleSupportEffect(
+      changedLevel,
+      templateId,
+      {
+        sourceInstanceId: 'support-instance-2',
+        skillId: 'skill-1',
+        effectId: 'attack-up',
+      },
+      true,
       clock.now().toISOString(),
     );
     const withoutFirst = removeSupportSource(
-      changedOwnership,
+      selected,
       templateId,
       'support-instance-1',
       clock.now().toISOString(),
     );
     expect(withoutFirst.supportTemplates[0]).toMatchObject({ name: '周回支援' });
-    expect(withoutFirst.supportTemplates[0]?.effects).toEqual([
+    expect(withoutFirst.supportTemplates[0]?.composition.sources).toEqual([
       expect.objectContaining({
         sourceInstanceId: 'support-instance-2',
-        ownership: 'virtual',
+        skills: [expect.objectContaining({ skillLevel: 7 })],
       }),
     ]);
-    expect(removeSupportTemplate(withoutFirst, templateId).supportTemplates).toEqual([]);
+    expect(withoutFirst.supportTemplates[0]?.composition.selectedEffects).toHaveLength(1);
+    const withoutSelectedSource = removeSupportSource(
+      withoutFirst,
+      templateId,
+      'support-instance-2',
+      clock.now().toISOString(),
+    );
+    expect(withoutSelectedSource.supportTemplates[0]?.composition).toEqual({
+      sources: [],
+      selectedEffects: [],
+    });
+    expect(removeSupportTemplate(withoutSelectedSource, templateId).supportTemplates).toEqual([]);
   });
 });

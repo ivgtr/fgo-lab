@@ -32,7 +32,7 @@ describe('calculation application logic', () => {
   it('creates and resolves a calculation without browser or React state', () => {
     const input = createDefaultCalcInput(master, undefined);
     const selection = completeCalculationSelection(undefined, master.servants[0], undefined);
-    const calculation = calculateResolvedDamage(input, selection, undefined, master, versions, {
+    const calculation = calculateResolvedDamage(input, selection, master, versions, {
       releaseValidated: true,
     });
     expect(calculation.input.attackerId).toBe('fixture-saber');
@@ -45,7 +45,6 @@ describe('calculation application logic', () => {
     const result = calculateResolvedDamage(
       input,
       { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
-      undefined,
       master,
       versions,
       { releaseValidated: true },
@@ -87,7 +86,6 @@ describe('calculation application logic', () => {
     const calculation = calculateResolvedDamage(
       input,
       { attackerSource: 'master', effectMode: 'manual', craftEssence: null },
-      undefined,
       master,
       versions,
       { releaseValidated: true },
@@ -129,7 +127,6 @@ describe('calculation application logic', () => {
     const calculation = calculateResolvedDamage(
       input,
       { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
-      undefined,
       specialMaster,
       { ...versions, masterDataVersion: specialMaster.version },
       { releaseValidated: true },
@@ -184,27 +181,34 @@ describe('calculation application logic', () => {
       templateId: '00000000-0000-4000-8000-000000000001',
       name: 'オベロン支援',
       masterDataVersion: boostMaster.version,
-      effects: [
-        {
-          sourceInstanceId: 'oberon-1',
-          sourceType: 'servant',
-          sourceId: supportId,
-          ownership: 'virtual',
-          effectId: 'boost-skill',
-          skillLevel: 10,
-          targetRole: 'ATTACKER',
-          enabled: true,
-          order: 0,
-        },
-      ],
+      composition: {
+        sources: [
+          {
+            sourceInstanceId: 'oberon-1',
+            servantId: supportId,
+            skills: [{ skillId: 'boost-skill', skillLevel: 10 }],
+          },
+        ],
+        selectedEffects: [
+          {
+            sourceInstanceId: 'oberon-1',
+            skillId: 'boost-skill',
+            effectId: 'boost-effect',
+          },
+        ],
+      },
       updatedAt: '2026-08-25T00:00:00.000Z',
       lastUsedAt: null,
     } satisfies SupportTemplate;
 
     const calculation = calculateResolvedDamage(
       input,
-      { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
-      support,
+      {
+        attackerSource: 'master',
+        effectMode: 'resolved',
+        craftEssence: null,
+        support: { sourceTemplateId: support.templateId, composition: support.composition },
+      },
       boostMaster,
       { ...versions, masterDataVersion: boostMaster.version },
       { releaseValidated: true },
@@ -222,7 +226,6 @@ describe('calculation application logic', () => {
     const calculation = calculateResolvedDamage(
       input,
       completeCalculationSelection(undefined, master.servants[0], undefined),
-      undefined,
       master,
       versions,
       { releaseValidated: false },
