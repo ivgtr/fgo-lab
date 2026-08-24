@@ -264,10 +264,22 @@ function initialAttackerSkills(
   }));
 }
 
+async function activateCurrentMaster() {
+  const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
+  if (!import.meta.env.DEV && candidate.manifest.artifactKind === 'diagnostic')
+    throw new Error('diagnostic_fixture_cannot_be_activated');
+  return {
+    active: await stageAndActivate(candidate.manifest, candidate.snapshot, new Date()),
+    fromOfflineCache: candidate.fromOfflineCache,
+  };
+}
+
 function Setup({
   onComplete,
+  startupWarning,
 }: {
   onComplete: (master: MasterDataSnapshot, profiles: ProfileCollection) => void;
+  startupWarning?: string;
 }) {
   const [state, setState] = useState<'idle' | 'running' | 'error'>('idle');
   const [error, setError] = useState('');
@@ -275,14 +287,7 @@ function Setup({
     setState('running');
     setError('');
     try {
-      const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
-      const manifest = candidate.manifest;
-      if (
-        !import.meta.env.DEV &&
-        (manifest as { artifactKind?: string }).artifactKind === 'diagnostic'
-      )
-        throw new Error('diagnostic_fixture_cannot_be_activated');
-      const master = await stageAndActivate(manifest, candidate.snapshot, new Date());
+      const { active: master } = await activateCurrentMaster();
       const profiles = (await repository.load()) ?? createProfileCollection('マスター', clock, ids);
       await repository.replace(profiles);
       onComplete(master.snapshot, profiles);
@@ -303,6 +308,7 @@ function Setup({
           <li>検索索引を準備</li>
           <li>active版を切替</li>
         </ol>
+        {startupWarning && <p role="alert">{startupWarning}</p>}
         {state === 'running' ? (
           <p role="status">{t('setup.running')}…</p>
         ) : (
@@ -386,43 +392,64 @@ export function App() {
   const [calculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
-      let active = await loadActiveMaster();
-      const saved = await repository.load();
-      if (active) {
-        try {
-          const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
-          if (candidate.fromOfflineCache) setOnline(false);
-          if (!import.meta.env.DEV && candidate.manifest.artifactKind === 'diagnostic')
-            throw new Error('diagnostic_fixture_cannot_be_activated');
-          if (candidate.manifest.masterDataVersion !== active.manifest.masterDataVersion)
-            active = await stageAndActivate(candidate.manifest, candidate.snapshot, new Date());
-        } catch (cause) {
-          setStartupWarning(
-            `更新に失敗したため互換性確認済みの ${active.manifest.masterDataVersion} を使用中: ${cause instanceof Error ? cause.message : String(cause)}`,
-          );
+      try {
+        const activeLoad = await loadActiveMaster();
+        let active = activeLoad.state === 'ready' ? activeLoad.active : undefined;
+        const saved = await repository.load();
+        if (activeLoad.state === 'discarded') {
+          try {
+            const current = await activateCurrentMaster();
+            if (current.fromOfflineCache) setOnline(false);
+            active = current.active;
+            setStartupWarning('互換性のない旧マスターデータを削除し、現行版へ更新しました。');
+          } catch (cause) {
+            setStartupWarning(
+              `互換性のない旧マスターデータを削除しました。再セットアップが必要です: ${cause instanceof Error ? cause.message : String(cause)}`,
+            );
+          }
+        } else if (active) {
+          try {
+            const candidate = await fetchMasterCandidate(import.meta.env.BASE_URL);
+            if (candidate.fromOfflineCache) setOnline(false);
+            if (!import.meta.env.DEV && candidate.manifest.artifactKind === 'diagnostic')
+              throw new Error('diagnostic_fixture_cannot_be_activated');
+            if (candidate.manifest.masterDataVersion !== active.manifest.masterDataVersion)
+              active = await stageAndActivate(candidate.manifest, candidate.snapshot, new Date());
+          } catch (cause) {
+            setStartupWarning(
+              `更新に失敗したため互換性確認済みの ${active.manifest.masterDataVersion} を使用中: ${cause instanceof Error ? cause.message : String(cause)}`,
+            );
+          }
         }
-      }
-      if (active && saved) {
-        let shared: CalculationShareSnapshot | null = null;
-        try {
-          shared = readShareFragment(location.hash);
-        } catch (cause) {
-          setStartupWarning(
-            `共有URLを復元できませんでした: ${cause instanceof Error ? cause.message : String(cause)}`,
+        if (active && saved) {
+          let shared: CalculationShareSnapshot | null = null;
+          try {
+            shared = readShareFragment(location.hash);
+          } catch (cause) {
+            setStartupWarning(
+              `共有URLを復元できませんでした: ${cause instanceof Error ? cause.message : String(cause)}`,
+            );
+          }
+          const savedProfile = activeProfile(saved);
+          setMaster(active.snapshot);
+          setProfiles(saved);
+          setSharedSnapshot(shared ?? undefined);
+          setCalculatorInput(shared?.input ?? savedProfile.draft?.input);
+          setCalculationSelection(
+            shared ? selectionFromShare(shared) : savedProfile.draft?.selection,
           );
+          setSelectedSupport(
+            shared ? undefined : (savedProfile.draft?.supportTemplate ?? undefined),
+          );
+          if (shared) setPage('calculate');
         }
-        const savedProfile = activeProfile(saved);
-        setMaster(active.snapshot);
-        setProfiles(saved);
-        setSharedSnapshot(shared ?? undefined);
-        setCalculatorInput(shared?.input ?? savedProfile.draft?.input);
-        setCalculationSelection(
-          shared ? selectionFromShare(shared) : savedProfile.draft?.selection,
+      } catch (cause) {
+        setStartupWarning(
+          `保存データを検証できなかったため、安全なセットアップ画面で起動しました: ${cause instanceof Error ? cause.message : String(cause)}`,
         );
-        setSelectedSupport(shared ? undefined : (savedProfile.draft?.supportTemplate ?? undefined));
-        if (shared) setPage('calculate');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     void bootstrap();
   }, []);
@@ -455,6 +482,7 @@ export function App() {
   if (!master || !profiles)
     return (
       <Setup
+        startupWarning={startupWarning}
         onComplete={(nextMaster, nextProfiles) => {
           setMaster(nextMaster);
           setProfiles(nextProfiles);

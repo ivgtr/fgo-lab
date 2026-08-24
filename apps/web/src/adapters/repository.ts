@@ -40,6 +40,13 @@ export interface ActiveMaster {
   snapshot: MasterDataSnapshot;
   activatedAt: string;
 }
+export type ActiveMasterLoadResult =
+  | { state: 'empty' }
+  | { state: 'ready'; active: ActiveMaster }
+  | {
+      state: 'discarded';
+      reason: 'invalid_record' | 'invalid_schema' | 'invalid_snapshot' | 'version_mismatch';
+    };
 async function sha256(value: string): Promise<string> {
   const digest = new Uint8Array(
     await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)),
@@ -68,14 +75,43 @@ export async function fetchMasterCandidate(
       dataResponse.headers.get('X-Fgo-Lab-Cache') === 'offline',
   };
 }
-export async function loadActiveMaster(): Promise<ActiveMaster | undefined> {
-  const value = await (await database()).get('master', 'active');
-  if (value === undefined) return undefined;
+async function discardMasterCache(db: IDBPDatabase<LabDb>): Promise<void> {
+  const transaction = db.transaction(['master', 'staging'], 'readwrite');
+  await transaction.objectStore('master').clear();
+  await transaction.objectStore('staging').clear();
+  await transaction.done;
+}
+export async function loadActiveMaster(): Promise<ActiveMasterLoadResult> {
+  const db = await database();
+  const value = await db.get('master', 'active');
+  if (value === undefined) return { state: 'empty' };
+  if (!value || typeof value !== 'object') {
+    await discardMasterCache(db);
+    return { state: 'discarded', reason: 'invalid_record' };
+  }
   const record = value as Record<string, unknown>;
+  const manifest = masterManifestSchema.safeParse(record['manifest']);
+  const snapshot = masterSnapshotSchema.safeParse(record['snapshot']);
+  if (!manifest.success || !snapshot.success || typeof record['activatedAt'] !== 'string') {
+    await discardMasterCache(db);
+    return { state: 'discarded', reason: 'invalid_schema' };
+  }
+  const report = validateMasterSnapshot(snapshot.data);
+  if (!report.valid) {
+    await discardMasterCache(db);
+    return { state: 'discarded', reason: 'invalid_snapshot' };
+  }
+  if (snapshot.data.version !== manifest.data.masterDataVersion) {
+    await discardMasterCache(db);
+    return { state: 'discarded', reason: 'version_mismatch' };
+  }
   return {
-    manifest: masterManifestSchema.parse(record['manifest']),
-    snapshot: masterSnapshotSchema.parse(record['snapshot']),
-    activatedAt: String(record['activatedAt']),
+    state: 'ready',
+    active: {
+      manifest: manifest.data,
+      snapshot: snapshot.data,
+      activatedAt: record['activatedAt'],
+    },
   };
 }
 export async function stageAndActivate(

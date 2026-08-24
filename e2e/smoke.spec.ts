@@ -132,6 +132,163 @@ test('reopens saved local data while offline', async ({ page, context, isMobile 
   }
 });
 
+test('discards an incompatible master cache without deleting user data', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers IndexedDB migration recovery');
+  const pageErrors: Error[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+
+  const profileId = await page.evaluate(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction(['master', 'user'], 'readwrite');
+          const masterStore = transaction.objectStore('master');
+          const userStore = transaction.objectStore('user');
+          const masterRequest = masterStore.get('active');
+          const userRequest = userStore.get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            const profiles = userRequest.result as { activeProfileId: string };
+            resolve(profiles.activeProfileId);
+            db.close();
+          };
+          masterRequest.onsuccess = () => {
+            const active = masterRequest.result as {
+              snapshot: {
+                servants: Array<{
+                  name: string;
+                  npSpecialAttack?: Record<string, unknown> | null;
+                }>;
+              };
+            };
+            const servant = active.snapshot.servants.find(
+              (candidate) => candidate.name === 'アーキタイプ：アース',
+            )!;
+            servant.npSpecialAttack = {
+              targetTraits: ['alignmentChaotic'],
+              multipliersByOvercharge: [1.5, 1.5, 1.5, 1.5, 1.5],
+            };
+            masterStore.put(active, 'active');
+          };
+        };
+      }),
+  );
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await expect(
+    page.getByText('互換性のない旧マスターデータを削除し、現行版へ更新しました。'),
+  ).toBeVisible();
+  await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
+  const recovered = await page.evaluate(
+    () =>
+      new Promise<{ profileId: string; hasCurrentSpecialAttack: boolean }>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction(['master', 'user'], 'readonly');
+          const masterRequest = transaction.objectStore('master').get('active');
+          const userRequest = transaction.objectStore('user').get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            const active = masterRequest.result as {
+              snapshot: {
+                servants: Array<{
+                  name: string;
+                  npSpecialAttack?: Record<string, unknown> | null;
+                }>;
+              };
+            };
+            const profiles = userRequest.result as { activeProfileId: string };
+            const servant = active.snapshot.servants.find(
+              (candidate) => candidate.name === 'アーキタイプ：アース',
+            );
+            resolve({
+              profileId: profiles.activeProfileId,
+              hasCurrentSpecialAttack: Boolean(
+                servant?.npSpecialAttack?.['multipliersByNpLevelAndOvercharge'],
+              ),
+            });
+            db.close();
+          };
+        };
+      }),
+  );
+  expect(recovered).toEqual({ profileId, hasCurrentSpecialAttack: true });
+
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('master', 'readwrite');
+          const store = transaction.objectStore('master');
+          const activeRequest = store.get('active');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            resolve();
+            db.close();
+          };
+          activeRequest.onsuccess = () => {
+            const active = activeRequest.result as {
+              snapshot: { servants: Array<{ npSpecialAttack?: Record<string, unknown> | null }> };
+            };
+            const servant = active.snapshot.servants.find(
+              (candidate) => candidate.npSpecialAttack,
+            )!;
+            servant.npSpecialAttack = {
+              targetTraits: ['invalid'],
+              multipliersByOvercharge: [1, 1, 1, 1, 1],
+            };
+            store.put(active, 'active');
+          };
+        };
+      }),
+  );
+  await page.route('**/master/**', (route) => route.abort());
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '初回セットアップ' })).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText(
+    '互換性のない旧マスターデータを削除しました。再セットアップが必要です',
+  );
+  await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
+  const discardedState = await page.evaluate(
+    () =>
+      new Promise<{ hasActiveMaster: boolean; profileId: string }>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction(['master', 'user'], 'readonly');
+          const masterRequest = transaction.objectStore('master').get('active');
+          const userRequest = transaction.objectStore('user').get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            resolve({
+              hasActiveMaster: masterRequest.result !== undefined,
+              profileId: (userRequest.result as { activeProfileId: string }).activeProfileId,
+            });
+            db.close();
+          };
+        };
+      }),
+  );
+  expect(discardedState).toEqual({ hasActiveMaster: false, profileId });
+});
+
 test('autosaves and restores a directly edited calculation draft', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation exposes the persistent undo status');
   await page.goto('/');
