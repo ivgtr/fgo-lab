@@ -180,4 +180,29 @@ describe('float32 NP damage kernel', () => {
     };
     expect(damageAtRandom(composed, 1, 1000)).toBe(9_117);
   });
+  it('matches AppMedia random endpoints for the Water Lilith default inputs', () => {
+    const waterLilith: CalcInput = {
+      ...input,
+      attackerId: '405900',
+      attackerAtk: 11_971,
+      fouAtk: 1_000,
+      craftEssenceAtk: 0,
+      npLevel: 5,
+      npMultipliers: [600, 800, 900, 950, 1_000],
+      attackNpFunctionType: 'damageNpStateIndividualFix',
+      cardType: 'quick',
+      classAttackRate: 1,
+      classAffinity: 1,
+      attributeAffinity: 1,
+      attackBuff: 0,
+      cardBuff: 0.32,
+      npDamageBuff: 0.2,
+      powerMod: 0.5,
+      npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
+      flatDamage: 175,
+    };
+    const result = calculateNpDamage(waterLilith, versions).results[4]!;
+    expect(result.minimum).toBe(72_476);
+    expect(result.maximum).toBe(88_463);
+  });
 });

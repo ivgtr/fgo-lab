@@ -122,6 +122,22 @@ export function Calculator({
     ),
   ].sort((left, right) => traitLabel(left).localeCompare(traitLabel(right), 'ja'));
   const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
+  const hiddenManualModifiers = [
+    ['攻撃バフ', input.attackBuff, 0],
+    ['敵防御力', input.defenseBuff, 0],
+    ['カード性能', input.cardBuff, 0],
+    ['カード耐性', input.cardResistance, 0],
+    ['宝具威力', input.npDamageBuff, 0],
+    ['宝具耐性', input.npResistance, 0],
+    ['特攻状態', input.powerMod, 0],
+    ['イベント特攻', input.eventDamageBuff, 0],
+    ['特殊威力', input.specialDamageBuff, 0],
+    ['特殊耐性', input.specialResistance, 0],
+    ['固定ダメージ', input.flatDamage, 0],
+    ['固定ダメージ軽減', input.damageCut, 0],
+  ].flatMap(([label, value, neutral]) => (value === neutral ? [] : [label as string]));
+  if (input.npSpecialMultipliers.some((multiplier) => multiplier !== 1))
+    hiddenManualModifiers.push('特攻宝具倍率');
   const classSituationLabel =
     input.classAffinity === 2
       ? '有利'
@@ -216,6 +232,23 @@ export function Calculator({
       },
       { ...selection, manualOverrides: [] },
     );
+  }
+  function clearManualDamageModifiers() {
+    change({
+      attackBuff: 0,
+      defenseBuff: 0,
+      cardBuff: 0,
+      cardResistance: 0,
+      npDamageBuff: 0,
+      npResistance: 0,
+      powerMod: 0,
+      eventDamageBuff: 0,
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
+      specialDamageBuff: 0,
+      specialResistance: 0,
+      flatDamage: 0,
+      damageCut: 0,
+    });
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
@@ -360,6 +393,14 @@ export function Calculator({
           </button>
         </div>
         <div className="form-grid">
+          {mode === 'quick' && hiddenManualModifiers.length ? (
+            <div className="notice form-grid-wide" role="status">
+              <p>直接入力の補正が計算に残っています：{hiddenManualModifiers.join('・')}</p>
+              <button type="button" onClick={clearManualDamageModifiers}>
+                手動補正をすべて解除
+              </button>
+            </div>
+          ) : null}
           <label>
             サーヴァントLv
             <input
@@ -923,6 +964,14 @@ export function Calculator({
           </div>
           <dl className="automatic-modifiers">
             <div>
+              <dt>合計ATK</dt>
+              <dd>
+                {numberFormatter.format(
+                  resolvedInput.attackerAtk + resolvedInput.fouAtk + resolvedInput.craftEssenceAtk,
+                )}
+              </dd>
+            </div>
+            <div>
               <dt>クラス攻撃補正</dt>
               <dd>{resolvedInput.classAttackRate.toFixed(2)}倍</dd>
             </div>
@@ -933,6 +982,56 @@ export function Calculator({
             <div>
               <dt>属性相性</dt>
               <dd>{resolvedInput.attributeAffinity.toFixed(2)}倍</dd>
+            </div>
+            <div>
+              <dt>攻撃バフ／敵防御</dt>
+              <dd>
+                {(resolvedInput.attackBuff * 100).toFixed(1)}%／
+                {(resolvedInput.defenseBuff * 100).toFixed(1)}%
+              </dd>
+            </div>
+            <div>
+              <dt>{resolvedInput.cardType.toUpperCase()}性能／耐性</dt>
+              <dd>
+                {(resolvedInput.cardBuff * 100).toFixed(1)}%／
+                {(resolvedInput.cardResistance * 100).toFixed(1)}%
+              </dd>
+            </div>
+            <div>
+              <dt>宝具威力／耐性</dt>
+              <dd>
+                {(resolvedInput.npDamageBuff * 100).toFixed(1)}%／
+                {(resolvedInput.npResistance * 100).toFixed(1)}%
+              </dd>
+            </div>
+            <div>
+              <dt>特攻状態＋イベント</dt>
+              <dd>
+                {((resolvedInput.powerMod + resolvedInput.eventDamageBuff) * 100).toFixed(1)}%
+              </dd>
+            </div>
+            <div>
+              <dt>NP{resolvedInput.npLevel} 特攻宝具</dt>
+              <dd>
+                {(
+                  (resolvedInput.npSpecialMultipliers[resolvedInput.npLevel - 1] ?? 1) * 100
+                ).toFixed(1)}
+                %
+              </dd>
+            </div>
+            <div>
+              <dt>特殊威力／特殊耐性</dt>
+              <dd>
+                {(resolvedInput.specialDamageBuff * 100).toFixed(1)}%／
+                {(resolvedInput.specialResistance * 100).toFixed(1)}%
+              </dd>
+            </div>
+            <div>
+              <dt>固定ダメージ／軽減</dt>
+              <dd>
+                {numberFormatter.format(resolvedInput.flatDamage)}／
+                {numberFormatter.format(resolvedInput.damageCut)}
+              </dd>
             </div>
           </dl>
           {automaticEffects.length ? (

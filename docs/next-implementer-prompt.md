@@ -128,9 +128,10 @@ UIを広げる前に、`damage-calculation-review.md`に従ってM3を完成さ�
 - Atlas Academyの文書とJPデータを一次根拠に独立実装する。
 - ChaldeaのAGPLコードをコピー、翻案、移植しない。挙動比較だけに使う。
 - AppMediaは標準ケースの比較先であり、唯一の正解にしない。
+- 水着リリスのAppMedia初期入力は、最低72,476／最大88,463を比較oracleとして維持する。
 - JavaScript倍精度の最後に一度floorする簡易式にしない。定義した演算境界で`Math.fround`相当を適用する。
 - 乱数900〜1099を全件、最終floorまで評価する。
-- 特殊処理をサーヴァントIDの散在したif文で実装せず、Function種別をキーにしたhandler registryへ隔離する。
+- 特殊処理をサーヴァントIDの散在したif文で実装せず、正規化済み入力とFunction種別の対応精度分類へ集約する。
 - 全攻撃宝具のFunction分類を100%にする。
 - 未知Function、条件不足、未対応handlerを0扱いしない。
 - `exact`、`approximate`、`unsupported`を結果契約に含める。
@@ -291,4 +292,3 @@ chore: prepare GitHub Pages release workflow
 そこでユーザーに、UIの最終ブラッシュアップと公開可否を確認してもらってください。ユーザー確認前でも、停止条件に該当しない実装、テスト、修正、コミットは最後まで進めてください。
 
 ---
-

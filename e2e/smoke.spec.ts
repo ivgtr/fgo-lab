@@ -401,6 +401,14 @@ test('autosaves and restores a directly edited calculation draft', async ({ page
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await page.getByRole('tab', { name: '直接入力' }).click();
   await expect(page.getByLabel('攻撃バフ（%）')).toHaveValue('20');
+  await page.getByRole('tab', { name: 'クイック操作' }).click();
+  await expect(page.getByRole('status')).toContainText(
+    '直接入力の補正が計算に残っています：攻撃バフ',
+  );
+  await page.getByRole('button', { name: '手動補正をすべて解除' }).click();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await page.getByRole('tab', { name: '直接入力' }).click();
+  await expect(page.getByLabel('攻撃バフ（%）')).toHaveValue('0');
 });
 
 test('edits Fou ATK from quick controls and shares the value with direct input', async ({
