@@ -221,6 +221,7 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 - `a334bf3 feat(calculator): apply attacker self skills`
 - `46dd8d0 fix(calculator): restore compact skills and result card`
 - `5b62f5c fix(calculator): export unified result card at fixed width`
+- `cb48f1a fix(calculator): remove redundant result pane`
 
 ## 8. 次の作業
 
