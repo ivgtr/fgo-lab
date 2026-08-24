@@ -39,6 +39,6 @@ test('@a11y mobile home and calculator have no serious axe violations', async ({
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await expectNoSeriousViolations(page);
-  await page.getByRole('button', { name: '計算' }).click();
+  await page.getByRole('button', { name: '計算', exact: true }).click();
   await expectNoSeriousViolations(page);
 });

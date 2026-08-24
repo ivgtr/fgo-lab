@@ -528,6 +528,7 @@ export function App() {
           <Home
             result={result.results[input.npLevel - 1]?.average ?? 0}
             attackerName={servant.name}
+            attackerImage={servant.imageKey}
             owned={build?.npLevel ? 1 : 0}
             hasHistory={profile.history.length > 0}
             onNavigate={(next) => void navigate(next)}
@@ -603,12 +604,14 @@ export function App() {
 function Home({
   result,
   attackerName,
+  attackerImage,
   owned,
   hasHistory,
   onNavigate,
 }: {
   result: number;
   attackerName: string;
+  attackerImage: string | null;
   owned: number;
   hasHistory: boolean;
   onNavigate: (page: Page) => void;
@@ -617,13 +620,32 @@ function Home({
     <div className="home-grid">
       <section className="primary-module">
         <p className="eyebrow">PRIMARY</p>
-        <h2>{hasHistory ? '前回の計算' : '最初の計算を始める'}</h2>
-        <p className="hero-number">{numberFormatter.format(result)}</p>
-        <p>
-          {hasHistory ? `${attackerName}・保存済みの最終条件` : `${attackerName}・NP1の初期条件`}
-        </p>
+        <h2>{hasHistory ? '前回の計算を開く' : '宝具ダメージを比べる'}</h2>
+        {hasHistory ? (
+          <>
+            <p className="hero-number">{numberFormatter.format(result)}</p>
+            <div className="entity-summary compact">
+              <MasterImage src={attackerImage} alt="" fallback={attackerName} />
+              <p>
+                <strong>{attackerName}</strong>
+                <small>保存済みの最終条件</small>
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="lead">
+              攻撃役と対象を選ぶと、NP1〜5の平均・最低・最大を一度に確認できます。
+            </p>
+            <ol className="start-guide">
+              <li>所持状態を登録するか、全DBから攻撃役を選択</li>
+              <li>対象クラスと支援条件を設定</li>
+              <li>宝具レベル別の結果を比較</li>
+            </ol>
+          </>
+        )}
         <button className="primary" onClick={() => onNavigate('calculate')}>
-          条件を開く
+          {hasHistory ? '前回条件を開く' : '新しい計算を始める'}
         </button>
       </section>
       <section>
@@ -635,6 +657,11 @@ function Home({
         <h2>次の育成</h2>
         <p>目標を設定すると必要素材を集計します。</p>
         <button onClick={() => onNavigate('growth')}>育成計画を見る</button>
+      </section>
+      <section>
+        <h2>火力ランキング</h2>
+        <p>同じ条件で攻撃宝具420騎を比較します。</p>
+        <button onClick={() => onNavigate('ranking')}>ランキングを見る</button>
       </section>
     </div>
   );
@@ -710,7 +737,23 @@ function Calculator({
   return (
     <div className="worksheet">
       <section>
-        <h2>計算条件</h2>
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">CONDITIONS</p>
+            <h2>計算条件</h2>
+          </div>
+          <span className="badge">{result.precision}</span>
+        </div>
+        <div className="entity-summary">
+          <MasterImage src={attacker?.imageKey ?? null} alt="" fallback={attacker?.name ?? '?'} />
+          <p>
+            <strong>{attacker?.name ?? input.attackerId}</strong>
+            <small>
+              {attacker?.classId}・{attacker?.npTarget === 'all' ? '全体' : '単体'}
+              {attacker?.npCard.toUpperCase()}宝具
+            </small>
+          </p>
+        </div>
         <div role="tablist" aria-label="入力方法">
           <button role="tab" aria-selected={mode === 'quick'} onClick={() => setMode('quick')}>
             クイック操作
@@ -855,9 +898,6 @@ function Calculator({
               </label>
             ))}
         </div>
-        <p>
-          計算精度 <span className="badge">{result.precision}</span>
-        </p>
         {sharedVersionMismatch && (
           <p role="status" className="notice">
             対応するデータ版またはエンジン版がないため、共有時の履歴結果を表示しています。入力を変更すると現行版で新規計算します。
@@ -868,7 +908,13 @@ function Calculator({
         </p>
       </section>
       <section data-share-card>
-        <h2>宝具ダメージ</h2>
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">RESULT</p>
+            <h2>宝具ダメージ</h2>
+          </div>
+          <small>平均を主表示</small>
+        </div>
         <table>
           <caption>宝具レベル別のダメージ</caption>
           <thead>
@@ -934,6 +980,7 @@ function Servants({
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState<'all' | 'owned' | 'unowned'>('all');
   const [selectedId, setSelectedId] = useState(servants[0]?.id ?? '');
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const visible = servants.filter((candidate) => {
     const owned = (builds[candidate.id]?.npLevel ?? 0) > 0;
     const normalizedSearch = search.toLocaleLowerCase('ja');
@@ -947,8 +994,8 @@ function Servants({
   const build = selected ? builds[selected.id] : undefined;
   const target = selected ? targets[selected.id] : undefined;
   return (
-    <div className="master-detail">
-      <section>
+    <div className={`master-detail${mobileDetailOpen ? ' mobile-detail-open' : ''}`}>
+      <section className="overview-pane">
         <label>
           検索
           <input
@@ -973,19 +1020,39 @@ function Servants({
               key={candidate.id}
               className="list-row"
               aria-current={selected?.id === candidate.id ? 'true' : undefined}
-              onClick={() => setSelectedId(candidate.id)}
+              onClick={() => {
+                setSelectedId(candidate.id);
+                setMobileDetailOpen(true);
+              }}
             >
-              <strong>{candidate.name}</strong>
-              <span>
-                {builds[candidate.id]?.npLevel
-                  ? `NP${String(builds[candidate.id]?.npLevel)}`
-                  : 'NP0・未所持'}
+              <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
+              <span className="list-row-main">
+                <strong>{candidate.name}</strong>
+                <small>
+                  {candidate.classId}・{candidate.npTarget === 'all' ? '全体' : '単体'}
+                  {candidate.npCard.toUpperCase()}
+                </small>
+              </span>
+              <span className="list-row-state">
+                <strong>
+                  {builds[candidate.id]?.npLevel
+                    ? `NP${String(builds[candidate.id]?.npLevel)}`
+                    : 'NP0'}
+                </strong>
+                <small>
+                  {builds[candidate.id]?.npLevel
+                    ? `Lv.${String(builds[candidate.id]?.level)}`
+                    : '未所持'}
+                </small>
               </span>
             </button>
           ))}
         </div>
       </section>
-      <section>
+      <section className="detail-editor">
+        <button className="mobile-back" onClick={() => setMobileDetailOpen(false)}>
+          ← 一覧へ戻る
+        </button>
         {!selected ? (
           <p>条件に一致するサーヴァントはいません。</p>
         ) : (
@@ -1002,7 +1069,21 @@ function Servants({
                 育成目標
               </button>
             </div>
-            <h2>{selected.name}</h2>
+            <div className="entity-summary detail-hero">
+              <MasterImage
+                src={selected.imageKey}
+                alt=""
+                fallback={selected.name}
+                className="large"
+              />
+              <p>
+                <strong>{selected.name}</strong>
+                <small>
+                  {selected.classId}・{selected.npTarget === 'all' ? '全体' : '単体'}
+                  {selected.npCard.toUpperCase()}宝具
+                </small>
+              </p>
+            </div>
             {tab === 'current' && (
               <label>
                 宝具Lv
@@ -1079,9 +1160,21 @@ function Servants({
             </label>
             {[1, 2, 3].map((slot) => {
               const key = String(slot);
+              const skill = selected.skills[slot - 1];
               return (
-                <label key={`skill:${key}`}>
-                  スキル{slot}
+                <label key={`skill:${key}`} className="skill-field">
+                  <span className="field-identity">
+                    <MasterImage
+                      src={skill?.imageKey ?? null}
+                      alt=""
+                      fallback={skill?.name ?? String(slot)}
+                      className="skill-icon"
+                    />
+                    <span>
+                      <strong>{skill?.name ?? `スキル${String(slot)}`}</strong>
+                      <small>スキル{slot}</small>
+                    </span>
+                  </span>
                   <input
                     type="number"
                     min="1"
@@ -1220,7 +1313,7 @@ function CraftEssences({
     )
     .slice(0, 100);
   return (
-    <section>
+    <section className="ranking-page">
       <h2>登録済み {copies.length}枚</h2>
       <button className="primary" onClick={() => setDialogOpen(true)}>
         DBから礼装を登録
@@ -1231,12 +1324,14 @@ function CraftEssences({
           const label = names.get(copy.craftEssenceId) ?? copy.craftEssenceId;
           return (
             <li key={copy.copyId}>
-              <span>
+              <MasterImage src={master?.imageKey ?? null} alt="" fallback={label} />
+              <span className="list-row-main">
                 <strong>{label}</strong>
-                <br />
-                {master
-                  ? `ATK ${String(deriveCraftEssenceAtk(master, copy.level, copy.limitBreak))}`
-                  : ''}
+                <small>
+                  {master
+                    ? `ATK ${String(deriveCraftEssenceAtk(master, copy.level, copy.limitBreak))}`
+                    : ''}
+                </small>
               </span>
               <label>
                 Lv
@@ -1573,27 +1668,29 @@ function Ranking({
           </select>
         </label>
       </div>
-      <table>
-        <caption>共通条件の平均ダメージ順</caption>
-        <thead>
-          <tr>
-            <th>順位</th>
-            <th>サーヴァント</th>
-            <th>平均</th>
-            <th>状態</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={row.servantId}>
-              <td>{index + 1}</td>
-              <th>{row.name}</th>
-              <td className="average">{numberFormatter.format(row.average)}</td>
-              <td>{row.precision}</td>
+      <div className="ranking-table-scroll" role="region" tabIndex={0} aria-label="ランキング表">
+        <table>
+          <caption>共通条件の平均ダメージ順</caption>
+          <thead>
+            <tr>
+              <th>順位</th>
+              <th>サーヴァント</th>
+              <th>平均</th>
+              <th>状態</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={row.servantId}>
+                <td>{index + 1}</td>
+                <th>{row.name}</th>
+                <td className="average">{numberFormatter.format(row.average)}</td>
+                <td>{row.precision}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p role="status" className="notice">
         {ranking.loading
           ? 'Workerで計算中…'
@@ -1621,7 +1718,7 @@ function Growth({
   );
   const visible = filterAndSortLedger(ledger, search, category, order);
   const selected = ledger.find((entry) => entry.material.id === selectedId) ?? visible[0];
-  const servantNames = new Map(master.servants.map((servant) => [servant.id, servant.name]));
+  const servantById = new Map(master.servants.map((servant) => [servant.id, servant]));
   return (
     <section>
       <p className="notice">種火条件: 星5・クラス一致・成功ボーナスなし</p>
@@ -1674,7 +1771,16 @@ function Growth({
                   >
                     <th>
                       <button onClick={() => setSelectedId(entry.material.id)}>
-                        {entry.material.name}
+                        <MasterImage
+                          src={entry.material.imageKey}
+                          alt=""
+                          fallback={entry.material.name}
+                          className="material-icon"
+                        />
+                        <span>
+                          <strong>{entry.material.name}</strong>
+                          <small>{entry.material.category}</small>
+                        </span>
                       </button>
                     </th>
                     <td>{entry.amount}</td>
@@ -1687,9 +1793,13 @@ function Growth({
               <ul className="plain-list">
                 {selected?.usages.map((usage) => (
                   <li key={`${usage.servantId}:${usage.purpose}`}>
-                    <span>
-                      {servantNames.get(usage.servantId) ?? usage.servantId}
-                      <br />
+                    <MasterImage
+                      src={servantById.get(usage.servantId)?.imageKey ?? null}
+                      alt=""
+                      fallback={servantById.get(usage.servantId)?.name ?? usage.servantId}
+                    />
+                    <span className="list-row-main">
+                      <strong>{servantById.get(usage.servantId)?.name ?? usage.servantId}</strong>
                       <small>{usage.purpose}</small>
                     </span>
                     <strong>{usage.amount}</strong>
@@ -1834,6 +1944,28 @@ function DataPage({
       </button>
       <p aria-live="polite">{message}</p>
     </section>
+  );
+}
+function MasterImage({
+  src,
+  alt,
+  fallback,
+  className = '',
+}: {
+  src: string | null;
+  alt: string;
+  fallback: string;
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className={`image-frame ${className}`.trim()} aria-hidden={alt ? undefined : 'true'}>
+      {src && !failed ? (
+        <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />
+      ) : (
+        <span>{fallback.slice(0, 1)}</span>
+      )}
+    </span>
   );
 }
 function Empty({ title, action }: { title: string; action: string }) {

@@ -27,6 +27,23 @@ test('works at 320px without horizontal document overflow', async ({ page }) => 
   expect(overflow).toBe(false);
 });
 
+test('mobile servant editor moves between list and detail', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Mobile layout uses list-to-detail navigation');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: '所持', exact: true }).click();
+
+  const list = page.getByRole('list', { name: 'サーヴァント一覧' });
+  await expect(list).toBeVisible();
+  await expect(page.getByLabel('宝具Lv')).toBeHidden();
+  await list.getByRole('listitem').first().click();
+  await expect(list).toBeHidden();
+  await expect(page.getByLabel('宝具Lv')).toBeVisible();
+  await page.getByRole('button', { name: '一覧へ戻る' }).click();
+  await expect(list).toBeVisible();
+});
+
 test('reopens saved local data while offline', async ({ page, context, isMobile }) => {
   test.skip(isMobile, 'One browser project is sufficient for the service worker offline drill');
   await page.goto('/');
