@@ -48,6 +48,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   ).toHaveCount(1);
   await page.getByRole('tab', { name: '育成目標' }).click();
   await page.getByLabel('レベル').fill('90');
+  await page.getByLabel('スキル1').fill('2');
   await page.getByLabel('育成計画へ含める').check();
 
   await page.getByRole('button', { name: '概念礼装' }).click();
@@ -67,6 +68,10 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await expect(
     page.getByRole('list', { name: '保存済み支援条件' }).getByRole('listitem'),
   ).toContainText('支援条件 1');
+
+  await page.getByRole('button', { name: '育成計画' }).click();
+  await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('剣の輝石');
+  await expect(page.getByLabel('素材の使用先')).toContainText('アルトリア・ペンドラゴン');
 
   await page.reload();
   await page.getByRole('button', { name: '概念礼装' }).click();
@@ -106,8 +111,12 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('1件をWorkerで計算');
+  await expect(page.getByRole('status')).toContainText('420件をWorkerで計算');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );
+  await page.getByLabel('宝具カード').selectOption('arts');
+  await expect(page.getByRole('status')).not.toContainText('420件表示');
+  await page.getByLabel('対象範囲').selectOption('owned');
+  await expect(page.getByRole('status')).toContainText('0件表示');
 });

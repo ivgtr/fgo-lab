@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CraftEssenceMaster, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import {
   calculateGrowthLedger,
+  filterAndSortLedger,
   createProfileCollection,
   defaultServantBuild,
   activeProfile,
@@ -105,8 +106,11 @@ function Setup({
   );
 }
 
-function calcInput(master: MasterDataSnapshot, build: ServantBuild | undefined): CalcInput {
-  const servant = master.servants[0]!;
+function calcInput(
+  master: MasterDataSnapshot,
+  build: ServantBuild | undefined,
+  servant = master.servants[0]!,
+): CalcInput {
   return {
     attackerId: servant.id,
     attackerLevel: build?.level ?? 90,
@@ -387,7 +391,16 @@ export function App() {
         )}{' '}
         {page === 'ranking' && (
           <Ranking
-            candidates={[{ servantId: servant.id, name: servant.name, input }]}
+            candidates={currentMaster.servants.map((candidate) => ({
+              servantId: candidate.id,
+              name: candidate.name,
+              input: calcInput(currentMaster, profile.servantBuilds[candidate.id], candidate),
+              classId: candidate.classId,
+              rarity: candidate.rarity,
+              npCard: candidate.npCard,
+              npTarget: candidate.npTarget,
+              owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
+            }))}
             versions={versions}
           />
         )}{' '}
@@ -683,6 +696,55 @@ function Servants({
                 }
               />
             </label>
+            <label>
+              スキル1
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={
+                  tab === 'current' ? (build?.skills['1'] ?? 1) : (target?.skills['1'] ?? 1)
+                }
+                onChange={(event) => {
+                  const level = Number(event.target.value);
+                  if (tab === 'current')
+                    void onChange(selected.id, {
+                      skills: { ...build?.skills, '1': level },
+                    });
+                  else
+                    void onTargetChange(selected.id, {
+                      skills: { ...target?.skills, '1': level },
+                      planned: true,
+                    });
+                }}
+              />
+            </label>
+            <div className="toolbar">
+              {[90, 100, 120].map((level) => (
+                <button
+                  key={level}
+                  onClick={() =>
+                    void (tab === 'current'
+                      ? onChange(selected.id, { level })
+                      : onTargetChange(selected.id, { level, planned: true }))
+                  }
+                >
+                  Lv{level}
+                </button>
+              ))}
+              <button
+                onClick={() =>
+                  void (tab === 'current'
+                    ? onChange(selected.id, { skills: { ...build?.skills, '1': 10 } })
+                    : onTargetChange(selected.id, {
+                        skills: { ...target?.skills, '1': 10 },
+                        planned: true,
+                      }))
+                }
+              >
+                スキル全て10
+              </button>
+            </div>
             {tab === 'target' && (
               <label>
                 <input
@@ -809,25 +871,78 @@ function Ranking({
   candidates,
   versions,
 }: {
-  candidates: { servantId: string; name: string; input: CalcInput }[];
+  candidates: {
+    servantId: string;
+    name: string;
+    input: CalcInput;
+    classId: string;
+    rarity: number;
+    npCard: string;
+    npTarget: string;
+    owned: boolean;
+  }[];
   versions: Parameters<typeof calculateNpDamage>[1];
 }) {
   const ranking = useRanking(candidates, versions);
+  const [classId, setClassId] = useState('any');
+  const [card, setCard] = useState('any');
+  const [target, setTarget] = useState('any');
+  const [rarity, setRarity] = useState('any');
+  const [scope, setScope] = useState<'all' | 'owned'>('all');
+  const rows = ranking.rows.filter(
+    (row) =>
+      (classId === 'any' || row.classId === classId) &&
+      (card === 'any' || row.npCard === card) &&
+      (target === 'any' || row.npTarget === target) &&
+      (rarity === 'any' || row.rarity === Number(rarity)) &&
+      (scope === 'all' || row.owned),
+  );
   return (
     <section>
       <div className="toolbar">
         <label>
           対象範囲
-          <select>
-            <option>全サーヴァント</option>
-            <option>所持サーヴァント</option>
+          <select
+            value={scope}
+            onChange={(event) => setScope(event.target.value as 'all' | 'owned')}
+          >
+            <option value="all">全サーヴァント</option>
+            <option value="owned">所持サーヴァント</option>
           </select>
         </label>
         <label>
           クラス
-          <select>
-            <option>すべて</option>
-            <option>Saber</option>
+          <select value={classId} onChange={(event) => setClassId(event.target.value)}>
+            <option value="any">すべて</option>
+            <option value="saber">Saber</option>
+          </select>
+        </label>
+        <label>
+          宝具カード
+          <select value={card} onChange={(event) => setCard(event.target.value)}>
+            <option value="any">すべて</option>
+            <option value="buster">Buster</option>
+            <option value="arts">Arts</option>
+            <option value="quick">Quick</option>
+          </select>
+        </label>
+        <label>
+          宝具範囲
+          <select value={target} onChange={(event) => setTarget(event.target.value)}>
+            <option value="any">すべて</option>
+            <option value="single">単体</option>
+            <option value="all">全体</option>
+          </select>
+        </label>
+        <label>
+          レアリティ
+          <select value={rarity} onChange={(event) => setRarity(event.target.value)}>
+            <option value="any">すべて</option>
+            {[5, 4, 3, 2, 1, 0].map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -842,7 +957,7 @@ function Ranking({
           </tr>
         </thead>
         <tbody>
-          {ranking.rows.map((row, index) => (
+          {rows.map((row, index) => (
             <tr key={row.servantId}>
               <td>{index + 1}</td>
               <th>{row.name}</th>
@@ -855,7 +970,7 @@ function Ranking({
       <p role="status" className="notice">
         {ranking.loading
           ? 'Workerで計算中…'
-          : `${String(ranking.rows.length)}件をWorkerで計算・unsupported ${String(ranking.unsupported.length)}件`}
+          : `${String(rows.length)}件表示 / ${String(ranking.rows.length)}件をWorkerで計算・unsupported ${String(ranking.unsupported.length)}件`}
       </p>
     </section>
   );
@@ -867,35 +982,84 @@ function Growth({
   master: MasterDataSnapshot;
   profile: ReturnType<typeof activeProfile>;
 }) {
+  const [search, setSearch] = useState('');
+  const [order, setOrder] = useState<'game' | 'amount' | 'name'>('game');
+  const [selectedId, setSelectedId] = useState<string>();
   const ledger = calculateGrowthLedger(
     master.servants,
     master.materials,
     profile.servantBuilds,
     profile.servantTargets,
   );
+  const visible = filterAndSortLedger(ledger, search, 'all', order);
+  const selected = ledger.find((entry) => entry.material.id === selectedId) ?? visible[0];
+  const servantNames = new Map(master.servants.map((servant) => [servant.id, servant.name]));
   return (
     <section>
       <p className="notice">種火条件: 星5・クラス一致・成功ボーナスなし</p>
       {ledger.length === 0 ? (
         <Empty title="計画中の育成目標はありません" action="所持・育成で目標を設定" />
       ) : (
-        <table>
-          <caption>必要素材台帳</caption>
-          <thead>
-            <tr>
-              <th>素材</th>
-              <th>必要数</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledger.map((entry) => (
-              <tr key={entry.material.id}>
-                <th>{entry.material.name}</th>
-                <td>{entry.amount}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="toolbar">
+            <label>
+              素材名検索
+              <input value={search} onChange={(event) => setSearch(event.target.value)} />
+            </label>
+            <label>
+              並び順
+              <select
+                value={order}
+                onChange={(event) => setOrder(event.target.value as typeof order)}
+              >
+                <option value="game">ゲーム内順</option>
+                <option value="amount">必要数順</option>
+                <option value="name">素材名順</option>
+              </select>
+            </label>
+          </div>
+          <div className="growth-layout">
+            <table>
+              <caption>必要素材台帳</caption>
+              <thead>
+                <tr>
+                  <th>素材</th>
+                  <th>必要数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((entry) => (
+                  <tr
+                    key={entry.material.id}
+                    aria-current={selected?.material.id === entry.material.id ? 'true' : undefined}
+                  >
+                    <th>
+                      <button onClick={() => setSelectedId(entry.material.id)}>
+                        {entry.material.name}
+                      </button>
+                    </th>
+                    <td>{entry.amount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <aside className="usage-detail" aria-label="素材の使用先">
+              <h2>{selected?.material.name ?? '素材を選択'}</h2>
+              <ul className="plain-list">
+                {selected?.usages.map((usage) => (
+                  <li key={`${usage.servantId}:${usage.purpose}`}>
+                    <span>
+                      {servantNames.get(usage.servantId) ?? usage.servantId}
+                      <br />
+                      <small>{usage.purpose}</small>
+                    </span>
+                    <strong>{usage.amount}</strong>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+        </>
       )}
     </section>
   );

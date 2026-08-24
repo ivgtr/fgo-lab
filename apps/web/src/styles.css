@@ -59,7 +59,7 @@ button:hover {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
 }
-aside {
+.shell > aside {
   background: var(--nav);
   color: #f7f8fb;
   padding: 1.5rem 1rem;
@@ -90,14 +90,14 @@ nav ul {
   display: grid;
   gap: 0.2rem;
 }
-aside nav button {
+.shell > aside nav button {
   width: 100%;
   text-align: left;
   background: transparent;
   border-color: transparent;
   color: #dce0e9;
 }
-aside nav button[aria-current='page'] {
+.shell > aside nav button[aria-current='page'] {
   background: #f7f8fb;
   color: var(--nav);
   font-weight: 700;
@@ -318,6 +318,17 @@ td.average {
   padding: 1.25rem;
   border-top: 4px solid var(--accent);
 }
+.growth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(240px, 3fr);
+  gap: 1rem;
+  align-items: start;
+}
+.usage-detail {
+  background: white;
+  border-top: 2px solid var(--line);
+  padding: 1rem;
+}
 .file {
   display: block;
   margin-top: 1rem;
@@ -338,7 +349,8 @@ td.average {
   }
   .home-grid,
   .worksheet,
-  .master-detail {
+  .master-detail,
+  .growth-layout {
     grid-template-columns: 1fr;
   }
   .home-grid .primary-module {

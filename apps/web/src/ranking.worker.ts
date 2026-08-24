@@ -6,6 +6,11 @@ export interface RankingCandidate {
   servantId: string;
   name: string;
   input: CalcInput;
+  classId: string;
+  rarity: number;
+  npCard: string;
+  npTarget: string;
+  owned: boolean;
 }
 export interface RankingRequest {
   requestId: string;
@@ -19,6 +24,11 @@ export interface RankingRow {
   minimum: number;
   maximum: number;
   precision: 'exact' | 'approximate';
+  classId: string;
+  rarity: number;
+  npCard: string;
+  npTarget: string;
+  owned: boolean;
 }
 export interface RankingResponse {
   requestId: string;
@@ -48,6 +58,11 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
       minimum: current.minimum,
       maximum: current.maximum,
       precision: 'approximate',
+      classId: candidate.classId,
+      rarity: candidate.rarity,
+      npCard: candidate.npCard,
+      npTarget: candidate.npTarget,
+      owned: candidate.owned,
     });
   }
   rows.sort(
