@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CraftEssenceMaster, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
+import {
+  deriveCraftEssenceAtk,
+  type CraftEssenceMaster,
+  type MasterDataSnapshot,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import {
   calculateGrowthLedger,
   filterAndSortLedger,
@@ -142,6 +147,7 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
   const [page, setPage] = useState<Page>('home');
+  const [undoSnapshot, setUndoSnapshot] = useState<ProfileCollection>();
   const [calculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
@@ -168,9 +174,16 @@ export function App() {
     }
     void bootstrap();
   }, []);
-  async function persist(next: ProfileCollection) {
-    setProfiles(next);
+  async function persist(next: ProfileCollection, rememberForUndo = true) {
     await repository.replace(next);
+    if (rememberForUndo && profiles) setUndoSnapshot(profiles);
+    setProfiles(next);
+  }
+  async function undoLastChange() {
+    if (!undoSnapshot) return;
+    await repository.replace(undoSnapshot);
+    setProfiles(undoSnapshot);
+    setUndoSnapshot(undefined);
   }
   if (loading)
     return (
@@ -275,6 +288,28 @@ export function App() {
       craftEssences: profile.craftEssences.filter((copy) => copy.copyId !== copyId),
     });
   }
+  async function updateCraftEssence(
+    copyId: string,
+    patch: Pick<Partial<CraftEssenceCopy>, 'level' | 'limitBreak'>,
+  ) {
+    const current = profile.craftEssences.find((copy) => copy.copyId === copyId);
+    if (!current) return;
+    const masterCe = currentMaster.craftEssences.find(
+      (candidate) => candidate.id === current.craftEssenceId,
+    );
+    if (!masterCe) return;
+    const limitBreak = patch.limitBreak ?? current.limitBreak;
+    const maximum = masterCe.maxLevelByLimitBreak[limitBreak] ?? 100;
+    const level = Math.min(patch.level ?? current.level, maximum);
+    await replaceProfile({
+      ...profile,
+      craftEssences: profile.craftEssences.map((copy) =>
+        copy.copyId === copyId
+          ? { ...copy, level, limitBreak, updatedAt: new Date().toISOString() }
+          : copy,
+      ),
+    });
+  }
   async function addSupportTemplate() {
     const template: SupportTemplate = {
       templateId: crypto.randomUUID(),
@@ -346,6 +381,9 @@ export function App() {
             </>
           )}
         </p>
+        <button disabled={!undoSnapshot} onClick={() => void undoLastChange()}>
+          直前の操作を元に戻す
+        </button>
       </aside>
       <main id="main">
         <header>
@@ -384,6 +422,7 @@ export function App() {
             masters={currentMaster.craftEssences}
             onAdd={addCraftEssence}
             onRemove={removeCraftEssence}
+            onUpdate={updateCraftEssence}
           />
         )}{' '}
         {page === 'support' && (
@@ -769,15 +808,28 @@ function CraftEssences({
   masters,
   onAdd,
   onRemove,
+  onUpdate,
 }: {
   copies: CraftEssenceCopy[];
   masters: CraftEssenceMaster[];
   onAdd: (craftEssenceId: string) => Promise<void>;
   onRemove: (copyId: string) => Promise<void>;
+  onUpdate: (
+    copyId: string,
+    patch: Pick<Partial<CraftEssenceCopy>, 'level' | 'limitBreak'>,
+  ) => Promise<void>;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState('');
   const names = new Map(masters.map((master) => [master.id, master.name]));
+  const masterById = new Map(masters.map((master) => [master.id, master]));
+  const orderedCopies = [...copies].sort(
+    (a, b) =>
+      (names.get(a.craftEssenceId) ?? a.craftEssenceId).localeCompare(
+        names.get(b.craftEssenceId) ?? b.craftEssenceId,
+        'ja',
+      ) || a.copyId.localeCompare(b.copyId),
+  );
   const candidates = masters
     .filter((master) =>
       master.name.toLocaleLowerCase('ja').includes(search.toLocaleLowerCase('ja')),
@@ -790,15 +842,49 @@ function CraftEssences({
         DBから礼装を登録
       </button>
       <ul className="plain-list" aria-label="登録済み概念礼装">
-        {copies.map((copy, index) => (
-          <li key={copy.copyId}>
-            <span>
-              <strong>{names.get(copy.craftEssenceId) ?? copy.craftEssenceId}</strong> {index + 1}
-              枚目 / Lv.{copy.level} / 未凸
-            </span>
-            <button onClick={() => void onRemove(copy.copyId)}>登録解除</button>
-          </li>
-        ))}
+        {orderedCopies.map((copy) => {
+          const master = masterById.get(copy.craftEssenceId);
+          const label = names.get(copy.craftEssenceId) ?? copy.craftEssenceId;
+          return (
+            <li key={copy.copyId}>
+              <span>
+                <strong>{label}</strong>
+                <br />
+                {master ? `ATK ${String(deriveCraftEssenceAtk(master, copy.level, copy.limitBreak))}` : ''}
+              </span>
+              <label>
+                Lv
+                <input
+                  aria-label={`${label}のレベル`}
+                  type="number"
+                  min="1"
+                  max={master?.maxLevelByLimitBreak[copy.limitBreak] ?? 100}
+                  value={copy.level}
+                  onChange={(event) =>
+                    void onUpdate(copy.copyId, { level: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label>
+                限界突破
+                <select
+                  aria-label={`${label}の限界突破`}
+                  value={copy.limitBreak}
+                  onChange={(event) =>
+                    void onUpdate(copy.copyId, { limitBreak: Number(event.target.value) })
+                  }
+                >
+                  {[0, 1, 2, 3, 4].map((value) => (
+                    <option key={value} value={value}>
+                      {value === 4 ? '最大解放' : `${String(value)}回`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button onClick={() => void onRemove(copy.copyId)}>登録解除</button>
+            </li>
+          );
+        })}
       </ul>
       {dialogOpen && (
         <div

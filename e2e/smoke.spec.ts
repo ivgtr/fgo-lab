@@ -62,6 +62,13 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await expect(
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
   ).toHaveCount(2);
+  const ceRows = page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem');
+  await ceRows.nth(0).getByLabel('カレイドスコープの限界突破').selectOption('4');
+  await ceRows.nth(0).getByLabel('カレイドスコープのレベル').fill('20');
+  await expect(ceRows.nth(0)).toContainText('ATK');
+  await expect(ceRows.nth(1).getByLabel('カレイドスコープのレベル')).toHaveValue('1');
+  await page.getByRole('button', { name: '直前の操作を元に戻す' }).click();
+  await expect(ceRows.nth(0).getByLabel('カレイドスコープのレベル')).toHaveValue('1');
 
   await page.getByRole('button', { name: '支援条件' }).click();
   await page.getByRole('button', { name: '支援条件を作成' }).click();
