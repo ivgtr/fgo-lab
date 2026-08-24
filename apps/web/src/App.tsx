@@ -18,6 +18,7 @@ import { calculateNpDamage } from '@fgo-lab/calc-core';
 import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalcInput,
+  CalculationShareSnapshot,
   CraftEssenceCopy,
   LocalProfile,
   ProfileCollection,
@@ -34,7 +35,13 @@ import {
   loadActiveMaster,
   stageAndActivate,
 } from './adapters/repository';
-import { createShareFragment, exportBackup, importBackup, resultCardPng } from './adapters/share';
+import {
+  createShareFragment,
+  exportBackup,
+  importBackup,
+  readShareFragment,
+  resultCardPng,
+} from './adapters/share';
 import { numberFormatter, t } from './i18n';
 import { useRanking } from './useRanking';
 
@@ -148,6 +155,8 @@ export function App() {
   const [startupWarning, setStartupWarning] = useState('');
   const [page, setPage] = useState<Page>('home');
   const [undoSnapshot, setUndoSnapshot] = useState<ProfileCollection>();
+  const [calculatorInput, setCalculatorInput] = useState<CalcInput>();
+  const [sharedSnapshot, setSharedSnapshot] = useState<CalculationShareSnapshot>();
   const [calculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
@@ -167,8 +176,20 @@ export function App() {
         }
       }
       if (active && saved) {
+        let shared: CalculationShareSnapshot | null = null;
+        try {
+          shared = readShareFragment(location.hash);
+        } catch (cause) {
+          setStartupWarning(
+            `共有URLを復元できませんでした: ${cause instanceof Error ? cause.message : String(cause)}`,
+          );
+        }
+        const savedProfile = activeProfile(saved);
         setMaster(active.snapshot);
         setProfiles(saved);
+        setSharedSnapshot(shared ?? undefined);
+        setCalculatorInput(shared?.input ?? savedProfile.draft?.input);
+        if (shared) setPage('calculate');
       }
       setLoading(false);
     }
@@ -197,6 +218,18 @@ export function App() {
         onComplete={(nextMaster, nextProfiles) => {
           setMaster(nextMaster);
           setProfiles(nextProfiles);
+          try {
+            const shared = readShareFragment(location.hash);
+            if (shared) {
+              setSharedSnapshot(shared);
+              setCalculatorInput(shared.input);
+              setPage('calculate');
+            }
+          } catch (cause) {
+            setStartupWarning(
+              `共有URLを復元できませんでした: ${cause instanceof Error ? cause.message : String(cause)}`,
+            );
+          }
         }}
       />
     );
@@ -205,7 +238,7 @@ export function App() {
   const profile = activeProfile(currentProfiles);
   const servant = currentMaster.servants[0]!;
   const build = profile.servantBuilds[servant.id];
-  const input = calcInput(currentMaster, build);
+  const input = calculatorInput ?? calcInput(currentMaster, build);
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -215,13 +248,17 @@ export function App() {
     masterDataLocale: 'ja-JP' as const,
   };
   const calculatedResult = calculateNpDamage(input, versions);
-  const result = !ENGINE_RELEASE_VALIDATED
+  const compatibleSharedSnapshot =
+    sharedSnapshot?.result.versions.masterDataVersion === currentMaster.version &&
+    sharedSnapshot.result.versions.engineVersion === ENGINE_VERSION;
+  const localResult = !ENGINE_RELEASE_VALIDATED
     ? {
         ...calculatedResult,
         precision: 'approximate' as const,
         warnings: [...calculatedResult.warnings, 'diagnostic_fixture_not_release_validated'],
       }
     : calculatedResult;
+  const result = sharedSnapshot && !compatibleSharedSnapshot ? sharedSnapshot.result : localResult;
   async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
     const current = profile.servantBuilds[servantId] ?? defaultServantBuild(servantId, clock);
     const nextBuild = {
@@ -324,9 +361,39 @@ export function App() {
       supportTemplates: [...profile.supportTemplates, template],
     });
   }
-  async function finalizeCurrentCalculation() {
+  async function saveCalculationDraft(nextInput: CalcInput) {
+    setCalculatorInput(nextInput);
+    setSharedSnapshot(undefined);
+    const nextCalculated = calculateNpDamage(nextInput, versions);
+    const nextResult = !ENGINE_RELEASE_VALIDATED
+      ? {
+          ...nextCalculated,
+          precision: 'approximate' as const,
+          warnings: [...nextCalculated.warnings, 'diagnostic_fixture_not_release_validated'],
+        }
+      : nextCalculated;
     const fingerprint = await inputFingerprint(
-      input,
+      nextInput,
+      currentMaster.version,
+      ENGINE_VERSION,
+      async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+    );
+    await replaceProfile({
+      ...profile,
+      draft: {
+        profileId: profile.profileId,
+        calculationSessionId,
+        input: nextInput,
+        result: nextResult,
+        inputFingerprint: fingerprint,
+        updatedAt: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  }
+  async function finalizeCurrentCalculation(currentInput = input, currentResult = result) {
+    const fingerprint = await inputFingerprint(
+      currentInput,
       currentMaster.version,
       ENGINE_VERSION,
       async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
@@ -334,8 +401,8 @@ export function App() {
     await replaceProfile(
       finalizeHistory(profile, {
         sessionId: calculationSessionId,
-        input,
-        result,
+        input: currentInput,
+        result: currentResult,
         fingerprint,
         now: new Date().toISOString(),
         historyId: crypto.randomUUID(),
@@ -403,7 +470,9 @@ export function App() {
           <Calculator
             input={input}
             result={result}
-            attackerName={servant.name}
+            servants={currentMaster.servants}
+            sharedVersionMismatch={Boolean(sharedSnapshot && !compatibleSharedSnapshot)}
+            onInputChange={saveCalculationDraft}
             onFinalize={finalizeCurrentCalculation}
           />
         )}{' '}
@@ -498,15 +567,24 @@ function Home({
 function Calculator({
   input,
   result,
-  attackerName,
+  servants,
+  sharedVersionMismatch,
+  onInputChange,
   onFinalize,
 }: {
   input: CalcInput;
   result: ReturnType<typeof calculateNpDamage>;
-  attackerName: string;
-  onFinalize: () => Promise<void>;
+  servants: ServantMaster[];
+  sharedVersionMismatch: boolean;
+  onInputChange: (input: CalcInput) => Promise<void>;
+  onFinalize: (input: CalcInput, result: ReturnType<typeof calculateNpDamage>) => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
+  const [mode, setMode] = useState<'quick' | 'direct'>('quick');
+  const attacker = servants.find((candidate) => candidate.id === input.attackerId);
+  function change(patch: Partial<CalcInput>) {
+    void onInputChange({ ...input, ...patch });
+  }
   const snapshot = {
     kind: 'fgo-lab-calculation-share' as const,
     schemaVersion: 1 as const,
@@ -516,7 +594,7 @@ function Calculator({
   };
   async function copyUrl() {
     try {
-      await onFinalize();
+      await onFinalize(input, result);
       const url = new URL(location.href);
       url.hash = createShareFragment(snapshot);
       await navigator.clipboard.writeText(url.toString());
@@ -531,7 +609,7 @@ function Calculator({
   }
   async function saveImage() {
     try {
-      await onFinalize();
+      await onFinalize(input, result);
       const url = URL.createObjectURL(await resultCardPng(snapshot));
       const link = document.createElement('a');
       link.href = url;
@@ -547,24 +625,158 @@ function Calculator({
     <div className="worksheet">
       <section>
         <h2>計算条件</h2>
-        <dl className="input-list">
-          <div>
-            <dt>攻撃役</dt>
-            <dd>
-              {attackerName} Lv.{input.attackerLevel}
-            </dd>
-          </div>
-          <div>
-            <dt>攻撃対象</dt>
-            <dd>Lancer / Earth</dd>
-          </div>
-          <div>
-            <dt>計算精度</dt>
-            <dd>
-              <span className="badge">{result.precision}</span>
-            </dd>
-          </div>
-        </dl>
+        <div role="tablist" aria-label="入力方法">
+          <button role="tab" aria-selected={mode === 'quick'} onClick={() => setMode('quick')}>
+            クイック操作
+          </button>
+          <button role="tab" aria-selected={mode === 'direct'} onClick={() => setMode('direct')}>
+            直接入力
+          </button>
+        </div>
+        <div className="form-grid">
+          <label>
+            攻撃役
+            <select
+              value={input.attackerId}
+              onChange={(event) => {
+                const selected = servants.find((candidate) => candidate.id === event.target.value);
+                if (!selected) return;
+                change({
+                  attackerId: selected.id,
+                  attackerAtk:
+                    selected.atkByLevel[String(input.attackerLevel)] ??
+                    selected.atkByLevel['90'] ??
+                    0,
+                  npMultipliers: selected.npMultipliers,
+                  cardType: selected.npCard,
+                });
+              }}
+            >
+              {servants.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            サーヴァントLv
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={input.attackerLevel}
+              onChange={(event) => {
+                const level = Number(event.target.value);
+                change({
+                  attackerLevel: level,
+                  attackerAtk: attacker?.atkByLevel[String(level)] ?? input.attackerAtk,
+                });
+              }}
+            />
+          </label>
+          <label>
+            宝具Lv
+            <select
+              value={input.npLevel}
+              onChange={(event) => change({ npLevel: Number(event.target.value) })}
+            >
+              {[1, 2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>
+                  NP{value}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            OC
+            <select
+              value={input.overcharge}
+              onChange={(event) => change({ overcharge: Number(event.target.value) })}
+            >
+              {[1, 2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            敵クラス
+            <input
+              value={input.target.classId}
+              onChange={(event) =>
+                change({ target: { ...input.target, classId: event.target.value } })
+              }
+            />
+          </label>
+          <label>
+            敵属性
+            <select
+              value={input.target.attribute}
+              onChange={(event) =>
+                change({
+                  target: {
+                    ...input.target,
+                    attribute: event.target.value as CalcInput['target']['attribute'],
+                  },
+                })
+              }
+            >
+              {['man', 'earth', 'sky', 'star', 'beast', 'unknown'].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            敵特性（カンマ区切り）
+            <input
+              value={input.target.traits.join(',')}
+              onChange={(event) =>
+                change({
+                  target: {
+                    ...input.target,
+                    traits: event.target.value
+                      .split(',')
+                      .map((value) => value.trim())
+                      .filter(Boolean),
+                  },
+                })
+              }
+            />
+          </label>
+          {mode === 'direct' &&
+            (
+              [
+                ['攻撃力補正', 'attackBuff'],
+                ['カード性能補正', 'cardBuff'],
+                ['宝具威力補正', 'npDamageBuff'],
+                ['特攻付与', 'powerMod'],
+                ['特殊威力', 'npSpecialMultiplier'],
+                ['特殊耐性', 'specialResistance'],
+              ] as const
+            ).map(([label, key]) => (
+              <label key={key}>
+                {label}
+                <input
+                  type="number"
+                  step="0.01"
+                  value={input[key]}
+                  onChange={(event) => change({ [key]: Number(event.target.value) })}
+                />
+              </label>
+            ))}
+        </div>
+        <p>
+          計算精度 <span className="badge">{result.precision}</span>
+        </p>
+        {sharedVersionMismatch && (
+          <p role="status" className="notice">
+            対応するデータ版またはエンジン版がないため、共有時の履歴結果を表示しています。入力を変更すると現行版で新規計算します。
+          </p>
+        )}
         <p className="notice">
           特殊Functionの差分検証が完了するまで、結果精度はapproximateとして表示します。
         </p>
@@ -608,6 +820,9 @@ function Calculator({
           <ul>
             {result.assumptions.map((item) => (
               <li key={item}>{item}</li>
+            ))}
+            {result.warnings.map((item) => (
+              <li key={item}>警告: {item}</li>
             ))}
           </ul>
         </details>
@@ -741,9 +956,7 @@ function Servants({
                 type="number"
                 min="1"
                 max="10"
-                value={
-                  tab === 'current' ? (build?.skills['1'] ?? 1) : (target?.skills['1'] ?? 1)
-                }
+                value={tab === 'current' ? (build?.skills['1'] ?? 1) : (target?.skills['1'] ?? 1)}
                 onChange={(event) => {
                   const level = Number(event.target.value);
                   if (tab === 'current')
@@ -850,7 +1063,9 @@ function CraftEssences({
               <span>
                 <strong>{label}</strong>
                 <br />
-                {master ? `ATK ${String(deriveCraftEssenceAtk(master, copy.level, copy.limitBreak))}` : ''}
+                {master
+                  ? `ATK ${String(deriveCraftEssenceAtk(master, copy.level, copy.limitBreak))}`
+                  : ''}
               </span>
               <label>
                 Lv

@@ -27,6 +27,21 @@ test('works at 320px without horizontal document overflow', async ({ page }) => 
   expect(overflow).toBe(false);
 });
 
+test('autosaves and restores a directly edited calculation draft', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop navigation exposes the persistent undo status');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await page.getByRole('tab', { name: '直接入力' }).click();
+  await page.getByLabel('攻撃力補正').fill('0.2');
+  await expect(page.getByRole('button', { name: '直前の操作を元に戻す' })).toBeEnabled();
+  await page.reload();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await page.getByRole('tab', { name: '直接入力' }).click();
+  await expect(page.getByLabel('攻撃力補正')).toHaveValue('0.2');
+});
+
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation covers all management pages');
   await page.goto('/');

@@ -22,6 +22,7 @@ export function createShareFragment(snapshot: CalculationShareSnapshot): string 
   return fragment;
 }
 export function readShareFragment(fragment: string): CalculationShareSnapshot | null {
+  if (fragment.length > MAX_SHARE_FRAGMENT_LENGTH + 1) throw new RangeError('share_too_large');
   const value = new URLSearchParams(fragment.replace(/^#/, '')).get('share');
   return value ? parseCalculationShareSnapshot(decode(value)) : null;
 }
