@@ -530,8 +530,12 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await expect(specialConditions).toContainText('竜特攻');
   await expect(specialConditions).toContainText('+80% / 150%');
   await expect(specialConditions).not.toContainText('竜殺し A++');
-  await expect(specialConditions.locator('.special-trait-icon')).toHaveCount(2);
-  await specialConditions.getByRole('checkbox', { name: /竜特攻/ }).check();
+  await expect(specialConditions.locator('.modifier-chip-icon')).toHaveCount(2);
+  const dragonTrait = specialConditions.getByRole('button', { name: /竜特攻/ });
+  await expect(dragonTrait).toHaveCSS('border-radius', '0px');
+  await expect(dragonTrait).toHaveAttribute('aria-pressed', 'false');
+  await dragonTrait.click();
+  await expect(dragonTrait).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('1.50倍');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
@@ -545,7 +549,10 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await page.getByLabel('宝具Lv').selectOption('5');
   await expect(specialConditions).toContainText('混沌特攻');
   await expect(specialConditions).toContainText('200%');
-  await specialConditions.getByRole('checkbox', { name: /混沌特攻/ }).check();
+  const chaoticTrait = specialConditions.getByRole('button', { name: /混沌特攻/ });
+  await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
+  await chaoticTrait.click();
+  await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('2.00倍');
 });
 
@@ -577,11 +584,16 @@ test('matches the reported Water Lilith inputs and exposes passive damage stacks
   await expect(np5).toContainText('61,944');
   await expect(np5).toContainText('75,640');
   const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await expect(effectiveInput.locator('.section-heading')).toHaveCSS('border-bottom-width', '0px');
+  await expect(effectiveInput.locator('.automatic-modifiers')).toHaveCSS('display', 'flex');
+  await expect(effectiveInput.locator('.automatic-modifiers')).toHaveCSS('flex-wrap', 'wrap');
   await expect(effectiveInput).toContainText('QUICK性能／耐性0.0%');
   await expect(effectiveInput).toContainText('固定ダメージ／軽減0／0');
 
   await page.getByRole('tab', { name: 'クイック操作' }).click();
   const damageEffects = page.getByRole('group', { name: '火力効果' });
+  await expect(damageEffects.getByRole('list')).toHaveCSS('display', 'flex');
+  await expect(damageEffects.getByRole('list')).toHaveCSS('flex-wrap', 'wrap');
   await expect(damageEffects).toContainText('クイックアップ +12%');
   await expect(damageEffects).toContainText('アタックプラス +175');
   await expect(damageEffects.getByLabel(/リリス・騎乗 EX \+12%/)).toBeVisible();

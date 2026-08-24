@@ -28,6 +28,7 @@ import {
 } from './specialTraitPresentation';
 import { CalculationResult } from './CalculationResult';
 import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffectStacks';
+import { ModifierChip } from './ModifierChip';
 import './calculator.css';
 import './calculator-form.css';
 
@@ -591,94 +592,63 @@ export function Calculator({
             </select>
           </label>
           {mode === 'quick' && specialTraitCandidates.length ? (
-            <fieldset className="special-trait-controls form-grid-wide">
+            <fieldset className="modifier-group form-grid-wide">
               <legend>特攻条件</legend>
-              <ul className="plain-list special-trait-list">
+              <ul className="plain-list modifier-chip-list">
                 {specialTraitCandidates.map((candidate) => {
                   const traitPresent = input.target.traits.includes(candidate.trait);
                   const enabled = candidate.matchesWhenPresent ? traitPresent : !traitPresent;
                   const label = specialTraitLabel(candidate);
                   return (
-                    <li
+                    <ModifierChip
                       key={`${candidate.matchesWhenPresent ? 'has' : 'not'}:${candidate.trait}`}
-                      data-enabled={enabled}
-                    >
-                      <label title={`${label}特攻を${enabled ? '無効' : '有効'}化`}>
-                        <input
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={(event) =>
-                            change({
-                              target: {
-                                ...input.target,
-                                traits:
-                                  event.target.checked === candidate.matchesWhenPresent
-                                    ? [...new Set([...input.target.traits, candidate.trait])]
-                                    : input.target.traits.filter(
-                                        (trait) => trait !== candidate.trait,
-                                      ),
-                              },
-                            })
-                          }
-                        />
-                        <span className="special-trait-copy">
-                          <strong>{label}特攻</strong>
-                          <small>
-                            {enabled ? '適用中' : '対象外'}・
-                            {candidate.sources.map(specialTraitValueLabel).join(' / ')}
-                          </small>
-                        </span>
-                        <span className="special-trait-sources" aria-label="付与元">
-                          {candidate.sources.map((source) => (
-                            <span
-                              className="special-trait-source"
-                              key={source.key}
-                              title={`${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`}
-                              role="img"
-                              aria-label={`${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`}
-                            >
-                              <MasterImage
-                                src={source.imageKey}
-                                alt=""
-                                fallback={specialTraitSourceLabel(source)}
-                                className="special-trait-icon"
-                              />
-                            </span>
-                          ))}
-                        </span>
-                      </label>
-                    </li>
+                      active={enabled}
+                      label={`${label}特攻`}
+                      detail={`${enabled ? '適用中' : '対象外'}・${candidate.sources
+                        .map(specialTraitValueLabel)
+                        .join(' / ')}`}
+                      sources={candidate.sources.map((source) => ({
+                        key: source.key,
+                        label: `${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`,
+                        imageKey: source.imageKey,
+                      }))}
+                      onToggle={(active) =>
+                        change({
+                          target: {
+                            ...input.target,
+                            traits:
+                              active === candidate.matchesWhenPresent
+                                ? [...new Set([...input.target.traits, candidate.trait])]
+                                : input.target.traits.filter((trait) => trait !== candidate.trait),
+                          },
+                        })
+                      }
+                    />
                   );
                 })}
               </ul>
             </fieldset>
           ) : null}
           {mode === 'quick' && fieldTraitCandidates.length ? (
-            <fieldset className="special-trait-controls form-grid-wide">
+            <fieldset className="modifier-group form-grid-wide">
               <legend>フィールド条件</legend>
-              <ul className="plain-list special-trait-list">
+              <ul className="plain-list modifier-chip-list">
                 {fieldTraitCandidates.map((trait) => {
                   const enabled = input.fieldTraits.includes(trait);
                   return (
-                    <li key={trait} data-enabled={enabled}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={enabled}
-                          onChange={(event) =>
-                            change({
-                              fieldTraits: event.target.checked
-                                ? [...new Set([...input.fieldTraits, trait])]
-                                : input.fieldTraits.filter((candidate) => candidate !== trait),
-                            })
-                          }
-                        />
-                        <span className="special-trait-copy">
-                          <strong>{traitLabel(trait)}フィールド</strong>
-                          <small>{enabled ? '条件成立' : '条件不成立'}</small>
-                        </span>
-                      </label>
-                    </li>
+                    <ModifierChip
+                      key={trait}
+                      active={enabled}
+                      label={`${traitLabel(trait)}フィールド`}
+                      detail={enabled ? '条件成立' : '条件不成立'}
+                      onToggle={(active) =>
+                        change({
+                          fieldTraits: active
+                            ? [...new Set([...input.fieldTraits, trait])]
+                            : input.fieldTraits.filter((candidate) => candidate !== trait),
+                        })
+                      }
+                    />
                   );
                 })}
               </ul>
@@ -1007,45 +977,23 @@ export function Calculator({
             </div>
           </dl>
           {mode === 'quick' && damageEffectStacks.length ? (
-            <fieldset className="special-trait-controls">
+            <fieldset className="modifier-group">
               <legend>火力効果</legend>
-              <ul className="plain-list special-trait-list damage-effect-stack-list">
+              <ul className="plain-list modifier-chip-list">
                 {damageEffectStacks.map((stack) => (
-                  <li
+                  <ModifierChip
                     key={stack.kind}
-                    data-enabled={stack.sources.some((source) => source.applied)}
-                  >
-                    <div className="damage-effect-stack">
-                      <span className="special-trait-copy">
-                        <strong>{stack.label}</strong>
-                        <small>
-                          {stack.sources
-                            .map(
-                              (source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`,
-                            )
-                            .join('・')}
-                        </small>
-                      </span>
-                      <span className="special-trait-sources" aria-label="付与元">
-                        {stack.sources.map((source) => (
-                          <span
-                            className="special-trait-source"
-                            key={source.key}
-                            title={`${source.sourceName}・${source.effectName}: ${source.effectLabel} ${damageEffectStateLabel(source)}`}
-                            role="img"
-                            aria-label={`${source.sourceName}・${source.effectName} ${damageEffectStateLabel(source)}`}
-                          >
-                            <MasterImage
-                              src={source.imageKey}
-                              alt=""
-                              fallback={source.sourceName}
-                              className="special-trait-icon"
-                            />
-                          </span>
-                        ))}
-                      </span>
-                    </div>
-                  </li>
+                    active={stack.sources.some((source) => source.applied)}
+                    label={stack.label}
+                    detail={stack.sources
+                      .map((source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`)
+                      .join('・')}
+                    sources={stack.sources.map((source) => ({
+                      key: source.key,
+                      label: `${source.sourceName}・${source.effectName} ${damageEffectStateLabel(source)}`,
+                      imageKey: source.imageKey,
+                    }))}
+                  />
                 ))}
               </ul>
             </fieldset>

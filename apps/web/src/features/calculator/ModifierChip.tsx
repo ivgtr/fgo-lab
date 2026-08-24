@@ -1,0 +1,78 @@
+import { MasterImage } from '../../ui/MasterImage';
+
+export interface ModifierChipSource {
+  key: string;
+  label: string;
+  imageKey: string | null;
+}
+
+function ModifierChipContent({
+  label,
+  detail,
+  sources,
+}: {
+  label: string;
+  detail: string;
+  sources: readonly ModifierChipSource[];
+}) {
+  return (
+    <>
+      <span className="modifier-chip-copy">
+        <strong>{label}</strong>
+        <small>{detail}</small>
+      </span>
+      {sources.length ? (
+        <span className="modifier-chip-sources">
+          {sources.map((source) => (
+            <span
+              className="modifier-chip-source"
+              key={source.key}
+              title={source.label}
+              role="img"
+              aria-label={source.label}
+            >
+              <MasterImage
+                src={source.imageKey}
+                alt=""
+                fallback={source.label}
+                className="modifier-chip-icon"
+              />
+            </span>
+          ))}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+export function ModifierChip({
+  active,
+  label,
+  detail,
+  sources = [],
+  onToggle,
+}: {
+  active: boolean;
+  label: string;
+  detail: string;
+  sources?: readonly ModifierChipSource[];
+  onToggle?: (active: boolean) => void;
+}) {
+  const content = <ModifierChipContent label={label} detail={detail} sources={sources} />;
+  return (
+    <li data-active={active}>
+      {onToggle ? (
+        <button
+          type="button"
+          className="modifier-chip"
+          aria-pressed={active}
+          onClick={() => onToggle(!active)}
+        >
+          {content}
+        </button>
+      ) : (
+        <div className="modifier-chip">{content}</div>
+      )}
+    </li>
+  );
+}

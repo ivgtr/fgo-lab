@@ -7,16 +7,14 @@
 .worksheet > section {
   background: var(--paper);
   padding: 1.25rem 1.4rem 1.5rem;
-  border-top: 2px solid var(--line);
 }
 .section-heading {
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid var(--line);
   margin-bottom: 1rem;
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.2rem;
 }
 
 .section-heading .eyebrow,
@@ -48,23 +46,23 @@
 
 .support-composition {
   margin-top: 1.25rem;
-  border-top: 1px solid var(--line);
 }
 .automatic-abilities {
   margin-top: 1.25rem;
-  border-top: 1px solid var(--line);
 }
 .automatic-modifiers {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.4rem;
   margin: 0 0 0.75rem;
-  border: 1px solid var(--line);
 }
 .automatic-modifiers > div {
-  padding: 0.55rem 0.65rem;
-}
-.automatic-modifiers > div + div {
-  border-left: 1px solid var(--line);
+  flex: 0 1 auto;
+  min-width: max-content;
+  max-width: 100%;
+  padding: 0.5rem 0.65rem;
+  background: #f4f5f3;
 }
 .automatic-modifiers dt,
 .automatic-modifiers dd {
@@ -79,7 +77,6 @@
 }
 .attacker-skills {
   margin-top: 1.25rem;
-  border-top: 1px solid var(--line);
 }
 .attacker-skill-list > .attacker-skill-row {
   display: grid;
@@ -186,82 +183,83 @@
 .effect-inactive {
   white-space: nowrap;
 }
-.special-trait-controls {
+.modifier-group {
   min-width: 0;
   margin: 0;
-  padding: 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 0;
+  border: 0;
 }
-.special-trait-controls legend {
-  padding-inline: 0.35rem;
+.modifier-group legend {
+  margin-bottom: 0.4rem;
   color: #40495b;
   font-size: 0.82rem;
   font-weight: 800;
 }
-.special-trait-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.3rem;
+.modifier-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.4rem;
 }
-.special-trait-list li {
+.modifier-chip-list li {
   min-width: 0;
+  max-width: 100%;
 }
-.special-trait-list label,
-.damage-effect-stack {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+.modifier-chip {
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.4rem;
+  width: max-content;
+  max-width: 100%;
   min-height: 42px;
-  padding: 0.3rem 0.45rem;
-  border: 1px solid #d9dcde;
-  border-radius: 6px;
-  background: #fafaf7;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: #f1f2f0;
+  color: #59605d;
+  text-align: left;
+}
+button.modifier-chip {
   cursor: pointer;
 }
-.damage-effect-stack {
-  grid-template-columns: minmax(0, 1fr) auto;
-  cursor: default;
-}
-.special-trait-list li[data-enabled='true'] label,
-.damage-effect-stack-list li[data-enabled='true'] .damage-effect-stack {
+.modifier-chip-list li[data-active='true'] .modifier-chip {
   border-color: #7d9a87;
-  background: #f1f7f2;
+  background: #eaf4ed;
+  color: #285c3e;
+  box-shadow: inset 0 0 0 1px rgb(40 92 62 / 8%);
 }
-.special-trait-list input {
-  width: 18px;
-  min-height: 18px;
-  flex: 0 0 auto;
-}
-.special-trait-copy {
+.modifier-chip-copy {
   display: grid;
   min-width: 0;
 }
-.special-trait-copy strong,
-.special-trait-copy small {
+.modifier-chip-copy strong,
+.modifier-chip-copy small {
   overflow-wrap: anywhere;
 }
-.special-trait-copy strong {
+.modifier-chip-copy strong {
   font-size: 0.76rem;
   line-height: 1.2;
 }
-.special-trait-copy small {
+.modifier-chip-copy small {
   color: var(--muted);
   font-size: 0.6rem;
   line-height: 1.25;
 }
-.special-trait-sources {
+.modifier-chip-list li[data-active='true'] .modifier-chip-copy small {
+  color: #52705c;
+}
+.modifier-chip-sources {
   display: flex;
   flex-direction: row-reverse;
   align-items: center;
   padding-left: 0.15rem;
 }
-.special-trait-source {
+.modifier-chip-source {
   display: inline-flex;
   margin-left: -0.22rem;
 }
-.image-frame.special-trait-icon {
+.image-frame.modifier-chip-icon {
   width: 28px;
   height: 28px;
   flex-basis: 28px;
@@ -271,10 +269,6 @@
 }
 
 @media (max-width: 760px) {
-  .special-trait-list {
-    grid-template-columns: 1fr;
-  }
-
   .worksheet {
     grid-template-columns: 1fr;
   }
@@ -286,15 +280,6 @@
   .attacker-skill-list > .attacker-skill-row {
     grid-template-columns: 36px minmax(0, 1fr) 68px;
     align-items: start;
-  }
-
-  .automatic-modifiers {
-    grid-template-columns: 1fr;
-  }
-
-  .automatic-modifiers > div + div {
-    border-top: 1px solid var(--line);
-    border-left: 0;
   }
 
   .attacker-skill-row > .image-frame {
