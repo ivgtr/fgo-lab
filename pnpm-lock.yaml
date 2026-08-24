@@ -135,6 +135,15 @@ importers:
         specifier: 4.20.5
         version: 4.20.5
 
+  packages/effect-resolver:
+    dependencies:
+      '@fgo-lab/master-data':
+        specifier: workspace:*
+        version: link:../master-data
+      '@fgo-lab/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/master-data:
     dependencies:
       '@fgo-lab/schema':

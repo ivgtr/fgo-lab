@@ -5,6 +5,7 @@
     { "path": "packages/master-data" },
     { "path": "packages/data-pipeline" },
     { "path": "packages/calc-core" },
+    { "path": "packages/effect-resolver" },
     { "path": "packages/profile-domain" },
     { "path": "packages/workspace-domain" },
     { "path": "apps/web" }
