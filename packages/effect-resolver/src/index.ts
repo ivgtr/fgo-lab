@@ -2,7 +2,7 @@ import type { CraftEssenceMaster, MasterEffect, ServantMaster } from '@fgo-lab/m
 import type { AttackerSkillSelection, CalcInput, SupportTemplate } from '@fgo-lab/schema';
 
 export type ResolvedBuffKind =
-  'attackBuff' | 'cardBuff' | 'npDamageBuff' | 'eventDamageBuff' | 'specialDamageBuff';
+  'attackBuff' | 'cardBuff' | 'npDamageBuff' | 'eventDamageBuff' | 'specialDamageBuff' | 'powerMod';
 
 export interface ResolvedSupportEffect {
   origin: 'attacker' | 'support' | 'craftEssence' | 'passive' | 'np';
@@ -57,8 +57,8 @@ function buffKind(label: string): ResolvedBuffKind | null {
 }
 
 function effectBuffKind(effect: MasterEffect): ResolvedBuffKind | null {
-  if ((effect.buffTypes ?? []).some((type) => type.toLowerCase().includes('updamageindividuality')))
-    return 'specialDamageBuff';
+  if ((effect.buffTypes ?? []).some((type) => type.toLowerCase().startsWith('updamage')))
+    return 'powerMod';
   return buffKind(effect.label);
 }
 

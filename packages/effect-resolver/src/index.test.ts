@@ -322,4 +322,36 @@ describe('automatic equipment, passive, and NP effects', () => {
       reason: 'target_trait_mismatch',
     });
   });
+
+  it('applies only a matching damage power trait', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              id: 'dragon-power',
+              type: 'addStateShort',
+              target: 'self',
+              label: '威力アップ・対竜',
+              values: Array(10).fill(500) as number[],
+              targetTraits: ['dragon'],
+              buffTypes: ['upDamage'],
+            },
+          ],
+        },
+      ],
+    };
+    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    expect(
+      resolveAttackerSkills(
+        { ...input, target: { ...input.target, traits: ['dragon'] } },
+        selection,
+        [attacker],
+      ).input.powerMod,
+    ).toBe(0.5);
+    expect(resolveAttackerSkills(input, selection, [attacker]).input.powerMod).toBe(0);
+  });
 });

@@ -9,6 +9,7 @@ import {
   deriveCraftEssenceAtk,
   type CraftEssenceMaster,
   type MasterDataSnapshot,
+  type MasterEffect,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import {
@@ -76,6 +77,73 @@ const repository = new IndexedDbProfileRepository();
 const ENGINE_RELEASE_VALIDATED = import.meta.env['VITE_ENGINE_RELEASE_VALIDATED'] === 'true';
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
+
+const TRAIT_LABELS: Readonly<Record<string, string>> = {
+  alignmentChaotic: '混沌',
+  alignmentEvil: '悪',
+  alignmentGood: '善',
+  alignmentLawful: '秩序',
+  arthur: 'アーサー',
+  attributeEarth: '地の力',
+  attributeHuman: '人の力',
+  attributeSky: '天の力',
+  attributeStar: '星の力',
+  brynhildsBeloved: 'ブリュンヒルデの愛する者',
+  classBeast: 'ビースト',
+  classRider: 'ライダー',
+  demonic: '魔性',
+  divine: '神性',
+  dragon: '竜',
+  genderFemale: '女性',
+  genderMale: '男性',
+  giant: '巨人',
+  king: '王',
+  oni: '鬼',
+  riding: '騎乗',
+  saberClassServant: 'セイバークラスのサーヴァント',
+  saberface: 'セイバー顔',
+  skyOrEarthServant: '天または地の力を持つサーヴァント',
+  standardClassServant: '通常クラスのサーヴァント',
+  superGiant: '超巨大',
+  threatToHumanity: '人類の脅威',
+  weakToEnumaElish: 'エヌマ・エリシュ特攻対象',
+};
+
+interface SpecialTraitSource {
+  key: string;
+  name: string;
+  imageKey: string | null;
+  valueLabel: string;
+}
+
+interface SpecialTraitCandidate {
+  trait: string;
+  label: string;
+  sources: SpecialTraitSource[];
+}
+
+function isResolvableSpecialDamageEffect(effect: MasterEffect): boolean {
+  return (
+    effect.targetTraits?.length === 1 &&
+    (effect.buffTypes ?? []).some((type) => type.toLowerCase().startsWith('updamage'))
+  );
+}
+
+function specialTraitLabel(trait: string, effectLabel?: string): string {
+  if (effectLabel) {
+    const simplified = effectLabel
+      .replace(/^威力アップ(?:・対|・|・対\s*|対\s*)/, '')
+      .replace(/^威力アップ[〔［]/, '')
+      .replace(/[〕］]$/, '')
+      .trim();
+    if (simplified && simplified !== effectLabel) return simplified;
+  }
+  return TRAIT_LABELS[trait] ?? (trait.startsWith('trait:') ? '特殊条件' : trait);
+}
+
+function damagePowerLabel(rawValue: number | undefined): string {
+  return rawValue === undefined ? '倍率不明' : `+${(rawValue / 10).toLocaleString('ja-JP')}%`;
+}
 
 function handleModalKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: () => void) {
   if (event.key === 'Escape') {
@@ -997,37 +1065,90 @@ function Calculator({
     ...craftEssenceEffectResolution.effects,
     ...npEffectResolution.effects,
   ];
-  const traitCandidateSources = new Map<string, Set<string>>();
-  const addTraitCandidates = (
-    effects: readonly { targetTraits?: string[] | undefined }[],
-    sourceName: string,
-  ) => {
-    for (const effect of effects)
-      for (const trait of effect.targetTraits ?? []) {
-        const sources = traitCandidateSources.get(trait) ?? new Set<string>();
-        sources.add(sourceName);
-        traitCandidateSources.set(trait, sources);
-      }
+  const traitCandidates = new Map<string, SpecialTraitCandidate>();
+  const addTraitCandidate = (trait: string, label: string, source: SpecialTraitSource) => {
+    if (trait.startsWith('trait:')) return;
+    const candidate = traitCandidates.get(trait) ?? { trait, label, sources: [] };
+    if (!candidate.sources.some((item) => item.key === source.key)) candidate.sources.push(source);
+    traitCandidates.set(trait, candidate);
   };
-  for (const skill of attacker?.skills ?? []) addTraitCandidates(skill.effects, skill.name);
-  for (const passive of attacker?.passives ?? []) addTraitCandidates(passive.effects, passive.name);
-  addTraitCandidates(attacker?.npEffects ?? [], '宝具効果');
-  if (attacker?.npSpecialAttack)
-    for (const trait of attacker.npSpecialAttack.targetTraits) {
-      const sources = traitCandidateSources.get(trait) ?? new Set<string>();
-      sources.add('特攻宝具');
-      traitCandidateSources.set(trait, sources);
+  const addEffectCandidates = (
+    effects: readonly MasterEffect[],
+    source: Omit<SpecialTraitSource, 'key' | 'valueLabel'> & { key: string },
+    valueIndex: number,
+  ) => {
+    for (const effect of effects) {
+      if (!isResolvableSpecialDamageEffect(effect)) continue;
+      const trait = effect.targetTraits![0]!;
+      addTraitCandidate(trait, specialTraitLabel(trait, effect.label), {
+        ...source,
+        key: `${source.key}:${effect.id}`,
+        valueLabel: damagePowerLabel(effect.values[valueIndex]),
+      });
     }
+  };
+  for (const selectedSkill of selection.attackerSkills ?? []) {
+    if (!selectedSkill.enabled) continue;
+    const skill = attacker?.skills.find((candidate) => candidate.id === selectedSkill.skillId);
+    if (skill)
+      addEffectCandidates(
+        skill.effects,
+        { key: `attacker:${skill.id}`, name: skill.name, imageKey: skill.imageKey },
+        selectedSkill.skillLevel - 1,
+      );
+  }
+  for (const passive of attacker?.passives ?? [])
+    addEffectCandidates(
+      passive.effects,
+      { key: `passive:${passive.id}`, name: passive.name, imageKey: passive.imageKey },
+      0,
+    );
+  addEffectCandidates(
+    (attacker?.npEffects ?? []).filter((effect) => effect.timing === 'beforeDamage'),
+    {
+      key: `np:${attacker?.id ?? 'none'}`,
+      name: '宝具前効果',
+      imageKey: attacker?.imageKey ?? null,
+    },
+    input.overcharge - 1,
+  );
+  if (attacker?.npSpecialAttack)
+    for (const trait of attacker.npSpecialAttack.targetTraits)
+      addTraitCandidate(trait, specialTraitLabel(trait), {
+        key: `np-special:${attacker.id}:${trait}`,
+        name: '特攻宝具',
+        imageKey: attacker.imageKey,
+        valueLabel: `×${(
+          attacker.npSpecialAttack.multipliersByOvercharge[input.overcharge - 1] ?? 1
+        ).toFixed(2)}`,
+      });
   if (selectedCraftEssence)
-    addTraitCandidates(selectedCraftEssence.effects, selectedCraftEssence.name);
+    addEffectCandidates(
+      selectedCraftEssence.effects,
+      {
+        key: `ce:${selectedCraftEssence.id}`,
+        name: selectedCraftEssence.name,
+        imageKey: selectedCraftEssence.imageKey,
+      },
+      selection.craftEssence?.limitBreak === 4 ? 1 : 0,
+    );
   for (const selectedEffect of selectedSupport?.effects ?? []) {
     if (!selectedEffect.enabled) continue;
     const source = servants.find((candidate) => candidate.id === selectedEffect.sourceId);
     const skill = source?.skills.find((candidate) => candidate.id === selectedEffect.effectId);
-    if (source && skill) addTraitCandidates(skill.effects, `${source.name}・${skill.name}`);
+    if (source && skill)
+      addEffectCandidates(
+        skill.effects,
+        {
+          key: `support:${source.id}:${skill.id}`,
+          name: `${source.name}・${skill.name}`,
+          imageKey: skill.imageKey,
+        },
+        selectedEffect.skillLevel - 1,
+      );
   }
-  const specialTraitCandidates = [...traitCandidateSources.entries()].sort(([left], [right]) =>
-    left.localeCompare(right, 'ja'),
+  const specialTraitCandidates = [...traitCandidates.values()].sort((left, right) =>
+    left.label.localeCompare(right.label, 'ja'),
   );
   const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
   const classSituationLabel =
@@ -1565,39 +1686,62 @@ function Calculator({
               ) : null}
             </select>
           </label>
-          <fieldset className="special-trait-controls form-grid-wide">
-            <legend>計算可能な特攻条件</legend>
-            {specialTraitCandidates.length ? (
+          {specialTraitCandidates.length ? (
+            <fieldset className="special-trait-controls form-grid-wide">
+              <legend>特攻条件</legend>
               <ul className="plain-list special-trait-list">
-                {specialTraitCandidates.map(([trait, sources]) => (
-                  <li key={trait}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={input.target.traits.includes(trait)}
-                        onChange={(event) =>
-                          change({
-                            target: {
-                              ...input.target,
-                              traits: event.target.checked
-                                ? [...new Set([...input.target.traits, trait])]
-                                : input.target.traits.filter((candidate) => candidate !== trait),
-                            },
-                          })
-                        }
-                      />
-                      <span>
-                        <strong>{trait}</strong>
-                        <small>{[...sources].join('・')}</small>
-                      </span>
-                    </label>
-                  </li>
-                ))}
+                {specialTraitCandidates.map((candidate) => {
+                  const enabled = input.target.traits.includes(candidate.trait);
+                  return (
+                    <li key={candidate.trait} data-enabled={enabled}>
+                      <label title={`${candidate.label}特攻を${enabled ? '無効' : '有効'}化`}>
+                        <input
+                          type="checkbox"
+                          checked={enabled}
+                          onChange={(event) =>
+                            change({
+                              target: {
+                                ...input.target,
+                                traits: event.target.checked
+                                  ? [...new Set([...input.target.traits, candidate.trait])]
+                                  : input.target.traits.filter(
+                                      (trait) => trait !== candidate.trait,
+                                    ),
+                              },
+                            })
+                          }
+                        />
+                        <span className="special-trait-copy">
+                          <strong>{candidate.label}特攻</strong>
+                          <small>
+                            {enabled ? '適用中' : '対象外'}・
+                            {candidate.sources.map((source) => source.valueLabel).join(' / ')}
+                          </small>
+                        </span>
+                        <span className="special-trait-sources" aria-label="付与元">
+                          {candidate.sources.map((source) => (
+                            <span
+                              className="special-trait-source"
+                              key={source.key}
+                              title={`${source.name} ${source.valueLabel}`}
+                              aria-label={`${source.name} ${source.valueLabel}`}
+                            >
+                              <MasterImage
+                                src={source.imageKey}
+                                alt=""
+                                fallback={source.name}
+                                className="special-trait-icon"
+                              />
+                            </span>
+                          ))}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
               </ul>
-            ) : (
-              <p className="notice">現在の構成でオン／オフできる特攻はありません。</p>
-            )}
-          </fieldset>
+            </fieldset>
+          ) : null}
           {mode === 'direct' && (
             <>
               <div className="direct-input-summary form-grid-wide">

@@ -31,6 +31,7 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
   await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('33,713');
   await expect(page.getByLabel('自動適用される能力')).toContainText('クラス相性2.00倍');
   await expect(page.getByLabel('攻撃役の自身スキル')).toContainText('理想郷の騎士 EX');
+  await expect(page.getByRole('group', { name: '特攻条件' })).toHaveCount(0);
 });
 
 test('works at 320px without horizontal document overflow', async ({ page }) => {
@@ -247,10 +248,17 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
   await attackerDialog.getByLabel('名前・クラス').fill('ジークフリート');
   await attackerDialog.getByRole('button', { name: /ジークフリート saber・Lv90/ }).click();
+  await page.getByLabel('竜殺し A++を使用').check();
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   await expect(page.getByLabel('自動適用される能力')).toContainText('対象特性なし');
-  await page.getByRole('checkbox', { name: /dragon/ }).check();
+  const specialConditions = page.getByRole('group', { name: '特攻条件' });
+  await expect(specialConditions.getByRole('listitem')).toHaveCount(1);
+  await expect(specialConditions).toContainText('竜特攻');
+  await expect(specialConditions).toContainText('+80% / ×1.50');
+  await expect(specialConditions).not.toContainText('竜殺し A++');
+  await expect(specialConditions.locator('.special-trait-icon')).toHaveCount(2);
+  await specialConditions.getByRole('checkbox', { name: /竜特攻/ }).check();
   await expect(page.getByLabel('自動適用される能力')).toContainText('1.50倍');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
