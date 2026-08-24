@@ -41,6 +41,7 @@ export const craftEssenceCopySchema = z.object({
   limitBreak: z.number().int().min(0).max(4),
   updatedAt: z.iso.datetime(),
 });
+export type CraftEssenceCopy = z.infer<typeof craftEssenceCopySchema>;
 
 export const supportEffectSchema = z.object({
   sourceType: z.enum(['servant', 'craftEssence', 'mysticCode', 'custom']),
@@ -59,6 +60,7 @@ export const supportTemplateSchema = z.object({
   updatedAt: z.iso.datetime(),
   lastUsedAt: z.iso.datetime().nullable(),
 });
+export type SupportTemplate = z.infer<typeof supportTemplateSchema>;
 
 export const calcInputSchema = z.object({
   attackerId: z.string().min(1).max(80),

@@ -9,7 +9,16 @@ import {
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
 import { calculateNpDamage } from '@fgo-lab/calc-core';
-import type { CalcInput, ProfileCollection, ServantBuild, UserDataBackup } from '@fgo-lab/schema';
+import type {
+  CalcInput,
+  CraftEssenceCopy,
+  LocalProfile,
+  ProfileCollection,
+  ServantBuild,
+  ServantTarget,
+  SupportTemplate,
+  UserDataBackup,
+} from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   IndexedDbProfileRepository,
@@ -214,6 +223,65 @@ export function App() {
       ),
     });
   }
+  async function replaceProfile(nextProfile: LocalProfile) {
+    await persist({
+      ...currentProfiles,
+      profiles: currentProfiles.profiles.map((item) =>
+        item.profileId === nextProfile.profileId ? nextProfile : item,
+      ),
+    });
+  }
+  async function updateTarget(patch: Partial<ServantTarget>) {
+    const timestamp = new Date().toISOString();
+    const current = profile.servantTargets[servant.id] ?? {
+      servantId: servant.id,
+      level: build?.level ?? 1,
+      ascension: build?.ascension ?? 0,
+      fouAtk: build?.fouAtk ?? 0,
+      skills: build?.skills ?? {},
+      appends: build?.appends ?? {},
+      planned: true,
+      updatedAt: timestamp,
+    };
+    await replaceProfile({
+      ...profile,
+      servantTargets: {
+        ...profile.servantTargets,
+        [servant.id]: { ...current, ...patch, servantId: servant.id, updatedAt: timestamp },
+      },
+      updatedAt: timestamp,
+    });
+  }
+  async function addCraftEssence() {
+    const copy: CraftEssenceCopy = {
+      copyId: crypto.randomUUID(),
+      craftEssenceId: currentMaster.craftEssences[0]!.id,
+      level: 1,
+      limitBreak: 0,
+      updatedAt: new Date().toISOString(),
+    };
+    await replaceProfile({ ...profile, craftEssences: [...profile.craftEssences, copy] });
+  }
+  async function removeCraftEssence(copyId: string) {
+    await replaceProfile({
+      ...profile,
+      craftEssences: profile.craftEssences.filter((copy) => copy.copyId !== copyId),
+    });
+  }
+  async function addSupportTemplate() {
+    const template: SupportTemplate = {
+      templateId: crypto.randomUUID(),
+      name: `支援条件 ${String(profile.supportTemplates.length + 1)}`,
+      masterDataVersion: currentMaster.version,
+      effects: [],
+      updatedAt: new Date().toISOString(),
+      lastUsedAt: null,
+    };
+    await replaceProfile({
+      ...profile,
+      supportTemplates: [...profile.supportTemplates, template],
+    });
+  }
   return (
     <div className="shell">
       <a className="skip" href="#main">
@@ -261,10 +329,25 @@ export function App() {
         )}{' '}
         {page === 'calculate' && <Calculator input={input} result={result} />}{' '}
         {page === 'servants' && (
-          <Servants name={servant.name} build={build} onChange={updateBuild} />
+          <Servants
+            name={servant.name}
+            build={build}
+            target={profile.servantTargets[servant.id]}
+            onChange={updateBuild}
+            onTargetChange={updateTarget}
+          />
         )}{' '}
-        {page === 'ce' && <CraftEssences count={profile.craftEssences.length} />}{' '}
-        {page === 'support' && <Empty title="支援条件" action="支援条件を作成" />}{' '}
+        {page === 'ce' && (
+          <CraftEssences
+            copies={profile.craftEssences}
+            name={currentMaster.craftEssences[0]!.name}
+            onAdd={addCraftEssence}
+            onRemove={removeCraftEssence}
+          />
+        )}{' '}
+        {page === 'support' && (
+          <SupportTemplates templates={profile.supportTemplates} onAdd={addSupportTemplate} />
+        )}{' '}
         {page === 'ranking' && <Ranking name={servant.name} average={result.results[0]!.average} />}{' '}
         {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
         {page === 'data' && (
@@ -427,12 +510,17 @@ function Calculator({
 function Servants({
   name,
   build,
+  target,
   onChange,
+  onTargetChange,
 }: {
   name: string;
   build: ServantBuild | undefined;
+  target: ServantTarget | undefined;
   onChange: (patch: Partial<ServantBuild>) => Promise<void>;
+  onTargetChange: (patch: Partial<ServantTarget>) => Promise<void>;
 }) {
+  const [tab, setTab] = useState<'current' | 'target'>('current');
   return (
     <div className="master-detail">
       <section>
@@ -447,44 +535,116 @@ function Servants({
       </section>
       <section>
         <div role="tablist">
-          <button role="tab" aria-selected="true">
+          <button role="tab" aria-selected={tab === 'current'} onClick={() => setTab('current')}>
             現在値
           </button>
-          <button role="tab" aria-selected="false">
+          <button role="tab" aria-selected={tab === 'target'} onClick={() => setTab('target')}>
             育成目標
           </button>
         </div>
         <h2>{name}</h2>
-        <label>
-          宝具Lv
-          <select
-            value={build?.npLevel ?? 0}
-            onChange={(event) => void onChange({ npLevel: Number(event.target.value) })}
-          >
-            {[0, 1, 2, 3, 4, 5].map((value) => (
-              <option key={value} value={value}>
-                {value === 0 ? 'NP0・未所持' : `NP${value}`}
-              </option>
-            ))}
-          </select>
-        </label>
+        {tab === 'current' && (
+          <label>
+            宝具Lv
+            <select
+              value={build?.npLevel ?? 0}
+              onChange={(event) => void onChange({ npLevel: Number(event.target.value) })}
+            >
+              {[0, 1, 2, 3, 4, 5].map((value) => (
+                <option key={value} value={value}>
+                  {value === 0 ? 'NP0・未所持' : `NP${value}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           レベル
           <input
             type="number"
             min="1"
             max="120"
-            value={build?.level ?? 1}
-            onChange={(event) => void onChange({ level: Number(event.target.value) })}
+            value={tab === 'current' ? (build?.level ?? 1) : (target?.level ?? build?.level ?? 1)}
+            onChange={(event) =>
+              void (tab === 'current'
+                ? onChange({ level: Number(event.target.value) })
+                : onTargetChange({ level: Number(event.target.value), planned: true }))
+            }
           />
         </label>
+        {tab === 'target' && (
+          <label>
+            <input
+              type="checkbox"
+              checked={target?.planned ?? false}
+              onChange={(event) => void onTargetChange({ planned: event.target.checked })}
+            />
+            育成計画へ含める
+          </label>
+        )}
         <p aria-live="polite">妥当な変更は端末内へ自動保存されます。</p>
       </section>
     </div>
   );
 }
-function CraftEssences({ count }: { count: number }) {
-  return <Empty title={`登録済み ${count}枚`} action="DBから礼装を登録" />;
+function CraftEssences({
+  copies,
+  name,
+  onAdd,
+  onRemove,
+}: {
+  copies: CraftEssenceCopy[];
+  name: string;
+  onAdd: () => Promise<void>;
+  onRemove: (copyId: string) => Promise<void>;
+}) {
+  return (
+    <section>
+      <h2>登録済み {copies.length}枚</h2>
+      <button className="primary" onClick={() => void onAdd()}>
+        DBから礼装を登録
+      </button>
+      <ul className="plain-list" aria-label="登録済み概念礼装">
+        {copies.map((copy, index) => (
+          <li key={copy.copyId}>
+            <span>
+              <strong>{name}</strong> {index + 1}枚目 / Lv.{copy.level} / 未凸
+            </span>
+            <button onClick={() => void onRemove(copy.copyId)}>登録解除</button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+function SupportTemplates({
+  templates,
+  onAdd,
+}: {
+  templates: SupportTemplate[];
+  onAdd: () => Promise<void>;
+}) {
+  return (
+    <section>
+      <button className="primary" onClick={() => void onAdd()}>
+        支援条件を作成
+      </button>
+      {templates.length === 0 ? (
+        <p>保存済みの支援条件はありません。</p>
+      ) : (
+        <ul className="plain-list" aria-label="保存済み支援条件">
+          {templates.map((template) => (
+            <li key={template.templateId}>
+              <strong>{template.name}</strong>
+              <span>
+                {template.effects.length}効果 / DB {template.masterDataVersion}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
 function Ranking({ name, average }: { name: string; average: number }) {
   return (
