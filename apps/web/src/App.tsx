@@ -20,13 +20,7 @@ import {
   type Clock,
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
-import {
-  attributeAffinity as resolveAttributeAffinity,
-  calculateNpDamage,
-  classAffinity as resolveClassAffinity,
-  classAttackRate as resolveClassAttackRate,
-  servantAttribute,
-} from '@fgo-lab/calc-core';
+import { calculateNpDamage, classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
 import {
   resolveAttackerSkills,
   resolveCraftEssenceEffects,
@@ -263,7 +257,11 @@ function calcInput(
   build: ServantBuild | undefined,
   servant = master.servants[0]!,
 ): CalcInput {
-  const target: CalcInput['target'] = { classId: 'lancer', attribute: 'earth', traits: [] };
+  const target: CalcInput['target'] = {
+    classId: 'affinity:2',
+    attribute: 'unknown',
+    traits: [],
+  };
   return {
     attackerId: servant.id,
     attackerLevel: build?.level ?? 90,
@@ -277,8 +275,8 @@ function calcInput(
     attackNpFunctionType: servant.attackNpFunctionType,
     cardType: servant.npCard,
     classAttackRate: resolveClassAttackRate(servant.classId),
-    classAffinity: resolveClassAffinity(servant.classId, target.classId),
-    attributeAffinity: resolveAttributeAffinity(servantAttribute(servant.traits), target.attribute),
+    classAffinity: 2,
+    attributeAffinity: 1,
     attackBuff: 0,
     defenseBuff: 0,
     cardBuff: 0,
@@ -999,11 +997,60 @@ function Calculator({
     ...craftEssenceEffectResolution.effects,
     ...npEffectResolution.effects,
   ];
-  const targetClassOptions = [...new Set(servants.map((servant) => servant.classId))].sort();
-  const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
-  const targetSummary = [input.target.classId, input.target.attribute, ...input.target.traits].join(
-    '・',
+  const traitCandidateSources = new Map<string, Set<string>>();
+  const addTraitCandidates = (
+    effects: readonly { targetTraits?: string[] | undefined }[],
+    sourceName: string,
+  ) => {
+    for (const effect of effects)
+      for (const trait of effect.targetTraits ?? []) {
+        const sources = traitCandidateSources.get(trait) ?? new Set<string>();
+        sources.add(sourceName);
+        traitCandidateSources.set(trait, sources);
+      }
+  };
+  for (const skill of attacker?.skills ?? []) addTraitCandidates(skill.effects, skill.name);
+  for (const passive of attacker?.passives ?? []) addTraitCandidates(passive.effects, passive.name);
+  addTraitCandidates(attacker?.npEffects ?? [], '宝具効果');
+  if (attacker?.npSpecialAttack)
+    for (const trait of attacker.npSpecialAttack.targetTraits) {
+      const sources = traitCandidateSources.get(trait) ?? new Set<string>();
+      sources.add('特攻宝具');
+      traitCandidateSources.set(trait, sources);
+    }
+  if (selectedCraftEssence)
+    addTraitCandidates(selectedCraftEssence.effects, selectedCraftEssence.name);
+  for (const selectedEffect of selectedSupport?.effects ?? []) {
+    if (!selectedEffect.enabled) continue;
+    const source = servants.find((candidate) => candidate.id === selectedEffect.sourceId);
+    const skill = source?.skills.find((candidate) => candidate.id === selectedEffect.effectId);
+    if (source && skill) addTraitCandidates(skill.effects, `${source.name}・${skill.name}`);
+  }
+  const specialTraitCandidates = [...traitCandidateSources.entries()].sort(([left], [right]) =>
+    left.localeCompare(right, 'ja'),
   );
+  const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
+  const classSituationLabel =
+    input.classAffinity === 2
+      ? '有利'
+      : input.classAffinity === 1.5
+        ? '攻撃有利'
+        : input.classAffinity === 0.5
+          ? '不利'
+          : input.classAffinity === 1
+            ? '等倍'
+            : '直接入力';
+  const attributeSituationLabel =
+    input.attributeAffinity === 1.1
+      ? '有利'
+      : input.attributeAffinity === 0.9
+        ? '不利'
+        : input.attributeAffinity === 1
+          ? '等倍'
+          : '直接入力';
+  const targetSummary = `クラス${classSituationLabel}（${input.classAffinity.toFixed(2)}倍）・属性${attributeSituationLabel}（${input.attributeAffinity.toFixed(2)}倍）${
+    input.target.traits.length ? `・特攻 ${input.target.traits.join('・')}` : ''
+  }`;
   const craftEssenceSummary =
     selectedCraftEssence && selection.craftEssence
       ? `${selectedCraftEssence.name} Lv.${selection.craftEssence.level}`
@@ -1035,6 +1082,22 @@ function Calculator({
       },
     );
   }
+  function changeAffinitySituation(key: 'classAffinity' | 'attributeAffinity', value: number) {
+    void onCompositionChange(
+      {
+        ...input,
+        [key]: value,
+        target:
+          key === 'classAffinity'
+            ? { ...input.target, classId: `affinity:${String(value)}` }
+            : { ...input.target, attribute: 'unknown' },
+      },
+      {
+        ...selection,
+        manualOverrides: (selection.manualOverrides ?? []).filter((candidate) => candidate !== key),
+      },
+    );
+  }
   function changeAttackerLevel(level: number) {
     change({
       attackerLevel: level,
@@ -1063,11 +1126,8 @@ function Calculator({
               )
             : 0,
         classAttackRate: resolveClassAttackRate(attacker?.classId ?? 'unknown'),
-        classAffinity: resolveClassAffinity(attacker?.classId ?? 'unknown', input.target.classId),
-        attributeAffinity: resolveAttributeAffinity(
-          servantAttribute(attacker?.traits ?? []),
-          input.target.attribute,
-        ),
+        classAffinity: 1,
+        attributeAffinity: 1,
       },
       { ...selection, manualOverrides: [] },
     );
@@ -1093,12 +1153,8 @@ function Calculator({
         classAttackRate: manualOverrides.has('classAttackRate')
           ? input.classAttackRate
           : resolveClassAttackRate(candidate.classId),
-        classAffinity: manualOverrides.has('classAffinity')
-          ? input.classAffinity
-          : resolveClassAffinity(candidate.classId, input.target.classId),
-        attributeAffinity: manualOverrides.has('attributeAffinity')
-          ? input.attributeAffinity
-          : resolveAttributeAffinity(servantAttribute(candidate.traits), input.target.attribute),
+        classAffinity: input.classAffinity,
+        attributeAffinity: input.attributeAffinity,
       },
       {
         ...selection,
@@ -1473,68 +1529,75 @@ function Calculator({
             )}
           </div>
           <label>
-            敵クラス
+            クラス相性の状況
             <select
-              value={input.target.classId}
+              value={String(input.classAffinity)}
               onChange={(event) =>
-                change({
-                  classAffinity: manualOverrides.has('classAffinity')
-                    ? input.classAffinity
-                    : resolveClassAffinity(attacker?.classId ?? 'unknown', event.target.value),
-                  target: { ...input.target, classId: event.target.value },
-                })
+                changeAffinitySituation('classAffinity', Number(event.target.value))
               }
             >
-              {targetClassOptions.map((classId) => (
-                <option key={classId} value={classId}>
-                  {classId}
+              <option value="2">有利（2.0倍）</option>
+              <option value="1.5">攻撃有利（1.5倍）</option>
+              <option value="1">等倍（1.0倍）</option>
+              <option value="0.5">不利（0.5倍）</option>
+              {![0.5, 1, 1.5, 2].includes(input.classAffinity) ? (
+                <option value={String(input.classAffinity)}>
+                  直接入力（{input.classAffinity}倍）
                 </option>
-              ))}
+              ) : null}
             </select>
           </label>
           <label>
-            敵属性
+            属性相性の状況
             <select
-              value={input.target.attribute}
+              value={String(input.attributeAffinity)}
               onChange={(event) =>
-                change({
-                  attributeAffinity: manualOverrides.has('attributeAffinity')
-                    ? input.attributeAffinity
-                    : resolveAttributeAffinity(
-                        servantAttribute(attacker?.traits ?? []),
-                        event.target.value as CalcInput['target']['attribute'],
-                      ),
-                  target: {
-                    ...input.target,
-                    attribute: event.target.value as CalcInput['target']['attribute'],
-                  },
-                })
+                changeAffinitySituation('attributeAffinity', Number(event.target.value))
               }
             >
-              {['man', 'earth', 'sky', 'star', 'beast', 'unknown'].map((value) => (
-                <option key={value} value={value}>
-                  {value}
+              <option value="1.1">有利（1.1倍）</option>
+              <option value="1">等倍（1.0倍）</option>
+              <option value="0.9">不利（0.9倍）</option>
+              {![0.9, 1, 1.1].includes(input.attributeAffinity) ? (
+                <option value={String(input.attributeAffinity)}>
+                  直接入力（{input.attributeAffinity}倍）
                 </option>
-              ))}
+              ) : null}
             </select>
           </label>
-          <label>
-            敵特性（カンマ区切り）
-            <input
-              value={input.target.traits.join(',')}
-              onChange={(event) =>
-                change({
-                  target: {
-                    ...input.target,
-                    traits: event.target.value
-                      .split(',')
-                      .map((value) => value.trim())
-                      .filter(Boolean),
-                  },
-                })
-              }
-            />
-          </label>
+          <fieldset className="special-trait-controls form-grid-wide">
+            <legend>計算可能な特攻条件</legend>
+            {specialTraitCandidates.length ? (
+              <ul className="plain-list special-trait-list">
+                {specialTraitCandidates.map(([trait, sources]) => (
+                  <li key={trait}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={input.target.traits.includes(trait)}
+                        onChange={(event) =>
+                          change({
+                            target: {
+                              ...input.target,
+                              traits: event.target.checked
+                                ? [...new Set([...input.target.traits, trait])]
+                                : input.target.traits.filter((candidate) => candidate !== trait),
+                            },
+                          })
+                        }
+                      />
+                      <span>
+                        <strong>{trait}</strong>
+                        <small>{[...sources].join('・')}</small>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="notice">現在の構成でオン／オフできる特攻はありません。</p>
+            )}
+          </fieldset>
           {mode === 'direct' && (
             <>
               <div className="direct-input-summary form-grid-wide">
@@ -1547,7 +1610,7 @@ function Calculator({
                   </strong>
                 </span>
                 <button type="button" onClick={resetAutomaticValues}>
-                  ATK・相性を自動値へ戻す
+                  ATK・相性を既定値へ戻す
                 </button>
               </div>
               {(

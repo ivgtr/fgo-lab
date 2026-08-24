@@ -466,6 +466,55 @@ h3 {
   color: var(--accent);
   font-weight: 800;
 }
+.special-trait-controls {
+  min-width: 0;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.special-trait-controls legend {
+  padding-inline: 0.35rem;
+  color: #40495b;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.special-trait-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.special-trait-list li {
+  min-width: 0;
+}
+.special-trait-list label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 48px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d9dcde;
+  border-radius: 6px;
+  background: #fafaf7;
+  cursor: pointer;
+}
+.special-trait-list input {
+  width: 20px;
+  min-height: 20px;
+  flex: 0 0 auto;
+}
+.special-trait-list span {
+  display: grid;
+  min-width: 0;
+}
+.special-trait-list strong,
+.special-trait-list small {
+  overflow-wrap: anywhere;
+}
+.special-trait-list small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
 [role='tablist'] {
   display: flex;
   border-bottom: 1px solid var(--line);
@@ -1002,6 +1051,9 @@ td.average {
   display: none;
 }
 @media (max-width: 760px) {
+  .special-trait-list {
+    grid-template-columns: 1fr;
+  }
   .shell {
     display: block;
     padding-bottom: 70px;

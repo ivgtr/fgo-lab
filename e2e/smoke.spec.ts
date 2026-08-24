@@ -21,7 +21,7 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toHaveCount(1);
   await expect(page.getByText('宝具ダメージ目安', { exact: true })).toHaveCount(0);
   await expect(resultCard).toContainText('アルトリア・ペンドラゴン');
-  await expect(resultCard).toContainText('lancer・earth');
+  await expect(resultCard).toContainText('クラス有利（2.00倍）・属性等倍（1.00倍）');
   await expect(resultCard).toContainText('支援なし');
   await expect(page.getByLabel('攻撃役の自身スキル').getByRole('listitem')).toHaveCount(3);
   await expect(page.getByRole('row', { name: /NP1.*現在/ })).toHaveAttribute(
@@ -157,18 +157,19 @@ test('edits Fou ATK from quick controls and shares the value with direct input',
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const fou = page.getByLabel('ATKフォウ（加算）');
   await expect(fou).toHaveValue('1000');
+  const fouControls = page.getByLabel('ATKフォウのクイック選択');
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const before = Number((await damage.textContent())?.replaceAll(',', ''));
-  await page.getByRole('button', { name: '+1,000' }).click();
+  await fouControls.getByRole('button', { name: '+1,000' }).click();
   await expect(fou).toHaveValue('2000');
   expect(Number((await damage.textContent())?.replaceAll(',', ''))).toBeGreaterThan(before);
-  await page.getByRole('button', { name: '+1,000' }).click();
+  await fouControls.getByRole('button', { name: '+1,000' }).click();
   await expect(fou).toHaveValue('3000');
-  await expect(page.getByRole('button', { name: '+1,000' })).toBeDisabled();
-  await page.getByRole('button', { name: 'リセット' }).click();
+  await expect(fouControls.getByRole('button', { name: '+1,000' })).toBeDisabled();
+  await fouControls.getByRole('button', { name: 'リセット' }).click();
   await expect(fou).toHaveValue('0');
-  await page.getByRole('button', { name: '+1,000' }).click();
-  await page.getByRole('button', { name: '+1,000' }).click();
+  await fouControls.getByRole('button', { name: '+1,000' }).click();
+  await fouControls.getByRole('button', { name: '+1,000' }).click();
   await page.getByRole('tab', { name: '直接入力' }).click();
   await expect(page.getByLabel('ATKフォウ')).toHaveValue('2000');
   await page.reload();
@@ -210,8 +211,6 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
     'ATKフォウ',
     '礼装ATK',
     'クラス攻撃補正',
-    'クラス相性',
-    '属性相性',
     '攻撃バフ（%）',
     '敵防御力（%）',
     'カード耐性（%）',
@@ -221,12 +220,16 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
     '固定ダメージ軽減',
   ])
     await expect(page.getByLabel(label)).toBeVisible();
+  const directClassAffinity = page.getByRole('spinbutton', { name: /^クラス相性/ });
+  const directAttributeAffinity = page.getByRole('spinbutton', { name: /^属性相性/ });
+  await expect(directClassAffinity).toBeVisible();
+  await expect(directAttributeAffinity).toBeVisible();
 
-  await page.getByLabel('クラス相性').fill('1');
-  await page.getByLabel('敵クラス').selectOption('archer');
-  await expect(page.getByLabel('クラス相性')).toHaveValue('1');
-  await page.getByRole('button', { name: 'ATK・相性を自動値へ戻す' }).click();
-  await expect(page.getByLabel('クラス相性')).toHaveValue('0.5');
+  await directClassAffinity.fill('1.7');
+  await page.getByLabel('クラス相性の状況').selectOption('0.5');
+  await expect(directClassAffinity).toHaveValue('0.5');
+  await page.getByRole('button', { name: 'ATK・相性を既定値へ戻す' }).click();
+  await expect(directClassAffinity).toHaveValue('1');
 
   await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
   const ceDialog = page.getByRole('dialog', { name: '概念礼装を選択' });
@@ -247,7 +250,7 @@ test('restores complete direct inputs, CE effects, and trait special NP resoluti
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   await expect(page.getByLabel('自動適用される能力')).toContainText('対象特性なし');
-  await page.getByLabel('敵特性（カンマ区切り）').fill('dragon');
+  await page.getByRole('checkbox', { name: /dragon/ }).check();
   await expect(page.getByLabel('自動適用される能力')).toContainText('1.50倍');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
@@ -262,7 +265,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   await page.getByLabel('理想郷の騎士 EXを使用').check();
-  await page.getByLabel('敵クラス').selectOption('berserker');
+  await page.getByLabel('クラス相性の状況').selectOption('1.5');
   const sharedDamage = await currentDamage.textContent();
   await page.getByRole('button', { name: 'URLをコピー' }).click();
   await expect(page.getByText('共有URLをコピーしました')).toBeVisible();
@@ -271,7 +274,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await page.goto('about:blank');
   await page.goto(sharedUrl);
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
-  await expect(page.getByLabel('敵クラス')).toHaveValue('berserker');
+  await expect(page.getByLabel('クラス相性の状況')).toHaveValue('1.5');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
   await expect(page.getByLabel('理想郷の騎士 EXを使用')).not.toBeChecked();
 
