@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FGO Lab — 育成計画</title>
+  <style>
+    :root {
+      --page:#f5f3f0; --surface:#fff; --text:#201d1b; --muted:#746d67;
+      --line:#d8d2cc; --line-soft:#ece7e2; --accent:#982b3d; --selected:#fbf1f3;
+    }
+    * { box-sizing:border-box; }
+    html { color-scheme:light; }
+    body { margin:0; background:var(--page); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif; line-height:1.45; }
+    button,input,select { font:inherit; }
+    button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible { outline:3px solid #d88b97; outline-offset:2px; }
+    button { color:inherit; }
+    .app-header { background:var(--surface); border-bottom:1px solid var(--line); }
+    .app-header-inner { width:min(1180px,calc(100% - 32px)); min-height:62px; margin:auto; display:flex; align-items:center; gap:28px; }
+    .brand { flex:0 0 auto; font-family:Georgia,"Times New Roman",serif; font-size:22px; font-weight:700; }
+    .global-nav { display:flex; align-self:stretch; gap:3px; overflow:auto; }
+    .global-nav a { display:flex; align-items:center; flex:0 0 auto; padding:3px 10px 0; border-bottom:2px solid transparent; color:var(--muted); font-size:13px; text-decoration:none; }
+    .global-nav a[aria-current="page"] { border-bottom-color:var(--accent); color:var(--accent); font-weight:700; }
+    .autosave { margin-left:auto; color:#326246; font-size:12px; white-space:nowrap; }
+    main { width:min(1180px,calc(100% - 32px)); margin:0 auto 52px; background:var(--surface); }
+    .page-head { padding:30px 20px 18px; }
+    h1 { margin:0 0 5px; font-size:28px; letter-spacing:.01em; }
+    .page-head p { margin:0; color:var(--muted); font-size:13px; }
+    .overview { display:flex; gap:22px; padding:10px 20px 12px; border-top:1px solid var(--line-soft); color:var(--muted); font-size:12px; overflow:auto; }
+    .overview span { flex:0 0 auto; }
+    .overview strong { margin-left:5px; color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
+    .toolbar { display:flex; gap:8px; align-items:center; padding:13px 20px; border-block:1px solid var(--line); }
+    .search { flex:1; min-width:180px; }
+    .search input { width:100%; min-height:42px; padding:8px 11px; border:1px solid #bfb8b1; border-radius:4px; background:#fff; }
+    .filter { position:relative; }
+    .filter summary { min-height:42px; padding:9px 13px; border:1px solid #bfb8b1; border-radius:4px; background:#fff; cursor:pointer; list-style:none; white-space:nowrap; }
+    .filter summary::-webkit-details-marker { display:none; }
+    .filter summary::after { content:"▾"; margin-left:12px; color:var(--muted); font-size:11px; }
+    .filter[open] summary::after { content:"▴"; }
+    .filter-panel { position:absolute; z-index:5; right:0; top:48px; width:280px; padding:13px; border:1px solid var(--line); background:#fff; }
+    .field + .field { margin-top:11px; }
+    .field label { display:block; margin-bottom:4px; color:var(--muted); font-size:12px; }
+    .field select { width:100%; min-height:38px; padding:6px 8px; border:1px solid #bfb8b1; border-radius:4px; background:#fff; }
+    .filter-state { padding:0 20px 9px; color:var(--muted); font-size:12px; }
+    .filter-state:empty { display:none; }
+    .ledger { display:grid; grid-template-columns:minmax(520px,7fr) minmax(280px,3fr); border-bottom:1px solid var(--line); }
+    .material-list { min-width:0; }
+    .material-group[hidden], .material-row[hidden] { display:none; }
+    .group-head { display:flex; justify-content:space-between; padding:12px 14px 7px 20px; border-bottom:1px solid var(--line-soft); color:var(--muted); font-size:12px; font-weight:400; }
+    .material-row { display:grid; grid-template-columns:42px minmax(0,1fr) auto 16px; gap:11px; align-items:center; width:100%; min-height:62px; padding:8px 15px 8px 20px; border:0; border-bottom:1px solid var(--line-soft); background:#fff; text-align:left; cursor:pointer; }
+    .material-row:hover { background:#faf8f6; }
+    .material-row[aria-current="true"] { background:var(--selected); box-shadow:inset 3px 0 var(--accent); }
+    .item-image { width:38px; height:38px; object-fit:contain; }
+    .item-fallback { display:grid; place-items:center; width:38px; height:38px; border:1px solid var(--line); color:#615a54; font-size:9px; font-weight:700; }
+    .item-copy strong,.item-copy span { display:block; }
+    .item-copy strong { font-size:14px; }
+    .item-copy span { color:var(--muted); font-size:11px; }
+    .amount { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
+    .chevron { color:var(--muted); }
+    .empty { padding:34px 20px; color:var(--muted); font-size:13px; }
+    .empty[hidden] { display:none; }
+    .detail { min-width:0; padding:18px 20px; border-left:1px solid var(--line); }
+    .detail-inner { position:sticky; top:18px; }
+    .mobile-back { display:none; padding:0; border:0; background:transparent; color:var(--accent); cursor:pointer; }
+    .detail-label { margin:0 0 3px; color:var(--muted); font-size:11px; }
+    .detail h2 { margin:0; font-size:20px; }
+    .detail-total { margin:3px 0 17px; color:var(--muted); font-size:12px; }
+    .detail-total strong { margin-left:4px; color:var(--text); font-size:19px; font-variant-numeric:tabular-nums; }
+    .contributor { display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:10px; align-items:center; padding:11px 0; border-top:1px solid var(--line-soft); color:inherit; text-decoration:none; }
+    .contributor:hover .servant strong { color:var(--accent); text-decoration:underline; text-underline-offset:3px; }
+    .face { width:42px; height:42px; object-fit:cover; border:1px solid var(--line); border-radius:2px 9px 2px 2px; }
+    .servant strong,.servant span { display:block; }
+    .servant strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+    .servant span { color:var(--muted); font-size:11px; }
+    .use-amount { font-weight:700; font-variant-numeric:tabular-nums; }
+    .use-amount::after { content:"›"; margin-left:7px; color:var(--muted); font-weight:400; }
+    .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (max-width:820px) {
+      .app-header-inner,main { width:100%; }
+      .app-header-inner { padding-left:14px; }
+      .autosave { display:none; }
+      .page-head { padding:23px 16px 16px; }
+      .overview { padding-inline:16px; }
+      .toolbar { padding-inline:16px; }
+      .filter-state { padding-inline:16px; }
+      .ledger { display:block; }
+      .detail { border-left:0; }
+      .ledger:not(.detail-open) .detail { display:none; }
+      .ledger.detail-open .material-list { display:none; }
+      .mobile-back { display:inline-block; margin-bottom:20px; }
+      .detail-inner { position:static; }
+    }
+    @media (max-width:480px) {
+      .app-header-inner { display:block; padding-top:11px; }
+      .brand { padding-left:2px; }
+      .global-nav { min-height:42px; margin-top:3px; }
+      .global-nav a { padding-inline:7px; font-size:12px; }
+      h1 { font-size:25px; }
+      .overview { gap:15px; }
+      .toolbar { align-items:stretch; }
+      .filter summary { padding-inline:11px; }
+      .filter summary span { display:none; }
+      .filter summary::before { content:"絞り込み"; }
+      .filter-panel { position:fixed; top:auto; right:10px; left:10px; width:auto; }
+      .group-head { padding-left:14px; }
+      .material-row { padding-left:14px; }
+      .detail { padding-inline:16px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="brand">FGO Lab</div>
+      <nav class="global-nav" aria-label="主要なページ">
+        <a href="my-chaldea-ui-comparison.html">所持・育成管理</a>
+        <a href="ui-comparison.html">ダメージ計算</a>
+        <a href="ui-comparison.html#ranking">火力ランキング</a>
+        <a href="growth-plan-ui.html" aria-current="page">育成計画</a>
+      </nav>
+      <span class="autosave">端末に保存済み</span>
+    </div>
+  </header>
+
+  <main>
+    <header class="page-head">
+      <h1>育成計画</h1>
+      <p>3騎の育成目標から、必要な素材を集計しています。</p>
+    </header>
+
+    <div class="overview" aria-label="特殊素材の必要数">
+      <span>QP<strong>284,900,000</strong></span>
+      <span>種火<strong>211</strong></span>
+      <span>聖杯<strong>10</strong></span>
+      <span>コイン<strong>300</strong></span>
+    </div>
+
+    <div class="toolbar">
+      <label class="search"><span class="visually-hidden">素材名で検索</span><input type="search" placeholder="素材名で検索" data-search /></label>
+      <details class="filter" data-filter>
+        <summary><span>絞り込み・並び順</span></summary>
+        <div class="filter-panel">
+          <div class="field"><label for="category">カテゴリ</label><select id="category" data-category><option value="all">すべて</option><option value="standard">再臨・スキル素材</option><option value="special">レベル・特殊素材</option></select></div>
+          <div class="field"><label for="sort">並び順</label><select id="sort" data-sort><option value="game">ゲーム内の並び順</option><option value="amount">必要数が多い順</option><option value="name">素材名順</option></select></div>
+        </div>
+      </details>
+    </div>
+    <p class="filter-state" data-filter-state></p>
+
+    <div class="ledger" data-ledger>
+      <section class="material-list" aria-label="必要素材一覧">
+        <section class="material-group" data-group="standard">
+          <h2 class="group-head"><span>再臨・スキル素材</span><span data-group-count>7種</span></h2>
+          <div data-rows>
+            <button class="material-row" type="button" aria-current="true" data-order="1" data-category="standard" data-name="竜の牙" data-total="126" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|再臨・スキル|90|https://static.atlasacademy.io/JP/Faces/f_1001000.png,坂田金時|Lv.90・10/6/6 → 10/10/10|スキル2・3|36|https://static.atlasacademy.io/JP/Faces/f_7006000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6512.png" alt="" /><span class="item-copy"><strong>竜の牙</strong><span>再臨・スキル</span></span><span class="amount">126</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="2" data-category="standard" data-name="英雄の証" data-total="161" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|再臨・スキル|161|https://static.atlasacademy.io/JP/Faces/f_1001000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6503.png" alt="" /><span class="item-copy"><strong>英雄の証</strong><span>再臨・スキル</span></span><span class="amount">161</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="3" data-category="standard" data-name="剣の秘石" data-total="51" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|スキル1・2・3|51|https://static.atlasacademy.io/JP/Faces/f_1001000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6201.png" alt="" /><span class="item-copy"><strong>剣の秘石</strong><span>スキル</span></span><span class="amount">51</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="4" data-category="standard" data-name="混沌の爪" data-total="60" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|スキル1・2・3|45|https://static.atlasacademy.io/JP/Faces/f_1001000.png,坂田金時|Lv.90・10/6/6 → 10/10/10|スキル2・3|15|https://static.atlasacademy.io/JP/Faces/f_7006000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6507.png" alt="" /><span class="item-copy"><strong>混沌の爪</strong><span>スキル</span></span><span class="amount">60</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="5" data-category="standard" data-name="竜の逆鱗" data-total="35" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|再臨・スキル|35|https://static.atlasacademy.io/JP/Faces/f_1001000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6506.png" alt="" /><span class="item-copy"><strong>竜の逆鱗</strong><span>再臨・スキル</span></span><span class="amount">35</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="6" data-category="standard" data-name="鳳凰の羽根" data-total="12" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|霊基再臨|12|https://static.atlasacademy.io/JP/Faces/f_1001000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6501.png" alt="" /><span class="item-copy"><strong>鳳凰の羽根</strong><span>再臨</span></span><span class="amount">12</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="7" data-category="standard" data-name="伝承結晶" data-total="5" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90・10/10/10|スキル1・2・3|3|https://static.atlasacademy.io/JP/Faces/f_1001000.png,坂田金時|Lv.90・10/6/6 → 10/10/10|スキル2・3|2|https://static.atlasacademy.io/JP/Faces/f_7006000.png"><img class="item-image" src="https://static.atlasacademy.io/JP/Items/6999.png" alt="" /><span class="item-copy"><strong>伝承結晶</strong><span>スキル</span></span><span class="amount">5</span><span class="chevron">›</span></button>
+          </div>
+        </section>
+        <section class="material-group" data-group="special">
+          <h2 class="group-head"><span>レベル・特殊素材</span><span data-group-count>3種</span></h2>
+          <div data-rows>
+            <button class="material-row" type="button" data-order="8" data-category="special" data-name="叡智の業火" data-total="211" data-contributors="アルトリア・ペンドラゴン|未所持 → Lv.90|レベル強化|127|https://static.atlasacademy.io/JP/Faces/f_1001000.png,モルガン|Lv.100 → 120|レベル強化|84|https://static.atlasacademy.io/JP/Faces/f_7040000.png"><span class="item-fallback">種火</span><span class="item-copy"><strong>叡智の業火</strong><span>クラス一致・成功ボーナスなし</span></span><span class="amount">211</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="9" data-category="special" data-name="聖杯" data-total="10" data-contributors="モルガン|Lv.100 → 120|聖杯転臨|10|https://static.atlasacademy.io/JP/Faces/f_7040000.png"><span class="item-fallback">聖杯</span><span class="item-copy"><strong>聖杯</strong><span>聖杯転臨</span></span><span class="amount">10</span><span class="chevron">›</span></button>
+            <button class="material-row" type="button" data-order="10" data-category="special" data-name="サーヴァントコイン" data-total="300" data-contributors="モルガン|Lv.100 → 120|Lv.100以降|300|https://static.atlasacademy.io/JP/Faces/f_7040000.png"><span class="item-fallback">コイン</span><span class="item-copy"><strong>サーヴァントコイン</strong><span>Lv.100以降</span></span><span class="amount">300</span><span class="chevron">›</span></button>
+          </div>
+        </section>
+        <p class="empty" data-empty hidden>条件に一致する素材はありません。</p>
+      </section>
+
+      <aside class="detail" aria-live="polite">
+        <div class="detail-inner">
+          <button class="mobile-back" type="button" data-back>← 素材一覧へ戻る</button>
+          <p class="detail-label">選択した素材</p>
+          <h2 data-detail-name>竜の牙</h2>
+          <p class="detail-total">必要数<strong data-detail-total>126</strong></p>
+          <div data-contributor-list></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const rows = [...document.querySelectorAll('.material-row')];
+    const ledger = document.querySelector('[data-ledger]');
+    const detailName = document.querySelector('[data-detail-name]');
+    const detailTotal = document.querySelector('[data-detail-total]');
+    const contributorList = document.querySelector('[data-contributor-list]');
+    const search = document.querySelector('[data-search]');
+    const category = document.querySelector('[data-category]');
+    const sort = document.querySelector('[data-sort]');
+    const filterState = document.querySelector('[data-filter-state]');
+    const globalNav = document.querySelector('.global-nav');
+    const servantIds = { 'アルトリア・ペンドラゴン':'1001000', 'モルガン':'7040000', '坂田金時':'7006000' };
+    if (matchMedia('(max-width:480px)').matches) globalNav.scrollLeft = globalNav.scrollWidth;
+
+    function selectMaterial(row, moveToDetail = false) {
+      rows.forEach((item) => item.removeAttribute('aria-current'));
+      row.setAttribute('aria-current', 'true');
+      detailName.textContent = row.dataset.name;
+      detailTotal.textContent = row.dataset.total;
+      contributorList.replaceChildren(...row.dataset.contributors.split(',').map((record) => {
+        const [name, goal, use, amount, face] = record.split('|');
+        const item = document.createElement('a');
+        item.className = 'contributor';
+        item.href = `my-chaldea-ui-comparison.html?servant=${servantIds[name]}&tab=target#a`;
+        item.setAttribute('aria-label', `${name}の育成目標を編集`);
+        const image = document.createElement('img');
+        image.className = 'face'; image.src = face; image.alt = '';
+        const copy = document.createElement('span'); copy.className = 'servant';
+        const servantName = document.createElement('strong'); servantName.textContent = name;
+        const usage = document.createElement('span'); usage.textContent = `${use}・${goal}`;
+        const quantity = document.createElement('strong'); quantity.className = 'use-amount'; quantity.textContent = amount;
+        copy.append(servantName, usage); item.append(image, copy, quantity);
+        return item;
+      }));
+      if (moveToDetail && matchMedia('(max-width:820px)').matches) {
+        ledger.classList.add('detail-open');
+        document.querySelector('[data-back]').focus();
+      }
+    }
+
+    function applyView() {
+      const query = search.value.trim().toLocaleLowerCase('ja');
+      let visibleCount = 0;
+      rows.forEach((row) => {
+        const visible = (!query || row.dataset.name.toLocaleLowerCase('ja').includes(query)) && (category.value === 'all' || row.dataset.category === category.value);
+        row.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+      document.querySelectorAll('[data-group]').forEach((group) => {
+        const visibleRows = [...group.querySelectorAll('.material-row:not([hidden])')];
+        group.hidden = visibleRows.length === 0;
+        group.querySelector('[data-group-count]').textContent = `${visibleRows.length}種`;
+        const container = group.querySelector('[data-rows]');
+        visibleRows.sort((a,b) => sort.value === 'amount' ? Number(b.dataset.total) - Number(a.dataset.total) : sort.value === 'name' ? a.dataset.name.localeCompare(b.dataset.name, 'ja') : Number(a.dataset.order) - Number(b.dataset.order));
+        visibleRows.forEach((row) => container.append(row));
+      });
+      document.querySelector('[data-empty]').hidden = visibleCount !== 0;
+      const current = document.querySelector('.material-row[aria-current="true"]');
+      const firstVisible = rows.find((row) => !row.hidden);
+      document.querySelector('.detail').hidden = visibleCount === 0;
+      if (firstVisible && (!current || current.hidden)) selectMaterial(firstVisible);
+      const states = [];
+      if (query) states.push(`「${search.value.trim()}」`);
+      if (category.value !== 'all') states.push(category.options[category.selectedIndex].text);
+      if (sort.value !== 'game') states.push(sort.options[sort.selectedIndex].text);
+      filterState.textContent = states.length ? `適用中: ${states.join('・')}` : '';
+    }
+
+    rows.forEach((row) => row.addEventListener('click', () => selectMaterial(row, true)));
+    search.addEventListener('input', applyView);
+    category.addEventListener('change', applyView);
+    sort.addEventListener('change', applyView);
+    document.querySelector('[data-back]').addEventListener('click', () => {
+      ledger.classList.remove('detail-open');
+      document.querySelector('.material-row[aria-current="true"]')?.focus();
+    });
+    selectMaterial(rows[0]);
+  </script>
+</body>
+</html>

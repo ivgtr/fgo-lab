@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FGO Lab — 所持・育成管理 UI比較</title>
+  <style>
+    :root {
+      --ink: #211d1b;
+      --muted: #716964;
+      --line: #d8d1cb;
+      --soft-line: #ebe6e1;
+      --paper: #fffdfa;
+      --canvas: #f4f1ed;
+      --accent: #8b2432;
+      --accent-soft: #f6e9eb;
+      --focus: #1769aa;
+      --good: #2e6848;
+      --warn: #8a5a12;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button, input, select { font: inherit; }
+    button, select, input { min-height: 40px; }
+    button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 3px solid color-mix(in srgb, var(--focus) 45%, transparent); outline-offset: 2px; }
+    button { color: inherit; }
+    .app-head { border-bottom: 1px solid var(--line); background: var(--paper); }
+    .app-head-inner, main { width: min(1180px, calc(100% - 32px)); margin: auto; }
+    .app-head-inner { display: flex; justify-content: space-between; gap: 24px; align-items: center; min-height: 72px; }
+    .brand { display: flex; gap: 14px; align-items: baseline; }
+    .brand strong { font-family: Georgia, serif; font-size: 20px; letter-spacing: .02em; }
+    .brand span, .status { color: var(--muted); }
+    .status { border: 1px solid var(--line); padding: 4px 9px; border-radius: 999px; font-size: 12px; }
+    main { padding: 28px 0 56px; }
+    .intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; margin-bottom: 22px; }
+    h1 { margin: 0 0 6px; font: 700 30px/1.2 Georgia, serif; }
+    h2, h3, p { margin-top: 0; }
+    .intro p, .panel-head p, .quiet { color: var(--muted); }
+    .intro p { max-width: 720px; margin-bottom: 0; }
+    .decision { max-width: 360px; padding-left: 16px; border-left: 3px solid var(--accent); }
+    .decision strong, .decision span { display: block; }
+    .decision span { color: var(--muted); font-size: 12px; }
+
+    .score-scroll { overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--line); background: var(--paper); }
+    .score { width: 100%; min-width: 760px; border-collapse: collapse; }
+    .score th, .score td { padding: 9px 12px; border-bottom: 1px solid var(--soft-line); text-align: left; }
+    .score thead th { color: var(--muted); font-size: 12px; background: #faf7f3; }
+    .score tbody tr:last-child td { border-bottom: 0; }
+    .mark { font-weight: 700; color: var(--good); }
+    .mark.low { color: var(--muted); font-weight: 500; }
+
+    .view-tabs { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); background: var(--paper); margin-bottom: 16px; }
+    .view-tabs button { border: 0; border-right: 1px solid var(--line); background: transparent; padding: 11px 12px; text-align: left; cursor: pointer; }
+    .view-tabs button:last-child { border-right: 0; }
+    .view-tabs button[aria-selected="true"] { background: var(--accent-soft); box-shadow: inset 0 -3px var(--accent); }
+    .view-tabs strong, .view-tabs span { display: block; }
+    .view-tabs span { color: var(--muted); font-size: 11px; }
+
+    .demo-shell { border: 1px solid var(--line); background: var(--paper); }
+    .demo-nav { display: flex; justify-content: space-between; gap: 20px; align-items: center; min-height: 58px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+    .section-tabs { display: flex; align-items: center; gap: 4px; }
+    .section-tabs button { border: 0; background: transparent; padding: 7px 10px; cursor: pointer; }
+    .section-tabs button.active { color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--accent); }
+    .sync { color: var(--muted); font-size: 12px; }
+    .sync[data-state="saving"] { color: var(--warn); }
+    .sync[data-state="saved"] { color: var(--good); }
+    .panel { padding: 20px; }
+    .panel[hidden] { display: none; }
+    .panel-head { display: flex; justify-content: space-between; gap: 20px; align-items: start; margin-bottom: 16px; }
+    .panel-head h2 { margin-bottom: 3px; font-size: 20px; }
+    .panel-head p { margin-bottom: 0; }
+    .mode-label { flex: 0 0 auto; padding: 4px 8px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; border-radius: 4px; }
+    .toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) repeat(2, 170px) auto; gap: 8px; margin-bottom: 14px; }
+    .overview-toolbar { grid-template-columns: minmax(220px, 1fr) repeat(2, 170px); }
+    .toolbar input, .toolbar select, .field input, .field select, .sheet input, .sheet select { width: 100%; border: 1px solid var(--line); background: #fff; padding: 7px 9px; border-radius: 4px; }
+    .primary, .secondary { border: 1px solid var(--accent); padding: 7px 13px; border-radius: 4px; cursor: pointer; }
+    .primary { background: var(--accent); color: #fff; font-weight: 700; }
+    .secondary { background: #fff; color: var(--accent); }
+    .toolbar-note { min-height: 40px; display: flex; align-items: center; justify-content: flex-end; color: var(--muted); font-size: 12px; }
+
+    /* A: overview grid + detail */
+    .master-detail { display: grid; grid-template-columns: minmax(440px, 1.25fr) minmax(330px, .75fr); border-top: 1px solid var(--line); }
+    .master-detail.detail-closed { grid-template-columns: 1fr; }
+    .master-detail.detail-closed .overview-pane { border-right: 0; }
+    .master-detail.detail-closed .detail-editor { display: none; }
+    .master-detail.detail-closed .portrait-grid { grid-template-columns: repeat(8, 1fr); }
+    .overview-pane { min-width: 0; padding: 14px; border-right: 1px solid var(--line); }
+    .overview-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 10px; }
+    .overview-top strong, .overview-top span { display: block; }
+    .overview-top span { color: var(--muted); font-size: 12px; }
+    .class-strip { display: flex; gap: 4px; overflow-x: auto; padding: 3px 0 10px; }
+    .class-strip button { flex: 0 0 auto; min-height: 34px; padding: 4px 9px; border: 1px solid var(--line); background: #fff; border-radius: 3px 8px 3px 3px; cursor: pointer; }
+    .class-strip button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .portrait-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+    .portrait-grid[hidden] { display: none; }
+    .servant-tile { position: relative; min-width: 0; padding: 3px; border: 1px solid transparent; background: #fff; text-align: left; }
+    .servant-tile:hover { background: #fdf9f6; }
+    .servant-tile[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .servant-tile[data-owned="false"] .tile-face { filter: grayscale(.85); opacity: .64; }
+    .servant-tile[data-owned="true"]::after { content: "✓"; position: absolute; right: 7px; bottom: 7px; display: grid; place-items: center; width: 21px; height: 21px; border: 2px solid #fff; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; }
+    .tile-main { display: block; width: 100%; min-height: 0; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
+    .tile-face { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--line); border-radius: 3px 12px 3px 3px; background: #eee; }
+    .tile-main strong, .tile-main small { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .servant-rows { border-top: 1px solid var(--line); }
+    .servant-list-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto 18px; gap: 10px; align-items: center; width: 100%; min-height: 66px; padding: 7px 8px; border: 0; border-bottom: 1px solid var(--soft-line); background: #fff; text-align: left; cursor: pointer; }
+    .servant-list-row:hover { background: #fdf9f6; }
+    .servant-list-row[hidden] { display: none; }
+    .servant-list-row[aria-current="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+    .servant-list-row[data-owned="false"] .row-face { filter: grayscale(.85); opacity: .64; }
+    .row-face { width: 52px; height: 52px; object-fit: cover; border: 1px solid var(--line); border-radius: 3px 10px 3px 3px; background: #eee; }
+    .row-copy, .row-copy strong, .row-copy span, .list-value, .list-value strong, .list-value span { display: block; min-width: 0; }
+    .row-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-copy span, .list-value span { color: var(--muted); font-size: 12px; }
+    .list-value { text-align: right; font-variant-numeric: tabular-nums; }
+    .overview-help { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .filter-empty { margin: 0; padding: 24px 12px; border-bottom: 1px solid var(--soft-line); color: var(--muted); text-align: center; }
+    .filter-empty[hidden] { display: none; }
+    .identity { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .face { width: 44px; height: 44px; flex: 0 0 auto; object-fit: cover; border: 1px solid var(--line); border-radius: 3px 10px 3px 3px; background: #eee; }
+    .identity strong, .identity span, .value-stack strong, .value-stack span { display: block; min-width: 0; }
+    .identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .identity span, .value-stack span { color: var(--muted); font-size: 12px; }
+    .value-stack strong { font-variant-numeric: tabular-nums; }
+    .needs { color: var(--warn) !important; }
+    .chevron { color: var(--muted); font-size: 18px; }
+    .detail-editor { padding: 16px; background: #fcfaf7; }
+    .mobile-detail-back { display: none; width: 100%; margin-bottom: 12px; border: 1px solid var(--line); background: #fff; text-align: left; padding: 7px 10px; cursor: pointer; }
+    .detail-person { display: flex; gap: 12px; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .detail-close { margin-left: auto; min-height: 34px; padding: 4px 8px; border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 4px; cursor: pointer; }
+    .detail-person .face { width: 56px; height: 56px; }
+    .detail-person h3 { margin: 0 0 2px; font-size: 17px; }
+    .detail-person p { margin: 0; color: var(--muted); font-size: 12px; }
+    .detail-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+    .detail-tabs button { min-height: 43px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
+    .detail-tabs button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--text); font-weight: 700; }
+    .detail-tab-panel[hidden] { display: none; }
+    .quick-setting-bar { display: flex; gap: 5px; align-items: center; overflow-x: auto; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .quick-setting-bar span { flex: 0 0 auto; margin-right: 3px; color: var(--muted); font-size: 11px; }
+    .quick-setting-bar button { flex: 0 0 auto; min-height: 32px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--text); cursor: pointer; }
+    .quick-setting-bar button:hover, .quick-setting-bar button:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .setting-section { padding-top: 14px; }
+    .setting-section + .setting-section { margin-top: 14px; border-top: 1px solid var(--line); }
+    .setting-section-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 5px; }
+    .setting-section-head strong { font-size: 13px; }
+    .setting-section-head span { color: var(--muted); font-size: 11px; }
+    .setting-row { display: grid; grid-template-columns: 46px minmax(0, 1fr) 76px; gap: 10px; align-items: center; min-height: 62px; padding: 7px 0; border-bottom: 1px solid var(--soft-line); }
+    .setting-row[hidden] { display: none; }
+    .setting-row:last-child { border-bottom: 0; }
+    .setting-icon, .setting-symbol { width: 46px; height: 46px; border: 1px solid var(--line); border-radius: 3px 10px 3px 3px; background: #eee; object-fit: cover; }
+    .setting-symbol { display: grid; place-items: center; background: #f5f0e9; color: #5f554f; font-weight: 700; font-size: 12px; }
+    .setting-copy strong, .setting-copy span { display: block; }
+    .setting-copy strong { line-height: 1.35; }
+    .setting-copy span { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .setting-control { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .setting-control input, .setting-control select { width: 70px; min-height: 38px; border: 0; border-bottom: 1px solid #9e9690; border-radius: 0; background: transparent; padding: 5px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .setting-control label { color: var(--muted); font-size: 11px; }
+    .plan-row { grid-template-columns: 46px minmax(0, 1fr) auto 76px; }
+    .current-value { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .material-summary { margin-top: 16px; padding: 13px; border-left: 3px solid var(--accent); background: #fff; }
+    .material-summary h4 { margin: 0 0 4px; font-size: 15px; }
+    .material-summary p { margin: 0; color: var(--muted); font-size: 12px; }
+    .material-breakdown { margin-top: 10px; border-top: 1px solid var(--soft-line); }
+    .material-group { padding-top: 12px; }
+    .material-group + .material-group { margin-top: 4px; border-top: 1px solid var(--line); }
+    .material-group-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+    .material-group-head strong { font-size: 13px; }
+    .material-group-head span { color: var(--muted); font-size: 11px; }
+    .material-item { display: grid; grid-template-columns: 34px 1fr auto; gap: 9px; align-items: center; min-height: 46px; border-bottom: 1px solid var(--soft-line); }
+    .material-item img { width: 32px; height: 32px; object-fit: contain; }
+    .material-item strong { font-variant-numeric: tabular-nums; }
+    .material-badge { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line); background: #f5f0e9; color: #5f554f; font-size: 10px; font-weight: 700; }
+    .qp-item { grid-template-columns: minmax(0, 1fr) auto; }
+    .material-total { display: flex; justify-content: space-between; gap: 10px; padding: 11px 0 2px; font-size: 14px; }
+    .material-condition { margin-top: 9px !important; padding-top: 9px; border-top: 1px solid var(--soft-line); }
+    .autosave-hint { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+
+    /* B: sheet */
+    .sheet-scroll { overflow: auto; max-height: 500px; border: 1px solid var(--line); }
+    .sheet { width: 100%; min-width: 1050px; border-collapse: separate; border-spacing: 0; }
+    .sheet th, .sheet td { min-width: 76px; padding: 6px; border-right: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); text-align: center; }
+    .sheet th { position: sticky; top: 0; z-index: 3; background: #f7f3ef; color: var(--muted); font-size: 11px; }
+    .sheet th:first-child, .sheet td:first-child { position: sticky; left: 0; z-index: 2; min-width: 210px; background: #fff; text-align: left; }
+    .sheet th:first-child { z-index: 4; background: #f7f3ef; }
+    .sheet .identity .face { width: 34px; height: 34px; }
+    .sheet input, .sheet select { min-height: 34px; padding: 4px 5px; text-align: center; }
+    .changed { background: #fff8e8; }
+    .sheet-note { display: flex; justify-content: space-between; gap: 16px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+
+    /* C: catalog */
+    .catalog-summary { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-bottom: 0; }
+    .catalog-summary strong { font-size: 16px; }
+    .catalog { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); }
+    .catalog-item { min-width: 0; min-height: 126px; padding: 12px; border: 0; border-right: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); background: #fff; text-align: left; cursor: pointer; }
+    .catalog-item:nth-child(4n) { border-right: 0; }
+    .catalog-item[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 -3px var(--accent); }
+    .catalog-item .identity { align-items: start; }
+    .owned-state { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
+    .catalog-item[aria-pressed="true"] .owned-state { color: var(--accent); font-weight: 700; }
+
+    /* D: board */
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .lane { border-top: 3px solid var(--line); background: #faf8f5; min-height: 350px; padding: 12px; }
+    .lane.active { border-color: var(--accent); }
+    .lane-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+    .lane-head span { color: var(--muted); }
+    .board-item { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--soft-line); }
+    .board-item:first-of-type { border-top: 0; }
+    .board-item p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .board-warning { margin-top: 16px; padding: 12px 14px; border-left: 3px solid var(--warn); background: #fffaf0; }
+
+    .review { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-top: 0; background: #faf7f3; }
+    .review div { padding: 13px; border-right: 1px solid var(--line); }
+    .review div:last-child { border-right: 0; }
+    .review strong, .review span { display: block; }
+    .review span { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .undo-toast { position: fixed; left: 50%; bottom: 18px; z-index: 10; display: flex; align-items: center; gap: 14px; padding: 10px 12px; border: 1px solid #403b38; background: #2c2927; color: #fff; border-radius: 4px; transform: translateX(-50%); }
+    .undo-toast[hidden] { display: none; }
+    .undo-toast button { min-height: 32px; border: 0; background: transparent; color: #fff; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+    @media (max-width: 820px) {
+      .app-head-inner, main { width: min(100% - 20px, 1180px); }
+      .intro { grid-template-columns: 1fr; }
+      .decision { max-width: none; }
+      .view-tabs { grid-template-columns: repeat(2, 1fr); }
+      .view-tabs button:nth-child(2) { border-right: 0; }
+      .view-tabs button:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .toolbar input { grid-column: 1 / -1; }
+      .master-detail { display: block; }
+      .master-detail.detail-closed .portrait-grid { grid-template-columns: repeat(7, 1fr); }
+      .overview-pane { border-right: 0; }
+      .detail-editor { display: none; border-top: 0; }
+      .detail-editor.is-mobile-open { display: block; }
+      .overview-pane.is-mobile-hidden { display: none; }
+      .mobile-detail-back { display: block; }
+      .detail-close { display: none; }
+      .portrait-grid { grid-template-columns: repeat(6, 1fr); }
+      .catalog { grid-template-columns: repeat(2, 1fr); }
+      .catalog-item:nth-child(4n) { border-right: 1px solid var(--soft-line); }
+      .catalog-item:nth-child(2n) { border-right: 0; }
+      .board { grid-template-columns: 1fr; }
+      .lane { min-height: auto; }
+      .review { grid-template-columns: repeat(2, 1fr); }
+      .review div:nth-child(2) { border-right: 0; }
+      .review div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    }
+    @media (max-width: 480px) {
+      .app-head-inner { min-height: 62px; }
+      .brand span, .sync { display: none; }
+      main { padding-top: 18px; }
+      h1 { font-size: 25px; }
+      .score-scroll { margin-inline: -10px; }
+      .view-tabs { margin-inline: -10px; }
+      .panel { padding: 14px 10px; }
+      .panel-head { display: block; }
+      .mode-label { display: inline-block; margin-top: 8px; }
+      .toolbar { grid-template-columns: 1fr; }
+      .toolbar input { grid-column: auto; }
+      .overview-pane { padding: 10px 0; }
+      .overview-top { display: block; }
+      .portrait-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+      .servant-tile { padding: 2px; }
+      .detail-editor { padding: 14px 10px; }
+      .quick-setting-bar { display: grid; grid-template-columns: repeat(4, max-content); overflow: visible; }
+      .quick-setting-bar span { grid-column: 1 / -1; }
+      .catalog { grid-template-columns: 1fr 1fr; }
+      .catalog-item { min-height: 142px; padding: 9px; }
+      .catalog-item .identity { display: block; }
+      .catalog-item .face { margin-bottom: 7px; }
+      .review { grid-template-columns: 1fr; }
+      .review div, .review div:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--line); }
+      .review div:last-child { border-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-head">
+    <div class="app-head-inner">
+      <div class="brand"><strong>FGO Lab</strong><span>所持・育成管理 UI比較</span></div>
+      <span class="status">検討用デモ</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div><h1>保有状態を、登録して終わりにしない</h1><p>同じサンプルデータを四つの操作モデルで表示します。日常更新、初回登録、連続編集、育成判断のどれに強いかを比較してください。</p></div>
+      <div class="decision"><strong>更新した仮説</strong><span>AとBは別ページではなく、同じ保有データのグリッド表示／一括編集表示にする。変更は都度保存し、この画面から計算利用を促さない。</span></div>
+    </section>
+
+    <div class="score-scroll" tabindex="0" aria-label="UIパターン評価表。横方向にスクロールできます">
+      <table class="score">
+        <thead><tr><th>パターン</th><th>日常更新</th><th>一括編集</th><th>初回登録</th><th>モバイル</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A. 一覧＋詳細</strong></td><td class="mark">強い</td><td>中程度</td><td class="mark">強い</td><td class="mark">強い</td><td>統合した主画面候補</td></tr>
+          <tr><td><strong>B. 編集シート</strong></td><td class="mark">強い</td><td class="mark">最も強い</td><td>弱い</td><td class="mark low">弱い</td><td>PC用パワーモード</td></tr>
+          <tr><td><strong>C. 所持登録カタログ</strong></td><td>弱い</td><td>所持のみ強い</td><td class="mark">強い</td><td class="mark">強い</td><td>Aへ統合する旧比較案</td></tr>
+          <tr><td><strong>D. 育成ボード</strong></td><td>中程度</td><td class="mark low">弱い</td><td class="mark low">弱い</td><td>中程度</td><td>将来の補助ビュー</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="view-tabs" role="tablist" aria-label="所持・育成管理 UIパターン">
+      <button type="button" role="tab" aria-selected="true" aria-controls="panel-a" id="tab-a" data-view="a"><strong>A. 一覧＋詳細</strong><span>顔／横長を比較</span></button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-b" id="tab-b" data-view="b"><strong>B. 編集シート</strong><span>連続編集</span></button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-c" id="tab-c" data-view="c"><strong>C. 所持登録</strong><span>旧比較案</span></button>
+      <button type="button" role="tab" aria-selected="false" aria-controls="panel-d" id="tab-d" data-view="d"><strong>D. 育成ボード</strong><span>補助ビュー候補</span></button>
+    </div>
+
+    <div class="demo-shell">
+      <nav class="demo-nav" aria-label="所持・育成管理カテゴリ">
+        <div class="section-tabs"><button class="active" type="button">サーヴァント</button><button type="button">概念礼装</button><button type="button">魔術礼装</button></div>
+      <span class="sync" data-autosave-state data-state="saved" role="status" aria-live="polite">端末に保存済み</span>
+      </nav>
+
+      <section class="panel" id="panel-a" role="tabpanel" aria-labelledby="tab-a" data-panel="a">
+        <header class="panel-head"><div><h2>サーヴァント 所持 <span data-a-total-count>0 / 8</span>騎</h2><p>初期状態では全サーヴァントを未所持で表示します。選択後、宝具Lvを1以上にすると所持になります。</p></div><span class="mode-label">主画面候補</span></header>
+        <div class="toolbar overview-toolbar"><input type="search" placeholder="名前、クラス、宝具で検索" aria-label="サーヴァントを検索" /><select aria-label="表示対象" data-ownership-filter><option value="all">全サーヴァント</option><option value="owned">所持のみ</option><option value="unowned">未所持のみ</option></select><select aria-label="育成状態"><option>すべての状態</option><option>育成中</option><option>要確認</option></select></div>
+        <div class="master-detail" data-master-detail>
+          <div class="overview-pane" data-overview-pane>
+            <div class="overview-top"><div><strong data-a-owned-count>所持 0騎</strong><span>一覧は確認と選択のみ。値は詳細で編集します</span></div></div>
+            <div class="class-strip" aria-label="クラスで絞り込み"><button type="button" aria-pressed="true">すべて</button><button type="button" aria-pressed="false">Saber</button><button type="button" aria-pressed="false">Archer</button><button type="button" aria-pressed="false">Lancer</button><button type="button" aria-pressed="false">Berserker</button><button type="button" aria-pressed="false">Extra</button></div>
+            <div class="portrait-grid" data-portrait-grid hidden aria-hidden="true">
+              <article class="servant-tile" aria-current="true" data-servant-id="1001000" data-owned="false" data-level="1" data-np="0" data-servant="アルトリア・ペンドラゴン" data-meta="Saber · 全体Buster" data-image="https://static.atlasacademy.io/JP/Faces/f_1001000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_1001000.png" alt="" /><strong>アルトリア</strong><small>Saber · 全体B</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-servant-id="7040000" data-owned="false" data-level="1" data-np="0" data-servant="モルガン" data-meta="Berserker · 全体Buster" data-image="https://static.atlasacademy.io/JP/Faces/f_7040000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_7040000.png" alt="" /><strong>モルガン</strong><small>Berserker · 全体B</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-owned="false" data-level="1" data-np="0" data-servant="アーキタイプ：アース" data-meta="Moon Cancer · 全体Buster" data-image="https://static.atlasacademy.io/JP/Faces/f_23005000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_23005000.png" alt="" /><strong>アーキタイプ：アース</strong><small>Moon Cancer · 全体B</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-servant-id="7006000" data-owned="false" data-level="1" data-np="0" data-servant="坂田金時" data-meta="Berserker · 単体Buster" data-image="https://static.atlasacademy.io/JP/Faces/f_7006000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_7006000.png" alt="" /><strong>坂田金時</strong><small>Berserker · 単体B</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-owned="false" data-level="1" data-np="0" data-servant="葛飾北斎" data-meta="Foreigner · 全体Arts" data-image="https://static.atlasacademy.io/JP/Faces/f_25002000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_25002000.png" alt="" /><strong>葛飾北斎</strong><small>Foreigner · 全体A</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-owned="false" data-level="1" data-np="0" data-servant="沖田総司" data-meta="Saber · 単体Quick" data-image="https://static.atlasacademy.io/JP/Faces/f_1027000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_1027000.png" alt="" /><strong>沖田総司</strong><small>Saber · 単体Q</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-owned="false" data-level="1" data-np="0" data-servant="エルキドゥ" data-meta="Lancer · 単体Buster" data-image="https://static.atlasacademy.io/JP/Faces/f_3008000.png"><button class="tile-main" type="button"><img class="tile-face" src="https://static.atlasacademy.io/JP/Faces/f_3008000.png" alt="" /><strong>エルキドゥ</strong><small>Lancer · 単体B</small><small class="tile-level">NP0 · 未所持</small></button></article>
+              <article class="servant-tile" data-owned="false" data-level="1" data-np="0" data-servant="画像なしサーヴァント" data-meta="Class unknown" data-image=""><button class="tile-main" type="button"><span class="tile-face"></span><strong>画像なし</strong><small>名称で操作可能</small><small class="tile-level">NP0 · 未所持</small></button></article>
+            </div>
+            <div class="servant-rows">
+              <button type="button" class="servant-list-row" aria-current="true" data-list-servant="アルトリア・ペンドラゴン" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_1001000.png" alt="" /><span class="row-copy"><strong>アルトリア・ペンドラゴン</strong><span>Saber · 全体Buster</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="モルガン" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_7040000.png" alt="" /><span class="row-copy"><strong>モルガン</strong><span>Berserker · 全体Buster</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="アーキタイプ：アース" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_23005000.png" alt="" /><span class="row-copy"><strong>アーキタイプ：アース</strong><span>Moon Cancer · 全体Buster</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="坂田金時" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_7006000.png" alt="" /><span class="row-copy"><strong>坂田金時</strong><span>Berserker · 単体Buster</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="葛飾北斎" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_25002000.png" alt="" /><span class="row-copy"><strong>葛飾北斎</strong><span>Foreigner · 全体Arts</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="沖田総司" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_1027000.png" alt="" /><span class="row-copy"><strong>沖田総司</strong><span>Saber · 単体Quick</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="エルキドゥ" data-owned="false"><img class="row-face" src="https://static.atlasacademy.io/JP/Faces/f_3008000.png" alt="" /><span class="row-copy"><strong>エルキドゥ</strong><span>Lancer · 単体Buster</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+              <button type="button" class="servant-list-row" data-list-servant="画像なしサーヴァント" data-owned="false"><span class="row-face"></span><span class="row-copy"><strong>画像なしサーヴァント</strong><span>Class unknown</span></span><span class="list-value"><strong>NP0</strong><span>未所持</span></span><span>›</span></button>
+            </div>
+            <p class="filter-empty" data-ownership-empty hidden>所持サーヴァントはまだ登録されていません。</p>
+            <p class="overview-help">顔画像、名称、クラス、現在の育成値を一行で確認できます。</p>
+          </div>
+          <aside class="detail-editor" data-detail-editor aria-label="選択中サーヴァントの編集">
+            <button type="button" class="mobile-detail-back" data-mobile-detail-back>← サーヴァント一覧へ戻る</button>
+            <div class="detail-person"><img class="face" data-detail-image src="https://static.atlasacademy.io/JP/Faces/f_1001000.png" alt="" /><div><h3 data-detail-name>アルトリア・ペンドラゴン</h3><p data-detail-meta>Saber · 全体Buster · 未所持</p></div><button type="button" class="detail-close" data-detail-close aria-label="詳細を閉じる">閉じる</button></div>
+            <div class="detail-tabs" role="tablist" aria-label="育成値の表示"><button id="detail-tab-current" type="button" role="tab" aria-selected="true" aria-controls="detail-current" data-detail-tab="current">現在値</button><button id="detail-tab-target" type="button" role="tab" aria-selected="false" aria-controls="detail-target" data-detail-tab="target" tabindex="-1">育成目標</button></div>
+            <div id="detail-current" class="detail-tab-panel" role="tabpanel" aria-labelledby="detail-tab-current" data-detail-tab-panel="current">
+              <div class="quick-setting-bar" aria-label="現在値のよく使う設定"><span>よく使う設定</span><button type="button" data-set-control="a-level" data-set-value="90">Lv90</button><button type="button" data-set-control="a-level" data-set-value="100">Lv100</button><button type="button" data-set-control="a-level" data-set-value="120">Lv120</button><button type="button" data-set-skills="current">スキル全て10</button></div>
+              <section class="setting-section"><div class="setting-section-head"><strong>基本</strong><span>変更時に自動保存</span></div>
+                <div class="setting-row"><span class="setting-symbol" aria-hidden="true">Lv</span><span class="setting-copy"><strong>サーヴァントレベル</strong><span>聖杯転臨を含む現在値</span></span><span class="setting-control"><input id="a-level" aria-label="サーヴァントレベル" type="number" value="1" min="1" max="120" data-autosave /></span></div>
+                <div class="setting-row"><span class="setting-symbol" aria-hidden="true">再臨</span><span class="setting-copy"><strong>霊基再臨</strong><span>素材計算に使用</span></span><span class="setting-control"><select id="a-ascension" aria-label="霊基再臨段階" data-autosave><option selected>0</option><option>1</option><option>2</option><option>3</option><option>4</option></select></span></div>
+                <div class="setting-row"><span class="setting-symbol" aria-hidden="true">宝具</span><span class="setting-copy"><strong>宝具レベル</strong><span>NP0は未所持</span></span><span class="setting-control"><select id="a-np" aria-label="宝具レベル" data-autosave><option value="0" selected>0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></span></div>
+              </section>
+              <section class="setting-section"><div class="setting-section-head"><strong>保有スキル</strong><span>DB登録名・画像</span></div>
+                <div class="setting-row" data-skill-row="1"><img class="setting-icon" data-skill-icon="1" src="https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png" alt="" /><span class="setting-copy"><strong data-skill-name="1">理想郷の騎士 EX</strong><span>スキル1</span></span><span class="setting-control"><label for="a-s1">Lv</label><input id="a-s1" type="number" value="1" min="1" max="10" data-autosave /></span></div>
+                <div class="setting-row" data-skill-row="2"><img class="setting-icon" data-skill-icon="2" src="https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png" alt="" /><span class="setting-copy"><strong data-skill-name="2">竜の炉心 B</strong><span>スキル2</span></span><span class="setting-control"><label for="a-s2">Lv</label><input id="a-s2" type="number" value="1" min="1" max="10" data-autosave /></span></div>
+                <div class="setting-row" data-skill-row="3"><img class="setting-icon" data-skill-icon="3" src="https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png" alt="" /><span class="setting-copy"><strong data-skill-name="3">輝ける路 EX</strong><span>スキル3</span></span><span class="setting-control"><label for="a-s3">Lv</label><input id="a-s3" type="number" value="1" min="1" max="10" data-autosave /></span></div>
+              </section>
+              <p class="autosave-hint">管理に必要な値だけを記録します。効果詳細、プロフィール、音声などの閲覧機能は設けません。</p>
+            </div>
+            <div id="detail-target" class="detail-tab-panel" role="tabpanel" aria-labelledby="detail-tab-target" data-detail-tab-panel="target" hidden>
+              <div class="quick-setting-bar" aria-label="育成目標のよく使う設定"><span>よく使う設定</span><button type="button" data-set-control="a-target-level" data-set-value="90">Lv90</button><button type="button" data-set-control="a-target-level" data-set-value="100">Lv100</button><button type="button" data-set-control="a-target-level" data-set-value="120">Lv120</button><button type="button" data-set-skills="target">スキル全て10</button></div>
+              <section class="setting-section"><div class="setting-section-head"><strong>現在値からの育成目標</strong><span>目標も自動保存</span></div>
+                <div class="setting-row plan-row"><span class="setting-symbol" aria-hidden="true">Lv</span><span class="setting-copy"><strong>サーヴァントレベル</strong><span>種火・聖杯・QPを集計</span></span><span class="current-value" data-current-output="a-level">1 →</span><span class="setting-control"><input id="a-target-level" aria-label="目標サーヴァントレベル" type="number" value="90" min="1" max="120" data-autosave /></span></div>
+                <div class="setting-row plan-row" data-skill-row="1"><img class="setting-icon" data-skill-icon="1" src="https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png" alt="" /><span class="setting-copy"><strong data-skill-name="1">理想郷の騎士 EX</strong><span>スキル1</span></span><span class="current-value" data-current-output="a-s1">1 →</span><span class="setting-control"><input id="a-target-s1" aria-label="スキル1 目標レベル" type="number" value="10" min="1" max="10" data-autosave /></span></div>
+                <div class="setting-row plan-row" data-skill-row="2"><img class="setting-icon" data-skill-icon="2" src="https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png" alt="" /><span class="setting-copy"><strong data-skill-name="2">竜の炉心 B</strong><span>スキル2</span></span><span class="current-value" data-current-output="a-s2">1 →</span><span class="setting-control"><input id="a-target-s2" aria-label="スキル2 目標レベル" type="number" value="10" min="1" max="10" data-autosave /></span></div>
+                <div class="setting-row plan-row" data-skill-row="3"><img class="setting-icon" data-skill-icon="3" src="https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png" alt="" /><span class="setting-copy"><strong data-skill-name="3">輝ける路 EX</strong><span>スキル3</span></span><span class="current-value" data-current-output="a-s3">1 →</span><span class="setting-control"><input id="a-target-s3" aria-label="スキル3 目標レベル" type="number" value="10" min="1" max="10" data-autosave /></span></div>
+              </section>
+              <section class="material-summary"><h4>必要素材 12種</h4><p>Lv.1・再臨0・スキル1から通常上限とスキル10までの差分例です。素材は省略せず、すべて表示します。</p>
+                <div class="material-breakdown">
+                  <section class="material-group"><div class="material-group-head"><strong>レベル強化</strong><span>1種</span></div>
+                    <div class="material-item"><span class="material-badge" aria-hidden="true">種火</span><span>叡智の業火・クラス一致</span><strong>127</strong></div>
+                  </section>
+                  <section class="material-group"><div class="material-group-head"><strong>再臨・スキル強化</strong><span>11種・用途合算</span></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/7001.png" alt="" /><span>セイバーピース</span><strong>17</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/7101.png" alt="" /><span>セイバーモニュメント</span><strong>17</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6001.png" alt="" /><span>剣の輝石</span><strong>51</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6101.png" alt="" /><span>剣の魔石</span><strong>51</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6201.png" alt="" /><span>剣の秘石</span><strong>51</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6503.png" alt="" /><span>英雄の証</span><strong>161</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6512.png" alt="" /><span>竜の牙</span><strong>126</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6501.png" alt="" /><span>鳳凰の羽根</span><strong>12</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6507.png" alt="" /><span>混沌の爪</span><strong>45</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6506.png" alt="" /><span>竜の逆鱗</span><strong>35</strong></div>
+                    <div class="material-item"><img src="https://static.atlasacademy.io/JP/Items/6999.png" alt="" /><span>伝承結晶</span><strong>3</strong></div>
+                  </section>
+                  <section class="material-group"><div class="material-group-head"><strong>QP</strong><span>用途別</span></div>
+                    <div class="material-item qp-item"><span>霊基再臨</span><strong>4,400,000</strong></div>
+                    <div class="material-item qp-item"><span>スキル強化</span><strong>163,200,000</strong></div>
+                    <div class="material-item qp-item"><span>種火合成</span><strong>694,110</strong></div>
+                    <div class="material-total"><span>必要QP合計</span><strong>168,294,110</strong></div>
+                  </section>
+                </div>
+                <p class="material-condition">計算条件：★5クラス一致種火、成功ボーナスなし、20枚ずつ合成。所持素材との差し引きは行いません。</p>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b" data-panel="b" hidden>
+        <header class="panel-head"><div><h2>編集シート</h2><p>同じ列を上から連続編集します。直近に変更したセルだけを薄く示します。</p></div><span class="mode-label">PC向けパワーモード</span></header>
+        <div class="toolbar"><input type="search" placeholder="シート内を検索" aria-label="編集シートを検索" /><select><option>全クラス</option></select><select><option>現在値を編集</option><option>目標値を編集</option></select><span class="toolbar-note">セルごとに自動保存</span></div>
+        <div class="sheet-scroll" tabindex="0" aria-label="サーヴァント育成値編集シート。横方向にスクロールできます">
+          <table class="sheet"><thead><tr><th>サーヴァント</th><th>Lv</th><th>宝具</th><th>S1</th><th>S2</th><th>S3</th><th>A1</th><th>A2</th><th>A3</th><th>フォウ</th><th>目標Lv</th></tr></thead><tbody>
+            <tr><td><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_1001000.png" alt="" /><span><strong>アルトリア</strong><span>Saber</span></span></span></td><td><input value="90" aria-label="アルトリア レベル" /></td><td><select aria-label="アルトリア 宝具レベル"><option>0 未所持</option><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="0" /></td><td><input value="1000" /></td><td class="changed"><input value="100" /></td></tr>
+            <tr><td><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_7040000.png" alt="" /><span><strong>モルガン</strong><span>Berserker</span></span></span></td><td><input value="100" /></td><td><select><option>0 未所持</option><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="2000" /></td><td><input value="100" /></td></tr>
+            <tr><td><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_7006000.png" alt="" /><span><strong>坂田金時</strong><span>Berserker</span></span></span></td><td><input value="90" /></td><td><select><option>0 未所持</option><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></td><td class="changed"><input value="10" /></td><td class="changed"><input value="6" /></td><td class="changed"><input value="6" /></td><td><input value="0" /></td><td><input value="0" /></td><td><input value="0" /></td><td><input value="1000" /></td><td><input placeholder="未設定" /></td></tr>
+            <tr><td><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_1027000.png" alt="" /><span><strong>沖田総司</strong><span>Saber</span></span></span></td><td><input value="90" /></td><td><select><option>0 未所持</option><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="10" /></td><td><input value="0" /></td><td><input value="0" /></td><td><input value="0" /></td><td><input value="1000" /></td><td><input value="100" /></td></tr>
+          </tbody></table>
+        </div>
+        <div class="sheet-note"><span>Tab / Shift+Tabでセル間を移動</span><span>薄黄色: 最近変更した値</span></div>
+      </section>
+
+      <section class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c" data-panel="c" hidden>
+        <header class="panel-head"><div><h2>所持登録だけの旧案</h2><p>NP0の操作をAへ統合できるため、独立画面としては採用しない比較対象です。</p></div><span class="mode-label">非推奨</span></header>
+        <div class="toolbar"><input type="search" placeholder="名前、クラスで検索" aria-label="登録するサーヴァントを検索" /><select><option>全クラス</option><option>Saber</option><option>Berserker</option></select><select><option>実装順</option><option>レアリティ順</option></select><span class="toolbar-note">選択は自動保存</span></div>
+        <div class="catalog-summary"><span><strong data-owned-count>4騎を選択</strong><br /><span class="quiet">タップで所持／未所持を切替</span></span><span class="quiet">詳細値は通常表示で編集</span></div>
+        <div class="catalog">
+          <button type="button" class="catalog-item" aria-pressed="true"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_1001000.png" alt="" /><span><strong>アルトリア</strong><span>Saber · ★5</span></span></span><span class="owned-state">✓ 所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="true"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_7040000.png" alt="" /><span><strong>モルガン</strong><span>Berserker · ★5</span></span></span><span class="owned-state">✓ 所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="false"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_23005000.png" alt="" /><span><strong>アーキタイプ：アース</strong><span>Moon Cancer · ★5</span></span></span><span class="owned-state">未所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="true"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_7006000.png" alt="" /><span><strong>坂田金時</strong><span>Berserker · ★5</span></span></span><span class="owned-state">✓ 所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="false"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_25002000.png" alt="" /><span><strong>葛飾北斎</strong><span>Foreigner · ★5</span></span></span><span class="owned-state">未所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="true"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_1027000.png" alt="" /><span><strong>沖田総司</strong><span>Saber · ★5</span></span></span><span class="owned-state">✓ 所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="false"><span class="identity"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_3008000.png" alt="" /><span><strong>エルキドゥ</strong><span>Lancer · ★5</span></span></span><span class="owned-state">未所持</span></button>
+          <button type="button" class="catalog-item" aria-pressed="false"><span class="identity"><span class="face"></span><span><strong>未登録データ</strong><span>画像なしfallback</span></span></span><span class="owned-state">未所持</span></button>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-d" role="tabpanel" aria-labelledby="tab-d" data-panel="d" hidden>
+        <header class="panel-head"><div><h2>育成状況ボード</h2><p>正確な値を編集する画面ではなく、次に育てる対象を俯瞰する補助ビューです。</p></div><span class="mode-label">MVP主画面には非推奨</span></header>
+        <div class="board">
+          <section class="lane"><div class="lane-head"><strong>育成完了</strong><span>1騎</span></div><div class="board-item"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_7040000.png" alt="" /><div><strong>モルガン</strong><p>現在値が目標値に到達</p></div></div></section>
+          <section class="lane active"><div class="lane-head"><strong>育成中</strong><span>2騎</span></div><div class="board-item"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_1001000.png" alt="" /><div><strong>アルトリア</strong><p>Lv.90 → 100 · NP1 → 2</p></div></div><div class="board-item"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_1027000.png" alt="" /><div><strong>沖田総司</strong><p>Lv.90 → 100</p></div></div></section>
+          <section class="lane"><div class="lane-head"><strong>目標未設定</strong><span>1騎</span></div><div class="board-item"><img class="face" src="https://static.atlasacademy.io/JP/Faces/f_7006000.png" alt="" /><div><strong>坂田金時</strong><p>スキル値も要確認</p></div></div></section>
+        </div>
+        <div class="board-warning"><strong>この案の弱点</strong><br />状態の把握には向きますが、約400騎の検索、数値比較、連続編集には向きません。素材計画と結び付くまでは独立した主画面にする理由が弱いと判断しています。</div>
+      </section>
+    </div>
+
+    <section class="review" aria-label="比較時の観点">
+      <div><strong>左右の責務を分ける</strong><span>左は検索・絞り込み・選択、右詳細だけが宝具Lvを含む値の更新を担当する。</span></div>
+      <div><strong>全項目を常時見せない</strong><span>日常一覧は要約し、詳細値は選択後に開く。</span></div>
+      <div><strong>現在と目標を混ぜない</strong><span>同じ値に見えても、用途と保存先を明示する。</span></div>
+      <div><strong>礼装は別の編集構造</strong><span>所持数・凸・個体Lvがあるため、上位ナビだけ共有して行項目は分ける。</span></div>
+    </section>
+  </main>
+
+  <div class="undo-toast" data-undo-toast role="status" aria-live="polite" hidden><span>変更を端末に保存しました</span><button type="button" data-undo>元に戻す</button></div>
+
+  <script>
+    const autosaveState = document.querySelector("[data-autosave-state]");
+    const undoToast = document.querySelector("[data-undo-toast]");
+    let saveTimer;
+    let toastTimer;
+    let undoAction = null;
+    function queueAutosave(nextUndoAction) {
+      clearTimeout(saveTimer);
+      clearTimeout(toastTimer);
+      undoAction = nextUndoAction;
+      autosaveState.dataset.state = "saving";
+      autosaveState.textContent = "端末に保存中…";
+      undoToast.hidden = true;
+      saveTimer = setTimeout(() => {
+        autosaveState.dataset.state = "saved";
+        autosaveState.textContent = "端末に保存済み";
+        undoToast.hidden = false;
+        toastTimer = setTimeout(() => { undoToast.hidden = true; }, 4200);
+      }, 380);
+    }
+    document.querySelector("[data-undo]").addEventListener("click", () => {
+      if (undoAction) undoAction();
+      undoAction = null;
+      undoToast.hidden = true;
+      autosaveState.dataset.state = "saved";
+      autosaveState.textContent = "変更を元に戻しました";
+    });
+
+    const viewButtons = [...document.querySelectorAll("[data-view]")];
+    const panels = [...document.querySelectorAll("[data-panel]")];
+    function setView(view) {
+      viewButtons.forEach((button) => button.setAttribute("aria-selected", String(button.dataset.view === view)));
+      panels.forEach((panel) => { panel.hidden = panel.dataset.panel !== view; });
+      history.replaceState(null, "", `${location.search}#${view}`);
+    }
+    viewButtons.forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
+    const initialHash = location.hash.slice(1);
+    const initialView = initialHash.split("-")[0];
+    if (["a", "b", "c", "d"].includes(initialView)) setView(initialView);
+
+    const servantTiles = [...document.querySelectorAll(".servant-tile")];
+    const servantListRows = [...document.querySelectorAll("[data-list-servant]")];
+    const demoSkills = {
+      "アルトリア・ペンドラゴン": [["理想郷の騎士 EX", "skill_00300.png", 1], ["竜の炉心 B", "skill_00306.png", 1], ["輝ける路 EX", "skill_00601.png", 1]],
+      "モルガン": [["渇望のカリスマ B", "skill_00300.png", 1], ["湖の加護 C", "skill_00601.png", 1], ["最果てより A", "skill_00404.png", 1]],
+      "アーキタイプ：アース": [["虹の魔眼 A", "skill_00512.png", 1], ["星の息吹 C", "skill_00601.png", 1], ["ファニー・ヴァンプ EX", "skill_00403.png", 1]],
+      "坂田金時": [["怪力 A+", "skill_00300.png", 1], ["動物会話 C", "skill_00601.png", 1], ["天性の肉体 A", "skill_00401.png", 1]],
+      "葛飾北斎": [["森羅万象 A+", "skill_00402.png", 1], ["父娘の絆 A", "skill_00305.png", 1], ["雅号・異星蛸 A", "skill_00325.png", 1]],
+      "沖田総司": [["縮地 B+", "skill_00304.png", 1], ["絶刀 A", "skill_00311.png", 1], ["心眼（偽） A", "skill_00402.png", 1]],
+      "エルキドゥ": [["変容 A", "skill_00306.png", 1], ["気配感知 A++", "skill_00520.png", 1], ["民の叡智 A+", "skill_00600.png", 1]]
+    };
+    let selectedTile = servantTiles.find((item) => item.hasAttribute("aria-current"));
+    const ownershipFilter = document.querySelector("[data-ownership-filter]");
+    function applyOwnershipFilter() {
+      const filter = ownershipFilter.value;
+      let visibleCount = 0;
+      servantListRows.forEach((row) => {
+        const visible = filter === "all" || (filter === "owned" && row.dataset.owned === "true") || (filter === "unowned" && row.dataset.owned === "false");
+        row.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+      document.querySelector("[data-ownership-empty]").hidden = visibleCount > 0;
+    }
+    ownershipFilter.addEventListener("change", applyOwnershipFilter);
+    function updateAOwnedCount() {
+      const count = servantTiles.filter((item) => item.dataset.owned === "true").length;
+      document.querySelector("[data-a-owned-count]").textContent = `所持 ${count}騎`;
+      document.querySelector("[data-a-total-count]").textContent = `${count} / ${servantTiles.length}`;
+    }
+    function renderTileNp(tile, value) {
+      const owned = Number(value) > 0;
+      tile.dataset.np = value;
+      tile.dataset.owned = String(owned);
+      tile.querySelector(".tile-level").textContent = owned ? `Lv.${tile.dataset.level} · NP${value}` : "NP0 · 未所持";
+      const matchingRow = servantListRows.find((row) => row.dataset.listServant === tile.dataset.servant);
+      if (matchingRow) {
+        matchingRow.dataset.owned = String(owned);
+        matchingRow.querySelector(".list-value strong").textContent = owned ? `Lv.${tile.dataset.level} · NP${value}` : "NP0";
+        const skillSummary = (demoSkills[tile.dataset.servant] || []).map((skill) => skill[2]).join(" / ");
+        matchingRow.querySelector(".list-value span").textContent = owned ? skillSummary : "未所持";
+      }
+      updateAOwnedCount();
+      applyOwnershipFilter();
+    }
+    function openServantDetail(tile) {
+      selectedTile = tile;
+      servantTiles.forEach((item) => item.removeAttribute("aria-current"));
+      servantListRows.forEach((item) => item.removeAttribute("aria-current"));
+      tile.setAttribute("aria-current", "true");
+      const matchingRow = servantListRows.find((row) => row.dataset.listServant === tile.dataset.servant);
+      if (matchingRow) matchingRow.setAttribute("aria-current", "true");
+      document.querySelector("[data-detail-name]").textContent = tile.dataset.servant;
+      const npValue = tile.dataset.np;
+      document.querySelector("[data-detail-meta]").textContent = `${tile.dataset.meta} · ${npValue === "0" ? "未所持" : `NP${npValue}`}`;
+      document.querySelector("#a-level").value = tile.dataset.level;
+      document.querySelector('[data-current-output="a-level"]').textContent = `${tile.dataset.level} →`;
+      document.querySelector("#a-np").value = npValue;
+      const skills = demoSkills[tile.dataset.servant] || [];
+      [1, 2, 3].forEach((slot) => {
+        const skill = skills[slot - 1];
+        document.querySelectorAll(`[data-skill-row="${slot}"]`).forEach((row) => { row.hidden = !skill; });
+        if (!skill) return;
+        document.querySelectorAll(`[data-skill-name="${slot}"]`).forEach((name) => { name.textContent = skill[0]; });
+        document.querySelectorAll(`[data-skill-icon="${slot}"]`).forEach((icon) => { icon.src = `https://static.atlasacademy.io/JP/SkillIcons/${skill[1]}`; });
+        document.querySelector(`#a-s${slot}`).value = skill[2];
+        document.querySelector(`[data-current-output="a-s${slot}"]`).textContent = `${skill[2]} →`;
+      });
+      const detailImage = document.querySelector("[data-detail-image]");
+      detailImage.src = tile.dataset.image;
+      detailImage.alt = tile.dataset.image ? tile.dataset.servant : "";
+      document.querySelector("[data-master-detail]").classList.remove("detail-closed");
+      if (matchMedia("(max-width: 820px)").matches) {
+        document.querySelector("[data-overview-pane]").classList.add("is-mobile-hidden");
+        document.querySelector("[data-detail-editor]").classList.add("is-mobile-open");
+      }
+    }
+    servantTiles.forEach((tile) => tile.querySelector(".tile-main").addEventListener("click", () => openServantDetail(tile)));
+    servantListRows.forEach((row) => row.addEventListener("click", () => {
+      const tile = servantTiles.find((item) => item.dataset.servant === row.dataset.listServant);
+      if (tile) openServantDetail(tile);
+    }));
+    document.querySelector("[data-mobile-detail-back]").addEventListener("click", () => {
+      document.querySelector("[data-overview-pane]").classList.remove("is-mobile-hidden");
+      document.querySelector("[data-detail-editor]").classList.remove("is-mobile-open");
+    });
+    document.querySelector("[data-detail-close]").addEventListener("click", () => {
+      document.querySelector("[data-master-detail]").classList.add("detail-closed");
+      servantTiles.forEach((item) => item.removeAttribute("aria-current"));
+      servantListRows.forEach((item) => item.removeAttribute("aria-current"));
+    });
+
+    const detailTabs = [...document.querySelectorAll("[data-detail-tab]")];
+    function setDetailTab(tabName) {
+      detailTabs.forEach((tab) => {
+        const active = tab.dataset.detailTab === tabName;
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+      });
+      document.querySelectorAll("[data-detail-tab-panel]").forEach((panel) => { panel.hidden = panel.dataset.detailTabPanel !== tabName; });
+    }
+    detailTabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => setDetailTab(tab.dataset.detailTab));
+      tab.addEventListener("keydown", (event) => {
+        if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+        event.preventDefault();
+        const nextIndex = event.key === 'ArrowRight' ? (index + 1) % detailTabs.length : (index - 1 + detailTabs.length) % detailTabs.length;
+        detailTabs[nextIndex].focus();
+        setDetailTab(detailTabs[nextIndex].dataset.detailTab);
+      });
+    });
+    document.querySelectorAll("[data-current-output]").forEach((output) => {
+      const input = document.getElementById(output.dataset.currentOutput);
+      input.addEventListener("input", () => { if (input.checkValidity()) output.textContent = `${input.value} →`; });
+    });
+    function syncSelectedCurrentValues() {
+      if (!selectedTile) return;
+      const level = document.querySelector("#a-level").value;
+      const skillValues = [1, 2, 3].map((slot) => document.querySelector(`#a-s${slot}`).value);
+      selectedTile.dataset.level = level;
+      const skills = demoSkills[selectedTile.dataset.servant];
+      if (skills) skillValues.forEach((value, index) => { skills[index][2] = Number(value); });
+      const matchingRow = servantListRows.find((row) => row.dataset.listServant === selectedTile.dataset.servant);
+      if (matchingRow && selectedTile.dataset.owned === "true") {
+        matchingRow.querySelector(".list-value strong").textContent = `Lv.${level} · NP${selectedTile.dataset.np}`;
+        matchingRow.querySelector(".list-value span").textContent = skillValues.join(" / ");
+      }
+    }
+    ["a-level", "a-s1", "a-s2", "a-s3"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", syncSelectedCurrentValues);
+    });
+    function applyQuickValues(controls, value) {
+      const previousValues = controls.map((control) => control.value);
+      if (previousValues.every((previous) => previous === String(value))) return;
+      controls.forEach((control) => {
+        control.value = value;
+        control.dataset.previousValue = value;
+        control.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      queueAutosave(() => {
+        controls.forEach((control, index) => {
+          control.value = previousValues[index];
+          control.dataset.previousValue = previousValues[index];
+          control.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+    }
+    document.querySelectorAll("[data-set-control]").forEach((button) => button.addEventListener("click", () => {
+      applyQuickValues([document.getElementById(button.dataset.setControl)], button.dataset.setValue);
+    }));
+    document.querySelectorAll("[data-set-skills]").forEach((button) => button.addEventListener("click", () => {
+      const prefix = button.dataset.setSkills === "current" ? "a-s" : "a-target-s";
+      applyQuickValues([1, 2, 3].map((slot) => document.getElementById(`${prefix}${slot}`)), 10);
+    }));
+    const initialParams = new URLSearchParams(location.search);
+    const linkedServant = servantTiles.find((tile) => tile.dataset.servantId === initialParams.get("servant"));
+    if (linkedServant) {
+      openServantDetail(linkedServant);
+      setDetailTab(initialParams.get("tab") === "target" ? "target" : "current");
+    } else if (["a-target", "a-material"].includes(initialHash)) {
+      setDetailTab("target");
+      if (matchMedia("(max-width: 820px)").matches && selectedTile) openServantDetail(selectedTile);
+    }
+
+    const detailNp = document.querySelector("#a-np");
+    detailNp.addEventListener("focusin", () => { detailNp.dataset.previousValue = detailNp.value; });
+    detailNp.addEventListener("change", () => {
+      if (!selectedTile) return;
+      const previousValue = detailNp.dataset.previousValue;
+      const nextValue = detailNp.value;
+      renderTileNp(selectedTile, nextValue);
+      document.querySelector("[data-detail-meta]").textContent = `${selectedTile.dataset.meta} · ${nextValue === "0" ? "未所持" : `NP${nextValue}`}`;
+      queueAutosave(() => {
+        detailNp.value = previousValue;
+        renderTileNp(selectedTile, previousValue);
+        document.querySelector("[data-detail-meta]").textContent = `${selectedTile.dataset.meta} · ${previousValue === "0" ? "未所持" : `NP${previousValue}`}`;
+      });
+      detailNp.dataset.previousValue = nextValue;
+    });
+
+    if (initialHash === "a-owned") ownershipFilter.value = "owned";
+    applyOwnershipFilter();
+
+    document.querySelectorAll("[data-autosave], .sheet input, .sheet select").forEach((control) => {
+      if (control === detailNp) return;
+      control.addEventListener("focusin", () => { control.dataset.previousValue = control.value; });
+      control.addEventListener("change", () => {
+        if (!control.checkValidity()) return;
+        const previousValue = control.dataset.previousValue;
+        queueAutosave(() => {
+          control.value = previousValue;
+          control.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        control.dataset.previousValue = control.value;
+      });
+    });
+
+    const catalogItems = [...document.querySelectorAll(".catalog-item")];
+    function updateOwnedCount() {
+      const count = catalogItems.filter((item) => item.getAttribute("aria-pressed") === "true").length;
+      document.querySelector("[data-owned-count]").textContent = `${count}騎を選択`;
+    }
+    catalogItems.forEach((item) => item.addEventListener("click", () => {
+      const previous = item.getAttribute("aria-pressed") === "true";
+      const next = !previous;
+      item.setAttribute("aria-pressed", String(next));
+      item.querySelector(".owned-state").textContent = next ? "✓ 所持" : "未所持";
+      updateOwnedCount();
+      queueAutosave(() => {
+        item.setAttribute("aria-pressed", String(previous));
+        item.querySelector(".owned-state").textContent = previous ? "✓ 所持" : "未所持";
+        updateOwnedCount();
+      });
+    }));
+  </script>
+</body>
+</html>
