@@ -122,10 +122,24 @@ test('finalizes one deduplicated history entry per calculation input', async ({
   const stream = await (await downloadPromise).createReadStream();
   const chunks: Buffer[] = [];
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  const backup = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
+  const backupBuffer = Buffer.concat(chunks);
+  const backup = JSON.parse(backupBuffer.toString('utf8')) as {
     profiles: { profiles: { history: unknown[] }[] };
   };
   expect(backup.profiles.profiles[0]?.history).toHaveLength(1);
+  await page.getByLabel('バックアップを復元').setInputFiles({
+    name: 'round-trip.json',
+    mimeType: 'application/json',
+    buffer: backupBuffer,
+  });
+  const preview = page.getByRole('region', { name: '復元内容のプレビュー' });
+  await expect(preview).toContainText('プロフィール 1件');
+  await expect(preview.getByRole('button', { name: '全置換を実行' })).toBeDisabled();
+  const preImportDownload = page.waitForEvent('download');
+  await preview.getByRole('button', { name: '復元前バックアップを保存' }).click();
+  await preImportDownload;
+  await preview.getByRole('button', { name: '全置換を実行' }).click();
+  await expect(page.getByText('検証済みデータへ全置換しました')).toBeVisible();
 });
 
 test('calculates ranking in a worker', async ({ page, isMobile }) => {

@@ -519,7 +519,7 @@ export function App() {
           <DataPage
             profiles={currentProfiles}
             masterVersion={currentMaster.version}
-            onImport={(next) => void persist(next)}
+            onImport={(next) => persist(next)}
           />
         )}{' '}
       </main>
@@ -1376,9 +1376,11 @@ function DataPage({
 }: {
   profiles: ProfileCollection;
   masterVersion: string;
-  onImport: (profiles: ProfileCollection) => void;
+  onImport: (profiles: ProfileCollection) => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
+  const [pendingBackup, setPendingBackup] = useState<UserDataBackup>();
+  const [preImportBackupSaved, setPreImportBackupSaved] = useState(false);
   const backup = useMemo<UserDataBackup>(
     () => ({
       kind: 'fgo-lab-user-backup',
@@ -1389,15 +1391,30 @@ function DataPage({
     }),
     [profiles],
   );
-  function download() {
-    const url = URL.createObjectURL(new Blob([exportBackup(backup)], { type: 'application/json' }));
+  function downloadBackup(value: UserDataBackup, filename: string) {
+    const url = URL.createObjectURL(new Blob([exportBackup(value)], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'fgo-lab-backup.json';
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
+  }
+  function download() {
+    downloadBackup(backup, 'fgo-lab-backup.json');
     setMessage('バックアップを保存しました');
   }
+  const importCounts = pendingBackup
+    ? pendingBackup.profiles.profiles.reduce(
+        (counts, profile) => ({
+          servants: counts.servants + Object.keys(profile.servantBuilds).length,
+          targets: counts.targets + Object.keys(profile.servantTargets).length,
+          craftEssences: counts.craftEssences + profile.craftEssences.length,
+          supports: counts.supports + profile.supportTemplates.length,
+          history: counts.history + profile.history.length,
+        }),
+        { servants: 0, targets: 0, craftEssences: 0, supports: 0, history: 0 },
+      )
+    : undefined;
   return (
     <section>
       <dl>
@@ -1425,13 +1442,53 @@ function DataPage({
                 .text()
                 .then((text) => {
                   const parsed = importBackup(text);
-                  onImport(parsed.profiles);
-                  setMessage('検証後に復元しました');
+                  setPendingBackup(parsed);
+                  setPreImportBackupSaved(false);
+                  setMessage('形式を検証しました。内容と全置換を確認してください。');
                 })
                 .catch(() => setMessage('復元できませんでした'));
           }}
         />
       </label>
+      {pendingBackup && importCounts && (
+        <section aria-label="復元内容のプレビュー" className="notice">
+          <h2>全置換のプレビュー</h2>
+          <p>
+            プロフィール {pendingBackup.profiles.profiles.length}件 / 所持登録{' '}
+            {importCounts.servants}件 / 育成目標 {importCounts.targets}件 / 礼装{' '}
+            {importCounts.craftEssences}枚 / 支援条件 {importCounts.supports}件 / 履歴{' '}
+            {importCounts.history}件
+          </p>
+          <p>現在の全ユーザーデータを置き換えます。マスターデータは変更しません。</p>
+          <div className="toolbar">
+            <button
+              onClick={() => {
+                downloadBackup(backup, 'fgo-lab-before-import.json');
+                setPreImportBackupSaved(true);
+                setMessage('復元前バックアップを保存しました');
+              }}
+            >
+              復元前バックアップを保存
+            </button>
+            <button
+              className="danger"
+              disabled={!preImportBackupSaved}
+              onClick={() => {
+                void onImport(pendingBackup.profiles)
+                  .then(() => {
+                    setPendingBackup(undefined);
+                    setPreImportBackupSaved(false);
+                    setMessage('検証済みデータへ全置換しました');
+                  })
+                  .catch(() => setMessage('復元に失敗しました。元データは維持されています。'));
+              }}
+            >
+              全置換を実行
+            </button>
+            <button onClick={() => setPendingBackup(undefined)}>キャンセル</button>
+          </div>
+        </section>
+      )}
       <button
         className="danger"
         onClick={() => {
