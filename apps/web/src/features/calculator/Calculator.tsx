@@ -591,9 +591,10 @@ export function Calculator({
               ) : null}
             </select>
           </label>
-          {mode === 'quick' && specialTraitCandidates.length ? (
+          {mode === 'quick' &&
+          (specialTraitCandidates.length > 0 || fieldTraitCandidates.length > 0) ? (
             <fieldset className="modifier-group form-grid-wide">
-              <legend>特攻条件</legend>
+              <legend>適用条件</legend>
               <ul className="modifier-chip-list">
                 {specialTraitCandidates.map((candidate) => {
                   const traitPresent = input.target.traits.includes(candidate.trait);
@@ -626,18 +627,11 @@ export function Calculator({
                     />
                   );
                 })}
-              </ul>
-            </fieldset>
-          ) : null}
-          {mode === 'quick' && fieldTraitCandidates.length ? (
-            <fieldset className="modifier-group form-grid-wide">
-              <legend>フィールド条件</legend>
-              <ul className="modifier-chip-list">
                 {fieldTraitCandidates.map((trait) => {
                   const enabled = input.fieldTraits.includes(trait);
                   return (
                     <ModifierChip
-                      key={trait}
+                      key={`field:${trait}`}
                       active={enabled}
                       label={`${traitLabel(trait)}フィールド`}
                       detail={enabled ? '条件成立' : '条件不成立'}
@@ -976,33 +970,34 @@ export function Calculator({
                 </dd>
               </div>
             </dl>
+            {mode === 'quick' && damageEffectStacks.length ? (
+              <fieldset className="modifier-group">
+                <legend>火力効果の内訳</legend>
+                <ul className="modifier-chip-list">
+                  {damageEffectStacks.map((stack) => (
+                    <ModifierChip
+                      key={stack.kind}
+                      active={stack.sources.some((source) => source.applied)}
+                      label={stack.label}
+                      detail={stack.sources
+                        .map((source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`)
+                        .join('・')}
+                      sources={stack.sources.map((source) => ({
+                        key: source.key,
+                        label: `${source.sourceName}・${source.effectName} ${damageEffectStateLabel(source)}`,
+                        imageKey: source.imageKey,
+                      }))}
+                    />
+                  ))}
+                </ul>
+              </fieldset>
+            ) : mode === 'quick' ? (
+              <p className="notice">自動適用される宝具火力能力はありません。</p>
+            ) : null}
           </details>
-          {mode === 'quick' && damageEffectStacks.length ? (
-            <fieldset className="modifier-group">
-              <legend>火力効果</legend>
-              <ul className="modifier-chip-list">
-                {damageEffectStacks.map((stack) => (
-                  <ModifierChip
-                    key={stack.kind}
-                    active={stack.sources.some((source) => source.applied)}
-                    label={stack.label}
-                    detail={stack.sources
-                      .map((source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`)
-                      .join('・')}
-                    sources={stack.sources.map((source) => ({
-                      key: source.key,
-                      label: `${source.sourceName}・${source.effectName} ${damageEffectStateLabel(source)}`,
-                      imageKey: source.imageKey,
-                    }))}
-                  />
-                ))}
-              </ul>
-            </fieldset>
-          ) : mode === 'quick' ? (
-            <p className="notice">自動適用される宝具火力能力はありません。</p>
-          ) : (
+          {mode === 'direct' ? (
             <p className="notice">直接入力ではパッシブ・スキル・礼装効果を自動加算しません。</p>
-          )}
+          ) : null}
         </section>
         <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>
           <div className="section-heading compact-heading">

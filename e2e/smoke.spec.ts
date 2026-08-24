@@ -33,7 +33,7 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
   await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('33,713');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('クラス相性2.00倍');
   await expect(page.getByLabel('攻撃役の自身スキル')).toContainText('理想郷の騎士 EX');
-  await expect(page.getByRole('group', { name: '特攻条件' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: '適用条件' })).toHaveCount(0);
 });
 
 test('works at 320px without horizontal document overflow', async ({ page }) => {
@@ -534,7 +534,7 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('対象特性なし');
-  const specialConditions = page.getByRole('group', { name: '特攻条件' });
+  const specialConditions = page.getByRole('group', { name: '適用条件' });
   await expect(specialConditions.getByRole('listitem')).toHaveCount(1);
   await expect(specialConditions).toContainText('竜特攻');
   await expect(specialConditions).toContainText('+80% / 150%');
@@ -612,7 +612,7 @@ test('matches the reported Water Lilith inputs and exposes passive damage stacks
   await expect(effectiveInput).toContainText('固定ダメージ／軽減0／0');
 
   await page.getByRole('tab', { name: 'クイック操作' }).click();
-  const damageEffects = page.getByRole('group', { name: '火力効果' });
+  const damageEffects = page.getByRole('group', { name: '火力効果の内訳' });
   await expect(damageEffects.getByRole('list')).toHaveCSS('display', 'flex');
   await expect(damageEffects.getByRole('list')).toHaveCSS('flex-wrap', 'wrap');
   await expect(damageEffects).toContainText('クイックアップ +12%');
