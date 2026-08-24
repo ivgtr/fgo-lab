@@ -63,6 +63,33 @@ test('autosaves and restores a directly edited calculation draft', async ({ page
   await expect(page.getByLabel('攻撃力補正')).toHaveValue('0.2');
 });
 
+test('round-trips an allowlisted calculation share', async ({ page, context, isMobile }) => {
+  test.skip(isMobile, 'One browser project covers clipboard and download sharing');
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await page.getByLabel('敵クラス').fill('berserker');
+  await page.getByRole('button', { name: 'URLをコピー' }).click();
+  await expect(page.getByText('共有URLをコピーしました')).toBeVisible();
+  const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
+  expect(sharedUrl).toContain('#share=');
+  await page.goto(sharedUrl);
+  await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
+  await expect(page.getByLabel('敵クラス')).toHaveValue('berserker');
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '共有専用JSONを保存' }).click();
+  const stream = await (await downloadPromise).createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  const sharedJson = Buffer.concat(chunks).toString('utf8');
+  expect(sharedJson).toContain('fgo-lab-calculation-share');
+  expect(sharedJson).not.toContain('profileId');
+  expect(sharedJson).not.toContain('servantBuilds');
+});
+
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation covers all management pages');
   await page.goto('/');

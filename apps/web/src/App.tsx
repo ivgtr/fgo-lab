@@ -696,6 +696,17 @@ function Calculator({
       setMessage('画像を保存できません。結果カードをスクリーンショットしてください。');
     }
   }
+  function saveShareJson() {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' }),
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'fgo-lab-calculation.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage('共有専用JSONを保存しました');
+  }
   return (
     <div className="worksheet">
       <section>
@@ -888,6 +899,7 @@ function Calculator({
         <div className="toolbar">
           <button onClick={() => void saveImage()}>画像として保存</button>
           <button onClick={() => void copyUrl()}>URLをコピー</button>
+          <button onClick={saveShareJson}>共有専用JSONを保存</button>
         </div>
         <p aria-live="polite">{message}</p>
         <details>
