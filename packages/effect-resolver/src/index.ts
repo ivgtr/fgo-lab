@@ -22,6 +22,7 @@ export interface DamageTraitCondition {
 }
 
 export interface ResolvedSupportEffect {
+  effectKey: string;
   origin: 'attacker' | 'support' | 'craftEssence' | 'passive' | 'np';
   sourceId: string;
   sourceName: string;
@@ -33,6 +34,8 @@ export interface ResolvedSupportEffect {
   kind: ResolvedBuffKind | null;
   damageTraitCondition: DamageTraitCondition | null;
   requiredFieldTraits: readonly string[];
+  damageRelevant: boolean;
+  calculationSupported: boolean;
   applied: boolean;
   reason: string;
 }
@@ -40,15 +43,17 @@ export interface ResolvedSupportEffect {
 export interface ResolvedSupportTemplate {
   input: CalcInput;
   effects: ResolvedSupportEffect[];
+  npDamageBuffRate: number;
   precision: 'exact' | 'approximate' | 'unsupported';
   warnings: string[];
 }
 
 interface SkillSelection {
+  sourceInstanceId: string;
   sourceId: string;
   skillId: string;
   skillLevel: number;
-  enabled: boolean;
+  defaultEnabled: boolean;
   order: number;
 }
 
@@ -92,6 +97,7 @@ function isPotentiallyDamageRelevant(effect: MasterEffect): boolean {
 }
 
 interface ResolvableEffect {
+  sourceInstanceId: string;
   sourceId: string;
   sourceName: string;
   skillId: string;
@@ -99,6 +105,19 @@ interface ResolvableEffect {
   effect: MasterEffect;
   rawValue: number | undefined;
   appliedReason: string;
+  defaultEnabled: boolean;
+}
+
+export interface ResolveEffectOptions {
+  effectOverrides?: Readonly<Record<string, boolean>>;
+  defaultEnabled?: boolean;
+}
+
+function effectKey(
+  origin: ResolvedSupportEffect['origin'],
+  item: Pick<ResolvableEffect, 'sourceInstanceId' | 'skillId' | 'effect'>,
+) {
+  return `${origin}:${item.sourceInstanceId}:${item.skillId}:${item.effect.id}`;
 }
 
 function resolveEffects(
@@ -106,16 +125,24 @@ function resolveEffects(
   items: readonly ResolvableEffect[],
   origin: ResolvedSupportEffect['origin'],
   recipientTraits: readonly string[] = [],
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
   const nextInput = { ...baseInput };
   const effects: ResolvedSupportEffect[] = [];
   const warnings: string[] = [];
+  let npDamageBuffRate = 0;
   let precision: ResolvedSupportTemplate['precision'] = 'exact';
 
   for (const item of items) {
     const { effect, rawValue } = item;
     const kind = effectBuffKind(effect);
+    const npDamageBuffRateEffect =
+      effect.buffTypes?.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp');
+    const key = effectKey(origin, item);
+    const override = options.effectOverrides?.[key];
+    const enabled = override ?? item.defaultEnabled;
     const effectIdentity = {
+      effectKey: key,
       origin,
       sourceId: item.sourceId,
       sourceName: item.sourceName,
@@ -134,6 +161,9 @@ function resolveEffects(
             } satisfies DamageTraitCondition)
           : null,
       requiredFieldTraits: effect.requiredFieldTraits ?? [],
+      damageRelevant:
+        kind !== null || Boolean(npDamageBuffRateEffect) || isPotentiallyDamageRelevant(effect),
+      calculationSupported: kind !== null || Boolean(npDamageBuffRateEffect),
     };
     if (rawValue === undefined) {
       precision = 'unsupported';
@@ -159,7 +189,28 @@ function resolveEffects(
       });
       continue;
     }
-    if (!matchesTraitCondition(effect.targetCondition, baseInput.target.traits)) {
+    if (kind === 'cardBuff' && !effect.cardTypes.includes(baseInput.cardType)) {
+      effects.push({
+        ...effectIdentity,
+        value,
+        applied: false,
+        reason: 'card_type_mismatch',
+      });
+      continue;
+    }
+    if (!enabled) {
+      effects.push({
+        ...effectIdentity,
+        value,
+        applied: false,
+        reason: 'calculation_effect_disabled',
+      });
+      continue;
+    }
+    if (
+      override !== true &&
+      !matchesTraitCondition(effect.targetCondition, baseInput.target.traits)
+    ) {
       effects.push({
         ...effectIdentity,
         value,
@@ -169,6 +220,7 @@ function resolveEffects(
       continue;
     }
     if (
+      override !== true &&
       (effect.requiredFieldTraits?.length ?? 0) > 0 &&
       !effect.requiredFieldTraits?.every((trait) => baseInput.fieldTraits.includes(trait))
     ) {
@@ -180,12 +232,13 @@ function resolveEffects(
       });
       continue;
     }
-    if (kind === 'cardBuff' && !effect.cardTypes.includes(baseInput.cardType)) {
+    if (npDamageBuffRateEffect) {
+      npDamageBuffRate = Math.max(npDamageBuffRate, value);
       effects.push({
         ...effectIdentity,
         value,
-        applied: false,
-        reason: 'card_type_mismatch',
+        applied: true,
+        reason: 'np_damage_buff_rate',
       });
       continue;
     }
@@ -214,7 +267,7 @@ function resolveEffects(
     });
   }
 
-  return { input: nextInput, effects, precision, warnings };
+  return { input: nextInput, effects, npDamageBuffRate, precision, warnings };
 }
 
 function resolveSkillSelections(
@@ -222,6 +275,7 @@ function resolveSkillSelections(
   selectedSkills: readonly SkillSelection[],
   servants: readonly ServantMaster[],
   origin: ResolvedSupportEffect['origin'],
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
   const warnings: string[] = [];
   let missing = false;
@@ -230,7 +284,7 @@ function resolveSkillSelections(
   const items: ResolvableEffect[] = [];
 
   for (const selected of [...selectedSkills].sort((a, b) => a.order - b.order)) {
-    if (!selected.enabled) continue;
+    if (!selected.defaultEnabled && origin === 'support') continue;
     const source = servantById.get(selected.sourceId);
     const skill = [...(source?.skills ?? []), ...(source?.passives ?? [])].find(
       (candidate) => candidate.id === selected.skillId,
@@ -242,6 +296,7 @@ function resolveSkillSelections(
     }
     for (const effect of skill.effects) {
       items.push({
+        sourceInstanceId: selected.sourceInstanceId,
         sourceId: source.id,
         sourceName: source.name,
         skillId: skill.id,
@@ -249,11 +304,12 @@ function resolveSkillSelections(
         effect,
         rawValue: effect.values[selected.skillLevel - 1],
         appliedReason: 'unconditional_attacker_buff',
+        defaultEnabled: selected.defaultEnabled,
       });
     }
   }
 
-  const resolved = resolveEffects(baseInput, items, origin, recipientTraits);
+  const resolved = resolveEffects(baseInput, items, origin, recipientTraits, options);
   return {
     ...resolved,
     precision: missing ? 'unsupported' : resolved.precision,
@@ -264,25 +320,29 @@ function resolveSkillSelections(
 export function resolveServantPassives(
   baseInput: CalcInput,
   servant: ServantMaster | undefined,
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
   if (!servant)
     return {
       input: baseInput,
       effects: [],
+      npDamageBuffRate: 0,
       precision: 'unsupported',
       warnings: ['passive_source_missing'],
     };
   return resolveSkillSelections(
     baseInput,
     servant.passives.map((skill, order) => ({
+      sourceInstanceId: `passive:${servant.id}`,
       sourceId: servant.id,
       skillId: skill.id,
       skillLevel: 1,
-      enabled: true,
+      defaultEnabled: true,
       order,
     })),
     [servant],
     'passive',
+    options,
   );
 }
 
@@ -291,11 +351,20 @@ export function resolveCraftEssenceEffects(
   craftEssence: CraftEssenceMaster | undefined,
   limitBreak: number,
   recipientTraits: readonly string[] = [],
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
-  if (!craftEssence) return { input: baseInput, effects: [], precision: 'exact', warnings: [] };
+  if (!craftEssence)
+    return {
+      input: baseInput,
+      effects: [],
+      npDamageBuffRate: 0,
+      precision: 'exact',
+      warnings: [],
+    };
   return resolveEffects(
     baseInput,
     craftEssence.effects.map((effect) => ({
+      sourceInstanceId: `craftEssence:${craftEssence.id}`,
       sourceId: craftEssence.id,
       sourceName: craftEssence.name,
       skillId: `ce:${craftEssence.id}`,
@@ -303,20 +372,24 @@ export function resolveCraftEssenceEffects(
       effect,
       rawValue: effect.values[limitBreak === 4 ? 1 : 0],
       appliedReason: limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
+      defaultEnabled: true,
     })),
     'craftEssence',
     recipientTraits,
+    options,
   );
 }
 
 export function resolveNpEffects(
   baseInput: CalcInput,
   servant: ServantMaster | undefined,
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
   if (!servant)
     return {
       input: baseInput,
       effects: [],
+      npDamageBuffRate: 0,
       precision: 'unsupported',
       warnings: ['np_source_missing'],
     };
@@ -325,6 +398,7 @@ export function resolveNpEffects(
     servant.npEffects
       .filter((effect) => effect.timing === 'beforeDamage')
       .map((effect) => ({
+        sourceInstanceId: `np:${servant.id}`,
         sourceId: servant.id,
         sourceName: servant.name,
         skillId: `np:${servant.id}`,
@@ -332,15 +406,20 @@ export function resolveNpEffects(
         effect,
         rawValue: effect.values[baseInput.overcharge - 1],
         appliedReason: 'np_before_damage',
+        defaultEnabled: true,
       })),
     'np',
     servant.traits,
+    options,
   );
   const special = servant.npSpecialAttack;
   if (!special) return resolved;
   const multipliers = deriveNpSpecialMultipliers(servant, baseInput.overcharge);
   const selectedMultiplier = multipliers[baseInput.npLevel - 1] ?? 1;
-  const matched = matchesTraitCondition(special.targetCondition, baseInput.target.traits);
+  const specialKey = `np:np:${servant.id}:np:${servant.id}:special:np-special:${servant.id}`;
+  const override = options.effectOverrides?.[specialKey];
+  const matched =
+    override ?? matchesTraitCondition(special.targetCondition, baseInput.target.traits);
   return {
     ...resolved,
     input: matched
@@ -354,6 +433,7 @@ export function resolveNpEffects(
     effects: [
       ...resolved.effects,
       {
+        effectKey: specialKey,
         origin: 'np',
         sourceId: servant.id,
         sourceName: servant.name,
@@ -365,6 +445,8 @@ export function resolveNpEffects(
         kind: null,
         damageTraitCondition: { kind: 'npSpecial', condition: special.targetCondition },
         requiredFieldTraits: [],
+        damageRelevant: true,
+        calculationSupported: true,
         applied: matched,
         reason: matched ? 'target_trait_matched' : 'target_trait_mismatch',
       },
@@ -376,18 +458,21 @@ export function resolveSupportTemplate(
   baseInput: CalcInput,
   template: SupportTemplate,
   servants: readonly ServantMaster[],
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
   return resolveSkillSelections(
     baseInput,
     template.effects.map((effect) => ({
+      sourceInstanceId: effect.sourceInstanceId,
       sourceId: effect.sourceId,
       skillId: effect.effectId,
       skillLevel: effect.skillLevel,
-      enabled: effect.enabled,
+      defaultEnabled: effect.enabled,
       order: effect.order,
     })),
     servants,
     'support',
+    options,
   );
 }
 
@@ -395,17 +480,20 @@ export function resolveAttackerSkills(
   baseInput: CalcInput,
   selections: readonly AttackerSkillSelection[],
   servants: readonly ServantMaster[],
+  options: ResolveEffectOptions = {},
 ): ResolvedSupportTemplate {
   return resolveSkillSelections(
     baseInput,
     selections.map((selection, order) => ({
+      sourceInstanceId: `attacker:${baseInput.attackerId}`,
       sourceId: baseInput.attackerId,
       skillId: selection.skillId,
       skillLevel: selection.skillLevel,
-      enabled: selection.enabled,
+      defaultEnabled: options.defaultEnabled ?? true,
       order,
     })),
     servants,
     'attacker',
+    options,
   );
 }

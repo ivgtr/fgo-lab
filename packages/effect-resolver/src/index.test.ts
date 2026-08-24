@@ -137,6 +137,12 @@ describe('resolveSupportTemplate', () => {
     expect(result.input.cardBuff).toBeCloseTo(0.5);
     expect(result.input.npDamageBuff).toBeCloseTo(0.3);
     expect(result.effects.filter((effect) => effect.applied)).toHaveLength(3);
+    expect(result.effects.find((effect) => effect.effectId === 'np')).toMatchObject({
+      damageRelevant: true,
+    });
+    expect(result.effects.find((effect) => effect.effectId === 'charge')).toMatchObject({
+      damageRelevant: false,
+    });
     expect(result.precision).toBe('exact');
   });
 
@@ -176,7 +182,7 @@ describe('resolveSupportTemplate', () => {
     expect(result.warnings).toEqual(['support_effect_missing:support:skill']);
   });
 
-  it('marks an unhandled damage effect as approximate', () => {
+  it('resolves a structured NP damage buff rate without stacking duplicate boost states', () => {
     const boosted: ServantMaster = {
       ...source,
       skills: [
@@ -188,6 +194,47 @@ describe('resolveSupportTemplate', () => {
               type: 'addStateShort',
               target: 'ptOne',
               label: '宝具威力アップブースト',
+              values: Array(10).fill(1000) as number[],
+              buffTypes: ['buffRate'],
+              buffRateTargets: ['buffNpDamageUp'],
+              cardTypes: [],
+            },
+            {
+              id: 'weaker-boost',
+              type: 'addStateShort',
+              target: 'ptOne',
+              label: '宝具威力アップブースト',
+              values: Array(10).fill(500) as number[],
+              buffTypes: ['buffRate'],
+              buffRateTargets: ['buffNpDamageUp'],
+              cardTypes: [],
+            },
+          ],
+        },
+      ],
+    };
+    const result = resolveSupportTemplate(input, template(), [boosted]);
+    expect(result.precision).toBe('exact');
+    expect(result.npDamageBuffRate).toBe(1);
+    expect(result.effects[0]).toMatchObject({
+      applied: true,
+      reason: 'np_damage_buff_rate',
+    });
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('keeps an untyped buff rate closed as approximate', () => {
+    const boosted: ServantMaster = {
+      ...source,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              id: 'unknown-boost',
+              type: 'addStateShort',
+              target: 'ptOne',
+              label: '対象不明のブースト',
               values: Array(10).fill(1000) as number[],
               buffTypes: ['buffRate'],
               cardTypes: [],
@@ -251,11 +298,7 @@ describe('resolveAttackerSkills', () => {
   const attacker: ServantMaster = { ...source, id: input.attackerId, name: '攻撃役' };
 
   it('applies enabled self skills without mutating the base input', () => {
-    const result = resolveAttackerSkills(
-      input,
-      [{ skillId: 'skill', skillLevel: 10, enabled: true }],
-      [attacker],
-    );
+    const result = resolveAttackerSkills(input, [{ skillId: 'skill', skillLevel: 10 }], [attacker]);
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
     expect(result.input.npDamageBuff).toBeCloseTo(0.3);
@@ -263,14 +306,65 @@ describe('resolveAttackerSkills', () => {
     expect(input).toMatchObject({ attackBuff: 0.1, cardBuff: 0, npDamageBuff: 0 });
   });
 
-  it('does not apply disabled self skills', () => {
+  it('can exclude every effect in a self skill independently from its level', () => {
     const result = resolveAttackerSkills(
       input,
-      [{ skillId: 'skill', skillLevel: 10, enabled: false }],
+      [{ skillId: 'skill', skillLevel: 10 }],
       [attacker],
+      {
+        effectOverrides: {
+          'attacker:attacker:attacker:skill:attack': false,
+          'attacker:attacker:attacker:skill:buster': false,
+          'attacker:attacker:attacker:skill:np': false,
+          'attacker:attacker:attacker:skill:charge': false,
+        },
+      },
     );
     expect(result.input).toEqual(input);
-    expect(result.effects).toEqual([]);
+    expect(result.effects.every((effect) => !effect.applied)).toBe(true);
+  });
+
+  it('uses effect overrides as the only calculator-level switch', () => {
+    const result = resolveAttackerSkills(
+      input,
+      [{ skillId: 'skill', skillLevel: 10 }],
+      [attacker],
+      {
+        defaultEnabled: false,
+        effectOverrides: {
+          'attacker:attacker:attacker:skill:attack': true,
+        },
+      },
+    );
+
+    expect(result.input.attackBuff).toBeCloseTo(0.3);
+    expect(result.input.cardBuff).toBe(0);
+    expect(result.input.npDamageBuff).toBe(0);
+    expect(result.effects.find((effect) => effect.effectId === 'attack')?.applied).toBe(true);
+    expect(result.effects.find((effect) => effect.effectId === 'np')).toMatchObject({
+      applied: false,
+      reason: 'calculation_effect_disabled',
+    });
+  });
+
+  it('does not let an override bypass a hard card mismatch', () => {
+    const result = resolveAttackerSkills(
+      { ...input, cardType: 'arts' },
+      [{ skillId: 'skill', skillLevel: 10 }],
+      [attacker],
+      {
+        defaultEnabled: false,
+        effectOverrides: {
+          'attacker:attacker:attacker:skill:buster': true,
+        },
+      },
+    );
+
+    expect(result.input.cardBuff).toBe(0);
+    expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
+      applied: false,
+      reason: 'card_type_mismatch',
+    });
   });
 
   it('applies a recipient-limited buff only when the attacker has the trait', () => {
@@ -295,7 +389,7 @@ describe('resolveAttackerSkills', () => {
         },
       ],
     };
-    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    const selection = [{ skillId: 'skill', skillLevel: 10 }];
     expect(resolveAttackerSkills(input, selection, [conditional]).input.attackBuff).toBeCloseTo(
       0.3,
     );
@@ -415,7 +509,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         },
       ],
     };
-    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    const selection = [{ skillId: 'skill', skillLevel: 10 }];
     const missed = resolveAttackerSkills(input, selection, [attacker]);
     expect(missed.input.attackBuff).toBe(0.1);
     expect(missed.effects[0]).toMatchObject({ applied: false, reason: 'field_trait_mismatch' });
@@ -509,7 +603,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         },
       ],
     };
-    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    const selection = [{ skillId: 'skill', skillLevel: 10 }];
     expect(
       resolveAttackerSkills(
         { ...input, target: { ...input.target, traits: ['dragon'] } },
@@ -523,6 +617,12 @@ describe('automatic equipment, passive, and NP effects', () => {
       kind: 'powerMod',
       condition: { anyOf: ['dragon'], noneOf: [] },
     });
+    const forced = resolveAttackerSkills(input, selection, [attacker], {
+      effectOverrides: {
+        'attacker:attacker:attacker:skill:dragon-power': true,
+      },
+    });
+    expect(forced.input.powerMod).toBe(0.5);
   });
 
   it('applies an excluded-trait modifier only while that trait is absent', () => {
@@ -547,7 +647,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         },
       ],
     };
-    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    const selection = [{ skillId: 'skill', skillLevel: 10 }];
     expect(resolveAttackerSkills(input, selection, [attacker]).input.powerMod).toBe(0.5);
     expect(
       resolveAttackerSkills(

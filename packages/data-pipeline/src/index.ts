@@ -42,6 +42,18 @@ export function createManifest(input: {
     })),
   });
 }
+
+export function assertMasterVersionIdentity(
+  current: MasterManifest | undefined,
+  candidate: MasterManifest,
+): void {
+  if (!current || current.masterDataVersion !== candidate.masterDataVersion) return;
+  const currentMaster = current.files.find((file) => file.key === 'master' && file.required);
+  const candidateMaster = candidate.files.find((file) => file.key === 'master' && file.required);
+  if (!currentMaster || !candidateMaster || currentMaster.sha256 !== candidateMaster.sha256)
+    throw new Error(`master_version_reused:${candidate.masterDataVersion}`);
+}
+
 export interface AtlasFunctionInventory {
   attackEntries: number;
   counts: Record<string, number>;
@@ -127,6 +139,7 @@ type AtlasBuff = {
   tvals?: AtlasTraitRef[];
   ckSelfIndv?: AtlasTraitRef[];
   ckOpIndv?: AtlasTraitRef[];
+  script?: { UpBuffRateBuffIndiv?: AtlasTraitRef[] };
 };
 type AtlasFunction = {
   funcId?: number;
@@ -204,6 +217,12 @@ const cardTypeByTrait: Record<string, 'buster' | 'arts' | 'quick'> = {
   cardQuick: 'quick',
 };
 
+function buffRateTargets(buffs: AtlasBuff[] | undefined) {
+  return (buffs ?? []).flatMap((buff) =>
+    (buff.script?.UpBuffRateBuffIndiv ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
+  );
+}
+
 function normalizeFunctions(functions: AtlasFunction[] | undefined) {
   return (functions ?? []).flatMap((fn) =>
     typeof fn.funcId === 'number'
@@ -233,6 +252,9 @@ function normalizeFunctions(functions: AtlasFunction[] | undefined) {
               trait.name ? [trait.name] : [],
             ),
             buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
+            ...(buffRateTargets(fn.buffs).length
+              ? { buffRateTargets: buffRateTargets(fn.buffs) }
+              : {}),
             cardTypes: [
               ...new Set(
                 (fn.buffs ?? []).flatMap((buff) =>

@@ -19,17 +19,11 @@ import { selectCalculationAttacker, setCalculationEffectMode } from './calculati
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
 import { AttackerPicker, CraftEssencePicker, SupportTemplatePicker } from './CalculatorPickers';
-import { collectSpecialTraitCandidates } from './specialTraits';
-import {
-  specialTraitLabel,
-  specialTraitSourceLabel,
-  specialTraitValueLabel,
-  traitLabel,
-} from './specialTraitPresentation';
+import { traitLabel } from './traitPresentation';
 import { CalculationResult } from './CalculationResult';
 import { collectDamageEffectStacks } from './damageEffectStacks';
-import { ModifierChip } from './ModifierChip';
 import { AttackerSkills } from './AttackerSkills';
+import { AppliedEffects } from './AppliedEffects';
 import { EffectiveInputDetails } from './EffectiveInputDetails';
 import './calculator.css';
 import './calculator-form.css';
@@ -85,22 +79,30 @@ export function Calculator({
   const selectedCraftEssenceCopy = selection.craftEssence?.copyId
     ? craftEssenceCopies.find((copy) => copy.copyId === selection.craftEssence?.copyId)
     : undefined;
-  const attackerSkillEffects = resolvedEffects.filter((effect) => effect.origin === 'attacker');
+  const ownEffects = resolvedEffects.filter((effect) => effect.origin !== 'support');
   const supportEffects = resolvedEffects.filter((effect) => effect.origin === 'support');
-  const specialTraitCandidates = collectSpecialTraitCandidates({
-    effects: resolvedEffects,
-    servants,
-    craftEssence: selectedCraftEssence,
-  }).sort((left, right) => specialTraitLabel(left).localeCompare(specialTraitLabel(right), 'ja'));
+  const supportSources = selectedSupport
+    ? [
+        ...new Map(
+          [...selectedSupport.effects]
+            .sort((left, right) => left.order - right.order)
+            .map((effect) => [effect.sourceInstanceId, effect.sourceId]),
+        ).values(),
+      ]
+    : [];
+  const enabledSupportSkillCount = selectedSupport?.effects.filter(
+    (effect) => effect.enabled,
+  ).length;
   const damageEffectStacks = collectDamageEffectStacks({
     effects: resolvedEffects,
     servants,
     craftEssence: selectedCraftEssence,
   });
-  const fieldTraitCandidates = [
-    ...new Set(resolvedEffects.flatMap((effect) => effect.requiredFieldTraits)),
-  ].sort((left, right) => traitLabel(left).localeCompare(traitLabel(right), 'ja'));
-  const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
+  const enabledAttackerSkillCount = new Set(
+    resolvedEffects
+      .filter((effect) => effect.origin === 'attacker' && effect.applied)
+      .map((effect) => effect.skillId),
+  ).size;
   const classSituationLabel =
     input.classAffinity === 2
       ? '有利'
@@ -262,14 +264,17 @@ export function Calculator({
       { ...selection, craftEssence: null },
     );
   }
-  function changeAttackerSkill(
-    skillId: string,
-    patch: Partial<Pick<AttackerSkillSelection, 'enabled' | 'skillLevel'>>,
-  ) {
+  function changeAttackerSkill(skillId: string, patch: Pick<AttackerSkillSelection, 'skillLevel'>) {
     const attackerSkills = (selection.attackerSkills ?? []).map((skill) =>
       skill.skillId === skillId ? { ...skill, ...patch } : skill,
     );
     void onCompositionChange(input, { ...selection, attackerSkills });
+  }
+  function changeEffect(effectKey: string, active: boolean) {
+    void onCompositionChange(input, {
+      ...selection,
+      effectOverrides: { ...selection.effectOverrides, [effectKey]: active },
+    });
   }
   function closeAttackerDialog() {
     setAttackerDialogOpen(false);
@@ -548,63 +553,6 @@ export function Calculator({
               ) : null}
             </select>
           </label>
-          {mode === 'quick' &&
-          (specialTraitCandidates.length > 0 || fieldTraitCandidates.length > 0) ? (
-            <fieldset className="modifier-group form-grid-wide">
-              <legend>適用条件</legend>
-              <ul className="modifier-chip-list">
-                {specialTraitCandidates.map((candidate) => {
-                  const traitPresent = input.target.traits.includes(candidate.trait);
-                  const enabled = candidate.matchesWhenPresent ? traitPresent : !traitPresent;
-                  const label = specialTraitLabel(candidate);
-                  return (
-                    <ModifierChip
-                      key={`${candidate.matchesWhenPresent ? 'has' : 'not'}:${candidate.trait}`}
-                      active={enabled}
-                      label={`${label}特攻`}
-                      detail={`${enabled ? '適用中' : '対象外'}・${candidate.sources
-                        .map(specialTraitValueLabel)
-                        .join(' / ')}`}
-                      sources={candidate.sources.map((source) => ({
-                        key: source.key,
-                        label: `${specialTraitSourceLabel(source)} ${specialTraitValueLabel(source)}`,
-                        imageKey: source.imageKey,
-                      }))}
-                      onToggle={(active) =>
-                        change({
-                          target: {
-                            ...input.target,
-                            traits:
-                              active === candidate.matchesWhenPresent
-                                ? [...new Set([...input.target.traits, candidate.trait])]
-                                : input.target.traits.filter((trait) => trait !== candidate.trait),
-                          },
-                        })
-                      }
-                    />
-                  );
-                })}
-                {fieldTraitCandidates.map((trait) => {
-                  const enabled = input.fieldTraits.includes(trait);
-                  return (
-                    <ModifierChip
-                      key={`field:${trait}`}
-                      active={enabled}
-                      label={`${traitLabel(trait)}フィールド`}
-                      detail={enabled ? '条件成立' : '条件不成立'}
-                      onToggle={(active) =>
-                        change({
-                          fieldTraits: active
-                            ? [...new Set([...input.fieldTraits, trait])]
-                            : input.fieldTraits.filter((candidate) => candidate !== trait),
-                        })
-                      }
-                    />
-                  );
-                })}
-              </ul>
-            </fieldset>
-          ) : null}
           {mode === 'direct' && (
             <>
               <div className="direct-input-summary form-grid-wide">
@@ -727,65 +675,80 @@ export function Calculator({
           attackerSource={selection.attackerSource}
           selectedSkills={selection.attackerSkills ?? []}
           savedBuild={builds[input.attackerId]}
-          resolvedEffects={attackerSkillEffects}
-          warnings={effectWarnings}
           hidden={mode === 'direct'}
           onChange={changeAttackerSkill}
         />
-        <EffectiveInputDetails
-          input={resolvedInput}
-          mode={mode}
-          damageEffectStacks={damageEffectStacks}
-        />
+        {mode === 'quick' ? (
+          <AppliedEffects
+            title="自身の適用内容"
+            effects={ownEffects}
+            servants={servants}
+            craftEssence={selectedCraftEssence}
+            onToggle={changeEffect}
+          />
+        ) : null}
         <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>
           <div className="section-heading compact-heading">
             <div>
               <p className="eyebrow">SUPPORT</p>
               <h3>支援・バフ</h3>
             </div>
-            <button onClick={() => setSupportDialogOpen(true)}>支援条件を呼び出す</button>
+            <small>保存した構成を計算へ反映</small>
           </div>
-          {!selectedSupport ? (
-            <p className="notice">保存済み支援条件はまだ適用されていません。</p>
-          ) : (
+          <button
+            type="button"
+            className="support-template-trigger"
+            aria-label={
+              selectedSupport ? `支援条件を変更: ${selectedSupport.name}` : '支援条件を呼び出す'
+            }
+            onClick={() => setSupportDialogOpen(true)}
+          >
+            <span className="calculator-support-faces" aria-hidden="true">
+              {supportSources.length ? (
+                supportSources.slice(0, 3).map((sourceId, index) => {
+                  const source = servants.find((servant) => servant.id === sourceId);
+                  return (
+                    <MasterImage
+                      key={`${sourceId}:${String(index)}`}
+                      src={source?.imageKey ?? null}
+                      alt=""
+                      fallback={source?.name ?? '?'}
+                    />
+                  );
+                })
+              ) : (
+                <span className="support-empty-icon">+</span>
+              )}
+            </span>
+            <span className="support-template-trigger-copy">
+              <small>{selectedSupport ? '使用中の支援条件' : '支援なし'}</small>
+              <strong>{selectedSupport?.name ?? '保存済みの支援条件から選択'}</strong>
+              <span>
+                {selectedSupport
+                  ? `${String(supportSources.length)}騎・使用${String(enabledSupportSkillCount ?? 0)}スキル`
+                  : '呼び出すと、登録済みの効果をまとめて適用します'}
+              </span>
+            </span>
+            <span className="picker-action">{selectedSupport ? '変更' : '呼び出す'}</span>
+          </button>
+          {selectedSupport ? (
             <>
-              <div className="selected-support-head">
-                <span>
-                  <small>使用中の支援条件</small>
-                  <strong>{selectedSupport.name}</strong>
-                </span>
-                <button onClick={() => void onSupportSelect(undefined)}>解除</button>
-              </div>
-              <ul className="plain-list support-effect-list">
-                {supportEffects.map((effect, index) => (
-                  <li
-                    key={`${effect.sourceId}:${effect.skillId}:${effect.effectId}:${String(index)}`}
+              <AppliedEffects
+                title="支援の適用内容"
+                effects={supportEffects}
+                servants={servants}
+                craftEssence={selectedCraftEssence}
+                onToggle={changeEffect}
+                action={
+                  <button
+                    type="button"
+                    className="quiet"
+                    onClick={() => void onSupportSelect(undefined)}
                   >
-                    <span className="list-row-main">
-                      <strong>
-                        {effect.sourceName}・{effect.skillName}
-                      </strong>
-                      <small>{effect.label}</small>
-                    </span>
-                    <span className={effect.applied ? 'effect-applied' : 'effect-inactive'}>
-                      {effect.applied && effect.value !== null
-                        ? `+${effect.value.toLocaleString('ja-JP', {
-                            style: 'percent',
-                            maximumFractionDigits: 1,
-                          })}`
-                        : effect.reason === 'not_np_damage_relevant'
-                          ? '宝具火力外'
-                          : effect.reason === 'attacker_trait_mismatch'
-                            ? '攻撃役の特性不一致'
-                            : effect.reason === 'target_trait_mismatch'
-                              ? '対象特性なし'
-                              : effect.reason === 'card_type_mismatch'
-                                ? 'カード不一致'
-                                : '未適用'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                    支援を解除
+                  </button>
+                }
+              />
               {effectWarnings
                 .filter((warning) => warning.startsWith('support_'))
                 .map((warning) => (
@@ -794,8 +757,13 @@ export function Calculator({
                   </p>
                 ))}
             </>
-          )}
+          ) : null}
         </section>
+        <EffectiveInputDetails
+          input={resolvedInput}
+          mode={mode}
+          damageEffectStacks={damageEffectStacks}
+        />
         {sharedVersionMismatch && (
           <p role="status" className="notice">
             対応するデータ版またはエンジン版がないため、共有時の履歴結果を表示しています。入力を変更すると現行版で新規計算します。
@@ -811,7 +779,7 @@ export function Calculator({
         targetSummary={targetSummary}
         craftEssenceSummary={craftEssenceSummary}
         supportSummary={supportSummary}
-        enabledAttackerSkillCount={enabledAttackerSkills.length}
+        enabledAttackerSkillCount={enabledAttackerSkillCount}
         onFinalize={onFinalize}
       />
       {attackerDialogOpen && (

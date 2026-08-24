@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterManifestSchema } from '@fgo-lab/master-data';
 import {
+  assertMasterVersionIdentity,
   createManifest,
   inventoryAtlasAttackFunctions,
   normalizeAtlasSnapshot,
@@ -34,6 +35,10 @@ if (command === 'validate') {
   if (report.unknown.length > 0) process.exitCode = 1;
 } else if (command === 'normalize') {
   const version = process.argv[3] ?? new Date().toISOString().slice(0, 10).replaceAll('-', '');
+  const manifestPath = resolve(root, 'apps/web/public/master/manifest.json');
+  const currentManifest = await readFile(manifestPath, 'utf8')
+    .then((content) => masterManifestSchema.parse(JSON.parse(content)))
+    .catch(() => undefined);
   const [servants, equips, items] = await Promise.all(
     ['nice_servant.json', 'nice_equip.json', 'nice_item.json'].map(
       async (file) =>
@@ -42,7 +47,6 @@ if (command === 'validate') {
   );
   const snapshot = normalizeAtlasSnapshot({ version, servants, equips, items });
   const content = `${JSON.stringify(snapshot)}\n`;
-  await writeFile(resolve(root, 'apps/web/public/master/master.json'), content, 'utf8');
   const timestamp = new Date().toISOString();
   const manifest = createManifest({
     masterDataVersion: version,
@@ -53,11 +57,9 @@ if (command === 'validate') {
     imagesEnabled: true,
     files: [{ key: 'master', file: 'master.json', content, required: true }],
   });
-  await writeFile(
-    resolve(root, 'apps/web/public/master/manifest.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    'utf8',
-  );
+  assertMasterVersionIdentity(currentManifest, manifest);
+  await writeFile(resolve(root, 'apps/web/public/master/master.json'), content, 'utf8');
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
   console.log(
     JSON.stringify(
       {

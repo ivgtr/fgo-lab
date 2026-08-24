@@ -207,6 +207,107 @@ test('reopens saved local data while offline', async ({ page, context, isMobile 
   }
 });
 
+test('replaces an older active master with the current published version', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers the IndexedDB master update path');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  const home = page.getByRole('heading', { name: 'ホーム' });
+  await expect(setup.or(home)).toBeVisible();
+  if (await setup.isVisible()) await setup.click();
+  await expect(home).toBeVisible();
+
+  const currentVersion = await page.evaluate(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('master', 'readwrite');
+          const store = transaction.objectStore('master');
+          const activeRequest = store.get('active');
+          transaction.onerror = () => reject(transaction.error);
+          activeRequest.onsuccess = () => {
+            const active = activeRequest.result as {
+              manifest: { masterDataVersion: string };
+              snapshot: {
+                version: string;
+                servants: Array<{
+                  id: string;
+                  skills: Array<{
+                    id: string;
+                    effects: Array<{ id: string; buffRateTargets?: string[] }>;
+                  }>;
+                }>;
+              };
+            };
+            const current = active.manifest.masterDataVersion;
+            active.manifest.masterDataVersion = `${current}-stale`;
+            active.snapshot.version = `${current}-stale`;
+            const boost = active.snapshot.servants
+              .find((servant) => servant.id === '2800100')
+              ?.skills.find((skill) => skill.id === '904650')
+              ?.effects.find((effect) => effect.id === '7366');
+            if (boost) delete boost.buffRateTargets;
+            store.put(active, 'active');
+            transaction.oncomplete = () => {
+              resolve(current);
+              db.close();
+            };
+          };
+        };
+      }),
+  );
+
+  await page.reload();
+  await expect(home).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<{ version: string; buffRateTargets: string[] | undefined }>(
+            (resolve, reject) => {
+              const request = indexedDB.open('fgo-lab', 1);
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => {
+                const db = request.result;
+                const transaction = db.transaction('master', 'readonly');
+                const activeRequest = transaction.objectStore('master').get('active');
+                transaction.onerror = () => reject(transaction.error);
+                activeRequest.onsuccess = () => {
+                  const active = activeRequest.result as {
+                    manifest: { masterDataVersion: string };
+                    snapshot: {
+                      servants: Array<{
+                        id: string;
+                        skills: Array<{
+                          id: string;
+                          effects: Array<{ id: string; buffRateTargets?: string[] }>;
+                        }>;
+                      }>;
+                    };
+                  };
+                  const boost = active.snapshot.servants
+                    .find((servant) => servant.id === '2800100')
+                    ?.skills.find((skill) => skill.id === '904650')
+                    ?.effects.find((effect) => effect.id === '7366');
+                  resolve({
+                    version: active.manifest.masterDataVersion,
+                    buffRateTargets: boost?.buffRateTargets,
+                  });
+                  db.close();
+                };
+              };
+            },
+          ),
+      ),
+    )
+    .toEqual({ version: currentVersion, buffRateTargets: ['buffNpDamageUp'] });
+});
+
 test('discards an incompatible master cache without deleting user data', async ({
   page,
   isMobile,
@@ -593,23 +694,18 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
   await attackerDialog.getByLabel('名前で検索').fill('ジークフリート');
   await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv90/ }).click();
-  await page.getByLabel('竜殺し A++を使用').check();
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const dragonPower = ownEffects.getByRole('button', { name: /威力アップ・対竜/ });
+  const dragonNpSpecial = ownEffects.getByRole('button', { name: /特攻宝具/ });
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
-  await expect(page.getByLabel('計算に使用する最終値')).toContainText('対象特性なし');
-  const specialConditions = page.getByRole('group', { name: '適用条件' });
-  await expect(specialConditions.getByRole('listitem')).toHaveCount(1);
-  await expect(specialConditions).toContainText('竜特攻');
-  await expect(specialConditions).toContainText('+80% / 150%');
-  await expect(specialConditions).not.toContainText('竜殺し A++');
-  await expect(specialConditions.locator('.modifier-chip-icon')).toHaveCount(2);
-  const dragonTrait = specialConditions.getByRole('button', { name: /竜特攻/ });
-  await expect(specialConditions.getByRole('list')).toHaveCSS('border-top-width', '0px');
-  await expect(specialConditions.getByRole('listitem')).toHaveCSS('border-bottom-width', '0px');
-  await expect(dragonTrait).toHaveCSS('border-radius', '0px');
-  await expect(dragonTrait).toHaveAttribute('aria-pressed', 'false');
-  await dragonTrait.click();
-  await expect(dragonTrait).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('group', { name: '適用条件' })).toHaveCount(0);
+  await expect(dragonPower).toHaveAttribute('aria-pressed', 'false');
+  await expect(dragonNpSpecial).toHaveAttribute('aria-pressed', 'false');
+  await dragonPower.click();
+  await dragonNpSpecial.click();
+  await expect(dragonPower).toHaveAttribute('aria-pressed', 'true');
+  await expect(dragonNpSpecial).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('1.50倍');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
@@ -621,9 +717,8 @@ test('separates final direct inputs from resolved CE and trait effects', async (
     .getByRole('button', { name: /アーキタイプ：アース.*ムーンキャンサー.*Lv90/ })
     .click();
   await page.getByLabel('宝具Lv').selectOption('5');
-  await expect(specialConditions).toContainText('混沌特攻');
-  await expect(specialConditions).toContainText('200%');
-  const chaoticTrait = specialConditions.getByRole('button', { name: /混沌特攻/ });
+  const chaoticTrait = ownEffects.getByRole('button', { name: /特攻宝具/ });
+  await expect(chaoticTrait).toContainText('2.00倍');
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
   await chaoticTrait.click();
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'true');
@@ -692,7 +787,11 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
-  await page.getByLabel('理想郷の騎士 EXを使用').check();
+  await page
+    .getByRole('group', { name: /自身の適用内容/ })
+    .getByRole('button', { name: /攻撃力アップ.*理想郷の騎士 EX/ })
+    .first()
+    .click();
   await page.getByLabel('クラス相性の状況').selectOption('1.5');
   const sharedDamage = await currentDamage.textContent();
   await page.getByRole('button', { name: 'URLをコピー' }).click();
@@ -704,7 +803,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
   await expect(page.getByLabel('クラス相性の状況')).toHaveValue('1.5');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
-  await expect(page.getByLabel('理想郷の騎士 EXを使用')).not.toBeChecked();
+  await expect(page.getByRole('group', { name: /自身の適用内容/ })).toHaveCount(0);
 
   const imageDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '画像として保存' }).click();
@@ -839,7 +938,11 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await expect(selfSkillRegion).toContainText('保存値');
   await selfSkillRegion.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
   await expect(selfSkillRegion).toContainText('一時変更');
-  await selfSkillRegion.getByLabel('理想郷の騎士 EXを使用').check();
+  const selfAttackEffect = page
+    .getByRole('group', { name: /自身の適用内容/ })
+    .getByRole('button', { name: /攻撃力アップ.*理想郷の騎士 EX/ })
+    .first();
+  await selfAttackEffect.click();
   const damageWithSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(damageWithSelfSkill).toBeGreaterThan(damageBeforeSelfSkill);
   await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
@@ -862,8 +965,23 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.getByRole('button', { name: '支援条件を呼び出す' }).click();
   const templateDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await templateDialog.getByRole('button', { name: '呼び出す' }).click();
-  await expect(page.getByLabel('支援・バフ')).toContainText('周回支援');
-  await expect(page.getByLabel('支援・バフ')).toContainText('+27%');
+  const calculatorSupport = page.getByLabel('支援・バフ');
+  await expect(calculatorSupport).toContainText('周回支援');
+  await expect(calculatorSupport).toContainText('+27%');
+  await expect(calculatorSupport).not.toContainText('チャージ増加');
+  await expect(calculatorSupport).not.toContainText('Extra Attackアップ');
+  const supportAttackEffect = calculatorSupport
+    .getByRole('group', { name: /支援の適用内容/ })
+    .getByRole('button', { name: /攻撃力アップ/ })
+    .first();
+  await expect(supportAttackEffect).toHaveAttribute('aria-pressed', 'true');
+  const damageWithSupportEffect = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  await supportAttackEffect.click();
+  const damageWithoutSupportEffect = Number(
+    (await currentDamage.textContent())?.replaceAll(',', ''),
+  );
+  expect(damageWithoutSupportEffect).toBeLessThan(damageWithSupportEffect);
+  await supportAttackEffect.click();
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('カレイドスコープ Lv.20');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('自身スキル1件適用');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('周回支援（1スキル）');
@@ -898,7 +1016,12 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await expect(page.getByLabel('支援・バフ')).toContainText('周回支援');
-  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
+  await expect(
+    page
+      .getByRole('group', { name: /自身の適用内容/ })
+      .getByRole('button', { name: /攻撃力アップ.*理想郷の騎士 EX/ })
+      .first(),
+  ).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
   await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
     '登録コピー・Lv20',

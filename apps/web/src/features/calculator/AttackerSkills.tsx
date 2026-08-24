@@ -1,5 +1,4 @@
 import type { ServantMaster } from '@fgo-lab/master-data';
-import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
 import type { AttackerSkillSelection, CalculationSelection, ServantBuild } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
 import './attacker-skills.css';
@@ -9,8 +8,6 @@ export function AttackerSkills({
   attackerSource,
   selectedSkills,
   savedBuild,
-  resolvedEffects,
-  warnings,
   hidden,
   onChange,
 }: {
@@ -18,13 +15,8 @@ export function AttackerSkills({
   attackerSource: CalculationSelection['attackerSource'];
   selectedSkills: readonly AttackerSkillSelection[];
   savedBuild: ServantBuild | undefined;
-  resolvedEffects: readonly ResolvedSupportEffect[];
-  warnings: readonly string[];
   hidden: boolean;
-  onChange: (
-    skillId: string,
-    patch: Partial<Pick<AttackerSkillSelection, 'enabled' | 'skillLevel'>>,
-  ) => void;
+  onChange: (skillId: string, patch: Pick<AttackerSkillSelection, 'skillLevel'>) => void;
 }) {
   return (
     <section className="attacker-skills" aria-label="攻撃役の自身スキル" hidden={hidden}>
@@ -47,29 +39,9 @@ export function AttackerSkills({
             const savedLevel =
               attackerSource === 'owned' ? (savedBuild?.skills[String(index + 1)] ?? 1) : 10;
             const modified = selectedSkill.skillLevel !== savedLevel;
-            const effects = resolvedEffects.filter((effect) => effect.skillId === skill.id);
             const state = modified ? 'modified' : attackerSource === 'owned' ? 'saved' : 'added';
             const stateLabel =
               state === 'modified' ? '一時変更' : state === 'saved' ? '保存値' : '仮想値';
-            const effectSummary = skill.effects.map((effect) => {
-              const resolved = effects.find((candidate) => candidate.effectId === effect.id);
-              if (!selectedSkill.enabled) return effect.label;
-              if (resolved?.applied && resolved.value !== null)
-                return `${effect.label} ${resolved.value.toLocaleString('ja-JP', {
-                  style: 'percent',
-                  signDisplay: 'always',
-                  maximumFractionDigits: 1,
-                })}`;
-              if (resolved?.reason === 'not_np_damage_relevant')
-                return `${effect.label}（宝具火力外）`;
-              if (resolved?.reason === 'card_type_mismatch')
-                return `${effect.label}（カード不一致）`;
-              if (resolved?.reason === 'attacker_trait_mismatch')
-                return `${effect.label}（攻撃役の特性不一致）`;
-              if (resolved?.reason === 'target_trait_mismatch')
-                return `${effect.label}（対象特性なし）`;
-              return `${effect.label}（未対応）`;
-            });
             return (
               <li key={skill.id} className="attacker-skill-row" data-state={state}>
                 <MasterImage
@@ -85,7 +57,6 @@ export function AttackerSkills({
                     </strong>
                     <small className={`skill-state skill-state-${state}`}>{stateLabel}</small>
                   </div>
-                  <p>{effectSummary.join('・')}</p>
                   {modified ? (
                     <button
                       type="button"
@@ -114,27 +85,11 @@ export function AttackerSkills({
                     ))}
                   </select>
                 </label>
-                <label className="skill-toggle">
-                  <input
-                    type="checkbox"
-                    checked={selectedSkill.enabled}
-                    onChange={(event) => onChange(skill.id, { enabled: event.target.checked })}
-                    aria-label={`${skill.name}を使用`}
-                  />
-                  適用
-                </label>
               </li>
             );
           })}
         </ul>
       )}
-      {warnings
-        .filter((warning) => warning.startsWith('attacker_'))
-        .map((warning) => (
-          <p className="notice" key={warning}>
-            未解決: {warning}
-          </p>
-        ))}
     </section>
   );
 }

@@ -47,22 +47,25 @@ export function resolveCalculationInput(
         (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
       )
     : undefined;
-  const passive = resolveServantPassives(baseInput, attacker);
+  const resolveOptions = { effectOverrides: selection.effectOverrides ?? {} };
+  const passive = resolveServantPassives(baseInput, attacker, resolveOptions);
   const craftEssenceResolution = resolveCraftEssenceEffects(
     passive.input,
     craftEssence,
     selection.craftEssence?.limitBreak ?? 0,
     attacker?.traits ?? [],
+    resolveOptions,
   );
   const attackerSkills = resolveAttackerSkills(
     craftEssenceResolution.input,
     selection.attackerSkills ?? [],
     master.servants,
+    { ...resolveOptions, defaultEnabled: false },
   );
   const support = supportTemplate
-    ? resolveSupportTemplate(attackerSkills.input, supportTemplate, master.servants)
+    ? resolveSupportTemplate(attackerSkills.input, supportTemplate, master.servants, resolveOptions)
     : undefined;
-  const np = resolveNpEffects(support?.input ?? attackerSkills.input, attacker);
+  const np = resolveNpEffects(support?.input ?? attackerSkills.input, attacker, resolveOptions);
   const resolutions: [string, ResolvedSupportTemplate][] = [
     ['passive-effect', passive],
     ['craft-essence-effect', craftEssenceResolution],
@@ -70,8 +73,19 @@ export function resolveCalculationInput(
   ];
   if (support) resolutions.push(['support-effect', support]);
   resolutions.push(['np-effect', np]);
+  const npDamageBuffRate = Math.max(
+    0,
+    ...resolutions.map(([, resolution]) => resolution.npDamageBuffRate),
+  );
+  const resolvedInput =
+    npDamageBuffRate > 0
+      ? {
+          ...np.input,
+          npDamageBuff: np.input.npDamageBuff * (1 + npDamageBuffRate),
+        }
+      : np.input;
   return {
-    input: np.input,
+    input: resolvedInput,
     precision: resolutions.some(([, resolution]) => resolution.precision === 'unsupported')
       ? 'unsupported'
       : resolutions.some(([, resolution]) => resolution.precision === 'approximate')
@@ -187,7 +201,6 @@ export function createAttackerSkillSelection(
   return (servant?.skills ?? []).slice(0, 3).map((skill, index) => ({
     skillId: skill.id,
     skillLevel: source === 'owned' ? (build?.skills[String(index + 1)] ?? 1) : 10,
-    enabled: false,
   }));
 }
 
@@ -221,6 +234,7 @@ export function selectCalculationAttacker(
       ...selection,
       attackerSource: source,
       attackerSkills: createAttackerSkillSelection(servant, source, build),
+      effectOverrides: {},
     },
   };
 }

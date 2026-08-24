@@ -8,7 +8,7 @@
 }
 .attacker-skill-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 78px auto;
+  grid-template-columns: 36px minmax(0, 1fr) 78px;
   align-items: center;
   gap: 0.65rem;
   min-height: 62px;
@@ -24,13 +24,6 @@
 }
 .attacker-skill-copy strong {
   font-size: 0.82rem;
-}
-.attacker-skill-copy p {
-  margin: 0.15rem 0 0;
-  overflow-wrap: anywhere;
-  color: var(--muted);
-  font-size: 0.7rem;
-  line-height: 1.4;
 }
 .skill-state {
   flex: 0 0 auto;
@@ -59,17 +52,6 @@
   min-height: 38px;
   padding: 0.35rem;
 }
-.skill-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-.skill-toggle input {
-  width: 22px;
-  min-height: 22px;
-}
 .skill-reset {
   min-height: 26px;
   margin-top: 0.15rem;
@@ -96,10 +78,5 @@
   .skill-level-control {
     grid-column: 3;
     grid-row: 1;
-  }
-  .skill-toggle {
-    grid-column: 3;
-    grid-row: 2;
-    min-height: 28px;
   }
 }

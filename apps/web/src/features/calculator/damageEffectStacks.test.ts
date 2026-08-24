@@ -4,6 +4,7 @@ import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffec
 
 function effect(patch: Partial<ResolvedSupportEffect>): ResolvedSupportEffect {
   return {
+    effectKey: 'passive:servant-1:passive-1:quick-up',
     origin: 'passive',
     sourceId: 'servant-1',
     sourceName: 'リリス',
@@ -15,6 +16,8 @@ function effect(patch: Partial<ResolvedSupportEffect>): ResolvedSupportEffect {
     kind: 'cardBuff',
     damageTraitCondition: null,
     requiredFieldTraits: [],
+    damageRelevant: true,
+    calculationSupported: true,
     applied: true,
     reason: 'unconditional_attacker_buff',
     ...patch,

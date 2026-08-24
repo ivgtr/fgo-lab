@@ -109,6 +109,12 @@
 .result-details {
   margin-top: 0.55rem;
 }
+.result-details ul,
+.result-details li {
+  min-width: 0;
+  max-width: 100%;
+  word-break: break-all;
+}
 
 @media (max-width: 760px) {
   .result-column {
@@ -119,5 +125,14 @@
   }
   .np-result-table .average {
     font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .result-actions {
+    grid-template-columns: 1fr;
+  }
+  .result-actions button:last-child {
+    grid-column: auto;
   }
 }

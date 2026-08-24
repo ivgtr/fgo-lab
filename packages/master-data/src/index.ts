@@ -40,6 +40,7 @@ const masterEffectSchema = z.object({
   targetCondition: traitConditionSchema.optional(),
   requiredFieldTraits: z.array(z.string()).optional(),
   buffTypes: z.array(z.string()).optional(),
+  buffRateTargets: z.array(z.string()).optional(),
   cardTypes: z.array(z.enum(['buster', 'arts', 'quick'])).max(3),
 });
 export type MasterEffect = z.infer<typeof masterEffectSchema>;

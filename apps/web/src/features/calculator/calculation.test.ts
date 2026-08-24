@@ -6,6 +6,7 @@ import {
   SCHEMA_VERSION,
   type CalcInput,
   type CalculationShareSnapshot,
+  type SupportTemplate,
   type VersionContext,
 } from '@fgo-lab/schema';
 import {
@@ -138,6 +139,82 @@ describe('calculation application logic', () => {
     expect(calculation.result.results.map((row) => row.average)).toEqual([
       68275.355, 91033.975, 102413.275, 108102.92, 113792.6,
     ]);
+  });
+
+  it('applies an NP damage buff rate after all additive NP damage buffs', () => {
+    const supportId = 'fixture-oberon';
+    const boostMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        fixture.servants[0],
+        {
+          ...fixture.servants[0],
+          id: supportId,
+          name: '検証用オベロン',
+          skills: [
+            {
+              id: 'boost-skill',
+              slot: 3,
+              priority: 1,
+              name: '夢のおわり EX',
+              detail: '',
+              imageKey: null,
+              effects: [
+                {
+                  id: 'boost-effect',
+                  type: 'addStateShort',
+                  target: 'ptOne',
+                  label: '宝具威力アップブースト',
+                  values: Array(10).fill(1000),
+                  buffTypes: ['buffRate'],
+                  buffRateTargets: ['buffNpDamageUp'],
+                  cardTypes: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const input = {
+      ...createDefaultCalcInput(boostMaster, undefined),
+      npDamageBuff: 0.3,
+    };
+    const support = {
+      templateId: '00000000-0000-4000-8000-000000000001',
+      name: 'オベロン支援',
+      masterDataVersion: boostMaster.version,
+      effects: [
+        {
+          sourceInstanceId: 'oberon-1',
+          sourceType: 'servant',
+          sourceId: supportId,
+          ownership: 'virtual',
+          effectId: 'boost-skill',
+          skillLevel: 10,
+          targetRole: 'ATTACKER',
+          enabled: true,
+          order: 0,
+        },
+      ],
+      updatedAt: '2026-08-25T00:00:00.000Z',
+      lastUsedAt: null,
+    } satisfies SupportTemplate;
+
+    const calculation = calculateResolvedDamage(
+      input,
+      { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
+      support,
+      boostMaster,
+      { ...versions, masterDataVersion: boostMaster.version },
+      { releaseValidated: true },
+    );
+
+    expect(calculation.input.npDamageBuff).toBeCloseTo(0.6);
+    expect(calculation.result.precision).toBe('exact');
+    expect(calculation.result.warnings).not.toContain(
+      'support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect',
+    );
   });
 
   it('marks every non-release calculation through the same result path', () => {

@@ -1,7 +1,7 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ResolvedBuffKind, ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
 import { effectSourceImage } from './effectSourcePresentation';
-import { traitLabel } from './specialTraitPresentation';
+import { traitLabel } from './traitPresentation';
 
 export type DamageEffectStackKind = ResolvedBuffKind | 'npSpecial' | 'unresolved';
 
@@ -78,7 +78,7 @@ export function collectDamageEffectStacks({
     const kind = stackKind(effect);
     if (!kind) continue;
     const stack = stacks.get(kind) ?? { kind, label: STACK_LABELS[kind], sources: [] };
-    const key = `${effect.origin}:${effect.sourceId}:${effect.skillId}:${effect.effectId}`;
+    const key = effect.effectKey;
     if (!stack.sources.some((source) => source.key === key)) {
       stack.sources.push({
         key,

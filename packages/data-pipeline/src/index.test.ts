@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertMasterVersionIdentity,
   createManifest,
   inventoryAtlasAttackFunctions,
   normalizeAtlasSnapshot,
@@ -33,6 +34,31 @@ describe('immutable publish pipeline', () => {
       files: [{ key: 'master', file: 'master.json', content, required: true }],
     });
     expect(validatePublishedArtifact(manifest, { 'master.json': `${content} ` }).valid).toBe(false);
+  });
+  it('rejects publishing different master content under an existing version', () => {
+    const manifest = createManifest({
+      masterDataVersion: 'v1',
+      createdAt: '2026-08-24T00:00:00.000Z',
+      retrievedAt: '2026-08-24T00:00:00.000Z',
+      minimalAppVersion: '0.1.0',
+      artifactKind: 'diagnostic',
+      imagesEnabled: false,
+      files: [{ key: 'master', file: 'master.json', content, required: true }],
+    });
+    const changed = createManifest({
+      masterDataVersion: 'v1',
+      createdAt: '2026-08-25T00:00:00.000Z',
+      retrievedAt: '2026-08-25T00:00:00.000Z',
+      minimalAppVersion: '0.1.0',
+      artifactKind: 'diagnostic',
+      imagesEnabled: false,
+      files: [{ key: 'master', file: 'master.json', content: `${content} `, required: true }],
+    });
+
+    expect(() => assertMasterVersionIdentity(manifest, changed)).toThrow(
+      'master_version_reused:v1',
+    );
+    expect(() => assertMasterVersionIdentity(manifest, manifest)).not.toThrow();
   });
   it('reports future damage functions instead of treating them as zero', () =>
     expect(
@@ -193,6 +219,21 @@ describe('immutable publish pipeline', () => {
                   ],
                   svals: Array(10).fill({ Value: 500 }),
                 },
+                {
+                  funcId: 14,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'ptOne',
+                  funcPopupText: '宝具威力アップブースト',
+                  buffs: [
+                    {
+                      type: 'buffRate',
+                      script: {
+                        UpBuffRateBuffIndiv: [{ id: 3030, name: 'buffNpDamageUp' }],
+                      },
+                    },
+                  ],
+                  svals: Array(10).fill({ Value: 1000 }),
+                },
               ],
             },
           ],
@@ -271,6 +312,10 @@ describe('immutable publish pipeline', () => {
       label: '表示名に依存しない色バフ',
       buffTypes: ['upCommandall'],
       cardTypes: ['buster'],
+    });
+    expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '14')).toMatchObject({
+      buffTypes: ['buffRate'],
+      buffRateTargets: ['buffNpDamageUp'],
     });
     expect(snapshot.servants.find((servant) => servant.id === '1')?.npCard).toBe('arts');
   });
