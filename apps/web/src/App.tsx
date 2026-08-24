@@ -1526,7 +1526,7 @@ function Calculator({
           特殊Functionの差分検証が完了するまで、結果精度はapproximateとして表示します。
         </p>
       </section>
-      <section className="result-pane" aria-label="宝具レベル別ダメージ比較">
+      <div className="result-column">
         <article
           ref={resultCardRef}
           className="result-card"
@@ -1624,7 +1624,7 @@ function Calculator({
             ))}
           </ul>
         </details>
-      </section>
+      </div>
       {attackerDialogOpen && (
         <div
           role="dialog"

@@ -11,6 +11,13 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
     .click();
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   const resultCard = page.getByLabel('共有対象の計算結果');
+  await expect(page.locator('.result-pane')).toHaveCount(0);
+  expect(
+    await resultCard.evaluate((card) => {
+      const container = getComputedStyle(card.parentElement!);
+      return [container.backgroundColor, container.borderTopWidth, container.paddingTop];
+    }),
+  ).toEqual(['rgba(0, 0, 0, 0)', '0px', '0px']);
   await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toHaveCount(1);
   await expect(page.getByText('宝具ダメージ目安', { exact: true })).toHaveCount(0);
   await expect(resultCard).toContainText('アルトリア・ペンドラゴン');

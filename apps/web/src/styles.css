@@ -244,7 +244,8 @@ h3 {
   padding: 1.25rem 1.4rem 1.5rem;
   border-top: 2px solid var(--line);
 }
-.worksheet > section:last-child {
+.result-column {
+  min-width: 0;
   position: sticky;
   top: 1rem;
 }
@@ -473,9 +474,6 @@ tbody tr[aria-current='true'] {
 td.average {
   font-weight: 800;
   color: #16233b;
-}
-.result-pane {
-  background: #f7f7f4 !important;
 }
 .result-card {
   overflow: hidden;
@@ -941,7 +939,7 @@ td.average {
   .worksheet > section {
     padding: 0.85rem;
   }
-  .worksheet > section:last-child {
+  .result-column {
     position: static;
   }
   .master-detail > section {
