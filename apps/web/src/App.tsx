@@ -1509,6 +1509,9 @@ function Ranking({
   const [target, setTarget] = useState('any');
   const [rarity, setRarity] = useState('any');
   const [scope, setScope] = useState<'all' | 'owned'>('all');
+  const classes = [...new Set(candidates.map((candidate) => candidate.classId))].sort((a, b) =>
+    a.localeCompare(b),
+  );
   const rows = ranking.rows.filter(
     (row) =>
       (classId === 'any' || row.classId === classId) &&
@@ -1534,7 +1537,11 @@ function Ranking({
           クラス
           <select value={classId} onChange={(event) => setClassId(event.target.value)}>
             <option value="any">すべて</option>
-            <option value="saber">Saber</option>
+            {classes.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
           </select>
         </label>
         <label>

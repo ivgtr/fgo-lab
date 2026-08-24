@@ -214,6 +214,8 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   );
   await page.getByLabel('宝具カード').selectOption('arts');
   await expect(page.getByRole('status')).not.toContainText('420件表示');
+  await page.getByLabel('クラス').selectOption('saber');
+  await expect(page.getByRole('status')).not.toContainText('420件表示');
   await page.getByLabel('対象範囲').selectOption('owned');
   await expect(page.getByRole('status')).toContainText('0件表示');
 });
