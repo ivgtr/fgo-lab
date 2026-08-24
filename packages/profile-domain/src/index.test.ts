@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { calculateGrowthLedger, createProfileCollection, isOwned } from './index';
+import fixture from '../../test-fixtures/master/fixture.json';
+import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  activeProfile,
+  addCraftEssenceCopy,
+  addSupportServant,
+  addSupportTemplate,
+  calculateGrowthLedger,
+  createProfileCollection,
+  isOwned,
+  updateCraftEssenceCopy,
+  updateServantBuild,
+  updateServantTarget,
+} from './index';
 
 const clock = { now: () => new Date('2026-08-24T00:00:00Z') };
 const ids = { next: () => '00000000-0000-4000-8000-000000000001' };
+const master = masterSnapshotSchema.parse(fixture);
 describe('profile domain', () => {
   it('creates a multi-profile-ready collection with one active profile', () =>
     expect(createProfileCollection('マスター', clock, ids).profiles).toHaveLength(1));
@@ -76,5 +90,68 @@ describe('profile domain', () => {
     );
     expect(ledger.find((entry) => entry.material.id === 'm')?.amount).toBe(5);
     expect(ledger.find((entry) => entry.material.id === 'system:qp')?.amount).toBe(10);
+  });
+  it('owns servant current and target transitions without mutating the source profile', () => {
+    const source = activeProfile(createProfileCollection('マスター', clock, ids));
+    const withBuild = updateServantBuild(
+      source,
+      'fixture-saber',
+      { level: 90, npLevel: 1 },
+      clock.now().toISOString(),
+    );
+    const withTarget = updateServantTarget(
+      withBuild,
+      'fixture-saber',
+      { level: 100 },
+      clock.now().toISOString(),
+    );
+    expect(source.servantBuilds['fixture-saber']).toBeUndefined();
+    expect(withTarget.servantBuilds['fixture-saber']).toMatchObject({ level: 90, npLevel: 1 });
+    expect(withTarget.servantTargets['fixture-saber']).toMatchObject({ level: 100, ascension: 0 });
+  });
+  it('clamps a craft essence copy to the selected limit break maximum', () => {
+    const source = activeProfile(createProfileCollection('マスター', clock, ids));
+    const copyId = '00000000-0000-4000-8000-000000000002';
+    const withCopy = addCraftEssenceCopy(source, 'fixture-ce', copyId, clock.now().toISOString());
+    const updated = updateCraftEssenceCopy(
+      withCopy,
+      master.craftEssences[0]!,
+      copyId,
+      { level: 100, limitBreak: 0 },
+      clock.now().toISOString(),
+    );
+    expect(updated.craftEssences[0]).toMatchObject({ level: 20, limitBreak: 0 });
+  });
+  it('adds each servant skill to a support template once', () => {
+    const source = activeProfile(createProfileCollection('マスター', clock, ids));
+    const templateId = '00000000-0000-4000-8000-000000000003';
+    const withTemplate = addSupportTemplate(
+      source,
+      master.version,
+      templateId,
+      clock.now().toISOString(),
+    );
+    const supportServant = {
+      ...master.servants[0]!,
+      skills: [
+        {
+          id: 'skill-1',
+          slot: 1,
+          priority: 0,
+          name: '支援スキル',
+          detail: '',
+          imageKey: null,
+          effects: [],
+        },
+      ],
+    };
+    const once = addSupportServant(
+      withTemplate,
+      templateId,
+      supportServant,
+      clock.now().toISOString(),
+    );
+    const twice = addSupportServant(once, templateId, supportServant, clock.now().toISOString());
+    expect(twice.supportTemplates[0]?.effects).toHaveLength(1);
   });
 });

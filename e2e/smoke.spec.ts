@@ -115,13 +115,16 @@ test('reopens saved local data while offline', async ({ page, context, isMobile 
   test.skip(isMobile, 'One browser project is sufficient for the service worker offline drill');
   await page.goto('/');
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  const home = page.getByRole('heading', { name: 'ホーム' });
+  await expect(setup.or(home)).toBeVisible();
   if (await setup.isVisible()) await setup.click();
+  await expect(home).toBeVisible();
   await page.evaluate(async () => {
     await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
   });
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await expect(home).toBeVisible();
   await context.setOffline(true);
   try {
     await page.reload();

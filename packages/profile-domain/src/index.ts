@@ -1,5 +1,12 @@
 import type { CraftEssenceMaster, MaterialMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { LocalProfile, ProfileCollection, ServantBuild, ServantTarget } from '@fgo-lab/schema';
+import type {
+  CraftEssenceCopy,
+  LocalProfile,
+  ProfileCollection,
+  ServantBuild,
+  ServantTarget,
+  SupportTemplate,
+} from '@fgo-lab/schema';
 
 export interface Clock {
   now(): Date;
@@ -48,8 +55,13 @@ export function activeProfile(collection: ProfileCollection): LocalProfile {
 export function isOwned(build: ServantBuild | undefined): boolean {
   return (build?.npLevel ?? 0) >= 1;
 }
-export function defaultServantBuild(servantId: string, clock: Clock): ServantBuild {
-  return {
+export function updateServantBuild(
+  profile: LocalProfile,
+  servantId: string,
+  patch: Partial<Omit<ServantBuild, 'servantId' | 'updatedAt'>>,
+  now: string,
+): LocalProfile {
+  const current = profile.servantBuilds[servantId] ?? {
     servantId,
     level: 1,
     ascension: 0,
@@ -57,30 +69,173 @@ export function defaultServantBuild(servantId: string, clock: Clock): ServantBui
     fouAtk: 0,
     skills: {},
     appends: {},
-    updatedAt: clock.now().toISOString(),
+    updatedAt: now,
   };
-}
-export function applyServantPatch(
-  current: ServantBuild,
-  patch: Partial<Omit<ServantBuild, 'servantId' | 'updatedAt'>>,
-  clock: Clock,
-): ServantBuild {
   return {
-    ...current,
-    ...patch,
-    servantId: current.servantId,
-    updatedAt: clock.now().toISOString(),
+    ...profile,
+    servantBuilds: {
+      ...profile.servantBuilds,
+      [servantId]: { ...current, ...patch, servantId, updatedAt: now },
+    },
+    updatedAt: now,
   };
-}
-export function validateCraftEssenceLevel(
-  master: CraftEssenceMaster,
-  level: number,
-  limitBreak: number,
-): boolean {
-  const maximum = master.maxLevelByLimitBreak[limitBreak];
-  return maximum !== undefined && Number.isInteger(level) && level >= 1 && level <= maximum;
 }
 
+export function updateServantTarget(
+  profile: LocalProfile,
+  servantId: string,
+  patch: Partial<Omit<ServantTarget, 'servantId' | 'updatedAt'>>,
+  now: string,
+): LocalProfile {
+  const build = profile.servantBuilds[servantId];
+  const current = profile.servantTargets[servantId] ?? {
+    servantId,
+    level: build?.level ?? 1,
+    ascension: build?.ascension ?? 0,
+    fouAtk: build?.fouAtk ?? 0,
+    skills: build?.skills ?? {},
+    appends: build?.appends ?? {},
+    planned: true,
+    updatedAt: now,
+  };
+  return {
+    ...profile,
+    servantTargets: {
+      ...profile.servantTargets,
+      [servantId]: { ...current, ...patch, servantId, updatedAt: now },
+    },
+    updatedAt: now,
+  };
+}
+
+export function addCraftEssenceCopy(
+  profile: LocalProfile,
+  craftEssenceId: string,
+  copyId: string,
+  now: string,
+): LocalProfile {
+  const copy: CraftEssenceCopy = {
+    copyId,
+    craftEssenceId,
+    level: 1,
+    limitBreak: 0,
+    updatedAt: now,
+  };
+  return { ...profile, craftEssences: [...profile.craftEssences, copy], updatedAt: now };
+}
+
+export function removeCraftEssenceCopy(profile: LocalProfile, copyId: string): LocalProfile {
+  return {
+    ...profile,
+    craftEssences: profile.craftEssences.filter((copy) => copy.copyId !== copyId),
+  };
+}
+
+export function updateCraftEssenceCopy(
+  profile: LocalProfile,
+  master: CraftEssenceMaster,
+  copyId: string,
+  patch: Pick<Partial<CraftEssenceCopy>, 'level' | 'limitBreak'>,
+  now: string,
+): LocalProfile {
+  return {
+    ...profile,
+    craftEssences: profile.craftEssences.map((copy) => {
+      if (copy.copyId !== copyId) return copy;
+      const limitBreak = patch.limitBreak ?? copy.limitBreak;
+      const maximum = master.maxLevelByLimitBreak[limitBreak] ?? 100;
+      return {
+        ...copy,
+        level: Math.min(patch.level ?? copy.level, maximum),
+        limitBreak,
+        updatedAt: now,
+      };
+    }),
+    updatedAt: now,
+  };
+}
+
+export function addSupportTemplate(
+  profile: LocalProfile,
+  masterDataVersion: string,
+  templateId: string,
+  now: string,
+): LocalProfile {
+  const template: SupportTemplate = {
+    templateId,
+    name: `支援条件 ${String(profile.supportTemplates.length + 1)}`,
+    masterDataVersion,
+    effects: [],
+    updatedAt: now,
+    lastUsedAt: null,
+  };
+  return {
+    ...profile,
+    supportTemplates: [...profile.supportTemplates, template],
+    updatedAt: now,
+  };
+}
+
+export function addSupportServant(
+  profile: LocalProfile,
+  templateId: string,
+  source: ServantMaster,
+  now: string,
+): LocalProfile {
+  return {
+    ...profile,
+    supportTemplates: profile.supportTemplates.map((template) => {
+      if (template.templateId !== templateId) return template;
+      const existing = new Set(
+        template.effects.map((effect) => `${effect.sourceId}:${effect.effectId}`),
+      );
+      const additions = source.skills.flatMap((skill, index) =>
+        existing.has(`${source.id}:${skill.id}`)
+          ? []
+          : [
+              {
+                sourceType: 'servant' as const,
+                sourceId: source.id,
+                effectId: skill.id,
+                skillLevel: 10,
+                targetRole: 'ATTACKER' as const,
+                enabled: false,
+                order: template.effects.length + index,
+              },
+            ],
+      );
+      return { ...template, effects: [...template.effects, ...additions], updatedAt: now };
+    }),
+    updatedAt: now,
+  };
+}
+
+export function updateSupportEffect(
+  profile: LocalProfile,
+  templateId: string,
+  sourceId: string,
+  effectId: string,
+  patch: Partial<Pick<SupportTemplate['effects'][number], 'enabled' | 'skillLevel'>>,
+  now: string,
+): LocalProfile {
+  return {
+    ...profile,
+    supportTemplates: profile.supportTemplates.map((template) =>
+      template.templateId === templateId
+        ? {
+            ...template,
+            effects: template.effects.map((effect) =>
+              effect.sourceId === sourceId && effect.effectId === effectId
+                ? { ...effect, ...patch }
+                : effect,
+            ),
+            updatedAt: now,
+          }
+        : template,
+    ),
+    updatedAt: now,
+  };
+}
 export interface MaterialUsage {
   materialId: string;
   servantId: string;
