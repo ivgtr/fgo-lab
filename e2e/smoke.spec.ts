@@ -35,14 +35,29 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '所持・育成' }).click();
   await page.getByLabel('宝具Lv').selectOption('1');
-  await expect(page.getByRole('button', { name: /アルトリア・ペンドラゴン.*NP1/ })).toBeVisible();
+  await expect(
+    page
+      .getByRole('list', { name: 'サーヴァント一覧' })
+      .getByRole('listitem')
+      .filter({ hasText: 'アルトリア・ペンドラゴン' })
+      .first(),
+  ).toContainText('NP1');
+  await page.getByRole('button', { name: '所持のみ', exact: true }).click();
+  await expect(
+    page.getByRole('list', { name: 'サーヴァント一覧' }).getByRole('listitem'),
+  ).toHaveCount(1);
   await page.getByRole('tab', { name: '育成目標' }).click();
   await page.getByLabel('レベル').fill('90');
   await page.getByLabel('育成計画へ含める').check();
 
   await page.getByRole('button', { name: '概念礼装' }).click();
-  await page.getByRole('button', { name: 'DBから礼装を登録' }).click();
-  await page.getByRole('button', { name: 'DBから礼装を登録' }).click();
+  for (let index = 0; index < 2; index += 1) {
+    await page.getByRole('button', { name: 'DBから礼装を登録' }).click();
+    const dialog = page.getByRole('dialog', { name: '概念礼装を検索' });
+    await dialog.getByLabel('礼装名').fill('カレイドスコープ');
+    await dialog.getByRole('button', { name: '登録' }).first().click();
+    await expect(dialog).toBeHidden();
+  }
   await expect(
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
   ).toHaveCount(2);

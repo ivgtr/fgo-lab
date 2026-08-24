@@ -265,6 +265,19 @@ td.average {
   display: flex;
   justify-content: space-between;
 }
+.servant-list {
+  max-height: min(68vh, 760px);
+  overflow: auto;
+  border-top: 1px solid var(--line);
+}
+.servant-list .list-row {
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+.servant-list .list-row[aria-current='true'] {
+  border-left: 4px solid var(--accent);
+  background: #f7e8e9;
+}
 .toolbar {
   display: flex;
   gap: 1rem;
@@ -287,6 +300,23 @@ td.average {
   gap: 1rem;
   border-bottom: 1px solid var(--line);
   padding: 0.5rem 0;
+}
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(15 22 37 / 70%);
+}
+.dialog-panel {
+  width: min(680px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  background: white;
+  padding: 1.25rem;
+  border-top: 4px solid var(--accent);
 }
 .file {
   display: block;

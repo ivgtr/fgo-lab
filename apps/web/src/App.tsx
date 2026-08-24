@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { MasterDataSnapshot } from '@fgo-lab/master-data';
+import type { CraftEssenceMaster, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import {
   calculateGrowthLedger,
   createProfileCollection,
@@ -205,17 +205,17 @@ export function App() {
         warnings: [...calculatedResult.warnings, 'diagnostic_fixture_not_release_validated'],
       }
     : calculatedResult;
-  async function updateBuild(patch: Partial<ServantBuild>) {
-    const current = build ?? defaultServantBuild(servant.id, clock);
+  async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
+    const current = profile.servantBuilds[servantId] ?? defaultServantBuild(servantId, clock);
     const nextBuild = {
       ...current,
       ...patch,
-      servantId: servant.id,
+      servantId,
       updatedAt: new Date().toISOString(),
     };
     const nextProfile = {
       ...profile,
-      servantBuilds: { ...profile.servantBuilds, [servant.id]: nextBuild },
+      servantBuilds: { ...profile.servantBuilds, [servantId]: nextBuild },
       updatedAt: new Date().toISOString(),
     };
     await persist({
@@ -233,15 +233,16 @@ export function App() {
       ),
     });
   }
-  async function updateTarget(patch: Partial<ServantTarget>) {
+  async function updateTarget(servantId: string, patch: Partial<ServantTarget>) {
     const timestamp = new Date().toISOString();
-    const current = profile.servantTargets[servant.id] ?? {
-      servantId: servant.id,
-      level: build?.level ?? 1,
-      ascension: build?.ascension ?? 0,
-      fouAtk: build?.fouAtk ?? 0,
-      skills: build?.skills ?? {},
-      appends: build?.appends ?? {},
+    const servantBuild = profile.servantBuilds[servantId];
+    const current = profile.servantTargets[servantId] ?? {
+      servantId,
+      level: servantBuild?.level ?? 1,
+      ascension: servantBuild?.ascension ?? 0,
+      fouAtk: servantBuild?.fouAtk ?? 0,
+      skills: servantBuild?.skills ?? {},
+      appends: servantBuild?.appends ?? {},
       planned: true,
       updatedAt: timestamp,
     };
@@ -249,15 +250,15 @@ export function App() {
       ...profile,
       servantTargets: {
         ...profile.servantTargets,
-        [servant.id]: { ...current, ...patch, servantId: servant.id, updatedAt: timestamp },
+        [servantId]: { ...current, ...patch, servantId, updatedAt: timestamp },
       },
       updatedAt: timestamp,
     });
   }
-  async function addCraftEssence() {
+  async function addCraftEssence(craftEssenceId: string) {
     const copy: CraftEssenceCopy = {
       copyId: crypto.randomUUID(),
-      craftEssenceId: currentMaster.craftEssences[0]!.id,
+      craftEssenceId,
       level: 1,
       limitBreak: 0,
       updatedAt: new Date().toISOString(),
@@ -366,9 +367,9 @@ export function App() {
         )}{' '}
         {page === 'servants' && (
           <Servants
-            name={servant.name}
-            build={build}
-            target={profile.servantTargets[servant.id]}
+            servants={currentMaster.servants}
+            builds={profile.servantBuilds}
+            targets={profile.servantTargets}
             onChange={updateBuild}
             onTargetChange={updateTarget}
           />
@@ -376,7 +377,7 @@ export function App() {
         {page === 'ce' && (
           <CraftEssences
             copies={profile.craftEssences}
-            name={currentMaster.craftEssences[0]!.name}
+            masters={currentMaster.craftEssences}
             onAdd={addCraftEssence}
             onRemove={removeCraftEssence}
           />
@@ -563,112 +564,215 @@ function Calculator({
   );
 }
 function Servants({
-  name,
-  build,
-  target,
+  servants,
+  builds,
+  targets,
   onChange,
   onTargetChange,
 }: {
-  name: string;
-  build: ServantBuild | undefined;
-  target: ServantTarget | undefined;
-  onChange: (patch: Partial<ServantBuild>) => Promise<void>;
-  onTargetChange: (patch: Partial<ServantTarget>) => Promise<void>;
+  servants: ServantMaster[];
+  builds: Record<string, ServantBuild>;
+  targets: Record<string, ServantTarget>;
+  onChange: (servantId: string, patch: Partial<ServantBuild>) => Promise<void>;
+  onTargetChange: (servantId: string, patch: Partial<ServantTarget>) => Promise<void>;
 }) {
   const [tab, setTab] = useState<'current' | 'target'>('current');
+  const [search, setSearch] = useState('');
+  const [scope, setScope] = useState<'all' | 'owned' | 'unowned'>('all');
+  const [selectedId, setSelectedId] = useState(servants[0]?.id ?? '');
+  const visible = servants.filter((candidate) => {
+    const owned = (builds[candidate.id]?.npLevel ?? 0) > 0;
+    return (
+      candidate.name.toLocaleLowerCase('ja').includes(search.toLocaleLowerCase('ja')) &&
+      (scope === 'all' || (scope === 'owned' ? owned : !owned))
+    );
+  });
+  const selected = servants.find((candidate) => candidate.id === selectedId) ?? visible[0];
+  const build = selected ? builds[selected.id] : undefined;
+  const target = selected ? targets[selected.id] : undefined;
   return (
     <div className="master-detail">
       <section>
         <label>
           検索
-          <input type="search" placeholder="名称・クラス" />
-        </label>
-        <button className="list-row" aria-current="true">
-          <strong>{name}</strong>
-          <span>{build?.npLevel ? `NP${build.npLevel}` : 'NP0・未所持'}</span>
-        </button>
-      </section>
-      <section>
-        <div role="tablist">
-          <button role="tab" aria-selected={tab === 'current'} onClick={() => setTab('current')}>
-            現在値
-          </button>
-          <button role="tab" aria-selected={tab === 'target'} onClick={() => setTab('target')}>
-            育成目標
-          </button>
-        </div>
-        <h2>{name}</h2>
-        {tab === 'current' && (
-          <label>
-            宝具Lv
-            <select
-              value={build?.npLevel ?? 0}
-              onChange={(event) => void onChange({ npLevel: Number(event.target.value) })}
-            >
-              {[0, 1, 2, 3, 4, 5].map((value) => (
-                <option key={value} value={value}>
-                  {value === 0 ? 'NP0・未所持' : `NP${value}`}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <label>
-          レベル
           <input
-            type="number"
-            min="1"
-            max="120"
-            value={tab === 'current' ? (build?.level ?? 1) : (target?.level ?? build?.level ?? 1)}
-            onChange={(event) =>
-              void (tab === 'current'
-                ? onChange({ level: Number(event.target.value) })
-                : onTargetChange({ level: Number(event.target.value), planned: true }))
-            }
+            type="search"
+            placeholder="名称・クラス"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        {tab === 'target' && (
-          <label>
-            <input
-              type="checkbox"
-              checked={target?.planned ?? false}
-              onChange={(event) => void onTargetChange({ planned: event.target.checked })}
-            />
-            育成計画へ含める
-          </label>
+        <div className="toolbar" aria-label="所持状態フィルター">
+          {(['all', 'owned', 'unowned'] as const).map((value) => (
+            <button key={value} aria-pressed={scope === value} onClick={() => setScope(value)}>
+              {value === 'all' ? '全件' : value === 'owned' ? '所持のみ' : '未所持のみ'}
+            </button>
+          ))}
+        </div>
+        <p>{visible.length}騎</p>
+        <div className="servant-list" role="list" aria-label="サーヴァント一覧">
+          {visible.map((candidate) => (
+            <button
+              role="listitem"
+              key={candidate.id}
+              className="list-row"
+              aria-current={selected?.id === candidate.id ? 'true' : undefined}
+              onClick={() => setSelectedId(candidate.id)}
+            >
+              <strong>{candidate.name}</strong>
+              <span>
+                {builds[candidate.id]?.npLevel
+                  ? `NP${String(builds[candidate.id]?.npLevel)}`
+                  : 'NP0・未所持'}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+      <section>
+        {!selected ? (
+          <p>条件に一致するサーヴァントはいません。</p>
+        ) : (
+          <>
+            <div role="tablist">
+              <button
+                role="tab"
+                aria-selected={tab === 'current'}
+                onClick={() => setTab('current')}
+              >
+                現在値
+              </button>
+              <button role="tab" aria-selected={tab === 'target'} onClick={() => setTab('target')}>
+                育成目標
+              </button>
+            </div>
+            <h2>{selected.name}</h2>
+            {tab === 'current' && (
+              <label>
+                宝具Lv
+                <select
+                  value={build?.npLevel ?? 0}
+                  onChange={(event) =>
+                    void onChange(selected.id, { npLevel: Number(event.target.value) })
+                  }
+                >
+                  {[0, 1, 2, 3, 4, 5].map((value) => (
+                    <option key={value} value={value}>
+                      {value === 0 ? 'NP0・未所持' : `NP${value}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label>
+              レベル
+              <input
+                type="number"
+                min="1"
+                max="120"
+                value={
+                  tab === 'current' ? (build?.level ?? 1) : (target?.level ?? build?.level ?? 1)
+                }
+                onChange={(event) =>
+                  void (tab === 'current'
+                    ? onChange(selected.id, { level: Number(event.target.value) })
+                    : onTargetChange(selected.id, {
+                        level: Number(event.target.value),
+                        planned: true,
+                      }))
+                }
+              />
+            </label>
+            {tab === 'target' && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={target?.planned ?? false}
+                  onChange={(event) =>
+                    void onTargetChange(selected.id, { planned: event.target.checked })
+                  }
+                />
+                育成計画へ含める
+              </label>
+            )}
+            <p aria-live="polite">妥当な変更は端末内へ自動保存されます。</p>
+          </>
         )}
-        <p aria-live="polite">妥当な変更は端末内へ自動保存されます。</p>
       </section>
     </div>
   );
 }
 function CraftEssences({
   copies,
-  name,
+  masters,
   onAdd,
   onRemove,
 }: {
   copies: CraftEssenceCopy[];
-  name: string;
-  onAdd: () => Promise<void>;
+  masters: CraftEssenceMaster[];
+  onAdd: (craftEssenceId: string) => Promise<void>;
   onRemove: (copyId: string) => Promise<void>;
 }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const names = new Map(masters.map((master) => [master.id, master.name]));
+  const candidates = masters
+    .filter((master) =>
+      master.name.toLocaleLowerCase('ja').includes(search.toLocaleLowerCase('ja')),
+    )
+    .slice(0, 100);
   return (
     <section>
       <h2>登録済み {copies.length}枚</h2>
-      <button className="primary" onClick={() => void onAdd()}>
+      <button className="primary" onClick={() => setDialogOpen(true)}>
         DBから礼装を登録
       </button>
       <ul className="plain-list" aria-label="登録済み概念礼装">
         {copies.map((copy, index) => (
           <li key={copy.copyId}>
             <span>
-              <strong>{name}</strong> {index + 1}枚目 / Lv.{copy.level} / 未凸
+              <strong>{names.get(copy.craftEssenceId) ?? copy.craftEssenceId}</strong> {index + 1}
+              枚目 / Lv.{copy.level} / 未凸
             </span>
             <button onClick={() => void onRemove(copy.copyId)}>登録解除</button>
           </li>
         ))}
       </ul>
+      {dialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ce-dialog-title"
+          className="dialog"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setDialogOpen(false);
+          }}
+        >
+          <div className="dialog-panel">
+            <h2 id="ce-dialog-title">概念礼装を検索</h2>
+            <label>
+              礼装名
+              <input value={search} onChange={(event) => setSearch(event.target.value)} autoFocus />
+            </label>
+            <ul className="plain-list" aria-label="概念礼装DB検索結果">
+              {candidates.map((master) => (
+                <li key={master.id}>
+                  <span>{master.name}</span>
+                  <button
+                    onClick={() => {
+                      void onAdd(master.id);
+                      setDialogOpen(false);
+                    }}
+                  >
+                    登録
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setDialogOpen(false)}>閉じる</button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
