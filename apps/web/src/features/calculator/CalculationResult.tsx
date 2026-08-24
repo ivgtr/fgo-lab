@@ -161,7 +161,6 @@ export function CalculationResult({
           </tbody>
         </table>
         <footer className="result-card-foot">
-          <span className={`precision precision-${result.precision}`}>{result.precision}</span>
           <small>FGO Lab・DB {result.versions.masterDataVersion}</small>
         </footer>
       </article>

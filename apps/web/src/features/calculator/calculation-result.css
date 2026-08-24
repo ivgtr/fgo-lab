@@ -93,23 +93,9 @@
 .result-card-foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
   padding: 0.65rem 0.8rem;
-}
-.precision {
-  font:
-    750 0.65rem ui-monospace,
-    monospace;
-}
-.precision-exact {
-  color: #285c3e;
-}
-.precision-approximate {
-  color: #805718;
-}
-.precision-unsupported {
-  color: #881c2e;
 }
 .result-actions {
   display: grid;
