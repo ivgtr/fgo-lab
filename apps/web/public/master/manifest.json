@@ -1,0 +1,19 @@
+{
+  "manifestVersion": 1,
+  "masterDataVersion": "fixture-1",
+  "createdAt": "2026-08-24T00:00:00.000Z",
+  "source": { "name": "Atlas Academy", "region": "JP", "retrievedAt": "2026-08-24T00:00:00.000Z" },
+  "minimalAppVersion": "0.1.0",
+  "schemaVersion": 1,
+  "artifactKind": "diagnostic",
+  "imagesEnabled": false,
+  "files": [
+    {
+      "key": "master",
+      "file": "fixture.json",
+      "bytes": 0,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "required": true
+    }
+  ]
+}

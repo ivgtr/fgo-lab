@@ -1,0 +1,345 @@
+:root {
+  font-family: Inter, 'Noto Sans JP', system-ui, sans-serif;
+  color: #182033;
+  background: #f4f2ed;
+  font-synthesis: none;
+  --ink: #182033;
+  --muted: #687083;
+  --line: #ccd0d8;
+  --paper: #fff;
+  --accent: #9e283b;
+  --nav: #18233a;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+input,
+select,
+.file {
+  min-height: 44px;
+}
+button {
+  border: 1px solid #aeb4c0;
+  background: #fff;
+  color: var(--ink);
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+button:hover {
+  border-color: var(--accent);
+}
+:focus-visible {
+  outline: 3px solid #d8942d;
+  outline-offset: 2px;
+}
+.skip {
+  position: fixed;
+  left: 1rem;
+  top: -5rem;
+  z-index: 9;
+  background: white;
+  padding: 1rem;
+}
+.skip:focus {
+  top: 1rem;
+}
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+aside {
+  background: var(--nav);
+  color: #f7f8fb;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.brand {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 1.15rem;
+  padding: 0.25rem 0.4rem 1.5rem;
+}
+.brand span {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid #d0a868;
+}
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+aside nav button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+  color: #dce0e9;
+}
+aside nav button[aria-current='page'] {
+  background: #f7f8fb;
+  color: var(--nav);
+  font-weight: 700;
+  border-left: 4px solid var(--accent);
+}
+.utility {
+  margin-top: auto;
+  color: #bfc5d0;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+main {
+  padding: 2rem clamp(1rem, 4vw, 4rem);
+  max-width: 1440px;
+  width: 100%;
+}
+header {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1.6rem;
+}
+h1 {
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  margin: 0.2rem 0 1rem;
+}
+h2 {
+  font-size: 1.1rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  color: var(--accent);
+}
+.setup {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.setup section {
+  max-width: 560px;
+  border-top: 4px solid var(--accent);
+  padding: 2rem;
+  background: white;
+}
+.steps {
+  line-height: 2;
+  border-left: 1px solid var(--line);
+}
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 700;
+}
+.error,
+.danger {
+  color: #881c2e;
+}
+.danger {
+  margin-top: 2rem;
+  border-color: #881c2e;
+}
+.home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
+  gap: 1rem;
+}
+.home-grid section {
+  background: white;
+  border-top: 2px solid var(--line);
+  padding: 1.2rem;
+}
+.home-grid .primary-module {
+  grid-row: span 2;
+  border-top-color: var(--accent);
+  padding: clamp(1.3rem, 4vw, 2.5rem);
+}
+.hero-number {
+  font:
+    700 clamp(2.5rem, 7vw, 4.5rem)/1 ui-monospace,
+    monospace;
+  margin: 1.2rem 0;
+}
+.worksheet {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(390px, 0.9fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.worksheet > section,
+.master-detail > section {
+  background: var(--paper);
+  padding: 1.25rem;
+  border-top: 2px solid var(--line);
+}
+.input-list > div,
+dl > div {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #e0e2e7;
+}
+dd {
+  margin: 0;
+}
+.badge {
+  font:
+    600 0.75rem ui-monospace,
+    monospace;
+  border: 1px solid #66806a;
+  padding: 0.2rem 0.4rem;
+}
+.notice {
+  font-size: 0.84rem;
+  color: var(--muted);
+  border-left: 3px solid #aeb4c0;
+  padding: 0.6rem 0.8rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-variant-numeric: tabular-nums;
+}
+caption {
+  text-align: left;
+  font-weight: 700;
+  padding: 0.75rem 0;
+}
+th,
+td {
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+  padding: 0.75rem 0.55rem;
+}
+th:first-child {
+  text-align: left;
+}
+thead th {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+tbody tr[aria-current='true'] {
+  background: #f7e8e9;
+  border-left: 4px solid var(--accent);
+}
+td.average {
+  font-weight: 800;
+  color: #16233b;
+}
+.master-detail {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.2fr);
+  gap: 1rem;
+}
+.master-detail label,
+.toolbar label {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.list-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.empty {
+  padding: 2rem 0;
+  border-top: 1px solid var(--line);
+}
+.file {
+  display: block;
+  margin-top: 1rem;
+}
+.bottom-nav {
+  display: none;
+}
+@media (max-width: 760px) {
+  .shell {
+    display: block;
+    padding-bottom: 70px;
+  }
+  .shell > aside {
+    display: none;
+  }
+  main {
+    padding: 1rem;
+  }
+  .home-grid,
+  .worksheet,
+  .master-detail {
+    grid-template-columns: 1fr;
+  }
+  .home-grid .primary-module {
+    grid-row: auto;
+  }
+  .worksheet > section {
+    padding: 0.85rem;
+  }
+  .worksheet table {
+    font-size: 0.82rem;
+  }
+  .worksheet th,
+  .worksheet td {
+    padding: 0.65rem 0.25rem;
+  }
+  .bottom-nav {
+    position: fixed;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--nav);
+    z-index: 5;
+  }
+  .bottom-nav button {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #e4e7ed;
+    padding: 0.4rem 0.1rem;
+    font-size: 0.72rem;
+  }
+  .bottom-nav button[aria-current='page'] {
+    background: white;
+    color: var(--ink);
+    border-top: 4px solid var(--accent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

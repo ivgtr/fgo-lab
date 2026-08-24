@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist-types",
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/schema" },
+    { "path": "../../packages/master-data" },
+    { "path": "../../packages/calc-core" },
+    { "path": "../../packages/profile-domain" },
+    { "path": "../../packages/workspace-domain" }
+  ]
+}

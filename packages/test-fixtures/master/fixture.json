@@ -1,0 +1,46 @@
+{
+  "version": "fixture-1",
+  "servants": [
+    {
+      "id": "fixture-saber",
+      "name": "検証用セイバー",
+      "classId": "saber",
+      "rarity": 5,
+      "npCard": "buster",
+      "npTarget": "all",
+      "atkByLevel": { "1": 1700, "90": 10000, "100": 10950, "120": 12850 },
+      "npMultipliers": [300, 400, 450, 475, 500],
+      "attackNpFunctionType": "damageNp",
+      "traits": ["servant", "humanoid"],
+      "imageKey": null,
+      "growth": [
+        {
+          "from": "skill:1:1",
+          "to": "skill:1:2",
+          "materialId": "fixture-proof",
+          "amount": 5,
+          "qp": 100000
+        }
+      ]
+    }
+  ],
+  "craftEssences": [
+    {
+      "id": "fixture-ce",
+      "name": "検証用礼装",
+      "maxLevelByLimitBreak": [20, 35, 50, 65, 100],
+      "atkMin": 0,
+      "atkMax": 2000,
+      "imageKey": null
+    }
+  ],
+  "materials": [
+    {
+      "id": "fixture-proof",
+      "name": "検証の証",
+      "category": "skill",
+      "sortOrder": 1,
+      "imageKey": null
+    }
+  ]
+}
