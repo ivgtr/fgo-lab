@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { ServantBuild, ServantTarget } from '@fgo-lab/schema';
-import { MasterImage } from './MasterImage';
+import { MasterImage } from '../../ui/MasterImage';
+import './profile.css';
 
 export function Servants({
   servants,

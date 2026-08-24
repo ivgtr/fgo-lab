@@ -22,11 +22,12 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { createAttackerSkillSelection } from './calculation';
-import { numberFormatter } from './i18n';
-import { MasterImage } from './MasterImage';
+import { numberFormatter } from '../../ui/i18n';
+import { MasterImage } from '../../ui/MasterImage';
 import { AttackerPicker, CraftEssencePicker, SupportTemplatePicker } from './CalculatorPickers';
 import { collectSpecialTraitCandidates } from './specialTraits';
 import { CalculationResult } from './CalculationResult';
+import './calculator.css';
 
 export function Calculator({
   input,

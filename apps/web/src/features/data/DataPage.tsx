@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { APP_VERSION, type ProfileCollection, type UserDataBackup } from '@fgo-lab/schema';
-import { clearUserData } from './adapters/repository';
-import { exportBackup, importBackup } from './adapters/share';
+import { clearUserData } from '../../adapters/repository';
+import { exportBackup, importBackup } from '../../adapters/share';
+import './data.css';
 
 export function DataPage({
   profiles,

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { SupportTemplate } from '@fgo-lab/schema';
+import './profile.css';
 
 export function SupportTemplates({
   templates,

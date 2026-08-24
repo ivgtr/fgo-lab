@@ -5,9 +5,9 @@ import type {
   CalculationSelection,
   CalculationShareSnapshot,
 } from '@fgo-lab/schema';
-import { createShareFragment, resultCardPng } from './adapters/share';
-import { numberFormatter } from './i18n';
-import { MasterImage } from './MasterImage';
+import { createShareFragment, resultCardPng } from '../../adapters/share';
+import { numberFormatter } from '../../ui/i18n';
+import { MasterImage } from '../../ui/MasterImage';
 
 export function CalculationResult({
   input,

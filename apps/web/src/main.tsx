@@ -1,7 +1,8 @@
+import './app/foundation.css';
+import './ui/styles.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
-import './styles.css';
+import { App } from './app/App';
 
 const root = document.querySelector<HTMLDivElement>('#root');
 if (!root) throw new Error('root_missing');

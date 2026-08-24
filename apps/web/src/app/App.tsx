@@ -1,3 +1,4 @@
+import './shell.css';
 import { useEffect, useState } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
@@ -24,22 +25,22 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { IndexedDbProfileRepository } from './adapters/repository';
-import { t } from './i18n';
+import { IndexedDbProfileRepository } from '../adapters/repository';
+import { t } from '../ui/i18n';
 import {
   calculateResolvedDamage,
   completeCalculationSelection,
   createDefaultCalcInput,
-} from './calculation';
+} from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
-import { DataPage } from './DataPage';
-import { Calculator } from './Calculator';
-import { CraftEssences } from './CraftEssences';
-import { Growth } from './Growth';
-import { Home } from './Home';
-import { Ranking } from './Ranking';
-import { Servants } from './Servants';
-import { SupportTemplates } from './SupportTemplates';
+import { DataPage } from '../features/data/DataPage';
+import { Calculator } from '../features/calculator/Calculator';
+import { CraftEssences } from '../features/profile/CraftEssences';
+import { Growth } from '../features/growth/Growth';
+import { Home } from '../features/home/Home';
+import { Ranking } from '../features/ranking/Ranking';
+import { Servants } from '../features/profile/Servants';
+import { SupportTemplates } from '../features/profile/SupportTemplates';
 import { useProfileCollection } from './useProfileCollection';
 
 type Page = 'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';

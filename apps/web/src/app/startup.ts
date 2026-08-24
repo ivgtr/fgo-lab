@@ -12,9 +12,9 @@ import {
   loadActiveMaster,
   stageAndActivate,
   type ActiveMaster,
-} from './adapters/repository';
-import { readShareFragment } from './adapters/share';
-import { selectionFromShare } from './calculation';
+} from '../adapters/repository';
+import { readShareFragment } from '../adapters/share';
+import { selectionFromShare } from '../features/calculator/calculation';
 
 interface StartupOptions {
   baseUrl: string;

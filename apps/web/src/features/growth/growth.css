@@ -1,0 +1,32 @@
+.growth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(240px, 3fr);
+  gap: 1rem;
+  align-items: start;
+}
+.growth-layout tbody button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.growth-layout tbody button > span {
+  display: grid;
+}
+.growth-layout tbody button small {
+  color: var(--muted);
+}
+.usage-detail {
+  background: white;
+  border-top: 2px solid var(--line);
+  padding: 1rem;
+}
+
+@media (max-width: 760px) {
+  .growth-layout {
+    grid-template-columns: 1fr;
+  }
+}

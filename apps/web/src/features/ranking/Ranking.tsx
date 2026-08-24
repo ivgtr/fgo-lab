@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { VersionContext } from '@fgo-lab/schema';
-import { numberFormatter } from './i18n';
+import { numberFormatter } from '../../ui/i18n';
 import { useRanking } from './useRanking';
 import type { RankingCandidate } from './ranking.worker';
+import './ranking.css';
 
 export function Ranking({
   candidates,

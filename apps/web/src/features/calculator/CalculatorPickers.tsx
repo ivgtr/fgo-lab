@@ -5,7 +5,7 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import type { CraftEssenceCopy, ServantBuild, SupportTemplate } from '@fgo-lab/schema';
-import { MasterImage } from './MasterImage';
+import { MasterImage } from '../../ui/MasterImage';
 
 function trapModalKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: () => void) {
   if (event.key === 'Escape') {

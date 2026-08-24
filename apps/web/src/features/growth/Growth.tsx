@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import { calculateGrowthLedger, filterAndSortLedger } from '@fgo-lab/profile-domain';
 import type { activeProfile } from '@fgo-lab/profile-domain';
-import { MasterImage } from './MasterImage';
+import { MasterImage } from '../../ui/MasterImage';
+import './growth.css';
 
 export function Growth({
   master,

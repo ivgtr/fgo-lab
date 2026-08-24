@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import fixture from '../../../packages/test-fixtures/master/fixture.json';
+import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import type { CalculationShareSnapshot, VersionContext } from '@fgo-lab/schema';
 import {

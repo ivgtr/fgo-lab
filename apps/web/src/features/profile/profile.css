@@ -1,0 +1,117 @@
+.master-detail {
+  display: grid;
+  grid-template-columns: minmax(380px, 1.08fr) minmax(420px, 0.92fr);
+  gap: 1rem;
+}
+.mobile-back {
+  display: none;
+}
+
+.master-detail > section {
+  background: var(--paper);
+  padding: 1.25rem 1.4rem 1.5rem;
+  border-top: 2px solid var(--line);
+}
+
+.craft-essence-page {
+  min-width: 0;
+}
+
+.master-detail label,
+.master-detail > section:last-child > details {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  color: #40495b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.field-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.field-identity > span {
+  display: grid;
+  margin: 0;
+}
+
+.field-identity small,
+.list-row-state small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.list-row-state {
+  display: grid;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.servant-list {
+  max-height: min(68vh, 760px);
+  overflow: auto;
+  border-top: 1px solid var(--line);
+}
+.servant-list .list-row {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  min-height: 62px;
+  padding: 0.5rem 0.65rem;
+}
+.servant-list .list-row[aria-current='true'] {
+  border-left: 4px solid var(--accent);
+  background: #f7e8e9;
+}
+
+.detail-hero {
+  margin-top: 0.25rem;
+}
+.skill-field {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: 1rem !important;
+  border-bottom: 1px solid #e3e5e9;
+  padding-block: 0.55rem;
+}
+.skill-field input {
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .master-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .master-detail > section {
+    padding: 0.85rem;
+  }
+
+  .master-detail .detail-editor {
+    display: none;
+  }
+
+  .master-detail.mobile-detail-open .overview-pane {
+    display: none;
+  }
+
+  .master-detail.mobile-detail-open .detail-editor {
+    display: block;
+  }
+
+  .mobile-back {
+    display: inline-flex;
+    margin-bottom: 0.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    padding-inline: 0;
+  }
+
+  .entity-summary.detail-hero {
+    margin-top: 0;
+  }
+}

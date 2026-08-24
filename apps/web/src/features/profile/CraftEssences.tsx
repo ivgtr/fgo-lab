@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { deriveCraftEssenceAtk, type CraftEssenceMaster } from '@fgo-lab/master-data';
 import type { CraftEssenceCopy } from '@fgo-lab/schema';
-import { MasterImage } from './MasterImage';
+import { MasterImage } from '../../ui/MasterImage';
+import './profile.css';
 
 export function CraftEssences({
   copies,
@@ -36,7 +37,7 @@ export function CraftEssences({
     )
     .slice(0, 100);
   return (
-    <section className="ranking-page">
+    <section className="craft-essence-page">
       <h2>登録済み {copies.length}枚</h2>
       <button className="primary" onClick={() => setDialogOpen(true)}>
         DBから礼装を登録

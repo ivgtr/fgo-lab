@@ -1,5 +1,6 @@
-import { numberFormatter } from './i18n';
-import { MasterImage } from './MasterImage';
+import { numberFormatter } from '../../ui/i18n';
+import { MasterImage } from '../../ui/MasterImage';
+import './home.css';
 
 type HomeDestination = 'calculate' | 'servants' | 'growth' | 'ranking';
 
