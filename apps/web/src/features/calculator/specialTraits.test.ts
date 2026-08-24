@@ -53,7 +53,6 @@ describe('special trait candidates', () => {
           sourceName: '攻撃役',
           effectName: '竜特攻付与',
           imageKey: null,
-          effectLabel: '威力アップ・対竜',
           value: 0.3,
           modifierKind: 'powerMod',
         },

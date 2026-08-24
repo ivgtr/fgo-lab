@@ -1,0 +1,105 @@
+.attacker-skills {
+  margin-top: 1.25rem;
+}
+.attacker-skill-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.attacker-skill-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 78px auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 62px;
+  padding: 0.55rem 0;
+}
+.attacker-skill-copy {
+  min-width: 0;
+}
+.attacker-skill-copy > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.attacker-skill-copy strong {
+  font-size: 0.82rem;
+}
+.attacker-skill-copy p {
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.skill-state {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+.skill-state-saved {
+  color: #285c3e;
+}
+.skill-state-modified {
+  color: #805718;
+}
+.skill-state-added {
+  color: var(--accent);
+}
+.skill-level-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.skill-level-control select {
+  min-height: 38px;
+  padding: 0.35rem;
+}
+.skill-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.skill-toggle input {
+  width: 22px;
+  min-height: 22px;
+}
+.skill-reset {
+  min-height: 26px;
+  margin-top: 0.15rem;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  padding: 0;
+  font-size: 0.65rem;
+}
+
+@media (max-width: 760px) {
+  .attacker-skill-row {
+    grid-template-columns: 36px minmax(0, 1fr) 68px;
+    align-items: start;
+  }
+  .attacker-skill-row > .image-frame {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  .attacker-skill-copy {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .skill-level-control {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .skill-toggle {
+    grid-column: 3;
+    grid-row: 2;
+    min-height: 28px;
+  }
+}

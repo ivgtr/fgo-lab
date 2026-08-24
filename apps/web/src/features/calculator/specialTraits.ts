@@ -8,7 +8,6 @@ export interface SpecialTraitSource {
   sourceName: string;
   effectName: string;
   imageKey: string | null;
-  effectLabel: string;
   value: number | null;
   modifierKind: DamageTraitCondition['kind'];
 }
@@ -53,7 +52,6 @@ export function collectSpecialTraitCandidates({
           sourceName: effect.sourceName,
           effectName: effect.skillName,
           imageKey: effectSourceImage(effect, servants, craftEssence),
-          effectLabel: effect.label,
           value: effect.value,
           modifierKind: effect.damageTraitCondition.kind,
         });

@@ -94,24 +94,33 @@ export function calculateResolvedDamage(
   supportTemplate: SupportTemplate | undefined,
   master: MasterDataSnapshot,
   versions: VersionContext,
+  options: { releaseValidated: boolean },
 ) {
   const resolved = resolveCalculationInput(baseInput, selection, supportTemplate, master);
   const calculation = calculateNpDamage(resolved.input, versions);
+  const result = {
+    ...calculation,
+    precision:
+      resolved.precision === 'unsupported'
+        ? ('unsupported' as const)
+        : resolved.precision === 'approximate' || calculation.precision === 'approximate'
+          ? ('approximate' as const)
+          : calculation.precision,
+    warnings: [...calculation.warnings, ...resolved.warnings],
+    trace: [...calculation.trace, ...resolved.trace],
+  };
   return {
     input: resolved.input,
     effects: resolved.effects,
     effectWarnings: resolved.warnings,
-    result: {
-      ...calculation,
-      precision:
-        resolved.precision === 'unsupported'
-          ? ('unsupported' as const)
-          : resolved.precision === 'approximate' || calculation.precision === 'approximate'
-            ? ('approximate' as const)
-            : calculation.precision,
-      warnings: [...calculation.warnings, ...resolved.warnings],
-      trace: [...calculation.trace, ...resolved.trace],
-    },
+    result: options.releaseValidated
+      ? result
+      : {
+          ...result,
+          precision:
+            result.precision === 'unsupported' ? result.precision : ('approximate' as const),
+          warnings: [...new Set([...result.warnings, 'diagnostic_fixture_not_release_validated'])],
+        },
   };
 }
 
@@ -180,6 +189,67 @@ export function createAttackerSkillSelection(
     skillLevel: source === 'owned' ? (build?.skills[String(index + 1)] ?? 1) : 10,
     enabled: false,
   }));
+}
+
+export function selectCalculationAttacker(
+  input: CalcInput,
+  selection: CalculationSelection,
+  servant: ServantMaster,
+  source: CalculationSelection['attackerSource'],
+  build: ServantBuild | undefined,
+): { input: CalcInput; selection: CalculationSelection } {
+  const manualOverrides = new Set(selection.manualOverrides ?? []);
+  const level = build?.level ?? 90;
+  return {
+    input: {
+      ...input,
+      attackerId: servant.id,
+      attackerLevel: level,
+      attackerAtk: manualOverrides.has('attackerAtk')
+        ? input.attackerAtk
+        : (servant.atkByLevel[String(level)] ?? servant.atkByLevel['90'] ?? input.attackerAtk),
+      fouAtk: manualOverrides.has('fouAtk') ? input.fouAtk : (build?.fouAtk ?? 1000),
+      npLevel: Math.max(1, build?.npLevel ?? 1),
+      npMultipliers: servant.npMultipliers,
+      attackNpFunctionType: servant.attackNpFunctionType,
+      cardType: servant.npCard,
+      classAttackRate: manualOverrides.has('classAttackRate')
+        ? input.classAttackRate
+        : classAttackRate(servant.classId),
+    },
+    selection: {
+      ...selection,
+      attackerSource: source,
+      attackerSkills: createAttackerSkillSelection(servant, source, build),
+    },
+  };
+}
+
+export function setCalculationEffectMode(
+  input: CalcInput,
+  selection: CalculationSelection,
+  effectMode: CalculationSelection['effectMode'],
+): { input: CalcInput; selection: CalculationSelection } {
+  if (effectMode === 'manual') return { input, selection: { ...selection, effectMode } };
+  return {
+    input: {
+      ...input,
+      attackBuff: 0,
+      defenseBuff: 0,
+      cardBuff: 0,
+      cardResistance: 0,
+      npDamageBuff: 0,
+      npResistance: 0,
+      powerMod: 0,
+      eventDamageBuff: 0,
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
+      specialDamageBuff: 0,
+      specialResistance: 0,
+      flatDamage: 0,
+      damageCut: 0,
+    },
+    selection: { ...selection, effectMode },
+  };
 }
 
 export function selectionFromShare(shared: CalculationShareSnapshot): CalculationSelection {

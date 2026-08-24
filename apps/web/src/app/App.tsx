@@ -194,12 +194,13 @@ export function App() {
     );
   const currentMaster = master;
   const profile = activeProfile(profiles);
-  const servant = currentMaster.servants[0]!;
-  const build = profile.servantBuilds[servant.id];
-  const baseInput = calculation.input ?? createDefaultCalcInput(currentMaster, build);
-  const selectedAttacker = currentMaster.servants.find(
-    (candidate) => candidate.id === baseInput.attackerId,
-  );
+  const defaultServant = currentMaster.servants[0]!;
+  const defaultBuild = profile.servantBuilds[defaultServant.id];
+  const baseInput = calculation.input ?? createDefaultCalcInput(currentMaster, defaultBuild);
+  const selectedAttacker =
+    currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
+    defaultServant;
+  const selectedBuild = profile.servantBuilds[selectedAttacker.id];
   const currentSelection = completeCalculationSelection(
     calculation.selection,
     selectedAttacker,
@@ -219,21 +220,16 @@ export function App() {
     calculation.support,
     currentMaster,
     versions,
+    { releaseValidated: ENGINE_RELEASE_VALIDATED },
   );
   const input = resolvedCalculation.input;
-  const calculatedResult = resolvedCalculation.result;
   const compatibleSharedSnapshot =
     calculation.shared?.result.versions.masterDataVersion === currentMaster.version &&
     calculation.shared.result.versions.engineVersion === ENGINE_VERSION;
-  const localResult = !ENGINE_RELEASE_VALIDATED
-    ? {
-        ...calculatedResult,
-        precision: 'approximate' as const,
-        warnings: [...calculatedResult.warnings, 'diagnostic_fixture_not_release_validated'],
-      }
-    : calculatedResult;
   const result =
-    calculation.shared && !compatibleSharedSnapshot ? calculation.shared.result : localResult;
+    calculation.shared && !compatibleSharedSnapshot
+      ? calculation.shared.result
+      : resolvedCalculation.result;
   async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) => patchServantBuild(current, servantId, patch, now));
@@ -301,16 +297,9 @@ export function App() {
       supportTemplate,
       currentMaster,
       versions,
+      { releaseValidated: ENGINE_RELEASE_VALIDATED },
     );
     const resolvedInput = nextCalculation.input;
-    const nextCalculated = nextCalculation.result;
-    const nextResult = !ENGINE_RELEASE_VALIDATED
-      ? {
-          ...nextCalculated,
-          precision: 'approximate' as const,
-          warnings: [...nextCalculated.warnings, 'diagnostic_fixture_not_release_validated'],
-        }
-      : nextCalculated;
     const fingerprint = await inputFingerprint(
       resolvedInput,
       currentMaster.version,
@@ -324,7 +313,7 @@ export function App() {
         profileId: current.profileId,
         calculationSessionId,
         input: nextInput,
-        result: nextResult,
+        result: nextCalculation.result,
         inputFingerprint: fingerprint,
         supportTemplate: supportTemplate ?? null,
         selection,
@@ -404,9 +393,9 @@ export function App() {
         {page === 'home' && (
           <Home
             result={result.results[input.npLevel - 1]?.average ?? 0}
-            attackerName={servant.name}
-            attackerImage={servant.imageKey}
-            owned={build?.npLevel ? 1 : 0}
+            attackerName={selectedAttacker.name}
+            attackerImage={selectedAttacker.imageKey}
+            owned={selectedBuild?.npLevel ? 1 : 0}
             hasHistory={profile.history.length > 0}
             onNavigate={(next) => void navigate(next)}
           />

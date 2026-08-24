@@ -13,7 +13,6 @@ const source: SpecialTraitSource = {
   sourceName: '攻撃役',
   effectName: '効果元',
   imageKey: null,
-  effectLabel: '威力アップ・対竜',
   value: 0.3,
   modifierKind: 'powerMod',
 };
@@ -28,19 +27,12 @@ describe('special trait presentation', () => {
     ).toBe('セイバー');
   });
 
-  it('uses external effect wording as a fallback without exposing unknown identifiers', () => {
+  it('does not infer a condition name from mutable external wording', () => {
     expect(
       specialTraitLabel({
         trait: 'newTrait',
         matchesWhenPresent: true,
-        sources: [{ ...source, effectLabel: '威力アップ・対新特性' }],
-      }),
-    ).toBe('新特性');
-    expect(
-      specialTraitLabel({
-        trait: 'unlabeledTrait',
-        matchesWhenPresent: true,
-        sources: [{ ...source, effectLabel: '解析できない効果' }],
+        sources: [source],
       }),
     ).toBe('未登録条件');
     expect(traitLabel('trait:unregistered')).toBe('未登録条件');

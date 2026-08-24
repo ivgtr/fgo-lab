@@ -15,7 +15,7 @@ import type {
   ServantBuild,
   SupportTemplate,
 } from '@fgo-lab/schema';
-import { createAttackerSkillSelection } from './calculation';
+import { selectCalculationAttacker, setCalculationEffectMode } from './calculation';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
 import { AttackerPicker, CraftEssencePicker, SupportTemplatePicker } from './CalculatorPickers';
@@ -27,8 +27,10 @@ import {
   traitLabel,
 } from './specialTraitPresentation';
 import { CalculationResult } from './CalculationResult';
-import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffectStacks';
+import { collectDamageEffectStacks } from './damageEffectStacks';
 import { ModifierChip } from './ModifierChip';
+import { AttackerSkills } from './AttackerSkills';
+import { EffectiveInputDetails } from './EffectiveInputDetails';
 import './calculator.css';
 import './calculator-form.css';
 
@@ -195,57 +197,13 @@ export function Calculator({
     );
   }
   function changeEffectMode(effectMode: 'resolved' | 'manual') {
-    const nextInput =
-      effectMode === 'resolved'
-        ? {
-            ...input,
-            attackBuff: 0,
-            defenseBuff: 0,
-            cardBuff: 0,
-            cardResistance: 0,
-            npDamageBuff: 0,
-            npResistance: 0,
-            powerMod: 0,
-            eventDamageBuff: 0,
-            npSpecialMultipliers: [1, 1, 1, 1, 1] as CalcInput['npSpecialMultipliers'],
-            specialDamageBuff: 0,
-            specialResistance: 0,
-            flatDamage: 0,
-            damageCut: 0,
-          }
-        : input;
-    void onCompositionChange(nextInput, { ...selection, effectMode });
+    const next = setCalculationEffectMode(input, selection, effectMode);
+    void onCompositionChange(next.input, next.selection);
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
-    const level = saved?.level ?? 90;
-    void onCompositionChange(
-      {
-        ...input,
-        attackerId: candidate.id,
-        attackerLevel: level,
-        attackerAtk: manualOverrides.has('attackerAtk')
-          ? input.attackerAtk
-          : (candidate.atkByLevel[String(level)] ??
-            candidate.atkByLevel['90'] ??
-            input.attackerAtk),
-        fouAtk: manualOverrides.has('fouAtk') ? input.fouAtk : (saved?.fouAtk ?? 1000),
-        npLevel: Math.max(1, saved?.npLevel ?? 1),
-        npMultipliers: candidate.npMultipliers,
-        attackNpFunctionType: candidate.attackNpFunctionType,
-        cardType: candidate.npCard,
-        classAttackRate: manualOverrides.has('classAttackRate')
-          ? input.classAttackRate
-          : resolveClassAttackRate(candidate.classId),
-        classAffinity: input.classAffinity,
-        attributeAffinity: input.attributeAffinity,
-      },
-      {
-        ...selection,
-        attackerSource: source,
-        attackerSkills: createAttackerSkillSelection(candidate, source, saved),
-      },
-    );
+    const next = selectCalculationAttacker(input, selection, candidate, source, saved);
+    void onCompositionChange(next.input, next.selection);
     closeAttackerDialog();
   }
   function selectCraftEssence(
@@ -765,240 +723,21 @@ export function Calculator({
             </>
           )}
         </div>
-        <section
-          className="attacker-skills"
-          aria-label="攻撃役の自身スキル"
+        <AttackerSkills
+          attacker={attacker}
+          attackerSource={selection.attackerSource}
+          selectedSkills={selection.attackerSkills ?? []}
+          savedBuild={builds[input.attackerId]}
+          resolvedEffects={attackerSkillEffects}
+          warnings={effectWarnings}
           hidden={mode === 'direct'}
-        >
-          <div className="section-heading compact-heading">
-            <div>
-              <p className="eyebrow">SELF SKILLS</p>
-              <h3>攻撃役の自身スキル</h3>
-            </div>
-            <small>変更はこの計算だけ</small>
-          </div>
-          {(selection.attackerSkills ?? []).length === 0 ? (
-            <p className="notice">展開できる自身スキルがありません。</p>
-          ) : (
-            <ul className="plain-list attacker-skill-list">
-              {(selection.attackerSkills ?? []).map((selectedSkill, index) => {
-                const skill = attacker?.skills.find(
-                  (candidate) => candidate.id === selectedSkill.skillId,
-                );
-                if (!skill) return null;
-                const savedLevel =
-                  selection.attackerSource === 'owned'
-                    ? (builds[input.attackerId]?.skills[String(index + 1)] ?? 1)
-                    : 10;
-                const modified = selectedSkill.skillLevel !== savedLevel;
-                const effects = attackerSkillEffects.filter(
-                  (effect) => effect.skillId === skill.id,
-                );
-                const state = modified
-                  ? 'modified'
-                  : selection.attackerSource === 'owned'
-                    ? 'saved'
-                    : 'added';
-                const stateLabel =
-                  state === 'modified' ? '一時変更' : state === 'saved' ? '保存値' : '仮想値';
-                const effectSummary = skill.effects.map((effect) => {
-                  const resolved = effects.find((candidate) => candidate.effectId === effect.id);
-                  if (!selectedSkill.enabled) return effect.label;
-                  if (resolved?.applied && resolved.value !== null)
-                    return `${effect.label} ${resolved.value.toLocaleString('ja-JP', {
-                      style: 'percent',
-                      signDisplay: 'always',
-                      maximumFractionDigits: 1,
-                    })}`;
-                  if (resolved?.reason === 'not_np_damage_relevant')
-                    return `${effect.label}（宝具火力外）`;
-                  if (resolved?.reason === 'card_type_mismatch')
-                    return `${effect.label}（カード不一致）`;
-                  if (resolved?.reason === 'attacker_trait_mismatch')
-                    return `${effect.label}（攻撃役の特性不一致）`;
-                  if (resolved?.reason === 'target_trait_mismatch')
-                    return `${effect.label}（対象特性なし）`;
-                  return `${effect.label}（未対応）`;
-                });
-                return (
-                  <li key={skill.id} className="attacker-skill-row" data-state={state}>
-                    <MasterImage
-                      src={skill.imageKey}
-                      alt=""
-                      fallback={skill.name}
-                      className="skill-icon"
-                    />
-                    <div className="attacker-skill-copy">
-                      <div>
-                        <strong>
-                          スキル{index + 1}：{skill.name}
-                        </strong>
-                        <small className={`skill-state skill-state-${state}`}>{stateLabel}</small>
-                      </div>
-                      <p>{effectSummary.join('・')}</p>
-                      {modified ? (
-                        <button
-                          type="button"
-                          className="skill-reset"
-                          onClick={() => changeAttackerSkill(skill.id, { skillLevel: savedLevel })}
-                        >
-                          {selection.attackerSource === 'owned'
-                            ? `保存Lv${savedLevel}へ戻す`
-                            : `既定Lv${savedLevel}へ戻す`}
-                        </button>
-                      ) : null}
-                    </div>
-                    <label className="skill-level-control">
-                      <span>Lv</span>
-                      <select
-                        value={selectedSkill.skillLevel}
-                        onChange={(event) =>
-                          changeAttackerSkill(skill.id, {
-                            skillLevel: Number(event.target.value),
-                          })
-                        }
-                        aria-label={`${skill.name}のスキルレベル`}
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                          <option key={value} value={value}>
-                            {value}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="skill-toggle">
-                      <input
-                        type="checkbox"
-                        checked={selectedSkill.enabled}
-                        onChange={(event) =>
-                          changeAttackerSkill(skill.id, { enabled: event.target.checked })
-                        }
-                        aria-label={`${skill.name}を使用`}
-                      />
-                      適用
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {effectWarnings
-            .filter((warning) => warning.startsWith('attacker_'))
-            .map((warning) => (
-              <p className="notice" key={warning}>
-                未解決: {warning}
-              </p>
-            ))}
-        </section>
-        <section className="automatic-abilities" aria-label="計算に使用する最終値">
-          <details className="effective-input-details">
-            <summary>
-              <strong>計算に使用する最終値</strong>
-              <small>{mode === 'quick' ? 'マスターと対象から解決' : '入力値をそのまま使用'}</small>
-            </summary>
-            <dl className="automatic-modifiers">
-              <div>
-                <dt>合計ATK</dt>
-                <dd>
-                  {numberFormatter.format(
-                    resolvedInput.attackerAtk +
-                      resolvedInput.fouAtk +
-                      resolvedInput.craftEssenceAtk,
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>クラス攻撃補正</dt>
-                <dd>{resolvedInput.classAttackRate.toFixed(2)}倍</dd>
-              </div>
-              <div>
-                <dt>クラス相性</dt>
-                <dd>{resolvedInput.classAffinity.toFixed(2)}倍</dd>
-              </div>
-              <div>
-                <dt>属性相性</dt>
-                <dd>{resolvedInput.attributeAffinity.toFixed(2)}倍</dd>
-              </div>
-              <div>
-                <dt>攻撃バフ／敵防御</dt>
-                <dd>
-                  {(resolvedInput.attackBuff * 100).toFixed(1)}%／
-                  {(resolvedInput.defenseBuff * 100).toFixed(1)}%
-                </dd>
-              </div>
-              <div>
-                <dt>{resolvedInput.cardType.toUpperCase()}性能／耐性</dt>
-                <dd>
-                  {(resolvedInput.cardBuff * 100).toFixed(1)}%／
-                  {(resolvedInput.cardResistance * 100).toFixed(1)}%
-                </dd>
-              </div>
-              <div>
-                <dt>宝具威力／耐性</dt>
-                <dd>
-                  {(resolvedInput.npDamageBuff * 100).toFixed(1)}%／
-                  {(resolvedInput.npResistance * 100).toFixed(1)}%
-                </dd>
-              </div>
-              <div>
-                <dt>特攻状態＋イベント</dt>
-                <dd>
-                  {((resolvedInput.powerMod + resolvedInput.eventDamageBuff) * 100).toFixed(1)}%
-                </dd>
-              </div>
-              <div>
-                <dt>NP{resolvedInput.npLevel} 特攻宝具</dt>
-                <dd>
-                  {(
-                    (resolvedInput.npSpecialMultipliers[resolvedInput.npLevel - 1] ?? 1) * 100
-                  ).toFixed(1)}
-                  %
-                </dd>
-              </div>
-              <div>
-                <dt>特殊威力／特殊耐性</dt>
-                <dd>
-                  {(resolvedInput.specialDamageBuff * 100).toFixed(1)}%／
-                  {(resolvedInput.specialResistance * 100).toFixed(1)}%
-                </dd>
-              </div>
-              <div>
-                <dt>固定ダメージ／軽減</dt>
-                <dd>
-                  {numberFormatter.format(resolvedInput.flatDamage)}／
-                  {numberFormatter.format(resolvedInput.damageCut)}
-                </dd>
-              </div>
-            </dl>
-            {mode === 'quick' && damageEffectStacks.length ? (
-              <fieldset className="modifier-group">
-                <legend>火力効果の内訳</legend>
-                <ul className="modifier-chip-list">
-                  {damageEffectStacks.map((stack) => (
-                    <ModifierChip
-                      key={stack.kind}
-                      active={stack.sources.some((source) => source.applied)}
-                      label={stack.label}
-                      detail={stack.sources
-                        .map((source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`)
-                        .join('・')}
-                      sources={stack.sources.map((source) => ({
-                        key: source.key,
-                        label: `${source.sourceName}・${source.effectName} ${damageEffectStateLabel(source)}`,
-                        imageKey: source.imageKey,
-                      }))}
-                    />
-                  ))}
-                </ul>
-              </fieldset>
-            ) : mode === 'quick' ? (
-              <p className="notice">自動適用される宝具火力能力はありません。</p>
-            ) : null}
-          </details>
-          {mode === 'direct' ? (
-            <p className="notice">直接入力ではパッシブ・スキル・礼装効果を自動加算しません。</p>
-          ) : null}
-        </section>
+          onChange={changeAttackerSkill}
+        />
+        <EffectiveInputDetails
+          input={resolvedInput}
+          mode={mode}
+          damageEffectStacks={damageEffectStacks}
+        />
         <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>
           <div className="section-heading compact-heading">
             <div>

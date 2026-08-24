@@ -1,0 +1,46 @@
+.automatic-abilities {
+  margin-top: 1.25rem;
+}
+.effective-input-details {
+  margin-bottom: 0.85rem;
+}
+.effective-input-details summary {
+  cursor: pointer;
+}
+.effective-input-details summary small {
+  margin-inline-start: 0.75rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+.effective-input-details[open] summary {
+  margin-bottom: 0.65rem;
+}
+.automatic-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1rem;
+  margin: 0 0 0.75rem;
+}
+.automatic-modifiers > div {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 0.2rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  white-space: nowrap;
+}
+.automatic-modifiers dt,
+.automatic-modifiers dd {
+  margin: 0;
+}
+.automatic-modifiers dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.automatic-modifiers dd {
+  font-weight: 800;
+}
