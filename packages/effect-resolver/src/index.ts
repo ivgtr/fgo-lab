@@ -375,7 +375,7 @@ export function resolveNpEffects(
         skillId: `np:${servant.id}:special`,
         skillName: '特攻宝具',
         effectId: `np-special:${servant.id}`,
-        label: `${special.targetCondition.anyOf.join('・')}特攻`,
+        label: '特攻宝具',
         value: selectedMultiplier,
         kind: null,
         damageTraitCondition: { kind: 'npSpecial', condition: special.targetCondition },

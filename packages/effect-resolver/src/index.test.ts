@@ -386,7 +386,11 @@ describe('automatic equipment, passive, and NP effects', () => {
       attacker,
     );
     expect(matched.input.npSpecialMultipliers).toEqual([1.7, 1.95, 2.075, 2.138, 2.2]);
-    expect(matched.effects.at(-1)).toMatchObject({ applied: true, reason: 'target_trait_matched' });
+    expect(matched.effects.at(-1)).toMatchObject({
+      label: '特攻宝具',
+      applied: true,
+      reason: 'target_trait_matched',
+    });
     const missed = resolveNpEffects(input, attacker);
     expect(missed.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
     expect(missed.effects.at(-1)).toMatchObject({

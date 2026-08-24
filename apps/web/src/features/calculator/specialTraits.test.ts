@@ -42,24 +42,24 @@ describe('special trait candidates', () => {
       craftEssence: undefined,
     });
 
-    expect(candidates).toEqual([
-      {
-        trait: 'dragon',
-        matchesWhenPresent: true,
-        sources: [
-          {
-            key: 'attacker:servant-1:skill-1:dragon-power',
-            origin: 'attacker',
-            sourceName: '攻撃役',
-            effectName: '竜特攻付与',
-            imageKey: null,
-            effectLabel: '威力アップ・対竜',
-            value: 0.3,
-            modifierKind: 'powerMod',
-          },
-        ],
-      },
-    ]);
+    expect(candidates).toHaveLength(2);
+    expect(candidates[0]).toEqual({
+      trait: 'dragon',
+      matchesWhenPresent: true,
+      sources: [
+        {
+          key: 'attacker:servant-1:skill-1:dragon-power',
+          origin: 'attacker',
+          sourceName: '攻撃役',
+          effectName: '竜特攻付与',
+          imageKey: null,
+          effectLabel: '威力アップ・対竜',
+          value: 0.3,
+          modifierKind: 'powerMod',
+        },
+      ],
+    });
+    expect(candidates[1]).toMatchObject({ trait: 'trait:internal', matchesWhenPresent: true });
   });
 
   it('exposes every alternative trait from a multi-trait damage condition', () => {

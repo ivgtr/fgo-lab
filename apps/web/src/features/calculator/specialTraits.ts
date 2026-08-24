@@ -43,7 +43,6 @@ export function collectSpecialTraitCandidates({
       })),
     ];
     for (const { trait, matchesWhenPresent } of conditionedTraits) {
-      if (trait.startsWith('trait:')) continue;
       const candidateKey = `${matchesWhenPresent ? 'has' : 'not'}:${trait}`;
       const candidate = candidates.get(candidateKey) ?? { trait, matchesWhenPresent, sources: [] };
       const key = `${effect.origin}:${effect.sourceId}:${effect.skillId}:${effect.effectId}`;

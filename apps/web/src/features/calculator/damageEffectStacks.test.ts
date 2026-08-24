@@ -67,4 +67,25 @@ describe('damage effect stacks', () => {
     expect(damageEffectStateLabel(stacks[0]!.sources[0]!)).toBe('カード不一致');
     expect(damageEffectStateLabel(stacks[1]!.sources[0]!)).toBe('未対応');
   });
+
+  it('translates structured damage conditions without exposing master identifiers', () => {
+    const stacks = collectDamageEffectStacks({
+      effects: [
+        effect({
+          origin: 'np',
+          label: '特攻宝具',
+          kind: null,
+          damageTraitCondition: {
+            kind: 'npSpecial',
+            condition: { anyOf: ['buffCharm'], noneOf: [] },
+          },
+        }),
+      ],
+      servants: [],
+      craftEssence: undefined,
+    });
+
+    expect(stacks[0]?.sources[0]?.effectLabel).toBe('魅了特攻');
+    expect(stacks[0]?.sources[0]?.effectLabel).not.toContain('buffCharm');
+  });
 });

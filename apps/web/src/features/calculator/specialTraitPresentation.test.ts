@@ -3,6 +3,7 @@ import {
   specialTraitLabel,
   specialTraitSourceLabel,
   specialTraitValueLabel,
+  traitLabel,
 } from './specialTraitPresentation';
 import type { SpecialTraitSource } from './specialTraits';
 
@@ -27,7 +28,7 @@ describe('special trait presentation', () => {
     ).toBe('セイバー');
   });
 
-  it('uses external effect wording only as a fallback and identifies unknown traits', () => {
+  it('uses external effect wording as a fallback without exposing unknown identifiers', () => {
     expect(
       specialTraitLabel({
         trait: 'newTrait',
@@ -41,7 +42,8 @@ describe('special trait presentation', () => {
         matchesWhenPresent: true,
         sources: [{ ...source, effectLabel: '解析できない効果' }],
       }),
-    ).toBe('特殊条件（unlabeledTrait）');
+    ).toBe('未登録条件');
+    expect(traitLabel('trait:unregistered')).toBe('未登録条件');
   });
 
   it('labels an excluded trait without parsing effect text', () => {
