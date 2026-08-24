@@ -8,11 +8,13 @@ import './ranking.css';
 export function Ranking({
   candidates,
   versions,
+  releaseValidated,
 }: {
   candidates: RankingCandidate[];
   versions: VersionContext;
+  releaseValidated: boolean;
 }) {
-  const ranking = useRanking(candidates, versions);
+  const ranking = useRanking(candidates, versions, releaseValidated);
   const [classId, setClassId] = useState('any');
   const [card, setCard] = useState('any');
   const [target, setTarget] = useState('any');

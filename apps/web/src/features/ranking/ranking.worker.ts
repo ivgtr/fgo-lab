@@ -18,6 +18,7 @@ export interface RankingRequest {
   requestId: string;
   candidates: RankingCandidate[];
   versions: VersionContext;
+  releaseValidated: boolean;
 }
 export interface RankingRow {
   servantId: string;
@@ -60,7 +61,9 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
       minimum: current.minimum,
       maximum: current.maximum,
       precision:
-        result.precision === 'approximate' || candidate.resolutionPrecision === 'approximate'
+        !event.data.releaseValidated ||
+        result.precision === 'approximate' ||
+        candidate.resolutionPrecision === 'approximate'
           ? 'approximate'
           : 'exact',
       classId: candidate.classId,

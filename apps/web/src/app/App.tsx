@@ -485,6 +485,7 @@ export function App() {
                 };
               })}
             versions={versions}
+            releaseValidated={ENGINE_RELEASE_VALIDATED}
           />
         )}{' '}
         {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
