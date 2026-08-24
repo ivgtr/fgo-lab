@@ -18,7 +18,7 @@ import {
   loadActiveMaster,
   stageAndActivate,
 } from './adapters/repository';
-import { exportBackup, importBackup } from './adapters/share';
+import { createShareFragment, exportBackup, importBackup, resultCardPng } from './adapters/share';
 import { numberFormatter, t } from './i18n';
 
 type Page = 'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
@@ -319,6 +319,41 @@ function Calculator({
   input: CalcInput;
   result: ReturnType<typeof calculateNpDamage>;
 }) {
+  const [message, setMessage] = useState('');
+  const snapshot = {
+    kind: 'fgo-lab-calculation-share' as const,
+    schemaVersion: 1 as const,
+    sharedAt: new Date().toISOString(),
+    input,
+    result,
+  };
+  async function copyUrl() {
+    try {
+      const url = new URL(location.href);
+      url.hash = createShareFragment(snapshot);
+      await navigator.clipboard.writeText(url.toString());
+      setMessage('共有URLをコピーしました');
+    } catch (cause) {
+      setMessage(
+        cause instanceof RangeError
+          ? 'URLが長いため共有専用JSONまたは画像を使用してください'
+          : 'URLをコピーできませんでした',
+      );
+    }
+  }
+  async function saveImage() {
+    try {
+      const url = URL.createObjectURL(await resultCardPng(snapshot));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'fgo-lab-result.png';
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage('結果画像を保存しました');
+    } catch {
+      setMessage('画像を保存できません。結果カードをスクリーンショットしてください。');
+    }
+  }
   return (
     <div className="worksheet">
       <section>
@@ -372,6 +407,11 @@ function Calculator({
             ))}
           </tbody>
         </table>
+        <div className="toolbar">
+          <button onClick={() => void saveImage()}>画像として保存</button>
+          <button onClick={() => void copyUrl()}>URLをコピー</button>
+        </div>
+        <p aria-live="polite">{message}</p>
         <details>
           <summary>計算内訳・仮定</summary>
           <ul>
