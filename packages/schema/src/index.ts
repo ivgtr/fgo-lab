@@ -194,6 +194,38 @@ export const profileCollectionSchema = z.object({
 });
 export type ProfileCollection = z.infer<typeof profileCollectionSchema>;
 
+export function parseStoredProfileCollection(value: unknown): {
+  collection: ProfileCollection;
+  upgraded: boolean;
+} {
+  const current = profileCollectionSchema.safeParse(value);
+  if (current.success) return { collection: current.data, upgraded: false };
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    (value as Record<string, unknown>)['schemaVersion'] !== 1
+  )
+    throw current.error;
+
+  const stored = value as Record<string, unknown>;
+  const storedProfiles: unknown = stored['profiles'];
+  const profiles = Array.isArray(storedProfiles)
+    ? (storedProfiles as unknown[]).map((profile) =>
+        profile && typeof profile === 'object'
+          ? { ...(profile as Record<string, unknown>), draft: null, history: [] }
+          : profile,
+      )
+    : storedProfiles;
+  return {
+    collection: profileCollectionSchema.parse({
+      ...stored,
+      schemaVersion: SCHEMA_VERSION,
+      profiles,
+    }),
+    upgraded: true,
+  };
+}
+
 export const userDataBackupSchema = z.object({
   kind: z.literal('fgo-lab-user-backup'),
   schemaVersion: z.literal(SCHEMA_VERSION),

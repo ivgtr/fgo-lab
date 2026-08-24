@@ -15,7 +15,16 @@ describe('profile collection state owner', () => {
   it('serializes concurrent updates against the latest committed collection', async () => {
     let stored: ProfileCollection | undefined;
     const repository: ProfileRepository = {
-      load: () => Promise.resolve(stored),
+      load: () =>
+        Promise.resolve(
+          stored
+            ? {
+                state: 'ready' as const,
+                collection: stored,
+                discardedCalculationSnapshots: false,
+              }
+            : { state: 'empty' as const },
+        ),
       replace: async (collection) => {
         await Promise.resolve();
         stored = collection;

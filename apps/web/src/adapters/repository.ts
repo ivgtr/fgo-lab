@@ -6,7 +6,7 @@ import {
   validateMasterSnapshot,
 } from '@fgo-lab/master-data';
 import type { ProfileCollection } from '@fgo-lab/schema';
-import { profileCollectionSchema } from '@fgo-lab/schema';
+import { parseStoredProfileCollection, profileCollectionSchema } from '@fgo-lab/schema';
 import type { ProfileRepository } from '@fgo-lab/profile-domain';
 
 interface LabDb extends DBSchema {
@@ -28,8 +28,16 @@ function database() {
 }
 export class IndexedDbProfileRepository implements ProfileRepository {
   async load() {
-    const value = await (await database()).get('user', 'profiles');
-    return value === undefined ? undefined : profileCollectionSchema.parse(value);
+    const db = await database();
+    const value = await db.get('user', 'profiles');
+    if (value === undefined) return { state: 'empty' as const };
+    const stored = parseStoredProfileCollection(value);
+    if (stored.upgraded) await db.put('user', stored.collection, 'profiles');
+    return {
+      state: 'ready' as const,
+      collection: stored.collection,
+      discardedCalculationSnapshots: stored.upgraded,
+    };
   }
   async replace(collection: ProfileCollection) {
     await (await database()).put('user', profileCollectionSchema.parse(collection), 'profiles');

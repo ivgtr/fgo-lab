@@ -292,6 +292,102 @@ test('discards an incompatible master cache without deleting user data', async (
   expect(discardedState).toEqual({ hasActiveMaster: false, profileId });
 });
 
+test('upgrades v1 profiles without blocking startup', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop project covers IndexedDB profile migration');
+  const pageErrors: Error[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error));
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('user', 'readwrite');
+          const store = transaction.objectStore('user');
+          const profilesRequest = store.get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            resolve();
+            db.close();
+          };
+          profilesRequest.onsuccess = () => {
+            const collection = profilesRequest.result as {
+              schemaVersion: number;
+              profiles: Array<Record<string, unknown>>;
+            };
+            const profile = collection.profiles[0]!;
+            collection.schemaVersion = 1;
+            profile['servantBuilds'] = {
+              '405900': {
+                servantId: '405900',
+                level: 90,
+                ascension: 4,
+                npLevel: 1,
+                fouAtk: 1000,
+                skills: { '1': 10 },
+                appends: {},
+                updatedAt: '2026-08-24T00:00:00.000Z',
+              },
+            };
+            profile['draft'] = { input: { npSpecialMultiplier: 1.5 } };
+            profile['history'] = [{ input: { npSpecialMultiplier: 1.5 } }];
+            store.put(collection, 'profiles');
+          };
+        };
+      }),
+  );
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await expect(
+    page.getByText('保存済みの育成データを引き継ぎ、旧形式の計算下書きと履歴を削除しました。'),
+  ).toBeVisible();
+  const recovered = await page.evaluate(
+    () =>
+      new Promise<{
+        schemaVersion: number;
+        npLevel: number;
+        draft: unknown;
+        historyLength: number;
+      }>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('user', 'readonly');
+          const profilesRequest = transaction.objectStore('user').get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            const collection = profilesRequest.result as {
+              schemaVersion: number;
+              profiles: Array<{
+                servantBuilds: Record<string, { npLevel: number }>;
+                draft: unknown;
+                history: unknown[];
+              }>;
+            };
+            const profile = collection.profiles[0]!;
+            resolve({
+              schemaVersion: collection.schemaVersion,
+              npLevel: profile.servantBuilds['405900']!.npLevel,
+              draft: profile.draft,
+              historyLength: profile.history.length,
+            });
+            db.close();
+          };
+        };
+      }),
+  );
+  expect(recovered).toEqual({ schemaVersion: 2, npLevel: 1, draft: null, historyLength: 0 });
+  await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
+});
+
 test('autosaves and restores a directly edited calculation draft', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation exposes the persistent undo status');
   await page.goto('/');

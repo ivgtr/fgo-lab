@@ -3,6 +3,7 @@ import {
   calculationShareCompositionSchema,
   calculationShareSnapshotSchema,
   calcInputSchema,
+  parseStoredProfileCollection,
   SCHEMA_VERSION,
 } from './index';
 
@@ -32,6 +33,60 @@ describe('portable schema boundaries', () => {
     expect(calcInputSchema.shape.npSpecialMultipliers.safeParse(1.5)).toMatchObject({
       success: false,
     });
+  });
+
+  it('upgrades v1 profiles once while discarding incompatible calculation snapshots', () => {
+    const profileId = crypto.randomUUID();
+    const recovered = parseStoredProfileCollection({
+      schemaVersion: 1,
+      activeProfileId: profileId,
+      profiles: [
+        {
+          profileId,
+          name: '保存済み',
+          createdAt: '2026-08-24T00:00:00.000Z',
+          updatedAt: '2026-08-24T00:00:00.000Z',
+          servantBuilds: {
+            '405900': {
+              servantId: '405900',
+              level: 90,
+              ascension: 4,
+              npLevel: 1,
+              fouAtk: 1000,
+              skills: { '1': 10 },
+              appends: {},
+              updatedAt: '2026-08-24T00:00:00.000Z',
+            },
+          },
+          servantTargets: {},
+          craftEssences: [],
+          supportTemplates: [],
+          draft: { input: { npSpecialMultiplier: 1.5 } },
+          history: [{ input: { npSpecialMultiplier: 1.5 } }],
+        },
+      ],
+    });
+
+    expect(recovered).toMatchObject({
+      upgraded: true,
+      collection: {
+        schemaVersion: SCHEMA_VERSION,
+        profiles: [
+          {
+            servantBuilds: { '405900': { npLevel: 1 } },
+            draft: null,
+            history: [],
+          },
+        ],
+      },
+    });
+    expect(parseStoredProfileCollection(recovered.collection).upgraded).toBe(false);
+  });
+
+  it('does not reinterpret unknown future profile schemas', () => {
+    expect(() =>
+      parseStoredProfileCollection({ schemaVersion: SCHEMA_VERSION + 1, profiles: [] }),
+    ).toThrow();
   });
 
   it('keeps portable CE state while stripping local copy identity', () => {

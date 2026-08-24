@@ -67,7 +67,10 @@ export async function bootstrapApplication(
   try {
     const activeLoad = await loadActiveMaster();
     let active = activeLoad.state === 'ready' ? activeLoad.active : undefined;
-    const profiles = await profilesRepository.load();
+    const profilesLoad = await profilesRepository.load();
+    const profiles = profilesLoad.state === 'ready' ? profilesLoad.collection : undefined;
+    if (profilesLoad.state === 'ready' && profilesLoad.discardedCalculationSnapshots)
+      warning = '保存済みの育成データを引き継ぎ、旧形式の計算下書きと履歴を削除しました。';
     if (activeLoad.state === 'discarded') {
       try {
         const current = await activateCurrentMaster(options);
@@ -125,10 +128,16 @@ export async function setupApplication(
   options: StartupOptions,
 ): Promise<ReadyStartupResult> {
   const { active, fromOfflineCache } = await activateCurrentMaster(options);
+  const profilesLoad = await profilesRepository.load();
   const profiles =
-    (await profilesRepository.load()) ?? createProfileCollection('マスター', clock, ids);
+    profilesLoad.state === 'ready'
+      ? profilesLoad.collection
+      : createProfileCollection('マスター', clock, ids);
   await profilesRepository.replace(profiles);
-  let warning = '';
+  let warning =
+    profilesLoad.state === 'ready' && profilesLoad.discardedCalculationSnapshots
+      ? '保存済みの育成データを引き継ぎ、旧形式の計算下書きと履歴を削除しました。'
+      : '';
   let shared: CalculationShareSnapshot | null = null;
   try {
     shared = readShareFragment(options.fragment);

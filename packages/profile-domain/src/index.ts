@@ -15,8 +15,15 @@ export interface Clock {
 export interface IdGenerator {
   next(): string;
 }
+export type ProfileLoadResult =
+  | { state: 'empty' }
+  | {
+      state: 'ready';
+      collection: ProfileCollection;
+      discardedCalculationSnapshots: boolean;
+    };
 export interface ProfileRepository {
-  load(): Promise<ProfileCollection | undefined>;
+  load(): Promise<ProfileLoadResult>;
   replace(collection: ProfileCollection): Promise<void>;
 }
 
