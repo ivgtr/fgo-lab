@@ -18,6 +18,20 @@ describe('master validation', () => {
         servants: [{ ...fixture.servants[0], attackNpFunctionType: 'futureDamage' }],
       }).unknownAttackFunctions,
     ).toEqual(['futureDamage']));
+  it('does not classify a non-attacking NP as an unknown damage function', () =>
+    expect(
+      validateMasterSnapshot({
+        ...fixture,
+        servants: [
+          {
+            ...fixture.servants[0],
+            hasAttackNp: false,
+            attackNpFunctionType: 'none',
+            npMultipliers: [0, 0, 0, 0, 0],
+          },
+        ],
+      }),
+    ).toMatchObject({ valid: true, unknownAttackFunctions: [] }));
   it('derives CE attack and rejects levels over the limit', () => {
     expect(deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 1, 0)).toBe(0);
     expect(() => deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 21, 0)).toThrow(RangeError);

@@ -29,6 +29,7 @@ export const servantMasterSchema = z.object({
   name: z.string(),
   classId: z.string(),
   rarity: z.number().int().min(0).max(5),
+  hasAttackNp: z.boolean().default(true),
   npCard: z.enum(['buster', 'arts', 'quick']),
   npTarget: z.enum(['single', 'all']),
   atkByLevel: z.record(z.string(), z.number().int().nonnegative()),
@@ -105,6 +106,7 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
   const unknownAttackFunctions = [
     ...new Set(
       parsed.data.servants
+        .filter((servant) => servant.hasAttackNp)
         .map((s) => s.attackNpFunctionType)
         .filter((type) => !knownFunctions.has(type)),
     ),

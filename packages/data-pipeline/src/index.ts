@@ -198,15 +198,20 @@ export function normalizeAtlasSnapshot(input: {
       .sort((a, b) => (b.np.priority ?? 0) - (a.np.priority ?? 0));
     const attack = attacks[0];
     if (
-      !attack ||
       typeof servant.id !== 'number' ||
       !servant.name ||
       !servant.className ||
       typeof servant.rarity !== 'number'
     )
       return [];
-    const values = attack.fn.svals?.slice(0, 5).map((value) => (value.Value ?? 0) / 10);
-    if (!values || values.length !== 5 || values.some((value) => value <= 0)) return [];
+    const values = attack?.fn.svals?.slice(0, 5).map((value) => (value.Value ?? 0) / 10);
+    const hasAttackNp = Boolean(
+      attack && values && values.length === 5 && values.every((value) => value > 0),
+    );
+    const npMultipliers = hasAttackNp
+      ? (values as [number, number, number, number, number])
+      : ([0, 0, 0, 0, 0] as const);
+    const representativeNp = attack?.np ?? servant.noblePhantasms?.[0];
     const image = servant.extraAssets?.faces?.ascension?.['1'] ?? null;
     return [
       {
@@ -214,13 +219,14 @@ export function normalizeAtlasSnapshot(input: {
         name: servant.name,
         classId: servant.className,
         rarity: servant.rarity,
-        npCard: cardMap[attack.np.card ?? ''] ?? 'buster',
-        npTarget: attack.fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
+        hasAttackNp,
+        npCard: cardMap[representativeNp?.card ?? ''] ?? 'buster',
+        npTarget: attack?.fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
         atkByLevel: Object.fromEntries(
           (servant.atkGrowth ?? []).map((atk, index) => [String(index + 1), atk]),
         ),
-        npMultipliers: values as [number, number, number, number, number],
-        attackNpFunctionType: attack.fn.funcType!,
+        npMultipliers,
+        attackNpFunctionType: attack?.fn.funcType ?? 'none',
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
         imageKey: image,
         growth: [

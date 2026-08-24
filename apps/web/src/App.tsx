@@ -499,16 +499,18 @@ export function App() {
         )}{' '}
         {page === 'ranking' && (
           <Ranking
-            candidates={currentMaster.servants.map((candidate) => ({
-              servantId: candidate.id,
-              name: candidate.name,
-              input: calcInput(currentMaster, profile.servantBuilds[candidate.id], candidate),
-              classId: candidate.classId,
-              rarity: candidate.rarity,
-              npCard: candidate.npCard,
-              npTarget: candidate.npTarget,
-              owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
-            }))}
+            candidates={currentMaster.servants
+              .filter((candidate) => candidate.hasAttackNp)
+              .map((candidate) => ({
+                servantId: candidate.id,
+                name: candidate.name,
+                input: calcInput(currentMaster, profile.servantBuilds[candidate.id], candidate),
+                classId: candidate.classId,
+                rarity: candidate.rarity,
+                npCard: candidate.npCard,
+                npTarget: candidate.npTarget,
+                owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
+              }))}
             versions={versions}
           />
         )}{' '}
@@ -849,8 +851,10 @@ function Servants({
   const [selectedId, setSelectedId] = useState(servants[0]?.id ?? '');
   const visible = servants.filter((candidate) => {
     const owned = (builds[candidate.id]?.npLevel ?? 0) > 0;
+    const normalizedSearch = search.toLocaleLowerCase('ja');
     return (
-      candidate.name.toLocaleLowerCase('ja').includes(search.toLocaleLowerCase('ja')) &&
+      (candidate.name.toLocaleLowerCase('ja').includes(normalizedSearch) ||
+        candidate.classId.toLocaleLowerCase('ja').includes(normalizedSearch)) &&
       (scope === 'all' || (scope === 'owned' ? owned : !owned))
     );
   });

@@ -49,6 +49,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   if (await setup.isVisible()) await setup.click();
 
   await page.getByRole('button', { name: '所持・育成' }).click();
+  await expect(page.getByText('469騎')).toBeVisible();
   await page.getByLabel('宝具Lv').selectOption('1');
   await expect(
     page

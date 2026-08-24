@@ -28,6 +28,7 @@ describe('profile domain', () => {
         name: 'X',
         classId: 'saber',
         rarity: 5,
+        hasAttackNp: true,
         npCard: 'buster' as const,
         npTarget: 'all' as const,
         atkByLevel: { '1': 1 },
