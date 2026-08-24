@@ -5,6 +5,7 @@ import type {
   ProfileCollection,
   ServantBuild,
   ServantTarget,
+  SupportEffect,
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -188,42 +189,86 @@ export function addSupportServant(
   profile: LocalProfile,
   templateId: string,
   source: ServantMaster,
+  sourceInstanceId: string,
+  ownership: SupportEffect['ownership'],
+  skillLevels: Readonly<Record<string, number>>,
   now: string,
 ): LocalProfile {
   return {
     ...profile,
     supportTemplates: profile.supportTemplates.map((template) => {
       if (template.templateId !== templateId) return template;
-      const existing = new Set(
-        template.effects.map((effect) => `${effect.sourceId}:${effect.effectId}`),
-      );
-      const additions = source.skills.flatMap((skill, index) =>
-        existing.has(`${source.id}:${skill.id}`)
-          ? []
-          : [
-              {
-                sourceType: 'servant' as const,
-                sourceId: source.id,
-                effectId: skill.id,
-                skillLevel: 10,
-                targetRole: 'ATTACKER' as const,
-                enabled: false,
-                order: template.effects.length + index,
-              },
-            ],
-      );
+      if (template.effects.some((effect) => effect.sourceInstanceId === sourceInstanceId))
+        return template;
+      const additions: SupportEffect[] = source.skills.map((skill, index) => ({
+        sourceInstanceId,
+        sourceType: 'servant',
+        sourceId: source.id,
+        ownership,
+        effectId: skill.id,
+        skillLevel: Math.min(10, Math.max(1, skillLevels[String(skill.slot)] ?? 10)),
+        targetRole: 'ATTACKER',
+        enabled: false,
+        order: template.effects.length + index,
+      }));
       return { ...template, effects: [...template.effects, ...additions], updatedAt: now };
     }),
     updatedAt: now,
   };
 }
 
-export function updateSupportEffect(
+export function updateSupportTemplate(
   profile: LocalProfile,
   templateId: string,
-  sourceId: string,
-  effectId: string,
-  patch: Partial<Pick<SupportTemplate['effects'][number], 'enabled' | 'skillLevel'>>,
+  patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt'>>,
+  now: string,
+): LocalProfile {
+  return {
+    ...profile,
+    supportTemplates: profile.supportTemplates.map((template) =>
+      template.templateId === templateId ? { ...template, ...patch, updatedAt: now } : template,
+    ),
+    updatedAt: now,
+  };
+}
+
+export function removeSupportTemplate(profile: LocalProfile, templateId: string): LocalProfile {
+  return {
+    ...profile,
+    supportTemplates: profile.supportTemplates.filter(
+      (template) => template.templateId !== templateId,
+    ),
+  };
+}
+
+export function removeSupportSource(
+  profile: LocalProfile,
+  templateId: string,
+  sourceInstanceId: string,
+  now: string,
+): LocalProfile {
+  return {
+    ...profile,
+    supportTemplates: profile.supportTemplates.map((template) =>
+      template.templateId === templateId
+        ? {
+            ...template,
+            effects: template.effects.filter(
+              (effect) => effect.sourceInstanceId !== sourceInstanceId,
+            ),
+            updatedAt: now,
+          }
+        : template,
+    ),
+    updatedAt: now,
+  };
+}
+
+export function updateSupportSource(
+  profile: LocalProfile,
+  templateId: string,
+  sourceInstanceId: string,
+  patch: Pick<Partial<SupportEffect>, 'ownership'>,
   now: string,
 ): LocalProfile {
   return {
@@ -233,7 +278,32 @@ export function updateSupportEffect(
         ? {
             ...template,
             effects: template.effects.map((effect) =>
-              effect.sourceId === sourceId && effect.effectId === effectId
+              effect.sourceInstanceId === sourceInstanceId ? { ...effect, ...patch } : effect,
+            ),
+            updatedAt: now,
+          }
+        : template,
+    ),
+    updatedAt: now,
+  };
+}
+
+export function updateSupportEffect(
+  profile: LocalProfile,
+  templateId: string,
+  sourceInstanceId: string,
+  effectId: string,
+  patch: Partial<Pick<SupportEffect, 'enabled' | 'skillLevel'>>,
+  now: string,
+): LocalProfile {
+  return {
+    ...profile,
+    supportTemplates: profile.supportTemplates.map((template) =>
+      template.templateId === templateId
+        ? {
+            ...template,
+            effects: template.effects.map((effect) =>
+              effect.sourceInstanceId === sourceInstanceId && effect.effectId === effectId
                 ? { ...effect, ...patch }
                 : effect,
             ),

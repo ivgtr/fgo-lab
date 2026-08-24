@@ -43,15 +43,23 @@ export const craftEssenceCopySchema = z.object({
 });
 export type CraftEssenceCopy = z.infer<typeof craftEssenceCopySchema>;
 
-export const supportEffectSchema = z.object({
-  sourceType: z.enum(['servant', 'craftEssence', 'mysticCode', 'custom']),
-  sourceId: z.string().min(1).max(80),
-  effectId: z.string().min(1).max(80),
-  skillLevel: z.number().int().min(1).max(10),
-  targetRole: z.literal('ATTACKER'),
-  enabled: z.boolean(),
-  order: z.number().int().nonnegative(),
-});
+export const supportEffectSchema = z
+  .object({
+    sourceInstanceId: z.string().min(1).max(160).optional(),
+    sourceType: z.enum(['servant', 'craftEssence', 'mysticCode', 'custom']),
+    sourceId: z.string().min(1).max(80),
+    ownership: z.enum(['owned', 'friend', 'virtual']).default('virtual'),
+    effectId: z.string().min(1).max(80),
+    skillLevel: z.number().int().min(1).max(10),
+    targetRole: z.literal('ATTACKER'),
+    enabled: z.boolean(),
+    order: z.number().int().nonnegative(),
+  })
+  .transform((effect) => ({
+    ...effect,
+    sourceInstanceId: effect.sourceInstanceId ?? `legacy:${effect.sourceType}:${effect.sourceId}`,
+  }));
+export type SupportEffect = z.infer<typeof supportEffectSchema>;
 export const supportTemplateSchema = z.object({
   templateId: z.uuid(),
   name: z.string().trim().min(1).max(80),

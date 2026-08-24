@@ -287,7 +287,6 @@ export function Calculator({
             <p className="eyebrow">CONDITIONS</p>
             <h2>計算条件</h2>
           </div>
-          <span className="badge">{result.precision}</span>
         </div>
         <button
           ref={attackerTriggerRef}
@@ -758,8 +757,10 @@ export function Calculator({
                 <button onClick={() => void onSupportSelect(undefined)}>解除</button>
               </div>
               <ul className="plain-list support-effect-list">
-                {supportEffects.map((effect) => (
-                  <li key={`${effect.sourceId}:${effect.skillId}:${effect.effectId}`}>
+                {supportEffects.map((effect, index) => (
+                  <li
+                    key={`${effect.sourceId}:${effect.skillId}:${effect.effectId}:${String(index)}`}
+                  >
                     <span className="list-row-main">
                       <strong>
                         {effect.sourceName}・{effect.skillName}
@@ -800,9 +801,6 @@ export function Calculator({
             対応するデータ版またはエンジン版がないため、共有時の履歴結果を表示しています。入力を変更すると現行版で新規計算します。
           </p>
         )}
-        <p className="notice">
-          特殊Functionの差分検証が完了するまで、結果精度はapproximateとして表示します。
-        </p>
       </section>
       <CalculationResult
         input={resolvedInput}

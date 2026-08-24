@@ -113,8 +113,10 @@ function template(patch: Partial<SupportTemplate> = {}): SupportTemplate {
     masterDataVersion: 'test',
     effects: [
       {
+        sourceInstanceId: 'support-instance-1',
         sourceType: 'servant',
         sourceId: source.id,
+        ownership: 'virtual',
         effectId: 'skill',
         skillLevel: 10,
         targetRole: 'ATTACKER',

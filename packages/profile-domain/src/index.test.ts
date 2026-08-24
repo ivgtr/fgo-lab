@@ -9,9 +9,13 @@ import {
   calculateGrowthLedger,
   createProfileCollection,
   isOwned,
+  removeSupportSource,
+  removeSupportTemplate,
   updateCraftEssenceCopy,
   updateServantBuild,
   updateServantTarget,
+  updateSupportSource,
+  updateSupportTemplate,
 } from './index';
 
 const clock = { now: () => new Date('2026-08-24T00:00:00Z') };
@@ -122,7 +126,7 @@ describe('profile domain', () => {
     );
     expect(updated.craftEssences[0]).toMatchObject({ level: 20, limitBreak: 0 });
   });
-  it('adds each servant skill to a support template once', () => {
+  it('keeps duplicate support servants independent by source instance', () => {
     const source = activeProfile(createProfileCollection('マスター', clock, ids));
     const templateId = '00000000-0000-4000-8000-000000000003';
     const withTemplate = addSupportTemplate(
@@ -149,9 +153,69 @@ describe('profile domain', () => {
       withTemplate,
       templateId,
       supportServant,
+      'support-instance-1',
+      'owned',
+      { '1': 8 },
       clock.now().toISOString(),
     );
-    const twice = addSupportServant(once, templateId, supportServant, clock.now().toISOString());
-    expect(twice.supportTemplates[0]?.effects).toHaveLength(1);
+    const sameInstance = addSupportServant(
+      once,
+      templateId,
+      supportServant,
+      'support-instance-1',
+      'owned',
+      { '1': 8 },
+      clock.now().toISOString(),
+    );
+    const twice = addSupportServant(
+      sameInstance,
+      templateId,
+      supportServant,
+      'support-instance-2',
+      'friend',
+      {},
+      clock.now().toISOString(),
+    );
+    expect(twice.supportTemplates[0]?.effects).toHaveLength(2);
+    expect(twice.supportTemplates[0]?.effects).toEqual([
+      expect.objectContaining({
+        sourceInstanceId: 'support-instance-1',
+        ownership: 'owned',
+        skillLevel: 8,
+      }),
+      expect.objectContaining({
+        sourceInstanceId: 'support-instance-2',
+        ownership: 'friend',
+        skillLevel: 10,
+      }),
+    ]);
+
+    const renamed = updateSupportTemplate(
+      twice,
+      templateId,
+      { name: '周回支援' },
+      clock.now().toISOString(),
+    );
+    const changedOwnership = updateSupportSource(
+      renamed,
+      templateId,
+      'support-instance-2',
+      { ownership: 'virtual' },
+      clock.now().toISOString(),
+    );
+    const withoutFirst = removeSupportSource(
+      changedOwnership,
+      templateId,
+      'support-instance-1',
+      clock.now().toISOString(),
+    );
+    expect(withoutFirst.supportTemplates[0]).toMatchObject({ name: '周回支援' });
+    expect(withoutFirst.supportTemplates[0]?.effects).toEqual([
+      expect.objectContaining({
+        sourceInstanceId: 'support-instance-2',
+        ownership: 'virtual',
+      }),
+    ]);
+    expect(removeSupportTemplate(withoutFirst, templateId).supportTemplates).toEqual([]);
   });
 });

@@ -64,11 +64,42 @@ test('mobile servant editor moves between list and detail', async ({ page, isMob
   const list = page.getByRole('list', { name: 'サーヴァント一覧' });
   await expect(list).toBeVisible();
   await expect(page.getByLabel('宝具Lv')).toBeHidden();
+  await page.getByRole('button', { name: /^絞り込み/ }).click();
+  const filterDialog = page.getByRole('dialog', { name: '詳細な絞り込み' });
+  await expect(filterDialog).toBeVisible();
+  await filterDialog.getByRole('button', { name: 'Quick', exact: true }).click();
+  await filterDialog.getByRole('button', { name: /騎を表示$/ }).click();
+  await expect(list.getByRole('listitem').first()).toContainText('QUICK');
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(false);
   await list.getByRole('listitem').first().click();
   await expect(list).toBeHidden();
   await expect(page.getByLabel('宝具Lv')).toBeVisible();
   await page.getByRole('button', { name: '一覧へ戻る' }).click();
   await expect(list).toBeVisible();
+});
+
+test('mobile support editor moves between saved list and detail', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Mobile layout uses list-to-detail navigation');
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'その他' }).click();
+  await page.getByRole('button', { name: '支援条件' }).click();
+
+  await page.getByRole('button', { name: '最初の支援条件を作成' }).click();
+  const list = page.getByRole('list', { name: '保存済み支援条件' });
+  await expect(list).toBeHidden();
+  await expect(page.getByRole('region', { name: '支援条件の編集' })).toBeVisible();
+  await page.getByRole('button', { name: '支援条件一覧へ戻る' }).click();
+  await expect(list).toBeVisible();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(false);
 });
 
 test('mobile calculator selects virtual attacker and CE from the full DB', async ({
@@ -86,9 +117,41 @@ test('mobile calculator selects virtual attacker and CE from the full DB', async
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
-  await attackerDialog.getByLabel('名前・クラス').fill('アルトリア・ペンドラゴン');
+  await attackerDialog.getByRole('button', { name: /絞り込み/ }).click();
+  await expect(
+    attackerDialog
+      .getByRole('group', { name: 'クラス' })
+      .getByRole('button', { name: 'セイバー', exact: true })
+      .locator('img'),
+  ).toHaveAttribute('src', /filter-icons\/class\/saber\.png$/);
+  await expect(
+    attackerDialog
+      .getByRole('group', { name: '宝具タイプ' })
+      .getByRole('button', { name: 'Buster' })
+      .locator('img'),
+  ).toHaveAttribute('src', /filter-icons\/card\/buster\.png$/);
   await attackerDialog
-    .getByRole('button', { name: /アルトリア・ペンドラゴン saber・Lv90/ })
+    .getByRole('group', { name: 'レア度' })
+    .getByRole('button', { name: '★5' })
+    .click();
+  await attackerDialog
+    .getByRole('group', { name: 'クラス' })
+    .getByRole('button', { name: 'セイバー', exact: true })
+    .click();
+  await attackerDialog
+    .getByRole('group', { name: '宝具タイプ' })
+    .getByRole('button', { name: 'Buster' })
+    .click();
+  await attackerDialog
+    .getByRole('group', { name: '宝具範囲' })
+    .getByRole('button', { name: '全体' })
+    .click();
+  const showFilteredCandidates = attackerDialog.getByRole('button', { name: /騎の候補を見る/ });
+  await expect(showFilteredCandidates).not.toContainText('469騎');
+  await showFilteredCandidates.click();
+  await attackerDialog.getByLabel('名前で検索').fill('アルトリア・ペンドラゴン');
+  await attackerDialog
+    .getByRole('button', { name: /アルトリア・ペンドラゴン.*★5・セイバー.*Lv90/ })
     .click();
   await expect(page.getByRole('button', { name: '攻撃役を変更' })).toContainText('全DBの仮想設定');
 
@@ -528,8 +591,8 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
-  await attackerDialog.getByLabel('名前・クラス').fill('ジークフリート');
-  await attackerDialog.getByRole('button', { name: /ジークフリート saber・Lv90/ }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('ジークフリート');
+  await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv90/ }).click();
   await page.getByLabel('竜殺し A++を使用').check();
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
@@ -553,9 +616,9 @@ test('separates final direct inputs from resolved CE and trait effects', async (
 
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
-  await attackerDialog.getByLabel('名前・クラス').fill('アーキタイプ：アース');
+  await attackerDialog.getByLabel('名前で検索').fill('アーキタイプ：アース');
   await attackerDialog
-    .getByRole('button', { name: /アーキタイプ：アース moonCancer・Lv90/ })
+    .getByRole('button', { name: /アーキタイプ：アース.*ムーンキャンサー.*Lv90/ })
     .click();
   await page.getByLabel('宝具Lv').selectOption('5');
   await expect(specialConditions).toContainText('混沌特攻');
@@ -580,8 +643,8 @@ test('matches the reported Water Lilith inputs and exposes passive damage stacks
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
-  await attackerDialog.getByLabel('名前・クラス').fill('リリス');
-  await attackerDialog.getByRole('button', { name: /リリス rider・Lv90/ }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('リリス');
+  await attackerDialog.getByRole('button', { name: /リリス.*ライダー.*Lv90/ }).click();
   await page.getByRole('spinbutton', { name: 'サーヴァントLv', exact: true }).fill('120');
   await page.getByRole('tab', { name: '直接入力' }).click();
   await page.getByLabel('ATKフォウ').fill('3000');
@@ -674,6 +737,25 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '所持・育成' }).click();
   await expect(page.getByText('469騎')).toBeVisible();
+  await page
+    .getByRole('group', { name: 'クラス' })
+    .getByRole('button', { name: 'セイバー', exact: true })
+    .click();
+  const servantList = page.getByRole('list', { name: 'サーヴァント一覧' });
+  await expect(servantList.getByRole('listitem').first()).toContainText('saber');
+
+  await page.getByRole('button', { name: /^絞り込み/ }).click();
+  const servantFilterDialog = page.getByRole('dialog', { name: '詳細な絞り込み' });
+  await servantFilterDialog.getByRole('button', { name: '★5', exact: true }).click();
+  await servantFilterDialog.getByRole('button', { name: 'Buster', exact: true }).click();
+  await servantFilterDialog.getByRole('button', { name: /騎を表示$/ }).click();
+  await expect(servantList.getByRole('listitem').first()).toContainText('saber・全体BUSTER');
+
+  await page.getByRole('button', { name: /^絞り込み/ }).click();
+  await servantFilterDialog.getByRole('button', { name: '条件をクリア' }).click();
+  await servantFilterDialog.getByRole('button', { name: /騎を表示$/ }).click();
+  await page.getByRole('button', { name: '全', exact: true }).click();
+  await expect(page.getByText('469騎')).toBeVisible();
   await page.getByLabel('宝具Lv').selectOption('1');
   await expect(
     page
@@ -711,19 +793,33 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await expect(ceRows.nth(0).getByLabel('カレイドスコープのレベル')).toHaveValue('1');
 
   await page.getByRole('button', { name: '支援条件' }).click();
-  await page.getByRole('button', { name: '支援条件を作成' }).click();
-  await expect(page.getByLabel('保存済み支援条件')).toContainText('支援条件 1');
-  await page.getByRole('button', { name: '支援元を追加' }).click();
-  const supportDialog = page.getByRole('dialog', { name: '支援元サーヴァントを検索' });
-  await supportDialog.getByLabel('サーヴァント名').fill('アルトリア・ペンドラゴン');
-  await supportDialog.getByRole('button', { name: '追加', exact: true }).first().click();
+  await page.getByRole('button', { name: '新規作成', exact: true }).click();
+  await page.getByLabel('支援条件名').fill('周回支援');
+  await page.getByLabel('支援条件名').press('Tab');
+  await expect(page.getByRole('list', { name: '保存済み支援条件' })).toContainText('周回支援');
+  await page.getByRole('button', { name: /支援元を追加/ }).click();
+  const supportDialog = page.getByRole('dialog', { name: '支援元サーヴァントを選択' });
+  await supportDialog.getByRole('button', { name: /^絞り込み/ }).click();
+  await expect(supportDialog.getByRole('group', { name: 'レア度' })).toBeVisible();
+  await expect(supportDialog.getByRole('group', { name: '宝具タイプ' })).toHaveCount(0);
+  await supportDialog.getByLabel('名前で検索').fill('アルトリア・ペンドラゴン');
+  await supportDialog
+    .getByRole('button', { name: /^アルトリア・ペンドラゴン ★5・セイバー/ })
+    .click();
   await page.getByLabel('理想郷の騎士 EXを使用').click();
   await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
   await page.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
   await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText(
     '使用中 1スキル',
   );
-
+  await page.getByRole('button', { name: /支援元を追加/ }).click();
+  await supportDialog.getByLabel('名前で検索').fill('アルトリア・ペンドラゴン');
+  await supportDialog
+    .getByRole('button', { name: /^アルトリア・ペンドラゴン ★5・セイバー/ })
+    .click();
+  await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText('支援元 2騎');
+  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toHaveCount(2);
+  await expect(page.getByLabel('理想郷の騎士 EXを使用').nth(1)).not.toBeChecked();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const unequippedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
@@ -766,13 +862,33 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.getByRole('button', { name: '支援条件を呼び出す' }).click();
   const templateDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await templateDialog.getByRole('button', { name: '呼び出す' }).click();
-  await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
+  await expect(page.getByLabel('支援・バフ')).toContainText('周回支援');
   await expect(page.getByLabel('支援・バフ')).toContainText('+27%');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('カレイドスコープ Lv.20');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('自身スキル1件適用');
-  await expect(page.getByLabel('共有対象の計算結果')).toContainText('支援条件 1（1スキル）');
+  await expect(page.getByLabel('共有対象の計算結果')).toContainText('周回支援（1スキル）');
   const supportedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(supportedDamage).toBeGreaterThan(baseDamage);
+
+  await page.getByRole('button', { name: '火力ランキング' }).click();
+  const rankingCondition = page.getByRole('region', { name: 'ランキングの共通支援条件' });
+  await page.getByLabel('クラス').selectOption('saber');
+  const rankingRow = page.getByRole('row', {
+    name: /^\d+ アルトリア・ペンドラゴン [\d,]+$/,
+  });
+  await expect(rankingRow).toBeVisible();
+  const rankingWithoutSupport = Number(
+    (await rankingRow.locator('td.average').textContent())?.replaceAll(',', ''),
+  );
+  await rankingCondition.getByRole('button', { name: '選択' }).click();
+  const rankingSupportDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
+  await rankingSupportDialog.getByRole('button', { name: '呼び出す' }).click();
+  await expect(rankingCondition).toContainText('周回支援・使用1スキル');
+  await expect
+    .poll(async () =>
+      Number((await rankingRow.locator('td.average').textContent())?.replaceAll(',', '')),
+    )
+    .toBeGreaterThan(rankingWithoutSupport);
 
   await page.getByRole('button', { name: '育成計画' }).click();
   await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('剣の輝石');
@@ -781,7 +897,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
-  await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
+  await expect(page.getByLabel('支援・バフ')).toContainText('周回支援');
   await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
   await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
   await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
@@ -799,8 +915,13 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.getByRole('button', { name: '所持・育成' }).click();
   await expect(page.getByLabel('スキル1')).toHaveValue('1');
   await page.getByRole('button', { name: '支援条件' }).click();
-  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
-  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
+  await expect(page.getByLabel('理想郷の騎士 EXを使用').first()).toBeChecked();
+  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル').first()).toHaveValue('8');
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'この支援条件を削除' }).click();
+  await expect(page.getByText('保存済みの支援条件はありません。')).toBeVisible();
+  await page.getByRole('button', { name: '直前の操作を元に戻す' }).click();
+  await expect(page.getByRole('list', { name: '保存済み支援条件' })).toContainText('周回支援');
 });
 
 test('finalizes one deduplicated history entry per calculation input', async ({
@@ -848,7 +969,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('415件をWorkerで計算・unsupported 5件');
+  await expect(page.getByRole('status')).toContainText('415件を計算・計算対象外 5件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );

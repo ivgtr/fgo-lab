@@ -7,10 +7,14 @@ import {
   addSupportServant,
   addSupportTemplate as appendSupportTemplate,
   removeCraftEssenceCopy,
+  removeSupportSource as deleteSupportSource,
+  removeSupportTemplate as deleteSupportTemplate,
   updateCraftEssenceCopy,
   updateServantBuild as patchServantBuild,
   updateServantTarget as patchServantTarget,
   updateSupportEffect as patchSupportEffect,
+  updateSupportSource as patchSupportSource,
+  updateSupportTemplate as patchSupportTemplate,
   type Clock,
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
@@ -22,6 +26,7 @@ import type {
   CraftEssenceCopy,
   ServantBuild,
   ServantTarget,
+  SupportEffect,
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -96,7 +101,6 @@ function Setup({
   return (
     <main className="setup">
       <section>
-        <p className="eyebrow">LOCAL FIRST / JP</p>
         <h1>{t('setup.title')}</h1>
         <p>{t('setup.description')}</p>
         <ol className="steps">
@@ -143,6 +147,7 @@ export function App() {
     support: undefined,
     shared: undefined,
   });
+  const [rankingSupportId, setRankingSupportId] = useState<string | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [calculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
@@ -194,6 +199,9 @@ export function App() {
     );
   const currentMaster = master;
   const profile = activeProfile(profiles);
+  const rankingSupport = profile.supportTemplates.find(
+    (template) => template.templateId === rankingSupportId,
+  );
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
   const baseInput = calculation.input ?? createDefaultCalcInput(currentMaster, defaultBuild);
@@ -267,22 +275,64 @@ export function App() {
     await updateActiveProfile((current) =>
       appendSupportTemplate(current, currentMaster.version, templateId, now),
     );
+    return templateId;
   }
-  async function addSupportSource(templateId: string, servantId: string) {
+  async function addSupportSource(
+    templateId: string,
+    servantId: string,
+    ownership: SupportEffect['ownership'],
+  ) {
     const source = currentMaster.servants.find((candidate) => candidate.id === servantId);
     if (!source) return;
     const now = new Date().toISOString();
-    await updateActiveProfile((current) => addSupportServant(current, templateId, source, now));
+    const sourceInstanceId = crypto.randomUUID();
+    await updateActiveProfile((current) =>
+      addSupportServant(
+        current,
+        templateId,
+        source,
+        sourceInstanceId,
+        ownership,
+        ownership === 'owned' ? (current.servantBuilds[servantId]?.skills ?? {}) : {},
+        now,
+      ),
+    );
   }
   async function updateSupportEffect(
     templateId: string,
-    sourceId: string,
+    sourceInstanceId: string,
     effectId: string,
-    patch: Partial<Pick<SupportTemplate['effects'][number], 'enabled' | 'skillLevel'>>,
+    patch: Partial<Pick<SupportEffect, 'enabled' | 'skillLevel'>>,
   ) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) =>
-      patchSupportEffect(current, templateId, sourceId, effectId, patch, now),
+      patchSupportEffect(current, templateId, sourceInstanceId, effectId, patch, now),
+    );
+  }
+  async function updateSupportTemplate(
+    templateId: string,
+    patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt'>>,
+  ) {
+    const now = new Date().toISOString();
+    await updateActiveProfile((current) => patchSupportTemplate(current, templateId, patch, now));
+  }
+  async function removeSupportTemplate(templateId: string) {
+    await updateActiveProfile((current) => deleteSupportTemplate(current, templateId));
+  }
+  async function removeSupportSource(templateId: string, sourceInstanceId: string) {
+    const now = new Date().toISOString();
+    await updateActiveProfile((current) =>
+      deleteSupportSource(current, templateId, sourceInstanceId, now),
+    );
+  }
+  async function updateSupportSource(
+    templateId: string,
+    sourceInstanceId: string,
+    ownership: SupportEffect['ownership'],
+  ) {
+    const now = new Date().toISOString();
+    await updateActiveProfile((current) =>
+      patchSupportSource(current, templateId, sourceInstanceId, { ownership }, now),
     );
   }
   async function saveCalculationDraft(
@@ -387,7 +437,6 @@ export function App() {
       </aside>
       <main id="main">
         <header>
-          <p className="eyebrow">非公式・非営利 / JP DATA</p>
           <h1>{nav.find(([id]) => id === page)?.[1]}</h1>
         </header>
         {page === 'home' && (
@@ -419,7 +468,15 @@ export function App() {
             onCompositionChange={(nextInput, nextSelection) =>
               saveCalculationDraft(nextInput, calculation.support, nextSelection)
             }
-            onSupportSelect={(template) => saveCalculationDraft(baseInput, template)}
+            onSupportSelect={async (template) => {
+              if (!template) {
+                await saveCalculationDraft(baseInput, undefined);
+                return;
+              }
+              const lastUsedAt = new Date().toISOString();
+              await updateSupportTemplate(template.templateId, { lastUsedAt });
+              await saveCalculationDraft(baseInput, { ...template, lastUsedAt });
+            }}
             onFinalize={finalizeCurrentCalculation}
           />
         )}{' '}
@@ -445,8 +502,13 @@ export function App() {
           <SupportTemplates
             templates={profile.supportTemplates}
             servants={currentMaster.servants}
+            builds={profile.servantBuilds}
             onAdd={addSupportTemplate}
             onAddSource={addSupportSource}
+            onUpdateTemplate={updateSupportTemplate}
+            onRemoveTemplate={removeSupportTemplate}
+            onRemoveSource={removeSupportSource}
+            onUpdateSource={updateSupportSource}
             onUpdateEffect={updateSupportEffect}
           />
         )}{' '}
@@ -468,7 +530,7 @@ export function App() {
                     attackerSkills: [],
                     craftEssence: null,
                   },
-                  undefined,
+                  rankingSupport,
                   currentMaster,
                 );
                 return {
@@ -486,6 +548,16 @@ export function App() {
               })}
             versions={versions}
             releaseValidated={ENGINE_RELEASE_VALIDATED}
+            supportTemplates={profile.supportTemplates}
+            servants={currentMaster.servants}
+            selectedSupport={rankingSupport}
+            onSupportSelect={async (template) => {
+              setRankingSupportId(template?.templateId ?? null);
+              if (template)
+                await updateSupportTemplate(template.templateId, {
+                  lastUsedAt: new Date().toISOString(),
+                });
+            }}
           />
         )}{' '}
         {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
@@ -502,32 +574,60 @@ export function App() {
   );
 }
 function BottomNav({ page, setPage }: { page: Page; setPage: (page: Page) => void }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const morePages: readonly [Page, string][] = [
+    ['ranking', '火力ランキング'],
+    ['ce', '概念礼装'],
+    ['support', '支援条件'],
+    ['data', 'データ管理'],
+  ];
+  const selectPage = (next: Page) => {
+    setMoreOpen(false);
+    setPage(next);
+  };
   return (
     <nav className="bottom-nav" aria-label="モバイル主要">
-      <button aria-current={page === 'home' ? 'page' : undefined} onClick={() => setPage('home')}>
+      <button
+        aria-current={page === 'home' ? 'page' : undefined}
+        onClick={() => selectPage('home')}
+      >
         ホーム
       </button>
       <button
         aria-current={page === 'calculate' ? 'page' : undefined}
-        onClick={() => setPage('calculate')}
+        onClick={() => selectPage('calculate')}
       >
         計算
       </button>
       <button
         aria-current={page === 'servants' ? 'page' : undefined}
-        onClick={() => setPage('servants')}
+        onClick={() => selectPage('servants')}
       >
         所持
       </button>
       <button
         aria-current={page === 'growth' ? 'page' : undefined}
-        onClick={() => setPage('growth')}
+        onClick={() => selectPage('growth')}
       >
         育成
       </button>
-      <button aria-current={page === 'data' ? 'page' : undefined} onClick={() => setPage('data')}>
-        データ
+      <button
+        aria-current={morePages.some(([candidate]) => candidate === page) ? 'page' : undefined}
+        aria-expanded={moreOpen}
+        aria-controls="mobile-more-menu"
+        onClick={() => setMoreOpen((current) => !current)}
+      >
+        その他
       </button>
+      {moreOpen ? (
+        <div id="mobile-more-menu" className="bottom-nav-more" aria-label="その他の機能">
+          {morePages.map(([id, label]) => (
+            <button key={id} type="button" onClick={() => selectPage(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </nav>
   );
 }

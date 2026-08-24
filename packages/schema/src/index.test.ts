@@ -6,6 +6,7 @@ import {
   calcInputSchema,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
+  supportTemplateSchema,
 } from './index';
 
 describe('portable schema boundaries', () => {
@@ -40,6 +41,32 @@ describe('portable schema boundaries', () => {
     expect(
       calculationSelectionSchema.parse({ attackerSource: 'master', craftEssence: null }),
     ).toEqual({ attackerSource: 'master', effectMode: 'resolved', craftEssence: null });
+  });
+
+  it('normalizes legacy support effects into one virtual source instance', () => {
+    const template = supportTemplateSchema.parse({
+      templateId: crypto.randomUUID(),
+      name: '旧形式',
+      masterDataVersion: 'test',
+      effects: [
+        {
+          sourceType: 'servant',
+          sourceId: 'support-1',
+          effectId: 'skill-1',
+          skillLevel: 10,
+          targetRole: 'ATTACKER',
+          enabled: true,
+          order: 0,
+        },
+      ],
+      updatedAt: '2026-08-24T00:00:00.000Z',
+      lastUsedAt: null,
+    });
+
+    expect(template.effects[0]).toMatchObject({
+      sourceInstanceId: 'legacy:servant:support-1',
+      ownership: 'virtual',
+    });
   });
 
   it('upgrades v1 profiles once while discarding incompatible calculation snapshots', () => {

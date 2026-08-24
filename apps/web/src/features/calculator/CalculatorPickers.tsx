@@ -6,6 +6,12 @@ import {
 } from '@fgo-lab/master-data';
 import type { CraftEssenceCopy, ServantBuild, SupportTemplate } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
+import { ServantPicker } from '../../ui/ServantPicker';
+import { SupportTemplateRow } from '../support/SupportTemplateRow';
+import {
+  createServantMap,
+  supportTemplateSearchText,
+} from '../support/supportTemplatePresentation';
 import './calculator-pickers.css';
 
 function trapModalKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: () => void) {
@@ -45,82 +51,29 @@ export function AttackerPicker({
   onSelect: (servant: ServantMaster, source: 'owned' | 'master') => void;
   onClose: () => void;
 }) {
-  const [source, setSource] = useState(initialSource);
-  const [search, setSearch] = useState('');
-  const normalizedSearch = search.trim().toLocaleLowerCase('ja');
-  const visible = servants
-    .filter((candidate) => source === 'master' || Boolean(builds[candidate.id]?.npLevel))
-    .filter((candidate) =>
-      [candidate.name, candidate.classId, candidate.id]
-        .join(' ')
-        .toLocaleLowerCase('ja')
-        .includes(normalizedSearch),
-    )
-    .slice(0, 100);
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="attacker-picker-title"
-      className="dialog"
-      onKeyDown={(event) => trapModalKeyboard(event, onClose)}
-    >
-      <div className="dialog-panel picker-dialog-panel">
-        <div className="section-heading">
-          <h2 id="attacker-picker-title">攻撃役を選択</h2>
-          <button onClick={onClose}>閉じる</button>
-        </div>
-        <div role="tablist" aria-label="攻撃役の選択元" className="source-tabs">
-          <button role="tab" aria-selected={source === 'owned'} onClick={() => setSource('owned')}>
-            所持・育成管理
-          </button>
-          <button
-            role="tab"
-            aria-selected={source === 'master'}
-            onClick={() => setSource('master')}
-          >
-            全DB
-          </button>
-        </div>
-        <label>
-          名前・クラス
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            autoFocus
-          />
-        </label>
-        {visible.length === 0 ? (
-          <p className="empty">一致する攻撃役はありません。</p>
-        ) : (
-          <ul className="plain-list picker-result-list">
-            {visible.map((candidate) => {
-              const saved = builds[candidate.id];
-              return (
-                <li key={candidate.id}>
-                  <button className="list-row" onClick={() => onSelect(candidate, source)}>
-                    <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
-                    <span className="list-row-main">
-                      <strong>{candidate.name}</strong>
-                      <small>
-                        {candidate.classId}・
-                        {source === 'owned' && saved
-                          ? `Lv${saved.level} / NP${saved.npLevel} / フォウ${saved.fouAtk}`
-                          : 'Lv90 / NP1 / フォウ1000（仮想）'}
-                      </small>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {visible.length === 100 && (
-          <p className="notice">先頭100件を表示中です。名前またはクラスで絞り込んでください。</p>
-        )}
-      </div>
-    </div>
+    <ServantPicker
+      purpose="attacker"
+      title="攻撃役を選択"
+      servants={servants}
+      sources={[
+        {
+          id: 'owned',
+          label: '所持・育成管理',
+          includes: (candidate) => Boolean(builds[candidate.id]?.npLevel),
+        },
+        { id: 'master', label: '全DB', includes: () => true },
+      ]}
+      initialSourceId={initialSource}
+      description={(candidate, source) => {
+        const saved = builds[candidate.id];
+        return source === 'owned' && saved
+          ? `Lv${saved.level} / NP${saved.npLevel} / フォウ${saved.fouAtk}`
+          : 'Lv90 / NP1 / フォウ1000（仮想）';
+      }}
+      onSelect={(candidate, source) => onSelect(candidate, source as 'owned' | 'master')}
+      onClose={onClose}
+    />
   );
 }
 
@@ -250,15 +203,11 @@ export function SupportTemplatePicker({
   onClose: () => void;
 }) {
   const [search, setSearch] = useState('');
-  const visible = templates.filter((template) => {
-    const sourceNames = template.effects.map(
-      (effect) => servants.find((servant) => servant.id === effect.sourceId)?.name ?? '',
-    );
-    return [template.name, ...sourceNames]
-      .join(' ')
-      .toLocaleLowerCase('ja')
-      .includes(search.toLocaleLowerCase('ja'));
-  });
+  const servantById = createServantMap(servants);
+  const normalizedSearch = search.trim().toLocaleLowerCase('ja');
+  const visible = templates.filter((template) =>
+    supportTemplateSearchText(template, servantById).includes(normalizedSearch),
+  );
   return (
     <div
       role="dialog"
@@ -282,21 +231,16 @@ export function SupportTemplatePicker({
           <p>一致する支援条件はありません。</p>
         ) : (
           <ul className="plain-list template-picker-list">
-            {visible.map((template) => {
-              const sourceIds = [...new Set(template.effects.map((effect) => effect.sourceId))];
-              return (
-                <li key={template.templateId}>
-                  <span className="list-row-main">
-                    <strong>{template.name}</strong>
-                    <small>
-                      {sourceIds.length}騎・使用中
-                      {template.effects.filter((effect) => effect.enabled).length}スキル
-                    </small>
-                  </span>
-                  <button onClick={() => onSelect(template)}>呼び出す</button>
-                </li>
-              );
-            })}
+            {visible.map((template) => (
+              <li key={template.templateId}>
+                <SupportTemplateRow
+                  template={template}
+                  servantById={servantById}
+                  trailingLabel="呼び出す"
+                  onSelect={() => onSelect(template)}
+                />
+              </li>
+            ))}
           </ul>
         )}
         <button onClick={onClose}>閉じる</button>

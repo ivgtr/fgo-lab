@@ -169,4 +169,29 @@ h3 {
     color: var(--ink);
     border-top: 4px solid var(--accent);
   }
+
+  .bottom-nav-more {
+    position: absolute;
+    right: 0.5rem;
+    bottom: calc(100% + 0.45rem);
+    display: grid;
+    width: min(240px, calc(100vw - 1rem));
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper);
+    box-shadow: 0 12px 34px rgb(20 24 34 / 25%);
+  }
+
+  .bottom-nav-more button {
+    min-height: 46px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    padding-inline: 1rem;
+    text-align: left;
+  }
+
+  .bottom-nav-more button:last-child {
+    border-bottom: 0;
+  }
 }

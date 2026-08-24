@@ -63,13 +63,24 @@
 .effect-inactive {
   color: var(--muted);
 }
-.support-effect-list li,
-.template-picker-list li {
+.support-effect-list li {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 0.7rem 0;
   border-bottom: 1px solid var(--line);
+}
+
+.template-picker-list li {
+  min-height: 0;
+  padding: 0;
+}
+
+.template-picker-list .support-template-row {
+  min-height: 64px;
+  border: 0;
+  border-radius: 0;
+  padding: 0.55rem;
 }
 .effect-applied {
   color: #285c3e;
