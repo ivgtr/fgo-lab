@@ -186,7 +186,14 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const result = calculateNpDamage(input, versions);
+  const calculatedResult = calculateNpDamage(input, versions);
+  const result = currentMaster.version.startsWith('fixture-')
+    ? {
+        ...calculatedResult,
+        precision: 'approximate' as const,
+        warnings: [...calculatedResult.warnings, 'diagnostic_fixture_not_release_validated'],
+      }
+    : calculatedResult;
   async function updateBuild(patch: Partial<ServantBuild>) {
     const current = build ?? defaultServantBuild(servant.id, clock);
     const nextBuild = {

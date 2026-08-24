@@ -21,18 +21,21 @@ export function damageAtRandom(input: CalcInput, npLevel: number, randomPermille
   }
 
   let value = f32Add(f32Add(input.attackerAtk, input.fouAtk), input.craftEssenceAtk);
-  value = f32Mul(value, DAMAGE_CONSTANT);
+  value = f32Mul(value, f32Div(npMultiplier, 1000));
+  value = f32Mul(
+    value,
+    f32Mul(CARD_RATE[input.cardType], Math.max(f32Add(1, boundedBuff(input.cardBuff)), 0)),
+  );
   value = f32Mul(value, input.classAttackRate);
   value = f32Mul(value, input.classAffinity);
   value = f32Mul(value, input.attributeAffinity);
   value = f32Mul(value, f32Div(randomPermille, 1000));
-  value = f32Mul(value, f32Add(1, boundedBuff(input.attackBuff)));
-  value = f32Mul(value, CARD_RATE[input.cardType]);
-  value = f32Mul(value, f32Add(1, boundedBuff(input.cardBuff)));
-  value = f32Mul(value, f32Div(npMultiplier, 1000));
-  value = f32Mul(value, f32Add(1, boundedBuff(input.npDamageBuff) + boundedBuff(input.powerMod)));
-  value = f32Mul(value, input.npSpecialMultiplier);
-  value = f32Mul(value, f32Add(1, -boundedBuff(input.specialResistance)));
+  value = f32Mul(value, DAMAGE_CONSTANT);
+  value = f32Mul(value, Math.max(f32Add(1, boundedBuff(input.attackBuff)), 0));
+  value = f32Mul(value, Math.max(f32Add(1, -boundedBuff(input.specialResistance)), 0));
+  const power = f32Add(boundedBuff(input.npDamageBuff), boundedBuff(input.powerMod));
+  value = f32Mul(value, Math.max(f32Add(1, power), 0.001));
+  value = f32Mul(value, Math.max(input.npSpecialMultiplier, 0.001));
   return floorDamage(f32Add(f32(value), input.flatDamage));
 }
 

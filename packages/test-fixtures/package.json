@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./master": "./master/fixture.json"
+    "./master": "./master/fixture.json",
+    "./golden/np-damage-v1": "./golden/np-damage-v1.json"
   }
 }

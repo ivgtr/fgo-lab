@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CalcInput, VersionContext } from '@fgo-lab/schema';
+import golden from '../../test-fixtures/golden/np-damage-v1.json';
 import {
   calculateNpDamage,
   damageAtRandom,
@@ -49,6 +50,21 @@ describe('float32 NP damage kernel', () => {
     expect(result.results[0]?.minimum).toBe(damageAtRandom(input, 1, 900));
     expect(result.results[0]?.maximum).toBe(damageAtRandom(input, 1, 1099));
     expect(result.results[4]!.average).toBeGreaterThan(result.results[0]!.average);
+  });
+  it('matches the independent neutral Arts formula at random 1000', () => {
+    const neutral: CalcInput = {
+      ...input,
+      attackerAtk: 10_000,
+      fouAtk: 0,
+      craftEssenceAtk: 0,
+      npMultipliers: [1000, 1000, 1000, 1000, 1000],
+      cardType: 'arts',
+      classAffinity: 1,
+      attackBuff: 0,
+      cardBuff: 0,
+      npDamageBuff: 0,
+    };
+    expect(damageAtRandom(neutral, 1, 1000)).toBe(golden.expectedDamage);
   });
   it('is deterministic', () =>
     expect(calculateNpDamage(input, versions)).toEqual(calculateNpDamage(input, versions)));
