@@ -28,6 +28,9 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
     'aria-current',
     'true',
   );
+  await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('33,713');
+  await expect(page.getByLabel('自動適用される能力')).toContainText('クラス相性2.00倍');
+  await expect(page.getByLabel('攻撃役の自身スキル')).toContainText('理想郷の騎士 EX');
 });
 
 test('works at 320px without horizontal document overflow', async ({ page }) => {
@@ -135,12 +138,70 @@ test('autosaves and restores a directly edited calculation draft', async ({ page
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await page.getByRole('tab', { name: '直接入力' }).click();
-  await page.getByLabel('攻撃力補正').fill('0.2');
+  await page.getByLabel('攻撃バフ（%）').fill('20');
   await expect(page.getByRole('button', { name: '直前の操作を元に戻す' })).toBeEnabled();
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await page.getByRole('tab', { name: '直接入力' }).click();
-  await expect(page.getByLabel('攻撃力補正')).toHaveValue('0.2');
+  await expect(page.getByLabel('攻撃バフ（%）')).toHaveValue('20');
+});
+
+test('restores complete direct inputs, CE effects, and trait special NP resolution', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers the full calculator form');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await page.getByRole('tab', { name: '直接入力' }).click();
+  for (const label of [
+    '基礎ATK',
+    'ATKフォウ',
+    '礼装ATK',
+    'クラス攻撃補正',
+    'クラス相性',
+    '属性相性',
+    '攻撃バフ（%）',
+    '敵防御力（%）',
+    'カード耐性（%）',
+    '宝具耐性（%）',
+    '特攻宝具倍率（%）',
+    'イベント特攻（%）',
+    '固定ダメージ軽減',
+  ])
+    await expect(page.getByLabel(label)).toBeVisible();
+
+  await page.getByLabel('クラス相性').fill('1');
+  await page.getByLabel('敵クラス').selectOption('archer');
+  await expect(page.getByLabel('クラス相性')).toHaveValue('1');
+  await page.getByRole('button', { name: 'ATK・相性を自動値へ戻す' }).click();
+  await expect(page.getByLabel('クラス相性')).toHaveValue('0.5');
+
+  await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
+  const ceDialog = page.getByRole('dialog', { name: '概念礼装を選択' });
+  await ceDialog.getByRole('tab', { name: '全DB' }).click();
+  await ceDialog.getByLabel('礼装名').fill('黒の聖杯');
+  await ceDialog
+    .getByRole('button', { name: /黒の聖杯/ })
+    .first()
+    .click();
+  await expect(page.getByLabel('自動適用される能力')).toContainText('宝具威力アップ');
+  await expect(page.getByLabel('自動適用される能力')).toContainText('+60%');
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前・クラス').fill('ジークフリート');
+  await attackerDialog.getByRole('button', { name: /ジークフリート saber・Lv90/ }).click();
+  const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
+  const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
+  await expect(page.getByLabel('自動適用される能力')).toContainText('対象特性なし');
+  await page.getByLabel('敵特性（カンマ区切り）').fill('dragon');
+  await expect(page.getByLabel('自動適用される能力')).toContainText('1.50倍');
+  const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
+  expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
 });
 
 test('round-trips an allowlisted calculation share', async ({ page, context, isMobile }) => {
@@ -151,9 +212,9 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
-  await page.getByLabel('カリスマ Bを使用').check();
+  await page.getByLabel('理想郷の騎士 EXを使用').check();
+  await page.getByLabel('敵クラス').selectOption('berserker');
   const sharedDamage = await currentDamage.textContent();
-  await page.getByLabel('敵クラス').fill('berserker');
   await page.getByRole('button', { name: 'URLをコピー' }).click();
   await expect(page.getByText('共有URLをコピーしました')).toBeVisible();
   const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
@@ -163,7 +224,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
   await expect(page.getByLabel('敵クラス')).toHaveValue('berserker');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
-  await expect(page.getByLabel('カリスマ Bを使用')).not.toBeChecked();
+  await expect(page.getByLabel('理想郷の騎士 EXを使用')).not.toBeChecked();
 
   const imageDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '画像として保存' }).click();
@@ -239,9 +300,9 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   const supportDialog = page.getByRole('dialog', { name: '支援元サーヴァントを検索' });
   await supportDialog.getByLabel('サーヴァント名').fill('アルトリア・ペンドラゴン');
   await supportDialog.getByRole('button', { name: '追加', exact: true }).first().click();
-  await page.getByLabel('カリスマ Bを使用').click();
-  await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
-  await page.getByLabel('カリスマ Bのスキルレベル').selectOption('8');
+  await page.getByLabel('理想郷の騎士 EXを使用').click();
+  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
+  await page.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
   await expect(page.getByRole('region', { name: '支援条件の編集' })).toContainText(
     '使用中 1スキル',
   );
@@ -263,9 +324,9 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   const selfSkillRegion = page.getByLabel('攻撃役の自身スキル');
   const damageBeforeSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   await expect(selfSkillRegion).toContainText('保存値');
-  await selfSkillRegion.getByLabel('カリスマ Bのスキルレベル').selectOption('8');
+  await selfSkillRegion.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
   await expect(selfSkillRegion).toContainText('一時変更');
-  await selfSkillRegion.getByLabel('カリスマ Bを使用').check();
+  await selfSkillRegion.getByLabel('理想郷の騎士 EXを使用').check();
   const damageWithSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(damageWithSelfSkill).toBeGreaterThan(damageBeforeSelfSkill);
   await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
@@ -289,7 +350,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   const templateDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await templateDialog.getByRole('button', { name: '呼び出す' }).click();
   await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
-  await expect(page.getByLabel('支援・バフ')).toContainText('+15.3%');
+  await expect(page.getByLabel('支援・バフ')).toContainText('+27%');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('カレイドスコープ Lv.20');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('自身スキル1件適用');
   await expect(page.getByLabel('共有対象の計算結果')).toContainText('支援条件 1（1スキル）');
@@ -304,8 +365,8 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
-  await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
-  await expect(page.getByLabel('カリスマ Bのスキルレベル')).toHaveValue('8');
+  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
+  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
   await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
     '登録コピー・Lv20',
   );
@@ -321,8 +382,8 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.getByRole('button', { name: '所持・育成' }).click();
   await expect(page.getByLabel('スキル1')).toHaveValue('1');
   await page.getByRole('button', { name: '支援条件' }).click();
-  await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
-  await expect(page.getByLabel('カリスマ Bのスキルレベル')).toHaveValue('8');
+  await expect(page.getByLabel('理想郷の騎士 EXを使用')).toBeChecked();
+  await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
 });
 
 test('finalizes one deduplicated history entry per calculation input', async ({
@@ -370,14 +431,14 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('420件をWorkerで計算');
+  await expect(page.getByRole('status')).toContainText('415件をWorkerで計算・unsupported 5件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );
   await page.getByLabel('宝具カード').selectOption('arts');
-  await expect(page.getByRole('status')).not.toContainText('420件表示');
+  await expect(page.getByRole('status')).not.toContainText('415件表示');
   await page.getByLabel('クラス').selectOption('saber');
-  await expect(page.getByRole('status')).not.toContainText('420件表示');
+  await expect(page.getByRole('status')).not.toContainText('415件表示');
   await page.getByLabel('対象範囲').selectOption('owned');
   await expect(page.getByRole('status')).toContainText('0件表示');
 });

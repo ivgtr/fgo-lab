@@ -276,6 +276,48 @@ h3 {
   margin-top: 1.25rem;
   border-top: 1px solid var(--line);
 }
+.automatic-abilities {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.automatic-modifiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0 0.75rem;
+  border: 1px solid var(--line);
+}
+.automatic-modifiers > div {
+  padding: 0.55rem 0.65rem;
+}
+.automatic-modifiers > div + div {
+  border-left: 1px solid var(--line);
+}
+.automatic-modifiers dt,
+.automatic-modifiers dd {
+  margin: 0;
+}
+.automatic-modifiers dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.automatic-modifiers dd {
+  font-weight: 800;
+}
+.automatic-effect-list li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.55rem 0;
+  font-size: 0.75rem;
+}
+.automatic-effect-list li > span:first-child {
+  display: grid;
+}
+.automatic-effect-list small {
+  color: var(--muted);
+}
 .attacker-skills {
   margin-top: 1.25rem;
   border-top: 1px solid var(--line);
@@ -781,6 +823,27 @@ td.average {
 .form-grid-wide {
   grid-column: 1 / -1;
 }
+.direct-input-summary {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block: 1px solid var(--line);
+  background: #fafaf8;
+  padding: 0.7rem;
+}
+.direct-input-summary > span {
+  display: grid;
+}
+.direct-input-summary small,
+.form-grid label > small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.direct-input-summary strong {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
 .picker-field {
   display: grid;
   gap: 0.35rem;
@@ -975,6 +1038,20 @@ td.average {
   .attacker-skill-list > .attacker-skill-row {
     grid-template-columns: 36px minmax(0, 1fr) 68px;
     align-items: start;
+  }
+  .automatic-modifiers {
+    grid-template-columns: 1fr;
+  }
+  .automatic-modifiers > div + div {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+  .automatic-effect-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .automatic-effect-list li > span:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
   .attacker-skill-row > .image-frame {
     grid-column: 1;

@@ -39,8 +39,8 @@ const pendingDifferential =
 
 export const attackNpHandlers: Readonly<Record<AttackNpFunctionType, Handler>> = {
   damageNp: exactBase,
-  damageNpIndividual: pendingDifferential('individual_trait_parameters_not_resolved'),
-  damageNpPierce: pendingDifferential('defense_ignore_trace_not_resolved'),
+  damageNpIndividual: exactBase,
+  damageNpPierce: exactBase,
   damageNpIndividualSum: ({ baseMultiplier, matchedTraitCount }) => ({
     multiplier: baseMultiplier * Math.max(1, matchedTraitCount),
     precision: 'approximate',

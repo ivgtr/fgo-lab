@@ -1,7 +1,13 @@
-import type { ServantMaster } from '@fgo-lab/master-data';
+import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { CalcInput, SupportTemplate } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { resolveAttackerSkills, resolveSupportTemplate } from './index';
+import {
+  resolveAttackerSkills,
+  resolveCraftEssenceEffects,
+  resolveNpEffects,
+  resolveServantPassives,
+  resolveSupportTemplate,
+} from './index';
 
 const input: CalcInput = {
   attackerId: 'attacker',
@@ -18,12 +24,18 @@ const input: CalcInput = {
   classAffinity: 1,
   attributeAffinity: 1,
   attackBuff: 0.1,
+  defenseBuff: 0,
   cardBuff: 0,
+  cardResistance: 0,
   npDamageBuff: 0,
+  npResistance: 0,
   powerMod: 0,
+  eventDamageBuff: 0,
   npSpecialMultiplier: 1,
+  specialDamageBuff: 0,
   specialResistance: 0,
   flatDamage: 0,
+  damageCut: 0,
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 };
 
@@ -31,6 +43,7 @@ const source: ServantMaster = {
   id: 'support',
   name: '支援役',
   classId: 'caster',
+  attribute: 'human',
   rarity: 5,
   hasAttackNp: false,
   npCard: 'arts',
@@ -41,9 +54,13 @@ const source: ServantMaster = {
   traits: [],
   imageKey: null,
   growth: [],
+  passives: [],
+  npEffects: [],
   skills: [
     {
       id: 'skill',
+      slot: 1,
+      priority: 1,
       name: '支援スキル',
       detail: '',
       imageKey: null,
@@ -180,5 +197,129 @@ describe('resolveAttackerSkills', () => {
     );
     expect(result.input).toEqual(input);
     expect(result.effects).toEqual([]);
+  });
+
+  it('applies a recipient-limited buff only when the attacker has the trait', () => {
+    const conditional: ServantMaster = {
+      ...attacker,
+      traits: ['knightsOfTheRound'],
+      skills: [
+        {
+          ...attacker.skills[0]!,
+          effects: [
+            {
+              id: 'round-table',
+              type: 'addStateShort',
+              target: 'ptAll',
+              label: '攻撃力アップ',
+              values: Array(10).fill(200) as number[],
+              recipientTraits: ['knightsOfTheRound'],
+            },
+          ],
+        },
+      ],
+    };
+    const selection = [{ skillId: 'skill', skillLevel: 10, enabled: true }];
+    expect(resolveAttackerSkills(input, selection, [conditional]).input.attackBuff).toBeCloseTo(
+      0.3,
+    );
+    const mismatch = resolveAttackerSkills(input, selection, [{ ...conditional, traits: [] }]);
+    expect(mismatch.input.attackBuff).toBe(0.1);
+    expect(mismatch.effects[0]).toMatchObject({
+      applied: false,
+      reason: 'attacker_trait_mismatch',
+    });
+  });
+});
+
+describe('automatic equipment, passive, and NP effects', () => {
+  it('uses the normal and maximum-limit-break craft essence values', () => {
+    const craftEssence: CraftEssenceMaster = {
+      id: 'black-grail',
+      name: '黒の聖杯',
+      maxLevelByLimitBreak: [20, 35, 50, 65, 100],
+      atkMin: 600,
+      atkMax: 2400,
+      imageKey: null,
+      effects: [
+        {
+          id: 'np',
+          type: 'addStateShort',
+          target: 'self',
+          label: '宝具威力アップ',
+          values: [600, 800],
+        },
+      ],
+    };
+    expect(resolveCraftEssenceEffects(input, craftEssence, 0).input.npDamageBuff).toBe(0.6);
+    expect(resolveCraftEssenceEffects(input, craftEssence, 4).input.npDamageBuff).toBe(0.8);
+  });
+
+  it('applies a matching passive card buff', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      passives: [
+        {
+          id: 'passive',
+          slot: 0,
+          priority: 0,
+          name: '狂化',
+          detail: '',
+          imageKey: null,
+          effects: [
+            {
+              id: 'buster',
+              type: 'addStateShort',
+              target: 'self',
+              label: 'バスターアップ',
+              values: Array(10).fill(80) as number[],
+            },
+          ],
+        },
+      ],
+    };
+    expect(resolveServantPassives(input, attacker).input.cardBuff).toBe(0.08);
+  });
+
+  it('uses OC for a damage-relevant effect before the NP function', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      npEffects: [
+        {
+          id: 'attack',
+          type: 'addStateShort',
+          target: 'self',
+          label: '攻撃力アップ',
+          values: [100, 200, 300, 400, 500],
+          timing: 'beforeDamage',
+        },
+      ],
+    };
+    expect(resolveNpEffects({ ...input, overcharge: 3 }, attacker).input.attackBuff).toBe(0.4);
+  });
+
+  it('applies a special NP multiplier only to a matching enemy trait', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      npSpecialAttack: {
+        targetTraits: ['dragon'],
+        multipliersByOvercharge: [1.5, 1.625, 1.75, 1.875, 2],
+      },
+    };
+    const matched = resolveNpEffects(
+      { ...input, overcharge: 2, target: { ...input.target, traits: ['dragon'] } },
+      attacker,
+    );
+    expect(matched.input.npSpecialMultiplier).toBe(1.625);
+    expect(matched.effects.at(-1)).toMatchObject({ applied: true, reason: 'target_trait_matched' });
+    const missed = resolveNpEffects(input, attacker);
+    expect(missed.input.npSpecialMultiplier).toBe(1);
+    expect(missed.effects.at(-1)).toMatchObject({
+      applied: false,
+      reason: 'target_trait_mismatch',
+    });
   });
 });

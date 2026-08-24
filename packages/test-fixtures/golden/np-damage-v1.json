@@ -1,6 +1,6 @@
 {
   "caseId": "atlas-neutral-arts-random-1000",
-  "description": "ATK 10000、宝具倍率1000、Arts、全相性等倍、バフなし、乱数1000",
+  "description": "ATK 10000、宝具倍率100%、Arts、全相性等倍、バフなし、乱数1000",
   "expectedDamage": 2300,
   "masterDataVersion": "independent-constant-fixture-1",
   "engineVersion": "1.0.0",
@@ -8,6 +8,6 @@
     "https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/damage.md",
     "https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md"
   ],
-  "derivation": "floor(float32(10000 * 1 * 1 * 1 * 1 * 1 * 1 * 0.23))",
+  "derivation": "floor(float32(10000 * (100 / 100) * 1 * 1 * 1 * 1 * 1 * 0.23))",
   "review": "independent arithmetic fixture; external differential pending"
 }

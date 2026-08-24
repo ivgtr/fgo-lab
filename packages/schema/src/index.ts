@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SCHEMA_VERSION = 1 as const;
-export const ENGINE_VERSION = '1.0.0' as const;
+export const ENGINE_VERSION = '1.1.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -72,17 +72,24 @@ export const calcInputSchema = z.object({
   npLevel: z.number().int().min(1).max(5),
   overcharge: z.number().int().min(1).max(5),
   npMultipliers: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
+  attackNpFunctionType: z.string().optional(),
   cardType: z.enum(['buster', 'arts', 'quick']),
   classAttackRate: z.number().min(0).max(5),
   classAffinity: z.number().min(0).max(5),
   attributeAffinity: z.number().min(0).max(5),
   attackBuff: z.number().min(-1).max(5),
+  defenseBuff: z.number().min(-5).max(5).default(0),
   cardBuff: z.number().min(-1).max(5),
+  cardResistance: z.number().min(-5).max(5).default(0),
   npDamageBuff: z.number().min(-1).max(5),
+  npResistance: z.number().min(-5).max(5).default(0),
   powerMod: z.number().min(-1).max(10),
+  eventDamageBuff: z.number().min(-1).max(10).default(0),
   npSpecialMultiplier: z.number().min(0).max(20),
+  specialDamageBuff: z.number().min(-1).max(20).default(0),
   specialResistance: z.number().min(-5).max(5),
   flatDamage: z.number().int().min(-100000).max(100000),
+  damageCut: z.number().int().min(0).max(100000).default(0),
   target: z.object({
     classId: z.string().min(1).max(40),
     attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
@@ -101,6 +108,19 @@ export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema
 export const calculationSelectionSchema = z.object({
   attackerSource: z.enum(['owned', 'master']),
   attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
+  manualOverrides: z
+    .array(
+      z.enum([
+        'attackerAtk',
+        'fouAtk',
+        'craftEssenceAtk',
+        'classAttackRate',
+        'classAffinity',
+        'attributeAffinity',
+      ]),
+    )
+    .max(6)
+    .optional(),
   craftEssence: z
     .object({
       source: z.enum(['registered', 'master']),

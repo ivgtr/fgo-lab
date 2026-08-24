@@ -126,11 +126,14 @@ type AtlasServant = {
   type?: string;
   name?: string;
   className?: string;
+  attribute?: string;
   rarity?: number;
   atkGrowth?: number[];
-  traits?: { name?: string }[];
+  traits?: { id?: number; name?: string }[];
   skills?: {
     id?: number;
+    num?: number;
+    priority?: number;
     name?: string;
     detail?: string;
     icon?: string;
@@ -139,9 +142,15 @@ type AtlasServant = {
       funcType?: string;
       funcTargetType?: string;
       funcPopupText?: string;
-      svals?: { Value?: number; Rate?: number }[];
+      functvals?: { id?: number; name?: string; negative?: boolean }[];
+      buffs?: {
+        type?: string;
+        ckOpIndv?: { id?: number; name?: string }[];
+      }[];
+      svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
     }[];
   }[];
+  classPassive?: AtlasServant['skills'];
   noblePhantasms?: AtlasNp[];
   extraAssets?: { faces?: { ascension?: Record<string, string> } };
   ascensionMaterials?: AtlasMaterialStep;
@@ -151,7 +160,19 @@ type AtlasServant = {
 type AtlasNp = {
   card?: string;
   priority?: number;
-  functions?: { funcType?: string; funcTargetType?: string; svals?: { Value?: number }[] }[];
+  functions?: {
+    funcId?: number;
+    funcType?: string;
+    funcTargetType?: string;
+    funcPopupText?: string;
+    functvals?: { id?: number; name?: string; negative?: boolean }[];
+    buffs?: { type?: string; ckOpIndv?: { id?: number; name?: string }[] }[];
+    svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
+    svals2?: { Correction?: number }[];
+    svals3?: { Correction?: number }[];
+    svals4?: { Correction?: number }[];
+    svals5?: { Correction?: number }[];
+  }[];
 };
 type AtlasEquip = {
   id?: number;
@@ -160,6 +181,20 @@ type AtlasEquip = {
   lvMax?: number;
   atkBase?: number;
   atkMax?: number;
+  skills?: {
+    id?: number;
+    condLimitCount?: number;
+    priority?: number;
+    functions?: {
+      funcId?: number;
+      funcType?: string;
+      funcTargetType?: string;
+      funcPopupText?: string;
+      functvals?: { id?: number; name?: string; negative?: boolean }[];
+      buffs?: { type?: string; ckOpIndv?: { id?: number; name?: string }[] }[];
+      svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
+    }[];
+  }[];
   extraAssets?: { equipFace?: { equip?: Record<string, string> } };
 };
 type AtlasItem = {
@@ -171,6 +206,41 @@ type AtlasItem = {
   uses?: string[];
 };
 const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = { 1: 'quick', 2: 'buster', 3: 'arts' };
+
+function normalizeFunctions(
+  functions:
+    | {
+        funcId?: number;
+        funcType?: string;
+        funcTargetType?: string;
+        funcPopupText?: string;
+        functvals?: { id?: number; name?: string; negative?: boolean }[];
+        buffs?: { type?: string; ckOpIndv?: { id?: number; name?: string }[] }[];
+        svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
+      }[]
+    | undefined,
+) {
+  return (functions ?? []).flatMap((fn) =>
+    typeof fn.funcId === 'number'
+      ? [
+          {
+            id: String(fn.funcId),
+            type: fn.funcType ?? 'unknown',
+            target: fn.funcTargetType ?? 'unknown',
+            label: fn.funcPopupText ?? fn.funcType ?? '効果',
+            values: (fn.svals ?? []).slice(0, 10).map((value) => value.Value ?? value.Rate ?? 0),
+            recipientTraits: (fn.functvals ?? []).flatMap((trait) =>
+              trait.name && !trait.negative ? [trait.name] : [],
+            ),
+            targetTraits: (fn.buffs ?? []).flatMap((buff) =>
+              (buff.ckOpIndv ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
+            ),
+            buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
+          },
+        ]
+      : [],
+  );
+}
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
   const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
@@ -200,6 +270,13 @@ export function normalizeAtlasSnapshot(input: {
 }): MasterDataSnapshot {
   if (!Array.isArray(input.servants) || !Array.isArray(input.equips) || !Array.isArray(input.items))
     throw new TypeError('atlas_exports_must_be_arrays');
+  const traitNameById = new Map(
+    (input.servants as AtlasServant[]).flatMap((candidate) =>
+      (candidate.traits ?? []).flatMap((trait) =>
+        typeof trait.id === 'number' && trait.name ? [[trait.id, trait.name] as const] : [],
+      ),
+    ),
+  );
   const servants = (input.servants as AtlasServant[]).flatMap((servant) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
     const attacks = (servant.noblePhantasms ?? [])
@@ -225,12 +302,49 @@ export function normalizeAtlasSnapshot(input: {
       ? (values as [number, number, number, number, number])
       : ([0, 0, 0, 0, 0] as const);
     const representativeNp = attack?.np ?? servant.noblePhantasms?.[0];
+    const specialTargetId = attack?.fn.svals?.[0]?.Target;
+    const specialTargetName =
+      typeof specialTargetId === 'number'
+        ? (traitNameById.get(specialTargetId) ?? `trait:${String(specialTargetId)}`)
+        : undefined;
+    const correctionSources = [
+      attack?.fn.svals,
+      attack?.fn.svals2,
+      attack?.fn.svals3,
+      attack?.fn.svals4,
+      attack?.fn.svals5,
+    ];
+    const specialCorrections = correctionSources.map(
+      (source) => (source?.[0]?.Correction ?? 1000) / 1000,
+    );
+    const damageFunctionIndex = representativeNp?.functions?.findIndex((fn) =>
+      fn.funcType?.startsWith('damageNp'),
+    );
     const image = servant.extraAssets?.faces?.ascension?.['1'] ?? null;
+    const activeSkills = [...(servant.skills ?? [])]
+      .filter((skill) => typeof skill.num === 'number' && skill.num >= 1 && skill.num <= 3)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+      .filter(
+        (skill, index, all) => all.findIndex((candidate) => candidate.num === skill.num) === index,
+      )
+      .sort((a, b) => (a.num ?? 0) - (b.num ?? 0));
+    const normalizeSkill = (skill: NonNullable<AtlasServant['skills']>[number]) => ({
+      id: String(skill.id),
+      slot: skill.num ?? 0,
+      priority: skill.priority ?? 0,
+      name: skill.name ?? '不明なスキル',
+      detail: skill.detail ?? '',
+      imageKey: skill.icon ?? null,
+      effects: normalizeFunctions(skill.functions),
+    });
     return [
       {
         id: String(servant.id),
         name: servant.name,
         classId: servant.className,
+        attribute: ['human', 'earth', 'sky', 'star', 'beast'].includes(servant.attribute ?? '')
+          ? servant.attribute
+          : 'unknown',
         rarity: servant.rarity,
         hasAttackNp,
         npCard: cardMap[representativeNp?.card ?? ''] ?? 'buster',
@@ -242,33 +356,38 @@ export function normalizeAtlasSnapshot(input: {
         attackNpFunctionType: attack?.fn.funcType ?? 'none',
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
         imageKey: image,
-        skills: (servant.skills ?? []).flatMap((skill) =>
-          typeof skill.id === 'number' && skill.name
-            ? [
-                {
-                  id: String(skill.id),
-                  name: skill.name,
-                  detail: skill.detail ?? '',
-                  imageKey: skill.icon ?? null,
-                  effects: (skill.functions ?? []).flatMap((fn) =>
-                    typeof fn.funcId === 'number'
-                      ? [
-                          {
-                            id: String(fn.funcId),
-                            type: fn.funcType ?? 'unknown',
-                            target: fn.funcTargetType ?? 'unknown',
-                            label: fn.funcPopupText ?? fn.funcType ?? '効果',
-                            values: (fn.svals ?? [])
-                              .slice(0, 10)
-                              .map((value) => value.Value ?? value.Rate ?? 0),
-                          },
-                        ]
-                      : [],
-                  ),
-                },
-              ]
-            : [],
+        skills: activeSkills
+          .filter((skill) => typeof skill.id === 'number' && skill.name)
+          .map(normalizeSkill),
+        passives: (servant.classPassive ?? [])
+          .filter((skill) => typeof skill.id === 'number' && skill.name)
+          .map(normalizeSkill),
+        npEffects: (representativeNp?.functions ?? []).flatMap((fn, index) =>
+          fn.funcType?.startsWith('damageNp')
+            ? []
+            : normalizeFunctions([fn]).map((effect) => ({
+                ...effect,
+                timing:
+                  damageFunctionIndex !== undefined &&
+                  damageFunctionIndex >= 0 &&
+                  index < damageFunctionIndex
+                    ? ('beforeDamage' as const)
+                    : ('afterDamage' as const),
+              })),
         ),
+        npSpecialAttack:
+          attack?.fn.funcType === 'damageNpIndividual' && specialTargetName
+            ? {
+                targetTraits: [specialTargetName],
+                multipliersByOvercharge: specialCorrections as [
+                  number,
+                  number,
+                  number,
+                  number,
+                  number,
+                ],
+              }
+            : null,
         growth: [
           ...growthSteps(servant.ascensionMaterials, 'ascension'),
           ...growthSteps(servant.skillMaterials, 'skill', 3),
@@ -287,6 +406,14 @@ export function normalizeAtlasSnapshot(input: {
       return [];
     const initial = Math.min(20, equip.lvMax);
     const increment = (equip.lvMax - initial) / 4;
+    const normalSkill = [...(equip.skills ?? [])]
+      .filter((skill) => (skill.condLimitCount ?? 0) === 0)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+    const limitBreakSkill = [...(equip.skills ?? [])]
+      .filter((skill) => skill.condLimitCount === 4)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+    const normalEffects = normalizeFunctions(normalSkill?.functions);
+    const limitBreakEffects = normalizeFunctions(limitBreakSkill?.functions);
     return [
       {
         id: String(equip.id),
@@ -297,6 +424,18 @@ export function normalizeAtlasSnapshot(input: {
         atkMin: equip.atkBase ?? 0,
         atkMax: equip.atkMax ?? 0,
         imageKey: equip.extraAssets?.equipFace?.equip?.[String(equip.id)] ?? null,
+        effects: normalEffects.map((effect) => {
+          const limitBreakEffect = limitBreakEffects.find(
+            (candidate) => candidate.id === effect.id && candidate.label === effect.label,
+          );
+          return {
+            ...effect,
+            values: [
+              effect.values[0] ?? 0,
+              limitBreakEffect?.values[0] ?? effect.values[0] ?? 0,
+            ] as [number, number],
+          };
+        }),
       },
     ];
   });

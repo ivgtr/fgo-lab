@@ -27,6 +27,7 @@ describe('profile domain', () => {
         id: 'x',
         name: 'X',
         classId: 'saber',
+        attribute: 'earth' as const,
         rarity: 5,
         hasAttackNp: true,
         npCard: 'buster' as const,
@@ -37,6 +38,8 @@ describe('profile domain', () => {
         traits: [],
         imageKey: null,
         skills: [],
+        passives: [],
+        npEffects: [],
         growth: [{ from: 'skill:1:1', to: 'skill:1:2', materialId: 'm', amount: 5, qp: 10 }],
       },
     ];

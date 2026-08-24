@@ -1,11 +1,11 @@
 {
   "manifestVersion": 1,
-  "masterDataVersion": "2026-08-24-atlas-jp-skills",
-  "createdAt": "2026-08-24T04:38:07.769Z",
+  "masterDataVersion": "2026-08-24-atlas-jp-calculator-v3",
+  "createdAt": "2026-08-24T08:22:51.895Z",
   "source": {
     "name": "Atlas Academy",
     "region": "JP",
-    "retrievedAt": "2026-08-24T04:38:07.769Z"
+    "retrievedAt": "2026-08-24T08:22:51.895Z"
   },
   "artifactKind": "production",
   "minimalAppVersion": "0.1.0",
@@ -14,8 +14,8 @@
     {
       "key": "master",
       "file": "master.json",
-      "bytes": 7530618,
-      "sha256": "d96fdf76c91458cc1631bcade6b5c8212de06ee7a959e85af80a3821b5f628a0",
+      "bytes": 9380685,
+      "sha256": "bdd8541bd62bb01e47e1ac5069e43342329535d6b967d8ab298c9583cd1f3734",
       "required": true
     }
   ],

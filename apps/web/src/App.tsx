@@ -20,9 +20,18 @@ import {
   type Clock,
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
-import { calculateNpDamage } from '@fgo-lab/calc-core';
+import {
+  attributeAffinity as resolveAttributeAffinity,
+  calculateNpDamage,
+  classAffinity as resolveClassAffinity,
+  classAttackRate as resolveClassAttackRate,
+  servantAttribute,
+} from '@fgo-lab/calc-core';
 import {
   resolveAttackerSkills,
+  resolveCraftEssenceEffects,
+  resolveNpEffects,
+  resolveServantPassives,
   resolveSupportTemplate,
   type ResolvedSupportTemplate,
 } from '@fgo-lab/effect-resolver';
@@ -101,7 +110,7 @@ function handleModalKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: (
 function withEffectResolution(
   result: ReturnType<typeof calculateNpDamage>,
   resolution: ResolvedSupportTemplate | undefined,
-  traceStep: 'attacker-effect' | 'support-effect',
+  traceStep: string,
 ) {
   if (!resolution) return result;
   return {
@@ -120,6 +129,63 @@ function withEffectResolution(
         detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
       })),
     ],
+  };
+}
+
+function resolveCalculationComposition(
+  baseInput: CalcInput,
+  selection: CalculationSelection,
+  supportTemplate: SupportTemplate | undefined,
+  master: MasterDataSnapshot,
+) {
+  const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
+  const craftEssence = selection.craftEssence
+    ? master.craftEssences.find(
+        (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
+      )
+    : undefined;
+  const passive = resolveServantPassives(baseInput, attacker);
+  const craftEssenceResolution = resolveCraftEssenceEffects(
+    passive.input,
+    craftEssence,
+    selection.craftEssence?.limitBreak ?? 0,
+    attacker?.traits ?? [],
+  );
+  const attackerSkills = resolveAttackerSkills(
+    craftEssenceResolution.input,
+    selection.attackerSkills ?? [],
+    master.servants,
+  );
+  const support = supportTemplate
+    ? resolveSupportTemplate(attackerSkills.input, supportTemplate, master.servants)
+    : undefined;
+  const np = resolveNpEffects(support?.input ?? attackerSkills.input, attacker);
+  return {
+    input: np.input,
+    resolutions: [
+      ['passive-effect', passive],
+      ['craft-essence-effect', craftEssenceResolution],
+      ['attacker-effect', attackerSkills],
+      ['support-effect', support],
+      ['np-effect', np],
+    ] as const,
+  };
+}
+
+function calculateResolvedDamage(
+  baseInput: CalcInput,
+  selection: CalculationSelection,
+  supportTemplate: SupportTemplate | undefined,
+  master: MasterDataSnapshot,
+  versions: Parameters<typeof calculateNpDamage>[1],
+) {
+  const composition = resolveCalculationComposition(baseInput, selection, supportTemplate, master);
+  return {
+    input: composition.input,
+    result: composition.resolutions.reduce(
+      (result, [traceStep, resolution]) => withEffectResolution(result, resolution, traceStep),
+      calculateNpDamage(composition.input, versions),
+    ),
   };
 }
 
@@ -197,6 +263,7 @@ function calcInput(
   build: ServantBuild | undefined,
   servant = master.servants[0]!,
 ): CalcInput {
+  const target: CalcInput['target'] = { classId: 'lancer', attribute: 'earth', traits: [] };
   return {
     attackerId: servant.id,
     attackerLevel: build?.level ?? 90,
@@ -207,18 +274,25 @@ function calcInput(
     npLevel: Math.max(1, build?.npLevel ?? 1),
     overcharge: 1,
     npMultipliers: servant.npMultipliers,
+    attackNpFunctionType: servant.attackNpFunctionType,
     cardType: servant.npCard,
-    classAttackRate: 1,
-    classAffinity: 1.5,
-    attributeAffinity: 1,
+    classAttackRate: resolveClassAttackRate(servant.classId),
+    classAffinity: resolveClassAffinity(servant.classId, target.classId),
+    attributeAffinity: resolveAttributeAffinity(servantAttribute(servant.traits), target.attribute),
     attackBuff: 0,
+    defenseBuff: 0,
     cardBuff: 0,
+    cardResistance: 0,
     npDamageBuff: 0,
+    npResistance: 0,
     powerMod: 0,
+    eventDamageBuff: 0,
     npSpecialMultiplier: 1,
+    specialDamageBuff: 0,
     specialResistance: 0,
     flatDamage: 0,
-    target: { classId: 'lancer', attribute: 'earth', traits: [] },
+    damageCut: 0,
+    target,
   };
 }
 
@@ -366,24 +440,15 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const attackerSkillResolution = resolveAttackerSkills(
+  const resolvedCalculation = calculateResolvedDamage(
     baseInput,
-    currentSelection.attackerSkills ?? [],
-    currentMaster.servants,
+    currentSelection,
+    selectedSupport,
+    currentMaster,
+    versions,
   );
-  const supportResolution = selectedSupport
-    ? resolveSupportTemplate(attackerSkillResolution.input, selectedSupport, currentMaster.servants)
-    : undefined;
-  const input = supportResolution?.input ?? attackerSkillResolution.input;
-  const calculatedResult = withEffectResolution(
-    withEffectResolution(
-      calculateNpDamage(input, versions),
-      attackerSkillResolution,
-      'attacker-effect',
-    ),
-    supportResolution,
-    'support-effect',
-  );
+  const input = resolvedCalculation.input;
+  const calculatedResult = resolvedCalculation.result;
   const compatibleSharedSnapshot =
     sharedSnapshot?.result.versions.masterDataVersion === currentMaster.version &&
     sharedSnapshot.result.versions.engineVersion === ENGINE_VERSION;
@@ -562,29 +627,15 @@ export function App() {
     setCalculationSelection(selection);
     setSelectedSupport(supportTemplate);
     setSharedSnapshot(undefined);
-    const nextResolution = supportTemplate
-      ? resolveSupportTemplate(
-          resolveAttackerSkills(nextInput, selection.attackerSkills ?? [], currentMaster.servants)
-            .input,
-          supportTemplate,
-          currentMaster.servants,
-        )
-      : undefined;
-    const nextAttackerResolution = resolveAttackerSkills(
+    const nextCalculation = calculateResolvedDamage(
       nextInput,
-      selection.attackerSkills ?? [],
-      currentMaster.servants,
+      selection,
+      supportTemplate,
+      currentMaster,
+      versions,
     );
-    const resolvedInput = nextResolution?.input ?? nextAttackerResolution.input;
-    const nextCalculated = withEffectResolution(
-      withEffectResolution(
-        calculateNpDamage(resolvedInput, versions),
-        nextAttackerResolution,
-        'attacker-effect',
-      ),
-      nextResolution,
-      'support-effect',
-    );
+    const resolvedInput = nextCalculation.input;
+    const nextCalculated = nextCalculation.result;
     const nextResult = !ENGINE_RELEASE_VALIDATED
       ? {
           ...nextCalculated,
@@ -882,6 +933,7 @@ function Calculator({
   const attackerTriggerRef = useRef<HTMLButtonElement>(null);
   const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
   const resultCardRef = useRef<HTMLElement>(null);
+  const manualOverrides = new Set(selection.manualOverrides ?? []);
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
@@ -934,6 +986,20 @@ function Calculator({
     selection.attackerSkills ?? [],
     servants,
   );
+  const passiveResolution = resolveServantPassives(input, attacker);
+  const craftEssenceEffectResolution = resolveCraftEssenceEffects(
+    input,
+    selectedCraftEssence,
+    selection.craftEssence?.limitBreak ?? 0,
+    attacker?.traits ?? [],
+  );
+  const npEffectResolution = resolveNpEffects(input, attacker);
+  const automaticEffects = [
+    ...passiveResolution.effects,
+    ...craftEssenceEffectResolution.effects,
+    ...npEffectResolution.effects,
+  ];
+  const targetClassOptions = [...new Set(servants.map((servant) => servant.classId))].sort();
   const enabledAttackerSkills = (selection.attackerSkills ?? []).filter((skill) => skill.enabled);
   const targetSummary = [input.target.classId, input.target.attribute, ...input.target.traits].join(
     '・',
@@ -957,6 +1023,47 @@ function Calculator({
   function change(patch: Partial<CalcInput>) {
     void onInputChange({ ...input, ...patch });
   }
+  function changeManual(
+    key: NonNullable<CalculationSelection['manualOverrides']>[number],
+    value: number,
+  ) {
+    void onCompositionChange(
+      { ...input, [key]: value },
+      {
+        ...selection,
+        manualOverrides: [...new Set([...(selection.manualOverrides ?? []), key])],
+      },
+    );
+  }
+  function resetAutomaticValues() {
+    const saved = selection.attackerSource === 'owned' ? builds[input.attackerId] : undefined;
+    const craftEssence = selection.craftEssence;
+    void onCompositionChange(
+      {
+        ...input,
+        attackerAtk:
+          attacker?.atkByLevel[String(input.attackerLevel)] ??
+          attacker?.atkByLevel['90'] ??
+          input.attackerAtk,
+        fouAtk: saved?.fouAtk ?? 1000,
+        craftEssenceAtk:
+          selectedCraftEssence && craftEssence
+            ? deriveCraftEssenceAtk(
+                selectedCraftEssence,
+                craftEssence.level,
+                craftEssence.limitBreak,
+              )
+            : 0,
+        classAttackRate: resolveClassAttackRate(attacker?.classId ?? 'unknown'),
+        classAffinity: resolveClassAffinity(attacker?.classId ?? 'unknown', input.target.classId),
+        attributeAffinity: resolveAttributeAffinity(
+          servantAttribute(attacker?.traits ?? []),
+          input.target.attribute,
+        ),
+      },
+      { ...selection, manualOverrides: [] },
+    );
+  }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
     const level = saved?.level ?? 90;
@@ -965,12 +1072,25 @@ function Calculator({
         ...input,
         attackerId: candidate.id,
         attackerLevel: level,
-        attackerAtk:
-          candidate.atkByLevel[String(level)] ?? candidate.atkByLevel['90'] ?? input.attackerAtk,
-        fouAtk: saved?.fouAtk ?? 1000,
+        attackerAtk: manualOverrides.has('attackerAtk')
+          ? input.attackerAtk
+          : (candidate.atkByLevel[String(level)] ??
+            candidate.atkByLevel['90'] ??
+            input.attackerAtk),
+        fouAtk: manualOverrides.has('fouAtk') ? input.fouAtk : (saved?.fouAtk ?? 1000),
         npLevel: Math.max(1, saved?.npLevel ?? 1),
         npMultipliers: candidate.npMultipliers,
+        attackNpFunctionType: candidate.attackNpFunctionType,
         cardType: candidate.npCard,
+        classAttackRate: manualOverrides.has('classAttackRate')
+          ? input.classAttackRate
+          : resolveClassAttackRate(candidate.classId),
+        classAffinity: manualOverrides.has('classAffinity')
+          ? input.classAffinity
+          : resolveClassAffinity(candidate.classId, input.target.classId),
+        attributeAffinity: manualOverrides.has('attributeAffinity')
+          ? input.attributeAffinity
+          : resolveAttributeAffinity(servantAttribute(candidate.traits), input.target.attribute),
       },
       {
         ...selection,
@@ -991,7 +1111,9 @@ function Calculator({
       {
         ...input,
         craftEssenceId: master.id,
-        craftEssenceAtk: deriveCraftEssenceAtk(master, level, limitBreak),
+        craftEssenceAtk: manualOverrides.has('craftEssenceAtk')
+          ? input.craftEssenceAtk
+          : deriveCraftEssenceAtk(master, level, limitBreak),
       },
       {
         ...selection,
@@ -1017,14 +1139,20 @@ function Calculator({
     void onCompositionChange(
       {
         ...input,
-        craftEssenceAtk: deriveCraftEssenceAtk(selectedCraftEssence, level, limitBreak),
+        craftEssenceAtk: manualOverrides.has('craftEssenceAtk')
+          ? input.craftEssenceAtk
+          : deriveCraftEssenceAtk(selectedCraftEssence, level, limitBreak),
       },
       { ...selection, craftEssence: { ...current, level, limitBreak } },
     );
   }
   function clearCraftEssence() {
     void onCompositionChange(
-      { ...input, craftEssenceId: null, craftEssenceAtk: 0 },
+      {
+        ...input,
+        craftEssenceId: null,
+        craftEssenceAtk: manualOverrides.has('craftEssenceAtk') ? input.craftEssenceAtk : 0,
+      },
       { ...selection, craftEssence: null },
     );
   }
@@ -1154,7 +1282,9 @@ function Calculator({
                 const level = Number(event.target.value);
                 change({
                   attackerLevel: level,
-                  attackerAtk: attacker?.atkByLevel[String(level)] ?? input.attackerAtk,
+                  attackerAtk: manualOverrides.has('attackerAtk')
+                    ? input.attackerAtk
+                    : (attacker?.atkByLevel[String(level)] ?? input.attackerAtk),
                 });
               }}
             />
@@ -1287,12 +1417,23 @@ function Calculator({
           </div>
           <label>
             敵クラス
-            <input
+            <select
               value={input.target.classId}
               onChange={(event) =>
-                change({ target: { ...input.target, classId: event.target.value } })
+                change({
+                  classAffinity: manualOverrides.has('classAffinity')
+                    ? input.classAffinity
+                    : resolveClassAffinity(attacker?.classId ?? 'unknown', event.target.value),
+                  target: { ...input.target, classId: event.target.value },
+                })
               }
-            />
+            >
+              {targetClassOptions.map((classId) => (
+                <option key={classId} value={classId}>
+                  {classId}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             敵属性
@@ -1300,6 +1441,12 @@ function Calculator({
               value={input.target.attribute}
               onChange={(event) =>
                 change({
+                  attributeAffinity: manualOverrides.has('attributeAffinity')
+                    ? input.attributeAffinity
+                    : resolveAttributeAffinity(
+                        servantAttribute(attacker?.traits ?? []),
+                        event.target.value as CalcInput['target']['attribute'],
+                      ),
                   target: {
                     ...input.target,
                     attribute: event.target.value as CalcInput['target']['attribute'],
@@ -1331,27 +1478,117 @@ function Calculator({
               }
             />
           </label>
-          {mode === 'direct' &&
-            (
-              [
-                ['攻撃力補正', 'attackBuff'],
-                ['カード性能補正', 'cardBuff'],
-                ['宝具威力補正', 'npDamageBuff'],
-                ['特攻付与', 'powerMod'],
-                ['特殊威力', 'npSpecialMultiplier'],
-                ['特殊耐性', 'specialResistance'],
-              ] as const
-            ).map(([label, key]) => (
-              <label key={key}>
-                {label}
+          {mode === 'direct' && (
+            <>
+              <div className="direct-input-summary form-grid-wide">
+                <span>
+                  <small>合計ATK</small>
+                  <strong>
+                    {numberFormatter.format(
+                      input.attackerAtk + input.fouAtk + input.craftEssenceAtk,
+                    )}
+                  </strong>
+                </span>
+                <button type="button" onClick={resetAutomaticValues}>
+                  ATK・相性を自動値へ戻す
+                </button>
+              </div>
+              {(
+                [
+                  ['基礎ATK', 'attackerAtk'],
+                  ['ATKフォウ', 'fouAtk'],
+                  ['礼装ATK', 'craftEssenceAtk'],
+                ] as const
+              ).map(([label, key]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={input[key]}
+                    onChange={(event) => changeManual(key, Number(event.target.value))}
+                  />
+                  <small>{manualOverrides.has(key) ? '直接入力' : '自動'}</small>
+                </label>
+              ))}
+              {(
+                [
+                  ['クラス攻撃補正', 'classAttackRate'],
+                  ['クラス相性', 'classAffinity'],
+                  ['属性相性', 'attributeAffinity'],
+                ] as const
+              ).map(([label, key]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.05"
+                    value={input[key]}
+                    onChange={(event) => changeManual(key, Number(event.target.value))}
+                  />
+                  <small>{manualOverrides.has(key) ? '直接入力' : '対象から自動計算'}</small>
+                </label>
+              ))}
+              {(
+                [
+                  ['攻撃バフ', 'attackBuff'],
+                  ['敵防御力', 'defenseBuff'],
+                  ['カード性能', 'cardBuff'],
+                  ['カード耐性', 'cardResistance'],
+                  ['宝具威力', 'npDamageBuff'],
+                  ['宝具耐性', 'npResistance'],
+                  ['特攻状態', 'powerMod'],
+                  ['イベント特攻', 'eventDamageBuff'],
+                  ['特殊威力', 'specialDamageBuff'],
+                  ['特殊耐性', 'specialResistance'],
+                ] as const
+              ).map(([label, key]) => (
+                <label key={key}>
+                  {label}（%）
+                  <input
+                    type="number"
+                    step="1"
+                    value={input[key] * 100}
+                    onChange={(event) => change({ [key]: Number(event.target.value) / 100 })}
+                  />
+                </label>
+              ))}
+              <label>
+                特攻宝具倍率（%）
                 <input
                   type="number"
-                  step="0.01"
-                  value={input[key]}
-                  onChange={(event) => change({ [key]: Number(event.target.value) })}
+                  min="0"
+                  step="10"
+                  value={input.npSpecialMultiplier * 100}
+                  onChange={(event) =>
+                    change({ npSpecialMultiplier: Number(event.target.value) / 100 })
+                  }
                 />
               </label>
-            ))}
+              <label>
+                固定ダメージ加算
+                <input
+                  type="number"
+                  step="1"
+                  value={input.flatDamage}
+                  onChange={(event) => change({ flatDamage: Number(event.target.value) })}
+                />
+              </label>
+              <label>
+                固定ダメージ軽減
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={input.damageCut}
+                  onChange={(event) => change({ damageCut: Number(event.target.value) })}
+                />
+              </label>
+            </>
+          )}
         </div>
         <section className="attacker-skills" aria-label="攻撃役の自身スキル">
           <div className="section-heading compact-heading">
@@ -1398,6 +1635,10 @@ function Calculator({
                     return `${effect.label}（宝具火力外）`;
                   if (resolved?.reason === 'card_type_mismatch')
                     return `${effect.label}（カード不一致）`;
+                  if (resolved?.reason === 'attacker_trait_mismatch')
+                    return `${effect.label}（攻撃役の特性不一致）`;
+                  if (resolved?.reason === 'target_trait_mismatch')
+                    return `${effect.label}（対象特性なし）`;
                   return `${effect.label}（未対応）`;
                 });
                 return (
@@ -1468,6 +1709,69 @@ function Calculator({
             </p>
           ))}
         </section>
+        <section className="automatic-abilities" aria-label="自動適用される能力">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow">AUTOMATIC</p>
+              <h3>自動適用される能力</h3>
+            </div>
+            <small>マスターと対象から解決</small>
+          </div>
+          <dl className="automatic-modifiers">
+            <div>
+              <dt>クラス攻撃補正</dt>
+              <dd>{resolvedInput.classAttackRate.toFixed(2)}倍</dd>
+            </div>
+            <div>
+              <dt>クラス相性</dt>
+              <dd>{resolvedInput.classAffinity.toFixed(2)}倍</dd>
+            </div>
+            <div>
+              <dt>属性相性</dt>
+              <dd>{resolvedInput.attributeAffinity.toFixed(2)}倍</dd>
+            </div>
+          </dl>
+          {automaticEffects.length ? (
+            <ul className="plain-list automatic-effect-list">
+              {automaticEffects.map((effect) => (
+                <li key={`${effect.origin}:${effect.skillId}:${effect.effectId}`}>
+                  <span>
+                    <strong>{effect.sourceName}</strong>
+                    <small>
+                      {effect.origin === 'passive'
+                        ? 'パッシブ'
+                        : effect.origin === 'craftEssence'
+                          ? '概念礼装'
+                          : '宝具前効果'}
+                    </small>
+                  </span>
+                  <span>{effect.label}</span>
+                  <b className={effect.applied ? 'effect-applied' : 'effect-inactive'}>
+                    {effect.applied && effect.value !== null
+                      ? effect.reason === 'target_trait_matched' && effect.skillName === '特攻宝具'
+                        ? `${effect.value.toFixed(2)}倍`
+                        : effect.value.toLocaleString('ja-JP', {
+                            style: 'percent',
+                            signDisplay: 'always',
+                            maximumFractionDigits: 1,
+                          })
+                      : effect.reason === 'card_type_mismatch'
+                        ? 'カード不一致'
+                        : effect.reason === 'attacker_trait_mismatch'
+                          ? '攻撃役の特性不一致'
+                          : effect.reason === 'target_trait_mismatch'
+                            ? '対象特性なし'
+                            : effect.reason === 'not_np_damage_relevant'
+                              ? '宝具火力外'
+                              : '未対応'}
+                  </b>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="notice">自動適用される宝具火力能力はありません。</p>
+          )}
+        </section>
         <section className="support-composition" aria-label="支援・バフ">
           <div className="section-heading compact-heading">
             <div>
@@ -1504,7 +1808,13 @@ function Calculator({
                           })}`
                         : effect.reason === 'not_np_damage_relevant'
                           ? '宝具火力外'
-                          : '未適用'}
+                          : effect.reason === 'attacker_trait_mismatch'
+                            ? '攻撃役の特性不一致'
+                            : effect.reason === 'target_trait_mismatch'
+                              ? '対象特性なし'
+                              : effect.reason === 'card_type_mismatch'
+                                ? 'カード不一致'
+                                : '未適用'}
                     </span>
                   </li>
                 ))}

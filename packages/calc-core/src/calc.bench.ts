@@ -17,12 +17,18 @@ const input = {
   classAffinity: 1,
   attributeAffinity: 1,
   attackBuff: 0,
+  defenseBuff: 0,
   cardBuff: 0,
+  cardResistance: 0,
   npDamageBuff: 0,
+  npResistance: 0,
   powerMod: 0,
+  eventDamageBuff: 0,
   npSpecialMultiplier: 1,
+  specialDamageBuff: 0,
   specialResistance: 0,
   flatDamage: 0,
+  damageCut: 0,
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies CalcInput;
 const versions = {

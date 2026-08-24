@@ -24,10 +24,34 @@ export const masterManifestSchema = z.object({
 });
 export type MasterManifest = z.infer<typeof masterManifestSchema>;
 
+const masterEffectSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  target: z.string(),
+  label: z.string(),
+  values: z.array(z.number()).max(10),
+  recipientTraits: z.array(z.string()).optional(),
+  targetTraits: z.array(z.string()).optional(),
+  buffTypes: z.array(z.string()).optional(),
+});
+export type MasterEffect = z.infer<typeof masterEffectSchema>;
+
+const masterSkillSchema = z.object({
+  id: z.string(),
+  slot: z.number().int().min(0).max(20).default(0),
+  priority: z.number().int().default(0),
+  name: z.string(),
+  detail: z.string(),
+  imageKey: z.string().nullable(),
+  effects: z.array(masterEffectSchema),
+});
+export type MasterSkill = z.infer<typeof masterSkillSchema>;
+
 export const servantMasterSchema = z.object({
   id: z.string(),
   name: z.string(),
   classId: z.string(),
+  attribute: z.enum(['human', 'earth', 'sky', 'star', 'beast', 'unknown']).default('unknown'),
   rarity: z.number().int().min(0).max(5),
   hasAttackNp: z.boolean().default(true),
   npCard: z.enum(['buster', 'arts', 'quick']),
@@ -37,25 +61,24 @@ export const servantMasterSchema = z.object({
   attackNpFunctionType: z.string(),
   traits: z.array(z.string()),
   imageKey: z.string().nullable(),
-  skills: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        detail: z.string(),
-        imageKey: z.string().nullable(),
-        effects: z.array(
-          z.object({
-            id: z.string(),
-            type: z.string(),
-            target: z.string(),
-            label: z.string(),
-            values: z.array(z.number()).max(10),
-          }),
-        ),
-      }),
-    )
+  skills: z.array(masterSkillSchema).default([]),
+  passives: z.array(masterSkillSchema).default([]),
+  npEffects: z
+    .array(masterEffectSchema.extend({ timing: z.enum(['beforeDamage', 'afterDamage']) }))
     .default([]),
+  npSpecialAttack: z
+    .object({
+      targetTraits: z.array(z.string()).min(1),
+      multipliersByOvercharge: z.tuple([
+        z.number(),
+        z.number(),
+        z.number(),
+        z.number(),
+        z.number(),
+      ]),
+    })
+    .nullable()
+    .optional(),
   growth: z.array(
     z.object({
       from: z.string(),
@@ -74,6 +97,13 @@ export const craftEssenceMasterSchema = z.object({
   atkMin: z.number().int().nonnegative(),
   atkMax: z.number().int().nonnegative(),
   imageKey: z.string().nullable(),
+  effects: z
+    .array(
+      masterEffectSchema.omit({ values: true }).extend({
+        values: z.tuple([z.number(), z.number()]),
+      }),
+    )
+    .default([]),
 });
 export type CraftEssenceMaster = z.infer<typeof craftEssenceMasterSchema>;
 export const materialMasterSchema = z.object({
