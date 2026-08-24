@@ -216,6 +216,7 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 - 2026-08-24: `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm build`、`pnpm validate:master` 成功。`pnpm test` 8 files / 52 tests成功。
 - 2026-08-24: Playwright Chromium／mobile Chromiumで16件成功、10件skip。320px、オフライン、axe、入力復元、黒の聖杯+60%、ジークフリートの竜特攻1.50倍、共有、固定幅PNGを確認。
 - 2026-08-24: クイック操作へATKフォウ加算を追加。`+1,000`の累積加算、`+3,000`上限、0へのリセット、直接入力とdraft復元の同期をPlaywrightで確認。
+- 2026-08-24: クイック操作のサーヴァントLvに`90`／`100`／`120`プリセットとリセットを追加。リセットは所持の保存Lvまたは仮想設定Lv90のみを復元し、NP等の他条件を維持することと320px非オーバーフローをPlaywrightで確認。
 
 ## 7. コミット記録
 

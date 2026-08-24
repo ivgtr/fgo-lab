@@ -1035,6 +1035,14 @@ function Calculator({
       },
     );
   }
+  function changeAttackerLevel(level: number) {
+    change({
+      attackerLevel: level,
+      attackerAtk: manualOverrides.has('attackerAtk')
+        ? input.attackerAtk
+        : (attacker?.atkByLevel[String(level)] ?? input.attackerAtk),
+    });
+  }
   function resetAutomaticValues() {
     const saved = selection.attackerSource === 'owned' ? builds[input.attackerId] : undefined;
     const craftEssence = selection.craftEssence;
@@ -1274,28 +1282,47 @@ function Calculator({
           <label>
             サーヴァントLv
             <input
+              aria-label="サーヴァントLv"
               type="number"
               min="1"
               max="120"
               value={input.attackerLevel}
-              onChange={(event) => {
-                const level = Number(event.target.value);
-                change({
-                  attackerLevel: level,
-                  attackerAtk: manualOverrides.has('attackerAtk')
-                    ? input.attackerAtk
-                    : (attacker?.atkByLevel[String(level)] ?? input.attackerAtk),
-                });
-              }}
+              onChange={(event) => changeAttackerLevel(Number(event.target.value))}
             />
-            {selection.attackerSource === 'owned' && builds[input.attackerId]?.npLevel ? (
-              <button
-                type="button"
-                className="inline-action"
-                onClick={() => attacker && selectAttacker(attacker, 'owned')}
+            {mode === 'quick' ? (
+              <span
+                className="quick-value-presets level-presets"
+                aria-label="サーヴァントLvのクイック選択"
               >
-                保存値へ戻す
-              </button>
+                {[90, 100, 120].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    aria-pressed={input.attackerLevel === level}
+                    onClick={() => changeAttackerLevel(level)}
+                  >
+                    {level}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  disabled={
+                    input.attackerLevel ===
+                    (selection.attackerSource === 'owned'
+                      ? (builds[input.attackerId]?.level ?? 90)
+                      : 90)
+                  }
+                  onClick={() =>
+                    changeAttackerLevel(
+                      selection.attackerSource === 'owned'
+                        ? (builds[input.attackerId]?.level ?? 90)
+                        : 90,
+                    )
+                  }
+                >
+                  リセット
+                </button>
+              </span>
             ) : null}
           </label>
           {mode === 'quick' ? (

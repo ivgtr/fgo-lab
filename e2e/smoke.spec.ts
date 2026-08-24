@@ -176,6 +176,25 @@ test('edits Fou ATK from quick controls and shares the value with direct input',
   await expect(page.getByLabel('ATKフォウ（加算）')).toHaveValue('2000');
 });
 
+test('uses quick servant level presets and resets only the level', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop project covers calculator draft changes');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  const level = page.getByLabel('サーヴァントLv', { exact: true });
+  const controls = page.getByLabel('サーヴァントLvのクイック選択');
+  await expect(level).toHaveValue('90');
+  await controls.getByRole('button', { name: '100', exact: true }).click();
+  await expect(level).toHaveValue('100');
+  await page.getByLabel('宝具Lv').selectOption('2');
+  await controls.getByRole('button', { name: 'リセット' }).click();
+  await expect(level).toHaveValue('90');
+  await expect(page.getByLabel('宝具Lv')).toHaveValue('2');
+  await controls.getByRole('button', { name: '120', exact: true }).click();
+  await expect(level).toHaveValue('120');
+});
+
 test('restores complete direct inputs, CE effects, and trait special NP resolution', async ({
   page,
   isMobile,

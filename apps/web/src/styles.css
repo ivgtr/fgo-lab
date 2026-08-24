@@ -448,6 +448,9 @@ h3 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.35rem;
 }
+.quick-value-presets.level-presets {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .quick-value-presets button {
   min-height: 32px;
   padding: 0.3rem;
@@ -456,6 +459,7 @@ h3 {
   color: var(--muted);
   font-size: 0.7rem;
 }
+.quick-value-presets button[aria-pressed='true'],
 .quick-value-presets button:not(:disabled):active {
   border-color: var(--accent);
   background: #f6ece8;
