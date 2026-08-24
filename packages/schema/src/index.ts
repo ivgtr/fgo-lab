@@ -91,6 +91,20 @@ export const calcInputSchema = z.object({
 });
 export type CalcInput = z.infer<typeof calcInputSchema>;
 
+export const calculationSelectionSchema = z.object({
+  attackerSource: z.enum(['owned', 'master']),
+  craftEssence: z
+    .object({
+      source: z.enum(['registered', 'master']),
+      craftEssenceId: z.string().min(1).max(80),
+      copyId: z.uuid().nullable(),
+      level: z.number().int().min(1).max(100),
+      limitBreak: z.number().int().min(0).max(4),
+    })
+    .nullable(),
+});
+export type CalculationSelection = z.infer<typeof calculationSelectionSchema>;
+
 export const damageSummarySchema = z.object({
   npLevel: z.number().int().min(1).max(5),
   minimum: z.number().int().nonnegative(),
@@ -115,6 +129,7 @@ export const calculationDraftSchema = z.object({
   result: calcResultSchema,
   inputFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   supportTemplate: supportTemplateSchema.nullable().optional(),
+  selection: calculationSelectionSchema.optional(),
   updatedAt: z.iso.datetime(),
 });
 export const calculationHistoryEntrySchema = calculationDraftSchema.extend({
@@ -153,12 +168,20 @@ export const userDataBackupSchema = z.object({
 });
 export type UserDataBackup = z.infer<typeof userDataBackupSchema>;
 
+export const calculationShareCompositionSchema = z.object({
+  craftEssence: calculationSelectionSchema.shape.craftEssence
+    .unwrap()
+    .omit({ source: true, copyId: true })
+    .nullable(),
+});
+
 export const calculationShareSnapshotSchema = z.object({
   kind: z.literal('fgo-lab-calculation-share'),
   schemaVersion: z.literal(SCHEMA_VERSION),
   sharedAt: z.iso.datetime(),
   input: calcInputSchema,
   result: calcResultSchema,
+  composition: calculationShareCompositionSchema.optional(),
 });
 export type CalculationShareSnapshot = z.infer<typeof calculationShareSnapshotSchema>;
 

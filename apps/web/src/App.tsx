@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import {
   deriveCraftEssenceAtk,
   type CraftEssenceMaster,
@@ -19,6 +25,7 @@ import { resolveSupportTemplate, type ResolvedSupportTemplate } from '@fgo-lab/e
 import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalcInput,
+  CalculationSelection,
   CalculationShareSnapshot,
   CraftEssenceCopy,
   LocalProfile,
@@ -61,6 +68,30 @@ const repository = new IndexedDbProfileRepository();
 const ENGINE_RELEASE_VALIDATED = import.meta.env['VITE_ENGINE_RELEASE_VALIDATED'] === 'true';
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
+
+function handleModalKeyboard(event: ReactKeyboardEvent<HTMLDivElement>, close: () => void) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    close();
+    return;
+  }
+  if (event.key !== 'Tab') return;
+  const focusable = Array.from(
+    event.currentTarget.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (!first || !last) return;
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 function withSupportResolution(
   result: ReturnType<typeof calculateNpDamage>,
@@ -173,6 +204,14 @@ function calcInput(
   };
 }
 
+function selectionFromShare(shared: CalculationShareSnapshot): CalculationSelection {
+  const craftEssence = shared.composition?.craftEssence;
+  return {
+    attackerSource: 'master',
+    craftEssence: craftEssence ? { ...craftEssence, source: 'master', copyId: null } : null,
+  };
+}
+
 export function App() {
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [profiles, setProfiles] = useState<ProfileCollection>();
@@ -181,6 +220,7 @@ export function App() {
   const [page, setPage] = useState<Page>('home');
   const [undoSnapshot, setUndoSnapshot] = useState<ProfileCollection>();
   const [calculatorInput, setCalculatorInput] = useState<CalcInput>();
+  const [calculationSelection, setCalculationSelection] = useState<CalculationSelection>();
   const [selectedSupport, setSelectedSupport] = useState<SupportTemplate>();
   const [sharedSnapshot, setSharedSnapshot] = useState<CalculationShareSnapshot>();
   const [online, setOnline] = useState(navigator.onLine);
@@ -217,6 +257,9 @@ export function App() {
         setProfiles(saved);
         setSharedSnapshot(shared ?? undefined);
         setCalculatorInput(shared?.input ?? savedProfile.draft?.input);
+        setCalculationSelection(
+          shared ? selectionFromShare(shared) : savedProfile.draft?.selection,
+        );
         setSelectedSupport(shared ? undefined : (savedProfile.draft?.supportTemplate ?? undefined));
         if (shared) setPage('calculate');
       }
@@ -261,6 +304,7 @@ export function App() {
             if (shared) {
               setSharedSnapshot(shared);
               setCalculatorInput(shared.input);
+              setCalculationSelection(selectionFromShare(shared));
               setPage('calculate');
             }
           } catch (cause) {
@@ -277,6 +321,12 @@ export function App() {
   const servant = currentMaster.servants[0]!;
   const build = profile.servantBuilds[servant.id];
   const baseInput = calculatorInput ?? calcInput(currentMaster, build);
+  const currentSelection =
+    calculationSelection ??
+    ({
+      attackerSource: profile.servantBuilds[baseInput.attackerId]?.npLevel ? 'owned' : 'master',
+      craftEssence: null,
+    } satisfies CalculationSelection);
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -462,8 +512,13 @@ export function App() {
       updatedAt: timestamp,
     });
   }
-  async function saveCalculationDraft(nextInput: CalcInput, supportTemplate = selectedSupport) {
+  async function saveCalculationDraft(
+    nextInput: CalcInput,
+    supportTemplate = selectedSupport,
+    selection = currentSelection,
+  ) {
     setCalculatorInput(nextInput);
+    setCalculationSelection(selection);
     setSelectedSupport(supportTemplate);
     setSharedSnapshot(undefined);
     const nextResolution = supportTemplate
@@ -496,6 +551,7 @@ export function App() {
         result: nextResult,
         inputFingerprint: fingerprint,
         supportTemplate: supportTemplate ?? null,
+        selection,
         updatedAt: new Date().toISOString(),
       },
       updatedAt: new Date().toISOString(),
@@ -583,10 +639,17 @@ export function App() {
             resolvedInput={input}
             result={result}
             servants={currentMaster.servants}
+            builds={profile.servantBuilds}
+            craftEssenceCopies={profile.craftEssences}
+            craftEssences={currentMaster.craftEssences}
+            selection={currentSelection}
             supportTemplates={profile.supportTemplates}
             selectedSupport={selectedSupport}
             sharedVersionMismatch={Boolean(sharedSnapshot && !compatibleSharedSnapshot)}
             onInputChange={saveCalculationDraft}
+            onCompositionChange={(nextInput, nextSelection) =>
+              saveCalculationDraft(nextInput, selectedSupport, nextSelection)
+            }
             onSupportSelect={(template) => saveCalculationDraft(baseInput, template)}
             onFinalize={finalizeCurrentCalculation}
           />
@@ -718,10 +781,15 @@ function Calculator({
   resolvedInput,
   result,
   servants,
+  builds,
+  craftEssenceCopies,
+  craftEssences,
+  selection,
   supportTemplates,
   selectedSupport,
   sharedVersionMismatch,
   onInputChange,
+  onCompositionChange,
   onSupportSelect,
   onFinalize,
 }: {
@@ -729,10 +797,15 @@ function Calculator({
   resolvedInput: CalcInput;
   result: ReturnType<typeof calculateNpDamage>;
   servants: ServantMaster[];
+  builds: Record<string, ServantBuild>;
+  craftEssenceCopies: CraftEssenceCopy[];
+  craftEssences: CraftEssenceMaster[];
+  selection: CalculationSelection;
   supportTemplates: SupportTemplate[];
   selectedSupport: SupportTemplate | undefined;
   sharedVersionMismatch: boolean;
   onInputChange: (input: CalcInput) => Promise<void>;
+  onCompositionChange: (input: CalcInput, selection: CalculationSelection) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onFinalize: (input: CalcInput, result: ReturnType<typeof calculateNpDamage>) => Promise<void>;
 }) {
@@ -740,7 +813,62 @@ function Calculator({
   const [mode, setMode] = useState<'quick' | 'direct'>('quick');
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [supportSearch, setSupportSearch] = useState('');
+  const [attackerDialogOpen, setAttackerDialogOpen] = useState(false);
+  const [attackerSource, setAttackerSource] = useState<'owned' | 'master'>(
+    selection.attackerSource,
+  );
+  const [attackerSearch, setAttackerSearch] = useState('');
+  const [craftEssenceDialogOpen, setCraftEssenceDialogOpen] = useState(false);
+  const [craftEssenceSource, setCraftEssenceSource] = useState<'registered' | 'master'>(
+    selection.craftEssence?.source ?? 'registered',
+  );
+  const [craftEssenceSearch, setCraftEssenceSearch] = useState('');
+  const attackerTriggerRef = useRef<HTMLButtonElement>(null);
+  const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
+  const selectedCraftEssence = craftEssences.find(
+    (candidate) => candidate.id === input.craftEssenceId,
+  );
+  const selectedCraftEssenceCopy = selection.craftEssence?.copyId
+    ? craftEssenceCopies.find((copy) => copy.copyId === selection.craftEssence?.copyId)
+    : undefined;
+  const normalizedAttackerSearch = attackerSearch.trim().toLocaleLowerCase('ja');
+  const visibleAttackers = servants
+    .filter((candidate) => attackerSource === 'master' || Boolean(builds[candidate.id]?.npLevel))
+    .filter((candidate) =>
+      [candidate.name, candidate.classId, candidate.id]
+        .join(' ')
+        .toLocaleLowerCase('ja')
+        .includes(normalizedAttackerSearch),
+    )
+    .slice(0, 100);
+  const normalizedCraftEssenceSearch = craftEssenceSearch.trim().toLocaleLowerCase('ja');
+  const visibleCraftEssences =
+    craftEssenceSource === 'registered'
+      ? craftEssenceCopies
+          .map((copy) => ({
+            copy,
+            master: craftEssences.find((candidate) => candidate.id === copy.craftEssenceId),
+          }))
+          .filter((entry): entry is { copy: CraftEssenceCopy; master: CraftEssenceMaster } =>
+            Boolean(entry.master),
+          )
+          .filter(({ master }) =>
+            [master.name, master.id]
+              .join(' ')
+              .toLocaleLowerCase('ja')
+              .includes(normalizedCraftEssenceSearch),
+          )
+          .slice(0, 100)
+      : craftEssences
+          .filter((candidate) =>
+            [candidate.name, candidate.id]
+              .join(' ')
+              .toLocaleLowerCase('ja')
+              .includes(normalizedCraftEssenceSearch),
+          )
+          .slice(0, 100)
+          .map((master) => ({ master, copy: undefined }));
   const selectedSupportResolution = selectedSupport
     ? resolveSupportTemplate(input, selectedSupport, servants)
     : undefined;
@@ -756,12 +884,96 @@ function Calculator({
   function change(patch: Partial<CalcInput>) {
     void onInputChange({ ...input, ...patch });
   }
+  function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
+    const saved = source === 'owned' ? builds[candidate.id] : undefined;
+    const level = saved?.level ?? 90;
+    void onCompositionChange(
+      {
+        ...input,
+        attackerId: candidate.id,
+        attackerLevel: level,
+        attackerAtk:
+          candidate.atkByLevel[String(level)] ?? candidate.atkByLevel['90'] ?? input.attackerAtk,
+        fouAtk: saved?.fouAtk ?? 1000,
+        npLevel: Math.max(1, saved?.npLevel ?? 1),
+        npMultipliers: candidate.npMultipliers,
+        cardType: candidate.npCard,
+      },
+      { ...selection, attackerSource: source },
+    );
+    closeAttackerDialog();
+  }
+  function selectCraftEssence(
+    master: CraftEssenceMaster,
+    source: 'registered' | 'master',
+    copy?: CraftEssenceCopy,
+  ) {
+    const level = copy?.level ?? 1;
+    const limitBreak = copy?.limitBreak ?? 0;
+    void onCompositionChange(
+      {
+        ...input,
+        craftEssenceId: master.id,
+        craftEssenceAtk: deriveCraftEssenceAtk(master, level, limitBreak),
+      },
+      {
+        ...selection,
+        craftEssence: {
+          source,
+          craftEssenceId: master.id,
+          copyId: copy?.copyId ?? null,
+          level,
+          limitBreak,
+        },
+      },
+    );
+    closeCraftEssenceDialog();
+  }
+  function changeCraftEssenceState(patch: Partial<{ level: number; limitBreak: number }>) {
+    const current = selection.craftEssence;
+    if (!current || !selectedCraftEssence) return;
+    const limitBreak = Math.max(0, Math.min(4, patch.limitBreak ?? current.limitBreak));
+    const maximum =
+      selectedCraftEssence.maxLevelByLimitBreak[limitBreak] ??
+      selectedCraftEssence.maxLevelByLimitBreak[4];
+    const level = Math.max(1, Math.min(maximum, patch.level ?? current.level));
+    void onCompositionChange(
+      {
+        ...input,
+        craftEssenceAtk: deriveCraftEssenceAtk(selectedCraftEssence, level, limitBreak),
+      },
+      { ...selection, craftEssence: { ...current, level, limitBreak } },
+    );
+  }
+  function clearCraftEssence() {
+    void onCompositionChange(
+      { ...input, craftEssenceId: null, craftEssenceAtk: 0 },
+      { ...selection, craftEssence: null },
+    );
+  }
+  function closeAttackerDialog() {
+    setAttackerDialogOpen(false);
+    requestAnimationFrame(() => attackerTriggerRef.current?.focus());
+  }
+  function closeCraftEssenceDialog() {
+    setCraftEssenceDialogOpen(false);
+    requestAnimationFrame(() => craftEssenceTriggerRef.current?.focus());
+  }
   const snapshot = {
     kind: 'fgo-lab-calculation-share' as const,
     schemaVersion: 1 as const,
     sharedAt: new Date().toISOString(),
     input: resolvedInput,
     result,
+    composition: {
+      craftEssence: selection.craftEssence
+        ? {
+            craftEssenceId: selection.craftEssence.craftEssenceId,
+            level: selection.craftEssence.level,
+            limitBreak: selection.craftEssence.limitBreak,
+          }
+        : null,
+    },
   };
   async function copyUrl() {
     try {
@@ -813,7 +1025,15 @@ function Calculator({
           </div>
           <span className="badge">{result.precision}</span>
         </div>
-        <div className="entity-summary">
+        <button
+          ref={attackerTriggerRef}
+          className="entity-summary entity-picker-trigger"
+          onClick={() => {
+            setAttackerSource(selection.attackerSource);
+            setAttackerDialogOpen(true);
+          }}
+          aria-label="攻撃役を変更"
+        >
           <MasterImage src={attacker?.imageKey ?? null} alt="" fallback={attacker?.name ?? '?'} />
           <p>
             <strong>{attacker?.name ?? input.attackerId}</strong>
@@ -821,8 +1041,12 @@ function Calculator({
               {attacker?.classId}・{attacker?.npTarget === 'all' ? '全体' : '単体'}
               {attacker?.npCard.toUpperCase()}宝具
             </small>
+            <small>
+              {selection.attackerSource === 'owned' ? '所持・育成管理の保存値' : '全DBの仮想設定'}
+            </small>
           </p>
-        </div>
+          <span className="picker-action">変更</span>
+        </button>
         <div role="tablist" aria-label="入力方法">
           <button role="tab" aria-selected={mode === 'quick'} onClick={() => setMode('quick')}>
             クイック操作
@@ -832,31 +1056,6 @@ function Calculator({
           </button>
         </div>
         <div className="form-grid">
-          <label>
-            攻撃役
-            <select
-              value={input.attackerId}
-              onChange={(event) => {
-                const selected = servants.find((candidate) => candidate.id === event.target.value);
-                if (!selected) return;
-                change({
-                  attackerId: selected.id,
-                  attackerAtk:
-                    selected.atkByLevel[String(input.attackerLevel)] ??
-                    selected.atkByLevel['90'] ??
-                    0,
-                  npMultipliers: selected.npMultipliers,
-                  cardType: selected.npCard,
-                });
-              }}
-            >
-              {servants.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </select>
-          </label>
           <label>
             サーヴァントLv
             <input
@@ -872,6 +1071,15 @@ function Calculator({
                 });
               }}
             />
+            {selection.attackerSource === 'owned' && builds[input.attackerId]?.npLevel ? (
+              <button
+                type="button"
+                className="inline-action"
+                onClick={() => attacker && selectAttacker(attacker, 'owned')}
+              >
+                保存値へ戻す
+              </button>
+            ) : null}
           </label>
           <label>
             宝具Lv
@@ -899,6 +1107,97 @@ function Calculator({
               ))}
             </select>
           </label>
+          <div className="picker-field form-grid-wide">
+            <span>概念礼装</span>
+            {selectedCraftEssence && selection.craftEssence ? (
+              <div className="selected-equipment">
+                <button
+                  ref={craftEssenceTriggerRef}
+                  className="entity-summary compact entity-picker-trigger"
+                  onClick={() => {
+                    setCraftEssenceSource(selection.craftEssence?.source ?? 'registered');
+                    setCraftEssenceDialogOpen(true);
+                  }}
+                  aria-label="概念礼装を変更"
+                >
+                  <MasterImage
+                    src={selectedCraftEssence.imageKey}
+                    alt=""
+                    fallback={selectedCraftEssence.name}
+                  />
+                  <span className="list-row-main">
+                    <strong>{selectedCraftEssence.name}</strong>
+                    <small>
+                      {selection.craftEssence.source === 'registered'
+                        ? '登録コピー'
+                        : '全DBの仮想設定'}
+                      ・Lv{selection.craftEssence.level}・ATK {input.craftEssenceAtk}
+                    </small>
+                  </span>
+                  <span className="picker-action">変更</span>
+                </button>
+                <div className="equipment-controls">
+                  <label>
+                    礼装Lv
+                    <input
+                      type="number"
+                      min="1"
+                      max={
+                        selectedCraftEssence.maxLevelByLimitBreak[selection.craftEssence.limitBreak]
+                      }
+                      value={selection.craftEssence.level}
+                      onChange={(event) =>
+                        changeCraftEssenceState({ level: Number(event.target.value) })
+                      }
+                    />
+                  </label>
+                  <label>
+                    限界突破
+                    <select
+                      value={selection.craftEssence.limitBreak}
+                      onChange={(event) =>
+                        changeCraftEssenceState({ limitBreak: Number(event.target.value) })
+                      }
+                    >
+                      {[0, 1, 2, 3, 4].map((value) => (
+                        <option key={value} value={value}>
+                          {value === 4 ? '最大解放' : `${value}回`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {selectedCraftEssenceCopy ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        selectCraftEssence(
+                          selectedCraftEssence,
+                          'registered',
+                          selectedCraftEssenceCopy,
+                        )
+                      }
+                    >
+                      保存値へ戻す
+                    </button>
+                  ) : null}
+                  <button type="button" onClick={clearCraftEssence}>
+                    外す
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                ref={craftEssenceTriggerRef}
+                className="empty-picker"
+                onClick={() => {
+                  setCraftEssenceSource(craftEssenceCopies.length ? 'registered' : 'master');
+                  setCraftEssenceDialogOpen(true);
+                }}
+              >
+                礼装なし・選択する
+              </button>
+            )}
+          </div>
           <label>
             敵クラス
             <input
@@ -1078,6 +1377,152 @@ function Calculator({
           </ul>
         </details>
       </section>
+      {attackerDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="attacker-picker-title"
+          className="dialog"
+          onKeyDown={(event) => handleModalKeyboard(event, closeAttackerDialog)}
+        >
+          <div className="dialog-panel picker-dialog-panel">
+            <div className="section-heading">
+              <h2 id="attacker-picker-title">攻撃役を選択</h2>
+              <button onClick={closeAttackerDialog}>閉じる</button>
+            </div>
+            <div role="tablist" aria-label="攻撃役の選択元" className="source-tabs">
+              <button
+                role="tab"
+                aria-selected={attackerSource === 'owned'}
+                onClick={() => setAttackerSource('owned')}
+              >
+                所持・育成管理
+              </button>
+              <button
+                role="tab"
+                aria-selected={attackerSource === 'master'}
+                onClick={() => setAttackerSource('master')}
+              >
+                全DB
+              </button>
+            </div>
+            <label>
+              名前・クラス
+              <input
+                type="search"
+                value={attackerSearch}
+                onChange={(event) => setAttackerSearch(event.target.value)}
+                autoFocus
+              />
+            </label>
+            {visibleAttackers.length === 0 ? (
+              <p className="empty">一致する攻撃役はありません。</p>
+            ) : (
+              <ul className="plain-list picker-result-list">
+                {visibleAttackers.map((candidate) => {
+                  const saved = builds[candidate.id];
+                  return (
+                    <li key={candidate.id}>
+                      <button
+                        className="list-row"
+                        onClick={() => selectAttacker(candidate, attackerSource)}
+                      >
+                        <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
+                        <span className="list-row-main">
+                          <strong>{candidate.name}</strong>
+                          <small>
+                            {candidate.classId}・
+                            {attackerSource === 'owned' && saved
+                              ? `Lv${saved.level} / NP${saved.npLevel} / フォウ${saved.fouAtk}`
+                              : 'Lv90 / NP1 / フォウ1000（仮想）'}
+                          </small>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {visibleAttackers.length === 100 ? (
+              <p className="notice">
+                先頭100件を表示中です。名前またはクラスで絞り込んでください。
+              </p>
+            ) : null}
+          </div>
+        </div>
+      )}
+      {craftEssenceDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="calculation-ce-picker-title"
+          className="dialog"
+          onKeyDown={(event) => handleModalKeyboard(event, closeCraftEssenceDialog)}
+        >
+          <div className="dialog-panel picker-dialog-panel">
+            <div className="section-heading">
+              <h2 id="calculation-ce-picker-title">概念礼装を選択</h2>
+              <button onClick={closeCraftEssenceDialog}>閉じる</button>
+            </div>
+            <div role="tablist" aria-label="概念礼装の選択元" className="source-tabs">
+              <button
+                role="tab"
+                aria-selected={craftEssenceSource === 'registered'}
+                onClick={() => setCraftEssenceSource('registered')}
+              >
+                登録済みコピー
+              </button>
+              <button
+                role="tab"
+                aria-selected={craftEssenceSource === 'master'}
+                onClick={() => setCraftEssenceSource('master')}
+              >
+                全DB
+              </button>
+            </div>
+            <label>
+              礼装名
+              <input
+                type="search"
+                value={craftEssenceSearch}
+                onChange={(event) => setCraftEssenceSearch(event.target.value)}
+                autoFocus
+              />
+            </label>
+            {visibleCraftEssences.length === 0 ? (
+              <p className="empty">
+                {craftEssenceSource === 'registered'
+                  ? '登録済みの概念礼装はありません。全DBから仮想礼装を選択できます。'
+                  : '一致する概念礼装はありません。'}
+              </p>
+            ) : (
+              <ul className="plain-list picker-result-list">
+                {visibleCraftEssences.map(({ master, copy }) => (
+                  <li key={copy?.copyId ?? master.id}>
+                    <button
+                      className="list-row"
+                      onClick={() => selectCraftEssence(master, craftEssenceSource, copy)}
+                    >
+                      <MasterImage src={master.imageKey} alt="" fallback={master.name} />
+                      <span className="list-row-main">
+                        <strong>{master.name}</strong>
+                        <small>
+                          {copy
+                            ? `登録コピー・Lv${copy.level}・${copy.limitBreak === 4 ? '最大解放' : `${copy.limitBreak}回突破`}・ATK ${deriveCraftEssenceAtk(master, copy.level, copy.limitBreak)}`
+                            : `Lv1・未突破（仮想）・ATK ${deriveCraftEssenceAtk(master, 1, 0)}`}
+                        </small>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {visibleCraftEssences.length === 100 ? (
+              <p className="notice">先頭100件を表示中です。礼装名で絞り込んでください。</p>
+            ) : null}
+          </div>
+        </div>
+      )}
       {supportDialogOpen && (
         <div
           role="dialog"

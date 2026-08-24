@@ -41,4 +41,9 @@ test('@a11y mobile home and calculator have no serious axe violations', async ({
   await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: '計算', exact: true }).click();
   await expectNoSeriousViolations(page);
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  await expectNoSeriousViolations(page);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
+  await expectNoSeriousViolations(page);
 });

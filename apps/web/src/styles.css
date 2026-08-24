@@ -557,6 +557,60 @@ td.average {
 .entity-summary strong {
   font-size: 1.05rem;
 }
+.entity-picker-trigger {
+  width: 100%;
+  justify-content: flex-start;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+.entity-picker-trigger .picker-action {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.form-grid-wide {
+  grid-column: 1 / -1;
+}
+.picker-field {
+  display: grid;
+  gap: 0.35rem;
+  color: #40495b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.empty-picker {
+  border-style: dashed;
+  color: var(--muted);
+  text-align: left;
+}
+.selected-equipment {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  padding: 0.75rem;
+}
+.selected-equipment .entity-summary {
+  margin: 0;
+}
+.equipment-controls {
+  display: flex;
+  align-items: end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.equipment-controls label {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 7rem;
+}
+.inline-action {
+  min-height: 32px;
+  padding-block: 0.25rem;
+  color: var(--accent);
+}
 .detail-hero {
   margin-top: 0.25rem;
 }
@@ -587,6 +641,39 @@ td.average {
   background: white;
   padding: 1.25rem;
   border-top: 4px solid var(--accent);
+}
+.picker-dialog-panel > label {
+  display: grid;
+  gap: 0.35rem;
+  color: #40495b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.source-tabs {
+  display: flex;
+  margin-bottom: 0.85rem;
+}
+.source-tabs button {
+  flex: 1;
+  border-radius: 0;
+}
+.source-tabs button[aria-selected='true'] {
+  border-color: var(--accent);
+  background: var(--soft-accent);
+  color: var(--accent);
+}
+.picker-result-list {
+  max-height: min(52vh, 520px);
+  overflow: auto;
+}
+.picker-result-list li {
+  padding: 0;
+}
+.picker-result-list .list-row {
+  min-height: 64px;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding: 0.55rem;
 }
 .growth-layout {
   display: grid;
@@ -673,6 +760,10 @@ td.average {
   }
   .entity-summary.detail-hero {
     margin-top: 0;
+  }
+  .equipment-controls > label,
+  .equipment-controls > button {
+    flex: 1 1 8rem;
   }
   .worksheet table {
     font-size: 0.82rem;

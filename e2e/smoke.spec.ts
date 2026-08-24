@@ -44,6 +44,49 @@ test('mobile servant editor moves between list and detail', async ({ page, isMob
   await expect(list).toBeVisible();
 });
 
+test('mobile calculator selects virtual attacker and CE from the full DB', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'Mobile project covers the compact picker flow');
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.route('https://static.atlasacademy.io/**', (route) => route.abort());
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: '計算', exact: true }).click();
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前・クラス').fill('アルトリア・ペンドラゴン');
+  await attackerDialog
+    .getByRole('button', { name: /アルトリア・ペンドラゴン saber・Lv90/ })
+    .click();
+  await expect(page.getByRole('button', { name: '攻撃役を変更' })).toContainText('全DBの仮想設定');
+
+  await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
+  const ceDialog = page.getByRole('dialog', { name: '概念礼装を選択' });
+  await ceDialog.getByRole('tab', { name: '全DB' }).click();
+  await ceDialog.getByLabel('礼装名').fill('カレイドスコープ');
+  await ceDialog
+    .getByRole('button', { name: /カレイドスコープ/ })
+    .first()
+    .click();
+  await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
+    '全DBの仮想設定',
+  );
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  await page.keyboard.press('Escape');
+  await expect(attackerDialog).toBeHidden();
+  await expect(page.getByRole('button', { name: '攻撃役を変更' })).toBeFocused();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(false);
+});
+
 test('reopens saved local data while offline', async ({ page, context, isMobile }) => {
   test.skip(isMobile, 'One browser project is sufficient for the service worker offline drill');
   await page.goto('/');
@@ -105,6 +148,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   expect(sharedJson).toContain('fgo-lab-calculation-share');
   expect(sharedJson).not.toContain('profileId');
   expect(sharedJson).not.toContain('servantBuilds');
+  expect(sharedJson).not.toContain('copyId');
 });
 
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
@@ -132,7 +176,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.getByLabel('スキル1').fill('2');
   await page.getByLabel('育成計画へ含める').check();
 
-  await page.getByRole('button', { name: '概念礼装' }).click();
+  await page.getByRole('button', { name: '概念礼装', exact: true }).click();
   for (let index = 0; index < 2; index += 1) {
     await page.getByRole('button', { name: 'DBから礼装を登録' }).click();
     const dialog = page.getByRole('dialog', { name: '概念礼装を検索' });
@@ -167,7 +211,35 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
-  const baseDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  const unequippedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await expect(attackerDialog.getByRole('tab', { name: '所持・育成管理' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(attackerDialog.getByRole('listitem')).toHaveCount(1);
+  await attackerDialog.getByRole('button', { name: /アルトリア・ペンドラゴン/ }).click();
+  await expect(page.getByRole('button', { name: '攻撃役を変更' })).toContainText(
+    '所持・育成管理の保存値',
+  );
+  await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
+  const calculatorCeDialog = page.getByRole('dialog', { name: '概念礼装を選択' });
+  await expect(calculatorCeDialog.getByRole('tab', { name: '登録済みコピー' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(calculatorCeDialog.getByRole('listitem')).toHaveCount(2);
+  await calculatorCeDialog
+    .getByRole('button', { name: /カレイドスコープ/ })
+    .first()
+    .click();
+  await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText('登録コピー');
+  await page.getByLabel('礼装Lv').fill('20');
+  await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText('Lv20');
+  const equippedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  expect(equippedDamage).toBeGreaterThan(unequippedDamage);
+  const baseDamage = equippedDamage;
   await page.getByRole('button', { name: '支援条件を呼び出す' }).click();
   const templateDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await templateDialog.getByRole('button', { name: '呼び出す' }).click();
@@ -184,10 +256,18 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   await page.reload();
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
-  await page.getByRole('button', { name: '概念礼装' }).click();
+  await expect(page.getByRole('button', { name: '概念礼装を変更' })).toContainText(
+    '登録コピー・Lv20',
+  );
+  await page.getByRole('button', { name: '概念礼装', exact: true }).click();
   await expect(
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
   ).toHaveCount(2);
+  const restoredCopyLevels = page
+    .getByRole('list', { name: '登録済み概念礼装' })
+    .getByLabel('カレイドスコープのレベル');
+  await expect(restoredCopyLevels.nth(0)).toHaveValue('1');
+  await expect(restoredCopyLevels.nth(1)).toHaveValue('1');
   await page.getByRole('button', { name: '支援条件' }).click();
   await expect(page.getByLabel('カリスマ Bを使用')).toBeChecked();
   await expect(page.getByLabel('カリスマ Bのスキルレベル')).toHaveValue('8');

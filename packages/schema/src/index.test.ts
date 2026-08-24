@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { calculationShareSnapshotSchema, SCHEMA_VERSION } from './index';
+import {
+  calculationShareCompositionSchema,
+  calculationShareSnapshotSchema,
+  SCHEMA_VERSION,
+} from './index';
 
 describe('portable schema boundaries', () => {
   it('rejects profile data in a share snapshot', () => {
@@ -18,5 +22,20 @@ describe('portable schema boundaries', () => {
         schemaVersion: 2,
       }),
     ).toMatchObject({ success: false });
+  });
+
+  it('keeps portable CE state while stripping local copy identity', () => {
+    const parsed = calculationShareCompositionSchema.parse({
+      craftEssence: {
+        source: 'registered',
+        craftEssenceId: 'ce-1',
+        copyId: crypto.randomUUID(),
+        level: 80,
+        limitBreak: 4,
+      },
+    });
+    expect(parsed).toEqual({
+      craftEssence: { craftEssenceId: 'ce-1', level: 80, limitBreak: 4 },
+    });
   });
 });
