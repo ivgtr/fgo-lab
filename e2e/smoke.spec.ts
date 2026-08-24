@@ -9,6 +9,8 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
     .first()
     .click();
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await expect(effectiveInput.locator('details')).not.toHaveAttribute('open', '');
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   const resultCard = page.getByLabel('共有対象の計算結果');
   await expect(page.locator('.result-pane')).toHaveCount(0);
@@ -39,6 +41,13 @@ test('works at 320px without horizontal document overflow', async ({ page }) => 
   await page.goto('/');
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await effectiveInput.locator('summary').click();
+  await expect(effectiveInput.locator('.automatic-modifiers')).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
@@ -586,9 +595,19 @@ test('matches the reported Water Lilith inputs and exposes passive damage stacks
   await expect(np5).toContainText('61,944');
   await expect(np5).toContainText('75,640');
   const effectiveInput = page.getByLabel('計算に使用する最終値');
-  await expect(effectiveInput.locator('.section-heading')).toHaveCSS('border-bottom-width', '0px');
-  await expect(effectiveInput.locator('.automatic-modifiers')).toHaveCSS('display', 'flex');
-  await expect(effectiveInput.locator('.automatic-modifiers')).toHaveCSS('flex-wrap', 'wrap');
+  const effectiveInputDetails = effectiveInput.locator('details');
+  const effectiveModifiers = effectiveInput.locator('.automatic-modifiers');
+  await expect(effectiveInputDetails).not.toHaveAttribute('open', '');
+  await expect(effectiveModifiers).toBeHidden();
+  await effectiveInput.locator('summary').click();
+  await expect(effectiveInputDetails).toHaveAttribute('open', '');
+  await expect(effectiveModifiers).toHaveCSS('display', 'flex');
+  await expect(effectiveModifiers).toHaveCSS('flex-wrap', 'wrap');
+  await expect(effectiveModifiers.locator('div').first()).toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+  await expect(effectiveModifiers.locator('div').first()).toHaveCSS('padding-top', '0px');
   await expect(effectiveInput).toContainText('QUICK性能／耐性0.0%');
   await expect(effectiveInput).toContainText('固定ダメージ／軽減0／0');
 

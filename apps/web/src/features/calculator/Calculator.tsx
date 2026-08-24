@@ -897,85 +897,86 @@ export function Calculator({
             ))}
         </section>
         <section className="automatic-abilities" aria-label="計算に使用する最終値">
-          <div className="section-heading compact-heading">
-            <div>
-              <p className="eyebrow">EFFECTIVE INPUT</p>
-              <h3>計算に使用する最終値</h3>
-            </div>
-            <small>{mode === 'quick' ? 'マスターと対象から解決' : '入力値をそのまま使用'}</small>
-          </div>
-          <dl className="automatic-modifiers">
-            <div>
-              <dt>合計ATK</dt>
-              <dd>
-                {numberFormatter.format(
-                  resolvedInput.attackerAtk + resolvedInput.fouAtk + resolvedInput.craftEssenceAtk,
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>クラス攻撃補正</dt>
-              <dd>{resolvedInput.classAttackRate.toFixed(2)}倍</dd>
-            </div>
-            <div>
-              <dt>クラス相性</dt>
-              <dd>{resolvedInput.classAffinity.toFixed(2)}倍</dd>
-            </div>
-            <div>
-              <dt>属性相性</dt>
-              <dd>{resolvedInput.attributeAffinity.toFixed(2)}倍</dd>
-            </div>
-            <div>
-              <dt>攻撃バフ／敵防御</dt>
-              <dd>
-                {(resolvedInput.attackBuff * 100).toFixed(1)}%／
-                {(resolvedInput.defenseBuff * 100).toFixed(1)}%
-              </dd>
-            </div>
-            <div>
-              <dt>{resolvedInput.cardType.toUpperCase()}性能／耐性</dt>
-              <dd>
-                {(resolvedInput.cardBuff * 100).toFixed(1)}%／
-                {(resolvedInput.cardResistance * 100).toFixed(1)}%
-              </dd>
-            </div>
-            <div>
-              <dt>宝具威力／耐性</dt>
-              <dd>
-                {(resolvedInput.npDamageBuff * 100).toFixed(1)}%／
-                {(resolvedInput.npResistance * 100).toFixed(1)}%
-              </dd>
-            </div>
-            <div>
-              <dt>特攻状態＋イベント</dt>
-              <dd>
-                {((resolvedInput.powerMod + resolvedInput.eventDamageBuff) * 100).toFixed(1)}%
-              </dd>
-            </div>
-            <div>
-              <dt>NP{resolvedInput.npLevel} 特攻宝具</dt>
-              <dd>
-                {(
-                  (resolvedInput.npSpecialMultipliers[resolvedInput.npLevel - 1] ?? 1) * 100
-                ).toFixed(1)}
-                %
-              </dd>
-            </div>
-            <div>
-              <dt>特殊威力／特殊耐性</dt>
-              <dd>
-                {(resolvedInput.specialDamageBuff * 100).toFixed(1)}%／
-                {(resolvedInput.specialResistance * 100).toFixed(1)}%
-              </dd>
-            </div>
-            <div>
-              <dt>固定ダメージ／軽減</dt>
-              <dd>
-                {numberFormatter.format(resolvedInput.flatDamage)}／
-                {numberFormatter.format(resolvedInput.damageCut)}
-              </dd>
-            </div>
-          </dl>
+          <details className="effective-input-details">
+            <summary>
+              <strong>計算に使用する最終値</strong>
+              <small>{mode === 'quick' ? 'マスターと対象から解決' : '入力値をそのまま使用'}</small>
+            </summary>
+            <dl className="automatic-modifiers">
+              <div>
+                <dt>合計ATK</dt>
+                <dd>
+                  {numberFormatter.format(
+                    resolvedInput.attackerAtk +
+                      resolvedInput.fouAtk +
+                      resolvedInput.craftEssenceAtk,
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>クラス攻撃補正</dt>
+                <dd>{resolvedInput.classAttackRate.toFixed(2)}倍</dd>
+              </div>
+              <div>
+                <dt>クラス相性</dt>
+                <dd>{resolvedInput.classAffinity.toFixed(2)}倍</dd>
+              </div>
+              <div>
+                <dt>属性相性</dt>
+                <dd>{resolvedInput.attributeAffinity.toFixed(2)}倍</dd>
+              </div>
+              <div>
+                <dt>攻撃バフ／敵防御</dt>
+                <dd>
+                  {(resolvedInput.attackBuff * 100).toFixed(1)}%／
+                  {(resolvedInput.defenseBuff * 100).toFixed(1)}%
+                </dd>
+              </div>
+              <div>
+                <dt>{resolvedInput.cardType.toUpperCase()}性能／耐性</dt>
+                <dd>
+                  {(resolvedInput.cardBuff * 100).toFixed(1)}%／
+                  {(resolvedInput.cardResistance * 100).toFixed(1)}%
+                </dd>
+              </div>
+              <div>
+                <dt>宝具威力／耐性</dt>
+                <dd>
+                  {(resolvedInput.npDamageBuff * 100).toFixed(1)}%／
+                  {(resolvedInput.npResistance * 100).toFixed(1)}%
+                </dd>
+              </div>
+              <div>
+                <dt>特攻状態＋イベント</dt>
+                <dd>
+                  {((resolvedInput.powerMod + resolvedInput.eventDamageBuff) * 100).toFixed(1)}%
+                </dd>
+              </div>
+              <div>
+                <dt>NP{resolvedInput.npLevel} 特攻宝具</dt>
+                <dd>
+                  {(
+                    (resolvedInput.npSpecialMultipliers[resolvedInput.npLevel - 1] ?? 1) * 100
+                  ).toFixed(1)}
+                  %
+                </dd>
+              </div>
+              <div>
+                <dt>特殊威力／特殊耐性</dt>
+                <dd>
+                  {(resolvedInput.specialDamageBuff * 100).toFixed(1)}%／
+                  {(resolvedInput.specialResistance * 100).toFixed(1)}%
+                </dd>
+              </div>
+              <div>
+                <dt>固定ダメージ／軽減</dt>
+                <dd>
+                  {numberFormatter.format(resolvedInput.flatDamage)}／
+                  {numberFormatter.format(resolvedInput.damageCut)}
+                </dd>
+              </div>
+            </dl>
+          </details>
           {mode === 'quick' && damageEffectStacks.length ? (
             <fieldset className="modifier-group">
               <legend>火力効果</legend>
