@@ -881,6 +881,7 @@ function Calculator({
   const [craftEssenceSearch, setCraftEssenceSearch] = useState('');
   const attackerTriggerRef = useRef<HTMLButtonElement>(null);
   const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
+  const resultCardRef = useRef<HTMLElement>(null);
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
@@ -1077,8 +1078,9 @@ function Calculator({
   }
   async function saveImage() {
     try {
+      if (!resultCardRef.current) throw new Error('result_card_missing');
       await onFinalize(resolvedInput, result);
-      const url = URL.createObjectURL(await resultCardPng(snapshot));
+      const url = URL.createObjectURL(await resultCardPng(resultCardRef.current));
       const link = document.createElement('a');
       link.href = url;
       link.download = 'fgo-lab-result.png';
@@ -1525,17 +1527,18 @@ function Calculator({
         </p>
       </section>
       <section className="result-pane" aria-label="宝具レベル別ダメージ比較">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">RESULT</p>
-            <h2>宝具ダメージ</h2>
-          </div>
-          <small>平均を主表示</small>
-        </div>
-        <article className="result-card" data-share-card aria-label="共有対象の計算結果">
+        <article
+          ref={resultCardRef}
+          className="result-card"
+          data-share-card
+          aria-label="共有対象の計算結果"
+        >
           <header className="result-card-head">
             <div className="result-card-title">
-              <h3>宝具ダメージ目安</h3>
+              <div>
+                <p className="eyebrow">RESULT</p>
+                <h2>宝具ダメージ</h2>
+              </div>
               <span>平均・最低・最大</span>
             </div>
             <div className="result-subject">

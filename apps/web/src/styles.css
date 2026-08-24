@@ -488,12 +488,13 @@ td.average {
 }
 .result-card-title {
   display: flex;
-  align-items: baseline;
+  align-items: end;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.7rem;
 }
-.result-card-title h3 {
+.result-card-title .eyebrow,
+.result-card-title h2 {
   margin: 0;
 }
 .result-card-title span,

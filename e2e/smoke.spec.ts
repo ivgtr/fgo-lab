@@ -11,6 +11,8 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
     .click();
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   const resultCard = page.getByLabel('共有対象の計算結果');
+  await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toHaveCount(1);
+  await expect(page.getByText('宝具ダメージ目安', { exact: true })).toHaveCount(0);
   await expect(resultCard).toContainText('アルトリア・ペンドラゴン');
   await expect(resultCard).toContainText('lancer・earth');
   await expect(resultCard).toContainText('支援なし');
@@ -86,6 +88,12 @@ test('mobile calculator selects virtual attacker and CE from the full DB', async
   await page.keyboard.press('Escape');
   await expect(attackerDialog).toBeHidden();
   await expect(page.getByRole('button', { name: '攻撃役を変更' })).toBeFocused();
+  const imageDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '画像として保存' }).click();
+  const imageStream = await (await imageDownloadPromise).createReadStream();
+  const imageChunks: Buffer[] = [];
+  for await (const chunk of imageStream) imageChunks.push(Buffer.from(chunk));
+  expect(Buffer.concat(imageChunks).readUInt32BE(16)).toBe(1120);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
@@ -149,6 +157,16 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await expect(page.getByLabel('敵クラス')).toHaveValue('berserker');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
   await expect(page.getByLabel('カリスマ Bを使用')).not.toBeChecked();
+
+  const imageDownloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '画像として保存' }).click();
+  const imageStream = await (await imageDownloadPromise).createReadStream();
+  const imageChunks: Buffer[] = [];
+  for await (const chunk of imageStream) imageChunks.push(Buffer.from(chunk));
+  const resultImage = Buffer.concat(imageChunks);
+  expect(resultImage.subarray(1, 4).toString('ascii')).toBe('PNG');
+  expect(resultImage.readUInt32BE(16)).toBe(1120);
+  expect(resultImage.readUInt32BE(20)).toBeGreaterThan(900);
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '共有専用JSONを保存' }).click();
