@@ -123,6 +123,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '育成計画' }).click();
   await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('剣の輝石');
+  await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('QP');
   await expect(page.getByLabel('素材の使用先')).toContainText('アルトリア・ペンドラゴン');
 
   await page.reload();

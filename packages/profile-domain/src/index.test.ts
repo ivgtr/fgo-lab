@@ -65,13 +65,13 @@ describe('profile domain', () => {
         planned: true,
       },
     };
-    expect(
-      calculateGrowthLedger(
-        servants,
-        [{ id: 'm', name: 'M', category: 'skill', sortOrder: 1, imageKey: null }],
-        current,
-        targets,
-      )[0]?.amount,
-    ).toBe(5);
+    const ledger = calculateGrowthLedger(
+      servants,
+      [{ id: 'm', name: 'M', category: 'skill', sortOrder: 1, imageKey: null }],
+      current,
+      targets,
+    );
+    expect(ledger.find((entry) => entry.material.id === 'm')?.amount).toBe(5);
+    expect(ledger.find((entry) => entry.material.id === 'system:qp')?.amount).toBe(10);
   });
 });

@@ -1028,26 +1028,106 @@ function Servants({
               />
             </label>
             <label>
-              スキル1
+              再臨段階
+              <select
+                value={tab === 'current' ? (build?.ascension ?? 0) : (target?.ascension ?? 0)}
+                onChange={(event) =>
+                  void (tab === 'current'
+                    ? onChange(selected.id, { ascension: Number(event.target.value) })
+                    : onTargetChange(selected.id, {
+                        ascension: Number(event.target.value),
+                        planned: true,
+                      }))
+                }
+              >
+                {[0, 1, 2, 3, 4].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              ATKフォウ
               <input
                 type="number"
-                min="1"
-                max="10"
-                value={tab === 'current' ? (build?.skills['1'] ?? 1) : (target?.skills['1'] ?? 1)}
-                onChange={(event) => {
-                  const level = Number(event.target.value);
-                  if (tab === 'current')
-                    void onChange(selected.id, {
-                      skills: { ...build?.skills, '1': level },
-                    });
-                  else
-                    void onTargetChange(selected.id, {
-                      skills: { ...target?.skills, '1': level },
-                      planned: true,
-                    });
-                }}
+                min="0"
+                max="5000"
+                step="10"
+                value={tab === 'current' ? (build?.fouAtk ?? 0) : (target?.fouAtk ?? 0)}
+                onChange={(event) =>
+                  void (tab === 'current'
+                    ? onChange(selected.id, { fouAtk: Number(event.target.value) })
+                    : onTargetChange(selected.id, {
+                        fouAtk: Number(event.target.value),
+                        planned: true,
+                      }))
+                }
               />
             </label>
+            {[1, 2, 3].map((slot) => {
+              const key = String(slot);
+              return (
+                <label key={`skill:${key}`}>
+                  スキル{slot}
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={
+                      tab === 'current' ? (build?.skills[key] ?? 1) : (target?.skills[key] ?? 1)
+                    }
+                    onChange={(event) => {
+                      const level = Number(event.target.value);
+                      if (tab === 'current')
+                        void onChange(selected.id, {
+                          skills: { ...build?.skills, [key]: level },
+                        });
+                      else
+                        void onTargetChange(selected.id, {
+                          skills: { ...target?.skills, [key]: level },
+                          planned: true,
+                        });
+                    }}
+                  />
+                </label>
+              );
+            })}
+            <details>
+              <summary>アペンドスキル</summary>
+              <div className="form-grid">
+                {[1, 2, 3, 4, 5].map((slot) => {
+                  const key = String(slot);
+                  return (
+                    <label key={`append:${key}`}>
+                      アペンド{slot}
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={
+                          tab === 'current'
+                            ? (build?.appends[key] ?? 0)
+                            : (target?.appends[key] ?? 0)
+                        }
+                        onChange={(event) => {
+                          const level = Number(event.target.value);
+                          if (tab === 'current')
+                            void onChange(selected.id, {
+                              appends: { ...build?.appends, [key]: level },
+                            });
+                          else
+                            void onTargetChange(selected.id, {
+                              appends: { ...target?.appends, [key]: level },
+                              planned: true,
+                            });
+                        }}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </details>
             <div className="toolbar">
               {[90, 100, 120].map((level) => (
                 <button
@@ -1064,9 +1144,11 @@ function Servants({
               <button
                 onClick={() =>
                   void (tab === 'current'
-                    ? onChange(selected.id, { skills: { ...build?.skills, '1': 10 } })
+                    ? onChange(selected.id, {
+                        skills: { ...build?.skills, '1': 10, '2': 10, '3': 10 },
+                      })
                     : onTargetChange(selected.id, {
-                        skills: { ...target?.skills, '1': 10 },
+                        skills: { ...target?.skills, '1': 10, '2': 10, '3': 10 },
                         planned: true,
                       }))
                 }
@@ -1510,6 +1592,7 @@ function Growth({
 }) {
   const [search, setSearch] = useState('');
   const [order, setOrder] = useState<'game' | 'amount' | 'name'>('game');
+  const [category, setCategory] = useState('all');
   const [selectedId, setSelectedId] = useState<string>();
   const ledger = calculateGrowthLedger(
     master.servants,
@@ -1517,7 +1600,7 @@ function Growth({
     profile.servantBuilds,
     profile.servantTargets,
   );
-  const visible = filterAndSortLedger(ledger, search, 'all', order);
+  const visible = filterAndSortLedger(ledger, search, category, order);
   const selected = ledger.find((entry) => entry.material.id === selectedId) ?? visible[0];
   const servantNames = new Map(master.servants.map((servant) => [servant.id, servant.name]));
   return (
@@ -1531,6 +1614,17 @@ function Growth({
             <label>
               素材名検索
               <input value={search} onChange={(event) => setSearch(event.target.value)} />
+            </label>
+            <label>
+              カテゴリ
+              <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                <option value="all">すべて</option>
+                {[...new Set(ledger.map((entry) => entry.material.category))].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
               並び順

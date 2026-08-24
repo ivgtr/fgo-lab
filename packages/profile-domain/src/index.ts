@@ -99,29 +99,59 @@ export function calculateGrowthLedger(
   targets: Readonly<Record<string, ServantTarget>>,
 ): MaterialLedgerEntry[] {
   const usages: MaterialUsage[] = [];
+  const qpTransitions = new Set<string>();
   for (const servant of servants) {
     const target = targets[servant.id];
     if (!target?.planned) continue;
     const build = current[servant.id];
     for (const step of servant.growth) {
-      const skillId = step.from.split(':')[1];
-      const fromLevel = Number(step.from.split(':')[2]);
+      const [purpose, slot, fromRaw] = step.from.split(':');
       const toLevel = Number(step.to.split(':')[2]);
-      if (
-        skillId &&
-        build &&
-        (build.skills[skillId] ?? 1) <= fromLevel &&
-        (target.skills[skillId] ?? 1) >= toLevel
-      )
+      const fromLevel = Number(fromRaw);
+      if (!purpose || !slot || !Number.isInteger(fromLevel) || !Number.isInteger(toLevel)) continue;
+      const currentLevel =
+        purpose === 'ascension'
+          ? (build?.ascension ?? 0)
+          : purpose === 'append'
+            ? (build?.appends[slot] ?? 0)
+            : (build?.skills[slot] ?? 1);
+      const targetLevel =
+        purpose === 'ascension'
+          ? target.ascension
+          : purpose === 'append'
+            ? (target.appends[slot] ?? 0)
+            : (target.skills[slot] ?? 1);
+      if (currentLevel <= fromLevel && targetLevel >= toLevel) {
         usages.push({
           materialId: step.materialId,
           servantId: servant.id,
-          purpose: `skill:${skillId}`,
+          purpose: `${purpose}:${slot}`,
           amount: step.amount,
         });
+        const transition = `${servant.id}:${step.from}:${step.to}`;
+        if (step.qp > 0 && !qpTransitions.has(transition)) {
+          qpTransitions.add(transition);
+          usages.push({
+            materialId: 'system:qp',
+            servantId: servant.id,
+            purpose: `${purpose}:${slot}:QP`,
+            amount: step.qp,
+          });
+        }
+      }
     }
   }
-  return materials
+  const ledgerMaterials: MaterialMaster[] = [
+    ...materials,
+    {
+      id: 'system:qp',
+      name: 'QP',
+      category: 'currency',
+      sortOrder: Number.MAX_SAFE_INTEGER,
+      imageKey: null,
+    },
+  ];
+  return ledgerMaterials
     .map((material) => {
       const selected = usages.filter((usage) => usage.materialId === material.id);
       return {
