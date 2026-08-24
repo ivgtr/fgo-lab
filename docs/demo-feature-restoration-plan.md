@@ -215,6 +215,7 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 - 2026-08-24: Atlas JPのクラス攻撃率、全17クラス相性、5属性相性を自動解決。最新スキル、パッシブ、礼装通常／MLB、宝具前OC効果、単一特性の特攻宝具をマスターへ取り込んだ。
 - 2026-08-24: `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm build`、`pnpm validate:master` 成功。`pnpm test` 8 files / 52 tests成功。
 - 2026-08-24: Playwright Chromium／mobile Chromiumで16件成功、10件skip。320px、オフライン、axe、入力復元、黒の聖杯+60%、ジークフリートの竜特攻1.50倍、共有、固定幅PNGを確認。
+- 2026-08-24: クイック操作へATKフォウ加算を追加。`+1,000`の累積加算、`+3,000`上限、0へのリセット、直接入力とdraft復元の同期をPlaywrightで確認。
 
 ## 7. コミット記録
 

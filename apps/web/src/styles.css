@@ -443,6 +443,25 @@ h3 {
   font-size: 0.82rem;
   font-weight: 700;
 }
+.quick-value-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+.quick-value-presets button {
+  min-height: 32px;
+  padding: 0.3rem;
+  border-color: #cfd4d8;
+  background: #f7f7f4;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.quick-value-presets button:not(:disabled):active {
+  border-color: var(--accent);
+  background: #f6ece8;
+  color: var(--accent);
+  font-weight: 800;
+}
 [role='tablist'] {
   display: flex;
   border-bottom: 1px solid var(--line);

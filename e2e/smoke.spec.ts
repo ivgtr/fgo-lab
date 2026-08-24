@@ -146,6 +146,36 @@ test('autosaves and restores a directly edited calculation draft', async ({ page
   await expect(page.getByLabel('攻撃バフ（%）')).toHaveValue('20');
 });
 
+test('edits Fou ATK from quick controls and shares the value with direct input', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers draft persistence across input modes');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  const fou = page.getByLabel('ATKフォウ（加算）');
+  await expect(fou).toHaveValue('1000');
+  const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
+  const before = Number((await damage.textContent())?.replaceAll(',', ''));
+  await page.getByRole('button', { name: '+1,000' }).click();
+  await expect(fou).toHaveValue('2000');
+  expect(Number((await damage.textContent())?.replaceAll(',', ''))).toBeGreaterThan(before);
+  await page.getByRole('button', { name: '+1,000' }).click();
+  await expect(fou).toHaveValue('3000');
+  await expect(page.getByRole('button', { name: '+1,000' })).toBeDisabled();
+  await page.getByRole('button', { name: 'リセット' }).click();
+  await expect(fou).toHaveValue('0');
+  await page.getByRole('button', { name: '+1,000' }).click();
+  await page.getByRole('button', { name: '+1,000' }).click();
+  await page.getByRole('tab', { name: '直接入力' }).click();
+  await expect(page.getByLabel('ATKフォウ')).toHaveValue('2000');
+  await page.reload();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await expect(page.getByLabel('ATKフォウ（加算）')).toHaveValue('2000');
+});
+
 test('restores complete direct inputs, CE effects, and trait special NP resolution', async ({
   page,
   isMobile,

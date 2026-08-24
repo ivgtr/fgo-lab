@@ -1298,6 +1298,36 @@ function Calculator({
               </button>
             ) : null}
           </label>
+          {mode === 'quick' ? (
+            <label>
+              ATKフォウ（加算）
+              <input
+                type="number"
+                min="0"
+                max="3000"
+                step="10"
+                value={input.fouAtk}
+                onChange={(event) => changeManual('fouAtk', Number(event.target.value))}
+              />
+              <span className="quick-value-presets" aria-label="ATKフォウのクイック選択">
+                <button
+                  type="button"
+                  disabled={input.fouAtk >= 3000}
+                  onClick={() => changeManual('fouAtk', Math.min(input.fouAtk + 1000, 3000))}
+                >
+                  +1,000
+                </button>
+                <button
+                  type="button"
+                  disabled={input.fouAtk === 0}
+                  onClick={() => changeManual('fouAtk', 0)}
+                >
+                  リセット
+                </button>
+              </span>
+              <small>合計ATKへ加算・最大+3,000</small>
+            </label>
+          ) : null}
           <label>
             宝具Lv
             <select
@@ -1505,6 +1535,7 @@ function Calculator({
                   <input
                     type="number"
                     min="0"
+                    max={key === 'fouAtk' ? 3000 : undefined}
                     step="1"
                     value={input[key]}
                     onChange={(event) => changeManual(key, Number(event.target.value))}
