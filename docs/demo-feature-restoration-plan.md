@@ -82,12 +82,12 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 
 ### D3: ダメージ計算の構成呼び出し
 
-状態: 未着手
+状態: 実装中
 
 - [ ] 攻撃役と礼装を検索モーダルから選択する。
 - [ ] 保存済みレベル、NP、スキル、礼装Lvを読み込み、一時上書きと復元を提供する。
 - [ ] 攻撃役の自身スキルをDBから展開し、Lvと適用状態を編集する。
-- [ ] 保存済み支援条件を呼び出し、全付与元と全効果を展開する。
+- [x] 保存済み支援条件を検索して呼び出し、全効果と適用状態を展開する。
 - [ ] 効果をサーヴァント／礼装／魔術礼装／カスタムから追加する。
 - [ ] `saved` / `modified` / `added` / `pending_remove` を表示する。
 - [ ] 現在構成の別名保存と、明示操作によるテンプレート更新を実装する。
@@ -167,16 +167,16 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 
 ### Slice 1: 保存済み支援条件を計算へ反映する
 
-状態: 実装中
+状態: 完了
 
 対象:
 
 1. [x] 現行 `SupportTemplate` と正規化済みskillデータの表現力を確認する。
 2. [x] 最小のEffect Resolver契約を追加する。
-3. 計算画面へ支援条件検索・呼び出し・全効果展開を追加する。
-4. 展開した効果を `CalcInput` へ反映する。
-5. 保存元を変更せず、計算draftへだけ保存する。
-6. 単体、integration、E2Eで結果変化と再読込を検証する。
+3. [x] 計算画面へ支援条件検索・呼び出し・全効果展開を追加する。
+4. [x] 展開した効果を `CalcInput` へ反映する。
+5. [x] 保存元を変更せず、計算draftへだけ保存する。
+6. [x] 単体、integration、E2Eで結果変化と再読込を検証する。
 
 調査結果:
 
@@ -187,7 +187,7 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 
 未解決事項:
 
-- 現行schema v1を後方互換のoptional field追加で維持できるか、schema v2が必要か。
+- schema v1へoptionalな支援テンプレートsnapshotを追加し、既存保存データとの後方互換を維持した。schema v2への移行は不要。
 - 特殊効果を最初のスライスへ含める範囲。
 
 ## 6. 検証記録
@@ -195,7 +195,13 @@ D3〜D8 ─> D9 ホーム・セットアップ・公開品質ゲート
 - 2026-08-24: `pnpm typecheck` 成功。
 - 2026-08-24: `pnpm lint` 成功。
 - 2026-08-24: `pnpm test` 8 files / 37 tests 成功。Effect Resolver 4件を含む。
+- 2026-08-24: `pnpm build` 成功。
+- 2026-08-24: Playwright Chromium/mobile Chromium 14件成功、project固有8件skip。
+- 2026-08-24: 保存済みカリスマB Lv8の呼び出しで攻撃力+15.3%とダメージ増加を確認し、再読込後の復元を確認。
+- 2026-08-24: axe serious/critical 0件。
 
 ## 7. コミット記録
 
-まだなし。
+- `d0ea993 docs: plan restoration of adopted demo features`
+- `52dea7a feat(calc): add fail-closed support effect resolver`
+- `feat(calculator): apply saved support templates`（この更新と同じコミット）

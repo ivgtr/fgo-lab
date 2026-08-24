@@ -114,6 +114,7 @@ export const calculationDraftSchema = z.object({
   input: calcInputSchema,
   result: calcResultSchema,
   inputFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+  supportTemplate: supportTemplateSchema.nullable().optional(),
   updatedAt: z.iso.datetime(),
 });
 export const calculationHistoryEntrySchema = calculationDraftSchema.extend({

@@ -15,6 +15,7 @@ import {
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
 import { calculateNpDamage } from '@fgo-lab/calc-core';
+import { resolveSupportTemplate, type ResolvedSupportTemplate } from '@fgo-lab/effect-resolver';
 import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalcInput,
@@ -60,6 +61,30 @@ const repository = new IndexedDbProfileRepository();
 const ENGINE_RELEASE_VALIDATED = import.meta.env['VITE_ENGINE_RELEASE_VALIDATED'] === 'true';
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
+
+function withSupportResolution(
+  result: ReturnType<typeof calculateNpDamage>,
+  resolution: ResolvedSupportTemplate | undefined,
+) {
+  if (!resolution) return result;
+  return {
+    ...result,
+    precision:
+      resolution.precision === 'unsupported'
+        ? ('unsupported' as const)
+        : resolution.precision === 'approximate' || result.precision === 'approximate'
+          ? ('approximate' as const)
+          : result.precision,
+    warnings: [...result.warnings, ...resolution.warnings],
+    trace: [
+      ...result.trace,
+      ...resolution.effects.map((effect) => ({
+        step: 'support-effect',
+        detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
+      })),
+    ],
+  };
+}
 
 function Setup({
   onComplete,
@@ -156,6 +181,7 @@ export function App() {
   const [page, setPage] = useState<Page>('home');
   const [undoSnapshot, setUndoSnapshot] = useState<ProfileCollection>();
   const [calculatorInput, setCalculatorInput] = useState<CalcInput>();
+  const [selectedSupport, setSelectedSupport] = useState<SupportTemplate>();
   const [sharedSnapshot, setSharedSnapshot] = useState<CalculationShareSnapshot>();
   const [online, setOnline] = useState(navigator.onLine);
   const [calculationSessionId] = useState(() => crypto.randomUUID());
@@ -191,6 +217,7 @@ export function App() {
         setProfiles(saved);
         setSharedSnapshot(shared ?? undefined);
         setCalculatorInput(shared?.input ?? savedProfile.draft?.input);
+        setSelectedSupport(shared ? undefined : (savedProfile.draft?.supportTemplate ?? undefined));
         if (shared) setPage('calculate');
       }
       setLoading(false);
@@ -249,7 +276,7 @@ export function App() {
   const profile = activeProfile(currentProfiles);
   const servant = currentMaster.servants[0]!;
   const build = profile.servantBuilds[servant.id];
-  const input = calculatorInput ?? calcInput(currentMaster, build);
+  const baseInput = calculatorInput ?? calcInput(currentMaster, build);
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -258,7 +285,14 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const calculatedResult = calculateNpDamage(input, versions);
+  const supportResolution = selectedSupport
+    ? resolveSupportTemplate(baseInput, selectedSupport, currentMaster.servants)
+    : undefined;
+  const input = supportResolution?.input ?? baseInput;
+  const calculatedResult = withSupportResolution(
+    calculateNpDamage(input, versions),
+    supportResolution,
+  );
   const compatibleSharedSnapshot =
     sharedSnapshot?.result.versions.masterDataVersion === currentMaster.version &&
     sharedSnapshot.result.versions.engineVersion === ENGINE_VERSION;
@@ -428,10 +462,18 @@ export function App() {
       updatedAt: timestamp,
     });
   }
-  async function saveCalculationDraft(nextInput: CalcInput) {
+  async function saveCalculationDraft(nextInput: CalcInput, supportTemplate = selectedSupport) {
     setCalculatorInput(nextInput);
+    setSelectedSupport(supportTemplate);
     setSharedSnapshot(undefined);
-    const nextCalculated = calculateNpDamage(nextInput, versions);
+    const nextResolution = supportTemplate
+      ? resolveSupportTemplate(nextInput, supportTemplate, currentMaster.servants)
+      : undefined;
+    const resolvedInput = nextResolution?.input ?? nextInput;
+    const nextCalculated = withSupportResolution(
+      calculateNpDamage(resolvedInput, versions),
+      nextResolution,
+    );
     const nextResult = !ENGINE_RELEASE_VALIDATED
       ? {
           ...nextCalculated,
@@ -440,7 +482,7 @@ export function App() {
         }
       : nextCalculated;
     const fingerprint = await inputFingerprint(
-      nextInput,
+      resolvedInput,
       currentMaster.version,
       ENGINE_VERSION,
       async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
@@ -453,6 +495,7 @@ export function App() {
         input: nextInput,
         result: nextResult,
         inputFingerprint: fingerprint,
+        supportTemplate: supportTemplate ?? null,
         updatedAt: new Date().toISOString(),
       },
       updatedAt: new Date().toISOString(),
@@ -536,11 +579,15 @@ export function App() {
         )}{' '}
         {page === 'calculate' && (
           <Calculator
-            input={input}
+            input={baseInput}
+            resolvedInput={input}
             result={result}
             servants={currentMaster.servants}
+            supportTemplates={profile.supportTemplates}
+            selectedSupport={selectedSupport}
             sharedVersionMismatch={Boolean(sharedSnapshot && !compatibleSharedSnapshot)}
             onInputChange={saveCalculationDraft}
+            onSupportSelect={(template) => saveCalculationDraft(baseInput, template)}
             onFinalize={finalizeCurrentCalculation}
           />
         )}{' '}
@@ -668,22 +715,44 @@ function Home({
 }
 function Calculator({
   input,
+  resolvedInput,
   result,
   servants,
+  supportTemplates,
+  selectedSupport,
   sharedVersionMismatch,
   onInputChange,
+  onSupportSelect,
   onFinalize,
 }: {
   input: CalcInput;
+  resolvedInput: CalcInput;
   result: ReturnType<typeof calculateNpDamage>;
   servants: ServantMaster[];
+  supportTemplates: SupportTemplate[];
+  selectedSupport: SupportTemplate | undefined;
   sharedVersionMismatch: boolean;
   onInputChange: (input: CalcInput) => Promise<void>;
+  onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onFinalize: (input: CalcInput, result: ReturnType<typeof calculateNpDamage>) => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const [mode, setMode] = useState<'quick' | 'direct'>('quick');
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const [supportSearch, setSupportSearch] = useState('');
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
+  const selectedSupportResolution = selectedSupport
+    ? resolveSupportTemplate(input, selectedSupport, servants)
+    : undefined;
+  const visibleSupportTemplates = supportTemplates.filter((template) => {
+    const sourceNames = template.effects.map(
+      (effect) => servants.find((servant) => servant.id === effect.sourceId)?.name ?? '',
+    );
+    return [template.name, ...sourceNames]
+      .join(' ')
+      .toLocaleLowerCase('ja')
+      .includes(supportSearch.toLocaleLowerCase('ja'));
+  });
   function change(patch: Partial<CalcInput>) {
     void onInputChange({ ...input, ...patch });
   }
@@ -691,12 +760,12 @@ function Calculator({
     kind: 'fgo-lab-calculation-share' as const,
     schemaVersion: 1 as const,
     sharedAt: new Date().toISOString(),
-    input,
+    input: resolvedInput,
     result,
   };
   async function copyUrl() {
     try {
-      await onFinalize(input, result);
+      await onFinalize(resolvedInput, result);
       const url = new URL(location.href);
       url.hash = createShareFragment(snapshot);
       await navigator.clipboard.writeText(url.toString());
@@ -711,7 +780,7 @@ function Calculator({
   }
   async function saveImage() {
     try {
-      await onFinalize(input, result);
+      await onFinalize(resolvedInput, result);
       const url = URL.createObjectURL(await resultCardPng(snapshot));
       const link = document.createElement('a');
       link.href = url;
@@ -898,6 +967,55 @@ function Calculator({
               </label>
             ))}
         </div>
+        <section className="support-composition" aria-label="支援・バフ">
+          <div className="section-heading compact-heading">
+            <div>
+              <p className="eyebrow">SUPPORT</p>
+              <h3>支援・バフ</h3>
+            </div>
+            <button onClick={() => setSupportDialogOpen(true)}>支援条件を呼び出す</button>
+          </div>
+          {!selectedSupport ? (
+            <p className="notice">保存済み支援条件はまだ適用されていません。</p>
+          ) : (
+            <>
+              <div className="selected-support-head">
+                <span>
+                  <small>使用中の支援条件</small>
+                  <strong>{selectedSupport.name}</strong>
+                </span>
+                <button onClick={() => void onSupportSelect(undefined)}>解除</button>
+              </div>
+              <ul className="plain-list support-effect-list">
+                {selectedSupportResolution?.effects.map((effect) => (
+                  <li key={`${effect.sourceId}:${effect.skillId}:${effect.effectId}`}>
+                    <span className="list-row-main">
+                      <strong>
+                        {effect.sourceName}・{effect.skillName}
+                      </strong>
+                      <small>{effect.label}</small>
+                    </span>
+                    <span className={effect.applied ? 'effect-applied' : 'effect-inactive'}>
+                      {effect.applied && effect.value !== null
+                        ? `+${effect.value.toLocaleString('ja-JP', {
+                            style: 'percent',
+                            maximumFractionDigits: 1,
+                          })}`
+                        : effect.reason === 'not_np_damage_relevant'
+                          ? '宝具火力外'
+                          : '未適用'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {selectedSupportResolution?.warnings.map((warning) => (
+                <p className="notice" key={warning}>
+                  未解決: {warning}
+                </p>
+              ))}
+            </>
+          )}
+        </section>
         {sharedVersionMismatch && (
           <p role="status" className="notice">
             対応するデータ版またはエンジン版がないため、共有時の履歴結果を表示しています。入力を変更すると現行版で新規計算します。
@@ -960,6 +1078,59 @@ function Calculator({
           </ul>
         </details>
       </section>
+      {supportDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="support-template-picker-title"
+          className="dialog"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setSupportDialogOpen(false);
+          }}
+        >
+          <div className="dialog-panel">
+            <h2 id="support-template-picker-title">保存済み支援条件</h2>
+            <label>
+              条件名・サーヴァント名
+              <input
+                type="search"
+                value={supportSearch}
+                onChange={(event) => setSupportSearch(event.target.value)}
+                autoFocus
+              />
+            </label>
+            {visibleSupportTemplates.length === 0 ? (
+              <p>一致する支援条件はありません。</p>
+            ) : (
+              <ul className="plain-list template-picker-list">
+                {visibleSupportTemplates.map((template) => {
+                  const sourceIds = [...new Set(template.effects.map((effect) => effect.sourceId))];
+                  return (
+                    <li key={template.templateId}>
+                      <span className="list-row-main">
+                        <strong>{template.name}</strong>
+                        <small>
+                          {sourceIds.length}騎・使用中
+                          {template.effects.filter((effect) => effect.enabled).length}スキル
+                        </small>
+                      </span>
+                      <button
+                        onClick={() => {
+                          void onSupportSelect(template);
+                          setSupportDialogOpen(false);
+                        }}
+                      >
+                        呼び出す
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button onClick={() => setSupportDialogOpen(false)}>閉じる</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

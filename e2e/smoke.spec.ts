@@ -165,12 +165,25 @@ test('persists servant, target, CE copies, and support templates', async ({ page
     '使用中 1スキル',
   );
 
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
+  const baseDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  await page.getByRole('button', { name: '支援条件を呼び出す' }).click();
+  const templateDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
+  await templateDialog.getByRole('button', { name: '呼び出す' }).click();
+  await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
+  await expect(page.getByLabel('支援・バフ')).toContainText('+15.3%');
+  const supportedDamage = Number((await currentDamage.textContent())?.replaceAll(',', ''));
+  expect(supportedDamage).toBeGreaterThan(baseDamage);
+
   await page.getByRole('button', { name: '育成計画' }).click();
   await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('剣の輝石');
   await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('QP');
   await expect(page.getByLabel('素材の使用先')).toContainText('アルトリア・ペンドラゴン');
 
   await page.reload();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await expect(page.getByLabel('支援・バフ')).toContainText('支援条件 1');
   await page.getByRole('button', { name: '概念礼装' }).click();
   await expect(
     page.getByRole('list', { name: '登録済み概念礼装' }).getByRole('listitem'),
