@@ -231,12 +231,7 @@ export function App() {
   };
   const resolvedCalculation = calculateScenario(currentScenario, currentMaster, versions);
   const input = resolvedCalculation.input;
-  const compatibleSharedSnapshot =
-    calculation.shared?.result.versions.masterDataVersion === currentMaster.version;
-  const result =
-    calculation.shared && !compatibleSharedSnapshot
-      ? calculation.shared.result
-      : resolvedCalculation.result;
+  const result = resolvedCalculation.result;
   async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) => patchServantBuild(current, servantId, patch, now));
@@ -452,7 +447,6 @@ export function App() {
             selection={currentSelection}
             supportTemplates={profile.supportTemplates}
             selectedSupport={calculationSupportTemplate}
-            sharedVersionMismatch={Boolean(calculation.shared && !compatibleSharedSnapshot)}
             onInputChange={saveCalculationDraft}
             onCompositionChange={(nextInput, nextSelection) =>
               saveCalculationDraft(nextInput, nextSelection)

@@ -48,7 +48,6 @@ export function Calculator({
   selection,
   supportTemplates,
   selectedSupport,
-  sharedVersionMismatch,
   onInputChange,
   onCompositionChange,
   onSupportSelect,
@@ -67,7 +66,6 @@ export function Calculator({
   selection: CalculationEditorState;
   supportTemplates: SupportTemplate[];
   selectedSupport: SupportTemplate | undefined;
-  sharedVersionMismatch: boolean;
   onInputChange: (input: DamageResolutionInput) => Promise<void>;
   onCompositionChange: (
     input: DamageResolutionInput,
@@ -913,11 +911,6 @@ export function Calculator({
           mode={mode}
           damageEffectStacks={damageEffectStacks}
         />
-        {sharedVersionMismatch && (
-          <p role="status" className="notice">
-            対応するデータ版またはエンジン版がないため、共有時の履歴結果を表示しています。入力を変更すると現行版で新規計算します。
-          </p>
-        )}
       </section>
       <CalculationResult
         input={resolvedInput}

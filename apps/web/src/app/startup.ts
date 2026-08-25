@@ -13,7 +13,7 @@ import {
   stageAndActivate,
   type ActiveMaster,
 } from '../adapters/repository';
-import { readShareFragment } from '../adapters/share';
+import { readShareFragment, validateCalculationShareSnapshot } from '../adapters/share';
 
 interface StartupOptions {
   baseUrl: string;
@@ -93,7 +93,8 @@ export async function bootstrapApplication(
 
     let shared: CalculationShareSnapshot | null = null;
     try {
-      shared = readShareFragment(options.fragment);
+      const candidate = readShareFragment(options.fragment);
+      shared = candidate ? validateCalculationShareSnapshot(candidate, active.snapshot) : null;
     } catch (cause) {
       warning = `共有URLを復元できませんでした: ${errorMessage(cause)}`;
     }
@@ -136,7 +137,8 @@ export async function setupApplication(
       : '';
   let shared: CalculationShareSnapshot | null = null;
   try {
-    shared = readShareFragment(options.fragment);
+    const candidate = readShareFragment(options.fragment);
+    shared = candidate ? validateCalculationShareSnapshot(candidate, active.snapshot) : null;
   } catch (cause) {
     warning = `共有URLを復元できませんでした: ${errorMessage(cause)}`;
   }
