@@ -194,7 +194,7 @@ describe('resolveSupportComposition', () => {
     });
   });
 
-  it('excludes critical and Extra Attack buffs from NP damage controls', () => {
+  it('excludes non-NP buffs and exposes unresolved damage candidates', () => {
     expect(
       isDamageRelevantEffect({
         id: 'extra',
@@ -216,7 +216,7 @@ describe('resolveSupportComposition', () => {
         buffTypes: ['buffRate'],
         cardTypes: [],
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('adds unconditional damage buffs at the selected skill level', () => {
@@ -313,7 +313,7 @@ describe('resolveSupportComposition', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it('keeps an untyped buff rate closed as approximate', () => {
+  it('keeps an untyped buff rate fail-closed as unsupported', () => {
     const boosted: ServantMaster = {
       ...source,
       skills: [
@@ -334,7 +334,7 @@ describe('resolveSupportComposition', () => {
       ],
     };
     const result = resolveSupportComposition(input, compositionFor(boosted), [boosted]);
-    expect(result.precision).toBe('approximate');
+    expect(result.precision).toBe('unsupported');
     expect(result.effects[0]).toMatchObject({
       applied: false,
       reason: 'damage_effect_not_supported',

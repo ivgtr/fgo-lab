@@ -238,6 +238,29 @@ describe('calculation application logic', () => {
     expect(calculation.result.issues.map((issue) => issue.code)).not.toContain(
       'support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect',
     );
+
+    const unresolvedEffect = boostMaster.servants[1]?.skills[0]?.effects[0];
+    if (!unresolvedEffect) throw new Error('expected fixture effect');
+    delete unresolvedEffect.buffRateTargets;
+    const unsupported = calculateResolvedDamage(
+      input,
+      {
+        attackerSource: 'master',
+        effectMode: 'resolved',
+        craftEssence: null,
+        support: { sourceTemplateId: support.templateId, composition: support.composition },
+      },
+      boostMaster,
+      { ...versions, masterDataVersion: boostMaster.version },
+      { releaseValidated: true },
+    );
+    expect(unsupported.result).toMatchObject({
+      status: 'unsupported',
+      rows: [],
+      missingEvidence: [
+        'support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect',
+      ],
+    });
   });
 
   it('marks every non-release calculation through the same result path', () => {

@@ -57,7 +57,35 @@ export interface ResolvedEffectSet {
 }
 
 const NON_NP_DAMAGE_BUFF_TYPES = new Set(['upCriticaldamage', 'upExtraattack']);
-const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set(['buffRate']);
+const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
+  'addIndividuality',
+  'addSelfdamage',
+  'buffRate',
+  'changeCommandCardType',
+  'downAtk',
+  'downCommandall',
+  'downNpdamage',
+  'downTolerance',
+  'fieldIndividuality',
+  'fieldIndividualityChangedFunction',
+  'npattackPrevBuff',
+  'overwriteClassRelation',
+  'pierceDefence',
+  'pierceSubdamage',
+  'subFieldIndividuality',
+  'subIndividuality',
+  'subSelfdamage',
+  'tdTypeChange',
+  'tdTypeChangeArts',
+  'tdTypeChangeBuster',
+  'tdTypeChangeQuick',
+  'toFieldChangeField',
+  'upDefence',
+  'upDefenceNpdamage',
+  'upDefencecommandall',
+  'upTolerance',
+  'upToleranceSubstate',
+]);
 
 interface SkillSelection {
   sourceInstanceId: string;
@@ -112,7 +140,8 @@ export function isDamageRelevantEffect(effect: MasterEffect): boolean {
     effectBuffKind(effect) !== null ||
     Boolean(
       effect.buffTypes?.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp'),
-    )
+    ) ||
+    isPotentiallyDamageRelevant(effect)
   );
 }
 
@@ -301,7 +330,7 @@ function resolveEffects(
     }
     const damageRelevant = isPotentiallyDamageRelevant(effect);
     if (damageRelevant) {
-      if (precision === 'exact') precision = 'approximate';
+      precision = 'unsupported';
       warnings.push(`${origin}_effect_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`);
     }
     effects.push({
