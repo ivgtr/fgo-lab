@@ -170,7 +170,7 @@ calculation-application <- web / ranking worker
 
 ### Q3：ScenarioResolverの再構築
 
-状態: 進行中
+状態: 完了
 
 作業:
 
@@ -310,8 +310,8 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 | Q0 | 完了 | 2026-08-25 | Q0-D1〜D7を技術判断として承認。`docs/reports/damage-quality-q0.md` |
 | Q1 | 完了 | 2026-08-25 | scenario/result、全攻撃宝具、魔術礼装、lossless effect parameter、fail-closed registryへ置換。`docs/reports/damage-quality-q1.md` |
 | Q2 | 完了 | 2026-08-25 | 純粋kernel、NP1〜5 evaluator、共有application facade、9種Function handler、golden、benchmarkへ収束。`docs/reports/damage-quality-q2.md` |
-| Q3 | 進行中 | 2026-08-25 | Q3-D1〜D7を技術判断として承認。共通EffectSource、単一resolver／aggregator、application facadeへ置換する。`docs/reports/damage-quality-q3.md` |
-| Q4 | 未着手 | - | - |
+| Q3 | 完了 | 2026-08-25 | 共通EffectSource、判別可能effect状態、単一integer aggregator、application facade、全付与元goldenへ収束。`docs/reports/damage-quality-q3.md` |
+| Q4 | 次に着手 | - | evidence-based precisionへ置換し、環境flag上書きを削除する。 |
 | Q5 | 未着手 | - | - |
 | Q6 | 未着手 | - | - |
 | Q7 | 未着手 | - | - |
