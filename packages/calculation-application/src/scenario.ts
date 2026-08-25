@@ -11,6 +11,7 @@ import type {
   VersionContext,
 } from '@fgo-lab/schema';
 import { calculateDamageResolution } from './damageResolution';
+import { evaluateCalculationEvidence } from './evidence';
 import { applyNpDamageHandler } from './npDamageHandler';
 
 export interface ResolvedCalculationInput {
@@ -81,6 +82,18 @@ export function calculateResolvedDamage(
 ) {
   const resolved = resolveCalculationInput(baseInput, selection, master);
   const calculation = calculateDamageResolution(resolved.input, versions);
+  const effectEvidenceKeys = resolved.effects.flatMap((effect) => {
+    if (effect.state !== 'applied') return [];
+    if (effect.reason === 'np_damage_buff_rate') return ['effect-operation:npDamageBuffRate'];
+    return effect.kind ? [`effect-operation:${effect.kind}`] : [];
+  });
+  const evidence = evaluateCalculationEvidence([
+    ...calculation.evidence.map((entry) => entry.key),
+    ...(selection.effectMode === 'manual'
+      ? ['input:manual-final-modifiers']
+      : ['master:normalized-v5']),
+    ...effectEvidenceKeys,
+  ]);
   const effects = resolved.effects.map((effect) => ({
     effectKey: effect.effectKey,
     state: effect.state,
@@ -88,7 +101,11 @@ export function calculateResolvedDamage(
   }));
   const resolutionIssues = resolved.warnings.map((warning) => ({ code: warning, detail: warning }));
   let result: CalculationResult;
-  if (calculation.status === 'unsupported' || resolved.precision === 'unsupported')
+  if (
+    calculation.status === 'unsupported' ||
+    resolved.precision === 'unsupported' ||
+    evidence.status === 'unsupported'
+  )
     result = {
       status: 'unsupported',
       rows: [],
@@ -99,17 +116,17 @@ export function calculateResolvedDamage(
       missingEvidence: [
         ...(calculation.status === 'unsupported' ? calculation.missingEvidence : []),
         ...resolved.warnings,
+        ...(evidence.status === 'unsupported' ? evidence.missingEvidence : []),
       ],
       versions,
+      evidence: evidence.evidence,
     };
   else
     result = {
       ...calculation,
       effects,
-      precision:
-        resolved.precision === 'approximate' || calculation.precision === 'approximate'
-          ? 'approximate'
-          : 'exact',
+      precision: evidence.precision,
+      evidence: evidence.evidence,
       issues: [...calculation.issues, ...resolutionIssues],
       trace: [...calculation.trace, ...resolved.trace],
     };

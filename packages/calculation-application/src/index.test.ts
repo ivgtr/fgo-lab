@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
+import {
+  ENGINE_VERSION,
+  SCHEMA_VERSION,
+  type DamageResolutionInput,
+  type VersionContext,
+} from '@fgo-lab/schema';
 import { calculateDamageResolution } from './index';
 
 const input: DamageResolutionInput = {
@@ -38,9 +43,9 @@ const input: DamageResolutionInput = {
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 };
 const versions: VersionContext = {
-  schemaVersion: 5,
+  schemaVersion: SCHEMA_VERSION,
   masterDataVersion: 'fixture',
-  engineVersion: '2.0.0',
+  engineVersion: ENGINE_VERSION,
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
@@ -49,7 +54,11 @@ const versions: VersionContext = {
 describe('calculation application', () => {
   it('owns result construction for the shared damage evaluation path', () => {
     const result = calculateDamageResolution(input, versions);
-    expect(result).toMatchObject({ status: 'calculated', precision: 'exact' });
+    expect(result).toMatchObject({ status: 'calculated', precision: 'approximate' });
+    expect(result.evidence.map((entry) => entry.key)).toEqual([
+      'kernel:np-damage-v1',
+      'np-function:standard',
+    ]);
     expect(result.rows[0]).toEqual({
       npLevel: 1,
       minimum: 2070,

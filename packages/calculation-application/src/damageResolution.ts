@@ -6,6 +6,7 @@ import {
   type DamageResolutionInput,
   type VersionContext,
 } from '@fgo-lab/schema';
+import { evaluateCalculationEvidence } from './evidence';
 
 export function calculateDamageResolution(
   rawInput: DamageResolutionInput,
@@ -14,6 +15,10 @@ export function calculateDamageResolution(
   const input = damageResolutionInputSchema.parse(rawInput);
   const functionKind = input.damageFunction.kind;
   const prepared = prepareDamageEvaluation(input);
+  const evidence = evaluateCalculationEvidence([
+    'kernel:np-damage-v1',
+    `np-function:${functionKind}`,
+  ]);
   const common = {
     effects: [],
     assumptions: ['random:900..1099', 'probability:only_guaranteed_effects'],
@@ -23,18 +28,22 @@ export function calculateDamageResolution(
       { step: 'attack-np-function', detail: functionKind },
     ],
     versions,
+    evidence: evidence.evidence,
   };
-  if (prepared.status === 'unsupported')
+  if (prepared.status === 'unsupported' || evidence.status === 'unsupported')
     return {
       ...common,
       status: 'unsupported',
       rows: [],
-      missingEvidence: [prepared.warning],
+      missingEvidence: [
+        ...(prepared.status === 'unsupported' ? [prepared.warning] : []),
+        ...(evidence.status === 'unsupported' ? evidence.missingEvidence : []),
+      ],
     };
   return {
     ...common,
     status: 'calculated',
-    precision: prepared.precision,
+    precision: evidence.precision,
     rows: evaluateDamageRows(prepared.kernelInputs),
     breakdown: [
       {

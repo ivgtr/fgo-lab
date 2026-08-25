@@ -57,7 +57,7 @@ describe('calculation application logic', () => {
     expect(calculation.input.attackerId).toBe('fixture-saber');
     expect(calculation.result.rows).toHaveLength(5);
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
-    expect(calculation.result.precision).toBe('exact');
+    expect(calculation.result.precision).toBe('approximate');
   });
 
   it('matches the all-source single-aggregation golden', () => {
@@ -196,7 +196,7 @@ describe('calculation application logic', () => {
     expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5]);
     expect(calculation.result).toMatchObject({
       status: 'calculated',
-      precision: 'exact',
+      precision: 'approximate',
       rows: effectSourcesGolden.expectedRows,
     });
   });
@@ -463,7 +463,7 @@ describe('calculation application logic', () => {
       calculation.effects.map((_, index) => index),
     );
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
-    expect(calculation.result.precision).toBe('exact');
+    expect(calculation.result.precision).toBe('approximate');
     expect(calculation.result.issues.map((issue) => issue.code)).not.toContain(
       'support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect',
     );

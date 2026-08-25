@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 5 as const;
-export const ENGINE_VERSION = '3.0.0' as const;
+export const SCHEMA_VERSION = 6 as const;
+export const ENGINE_VERSION = '4.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -297,6 +297,17 @@ export const damageRowSchema = z.object({
   maximum: z.number().int().nonnegative(),
 });
 export type DamageRow = z.infer<typeof damageRowSchema>;
+export const calculationEvidenceSchema = z.object({
+  key: z.string().min(1),
+  subject: z.string().min(1),
+  status: z.enum(['validated', 'provisional']),
+  sources: z.array(z.string().min(1)),
+  goldenCaseIds: z.array(z.string().min(1)),
+  differentialCaseIds: z.array(z.string().min(1)),
+  reviewedAt: z.iso.date(),
+  engineVersion: z.literal(ENGINE_VERSION),
+});
+export type CalculationEvidence = z.infer<typeof calculationEvidenceSchema>;
 const resultBaseSchema = z.object({
   effects: z.array(
     z.object({
@@ -308,6 +319,7 @@ const resultBaseSchema = z.object({
   assumptions: z.array(z.string()),
   issues: z.array(z.object({ code: z.string(), detail: z.string() })),
   trace: z.array(z.object({ step: z.string(), detail: z.string() })),
+  evidence: z.array(calculationEvidenceSchema).min(1),
   versions: versionContextSchema,
 });
 const calculatedResultSchema = resultBaseSchema.extend({

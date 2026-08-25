@@ -1,0 +1,113 @@
+import { ENGINE_VERSION, type CalculationEvidence } from '@fgo-lab/schema';
+
+const ATLAS_DAMAGE = 'https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/damage.md';
+const ATLAS_FLOAT32 =
+  'https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md';
+const CHALDEA_DAMAGE =
+  'https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart';
+
+function evidence(
+  key: string,
+  subject: string,
+  status: CalculationEvidence['status'],
+  sources: string[],
+  goldenCaseIds: string[] = [],
+  differentialCaseIds: string[] = [],
+): CalculationEvidence {
+  return {
+    key,
+    subject,
+    status,
+    sources,
+    goldenCaseIds,
+    differentialCaseIds,
+    reviewedAt: '2026-08-25',
+    engineVersion: ENGINE_VERSION,
+  };
+}
+
+const entries: CalculationEvidence[] = [
+  evidence(
+    'kernel:np-damage-v1',
+    'NP damage formula, binary32 boundaries, and random evaluation',
+    'validated',
+    [ATLAS_DAMAGE, ATLAS_FLOAT32],
+    ['atlas-neutral-arts-random-1000'],
+  ),
+  evidence(
+    'master:normalized-v5',
+    'Atlas JP damage Function and effect normalization',
+    'validated',
+    ['Atlas Academy JP nice servant, craft essence, and mystic code datasets'],
+  ),
+  ...(
+    [
+      'standard',
+      'defensePiercing',
+      'trait',
+      'traitCount',
+      'stateTrait',
+      'hpRatioLow',
+      'battlePointPhase',
+      'targetRarity',
+      'traitExpression',
+    ] as const
+  ).map((kind) =>
+    evidence(`np-function:${kind}`, `NP damage Function handler: ${kind}`, 'provisional', [
+      ATLAS_DAMAGE,
+      CHALDEA_DAMAGE,
+    ]),
+  ),
+  ...(
+    [
+      'attackBuff',
+      'cardBuff',
+      'npDamageBuff',
+      'eventDamageBuff',
+      'specialDamageBuff',
+      'powerMod',
+      'flatDamage',
+      'npDamageBuffRate',
+    ] as const
+  ).map((kind) =>
+    evidence(
+      `effect-operation:${kind}`,
+      `Damage effect aggregation: ${kind}`,
+      'provisional',
+      [ATLAS_DAMAGE],
+      ['all-effect-sources-single-aggregation'],
+    ),
+  ),
+  evidence(
+    'input:manual-final-modifiers',
+    'User supplied final damage modifiers',
+    'provisional',
+    [],
+  ),
+];
+
+export const calculationEvidenceRegistry: ReadonlyMap<string, CalculationEvidence> = new Map(
+  entries.map((entry) => [entry.key, entry]),
+);
+
+export function evaluateCalculationEvidence(keys: readonly string[]):
+  | {
+      status: 'resolved';
+      precision: 'exact' | 'approximate';
+      evidence: CalculationEvidence[];
+    }
+  | { status: 'unsupported'; missingEvidence: string[]; evidence: CalculationEvidence[] } {
+  const uniqueKeys = [...new Set(keys)];
+  const resolved = uniqueKeys.flatMap((key) => {
+    const entry = calculationEvidenceRegistry.get(key);
+    return entry ? [entry] : [];
+  });
+  const missingEvidence = uniqueKeys.filter((key) => !calculationEvidenceRegistry.has(key));
+  if (missingEvidence.length > 0)
+    return { status: 'unsupported', missingEvidence, evidence: resolved };
+  return {
+    status: 'resolved',
+    precision: resolved.some((entry) => entry.status === 'provisional') ? 'approximate' : 'exact',
+    evidence: resolved,
+  };
+}
