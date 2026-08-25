@@ -33,6 +33,7 @@ const scenario = {
     specialResistance: 0,
     flatDamage: 0,
     damageCut: 0,
+    ignoreDamageCut: false,
     fieldTraits: [],
     attackerStateTraits: [],
     attackerHpPermille: null,
@@ -155,9 +156,7 @@ describe('workspace derivations', () => {
     });
 
     expect(second.history).toHaveLength(1);
-    expect(second.history[0]?.calculationSessionId).toBe(
-      '00000000-0000-4000-8000-000000000011',
-    );
+    expect(second.history[0]?.calculationSessionId).toBe('00000000-0000-4000-8000-000000000011');
   });
 
   it('does not finalize an unsupported result', () => {

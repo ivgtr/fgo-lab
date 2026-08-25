@@ -44,6 +44,7 @@ const input: DamageResolutionInput = {
   specialResistance: 0,
   flatDamage: 0,
   damageCut: 0,
+  ignoreDamageCut: false,
   fieldTraits: [],
   attackerStateTraits: [],
   attackerHpPermille: null,
@@ -1177,6 +1178,18 @@ describe('actor-aware effect routing', () => {
     expect(resolved.input.damageFunction).toMatchObject({ ignoreDefense: true });
     expect(resolved.effects[0]).toMatchObject({
       kind: 'ignoreDefense',
+      value: null,
+      state: 'applied',
+    });
+  });
+
+  it('applies a valueless damage-cut-piercing state through its own kernel flag', () => {
+    const resolved = resolveOne(attackEffect('self', 'pierceSubdamage'), 'attacker', null);
+
+    expect(resolved.precision).toBe('exact');
+    expect(resolved.input.ignoreDamageCut).toBe(true);
+    expect(resolved.effects[0]).toMatchObject({
+      kind: 'ignoreDamageCut',
       value: null,
       state: 'applied',
     });

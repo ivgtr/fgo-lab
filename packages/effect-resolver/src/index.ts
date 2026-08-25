@@ -15,6 +15,7 @@ export type ResolvedBuffKind =
   | 'npDamageBuff'
   | 'npResistance'
   | 'ignoreDefense'
+  | 'ignoreDamageCut'
   | 'eventDamageBuff'
   | 'specialDamageBuff'
   | 'powerMod'
@@ -81,7 +82,6 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'fieldIndividualityChangedFunction',
   'npattackPrevBuff',
   'overwriteClassRelation',
-  'pierceSubdamage',
   'subFieldIndividuality',
   'subIndividuality',
   'subSelfdamage',
@@ -129,6 +129,7 @@ function effectModifier(effect: MasterEffect): Omit<DamageEffectRoute, 'recipien
   const buffTypes = effect.buffTypes ?? [];
   if (buffTypes.some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return null;
   if (buffTypes.includes('pierceDefence')) return { kind: 'ignoreDefense', sign: 1 };
+  if (buffTypes.includes('pierceSubdamage')) return { kind: 'ignoreDamageCut', sign: 1 };
   if (buffTypes.includes('addDamage')) return { kind: 'flatDamage', sign: 1 };
   if (
     buffTypes.some((type) =>
@@ -346,8 +347,7 @@ function resolveBattleContext(
         targetTraits: [...targetTraits],
         fieldTraits: [...fieldTraits],
       };
-      if (effectConditionsMatch(baseInput, item, context, conditionAsserted) !== true)
-        continue;
+      if (effectConditionsMatch(baseInput, item, context, conditionAsserted) !== true) continue;
       for (const trait of changes.addedFieldTraits)
         if (!fieldTraits.has(trait)) {
           fieldTraits.add(trait);
@@ -515,7 +515,8 @@ export function resolveEffectSources(
       continue;
     }
     const requiresNumericValue =
-      (kind !== null && kind !== 'ignoreDefense') || Boolean(npDamageBuffRateEffect);
+      (kind !== null && kind !== 'ignoreDefense' && kind !== 'ignoreDamageCut') ||
+      Boolean(npDamageBuffRateEffect);
     if (rawValue === undefined && directRelevant && requiresNumericValue) {
       precision = 'unsupported';
       warnings.push(
@@ -610,6 +611,7 @@ export function resolveEffectSources(
     npDamageBuff: 0,
     npResistance: 0,
     ignoreDefense: 0,
+    ignoreDamageCut: 0,
     eventDamageBuff: 0,
     specialDamageBuff: 0,
     powerMod: 0,
@@ -620,6 +622,7 @@ export function resolveEffectSources(
       continue;
     if (effect.kind === 'flatDamage') flatDamage += effect.value ?? 0;
     else if (effect.kind === 'ignoreDefense') modifierPermilles.ignoreDefense = 1;
+    else if (effect.kind === 'ignoreDamageCut') modifierPermilles.ignoreDamageCut = 1;
     else modifierPermilles[effect.kind] += effect.valuePermille ?? 0;
   }
   const aggregatedInput = {
@@ -635,6 +638,7 @@ export function resolveEffectSources(
     specialDamageBuff: baseInput.specialDamageBuff + modifierPermilles.specialDamageBuff / 1_000,
     powerMod: baseInput.powerMod + modifierPermilles.powerMod / 1_000,
     flatDamage: baseInput.flatDamage + flatDamage,
+    ignoreDamageCut: baseInput.ignoreDamageCut || modifierPermilles.ignoreDamageCut > 0,
     damageFunction:
       baseInput.damageFunction.status === 'resolved' && modifierPermilles.ignoreDefense > 0
         ? { ...baseInput.damageFunction, ignoreDefense: true }

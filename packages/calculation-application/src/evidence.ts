@@ -85,6 +85,7 @@ const entries: CalculationEvidence[] = [
       'powerMod',
       'flatDamage',
       'ignoreDefense',
+      'ignoreDamageCut',
       'npDamageBuffRate',
     ] as const
   ).map((kind) =>

@@ -82,7 +82,8 @@ Archetype: Earth passes the production-master regression and focused browser flo
 servant-specific branch.
 
 The default production audit moved from 37 unsupported calculations to 24 after context resolution,
-then to 18 after the already-tested defence-ignore operation was connected to the evidence gate.
+then to 18 after the already-tested defence-ignore operation was connected to the evidence gate,
+and to 17 after damage-cut piercing became an explicit kernel input.
 The audit now locks the exact servant IDs and reason families, not only the count. Four HP-dependent
 entries can be resolved by the new conditional quantitative input. Battle Point input uses the same
 contract, but Ereshkigal remains fail-closed because a separate phase-range parameter is unresolved.

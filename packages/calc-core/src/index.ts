@@ -40,6 +40,7 @@ export function compileDamageKernelInput(
     npSpecialMultiplierPermille: npSpecialMultiplier * 1000,
     flatDamage: input.flatDamage,
     damageCut: input.damageCut,
+    ignoreDamageCut: input.ignoreDamageCut,
     ignoreDefense,
   };
 }

@@ -79,6 +79,7 @@ const input: DamageResolutionInput = {
   specialResistance: 0,
   flatDamage: 0,
   damageCut: 0,
+  ignoreDamageCut: false,
   fieldTraits: [],
   attackerStateTraits: [],
   attackerHpPermille: null,
@@ -115,6 +116,7 @@ describe('float32 NP damage kernel', () => {
       npSpecialMultiplierPermille: 1_000,
       flatDamage: 0,
       damageCut: 0,
+      ignoreDamageCut: false,
       ignoreDefense: false,
     };
     expect(calculateDamagePoint(kernelInput, 1_000)).toBe(golden.expectedDamage);
@@ -204,6 +206,15 @@ describe('float32 NP damage kernel', () => {
       damageFunction: { status: 'resolved', kind: 'defensePiercing', ignoreDefense: true },
     }).rows[0]!.average;
     expect(pierced / normal).toBeCloseTo(1.2 / 0.7, 2);
+  });
+  it('ignores fixed damage cut only when the dedicated flag is active', () => {
+    const cut = evaluateForTest({ ...input, damageCut: 1_000 }).rows[0]!.average;
+    const pierced = evaluateForTest({
+      ...input,
+      damageCut: 1_000,
+      ignoreDamageCut: true,
+    }).rows[0]!.average;
+    expect(pierced - cut).toBe(1_000);
   });
   it('marks an unresolved special NP function as unsupported in the result', () => {
     expect(

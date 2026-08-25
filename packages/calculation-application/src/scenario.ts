@@ -177,7 +177,8 @@ function resolveScenarioNpDamage(
   const selected = controls.filter((control) => decisions[control.effectKey] === true);
   const targetTraits = selected.flatMap((control) => control.targetTraits);
   const targetStateTraits = selected.flatMap((control) => control.targetStateTraits);
-  const targetRarity = selected.find((control) => control.targetRarity !== null)?.targetRarity ?? -1;
+  const targetRarity =
+    selected.find((control) => control.targetRarity !== null)?.targetRarity ?? -1;
   const resolvedInput = applyNpDamageHandler(input, damage, {
     overcharge: input.overcharge,
     attackerTraitCounts: traitCounts(attacker.traits),
@@ -308,6 +309,7 @@ function resolvedScenarioInput(
     specialResistance: 0,
     flatDamage: 0,
     damageCut: 0,
+    ignoreDamageCut: false,
     fieldTraits: [],
     attackerStateTraits: [],
     attackerHpPermille: scenario.attackerHpPermille,
@@ -337,7 +339,9 @@ export function resolveScenario(
       effects: [],
     };
   const input = resolvedScenarioInput(scenario, master);
-  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId)!;
+  const servant = master.servants.find(
+    (candidate) => candidate.id === scenario.attacker.servantId,
+  )!;
   const damage = getPrimaryNpDamage(servant)!;
   const npDamage = resolveScenarioNpDamage(input, damage, servant, scenario.effectDecisions);
   const resolved = resolveScenarioEffects(npDamage.input, scenario, master);

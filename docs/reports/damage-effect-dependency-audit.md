@@ -16,8 +16,9 @@ master schema 8ではこれらを分離し、コンテキストを先に収束�
 | 変更前 | 37 | disabled効果の値消失、フィールド変更の誤分類、条件欠落を含む |
 | context resolver導入後 | 24 | 千年城などのproducer/consumer依存を解決 |
 | evidence台帳是正後 | 18 | 実装・テスト済みの防御無視6件を正式に計算対象化 |
+| ダメージカット貫通追加後 | 17 | 軽減貫通を防御無視と分けたkernel flagとして実装 |
 
-件数だけでは相殺を検出できないため、production-master auditは残存18 IDとreason familyの完全一致を
+件数だけでは相殺を検出できないため、production-master auditは残存17 IDとreason familyの完全一致を
 要求する。これは監査ベースラインであり、計算処理の分岐には使用しない。
 
 ## アーキタイプ：アース
@@ -36,7 +37,7 @@ master schema 8ではこれらを分離し、コンテキストを先に収束�
 | --- | --- | ---: | --- |
 | P0（UI接続済み） | `missing_attacker_hp_ratio` | 4 | HP依存宝具にだけ残りHP入力を表示し、入力後に計算する |
 | P1 | `np_effect_parameter_semantics_not_resolved` | 7 | Trigger/ParamAdd/phase-rangeをraw key単位で型付けし、共有handlerへ集約する |
-| P1 | `np_effect_not_resolved` | 3 | 参照関数・前置効果の実体をmasterへ取り込み、参照グラフとして解決する |
+| P1 | `np_effect_not_resolved` | 2 | 参照関数・前置効果の実体をmasterへ取り込み、参照グラフとして解決する |
 | P1 | `passive_effect_not_resolved` | 4 | クラス相性上書き等を専用context operationとして正規化する |
 | P1 | `passive_effect_condition_not_resolved` | 1 | 条件式を名称推測せずAtlas scriptから正規化する |
 | P2（UI接続済み） | `missing_battle_point_phase` | 1 | 必要な宝具にだけ段階入力を表示する。別の未解釈条件が残る間はfail-closed |

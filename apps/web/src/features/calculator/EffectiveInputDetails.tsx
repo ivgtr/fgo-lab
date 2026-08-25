@@ -77,6 +77,7 @@ export function EffectiveInputDetails({
             <dt>固定ダメージ／軽減</dt>
             <dd>
               {numberFormatter.format(input.flatDamage)}／{numberFormatter.format(input.damageCut)}
+              {input.ignoreDamageCut ? '（軽減貫通）' : ''}
             </dd>
           </div>
         </dl>

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 9 as const;
-export const ENGINE_VERSION = '7.1.0' as const;
+export const SCHEMA_VERSION = 10 as const;
+export const ENGINE_VERSION = '7.2.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -144,6 +144,7 @@ export const damageResolutionInputSchema = z.object({
   specialResistance: z.number().min(-5).max(5),
   flatDamage: z.number().int().min(-100000).max(100000),
   damageCut: z.number().int().min(0).max(100000).default(0),
+  ignoreDamageCut: z.boolean().default(false),
   fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
   attackerStateTraits: z.array(z.string().min(1).max(80)).max(100),
   attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
@@ -173,6 +174,7 @@ export const damageKernelInputSchema = z
     npSpecialMultiplierPermille: z.number().nonnegative().max(20000),
     flatDamage: z.number().int().min(-100000).max(100000),
     damageCut: z.number().int().nonnegative().max(100000),
+    ignoreDamageCut: z.boolean(),
     ignoreDefense: z.boolean(),
   })
   .strict();

@@ -196,6 +196,10 @@ describe('scenario calculation facade', () => {
             ...modifierEffect('np-ignore-defense', 'pierceDefence', 0),
             timing: 'beforeDamage' as const,
           },
+          {
+            ...modifierEffect('np-ignore-damage-cut', 'pierceSubdamage', 0),
+            timing: 'beforeDamage' as const,
+          },
         ],
       })),
     };
@@ -294,11 +298,12 @@ describe('scenario calculation facade', () => {
     expect(calculation.input).toMatchObject({
       ...effectSourcesGolden.expectedModifiers,
       damageFunction: { ignoreDefense: effectSourcesGolden.expectedIgnoreDefense },
+      ignoreDamageCut: effectSourcesGolden.expectedIgnoreDamageCut,
     });
     expect(calculation.effects.map((effect) => effect.origin)).toEqual(
       effectSourcesGolden.sourceOrder,
     );
-    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
     expect(calculation.result).toMatchObject({
       status: 'calculated',
       precision: 'approximate',

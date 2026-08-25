@@ -16,7 +16,6 @@ const expectedUnsupportedFamilies = {
   '506000': ['np_effect_not_resolved'],
   '605300': ['passive_effect_not_resolved'],
   '702500': ['missing_attacker_hp_ratio'],
-  '704900': ['np_effect_not_resolved'],
   '800100': ['np_effect_parameter_semantics_not_resolved'],
   '1000300': ['passive_effect_not_resolved'],
   '1102000': ['np_effect_parameter_semantics_not_resolved'],
@@ -69,6 +68,7 @@ describe('production master damage quality ratchet', () => {
         effect.reason === 'calculation_effect_disabled' &&
         effect.kind !== null &&
         effect.kind !== 'ignoreDefense' &&
+        effect.kind !== 'ignoreDamageCut' &&
         effect.value === null
           ? [`${servant.id}:${effect.skillId}:${effect.effectId}`]
           : [],
@@ -76,6 +76,9 @@ describe('production master damage quality ratchet', () => {
     );
     const archetype = calculations.find(
       ({ servant }) => servant.name === 'アーキタイプ：アース',
+    )?.calculation;
+    const soujuurou = calculations.find(
+      ({ servant }) => servant.name === '静希草十郎',
     )?.calculation;
     const unsupportedFamilies = Object.fromEntries(
       unsupported.map(({ servant, calculation }) => {
@@ -101,6 +104,14 @@ describe('production master damage quality ratchet', () => {
       value: 0.2,
       state: 'rejected',
       reason: 'calculation_effect_disabled',
+    });
+    expect(soujuurou?.result.status).toBe('calculated');
+    expect(soujuurou?.input.ignoreDamageCut).toBe(true);
+    expect(
+      soujuurou?.effects.find((effect) => effect.label === 'ダメージカット貫通'),
+    ).toMatchObject({
+      kind: 'ignoreDamageCut',
+      state: 'applied',
     });
   });
 });

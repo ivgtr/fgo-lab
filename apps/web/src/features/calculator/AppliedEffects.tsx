@@ -13,6 +13,7 @@ function effectValueLabel(effect: ResolvedEffect) {
     effect.contextChanges.addedRecipientTraits.length > 0
   )
     return '条件反映';
+  if (effect.kind === 'ignoreDefense' || effect.kind === 'ignoreDamageCut') return '有効';
   if (effect.value === null) return '倍率不明';
   if (effect.kind === 'flatDamage') return `+${effect.value.toLocaleString('ja-JP')}`;
   if (effect.damageTraitCondition?.kind === 'npSpecial') return `${effect.value.toFixed(2)}倍`;

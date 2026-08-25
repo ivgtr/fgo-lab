@@ -31,6 +31,7 @@ const STACK_LABELS: Record<DamageEffectStackKind, string> = {
   npDamageBuff: '宝具威力',
   npResistance: '宝具耐性',
   ignoreDefense: '防御無視',
+  ignoreDamageCut: 'ダメージカット貫通',
   eventDamageBuff: 'イベント特攻',
   specialDamageBuff: '特殊威力',
   powerMod: '特攻状態',
@@ -47,6 +48,7 @@ const STACK_ORDER: DamageEffectStackKind[] = [
   'npDamageBuff',
   'npResistance',
   'ignoreDefense',
+  'ignoreDamageCut',
   'powerMod',
   'npSpecial',
   'eventDamageBuff',
@@ -109,7 +111,7 @@ export function collectDamageEffectStacks({
 }
 
 export function damageEffectValueLabel(source: DamageEffectSource): string {
-  if (source.kind === 'ignoreDefense') return '適用';
+  if (source.kind === 'ignoreDefense' || source.kind === 'ignoreDamageCut') return '適用';
   if (source.value === null) return '倍率不明';
   if (source.kind === 'flatDamage') return `+${source.value.toLocaleString('ja-JP')}`;
   if (source.kind === 'npSpecial') return `${source.value.toFixed(2)}倍`;

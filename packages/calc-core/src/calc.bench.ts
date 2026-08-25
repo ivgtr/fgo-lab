@@ -30,6 +30,7 @@ const input = {
   specialResistance: 0,
   flatDamage: 0,
   damageCut: 0,
+  ignoreDamageCut: false,
   fieldTraits: [],
   attackerStateTraits: [],
   attackerHpPermille: null,
