@@ -127,7 +127,9 @@ describe('production master damage quality ratchet', () => {
       expect(calculation.input.attackerHpPermille, String(value)).toBeNull();
       expect(calculation.effectWarnings, String(value)).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('constraintValidationUnsupported:world:attacker-hp'),
+          expect.stringContaining(
+            'constraintValidationUnsupported:world:attacker-hp:quantityFactOutOfDomain',
+          ),
         ]),
       );
     }

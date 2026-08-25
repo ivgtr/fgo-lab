@@ -1,9 +1,9 @@
 ---
 title: "Damage effect execution E3.3 unified constraint validation"
-status: "Complete"
+status: "Complete - Review Findings Corrected"
 created_at: "2026-08-26"
-schema_version: 13
-engine_version: "11.0.0"
+schema_version: 14
+engine_version: "11.1.0"
 master_data_version: "2026-08-25-atlas-jp-calculator-v18"
 ---
 
@@ -67,14 +67,24 @@ The actual UI trace was inspected for the input decision, fixed facts, selected 
 ## Validation
 
 - format, lint, typecheck: pass
-- unit/integration/property/golden: 29 files, 140 tests pass
+- unit/integration/property/golden: 29 files, 146 tests pass
 - production master validation: 3 files, 15 tests pass
 - evidence validation: 2 files, 10 tests pass
 - production condition/projection cross audit: pass for all 420 scenarios
-- production build: pass, 169 modules
+- production build: pass, 170 modules
 - Playwright Chromium and mobile Chromium: 35 pass, 21 project-specific skips, 0 failures
 - PC, 390px, and 320px Dante/Indra/support/share operation: pass
-- benchmark: 348.08 ops/s, mean 2.8729 ms for NP1-5 / 200 random values
+- benchmark: 261.49 ops/s, mean 3.8242 ms for NP1-5 / 200 random values
 - `git diff --check`: pass
 
 E4 remains unstarted.
+
+## Review closure
+
+The first review of E3.3 found three remaining boundary defects. All were corrected without a compatibility path.
+
+- Quantity domains now live in `packages/schema/src/quantityFacts.ts`: attacker HP permille 0–1,000, target rarity 0–5, and current Battle Point phase 0–10. Both Zod schemas and executor validation use this module. Out-of-domain fixed facts return typed `quantityFactOutOfDomain`; they are never clamped or committed.
+- Trait scope semantics now encode a one-way implication. A positive `targetState`/`attackerState` fact also satisfies the combined `target`/`attacker` scope, while a negative state fact does not assert absence from the whole actor. State-only conditions remain state-only. The evaluator and solver use the same semantic functions.
+- An initial constraint failure invalidates every selected conditional operation in that constraint set. Conflict reporting includes all selected condition source keys, and no later selected modifier can be partially applied.
+
+Production servant `202500` with `attackerHpPermille` `-100` or `2000` now returns unsupported, no damage rows, a typed warning, and a null HP value in the final input. Crafted shares carrying those values fail schema decoding. Focused P0/P1/P2 regressions pass, including two earth decisions against a fixed sky fact with both operations `notApplied` and `powerMod 0`.

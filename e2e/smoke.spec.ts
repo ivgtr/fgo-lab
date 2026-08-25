@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { SCHEMA_VERSION } from '../packages/schema/src/index';
 import { completeSetup } from './setup';
 
 test('diagnostic setup and main calculation flow', async ({ page }) => {
@@ -582,7 +583,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: 13, servantBuildCount: 0 });
+  expect(recovered).toEqual({ schemaVersion: SCHEMA_VERSION, servantBuildCount: 0 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 
