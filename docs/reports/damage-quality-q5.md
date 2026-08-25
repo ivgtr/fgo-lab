@@ -1,13 +1,13 @@
 # ダメージ計算品質 Q5 監査・置換計画
 
 更新日: 2026-08-25  
-状態: 実装中
+状態: 完了（確認待ち）
 
 ## 1. 判定
 
-Q5開始時点の単発計算は、永続化境界では`CalculationScenario`を使用しているが、UIから計算applicationへ至る実行境界では`DamageResolutionInput + CalculationEditorState`へ戻している。このため`CalculationScenario`は計算の唯一の正本になっていない。
+Q5開始時点の単発計算は、永続化境界では`CalculationScenario`を使用していたが、UIから計算applicationへ至る実行境界では`DamageResolutionInput + CalculationEditorState`へ戻していた。このため`CalculationScenario`は計算の唯一の正本になっていなかった。
 
-draft、履歴、共有のschemaは現行resultを保持する形へ更新済みだが、session境界、共有snapshotの整合性、結果根拠の表示には実装漏れがある。場当たり的な補正を加えず、scenarioを直接受け取るapplication facadeへ収束させ、旧selection変換を削除する。
+draft、履歴、共有のschema、session境界、共有snapshotの整合性、結果根拠の表示を、scenarioを直接受け取るapplication facadeへ収束させた。旧editor state、selection変換、旧application入口は併存させず削除した。
 
 ## 2. 実装差分と優先度
 
@@ -41,14 +41,14 @@ Calculator UI
   -> calculateScenario(scenario, master, versions)
   -> scenario resolver / effect resolver
   -> damage kernel
-  -> CalculationExecution { resolvedInput, effects, warnings, result }
+  -> CalculationExecution { scenarioInput, input, effects, warnings, result }
   -> draft / history / share / result UI
 ```
 
 - quickは`resolved` scenarioだけを編集する。master由来のATK、NP倍率、効果集約値をscenarioへ保存しない。
 - manualは最終`DamageResolutionInput`だけを保持する独立unionとし、resolved側の選択や共通項目を重複保持しない。
 - application facadeがscenario検証、master参照、Function適用、effect解決、kernel実行、evidence評価を一回で行う。
-- UIはfacadeが返した`resolvedInput`を表示用に参照できるが、次のquick scenarioをその数値から逆変換しない。
+- UIはfacadeが返した効果適用前の`scenarioInput`と適用後の`input`を表示・mode切替に使うが、適用後の数値からquick scenarioを逆変換しない。
 - draft、履歴、共有は同じscenarioと同じfacade resultを保存する。
 - master・schema・engineが現行契約と一致しない共有は現行計算画面へ取り込まない。旧結果表示の互換経路は設けない。
 - calculation sessionは計算画面へ入るたび発行し、一sessionにつき最大一履歴をupsertする。
@@ -111,22 +111,25 @@ Calculator UI
 - 履歴・共有の確定では解決済みinputからscenarioを逆生成せず、現在のscenarioそのものを保存するようにした。
 - 結果詳細へprecision、breakdown、assumption、issue detail、trace、evidence、missing evidenceを表示し、共有カードへengine版とprecisionを追加した。
 - manual scenarioを`{ mode: 'manual', manual: DamageResolutionInput }`だけのstrict unionへ変更し、resolved共通fieldとの二重保持を削除した。schema version 8・engine version 5.0.0へ更新し、旧形式の互換読込は追加していない。
+- `Calculator`を`CalculationScenario`の直接編集へ置換し、quickはresolved scenario、directはmanual scenarioだけを更新するようにした。
+- resolvedからmanualへ切り替える際は、effect適用後の`input`ではなく効果適用前の`scenarioInput`を使用し、passive・礼装・skillの二重適用を防いだ。
+- 特攻宝具の対象traitを「適用条件」としてscenarioへ直接反映し、skill効果のon/offと混同しないUIへ分離した。
+- `CalculationEditorState`、旧editor schema、scenario/selection相互変換、`calculateResolvedDamage()`、`resolveCalculationInput()`と対応する旧adapter testを削除した。
+- ranking候補の組立もresolved scenarioと`resolveScenario()`を使用し、Web独自のselection変換を削除した。worker自体のscenario facade統合はQ6で扱う。
+- share allowlistは再現に必要な自身skill ID・levelを含め、所持編成、礼装copy IDなどの個人データを含めない契約に固定した。
+- 全付与元goldenをscenario facadeのintegration testへ移し、効果適用前入力が補正値ゼロ、適用後入力が期待集約値になることを固定した。
 
-### 未完了
-
-- `Calculator`の編集用propsはまだ`DamageResolutionInput + CalculationEditorState`であり、scenarioからUI stateを復元するadapterが残る。
-- `calculateResolvedDamage()`と`resolveCalculationInput()`は旧UIおよびQ6前のranking候補組立用に残る。
-- UIをscenario直接編集へ置換後、旧editor schema、selection変換、旧application入口、対応する旧テストを削除する必要がある。
-
-## 7. 中間検証
+## 7. 最終検証
 
 2026-08-25時点で次を確認した。
 
-- `pnpm test`: 23 files / 138 tests成功
+- `pnpm test`: 22 files / 129 tests成功（削除した旧adapter testを含まない）
 - `pnpm validate:evidence`: 2 files / 10 tests成功
 - `pnpm typecheck`: 成功
 - `pnpm lint`: 成功
 - `pnpm build`: 成功
 - `pnpm validate:master`: artifact検証成功、3 files / 14 tests成功
+- `pnpm exec playwright test --workers=1`: 25件成功、17件project条件によるskip
+- 旧editor state、旧selection変換、旧application入口の参照検索: 0件
 
-Q5は中間ゲートまで成功しているが、旧UI stateが残るため完了とは判定しない。
+Q5確認ゲートはすべて成功した。Q6でranking workerを同じscenario facadeへ接続する前に、Q5完了承認を得る。
