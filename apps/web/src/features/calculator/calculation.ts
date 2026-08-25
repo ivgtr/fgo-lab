@@ -1,4 +1,4 @@
-import { calculateDamageResolution } from '@fgo-lab/calculation-application';
+import { applyNpDamageHandler, calculateDamageResolution } from '@fgo-lab/calculation-application';
 import { classAttackRate } from '@fgo-lab/calc-core';
 import {
   resolveAttackerSkills,
@@ -35,6 +35,28 @@ export interface ResolvedCalculationInput {
   effects: ResolvedSupportEffect[];
 }
 
+function traitCounts(traits: readonly string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const trait of traits) counts[trait] = (counts[trait] ?? 0) + 1;
+  return counts;
+}
+
+function applyDamageFunction(
+  input: DamageResolutionInput,
+  damage: Parameters<typeof applyNpDamageHandler>[1],
+  attackerTraits: readonly string[],
+): DamageResolutionInput {
+  return applyNpDamageHandler(input, damage, {
+    overcharge: input.overcharge,
+    attackerTraitCounts: traitCounts(attackerTraits),
+    targetTraitCounts: traitCounts(input.target.traits),
+    targetStateTraitCounts: traitCounts(input.targetStateTraits),
+    attackerHpPermille: input.attackerHpPermille,
+    targetRarity: input.targetRarity,
+    battlePointPhase: input.battlePointPhase,
+  });
+}
+
 export function resolveCalculationInput(
   baseInput: DamageResolutionInput,
   selection: CalculationEditorState,
@@ -49,13 +71,16 @@ export function resolveCalculationInput(
       effects: [],
     };
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
+  const damage = attacker ? getPrimaryNpDamage(attacker) : undefined;
+  const damageInput =
+    attacker && damage ? applyDamageFunction(baseInput, damage, attacker.traits) : baseInput;
   const craftEssence = selection.craftEssence
     ? master.craftEssences.find(
         (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
       )
     : undefined;
   const resolveOptions = { effectOverrides: selection.effectOverrides ?? {} };
-  const passive = resolveServantPassives(baseInput, attacker, resolveOptions);
+  const passive = resolveServantPassives(damageInput, attacker, resolveOptions);
   const craftEssenceResolution = resolveCraftEssenceEffects(
     passive.input,
     craftEssence,
@@ -72,9 +97,7 @@ export function resolveCalculationInput(
   const mysticCode = selection.mysticCode
     ? resolveMysticCodeSkills(
         attackerSkills.input,
-        master.mysticCodes.find(
-          (candidate) => candidate.id === selection.mysticCode?.mysticCodeId,
-        ),
+        master.mysticCodes.find((candidate) => candidate.id === selection.mysticCode?.mysticCodeId),
         selection.mysticCode.skills,
         attacker?.traits ?? [],
         { ...resolveOptions, defaultEnabled: false },
@@ -203,37 +226,45 @@ export function createDefaultDamageResolutionInput(
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
-  return {
-    attackerId: servant.id,
-    attackerLevel: build?.level ?? 90,
-    attackerAtk: servant.atkByLevel[String(build?.level ?? 90)] ?? servant.atkByLevel['90'] ?? 0,
-    fouAtk: build?.fouAtk ?? 1000,
-    craftEssenceId: null,
-    craftEssenceAtk: 0,
-    npLevel: Math.max(1, build?.npLevel ?? 1),
-    overcharge: 1,
-    npMultipliers: deriveNpMultipliers(damage, 1),
-    attackNpFunctionType: damage.rawFunctionType,
-    cardType: noblePhantasm.card,
-    classAttackRate: classAttackRate(servant.classId),
-    classAffinity: 2,
-    attributeAffinity: 1,
-    attackBuff: 0,
-    defenseBuff: 0,
-    cardBuff: 0,
-    cardResistance: 0,
-    npDamageBuff: 0,
-    npResistance: 0,
-    powerMod: 0,
-    eventDamageBuff: 0,
-    npSpecialMultipliers: [1, 1, 1, 1, 1],
-    specialDamageBuff: 0,
-    specialResistance: 0,
-    flatDamage: 0,
-    damageCut: 0,
-    fieldTraits: [],
-    target: { classId: 'affinity:2', attribute: 'unknown', traits: [] },
-  };
+  return applyDamageFunction(
+    {
+      attackerId: servant.id,
+      attackerLevel: build?.level ?? 90,
+      attackerAtk: servant.atkByLevel[String(build?.level ?? 90)] ?? servant.atkByLevel['90'] ?? 0,
+      fouAtk: build?.fouAtk ?? 1000,
+      craftEssenceId: null,
+      craftEssenceAtk: 0,
+      npLevel: Math.max(1, build?.npLevel ?? 1),
+      overcharge: 1,
+      npMultipliers: deriveNpMultipliers(damage, 1),
+      damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
+      cardType: noblePhantasm.card,
+      classAttackRate: classAttackRate(servant.classId),
+      classAffinity: 2,
+      attributeAffinity: 1,
+      attackBuff: 0,
+      defenseBuff: 0,
+      cardBuff: 0,
+      cardResistance: 0,
+      npDamageBuff: 0,
+      npResistance: 0,
+      powerMod: 0,
+      eventDamageBuff: 0,
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
+      specialDamageBuff: 0,
+      specialResistance: 0,
+      flatDamage: 0,
+      damageCut: 0,
+      fieldTraits: [],
+      attackerHpPermille: null,
+      targetRarity: null,
+      targetStateTraits: [],
+      battlePointPhase: null,
+      target: { classId: 'affinity:2', attribute: 'unknown', traits: [] },
+    },
+    damage,
+    servant.traits,
+  );
 }
 
 export function scenarioFromDamageResolutionInput(
@@ -253,12 +284,12 @@ export function scenarioFromDamageResolutionInput(
       classId: input.target.classId,
       attribute: input.target.attribute,
       traits: input.target.traits,
-      stateTraits: [],
-      rarity: null,
-      hpPermille: null,
+      stateTraits: input.targetStateTraits,
+      rarity: input.targetRarity,
     },
+    attackerHpPermille: input.attackerHpPermille,
     fieldTraits: input.fieldTraits,
-    battleState: { battlePointPhase: null },
+    battleState: { battlePointPhase: input.battlePointPhase },
     assumptions: {
       classAffinity: input.classAffinity,
       attributeAffinity: input.attributeAffinity,
@@ -318,28 +349,36 @@ export function damageResolutionInputFromScenario(
   const damage = getPrimaryNpDamage(servant);
   if (!damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   const base = createDefaultDamageResolutionInput(master, undefined, servant);
-  return {
-    ...base,
-    attackerLevel: scenario.attacker.level,
-    attackerAtk:
-      scenario.explicitOverrides.attackerAtk ??
-      servant.atkByLevel[String(scenario.attacker.level)] ??
-      0,
-    fouAtk: scenario.explicitOverrides.fouAtk ?? scenario.attacker.fouAtk,
-    craftEssenceAtk: scenario.explicitOverrides.craftEssenceAtk ?? 0,
-    npLevel: scenario.attacker.npLevel,
-    overcharge: scenario.overcharge,
-    npMultipliers: deriveNpMultipliers(damage, scenario.overcharge),
-    classAttackRate: scenario.explicitOverrides.classAttackRate ?? base.classAttackRate,
-    classAffinity: scenario.assumptions.classAffinity,
-    attributeAffinity: scenario.assumptions.attributeAffinity,
-    fieldTraits: scenario.fieldTraits,
-    target: {
-      classId: scenario.target.classId,
-      attribute: scenario.target.attribute,
-      traits: [...new Set([...scenario.target.traits, ...scenario.target.stateTraits])],
+  return applyDamageFunction(
+    {
+      ...base,
+      attackerLevel: scenario.attacker.level,
+      attackerAtk:
+        scenario.explicitOverrides.attackerAtk ??
+        servant.atkByLevel[String(scenario.attacker.level)] ??
+        0,
+      fouAtk: scenario.explicitOverrides.fouAtk ?? scenario.attacker.fouAtk,
+      craftEssenceAtk: scenario.explicitOverrides.craftEssenceAtk ?? 0,
+      npLevel: scenario.attacker.npLevel,
+      overcharge: scenario.overcharge,
+      npMultipliers: deriveNpMultipliers(damage, scenario.overcharge),
+      classAttackRate: scenario.explicitOverrides.classAttackRate ?? base.classAttackRate,
+      classAffinity: scenario.assumptions.classAffinity,
+      attributeAffinity: scenario.assumptions.attributeAffinity,
+      fieldTraits: scenario.fieldTraits,
+      target: {
+        classId: scenario.target.classId,
+        attribute: scenario.target.attribute,
+        traits: scenario.target.traits,
+      },
+      attackerHpPermille: scenario.attackerHpPermille,
+      targetRarity: scenario.target.rarity,
+      targetStateTraits: scenario.target.stateTraits,
+      battlePointPhase: scenario.battleState.battlePointPhase,
     },
-  };
+    damage,
+    servant.traits,
+  );
 }
 
 export function completeCalculationEditorState(
@@ -382,8 +421,8 @@ export function selectCalculationAttacker(
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   const manualOverrides = new Set(selection.manualOverrides ?? []);
   const level = build?.level ?? 90;
-  return {
-    input: {
+  const nextInput = applyDamageFunction(
+    {
       ...input,
       attackerId: servant.id,
       attackerLevel: level,
@@ -393,12 +432,17 @@ export function selectCalculationAttacker(
       fouAtk: manualOverrides.has('fouAtk') ? input.fouAtk : (build?.fouAtk ?? 1000),
       npLevel: Math.max(1, build?.npLevel ?? 1),
       npMultipliers: deriveNpMultipliers(damage, input.overcharge),
-      attackNpFunctionType: damage.rawFunctionType,
+      damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
       cardType: noblePhantasm.card,
       classAttackRate: manualOverrides.has('classAttackRate')
         ? input.classAttackRate
         : classAttackRate(servant.classId),
     },
+    damage,
+    servant.traits,
+  );
+  return {
+    input: nextInput,
     selection: {
       ...selection,
       attackerSource: source,

@@ -43,7 +43,18 @@ describe('calculation application logic', () => {
   });
 
   it('stores selected conditions without master-derived damage values', () => {
-    const input = createDefaultDamageResolutionInput(master, undefined);
+    const input = {
+      ...createDefaultDamageResolutionInput(master, undefined),
+      attackerHpPermille: 420,
+      targetRarity: 5,
+      targetStateTraits: ['burning', 'burning'],
+      battlePointPhase: 3,
+      target: {
+        classId: 'lancer',
+        attribute: 'earth' as const,
+        traits: ['genderMale'],
+      },
+    };
     const scenario = scenarioFromDamageResolutionInput(input, {
       attackerSource: 'master',
       effectMode: 'resolved',
@@ -78,9 +89,15 @@ describe('calculation application logic', () => {
         limitBreak: 0,
       },
     });
-    expect(damageResolutionInputFromScenario(scenario, master).npMultipliers).toEqual(
-      input.npMultipliers,
-    );
+    const restored = damageResolutionInputFromScenario(scenario, master);
+    expect(restored.npMultipliers).toEqual(input.npMultipliers);
+    expect(restored).toMatchObject({
+      attackerHpPermille: 420,
+      targetRarity: 5,
+      targetStateTraits: ['burning', 'burning'],
+      battlePointPhase: 3,
+      target: { traits: ['genderMale'] },
+    });
   });
 
   it('uses manual values as the final calculation input without effect resolution', () => {
@@ -148,6 +165,56 @@ describe('calculation application logic', () => {
     expect(calculation.result.rows.map((row) => row.average)).toEqual([
       68275.355, 91033.975, 102413.275, 108102.92, 113792.6,
     ]);
+  });
+
+  it('re-resolves HP and OC dependent NP functions at calculation time', () => {
+    const hpMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...fixture.servants[0],
+          noblePhantasms: fixture.servants[0]!.noblePhantasms.map((np) => ({
+            ...np,
+            damage: np.damage.map((damage) => ({
+              ...damage,
+              kind: 'hpRatioLow',
+              rawFunctionType: 'damageNpHpratioLow',
+              parametersByOvercharge: damage.parametersByOvercharge.map((row, ocIndex) =>
+                row.map((parameter, npIndex) => ({
+                  ...parameter,
+                  valuePermille: 3_000 + ocIndex * 1_000 + npIndex * 1_000,
+                  targetId: 6_000,
+                })),
+              ),
+            })),
+          })),
+        },
+      ],
+    });
+    const unresolvedInput = createDefaultDamageResolutionInput(hpMaster, undefined);
+    const selection = completeCalculationEditorState(undefined, hpMaster.servants[0], undefined);
+    expect(
+      calculateResolvedDamage(unresolvedInput, selection, hpMaster, versions, {
+        releaseValidated: true,
+      }).result,
+    ).toMatchObject({
+      status: 'unsupported',
+      rows: [],
+      missingEvidence: ['missing_attacker_hp_ratio'],
+    });
+
+    const resolved = calculateResolvedDamage(
+      { ...unresolvedInput, overcharge: 3, attackerHpPermille: 500 },
+      selection,
+      hpMaster,
+      versions,
+      { releaseValidated: true },
+    );
+    expect(resolved.input).toMatchObject({
+      damageFunction: { status: 'resolved', kind: 'hpRatioLow' },
+      npMultipliers: [800, 900, 1000, 1100, 1200],
+    });
+    expect(resolved.result.status).toBe('calculated');
   });
 
   it('applies an NP damage buff rate after all additive NP damage buffs', () => {
@@ -257,9 +324,7 @@ describe('calculation application logic', () => {
     expect(unsupported.result).toMatchObject({
       status: 'unsupported',
       rows: [],
-      missingEvidence: [
-        'support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect',
-      ],
+      missingEvidence: ['support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect'],
     });
   });
 

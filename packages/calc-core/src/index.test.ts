@@ -11,8 +11,6 @@ import {
   classAffinity,
   classAttackRate,
   f32Add,
-  ATTACK_NP_FUNCTION_TYPES,
-  classifyAttackNpFunction,
 } from './index';
 
 const evaluateForTest = (value: DamageResolutionInput) => {
@@ -40,7 +38,11 @@ const resolvedDamagePoint = (
   randomPermille: number,
 ) =>
   calculateDamagePoint(
-    compileDamageKernelInput(value, npLevel, value.attackNpFunctionType === 'damageNpPierce'),
+    compileDamageKernelInput(
+      value,
+      npLevel,
+      value.damageFunction.status === 'resolved' && value.damageFunction.ignoreDefense,
+    ),
     randomPermille,
   );
 
@@ -54,6 +56,7 @@ const input: DamageResolutionInput = {
   npLevel: 1,
   overcharge: 1,
   npMultipliers: [300, 400, 450, 475, 500],
+  damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
   cardType: 'buster',
   classAttackRate: 1,
   classAffinity: 2,
@@ -72,6 +75,10 @@ const input: DamageResolutionInput = {
   flatDamage: 0,
   damageCut: 0,
   fieldTraits: [],
+  attackerHpPermille: null,
+  targetRarity: null,
+  targetStateTraits: [],
+  battlePointPhase: null,
   target: { classId: 'lancer', attribute: 'earth', traits: ['dragon', 'male'] },
 };
 describe('float32 NP damage kernel', () => {
@@ -155,48 +162,30 @@ describe('float32 NP damage kernel', () => {
     expect(attributeAffinity('unknown', 'sky')).toBe(1);
   });
   it('is deterministic', () => expect(evaluateForTest(input)).toEqual(evaluateForTest(input)));
-  it('fails closed for unknown functions', () =>
-    expect(classifyAttackNpFunction('futureDamage').precision).toBe('unsupported'));
-  it.each(ATTACK_NP_FUNCTION_TYPES)('classifies the registered %s handler', (type) => {
-    const resolved = classifyAttackNpFunction(type);
-    if (
-      ['damageNp', 'damageNpIndividual', 'damageNpPierce', 'damageNpStateIndividualFix'].includes(
-        type,
-      )
-    )
-      expect(resolved.precision).toBe('exact');
-    else if (['damageNpHpratioLow', 'damageNpBattlePointPhase'].includes(type))
-      expect(resolved.precision).toBe('unsupported');
-    else expect(resolved.precision).toBe('approximate');
-  });
   it('ignores enemy defense for a defense-piercing NP', () => {
     const defended = { ...input, defenseBuff: 0.5 };
-    const normal = evaluateForTest({ ...defended, attackNpFunctionType: 'damageNp' }).rows[0]!
-      .average;
+    const normal = evaluateForTest(defended).rows[0]!.average;
     const pierced = evaluateForTest({
       ...defended,
-      attackNpFunctionType: 'damageNpPierce',
+      damageFunction: { status: 'resolved', kind: 'defensePiercing', ignoreDefense: true },
     }).rows[0]!.average;
     expect(pierced / normal).toBeCloseTo(1.2 / 0.7, 2);
   });
   it('marks an unresolved special NP function as unsupported in the result', () => {
-    expect(evaluateForTest({ ...input, attackNpFunctionType: 'damageNpHpratioLow' })).toMatchObject(
-      {
-        status: 'unsupported',
-        rows: [],
-        issues: [{ code: 'missing_hp_ratio' }],
-        missingEvidence: ['missing_hp_ratio'],
-      },
-    );
-  });
-  it('requires conditional inputs instead of silently using base damage', () => {
-    expect(classifyAttackNpFunction('damageNpHpratioLow')).toMatchObject({
-      precision: 'unsupported',
-      warning: 'missing_hp_ratio',
-    });
-    expect(classifyAttackNpFunction('damageNpBattlePointPhase')).toMatchObject({
-      precision: 'unsupported',
-      warning: 'missing_battle_point_phase',
+    expect(
+      evaluateForTest({
+        ...input,
+        damageFunction: {
+          status: 'unsupported',
+          kind: 'hpRatioLow',
+          missingEvidence: 'missing_attacker_hp_ratio',
+        },
+      }),
+    ).toMatchObject({
+      status: 'unsupported',
+      rows: [],
+      issues: [{ code: 'missing_attacker_hp_ratio' }],
+      missingEvidence: ['missing_attacker_hp_ratio'],
     });
   });
   it('uses the special NP multiplier belonging to each result row', () => {
@@ -239,7 +228,7 @@ describe('float32 NP damage kernel', () => {
       craftEssenceAtk: 2_400,
       npLevel: 5,
       npMultipliers: [600, 800, 900, 950, 1_000],
-      attackNpFunctionType: 'damageNpStateIndividualFix',
+      damageFunction: { status: 'resolved', kind: 'stateTrait', ignoreDefense: false },
       cardType: 'quick',
       classAttackRate: 1,
       classAffinity: 1,

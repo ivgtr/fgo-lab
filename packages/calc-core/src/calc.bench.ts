@@ -12,6 +12,7 @@ const input = {
   npLevel: 1,
   overcharge: 1,
   npMultipliers: [300, 400, 450, 475, 500],
+  damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
   cardType: 'buster',
   classAttackRate: 1,
   classAffinity: 1,
@@ -30,6 +31,10 @@ const input = {
   flatDamage: 0,
   damageCut: 0,
   fieldTraits: [],
+  attackerHpPermille: null,
+  targetRarity: null,
+  targetStateTraits: [],
+  battlePointPhase: null,
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies DamageResolutionInput;
 bench('NP1-5 / 200 random values', () => {

@@ -1,12 +1,10 @@
 import type { DamageKernelInput, DamageResolutionInput, DamageRow } from '@fgo-lab/schema';
 import { damageResolutionInputSchema } from '@fgo-lab/schema';
-import { classifyAttackNpFunction } from './attackNpFunction';
 import { calculateDamagePoint } from './formula';
 import { clamp, f32Add, f32Mul } from './float32';
 
 export * from './float32';
 export * from './formula';
-export * from './attackNpFunction';
 export * from './affinities';
 
 function boundedBuff(value: number): number {
@@ -85,16 +83,15 @@ export type PreparedDamageEvaluation =
 
 export function prepareDamageEvaluation(rawInput: DamageResolutionInput): PreparedDamageEvaluation {
   const input = damageResolutionInputSchema.parse(rawInput);
-  const attackFunction = classifyAttackNpFunction(input.attackNpFunctionType ?? 'damageNp');
-  if (attackFunction.precision === 'unsupported')
+  const damageFunction = input.damageFunction;
+  if (damageFunction.status === 'unsupported')
     return {
       status: 'unsupported',
       precision: 'unsupported',
-      warning: attackFunction.warning ?? 'unsupported_attack_function',
+      warning: damageFunction.missingEvidence,
     };
-  const ignoreDefense = input.attackNpFunctionType === 'damageNpPierce';
   const kernelInputs = ([1, 2, 3, 4, 5] as const).map((npLevel) =>
-    compileDamageKernelInput(input, npLevel, ignoreDefense),
+    compileDamageKernelInput(input, npLevel, damageFunction.ignoreDefense),
   ) as [
     DamageKernelInput,
     DamageKernelInput,
@@ -104,8 +101,7 @@ export function prepareDamageEvaluation(rawInput: DamageResolutionInput): Prepar
   ];
   return {
     status: 'ready',
-    precision: attackFunction.precision,
-    ...(attackFunction.warning ? { warning: attackFunction.warning } : {}),
+    precision: 'exact',
     kernelInputs,
   };
 }

@@ -1,7 +1,5 @@
 import {
-  deriveNpSpecialMultipliers,
   getPrimaryNoblePhantasm,
-  getPrimaryNpDamage,
   type CraftEssenceMaster,
   type MasterEffect,
   type MysticCodeMaster,
@@ -196,6 +194,7 @@ function resolveEffects(
   const warnings: string[] = [];
   let npDamageBuffRate = 0;
   let precision: ResolvedEffectSet['precision'] = 'exact';
+  const targetTraits = [...baseInput.target.traits, ...baseInput.targetStateTraits];
 
   for (const item of items) {
     const { effect, rawValue } = item;
@@ -282,10 +281,7 @@ function resolveEffects(
       });
       continue;
     }
-    if (
-      !forceSoftConditions &&
-      !matchesTraitCondition(effect.targetCondition, baseInput.target.traits)
-    ) {
+    if (!forceSoftConditions && !matchesTraitCondition(effect.targetCondition, targetTraits)) {
       effects.push({
         ...effectIdentity,
         value,
@@ -472,8 +468,7 @@ export function resolveNpEffects(
       warnings: ['np_source_missing'],
     };
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
-  const damage = getPrimaryNpDamage(servant);
-  if (!noblePhantasm || !damage)
+  if (!noblePhantasm)
     return {
       input: baseInput,
       effects: [],
@@ -481,7 +476,7 @@ export function resolveNpEffects(
       precision: 'unsupported',
       warnings: ['np_source_missing'],
     };
-  const resolved = resolveEffects(
+  return resolveEffects(
     baseInput,
     noblePhantasm.effects
       .filter((effect) => effect.timing === 'beforeDamage')
@@ -501,55 +496,6 @@ export function resolveNpEffects(
     servant.traits,
     options,
   );
-  if (!['trait', 'stateTrait'].includes(damage.kind)) return resolved;
-  const targetTrait = damage.parametersByOvercharge[baseInput.overcharge - 1]?.[0]?.targetTrait;
-  if (!targetTrait)
-    return {
-      ...resolved,
-      precision: 'unsupported',
-      warnings: [...resolved.warnings, 'np_special_target_missing'],
-    };
-  const multipliers = deriveNpSpecialMultipliers(damage, baseInput.overcharge);
-  const selectedMultiplier = multipliers[baseInput.npLevel - 1] ?? 1;
-  const specialKey = `np:np:${servant.id}:np:${servant.id}:special:np-special:${servant.id}`;
-  const override = options.effectOverrides?.[specialKey];
-  const matched = override ?? baseInput.target.traits.includes(targetTrait.name);
-  return {
-    ...resolved,
-    input: matched
-      ? {
-          ...resolved.input,
-          npSpecialMultipliers: resolved.input.npSpecialMultipliers.map(
-            (baseMultiplier, index) => baseMultiplier * (multipliers[index] ?? 1),
-          ) as DamageResolutionInput['npSpecialMultipliers'],
-        }
-      : resolved.input,
-    effects: [
-      ...resolved.effects,
-      {
-        effectKey: specialKey,
-        sourceInstanceId: `np:${servant.id}`,
-        origin: 'np',
-        sourceId: servant.id,
-        sourceName: servant.name,
-        skillId: `np:${servant.id}:special`,
-        skillName: '特攻宝具',
-        effectId: `np-special:${servant.id}`,
-        label: '特攻宝具',
-        value: selectedMultiplier,
-        kind: null,
-        damageTraitCondition: {
-          kind: 'npSpecial',
-          condition: { anyOf: [targetTrait.name], noneOf: [] },
-        },
-        requiredFieldTraits: [],
-        damageRelevant: true,
-        calculationSupported: true,
-        applied: matched,
-        reason: matched ? 'target_trait_matched' : 'target_trait_mismatch',
-      },
-    ],
-  };
 }
 
 export function resolveSupportComposition(

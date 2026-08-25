@@ -92,6 +92,36 @@ describe('NP damage handler registry', () => {
     }
   });
 
+  it('does not mix permanent and state trait conditions', () => {
+    const targetTrait = { id: 1, name: 'dragon' };
+    const trait = {
+      ...base,
+      kind: 'trait',
+      rawFunctionType: 'damageNpIndividual',
+      parametersByOvercharge: matrix({ targetTrait, correctionPermille: 1_500 }),
+    } as NpDamageSpec;
+    const stateTrait = {
+      ...base,
+      kind: 'stateTrait',
+      rawFunctionType: 'damageNpStateIndividualFix',
+      parametersByOvercharge: matrix({ targetTrait, correctionPermille: 1_500 }),
+    } as NpDamageSpec;
+    const permanentOnly = { ...context, targetTraitCounts: { dragon: 1 } };
+    const stateOnly = { ...context, targetStateTraitCounts: { dragon: 1 } };
+    expect(resolveNpDamageHandler(trait, permanentOnly)).toMatchObject({
+      npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
+    });
+    expect(resolveNpDamageHandler(trait, stateOnly)).toMatchObject({
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
+    });
+    expect(resolveNpDamageHandler(stateTrait, permanentOnly)).toMatchObject({
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
+    });
+    expect(resolveNpDamageHandler(stateTrait, stateOnly)).toMatchObject({
+      npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
+    });
+  });
+
   it('uses attacker HP, trait stack counts, and battle point phase', () => {
     const hp = {
       ...base,

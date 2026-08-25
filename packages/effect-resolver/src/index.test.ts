@@ -22,6 +22,7 @@ const input: DamageResolutionInput = {
   npLevel: 1,
   overcharge: 1,
   npMultipliers: [300, 400, 450, 475, 500],
+  damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
   cardType: 'buster',
   classAttackRate: 1,
   classAffinity: 1,
@@ -40,6 +41,10 @@ const input: DamageResolutionInput = {
   flatDamage: 0,
   damageCut: 0,
   fieldTraits: [],
+  attackerHpPermille: null,
+  targetRarity: null,
+  targetStateTraits: [],
+  battlePointPhase: null,
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 };
 
@@ -552,7 +557,8 @@ describe('resolveMysticCodeSkills', () => {
     expect(resolved.input.npDamageBuff).toBeCloseTo(0.3);
     expect(resolved.effects.every((effect) => effect.origin === 'mysticCode')).toBe(true);
     expect(
-      resolveMysticCodeSkills(input, undefined, [{ skillId: 'skill', skillLevel: 10 }], []).precision,
+      resolveMysticCodeSkills(input, undefined, [{ skillId: 'skill', skillLevel: 10 }], [])
+        .precision,
     ).toBe('unsupported');
   });
 });
@@ -703,7 +709,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     ).toBeCloseTo(0.45);
   });
 
-  it('applies a special NP multiplier only to a matching enemy trait', () => {
+  it('leaves NP damage-function multipliers to the calculation application', () => {
     const attacker: ServantMaster = {
       ...source,
       id: input.attackerId,
@@ -722,7 +728,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         rawPath: 'fixture.special-damage',
       }),
     };
-    const matched = resolveNpEffects(
+    const resolved = resolveNpEffects(
       {
         ...input,
         npLevel: 5,
@@ -731,22 +737,8 @@ describe('automatic equipment, passive, and NP effects', () => {
       },
       attacker,
     );
-    expect(matched.input.npSpecialMultipliers).toEqual([1.7, 1.95, 2.075, 2.138, 2.2]);
-    expect(matched.effects.at(-1)).toMatchObject({
-      label: '特攻宝具',
-      applied: true,
-      reason: 'target_trait_matched',
-    });
-    const missed = resolveNpEffects(input, attacker);
-    expect(missed.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
-    expect(missed.effects.at(-1)).toMatchObject({
-      applied: false,
-      reason: 'target_trait_mismatch',
-      damageTraitCondition: {
-        kind: 'npSpecial',
-        condition: { anyOf: ['dragon'], noneOf: [] },
-      },
-    });
+    expect(resolved.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(resolved.effects).toEqual([]);
   });
 
   it('applies only a matching damage power trait', () => {

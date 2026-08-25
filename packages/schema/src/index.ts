@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 4 as const;
-export const ENGINE_VERSION = '2.0.0' as const;
+export const SCHEMA_VERSION = 5 as const;
+export const ENGINE_VERSION = '3.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -89,7 +89,38 @@ export const damageResolutionInputSchema = z.object({
   npLevel: z.number().int().min(1).max(5),
   overcharge: z.number().int().min(1).max(5),
   npMultipliers: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
-  attackNpFunctionType: z.string().optional(),
+  damageFunction: z.discriminatedUnion('status', [
+    z.object({
+      status: z.literal('resolved'),
+      kind: z.enum([
+        'standard',
+        'defensePiercing',
+        'trait',
+        'traitCount',
+        'stateTrait',
+        'hpRatioLow',
+        'battlePointPhase',
+        'targetRarity',
+        'traitExpression',
+      ]),
+      ignoreDefense: z.boolean(),
+    }),
+    z.object({
+      status: z.literal('unsupported'),
+      kind: z.enum([
+        'standard',
+        'defensePiercing',
+        'trait',
+        'traitCount',
+        'stateTrait',
+        'hpRatioLow',
+        'battlePointPhase',
+        'targetRarity',
+        'traitExpression',
+      ]),
+      missingEvidence: z.string().min(1),
+    }),
+  ]),
   cardType: z.enum(['buster', 'arts', 'quick']),
   classAttackRate: z.number().min(0).max(5),
   classAffinity: z.number().min(0).max(5),
@@ -114,6 +145,10 @@ export const damageResolutionInputSchema = z.object({
   flatDamage: z.number().int().min(-100000).max(100000),
   damageCut: z.number().int().min(0).max(100000).default(0),
   fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
+  attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
+  targetRarity: z.number().int().min(0).max(5).nullable(),
+  targetStateTraits: z.array(z.string().min(1).max(80)).max(100),
+  battlePointPhase: z.number().int().nonnegative().nullable(),
   target: z.object({
     classId: z.string().min(1).max(40),
     attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
@@ -208,8 +243,8 @@ const scenarioBaseSchema = z
       traits: z.array(z.string().min(1).max(80)).max(100),
       stateTraits: z.array(z.string().min(1).max(80)).max(100),
       rarity: z.number().int().min(0).max(5).nullable(),
-      hpPermille: z.number().int().min(0).max(1000).nullable(),
     }),
+    attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
     fieldTraits: z.array(z.string().min(1).max(80)).max(100),
     battleState: z.object({ battlePointPhase: z.number().int().nonnegative().nullable() }),
     assumptions: z.object({

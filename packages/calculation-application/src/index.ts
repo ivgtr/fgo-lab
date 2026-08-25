@@ -14,15 +14,15 @@ export function calculateDamageResolution(
   versions: VersionContext,
 ): CalculationResult {
   const input = damageResolutionInputSchema.parse(rawInput);
-  const functionType = input.attackNpFunctionType ?? 'damageNp';
+  const functionKind = input.damageFunction.kind;
   const prepared = prepareDamageEvaluation(input);
   const common = {
     effects: [],
     assumptions: ['random:900..1099', 'probability:only_guaranteed_effects'],
-    issues: prepared.warning ? [{ code: prepared.warning, detail: functionType }] : [],
+    issues: prepared.warning ? [{ code: prepared.warning, detail: functionKind }] : [],
     trace: [
       { step: 'validate', detail: `damage_resolution_schema_v${String(SCHEMA_VERSION)}` },
-      { step: 'attack-np-function', detail: functionType },
+      { step: 'attack-np-function', detail: functionKind },
     ],
     versions,
   };

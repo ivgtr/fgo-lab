@@ -1,4 +1,5 @@
 import type { NpDamageSpec } from '@fgo-lab/master-data';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 
 export interface NpDamageHandlerContext {
   overcharge: number;
@@ -134,4 +135,31 @@ export function resolveNpDamageHandler(
       );
     }) as [number, number, number, number, number],
   );
+}
+
+export function applyNpDamageHandler(
+  input: DamageResolutionInput,
+  damage: NpDamageSpec,
+  context: NpDamageHandlerContext,
+): DamageResolutionInput {
+  const result = resolveNpDamageHandler(damage, context);
+  if (result.status === 'unsupported')
+    return {
+      ...input,
+      damageFunction: {
+        status: 'unsupported',
+        kind: damage.kind,
+        missingEvidence: result.missingEvidence,
+      },
+    };
+  return {
+    ...input,
+    npMultipliers: result.npMultipliers,
+    npSpecialMultipliers: result.npSpecialMultipliers,
+    damageFunction: {
+      status: 'resolved',
+      kind: damage.kind,
+      ignoreDefense: result.ignoreDefense,
+    },
+  };
 }

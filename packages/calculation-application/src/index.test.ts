@@ -12,6 +12,7 @@ const input: DamageResolutionInput = {
   npLevel: 1,
   overcharge: 1,
   npMultipliers: [100, 100, 100, 100, 100],
+  damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
   cardType: 'arts',
   classAttackRate: 1,
   classAffinity: 1,
@@ -30,10 +31,14 @@ const input: DamageResolutionInput = {
   flatDamage: 0,
   damageCut: 0,
   fieldTraits: [],
+  attackerHpPermille: null,
+  targetRarity: null,
+  targetStateTraits: [],
+  battlePointPhase: null,
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 };
 const versions: VersionContext = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   masterDataVersion: 'fixture',
   engineVersion: '2.0.0',
   appVersion: '0.1.0',
@@ -55,7 +60,21 @@ describe('calculation application', () => {
 
   it('returns no numeric rows when function preparation is unsupported', () => {
     expect(
-      calculateDamageResolution({ ...input, attackNpFunctionType: 'damageNpHpratioLow' }, versions),
-    ).toMatchObject({ status: 'unsupported', rows: [], missingEvidence: ['missing_hp_ratio'] });
+      calculateDamageResolution(
+        {
+          ...input,
+          damageFunction: {
+            status: 'unsupported',
+            kind: 'hpRatioLow',
+            missingEvidence: 'missing_attacker_hp_ratio',
+          },
+        },
+        versions,
+      ),
+    ).toMatchObject({
+      status: 'unsupported',
+      rows: [],
+      missingEvidence: ['missing_attacker_hp_ratio'],
+    });
   });
 });
