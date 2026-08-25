@@ -160,7 +160,8 @@ export function CalculationResult({
         )}
         <footer className="result-card-foot">
           <small>
-            FGO Lab・DB {result.versions.masterDataVersion}・Engine {result.versions.engineVersion}・
+            FGO Lab・DB {result.versions.masterDataVersion}・Engine {result.versions.engineVersion}
+            ・
             {result.status === 'calculated'
               ? result.precision === 'exact'
                 ? '検証済み精度'

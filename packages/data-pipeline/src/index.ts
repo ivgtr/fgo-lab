@@ -382,7 +382,11 @@ function buffConditionOperator(value: number | undefined): 'any' | 'all' | 'part
 }
 
 function uniqueTraits(traits: readonly { name: string; negative: boolean }[]) {
-  return [...new Map(traits.map((trait) => [`${trait.negative ? '!' : ''}${trait.name}`, trait])).values()];
+  return [
+    ...new Map(
+      traits.map((trait) => [`${trait.negative ? '!' : ''}${trait.name}`, trait]),
+    ).values(),
+  ];
 }
 
 function normalizeFunctions(
