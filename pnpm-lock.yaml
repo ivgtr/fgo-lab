@@ -125,6 +125,15 @@ importers:
         specifier: 8.2.2
         version: 8.2.2(@types/node@24.3.0)(tsx@4.20.5)
 
+  packages/battle-execution:
+    dependencies:
+      '@fgo-lab/master-data':
+        specifier: workspace:*
+        version: link:../master-data
+      '@fgo-lab/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/calc-core:
     dependencies:
       '@fgo-lab/schema':
