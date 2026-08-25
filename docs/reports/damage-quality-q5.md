@@ -1,0 +1,98 @@
+# ダメージ計算品質 Q5 監査・置換計画
+
+更新日: 2026-08-25  
+状態: 実装中
+
+## 1. 判定
+
+Q5開始時点の単発計算は、永続化境界では`CalculationScenario`を使用しているが、UIから計算applicationへ至る実行境界では`DamageResolutionInput + CalculationEditorState`へ戻している。このため`CalculationScenario`は計算の唯一の正本になっていない。
+
+draft、履歴、共有のschemaは現行resultを保持する形へ更新済みだが、session境界、共有snapshotの整合性、結果根拠の表示には実装漏れがある。場当たり的な補正を加えず、scenarioを直接受け取るapplication facadeへ収束させ、旧selection変換を削除する。
+
+## 2. 実装差分と優先度
+
+### P0: 計算結果の正しさ・再現性
+
+1. `App`は保存済みscenarioを`damageResolutionInputFromScenario()`と`selectionFromScenario()`で二つの中間値へ復元し、`calculateResolvedDamage()`へ渡している。scenarioから計算までの経路が一つではなく、変換の欠落や二重適用を型で防げない。
+2. draft保存時は、先に組み立てたscenarioではなく、その生成元である`nextInput + selection`を再び計算している。保存されたscenarioと保存resultが同じfacade呼出しから得られたことを保証できない。
+3. manual scenarioはscenario共通項目と`manual`入力に攻撃者・対象・相性等を重複保持する。不一致な値をschemaが許し、UI表示と計算値が分離し得る。
+4. 共有snapshotはscenarioとresultの組をschema検証するだけで、同じmaster・engine・scenarioから再現したresultとの一致を確認しない。異なるmaster版のsnapshotでは、現行masterから作った入力表示と共有時resultを同じ画面に出している。
+
+### P1: 履歴の意味
+
+1. `calculationSessionId`は`App`のmount時に一度だけ発行され、計算画面を開くたびには更新されない。
+2. `finalizeHistory()`は直前fingerprintの重複だけを抑止し、同一sessionから複数履歴が確定することを防がない。
+3. URL・画像共有は履歴を確定するが、共有JSONは確定しない。
+4. 有効な結果がない初期状態や`unsupported`結果も、画面離脱だけで履歴になり得る。
+
+### P2: 根拠の可視性
+
+1. 結果詳細はassumptionとissue codeだけを表示し、breakdown、trace、evidence、precisionの判定理由を表示していない。
+2. `unsupported`時の`missingEvidence`を表示せず、数値を出さない理由を利用者が追えない。
+3. 共有カードはDB版だけを表示し、engine版とprecisionを共有結果から確認できない。
+
+## 3. 収束先
+
+計算経路を次の一方向へ固定する。
+
+```text
+Calculator UI
+  -> CalculationScenario
+  -> calculateScenario(scenario, master, versions)
+  -> scenario resolver / effect resolver
+  -> damage kernel
+  -> CalculationExecution { resolvedInput, effects, warnings, result }
+  -> draft / history / share / result UI
+```
+
+- quickは`resolved` scenarioだけを編集する。master由来のATK、NP倍率、効果集約値をscenarioへ保存しない。
+- manualは最終`DamageResolutionInput`だけを保持する独立unionとし、resolved側の選択や共通項目を重複保持しない。
+- application facadeがscenario検証、master参照、Function適用、effect解決、kernel実行、evidence評価を一回で行う。
+- UIはfacadeが返した`resolvedInput`を表示用に参照できるが、次のquick scenarioをその数値から逆変換しない。
+- draft、履歴、共有は同じscenarioと同じfacade resultを保存する。
+- master・schema・engineが現行契約と一致しない共有は現行計算画面へ取り込まない。旧結果表示の互換経路は設けない。
+- calculation sessionは計算画面へ入るたび発行し、一sessionにつき最大一履歴をupsertする。
+
+## 4. 実装スライス
+
+### Q5-S1: scenario application facade
+
+- `calculateScenario()`とdefault resolved scenario builderを`calculation-application`へ追加する。
+- effect resolverを`resolved` scenarioの選択値から呼び出す。
+- manual scenarioの重複fieldを削除し、schema・engine版を更新する。
+- quick/manual同値テストをapplication packageへ置く。
+
+### Q5-S2: Web UI直結
+
+- `Calculator`の編集値を`CalculationScenario`へ置換する。
+- `scenarioFromDamageResolutionInput()`、`selectionFromScenario()`、`damageResolutionInputFromScenario()`と旧計算呼出しを削除する。
+- draft保存は`calculateScenario(nextScenario, ...)`の一結果だけを保存する。
+
+### Q5-S3: session・履歴
+
+- 計算画面entryごとにsession IDを発行する。
+- 同一sessionの再確定は同じ履歴行を更新し、新規行を増やさない。
+- fingerprint一致時の直前履歴再利用と直近20件制限を維持する。
+- URL、画像、共有JSONの全共有操作を同じfinalize経路へ接続する。
+
+### Q5-S4: 共有境界
+
+- share snapshot builderを一箇所に置き、許可リストをschemaで固定する。
+- 読込時に現行master版を要求し、scenarioをfacadeで再計算する。
+- snapshot resultは再計算結果との一致検証にだけ使用し、不一致なら共有全体を拒否する。
+
+### Q5-S5: 結果根拠と公開ゲート
+
+- status、precision、breakdown、assumption、issue、trace、evidence、missing evidenceを結果詳細へ表示する。
+- quick/manual同値、session一件、share round-trip、旧版拒否、単一facade利用をunit/contract/E2Eで固定する。
+- test、typecheck、lint、build、evidence/master validationを通す。
+
+## 5. Q5確認ゲート
+
+- 同じ最終入力を表すquickとmanualが同じNP1〜5の行を返す。
+- UI、draft、history、shareが`calculateScenario()`以外の計算application入口を呼ばない。
+- 一つのsessionから履歴が一件だけ確定し、再共有では同じ行が更新される。
+- 同じmaster・engine・scenarioの共有元と共有先が同じresultを返す。
+- 旧schema、旧engine、異なるmaster、不整合なscenario/resultの共有を現行結果として表示しない。
+- 結果画面だけでprecisionと、その根拠・仮定・警告・traceを確認できる。
+

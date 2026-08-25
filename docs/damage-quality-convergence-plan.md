@@ -227,7 +227,9 @@ calculation-application <- web / ranking worker
 
 ### Q5：単発計算UI・draft・履歴・共有の置換
 
-状態: 未着手
+状態: 実装中
+
+実装判断と進捗: `docs/reports/damage-quality-q5.md`
 
 作業:
 
@@ -329,8 +331,8 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 | Q1 | 完了 | 2026-08-25 | scenario/result、全攻撃宝具、魔術礼装、lossless effect parameter、fail-closed registryへ置換。`docs/reports/damage-quality-q1.md` |
 | Q2 | 完了 | 2026-08-25 | 純粋kernel、NP1〜5 evaluator、共有application facade、9種Function handler、golden、benchmarkへ収束。`docs/reports/damage-quality-q2.md` |
 | Q3 | 完了 | 2026-08-25 | 共通EffectSource、判別可能effect状態、単一integer aggregator、application facade、全付与元goldenへ収束。`docs/reports/damage-quality-q3.md` |
-| Q4 | 進行中 | 2026-08-25 | Q4-D1〜D6を技術判断として承認。結果evidence必須化、registry合成、環境flag削除へ置換する。`docs/reports/damage-quality-q4.md` |
-| Q5 | 未着手 | - | - |
+| Q4 | 完了 | 2026-08-25 | 標準Function外部差分、特殊Function golden、共通precision評価、evidence inventory gateへ収束。完全なChaldea実行差分は対象外とし、特殊8種はprovisionalを維持。`docs/reports/damage-quality-q4.md` |
+| Q5 | 実装中 | 2026-08-25 | 現行経路を監査し、scenario facade、UI直結、session履歴、共有整合性、結果根拠表示の5スライスへ確定。`docs/reports/damage-quality-q5.md` |
 | Q6 | 未着手 | - | - |
 | Q7 | 未着手 | - | - |
 
