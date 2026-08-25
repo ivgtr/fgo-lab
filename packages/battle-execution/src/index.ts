@@ -270,7 +270,7 @@ export {
   executeOrderedScenario,
   type OrderedScenarioExecution,
 } from './engine';
-export { canonicalExclusiveGroup } from './conditionSemantics';
+export { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 export {
   applyNpDamageOperation,
   evaluateNpDamageOperation,

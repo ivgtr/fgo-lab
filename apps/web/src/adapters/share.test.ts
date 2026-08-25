@@ -9,7 +9,11 @@ import {
 } from './share';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { calculateScenario, createDefaultResolvedScenario } from '@fgo-lab/calculation-application';
+import {
+  applyEffectProjectionDecision,
+  calculateScenario,
+  createDefaultResolvedScenario,
+} from '@fgo-lab/calculation-application';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -86,6 +90,107 @@ describe('portable input limits', () => {
 
     expect(() => validateCalculationShareSnapshot(snapshot, master)).toThrow(
       'share_master_version_mismatch',
+    );
+  });
+
+  it('fails closed on crafted cross-domain fact and effect decisions', () => {
+    const base = master.servants[0]!;
+    const craftedMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...base,
+          skills: [
+            {
+              id: 'earth-skill',
+              slot: 1,
+              priority: 1,
+              name: 'earth skill',
+              detail: '',
+              imageKey: null,
+              effects: [
+                {
+                  id: 'earth-power',
+                  type: 'addStateShort',
+                  target: 'self',
+                  label: '対地威力アップ',
+                  parameterSets: [
+                    Array.from({ length: 10 }, () => ({ Value: 500 })),
+                    [],
+                    [],
+                    [],
+                    [],
+                  ],
+                  buffTypes: ['upDamage'],
+                  conditions: {
+                    recipient: [{ operator: 'any', traits: [] }],
+                    holder: { operator: 'any', traits: [] },
+                    opponent: {
+                      operator: 'all',
+                      traits: [{ name: 'attributeEarth', negative: false }],
+                    },
+                    field: {
+                      operator: 'all',
+                      traits: [{ name: 'fieldHell', negative: false }],
+                    },
+                  },
+                  contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+                  cardTypes: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const craftedVersions = { ...versions, masterDataVersion: craftedMaster.version };
+    const baseScenario = {
+      ...createDefaultResolvedScenario(craftedMaster, undefined),
+      attackerSkills: [{ skillId: 'earth-skill', skillLevel: 10 }],
+    };
+    const initial = calculateScenario(baseScenario, craftedMaster, craftedVersions);
+    const earth = initial.effects.find((effect) => effect.label === '対地威力アップ')!;
+    const selected = applyEffectProjectionDecision(baseScenario, earth, true);
+    const compatibleResult = calculateScenario(selected, craftedMaster, craftedVersions).result;
+    const conflictingScenario = {
+      ...selected,
+      worldFactAssertions: [
+        {
+          decisionKey: 'crafted:sky',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'target' as const,
+            trait: 'attributeSky',
+            present: true,
+          },
+        },
+        {
+          decisionKey: 'crafted:heaven',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'field' as const,
+            trait: 'fieldHeaven',
+            present: true,
+          },
+        },
+      ],
+    };
+    const recalculated = calculateScenario(conflictingScenario, craftedMaster, craftedVersions);
+    const snapshot = {
+      kind: 'fgo-lab-calculation-share',
+      schemaVersion: SCHEMA_VERSION,
+      sharedAt: '2026-08-25T00:00:00.000Z',
+      scenario: conflictingScenario,
+      result: compatibleResult,
+    } as const;
+
+    expect(recalculated.result.status).toBe('unsupported');
+    expect(recalculated.effectWarnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
+    );
+    expect(recalculated.input.powerMod).toBe(0);
+    expect(() => validateCalculationShareSnapshot(snapshot, craftedMaster)).toThrow(
+      'share_result_mismatch',
     );
   });
 });

@@ -21,3 +21,14 @@ export function canonicalExclusiveGroup(
   }
   return null;
 }
+
+export function canonicalExclusiveTraits(
+  scope: TraitScope,
+  group: CanonicalExclusiveGroup,
+): readonly string[] {
+  if (group === 'fieldRealm')
+    return scope === 'field' ? [...EXCLUSIVE_TRAIT_GROUPS.fieldRealm] : [];
+  return scope === 'attacker' || scope === 'target'
+    ? [...EXCLUSIVE_TRAIT_GROUPS.worldAttribute]
+    : [];
+}
