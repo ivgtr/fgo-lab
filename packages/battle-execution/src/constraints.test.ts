@@ -128,6 +128,85 @@ describe('unified constraint validation', () => {
     ).toBe('satisfied');
   });
 
+  it('normalizes integer quantity ranges through NOT and fails on an empty range', () => {
+    expect(
+      validateConstraintSet({
+        fixedFacts: [
+          {
+            sourceKey: 'world:rarity',
+            fact: { kind: 'quantity', quantity: 'targetRarity', value: 5 },
+          },
+        ],
+        expressions: [
+          condition('effect:not-five', {
+            kind: 'not',
+            expression: {
+              kind: 'quantity',
+              quantity: 'targetRarity',
+              comparison: 'equal',
+              value: 5,
+            },
+          }),
+        ],
+      }),
+    ).toMatchObject({ status: 'conflict', issue: { conflicts: [{ kind: 'quantityRange' }] } });
+    expect(
+      validateConstraintSet({
+        fixedFacts: [
+          {
+            sourceKey: 'world:hp',
+            fact: { kind: 'quantity', quantity: 'attackerHpPermille', value: 500 },
+          },
+        ],
+        expressions: [
+          condition('effect:hp-range', {
+            kind: 'all',
+            expressions: [
+              {
+                kind: 'quantity',
+                quantity: 'attackerHpPermille',
+                comparison: 'greaterThan',
+                value: 499,
+              },
+              {
+                kind: 'quantity',
+                quantity: 'attackerHpPermille',
+                comparison: 'atMost',
+                value: 500,
+              },
+            ],
+          }),
+        ],
+      }).status,
+    ).toBe('satisfied');
+  });
+
+  it('fails typed-unsupported instead of truncating excessive OR alternatives', () => {
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [
+          condition('effect:too-wide', {
+            kind: 'any',
+            expressions: Array.from({ length: 2_049 }, (_, index) => ({
+              kind: 'trait' as const,
+              scope: 'target' as const,
+              trait: `trait-${String(index)}`,
+              present: true,
+            })),
+          }),
+        ],
+      }),
+    ).toEqual({
+      status: 'unsupported',
+      issue: {
+        kind: 'constraintValidationUnsupported',
+        sourceKeys: ['effect:too-wide'],
+        reason: 'constraintComplexityExceeded',
+      },
+    });
+  });
+
   it('detects conflicts across nested AND, OR, and NOT without choosing the first OR branch', () => {
     expect(
       validateConstraintSet({
