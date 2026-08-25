@@ -1,0 +1,231 @@
+.startup-screen {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  max-width: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 32px 20px;
+  background:
+    radial-gradient(circle at 50% 42%, rgb(30 77 145 / 72%) 0, transparent 38%),
+    linear-gradient(180deg, #123d7f 0%, #08265a 52%, #020a19 100%);
+  color: #f8fafc;
+}
+
+.startup-screen::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: min(58vw, 620px);
+  aspect-ratio: 1;
+  border: 1px solid rgb(220 232 242 / 14%);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 72px rgb(255 255 255 / 1.5%),
+    inset 0 0 0 144px rgb(255 255 255 / 1%);
+}
+
+.startup-screen::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 0;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgb(0 0 0 / 28%));
+}
+
+.startup-screen__panel {
+  position: relative;
+  z-index: 1;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.startup-screen__mark {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 22px;
+  border: 2px solid #d1b06b;
+  border-radius: 50%;
+  color: #fff;
+  box-shadow: 0 0 28px rgb(5 16 39 / 35%);
+}
+
+.startup-screen__mark::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 3px solid transparent;
+  border-top-color: #fff;
+  border-right-color: #fff;
+  border-radius: 50%;
+  rotate: 18deg;
+}
+
+.startup-screen__mark span {
+  position: relative;
+  font:
+    700 1.2rem Georgia,
+    'Times New Roman',
+    serif;
+  letter-spacing: 0.06em;
+}
+
+.startup-screen__panel > h1 {
+  margin: 0;
+  font:
+    600 1.9rem/1.2 Georgia,
+    'Times New Roman',
+    serif;
+  letter-spacing: 0.045em;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 28%);
+}
+
+.startup-screen__status-copy {
+  margin-top: 42px;
+}
+
+.startup-screen__status-copy h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.startup-screen__status-copy p {
+  margin: 8px 0 0;
+  color: #c5d1dc;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.startup-screen__activity {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.startup-screen__activity span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #72859d;
+  animation: startup-activity 1.2s ease-in-out infinite;
+}
+
+.startup-screen__activity span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.startup-screen__activity span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.startup-screen__notice {
+  width: 100%;
+  margin: 24px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgb(209 176 107 / 54%);
+  background: rgb(2 10 25 / 46%);
+  color: #f0dfb9;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.startup-screen__error-detail {
+  width: 100%;
+  margin-top: 20px;
+  color: #c5d1dc;
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.startup-screen__error-detail code {
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+  color: #ffc4cd;
+}
+
+.startup-screen__action {
+  width: min(280px, 100%);
+  margin-top: 28px;
+  border-color: #bd4055;
+  background: #a82d45;
+  color: #fff;
+}
+
+.startup-screen__action:hover {
+  border-color: #d15c70;
+  background: #bd4055;
+  color: #fff;
+}
+
+.startup-screen--error .startup-screen__mark::before {
+  border-top-color: #e36a7e;
+  border-right-color: transparent;
+  border-bottom-color: #e36a7e;
+}
+
+.startup-screen--checking .startup-screen__mark::before,
+.startup-screen--updating .startup-screen__mark::before {
+  animation: startup-orbit 2.8s linear infinite;
+}
+
+@keyframes startup-activity {
+  0%,
+  100% {
+    scale: 0.75;
+    background: #72859d;
+  }
+  50% {
+    scale: 1;
+    background: #fff;
+  }
+}
+
+@keyframes startup-orbit {
+  to {
+    rotate: 378deg;
+  }
+}
+
+@media (max-width: 480px) {
+  .startup-screen {
+    padding: 28px 22px max(28px, env(safe-area-inset-bottom));
+  }
+
+  .startup-screen__mark {
+    width: 74px;
+    height: 74px;
+  }
+
+  .startup-screen__status-copy {
+    margin-top: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-screen__activity span {
+    animation: none;
+  }
+
+  .startup-screen__activity span:first-child {
+    background: #fff;
+  }
+
+  .startup-screen--checking .startup-screen__mark::before,
+  .startup-screen--updating .startup-screen__mark::before {
+    animation: none;
+  }
+}

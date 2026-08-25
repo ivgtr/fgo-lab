@@ -46,6 +46,7 @@ import { Home } from '../features/home/Home';
 import { Ranking } from '../features/ranking/Ranking';
 import { Servants } from '../features/profile/Servants';
 import { SupportTemplates } from '../features/profile/SupportTemplates';
+import { StartupScreen } from './StartupScreen';
 import { useProfileCollection } from './useProfileCollection';
 
 type Page = 'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
@@ -94,33 +95,16 @@ function Setup({
       setState('error');
     }
   }
-  return (
-    <main className="setup">
-      <section>
-        <h1>{t('setup.title')}</h1>
-        <p>{t('setup.description')}</p>
-        <ol className="steps">
-          <li>ローカルDBを作成</li>
-          <li>マスターデータを取得・検証</li>
-          <li>検索索引を準備</li>
-          <li>active版を切替</li>
-        </ol>
-        {startupWarning && <p role="alert">{startupWarning}</p>}
-        {state === 'running' ? (
-          <p role="status">{t('setup.running')}…</p>
-        ) : (
-          <button className="primary" onClick={() => void run()}>
-            {state === 'error' ? t('setup.retry') : t('setup.start')}
-          </button>
-        )}
-        {state === 'error' && (
-          <p role="alert" className="error">
-            {t('setup.error')}: {error}
-          </p>
-        )}
-        <small>取得した版はchecksum・schema・参照整合性の検証後にだけ有効化します。</small>
-      </section>
-    </main>
+  return state === 'running' ? (
+    <StartupScreen mode="updating" notice={startupWarning} />
+  ) : (
+    <StartupScreen
+      mode={state === 'error' ? 'error' : 'setup'}
+      notice={startupWarning}
+      errorDetail={state === 'error' ? error : undefined}
+      actionLabel={state === 'error' ? t('setup.retry') : t('setup.start')}
+      onAction={() => void run()}
+    />
   );
 }
 
@@ -171,12 +155,7 @@ export function App() {
       removeEventListener('offline', update);
     };
   }, []);
-  if (loading)
-    return (
-      <main className="setup">
-        <p role="status">起動時のデータ更新を確認しています…</p>
-      </main>
-    );
+  if (loading) return <StartupScreen mode="checking" />;
   if (!master || !profiles)
     return (
       <Setup

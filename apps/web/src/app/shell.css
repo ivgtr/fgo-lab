@@ -91,22 +91,6 @@ h3 {
   letter-spacing: 0.13em;
   color: var(--accent);
 }
-.setup {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-.setup section {
-  max-width: 560px;
-  border-top: 4px solid var(--accent);
-  padding: 2rem;
-  background: white;
-}
-.steps {
-  line-height: 2;
-  border-left: 1px solid var(--line);
-}
 .primary {
   background: var(--accent);
   border-color: var(--accent);

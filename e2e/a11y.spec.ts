@@ -12,6 +12,12 @@ async function expectNoSeriousViolations(page: Page) {
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 }
 
+test('@a11y startup screen has no serious axe violations', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.startup-screen')).toBeVisible();
+  await expectNoSeriousViolations(page);
+});
+
 test('@a11y major desktop screens have no serious axe violations', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation covers every R1 screen');
   await page.goto('/');
