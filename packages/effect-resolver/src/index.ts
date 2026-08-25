@@ -92,7 +92,6 @@ interface SkillSelection {
   skillLevel: number;
   defaultEnabled: boolean;
   selectedEffectIds?: readonly string[];
-  explicitEffectSelection?: boolean;
   order: number;
 }
 
@@ -153,7 +152,6 @@ interface ResolvableEffect {
   rawValue: number | undefined;
   appliedReason: string;
   defaultEnabled: boolean;
-  forceSoftConditions: boolean;
 }
 
 function numericParameter(
@@ -204,7 +202,6 @@ function resolveEffects(
     const key = effectKey(origin, item);
     const override = options.effectOverrides?.[key];
     const enabled = override ?? item.defaultEnabled;
-    const forceSoftConditions = override === true || item.forceSoftConditions;
     const effectIdentity = {
       effectKey: key,
       sourceInstanceId: item.sourceInstanceId,
@@ -281,7 +278,7 @@ function resolveEffects(
       });
       continue;
     }
-    if (!forceSoftConditions && !matchesTraitCondition(effect.targetCondition, targetTraits)) {
+    if (!matchesTraitCondition(effect.targetCondition, targetTraits)) {
       effects.push({
         ...effectIdentity,
         value,
@@ -291,7 +288,6 @@ function resolveEffects(
       continue;
     }
     if (
-      !forceSoftConditions &&
       (effect.requiredFieldTraits?.length ?? 0) > 0 &&
       !effect.requiredFieldTraits?.every((trait) => baseInput.fieldTraits.includes(trait))
     ) {
@@ -375,9 +371,6 @@ function resolveSkillSelections(
         rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
         appliedReason: 'unconditional_attacker_buff',
         defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
-        forceSoftConditions:
-          Boolean(selected.explicitEffectSelection) &&
-          Boolean(selected.selectedEffectIds?.includes(effect.id)),
       });
     }
   }
@@ -446,7 +439,6 @@ export function resolveCraftEssenceEffects(
       rawValue: numericParameter(effect, 0, 0, limitBreak === 4),
       appliedReason: limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
       defaultEnabled: true,
-      forceSoftConditions: false,
     })),
     'craftEssence',
     recipientTraits,
@@ -490,7 +482,6 @@ export function resolveNpEffects(
         rawValue: numericParameter(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
         appliedReason: 'np_before_damage',
         defaultEnabled: true,
-        forceSoftConditions: false,
       })),
     'np',
     servant.traits,
@@ -520,7 +511,6 @@ export function resolveSupportComposition(
               effect.skillId === skill.skillId,
           )
           .map((effect) => effect.effectId),
-        explicitEffectSelection: true,
         order: sourceOrder * 20 + skillOrder,
       })),
     ),
@@ -586,7 +576,6 @@ export function resolveMysticCodeSkills(
         rawValue: numericParameter(effect, 0, selection.skillLevel - 1),
         appliedReason: 'mystic_code_buff',
         defaultEnabled: options.defaultEnabled ?? true,
-        forceSoftConditions: false,
       });
   }
   const resolved = resolveEffects(baseInput, items, 'mysticCode', recipientTraits, options);

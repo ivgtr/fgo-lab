@@ -777,12 +777,16 @@ describe('automatic equipment, passive, and NP effects', () => {
       kind: 'powerMod',
       condition: { anyOf: ['dragon'], noneOf: [] },
     });
-    const forced = resolveAttackerSkills(input, selection, [attacker], {
+    const explicitlyEnabled = resolveAttackerSkills(input, selection, [attacker], {
       effectOverrides: {
         'attacker:attacker:attacker:skill:dragon-power': true,
       },
     });
-    expect(forced.input.powerMod).toBe(0.5);
+    expect(explicitlyEnabled.input.powerMod).toBe(0);
+    expect(explicitlyEnabled.effects[0]).toMatchObject({
+      applied: false,
+      reason: 'target_trait_mismatch',
+    });
   });
 
   it('applies an excluded-trait modifier only while that trait is absent', () => {
