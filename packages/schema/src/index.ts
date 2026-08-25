@@ -355,11 +355,13 @@ export const calculationDraftSchema = z.object({
   scenarioFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   updatedAt: z.iso.datetime(),
 });
+export type CalculationDraft = z.infer<typeof calculationDraftSchema>;
 export const calculationHistoryEntrySchema = calculationDraftSchema.extend({
   historyId: z.uuid(),
   finalizedAt: z.iso.datetime(),
   lastUsedAt: z.iso.datetime(),
 });
+export type CalculationHistoryEntry = z.infer<typeof calculationHistoryEntrySchema>;
 
 export const localProfileSchema = z.object({
   profileId: z.uuid(),

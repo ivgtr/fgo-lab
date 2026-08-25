@@ -21,6 +21,7 @@ import {
 import { finalizeHistory, scenarioFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalculationScenario,
+  CalculationHistoryEntry,
   DamageResolutionInput,
   CalculationShareSnapshot,
   CraftEssenceCopy,
@@ -324,11 +325,10 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function saveCalculationDraft(
-    nextInput: DamageResolutionInput,
-    selection = currentSelection,
+  async function saveScenarioDraft(
+    scenario: CalculationScenario,
+    sessionId = calculationSessionId,
   ) {
-    const scenario = scenarioFromDamageResolutionInput(nextInput, selection);
     setCalculation({ scenario, shared: undefined });
     const nextCalculation = calculateScenario(scenario, currentMaster, versions);
     const fingerprint = await scenarioFingerprint(
@@ -342,7 +342,7 @@ export function App() {
       ...current,
       draft: {
         profileId: current.profileId,
-        calculationSessionId,
+        calculationSessionId: sessionId,
         scenario,
         result: nextCalculation.result,
         scenarioFingerprint: fingerprint,
@@ -350,6 +350,17 @@ export function App() {
       },
       updatedAt: now,
     }));
+  }
+  async function saveCalculationDraft(
+    nextInput: DamageResolutionInput,
+    selection = currentSelection,
+  ) {
+    await saveScenarioDraft(scenarioFromDamageResolutionInput(nextInput, selection));
+  }
+  async function copyHistoryToDraft(entry: CalculationHistoryEntry) {
+    const sessionId = crypto.randomUUID();
+    setCalculationSessionId(sessionId);
+    await saveScenarioDraft(entry.scenario, sessionId);
   }
   async function finalizeCurrentCalculation() {
     const fingerprint = await scenarioFingerprint(
@@ -446,6 +457,7 @@ export function App() {
             craftEssences={currentMaster.craftEssences}
             selection={currentSelection}
             supportTemplates={profile.supportTemplates}
+            history={profile.history}
             selectedSupport={calculationSupportTemplate}
             onInputChange={saveCalculationDraft}
             onCompositionChange={(nextInput, nextSelection) =>
@@ -493,6 +505,7 @@ export function App() {
               });
             }}
             onFinalize={finalizeCurrentCalculation}
+            onHistorySelect={copyHistoryToDraft}
           />
         )}{' '}
         {page === 'servants' && (

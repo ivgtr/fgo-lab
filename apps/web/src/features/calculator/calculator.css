@@ -27,6 +27,37 @@
   color: var(--muted);
 }
 
+.calculation-history-dialog {
+  width: min(620px, calc(100vw - 2rem));
+}
+
+.calculation-history-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calculation-history-list button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.calculation-history-list button span:first-child {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.calculation-history-list small {
+  color: var(--muted);
+}
+
 .compact-heading {
   align-items: center;
   margin-top: 1.25rem;

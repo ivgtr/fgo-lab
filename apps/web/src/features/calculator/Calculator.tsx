@@ -11,6 +11,7 @@ import type {
   AttackerSkillSelection,
   DamageResolutionInput,
   CalculationEditorState,
+  CalculationHistoryEntry,
   CalculationResult as CalculationResultValue,
   CalculationScenario,
   CraftEssenceCopy,
@@ -49,12 +50,14 @@ export function Calculator({
   craftEssences,
   selection,
   supportTemplates,
+  history,
   selectedSupport,
   onInputChange,
   onCompositionChange,
   onSupportSelect,
   onSupportSave,
   onFinalize,
+  onHistorySelect,
 }: {
   input: DamageResolutionInput;
   resolvedInput: DamageResolutionInput;
@@ -68,6 +71,7 @@ export function Calculator({
   craftEssences: CraftEssenceMaster[];
   selection: CalculationEditorState;
   supportTemplates: SupportTemplate[];
+  history: CalculationHistoryEntry[];
   selectedSupport: SupportTemplate | undefined;
   onInputChange: (input: DamageResolutionInput) => Promise<void>;
   onCompositionChange: (
@@ -77,12 +81,14 @@ export function Calculator({
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: () => Promise<void>;
+  onHistorySelect: (entry: CalculationHistoryEntry) => Promise<void>;
 }) {
   const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [supportServantDialogOpen, setSupportServantDialogOpen] = useState(false);
   const [attackerDialogOpen, setAttackerDialogOpen] = useState(false);
   const [craftEssenceDialogOpen, setCraftEssenceDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const attackerTriggerRef = useRef<HTMLButtonElement>(null);
   const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
   const manualOverrides = new Set(selection.manualOverrides ?? []);
@@ -398,6 +404,9 @@ export function Calculator({
             <p className="eyebrow">CONDITIONS</p>
             <h2>計算条件</h2>
           </div>
+          <button type="button" onClick={() => setHistoryDialogOpen(true)}>
+            履歴（{history.length}）
+          </button>
         </div>
         <button
           ref={attackerTriggerRef}
@@ -946,6 +955,71 @@ export function Calculator({
           onSelect={selectCraftEssence}
           onClose={closeCraftEssenceDialog}
         />
+      )}
+      {historyDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="calculation-history-title"
+          className="dialog"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setHistoryDialogOpen(false);
+          }}
+        >
+          <div className="dialog-panel calculation-history-dialog">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">HISTORY</p>
+                <h2 id="calculation-history-title">計算履歴</h2>
+              </div>
+              <button type="button" onClick={() => setHistoryDialogOpen(false)}>
+                閉じる
+              </button>
+            </div>
+            {history.length ? (
+              <ul className="calculation-history-list">
+                {[...history].reverse().map((entry) => {
+                  const attackerId =
+                    entry.scenario.mode === 'manual'
+                      ? entry.scenario.manual.attackerId
+                      : entry.scenario.attacker.servantId;
+                  const servant = servants.find((candidate) => candidate.id === attackerId);
+                  const npLevel =
+                    entry.scenario.mode === 'manual'
+                      ? entry.scenario.manual.npLevel
+                      : entry.scenario.attacker.npLevel;
+                  const average =
+                    entry.result.status === 'calculated'
+                      ? entry.result.rows[npLevel - 1]?.average
+                      : undefined;
+                  return (
+                    <li key={entry.historyId}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void onHistorySelect(entry);
+                          setHistoryDialogOpen(false);
+                        }}
+                      >
+                        <span>
+                          <strong>{servant?.name ?? attackerId}</strong>
+                          <small>
+                            NP{npLevel}・{new Date(entry.lastUsedAt).toLocaleString('ja-JP')}
+                          </small>
+                        </span>
+                        <span>
+                          {average === undefined ? '計算対象外' : numberFormatter.format(average)}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="empty">確定済みの計算履歴はありません。</p>
+            )}
+          </div>
+        </div>
       )}
       {supportDialogOpen && (
         <SupportTemplatePicker
