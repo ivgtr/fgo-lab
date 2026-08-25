@@ -5,6 +5,7 @@ const ATLAS_FLOAT32 =
   'https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md';
 const CHALDEA_DAMAGE =
   'https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart';
+const APPMEDIA_NP_CALCULATOR = 'https://appmedia.jp/fategrandorder/5499061';
 const NP_FUNCTION_GOLDEN_CASE_IDS = {
   standard: ['standard-reference-np-row'],
   defensePiercing: ['defense-piercing-np-row'],
@@ -67,9 +68,10 @@ const entries: CalculationEvidence[] = [
     evidence(
       `np-function:${kind}`,
       `NP damage Function handler: ${kind}`,
-      'provisional',
-      [ATLAS_DAMAGE, CHALDEA_DAMAGE],
+      kind === 'standard' ? 'validated' : 'provisional',
+      kind === 'standard' ? [ATLAS_DAMAGE, APPMEDIA_NP_CALCULATOR] : [ATLAS_DAMAGE, CHALDEA_DAMAGE],
       [...NP_FUNCTION_GOLDEN_CASE_IDS[kind]],
+      kind === 'standard' ? ['appmedia-lilith-neutral-np5'] : [],
     ),
   ),
   ...(

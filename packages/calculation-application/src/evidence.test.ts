@@ -20,13 +20,22 @@ describe('calculation evidence registry', () => {
     });
   });
 
-  it('derives approximate precision from a used provisional entry', () => {
+  it('keeps a validated standard Function exact', () => {
     expect(
       evaluateCalculationEvidence(['kernel:np-damage-v1', 'np-function:standard']),
     ).toMatchObject({
       status: 'resolved',
-      precision: 'approximate',
+      precision: 'exact',
     });
+  });
+
+  it('derives approximate precision from a used provisional special Function', () => {
+    expect(evaluateCalculationEvidence(['kernel:np-damage-v1', 'np-function:trait'])).toMatchObject(
+      {
+        status: 'resolved',
+        precision: 'approximate',
+      },
+    );
   });
 
   it('does not let an unused provisional entry demote the result', () => {

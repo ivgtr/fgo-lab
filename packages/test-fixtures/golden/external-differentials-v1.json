@@ -1,0 +1,36 @@
+{
+  "description": "公開計算機との入力・出力差分を固定する外部differential",
+  "reviewedAt": "2026-08-25",
+  "engineVersion": "4.2.0",
+  "cases": [
+    {
+      "caseId": "appmedia-lilith-neutral-np5",
+      "source": "https://appmedia.jp/fategrandorder/5499061",
+      "sourceImplementation": "https://appmedia.jp/wp-content/themes/appmedia/lib/fgo/fgo_damage_simulator_ver2.js?202605131445",
+      "inputMeaning": "AppMediaの特攻宝具100%は+100%ではなく中立倍率1.0。パッシブと状態特攻を加算しない直接入力。",
+      "input": {
+        "totalAtk": 20781,
+        "npLevel": 5,
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "cardType": "quick",
+        "classAttackRate": 1,
+        "classAffinity": 1,
+        "attributeAffinity": 1,
+        "npDamageBuff": 0.8,
+        "npSpecialMultipliers": [1, 1, 1, 1, 1]
+      },
+      "externalExpected": { "minimum": 61944, "maximum": 75640 },
+      "fgoLabExpected": {
+        "npLevel": 5,
+        "minimum": 61944,
+        "average": 68791.76,
+        "maximum": 75640
+      },
+      "difference": {
+        "minimum": 0,
+        "maximum": 0,
+        "average": "AppMediaは200乱数点の算術平均をoracleとして公開しない"
+      }
+    }
+  ]
+}

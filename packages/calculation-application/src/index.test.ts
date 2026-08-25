@@ -55,7 +55,7 @@ const versions: VersionContext = {
 describe('calculation application', () => {
   it('owns result construction for the shared damage evaluation path', () => {
     const result = calculateDamageResolution(input, versions);
-    expect(result).toMatchObject({ status: 'calculated', precision: 'approximate' });
+    expect(result).toMatchObject({ status: 'calculated', precision: 'exact' });
     expect(result.evidence.map((entry) => entry.key)).toEqual([
       'kernel:np-damage-v1',
       'np-function:standard',

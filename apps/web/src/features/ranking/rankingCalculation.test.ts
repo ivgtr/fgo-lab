@@ -32,9 +32,7 @@ describe('ranking calculation', () => {
   it('derives row precision from the same evidence registry as a single calculation', () => {
     const response = calculateRanking({ requestId: 'request', candidates: [candidate], versions });
     expect(response.unsupported).toEqual([]);
-    expect(response.rows).toMatchObject([
-      { servantId: candidate.servantId, precision: 'approximate' },
-    ]);
+    expect(response.rows).toMatchObject([{ servantId: candidate.servantId, precision: 'exact' }]);
   });
 
   it('fails closed when candidate resolution uses unregistered evidence', () => {

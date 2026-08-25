@@ -55,7 +55,7 @@ describe('calculation application logic', () => {
     expect(calculation.input.attackerId).toBe('fixture-saber');
     expect(calculation.result.rows).toHaveLength(5);
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
-    expect(calculation.result.precision).toBe('approximate');
+    expect(calculation.result.precision).toBe('exact');
   });
 
   it('matches the all-source single-aggregation golden', () => {
@@ -518,7 +518,7 @@ describe('calculation application logic', () => {
     );
 
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
-    expect(calculation.result.precision).toBe('approximate');
+    expect(calculation.result.precision).toBe('exact');
     expect(calculation.result.evidence.map((entry) => entry.key)).toEqual([
       'kernel:np-damage-v1',
       'np-function:standard',
