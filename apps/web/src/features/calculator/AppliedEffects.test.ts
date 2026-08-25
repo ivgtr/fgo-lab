@@ -1,4 +1,4 @@
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection } from '@fgo-lab/calculation-application';
 import { describe, expect, it } from 'vitest';
 import { isEffectSelected, visibleAppliedEffects } from './AppliedEffects';
 

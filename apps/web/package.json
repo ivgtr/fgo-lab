@@ -13,7 +13,6 @@
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/calc-core": "workspace:*",
     "@fgo-lab/calculation-application": "workspace:*",
-    "@fgo-lab/battle-execution": "workspace:*",
     "@fgo-lab/profile-domain": "workspace:*",
     "@fgo-lab/workspace-domain": "workspace:*",
     "idb": "8.0.3",

@@ -81,9 +81,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@fgo-lab/battle-execution':
-        specifier: workspace:*
-        version: link:../../packages/battle-execution
       '@fgo-lab/calc-core':
         specifier: workspace:*
         version: link:../../packages/calc-core

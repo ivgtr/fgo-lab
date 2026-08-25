@@ -1,6 +1,6 @@
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { SupportSource, SupportTemplate } from '@fgo-lab/schema';
-import { canNormalizeDamageEffect } from '@fgo-lab/battle-execution';
+import { supportDamageEffectSummary } from '@fgo-lab/calculation-application';
 
 export type SupportSourceGroup = SupportSource;
 
@@ -46,10 +46,5 @@ export function relativeSupportUsage(value: string | null): string {
 }
 
 export function supportSkillSummary(servant: ServantMaster | undefined, effectId: string) {
-  const skill = servant?.skills.find((candidate) => candidate.id === effectId);
-  return (skill?.effects ?? [])
-    .filter((effect) => canNormalizeDamageEffect(effect, 'support'))
-    .map((effect) => effect.label)
-    .filter((label, index, labels) => labels.indexOf(label) === index)
-    .join('・');
+  return supportDamageEffectSummary(servant, effectId);
 }

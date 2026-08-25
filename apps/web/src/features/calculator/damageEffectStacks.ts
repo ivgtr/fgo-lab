@@ -1,4 +1,4 @@
-import type { EffectProjection, ModifierKind } from '@fgo-lab/battle-execution';
+import type { EffectProjection, ModifierKind } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import { effectSourceImage } from './effectSourcePresentation';
 

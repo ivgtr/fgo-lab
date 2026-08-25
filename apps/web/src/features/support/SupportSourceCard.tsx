@@ -1,8 +1,7 @@
-import { canNormalizeDamageEffect } from '@fgo-lab/battle-execution';
+import { supportDamageSkillViews } from '@fgo-lab/calculation-application';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { SupportSource } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
-import { supportSkillSummary } from './supportTemplatePresentation';
 import './support.css';
 
 export function SupportSourceCard({
@@ -18,11 +17,7 @@ export function SupportSourceCard({
   onRemove: () => void;
   onSkillLevelChange: (skillId: string, skillLevel: number) => void;
 }) {
-  const damageSkills = source.skills.filter((selection) =>
-    servant?.skills
-      .find((skill) => skill.id === selection.skillId)
-      ?.effects.some((effect) => canNormalizeDamageEffect(effect, 'support')),
-  );
+  const damageSkills = supportDamageSkillViews(source, servant);
 
   return (
     <section className="support-source">
@@ -48,30 +43,22 @@ export function SupportSourceCard({
       </header>
       {damageSkills.length ? (
         <ul className="support-skill-list">
-          {damageSkills.map((selection) => {
-            const skill = servant?.skills.find((candidate) => candidate.id === selection.skillId);
-            const name = skill?.name ?? selection.skillId;
+          {damageSkills.map((skill) => {
+            const name = skill.name;
             return (
-              <li key={`${source.sourceInstanceId}:${selection.skillId}`}>
-                <MasterImage
-                  src={skill?.imageKey ?? null}
-                  alt=""
-                  fallback={name}
-                  className="skill-icon"
-                />
+              <li key={`${source.sourceInstanceId}:${skill.skillId}`}>
+                <MasterImage src={skill.imageKey} alt="" fallback={name} className="skill-icon" />
                 <span className="support-skill-copy">
                   <strong>{name}</strong>
-                  <small>
-                    {supportSkillSummary(servant, selection.skillId) || '宝具火力への効果なし'}
-                  </small>
+                  <small>{skill.effectLabels.join('・') || '宝具火力への効果なし'}</small>
                 </span>
                 <label className="support-skill-level">
                   <span>Lv</span>
                   <select
                     aria-label={`${name}のスキルレベル`}
-                    value={selection.skillLevel}
+                    value={skill.skillLevel}
                     onChange={(event) =>
-                      onSkillLevelChange(selection.skillId, Number(event.target.value))
+                      onSkillLevelChange(skill.skillId, Number(event.target.value))
                     }
                   >
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (

@@ -10,7 +10,7 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection } from '@fgo-lab/calculation-application';
 import { applyEffectProjectionDecision } from '@fgo-lab/calculation-application';
 import type {
   AttackerSkillSelection,

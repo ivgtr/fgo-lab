@@ -1,4 +1,4 @@
-import { canNormalizeDamageEffect } from '@fgo-lab/battle-execution';
+import { supportEffectOptions } from '@fgo-lab/calculation-application';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { SupportComposition, SupportEffectRef } from '@fgo-lab/schema';
 import { ModifierChip } from '../calculator/ModifierChip';
@@ -20,26 +20,7 @@ export function SupportEffectSelector({
   servants: readonly ServantMaster[];
   onToggle: (effect: SupportEffectRef, selected: boolean) => void;
 }) {
-  const servantById = new Map(servants.map((servant) => [servant.id, servant]));
-  const effects = composition.sources.flatMap((source) => {
-    const servant = servantById.get(source.servantId);
-    return source.skills.flatMap((selection) => {
-      const skill = servant?.skills.find((candidate) => candidate.id === selection.skillId);
-      return (skill?.effects ?? [])
-        .filter((effect) => canNormalizeDamageEffect(effect, 'support'))
-        .map((effect) => ({
-          ref: {
-            sourceInstanceId: source.sourceInstanceId,
-            skillId: selection.skillId,
-            effectId: effect.id,
-          } satisfies SupportEffectRef,
-          effect,
-          skill,
-          servant,
-          skillLevel: selection.skillLevel,
-        }));
-    });
-  });
+  const effects = supportEffectOptions(composition, servants);
 
   return (
     <fieldset className="modifier-group support-effect-selector">
@@ -48,7 +29,7 @@ export function SupportEffectSelector({
       </legend>
       {effects.length ? (
         <ul className="modifier-chip-list">
-          {effects.map(({ ref, effect, skill, servant, skillLevel }) => {
+          {effects.map(({ ref, label, skillName, sourceName, imageKey, skillLevel }) => {
             const selected = composition.selectedEffects.some((candidate) =>
               sameEffect(candidate, ref),
             );
@@ -56,13 +37,13 @@ export function SupportEffectSelector({
               <ModifierChip
                 key={`${ref.sourceInstanceId}:${ref.skillId}:${ref.effectId}`}
                 active={selected}
-                label={effect.label}
+                label={label}
                 detail={`Lv${skillLevel}・${selected ? 'セットから除外' : 'セットに含める'}`}
                 sources={[
                   {
                     key: `${ref.sourceInstanceId}:${ref.skillId}`,
-                    label: `${servant?.name ?? ref.sourceInstanceId}・${skill?.name ?? ref.skillId}`,
-                    imageKey: skill?.imageKey ?? null,
+                    label: `${sourceName}・${skillName}`,
+                    imageKey,
                   },
                 ]}
                 onToggle={(active) => onToggle(ref, active)}

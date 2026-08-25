@@ -30,7 +30,7 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
   calculateScenario,

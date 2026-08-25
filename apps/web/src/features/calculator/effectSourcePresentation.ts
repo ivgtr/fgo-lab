@@ -1,5 +1,5 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection } from '@fgo-lab/calculation-application';
 
 export function effectSourceImage(
   effect: EffectProjection,
