@@ -132,7 +132,7 @@ calculation-application <- web / ranking worker
 
 ### Q1：計算schemaとマスター正規化の置換
 
-状態: 未着手
+状態: 進行中
 
 作業:
 
@@ -308,7 +308,7 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 |---|---|---|---|
 | Plan | 承認済み | 2026-08-25 | 本計画の範囲、順序、破壊的変更方針 |
 | Q0 | 完了 | 2026-08-25 | Q0-D1〜D7を技術判断として承認。`docs/reports/damage-quality-q0.md` |
-| Q1 | 未着手 | - | - |
+| Q1 | 進行中 | 2026-08-25 | master正規化置換を完了（`1c4057f`）。scenario/result置換と魔術礼装sourceは継続中。`docs/reports/damage-quality-q1.md` |
 | Q2 | 未着手 | - | - |
 | Q3 | 未着手 | - | - |
 | Q4 | 未着手 | - | - |
