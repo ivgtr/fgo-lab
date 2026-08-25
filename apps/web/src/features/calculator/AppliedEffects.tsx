@@ -16,8 +16,14 @@ function isContextOnly(effect: ResolvedEffect) {
   );
 }
 
-function isUserControllable(effect: ResolvedEffect) {
-  if (effect.damageTraitCondition?.kind === 'npSpecial') return true;
+export function isAppliedEffectUserControllable(effect: ResolvedEffect) {
+  if (isContextOnly(effect)) return false;
+  if (
+    effect.reason === 'trait_condition_mismatch' ||
+    effect.damageTraitCondition !== null ||
+    effect.requiredFieldTraits.length > 0
+  )
+    return true;
   return ['attacker', 'mysticCode', 'support'].includes(effect.origin);
 }
 
@@ -64,9 +70,7 @@ function effectLabel(effect: ResolvedEffect) {
 export function visibleAppliedEffects(effects: readonly ResolvedEffect[]) {
   return effects.filter(
     (effect) =>
-      effect.damageRelevant &&
-      !HIDDEN_MISMATCHES.has(effect.reason) &&
-      !(isContextOnly(effect) && !isUserControllable(effect)),
+      effect.damageRelevant && !HIDDEN_MISMATCHES.has(effect.reason) && !isContextOnly(effect),
   );
 }
 
@@ -112,7 +116,7 @@ export function AppliedEffects({
                   imageKey: effectSourceImage(effect, servants, craftEssence),
                 },
               ]}
-              {...(effect.state !== 'unsupported' && isUserControllable(effect)
+              {...(effect.state !== 'unsupported' && isAppliedEffectUserControllable(effect)
                 ? { onToggle: (active: boolean) => onToggle(effect.effectKey, active) }
                 : {})}
             />

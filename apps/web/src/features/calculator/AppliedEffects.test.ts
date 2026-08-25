@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
-import { visibleAppliedEffects } from './AppliedEffects';
+import { isAppliedEffectUserControllable, visibleAppliedEffects } from './AppliedEffects';
 
 function contextEffect(origin: ResolvedEffect['origin']): ResolvedEffect {
   return {
@@ -27,11 +27,55 @@ function contextEffect(origin: ResolvedEffect['origin']): ResolvedEffect {
 }
 
 describe('applied effect presentation', () => {
-  it('hides automatic context plumbing but retains user-controlled context decisions', () => {
+  it('hides context plumbing regardless of its source', () => {
     const automatic = contextEffect('np');
     const controllable = contextEffect('attacker');
 
-    expect(visibleAppliedEffects([automatic, controllable])).toEqual([controllable]);
+    expect(visibleAppliedEffects([automatic, controllable])).toEqual([]);
+    expect(isAppliedEffectUserControllable(automatic)).toBe(false);
+    expect(isAppliedEffectUserControllable(controllable)).toBe(false);
+  });
+
+  it('lets the user assert conditions on an NP damage effect', () => {
+    const conditionalNpEffect: ResolvedEffect = {
+      ...contextEffect('np'),
+      effectKey: 'np:conditional-power',
+      label: '威力アップ・対天の力',
+      kind: 'powerMod',
+      value: 0.5,
+      valuePermille: 500,
+      damageTraitCondition: {
+        kind: 'powerMod',
+        condition: {
+          operator: 'any',
+          traits: [{ name: 'attributeSky', negative: false }],
+        },
+      },
+      requiredFieldTraits: ['fieldHeaven'],
+      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+      state: 'rejected',
+      reason: 'trait_condition_mismatch',
+    };
+
+    expect(visibleAppliedEffects([conditionalNpEffect])).toEqual([conditionalNpEffect]);
+    expect(isAppliedEffectUserControllable(conditionalNpEffect)).toBe(true);
+  });
+
+  it('does not strand a conditional automatic damage effect without presentation metadata', () => {
+    const conditionalPassive: ResolvedEffect = {
+      ...contextEffect('passive'),
+      effectKey: 'passive:conditional-attack',
+      label: '攻撃力アップ',
+      kind: 'attackBuff',
+      value: 0.2,
+      valuePermille: 200,
+      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+      state: 'rejected',
+      reason: 'trait_condition_mismatch',
+    };
+
+    expect(visibleAppliedEffects([conditionalPassive])).toEqual([conditionalPassive]);
+    expect(isAppliedEffectUserControllable(conditionalPassive)).toBe(true);
   });
 
   it('hides card buffs that cannot affect the selected NP card', () => {
