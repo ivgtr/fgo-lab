@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   deriveCraftEssenceAtk,
+  naturalServantLevel,
   type CraftEssenceMaster,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -69,7 +70,7 @@ export function AttackerPicker({
         const saved = builds[candidate.id];
         return source === 'owned' && saved
           ? `Lv${saved.level} / NP${saved.npLevel} / フォウ${saved.fouAtk}`
-          : 'Lv90 / NP1 / フォウ1000（仮想）';
+          : `Lv${naturalServantLevel(candidate.rarity)} / NP1 / フォウ1000（仮想）`;
       }}
       onSelect={(candidate, source) => onSelect(candidate, source as 'owned' | 'master')}
       onClose={onClose}
