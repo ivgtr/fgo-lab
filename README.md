@@ -25,7 +25,3 @@ pnpm build
 ```
 
 Atlas JPのraw exportを`data/raw/`へ配置した場合、`pnpm --filter @fgo-lab/data-pipeline normalize <version>`で配信用マスターを再生成できます。rawファイルはリポジトリへコミットしません。
-
-現在の実装状況と公開前の未完ゲートは[docs/reports/r1-implementation-status.md](docs/reports/r1-implementation-status.md)を参照してください。
-
-Fate/Grand Orderおよび権利者とは関係ありません。データ出典とライセンス境界は[docs/licenses/data-sources.md](docs/licenses/data-sources.md)を参照してください。

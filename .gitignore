@@ -17,6 +17,11 @@ test-results/
 Thumbs.db
 .vscode/
 .idea/
+.frontend-review/report/
+docs/*
+!docs/adr/
+!docs/adr/**
+!docs/*requirements*.md
 data/raw/
 data/cache/
 *.sqlite
