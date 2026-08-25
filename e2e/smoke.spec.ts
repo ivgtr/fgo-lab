@@ -751,7 +751,9 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await expect(archetypeEffects).toContainText('+30%・計算外');
   await expect(archetypeEffects).toContainText('宝具威力アップ');
   await expect(archetypeEffects).toContainText('+20%・計算外');
-  await expect(archetypeEffects).toContainText('千年城フィールドを適用');
+  await expect(archetypeEffects).not.toContainText('千年城フィールドを適用');
+  await expect(archetypeEffects).toContainText('バスターアップ：千年城');
+  await expect(archetypeEffects).toContainText('+30%・計算中');
   await expect(archetypeEffects).not.toContainText('倍率不明');
   await expect(archetypeEffects).not.toContainText('未対応');
   await page.getByLabel('宝具Lv').selectOption('5');

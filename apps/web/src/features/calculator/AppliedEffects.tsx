@@ -7,6 +7,20 @@ import { traitLabel } from './traitPresentation';
 
 const HIDDEN_MISMATCHES = new Set(['attacker_trait_mismatch', 'card_type_mismatch']);
 
+function isContextOnly(effect: ResolvedEffect) {
+  return (
+    effect.kind === null &&
+    effect.damageTraitCondition === null &&
+    (effect.contextChanges.addedFieldTraits.length > 0 ||
+      effect.contextChanges.addedRecipientTraits.length > 0)
+  );
+}
+
+function isUserControllable(effect: ResolvedEffect) {
+  if (effect.damageTraitCondition?.kind === 'npSpecial') return true;
+  return ['attacker', 'mysticCode', 'support'].includes(effect.origin);
+}
+
 function effectValueLabel(effect: ResolvedEffect) {
   if (
     effect.contextChanges.addedFieldTraits.length > 0 ||
@@ -48,7 +62,12 @@ function effectLabel(effect: ResolvedEffect) {
 }
 
 export function visibleAppliedEffects(effects: readonly ResolvedEffect[]) {
-  return effects.filter((effect) => effect.damageRelevant && !HIDDEN_MISMATCHES.has(effect.reason));
+  return effects.filter(
+    (effect) =>
+      effect.damageRelevant &&
+      !HIDDEN_MISMATCHES.has(effect.reason) &&
+      !(isContextOnly(effect) && !isUserControllable(effect)),
+  );
 }
 
 export function AppliedEffects({
@@ -93,7 +112,7 @@ export function AppliedEffects({
                   imageKey: effectSourceImage(effect, servants, craftEssence),
                 },
               ]}
-              {...(effect.state !== 'unsupported'
+              {...(effect.state !== 'unsupported' && isUserControllable(effect)
                 ? { onToggle: (active: boolean) => onToggle(effect.effectKey, active) }
                 : {})}
             />
