@@ -5,7 +5,7 @@
 - Status: in progress
 - Priority: evidence completeness before exact labels
 
-## 現行precision経路
+## Q3完了時点のprecision経路
 
 Q3完了時点では、次の問題が残る。
 
@@ -92,3 +92,25 @@ evidenceを持たない旧resultを現行resultとして読まない。結果sch
 ## Q4開始判断
 
 Q4-D1〜D6を採用する。現在の`exact`表示を互換維持せず、証拠が不足する経路は`approximate`へ正しく降格させる。数値意味が未解決な経路は`approximate`で隠さず、引き続き数値なし`unsupported`とする。
+
+## 実装チェックポイント 1
+
+- Commits:
+  - `1f77498 refactor(calc): derive precision from evidence`
+  - `56c8f06 refactor(calc): remove release precision flag`
+- result schemaへ必須evidenceを追加し、schema version 6・engine version 4.0.0へ更新した。
+- kernel、master normalization、9種Function、8種effect operation、manual final modifiersをapplication registryへ登録した。
+- Functionとeffect operationは独立differential未完のためprovisionalを維持する。従来の`exact`期待は互換維持せず`approximate`へ変更した。
+- 単発計算とrankingは、使用したevidence keyだけを合成して同じ評価関数からprecisionを得る。
+- 未登録evidenceは単発計算・rankingとも数値なし`unsupported`になる。
+- `VITE_ENGINE_RELEASE_VALIDATED`、`ENGINE_RELEASE_VALIDATED`、`releaseValidated`の実装経路を削除し、旧flag testも根拠追跡testへ置換した。
+- 旧schemaまたは旧engineの計算結果は現行result schemaで拒否する。
+
+検証結果:
+
+- `pnpm typecheck`: success
+- `pnpm test`: 18 files / 110 tests passed
+- `pnpm lint`: success
+- `pnpm build`: success
+
+Q4は継続する。次のゲートはFunction別golden／differentialであり、現時点ではFunction evidenceをvalidatedへ昇格しない。

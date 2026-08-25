@@ -17,7 +17,7 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 
 機能範囲は `docs/fgo-lab-requirements-v0.3.md`、計算仕様と検証観点は `docs/damage-calculation-review.md`、破壊的変更を含む実装方針は `docs/adr/008-refactoring-contract.md` を正とする。本計画は `docs/implementation-plan.md` のM3、M6、M7、M9のうち計算品質に関係する作業順を具体化し、その範囲では `docs/demo-feature-restoration-plan.md` のD2、D3、D4、D7、D9より優先する。
 
-本計画の完了までは、火力ランキングを完成機能として扱わず、`VITE_ENGINE_RELEASE_VALIDATED=true`を公開buildへ設定しない。
+本計画の完了までは、火力ランキングを完成機能として扱わない。公開可否は環境変数ではなく、計算結果が参照する必須evidenceの完全性を検査するゲートで判定する。
 
 ## 2. 強制する実装原則
 
@@ -191,6 +191,19 @@ calculation-application <- web / ranking worker
 ### Q4：特殊Functionとevidence-based precision
 
 状態: 進行中
+
+実装済み:
+
+- `CalculationEvidence`を結果schemaの必須要素とし、schema version 6・engine version 4.0.0へ破壊的に更新した。
+- application所有のregistryから、実行時に使用したkernel、Function、master、effect operation、manual inputのevidenceを解決する。
+- 未知evidenceは`unsupported`、使用したprovisional evidenceは`approximate`、使用した全件がvalidatedの場合だけ`exact`とする。
+- 単発計算とrankingを同じevidence評価へ接続し、環境flagと`releaseValidated`経路を削除した。
+- 旧schema・旧engineの計算結果を現行result schemaで拒否する。
+
+残作業:
+
+- Function別golden／differentialと外部比較を追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。
+- evidence inventoryと公開ゲートを確定する。
 
 作業:
 
