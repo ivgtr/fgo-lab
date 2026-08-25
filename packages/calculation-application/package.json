@@ -6,7 +6,7 @@
   "exports": "./src/index.ts",
   "dependencies": {
     "@fgo-lab/calc-core": "workspace:*",
-    "@fgo-lab/effect-resolver": "workspace:*",
+    "@fgo-lab/battle-execution": "workspace:*",
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/schema": "workspace:*"
   }

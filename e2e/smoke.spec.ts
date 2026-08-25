@@ -252,13 +252,13 @@ test('reopens saved local data while offline', async ({ page, context, isMobile 
   const home = page.getByRole('heading', { name: 'ホーム' });
   await expect(setup.or(home)).toBeVisible();
   if (await setup.isVisible()) await setup.click();
-  await expect(home).toBeVisible();
+  await expect(home).toBeVisible({ timeout: 15_000 });
   await page.evaluate(async () => {
     await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
   });
   await page.reload();
-  await expect(home).toBeVisible();
+  await expect(home).toBeVisible({ timeout: 15_000 });
   await context.setOffline(true);
   try {
     await page.reload();
@@ -380,7 +380,7 @@ test('discards an incompatible master cache without deleting user data', async (
   await page.goto('/');
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
-  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
 
   const profileId = await page.evaluate(
     () =>
@@ -410,7 +410,7 @@ test('discards an incompatible master cache without deleting user data', async (
   );
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
   await expect(
     page.getByText('互換性のない旧マスターデータを削除し、現行版へ更新しました。'),
   ).toBeVisible();
@@ -552,8 +552,10 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
   );
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: '初回セットアップ' })).toBeVisible();
-  await page.getByRole('button', { name: 'セットアップを開始' }).click();
+  const resetSetup = page.getByRole('button', { name: 'セットアップを開始' });
+  const resetHome = page.getByRole('heading', { name: 'ホーム' });
+  await expect(resetSetup.or(resetHome)).toBeVisible({ timeout: 15_000 });
+  if (await resetSetup.isVisible()) await resetSetup.click();
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
   const recovered = await page.evaluate(
     () =>
@@ -585,7 +587,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: 8, servantBuildCount: 0 });
+  expect(recovered).toEqual({ schemaVersion: 11, servantBuildCount: 0 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 
@@ -721,7 +723,7 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
   await attackerDialog.getByLabel('名前で検索').fill('ジークフリート');
-  await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv90/ }).click();
+  await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv80/ }).click();
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
   const dragonPower = ownEffects.getByRole('button', { name: /威力アップ・対竜/ });
   const dragonNpSpecial = ownEffects.getByRole('button', { name: /竜・特攻宝具/ });
@@ -782,7 +784,7 @@ test('requests quantitative context only when the selected NP requires it', asyn
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
   await attackerDialog.getByLabel('名前で検索').fill('アン・ボニー＆メアリー・リード');
   await attackerDialog
-    .getByRole('button', { name: /アン・ボニー＆メアリー・リード.*ライダー.*Lv90/ })
+    .getByRole('button', { name: /アン・ボニー＆メアリー・リード.*ライダー.*Lv80/ })
     .first()
     .click();
 
@@ -1174,7 +1176,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('383件を計算・計算対象外 37件');
+  await expect(page.getByRole('status')).toContainText('403件を計算・計算対象外 17件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );

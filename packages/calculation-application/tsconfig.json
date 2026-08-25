@@ -6,6 +6,6 @@
     { "path": "../schema" },
     { "path": "../master-data" },
     { "path": "../calc-core" },
-    { "path": "../effect-resolver" }
+    { "path": "../battle-execution" }
   ]
 }

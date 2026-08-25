@@ -1,4 +1,4 @@
-import { isDamageEffectRoutable } from '@fgo-lab/effect-resolver';
+import { canNormalizeDamageEffect } from '@fgo-lab/battle-execution';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { SupportComposition, SupportEffectRef } from '@fgo-lab/schema';
 import { ModifierChip } from '../calculator/ModifierChip';
@@ -26,7 +26,7 @@ export function SupportEffectSelector({
     return source.skills.flatMap((selection) => {
       const skill = servant?.skills.find((candidate) => candidate.id === selection.skillId);
       return (skill?.effects ?? [])
-        .filter((effect) => isDamageEffectRoutable(effect, 'support'))
+        .filter((effect) => canNormalizeDamageEffect(effect, 'support'))
         .map((effect) => ({
           ref: {
             sourceInstanceId: source.sourceInstanceId,

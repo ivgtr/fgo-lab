@@ -28,6 +28,7 @@ describe('ordered battle execution contracts', () => {
     };
     const assumption: ScenarioAssumption = {
       decisionKey: 'np:field:milleniumCastle',
+      enabled: true,
       assertion: { kind: 'trait', scope: 'field', trait: 'milleniumCastle', present: true },
     };
     expect(condition).toMatchObject({ kind: 'all' });
@@ -37,7 +38,6 @@ describe('ordered battle execution contracts', () => {
       trait: 'milleniumCastle',
       present: true,
     });
-    expect(assumption).not.toHaveProperty('conditionAsserted');
   });
 
   it('models every R1 operation as a discriminated union without servant identity', () => {

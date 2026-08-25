@@ -1,9 +1,8 @@
+import type { EffectProjection, ModifierKind } from '@fgo-lab/battle-execution';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { ResolvedBuffKind, ResolvedEffect } from '@fgo-lab/effect-resolver';
 import { effectSourceImage } from './effectSourcePresentation';
-import { traitLabel } from './traitPresentation';
 
-export type DamageEffectStackKind = ResolvedBuffKind | 'npSpecial' | 'unresolved';
+export type DamageEffectStackKind = ModifierKind | 'npSpecial' | 'unresolved';
 
 export interface DamageEffectSource {
   key: string;
@@ -13,7 +12,7 @@ export interface DamageEffectSource {
   imageKey: string | null;
   value: number | null;
   applied: boolean;
-  reason: string;
+  explanation: EffectProjection['explanation']['code'];
   kind: DamageEffectStackKind;
 }
 
@@ -57,57 +56,35 @@ const STACK_ORDER: DamageEffectStackKind[] = [
   'unresolved',
 ];
 
-function stackKind(effect: ResolvedEffect): DamageEffectStackKind | null {
-  if (effect.damageTraitCondition?.kind === 'npSpecial') return 'npSpecial';
-  if (effect.kind) return effect.kind;
-  return effect.reason === 'damage_effect_not_supported' ? 'unresolved' : null;
-}
-
-function effectLabel(effect: ResolvedEffect): string {
-  const condition = effect.damageTraitCondition?.condition;
-  if (!condition) return effect.label;
-  const traits = condition.traits.map((trait) =>
-    trait.negative ? `非${traitLabel(trait.name)}` : traitLabel(trait.name),
-  );
-  return traits.length ? `${traits.join('・')}特攻` : effect.label;
-}
-
 export function collectDamageEffectStacks({
   effects,
   servants,
   craftEssence,
 }: {
-  effects: readonly ResolvedEffect[];
+  effects: readonly EffectProjection[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
 }): DamageEffectStack[] {
   const stacks = new Map<DamageEffectStackKind, DamageEffectStack>();
-
   for (const effect of effects) {
-    const kind = stackKind(effect);
+    const kind = effect.modifier ?? (effect.outcome === 'unsupported' ? 'unresolved' : null);
     if (!kind) continue;
     const stack = stacks.get(kind) ?? { kind, label: STACK_LABELS[kind], sources: [] };
-    const key = effect.effectKey;
-    if (!stack.sources.some((source) => source.key === key)) {
+    if (!stack.sources.some((source) => source.key === effect.projectionKey))
       stack.sources.push({
-        key,
+        key: effect.projectionKey,
         sourceName: effect.sourceName,
         effectName: effect.skillName,
-        effectLabel: effectLabel(effect),
+        effectLabel: effect.label,
         imageKey: effectSourceImage(effect, servants, craftEssence),
         value: effect.value,
-        applied: effect.state === 'applied',
-        reason: effect.reason,
+        applied: effect.outcome === 'applied',
+        explanation: effect.explanation.code,
         kind,
       });
-    }
     stacks.set(kind, stack);
   }
-
-  return STACK_ORDER.flatMap((kind) => {
-    const stack = stacks.get(kind);
-    return stack ? [stack] : [];
-  });
+  return STACK_ORDER.flatMap((kind) => (stacks.has(kind) ? [stacks.get(kind)!] : []));
 }
 
 export function damageEffectValueLabel(source: DamageEffectSource): string {
@@ -124,8 +101,14 @@ export function damageEffectValueLabel(source: DamageEffectSource): string {
 
 export function damageEffectStateLabel(source: DamageEffectSource): string {
   if (source.applied) return damageEffectValueLabel(source);
-  if (source.reason === 'card_type_mismatch') return 'カード不一致';
-  if (source.reason === 'calculation_effect_disabled') return '計算外';
-  if (source.reason === 'trait_condition_mismatch') return '条件未選択';
-  return '未対応';
+  const labels: Record<DamageEffectSource['explanation'], string> = {
+    applied: damageEffectValueLabel(source),
+    disabled: '計算外',
+    conditionNotMet: '条件未選択',
+    cardMismatch: 'カード不一致',
+    targetMismatch: '対象不一致',
+    stateMutationOnly: '状態反映',
+    unresolved: '未対応',
+  };
+  return labels[source.explanation];
 }

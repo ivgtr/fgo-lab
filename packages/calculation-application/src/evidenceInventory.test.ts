@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import effectSources from '../../test-fixtures/golden/effect-sources-v1.json';
+import effectSources from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
 import externalDifferentials from '../../test-fixtures/golden/external-differentials-v1.json';
 import masterNormalization from '../../test-fixtures/golden/master-normalization-v1.json';
 import npDamage from '../../test-fixtures/golden/np-damage-v1.json';
@@ -8,7 +8,7 @@ import { calculationEvidenceRegistry } from './evidence';
 
 const expectedKeys = new Set([
   'kernel:np-damage-v1',
-  'master:normalized-v6',
+  'master:normalized-v7',
   ...[
     'standard',
     'defensePiercing',

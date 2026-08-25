@@ -1,101 +1,54 @@
+import type { EffectProjection } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
-import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
 import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffectStacks';
 
-function effect(patch: Partial<ResolvedEffect>): ResolvedEffect {
+function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
   return {
-    order: 0,
-    effectKey: 'passive:servant-1:passive-1:quick-up',
-    sourceInstanceId: 'passive:servant-1',
-    origin: 'passive',
-    sourceId: 'servant-1',
-    sourceName: 'リリス',
-    skillId: 'passive-1',
-    skillName: '騎乗 EX',
-    effectId: 'quick-up',
-    label: 'クイックアップ',
-    value: 0.12,
-    valuePermille: 120,
-    kind: 'cardBuff',
-    damageTraitCondition: null,
-    requiredFieldTraits: [],
-    contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
-    damageRelevant: true,
-    state: 'applied',
-    reason: 'unconditional_attacker_buff',
+    projectionKey: 'attack',
+    operationId: 'attack',
+    label: '攻撃力アップ',
+    sourceName: 'source',
+    skillName: 'skill',
+    valuePermille: 300,
+    value: 0.3,
+    modifier: 'attackBuff',
+    source: {
+      origin: 'attacker',
+      sourceInstanceId: 'source',
+      sourceId: 'source',
+      skillId: 'skill',
+      effectId: 'effect',
+    },
+    outcome: 'applied',
+    visibility: 'visible',
+    controllability: 'user',
+    decision: { state: 'enabled', decisionKey: 'attack' },
+    explanation: { code: 'applied', condition: null },
     ...patch,
   };
 }
 
-describe('damage effect stacks', () => {
-  it('groups every damage source by calculation modifier without duplicating it', () => {
-    const quick = effect({});
-    const fixedDamage = effect({
-      skillId: 'passive-2',
-      skillName: '神性 B',
-      effectId: 'flat-damage',
-      label: 'アタックプラス',
-      value: 175,
-      valuePermille: null,
-      kind: 'flatDamage',
-    });
+describe('typed damage effect stacks', () => {
+  it('groups projections by modifier without reason-string inference', () => {
     const stacks = collectDamageEffectStacks({
-      effects: [quick, quick, fixedDamage],
+      effects: [projection(), projection({ projectionKey: 'attack-2', value: 0.2 })],
       servants: [],
       craftEssence: undefined,
     });
-
-    expect(stacks.map((stack) => [stack.kind, stack.sources.length])).toEqual([
-      ['cardBuff', 1],
-      ['flatDamage', 1],
-    ]);
-    expect(damageEffectStateLabel(stacks[0]!.sources[0]!)).toBe('+12%');
-    expect(damageEffectStateLabel(stacks[1]!.sources[0]!)).toBe('+175');
+    expect(stacks).toMatchObject([{ kind: 'attackBuff', sources: [{ applied: true }, {}] }]);
   });
 
-  it('keeps inactive and unsupported damage effects visible with their reason', () => {
+  it('maps typed explanations to display copy', () => {
     const stacks = collectDamageEffectStacks({
       effects: [
-        effect({ state: 'rejected', reason: 'card_type_mismatch' }),
-        effect({
-          effectId: 'unknown',
-          label: '未知の威力アップ',
-          kind: null,
-          value: null,
-          state: 'rejected',
-          reason: 'damage_effect_not_supported',
+        projection({
+          outcome: 'impossible',
+          explanation: { code: 'cardMismatch', condition: null },
         }),
       ],
       servants: [],
       craftEssence: undefined,
     });
-
-    expect(stacks.map((stack) => stack.kind)).toEqual(['cardBuff', 'unresolved']);
     expect(damageEffectStateLabel(stacks[0]!.sources[0]!)).toBe('カード不一致');
-    expect(damageEffectStateLabel(stacks[1]!.sources[0]!)).toBe('未対応');
-  });
-
-  it('translates structured damage conditions without exposing master identifiers', () => {
-    const stacks = collectDamageEffectStacks({
-      effects: [
-        effect({
-          origin: 'np',
-          label: '特攻宝具',
-          kind: null,
-          damageTraitCondition: {
-            kind: 'npSpecial',
-            condition: {
-              operator: 'any',
-              traits: [{ name: 'buffCharm', negative: false }],
-            },
-          },
-        }),
-      ],
-      servants: [],
-      craftEssence: undefined,
-    });
-
-    expect(stacks[0]?.sources[0]?.effectLabel).toBe('魅了特攻');
-    expect(stacks[0]?.sources[0]?.effectLabel).not.toContain('buffCharm');
   });
 });

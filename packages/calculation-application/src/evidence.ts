@@ -47,11 +47,11 @@ const entries: CalculationEvidence[] = [
     ['atlas-neutral-arts-random-1000'],
   ),
   evidence(
-    'master:normalized-v6',
+    'master:normalized-v7',
     'Atlas JP damage Function, battle point, and effect normalization',
     'validated',
     ['Atlas Academy JP nice servant, craft essence, and mystic code datasets'],
-    ['master-normalization-v16'],
+    ['master-normalization-v17'],
   ),
   ...(
     [
@@ -95,8 +95,8 @@ const entries: CalculationEvidence[] = [
       'provisional',
       [ATLAS_DAMAGE],
       kind === 'ignoreDefense'
-        ? ['all-effect-sources-single-aggregation', 'defense-piercing-np-row']
-        : ['all-effect-sources-single-aggregation'],
+        ? ['all-effect-sources-ordered-execution', 'defense-piercing-np-row']
+        : ['all-effect-sources-ordered-execution'],
     ),
   ),
   evidence(

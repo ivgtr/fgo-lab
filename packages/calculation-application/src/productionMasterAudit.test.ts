@@ -8,23 +8,23 @@ import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 const root = resolve(import.meta.dirname, '../../..');
 
 const expectedUnsupportedFamilies = {
-  '106600': ['np_effect_not_resolved'],
+  '106600': ['unsupportedOperation'],
   '202500': ['missing_attacker_hp_ratio'],
   '203300': ['missing_attacker_hp_ratio'],
-  '305800': ['np_effect_parameter_semantics_not_resolved'],
+  '305800': ['unsupportedOperation'],
   '400900': ['missing_attacker_hp_ratio'],
-  '506000': ['np_effect_not_resolved'],
-  '605300': ['passive_effect_not_resolved'],
+  '506000': ['unsupportedOperation'],
+  '605300': ['unsupportedOperation'],
   '702500': ['missing_attacker_hp_ratio'],
-  '800100': ['np_effect_parameter_semantics_not_resolved'],
-  '1000300': ['passive_effect_not_resolved'],
-  '1102000': ['np_effect_parameter_semantics_not_resolved'],
-  '1102300': ['np_effect_parameter_semantics_not_resolved'],
-  '2300600': ['passive_effect_condition_not_resolved'],
-  '2300900': ['passive_effect_not_resolved'],
-  '2301200': ['np_effect_parameter_semantics_not_resolved'],
-  '2801300': ['np_effect_parameter_semantics_not_resolved', 'passive_effect_not_resolved'],
-  '3300200': ['missing_battle_point_phase', 'np_effect_parameter_semantics_not_resolved'],
+  '800100': ['unsupportedOperation'],
+  '1000300': ['unsupportedOperation'],
+  '1102000': ['unsupportedOperation'],
+  '1102300': ['unsupportedOperation'],
+  '2300900': ['unsupportedOperation'],
+  '2301100': ['unsupportedOperation'],
+  '2301200': ['unsupportedOperation'],
+  '2801300': ['unsupportedOperation'],
+  '3300200': ['missing_battle_point_phase', 'unsupportedOperation'],
 } as const;
 
 function reasonFamily(reason: string): string {
@@ -65,12 +65,12 @@ describe('production master damage quality ratchet', () => {
     );
     const missingCandidateValues = calculations.flatMap(({ servant, calculation }) =>
       calculation.effects.flatMap((effect) =>
-        effect.reason === 'calculation_effect_disabled' &&
-        effect.kind !== null &&
-        effect.kind !== 'ignoreDefense' &&
-        effect.kind !== 'ignoreDamageCut' &&
+        effect.explanation.code === 'disabled' &&
+        effect.modifier !== null &&
+        effect.modifier !== 'ignoreDefense' &&
+        effect.modifier !== 'ignoreDamageCut' &&
         effect.value === null
-          ? [`${servant.id}:${effect.skillId}:${effect.effectId}`]
+          ? [`${servant.id}:${effect.source.skillId}:${effect.source.effectId}`]
           : [],
       ),
     );
@@ -99,19 +99,19 @@ describe('production master damage quality ratchet', () => {
     expect(archetype?.input.fieldTraits).toContain('milleniumCastle');
     expect(
       archetype?.effects.find((effect) => effect.label === 'バスターアップ：千年城'),
-    ).toMatchObject({ value: 0.3, state: 'applied' });
+    ).toMatchObject({ value: 0.3, outcome: 'applied' });
     expect(archetype?.effects.find((effect) => effect.label === '防御力ダウン')).toMatchObject({
       value: 0.2,
-      state: 'rejected',
-      reason: 'calculation_effect_disabled',
+      outcome: 'notApplied',
+      explanation: { code: 'disabled' },
     });
     expect(soujuurou?.result.status).toBe('calculated');
     expect(soujuurou?.input.ignoreDamageCut).toBe(true);
     expect(
       soujuurou?.effects.find((effect) => effect.label === 'ダメージカット貫通'),
     ).toMatchObject({
-      kind: 'ignoreDamageCut',
-      state: 'applied',
+      modifier: 'ignoreDamageCut',
+      outcome: 'applied',
     });
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { assumptionForProjection } from '@fgo-lab/battle-execution';
 import fixture from '../../test-fixtures/master/fixture.json';
-import effectSourcesGolden from '../../test-fixtures/golden/effect-sources-v1.json';
+import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   calculationScenarioSchema,
@@ -100,13 +101,11 @@ describe('scenario calculation facade', () => {
       ...versions,
       masterDataVersion: conditionalMaster.version,
     });
-    const condition = inactive.effects.find(
-      (effect) => effect.damageTraitCondition?.kind === 'npSpecial',
-    );
+    const condition = inactive.effects.find((effect) => effect.modifier === 'npSpecial');
 
     expect(condition).toMatchObject({
-      state: 'rejected',
-      reason: 'calculation_effect_disabled',
+      outcome: 'notApplied',
+      explanation: { code: 'disabled' },
       value: 1.5,
     });
     expect(inactive.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
@@ -114,7 +113,7 @@ describe('scenario calculation facade', () => {
     const active = calculateScenario(
       {
         ...scenario,
-        effectDecisions: { [condition!.effectKey]: true },
+        effectAssumptions: [assumptionForProjection(condition!, true)],
       },
       conditionalMaster,
       { ...versions, masterDataVersion: conditionalMaster.version },
@@ -122,10 +121,10 @@ describe('scenario calculation facade', () => {
 
     expect(active.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
     expect(
-      active.effects.find((effect) => effect.effectKey === condition!.effectKey),
+      active.effects.find((effect) => effect.projectionKey === condition!.projectionKey),
     ).toMatchObject({
-      state: 'applied',
-      reason: 'np_special_condition_asserted',
+      outcome: 'applied',
+      explanation: { code: 'applied' },
     });
     expect(active.result.status).toBe('calculated');
   });
@@ -156,7 +155,9 @@ describe('scenario calculation facade', () => {
     const calculation = calculateScenario(scenario, master, versions);
 
     expect(calculation.result.status).toBe('unsupported');
-    expect(calculation.effectWarnings).toContain('craftEssence_source_missing:missing');
+    expect(calculation.effectWarnings).toContain(
+      'unsupportedOperation:craftEssence:missing:source_missing',
+    );
   });
 
   it('marks user-supplied manual final modifiers as provisional evidence', () => {
@@ -270,10 +271,18 @@ describe('scenario calculation facade', () => {
         mysticCodeId: 'combo-mc',
         skills: [{ skillId: 'mc-skill', skillLevel: 10 }],
       },
-      effectDecisions: {
-        'attacker:attacker:fixture-saber:attacker-skill:attacker-attack': true,
-        'mysticCode:mysticCode:combo-mc:mc-skill:mc-card': true,
-      },
+      effectAssumptions: [
+        {
+          decisionKey: 'attacker:attacker:fixture-saber:attacker-skill:attacker-attack',
+          enabled: true,
+          assertion: null,
+        },
+        {
+          decisionKey: 'mysticCode:mysticCode:combo-mc:mc-skill:mc-card',
+          enabled: true,
+          assertion: null,
+        },
+      ],
       support: {
         sourceTemplateId: null,
         composition: {
@@ -311,10 +320,17 @@ describe('scenario calculation facade', () => {
       damageFunction: { ignoreDefense: effectSourcesGolden.expectedIgnoreDefense },
       ignoreDamageCut: effectSourcesGolden.expectedIgnoreDamageCut,
     });
-    expect(calculation.effects.map((effect) => effect.origin)).toEqual(
-      effectSourcesGolden.sourceOrder,
-    );
-    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(calculation.effects.map((effect) => effect.source.origin)).toEqual([
+      'passive',
+      'attacker',
+      'craftEssence',
+      'support',
+      'mysticCode',
+      'np',
+      'np',
+      'np',
+      'np',
+    ]);
     expect(calculation.result).toMatchObject({
       status: 'calculated',
       precision: 'approximate',

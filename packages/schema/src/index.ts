@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 10 as const;
-export const ENGINE_VERSION = '7.2.0' as const;
+export const SCHEMA_VERSION = 11 as const;
+export const ENGINE_VERSION = '8.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -236,7 +236,27 @@ const resolvedScenarioSchema = scenarioBaseSchema
         composition: supportCompositionSchema,
       })
       .nullable(),
-    effectDecisions: z.record(z.string(), z.boolean()),
+    effectAssumptions: z.array(
+      z.object({
+        decisionKey: z.string().min(1).max(300),
+        enabled: z.boolean(),
+        assertion: z
+          .discriminatedUnion('kind', [
+            z.object({
+              kind: z.literal('trait'),
+              scope: z.enum(['attacker', 'target', 'field']),
+              trait: z.string().min(1).max(80),
+              present: z.boolean(),
+            }),
+            z.object({
+              kind: z.literal('quantity'),
+              quantity: z.enum(['attackerHpPermille', 'targetRarity', 'battlePointPhase']),
+              value: z.number().int(),
+            }),
+          ])
+          .nullable(),
+      }),
+    ),
     explicitOverrides: z.object({
       attackerAtk: z.number().int().nonnegative().max(100000).optional(),
       fouAtk: z.number().int().nonnegative().max(3000).optional(),
@@ -280,9 +300,17 @@ export type CalculationEvidence = z.infer<typeof calculationEvidenceSchema>;
 const resultBaseSchema = z.object({
   effects: z.array(
     z.object({
-      effectKey: z.string(),
-      state: z.enum(['applied', 'rejected', 'unsupported']),
-      reasonCode: z.string(),
+      projectionKey: z.string(),
+      outcome: z.enum(['applied', 'notApplied', 'notRelevant', 'impossible', 'unsupported']),
+      explanationCode: z.enum([
+        'applied',
+        'disabled',
+        'conditionNotMet',
+        'cardMismatch',
+        'targetMismatch',
+        'stateMutationOnly',
+        'unresolved',
+      ]),
     }),
   ),
   assumptions: z.array(z.string()),

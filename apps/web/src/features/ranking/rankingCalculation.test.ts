@@ -20,7 +20,7 @@ const candidate: RankingCandidate = {
   input: calculateScenario(createDefaultResolvedScenario(master, undefined), master, versions)
     .input,
   resolutionUnsupported: false,
-  resolutionEvidenceKeys: ['master:normalized-v6'],
+  resolutionEvidenceKeys: ['master:normalized-v7'],
   resolutionWarnings: [],
   classId: master.servants[0]!.classId,
   rarity: master.servants[0]!.rarity,
@@ -40,7 +40,7 @@ describe('ranking calculation', () => {
     const response = calculateRanking({
       requestId: 'request',
       candidates: [
-        { ...candidate, resolutionEvidenceKeys: ['master:normalized-v6', 'unknown:evidence'] },
+        { ...candidate, resolutionEvidenceKeys: ['master:normalized-v7', 'unknown:evidence'] },
       ],
       versions,
     });

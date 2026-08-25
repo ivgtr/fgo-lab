@@ -7,7 +7,6 @@
     { "path": "packages/calc-core" },
     { "path": "packages/battle-execution" },
     { "path": "packages/calculation-application" },
-    { "path": "packages/effect-resolver" },
     { "path": "packages/profile-domain" },
     { "path": "packages/workspace-domain" },
     { "path": "apps/web" }

@@ -10,8 +10,7 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import { applyScenarioNpDamageFunction } from '@fgo-lab/calculation-application';
-import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
+import { assumptionForProjection, type EffectProjection } from '@fgo-lab/battle-execution';
 import type {
   AttackerSkillSelection,
   DamageResolutionInput,
@@ -61,7 +60,7 @@ export function Calculator({
 }: {
   resolvedInput: DamageResolutionInput;
   scenarioInput: DamageResolutionInput;
-  resolvedEffects: readonly ResolvedEffect[];
+  resolvedEffects: readonly EffectProjection[];
   effectWarnings: readonly string[];
   result: CalculationResultValue;
   scenario: CalculationScenario;
@@ -115,8 +114,8 @@ export function Calculator({
         (copy) => copy.craftEssenceId === craftEssenceSelection.craftEssenceId,
       )
     : undefined;
-  const ownEffects = resolvedEffects.filter((effect) => effect.origin !== 'support');
-  const supportEffects = resolvedEffects.filter((effect) => effect.origin === 'support');
+  const ownEffects = resolvedEffects.filter((effect) => effect.source.origin !== 'support');
+  const supportEffects = resolvedEffects.filter((effect) => effect.source.origin === 'support');
   const supportComposition = resolvedScenario?.support?.composition;
   const supportSources = supportComposition?.sources ?? [];
   const selectedSupportEffectCount = supportComposition?.selectedEffects.length ?? 0;
@@ -132,8 +131,8 @@ export function Calculator({
   });
   const enabledAttackerSkillCount = new Set(
     resolvedEffects
-      .filter((effect) => effect.origin === 'attacker' && effect.state === 'applied')
-      .map((effect) => effect.skillId),
+      .filter((effect) => effect.source.origin === 'attacker' && effect.outcome === 'applied')
+      .map((effect) => effect.source.skillId),
   ).size;
   const classSituationLabel =
     input.classAffinity === 2
@@ -288,7 +287,7 @@ export function Calculator({
       })),
       mysticCode: null,
       support: null,
-      effectDecisions: {},
+      effectAssumptions: [],
       explicitOverrides: {
         attackerAtk: input.attackerAtk,
         fouAtk: input.fouAtk,
@@ -304,29 +303,22 @@ export function Calculator({
     if (!noblePhantasm || !damage) return;
     const level = saved?.level ?? naturalServantLevel(candidate.rarity);
     if (scenario.mode === 'manual') {
-      changeManualInput(
-        applyScenarioNpDamageFunction(
-          {
-            ...input,
-            attackerId: candidate.id,
-            attackerLevel: level,
-            attackerAtk:
-              candidate.atkByLevel[String(level)] ??
-              candidate.atkByLevel['90'] ??
-              input.attackerAtk,
-            fouAtk: saved?.fouAtk ?? 1000,
-            npLevel: Math.max(1, saved?.npLevel ?? 1),
-            npMultipliers: deriveNpMultipliers(damage, input.overcharge),
-            damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
-            cardType: noblePhantasm.card,
-            classAttackRate: resolveClassAttackRate(candidate.classId),
-            attackerHpPermille: null,
-            battlePointPhase: null,
-          },
-          damage,
-          candidate.traits,
-        ),
-      );
+      changeManualInput({
+        ...input,
+        attackerId: candidate.id,
+        attackerLevel: level,
+        attackerAtk:
+          candidate.atkByLevel[String(level)] ?? candidate.atkByLevel['90'] ?? input.attackerAtk,
+        fouAtk: saved?.fouAtk ?? 1000,
+        npLevel: Math.max(1, saved?.npLevel ?? 1),
+        npMultipliers: deriveNpMultipliers(damage, input.overcharge),
+        npSpecialMultipliers: [1, 1, 1, 1, 1],
+        damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
+        cardType: noblePhantasm.card,
+        classAttackRate: resolveClassAttackRate(candidate.classId),
+        attackerHpPermille: null,
+        battlePointPhase: null,
+      });
     } else {
       void onScenarioChange({
         ...scenario,
@@ -341,7 +333,7 @@ export function Calculator({
           skillId: skill.id,
           skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
         })),
-        effectDecisions: {},
+        effectAssumptions: [],
         attackerHpPermille: null,
         battleState: { battlePointPhase: null },
         explicitOverrides: {},
@@ -400,14 +392,13 @@ export function Calculator({
     );
     void onScenarioChange({ ...resolvedScenario, attackerSkills });
   }
-  function changeEffect(effectKey: string, active: boolean) {
-    const effect = resolvedEffects.find((candidate) => candidate.effectKey === effectKey);
+  function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
-    if (effect?.origin === 'support' && resolvedScenario.support) {
+    if (effect.source.origin === 'support' && resolvedScenario.support) {
       const ref = {
-        sourceInstanceId: effect.sourceInstanceId,
-        skillId: effect.skillId,
-        effectId: effect.effectId,
+        sourceInstanceId: effect.source.sourceInstanceId,
+        skillId: effect.source.skillId,
+        effectId: effect.source.effectId,
       };
       const current = resolvedScenario.support.composition.selectedEffects;
       const matches = (candidate: typeof ref) =>
@@ -432,7 +423,12 @@ export function Calculator({
     }
     void onScenarioChange({
       ...resolvedScenario,
-      effectDecisions: { ...resolvedScenario.effectDecisions, [effectKey]: active },
+      effectAssumptions: [
+        ...resolvedScenario.effectAssumptions.filter(
+          (assumption) => assumption.decisionKey !== effect.projectionKey,
+        ),
+        assumptionForProjection(effect, active),
+      ],
     });
   }
   function addSupportServant(servant: ServantMaster) {

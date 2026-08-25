@@ -1,42 +1,32 @@
-import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ReactNode } from 'react';
 import { effectSourceImage } from './effectSourcePresentation';
 import { ModifierChip } from './ModifierChip';
 import { traitLabel } from './traitPresentation';
 
-const HIDDEN_MISMATCHES = new Set(['attacker_trait_mismatch', 'card_type_mismatch']);
-
-function isContextOnly(effect: ResolvedEffect) {
-  return (
-    effect.kind === null &&
-    effect.damageTraitCondition === null &&
-    (effect.contextChanges.addedFieldTraits.length > 0 ||
-      effect.contextChanges.addedRecipientTraits.length > 0)
-  );
+function conditionLabel(condition: EffectProjection['explanation']['condition']): string {
+  if (!condition) return '';
+  if (condition.kind === 'trait') return traitLabel(condition.trait);
+  if (condition.kind === 'quantity' && condition.quantity === 'targetRarity')
+    return `レアリティ${condition.value}`;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.map(conditionLabel).filter(Boolean).join('・');
+  if (condition.kind === 'not') return `非${conditionLabel(condition.expression)}`;
+  return '';
 }
 
-export function isAppliedEffectUserControllable(effect: ResolvedEffect) {
-  if (isContextOnly(effect)) return false;
-  if (
-    effect.reason === 'trait_condition_mismatch' ||
-    effect.damageTraitCondition !== null ||
-    effect.requiredFieldTraits.length > 0
-  )
-    return true;
-  return ['attacker', 'mysticCode', 'support'].includes(effect.origin);
+function effectLabel(effect: EffectProjection): string {
+  if (effect.modifier !== 'npSpecial') return effect.label;
+  const condition = conditionLabel(effect.explanation.condition);
+  return condition ? `${condition}・${effect.label}` : effect.label;
 }
 
-function effectValueLabel(effect: ResolvedEffect) {
-  if (
-    effect.contextChanges.addedFieldTraits.length > 0 ||
-    effect.contextChanges.addedRecipientTraits.length > 0
-  )
-    return '条件反映';
-  if (effect.kind === 'ignoreDefense' || effect.kind === 'ignoreDamageCut') return '有効';
+function effectValueLabel(effect: EffectProjection) {
+  if (effect.modifier === 'ignoreDefense' || effect.modifier === 'ignoreDamageCut') return '有効';
   if (effect.value === null) return '倍率不明';
-  if (effect.kind === 'flatDamage') return `+${effect.value.toLocaleString('ja-JP')}`;
-  if (effect.damageTraitCondition?.kind === 'npSpecial') return `${effect.value.toFixed(2)}倍`;
+  if (effect.modifier === 'flatDamage') return `+${effect.value.toLocaleString('ja-JP')}`;
+  if (effect.modifier === 'npSpecial') return `${effect.value.toFixed(2)}倍`;
   return effect.value.toLocaleString('ja-JP', {
     style: 'percent',
     signDisplay: 'always',
@@ -44,34 +34,14 @@ function effectValueLabel(effect: ResolvedEffect) {
   });
 }
 
-function effectStateLabel(effect: ResolvedEffect) {
-  if (effect.state === 'unsupported') return '未対応';
+function effectStateLabel(effect: EffectProjection) {
+  if (effect.outcome === 'unsupported') return '未対応';
   const value = effectValueLabel(effect);
-  return effect.state === 'applied' ? `${value}・計算中` : `${value}・計算外`;
+  return effect.outcome === 'applied' ? `${value}・計算中` : `${value}・計算外`;
 }
 
-function effectLabel(effect: ResolvedEffect) {
-  if (!effect.label) {
-    const fieldTraits = effect.contextChanges.addedFieldTraits.map(traitLabel);
-    const recipientTraits = effect.contextChanges.addedRecipientTraits.map(traitLabel);
-    if (fieldTraits.length > 0) return `${fieldTraits.join('・')}フィールドを適用`;
-    if (recipientTraits.length > 0) return `${recipientTraits.join('・')}特性を付与`;
-  }
-  if (effect.damageTraitCondition?.kind !== 'npSpecial') return effect.label;
-  const conditions = effect.damageTraitCondition.condition.traits
-    .filter((trait) => !trait.negative)
-    .map((trait) => {
-      const rarity = /^rarity(\d+)$/.exec(trait.name);
-      return rarity ? `レアリティ${rarity[1]}` : traitLabel(trait.name);
-    });
-  return conditions.length ? `${conditions.join('・')}・${effect.label}` : effect.label;
-}
-
-export function visibleAppliedEffects(effects: readonly ResolvedEffect[]) {
-  return effects.filter(
-    (effect) =>
-      effect.damageRelevant && !HIDDEN_MISMATCHES.has(effect.reason) && !isContextOnly(effect),
-  );
+export function visibleAppliedEffects(effects: readonly EffectProjection[]) {
+  return effects.filter((effect) => effect.visibility === 'visible');
 }
 
 export function AppliedEffects({
@@ -83,10 +53,10 @@ export function AppliedEffects({
   action,
 }: {
   title: string;
-  effects: readonly ResolvedEffect[];
+  effects: readonly EffectProjection[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
-  onToggle: (effectKey: string, active: boolean) => void;
+  onToggle: (projection: EffectProjection, active: boolean) => void;
   action?: ReactNode;
 }) {
   const visibleEffects = visibleAppliedEffects(effects);
@@ -105,19 +75,19 @@ export function AppliedEffects({
         <ul className="modifier-chip-list">
           {visibleEffects.map((effect) => (
             <ModifierChip
-              key={effect.effectKey}
-              active={effect.state === 'applied'}
+              key={effect.projectionKey}
+              active={effect.outcome === 'applied'}
               label={effectLabel(effect)}
               detail={effectStateLabel(effect)}
               sources={[
                 {
-                  key: `${effect.effectKey}:source`,
+                  key: `${effect.projectionKey}:source`,
                   label: `${effect.sourceName}・${effect.skillName}`,
                   imageKey: effectSourceImage(effect, servants, craftEssence),
                 },
               ]}
-              {...(effect.state !== 'unsupported' && isAppliedEffectUserControllable(effect)
-                ? { onToggle: (active: boolean) => onToggle(effect.effectKey, active) }
+              {...(effect.outcome !== 'unsupported' && effect.controllability === 'user'
+                ? { onToggle: (active: boolean) => onToggle(effect, active) }
                 : {})}
             />
           ))}

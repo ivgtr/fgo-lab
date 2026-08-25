@@ -14,7 +14,7 @@
     { "path": "../../packages/master-data" },
     { "path": "../../packages/calc-core" },
     { "path": "../../packages/calculation-application" },
-    { "path": "../../packages/effect-resolver" },
+    { "path": "../../packages/battle-execution" },
     { "path": "../../packages/profile-domain" },
     { "path": "../../packages/workspace-domain" }
   ]

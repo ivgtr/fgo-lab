@@ -44,6 +44,7 @@ export type ExecutionPhase =
   | 'support'
   | 'mysticCode'
   | 'beforeNpDamage'
+  | 'damageEvaluation'
   | 'npDamage';
 
 interface OperationBase {
@@ -53,6 +54,7 @@ interface OperationBase {
   source: OperationSource;
   condition: ConditionExpression;
   decisionKey: string | null;
+  enabledByDefault: boolean;
   evidence: OperationEvidence;
   presentation: { label: string; sourceName: string; skillName: string };
 }
@@ -67,7 +69,9 @@ export type ModifierKind =
   | 'eventDamageBuff'
   | 'specialDamageBuff'
   | 'powerMod'
-  | 'flatDamage';
+  | 'flatDamage'
+  | 'ignoreDefense'
+  | 'ignoreDamageCut';
 
 export type BattleOperation =
   | (OperationBase & {
@@ -95,30 +99,8 @@ export type BattleOperation =
   | (OperationBase & { kind: 'ignoreDamageCut' })
   | (OperationBase & {
       kind: 'executeNpDamage';
-      function:
-        | { kind: 'standard' }
-        | { kind: 'defensePiercing' }
-        | { kind: 'trait'; trait: string; correctionPermille: number }
-        | {
-            kind: 'traitCount';
-            scope: ActorScope;
-            traits: readonly string[];
-            correctionPermille: number;
-            maximumCount: number;
-          }
-        | { kind: 'stateTrait'; trait: string; correctionPermille: number }
-        | { kind: 'hpRatioLow'; maximumCorrectionPermille: number }
-        | { kind: 'targetRarity'; rarities: readonly number[]; correctionPermille: number }
-        | {
-            kind: 'traitExpression';
-            expression: ConditionExpression;
-            correctionPermille: number;
-          }
-        | {
-            kind: 'battlePointPhase';
-            correctionPermille: number;
-            maximumPhase: number;
-          };
+      damage: NpDamageSpec;
+      overcharge: number;
       npMultipliers: readonly [number, number, number, number, number];
     });
 
@@ -139,6 +121,7 @@ export interface BattleState {
     battlePointPhase: number | null;
   };
   modifiers: readonly AppliedModifier[];
+  modifierRates: Partial<Record<ModifierKind, number>>;
   ignoreDefense: boolean;
   ignoreDamageCut: boolean;
   evidence: readonly OperationEvidence[];
@@ -147,13 +130,15 @@ export interface BattleState {
 
 export type ScenarioAssumption = {
   decisionKey: string;
+  enabled: boolean;
   assertion:
     | { kind: 'trait'; scope: TraitScope; trait: string; present: boolean }
     | {
         kind: 'quantity';
         quantity: keyof BattleState['quantities'];
         value: number;
-      };
+      }
+    | null;
 };
 
 export type ExecutionIssue =
@@ -184,7 +169,10 @@ export interface EffectProjection {
   sourceName: string;
   skillName: string;
   valuePermille: number | null;
+  value: number | null;
   modifier: ModifierKind | 'npSpecial' | null;
+  source: OperationSource;
+  outcome: OperationOutcome;
   visibility: 'visible' | 'hidden';
   controllability: 'automatic' | 'user';
   decision:
@@ -210,3 +198,11 @@ export interface BattleExecutionResult {
   precision: 'exact' | 'approximate' | 'unsupported';
   issues: readonly ExecutionIssue[];
 }
+
+export {
+  assumptionForProjection,
+  canNormalizeDamageEffect,
+  executeOrderedScenario,
+  type OrderedScenarioExecution,
+} from './engine';
+import type { NpDamageSpec } from '@fgo-lab/master-data';
