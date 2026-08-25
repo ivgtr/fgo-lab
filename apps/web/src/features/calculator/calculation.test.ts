@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
+import effectSourcesGolden from '../../../../../packages/test-fixtures/golden/effect-sources-v1.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   ENGINE_VERSION,
@@ -29,6 +30,23 @@ const versions: VersionContext = {
   masterDataLocale: 'ja-JP',
 };
 
+function modifierEffect(
+  id: string,
+  buffType: string,
+  value: number,
+  cardTypes: ('buster' | 'arts' | 'quick')[] = [],
+) {
+  return {
+    id,
+    type: 'addStateShort',
+    target: 'self',
+    label: id,
+    parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
+    buffTypes: [buffType],
+    cardTypes,
+  };
+}
+
 describe('calculation application logic', () => {
   it('creates and resolves a calculation without browser or React state', () => {
     const input = createDefaultDamageResolutionInput(master, undefined);
@@ -40,6 +58,147 @@ describe('calculation application logic', () => {
     expect(calculation.result.rows).toHaveLength(5);
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
     expect(calculation.result.precision).toBe('exact');
+  });
+
+  it('matches the all-source single-aggregation golden', () => {
+    const baseServant = fixture.servants[0]!;
+    const attacker = {
+      ...baseServant,
+      passives: [
+        {
+          id: 'passive-skill',
+          slot: 0,
+          priority: 0,
+          name: 'passive',
+          detail: '',
+          imageKey: null,
+          effects: [modifierEffect('passive-card', 'upCommandall', 100, ['buster'])],
+        },
+      ],
+      skills: [
+        {
+          id: 'attacker-skill',
+          slot: 1,
+          priority: 1,
+          name: 'attacker',
+          detail: '',
+          imageKey: null,
+          effects: [modifierEffect('attacker-attack', 'upAtk', 200)],
+        },
+      ],
+      noblePhantasms: baseServant.noblePhantasms.map((np) => ({
+        ...np,
+        effects: [
+          { ...modifierEffect('np-attack', 'upAtk', 600), timing: 'beforeDamage' as const },
+        ],
+      })),
+    };
+    const support = {
+      ...baseServant,
+      id: 'combo-support',
+      name: 'support',
+      passives: [],
+      noblePhantasms: [],
+      skills: [
+        {
+          id: 'support-skill',
+          slot: 1,
+          priority: 1,
+          name: 'support',
+          detail: '',
+          imageKey: null,
+          effects: [modifierEffect('support-power', 'upDamage', 500)],
+        },
+      ],
+    };
+    const combinationMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [attacker, support],
+      craftEssences: [
+        {
+          ...fixture.craftEssences[0]!,
+          effects: [modifierEffect('ce-np', 'upNpdamage', 300)],
+        },
+      ],
+      mysticCodes: [
+        {
+          id: 'combo-mc',
+          name: 'mystic',
+          maxLevel: 10,
+          imageKey: null,
+          skills: [
+            {
+              id: 'mc-skill',
+              slot: 1,
+              priority: 1,
+              name: 'mystic',
+              detail: '',
+              imageKey: null,
+              effects: [modifierEffect('mc-card', 'upCommandall', 400, ['buster'])],
+            },
+          ],
+        },
+      ],
+    });
+    const input = {
+      ...createDefaultDamageResolutionInput(combinationMaster, undefined),
+      classAffinity: 1,
+    };
+    const calculation = calculateResolvedDamage(
+      input,
+      {
+        attackerSource: 'master',
+        effectMode: 'resolved',
+        attackerSkills: [{ skillId: 'attacker-skill', skillLevel: 10 }],
+        mysticCode: {
+          mysticCodeId: 'combo-mc',
+          skills: [{ skillId: 'mc-skill', skillLevel: 10 }],
+        },
+        effectOverrides: {
+          'attacker:attacker:fixture-saber:attacker-skill:attacker-attack': true,
+          'mysticCode:mysticCode:combo-mc:mc-skill:mc-card': true,
+        },
+        support: {
+          sourceTemplateId: null,
+          composition: {
+            sources: [
+              {
+                sourceInstanceId: 'support-1',
+                servantId: 'combo-support',
+                skills: [{ skillId: 'support-skill', skillLevel: 10 }],
+              },
+            ],
+            selectedEffects: [
+              {
+                sourceInstanceId: 'support-1',
+                skillId: 'support-skill',
+                effectId: 'support-power',
+              },
+            ],
+          },
+        },
+        craftEssence: {
+          source: 'master',
+          craftEssenceId: 'fixture-ce',
+          copyId: null,
+          level: 1,
+          limitBreak: 0,
+        },
+      },
+      combinationMaster,
+      { ...versions, masterDataVersion: combinationMaster.version },
+      { releaseValidated: true },
+    );
+    expect(calculation.input).toMatchObject(effectSourcesGolden.expectedModifiers);
+    expect(calculation.effects.map((effect) => effect.origin)).toEqual(
+      effectSourcesGolden.sourceOrder,
+    );
+    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(calculation.result).toMatchObject({
+      status: 'calculated',
+      precision: 'exact',
+      rows: effectSourcesGolden.expectedRows,
+    });
   });
 
   it('stores selected conditions without master-derived damage values', () => {

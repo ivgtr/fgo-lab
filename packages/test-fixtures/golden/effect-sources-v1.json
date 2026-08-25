@@ -1,0 +1,21 @@
+{
+  "caseId": "all-effect-sources-single-aggregation",
+  "description": "passive、概念礼装、自身スキル、魔術礼装、支援、宝具前効果をcanonical順で一度だけ集約する",
+  "reviewedAt": "2026-08-25",
+  "engineVersion": "3.0.0",
+  "sourceOrder": ["passive", "craftEssence", "attacker", "mysticCode", "support", "np"],
+  "expectedModifiers": {
+    "attackBuff": 0.8,
+    "cardBuff": 0.5,
+    "npDamageBuff": 0.3,
+    "powerMod": 0.5
+  },
+  "expectedRows": [
+    { "npLevel": 1, "minimum": 49797, "average": 55302.905, "maximum": 60808 },
+    { "npLevel": 2, "minimum": 66397, "average": 73737.41, "maximum": 81078 },
+    { "npLevel": 3, "minimum": 74696, "average": 82954.5, "maximum": 91213 },
+    { "npLevel": 4, "minimum": 78846, "average": 87563.27, "maximum": 96280 },
+    { "npLevel": 5, "minimum": 82996, "average": 92171.895, "maximum": 101348 }
+  ],
+  "reviewStatus": "synthetic-source-composition-reviewed; external differential pending"
+}
