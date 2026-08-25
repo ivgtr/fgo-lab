@@ -94,6 +94,45 @@ function hasCanonicalInputConflict(input: {
 }
 
 describe('production master damage quality ratchet', () => {
+  it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '202500')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    for (const value of [-100, 2_000]) {
+      const calculation = calculateScenario(
+        {
+          ...scenario,
+          worldFactAssertions: [
+            {
+              decisionKey: 'world:attacker-hp',
+              fact: { kind: 'quantity', quantity: 'attackerHpPermille', value },
+            },
+          ],
+        },
+        master,
+        versions,
+      );
+      expect(calculation.result.status, String(value)).toBe('unsupported');
+      expect(calculation.result.rows, String(value)).toEqual([]);
+      expect(calculation.input.attackerHpPermille, String(value)).toBeNull();
+      expect(calculation.effectWarnings, String(value)).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('constraintValidationUnsupported:world:attacker-hp'),
+        ]),
+      );
+    }
+  });
+
   it('keeps representative OR conditions user-controllable and effect-local', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),

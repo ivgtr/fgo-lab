@@ -173,6 +173,14 @@ describe('scenario calculation facade', () => {
                   'self',
                   traitConditions('attributeEarth', 'fieldHell'),
                 ),
+                modifierEffect(
+                  'earth-power-b',
+                  'upDamage',
+                  500,
+                  [],
+                  'self',
+                  traitConditions('attributeEarth', 'fieldHell'),
+                ),
               ],
             },
           ],
@@ -189,6 +197,7 @@ describe('scenario calculation facade', () => {
     });
     const sky = inactive.effects.find((effect) => effect.label === 'sky-power')!;
     const earth = inactive.effects.find((effect) => effect.label === 'earth-power')!;
+    const earthB = inactive.effects.find((effect) => effect.label === 'earth-power-b')!;
     const skyScenario = applyEffectProjectionDecision(scenario, sky, true);
 
     const skyOnly = calculateScenario(skyScenario, exclusiveMaster, {
@@ -219,6 +228,36 @@ describe('scenario calculation facade', () => {
     expect(
       conflict.effects
         .filter((effect) => ['sky-power', 'earth-power'].includes(effect.label))
+        .map((effect) => effect.outcome),
+    ).toEqual(['notApplied', 'notApplied']);
+
+    const fixedFactConflict = calculateScenario(
+      {
+        ...applyEffectProjectionDecision(
+          applyEffectProjectionDecision(scenario, earth, true),
+          earthB,
+          true,
+        ),
+        worldFactAssertions: [
+          {
+            decisionKey: 'world:sky',
+            fact: {
+              kind: 'trait',
+              scope: 'target',
+              trait: 'attributeSky',
+              present: true,
+            },
+          },
+        ],
+      },
+      exclusiveMaster,
+      { ...versions, masterDataVersion: exclusiveMaster.version },
+    );
+    expect(fixedFactConflict.result.status).toBe('unsupported');
+    expect(fixedFactConflict.input.powerMod).toBe(0);
+    expect(
+      fixedFactConflict.effects
+        .filter((effect) => ['earth-power', 'earth-power-b'].includes(effect.label))
         .map((effect) => effect.outcome),
     ).toEqual(['notApplied', 'notApplied']);
   });

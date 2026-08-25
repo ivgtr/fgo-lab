@@ -171,7 +171,10 @@ export type ConstraintValidationIssue =
       kind: 'constraintValidationUnsupported';
       sourceKeys: readonly string[];
       reason:
-        'unsupportedCondition' | 'constraintComplexityExceeded' | 'unrepresentableQuantityRange';
+        | 'unsupportedCondition'
+        | 'constraintComplexityExceeded'
+        | 'unrepresentableQuantityRange'
+        | 'quantityFactOutOfDomain';
     };
 
 export type ConditionConstraintConflict =
@@ -270,7 +273,12 @@ export {
   executeOrderedScenario,
   type OrderedScenarioExecution,
 } from './engine';
-export { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
+export {
+  canonicalExclusiveGroup,
+  canonicalExclusiveTraits,
+  impliedTraitConstraintScopes,
+  traitConditionReadScopes,
+} from './conditionSemantics';
 export {
   applyNpDamageOperation,
   evaluateNpDamageOperation,

@@ -1,7 +1,16 @@
 import { z } from 'zod';
+import { quantityFactValueSchema, worldFactQuantitySchema } from './quantityFacts';
 
-export const SCHEMA_VERSION = 13 as const;
-export const ENGINE_VERSION = '11.0.0' as const;
+export {
+  isQuantityFactValueInDomain,
+  QUANTITY_FACT_DOMAINS,
+  quantityFactValueSchema,
+  worldFactQuantitySchema,
+  type QuantityFactName,
+} from './quantityFacts';
+
+export const SCHEMA_VERSION = 14 as const;
+export const ENGINE_VERSION = '11.1.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -147,10 +156,10 @@ export const damageResolutionInputSchema = z.object({
   ignoreDamageCut: z.boolean().default(false),
   fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
   attackerStateTraits: z.array(z.string().min(1).max(80)).max(100),
-  attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
-  targetRarity: z.number().int().min(0).max(5).nullable(),
+  attackerHpPermille: quantityFactValueSchema('attackerHpPermille').nullable(),
+  targetRarity: quantityFactValueSchema('targetRarity').nullable(),
   targetStateTraits: z.array(z.string().min(1).max(80)).max(100),
-  battlePointPhase: z.number().int().nonnegative().nullable(),
+  battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
   target: z.object({
     classId: z.string().min(1).max(40),
     attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
@@ -204,8 +213,10 @@ const scenarioBaseSchema = z
         attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
       })
       .strict(),
-    attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
-    battleState: z.object({ battlePointPhase: z.number().int().nonnegative().nullable() }),
+    attackerHpPermille: quantityFactValueSchema('attackerHpPermille').nullable(),
+    battleState: z.object({
+      battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
+    }),
     assumptions: z.object({
       classAffinity: z.number().min(0).max(5),
       attributeAffinity: z.number().min(0).max(5),
@@ -253,11 +264,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
             trait: z.string().min(1).max(80),
             present: z.boolean(),
           }),
-          z.object({
-            kind: z.literal('quantity'),
-            quantity: z.enum(['attackerHpPermille', 'targetRarity', 'battlePointPhase']),
-            value: z.number().int(),
-          }),
+          worldFactQuantitySchema,
         ]),
       }),
     ),

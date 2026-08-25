@@ -1049,7 +1049,11 @@ export function executeOrderedScenario(
     initialConstraintValidation.status === 'satisfied' ? [] : [initialConstraintValidation.issue];
   if (initialConstraintValidation.status === 'satisfied')
     state = applyWorldFacts(state, scenario.worldFactAssertions);
-  const invalidDecisionKeys = new Set(constraintIssues.flatMap((issue) => [...issue.sourceKeys]));
+  const invalidDecisionKeys = new Set(
+    initialConstraintValidation.status === 'satisfied'
+      ? []
+      : activeConditionConstraints.map((constraint) => constraint.sourceKey),
+  );
   const resolvedCompileProjections = compileProjections.map((projection) => {
     const choice = decisions.get(projection.projectionKey);
     const enabled =

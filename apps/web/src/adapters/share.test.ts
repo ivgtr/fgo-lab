@@ -14,7 +14,12 @@ import {
   calculateScenario,
   createDefaultResolvedScenario,
 } from '@fgo-lab/calculation-application';
-import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import {
+  APP_VERSION,
+  ENGINE_VERSION,
+  SCHEMA_VERSION,
+  type CalculationShareSnapshot,
+} from '@fgo-lab/schema';
 
 const master = masterSnapshotSchema.parse(fixture);
 const versions = {
@@ -39,13 +44,13 @@ describe('portable input limits', () => {
 
   it('round-trips only a reproducible current-master calculation', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
-    const snapshot = {
+    const snapshot: CalculationShareSnapshot = {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-25T00:00:00.000Z',
       scenario,
       result: calculateScenario(scenario, master, versions).result,
-    } as const;
+    };
     const restored = readShareFragment(`#${createShareFragment(snapshot)}`);
 
     expect(restored && validateCalculationShareSnapshot(restored, master)).toEqual(snapshot);
@@ -91,6 +96,27 @@ describe('portable input limits', () => {
     expect(() => validateCalculationShareSnapshot(snapshot, master)).toThrow(
       'share_master_version_mismatch',
     );
+  });
+
+  it('rejects an out-of-domain quantity fact while decoding a crafted share', () => {
+    const scenario = createDefaultResolvedScenario(master, undefined);
+    const snapshot: CalculationShareSnapshot = {
+      kind: 'fgo-lab-calculation-share',
+      schemaVersion: SCHEMA_VERSION,
+      sharedAt: '2026-08-26T00:00:00.000Z',
+      scenario: {
+        ...scenario,
+        worldFactAssertions: [
+          {
+            decisionKey: 'crafted:hp',
+            fact: { kind: 'quantity', quantity: 'attackerHpPermille', value: -100 },
+          },
+        ],
+      },
+      result: calculateScenario(scenario, master, versions).result,
+    };
+
+    expect(() => readShareFragment(`#${createShareFragment(snapshot)}`)).toThrow();
   });
 
   it('fails closed on crafted cross-domain fact and effect decisions', () => {

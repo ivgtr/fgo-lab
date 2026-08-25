@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ConditionExpression } from './index';
+import { QUANTITY_FACT_DOMAINS, type QuantityFactName } from '@fgo-lab/schema';
+import type { ConditionExpression, TraitScope } from './index';
 import { validateConstraintSet, type FixedConstraintFact } from './constraints';
 
 const trait = (
   sourceKey: string,
-  scope: 'target' | 'field',
+  scope: TraitScope,
   name: string,
   present = true,
 ): FixedConstraintFact => ({
@@ -126,6 +127,82 @@ describe('unified constraint validation', () => {
         expressions: [rarityCondition(5)],
       }).status,
     ).toBe('satisfied');
+  });
+
+  it('rejects fixed quantity facts outside their canonical domains', () => {
+    for (const quantity of Object.keys(QUANTITY_FACT_DOMAINS) as QuantityFactName[]) {
+      const domain = QUANTITY_FACT_DOMAINS[quantity];
+      for (const value of [domain.min, domain.max])
+        expect(
+          validateConstraintSet({
+            fixedFacts: [
+              { sourceKey: `world:${quantity}`, fact: { kind: 'quantity', quantity, value } },
+            ],
+            expressions: [],
+          }).status,
+          `${quantity}:${String(value)}`,
+        ).toBe('satisfied');
+    }
+    for (const [quantity, values] of [
+      ['attackerHpPermille', [-1, 1_001]],
+      ['targetRarity', [-1, 6]],
+      ['battlePointPhase', [-1, 11]],
+    ] as const)
+      for (const value of values)
+        expect(
+          validateConstraintSet({
+            fixedFacts: [
+              { sourceKey: `world:${quantity}`, fact: { kind: 'quantity', quantity, value } },
+            ],
+            expressions: [],
+          }),
+          `${quantity}:${String(value)}`,
+        ).toEqual({
+          status: 'unsupported',
+          issue: {
+            kind: 'constraintValidationUnsupported',
+            sourceKeys: [`world:${quantity}`],
+            reason: 'quantityFactOutOfDomain',
+          },
+        });
+  });
+
+  it('uses canonical actor scope semantics for fixed facts and conditions', () => {
+    expect(
+      validateConstraintSet({
+        fixedFacts: [trait('world:super-giant', 'targetState', 'superGiant')],
+        expressions: [
+          condition('effect:not-super-giant', {
+            kind: 'trait',
+            scope: 'target',
+            trait: 'superGiant',
+            present: false,
+          }),
+        ],
+      }),
+    ).toMatchObject({
+      status: 'conflict',
+      issue: { conflicts: [{ kind: 'traitPolarity', scope: 'target', trait: 'superGiant' }] },
+    });
+  });
+
+  it('attributes an initial conflict to every selected condition constraint', () => {
+    const earth = (sourceKey: string) =>
+      condition(sourceKey, {
+        kind: 'trait',
+        scope: 'target',
+        trait: 'attributeEarth',
+        present: true,
+      });
+    const result = validateConstraintSet({
+      fixedFacts: [trait('world:sky', 'target', 'attributeSky')],
+      expressions: [earth('effect:earth:a'), earth('effect:earth:b')],
+    });
+    expect(result.status).toBe('conflict');
+    if (result.status !== 'conflict') throw new Error('constraint conflict expected');
+    expect(result.issue.sourceKeys).toEqual(
+      expect.arrayContaining(['world:sky', 'effect:earth:a', 'effect:earth:b']),
+    );
   });
 
   it('normalizes integer quantity ranges through NOT and fails on an empty range', () => {

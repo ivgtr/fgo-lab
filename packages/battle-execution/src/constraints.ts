@@ -7,7 +7,12 @@ import type {
   TraitScope,
   WorldFactAssertion,
 } from './index';
-import { canonicalExclusiveGroup } from './conditionSemantics';
+import {
+  isQuantityFactValueInDomain,
+  QUANTITY_FACT_DOMAINS,
+  type QuantityFactName,
+} from '@fgo-lab/schema';
+import { canonicalExclusiveGroup, impliedTraitConstraintScopes } from './conditionSemantics';
 
 export const MAX_CONSTRAINT_ALTERNATIVES = 2_048;
 export const MAX_CONSTRAINT_LITERALS = 128;
@@ -29,7 +34,7 @@ export type ConstraintValidationResult =
   | { status: 'conflict'; issue: ConstraintValidationIssue }
   | { status: 'unsupported'; issue: ConstraintValidationIssue };
 
-type QuantityName = Extract<WorldFactAssertion['fact'], { kind: 'quantity' }>['quantity'];
+type QuantityName = QuantityFactName;
 type Literal =
   | {
       kind: 'trait';
@@ -61,12 +66,6 @@ interface ConflictDetail {
   sourceKeys: readonly string[];
 }
 
-const QUANTITY_DOMAIN: Record<QuantityName, { min: number; max: number }> = {
-  attackerHpPermille: { min: 0, max: 1_000 },
-  targetRarity: { min: 0, max: 5 },
-  battlePointPhase: { min: 0, max: Number.MAX_SAFE_INTEGER },
-};
-
 function unique(values: readonly string[]): string[] {
   return [...new Set(values)];
 }
@@ -78,7 +77,7 @@ function quantityRanges(
   negated: boolean,
 ): readonly { min: number; max: number }[] | null {
   if (!Number.isFinite(value)) return null;
-  const domain = QUANTITY_DOMAIN[quantity];
+  const domain = QUANTITY_FACT_DOMAINS[quantity];
   const effectiveComparison = negated
     ? comparison === 'lessThan'
       ? 'atLeast'
@@ -127,15 +126,16 @@ function compileExpression(
       return {
         status: 'supported',
         alternatives: [
-          [
-            {
-              kind: 'trait',
-              scope: expression.scope,
-              trait: expression.trait,
-              present: negated ? !expression.present : expression.present,
-              sourceKey,
-            },
-          ],
+          impliedTraitConstraintScopes(
+            expression.scope,
+            negated ? !expression.present : expression.present,
+          ).map((scope) => ({
+            kind: 'trait',
+            scope,
+            trait: expression.trait,
+            present: negated ? !expression.present : expression.present,
+            sourceKey,
+          })),
         ],
       };
     case 'card': {
@@ -309,19 +309,33 @@ function deduplicate(alternatives: Alternatives): Alternatives {
   });
 }
 
-function fixedLiteral(item: FixedConstraintFact): Literal {
-  if (item.fact.kind === 'trait') return { ...item.fact, sourceKey: item.sourceKey };
-  if (item.fact.kind === 'card') return { ...item.fact, sourceKey: item.sourceKey };
-  return {
-    kind: 'quantityRange',
-    quantity: item.fact.quantity,
-    min: item.fact.value,
-    max: item.fact.value,
-    sourceKey: item.sourceKey,
-  };
+function fixedLiterals(item: FixedConstraintFact): Literal[] {
+  if (item.fact.kind === 'trait') {
+    const { scope: assertedScope, trait, present } = item.fact;
+    return impliedTraitConstraintScopes(assertedScope, present).map((scope) => ({
+      kind: 'trait',
+      scope,
+      trait,
+      present,
+      sourceKey: item.sourceKey,
+    }));
+  }
+  if (item.fact.kind === 'card') return [{ ...item.fact, sourceKey: item.sourceKey }];
+  return [
+    {
+      kind: 'quantityRange',
+      quantity: item.fact.quantity,
+      min: item.fact.value,
+      max: item.fact.value,
+      sourceKey: item.sourceKey,
+    },
+  ];
 }
 
-function conflictIssue(details: readonly ConflictDetail[]): ConstraintValidationIssue {
+function conflictIssue(
+  details: readonly ConflictDetail[],
+  expressionSourceKeys: readonly string[] = [],
+): ConstraintValidationIssue {
   const uniqueDetails = details.filter(
     (detail, index, all) =>
       all.findIndex(
@@ -330,7 +344,10 @@ function conflictIssue(details: readonly ConflictDetail[]): ConstraintValidation
   );
   return {
     kind: 'constraintConflict',
-    sourceKeys: unique(uniqueDetails.flatMap((detail) => detail.sourceKeys)),
+    sourceKeys: unique([
+      ...uniqueDetails.flatMap((detail) => detail.sourceKeys),
+      ...expressionSourceKeys,
+    ]),
     conflicts: uniqueDetails.map((detail) => detail.conflict),
   };
 }
@@ -342,7 +359,25 @@ export function validateConstraintSet({
   fixedFacts: readonly FixedConstraintFact[];
   expressions: readonly SatisfiableConditionConstraint[];
 }): ConstraintValidationResult {
-  const fixed = fixedFacts.map(fixedLiteral);
+  const expressionSourceKeys = expressions.map((expression) => expression.sourceKey);
+  const invalidQuantityFacts = fixedFacts.filter(
+    (item) =>
+      item.fact.kind === 'quantity' &&
+      !isQuantityFactValueInDomain(item.fact.quantity, item.fact.value),
+  );
+  if (invalidQuantityFacts.length > 0)
+    return {
+      status: 'unsupported',
+      issue: {
+        kind: 'constraintValidationUnsupported',
+        sourceKeys: unique([
+          ...invalidQuantityFacts.map((fact) => fact.sourceKey),
+          ...expressionSourceKeys,
+        ]),
+        reason: 'quantityFactOutOfDomain',
+      },
+    };
+  const fixed = fixedFacts.flatMap(fixedLiterals);
   if (fixed.length > MAX_CONSTRAINT_LITERALS)
     return {
       status: 'unsupported',
@@ -353,7 +388,11 @@ export function validateConstraintSet({
       },
     };
   const fixedConflicts = analyzeLiterals(fixed);
-  if (fixedConflicts.length) return { status: 'conflict', issue: conflictIssue(fixedConflicts) };
+  if (fixedConflicts.length)
+    return {
+      status: 'conflict',
+      issue: conflictIssue(fixedConflicts, expressionSourceKeys),
+    };
 
   let candidates: Alternatives = [fixed];
   const activeSourceKeys = fixedFacts.map((fact) => fact.sourceKey);
@@ -402,10 +441,10 @@ export function validateConstraintSet({
         status: 'conflict',
         issue:
           conflicts.length > 0
-            ? conflictIssue(conflicts)
+            ? conflictIssue(conflicts, expressionSourceKeys)
             : {
                 kind: 'constraintConflict',
-                sourceKeys: unique(activeSourceKeys),
+                sourceKeys: unique([...activeSourceKeys, ...expressionSourceKeys]),
                 conflicts: [{ kind: 'unsatisfiableExpression' }],
               },
       };

@@ -64,6 +64,12 @@ describe('condition expression properties', () => {
     expect(evaluateConditionExpression(permanent, state([], ['confusion']))).toBe(true);
     expect(evaluateConditionExpression(stateOnly, state(['confusion']))).toBeNull();
     expect(evaluateConditionExpression(stateOnly, state([], ['confusion']))).toBe(true);
+    expect(
+      evaluateConditionExpression(
+        { kind: 'trait', scope: 'target', trait: 'confusion', present: false },
+        state([], ['confusion']),
+      ),
+    ).toBe(false);
   });
 
   it('preserves unknown quantity truth through all/any/not expressions', () => {

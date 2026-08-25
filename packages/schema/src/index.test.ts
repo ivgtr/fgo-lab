@@ -8,6 +8,7 @@ import {
   parseStoredProfileCollection,
   SCHEMA_VERSION,
   supportTemplateSchema,
+  QUANTITY_FACT_DOMAINS,
 } from './index';
 
 describe('portable schema boundaries', () => {
@@ -49,6 +50,58 @@ describe('portable schema boundaries', () => {
     expect(() =>
       calculationScenarioSchema.parse({ ...scenario, npMultipliers: [1, 1, 1, 1, 1] }),
     ).toThrow();
+  });
+
+  it('rejects out-of-domain quantity world facts at the portable input boundary', () => {
+    const scenario = calculationScenarioSchema.parse({
+      mode: 'resolved',
+      attacker: {
+        servantId: '1',
+        source: 'master',
+        level: 90,
+        npLevel: 1,
+        fouAtk: 1000,
+      },
+      overcharge: 1,
+      target: { classId: 'lancer', attribute: 'earth' },
+      attackerHpPermille: null,
+      battleState: { battlePointPhase: null },
+      assumptions: { classAffinity: 2, attributeAffinity: 1 },
+      craftEssence: null,
+      attackerSkills: [],
+      mysticCode: null,
+      support: null,
+      effectDecisions: [],
+      worldFactAssertions: [],
+      explicitOverrides: {},
+    });
+    for (const [quantity, domain] of Object.entries(QUANTITY_FACT_DOMAINS)) {
+      for (const value of [domain.min, domain.max])
+        expect(
+          calculationScenarioSchema.safeParse({
+            ...scenario,
+            worldFactAssertions: [
+              { decisionKey: `world:${quantity}`, fact: { kind: 'quantity', quantity, value } },
+            ],
+          }).success,
+          `${quantity}:${String(value)}`,
+        ).toBe(true);
+    }
+    for (const [quantity, values] of [
+      ['attackerHpPermille', [-1, 1_001]],
+      ['targetRarity', [-1, 6]],
+      ['battlePointPhase', [-1, 11]],
+    ] as const)
+      for (const value of values)
+        expect(
+          calculationScenarioSchema.safeParse({
+            ...scenario,
+            worldFactAssertions: [
+              { decisionKey: `world:${quantity}`, fact: { kind: 'quantity', quantity, value } },
+            ],
+          }).success,
+          `${quantity}:${String(value)}`,
+        ).toBe(false);
   });
   it('does not allow unsupported results to carry numeric rows', () => {
     const unsupported = {

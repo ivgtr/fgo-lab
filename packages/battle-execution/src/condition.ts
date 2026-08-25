@@ -1,5 +1,6 @@
 import type { TraitCondition } from '@fgo-lab/master-data';
 import type { BattleState, ConditionExpression, TraitScope } from './index';
+import { traitConditionReadScopes } from './conditionSemantics';
 
 export function normalizeTraitCondition(
   condition: TraitCondition,
@@ -44,13 +45,13 @@ export function evaluateCondition(
   state: BattleState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
-    const direct = state.traits[scope].get(trait);
-    if (scope !== 'attacker' && scope !== 'target') return direct;
-    const stateValue =
-      state.traits[scope === 'attacker' ? 'attackerState' : 'targetState'].get(trait);
-    if (direct === true || stateValue === true) return true;
-    if (direct === false && stateValue === false) return false;
-    return direct ?? stateValue;
+    const values = traitConditionReadScopes(scope).flatMap((candidate) => {
+      const value = state.traits[candidate].get(trait);
+      return value === undefined ? [] : [value];
+    });
+    if (values.includes(true)) return true;
+    if (values.includes(false)) return false;
+    return undefined;
   };
   switch (condition.kind) {
     case 'always':
