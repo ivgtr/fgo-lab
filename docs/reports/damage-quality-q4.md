@@ -140,4 +140,21 @@ Q4は継続する。次のゲートはFunction別golden／differentialであり�
 - `pnpm build`: success
 - `pnpm validate:master`: 2 files / 13 tests passed、artifact validation success
 
-次の優先事項は、goldenを外部実行結果とのdifferentialへ引き上げること、およびAppMedia標準ケースとの差を丸め規則まで含めて記録することである。
+## 実装チェックポイント 4: AppMedia標準differential
+
+- Commit: `83de448 test(calc): validate standard NP differential`
+- AppMedia水着リリス比較条件を版付きfixtureへ固定した。NP5、等倍、合計ATK 20,781、Quick補正なし、宝具威力+80%、特攻宝具100%（中立倍率1.0）、パッシブ・状態特攻なしである。
+- AppMedia oracleは最低61,944・最大75,640、FGO Lab engine 4.2.0は最低61,944・最大75,640・200乱数平均68,791.76となり、公開端点差は0だった。
+- AppMediaは200乱数点の算術平均をoracleとして公開しないため、平均値はAtlas式とbinary32境界から導出したFGO Lab値として区別する。
+- `np-function:standard`へgoldenとexternal differentialを接続し、このsubjectだけvalidatedへ昇格した。特殊8種とeffect operationはprovisionalを維持する。
+- 標準Functionかつprovisional effectを使わない単発計算・rankingだけが、環境flagなしで`exact`となる。
+
+最新検証結果:
+
+- `pnpm typecheck`: success
+- `pnpm test`: 20 files / 126 tests passed
+- `pnpm lint`: success
+- `pnpm build`: success
+- `pnpm validate:master`: 2 files / 13 tests passed、artifact validation success
+
+次の優先事項は、特殊8種goldenをChaldea実行結果とのdifferentialへ引き上げること、およびevidence inventoryを公開ゲートとして固定することである。

@@ -205,7 +205,7 @@ calculation-application <- web / ranking worker
 
 残作業:
 
-- Function別の実行可能な外部differentialとAppMedia標準比較を追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。
+- 特殊Function 8種について実行可能なChaldea differentialを追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。標準FunctionのAppMedia端点比較は完了した。
 - evidence inventoryと公開ゲートを確定する。
 
 作業:
