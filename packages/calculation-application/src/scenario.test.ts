@@ -34,6 +34,7 @@ function modifierEffect(
   value: number,
   cardTypes: ('buster' | 'arts' | 'quick')[] = [],
   target = 'self',
+  conditions = unconditionalConditions,
 ) {
   return {
     id,
@@ -42,9 +43,23 @@ function modifierEffect(
     label: id,
     parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
     buffTypes: [buffType],
-    conditions: unconditionalConditions,
+    conditions,
     contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
     cardTypes,
+  };
+}
+
+function traitConditions(opponent: string, field: string) {
+  return {
+    ...unconditionalConditions,
+    opponent: {
+      operator: 'all' as const,
+      traits: [{ name: opponent, negative: false }],
+    },
+    field: {
+      operator: 'all' as const,
+      traits: [{ name: field, negative: false }],
+    },
   };
 }
 
@@ -127,6 +142,169 @@ describe('scenario calculation facade', () => {
       explanation: { code: 'applied' },
     });
     expect(active.result.status).toBe('calculated');
+  });
+
+  it('applies one exclusive conditional modifier and fails closed when both are selected', () => {
+    const baseServant = fixture.servants[0]!;
+    const exclusiveMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'realm-skill',
+              slot: 1,
+              priority: 1,
+              name: 'realm skill',
+              detail: '',
+              imageKey: null,
+              effects: [
+                modifierEffect(
+                  'sky-power',
+                  'upDamage',
+                  500,
+                  [],
+                  'self',
+                  traitConditions('attributeSky', 'fieldHeaven'),
+                ),
+                modifierEffect(
+                  'earth-power',
+                  'upDamage',
+                  500,
+                  [],
+                  'self',
+                  traitConditions('attributeEarth', 'fieldHell'),
+                ),
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario = {
+      ...createDefaultResolvedScenario(exclusiveMaster, undefined),
+      attackerSkills: [{ skillId: 'realm-skill', skillLevel: 10 }],
+    };
+    const inactive = calculateScenario(scenario, exclusiveMaster, {
+      ...versions,
+      masterDataVersion: exclusiveMaster.version,
+    });
+    const sky = inactive.effects.find((effect) => effect.label === 'sky-power')!;
+    const earth = inactive.effects.find((effect) => effect.label === 'earth-power')!;
+    const skyAssumptions = assumptionsForProjection(sky, true);
+    const earthAssumptions = assumptionsForProjection(earth, true);
+
+    const skyOnly = calculateScenario(
+      { ...scenario, effectAssumptions: skyAssumptions },
+      exclusiveMaster,
+      { ...versions, masterDataVersion: exclusiveMaster.version },
+    );
+    expect(skyOnly.result.status).toBe('calculated');
+    expect(skyOnly.input).toMatchObject({
+      powerMod: 0.5,
+      fieldTraits: ['fieldHeaven'],
+      target: { traits: ['attributeSky'] },
+    });
+    expect(skyOnly.effects.find((effect) => effect.label === 'sky-power')?.outcome).toBe('applied');
+    expect(skyOnly.effects.find((effect) => effect.label === 'earth-power')?.outcome).toBe(
+      'notApplied',
+    );
+
+    const conflict = calculateScenario(
+      { ...scenario, effectAssumptions: [...skyAssumptions, ...earthAssumptions] },
+      exclusiveMaster,
+      { ...versions, masterDataVersion: exclusiveMaster.version },
+    );
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.input.powerMod).toBe(0);
+    expect(conflict.effectWarnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('exclusiveAssumptionConflict:target:worldAttribute'),
+        expect.stringContaining('exclusiveAssumptionConflict:field:fieldRealm'),
+      ]),
+    );
+    expect(
+      conflict.effects
+        .filter((effect) => ['sky-power', 'earth-power'].includes(effect.label))
+        .map((effect) => effect.outcome),
+    ).toEqual(['notApplied', 'notApplied']);
+  });
+
+  it('uses the same condition assertion path for a support effect', () => {
+    const attacker = fixture.servants[0]!;
+    const support = {
+      ...attacker,
+      id: 'conditional-support',
+      name: 'conditional support',
+      passives: [],
+      noblePhantasms: [],
+      skills: [
+        {
+          id: 'support-condition-skill',
+          slot: 1,
+          priority: 1,
+          name: 'support condition',
+          detail: '',
+          imageKey: null,
+          effects: [
+            modifierEffect(
+              'support-sky-power',
+              'upDamage',
+              300,
+              [],
+              'ptOne',
+              traitConditions('attributeSky', 'fieldHeaven'),
+            ),
+          ],
+        },
+      ],
+    };
+    const supportMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [attacker, support],
+    });
+    const scenario = {
+      ...createDefaultResolvedScenario(supportMaster, undefined),
+      support: {
+        sourceTemplateId: null,
+        composition: {
+          sources: [
+            {
+              sourceInstanceId: 'support-source',
+              servantId: support.id,
+              skills: [{ skillId: 'support-condition-skill', skillLevel: 10 }],
+            },
+          ],
+          selectedEffects: [],
+        },
+      },
+    };
+    const inactive = calculateScenario(scenario, supportMaster, {
+      ...versions,
+      masterDataVersion: supportMaster.version,
+    });
+    const projection = inactive.effects.find((effect) => effect.label === 'support-sky-power')!;
+    const active = calculateScenario(
+      { ...scenario, effectAssumptions: assumptionsForProjection(projection, true) },
+      supportMaster,
+      { ...versions, masterDataVersion: supportMaster.version },
+    );
+
+    expect(projection).toMatchObject({
+      controllability: 'user',
+      decision: { mode: 'enableAndAssert' },
+    });
+    expect(active.result.status).toBe('calculated');
+    expect(active.input).toMatchObject({
+      powerMod: 0.3,
+      fieldTraits: ['fieldHeaven'],
+      target: { traits: ['attributeSky'] },
+    });
+    expect(active.effects.find((effect) => effect.label === 'support-sky-power')).toMatchObject({
+      outcome: 'applied',
+      decision: { state: 'enabled' },
+    });
   });
 
   it('preserves repeated state-trait stacks through ordered NP execution', () => {

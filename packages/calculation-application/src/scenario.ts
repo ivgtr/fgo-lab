@@ -155,9 +155,11 @@ export function resolveScenario(
   const warnings = execution.issues.map((issue) =>
     issue.kind === 'contradictoryAssumptions'
       ? `${issue.kind}:${issue.decisionKeys.join(',')}`
-      : issue.kind === 'unsupportedParameter'
-        ? `${issue.kind}:${issue.operationId}:${issue.parameter}`
-        : `${issue.kind}:${issue.operationId}:${issue.detail}`,
+      : issue.kind === 'exclusiveAssumptionConflict'
+        ? `${issue.kind}:${issue.scope}:${issue.group}:${issue.traits.join(',')}:${issue.decisionKeys.join(',')}`
+        : issue.kind === 'unsupportedParameter'
+          ? `${issue.kind}:${issue.operationId}:${issue.parameter}`
+          : `${issue.kind}:${issue.operationId}:${issue.detail}`,
   );
   return {
     input: execution.input,

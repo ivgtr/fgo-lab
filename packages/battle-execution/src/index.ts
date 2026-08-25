@@ -25,7 +25,8 @@ export type ConditionExpression =
     }
   | { kind: 'all'; expressions: readonly ConditionExpression[] }
   | { kind: 'any'; expressions: readonly ConditionExpression[] }
-  | { kind: 'not'; expression: ConditionExpression };
+  | { kind: 'not'; expression: ConditionExpression }
+  | { kind: 'unsupported'; reason: 'partialTraitCondition' | 'ambiguousConditionAssertion' };
 
 export interface OperationEvidence {
   rawPath: string;
@@ -106,6 +107,7 @@ export type BattleOperation =
       kind: 'executeNpDamage';
       damage: NpDamageSpec;
       overcharge: number;
+      selectedNpLevel: number;
       npMultipliers: readonly [number, number, number, number, number];
     });
 
@@ -157,7 +159,14 @@ export type ExecutionIssue =
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }
   | { kind: 'unsupportedParameter'; operationId: string; parameter: string }
-  | { kind: 'contradictoryAssumptions'; decisionKeys: readonly string[] };
+  | { kind: 'contradictoryAssumptions'; decisionKeys: readonly string[] }
+  | {
+      kind: 'exclusiveAssumptionConflict';
+      scope: TraitScope;
+      group: ExclusiveTraitGroup;
+      traits: readonly string[];
+      decisionKeys: readonly string[];
+    };
 
 export type OperationOutcome =
   'applied' | 'notApplied' | 'notRelevant' | 'impossible' | 'unsupported';
