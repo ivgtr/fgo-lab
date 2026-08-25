@@ -9,8 +9,11 @@ import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema
 
 export type ResolvedBuffKind =
   | 'attackBuff'
+  | 'defenseBuff'
   | 'cardBuff'
+  | 'cardResistance'
   | 'npDamageBuff'
+  | 'npResistance'
   | 'eventDamageBuff'
   | 'specialDamageBuff'
   | 'powerMod'
@@ -101,35 +104,104 @@ interface SkillSelection {
   order: number;
 }
 
-function effectBuffKind(effect: MasterEffect): ResolvedBuffKind | null {
+type EffectRecipient = 'attacker' | 'target';
+
+interface DamageEffectRoute {
+  kind: ResolvedBuffKind;
+  recipient: EffectRecipient;
+  sign: 1 | -1;
+}
+
+function effectModifier(effect: MasterEffect): Omit<DamageEffectRoute, 'recipient'> | null {
   const buffTypes = effect.buffTypes ?? [];
   if (buffTypes.some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return null;
-  if (buffTypes.includes('addDamage')) return 'flatDamage';
+  if (buffTypes.includes('addDamage')) return { kind: 'flatDamage', sign: 1 };
   if (
     buffTypes.some((type) =>
       ['upDamage', 'upDamageIndividuality', 'upDamageIndividualityActiveonly'].includes(type),
     )
   )
-    return 'powerMod';
-  if (buffTypes.some((type) => type === 'upAtk' || type === 'downDefence')) return 'attackBuff';
-  if (buffTypes.some((type) => type === 'upNpdamage' || type === 'downDefenceNpdamage'))
-    return 'npDamageBuff';
+    return { kind: 'powerMod', sign: 1 };
+  if (buffTypes.includes('upAtk')) return { kind: 'attackBuff', sign: 1 };
+  if (buffTypes.includes('downAtk')) return { kind: 'attackBuff', sign: -1 };
+  if (buffTypes.includes('downDefence')) return { kind: 'attackBuff', sign: 1 };
+  if (buffTypes.includes('upDefence')) return { kind: 'defenseBuff', sign: 1 };
+  if (buffTypes.includes('upNpdamage')) return { kind: 'npDamageBuff', sign: 1 };
+  if (buffTypes.includes('downNpdamage')) return { kind: 'npDamageBuff', sign: -1 };
+  if (buffTypes.includes('downDefenceNpdamage')) return { kind: 'npDamageBuff', sign: 1 };
+  if (buffTypes.includes('upDefenceNpdamage')) return { kind: 'npResistance', sign: 1 };
   if (
     effect.cardTypes.length > 0 &&
-    buffTypes.some((type) =>
-      ['upCommandall', 'upCommandatk', 'downDefencecommandall'].includes(type),
-    )
+    buffTypes.some((type) => ['upCommandall', 'upCommandatk'].includes(type))
   )
-    return 'cardBuff';
+    return { kind: 'cardBuff', sign: 1 };
+  if (effect.cardTypes.length > 0 && buffTypes.includes('downCommandall'))
+    return { kind: 'cardBuff', sign: -1 };
+  if (effect.cardTypes.length > 0 && buffTypes.includes('downDefencecommandall'))
+    return { kind: 'cardBuff', sign: 1 };
+  if (effect.cardTypes.length > 0 && buffTypes.includes('upDefencecommandall'))
+    return { kind: 'cardResistance', sign: 1 };
   return null;
 }
 
-function matchesTraitCondition(condition: TraitCondition | undefined, traits: readonly string[]) {
-  if (!condition) return true;
-  return (
-    (condition.anyOf.length === 0 || condition.anyOf.some((trait) => traits.includes(trait))) &&
-    condition.noneOf.every((trait) => !traits.includes(trait))
+function targetRecipient(origin: ResolvedEffect['origin'], target: string): EffectRecipient | null {
+  if (target.startsWith('enemy')) return 'target';
+  if (target === 'self') return origin === 'support' || origin === 'mysticCode' ? null : 'attacker';
+  if (target === 'ptOther' || target === 'ptOtherFull')
+    return origin === 'support' ? 'attacker' : null;
+  if (target === 'ptOne' || target === 'ptAll' || target === 'ptFull') return 'attacker';
+  return null;
+}
+
+function expectedRecipient(kind: ResolvedBuffKind, buffTypes: readonly string[]): EffectRecipient {
+  if (
+    buffTypes.some((type) =>
+      [
+        'downDefence',
+        'upDefence',
+        'downDefencecommandall',
+        'upDefencecommandall',
+        'downDefenceNpdamage',
+        'upDefenceNpdamage',
+      ].includes(type),
+    )
+  )
+    return 'target';
+  return 'attacker';
+}
+
+function damageEffectRoute(
+  effect: MasterEffect,
+  origin: ResolvedEffect['origin'],
+): DamageEffectRoute | null {
+  const modifier = effectModifier(effect);
+  if (!modifier) return null;
+  const recipient = targetRecipient(origin, effect.target);
+  if (!recipient || recipient !== expectedRecipient(modifier.kind, effect.buffTypes ?? []))
+    return null;
+  return { ...modifier, recipient };
+}
+
+function matchesTraitCondition(
+  condition: TraitCondition,
+  traits: readonly string[],
+): boolean | null {
+  if (condition.traits.length === 0) return true;
+  if (condition.operator === 'partial') return null;
+  const matches = condition.traits.map((trait) =>
+    trait.negative ? !traits.includes(trait.name) : traits.includes(trait.name),
   );
+  return condition.operator === 'all' ? matches.every(Boolean) : matches.some(Boolean);
+}
+
+function matchesTraitConditionGroups(
+  conditions: readonly TraitCondition[],
+  traits: readonly string[],
+): boolean | null {
+  if (conditions.length === 0) return true;
+  const results = conditions.map((condition) => matchesTraitCondition(condition, traits));
+  if (results.some((result) => result === true)) return true;
+  return results.includes(null) ? null : false;
 }
 
 function isPotentiallyDamageRelevant(effect: MasterEffect): boolean {
@@ -141,13 +213,18 @@ function isPotentiallyDamageRelevant(effect: MasterEffect): boolean {
   return buffTypes.some((type) => UNSUPPORTED_NP_DAMAGE_BUFF_TYPES.has(type));
 }
 
-export function isDamageRelevantEffect(effect: MasterEffect): boolean {
+export function isDamageEffectRoutable(
+  effect: MasterEffect,
+  origin: ResolvedEffect['origin'],
+): boolean {
   return (
-    effectBuffKind(effect) !== null ||
+    damageEffectRoute(effect, origin) !== null ||
     Boolean(
-      effect.buffTypes?.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp'),
+      targetRecipient(origin, effect.target) === 'attacker' &&
+      effect.buffTypes?.includes('buffRate') &&
+      effect.buffRateTargets?.includes('buffNpDamageUp'),
     ) ||
-    isPotentiallyDamageRelevant(effect)
+    (targetRecipient(origin, effect.target) !== null && isPotentiallyDamageRelevant(effect))
   );
 }
 
@@ -163,7 +240,7 @@ export interface EffectSource {
   rawValue: number | undefined;
   appliedReason: string;
   defaultEnabled: boolean;
-  recipientTraits: readonly string[];
+  attackerTraits: readonly string[];
 }
 
 function numericParameter(
@@ -198,16 +275,21 @@ export function resolveEffectSources(
   const warnings: string[] = [];
   let npDamageBuffRate = 0;
   let precision: EffectResolution['precision'] = 'exact';
-  const targetTraits = [...baseInput.target.traits, ...baseInput.targetStateTraits];
-
   for (const item of items) {
     const { effect, rawValue } = item;
-    const kind = effectBuffKind(effect);
+    const route = damageEffectRoute(effect, item.origin);
+    const kind = route?.kind ?? null;
     const npDamageBuffRateEffect =
       effect.buffTypes?.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp');
     const key = effectKey(item);
     const override = options.effectOverrides?.[key];
     const enabled = override ?? item.defaultEnabled;
+    const routedDamageRelevant =
+      route !== null ||
+      Boolean(
+        targetRecipient(item.origin, effect.target) === 'attacker' && npDamageBuffRateEffect,
+      ) ||
+      (targetRecipient(item.origin, effect.target) !== null && isPotentiallyDamageRelevant(effect));
     const effectIdentity = {
       effectKey: key,
       order: item.order,
@@ -219,21 +301,34 @@ export function resolveEffectSources(
       skillName: item.skillName,
       effectId: effect.id,
       label: effect.label,
-      valuePermille: kind === 'flatDamage' ? null : (rawValue ?? null),
+      valuePermille:
+        kind === 'flatDamage'
+          ? null
+          : rawValue === undefined
+            ? null
+            : rawValue * (route?.sign ?? 1),
       kind,
       damageTraitCondition:
         kind === 'powerMod' &&
-        effect.targetCondition &&
-        (effect.targetCondition.anyOf.length > 0 || effect.targetCondition.noneOf.length > 0)
+        route?.recipient === 'attacker' &&
+        effect.conditions.opponent.traits.length > 0
           ? ({
               kind: 'powerMod',
-              condition: effect.targetCondition,
+              condition: effect.conditions.opponent,
             } satisfies DamageTraitCondition)
           : null,
-      requiredFieldTraits: effect.requiredFieldTraits ?? [],
-      damageRelevant:
-        kind !== null || Boolean(npDamageBuffRateEffect) || isPotentiallyDamageRelevant(effect),
+      requiredFieldTraits: effect.conditions.field.traits.map((trait) => trait.name),
+      damageRelevant: routedDamageRelevant,
     };
+    if (!enabled) {
+      effects.push({
+        ...effectIdentity,
+        value: null,
+        state: 'rejected',
+        reason: 'calculation_effect_disabled',
+      });
+      continue;
+    }
     if (rawValue === undefined && effectIdentity.damageRelevant) {
       precision = 'unsupported';
       warnings.push(
@@ -257,15 +352,12 @@ export function resolveEffectSources(
       continue;
     }
     const value = kind === 'flatDamage' ? rawValue : rawValue / 1000;
-    if (
-      (effect.recipientTraits?.length ?? 0) > 0 &&
-      !effect.recipientTraits?.some((trait) => item.recipientTraits.includes(trait))
-    ) {
+    if (!routedDamageRelevant) {
       effects.push({
         ...effectIdentity,
         value,
         state: 'rejected',
-        reason: 'attacker_trait_mismatch',
+        reason: 'not_np_damage_relevant',
       });
       continue;
     }
@@ -278,33 +370,41 @@ export function resolveEffectSources(
       });
       continue;
     }
-    if (!enabled) {
+    const attackerTraits = [
+      ...item.attackerTraits,
+      ...baseInput.attackerStateTraits,
+      'cardNP',
+      `card${baseInput.cardType[0]!.toUpperCase()}${baseInput.cardType.slice(1)}`,
+    ];
+    const targetTraits = [...baseInput.target.traits, ...baseInput.targetStateTraits];
+    const recipient = route?.recipient ?? targetRecipient(item.origin, effect.target);
+    const holderTraits = recipient === 'target' ? targetTraits : attackerTraits;
+    const opponentTraits = recipient === 'target' ? attackerTraits : targetTraits;
+    const conditionResults = [
+      matchesTraitConditionGroups(effect.conditions.recipient, holderTraits),
+      matchesTraitCondition(effect.conditions.holder, holderTraits),
+      matchesTraitCondition(effect.conditions.opponent, opponentTraits),
+      matchesTraitCondition(effect.conditions.field, baseInput.fieldTraits),
+    ];
+    if (conditionResults.includes(null)) {
       effects.push({
         ...effectIdentity,
         value,
-        state: 'rejected',
-        reason: 'calculation_effect_disabled',
+        state: 'unsupported',
+        reason: 'trait_condition_operator_not_supported',
       });
+      precision = 'unsupported';
+      warnings.push(
+        `${item.origin}_effect_condition_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`,
+      );
       continue;
     }
-    if (!matchesTraitCondition(effect.targetCondition, targetTraits)) {
+    if (!conditionResults.every(Boolean)) {
       effects.push({
         ...effectIdentity,
         value,
         state: 'rejected',
-        reason: 'target_trait_mismatch',
-      });
-      continue;
-    }
-    if (
-      (effect.requiredFieldTraits?.length ?? 0) > 0 &&
-      !effect.requiredFieldTraits?.every((trait) => baseInput.fieldTraits.includes(trait))
-    ) {
-      effects.push({
-        ...effectIdentity,
-        value,
-        state: 'rejected',
-        reason: 'field_trait_mismatch',
+        reason: 'trait_condition_mismatch',
       });
       continue;
     }
@@ -318,7 +418,7 @@ export function resolveEffectSources(
       );
       effects.push({
         ...effectIdentity,
-        value,
+        value: value * (route?.sign ?? 1),
         state: 'unsupported',
         reason: 'effect_metadata_not_resolved',
       });
@@ -352,7 +452,7 @@ export function resolveEffectSources(
     }
     effects.push({
       ...effectIdentity,
-      value,
+      value: value * (route?.sign ?? 1),
       kind: null,
       state: damageRelevant ? 'unsupported' : 'rejected',
       reason: damageRelevant ? 'damage_effect_not_supported' : 'not_np_damage_relevant',
@@ -361,8 +461,11 @@ export function resolveEffectSources(
 
   const modifierPermilles: Record<Exclude<ResolvedBuffKind, 'flatDamage'>, number> = {
     attackBuff: 0,
+    defenseBuff: 0,
     cardBuff: 0,
+    cardResistance: 0,
     npDamageBuff: 0,
+    npResistance: 0,
     eventDamageBuff: 0,
     specialDamageBuff: 0,
     powerMod: 0,
@@ -377,8 +480,11 @@ export function resolveEffectSources(
   const aggregatedInput = {
     ...baseInput,
     attackBuff: baseInput.attackBuff + modifierPermilles.attackBuff / 1_000,
+    defenseBuff: baseInput.defenseBuff + modifierPermilles.defenseBuff / 1_000,
     cardBuff: baseInput.cardBuff + modifierPermilles.cardBuff / 1_000,
+    cardResistance: baseInput.cardResistance + modifierPermilles.cardResistance / 1_000,
     npDamageBuff: baseInput.npDamageBuff + modifierPermilles.npDamageBuff / 1_000,
+    npResistance: baseInput.npResistance + modifierPermilles.npResistance / 1_000,
     eventDamageBuff: baseInput.eventDamageBuff + modifierPermilles.eventDamageBuff / 1_000,
     specialDamageBuff: baseInput.specialDamageBuff + modifierPermilles.specialDamageBuff / 1_000,
     powerMod: baseInput.powerMod + modifierPermilles.powerMod / 1_000,
@@ -402,7 +508,7 @@ function collectSkillSelections(
 ): { items: EffectSource[]; warnings: string[] } {
   const warnings: string[] = [];
   const servantById = new Map(servants.map((servant) => [servant.id, servant]));
-  const recipientTraits = servantById.get(baseInput.attackerId)?.traits ?? [];
+  const attackerTraits = servantById.get(baseInput.attackerId)?.traits ?? [];
   const items: EffectSource[] = [];
 
   for (const selected of [...selectedSkills].sort((a, b) => a.order - b.order)) {
@@ -427,7 +533,7 @@ function collectSkillSelections(
         rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
         appliedReason: 'unconditional_attacker_buff',
         defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
-        recipientTraits,
+        attackerTraits,
       });
     }
   }
@@ -447,7 +553,7 @@ export function resolveScenarioEffects(
   master: MasterDataSnapshot,
 ): ScenarioEffectResolution {
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
-  const recipientTraits = attacker?.traits ?? [];
+  const attackerTraits = attacker?.traits ?? [];
   const items: EffectSource[] = [];
   const warnings: string[] = [];
   const append = (collected: { items: EffectSource[]; warnings: string[] }) => {
@@ -491,11 +597,9 @@ export function resolveScenarioEffects(
           effect,
           rawValue: numericParameter(effect, 0, 0, scenario.craftEssence?.limitBreak === 4),
           appliedReason:
-            scenario.craftEssence?.limitBreak === 4
-              ? 'limit_break_effect'
-              : 'craft_essence_effect',
+            scenario.craftEssence?.limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
           defaultEnabled: true,
-          recipientTraits,
+          attackerTraits,
         })),
       );
   }
@@ -518,8 +622,7 @@ export function resolveScenarioEffects(
     const mysticCode = master.mysticCodes.find(
       (candidate) => candidate.id === scenario.mysticCode?.mysticCodeId,
     );
-    if (!mysticCode)
-      warnings.push(`mysticCode_source_missing:${scenario.mysticCode.mysticCodeId}`);
+    if (!mysticCode) warnings.push(`mysticCode_source_missing:${scenario.mysticCode.mysticCodeId}`);
     else
       for (const selected of scenario.mysticCode.skills) {
         const skill = mysticCode.skills.find((candidate) => candidate.id === selected.skillId);
@@ -540,7 +643,7 @@ export function resolveScenarioEffects(
             rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
             appliedReason: 'mystic_code_buff',
             defaultEnabled: false,
-            recipientTraits,
+            attackerTraits,
           })),
         );
       }
@@ -591,7 +694,7 @@ export function resolveScenarioEffects(
             rawValue: numericParameter(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
             appliedReason: 'np_before_damage',
             defaultEnabled: true,
-            recipientTraits,
+            attackerTraits,
           })),
       );
   }

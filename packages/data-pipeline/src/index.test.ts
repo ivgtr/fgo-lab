@@ -249,7 +249,11 @@ describe('immutable publish pipeline', () => {
                   buffs: [
                     {
                       type: 'upDamage',
-                      ckOpIndv: [{ id: 2076, name: 'superGiant', negative: true }],
+                      ckOpIndv: [
+                        { id: 2076, name: 'superGiant', negative: true },
+                        { id: 2001, name: 'servant' },
+                      ],
+                      script: { checkIndvType: 1 },
                     },
                   ],
                   svals: Array(10).fill({ Value: 500 }),
@@ -359,8 +363,21 @@ describe('immutable publish pipeline', () => {
       correctionPermille: 1500,
     });
     expect(lilith?.skills[0]?.effects[0]).toMatchObject({
-      targetCondition: { anyOf: [], noneOf: ['superGiant'] },
-      requiredFieldTraits: ['fieldDarkness'],
+      conditions: {
+        recipient: [{ operator: 'any', traits: [] }],
+        holder: { operator: 'all', traits: [] },
+        opponent: {
+          operator: 'all',
+          traits: [
+            { name: 'superGiant', negative: true },
+            { name: 'servant', negative: false },
+          ],
+        },
+        field: {
+          operator: 'any',
+          traits: [{ name: 'fieldDarkness', negative: false }],
+        },
+      },
     });
     expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '13')).toMatchObject({
       label: '表示名に依存しない色バフ',

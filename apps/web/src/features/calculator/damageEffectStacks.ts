@@ -25,8 +25,11 @@ export interface DamageEffectStack {
 
 const STACK_LABELS: Record<DamageEffectStackKind, string> = {
   attackBuff: '攻撃力',
+  defenseBuff: '防御力',
   cardBuff: 'カード性能',
+  cardResistance: 'カード耐性',
   npDamageBuff: '宝具威力',
+  npResistance: '宝具耐性',
   eventDamageBuff: 'イベント特攻',
   specialDamageBuff: '特殊威力',
   powerMod: '特攻状態',
@@ -37,8 +40,11 @@ const STACK_LABELS: Record<DamageEffectStackKind, string> = {
 
 const STACK_ORDER: DamageEffectStackKind[] = [
   'attackBuff',
+  'defenseBuff',
   'cardBuff',
+  'cardResistance',
   'npDamageBuff',
+  'npResistance',
   'powerMod',
   'npSpecial',
   'eventDamageBuff',
@@ -56,10 +62,9 @@ function stackKind(effect: ResolvedEffect): DamageEffectStackKind | null {
 function effectLabel(effect: ResolvedEffect): string {
   const condition = effect.damageTraitCondition?.condition;
   if (!condition) return effect.label;
-  const traits = [
-    ...condition.anyOf.map(traitLabel),
-    ...condition.noneOf.map((trait) => `非${traitLabel(trait)}`),
-  ];
+  const traits = condition.traits.map((trait) =>
+    trait.negative ? `非${traitLabel(trait.name)}` : traitLabel(trait.name),
+  );
   return traits.length ? `${traits.join('・')}特攻` : effect.label;
 }
 

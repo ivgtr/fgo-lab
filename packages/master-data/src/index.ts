@@ -18,17 +18,29 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(6),
+  schemaVersion: z.literal(7),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
 export type MasterManifest = z.infer<typeof masterManifestSchema>;
 
+const signedTraitSchema = z.object({
+  name: z.string().min(1),
+  negative: z.boolean(),
+});
 export const traitConditionSchema = z.object({
-  anyOf: z.array(z.string()),
-  noneOf: z.array(z.string()),
+  operator: z.enum(['any', 'all', 'partial']),
+  traits: z.array(signedTraitSchema),
 });
 export type TraitCondition = z.infer<typeof traitConditionSchema>;
+
+export const effectConditionsSchema = z.object({
+  recipient: z.array(traitConditionSchema),
+  holder: traitConditionSchema,
+  opponent: traitConditionSchema,
+  field: traitConditionSchema,
+});
+export type EffectConditions = z.infer<typeof effectConditionsSchema>;
 
 const effectParameterSchema = z.record(z.string(), z.json());
 const effectParameterSetsSchema = z.tuple([
@@ -47,9 +59,7 @@ const masterEffectSchema = z.object({
   limitBreakParameterSets: effectParameterSetsSchema.optional(),
   functionScript: z.record(z.string(), z.json()).optional(),
   overwriteTargetValues: z.array(z.json()).optional(),
-  recipientTraits: z.array(z.string()).optional(),
-  targetCondition: traitConditionSchema.optional(),
-  requiredFieldTraits: z.array(z.string()).optional(),
+  conditions: effectConditionsSchema,
   buffTypes: z.array(z.string()).optional(),
   buffRateTargets: z.array(z.string()).optional(),
   cardTypes: z.array(z.enum(['buster', 'arts', 'quick'])).max(3),

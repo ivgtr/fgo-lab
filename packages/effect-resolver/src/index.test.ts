@@ -8,11 +8,13 @@ import type { DamageResolutionInput, SupportComposition } from '@fgo-lab/schema'
 import type { MasterEffect, NpDamageSpec } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import {
-  isDamageRelevantEffect,
+  isDamageEffectRoutable,
   resolveEffectSources,
   type EffectSource,
   type ResolveEffectOptions,
 } from './index';
+
+const isDamageRelevantEffect = (effect: MasterEffect) => isDamageEffectRoutable(effect, 'support');
 
 const input: DamageResolutionInput = {
   attackerId: 'attacker',
@@ -58,6 +60,12 @@ const parameterSets = (values: readonly number[]): MasterEffect['parameterSets']
   [],
   [],
 ];
+const unconditionalConditions: MasterEffect['conditions'] = {
+  recipient: [{ operator: 'any', traits: [] }],
+  holder: { operator: 'any', traits: [] },
+  opponent: { operator: 'any', traits: [] },
+  field: { operator: 'any', traits: [] },
+};
 const npEffectParameterSets = (
   values: readonly [
     readonly number[],
@@ -99,6 +107,7 @@ const source: ServantMaster = {
           label: '攻撃力アップ',
           parameterSets: parameterSets([100, 110, 120, 130, 140, 150, 160, 170, 180, 200]),
           buffTypes: ['upAtk'],
+          conditions: unconditionalConditions,
           cardTypes: [],
         },
         {
@@ -108,6 +117,7 @@ const source: ServantMaster = {
           label: 'バスターアップ',
           parameterSets: parameterSets([300, 320, 340, 360, 380, 400, 420, 440, 460, 500]),
           buffTypes: ['upCommandall'],
+          conditions: unconditionalConditions,
           cardTypes: ['buster'],
         },
         {
@@ -117,6 +127,7 @@ const source: ServantMaster = {
           label: '宝具威力アップ',
           parameterSets: parameterSets([200, 210, 220, 230, 240, 250, 260, 270, 280, 300]),
           buffTypes: ['upNpdamage'],
+          conditions: unconditionalConditions,
           cardTypes: [],
         },
         {
@@ -125,6 +136,7 @@ const source: ServantMaster = {
           target: 'ptAll',
           label: 'NP増加',
           parameterSets: parameterSets(Array(10).fill(2000)),
+          conditions: unconditionalConditions,
           cardTypes: [],
         },
       ],
@@ -227,7 +239,7 @@ function skillSources(
 ) {
   const warnings: string[] = [];
   const sources: EffectSource[] = [];
-  const recipientTraits =
+  const attackerTraits =
     servants.find((servant) => servant.id === baseInput.attackerId)?.traits ?? [];
   for (const selected of selections) {
     const servant = servants.find((candidate) => candidate.id === selected.sourceId);
@@ -251,7 +263,7 @@ function skillSources(
         rawValue: effectValue(effect, 0, selected.skillLevel - 1),
         appliedReason: 'unconditional_attacker_buff',
         defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
-        recipientTraits,
+        attackerTraits,
       });
   }
   return { sources, warnings };
@@ -331,7 +343,7 @@ function resolveCraftEssenceSourcesForTest(
   baseInput: DamageResolutionInput,
   craftEssence: CraftEssenceMaster | undefined,
   limitBreak: number,
-  recipientTraits: readonly string[] = [],
+  attackerTraits: readonly string[] = [],
   options: ResolveEffectOptions = {},
 ) {
   if (!craftEssence) return withWarnings(baseInput, [], [], options);
@@ -349,7 +361,7 @@ function resolveCraftEssenceSourcesForTest(
       rawValue: effectValue(effect, 0, 0, limitBreak === 4),
       appliedReason: limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
       defaultEnabled: true,
-      recipientTraits,
+      attackerTraits,
     })),
     [],
     options,
@@ -379,7 +391,7 @@ function resolveNpSourcesForTest(
         rawValue: effectValue(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
         appliedReason: 'np_before_damage',
         defaultEnabled: true,
-        recipientTraits: servant.traits,
+        attackerTraits: servant.traits,
       })),
     [],
     options,
@@ -390,7 +402,7 @@ function resolveMysticCodeSourcesForTest(
   baseInput: DamageResolutionInput,
   mysticCode: MysticCodeMaster | undefined,
   selections: readonly { skillId: string; skillLevel: number }[],
-  recipientTraits: readonly string[],
+  attackerTraits: readonly string[],
   options: ResolveEffectOptions = {},
 ) {
   if (!mysticCode) return withWarnings(baseInput, [], ['mysticCode_source_missing'], options);
@@ -415,7 +427,7 @@ function resolveMysticCodeSourcesForTest(
         rawValue: effectValue(effect, 0, selected.skillLevel - 1),
         appliedReason: 'mystic_code_buff',
         defaultEnabled: options.defaultEnabled ?? true,
-        recipientTraits,
+        attackerTraits,
       });
   }
   return withWarnings(baseInput, sources, warnings, options);
@@ -478,6 +490,7 @@ describe('resolveSupportSourcesForTest', () => {
         label: 'Extra Attackアップ',
         parameterSets: parameterSets(Array(10).fill(1000)),
         buffTypes: ['upExtraattack', 'upCommandall'],
+        conditions: unconditionalConditions,
         cardTypes: ['buster'],
       }),
     ).toBe(false);
@@ -490,6 +503,7 @@ describe('resolveSupportSourcesForTest', () => {
           label: '状態付与耐性',
           parameterSets: parameterSets(Array(10).fill(200)),
           buffTypes: [buffType],
+          conditions: unconditionalConditions,
           cardTypes: [],
         }),
       ).toBe(false);
@@ -507,6 +521,7 @@ describe('resolveSupportSourcesForTest', () => {
           label: '防御効果',
           parameterSets: parameterSets(Array(10).fill(200)),
           buffTypes: [buffType],
+          conditions: unconditionalConditions,
           cardTypes: [],
         }),
       ).toBe(false);
@@ -518,20 +533,22 @@ describe('resolveSupportSourcesForTest', () => {
         label: '攻撃力ダウン',
         parameterSets: parameterSets(Array(10).fill(200)),
         buffTypes: ['downAtk'],
+        conditions: unconditionalConditions,
         cardTypes: [],
       }),
     ).toBe(false);
-    expect(
-      isDamageRelevantEffect({
-        id: 'self-attack-down',
-        type: 'addState',
-        target: 'self',
-        label: '攻撃力ダウン',
-        parameterSets: parameterSets(Array(10).fill(200)),
-        buffTypes: ['downAtk'],
-        cardTypes: [],
-      }),
-    ).toBe(true);
+    const selfAttackDown: MasterEffect = {
+      id: 'self-attack-down',
+      type: 'addState',
+      target: 'self',
+      label: '攻撃力ダウン',
+      parameterSets: parameterSets(Array(10).fill(200)),
+      buffTypes: ['downAtk'],
+      conditions: unconditionalConditions,
+      cardTypes: [],
+    };
+    expect(isDamageRelevantEffect(selfAttackDown)).toBe(false);
+    expect(isDamageEffectRoutable(selfAttackDown, 'attacker')).toBe(true);
     expect(
       isDamageRelevantEffect({
         id: 'command-card-type-change',
@@ -540,6 +557,7 @@ describe('resolveSupportSourcesForTest', () => {
         label: 'コマンドカードタイプチェンジ',
         parameterSets: parameterSets(Array(10).fill(2)),
         buffTypes: ['changeCommandCardType'],
+        conditions: unconditionalConditions,
         cardTypes: [],
       }),
     ).toBe(false);
@@ -547,10 +565,11 @@ describe('resolveSupportSourcesForTest', () => {
       isDamageRelevantEffect({
         id: 'unsupported-rate',
         type: 'addStateShort',
-        target: 'self',
+        target: 'ptOne',
         label: '対象不明のブースト',
         parameterSets: parameterSets(Array(10).fill(1000)),
         buffTypes: ['buffRate'],
+        conditions: unconditionalConditions,
         cardTypes: [],
       }),
     ).toBe(true);
@@ -624,6 +643,7 @@ describe('resolveSupportSourcesForTest', () => {
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['buffRate'],
               buffRateTargets: ['buffNpDamageUp'],
+              conditions: unconditionalConditions,
               cardTypes: [],
             },
             {
@@ -634,6 +654,7 @@ describe('resolveSupportSourcesForTest', () => {
               parameterSets: parameterSets(Array(10).fill(500)),
               buffTypes: ['buffRate'],
               buffRateTargets: ['buffNpDamageUp'],
+              conditions: unconditionalConditions,
               cardTypes: [],
             },
           ],
@@ -664,6 +685,7 @@ describe('resolveSupportSourcesForTest', () => {
               label: '対象不明のブースト',
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['buffRate'],
+              conditions: unconditionalConditions,
               cardTypes: [],
             },
           ],
@@ -717,6 +739,7 @@ describe('resolveSupportSourcesForTest', () => {
               label: '被ダメージ時NP獲得量アップ',
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['upDamagedropnp'],
+              conditions: unconditionalConditions,
               cardTypes: [],
             },
             {
@@ -726,6 +749,7 @@ describe('resolveSupportSourcesForTest', () => {
               label: 'Extra Attackアップ',
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['upCommandall'],
+              conditions: unconditionalConditions,
               cardTypes: [],
             },
           ],
@@ -878,8 +902,16 @@ describe('resolveAttackerSourcesForTest', () => {
               target: 'ptAll',
               label: '攻撃力アップ',
               parameterSets: parameterSets(Array(10).fill(200)),
-              recipientTraits: ['knightsOfTheRound'],
               buffTypes: ['upAtk'],
+              conditions: {
+                ...unconditionalConditions,
+                recipient: [
+                  {
+                    operator: 'any',
+                    traits: [{ name: 'knightsOfTheRound', negative: false }],
+                  },
+                ],
+              },
               cardTypes: [],
             },
           ],
@@ -896,7 +928,141 @@ describe('resolveAttackerSourcesForTest', () => {
     expect(mismatch.input.attackBuff).toBe(0.1);
     expect(mismatch.effects[0]).toMatchObject({
       state: 'rejected',
-      reason: 'attacker_trait_mismatch',
+      reason: 'trait_condition_mismatch',
+    });
+  });
+});
+
+describe('actor-aware effect routing', () => {
+  function resolveOne(
+    effect: MasterEffect,
+    origin: EffectSource['origin'],
+    rawValue: number | undefined = 200,
+    defaultEnabled = true,
+  ) {
+    return resolveEffectSources(input, [
+      {
+        order: 0,
+        origin,
+        sourceInstanceId: `${origin}:source`,
+        sourceId: 'source',
+        sourceName: 'source',
+        skillId: 'skill',
+        skillName: 'skill',
+        effect,
+        rawValue,
+        appliedReason: 'test',
+        defaultEnabled,
+        attackerTraits: [],
+      },
+    ]);
+  }
+
+  const attackEffect = (target: string, buffType = 'upAtk'): MasterEffect => ({
+    id: `${target}:${buffType}`,
+    type: 'addStateShort',
+    target,
+    label: buffType,
+    parameterSets: parameterSets(Array(10).fill(200)),
+    buffTypes: [buffType],
+    conditions: unconditionalConditions,
+    cardTypes: [],
+  });
+
+  it('does not route support-only self buffs or enemy attack buffs to the attacker', () => {
+    const supportSelf = resolveOne(attackEffect('self'), 'support');
+    const enemyAttackUp = resolveOne(attackEffect('enemyAll'), 'attacker');
+
+    expect(supportSelf.input.attackBuff).toBe(input.attackBuff);
+    expect(enemyAttackUp.input.attackBuff).toBe(input.attackBuff);
+    expect(supportSelf.effects[0]).toMatchObject({
+      damageRelevant: false,
+      state: 'rejected',
+      reason: 'not_np_damage_relevant',
+    });
+    expect(enemyAttackUp.effects[0]).toMatchObject({ damageRelevant: false });
+  });
+
+  it('does not turn a craft essence self defense demerit into an attack buff', () => {
+    const resolved = resolveOne(attackEffect('self', 'downDefence'), 'craftEssence');
+
+    expect(resolved.input.attackBuff).toBe(input.attackBuff);
+    expect(resolved.precision).toBe('exact');
+    expect(resolved.effects[0]).toMatchObject({ damageRelevant: false, state: 'rejected' });
+  });
+
+  it('evaluates card resistance against the attacking card context', () => {
+    const effect: MasterEffect = {
+      ...attackEffect('enemy', 'downDefencecommandall'),
+      cardTypes: ['buster'],
+      conditions: {
+        ...unconditionalConditions,
+        opponent: {
+          operator: 'any',
+          traits: [{ name: 'cardBuster', negative: false }],
+        },
+      },
+    };
+
+    const resolved = resolveOne(effect, 'attacker');
+    expect(resolved.input.cardBuff).toBe(0.2);
+    expect(resolved.effects[0]).toMatchObject({ state: 'applied', kind: 'cardBuff' });
+  });
+
+  it('preserves AND predicates instead of applying on one matching trait', () => {
+    const effect: MasterEffect = {
+      ...attackEffect('self', 'upDamage'),
+      conditions: {
+        ...unconditionalConditions,
+        opponent: {
+          operator: 'all',
+          traits: [
+            { name: 'alignmentNeutral', negative: false },
+            { name: 'servant', negative: false },
+          ],
+        },
+      },
+    };
+
+    expect(resolveOne(effect, 'attacker').effects[0]).toMatchObject({
+      state: 'rejected',
+      reason: 'trait_condition_mismatch',
+    });
+    expect(resolveOne(effect, 'attacker').input.powerMod).toBe(0);
+    expect(
+      resolveEffectSources(
+        {
+          ...input,
+          target: { ...input.target, traits: ['alignmentNeutral', 'servant'] },
+        },
+        [
+          {
+            order: 0,
+            origin: 'attacker',
+            sourceInstanceId: 'attacker:source',
+            sourceId: 'source',
+            sourceName: 'source',
+            skillId: 'skill',
+            skillName: 'skill',
+            effect,
+            rawValue: 200,
+            appliedReason: 'test',
+            defaultEnabled: true,
+            attackerTraits: [],
+          },
+        ],
+      ).input.powerMod,
+    ).toBe(0.2);
+  });
+
+  it('rejects disabled effects before requiring a level value', () => {
+    const resolved = resolveOne(attackEffect('self'), 'attacker', undefined, false);
+
+    expect(resolved.precision).toBe('exact');
+    expect(resolved.warnings).toEqual([]);
+    expect(resolved.effects[0]).toMatchObject({
+      state: 'rejected',
+      reason: 'calculation_effect_disabled',
     });
   });
 });
@@ -946,6 +1112,7 @@ describe('automatic equipment, passive, and NP effects', () => {
           parameterSets: parameterSets([600]),
           limitBreakParameterSets: parameterSets([800]),
           buffTypes: ['upNpdamage'],
+          conditions: unconditionalConditions,
           cardTypes: [],
         },
       ],
@@ -974,6 +1141,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               label: 'バスターアップ',
               parameterSets: parameterSets(Array(10).fill(80)),
               buffTypes: ['upCommandall'],
+              conditions: unconditionalConditions,
               cardTypes: ['buster'],
             },
           ],
@@ -1003,6 +1171,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               label: 'アタックプラス',
               parameterSets: parameterSets([175]),
               buffTypes: ['addDamage'],
+              conditions: unconditionalConditions,
               cardTypes: [],
             },
           ],
@@ -1028,8 +1197,14 @@ describe('automatic equipment, passive, and NP effects', () => {
               target: 'ptAll',
               label: '攻撃力アップ',
               parameterSets: parameterSets(Array(10).fill(200)),
-              requiredFieldTraits: ['fieldDarkness'],
               buffTypes: ['upAtk'],
+              conditions: {
+                ...unconditionalConditions,
+                field: {
+                  operator: 'any',
+                  traits: [{ name: 'fieldDarkness', negative: false }],
+                },
+              },
               cardTypes: [],
             },
           ],
@@ -1039,7 +1214,10 @@ describe('automatic equipment, passive, and NP effects', () => {
     const selection = [{ skillId: 'skill', skillLevel: 10 }];
     const missed = resolveAttackerSourcesForTest(input, selection, [attacker]);
     expect(missed.input.attackBuff).toBe(0.1);
-    expect(missed.effects[0]).toMatchObject({ state: 'rejected', reason: 'field_trait_mismatch' });
+    expect(missed.effects[0]).toMatchObject({
+      state: 'rejected',
+      reason: 'trait_condition_mismatch',
+    });
     expect(
       resolveAttackerSourcesForTest({ ...input, fieldTraits: ['fieldDarkness'] }, selection, [
         attacker,
@@ -1066,6 +1244,7 @@ describe('automatic equipment, passive, and NP effects', () => {
           ]),
           timing: 'beforeDamage',
           buffTypes: ['upAtk'],
+          conditions: unconditionalConditions,
           cardTypes: [],
         },
       ]),
@@ -1121,8 +1300,14 @@ describe('automatic equipment, passive, and NP effects', () => {
               target: 'self',
               label: '威力アップ・対竜',
               parameterSets: parameterSets(Array(10).fill(500)),
-              targetCondition: { anyOf: ['dragon'], noneOf: [] },
               buffTypes: ['upDamage'],
+              conditions: {
+                ...unconditionalConditions,
+                opponent: {
+                  operator: 'any',
+                  traits: [{ name: 'dragon', negative: false }],
+                },
+              },
               cardTypes: [],
             },
           ],
@@ -1141,7 +1326,10 @@ describe('automatic equipment, passive, and NP effects', () => {
     expect(missed.input.powerMod).toBe(0);
     expect(missed.effects[0]?.damageTraitCondition).toEqual({
       kind: 'powerMod',
-      condition: { anyOf: ['dragon'], noneOf: [] },
+      condition: {
+        operator: 'any',
+        traits: [{ name: 'dragon', negative: false }],
+      },
     });
     const explicitlyEnabled = resolveAttackerSourcesForTest(input, selection, [attacker], {
       effectOverrides: {
@@ -1151,7 +1339,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     expect(explicitlyEnabled.input.powerMod).toBe(0);
     expect(explicitlyEnabled.effects[0]).toMatchObject({
       state: 'rejected',
-      reason: 'target_trait_mismatch',
+      reason: 'trait_condition_mismatch',
     });
   });
 
@@ -1169,8 +1357,14 @@ describe('automatic equipment, passive, and NP effects', () => {
               target: 'self',
               label: '威力アップ・対非超巨大',
               parameterSets: parameterSets(Array(10).fill(500)),
-              targetCondition: { anyOf: [], noneOf: ['superGiant'] },
               buffTypes: ['upDamage'],
+              conditions: {
+                ...unconditionalConditions,
+                opponent: {
+                  operator: 'any',
+                  traits: [{ name: 'superGiant', negative: true }],
+                },
+              },
               cardTypes: [],
             },
           ],

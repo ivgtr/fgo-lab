@@ -83,7 +83,10 @@ describe('damage effect stacks', () => {
           kind: null,
           damageTraitCondition: {
             kind: 'npSpecial',
-            condition: { anyOf: ['buffCharm'], noneOf: [] },
+            condition: {
+              operator: 'any',
+              traits: [{ name: 'buffCharm', negative: false }],
+            },
           },
         }),
       ],

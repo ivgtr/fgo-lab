@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 6,
+    schemaVersion: 7,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -139,7 +139,10 @@ type AtlasBuff = {
   tvals?: AtlasTraitRef[];
   ckSelfIndv?: AtlasTraitRef[];
   ckOpIndv?: AtlasTraitRef[];
-  script?: { UpBuffRateBuffIndiv?: AtlasTraitRef[] };
+  script?: {
+    UpBuffRateBuffIndiv?: AtlasTraitRef[];
+    checkIndvType?: number;
+  };
 };
 type AtlasFunction = {
   funcId?: number;
@@ -364,6 +367,18 @@ function buffRateTargets(buffs: AtlasBuff[] | undefined) {
   );
 }
 
+function signedTraits(traits: readonly AtlasTraitRef[] | undefined) {
+  return (traits ?? []).flatMap((trait) =>
+    trait.name ? [{ name: trait.name, negative: Boolean(trait.negative) }] : [],
+  );
+}
+
+function buffConditionOperator(value: number | undefined): 'any' | 'all' | 'partial' {
+  if (value === 1 || value === 3) return 'all';
+  if (value === 4) return 'partial';
+  return 'any';
+}
+
 function normalizeFunctions(functions: AtlasFunction[] | undefined) {
   return (functions ?? []).flatMap((fn) =>
     typeof fn.funcId === 'number'
@@ -384,24 +399,32 @@ function normalizeFunctions(functions: AtlasFunction[] | undefined) {
             ],
             ...(fn.script ? { functionScript: fn.script } : {}),
             ...(fn.overWriteTvalsList ? { overwriteTargetValues: fn.overWriteTvalsList } : {}),
-            recipientTraits: (fn.functvals ?? []).flatMap((trait) =>
-              trait.name && !trait.negative ? [trait.name] : [],
-            ),
-            targetCondition: {
-              anyOf: (fn.buffs ?? []).flatMap((buff) =>
-                (buff.ckOpIndv ?? []).flatMap((trait) =>
-                  trait.name && !trait.negative ? [trait.name] : [],
-                ),
-              ),
-              noneOf: (fn.buffs ?? []).flatMap((buff) =>
-                (buff.ckOpIndv ?? []).flatMap((trait) =>
-                  trait.name && trait.negative ? [trait.name] : [],
-                ),
-              ),
+            conditions: {
+              recipient:
+                (fn.overWriteTvalsList ?? []).length > 0
+                  ? fn.overWriteTvalsList!.map((group) => ({
+                      operator: 'all' as const,
+                      traits: signedTraits(Array.isArray(group) ? (group as AtlasTraitRef[]) : []),
+                    }))
+                  : [
+                      {
+                        operator: 'any' as const,
+                        traits: signedTraits(fn.functvals),
+                      },
+                    ],
+              holder: {
+                operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+                traits: signedTraits(fn.buffs?.[0]?.ckSelfIndv),
+              },
+              opponent: {
+                operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+                traits: signedTraits(fn.buffs?.[0]?.ckOpIndv),
+              },
+              field: {
+                operator: 'any' as const,
+                traits: signedTraits(fn.funcquestTvals),
+              },
             },
-            requiredFieldTraits: (fn.funcquestTvals ?? []).flatMap((trait) =>
-              trait.name ? [trait.name] : [],
-            ),
             buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
             ...(buffRateTargets(fn.buffs).length
               ? { buffRateTargets: buffRateTargets(fn.buffs) }

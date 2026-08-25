@@ -1,4 +1,4 @@
-import { isDamageRelevantEffect } from '@fgo-lab/effect-resolver';
+import { isDamageEffectRoutable } from '@fgo-lab/effect-resolver';
 import type { ServantMaster } from '@fgo-lab/master-data';
 import type { SupportSource } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
@@ -21,7 +21,7 @@ export function SupportSourceCard({
   const damageSkills = source.skills.filter((selection) =>
     servant?.skills
       .find((skill) => skill.id === selection.skillId)
-      ?.effects.some(isDamageRelevantEffect),
+      ?.effects.some((effect) => isDamageEffectRoutable(effect, 'support')),
   );
 
   return (

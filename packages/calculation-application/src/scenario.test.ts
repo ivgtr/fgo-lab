@@ -20,20 +20,28 @@ const versions: VersionContext = {
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
 };
+const unconditionalConditions = {
+  recipient: [{ operator: 'any' as const, traits: [] }],
+  holder: { operator: 'any' as const, traits: [] },
+  opponent: { operator: 'any' as const, traits: [] },
+  field: { operator: 'any' as const, traits: [] },
+};
 
 function modifierEffect(
   id: string,
   buffType: string,
   value: number,
   cardTypes: ('buster' | 'arts' | 'quick')[] = [],
+  target = 'self',
 ) {
   return {
     id,
     type: 'addStateShort',
-    target: 'self',
+    target,
     label: id,
     parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
     buffTypes: [buffType],
+    conditions: unconditionalConditions,
     cardTypes,
   };
 }
@@ -139,7 +147,7 @@ describe('scenario calculation facade', () => {
           name: 'support',
           detail: '',
           imageKey: null,
-          effects: [modifierEffect('support-power', 'upDamage', 500)],
+          effects: [modifierEffect('support-power', 'upDamage', 500, [], 'ptOne')],
         },
       ],
     };
@@ -166,7 +174,7 @@ describe('scenario calculation facade', () => {
               name: 'mystic',
               detail: '',
               imageKey: null,
-              effects: [modifierEffect('mc-card', 'upCommandall', 400, ['buster'])],
+              effects: [modifierEffect('mc-card', 'upCommandall', 400, ['buster'], 'ptOne')],
             },
           ],
         },
