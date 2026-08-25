@@ -5,7 +5,7 @@ import {
   type ServantMaster,
   type TraitCondition,
 } from '@fgo-lab/master-data';
-import type { CalculationEditorState, DamageResolutionInput } from '@fgo-lab/schema';
+import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 
 export type ResolvedBuffKind =
   | 'attackBuff'
@@ -426,9 +426,11 @@ export interface ScenarioEffectResolution extends EffectResolution {
   trace: { step: string; detail: string }[];
 }
 
+type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
+
 export function resolveScenarioEffects(
   baseInput: DamageResolutionInput,
-  selection: CalculationEditorState,
+  scenario: ResolvedCalculationScenario,
   master: MasterDataSnapshot,
 ): ScenarioEffectResolution {
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
@@ -457,12 +459,12 @@ export function resolveScenarioEffects(
       ),
     );
   }
-  if (selection.craftEssence) {
+  if (scenario.craftEssence) {
     const craftEssence = master.craftEssences.find(
-      (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
+      (candidate) => candidate.id === scenario.craftEssence?.craftEssenceId,
     );
     if (!craftEssence)
-      warnings.push(`craftEssence_source_missing:${selection.craftEssence.craftEssenceId}`);
+      warnings.push(`craftEssence_source_missing:${scenario.craftEssence.craftEssenceId}`);
     else
       items.push(
         ...craftEssence.effects.map((effect, order) => ({
@@ -474,9 +476,9 @@ export function resolveScenarioEffects(
           skillId: `ce:${craftEssence.id}`,
           skillName: craftEssence.name,
           effect,
-          rawValue: numericParameter(effect, 0, 0, selection.craftEssence?.limitBreak === 4),
+          rawValue: numericParameter(effect, 0, 0, scenario.craftEssence?.limitBreak === 4),
           appliedReason:
-            selection.craftEssence?.limitBreak === 4
+            scenario.craftEssence?.limitBreak === 4
               ? 'limit_break_effect'
               : 'craft_essence_effect',
           defaultEnabled: true,
@@ -487,7 +489,7 @@ export function resolveScenarioEffects(
   append(
     collectSkillSelections(
       baseInput,
-      (selection.attackerSkills ?? []).map((skill, order) => ({
+      scenario.attackerSkills.map((skill, order) => ({
         sourceInstanceId: `attacker:${baseInput.attackerId}`,
         sourceId: baseInput.attackerId,
         skillId: skill.skillId,
@@ -499,14 +501,14 @@ export function resolveScenarioEffects(
       'attacker',
     ),
   );
-  if (selection.mysticCode) {
+  if (scenario.mysticCode) {
     const mysticCode = master.mysticCodes.find(
-      (candidate) => candidate.id === selection.mysticCode?.mysticCodeId,
+      (candidate) => candidate.id === scenario.mysticCode?.mysticCodeId,
     );
     if (!mysticCode)
-      warnings.push(`mysticCode_source_missing:${selection.mysticCode.mysticCodeId}`);
+      warnings.push(`mysticCode_source_missing:${scenario.mysticCode.mysticCodeId}`);
     else
-      for (const selected of selection.mysticCode.skills) {
+      for (const selected of scenario.mysticCode.skills) {
         const skill = mysticCode.skills.find((candidate) => candidate.id === selected.skillId);
         if (!skill) {
           warnings.push(`mysticCode_effect_missing:${mysticCode.id}:${selected.skillId}`);
@@ -530,8 +532,8 @@ export function resolveScenarioEffects(
         );
       }
   }
-  if (selection.support) {
-    const composition = selection.support.composition;
+  if (scenario.support) {
+    const composition = scenario.support.composition;
     append(
       collectSkillSelections(
         baseInput,
@@ -582,7 +584,7 @@ export function resolveScenarioEffects(
   }
   const orderedItems = items.map((item, order) => ({ ...item, order }));
   const resolved = resolveEffectSources(baseInput, orderedItems, {
-    effectOverrides: selection.effectOverrides ?? {},
+    effectOverrides: scenario.effectDecisions,
   });
   warnings.push(...resolved.warnings);
   return {
