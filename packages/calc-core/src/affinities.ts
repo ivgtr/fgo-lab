@@ -1,6 +1,6 @@
-import type { CalcInput } from '@fgo-lab/schema';
+import type { DamageKernelInput } from '@fgo-lab/schema';
 
-export type CombatAttribute = CalcInput['target']['attribute'];
+export type CombatAttribute = DamageKernelInput['target']['attribute'];
 
 const CLASS_ORDER = [
   'saber',

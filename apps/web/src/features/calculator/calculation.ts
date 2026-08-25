@@ -17,7 +17,7 @@ import {
 } from '@fgo-lab/master-data';
 import type {
   AttackerSkillSelection,
-  CalcInput,
+  DamageKernelInput,
   CalculationSelection,
   CalculationShareSnapshot,
   ServantBuild,
@@ -26,7 +26,7 @@ import type {
 } from '@fgo-lab/schema';
 
 export interface ResolvedCalculationInput {
-  input: CalcInput;
+  input: DamageKernelInput;
   precision: ResolvedEffectSet['precision'];
   warnings: string[];
   trace: { step: string; detail: string }[];
@@ -34,7 +34,7 @@ export interface ResolvedCalculationInput {
 }
 
 export function resolveCalculationInput(
-  baseInput: CalcInput,
+  baseInput: DamageKernelInput,
   selection: CalculationSelection,
   master: MasterDataSnapshot,
 ): ResolvedCalculationInput {
@@ -113,7 +113,7 @@ export function resolveCalculationInput(
 }
 
 export function calculateResolvedDamage(
-  baseInput: CalcInput,
+  baseInput: DamageKernelInput,
   selection: CalculationSelection,
   master: MasterDataSnapshot,
   versions: VersionContext,
@@ -177,11 +177,11 @@ export function calculateResolvedDamage(
   };
 }
 
-export function createDefaultCalcInput(
+export function createDefaultDamageKernelInput(
   master: MasterDataSnapshot,
   build: ServantBuild | undefined,
   servant: ServantMaster = master.servants[0]!,
-): CalcInput {
+): DamageKernelInput {
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
@@ -247,12 +247,12 @@ export function createAttackerSkillSelection(
 }
 
 export function selectCalculationAttacker(
-  input: CalcInput,
+  input: DamageKernelInput,
   selection: CalculationSelection,
   servant: ServantMaster,
   source: CalculationSelection['attackerSource'],
   build: ServantBuild | undefined,
-): { input: CalcInput; selection: CalculationSelection } {
+): { input: DamageKernelInput; selection: CalculationSelection } {
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
@@ -285,10 +285,10 @@ export function selectCalculationAttacker(
 }
 
 export function setCalculationEffectMode(
-  input: CalcInput,
+  input: DamageKernelInput,
   selection: CalculationSelection,
   effectMode: CalculationSelection['effectMode'],
-): { input: CalcInput; selection: CalculationSelection } {
+): { input: DamageKernelInput; selection: CalculationSelection } {
   if (effectMode === 'manual') return { input, selection: { ...selection, effectMode } };
   return {
     input: {

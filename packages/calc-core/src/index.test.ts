@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CalcInput, VersionContext } from '@fgo-lab/schema';
+import type { DamageKernelInput, VersionContext } from '@fgo-lab/schema';
 import golden from '../../test-fixtures/golden/np-damage-v1.json';
 import {
   calculateNpDamage,
@@ -12,7 +12,7 @@ import {
   classifyAttackNpFunction,
 } from './index';
 
-const input: CalcInput = {
+const input: DamageKernelInput = {
   attackerId: 'fixture-saber',
   attackerLevel: 90,
   attackerAtk: 10000,
@@ -62,7 +62,7 @@ describe('float32 NP damage kernel', () => {
     expect(result.rows[4]!.average).toBeGreaterThan(result.rows[0]!.average);
   });
   it('matches the independent neutral Arts formula at random 1000', () => {
-    const neutral: CalcInput = {
+    const neutral: DamageKernelInput = {
       ...input,
       attackerAtk: 10_000,
       fouAtk: 0,
@@ -82,7 +82,7 @@ describe('float32 NP damage kernel', () => {
       attackerAtk: 11_221,
       fouAtk: 1_000,
       craftEssenceAtk: 0,
-      npMultipliers: [400, 500, 550, 575, 600] as CalcInput['npMultipliers'],
+      npMultipliers: [400, 500, 550, 575, 600] as DamageKernelInput['npMultipliers'],
       classAttackRate: classAttackRate('saber'),
       classAffinity: classAffinity('saber', 'lancer'),
       attributeAffinity: attributeAffinity('earth', 'earth'),
@@ -157,15 +157,15 @@ describe('float32 NP damage kernel', () => {
   it('uses the special NP multiplier belonging to each result row', () => {
     const rowSpecific = {
       ...input,
-      npMultipliers: [100, 100, 100, 100, 100] as CalcInput['npMultipliers'],
-      npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as CalcInput['npSpecialMultipliers'],
+      npMultipliers: [100, 100, 100, 100, 100] as DamageKernelInput['npMultipliers'],
+      npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as DamageKernelInput['npSpecialMultipliers'],
     };
     const result = calculateNpDamage(rowSpecific, versions);
     expect(result.rows[1]!.average / result.rows[0]!.average).toBeCloseTo(1.5, 3);
     expect(result.rows[4]!.average / result.rows[0]!.average).toBeCloseTo(3, 3);
   });
   it('keeps additive and multiplicative modifier groups in the documented order', () => {
-    const composed: CalcInput = {
+    const composed: DamageKernelInput = {
       ...input,
       attackerAtk: 10_000,
       fouAtk: 0,
@@ -186,7 +186,7 @@ describe('float32 NP damage kernel', () => {
     expect(damageAtRandom(composed, 1, 1000)).toBe(9_117);
   });
   it('matches AppMedia random endpoints for the reported Water Lilith inputs', () => {
-    const waterLilith: CalcInput = {
+    const waterLilith: DamageKernelInput = {
       ...input,
       attackerId: '405900',
       attackerAtk: 15_381,

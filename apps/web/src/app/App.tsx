@@ -20,7 +20,7 @@ import {
 } from '@fgo-lab/profile-domain';
 import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
 import type {
-  CalcInput,
+  DamageKernelInput,
   CalculationSelection,
   CalculationShareSnapshot,
   CraftEssenceCopy,
@@ -35,7 +35,7 @@ import { t } from '../ui/i18n';
 import {
   calculateResolvedDamage,
   completeCalculationSelection,
-  createDefaultCalcInput,
+  createDefaultDamageKernelInput,
   resolveCalculationInput,
 } from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
@@ -66,7 +66,7 @@ const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
 
 interface CalculationWorkspace {
-  input: CalcInput | undefined;
+  input: DamageKernelInput | undefined;
   selection: CalculationSelection | undefined;
   shared: CalculationShareSnapshot | undefined;
 }
@@ -202,7 +202,8 @@ export function App() {
   );
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
-  const baseInput = calculation.input ?? createDefaultCalcInput(currentMaster, defaultBuild);
+  const baseInput =
+    calculation.input ?? createDefaultDamageKernelInput(currentMaster, defaultBuild);
   const selectedAttacker =
     currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
     defaultServant;
@@ -330,7 +331,7 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function saveCalculationDraft(nextInput: CalcInput, selection = currentSelection) {
+  async function saveCalculationDraft(nextInput: DamageKernelInput, selection = currentSelection) {
     setCalculation({ input: nextInput, selection, shared: undefined });
     const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions, {
       releaseValidated: ENGINE_RELEASE_VALIDATED,
@@ -538,7 +539,7 @@ export function App() {
               .map((candidate) => {
                 const np = getPrimaryNpPresentation(candidate);
                 if (!np) throw new TypeError(`attack_np_missing:${candidate.id}`);
-                const input = createDefaultCalcInput(
+                const input = createDefaultDamageKernelInput(
                   currentMaster,
                   profile.servantBuilds[candidate.id],
                   candidate,

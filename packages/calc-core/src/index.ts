@@ -1,5 +1,10 @@
-import type { CalculationResult, CalcInput, DamageRow, VersionContext } from '@fgo-lab/schema';
-import { calcInputSchema, SCHEMA_VERSION } from '@fgo-lab/schema';
+import type {
+  CalculationResult,
+  DamageKernelInput,
+  DamageRow,
+  VersionContext,
+} from '@fgo-lab/schema';
+import { damageKernelInputSchema, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { classifyAttackNpFunction } from './attackNpFunction';
 import { damageAtRandom } from './formula';
 
@@ -9,10 +14,10 @@ export * from './attackNpFunction';
 export * from './affinities';
 
 export function calculateNpDamage(
-  rawInput: CalcInput,
+  rawInput: DamageKernelInput,
   versions: VersionContext,
 ): CalculationResult {
-  const input = calcInputSchema.parse(rawInput);
+  const input = damageKernelInputSchema.parse(rawInput);
   const attackFunction = classifyAttackNpFunction(input.attackNpFunctionType ?? 'damageNp');
   const common = {
     effects: [],

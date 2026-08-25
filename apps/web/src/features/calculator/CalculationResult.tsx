@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type {
-  CalcInput,
+  DamageKernelInput,
   CalculationResult as CalculationResultValue,
   CalculationSelection,
   CalculationShareSnapshot,
@@ -23,7 +23,7 @@ export function CalculationResult({
   enabledAttackerSkillCount,
   onFinalize,
 }: {
-  input: CalcInput;
+  input: DamageKernelInput;
   result: CalculationResultValue;
   selection: CalculationSelection;
   attackerName: string;
@@ -32,7 +32,7 @@ export function CalculationResult({
   craftEssenceSummary: string;
   supportSummary: string;
   enabledAttackerSkillCount: number;
-  onFinalize: (input: CalcInput, result: CalculationResultValue) => Promise<void>;
+  onFinalize: (input: DamageKernelInput, result: CalculationResultValue) => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const resultCardRef = useRef<HTMLElement>(null);

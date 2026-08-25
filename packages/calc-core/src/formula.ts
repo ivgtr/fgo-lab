@@ -1,4 +1,4 @@
-import type { CalcInput } from '@fgo-lab/schema';
+import type { DamageKernelInput } from '@fgo-lab/schema';
 import { clamp, f32, f32Add, f32Div, f32Mul, floorDamage } from './float32';
 
 const CARD_RATE = { buster: 1.5, arts: 1, quick: 0.8 } as const;
@@ -8,7 +8,11 @@ function boundedBuff(value: number): number {
   return clamp(value, -1, 5);
 }
 
-export function damageAtRandom(input: CalcInput, npLevel: number, randomPermille: number): number {
+export function damageAtRandom(
+  input: DamageKernelInput,
+  npLevel: number,
+  randomPermille: number,
+): number {
   const npMultiplier = input.npMultipliers[npLevel - 1];
   const npSpecialMultiplier = input.npSpecialMultipliers[npLevel - 1];
   if (npMultiplier === undefined || npSpecialMultiplier === undefined)

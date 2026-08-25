@@ -79,7 +79,7 @@ export const supportTemplateSchema = z.object({
 });
 export type SupportTemplate = z.infer<typeof supportTemplateSchema>;
 
-export const calcInputSchema = z.object({
+export const damageKernelInputSchema = z.object({
   attackerId: z.string().min(1).max(80),
   attackerLevel: z.number().int().min(1).max(120),
   attackerAtk: z.number().int().nonnegative().max(100000),
@@ -120,7 +120,7 @@ export const calcInputSchema = z.object({
     traits: z.array(z.string().min(1).max(80)).max(100),
   }),
 });
-export type CalcInput = z.infer<typeof calcInputSchema>;
+export type DamageKernelInput = z.infer<typeof damageKernelInputSchema>;
 
 export const attackerSkillSelectionSchema = z.object({
   skillId: z.string().min(1).max(80),
@@ -211,7 +211,7 @@ export type CalculationResult = z.infer<typeof calculationResultSchema>;
 export const calculationDraftSchema = z.object({
   profileId: z.uuid(),
   calculationSessionId: z.uuid(),
-  input: calcInputSchema,
+  input: damageKernelInputSchema,
   result: calculationResultSchema,
   inputFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   selection: calculationSelectionSchema.optional(),
@@ -271,7 +271,7 @@ export const calculationShareSnapshotSchema = z.object({
   kind: z.literal('fgo-lab-calculation-share'),
   schemaVersion: z.literal(SCHEMA_VERSION),
   sharedAt: z.iso.datetime(),
-  input: calcInputSchema,
+  input: damageKernelInputSchema,
   result: calculationResultSchema,
   composition: calculationShareCompositionSchema.optional(),
 });

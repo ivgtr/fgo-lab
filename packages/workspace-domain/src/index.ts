@@ -1,4 +1,4 @@
-import type { CalculationResult, CalcInput, LocalProfile } from '@fgo-lab/schema';
+import type { CalculationResult, DamageKernelInput, LocalProfile } from '@fgo-lab/schema';
 
 export function canonicalize(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -9,7 +9,7 @@ export function canonicalize(value: unknown): string {
     .join(',')}}`;
 }
 export async function inputFingerprint(
-  input: CalcInput,
+  input: DamageKernelInput,
   masterDataVersion: string,
   engineVersion: string,
   digest: (data: Uint8Array) => Promise<ArrayBuffer>,
@@ -20,7 +20,7 @@ export async function inputFingerprint(
 }
 export interface FinalizeHistoryCommand {
   sessionId: string;
-  input: CalcInput;
+  input: DamageKernelInput;
   result: CalculationResult;
   fingerprint: string;
   now: string;
