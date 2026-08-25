@@ -1,0 +1,30 @@
+{
+  "caseId": "master-normalization-v13",
+  "reviewedAt": "2026-08-25",
+  "masterSchemaVersion": 6,
+  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v13",
+  "artifact": {
+    "bytes": 17501626,
+    "sha256": "4c87f7443d405647ad918fe4d191237f1a1536e0a75f281f92038df51d0317b4"
+  },
+  "counts": {
+    "sourceAttackFunctions": 627,
+    "includedAttackFunctions": 621,
+    "excludedAttackFunctions": 6,
+    "servants": 469,
+    "craftEssences": 2700,
+    "mysticCodes": 28,
+    "materials": 152
+  },
+  "normalizedFunctionCounts": {
+    "damageNp": 371,
+    "damageNpPierce": 67,
+    "damageNpIndividual": 141,
+    "damageNpIndividualSum": 20,
+    "damageNpStateIndividualFix": 12,
+    "damageNpHpratioLow": 6,
+    "damageNpRare": 1,
+    "damageNpAndOrCheckIndividuality": 1,
+    "damageNpBattlePointPhase": 2
+  }
+}

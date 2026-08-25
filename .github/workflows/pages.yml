@@ -28,7 +28,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test && pnpm typecheck && pnpm build
+      - run: pnpm test && pnpm validate:evidence && pnpm typecheck && pnpm build
         env:
           VITE_BASE_PATH: /fgo-lab/
       - uses: actions/configure-pages@v5

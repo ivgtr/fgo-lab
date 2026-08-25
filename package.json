@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:a11y": "playwright test --grep @a11y",
     "validate:master": "pnpm --filter @fgo-lab/data-pipeline validate && vitest run packages/master-data packages/data-pipeline",
+    "validate:evidence": "vitest run packages/calculation-application/src/evidenceInventory.test.ts packages/calculation-application/src/evidence.test.ts",
     "benchmark:calc": "vitest bench --run packages/calc-core/src/calc.bench.ts"
   },
   "dependencies": {

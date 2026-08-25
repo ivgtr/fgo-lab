@@ -51,6 +51,7 @@ const entries: CalculationEvidence[] = [
     'Atlas JP damage Function, battle point, and effect normalization',
     'validated',
     ['Atlas Academy JP nice servant, craft essence, and mystic code datasets'],
+    ['master-normalization-v13'],
   ),
   ...(
     [
