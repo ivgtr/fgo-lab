@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
-document_version: "1.0.0"
-status: "E3 Corrective Work In Progress"
+document_version: "1.1.0"
+status: "E3.2 Redesign In Progress"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -195,6 +195,43 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 - 既定scenarioのunsupportedは17騎から19騎。追加はpartial条件の自動パッシブを持つ`2300600`と、対象レアリティ未指定の`403400`で、いずれもtyped fail-closedである。
 - ダンテ実masterで対天／対地単独、同時矛盾、hidden field、自動パッシブ／NP、カード不一致、traceを確認した。PCとmobile Chromiumの同一操作E2Eを追加した。
 - schema 12、engine 9.0.0。E4ランキング統合には着手していない。
+
+### E3.2：条件・decision・factモデルの破壊的再置換
+
+状態: 実装中
+
+現状監査:
+
+- `assertionsForCondition(any)`は候補が複数ならunsupported planを返し、`decisionMode`がその火力効果を`automatic`へfallbackさせる。visibleな条件付き火力が押せず、未適用でも`calculated`になる。
+- `ScenarioAssumption.assertion.exclusiveGroup`はcanonical semanticsから導出可能なのに保存され、`applyAssumptions`が外部値を信用している。`null`へ改変すると排他検証を回避できる。
+- `assumptionsForProjection`をwebとapplicationが直接呼び、支援テンプレート復元時にcondition IRを再解釈している。projectionからscenario commandへの責務がfacade外へ漏れている。
+- production監査は`controllability === user`だけを起点にするため、誤ってautomaticへ分類された条件付き火力を監査対象から落とす。
+- `engine.ts`がmaster condition正規化、decision計画、fact検証、operation compile、順序実行、projectionを同時に所有し、責務境界の単体検証が難しい。
+
+採用設計はADR-009のD+B+C内部検証である。UIは変更せず、effect-local condition satisfactionを具体的world factへ偽装しない。
+
+作業:
+
+1. `ConditionExpression`へpartialを情報保持するvariantを追加し、全variantの評価・制約化・unsupported分類をexhaustiveにする。
+2. `ScenarioAssumption`を、operation使用意思とeffect-local条件成立を分離した`EffectDecision`へ破壊的置換する。scenarioからtrait assertionと`exclusiveGroup`を削除する。
+3. canonical trait semanticsをexecutor所有とし、初期world factとderived fact、選択済みcondition制約を入力メタデータなしで検証する。
+4. OR/AND/NOTを保持した条件制約の充足可能性を検証する。矛盾時は`conditionDecisionConflict`、partialや伝播不能時はtyped unsupportedとする。
+5. condition IR、decision planning、fact normalization/validation、operation compilation、ordered execution、projectionを同一package内で分割する。
+6. projectionから`EffectDecisionCommand`を生成・適用するAPIを`calculation-application`へ集約する。Calculator、支援保存・復元、rankingからexecutor内部関数への直接依存を削除する。
+7. 全master監査をvisible damage候補全体へ広げ、誤automatic、空command、inert control、排他迂回、未知condition variantをratchetする。
+8. ダンテ、インドラ、ネモ、モルガン、マルタ、ソロモン、U-オルガマリー、条件付き支援/パッシブ/CE/NP、BBドバイ、アーキタイプ、武則天、水着リリスをunit・実master・E2Eへ固定する。
+9. schema、engine、master版を更新し、旧型・旧関数・旧fixture・不要adapterを同フェーズで削除する。
+
+確認ゲート E3.2:
+
+- visibleな未成立条件付き火力がautomaticへfallbackしない。
+- OR条件のonは当該operationだけを適用し、具体的traitをworld factへ追加しない。
+- selected condition群の排他矛盾はscenarioメタデータなしでfail-closedになる。
+- context mutationはhiddenかつtraceableで、effect-local成立との由来が区別される。
+- support/self/passive/CE/mystic/NPが同じcondition evaluatorとdecision commandを使う。
+- 未選択任意unsupportedは計算継続、選択済み/automatic/NP本体unsupportedは計算停止となる。
+- PC、390px、320px、共有、保存、復元、支援セット、rankingでdecision semanticsが一致する。
+- 全品質ゲートと実master UI確認を通し、E4へ進まず画面確認待ちで停止する。
 
 ### E4：ランキング統合と全master収束
 

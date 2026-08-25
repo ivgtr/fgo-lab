@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行要件"
-document_version: "1.0.0"
-status: "Proposed"
+document_version: "1.1.0"
+status: "E3.2 Redesign Approved"
 created_at: "2026-08-25"
 source_requirements: "docs/fgo-lab-requirements-v0.3.md v0.3.5"
 ui_baseline: "docs/ui-design-spec.md v1.3.9"
@@ -235,6 +235,23 @@ Chaldeaは、戦闘状態へFunctionを順序付きで適用する設計の比�
 - 適用したScenarioAssumptionとoperation IDを計算traceへ記録し、ダメージ内訳から成立factと実行結果を追跡できるようにした。
 
 production master 469騎中、攻撃宝具を解決できる420騎を監査した。ユーザー操作可能projection 1,083件の操作後無変化は0件、排他候補12組の正常計算は0件、automatic visibleは548件、hiddenは671件だった。既定scenarioのunsupportedは17騎から19騎へ増えた。追加2騎はpartial条件を持つ自動パッシブ1騎と、対象レアリティを一意に仮定できない特殊宝具1騎であり、誤った旧結果を維持しない。さらにNPレベル別の条件付き宝具projection表示は3騎で選択中NPレベルを参照するよう是正した。
+
+### 8.6 E3.2 条件・decision・fact意味論の再設計
+
+E3.1は単一traitの条件成立をworld fact assertionへ変換することでダンテの回帰を止めたが、複数候補ORを一意なfactへ変換できない場合に`automatic`へ落とす欠陥を残した。その結果、条件付き火力がvisibleであるにもかかわらず、操作不能・計算外のまま結果全体は`calculated`になり得る。さらに排他検証がscenarioから渡された`exclusiveGroup`を信用するため、外部入力が同フィールドを欠落・改変するとcanonicalな排他関係を迂回できる。
+
+E3.2では次を最終契約とする。
+
+1. `MasterCondition`はAND、OR、NOT、partial、数量条件を情報欠落なく正規化したIRとし、UI操作の作りやすさを理由に単一traitへ縮約しない。
+2. scenarioへ保存する`UserDecision`は、operationを使用する意思とeffect-localな条件成立宣言を別フィールドで表す。条件成立宣言をworld factへ変換しない。
+3. `WorldFact`はscenarioの定量入力、masterの恒常trait、executorが順序付きcontext mutationから生成したtraitだけで構成する。排他groupは保存せず、executorがcanonical trait semanticsから導出する。
+4. 選択されたeffect-local condition同士は、完全な条件式を論理制約として検証する。両立する選択肢が一つもない場合は型付き`conditionDecisionConflict`として両方を適用せずfail-closedにする。
+5. effect-local成立は当該火力operationだけに作用し、別効果のcondition evaluatorやworld factへ伝播しない。状態変更operationへeffect-local成立を使う必要がある場合はexactとせずtyped unsupportedにする。
+6. `automatic`は、無条件であるか、現在のworld/derived factだけで条件を決定でき、ユーザー判断を必要としないoperationに限定する。未成立・未解決の条件付き火力をautomaticへfallbackしない。
+7. UIはapplication facadeが返すprojectionとcommandだけを扱う。webがcondition IRを解釈してscenario入力を再構築しない。
+8. 未選択の任意効果のunsupportedは計算全体を止めない。選択済み、automatic、または宝具本体のunsupportedは必ず結果全体をfail-closedにする。
+
+この契約により、「蛇または竜」のようなOR効果は、どちらのtraitかを捏造せず、その効果だけの成立を宣言して正確に計算できる。一方、その成立が中間状態として後続へ伝播しなければ結果を確定できない場合は、具体的なworld factがない限りunsupportedとする。
 
 ## 9. 受入条件
 
