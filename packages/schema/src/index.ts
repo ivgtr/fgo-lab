@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 7 as const;
-export const ENGINE_VERSION = '4.2.0' as const;
+export const SCHEMA_VERSION = 8 as const;
+export const ENGINE_VERSION = '5.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -279,8 +279,8 @@ const resolvedScenarioSchema = scenarioBaseSchema
   })
   .strict();
 
-const manualScenarioSchema = scenarioBaseSchema
-  .extend({
+const manualScenarioSchema = z
+  .object({
     mode: z.literal('manual'),
     manual: damageResolutionInputSchema,
   })

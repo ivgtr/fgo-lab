@@ -5,26 +5,6 @@ import { canonicalize, filterRanking, finalizeHistory } from './index';
 
 const scenario = {
   mode: 'manual',
-  attacker: {
-    servantId: 'attacker',
-    source: 'master',
-    level: 90,
-    npLevel: 1,
-    fouAtk: 1000,
-    stateTraits: [],
-  },
-  overcharge: 1,
-  target: {
-    classId: 'neutral',
-    attribute: 'unknown',
-    traits: [],
-    stateTraits: [],
-    rarity: null,
-  },
-  attackerHpPermille: null,
-  fieldTraits: [],
-  battleState: { battlePointPhase: null },
-  assumptions: { classAffinity: 1, attributeAffinity: 1 },
   manual: {
     attackerId: 'attacker',
     attackerLevel: 90,

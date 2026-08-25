@@ -94,7 +94,7 @@ export function scenarioFromDamageResolutionInput(
       attributeAffinity: input.attributeAffinity,
     },
   };
-  if (selection.effectMode === 'manual') return { ...base, mode: 'manual', manual: input };
+  if (selection.effectMode === 'manual') return { mode: 'manual', manual: input };
   const manualOverrides = new Set(selection.manualOverrides ?? []);
   return {
     ...base,
@@ -121,7 +121,7 @@ export function scenarioFromDamageResolutionInput(
 
 export function selectionFromScenario(scenario: CalculationScenario): CalculationEditorState {
   if (scenario.mode === 'manual')
-    return { attackerSource: scenario.attacker.source, effectMode: 'manual', craftEssence: null };
+    return { attackerSource: 'master', effectMode: 'manual', craftEssence: null };
   return {
     attackerSource: scenario.attacker.source,
     effectMode: 'resolved',

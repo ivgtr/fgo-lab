@@ -110,11 +110,11 @@ Calculator UI
 - 共有読込時に現行master版を要求し、snapshotのversion contextでscenarioを再計算してresult全体が一致した場合だけ受理するようにした。旧版result表示経路は削除した。
 - 履歴・共有の確定では解決済みinputからscenarioを逆生成せず、現在のscenarioそのものを保存するようにした。
 - 結果詳細へprecision、breakdown、assumption、issue detail、trace、evidence、missing evidenceを表示し、共有カードへengine版とprecisionを追加した。
+- manual scenarioを`{ mode: 'manual', manual: DamageResolutionInput }`だけのstrict unionへ変更し、resolved共通fieldとの二重保持を削除した。schema version 8・engine version 5.0.0へ更新し、旧形式の互換読込は追加していない。
 
 ### 未完了
 
 - `Calculator`の編集用propsはまだ`DamageResolutionInput + CalculationEditorState`であり、scenarioからUI stateを復元するadapterが残る。
-- manual scenarioは共通fieldと`manual`入力を重複保持している。
 - `calculateResolvedDamage()`と`resolveCalculationInput()`は旧UIおよびQ6前のranking候補組立用に残る。
 - UIをscenario直接編集へ置換後、旧editor schema、selection変換、旧application入口、対応する旧テストを削除する必要がある。
 

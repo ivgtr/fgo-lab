@@ -361,7 +361,6 @@ export function calculateResolvedDamage(
   const resolved = resolveCalculationInput(baseInput, selection, master);
   return evaluateResolvedCalculation(
     {
-      ...createDefaultResolvedScenario(master, undefined),
       mode: 'manual',
       manual: baseInput,
     },

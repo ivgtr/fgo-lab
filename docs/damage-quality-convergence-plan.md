@@ -194,7 +194,7 @@ calculation-application <- web / ranking worker
 
 実装済み:
 
-- `CalculationEvidence`を結果schemaの必須要素とし、現在はschema version 7・engine version 4.2.0へ破壊的に更新した。
+- `CalculationEvidence`を結果schemaの必須要素とした。Q5ではmanual scenarioの重複field削除に伴い、schema version 8・engine version 5.0.0へ破壊的に更新した。
 - application所有のregistryから、実行時に使用したkernel、Function、master、effect operation、manual inputのevidenceを解決する。
 - 未知evidenceは`unsupported`、使用したprovisional evidenceは`approximate`、使用した全件がvalidatedの場合だけ`exact`とする。
 - 単発計算とrankingを同じevidence評価へ接続し、環境flagと`releaseValidated`経路を削除した。

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  calculationScenarioSchema,
   ENGINE_VERSION,
   SCHEMA_VERSION,
   type CalculationScenario,
@@ -34,12 +35,17 @@ describe('scenario calculation facade', () => {
     const resolvedScenario = createDefaultResolvedScenario(master, undefined);
     const resolved = calculateScenario(resolvedScenario, master, versions);
     const manualScenario: CalculationScenario = {
-      ...resolvedScenario,
       mode: 'manual',
       manual: resolved.input,
     };
     const manual = calculateScenario(manualScenario, master, versions);
 
     expect(manual.result.rows).toEqual(resolved.result.rows);
+    expect(() =>
+      calculationScenarioSchema.parse({
+        ...manualScenario,
+        attacker: resolvedScenario.attacker,
+      }),
+    ).toThrow();
   });
 });
