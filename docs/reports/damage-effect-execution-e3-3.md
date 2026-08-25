@@ -67,7 +67,7 @@ The actual UI trace was inspected for the input decision, fixed facts, selected 
 ## Validation
 
 - format, lint, typecheck: pass
-- unit/integration/property/golden: 29 files, 146 tests pass
+- unit/integration/property/golden: 29 files, 147 tests pass
 - production master validation: 3 files, 15 tests pass
 - evidence validation: 2 files, 10 tests pass
 - production condition/projection cross audit: pass for all 420 scenarios
@@ -84,6 +84,7 @@ E4 remains unstarted.
 The first review of E3.3 found three remaining boundary defects. All were corrected without a compatibility path.
 
 - Quantity domains now live in `packages/schema/src/quantityFacts.ts`: attacker HP permille 0–1,000, target rarity 0–5, and current Battle Point phase 0–10. Both Zod schemas and executor validation use this module. Out-of-domain fixed facts return typed `quantityFactOutOfDomain`; they are never clamped or committed.
+- A production ratchet verifies that every normalized `maximumBattlePointPhase` remains inside the shared Battle Point domain, so a future master expansion cannot silently outgrow the input contract.
 - Trait scope semantics now encode a one-way implication. A positive `targetState`/`attackerState` fact also satisfies the combined `target`/`attacker` scope, while a negative state fact does not assert absence from the whole actor. State-only conditions remain state-only. The evaluator and solver use the same semantic functions.
 - An initial constraint failure invalidates every selected conditional operation in that constraint set. Conflict reporting includes all selected condition source keys, and no later selected modifier can be partially applied.
 

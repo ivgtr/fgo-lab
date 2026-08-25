@@ -8,7 +8,12 @@ import {
   type EffectProjection,
   type TraitScope,
 } from '@fgo-lab/battle-execution';
-import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
+import {
+  ENGINE_VERSION,
+  QUANTITY_FACT_DOMAINS,
+  SCHEMA_VERSION,
+  type VersionContext,
+} from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
@@ -94,6 +99,26 @@ function hasCanonicalInputConflict(input: {
 }
 
 describe('production master damage quality ratchet', () => {
+  it('keeps the canonical Battle Point domain large enough for every master phase', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const maximumPhases = master.servants.flatMap((servant) =>
+      servant.noblePhantasms.flatMap((np) =>
+        np.damage.flatMap((damage) =>
+          damage.kind === 'battlePointPhase' ? [damage.maximumBattlePointPhase] : [],
+        ),
+      ),
+    );
+    expect(maximumPhases.length).toBeGreaterThan(0);
+    expect(Math.max(...maximumPhases)).toBeLessThanOrEqual(
+      QUANTITY_FACT_DOMAINS.battlePointPhase.max,
+    );
+    expect(Math.min(...maximumPhases)).toBeGreaterThanOrEqual(
+      QUANTITY_FACT_DOMAINS.battlePointPhase.min,
+    );
+  });
+
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
