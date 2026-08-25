@@ -10,7 +10,7 @@ import {
 } from '@fgo-lab/master-data';
 import type {
   AttackerSkillSelection,
-  DamageKernelInput,
+  DamageResolutionInput,
   SupportComposition,
 } from '@fgo-lab/schema';
 
@@ -49,7 +49,7 @@ export interface ResolvedSupportEffect {
 }
 
 export interface ResolvedEffectSet {
-  input: DamageKernelInput;
+  input: DamageResolutionInput;
   effects: ResolvedSupportEffect[];
   npDamageBuffRate: number;
   precision: 'exact' | 'approximate' | 'unsupported';
@@ -185,7 +185,7 @@ function effectKey(
 }
 
 function resolveEffects(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   items: readonly ResolvableEffect[],
   origin: ResolvedSupportEffect['origin'],
   recipientTraits: readonly string[] = [],
@@ -346,7 +346,7 @@ function resolveEffects(
 }
 
 function resolveSkillSelections(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   selectedSkills: readonly SkillSelection[],
   servants: readonly ServantMaster[],
   origin: ResolvedSupportEffect['origin'],
@@ -395,7 +395,7 @@ function resolveSkillSelections(
 }
 
 export function resolveServantPassives(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   servant: ServantMaster | undefined,
   options: ResolveEffectOptions = {},
 ): ResolvedEffectSet {
@@ -424,7 +424,7 @@ export function resolveServantPassives(
 }
 
 export function resolveCraftEssenceEffects(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   craftEssence: CraftEssenceMaster | undefined,
   limitBreak: number,
   recipientTraits: readonly string[] = [],
@@ -459,7 +459,7 @@ export function resolveCraftEssenceEffects(
 }
 
 export function resolveNpEffects(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   servant: ServantMaster | undefined,
   options: ResolveEffectOptions = {},
 ): ResolvedEffectSet {
@@ -521,7 +521,7 @@ export function resolveNpEffects(
           ...resolved.input,
           npSpecialMultipliers: resolved.input.npSpecialMultipliers.map(
             (baseMultiplier, index) => baseMultiplier * (multipliers[index] ?? 1),
-          ) as DamageKernelInput['npSpecialMultipliers'],
+          ) as DamageResolutionInput['npSpecialMultipliers'],
         }
       : resolved.input,
     effects: [
@@ -553,7 +553,7 @@ export function resolveNpEffects(
 }
 
 export function resolveSupportComposition(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   composition: SupportComposition,
   servants: readonly ServantMaster[],
   options: ResolveEffectOptions = {},
@@ -585,7 +585,7 @@ export function resolveSupportComposition(
 }
 
 export function resolveAttackerSkills(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   selections: readonly AttackerSkillSelection[],
   servants: readonly ServantMaster[],
   options: ResolveEffectOptions = {},
@@ -607,7 +607,7 @@ export function resolveAttackerSkills(
 }
 
 export function resolveMysticCodeSkills(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   mysticCode: MysticCodeMaster | undefined,
   selections: readonly AttackerSkillSelection[],
   recipientTraits: readonly string[],

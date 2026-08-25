@@ -18,7 +18,7 @@ import {
 } from '@fgo-lab/master-data';
 import type {
   AttackerSkillSelection,
-  DamageKernelInput,
+  DamageResolutionInput,
   CalculationEditorState,
   ServantBuild,
   CalculationResult,
@@ -27,7 +27,7 @@ import type {
 } from '@fgo-lab/schema';
 
 export interface ResolvedCalculationInput {
-  input: DamageKernelInput;
+  input: DamageResolutionInput;
   precision: ResolvedEffectSet['precision'];
   warnings: string[];
   trace: { step: string; detail: string }[];
@@ -35,7 +35,7 @@ export interface ResolvedCalculationInput {
 }
 
 export function resolveCalculationInput(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   selection: CalculationEditorState,
   master: MasterDataSnapshot,
 ): ResolvedCalculationInput {
@@ -130,7 +130,7 @@ export function resolveCalculationInput(
 }
 
 export function calculateResolvedDamage(
-  baseInput: DamageKernelInput,
+  baseInput: DamageResolutionInput,
   selection: CalculationEditorState,
   master: MasterDataSnapshot,
   versions: VersionContext,
@@ -194,11 +194,11 @@ export function calculateResolvedDamage(
   };
 }
 
-export function createDefaultDamageKernelInput(
+export function createDefaultDamageResolutionInput(
   master: MasterDataSnapshot,
   build: ServantBuild | undefined,
   servant: ServantMaster = master.servants[0]!,
-): DamageKernelInput {
+): DamageResolutionInput {
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
@@ -235,8 +235,8 @@ export function createDefaultDamageKernelInput(
   };
 }
 
-export function scenarioFromDamageKernelInput(
-  input: DamageKernelInput,
+export function scenarioFromDamageResolutionInput(
+  input: DamageResolutionInput,
   selection: CalculationEditorState,
 ): CalculationScenario {
   const base = {
@@ -307,16 +307,16 @@ export function selectionFromScenario(scenario: CalculationScenario): Calculatio
   };
 }
 
-export function damageKernelInputFromScenario(
+export function damageResolutionInputFromScenario(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
-): DamageKernelInput {
+): DamageResolutionInput {
   if (scenario.mode === 'manual') return scenario.manual;
   const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
   if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
   const damage = getPrimaryNpDamage(servant);
   if (!damage) throw new TypeError(`attack_np_missing:${servant.id}`);
-  const base = createDefaultDamageKernelInput(master, undefined, servant);
+  const base = createDefaultDamageResolutionInput(master, undefined, servant);
   return {
     ...base,
     attackerLevel: scenario.attacker.level,
@@ -370,12 +370,12 @@ export function createAttackerSkillSelection(
 }
 
 export function selectCalculationAttacker(
-  input: DamageKernelInput,
+  input: DamageResolutionInput,
   selection: CalculationEditorState,
   servant: ServantMaster,
   source: CalculationEditorState['attackerSource'],
   build: ServantBuild | undefined,
-): { input: DamageKernelInput; selection: CalculationEditorState } {
+): { input: DamageResolutionInput; selection: CalculationEditorState } {
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
@@ -408,10 +408,10 @@ export function selectCalculationAttacker(
 }
 
 export function setCalculationEffectMode(
-  input: DamageKernelInput,
+  input: DamageResolutionInput,
   selection: CalculationEditorState,
   effectMode: CalculationEditorState['effectMode'],
-): { input: DamageKernelInput; selection: CalculationEditorState } {
+): { input: DamageResolutionInput; selection: CalculationEditorState } {
   if (effectMode === 'manual') return { input, selection: { ...selection, effectMode } };
   return {
     input: {

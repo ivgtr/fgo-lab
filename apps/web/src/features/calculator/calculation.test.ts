@@ -4,16 +4,16 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
-  type DamageKernelInput,
+  type DamageResolutionInput,
   type SupportTemplate,
   type VersionContext,
 } from '@fgo-lab/schema';
 import {
   calculateResolvedDamage,
   completeCalculationEditorState,
-  createDefaultDamageKernelInput,
-  damageKernelInputFromScenario,
-  scenarioFromDamageKernelInput,
+  createDefaultDamageResolutionInput,
+  damageResolutionInputFromScenario,
+  scenarioFromDamageResolutionInput,
   selectCalculationAttacker,
   selectionFromScenario,
   setCalculationEffectMode,
@@ -31,7 +31,7 @@ const versions: VersionContext = {
 
 describe('calculation application logic', () => {
   it('creates and resolves a calculation without browser or React state', () => {
-    const input = createDefaultDamageKernelInput(master, undefined);
+    const input = createDefaultDamageResolutionInput(master, undefined);
     const selection = completeCalculationEditorState(undefined, master.servants[0], undefined);
     const calculation = calculateResolvedDamage(input, selection, master, versions, {
       releaseValidated: true,
@@ -43,8 +43,8 @@ describe('calculation application logic', () => {
   });
 
   it('stores selected conditions without master-derived damage values', () => {
-    const input = createDefaultDamageKernelInput(master, undefined);
-    const scenario = scenarioFromDamageKernelInput(input, {
+    const input = createDefaultDamageResolutionInput(master, undefined);
+    const scenario = scenarioFromDamageResolutionInput(input, {
       attackerSource: 'master',
       effectMode: 'resolved',
       attackerSkills: [],
@@ -78,14 +78,14 @@ describe('calculation application logic', () => {
         limitBreak: 0,
       },
     });
-    expect(damageKernelInputFromScenario(scenario, master).npMultipliers).toEqual(
+    expect(damageResolutionInputFromScenario(scenario, master).npMultipliers).toEqual(
       input.npMultipliers,
     );
   });
 
   it('uses manual values as the final calculation input without effect resolution', () => {
     const input = {
-      ...createDefaultDamageKernelInput(master, undefined),
+      ...createDefaultDamageResolutionInput(master, undefined),
       cardBuff: 0.32,
       npDamageBuff: 0.8,
       flatDamage: 0,
@@ -132,7 +132,7 @@ describe('calculation application logic', () => {
       ],
     });
     const input = {
-      ...createDefaultDamageKernelInput(specialMaster, undefined),
+      ...createDefaultDamageResolutionInput(specialMaster, undefined),
       classAffinity: 1,
       target: { classId: 'neutral', attribute: 'unknown' as const, traits: ['genderMale'] },
     };
@@ -192,7 +192,7 @@ describe('calculation application logic', () => {
       ],
     });
     const input = {
-      ...createDefaultDamageKernelInput(boostMaster, undefined),
+      ...createDefaultDamageResolutionInput(boostMaster, undefined),
       npDamageBuff: 0.3,
     };
     const support = {
@@ -264,7 +264,7 @@ describe('calculation application logic', () => {
   });
 
   it('marks every non-release calculation through the same result path', () => {
-    const input = createDefaultDamageKernelInput(master, undefined);
+    const input = createDefaultDamageResolutionInput(master, undefined);
     const calculation = calculateResolvedDamage(
       input,
       completeCalculationEditorState(undefined, master.servants[0], undefined),
@@ -281,7 +281,7 @@ describe('calculation application logic', () => {
   });
 
   it('changes every attacker-owned damage input in one state transition', () => {
-    const input = { ...createDefaultDamageKernelInput(master, undefined), attackerAtk: 999 };
+    const input = { ...createDefaultDamageResolutionInput(master, undefined), attackerAtk: 999 };
     const servant = {
       ...master.servants[0]!,
       id: 'next-attacker',
@@ -322,10 +322,10 @@ describe('calculation application logic', () => {
 
   it('clears direct damage modifiers when automatic resolution becomes their owner', () => {
     const input = {
-      ...createDefaultDamageKernelInput(master, undefined),
+      ...createDefaultDamageResolutionInput(master, undefined),
       attackBuff: 0.5,
       cardBuff: 0.5,
-      npSpecialMultipliers: [2, 2, 2, 2, 2] as DamageKernelInput['npSpecialMultipliers'],
+      npSpecialMultipliers: [2, 2, 2, 2, 2] as DamageResolutionInput['npSpecialMultipliers'],
       flatDamage: 500,
     };
     const next = setCalculationEffectMode(

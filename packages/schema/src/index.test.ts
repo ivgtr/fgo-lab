@@ -4,7 +4,7 @@ import {
   calculationEditorStateSchema,
   calculationResultSchema,
   calculationScenarioSchema,
-  damageKernelInputSchema,
+  damageResolutionInputSchema,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
   supportTemplateSchema,
@@ -80,9 +80,9 @@ describe('portable schema boundaries', () => {
 
   it('uses one explicit special NP multiplier per NP level', () => {
     expect(
-      damageKernelInputSchema.shape.npSpecialMultipliers.safeParse([1, 1.5, 2, 2.5, 3]),
+      damageResolutionInputSchema.shape.npSpecialMultipliers.safeParse([1, 1.5, 2, 2.5, 3]),
     ).toMatchObject({ success: true });
-    expect(damageKernelInputSchema.shape.npSpecialMultipliers.safeParse(1.5)).toMatchObject({
+    expect(damageResolutionInputSchema.shape.npSpecialMultipliers.safeParse(1.5)).toMatchObject({
       success: false,
     });
   });

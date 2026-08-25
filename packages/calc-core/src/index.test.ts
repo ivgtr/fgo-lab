@@ -1,18 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import type { DamageKernelInput, VersionContext } from '@fgo-lab/schema';
+import type { DamageKernelInput, DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
+import { damageKernelInputSchema } from '@fgo-lab/schema';
 import golden from '../../test-fixtures/golden/np-damage-v1.json';
 import {
   calculateNpDamage,
+  calculateDamagePoint,
+  compileDamageKernelInput,
   attributeAffinity,
   classAffinity,
   classAttackRate,
-  damageAtRandom,
   f32Add,
   ATTACK_NP_FUNCTION_TYPES,
   classifyAttackNpFunction,
 } from './index';
 
-const input: DamageKernelInput = {
+const resolvedDamagePoint = (
+  value: DamageResolutionInput,
+  npLevel: number,
+  randomPermille: number,
+) =>
+  calculateDamagePoint(
+    compileDamageKernelInput(value, npLevel, value.attackNpFunctionType === 'damageNpPierce'),
+    randomPermille,
+  );
+
+const input: DamageResolutionInput = {
   attackerId: 'fixture-saber',
   attackerLevel: 90,
   attackerAtk: 10000,
@@ -54,15 +66,38 @@ const versions: VersionContext = {
 describe('float32 NP damage kernel', () => {
   it('rounds at primitive boundaries', () =>
     expect(f32Add(0.1, 0.2)).toBe(Math.fround(Math.fround(0.1) + Math.fround(0.2))));
+  it('accepts only one-level numeric kernel inputs', () => {
+    const kernelInput: DamageKernelInput = {
+      totalAtk: 10_000,
+      npMultiplierPermille: 1_000,
+      card: 'arts',
+      classAttackRatePermille: 1_000,
+      classAffinityPermille: 1_000,
+      attributeAffinityPermille: 1_000,
+      attackModifierPermille: 0,
+      cardModifierPermille: 0,
+      npPowerModifierPermille: 0,
+      specialModifierPermille: 1_000,
+      npSpecialMultiplierPermille: 1_000,
+      flatDamage: 0,
+      damageCut: 0,
+      ignoreDefense: false,
+    };
+    expect(calculateDamagePoint(kernelInput, 1_000)).toBe(golden.expectedDamage);
+    expect(
+      damageKernelInputSchema.safeParse({ ...kernelInput, attackerId: 'must-not-enter-kernel' })
+        .success,
+    ).toBe(false);
+  });
   it('evaluates all five levels and the exact random endpoints', () => {
     const result = calculateNpDamage(input, versions);
     expect(result.rows).toHaveLength(5);
-    expect(result.rows[0]?.minimum).toBe(damageAtRandom(input, 1, 900));
-    expect(result.rows[0]?.maximum).toBe(damageAtRandom(input, 1, 1099));
+    expect(result.rows[0]?.minimum).toBe(resolvedDamagePoint(input, 1, 900));
+    expect(result.rows[0]?.maximum).toBe(resolvedDamagePoint(input, 1, 1099));
     expect(result.rows[4]!.average).toBeGreaterThan(result.rows[0]!.average);
   });
   it('matches the independent neutral Arts formula at random 1000', () => {
-    const neutral: DamageKernelInput = {
+    const neutral: DamageResolutionInput = {
       ...input,
       attackerAtk: 10_000,
       fouAtk: 0,
@@ -74,7 +109,7 @@ describe('float32 NP damage kernel', () => {
       cardBuff: 0,
       npDamageBuff: 0,
     };
-    expect(damageAtRandom(neutral, 1, 1000)).toBe(golden.expectedDamage);
+    expect(resolvedDamagePoint(neutral, 1, 1000)).toBe(golden.expectedDamage);
   });
   it('uses percentage NP multipliers from normalized master data', () => {
     const artoriaLike = {
@@ -82,7 +117,7 @@ describe('float32 NP damage kernel', () => {
       attackerAtk: 11_221,
       fouAtk: 1_000,
       craftEssenceAtk: 0,
-      npMultipliers: [400, 500, 550, 575, 600] as DamageKernelInput['npMultipliers'],
+      npMultipliers: [400, 500, 550, 575, 600] as DamageResolutionInput['npMultipliers'],
       classAttackRate: classAttackRate('saber'),
       classAffinity: classAffinity('saber', 'lancer'),
       attributeAffinity: attributeAffinity('earth', 'earth'),
@@ -157,15 +192,15 @@ describe('float32 NP damage kernel', () => {
   it('uses the special NP multiplier belonging to each result row', () => {
     const rowSpecific = {
       ...input,
-      npMultipliers: [100, 100, 100, 100, 100] as DamageKernelInput['npMultipliers'],
-      npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as DamageKernelInput['npSpecialMultipliers'],
+      npMultipliers: [100, 100, 100, 100, 100] as DamageResolutionInput['npMultipliers'],
+      npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as DamageResolutionInput['npSpecialMultipliers'],
     };
     const result = calculateNpDamage(rowSpecific, versions);
     expect(result.rows[1]!.average / result.rows[0]!.average).toBeCloseTo(1.5, 3);
     expect(result.rows[4]!.average / result.rows[0]!.average).toBeCloseTo(3, 3);
   });
   it('keeps additive and multiplicative modifier groups in the documented order', () => {
-    const composed: DamageKernelInput = {
+    const composed: DamageResolutionInput = {
       ...input,
       attackerAtk: 10_000,
       fouAtk: 0,
@@ -183,10 +218,10 @@ describe('float32 NP damage kernel', () => {
       npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
       flatDamage: 175,
     };
-    expect(damageAtRandom(composed, 1, 1000)).toBe(9_117);
+    expect(resolvedDamagePoint(composed, 1, 1000)).toBe(9_117);
   });
   it('matches AppMedia random endpoints for the reported Water Lilith inputs', () => {
-    const waterLilith: DamageKernelInput = {
+    const waterLilith: DamageResolutionInput = {
       ...input,
       attackerId: '405900',
       attackerAtk: 15_381,

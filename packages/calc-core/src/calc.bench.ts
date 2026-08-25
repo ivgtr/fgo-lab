@@ -1,5 +1,5 @@
 import { bench } from 'vitest';
-import type { DamageKernelInput, VersionContext } from '@fgo-lab/schema';
+import type { DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
 import { calculateNpDamage } from './index';
 
 const input = {
@@ -31,7 +31,7 @@ const input = {
   damageCut: 0,
   fieldTraits: [],
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
-} satisfies DamageKernelInput;
+} satisfies DamageResolutionInput;
 const versions = {
   schemaVersion: 4,
   masterDataVersion: 'fixture-1',

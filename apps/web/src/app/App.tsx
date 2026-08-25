@@ -21,7 +21,7 @@ import {
 import { finalizeHistory, scenarioFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalculationScenario,
-  DamageKernelInput,
+  DamageResolutionInput,
   CalculationShareSnapshot,
   CraftEssenceCopy,
   ServantBuild,
@@ -35,10 +35,10 @@ import { t } from '../ui/i18n';
 import {
   calculateResolvedDamage,
   completeCalculationEditorState,
-  createDefaultDamageKernelInput,
-  damageKernelInputFromScenario,
+  createDefaultDamageResolutionInput,
+  damageResolutionInputFromScenario,
   resolveCalculationInput,
-  scenarioFromDamageKernelInput,
+  scenarioFromDamageResolutionInput,
   selectionFromScenario,
 } from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
@@ -203,11 +203,11 @@ export function App() {
   );
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
-  const defaultInput = createDefaultDamageKernelInput(currentMaster, defaultBuild);
+  const defaultInput = createDefaultDamageResolutionInput(currentMaster, defaultBuild);
   const defaultSelection = completeCalculationEditorState(undefined, defaultServant, defaultBuild);
   const currentScenario =
-    calculation.scenario ?? scenarioFromDamageKernelInput(defaultInput, defaultSelection);
-  const baseInput = damageKernelInputFromScenario(currentScenario, currentMaster);
+    calculation.scenario ?? scenarioFromDamageResolutionInput(defaultInput, defaultSelection);
+  const baseInput = damageResolutionInputFromScenario(currentScenario, currentMaster);
   const selectedAttacker =
     currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
     defaultServant;
@@ -335,8 +335,8 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function saveCalculationDraft(nextInput: DamageKernelInput, selection = currentSelection) {
-    const scenario = scenarioFromDamageKernelInput(nextInput, selection);
+  async function saveCalculationDraft(nextInput: DamageResolutionInput, selection = currentSelection) {
+    const scenario = scenarioFromDamageResolutionInput(nextInput, selection);
     setCalculation({ scenario, shared: undefined });
     const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions, {
       releaseValidated: ENGINE_RELEASE_VALIDATED,
@@ -362,7 +362,7 @@ export function App() {
     }));
   }
   async function finalizeCurrentCalculation(currentInput = input, currentResult = result) {
-    const scenario = scenarioFromDamageKernelInput(currentInput, currentSelection);
+    const scenario = scenarioFromDamageResolutionInput(currentInput, currentSelection);
     const fingerprint = await scenarioFingerprint(
       scenario,
       currentMaster.version,
@@ -543,7 +543,7 @@ export function App() {
               .map((candidate) => {
                 const np = getPrimaryNpPresentation(candidate);
                 if (!np) throw new TypeError(`attack_np_missing:${candidate.id}`);
-                const input = createDefaultDamageKernelInput(
+                const input = createDefaultDamageResolutionInput(
                   currentMaster,
                   profile.servantBuilds[candidate.id],
                   candidate,

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type {
-  DamageKernelInput,
+  DamageResolutionInput,
   CalculationResult as CalculationResultValue,
   CalculationEditorState,
   CalculationShareSnapshot,
@@ -9,7 +9,7 @@ import { SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
-import { scenarioFromDamageKernelInput } from './calculation';
+import { scenarioFromDamageResolutionInput } from './calculation';
 import './calculation-result.css';
 
 export function CalculationResult({
@@ -24,7 +24,7 @@ export function CalculationResult({
   enabledAttackerSkillCount,
   onFinalize,
 }: {
-  input: DamageKernelInput;
+  input: DamageResolutionInput;
   result: CalculationResultValue;
   selection: CalculationEditorState;
   attackerName: string;
@@ -33,7 +33,7 @@ export function CalculationResult({
   craftEssenceSummary: string;
   supportSummary: string;
   enabledAttackerSkillCount: number;
-  onFinalize: (input: DamageKernelInput, result: CalculationResultValue) => Promise<void>;
+  onFinalize: (input: DamageResolutionInput, result: CalculationResultValue) => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const resultCardRef = useRef<HTMLElement>(null);
@@ -41,7 +41,7 @@ export function CalculationResult({
     kind: 'fgo-lab-calculation-share',
     schemaVersion: SCHEMA_VERSION,
     sharedAt: new Date().toISOString(),
-    scenario: scenarioFromDamageKernelInput(input, selection),
+    scenario: scenarioFromDamageResolutionInput(input, selection),
     result,
   } satisfies CalculationShareSnapshot;
   async function copyUrl() {

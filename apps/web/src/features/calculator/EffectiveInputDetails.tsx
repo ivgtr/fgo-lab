@@ -1,4 +1,4 @@
-import type { DamageKernelInput } from '@fgo-lab/schema';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { numberFormatter } from '../../ui/i18n';
 import type { DamageEffectStack } from './damageEffectStacks';
 import { damageEffectStateLabel } from './damageEffectStacks';
@@ -10,7 +10,7 @@ export function EffectiveInputDetails({
   mode,
   damageEffectStacks,
 }: {
-  input: DamageKernelInput;
+  input: DamageResolutionInput;
   mode: 'quick' | 'direct';
   damageEffectStacks: readonly DamageEffectStack[];
 }) {

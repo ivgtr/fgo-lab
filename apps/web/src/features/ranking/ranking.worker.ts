@@ -1,11 +1,11 @@
 /// <reference lib="webworker" />
 import { calculateNpDamage } from '@fgo-lab/calc-core';
-import type { DamageKernelInput, VersionContext } from '@fgo-lab/schema';
+import type { DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
 
 export interface RankingCandidate {
   servantId: string;
   name: string;
-  input: DamageKernelInput;
+  input: DamageResolutionInput;
   resolutionPrecision: 'exact' | 'approximate' | 'unsupported';
   resolutionWarnings: string[];
   classId: string;

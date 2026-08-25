@@ -79,7 +79,7 @@ export const supportTemplateSchema = z.object({
 });
 export type SupportTemplate = z.infer<typeof supportTemplateSchema>;
 
-export const damageKernelInputSchema = z.object({
+export const damageResolutionInputSchema = z.object({
   attackerId: z.string().min(1).max(80),
   attackerLevel: z.number().int().min(1).max(120),
   attackerAtk: z.number().int().nonnegative().max(100000),
@@ -120,6 +120,26 @@ export const damageKernelInputSchema = z.object({
     traits: z.array(z.string().min(1).max(80)).max(100),
   }),
 });
+export type DamageResolutionInput = z.infer<typeof damageResolutionInputSchema>;
+
+export const damageKernelInputSchema = z
+  .object({
+    totalAtk: z.number().int().nonnegative().max(120000),
+    npMultiplierPermille: z.number().nonnegative().max(200000),
+    card: z.enum(['buster', 'arts', 'quick']),
+    classAttackRatePermille: z.number().nonnegative().max(5000),
+    classAffinityPermille: z.number().nonnegative().max(5000),
+    attributeAffinityPermille: z.number().nonnegative().max(5000),
+    attackModifierPermille: z.number().min(-5000).max(10000),
+    cardModifierPermille: z.number().min(-5000).max(10000),
+    npPowerModifierPermille: z.number().min(-5000).max(30000),
+    specialModifierPermille: z.number().nonnegative().max(200000),
+    npSpecialMultiplierPermille: z.number().nonnegative().max(20000),
+    flatDamage: z.number().int().min(-100000).max(100000),
+    damageCut: z.number().int().nonnegative().max(100000),
+    ignoreDefense: z.boolean(),
+  })
+  .strict();
 export type DamageKernelInput = z.infer<typeof damageKernelInputSchema>;
 
 export const attackerSkillSelectionSchema = z.object({
@@ -225,7 +245,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
 const manualScenarioSchema = scenarioBaseSchema
   .extend({
     mode: z.literal('manual'),
-    manual: damageKernelInputSchema,
+    manual: damageResolutionInputSchema,
   })
   .strict();
 

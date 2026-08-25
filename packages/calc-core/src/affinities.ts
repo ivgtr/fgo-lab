@@ -1,6 +1,6 @@
-import type { DamageKernelInput } from '@fgo-lab/schema';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 
-export type CombatAttribute = DamageKernelInput['target']['attribute'];
+export type CombatAttribute = DamageResolutionInput['target']['attribute'];
 
 const CLASS_ORDER = [
   'saber',

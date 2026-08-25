@@ -9,7 +9,7 @@ import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
 import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
 import type {
   AttackerSkillSelection,
-  DamageKernelInput,
+  DamageResolutionInput,
   CalculationEditorState,
   CalculationResult as CalculationResultValue,
   CraftEssenceCopy,
@@ -55,8 +55,8 @@ export function Calculator({
   onSupportSave,
   onFinalize,
 }: {
-  input: DamageKernelInput;
-  resolvedInput: DamageKernelInput;
+  input: DamageResolutionInput;
+  resolvedInput: DamageResolutionInput;
   resolvedEffects: readonly ResolvedSupportEffect[];
   effectWarnings: readonly string[];
   result: CalculationResultValue;
@@ -68,14 +68,14 @@ export function Calculator({
   supportTemplates: SupportTemplate[];
   selectedSupport: SupportTemplate | undefined;
   sharedVersionMismatch: boolean;
-  onInputChange: (input: DamageKernelInput) => Promise<void>;
+  onInputChange: (input: DamageResolutionInput) => Promise<void>;
   onCompositionChange: (
-    input: DamageKernelInput,
+    input: DamageResolutionInput,
     selection: CalculationEditorState,
   ) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
-  onFinalize: (input: DamageKernelInput, result: CalculationResultValue) => Promise<void>;
+  onFinalize: (input: DamageResolutionInput, result: CalculationResultValue) => Promise<void>;
 }) {
   const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
@@ -145,7 +145,7 @@ export function Calculator({
     : supportSources.length
       ? `未保存の支援構成（${selectedSupportEffectCount}効果）`
       : '支援なし';
-  function change(patch: Partial<DamageKernelInput>) {
+  function change(patch: Partial<DamageResolutionInput>) {
     void onInputChange({ ...input, ...patch });
   }
   function changeManual(
@@ -747,7 +747,7 @@ export function Calculator({
                   onChange={(event) => {
                     const multipliers = [
                       ...input.npSpecialMultipliers,
-                    ] as DamageKernelInput['npSpecialMultipliers'];
+                    ] as DamageResolutionInput['npSpecialMultipliers'];
                     multipliers[input.npLevel - 1] = Number(event.target.value) / 100;
                     change({ npSpecialMultipliers: multipliers });
                   }}

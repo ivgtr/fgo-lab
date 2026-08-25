@@ -1,5 +1,5 @@
 import type { CraftEssenceMaster, MysticCodeMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { DamageKernelInput, SupportComposition } from '@fgo-lab/schema';
+import type { DamageResolutionInput, SupportComposition } from '@fgo-lab/schema';
 import type { MasterEffect, NpDamageSpec } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import {
@@ -12,7 +12,7 @@ import {
   resolveSupportComposition,
 } from './index';
 
-const input: DamageKernelInput = {
+const input: DamageResolutionInput = {
   attackerId: 'attacker',
   attackerLevel: 90,
   attackerAtk: 10000,
