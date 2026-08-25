@@ -1,11 +1,11 @@
 ---
 title: "FGO Lab 実装計画書"
-document_version: "0.11.0"
+document_version: "0.11.1"
 status: "Ready for Implementation"
 created_at: "2026-08-23"
-updated_at: "2026-08-24"
-source_requirements: "docs/fgo-lab-requirements-v0.3.md v0.3.4"
-ui_baseline: "docs/ui-design-spec.md v1.3.8"
+updated_at: "2026-08-25"
+source_requirements: "docs/fgo-lab-requirements-v0.3.md v0.3.5"
+ui_baseline: "docs/ui-design-spec.md v1.3.9"
 ui_baseline_status: "Approved"
 ---
 
@@ -16,6 +16,8 @@ ui_baseline_status: "Approved"
 本書は、確定したプロダクト構造を、実装順、成果物、依存関係、完了条件へ変換した実行計画である。
 
 ダメージ計算品質の収束作業については、`docs/damage-quality-convergence-plan.md`を段階実行と確認ゲートの正本とする。同計画は、本書のM3、M6、M7、M9に含まれる計算品質関連作業を具体化し、その範囲では既存の機能復元順より優先する。
+
+条件、状態変化、補正の順序付き実行への移行は、`docs/damage-effect-execution-migration-plan.md`を正本とする。同計画のE0〜E3をQ6および新しい個別効果対応より優先し、内部を破壊的に置換しながら承認済みのフロントエンド入出力体験を維持する。
 
 機能範囲とデータ境界は `docs/fgo-lab-requirements-v0.3.md`、承認済みの画面構造と操作モデルは `docs/ui-design-spec.md` を正とする。両者が衝突する場合は片方だけを上書きせず、要件書とUI仕様を同時に更新する。旧要件書v0.2.2は検討履歴であり、実装判断には使用しない。
 
@@ -53,7 +55,7 @@ ui_baseline_status: "Approved"
 - ダメージ計算の主目的は撃破判定ではなく、条件ごとのダメージ目安を知ることである。
 - 宝具結果はNP1〜5を縦に並べ、各行に平均、最低、最大を表示する。現在のNPレベルだけを強調する。
 - 敵HP、撃破率、不足、余剰、前NPレベルとの差は主結果へ表示しない。
-- 攻撃対象のクラス、属性、特性から特攻の適用可否を判定し、適用／不適用の根拠を表示する。
+- 攻撃対象のクラス、属性と、適用内容で宣言した条件から特攻の適用可否を判定し、適用／不適用の根拠を表示する。対象特性の専用エディタは設けない。
 - 比較は複数シナリオ表ではなく火力ランキングへ一本化する。全サーヴァントと所持サーヴァントを切り替える。
 - 育成計画は明示的に計画中としたサーヴァントだけを対象にし、現在値と目標値の差を素材別台帳へ合計する。
 - 所持素材との差し引きは行わず、必要総数を表示する。
@@ -348,7 +350,7 @@ web UI -> import-export / URL-share interfaces -> local file / URL fragment
 - DB由来の自身スキル、支援スキル、魔術礼装効果
 - 保存済み、変更、追加、削除予定の差分表示
 - クイック操作／直接入力の同一計算状態
-- 攻撃対象のクラス、属性、特性、耐性
+- 攻撃対象のクラス、属性、耐性と、適用内容による条件成立宣言
 - 特攻の適用／不適用根拠
 - NP1〜5の平均、最低、最大結果表
 - 結果の内訳、仮定、警告、データ版

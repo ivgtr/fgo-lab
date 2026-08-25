@@ -1,10 +1,10 @@
 ---
 title: "FGO Lab プロダクト要件定義書"
-document_version: "0.3.4"
+document_version: "0.3.5"
 status: "Baseline"
 created_at: "2026-08-24"
 supersedes: "docs/fgo-lab-requirements.md v0.2.2"
-ui_baseline: "docs/ui-design-spec.md v1.3.8"
+ui_baseline: "docs/ui-design-spec.md v1.3.9"
 ---
 
 # FGO Lab プロダクト要件定義書
@@ -19,6 +19,7 @@ ui_baseline: "docs/ui-design-spec.md v1.3.8"
 - `docs/ui-design-spec.md`: 承認済みの情報構造、操作モデル、レスポンシブ、画面受入条件
 - `docs/implementation-plan.md`: 実装順、依存関係、成果物、品質ゲート
 - `docs/damage-calculation-review.md`: 計算式調査、実装境界、検証基準、配信方針
+- `docs/damage-effect-execution-requirements.md`: 条件、状態変化、補正を順序付きで実行する計算要件とUI不変条件
 - 比較デモとoptions文書: 判断理由と実装時の参照資料
 
 本書と旧要件書が衝突する場合は本書を優先する。本書とUI仕様が衝突する場合、機能範囲とデータ境界は本書、画面構造と操作モデルはUI仕様を優先し、片方だけを変更せず両文書を更新する。
@@ -195,7 +196,7 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 | FR-CALC-004 | サーヴァントLv、礼装Lv、NP、OC、各スキルLvを変更できる |
 | FR-CALC-005 | NPレベルは選択式とし、細かな数値は数値入力とショートカットを使い分ける |
 | FR-CALC-006 | 自身スキルと自バフを攻撃役の近くへ配置し、短い操作で追加・変更できる |
-| FR-CALC-007 | 攻撃対象のクラス、属性、特性、耐性を設定できる |
+| FR-CALC-007 | 攻撃対象のクラス、属性、耐性を設定できる。条件付き特性は専用エディタを設けず、適用内容の成立宣言として入力できる |
 | FR-CALC-008 | 特攻の適用／不適用と、その判定根拠を表示する |
 | FR-CALC-009 | NP1〜5を縦に並べ、各行へ平均、最低、最大を表示する |
 | FR-CALC-010 | 現在入力中のNPレベル一行だけを、色以外の手段も使って強調する |
@@ -370,6 +371,16 @@ CalcResult + Breakdown + Assumptions + Warnings + Trace
 - 全攻撃宝具をFunction種別へ分類し、未知Functionと未対応handlerをデータ更新ごとに検出する。
 - AppMedia等の単一実装の出力を唯一の正解値にせず、一次根拠、独立計算、差分照合を組み合わせる。
 
+### 8.4 効果実行とUI不変条件
+
+- 条件判定、状態変化、補正付与、宝具ダメージを、マスター由来の順序付き操作として一つの計算状態へ適用する。
+- 自身、パッシブ、礼装、支援、魔術礼装、宝具前効果、宝具特殊Functionは同じ条件評価器と実行経路を使用する。
+- UIの効果on/offは成立条件の宣言であり、カード不一致、付与対象不一致、順序、値欠損、未対応handlerを迂回しない。
+- UIはreason文字列、表示名、サーヴァントIDから効果の表示可否または操作可否を推測しない。
+- 内部の破壊的移行後も、ダメージ計算画面の入力項目、操作順、結果表、内訳導線、共有導線を維持する。
+- 誤計算修正による数値、適用効果、内訳、precisionの変化は旧出力との互換対象にしない。
+- 詳細な目標契約と受入条件は`docs/damage-effect-execution-requirements.md`を正とする。
+
 ## 9. マスターデータ要件
 
 R1では少なくとも次を扱う。
@@ -534,6 +545,9 @@ R1が提供するゲームデータと表示言語はJP・日本語を正とす�
 - [ ] 主要ブラウザ、320px、キーボード、オフラインの必須フローが通る。
 - [ ] 重大なアクセシビリティ違反が0件である。
 - [ ] 画像を取得できなくても名称と数値で主要機能を利用できる。
+- [ ] 条件付き効果と状態変化が順序付きの単一実行経路で解決される。
+- [ ] 内部計算移行の前後で、ダメージ計算画面の入力項目、操作順、結果形式、共有導線が維持される。
+- [ ] 新旧resolver、別NP条件経路、UI側のreason文字列判定が残っていない。
 
 ## 14. R2候補
 
@@ -580,6 +594,8 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 - `docs/ui-design-spec.md`
 - `docs/implementation-plan.md`
 - `docs/damage-calculation-review.md`
+- `docs/damage-effect-execution-requirements.md`
+- `docs/damage-effect-execution-migration-plan.md`
 - `docs/home-ui-options.md`
 - `docs/my-chaldea-ui-options.md`
 - `docs/craft-essence-ui-options.md`

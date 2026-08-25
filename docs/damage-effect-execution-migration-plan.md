@@ -1,0 +1,257 @@
+---
+title: "FGO Lab ダメージ効果実行エンジン移行計画"
+document_version: "1.0.0"
+status: "Proposed"
+created_at: "2026-08-25"
+source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
+refactoring_contract: "docs/adr/008-refactoring-contract.md"
+---
+
+# FGO Lab ダメージ効果実行エンジン移行計画
+
+## 1. 目的と優先度
+
+本計画は、`docs/damage-effect-execution-requirements.md`を実装、検証、削除、確認の単位へ分解する。ダメージ計算品質を最優先とし、Q6のランキング完成や新しい効果対応より先に実施する。
+
+内部は破壊的に置換するが、フロントエンドの入出力体験は変えない。移行のためだけの互換層や新旧runtime経路は作らない。
+
+## 2. 現状と移行理由
+
+現行実装には次の構造的な重複と漏出がある。
+
+- context mutationを固定点探索し、その後にmodifierを評価しているため、マスターの実行順が主モデルになっていない。
+- 効果onが条件全体の成立を直接上書きする。
+- UIがresolverのreason文字列、条件種別、付与元から操作可否を再判定している。
+- 特攻宝具のcondition controlをapplication layerで別途生成している。
+- 状態生成効果、火力効果、表示判定の責務が一つのflat effect配列へ混在している。
+
+直近の個別修正は回帰を止めるために必要だったが、この構造へ条件分岐を追加し続けることは完了形としない。
+
+## 3. 移行規則
+
+1. 各フェーズは最終契約へ直接進み、旧形式を読み続けるadapterを成果物にしない。
+2. productionに新旧executorを同時に接続し、結果比較やfeature flagで切り替える方式を採用しない。
+3. 置換前の比較はtest fixtureと保存済みgoldenで行い、旧engineをruntimeへ残さない。
+4. 一つのフェーズの完了時点で、対象範囲の旧型、旧関数、旧testを削除する。
+5. フェーズ途中でmain相当の検証を通せない巨大な未完成commitを作らない。契約、fixture、実装置換、削除確認をレビュー可能なcommitに分ける。
+6. ただしproduction経路を二つに分けるための小分けは行わない。中央切替は一つの置換commitにまとめる。
+
+## 4. 完了形
+
+```text
+UI input
+  -> CalculationScenario
+  -> ScenarioCompiler
+       master functions -> OrderedBattleOperation[]
+       effect decisions -> ScenarioAssumption[]
+  -> BattleExecutor
+       initial state
+       condition evaluation
+       ordered state mutation / modifier application
+  -> DamageKernelInput
+  -> existing DamageKernel / ResultEvaluator
+  -> ExecutionResult
+       calculation result
+       typed effect projections
+       trace / evidence / warnings
+  -> existing UI regions / share projection / ranking
+```
+
+状態所有者は`BattleExecutor`の一つとする。UI、application facade、rankingは補正値や条件成立状態を独自に再構成しない。
+
+## 5. フェーズと確認ゲート
+
+### E0：UI baselineと現状inventoryの固定
+
+状態: 未着手
+
+作業:
+
+- 現行ダメージ計算の入力項目、順序、初期値、操作可能条件、結果表、共有導線を一覧化する。
+- PCと320pxの代表スクリーンショットを保存する。
+- 現行のscenario、effect decision、NP condition control、context resolution、UI projectionの全利用箇所をinventory化する。
+- 全masterについて、操作種別、条件式、parameter、context producer／consumer、未対応理由を出力する。
+- 必須回帰シナリオの操作列と期待される表示項目をfixture化する。
+
+確認ゲート E0:
+
+- 維持するUIと、正しさのため変更を許容する数値・内訳が区別されている。
+- 削除対象一覧がファイル、型、関数単位で確定している。
+- サーヴァントID分岐なしで覆うべきFunction familyが確定している。
+- 以後の差分を旧runtimeなしで比較できるfixtureが揃っている。
+
+進行条件: UI baseline、許容する出力差、必須回帰シナリオをreportへ記録する。要件書と異なるUI判断が見つからない限り、ユーザー確認で停止せずE1へ進む。
+
+### E1：最終契約と正規化schemaの確定
+
+状態: 未着手
+
+作業:
+
+- `BattleState`、`BattleOperation`、`ConditionExpression`、`ScenarioAssumption`、`OperationResult`、`EffectProjection`を判別可能unionとして確定する。
+- 条件のAND、OR、否定、個数、対象、field、card、state、定量値をlosslessに正規化する。
+- master内の実行順とタイミングを正規化する。
+- unsupportedにするoperation／condition／parameterを明示する。
+- 新しいschema、master、engine versionと旧計算データの扱いを決定する。
+- 型契約とraw fixtureのcontract testを先に作る。
+
+確認ゲート E1:
+
+- 任意の正規化操作がサーヴァント名やIDを参照せず表現できる。
+- 表示名やreason文字列が計算契約に含まれない。
+- 条件成立宣言がカード、対象、値、順序、handler対応を迂回できない。
+- 旧scenarioからの曖昧な自動変換が設計されていない。
+
+進行条件: 入力がどの状態へ変換され、何が自動・手動・unsupportedになるかを代表例でreportへ記録する。UI要件またはR1対応範囲の変更が必要にならない限り、ユーザー確認で停止せずE2へ進む。
+
+### E2：計算経路とフロントエンド投影の破壊的置換
+
+状態: 未着手
+
+作業:
+
+- マスター正規化を最終`BattleOperation`形式へ置換する。
+- 共通condition evaluatorと順序付き`BattleExecutor`を実装する。
+- 自身、パッシブ、礼装、支援、魔術礼装、宝具前効果、宝具特殊Functionを一つの操作列へ接続する。
+- UIのeffect decisionを`ScenarioAssumption`へ変換し、状態へ反映して全操作を再評価する。
+- `DamageKernelInput`を実行済み状態から一度だけ生成する。
+- 既存のfloat32境界、乱数200点、NP1〜5 evaluatorは計算式を変更せず接続する。
+- `EffectProjection`から`自身の適用内容`、支援効果、内訳、警告を描画する。
+- 既存コントロールを同じ位置、ラベル、順序、初期値で`ScenarioAssumption`へ接続する。
+- 特攻宝具を通常条件効果と同じprojectionへ統合する。
+- URL、共有JSON、画像、draft、履歴を最終scenario/resultへ更新する。
+- 同じ置換commitで旧context固定点探索、条件一括assert、別NP condition control、旧modifier aggregation、UIのreason文字列判定を削除する。
+
+確認ゲート E2:
+
+- productionからdamage kernelへ到達するexecutorが一つだけである。
+- context producerが実行順どおり後続条件へ影響する。
+- 後続条件が先行操作を遡って成立させない。
+- 条件矛盾と未解決操作がfail-closedになる。
+- 必須unit、golden、property、inventoryが成功する。
+- `rg`による旧型・旧関数・互換flag参照が0件である。
+- baseline E2Eで入力項目、操作順、結果表、共有導線が維持される。
+
+進行条件: 必須回帰シナリオの計算値、適用効果、非表示効果、警告を一覧化し、E3の全master監査まで続ける。
+
+### E3：全master監査とUX不変確認
+
+状態: 未着手
+
+作業:
+
+- 全masterを最終executorで監査し、未知operation、条件、parameter、表示projectionを分類する。
+- 非火力効果、カード不一致色バフ、状態生成だけの効果が表示されないことを全件監査する。
+- E0で保存したbaselineと、単発計算のunsupported件数・型付き分類を比較し、増減理由を記録する。
+- PCと320pxのvisual regression、キーボード操作、共有round-tripを実行する。
+- 必須回帰シナリオを実データE2Eで確認する。
+- E2で見つかった問題は旧分岐を戻さず、最終operation／condition／projection契約の修正として解消する。
+
+確認ゲート E3:
+
+- baseline E2Eで入力項目、操作順、結果表、共有導線が維持される。
+- PCと320pxのvisual regressionに意図しない差がない。
+- UIに計算用reason文字列、マスターlabel、サーヴァントID分岐がない。
+- ダンテ、アーキタイプ：アース、水着武則天、水着リリスの操作違和感が解消している。
+- schema／engine不一致のdraft、履歴、共有が現行結果として誤表示されない。
+- 全masterの表示projection監査に未分類項目がない。
+
+ユーザー確認: 実画面で入力体験と結果表示を確認する。計画承認後は、この確認が必要になるまでE0〜E3の作業と自動検証を一気通貫で進める。
+
+### E4：ランキング統合と全master収束
+
+状態: 未着手
+
+作業:
+
+- ranking workerを同じscenario compiler、executor、kernelへ接続する。
+- 候補別の自身効果と成立宣言を同じ規則で解決する。
+- ranking専用のeffect解決、入力集約、簡易式を削除する。
+- 全master inventory、単発対ranking differential、benchmarkをCIへ追加する。
+- 未対応をFunction family単位で分類し、サーヴァント別例外を作らず閉じる。
+
+確認ゲート E4:
+
+- 同一scenarioの単発計算とranking結果が完全一致する。
+- 全JP攻撃宝具で未分類operationと条件が0件である。
+- unsupported候補が通常順位へ混在しない。
+- ranking中もUI操作を阻害しない。
+
+### E5：文書、版、旧経路の最終監査
+
+状態: 未着手
+
+作業:
+
+- schema、master、engine versionとデータ影響を記録する。
+- 要件、UI仕様、計画、ADR、品質report、evidenceを最終実装へ合わせる。
+- supersededなcondition／dependency計画を履歴化し、進行中の正本を一つにする。
+- 旧型、旧関数、旧fixture、旧文言判定、互換flag、未使用adapterを全workspaceで監査する。
+- typecheck、lint、unit、integration、golden、inventory、E2E、build、benchmarkを実行する。
+
+確認ゲート E5:
+
+- `docs/damage-effect-execution-requirements.md`の受入条件をすべて追跡できる。
+- 新旧実装が併存していない。
+- 公開可否と残るunsupported範囲を文書とreportから判断できる。
+- UI baselineと計算品質の双方が公開ゲートを通る。
+
+## 6. 削除対象
+
+E0で利用箇所を再確認したうえで、少なくとも次を削除対象とする。
+
+- `effectConditionsMatch`の条件一括成立経路
+- `resolveBattleContext`の固定点探索
+- booleanの`effectOverrides`／`effectDecisions`を条件迂回として解釈する契約
+- application layerの`npConditionControls`と合成`ResolvedEffect`
+- UIのreason文字列による`isAppliedEffectUserControllable`判定
+- UIのcontext-only構造推測
+- 表示と計算で重複するdamage relevance classifier
+- 移行で不要になる旧schema fixture、旧共有fixture、旧migration
+
+名称は実装時に変更される可能性があるため、削除完了は名前ではなく責務と参照0件で判定する。
+
+## 7. テスト行列
+
+| 層 | 必須検証 |
+|---|---|
+| Normalizer | raw Functionから順序、対象、条件、値、operationへのlossless変換 |
+| Condition | AND、OR、否定、対象、field、card、state、個数、定量、矛盾 |
+| Executor | 順序、状態追加・削除、後続条件、非遡及、aggregation、fail-closed |
+| Kernel | 既存float32、floor、clamp、乱数200点、NP1〜5 golden無回帰 |
+| Projection | 表示、非表示、自動適用、操作可能、理由、付与元 |
+| Application | quick/manual、draft、history、share、rankingの同一経路 |
+| E2E | 現行入力体験、代表4騎、結果、内訳、警告、共有、320px |
+| Inventory | 全masterの未知operation、条件、parameter、ID分岐、旧参照 |
+| Performance | 単発p95 100ms、NP1〜5、全候補ranking、Long Task |
+
+外部計算機の値だけをgoldenの正解にしない。Atlas raw、計算根拠、独立計算、比較先との差分理由を記録する。
+
+## 8. コミット境界
+
+レビュー可能性と旧実装非併存を両立するため、次を基本単位とする。
+
+1. `docs(calc): define ordered effect execution migration`
+2. `test(calc): lock execution and UI baselines`
+3. `refactor(calc)!: replace effect execution and UI projections`
+4. `test(calc): audit ordered execution against production master`
+5. `refactor(calc)!: unify ranking execution path`
+6. `docs(calc): record migration evidence and removed paths`
+
+3は中央production経路、typed UI projection、共有・draft接続の切替と、旧resolver、旧UI判定、別NP controlの削除を同じcommitへ含める。4は最終実装に対する監査と回帰fixtureだけを追加し、旧runtimeを比較用に復元しない。各commitでformat、typecheck、対象testを通し、中央切替後に旧runtimeへ戻すfallbackは追加しない。
+
+## 9. 中断条件
+
+次の場合は該当フェーズを完了扱いにせず、原因と選択肢を提示して確認を受ける。
+
+- UI入出力体験を変えなければ正しい条件を表現できない。
+- Atlas rawから実行順または条件をlosslessに正規化できないFunction familyが見つかった。
+- 現行kernelの演算境界を変更しなければ実測または一次根拠へ一致しない。
+- 安全な一方向移行ができないユーザー原本データが見つかった。
+- 全masterで共通化できずサーヴァントID分岐が必要に見える。
+
+この場合も旧実装との併存で回避せず、要件、マスター表現、R1対応範囲のどれを変更するか判断する。
+
+## 10. 着手順
+
+本計画の確認後はE0から開始する。E0とE1はproduction挙動を変更しない。E1確認後、E2で計算経路とUI投影を一度に置換し、E3の実画面確認が必要な段階まで自動検証を含めて進める。E4はE3のUI確認後に着手する。

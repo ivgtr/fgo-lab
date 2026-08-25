@@ -1,10 +1,10 @@
 ---
 title: "FGO Lab ダメージ計算品質 収束計画"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "In Progress"
 created_at: "2026-08-25"
 updated_at: "2026-08-25"
-source_requirements: "docs/fgo-lab-requirements-v0.3.md v0.3.4"
+source_requirements: "docs/fgo-lab-requirements-v0.3.md v0.3.5"
 source_calculation_review: "docs/damage-calculation-review.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 ---
@@ -18,6 +18,8 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 機能範囲は `docs/fgo-lab-requirements-v0.3.md`、計算仕様と検証観点は `docs/damage-calculation-review.md`、破壊的変更を含む実装方針は `docs/adr/008-refactoring-contract.md` を正とする。本計画は `docs/implementation-plan.md` のM3、M6、M7、M9のうち計算品質に関係する作業順を具体化し、その範囲では `docs/demo-feature-restoration-plan.md` のD2、D3、D4、D7、D9より優先する。
 
 本計画の完了までは、火力ランキングを完成機能として扱わない。公開可否は環境変数ではなく、計算結果が参照する必須evidenceの完全性を検査するゲートで判定する。
+
+Q5.5後の効果条件、状態変化、UI投影の構造的な再移行は、`docs/damage-effect-execution-requirements.md`と`docs/damage-effect-execution-migration-plan.md`を正本とする。同移行のE0〜E3をQ6より先に完了し、旧resolverへ個別条件を追加しない。
 
 ## 2. 強制する実装原則
 
@@ -357,7 +359,7 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 | Q3 | 完了 | 2026-08-25 | 共通EffectSource、判別可能effect状態、単一integer aggregator、application facade、全付与元goldenへ収束。`docs/reports/damage-quality-q3.md` |
 | Q4 | 完了 | 2026-08-25 | 標準Function外部差分、特殊Function golden、共通precision評価、evidence inventory gateへ収束。完全なChaldea実行差分は対象外とし、特殊8種はprovisionalを維持。`docs/reports/damage-quality-q4.md` |
 | Q5 | 完了（確認待ち） | 2026-08-25 | scenario直接編集、効果適用前後入力の分離、session履歴、共有再計算検証、結果根拠表示へ収束し、旧editor・selection・application入口を削除。`docs/reports/damage-quality-q5.md` |
-| Q5.5 | 調査完了・計画確認待ち | 2026-08-25 | target方向、card条件、AND/OR条件、resolver判定順にP0を確認。actor-aware routingとlossless conditionへ置換する計画を策定。`docs/reports/damage-effect-routing-audit.md` |
+| Q5.5 | 実装完了・構造再移行へ移行 | 2026-08-25 | actor-aware routing、lossless condition、context依存、UI filteringを実装。固定点context、条件一括assert、別NP controlは新しい順序付き実行計画で置換する。`docs/reports/damage-effect-routing-audit.md`、`docs/damage-effect-execution-migration-plan.md` |
 | Q6 | 未着手 | - | - |
 | Q7 | 未着手 | - | - |
 
