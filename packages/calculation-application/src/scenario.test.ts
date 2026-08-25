@@ -110,7 +110,9 @@ describe('scenario calculation facade', () => {
     );
 
     expect(active.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
-    expect(active.effects.find((effect) => effect.effectKey === condition!.effectKey)).toMatchObject({
+    expect(
+      active.effects.find((effect) => effect.effectKey === condition!.effectKey),
+    ).toMatchObject({
       state: 'applied',
       reason: 'np_special_condition_asserted',
     });
@@ -190,6 +192,10 @@ describe('scenario calculation facade', () => {
         ...np,
         effects: [
           { ...modifierEffect('np-attack', 'upAtk', 600), timing: 'beforeDamage' as const },
+          {
+            ...modifierEffect('np-ignore-defense', 'pierceDefence', 0),
+            timing: 'beforeDamage' as const,
+          },
         ],
       })),
     };
@@ -285,11 +291,14 @@ describe('scenario calculation facade', () => {
       powerMod: 0,
       flatDamage: 0,
     });
-    expect(calculation.input).toMatchObject(effectSourcesGolden.expectedModifiers);
+    expect(calculation.input).toMatchObject({
+      ...effectSourcesGolden.expectedModifiers,
+      damageFunction: { ignoreDefense: effectSourcesGolden.expectedIgnoreDefense },
+    });
     expect(calculation.effects.map((effect) => effect.origin)).toEqual(
       effectSourcesGolden.sourceOrder,
     );
-    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     expect(calculation.result).toMatchObject({
       status: 'calculated',
       precision: 'approximate',

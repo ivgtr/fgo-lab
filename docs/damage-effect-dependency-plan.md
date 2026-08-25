@@ -73,3 +73,20 @@ NP damage merely because their full gameplay behavior is outside the calculator.
 - production-master audit records unsupported counts and reason families before/after;
 - typecheck, lint, unit/integration, production build, and focused calculator E2E pass;
 - residual unsupported cases remain fail-closed with a typed reason and an audit entry.
+
+## 2026-08-25 implementation result
+
+Phases 1–5 are complete. Master schema 8 replaces the lossy effect shape; the resolver now runs a
+fixed-point context pass before modifier aggregation, and disabled effects retain known values.
+Archetype: Earth passes the production-master regression and focused browser flow without a
+servant-specific branch.
+
+The default production audit moved from 37 unsupported calculations to 24 after context resolution,
+then to 18 after the already-tested defence-ignore operation was connected to the evidence gate.
+The audit now locks the exact servant IDs and reason families, not only the count. Four HP-dependent
+entries can be resolved by the new conditional quantitative input. Battle Point input uses the same
+contract, but Ereshkigal remains fail-closed because a separate phase-range parameter is unresolved.
+
+Residual implementation is tracked by semantic family in
+`docs/reports/damage-effect-dependency-audit.md`. It must be reduced by adding shared parameter or
+effect handlers and golden cases; production code must not branch on the audit's servant IDs.

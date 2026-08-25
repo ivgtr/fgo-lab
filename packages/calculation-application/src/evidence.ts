@@ -84,6 +84,7 @@ const entries: CalculationEvidence[] = [
       'specialDamageBuff',
       'powerMod',
       'flatDamage',
+      'ignoreDefense',
       'npDamageBuffRate',
     ] as const
   ).map((kind) =>
@@ -92,7 +93,9 @@ const entries: CalculationEvidence[] = [
       `Damage effect aggregation: ${kind}`,
       'provisional',
       [ATLAS_DAMAGE],
-      ['all-effect-sources-single-aggregation'],
+      kind === 'ignoreDefense'
+        ? ['all-effect-sources-single-aggregation', 'defense-piercing-np-row']
+        : ['all-effect-sources-single-aggregation'],
     ),
   ),
   evidence(

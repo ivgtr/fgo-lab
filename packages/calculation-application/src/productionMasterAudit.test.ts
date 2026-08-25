@@ -7,6 +7,31 @@ import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
 
+const expectedUnsupportedFamilies = {
+  '106600': ['np_effect_not_resolved'],
+  '202500': ['missing_attacker_hp_ratio'],
+  '203300': ['missing_attacker_hp_ratio'],
+  '305800': ['np_effect_parameter_semantics_not_resolved'],
+  '400900': ['missing_attacker_hp_ratio'],
+  '506000': ['np_effect_not_resolved'],
+  '605300': ['passive_effect_not_resolved'],
+  '702500': ['missing_attacker_hp_ratio'],
+  '704900': ['np_effect_not_resolved'],
+  '800100': ['np_effect_parameter_semantics_not_resolved'],
+  '1000300': ['passive_effect_not_resolved'],
+  '1102000': ['np_effect_parameter_semantics_not_resolved'],
+  '1102300': ['np_effect_parameter_semantics_not_resolved'],
+  '2300600': ['passive_effect_condition_not_resolved'],
+  '2300900': ['passive_effect_not_resolved'],
+  '2301200': ['np_effect_parameter_semantics_not_resolved'],
+  '2801300': ['np_effect_parameter_semantics_not_resolved', 'passive_effect_not_resolved'],
+  '3300200': ['missing_battle_point_phase', 'np_effect_parameter_semantics_not_resolved'],
+} as const;
+
+function reasonFamily(reason: string): string {
+  return reason.split(':', 1)[0] ?? reason;
+}
+
 describe('production master damage quality ratchet', () => {
   it('keeps known candidate values and bounds fail-closed servants', async () => {
     const master = masterSnapshotSchema.parse(
@@ -52,10 +77,20 @@ describe('production master damage quality ratchet', () => {
     const archetype = calculations.find(
       ({ servant }) => servant.name === 'アーキタイプ：アース',
     )?.calculation;
+    const unsupportedFamilies = Object.fromEntries(
+      unsupported.map(({ servant, calculation }) => {
+        if (calculation.result.status !== 'unsupported')
+          throw new Error('unsupported audit lost its discriminant');
+        return [
+          servant.id,
+          [...new Set(calculation.result.missingEvidence.map(reasonFamily))].sort(),
+        ];
+      }),
+    );
 
     expect(master.servants).toHaveLength(469);
     expect(calculations).toHaveLength(420);
-    expect(unsupported.length).toBeLessThanOrEqual(24);
+    expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
     expect(missingCandidateValues).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
     expect(archetype?.input.fieldTraits).toContain('milleniumCastle');

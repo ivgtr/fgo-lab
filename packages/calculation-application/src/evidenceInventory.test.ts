@@ -28,6 +28,7 @@ const expectedKeys = new Set([
     'specialDamageBuff',
     'powerMod',
     'flatDamage',
+    'ignoreDefense',
     'npDamageBuffRate',
   ].map((kind) => `effect-operation:${kind}`),
   'input:manual-final-modifiers',

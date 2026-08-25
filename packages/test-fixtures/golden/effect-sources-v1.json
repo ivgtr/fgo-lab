@@ -3,13 +3,14 @@
   "description": "passive、概念礼装、自身スキル、魔術礼装、支援、宝具前効果をcanonical順で一度だけ集約する",
   "reviewedAt": "2026-08-25",
   "engineVersion": "7.1.0",
-  "sourceOrder": ["passive", "craftEssence", "attacker", "mysticCode", "support", "np"],
+  "sourceOrder": ["passive", "craftEssence", "attacker", "mysticCode", "support", "np", "np"],
   "expectedModifiers": {
     "attackBuff": 0.8,
     "cardBuff": 0.5,
     "npDamageBuff": 0.3,
     "powerMod": 0.5
   },
+  "expectedIgnoreDefense": true,
   "expectedRows": [
     { "npLevel": 1, "minimum": 49797, "average": 55302.905, "maximum": 60808 },
     { "npLevel": 2, "minimum": 66397, "average": 73737.41, "maximum": 81078 },

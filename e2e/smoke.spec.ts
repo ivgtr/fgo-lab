@@ -40,7 +40,9 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
   await expect(ownEffects).not.toContainText('コマンドカードタイプチェンジ');
   await expect(ownEffects).not.toContainText('弱体耐性アップ');
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
-  await expect(page.getByLabel('計算に使用する最終値')).toContainText('BUSTER性能／耐性50.0%／0.0%');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText(
+    'BUSTER性能／耐性50.0%／0.0%',
+  );
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('宝具威力／耐性30.0%／0.0%');
 });
 
@@ -741,6 +743,17 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await attackerDialog
     .getByRole('button', { name: /アーキタイプ：アース.*ムーンキャンサー.*Lv90/ })
     .click();
+  const archetypeEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect(archetypeEffects).toContainText('防御力ダウン');
+  await expect(archetypeEffects).toContainText('+20%・計算外');
+  await expect(archetypeEffects).toContainText('攻撃力アップ');
+  await expect(archetypeEffects).toContainText('+30%・計算外');
+  await expect(archetypeEffects).toContainText('宝具威力アップ');
+  await expect(archetypeEffects).toContainText('+20%・計算外');
+  await expect(archetypeEffects).toContainText('千年城フィールドを適用');
+  await expect(archetypeEffects).not.toContainText('倍率不明');
+  await expect(archetypeEffects).not.toContainText('未対応');
   await page.getByLabel('宝具Lv').selectOption('5');
   const chaoticTrait = page
     .getByRole('group', { name: /自身の適用内容/ })
@@ -751,6 +764,32 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await chaoticTrait.click();
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('2.00倍');
+});
+
+test('requests quantitative context only when the selected NP requires it', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers contextual damage inputs');
+  await page.goto('/');
+  const setup = page.getByRole('button', { name: 'セットアップを開始' });
+  if (await setup.isVisible()) await setup.click();
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('アン・ボニー＆メアリー・リード');
+  await attackerDialog
+    .getByRole('button', { name: /アン・ボニー＆メアリー・リード.*ライダー.*Lv90/ })
+    .first()
+    .click();
+
+  const remainingHp = page.getByRole('spinbutton', { name: '自身の残りHP（%）' });
+  await expect(remainingHp).toBeVisible();
+  await expect(remainingHp).toHaveValue('');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+  await remainingHp.fill('50');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });
 
 test('matches the reported Water Lilith inputs and exposes passive damage stacks', async ({

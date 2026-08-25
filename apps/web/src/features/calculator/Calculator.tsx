@@ -98,6 +98,7 @@ export function Calculator({
   const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
+  const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : null;
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
@@ -188,6 +189,23 @@ export function Calculator({
         key === 'classAffinity'
           ? { ...scenario.target, classId: `affinity:${String(value)}` }
           : { ...scenario.target, attribute: 'unknown' },
+    });
+  }
+  function changeDamageContext(
+    key: 'attackerHpPermille' | 'battlePointPhase',
+    value: number | null,
+  ) {
+    if (scenario.mode === 'manual') {
+      changeManualInput({ [key]: value });
+      return;
+    }
+    if (key === 'attackerHpPermille') {
+      void onScenarioChange({ ...scenario, attackerHpPermille: value });
+      return;
+    }
+    void onScenarioChange({
+      ...scenario,
+      battleState: { ...scenario.battleState, battlePointPhase: value },
     });
   }
   function changeAttackerLevel(level: number) {
@@ -294,6 +312,8 @@ export function Calculator({
             damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
             cardType: noblePhantasm.card,
             classAttackRate: resolveClassAttackRate(candidate.classId),
+            attackerHpPermille: null,
+            battlePointPhase: null,
           },
           damage,
           candidate.traits,
@@ -314,6 +334,8 @@ export function Calculator({
           skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
         })),
         effectDecisions: {},
+        attackerHpPermille: null,
+        battleState: { battlePointPhase: null },
         explicitOverrides: {},
       });
     }
@@ -757,6 +779,55 @@ export function Calculator({
               ) : null}
             </select>
           </label>
+          {attackerDamage?.kind === 'hpRatioLow' ? (
+            <label className="damage-context-input form-grid-wide">
+              自身の残りHP（%）
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                required
+                value={input.attackerHpPermille === null ? '' : input.attackerHpPermille / 10}
+                onChange={(event) =>
+                  changeDamageContext(
+                    'attackerHpPermille',
+                    event.target.value === ''
+                      ? null
+                      : Math.round(Math.min(100, Math.max(0, Number(event.target.value))) * 10),
+                  )
+                }
+              />
+              <small>HPが少ないほど威力が上がる宝具の計算に必要です</small>
+            </label>
+          ) : null}
+          {attackerDamage?.kind === 'battlePointPhase' ? (
+            <label className="damage-context-input form-grid-wide">
+              バトルポイント段階
+              <input
+                type="number"
+                min="0"
+                max={attackerDamage.maximumBattlePointPhase}
+                step="1"
+                required
+                value={input.battlePointPhase ?? ''}
+                onChange={(event) =>
+                  changeDamageContext(
+                    'battlePointPhase',
+                    event.target.value === ''
+                      ? null
+                      : Math.round(
+                          Math.min(
+                            attackerDamage.maximumBattlePointPhase,
+                            Math.max(0, Number(event.target.value)),
+                          ),
+                        ),
+                  )
+                }
+              />
+              <small>0〜{attackerDamage.maximumBattlePointPhase}の現在段階を入力します</small>
+            </label>
+          ) : null}
           {mode === 'direct' && (
             <>
               <div className="direct-input-summary form-grid-wide">

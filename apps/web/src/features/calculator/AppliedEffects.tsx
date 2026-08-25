@@ -8,6 +8,11 @@ import { traitLabel } from './traitPresentation';
 const HIDDEN_MISMATCHES = new Set(['attacker_trait_mismatch', 'card_type_mismatch']);
 
 function effectValueLabel(effect: ResolvedEffect) {
+  if (
+    effect.contextChanges.addedFieldTraits.length > 0 ||
+    effect.contextChanges.addedRecipientTraits.length > 0
+  )
+    return '条件反映';
   if (effect.value === null) return '倍率不明';
   if (effect.kind === 'flatDamage') return `+${effect.value.toLocaleString('ja-JP')}`;
   if (effect.damageTraitCondition?.kind === 'npSpecial') return `${effect.value.toFixed(2)}倍`;
@@ -25,6 +30,12 @@ function effectStateLabel(effect: ResolvedEffect) {
 }
 
 function effectLabel(effect: ResolvedEffect) {
+  if (!effect.label) {
+    const fieldTraits = effect.contextChanges.addedFieldTraits.map(traitLabel);
+    const recipientTraits = effect.contextChanges.addedRecipientTraits.map(traitLabel);
+    if (fieldTraits.length > 0) return `${fieldTraits.join('・')}フィールドを適用`;
+    if (recipientTraits.length > 0) return `${recipientTraits.join('・')}特性を付与`;
+  }
   if (effect.damageTraitCondition?.kind !== 'npSpecial') return effect.label;
   const conditions = effect.damageTraitCondition.condition.traits
     .filter((trait) => !trait.negative)
