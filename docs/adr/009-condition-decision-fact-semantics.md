@@ -30,3 +30,21 @@ UIはconditionを解釈しない。`calculation-application`がprojectionから�
 - ダンテの天/地のような排他的条件は、scenarioのメタデータ改変に依存せずfail-closedになる。
 - effect-local成立は他効果を暗黙成立させない。
 - schemaとengineは破壊的に更新し、旧`ScenarioAssumption`、`OperationDecisionMode`、`assumptionsForProjection`を残さない。
+
+## E3.3 amendment: unified constraint validation
+
+E3.2の実装は型を分離した一方、`WorldFactAssertion`とeffect-local conditionを別々に検証した。このため、既知の`attributeSky`／`fieldHeaven`と、成立を宣言した`attributeEarth`／`fieldHell`が同じscenario内で共存できた。さらにcontext mutationはstate変更後に排他検証され、unsupportedでも変更済みstateが後続operationへ渡った。
+
+E3.3では分離した入力型を維持しつつ、実行時検証を一つのcanonical constraint systemへ統合する。
+
+- fixed literalは、master／damage inputから確定した現在のtrait、検証済みworld fact、順序付きcontext mutationで確定したtrait、既知のquantityである。traitの未登録はunknownであり、negative literalではない。
+- satisfiable expressionは、選択されたeffect-local conditionである。conditionはmaster IRから取得し、scenarioへ複製しない。成立宣言は具体traitへ変換せず、world stateにも追加しない。
+- fixed literal同士、expression同士、fixed literalとexpressionを同じsolverへ入力する。AND、OR、NOTを保持した候補のうち、一つでも共通の充足割当があれば成立とする。
+- canonical exclusive group、trait polarity、integer quantity rangeの空積をtyped conflictとする。`partialTrait`、`traitCount`など制約へ正確に変換できないvariantはtyped unsupportedとする。
+- quantity比較は整数区間へ正規化し、否定されたequalは二つの区間へ分岐する。表現不能な範囲を近似しない。
+- conjunctionごとに矛盾候補を除去し、同値候補を正規化・重複排除する。候補2,048件または一候補128 literalを超えた場合は、誤った簡約をせずtyped `constraintComplexityExceeded`へ落とす。
+- world factsは全入力との制約検証に成功したcandidate stateだけをcommitする。
+- context mutationは現在stateをcloneしたcandidateへ適用し、選択済みeffect-local expressionsを含む全制約を再検証する。成功時だけcandidateをcommitし、失敗時は元stateを維持する。
+- conflictへ関与したdecisionとmutation operationは`applied`にしない。最終damage inputは最後にcommit済みのstateだけからfoldする。
+
+この変更はUI入力を増やさない。OR効果のオン・オフを維持し、既知のworld factと両立する枝がある場合だけ計算する。具体的な対象選択がないと後続状態を一意に確定できないcondition familyは、引き続きtyped unsupportedとする。

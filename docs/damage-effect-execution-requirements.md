@@ -266,6 +266,19 @@ E3.2では次を最終契約とする。
 - production 420計算でuser projection 1,545件、automatic visible 439件、hidden 671件、操作後不変0件、排他矛盾7組の正常計算0件。未知condition variantはproduction ratchetで検出する。
 - 既定scenarioのunsupportedは19騎から15騎。対象レアリティORの1騎はexactに解決可能となり、未選択の任意unsupportedを持つ3騎は既定計算を継続する。選択時にfail-closedとなるunsupportedは58騎90効果、partialはBBドバイの1騎1効果である。
 
+### 8.8 E3.3 unified constraint validation
+
+E3.2で型分離したworld factとeffect-local decisionを、実行時には一つのcanonical制約系で検証する。
+
+1. master／damage input、外部world fact、commit済みcontext mutation、既知quantityをfixed literalとして扱う。
+2. 未指定traitはunknownであり、`present: false`とみなさない。negativeは明示的world factまたはcommit済みremove mutationだけが生成する。
+3. 選択済みeffect-local conditionはmaster IR由来のsatisfiable expressionであり、具体traitやworld stateへ変換しない。
+4. fixed literalとexpressionの交差をAND／OR／NOTの情報を失わず検証し、共通の充足割当がなければtyped conflictでfail-closedにする。
+5. canonical排他、trait polarity、quantity rangeを同じsolverで検証する。解釈不能conditionと安全上限超過はtyped unsupportedにする。
+6. context mutationはcandidate stateで検証し、成功時だけ原子的にcommitする。失敗時は元stateを後続operationとdamage inputへ渡す。
+7. webはexecutorのruntime分類関数を直接使用せず、`calculation-application`のview model、projection、commandだけを使用する。
+8. crafted shareを含む外部scenarioはschema通過後もexecutorで同じ制約検証を受け、矛盾した結果を`calculated`として受理しない。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。
