@@ -871,12 +871,7 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(page.getByRole('alert')).toContainText('正確に計算できない');
   const resultDetails = page.getByText('計算内訳・根拠・仮定・警告');
   await resultDetails.click();
-  await expect(
-    page.getByText(/exclusiveAssumptionConflict:target:worldAttribute/).first(),
-  ).toBeVisible();
-  await expect(
-    page.getByText(/exclusiveAssumptionConflict:field:fieldRealm/).first(),
-  ).toBeVisible();
+  await expect(page.getByText(/conditionDecisionConflict:/).first()).toBeVisible();
 
   await sky.click();
   await expect(sky).toHaveAttribute('aria-pressed', 'false');
@@ -884,6 +879,51 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(table).toBeVisible();
   await expect(np1Average).toHaveText(skyAverage ?? '');
   await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
+});
+
+test('OR condition effects stay operable and causal at PC, 390px, and 320px', async ({ page }) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('インドラ');
+  await attackerDialog.getByRole('button', { name: /インドラ.*Lv90/ }).click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const orEffect = ownEffects.getByRole('button', { name: /威力アップ〔蛇・竜〕/ });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  const average = table
+    .getByRole('row', { name: /NP1.*現在/ })
+    .locator('td')
+    .first();
+  const initialAverage = await average.textContent();
+
+  await expect(orEffect).toHaveAttribute('aria-pressed', 'false');
+  await orEffect.click();
+  await expect(orEffect).toHaveAttribute('aria-pressed', 'true');
+  await expect(orEffect).toContainText('計算中');
+  await expect(average).not.toHaveText(initialAverage ?? '');
+  await expect(table).toBeVisible();
+
+  const details = page.getByText('計算内訳・根拠・仮定・警告');
+  await details.click();
+  await expect(page.getByText(/user-decision:.*condition:assumeSatisfied/).first()).toBeVisible();
+  await expect(page.getByText(/attackerSkill:addModifier:.*:applied/).first()).toBeVisible();
+
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(orEffect).toBeVisible();
+    await orEffect.click();
+    await expect(orEffect).toHaveAttribute('aria-pressed', 'false');
+    await orEffect.click();
+    await expect(orEffect).toHaveAttribute('aria-pressed', 'true');
+    await expect(table).toBeVisible();
+  }
 });
 
 test('matches the reported Water Lilith inputs and exposes passive damage stacks', async ({

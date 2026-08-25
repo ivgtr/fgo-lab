@@ -4,7 +4,6 @@ import {
   type MasterDataSnapshot,
   type MasterEffect,
   type NpDamageSpec,
-  type TraitCondition,
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 import type {

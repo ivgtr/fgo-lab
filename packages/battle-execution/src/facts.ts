@@ -32,7 +32,11 @@ export function validateAndApplyWorldFacts(
     const group = canonicalExclusiveGroup(fact.scope, fact.trait);
     if (!group) continue;
     const groupKey = `${fact.scope}:${group}`;
-    const entry = groups.get(groupKey) ?? { scope: fact.scope, group, traits: new Map() };
+    const entry = groups.get(groupKey) ?? {
+      scope: fact.scope,
+      group,
+      traits: new Map<string, Set<string>>(),
+    };
     entry.traits.set(
       fact.trait,
       new Set([...(entry.traits.get(fact.trait) ?? []), assertion.decisionKey]),

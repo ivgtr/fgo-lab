@@ -93,7 +93,7 @@ export function AppliedEffects({
                   imageKey: effectSourceImage(effect, servants, craftEssence),
                 },
               ]}
-              {...(effect.outcome !== 'unsupported' && effect.controllability === 'user'
+              {...(effect.controllability === 'user'
                 ? { onToggle: (active: boolean) => onToggle(effect, active) }
                 : {})}
             />

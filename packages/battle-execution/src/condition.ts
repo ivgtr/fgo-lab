@@ -126,7 +126,7 @@ function alternatives(condition: ConditionExpression, negated = false): Alternat
       const children = condition.expressions.map((child) => alternatives(child, negated));
       if (children.some((child) => child === null)) return null;
       return conjunction
-        ? (children as Alternatives[]).reduce(cartesian, [[]] as Alternatives)
+        ? (children as Alternatives[]).reduce<Alternatives>(cartesian, [[]])
         : (children as Alternatives[]).flat();
     }
   }

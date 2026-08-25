@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import type { ConditionExpression } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { applyEffectProjectionDecision } from './effectDecision';
@@ -28,6 +29,22 @@ const expectedUnsupportedFamilies = {
 
 function reasonFamily(reason: string): string {
   return reason.split(':', 1)[0] ?? reason;
+}
+
+function containsMultiBranchOr(condition: ConditionExpression | null): boolean {
+  if (!condition) return false;
+  if (condition.kind === 'any' && condition.expressions.length > 1) return true;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some(containsMultiBranchOr);
+  return condition.kind === 'not' && containsMultiBranchOr(condition.expression);
+}
+
+function collectConditionKinds(condition: ConditionExpression | null, kinds: Set<string>): void {
+  if (!condition) return;
+  kinds.add(condition.kind);
+  if (condition.kind === 'all' || condition.kind === 'any')
+    condition.expressions.forEach((child) => collectConditionKinds(child, kinds));
+  else if (condition.kind === 'not') collectConditionKinds(condition.expression, kinds);
 }
 
 describe('production master damage quality ratchet', () => {
@@ -68,6 +85,9 @@ describe('production master damage quality ratchet', () => {
         versions,
       );
       expect(selected.result.status, `${servantName}:${label}`).toBe('calculated');
+      if (initial.result.status !== 'calculated' || selected.result.status !== 'calculated')
+        throw new Error(`${servantName}:${label}:calculated result expected`);
+      expect(selected.result.rows[0].average).toBeGreaterThan(initial.result.rows[0].average);
       expect(
         selected.effects.find((effect) => effect.projectionKey === projection.projectionKey),
       ).toMatchObject({ outcome: 'applied', decision: { state: 'enabled' } });
@@ -122,6 +142,9 @@ describe('production master damage quality ratchet', () => {
     const mismatchedCardEffects = initial.effects.filter(
       (effect) => effect.explanation.code === 'cardMismatch',
     );
+    expect(initial.result.status).toBe('calculated');
+    if (initial.result.status !== 'calculated') throw new Error('Dante base must calculate');
+    expect(initial.result.rows[0].average).toBeCloseTo(32_208.975);
 
     expect(fieldChanges).not.toHaveLength(0);
     expect(fieldChanges.every((effect) => effect.visibility === 'hidden')).toBe(true);
@@ -142,6 +165,9 @@ describe('production master damage quality ratchet', () => {
     ] as const) {
       const calculation = calculateScenario(selectedScenario, master, versions);
       expect(calculation.result.status).toBe('calculated');
+      if (calculation.result.status !== 'calculated')
+        throw new Error('Dante selected realm must calculate');
+      expect(calculation.result.rows[0].average).toBeCloseTo(45_629.59);
       expect(calculation.input.powerMod).toBe(0.5);
       expect(calculation.input.target.traits).toEqual([]);
       expect(calculation.input.fieldTraits).toEqual([]);
@@ -241,7 +267,29 @@ describe('production master damage quality ratchet', () => {
         ];
       }),
     );
+    const multiBranchOrEffects = calculations.flatMap(({ servant, calculation }) =>
+      calculation.effects.flatMap((effect) =>
+        effect.visibility === 'visible' && containsMultiBranchOr(effect.explanation.condition)
+          ? [{ servantId: servant.id, projectionKey: effect.projectionKey }]
+          : [],
+      ),
+    );
+    const conditionKinds = new Set<string>();
+    calculations.forEach(({ calculation }) =>
+      calculation.effects.forEach((effect) =>
+        collectConditionKinds(effect.explanation.condition, conditionKinds),
+      ),
+    );
+    const allProjections = calculations.flatMap(({ calculation }) => calculation.effects);
+    const partialConditionProjections = calculations.flatMap(({ servant, calculation }) =>
+      calculation.effects.flatMap((effect) =>
+        effect.explanation.condition?.kind === 'partialTrait'
+          ? [{ servantId: servant.id, projectionKey: effect.projectionKey }]
+          : [],
+      ),
+    );
     const inertUserProjections: string[] = [];
+    const selectedUnsupportedProjections: string[] = [];
     const invalidAutomaticConditions: string[] = [];
     const invalidExclusiveCalculations: string[] = [];
     let exclusivePairCount = 0;
@@ -264,6 +312,8 @@ describe('production master damage quality ratchet', () => {
         const activeEffect = active.effects.find(
           (candidate) => candidate.projectionKey === effect.projectionKey,
         );
+        if (active.result.status === 'unsupported' && activeEffect?.outcome === 'unsupported')
+          selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
         if (
           !activeEffect ||
           (activeEffect.outcome === effect.outcome &&
@@ -313,11 +363,38 @@ describe('production master damage quality ratchet', () => {
 
     expect(master.servants).toHaveLength(469);
     expect(calculations).toHaveLength(420);
+    expect({
+      user: allProjections.filter((effect) => effect.controllability === 'user').length,
+      automaticVisible: allProjections.filter(
+        (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
+      ).length,
+      hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
+    }).toEqual({ user: 1_545, automaticVisible: 439, hidden: 671 });
+    expect({
+      servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
+      effects: partialConditionProjections.length,
+    }).toEqual({ servants: 1, effects: 1 });
+    expect({
+      servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
+      effects: multiBranchOrEffects.length,
+    }).toEqual({ servants: 16, effects: 19 });
+    expect([...conditionKinds].sort()).toEqual([
+      'all',
+      'always',
+      'any',
+      'partialTrait',
+      'quantity',
+      'trait',
+    ]);
     expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
     expect(missingCandidateValues).toEqual([]);
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
-    expect(exclusivePairCount).toBeGreaterThan(0);
+    expect({
+      servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
+      effects: selectedUnsupportedProjections.length,
+    }).toEqual({ servants: 58, effects: 90 });
+    expect(exclusivePairCount).toBe(7);
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
     expect(archetype?.input.fieldTraits).toContain('milleniumCastle');
