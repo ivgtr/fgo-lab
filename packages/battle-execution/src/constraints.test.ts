@@ -82,7 +82,7 @@ describe('unified constraint validation', () => {
     ).toBe('conflict');
   });
 
-  it('distinguishes explicit negative facts from unknown traits', () => {
+  it('distinguishes initial negative, explicit state negative, and unknown traits', () => {
     const dragon = condition('effect:dragon', {
       kind: 'trait',
       scope: 'target',
@@ -91,13 +91,22 @@ describe('unified constraint validation', () => {
     });
     expect(
       validateConstraintSet({
-        fixedFacts: [trait('world:not-dragon', 'target', 'dragon', false)],
+        fixedFacts: [
+          trait('world:not-dragon', 'target', 'dragon', false),
+          trait('world:not-state-dragon', 'targetState', 'dragon', false),
+        ],
         expressions: [dragon],
       }),
     ).toMatchObject({
       status: 'conflict',
       issue: { conflicts: [{ kind: 'traitPolarity', trait: 'dragon' }] },
     });
+    expect(
+      validateConstraintSet({
+        fixedFacts: [trait('world:not-initial-dragon', 'target', 'dragon', false)],
+        expressions: [dragon],
+      }).status,
+    ).toBe('satisfied');
     expect(validateConstraintSet({ fixedFacts: [], expressions: [dragon] }).status).toBe(
       'satisfied',
     );

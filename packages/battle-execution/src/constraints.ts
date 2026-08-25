@@ -1,10 +1,10 @@
 import type {
+  ActorScope,
   BattleState,
   CardType,
   ConditionConstraintConflict,
   ConditionExpression,
   ConstraintValidationIssue,
-  TraitScope,
   WorldFactAssertion,
 } from './index';
 import {
@@ -12,7 +12,15 @@ import {
   QUANTITY_FACT_DOMAINS,
   type QuantityFactName,
 } from '@fgo-lab/schema';
-import { canonicalExclusiveGroup, impliedTraitConstraintScopes } from './conditionSemantics';
+import {
+  canonicalExclusiveGroup,
+  traitConditionConstraintScope,
+  traitConstraintActorScope,
+  traitConstraintLayer,
+  traitConstraintPublicScope,
+  traitFactConstraintScope,
+  type TraitConstraintScope,
+} from './conditionSemantics';
 
 export const MAX_CONSTRAINT_ALTERNATIVES = 2_048;
 export const MAX_CONSTRAINT_LITERALS = 128;
@@ -38,7 +46,7 @@ type QuantityName = QuantityFactName;
 type Literal =
   | {
       kind: 'trait';
-      scope: TraitScope;
+      scope: TraitConstraintScope;
       trait: string;
       present: boolean;
       sourceKey: string;
@@ -126,16 +134,15 @@ function compileExpression(
       return {
         status: 'supported',
         alternatives: [
-          impliedTraitConstraintScopes(
-            expression.scope,
-            negated ? !expression.present : expression.present,
-          ).map((scope) => ({
-            kind: 'trait',
-            scope,
-            trait: expression.trait,
-            present: negated ? !expression.present : expression.present,
-            sourceKey,
-          })),
+          [
+            {
+              kind: 'trait',
+              scope: traitConditionConstraintScope(expression.scope),
+              trait: expression.trait,
+              present: negated ? !expression.present : expression.present,
+              sourceKey,
+            },
+          ],
         ],
       };
     case 'card': {
@@ -213,6 +220,10 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   const conflicts: ConflictDetail[] = [];
   const traits = new Map<string, Extract<Literal, { kind: 'trait' }>>();
   const groups = new Map<string, Extract<Literal, { kind: 'trait' }>>();
+  const actorTraits = new Map<
+    string,
+    Partial<Record<'initial' | 'state' | 'combined', Extract<Literal, { kind: 'trait' }>>>
+  >();
   const quantities = new Map<
     QuantityName,
     { min: number; max: number; sourceKeys: readonly string[] }
@@ -267,26 +278,65 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
     const prior = traits.get(traitKey);
     if (prior && prior.present !== literal.present)
       conflicts.push({
-        conflict: { kind: 'traitPolarity', scope: literal.scope, trait: literal.trait },
+        conflict: {
+          kind: 'traitPolarity',
+          scope: traitConstraintPublicScope(literal.scope),
+          trait: literal.trait,
+        },
         sourceKeys: unique([prior.sourceKey, literal.sourceKey]),
       });
     traits.set(traitKey, literal);
+    const actorScope = traitConstraintActorScope(literal.scope);
+    const layer = traitConstraintLayer(literal.scope);
+    if (actorScope !== 'field' && layer !== 'field') {
+      const actorTraitKey = `${actorScope}:${literal.trait}`;
+      const layers = actorTraits.get(actorTraitKey) ?? {};
+      layers[layer] = literal;
+      actorTraits.set(actorTraitKey, layers);
+    }
     if (!literal.present) continue;
-    const group = canonicalExclusiveGroup(literal.scope, literal.trait);
+    const group = canonicalExclusiveGroup(actorScope, literal.trait);
     if (!group) continue;
-    const groupKey = `${literal.scope}:${group}`;
+    const groupKey = `${actorScope}:${group}`;
     const priorGroup = groups.get(groupKey);
     if (priorGroup && priorGroup.trait !== literal.trait)
       conflicts.push({
         conflict: {
           kind: 'exclusiveTrait',
-          scope: literal.scope,
+          scope: actorScope,
           group,
           traits: [priorGroup.trait, literal.trait],
         },
         sourceKeys: unique([priorGroup.sourceKey, literal.sourceKey]),
       });
     groups.set(groupKey, literal);
+  }
+  for (const [actorTraitKey, layers] of actorTraits) {
+    const separator = actorTraitKey.indexOf(':');
+    const actor = actorTraitKey.slice(0, separator) as ActorScope;
+    const trait = actorTraitKey.slice(separator + 1);
+    const positiveParts = [layers.initial, layers.state].filter(
+      (literal): literal is Extract<Literal, { kind: 'trait' }> => literal?.present === true,
+    );
+    if (layers.combined?.present === false)
+      for (const positive of positiveParts)
+        conflicts.push({
+          conflict: { kind: 'traitPolarity', scope: actor, trait },
+          sourceKeys: unique([layers.combined.sourceKey, positive.sourceKey]),
+        });
+    if (
+      layers.combined?.present === true &&
+      layers.initial?.present === false &&
+      layers.state?.present === false
+    )
+      conflicts.push({
+        conflict: { kind: 'traitPolarity', scope: actor, trait },
+        sourceKeys: unique([
+          layers.combined.sourceKey,
+          layers.initial.sourceKey,
+          layers.state.sourceKey,
+        ]),
+      });
   }
   return conflicts;
 }
@@ -311,14 +361,15 @@ function deduplicate(alternatives: Alternatives): Alternatives {
 
 function fixedLiterals(item: FixedConstraintFact): Literal[] {
   if (item.fact.kind === 'trait') {
-    const { scope: assertedScope, trait, present } = item.fact;
-    return impliedTraitConstraintScopes(assertedScope, present).map((scope) => ({
-      kind: 'trait',
-      scope,
-      trait,
-      present,
-      sourceKey: item.sourceKey,
-    }));
+    return [
+      {
+        kind: 'trait',
+        scope: traitFactConstraintScope(item.fact.scope),
+        trait: item.fact.trait,
+        present: item.fact.present,
+        sourceKey: item.sourceKey,
+      },
+    ];
   }
   if (item.fact.kind === 'card') return [{ ...item.fact, sourceKey: item.sourceKey }];
   return [
@@ -336,12 +387,22 @@ function conflictIssue(
   details: readonly ConflictDetail[],
   expressionSourceKeys: readonly string[] = [],
 ): ConstraintValidationIssue {
-  const uniqueDetails = details.filter(
-    (detail, index, all) =>
-      all.findIndex(
-        (candidate) => JSON.stringify(candidate.conflict) === JSON.stringify(detail.conflict),
-      ) === index,
-  );
+  const uniqueDetails = [
+    ...details.reduce((byConflict, detail) => {
+      const key = JSON.stringify(detail.conflict);
+      const prior = byConflict.get(key);
+      byConflict.set(
+        key,
+        prior
+          ? {
+              conflict: prior.conflict,
+              sourceKeys: unique([...prior.sourceKeys, ...detail.sourceKeys]),
+            }
+          : detail,
+      );
+      return byConflict;
+    }, new Map<string, ConflictDetail>()),
+  ].map(([, detail]) => detail);
   return {
     kind: 'constraintConflict',
     sourceKeys: unique([

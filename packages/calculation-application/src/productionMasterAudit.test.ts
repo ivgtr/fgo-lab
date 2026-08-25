@@ -99,6 +99,48 @@ function hasCanonicalInputConflict(input: {
 }
 
 describe('production master damage quality ratchet', () => {
+  it('allows Summer Wu to grant a state trait after an initial negative trait fact', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '505200')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const baseline = calculateScenario(scenario, master, versions);
+    const initiallyNotUndead = calculateScenario(
+      {
+        ...scenario,
+        worldFactAssertions: [
+          {
+            decisionKey: 'world:initial:not-undead',
+            fact: { kind: 'trait', scope: 'target', trait: 'undead', present: false },
+          },
+        ],
+      },
+      master,
+      versions,
+    );
+
+    expect(baseline.result.status).toBe('calculated');
+    expect(initiallyNotUndead.result.status).toBe('calculated');
+    expect(initiallyNotUndead.result.rows).toEqual(baseline.result.rows);
+    expect(initiallyNotUndead.input.target.traits).toEqual([]);
+    expect(initiallyNotUndead.input.targetStateTraits).toContain('undead');
+    expect(
+      initiallyNotUndead.effects.find((effect) => effect.label === '死霊特性付与'),
+    ).toMatchObject({ visibility: 'hidden', outcome: 'applied' });
+    expect(initiallyNotUndead.effectWarnings).not.toEqual(
+      expect.arrayContaining([expect.stringContaining('traitPolarity:target:undead')]),
+    );
+  });
+
   it('keeps the canonical Battle Point domain large enough for every master phase', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
@@ -231,10 +273,23 @@ describe('production master damage quality ratchet', () => {
       const incompatible = calculateScenario(
         {
           ...applyEffectProjectionDecision(scenario, projection, true),
-          worldFactAssertions: atoms.map((atom) => ({
-            decisionKey: `audit:negative:${projection.projectionKey}:${atom.scope}:${atom.trait}`,
-            fact: { kind: 'trait' as const, ...atom, present: false },
-          })),
+          worldFactAssertions: atoms.flatMap((atom) => {
+            const scopes =
+              atom.scope === 'target'
+                ? (['target', 'targetState'] as const)
+                : atom.scope === 'attacker'
+                  ? (['attacker', 'attackerState'] as const)
+                  : [atom.scope];
+            return scopes.map((scope) => ({
+              decisionKey: `audit:negative:${projection.projectionKey}:${scope}:${atom.trait}`,
+              fact: {
+                kind: 'trait' as const,
+                scope,
+                trait: atom.trait,
+                present: false,
+              },
+            }));
+          }),
         },
         master,
         versions,

@@ -4,7 +4,9 @@ import {
   type BattleState,
   type ConditionExpression,
   type EffectProjection,
+  type TraitScope,
 } from './index';
+import { validateConstraintSet, type FixedConstraintFact } from './constraints';
 
 function state(target: readonly string[] = [], targetState: readonly string[] = []): BattleState {
   return {
@@ -34,6 +36,119 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
 }
 
 describe('condition expression properties', () => {
+  it('keeps evaluator and solver aligned across initial, state, and combined actor traits', () => {
+    const values = [undefined, false, true] as const;
+    for (const actor of ['attacker', 'target'] as const) {
+      const stateScope: TraitScope = actor === 'attacker' ? 'attackerState' : 'targetState';
+      for (const initial of values)
+        for (const stateValue of values)
+          for (const conditionScope of [actor, stateScope])
+            for (const present of [false, true]) {
+              const current = state();
+              const initialTraits = current.traits[actor] as Map<string, boolean>;
+              const stateTraits = current.traits[stateScope] as Map<string, boolean>;
+              if (initial !== undefined) initialTraits.set('timedTrait', initial);
+              if (stateValue !== undefined) stateTraits.set('timedTrait', stateValue);
+              const expression: ConditionExpression = {
+                kind: 'trait',
+                scope: conditionScope,
+                trait: 'timedTrait',
+                present,
+              };
+              const evaluation = evaluateConditionExpression(expression, current);
+              const fixedFacts: FixedConstraintFact[] = [
+                ...(initial === undefined
+                  ? []
+                  : [
+                      {
+                        sourceKey: `${actor}:initial`,
+                        fact: {
+                          kind: 'trait' as const,
+                          scope: actor,
+                          trait: 'timedTrait',
+                          present: initial,
+                        },
+                      },
+                    ]),
+                ...(stateValue === undefined
+                  ? []
+                  : [
+                      {
+                        sourceKey: `${actor}:state`,
+                        fact: {
+                          kind: 'trait' as const,
+                          scope: stateScope,
+                          trait: 'timedTrait',
+                          present: stateValue,
+                        },
+                      },
+                    ]),
+              ];
+              const validation = validateConstraintSet({
+                fixedFacts,
+                expressions: [{ sourceKey: `${conditionScope}:condition`, expression }],
+              });
+              expect(
+                validation.status,
+                `${conditionScope}:${String(initial)}:${String(stateValue)}:${present}`,
+              ).toBe(evaluation === false ? 'conflict' : 'satisfied');
+            }
+    }
+  });
+
+  it('re-derives the combined actor trait after state grant and removal', () => {
+    const combined: ConditionExpression = {
+      kind: 'trait',
+      scope: 'target',
+      trait: 'undead',
+      present: true,
+    };
+    const stateOnly: ConditionExpression = { ...combined, scope: 'targetState' };
+    const before = state();
+    (before.traits.target as Map<string, boolean>).set('undead', false);
+    const granted = state();
+    (granted.traits.target as Map<string, boolean>).set('undead', false);
+    (granted.traits.targetState as Map<string, boolean>).set('undead', true);
+    const removed = state();
+    (removed.traits.target as Map<string, boolean>).set('undead', false);
+    (removed.traits.targetState as Map<string, boolean>).set('undead', false);
+
+    expect(evaluateConditionExpression(combined, before)).toBeNull();
+    expect(evaluateConditionExpression(combined, granted)).toBe(true);
+    expect(evaluateConditionExpression(stateOnly, granted)).toBe(true);
+    expect(evaluateConditionExpression(combined, removed)).toBe(false);
+    expect(evaluateConditionExpression(stateOnly, removed)).toBe(false);
+
+    const validateSnapshot = (stateValue: boolean | undefined, expression: ConditionExpression) =>
+      validateConstraintSet({
+        fixedFacts: [
+          {
+            sourceKey: 'initial:not-undead',
+            fact: { kind: 'trait', scope: 'target', trait: 'undead', present: false },
+          },
+          ...(stateValue === undefined
+            ? []
+            : [
+                {
+                  sourceKey: 'state:undead',
+                  fact: {
+                    kind: 'trait' as const,
+                    scope: 'targetState' as const,
+                    trait: 'undead',
+                    present: stateValue,
+                  },
+                },
+              ]),
+        ],
+        expressions: [{ sourceKey: 'condition:undead', expression }],
+      }).status;
+    expect(validateSnapshot(undefined, combined)).toBe('satisfied');
+    expect(validateSnapshot(true, combined)).toBe('satisfied');
+    expect(validateSnapshot(true, stateOnly)).toBe('satisfied');
+    expect(validateSnapshot(false, combined)).toBe('conflict');
+    expect(validateSnapshot(false, stateOnly)).toBe('conflict');
+  });
+
   it('is invariant to trait insertion order and unrelated traits', () => {
     const condition: ConditionExpression = {
       kind: 'all',

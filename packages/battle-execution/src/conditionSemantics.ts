@@ -1,25 +1,94 @@
 import type { ActorScope, CanonicalExclusiveGroup, TraitScope } from './index';
 
+export type TraitConstraintScope =
+  | 'attackerInitial'
+  | 'attackerState'
+  | 'attackerCombined'
+  | 'targetInitial'
+  | 'targetState'
+  | 'targetCombined'
+  | 'field';
+
+const TRAIT_SCOPE_SEMANTICS = {
+  attacker: {
+    readScopes: ['attacker', 'attackerState'],
+    factScope: 'attackerInitial',
+    conditionScope: 'attackerCombined',
+    actor: 'attacker',
+  },
+  attackerState: {
+    readScopes: ['attackerState'],
+    factScope: 'attackerState',
+    conditionScope: 'attackerState',
+    actor: 'attacker',
+  },
+  target: {
+    readScopes: ['target', 'targetState'],
+    factScope: 'targetInitial',
+    conditionScope: 'targetCombined',
+    actor: 'target',
+  },
+  targetState: {
+    readScopes: ['targetState'],
+    factScope: 'targetState',
+    conditionScope: 'targetState',
+    actor: 'target',
+  },
+  field: {
+    readScopes: ['field'],
+    factScope: 'field',
+    conditionScope: 'field',
+    actor: 'field',
+  },
+} as const satisfies Record<
+  TraitScope,
+  {
+    readScopes: readonly TraitScope[];
+    factScope: TraitConstraintScope;
+    conditionScope: TraitConstraintScope;
+    actor: ActorScope | 'field';
+  }
+>;
+
 export function traitConditionReadScopes(scope: TraitScope): readonly TraitScope[] {
-  if (scope === 'attacker') return ['attacker', 'attackerState'];
-  if (scope === 'target') return ['target', 'targetState'];
-  return [scope];
+  return TRAIT_SCOPE_SEMANTICS[scope].readScopes;
 }
 
-export function impliedTraitConstraintScopes(
-  scope: TraitScope,
-  present: boolean,
-): readonly TraitScope[] {
-  if (!present) return [scope];
-  if (scope === 'attackerState') return ['attackerState', 'attacker'];
-  if (scope === 'targetState') return ['targetState', 'target'];
-  return [scope];
+export function traitFactConstraintScope(scope: TraitScope): TraitConstraintScope {
+  return TRAIT_SCOPE_SEMANTICS[scope].factScope;
+}
+
+export function traitConditionConstraintScope(scope: TraitScope): TraitConstraintScope {
+  return TRAIT_SCOPE_SEMANTICS[scope].conditionScope;
+}
+
+export function traitConstraintActorScope(scope: TraitConstraintScope): ActorScope | 'field' {
+  if (scope.startsWith('attacker')) return 'attacker';
+  if (scope.startsWith('target')) return 'target';
+  return 'field';
+}
+
+export function traitConstraintLayer(
+  scope: TraitConstraintScope,
+): 'initial' | 'state' | 'combined' | 'field' {
+  if (scope.endsWith('Initial')) return 'initial';
+  if (scope.endsWith('State')) return 'state';
+  if (scope.endsWith('Combined')) return 'combined';
+  return 'field';
+}
+
+export function traitConstraintPublicScope(scope: TraitConstraintScope): TraitScope {
+  const actor = traitConstraintActorScope(scope);
+  if (actor === 'field') return 'field';
+  return traitConstraintLayer(scope) === 'state'
+    ? actor === 'attacker'
+      ? 'attackerState'
+      : 'targetState'
+    : actor;
 }
 
 function actorScopeForTrait(scope: TraitScope): ActorScope | 'field' {
-  if (scope === 'attackerState') return 'attacker';
-  if (scope === 'targetState') return 'target';
-  return scope;
+  return TRAIT_SCOPE_SEMANTICS[scope].actor;
 }
 
 const EXCLUSIVE_TRAIT_GROUPS = {

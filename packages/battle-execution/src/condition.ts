@@ -45,12 +45,13 @@ export function evaluateCondition(
   state: BattleState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
-    const values = traitConditionReadScopes(scope).flatMap((candidate) => {
+    const readScopes = traitConditionReadScopes(scope);
+    const values = readScopes.flatMap((candidate) => {
       const value = state.traits[candidate].get(trait);
       return value === undefined ? [] : [value];
     });
     if (values.includes(true)) return true;
-    if (values.includes(false)) return false;
+    if (values.length === readScopes.length && values.every((value) => !value)) return false;
     return undefined;
   };
   switch (condition.kind) {

@@ -276,8 +276,13 @@ export {
 export {
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
-  impliedTraitConstraintScopes,
+  traitConditionConstraintScope,
   traitConditionReadScopes,
+  traitConstraintActorScope,
+  traitConstraintLayer,
+  traitConstraintPublicScope,
+  traitFactConstraintScope,
+  type TraitConstraintScope,
 } from './conditionSemantics';
 export {
   applyNpDamageOperation,
