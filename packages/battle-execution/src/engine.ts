@@ -1131,7 +1131,11 @@ export function executeOrderedScenario(
       };
     } else if (condition === null && localConditionSatisfied) {
       outcome = 'applied';
-    } else if (condition === null && operation.decisionKey && !choice) {
+    } else if (
+      condition === null &&
+      operation.decisionKey &&
+      choice?.conditionSatisfaction !== 'assumeSatisfied'
+    ) {
       outcome = 'notApplied';
       code = 'unresolved';
     } else if (

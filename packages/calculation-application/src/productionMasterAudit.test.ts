@@ -295,6 +295,27 @@ describe('production master damage quality ratchet', () => {
       expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
     );
 
+    const earthAfterConflict = calculateScenario(
+      applyEffectProjectionDecision(
+        applyEffectProjectionDecision(skyScenario, earth, true),
+        sky,
+        false,
+      ),
+      master,
+      versions,
+    );
+    expect(earthAfterConflict.result.status).toBe('calculated');
+    expect(earthAfterConflict.input.powerMod).toBe(0.5);
+    expect(earthAfterConflict.effects.find((effect) => effect.label === sky.label)).toMatchObject({
+      outcome: 'notApplied',
+      explanation: { code: 'unresolved' },
+    });
+    expect(earthAfterConflict.effects.find((effect) => effect.label === earth.label)).toMatchObject(
+      {
+        outcome: 'applied',
+      },
+    );
+
     for (const [facts, selected, rejectedLabel] of [
       [
         [
