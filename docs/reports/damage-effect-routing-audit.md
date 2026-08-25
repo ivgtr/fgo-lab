@@ -183,10 +183,10 @@ Atlas nice skill APIで`attackBeforeFunction`の参照先22 skillを全件確認
 
 ## 11. 検証結果
 
-- unit: 23 files / 141 tests passed
+- unit: 今回の対象22 files / 138 tests passed
 - master validation: 14 tests passed、checksum / schema検証成功
 - typecheck、lint成功
 - production build成功
 - actor routing、card耐性、AND条件、disabled値欠損、防御無視、未解決parameter、nested functionの回帰testを追加
 
-E2Eは最終UI確認と合わせて実行する。
+E2EはChromium / mobile Chromiumの全44件を実行し、22 passed、17 skipped、5 failedだった。今回のfail-closed強化で変化したranking期待値（382 calculated / 38 unsupported）は更新後のfocused testで成功した。残る4件は、今回の計算コミットに含めていない作業ツリー上のStartupScreen変更が再読込後の期待画面を変えたケースであり、この変更を上書きせず確認対象として残している。
