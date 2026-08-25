@@ -866,6 +866,24 @@ describe('resolveAttackerSourcesForTest', () => {
     });
   });
 
+  it('classifies a hard card mismatch before an effect is enabled', () => {
+    const result = resolveAttackerSourcesForTest(
+      { ...input, cardType: 'arts' },
+      [{ skillId: 'skill', skillLevel: 10 }],
+      [attacker],
+      { defaultEnabled: false },
+    );
+
+    expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
+      state: 'rejected',
+      reason: 'card_type_mismatch',
+    });
+    expect(result.effects.find((effect) => effect.effectId === 'attack')).toMatchObject({
+      state: 'rejected',
+      reason: 'calculation_effect_disabled',
+    });
+  });
+
   it('distinguishes an explicit zero from a missing damage value', () => {
     const attacker: ServantMaster = {
       ...source,

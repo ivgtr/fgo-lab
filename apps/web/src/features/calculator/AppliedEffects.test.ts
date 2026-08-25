@@ -33,4 +33,26 @@ describe('applied effect presentation', () => {
 
     expect(visibleAppliedEffects([automatic, controllable])).toEqual([controllable]);
   });
+
+  it('hides card buffs that cannot affect the selected NP card', () => {
+    const applicable = {
+      ...contextEffect('attacker'),
+      effectKey: 'attacker:arts',
+      label: 'アーツアップ',
+      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+      kind: 'cardBuff' as const,
+      value: 0.2,
+      valuePermille: 200,
+      state: 'rejected' as const,
+      reason: 'calculation_effect_disabled',
+    };
+    const mismatch = {
+      ...applicable,
+      effectKey: 'attacker:buster',
+      label: 'バスターアップ',
+      reason: 'card_type_mismatch',
+    };
+
+    expect(visibleAppliedEffects([applicable, mismatch])).toEqual([applicable]);
+  });
 });

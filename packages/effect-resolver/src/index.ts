@@ -455,6 +455,15 @@ export function resolveEffectSources(
       contextChanges: effect.contextChanges,
       damageRelevant: routedDamageRelevant,
     };
+    if (kind === 'cardBuff' && !effect.cardTypes.includes(baseInput.cardType)) {
+      effects.push({
+        ...effectIdentity,
+        value: signedValue,
+        state: 'rejected',
+        reason: 'card_type_mismatch',
+      });
+      continue;
+    }
     if (!enabled) {
       effects.push({
         ...effectIdentity,
@@ -470,15 +479,6 @@ export function resolveEffectSources(
         value: signedValue,
         state: 'rejected',
         reason: 'not_np_damage_relevant',
-      });
-      continue;
-    }
-    if (kind === 'cardBuff' && !effect.cardTypes.includes(baseInput.cardType)) {
-      effects.push({
-        ...effectIdentity,
-        value: signedValue,
-        state: 'rejected',
-        reason: 'card_type_mismatch',
       });
       continue;
     }
