@@ -4,6 +4,7 @@
 - Phase: Q1
 - Status: in progress
 - Implementation commit: `1c4057f`
+- Result contract commit: `d74d063`
 - Published master: `2026-08-25-atlas-jp-calculator-v10`
 - Master schema: 4
 
@@ -43,9 +44,10 @@ rawの攻撃宝具Function 627件は次のように分類した。
 
 ## Q1で残る作業
 
-- `CalculationScenario`と`CalculationResult`のdiscriminated unionへschemaを置換する。
-- `unsupported`結果から数値行を型として排除する。
-- 旧`CalcInput`、`CalcResult`、保存形式、互換migrationを削除する。
+- `CalculationResult`は`calculated | unsupported`のdiscriminated unionへ置換済み。`unsupported`の`rows`は空tupleであり、rankingとUIも数値として扱わない。
+- `schemaVersion`を4、`engineVersion`を2.0.0へ更新済み。旧v1〜v3保存形式のmigrationは削除し、不一致時はuser storeをresetする。
+- `CalculationScenario`のdiscriminated unionへ入力schemaを置換する。
+- 旧`CalcInput`とそれを含むdraft・history・share保存形式を削除する。
 - 魔術礼装raw sourceと内部master modelを追加する。
 - damage関連effectの値・条件・対象・タイミングをlosslessに正規化し、未知・欠損を分類する。
 
