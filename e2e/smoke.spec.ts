@@ -722,7 +722,7 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv90/ }).click();
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
   const dragonPower = ownEffects.getByRole('button', { name: /威力アップ・対竜/ });
-  const dragonNpSpecial = page.getByRole('group', { name: '適用条件' }).getByRole('button');
+  const dragonNpSpecial = ownEffects.getByRole('button', { name: /竜・特攻宝具/ });
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   await expect(dragonPower).toHaveAttribute('aria-pressed', 'false');
@@ -742,7 +742,10 @@ test('separates final direct inputs from resolved CE and trait effects', async (
     .getByRole('button', { name: /アーキタイプ：アース.*ムーンキャンサー.*Lv90/ })
     .click();
   await page.getByLabel('宝具Lv').selectOption('5');
-  const chaoticTrait = page.getByRole('group', { name: '適用条件' }).getByRole('button').first();
+  const chaoticTrait = page
+    .getByRole('group', { name: /自身の適用内容/ })
+    .getByRole('button', { name: /混沌・特攻宝具/ })
+    .first();
   await expect(chaoticTrait).toContainText('2.00倍');
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
   await chaoticTrait.click();
@@ -1130,7 +1133,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('382件を計算・計算対象外 38件');
+  await expect(page.getByRole('status')).toContainText('383件を計算・計算対象外 37件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );

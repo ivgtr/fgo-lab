@@ -37,7 +37,14 @@ describe('portable schema boundaries', () => {
       explicitOverrides: {},
     });
     expect(scenario.mode).toBe('resolved');
+    if (scenario.mode !== 'resolved') throw new TypeError('expected resolved scenario');
     expect(scenario).not.toHaveProperty('npMultipliers');
+    expect(() =>
+      calculationScenarioSchema.parse({
+        ...scenario,
+        target: { ...scenario.target, traits: ['dragon'] },
+      }),
+    ).toThrow();
     expect(() =>
       calculationScenarioSchema.parse({ ...scenario, npMultipliers: [1, 1, 1, 1, 1] }),
     ).toThrow();

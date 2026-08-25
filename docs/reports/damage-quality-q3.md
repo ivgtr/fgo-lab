@@ -25,7 +25,9 @@ Q2完了時点のeffect解決は、共通の`MasterEffect`を扱う一方、Web 
 - effectの判定結果が`applied: boolean`と自由文字列reasonに分かれ、unsupportedとの型上の区別が弱い。
 - NP damage buff rateだけがWeb側でresolver結果を再走査して後処理される。
 - 単発計算はWeb orchestration、rankingは解決済みinput受渡しであり、scenario resolverの入口が一つではない。
-- 明示的effect選択が対象特性・field条件を強制成立させる経路があった。これは`ac1432c`で先行削除した。
+- 当時は明示的effect選択による対象特性・field条件の成立宣言を`ac1432c`で削除した。
+  後続の`docs/damage-condition-application-plan.md`では入力負荷と二重契約を解消するため、
+  正規化済み条件を表示した上で明示選択を成立宣言とする契約へ再設計している。
 
 ## 確定する目標契約
 

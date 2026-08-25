@@ -113,7 +113,9 @@ Calculator UI
 - manual scenarioを`{ mode: 'manual', manual: DamageResolutionInput }`だけのstrict unionへ変更し、resolved共通fieldとの二重保持を削除した。schema version 8・engine version 5.0.0へ更新し、旧形式の互換読込は追加していない。
 - `Calculator`を`CalculationScenario`の直接編集へ置換し、quickはresolved scenario、directはmanual scenarioだけを更新するようにした。
 - resolvedからmanualへ切り替える際は、effect適用後の`input`ではなく効果適用前の`scenarioInput`を使用し、passive・礼装・skillの二重適用を防いだ。
-- 特攻宝具の対象traitを「適用条件」としてscenarioへ直接反映し、skill効果のon/offと混同しないUIへ分離した。
+- 特攻宝具の対象traitをscenarioへ直接反映する旧「適用条件」UIは、後続の
+  `docs/damage-condition-application-plan.md`で廃止した。現在は特攻宝具をskill効果と
+  同じ明示的な適用判断へ統合している。
 - `CalculationEditorState`、旧editor schema、scenario/selection相互変換、`calculateResolvedDamage()`、`resolveCalculationInput()`と対応する旧adapter testを削除した。
 - ranking候補の組立もresolved scenarioと`resolveScenario()`を使用し、Web独自のselection変換を削除した。worker自体のscenario facade統合はQ6で扱う。
 - share allowlistは再現に必要な自身skill ID・levelを含め、所持編成、礼装copy IDなどの個人データを含めない契約に固定した。

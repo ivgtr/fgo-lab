@@ -186,18 +186,22 @@ export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema
 
 const scenarioBaseSchema = z
   .object({
-    attacker: z.object({
-      servantId: z.string().min(1).max(80),
-      source: z.enum(['owned', 'master']),
-      level: z.number().int().min(1).max(120),
-      npLevel: z.number().int().min(1).max(5),
-      fouAtk: z.number().int().min(0).max(3000),
-    }),
+    attacker: z
+      .object({
+        servantId: z.string().min(1).max(80),
+        source: z.enum(['owned', 'master']),
+        level: z.number().int().min(1).max(120),
+        npLevel: z.number().int().min(1).max(5),
+        fouAtk: z.number().int().min(0).max(3000),
+      })
+      .strict(),
     overcharge: z.number().int().min(1).max(5),
-    target: z.object({
-      classId: z.string().min(1).max(40),
-      attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
-    }),
+    target: z
+      .object({
+        classId: z.string().min(1).max(40),
+        attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
+      })
+      .strict(),
     attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
     battleState: z.object({ battlePointPhase: z.number().int().nonnegative().nullable() }),
     assumptions: z.object({

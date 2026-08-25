@@ -29,7 +29,6 @@ import {
   SupportServantPicker,
   SupportTemplatePicker,
 } from './CalculatorPickers';
-import { traitLabel } from './traitPresentation';
 import { CalculationResult } from './CalculationResult';
 import { collectDamageEffectStacks } from './damageEffectStacks';
 import { AttackerSkills } from './AttackerSkills';
@@ -99,27 +98,6 @@ export function Calculator({
   const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
-  const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : undefined;
-  const npConditionTraits = attackerDamage
-    ? [
-        ...new Map(
-          attackerDamage.parametersByOvercharge.flat().flatMap((parameter) =>
-            parameter.targetTrait
-              ? [
-                  [
-                    parameter.targetTrait.name,
-                    {
-                      ...parameter.targetTrait,
-                      id: parameter.targetTrait.name,
-                      multiplier: (parameter.correctionPermille ?? 1_000) / 1_000,
-                    },
-                  ] as const,
-                ]
-              : [],
-          ),
-        ).values(),
-      ]
-    : [];
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
@@ -166,11 +144,7 @@ export function Calculator({
         : input.attributeAffinity === 1
           ? '等倍'
           : '直接入力';
-  const targetSummary = `クラス${classSituationLabel}（${input.classAffinity.toFixed(2)}倍）・属性${attributeSituationLabel}（${input.attributeAffinity.toFixed(2)}倍）${
-    input.target.traits.length ? `・対象状態 ${input.target.traits.map(traitLabel).join('・')}` : ''
-  }${
-    input.fieldTraits.length ? `・フィールド ${input.fieldTraits.map(traitLabel).join('・')}` : ''
-  }`;
+  const targetSummary = `クラス${classSituationLabel}（${input.classAffinity.toFixed(2)}倍）・属性${attributeSituationLabel}（${input.attributeAffinity.toFixed(2)}倍）`;
   const craftEssenceSummary =
     selectedCraftEssence && craftEssenceSelection
       ? `${selectedCraftEssence.name} Lv.${craftEssenceSelection.level}`
@@ -269,18 +243,13 @@ export function Calculator({
         level: input.attackerLevel,
         npLevel: input.npLevel,
         fouAtk: input.fouAtk,
-        stateTraits: input.attackerStateTraits,
       },
       overcharge: input.overcharge,
       target: {
         classId: input.target.classId,
         attribute: input.target.attribute,
-        traits: input.target.traits,
-        stateTraits: input.targetStateTraits,
-        rarity: input.targetRarity,
       },
       attackerHpPermille: input.attackerHpPermille,
-      fieldTraits: input.fieldTraits,
       battleState: { battlePointPhase: input.battlePointPhase },
       assumptions: {
         classAffinity: input.classAffinity,
@@ -339,7 +308,6 @@ export function Calculator({
           level,
           npLevel: Math.max(1, saved?.npLevel ?? 1),
           fouAtk: saved?.fouAtk ?? 1000,
-          stateTraits: [],
         },
         attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
           skillId: skill.id,
@@ -918,43 +886,6 @@ export function Calculator({
           hidden={mode === 'direct'}
           onChange={changeAttackerSkill}
         />
-        {mode === 'quick' && resolvedScenario && npConditionTraits.length > 0 ? (
-          <fieldset aria-label="適用条件" className="modifier-group">
-            <div className="calculator-support-effect-legend">
-              <span>
-                <strong>対象特性</strong>
-                <small>特攻宝具の成立条件</small>
-              </span>
-            </div>
-            <div className="modifier-list">
-              {npConditionTraits.map((trait) => {
-                const active = resolvedScenario.target.traits.includes(trait.id);
-                return (
-                  <button
-                    type="button"
-                    key={trait.id}
-                    aria-pressed={active}
-                    onClick={() =>
-                      void onScenarioChange({
-                        ...resolvedScenario,
-                        target: {
-                          ...resolvedScenario.target,
-                          traits: active
-                            ? resolvedScenario.target.traits.filter(
-                                (candidate) => candidate !== trait.id,
-                              )
-                            : [...resolvedScenario.target.traits, trait.id],
-                        },
-                      })
-                    }
-                  >
-                    {traitLabel(trait.id)}・特攻宝具 {trait.multiplier.toFixed(2)}倍
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-        ) : null}
         {mode === 'quick' ? (
           <AppliedEffects
             title="自身の適用内容"

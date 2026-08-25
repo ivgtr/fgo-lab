@@ -123,8 +123,7 @@ export function damageEffectValueLabel(source: DamageEffectSource): string {
 export function damageEffectStateLabel(source: DamageEffectSource): string {
   if (source.applied) return damageEffectValueLabel(source);
   if (source.reason === 'card_type_mismatch') return 'カード不一致';
-  if (source.reason === 'attacker_trait_mismatch') return '攻撃役の特性不一致';
-  if (source.reason === 'target_trait_mismatch') return '対象特性なし';
-  if (source.reason === 'field_trait_mismatch') return 'フィールド不一致';
+  if (source.reason === 'calculation_effect_disabled') return '計算外';
+  if (source.reason === 'trait_condition_mismatch') return '条件未選択';
   return '未対応';
 }
