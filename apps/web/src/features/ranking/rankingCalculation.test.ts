@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { createDefaultDamageResolutionInput } from '../calculator/calculation';
+import { calculateScenario, createDefaultResolvedScenario } from '@fgo-lab/calculation-application';
 import { calculateRanking, type RankingCandidate } from './rankingCalculation';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -17,7 +17,8 @@ const versions = {
 const candidate: RankingCandidate = {
   servantId: master.servants[0]!.id,
   name: master.servants[0]!.name,
-  input: createDefaultDamageResolutionInput(master, undefined),
+  input: calculateScenario(createDefaultResolvedScenario(master, undefined), master, versions)
+    .input,
   resolutionUnsupported: false,
   resolutionEvidenceKeys: ['master:normalized-v6'],
   resolutionWarnings: [],

@@ -33,11 +33,10 @@ import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   calculateScenario,
   createDefaultResolvedScenario,
-  resolveCalculationInput,
+  resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
-import { createDefaultDamageResolutionInput } from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { DataPage } from '../features/data/DataPage';
 import { Calculator } from '../features/calculator/Calculator';
@@ -522,27 +521,21 @@ export function App() {
               .map((candidate) => {
                 const np = getPrimaryNpPresentation(candidate);
                 if (!np) throw new TypeError(`attack_np_missing:${candidate.id}`);
-                const input = createDefaultDamageResolutionInput(
-                  currentMaster,
-                  profile.servantBuilds[candidate.id],
-                  candidate,
-                );
-                const resolved = resolveCalculationInput(
-                  input,
-                  {
-                    attackerSource: 'master',
-                    effectMode: 'resolved',
-                    attackerSkills: [],
-                    craftEssence: null,
-                    support: rankingSupport
-                      ? {
-                          sourceTemplateId: rankingSupport.templateId,
-                          composition: rankingSupport.composition,
-                        }
-                      : null,
-                  },
-                  currentMaster,
-                );
+                const scenario = {
+                  ...createDefaultResolvedScenario(
+                    currentMaster,
+                    profile.servantBuilds[candidate.id],
+                    candidate,
+                  ),
+                  attackerSkills: [],
+                  support: rankingSupport
+                    ? {
+                        sourceTemplateId: rankingSupport.templateId,
+                        composition: rankingSupport.composition,
+                      }
+                    : null,
+                };
+                const resolved = resolveScenario(scenario, currentMaster);
                 return {
                   servantId: candidate.id,
                   name: candidate.name,

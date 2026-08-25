@@ -1,5 +1,5 @@
 import type { ServantMaster } from '@fgo-lab/master-data';
-import type { AttackerSkillSelection, CalculationEditorState, ServantBuild } from '@fgo-lab/schema';
+import type { AttackerSkillSelection, ServantBuild } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
 import './attacker-skills.css';
 
@@ -12,7 +12,7 @@ export function AttackerSkills({
   onChange,
 }: {
   attacker: ServantMaster | undefined;
-  attackerSource: CalculationEditorState['attackerSource'];
+  attackerSource: 'owned' | 'master';
   selectedSkills: readonly AttackerSkillSelection[];
   savedBuild: ServantBuild | undefined;
   hidden: boolean;
