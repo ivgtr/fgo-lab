@@ -28,7 +28,7 @@ export interface DamageTraitCondition {
   condition: TraitCondition;
 }
 
-export interface ResolvedSupportEffect {
+export interface ResolvedEffect {
   effectKey: string;
   sourceInstanceId: string;
   origin: 'attacker' | 'support' | 'craftEssence' | 'mysticCode' | 'passive' | 'np';
@@ -48,9 +48,9 @@ export interface ResolvedSupportEffect {
   reason: string;
 }
 
-export interface ResolvedEffectSet {
+export interface EffectResolution {
   input: DamageResolutionInput;
-  effects: ResolvedSupportEffect[];
+  effects: ResolvedEffect[];
   npDamageBuffRate: number;
   precision: 'exact' | 'approximate' | 'unsupported';
   warnings: string[];
@@ -176,7 +176,7 @@ export interface ResolveEffectOptions {
 }
 
 function effectKey(
-  origin: ResolvedSupportEffect['origin'],
+  origin: ResolvedEffect['origin'],
   item: Pick<ResolvableEffect, 'sourceInstanceId' | 'skillId' | 'effect'>,
 ) {
   return `${origin}:${item.sourceInstanceId}:${item.skillId}:${item.effect.id}`;
@@ -185,15 +185,15 @@ function effectKey(
 function resolveEffects(
   baseInput: DamageResolutionInput,
   items: readonly ResolvableEffect[],
-  origin: ResolvedSupportEffect['origin'],
+  origin: ResolvedEffect['origin'],
   recipientTraits: readonly string[] = [],
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   const nextInput = { ...baseInput };
-  const effects: ResolvedSupportEffect[] = [];
+  const effects: ResolvedEffect[] = [];
   const warnings: string[] = [];
   let npDamageBuffRate = 0;
-  let precision: ResolvedEffectSet['precision'] = 'exact';
+  let precision: EffectResolution['precision'] = 'exact';
   const targetTraits = [...baseInput.target.traits, ...baseInput.targetStateTraits];
 
   for (const item of items) {
@@ -343,9 +343,9 @@ function resolveSkillSelections(
   baseInput: DamageResolutionInput,
   selectedSkills: readonly SkillSelection[],
   servants: readonly ServantMaster[],
-  origin: ResolvedSupportEffect['origin'],
+  origin: ResolvedEffect['origin'],
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   const warnings: string[] = [];
   let missing = false;
   const servantById = new Map(servants.map((servant) => [servant.id, servant]));
@@ -389,7 +389,7 @@ export function resolveServantPassives(
   baseInput: DamageResolutionInput,
   servant: ServantMaster | undefined,
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   if (!servant)
     return {
       input: baseInput,
@@ -420,7 +420,7 @@ export function resolveCraftEssenceEffects(
   limitBreak: number,
   recipientTraits: readonly string[] = [],
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   if (!craftEssence)
     return {
       input: baseInput,
@@ -452,7 +452,7 @@ export function resolveNpEffects(
   baseInput: DamageResolutionInput,
   servant: ServantMaster | undefined,
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   if (!servant)
     return {
       input: baseInput,
@@ -496,7 +496,7 @@ export function resolveSupportComposition(
   composition: SupportComposition,
   servants: readonly ServantMaster[],
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   return resolveSkillSelections(
     baseInput,
     composition.sources.flatMap((source, sourceOrder) =>
@@ -527,7 +527,7 @@ export function resolveAttackerSkills(
   selections: readonly AttackerSkillSelection[],
   servants: readonly ServantMaster[],
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   return resolveSkillSelections(
     baseInput,
     selections.map((selection, order) => ({
@@ -550,7 +550,7 @@ export function resolveMysticCodeSkills(
   selections: readonly AttackerSkillSelection[],
   recipientTraits: readonly string[],
   options: ResolveEffectOptions = {},
-): ResolvedEffectSet {
+): EffectResolution {
   if (!mysticCode)
     return {
       input: baseInput,
@@ -588,7 +588,7 @@ export function resolveMysticCodeSkills(
   };
 }
 
-export interface ScenarioEffectResolution extends ResolvedEffectSet {
+export interface ScenarioEffectResolution extends EffectResolution {
   trace: { step: string; detail: string }[];
 }
 
@@ -639,7 +639,7 @@ export function resolveScenarioEffects(
     attacker,
     resolveOptions,
   );
-  const resolutions: [string, ResolvedEffectSet][] = [
+  const resolutions: [string, EffectResolution][] = [
     ['passive-effect', passive],
     ['craft-essence-effect', craftEssenceResolution],
     ['attacker-effect', attackerSkills],

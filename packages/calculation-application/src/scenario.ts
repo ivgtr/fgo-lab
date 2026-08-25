@@ -1,7 +1,7 @@
 import {
   resolveScenarioEffects,
-  type ResolvedEffectSet,
-  type ResolvedSupportEffect,
+  type EffectResolution,
+  type ResolvedEffect,
 } from '@fgo-lab/effect-resolver';
 import { getPrimaryNpDamage, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import type {
@@ -15,10 +15,10 @@ import { applyNpDamageHandler } from './npDamageHandler';
 
 export interface ResolvedCalculationInput {
   input: DamageResolutionInput;
-  precision: ResolvedEffectSet['precision'];
+  precision: EffectResolution['precision'];
   warnings: string[];
   trace: { step: string; detail: string }[];
-  effects: ResolvedSupportEffect[];
+  effects: ResolvedEffect[];
 }
 
 function traitCounts(traits: readonly string[]): Record<string, number> {

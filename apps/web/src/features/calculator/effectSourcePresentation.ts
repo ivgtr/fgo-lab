@@ -1,8 +1,8 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
+import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
 
 export function effectSourceImage(
-  effect: ResolvedSupportEffect,
+  effect: ResolvedEffect,
   servants: readonly ServantMaster[],
   craftEssence: CraftEssenceMaster | undefined,
 ): string | null {

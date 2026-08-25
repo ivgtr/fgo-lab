@@ -1,5 +1,5 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
-import type { ResolvedBuffKind, ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
+import type { ResolvedBuffKind, ResolvedEffect } from '@fgo-lab/effect-resolver';
 import { effectSourceImage } from './effectSourcePresentation';
 import { traitLabel } from './traitPresentation';
 
@@ -47,13 +47,13 @@ const STACK_ORDER: DamageEffectStackKind[] = [
   'unresolved',
 ];
 
-function stackKind(effect: ResolvedSupportEffect): DamageEffectStackKind | null {
+function stackKind(effect: ResolvedEffect): DamageEffectStackKind | null {
   if (effect.damageTraitCondition?.kind === 'npSpecial') return 'npSpecial';
   if (effect.kind) return effect.kind;
   return effect.reason === 'damage_effect_not_supported' ? 'unresolved' : null;
 }
 
-function effectLabel(effect: ResolvedSupportEffect): string {
+function effectLabel(effect: ResolvedEffect): string {
   const condition = effect.damageTraitCondition?.condition;
   if (!condition) return effect.label;
   const traits = [
@@ -68,7 +68,7 @@ export function collectDamageEffectStacks({
   servants,
   craftEssence,
 }: {
-  effects: readonly ResolvedSupportEffect[];
+  effects: readonly ResolvedEffect[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
 }): DamageEffectStack[] {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
+import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
 import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffectStacks';
 
-function effect(patch: Partial<ResolvedSupportEffect>): ResolvedSupportEffect {
+function effect(patch: Partial<ResolvedEffect>): ResolvedEffect {
   return {
     effectKey: 'passive:servant-1:passive-1:quick-up',
     sourceInstanceId: 'passive:servant-1',

@@ -1,4 +1,4 @@
-import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
+import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ReactNode } from 'react';
 import { effectSourceImage } from './effectSourcePresentation';
@@ -6,7 +6,7 @@ import { ModifierChip } from './ModifierChip';
 
 const HIDDEN_MISMATCHES = new Set(['attacker_trait_mismatch', 'card_type_mismatch']);
 
-function effectValueLabel(effect: ResolvedSupportEffect) {
+function effectValueLabel(effect: ResolvedEffect) {
   if (effect.value === null) return '倍率不明';
   if (effect.kind === 'flatDamage') return `+${effect.value.toLocaleString('ja-JP')}`;
   if (effect.damageTraitCondition?.kind === 'npSpecial') return `${effect.value.toFixed(2)}倍`;
@@ -17,13 +17,13 @@ function effectValueLabel(effect: ResolvedSupportEffect) {
   });
 }
 
-function effectStateLabel(effect: ResolvedSupportEffect) {
+function effectStateLabel(effect: ResolvedEffect) {
   if (!effect.calculationSupported) return '未対応';
   const value = effectValueLabel(effect);
   return effect.applied ? `${value}・計算中` : `${value}・計算外`;
 }
 
-export function visibleAppliedEffects(effects: readonly ResolvedSupportEffect[]) {
+export function visibleAppliedEffects(effects: readonly ResolvedEffect[]) {
   return effects.filter((effect) => effect.damageRelevant && !HIDDEN_MISMATCHES.has(effect.reason));
 }
 
@@ -36,7 +36,7 @@ export function AppliedEffects({
   action,
 }: {
   title: string;
-  effects: readonly ResolvedSupportEffect[];
+  effects: readonly ResolvedEffect[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
   onToggle: (effectKey: string, active: boolean) => void;

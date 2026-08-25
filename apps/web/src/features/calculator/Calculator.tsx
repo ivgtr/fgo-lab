@@ -6,7 +6,7 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
+import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
 import type {
   AttackerSkillSelection,
   DamageResolutionInput,
@@ -57,7 +57,7 @@ export function Calculator({
 }: {
   input: DamageResolutionInput;
   resolvedInput: DamageResolutionInput;
-  resolvedEffects: readonly ResolvedSupportEffect[];
+  resolvedEffects: readonly ResolvedEffect[];
   effectWarnings: readonly string[];
   result: CalculationResultValue;
   servants: ServantMaster[];
