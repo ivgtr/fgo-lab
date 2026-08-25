@@ -7,6 +7,8 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 
+export * from './npDamageHandler';
+
 export function calculateDamageResolution(
   rawInput: DamageResolutionInput,
   versions: VersionContext,
