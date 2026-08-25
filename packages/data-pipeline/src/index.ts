@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { MasterDataSnapshot, MasterManifest } from '@fgo-lab/master-data';
+import type { MasterDataSnapshot, MasterManifest, NpDamageSpec } from '@fgo-lab/master-data';
 import {
   masterManifestSchema,
   masterSnapshotSchema,
@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 3,
+    schemaVersion: 4,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -150,11 +150,30 @@ type AtlasFunction = {
   funcquestTvals?: AtlasTraitRef[];
   script?: { funcIndividuality?: AtlasTraitRef[] };
   buffs?: AtlasBuff[];
-  svals?: { Value?: number; Rate?: number; Target?: number; Correction?: number }[];
-  svals2?: { Correction?: number }[];
-  svals3?: { Correction?: number }[];
-  svals4?: { Correction?: number }[];
-  svals5?: { Correction?: number }[];
+  overWriteTvalsList?: unknown[];
+  svals?: AtlasFunctionValue[];
+  svals2?: AtlasFunctionValue[];
+  svals3?: AtlasFunctionValue[];
+  svals4?: AtlasFunctionValue[];
+  svals5?: AtlasFunctionValue[];
+};
+type AtlasFunctionValue = {
+  Rate?: number;
+  Value?: number;
+  Value2?: number;
+  Target?: number;
+  Correction?: number;
+  TargetList?: number[];
+  ParamAddMaxCount?: number;
+  TargetRarityList?: number[];
+  AndCheckIndividualityList?: number[];
+  AddIndividualty?: number;
+  AddIndividualtyList?: number[];
+  IncludeIgnoreIndividuality?: number;
+  IgnoreIndivUnreleaseable?: number;
+  CheckDead?: number;
+  HideMiss?: number;
+  HideNoEffect?: number;
 };
 type AtlasServant = {
   id?: number;
@@ -183,6 +202,8 @@ type AtlasServant = {
   appendSkillMaterials?: AtlasMaterialStep;
 };
 type AtlasNp = {
+  id?: number;
+  name?: string;
   card?: string;
   priority?: number;
   functions?: AtlasFunction[];
@@ -216,6 +237,101 @@ const cardTypeByTrait: Record<string, 'buster' | 'arts' | 'quick'> = {
   cardBuster: 'buster',
   cardQuick: 'quick',
 };
+
+const damageKindByFunction = {
+  damageNp: 'standard',
+  damageNpPierce: 'defensePiercing',
+  damageNpIndividual: 'trait',
+  damageNpIndividualSum: 'traitCount',
+  damageNpStateIndividualFix: 'stateTrait',
+  damageNpHpratioLow: 'hpRatioLow',
+  damageNpBattlePointPhase: 'battlePointPhase',
+  damageNpRare: 'targetRarity',
+  damageNpAndOrCheckIndividuality: 'traitExpression',
+} as const satisfies Record<string, NpDamageSpec['kind']>;
+
+function normalizeNpDamageFunction(
+  fn: AtlasFunction,
+  rawPath: string,
+  traitNameById: ReadonlyMap<number, string>,
+): NpDamageSpec {
+  const rawFunctionType = fn.funcType;
+  if (!rawFunctionType || !(rawFunctionType in damageKindByFunction))
+    throw new TypeError(`unknown_attack_function:${rawPath}:${rawFunctionType ?? 'missing'}`);
+  if (typeof fn.funcId !== 'number') throw new TypeError(`missing_function_id:${rawPath}`);
+  const sources = [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5];
+  const parametersByOvercharge = sources.map((source, overchargeIndex) => {
+    if (!source || source.length !== 5)
+      throw new TypeError(`invalid_np_parameter_count:${rawPath}:oc${String(overchargeIndex + 1)}`);
+    return source.map((value, npLevelIndex) => {
+      if (typeof value.Rate !== 'number' || typeof value.Value !== 'number')
+        throw new TypeError(
+          `missing_np_parameter:${rawPath}:oc${String(overchargeIndex + 1)}:np${String(npLevelIndex + 1)}`,
+        );
+      return {
+        ratePermille: value.Rate,
+        valuePermille: value.Value,
+        ...(typeof value.Value2 === 'number' ? { secondaryValuePermille: value.Value2 } : {}),
+        ...(typeof value.Target === 'number' ? { targetId: value.Target } : {}),
+        ...(['damageNpIndividual', 'damageNpStateIndividualFix'].includes(rawFunctionType) &&
+        typeof value.Target === 'number'
+          ? {
+              targetTrait: {
+                id: value.Target,
+                name: traitNameById.get(value.Target) ?? `trait:${String(value.Target)}`,
+              },
+            }
+          : {}),
+        ...(typeof value.Correction === 'number' ? { correctionPermille: value.Correction } : {}),
+        ...(value.TargetList ? { targetIds: value.TargetList } : {}),
+        ...(value.TargetList
+          ? {
+              targetTraits: value.TargetList.map((id) => ({
+                id,
+                name: traitNameById.get(id) ?? `trait:${String(id)}`,
+              })),
+            }
+          : {}),
+        ...(typeof value.ParamAddMaxCount === 'number'
+          ? { maximumTargetCount: value.ParamAddMaxCount }
+          : {}),
+        ...(value.TargetRarityList ? { targetRarities: value.TargetRarityList } : {}),
+        ...(value.AndCheckIndividualityList
+          ? { andCheckTraitIds: value.AndCheckIndividualityList }
+          : {}),
+        ...(typeof value.AddIndividualty === 'number'
+          ? { additionalTraitId: value.AddIndividualty }
+          : {}),
+        ...(value.AddIndividualtyList ? { additionalTraitIds: value.AddIndividualtyList } : {}),
+        ...(typeof value.IncludeIgnoreIndividuality === 'number'
+          ? { includeIgnoreIndividuality: value.IncludeIgnoreIndividuality }
+          : {}),
+        ...(typeof value.IgnoreIndivUnreleaseable === 'number'
+          ? { ignoreUnreleaseableTraits: value.IgnoreIndivUnreleaseable }
+          : {}),
+        ...(typeof value.CheckDead === 'number' ? { checkDead: value.CheckDead } : {}),
+        ...(typeof value.HideMiss === 'number' ? { hideMiss: value.HideMiss } : {}),
+        ...(typeof value.HideNoEffect === 'number' ? { hideNoEffect: value.HideNoEffect } : {}),
+        ...(value.AndCheckIndividualityList
+          ? {
+              andCheckTraits: value.AndCheckIndividualityList.map((id) => ({
+                id,
+                name: traitNameById.get(id) ?? `trait:${String(id)}`,
+              })),
+            }
+          : {}),
+      };
+    });
+  });
+  return {
+    kind: damageKindByFunction[rawFunctionType as keyof typeof damageKindByFunction],
+    rawFunctionType: rawFunctionType as NpDamageSpec['rawFunctionType'],
+    functionId: String(fn.funcId),
+    target: fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
+    parametersByOvercharge: parametersByOvercharge as NpDamageSpec['parametersByOvercharge'],
+    rawPath,
+  } as NpDamageSpec;
+}
 
 function buffRateTargets(buffs: AtlasBuff[] | undefined) {
   return (buffs ?? []).flatMap((buff) =>
@@ -337,17 +453,40 @@ export function normalizeAtlasSnapshot(input: {
     throw new TypeError('atlas_exports_must_be_arrays');
   const atlasServants = input.servants as AtlasServant[];
   const atlasEquips = input.equips as AtlasEquip[];
+  const attackInventory = inventoryAtlasAttackFunctions(atlasServants);
+  if (attackInventory.unknown.length > 0)
+    throw new TypeError(`unknown_attack_functions:${attackInventory.unknown.join(',')}`);
+  const excludedAttackFunctions = atlasServants.flatMap((servant) => {
+    const reason = !servant.collectionNo
+      ? ('missingCollectionNo' as const)
+      : !['normal', 'heroine'].includes(servant.type ?? '')
+        ? ('servantTypeExcluded' as const)
+        : typeof servant.id !== 'number' ||
+            !servant.name ||
+            !servant.className ||
+            typeof servant.rarity !== 'number'
+          ? ('servantIdentityIncomplete' as const)
+          : null;
+    if (!reason) return [];
+    return (servant.noblePhantasms ?? []).flatMap((np) =>
+      (np.functions ?? []).flatMap((fn) =>
+        fn.funcType?.startsWith('damageNp')
+          ? [
+              {
+                servantId: String(servant.id ?? 'missing'),
+                noblePhantasmId: String(np.id ?? 'missing'),
+                functionId: String(fn.funcId ?? 'missing'),
+                rawFunctionType: fn.funcType,
+                reason,
+              },
+            ]
+          : [],
+      ),
+    );
+  });
   const traitNameById = collectTraitNameById(atlasServants, atlasEquips);
-  const servants = atlasServants.flatMap((servant) => {
+  const servants = atlasServants.flatMap((servant, servantIndex) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
-    const attacks = (servant.noblePhantasms ?? [])
-      .flatMap((np) =>
-        (np.functions ?? [])
-          .filter((fn) => typeof fn.funcType === 'string' && fn.funcType.startsWith('damageNp'))
-          .map((fn) => ({ np, fn })),
-      )
-      .sort((a, b) => (b.np.priority ?? 0) - (a.np.priority ?? 0));
-    const attack = attacks[0];
     if (
       typeof servant.id !== 'number' ||
       !servant.name ||
@@ -355,32 +494,47 @@ export function normalizeAtlasSnapshot(input: {
       typeof servant.rarity !== 'number'
     )
       return [];
-    const values = attack?.fn.svals?.slice(0, 5).map((value) => (value.Value ?? 0) / 10);
-    const hasAttackNp = Boolean(
-      attack && values && values.length === 5 && values.every((value) => value > 0),
-    );
-    const npMultipliers = hasAttackNp
-      ? (values as [number, number, number, number, number])
-      : ([0, 0, 0, 0, 0] as const);
-    const representativeNp = attack?.np ?? servant.noblePhantasms?.[0];
-    const specialTargetId = attack?.fn.svals?.[0]?.Target;
-    const specialTargetName =
-      typeof specialTargetId === 'number'
-        ? (traitNameById.get(specialTargetId) ?? `trait:${String(specialTargetId)}`)
-        : undefined;
-    const correctionSources = [
-      attack?.fn.svals,
-      attack?.fn.svals2,
-      attack?.fn.svals3,
-      attack?.fn.svals4,
-      attack?.fn.svals5,
-    ];
-    const specialMultipliers = [0, 1, 2, 3, 4].map((npLevelIndex) =>
-      correctionSources.map((source) => (source?.[npLevelIndex]?.Correction ?? 1000) / 1000),
-    );
-    const damageFunctionIndex = representativeNp?.functions?.findIndex((fn) =>
-      fn.funcType?.startsWith('damageNp'),
-    );
+    const noblePhantasms = (servant.noblePhantasms ?? []).flatMap((np, npIndex) => {
+      const indexedFunctions = (np.functions ?? []).map((fn, functionIndex) => ({
+        fn,
+        functionIndex,
+      }));
+      const damageFunctions = indexedFunctions.filter(({ fn }) =>
+        fn.funcType?.startsWith('damageNp'),
+      );
+      if (damageFunctions.length === 0) return [];
+      if (typeof np.id !== 'number')
+        throw new TypeError(
+          `missing_np_id:servants[${String(servantIndex)}].noblePhantasms[${String(npIndex)}]`,
+        );
+      const firstDamageIndex = damageFunctions[0]?.functionIndex ?? -1;
+      return [
+        {
+          id: String(np.id),
+          name: np.name ?? '不明な宝具',
+          priority: np.priority ?? 0,
+          card: cardMap[np.card ?? ''] ?? 'buster',
+          damage: damageFunctions.map(({ fn, functionIndex }) =>
+            normalizeNpDamageFunction(
+              fn,
+              `servants[${String(servantIndex)}].noblePhantasms[${String(npIndex)}].functions[${String(functionIndex)}]`,
+              traitNameById,
+            ),
+          ),
+          effects: indexedFunctions.flatMap(({ fn, functionIndex }) =>
+            fn.funcType?.startsWith('damageNp')
+              ? []
+              : normalizeFunctions([fn]).map((effect) => ({
+                  ...effect,
+                  timing:
+                    firstDamageIndex >= 0 && functionIndex < firstDamageIndex
+                      ? ('beforeDamage' as const)
+                      : ('afterDamage' as const),
+                })),
+          ),
+        },
+      ];
+    });
     const image = servant.extraAssets?.faces?.ascension?.['1'] ?? null;
     const activeSkills = [...(servant.skills ?? [])]
       .filter((skill) => typeof skill.num === 'number' && skill.num >= 1 && skill.num <= 3)
@@ -407,14 +561,10 @@ export function normalizeAtlasSnapshot(input: {
           ? servant.attribute
           : 'unknown',
         rarity: servant.rarity,
-        hasAttackNp,
-        npCard: cardMap[representativeNp?.card ?? ''] ?? 'buster',
-        npTarget: attack?.fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
         atkByLevel: Object.fromEntries(
           (servant.atkGrowth ?? []).map((atk, index) => [String(index + 1), atk]),
         ),
-        npMultipliers,
-        attackNpFunctionType: attack?.fn.funcType ?? 'none',
+        noblePhantasms,
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
         imageKey: image,
         skills: activeSkills
@@ -423,36 +573,6 @@ export function normalizeAtlasSnapshot(input: {
         passives: (servant.classPassive ?? [])
           .filter((skill) => typeof skill.id === 'number' && skill.name)
           .map(normalizeSkill),
-        npEffects: (representativeNp?.functions ?? []).flatMap((fn, index) =>
-          fn.funcType?.startsWith('damageNp')
-            ? []
-            : normalizeFunctions([fn]).map((effect) => ({
-                ...effect,
-                timing:
-                  damageFunctionIndex !== undefined &&
-                  damageFunctionIndex >= 0 &&
-                  index < damageFunctionIndex
-                    ? ('beforeDamage' as const)
-                    : ('afterDamage' as const),
-              })),
-        ),
-        npSpecialAttack:
-          ['damageNpIndividual', 'damageNpStateIndividualFix'].includes(
-            attack?.fn.funcType ?? '',
-          ) &&
-          specialTargetName &&
-          specialMultipliers.some((row) => row.some((multiplier) => multiplier !== 1))
-            ? {
-                targetCondition: { anyOf: [specialTargetName], noneOf: [] },
-                multipliersByNpLevelAndOvercharge: specialMultipliers as [
-                  [number, number, number, number, number],
-                  [number, number, number, number, number],
-                  [number, number, number, number, number],
-                  [number, number, number, number, number],
-                  [number, number, number, number, number],
-                ],
-              }
-            : null,
         growth: [
           ...growthSteps(servant.ascensionMaterials, 'ascension'),
           ...growthSteps(servant.skillMaterials, 'skill', 3),
@@ -522,5 +642,22 @@ export function normalizeAtlasSnapshot(input: {
         ]
       : [],
   );
-  return masterSnapshotSchema.parse({ version: input.version, servants, craftEssences, materials });
+  const includedCount = servants.reduce(
+    (count, servant) =>
+      count + servant.noblePhantasms.reduce((npCount, np) => npCount + np.damage.length, 0),
+    0,
+  );
+  return masterSnapshotSchema.parse({
+    version: input.version,
+    normalization: {
+      attackFunctions: {
+        sourceCount: attackInventory.attackEntries,
+        includedCount,
+        excluded: excludedAttackFunctions,
+      },
+    },
+    servants,
+    craftEssences,
+    materials,
+  });
 }

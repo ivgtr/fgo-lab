@@ -1,5 +1,7 @@
 import {
   deriveNpSpecialMultipliers,
+  getPrimaryNoblePhantasm,
+  getPrimaryNpDamage,
   type CraftEssenceMaster,
   type MasterEffect,
   type ServantMaster,
@@ -412,9 +414,19 @@ export function resolveNpEffects(
       precision: 'unsupported',
       warnings: ['np_source_missing'],
     };
+  const noblePhantasm = getPrimaryNoblePhantasm(servant);
+  const damage = getPrimaryNpDamage(servant);
+  if (!noblePhantasm || !damage)
+    return {
+      input: baseInput,
+      effects: [],
+      npDamageBuffRate: 0,
+      precision: 'unsupported',
+      warnings: ['np_source_missing'],
+    };
   const resolved = resolveEffects(
     baseInput,
-    servant.npEffects
+    noblePhantasm.effects
       .filter((effect) => effect.timing === 'beforeDamage')
       .map((effect) => ({
         sourceInstanceId: `np:${servant.id}`,
@@ -432,14 +444,19 @@ export function resolveNpEffects(
     servant.traits,
     options,
   );
-  const special = servant.npSpecialAttack;
-  if (!special) return resolved;
-  const multipliers = deriveNpSpecialMultipliers(servant, baseInput.overcharge);
+  if (!['trait', 'stateTrait'].includes(damage.kind)) return resolved;
+  const targetTrait = damage.parametersByOvercharge[baseInput.overcharge - 1]?.[0]?.targetTrait;
+  if (!targetTrait)
+    return {
+      ...resolved,
+      precision: 'unsupported',
+      warnings: [...resolved.warnings, 'np_special_target_missing'],
+    };
+  const multipliers = deriveNpSpecialMultipliers(damage, baseInput.overcharge);
   const selectedMultiplier = multipliers[baseInput.npLevel - 1] ?? 1;
   const specialKey = `np:np:${servant.id}:np:${servant.id}:special:np-special:${servant.id}`;
   const override = options.effectOverrides?.[specialKey];
-  const matched =
-    override ?? matchesTraitCondition(special.targetCondition, baseInput.target.traits);
+  const matched = override ?? baseInput.target.traits.includes(targetTrait.name);
   return {
     ...resolved,
     input: matched
@@ -464,7 +481,10 @@ export function resolveNpEffects(
         label: '特攻宝具',
         value: selectedMultiplier,
         kind: null,
-        damageTraitCondition: { kind: 'npSpecial', condition: special.targetCondition },
+        damageTraitCondition: {
+          kind: 'npSpecial',
+          condition: { anyOf: [targetTrait.name], noneOf: [] },
+        },
         requiredFieldTraits: [],
         damageRelevant: true,
         calculationSupported: true,

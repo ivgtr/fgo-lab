@@ -1,5 +1,6 @@
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { CalcInput, SupportComposition } from '@fgo-lab/schema';
+import type { MasterEffect, NpDamageSpec } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import {
   isDamageRelevantEffect,
@@ -47,17 +48,12 @@ const source: ServantMaster = {
   classId: 'caster',
   attribute: 'human',
   rarity: 5,
-  hasAttackNp: false,
-  npCard: 'arts',
-  npTarget: 'all',
   atkByLevel: {},
-  npMultipliers: [0, 0, 0, 0, 0],
-  attackNpFunctionType: 'none',
+  noblePhantasms: [],
   traits: [],
   imageKey: null,
   growth: [],
   passives: [],
-  npEffects: [],
   skills: [
     {
       id: 'skill',
@@ -106,6 +102,39 @@ const source: ServantMaster = {
     },
   ],
 };
+
+const npParameterMatrix = (
+  correctionsByOvercharge: readonly (readonly number[])[] = Array.from({ length: 5 }, () =>
+    Array.from({ length: 5 }, () => 1000),
+  ),
+) =>
+  correctionsByOvercharge.map((corrections) =>
+    corrections.map((correctionPermille) => ({
+      ratePermille: 1000,
+      valuePermille: 3000,
+      correctionPermille,
+      targetId: 2002,
+      targetTrait: { id: 2002, name: 'dragon' },
+    })),
+  ) as NpDamageSpec['parametersByOvercharge'];
+
+const standardDamage: NpDamageSpec = {
+  kind: 'standard',
+  rawFunctionType: 'damageNp',
+  functionId: 'damage',
+  target: 'all',
+  parametersByOvercharge: npParameterMatrix(),
+  rawPath: 'fixture.damage',
+};
+
+function attackNoblePhantasm(
+  effects: Array<MasterEffect & { timing: 'beforeDamage' | 'afterDamage' }>,
+  damage: NpDamageSpec = standardDamage,
+) {
+  return [
+    { id: 'np', name: '宝具', priority: 1, card: 'buster' as const, damage: [damage], effects },
+  ];
+}
 
 function compositionFor(servant: ServantMaster = source): SupportComposition {
   return {
@@ -563,7 +592,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     const attacker: ServantMaster = {
       ...source,
       id: input.attackerId,
-      npEffects: [
+      noblePhantasms: attackNoblePhantasm([
         {
           id: 'attack',
           type: 'addStateShort',
@@ -574,7 +603,7 @@ describe('automatic equipment, passive, and NP effects', () => {
           buffTypes: ['upAtk'],
           cardTypes: [],
         },
-      ],
+      ]),
     };
     expect(resolveNpEffects({ ...input, overcharge: 3 }, attacker).input.attackBuff).toBe(0.4);
   });
@@ -583,16 +612,20 @@ describe('automatic equipment, passive, and NP effects', () => {
     const attacker: ServantMaster = {
       ...source,
       id: input.attackerId,
-      npSpecialAttack: {
-        targetCondition: { anyOf: ['dragon'], noneOf: [] },
-        multipliersByNpLevelAndOvercharge: [
-          [1.5, 1.6, 1.7, 1.8, 1.9],
-          [1.75, 1.85, 1.95, 2.05, 2.15],
-          [1.875, 1.975, 2.075, 2.175, 2.275],
-          [1.938, 2.038, 2.138, 2.238, 2.338],
-          [2, 2.1, 2.2, 2.3, 2.4],
-        ],
-      },
+      noblePhantasms: attackNoblePhantasm([], {
+        kind: 'trait',
+        rawFunctionType: 'damageNpIndividual',
+        functionId: 'special-damage',
+        target: 'all',
+        parametersByOvercharge: npParameterMatrix([
+          [1500, 1750, 1875, 1938, 2000],
+          [1600, 1850, 1975, 2038, 2100],
+          [1700, 1950, 2075, 2138, 2200],
+          [1800, 2050, 2175, 2238, 2300],
+          [1900, 2150, 2275, 2338, 2400],
+        ]),
+        rawPath: 'fixture.special-damage',
+      }),
     };
     const matched = resolveNpEffects(
       {

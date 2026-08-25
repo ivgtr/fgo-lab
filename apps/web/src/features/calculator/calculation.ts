@@ -8,7 +8,13 @@ import {
   type ResolvedSupportEffect,
   type ResolvedEffectSet,
 } from '@fgo-lab/effect-resolver';
-import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
+import {
+  deriveNpMultipliers,
+  getPrimaryNoblePhantasm,
+  getPrimaryNpDamage,
+  type MasterDataSnapshot,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import type {
   AttackerSkillSelection,
   CalcInput,
@@ -145,6 +151,9 @@ export function createDefaultCalcInput(
   build: ServantBuild | undefined,
   servant: ServantMaster = master.servants[0]!,
 ): CalcInput {
+  const noblePhantasm = getPrimaryNoblePhantasm(servant);
+  const damage = getPrimaryNpDamage(servant);
+  if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   return {
     attackerId: servant.id,
     attackerLevel: build?.level ?? 90,
@@ -154,9 +163,9 @@ export function createDefaultCalcInput(
     craftEssenceAtk: 0,
     npLevel: Math.max(1, build?.npLevel ?? 1),
     overcharge: 1,
-    npMultipliers: servant.npMultipliers,
-    attackNpFunctionType: servant.attackNpFunctionType,
-    cardType: servant.npCard,
+    npMultipliers: deriveNpMultipliers(damage, 1),
+    attackNpFunctionType: damage.rawFunctionType,
+    cardType: noblePhantasm.card,
     classAttackRate: classAttackRate(servant.classId),
     classAffinity: 2,
     attributeAffinity: 1,
@@ -213,6 +222,9 @@ export function selectCalculationAttacker(
   source: CalculationSelection['attackerSource'],
   build: ServantBuild | undefined,
 ): { input: CalcInput; selection: CalculationSelection } {
+  const noblePhantasm = getPrimaryNoblePhantasm(servant);
+  const damage = getPrimaryNpDamage(servant);
+  if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   const manualOverrides = new Set(selection.manualOverrides ?? []);
   const level = build?.level ?? 90;
   return {
@@ -225,9 +237,9 @@ export function selectCalculationAttacker(
         : (servant.atkByLevel[String(level)] ?? servant.atkByLevel['90'] ?? input.attackerAtk),
       fouAtk: manualOverrides.has('fouAtk') ? input.fouAtk : (build?.fouAtk ?? 1000),
       npLevel: Math.max(1, build?.npLevel ?? 1),
-      npMultipliers: servant.npMultipliers,
-      attackNpFunctionType: servant.attackNpFunctionType,
-      cardType: servant.npCard,
+      npMultipliers: deriveNpMultipliers(damage, input.overcharge),
+      attackNpFunctionType: damage.rawFunctionType,
+      cardType: noblePhantasm.card,
       classAttackRate: manualOverrides.has('classAttackRate')
         ? input.classAttackRate
         : classAttackRate(servant.classId),

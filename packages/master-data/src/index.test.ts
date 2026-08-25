@@ -11,39 +11,63 @@ describe('master validation', () => {
       errors: [],
       unknownAttackFunctions: [],
     }));
-  it('reports unknown attack functions', () =>
-    expect(
-      validateMasterSnapshot({
-        ...fixture,
-        servants: [{ ...fixture.servants[0], attackNpFunctionType: 'futureDamage' }],
-      }).unknownAttackFunctions,
-    ).toEqual(['futureDamage']));
-  it('does not classify a non-attacking NP as an unknown damage function', () =>
+  it('rejects an unknown attack function in the normalized master', () =>
     expect(
       validateMasterSnapshot({
         ...fixture,
         servants: [
           {
             ...fixture.servants[0],
-            hasAttackNp: false,
-            attackNpFunctionType: 'none',
-            npMultipliers: [0, 0, 0, 0, 0],
+            noblePhantasms: [
+              {
+                ...fixture.servants[0]!.noblePhantasms[0]!,
+                damage: [
+                  {
+                    ...fixture.servants[0]!.noblePhantasms[0]!.damage[0]!,
+                    rawFunctionType: 'futureDamage',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    ).toMatchObject({ valid: false, unknownAttackFunctions: [] }));
+  it('accepts a servant without an attacking NP', () =>
+    expect(
+      validateMasterSnapshot({
+        ...fixture,
+        normalization: { attackFunctions: { sourceCount: 0, includedCount: 0, excluded: [] } },
+        servants: [
+          {
+            ...fixture.servants[0],
+            noblePhantasms: [],
           },
         ],
       }),
     ).toMatchObject({ valid: true, unknownAttackFunctions: [] }));
-  it('rejects an exact special NP function without its condition and level multipliers', () =>
+  it('rejects an incomplete NP parameter matrix', () =>
     expect(
       validateMasterSnapshot({
         ...fixture,
         servants: [
           {
             ...fixture.servants[0],
-            attackNpFunctionType: 'damageNpIndividual',
+            noblePhantasms: [
+              {
+                ...fixture.servants[0]!.noblePhantasms[0]!,
+                damage: [
+                  {
+                    ...fixture.servants[0]!.noblePhantasms[0]!.damage[0]!,
+                    parametersByOvercharge: [],
+                  },
+                ],
+              },
+            ],
           },
         ],
       }),
-    ).toMatchObject({ valid: false, errors: ['missing special NP condition:fixture-saber'] }));
+    ).toMatchObject({ valid: false }));
   it('derives CE attack and rejects levels over the limit', () => {
     expect(deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 1, 0)).toBe(0);
     expect(() => deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 21, 0)).toThrow(RangeError);

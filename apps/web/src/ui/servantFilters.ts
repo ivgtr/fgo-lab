@@ -1,11 +1,17 @@
-import type { ServantMaster } from '@fgo-lab/master-data';
+import {
+  getPrimaryNoblePhantasm,
+  getPrimaryNpDamage,
+  type NoblePhantasmMaster,
+  type NpDamageSpec,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import { allServantClasses } from './servantFilterOptions';
 
 export type ServantFilterState = {
   classId: string | null;
   rarities: Set<number>;
-  npCards: Set<ServantMaster['npCard']>;
-  npTargets: Set<ServantMaster['npTarget']>;
+  npCards: Set<NoblePhantasmMaster['card']>;
+  npTargets: Set<NpDamageSpec['target']>;
 };
 
 export function createEmptyServantFilters(): ServantFilterState {
@@ -44,8 +50,10 @@ export function filterServants(
 ): ServantMaster[] {
   const normalizedSearch = search.trim().toLocaleLowerCase('ja');
   const selectedClass = allServantClasses.find((option) => option.id === filters.classId);
-  return servants.filter(
-    (candidate) =>
+  return servants.filter((candidate) => {
+    const noblePhantasm = getPrimaryNoblePhantasm(candidate);
+    const damage = getPrimaryNpDamage(candidate);
+    return (
       (normalizedSearch.length === 0 ||
         [candidate.name, candidate.id]
           .join(' ')
@@ -53,9 +61,8 @@ export function filterServants(
           .includes(normalizedSearch)) &&
       (!selectedClass || selectedClass.values.includes(candidate.classId)) &&
       (filters.rarities.size === 0 || filters.rarities.has(candidate.rarity)) &&
-      (filters.npCards.size === 0 ||
-        (candidate.hasAttackNp && filters.npCards.has(candidate.npCard))) &&
-      (filters.npTargets.size === 0 ||
-        (candidate.hasAttackNp && filters.npTargets.has(candidate.npTarget))),
-  );
+      (filters.npCards.size === 0 || (noblePhantasm && filters.npCards.has(noblePhantasm.card))) &&
+      (filters.npTargets.size === 0 || (damage && filters.npTargets.has(damage.target)))
+    );
+  });
 }

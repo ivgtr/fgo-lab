@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   deriveCraftEssenceAtk,
+  getPrimaryNpPresentation,
   type CraftEssenceMaster,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -82,6 +83,7 @@ export function Calculator({
   const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
   const manualOverrides = new Set(selection.manualOverrides ?? []);
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
+  const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
@@ -403,8 +405,8 @@ export function Calculator({
           <p>
             <strong>{attacker?.name ?? input.attackerId}</strong>
             <small>
-              {attacker?.classId}・{attacker?.npTarget === 'all' ? '全体' : '単体'}
-              {attacker?.npCard.toUpperCase()}宝具
+              {attacker?.classId}・{attackerNp?.target === 'all' ? '全体' : '単体'}
+              {attackerNp?.card.toUpperCase()}宝具
             </small>
             <small>
               {selection.attackerSource === 'owned' ? '所持・育成管理の保存値' : '全DBの仮想設定'}

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
-import { masterSnapshotSchema, type ServantMaster } from '@fgo-lab/master-data';
+import {
+  masterSnapshotSchema,
+  type NoblePhantasmMaster,
+  type NpDamageSpec,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import {
   clearServantFilterDetails,
   countActiveServantFilterGroups,
@@ -15,16 +20,18 @@ const artsArcher: ServantMaster = {
   name: '検証用アーチャー',
   classId: 'archer',
   rarity: 4,
-  npCard: 'arts',
-  npTarget: 'single',
+  noblePhantasms: saber.noblePhantasms.map((np) => ({
+    ...np,
+    card: 'arts',
+    damage: np.damage.map((damage) => ({ ...damage, target: 'single' })),
+  })),
 };
 const supportCaster: ServantMaster = {
   ...saber,
   id: 'support-caster',
   name: '非攻撃キャスター',
   classId: 'caster',
-  hasAttackNp: false,
-  npCard: 'arts',
+  noblePhantasms: [],
 };
 const servants = [saber, artsArcher, supportCaster];
 
@@ -33,7 +40,7 @@ describe('servant filters', () => {
     const filters = {
       ...createEmptyServantFilters(),
       rarities: new Set([4, 5]),
-      npCards: new Set<ServantMaster['npCard']>(['arts']),
+      npCards: new Set<NoblePhantasmMaster['card']>(['arts']),
     };
     expect(filterServants(servants, filters, '')).toEqual([artsArcher]);
   });
@@ -49,7 +56,7 @@ describe('servant filters', () => {
       ...createEmptyServantFilters(),
       classId: 'saber',
       rarities: new Set([5]),
-      npTargets: new Set<ServantMaster['npTarget']>(['all']),
+      npTargets: new Set<NpDamageSpec['target']>(['all']),
     };
     expect(countActiveServantFilterGroups(filters)).toBe(3);
     expect(clearServantFilterDetails(filters)).toEqual({

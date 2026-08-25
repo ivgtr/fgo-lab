@@ -104,18 +104,23 @@ describe('calculation application logic', () => {
       servants: [
         {
           ...fixture.servants[0],
-          attackNpFunctionType: 'damageNpIndividual',
-          npMultipliers: [1200, 1200, 1200, 1200, 1200],
-          npSpecialAttack: {
-            targetCondition: { anyOf: ['genderMale'], noneOf: [] },
-            multipliersByNpLevelAndOvercharge: [
-              [1.5, 1.5, 1.5, 1.5, 1.5],
-              [2, 2, 2, 2, 2],
-              [2.25, 2.25, 2.25, 2.25, 2.25],
-              [2.375, 2.375, 2.375, 2.375, 2.375],
-              [2.5, 2.5, 2.5, 2.5, 2.5],
-            ],
-          },
+          noblePhantasms: fixture.servants[0]!.noblePhantasms.map((np) => ({
+            ...np,
+            damage: np.damage.map((damage) => ({
+              ...damage,
+              kind: 'trait',
+              rawFunctionType: 'damageNpIndividual',
+              parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                row.map((parameter, index) => ({
+                  ...parameter,
+                  valuePermille: 12_000,
+                  correctionPermille: [1500, 2000, 2250, 2375, 2500][index],
+                  targetId: 109,
+                  targetTrait: { id: 109, name: 'genderMale' },
+                })),
+              ),
+            })),
+          })),
         },
       ],
     });
@@ -240,8 +245,19 @@ describe('calculation application logic', () => {
     const servant = {
       ...master.servants[0]!,
       id: 'next-attacker',
-      npCard: 'quick' as const,
-      npMultipliers: [600, 800, 900, 950, 1000] as CalcInput['npMultipliers'],
+      noblePhantasms: master.servants[0]!.noblePhantasms.map((np) => ({
+        ...np,
+        card: 'quick' as const,
+        damage: np.damage.map((damage) => ({
+          ...damage,
+          parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+            row.map((parameter, index) => ({
+              ...parameter,
+              valuePermille: [6000, 8000, 9000, 9500, 10_000][index],
+            })),
+          ) as typeof damage.parametersByOvercharge,
+        })),
+      })),
       atkByLevel: { '90': 12_345 },
     };
     const next = selectCalculationAttacker(

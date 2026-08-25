@@ -1,16 +1,70 @@
 {
   "version": "fixture-1",
+  "normalization": {
+    "attackFunctions": { "sourceCount": 1, "includedCount": 1, "excluded": [] }
+  },
   "servants": [
     {
       "id": "fixture-saber",
       "name": "検証用セイバー",
       "classId": "saber",
       "rarity": 5,
-      "npCard": "buster",
-      "npTarget": "all",
       "atkByLevel": { "1": 1700, "90": 10000, "100": 10950, "120": 12850 },
-      "npMultipliers": [300, 400, 450, 475, 500],
-      "attackNpFunctionType": "damageNp",
+      "noblePhantasms": [
+        {
+          "id": "fixture-np",
+          "name": "検証用宝具",
+          "priority": 1,
+          "card": "buster",
+          "damage": [
+            {
+              "kind": "standard",
+              "rawFunctionType": "damageNp",
+              "functionId": "fixture-damage",
+              "target": "all",
+              "parametersByOvercharge": [
+                [
+                  { "ratePermille": 1000, "valuePermille": 3000 },
+                  { "ratePermille": 1000, "valuePermille": 4000 },
+                  { "ratePermille": 1000, "valuePermille": 4500 },
+                  { "ratePermille": 1000, "valuePermille": 4750 },
+                  { "ratePermille": 1000, "valuePermille": 5000 }
+                ],
+                [
+                  { "ratePermille": 1000, "valuePermille": 3000 },
+                  { "ratePermille": 1000, "valuePermille": 4000 },
+                  { "ratePermille": 1000, "valuePermille": 4500 },
+                  { "ratePermille": 1000, "valuePermille": 4750 },
+                  { "ratePermille": 1000, "valuePermille": 5000 }
+                ],
+                [
+                  { "ratePermille": 1000, "valuePermille": 3000 },
+                  { "ratePermille": 1000, "valuePermille": 4000 },
+                  { "ratePermille": 1000, "valuePermille": 4500 },
+                  { "ratePermille": 1000, "valuePermille": 4750 },
+                  { "ratePermille": 1000, "valuePermille": 5000 }
+                ],
+                [
+                  { "ratePermille": 1000, "valuePermille": 3000 },
+                  { "ratePermille": 1000, "valuePermille": 4000 },
+                  { "ratePermille": 1000, "valuePermille": 4500 },
+                  { "ratePermille": 1000, "valuePermille": 4750 },
+                  { "ratePermille": 1000, "valuePermille": 5000 }
+                ],
+                [
+                  { "ratePermille": 1000, "valuePermille": 3000 },
+                  { "ratePermille": 1000, "valuePermille": 4000 },
+                  { "ratePermille": 1000, "valuePermille": 4500 },
+                  { "ratePermille": 1000, "valuePermille": 4750 },
+                  { "ratePermille": 1000, "valuePermille": 5000 }
+                ]
+              ],
+              "rawPath": "fixture.servants[0].noblePhantasms[0].functions[0]"
+            }
+          ],
+          "effects": []
+        }
+      ],
       "traits": ["servant", "humanoid"],
       "imageKey": null,
       "growth": [

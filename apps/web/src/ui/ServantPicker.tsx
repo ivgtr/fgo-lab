@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import type { ServantMaster } from '@fgo-lab/master-data';
+import { getPrimaryNpPresentation, type ServantMaster } from '@fgo-lab/master-data';
 import { MasterImage } from './MasterImage';
 import {
   ServantAdvancedFilterFields,
@@ -188,28 +188,31 @@ export function ServantPicker({
               <p className="empty">条件に一致するサーヴァントはいません。</p>
             ) : (
               <ul className="plain-list picker-result-list servant-picker-results">
-                {visible.map((candidate) => (
-                  <li key={candidate.id}>
-                    <button
-                      type="button"
-                      className="list-row"
-                      onClick={() => onSelect(candidate, sourceId)}
-                    >
-                      <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
-                      <span className="list-row-main">
-                        <strong>{candidate.name}</strong>
-                        <small>
-                          ★{candidate.rarity}・
-                          {servantClassLabels.get(candidate.classId) ?? candidate.classId}
-                          {showNpFilters
-                            ? `・${candidate.npCard === 'buster' ? 'Buster' : candidate.npCard === 'arts' ? 'Arts' : 'Quick'}・${candidate.npTarget === 'all' ? '全体' : '単体'}宝具`
-                            : ''}
-                        </small>
-                        <small>{description(candidate, sourceId)}</small>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {visible.map((candidate) => {
+                  const np = getPrimaryNpPresentation(candidate);
+                  return (
+                    <li key={candidate.id}>
+                      <button
+                        type="button"
+                        className="list-row"
+                        onClick={() => onSelect(candidate, sourceId)}
+                      >
+                        <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
+                        <span className="list-row-main">
+                          <strong>{candidate.name}</strong>
+                          <small>
+                            ★{candidate.rarity}・
+                            {servantClassLabels.get(candidate.classId) ?? candidate.classId}
+                            {showNpFilters && np
+                              ? `・${np.card === 'buster' ? 'Buster' : np.card === 'arts' ? 'Arts' : 'Quick'}・${np.target === 'all' ? '全体' : '単体'}宝具`
+                              : ''}
+                          </small>
+                          <small>{description(candidate, sourceId)}</small>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

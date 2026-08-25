@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import type { ServantMaster } from '@fgo-lab/master-data';
+import { getPrimaryNpPresentation, type ServantMaster } from '@fgo-lab/master-data';
 import type { ServantBuild, ServantTarget } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
 import {
@@ -110,6 +110,7 @@ export function Servants({
     return 0;
   });
   const selected = visible.find((candidate) => candidate.id === selectedId) ?? visible[0];
+  const selectedNp = selected ? getPrimaryNpPresentation(selected) : null;
   const build = selected ? builds[selected.id] : undefined;
   const target = selected ? targets[selected.id] : undefined;
   const ownershipCounts = filteredWithoutScope.reduce(
@@ -271,48 +272,51 @@ export function Servants({
           </div>
         ) : null}
         <div className="servant-list" role="list" aria-label="サーヴァント一覧">
-          {visible.map((candidate) => (
-            <button
-              role="listitem"
-              key={candidate.id}
-              className="list-row"
-              aria-current={selected?.id === candidate.id ? 'true' : undefined}
-              onClick={() => {
-                setSelectedId(candidate.id);
-                setMobileDetailOpen(true);
-              }}
-            >
-              <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
-              <span className="list-row-main">
-                <strong>{candidate.name}</strong>
-                <small>
-                  {candidate.classId}・{candidate.npTarget === 'all' ? '全体' : '単体'}
-                  {candidate.npCard.toUpperCase()}
-                </small>
-              </span>
-              <span className="list-row-state">
-                <strong>
-                  {builds[candidate.id]?.npLevel
-                    ? `NP${String(builds[candidate.id]?.npLevel)}`
-                    : 'NP0'}
-                </strong>
-                <small>
-                  {builds[candidate.id]?.npLevel
-                    ? `Lv.${String(builds[candidate.id]?.level)}`
-                    : '未所持'}
-                </small>
-                {targets[candidate.id]?.planned ? (
-                  <em
-                    className={`growth-status ${hasGrowthGap(builds[candidate.id], targets[candidate.id]) ? 'gap' : 'achieved'}`}
-                  >
-                    {hasGrowthGap(builds[candidate.id], targets[candidate.id])
-                      ? '育成差分'
-                      : '目標達成'}
-                  </em>
-                ) : null}
-              </span>
-            </button>
-          ))}
+          {visible.map((candidate) => {
+            const np = getPrimaryNpPresentation(candidate);
+            return (
+              <button
+                role="listitem"
+                key={candidate.id}
+                className="list-row"
+                aria-current={selected?.id === candidate.id ? 'true' : undefined}
+                onClick={() => {
+                  setSelectedId(candidate.id);
+                  setMobileDetailOpen(true);
+                }}
+              >
+                <MasterImage src={candidate.imageKey} alt="" fallback={candidate.name} />
+                <span className="list-row-main">
+                  <strong>{candidate.name}</strong>
+                  <small>
+                    {candidate.classId}・{np?.target === 'all' ? '全体' : '単体'}
+                    {np?.card.toUpperCase()}
+                  </small>
+                </span>
+                <span className="list-row-state">
+                  <strong>
+                    {builds[candidate.id]?.npLevel
+                      ? `NP${String(builds[candidate.id]?.npLevel)}`
+                      : 'NP0'}
+                  </strong>
+                  <small>
+                    {builds[candidate.id]?.npLevel
+                      ? `Lv.${String(builds[candidate.id]?.level)}`
+                      : '未所持'}
+                  </small>
+                  {targets[candidate.id]?.planned ? (
+                    <em
+                      className={`growth-status ${hasGrowthGap(builds[candidate.id], targets[candidate.id]) ? 'gap' : 'achieved'}`}
+                    >
+                      {hasGrowthGap(builds[candidate.id], targets[candidate.id])
+                        ? '育成差分'
+                        : '目標達成'}
+                    </em>
+                  ) : null}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
       <section className="detail-editor">
@@ -345,8 +349,8 @@ export function Servants({
               <p>
                 <strong>{selected.name}</strong>
                 <small>
-                  {selected.classId}・{selected.npTarget === 'all' ? '全体' : '単体'}
-                  {selected.npCard.toUpperCase()}宝具
+                  {selected.classId}・{selectedNp?.target === 'all' ? '全体' : '単体'}
+                  {selectedNp?.card.toUpperCase()}宝具
                 </small>
               </p>
             </div>

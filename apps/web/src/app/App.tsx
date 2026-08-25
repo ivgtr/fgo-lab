@@ -1,6 +1,6 @@
 import './shell.css';
 import { useEffect, useState } from 'react';
-import type { MasterDataSnapshot } from '@fgo-lab/master-data';
+import { getPrimaryNpPresentation, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   activeProfile,
   addCraftEssenceCopy,
@@ -532,8 +532,10 @@ export function App() {
         {page === 'ranking' && (
           <Ranking
             candidates={currentMaster.servants
-              .filter((candidate) => candidate.hasAttackNp)
+              .filter((candidate) => candidate.noblePhantasms.length > 0)
               .map((candidate) => {
+                const np = getPrimaryNpPresentation(candidate);
+                if (!np) throw new TypeError(`attack_np_missing:${candidate.id}`);
                 const input = createDefaultCalcInput(
                   currentMaster,
                   profile.servantBuilds[candidate.id],
@@ -563,8 +565,8 @@ export function App() {
                   resolutionWarnings: resolved.warnings,
                   classId: candidate.classId,
                   rarity: candidate.rarity,
-                  npCard: candidate.npCard,
-                  npTarget: candidate.npTarget,
+                  npCard: np.card,
+                  npTarget: np.target,
                   owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
                 };
               })}

@@ -6,7 +6,13 @@ import {
   normalizeAtlasSnapshot,
   validatePublishedArtifact,
 } from './index';
-const content = JSON.stringify({ version: 'v1', servants: [], craftEssences: [], materials: [] });
+const content = JSON.stringify({
+  version: 'v1',
+  normalization: { attackFunctions: { sourceCount: 0, includedCount: 0, excluded: [] } },
+  servants: [],
+  craftEssences: [],
+  materials: [],
+});
 describe('immutable publish pipeline', () => {
   it('creates and validates a checksum manifest', () => {
     const manifest = createManifest({
@@ -80,6 +86,7 @@ describe('immutable publish pipeline', () => {
     });
     const specialValues = (corrections: readonly number[]) =>
       [3000, 4000, 4500, 4750, 5000].map((Value, index) => ({
+        Rate: 1000,
         Value,
         Target: 2002,
         Correction: corrections[index],
@@ -106,6 +113,8 @@ describe('immutable publish pipeline', () => {
           ],
           noblePhantasms: [
             {
+              id: 100,
+              name: '攻撃宝具',
               card: '2',
               priority: 1,
               functions: [
@@ -146,23 +155,36 @@ describe('immutable publish pipeline', () => {
       attribute: 'earth',
       skills: [{ id: '2', slot: 1, name: '強化後スキル' }],
       passives: [{ id: '3' }],
-      npEffects: [{ id: '11', timing: 'beforeDamage' }],
-      npMultipliers: [300, 400, 450, 475, 500],
-      npSpecialAttack: {
-        targetCondition: { anyOf: ['dragon'], noneOf: [] },
-        multipliersByNpLevelAndOvercharge: [
-          [1.5, 1.6, 1.7, 1.8, 1.9],
-          [1.75, 1.85, 1.95, 2.05, 2.15],
-          [1.875, 1.975, 2.075, 2.175, 2.275],
-          [1.938, 2.038, 2.138, 2.238, 2.338],
-          [2, 2.1, 2.2, 2.3, 2.4],
-        ],
-      },
+    });
+    const noblePhantasm = snapshot.servants[0]?.noblePhantasms[0];
+    expect(noblePhantasm).toMatchObject({
+      id: '100',
+      card: 'buster',
+      effects: [{ id: '11', timing: 'beforeDamage' }],
+    });
+    expect(noblePhantasm?.damage[0]).toMatchObject({
+      kind: 'trait',
+      rawFunctionType: 'damageNpIndividual',
+    });
+    expect(noblePhantasm?.damage[0]?.parametersByOvercharge[0][0]).toMatchObject({
+      ratePermille: 1000,
+      valuePermille: 3000,
+      correctionPermille: 1500,
+      targetTrait: { id: 2002, name: 'dragon' },
     });
     expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({ values: [600, 800] });
   });
 
   it('normalizes card enums and explicit Atlas conditions without label parsing', () => {
+    const stateDamageValues = (correction: number) =>
+      [6000, 8000, 9000, 9500, 10000].map((Value) => ({
+        Rate: 1000,
+        Value,
+        Target: 3012,
+        Correction: correction,
+      }));
+    const standardDamageValues = () =>
+      Array.from({ length: 5 }, () => ({ Rate: 1000, Value: 1000 }));
     const snapshot = normalizeAtlasSnapshot({
       version: 'conditions',
       servants: [
@@ -239,6 +261,8 @@ describe('immutable publish pipeline', () => {
           ],
           noblePhantasms: [
             {
+              id: 200,
+              name: '状態特攻宝具',
               card: '3',
               priority: 1,
               functions: [
@@ -246,17 +270,11 @@ describe('immutable publish pipeline', () => {
                   funcId: 12,
                   funcType: 'damageNpStateIndividualFix',
                   funcTargetType: 'enemy',
-                  svals: [
-                    { Value: 6000, Target: 3012, Correction: 1500 },
-                    { Value: 8000, Target: 3012, Correction: 1500 },
-                    { Value: 9000, Target: 3012, Correction: 1500 },
-                    { Value: 9500, Target: 3012, Correction: 1500 },
-                    { Value: 10000, Target: 3012, Correction: 1500 },
-                  ],
-                  svals2: Array(5).fill({ Correction: 1625 }),
-                  svals3: Array(5).fill({ Correction: 1750 }),
-                  svals4: Array(5).fill({ Correction: 1875 }),
-                  svals5: Array(5).fill({ Correction: 2000 }),
+                  svals: stateDamageValues(1500),
+                  svals2: stateDamageValues(1625),
+                  svals3: stateDamageValues(1750),
+                  svals4: stateDamageValues(1875),
+                  svals5: stateDamageValues(2000),
                 },
               ],
             },
@@ -273,13 +291,19 @@ describe('immutable publish pipeline', () => {
           atkGrowth: [1],
           noblePhantasms: [
             {
+              id: 300,
+              name: 'Arts宝具',
               card: '1',
               functions: [
                 {
                   funcId: 1,
                   funcType: 'damageNp',
                   funcTargetType: 'enemy',
-                  svals: Array(5).fill({ Value: 1000 }),
+                  svals: standardDamageValues(),
+                  svals2: standardDamageValues(),
+                  svals3: standardDamageValues(),
+                  svals4: standardDamageValues(),
+                  svals5: standardDamageValues(),
                 },
               ],
             },
@@ -291,18 +315,11 @@ describe('immutable publish pipeline', () => {
     });
 
     const lilith = snapshot.servants.find((servant) => servant.id === '405900');
-    expect(lilith).toMatchObject({
-      npCard: 'quick',
-      npSpecialAttack: {
-        targetCondition: { anyOf: ['buffCharm'], noneOf: [] },
-        multipliersByNpLevelAndOvercharge: [
-          [1.5, 1.625, 1.75, 1.875, 2],
-          [1.5, 1.625, 1.75, 1.875, 2],
-          [1.5, 1.625, 1.75, 1.875, 2],
-          [1.5, 1.625, 1.75, 1.875, 2],
-          [1.5, 1.625, 1.75, 1.875, 2],
-        ],
-      },
+    expect(lilith?.noblePhantasms[0]).toMatchObject({ card: 'quick' });
+    expect(lilith?.noblePhantasms[0]?.damage[0]).toMatchObject({ kind: 'stateTrait' });
+    expect(lilith?.noblePhantasms[0]?.damage[0]?.parametersByOvercharge[0][0]).toMatchObject({
+      targetTrait: { id: 3012, name: 'buffCharm' },
+      correctionPermille: 1500,
     });
     expect(lilith?.skills[0]?.effects[0]).toMatchObject({
       targetCondition: { anyOf: [], noneOf: ['superGiant'] },
@@ -317,6 +334,8 @@ describe('immutable publish pipeline', () => {
       buffTypes: ['buffRate'],
       buffRateTargets: ['buffNpDamageUp'],
     });
-    expect(snapshot.servants.find((servant) => servant.id === '1')?.npCard).toBe('arts');
+    expect(snapshot.servants.find((servant) => servant.id === '1')?.noblePhantasms[0]?.card).toBe(
+      'arts',
+    );
   });
 });
