@@ -96,3 +96,37 @@ Calculator UI
 - 旧schema、旧engine、異なるmaster、不整合なscenario/resultの共有を現行結果として表示しない。
 - 結果画面だけでprecisionと、その根拠・仮定・警告・traceを確認できる。
 
+## 6. 実装進捗
+
+### 完了
+
+- `calculateScenario(scenario, master, versions)`を追加し、単発計算とdraft結果生成を保存対象scenarioから直接実行するようにした。
+- resolved scenarioのmaster参照、NP Function適用、effect解決、kernel、evidence評価をapplication facade内の一方向処理へまとめた。
+- 同値のresolved/manual最終入力が同じNP1〜5行を返すapplication testを追加した。
+- 計算画面へ入るたび新しいsession IDを発行するようにした。
+- `finalizeHistory()`へ同一sessionのupsert、直前fingerprint重複時のsession引継ぎ、unsupported結果の非確定を実装した。
+- URL、画像、共有JSONを同じ履歴確定経路へ接続した。
+- 履歴モーダルから過去scenarioを新session・新draftへコピーし、現行masterで再計算するようにした。
+- 共有読込時に現行master版を要求し、snapshotのversion contextでscenarioを再計算してresult全体が一致した場合だけ受理するようにした。旧版result表示経路は削除した。
+- 履歴・共有の確定では解決済みinputからscenarioを逆生成せず、現在のscenarioそのものを保存するようにした。
+- 結果詳細へprecision、breakdown、assumption、issue detail、trace、evidence、missing evidenceを表示し、共有カードへengine版とprecisionを追加した。
+
+### 未完了
+
+- `Calculator`の編集用propsはまだ`DamageResolutionInput + CalculationEditorState`であり、scenarioからUI stateを復元するadapterが残る。
+- manual scenarioは共通fieldと`manual`入力を重複保持している。
+- `calculateResolvedDamage()`と`resolveCalculationInput()`は旧UIおよびQ6前のranking候補組立用に残る。
+- UIをscenario直接編集へ置換後、旧editor schema、selection変換、旧application入口、対応する旧テストを削除する必要がある。
+
+## 7. 中間検証
+
+2026-08-25時点で次を確認した。
+
+- `pnpm test`: 23 files / 138 tests成功
+- `pnpm validate:evidence`: 2 files / 10 tests成功
+- `pnpm typecheck`: 成功
+- `pnpm lint`: 成功
+- `pnpm build`: 成功
+- `pnpm validate:master`: artifact検証成功、3 files / 14 tests成功
+
+Q5は中間ゲートまで成功しているが、旧UI stateが残るため完了とは判定しない。
