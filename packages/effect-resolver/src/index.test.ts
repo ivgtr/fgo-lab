@@ -481,6 +481,57 @@ describe('resolveSupportSourcesForTest', () => {
         cardTypes: ['buster'],
       }),
     ).toBe(false);
+    for (const buffType of ['upTolerance', 'downTolerance', 'upToleranceSubstate'])
+      expect(
+        isDamageRelevantEffect({
+          id: buffType,
+          type: 'addState',
+          target: 'self',
+          label: '状態付与耐性',
+          parameterSets: parameterSets(Array(10).fill(200)),
+          buffTypes: [buffType],
+          cardTypes: [],
+        }),
+      ).toBe(false);
+    for (const buffType of [
+      'subSelfdamage',
+      'upDefence',
+      'upDefenceNpdamage',
+      'upDefencecommandall',
+    ])
+      expect(
+        isDamageRelevantEffect({
+          id: buffType,
+          type: 'addState',
+          target: 'self',
+          label: '防御効果',
+          parameterSets: parameterSets(Array(10).fill(200)),
+          buffTypes: [buffType],
+          cardTypes: [],
+        }),
+      ).toBe(false);
+    expect(
+      isDamageRelevantEffect({
+        id: 'enemy-attack-down',
+        type: 'addState',
+        target: 'enemyAll',
+        label: '攻撃力ダウン',
+        parameterSets: parameterSets(Array(10).fill(200)),
+        buffTypes: ['downAtk'],
+        cardTypes: [],
+      }),
+    ).toBe(false);
+    expect(
+      isDamageRelevantEffect({
+        id: 'self-attack-down',
+        type: 'addState',
+        target: 'self',
+        label: '攻撃力ダウン',
+        parameterSets: parameterSets(Array(10).fill(200)),
+        buffTypes: ['downAtk'],
+        cardTypes: [],
+      }),
+    ).toBe(true);
     expect(
       isDamageRelevantEffect({
         id: 'command-card-type-change',

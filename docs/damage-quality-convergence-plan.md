@@ -201,6 +201,7 @@ calculation-application <- web / ranking worker
 - 旧schema・旧engineの計算結果を現行result schemaで拒否する。
 - `damageNpIndividualSum`が攻撃者・対象の恒常特性と状態特性を数えるようscenarioを拡張し、状態スタックを明示入力へ含めた。
 - Q5確認時に、通常コマンドカードだけを変える`changeCommandCardType`が宝具火力を誤って`unsupported`にする分類漏れを修正し、engine version 5.0.1へ更新した。
+- 同じ確認で、状態付与成功率、味方側の防御効果、敵側の攻撃低下を宝具火力候補から除外し、engine version 5.0.2へ更新した。
 - `damageNpBattlePointPhase`の最大phaseをmaster schema 6へ正規化し、入力phaseをサーヴァント固有上限へclampする。
 - 9種Functionを覆う10件の実データgolden行列を追加した。
 - evidence inventoryをCIとPages deployの必須ゲートにし、registry、case ID、validated根拠、公開master artifactを検査する。

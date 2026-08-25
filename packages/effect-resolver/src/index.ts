@@ -50,7 +50,21 @@ export interface EffectResolution {
   warnings: string[];
 }
 
-const NON_NP_DAMAGE_BUFF_TYPES = new Set(['upCriticaldamage', 'upExtraattack']);
+const NON_NP_DAMAGE_BUFF_TYPES = new Set([
+  'changeCommandCardType',
+  'downTolerance',
+  'upCriticaldamage',
+  'upExtraattack',
+  'upTolerance',
+  'upToleranceSubstate',
+]);
+const ATTACK_REDUCTION_BUFF_TYPES = new Set(['downAtk', 'downCommandall', 'downNpdamage']);
+const DEFENSIVE_BUFF_TYPES = new Set([
+  'subSelfdamage',
+  'upDefence',
+  'upDefenceNpdamage',
+  'upDefencecommandall',
+]);
 const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'addIndividuality',
   'addSelfdamage',
@@ -58,7 +72,6 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'downAtk',
   'downCommandall',
   'downNpdamage',
-  'downTolerance',
   'fieldIndividuality',
   'fieldIndividualityChangedFunction',
   'npattackPrevBuff',
@@ -76,8 +89,6 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'upDefence',
   'upDefenceNpdamage',
   'upDefencecommandall',
-  'upTolerance',
-  'upToleranceSubstate',
 ]);
 
 interface SkillSelection {
@@ -124,6 +135,9 @@ function matchesTraitCondition(condition: TraitCondition | undefined, traits: re
 function isPotentiallyDamageRelevant(effect: MasterEffect): boolean {
   const buffTypes = effect.buffTypes ?? [];
   if (buffTypes.some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return false;
+  const targetsEnemy = effect.target.startsWith('enemy');
+  if (targetsEnemy && buffTypes.some((type) => ATTACK_REDUCTION_BUFF_TYPES.has(type))) return false;
+  if (!targetsEnemy && buffTypes.some((type) => DEFENSIVE_BUFF_TYPES.has(type))) return false;
   return buffTypes.some((type) => UNSUPPORTED_NP_DAMAGE_BUFF_TYPES.has(type));
 }
 

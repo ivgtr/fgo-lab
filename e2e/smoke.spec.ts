@@ -38,6 +38,7 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
   await ownEffects.getByRole('button', { name: /バスターアップ/ }).click();
   await ownEffects.getByRole('button', { name: /宝具威力アップ/ }).click();
   await expect(ownEffects).not.toContainText('コマンドカードタイプチェンジ');
+  await expect(ownEffects).not.toContainText('弱体耐性アップ');
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('BUSTER性能／耐性50.0%／0.0%');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('宝具威力／耐性30.0%／0.0%');
@@ -1129,7 +1130,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('372件を計算・計算対象外 48件');
+  await expect(page.getByRole('status')).toContainText('388件を計算・計算対象外 32件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );
