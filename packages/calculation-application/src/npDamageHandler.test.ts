@@ -169,4 +169,31 @@ describe('NP damage handler registry', () => {
       npSpecialMultipliers: [1.4, 1.4, 1.4, 1.4, 1.4],
     });
   });
+
+  it('fails closed for every missing external handler input', () => {
+    const rarity = {
+      ...base,
+      kind: 'targetRarity',
+      rawFunctionType: 'damageNpRare',
+      parametersByOvercharge: matrix({ targetRarities: [5], correctionPermille: 1_500 }),
+    } as NpDamageSpec;
+    const battle = {
+      ...base,
+      kind: 'battlePointPhase',
+      rawFunctionType: 'damageNpBattlePointPhase',
+      parametersByOvercharge: matrix({ secondaryValuePermille: 1_000, correctionPermille: 100 }),
+    } as NpDamageSpec;
+    expect(resolveNpDamageHandler(rarity, context)).toEqual({
+      status: 'unsupported',
+      missingEvidence: 'missing_target_rarity',
+    });
+    expect(resolveNpDamageHandler(battle, context)).toEqual({
+      status: 'unsupported',
+      missingEvidence: 'missing_battle_point_phase',
+    });
+    expect(resolveNpDamageHandler(rarity, { ...context, overcharge: 6 })).toEqual({
+      status: 'unsupported',
+      missingEvidence: 'invalid_overcharge',
+    });
+  });
 });

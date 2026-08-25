@@ -10,7 +10,12 @@ import {
   attributeAffinity,
   classAffinity,
   classAttackRate,
+  clamp,
+  f32,
   f32Add,
+  f32Div,
+  f32Mul,
+  floorDamage,
 } from './index';
 
 const evaluateForTest = (value: DamageResolutionInput) => {
@@ -84,6 +89,16 @@ const input: DamageResolutionInput = {
 describe('float32 NP damage kernel', () => {
   it('rounds at primitive boundaries', () =>
     expect(f32Add(0.1, 0.2)).toBe(Math.fround(Math.fround(0.1) + Math.fround(0.2))));
+  it('names and fixes every arithmetic boundary primitive', () => {
+    expect(f32(1 / 3)).toBe(Math.fround(1 / 3));
+    expect(f32Mul(0.1, 0.2)).toBe(Math.fround(Math.fround(0.1) * Math.fround(0.2)));
+    expect(f32Div(1, 3)).toBe(Math.fround(Math.fround(1) / Math.fround(3)));
+    expect(() => f32Div(1, 0)).toThrow('division by zero');
+    expect(clamp(6, -1, 5)).toBe(5);
+    expect(() => clamp(1, 2, 0)).toThrow('minimum exceeds maximum');
+    expect(floorDamage(10.999)).toBe(10);
+    expect(floorDamage(-1)).toBe(0);
+  });
   it('accepts only one-level numeric kernel inputs', () => {
     const kernelInput: DamageKernelInput = {
       totalAtk: 10_000,
@@ -102,10 +117,28 @@ describe('float32 NP damage kernel', () => {
       ignoreDefense: false,
     };
     expect(calculateDamagePoint(kernelInput, 1_000)).toBe(golden.expectedDamage);
+    expect(() => calculateDamagePoint(kernelInput, 899)).toThrow(
+      'random must be an integer in 900..1099',
+    );
     expect(
       damageKernelInputSchema.safeParse({ ...kernelInput, attackerId: 'must-not-enter-kernel' })
         .success,
     ).toBe(false);
+  });
+  it('matches the source-backed NP1-5 and 200-point golden', () => {
+    const { npMultiplierPermilles, ...baseInput } = golden.input;
+    const kernelInputs = npMultiplierPermilles.map((npMultiplierPermille) => ({
+      ...baseInput,
+      card: golden.input.card as DamageKernelInput['card'],
+      npMultiplierPermille,
+    })) as [
+      DamageKernelInput,
+      DamageKernelInput,
+      DamageKernelInput,
+      DamageKernelInput,
+      DamageKernelInput,
+    ];
+    expect(evaluateDamageRows(kernelInputs)).toEqual(golden.expectedRows);
   });
   it('evaluates all five levels and the exact random endpoints', () => {
     const result = evaluateForTest(input);

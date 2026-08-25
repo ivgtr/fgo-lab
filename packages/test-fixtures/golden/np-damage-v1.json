@@ -1,13 +1,38 @@
 {
   "caseId": "atlas-neutral-arts-random-1000",
-  "description": "ATK 10000、宝具倍率100%、Arts、全相性等倍、バフなし、乱数1000",
+  "description": "ATK 10000、宝具倍率100%〜500%、Arts、全相性等倍、バフなし",
+  "retrievedAt": "2026-08-25",
+  "input": {
+    "totalAtk": 10000,
+    "npMultiplierPermilles": [1000, 2000, 3000, 4000, 5000],
+    "card": "arts",
+    "classAttackRatePermille": 1000,
+    "classAffinityPermille": 1000,
+    "attributeAffinityPermille": 1000,
+    "attackModifierPermille": 0,
+    "cardModifierPermille": 0,
+    "npPowerModifierPermille": 0,
+    "specialModifierPermille": 1000,
+    "npSpecialMultiplierPermille": 1000,
+    "flatDamage": 0,
+    "damageCut": 0,
+    "ignoreDefense": false
+  },
+  "randomRange": { "minimumPermille": 900, "maximumPermille": 1099, "sampleCount": 200 },
   "expectedDamage": 2300,
+  "expectedRows": [
+    { "npLevel": 1, "minimum": 2070, "average": 2298.395, "maximum": 2527 },
+    { "npLevel": 2, "minimum": 4140, "average": 4597.29, "maximum": 5055 },
+    { "npLevel": 3, "minimum": 6210, "average": 6896.085, "maximum": 7583 },
+    { "npLevel": 4, "minimum": 8280, "average": 9194.99, "maximum": 10110 },
+    { "npLevel": 5, "minimum": 10350, "average": 11493.96, "maximum": 12638 }
+  ],
   "masterDataVersion": "independent-constant-fixture-1",
-  "engineVersion": "1.0.0",
+  "engineVersion": "3.0.0",
   "sources": [
     "https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/damage.md",
     "https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md"
   ],
-  "derivation": "floor(float32(10000 * (100 / 100) * 1 * 1 * 1 * 1 * 1 * 0.23))",
-  "review": "independent arithmetic fixture; external differential pending"
+  "derivation": "各NP倍率・乱数900〜1099についてAtlas式の各乗算境界をbinary32へ丸め、最後にfloor。averageは200整数結果の算術平均。",
+  "reviewStatus": "independent-formula-reviewed; external differential pending"
 }
