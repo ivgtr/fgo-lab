@@ -190,7 +190,7 @@ calculation-application <- web / ranking worker
 
 ### Q4：特殊Functionとevidence-based precision
 
-状態: 進行中
+状態: 完了
 
 実装済み:
 
@@ -204,14 +204,15 @@ calculation-application <- web / ranking worker
 - 9種Functionを覆う10件の実データgolden行列を追加した。
 - evidence inventoryをCIとPages deployの必須ゲートにし、registry、case ID、validated根拠、公開master artifactを検査する。
 
-残作業:
+完了時の制約:
 
-- 特殊Function 8種について実行可能なChaldea differentialを追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。標準FunctionのAppMedia端点比較は完了した。
-- 特殊8種のChaldea実行differential完了後にQ4最終ゲートを判定する。
+- 標準FunctionはAppMedia端点比較まで完了し、validatedとする。
+- 特殊Function 8種はAtlas rawの実データgoldenとChaldea公開分岐のsource照合までとし、完全な外部実行differentialは要求しない。
+- 特殊8種は証拠を過大評価せずprovisional／approximateを維持する。後続作業で暗黙にvalidatedへ昇格しない。
 
 作業:
 
-- 各Functionについて一次根拠、独立golden、differential結果、レビュー記録をevidenceとして管理する。
+- 各Functionについて一次根拠、独立golden、利用可能なdifferential結果、レビュー記録をevidenceとして管理する。
 - `exact`、`approximate`、`unsupported`を、実行時に使用したFunction・効果・条件のevidenceから導出する。
 - `VITE_ENGINE_RELEASE_VALIDATED`による全体precision上書きを削除する。
 - 差分を丸め、入力仮定、データ版、比較先の簡略化、FGO Lab不具合へ分類する。
@@ -222,7 +223,7 @@ calculation-application <- web / ranking worker
 - `exact`結果に未検証handler、未解決効果、暗黙仮定が含まれない。
 - R1対応Functionの必須テスト行列が100%成功する。
 - R1対象外Functionは理由付き`unsupported`となる。
-- AppMedia標準ケースとChaldea特殊ケースとの差を説明できる。
+- AppMedia標準ケースとの差を説明でき、特殊8種は完全なChaldea実行差分がないことをprecisionへ反映する。
 
 ### Q5：単発計算UI・draft・履歴・共有の置換
 

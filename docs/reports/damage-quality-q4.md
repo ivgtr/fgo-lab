@@ -2,7 +2,7 @@
 
 - Date: 2026-08-25
 - Phase: Q4
-- Status: in progress
+- Status: complete
 - Priority: evidence completeness before exact labels
 
 ## Q3完了時点のprecision経路
@@ -93,6 +93,12 @@ evidenceを持たない旧resultを現行resultとして読まない。結果sch
 
 Q4-D1〜D6を採用する。現在の`exact`表示を互換維持せず、証拠が不足する経路は`approximate`へ正しく降格させる。数値意味が未解決な経路は`approximate`で隠さず、引き続き数値なし`unsupported`とする。
 
+### Q4-D7: 特殊Functionの完全外部実行差分を完了条件にしない
+
+2026-08-25の確認により、特殊8種についてChaldea本体を実行する完全差分はスコープから外す。Atlas raw実データgoldenとChaldea公開分岐のsource照合は維持するが、これを外部実行結果とは呼ばない。
+
+完全差分を省略する代わりに、特殊8種はprovisional／approximateから昇格させない。標準Functionのvalidated判定と混同せず、evidence inventoryがこの境界を固定する。
+
 ## 実装チェックポイント 1
 
 - Commits:
@@ -113,7 +119,7 @@ Q4-D1〜D6を採用する。現在の`exact`表示を互換維持せず、証拠
 - `pnpm lint`: success
 - `pnpm build`: success
 
-Q4は継続する。次のゲートはFunction別golden／differentialであり、現時点ではFunction evidenceをvalidatedへ昇格しない。
+この時点ではQ4を継続し、Function別golden／differentialを追加した。最終判断はQ4-D7と後続チェックポイントに記録する。
 
 ## 実装チェックポイント 2: Function状態入力とgolden行列
 
@@ -177,4 +183,8 @@ Q4は継続する。次のゲートはFunction別golden／differentialであり�
 - `pnpm build`: success
 - `pnpm validate:master`: artifact validation success
 
-Q4の主要未完は特殊8種の実行可能なChaldea differentialである。ローカル環境にDart/FlutterおよびChaldea checkoutは存在しないため、現時点ではsource分岐照合を実行結果照合と呼ばず、該当evidenceをprovisionalに維持する。
+## Q4完了判断
+
+Q4-D7により、特殊8種の完全なChaldea実行differentialは実施しない。該当evidenceをprovisional、結果をapproximateに維持することで検証不足を明示する。
+
+標準Functionの外部端点比較、特殊Function golden、状態特性とBattle Pointの修正、schema・engine・masterの破壊的更新、単発計算とrankingの共通precision評価、evidence inventory公開ゲートが完了したため、Q4を完了と判定する。
