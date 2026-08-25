@@ -10,11 +10,11 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
   return {
     card: 'buster',
     traits: {
-      attacker: new Set(),
-      attackerState: new Set(),
-      target: new Set(target),
-      targetState: new Set(targetState),
-      field: new Set(),
+      attacker: new Map(),
+      attackerState: new Map(),
+      target: new Map(target.map((trait) => [trait, true])),
+      targetState: new Map(targetState.map((trait) => [trait, true])),
+      field: new Map(),
     },
     traitCounts: {
       attacker: {},
@@ -62,7 +62,7 @@ describe('condition expression properties', () => {
     const stateOnly: ConditionExpression = { ...permanent, scope: 'targetState' };
 
     expect(evaluateConditionExpression(permanent, state([], ['confusion']))).toBe(true);
-    expect(evaluateConditionExpression(stateOnly, state(['confusion']))).toBe(false);
+    expect(evaluateConditionExpression(stateOnly, state(['confusion']))).toBeNull();
     expect(evaluateConditionExpression(stateOnly, state([], ['confusion']))).toBe(true);
   });
 

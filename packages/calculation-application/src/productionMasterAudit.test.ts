@@ -202,8 +202,140 @@ describe('production master damage quality ratchet', () => {
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.powerMod).toBe(0);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('conditionDecisionConflict:')]),
+      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
     );
+
+    for (const [facts, selected, rejectedLabel] of [
+      [
+        [
+          {
+            decisionKey: 'world:sky',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'target' as const,
+              trait: 'attributeSky',
+              present: true,
+            },
+          },
+          {
+            decisionKey: 'world:heaven',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'field' as const,
+              trait: 'fieldHeaven',
+              present: true,
+            },
+          },
+        ],
+        earthScenario,
+        '威力アップ・対 地の力',
+      ],
+      [
+        [
+          {
+            decisionKey: 'world:earth',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'target' as const,
+              trait: 'attributeEarth',
+              present: true,
+            },
+          },
+          {
+            decisionKey: 'world:hell',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'field' as const,
+              trait: 'fieldHell',
+              present: true,
+            },
+          },
+        ],
+        skyScenario,
+        '威力アップ・対 天の力',
+      ],
+    ] as const) {
+      const crossDomainConflict = calculateScenario(
+        { ...selected, worldFactAssertions: [...facts] },
+        master,
+        versions,
+      );
+      expect(crossDomainConflict.result.status).toBe('unsupported');
+      expect(crossDomainConflict.effectWarnings).toEqual(
+        expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
+      );
+      expect(
+        crossDomainConflict.effects.find((effect) => effect.label === rejectedLabel)?.outcome,
+      ).not.toBe('applied');
+      expect(
+        crossDomainConflict.effects.filter(
+          (effect) => effect.label.startsWith('威力アップ・対') && effect.outcome === 'applied',
+        ),
+      ).toHaveLength(0);
+      expect(crossDomainConflict.input.powerMod).toBe(0);
+    }
+
+    for (const [facts, selected, acceptedLabel] of [
+      [
+        [
+          {
+            decisionKey: 'world:sky',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'target' as const,
+              trait: 'attributeSky',
+              present: true,
+            },
+          },
+          {
+            decisionKey: 'world:heaven',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'field' as const,
+              trait: 'fieldHeaven',
+              present: true,
+            },
+          },
+        ],
+        skyScenario,
+        '威力アップ・対 天の力',
+      ],
+      [
+        [
+          {
+            decisionKey: 'world:earth',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'target' as const,
+              trait: 'attributeEarth',
+              present: true,
+            },
+          },
+          {
+            decisionKey: 'world:hell',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'field' as const,
+              trait: 'fieldHell',
+              present: true,
+            },
+          },
+        ],
+        earthScenario,
+        '威力アップ・対 地の力',
+      ],
+    ] as const) {
+      const compatible = calculateScenario(
+        { ...selected, worldFactAssertions: [...facts] },
+        master,
+        versions,
+      );
+      expect(compatible.result.status).toBe('calculated');
+      expect(compatible.input.powerMod).toBe(0.5);
+      expect(compatible.effects.find((effect) => effect.label === acceptedLabel)?.outcome).toBe(
+        'applied',
+      );
+    }
   });
 
   it('keeps known candidate values and bounds fail-closed servants', async () => {
@@ -344,7 +476,7 @@ describe('production master damage quality ratchet', () => {
             versions,
           );
           const hasConflict = conflict.effectWarnings.some((warning) =>
-            warning.startsWith('conditionDecisionConflict:'),
+            warning.startsWith('constraintConflict:'),
           );
           if (!hasConflict) continue;
           exclusivePairCount += 1;
@@ -394,7 +526,7 @@ describe('production master damage quality ratchet', () => {
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
     }).toEqual({ servants: 58, effects: 90 });
-    expect(exclusivePairCount).toBe(7);
+    expect(exclusivePairCount).toBe(8);
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
     expect(archetype?.input.fieldTraits).toContain('milleniumCastle');
@@ -427,7 +559,7 @@ describe('production master damage quality ratchet', () => {
     expect(summerLilith?.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
     expect(summerLilith?.effects.find((effect) => effect.modifier === 'npSpecial')).toMatchObject({
       outcome: 'notApplied',
-      explanation: { code: 'conditionNotMet' },
+      explanation: { code: 'unresolved' },
     });
   }, 30_000);
 });

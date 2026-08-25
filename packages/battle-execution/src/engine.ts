@@ -26,9 +26,12 @@ import {
   evaluateCondition,
   isConditional,
   normalizeTraitCondition,
-  validateConditionDecisions,
 } from './condition';
-import { validateAndApplyWorldFacts, validateCanonicalWorldState } from './facts';
+import {
+  fixedConstraintFactsFromState,
+  validateConstraintSet,
+  type SatisfiableConditionConstraint,
+} from './constraints';
 import { applyNpDamageOperation } from './npDamageOperation';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -558,11 +561,11 @@ function cloneState(state: BattleState): BattleState {
   return {
     ...state,
     traits: {
-      attacker: new Set(state.traits.attacker),
-      attackerState: new Set(state.traits.attackerState),
-      target: new Set(state.traits.target),
-      targetState: new Set(state.traits.targetState),
-      field: new Set(state.traits.field),
+      attacker: new Map(state.traits.attacker),
+      attackerState: new Map(state.traits.attackerState),
+      target: new Map(state.traits.target),
+      targetState: new Map(state.traits.targetState),
+      field: new Map(state.traits.field),
     },
     traitCounts: {
       attacker: { ...state.traitCounts.attacker },
@@ -706,11 +709,11 @@ function initialState(
   return {
     card: input.cardType,
     traits: {
-      attacker: new Set(attacker),
-      attackerState: new Set(input.attackerStateTraits),
-      target: new Set(input.target.traits),
-      targetState: new Set(input.targetStateTraits),
-      field: new Set(input.fieldTraits),
+      attacker: traitFacts(attacker),
+      attackerState: traitFacts(input.attackerStateTraits),
+      target: traitFacts(input.target.traits),
+      targetState: traitFacts(input.targetStateTraits),
+      field: traitFacts(input.fieldTraits),
     },
     traitCounts: {
       attacker: traitCounts(attacker),
@@ -731,6 +734,31 @@ function initialState(
     evidence: [],
     unresolved: [],
   };
+}
+
+function traitFacts(traits: Iterable<string>): ReadonlyMap<string, boolean> {
+  return new Map([...traits].map((trait) => [trait, true] as const));
+}
+
+function applyWorldFacts(
+  state: BattleState,
+  assertions: ResolvedScenario['worldFactAssertions'],
+): BattleState {
+  const candidate = cloneState(state);
+  for (const assertion of assertions) {
+    const fact = assertion.fact;
+    if (fact.kind === 'quantity') candidate.quantities[fact.quantity] = fact.value;
+    else {
+      (candidate.traits[fact.scope] as Map<string, boolean>).set(fact.trait, fact.present);
+      candidate.traitCounts[fact.scope] = fact.present
+        ? {
+            ...candidate.traitCounts[fact.scope],
+            [fact.trait]: Math.max(1, candidate.traitCounts[fact.scope][fact.trait] ?? 0),
+          }
+        : withoutTraitCount(candidate.traitCounts[fact.scope], fact.trait);
+    }
+  }
+  return candidate;
 }
 
 function traitCounts(traits: Iterable<string>): Record<string, number> {
@@ -874,7 +902,7 @@ function foldInput(input: DamageResolutionInput, state: BattleState): DamageReso
   const npRate = (state.modifierRates.npDamageBuff ?? 0) / 1000;
   return {
     ...input,
-    fieldTraits: [...state.traits.field],
+    fieldTraits: [...state.traits.field].flatMap(([trait, present]) => (present ? [trait] : [])),
     attackerStateTraits: expandedTraits(state.traitCounts.attackerState),
     targetStateTraits: expandedTraits(state.traitCounts.targetState),
     target: {
@@ -909,8 +937,6 @@ export function executeOrderedScenario(
 ): OrderedScenarioExecution {
   const attacker = master.servants.find((servant) => servant.id === baseInput.attackerId);
   let state = initialState(baseInput, attacker?.traits ?? []);
-  const worldFactIssues = validateAndApplyWorldFacts(state, scenario.worldFactAssertions);
-  const initialWorldStateIssues = validateCanonicalWorldState(state);
   const collected = collectSources(baseInput, scenario, master);
   const operations: BattleOperation[] = [];
   const compileProjections: EffectProjection[] = [];
@@ -1000,19 +1026,30 @@ export function executeOrderedScenario(
       operation.decisionKey ? [[operation.decisionKey, operation.condition] as const] : [],
     ),
   );
-  const conditionIssues = validateConditionDecisions(
-    scenario.effectDecisions,
-    conditionByDecisionKey,
-  );
-  const invalidDecisionKeys = new Set(
-    [...worldFactIssues, ...conditionIssues].flatMap((issue) =>
-      issue.kind === 'contradictoryWorldFacts' ||
-      issue.kind === 'exclusiveWorldFactConflict' ||
-      issue.kind === 'conditionDecisionConflict'
-        ? [...issue.decisionKeys]
-        : [],
-    ),
-  );
+  const activeConditionConstraints: SatisfiableConditionConstraint[] =
+    scenario.effectDecisions.flatMap((decision) => {
+      const expression = conditionByDecisionKey.get(decision.decisionKey);
+      return decision.operationEnabled &&
+        decision.conditionSatisfaction === 'assumeSatisfied' &&
+        expression
+        ? [{ sourceKey: decision.decisionKey, expression }]
+        : [];
+    });
+  const initialConstraintValidation = validateConstraintSet({
+    fixedFacts: [
+      ...fixedConstraintFactsFromState(state, 'initial'),
+      ...scenario.worldFactAssertions.map((assertion) => ({
+        sourceKey: assertion.decisionKey,
+        fact: assertion.fact,
+      })),
+    ],
+    expressions: activeConditionConstraints,
+  });
+  const constraintIssues =
+    initialConstraintValidation.status === 'satisfied' ? [] : [initialConstraintValidation.issue];
+  if (initialConstraintValidation.status === 'satisfied')
+    state = applyWorldFacts(state, scenario.worldFactAssertions);
+  const invalidDecisionKeys = new Set(constraintIssues.flatMap((issue) => [...issue.sourceKeys]));
   const resolvedCompileProjections = compileProjections.map((projection) => {
     const choice = decisions.get(projection.projectionKey);
     const enabled =
@@ -1097,6 +1134,12 @@ export function executeOrderedScenario(
     } else if (condition === null && operation.decisionKey && !choice) {
       outcome = 'notApplied';
       code = 'unresolved';
+    } else if (
+      condition === null &&
+      (operation.kind === 'addTrait' || operation.kind === 'removeTrait')
+    ) {
+      outcome = 'notApplied';
+      code = 'unresolved';
     } else if (condition === null) {
       outcome = 'unsupported';
       code = 'unresolved';
@@ -1110,22 +1153,26 @@ export function executeOrderedScenario(
       code = 'conditionNotMet';
     }
     if (outcome === 'applied') {
-      state = cloneState(state);
+      const candidateState = cloneState(state);
       if (operation.kind === 'addTrait') {
-        (state.traits[operation.scope] as Set<string>).add(operation.trait);
-        state.traitCounts[operation.scope] = {
-          ...state.traitCounts[operation.scope],
-          [operation.trait]: (state.traitCounts[operation.scope][operation.trait] ?? 0) + 1,
+        (candidateState.traits[operation.scope] as Map<string, boolean>).set(operation.trait, true);
+        candidateState.traitCounts[operation.scope] = {
+          ...candidateState.traitCounts[operation.scope],
+          [operation.trait]:
+            (candidateState.traitCounts[operation.scope][operation.trait] ?? 0) + 1,
         };
       } else if (operation.kind === 'removeTrait') {
-        (state.traits[operation.scope] as Set<string>).delete(operation.trait);
-        state.traitCounts[operation.scope] = withoutTraitCount(
-          state.traitCounts[operation.scope],
+        (candidateState.traits[operation.scope] as Map<string, boolean>).set(
+          operation.trait,
+          false,
+        );
+        candidateState.traitCounts[operation.scope] = withoutTraitCount(
+          candidateState.traitCounts[operation.scope],
           operation.trait,
         );
       } else if (operation.kind === 'addModifier')
-        state.modifiers = [
-          ...state.modifiers,
+        candidateState.modifiers = [
+          ...candidateState.modifiers,
           {
             operationId: operation.operationId,
             source: operation.source,
@@ -1135,26 +1182,34 @@ export function executeOrderedScenario(
           },
         ];
       else if (operation.kind === 'changeModifierRate')
-        state.modifierRates = {
-          ...state.modifierRates,
+        candidateState.modifierRates = {
+          ...candidateState.modifierRates,
           [operation.modifier]: Math.max(
-            state.modifierRates[operation.modifier] ?? 0,
+            candidateState.modifierRates[operation.modifier] ?? 0,
             operation.ratePermille,
           ),
         };
-      else if (operation.kind === 'ignoreDefense') state.ignoreDefense = true;
-      else if (operation.kind === 'ignoreDamageCut') state.ignoreDamageCut = true;
+      else if (operation.kind === 'ignoreDefense') candidateState.ignoreDefense = true;
+      else if (operation.kind === 'ignoreDamageCut') candidateState.ignoreDamageCut = true;
       else input = applyNp(input, operation, state, localConditionSatisfied);
-      const mutationIssues =
+      const mutationValidation =
         operation.kind === 'addTrait' || operation.kind === 'removeTrait'
-          ? validateCanonicalWorldState(state, [operation.operationId])
-          : [];
-      if (mutationIssues.length) {
+          ? validateConstraintSet({
+              fixedFacts: fixedConstraintFactsFromState(candidateState, operation.operationId),
+              expressions: activeConditionConstraints.filter(
+                (constraint) => !invalidDecisionKeys.has(constraint.sourceKey),
+              ),
+            })
+          : { status: 'satisfied' as const, alternativeCount: 1 };
+      if (mutationValidation.status !== 'satisfied') {
         outcome = 'unsupported';
         code = 'unresolved';
-        issue = mutationIssues[0]!;
+        issue = mutationValidation.issue;
+        mutationValidation.issue.sourceKeys.forEach((key) => invalidDecisionKeys.add(key));
+      } else {
+        state = candidateState;
+        state.evidence = [...state.evidence, operation.evidence];
       }
-      state.evidence = [...state.evidence, operation.evidence];
     }
     if (issue) state.unresolved = [...state.unresolved, issue];
     results.push({
@@ -1167,9 +1222,7 @@ export function executeOrderedScenario(
     });
   }
   const issues = [
-    ...worldFactIssues,
-    ...initialWorldStateIssues,
-    ...conditionIssues,
+    ...constraintIssues,
     ...collected.issues,
     ...resolvedCompileProjections
       .filter((projection) => projection.outcome === 'unsupported')

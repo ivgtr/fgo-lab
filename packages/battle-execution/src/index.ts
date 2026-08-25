@@ -126,7 +126,7 @@ export interface AppliedModifier {
 
 export interface BattleState {
   card: CardType;
-  traits: Record<TraitScope, ReadonlySet<string>>;
+  traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
   traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
   quantities: {
     attackerHpPermille: number | null;
@@ -158,20 +158,21 @@ export type ExecutionIssue =
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }
   | { kind: 'unsupportedParameter'; operationId: string; parameter: string }
-  | { kind: 'contradictoryWorldFacts'; decisionKeys: readonly string[] }
+  | ConstraintValidationIssue
+  | { kind: 'unsafeLocalConditionDecision'; operationId: string; detail: string };
+
+export type ConstraintValidationIssue =
   | {
-      kind: 'exclusiveWorldFactConflict';
-      scope: TraitScope;
-      group: CanonicalExclusiveGroup;
-      traits: readonly string[];
-      decisionKeys: readonly string[];
-    }
-  | {
-      kind: 'conditionDecisionConflict';
-      decisionKeys: readonly string[];
+      kind: 'constraintConflict';
+      sourceKeys: readonly string[];
       conflicts: readonly ConditionConstraintConflict[];
     }
-  | { kind: 'unsafeLocalConditionDecision'; operationId: string; detail: string };
+  | {
+      kind: 'constraintValidationUnsupported';
+      sourceKeys: readonly string[];
+      reason:
+        'unsupportedCondition' | 'constraintComplexityExceeded' | 'unrepresentableQuantityRange';
+    };
 
 export type ConditionConstraintConflict =
   | {
@@ -185,7 +186,14 @@ export type ConditionConstraintConflict =
       kind: 'quantityEquality';
       quantity: keyof BattleState['quantities'];
       values: readonly number[];
-    };
+    }
+  | {
+      kind: 'quantityRange';
+      quantity: keyof BattleState['quantities'];
+      ranges: readonly { min: number; max: number }[];
+    }
+  | { kind: 'cardMismatch'; cards: readonly CardType[] }
+  | { kind: 'unsatisfiableExpression' };
 
 export type OperationOutcome =
   'applied' | 'notApplied' | 'notRelevant' | 'impossible' | 'unsupported';

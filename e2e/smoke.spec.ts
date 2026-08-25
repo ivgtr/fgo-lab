@@ -871,7 +871,7 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(page.getByRole('alert')).toContainText('正確に計算できない');
   const resultDetails = page.getByText('計算内訳・根拠・仮定・警告');
   await resultDetails.click();
-  await expect(page.getByText(/conditionDecisionConflict:/).first()).toBeVisible();
+  await expect(page.getByText(/constraintConflict:/).first()).toBeVisible();
 
   await sky.click();
   await expect(sky).toHaveAttribute('aria-pressed', 'false');

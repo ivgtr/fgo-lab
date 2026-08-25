@@ -154,19 +154,25 @@ export function resolveScenario(
   const baseInput = resolvedScenarioBaseInput(scenario, master);
   const execution = executeOrderedScenario(baseInput, scenario, master);
   const warnings = execution.issues.map((issue) => {
-    if (issue.kind === 'contradictoryWorldFacts')
-      return `${issue.kind}:${issue.decisionKeys.join(',')}`;
-    if (issue.kind === 'exclusiveWorldFactConflict')
-      return `${issue.kind}:${issue.scope}:${issue.group}:${issue.traits.join(',')}:${issue.decisionKeys.join(',')}`;
-    if (issue.kind === 'conditionDecisionConflict')
-      return `${issue.kind}:${issue.decisionKeys.join(',')}:${issue.conflicts
-        .map((conflict) =>
-          conflict.kind === 'exclusiveTrait'
-            ? `${conflict.kind}:${conflict.scope}:${conflict.group}:${conflict.traits.join(',')}`
-            : conflict.kind === 'traitPolarity'
-              ? `${conflict.kind}:${conflict.scope}:${conflict.trait}`
-              : `${conflict.kind}:${conflict.quantity}:${conflict.values.join(',')}`,
-        )
+    if (issue.kind === 'constraintValidationUnsupported')
+      return `${issue.kind}:${issue.sourceKeys.join(',')}:${issue.reason}`;
+    if (issue.kind === 'constraintConflict')
+      return `${issue.kind}:${issue.sourceKeys.join(',')}:${issue.conflicts
+        .map((conflict) => {
+          if (conflict.kind === 'exclusiveTrait')
+            return `${conflict.kind}:${conflict.scope}:${conflict.group}:${conflict.traits.join(',')}`;
+          if (conflict.kind === 'traitPolarity')
+            return `${conflict.kind}:${conflict.scope}:${conflict.trait}`;
+          if (conflict.kind === 'quantityEquality')
+            return `${conflict.kind}:${conflict.quantity}:${conflict.values.join(',')}`;
+          if (conflict.kind === 'quantityRange')
+            return `${conflict.kind}:${conflict.quantity}:${conflict.ranges
+              .map((range) => `${String(range.min)}-${String(range.max)}`)
+              .join(',')}`;
+          if (conflict.kind === 'cardMismatch')
+            return `${conflict.kind}:${conflict.cards.join(',')}`;
+          return conflict.kind;
+        })
         .join('|')}`;
     if (issue.kind === 'unsupportedParameter')
       return `${issue.kind}:${issue.operationId}:${issue.parameter}`;

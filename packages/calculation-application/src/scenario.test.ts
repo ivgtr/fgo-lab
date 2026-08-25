@@ -120,7 +120,7 @@ describe('scenario calculation facade', () => {
 
     expect(condition).toMatchObject({
       outcome: 'notApplied',
-      explanation: { code: 'conditionNotMet' },
+      explanation: { code: 'unresolved' },
       value: 1.5,
     });
     expect(inactive.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
@@ -214,7 +214,7 @@ describe('scenario calculation facade', () => {
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.powerMod).toBe(0);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('conditionDecisionConflict:')]),
+      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
     );
     expect(
       conflict.effects
@@ -300,6 +300,78 @@ describe('scenario calculation facade', () => {
       outcome: 'applied',
       decision: { state: 'enabled' },
     });
+  });
+
+  it('validates context mutations transactionally against selected conditions', () => {
+    const baseServant = fixture.servants[0]!;
+    const heavenContext = {
+      ...modifierEffect('heaven-context', 'nonDamageContext', 0),
+      contextChanges: { addedFieldTraits: ['fieldHeaven'], addedRecipientTraits: [] },
+    };
+    const transactionalMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          passives: [
+            {
+              id: 'realm-passive',
+              slot: 0,
+              priority: 0,
+              name: 'realm passive',
+              detail: '',
+              imageKey: null,
+              effects: [heavenContext],
+            },
+          ],
+          skills: [
+            {
+              id: 'hell-power-skill',
+              slot: 1,
+              priority: 1,
+              name: 'hell power',
+              detail: '',
+              imageKey: null,
+              effects: [
+                modifierEffect('hell-power', 'upDamage', 500, [], 'self', {
+                  ...unconditionalConditions,
+                  field: {
+                    operator: 'all',
+                    traits: [{ name: 'fieldHell', negative: false }],
+                  },
+                }),
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario = {
+      ...createDefaultResolvedScenario(transactionalMaster, undefined),
+      attackerSkills: [{ skillId: 'hell-power-skill', skillLevel: 10 }],
+    };
+    const initial = calculateScenario(scenario, transactionalMaster, {
+      ...versions,
+      masterDataVersion: transactionalMaster.version,
+    });
+    const hell = initial.effects.find((effect) => effect.label === 'hell-power')!;
+    const conflict = calculateScenario(
+      applyEffectProjectionDecision(scenario, hell, true),
+      transactionalMaster,
+      { ...versions, masterDataVersion: transactionalMaster.version },
+    );
+    const context = conflict.effects.find((effect) => effect.label === 'heaven-context')!;
+
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.effectWarnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
+    );
+    expect(context).toMatchObject({ visibility: 'hidden', outcome: 'unsupported' });
+    expect(conflict.effects.find((effect) => effect.label === 'hell-power')?.outcome).toBe(
+      'notApplied',
+    );
+    expect(conflict.input.fieldTraits).toEqual([]);
+    expect(conflict.input.powerMod).toBe(0);
   });
 
   it('routes conditional passives and craft essences through the same effect-local decision', () => {
@@ -403,8 +475,8 @@ describe('scenario calculation facade', () => {
     expect('exclusiveGroup' in externallyParsed.worldFactAssertions[0]!.fact).toBe(false);
     const conflict = calculateScenario(externallyParsed, master, versions);
     expect(conflict.result.status).toBe('unsupported');
-    expect(conflict.effectWarnings).toContain(
-      'exclusiveWorldFactConflict:target:worldAttribute:attributeSky,attributeEarth:world:sky,world:earth',
+    expect(conflict.effectWarnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
     );
     expect(conflict.input.target.traits).toEqual([]);
   });
