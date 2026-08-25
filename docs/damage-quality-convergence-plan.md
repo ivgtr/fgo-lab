@@ -194,15 +194,18 @@ calculation-application <- web / ranking worker
 
 実装済み:
 
-- `CalculationEvidence`を結果schemaの必須要素とし、schema version 6・engine version 4.0.0へ破壊的に更新した。
+- `CalculationEvidence`を結果schemaの必須要素とし、現在はschema version 7・engine version 4.2.0へ破壊的に更新した。
 - application所有のregistryから、実行時に使用したkernel、Function、master、effect operation、manual inputのevidenceを解決する。
 - 未知evidenceは`unsupported`、使用したprovisional evidenceは`approximate`、使用した全件がvalidatedの場合だけ`exact`とする。
 - 単発計算とrankingを同じevidence評価へ接続し、環境flagと`releaseValidated`経路を削除した。
 - 旧schema・旧engineの計算結果を現行result schemaで拒否する。
+- `damageNpIndividualSum`が攻撃者・対象の恒常特性と状態特性を数えるようscenarioを拡張し、状態スタックを明示入力へ含めた。
+- `damageNpBattlePointPhase`の最大phaseをmaster schema 6へ正規化し、入力phaseをサーヴァント固有上限へclampする。
+- 9種Functionを覆う10件の実データgolden行列を追加した。
 
 残作業:
 
-- Function別golden／differentialと外部比較を追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。
+- Function別の実行可能な外部differentialとAppMedia標準比較を追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。
 - evidence inventoryと公開ゲートを確定する。
 
 作業:

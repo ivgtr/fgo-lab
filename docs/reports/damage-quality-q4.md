@@ -114,3 +114,30 @@ Q4-D1〜D6を採用する。現在の`exact`表示を互換維持せず、証拠
 - `pnpm build`: success
 
 Q4は継続する。次のゲートはFunction別golden／differentialであり、現時点ではFunction evidenceをvalidatedへ昇格しない。
+
+## 実装チェックポイント 2: Function状態入力とgolden行列
+
+- Commit: `9151b12 fix(calc): count NP trait stacks from battle state`
+- Atlas raw全件とChaldeaのFunction分岐を突合し、`damageNpIndividualSum`が通常特性だけでなく該当traitを持つbuff数も合算することを確認した。
+- `DamageResolutionInput`と`CalculationScenario.attacker`へ状態特性を追加し、攻撃者は恒常＋状態、対象も恒常＋状態のcountをhandlerへ渡す。
+- 状態特性を持たない旧scenarioは暗黙補完せず、schema version 7で拒否する。計算意味変更のためengine versionを4.1.0へ更新した。
+- `np-functions-v1.json`に9種Functionを覆う10ケースを追加した。値はAtlas JP raw、分岐・count規則は[Chaldea damage implementation](https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart#L80-L161)と照合した。
+- goldenはパラメータと分岐の独立レビューであり、Chaldeaを実行した出力比較ではない。このため全Function evidenceはprovisionalを維持する。
+
+## 実装チェックポイント 3: Battle Point上限
+
+- Commit: `87cbefe fix(calc): clamp battle point NP phases`
+- raw全627 Functionのparameter key、Target、script、overwriteを監査した。現行対象の`damageNpBattlePointPhase`は2 entryで、どちらも同一Battle Point IDを参照する。
+- Chaldeaが現在phaseをサーヴァント固有の最大phaseへclampする一方、旧masterは`battlePoints`を捨てていたため、任意の大値で倍率が過大になる実装漏れを確認した。
+- エレシュキガルのBattle Point phase 0〜10を正規化し、`NpDamageSpec.maximumBattlePointPhase`を必須化した。master schemaを6、engine versionを4.2.0へ更新した。
+- 公開masterは`2026-08-25-atlas-jp-calculator-v13`へ置換し、対象2宝具が最大phase 10を保持することを確認した。
+
+最新検証結果:
+
+- `pnpm typecheck`: success
+- `pnpm test`: 19 files / 124 tests passed
+- `pnpm lint`: success
+- `pnpm build`: success
+- `pnpm validate:master`: 2 files / 13 tests passed、artifact validation success
+
+次の優先事項は、goldenを外部実行結果とのdifferentialへ引き上げること、およびAppMedia標準ケースとの差を丸め規則まで含めて記録することである。
