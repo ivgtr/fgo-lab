@@ -276,8 +276,9 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 7. webはexecutorのruntime分類関数を直接使用せず、`calculation-application`のview model、projection、commandだけを使用する。
 8. crafted shareを含む外部scenarioはschema通過後もexecutorで同じ制約検証を受け、矛盾した結果を`calculated`として受理しない。
 9. quantity factは種類ごとのcanonical定義域をschemaとexecutorで共有する。範囲外の値はクランプせず、入力境界で拒否し、schemaを迂回した実行境界でもtyped unsupportedにする。
-10. actor traitとstate traitの包含関係は共通scope semanticsから導出する。positive state traitはactor全体にも成立するが、state専用条件と恒常traitを同一視しない。
+10. trait制約IRはactorの初期trait、後から付与・解除されるstate trait、両者の論理和であるcombined predicateを別scopeとして保持する。actor条件はcombined、state専用条件はstateだけを読む。初期negativeだけではstateを否定せず、positive stateはcombinedを成立させる。この規則をcondition evaluatorとsolverで共有する。
 11. 初期制約検証が失敗した場合、選択中の条件付きoperationをall-or-nothingで非適用とし、競合後のdamage inputへmodifierを残さない。
+12. context mutationは初期traitを書き換えずstate traitだけを更新し、各operationのcandidate stateからcombined predicateを再導出する。付与後と解除後の条件評価は同じ時点のstateを使用する。
 
 ## 9. 受入条件
 

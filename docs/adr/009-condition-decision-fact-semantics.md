@@ -49,13 +49,15 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 
 この変更はUI入力を増やさない。OR効果のオン・オフを維持し、既知のworld factと両立する枝がある場合だけ計算する。具体的な対象選択がないと後続状態を一意に確定できないcondition familyは、引き続きtyped unsupportedとする。
 
-## E3.3 review closure: bounded quantities and scope implications
+## E3.3 review closure: bounded quantities and temporal trait scopes
 
 統合制約モデルの入力境界を次の規則で閉じる。
 
 - quantity factの定義域はschema packageの単一モジュールが所有する。HP permilleは0〜1,000、対象レアリティは0〜5、現行masterのBattle Point段階は0〜10とし、portable schemaとexecutorが同じ定義を参照する。
 - schemaを迂回した呼び出しもexecutorで再検証し、範囲外のfixed quantityはクランプせずtyped `quantityFactOutOfDomain`としてfail-closedにする。
-- actor scopeは恒常traitとstate traitを読むが、state専用scopeはstate traitだけを読む。positive state traitはactor全体のpositive traitを含意する一方、negative state traitはactor全体のnegativeを含意しない。この一方向規則をcondition evaluatorとsolverで共有する。
+- 制約IRはactorごとに`initial`、`state`、`combined`を区別する。外部のactor world factは初期trait、state world factとcontext mutationはstate trait、actor向けmaster conditionは`combined = initial OR state`として扱う。state専用conditionはstateだけを読む。
+- `initial: false`はstateの不在を意味しない。したがってstateがunknownならcombinedもunknown、state付与後はcombined true、明示的なinitial/state双方のfalseまたは付与解除後はcombined falseとなる。この三値論理をcondition evaluatorとsolverで共有する。
+- context mutationは初期traitへstate traitを複製せず、candidate stateのstate layerだけを変更する。検証とcommitの各時点でcombined predicateを再導出する。
 - 初期の統合制約検証に失敗した場合、その検証へ入力された選択中のcondition operationをすべて`notApplied`とする。最初に発見した競合だけを無効化対象にする部分適用は行わない。
 
-この変更によりschemaは14、engineは11.1.0となる。旧値を維持する互換クランプや別検証経路は設けない。
+この変更によりschemaは14、engineは11.2.0となる。旧値を維持する互換クランプや別検証経路は設けない。

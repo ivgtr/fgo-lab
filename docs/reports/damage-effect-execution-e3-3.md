@@ -3,7 +3,7 @@ title: "Damage effect execution E3.3 unified constraint validation"
 status: "Complete - Review Findings Corrected"
 created_at: "2026-08-26"
 schema_version: 14
-engine_version: "11.1.0"
+engine_version: "11.2.0"
 master_data_version: "2026-08-25-atlas-jp-calculator-v18"
 ---
 
@@ -67,14 +67,14 @@ The actual UI trace was inspected for the input decision, fixed facts, selected 
 ## Validation
 
 - format, lint, typecheck: pass
-- unit/integration/property/golden: 29 files, 147 tests pass
+- unit/integration/property/golden: 29 files, 150 tests pass
 - production master validation: 3 files, 15 tests pass
 - evidence validation: 2 files, 10 tests pass
 - production condition/projection cross audit: pass for all 420 scenarios
 - production build: pass, 170 modules
 - Playwright Chromium and mobile Chromium: 35 pass, 21 project-specific skips, 0 failures
 - PC, 390px, and 320px Dante/Indra/support/share operation: pass
-- benchmark: 261.49 ops/s, mean 3.8242 ms for NP1-5 / 200 random values
+- benchmark: 436.95 ops/s, mean 2.2886 ms for NP1-5 / 200 random values
 - `git diff --check`: pass
 
 E4 remains unstarted.
@@ -85,7 +85,13 @@ The first review of E3.3 found three remaining boundary defects. All were correc
 
 - Quantity domains now live in `packages/schema/src/quantityFacts.ts`: attacker HP permille 0–1,000, target rarity 0–5, and current Battle Point phase 0–10. Both Zod schemas and executor validation use this module. Out-of-domain fixed facts return typed `quantityFactOutOfDomain`; they are never clamped or committed.
 - A production ratchet verifies that every normalized `maximumBattlePointPhase` remains inside the shared Battle Point domain, so a future master expansion cannot silently outgrow the input contract.
-- Trait scope semantics now encode a one-way implication. A positive `targetState`/`attackerState` fact also satisfies the combined `target`/`attacker` scope, while a negative state fact does not assert absence from the whole actor. State-only conditions remain state-only. The evaluator and solver use the same semantic functions.
+- Trait constraint scopes now distinguish initial, state, and combined actor traits. Actor conditions read the three-valued `initial OR state` predicate; state-only conditions read state only. An initial negative does not deny a later state grant, and context mutations never rewrite the initial layer. The evaluator and solver use the same scope table and truth table.
 - An initial constraint failure invalidates every selected conditional operation in that constraint set. Conflict reporting includes all selected condition source keys, and no later selected modifier can be partially applied.
 
 Production servant `202500` with `attackerHpPermille` `-100` or `2000` now returns unsupported, no damage rows, a typed warning, and a null HP value in the final input. Crafted shares carrying those values fail schema decoding. Focused P0/P1/P2 regressions pass, including two earth decisions against a fixed sky fact with both operations `notApplied` and `powerMod 0`.
+
+### Follow-up temporal trait review
+
+The follow-up review showed that the earlier one-way scope expansion still copied a positive state fact into the initial actor scope. That made a valid timeline—initially not undead, then grant undead state—self-contradictory. The expansion was removed rather than extended with an exception; initial, state, and combined scopes are now distinct in the constraint IR.
+
+Production Summer Wu (`505200`) now remains calculated when the initial target fact is `undead: false`: the hidden NP-before-damage mutation applies `targetState: undead`, the initial trait remains false, the combined target predicate is re-derived as true, and all five NP rows match the baseline. In both cases NP1 is minimum `19,351`, average `21,490`, maximum `23,629`, with no warnings. Grant and removal truth tables cover attacker and target scopes for true, false, and unknown values.
