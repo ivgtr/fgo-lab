@@ -250,6 +250,28 @@ calculation-application <- web / ranking worker
 - 旧版共有を現行結果として誤表示しない。
 - UIから計算に至る経路が一つだけである。
 
+### Q5.5：効果target routing・条件式のlossless化
+
+状態: 調査完了・計画確認待ち
+
+監査結果と修正計画: `docs/reports/damage-effect-routing-audit.md`
+
+作業:
+
+- source actor、recipient actor、enemy targetを含むactor-aware effect routingへ置換する。
+- Atlasのcondition operatorとpredicate groupをlosslessに正規化する。
+- card predicate、target trait、attacker trait、recipient trait、field、stateを分離する。
+- disabled・到達不能・条件不成立を先にrejectし、適用対象だけに値とhandler解決を要求する。
+- context-freeな旧effect classifierを削除し、UI、単発計算、rankingが同じrouting結果を使う。
+
+確認ゲート Q5.5:
+
+- 自身／味方の防御低下、敵の攻撃力上昇、supportのself buff、CEのother-only buffが攻撃役へ加算されない。
+- card耐性低下がcardとtimingに従って適用される。
+- AND / OR条件がAtlas raw semanticsと一致する。
+- 未選択effectの値欠損で計算対象外にならない。
+- 全masterのorigin × target × buff kind routing違反が0件になる。
+
 ### Q6：ランキングの同一計算経路への置換
 
 状態: 未着手
@@ -335,6 +357,7 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 | Q3 | 完了 | 2026-08-25 | 共通EffectSource、判別可能effect状態、単一integer aggregator、application facade、全付与元goldenへ収束。`docs/reports/damage-quality-q3.md` |
 | Q4 | 完了 | 2026-08-25 | 標準Function外部差分、特殊Function golden、共通precision評価、evidence inventory gateへ収束。完全なChaldea実行差分は対象外とし、特殊8種はprovisionalを維持。`docs/reports/damage-quality-q4.md` |
 | Q5 | 完了（確認待ち） | 2026-08-25 | scenario直接編集、効果適用前後入力の分離、session履歴、共有再計算検証、結果根拠表示へ収束し、旧editor・selection・application入口を削除。`docs/reports/damage-quality-q5.md` |
+| Q5.5 | 調査完了・計画確認待ち | 2026-08-25 | target方向、card条件、AND/OR条件、resolver判定順にP0を確認。actor-aware routingとlossless conditionへ置換する計画を策定。`docs/reports/damage-effect-routing-audit.md` |
 | Q6 | 未着手 | - | - |
 | Q7 | 未着手 | - | - |
 
