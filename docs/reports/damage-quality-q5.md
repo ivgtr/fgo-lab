@@ -118,6 +118,7 @@ Calculator UI
 - ranking候補の組立もresolved scenarioと`resolveScenario()`を使用し、Web独自のselection変換を削除した。worker自体のscenario facade統合はQ6で扱う。
 - share allowlistは再現に必要な自身skill ID・levelを含め、所持編成、礼装copy IDなどの個人データを含めない契約に固定した。
 - 全付与元goldenをscenario facadeのintegration testへ移し、効果適用前入力が補正値ゼロ、適用後入力が期待集約値になることを固定した。
+- 通常コマンドカードだけを変える`changeCommandCardType`を宝具火力の未対応効果から除外し、他の有効なskill効果を巻き込んで計算停止しないよう修正した。計算可否の変更をengine version 5.0.1として記録した。
 
 ## 7. 最終検証
 

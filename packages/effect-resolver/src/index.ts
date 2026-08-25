@@ -55,7 +55,6 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'addIndividuality',
   'addSelfdamage',
   'buffRate',
-  'changeCommandCardType',
   'downAtk',
   'downCommandall',
   'downNpdamage',

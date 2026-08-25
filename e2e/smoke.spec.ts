@@ -34,6 +34,13 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('クラス相性2.00倍');
   await expect(page.getByLabel('攻撃役の自身スキル')).toContainText('理想郷の騎士 EX');
   await expect(page.getByRole('group', { name: '適用条件' })).toHaveCount(0);
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  await ownEffects.getByRole('button', { name: /バスターアップ/ }).click();
+  await ownEffects.getByRole('button', { name: /宝具威力アップ/ }).click();
+  await expect(ownEffects).not.toContainText('コマンドカードタイプチェンジ');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('BUSTER性能／耐性50.0%／0.0%');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('宝具威力／耐性30.0%／0.0%');
 });
 
 test('works at 320px without horizontal document overflow', async ({ page }) => {

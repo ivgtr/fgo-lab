@@ -483,6 +483,17 @@ describe('resolveSupportSourcesForTest', () => {
     ).toBe(false);
     expect(
       isDamageRelevantEffect({
+        id: 'command-card-type-change',
+        type: 'addStateShort',
+        target: 'self',
+        label: 'コマンドカードタイプチェンジ',
+        parameterSets: parameterSets(Array(10).fill(2)),
+        buffTypes: ['changeCommandCardType'],
+        cardTypes: [],
+      }),
+    ).toBe(false);
+    expect(
+      isDamageRelevantEffect({
         id: 'unsupported-rate',
         type: 'addStateShort',
         target: 'self',
