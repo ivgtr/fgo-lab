@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 8 as const;
-export const ENGINE_VERSION = '6.1.0' as const;
+export const SCHEMA_VERSION = 9 as const;
+export const ENGINE_VERSION = '7.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -192,18 +192,13 @@ const scenarioBaseSchema = z
       level: z.number().int().min(1).max(120),
       npLevel: z.number().int().min(1).max(5),
       fouAtk: z.number().int().min(0).max(3000),
-      stateTraits: z.array(z.string().min(1).max(80)).max(100),
     }),
     overcharge: z.number().int().min(1).max(5),
     target: z.object({
       classId: z.string().min(1).max(40),
       attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
-      traits: z.array(z.string().min(1).max(80)).max(100),
-      stateTraits: z.array(z.string().min(1).max(80)).max(100),
-      rarity: z.number().int().min(0).max(5).nullable(),
     }),
     attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
-    fieldTraits: z.array(z.string().min(1).max(80)).max(100),
     battleState: z.object({ battlePointPhase: z.number().int().nonnegative().nullable() }),
     assumptions: z.object({
       classAffinity: z.number().min(0).max(5),

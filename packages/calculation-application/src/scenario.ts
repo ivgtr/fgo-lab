@@ -10,7 +10,9 @@ import {
   getPrimaryNoblePhantasm,
   getPrimaryNpDamage,
   type MasterDataSnapshot,
+  type NpDamageSpec,
   type ServantMaster,
+  type TraitCondition,
 } from '@fgo-lab/master-data';
 import type {
   CalculationResult,
@@ -43,6 +45,17 @@ export interface CalculationExecution {
 
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
+interface NpConditionControl {
+  effectKey: string;
+  effectId: string;
+  label: string;
+  condition: TraitCondition;
+  value: number;
+  targetTraits: readonly string[];
+  targetStateTraits: readonly string[];
+  targetRarity: number | null;
+}
+
 function traitCounts(traits: readonly string[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const trait of traits) counts[trait] = (counts[trait] ?? 0) + 1;
@@ -66,6 +79,143 @@ export function applyScenarioNpDamageFunction(
   });
 }
 
+function npConditionControls(
+  attacker: ServantMaster,
+  damage: NpDamageSpec,
+  input: DamageResolutionInput,
+): NpConditionControl[] {
+  const parameter = damage.parametersByOvercharge[input.overcharge - 1]?.[input.npLevel - 1];
+  if (!parameter) return [];
+  const makeControl = (
+    suffix: string,
+    label: string,
+    condition: TraitCondition,
+    value: number,
+    patch: Pick<NpConditionControl, 'targetTraits' | 'targetStateTraits' | 'targetRarity'>,
+  ): NpConditionControl => ({
+    effectKey: `np-special:${attacker.id}:${damage.functionId}:${suffix}`,
+    effectId: `np-special:${damage.functionId}:${suffix}`,
+    label,
+    condition,
+    value,
+    ...patch,
+  });
+  const multiplier = (parameter.correctionPermille ?? 1_000) / 1_000;
+  if (damage.kind === 'trait' && parameter.targetTrait)
+    return [
+      makeControl(
+        `trait:${parameter.targetTrait.name}`,
+        '特攻宝具',
+        { operator: 'all', traits: [{ name: parameter.targetTrait.name, negative: false }] },
+        multiplier,
+        { targetTraits: [parameter.targetTrait.name], targetStateTraits: [], targetRarity: null },
+      ),
+    ];
+  if (damage.kind === 'stateTrait' && parameter.targetTrait)
+    return [
+      makeControl(
+        `state-trait:${parameter.targetTrait.name}`,
+        '特攻宝具',
+        { operator: 'all', traits: [{ name: parameter.targetTrait.name, negative: false }] },
+        multiplier,
+        { targetTraits: [], targetStateTraits: [parameter.targetTrait.name], targetRarity: null },
+      ),
+    ];
+  if (damage.kind === 'traitExpression' && parameter.andCheckTraits?.length)
+    return [
+      makeControl(
+        `trait-expression:${parameter.andCheckTraits.map((trait) => trait.name).join('+')}`,
+        '特攻宝具',
+        {
+          operator: 'all',
+          traits: parameter.andCheckTraits.map((trait) => ({ name: trait.name, negative: false })),
+        },
+        multiplier,
+        {
+          targetTraits: parameter.andCheckTraits.map((trait) => trait.name),
+          targetStateTraits: [],
+          targetRarity: null,
+        },
+      ),
+    ];
+  if (damage.kind === 'targetRarity' && parameter.targetRarities?.length)
+    return [
+      makeControl(
+        `rarity:${parameter.targetRarities.join('+')}`,
+        'レアリティ特攻宝具',
+        {
+          operator: 'any',
+          traits: parameter.targetRarities.map((rarity) => ({
+            name: `rarity${String(rarity)}`,
+            negative: false,
+          })),
+        },
+        multiplier,
+        { targetTraits: [], targetStateTraits: [], targetRarity: parameter.targetRarities[0]! },
+      ),
+    ];
+  if (damage.kind === 'traitCount' && parameter.targetId === 1)
+    return (parameter.targetTraits ?? []).map((trait) =>
+      makeControl(
+        `trait-count:${trait.name}`,
+        '特攻宝具・対象特性数',
+        { operator: 'all', traits: [{ name: trait.name, negative: false }] },
+        1 + (parameter.correctionPermille ?? 0) / 1_000,
+        { targetTraits: [trait.name], targetStateTraits: [], targetRarity: null },
+      ),
+    );
+  return [];
+}
+
+function resolveScenarioNpDamage(
+  input: DamageResolutionInput,
+  damage: NpDamageSpec,
+  attacker: ServantMaster,
+  decisions: Readonly<Record<string, boolean>>,
+): { input: DamageResolutionInput; effects: ResolvedEffect[] } {
+  const controls = npConditionControls(attacker, damage, input);
+  const selected = controls.filter((control) => decisions[control.effectKey] === true);
+  const targetTraits = selected.flatMap((control) => control.targetTraits);
+  const targetStateTraits = selected.flatMap((control) => control.targetStateTraits);
+  const targetRarity = selected.find((control) => control.targetRarity !== null)?.targetRarity ?? -1;
+  const resolvedInput = applyNpDamageHandler(input, damage, {
+    overcharge: input.overcharge,
+    attackerTraitCounts: traitCounts(attacker.traits),
+    targetTraitCounts: traitCounts(targetTraits),
+    targetCombinedTraitCounts: traitCounts([...targetTraits, ...targetStateTraits]),
+    targetStateTraitCounts: traitCounts(targetStateTraits),
+    attackerHpPermille: input.attackerHpPermille,
+    targetRarity,
+    battlePointPhase: input.battlePointPhase,
+  });
+  return {
+    input: resolvedInput,
+    effects: controls.map((control, order) => {
+      const active = decisions[control.effectKey] === true;
+      return {
+        order,
+        effectKey: control.effectKey,
+        sourceInstanceId: `np:${attacker.id}`,
+        origin: 'np',
+        sourceId: attacker.id,
+        sourceName: attacker.name,
+        skillId: `np:${attacker.id}`,
+        skillName: '特攻宝具',
+        effectId: control.effectId,
+        label: control.label,
+        value: control.value,
+        valuePermille: Math.round(control.value * 1_000),
+        kind: null,
+        damageTraitCondition: { kind: 'npSpecial', condition: control.condition },
+        requiredFieldTraits: [],
+        damageRelevant: true,
+        state: active ? 'applied' : 'rejected',
+        reason: active ? 'np_special_condition_asserted' : 'calculation_effect_disabled',
+      } satisfies ResolvedEffect;
+    }),
+  };
+}
+
 export function createDefaultResolvedScenario(
   master: MasterDataSnapshot,
   build: ServantBuild | undefined,
@@ -83,18 +233,13 @@ export function createDefaultResolvedScenario(
       level,
       npLevel: Math.max(1, build?.npLevel ?? 1),
       fouAtk: build?.fouAtk ?? 1000,
-      stateTraits: [],
     },
     overcharge: 1,
     target: {
       classId: 'affinity:2',
       attribute: 'unknown',
-      traits: [],
-      stateTraits: [],
-      rarity: null,
     },
     attackerHpPermille: null,
-    fieldTraits: [],
     battleState: { battlePointPhase: null },
     assumptions: { classAffinity: 2, attributeAffinity: 1 },
     craftEssence: null,
@@ -162,19 +307,19 @@ function resolvedScenarioInput(
     specialResistance: 0,
     flatDamage: 0,
     damageCut: 0,
-    fieldTraits: scenario.fieldTraits,
-    attackerStateTraits: scenario.attacker.stateTraits,
+    fieldTraits: [],
+    attackerStateTraits: [],
     attackerHpPermille: scenario.attackerHpPermille,
-    targetRarity: scenario.target.rarity,
-    targetStateTraits: scenario.target.stateTraits,
+    targetRarity: null,
+    targetStateTraits: [],
     battlePointPhase: scenario.battleState.battlePointPhase,
     target: {
       classId: scenario.target.classId,
       attribute: scenario.target.attribute,
-      traits: scenario.target.traits,
+      traits: [],
     },
   };
-  return applyScenarioNpDamageFunction(input, damage, servant.traits);
+  return resolveScenarioNpDamage(input, damage, servant, scenario.effectDecisions).input;
 }
 
 export function resolveScenario(
@@ -191,8 +336,12 @@ export function resolveScenario(
       effects: [],
     };
   const input = resolvedScenarioInput(scenario, master);
-  const resolved = resolveScenarioEffects(input, scenario, master);
-  const effectEvidenceKeys = resolved.effects.flatMap((effect) => {
+  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId)!;
+  const damage = getPrimaryNpDamage(servant)!;
+  const npDamage = resolveScenarioNpDamage(input, damage, servant, scenario.effectDecisions);
+  const resolved = resolveScenarioEffects(npDamage.input, scenario, master);
+  const effects = [...npDamage.effects, ...resolved.effects];
+  const effectEvidenceKeys = effects.flatMap((effect) => {
     if (effect.state !== 'applied') return [];
     if (effect.reason === 'np_damage_buff_rate') return ['effect-operation:npDamageBuffRate'];
     return effect.kind ? [`effect-operation:${effect.kind}`] : [];
@@ -202,8 +351,14 @@ export function resolveScenario(
     precision: resolved.precision,
     evidenceKeys: ['master:normalized-v6', ...effectEvidenceKeys],
     warnings: resolved.warnings,
-    effects: resolved.effects,
-    trace: resolved.trace,
+    effects,
+    trace: [
+      ...npDamage.effects.map((effect) => ({
+        step: 'np-special-effect',
+        detail: `${effect.effectKey}:${effect.reason}`,
+      })),
+      ...resolved.trace,
+    ],
   };
 }
 

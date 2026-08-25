@@ -1395,10 +1395,10 @@ describe('automatic equipment, passive, and NP effects', () => {
         'attacker:attacker:attacker:skill:dragon-power': true,
       },
     });
-    expect(explicitlyEnabled.input.powerMod).toBe(0);
+    expect(explicitlyEnabled.input.powerMod).toBe(0.5);
     expect(explicitlyEnabled.effects[0]).toMatchObject({
-      state: 'rejected',
-      reason: 'trait_condition_mismatch',
+      state: 'applied',
+      reason: 'unconditional_attacker_buff',
     });
   });
 

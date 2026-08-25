@@ -255,6 +255,7 @@ export interface EffectSource {
   rawValue: number | undefined;
   appliedReason: string;
   defaultEnabled: boolean;
+  conditionAsserted?: boolean;
   attackerTraits: readonly string[];
 }
 
@@ -299,6 +300,7 @@ export function resolveEffectSources(
     const key = effectKey(item);
     const override = options.effectOverrides?.[key];
     const enabled = override ?? item.defaultEnabled;
+    const conditionAsserted = override === true || item.conditionAsserted === true;
     const routedDamageRelevant =
       route !== null ||
       Boolean(
@@ -399,12 +401,14 @@ export function resolveEffectSources(
     const recipient = route?.recipient ?? targetRecipient(item.origin, effect.target);
     const holderTraits = recipient === 'target' ? targetTraits : attackerTraits;
     const opponentTraits = recipient === 'target' ? attackerTraits : targetTraits;
-    const conditionResults = [
-      matchesTraitConditionGroups(effect.conditions.recipient, holderTraits),
-      matchesTraitCondition(effect.conditions.holder, holderTraits),
-      matchesTraitCondition(effect.conditions.opponent, opponentTraits),
-      matchesTraitCondition(effect.conditions.field, baseInput.fieldTraits),
-    ];
+    const conditionResults = conditionAsserted
+      ? [true]
+      : [
+          matchesTraitConditionGroups(effect.conditions.recipient, holderTraits),
+          matchesTraitCondition(effect.conditions.holder, holderTraits),
+          matchesTraitCondition(effect.conditions.opponent, opponentTraits),
+          matchesTraitCondition(effect.conditions.field, baseInput.fieldTraits),
+        ];
     if (conditionResults.includes(null)) {
       effects.push({
         ...effectIdentity,
@@ -580,6 +584,7 @@ function collectSkillSelections(
         rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
         appliedReason: 'unconditional_attacker_buff',
         defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
+        conditionAsserted: selected.selectedEffectIds?.includes(effect.id) ?? false,
         attackerTraits,
       });
     }

@@ -57,6 +57,65 @@ describe('scenario calculation facade', () => {
     expect(calculation.result.rows).toHaveLength(5);
   });
 
+  it('applies a conditional NP from the same explicit effect decision contract', () => {
+    const baseServant = fixture.servants[0]!;
+    const conditionalMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
+            ...np,
+            damage: np.damage.map((damage) => ({
+              ...damage,
+              kind: 'trait',
+              rawFunctionType: 'damageNpIndividual',
+              parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                row.map((parameter) => ({
+                  ...parameter,
+                  targetId: 1,
+                  targetTrait: { id: 1, name: 'dragon' },
+                  correctionPermille: 1_500,
+                })),
+              ),
+            })),
+          })),
+        },
+      ],
+    });
+    const scenario = createDefaultResolvedScenario(conditionalMaster, undefined);
+    const inactive = calculateScenario(scenario, conditionalMaster, {
+      ...versions,
+      masterDataVersion: conditionalMaster.version,
+    });
+    const condition = inactive.effects.find(
+      (effect) => effect.damageTraitCondition?.kind === 'npSpecial',
+    );
+
+    expect(condition).toMatchObject({
+      state: 'rejected',
+      reason: 'calculation_effect_disabled',
+      value: 1.5,
+    });
+    expect(inactive.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+
+    const active = calculateScenario(
+      {
+        ...scenario,
+        effectDecisions: { [condition!.effectKey]: true },
+      },
+      conditionalMaster,
+      { ...versions, masterDataVersion: conditionalMaster.version },
+    );
+
+    expect(active.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
+    expect(active.effects.find((effect) => effect.effectKey === condition!.effectKey)).toMatchObject({
+      state: 'applied',
+      reason: 'np_special_condition_asserted',
+    });
+    expect(active.result.status).toBe('calculated');
+  });
+
   it('returns identical NP rows for equivalent resolved and manual inputs', () => {
     const resolvedScenario = createDefaultResolvedScenario(master, undefined);
     const resolved = calculateScenario(resolvedScenario, master, versions);
