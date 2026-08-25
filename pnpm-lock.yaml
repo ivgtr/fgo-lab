@@ -84,6 +84,9 @@ importers:
       '@fgo-lab/calc-core':
         specifier: workspace:*
         version: link:../../packages/calc-core
+      '@fgo-lab/calculation-application':
+        specifier: workspace:*
+        version: link:../../packages/calculation-application
       '@fgo-lab/effect-resolver':
         specifier: workspace:*
         version: link:../../packages/effect-resolver
@@ -124,6 +127,15 @@ importers:
 
   packages/calc-core:
     dependencies:
+      '@fgo-lab/schema':
+        specifier: workspace:*
+        version: link:../schema
+
+  packages/calculation-application:
+    dependencies:
+      '@fgo-lab/calc-core':
+        specifier: workspace:*
+        version: link:../calc-core
       '@fgo-lab/schema':
         specifier: workspace:*
         version: link:../schema

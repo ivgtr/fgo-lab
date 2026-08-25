@@ -1,6 +1,6 @@
 import { bench } from 'vitest';
-import type { DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
-import { calculateNpDamage } from './index';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
+import { evaluateDamageRows, prepareDamageEvaluation } from './index';
 
 const input = {
   attackerId: 'x',
@@ -32,14 +32,7 @@ const input = {
   fieldTraits: [],
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies DamageResolutionInput;
-const versions = {
-  schemaVersion: 4,
-  masterDataVersion: 'fixture-1',
-  engineVersion: '2.0.0',
-  appVersion: '0.1.0',
-  gameRegion: 'JP',
-  masterDataLocale: 'ja-JP',
-} satisfies VersionContext;
 bench('NP1-5 / 200 random values', () => {
-  calculateNpDamage(input, versions);
+  const prepared = prepareDamageEvaluation(input);
+  if (prepared.status === 'ready') evaluateDamageRows(prepared.kernelInputs);
 });

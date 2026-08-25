@@ -1,4 +1,5 @@
-import { calculateNpDamage, classAttackRate } from '@fgo-lab/calc-core';
+import { calculateDamageResolution } from '@fgo-lab/calculation-application';
+import { classAttackRate } from '@fgo-lab/calc-core';
 import {
   resolveAttackerSkills,
   resolveCraftEssenceEffects,
@@ -137,7 +138,7 @@ export function calculateResolvedDamage(
   options: { releaseValidated: boolean },
 ) {
   const resolved = resolveCalculationInput(baseInput, selection, master);
-  const calculation = calculateNpDamage(resolved.input, versions);
+  const calculation = calculateDamageResolution(resolved.input, versions);
   const effects = resolved.effects.map((effect) => ({
     effectKey: effect.effectKey,
     state: effect.calculationSupported

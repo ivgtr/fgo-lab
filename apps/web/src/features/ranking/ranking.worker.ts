@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { calculateNpDamage } from '@fgo-lab/calc-core';
+import { calculateDamageResolution } from '@fgo-lab/calculation-application';
 import type { DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
 
 export interface RankingCandidate {
@@ -43,7 +43,7 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
   const rows: RankingRow[] = [];
   const unsupported: RankingResponse['unsupported'] = [];
   for (const candidate of event.data.candidates) {
-    const result = calculateNpDamage(candidate.input, event.data.versions);
+    const result = calculateDamageResolution(candidate.input, event.data.versions);
     if (result.status === 'unsupported' || candidate.resolutionPrecision === 'unsupported') {
       unsupported.push({
         servantId: candidate.servantId,

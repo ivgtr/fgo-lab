@@ -1,11 +1,5 @@
-import type {
-  CalculationResult,
-  DamageKernelInput,
-  DamageResolutionInput,
-  DamageRow,
-  VersionContext,
-} from '@fgo-lab/schema';
-import { damageResolutionInputSchema, SCHEMA_VERSION } from '@fgo-lab/schema';
+import type { DamageKernelInput, DamageResolutionInput, DamageRow } from '@fgo-lab/schema';
+import { damageResolutionInputSchema } from '@fgo-lab/schema';
 import { classifyAttackNpFunction } from './attackNpFunction';
 import { calculateDamagePoint } from './formula';
 import { clamp, f32Add, f32Mul } from './float32';
@@ -37,16 +31,14 @@ export function compileDamageKernelInput(
     classAttackRatePermille: input.classAttackRate * 1000,
     classAffinityPermille: input.classAffinity * 1000,
     attributeAffinityPermille: input.attributeAffinity * 1000,
-    attackModifierPermille:
-      (input.attackBuff - (ignoreDefense ? 0 : input.defenseBuff)) * 1000,
+    attackModifierPermille: (input.attackBuff - (ignoreDefense ? 0 : input.defenseBuff)) * 1000,
     cardModifierPermille: (input.cardBuff - input.cardResistance) * 1000,
     npPowerModifierPermille:
       f32Add(
         boundedBuff(input.npDamageBuff - input.npResistance),
         boundedBuff(input.powerMod + input.eventDamageBuff),
       ) * 1000,
-    specialModifierPermille:
-      f32Mul(specialResistanceFactor, specialDamageFactor) * 1000,
+    specialModifierPermille: f32Mul(specialResistanceFactor, specialDamageFactor) * 1000,
     npSpecialMultiplierPermille: npSpecialMultiplier * 1000,
     flatDamage: input.flatDamage,
     damageCut: input.damageCut,
@@ -76,58 +68,44 @@ export function evaluateDamageRows(
   }) as [DamageRow, DamageRow, DamageRow, DamageRow, DamageRow];
 }
 
-export function calculateNpDamage(
-  rawInput: DamageResolutionInput,
-  versions: VersionContext,
-): CalculationResult {
+export type PreparedDamageEvaluation =
+  | {
+      status: 'ready';
+      precision: 'exact' | 'approximate';
+      warning?: string;
+      kernelInputs: [
+        DamageKernelInput,
+        DamageKernelInput,
+        DamageKernelInput,
+        DamageKernelInput,
+        DamageKernelInput,
+      ];
+    }
+  | { status: 'unsupported'; precision: 'unsupported'; warning: string };
+
+export function prepareDamageEvaluation(rawInput: DamageResolutionInput): PreparedDamageEvaluation {
   const input = damageResolutionInputSchema.parse(rawInput);
   const attackFunction = classifyAttackNpFunction(input.attackNpFunctionType ?? 'damageNp');
-  const common = {
-    effects: [],
-    assumptions: ['random:900..1099', 'probability:only_guaranteed_effects'],
-    issues: attackFunction.warning
-      ? [{ code: attackFunction.warning, detail: input.attackNpFunctionType ?? 'damageNp' }]
-      : [],
-    trace: [
-      { step: 'validate', detail: `calc_input_schema_v${String(SCHEMA_VERSION)}` },
-      { step: 'attack-np-function', detail: input.attackNpFunctionType ?? 'damageNp' },
-    ],
-    versions,
-  };
   if (attackFunction.precision === 'unsupported')
     return {
-      ...common,
       status: 'unsupported',
-      rows: [],
-      missingEvidence: attackFunction.warning ? [attackFunction.warning] : [],
+      precision: 'unsupported',
+      warning: attackFunction.warning ?? 'unsupported_attack_function',
     };
   const ignoreDefense = input.attackNpFunctionType === 'damageNpPierce';
   const kernelInputs = ([1, 2, 3, 4, 5] as const).map((npLevel) =>
     compileDamageKernelInput(input, npLevel, ignoreDefense),
-  ) as [DamageKernelInput, DamageKernelInput, DamageKernelInput, DamageKernelInput, DamageKernelInput];
-  const rows = evaluateDamageRows(kernelInputs);
+  ) as [
+    DamageKernelInput,
+    DamageKernelInput,
+    DamageKernelInput,
+    DamageKernelInput,
+    DamageKernelInput,
+  ];
   return {
-    ...common,
-    status: 'calculated',
+    status: 'ready',
     precision: attackFunction.precision,
-    rows,
-    breakdown: [
-      {
-        key: 'totalAtk',
-        labelKey: 'calc.breakdown.totalAtk',
-        value: input.attackerAtk + input.fouAtk + input.craftEssenceAtk,
-      },
-      {
-        key: 'classAffinity',
-        labelKey: 'calc.breakdown.classAffinity',
-        value: input.classAffinity,
-      },
-      {
-        key: 'attributeAffinity',
-        labelKey: 'calc.breakdown.attributeAffinity',
-        value: input.attributeAffinity,
-      },
-    ],
-    trace: [...common.trace, { step: 'random', detail: 'evaluated_200_final_floors' }],
+    ...(attackFunction.warning ? { warning: attackFunction.warning } : {}),
+    kernelInputs,
   };
 }

@@ -12,6 +12,7 @@
     "@fgo-lab/schema": "workspace:*",
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/calc-core": "workspace:*",
+    "@fgo-lab/calculation-application": "workspace:*",
     "@fgo-lab/effect-resolver": "workspace:*",
     "@fgo-lab/profile-domain": "workspace:*",
     "@fgo-lab/workspace-domain": "workspace:*",

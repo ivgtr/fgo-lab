@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { DamageKernelInput, DamageResolutionInput, VersionContext } from '@fgo-lab/schema';
+import type { DamageKernelInput, DamageResolutionInput } from '@fgo-lab/schema';
 import { damageKernelInputSchema } from '@fgo-lab/schema';
 import golden from '../../test-fixtures/golden/np-damage-v1.json';
 import {
-  calculateNpDamage,
   calculateDamagePoint,
   compileDamageKernelInput,
+  evaluateDamageRows,
+  prepareDamageEvaluation,
   attributeAffinity,
   classAffinity,
   classAttackRate,
@@ -13,6 +14,25 @@ import {
   ATTACK_NP_FUNCTION_TYPES,
   classifyAttackNpFunction,
 } from './index';
+
+const evaluateForTest = (value: DamageResolutionInput) => {
+  const prepared = prepareDamageEvaluation(value);
+  if (prepared.status === 'unsupported')
+    return {
+      status: 'unsupported' as const,
+      precision: 'unsupported' as const,
+      rows: [] as const,
+      issues: [{ code: prepared.warning }],
+      missingEvidence: [prepared.warning],
+    };
+  return {
+    status: 'calculated' as const,
+    precision: prepared.precision,
+    rows: evaluateDamageRows(prepared.kernelInputs),
+    issues: prepared.warning ? [{ code: prepared.warning }] : [],
+    missingEvidence: [],
+  };
+};
 
 const resolvedDamagePoint = (
   value: DamageResolutionInput,
@@ -54,15 +74,6 @@ const input: DamageResolutionInput = {
   fieldTraits: [],
   target: { classId: 'lancer', attribute: 'earth', traits: ['dragon', 'male'] },
 };
-const versions: VersionContext = {
-  schemaVersion: 4,
-  masterDataVersion: 'fixture-1',
-  engineVersion: '2.0.0',
-  appVersion: '0.1.0',
-  gameRegion: 'JP',
-  masterDataLocale: 'ja-JP',
-};
-
 describe('float32 NP damage kernel', () => {
   it('rounds at primitive boundaries', () =>
     expect(f32Add(0.1, 0.2)).toBe(Math.fround(Math.fround(0.1) + Math.fround(0.2))));
@@ -90,7 +101,7 @@ describe('float32 NP damage kernel', () => {
     ).toBe(false);
   });
   it('evaluates all five levels and the exact random endpoints', () => {
-    const result = calculateNpDamage(input, versions);
+    const result = evaluateForTest(input);
     expect(result.rows).toHaveLength(5);
     expect(result.rows[0]?.minimum).toBe(resolvedDamagePoint(input, 1, 900));
     expect(result.rows[0]?.maximum).toBe(resolvedDamagePoint(input, 1, 1099));
@@ -125,7 +136,7 @@ describe('float32 NP damage kernel', () => {
       cardBuff: 0,
       npDamageBuff: 0,
     };
-    expect(calculateNpDamage(artoriaLike, versions).rows[0]).toEqual({
+    expect(evaluateForTest(artoriaLike).rows[0]).toEqual({
       npLevel: 1,
       minimum: 30_356,
       average: 33_712.6,
@@ -143,8 +154,7 @@ describe('float32 NP damage kernel', () => {
     expect(attributeAffinity('earth', 'sky')).toBe(0.9);
     expect(attributeAffinity('unknown', 'sky')).toBe(1);
   });
-  it('is deterministic', () =>
-    expect(calculateNpDamage(input, versions)).toEqual(calculateNpDamage(input, versions)));
+  it('is deterministic', () => expect(evaluateForTest(input)).toEqual(evaluateForTest(input)));
   it('fails closed for unknown functions', () =>
     expect(classifyAttackNpFunction('futureDamage').precision).toBe('unsupported'));
   it.each(ATTACK_NP_FUNCTION_TYPES)('classifies the registered %s handler', (type) => {
@@ -161,23 +171,23 @@ describe('float32 NP damage kernel', () => {
   });
   it('ignores enemy defense for a defense-piercing NP', () => {
     const defended = { ...input, defenseBuff: 0.5 };
-    const normal = calculateNpDamage({ ...defended, attackNpFunctionType: 'damageNp' }, versions)
-      .rows[0]!.average;
-    const pierced = calculateNpDamage(
-      { ...defended, attackNpFunctionType: 'damageNpPierce' },
-      versions,
-    ).rows[0]!.average;
+    const normal = evaluateForTest({ ...defended, attackNpFunctionType: 'damageNp' }).rows[0]!
+      .average;
+    const pierced = evaluateForTest({
+      ...defended,
+      attackNpFunctionType: 'damageNpPierce',
+    }).rows[0]!.average;
     expect(pierced / normal).toBeCloseTo(1.2 / 0.7, 2);
   });
   it('marks an unresolved special NP function as unsupported in the result', () => {
-    expect(
-      calculateNpDamage({ ...input, attackNpFunctionType: 'damageNpHpratioLow' }, versions),
-    ).toMatchObject({
-      status: 'unsupported',
-      rows: [],
-      issues: [{ code: 'missing_hp_ratio' }],
-      missingEvidence: ['missing_hp_ratio'],
-    });
+    expect(evaluateForTest({ ...input, attackNpFunctionType: 'damageNpHpratioLow' })).toMatchObject(
+      {
+        status: 'unsupported',
+        rows: [],
+        issues: [{ code: 'missing_hp_ratio' }],
+        missingEvidence: ['missing_hp_ratio'],
+      },
+    );
   });
   it('requires conditional inputs instead of silently using base damage', () => {
     expect(classifyAttackNpFunction('damageNpHpratioLow')).toMatchObject({
@@ -195,7 +205,7 @@ describe('float32 NP damage kernel', () => {
       npMultipliers: [100, 100, 100, 100, 100] as DamageResolutionInput['npMultipliers'],
       npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as DamageResolutionInput['npSpecialMultipliers'],
     };
-    const result = calculateNpDamage(rowSpecific, versions);
+    const result = evaluateForTest(rowSpecific);
     expect(result.rows[1]!.average / result.rows[0]!.average).toBeCloseTo(1.5, 3);
     expect(result.rows[4]!.average / result.rows[0]!.average).toBeCloseTo(3, 3);
   });
@@ -241,7 +251,7 @@ describe('float32 NP damage kernel', () => {
       npSpecialMultipliers: [1, 1, 1, 1, 1],
       flatDamage: 0,
     };
-    const result = calculateNpDamage(waterLilith, versions).rows[4]!;
+    const result = evaluateForTest(waterLilith).rows[4]!;
     expect(result.minimum).toBe(61_944);
     expect(result.maximum).toBe(75_640);
   });
