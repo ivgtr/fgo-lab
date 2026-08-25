@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
+import effectSourcesGolden from '../../test-fixtures/golden/effect-sources-v1.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   calculationScenarioSchema,
@@ -19,6 +20,23 @@ const versions: VersionContext = {
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
 };
+
+function modifierEffect(
+  id: string,
+  buffType: string,
+  value: number,
+  cardTypes: ('buster' | 'arts' | 'quick')[] = [],
+) {
+  return {
+    id,
+    type: 'addStateShort',
+    target: 'self',
+    label: id,
+    parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
+    buffTypes: [buffType],
+    cardTypes,
+  };
+}
 
 describe('scenario calculation facade', () => {
   it('calculates a resolved scenario without a UI selection adapter', () => {
@@ -47,5 +65,167 @@ describe('scenario calculation facade', () => {
         attacker: resolvedScenario.attacker,
       }),
     ).toThrow();
+  });
+
+  it('fails closed when a resolved scenario references a missing craft essence', () => {
+    const scenario = {
+      ...createDefaultResolvedScenario(master, undefined),
+      craftEssence: { craftEssenceId: 'missing', level: 1, limitBreak: 0 },
+    };
+    const calculation = calculateScenario(scenario, master, versions);
+
+    expect(calculation.result.status).toBe('unsupported');
+    expect(calculation.effectWarnings).toContain('craftEssence_source_missing:missing');
+  });
+
+  it('marks user-supplied manual final modifiers as provisional evidence', () => {
+    const resolved = calculateScenario(
+      createDefaultResolvedScenario(master, undefined),
+      master,
+      versions,
+    );
+    const manual = calculateScenario({ mode: 'manual', manual: resolved.input }, master, versions);
+
+    expect(manual.result).toMatchObject({ status: 'calculated', precision: 'approximate' });
+    expect(manual.result.evidence.map((entry) => entry.key)).toContain(
+      'input:manual-final-modifiers',
+    );
+  });
+
+  it('matches the all-source single-aggregation golden through the scenario facade', () => {
+    const baseServant = fixture.servants[0]!;
+    const attacker = {
+      ...baseServant,
+      passives: [
+        {
+          id: 'passive-skill',
+          slot: 0,
+          priority: 0,
+          name: 'passive',
+          detail: '',
+          imageKey: null,
+          effects: [modifierEffect('passive-card', 'upCommandall', 100, ['buster'])],
+        },
+      ],
+      skills: [
+        {
+          id: 'attacker-skill',
+          slot: 1,
+          priority: 1,
+          name: 'attacker',
+          detail: '',
+          imageKey: null,
+          effects: [modifierEffect('attacker-attack', 'upAtk', 200)],
+        },
+      ],
+      noblePhantasms: baseServant.noblePhantasms.map((np) => ({
+        ...np,
+        effects: [
+          { ...modifierEffect('np-attack', 'upAtk', 600), timing: 'beforeDamage' as const },
+        ],
+      })),
+    };
+    const support = {
+      ...baseServant,
+      id: 'combo-support',
+      name: 'support',
+      passives: [],
+      noblePhantasms: [],
+      skills: [
+        {
+          id: 'support-skill',
+          slot: 1,
+          priority: 1,
+          name: 'support',
+          detail: '',
+          imageKey: null,
+          effects: [modifierEffect('support-power', 'upDamage', 500)],
+        },
+      ],
+    };
+    const combinationMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [attacker, support],
+      craftEssences: [
+        {
+          ...fixture.craftEssences[0]!,
+          effects: [modifierEffect('ce-np', 'upNpdamage', 300)],
+        },
+      ],
+      mysticCodes: [
+        {
+          id: 'combo-mc',
+          name: 'mystic',
+          maxLevel: 10,
+          imageKey: null,
+          skills: [
+            {
+              id: 'mc-skill',
+              slot: 1,
+              priority: 1,
+              name: 'mystic',
+              detail: '',
+              imageKey: null,
+              effects: [modifierEffect('mc-card', 'upCommandall', 400, ['buster'])],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario = {
+      ...createDefaultResolvedScenario(combinationMaster, undefined),
+      assumptions: { classAffinity: 1, attributeAffinity: 1 },
+      craftEssence: { craftEssenceId: 'fixture-ce', level: 1, limitBreak: 0 },
+      attackerSkills: [{ skillId: 'attacker-skill', skillLevel: 10 }],
+      mysticCode: {
+        mysticCodeId: 'combo-mc',
+        skills: [{ skillId: 'mc-skill', skillLevel: 10 }],
+      },
+      effectDecisions: {
+        'attacker:attacker:fixture-saber:attacker-skill:attacker-attack': true,
+        'mysticCode:mysticCode:combo-mc:mc-skill:mc-card': true,
+      },
+      support: {
+        sourceTemplateId: null,
+        composition: {
+          sources: [
+            {
+              sourceInstanceId: 'support-1',
+              servantId: 'combo-support',
+              skills: [{ skillId: 'support-skill', skillLevel: 10 }],
+            },
+          ],
+          selectedEffects: [
+            {
+              sourceInstanceId: 'support-1',
+              skillId: 'support-skill',
+              effectId: 'support-power',
+            },
+          ],
+        },
+      },
+    };
+    const calculation = calculateScenario(scenario, combinationMaster, {
+      ...versions,
+      masterDataVersion: combinationMaster.version,
+    });
+
+    expect(calculation.scenarioInput).toMatchObject({
+      attackBuff: 0,
+      cardBuff: 0,
+      npDamageBuff: 0,
+      powerMod: 0,
+      flatDamage: 0,
+    });
+    expect(calculation.input).toMatchObject(effectSourcesGolden.expectedModifiers);
+    expect(calculation.effects.map((effect) => effect.origin)).toEqual(
+      effectSourcesGolden.sourceOrder,
+    );
+    expect(calculation.effects.map((effect) => effect.order)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(calculation.result).toMatchObject({
+      status: 'calculated',
+      precision: 'approximate',
+      rows: effectSourcesGolden.expectedRows,
+    });
   });
 });

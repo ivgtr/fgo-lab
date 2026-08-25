@@ -427,6 +427,7 @@ export function App() {
         {page === 'calculate' && (
           <Calculator
             resolvedInput={input}
+            scenarioInput={resolvedCalculation.scenarioInput}
             resolvedEffects={resolvedCalculation.effects}
             effectWarnings={resolvedCalculation.effectWarnings}
             result={result}

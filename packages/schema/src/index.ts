@@ -184,50 +184,6 @@ export const attackerSkillSelectionSchema = z.object({
 });
 export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema>;
 
-export const calculationEditorStateSchema = z.object({
-  attackerSource: z.enum(['owned', 'master']),
-  effectMode: z.enum(['resolved', 'manual']).default('resolved'),
-  attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
-  mysticCode: z
-    .object({
-      mysticCodeId: z.string().min(1).max(80),
-      skills: z.array(attackerSkillSelectionSchema).min(1).max(3),
-    })
-    .nullable()
-    .optional(),
-  effectOverrides: z.record(z.string(), z.boolean()).optional(),
-  support: z
-    .object({
-      sourceTemplateId: z.uuid().nullable(),
-      composition: supportCompositionSchema,
-    })
-    .nullable()
-    .optional(),
-  manualOverrides: z
-    .array(
-      z.enum([
-        'attackerAtk',
-        'fouAtk',
-        'craftEssenceAtk',
-        'classAttackRate',
-        'classAffinity',
-        'attributeAffinity',
-      ]),
-    )
-    .max(6)
-    .optional(),
-  craftEssence: z
-    .object({
-      source: z.enum(['registered', 'master']),
-      craftEssenceId: z.string().min(1).max(80),
-      copyId: z.uuid().nullable(),
-      level: z.number().int().min(1).max(100),
-      limitBreak: z.number().int().min(0).max(4),
-    })
-    .nullable(),
-});
-export type CalculationEditorState = z.infer<typeof calculationEditorStateSchema>;
-
 const scenarioBaseSchema = z
   .object({
     attacker: z.object({
@@ -267,8 +223,18 @@ const resolvedScenarioSchema = scenarioBaseSchema
       })
       .nullable(),
     attackerSkills: z.array(attackerSkillSelectionSchema).max(20),
-    mysticCode: calculationEditorStateSchema.shape.mysticCode.unwrap().nullable(),
-    support: calculationEditorStateSchema.shape.support.unwrap().nullable(),
+    mysticCode: z
+      .object({
+        mysticCodeId: z.string().min(1).max(80),
+        skills: z.array(attackerSkillSelectionSchema).min(1).max(3),
+      })
+      .nullable(),
+    support: z
+      .object({
+        sourceTemplateId: z.uuid().nullable(),
+        composition: supportCompositionSchema,
+      })
+      .nullable(),
     effectDecisions: z.record(z.string(), z.boolean()),
     explicitOverrides: z.object({
       attackerAtk: z.number().int().nonnegative().max(100000).optional(),

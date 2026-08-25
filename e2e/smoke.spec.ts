@@ -391,21 +391,8 @@ test('discards an incompatible master cache without deleting user data', async (
             db.close();
           };
           masterRequest.onsuccess = () => {
-            const active = masterRequest.result as {
-              snapshot: {
-                servants: Array<{
-                  name: string;
-                  npSpecialAttack?: Record<string, unknown> | null;
-                }>;
-              };
-            };
-            const servant = active.snapshot.servants.find(
-              (candidate) => candidate.name === 'アーキタイプ：アース',
-            )!;
-            servant.npSpecialAttack = {
-              targetTraits: ['alignmentChaotic'],
-              multipliersByOvercharge: [1.5, 1.5, 1.5, 1.5, 1.5],
-            };
+            const active = masterRequest.result as { snapshot: { version: string } };
+            active.snapshot.version = 'incompatible-master-version';
             masterStore.put(active, 'active');
           };
         };
@@ -420,7 +407,7 @@ test('discards an incompatible master cache without deleting user data', async (
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
   const recovered = await page.evaluate(
     () =>
-      new Promise<{ profileId: string; hasCurrentSpecialAttack: boolean }>((resolve, reject) => {
+      new Promise<{ profileId: string; masterVersion: string }>((resolve, reject) => {
         const request = indexedDB.open('fgo-lab', 1);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
@@ -430,30 +417,19 @@ test('discards an incompatible master cache without deleting user data', async (
           const userRequest = transaction.objectStore('user').get('profiles');
           transaction.onerror = () => reject(transaction.error);
           transaction.oncomplete = () => {
-            const active = masterRequest.result as {
-              snapshot: {
-                servants: Array<{
-                  name: string;
-                  npSpecialAttack?: Record<string, unknown> | null;
-                }>;
-              };
-            };
+            const active = masterRequest.result as { snapshot: { version: string } };
             const profiles = userRequest.result as { activeProfileId: string };
-            const servant = active.snapshot.servants.find(
-              (candidate) => candidate.name === 'アーキタイプ：アース',
-            );
             resolve({
               profileId: profiles.activeProfileId,
-              hasCurrentSpecialAttack: Boolean(
-                servant?.npSpecialAttack?.['multipliersByNpLevelAndOvercharge'],
-              ),
+              masterVersion: active.snapshot.version,
             });
             db.close();
           };
         };
       }),
   );
-  expect(recovered).toEqual({ profileId, hasCurrentSpecialAttack: true });
+  expect(recovered.profileId).toBe(profileId);
+  expect(recovered.masterVersion).not.toBe('incompatible-master-version');
 
   await page.evaluate(
     () =>
@@ -472,15 +448,9 @@ test('discards an incompatible master cache without deleting user data', async (
           };
           activeRequest.onsuccess = () => {
             const active = activeRequest.result as {
-              snapshot: { servants: Array<{ npSpecialAttack?: Record<string, unknown> | null }> };
+              snapshot: { servants: Array<{ rarity: number }> };
             };
-            const servant = active.snapshot.servants.find(
-              (candidate) => candidate.npSpecialAttack,
-            )!;
-            servant.npSpecialAttack = {
-              targetTraits: ['invalid'],
-              multipliersByOvercharge: [1, 1, 1, 1, 1],
-            };
+            active.snapshot.servants[0]!.rarity = 99;
             store.put(active, 'active');
           };
         };
@@ -517,7 +487,10 @@ test('discards an incompatible master cache without deleting user data', async (
   expect(discardedState).toEqual({ hasActiveMaster: false, profileId });
 });
 
-test('upgrades v1 profiles without blocking startup', async ({ page, isMobile }) => {
+test('rejects v1 profiles instead of reinterpreting old calculation data', async ({
+  page,
+  isMobile,
+}) => {
   test.skip(isMobile, 'Desktop project covers IndexedDB profile migration');
   const pageErrors: Error[] = [];
   page.on('pageerror', (error) => pageErrors.push(error));
@@ -569,19 +542,14 @@ test('upgrades v1 profiles without blocking startup', async ({ page, isMobile })
   );
 
   await page.reload();
+  await expect(page.getByRole('heading', { name: '初回セットアップ' })).toBeVisible();
+  await page.getByRole('button', { name: 'セットアップを開始' }).click();
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
-  await expect(
-    page.getByText(
-      '保存済みの育成データを引き継ぎ、旧形式の支援条件・計算下書き・履歴を削除しました。',
-    ),
-  ).toBeVisible();
   const recovered = await page.evaluate(
     () =>
       new Promise<{
         schemaVersion: number;
-        npLevel: number;
-        draft: unknown;
-        historyLength: number;
+        servantBuildCount: number;
       }>((resolve, reject) => {
         const request = indexedDB.open('fgo-lab', 1);
         request.onerror = () => reject(request.error);
@@ -594,24 +562,20 @@ test('upgrades v1 profiles without blocking startup', async ({ page, isMobile })
             const collection = profilesRequest.result as {
               schemaVersion: number;
               profiles: Array<{
-                servantBuilds: Record<string, { npLevel: number }>;
-                draft: unknown;
-                history: unknown[];
+                servantBuilds: Record<string, unknown>;
               }>;
             };
             const profile = collection.profiles[0]!;
             resolve({
               schemaVersion: collection.schemaVersion,
-              npLevel: profile.servantBuilds['405900']!.npLevel,
-              draft: profile.draft,
-              historyLength: profile.history.length,
+              servantBuildCount: Object.keys(profile.servantBuilds).length,
             });
             db.close();
           };
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: 3, npLevel: 1, draft: null, historyLength: 0 });
+  expect(recovered).toEqual({ schemaVersion: 8, servantBuildCount: 0 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 
@@ -750,17 +714,16 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv90/ }).click();
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
   const dragonPower = ownEffects.getByRole('button', { name: /威力アップ・対竜/ });
-  const dragonNpSpecial = ownEffects.getByRole('button', { name: /特攻宝具/ });
+  const dragonNpSpecial = page.getByRole('group', { name: '適用条件' }).getByRole('button');
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
-  await expect(page.getByRole('group', { name: '適用条件' })).toHaveCount(0);
   await expect(dragonPower).toHaveAttribute('aria-pressed', 'false');
   await expect(dragonNpSpecial).toHaveAttribute('aria-pressed', 'false');
-  await dragonPower.click();
   await dragonNpSpecial.click();
-  await expect(dragonPower).toHaveAttribute('aria-pressed', 'true');
   await expect(dragonNpSpecial).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByLabel('計算に使用する最終値')).toContainText('1.50倍');
+  await dragonPower.click();
+  await expect(dragonPower).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('150.0%');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
   expect(withTrait).toBeGreaterThan(withoutTrait * 1.49);
 
@@ -771,7 +734,7 @@ test('separates final direct inputs from resolved CE and trait effects', async (
     .getByRole('button', { name: /アーキタイプ：アース.*ムーンキャンサー.*Lv90/ })
     .click();
   await page.getByLabel('宝具Lv').selectOption('5');
-  const chaoticTrait = ownEffects.getByRole('button', { name: /特攻宝具/ });
+  const chaoticTrait = page.getByRole('group', { name: '適用条件' }).getByRole('button').first();
   await expect(chaoticTrait).toContainText('2.00倍');
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
   await chaoticTrait.click();
@@ -857,7 +820,12 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
   await expect(page.getByLabel('クラス相性の状況')).toHaveValue('1.5');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
-  await expect(page.getByRole('group', { name: /自身の適用内容/ })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole('group', { name: /自身の適用内容/ })
+      .getByRole('button', { name: /攻撃力アップ.*理想郷の騎士 EX/ })
+      .first(),
+  ).toHaveAttribute('aria-pressed', 'true');
 
   const imageDownloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '画像として保存' }).click();
@@ -879,7 +847,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   expect(sharedJson).not.toContain('profileId');
   expect(sharedJson).not.toContain('servantBuilds');
   expect(sharedJson).not.toContain('copyId');
-  expect(sharedJson).not.toContain('attackerSkills');
+  expect(sharedJson).toContain('attackerSkills');
 });
 
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
@@ -1154,7 +1122,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   if (await setup.isVisible()) await setup.click();
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('415件を計算・計算対象外 5件');
+  await expect(page.getByRole('status')).toContainText('372件を計算・計算対象外 48件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );

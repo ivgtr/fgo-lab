@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculationShareSnapshotSchema,
-  calculationEditorStateSchema,
   calculationResultSchema,
   calculationScenarioSchema,
   damageResolutionInputSchema,
@@ -138,12 +137,6 @@ describe('portable schema boundaries', () => {
     expect(damageResolutionInputSchema.shape.npSpecialMultipliers.safeParse(1.5)).toMatchObject({
       success: false,
     });
-  });
-
-  it('normalizes stored selections to the resolved effect mode', () => {
-    expect(
-      calculationEditorStateSchema.parse({ attackerSource: 'master', craftEssence: null }),
-    ).toEqual({ attackerSource: 'master', effectMode: 'resolved', craftEssence: null });
   });
 
   it('stores support sources, skill levels, and selected effects separately', () => {

@@ -13,7 +13,6 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import type {
-  CalculationEditorState,
   CalculationResult,
   CalculationScenario,
   DamageResolutionInput,
@@ -35,6 +34,7 @@ export interface ResolvedCalculationInput {
 
 export interface CalculationExecution {
   scenario: CalculationScenario;
+  scenarioInput: DamageResolutionInput;
   input: DamageResolutionInput;
   effects: ResolvedEffect[];
   effectWarnings: string[];
@@ -113,9 +113,7 @@ function resolvedScenarioInput(
   scenario: ResolvedCalculationScenario,
   master: MasterDataSnapshot,
 ): DamageResolutionInput {
-  const servant = master.servants.find(
-    (candidate) => candidate.id === scenario.attacker.servantId,
-  );
+  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
   if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
@@ -125,8 +123,6 @@ function resolvedScenarioInput(
         (candidate) => candidate.id === scenario.craftEssence?.craftEssenceId,
       )
     : undefined;
-  if (scenario.craftEssence && !craftEssence)
-    throw new TypeError(`scenario_craft_essence_missing:${scenario.craftEssence.craftEssenceId}`);
   const input: DamageResolutionInput = {
     attackerId: servant.id,
     attackerLevel: scenario.attacker.level,
@@ -150,8 +146,7 @@ function resolvedScenarioInput(
     npMultipliers: deriveNpMultipliers(damage, scenario.overcharge),
     damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
     cardType: noblePhantasm.card,
-    classAttackRate:
-      scenario.explicitOverrides.classAttackRate ?? classAttackRate(servant.classId),
+    classAttackRate: scenario.explicitOverrides.classAttackRate ?? classAttackRate(servant.classId),
     classAffinity: scenario.assumptions.classAffinity,
     attributeAffinity: scenario.assumptions.attributeAffinity,
     attackBuff: 0,
@@ -214,6 +209,7 @@ export function resolveScenario(
 
 function evaluateResolvedCalculation(
   scenario: CalculationScenario,
+  scenarioInput: DamageResolutionInput,
   resolved: ResolvedCalculationInput,
   versions: VersionContext,
 ): CalculationExecution {
@@ -260,6 +256,7 @@ function evaluateResolvedCalculation(
     };
   return {
     scenario,
+    scenarioInput,
     input: resolved.input,
     effects: resolved.effects,
     effectWarnings: resolved.warnings,
@@ -272,99 +269,12 @@ export function calculateScenario(
   master: MasterDataSnapshot,
   versions: VersionContext,
 ): CalculationExecution {
-  return evaluateResolvedCalculation(scenario, resolveScenario(scenario, master), versions);
-}
-
-export function resolveCalculationInput(
-  baseInput: DamageResolutionInput,
-  selection: CalculationEditorState,
-  master: MasterDataSnapshot,
-): ResolvedCalculationInput {
-  if (selection.effectMode === 'manual')
-    return {
-      input: baseInput,
-      precision: 'exact',
-      evidenceKeys: ['input:manual-final-modifiers'],
-      warnings: [],
-      trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
-      effects: [],
-    };
-  const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
-  const damage = attacker ? getPrimaryNpDamage(attacker) : undefined;
-  const damageInput =
-    attacker && damage
-      ? applyScenarioNpDamageFunction(baseInput, damage, attacker.traits)
-      : baseInput;
-  const resolved = resolveScenarioEffects(
-    damageInput,
-    {
-      mode: 'resolved',
-      attacker: {
-        servantId: baseInput.attackerId,
-        source: selection.attackerSource,
-        level: baseInput.attackerLevel,
-        npLevel: baseInput.npLevel,
-        fouAtk: baseInput.fouAtk,
-        stateTraits: baseInput.attackerStateTraits,
-      },
-      overcharge: baseInput.overcharge,
-      target: {
-        classId: baseInput.target.classId,
-        attribute: baseInput.target.attribute,
-        traits: baseInput.target.traits,
-        stateTraits: baseInput.targetStateTraits,
-        rarity: baseInput.targetRarity,
-      },
-      attackerHpPermille: baseInput.attackerHpPermille,
-      fieldTraits: baseInput.fieldTraits,
-      battleState: { battlePointPhase: baseInput.battlePointPhase },
-      assumptions: {
-        classAffinity: baseInput.classAffinity,
-        attributeAffinity: baseInput.attributeAffinity,
-      },
-      craftEssence: selection.craftEssence
-        ? {
-            craftEssenceId: selection.craftEssence.craftEssenceId,
-            level: selection.craftEssence.level,
-            limitBreak: selection.craftEssence.limitBreak,
-          }
-        : null,
-      attackerSkills: selection.attackerSkills ?? [],
-      mysticCode: selection.mysticCode ?? null,
-      support: selection.support ?? null,
-      effectDecisions: selection.effectOverrides ?? {},
-      explicitOverrides: {},
-    },
-    master,
-  );
-  const effectEvidenceKeys = resolved.effects.flatMap((effect) => {
-    if (effect.state !== 'applied') return [];
-    if (effect.reason === 'np_damage_buff_rate') return ['effect-operation:npDamageBuffRate'];
-    return effect.kind ? [`effect-operation:${effect.kind}`] : [];
-  });
-  return {
-    input: resolved.input,
-    precision: resolved.precision,
-    evidenceKeys: ['master:normalized-v6', ...effectEvidenceKeys],
-    warnings: resolved.warnings,
-    effects: resolved.effects,
-    trace: resolved.trace,
-  };
-}
-
-export function calculateResolvedDamage(
-  baseInput: DamageResolutionInput,
-  selection: CalculationEditorState,
-  master: MasterDataSnapshot,
-  versions: VersionContext,
-) {
-  const resolved = resolveCalculationInput(baseInput, selection, master);
+  const scenarioInput =
+    scenario.mode === 'manual' ? scenario.manual : resolvedScenarioInput(scenario, master);
   return evaluateResolvedCalculation(
-    {
-      mode: 'manual',
-      manual: baseInput,
-    },
-    resolved,
+    scenario,
+    scenarioInput,
+    resolveScenario(scenario, master),
     versions,
   );
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
@@ -41,6 +41,7 @@ import './calculator-form.css';
 
 export function Calculator({
   resolvedInput,
+  scenarioInput,
   resolvedEffects,
   effectWarnings,
   result,
@@ -59,6 +60,7 @@ export function Calculator({
   onHistorySelect,
 }: {
   resolvedInput: DamageResolutionInput;
+  scenarioInput: DamageResolutionInput;
   resolvedEffects: readonly ResolvedEffect[];
   effectWarnings: readonly string[];
   result: CalculationResultValue;
@@ -78,6 +80,12 @@ export function Calculator({
 }) {
   const input = resolvedInput;
   const resolvedScenario = scenario.mode === 'resolved' ? scenario : null;
+  const lastResolvedScenario = useRef<Extract<CalculationScenario, { mode: 'resolved' }> | null>(
+    resolvedScenario,
+  );
+  useEffect(() => {
+    if (resolvedScenario) lastResolvedScenario.current = resolvedScenario;
+  }, [resolvedScenario]);
   const mode = resolvedScenario ? 'quick' : 'direct';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [supportServantDialogOpen, setSupportServantDialogOpen] = useState(false);
@@ -91,15 +99,33 @@ export function Calculator({
   const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
+  const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : undefined;
+  const npConditionTraits = attackerDamage
+    ? [
+        ...new Map(
+          attackerDamage.parametersByOvercharge.flat().flatMap((parameter) =>
+            parameter.targetTrait
+              ? [
+                  [
+                    parameter.targetTrait.name,
+                    {
+                      ...parameter.targetTrait,
+                      id: parameter.targetTrait.name,
+                      multiplier: (parameter.correctionPermille ?? 1_000) / 1_000,
+                    },
+                  ] as const,
+                ]
+              : [],
+          ),
+        ).values(),
+      ]
+    : [];
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
   const selectedCraftEssenceCopy = craftEssenceSelection
     ? craftEssenceCopies.find(
-        (copy) =>
-          copy.craftEssenceId === craftEssenceSelection.craftEssenceId &&
-          copy.level === craftEssenceSelection.level &&
-          copy.limitBreak === craftEssenceSelection.limitBreak,
+        (copy) => copy.craftEssenceId === craftEssenceSelection.craftEssenceId,
       )
     : undefined;
   const ownEffects = resolvedEffects.filter((effect) => effect.origin !== 'support');
@@ -225,10 +251,14 @@ export function Calculator({
   }
   function changeEffectMode(effectMode: 'resolved' | 'manual') {
     if (effectMode === 'manual') {
-      void onScenarioChange({ mode: 'manual', manual: input });
+      void onScenarioChange({ mode: 'manual', manual: scenarioInput });
       return;
     }
     if (scenario.mode === 'resolved') return;
+    if (lastResolvedScenario.current) {
+      void onScenarioChange(lastResolvedScenario.current);
+      return;
+    }
     const saved = builds[input.attackerId];
     const source = saved?.npLevel ? 'owned' : 'master';
     void onScenarioChange({
@@ -328,12 +358,17 @@ export function Calculator({
   ) {
     const level = copy?.level ?? 1;
     const limitBreak = copy?.limitBreak ?? 0;
-    if (scenario.mode === 'manual')
+    if (scenario.mode === 'manual') {
+      if (lastResolvedScenario.current)
+        lastResolvedScenario.current = {
+          ...lastResolvedScenario.current,
+          craftEssence: { craftEssenceId: master.id, level, limitBreak },
+        };
       changeManualInput({
         craftEssenceId: master.id,
         craftEssenceAtk: deriveCraftEssenceAtk(master, level, limitBreak),
       });
-    else
+    } else
       void onScenarioChange({
         ...scenario,
         craftEssence: { craftEssenceId: master.id, level, limitBreak },
@@ -883,6 +918,43 @@ export function Calculator({
           hidden={mode === 'direct'}
           onChange={changeAttackerSkill}
         />
+        {mode === 'quick' && resolvedScenario && npConditionTraits.length > 0 ? (
+          <fieldset aria-label="適用条件" className="modifier-group">
+            <div className="calculator-support-effect-legend">
+              <span>
+                <strong>対象特性</strong>
+                <small>特攻宝具の成立条件</small>
+              </span>
+            </div>
+            <div className="modifier-list">
+              {npConditionTraits.map((trait) => {
+                const active = resolvedScenario.target.traits.includes(trait.id);
+                return (
+                  <button
+                    type="button"
+                    key={trait.id}
+                    aria-pressed={active}
+                    onClick={() =>
+                      void onScenarioChange({
+                        ...resolvedScenario,
+                        target: {
+                          ...resolvedScenario.target,
+                          traits: active
+                            ? resolvedScenario.target.traits.filter(
+                                (candidate) => candidate !== trait.id,
+                              )
+                            : [...resolvedScenario.target.traits, trait.id],
+                        },
+                      })
+                    }
+                  >
+                    {traitLabel(trait.id)}・特攻宝具 {trait.multiplier.toFixed(2)}倍
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        ) : null}
         {mode === 'quick' ? (
           <AppliedEffects
             title="自身の適用内容"
