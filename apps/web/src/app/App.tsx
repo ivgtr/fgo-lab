@@ -30,7 +30,11 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { calculateResolvedDamage, resolveCalculationInput } from '@fgo-lab/calculation-application';
+import {
+  calculateScenario,
+  createDefaultResolvedScenario,
+  resolveCalculationInput,
+} from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
 import {
@@ -201,10 +205,9 @@ export function App() {
   );
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
-  const defaultInput = createDefaultDamageResolutionInput(currentMaster, defaultBuild);
-  const defaultSelection = completeCalculationEditorState(undefined, defaultServant, defaultBuild);
   const currentScenario =
-    calculation.scenario ?? scenarioFromDamageResolutionInput(defaultInput, defaultSelection);
+    calculation.scenario ??
+    createDefaultResolvedScenario(currentMaster, defaultBuild, defaultServant);
   const baseInput = damageResolutionInputFromScenario(currentScenario, currentMaster);
   const selectedAttacker =
     currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
@@ -226,12 +229,7 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const resolvedCalculation = calculateResolvedDamage(
-    baseInput,
-    currentSelection,
-    currentMaster,
-    versions,
-  );
+  const resolvedCalculation = calculateScenario(currentScenario, currentMaster, versions);
   const input = resolvedCalculation.input;
   const compatibleSharedSnapshot =
     calculation.shared?.result.versions.masterDataVersion === currentMaster.version;
@@ -337,7 +335,7 @@ export function App() {
   ) {
     const scenario = scenarioFromDamageResolutionInput(nextInput, selection);
     setCalculation({ scenario, shared: undefined });
-    const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions);
+    const nextCalculation = calculateScenario(scenario, currentMaster, versions);
     const fingerprint = await scenarioFingerprint(
       scenario,
       currentMaster.version,
