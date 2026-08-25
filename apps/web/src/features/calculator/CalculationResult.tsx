@@ -160,7 +160,14 @@ export function CalculationResult({
           </table>
         )}
         <footer className="result-card-foot">
-          <small>FGO Lab・DB {result.versions.masterDataVersion}</small>
+          <small>
+            FGO Lab・DB {result.versions.masterDataVersion}・Engine {result.versions.engineVersion}・
+            {result.status === 'calculated'
+              ? result.precision === 'exact'
+                ? '検証済み精度'
+                : '暫定精度'
+              : '計算対象外'}
+          </small>
         </footer>
       </article>
       <div className="result-actions">
@@ -174,15 +181,83 @@ export function CalculationResult({
       </div>
       <p aria-live="polite">{message}</p>
       <details className="result-details">
-        <summary>計算内訳・仮定・警告</summary>
-        <ul>
-          {result.assumptions.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-          {result.issues.map((item) => (
-            <li key={`${item.code}:${item.detail}`}>警告: {item.code}</li>
-          ))}
-        </ul>
+        <summary>計算内訳・根拠・仮定・警告</summary>
+        {result.status === 'calculated' && (
+          <section>
+            <h3>精度</h3>
+            <p>
+              {result.precision === 'exact'
+                ? '使用した計算要素はすべて検証済みです。'
+                : '検証途上の計算要素を含むため暫定値です。'}
+            </p>
+            <h3>計算内訳</h3>
+            <dl>
+              {result.breakdown.map((item) => (
+                <div key={item.key}>
+                  <dt>{item.labelKey}</dt>
+                  <dd>{numberFormatter.format(item.value)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
+        {result.status === 'unsupported' && (
+          <section>
+            <h3>計算できない理由</h3>
+            <ul>
+              {result.missingEvidence.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <section>
+          <h3>仮定</h3>
+          {result.assumptions.length ? (
+            <ul>
+              {result.assumptions.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>追加の仮定はありません。</p>
+          )}
+        </section>
+        <section>
+          <h3>警告</h3>
+          {result.issues.length ? (
+            <ul>
+              {result.issues.map((item) => (
+                <li key={`${item.code}:${item.detail}`}>
+                  {item.code}: {item.detail}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>警告はありません。</p>
+          )}
+        </section>
+        <section>
+          <h3>計算trace</h3>
+          <ol>
+            {result.trace.map((item, index) => (
+              <li key={`${String(index)}:${item.step}:${item.detail}`}>
+                {item.step}: {item.detail}
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section>
+          <h3>検証根拠</h3>
+          <ul>
+            {result.evidence.map((item) => (
+              <li key={item.key}>
+                {item.key} — {item.status === 'validated' ? '検証済み' : '暫定'}（確認日{' '}
+                {item.reviewedAt}）
+              </li>
+            ))}
+          </ul>
+        </section>
       </details>
     </div>
   );
