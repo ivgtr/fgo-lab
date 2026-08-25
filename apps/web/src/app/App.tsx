@@ -22,7 +22,6 @@ import { finalizeHistory, scenarioFingerprint } from '@fgo-lab/workspace-domain'
 import type {
   CalculationScenario,
   CalculationHistoryEntry,
-  DamageResolutionInput,
   CalculationShareSnapshot,
   CraftEssenceCopy,
   ServantBuild,
@@ -38,13 +37,7 @@ import {
 } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
-import {
-  completeCalculationEditorState,
-  createDefaultDamageResolutionInput,
-  damageResolutionInputFromScenario,
-  scenarioFromDamageResolutionInput,
-  selectionFromScenario,
-} from '../features/calculator/calculation';
+import { createDefaultDamageResolutionInput } from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { DataPage } from '../features/data/DataPage';
 import { Calculator } from '../features/calculator/Calculator';
@@ -209,19 +202,6 @@ export function App() {
   const currentScenario =
     calculation.scenario ??
     createDefaultResolvedScenario(currentMaster, defaultBuild, defaultServant);
-  const baseInput = damageResolutionInputFromScenario(currentScenario, currentMaster);
-  const selectedAttacker =
-    currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
-    defaultServant;
-  const selectedBuild = profile.servantBuilds[selectedAttacker.id];
-  const currentSelection = completeCalculationEditorState(
-    selectionFromScenario(currentScenario),
-    selectedAttacker,
-    profile.servantBuilds[baseInput.attackerId],
-  );
-  const calculationSupportTemplate = profile.supportTemplates.find(
-    (template) => template.templateId === currentSelection.support?.sourceTemplateId,
-  );
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -232,6 +212,14 @@ export function App() {
   };
   const resolvedCalculation = calculateScenario(currentScenario, currentMaster, versions);
   const input = resolvedCalculation.input;
+  const selectedAttacker =
+    currentMaster.servants.find((candidate) => candidate.id === input.attackerId) ?? defaultServant;
+  const selectedBuild = profile.servantBuilds[selectedAttacker.id];
+  const calculationSupportTemplate = profile.supportTemplates.find(
+    (template) =>
+      template.templateId ===
+      (currentScenario.mode === 'resolved' ? currentScenario.support?.sourceTemplateId : undefined),
+  );
   const result = resolvedCalculation.result;
   async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
     const now = new Date().toISOString();
@@ -351,12 +339,6 @@ export function App() {
       updatedAt: now,
     }));
   }
-  async function saveCalculationDraft(
-    nextInput: DamageResolutionInput,
-    selection = currentSelection,
-  ) {
-    await saveScenarioDraft(scenarioFromDamageResolutionInput(nextInput, selection));
-  }
   async function copyHistoryToDraft(entry: CalculationHistoryEntry) {
     const sessionId = crypto.randomUUID();
     setCalculationSessionId(sessionId);
@@ -445,7 +427,6 @@ export function App() {
         )}{' '}
         {page === 'calculate' && (
           <Calculator
-            input={baseInput}
             resolvedInput={input}
             resolvedEffects={resolvedCalculation.effects}
             effectWarnings={resolvedCalculation.effectWarnings}
@@ -455,26 +436,20 @@ export function App() {
             builds={profile.servantBuilds}
             craftEssenceCopies={profile.craftEssences}
             craftEssences={currentMaster.craftEssences}
-            selection={currentSelection}
             supportTemplates={profile.supportTemplates}
             history={profile.history}
             selectedSupport={calculationSupportTemplate}
-            onInputChange={saveCalculationDraft}
-            onCompositionChange={(nextInput, nextSelection) =>
-              saveCalculationDraft(nextInput, nextSelection)
-            }
+            onScenarioChange={saveScenarioDraft}
             onSupportSelect={async (template) => {
+              if (currentScenario.mode !== 'resolved') return;
               if (!template) {
-                await saveCalculationDraft(baseInput, {
-                  ...currentSelection,
-                  support: null,
-                });
+                await saveScenarioDraft({ ...currentScenario, support: null });
                 return;
               }
               const lastUsedAt = new Date().toISOString();
               await updateSupportTemplate(template.templateId, { lastUsedAt });
-              await saveCalculationDraft(baseInput, {
-                ...currentSelection,
+              await saveScenarioDraft({
+                ...currentScenario,
                 support: {
                   sourceTemplateId: template.templateId,
                   composition: structuredClone(template.composition),
@@ -482,10 +457,10 @@ export function App() {
               });
             }}
             onSupportSave={async (mode) => {
-              if (!currentSelection.support) return;
-              if (mode === 'source' && currentSelection.support.sourceTemplateId) {
-                await updateSupportTemplate(currentSelection.support.sourceTemplateId, {
-                  composition: structuredClone(currentSelection.support.composition),
+              if (currentScenario.mode !== 'resolved' || !currentScenario.support) return;
+              if (mode === 'source' && currentScenario.support.sourceTemplateId) {
+                await updateSupportTemplate(currentScenario.support.sourceTemplateId, {
+                  composition: structuredClone(currentScenario.support.composition),
                 });
                 return;
               }
@@ -495,13 +470,13 @@ export function App() {
                 patchSupportTemplate(
                   appendSupportTemplate(current, currentMaster.version, templateId, now),
                   templateId,
-                  { composition: structuredClone(currentSelection.support!.composition) },
+                  { composition: structuredClone(currentScenario.support!.composition) },
                   now,
                 ),
               );
-              await saveCalculationDraft(baseInput, {
-                ...currentSelection,
-                support: { ...currentSelection.support, sourceTemplateId: templateId },
+              await saveScenarioDraft({
+                ...currentScenario,
+                support: { ...currentScenario.support, sourceTemplateId: templateId },
               });
             }}
             onFinalize={finalizeCurrentCalculation}

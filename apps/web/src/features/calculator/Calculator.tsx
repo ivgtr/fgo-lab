@@ -1,16 +1,19 @@
 import { useRef, useState } from 'react';
 import {
   deriveCraftEssenceAtk,
+  deriveNpMultipliers,
+  getPrimaryNoblePhantasm,
+  getPrimaryNpDamage,
   getPrimaryNpPresentation,
   type CraftEssenceMaster,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
+import { applyScenarioNpDamageFunction } from '@fgo-lab/calculation-application';
 import type { ResolvedEffect } from '@fgo-lab/effect-resolver';
 import type {
   AttackerSkillSelection,
   DamageResolutionInput,
-  CalculationEditorState,
   CalculationHistoryEntry,
   CalculationResult as CalculationResultValue,
   CalculationScenario,
@@ -18,7 +21,6 @@ import type {
   ServantBuild,
   SupportTemplate,
 } from '@fgo-lab/schema';
-import { selectCalculationAttacker, setCalculationEffectMode } from './calculation';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
 import {
@@ -38,7 +40,6 @@ import './calculator.css';
 import './calculator-form.css';
 
 export function Calculator({
-  input,
   resolvedInput,
   resolvedEffects,
   effectWarnings,
@@ -48,18 +49,15 @@ export function Calculator({
   builds,
   craftEssenceCopies,
   craftEssences,
-  selection,
   supportTemplates,
   history,
   selectedSupport,
-  onInputChange,
-  onCompositionChange,
+  onScenarioChange,
   onSupportSelect,
   onSupportSave,
   onFinalize,
   onHistorySelect,
 }: {
-  input: DamageResolutionInput;
   resolvedInput: DamageResolutionInput;
   resolvedEffects: readonly ResolvedEffect[];
   effectWarnings: readonly string[];
@@ -69,21 +67,18 @@ export function Calculator({
   builds: Record<string, ServantBuild>;
   craftEssenceCopies: CraftEssenceCopy[];
   craftEssences: CraftEssenceMaster[];
-  selection: CalculationEditorState;
   supportTemplates: SupportTemplate[];
   history: CalculationHistoryEntry[];
   selectedSupport: SupportTemplate | undefined;
-  onInputChange: (input: DamageResolutionInput) => Promise<void>;
-  onCompositionChange: (
-    input: DamageResolutionInput,
-    selection: CalculationEditorState,
-  ) => Promise<void>;
+  onScenarioChange: (scenario: CalculationScenario) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: () => Promise<void>;
   onHistorySelect: (entry: CalculationHistoryEntry) => Promise<void>;
 }) {
-  const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
+  const input = resolvedInput;
+  const resolvedScenario = scenario.mode === 'resolved' ? scenario : null;
+  const mode = resolvedScenario ? 'quick' : 'direct';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const [supportServantDialogOpen, setSupportServantDialogOpen] = useState(false);
   const [attackerDialogOpen, setAttackerDialogOpen] = useState(false);
@@ -91,18 +86,25 @@ export function Calculator({
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const attackerTriggerRef = useRef<HTMLButtonElement>(null);
   const craftEssenceTriggerRef = useRef<HTMLButtonElement>(null);
-  const manualOverrides = new Set(selection.manualOverrides ?? []);
+  const manualOverrides = new Set(Object.keys(resolvedScenario?.explicitOverrides ?? {}));
+  const attackerSource = resolvedScenario?.attacker.source ?? 'master';
+  const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
-  const selectedCraftEssenceCopy = selection.craftEssence?.copyId
-    ? craftEssenceCopies.find((copy) => copy.copyId === selection.craftEssence?.copyId)
+  const selectedCraftEssenceCopy = craftEssenceSelection
+    ? craftEssenceCopies.find(
+        (copy) =>
+          copy.craftEssenceId === craftEssenceSelection.craftEssenceId &&
+          copy.level === craftEssenceSelection.level &&
+          copy.limitBreak === craftEssenceSelection.limitBreak,
+      )
     : undefined;
   const ownEffects = resolvedEffects.filter((effect) => effect.origin !== 'support');
   const supportEffects = resolvedEffects.filter((effect) => effect.origin === 'support');
-  const supportComposition = selection.support?.composition;
+  const supportComposition = resolvedScenario?.support?.composition;
   const supportSources = supportComposition?.sources ?? [];
   const selectedSupportEffectCount = supportComposition?.selectedEffects.length ?? 0;
   const supportModified = Boolean(
@@ -144,87 +146,179 @@ export function Calculator({
     input.fieldTraits.length ? `・フィールド ${input.fieldTraits.map(traitLabel).join('・')}` : ''
   }`;
   const craftEssenceSummary =
-    selectedCraftEssence && selection.craftEssence
-      ? `${selectedCraftEssence.name} Lv.${selection.craftEssence.level}`
+    selectedCraftEssence && craftEssenceSelection
+      ? `${selectedCraftEssence.name} Lv.${craftEssenceSelection.level}`
       : '礼装なし';
   const supportSummary = selectedSupport
     ? `${selectedSupport.name}（${selectedSupportEffectCount}効果）`
     : supportSources.length
       ? `未保存の支援構成（${selectedSupportEffectCount}効果）`
       : '支援なし';
-  function change(patch: Partial<DamageResolutionInput>) {
-    void onInputChange({ ...input, ...patch });
+  function changeManualInput(patch: Partial<DamageResolutionInput>) {
+    if (scenario.mode !== 'manual') return;
+    void onScenarioChange({ ...scenario, manual: { ...scenario.manual, ...patch } });
   }
-  function changeManual(
-    key: NonNullable<CalculationEditorState['manualOverrides']>[number],
-    value: number,
-  ) {
-    void onCompositionChange(
-      { ...input, [key]: value },
-      {
-        ...selection,
-        manualOverrides: [...new Set([...(selection.manualOverrides ?? []), key])],
-      },
-    );
+  function changeFinalValue(key: keyof DamageResolutionInput, value: number) {
+    if (scenario.mode === 'manual') {
+      changeManualInput({ [key]: value });
+      return;
+    }
+    if (!['attackerAtk', 'fouAtk', 'craftEssenceAtk', 'classAttackRate'].includes(key)) return;
+    void onScenarioChange({
+      ...scenario,
+      attacker: key === 'fouAtk' ? { ...scenario.attacker, fouAtk: value } : scenario.attacker,
+      explicitOverrides: { ...scenario.explicitOverrides, [key]: value },
+    });
   }
   function changeAffinitySituation(key: 'classAffinity' | 'attributeAffinity', value: number) {
-    void onCompositionChange(
-      {
-        ...input,
+    if (scenario.mode === 'manual') {
+      changeManualInput({
         [key]: value,
         target:
           key === 'classAffinity'
             ? { ...input.target, classId: `affinity:${String(value)}` }
             : { ...input.target, attribute: 'unknown' },
-      },
-      {
-        ...selection,
-        manualOverrides: (selection.manualOverrides ?? []).filter((candidate) => candidate !== key),
-      },
-    );
-  }
-  function changeAttackerLevel(level: number) {
-    change({
-      attackerLevel: level,
-      attackerAtk: manualOverrides.has('attackerAtk')
-        ? input.attackerAtk
-        : (attacker?.atkByLevel[String(level)] ?? input.attackerAtk),
+      });
+      return;
+    }
+    void onScenarioChange({
+      ...scenario,
+      assumptions: { ...scenario.assumptions, [key]: value },
+      target:
+        key === 'classAffinity'
+          ? { ...scenario.target, classId: `affinity:${String(value)}` }
+          : { ...scenario.target, attribute: 'unknown' },
     });
   }
+  function changeAttackerLevel(level: number) {
+    if (scenario.mode === 'manual') {
+      changeManualInput({
+        attackerLevel: level,
+        attackerAtk: attacker?.atkByLevel[String(level)] ?? input.attackerAtk,
+      });
+      return;
+    }
+    void onScenarioChange({ ...scenario, attacker: { ...scenario.attacker, level } });
+  }
   function resetAutomaticValues() {
-    const saved = selection.attackerSource === 'owned' ? builds[input.attackerId] : undefined;
-    const craftEssence = selection.craftEssence;
-    void onCompositionChange(
-      {
-        ...input,
-        attackerAtk:
-          attacker?.atkByLevel[String(input.attackerLevel)] ??
-          attacker?.atkByLevel['90'] ??
-          input.attackerAtk,
-        fouAtk: saved?.fouAtk ?? 1000,
-        craftEssenceAtk:
-          selectedCraftEssence && craftEssence
-            ? deriveCraftEssenceAtk(
-                selectedCraftEssence,
-                craftEssence.level,
-                craftEssence.limitBreak,
-              )
-            : 0,
-        classAttackRate: resolveClassAttackRate(attacker?.classId ?? 'unknown'),
-        classAffinity: 1,
-        attributeAffinity: 1,
-      },
-      { ...selection, manualOverrides: [] },
-    );
+    if (scenario.mode !== 'manual') return;
+    const saved = builds[input.attackerId];
+    changeManualInput({
+      ...input,
+      attackerAtk:
+        attacker?.atkByLevel[String(input.attackerLevel)] ??
+        attacker?.atkByLevel['90'] ??
+        input.attackerAtk,
+      fouAtk: saved?.fouAtk ?? 1000,
+      craftEssenceAtk:
+        selectedCraftEssence && craftEssenceSelection
+          ? deriveCraftEssenceAtk(
+              selectedCraftEssence,
+              craftEssenceSelection.level,
+              craftEssenceSelection.limitBreak,
+            )
+          : 0,
+      classAttackRate: resolveClassAttackRate(attacker?.classId ?? 'unknown'),
+      classAffinity: 1,
+      attributeAffinity: 1,
+    });
   }
   function changeEffectMode(effectMode: 'resolved' | 'manual') {
-    const next = setCalculationEffectMode(input, selection, effectMode);
-    void onCompositionChange(next.input, next.selection);
+    if (effectMode === 'manual') {
+      void onScenarioChange({ mode: 'manual', manual: input });
+      return;
+    }
+    if (scenario.mode === 'resolved') return;
+    const saved = builds[input.attackerId];
+    const source = saved?.npLevel ? 'owned' : 'master';
+    void onScenarioChange({
+      mode: 'resolved',
+      attacker: {
+        servantId: input.attackerId,
+        source,
+        level: input.attackerLevel,
+        npLevel: input.npLevel,
+        fouAtk: input.fouAtk,
+        stateTraits: input.attackerStateTraits,
+      },
+      overcharge: input.overcharge,
+      target: {
+        classId: input.target.classId,
+        attribute: input.target.attribute,
+        traits: input.target.traits,
+        stateTraits: input.targetStateTraits,
+        rarity: input.targetRarity,
+      },
+      attackerHpPermille: input.attackerHpPermille,
+      fieldTraits: input.fieldTraits,
+      battleState: { battlePointPhase: input.battlePointPhase },
+      assumptions: {
+        classAffinity: input.classAffinity,
+        attributeAffinity: input.attributeAffinity,
+      },
+      craftEssence: null,
+      attackerSkills: (attacker?.skills ?? []).slice(0, 3).map((skill, index) => ({
+        skillId: skill.id,
+        skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
+      })),
+      mysticCode: null,
+      support: null,
+      effectDecisions: {},
+      explicitOverrides: {
+        attackerAtk: input.attackerAtk,
+        fouAtk: input.fouAtk,
+        craftEssenceAtk: input.craftEssenceAtk,
+        classAttackRate: input.classAttackRate,
+      },
+    });
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
-    const next = selectCalculationAttacker(input, selection, candidate, source, saved);
-    void onCompositionChange(next.input, next.selection);
+    const noblePhantasm = getPrimaryNoblePhantasm(candidate);
+    const damage = getPrimaryNpDamage(candidate);
+    if (!noblePhantasm || !damage) return;
+    const level = saved?.level ?? 90;
+    if (scenario.mode === 'manual') {
+      changeManualInput(
+        applyScenarioNpDamageFunction(
+          {
+            ...input,
+            attackerId: candidate.id,
+            attackerLevel: level,
+            attackerAtk:
+              candidate.atkByLevel[String(level)] ??
+              candidate.atkByLevel['90'] ??
+              input.attackerAtk,
+            fouAtk: saved?.fouAtk ?? 1000,
+            npLevel: Math.max(1, saved?.npLevel ?? 1),
+            npMultipliers: deriveNpMultipliers(damage, input.overcharge),
+            damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
+            cardType: noblePhantasm.card,
+            classAttackRate: resolveClassAttackRate(candidate.classId),
+          },
+          damage,
+          candidate.traits,
+        ),
+      );
+    } else {
+      void onScenarioChange({
+        ...scenario,
+        attacker: {
+          servantId: candidate.id,
+          source,
+          level,
+          npLevel: Math.max(1, saved?.npLevel ?? 1),
+          fouAtk: saved?.fouAtk ?? 1000,
+          stateTraits: [],
+        },
+        attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
+          skillId: skill.id,
+          skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
+        })),
+        effectDecisions: {},
+        explicitOverrides: {},
+      });
+    }
     closeAttackerDialog();
   }
   function selectCraftEssence(
@@ -234,80 +328,65 @@ export function Calculator({
   ) {
     const level = copy?.level ?? 1;
     const limitBreak = copy?.limitBreak ?? 0;
-    void onCompositionChange(
-      {
-        ...input,
+    if (scenario.mode === 'manual')
+      changeManualInput({
         craftEssenceId: master.id,
-        craftEssenceAtk: manualOverrides.has('craftEssenceAtk')
-          ? input.craftEssenceAtk
-          : deriveCraftEssenceAtk(master, level, limitBreak),
-      },
-      {
-        ...selection,
-        craftEssence: {
-          source,
-          craftEssenceId: master.id,
-          copyId: copy?.copyId ?? null,
-          level,
-          limitBreak,
-        },
-      },
-    );
+        craftEssenceAtk: deriveCraftEssenceAtk(master, level, limitBreak),
+      });
+    else
+      void onScenarioChange({
+        ...scenario,
+        craftEssence: { craftEssenceId: master.id, level, limitBreak },
+      });
     closeCraftEssenceDialog();
   }
   function changeCraftEssenceState(patch: Partial<{ level: number; limitBreak: number }>) {
-    const current = selection.craftEssence;
-    if (!current || !selectedCraftEssence) return;
+    const current = craftEssenceSelection;
+    if (!current || !selectedCraftEssence || scenario.mode !== 'resolved') return;
     const limitBreak = Math.max(0, Math.min(4, patch.limitBreak ?? current.limitBreak));
     const maximum =
       selectedCraftEssence.maxLevelByLimitBreak[limitBreak] ??
       selectedCraftEssence.maxLevelByLimitBreak[4];
     const level = Math.max(1, Math.min(maximum, patch.level ?? current.level));
-    void onCompositionChange(
-      {
-        ...input,
-        craftEssenceAtk: manualOverrides.has('craftEssenceAtk')
-          ? input.craftEssenceAtk
-          : deriveCraftEssenceAtk(selectedCraftEssence, level, limitBreak),
-      },
-      { ...selection, craftEssence: { ...current, level, limitBreak } },
-    );
+    void onScenarioChange({
+      ...scenario,
+      craftEssence: { ...current, level, limitBreak },
+      explicitOverrides: Object.fromEntries(
+        Object.entries(scenario.explicitOverrides).filter(([key]) => key !== 'craftEssenceAtk'),
+      ),
+    });
   }
   function clearCraftEssence() {
-    void onCompositionChange(
-      {
-        ...input,
-        craftEssenceId: null,
-        craftEssenceAtk: manualOverrides.has('craftEssenceAtk') ? input.craftEssenceAtk : 0,
-      },
-      { ...selection, craftEssence: null },
-    );
+    if (scenario.mode === 'manual') changeManualInput({ craftEssenceId: null, craftEssenceAtk: 0 });
+    else void onScenarioChange({ ...scenario, craftEssence: null });
   }
   function changeAttackerSkill(skillId: string, patch: Pick<AttackerSkillSelection, 'skillLevel'>) {
-    const attackerSkills = (selection.attackerSkills ?? []).map((skill) =>
+    if (!resolvedScenario) return;
+    const attackerSkills = resolvedScenario.attackerSkills.map((skill) =>
       skill.skillId === skillId ? { ...skill, ...patch } : skill,
     );
-    void onCompositionChange(input, { ...selection, attackerSkills });
+    void onScenarioChange({ ...resolvedScenario, attackerSkills });
   }
   function changeEffect(effectKey: string, active: boolean) {
     const effect = resolvedEffects.find((candidate) => candidate.effectKey === effectKey);
-    if (effect?.origin === 'support' && selection.support) {
+    if (!resolvedScenario) return;
+    if (effect?.origin === 'support' && resolvedScenario.support) {
       const ref = {
         sourceInstanceId: effect.sourceInstanceId,
         skillId: effect.skillId,
         effectId: effect.effectId,
       };
-      const current = selection.support.composition.selectedEffects;
+      const current = resolvedScenario.support.composition.selectedEffects;
       const matches = (candidate: typeof ref) =>
         candidate.sourceInstanceId === ref.sourceInstanceId &&
         candidate.skillId === ref.skillId &&
         candidate.effectId === ref.effectId;
-      void onCompositionChange(input, {
-        ...selection,
+      void onScenarioChange({
+        ...resolvedScenario,
         support: {
-          ...selection.support,
+          ...resolvedScenario.support,
           composition: {
-            ...selection.support.composition,
+            ...resolvedScenario.support.composition,
             selectedEffects: active
               ? current.some(matches)
                 ? current
@@ -318,19 +397,20 @@ export function Calculator({
       });
       return;
     }
-    void onCompositionChange(input, {
-      ...selection,
-      effectOverrides: { ...selection.effectOverrides, [effectKey]: active },
+    void onScenarioChange({
+      ...resolvedScenario,
+      effectDecisions: { ...resolvedScenario.effectDecisions, [effectKey]: active },
     });
   }
   function addSupportServant(servant: ServantMaster) {
     const sourceInstanceId = crypto.randomUUID();
     const savedLevels = builds[servant.id]?.skills ?? {};
     const composition = supportComposition ?? { sources: [], selectedEffects: [] };
-    void onCompositionChange(input, {
-      ...selection,
+    if (!resolvedScenario) return;
+    void onScenarioChange({
+      ...resolvedScenario,
       support: {
-        sourceTemplateId: selection.support?.sourceTemplateId ?? null,
+        sourceTemplateId: resolvedScenario.support?.sourceTemplateId ?? null,
         composition: {
           ...composition,
           sources: [
@@ -350,16 +430,16 @@ export function Calculator({
     setSupportServantDialogOpen(false);
   }
   function removeCalculationSupportSource(sourceInstanceId: string) {
-    if (!selection.support) return;
-    void onCompositionChange(input, {
-      ...selection,
+    if (!resolvedScenario?.support) return;
+    void onScenarioChange({
+      ...resolvedScenario,
       support: {
-        ...selection.support,
+        ...resolvedScenario.support,
         composition: {
-          sources: selection.support.composition.sources.filter(
+          sources: resolvedScenario.support.composition.sources.filter(
             (source) => source.sourceInstanceId !== sourceInstanceId,
           ),
-          selectedEffects: selection.support.composition.selectedEffects.filter(
+          selectedEffects: resolvedScenario.support.composition.selectedEffects.filter(
             (effect) => effect.sourceInstanceId !== sourceInstanceId,
           ),
         },
@@ -367,14 +447,14 @@ export function Calculator({
     });
   }
   function changeSupportSkillLevel(sourceInstanceId: string, skillId: string, skillLevel: number) {
-    if (!selection.support) return;
-    void onCompositionChange(input, {
-      ...selection,
+    if (!resolvedScenario?.support) return;
+    void onScenarioChange({
+      ...resolvedScenario,
       support: {
-        ...selection.support,
+        ...resolvedScenario.support,
         composition: {
-          ...selection.support.composition,
-          sources: selection.support.composition.sources.map((source) =>
+          ...resolvedScenario.support.composition,
+          sources: resolvedScenario.support.composition.sources.map((source) =>
             source.sourceInstanceId === sourceInstanceId
               ? {
                   ...source,
@@ -422,7 +502,7 @@ export function Calculator({
               {attackerNp?.card.toUpperCase()}宝具
             </small>
             <small>
-              {selection.attackerSource === 'owned' ? '所持・育成管理の保存値' : '全DBの仮想設定'}
+              {attackerSource === 'owned' ? '所持・育成管理の保存値' : '全DBの仮想設定'}
             </small>
           </p>
           <span className="picker-action">変更</span>
@@ -473,15 +553,11 @@ export function Calculator({
                   type="button"
                   disabled={
                     input.attackerLevel ===
-                    (selection.attackerSource === 'owned'
-                      ? (builds[input.attackerId]?.level ?? 90)
-                      : 90)
+                    (attackerSource === 'owned' ? (builds[input.attackerId]?.level ?? 90) : 90)
                   }
                   onClick={() =>
                     changeAttackerLevel(
-                      selection.attackerSource === 'owned'
-                        ? (builds[input.attackerId]?.level ?? 90)
-                        : 90,
+                      attackerSource === 'owned' ? (builds[input.attackerId]?.level ?? 90) : 90,
                     )
                   }
                 >
@@ -499,20 +575,20 @@ export function Calculator({
                 max="3000"
                 step="10"
                 value={input.fouAtk}
-                onChange={(event) => changeManual('fouAtk', Number(event.target.value))}
+                onChange={(event) => changeFinalValue('fouAtk', Number(event.target.value))}
               />
               <span className="quick-value-presets" aria-label="ATKフォウのクイック選択">
                 <button
                   type="button"
                   disabled={input.fouAtk >= 3000}
-                  onClick={() => changeManual('fouAtk', Math.min(input.fouAtk + 1000, 3000))}
+                  onClick={() => changeFinalValue('fouAtk', Math.min(input.fouAtk + 1000, 3000))}
                 >
                   +1,000
                 </button>
                 <button
                   type="button"
                   disabled={input.fouAtk === 0}
-                  onClick={() => changeManual('fouAtk', 0)}
+                  onClick={() => changeFinalValue('fouAtk', 0)}
                 >
                   リセット
                 </button>
@@ -524,7 +600,15 @@ export function Calculator({
             宝具Lv
             <select
               value={input.npLevel}
-              onChange={(event) => change({ npLevel: Number(event.target.value) })}
+              onChange={(event) => {
+                const npLevel = Number(event.target.value);
+                if (scenario.mode === 'manual') changeManualInput({ npLevel });
+                else
+                  void onScenarioChange({
+                    ...scenario,
+                    attacker: { ...scenario.attacker, npLevel },
+                  });
+              }}
             >
               {[1, 2, 3, 4, 5].map((value) => (
                 <option key={value} value={value}>
@@ -537,7 +621,11 @@ export function Calculator({
             OC
             <select
               value={input.overcharge}
-              onChange={(event) => change({ overcharge: Number(event.target.value) })}
+              onChange={(event) => {
+                const overcharge = Number(event.target.value);
+                if (scenario.mode === 'manual') changeManualInput({ overcharge });
+                else void onScenarioChange({ ...scenario, overcharge });
+              }}
             >
               {[1, 2, 3, 4, 5].map((value) => (
                 <option key={value} value={value}>
@@ -548,7 +636,7 @@ export function Calculator({
           </label>
           <div className="picker-field form-grid-wide">
             <span>概念礼装</span>
-            {selectedCraftEssence && selection.craftEssence ? (
+            {selectedCraftEssence && craftEssenceSelection ? (
               <div className="selected-equipment">
                 <button
                   ref={craftEssenceTriggerRef}
@@ -564,10 +652,8 @@ export function Calculator({
                   <span className="list-row-main">
                     <strong>{selectedCraftEssence.name}</strong>
                     <small>
-                      {selection.craftEssence.source === 'registered'
-                        ? '登録コピー'
-                        : '全DBの仮想設定'}
-                      ・Lv{selection.craftEssence.level}・ATK {input.craftEssenceAtk}
+                      {selectedCraftEssenceCopy ? '登録コピー' : '全DBの仮想設定'}
+                      ・Lv{craftEssenceSelection.level}・ATK {input.craftEssenceAtk}
                     </small>
                   </span>
                   <span className="picker-action">変更</span>
@@ -579,9 +665,9 @@ export function Calculator({
                       type="number"
                       min="1"
                       max={
-                        selectedCraftEssence.maxLevelByLimitBreak[selection.craftEssence.limitBreak]
+                        selectedCraftEssence.maxLevelByLimitBreak[craftEssenceSelection.limitBreak]
                       }
-                      value={selection.craftEssence.level}
+                      value={craftEssenceSelection.level}
                       onChange={(event) =>
                         changeCraftEssenceState({ level: Number(event.target.value) })
                       }
@@ -590,7 +676,7 @@ export function Calculator({
                   <label>
                     限界突破
                     <select
-                      value={selection.craftEssence.limitBreak}
+                      value={craftEssenceSelection.limitBreak}
                       onChange={(event) =>
                         changeCraftEssenceState({ limitBreak: Number(event.target.value) })
                       }
@@ -698,7 +784,7 @@ export function Calculator({
                     max={key === 'fouAtk' ? 3000 : undefined}
                     step="1"
                     value={input[key]}
-                    onChange={(event) => changeManual(key, Number(event.target.value))}
+                    onChange={(event) => changeFinalValue(key, Number(event.target.value))}
                   />
                   <small>{manualOverrides.has(key) ? '直接入力' : '自動'}</small>
                 </label>
@@ -718,7 +804,7 @@ export function Calculator({
                     max="5"
                     step="0.05"
                     value={input[key]}
-                    onChange={(event) => changeManual(key, Number(event.target.value))}
+                    onChange={(event) => changeFinalValue(key, Number(event.target.value))}
                   />
                   <small>{manualOverrides.has(key) ? '直接入力' : '対象から自動計算'}</small>
                 </label>
@@ -743,7 +829,9 @@ export function Calculator({
                     type="number"
                     step="1"
                     value={input[key] * 100}
-                    onChange={(event) => change({ [key]: Number(event.target.value) / 100 })}
+                    onChange={(event) =>
+                      changeManualInput({ [key]: Number(event.target.value) / 100 })
+                    }
                   />
                 </label>
               ))}
@@ -759,7 +847,7 @@ export function Calculator({
                       ...input.npSpecialMultipliers,
                     ] as DamageResolutionInput['npSpecialMultipliers'];
                     multipliers[input.npLevel - 1] = Number(event.target.value) / 100;
-                    change({ npSpecialMultipliers: multipliers });
+                    changeManualInput({ npSpecialMultipliers: multipliers });
                   }}
                 />
               </label>
@@ -769,7 +857,9 @@ export function Calculator({
                   type="number"
                   step="1"
                   value={input.flatDamage}
-                  onChange={(event) => change({ flatDamage: Number(event.target.value) })}
+                  onChange={(event) =>
+                    changeManualInput({ flatDamage: Number(event.target.value) })
+                  }
                 />
               </label>
               <label>
@@ -779,7 +869,7 @@ export function Calculator({
                   min="0"
                   step="1"
                   value={input.damageCut}
-                  onChange={(event) => change({ damageCut: Number(event.target.value) })}
+                  onChange={(event) => changeManualInput({ damageCut: Number(event.target.value) })}
                 />
               </label>
             </>
@@ -787,8 +877,8 @@ export function Calculator({
         </div>
         <AttackerSkills
           attacker={attacker}
-          attackerSource={selection.attackerSource}
-          selectedSkills={selection.attackerSkills ?? []}
+          attackerSource={attackerSource}
+          selectedSkills={resolvedScenario?.attackerSkills ?? []}
           savedBuild={builds[input.attackerId]}
           hidden={mode === 'direct'}
           onChange={changeAttackerSkill}
@@ -940,7 +1030,7 @@ export function Calculator({
         <AttackerPicker
           servants={servants}
           builds={builds}
-          initialSource={selection.attackerSource}
+          initialSource={attackerSource}
           onSelect={selectAttacker}
           onClose={closeAttackerDialog}
         />
@@ -950,7 +1040,11 @@ export function Calculator({
           copies={craftEssenceCopies}
           masters={craftEssences}
           initialSource={
-            selection.craftEssence?.source ?? (craftEssenceCopies.length ? 'registered' : 'master')
+            selectedCraftEssenceCopy
+              ? 'registered'
+              : craftEssenceCopies.length
+                ? 'registered'
+                : 'master'
           }
           onSelect={selectCraftEssence}
           onClose={closeCraftEssenceDialog}
