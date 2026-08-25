@@ -293,6 +293,22 @@ export function resolveEffectSources(
       });
       continue;
     }
+    const unresolvedMetadata =
+      (effect.functionScript && Object.keys(effect.functionScript).length > 0) ||
+      (effect.overwriteTargetValues?.length ?? 0) > 0;
+    if (effectIdentity.damageRelevant && unresolvedMetadata) {
+      precision = 'unsupported';
+      warnings.push(
+        `${item.origin}_effect_metadata_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`,
+      );
+      effects.push({
+        ...effectIdentity,
+        value,
+        state: 'unsupported',
+        reason: 'effect_metadata_not_resolved',
+      });
+      continue;
+    }
     if (npDamageBuffRateEffect) {
       npDamageBuffRate = Math.max(npDamageBuffRate, value);
       effects.push({

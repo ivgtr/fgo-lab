@@ -585,6 +585,31 @@ describe('resolveSupportSourcesForTest', () => {
     });
   });
 
+  it('fails closed instead of ignoring damage effect script semantics', () => {
+    const scripted: ServantMaster = {
+      ...source,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              ...source.skills[0]!.effects[0]!,
+              id: 'scripted-attack',
+              functionScript: { funcIndividuality: [{ id: 3098, name: 'demeritFunction' }] },
+            },
+          ],
+        },
+      ],
+    };
+    const result = resolveSupportSourcesForTest(input, compositionFor(scripted), [scripted]);
+    expect(result).toMatchObject({
+      precision: 'unsupported',
+      input: { attackBuff: input.attackBuff },
+      effects: [{ state: 'unsupported', reason: 'effect_metadata_not_resolved' }],
+      warnings: ['support_effect_metadata_not_resolved:support:skill:scripted-attack'],
+    });
+  });
+
   it('does not misclassify NP gain when damaged as outgoing damage', () => {
     const defensive: ServantMaster = {
       ...source,
