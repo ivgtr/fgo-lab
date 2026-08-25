@@ -148,7 +148,7 @@ type AtlasFunction = {
   funcPopupText?: string;
   functvals?: AtlasTraitRef[];
   funcquestTvals?: AtlasTraitRef[];
-  script?: { funcIndividuality?: AtlasTraitRef[] };
+  script?: Record<string, unknown> & { funcIndividuality?: AtlasTraitRef[] };
   buffs?: AtlasBuff[];
   overWriteTvalsList?: unknown[];
   svals?: AtlasFunctionValue[];
@@ -157,7 +157,7 @@ type AtlasFunction = {
   svals4?: AtlasFunctionValue[];
   svals5?: AtlasFunctionValue[];
 };
-type AtlasFunctionValue = {
+type AtlasFunctionValue = Record<string, unknown> & {
   Rate?: number;
   Value?: number;
   Value2?: number;
@@ -362,7 +362,19 @@ function normalizeFunctions(functions: AtlasFunction[] | undefined) {
             type: fn.funcType ?? 'unknown',
             target: fn.funcTargetType ?? 'unknown',
             label: fn.funcPopupText ?? fn.funcType ?? '効果',
-            values: (fn.svals ?? []).slice(0, 10).map((value) => value.Value ?? value.Rate ?? 0),
+            parameterSets: [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].map(
+              (parameters) => (parameters ?? []).slice(0, 10),
+            ) as [
+              AtlasFunctionValue[],
+              AtlasFunctionValue[],
+              AtlasFunctionValue[],
+              AtlasFunctionValue[],
+              AtlasFunctionValue[],
+            ],
+            ...(fn.script ? { functionScript: fn.script } : {}),
+            ...(fn.overWriteTvalsList
+              ? { overwriteTargetValues: fn.overWriteTvalsList }
+              : {}),
             recipientTraits: (fn.functvals ?? []).flatMap((trait) =>
               trait.name && !trait.negative ? [trait.name] : [],
             ),
@@ -646,10 +658,7 @@ export function normalizeAtlasSnapshot(input: {
           )[occurrence];
           return {
             ...effect,
-            values: [
-              effect.values[0] ?? 0,
-              limitBreakEffect?.values[0] ?? effect.values[0] ?? 0,
-            ] as [number, number],
+            limitBreakParameterSets: limitBreakEffect?.parameterSets ?? effect.parameterSets,
           };
         }),
       },

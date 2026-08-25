@@ -174,7 +174,10 @@ describe('immutable publish pipeline', () => {
       correctionPermille: 1500,
       targetTrait: { id: 2002, name: 'dragon' },
     });
-    expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({ values: [600, 800] });
+    expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({
+      parameterSets: [[{ Value: 600 }], [], [], [], []],
+      limitBreakParameterSets: [[{ Value: 800 }], [], [], [], []],
+    });
   });
 
   it('normalizes card enums and explicit Atlas conditions without label parsing', () => {
@@ -366,7 +369,14 @@ describe('immutable publish pipeline', () => {
                   funcTargetType: 'ptOne',
                   funcPopupText: '攻撃力アップ',
                   buffs: [{ type: 'upAtk' }],
-                  svals: Array.from({ length: 10 }, (_, index) => ({ Value: 300 + index * 20 })),
+                  svals: Array.from({ length: 10 }, (_, index) => ({
+                    Rate: 5000,
+                    Turn: 1,
+                    Value: 300 + index * 20,
+                  })),
+                  svals2: [{ Value: 999, ParamAddMaxCount: 2 }],
+                  script: { funcIndividuality: [], customFlag: 7 },
+                  overWriteTvalsList: [{ id: 4002 }],
                 },
               ],
             },
@@ -390,7 +400,26 @@ describe('immutable publish pipeline', () => {
               expect.objectContaining({
                 id: '150',
                 buffTypes: ['upAtk'],
-                values: [300, 320, 340, 360, 380, 400, 420, 440, 460, 480],
+                parameterSets: [
+                  [
+                    { Rate: 5000, Turn: 1, Value: 300 },
+                    { Rate: 5000, Turn: 1, Value: 320 },
+                    { Rate: 5000, Turn: 1, Value: 340 },
+                    { Rate: 5000, Turn: 1, Value: 360 },
+                    { Rate: 5000, Turn: 1, Value: 380 },
+                    { Rate: 5000, Turn: 1, Value: 400 },
+                    { Rate: 5000, Turn: 1, Value: 420 },
+                    { Rate: 5000, Turn: 1, Value: 440 },
+                    { Rate: 5000, Turn: 1, Value: 460 },
+                    { Rate: 5000, Turn: 1, Value: 480 },
+                  ],
+                  [{ Value: 999, ParamAddMaxCount: 2 }],
+                  [],
+                  [],
+                  [],
+                ],
+                functionScript: { funcIndividuality: [], customFlag: 7 },
+                overwriteTargetValues: [{ id: 4002 }],
               }),
             ],
           }),

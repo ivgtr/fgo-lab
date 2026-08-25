@@ -129,6 +129,20 @@ interface ResolvableEffect {
   forceSoftConditions: boolean;
 }
 
+function numericParameter(
+  effect: MasterEffect,
+  setIndex: number,
+  valueIndex: number,
+  useLimitBreakParameters = false,
+): number | undefined {
+  const sets =
+    useLimitBreakParameters && effect.limitBreakParameterSets
+      ? effect.limitBreakParameterSets
+      : effect.parameterSets;
+  const value = sets[setIndex]?.[valueIndex]?.['Value'];
+  return typeof value === 'number' ? value : undefined;
+}
+
 export interface ResolveEffectOptions {
   effectOverrides?: Readonly<Record<string, boolean>>;
   defaultEnabled?: boolean;
@@ -188,7 +202,7 @@ function resolveEffects(
         kind !== null || Boolean(npDamageBuffRateEffect) || isPotentiallyDamageRelevant(effect),
       calculationSupported: kind !== null || Boolean(npDamageBuffRateEffect),
     };
-    if (rawValue === undefined) {
+    if (rawValue === undefined && effectIdentity.damageRelevant) {
       precision = 'unsupported';
       warnings.push(`${origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`);
       effects.push({
@@ -196,6 +210,15 @@ function resolveEffects(
         value: null,
         applied: false,
         reason: 'level_value_missing',
+      });
+      continue;
+    }
+    if (rawValue === undefined) {
+      effects.push({
+        ...effectIdentity,
+        value: null,
+        applied: false,
+        reason: 'not_np_damage_relevant',
       });
       continue;
     }
@@ -324,7 +347,7 @@ function resolveSkillSelections(
         skillId: skill.id,
         skillName: skill.name,
         effect,
-        rawValue: effect.values[selected.skillLevel - 1],
+        rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
         appliedReason: 'unconditional_attacker_buff',
         defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
         forceSoftConditions:
@@ -395,7 +418,7 @@ export function resolveCraftEssenceEffects(
       skillId: `ce:${craftEssence.id}`,
       skillName: craftEssence.name,
       effect,
-      rawValue: effect.values[limitBreak === 4 ? 1 : 0],
+      rawValue: numericParameter(effect, 0, 0, limitBreak === 4),
       appliedReason: limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
       defaultEnabled: true,
       forceSoftConditions: false,
@@ -440,7 +463,7 @@ export function resolveNpEffects(
         skillId: `np:${servant.id}`,
         skillName: '宝具前効果',
         effect,
-        rawValue: effect.values[baseInput.overcharge - 1],
+        rawValue: numericParameter(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
         appliedReason: 'np_before_damage',
         defaultEnabled: true,
         forceSoftConditions: false,
@@ -585,7 +608,7 @@ export function resolveMysticCodeSkills(
         skillId: skill.id,
         skillName: skill.name,
         effect,
-        rawValue: effect.values[selection.skillLevel - 1],
+        rawValue: numericParameter(effect, 0, selection.skillLevel - 1),
         appliedReason: 'mystic_code_buff',
         defaultEnabled: options.defaultEnabled ?? true,
         forceSoftConditions: false,

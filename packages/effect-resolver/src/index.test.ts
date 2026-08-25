@@ -43,6 +43,26 @@ const input: DamageKernelInput = {
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 };
 
+const parameterSets = (values: readonly number[]): MasterEffect['parameterSets'] => [
+  values.map((Value) => ({ Value })),
+  [],
+  [],
+  [],
+  [],
+];
+const npEffectParameterSets = (
+  values: readonly [
+    readonly number[],
+    readonly number[],
+    readonly number[],
+    readonly number[],
+    readonly number[],
+  ],
+): MasterEffect['parameterSets'] => {
+  const set = (source: readonly number[]) => source.map((Value) => ({ Value }));
+  return [set(values[0]), set(values[1]), set(values[2]), set(values[3]), set(values[4])];
+};
+
 const source: ServantMaster = {
   id: 'support',
   name: '支援役',
@@ -69,7 +89,7 @@ const source: ServantMaster = {
           type: 'addStateShort',
           target: 'ptAll',
           label: '攻撃力アップ',
-          values: [100, 110, 120, 130, 140, 150, 160, 170, 180, 200],
+          parameterSets: parameterSets([100, 110, 120, 130, 140, 150, 160, 170, 180, 200]),
           buffTypes: ['upAtk'],
           cardTypes: [],
         },
@@ -78,7 +98,7 @@ const source: ServantMaster = {
           type: 'addStateShort',
           target: 'ptOne',
           label: 'バスターアップ',
-          values: [300, 320, 340, 360, 380, 400, 420, 440, 460, 500],
+          parameterSets: parameterSets([300, 320, 340, 360, 380, 400, 420, 440, 460, 500]),
           buffTypes: ['upCommandall'],
           cardTypes: ['buster'],
         },
@@ -87,7 +107,7 @@ const source: ServantMaster = {
           type: 'addStateShort',
           target: 'ptAll',
           label: '宝具威力アップ',
-          values: [200, 210, 220, 230, 240, 250, 260, 270, 280, 300],
+          parameterSets: parameterSets([200, 210, 220, 230, 240, 250, 260, 270, 280, 300]),
           buffTypes: ['upNpdamage'],
           cardTypes: [],
         },
@@ -96,7 +116,7 @@ const source: ServantMaster = {
           type: 'gainNp',
           target: 'ptAll',
           label: 'NP増加',
-          values: Array(10).fill(2000) as number[],
+          parameterSets: parameterSets(Array(10).fill(2000)),
           cardTypes: [],
         },
       ],
@@ -181,7 +201,7 @@ describe('resolveSupportComposition', () => {
         type: 'addStateShort',
         target: 'self',
         label: 'Extra Attackアップ',
-        values: Array(10).fill(1000) as number[],
+        parameterSets: parameterSets(Array(10).fill(1000)),
         buffTypes: ['upExtraattack', 'upCommandall'],
         cardTypes: ['buster'],
       }),
@@ -192,7 +212,7 @@ describe('resolveSupportComposition', () => {
         type: 'addStateShort',
         target: 'self',
         label: '対象不明のブースト',
-        values: Array(10).fill(1000) as number[],
+        parameterSets: parameterSets(Array(10).fill(1000)),
         buffTypes: ['buffRate'],
         cardTypes: [],
       }),
@@ -264,7 +284,7 @@ describe('resolveSupportComposition', () => {
               type: 'addStateShort',
               target: 'ptOne',
               label: '宝具威力アップブースト',
-              values: Array(10).fill(1000) as number[],
+              parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['buffRate'],
               buffRateTargets: ['buffNpDamageUp'],
               cardTypes: [],
@@ -274,7 +294,7 @@ describe('resolveSupportComposition', () => {
               type: 'addStateShort',
               target: 'ptOne',
               label: '宝具威力アップブースト',
-              values: Array(10).fill(500) as number[],
+              parameterSets: parameterSets(Array(10).fill(500)),
               buffTypes: ['buffRate'],
               buffRateTargets: ['buffNpDamageUp'],
               cardTypes: [],
@@ -305,7 +325,7 @@ describe('resolveSupportComposition', () => {
               type: 'addStateShort',
               target: 'ptOne',
               label: '対象不明のブースト',
-              values: Array(10).fill(1000) as number[],
+              parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['buffRate'],
               cardTypes: [],
             },
@@ -333,7 +353,7 @@ describe('resolveSupportComposition', () => {
               type: 'addStateShort',
               target: 'ptOne',
               label: '被ダメージ時NP獲得量アップ',
-              values: Array(10).fill(1000) as number[],
+              parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['upDamagedropnp'],
               cardTypes: [],
             },
@@ -342,7 +362,7 @@ describe('resolveSupportComposition', () => {
               type: 'addStateShort',
               target: 'ptOne',
               label: 'Extra Attackアップ',
-              values: Array(10).fill(1000) as number[],
+              parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['upCommandall'],
               cardTypes: [],
             },
@@ -437,6 +457,45 @@ describe('resolveAttackerSkills', () => {
     });
   });
 
+  it('distinguishes an explicit zero from a missing damage value', () => {
+    const attacker: ServantMaster = {
+      ...source,
+      id: input.attackerId,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              ...source.skills[0]!.effects[0]!,
+              id: 'zero',
+              parameterSets: parameterSets(Array(10).fill(0)),
+            },
+            {
+              ...source.skills[0]!.effects[0]!,
+              id: 'missing',
+              parameterSets: [[{ Rate: 5000 }], [], [], [], []],
+            },
+          ],
+        },
+      ],
+    };
+    const resolved = resolveAttackerSkills(
+      input,
+      [{ skillId: 'skill', skillLevel: 1 }],
+      [attacker],
+    );
+    expect(resolved.effects.find((effect) => effect.effectId === 'zero')).toMatchObject({
+      value: 0,
+      applied: true,
+    });
+    expect(resolved.effects.find((effect) => effect.effectId === 'missing')).toMatchObject({
+      value: null,
+      applied: false,
+      reason: 'level_value_missing',
+    });
+    expect(resolved.precision).toBe('unsupported');
+  });
+
   it('applies a recipient-limited buff only when the attacker has the trait', () => {
     const conditional: ServantMaster = {
       ...attacker,
@@ -450,7 +509,7 @@ describe('resolveAttackerSkills', () => {
               type: 'addStateShort',
               target: 'ptAll',
               label: '攻撃力アップ',
-              values: Array(10).fill(200) as number[],
+              parameterSets: parameterSets(Array(10).fill(200)),
               recipientTraits: ['knightsOfTheRound'],
               buffTypes: ['upAtk'],
               cardTypes: [],
@@ -513,7 +572,8 @@ describe('automatic equipment, passive, and NP effects', () => {
           type: 'addStateShort',
           target: 'self',
           label: '宝具威力アップ',
-          values: [600, 800],
+          parameterSets: parameterSets([600]),
+          limitBreakParameterSets: parameterSets([800]),
           buffTypes: ['upNpdamage'],
           cardTypes: [],
         },
@@ -541,7 +601,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               type: 'addStateShort',
               target: 'self',
               label: 'バスターアップ',
-              values: Array(10).fill(80) as number[],
+              parameterSets: parameterSets(Array(10).fill(80)),
               buffTypes: ['upCommandall'],
               cardTypes: ['buster'],
             },
@@ -570,7 +630,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               type: 'addStateShort',
               target: 'self',
               label: 'アタックプラス',
-              values: [175],
+              parameterSets: parameterSets([175]),
               buffTypes: ['addDamage'],
               cardTypes: [],
             },
@@ -596,7 +656,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               type: 'addStateShort',
               target: 'ptAll',
               label: '攻撃力アップ',
-              values: Array(10).fill(200) as number[],
+              parameterSets: parameterSets(Array(10).fill(200)),
               requiredFieldTraits: ['fieldDarkness'],
               buffTypes: ['upAtk'],
               cardTypes: [],
@@ -615,7 +675,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     ).toBeCloseTo(0.3);
   });
 
-  it('uses OC for a damage-relevant effect before the NP function', () => {
+  it('uses OC and NP level for a damage-relevant effect before the NP function', () => {
     const attacker: ServantMaster = {
       ...source,
       id: input.attackerId,
@@ -625,14 +685,22 @@ describe('automatic equipment, passive, and NP effects', () => {
           type: 'addStateShort',
           target: 'self',
           label: '攻撃力アップ',
-          values: [100, 200, 300, 400, 500],
+          parameterSets: npEffectParameterSets([
+            [100, 110, 120, 130, 140],
+            [200, 210, 220, 230, 240],
+            [300, 350, 400, 450, 500],
+            [400, 410, 420, 430, 440],
+            [500, 510, 520, 530, 540],
+          ]),
           timing: 'beforeDamage',
           buffTypes: ['upAtk'],
           cardTypes: [],
         },
       ]),
     };
-    expect(resolveNpEffects({ ...input, overcharge: 3 }, attacker).input.attackBuff).toBe(0.4);
+    expect(
+      resolveNpEffects({ ...input, overcharge: 3, npLevel: 2 }, attacker).input.attackBuff,
+    ).toBeCloseTo(0.45);
   });
 
   it('applies a special NP multiplier only to a matching enemy trait', () => {
@@ -694,7 +762,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               type: 'addStateShort',
               target: 'self',
               label: '威力アップ・対竜',
-              values: Array(10).fill(500) as number[],
+              parameterSets: parameterSets(Array(10).fill(500)),
               targetCondition: { anyOf: ['dragon'], noneOf: [] },
               buffTypes: ['upDamage'],
               cardTypes: [],
@@ -738,7 +806,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               type: 'addStateShort',
               target: 'self',
               label: '威力アップ・対非超巨大',
-              values: Array(10).fill(500) as number[],
+              parameterSets: parameterSets(Array(10).fill(500)),
               targetCondition: { anyOf: [], noneOf: ['superGiant'] },
               buffTypes: ['upDamage'],
               cardTypes: [],

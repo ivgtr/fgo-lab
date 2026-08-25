@@ -30,12 +30,23 @@ export const traitConditionSchema = z.object({
 });
 export type TraitCondition = z.infer<typeof traitConditionSchema>;
 
+const effectParameterSchema = z.record(z.string(), z.json());
+const effectParameterSetsSchema = z.tuple([
+  z.array(effectParameterSchema).max(10),
+  z.array(effectParameterSchema).max(10),
+  z.array(effectParameterSchema).max(10),
+  z.array(effectParameterSchema).max(10),
+  z.array(effectParameterSchema).max(10),
+]);
 const masterEffectSchema = z.object({
   id: z.string(),
   type: z.string(),
   target: z.string(),
   label: z.string(),
-  values: z.array(z.number()).max(10),
+  parameterSets: effectParameterSetsSchema,
+  limitBreakParameterSets: effectParameterSetsSchema.optional(),
+  functionScript: z.record(z.string(), z.json()).optional(),
+  overwriteTargetValues: z.array(z.json()).optional(),
   recipientTraits: z.array(z.string()).optional(),
   targetCondition: traitConditionSchema.optional(),
   requiredFieldTraits: z.array(z.string()).optional(),
@@ -273,13 +284,7 @@ export const craftEssenceMasterSchema = z.object({
   atkMin: z.number().int().nonnegative(),
   atkMax: z.number().int().nonnegative(),
   imageKey: z.string().nullable(),
-  effects: z
-    .array(
-      masterEffectSchema.omit({ values: true }).extend({
-        values: z.tuple([z.number(), z.number()]),
-      }),
-    )
-    .default([]),
+  effects: z.array(masterEffectSchema).default([]),
 });
 export type CraftEssenceMaster = z.infer<typeof craftEssenceMasterSchema>;
 export const materialMasterSchema = z.object({
