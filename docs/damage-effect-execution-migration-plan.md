@@ -247,7 +247,7 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 ### E3.3：world factとeffect-local conditionの統合制約検証
 
-状態: 実装中
+状態: 完了（2026-08-26）
 
 目的:
 
@@ -272,6 +272,18 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 - unknownとexplicit negativeが区別される。
 - production交差監査で矛盾正常計算が0件である。
 - UI入力体験、OR操作、共有・復元、支援操作を維持する。
+
+完了記録（2026-08-26）:
+
+- engine 11.0.0でworld fact、master/input fact、選択済みeffect condition、commit済みcontext mutation、quantityを一つのbounded exact solverへ統合した。未指定traitはunknown、明示的negativeだけをfalseとして扱う。
+- AND／OR／NOTはmaster IRのまま候補へ展開し、canonical排他、trait polarity、integer quantity rangeを横断検証する。候補2,048件または128 literalを超える式は近似せずtyped unsupportedとする。
+- context mutationはcandidate stateへ適用後に全制約を再検証し、成功時のみcommitするtransactionへ置換した。失敗したmutationと競合operationは`applied`にならず、最終inputは検証済みstateだけから生成する。
+- webから`battle-execution`のruntime importを削除し、支援表示、効果分類、projection commandを`calculation-application`へ集約した。
+- production 469騎、攻撃宝具420 scenarioを監査した。canonical factとeffect conditionの競合候補は221組、57効果、50騎で、競合中の正常計算、競合operationの適用、矛盾traitの最終input残存はいずれも0件だった。
+- user decisionの排他組は7組、world fact projectionの排他組は1組、現行UI projection間のworld fact × effect-local競合は0組だった。multi-branch ORは16騎19効果の操作性を維持した。
+- Danteは対天／対地単独で`powerMod 0.5`、NP1平均`45629.59`。world Sky／Heavenと対地decision、world Earth／Hellと対天decision、対天／対地同時decisionはすべてfail-closedとなり、競合解除後は正常計算へ復帰する。
+- crafted shareの矛盾scenarioはschema通過後のexecutor検証でunsupportedとなり、保存済みのcalculated結果を受理しない。
+- PC、390px、320px、mobile ChromiumでDante、Indra、条件付き支援、共有・復元を実操作した。全Playwrightは35成功、21 project-specific skip、0失敗。E4には着手していない。
 
 ### E4：ランキング統合と全master収束
 

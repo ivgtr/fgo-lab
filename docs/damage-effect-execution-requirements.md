@@ -157,14 +157,11 @@ UIは自由形式のreason文字列から操作可否や表示可否を推測し
 
 ## 6. 非対象
 
-- ChaldeaのコードまたはAGPL-3.0実装の複製・翻案
 - 完全な戦闘シミュレーター
 - ターン進行、Wave、敵HP、撃破、NP回収、スター、通常攻撃
 - 最大火力になるスキル順の自動探索
 - R1で利用者が任意の行動順を編集する機能
 - 旧engineを残して旧結果を再現する互換モード
-
-Chaldeaは、戦闘状態へFunctionを順序付きで適用する設計の比較先としてのみ利用する。FGO Labの実装はAtlasデータとFGO Labの要件から独立して設計する。
 
 ## 7. データと版
 
@@ -292,14 +289,6 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 - [x] 単発計算とランキングが同じapplication facadeを使う。
 - [x] schema、master、engineの版変更とデータ影響が記録されている。
 
-## 10. 設計上の比較根拠
+## 10. 設計根拠の追跡
 
-2026-08-25時点のChaldea `0411ef595144a208ab932682978755a1dcba5667`を比較対象とした。
-
-- [`function_executor.dart`](https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/function_executor.dart): Functionを順序付きで戦闘状態へ適用する責務
-- [`battle.dart`](https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/models/battle.dart): actor、field、quest状態の所有
-- [`buff.dart`](https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/models/buff.dart): バフ条件の共通評価
-- [`damage.dart`](https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart): 実行済み状態からのダメージ評価
-- [`td_damage/model.dart`](https://github.com/chaldea-center/chaldea/blob/main/lib/app/modules/battle/td_damage/model.dart): 共通battle engineの再利用と、上位層に残る個別順序・ID分岐
-
-FGO Labは、順序付き状態実行と共通条件評価という境界だけを設計比較に用いる。完全battle simulatorと個別ID分岐は採用しない。ChaldeaはAGPL-3.0であるため、コードの複製・翻案を行わない。
+計算仕様はAtlas Academyの構造化データとfgo-docs、正規化manifest、golden／property test、production master監査を根拠として追跡する。外部実装の挙動は計算根拠や正解データとして扱わない。
