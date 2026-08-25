@@ -202,11 +202,12 @@ calculation-application <- web / ranking worker
 - `damageNpIndividualSum`が攻撃者・対象の恒常特性と状態特性を数えるようscenarioを拡張し、状態スタックを明示入力へ含めた。
 - `damageNpBattlePointPhase`の最大phaseをmaster schema 6へ正規化し、入力phaseをサーヴァント固有上限へclampする。
 - 9種Functionを覆う10件の実データgolden行列を追加した。
+- evidence inventoryをCIとPages deployの必須ゲートにし、registry、case ID、validated根拠、公開master artifactを検査する。
 
 残作業:
 
 - 特殊Function 8種について実行可能なChaldea differentialを追加し、証拠が揃ったsubjectだけvalidatedへ昇格する。標準FunctionのAppMedia端点比較は完了した。
-- evidence inventoryと公開ゲートを確定する。
+- 特殊8種のChaldea実行differential完了後にQ4最終ゲートを判定する。
 
 作業:
 

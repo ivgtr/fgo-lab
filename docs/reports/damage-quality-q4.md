@@ -158,3 +158,23 @@ Q4は継続する。次のゲートはFunction別golden／differentialであり�
 - `pnpm validate:master`: 2 files / 13 tests passed、artifact validation success
 
 次の優先事項は、特殊8種goldenをChaldea実行結果とのdifferentialへ引き上げること、およびevidence inventoryを公開ゲートとして固定することである。
+
+## 実装チェックポイント 5: evidence inventory公開ゲート
+
+- Commit: `8191084 test(calc): enforce evidence inventory gate`
+- registryの必須20 subjectが過不足なく存在することを検査する。
+- registryが参照する全golden case ID・differential case IDが版付きfixtureに存在することを検査する。
+- validated subjectは一次・外部sourceと、少なくとも一件のgoldenまたはdifferentialを必須とする。
+- master normalization goldenを追加し、公開manifestのschema、bytes、SHA-256、master version、収録件数、Function別件数へ実artifactを照合する。
+- `pnpm validate:evidence`をCIと手動Pages deployの必須stepへ追加した。環境flagによる公開判定は復活させない。
+
+最新検証結果:
+
+- `pnpm test`: 22 files / 130 tests passed
+- `pnpm validate:evidence`: 2 files / 10 tests passed
+- `pnpm typecheck`: success
+- `pnpm lint`: success
+- `pnpm build`: success
+- `pnpm validate:master`: artifact validation success
+
+Q4の主要未完は特殊8種の実行可能なChaldea differentialである。ローカル環境にDart/FlutterおよびChaldea checkoutは存在しないため、現時点ではsource分岐照合を実行結果照合と呼ばず、該当evidenceをprovisionalに維持する。
