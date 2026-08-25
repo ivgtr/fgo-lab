@@ -145,7 +145,7 @@ export function isDamageRelevantEffect(effect: MasterEffect): boolean {
   );
 }
 
-interface ResolvableEffect {
+export interface EffectSource {
   order: number;
   origin: ResolvedEffect['origin'];
   sourceInstanceId: string;
@@ -179,15 +179,13 @@ export interface ResolveEffectOptions {
   defaultEnabled?: boolean;
 }
 
-function effectKey(
-  item: Pick<ResolvableEffect, 'origin' | 'sourceInstanceId' | 'skillId' | 'effect'>,
-) {
+function effectKey(item: Pick<EffectSource, 'origin' | 'sourceInstanceId' | 'skillId' | 'effect'>) {
   return `${item.origin}:${item.sourceInstanceId}:${item.skillId}:${item.effect.id}`;
 }
 
-function resolveEffects(
+export function resolveEffectSources(
   baseInput: DamageResolutionInput,
-  items: readonly ResolvableEffect[],
+  items: readonly EffectSource[],
   options: ResolveEffectOptions = {},
 ): EffectResolution {
   const effects: ResolvedEffect[] = [];
@@ -339,7 +337,7 @@ function resolveEffects(
     });
   }
 
-  const input = effects.reduce(
+  const aggregatedInput = effects.reduce(
     (aggregated, effect) => {
       if (!effect.applied || !effect.kind || effect.reason === 'np_damage_buff_rate')
         return aggregated;
@@ -349,6 +347,13 @@ function resolveEffects(
     },
     { ...baseInput },
   );
+  const input =
+    npDamageBuffRate > 0
+      ? {
+          ...aggregatedInput,
+          npDamageBuff: aggregatedInput.npDamageBuff * (1 + npDamageBuffRate),
+        }
+      : aggregatedInput;
   return { input, effects, npDamageBuffRate, precision, warnings };
 }
 
@@ -357,11 +362,11 @@ function collectSkillSelections(
   selectedSkills: readonly SkillSelection[],
   servants: readonly ServantMaster[],
   origin: ResolvedEffect['origin'],
-): { items: ResolvableEffect[]; warnings: string[] } {
+): { items: EffectSource[]; warnings: string[] } {
   const warnings: string[] = [];
   const servantById = new Map(servants.map((servant) => [servant.id, servant]));
   const recipientTraits = servantById.get(baseInput.attackerId)?.traits ?? [];
-  const items: ResolvableEffect[] = [];
+  const items: EffectSource[] = [];
 
   for (const selected of [...selectedSkills].sort((a, b) => a.order - b.order)) {
     const source = servantById.get(selected.sourceId);
@@ -401,7 +406,7 @@ function resolveSkillSelections(
   options: ResolveEffectOptions = {},
 ): EffectResolution {
   const collected = collectSkillSelections(baseInput, selectedSkills, servants, origin);
-  const resolved = resolveEffects(baseInput, collected.items, options);
+  const resolved = resolveEffectSources(baseInput, collected.items, options);
   return {
     ...resolved,
     precision: collected.warnings.length > 0 ? 'unsupported' : resolved.precision,
@@ -453,7 +458,7 @@ export function resolveCraftEssenceEffects(
       precision: 'exact',
       warnings: [],
     };
-  return resolveEffects(
+  return resolveEffectSources(
     baseInput,
     craftEssence.effects.map((effect) => ({
       order: craftEssence.effects.indexOf(effect),
@@ -495,7 +500,7 @@ export function resolveNpEffects(
       precision: 'unsupported',
       warnings: ['np_source_missing'],
     };
-  return resolveEffects(
+  return resolveEffectSources(
     baseInput,
     noblePhantasm.effects
       .filter((effect) => effect.timing === 'beforeDamage')
@@ -586,7 +591,7 @@ export function resolveMysticCodeSkills(
       warnings: ['mysticCode_source_missing'],
     };
   const warnings: string[] = [];
-  const items: ResolvableEffect[] = [];
+  const items: EffectSource[] = [];
   for (const selection of selections) {
     const skill = mysticCode.skills.find((candidate) => candidate.id === selection.skillId);
     if (!skill) {
@@ -609,7 +614,7 @@ export function resolveMysticCodeSkills(
         recipientTraits,
       });
   }
-  const resolved = resolveEffects(baseInput, items, options);
+  const resolved = resolveEffectSources(baseInput, items, options);
   return {
     ...resolved,
     precision: warnings.length > 0 ? 'unsupported' : resolved.precision,
@@ -628,9 +633,9 @@ export function resolveScenarioEffects(
 ): ScenarioEffectResolution {
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
   const recipientTraits = attacker?.traits ?? [];
-  const items: ResolvableEffect[] = [];
+  const items: EffectSource[] = [];
   const warnings: string[] = [];
-  const append = (collected: { items: ResolvableEffect[]; warnings: string[] }) => {
+  const append = (collected: { items: EffectSource[]; warnings: string[] }) => {
     warnings.push(...collected.warnings);
     items.push(...collected.items);
   };
@@ -776,24 +781,17 @@ export function resolveScenarioEffects(
       );
   }
   const orderedItems = items.map((item, order) => ({ ...item, order }));
-  const resolved = resolveEffects(baseInput, orderedItems, {
+  const resolved = resolveEffectSources(baseInput, orderedItems, {
     effectOverrides: selection.effectOverrides ?? {},
   });
   warnings.push(...resolved.warnings);
-  const npDamageBuffRate = resolved.npDamageBuffRate;
   return {
-    input:
-      npDamageBuffRate > 0
-        ? {
-            ...resolved.input,
-            npDamageBuff: resolved.input.npDamageBuff * (1 + npDamageBuffRate),
-          }
-        : resolved.input,
+    input: resolved.input,
     precision:
       warnings.length > 0 || resolved.precision === 'unsupported' ? 'unsupported' : 'exact',
     warnings,
     effects: resolved.effects,
-    npDamageBuffRate,
+    npDamageBuffRate: resolved.npDamageBuffRate,
     trace: resolved.effects.map((effect) => ({
       step: `${effect.origin}-effect`,
       detail: `${effect.order}:${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
