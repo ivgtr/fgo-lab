@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { VersionContext } from '@fgo-lab/schema';
-import type { RankingCandidate, RankingResponse } from './ranking.worker';
+import type { RankingCandidate, RankingResponse } from './rankingCalculation';
 
-export function useRanking(
-  candidates: RankingCandidate[],
-  versions: VersionContext,
-  releaseValidated: boolean,
-) {
-  const fingerprint = JSON.stringify({ candidates, versions, releaseValidated });
+export function useRanking(candidates: RankingCandidate[], versions: VersionContext) {
+  const fingerprint = JSON.stringify({ candidates, versions });
   const [state, setState] = useState<RankingResponse & { fingerprint: string }>({
     requestId: '',
     rows: [],
@@ -20,7 +16,6 @@ export function useRanking(
     const payload = JSON.parse(fingerprint) as {
       candidates: RankingCandidate[];
       versions: VersionContext;
-      releaseValidated: boolean;
     };
     worker.onmessage = (event: MessageEvent<RankingResponse>) => {
       if (event.data.requestId === requestId) {

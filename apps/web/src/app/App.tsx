@@ -63,7 +63,6 @@ const nav: readonly [Page, ReturnType<typeof t>][] = [
   ['data', t('nav.data')],
 ];
 const repository = new IndexedDbProfileRepository();
-const ENGINE_RELEASE_VALIDATED = import.meta.env['VITE_ENGINE_RELEASE_VALIDATED'] === 'true';
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
 
@@ -232,7 +231,6 @@ export function App() {
     currentSelection,
     currentMaster,
     versions,
-    { releaseValidated: ENGINE_RELEASE_VALIDATED },
   );
   const input = resolvedCalculation.input;
   const compatibleSharedSnapshot =
@@ -340,9 +338,7 @@ export function App() {
   ) {
     const scenario = scenarioFromDamageResolutionInput(nextInput, selection);
     setCalculation({ scenario, shared: undefined });
-    const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions, {
-      releaseValidated: ENGINE_RELEASE_VALIDATED,
-    });
+    const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions);
     const fingerprint = await scenarioFingerprint(
       scenario,
       currentMaster.version,
@@ -570,7 +566,8 @@ export function App() {
                   servantId: candidate.id,
                   name: candidate.name,
                   input: resolved.input,
-                  resolutionPrecision: resolved.precision,
+                  resolutionUnsupported: resolved.precision === 'unsupported',
+                  resolutionEvidenceKeys: resolved.evidenceKeys,
                   resolutionWarnings: resolved.warnings,
                   classId: candidate.classId,
                   rarity: candidate.rarity,
@@ -580,7 +577,6 @@ export function App() {
                 };
               })}
             versions={versions}
-            releaseValidated={ENGINE_RELEASE_VALIDATED}
             supportTemplates={profile.supportTemplates}
             servants={currentMaster.servants}
             selectedSupport={rankingSupport}

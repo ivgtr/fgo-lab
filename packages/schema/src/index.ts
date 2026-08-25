@@ -7,7 +7,7 @@ export const APP_VERSION = '0.1.0' as const;
 export const versionContextSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   masterDataVersion: z.string().min(1).max(100),
-  engineVersion: z.string().min(1).max(50),
+  engineVersion: z.literal(ENGINE_VERSION),
   appVersion: z.string().min(1).max(50),
   gameRegion: z.literal('JP'),
   masterDataLocale: z.literal('ja-JP'),

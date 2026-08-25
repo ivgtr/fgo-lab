@@ -51,9 +51,7 @@ describe('calculation application logic', () => {
   it('creates and resolves a calculation without browser or React state', () => {
     const input = createDefaultDamageResolutionInput(master, undefined);
     const selection = completeCalculationEditorState(undefined, master.servants[0], undefined);
-    const calculation = calculateResolvedDamage(input, selection, master, versions, {
-      releaseValidated: true,
-    });
+    const calculation = calculateResolvedDamage(input, selection, master, versions);
     expect(calculation.input.attackerId).toBe('fixture-saber');
     expect(calculation.result.rows).toHaveLength(5);
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
@@ -187,7 +185,6 @@ describe('calculation application logic', () => {
       },
       combinationMaster,
       { ...versions, masterDataVersion: combinationMaster.version },
-      { releaseValidated: true },
     );
     expect(calculation.input).toMatchObject(effectSourcesGolden.expectedModifiers);
     expect(calculation.effects.map((effect) => effect.origin)).toEqual(
@@ -271,7 +268,6 @@ describe('calculation application logic', () => {
       { attackerSource: 'master', effectMode: 'manual', craftEssence: null },
       master,
       versions,
-      { releaseValidated: true },
     );
     expect(calculation.input).toEqual(input);
     expect(calculation.effects).toEqual([]);
@@ -317,7 +313,6 @@ describe('calculation application logic', () => {
       { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
       specialMaster,
       { ...versions, masterDataVersion: specialMaster.version },
-      { releaseValidated: true },
     );
 
     expect(calculation.input.npSpecialMultipliers).toEqual([1.5, 2, 2.25, 2.375, 2.5]);
@@ -353,9 +348,7 @@ describe('calculation application logic', () => {
     const unresolvedInput = createDefaultDamageResolutionInput(hpMaster, undefined);
     const selection = completeCalculationEditorState(undefined, hpMaster.servants[0], undefined);
     expect(
-      calculateResolvedDamage(unresolvedInput, selection, hpMaster, versions, {
-        releaseValidated: true,
-      }).result,
+      calculateResolvedDamage(unresolvedInput, selection, hpMaster, versions).result,
     ).toMatchObject({
       status: 'unsupported',
       rows: [],
@@ -367,7 +360,6 @@ describe('calculation application logic', () => {
       selection,
       hpMaster,
       versions,
-      { releaseValidated: true },
     );
     expect(resolved.input).toMatchObject({
       damageFunction: { status: 'resolved', kind: 'hpRatioLow' },
@@ -455,7 +447,6 @@ describe('calculation application logic', () => {
       },
       boostMaster,
       { ...versions, masterDataVersion: boostMaster.version },
-      { releaseValidated: true },
     );
 
     expect(calculation.input.npDamageBuff).toBeCloseTo(0.6);
@@ -481,7 +472,6 @@ describe('calculation application logic', () => {
       },
       boostMaster,
       { ...versions, masterDataVersion: boostMaster.version },
-      { releaseValidated: true },
     );
     expect(unsupported.result).toMatchObject({
       status: 'unsupported',
@@ -507,7 +497,6 @@ describe('calculation application logic', () => {
       },
       master,
       versions,
-      { releaseValidated: true },
     );
     expect(calculation.result).toMatchObject({
       status: 'unsupported',
@@ -516,21 +505,22 @@ describe('calculation application logic', () => {
     });
   });
 
-  it('marks every non-release calculation through the same result path', () => {
+  it('records every source of precision in the result evidence', () => {
     const input = createDefaultDamageResolutionInput(master, undefined);
     const calculation = calculateResolvedDamage(
       input,
       completeCalculationEditorState(undefined, master.servants[0], undefined),
       master,
       versions,
-      { releaseValidated: false },
     );
 
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
     expect(calculation.result.precision).toBe('approximate');
-    expect(calculation.result.issues.map((issue) => issue.code)).toContain(
-      'diagnostic_fixture_not_release_validated',
-    );
+    expect(calculation.result.evidence.map((entry) => entry.key)).toEqual([
+      'kernel:np-damage-v1',
+      'np-function:standard',
+      'master:normalized-v5',
+    ]);
   });
 
   it('changes every attacker-owned damage input in one state transition', () => {

@@ -4,13 +4,12 @@ import type { SupportTemplate, VersionContext } from '@fgo-lab/schema';
 import { numberFormatter } from '../../ui/i18n';
 import { SupportTemplatePicker } from '../calculator/CalculatorPickers';
 import { useRanking } from './useRanking';
-import type { RankingCandidate } from './ranking.worker';
+import type { RankingCandidate } from './rankingCalculation';
 import './ranking.css';
 
 export function Ranking({
   candidates,
   versions,
-  releaseValidated,
   supportTemplates,
   servants,
   selectedSupport,
@@ -18,13 +17,12 @@ export function Ranking({
 }: {
   candidates: RankingCandidate[];
   versions: VersionContext;
-  releaseValidated: boolean;
   supportTemplates: SupportTemplate[];
   servants: ServantMaster[];
   selectedSupport: SupportTemplate | undefined;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
 }) {
-  const ranking = useRanking(candidates, versions, releaseValidated);
+  const ranking = useRanking(candidates, versions);
   const [classId, setClassId] = useState('any');
   const [card, setCard] = useState('any');
   const [target, setTarget] = useState('any');

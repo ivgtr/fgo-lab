@@ -17,6 +17,7 @@ import { applyNpDamageHandler } from './npDamageHandler';
 export interface ResolvedCalculationInput {
   input: DamageResolutionInput;
   precision: EffectResolution['precision'];
+  evidenceKeys: string[];
   warnings: string[];
   trace: { step: string; detail: string }[];
   effects: ResolvedEffect[];
@@ -53,6 +54,7 @@ export function resolveCalculationInput(
     return {
       input: baseInput,
       precision: 'exact',
+      evidenceKeys: ['input:manual-final-modifiers'],
       warnings: [],
       trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
       effects: [],
@@ -64,9 +66,15 @@ export function resolveCalculationInput(
       ? applyScenarioNpDamageFunction(baseInput, damage, attacker.traits)
       : baseInput;
   const resolved = resolveScenarioEffects(damageInput, selection, master);
+  const effectEvidenceKeys = resolved.effects.flatMap((effect) => {
+    if (effect.state !== 'applied') return [];
+    if (effect.reason === 'np_damage_buff_rate') return ['effect-operation:npDamageBuffRate'];
+    return effect.kind ? [`effect-operation:${effect.kind}`] : [];
+  });
   return {
     input: resolved.input,
     precision: resolved.precision,
+    evidenceKeys: ['master:normalized-v5', ...effectEvidenceKeys],
     warnings: resolved.warnings,
     effects: resolved.effects,
     trace: resolved.trace,
@@ -78,21 +86,12 @@ export function calculateResolvedDamage(
   selection: CalculationEditorState,
   master: MasterDataSnapshot,
   versions: VersionContext,
-  options: { releaseValidated: boolean },
 ) {
   const resolved = resolveCalculationInput(baseInput, selection, master);
   const calculation = calculateDamageResolution(resolved.input, versions);
-  const effectEvidenceKeys = resolved.effects.flatMap((effect) => {
-    if (effect.state !== 'applied') return [];
-    if (effect.reason === 'np_damage_buff_rate') return ['effect-operation:npDamageBuffRate'];
-    return effect.kind ? [`effect-operation:${effect.kind}`] : [];
-  });
   const evidence = evaluateCalculationEvidence([
     ...calculation.evidence.map((entry) => entry.key),
-    ...(selection.effectMode === 'manual'
-      ? ['input:manual-final-modifiers']
-      : ['master:normalized-v5']),
-    ...effectEvidenceKeys,
+    ...resolved.evidenceKeys,
   ]);
   const effects = resolved.effects.map((effect) => ({
     effectKey: effect.effectKey,
@@ -129,18 +128,6 @@ export function calculateResolvedDamage(
       evidence: evidence.evidence,
       issues: [...calculation.issues, ...resolutionIssues],
       trace: [...calculation.trace, ...resolved.trace],
-    };
-  if (!options.releaseValidated && result.status === 'calculated')
-    result = {
-      ...result,
-      precision: 'approximate',
-      issues: [
-        ...result.issues,
-        {
-          code: 'diagnostic_fixture_not_release_validated',
-          detail: 'diagnostic_fixture_not_release_validated',
-        },
-      ],
     };
   return {
     input: resolved.input,

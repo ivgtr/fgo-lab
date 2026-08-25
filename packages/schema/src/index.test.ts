@@ -5,6 +5,7 @@ import {
   calculationResultSchema,
   calculationScenarioSchema,
   damageResolutionInputSchema,
+  ENGINE_VERSION,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
   supportTemplateSchema,
@@ -52,13 +53,58 @@ describe('portable schema boundaries', () => {
       versions: {
         schemaVersion: SCHEMA_VERSION,
         masterDataVersion: 'fixture',
-        engineVersion: '2.0.0',
+        engineVersion: ENGINE_VERSION,
         appVersion: '0.1.0',
         gameRegion: 'JP',
         masterDataLocale: 'ja-JP',
       },
     };
     expect(calculationResultSchema.safeParse(unsupported).success).toBe(false);
+  });
+
+  it('rejects calculation results from old schema and engine versions', () => {
+    const currentResult = {
+      status: 'unsupported',
+      rows: [],
+      effects: [],
+      assumptions: [],
+      issues: [],
+      trace: [],
+      evidence: [
+        {
+          key: 'kernel:np-damage-v1',
+          subject: 'fixture',
+          status: 'validated',
+          sources: [],
+          goldenCaseIds: [],
+          differentialCaseIds: [],
+          reviewedAt: '2026-08-25',
+          engineVersion: ENGINE_VERSION,
+        },
+      ],
+      missingEvidence: ['fixture'],
+      versions: {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: 'fixture',
+        engineVersion: ENGINE_VERSION,
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+      },
+    };
+    expect(calculationResultSchema.safeParse(currentResult).success).toBe(true);
+    expect(
+      calculationResultSchema.safeParse({
+        ...currentResult,
+        versions: { ...currentResult.versions, schemaVersion: SCHEMA_VERSION - 1 },
+      }).success,
+    ).toBe(false);
+    expect(
+      calculationResultSchema.safeParse({
+        ...currentResult,
+        versions: { ...currentResult.versions, engineVersion: '3.0.0' },
+      }).success,
+    ).toBe(false);
   });
   it('rejects profile data in a share snapshot', () => {
     const result = calculationShareSnapshotSchema.safeParse({
