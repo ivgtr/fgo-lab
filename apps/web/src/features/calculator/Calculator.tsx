@@ -12,6 +12,7 @@ import type {
   DamageResolutionInput,
   CalculationEditorState,
   CalculationResult as CalculationResultValue,
+  CalculationScenario,
   CraftEssenceCopy,
   ServantBuild,
   SupportTemplate,
@@ -41,6 +42,7 @@ export function Calculator({
   resolvedEffects,
   effectWarnings,
   result,
+  scenario,
   servants,
   builds,
   craftEssenceCopies,
@@ -59,6 +61,7 @@ export function Calculator({
   resolvedEffects: readonly ResolvedEffect[];
   effectWarnings: readonly string[];
   result: CalculationResultValue;
+  scenario: CalculationScenario;
   servants: ServantMaster[];
   builds: Record<string, ServantBuild>;
   craftEssenceCopies: CraftEssenceCopy[];
@@ -73,7 +76,7 @@ export function Calculator({
   ) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
-  onFinalize: (input: DamageResolutionInput, result: CalculationResultValue) => Promise<void>;
+  onFinalize: () => Promise<void>;
 }) {
   const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
@@ -915,7 +918,7 @@ export function Calculator({
       <CalculationResult
         input={resolvedInput}
         result={result}
-        selection={selection}
+        scenario={scenario}
         attackerName={attacker?.name ?? input.attackerId}
         attackerImage={attacker?.imageKey ?? null}
         targetSummary={targetSummary}

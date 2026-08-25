@@ -351,10 +351,9 @@ export function App() {
       updatedAt: now,
     }));
   }
-  async function finalizeCurrentCalculation(currentInput = input, currentResult = result) {
-    const scenario = scenarioFromDamageResolutionInput(currentInput, currentSelection);
+  async function finalizeCurrentCalculation() {
     const fingerprint = await scenarioFingerprint(
-      scenario,
+      currentScenario,
       currentMaster.version,
       ENGINE_VERSION,
       async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
@@ -364,8 +363,8 @@ export function App() {
     await updateActiveProfile((current) =>
       finalizeHistory(current, {
         sessionId: calculationSessionId,
-        scenario,
-        result: currentResult,
+        scenario: currentScenario,
+        result,
         fingerprint,
         now,
         historyId,
@@ -440,6 +439,7 @@ export function App() {
             resolvedEffects={resolvedCalculation.effects}
             effectWarnings={resolvedCalculation.effectWarnings}
             result={result}
+            scenario={currentScenario}
             servants={currentMaster.servants}
             builds={profile.servantBuilds}
             craftEssenceCopies={profile.craftEssences}

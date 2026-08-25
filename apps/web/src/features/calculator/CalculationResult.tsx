@@ -2,20 +2,19 @@ import { useRef, useState } from 'react';
 import type {
   DamageResolutionInput,
   CalculationResult as CalculationResultValue,
-  CalculationEditorState,
+  CalculationScenario,
   CalculationShareSnapshot,
 } from '@fgo-lab/schema';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
-import { scenarioFromDamageResolutionInput } from './calculation';
 import './calculation-result.css';
 
 export function CalculationResult({
   input,
   result,
-  selection,
+  scenario,
   attackerName,
   attackerImage,
   targetSummary,
@@ -26,14 +25,14 @@ export function CalculationResult({
 }: {
   input: DamageResolutionInput;
   result: CalculationResultValue;
-  selection: CalculationEditorState;
+  scenario: CalculationScenario;
   attackerName: string;
   attackerImage: string | null;
   targetSummary: string;
   craftEssenceSummary: string;
   supportSummary: string;
   enabledAttackerSkillCount: number;
-  onFinalize: (input: DamageResolutionInput, result: CalculationResultValue) => Promise<void>;
+  onFinalize: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const resultCardRef = useRef<HTMLElement>(null);
@@ -41,12 +40,12 @@ export function CalculationResult({
     kind: 'fgo-lab-calculation-share',
     schemaVersion: SCHEMA_VERSION,
     sharedAt: new Date().toISOString(),
-    scenario: scenarioFromDamageResolutionInput(input, selection),
+    scenario,
     result,
   } satisfies CalculationShareSnapshot;
   async function copyUrl() {
     try {
-      await onFinalize(input, result);
+      await onFinalize();
       const url = new URL(location.href);
       url.hash = createShareFragment(snapshot);
       await navigator.clipboard.writeText(url.toString());
@@ -62,7 +61,7 @@ export function CalculationResult({
   async function saveImage() {
     try {
       if (!resultCardRef.current) throw new Error('result_card_missing');
-      await onFinalize(input, result);
+      await onFinalize();
       const url = URL.createObjectURL(await resultCardPng(resultCardRef.current));
       const link = document.createElement('a');
       link.href = url;
@@ -75,7 +74,7 @@ export function CalculationResult({
     }
   }
   async function saveShareJson() {
-    await onFinalize(input, result);
+    await onFinalize();
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' }),
     );
