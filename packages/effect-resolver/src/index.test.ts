@@ -108,6 +108,7 @@ const source: ServantMaster = {
           parameterSets: parameterSets([100, 110, 120, 130, 140, 150, 160, 170, 180, 200]),
           buffTypes: ['upAtk'],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         },
         {
@@ -118,6 +119,7 @@ const source: ServantMaster = {
           parameterSets: parameterSets([300, 320, 340, 360, 380, 400, 420, 440, 460, 500]),
           buffTypes: ['upCommandall'],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: ['buster'],
         },
         {
@@ -128,6 +130,7 @@ const source: ServantMaster = {
           parameterSets: parameterSets([200, 210, 220, 230, 240, 250, 260, 270, 280, 300]),
           buffTypes: ['upNpdamage'],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         },
         {
@@ -137,6 +140,7 @@ const source: ServantMaster = {
           label: 'NP増加',
           parameterSets: parameterSets(Array(10).fill(2000)),
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         },
       ],
@@ -491,6 +495,7 @@ describe('resolveSupportSourcesForTest', () => {
         parameterSets: parameterSets(Array(10).fill(1000)),
         buffTypes: ['upExtraattack', 'upCommandall'],
         conditions: unconditionalConditions,
+        contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
         cardTypes: ['buster'],
       }),
     ).toBe(false);
@@ -504,6 +509,7 @@ describe('resolveSupportSourcesForTest', () => {
           parameterSets: parameterSets(Array(10).fill(200)),
           buffTypes: [buffType],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         }),
       ).toBe(false);
@@ -522,6 +528,7 @@ describe('resolveSupportSourcesForTest', () => {
           parameterSets: parameterSets(Array(10).fill(200)),
           buffTypes: [buffType],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         }),
       ).toBe(false);
@@ -534,6 +541,7 @@ describe('resolveSupportSourcesForTest', () => {
         parameterSets: parameterSets(Array(10).fill(200)),
         buffTypes: ['downAtk'],
         conditions: unconditionalConditions,
+        contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
         cardTypes: [],
       }),
     ).toBe(false);
@@ -545,6 +553,7 @@ describe('resolveSupportSourcesForTest', () => {
       parameterSets: parameterSets(Array(10).fill(200)),
       buffTypes: ['downAtk'],
       conditions: unconditionalConditions,
+      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
       cardTypes: [],
     };
     expect(isDamageRelevantEffect(selfAttackDown)).toBe(false);
@@ -558,6 +567,7 @@ describe('resolveSupportSourcesForTest', () => {
         parameterSets: parameterSets(Array(10).fill(2)),
         buffTypes: ['changeCommandCardType'],
         conditions: unconditionalConditions,
+        contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
         cardTypes: [],
       }),
     ).toBe(false);
@@ -570,6 +580,7 @@ describe('resolveSupportSourcesForTest', () => {
         parameterSets: parameterSets(Array(10).fill(1000)),
         buffTypes: ['buffRate'],
         conditions: unconditionalConditions,
+        contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
         cardTypes: [],
       }),
     ).toBe(true);
@@ -644,6 +655,7 @@ describe('resolveSupportSourcesForTest', () => {
               buffTypes: ['buffRate'],
               buffRateTargets: ['buffNpDamageUp'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
             {
@@ -655,6 +667,7 @@ describe('resolveSupportSourcesForTest', () => {
               buffTypes: ['buffRate'],
               buffRateTargets: ['buffNpDamageUp'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -686,6 +699,7 @@ describe('resolveSupportSourcesForTest', () => {
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['buffRate'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -740,6 +754,7 @@ describe('resolveSupportSourcesForTest', () => {
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['upDamagedropnp'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
             {
@@ -750,6 +765,7 @@ describe('resolveSupportSourcesForTest', () => {
               parameterSets: parameterSets(Array(10).fill(1000)),
               buffTypes: ['upCommandall'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -912,6 +928,7 @@ describe('resolveAttackerSourcesForTest', () => {
                   },
                 ],
               },
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -966,6 +983,7 @@ describe('actor-aware effect routing', () => {
     parameterSets: parameterSets(Array(10).fill(200)),
     buffTypes: [buffType],
     conditions: unconditionalConditions,
+    contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
     cardTypes: [],
   });
 
@@ -983,6 +1001,91 @@ describe('actor-aware effect routing', () => {
     expect(enemyAttackUp.effects[0]).toMatchObject({ damageRelevant: false });
   });
 
+  it('keeps a known candidate magnitude while the effect is disabled', () => {
+    const resolved = resolveOne(attackEffect('self'), 'attacker', 300, false);
+
+    expect(resolved.input.attackBuff).toBe(input.attackBuff);
+    expect(resolved.effects[0]).toMatchObject({
+      value: 0.3,
+      state: 'rejected',
+      reason: 'calculation_effect_disabled',
+    });
+  });
+
+  it('resolves context producers before field-dependent damage modifiers', () => {
+    const producer: MasterEffect = {
+      ...attackEffect('self'),
+      id: 'field-producer',
+      label: 'フィールド生成',
+      parameterSets: parameterSets(Array(10).fill(0)),
+      buffTypes: ['toFieldChangeField'],
+      contextChanges: {
+        addedFieldTraits: ['milleniumCastle'],
+        addedRecipientTraits: [],
+      },
+    };
+    const consumer: MasterEffect = {
+      ...attackEffect('self', 'upCommandall'),
+      id: 'field-consumer',
+      cardTypes: ['buster'],
+      conditions: {
+        ...unconditionalConditions,
+        holder: {
+          operator: 'any',
+          traits: [{ name: 'cardBuster', negative: false }],
+        },
+        field: {
+          operator: 'any',
+          traits: [{ name: 'milleniumCastle', negative: false }],
+        },
+      },
+    };
+    const resolved = resolveEffectSources(input, [
+      {
+        order: 0,
+        origin: 'passive',
+        sourceInstanceId: 'passive:source',
+        sourceId: 'source',
+        sourceName: 'source',
+        skillId: 'passive',
+        skillName: 'field consumer',
+        effect: consumer,
+        rawValue: 300,
+        appliedReason: 'passive',
+        defaultEnabled: true,
+        attackerTraits: [],
+      },
+      {
+        order: 1,
+        origin: 'np',
+        sourceInstanceId: 'np:source',
+        sourceId: 'source',
+        sourceName: 'source',
+        skillId: 'np',
+        skillName: 'field producer',
+        effect: producer,
+        rawValue: undefined,
+        appliedReason: 'np_before_damage',
+        defaultEnabled: true,
+        attackerTraits: [],
+      },
+    ]);
+
+    expect(resolved.precision).toBe('exact');
+    expect(resolved.input.fieldTraits).toContain('milleniumCastle');
+    expect(resolved.input.cardBuff).toBeCloseTo(0.3);
+    expect(resolved.effects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ effectId: 'field-consumer', state: 'applied' }),
+        expect.objectContaining({
+          effectId: 'field-producer',
+          state: 'applied',
+          reason: 'battle_context_applied',
+        }),
+      ]),
+    );
+  });
+
   it('does not turn a craft essence self defense demerit into an attack buff', () => {
     const resolved = resolveOne(attackEffect('self', 'downDefence'), 'craftEssence');
 
@@ -994,6 +1097,7 @@ describe('actor-aware effect routing', () => {
   it('evaluates card resistance against the attacking card context', () => {
     const effect: MasterEffect = {
       ...attackEffect('enemy', 'downDefencecommandall'),
+      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
       cardTypes: ['buster'],
       conditions: {
         ...unconditionalConditions,
@@ -1172,6 +1276,7 @@ describe('automatic equipment, passive, and NP effects', () => {
           limitBreakParameterSets: parameterSets([800]),
           buffTypes: ['upNpdamage'],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         },
       ],
@@ -1201,6 +1306,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               parameterSets: parameterSets(Array(10).fill(80)),
               buffTypes: ['upCommandall'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: ['buster'],
             },
           ],
@@ -1231,6 +1337,7 @@ describe('automatic equipment, passive, and NP effects', () => {
               parameterSets: parameterSets([175]),
               buffTypes: ['addDamage'],
               conditions: unconditionalConditions,
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -1264,6 +1371,7 @@ describe('automatic equipment, passive, and NP effects', () => {
                   traits: [{ name: 'fieldDarkness', negative: false }],
                 },
               },
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -1304,6 +1412,7 @@ describe('automatic equipment, passive, and NP effects', () => {
           timing: 'beforeDamage',
           buffTypes: ['upAtk'],
           conditions: unconditionalConditions,
+          contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
           cardTypes: [],
         },
       ]),
@@ -1367,6 +1476,7 @@ describe('automatic equipment, passive, and NP effects', () => {
                   traits: [{ name: 'dragon', negative: false }],
                 },
               },
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],
@@ -1424,6 +1534,7 @@ describe('automatic equipment, passive, and NP effects', () => {
                   traits: [{ name: 'superGiant', negative: true }],
                 },
               },
+              contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
               cardTypes: [],
             },
           ],

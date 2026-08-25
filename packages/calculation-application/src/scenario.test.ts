@@ -42,6 +42,7 @@ function modifierEffect(
     parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
     buffTypes: [buffType],
     conditions: unconditionalConditions,
+    contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
     cardTypes,
   };
 }

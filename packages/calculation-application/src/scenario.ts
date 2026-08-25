@@ -208,6 +208,7 @@ function resolveScenarioNpDamage(
         kind: null,
         damageTraitCondition: { kind: 'npSpecial', condition: control.condition },
         requiredFieldTraits: [],
+        contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
         damageRelevant: true,
         state: active ? 'applied' : 'rejected',
         reason: active ? 'np_special_condition_asserted' : 'calculation_effect_disabled',

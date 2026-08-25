@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 7,
+    schemaVersion: 8,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -142,6 +142,7 @@ type AtlasBuff = {
   script?: {
     UpBuffRateBuffIndiv?: AtlasTraitRef[];
     checkIndvType?: number;
+    INDIVIDUALITIE?: AtlasTraitRef;
   };
 };
 type AtlasFunction = {
@@ -177,6 +178,7 @@ type AtlasFunctionValue = Record<string, unknown> & {
   CheckDead?: number;
   HideMiss?: number;
   HideNoEffect?: number;
+  FieldIndividuality?: number[];
 };
 type AtlasServant = {
   id?: number;
@@ -379,7 +381,14 @@ function buffConditionOperator(value: number | undefined): 'any' | 'all' | 'part
   return 'any';
 }
 
-function normalizeFunctions(functions: AtlasFunction[] | undefined) {
+function uniqueTraits(traits: readonly { name: string; negative: boolean }[]) {
+  return [...new Map(traits.map((trait) => [`${trait.negative ? '!' : ''}${trait.name}`, trait])).values()];
+}
+
+function normalizeFunctions(
+  functions: AtlasFunction[] | undefined,
+  traitNameById: ReadonlyMap<number, string>,
+) {
   return (functions ?? []).flatMap((fn) =>
     typeof fn.funcId === 'number'
       ? [
@@ -422,8 +431,42 @@ function normalizeFunctions(functions: AtlasFunction[] | undefined) {
               },
               field: {
                 operator: 'any' as const,
-                traits: signedTraits(fn.funcquestTvals),
+                traits: uniqueTraits([
+                  ...signedTraits(fn.funcquestTvals),
+                  ...(fn.buffs ?? []).flatMap((buff) =>
+                    buff.script?.INDIVIDUALITIE?.name
+                      ? [{ name: buff.script.INDIVIDUALITIE.name, negative: false }]
+                      : [],
+                  ),
+                ]),
               },
+            },
+            contextChanges: {
+              addedFieldTraits:
+                fn.funcType === 'addFieldChangeToField'
+                  ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+                      .flatMap((parameters) => parameters ?? [])
+                      .flatMap((parameter) => parameter.FieldIndividuality ?? [])
+                      .flatMap((id) => {
+                        const name = traitNameById.get(id);
+                        return name ? [name] : [];
+                      })
+                      .filter((name, index, all) => all.indexOf(name) === index)
+                  : [],
+              addedRecipientTraits: (fn.buffs ?? []).some(
+                (buff) => buff.type === 'addIndividuality',
+              )
+                ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+                    .flatMap((parameters) => parameters ?? [])
+                    .flatMap((parameter) =>
+                      typeof parameter.Value === 'number' ? [parameter.Value] : [],
+                    )
+                    .flatMap((id) => {
+                      const name = traitNameById.get(id);
+                      return name ? [name] : [];
+                    })
+                    .filter((name, index, all) => all.indexOf(name) === index)
+                : [],
             },
             buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
             ...(buffRateTargets(fn.buffs).length
@@ -475,6 +518,7 @@ function collectFunctionTraitNames(functions: readonly AtlasFunction[] | undefin
       ...(buff.tvals ?? []),
       ...(buff.ckSelfIndv ?? []),
       ...(buff.ckOpIndv ?? []),
+      ...(buff.script?.INDIVIDUALITIE ? [buff.script.INDIVIDUALITIE] : []),
     ]),
   ]);
 }
@@ -606,7 +650,7 @@ export function normalizeAtlasSnapshot(input: {
           effects: indexedFunctions.flatMap(({ fn, functionIndex }) =>
             fn.funcType?.startsWith('damageNp')
               ? []
-              : normalizeFunctions([fn]).map((effect) => ({
+              : normalizeFunctions([fn], traitNameById).map((effect) => ({
                   ...effect,
                   timing:
                     firstDamageIndex >= 0 && functionIndex < firstDamageIndex
@@ -632,7 +676,7 @@ export function normalizeAtlasSnapshot(input: {
       name: skill.name ?? '不明なスキル',
       detail: skill.detail ?? '',
       imageKey: skill.icon ?? null,
-      effects: normalizeFunctions(skill.functions),
+      effects: normalizeFunctions(skill.functions, traitNameById),
     });
     return [
       {
@@ -679,8 +723,8 @@ export function normalizeAtlasSnapshot(input: {
     const limitBreakSkill = [...(equip.skills ?? [])]
       .filter((skill) => skill.condLimitCount === 4)
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
-    const normalEffects = normalizeFunctions(normalSkill?.functions);
-    const limitBreakEffects = normalizeFunctions(limitBreakSkill?.functions);
+    const normalEffects = normalizeFunctions(normalSkill?.functions, traitNameById);
+    const limitBreakEffects = normalizeFunctions(limitBreakSkill?.functions, traitNameById);
     return [
       {
         id: String(equip.id),
@@ -723,7 +767,7 @@ export function normalizeAtlasSnapshot(input: {
               name: skill.name,
               detail: skill.detail ?? '',
               imageKey: skill.icon ?? null,
-              effects: normalizeFunctions(skill.functions),
+              effects: normalizeFunctions(skill.functions, traitNameById),
             },
           ]
         : [],

@@ -19,6 +19,7 @@ function effect(patch: Partial<ResolvedEffect>): ResolvedEffect {
     kind: 'cardBuff',
     damageTraitCondition: null,
     requiredFieldTraits: [],
+    contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
     damageRelevant: true,
     state: 'applied',
     reason: 'unconditional_attacker_buff',

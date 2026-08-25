@@ -2,7 +2,7 @@
   "caseId": "all-effect-sources-single-aggregation",
   "description": "passive、概念礼装、自身スキル、魔術礼装、支援、宝具前効果をcanonical順で一度だけ集約する",
   "reviewedAt": "2026-08-25",
-  "engineVersion": "7.0.0",
+  "engineVersion": "7.1.0",
   "sourceOrder": ["passive", "craftEssence", "attacker", "mysticCode", "support", "np"],
   "expectedModifiers": {
     "attackBuff": 0.8,

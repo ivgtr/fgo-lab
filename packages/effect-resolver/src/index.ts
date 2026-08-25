@@ -41,6 +41,7 @@ export interface ResolvedEffect {
   kind: ResolvedBuffKind | null;
   damageTraitCondition: DamageTraitCondition | null;
   requiredFieldTraits: readonly string[];
+  contextChanges: MasterEffect['contextChanges'];
   damageRelevant: boolean;
   state: 'applied' | 'rejected' | 'unsupported';
   reason: string;
@@ -71,7 +72,6 @@ const DEFENSIVE_BUFF_TYPES = new Set([
 ]);
 const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'attackBeforeFunction',
-  'addIndividuality',
   'addSelfdamage',
   'buffRate',
   'downAtk',
@@ -89,7 +89,6 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'tdTypeChangeArts',
   'tdTypeChangeBuster',
   'tdTypeChangeQuick',
-  'toFieldChangeField',
   'upDefence',
   'upDefenceNpdamage',
   'upDefencecommandall',
@@ -282,6 +281,119 @@ function effectKey(item: Pick<EffectSource, 'origin' | 'sourceInstanceId' | 'ski
   return `${item.origin}:${item.sourceInstanceId}:${item.skillId}:${item.effect.id}`;
 }
 
+interface BattleContext {
+  attackerTraits: readonly string[];
+  targetTraits: readonly string[];
+  fieldTraits: readonly string[];
+}
+
+function baseBattleContext(baseInput: DamageResolutionInput, attackerTraits: readonly string[]) {
+  return {
+    attackerTraits: [
+      ...attackerTraits,
+      ...baseInput.attackerStateTraits,
+      'cardNP',
+      `card${baseInput.cardType[0]!.toUpperCase()}${baseInput.cardType.slice(1)}`,
+    ],
+    targetTraits: [...baseInput.target.traits, ...baseInput.targetStateTraits],
+    fieldTraits: baseInput.fieldTraits,
+  } satisfies BattleContext;
+}
+
+function effectConditionsMatch(
+  baseInput: DamageResolutionInput,
+  item: EffectSource,
+  context: BattleContext,
+  conditionAsserted: boolean,
+): boolean | null {
+  if (conditionAsserted) return true;
+  const effect = item.effect;
+  const route = damageEffectRoute(effect, item.origin);
+  const recipient = route?.recipient ?? targetRecipient(item.origin, effect.target);
+  const holderTraits = recipient === 'target' ? context.targetTraits : context.attackerTraits;
+  const opponentTraits = recipient === 'target' ? context.attackerTraits : context.targetTraits;
+  const results = [
+    matchesTraitConditionGroups(effect.conditions.recipient, holderTraits),
+    matchesTraitCondition(effect.conditions.holder, holderTraits),
+    matchesTraitCondition(effect.conditions.opponent, opponentTraits),
+    matchesTraitCondition(effect.conditions.field, context.fieldTraits),
+  ];
+  if (results.includes(null)) return null;
+  return results.every(Boolean);
+}
+
+function resolveBattleContext(
+  baseInput: DamageResolutionInput,
+  items: readonly EffectSource[],
+  options: ResolveEffectOptions,
+): BattleContext {
+  const initial = baseBattleContext(baseInput, items[0]?.attackerTraits ?? []);
+  const attackerTraits = new Set(initial.attackerTraits);
+  const targetTraits = new Set(initial.targetTraits);
+  const fieldTraits = new Set(initial.fieldTraits);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const item of items) {
+      const changes = item.effect.contextChanges;
+      if (changes.addedFieldTraits.length === 0 && changes.addedRecipientTraits.length === 0)
+        continue;
+      const override = options.effectOverrides?.[effectKey(item)];
+      if (!(override ?? item.defaultEnabled)) continue;
+      const conditionAsserted = override === true || item.conditionAsserted === true;
+      const context = {
+        attackerTraits: [...attackerTraits],
+        targetTraits: [...targetTraits],
+        fieldTraits: [...fieldTraits],
+      };
+      if (effectConditionsMatch(baseInput, item, context, conditionAsserted) !== true)
+        continue;
+      for (const trait of changes.addedFieldTraits)
+        if (!fieldTraits.has(trait)) {
+          fieldTraits.add(trait);
+          changed = true;
+        }
+      const recipient = targetRecipient(item.origin, item.effect.target);
+      const recipientTraits = recipient === 'target' ? targetTraits : attackerTraits;
+      for (const trait of changes.addedRecipientTraits)
+        if (!recipientTraits.has(trait)) {
+          recipientTraits.add(trait);
+          changed = true;
+        }
+    }
+  }
+  return {
+    attackerTraits: [...attackerTraits],
+    targetTraits: [...targetTraits],
+    fieldTraits: [...fieldTraits],
+  };
+}
+
+function directDamageRelevant(effect: MasterEffect, origin: ResolvedEffect['origin']) {
+  const npDamageBuffRateEffect =
+    effect.buffTypes?.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp');
+  return (
+    damageEffectRoute(effect, origin) !== null ||
+    Boolean(targetRecipient(origin, effect.target) === 'attacker' && npDamageBuffRateEffect) ||
+    (targetRecipient(origin, effect.target) !== null && isPotentiallyDamageRelevant(effect))
+  );
+}
+
+function consumedConditionTraits(items: readonly EffectSource[]) {
+  const traits = new Set<string>();
+  for (const item of items) {
+    if (!directDamageRelevant(item.effect, item.origin)) continue;
+    for (const condition of [
+      ...item.effect.conditions.recipient,
+      item.effect.conditions.holder,
+      item.effect.conditions.opponent,
+      item.effect.conditions.field,
+    ])
+      for (const trait of condition.traits) traits.add(trait.name);
+  }
+  return traits;
+}
+
 export function resolveEffectSources(
   baseInput: DamageResolutionInput,
   items: readonly EffectSource[],
@@ -291,6 +403,8 @@ export function resolveEffectSources(
   const warnings: string[] = [];
   let npDamageBuffRate = 0;
   let precision: EffectResolution['precision'] = 'exact';
+  const context = resolveBattleContext(baseInput, items, options);
+  const consumedTraits = consumedConditionTraits(items);
   for (const item of items) {
     const { effect, rawValue } = item;
     const route = damageEffectRoute(effect, item.origin);
@@ -301,12 +415,15 @@ export function resolveEffectSources(
     const override = options.effectOverrides?.[key];
     const enabled = override ?? item.defaultEnabled;
     const conditionAsserted = override === true || item.conditionAsserted === true;
-    const routedDamageRelevant =
-      route !== null ||
-      Boolean(
-        targetRecipient(item.origin, effect.target) === 'attacker' && npDamageBuffRateEffect,
-      ) ||
-      (targetRecipient(item.origin, effect.target) !== null && isPotentiallyDamageRelevant(effect));
+    const value =
+      rawValue === undefined ? null : kind === 'flatDamage' ? rawValue : rawValue / 1000;
+    const signedValue = value === null ? null : value * (route?.sign ?? 1);
+    const directRelevant = directDamageRelevant(effect, item.origin);
+    const contextRelevant = [
+      ...effect.contextChanges.addedFieldTraits,
+      ...effect.contextChanges.addedRecipientTraits,
+    ].some((trait) => consumedTraits.has(trait));
+    const routedDamageRelevant = directRelevant || contextRelevant;
     const effectIdentity = {
       effectKey: key,
       order: item.order,
@@ -335,44 +452,18 @@ export function resolveEffectSources(
             } satisfies DamageTraitCondition)
           : null,
       requiredFieldTraits: effect.conditions.field.traits.map((trait) => trait.name),
+      contextChanges: effect.contextChanges,
       damageRelevant: routedDamageRelevant,
     };
     if (!enabled) {
       effects.push({
         ...effectIdentity,
-        value: null,
+        value: signedValue,
         state: 'rejected',
         reason: 'calculation_effect_disabled',
       });
       continue;
     }
-    const requiresNumericValue =
-      (kind !== null && kind !== 'ignoreDefense') || Boolean(npDamageBuffRateEffect);
-    if (rawValue === undefined && effectIdentity.damageRelevant && requiresNumericValue) {
-      precision = 'unsupported';
-      warnings.push(
-        `${item.origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`,
-      );
-      effects.push({
-        ...effectIdentity,
-        value: null,
-        state: 'unsupported',
-        reason: 'level_value_missing',
-      });
-      continue;
-    }
-    if (rawValue === undefined && !effectIdentity.damageRelevant) {
-      effects.push({
-        ...effectIdentity,
-        value: null,
-        state: 'rejected',
-        reason: 'not_np_damage_relevant',
-      });
-      continue;
-    }
-    const value =
-      rawValue === undefined ? null : kind === 'flatDamage' ? rawValue : rawValue / 1000;
-    const signedValue = value === null ? null : value * (route?.sign ?? 1);
     if (!routedDamageRelevant) {
       effects.push({
         ...effectIdentity,
@@ -391,25 +482,8 @@ export function resolveEffectSources(
       });
       continue;
     }
-    const attackerTraits = [
-      ...item.attackerTraits,
-      ...baseInput.attackerStateTraits,
-      'cardNP',
-      `card${baseInput.cardType[0]!.toUpperCase()}${baseInput.cardType.slice(1)}`,
-    ];
-    const targetTraits = [...baseInput.target.traits, ...baseInput.targetStateTraits];
-    const recipient = route?.recipient ?? targetRecipient(item.origin, effect.target);
-    const holderTraits = recipient === 'target' ? targetTraits : attackerTraits;
-    const opponentTraits = recipient === 'target' ? attackerTraits : targetTraits;
-    const conditionResults = conditionAsserted
-      ? [true]
-      : [
-          matchesTraitConditionGroups(effect.conditions.recipient, holderTraits),
-          matchesTraitCondition(effect.conditions.holder, holderTraits),
-          matchesTraitCondition(effect.conditions.opponent, opponentTraits),
-          matchesTraitCondition(effect.conditions.field, baseInput.fieldTraits),
-        ];
-    if (conditionResults.includes(null)) {
+    const conditionResult = effectConditionsMatch(baseInput, item, context, conditionAsserted);
+    if (conditionResult === null) {
       effects.push({
         ...effectIdentity,
         value: signedValue,
@@ -422,12 +496,36 @@ export function resolveEffectSources(
       );
       continue;
     }
-    if (!conditionResults.every(Boolean)) {
+    if (!conditionResult) {
       effects.push({
         ...effectIdentity,
         value: signedValue,
         state: 'rejected',
         reason: 'trait_condition_mismatch',
+      });
+      continue;
+    }
+    if (contextRelevant && !directRelevant) {
+      effects.push({
+        ...effectIdentity,
+        value: null,
+        state: 'applied',
+        reason: 'battle_context_applied',
+      });
+      continue;
+    }
+    const requiresNumericValue =
+      (kind !== null && kind !== 'ignoreDefense') || Boolean(npDamageBuffRateEffect);
+    if (rawValue === undefined && directRelevant && requiresNumericValue) {
+      precision = 'unsupported';
+      warnings.push(
+        `${item.origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`,
+      );
+      effects.push({
+        ...effectIdentity,
+        value: null,
+        state: 'unsupported',
+        reason: 'level_value_missing',
       });
       continue;
     }
@@ -440,7 +538,7 @@ export function resolveEffectSources(
         ),
       ),
     ].sort();
-    if (effectIdentity.damageRelevant && unresolvedParameterKeys.length > 0) {
+    if (directRelevant && unresolvedParameterKeys.length > 0) {
       precision = 'unsupported';
       warnings.push(
         `${item.origin}_effect_parameter_semantics_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}:${unresolvedParameterKeys.join(',')}`,
@@ -456,7 +554,7 @@ export function resolveEffectSources(
     const unresolvedMetadata =
       (effect.functionScript && Object.keys(effect.functionScript).length > 0) ||
       (effect.overwriteTargetValues?.length ?? 0) > 0;
-    if (effectIdentity.damageRelevant && unresolvedMetadata) {
+    if (directRelevant && unresolvedMetadata) {
       precision = 'unsupported';
       warnings.push(
         `${item.origin}_effect_metadata_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`,
@@ -482,7 +580,7 @@ export function resolveEffectSources(
     if (kind) {
       effects.push({
         ...effectIdentity,
-        value,
+        value: signedValue,
         state: 'applied',
         reason: item.appliedReason,
       });
@@ -526,6 +624,7 @@ export function resolveEffectSources(
   }
   const aggregatedInput = {
     ...baseInput,
+    fieldTraits: [...context.fieldTraits],
     attackBuff: baseInput.attackBuff + modifierPermilles.attackBuff / 1_000,
     defenseBuff: baseInput.defenseBuff + modifierPermilles.defenseBuff / 1_000,
     cardBuff: baseInput.cardBuff + modifierPermilles.cardBuff / 1_000,

@@ -277,6 +277,9 @@ describe('immutable publish pipeline', () => {
                       type: 'upCommandall',
                       tvals: [{ id: 4002, name: 'cardBuster' }],
                       ckSelfIndv: [{ id: 4002, name: 'cardBuster' }],
+                      script: {
+                        INDIVIDUALITIE: { id: 2884, name: 'fieldDarkness' },
+                      },
                     },
                   ],
                   svals: Array(10).fill({ Value: 500 }),
@@ -295,6 +298,19 @@ describe('immutable publish pipeline', () => {
                     },
                   ],
                   svals: Array(10).fill({ Value: 1000 }),
+                },
+                {
+                  funcId: 15,
+                  funcType: 'addFieldChangeToField',
+                  funcTargetType: 'self',
+                  funcPopupText: '',
+                  buffs: [
+                    {
+                      type: 'toFieldChangeField',
+                      vals: [{ id: 2884, name: 'fieldDarkness' }],
+                    },
+                  ],
+                  svals: Array(10).fill({ FieldIndividuality: [2884] }),
                 },
               ],
             },
@@ -383,10 +399,22 @@ describe('immutable publish pipeline', () => {
       label: '表示名に依存しない色バフ',
       buffTypes: ['upCommandall'],
       cardTypes: ['buster'],
+      conditions: {
+        field: {
+          operator: 'any',
+          traits: [{ name: 'fieldDarkness', negative: false }],
+        },
+      },
     });
     expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '14')).toMatchObject({
       buffTypes: ['buffRate'],
       buffRateTargets: ['buffNpDamageUp'],
+    });
+    expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '15')).toMatchObject({
+      contextChanges: {
+        addedFieldTraits: ['fieldDarkness'],
+        addedRecipientTraits: [],
+      },
     });
     expect(snapshot.servants.find((servant) => servant.id === '1')?.noblePhantasms[0]?.card).toBe(
       'arts',
