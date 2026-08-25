@@ -128,7 +128,7 @@ export const attackerSkillSelectionSchema = z.object({
 });
 export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema>;
 
-export const calculationSelectionSchema = z.object({
+export const calculationEditorStateSchema = z.object({
   attackerSource: z.enum(['owned', 'master']),
   effectMode: z.enum(['resolved', 'manual']).default('resolved'),
   attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
@@ -163,7 +163,7 @@ export const calculationSelectionSchema = z.object({
     })
     .nullable(),
 });
-export type CalculationSelection = z.infer<typeof calculationSelectionSchema>;
+export type CalculationEditorState = z.infer<typeof calculationEditorStateSchema>;
 
 const scenarioBaseSchema = z
   .object({
@@ -203,7 +203,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
       })
       .nullable(),
     attackerSkills: z.array(attackerSkillSelectionSchema).max(20),
-    support: calculationSelectionSchema.shape.support.unwrap().nullable(),
+    support: calculationEditorStateSchema.shape.support.unwrap().nullable(),
     effectDecisions: z.record(z.string(), z.boolean()),
     explicitOverrides: z.object({
       attackerAtk: z.number().int().nonnegative().max(100000).optional(),

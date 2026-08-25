@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculationShareSnapshotSchema,
-  calculationSelectionSchema,
+  calculationEditorStateSchema,
   calculationResultSchema,
   calculationScenarioSchema,
   damageKernelInputSchema,
@@ -88,7 +88,7 @@ describe('portable schema boundaries', () => {
 
   it('normalizes stored selections to the resolved effect mode', () => {
     expect(
-      calculationSelectionSchema.parse({ attackerSource: 'master', craftEssence: null }),
+      calculationEditorStateSchema.parse({ attackerSource: 'master', craftEssence: null }),
     ).toEqual({ attackerSource: 'master', effectMode: 'resolved', craftEssence: null });
   });
 

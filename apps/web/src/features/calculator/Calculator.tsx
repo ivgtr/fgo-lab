@@ -10,7 +10,7 @@ import type { ResolvedSupportEffect } from '@fgo-lab/effect-resolver';
 import type {
   AttackerSkillSelection,
   DamageKernelInput,
-  CalculationSelection,
+  CalculationEditorState,
   CalculationResult as CalculationResultValue,
   CraftEssenceCopy,
   ServantBuild,
@@ -64,12 +64,15 @@ export function Calculator({
   builds: Record<string, ServantBuild>;
   craftEssenceCopies: CraftEssenceCopy[];
   craftEssences: CraftEssenceMaster[];
-  selection: CalculationSelection;
+  selection: CalculationEditorState;
   supportTemplates: SupportTemplate[];
   selectedSupport: SupportTemplate | undefined;
   sharedVersionMismatch: boolean;
   onInputChange: (input: DamageKernelInput) => Promise<void>;
-  onCompositionChange: (input: DamageKernelInput, selection: CalculationSelection) => Promise<void>;
+  onCompositionChange: (
+    input: DamageKernelInput,
+    selection: CalculationEditorState,
+  ) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: (input: DamageKernelInput, result: CalculationResultValue) => Promise<void>;
@@ -146,7 +149,7 @@ export function Calculator({
     void onInputChange({ ...input, ...patch });
   }
   function changeManual(
-    key: NonNullable<CalculationSelection['manualOverrides']>[number],
+    key: NonNullable<CalculationEditorState['manualOverrides']>[number],
     value: number,
   ) {
     void onCompositionChange(

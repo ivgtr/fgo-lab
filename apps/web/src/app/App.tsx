@@ -34,7 +34,7 @@ import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
 import {
   calculateResolvedDamage,
-  completeCalculationSelection,
+  completeCalculationEditorState,
   createDefaultDamageKernelInput,
   damageKernelInputFromScenario,
   resolveCalculationInput,
@@ -204,7 +204,7 @@ export function App() {
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
   const defaultInput = createDefaultDamageKernelInput(currentMaster, defaultBuild);
-  const defaultSelection = completeCalculationSelection(undefined, defaultServant, defaultBuild);
+  const defaultSelection = completeCalculationEditorState(undefined, defaultServant, defaultBuild);
   const currentScenario =
     calculation.scenario ?? scenarioFromDamageKernelInput(defaultInput, defaultSelection);
   const baseInput = damageKernelInputFromScenario(currentScenario, currentMaster);
@@ -212,7 +212,7 @@ export function App() {
     currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
     defaultServant;
   const selectedBuild = profile.servantBuilds[selectedAttacker.id];
-  const currentSelection = completeCalculationSelection(
+  const currentSelection = completeCalculationEditorState(
     selectionFromScenario(currentScenario),
     selectedAttacker,
     profile.servantBuilds[baseInput.attackerId],

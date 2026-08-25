@@ -10,7 +10,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   calculateResolvedDamage,
-  completeCalculationSelection,
+  completeCalculationEditorState,
   createDefaultDamageKernelInput,
   damageKernelInputFromScenario,
   scenarioFromDamageKernelInput,
@@ -32,7 +32,7 @@ const versions: VersionContext = {
 describe('calculation application logic', () => {
   it('creates and resolves a calculation without browser or React state', () => {
     const input = createDefaultDamageKernelInput(master, undefined);
-    const selection = completeCalculationSelection(undefined, master.servants[0], undefined);
+    const selection = completeCalculationEditorState(undefined, master.servants[0], undefined);
     const calculation = calculateResolvedDamage(input, selection, master, versions, {
       releaseValidated: true,
     });
@@ -238,7 +238,7 @@ describe('calculation application logic', () => {
     const input = createDefaultDamageKernelInput(master, undefined);
     const calculation = calculateResolvedDamage(
       input,
-      completeCalculationSelection(undefined, master.servants[0], undefined),
+      completeCalculationEditorState(undefined, master.servants[0], undefined),
       master,
       versions,
       { releaseValidated: false },

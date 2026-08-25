@@ -18,7 +18,7 @@ import {
 import type {
   AttackerSkillSelection,
   DamageKernelInput,
-  CalculationSelection,
+  CalculationEditorState,
   ServantBuild,
   CalculationResult,
   CalculationScenario,
@@ -35,7 +35,7 @@ export interface ResolvedCalculationInput {
 
 export function resolveCalculationInput(
   baseInput: DamageKernelInput,
-  selection: CalculationSelection,
+  selection: CalculationEditorState,
   master: MasterDataSnapshot,
 ): ResolvedCalculationInput {
   if (selection.effectMode === 'manual')
@@ -114,7 +114,7 @@ export function resolveCalculationInput(
 
 export function calculateResolvedDamage(
   baseInput: DamageKernelInput,
-  selection: CalculationSelection,
+  selection: CalculationEditorState,
   master: MasterDataSnapshot,
   versions: VersionContext,
   options: { releaseValidated: boolean },
@@ -220,7 +220,7 @@ export function createDefaultDamageKernelInput(
 
 export function scenarioFromDamageKernelInput(
   input: DamageKernelInput,
-  selection: CalculationSelection,
+  selection: CalculationEditorState,
 ): CalculationScenario {
   const base = {
     attacker: {
@@ -270,7 +270,7 @@ export function scenarioFromDamageKernelInput(
   };
 }
 
-export function selectionFromScenario(scenario: CalculationScenario): CalculationSelection {
+export function selectionFromScenario(scenario: CalculationScenario): CalculationEditorState {
   if (scenario.mode === 'manual')
     return { attackerSource: scenario.attacker.source, effectMode: 'manual', craftEssence: null };
   return {
@@ -280,7 +280,7 @@ export function selectionFromScenario(scenario: CalculationScenario): Calculatio
     effectOverrides: scenario.effectDecisions,
     support: scenario.support,
     manualOverrides: Object.keys(scenario.explicitOverrides) as NonNullable<
-      CalculationSelection['manualOverrides']
+      CalculationEditorState['manualOverrides']
     >,
     craftEssence: scenario.craftEssence
       ? { ...scenario.craftEssence, source: 'master', copyId: null }
@@ -322,18 +322,18 @@ export function damageKernelInputFromScenario(
   };
 }
 
-export function completeCalculationSelection(
-  selection: CalculationSelection | undefined,
+export function completeCalculationEditorState(
+  selection: CalculationEditorState | undefined,
   servant: ServantMaster | undefined,
   build: ServantBuild | undefined,
-): CalculationSelection {
+): CalculationEditorState {
   const base =
     selection ??
     ({
       attackerSource: build?.npLevel ? 'owned' : 'master',
       effectMode: 'resolved',
       craftEssence: null,
-    } satisfies CalculationSelection);
+    } satisfies CalculationEditorState);
   const attackerSkills =
     base.attackerSkills ?? createAttackerSkillSelection(servant, base.attackerSource, build);
   return { ...base, attackerSkills };
@@ -341,7 +341,7 @@ export function completeCalculationSelection(
 
 export function createAttackerSkillSelection(
   servant: ServantMaster | undefined,
-  source: CalculationSelection['attackerSource'],
+  source: CalculationEditorState['attackerSource'],
   build: ServantBuild | undefined,
 ): AttackerSkillSelection[] {
   return (servant?.skills ?? []).slice(0, 3).map((skill, index) => ({
@@ -352,11 +352,11 @@ export function createAttackerSkillSelection(
 
 export function selectCalculationAttacker(
   input: DamageKernelInput,
-  selection: CalculationSelection,
+  selection: CalculationEditorState,
   servant: ServantMaster,
-  source: CalculationSelection['attackerSource'],
+  source: CalculationEditorState['attackerSource'],
   build: ServantBuild | undefined,
-): { input: DamageKernelInput; selection: CalculationSelection } {
+): { input: DamageKernelInput; selection: CalculationEditorState } {
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
@@ -390,9 +390,9 @@ export function selectCalculationAttacker(
 
 export function setCalculationEffectMode(
   input: DamageKernelInput,
-  selection: CalculationSelection,
-  effectMode: CalculationSelection['effectMode'],
-): { input: DamageKernelInput; selection: CalculationSelection } {
+  selection: CalculationEditorState,
+  effectMode: CalculationEditorState['effectMode'],
+): { input: DamageKernelInput; selection: CalculationEditorState } {
   if (effectMode === 'manual') return { input, selection: { ...selection, effectMode } };
   return {
     input: {

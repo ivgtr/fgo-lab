@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type {
   DamageKernelInput,
   CalculationResult as CalculationResultValue,
-  CalculationSelection,
+  CalculationEditorState,
   CalculationShareSnapshot,
 } from '@fgo-lab/schema';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -26,7 +26,7 @@ export function CalculationResult({
 }: {
   input: DamageKernelInput;
   result: CalculationResultValue;
-  selection: CalculationSelection;
+  selection: CalculationEditorState;
   attackerName: string;
   attackerImage: string | null;
   targetSummary: string;
