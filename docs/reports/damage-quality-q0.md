@@ -2,7 +2,7 @@
 
 - Date: 2026-08-25
 - Phase: Q0
-- Status: confirmation requested
+- Status: approved
 - Baseline commit: `6062746`
 - Published master: `2026-08-25-atlas-jp-calculator-v7`
 - Current schema: 3
@@ -475,15 +475,17 @@ Q1へ進む前に、次を確定する。
 | Q0-D6 | vNext移行時は内部previewのローカルユーザーデータ全体をreset対象とする |
 | Q0-D7 | 魔術礼装をR1 effect sourceとしてQ1/Q3へ含める |
 
-この7点の確認後、Q1では最初に型とfixtureを実装し、現行normalizerやruntime経路を残したまま次フェーズへ進まない。
+2026-08-25に、利用者から技術判断を委任されたため、ダメージ品質最優先、後方互換層を作らない、内部previewでは破壊的変更を許容するという既承認方針に基づき、Q0-D1〜D7をすべて承認した。
+
+Q1では最初に型とfixtureを実装し、現行normalizerやruntime経路を残したまま次フェーズへ進まない。
 
 ## 11. Q0ゲート評価
 
 | Gate | 状態 | 根拠 |
 |---|---|---|
-| exact／unsupported対象の確定案 | 確認待ち | §3、§10 |
-| データフローと状態所有者 | 確認待ち | §6、§7 |
-| 破壊的変更とデータ影響 | 確認待ち | §9 |
-| 旧実装削除リスト | 確認待ち | §8 |
+| exact／unsupported対象の確定案 | 承認済み | §3、§10 |
+| データフローと状態所有者 | 承認済み | §6、§7 |
+| 破壊的変更とデータ影響 | 承認済み | §9 |
+| 旧実装削除リスト | 承認済み | §8 |
 
-Q0の調査成果物は揃っている。Q0-D1〜D7の承認まではQ1のproduction実装へ着手しない。
+Q0の調査成果物と判断は確定した。Q1のschema・master正規化置換へ進む。

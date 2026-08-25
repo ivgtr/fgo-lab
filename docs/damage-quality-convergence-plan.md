@@ -113,7 +113,7 @@ calculation-application <- web / ranking worker
 
 ### Q0：現状inventoryと目標契約
 
-状態: 確認待ち
+状態: 完了
 
 作業:
 
@@ -307,7 +307,7 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 | Phase | 状態 | 確認日 | 成果物・判断 |
 |---|---|---|---|
 | Plan | 承認済み | 2026-08-25 | 本計画の範囲、順序、破壊的変更方針 |
-| Q0 | 確認待ち | 2026-08-25 | `docs/reports/damage-quality-q0.md` |
+| Q0 | 完了 | 2026-08-25 | Q0-D1〜D7を技術判断として承認。`docs/reports/damage-quality-q0.md` |
 | Q1 | 未着手 | - | - |
 | Q2 | 未着手 | - | - |
 | Q3 | 未着手 | - | - |
