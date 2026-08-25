@@ -203,6 +203,26 @@ Chaldeaは、戦闘状態へFunctionを順序付きで適用する設計の比�
 - 防御無視とダメージカット無視: 対象防御状態との関係を別操作として評価する。
 - 特性数、状態特性、レアリティ、HP比率、Battle Point段階の特殊宝具をFunction familyごとに固定する。
 
+### 8.4 E3後の条件decision是正
+
+2026-08-25のE3画面確認で、順序付きexecutorへの移行後も条件成立宣言とoperation有効化が一つのboolean decisionへ混在していることを確認した。現行実装では次を再現できる。
+
+- ダンテ・アリギエーリの対天と対地を同時に成立宣言すると、`attributeSky`／`fieldHeaven`と`attributeEarth`／`fieldHell`が同じBattleStateへ入り、両方の威力アップが加算される。
+- `baseOperation`が全効果へdecision keyを付けるため、無条件NP効果とパッシブがユーザー操作可能になる。
+- operationが無効な場合にカード不一致より先にdisabled判定するため、成立不能な色バフが表示される。
+- 支援効果だけが`selectedEffects`を更新してreturnするため、同じ条件式でも自身効果と同じScenarioAssumptionを作らない。
+
+是正後の契約は次とする。
+
+1. operation有効化と条件成立のassertionを、`automatic`、`enableOperation`、`assertCondition`、`enableAndAssert`の型付きdecision modeで分離する。
+2. 状態生成だけを行うoperationは内部実行とし、火力decisionとしてprojectionしない。
+3. `attributeSky`／`attributeEarth`／`attributeHuman`／`attributeStar`／`attributeBeast`、`fieldHeaven`／`fieldHell`等は、サーヴァントや効果IDではなくtrait意味論から排他groupを付ける。
+4. 同一scope・排他groupへ異なるpresent traitを要求するScenarioAssumptionは、適用前に型付き矛盾として検出し、どちらも優先せず結果全体をfail-closedにする。
+5. 条件式の`partial`や複数候補ORを一つのtraitへ暗黙変換しない。UI操作から具体的な成立factを一意に生成できない場合は操作不能またはtyped unsupportedにする。
+6. 自身と支援のon/offは同じScenarioAssumption更新関数を使用する。支援テンプレート保存用の選択一覧は、最終decision projectionから導出する。
+
+この是正では入力欄や配置を増やさない。変化を許容するのは、成立不能操作の非表示、自動効果の操作不可、排他矛盾時のunsupported表示、正しい効果内訳とダメージ値である。
+
 ## 9. 受入条件
 
 - [ ] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

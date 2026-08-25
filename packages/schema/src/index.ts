@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 11 as const;
-export const ENGINE_VERSION = '8.0.0' as const;
+export const SCHEMA_VERSION = 12 as const;
+export const ENGINE_VERSION = '9.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -247,6 +247,9 @@ const resolvedScenarioSchema = scenarioBaseSchema
               scope: z.enum(['attacker', 'attackerState', 'target', 'targetState', 'field']),
               trait: z.string().min(1).max(80),
               present: z.boolean(),
+              exclusiveGroup: z
+                .enum(['worldAttribute', 'fieldRealm', 'alignmentOrder', 'alignmentMoral'])
+                .nullable(),
             }),
             z.object({
               kind: z.literal('quantity'),

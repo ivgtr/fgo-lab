@@ -115,7 +115,7 @@ describe('condition expression properties', () => {
       outcome: 'notApplied',
       visibility: 'visible',
       controllability: 'user',
-      decision: { state: 'enabled', decisionKey: 'projection' },
+      decision: { state: 'enabled', decisionKey: 'projection', mode: 'enableAndAssert' },
       explanation: {
         code: 'conditionNotMet',
         condition: {
@@ -132,12 +132,24 @@ describe('condition expression properties', () => {
       {
         decisionKey: 'projection',
         enabled: true,
-        assertion: { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
+        assertion: {
+          kind: 'trait',
+          scope: 'target',
+          trait: 'dragon',
+          present: true,
+          exclusiveGroup: null,
+        },
       },
       {
         decisionKey: 'projection',
         enabled: true,
-        assertion: { kind: 'trait', scope: 'targetState', trait: 'burning', present: true },
+        assertion: {
+          kind: 'trait',
+          scope: 'targetState',
+          trait: 'burning',
+          present: true,
+          exclusiveGroup: null,
+        },
       },
     ]);
   });

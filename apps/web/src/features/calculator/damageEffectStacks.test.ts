@@ -22,7 +22,7 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
     outcome: 'applied',
     visibility: 'visible',
     controllability: 'user',
-    decision: { state: 'enabled', decisionKey: 'attack' },
+    decision: { state: 'enabled', decisionKey: 'attack', mode: 'enableOperation' },
     explanation: { code: 'applied', condition: null },
     ...patch,
   };

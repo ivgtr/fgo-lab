@@ -7,6 +7,7 @@ import type {
   OperationResult,
   ScenarioAssumption,
 } from './index';
+import { exclusiveTraitGroup } from './index';
 
 describe('ordered battle execution contracts', () => {
   it('keeps conditions lossless and assumptions scoped to one state fact', () => {
@@ -29,7 +30,13 @@ describe('ordered battle execution contracts', () => {
     const assumption: ScenarioAssumption = {
       decisionKey: 'np:field:milleniumCastle',
       enabled: true,
-      assertion: { kind: 'trait', scope: 'field', trait: 'milleniumCastle', present: true },
+      assertion: {
+        kind: 'trait',
+        scope: 'field',
+        trait: 'milleniumCastle',
+        present: true,
+        exclusiveGroup: null,
+      },
     };
     expect(condition).toMatchObject({ kind: 'all' });
     expect(assumption.assertion).toEqual({
@@ -37,7 +44,16 @@ describe('ordered battle execution contracts', () => {
       scope: 'field',
       trait: 'milleniumCastle',
       present: true,
+      exclusiveGroup: null,
     });
+  });
+
+  it('classifies mutually exclusive condition traits without effect identity', () => {
+    expect(exclusiveTraitGroup('target', 'attributeSky')).toBe('worldAttribute');
+    expect(exclusiveTraitGroup('target', 'attributeEarth')).toBe('worldAttribute');
+    expect(exclusiveTraitGroup('field', 'fieldHeaven')).toBe('fieldRealm');
+    expect(exclusiveTraitGroup('field', 'fieldHell')).toBe('fieldRealm');
+    expect(exclusiveTraitGroup('target', 'dragon')).toBeNull();
   });
 
   it('models every R1 operation as a discriminated union without servant identity', () => {

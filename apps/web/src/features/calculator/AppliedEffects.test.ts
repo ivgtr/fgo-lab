@@ -22,7 +22,7 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
     outcome: 'applied',
     visibility,
     controllability: 'user',
-    decision: { state: 'enabled', decisionKey: visibility },
+    decision: { state: 'enabled', decisionKey: visibility, mode: 'enableOperation' },
     explanation: { code: 'applied', condition: null },
   };
 }

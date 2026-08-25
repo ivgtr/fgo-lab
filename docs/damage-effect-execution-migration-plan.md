@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
 document_version: "1.0.0"
-status: "E3 Complete - Awaiting UX Confirmation"
+status: "E3 Corrective Work In Progress"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -157,6 +157,34 @@ UI input
 - 全masterの表示projection監査に未分類項目がない。
 
 ユーザー確認: 実画面で入力体験と結果表示を確認する。計画承認後は、この確認が必要になるまでE0〜E3の作業と自動検証を一気通貫で進める。
+
+### E3.1：条件decisionと排他状態の是正
+
+状態: 進行中
+
+E3画面確認でダンテ・アリギエーリの対天／対地を同時適用できる回帰を確認した。原因は旧resolverの復活ではなく、新executorの`decisionKey`がoperation有効化と条件成立assertionを兼用し、BattleStateがtrait間の排他関係を持たないことにある。加えて全operationをユーザー操作可能として投影するため、自動パッシブと無条件NP効果の操作可否、未選択カード不一致効果のvisibility、支援だけ別経路となるcondition assertionが契約から逸脱している。
+
+作業:
+
+- trait意味論に基づく排他groupとtyped conflictをScenarioAssumptionへ追加する。
+- operation decisionをautomatic、operation enable、condition assertion、両方に判別する。
+- assumptionを状態変更前に一括検証し、排他矛盾時は全競合factを適用せずfail-closedにする。
+- 状態生成operationをhiddenかつautomaticに固定し、最終火力projectionだけを条件操作対象にする。
+- 自身と支援の`changeEffect`を同じassumption更新へ統合し、支援保存内容は最終projectionから導出する。
+- partial／曖昧OR条件を一つのtraitへ暗黙変換せずtyped unsupportedへ分類する。
+- production master全件で、操作可能だが操作後も状態が変化しないprojectionと、排他条件の同時正常計算を監査する。
+- ダンテの対天、対地、同時選択、内部field非表示、支援条件、パッシブ自動、カード不一致をunit／実master E2Eへ固定する。
+
+確認ゲート E3.1:
+
+- 対天または対地の単独選択は対応するoperationだけを適用する。
+- 対天と対地の同時選択は両方を加算せず、typed conflictでunsupportedになる。
+- 無条件パッシブと無条件NP効果にon/off操作がない。
+- 条件付き自身効果と支援効果が同じScenarioAssumptionを生成する。
+- 中間状態とカード不一致効果が火力on/off一覧にない。
+- 全master監査、PC／mobile Chromium、共有round-trip、build、旧経路参照0件を再度通す。
+
+E3.1完了後に実画面確認で停止する。E4は引き続き開始しない。
 
 ### E4：ランキング統合と全master収束
 

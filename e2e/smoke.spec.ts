@@ -582,7 +582,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: 11, servantBuildCount: 0 });
+  expect(recovered).toEqual({ schemaVersion: 12, servantBuildCount: 0 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 

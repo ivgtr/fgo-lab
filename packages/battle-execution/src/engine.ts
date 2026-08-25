@@ -21,6 +21,7 @@ import type {
   ScenarioAssumption,
   TraitScope,
 } from './index';
+import { exclusiveTraitGroup } from './conditionSemantics';
 import { applyNpDamageOperation } from './npDamageOperation';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -276,7 +277,13 @@ export function evaluateConditionExpression(
 function assertionsForCondition(
   condition: ConditionExpression,
 ): Exclude<ScenarioAssumption['assertion'], null>[] {
-  if (condition.kind === 'trait') return [condition];
+  if (condition.kind === 'trait')
+    return [
+      {
+        ...condition,
+        exclusiveGroup: exclusiveTraitGroup(condition.scope, condition.trait),
+      },
+    ];
   if (condition.kind === 'quantity')
     return [{ kind: 'quantity', quantity: condition.quantity, value: condition.value }];
   if (condition.kind === 'all')
@@ -327,6 +334,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     source: sourceIdentity(source),
     condition,
     decisionKey: key,
+    decisionMode: 'enableAndAssert' as const,
     enabledByDefault: source.enabledByDefault,
     evidence: { rawPath: key, functionId: source.effect.id, parameterKeys: [] },
     presentation: {
@@ -654,7 +662,7 @@ function makeProjection(
     outcome,
     visibility: 'visible',
     controllability: 'user',
-    decision: { state, decisionKey: key },
+    decision: { state, decisionKey: key, mode: 'enableAndAssert' },
     explanation: { code, condition },
   };
 }
@@ -707,10 +715,16 @@ function projectionFor(
       (operation.kind === 'executeNpDamage' && operation.condition.kind === 'always')
         ? 'hidden'
         : 'visible',
-    controllability: operation.decisionKey ? 'user' : 'automatic',
-    decision: operation.decisionKey
-      ? { state: enabled ? 'enabled' : 'disabled', decisionKey: operation.decisionKey }
-      : { state: 'none' },
+    controllability:
+      operation.decisionKey && operation.decisionMode !== 'automatic' ? 'user' : 'automatic',
+    decision:
+      operation.decisionKey && operation.decisionMode !== 'automatic'
+        ? {
+            state: enabled ? ('enabled' as const) : ('disabled' as const),
+            decisionKey: operation.decisionKey,
+            mode: operation.decisionMode,
+          }
+        : { state: 'none' },
     explanation: {
       code,
       condition: operation.condition.kind === 'always' ? null : operation.condition,
@@ -912,7 +926,7 @@ function traitCountProjections(
       outcome: 'applied',
       visibility: 'visible',
       controllability: 'user',
-      decision: { state: 'disabled', decisionKey: projectionKey },
+      decision: { state: 'disabled', decisionKey: projectionKey, mode: 'assertCondition' },
       explanation: {
         code: 'applied',
         condition: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
@@ -999,6 +1013,7 @@ export function executeOrderedScenario(
       condition,
       decisionKey:
         condition.kind === 'always' ? null : `np:${attacker.id}:${damage.functionId}:condition`,
+      decisionMode: condition.kind === 'always' ? 'automatic' : 'assertCondition',
       enabledByDefault: true,
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId, parameterKeys: [] },
       presentation: {
@@ -1041,7 +1056,10 @@ export function executeOrderedScenario(
       : {
           ...projection,
           outcome: 'notApplied' as const,
-          decision: { state: 'disabled' as const, decisionKey: projection.projectionKey },
+          decision:
+            projection.decision.state === 'none'
+              ? projection.decision
+              : { ...projection.decision, state: 'disabled' as const },
           explanation: { ...projection.explanation, code: 'disabled' as const },
         };
   });

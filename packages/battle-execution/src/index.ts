@@ -1,6 +1,10 @@
 export type ActorScope = 'attacker' | 'target';
 export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
 export type CardType = 'buster' | 'arts' | 'quick';
+export type ExclusiveTraitGroup =
+  'worldAttribute' | 'fieldRealm' | 'alignmentOrder' | 'alignmentMoral';
+export type OperationDecisionMode =
+  'automatic' | 'enableOperation' | 'assertCondition' | 'enableAndAssert';
 
 export type ConditionExpression =
   | { kind: 'always' }
@@ -54,6 +58,7 @@ interface OperationBase {
   source: OperationSource;
   condition: ConditionExpression;
   decisionKey: string | null;
+  decisionMode: OperationDecisionMode;
   enabledByDefault: boolean;
   evidence: OperationEvidence;
   presentation: { label: string; sourceName: string; skillName: string };
@@ -133,7 +138,13 @@ export type ScenarioAssumption = {
   decisionKey: string;
   enabled: boolean;
   assertion:
-    | { kind: 'trait'; scope: TraitScope; trait: string; present: boolean }
+    | {
+        kind: 'trait';
+        scope: TraitScope;
+        trait: string;
+        present: boolean;
+        exclusiveGroup: ExclusiveTraitGroup | null;
+      }
     | {
         kind: 'quantity';
         quantity: keyof BattleState['quantities'];
@@ -177,8 +188,16 @@ export interface EffectProjection {
   visibility: 'visible' | 'hidden';
   controllability: 'automatic' | 'user';
   decision:
-    | { state: 'enabled'; decisionKey: string }
-    | { state: 'disabled'; decisionKey: string }
+    | {
+        state: 'enabled';
+        decisionKey: string;
+        mode: Exclude<OperationDecisionMode, 'automatic'>;
+      }
+    | {
+        state: 'disabled';
+        decisionKey: string;
+        mode: Exclude<OperationDecisionMode, 'automatic'>;
+      }
     | { state: 'none' };
   explanation: ProjectionExplanation;
 }
@@ -207,6 +226,7 @@ export {
   executeOrderedScenario,
   type OrderedScenarioExecution,
 } from './engine';
+export { exclusiveTraitGroup } from './conditionSemantics';
 export {
   applyNpDamageOperation,
   evaluateNpDamageOperation,
