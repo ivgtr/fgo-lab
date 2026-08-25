@@ -132,6 +132,13 @@ export const calculationEditorStateSchema = z.object({
   attackerSource: z.enum(['owned', 'master']),
   effectMode: z.enum(['resolved', 'manual']).default('resolved'),
   attackerSkills: z.array(attackerSkillSelectionSchema).max(20).optional(),
+  mysticCode: z
+    .object({
+      mysticCodeId: z.string().min(1).max(80),
+      skills: z.array(attackerSkillSelectionSchema).min(1).max(3),
+    })
+    .nullable()
+    .optional(),
   effectOverrides: z.record(z.string(), z.boolean()).optional(),
   support: z
     .object({
@@ -203,6 +210,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
       })
       .nullable(),
     attackerSkills: z.array(attackerSkillSelectionSchema).max(20),
+    mysticCode: calculationEditorStateSchema.shape.mysticCode.unwrap().nullable(),
     support: calculationEditorStateSchema.shape.support.unwrap().nullable(),
     effectDecisions: z.record(z.string(), z.boolean()),
     explicitOverrides: z.object({

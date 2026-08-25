@@ -2,6 +2,7 @@ import { calculateNpDamage, classAttackRate } from '@fgo-lab/calc-core';
 import {
   resolveAttackerSkills,
   resolveCraftEssenceEffects,
+  resolveMysticCodeSkills,
   resolveNpEffects,
   resolveServantPassives,
   resolveSupportComposition,
@@ -67,20 +68,36 @@ export function resolveCalculationInput(
     master.servants,
     { ...resolveOptions, defaultEnabled: false },
   );
+  const mysticCode = selection.mysticCode
+    ? resolveMysticCodeSkills(
+        attackerSkills.input,
+        master.mysticCodes.find(
+          (candidate) => candidate.id === selection.mysticCode?.mysticCodeId,
+        ),
+        selection.mysticCode.skills,
+        attacker?.traits ?? [],
+        { ...resolveOptions, defaultEnabled: false },
+      )
+    : undefined;
   const support = selection.support
     ? resolveSupportComposition(
-        attackerSkills.input,
+        mysticCode?.input ?? attackerSkills.input,
         selection.support.composition,
         master.servants,
         {},
       )
     : undefined;
-  const np = resolveNpEffects(support?.input ?? attackerSkills.input, attacker, resolveOptions);
+  const np = resolveNpEffects(
+    support?.input ?? mysticCode?.input ?? attackerSkills.input,
+    attacker,
+    resolveOptions,
+  );
   const resolutions: [string, ResolvedEffectSet][] = [
     ['passive-effect', passive],
     ['craft-essence-effect', craftEssenceResolution],
     ['attacker-effect', attackerSkills],
   ];
+  if (mysticCode) resolutions.push(['mystic-code-effect', mysticCode]);
   if (support) resolutions.push(['support-effect', support]);
   resolutions.push(['np-effect', np]);
   const npDamageBuffRate = Math.max(
@@ -259,6 +276,7 @@ export function scenarioFromDamageKernelInput(
         }
       : null,
     attackerSkills: selection.attackerSkills ?? [],
+    mysticCode: selection.mysticCode ?? null,
     support: selection.support ?? null,
     effectDecisions: selection.effectOverrides ?? {},
     explicitOverrides: {
@@ -277,6 +295,7 @@ export function selectionFromScenario(scenario: CalculationScenario): Calculatio
     attackerSource: scenario.attacker.source,
     effectMode: 'resolved',
     attackerSkills: scenario.attackerSkills,
+    mysticCode: scenario.mysticCode,
     effectOverrides: scenario.effectDecisions,
     support: scenario.support,
     manualOverrides: Object.keys(scenario.explicitOverrides) as NonNullable<

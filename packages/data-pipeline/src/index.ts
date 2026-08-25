@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 4,
+    schemaVersion: 5,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -222,6 +222,20 @@ type AtlasEquip = {
     functions?: AtlasFunction[];
   }[];
   extraAssets?: { equipFace?: { equip?: Record<string, string> } };
+};
+type AtlasMysticCode = {
+  id?: number;
+  name?: string;
+  maxLv?: number;
+  extraAssets?: { item?: { male?: string; female?: string } };
+  skills?: {
+    id?: number;
+    name?: string;
+    detail?: string;
+    icon?: string;
+    priority?: number;
+    functions?: AtlasFunction[];
+  }[];
 };
 type AtlasItem = {
   id?: number;
@@ -421,7 +435,11 @@ function collectFunctionTraitNames(functions: readonly AtlasFunction[] | undefin
   ]);
 }
 
-function collectTraitNameById(servants: readonly AtlasServant[], equips: readonly AtlasEquip[]) {
+function collectTraitNameById(
+  servants: readonly AtlasServant[],
+  equips: readonly AtlasEquip[],
+  mysticCodes: readonly AtlasMysticCode[],
+) {
   const traits = [
     ...servants.flatMap((servant) => [
       ...(servant.traits ?? []),
@@ -432,6 +450,9 @@ function collectTraitNameById(servants: readonly AtlasServant[], equips: readonl
     ]),
     ...equips.flatMap((equip) =>
       (equip.skills ?? []).flatMap((skill) => collectFunctionTraitNames(skill.functions)),
+    ),
+    ...mysticCodes.flatMap((mysticCode) =>
+      (mysticCode.skills ?? []).flatMap((skill) => collectFunctionTraitNames(skill.functions)),
     ),
   ];
   return new Map(
@@ -447,12 +468,19 @@ export function normalizeAtlasSnapshot(input: {
   version: string;
   servants: unknown;
   equips: unknown;
+  mysticCodes: unknown;
   items: unknown;
 }): MasterDataSnapshot {
-  if (!Array.isArray(input.servants) || !Array.isArray(input.equips) || !Array.isArray(input.items))
+  if (
+    !Array.isArray(input.servants) ||
+    !Array.isArray(input.equips) ||
+    !Array.isArray(input.mysticCodes) ||
+    !Array.isArray(input.items)
+  )
     throw new TypeError('atlas_exports_must_be_arrays');
   const atlasServants = input.servants as AtlasServant[];
   const atlasEquips = input.equips as AtlasEquip[];
+  const atlasMysticCodes = input.mysticCodes as AtlasMysticCode[];
   const attackInventory = inventoryAtlasAttackFunctions(atlasServants);
   if (attackInventory.unknown.length > 0)
     throw new TypeError(`unknown_attack_functions:${attackInventory.unknown.join(',')}`);
@@ -484,7 +512,7 @@ export function normalizeAtlasSnapshot(input: {
       ),
     );
   });
-  const traitNameById = collectTraitNameById(atlasServants, atlasEquips);
+  const traitNameById = collectTraitNameById(atlasServants, atlasEquips, atlasMysticCodes);
   const servants = atlasServants.flatMap((servant, servantIndex) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
     if (
@@ -627,6 +655,39 @@ export function normalizeAtlasSnapshot(input: {
       },
     ];
   });
+  const mysticCodes = atlasMysticCodes.flatMap((mysticCode) => {
+    if (
+      typeof mysticCode.id !== 'number' ||
+      !mysticCode.name ||
+      typeof mysticCode.maxLv !== 'number'
+    )
+      return [];
+    const skills = (mysticCode.skills ?? []).flatMap((skill, skillIndex) =>
+      typeof skill.id === 'number' && skill.name
+        ? [
+            {
+              id: String(skill.id),
+              slot: skillIndex + 1,
+              priority: skill.priority ?? 0,
+              name: skill.name,
+              detail: skill.detail ?? '',
+              imageKey: skill.icon ?? null,
+              effects: normalizeFunctions(skill.functions),
+            },
+          ]
+        : [],
+    );
+    if (skills.length === 0) return [];
+    return [
+      {
+        id: String(mysticCode.id),
+        name: mysticCode.name,
+        maxLevel: mysticCode.maxLv,
+        imageKey: mysticCode.extraAssets?.item?.male ?? mysticCode.extraAssets?.item?.female ?? null,
+        skills,
+      },
+    ];
+  });
   const materials = (input.items as AtlasItem[]).flatMap((item) =>
     typeof item.id === 'number' &&
     item.name &&
@@ -658,6 +719,7 @@ export function normalizeAtlasSnapshot(input: {
     },
     servants,
     craftEssences,
+    mysticCodes,
     materials,
   });
 }

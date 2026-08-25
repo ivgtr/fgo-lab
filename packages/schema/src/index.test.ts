@@ -29,6 +29,7 @@ describe('portable schema boundaries', () => {
       assumptions: { classAffinity: 2, attributeAffinity: 1 },
       craftEssence: null,
       attackerSkills: [],
+      mysticCode: null,
       support: null,
       effectDecisions: {},
       explicitOverrides: {},

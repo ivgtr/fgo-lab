@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(4),
+  schemaVersion: z.literal(5),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -55,6 +55,15 @@ const masterSkillSchema = z.object({
   effects: z.array(masterEffectSchema),
 });
 export type MasterSkill = z.infer<typeof masterSkillSchema>;
+
+export const mysticCodeMasterSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  maxLevel: z.number().int().min(1).max(10),
+  imageKey: z.string().nullable(),
+  skills: z.array(masterSkillSchema).min(1).max(3),
+});
+export type MysticCodeMaster = z.infer<typeof mysticCodeMasterSchema>;
 
 const traitReferenceSchema = z.object({ id: z.number().int(), name: z.string().min(1) });
 
@@ -304,6 +313,7 @@ export const masterSnapshotSchema = z.object({
   }),
   servants: z.array(servantMasterSchema),
   craftEssences: z.array(craftEssenceMasterSchema),
+  mysticCodes: z.array(mysticCodeMasterSchema),
   materials: z.array(materialMasterSchema),
 });
 export type MasterDataSnapshot = z.infer<typeof masterSnapshotSchema>;
@@ -326,6 +336,11 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
   for (const servant of parsed.data.servants) {
     if (ids.has(servant.id)) errors.push(`duplicate servant:${servant.id}`);
     ids.add(servant.id);
+  }
+  const mysticCodeIds = new Set<string>();
+  for (const mysticCode of parsed.data.mysticCodes) {
+    if (mysticCodeIds.has(mysticCode.id)) errors.push(`duplicate mystic code:${mysticCode.id}`);
+    mysticCodeIds.add(mysticCode.id);
   }
   const includedAttackFunctions = parsed.data.servants.reduce(
     (count, servant) =>

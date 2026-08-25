@@ -4,6 +4,7 @@ import {
   getPrimaryNpDamage,
   type CraftEssenceMaster,
   type MasterEffect,
+  type MysticCodeMaster,
   type ServantMaster,
   type TraitCondition,
 } from '@fgo-lab/master-data';
@@ -30,7 +31,7 @@ export interface DamageTraitCondition {
 export interface ResolvedSupportEffect {
   effectKey: string;
   sourceInstanceId: string;
-  origin: 'attacker' | 'support' | 'craftEssence' | 'passive' | 'np';
+  origin: 'attacker' | 'support' | 'craftEssence' | 'mysticCode' | 'passive' | 'np';
   sourceId: string;
   sourceName: string;
   skillId: string;
@@ -551,4 +552,49 @@ export function resolveAttackerSkills(
     'attacker',
     options,
   );
+}
+
+export function resolveMysticCodeSkills(
+  baseInput: DamageKernelInput,
+  mysticCode: MysticCodeMaster | undefined,
+  selections: readonly AttackerSkillSelection[],
+  recipientTraits: readonly string[],
+  options: ResolveEffectOptions = {},
+): ResolvedEffectSet {
+  if (!mysticCode)
+    return {
+      input: baseInput,
+      effects: [],
+      npDamageBuffRate: 0,
+      precision: 'unsupported',
+      warnings: ['mysticCode_source_missing'],
+    };
+  const warnings: string[] = [];
+  const items: ResolvableEffect[] = [];
+  for (const selection of selections) {
+    const skill = mysticCode.skills.find((candidate) => candidate.id === selection.skillId);
+    if (!skill) {
+      warnings.push(`mysticCode_effect_missing:${mysticCode.id}:${selection.skillId}`);
+      continue;
+    }
+    for (const effect of skill.effects)
+      items.push({
+        sourceInstanceId: `mysticCode:${mysticCode.id}`,
+        sourceId: mysticCode.id,
+        sourceName: mysticCode.name,
+        skillId: skill.id,
+        skillName: skill.name,
+        effect,
+        rawValue: effect.values[selection.skillLevel - 1],
+        appliedReason: 'mystic_code_buff',
+        defaultEnabled: options.defaultEnabled ?? true,
+        forceSoftConditions: false,
+      });
+  }
+  const resolved = resolveEffects(baseInput, items, 'mysticCode', recipientTraits, options);
+  return {
+    ...resolved,
+    precision: warnings.length > 0 ? 'unsupported' : resolved.precision,
+    warnings: [...warnings, ...resolved.warnings],
+  };
 }

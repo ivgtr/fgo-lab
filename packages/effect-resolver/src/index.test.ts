@@ -1,4 +1,4 @@
-import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
+import type { CraftEssenceMaster, MysticCodeMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { DamageKernelInput, SupportComposition } from '@fgo-lab/schema';
 import type { MasterEffect, NpDamageSpec } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +7,7 @@ import {
   resolveAttackerSkills,
   resolveCraftEssenceEffects,
   resolveNpEffects,
+  resolveMysticCodeSkills,
   resolveServantPassives,
   resolveSupportComposition,
 } from './index';
@@ -468,6 +469,32 @@ describe('resolveAttackerSkills', () => {
       applied: false,
       reason: 'attacker_trait_mismatch',
     });
+  });
+});
+
+describe('resolveMysticCodeSkills', () => {
+  const mysticCode: MysticCodeMaster = {
+    id: '1',
+    name: '魔術礼装･カルデア',
+    maxLevel: 10,
+    imageKey: null,
+    skills: source.skills,
+  };
+
+  it('uses the shared effect resolver and fails closed for a missing source', () => {
+    const resolved = resolveMysticCodeSkills(
+      input,
+      mysticCode,
+      [{ skillId: 'skill', skillLevel: 10 }],
+      [],
+    );
+    expect(resolved.input.attackBuff).toBeCloseTo(0.3);
+    expect(resolved.input.cardBuff).toBeCloseTo(0.5);
+    expect(resolved.input.npDamageBuff).toBeCloseTo(0.3);
+    expect(resolved.effects.every((effect) => effect.origin === 'mysticCode')).toBe(true);
+    expect(
+      resolveMysticCodeSkills(input, undefined, [{ skillId: 'skill', skillLevel: 10 }], []).precision,
+    ).toBe('unsupported');
   });
 });
 

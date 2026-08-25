@@ -11,6 +11,7 @@ const content = JSON.stringify({
   normalization: { attackFunctions: { sourceCount: 0, includedCount: 0, excluded: [] } },
   servants: [],
   craftEssences: [],
+  mysticCodes: [],
   materials: [],
 });
 describe('immutable publish pipeline', () => {
@@ -149,6 +150,7 @@ describe('immutable publish pipeline', () => {
           ],
         },
       ],
+      mysticCodes: [],
       items: [],
     });
     expect(snapshot.servants[0]).toMatchObject({
@@ -311,6 +313,7 @@ describe('immutable publish pipeline', () => {
         },
       ],
       equips: [],
+      mysticCodes: [],
       items: [],
     });
 
@@ -337,5 +340,62 @@ describe('immutable publish pipeline', () => {
     expect(snapshot.servants.find((servant) => servant.id === '1')?.noblePhantasms[0]?.card).toBe(
       'arts',
     );
+  });
+
+  it('normalizes mystic code skills through the shared effect model', () => {
+    const snapshot = normalizeAtlasSnapshot({
+      version: 'mystic-code',
+      servants: [],
+      equips: [],
+      mysticCodes: [
+        {
+          id: 1,
+          name: '魔術礼装･カルデア',
+          maxLv: 10,
+          extraAssets: { item: { male: 'master-equip.png' } },
+          skills: [
+            {
+              id: 980002,
+              name: '瞬間強化',
+              detail: '味方単体の攻撃力を超アップ',
+              icon: 'skill.png',
+              functions: [
+                {
+                  funcId: 150,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'ptOne',
+                  funcPopupText: '攻撃力アップ',
+                  buffs: [{ type: 'upAtk' }],
+                  svals: Array.from({ length: 10 }, (_, index) => ({ Value: 300 + index * 20 })),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      items: [],
+    });
+
+    expect(snapshot.mysticCodes).toEqual([
+      {
+        id: '1',
+        name: '魔術礼装･カルデア',
+        maxLevel: 10,
+        imageKey: 'master-equip.png',
+        skills: [
+          expect.objectContaining({
+            id: '980002',
+            slot: 1,
+            effects: [
+              expect.objectContaining({
+                id: '150',
+                buffTypes: ['upAtk'],
+                values: [300, 320, 340, 360, 380, 400, 420, 440, 460, 480],
+              }),
+            ],
+          }),
+        ],
+      },
+    ]);
   });
 });
