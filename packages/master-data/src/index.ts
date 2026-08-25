@@ -238,6 +238,24 @@ export const servantMasterSchema = z.object({
 });
 export type ServantMaster = z.infer<typeof servantMasterSchema>;
 
+export function naturalServantLevel(rarity: ServantMaster['rarity']): number {
+  switch (rarity) {
+    case 0:
+    case 2:
+      return 65;
+    case 1:
+      return 60;
+    case 3:
+      return 70;
+    case 4:
+      return 80;
+    case 5:
+      return 90;
+    default:
+      throw new RangeError(`unsupported servant rarity:${String(rarity)}`);
+  }
+}
+
 export function getPrimaryNoblePhantasm(
   servant: Pick<ServantMaster, 'noblePhantasms'>,
 ): NoblePhantasmMaster | undefined {

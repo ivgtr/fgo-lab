@@ -58,6 +58,17 @@ describe('scenario calculation facade', () => {
     expect(calculation.result.rows).toHaveLength(5);
   });
 
+  it('uses the natural level cap for an unsaved servant build', () => {
+    const fourStarServant = {
+      ...master.servants[0]!,
+      rarity: 4,
+      atkByLevel: { ...master.servants[0]!.atkByLevel, '80': 9_000 },
+    };
+    const scenario = createDefaultResolvedScenario(master, undefined, fourStarServant);
+
+    expect(scenario.attacker).toMatchObject({ level: 80, source: 'master' });
+  });
+
   it('applies a conditional NP from the same explicit effect decision contract', () => {
     const baseServant = fixture.servants[0]!;
     const conditionalMaster = masterSnapshotSchema.parse({

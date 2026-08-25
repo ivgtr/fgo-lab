@@ -9,6 +9,7 @@ import {
   deriveNpMultipliers,
   getPrimaryNoblePhantasm,
   getPrimaryNpDamage,
+  naturalServantLevel,
   type MasterDataSnapshot,
   type NpDamageSpec,
   type ServantMaster,
@@ -226,7 +227,7 @@ export function createDefaultResolvedScenario(
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
-  const level = build?.level ?? 90;
+  const level = build?.level ?? naturalServantLevel(servant.rarity);
   return {
     mode: 'resolved',
     attacker: {

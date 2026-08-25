@@ -5,6 +5,7 @@ import {
   getPrimaryNoblePhantasm,
   getPrimaryNpDamage,
   getPrimaryNpPresentation,
+  naturalServantLevel,
   type CraftEssenceMaster,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -97,6 +98,13 @@ export function Calculator({
   const attackerSource = resolvedScenario?.attacker.source ?? 'master';
   const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
+  const naturalAttackerLevel = attacker
+    ? naturalServantLevel(attacker.rarity)
+    : input.attackerLevel;
+  const resetAttackerLevel =
+    attackerSource === 'owned'
+      ? (builds[input.attackerId]?.level ?? naturalAttackerLevel)
+      : naturalAttackerLevel;
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
   const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : null;
   const selectedCraftEssence = craftEssences.find(
@@ -294,7 +302,7 @@ export function Calculator({
     const noblePhantasm = getPrimaryNoblePhantasm(candidate);
     const damage = getPrimaryNpDamage(candidate);
     if (!noblePhantasm || !damage) return;
-    const level = saved?.level ?? 90;
+    const level = saved?.level ?? naturalServantLevel(candidate.rarity);
     if (scenario.mode === 'manual') {
       changeManualInput(
         applyScenarioNpDamageFunction(
@@ -564,7 +572,7 @@ export function Calculator({
                 className="quick-value-presets level-presets"
                 aria-label="サーヴァントLvのクイック選択"
               >
-                {[90, 100, 120].map((level) => (
+                {[100, 120].map((level) => (
                   <button
                     key={level}
                     type="button"
@@ -576,15 +584,8 @@ export function Calculator({
                 ))}
                 <button
                   type="button"
-                  disabled={
-                    input.attackerLevel ===
-                    (attackerSource === 'owned' ? (builds[input.attackerId]?.level ?? 90) : 90)
-                  }
-                  onClick={() =>
-                    changeAttackerLevel(
-                      attackerSource === 'owned' ? (builds[input.attackerId]?.level ?? 90) : 90,
-                    )
-                  }
+                  disabled={input.attackerLevel === resetAttackerLevel}
+                  onClick={() => changeAttackerLevel(resetAttackerLevel)}
                 >
                   リセット
                 </button>

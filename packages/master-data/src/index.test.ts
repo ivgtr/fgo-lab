@@ -5,6 +5,7 @@ import {
   deriveCraftEssenceAtk,
   masterManifestSchema,
   masterSnapshotSchema,
+  naturalServantLevel,
   validateMasterSnapshot,
 } from './index';
 
@@ -81,5 +82,9 @@ describe('master validation', () => {
   it('derives CE attack and rejects levels over the limit', () => {
     expect(deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 1, 0)).toBe(0);
     expect(() => deriveCraftEssenceAtk(parsedFixture.craftEssences[0]!, 21, 0)).toThrow(RangeError);
+  });
+  it('derives the natural level cap from servant rarity', () => {
+    expect([0, 1, 2, 3, 4, 5].map(naturalServantLevel)).toEqual([65, 60, 65, 70, 80, 90]);
+    expect(() => naturalServantLevel(6)).toThrow('unsupported servant rarity:6');
   });
 });
