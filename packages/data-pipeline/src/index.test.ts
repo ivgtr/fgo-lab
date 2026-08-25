@@ -92,6 +92,14 @@ describe('immutable publish pipeline', () => {
         Target: 2002,
         Correction: corrections[index],
       }));
+    const battlePointValues = () =>
+      [4500, 6000, 6750, 7125, 7500].map((Value) => ({
+        Rate: 1000,
+        Value,
+        Value2: 1000,
+        Target: 3300200,
+        Correction: 100,
+      }));
     const snapshot = normalizeAtlasSnapshot({
       version: 'test',
       servants: [
@@ -105,6 +113,7 @@ describe('immutable publish pipeline', () => {
           rarity: 5,
           atkGrowth: [1000],
           traits: [{ id: 2002, name: 'dragon' }],
+          battlePoints: [{ id: 3300200, phases: [{ phase: 0 }, { phase: 4 }, { phase: 10 }] }],
           skills: [
             { id: 1, num: 1, priority: 1, name: '旧スキル', functions: [] },
             { id: 2, num: 1, priority: 2, name: '強化後スキル', functions: [] },
@@ -130,6 +139,24 @@ describe('immutable publish pipeline', () => {
                   svals3: specialValues([1700, 1950, 2075, 2138, 2200]),
                   svals4: specialValues([1800, 2050, 2175, 2238, 2300]),
                   svals5: specialValues([1900, 2150, 2275, 2338, 2400]),
+                },
+              ],
+            },
+            {
+              id: 101,
+              name: 'Battle Point宝具',
+              card: '1',
+              priority: 0,
+              functions: [
+                {
+                  funcId: 13,
+                  funcType: 'damageNpBattlePointPhase',
+                  funcTargetType: 'enemyAll',
+                  svals: battlePointValues(),
+                  svals2: battlePointValues(),
+                  svals3: battlePointValues(),
+                  svals4: battlePointValues(),
+                  svals5: battlePointValues(),
                 },
               ],
             },
@@ -173,6 +200,10 @@ describe('immutable publish pipeline', () => {
       valuePermille: 3000,
       correctionPermille: 1500,
       targetTrait: { id: 2002, name: 'dragon' },
+    });
+    expect(snapshot.servants[0]?.noblePhantasms[1]?.damage[0]).toMatchObject({
+      kind: 'battlePointPhase',
+      maximumBattlePointPhase: 10,
     });
     expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({
       parameterSets: [[{ Value: 600 }], [], [], [], []],

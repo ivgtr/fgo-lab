@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 5,
+    schemaVersion: 6,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -185,6 +185,7 @@ type AtlasServant = {
   rarity?: number;
   atkGrowth?: number[];
   traits?: { id?: number; name?: string }[];
+  battlePoints?: { id?: number; phases?: { phase?: number }[] }[];
   skills?: {
     id?: number;
     num?: number;
@@ -268,6 +269,7 @@ function normalizeNpDamageFunction(
   fn: AtlasFunction,
   rawPath: string,
   traitNameById: ReadonlyMap<number, string>,
+  maximumBattlePointPhaseById: ReadonlyMap<number, number>,
 ): NpDamageSpec {
   const rawFunctionType = fn.funcType;
   if (!rawFunctionType || !(rawFunctionType in damageKindByFunction))
@@ -337,12 +339,21 @@ function normalizeNpDamageFunction(
       };
     });
   });
+  const kind = damageKindByFunction[rawFunctionType as keyof typeof damageKindByFunction];
+  const battlePointId = parametersByOvercharge[0]?.[0]?.targetId;
+  const maximumBattlePointPhase =
+    kind === 'battlePointPhase' && battlePointId !== undefined
+      ? maximumBattlePointPhaseById.get(battlePointId)
+      : undefined;
+  if (kind === 'battlePointPhase' && maximumBattlePointPhase === undefined)
+    throw new TypeError(`missing_battle_point_definition:${rawPath}:${String(battlePointId)}`);
   return {
-    kind: damageKindByFunction[rawFunctionType as keyof typeof damageKindByFunction],
+    kind,
     rawFunctionType: rawFunctionType as NpDamageSpec['rawFunctionType'],
     functionId: String(fn.funcId),
     target: fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
     parametersByOvercharge: parametersByOvercharge as NpDamageSpec['parametersByOvercharge'],
+    ...(maximumBattlePointPhase === undefined ? {} : { maximumBattlePointPhase }),
     rawPath,
   } as NpDamageSpec;
 }
@@ -372,9 +383,7 @@ function normalizeFunctions(functions: AtlasFunction[] | undefined) {
               AtlasFunctionValue[],
             ],
             ...(fn.script ? { functionScript: fn.script } : {}),
-            ...(fn.overWriteTvalsList
-              ? { overwriteTargetValues: fn.overWriteTvalsList }
-              : {}),
+            ...(fn.overWriteTvalsList ? { overwriteTargetValues: fn.overWriteTvalsList } : {}),
             recipientTraits: (fn.functvals ?? []).flatMap((trait) =>
               trait.name && !trait.negative ? [trait.name] : [],
             ),
@@ -535,6 +544,15 @@ export function normalizeAtlasSnapshot(input: {
     )
       return [];
     const noblePhantasms = (servant.noblePhantasms ?? []).flatMap((np, npIndex) => {
+      const maximumBattlePointPhaseById = new Map(
+        (servant.battlePoints ?? []).flatMap((battlePoint) => {
+          if (typeof battlePoint.id !== 'number') return [];
+          const phases = (battlePoint.phases ?? []).flatMap((phase) =>
+            typeof phase.phase === 'number' ? [phase.phase] : [],
+          );
+          return phases.length > 0 ? [[battlePoint.id, Math.max(...phases)] as const] : [];
+        }),
+      );
       const indexedFunctions = (np.functions ?? []).map((fn, functionIndex) => ({
         fn,
         functionIndex,
@@ -559,6 +577,7 @@ export function normalizeAtlasSnapshot(input: {
               fn,
               `servants[${String(servantIndex)}].noblePhantasms[${String(npIndex)}].functions[${String(functionIndex)}]`,
               traitNameById,
+              maximumBattlePointPhaseById,
             ),
           ),
           effects: indexedFunctions.flatMap(({ fn, functionIndex }) =>
@@ -692,7 +711,8 @@ export function normalizeAtlasSnapshot(input: {
         id: String(mysticCode.id),
         name: mysticCode.name,
         maxLevel: mysticCode.maxLv,
-        imageKey: mysticCode.extraAssets?.item?.male ?? mysticCode.extraAssets?.item?.female ?? null,
+        imageKey:
+          mysticCode.extraAssets?.item?.male ?? mysticCode.extraAssets?.item?.female ?? null,
         skills,
       },
     ];

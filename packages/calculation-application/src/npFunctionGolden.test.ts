@@ -18,6 +18,7 @@ interface GoldenCase {
   caseId: string;
   kind: NpDamageSpec['kind'];
   rawFunctionType: NpDamageSpec['rawFunctionType'];
+  maximumBattlePointPhase?: number;
   parameters: GoldenParameter[];
   context: {
     attackerStateTraits?: string[];
@@ -84,6 +85,9 @@ function damageSpec(testCase: GoldenCase): NpDamageSpec {
   return {
     kind: testCase.kind,
     rawFunctionType: testCase.rawFunctionType,
+    ...(testCase.maximumBattlePointPhase === undefined
+      ? {}
+      : { maximumBattlePointPhase: testCase.maximumBattlePointPhase }),
     functionId: testCase.caseId,
     target: 'single',
     parametersByOvercharge: Array.from({ length: 5 }, () => row),

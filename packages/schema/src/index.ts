@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SCHEMA_VERSION = 7 as const;
-export const ENGINE_VERSION = '4.1.0' as const;
+export const ENGINE_VERSION = '4.2.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({

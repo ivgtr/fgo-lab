@@ -75,7 +75,7 @@ export function resolveCalculationInput(
   return {
     input: resolved.input,
     precision: resolved.precision,
-    evidenceKeys: ['master:normalized-v5', ...effectEvidenceKeys],
+    evidenceKeys: ['master:normalized-v6', ...effectEvidenceKeys],
     warnings: resolved.warnings,
     effects: resolved.effects,
     trace: resolved.trace,

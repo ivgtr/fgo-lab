@@ -522,7 +522,7 @@ describe('calculation application logic', () => {
     expect(calculation.result.evidence.map((entry) => entry.key)).toEqual([
       'kernel:np-damage-v1',
       'np-function:standard',
-      'master:normalized-v5',
+      'master:normalized-v6',
     ]);
   });
 

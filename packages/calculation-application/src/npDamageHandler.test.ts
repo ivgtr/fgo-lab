@@ -179,14 +179,15 @@ describe('NP damage handler registry', () => {
       ...base,
       kind: 'battlePointPhase',
       rawFunctionType: 'damageNpBattlePointPhase',
+      maximumBattlePointPhase: 10,
       parametersByOvercharge: matrix({
         targetId: 1,
         secondaryValuePermille: 1_000,
         correctionPermille: 100,
       }),
     } as NpDamageSpec;
-    expect(resolveNpDamageHandler(battle, { ...context, battlePointPhase: 4 })).toMatchObject({
-      npSpecialMultipliers: [1.4, 1.4, 1.4, 1.4, 1.4],
+    expect(resolveNpDamageHandler(battle, { ...context, battlePointPhase: 40 })).toMatchObject({
+      npSpecialMultipliers: [2, 2, 2, 2, 2],
     });
   });
 
@@ -201,6 +202,7 @@ describe('NP damage handler registry', () => {
       ...base,
       kind: 'battlePointPhase',
       rawFunctionType: 'damageNpBattlePointPhase',
+      maximumBattlePointPhase: 10,
       parametersByOvercharge: matrix({ secondaryValuePermille: 1_000, correctionPermille: 100 }),
     } as NpDamageSpec;
     expect(resolveNpDamageHandler(rarity, context)).toEqual({

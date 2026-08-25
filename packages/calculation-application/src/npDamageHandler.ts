@@ -70,7 +70,10 @@ export function resolveNpDamageHandler(
   if (damage.kind === 'battlePointPhase') {
     if (context.battlePointPhase === null)
       return { status: 'unsupported', missingEvidence: 'missing_battle_point_phase' };
-    const battlePointPhase = context.battlePointPhase;
+    const battlePointPhase = Math.min(
+      Math.max(context.battlePointPhase, 0),
+      damage.maximumBattlePointPhase,
+    );
     return resolved(
       baseMultipliers,
       parameters.map(

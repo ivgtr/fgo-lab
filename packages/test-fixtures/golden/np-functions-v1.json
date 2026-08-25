@@ -1,7 +1,7 @@
 {
   "description": "Atlas JPの実パラメータとChaldeaのFunction分岐規則から独立に作成したNP Function handler行列",
   "reviewedAt": "2026-08-25",
-  "engineVersion": "4.1.0",
+  "engineVersion": "4.2.0",
   "sources": [
     "data/raw/nice_servant.json",
     "https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart#L80-L161"
@@ -208,6 +208,7 @@
       "caseId": "battle-point-phase-four",
       "kind": "battlePointPhase",
       "rawFunctionType": "damageNpBattlePointPhase",
+      "maximumBattlePointPhase": 10,
       "parameters": [
         { "Value": 4500, "Value2": 1000, "Target": 3300200, "Correction": 100 },
         { "Value": 6000, "Value2": 1000, "Target": 3300200, "Correction": 100 },
@@ -215,10 +216,10 @@
         { "Value": 7125, "Value2": 1000, "Target": 3300200, "Correction": 100 },
         { "Value": 7500, "Value2": 1000, "Target": 3300200, "Correction": 100 }
       ],
-      "context": { "battlePointPhase": 4 },
+      "context": { "battlePointPhase": 99 },
       "expected": {
         "npMultipliers": [450, 600, 675, 712.5, 750],
-        "npSpecialMultipliers": [1.4, 1.4, 1.4, 1.4, 1.4],
+        "npSpecialMultipliers": [2, 2, 2, 2, 2],
         "ignoreDefense": false
       }
     },

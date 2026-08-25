@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(5),
+  schemaVersion: z.literal(6),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -148,6 +148,7 @@ export const npDamageSpecSchema = z
     npDamageBaseSchema.extend({
       kind: z.literal('battlePointPhase'),
       rawFunctionType: z.literal('damageNpBattlePointPhase'),
+      maximumBattlePointPhase: z.number().int().nonnegative(),
     }),
     npDamageBaseSchema.extend({
       kind: z.literal('targetRarity'),

@@ -1,10 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
-import { deriveCraftEssenceAtk, masterSnapshotSchema, validateMasterSnapshot } from './index';
+import manifest from '../../test-fixtures/master/manifest.json';
+import {
+  deriveCraftEssenceAtk,
+  masterManifestSchema,
+  masterSnapshotSchema,
+  validateMasterSnapshot,
+} from './index';
 
 const parsedFixture = masterSnapshotSchema.parse(fixture);
 
 describe('master validation', () => {
+  it('accepts only the current master manifest schema', () => {
+    expect(masterManifestSchema.safeParse(manifest).success).toBe(true);
+    expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 5 }).success).toBe(false);
+  });
   it('accepts the legal minimal fixture', () =>
     expect(validateMasterSnapshot(fixture)).toEqual({
       valid: true,

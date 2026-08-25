@@ -19,7 +19,7 @@ const candidate: RankingCandidate = {
   name: master.servants[0]!.name,
   input: createDefaultDamageResolutionInput(master, undefined),
   resolutionUnsupported: false,
-  resolutionEvidenceKeys: ['master:normalized-v5'],
+  resolutionEvidenceKeys: ['master:normalized-v6'],
   resolutionWarnings: [],
   classId: master.servants[0]!.classId,
   rarity: master.servants[0]!.rarity,
@@ -41,7 +41,7 @@ describe('ranking calculation', () => {
     const response = calculateRanking({
       requestId: 'request',
       candidates: [
-        { ...candidate, resolutionEvidenceKeys: ['master:normalized-v5', 'unknown:evidence'] },
+        { ...candidate, resolutionEvidenceKeys: ['master:normalized-v6', 'unknown:evidence'] },
       ],
       versions,
     });
