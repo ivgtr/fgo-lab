@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 3 as const;
-export const ENGINE_VERSION = '1.4.0' as const;
+export const SCHEMA_VERSION = 4 as const;
+export const ENGINE_VERSION = '2.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -165,28 +165,54 @@ export const calculationSelectionSchema = z.object({
 });
 export type CalculationSelection = z.infer<typeof calculationSelectionSchema>;
 
-export const damageSummarySchema = z.object({
+export const damageRowSchema = z.object({
   npLevel: z.number().int().min(1).max(5),
   minimum: z.number().int().nonnegative(),
   average: z.number().nonnegative(),
   maximum: z.number().int().nonnegative(),
 });
-export const calcResultSchema = z.object({
-  precision: z.enum(['exact', 'approximate', 'unsupported']),
-  results: z.array(damageSummarySchema).length(5),
-  breakdown: z.array(z.object({ key: z.string(), labelKey: z.string(), value: z.number() })),
+export type DamageRow = z.infer<typeof damageRowSchema>;
+const resultBaseSchema = z.object({
+  effects: z.array(
+    z.object({
+      effectKey: z.string(),
+      state: z.enum(['applied', 'rejected', 'unsupported']),
+      reasonCode: z.string(),
+    }),
+  ),
   assumptions: z.array(z.string()),
-  warnings: z.array(z.string()),
+  issues: z.array(z.object({ code: z.string(), detail: z.string() })),
   trace: z.array(z.object({ step: z.string(), detail: z.string() })),
   versions: versionContextSchema,
 });
-export type CalcResult = z.infer<typeof calcResultSchema>;
+const calculatedResultSchema = resultBaseSchema.extend({
+  status: z.literal('calculated'),
+  precision: z.enum(['exact', 'approximate']),
+  rows: z.tuple([
+    damageRowSchema,
+    damageRowSchema,
+    damageRowSchema,
+    damageRowSchema,
+    damageRowSchema,
+  ]),
+  breakdown: z.array(z.object({ key: z.string(), labelKey: z.string(), value: z.number() })),
+});
+const unsupportedResultSchema = resultBaseSchema.extend({
+  status: z.literal('unsupported'),
+  rows: z.tuple([]),
+  missingEvidence: z.array(z.string()),
+});
+export const calculationResultSchema = z.discriminatedUnion('status', [
+  calculatedResultSchema,
+  unsupportedResultSchema,
+]);
+export type CalculationResult = z.infer<typeof calculationResultSchema>;
 
 export const calculationDraftSchema = z.object({
   profileId: z.uuid(),
   calculationSessionId: z.uuid(),
   input: calcInputSchema,
-  result: calcResultSchema,
+  result: calculationResultSchema,
   inputFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   selection: calculationSelectionSchema.optional(),
   updatedAt: z.iso.datetime(),
@@ -222,33 +248,7 @@ export function parseStoredProfileCollection(value: unknown): {
   collection: ProfileCollection;
   upgraded: boolean;
 } {
-  const current = profileCollectionSchema.safeParse(value);
-  if (current.success) return { collection: current.data, upgraded: false };
-  if (!value || typeof value !== 'object') throw current.error;
-
-  const stored = value as Record<string, unknown>;
-  if (![1, 2].includes(Number(stored['schemaVersion']))) throw current.error;
-  const storedProfiles: unknown = stored['profiles'];
-  const profiles = Array.isArray(storedProfiles)
-    ? (storedProfiles as unknown[]).map((profile) =>
-        profile && typeof profile === 'object'
-          ? {
-              ...(profile as Record<string, unknown>),
-              supportTemplates: [],
-              draft: null,
-              history: [],
-            }
-          : profile,
-      )
-    : storedProfiles;
-  return {
-    collection: profileCollectionSchema.parse({
-      ...stored,
-      schemaVersion: SCHEMA_VERSION,
-      profiles,
-    }),
-    upgraded: true,
-  };
+  return { collection: profileCollectionSchema.parse(value), upgraded: false };
 }
 
 export const userDataBackupSchema = z.object({
@@ -272,7 +272,7 @@ export const calculationShareSnapshotSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   sharedAt: z.iso.datetime(),
   input: calcInputSchema,
-  result: calcResultSchema,
+  result: calculationResultSchema,
   composition: calculationShareCompositionSchema.optional(),
 });
 export type CalculationShareSnapshot = z.infer<typeof calculationShareSnapshotSchema>;

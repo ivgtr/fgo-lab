@@ -426,7 +426,9 @@ export function App() {
         </header>
         {page === 'home' && (
           <Home
-            result={result.results[input.npLevel - 1]?.average ?? 0}
+            result={
+              result.status === 'calculated' ? (result.rows[input.npLevel - 1]?.average ?? 0) : 0
+            }
             attackerName={selectedAttacker.name}
             attackerImage={selectedAttacker.imageKey}
             owned={selectedBuild?.npLevel ? 1 : 0}

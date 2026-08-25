@@ -3,6 +3,7 @@ import {
   calculationShareCompositionSchema,
   calculationShareSnapshotSchema,
   calculationSelectionSchema,
+  calculationResultSchema,
   calcInputSchema,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
@@ -10,6 +11,26 @@ import {
 } from './index';
 
 describe('portable schema boundaries', () => {
+  it('does not allow unsupported results to carry numeric rows', () => {
+    const unsupported = {
+      status: 'unsupported',
+      rows: [{ npLevel: 1, minimum: 1, average: 1, maximum: 1 }],
+      effects: [],
+      assumptions: [],
+      issues: [],
+      trace: [],
+      missingEvidence: ['handler'],
+      versions: {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: 'fixture',
+        engineVersion: '2.0.0',
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+      },
+    };
+    expect(calculationResultSchema.safeParse(unsupported).success).toBe(false);
+  });
   it('rejects profile data in a share snapshot', () => {
     const result = calculationShareSnapshotSchema.safeParse({
       kind: 'fgo-lab-calculation-share',
@@ -71,52 +92,39 @@ describe('portable schema boundaries', () => {
     expect(template.composition.selectedEffects).toHaveLength(1);
   });
 
-  it('upgrades v1 profiles once while discarding incompatible calculation snapshots', () => {
+  it('rejects legacy profiles instead of maintaining a compatibility migration', () => {
     const profileId = crypto.randomUUID();
-    const recovered = parseStoredProfileCollection({
-      schemaVersion: 1,
-      activeProfileId: profileId,
-      profiles: [
-        {
-          profileId,
-          name: '保存済み',
-          createdAt: '2026-08-24T00:00:00.000Z',
-          updatedAt: '2026-08-24T00:00:00.000Z',
-          servantBuilds: {
-            '405900': {
-              servantId: '405900',
-              level: 90,
-              ascension: 4,
-              npLevel: 1,
-              fouAtk: 1000,
-              skills: { '1': 10 },
-              appends: {},
-              updatedAt: '2026-08-24T00:00:00.000Z',
-            },
-          },
-          servantTargets: {},
-          craftEssences: [],
-          supportTemplates: [],
-          draft: { input: { npSpecialMultiplier: 1.5 } },
-          history: [{ input: { npSpecialMultiplier: 1.5 } }],
-        },
-      ],
-    });
-
-    expect(recovered).toMatchObject({
-      upgraded: true,
-      collection: {
-        schemaVersion: SCHEMA_VERSION,
+    expect(() =>
+      parseStoredProfileCollection({
+        schemaVersion: 1,
+        activeProfileId: profileId,
         profiles: [
           {
-            servantBuilds: { '405900': { npLevel: 1 } },
-            draft: null,
-            history: [],
+            profileId,
+            name: '保存済み',
+            createdAt: '2026-08-24T00:00:00.000Z',
+            updatedAt: '2026-08-24T00:00:00.000Z',
+            servantBuilds: {
+              '405900': {
+                servantId: '405900',
+                level: 90,
+                ascension: 4,
+                npLevel: 1,
+                fouAtk: 1000,
+                skills: { '1': 10 },
+                appends: {},
+                updatedAt: '2026-08-24T00:00:00.000Z',
+              },
+            },
+            servantTargets: {},
+            craftEssences: [],
+            supportTemplates: [],
+            draft: { input: { npSpecialMultiplier: 1.5 } },
+            history: [{ input: { npSpecialMultiplier: 1.5 } }],
           },
         ],
-      },
-    });
-    expect(parseStoredProfileCollection(recovered.collection).upgraded).toBe(false);
+      }),
+    ).toThrow();
   });
 
   it('does not reinterpret unknown future profile schemas', () => {

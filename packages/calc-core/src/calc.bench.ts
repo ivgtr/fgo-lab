@@ -33,9 +33,9 @@ const input = {
   target: { classId: 'neutral', attribute: 'unknown', traits: [] },
 } satisfies CalcInput;
 const versions = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   masterDataVersion: 'fixture-1',
-  engineVersion: '1.4.0',
+  engineVersion: '2.0.0',
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',

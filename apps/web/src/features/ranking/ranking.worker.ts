@@ -44,15 +44,18 @@ self.onmessage = (event: MessageEvent<RankingRequest>) => {
   const unsupported: RankingResponse['unsupported'] = [];
   for (const candidate of event.data.candidates) {
     const result = calculateNpDamage(candidate.input, event.data.versions);
-    if (result.precision === 'unsupported' || candidate.resolutionPrecision === 'unsupported') {
+    if (result.status === 'unsupported' || candidate.resolutionPrecision === 'unsupported') {
       unsupported.push({
         servantId: candidate.servantId,
         name: candidate.name,
-        reason: [...result.warnings, ...candidate.resolutionWarnings].join(',') || 'unsupported',
+        reason:
+          [...result.issues.map((issue) => issue.code), ...candidate.resolutionWarnings].join(
+            ',',
+          ) || 'unsupported',
       });
       continue;
     }
-    const current = result.results[candidate.input.npLevel - 1];
+    const current = result.rows[candidate.input.npLevel - 1];
     if (!current) continue;
     rows.push({
       servantId: candidate.servantId,

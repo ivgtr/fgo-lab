@@ -21,6 +21,7 @@ import type {
   CalculationSelection,
   CalculationShareSnapshot,
   ServantBuild,
+  CalculationResult,
   VersionContext,
 } from '@fgo-lab/schema';
 
@@ -120,29 +121,59 @@ export function calculateResolvedDamage(
 ) {
   const resolved = resolveCalculationInput(baseInput, selection, master);
   const calculation = calculateNpDamage(resolved.input, versions);
-  const result = {
-    ...calculation,
-    precision:
-      resolved.precision === 'unsupported'
-        ? ('unsupported' as const)
-        : resolved.precision === 'approximate' || calculation.precision === 'approximate'
-          ? ('approximate' as const)
-          : calculation.precision,
-    warnings: [...calculation.warnings, ...resolved.warnings],
-    trace: [...calculation.trace, ...resolved.trace],
-  };
+  const effects = resolved.effects.map((effect) => ({
+    effectKey: effect.effectKey,
+    state: effect.calculationSupported
+      ? effect.applied
+        ? ('applied' as const)
+        : ('rejected' as const)
+      : ('unsupported' as const),
+    reasonCode: effect.reason,
+  }));
+  const resolutionIssues = resolved.warnings.map((warning) => ({ code: warning, detail: warning }));
+  let result: CalculationResult;
+  if (calculation.status === 'unsupported' || resolved.precision === 'unsupported')
+    result = {
+      status: 'unsupported',
+      rows: [],
+      effects,
+      assumptions: calculation.assumptions,
+      issues: [...calculation.issues, ...resolutionIssues],
+      trace: [...calculation.trace, ...resolved.trace],
+      missingEvidence: [
+        ...(calculation.status === 'unsupported' ? calculation.missingEvidence : []),
+        ...resolved.warnings,
+      ],
+      versions,
+    };
+  else
+    result = {
+      ...calculation,
+      effects,
+      precision:
+        resolved.precision === 'approximate' || calculation.precision === 'approximate'
+          ? 'approximate'
+          : 'exact',
+      issues: [...calculation.issues, ...resolutionIssues],
+      trace: [...calculation.trace, ...resolved.trace],
+    };
+  if (!options.releaseValidated && result.status === 'calculated')
+    result = {
+      ...result,
+      precision: 'approximate',
+      issues: [
+        ...result.issues,
+        {
+          code: 'diagnostic_fixture_not_release_validated',
+          detail: 'diagnostic_fixture_not_release_validated',
+        },
+      ],
+    };
   return {
     input: resolved.input,
     effects: resolved.effects,
     effectWarnings: resolved.warnings,
-    result: options.releaseValidated
-      ? result
-      : {
-          ...result,
-          precision:
-            result.precision === 'unsupported' ? result.precision : ('approximate' as const),
-          warnings: [...new Set([...result.warnings, 'diagnostic_fixture_not_release_validated'])],
-        },
+    result,
   };
 }
 

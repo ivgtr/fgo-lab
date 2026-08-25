@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type {
   CalcInput,
-  CalcResult,
+  CalculationResult as CalculationResultValue,
   CalculationSelection,
   CalculationShareSnapshot,
 } from '@fgo-lab/schema';
@@ -24,7 +24,7 @@ export function CalculationResult({
   onFinalize,
 }: {
   input: CalcInput;
-  result: CalcResult;
+  result: CalculationResultValue;
   selection: CalculationSelection;
   attackerName: string;
   attackerImage: string | null;
@@ -32,7 +32,7 @@ export function CalculationResult({
   craftEssenceSummary: string;
   supportSummary: string;
   enabledAttackerSkillCount: number;
-  onFinalize: (input: CalcInput, result: CalcResult) => Promise<void>;
+  onFinalize: (input: CalcInput, result: CalculationResultValue) => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const resultCardRef = useRef<HTMLElement>(null);
@@ -133,33 +133,39 @@ export function CalculationResult({
             <dd>{supportSummary}</dd>
           </div>
         </dl>
-        <table className="np-result-table">
-          <caption className="visually-hidden">宝具レベル別のダメージ</caption>
-          <thead>
-            <tr>
-              <th>宝具Lv</th>
-              <th className="average">平均</th>
-              <th>最低</th>
-              <th>最大</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result.results.map((row) => (
-              <tr
-                key={row.npLevel}
-                aria-current={row.npLevel === input.npLevel ? 'true' : undefined}
-              >
-                <th>
-                  NP{row.npLevel}
-                  {row.npLevel === input.npLevel && <small>現在</small>}
-                </th>
-                <td className="average">{numberFormatter.format(row.average)}</td>
-                <td>{numberFormatter.format(row.minimum)}</td>
-                <td>{numberFormatter.format(row.maximum)}</td>
+        {result.status === 'unsupported' ? (
+          <p className="empty" role="alert">
+            現在の条件は正確に計算できないため、ダメージ値を表示していません。
+          </p>
+        ) : (
+          <table className="np-result-table">
+            <caption className="visually-hidden">宝具レベル別のダメージ</caption>
+            <thead>
+              <tr>
+                <th>宝具Lv</th>
+                <th className="average">平均</th>
+                <th>最低</th>
+                <th>最大</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {result.rows.map((row) => (
+                <tr
+                  key={row.npLevel}
+                  aria-current={row.npLevel === input.npLevel ? 'true' : undefined}
+                >
+                  <th>
+                    NP{row.npLevel}
+                    {row.npLevel === input.npLevel && <small>現在</small>}
+                  </th>
+                  <td className="average">{numberFormatter.format(row.average)}</td>
+                  <td>{numberFormatter.format(row.minimum)}</td>
+                  <td>{numberFormatter.format(row.maximum)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <footer className="result-card-foot">
           <small>FGO Lab・DB {result.versions.masterDataVersion}</small>
         </footer>
@@ -180,8 +186,8 @@ export function CalculationResult({
           {result.assumptions.map((item) => (
             <li key={item}>{item}</li>
           ))}
-          {result.warnings.map((item) => (
-            <li key={item}>警告: {item}</li>
+          {result.issues.map((item) => (
+            <li key={`${item.code}:${item.detail}`}>警告: {item.code}</li>
           ))}
         </ul>
       </details>

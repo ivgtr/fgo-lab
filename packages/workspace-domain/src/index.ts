@@ -1,4 +1,4 @@
-import type { CalcInput, CalcResult, LocalProfile } from '@fgo-lab/schema';
+import type { CalculationResult, CalcInput, LocalProfile } from '@fgo-lab/schema';
 
 export function canonicalize(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -21,7 +21,7 @@ export async function inputFingerprint(
 export interface FinalizeHistoryCommand {
   sessionId: string;
   input: CalcInput;
-  result: CalcResult;
+  result: CalculationResult;
   fingerprint: string;
   now: string;
   historyId: string;

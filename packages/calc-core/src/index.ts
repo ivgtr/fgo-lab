@@ -1,4 +1,4 @@
-import type { CalcInput, CalcResult, VersionContext } from '@fgo-lab/schema';
+import type { CalculationResult, CalcInput, DamageRow, VersionContext } from '@fgo-lab/schema';
 import { calcInputSchema, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { classifyAttackNpFunction } from './attackNpFunction';
 import { damageAtRandom } from './formula';
@@ -8,10 +8,32 @@ export * from './formula';
 export * from './attackNpFunction';
 export * from './affinities';
 
-export function calculateNpDamage(rawInput: CalcInput, versions: VersionContext): CalcResult {
+export function calculateNpDamage(
+  rawInput: CalcInput,
+  versions: VersionContext,
+): CalculationResult {
   const input = calcInputSchema.parse(rawInput);
   const attackFunction = classifyAttackNpFunction(input.attackNpFunctionType ?? 'damageNp');
-  const results = ([1, 2, 3, 4, 5] as const).map((npLevel) => {
+  const common = {
+    effects: [],
+    assumptions: ['random:900..1099', 'probability:only_guaranteed_effects'],
+    issues: attackFunction.warning
+      ? [{ code: attackFunction.warning, detail: input.attackNpFunctionType ?? 'damageNp' }]
+      : [],
+    trace: [
+      { step: 'validate', detail: `calc_input_schema_v${String(SCHEMA_VERSION)}` },
+      { step: 'attack-np-function', detail: input.attackNpFunctionType ?? 'damageNp' },
+    ],
+    versions,
+  };
+  if (attackFunction.precision === 'unsupported')
+    return {
+      ...common,
+      status: 'unsupported',
+      rows: [],
+      missingEvidence: attackFunction.warning ? [attackFunction.warning] : [],
+    };
+  const rows = ([1, 2, 3, 4, 5] as const).map((npLevel) => {
     const distribution = Array.from({ length: 200 }, (_, index) =>
       damageAtRandom(input, npLevel, 900 + index),
     );
@@ -22,10 +44,12 @@ export function calculateNpDamage(rawInput: CalcInput, versions: VersionContext)
       average: total / distribution.length,
       maximum: distribution[199]!,
     };
-  });
+  }) as [DamageRow, DamageRow, DamageRow, DamageRow, DamageRow];
   return {
+    ...common,
+    status: 'calculated',
     precision: attackFunction.precision,
-    results,
+    rows,
     breakdown: [
       {
         key: 'totalAtk',
@@ -43,16 +67,6 @@ export function calculateNpDamage(rawInput: CalcInput, versions: VersionContext)
         value: input.attributeAffinity,
       },
     ],
-    assumptions: ['random:900..1099', 'probability:only_guaranteed_effects'],
-    warnings: attackFunction.warning ? [attackFunction.warning] : [],
-    trace: [
-      { step: 'validate', detail: `calc_input_schema_v${String(SCHEMA_VERSION)}` },
-      { step: 'random', detail: 'evaluated_200_final_floors' },
-      {
-        step: 'attack-np-function',
-        detail: input.attackNpFunctionType ?? 'damageNp',
-      },
-    ],
-    versions,
+    trace: [...common.trace, { step: 'random', detail: 'evaluated_200_final_floors' }],
   };
 }

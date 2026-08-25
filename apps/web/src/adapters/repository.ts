@@ -31,12 +31,21 @@ export class IndexedDbProfileRepository implements ProfileRepository {
     const db = await database();
     const value = await db.get('user', 'profiles');
     if (value === undefined) return { state: 'empty' as const };
-    const stored = parseStoredProfileCollection(value);
-    if (stored.upgraded) await db.put('user', stored.collection, 'profiles');
+    const stored = (() => {
+      try {
+        return parseStoredProfileCollection(value);
+      } catch {
+        return null;
+      }
+    })();
+    if (!stored) {
+      await db.clear('user');
+      return { state: 'empty' as const };
+    }
     return {
       state: 'ready' as const,
       collection: stored.collection,
-      discardedCalculationSnapshots: stored.upgraded,
+      discardedCalculationSnapshots: false,
     };
   }
   async replace(collection: ProfileCollection) {

@@ -36,7 +36,8 @@ describe('calculation application logic', () => {
       releaseValidated: true,
     });
     expect(calculation.input.attackerId).toBe('fixture-saber');
-    expect(calculation.result.results).toHaveLength(5);
+    expect(calculation.result.rows).toHaveLength(5);
+    if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
     expect(calculation.result.precision).toBe('exact');
   });
 
@@ -138,7 +139,7 @@ describe('calculation application logic', () => {
     );
 
     expect(calculation.input.npSpecialMultipliers).toEqual([1.5, 2, 2.25, 2.375, 2.5]);
-    expect(calculation.result.results.map((row) => row.average)).toEqual([
+    expect(calculation.result.rows.map((row) => row.average)).toEqual([
       68275.355, 91033.975, 102413.275, 108102.92, 113792.6,
     ]);
   });
@@ -220,8 +221,9 @@ describe('calculation application logic', () => {
     );
 
     expect(calculation.input.npDamageBuff).toBeCloseTo(0.6);
+    if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
     expect(calculation.result.precision).toBe('exact');
-    expect(calculation.result.warnings).not.toContain(
+    expect(calculation.result.issues.map((issue) => issue.code)).not.toContain(
       'support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect',
     );
   });
@@ -236,8 +238,11 @@ describe('calculation application logic', () => {
       { releaseValidated: false },
     );
 
+    if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
     expect(calculation.result.precision).toBe('approximate');
-    expect(calculation.result.warnings).toContain('diagnostic_fixture_not_release_validated');
+    expect(calculation.result.issues.map((issue) => issue.code)).toContain(
+      'diagnostic_fixture_not_release_validated',
+    );
   });
 
   it('changes every attacker-owned damage input in one state transition', () => {

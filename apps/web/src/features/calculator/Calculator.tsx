@@ -11,7 +11,7 @@ import type {
   AttackerSkillSelection,
   CalcInput,
   CalculationSelection,
-  CalcResult,
+  CalculationResult as CalculationResultValue,
   CraftEssenceCopy,
   ServantBuild,
   SupportTemplate,
@@ -59,7 +59,7 @@ export function Calculator({
   resolvedInput: CalcInput;
   resolvedEffects: readonly ResolvedSupportEffect[];
   effectWarnings: readonly string[];
-  result: CalcResult;
+  result: CalculationResultValue;
   servants: ServantMaster[];
   builds: Record<string, ServantBuild>;
   craftEssenceCopies: CraftEssenceCopy[];
@@ -72,7 +72,7 @@ export function Calculator({
   onCompositionChange: (input: CalcInput, selection: CalculationSelection) => Promise<void>;
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
-  onFinalize: (input: CalcInput, result: CalcResult) => Promise<void>;
+  onFinalize: (input: CalcInput, result: CalculationResultValue) => Promise<void>;
 }) {
   const mode = selection.effectMode === 'manual' ? 'direct' : 'quick';
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);

@@ -43,9 +43,9 @@ const input: CalcInput = {
   target: { classId: 'lancer', attribute: 'earth', traits: ['dragon', 'male'] },
 };
 const versions: VersionContext = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   masterDataVersion: 'fixture-1',
-  engineVersion: '1.4.0',
+  engineVersion: '2.0.0',
   appVersion: '0.1.0',
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
@@ -56,10 +56,10 @@ describe('float32 NP damage kernel', () => {
     expect(f32Add(0.1, 0.2)).toBe(Math.fround(Math.fround(0.1) + Math.fround(0.2))));
   it('evaluates all five levels and the exact random endpoints', () => {
     const result = calculateNpDamage(input, versions);
-    expect(result.results).toHaveLength(5);
-    expect(result.results[0]?.minimum).toBe(damageAtRandom(input, 1, 900));
-    expect(result.results[0]?.maximum).toBe(damageAtRandom(input, 1, 1099));
-    expect(result.results[4]!.average).toBeGreaterThan(result.results[0]!.average);
+    expect(result.rows).toHaveLength(5);
+    expect(result.rows[0]?.minimum).toBe(damageAtRandom(input, 1, 900));
+    expect(result.rows[0]?.maximum).toBe(damageAtRandom(input, 1, 1099));
+    expect(result.rows[4]!.average).toBeGreaterThan(result.rows[0]!.average);
   });
   it('matches the independent neutral Arts formula at random 1000', () => {
     const neutral: CalcInput = {
@@ -90,7 +90,7 @@ describe('float32 NP damage kernel', () => {
       cardBuff: 0,
       npDamageBuff: 0,
     };
-    expect(calculateNpDamage(artoriaLike, versions).results[0]).toEqual({
+    expect(calculateNpDamage(artoriaLike, versions).rows[0]).toEqual({
       npLevel: 1,
       minimum: 30_356,
       average: 33_712.6,
@@ -127,17 +127,22 @@ describe('float32 NP damage kernel', () => {
   it('ignores enemy defense for a defense-piercing NP', () => {
     const defended = { ...input, defenseBuff: 0.5 };
     const normal = calculateNpDamage({ ...defended, attackNpFunctionType: 'damageNp' }, versions)
-      .results[0]!.average;
+      .rows[0]!.average;
     const pierced = calculateNpDamage(
       { ...defended, attackNpFunctionType: 'damageNpPierce' },
       versions,
-    ).results[0]!.average;
+    ).rows[0]!.average;
     expect(pierced / normal).toBeCloseTo(1.2 / 0.7, 2);
   });
   it('marks an unresolved special NP function as unsupported in the result', () => {
     expect(
       calculateNpDamage({ ...input, attackNpFunctionType: 'damageNpHpratioLow' }, versions),
-    ).toMatchObject({ precision: 'unsupported', warnings: ['missing_hp_ratio'] });
+    ).toMatchObject({
+      status: 'unsupported',
+      rows: [],
+      issues: [{ code: 'missing_hp_ratio' }],
+      missingEvidence: ['missing_hp_ratio'],
+    });
   });
   it('requires conditional inputs instead of silently using base damage', () => {
     expect(classifyAttackNpFunction('damageNpHpratioLow')).toMatchObject({
@@ -156,8 +161,8 @@ describe('float32 NP damage kernel', () => {
       npSpecialMultipliers: [1, 1.5, 2, 2.5, 3] as CalcInput['npSpecialMultipliers'],
     };
     const result = calculateNpDamage(rowSpecific, versions);
-    expect(result.results[1]!.average / result.results[0]!.average).toBeCloseTo(1.5, 3);
-    expect(result.results[4]!.average / result.results[0]!.average).toBeCloseTo(3, 3);
+    expect(result.rows[1]!.average / result.rows[0]!.average).toBeCloseTo(1.5, 3);
+    expect(result.rows[4]!.average / result.rows[0]!.average).toBeCloseTo(3, 3);
   });
   it('keeps additive and multiplicative modifier groups in the documented order', () => {
     const composed: CalcInput = {
@@ -201,7 +206,7 @@ describe('float32 NP damage kernel', () => {
       npSpecialMultipliers: [1, 1, 1, 1, 1],
       flatDamage: 0,
     };
-    const result = calculateNpDamage(waterLilith, versions).results[4]!;
+    const result = calculateNpDamage(waterLilith, versions).rows[4]!;
     expect(result.minimum).toBe(61_944);
     expect(result.maximum).toBe(75_640);
   });
