@@ -544,7 +544,6 @@ function collectSources(
     skillId: string,
     skillLevel: number,
     enabledByDefault: boolean,
-    selectedEffectIds?: readonly string[],
   ) => {
     const servant = master.servants.find((candidate) => candidate.id === sourceId);
     const skill = [...(servant?.skills ?? []), ...(servant?.passives ?? [])].find(
@@ -569,7 +568,7 @@ function collectSources(
         skillName: skill.name,
         effect,
         rawValue: parameter(effect, 0, skillLevel - 1),
-        enabledByDefault: selectedEffectIds?.includes(effect.id) ?? enabledByDefault,
+        enabledByDefault,
       });
   };
   for (const passive of attacker.passives)
@@ -620,13 +619,6 @@ function collectSources(
           skill.skillId,
           skill.skillLevel,
           false,
-          scenario.support.composition.selectedEffects
-            .filter(
-              (selected) =>
-                selected.sourceInstanceId === source.sourceInstanceId &&
-                selected.skillId === skill.skillId,
-            )
-            .map((selected) => selected.effectId),
         );
   if (scenario.mysticCode) {
     const code = master.mysticCodes.find(

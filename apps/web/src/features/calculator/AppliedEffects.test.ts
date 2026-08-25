@@ -1,6 +1,6 @@
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
-import { visibleAppliedEffects } from './AppliedEffects';
+import { isEffectSelected, visibleAppliedEffects } from './AppliedEffects';
 
 function projection(visibility: EffectProjection['visibility']): EffectProjection {
   return {
@@ -32,5 +32,26 @@ describe('typed applied-effect projection', () => {
     expect(visibleAppliedEffects([projection('hidden'), projection('visible')])).toEqual([
       projection('visible'),
     ]);
+  });
+
+  it('keeps a conflicting selected decision visibly pressed until the user resolves it', () => {
+    const selected = {
+      ...projection('visible'),
+      outcome: 'notApplied' as const,
+      explanation: {
+        code: 'conditionNotMet' as const,
+        condition: {
+          kind: 'trait' as const,
+          scope: 'target' as const,
+          trait: 'attributeSky',
+          present: true,
+        },
+      },
+    };
+
+    expect(isEffectSelected(selected)).toBe(true);
+    expect(
+      isEffectSelected({ ...selected, decision: { ...selected.decision, state: 'disabled' } }),
+    ).toBe(false);
   });
 });

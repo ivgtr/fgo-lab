@@ -507,6 +507,11 @@ describe('scenario calculation facade', () => {
           enabled: true,
           assertion: null,
         },
+        {
+          decisionKey: 'support:support-1:support-skill:support-power',
+          enabled: true,
+          assertion: null,
+        },
       ],
       support: {
         sourceTemplateId: null,

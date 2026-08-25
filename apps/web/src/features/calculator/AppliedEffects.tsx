@@ -40,6 +40,13 @@ function effectStateLabel(effect: EffectProjection) {
   return effect.outcome === 'applied' ? `${value}・計算中` : `${value}・計算外`;
 }
 
+export function isEffectSelected(effect: EffectProjection) {
+  return (
+    effect.decision.state === 'enabled' ||
+    (effect.decision.state === 'none' && effect.outcome === 'applied')
+  );
+}
+
 export function visibleAppliedEffects(effects: readonly EffectProjection[]) {
   return effects.filter((effect) => effect.visibility === 'visible');
 }
@@ -76,7 +83,7 @@ export function AppliedEffects({
           {visibleEffects.map((effect) => (
             <ModifierChip
               key={effect.projectionKey}
-              active={effect.outcome === 'applied'}
+              active={isEffectSelected(effect)}
               label={effectLabel(effect)}
               detail={effectStateLabel(effect)}
               sources={[

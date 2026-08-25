@@ -394,6 +394,12 @@ export function Calculator({
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
+    const effectAssumptions = [
+      ...resolvedScenario.effectAssumptions.filter(
+        (assumption) => assumption.decisionKey !== effect.projectionKey,
+      ),
+      ...assumptionsForProjection(effect, active),
+    ];
     if (effect.source.origin === 'support' && resolvedScenario.support) {
       const ref = {
         sourceInstanceId: effect.source.sourceInstanceId,
@@ -407,6 +413,7 @@ export function Calculator({
         candidate.effectId === ref.effectId;
       void onScenarioChange({
         ...resolvedScenario,
+        effectAssumptions,
         support: {
           ...resolvedScenario.support,
           composition: {
@@ -423,12 +430,7 @@ export function Calculator({
     }
     void onScenarioChange({
       ...resolvedScenario,
-      effectAssumptions: [
-        ...resolvedScenario.effectAssumptions.filter(
-          (assumption) => assumption.decisionKey !== effect.projectionKey,
-        ),
-        ...assumptionsForProjection(effect, active),
-      ],
+      effectAssumptions,
     });
   }
   function addSupportServant(servant: ServantMaster) {
@@ -460,8 +462,16 @@ export function Calculator({
   }
   function removeCalculationSupportSource(sourceInstanceId: string) {
     if (!resolvedScenario?.support) return;
+    const removedDecisionKeys = new Set(
+      supportEffects
+        .filter((effect) => effect.source.sourceInstanceId === sourceInstanceId)
+        .map((effect) => effect.projectionKey),
+    );
     void onScenarioChange({
       ...resolvedScenario,
+      effectAssumptions: resolvedScenario.effectAssumptions.filter(
+        (assumption) => !removedDecisionKeys.has(assumption.decisionKey),
+      ),
       support: {
         ...resolvedScenario.support,
         composition: {

@@ -30,6 +30,7 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { assumptionsForProjection, type EffectProjection } from '@fgo-lab/battle-execution';
 import {
   calculateScenario,
   createDefaultResolvedScenario,
@@ -67,6 +68,32 @@ const ids: IdGenerator = { next: () => crypto.randomUUID() };
 interface CalculationWorkspace {
   scenario: CalculationScenario | undefined;
   shared: CalculationShareSnapshot | undefined;
+}
+
+function supportDecisionKeys(effects: readonly EffectProjection[]) {
+  return new Set(
+    effects
+      .filter((effect) => effect.source.origin === 'support')
+      .map((effect) => effect.projectionKey),
+  );
+}
+
+function selectedSupportAssumptions(
+  template: SupportTemplate,
+  effects: readonly EffectProjection[],
+) {
+  return effects
+    .filter(
+      (effect) =>
+        effect.source.origin === 'support' &&
+        template.composition.selectedEffects.some(
+          (selected) =>
+            selected.sourceInstanceId === effect.source.sourceInstanceId &&
+            selected.skillId === effect.source.skillId &&
+            selected.effectId === effect.source.effectId,
+        ),
+    )
+    .flatMap((effect) => assumptionsForProjection(effect, true));
 }
 
 function Setup({
@@ -421,18 +448,39 @@ export function App() {
             onScenarioChange={saveScenarioDraft}
             onSupportSelect={async (template) => {
               if (currentScenario.mode !== 'resolved') return;
+              const currentSupportDecisionKeys = supportDecisionKeys(resolvedCalculation.effects);
+              const retainedAssumptions = currentScenario.effectAssumptions.filter(
+                (assumption) => !currentSupportDecisionKeys.has(assumption.decisionKey),
+              );
               if (!template) {
-                await saveScenarioDraft({ ...currentScenario, support: null });
+                await saveScenarioDraft({
+                  ...currentScenario,
+                  support: null,
+                  effectAssumptions: retainedAssumptions,
+                });
                 return;
               }
               const lastUsedAt = new Date().toISOString();
               await updateSupportTemplate(template.templateId, { lastUsedAt });
-              await saveScenarioDraft({
+              const candidate = {
                 ...currentScenario,
                 support: {
                   sourceTemplateId: template.templateId,
                   composition: structuredClone(template.composition),
                 },
+                effectAssumptions: retainedAssumptions,
+              };
+              const candidateEffects = calculateScenario(
+                candidate,
+                currentMaster,
+                versions,
+              ).effects;
+              await saveScenarioDraft({
+                ...candidate,
+                effectAssumptions: [
+                  ...retainedAssumptions,
+                  ...selectedSupportAssumptions(template, candidateEffects),
+                ],
               });
             }}
             onSupportSave={async (mode) => {
