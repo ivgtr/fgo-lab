@@ -1,15 +1,17 @@
-import type { CraftEssenceMaster, MysticCodeMaster, ServantMaster } from '@fgo-lab/master-data';
+import {
+  getPrimaryNoblePhantasm,
+  type CraftEssenceMaster,
+  type MysticCodeMaster,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import type { DamageResolutionInput, SupportComposition } from '@fgo-lab/schema';
 import type { MasterEffect, NpDamageSpec } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import {
   isDamageRelevantEffect,
-  resolveAttackerSkills,
-  resolveCraftEssenceEffects,
-  resolveNpEffects,
-  resolveMysticCodeSkills,
-  resolveServantPassives,
-  resolveSupportComposition,
+  resolveEffectSources,
+  type EffectSource,
+  type ResolveEffectOptions,
 } from './index';
 
 const input: DamageResolutionInput = {
@@ -181,14 +183,251 @@ function compositionFor(servant: ServantMaster = source): SupportComposition {
   };
 }
 
-describe('resolveSupportComposition', () => {
+function effectValue(
+  effect: MasterEffect,
+  setIndex: number,
+  valueIndex: number,
+  useLimitBreak = false,
+) {
+  const sets =
+    useLimitBreak && effect.limitBreakParameterSets
+      ? effect.limitBreakParameterSets
+      : effect.parameterSets;
+  const value = sets[setIndex]?.[valueIndex]?.['Value'];
+  return typeof value === 'number' ? value : undefined;
+}
+
+function withWarnings(
+  baseInput: DamageResolutionInput,
+  sources: EffectSource[],
+  warnings: string[],
+  options: ResolveEffectOptions = {},
+) {
+  const resolved = resolveEffectSources(baseInput, sources, options);
+  return {
+    ...resolved,
+    precision: warnings.length ? ('unsupported' as const) : resolved.precision,
+    warnings: [...warnings, ...resolved.warnings],
+  };
+}
+
+function skillSources(
+  baseInput: DamageResolutionInput,
+  selections: readonly {
+    sourceInstanceId: string;
+    sourceId: string;
+    skillId: string;
+    skillLevel: number;
+    defaultEnabled: boolean;
+    selectedEffectIds?: readonly string[];
+  }[],
+  servants: readonly ServantMaster[],
+  origin: EffectSource['origin'],
+) {
+  const warnings: string[] = [];
+  const sources: EffectSource[] = [];
+  const recipientTraits =
+    servants.find((servant) => servant.id === baseInput.attackerId)?.traits ?? [];
+  for (const selected of selections) {
+    const servant = servants.find((candidate) => candidate.id === selected.sourceId);
+    const skill = [...(servant?.skills ?? []), ...(servant?.passives ?? [])].find(
+      (candidate) => candidate.id === selected.skillId,
+    );
+    if (!servant || !skill) {
+      warnings.push(`${origin}_effect_missing:${selected.sourceId}:${selected.skillId}`);
+      continue;
+    }
+    for (const effect of skill.effects)
+      sources.push({
+        order: sources.length,
+        origin,
+        sourceInstanceId: selected.sourceInstanceId,
+        sourceId: servant.id,
+        sourceName: servant.name,
+        skillId: skill.id,
+        skillName: skill.name,
+        effect,
+        rawValue: effectValue(effect, 0, selected.skillLevel - 1),
+        appliedReason: 'unconditional_attacker_buff',
+        defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
+        recipientTraits,
+      });
+  }
+  return { sources, warnings };
+}
+
+function resolveAttackerSourcesForTest(
+  baseInput: DamageResolutionInput,
+  selections: readonly { skillId: string; skillLevel: number }[],
+  servants: readonly ServantMaster[],
+  options: ResolveEffectOptions = {},
+) {
+  const collected = skillSources(
+    baseInput,
+    selections.map((selection) => ({
+      ...selection,
+      sourceInstanceId: `attacker:${baseInput.attackerId}`,
+      sourceId: baseInput.attackerId,
+      defaultEnabled: options.defaultEnabled ?? true,
+    })),
+    servants,
+    'attacker',
+  );
+  return withWarnings(baseInput, collected.sources, collected.warnings, options);
+}
+
+function resolveSupportSourcesForTest(
+  baseInput: DamageResolutionInput,
+  composition: SupportComposition,
+  servants: readonly ServantMaster[],
+  options: ResolveEffectOptions = {},
+) {
+  const collected = skillSources(
+    baseInput,
+    composition.sources.flatMap((support) =>
+      support.skills.map((skill) => ({
+        ...skill,
+        sourceInstanceId: support.sourceInstanceId,
+        sourceId: support.servantId,
+        defaultEnabled: false,
+        selectedEffectIds: composition.selectedEffects
+          .filter(
+            (effect) =>
+              effect.sourceInstanceId === support.sourceInstanceId &&
+              effect.skillId === skill.skillId,
+          )
+          .map((effect) => effect.effectId),
+      })),
+    ),
+    servants,
+    'support',
+  );
+  return withWarnings(baseInput, collected.sources, collected.warnings, options);
+}
+
+function resolvePassiveSourcesForTest(
+  baseInput: DamageResolutionInput,
+  servant: ServantMaster | undefined,
+  options: ResolveEffectOptions = {},
+) {
+  if (!servant) return withWarnings(baseInput, [], ['passive_source_missing'], options);
+  const collected = skillSources(
+    baseInput,
+    servant.passives.map((skill) => ({
+      sourceInstanceId: `passive:${servant.id}`,
+      sourceId: servant.id,
+      skillId: skill.id,
+      skillLevel: 1,
+      defaultEnabled: true,
+    })),
+    [servant],
+    'passive',
+  );
+  return withWarnings(baseInput, collected.sources, collected.warnings, options);
+}
+
+function resolveCraftEssenceSourcesForTest(
+  baseInput: DamageResolutionInput,
+  craftEssence: CraftEssenceMaster | undefined,
+  limitBreak: number,
+  recipientTraits: readonly string[] = [],
+  options: ResolveEffectOptions = {},
+) {
+  if (!craftEssence) return withWarnings(baseInput, [], [], options);
+  return withWarnings(
+    baseInput,
+    craftEssence.effects.map((effect, order) => ({
+      order,
+      origin: 'craftEssence',
+      sourceInstanceId: `craftEssence:${craftEssence.id}`,
+      sourceId: craftEssence.id,
+      sourceName: craftEssence.name,
+      skillId: `ce:${craftEssence.id}`,
+      skillName: craftEssence.name,
+      effect,
+      rawValue: effectValue(effect, 0, 0, limitBreak === 4),
+      appliedReason: limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
+      defaultEnabled: true,
+      recipientTraits,
+    })),
+    [],
+    options,
+  );
+}
+
+function resolveNpSourcesForTest(
+  baseInput: DamageResolutionInput,
+  servant: ServantMaster | undefined,
+  options: ResolveEffectOptions = {},
+) {
+  const np = servant ? getPrimaryNoblePhantasm(servant) : undefined;
+  if (!servant || !np) return withWarnings(baseInput, [], ['np_source_missing'], options);
+  return withWarnings(
+    baseInput,
+    np.effects
+      .filter((effect) => effect.timing === 'beforeDamage')
+      .map((effect, order) => ({
+        order,
+        origin: 'np',
+        sourceInstanceId: `np:${servant.id}`,
+        sourceId: servant.id,
+        sourceName: servant.name,
+        skillId: `np:${servant.id}`,
+        skillName: '宝具前効果',
+        effect,
+        rawValue: effectValue(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
+        appliedReason: 'np_before_damage',
+        defaultEnabled: true,
+        recipientTraits: servant.traits,
+      })),
+    [],
+    options,
+  );
+}
+
+function resolveMysticCodeSourcesForTest(
+  baseInput: DamageResolutionInput,
+  mysticCode: MysticCodeMaster | undefined,
+  selections: readonly { skillId: string; skillLevel: number }[],
+  recipientTraits: readonly string[],
+  options: ResolveEffectOptions = {},
+) {
+  if (!mysticCode) return withWarnings(baseInput, [], ['mysticCode_source_missing'], options);
+  const sources: EffectSource[] = [];
+  const warnings: string[] = [];
+  for (const selected of selections) {
+    const skill = mysticCode.skills.find((candidate) => candidate.id === selected.skillId);
+    if (!skill) {
+      warnings.push(`mysticCode_effect_missing:${mysticCode.id}:${selected.skillId}`);
+      continue;
+    }
+    for (const effect of skill.effects)
+      sources.push({
+        order: sources.length,
+        origin: 'mysticCode',
+        sourceInstanceId: `mysticCode:${mysticCode.id}`,
+        sourceId: mysticCode.id,
+        sourceName: mysticCode.name,
+        skillId: skill.id,
+        skillName: skill.name,
+        effect,
+        rawValue: effectValue(effect, 0, selected.skillLevel - 1),
+        appliedReason: 'mystic_code_buff',
+        defaultEnabled: options.defaultEnabled ?? true,
+        recipientTraits,
+      });
+  }
+  return withWarnings(baseInput, sources, warnings, options);
+}
+
+describe('resolveSupportSourcesForTest', () => {
   it('applies only effects explicitly selected in the composition', () => {
     const composition = compositionFor();
     composition.selectedEffects = composition.selectedEffects.filter(
       (effect) => effect.effectId === 'attack',
     );
 
-    const result = resolveSupportComposition(input, composition, [source]);
+    const result = resolveSupportSourcesForTest(input, composition, [source]);
 
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBe(0);
@@ -225,7 +464,7 @@ describe('resolveSupportComposition', () => {
   });
 
   it('adds unconditional damage buffs at the selected skill level', () => {
-    const result = resolveSupportComposition(input, compositionFor(), [source]);
+    const result = resolveSupportSourcesForTest(input, compositionFor(), [source]);
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
     expect(result.input.npDamageBuff).toBeCloseTo(0.3);
@@ -240,7 +479,7 @@ describe('resolveSupportComposition', () => {
   });
 
   it('does not apply a card buff to a different NP card', () => {
-    const result = resolveSupportComposition({ ...input, cardType: 'arts' }, compositionFor(), [
+    const result = resolveSupportSourcesForTest({ ...input, cardType: 'arts' }, compositionFor(), [
       source,
     ]);
     expect(result.input.cardBuff).toBe(0);
@@ -263,7 +502,7 @@ describe('resolveSupportComposition', () => {
         },
       ],
     };
-    const result = resolveSupportComposition(input, compositionFor(renamed), [renamed]);
+    const result = resolveSupportSourcesForTest(input, compositionFor(renamed), [renamed]);
 
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
@@ -271,7 +510,7 @@ describe('resolveSupportComposition', () => {
   });
 
   it('fails closed when the saved source cannot be resolved', () => {
-    const result = resolveSupportComposition(input, compositionFor(), []);
+    const result = resolveSupportSourcesForTest(input, compositionFor(), []);
     expect(result.precision).toBe('unsupported');
     expect(result.input).toEqual(input);
     expect(result.warnings).toEqual(['support_effect_missing:support:skill']);
@@ -308,7 +547,7 @@ describe('resolveSupportComposition', () => {
         },
       ],
     };
-    const result = resolveSupportComposition(input, compositionFor(boosted), [boosted]);
+    const result = resolveSupportSourcesForTest(input, compositionFor(boosted), [boosted]);
     expect(result.precision).toBe('exact');
     expect(result.npDamageBuffRate).toBe(1);
     expect(result.effects[0]).toMatchObject({
@@ -338,7 +577,7 @@ describe('resolveSupportComposition', () => {
         },
       ],
     };
-    const result = resolveSupportComposition(input, compositionFor(boosted), [boosted]);
+    const result = resolveSupportSourcesForTest(input, compositionFor(boosted), [boosted]);
     expect(result.precision).toBe('unsupported');
     expect(result.effects[0]).toMatchObject({
       applied: false,
@@ -375,7 +614,7 @@ describe('resolveSupportComposition', () => {
         },
       ],
     };
-    const result = resolveSupportComposition(input, compositionFor(defensive), [defensive]);
+    const result = resolveSupportSourcesForTest(input, compositionFor(defensive), [defensive]);
 
     expect(result.input.powerMod).toBe(0);
     expect(result.precision).toBe('exact');
@@ -389,11 +628,15 @@ describe('resolveSupportComposition', () => {
   });
 });
 
-describe('resolveAttackerSkills', () => {
+describe('resolveAttackerSourcesForTest', () => {
   const attacker: ServantMaster = { ...source, id: input.attackerId, name: '攻撃役' };
 
   it('applies enabled self skills without mutating the base input', () => {
-    const result = resolveAttackerSkills(input, [{ skillId: 'skill', skillLevel: 10 }], [attacker]);
+    const result = resolveAttackerSourcesForTest(
+      input,
+      [{ skillId: 'skill', skillLevel: 10 }],
+      [attacker],
+    );
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
     expect(result.input.npDamageBuff).toBeCloseTo(0.3);
@@ -402,7 +645,7 @@ describe('resolveAttackerSkills', () => {
   });
 
   it('can exclude every effect in a self skill independently from its level', () => {
-    const result = resolveAttackerSkills(
+    const result = resolveAttackerSourcesForTest(
       input,
       [{ skillId: 'skill', skillLevel: 10 }],
       [attacker],
@@ -420,7 +663,7 @@ describe('resolveAttackerSkills', () => {
   });
 
   it('uses effect overrides as the only calculator-level switch', () => {
-    const result = resolveAttackerSkills(
+    const result = resolveAttackerSourcesForTest(
       input,
       [{ skillId: 'skill', skillLevel: 10 }],
       [attacker],
@@ -443,7 +686,7 @@ describe('resolveAttackerSkills', () => {
   });
 
   it('does not let an override bypass a hard card mismatch', () => {
-    const result = resolveAttackerSkills(
+    const result = resolveAttackerSourcesForTest(
       { ...input, cardType: 'arts' },
       [{ skillId: 'skill', skillLevel: 10 }],
       [attacker],
@@ -484,7 +727,7 @@ describe('resolveAttackerSkills', () => {
         },
       ],
     };
-    const resolved = resolveAttackerSkills(
+    const resolved = resolveAttackerSourcesForTest(
       input,
       [{ skillId: 'skill', skillLevel: 1 }],
       [attacker],
@@ -524,10 +767,12 @@ describe('resolveAttackerSkills', () => {
       ],
     };
     const selection = [{ skillId: 'skill', skillLevel: 10 }];
-    expect(resolveAttackerSkills(input, selection, [conditional]).input.attackBuff).toBeCloseTo(
-      0.3,
-    );
-    const mismatch = resolveAttackerSkills(input, selection, [{ ...conditional, traits: [] }]);
+    expect(
+      resolveAttackerSourcesForTest(input, selection, [conditional]).input.attackBuff,
+    ).toBeCloseTo(0.3);
+    const mismatch = resolveAttackerSourcesForTest(input, selection, [
+      { ...conditional, traits: [] },
+    ]);
     expect(mismatch.input.attackBuff).toBe(0.1);
     expect(mismatch.effects[0]).toMatchObject({
       applied: false,
@@ -536,7 +781,7 @@ describe('resolveAttackerSkills', () => {
   });
 });
 
-describe('resolveMysticCodeSkills', () => {
+describe('resolveMysticCodeSourcesForTest', () => {
   const mysticCode: MysticCodeMaster = {
     id: '1',
     name: '魔術礼装･カルデア',
@@ -546,7 +791,7 @@ describe('resolveMysticCodeSkills', () => {
   };
 
   it('uses the shared effect resolver and fails closed for a missing source', () => {
-    const resolved = resolveMysticCodeSkills(
+    const resolved = resolveMysticCodeSourcesForTest(
       input,
       mysticCode,
       [{ skillId: 'skill', skillLevel: 10 }],
@@ -557,7 +802,7 @@ describe('resolveMysticCodeSkills', () => {
     expect(resolved.input.npDamageBuff).toBeCloseTo(0.3);
     expect(resolved.effects.every((effect) => effect.origin === 'mysticCode')).toBe(true);
     expect(
-      resolveMysticCodeSkills(input, undefined, [{ skillId: 'skill', skillLevel: 10 }], [])
+      resolveMysticCodeSourcesForTest(input, undefined, [{ skillId: 'skill', skillLevel: 10 }], [])
         .precision,
     ).toBe('unsupported');
   });
@@ -585,8 +830,8 @@ describe('automatic equipment, passive, and NP effects', () => {
         },
       ],
     };
-    expect(resolveCraftEssenceEffects(input, craftEssence, 0).input.npDamageBuff).toBe(0.6);
-    expect(resolveCraftEssenceEffects(input, craftEssence, 4).input.npDamageBuff).toBe(0.8);
+    expect(resolveCraftEssenceSourcesForTest(input, craftEssence, 0).input.npDamageBuff).toBe(0.6);
+    expect(resolveCraftEssenceSourcesForTest(input, craftEssence, 4).input.npDamageBuff).toBe(0.8);
   });
 
   it('applies a matching passive card buff', () => {
@@ -615,7 +860,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         },
       ],
     };
-    expect(resolveServantPassives(input, attacker).input.cardBuff).toBe(0.08);
+    expect(resolvePassiveSourcesForTest(input, attacker).input.cardBuff).toBe(0.08);
   });
 
   it('adds fixed damage without treating it as a percentage', () => {
@@ -644,7 +889,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         },
       ],
     };
-    const resolved = resolveServantPassives(input, attacker);
+    const resolved = resolvePassiveSourcesForTest(input, attacker);
     expect(resolved.input.flatDamage).toBe(175);
     expect(resolved.effects[0]).toMatchObject({ kind: 'flatDamage', value: 175, applied: true });
   });
@@ -672,12 +917,13 @@ describe('automatic equipment, passive, and NP effects', () => {
       ],
     };
     const selection = [{ skillId: 'skill', skillLevel: 10 }];
-    const missed = resolveAttackerSkills(input, selection, [attacker]);
+    const missed = resolveAttackerSourcesForTest(input, selection, [attacker]);
     expect(missed.input.attackBuff).toBe(0.1);
     expect(missed.effects[0]).toMatchObject({ applied: false, reason: 'field_trait_mismatch' });
     expect(
-      resolveAttackerSkills({ ...input, fieldTraits: ['fieldDarkness'] }, selection, [attacker])
-        .input.attackBuff,
+      resolveAttackerSourcesForTest({ ...input, fieldTraits: ['fieldDarkness'] }, selection, [
+        attacker,
+      ]).input.attackBuff,
     ).toBeCloseTo(0.3);
   });
 
@@ -705,7 +951,7 @@ describe('automatic equipment, passive, and NP effects', () => {
       ]),
     };
     expect(
-      resolveNpEffects({ ...input, overcharge: 3, npLevel: 2 }, attacker).input.attackBuff,
+      resolveNpSourcesForTest({ ...input, overcharge: 3, npLevel: 2 }, attacker).input.attackBuff,
     ).toBeCloseTo(0.45);
   });
 
@@ -728,7 +974,7 @@ describe('automatic equipment, passive, and NP effects', () => {
         rawPath: 'fixture.special-damage',
       }),
     };
-    const resolved = resolveNpEffects(
+    const resolved = resolveNpSourcesForTest(
       {
         ...input,
         npLevel: 5,
@@ -765,19 +1011,19 @@ describe('automatic equipment, passive, and NP effects', () => {
     };
     const selection = [{ skillId: 'skill', skillLevel: 10 }];
     expect(
-      resolveAttackerSkills(
+      resolveAttackerSourcesForTest(
         { ...input, target: { ...input.target, traits: ['dragon'] } },
         selection,
         [attacker],
       ).input.powerMod,
     ).toBe(0.5);
-    const missed = resolveAttackerSkills(input, selection, [attacker]);
+    const missed = resolveAttackerSourcesForTest(input, selection, [attacker]);
     expect(missed.input.powerMod).toBe(0);
     expect(missed.effects[0]?.damageTraitCondition).toEqual({
       kind: 'powerMod',
       condition: { anyOf: ['dragon'], noneOf: [] },
     });
-    const explicitlyEnabled = resolveAttackerSkills(input, selection, [attacker], {
+    const explicitlyEnabled = resolveAttackerSourcesForTest(input, selection, [attacker], {
       effectOverrides: {
         'attacker:attacker:attacker:skill:dragon-power': true,
       },
@@ -812,9 +1058,9 @@ describe('automatic equipment, passive, and NP effects', () => {
       ],
     };
     const selection = [{ skillId: 'skill', skillLevel: 10 }];
-    expect(resolveAttackerSkills(input, selection, [attacker]).input.powerMod).toBe(0.5);
+    expect(resolveAttackerSourcesForTest(input, selection, [attacker]).input.powerMod).toBe(0.5);
     expect(
-      resolveAttackerSkills(
+      resolveAttackerSourcesForTest(
         { ...input, target: { ...input.target, traits: ['superGiant'] } },
         selection,
         [attacker],
