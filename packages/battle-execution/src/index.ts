@@ -1,5 +1,5 @@
 export type ActorScope = 'attacker' | 'target';
-export type TraitScope = ActorScope | 'field';
+export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
 export type CardType = 'buster' | 'arts' | 'quick';
 
 export type ConditionExpression =
@@ -115,6 +115,7 @@ export interface AppliedModifier {
 export interface BattleState {
   card: CardType;
   traits: Record<TraitScope, ReadonlySet<string>>;
+  traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
   quantities: {
     attackerHpPermille: number | null;
     targetRarity: number | null;
@@ -200,9 +201,16 @@ export interface BattleExecutionResult {
 }
 
 export {
-  assumptionForProjection,
+  assumptionsForProjection,
   canNormalizeDamageEffect,
+  evaluateConditionExpression,
   executeOrderedScenario,
   type OrderedScenarioExecution,
 } from './engine';
+export {
+  applyNpDamageOperation,
+  evaluateNpDamageOperation,
+  type NpDamageOperationContext,
+  type NpDamageOperationResult,
+} from './npDamageOperation';
 import type { NpDamageSpec } from '@fgo-lab/master-data';

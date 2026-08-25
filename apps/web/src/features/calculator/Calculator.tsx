@@ -10,7 +10,7 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import { assumptionForProjection, type EffectProjection } from '@fgo-lab/battle-execution';
+import { assumptionsForProjection, type EffectProjection } from '@fgo-lab/battle-execution';
 import type {
   AttackerSkillSelection,
   DamageResolutionInput,
@@ -427,7 +427,7 @@ export function Calculator({
         ...resolvedScenario.effectAssumptions.filter(
           (assumption) => assumption.decisionKey !== effect.projectionKey,
         ),
-        assumptionForProjection(effect, active),
+        ...assumptionsForProjection(effect, active),
       ],
     });
   }

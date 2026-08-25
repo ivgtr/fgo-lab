@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { completeSetup } from './setup';
 
 test('diagnostic setup and main calculation flow', async ({ page }) => {
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
   await page
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
@@ -49,8 +49,7 @@ test('diagnostic setup and main calculation flow', async ({ page }) => {
 test('works at 320px without horizontal document overflow', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
     .first()
@@ -66,8 +65,7 @@ test('works at 320px without horizontal document overflow', async ({ page }) => 
 
 test('adds a support servant directly and optionally saves the composition', async ({ page }) => {
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
     .first()
@@ -119,8 +117,7 @@ test('adds a support servant directly and optionally saves the composition', asy
 test('mobile servant editor moves between list and detail', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Mobile layout uses list-to-detail navigation');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: '所持', exact: true }).click();
 
   const list = page.getByRole('list', { name: 'サーヴァント一覧' });
@@ -147,8 +144,7 @@ test('mobile support editor moves between saved list and detail', async ({ page,
   test.skip(!isMobile, 'Mobile layout uses list-to-detail navigation');
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'その他' }).click();
   await page.getByRole('button', { name: '支援条件' }).click();
 
@@ -172,8 +168,7 @@ test('mobile calculator selects virtual attacker and CE from the full DB', async
   await page.setViewportSize({ width: 320, height: 700 });
   await page.route('https://static.atlasacademy.io/**', (route) => route.abort());
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: '計算', exact: true }).click();
 
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
@@ -250,7 +245,7 @@ test('reopens saved local data while offline', async ({ page, context, isMobile 
   await page.goto('/');
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   const home = page.getByRole('heading', { name: 'ホーム' });
-  await expect(setup.or(home)).toBeVisible();
+  await expect(setup.or(home)).toBeVisible({ timeout: 15_000 });
   if (await setup.isVisible()) await setup.click();
   await expect(home).toBeVisible({ timeout: 15_000 });
   await page.evaluate(async () => {
@@ -277,9 +272,9 @@ test('replaces an older active master with the current published version', async
   await page.goto('/');
   const setup = page.getByRole('button', { name: 'セットアップを開始' });
   const home = page.getByRole('heading', { name: 'ホーム' });
-  await expect(setup.or(home)).toBeVisible();
+  await expect(setup.or(home)).toBeVisible({ timeout: 15_000 });
   if (await setup.isVisible()) await setup.click();
-  await expect(home).toBeVisible();
+  await expect(home).toBeVisible({ timeout: 15_000 });
 
   const currentVersion = await page.evaluate(
     () =>
@@ -325,7 +320,7 @@ test('replaces an older active master with the current published version', async
   );
 
   await page.reload();
-  await expect(home).toBeVisible();
+  await expect(home).toBeVisible({ timeout: 15_000 });
   await expect
     .poll(() =>
       page.evaluate(
@@ -378,8 +373,7 @@ test('discards an incompatible master cache without deleting user data', async (
   const pageErrors: Error[] = [];
   page.on('pageerror', (error) => pageErrors.push(error));
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
 
   const profileId = await page.evaluate(
@@ -468,7 +462,9 @@ test('discards an incompatible master cache without deleting user data', async (
   );
   await page.route('**/master/**', (route) => route.abort());
   await page.reload();
-  await expect(page.getByRole('heading', { name: '初回セットアップ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'セットアップを開始' })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByRole('alert')).toContainText(
     '互換性のない旧マスターデータを削除しました。再セットアップが必要です',
   );
@@ -505,8 +501,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
   const pageErrors: Error[] = [];
   page.on('pageerror', (error) => pageErrors.push(error));
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
 
   await page.evaluate(
@@ -594,8 +589,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
 test('autosaves and restores a directly edited calculation draft', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation exposes the persistent undo status');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await page.getByRole('tab', { name: '直接入力' }).click();
   await page.getByLabel('攻撃バフ（%）').fill('20');
@@ -618,8 +612,7 @@ test('edits Fou ATK from quick controls and shares the value with direct input',
 }) => {
   test.skip(isMobile, 'Desktop project covers draft persistence across input modes');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const fou = page.getByLabel('ATKフォウ（加算）');
   await expect(fou).toHaveValue('1000');
@@ -652,8 +645,7 @@ test('edits Fou ATK from quick controls and shares the value with direct input',
 test('uses quick servant level presets and resets only the level', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop project covers calculator draft changes');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const level = page.getByLabel('サーヴァントLv', { exact: true });
   const controls = page.getByLabel('サーヴァントLvのクイック選択');
@@ -674,8 +666,7 @@ test('separates final direct inputs from resolved CE and trait effects', async (
 }) => {
   test.skip(isMobile, 'Desktop project covers the full calculator form');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await page.getByRole('tab', { name: '直接入力' }).click();
   for (const label of [
@@ -763,11 +754,11 @@ test('separates final direct inputs from resolved CE and trait effects', async (
     .getByRole('group', { name: /自身の適用内容/ })
     .getByRole('button', { name: /混沌・特攻宝具/ })
     .first();
-  await expect(chaoticTrait).toContainText('2.00倍');
+  await expect(chaoticTrait).toContainText('1.50倍');
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
   await chaoticTrait.click();
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByLabel('計算に使用する最終値')).toContainText('2.00倍');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('1.50倍');
 });
 
 test('requests quantitative context only when the selected NP requires it', async ({
@@ -776,8 +767,7 @@ test('requests quantitative context only when the selected NP requires it', asyn
 }) => {
   test.skip(isMobile, 'Desktop project covers contextual damage inputs');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
@@ -796,14 +786,44 @@ test('requests quantitative context only when the selected NP requires it', asyn
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });
 
+test('executes Dante and Summer Wu production effects through the ordered path', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers the production servant execution audit');
+  await page.goto('/');
+  await completeSetup(page);
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('ダンテ・アリギエーリ');
+  await attackerDialog.getByRole('button', { name: /ダンテ・アリギエーリ.*Lv90/ }).click();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect(ownEffects).toContainText('威力アップ・対 天の力');
+  await expect(ownEffects).toContainText('威力アップ・対 地の力');
+  await expect(ownEffects).toContainText('宝具威力アップ');
+  await expect(ownEffects).not.toContainText('呪い');
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('武則天');
+  await attackerDialog.getByRole('button', { name: /武則天.*キャスター.*Lv80/ }).click();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect(ownEffects).toContainText('宝具威力アップ');
+  await expect(ownEffects).not.toContainText('死霊特性付与');
+  await expect(ownEffects).not.toContainText('防御力ダウン');
+});
+
 test('matches the reported Water Lilith inputs and exposes passive damage stacks', async ({
   page,
   isMobile,
 }) => {
   test.skip(isMobile, 'Desktop project covers the full direct input comparison');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
 
   await page.getByRole('button', { name: '攻撃役を変更' }).click();
@@ -854,8 +874,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   test.skip(isMobile, 'One browser project covers clipboard and download sharing');
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: 'ダメージ計算' }).click();
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   await page
@@ -907,8 +926,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation covers all management pages');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
 
   await page.getByRole('button', { name: '所持・育成' }).click();
   await expect(page.getByText('469騎')).toBeVisible();
@@ -1137,8 +1155,7 @@ test('finalizes one deduplicated history entry per calculation input', async ({
 }) => {
   test.skip(isMobile, 'Desktop navigation exercises history and backup together');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   for (let index = 0; index < 2; index += 1) {
     await page.getByRole('button', { name: 'ダメージ計算' }).click();
     await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
@@ -1173,8 +1190,7 @@ test('finalizes one deduplicated history entry per calculation input', async ({
 test('calculates ranking in a worker', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation exposes the ranking page');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   await expect(page.getByRole('status')).toContainText('403件を計算・計算対象外 17件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(

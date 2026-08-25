@@ -244,7 +244,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
           .discriminatedUnion('kind', [
             z.object({
               kind: z.literal('trait'),
-              scope: z.enum(['attacker', 'target', 'field']),
+              scope: z.enum(['attacker', 'attackerState', 'target', 'targetState', 'field']),
               trait: z.string().min(1).max(80),
               present: z.boolean(),
             }),

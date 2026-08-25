@@ -1,7 +1,7 @@
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 
-export interface NpDamageHandlerContext {
+export interface NpDamageOperationContext {
   overcharge: number;
   attackerTraitCounts: Readonly<Record<string, number>>;
   targetTraitCounts: Readonly<Record<string, number>>;
@@ -12,7 +12,7 @@ export interface NpDamageHandlerContext {
   battlePointPhase: number | null;
 }
 
-export type NpDamageHandlerResult =
+export type NpDamageOperationResult =
   | {
       status: 'resolved';
       npMultipliers: [number, number, number, number, number];
@@ -30,10 +30,10 @@ function countTraits(
   return required.reduce((sum, trait) => sum + Math.max(0, counts[trait.name] ?? 0), 0);
 }
 
-export function resolveNpDamageHandler(
+export function evaluateNpDamageOperation(
   damage: NpDamageSpec,
-  context: NpDamageHandlerContext,
-): NpDamageHandlerResult {
+  context: NpDamageOperationContext,
+): NpDamageOperationResult {
   const parameters = damage.parametersByOvercharge[context.overcharge - 1];
   if (!parameters) return { status: 'unsupported', missingEvidence: 'invalid_overcharge' };
   const baseMultipliers = parameters.map((parameter) => parameter.valuePermille / 10) as [
@@ -46,7 +46,7 @@ export function resolveNpDamageHandler(
   const resolved = (
     npMultipliers = baseMultipliers,
     npSpecialMultipliers = one(),
-  ): NpDamageHandlerResult => ({
+  ): NpDamageOperationResult => ({
     status: 'resolved',
     npMultipliers,
     npSpecialMultipliers,
@@ -141,12 +141,12 @@ export function resolveNpDamageHandler(
   );
 }
 
-export function applyNpDamageHandler(
+export function applyNpDamageOperation(
   input: DamageResolutionInput,
   damage: NpDamageSpec,
-  context: NpDamageHandlerContext,
+  context: NpDamageOperationContext,
 ): DamageResolutionInput {
-  const result = resolveNpDamageHandler(damage, context);
+  const result = evaluateNpDamageOperation(damage, context);
   if (result.status === 'unsupported')
     return {
       ...input,

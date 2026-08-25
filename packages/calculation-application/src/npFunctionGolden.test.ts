@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import goldenDocument from '../../test-fixtures/golden/np-functions-v1.json';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import { ENGINE_VERSION } from '@fgo-lab/schema';
-import { resolveNpDamageHandler, type NpDamageHandlerContext } from './npDamageHandler';
+import {
+  evaluateNpDamageOperation,
+  type NpDamageOperationContext,
+} from '@fgo-lab/battle-execution';
 
 interface GoldenParameter {
   Value: number;
@@ -95,7 +98,7 @@ function damageSpec(testCase: GoldenCase): NpDamageSpec {
   } as NpDamageSpec;
 }
 
-function context(testCase: GoldenCase): NpDamageHandlerContext {
+function context(testCase: GoldenCase): NpDamageOperationContext {
   const attackerTraits = testCase.context.attackerStateTraits ?? [];
   const targetTraits = testCase.context.targetTraits ?? [];
   const targetStateTraits = testCase.context.targetStateTraits ?? [];
@@ -118,7 +121,7 @@ describe('NP Function golden matrix', () => {
 
   for (const testCase of golden.cases) {
     it(testCase.caseId, () => {
-      expect(resolveNpDamageHandler(damageSpec(testCase), context(testCase))).toEqual({
+      expect(evaluateNpDamageOperation(damageSpec(testCase), context(testCase))).toEqual({
         status: 'resolved',
         ...testCase.expected,
       });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
-import { resolveNpDamageHandler, type NpDamageHandlerContext } from './npDamageHandler';
+import { evaluateNpDamageOperation, type NpDamageOperationContext } from './npDamageOperation';
 
 const parameters = (extra: Record<string, unknown> = {}) =>
   Array.from({ length: 5 }, (_, index) => ({
@@ -15,7 +15,7 @@ const base = {
   target: 'single' as const,
   rawPath: 'fixture',
 };
-const context: NpDamageHandlerContext = {
+const context: NpDamageOperationContext = {
   overcharge: 1,
   attackerTraitCounts: {},
   targetTraitCounts: {},
@@ -26,7 +26,7 @@ const context: NpDamageHandlerContext = {
   battlePointPhase: null,
 };
 
-describe('NP damage handler registry', () => {
+describe('NP damage operation', () => {
   it('resolves standard and defense-piercing functions', () => {
     const standard: NpDamageSpec = {
       ...base,
@@ -40,11 +40,11 @@ describe('NP damage handler registry', () => {
       rawFunctionType: 'damageNpPierce',
       parametersByOvercharge: matrix(),
     };
-    expect(resolveNpDamageHandler(standard, context)).toMatchObject({
+    expect(evaluateNpDamageOperation(standard, context)).toMatchObject({
       status: 'resolved',
       ignoreDefense: false,
     });
-    expect(resolveNpDamageHandler(piercing, context)).toMatchObject({
+    expect(evaluateNpDamageOperation(piercing, context)).toMatchObject({
       status: 'resolved',
       ignoreDefense: true,
     });
@@ -80,7 +80,7 @@ describe('NP damage handler registry', () => {
         rawFunctionType,
         parametersByOvercharge: matrix(patch),
       } as NpDamageSpec;
-      const result = resolveNpDamageHandler(damage, {
+      const result = evaluateNpDamageOperation(damage, {
         ...context,
         targetTraitCounts: { dragon: 1 },
         targetStateTraitCounts: { dragon: 1 },
@@ -109,16 +109,16 @@ describe('NP damage handler registry', () => {
     } as NpDamageSpec;
     const permanentOnly = { ...context, targetTraitCounts: { dragon: 1 } };
     const stateOnly = { ...context, targetStateTraitCounts: { dragon: 1 } };
-    expect(resolveNpDamageHandler(trait, permanentOnly)).toMatchObject({
+    expect(evaluateNpDamageOperation(trait, permanentOnly)).toMatchObject({
       npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
     });
-    expect(resolveNpDamageHandler(trait, stateOnly)).toMatchObject({
+    expect(evaluateNpDamageOperation(trait, stateOnly)).toMatchObject({
       npSpecialMultipliers: [1, 1, 1, 1, 1],
     });
-    expect(resolveNpDamageHandler(stateTrait, permanentOnly)).toMatchObject({
+    expect(evaluateNpDamageOperation(stateTrait, permanentOnly)).toMatchObject({
       npSpecialMultipliers: [1, 1, 1, 1, 1],
     });
-    expect(resolveNpDamageHandler(stateTrait, stateOnly)).toMatchObject({
+    expect(evaluateNpDamageOperation(stateTrait, stateOnly)).toMatchObject({
       npSpecialMultipliers: [1.5, 1.5, 1.5, 1.5, 1.5],
     });
   });
@@ -130,10 +130,10 @@ describe('NP damage handler registry', () => {
       rawFunctionType: 'damageNpHpratioLow',
       parametersByOvercharge: matrix({ targetId: 6_000 }),
     } as NpDamageSpec;
-    expect(resolveNpDamageHandler(hp, { ...context, attackerHpPermille: 500 })).toMatchObject({
+    expect(evaluateNpDamageOperation(hp, { ...context, attackerHpPermille: 500 })).toMatchObject({
       npMultipliers: [600, 700, 800, 900, 1000],
     });
-    expect(resolveNpDamageHandler(hp, context)).toEqual({
+    expect(evaluateNpDamageOperation(hp, context)).toEqual({
       status: 'unsupported',
       missingEvidence: 'missing_attacker_hp_ratio',
     });
@@ -153,7 +153,7 @@ describe('NP damage handler registry', () => {
       }),
     } as NpDamageSpec;
     expect(
-      resolveNpDamageHandler(sum, { ...context, attackerTraitCounts: { roman: 5 } }),
+      evaluateNpDamageOperation(sum, { ...context, attackerTraitCounts: { roman: 5 } }),
     ).toMatchObject({ npSpecialMultipliers: [1.6, 1.6, 1.6, 1.6, 1.6] });
 
     const targetSum = {
@@ -168,7 +168,7 @@ describe('NP damage handler registry', () => {
       }),
     } as NpDamageSpec;
     expect(
-      resolveNpDamageHandler(targetSum, {
+      evaluateNpDamageOperation(targetSum, {
         ...context,
         targetTraitCounts: { roman: 1 },
         targetCombinedTraitCounts: { roman: 2 },
@@ -186,7 +186,7 @@ describe('NP damage handler registry', () => {
         correctionPermille: 100,
       }),
     } as NpDamageSpec;
-    expect(resolveNpDamageHandler(battle, { ...context, battlePointPhase: 40 })).toMatchObject({
+    expect(evaluateNpDamageOperation(battle, { ...context, battlePointPhase: 40 })).toMatchObject({
       npSpecialMultipliers: [2, 2, 2, 2, 2],
     });
   });
@@ -205,15 +205,15 @@ describe('NP damage handler registry', () => {
       maximumBattlePointPhase: 10,
       parametersByOvercharge: matrix({ secondaryValuePermille: 1_000, correctionPermille: 100 }),
     } as NpDamageSpec;
-    expect(resolveNpDamageHandler(rarity, context)).toEqual({
+    expect(evaluateNpDamageOperation(rarity, context)).toEqual({
       status: 'unsupported',
       missingEvidence: 'missing_target_rarity',
     });
-    expect(resolveNpDamageHandler(battle, context)).toEqual({
+    expect(evaluateNpDamageOperation(battle, context)).toEqual({
       status: 'unsupported',
       missingEvidence: 'missing_battle_point_phase',
     });
-    expect(resolveNpDamageHandler(rarity, { ...context, overcharge: 6 })).toEqual({
+    expect(evaluateNpDamageOperation(rarity, { ...context, overcharge: 6 })).toEqual({
       status: 'unsupported',
       missingEvidence: 'invalid_overcharge',
     });

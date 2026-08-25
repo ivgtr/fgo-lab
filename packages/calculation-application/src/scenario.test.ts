@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assumptionForProjection } from '@fgo-lab/battle-execution';
+import { assumptionsForProjection } from '@fgo-lab/battle-execution';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -105,7 +105,7 @@ describe('scenario calculation facade', () => {
 
     expect(condition).toMatchObject({
       outcome: 'notApplied',
-      explanation: { code: 'disabled' },
+      explanation: { code: 'conditionNotMet' },
       value: 1.5,
     });
     expect(inactive.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
@@ -113,7 +113,7 @@ describe('scenario calculation facade', () => {
     const active = calculateScenario(
       {
         ...scenario,
-        effectAssumptions: [assumptionForProjection(condition!, true)],
+        effectAssumptions: assumptionsForProjection(condition!, true),
       },
       conditionalMaster,
       { ...versions, masterDataVersion: conditionalMaster.version },
@@ -127,6 +127,53 @@ describe('scenario calculation facade', () => {
       explanation: { code: 'applied' },
     });
     expect(active.result.status).toBe('calculated');
+  });
+
+  it('preserves repeated state-trait stacks through ordered NP execution', () => {
+    const baseServant = fixture.servants[0]!;
+    const burn = { id: 99, name: 'buffBurn' };
+    const stackEffect = (id: string) => ({
+      ...modifierEffect(id, 'addIndividuality', 0, [], 'enemyAll'),
+      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [burn.name] },
+      timing: 'beforeDamage' as const,
+    });
+    const stackedMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
+            ...np,
+            effects: [stackEffect('burn-one'), stackEffect('burn-two')],
+            damage: np.damage.map((damage) => ({
+              ...damage,
+              kind: 'traitCount',
+              rawFunctionType: 'damageNpIndividualSum',
+              parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                row.map((parameter) => ({
+                  ...parameter,
+                  targetId: 1,
+                  targetIds: [burn.id],
+                  targetTraits: [burn],
+                  secondaryValuePermille: 1_000,
+                  correctionPermille: 200,
+                  maximumTargetCount: 3,
+                })),
+              ),
+            })),
+          })),
+        },
+      ],
+    });
+
+    const calculation = calculateScenario(
+      createDefaultResolvedScenario(stackedMaster, undefined),
+      stackedMaster,
+      { ...versions, masterDataVersion: stackedMaster.version },
+    );
+
+    expect(calculation.input.targetStateTraits).toEqual(['buffBurn', 'buffBurn']);
+    expect(calculation.input.npSpecialMultipliers).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
   });
 
   it('returns identical NP rows for equivalent resolved and manual inputs', () => {

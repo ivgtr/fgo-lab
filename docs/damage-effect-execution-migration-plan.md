@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
 document_version: "1.0.0"
-status: "Proposed"
+status: "E3 Complete - Awaiting UX Confirmation"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -63,7 +63,7 @@ UI input
 
 ### E0：UI baselineと現状inventoryの固定
 
-状態: 未着手
+状態: 完了（`a28bba8`）
 
 作業:
 
@@ -84,7 +84,7 @@ UI input
 
 ### E1：最終契約と正規化schemaの確定
 
-状態: 未着手
+状態: 完了（`1726d7c`）
 
 作業:
 
@@ -106,7 +106,7 @@ UI input
 
 ### E2：計算経路とフロントエンド投影の破壊的置換
 
-状態: 未着手
+状態: 完了（`48b69a1`）
 
 作業:
 
@@ -136,7 +136,7 @@ UI input
 
 ### E3：全master監査とUX不変確認
 
-状態: 未着手
+状態: 完了（画面確認待ち）
 
 作業:
 

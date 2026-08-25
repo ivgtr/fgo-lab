@@ -21,6 +21,7 @@ import type {
   ScenarioAssumption,
   TraitScope,
 } from './index';
+import { applyNpDamageOperation } from './npDamageOperation';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -221,16 +222,21 @@ function effectCondition(effect: MasterEffect, origin: Origin): ConditionExpress
   ]);
 }
 
-function evaluateCondition(condition: ConditionExpression, state: BattleState): boolean | null {
+export function evaluateConditionExpression(
+  condition: ConditionExpression,
+  state: BattleState,
+): boolean | null {
+  const hasTrait = (scope: TraitScope, trait: string) =>
+    state.traits[scope].has(trait) ||
+    (scope === 'attacker' && state.traits.attackerState.has(trait)) ||
+    (scope === 'target' && state.traits.targetState.has(trait));
   switch (condition.kind) {
     case 'always':
       return true;
     case 'trait':
-      return state.traits[condition.scope].has(condition.trait) === condition.present;
+      return hasTrait(condition.scope, condition.trait) === condition.present;
     case 'traitCount': {
-      const count = condition.traits.filter((trait) =>
-        state.traits[condition.scope].has(trait),
-      ).length;
+      const count = condition.traits.filter((trait) => hasTrait(condition.scope, trait)).length;
       return condition.comparison === 'atLeast'
         ? count >= condition.count
         : condition.comparison === 'atMost'
@@ -249,30 +255,35 @@ function evaluateCondition(condition: ConditionExpression, state: BattleState): 
       return actual > condition.value;
     }
     case 'all': {
-      const values = condition.expressions.map((value) => evaluateCondition(value, state));
+      const values = condition.expressions.map((value) =>
+        evaluateConditionExpression(value, state),
+      );
       return values.includes(false) ? false : values.includes(null) ? null : true;
     }
     case 'any': {
-      const values = condition.expressions.map((value) => evaluateCondition(value, state));
+      const values = condition.expressions.map((value) =>
+        evaluateConditionExpression(value, state),
+      );
       return values.includes(true) ? true : values.includes(null) ? null : false;
     }
     case 'not': {
-      const value = evaluateCondition(condition.expression, state);
+      const value = evaluateConditionExpression(condition.expression, state);
       return value === null ? null : !value;
     }
   }
 }
 
-function firstAssertion(condition: ConditionExpression): ScenarioAssumption['assertion'] {
-  if (condition.kind === 'trait') return condition;
+function assertionsForCondition(
+  condition: ConditionExpression,
+): Exclude<ScenarioAssumption['assertion'], null>[] {
+  if (condition.kind === 'trait') return [condition];
   if (condition.kind === 'quantity')
-    return { kind: 'quantity', quantity: condition.quantity, value: condition.value };
-  if (condition.kind === 'all' || condition.kind === 'any')
-    for (const child of condition.expressions) {
-      const assertion = firstAssertion(child);
-      if (assertion) return assertion;
-    }
-  return null;
+    return [{ kind: 'quantity', quantity: condition.quantity, value: condition.value }];
+  if (condition.kind === 'all')
+    return condition.expressions.flatMap((child) => assertionsForCondition(child));
+  if (condition.kind === 'any')
+    return condition.expressions[0] ? assertionsForCondition(condition.expressions[0]) : [];
+  return [];
 }
 
 function parameter(
@@ -350,7 +361,7 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
       operations.push({
         ...baseOperation(source, order++, `add-${recipient}:${trait}`),
         kind: 'addTrait',
-        scope: recipient,
+        scope: recipient === 'attacker' ? 'attackerState' : 'targetState',
         trait,
       });
   const routed = route(source.effect, source.origin);
@@ -600,8 +611,17 @@ function cloneState(state: BattleState): BattleState {
     ...state,
     traits: {
       attacker: new Set(state.traits.attacker),
+      attackerState: new Set(state.traits.attackerState),
       target: new Set(state.traits.target),
+      targetState: new Set(state.traits.targetState),
       field: new Set(state.traits.field),
+    },
+    traitCounts: {
+      attacker: { ...state.traitCounts.attacker },
+      attackerState: { ...state.traitCounts.attackerState },
+      target: { ...state.traitCounts.target },
+      targetState: { ...state.traitCounts.targetState },
+      field: { ...state.traitCounts.field },
     },
     quantities: { ...state.quantities },
     modifiers: [...state.modifiers],
@@ -702,17 +722,26 @@ function initialState(
   input: DamageResolutionInput,
   attackerTraits: readonly string[],
 ): BattleState {
+  const attacker = [
+    ...attackerTraits,
+    'cardNP',
+    `card${input.cardType[0]!.toUpperCase()}${input.cardType.slice(1)}`,
+  ];
   return {
     card: input.cardType,
     traits: {
-      attacker: new Set([
-        ...attackerTraits,
-        ...input.attackerStateTraits,
-        'cardNP',
-        `card${input.cardType[0]!.toUpperCase()}${input.cardType.slice(1)}`,
-      ]),
-      target: new Set([...input.target.traits, ...input.targetStateTraits]),
+      attacker: new Set(attacker),
+      attackerState: new Set(input.attackerStateTraits),
+      target: new Set(input.target.traits),
+      targetState: new Set(input.targetStateTraits),
       field: new Set(input.fieldTraits),
+    },
+    traitCounts: {
+      attacker: traitCounts(attacker),
+      attackerState: traitCounts(input.attackerStateTraits),
+      target: traitCounts(input.target.traits),
+      targetState: traitCounts(input.targetStateTraits),
+      field: traitCounts(input.fieldTraits),
     },
     quantities: {
       attackerHpPermille: input.attackerHpPermille,
@@ -751,17 +780,51 @@ function applyAssumptions(
     }
     facts.set(factKey, { value, keys: [...(prior?.keys ?? []), assumption.decisionKey] });
     if (assertion.kind === 'trait') {
-      if (assertion.present) (state.traits[assertion.scope] as Set<string>).add(assertion.trait);
-      else (state.traits[assertion.scope] as Set<string>).delete(assertion.trait);
+      if (assertion.present) {
+        (state.traits[assertion.scope] as Set<string>).add(assertion.trait);
+        state.traitCounts[assertion.scope] = {
+          ...state.traitCounts[assertion.scope],
+          [assertion.trait]: Math.max(1, state.traitCounts[assertion.scope][assertion.trait] ?? 0),
+        };
+      } else {
+        (state.traits[assertion.scope] as Set<string>).delete(assertion.trait);
+        state.traitCounts[assertion.scope] = withoutTraitCount(
+          state.traitCounts[assertion.scope],
+          assertion.trait,
+        );
+      }
     } else state.quantities[assertion.quantity] = assertion.value;
   }
   return issues;
 }
 
-function traitCounts(traits: ReadonlySet<string>): Record<string, number> {
+function traitCounts(traits: Iterable<string>): Record<string, number> {
   const result: Record<string, number> = {};
   for (const trait of traits) result[trait] = (result[trait] ?? 0) + 1;
   return result;
+}
+
+function combinedTraitCounts(
+  ...groups: readonly Readonly<Record<string, number>>[]
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const group of groups)
+    for (const [trait, count] of Object.entries(group))
+      result[trait] = (result[trait] ?? 0) + count;
+  return result;
+}
+
+function withoutTraitCount(
+  counts: Readonly<Record<string, number>>,
+  removedTrait: string,
+): Record<string, number> {
+  return Object.fromEntries(Object.entries(counts).filter(([trait]) => trait !== removedTrait));
+}
+
+function expandedTraits(counts: Readonly<Record<string, number>>): string[] {
+  return Object.entries(counts).flatMap(([trait, count]) =>
+    Array.from({ length: Math.max(0, count) }, () => trait),
+  );
 }
 
 function applyNp(
@@ -769,116 +832,37 @@ function applyNp(
   operation: Extract<BattleOperation, { kind: 'executeNpDamage' }>,
   state: BattleState,
 ): DamageResolutionInput {
-  const damage = operation.damage;
-  const parameters = damage.parametersByOvercharge[operation.overcharge - 1];
-  if (!parameters)
-    return {
-      ...input,
-      damageFunction: {
-        status: 'unsupported',
-        kind: damage.kind,
-        missingEvidence: 'invalid_overcharge',
-      },
-    };
-  const base = parameters.map((item) => item.valuePermille / 10) as [
-    number,
-    number,
-    number,
-    number,
-    number,
-  ];
-  let special: [number, number, number, number, number] = [1, 1, 1, 1, 1];
-  let multipliers = base;
-  const target = traitCounts(state.traits.target);
-  const attacker = traitCounts(state.traits.attacker);
-  if (damage.kind === 'hpRatioLow') {
-    const hp = state.quantities.attackerHpPermille;
-    if (hp === null)
-      return {
-        ...input,
-        damageFunction: {
-          status: 'unsupported',
-          kind: damage.kind,
-          missingEvidence: 'missing_attacker_hp_ratio',
-        },
-      };
-    multipliers = parameters.map(
-      (item) => (item.valuePermille + Math.trunc(((1000 - hp) * (item.targetId ?? 0)) / 1000)) / 10,
-    ) as typeof base;
-  } else if (damage.kind === 'battlePointPhase') {
-    const phase = state.quantities.battlePointPhase;
-    if (phase === null)
-      return {
-        ...input,
-        damageFunction: {
-          status: 'unsupported',
-          kind: damage.kind,
-          missingEvidence: 'missing_battle_point_phase',
-        },
-      };
-    special = parameters.map(
-      (item) =>
-        ((item.secondaryValuePermille ?? 1000) +
-          (item.correctionPermille ?? 0) *
-            Math.min(Math.max(phase, 0), damage.maximumBattlePointPhase)) /
-        1000,
-    ) as typeof special;
-  } else if (damage.kind === 'targetRarity') {
-    const rarity = state.quantities.targetRarity;
-    if (rarity === null)
-      return {
-        ...input,
-        damageFunction: {
-          status: 'unsupported',
-          kind: damage.kind,
-          missingEvidence: 'missing_target_rarity',
-        },
-      };
-    special = parameters.map((item) =>
-      item.targetRarities?.includes(rarity) ? (item.correctionPermille ?? 1000) / 1000 : 1,
-    ) as typeof special;
-  } else if (damage.kind === 'traitExpression')
-    special = parameters.map((item) =>
-      (item.andCheckTraits ?? []).every((trait) => (target[trait.name] ?? 0) > 0)
-        ? (item.correctionPermille ?? 1000) / 1000
-        : 1,
-    ) as typeof special;
-  else if (damage.kind === 'trait' || damage.kind === 'stateTrait')
-    special = parameters.map((item) =>
-      item.targetTrait && (target[item.targetTrait.name] ?? 0) > 0
-        ? (item.correctionPermille ?? 1000) / 1000
-        : 1,
-    ) as typeof special;
-  else if (damage.kind === 'traitCount') {
-    const counts = parameters[0].targetId === 1 ? target : attacker;
-    special = parameters.map((item) => {
-      const count = (item.targetTraits ?? []).reduce(
-        (sum, trait) => sum + (counts[trait.name] ?? 0),
-        0,
-      );
-      const capped = item.maximumTargetCount ? Math.min(count, item.maximumTargetCount) : count;
-      return count
-        ? ((item.secondaryValuePermille ?? 1000) + capped * (item.correctionPermille ?? 0)) / 1000
-        : 1;
-    }) as typeof special;
-  }
-  return {
-    ...input,
-    npMultipliers: multipliers,
-    npSpecialMultipliers: special,
-    damageFunction: {
-      status: 'resolved',
-      kind: damage.kind,
-      ignoreDefense: damage.kind === 'defensePiercing' || state.ignoreDefense,
-    },
-  };
+  const attackerTraits = combinedTraitCounts(
+    state.traitCounts.attacker,
+    state.traitCounts.attackerState,
+  );
+  const targetTraits = state.traitCounts.target;
+  const targetStateTraits = state.traitCounts.targetState;
+  return applyNpDamageOperation(input, operation.damage, {
+    overcharge: operation.overcharge,
+    attackerTraitCounts: attackerTraits,
+    targetTraitCounts: targetTraits,
+    targetCombinedTraitCounts: combinedTraitCounts(
+      state.traitCounts.target,
+      state.traitCounts.targetState,
+    ),
+    targetStateTraitCounts: targetStateTraits,
+    attackerHpPermille: state.quantities.attackerHpPermille,
+    targetRarity: state.quantities.targetRarity,
+    battlePointPhase: state.quantities.battlePointPhase,
+  });
 }
 
 function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpression {
   const item = damage.parametersByOvercharge[overcharge - 1]?.[0];
   if (!item) return { kind: 'always' };
   if ((damage.kind === 'trait' || damage.kind === 'stateTrait') && item.targetTrait)
-    return { kind: 'trait', scope: 'target', trait: item.targetTrait.name, present: true };
+    return {
+      kind: 'trait',
+      scope: damage.kind === 'stateTrait' ? 'targetState' : 'target',
+      trait: item.targetTrait.name,
+      present: true,
+    };
   if (damage.kind === 'traitExpression' && item.andCheckTraits)
     return {
       kind: 'all',
@@ -902,6 +886,41 @@ function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpress
   return { kind: 'always' };
 }
 
+function traitCountProjections(
+  attackerId: string,
+  damage: NpDamageSpec,
+  overcharge: number,
+  source: OperationSource,
+  sourceName: string,
+  skillName: string,
+): EffectProjection[] {
+  const item = damage.parametersByOvercharge[overcharge - 1]?.[0];
+  if (damage.kind !== 'traitCount' || item?.targetId !== 1) return [];
+  const valuePermille = (item.secondaryValuePermille ?? 1_000) + (item.correctionPermille ?? 0);
+  return (item.targetTraits ?? []).map((trait) => {
+    const projectionKey = `np:${attackerId}:${damage.functionId}:trait:${trait.id}`;
+    return {
+      projectionKey,
+      operationId: `np:${attackerId}:${damage.functionId}:damage`,
+      label: '特攻宝具',
+      sourceName,
+      skillName,
+      valuePermille,
+      value: valuePermille / 1_000,
+      modifier: 'npSpecial',
+      source,
+      outcome: 'applied',
+      visibility: 'visible',
+      controllability: 'user',
+      decision: { state: 'disabled', decisionKey: projectionKey },
+      explanation: {
+        code: 'applied',
+        condition: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
+      },
+    };
+  });
+}
+
 function foldInput(input: DamageResolutionInput, state: BattleState): DamageResolutionInput {
   const sums: Partial<Record<ModifierKind, number>> = {};
   for (const modifier of state.modifiers)
@@ -912,6 +931,8 @@ function foldInput(input: DamageResolutionInput, state: BattleState): DamageReso
   return {
     ...input,
     fieldTraits: [...state.traits.field],
+    attackerStateTraits: expandedTraits(state.traitCounts.attackerState),
+    targetStateTraits: expandedTraits(state.traitCounts.targetState),
     attackBuff: input.attackBuff + value('attackBuff'),
     defenseBuff: input.defenseBuff + value('defenseBuff'),
     cardBuff: input.cardBuff + value('cardBuff'),
@@ -953,21 +974,32 @@ export function executeOrderedScenario(
   if (attacker && damage) {
     const np = getPrimaryNoblePhantasm(attacker)!;
     const condition = npCondition(damage, baseInput.overcharge);
+    const source: OperationSource = {
+      origin: 'np',
+      sourceInstanceId: `np:${attacker.id}`,
+      sourceId: attacker.id,
+      skillId: `np:${attacker.id}`,
+      effectId: damage.functionId,
+    };
+    compileProjections.push(
+      ...traitCountProjections(
+        attacker.id,
+        damage,
+        baseInput.overcharge,
+        source,
+        attacker.name,
+        np.name,
+      ),
+    );
     operations.push({
       operationId: `np:${attacker.id}:${damage.functionId}:damage`,
       order: operations.length,
       phase: 'npDamage',
-      source: {
-        origin: 'np',
-        sourceInstanceId: `np:${attacker.id}`,
-        sourceId: attacker.id,
-        skillId: `np:${attacker.id}`,
-        effectId: damage.functionId,
-      },
+      source,
       condition,
       decisionKey:
         condition.kind === 'always' ? null : `np:${attacker.id}:${damage.functionId}:condition`,
-      enabledByDefault: condition.kind === 'always',
+      enabledByDefault: true,
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId, parameterKeys: [] },
       presentation: {
         label: damage.kind === 'targetRarity' ? 'レアリティ特攻宝具' : '特攻宝具',
@@ -1018,7 +1050,7 @@ export function executeOrderedScenario(
   for (const operation of operations) {
     const choice = operation.decisionKey ? assumptions.get(operation.decisionKey) : undefined;
     const enabled = choice?.enabled ?? operation.enabledByDefault;
-    const condition = evaluateCondition(operation.condition, state);
+    const condition = evaluateConditionExpression(operation.condition, state);
     let outcome: OperationResult['outcome'] = 'applied';
     let code: EffectProjection['explanation']['code'] = 'applied';
     let issue: ExecutionIssue | null = null;
@@ -1032,6 +1064,9 @@ export function executeOrderedScenario(
     ) {
       outcome = 'impossible';
       code = 'cardMismatch';
+    } else if (condition === null && operation.decisionKey && !choice) {
+      outcome = 'notApplied';
+      code = 'unresolved';
     } else if (condition === null) {
       outcome = 'unsupported';
       code = 'unresolved';
@@ -1046,11 +1081,19 @@ export function executeOrderedScenario(
     }
     if (outcome === 'applied') {
       state = cloneState(state);
-      if (operation.kind === 'addTrait')
+      if (operation.kind === 'addTrait') {
         (state.traits[operation.scope] as Set<string>).add(operation.trait);
-      else if (operation.kind === 'removeTrait')
+        state.traitCounts[operation.scope] = {
+          ...state.traitCounts[operation.scope],
+          [operation.trait]: (state.traitCounts[operation.scope][operation.trait] ?? 0) + 1,
+        };
+      } else if (operation.kind === 'removeTrait') {
         (state.traits[operation.scope] as Set<string>).delete(operation.trait);
-      else if (operation.kind === 'addModifier')
+        state.traitCounts[operation.scope] = withoutTraitCount(
+          state.traitCounts[operation.scope],
+          operation.trait,
+        );
+      } else if (operation.kind === 'addModifier')
         state.modifiers = [
           ...state.modifiers,
           {
@@ -1114,16 +1157,17 @@ export function executeOrderedScenario(
   };
 }
 
-export function assumptionForProjection(
+export function assumptionsForProjection(
   projection: EffectProjection,
   enabled: boolean,
-): ScenarioAssumption {
-  return {
+): ScenarioAssumption[] {
+  const assertions =
+    enabled && projection.explanation.condition
+      ? assertionsForCondition(projection.explanation.condition)
+      : [];
+  return (assertions.length ? assertions : [null]).map((assertion) => ({
     decisionKey: projection.projectionKey,
     enabled,
-    assertion:
-      enabled && projection.explanation.condition
-        ? firstAssertion(projection.explanation.condition)
-        : null,
-  };
+    assertion,
+  }));
 }

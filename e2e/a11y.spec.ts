@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { completeSetup } from './setup';
 import type { Page } from '@playwright/test';
 
 async function expectNoSeriousViolations(page: Page) {
@@ -21,8 +22,7 @@ test('@a11y startup screen has no serious axe violations', async ({ page }) => {
 test('@a11y major desktop screens have no serious axe violations', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop navigation covers every R1 screen');
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   for (const name of [
     'ホーム',
     'ダメージ計算',
@@ -42,8 +42,7 @@ test('@a11y major desktop screens have no serious axe violations', async ({ page
 test('@a11y mobile home and calculator have no serious axe violations', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto('/');
-  const setup = page.getByRole('button', { name: 'セットアップを開始' });
-  if (await setup.isVisible()) await setup.click();
+  await completeSetup(page);
   await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: '計算', exact: true }).click();
   await expectNoSeriousViolations(page);

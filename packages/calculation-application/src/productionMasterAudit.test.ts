@@ -80,6 +80,11 @@ describe('production master damage quality ratchet', () => {
     const soujuurou = calculations.find(
       ({ servant }) => servant.name === '静希草十郎',
     )?.calculation;
+    const dante = calculations.find(
+      ({ servant }) => servant.name === 'ダンテ・アリギエーリ',
+    )?.calculation;
+    const summerWu = calculations.find(({ servant }) => servant.id === '505200')?.calculation;
+    const summerLilith = calculations.find(({ servant }) => servant.id === '405900')?.calculation;
     const unsupportedFamilies = Object.fromEntries(
       unsupported.map(({ servant, calculation }) => {
         if (calculation.result.status !== 'unsupported')
@@ -112,6 +117,21 @@ describe('production master damage quality ratchet', () => {
     ).toMatchObject({
       modifier: 'ignoreDamageCut',
       outcome: 'applied',
+    });
+    expect(dante?.result.status).toBe('calculated');
+    for (const label of ['威力アップ・対 天の力', '威力アップ・対 地の力', '宝具威力アップ'])
+      expect(dante?.effects.some((effect) => effect.label === label)).toBe(true);
+    expect(summerWu?.result.status).toBe('calculated');
+    expect(summerWu?.input.targetStateTraits).toContain('undead');
+    expect(summerWu?.effects.find((effect) => effect.label === '死霊特性付与')).toMatchObject({
+      visibility: 'hidden',
+      outcome: 'applied',
+    });
+    expect(summerLilith?.result.status).toBe('calculated');
+    expect(summerLilith?.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(summerLilith?.effects.find((effect) => effect.modifier === 'npSpecial')).toMatchObject({
+      outcome: 'notApplied',
+      explanation: { code: 'conditionNotMet' },
     });
   });
 });
