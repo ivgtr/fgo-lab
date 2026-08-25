@@ -1,10 +1,11 @@
 export type ActorScope = 'attacker' | 'target';
 export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
 export type CardType = 'buster' | 'arts' | 'quick';
-export type ExclusiveTraitGroup =
-  'worldAttribute' | 'fieldRealm' | 'alignmentOrder' | 'alignmentMoral';
-export type OperationDecisionMode =
-  'automatic' | 'enableOperation' | 'assertCondition' | 'enableAndAssert';
+export type CanonicalExclusiveGroup = 'worldAttribute' | 'fieldRealm';
+export interface OperationDecisionPlan {
+  activation: 'automatic' | 'user';
+  condition: 'evaluate' | 'userMayAssume' | 'unsupported';
+}
 
 export type ConditionExpression =
   | { kind: 'always' }
@@ -26,7 +27,11 @@ export type ConditionExpression =
   | { kind: 'all'; expressions: readonly ConditionExpression[] }
   | { kind: 'any'; expressions: readonly ConditionExpression[] }
   | { kind: 'not'; expression: ConditionExpression }
-  | { kind: 'unsupported'; reason: 'partialTraitCondition' | 'ambiguousConditionAssertion' };
+  | {
+      kind: 'partialTrait';
+      scope: TraitScope;
+      traits: readonly { trait: string; present: boolean }[];
+    };
 
 export interface OperationEvidence {
   rawPath: string;
@@ -59,7 +64,7 @@ interface OperationBase {
   source: OperationSource;
   condition: ConditionExpression;
   decisionKey: string | null;
-  decisionMode: OperationDecisionMode;
+  decisionPlan: OperationDecisionPlan;
   enabledByDefault: boolean;
   evidence: OperationEvidence;
   presentation: { label: string; sourceName: string; skillName: string };
@@ -136,37 +141,33 @@ export interface BattleState {
   unresolved: readonly ExecutionIssue[];
 }
 
-export type ScenarioAssumption = {
+export type EffectDecision = {
   decisionKey: string;
-  enabled: boolean;
-  assertion:
-    | {
-        kind: 'trait';
-        scope: TraitScope;
-        trait: string;
-        present: boolean;
-        exclusiveGroup: ExclusiveTraitGroup | null;
-      }
-    | {
-        kind: 'quantity';
-        quantity: keyof BattleState['quantities'];
-        value: number;
-      }
-    | null;
+  operationEnabled: boolean;
+  conditionSatisfaction: 'evaluate' | 'assumeSatisfied';
+};
+
+export type WorldFactAssertion = {
+  decisionKey: string;
+  fact:
+    | { kind: 'trait'; scope: TraitScope; trait: string; present: boolean }
+    | { kind: 'quantity'; quantity: keyof BattleState['quantities']; value: number };
 };
 
 export type ExecutionIssue =
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }
   | { kind: 'unsupportedParameter'; operationId: string; parameter: string }
-  | { kind: 'contradictoryAssumptions'; decisionKeys: readonly string[] }
+  | { kind: 'contradictoryWorldFacts'; decisionKeys: readonly string[] }
   | {
-      kind: 'exclusiveAssumptionConflict';
+      kind: 'exclusiveWorldFactConflict';
       scope: TraitScope;
-      group: ExclusiveTraitGroup;
+      group: CanonicalExclusiveGroup;
       traits: readonly string[];
       decisionKeys: readonly string[];
-    };
+    }
+  | { kind: 'conditionDecisionConflict'; decisionKeys: readonly string[]; detail: string }
+  | { kind: 'unsafeLocalConditionDecision'; operationId: string; detail: string };
 
 export type OperationOutcome =
   'applied' | 'notApplied' | 'notRelevant' | 'impossible' | 'unsupported';
@@ -193,6 +194,7 @@ export interface EffectProjection {
   value: number | null;
   modifier: ModifierKind | 'npSpecial' | null;
   source: OperationSource;
+  executionSupport: 'supported' | 'unsupported';
   outcome: OperationOutcome;
   visibility: 'visible' | 'hidden';
   controllability: 'automatic' | 'user';
@@ -200,12 +202,20 @@ export interface EffectProjection {
     | {
         state: 'enabled';
         decisionKey: string;
-        mode: Exclude<OperationDecisionMode, 'automatic'>;
+        kind: 'effect';
+        plan: OperationDecisionPlan;
       }
     | {
         state: 'disabled';
         decisionKey: string;
-        mode: Exclude<OperationDecisionMode, 'automatic'>;
+        kind: 'effect';
+        plan: OperationDecisionPlan;
+      }
+    | {
+        state: 'enabled' | 'disabled';
+        decisionKey: string;
+        kind: 'worldFact';
+        fact: WorldFactAssertion['fact'];
       }
     | { state: 'none' };
   explanation: ProjectionExplanation;
@@ -229,13 +239,12 @@ export interface BattleExecutionResult {
 }
 
 export {
-  assumptionsForProjection,
   canNormalizeDamageEffect,
   evaluateConditionExpression,
   executeOrderedScenario,
   type OrderedScenarioExecution,
 } from './engine';
-export { exclusiveTraitGroup } from './conditionSemantics';
+export { canonicalExclusiveGroup } from './conditionSemantics';
 export {
   applyNpDamageOperation,
   evaluateNpDamageOperation,

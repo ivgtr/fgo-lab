@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v17",
+  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v18",
   "createdAt": "2026-08-25T11:00:01.930Z",
   "source": {
     "name": "Atlas Academy",
@@ -15,7 +15,7 @@
       "key": "master",
       "file": "master.json",
       "bytes": 19779737,
-      "sha256": "7543abffc540fa04cb3bfdc813d0ce137b6def22808ac0b18b90fa8527996dde",
+      "sha256": "e79d982bc92926bc31ebf2da7e7372b5457444b14891a88c9cf0d36c7ddff9b8",
       "required": true
     }
   ],

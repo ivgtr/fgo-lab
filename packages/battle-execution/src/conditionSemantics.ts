@@ -1,4 +1,4 @@
-import type { ExclusiveTraitGroup, TraitScope } from './index';
+import type { CanonicalExclusiveGroup, TraitScope } from './index';
 
 const EXCLUSIVE_TRAIT_GROUPS = {
   worldAttribute: new Set([
@@ -9,22 +9,15 @@ const EXCLUSIVE_TRAIT_GROUPS = {
     'attributeBeast',
   ]),
   fieldRealm: new Set(['fieldHeaven', 'fieldHell']),
-  alignmentOrder: new Set([
-    'alignmentLawful',
-    'alignmentNeutral',
-    'alignmentChaotic',
-    'alignmentMadness',
-    'alignmentSummer',
-  ]),
-  alignmentMoral: new Set(['alignmentGood', 'alignmentBalanced', 'alignmentEvil']),
-} satisfies Record<ExclusiveTraitGroup, ReadonlySet<string>>;
+} satisfies Record<CanonicalExclusiveGroup, ReadonlySet<string>>;
 
-export function exclusiveTraitGroup(scope: TraitScope, trait: string): ExclusiveTraitGroup | null {
+export function canonicalExclusiveGroup(
+  scope: TraitScope,
+  trait: string,
+): CanonicalExclusiveGroup | null {
   if (scope === 'field') return EXCLUSIVE_TRAIT_GROUPS.fieldRealm.has(trait) ? 'fieldRealm' : null;
   if (scope === 'attacker' || scope === 'target') {
     if (EXCLUSIVE_TRAIT_GROUPS.worldAttribute.has(trait)) return 'worldAttribute';
-    if (EXCLUSIVE_TRAIT_GROUPS.alignmentOrder.has(trait)) return 'alignmentOrder';
-    if (EXCLUSIVE_TRAIT_GROUPS.alignmentMoral.has(trait)) return 'alignmentMoral';
   }
   return null;
 }

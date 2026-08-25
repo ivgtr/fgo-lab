@@ -68,7 +68,8 @@ export function createDefaultResolvedScenario(
     })),
     mysticCode: null,
     support: null,
-    effectAssumptions: [],
+    effectDecisions: [],
+    worldFactAssertions: [],
     explicitOverrides: {},
   };
 }
@@ -152,25 +153,28 @@ export function resolveScenario(
     };
   const baseInput = resolvedScenarioBaseInput(scenario, master);
   const execution = executeOrderedScenario(baseInput, scenario, master);
-  const warnings = execution.issues.map((issue) =>
-    issue.kind === 'contradictoryAssumptions'
-      ? `${issue.kind}:${issue.decisionKeys.join(',')}`
-      : issue.kind === 'exclusiveAssumptionConflict'
-        ? `${issue.kind}:${issue.scope}:${issue.group}:${issue.traits.join(',')}:${issue.decisionKeys.join(',')}`
-        : issue.kind === 'unsupportedParameter'
-          ? `${issue.kind}:${issue.operationId}:${issue.parameter}`
-          : `${issue.kind}:${issue.operationId}:${issue.detail}`,
-  );
-  const assumptionTrace = scenario.effectAssumptions
-    .filter((assumption) => assumption.enabled)
-    .map((assumption) => ({
-      step: 'scenario-assumption',
-      detail: assumption.assertion
-        ? assumption.assertion.kind === 'trait'
-          ? `${assumption.decisionKey}:trait:${assumption.assertion.scope}:${assumption.assertion.trait}:${String(assumption.assertion.present)}:${assumption.assertion.exclusiveGroup ?? 'none'}`
-          : `${assumption.decisionKey}:quantity:${assumption.assertion.quantity}:${String(assumption.assertion.value)}`
-        : `${assumption.decisionKey}:enabled`,
-    }));
+  const warnings = execution.issues.map((issue) => {
+    if (issue.kind === 'contradictoryWorldFacts')
+      return `${issue.kind}:${issue.decisionKeys.join(',')}`;
+    if (issue.kind === 'exclusiveWorldFactConflict')
+      return `${issue.kind}:${issue.scope}:${issue.group}:${issue.traits.join(',')}:${issue.decisionKeys.join(',')}`;
+    if (issue.kind === 'conditionDecisionConflict')
+      return `${issue.kind}:${issue.decisionKeys.join(',')}:${issue.detail}`;
+    if (issue.kind === 'unsupportedParameter')
+      return `${issue.kind}:${issue.operationId}:${issue.parameter}`;
+    return `${issue.kind}:${issue.operationId}:${issue.detail}`;
+  });
+  const decisionTrace = scenario.effectDecisions.map((decision) => ({
+    step: 'user-decision',
+    detail: `${decision.decisionKey}:operation:${String(decision.operationEnabled)}:condition:${decision.conditionSatisfaction}`,
+  }));
+  const worldFactTrace = scenario.worldFactAssertions.map((assertion) => ({
+    step: 'world-fact',
+    detail:
+      assertion.fact.kind === 'trait'
+        ? `${assertion.decisionKey}:trait:${assertion.fact.scope}:${assertion.fact.trait}:${String(assertion.fact.present)}`
+        : `${assertion.decisionKey}:quantity:${assertion.fact.quantity}:${String(assertion.fact.value)}`,
+  }));
   return {
     input: execution.input,
     precision: execution.precision,
@@ -187,7 +191,8 @@ export function resolveScenario(
     warnings,
     effects: [...execution.projections],
     trace: [
-      ...assumptionTrace,
+      ...decisionTrace,
+      ...worldFactTrace,
       ...execution.operations.map((operation) => ({
         step: `${operation.operation.phase}:${operation.operation.kind}`,
         detail: `${operation.operation.order}:${operation.operation.operationId}:${operation.outcome}`,

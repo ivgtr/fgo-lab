@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { assumptionsForProjection } from '@fgo-lab/battle-execution';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
 import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
@@ -10,6 +9,7 @@ import {
   type CalculationScenario,
   type VersionContext,
 } from '@fgo-lab/schema';
+import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -126,10 +126,7 @@ describe('scenario calculation facade', () => {
     expect(inactive.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
 
     const active = calculateScenario(
-      {
-        ...scenario,
-        effectAssumptions: assumptionsForProjection(condition!, true),
-      },
+      applyEffectProjectionDecision(scenario, condition!, true),
       conditionalMaster,
       { ...versions, masterDataVersion: conditionalMaster.version },
     );
@@ -192,19 +189,17 @@ describe('scenario calculation facade', () => {
     });
     const sky = inactive.effects.find((effect) => effect.label === 'sky-power')!;
     const earth = inactive.effects.find((effect) => effect.label === 'earth-power')!;
-    const skyAssumptions = assumptionsForProjection(sky, true);
-    const earthAssumptions = assumptionsForProjection(earth, true);
+    const skyScenario = applyEffectProjectionDecision(scenario, sky, true);
 
-    const skyOnly = calculateScenario(
-      { ...scenario, effectAssumptions: skyAssumptions },
-      exclusiveMaster,
-      { ...versions, masterDataVersion: exclusiveMaster.version },
-    );
+    const skyOnly = calculateScenario(skyScenario, exclusiveMaster, {
+      ...versions,
+      masterDataVersion: exclusiveMaster.version,
+    });
     expect(skyOnly.result.status).toBe('calculated');
     expect(skyOnly.input).toMatchObject({
       powerMod: 0.5,
-      fieldTraits: ['fieldHeaven'],
-      target: { traits: ['attributeSky'] },
+      fieldTraits: [],
+      target: { traits: [] },
     });
     expect(skyOnly.effects.find((effect) => effect.label === 'sky-power')?.outcome).toBe('applied');
     expect(skyOnly.effects.find((effect) => effect.label === 'earth-power')?.outcome).toBe(
@@ -212,17 +207,14 @@ describe('scenario calculation facade', () => {
     );
 
     const conflict = calculateScenario(
-      { ...scenario, effectAssumptions: [...skyAssumptions, ...earthAssumptions] },
+      applyEffectProjectionDecision(skyScenario, earth, true),
       exclusiveMaster,
       { ...versions, masterDataVersion: exclusiveMaster.version },
     );
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.powerMod).toBe(0);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('exclusiveAssumptionConflict:target:worldAttribute'),
-        expect.stringContaining('exclusiveAssumptionConflict:field:fieldRealm'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('conditionDecisionConflict:')]),
     );
     expect(
       conflict.effects
@@ -286,25 +278,135 @@ describe('scenario calculation facade', () => {
     });
     const projection = inactive.effects.find((effect) => effect.label === 'support-sky-power')!;
     const active = calculateScenario(
-      { ...scenario, effectAssumptions: assumptionsForProjection(projection, true) },
+      applyEffectProjectionDecision(scenario, projection, true),
       supportMaster,
       { ...versions, masterDataVersion: supportMaster.version },
     );
 
     expect(projection).toMatchObject({
       controllability: 'user',
-      decision: { mode: 'enableAndAssert' },
+      decision: {
+        kind: 'effect',
+        plan: { activation: 'user', condition: 'userMayAssume' },
+      },
     });
     expect(active.result.status).toBe('calculated');
     expect(active.input).toMatchObject({
       powerMod: 0.3,
-      fieldTraits: ['fieldHeaven'],
-      target: { traits: ['attributeSky'] },
+      fieldTraits: [],
+      target: { traits: [] },
     });
     expect(active.effects.find((effect) => effect.label === 'support-sky-power')).toMatchObject({
       outcome: 'applied',
       decision: { state: 'enabled' },
     });
+  });
+
+  it('routes conditional passives and craft essences through the same effect-local decision', () => {
+    const baseServant = fixture.servants[0]!;
+    const orCondition = {
+      ...unconditionalConditions,
+      opponent: {
+        operator: 'any' as const,
+        traits: [
+          { name: 'dragon', negative: false },
+          { name: 'lamia', negative: false },
+        ],
+      },
+    };
+    const conditionalMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          passives: [
+            {
+              id: 'conditional-passive',
+              slot: 0,
+              priority: 1,
+              name: 'conditional passive',
+              detail: '',
+              imageKey: null,
+              effects: [
+                modifierEffect('passive-or-power', 'upDamage', 200, [], 'self', orCondition),
+              ],
+            },
+          ],
+        },
+      ],
+      craftEssences: fixture.craftEssences.map((craftEssence) => ({
+        ...craftEssence,
+        effects: [modifierEffect('ce-or-power', 'upDamage', 300, [], 'self', orCondition)],
+      })),
+    });
+    const baseScenario = {
+      ...createDefaultResolvedScenario(conditionalMaster, undefined),
+      craftEssence: {
+        craftEssenceId: conditionalMaster.craftEssences[0]!.id,
+        level: 1,
+        limitBreak: 0,
+      },
+    };
+    const initial = calculateScenario(baseScenario, conditionalMaster, {
+      ...versions,
+      masterDataVersion: conditionalMaster.version,
+    });
+    const passive = initial.effects.find((effect) => effect.label === 'passive-or-power')!;
+    const craftEssence = initial.effects.find((effect) => effect.label === 'ce-or-power')!;
+    expect([passive, craftEssence]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ controllability: 'user', outcome: 'notApplied' }),
+      ]),
+    );
+    const selectedScenario = applyEffectProjectionDecision(
+      applyEffectProjectionDecision(baseScenario, passive, true),
+      craftEssence,
+      true,
+    );
+    const selected = calculateScenario(selectedScenario, conditionalMaster, {
+      ...versions,
+      masterDataVersion: conditionalMaster.version,
+    });
+    expect(selected.result.status).toBe('calculated');
+    expect(selected.input.powerMod).toBe(0.5);
+    expect(selected.input.target.traits).toEqual([]);
+  });
+
+  it('derives world-fact exclusivity canonically without scenario metadata', () => {
+    const scenario = createDefaultResolvedScenario(master, undefined);
+    const externallyParsed = calculationScenarioSchema.parse({
+      ...scenario,
+      worldFactAssertions: [
+        {
+          decisionKey: 'world:sky',
+          fact: {
+            kind: 'trait',
+            scope: 'target',
+            trait: 'attributeSky',
+            present: true,
+            exclusiveGroup: null,
+          },
+        },
+        {
+          decisionKey: 'world:earth',
+          fact: {
+            kind: 'trait',
+            scope: 'target',
+            trait: 'attributeEarth',
+            present: true,
+            exclusiveGroup: null,
+          },
+        },
+      ],
+    });
+    if (externallyParsed.mode !== 'resolved') throw new Error('resolved scenario expected');
+    expect('exclusiveGroup' in externallyParsed.worldFactAssertions[0]!.fact).toBe(false);
+    const conflict = calculateScenario(externallyParsed, master, versions);
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.effectWarnings).toContain(
+      'exclusiveWorldFactConflict:target:worldAttribute:attributeSky,attributeEarth:world:sky,world:earth',
+    );
+    expect(conflict.input.target.traits).toEqual([]);
   });
 
   it('preserves repeated state-trait stacks through ordered NP execution', () => {
@@ -496,21 +598,21 @@ describe('scenario calculation facade', () => {
         mysticCodeId: 'combo-mc',
         skills: [{ skillId: 'mc-skill', skillLevel: 10 }],
       },
-      effectAssumptions: [
+      effectDecisions: [
         {
           decisionKey: 'attacker:attacker:fixture-saber:attacker-skill:attacker-attack',
-          enabled: true,
-          assertion: null,
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
         },
         {
           decisionKey: 'mysticCode:mysticCode:combo-mc:mc-skill:mc-card',
-          enabled: true,
-          assertion: null,
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
         },
         {
           decisionKey: 'support:support-1:support-skill:support-power',
-          enabled: true,
-          assertion: null,
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
         },
       ],
       support: {

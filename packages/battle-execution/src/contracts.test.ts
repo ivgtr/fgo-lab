@@ -3,14 +3,15 @@ import type {
   BattleOperation,
   BattleState,
   ConditionExpression,
+  EffectDecision,
   EffectProjection,
   OperationResult,
-  ScenarioAssumption,
+  WorldFactAssertion,
 } from './index';
-import { exclusiveTraitGroup } from './index';
+import { canonicalExclusiveGroup } from './index';
 
 describe('ordered battle execution contracts', () => {
-  it('keeps conditions lossless and assumptions scoped to one state fact', () => {
+  it('keeps conditions, effect decisions, and world facts as separate contracts', () => {
     const condition: ConditionExpression = {
       kind: 'all',
       expressions: [
@@ -27,33 +28,55 @@ describe('ordered battle execution contracts', () => {
         },
       ],
     };
-    const assumption: ScenarioAssumption = {
+    const decision: EffectDecision = {
       decisionKey: 'np:field:milleniumCastle',
-      enabled: true,
-      assertion: {
+      operationEnabled: true,
+      conditionSatisfaction: 'assumeSatisfied',
+    };
+    const assertion: WorldFactAssertion = {
+      decisionKey: 'np:trait-count:milleniumCastle',
+      fact: {
         kind: 'trait',
         scope: 'field',
         trait: 'milleniumCastle',
         present: true,
-        exclusiveGroup: null,
       },
     };
     expect(condition).toMatchObject({ kind: 'all' });
-    expect(assumption.assertion).toEqual({
+    expect(decision).toMatchObject({ conditionSatisfaction: 'assumeSatisfied' });
+    expect(assertion.fact).toEqual({
       kind: 'trait',
       scope: 'field',
       trait: 'milleniumCastle',
       present: true,
-      exclusiveGroup: null,
+    });
+  });
+
+  it('preserves partial trait conditions without pretending they are a trait count', () => {
+    const condition: ConditionExpression = {
+      kind: 'partialTrait',
+      scope: 'target',
+      traits: [
+        { trait: 'divine', present: true },
+        { trait: 'undead', present: false },
+      ],
+    };
+    expect(condition).toEqual({
+      kind: 'partialTrait',
+      scope: 'target',
+      traits: [
+        { trait: 'divine', present: true },
+        { trait: 'undead', present: false },
+      ],
     });
   });
 
   it('classifies mutually exclusive condition traits without effect identity', () => {
-    expect(exclusiveTraitGroup('target', 'attributeSky')).toBe('worldAttribute');
-    expect(exclusiveTraitGroup('target', 'attributeEarth')).toBe('worldAttribute');
-    expect(exclusiveTraitGroup('field', 'fieldHeaven')).toBe('fieldRealm');
-    expect(exclusiveTraitGroup('field', 'fieldHell')).toBe('fieldRealm');
-    expect(exclusiveTraitGroup('target', 'dragon')).toBeNull();
+    expect(canonicalExclusiveGroup('target', 'attributeSky')).toBe('worldAttribute');
+    expect(canonicalExclusiveGroup('target', 'attributeEarth')).toBe('worldAttribute');
+    expect(canonicalExclusiveGroup('field', 'fieldHeaven')).toBe('fieldRealm');
+    expect(canonicalExclusiveGroup('field', 'fieldHell')).toBe('fieldRealm');
+    expect(canonicalExclusiveGroup('target', 'dragon')).toBeNull();
   });
 
   it('models every R1 operation as a discriminated union without servant identity', () => {

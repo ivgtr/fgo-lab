@@ -19,10 +19,16 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
       skillId: 'skill',
       effectId: 'effect',
     },
+    executionSupport: 'supported',
     outcome: 'applied',
     visibility,
     controllability: 'user',
-    decision: { state: 'enabled', decisionKey: visibility, mode: 'enableOperation' },
+    decision: {
+      state: 'enabled',
+      decisionKey: visibility,
+      kind: 'effect',
+      plan: { activation: 'user', condition: 'evaluate' },
+    },
     explanation: { code: 'applied', condition: null },
   };
 }
@@ -56,7 +62,8 @@ describe('typed applied-effect projection', () => {
         decision: {
           state: 'disabled',
           decisionKey: selected.projectionKey,
-          mode: 'enableOperation',
+          kind: 'effect',
+          plan: { activation: 'user', condition: 'evaluate' },
         },
       }),
     ).toBe(false);

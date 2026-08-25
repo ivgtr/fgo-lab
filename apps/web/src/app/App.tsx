@@ -30,8 +30,9 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { assumptionsForProjection, type EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
 import {
+  applyEffectProjectionDecisions,
   calculateScenario,
   createDefaultResolvedScenario,
   resolveScenario,
@@ -78,22 +79,17 @@ function supportDecisionKeys(effects: readonly EffectProjection[]) {
   );
 }
 
-function selectedSupportAssumptions(
-  template: SupportTemplate,
-  effects: readonly EffectProjection[],
-) {
-  return effects
-    .filter(
-      (effect) =>
-        effect.source.origin === 'support' &&
-        template.composition.selectedEffects.some(
-          (selected) =>
-            selected.sourceInstanceId === effect.source.sourceInstanceId &&
-            selected.skillId === effect.source.skillId &&
-            selected.effectId === effect.source.effectId,
-        ),
-    )
-    .flatMap((effect) => assumptionsForProjection(effect, true));
+function selectedSupportEffects(template: SupportTemplate, effects: readonly EffectProjection[]) {
+  return effects.filter(
+    (effect) =>
+      effect.source.origin === 'support' &&
+      template.composition.selectedEffects.some(
+        (selected) =>
+          selected.sourceInstanceId === effect.source.sourceInstanceId &&
+          selected.skillId === effect.source.skillId &&
+          selected.effectId === effect.source.effectId,
+      ),
+  );
 }
 
 function Setup({
@@ -449,14 +445,18 @@ export function App() {
             onSupportSelect={async (template) => {
               if (currentScenario.mode !== 'resolved') return;
               const currentSupportDecisionKeys = supportDecisionKeys(resolvedCalculation.effects);
-              const retainedAssumptions = currentScenario.effectAssumptions.filter(
-                (assumption) => !currentSupportDecisionKeys.has(assumption.decisionKey),
+              const retainedDecisions = currentScenario.effectDecisions.filter(
+                (decision) => !currentSupportDecisionKeys.has(decision.decisionKey),
+              );
+              const retainedWorldFacts = currentScenario.worldFactAssertions.filter(
+                (assertion) => !currentSupportDecisionKeys.has(assertion.decisionKey),
               );
               if (!template) {
                 await saveScenarioDraft({
                   ...currentScenario,
                   support: null,
-                  effectAssumptions: retainedAssumptions,
+                  effectDecisions: retainedDecisions,
+                  worldFactAssertions: retainedWorldFacts,
                 });
                 return;
               }
@@ -468,16 +468,17 @@ export function App() {
                   sourceTemplateId: template.templateId,
                   composition: structuredClone(template.composition),
                 },
-                effectAssumptions: retainedAssumptions,
+                effectDecisions: retainedDecisions,
+                worldFactAssertions: retainedWorldFacts,
               };
               const candidateEffects = resolveScenario(candidate, currentMaster).effects;
-              await saveScenarioDraft({
-                ...candidate,
-                effectAssumptions: [
-                  ...retainedAssumptions,
-                  ...selectedSupportAssumptions(template, candidateEffects),
-                ],
-              });
+              await saveScenarioDraft(
+                applyEffectProjectionDecisions(
+                  candidate,
+                  selectedSupportEffects(template, candidateEffects),
+                  true,
+                ),
+              );
             }}
             onSupportSave={async (mode) => {
               if (currentScenario.mode !== 'resolved' || !currentScenario.support) return;
@@ -560,13 +561,14 @@ export function App() {
                     : null,
                 };
                 const scenario = rankingSupport
-                  ? {
-                      ...baseScenario,
-                      effectAssumptions: selectedSupportAssumptions(
+                  ? applyEffectProjectionDecisions(
+                      baseScenario,
+                      selectedSupportEffects(
                         rankingSupport,
                         resolveScenario(baseScenario, currentMaster).effects,
                       ),
-                    }
+                      true,
+                    )
                   : baseScenario;
                 const resolved = resolveScenario(scenario, currentMaster);
                 return {

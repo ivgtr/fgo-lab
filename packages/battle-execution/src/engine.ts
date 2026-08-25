@@ -13,15 +13,23 @@ import type {
   BattleState,
   ConditionExpression,
   EffectProjection,
+  EffectDecision,
   ExecutionIssue,
   ExecutionPhase,
   ModifierKind,
   OperationResult,
   OperationSource,
-  ScenarioAssumption,
   TraitScope,
 } from './index';
-import { exclusiveTraitGroup } from './conditionSemantics';
+import {
+  combineConditions,
+  containsUnsupportedCondition,
+  evaluateCondition,
+  isConditional,
+  normalizeTraitCondition,
+  validateConditionDecisions,
+} from './condition';
+import { validateAndApplyWorldFacts, validateCanonicalWorldState } from './facts';
 import { applyNpDamageOperation } from './npDamageOperation';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -183,44 +191,15 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
   );
 }
 
-function traitExpression(condition: TraitCondition, scope: TraitScope): ConditionExpression {
-  if (condition.traits.length === 0) return { kind: 'always' };
-  const expressions = condition.traits.map<ConditionExpression>((trait) => ({
-    kind: 'trait',
-    scope,
-    trait: trait.name,
-    present: !trait.negative,
-  }));
-  if (condition.operator === 'partial')
-    return { kind: 'unsupported', reason: 'partialTraitCondition' };
-  return condition.operator === 'all' ? { kind: 'all', expressions } : { kind: 'any', expressions };
-}
-
-function combine(expressions: ConditionExpression[]): ConditionExpression {
-  const useful = expressions.filter((expression) => expression.kind !== 'always');
-  return useful.length === 0
-    ? { kind: 'always' }
-    : useful.length === 1
-      ? useful[0]!
-      : { kind: 'all', expressions: useful };
-}
-
-function containsUnsupportedCondition(condition: ConditionExpression): boolean {
-  if (condition.kind === 'unsupported') return true;
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.some(containsUnsupportedCondition);
-  return condition.kind === 'not' && containsUnsupportedCondition(condition.expression);
-}
-
 function effectCondition(effect: MasterEffect, origin: Origin): ConditionExpression {
   const recipient = targetRecipient(origin, effect.target) ?? 'attacker';
   const holder: TraitScope = recipient;
   const opponent: TraitScope = recipient === 'target' ? 'attacker' : 'target';
-  return combine([
-    ...effect.conditions.recipient.map((condition) => traitExpression(condition, holder)),
-    traitExpression(effect.conditions.holder, holder),
-    traitExpression(effect.conditions.opponent, opponent),
-    traitExpression(effect.conditions.field, 'field'),
+  return combineConditions([
+    ...effect.conditions.recipient.map((condition) => normalizeTraitCondition(condition, holder)),
+    normalizeTraitCondition(effect.conditions.holder, holder),
+    normalizeTraitCondition(effect.conditions.opponent, opponent),
+    normalizeTraitCondition(effect.conditions.field, 'field'),
   ]);
 }
 
@@ -228,118 +207,20 @@ export function evaluateConditionExpression(
   condition: ConditionExpression,
   state: BattleState,
 ): boolean | null {
-  const hasTrait = (scope: TraitScope, trait: string) =>
-    state.traits[scope].has(trait) ||
-    (scope === 'attacker' && state.traits.attackerState.has(trait)) ||
-    (scope === 'target' && state.traits.targetState.has(trait));
-  switch (condition.kind) {
-    case 'always':
-      return true;
-    case 'trait':
-      return hasTrait(condition.scope, condition.trait) === condition.present;
-    case 'traitCount': {
-      const count = condition.traits.filter((trait) => hasTrait(condition.scope, trait)).length;
-      return condition.comparison === 'atLeast'
-        ? count >= condition.count
-        : condition.comparison === 'atMost'
-          ? count <= condition.count
-          : count === condition.count;
-    }
-    case 'card':
-      return state.card === condition.card;
-    case 'quantity': {
-      const actual = state.quantities[condition.quantity];
-      if (actual === null) return null;
-      if (condition.comparison === 'lessThan') return actual < condition.value;
-      if (condition.comparison === 'atMost') return actual <= condition.value;
-      if (condition.comparison === 'equal') return actual === condition.value;
-      if (condition.comparison === 'atLeast') return actual >= condition.value;
-      return actual > condition.value;
-    }
-    case 'all': {
-      const values = condition.expressions.map((value) =>
-        evaluateConditionExpression(value, state),
-      );
-      return values.includes(false) ? false : values.includes(null) ? null : true;
-    }
-    case 'any': {
-      const values = condition.expressions.map((value) =>
-        evaluateConditionExpression(value, state),
-      );
-      return values.includes(true) ? true : values.includes(null) ? null : false;
-    }
-    case 'not': {
-      const value = evaluateConditionExpression(condition.expression, state);
-      return value === null ? null : !value;
-    }
-    case 'unsupported':
-      return null;
-  }
+  return evaluateCondition(condition, state);
 }
 
-type TraitAssertion = Exclude<ScenarioAssumption['assertion'], null>;
-type AssertionPlan =
-  { status: 'resolved'; assertions: TraitAssertion[] } | { status: 'unsupported'; reason: string };
-
-function assertionsForCondition(condition: ConditionExpression): AssertionPlan {
-  if (condition.kind === 'trait')
-    return {
-      status: 'resolved',
-      assertions: [
-        {
-          ...condition,
-          exclusiveGroup: exclusiveTraitGroup(condition.scope, condition.trait),
-        },
-      ],
-    };
-  if (condition.kind === 'quantity')
-    return {
-      status: 'resolved',
-      assertions: [{ kind: 'quantity', quantity: condition.quantity, value: condition.value }],
-    };
-  if (condition.kind === 'always' || condition.kind === 'card')
-    return { status: 'resolved', assertions: [] };
-  if (condition.kind === 'all') {
-    const plans = condition.expressions.map((child) => assertionsForCondition(child));
-    const unsupported = plans.find((plan) => plan.status === 'unsupported');
-    return (
-      unsupported ?? {
-        status: 'resolved',
-        assertions: plans.flatMap((plan) => (plan.status === 'resolved' ? plan.assertions : [])),
-      }
-    );
-  }
-  if (condition.kind === 'any')
-    return condition.expressions.length === 1
-      ? assertionsForCondition(condition.expressions[0]!)
-      : { status: 'unsupported', reason: 'ambiguousConditionAssertion' };
-  if (condition.kind === 'not' && condition.expression.kind === 'trait') {
-    const nested = condition.expression;
-    return {
-      status: 'resolved',
-      assertions: [
-        {
-          ...nested,
-          present: !nested.present,
-          exclusiveGroup: exclusiveTraitGroup(nested.scope, nested.trait),
-        },
-      ],
-    };
-  }
+function decisionPlan(source: SourceEffect, condition: ConditionExpression) {
   return {
-    status: 'unsupported',
-    reason: condition.kind === 'unsupported' ? condition.reason : 'ambiguousConditionAssertion',
+    activation: ['attacker', 'support', 'mysticCode'].includes(source.origin)
+      ? ('user' as const)
+      : ('automatic' as const),
+    condition: containsUnsupportedCondition(condition)
+      ? ('unsupported' as const)
+      : isConditional(condition)
+        ? ('userMayAssume' as const)
+        : ('evaluate' as const),
   };
-}
-
-function decisionMode(source: SourceEffect, condition: ConditionExpression) {
-  const plan = assertionsForCondition(condition);
-  if (plan.status === 'unsupported') return 'automatic' as const;
-  const hasAssertions = plan.assertions.length > 0;
-  const sourceSelectable = ['attacker', 'support', 'mysticCode'].includes(source.origin);
-  if (sourceSelectable)
-    return hasAssertions ? ('enableAndAssert' as const) : ('enableOperation' as const);
-  return hasAssertions ? ('assertCondition' as const) : ('automatic' as const);
 }
 
 function parameter(
@@ -373,7 +254,7 @@ function sourceIdentity(source: SourceEffect): OperationSource {
 function baseOperation(source: SourceEffect, order: number, suffix: string) {
   const key = decisionKey(source);
   const condition = effectCondition(source.effect, source.origin);
-  const mode = decisionMode(source, condition);
+  const plan = decisionPlan(source, condition);
   return {
     operationId: `${key}:${suffix}`,
     order,
@@ -383,8 +264,8 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
         : source.phase,
     source: sourceIdentity(source),
     condition,
-    decisionKey: mode === 'automatic' ? null : key,
-    decisionMode: mode,
+    decisionKey: plan.activation === 'user' || plan.condition === 'userMayAssume' ? key : null,
+    decisionPlan: plan,
     enabledByDefault: source.enabledByDefault,
     evidence: { rawPath: key, functionId: source.effect.id, parameterKeys: [] },
     presentation: {
@@ -410,7 +291,7 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
     operations.push({
       ...baseOperation(source, order++, `add-field:${trait}`),
       decisionKey: null,
-      decisionMode: 'automatic',
+      decisionPlan: { activation: 'automatic', condition: 'evaluate' },
       kind: 'addTrait',
       scope: 'field',
       trait,
@@ -421,7 +302,7 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
       operations.push({
         ...baseOperation(source, order++, `add-${recipient}:${trait}`),
         decisionKey: null,
-        decisionMode: 'automatic',
+        decisionPlan: { activation: 'automatic', condition: 'evaluate' },
         kind: 'addTrait',
         scope: recipient === 'attacker' ? 'attackerState' : 'targetState',
         trait,
@@ -708,6 +589,8 @@ function makeProjection(
   rawValue: number | null,
   condition: ConditionExpression,
 ): EffectProjection {
+  const plan = decisionPlan(source, condition);
+  const userControllable = plan.activation === 'user' || plan.condition === 'userMayAssume';
   return {
     projectionKey: key,
     operationId: key,
@@ -718,11 +601,19 @@ function makeProjection(
     value: rawValue === null ? null : modifier === 'flatDamage' ? rawValue : rawValue / 1000,
     modifier,
     source: sourceIdentity(source),
-    outcome,
+    executionSupport: 'unsupported',
+    outcome: userControllable ? 'notApplied' : outcome,
     visibility: 'visible',
-    controllability: 'automatic',
-    decision: { state: 'none' },
-    explanation: { code, condition },
+    controllability: userControllable ? 'user' : 'automatic',
+    decision: userControllable
+      ? {
+          state: 'disabled',
+          decisionKey: key,
+          kind: 'effect',
+          plan,
+        }
+      : { state: 'none' },
+    explanation: { code: userControllable ? 'disabled' : code, condition },
   };
 }
 
@@ -732,7 +623,7 @@ function projectionFor(
   code: EffectProjection['explanation']['code'],
   enabled: boolean,
   condition: boolean | null,
-  choice: ScenarioAssumption | undefined,
+  choice: EffectDecision | undefined,
 ): EffectProjection {
   const hidden = operation.kind === 'addTrait' || operation.kind === 'removeTrait';
   const valuePermille =
@@ -756,13 +647,14 @@ function projectionFor(
             ? 'ignoreDamageCut'
             : null;
   const decisionSelected =
-    operation.decisionMode === 'assertCondition' ? (choice?.enabled ?? false) : enabled;
-  const conditionSatisfiedInternally =
-    operation.decisionMode === 'assertCondition' && condition === true && choice?.enabled !== true;
+    operation.decisionPlan.activation === 'user'
+      ? enabled
+      : choice?.conditionSatisfaction === 'assumeSatisfied';
+  const conditionSatisfiedInternally = condition === true;
   const userControllable =
     operation.decisionKey !== null &&
-    operation.decisionMode !== 'automatic' &&
-    !conditionSatisfiedInternally;
+    (operation.decisionPlan.activation === 'user' ||
+      (operation.decisionPlan.condition === 'userMayAssume' && !conditionSatisfiedInternally));
   return {
     projectionKey: operation.decisionKey ?? operation.operationId,
     operationId: operation.operationId,
@@ -778,6 +670,7 @@ function projectionFor(
           : valuePermille / 1000,
     modifier,
     source: operation.source,
+    executionSupport: 'supported',
     outcome,
     visibility:
       hidden ||
@@ -787,11 +680,12 @@ function projectionFor(
         : 'visible',
     controllability: userControllable ? 'user' : 'automatic',
     decision:
-      userControllable && operation.decisionKey && operation.decisionMode !== 'automatic'
+      userControllable && operation.decisionKey
         ? {
             state: decisionSelected ? ('enabled' as const) : ('disabled' as const),
             decisionKey: operation.decisionKey,
-            mode: operation.decisionMode,
+            kind: 'effect' as const,
+            plan: operation.decisionPlan,
           }
         : { state: 'none' },
     explanation: {
@@ -840,93 +734,6 @@ function initialState(
   };
 }
 
-function applyAssumptions(
-  state: BattleState,
-  assumptions: readonly ScenarioAssumption[],
-): ExecutionIssue[] {
-  const issues: ExecutionIssue[] = [];
-  const active = assumptions.filter((item) => item.enabled && item.assertion);
-  const facts = new Map<string, { value: string; decisionKeys: Set<string> }>();
-  const exclusiveGroups = new Map<
-    string,
-    {
-      scope: TraitScope;
-      group: NonNullable<
-        Extract<ScenarioAssumption['assertion'], { kind: 'trait' }>['exclusiveGroup']
-      >;
-      traits: Map<string, Set<string>>;
-    }
-  >();
-  const invalidDecisionKeys = new Set<string>();
-  for (const assumption of active) {
-    const assertion = assumption.assertion!;
-    const factKey =
-      assertion.kind === 'trait'
-        ? `trait:${assertion.scope}:${assertion.trait}`
-        : `quantity:${assertion.quantity}`;
-    const value = assertion.kind === 'trait' ? String(assertion.present) : String(assertion.value);
-    const prior = facts.get(factKey);
-    if (prior && prior.value !== value) {
-      const decisionKeys = [...prior.decisionKeys, assumption.decisionKey];
-      issues.push({
-        kind: 'contradictoryAssumptions',
-        decisionKeys,
-      });
-      decisionKeys.forEach((key) => invalidDecisionKeys.add(key));
-      continue;
-    }
-    facts.set(factKey, {
-      value,
-      decisionKeys: new Set([...(prior?.decisionKeys ?? []), assumption.decisionKey]),
-    });
-    if (assertion.kind === 'trait' && assertion.present && assertion.exclusiveGroup) {
-      const groupKey = `${assertion.scope}:${assertion.exclusiveGroup}`;
-      const entry = exclusiveGroups.get(groupKey) ?? {
-        scope: assertion.scope,
-        group: assertion.exclusiveGroup,
-        traits: new Map<string, Set<string>>(),
-      };
-      entry.traits.set(
-        assertion.trait,
-        new Set([...(entry.traits.get(assertion.trait) ?? []), assumption.decisionKey]),
-      );
-      exclusiveGroups.set(groupKey, entry);
-    }
-  }
-  for (const entry of exclusiveGroups.values()) {
-    if (entry.traits.size < 2) continue;
-    const decisionKeys = [...new Set([...entry.traits.values()].flatMap((keys) => [...keys]))];
-    issues.push({
-      kind: 'exclusiveAssumptionConflict',
-      scope: entry.scope,
-      group: entry.group,
-      traits: [...entry.traits.keys()],
-      decisionKeys,
-    });
-    decisionKeys.forEach((key) => invalidDecisionKeys.add(key));
-  }
-  for (const assumption of active) {
-    if (invalidDecisionKeys.has(assumption.decisionKey)) continue;
-    const assertion = assumption.assertion!;
-    if (assertion.kind === 'trait') {
-      if (assertion.present) {
-        (state.traits[assertion.scope] as Set<string>).add(assertion.trait);
-        state.traitCounts[assertion.scope] = {
-          ...state.traitCounts[assertion.scope],
-          [assertion.trait]: Math.max(1, state.traitCounts[assertion.scope][assertion.trait] ?? 0),
-        };
-      } else {
-        (state.traits[assertion.scope] as Set<string>).delete(assertion.trait);
-        state.traitCounts[assertion.scope] = withoutTraitCount(
-          state.traitCounts[assertion.scope],
-          assertion.trait,
-        );
-      }
-    } else state.quantities[assertion.quantity] = assertion.value;
-  }
-  return issues;
-}
-
 function traitCounts(traits: Iterable<string>): Record<string, number> {
   const result: Record<string, number> = {};
   for (const trait of traits) result[trait] = (result[trait] ?? 0) + 1;
@@ -960,6 +767,7 @@ function applyNp(
   input: DamageResolutionInput,
   operation: Extract<BattleOperation, { kind: 'executeNpDamage' }>,
   state: BattleState,
+  effectLocalConditionSatisfied: boolean,
 ): DamageResolutionInput {
   const attackerTraits = combinedTraitCounts(
     state.traitCounts.attacker,
@@ -979,6 +787,7 @@ function applyNp(
     attackerHpPermille: state.quantities.attackerHpPermille,
     targetRarity: state.quantities.targetRarity,
     battlePointPhase: state.quantities.battlePointPhase,
+    effectLocalConditionSatisfied,
   });
 }
 
@@ -1039,10 +848,16 @@ function traitCountProjections(
       value: valuePermille / 1_000,
       modifier: 'npSpecial',
       source,
+      executionSupport: 'supported',
       outcome: 'applied',
       visibility: 'visible',
       controllability: 'user',
-      decision: { state: 'disabled', decisionKey: projectionKey, mode: 'assertCondition' },
+      decision: {
+        state: 'disabled',
+        decisionKey: projectionKey,
+        kind: 'worldFact',
+        fact: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
+      },
       explanation: {
         code: 'applied',
         condition: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
@@ -1095,7 +910,8 @@ export function executeOrderedScenario(
 ): OrderedScenarioExecution {
   const attacker = master.servants.find((servant) => servant.id === baseInput.attackerId);
   let state = initialState(baseInput, attacker?.traits ?? []);
-  const assumptionIssues = applyAssumptions(state, scenario.effectAssumptions);
+  const worldFactIssues = validateAndApplyWorldFacts(state, scenario.worldFactAssertions);
+  const initialWorldStateIssues = validateCanonicalWorldState(state);
   const collected = collectSources(baseInput, scenario, master);
   const operations: BattleOperation[] = [];
   const compileProjections: EffectProjection[] = [];
@@ -1108,13 +924,14 @@ export function executeOrderedScenario(
   if (attacker && damage) {
     const np = getPrimaryNoblePhantasm(attacker)!;
     const condition = npCondition(damage, baseInput.overcharge);
-    const npAssertionPlan = assertionsForCondition(condition);
-    const npDecisionMode =
-      condition.kind !== 'always' &&
-      npAssertionPlan.status === 'resolved' &&
-      npAssertionPlan.assertions.length > 0
-        ? 'assertCondition'
-        : 'automatic';
+    const npDecisionPlan = {
+      activation: 'automatic' as const,
+      condition: containsUnsupportedCondition(condition)
+        ? ('unsupported' as const)
+        : isConditional(condition)
+          ? ('userMayAssume' as const)
+          : ('evaluate' as const),
+    };
     const source: OperationSource = {
       origin: 'np',
       sourceInstanceId: `np:${attacker.id}`,
@@ -1140,8 +957,10 @@ export function executeOrderedScenario(
       source,
       condition,
       decisionKey:
-        npDecisionMode === 'automatic' ? null : `np:${attacker.id}:${damage.functionId}:condition`,
-      decisionMode: npDecisionMode,
+        npDecisionPlan.condition === 'userMayAssume'
+          ? `np:${attacker.id}:${damage.functionId}:condition`
+          : null,
+      decisionPlan: npDecisionPlan,
       enabledByDefault: true,
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId, parameterKeys: [] },
       presentation: {
@@ -1174,20 +993,32 @@ export function executeOrderedScenario(
   operations.forEach((operation, order) => {
     operation.order = order;
   });
-  const assumptions = new Map(
-    scenario.effectAssumptions.map((assumption) => [assumption.decisionKey, assumption]),
+  const decisions = new Map(
+    scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
+  );
+  const conditionByDecisionKey = new Map(
+    operations.flatMap((operation) =>
+      operation.decisionKey ? [[operation.decisionKey, operation.condition] as const] : [],
+    ),
+  );
+  const conditionIssues = validateConditionDecisions(
+    scenario.effectDecisions,
+    conditionByDecisionKey,
   );
   const invalidDecisionKeys = new Set(
-    assumptionIssues.flatMap((issue) =>
-      issue.kind === 'contradictoryAssumptions' || issue.kind === 'exclusiveAssumptionConflict'
-        ? issue.decisionKeys
+    [...worldFactIssues, ...conditionIssues].flatMap((issue) =>
+      issue.kind === 'contradictoryWorldFacts' ||
+      issue.kind === 'exclusiveWorldFactConflict' ||
+      issue.kind === 'conditionDecisionConflict'
+        ? [...issue.decisionKeys]
         : [],
     ),
   );
   const resolvedCompileProjections = compileProjections.map((projection) => {
-    if (projection.outcome === 'unsupported') return projection;
-    const choice = assumptions.get(projection.projectionKey);
-    const enabled = choice?.enabled ?? projection.decision.state === 'enabled';
+    const choice = decisions.get(projection.projectionKey);
+    const enabled =
+      choice?.operationEnabled ??
+      (projection.decision.state === 'none' || projection.decision.state === 'enabled');
     if (invalidDecisionKeys.has(projection.projectionKey))
       return {
         ...projection,
@@ -1200,6 +1031,16 @@ export function executeOrderedScenario(
                 state: enabled ? ('enabled' as const) : ('disabled' as const),
               },
         explanation: { ...projection.explanation, code: 'conditionNotMet' as const },
+      };
+    if (projection.executionSupport === 'unsupported' && enabled)
+      return {
+        ...projection,
+        outcome: 'unsupported' as const,
+        decision:
+          projection.decision.state === 'none'
+            ? projection.decision
+            : { ...projection.decision, state: 'enabled' as const },
+        explanation: { ...projection.explanation, code: 'unresolved' as const },
       };
     return enabled
       ? projection
@@ -1216,21 +1057,44 @@ export function executeOrderedScenario(
   const results: OperationResult[] = [];
   let input = baseInput;
   for (const operation of operations) {
-    const choice = operation.decisionKey ? assumptions.get(operation.decisionKey) : undefined;
+    const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
     const enabled =
-      operation.decisionMode === 'automatic' || operation.decisionMode === 'assertCondition'
+      operation.decisionPlan.activation === 'automatic'
         ? operation.enabledByDefault
-        : (choice?.enabled ?? operation.enabledByDefault);
+        : (choice?.operationEnabled ?? operation.enabledByDefault);
     const condition = evaluateConditionExpression(operation.condition, state);
+    const localConditionSatisfied =
+      choice?.conditionSatisfaction === 'assumeSatisfied' &&
+      operation.decisionPlan.condition === 'userMayAssume';
     let outcome: OperationResult['outcome'] = 'applied';
     let code: EffectProjection['explanation']['code'] = 'applied';
     let issue: ExecutionIssue | null = null;
-    if (operation.kind === 'addModifier' && operation.card && operation.card !== state.card) {
+    if (operation.decisionKey && invalidDecisionKeys.has(operation.decisionKey)) {
+      outcome = 'notApplied';
+      code = 'conditionNotMet';
+    } else if (
+      operation.kind === 'addModifier' &&
+      operation.card &&
+      operation.card !== state.card
+    ) {
       outcome = 'impossible';
       code = 'cardMismatch';
     } else if (!enabled) {
       outcome = 'notApplied';
       code = 'disabled';
+    } else if (
+      localConditionSatisfied &&
+      (operation.kind === 'addTrait' || operation.kind === 'removeTrait')
+    ) {
+      outcome = 'unsupported';
+      code = 'unresolved';
+      issue = {
+        kind: 'unsafeLocalConditionDecision',
+        operationId: operation.operationId,
+        detail: 'condition_satisfaction_would_create_world_fact',
+      };
+    } else if (condition === null && localConditionSatisfied) {
+      outcome = 'applied';
     } else if (condition === null && operation.decisionKey && !choice) {
       outcome = 'notApplied';
       code = 'unresolved';
@@ -1242,7 +1106,7 @@ export function executeOrderedScenario(
         operationId: operation.operationId,
         detail: 'quantity_missing',
       };
-    } else if (!condition) {
+    } else if (!condition && !localConditionSatisfied) {
       outcome = 'notApplied';
       code = 'conditionNotMet';
     }
@@ -1281,7 +1145,16 @@ export function executeOrderedScenario(
         };
       else if (operation.kind === 'ignoreDefense') state.ignoreDefense = true;
       else if (operation.kind === 'ignoreDamageCut') state.ignoreDamageCut = true;
-      else input = applyNp(input, operation, state);
+      else input = applyNp(input, operation, state, localConditionSatisfied);
+      const mutationIssues =
+        operation.kind === 'addTrait' || operation.kind === 'removeTrait'
+          ? validateCanonicalWorldState(state, [operation.operationId])
+          : [];
+      if (mutationIssues.length) {
+        outcome = 'unsupported';
+        code = 'unresolved';
+        issue = mutationIssues[0]!;
+      }
       state.evidence = [...state.evidence, operation.evidence];
     }
     if (issue) state.unresolved = [...state.unresolved, issue];
@@ -1295,14 +1168,12 @@ export function executeOrderedScenario(
     });
   }
   const issues = [
-    ...assumptionIssues,
+    ...worldFactIssues,
+    ...initialWorldStateIssues,
+    ...conditionIssues,
     ...collected.issues,
     ...resolvedCompileProjections
-      .filter(
-        (projection) =>
-          projection.outcome === 'unsupported' &&
-          ['passive', 'craftEssence', 'np'].includes(projection.source.origin),
-      )
+      .filter((projection) => projection.outcome === 'unsupported')
       .map<ExecutionIssue>((projection) => ({
         kind: 'unsupportedOperation',
         operationId: projection.operationId,
@@ -1328,20 +1199,4 @@ export function executeOrderedScenario(
     precision: issues.length ? 'unsupported' : 'exact',
     issues,
   };
-}
-
-export function assumptionsForProjection(
-  projection: EffectProjection,
-  enabled: boolean,
-): ScenarioAssumption[] {
-  const plan = projection.explanation.condition
-    ? assertionsForCondition(projection.explanation.condition)
-    : { status: 'resolved' as const, assertions: [] };
-  if (enabled && plan.status === 'unsupported') return [];
-  const assertions = enabled && plan.status === 'resolved' ? plan.assertions : [];
-  return (assertions.length ? assertions : [null]).map((assertion) => ({
-    decisionKey: projection.projectionKey,
-    enabled,
-    assertion,
-  }));
 }

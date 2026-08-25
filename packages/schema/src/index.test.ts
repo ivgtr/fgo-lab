@@ -33,7 +33,8 @@ describe('portable schema boundaries', () => {
       attackerSkills: [],
       mysticCode: null,
       support: null,
-      effectAssumptions: [],
+      effectDecisions: [],
+      worldFactAssertions: [],
       explicitOverrides: {},
     });
     expect(scenario.mode).toBe('resolved');

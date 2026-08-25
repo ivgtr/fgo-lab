@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  assumptionsForProjection,
   evaluateConditionExpression,
   type BattleState,
   type ConditionExpression,
@@ -95,7 +94,7 @@ describe('condition expression properties', () => {
     ).toBeNull();
   });
 
-  it('emits every assertion required by an all-condition toggle', () => {
+  it('keeps an all-condition as an effect-local decision without fabricating world facts', () => {
     const projection = {
       projectionKey: 'projection',
       operationId: 'operation',
@@ -112,10 +111,16 @@ describe('condition expression properties', () => {
         skillId: 'skill',
         effectId: 'effect',
       },
+      executionSupport: 'supported',
       outcome: 'notApplied',
       visibility: 'visible',
       controllability: 'user',
-      decision: { state: 'enabled', decisionKey: 'projection', mode: 'enableAndAssert' },
+      decision: {
+        state: 'enabled',
+        decisionKey: 'projection',
+        kind: 'effect',
+        plan: { activation: 'user', condition: 'userMayAssume' },
+      },
       explanation: {
         code: 'conditionNotMet',
         condition: {
@@ -128,29 +133,10 @@ describe('condition expression properties', () => {
       },
     } satisfies EffectProjection;
 
-    expect(assumptionsForProjection(projection, true)).toEqual([
-      {
-        decisionKey: 'projection',
-        enabled: true,
-        assertion: {
-          kind: 'trait',
-          scope: 'target',
-          trait: 'dragon',
-          present: true,
-          exclusiveGroup: null,
-        },
-      },
-      {
-        decisionKey: 'projection',
-        enabled: true,
-        assertion: {
-          kind: 'trait',
-          scope: 'targetState',
-          trait: 'burning',
-          present: true,
-          exclusiveGroup: null,
-        },
-      },
-    ]);
+    expect(projection.explanation.condition).toMatchObject({ kind: 'all' });
+    expect(projection.decision).toMatchObject({
+      kind: 'effect',
+      plan: { condition: 'userMayAssume' },
+    });
   });
 });

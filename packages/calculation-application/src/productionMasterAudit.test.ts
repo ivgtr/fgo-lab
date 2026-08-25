@@ -1,44 +1,99 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { assumptionsForProjection } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
+import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
 
-const priorUnsupportedFamilies = {
+const expectedUnsupportedFamilies = {
   '106600': ['unsupportedOperation'],
   '202500': ['missing_attacker_hp_ratio'],
   '203300': ['missing_attacker_hp_ratio'],
   '305800': ['unsupportedOperation'],
   '400900': ['missing_attacker_hp_ratio'],
-  '506000': ['unsupportedOperation'],
-  '605300': ['unsupportedOperation'],
   '702500': ['missing_attacker_hp_ratio'],
   '800100': ['unsupportedOperation'],
   '1000300': ['unsupportedOperation'],
   '1102000': ['unsupportedOperation'],
   '1102300': ['unsupportedOperation'],
+  '2300600': ['unsupportedOperation'],
   '2300900': ['unsupportedOperation'],
-  '2301100': ['unsupportedOperation'],
   '2301200': ['unsupportedOperation'],
   '2801300': ['unsupportedOperation'],
   '3300200': ['missing_battle_point_phase', 'unsupportedOperation'],
 } as const;
-
-const expectedUnsupportedFamilies: Readonly<Record<string, readonly string[]>> = {
-  ...priorUnsupportedFamilies,
-  '2300600': ['unsupportedOperation'],
-  '403400': ['unsupportedCondition'],
-};
 
 function reasonFamily(reason: string): string {
   return reason.split(':', 1)[0] ?? reason;
 }
 
 describe('production master damage quality ratchet', () => {
+  it('keeps representative OR conditions user-controllable and effect-local', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const cases = [
+      ['305900', 'インドラ', '威力アップ〔蛇・竜〕'],
+      ['306300', 'グレイ・リリィ', '威力アップ・対霊体'],
+      ['704000', 'モルガン', '威力アップ・対円卓の騎士と妖精'],
+      ['900400', 'マルタ', '威力アップ・対神性、死霊、悪魔'],
+      ['2801200', 'ソロモン', '威力アップ・七騎士クラス'],
+      ['4000100', 'Ｕ－オルガマリー', '威力アップ・対エクストラクラス'],
+    ] as const;
+    for (const [servantId, servantName, label] of cases) {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const initial = calculateScenario(scenario, master, versions);
+      const projection = initial.effects.find((effect) => effect.label === label)!;
+      expect(projection, `${servantName}:${label}`).toMatchObject({
+        visibility: 'visible',
+        controllability: 'user',
+        outcome: 'notApplied',
+        decision: { kind: 'effect', plan: { condition: 'userMayAssume' } },
+      });
+      const selected = calculateScenario(
+        applyEffectProjectionDecision(scenario, projection, true),
+        master,
+        versions,
+      );
+      expect(selected.result.status, `${servantName}:${label}`).toBe('calculated');
+      expect(
+        selected.effects.find((effect) => effect.projectionKey === projection.projectionKey),
+      ).toMatchObject({ outcome: 'applied', decision: { state: 'enabled' } });
+      expect(selected.input.target.traits).toEqual([]);
+      expect(selected.input.fieldTraits).toEqual([]);
+    }
+
+    const nemo = master.servants.find((candidate) => candidate.name === 'ネモ')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, nemo);
+    const initial = calculateScenario(scenario, master, versions);
+    const projections = [
+      '攻撃力アップ：水辺または虚数空間',
+      'アーツアップ：水辺または虚数空間',
+      '宝具威力アップ：水辺または虚数空間',
+    ].map((label) => initial.effects.find((effect) => effect.label === label)!);
+    const selectedScenario = projections.reduce(
+      (current, projection) => applyEffectProjectionDecision(current, projection, true),
+      scenario,
+    );
+    const selected = calculateScenario(selectedScenario, master, versions);
+    expect(selected.result.status).toBe('calculated');
+    expect(projections.every((projection) => projection.controllability === 'user')).toBe(true);
+    expect(selected.input).toMatchObject({ attackBuff: 0.2, cardBuff: 0.2, npDamageBuff: 0.3 });
+    expect(selected.input.fieldTraits).toEqual([]);
+  });
+
   it('executes Dante realm choices through typed assumptions and rejects the conflict', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
@@ -79,25 +134,21 @@ describe('production master damage quality ratchet', () => {
     expect(mismatchedCardEffects).not.toHaveLength(0);
     expect(mismatchedCardEffects.every((effect) => effect.visibility === 'hidden')).toBe(true);
 
-    const skyAssumptions = assumptionsForProjection(sky, true);
-    const earthAssumptions = assumptionsForProjection(earth, true);
-    for (const [selected, assumptions, trait, field] of [
-      [sky, skyAssumptions, 'attributeSky', 'fieldHeaven'],
-      [earth, earthAssumptions, 'attributeEarth', 'fieldHell'],
+    const skyScenario = applyEffectProjectionDecision(scenario, sky, true);
+    const earthScenario = applyEffectProjectionDecision(scenario, earth, true);
+    for (const [selected, selectedScenario] of [
+      [sky, skyScenario],
+      [earth, earthScenario],
     ] as const) {
-      const calculation = calculateScenario(
-        { ...scenario, effectAssumptions: assumptions },
-        master,
-        versions,
-      );
+      const calculation = calculateScenario(selectedScenario, master, versions);
       expect(calculation.result.status).toBe('calculated');
       expect(calculation.input.powerMod).toBe(0.5);
-      expect(calculation.input.target.traits).toEqual([trait]);
-      expect(calculation.input.fieldTraits).toEqual([field]);
+      expect(calculation.input.target.traits).toEqual([]);
+      expect(calculation.input.fieldTraits).toEqual([]);
       expect(
         calculation.result.trace.some(
           (entry) =>
-            entry.step === 'scenario-assumption' && entry.detail.includes(selected.projectionKey),
+            entry.step === 'user-decision' && entry.detail.includes(selected.projectionKey),
         ),
       ).toBe(true);
       expect(
@@ -117,7 +168,7 @@ describe('production master damage quality ratchet', () => {
     const conflict = calculateScenario(
       {
         ...scenario,
-        effectAssumptions: [...skyAssumptions, ...earthAssumptions],
+        ...applyEffectProjectionDecision(skyScenario, earth, true),
       },
       master,
       versions,
@@ -125,10 +176,7 @@ describe('production master damage quality ratchet', () => {
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.powerMod).toBe(0);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('exclusiveAssumptionConflict:target:worldAttribute'),
-        expect.stringContaining('exclusiveAssumptionConflict:field:fieldRealm'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('conditionDecisionConflict:')]),
     );
   });
 
@@ -194,33 +242,39 @@ describe('production master damage quality ratchet', () => {
       }),
     );
     const inertUserProjections: string[] = [];
+    const invalidAutomaticConditions: string[] = [];
     const invalidExclusiveCalculations: string[] = [];
     let exclusivePairCount = 0;
     for (const { servant, scenario, calculation } of calculations) {
       const userEffects = calculation.effects.filter((effect) => effect.controllability === 'user');
+      for (const effect of calculation.effects) {
+        if (
+          effect.visibility === 'visible' &&
+          effect.modifier !== null &&
+          effect.executionSupport === 'supported' &&
+          effect.explanation.condition !== null &&
+          effect.outcome !== 'applied' &&
+          effect.controllability === 'automatic'
+        )
+          invalidAutomaticConditions.push(`${servant.id}:${effect.projectionKey}`);
+      }
       for (const effect of userEffects) {
-        const assumptions = assumptionsForProjection(effect, true);
-        const active = calculateScenario(
-          { ...scenario, effectAssumptions: assumptions },
-          master,
-          versions,
-        );
+        const selectedScenario = applyEffectProjectionDecision(scenario, effect, true);
+        const active = calculateScenario(selectedScenario, master, versions);
         const activeEffect = active.effects.find(
           (candidate) => candidate.projectionKey === effect.projectionKey,
         );
         if (
-          assumptions.length === 0 ||
           !activeEffect ||
           (activeEffect.outcome === effect.outcome &&
-            activeEffect.decision.state === effect.decision.state)
+            activeEffect.decision.state === effect.decision.state &&
+            JSON.stringify(active.input) === JSON.stringify(calculation.input) &&
+            JSON.stringify(active.result) === JSON.stringify(calculation.result))
         )
           inertUserProjections.push(`${servant.id}:${effect.projectionKey}`);
       }
 
-      const exclusiveCandidates = userEffects.map((effect) => ({
-        effect,
-        assumptions: assumptionsForProjection(effect, true),
-      }));
+      const exclusiveCandidates = userEffects;
       const checkedPairs = new Set<string>();
       for (let leftIndex = 0; leftIndex < exclusiveCandidates.length; leftIndex += 1) {
         const left = exclusiveCandidates[leftIndex]!;
@@ -230,52 +284,28 @@ describe('production master damage quality ratchet', () => {
           rightIndex += 1
         ) {
           const right = exclusiveCandidates[rightIndex]!;
-          const conflicts = left.assumptions.some((leftAssumption) => {
-            const leftAssertion = leftAssumption.assertion;
-            if (
-              leftAssertion?.kind !== 'trait' ||
-              !leftAssertion.present ||
-              !leftAssertion.exclusiveGroup
-            )
-              return false;
-            return right.assumptions.some((rightAssumption) => {
-              const rightAssertion = rightAssumption.assertion;
-              return (
-                rightAssertion?.kind === 'trait' &&
-                rightAssertion.present &&
-                rightAssertion.scope === leftAssertion.scope &&
-                rightAssertion.exclusiveGroup === leftAssertion.exclusiveGroup &&
-                rightAssertion.trait !== leftAssertion.trait
-              );
-            });
-          });
-          if (!conflicts) continue;
-          const pairKey = `${left.effect.projectionKey}|${right.effect.projectionKey}`;
+          const pairKey = `${left.projectionKey}|${right.projectionKey}`;
           if (checkedPairs.has(pairKey)) continue;
           checkedPairs.add(pairKey);
-          exclusivePairCount += 1;
+          const leftSelected = applyEffectProjectionDecision(scenario, left, true);
           const conflict = calculateScenario(
-            {
-              ...scenario,
-              effectAssumptions: [...left.assumptions, ...right.assumptions],
-            },
+            applyEffectProjectionDecision(leftSelected, right, true),
             master,
             versions,
           );
+          const hasConflict = conflict.effectWarnings.some((warning) =>
+            warning.startsWith('conditionDecisionConflict:'),
+          );
+          if (!hasConflict) continue;
+          exclusivePairCount += 1;
           const outcomes = conflict.effects
             .filter(
               (effect) =>
-                effect.projectionKey === left.effect.projectionKey ||
-                effect.projectionKey === right.effect.projectionKey,
+                effect.projectionKey === left.projectionKey ||
+                effect.projectionKey === right.projectionKey,
             )
             .map((effect) => effect.outcome);
-          if (
-            conflict.result.status !== 'unsupported' ||
-            !conflict.effectWarnings.some((warning) =>
-              warning.startsWith('exclusiveAssumptionConflict:'),
-            ) ||
-            outcomes.includes('applied')
-          )
+          if (conflict.result.status !== 'unsupported' || outcomes.includes('applied'))
             invalidExclusiveCalculations.push(`${servant.id}:${pairKey}`);
         }
       }
@@ -285,6 +315,7 @@ describe('production master damage quality ratchet', () => {
     expect(calculations).toHaveLength(420);
     expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
     expect(missingCandidateValues).toEqual([]);
+    expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
     expect(exclusivePairCount).toBeGreaterThan(0);
     expect(invalidExclusiveCalculations).toEqual([]);
@@ -321,5 +352,5 @@ describe('production master damage quality ratchet', () => {
       outcome: 'notApplied',
       explanation: { code: 'conditionNotMet' },
     });
-  }, 15_000);
+  }, 30_000);
 });

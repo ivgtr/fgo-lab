@@ -19,10 +19,16 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
       skillId: 'skill',
       effectId: 'effect',
     },
+    executionSupport: 'supported',
     outcome: 'applied',
     visibility: 'visible',
     controllability: 'user',
-    decision: { state: 'enabled', decisionKey: 'attack', mode: 'enableOperation' },
+    decision: {
+      state: 'enabled',
+      decisionKey: 'attack',
+      kind: 'effect',
+      plan: { activation: 'user', condition: 'evaluate' },
+    },
     explanation: { code: 'applied', condition: null },
     ...patch,
   };

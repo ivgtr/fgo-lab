@@ -10,7 +10,8 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import { assumptionsForProjection, type EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
+import { applyEffectProjectionDecision } from '@fgo-lab/calculation-application';
 import type {
   AttackerSkillSelection,
   DamageResolutionInput,
@@ -287,7 +288,8 @@ export function Calculator({
       })),
       mysticCode: null,
       support: null,
-      effectAssumptions: [],
+      effectDecisions: [],
+      worldFactAssertions: [],
       explicitOverrides: {
         attackerAtk: input.attackerAtk,
         fouAtk: input.fouAtk,
@@ -333,7 +335,8 @@ export function Calculator({
           skillId: skill.id,
           skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
         })),
-        effectAssumptions: [],
+        effectDecisions: [],
+        worldFactAssertions: [],
         attackerHpPermille: null,
         battleState: { battlePointPhase: null },
         explicitOverrides: {},
@@ -394,12 +397,7 @@ export function Calculator({
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
-    const effectAssumptions = [
-      ...resolvedScenario.effectAssumptions.filter(
-        (assumption) => assumption.decisionKey !== effect.projectionKey,
-      ),
-      ...assumptionsForProjection(effect, active),
-    ];
+    const decidedScenario = applyEffectProjectionDecision(resolvedScenario, effect, active);
     if (effect.source.origin === 'support' && resolvedScenario.support) {
       const ref = {
         sourceInstanceId: effect.source.sourceInstanceId,
@@ -412,8 +410,7 @@ export function Calculator({
         candidate.skillId === ref.skillId &&
         candidate.effectId === ref.effectId;
       void onScenarioChange({
-        ...resolvedScenario,
-        effectAssumptions,
+        ...decidedScenario,
         support: {
           ...resolvedScenario.support,
           composition: {
@@ -429,8 +426,7 @@ export function Calculator({
       return;
     }
     void onScenarioChange({
-      ...resolvedScenario,
-      effectAssumptions,
+      ...decidedScenario,
     });
   }
   function addSupportServant(servant: ServantMaster) {
@@ -469,8 +465,11 @@ export function Calculator({
     );
     void onScenarioChange({
       ...resolvedScenario,
-      effectAssumptions: resolvedScenario.effectAssumptions.filter(
-        (assumption) => !removedDecisionKeys.has(assumption.decisionKey),
+      effectDecisions: resolvedScenario.effectDecisions.filter(
+        (decision) => !removedDecisionKeys.has(decision.decisionKey),
+      ),
+      worldFactAssertions: resolvedScenario.worldFactAssertions.filter(
+        (assertion) => !removedDecisionKeys.has(assertion.decisionKey),
       ),
       support: {
         ...resolvedScenario.support,

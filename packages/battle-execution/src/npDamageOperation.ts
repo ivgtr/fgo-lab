@@ -10,6 +10,7 @@ export interface NpDamageOperationContext {
   attackerHpPermille: number | null;
   targetRarity: number | null;
   battlePointPhase: number | null;
+  effectLocalConditionSatisfied?: boolean;
 }
 
 export type NpDamageOperationResult =
@@ -85,6 +86,17 @@ export function evaluateNpDamageOperation(
     );
   }
   if (damage.kind === 'targetRarity') {
+    if (context.effectLocalConditionSatisfied)
+      return resolved(
+        baseMultipliers,
+        parameters.map((parameter) => (parameter.correctionPermille ?? 1_000) / 1_000) as [
+          number,
+          number,
+          number,
+          number,
+          number,
+        ],
+      );
     if (context.targetRarity === null)
       return { status: 'unsupported', missingEvidence: 'missing_target_rarity' };
     const targetRarity = context.targetRarity;
@@ -101,6 +113,7 @@ export function evaluateNpDamageOperation(
     return resolved(
       baseMultipliers,
       parameters.map((parameter) =>
+        context.effectLocalConditionSatisfied ||
         (parameter.andCheckTraits ?? []).every(
           (trait) => (context.targetTraitCounts[trait.name] ?? 0) > 0,
         )
@@ -115,7 +128,8 @@ export function evaluateNpDamageOperation(
     return resolved(
       baseMultipliers,
       parameters.map((parameter) =>
-        parameter.targetTrait && (conditionCounts[parameter.targetTrait.name] ?? 0) > 0
+        context.effectLocalConditionSatisfied ||
+        (parameter.targetTrait && (conditionCounts[parameter.targetTrait.name] ?? 0) > 0)
           ? (parameter.correctionPermille ?? 1_000) / 1_000
           : 1,
       ) as [number, number, number, number, number],

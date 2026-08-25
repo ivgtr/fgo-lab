@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 12 as const;
-export const ENGINE_VERSION = '9.0.0' as const;
+export const SCHEMA_VERSION = 13 as const;
+export const ENGINE_VERSION = '10.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -236,28 +236,29 @@ const resolvedScenarioSchema = scenarioBaseSchema
         composition: supportCompositionSchema,
       })
       .nullable(),
-    effectAssumptions: z.array(
+    effectDecisions: z.array(
       z.object({
         decisionKey: z.string().min(1).max(300),
-        enabled: z.boolean(),
-        assertion: z
-          .discriminatedUnion('kind', [
-            z.object({
-              kind: z.literal('trait'),
-              scope: z.enum(['attacker', 'attackerState', 'target', 'targetState', 'field']),
-              trait: z.string().min(1).max(80),
-              present: z.boolean(),
-              exclusiveGroup: z
-                .enum(['worldAttribute', 'fieldRealm', 'alignmentOrder', 'alignmentMoral'])
-                .nullable(),
-            }),
-            z.object({
-              kind: z.literal('quantity'),
-              quantity: z.enum(['attackerHpPermille', 'targetRarity', 'battlePointPhase']),
-              value: z.number().int(),
-            }),
-          ])
-          .nullable(),
+        operationEnabled: z.boolean(),
+        conditionSatisfaction: z.enum(['evaluate', 'assumeSatisfied']),
+      }),
+    ),
+    worldFactAssertions: z.array(
+      z.object({
+        decisionKey: z.string().min(1).max(300),
+        fact: z.discriminatedUnion('kind', [
+          z.object({
+            kind: z.literal('trait'),
+            scope: z.enum(['attacker', 'attackerState', 'target', 'targetState', 'field']),
+            trait: z.string().min(1).max(80),
+            present: z.boolean(),
+          }),
+          z.object({
+            kind: z.literal('quantity'),
+            quantity: z.enum(['attackerHpPermille', 'targetRarity', 'battlePointPhase']),
+            value: z.number().int(),
+          }),
+        ]),
       }),
     ),
     explicitOverrides: z.object({
