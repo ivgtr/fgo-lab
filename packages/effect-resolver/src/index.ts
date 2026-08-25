@@ -29,6 +29,7 @@ export interface DamageTraitCondition {
 }
 
 export interface ResolvedEffect {
+  order: number;
   effectKey: string;
   sourceInstanceId: string;
   origin: 'attacker' | 'support' | 'craftEssence' | 'mysticCode' | 'passive' | 'np';
@@ -145,6 +146,8 @@ export function isDamageRelevantEffect(effect: MasterEffect): boolean {
 }
 
 interface ResolvableEffect {
+  order: number;
+  origin: ResolvedEffect['origin'];
   sourceInstanceId: string;
   sourceId: string;
   sourceName: string;
@@ -154,6 +157,7 @@ interface ResolvableEffect {
   rawValue: number | undefined;
   appliedReason: string;
   defaultEnabled: boolean;
+  recipientTraits: readonly string[];
 }
 
 function numericParameter(
@@ -176,20 +180,16 @@ export interface ResolveEffectOptions {
 }
 
 function effectKey(
-  origin: ResolvedEffect['origin'],
-  item: Pick<ResolvableEffect, 'sourceInstanceId' | 'skillId' | 'effect'>,
+  item: Pick<ResolvableEffect, 'origin' | 'sourceInstanceId' | 'skillId' | 'effect'>,
 ) {
-  return `${origin}:${item.sourceInstanceId}:${item.skillId}:${item.effect.id}`;
+  return `${item.origin}:${item.sourceInstanceId}:${item.skillId}:${item.effect.id}`;
 }
 
 function resolveEffects(
   baseInput: DamageResolutionInput,
   items: readonly ResolvableEffect[],
-  origin: ResolvedEffect['origin'],
-  recipientTraits: readonly string[] = [],
   options: ResolveEffectOptions = {},
 ): EffectResolution {
-  const nextInput = { ...baseInput };
   const effects: ResolvedEffect[] = [];
   const warnings: string[] = [];
   let npDamageBuffRate = 0;
@@ -201,13 +201,14 @@ function resolveEffects(
     const kind = effectBuffKind(effect);
     const npDamageBuffRateEffect =
       effect.buffTypes?.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp');
-    const key = effectKey(origin, item);
+    const key = effectKey(item);
     const override = options.effectOverrides?.[key];
     const enabled = override ?? item.defaultEnabled;
     const effectIdentity = {
       effectKey: key,
+      order: item.order,
       sourceInstanceId: item.sourceInstanceId,
-      origin,
+      origin: item.origin,
       sourceId: item.sourceId,
       sourceName: item.sourceName,
       skillId: item.skillId,
@@ -231,7 +232,9 @@ function resolveEffects(
     };
     if (rawValue === undefined && effectIdentity.damageRelevant) {
       precision = 'unsupported';
-      warnings.push(`${origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`);
+      warnings.push(
+        `${item.origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`,
+      );
       effects.push({
         ...effectIdentity,
         value: null,
@@ -252,7 +255,7 @@ function resolveEffects(
     const value = kind === 'flatDamage' ? rawValue : rawValue / 1000;
     if (
       (effect.recipientTraits?.length ?? 0) > 0 &&
-      !effect.recipientTraits?.some((trait) => recipientTraits.includes(trait))
+      !effect.recipientTraits?.some((trait) => item.recipientTraits.includes(trait))
     ) {
       effects.push({
         ...effectIdentity,
@@ -312,8 +315,6 @@ function resolveEffects(
       continue;
     }
     if (kind) {
-      if (kind === 'flatDamage') nextInput.flatDamage += rawValue;
-      else nextInput[kind] += value;
       effects.push({
         ...effectIdentity,
         value,
@@ -325,7 +326,9 @@ function resolveEffects(
     const damageRelevant = isPotentiallyDamageRelevant(effect);
     if (damageRelevant) {
       precision = 'unsupported';
-      warnings.push(`${origin}_effect_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`);
+      warnings.push(
+        `${item.origin}_effect_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}`,
+      );
     }
     effects.push({
       ...effectIdentity,
@@ -336,18 +339,26 @@ function resolveEffects(
     });
   }
 
-  return { input: nextInput, effects, npDamageBuffRate, precision, warnings };
+  const input = effects.reduce(
+    (aggregated, effect) => {
+      if (!effect.applied || !effect.kind || effect.reason === 'np_damage_buff_rate')
+        return aggregated;
+      if (effect.kind === 'flatDamage') aggregated.flatDamage += effect.value ?? 0;
+      else aggregated[effect.kind] += effect.value ?? 0;
+      return aggregated;
+    },
+    { ...baseInput },
+  );
+  return { input, effects, npDamageBuffRate, precision, warnings };
 }
 
-function resolveSkillSelections(
+function collectSkillSelections(
   baseInput: DamageResolutionInput,
   selectedSkills: readonly SkillSelection[],
   servants: readonly ServantMaster[],
   origin: ResolvedEffect['origin'],
-  options: ResolveEffectOptions = {},
-): EffectResolution {
+): { items: ResolvableEffect[]; warnings: string[] } {
   const warnings: string[] = [];
-  let missing = false;
   const servantById = new Map(servants.map((servant) => [servant.id, servant]));
   const recipientTraits = servantById.get(baseInput.attackerId)?.traits ?? [];
   const items: ResolvableEffect[] = [];
@@ -358,12 +369,13 @@ function resolveSkillSelections(
       (candidate) => candidate.id === selected.skillId,
     );
     if (!source || !skill) {
-      missing = true;
       warnings.push(`${origin}_effect_missing:${selected.sourceId}:${selected.skillId}`);
       continue;
     }
     for (const effect of skill.effects) {
       items.push({
+        order: items.length,
+        origin,
         sourceInstanceId: selected.sourceInstanceId,
         sourceId: source.id,
         sourceName: source.name,
@@ -373,15 +385,27 @@ function resolveSkillSelections(
         rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
         appliedReason: 'unconditional_attacker_buff',
         defaultEnabled: selected.selectedEffectIds?.includes(effect.id) ?? selected.defaultEnabled,
+        recipientTraits,
       });
     }
   }
 
-  const resolved = resolveEffects(baseInput, items, origin, recipientTraits, options);
+  return { items, warnings };
+}
+
+function resolveSkillSelections(
+  baseInput: DamageResolutionInput,
+  selectedSkills: readonly SkillSelection[],
+  servants: readonly ServantMaster[],
+  origin: ResolvedEffect['origin'],
+  options: ResolveEffectOptions = {},
+): EffectResolution {
+  const collected = collectSkillSelections(baseInput, selectedSkills, servants, origin);
+  const resolved = resolveEffects(baseInput, collected.items, options);
   return {
     ...resolved,
-    precision: missing ? 'unsupported' : resolved.precision,
-    warnings: [...warnings, ...resolved.warnings],
+    precision: collected.warnings.length > 0 ? 'unsupported' : resolved.precision,
+    warnings: [...collected.warnings, ...resolved.warnings],
   };
 }
 
@@ -432,6 +456,8 @@ export function resolveCraftEssenceEffects(
   return resolveEffects(
     baseInput,
     craftEssence.effects.map((effect) => ({
+      order: craftEssence.effects.indexOf(effect),
+      origin: 'craftEssence' as const,
       sourceInstanceId: `craftEssence:${craftEssence.id}`,
       sourceId: craftEssence.id,
       sourceName: craftEssence.name,
@@ -441,9 +467,8 @@ export function resolveCraftEssenceEffects(
       rawValue: numericParameter(effect, 0, 0, limitBreak === 4),
       appliedReason: limitBreak === 4 ? 'limit_break_effect' : 'craft_essence_effect',
       defaultEnabled: true,
+      recipientTraits,
     })),
-    'craftEssence',
-    recipientTraits,
     options,
   );
 }
@@ -475,6 +500,8 @@ export function resolveNpEffects(
     noblePhantasm.effects
       .filter((effect) => effect.timing === 'beforeDamage')
       .map((effect) => ({
+        order: noblePhantasm.effects.indexOf(effect),
+        origin: 'np' as const,
         sourceInstanceId: `np:${servant.id}`,
         sourceId: servant.id,
         sourceName: servant.name,
@@ -484,9 +511,8 @@ export function resolveNpEffects(
         rawValue: numericParameter(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
         appliedReason: 'np_before_damage',
         defaultEnabled: true,
+        recipientTraits: servant.traits,
       })),
-    'np',
-    servant.traits,
     options,
   );
 }
@@ -569,6 +595,8 @@ export function resolveMysticCodeSkills(
     }
     for (const effect of skill.effects)
       items.push({
+        order: items.length,
+        origin: 'mysticCode',
         sourceInstanceId: `mysticCode:${mysticCode.id}`,
         sourceId: mysticCode.id,
         sourceName: mysticCode.name,
@@ -578,9 +606,10 @@ export function resolveMysticCodeSkills(
         rawValue: numericParameter(effect, 0, selection.skillLevel - 1),
         appliedReason: 'mystic_code_buff',
         defaultEnabled: options.defaultEnabled ?? true,
+        recipientTraits,
       });
   }
-  const resolved = resolveEffects(baseInput, items, 'mysticCode', recipientTraits, options);
+  const resolved = resolveEffects(baseInput, items, options);
   return {
     ...resolved,
     precision: warnings.length > 0 ? 'unsupported' : resolved.precision,
@@ -598,77 +627,176 @@ export function resolveScenarioEffects(
   master: MasterDataSnapshot,
 ): ScenarioEffectResolution {
   const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
-  const craftEssence = selection.craftEssence
-    ? master.craftEssences.find(
-        (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
-      )
-    : undefined;
-  const resolveOptions = { effectOverrides: selection.effectOverrides ?? {} };
-  const passive = resolveServantPassives(baseInput, attacker, resolveOptions);
-  const craftEssenceResolution = resolveCraftEssenceEffects(
-    passive.input,
-    craftEssence,
-    selection.craftEssence?.limitBreak ?? 0,
-    attacker?.traits ?? [],
-    resolveOptions,
+  const recipientTraits = attacker?.traits ?? [];
+  const items: ResolvableEffect[] = [];
+  const warnings: string[] = [];
+  const append = (collected: { items: ResolvableEffect[]; warnings: string[] }) => {
+    warnings.push(...collected.warnings);
+    items.push(...collected.items);
+  };
+  if (!attacker) warnings.push('attacker_source_missing', 'np_source_missing');
+  else {
+    append(
+      collectSkillSelections(
+        baseInput,
+        attacker.passives.map((skill, order) => ({
+          sourceInstanceId: `passive:${attacker.id}`,
+          sourceId: attacker.id,
+          skillId: skill.id,
+          skillLevel: 1,
+          defaultEnabled: true,
+          order,
+        })),
+        [attacker],
+        'passive',
+      ),
+    );
+  }
+  if (selection.craftEssence) {
+    const craftEssence = master.craftEssences.find(
+      (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
+    );
+    if (!craftEssence)
+      warnings.push(`craftEssence_source_missing:${selection.craftEssence.craftEssenceId}`);
+    else
+      items.push(
+        ...craftEssence.effects.map((effect, order) => ({
+          order,
+          origin: 'craftEssence' as const,
+          sourceInstanceId: `craftEssence:${craftEssence.id}`,
+          sourceId: craftEssence.id,
+          sourceName: craftEssence.name,
+          skillId: `ce:${craftEssence.id}`,
+          skillName: craftEssence.name,
+          effect,
+          rawValue: numericParameter(effect, 0, 0, selection.craftEssence?.limitBreak === 4),
+          appliedReason:
+            selection.craftEssence?.limitBreak === 4
+              ? 'limit_break_effect'
+              : 'craft_essence_effect',
+          defaultEnabled: true,
+          recipientTraits,
+        })),
+      );
+  }
+  append(
+    collectSkillSelections(
+      baseInput,
+      (selection.attackerSkills ?? []).map((skill, order) => ({
+        sourceInstanceId: `attacker:${baseInput.attackerId}`,
+        sourceId: baseInput.attackerId,
+        skillId: skill.skillId,
+        skillLevel: skill.skillLevel,
+        defaultEnabled: false,
+        order,
+      })),
+      master.servants,
+      'attacker',
+    ),
   );
-  const attackerSkills = resolveAttackerSkills(
-    craftEssenceResolution.input,
-    selection.attackerSkills ?? [],
-    master.servants,
-    { ...resolveOptions, defaultEnabled: false },
-  );
-  const mysticCode = selection.mysticCode
-    ? resolveMysticCodeSkills(
-        attackerSkills.input,
-        master.mysticCodes.find((candidate) => candidate.id === selection.mysticCode?.mysticCodeId),
-        selection.mysticCode.skills,
-        attacker?.traits ?? [],
-        { ...resolveOptions, defaultEnabled: false },
-      )
-    : undefined;
-  const support = selection.support
-    ? resolveSupportComposition(
-        mysticCode?.input ?? attackerSkills.input,
-        selection.support.composition,
+  if (selection.mysticCode) {
+    const mysticCode = master.mysticCodes.find(
+      (candidate) => candidate.id === selection.mysticCode?.mysticCodeId,
+    );
+    if (!mysticCode)
+      warnings.push(`mysticCode_source_missing:${selection.mysticCode.mysticCodeId}`);
+    else
+      for (const selected of selection.mysticCode.skills) {
+        const skill = mysticCode.skills.find((candidate) => candidate.id === selected.skillId);
+        if (!skill) {
+          warnings.push(`mysticCode_effect_missing:${mysticCode.id}:${selected.skillId}`);
+          continue;
+        }
+        items.push(
+          ...skill.effects.map((effect, order) => ({
+            order,
+            origin: 'mysticCode' as const,
+            sourceInstanceId: `mysticCode:${mysticCode.id}`,
+            sourceId: mysticCode.id,
+            sourceName: mysticCode.name,
+            skillId: skill.id,
+            skillName: skill.name,
+            effect,
+            rawValue: numericParameter(effect, 0, selected.skillLevel - 1),
+            appliedReason: 'mystic_code_buff',
+            defaultEnabled: false,
+            recipientTraits,
+          })),
+        );
+      }
+  }
+  if (selection.support) {
+    const composition = selection.support.composition;
+    append(
+      collectSkillSelections(
+        baseInput,
+        composition.sources.flatMap((source, sourceOrder) =>
+          source.skills.map((skill, skillOrder) => ({
+            sourceInstanceId: source.sourceInstanceId,
+            sourceId: source.servantId,
+            skillId: skill.skillId,
+            skillLevel: skill.skillLevel,
+            defaultEnabled: false,
+            selectedEffectIds: composition.selectedEffects
+              .filter(
+                (effect) =>
+                  effect.sourceInstanceId === source.sourceInstanceId &&
+                  effect.skillId === skill.skillId,
+              )
+              .map((effect) => effect.effectId),
+            order: sourceOrder * 20 + skillOrder,
+          })),
+        ),
         master.servants,
-      )
-    : undefined;
-  const np = resolveNpEffects(
-    support?.input ?? mysticCode?.input ?? attackerSkills.input,
-    attacker,
-    resolveOptions,
-  );
-  const resolutions: [string, EffectResolution][] = [
-    ['passive-effect', passive],
-    ['craft-essence-effect', craftEssenceResolution],
-    ['attacker-effect', attackerSkills],
-  ];
-  if (mysticCode) resolutions.push(['mystic-code-effect', mysticCode]);
-  if (support) resolutions.push(['support-effect', support]);
-  resolutions.push(['np-effect', np]);
-  const npDamageBuffRate = Math.max(
-    0,
-    ...resolutions.map(([, resolution]) => resolution.npDamageBuffRate),
-  );
+        'support',
+      ),
+    );
+  }
+  if (attacker) {
+    const noblePhantasm = getPrimaryNoblePhantasm(attacker);
+    if (!noblePhantasm) warnings.push('np_source_missing');
+    else
+      items.push(
+        ...noblePhantasm.effects
+          .filter((effect) => effect.timing === 'beforeDamage')
+          .map((effect, order) => ({
+            order,
+            origin: 'np' as const,
+            sourceInstanceId: `np:${attacker.id}`,
+            sourceId: attacker.id,
+            sourceName: attacker.name,
+            skillId: `np:${attacker.id}`,
+            skillName: '宝具前効果',
+            effect,
+            rawValue: numericParameter(effect, baseInput.overcharge - 1, baseInput.npLevel - 1),
+            appliedReason: 'np_before_damage',
+            defaultEnabled: true,
+            recipientTraits,
+          })),
+      );
+  }
+  const orderedItems = items.map((item, order) => ({ ...item, order }));
+  const resolved = resolveEffects(baseInput, orderedItems, {
+    effectOverrides: selection.effectOverrides ?? {},
+  });
+  warnings.push(...resolved.warnings);
+  const npDamageBuffRate = resolved.npDamageBuffRate;
   return {
     input:
       npDamageBuffRate > 0
-        ? { ...np.input, npDamageBuff: np.input.npDamageBuff * (1 + npDamageBuffRate) }
-        : np.input,
-    precision: resolutions.some(([, resolution]) => resolution.precision === 'unsupported')
-      ? 'unsupported'
-      : resolutions.some(([, resolution]) => resolution.precision === 'approximate')
-        ? 'approximate'
-        : 'exact',
-    warnings: resolutions.flatMap(([, resolution]) => resolution.warnings),
-    effects: resolutions.flatMap(([, resolution]) => resolution.effects),
+        ? {
+            ...resolved.input,
+            npDamageBuff: resolved.input.npDamageBuff * (1 + npDamageBuffRate),
+          }
+        : resolved.input,
+    precision:
+      warnings.length > 0 || resolved.precision === 'unsupported' ? 'unsupported' : 'exact',
+    warnings,
+    effects: resolved.effects,
     npDamageBuffRate,
-    trace: resolutions.flatMap(([traceStep, resolution]) =>
-      resolution.effects.map((effect) => ({
-        step: traceStep,
-        detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
-      })),
-    ),
+    trace: resolved.effects.map((effect) => ({
+      step: `${effect.origin}-effect`,
+      detail: `${effect.order}:${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
+    })),
   };
 }

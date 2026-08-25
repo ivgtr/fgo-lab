@@ -300,6 +300,9 @@ describe('calculation application logic', () => {
     );
 
     expect(calculation.input.npDamageBuff).toBeCloseTo(0.6);
+    expect(calculation.effects.map((effect) => effect.order)).toEqual(
+      calculation.effects.map((_, index) => index),
+    );
     if (calculation.result.status !== 'calculated') throw new Error('expected calculated result');
     expect(calculation.result.precision).toBe('exact');
     expect(calculation.result.issues.map((issue) => issue.code)).not.toContain(
@@ -325,6 +328,32 @@ describe('calculation application logic', () => {
       status: 'unsupported',
       rows: [],
       missingEvidence: ['support_effect_not_resolved:fixture-oberon:boost-skill:boost-effect'],
+    });
+  });
+
+  it('fails closed when a selected craft essence source is missing', () => {
+    const input = createDefaultDamageResolutionInput(master, undefined);
+    const calculation = calculateResolvedDamage(
+      input,
+      {
+        attackerSource: 'master',
+        effectMode: 'resolved',
+        craftEssence: {
+          source: 'master',
+          craftEssenceId: 'missing-ce',
+          copyId: null,
+          level: 1,
+          limitBreak: 0,
+        },
+      },
+      master,
+      versions,
+      { releaseValidated: true },
+    );
+    expect(calculation.result).toMatchObject({
+      status: 'unsupported',
+      rows: [],
+      missingEvidence: ['craftEssence_source_missing:missing-ce'],
     });
   });
 

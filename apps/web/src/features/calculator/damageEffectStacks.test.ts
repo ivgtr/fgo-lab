@@ -4,6 +4,7 @@ import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffec
 
 function effect(patch: Partial<ResolvedEffect>): ResolvedEffect {
   return {
+    order: 0,
     effectKey: 'passive:servant-1:passive-1:quick-up',
     sourceInstanceId: 'passive:servant-1',
     origin: 'passive',
