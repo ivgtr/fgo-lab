@@ -74,7 +74,8 @@ export function CalculationResult({
       setMessage('画像を保存できません。結果カードをスクリーンショットしてください。');
     }
   }
-  function saveShareJson() {
+  async function saveShareJson() {
+    await onFinalize(input, result);
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' }),
     );
@@ -167,7 +168,7 @@ export function CalculationResult({
           URLをコピー
         </button>
         <button onClick={() => void saveImage()}>画像として保存</button>
-        <button aria-label="共有専用JSONを保存" onClick={saveShareJson}>
+        <button aria-label="共有専用JSONを保存" onClick={() => void saveShareJson()}>
           共有専用JSON
         </button>
       </div>

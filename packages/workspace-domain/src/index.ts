@@ -32,9 +32,41 @@ export function finalizeHistory(
   profile: LocalProfile,
   command: FinalizeHistoryCommand,
 ): LocalProfile {
+  if (command.result.status !== 'calculated') return profile;
+  const sessionIndex = profile.history.findIndex(
+    (entry) => entry.calculationSessionId === command.sessionId,
+  );
+  if (sessionIndex >= 0) {
+    const existing = profile.history[sessionIndex]!;
+    const updated = {
+      ...existing,
+      scenario: command.scenario,
+      result: command.result,
+      scenarioFingerprint: command.fingerprint,
+      updatedAt: command.now,
+      lastUsedAt: command.now,
+    };
+    return {
+      ...profile,
+      history: [
+        ...profile.history.slice(0, sessionIndex),
+        ...profile.history.slice(sessionIndex + 1),
+        updated,
+      ],
+      updatedAt: command.now,
+    };
+  }
   const previous = profile.history.at(-1);
   if (previous?.scenarioFingerprint === command.fingerprint) {
-    const history = [...profile.history.slice(0, -1), { ...previous, lastUsedAt: command.now }];
+    const history = [
+      ...profile.history.slice(0, -1),
+      {
+        ...previous,
+        calculationSessionId: command.sessionId,
+        updatedAt: command.now,
+        lastUsedAt: command.now,
+      },
+    ];
     return { ...profile, history, updatedAt: command.now };
   }
   const entry = {

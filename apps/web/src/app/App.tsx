@@ -150,7 +150,7 @@ export function App() {
   });
   const [rankingSupportId, setRankingSupportId] = useState<string | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
-  const [calculationSessionId] = useState(() => crypto.randomUUID());
+  const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
       const result = await bootstrapApplication(repository, {
@@ -379,6 +379,8 @@ export function App() {
   }
   async function navigate(nextPage: Page) {
     if (page === 'calculate' && nextPage !== 'calculate') await finalizeCurrentCalculation();
+    if (page !== 'calculate' && nextPage === 'calculate')
+      setCalculationSessionId(crypto.randomUUID());
     setPage(nextPage);
   }
   return (

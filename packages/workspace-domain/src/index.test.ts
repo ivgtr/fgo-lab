@@ -1,5 +1,121 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalize, filterRanking } from './index';
+import type { CalculationResult, CalculationScenario, LocalProfile } from '@fgo-lab/schema';
+import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { canonicalize, filterRanking, finalizeHistory } from './index';
+
+const scenario = {
+  mode: 'manual',
+  attacker: {
+    servantId: 'attacker',
+    source: 'master',
+    level: 90,
+    npLevel: 1,
+    fouAtk: 1000,
+    stateTraits: [],
+  },
+  overcharge: 1,
+  target: {
+    classId: 'neutral',
+    attribute: 'unknown',
+    traits: [],
+    stateTraits: [],
+    rarity: null,
+  },
+  attackerHpPermille: null,
+  fieldTraits: [],
+  battleState: { battlePointPhase: null },
+  assumptions: { classAffinity: 1, attributeAffinity: 1 },
+  manual: {
+    attackerId: 'attacker',
+    attackerLevel: 90,
+    attackerAtk: 10000,
+    fouAtk: 1000,
+    craftEssenceId: null,
+    craftEssenceAtk: 0,
+    npLevel: 1,
+    overcharge: 1,
+    npMultipliers: [300, 400, 450, 475, 500],
+    damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
+    cardType: 'buster',
+    classAttackRate: 1,
+    classAffinity: 1,
+    attributeAffinity: 1,
+    attackBuff: 0,
+    defenseBuff: 0,
+    cardBuff: 0,
+    cardResistance: 0,
+    npDamageBuff: 0,
+    npResistance: 0,
+    powerMod: 0,
+    eventDamageBuff: 0,
+    npSpecialMultipliers: [1, 1, 1, 1, 1],
+    specialDamageBuff: 0,
+    specialResistance: 0,
+    flatDamage: 0,
+    damageCut: 0,
+    fieldTraits: [],
+    attackerStateTraits: [],
+    attackerHpPermille: null,
+    targetRarity: null,
+    targetStateTraits: [],
+    battlePointPhase: null,
+    target: { classId: 'neutral', attribute: 'unknown', traits: [] },
+  },
+} satisfies CalculationScenario;
+
+const versions = {
+  schemaVersion: SCHEMA_VERSION,
+  masterDataVersion: 'test-master',
+  engineVersion: ENGINE_VERSION,
+  appVersion: 'test',
+  gameRegion: 'JP',
+  masterDataLocale: 'ja-JP',
+} as const;
+
+const calculatedResult = {
+  status: 'calculated',
+  precision: 'approximate',
+  rows: [1, 2, 3, 4, 5].map((npLevel) => ({
+    npLevel,
+    minimum: npLevel,
+    average: npLevel,
+    maximum: npLevel,
+  })) as CalculationResult extends { status: 'calculated'; rows: infer Rows } ? Rows : never,
+  breakdown: [],
+  effects: [],
+  assumptions: [],
+  issues: [],
+  trace: [],
+  evidence: [
+    {
+      key: 'input:manual-final-modifiers',
+      subject: 'manual',
+      status: 'provisional',
+      sources: ['test'],
+      goldenCaseIds: ['test'],
+      differentialCaseIds: [],
+      reviewedAt: '2026-08-25',
+      engineVersion: ENGINE_VERSION,
+    },
+  ],
+  versions,
+} satisfies CalculationResult;
+
+function profile(): LocalProfile {
+  return {
+    profileId: '00000000-0000-4000-8000-000000000001',
+    name: 'test',
+    createdAt: '2026-08-25T00:00:00.000Z',
+    updatedAt: '2026-08-25T00:00:00.000Z',
+    servantBuilds: {},
+    servantTargets: {},
+    craftEssences: [],
+    supportTemplates: [],
+    draft: null,
+    history: [],
+  };
+}
+
 describe('workspace derivations', () => {
   it('canonicalizes object key order', () =>
     expect(canonicalize({ b: 2, a: 1 })).toBe(canonicalize({ a: 1, b: 2 })));
@@ -13,4 +129,73 @@ describe('workspace derivations', () => {
         { text: '', classes: ['saber'], rarities: [5], cards: [], targets: ['all'] },
       ),
     ).toHaveLength(1));
+
+  it('updates one history entry when the same session is finalized repeatedly', () => {
+    const first = finalizeHistory(profile(), {
+      sessionId: '00000000-0000-4000-8000-000000000010',
+      scenario,
+      result: calculatedResult,
+      fingerprint: 'a'.repeat(64),
+      now: '2026-08-25T01:00:00.000Z',
+      historyId: '00000000-0000-4000-8000-000000000020',
+    });
+    const second = finalizeHistory(first, {
+      sessionId: '00000000-0000-4000-8000-000000000010',
+      scenario,
+      result: calculatedResult,
+      fingerprint: 'b'.repeat(64),
+      now: '2026-08-25T02:00:00.000Z',
+      historyId: '00000000-0000-4000-8000-000000000021',
+    });
+
+    expect(second.history).toHaveLength(1);
+    expect(second.history[0]).toMatchObject({
+      historyId: '00000000-0000-4000-8000-000000000020',
+      scenarioFingerprint: 'b'.repeat(64),
+      lastUsedAt: '2026-08-25T02:00:00.000Z',
+    });
+  });
+
+  it('transfers a duplicate fingerprint to the latest session', () => {
+    const first = finalizeHistory(profile(), {
+      sessionId: '00000000-0000-4000-8000-000000000010',
+      scenario,
+      result: calculatedResult,
+      fingerprint: 'a'.repeat(64),
+      now: '2026-08-25T01:00:00.000Z',
+      historyId: '00000000-0000-4000-8000-000000000020',
+    });
+    const second = finalizeHistory(first, {
+      sessionId: '00000000-0000-4000-8000-000000000011',
+      scenario,
+      result: calculatedResult,
+      fingerprint: 'a'.repeat(64),
+      now: '2026-08-25T02:00:00.000Z',
+      historyId: '00000000-0000-4000-8000-000000000021',
+    });
+
+    expect(second.history).toHaveLength(1);
+    expect(second.history[0]?.calculationSessionId).toBe(
+      '00000000-0000-4000-8000-000000000011',
+    );
+  });
+
+  it('does not finalize an unsupported result', () => {
+    const unsupported: CalculationResult = {
+      ...calculatedResult,
+      status: 'unsupported',
+      rows: [],
+      missingEvidence: ['test'],
+    };
+    expect(
+      finalizeHistory(profile(), {
+        sessionId: '00000000-0000-4000-8000-000000000010',
+        scenario,
+        result: unsupported,
+        fingerprint: 'a'.repeat(64),
+        now: '2026-08-25T01:00:00.000Z',
+        historyId: '00000000-0000-4000-8000-000000000020',
+      }).history,
+    ).toEqual([]);
+  });
 });
