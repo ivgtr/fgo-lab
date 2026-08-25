@@ -1,15 +1,5 @@
-import { applyNpDamageHandler, calculateDamageResolution } from '@fgo-lab/calculation-application';
+import { applyScenarioNpDamageFunction } from '@fgo-lab/calculation-application';
 import { classAttackRate } from '@fgo-lab/calc-core';
-import {
-  resolveAttackerSkills,
-  resolveCraftEssenceEffects,
-  resolveMysticCodeSkills,
-  resolveNpEffects,
-  resolveServantPassives,
-  resolveSupportComposition,
-  type ResolvedSupportEffect,
-  type ResolvedEffectSet,
-} from '@fgo-lab/effect-resolver';
 import {
   deriveNpMultipliers,
   getPrimaryNoblePhantasm,
@@ -22,201 +12,8 @@ import type {
   DamageResolutionInput,
   CalculationEditorState,
   ServantBuild,
-  CalculationResult,
   CalculationScenario,
-  VersionContext,
 } from '@fgo-lab/schema';
-
-export interface ResolvedCalculationInput {
-  input: DamageResolutionInput;
-  precision: ResolvedEffectSet['precision'];
-  warnings: string[];
-  trace: { step: string; detail: string }[];
-  effects: ResolvedSupportEffect[];
-}
-
-function traitCounts(traits: readonly string[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const trait of traits) counts[trait] = (counts[trait] ?? 0) + 1;
-  return counts;
-}
-
-function applyDamageFunction(
-  input: DamageResolutionInput,
-  damage: Parameters<typeof applyNpDamageHandler>[1],
-  attackerTraits: readonly string[],
-): DamageResolutionInput {
-  return applyNpDamageHandler(input, damage, {
-    overcharge: input.overcharge,
-    attackerTraitCounts: traitCounts(attackerTraits),
-    targetTraitCounts: traitCounts(input.target.traits),
-    targetStateTraitCounts: traitCounts(input.targetStateTraits),
-    attackerHpPermille: input.attackerHpPermille,
-    targetRarity: input.targetRarity,
-    battlePointPhase: input.battlePointPhase,
-  });
-}
-
-export function resolveCalculationInput(
-  baseInput: DamageResolutionInput,
-  selection: CalculationEditorState,
-  master: MasterDataSnapshot,
-): ResolvedCalculationInput {
-  if (selection.effectMode === 'manual')
-    return {
-      input: baseInput,
-      precision: 'exact',
-      warnings: [],
-      trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
-      effects: [],
-    };
-  const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
-  const damage = attacker ? getPrimaryNpDamage(attacker) : undefined;
-  const damageInput =
-    attacker && damage ? applyDamageFunction(baseInput, damage, attacker.traits) : baseInput;
-  const craftEssence = selection.craftEssence
-    ? master.craftEssences.find(
-        (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
-      )
-    : undefined;
-  const resolveOptions = { effectOverrides: selection.effectOverrides ?? {} };
-  const passive = resolveServantPassives(damageInput, attacker, resolveOptions);
-  const craftEssenceResolution = resolveCraftEssenceEffects(
-    passive.input,
-    craftEssence,
-    selection.craftEssence?.limitBreak ?? 0,
-    attacker?.traits ?? [],
-    resolveOptions,
-  );
-  const attackerSkills = resolveAttackerSkills(
-    craftEssenceResolution.input,
-    selection.attackerSkills ?? [],
-    master.servants,
-    { ...resolveOptions, defaultEnabled: false },
-  );
-  const mysticCode = selection.mysticCode
-    ? resolveMysticCodeSkills(
-        attackerSkills.input,
-        master.mysticCodes.find((candidate) => candidate.id === selection.mysticCode?.mysticCodeId),
-        selection.mysticCode.skills,
-        attacker?.traits ?? [],
-        { ...resolveOptions, defaultEnabled: false },
-      )
-    : undefined;
-  const support = selection.support
-    ? resolveSupportComposition(
-        mysticCode?.input ?? attackerSkills.input,
-        selection.support.composition,
-        master.servants,
-        {},
-      )
-    : undefined;
-  const np = resolveNpEffects(
-    support?.input ?? mysticCode?.input ?? attackerSkills.input,
-    attacker,
-    resolveOptions,
-  );
-  const resolutions: [string, ResolvedEffectSet][] = [
-    ['passive-effect', passive],
-    ['craft-essence-effect', craftEssenceResolution],
-    ['attacker-effect', attackerSkills],
-  ];
-  if (mysticCode) resolutions.push(['mystic-code-effect', mysticCode]);
-  if (support) resolutions.push(['support-effect', support]);
-  resolutions.push(['np-effect', np]);
-  const npDamageBuffRate = Math.max(
-    0,
-    ...resolutions.map(([, resolution]) => resolution.npDamageBuffRate),
-  );
-  const resolvedInput =
-    npDamageBuffRate > 0
-      ? {
-          ...np.input,
-          npDamageBuff: np.input.npDamageBuff * (1 + npDamageBuffRate),
-        }
-      : np.input;
-  return {
-    input: resolvedInput,
-    precision: resolutions.some(([, resolution]) => resolution.precision === 'unsupported')
-      ? 'unsupported'
-      : resolutions.some(([, resolution]) => resolution.precision === 'approximate')
-        ? 'approximate'
-        : 'exact',
-    warnings: resolutions.flatMap(([, resolution]) => resolution.warnings),
-    effects: resolutions.flatMap(([, resolution]) => resolution.effects),
-    trace: resolutions.flatMap(([traceStep, resolution]) =>
-      resolution.effects.map((effect) => ({
-        step: traceStep,
-        detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
-      })),
-    ),
-  };
-}
-
-export function calculateResolvedDamage(
-  baseInput: DamageResolutionInput,
-  selection: CalculationEditorState,
-  master: MasterDataSnapshot,
-  versions: VersionContext,
-  options: { releaseValidated: boolean },
-) {
-  const resolved = resolveCalculationInput(baseInput, selection, master);
-  const calculation = calculateDamageResolution(resolved.input, versions);
-  const effects = resolved.effects.map((effect) => ({
-    effectKey: effect.effectKey,
-    state: effect.calculationSupported
-      ? effect.applied
-        ? ('applied' as const)
-        : ('rejected' as const)
-      : ('unsupported' as const),
-    reasonCode: effect.reason,
-  }));
-  const resolutionIssues = resolved.warnings.map((warning) => ({ code: warning, detail: warning }));
-  let result: CalculationResult;
-  if (calculation.status === 'unsupported' || resolved.precision === 'unsupported')
-    result = {
-      status: 'unsupported',
-      rows: [],
-      effects,
-      assumptions: calculation.assumptions,
-      issues: [...calculation.issues, ...resolutionIssues],
-      trace: [...calculation.trace, ...resolved.trace],
-      missingEvidence: [
-        ...(calculation.status === 'unsupported' ? calculation.missingEvidence : []),
-        ...resolved.warnings,
-      ],
-      versions,
-    };
-  else
-    result = {
-      ...calculation,
-      effects,
-      precision:
-        resolved.precision === 'approximate' || calculation.precision === 'approximate'
-          ? 'approximate'
-          : 'exact',
-      issues: [...calculation.issues, ...resolutionIssues],
-      trace: [...calculation.trace, ...resolved.trace],
-    };
-  if (!options.releaseValidated && result.status === 'calculated')
-    result = {
-      ...result,
-      precision: 'approximate',
-      issues: [
-        ...result.issues,
-        {
-          code: 'diagnostic_fixture_not_release_validated',
-          detail: 'diagnostic_fixture_not_release_validated',
-        },
-      ],
-    };
-  return {
-    input: resolved.input,
-    effects: resolved.effects,
-    effectWarnings: resolved.warnings,
-    result,
-  };
-}
 
 export function createDefaultDamageResolutionInput(
   master: MasterDataSnapshot,
@@ -226,7 +23,7 @@ export function createDefaultDamageResolutionInput(
   const noblePhantasm = getPrimaryNoblePhantasm(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
-  return applyDamageFunction(
+  return applyScenarioNpDamageFunction(
     {
       attackerId: servant.id,
       attackerLevel: build?.level ?? 90,
@@ -349,7 +146,7 @@ export function damageResolutionInputFromScenario(
   const damage = getPrimaryNpDamage(servant);
   if (!damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   const base = createDefaultDamageResolutionInput(master, undefined, servant);
-  return applyDamageFunction(
+  return applyScenarioNpDamageFunction(
     {
       ...base,
       attackerLevel: scenario.attacker.level,
@@ -421,7 +218,7 @@ export function selectCalculationAttacker(
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   const manualOverrides = new Set(selection.manualOverrides ?? []);
   const level = build?.level ?? 90;
-  const nextInput = applyDamageFunction(
+  const nextInput = applyScenarioNpDamageFunction(
     {
       ...input,
       attackerId: servant.id,

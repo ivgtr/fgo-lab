@@ -136,6 +136,9 @@ importers:
       '@fgo-lab/calc-core':
         specifier: workspace:*
         version: link:../calc-core
+      '@fgo-lab/effect-resolver':
+        specifier: workspace:*
+        version: link:../effect-resolver
       '@fgo-lab/master-data':
         specifier: workspace:*
         version: link:../master-data

@@ -8,8 +8,8 @@ import {
   type SupportTemplate,
   type VersionContext,
 } from '@fgo-lab/schema';
+import { calculateResolvedDamage } from '@fgo-lab/calculation-application';
 import {
-  calculateResolvedDamage,
   completeCalculationEditorState,
   createDefaultDamageResolutionInput,
   damageResolutionInputFromScenario,

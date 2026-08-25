@@ -2,5 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "outDir": "dist", "rootDir": "src" },
   "include": ["src"],
-  "references": [{ "path": "../schema" }, { "path": "../master-data" }, { "path": "../calc-core" }]
+  "references": [
+    { "path": "../schema" },
+    { "path": "../master-data" },
+    { "path": "../calc-core" },
+    { "path": "../effect-resolver" }
+  ]
 }

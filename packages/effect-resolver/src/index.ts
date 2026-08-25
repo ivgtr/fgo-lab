@@ -2,12 +2,14 @@ import {
   getPrimaryNoblePhantasm,
   type CraftEssenceMaster,
   type MasterEffect,
+  type MasterDataSnapshot,
   type MysticCodeMaster,
   type ServantMaster,
   type TraitCondition,
 } from '@fgo-lab/master-data';
 import type {
   AttackerSkillSelection,
+  CalculationEditorState,
   DamageResolutionInput,
   SupportComposition,
 } from '@fgo-lab/schema';
@@ -583,5 +585,90 @@ export function resolveMysticCodeSkills(
     ...resolved,
     precision: warnings.length > 0 ? 'unsupported' : resolved.precision,
     warnings: [...warnings, ...resolved.warnings],
+  };
+}
+
+export interface ScenarioEffectResolution extends ResolvedEffectSet {
+  trace: { step: string; detail: string }[];
+}
+
+export function resolveScenarioEffects(
+  baseInput: DamageResolutionInput,
+  selection: CalculationEditorState,
+  master: MasterDataSnapshot,
+): ScenarioEffectResolution {
+  const attacker = master.servants.find((candidate) => candidate.id === baseInput.attackerId);
+  const craftEssence = selection.craftEssence
+    ? master.craftEssences.find(
+        (candidate) => candidate.id === selection.craftEssence?.craftEssenceId,
+      )
+    : undefined;
+  const resolveOptions = { effectOverrides: selection.effectOverrides ?? {} };
+  const passive = resolveServantPassives(baseInput, attacker, resolveOptions);
+  const craftEssenceResolution = resolveCraftEssenceEffects(
+    passive.input,
+    craftEssence,
+    selection.craftEssence?.limitBreak ?? 0,
+    attacker?.traits ?? [],
+    resolveOptions,
+  );
+  const attackerSkills = resolveAttackerSkills(
+    craftEssenceResolution.input,
+    selection.attackerSkills ?? [],
+    master.servants,
+    { ...resolveOptions, defaultEnabled: false },
+  );
+  const mysticCode = selection.mysticCode
+    ? resolveMysticCodeSkills(
+        attackerSkills.input,
+        master.mysticCodes.find((candidate) => candidate.id === selection.mysticCode?.mysticCodeId),
+        selection.mysticCode.skills,
+        attacker?.traits ?? [],
+        { ...resolveOptions, defaultEnabled: false },
+      )
+    : undefined;
+  const support = selection.support
+    ? resolveSupportComposition(
+        mysticCode?.input ?? attackerSkills.input,
+        selection.support.composition,
+        master.servants,
+      )
+    : undefined;
+  const np = resolveNpEffects(
+    support?.input ?? mysticCode?.input ?? attackerSkills.input,
+    attacker,
+    resolveOptions,
+  );
+  const resolutions: [string, ResolvedEffectSet][] = [
+    ['passive-effect', passive],
+    ['craft-essence-effect', craftEssenceResolution],
+    ['attacker-effect', attackerSkills],
+  ];
+  if (mysticCode) resolutions.push(['mystic-code-effect', mysticCode]);
+  if (support) resolutions.push(['support-effect', support]);
+  resolutions.push(['np-effect', np]);
+  const npDamageBuffRate = Math.max(
+    0,
+    ...resolutions.map(([, resolution]) => resolution.npDamageBuffRate),
+  );
+  return {
+    input:
+      npDamageBuffRate > 0
+        ? { ...np.input, npDamageBuff: np.input.npDamageBuff * (1 + npDamageBuffRate) }
+        : np.input,
+    precision: resolutions.some(([, resolution]) => resolution.precision === 'unsupported')
+      ? 'unsupported'
+      : resolutions.some(([, resolution]) => resolution.precision === 'approximate')
+        ? 'approximate'
+        : 'exact',
+    warnings: resolutions.flatMap(([, resolution]) => resolution.warnings),
+    effects: resolutions.flatMap(([, resolution]) => resolution.effects),
+    npDamageBuffRate,
+    trace: resolutions.flatMap(([traceStep, resolution]) =>
+      resolution.effects.map((effect) => ({
+        step: traceStep,
+        detail: `${effect.sourceId}:${effect.skillId}:${effect.effectId}:${effect.reason}`,
+      })),
+    ),
   };
 }

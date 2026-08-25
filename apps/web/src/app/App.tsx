@@ -30,14 +30,13 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { calculateResolvedDamage, resolveCalculationInput } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
 import {
-  calculateResolvedDamage,
   completeCalculationEditorState,
   createDefaultDamageResolutionInput,
   damageResolutionInputFromScenario,
-  resolveCalculationInput,
   scenarioFromDamageResolutionInput,
   selectionFromScenario,
 } from '../features/calculator/calculation';
@@ -335,7 +334,10 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function saveCalculationDraft(nextInput: DamageResolutionInput, selection = currentSelection) {
+  async function saveCalculationDraft(
+    nextInput: DamageResolutionInput,
+    selection = currentSelection,
+  ) {
     const scenario = scenarioFromDamageResolutionInput(nextInput, selection);
     setCalculation({ scenario, shared: undefined });
     const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions, {
