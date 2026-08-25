@@ -1,0 +1,287 @@
+{
+  "description": "Atlas JPの実パラメータとChaldeaのFunction分岐規則から独立に作成したNP Function handler行列",
+  "reviewedAt": "2026-08-25",
+  "engineVersion": "4.1.0",
+  "sources": [
+    "data/raw/nice_servant.json",
+    "https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart#L80-L161"
+  ],
+  "reviewStatus": "parameter-and-branch-reviewed; executable external differential pending",
+  "cases": [
+    {
+      "caseId": "standard-reference-np-row",
+      "kind": "standard",
+      "rawFunctionType": "damageNp",
+      "parameters": [
+        { "Value": 6000 },
+        { "Value": 8000 },
+        { "Value": 9000 },
+        { "Value": 9500 },
+        { "Value": 10000 }
+      ],
+      "context": {},
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [1, 1, 1, 1, 1],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "defense-piercing-np-row",
+      "kind": "defensePiercing",
+      "rawFunctionType": "damageNpPierce",
+      "parameters": [
+        { "Value": 6000 },
+        { "Value": 8000 },
+        { "Value": 9000 },
+        { "Value": 9500 },
+        { "Value": 10000 }
+      ],
+      "context": {},
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [1, 1, 1, 1, 1],
+        "ignoreDefense": true
+      }
+    },
+    {
+      "caseId": "trait-special-attack-match",
+      "kind": "trait",
+      "rawFunctionType": "damageNpIndividual",
+      "parameters": [
+        { "Value": 6000, "Target": 109, "Correction": 1500 },
+        { "Value": 8000, "Target": 109, "Correction": 1500 },
+        { "Value": 9000, "Target": 109, "Correction": 1500 },
+        { "Value": 9500, "Target": 109, "Correction": 1500 },
+        { "Value": 10000, "Target": 109, "Correction": 1500 }
+      ],
+      "context": { "targetTraits": ["classAlterEgo"] },
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [1.5, 1.5, 1.5, 1.5, 1.5],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "state-trait-special-attack-match",
+      "kind": "stateTrait",
+      "rawFunctionType": "damageNpStateIndividualFix",
+      "parameters": [
+        { "Value": 6000, "Target": 2004, "Correction": 1500 },
+        { "Value": 8000, "Target": 2004, "Correction": 1500 },
+        { "Value": 9000, "Target": 2004, "Correction": 1500 },
+        { "Value": 9500, "Target": 2004, "Correction": 1500 },
+        { "Value": 10000, "Target": 2004, "Correction": 1500 }
+      ],
+      "context": { "targetStateTraits": ["roman"] },
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [1.5, 1.5, 1.5, 1.5, 1.5],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "trait-count-attacker-buff-stacks",
+      "kind": "traitCount",
+      "rawFunctionType": "damageNpIndividualSum",
+      "parameters": [
+        {
+          "Value": 6000,
+          "Value2": 1000,
+          "Target": 0,
+          "Correction": 100,
+          "TargetList": [2828],
+          "ParamAddMaxCount": 12
+        },
+        {
+          "Value": 8000,
+          "Value2": 1000,
+          "Target": 0,
+          "Correction": 100,
+          "TargetList": [2828],
+          "ParamAddMaxCount": 12
+        },
+        {
+          "Value": 9000,
+          "Value2": 1000,
+          "Target": 0,
+          "Correction": 100,
+          "TargetList": [2828],
+          "ParamAddMaxCount": 12
+        },
+        {
+          "Value": 9500,
+          "Value2": 1000,
+          "Target": 0,
+          "Correction": 100,
+          "TargetList": [2828],
+          "ParamAddMaxCount": 12
+        },
+        {
+          "Value": 10000,
+          "Value2": 1000,
+          "Target": 0,
+          "Correction": 100,
+          "TargetList": [2828],
+          "ParamAddMaxCount": 12
+        }
+      ],
+      "context": { "attackerStateTraits": ["trait:2828", "trait:2828", "trait:2828"] },
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [1.3, 1.3, 1.3, 1.3, 1.3],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "trait-count-target-base-and-buff",
+      "kind": "traitCount",
+      "rawFunctionType": "damageNpIndividualSum",
+      "parameters": [
+        {
+          "Value": 3000,
+          "Value2": 1000,
+          "Target": 1,
+          "Correction": 200,
+          "TargetList": [2004],
+          "ParamAddMaxCount": 10
+        },
+        {
+          "Value": 4000,
+          "Value2": 1000,
+          "Target": 1,
+          "Correction": 200,
+          "TargetList": [2004],
+          "ParamAddMaxCount": 10
+        },
+        {
+          "Value": 4500,
+          "Value2": 1000,
+          "Target": 1,
+          "Correction": 200,
+          "TargetList": [2004],
+          "ParamAddMaxCount": 10
+        },
+        {
+          "Value": 4750,
+          "Value2": 1000,
+          "Target": 1,
+          "Correction": 200,
+          "TargetList": [2004],
+          "ParamAddMaxCount": 10
+        },
+        {
+          "Value": 5000,
+          "Value2": 1000,
+          "Target": 1,
+          "Correction": 200,
+          "TargetList": [2004],
+          "ParamAddMaxCount": 10
+        }
+      ],
+      "context": { "targetTraits": ["roman"], "targetStateTraits": ["roman", "roman"] },
+      "expected": {
+        "npMultipliers": [300, 400, 450, 475, 500],
+        "npSpecialMultipliers": [1.6, 1.6, 1.6, 1.6, 1.6],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "hp-ratio-low-half-hp",
+      "kind": "hpRatioLow",
+      "rawFunctionType": "damageNpHpratioLow",
+      "parameters": [
+        { "Value": 6000, "Target": 6000 },
+        { "Value": 8000, "Target": 6000 },
+        { "Value": 9000, "Target": 6000 },
+        { "Value": 9500, "Target": 6000 },
+        { "Value": 10000, "Target": 6000 }
+      ],
+      "context": { "attackerHpPermille": 500 },
+      "expected": {
+        "npMultipliers": [900, 1100, 1200, 1250, 1300],
+        "npSpecialMultipliers": [1, 1, 1, 1, 1],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "battle-point-phase-four",
+      "kind": "battlePointPhase",
+      "rawFunctionType": "damageNpBattlePointPhase",
+      "parameters": [
+        { "Value": 4500, "Value2": 1000, "Target": 3300200, "Correction": 100 },
+        { "Value": 6000, "Value2": 1000, "Target": 3300200, "Correction": 100 },
+        { "Value": 6750, "Value2": 1000, "Target": 3300200, "Correction": 100 },
+        { "Value": 7125, "Value2": 1000, "Target": 3300200, "Correction": 100 },
+        { "Value": 7500, "Value2": 1000, "Target": 3300200, "Correction": 100 }
+      ],
+      "context": { "battlePointPhase": 4 },
+      "expected": {
+        "npMultipliers": [450, 600, 675, 712.5, 750],
+        "npSpecialMultipliers": [1.4, 1.4, 1.4, 1.4, 1.4],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "target-rarity-low-rarity-match",
+      "kind": "targetRarity",
+      "rawFunctionType": "damageNpRare",
+      "parameters": [
+        { "Value": 6000, "Target": 0, "Correction": 1500, "TargetRarityList": [1, 2] },
+        { "Value": 8000, "Target": 0, "Correction": 1500, "TargetRarityList": [1, 2] },
+        { "Value": 9000, "Target": 0, "Correction": 1500, "TargetRarityList": [1, 2] },
+        { "Value": 9500, "Target": 0, "Correction": 1500, "TargetRarityList": [1, 2] },
+        { "Value": 10000, "Target": 0, "Correction": 1500, "TargetRarityList": [1, 2] }
+      ],
+      "context": { "targetRarity": 2 },
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [1.5, 1.5, 1.5, 1.5, 1.5],
+        "ignoreDefense": false
+      }
+    },
+    {
+      "caseId": "trait-expression-and-match",
+      "kind": "traitExpression",
+      "rawFunctionType": "damageNpAndOrCheckIndividuality",
+      "parameters": [
+        {
+          "Value": 6000,
+          "Target": 0,
+          "Correction": 2000,
+          "AndCheckIndividualityList": [108, 1000]
+        },
+        {
+          "Value": 8000,
+          "Target": 0,
+          "Correction": 2000,
+          "AndCheckIndividualityList": [108, 1000]
+        },
+        {
+          "Value": 9000,
+          "Target": 0,
+          "Correction": 2000,
+          "AndCheckIndividualityList": [108, 1000]
+        },
+        {
+          "Value": 9500,
+          "Target": 0,
+          "Correction": 2000,
+          "AndCheckIndividualityList": [108, 1000]
+        },
+        {
+          "Value": 10000,
+          "Target": 0,
+          "Correction": 2000,
+          "AndCheckIndividualityList": [108, 1000]
+        }
+      ],
+      "context": { "targetTraits": ["classRuler", "servant"] },
+      "expected": {
+        "npMultipliers": [600, 800, 900, 950, 1000],
+        "npSpecialMultipliers": [2, 2, 2, 2, 2],
+        "ignoreDefense": false
+      }
+    }
+  ]
+}

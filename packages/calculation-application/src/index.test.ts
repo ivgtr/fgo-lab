@@ -36,6 +36,7 @@ const input: DamageResolutionInput = {
   flatDamage: 0,
   damageCut: 0,
   fieldTraits: [],
+  attackerStateTraits: [],
   attackerHpPermille: null,
   targetRarity: null,
   targetStateTraits: [],

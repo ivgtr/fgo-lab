@@ -201,6 +201,7 @@ describe('calculation application logic', () => {
   it('stores selected conditions without master-derived damage values', () => {
     const input = {
       ...createDefaultDamageResolutionInput(master, undefined),
+      attackerStateTraits: ['roman', 'roman'],
       attackerHpPermille: 420,
       targetRarity: 5,
       targetStateTraits: ['burning', 'burning'],
@@ -227,6 +228,7 @@ describe('calculation application logic', () => {
     });
     expect(scenario).toMatchObject({
       mode: 'resolved',
+      attacker: { stateTraits: ['roman', 'roman'] },
       craftEssence: {
         craftEssenceId: 'fixture-ce',
         level: 1,
@@ -248,6 +250,7 @@ describe('calculation application logic', () => {
     const restored = damageResolutionInputFromScenario(scenario, master);
     expect(restored.npMultipliers).toEqual(input.npMultipliers);
     expect(restored).toMatchObject({
+      attackerStateTraits: ['roman', 'roman'],
       attackerHpPermille: 420,
       targetRarity: 5,
       targetStateTraits: ['burning', 'burning'],

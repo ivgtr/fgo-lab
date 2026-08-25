@@ -15,7 +15,14 @@ describe('portable schema boundaries', () => {
   it('keeps resolved scenarios free of master-derived numeric inputs', () => {
     const scenario = calculationScenarioSchema.parse({
       mode: 'resolved',
-      attacker: { servantId: '1', source: 'master', level: 90, npLevel: 1, fouAtk: 1000 },
+      attacker: {
+        servantId: '1',
+        source: 'master',
+        level: 90,
+        npLevel: 1,
+        fouAtk: 1000,
+        stateTraits: [],
+      },
       overcharge: 1,
       target: {
         classId: 'lancer',

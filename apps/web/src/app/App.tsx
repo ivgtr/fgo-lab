@@ -234,8 +234,7 @@ export function App() {
   );
   const input = resolvedCalculation.input;
   const compatibleSharedSnapshot =
-    calculation.shared?.result.versions.masterDataVersion === currentMaster.version &&
-    calculation.shared.result.versions.engineVersion === ENGINE_VERSION;
+    calculation.shared?.result.versions.masterDataVersion === currentMaster.version;
   const result =
     calculation.shared && !compatibleSharedSnapshot
       ? calculation.shared.result

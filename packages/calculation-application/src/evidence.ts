@@ -5,6 +5,17 @@ const ATLAS_FLOAT32 =
   'https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md';
 const CHALDEA_DAMAGE =
   'https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart';
+const NP_FUNCTION_GOLDEN_CASE_IDS = {
+  standard: ['standard-reference-np-row'],
+  defensePiercing: ['defense-piercing-np-row'],
+  trait: ['trait-special-attack-match'],
+  traitCount: ['trait-count-attacker-buff-stacks', 'trait-count-target-base-and-buff'],
+  stateTrait: ['state-trait-special-attack-match'],
+  hpRatioLow: ['hp-ratio-low-half-hp'],
+  battlePointPhase: ['battle-point-phase-four'],
+  targetRarity: ['target-rarity-low-rarity-match'],
+  traitExpression: ['trait-expression-and-match'],
+} as const;
 
 function evidence(
   key: string,
@@ -53,10 +64,13 @@ const entries: CalculationEvidence[] = [
       'traitExpression',
     ] as const
   ).map((kind) =>
-    evidence(`np-function:${kind}`, `NP damage Function handler: ${kind}`, 'provisional', [
-      ATLAS_DAMAGE,
-      CHALDEA_DAMAGE,
-    ]),
+    evidence(
+      `np-function:${kind}`,
+      `NP damage Function handler: ${kind}`,
+      'provisional',
+      [ATLAS_DAMAGE, CHALDEA_DAMAGE],
+      [...NP_FUNCTION_GOLDEN_CASE_IDS[kind]],
+    ),
   ),
   ...(
     [

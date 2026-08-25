@@ -53,6 +53,7 @@ export function createDefaultDamageResolutionInput(
       flatDamage: 0,
       damageCut: 0,
       fieldTraits: [],
+      attackerStateTraits: [],
       attackerHpPermille: null,
       targetRarity: null,
       targetStateTraits: [],
@@ -75,6 +76,7 @@ export function scenarioFromDamageResolutionInput(
       level: input.attackerLevel,
       npLevel: input.npLevel,
       fouAtk: input.fouAtk,
+      stateTraits: input.attackerStateTraits,
     },
     overcharge: input.overcharge,
     target: {
@@ -163,6 +165,7 @@ export function damageResolutionInputFromScenario(
       classAffinity: scenario.assumptions.classAffinity,
       attributeAffinity: scenario.assumptions.attributeAffinity,
       fieldTraits: scenario.fieldTraits,
+      attackerStateTraits: scenario.attacker.stateTraits,
       target: {
         classId: scenario.target.classId,
         attribute: scenario.target.attribute,

@@ -36,8 +36,9 @@ export function applyScenarioNpDamageFunction(
 ): DamageResolutionInput {
   return applyNpDamageHandler(input, damage, {
     overcharge: input.overcharge,
-    attackerTraitCounts: traitCounts(attackerTraits),
+    attackerTraitCounts: traitCounts([...attackerTraits, ...input.attackerStateTraits]),
     targetTraitCounts: traitCounts(input.target.traits),
+    targetCombinedTraitCounts: traitCounts([...input.target.traits, ...input.targetStateTraits]),
     targetStateTraitCounts: traitCounts(input.targetStateTraits),
     attackerHpPermille: input.attackerHpPermille,
     targetRarity: input.targetRarity,

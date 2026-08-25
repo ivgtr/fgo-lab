@@ -5,6 +5,7 @@ export interface NpDamageHandlerContext {
   overcharge: number;
   attackerTraitCounts: Readonly<Record<string, number>>;
   targetTraitCounts: Readonly<Record<string, number>>;
+  targetCombinedTraitCounts: Readonly<Record<string, number>>;
   targetStateTraitCounts: Readonly<Record<string, number>>;
   attackerHpPermille: number | null;
   targetRarity: number | null;
@@ -118,7 +119,7 @@ export function resolveNpDamageHandler(
     );
 
   const sourceCounts =
-    parameters[0].targetId === 1 ? context.targetTraitCounts : context.attackerTraitCounts;
+    parameters[0].targetId === 1 ? context.targetCombinedTraitCounts : context.attackerTraitCounts;
   return resolved(
     baseMultipliers,
     parameters.map((parameter) => {

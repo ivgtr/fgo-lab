@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 6 as const;
-export const ENGINE_VERSION = '4.0.0' as const;
+export const SCHEMA_VERSION = 7 as const;
+export const ENGINE_VERSION = '4.1.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -145,6 +145,7 @@ export const damageResolutionInputSchema = z.object({
   flatDamage: z.number().int().min(-100000).max(100000),
   damageCut: z.number().int().min(0).max(100000).default(0),
   fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
+  attackerStateTraits: z.array(z.string().min(1).max(80)).max(100),
   attackerHpPermille: z.number().int().min(0).max(1000).nullable(),
   targetRarity: z.number().int().min(0).max(5).nullable(),
   targetStateTraits: z.array(z.string().min(1).max(80)).max(100),
@@ -235,6 +236,7 @@ const scenarioBaseSchema = z
       level: z.number().int().min(1).max(120),
       npLevel: z.number().int().min(1).max(5),
       fouAtk: z.number().int().min(0).max(3000),
+      stateTraits: z.array(z.string().min(1).max(80)).max(100),
     }),
     overcharge: z.number().int().min(1).max(5),
     target: z.object({

@@ -19,6 +19,7 @@ const context: NpDamageHandlerContext = {
   overcharge: 1,
   attackerTraitCounts: {},
   targetTraitCounts: {},
+  targetCombinedTraitCounts: {},
   targetStateTraitCounts: {},
   attackerHpPermille: null,
   targetRarity: null,
@@ -154,6 +155,25 @@ describe('NP damage handler registry', () => {
     expect(
       resolveNpDamageHandler(sum, { ...context, attackerTraitCounts: { roman: 5 } }),
     ).toMatchObject({ npSpecialMultipliers: [1.6, 1.6, 1.6, 1.6, 1.6] });
+
+    const targetSum = {
+      ...sum,
+      parametersByOvercharge: matrix({
+        targetId: 1,
+        targetIds: [2],
+        targetTraits: [trait],
+        secondaryValuePermille: 1_000,
+        correctionPermille: 200,
+        maximumTargetCount: 3,
+      }),
+    } as NpDamageSpec;
+    expect(
+      resolveNpDamageHandler(targetSum, {
+        ...context,
+        targetTraitCounts: { roman: 1 },
+        targetCombinedTraitCounts: { roman: 2 },
+      }),
+    ).toMatchObject({ npSpecialMultipliers: [1.4, 1.4, 1.4, 1.4, 1.4] });
 
     const battle = {
       ...base,
