@@ -582,7 +582,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: 12, servantBuildCount: 0 });
+  expect(recovered).toEqual({ schemaVersion: 13, servantBuildCount: 0 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 
@@ -1301,7 +1301,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('401件を計算・計算対象外 19件');
+  await expect(page.getByRole('status')).toContainText('405件を計算・計算対象外 15件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );

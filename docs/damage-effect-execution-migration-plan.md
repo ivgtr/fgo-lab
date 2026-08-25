@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
 document_version: "1.1.0"
-status: "E3.2 Redesign In Progress"
+status: "E3.2 Complete - Awaiting User UX Confirmation"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -198,7 +198,7 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 ### E3.2：条件・decision・factモデルの破壊的再置換
 
-状態: 実装中
+状態: 完了（実画面確認待ち）
 
 現状監査:
 
@@ -232,6 +232,18 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 - 未選択任意unsupportedは計算継続、選択済み/automatic/NP本体unsupportedは計算停止となる。
 - PC、390px、320px、共有、保存、復元、支援セット、rankingでdecision semanticsが一致する。
 - 全品質ゲートと実master UI確認を通し、E4へ進まず画面確認待ちで停止する。
+
+完了記録（2026-08-25）:
+
+- schema 13、engine 10.0.0、normalized master v18へ破壊的更新し、`ScenarioAssumption`、`OperationDecisionMode`、`assumptionsForProjection`、scenarioの`exclusiveGroup`を削除した。
+- `ConditionExpression`は複数候補ORを保持し、partialもtrait数へ縮約せず`partialTrait`として情報保持する。condition IR、canonical fact検証、application commandを同一package群内で責務分割した。
+- effect-local condition satisfactionはworld factへ追加せず、当該火力operationだけへ作用する。選択済みcondition群はmaster IRから論理制約へ展開し、排他的で充足不能ならtyped `conditionDecisionConflict`となる。
+- 排他groupはscenario入力から廃止した。実master監査により`alignmentSummer`と通常alignment、アルジュナ〔オルタ〕の善/悪が併存することを確認したため、誤って排他としていたalignment群もcanonical定義から除外し、確実な世界属性と天国/地獄だけへ限定した。
+- webのcondition解釈を削除し、自身、支援、保存セット復元、ranking準備を`calculation-application`のprojection commandへ統合した。
+- production 420計算で、user projection 1,545件、automatic visible 439件、hidden 671件、操作後不変0件、排他矛盾7組の正常計算0件を固定した。multi-branch ORは16騎19効果で、代表7騎とネモの3効果同時選択を実master回帰化した。
+- 既定scenarioのunsupportedは19騎から15騎へ減少した。対象レアリティORはeffect-local成立でexactに解決し、未選択の任意unsupported効果3騎は既定計算を止めず、選択時だけfail-closedとした。partialはBBドバイ1騎1効果を情報欠落なくtyped unsupportedに維持する。
+- Danteは未選択NP1平均`32208.975`、対天/対地単独`45629.59`、`powerMod 0.5`。両方選択は`powerMod 0`のままtyped conflictとなる。実UIでは表示`45,630`、両ボタン選択時は結果表を非表示にし、decision、condition conflict、operation outcomeをtraceで確認した。
+- PC、390px、320pxとmobile ChromiumでDante/Indraを実操作し、ORボタン、hidden中間状態、damage、最終input、traceを確認した。全Playwrightは35成功、21 project-specific skip、0失敗。E4には着手していない。
 
 ### E4：ランキング統合と全master収束
 

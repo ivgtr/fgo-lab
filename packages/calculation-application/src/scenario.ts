@@ -159,7 +159,15 @@ export function resolveScenario(
     if (issue.kind === 'exclusiveWorldFactConflict')
       return `${issue.kind}:${issue.scope}:${issue.group}:${issue.traits.join(',')}:${issue.decisionKeys.join(',')}`;
     if (issue.kind === 'conditionDecisionConflict')
-      return `${issue.kind}:${issue.decisionKeys.join(',')}:${issue.detail}`;
+      return `${issue.kind}:${issue.decisionKeys.join(',')}:${issue.conflicts
+        .map((conflict) =>
+          conflict.kind === 'exclusiveTrait'
+            ? `${conflict.kind}:${conflict.scope}:${conflict.group}:${conflict.traits.join(',')}`
+            : conflict.kind === 'traitPolarity'
+              ? `${conflict.kind}:${conflict.scope}:${conflict.trait}`
+              : `${conflict.kind}:${conflict.quantity}:${conflict.values.join(',')}`,
+        )
+        .join('|')}`;
     if (issue.kind === 'unsupportedParameter')
       return `${issue.kind}:${issue.operationId}:${issue.parameter}`;
     return `${issue.kind}:${issue.operationId}:${issue.detail}`;

@@ -166,8 +166,26 @@ export type ExecutionIssue =
       traits: readonly string[];
       decisionKeys: readonly string[];
     }
-  | { kind: 'conditionDecisionConflict'; decisionKeys: readonly string[]; detail: string }
+  | {
+      kind: 'conditionDecisionConflict';
+      decisionKeys: readonly string[];
+      conflicts: readonly ConditionConstraintConflict[];
+    }
   | { kind: 'unsafeLocalConditionDecision'; operationId: string; detail: string };
+
+export type ConditionConstraintConflict =
+  | {
+      kind: 'exclusiveTrait';
+      scope: TraitScope;
+      group: CanonicalExclusiveGroup;
+      traits: readonly string[];
+    }
+  | { kind: 'traitPolarity'; scope: TraitScope; trait: string }
+  | {
+      kind: 'quantityEquality';
+      quantity: keyof BattleState['quantities'];
+      values: readonly number[];
+    };
 
 export type OperationOutcome =
   'applied' | 'notApplied' | 'notRelevant' | 'impossible' | 'unsupported';

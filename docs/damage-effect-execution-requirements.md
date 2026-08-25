@@ -253,18 +253,31 @@ E3.2では次を最終契約とする。
 
 この契約により、「蛇または竜」のようなOR効果は、どちらのtraitかを捏造せず、その効果だけの成立を宣言して正確に計算できる。一方、その成立が中間状態として後続へ伝播しなければ結果を確定できない場合は、具体的なworld factがない限りunsupportedとする。
 
+### 8.7 E3.2実装結果
+
+2026-08-25にschema 13、engine 10.0.0、normalized master v18で中央置換した。
+
+- scenarioは`effectDecisions`と`worldFactAssertions`を別型で保存し、effect decision内でも`operationEnabled`と`conditionSatisfaction`を分離する。master conditionはscenarioへ複製しない。
+- 複数候補ORはeffect-local成立として当該火力operationだけへ適用する。productionの16騎19効果を監査し、すべてvisibleかつuser-controllable、選択後appliedとした。具体traitやfieldはworld factへ追加しない。
+- selected condition群はAND/OR/NOTを保った制約として検証する。ダンテの天/地同時選択は`exclusiveTrait`のscope、canonical group、traitsを含む`conditionDecisionConflict`となり、両operationは`notApplied`、結果はunsupportedになる。
+- 排他性はscenarioの入力値を受け取らない。E3.1で排他扱いしたalignmentは、実masterで`alignmentSummer`との併存や善/悪の併存が確認されたため除外し、確実な`worldAttribute`と`fieldRealm`へ限定した。
+- context mutationはderived battle stateだけを更新しhidden、effect-local成立はworld factへ波及しない。両者はtraceのoperationと`user-decision`で区別できる。
+- webはprojectionからdecisionを組み立てず、`calculation-application`のcommandを呼ぶ。自身、支援、保存セット復元、ranking準備が同じcommand semanticsを使う。
+- production 420計算でuser projection 1,545件、automatic visible 439件、hidden 671件、操作後不変0件、排他矛盾7組の正常計算0件。未知condition variantはproduction ratchetで検出する。
+- 既定scenarioのunsupportedは19騎から15騎。対象レアリティORの1騎はexactに解決可能となり、未選択の任意unsupportedを持つ3騎は既定計算を継続する。選択時にfail-closedとなるunsupportedは58騎90効果、partialはBBドバイの1騎1効果である。
+
 ## 9. 受入条件
 
-- [ ] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。
-- [ ] UIがreason文字列やマスターラベルを使って表示・操作可否を判定していない。
-- [ ] `conditionAsserted`のように効果条件を一括迂回する経路が存在しない。
-- [ ] 通常条件効果と特攻宝具の別々のcondition control生成経路が存在しない。
-- [ ] context生成と火力補正が順序付きの一つの操作列で実行される。
-- [ ] 新旧resolver、scenario、実行結果、UI投影がruntimeで併存していない。
-- [ ] 旧型、旧関数、互換flag、不要なadapterへの参照が0件である。
-- [ ] 必須回帰シナリオと全master inventoryが成功する。
-- [ ] 単発計算とランキングが同じapplication facadeを使う。
-- [ ] schema、master、engineの版変更とデータ影響が記録されている。
+- [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。
+- [x] UIがreason文字列やマスターラベルを使って表示・操作可否を判定していない。
+- [x] `conditionAsserted`のように効果条件を一括迂回する経路が存在しない。
+- [x] 通常条件効果と特攻宝具の別々のcondition control生成経路が存在しない。
+- [x] context生成と火力補正が順序付きの一つの操作列で実行される。
+- [x] 新旧resolver、scenario、実行結果、UI投影がruntimeで併存していない。
+- [x] 旧型、旧関数、互換flag、不要なadapterへの参照が0件である。
+- [x] 必須回帰シナリオと全master inventoryが成功する。
+- [x] 単発計算とランキングが同じapplication facadeを使う。
+- [x] schema、master、engineの版変更とデータ影響が記録されている。
 
 ## 10. 設計上の比較根拠
 

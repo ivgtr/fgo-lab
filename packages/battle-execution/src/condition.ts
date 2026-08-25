@@ -1,6 +1,7 @@
 import type { TraitCondition } from '@fgo-lab/master-data';
 import type {
   BattleState,
+  ConditionConstraintConflict,
   ConditionExpression,
   EffectDecision,
   ExecutionIssue,
@@ -132,30 +133,43 @@ function alternatives(condition: ConditionExpression, negated = false): Alternat
   }
 }
 
-function literalsCompatible(literals: readonly ConstraintLiteral[]): boolean {
+function literalConflicts(literals: readonly ConstraintLiteral[]): ConditionConstraintConflict[] {
+  const conflicts: ConditionConstraintConflict[] = [];
   const traits = new Map<string, boolean>();
   const groups = new Map<string, string>();
   const quantities = new Map<string, number>();
   for (const literal of literals) {
     if (literal.kind === 'quantity') {
       const prior = quantities.get(literal.quantity);
-      if (prior !== undefined && prior !== literal.value) return false;
+      if (prior !== undefined && prior !== literal.value)
+        conflicts.push({
+          kind: 'quantityEquality',
+          quantity: literal.quantity,
+          values: [prior, literal.value],
+        });
       quantities.set(literal.quantity, literal.value);
       continue;
     }
     const traitKey = `${literal.scope}:${literal.trait}`;
     const prior = traits.get(traitKey);
-    if (prior !== undefined && prior !== literal.present) return false;
+    if (prior !== undefined && prior !== literal.present)
+      conflicts.push({ kind: 'traitPolarity', scope: literal.scope, trait: literal.trait });
     traits.set(traitKey, literal.present);
     if (!literal.present) continue;
     const group = canonicalExclusiveGroup(literal.scope, literal.trait);
     if (!group) continue;
     const groupKey = `${literal.scope}:${group}`;
     const priorTrait = groups.get(groupKey);
-    if (priorTrait && priorTrait !== literal.trait) return false;
+    if (priorTrait && priorTrait !== literal.trait)
+      conflicts.push({
+        kind: 'exclusiveTrait',
+        scope: literal.scope,
+        group,
+        traits: [priorTrait, literal.trait],
+      });
     groups.set(groupKey, literal.trait);
   }
-  return true;
+  return conflicts;
 }
 
 export function validateConditionDecisions(
@@ -172,10 +186,20 @@ export function validateConditionDecisions(
     if (!condition) continue;
     const next = alternatives(condition);
     if (next === null) continue;
-    combined = cartesian(combined, next).filter(literalsCompatible);
+    const candidates = cartesian(combined, next);
+    const compatible = candidates.filter((candidate) => literalConflicts(candidate).length === 0);
     decisionKeys.push(decision.decisionKey);
-    if (combined.length === 0)
-      return [{ kind: 'conditionDecisionConflict', decisionKeys, detail: 'unsatisfiable' }];
+    if (compatible.length === 0) {
+      const conflicts = candidates
+        .flatMap(literalConflicts)
+        .filter(
+          (conflict, index, all) =>
+            all.findIndex((candidate) => JSON.stringify(candidate) === JSON.stringify(conflict)) ===
+            index,
+        );
+      return [{ kind: 'conditionDecisionConflict', decisionKeys, conflicts }];
+    }
+    combined = compatible;
   }
   return [];
 }
