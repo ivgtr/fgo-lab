@@ -1,7 +1,7 @@
 # ダメージ効果 routing・条件式 監査
 
 更新日: 2026-08-25  
-状態: 調査完了・修正計画確認待ち
+状態: 実装完了・確認待ち
 
 ## 1. 結論
 
@@ -148,3 +148,45 @@ P0修正後、nested function inventoryを作り、現ダメージに影響す�
 5. P1 handler / nested function coverage（fail-closed範囲を減らす）
 
 Q6のranking facade統合はR0〜R4後に行う。先にrankingへ現行resolverを固定すると、誤ったtarget / condition semanticsを共通化してしまうためである。
+
+## 9. 実装結果
+
+2026-08-25にmaster schema 7、master `2026-08-25-atlas-jp-calculator-v14`、engine 6.1.0として実装した。旧`TraitCondition { anyOf, noneOf }`とcontext-freeな`isDamageRelevantEffect()`は削除し、旧形式の互換読込は残していない。
+
+- conditionをrecipient、buff holder、opponent、fieldへ分離し、signed traitと`any / all / partial` operatorを保持した。
+- attacker、support、craft essence、mystic code、passive、NPで共通のactor-aware routerを使用する。
+- supportの`self`効果、attackerの敵攻撃上昇、CEの装備者へ届かない効果はUIとresolverの双方で除外する。
+- disabled、到達不能、card不一致、condition不一致を、値欠損より先にrejectする。
+- damage modifierへ影響する未解決parameter keyは基礎値だけを適用せず、`effect_parameter_semantics_not_resolved`でfail-closedにする。
+- 無条件の`pierceDefence`は既存kernelの`ignoreDefense`へ接続した。35 effect record中32件を解決し、battle point条件または追加trait意味を持つ3件はfail-closedを維持した。
+
+実masterでの再確認:
+
+- supportから到達可能と誤判定される`self`効果: 0件
+- attackerへ到達すると誤判定される敵`upAtk`: 0件
+- CE装備者へ到達すると誤判定される`ptOther / ptOtherFull`: 0件
+- 天草四郎「熾天の杯 EX」: Buster耐性低下20%を`cardBuff +0.2`として適用し、警告なしで計算
+- 清少納言: `servant`だけでは中立／シャドウ特攻とも不成立、各AND条件が揃った場合だけ+50%
+
+## 10. nested function inventory
+
+Atlas nice skill APIで`attackBeforeFunction`の参照先22 skillを全件確認した。現宝具ダメージへ影響し得る参照先は次の4件で、残る18件はクリティカル限定、スター発生、継続ダメージ、NP獲得、強化解除などだった。
+
+| 参照skill | 呼出元 | 現宝具への影響 |
+| --- | --- | --- |
+| 970632 | 射殺封殺 B+ | 攻撃力アップ15% |
+| 968815 | 幽玄たる黒 A | 防御力ダウン10% |
+| 970932 | カイジュウ・ベイビー EX | 防御力ダウン10% |
+| 970497 | 魔法使い C | 魔弾消費数に応じた攻撃力アップ |
+
+現行raw exportには参照先skill本体が含まれないため、外部APIへ実行時依存するhandlerは追加していない。`attackBeforeFunction`自体を火力候補として分類し、参照先をmasterへlosslessに取り込むまでは理由付きunsupportedとする。これによりmodifierを黙って欠落させた`exact`結果は返さない。
+
+## 11. 検証結果
+
+- unit: 23 files / 141 tests passed
+- master validation: 14 tests passed、checksum / schema検証成功
+- typecheck、lint成功
+- production build成功
+- actor routing、card耐性、AND条件、disabled値欠損、防御無視、未解決parameter、nested functionの回帰testを追加
+
+E2Eは最終UI確認と合わせて実行する。

@@ -937,7 +937,7 @@ describe('actor-aware effect routing', () => {
   function resolveOne(
     effect: MasterEffect,
     origin: EffectSource['origin'],
-    rawValue: number | undefined = 200,
+    rawValue: number | null = 200,
     defaultEnabled = true,
   ) {
     return resolveEffectSources(input, [
@@ -950,7 +950,7 @@ describe('actor-aware effect routing', () => {
         skillId: 'skill',
         skillName: 'skill',
         effect,
-        rawValue,
+        rawValue: rawValue ?? undefined,
         appliedReason: 'test',
         defaultEnabled,
         attackerTraits: [],
@@ -1056,13 +1056,72 @@ describe('actor-aware effect routing', () => {
   });
 
   it('rejects disabled effects before requiring a level value', () => {
-    const resolved = resolveOne(attackEffect('self'), 'attacker', undefined, false);
+    const resolved = resolveOne(attackEffect('self'), 'attacker', null, false);
 
     expect(resolved.precision).toBe('exact');
     expect(resolved.warnings).toEqual([]);
     expect(resolved.effects[0]).toMatchObject({
       state: 'rejected',
       reason: 'calculation_effect_disabled',
+    });
+  });
+
+  it('applies a valueless defense-piercing state through the existing kernel flag', () => {
+    const resolved = resolveOne(attackEffect('self', 'pierceDefence'), 'attacker', null);
+
+    expect(resolved.precision).toBe('exact');
+    expect(resolved.input.damageFunction).toMatchObject({ ignoreDefense: true });
+    expect(resolved.effects[0]).toMatchObject({
+      kind: 'ignoreDefense',
+      value: null,
+      state: 'applied',
+    });
+  });
+
+  it('keeps unresolved parameter semantics fail-closed', () => {
+    const effect: MasterEffect = {
+      ...attackEffect('self', 'pierceDefence'),
+      parameterSets: [
+        [{ CheckBattlePointPhaseRange: [{ battlePointId: 3300200, range: ['7<='] }] }],
+        [],
+        [],
+        [],
+        [],
+      ],
+    };
+    const resolved = resolveOne(effect, 'np', null);
+
+    expect(resolved.precision).toBe('unsupported');
+    expect(resolved.input.damageFunction).toMatchObject({ ignoreDefense: false });
+    expect(resolved.effects[0]).toMatchObject({
+      state: 'unsupported',
+      reason: 'effect_parameter_semantics_not_resolved',
+    });
+  });
+
+  it('does not apply an HP-scaled modifier as its unadjusted base value', () => {
+    const effect: MasterEffect = {
+      ...attackEffect('self'),
+      parameterSets: [[{ Value: 200, RatioHPLow: 300 }], [], [], [], []],
+    };
+    const resolved = resolveOne(effect, 'attacker');
+
+    expect(resolved.input.attackBuff).toBe(input.attackBuff);
+    expect(resolved.precision).toBe('unsupported');
+    expect(resolved.effects[0]).toMatchObject({
+      state: 'unsupported',
+      reason: 'effect_parameter_semantics_not_resolved',
+    });
+  });
+
+  it('fails closed for a before-attack nested function until its referenced skill is normalized', () => {
+    const resolved = resolveOne(attackEffect('self', 'attackBeforeFunction'), 'attacker', 970632);
+
+    expect(resolved.input).toEqual(input);
+    expect(resolved.precision).toBe('unsupported');
+    expect(resolved.effects[0]).toMatchObject({
+      state: 'unsupported',
+      reason: 'damage_effect_not_supported',
     });
   });
 });

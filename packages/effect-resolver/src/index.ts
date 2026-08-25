@@ -14,6 +14,7 @@ export type ResolvedBuffKind =
   | 'cardResistance'
   | 'npDamageBuff'
   | 'npResistance'
+  | 'ignoreDefense'
   | 'eventDamageBuff'
   | 'specialDamageBuff'
   | 'powerMod'
@@ -69,6 +70,7 @@ const DEFENSIVE_BUFF_TYPES = new Set([
   'upDefencecommandall',
 ]);
 const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
+  'attackBeforeFunction',
   'addIndividuality',
   'addSelfdamage',
   'buffRate',
@@ -79,7 +81,6 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'fieldIndividualityChangedFunction',
   'npattackPrevBuff',
   'overwriteClassRelation',
-  'pierceDefence',
   'pierceSubdamage',
   'subFieldIndividuality',
   'subIndividuality',
@@ -92,6 +93,19 @@ const UNSUPPORTED_NP_DAMAGE_BUFF_TYPES = new Set([
   'upDefence',
   'upDefenceNpdamage',
   'upDefencecommandall',
+]);
+const RESOLVED_EFFECT_PARAMETER_KEYS = new Set([
+  'AuraEffectId',
+  'Count',
+  'HideMiss',
+  'HideNoEffect',
+  'OnField',
+  'Rate',
+  'ShowQuestNoEffect',
+  'ShowState',
+  'Turn',
+  'Value',
+  'Value2',
 ]);
 
 interface SkillSelection {
@@ -115,6 +129,7 @@ interface DamageEffectRoute {
 function effectModifier(effect: MasterEffect): Omit<DamageEffectRoute, 'recipient'> | null {
   const buffTypes = effect.buffTypes ?? [];
   if (buffTypes.some((type) => NON_NP_DAMAGE_BUFF_TYPES.has(type))) return null;
+  if (buffTypes.includes('pierceDefence')) return { kind: 'ignoreDefense', sign: 1 };
   if (buffTypes.includes('addDamage')) return { kind: 'flatDamage', sign: 1 };
   if (
     buffTypes.some((type) =>
@@ -329,7 +344,9 @@ export function resolveEffectSources(
       });
       continue;
     }
-    if (rawValue === undefined && effectIdentity.damageRelevant) {
+    const requiresNumericValue =
+      (kind !== null && kind !== 'ignoreDefense') || Boolean(npDamageBuffRateEffect);
+    if (rawValue === undefined && effectIdentity.damageRelevant && requiresNumericValue) {
       precision = 'unsupported';
       warnings.push(
         `${item.origin}_effect_level_missing:${item.sourceId}:${item.skillId}:${effect.id}`,
@@ -342,7 +359,7 @@ export function resolveEffectSources(
       });
       continue;
     }
-    if (rawValue === undefined) {
+    if (rawValue === undefined && !effectIdentity.damageRelevant) {
       effects.push({
         ...effectIdentity,
         value: null,
@@ -351,11 +368,13 @@ export function resolveEffectSources(
       });
       continue;
     }
-    const value = kind === 'flatDamage' ? rawValue : rawValue / 1000;
+    const value =
+      rawValue === undefined ? null : kind === 'flatDamage' ? rawValue : rawValue / 1000;
+    const signedValue = value === null ? null : value * (route?.sign ?? 1);
     if (!routedDamageRelevant) {
       effects.push({
         ...effectIdentity,
-        value,
+        value: signedValue,
         state: 'rejected',
         reason: 'not_np_damage_relevant',
       });
@@ -364,7 +383,7 @@ export function resolveEffectSources(
     if (kind === 'cardBuff' && !effect.cardTypes.includes(baseInput.cardType)) {
       effects.push({
         ...effectIdentity,
-        value,
+        value: signedValue,
         state: 'rejected',
         reason: 'card_type_mismatch',
       });
@@ -389,7 +408,7 @@ export function resolveEffectSources(
     if (conditionResults.includes(null)) {
       effects.push({
         ...effectIdentity,
-        value,
+        value: signedValue,
         state: 'unsupported',
         reason: 'trait_condition_operator_not_supported',
       });
@@ -402,9 +421,31 @@ export function resolveEffectSources(
     if (!conditionResults.every(Boolean)) {
       effects.push({
         ...effectIdentity,
-        value,
+        value: signedValue,
         state: 'rejected',
         reason: 'trait_condition_mismatch',
+      });
+      continue;
+    }
+    const unresolvedParameterKeys = [
+      ...new Set(
+        effect.parameterSets.flatMap((parameters) =>
+          parameters.flatMap((parameter) =>
+            Object.keys(parameter).filter((key) => !RESOLVED_EFFECT_PARAMETER_KEYS.has(key)),
+          ),
+        ),
+      ),
+    ].sort();
+    if (effectIdentity.damageRelevant && unresolvedParameterKeys.length > 0) {
+      precision = 'unsupported';
+      warnings.push(
+        `${item.origin}_effect_parameter_semantics_not_resolved:${item.sourceId}:${item.skillId}:${effect.id}:${unresolvedParameterKeys.join(',')}`,
+      );
+      effects.push({
+        ...effectIdentity,
+        value: signedValue,
+        state: 'unsupported',
+        reason: 'effect_parameter_semantics_not_resolved',
       });
       continue;
     }
@@ -418,17 +459,17 @@ export function resolveEffectSources(
       );
       effects.push({
         ...effectIdentity,
-        value: value * (route?.sign ?? 1),
+        value: signedValue,
         state: 'unsupported',
         reason: 'effect_metadata_not_resolved',
       });
       continue;
     }
-    if (npDamageBuffRateEffect) {
+    if (npDamageBuffRateEffect && value !== null) {
       npDamageBuffRate = Math.max(npDamageBuffRate, value);
       effects.push({
         ...effectIdentity,
-        value,
+        value: signedValue,
         state: 'applied',
         reason: 'np_damage_buff_rate',
       });
@@ -452,7 +493,7 @@ export function resolveEffectSources(
     }
     effects.push({
       ...effectIdentity,
-      value: value * (route?.sign ?? 1),
+      value: signedValue,
       kind: null,
       state: damageRelevant ? 'unsupported' : 'rejected',
       reason: damageRelevant ? 'damage_effect_not_supported' : 'not_np_damage_relevant',
@@ -466,6 +507,7 @@ export function resolveEffectSources(
     cardResistance: 0,
     npDamageBuff: 0,
     npResistance: 0,
+    ignoreDefense: 0,
     eventDamageBuff: 0,
     specialDamageBuff: 0,
     powerMod: 0,
@@ -475,6 +517,7 @@ export function resolveEffectSources(
     if (effect.state !== 'applied' || !effect.kind || effect.reason === 'np_damage_buff_rate')
       continue;
     if (effect.kind === 'flatDamage') flatDamage += effect.value ?? 0;
+    else if (effect.kind === 'ignoreDefense') modifierPermilles.ignoreDefense = 1;
     else modifierPermilles[effect.kind] += effect.valuePermille ?? 0;
   }
   const aggregatedInput = {
@@ -489,6 +532,10 @@ export function resolveEffectSources(
     specialDamageBuff: baseInput.specialDamageBuff + modifierPermilles.specialDamageBuff / 1_000,
     powerMod: baseInput.powerMod + modifierPermilles.powerMod / 1_000,
     flatDamage: baseInput.flatDamage + flatDamage,
+    damageFunction:
+      baseInput.damageFunction.status === 'resolved' && modifierPermilles.ignoreDefense > 0
+        ? { ...baseInput.damageFunction, ignoreDefense: true }
+        : baseInput.damageFunction,
   };
   const input =
     npDamageBuffRate > 0

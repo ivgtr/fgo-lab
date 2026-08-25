@@ -252,7 +252,7 @@ calculation-application <- web / ranking worker
 
 ### Q5.5：効果target routing・条件式のlossless化
 
-状態: 調査完了・計画確認待ち
+状態: 実装完了（確認待ち）
 
 監査結果と修正計画: `docs/reports/damage-effect-routing-audit.md`
 
