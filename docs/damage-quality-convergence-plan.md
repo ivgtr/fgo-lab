@@ -151,7 +151,7 @@ calculation-application <- web / ranking worker
 
 ### Q2：DamageKernelの再構築
 
-状態: 未着手
+状態: 完了
 
 作業:
 
@@ -309,8 +309,8 @@ golden fixtureには、入力、期待値、根拠、取得日、masterDataVersi
 | Plan | 承認済み | 2026-08-25 | 本計画の範囲、順序、破壊的変更方針 |
 | Q0 | 完了 | 2026-08-25 | Q0-D1〜D7を技術判断として承認。`docs/reports/damage-quality-q0.md` |
 | Q1 | 完了 | 2026-08-25 | scenario/result、全攻撃宝具、魔術礼装、lossless effect parameter、fail-closed registryへ置換。`docs/reports/damage-quality-q1.md` |
-| Q2 | 次に着手 | - | 純粋DamageKernelとResultEvaluatorへ責務を分離する。 |
-| Q3 | 未着手 | - | - |
+| Q2 | 完了 | 2026-08-25 | 純粋kernel、NP1〜5 evaluator、共有application facade、9種Function handler、golden、benchmarkへ収束。`docs/reports/damage-quality-q2.md` |
+| Q3 | 次に着手 | - | EffectSourceとScenarioResolverを単一経路へ収束する。 |
 | Q4 | 未着手 | - | - |
 | Q5 | 未着手 | - | - |
 | Q6 | 未着手 | - | - |
