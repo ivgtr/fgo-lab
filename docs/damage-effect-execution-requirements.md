@@ -223,6 +223,19 @@ Chaldeaは、戦闘状態へFunctionを順序付きで適用する設計の比�
 
 この是正では入力欄や配置を増やさない。変化を許容するのは、成立不能操作の非表示、自動効果の操作不可、排他矛盾時のunsupported表示、正しい効果内訳とダメージ値である。
 
+### 8.5 E3.1実装結果
+
+2026-08-25にschema 12、engine 9.0.0で是正した。
+
+- ダンテの対天は`attributeSky`と`fieldHeaven`、対地は`attributeEarth`と`fieldHell`を同じScenarioAssumption契約で記録し、選択した側の`powerMod +0.5`だけを適用する。
+- 世界属性とフィールドrealmはtrait意味論の排他groupで検査する。対天／対地の同時選択は状態変更前に2件の`exclusiveAssumptionConflict`となり、両補正を適用せず結果を`unsupported`にする。
+- フィールド変化と特性付与はhiddenかつautomaticなoperation、無条件NP効果とパッシブはautomatic、カード不一致はhiddenとした。UIはprojectionの型だけを参照する。
+- 自身と支援の操作はどちらも`assumptionsForProjection`を通る。支援テンプレートの選択参照は保存契約としてだけ保持し、executorの有効化入力には使用しない。
+- Atlas `checkIndvType=4`のpartial条件はtrait数条件へ単純化せず、現在のnormalized masterで正確に評価できないためtyped unsupportedとした。複数候補ORも先頭候補を暗黙選択しない。
+- 適用したScenarioAssumptionとoperation IDを計算traceへ記録し、ダメージ内訳から成立factと実行結果を追跡できるようにした。
+
+production master 469騎中、攻撃宝具を解決できる420騎を監査した。ユーザー操作可能projection 1,083件の操作後無変化は0件、排他候補12組の正常計算は0件、automatic visibleは548件、hiddenは671件だった。既定scenarioのunsupportedは17騎から19騎へ増えた。追加2騎はpartial条件を持つ自動パッシブ1騎と、対象レアリティを一意に仮定できない特殊宝具1騎であり、誤った旧結果を維持しない。さらにNPレベル別の条件付き宝具projection表示は3騎で選択中NPレベルを参照するよう是正した。
+
 ## 9. 受入条件
 
 - [ ] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

@@ -590,7 +590,10 @@ test('autosaves and restores a directly edited calculation draft', async ({ page
   test.skip(isMobile, 'Desktop navigation exposes the persistent undo status');
   await page.goto('/');
   await completeSetup(page);
-  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
   await page.getByRole('tab', { name: '直接入力' }).click();
   await page.getByLabel('攻撃バフ（%）').fill('20');
   await expect(page.getByRole('button', { name: '直前の操作を元に戻す' })).toBeEnabled();
@@ -754,11 +757,11 @@ test('separates final direct inputs from resolved CE and trait effects', async (
     .getByRole('group', { name: /自身の適用内容/ })
     .getByRole('button', { name: /混沌・特攻宝具/ })
     .first();
-  await expect(chaoticTrait).toContainText('1.50倍');
+  await expect(chaoticTrait).toContainText('2.00倍');
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
   await chaoticTrait.click();
   await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByLabel('計算に使用する最終値')).toContainText('1.50倍');
+  await expect(page.getByLabel('計算に使用する最終値')).toContainText('2.00倍');
 });
 
 test('requests quantitative context only when the selected NP requires it', async ({
@@ -815,6 +818,72 @@ test('executes Dante and Summer Wu production effects through the ordered path',
   await expect(ownEffects).toContainText('宝具威力アップ');
   await expect(ownEffects).not.toContainText('死霊特性付与');
   await expect(ownEffects).not.toContainText('防御力ダウン');
+});
+
+test('Dante realm decisions are exclusive and preserve the damage UI on desktop and mobile', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('ダンテ・アリギエーリ');
+  await attackerDialog.getByRole('button', { name: /ダンテ・アリギエーリ.*Lv90/ }).click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const sky = ownEffects.getByRole('button', { name: /威力アップ・対 天の力/ });
+  const earth = ownEffects.getByRole('button', { name: /威力アップ・対 地の力/ });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  const np1Average = table
+    .getByRole('row', { name: /NP1.*現在/ })
+    .locator('td')
+    .first();
+  const initialAverage = await np1Average.textContent();
+
+  await expect(sky).toHaveAttribute('aria-pressed', 'false');
+  await expect(earth).toHaveAttribute('aria-pressed', 'false');
+  await expect(ownEffects).not.toContainText('フィールド変化');
+  await expect(ownEffects).not.toContainText('クイックアップ');
+  await expect(ownEffects).not.toContainText('バスターアップ');
+  await expect(ownEffects.getByRole('button', { name: /宝具威力アップ.*宝具前効果/ })).toHaveCount(
+    0,
+  );
+  await expect(ownEffects.getByRole('button', { name: /アーツアップ.*陣地作成/ })).toHaveCount(0);
+
+  await sky.click();
+  await expect(sky).toHaveAttribute('aria-pressed', 'true');
+  await expect(earth).toHaveAttribute('aria-pressed', 'false');
+  await expect(np1Average).not.toHaveText(initialAverage ?? '');
+  const skyAverage = await np1Average.textContent();
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await effectiveInput.locator('summary').click();
+  await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
+
+  await earth.click();
+  await expect(sky).toHaveAttribute('aria-pressed', 'true');
+  await expect(earth).toHaveAttribute('aria-pressed', 'true');
+  await expect(table).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
+  const resultDetails = page.getByText('計算内訳・根拠・仮定・警告');
+  await resultDetails.click();
+  await expect(
+    page.getByText(/exclusiveAssumptionConflict:target:worldAttribute/).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/exclusiveAssumptionConflict:field:fieldRealm/).first(),
+  ).toBeVisible();
+
+  await sky.click();
+  await expect(sky).toHaveAttribute('aria-pressed', 'false');
+  await expect(earth).toHaveAttribute('aria-pressed', 'true');
+  await expect(table).toBeVisible();
+  await expect(np1Average).toHaveText(skyAverage ?? '');
+  await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
 });
 
 test('matches the reported Water Lilith inputs and exposes passive damage stacks', async ({
@@ -1192,7 +1261,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('403件を計算・計算対象外 17件');
+  await expect(page.getByRole('status')).toContainText('401件を計算・計算対象外 19件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );

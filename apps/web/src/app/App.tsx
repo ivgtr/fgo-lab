@@ -470,11 +470,7 @@ export function App() {
                 },
                 effectAssumptions: retainedAssumptions,
               };
-              const candidateEffects = calculateScenario(
-                candidate,
-                currentMaster,
-                versions,
-              ).effects;
+              const candidateEffects = resolveScenario(candidate, currentMaster).effects;
               await saveScenarioDraft({
                 ...candidate,
                 effectAssumptions: [
@@ -549,7 +545,7 @@ export function App() {
               .map((candidate) => {
                 const np = getPrimaryNpPresentation(candidate);
                 if (!np) throw new TypeError(`attack_np_missing:${candidate.id}`);
-                const scenario = {
+                const baseScenario = {
                   ...createDefaultResolvedScenario(
                     currentMaster,
                     profile.servantBuilds[candidate.id],
@@ -563,6 +559,15 @@ export function App() {
                       }
                     : null,
                 };
+                const scenario = rankingSupport
+                  ? {
+                      ...baseScenario,
+                      effectAssumptions: selectedSupportAssumptions(
+                        rankingSupport,
+                        resolveScenario(baseScenario, currentMaster).effects,
+                      ),
+                    }
+                  : baseScenario;
                 const resolved = resolveScenario(scenario, currentMaster);
                 return {
                   servantId: candidate.id,

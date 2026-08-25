@@ -160,7 +160,7 @@ UI input
 
 ### E3.1：条件decisionと排他状態の是正
 
-状態: 進行中
+状態: 完了（実画面確認待ち）
 
 E3画面確認でダンテ・アリギエーリの対天／対地を同時適用できる回帰を確認した。原因は旧resolverの復活ではなく、新executorの`decisionKey`がoperation有効化と条件成立assertionを兼用し、BattleStateがtrait間の排他関係を持たないことにある。加えて全operationをユーザー操作可能として投影するため、自動パッシブと無条件NP効果の操作可否、未選択カード不一致効果のvisibility、支援だけ別経路となるcondition assertionが契約から逸脱している。
 
@@ -185,6 +185,16 @@ E3画面確認でダンテ・アリギエーリの対天／対地を同時適用
 - 全master監査、PC／mobile Chromium、共有round-trip、build、旧経路参照0件を再度通す。
 
 E3.1完了後に実画面確認で停止する。E4は引き続き開始しない。
+
+完了記録（2026-08-25）:
+
+- `OperationDecisionMode`をautomatic、enableOperation、assertCondition、enableAndAssertへ分離し、内部状態operationをhidden／automaticへ固定した。
+- `worldAttribute`、`fieldRealm`、秩序・善悪alignmentの排他groupをtrait意味論として実装し、競合decisionを状態適用前にすべて無効化するtyped conflictへ接続した。
+- `Calculator.changeEffect`の支援専用returnと、executorの支援`selectedEffects`有効化を削除した。保存セット呼び出し時だけ選択参照を同じScenarioAssumptionへ具体化する。
+- production master 420計算、ユーザー操作1,083件、排他候補12組を全件実行監査した。操作後無変化0件、排他条件の同時正常計算0件。
+- 既定scenarioのunsupportedは17騎から19騎。追加はpartial条件の自動パッシブを持つ`2300600`と、対象レアリティ未指定の`403400`で、いずれもtyped fail-closedである。
+- ダンテ実masterで対天／対地単独、同時矛盾、hidden field、自動パッシブ／NP、カード不一致、traceを確認した。PCとmobile Chromiumの同一操作E2Eを追加した。
+- schema 12、engine 9.0.0。E4ランキング統合には着手していない。
 
 ### E4：ランキング統合と全master収束
 

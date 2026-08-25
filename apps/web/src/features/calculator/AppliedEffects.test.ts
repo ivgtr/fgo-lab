@@ -51,7 +51,14 @@ describe('typed applied-effect projection', () => {
 
     expect(isEffectSelected(selected)).toBe(true);
     expect(
-      isEffectSelected({ ...selected, decision: { ...selected.decision, state: 'disabled' } }),
+      isEffectSelected({
+        ...selected,
+        decision: {
+          state: 'disabled',
+          decisionKey: selected.projectionKey,
+          mode: 'enableOperation',
+        },
+      }),
     ).toBe(false);
   });
 });

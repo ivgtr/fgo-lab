@@ -161,6 +161,16 @@ export function resolveScenario(
           ? `${issue.kind}:${issue.operationId}:${issue.parameter}`
           : `${issue.kind}:${issue.operationId}:${issue.detail}`,
   );
+  const assumptionTrace = scenario.effectAssumptions
+    .filter((assumption) => assumption.enabled)
+    .map((assumption) => ({
+      step: 'scenario-assumption',
+      detail: assumption.assertion
+        ? assumption.assertion.kind === 'trait'
+          ? `${assumption.decisionKey}:trait:${assumption.assertion.scope}:${assumption.assertion.trait}:${String(assumption.assertion.present)}:${assumption.assertion.exclusiveGroup ?? 'none'}`
+          : `${assumption.decisionKey}:quantity:${assumption.assertion.quantity}:${String(assumption.assertion.value)}`
+        : `${assumption.decisionKey}:enabled`,
+    }));
   return {
     input: execution.input,
     precision: execution.precision,
@@ -176,10 +186,13 @@ export function resolveScenario(
     ],
     warnings,
     effects: [...execution.projections],
-    trace: execution.operations.map((operation) => ({
-      step: `${operation.operation.phase}:${operation.operation.kind}`,
-      detail: `${operation.operation.order}:${operation.outcome}`,
-    })),
+    trace: [
+      ...assumptionTrace,
+      ...execution.operations.map((operation) => ({
+        step: `${operation.operation.phase}:${operation.operation.kind}`,
+        detail: `${operation.operation.order}:${operation.operation.operationId}:${operation.outcome}`,
+      })),
+    ],
   };
 }
 

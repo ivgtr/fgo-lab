@@ -758,7 +758,7 @@ function projectionFor(
   const decisionSelected =
     operation.decisionMode === 'assertCondition' ? (choice?.enabled ?? false) : enabled;
   const conditionSatisfiedInternally =
-    operation.decisionMode === 'assertCondition' && condition === true;
+    operation.decisionMode === 'assertCondition' && condition === true && choice?.enabled !== true;
   const userControllable =
     operation.decisionKey !== null &&
     operation.decisionMode !== 'automatic' &&
@@ -1177,10 +1177,30 @@ export function executeOrderedScenario(
   const assumptions = new Map(
     scenario.effectAssumptions.map((assumption) => [assumption.decisionKey, assumption]),
   );
+  const invalidDecisionKeys = new Set(
+    assumptionIssues.flatMap((issue) =>
+      issue.kind === 'contradictoryAssumptions' || issue.kind === 'exclusiveAssumptionConflict'
+        ? issue.decisionKeys
+        : [],
+    ),
+  );
   const resolvedCompileProjections = compileProjections.map((projection) => {
     if (projection.outcome === 'unsupported') return projection;
     const choice = assumptions.get(projection.projectionKey);
     const enabled = choice?.enabled ?? projection.decision.state === 'enabled';
+    if (invalidDecisionKeys.has(projection.projectionKey))
+      return {
+        ...projection,
+        outcome: 'notApplied' as const,
+        decision:
+          projection.decision.state === 'none'
+            ? projection.decision
+            : {
+                ...projection.decision,
+                state: enabled ? ('enabled' as const) : ('disabled' as const),
+              },
+        explanation: { ...projection.explanation, code: 'conditionNotMet' as const },
+      };
     return enabled
       ? projection
       : {
@@ -1278,7 +1298,11 @@ export function executeOrderedScenario(
     ...assumptionIssues,
     ...collected.issues,
     ...resolvedCompileProjections
-      .filter((projection) => projection.outcome === 'unsupported')
+      .filter(
+        (projection) =>
+          projection.outcome === 'unsupported' &&
+          ['passive', 'craftEssence', 'np'].includes(projection.source.origin),
+      )
       .map<ExecutionIssue>((projection) => ({
         kind: 'unsupportedOperation',
         operationId: projection.operationId,

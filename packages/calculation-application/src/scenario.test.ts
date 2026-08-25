@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { assumptionsForProjection } from '@fgo-lab/battle-execution';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
 import {
   calculationScenarioSchema,
   ENGINE_VERSION,
@@ -34,7 +34,7 @@ function modifierEffect(
   value: number,
   cardTypes: ('buster' | 'arts' | 'quick')[] = [],
   target = 'self',
-  conditions = unconditionalConditions,
+  conditions: MasterEffect['conditions'] = unconditionalConditions,
 ) {
   return {
     id,

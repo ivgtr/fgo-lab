@@ -28,65 +28,9 @@ const priorUnsupportedFamilies = {
   '3300200': ['missing_battle_point_phase', 'unsupportedOperation'],
 } as const;
 
-const partialMatchUnsupportedIds = [
-  '100700',
-  '101000',
-  '101700',
-  '103100',
-  '105400',
-  '106100',
-  '200200',
-  '203300',
-  '204900',
-  '300100',
-  '300800',
-  '302800',
-  '304000',
-  '305400',
-  '305600',
-  '305700',
-  '305900',
-  '400100',
-  '404900',
-  '405700',
-  '500200',
-  '503200',
-  '505100',
-  '601500',
-  '603200',
-  '603700',
-  '603800',
-  '604600',
-  '604700',
-  '605000',
-  '702600',
-  '703300',
-  '703600',
-  '704400',
-  '705300',
-  '1000100',
-  '1000400',
-  '1000500',
-  '1000900',
-  '1001700',
-  '1100400',
-  '1100700',
-  '1101100',
-  '1101600',
-  '1101800',
-  '2300600',
-  '2300700',
-  '2300800',
-  '2500200',
-  '2501100',
-  '2800200',
-  '2800500',
-] as const;
-
-const expectedUnsupportedFamilies: Record<string, string[]> = {
+const expectedUnsupportedFamilies: Readonly<Record<string, readonly string[]>> = {
   ...priorUnsupportedFamilies,
-  ...Object.fromEntries(partialMatchUnsupportedIds.map((id) => [id, ['unsupportedOperation']])),
-  '203300': ['missing_attacker_hp_ratio', 'unsupportedOperation'],
+  '2300600': ['unsupportedOperation'],
   '403400': ['unsupportedCondition'],
 };
 
@@ -151,6 +95,19 @@ describe('production master damage quality ratchet', () => {
       expect(calculation.input.target.traits).toEqual([trait]);
       expect(calculation.input.fieldTraits).toEqual([field]);
       expect(
+        calculation.result.trace.some(
+          (entry) =>
+            entry.step === 'scenario-assumption' && entry.detail.includes(selected.projectionKey),
+        ),
+      ).toBe(true);
+      expect(
+        calculation.result.trace.some(
+          (entry) =>
+            entry.step === 'beforeNpDamage:addModifier' &&
+            entry.detail.includes(`${selected.projectionKey}:modifier:powerMod:applied`),
+        ),
+      ).toBe(true);
+      expect(
         calculation.effects.filter(
           (effect) => effect.label.startsWith('威力アップ・対') && effect.outcome === 'applied',
         ),
@@ -189,14 +146,12 @@ describe('production master damage quality ratchet', () => {
     };
     const calculations = master.servants.flatMap((servant) => {
       try {
+        const scenario = createDefaultResolvedScenario(master, undefined, servant);
         return [
           {
             servant,
-            calculation: calculateScenario(
-              createDefaultResolvedScenario(master, undefined, servant),
-              master,
-              versions,
-            ),
+            scenario,
+            calculation: calculateScenario(scenario, master, versions),
           },
         ];
       } catch {
@@ -238,11 +193,101 @@ describe('production master damage quality ratchet', () => {
         ];
       }),
     );
+    const inertUserProjections: string[] = [];
+    const invalidExclusiveCalculations: string[] = [];
+    let exclusivePairCount = 0;
+    for (const { servant, scenario, calculation } of calculations) {
+      const userEffects = calculation.effects.filter((effect) => effect.controllability === 'user');
+      for (const effect of userEffects) {
+        const assumptions = assumptionsForProjection(effect, true);
+        const active = calculateScenario(
+          { ...scenario, effectAssumptions: assumptions },
+          master,
+          versions,
+        );
+        const activeEffect = active.effects.find(
+          (candidate) => candidate.projectionKey === effect.projectionKey,
+        );
+        if (
+          assumptions.length === 0 ||
+          !activeEffect ||
+          (activeEffect.outcome === effect.outcome &&
+            activeEffect.decision.state === effect.decision.state)
+        )
+          inertUserProjections.push(`${servant.id}:${effect.projectionKey}`);
+      }
+
+      const exclusiveCandidates = userEffects.map((effect) => ({
+        effect,
+        assumptions: assumptionsForProjection(effect, true),
+      }));
+      const checkedPairs = new Set<string>();
+      for (let leftIndex = 0; leftIndex < exclusiveCandidates.length; leftIndex += 1) {
+        const left = exclusiveCandidates[leftIndex]!;
+        for (
+          let rightIndex = leftIndex + 1;
+          rightIndex < exclusiveCandidates.length;
+          rightIndex += 1
+        ) {
+          const right = exclusiveCandidates[rightIndex]!;
+          const conflicts = left.assumptions.some((leftAssumption) => {
+            const leftAssertion = leftAssumption.assertion;
+            if (
+              leftAssertion?.kind !== 'trait' ||
+              !leftAssertion.present ||
+              !leftAssertion.exclusiveGroup
+            )
+              return false;
+            return right.assumptions.some((rightAssumption) => {
+              const rightAssertion = rightAssumption.assertion;
+              return (
+                rightAssertion?.kind === 'trait' &&
+                rightAssertion.present &&
+                rightAssertion.scope === leftAssertion.scope &&
+                rightAssertion.exclusiveGroup === leftAssertion.exclusiveGroup &&
+                rightAssertion.trait !== leftAssertion.trait
+              );
+            });
+          });
+          if (!conflicts) continue;
+          const pairKey = `${left.effect.projectionKey}|${right.effect.projectionKey}`;
+          if (checkedPairs.has(pairKey)) continue;
+          checkedPairs.add(pairKey);
+          exclusivePairCount += 1;
+          const conflict = calculateScenario(
+            {
+              ...scenario,
+              effectAssumptions: [...left.assumptions, ...right.assumptions],
+            },
+            master,
+            versions,
+          );
+          const outcomes = conflict.effects
+            .filter(
+              (effect) =>
+                effect.projectionKey === left.effect.projectionKey ||
+                effect.projectionKey === right.effect.projectionKey,
+            )
+            .map((effect) => effect.outcome);
+          if (
+            conflict.result.status !== 'unsupported' ||
+            !conflict.effectWarnings.some((warning) =>
+              warning.startsWith('exclusiveAssumptionConflict:'),
+            ) ||
+            outcomes.includes('applied')
+          )
+            invalidExclusiveCalculations.push(`${servant.id}:${pairKey}`);
+        }
+      }
+    }
 
     expect(master.servants).toHaveLength(469);
     expect(calculations).toHaveLength(420);
     expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
     expect(missingCandidateValues).toEqual([]);
+    expect(inertUserProjections).toEqual([]);
+    expect(exclusivePairCount).toBeGreaterThan(0);
+    expect(invalidExclusiveCalculations).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
     expect(archetype?.input.fieldTraits).toContain('milleniumCastle');
     expect(
@@ -276,5 +321,5 @@ describe('production master damage quality ratchet', () => {
       outcome: 'notApplied',
       explanation: { code: 'conditionNotMet' },
     });
-  });
+  }, 15_000);
 });
