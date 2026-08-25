@@ -421,6 +421,36 @@ function resolveMysticCodeSourcesForTest(
 }
 
 describe('resolveSupportSourcesForTest', () => {
+  it('aggregates rates as integer permille before one final conversion', () => {
+    const stacked: ServantMaster = {
+      ...source,
+      skills: [
+        {
+          ...source.skills[0]!,
+          effects: [
+            {
+              ...source.skills[0]!.effects[0]!,
+              id: 'attack-100',
+              parameterSets: parameterSets(Array(10).fill(100)),
+            },
+            {
+              ...source.skills[0]!.effects[0]!,
+              id: 'attack-200',
+              parameterSets: parameterSets(Array(10).fill(200)),
+            },
+          ],
+        },
+      ],
+    };
+    const result = resolveSupportSourcesForTest(
+      { ...input, attackBuff: 0 },
+      compositionFor(stacked),
+      [stacked],
+    );
+    expect(result.input.attackBuff).toBe(0.3);
+    expect(result.effects.map((effect) => effect.valuePermille)).toEqual([100, 200]);
+  });
+
   it('applies only effects explicitly selected in the composition', () => {
     const composition = compositionFor();
     composition.selectedEffects = composition.selectedEffects.filter(

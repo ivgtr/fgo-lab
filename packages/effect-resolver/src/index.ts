@@ -33,6 +33,7 @@ export interface ResolvedEffect {
   effectId: string;
   label: string;
   value: number | null;
+  valuePermille: number | null;
   kind: ResolvedBuffKind | null;
   damageTraitCondition: DamageTraitCondition | null;
   requiredFieldTraits: readonly string[];
@@ -205,6 +206,7 @@ export function resolveEffectSources(
       skillName: item.skillName,
       effectId: effect.id,
       label: effect.label,
+      valuePermille: kind === 'flatDamage' ? null : (rawValue ?? null),
       kind,
       damageTraitCondition:
         kind === 'powerMod' &&
@@ -344,16 +346,31 @@ export function resolveEffectSources(
     });
   }
 
-  const aggregatedInput = effects.reduce(
-    (aggregated, effect) => {
-      if (effect.state !== 'applied' || !effect.kind || effect.reason === 'np_damage_buff_rate')
-        return aggregated;
-      if (effect.kind === 'flatDamage') aggregated.flatDamage += effect.value ?? 0;
-      else aggregated[effect.kind] += effect.value ?? 0;
-      return aggregated;
-    },
-    { ...baseInput },
-  );
+  const modifierPermilles: Record<Exclude<ResolvedBuffKind, 'flatDamage'>, number> = {
+    attackBuff: 0,
+    cardBuff: 0,
+    npDamageBuff: 0,
+    eventDamageBuff: 0,
+    specialDamageBuff: 0,
+    powerMod: 0,
+  };
+  let flatDamage = 0;
+  for (const effect of effects) {
+    if (effect.state !== 'applied' || !effect.kind || effect.reason === 'np_damage_buff_rate')
+      continue;
+    if (effect.kind === 'flatDamage') flatDamage += effect.value ?? 0;
+    else modifierPermilles[effect.kind] += effect.valuePermille ?? 0;
+  }
+  const aggregatedInput = {
+    ...baseInput,
+    attackBuff: baseInput.attackBuff + modifierPermilles.attackBuff / 1_000,
+    cardBuff: baseInput.cardBuff + modifierPermilles.cardBuff / 1_000,
+    npDamageBuff: baseInput.npDamageBuff + modifierPermilles.npDamageBuff / 1_000,
+    eventDamageBuff: baseInput.eventDamageBuff + modifierPermilles.eventDamageBuff / 1_000,
+    specialDamageBuff: baseInput.specialDamageBuff + modifierPermilles.specialDamageBuff / 1_000,
+    powerMod: baseInput.powerMod + modifierPermilles.powerMod / 1_000,
+    flatDamage: baseInput.flatDamage + flatDamage,
+  };
   const input =
     npDamageBuffRate > 0
       ? {

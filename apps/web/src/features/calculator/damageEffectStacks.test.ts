@@ -15,6 +15,7 @@ function effect(patch: Partial<ResolvedEffect>): ResolvedEffect {
     effectId: 'quick-up',
     label: 'クイックアップ',
     value: 0.12,
+    valuePermille: 120,
     kind: 'cardBuff',
     damageTraitCondition: null,
     requiredFieldTraits: [],
@@ -34,6 +35,7 @@ describe('damage effect stacks', () => {
       effectId: 'flat-damage',
       label: 'アタックプラス',
       value: 175,
+      valuePermille: null,
       kind: 'flatDamage',
     });
     const stacks = collectDamageEffectStacks({
