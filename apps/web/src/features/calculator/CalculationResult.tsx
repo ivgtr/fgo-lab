@@ -9,6 +9,7 @@ import { SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
+import { scenarioFromDamageKernelInput } from './calculation';
 import './calculation-result.css';
 
 export function CalculationResult({
@@ -40,17 +41,8 @@ export function CalculationResult({
     kind: 'fgo-lab-calculation-share',
     schemaVersion: SCHEMA_VERSION,
     sharedAt: new Date().toISOString(),
-    input,
+    scenario: scenarioFromDamageKernelInput(input, selection),
     result,
-    composition: {
-      craftEssence: selection.craftEssence
-        ? {
-            craftEssenceId: selection.craftEssence.craftEssenceId,
-            level: selection.craftEssence.level,
-            limitBreak: selection.craftEssence.limitBreak,
-          }
-        : null,
-    },
   } satisfies CalculationShareSnapshot;
   async function copyUrl() {
     try {

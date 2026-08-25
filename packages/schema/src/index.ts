@@ -165,6 +165,68 @@ export const calculationSelectionSchema = z.object({
 });
 export type CalculationSelection = z.infer<typeof calculationSelectionSchema>;
 
+const scenarioBaseSchema = z
+  .object({
+    attacker: z.object({
+      servantId: z.string().min(1).max(80),
+      source: z.enum(['owned', 'master']),
+      level: z.number().int().min(1).max(120),
+      npLevel: z.number().int().min(1).max(5),
+      fouAtk: z.number().int().min(0).max(3000),
+    }),
+    overcharge: z.number().int().min(1).max(5),
+    target: z.object({
+      classId: z.string().min(1).max(40),
+      attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
+      traits: z.array(z.string().min(1).max(80)).max(100),
+      stateTraits: z.array(z.string().min(1).max(80)).max(100),
+      rarity: z.number().int().min(0).max(5).nullable(),
+      hpPermille: z.number().int().min(0).max(1000).nullable(),
+    }),
+    fieldTraits: z.array(z.string().min(1).max(80)).max(100),
+    battleState: z.object({ battlePointPhase: z.number().int().nonnegative().nullable() }),
+    assumptions: z.object({
+      classAffinity: z.number().min(0).max(5),
+      attributeAffinity: z.number().min(0).max(5),
+    }),
+  })
+  .strict();
+
+const resolvedScenarioSchema = scenarioBaseSchema
+  .extend({
+    mode: z.literal('resolved'),
+    craftEssence: z
+      .object({
+        craftEssenceId: z.string().min(1).max(80),
+        level: z.number().int().min(1).max(100),
+        limitBreak: z.number().int().min(0).max(4),
+      })
+      .nullable(),
+    attackerSkills: z.array(attackerSkillSelectionSchema).max(20),
+    support: calculationSelectionSchema.shape.support.unwrap().nullable(),
+    effectDecisions: z.record(z.string(), z.boolean()),
+    explicitOverrides: z.object({
+      attackerAtk: z.number().int().nonnegative().max(100000).optional(),
+      fouAtk: z.number().int().nonnegative().max(3000).optional(),
+      craftEssenceAtk: z.number().int().nonnegative().max(10000).optional(),
+      classAttackRate: z.number().min(0).max(5).optional(),
+    }),
+  })
+  .strict();
+
+const manualScenarioSchema = scenarioBaseSchema
+  .extend({
+    mode: z.literal('manual'),
+    manual: damageKernelInputSchema,
+  })
+  .strict();
+
+export const calculationScenarioSchema = z.discriminatedUnion('mode', [
+  resolvedScenarioSchema,
+  manualScenarioSchema,
+]);
+export type CalculationScenario = z.infer<typeof calculationScenarioSchema>;
+
 export const damageRowSchema = z.object({
   npLevel: z.number().int().min(1).max(5),
   minimum: z.number().int().nonnegative(),
@@ -211,10 +273,9 @@ export type CalculationResult = z.infer<typeof calculationResultSchema>;
 export const calculationDraftSchema = z.object({
   profileId: z.uuid(),
   calculationSessionId: z.uuid(),
-  input: damageKernelInputSchema,
+  scenario: calculationScenarioSchema,
   result: calculationResultSchema,
-  inputFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
-  selection: calculationSelectionSchema.optional(),
+  scenarioFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   updatedAt: z.iso.datetime(),
 });
 export const calculationHistoryEntrySchema = calculationDraftSchema.extend({
@@ -260,20 +321,12 @@ export const userDataBackupSchema = z.object({
 });
 export type UserDataBackup = z.infer<typeof userDataBackupSchema>;
 
-export const calculationShareCompositionSchema = z.object({
-  craftEssence: calculationSelectionSchema.shape.craftEssence
-    .unwrap()
-    .omit({ source: true, copyId: true })
-    .nullable(),
-});
-
 export const calculationShareSnapshotSchema = z.object({
   kind: z.literal('fgo-lab-calculation-share'),
   schemaVersion: z.literal(SCHEMA_VERSION),
   sharedAt: z.iso.datetime(),
-  input: damageKernelInputSchema,
+  scenario: calculationScenarioSchema,
   result: calculationResultSchema,
-  composition: calculationShareCompositionSchema.optional(),
 });
 export type CalculationShareSnapshot = z.infer<typeof calculationShareSnapshotSchema>;
 

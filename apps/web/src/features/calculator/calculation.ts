@@ -19,9 +19,9 @@ import type {
   AttackerSkillSelection,
   DamageKernelInput,
   CalculationSelection,
-  CalculationShareSnapshot,
   ServantBuild,
   CalculationResult,
+  CalculationScenario,
   VersionContext,
 } from '@fgo-lab/schema';
 
@@ -218,6 +218,110 @@ export function createDefaultDamageKernelInput(
   };
 }
 
+export function scenarioFromDamageKernelInput(
+  input: DamageKernelInput,
+  selection: CalculationSelection,
+): CalculationScenario {
+  const base = {
+    attacker: {
+      servantId: input.attackerId,
+      source: selection.attackerSource,
+      level: input.attackerLevel,
+      npLevel: input.npLevel,
+      fouAtk: input.fouAtk,
+    },
+    overcharge: input.overcharge,
+    target: {
+      classId: input.target.classId,
+      attribute: input.target.attribute,
+      traits: input.target.traits,
+      stateTraits: [],
+      rarity: null,
+      hpPermille: null,
+    },
+    fieldTraits: input.fieldTraits,
+    battleState: { battlePointPhase: null },
+    assumptions: {
+      classAffinity: input.classAffinity,
+      attributeAffinity: input.attributeAffinity,
+    },
+  };
+  if (selection.effectMode === 'manual') return { ...base, mode: 'manual', manual: input };
+  const manualOverrides = new Set(selection.manualOverrides ?? []);
+  return {
+    ...base,
+    mode: 'resolved',
+    craftEssence: selection.craftEssence
+      ? {
+          craftEssenceId: selection.craftEssence.craftEssenceId,
+          level: selection.craftEssence.level,
+          limitBreak: selection.craftEssence.limitBreak,
+        }
+      : null,
+    attackerSkills: selection.attackerSkills ?? [],
+    support: selection.support ?? null,
+    effectDecisions: selection.effectOverrides ?? {},
+    explicitOverrides: {
+      ...(manualOverrides.has('attackerAtk') ? { attackerAtk: input.attackerAtk } : {}),
+      ...(manualOverrides.has('fouAtk') ? { fouAtk: input.fouAtk } : {}),
+      ...(manualOverrides.has('craftEssenceAtk') ? { craftEssenceAtk: input.craftEssenceAtk } : {}),
+      ...(manualOverrides.has('classAttackRate') ? { classAttackRate: input.classAttackRate } : {}),
+    },
+  };
+}
+
+export function selectionFromScenario(scenario: CalculationScenario): CalculationSelection {
+  if (scenario.mode === 'manual')
+    return { attackerSource: scenario.attacker.source, effectMode: 'manual', craftEssence: null };
+  return {
+    attackerSource: scenario.attacker.source,
+    effectMode: 'resolved',
+    attackerSkills: scenario.attackerSkills,
+    effectOverrides: scenario.effectDecisions,
+    support: scenario.support,
+    manualOverrides: Object.keys(scenario.explicitOverrides) as NonNullable<
+      CalculationSelection['manualOverrides']
+    >,
+    craftEssence: scenario.craftEssence
+      ? { ...scenario.craftEssence, source: 'master', copyId: null }
+      : null,
+  };
+}
+
+export function damageKernelInputFromScenario(
+  scenario: CalculationScenario,
+  master: MasterDataSnapshot,
+): DamageKernelInput {
+  if (scenario.mode === 'manual') return scenario.manual;
+  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
+  if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
+  const damage = getPrimaryNpDamage(servant);
+  if (!damage) throw new TypeError(`attack_np_missing:${servant.id}`);
+  const base = createDefaultDamageKernelInput(master, undefined, servant);
+  return {
+    ...base,
+    attackerLevel: scenario.attacker.level,
+    attackerAtk:
+      scenario.explicitOverrides.attackerAtk ??
+      servant.atkByLevel[String(scenario.attacker.level)] ??
+      0,
+    fouAtk: scenario.explicitOverrides.fouAtk ?? scenario.attacker.fouAtk,
+    craftEssenceAtk: scenario.explicitOverrides.craftEssenceAtk ?? 0,
+    npLevel: scenario.attacker.npLevel,
+    overcharge: scenario.overcharge,
+    npMultipliers: deriveNpMultipliers(damage, scenario.overcharge),
+    classAttackRate: scenario.explicitOverrides.classAttackRate ?? base.classAttackRate,
+    classAffinity: scenario.assumptions.classAffinity,
+    attributeAffinity: scenario.assumptions.attributeAffinity,
+    fieldTraits: scenario.fieldTraits,
+    target: {
+      classId: scenario.target.classId,
+      attribute: scenario.target.attribute,
+      traits: [...new Set([...scenario.target.traits, ...scenario.target.stateTraits])],
+    },
+  };
+}
+
 export function completeCalculationSelection(
   selection: CalculationSelection | undefined,
   servant: ServantMaster | undefined,
@@ -308,14 +412,5 @@ export function setCalculationEffectMode(
       damageCut: 0,
     },
     selection: { ...selection, effectMode },
-  };
-}
-
-export function selectionFromShare(shared: CalculationShareSnapshot): CalculationSelection {
-  const craftEssence = shared.composition?.craftEssence;
-  return {
-    attackerSource: 'master',
-    effectMode: 'manual',
-    craftEssence: craftEssence ? { ...craftEssence, source: 'master', copyId: null } : null,
   };
 }

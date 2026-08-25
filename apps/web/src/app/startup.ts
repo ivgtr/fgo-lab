@@ -14,7 +14,6 @@ import {
   type ActiveMaster,
 } from '../adapters/repository';
 import { readShareFragment } from '../adapters/share';
-import { selectionFromShare } from '../features/calculator/calculation';
 
 interface StartupOptions {
   baseUrl: string;
@@ -25,8 +24,7 @@ interface StartupOptions {
 
 interface StartupBase {
   calculation: {
-    input: CalculationShareSnapshot['input'] | undefined;
-    selection: ReturnType<typeof selectionFromShare> | undefined;
+    scenario: CalculationShareSnapshot['scenario'] | undefined;
     shared: CalculationShareSnapshot | undefined;
   };
   warning: string;
@@ -105,8 +103,7 @@ export async function bootstrapApplication(
       master: active.snapshot,
       profiles,
       calculation: {
-        input: shared?.input ?? profile.draft?.input,
-        selection: shared ? selectionFromShare(shared) : profile.draft?.selection,
+        scenario: shared?.scenario ?? profile.draft?.scenario,
         shared: shared ?? undefined,
       },
       warning,
@@ -149,8 +146,7 @@ export async function setupApplication(
     master: active.snapshot,
     profiles,
     calculation: {
-      input: shared?.input ?? profile.draft?.input,
-      selection: shared ? selectionFromShare(shared) : profile.draft?.selection,
+      scenario: shared?.scenario ?? profile.draft?.scenario,
       shared: shared ?? undefined,
     },
     warning,
@@ -171,7 +167,7 @@ function emptyResult(warning: string, offline: boolean): StartupResult {
     state: 'setup-required',
     master: undefined,
     profiles: undefined,
-    calculation: { input: undefined, selection: undefined, shared: undefined },
+    calculation: { scenario: undefined, shared: undefined },
     warning,
     offline,
   };

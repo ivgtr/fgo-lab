@@ -18,10 +18,10 @@ import {
   type Clock,
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
-import { finalizeHistory, inputFingerprint } from '@fgo-lab/workspace-domain';
+import { finalizeHistory, scenarioFingerprint } from '@fgo-lab/workspace-domain';
 import type {
+  CalculationScenario,
   DamageKernelInput,
-  CalculationSelection,
   CalculationShareSnapshot,
   CraftEssenceCopy,
   ServantBuild,
@@ -36,7 +36,10 @@ import {
   calculateResolvedDamage,
   completeCalculationSelection,
   createDefaultDamageKernelInput,
+  damageKernelInputFromScenario,
   resolveCalculationInput,
+  scenarioFromDamageKernelInput,
+  selectionFromScenario,
 } from '../features/calculator/calculation';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { DataPage } from '../features/data/DataPage';
@@ -66,8 +69,7 @@ const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
 
 interface CalculationWorkspace {
-  input: DamageKernelInput | undefined;
-  selection: CalculationSelection | undefined;
+  scenario: CalculationScenario | undefined;
   shared: CalculationShareSnapshot | undefined;
 }
 
@@ -141,8 +143,7 @@ export function App() {
     undo: undoLastChange,
   } = useProfileCollection(repository);
   const [calculation, setCalculation] = useState<CalculationWorkspace>({
-    input: undefined,
-    selection: undefined,
+    scenario: undefined,
     shared: undefined,
   });
   const [rankingSupportId, setRankingSupportId] = useState<string | null>(null);
@@ -202,14 +203,17 @@ export function App() {
   );
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
-  const baseInput =
-    calculation.input ?? createDefaultDamageKernelInput(currentMaster, defaultBuild);
+  const defaultInput = createDefaultDamageKernelInput(currentMaster, defaultBuild);
+  const defaultSelection = completeCalculationSelection(undefined, defaultServant, defaultBuild);
+  const currentScenario =
+    calculation.scenario ?? scenarioFromDamageKernelInput(defaultInput, defaultSelection);
+  const baseInput = damageKernelInputFromScenario(currentScenario, currentMaster);
   const selectedAttacker =
     currentMaster.servants.find((candidate) => candidate.id === baseInput.attackerId) ??
     defaultServant;
   const selectedBuild = profile.servantBuilds[selectedAttacker.id];
   const currentSelection = completeCalculationSelection(
-    calculation.selection,
+    selectionFromScenario(currentScenario),
     selectedAttacker,
     profile.servantBuilds[baseInput.attackerId],
   );
@@ -332,13 +336,13 @@ export function App() {
     );
   }
   async function saveCalculationDraft(nextInput: DamageKernelInput, selection = currentSelection) {
-    setCalculation({ input: nextInput, selection, shared: undefined });
+    const scenario = scenarioFromDamageKernelInput(nextInput, selection);
+    setCalculation({ scenario, shared: undefined });
     const nextCalculation = calculateResolvedDamage(nextInput, selection, currentMaster, versions, {
       releaseValidated: ENGINE_RELEASE_VALIDATED,
     });
-    const resolvedInput = nextCalculation.input;
-    const fingerprint = await inputFingerprint(
-      resolvedInput,
+    const fingerprint = await scenarioFingerprint(
+      scenario,
       currentMaster.version,
       ENGINE_VERSION,
       async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
@@ -349,18 +353,18 @@ export function App() {
       draft: {
         profileId: current.profileId,
         calculationSessionId,
-        input: nextInput,
+        scenario,
         result: nextCalculation.result,
-        inputFingerprint: fingerprint,
-        selection,
+        scenarioFingerprint: fingerprint,
         updatedAt: now,
       },
       updatedAt: now,
     }));
   }
   async function finalizeCurrentCalculation(currentInput = input, currentResult = result) {
-    const fingerprint = await inputFingerprint(
-      currentInput,
+    const scenario = scenarioFromDamageKernelInput(currentInput, currentSelection);
+    const fingerprint = await scenarioFingerprint(
+      scenario,
       currentMaster.version,
       ENGINE_VERSION,
       async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
@@ -370,7 +374,7 @@ export function App() {
     await updateActiveProfile((current) =>
       finalizeHistory(current, {
         sessionId: calculationSessionId,
-        input: currentInput,
+        scenario,
         result: currentResult,
         fingerprint,
         now,

@@ -1,4 +1,4 @@
-import type { CalculationResult, DamageKernelInput, LocalProfile } from '@fgo-lab/schema';
+import type { CalculationResult, CalculationScenario, LocalProfile } from '@fgo-lab/schema';
 
 export function canonicalize(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -8,19 +8,21 @@ export function canonicalize(value: unknown): string {
     .map(([key, item]) => `${JSON.stringify(key)}:${canonicalize(item)}`)
     .join(',')}}`;
 }
-export async function inputFingerprint(
-  input: DamageKernelInput,
+export async function scenarioFingerprint(
+  scenario: CalculationScenario,
   masterDataVersion: string,
   engineVersion: string,
   digest: (data: Uint8Array) => Promise<ArrayBuffer>,
 ): Promise<string> {
-  const bytes = new TextEncoder().encode(canonicalize({ input, masterDataVersion, engineVersion }));
+  const bytes = new TextEncoder().encode(
+    canonicalize({ scenario, masterDataVersion, engineVersion }),
+  );
   const hash = new Uint8Array(await digest(bytes));
   return [...hash].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 export interface FinalizeHistoryCommand {
   sessionId: string;
-  input: DamageKernelInput;
+  scenario: CalculationScenario;
   result: CalculationResult;
   fingerprint: string;
   now: string;
@@ -31,16 +33,16 @@ export function finalizeHistory(
   command: FinalizeHistoryCommand,
 ): LocalProfile {
   const previous = profile.history.at(-1);
-  if (previous?.inputFingerprint === command.fingerprint) {
+  if (previous?.scenarioFingerprint === command.fingerprint) {
     const history = [...profile.history.slice(0, -1), { ...previous, lastUsedAt: command.now }];
     return { ...profile, history, updatedAt: command.now };
   }
   const entry = {
     profileId: profile.profileId,
     calculationSessionId: command.sessionId,
-    input: command.input,
+    scenario: command.scenario,
     result: command.result,
-    inputFingerprint: command.fingerprint,
+    scenarioFingerprint: command.fingerprint,
     updatedAt: command.now,
     historyId: command.historyId,
     finalizedAt: command.now,

@@ -5,7 +5,6 @@ import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
   type DamageKernelInput,
-  type CalculationShareSnapshot,
   type SupportTemplate,
   type VersionContext,
 } from '@fgo-lab/schema';
@@ -13,8 +12,10 @@ import {
   calculateResolvedDamage,
   completeCalculationSelection,
   createDefaultDamageKernelInput,
+  damageKernelInputFromScenario,
+  scenarioFromDamageKernelInput,
   selectCalculationAttacker,
-  selectionFromShare,
+  selectionFromScenario,
   setCalculationEffectMode,
 } from './calculation';
 
@@ -41,32 +42,34 @@ describe('calculation application logic', () => {
     expect(calculation.result.precision).toBe('exact');
   });
 
-  it('normalizes shared composition to the only supported local selection shape', () => {
+  it('stores selected conditions without master-derived damage values', () => {
     const input = createDefaultDamageKernelInput(master, undefined);
-    const result = calculateResolvedDamage(
-      input,
-      { attackerSource: 'master', effectMode: 'resolved', craftEssence: null },
-      master,
-      versions,
-      { releaseValidated: true },
-    ).result;
-    const shared = {
-      kind: 'fgo-lab-calculation-share',
-      schemaVersion: SCHEMA_VERSION,
-      sharedAt: '2026-08-24T00:00:00.000Z',
-      input,
-      result,
-      composition: {
-        craftEssence: {
-          craftEssenceId: 'fixture-ce',
-          level: 1,
-          limitBreak: 0,
-        },
-      },
-    } satisfies CalculationShareSnapshot;
-    expect(selectionFromShare(shared)).toEqual({
+    const scenario = scenarioFromDamageKernelInput(input, {
       attackerSource: 'master',
-      effectMode: 'manual',
+      effectMode: 'resolved',
+      attackerSkills: [],
+      effectOverrides: {},
+      support: null,
+      craftEssence: {
+        source: 'registered',
+        copyId: crypto.randomUUID(),
+        craftEssenceId: 'fixture-ce',
+        level: 1,
+        limitBreak: 0,
+      },
+    });
+    expect(scenario).toMatchObject({
+      mode: 'resolved',
+      craftEssence: {
+        craftEssenceId: 'fixture-ce',
+        level: 1,
+        limitBreak: 0,
+      },
+    });
+    expect(scenario).not.toHaveProperty('npMultipliers');
+    expect(selectionFromScenario(scenario)).toMatchObject({
+      attackerSource: 'master',
+      effectMode: 'resolved',
       craftEssence: {
         source: 'master',
         craftEssenceId: 'fixture-ce',
@@ -75,6 +78,9 @@ describe('calculation application logic', () => {
         limitBreak: 0,
       },
     });
+    expect(damageKernelInputFromScenario(scenario, master).npMultipliers).toEqual(
+      input.npMultipliers,
+    );
   });
 
   it('uses manual values as the final calculation input without effect resolution', () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  calculationShareCompositionSchema,
   calculationShareSnapshotSchema,
   calculationSelectionSchema,
   calculationResultSchema,
+  calculationScenarioSchema,
   damageKernelInputSchema,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
@@ -11,6 +11,34 @@ import {
 } from './index';
 
 describe('portable schema boundaries', () => {
+  it('keeps resolved scenarios free of master-derived numeric inputs', () => {
+    const scenario = calculationScenarioSchema.parse({
+      mode: 'resolved',
+      attacker: { servantId: '1', source: 'master', level: 90, npLevel: 1, fouAtk: 1000 },
+      overcharge: 1,
+      target: {
+        classId: 'lancer',
+        attribute: 'earth',
+        traits: [],
+        stateTraits: [],
+        rarity: 5,
+        hpPermille: 1000,
+      },
+      fieldTraits: [],
+      battleState: { battlePointPhase: null },
+      assumptions: { classAffinity: 2, attributeAffinity: 1 },
+      craftEssence: null,
+      attackerSkills: [],
+      support: null,
+      effectDecisions: {},
+      explicitOverrides: {},
+    });
+    expect(scenario.mode).toBe('resolved');
+    expect(scenario).not.toHaveProperty('npMultipliers');
+    expect(() =>
+      calculationScenarioSchema.parse({ ...scenario, npMultipliers: [1, 1, 1, 1, 1] }),
+    ).toThrow();
+  });
   it('does not allow unsupported results to carry numeric rows', () => {
     const unsupported = {
       status: 'unsupported',
@@ -131,20 +159,5 @@ describe('portable schema boundaries', () => {
     expect(() =>
       parseStoredProfileCollection({ schemaVersion: SCHEMA_VERSION + 1, profiles: [] }),
     ).toThrow();
-  });
-
-  it('keeps portable CE state while stripping local copy identity', () => {
-    const parsed = calculationShareCompositionSchema.parse({
-      craftEssence: {
-        source: 'registered',
-        craftEssenceId: 'ce-1',
-        copyId: crypto.randomUUID(),
-        level: 80,
-        limitBreak: 4,
-      },
-    });
-    expect(parsed).toEqual({
-      craftEssence: { craftEssenceId: 'ce-1', level: 80, limitBreak: 4 },
-    });
   });
 });
