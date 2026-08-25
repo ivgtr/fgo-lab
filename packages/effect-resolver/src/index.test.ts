@@ -433,7 +433,7 @@ describe('resolveSupportSourcesForTest', () => {
     expect(result.input.cardBuff).toBe(0);
     expect(result.input.npDamageBuff).toBe(0);
     expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
-      applied: false,
+      state: 'rejected',
       reason: 'calculation_effect_disabled',
     });
   });
@@ -468,7 +468,7 @@ describe('resolveSupportSourcesForTest', () => {
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBeCloseTo(0.5);
     expect(result.input.npDamageBuff).toBeCloseTo(0.3);
-    expect(result.effects.filter((effect) => effect.applied)).toHaveLength(3);
+    expect(result.effects.filter((effect) => effect.state === 'applied')).toHaveLength(3);
     expect(result.effects.find((effect) => effect.effectId === 'np')).toMatchObject({
       damageRelevant: true,
     });
@@ -484,7 +484,7 @@ describe('resolveSupportSourcesForTest', () => {
     ]);
     expect(result.input.cardBuff).toBe(0);
     expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
-      applied: false,
+      state: 'rejected',
       reason: 'card_type_mismatch',
     });
   });
@@ -551,7 +551,7 @@ describe('resolveSupportSourcesForTest', () => {
     expect(result.precision).toBe('exact');
     expect(result.npDamageBuffRate).toBe(1);
     expect(result.effects[0]).toMatchObject({
-      applied: true,
+      state: 'applied',
       reason: 'np_damage_buff_rate',
     });
     expect(result.warnings).toEqual([]);
@@ -580,7 +580,7 @@ describe('resolveSupportSourcesForTest', () => {
     const result = resolveSupportSourcesForTest(input, compositionFor(boosted), [boosted]);
     expect(result.precision).toBe('unsupported');
     expect(result.effects[0]).toMatchObject({
-      applied: false,
+      state: 'unsupported',
       reason: 'damage_effect_not_supported',
     });
   });
@@ -622,7 +622,9 @@ describe('resolveSupportSourcesForTest', () => {
     expect(
       result.effects.every(
         (effect) =>
-          effect.kind === null && !effect.applied && effect.reason === 'not_np_damage_relevant',
+          effect.kind === null &&
+          effect.state !== 'applied' &&
+          effect.reason === 'not_np_damage_relevant',
       ),
     ).toBe(true);
   });
@@ -659,7 +661,7 @@ describe('resolveAttackerSourcesForTest', () => {
       },
     );
     expect(result.input).toEqual(input);
-    expect(result.effects.every((effect) => !effect.applied)).toBe(true);
+    expect(result.effects.every((effect) => effect.state !== 'applied')).toBe(true);
   });
 
   it('uses effect overrides as the only calculator-level switch', () => {
@@ -678,9 +680,9 @@ describe('resolveAttackerSourcesForTest', () => {
     expect(result.input.attackBuff).toBeCloseTo(0.3);
     expect(result.input.cardBuff).toBe(0);
     expect(result.input.npDamageBuff).toBe(0);
-    expect(result.effects.find((effect) => effect.effectId === 'attack')?.applied).toBe(true);
+    expect(result.effects.find((effect) => effect.effectId === 'attack')?.state).toBe('applied');
     expect(result.effects.find((effect) => effect.effectId === 'np')).toMatchObject({
-      applied: false,
+      state: 'rejected',
       reason: 'calculation_effect_disabled',
     });
   });
@@ -700,7 +702,7 @@ describe('resolveAttackerSourcesForTest', () => {
 
     expect(result.input.cardBuff).toBe(0);
     expect(result.effects.find((effect) => effect.effectId === 'buster')).toMatchObject({
-      applied: false,
+      state: 'rejected',
       reason: 'card_type_mismatch',
     });
   });
@@ -734,11 +736,11 @@ describe('resolveAttackerSourcesForTest', () => {
     );
     expect(resolved.effects.find((effect) => effect.effectId === 'zero')).toMatchObject({
       value: 0,
-      applied: true,
+      state: 'applied',
     });
     expect(resolved.effects.find((effect) => effect.effectId === 'missing')).toMatchObject({
       value: null,
-      applied: false,
+      state: 'unsupported',
       reason: 'level_value_missing',
     });
     expect(resolved.precision).toBe('unsupported');
@@ -775,7 +777,7 @@ describe('resolveAttackerSourcesForTest', () => {
     ]);
     expect(mismatch.input.attackBuff).toBe(0.1);
     expect(mismatch.effects[0]).toMatchObject({
-      applied: false,
+      state: 'rejected',
       reason: 'attacker_trait_mismatch',
     });
   });
@@ -891,7 +893,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     };
     const resolved = resolvePassiveSourcesForTest(input, attacker);
     expect(resolved.input.flatDamage).toBe(175);
-    expect(resolved.effects[0]).toMatchObject({ kind: 'flatDamage', value: 175, applied: true });
+    expect(resolved.effects[0]).toMatchObject({ kind: 'flatDamage', value: 175, state: 'applied' });
   });
 
   it('requires explicit field state for field-limited buffs', () => {
@@ -919,7 +921,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     const selection = [{ skillId: 'skill', skillLevel: 10 }];
     const missed = resolveAttackerSourcesForTest(input, selection, [attacker]);
     expect(missed.input.attackBuff).toBe(0.1);
-    expect(missed.effects[0]).toMatchObject({ applied: false, reason: 'field_trait_mismatch' });
+    expect(missed.effects[0]).toMatchObject({ state: 'rejected', reason: 'field_trait_mismatch' });
     expect(
       resolveAttackerSourcesForTest({ ...input, fieldTraits: ['fieldDarkness'] }, selection, [
         attacker,
@@ -1030,7 +1032,7 @@ describe('automatic equipment, passive, and NP effects', () => {
     });
     expect(explicitlyEnabled.input.powerMod).toBe(0);
     expect(explicitlyEnabled.effects[0]).toMatchObject({
-      applied: false,
+      state: 'rejected',
       reason: 'target_trait_mismatch',
     });
   });

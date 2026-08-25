@@ -37,8 +37,7 @@ export interface ResolvedEffect {
   damageTraitCondition: DamageTraitCondition | null;
   requiredFieldTraits: readonly string[];
   damageRelevant: boolean;
-  calculationSupported: boolean;
-  applied: boolean;
+  state: 'applied' | 'rejected' | 'unsupported';
   reason: string;
 }
 
@@ -219,7 +218,6 @@ export function resolveEffectSources(
       requiredFieldTraits: effect.requiredFieldTraits ?? [],
       damageRelevant:
         kind !== null || Boolean(npDamageBuffRateEffect) || isPotentiallyDamageRelevant(effect),
-      calculationSupported: kind !== null || Boolean(npDamageBuffRateEffect),
     };
     if (rawValue === undefined && effectIdentity.damageRelevant) {
       precision = 'unsupported';
@@ -229,7 +227,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value: null,
-        applied: false,
+        state: 'unsupported',
         reason: 'level_value_missing',
       });
       continue;
@@ -238,7 +236,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value: null,
-        applied: false,
+        state: 'rejected',
         reason: 'not_np_damage_relevant',
       });
       continue;
@@ -251,7 +249,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: false,
+        state: 'rejected',
         reason: 'attacker_trait_mismatch',
       });
       continue;
@@ -260,7 +258,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: false,
+        state: 'rejected',
         reason: 'card_type_mismatch',
       });
       continue;
@@ -269,7 +267,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: false,
+        state: 'rejected',
         reason: 'calculation_effect_disabled',
       });
       continue;
@@ -278,7 +276,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: false,
+        state: 'rejected',
         reason: 'target_trait_mismatch',
       });
       continue;
@@ -290,7 +288,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: false,
+        state: 'rejected',
         reason: 'field_trait_mismatch',
       });
       continue;
@@ -300,7 +298,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: true,
+        state: 'applied',
         reason: 'np_damage_buff_rate',
       });
       continue;
@@ -309,7 +307,7 @@ export function resolveEffectSources(
       effects.push({
         ...effectIdentity,
         value,
-        applied: true,
+        state: 'applied',
         reason: item.appliedReason,
       });
       continue;
@@ -325,14 +323,14 @@ export function resolveEffectSources(
       ...effectIdentity,
       value,
       kind: null,
-      applied: false,
+      state: damageRelevant ? 'unsupported' : 'rejected',
       reason: damageRelevant ? 'damage_effect_not_supported' : 'not_np_damage_relevant',
     });
   }
 
   const aggregatedInput = effects.reduce(
     (aggregated, effect) => {
-      if (!effect.applied || !effect.kind || effect.reason === 'np_damage_buff_rate')
+      if (effect.state !== 'applied' || !effect.kind || effect.reason === 'np_damage_buff_rate')
         return aggregated;
       if (effect.kind === 'flatDamage') aggregated.flatDamage += effect.value ?? 0;
       else aggregated[effect.kind] += effect.value ?? 0;

@@ -110,7 +110,7 @@ export function Calculator({
   });
   const enabledAttackerSkillCount = new Set(
     resolvedEffects
-      .filter((effect) => effect.origin === 'attacker' && effect.applied)
+      .filter((effect) => effect.origin === 'attacker' && effect.state === 'applied')
       .map((effect) => effect.skillId),
   ).size;
   const classSituationLabel =

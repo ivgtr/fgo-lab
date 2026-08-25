@@ -83,11 +83,7 @@ export function calculateResolvedDamage(
   const calculation = calculateDamageResolution(resolved.input, versions);
   const effects = resolved.effects.map((effect) => ({
     effectKey: effect.effectKey,
-    state: effect.calculationSupported
-      ? effect.applied
-        ? ('applied' as const)
-        : ('rejected' as const)
-      : ('unsupported' as const),
+    state: effect.state,
     reasonCode: effect.reason,
   }));
   const resolutionIssues = resolved.warnings.map((warning) => ({ code: warning, detail: warning }));

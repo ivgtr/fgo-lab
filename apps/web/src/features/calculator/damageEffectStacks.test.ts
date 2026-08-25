@@ -19,8 +19,7 @@ function effect(patch: Partial<ResolvedEffect>): ResolvedEffect {
     damageTraitCondition: null,
     requiredFieldTraits: [],
     damageRelevant: true,
-    calculationSupported: true,
-    applied: true,
+    state: 'applied',
     reason: 'unconditional_attacker_buff',
     ...patch,
   };
@@ -54,13 +53,13 @@ describe('damage effect stacks', () => {
   it('keeps inactive and unsupported damage effects visible with their reason', () => {
     const stacks = collectDamageEffectStacks({
       effects: [
-        effect({ applied: false, reason: 'card_type_mismatch' }),
+        effect({ state: 'rejected', reason: 'card_type_mismatch' }),
         effect({
           effectId: 'unknown',
           label: '未知の威力アップ',
           kind: null,
           value: null,
-          applied: false,
+          state: 'rejected',
           reason: 'damage_effect_not_supported',
         }),
       ],

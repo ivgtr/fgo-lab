@@ -18,9 +18,9 @@ function effectValueLabel(effect: ResolvedEffect) {
 }
 
 function effectStateLabel(effect: ResolvedEffect) {
-  if (!effect.calculationSupported) return '未対応';
+  if (effect.state === 'unsupported') return '未対応';
   const value = effectValueLabel(effect);
-  return effect.applied ? `${value}・計算中` : `${value}・計算外`;
+  return effect.state === 'applied' ? `${value}・計算中` : `${value}・計算外`;
 }
 
 export function visibleAppliedEffects(effects: readonly ResolvedEffect[]) {
@@ -59,7 +59,7 @@ export function AppliedEffects({
           {visibleEffects.map((effect) => (
             <ModifierChip
               key={effect.effectKey}
-              active={effect.applied}
+              active={effect.state === 'applied'}
               label={effect.label}
               detail={effectStateLabel(effect)}
               sources={[
@@ -69,7 +69,7 @@ export function AppliedEffects({
                   imageKey: effectSourceImage(effect, servants, craftEssence),
                 },
               ]}
-              {...(effect.calculationSupported
+              {...(effect.state !== 'unsupported'
                 ? { onToggle: (active: boolean) => onToggle(effect.effectKey, active) }
                 : {})}
             />

@@ -87,7 +87,7 @@ export function collectDamageEffectStacks({
         effectLabel: effectLabel(effect),
         imageKey: effectSourceImage(effect, servants, craftEssence),
         value: effect.value,
-        applied: effect.applied,
+        applied: effect.state === 'applied',
         reason: effect.reason,
         kind,
       });
