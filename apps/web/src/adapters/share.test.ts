@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -12,6 +13,7 @@ import {
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  applyCanonicalInputCommand,
   applyEffectConditionDecision,
   applyEffectProjectionDecision,
   calculateScenario,
@@ -46,7 +48,8 @@ const versions = {
 describe('portable input limits', () => {
   it('rejects oversized backups before schema use', () =>
     expect(() => importBackup('x'.repeat(101), 100)).toThrow('backup_too_large'));
-  it('keeps a conservative URL limit', () => expect(MAX_SHARE_FRAGMENT_LENGTH).toBe(8192));
+  it('keeps a bounded URL limit large enough for traced proc scenarios', () =>
+    expect(MAX_SHARE_FRAGMENT_LENGTH).toBe(16_384));
   it('keeps result image layout width independent from the viewport', () =>
     expect(RESULT_CARD_EXPORT_WIDTH).toBe(560));
   it('rejects oversized shared fragments before decoding', () =>
@@ -94,6 +97,47 @@ describe('portable input limits', () => {
         .filter((input) => input.kind === 'matchingActorCount')
         .map((input) => input.defaultValue),
     ).toEqual([1, 1]);
+  });
+
+  it('round-trips an explicit chained proc result without changing its damage', () => {
+    const servant = productionMaster.servants.find((candidate) => candidate.id === '101300')!;
+    const base = createDefaultResolvedScenario(productionMaster, undefined, servant);
+    const initial = calculateScenario(base, productionMaster, {
+      ...versions,
+      masterDataVersion: productionMaster.version,
+    });
+    const input = initial.effectInputs.find((candidate) => candidate.kind === 'procSuccessCount')!;
+    const scenario = applyCanonicalInputCommand(base, {
+      kind: 'setCanonicalIntegerInput',
+      key: input.key,
+      value: 2,
+    });
+    const calculation = calculateScenario(scenario, productionMaster, {
+      ...versions,
+      masterDataVersion: productionMaster.version,
+    });
+    const snapshot: CalculationShareSnapshot = {
+      kind: 'fgo-lab-calculation-share',
+      schemaVersion: SCHEMA_VERSION,
+      sharedAt: '2026-08-27T00:00:00.000Z',
+      scenario,
+      result: calculation.result,
+    };
+
+    const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
+    expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
+    expect(restored.scenario.mode).toBe('resolved');
+    if (restored.scenario.mode !== 'resolved') throw new Error('resolved share required');
+    expect(restored.scenario.canonicalInputValues[input.key]).toEqual({
+      kind: 'integer',
+      value: 2,
+    });
+    const recalculated = calculateScenario(restored.scenario, productionMaster, {
+      ...versions,
+      masterDataVersion: productionMaster.version,
+    });
+    expect(recalculated.input).toEqual(calculation.input);
+    expect(recalculated.result).toEqual(calculation.result);
   });
 
   it('rejects a shared result that does not match its scenario', () => {

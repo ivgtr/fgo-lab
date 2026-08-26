@@ -3,7 +3,7 @@ import { parseCalculationShareSnapshot, parseUserDataBackup } from '@fgo-lab/sch
 import { calculateScenario } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import { canonicalize } from '@fgo-lab/workspace-domain';
-export const MAX_SHARE_FRAGMENT_LENGTH = 8192;
+export const MAX_SHARE_FRAGMENT_LENGTH = 16_384;
 export const RESULT_CARD_EXPORT_WIDTH = 560;
 function encode(value: unknown): string {
   const bytes = new TextEncoder().encode(JSON.stringify(value));
