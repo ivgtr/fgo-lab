@@ -300,6 +300,16 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 - 移行前後の既定420 scenarioとuser projection選択1,534件、合計1,954件でscenario input、final input、projection、operation trace、damage rowが完全一致した。digestは双方`825dcf95b265e585cce9343ed6d4b7a180f531794ca3f0e173516220c5d0bc3a`である。
 - 既定unsupported 12騎、選択時unsupported 14騎25 occurrence、user 1,534、automatic visible 443、hidden 687、inert user 0を維持した。E4には着手していない。
 
+### E3.6：canonical IR fail-open閉鎖
+
+状態: 実装中（2026-08-26）
+
+- 限界突破skillなしと、限界突破skillありだが対応effect不一致のケースを分離する。前者だけを通常値同一として扱い、後者はstable occurrence identityとcanonical semantic identityの不一致でartifact生成を停止する。
+- effect配列やoperation配列のindexをsemantic対応付けに使わない。effect順序変更はoccurrence identityで安全に照合し、欠落、余剰、kind／target／modifier／condition変更は拒否する。
+- executorは一effect内の全canonical operationを配列順にcompileする。部分的な値欠落、unsupported semantics、target mismatchはeffect単位でall-or-nothingにする。
+- 1,954ケースの固定digestをproduction testで再計算し、scenario input、final input、projection、trace、damage rowの変更を通常の品質ゲートで検出する。
+- 現行productionは全effectが単一operationのため、この修正でdamage値、unsupported、projection inventoryを変更しないことをratchetで確認する。変化が生じた場合はE3.6を完了扱いにしない。
+
 ### E4：ランキング統合と全master収束
 
 状態: 未着手

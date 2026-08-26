@@ -47,3 +47,11 @@ recipientの期待方向はmodifier semanticsに含める。たとえば防御�
 production 13,314 effect occurrenceを同数のtyped operationへ変換した。`Value`保有10,432 effectはmodifier 3,733、modifier rate 1、context trait ID 73、その他non-damage 6,625へ用途分類し、modifier用途以外の値をmodifier seriesへ入れていない。canonical traitへ解決できないrecipient trait参照25件は、無条件の`nonDamage`へ潰さず`unresolved`かつ`damageRelevant: false`として監査可能に保持する。
 
 移行前後の既定420 scenarioとuser projection選択1,534ケースを、version/evidence metadataを除いて比較した。scenario input、final damage input、projection、operation trace、damage rowは1,954件すべて一致した。master schema 21、artifact v36、engine 12.13.0へ更新し、旧schema artifactは拒否する。
+
+# Limit break and multi-operation invariants
+
+- 限界突破skillを持たない礼装は、通常operationの値を全限界突破段階で使う明示的な同値ケースとする。
+- 限界突破skillを持つ礼装は、通常／限界突破effectをstable occurrence identityで対応付け、condition、target policy、operation semanticsを比較する。欠落、余剰、kind変更、semantic変更はartifact生成エラーとし、通常値へfallbackしない。
+- valued operationの限界突破値は、対応するcanonical operationのsemantic identityで照合して取り込む。配列indexだけでは対応付けない。
+- 一つのeffectが複数のdamage／card／ignore／context operationを持つ場合、executorはcanonical配列順にすべてcompileする。未解決operationまたは値欠落が一つでもあればeffect全体をcompileせずfail-closedとする。
+- 移行前後比較は一度限りの作業メモにせず、production 420既定scenarioと1,534 user projection選択を再計算するdigest ratchetとしてrepositoryに保持する。

@@ -210,3 +210,9 @@ production 13,314 effect occurrenceを13,314 canonical operationへ正規化し�
 production inventoryは既定unsupported 12騎、選択時unsupported 14騎25 occurrence、user projection 1,534、automatic visible 443、hidden 687、inert user 0を維持した。constraint conflict中のapplied operationとhidden mutationの未選択commitは0、到達可能hidden mutationは15である。
 
 production buildは178 modules、main 453.62 kB（gzip 130.29 kB）、ranking worker 95.53 kBとなった。構造監査前baseline比でmainは同等、workerはtyped master schemaの追加により1.14 kB増加した。計算benchmarkは418.88 ops/s、mean 2.3873 msであり、環境揺らぎを考慮しても意味論上の退行は確認していない。
+
+# 10. Follow-up fail-closed contract
+
+レビューで、限界突破礼装のcanonical値が通常値へfallbackする経路と、複数の非context operationの先頭だけをcompileする経路を確認した。現行productionでは前者の不一致と複数operation effectは存在せず実測差分はないが、将来artifactで誤値を正常計算として通し得るためE3.6で閉鎖する。
+
+限界突破skillが存在する場合、通常／限界突破effectはoccurrence identityと値以外のcanonical semanticsで完全照合する。executorは一effectの全operationをcanonical順にcompileし、一部だけ成功させない。1,954ケースparityは固定digestを再計算するtestへ移し、移行結果を再現可能にする。
