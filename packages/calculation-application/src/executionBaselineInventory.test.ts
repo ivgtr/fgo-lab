@@ -17,6 +17,53 @@ function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): Mast
   ];
 }
 
+const nonDamageBuffs = new Set([
+  'changeCommandCardType',
+  'downTolerance',
+  'upCriticaldamage',
+  'upExtraattack',
+  'upTolerance',
+  'upToleranceSubstate',
+]);
+const directModifierBuffs = new Set([
+  'addDamage',
+  'downAtk',
+  'downDefence',
+  'downDefenceNpdamage',
+  'downNpdamage',
+  'pierceDefence',
+  'pierceSubdamage',
+  'upAtk',
+  'upDamage',
+  'upDamageIndividuality',
+  'upDamageIndividualityActiveonly',
+  'upDefence',
+  'upDefenceNpdamage',
+  'upNpdamage',
+]);
+const cardModifierBuffs = new Set([
+  'downCommandall',
+  'downDefencecommandall',
+  'upCommandall',
+  'upCommandatk',
+  'upDefencecommandall',
+]);
+
+function rawValuePurpose(effect: MasterEffect) {
+  const buffs = effect.buffTypes ?? [];
+  if (buffs.some((buff) => buff === 'fieldIndividuality' || buff === 'addIndividuality'))
+    return 'contextTraitId';
+  if (buffs.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp'))
+    return 'modifierRate';
+  if (
+    !buffs.some((buff) => nonDamageBuffs.has(buff)) &&
+    (buffs.some((buff) => directModifierBuffs.has(buff)) ||
+      (effect.cardTypes.length > 0 && buffs.some((buff) => cardModifierBuffs.has(buff))))
+  )
+    return 'modifier';
+  return 'nonDamage';
+}
+
 describe('E0 production master execution inventory', () => {
   it('locks every normalized function family and context dependency', async () => {
     const master = masterSnapshotSchema.parse(
@@ -86,6 +133,22 @@ describe('E0 production master execution inventory', () => {
         ),
       ),
     ).toMatchSnapshot('parameter-keys');
+
+    const valueEffects = effects.filter((effect) =>
+      effect.parameterSemantics.value.includes('Value'),
+    );
+    expect(valueEffects).toHaveLength(10_432);
+    expect(
+      Object.fromEntries(
+        Object.entries(
+          valueEffects.reduce<Record<string, number>>((counts, effect) => {
+            const purpose = rawValuePurpose(effect);
+            counts[purpose] = (counts[purpose] ?? 0) + 1;
+            return counts;
+          }, {}),
+        ).sort(),
+      ),
+    ).toEqual({ contextTraitId: 73, modifier: 3_733, modifierRate: 1, nonDamage: 6_625 });
   });
 
   it('locks mandatory real-master scenarios without production branching', async () => {

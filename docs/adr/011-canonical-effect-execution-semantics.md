@@ -1,0 +1,43 @@
+---
+title: "ADR-011 Canonical effect execution semantics"
+status: "Accepted"
+date: "2026-08-26"
+---
+
+# Context
+
+MasterEffectはraw Atlas Functionを正規化しているが、runtime executorが`parameterSets.Value`、buff type、target文字列を再解釈していた。`Value`はdamage modifierだけでなくfield trait ID、recipient trait ID、NP等の非damage値にも使われるため、汎用value seriesでは意味を保存できない。
+
+production masterには13,314 effect occurrenceがあり、うち10,432件が`Value`を持つ。現行実行意味に基づく排他的な用途はmodifier 3,733件、modifier-rate 1件、context trait ID 73件、その他の非damage値 6,625件である。
+
+# Decision
+
+1. data-pipelineをAtlas固有語彙を解釈する唯一のmodule境界とする。
+2. MasterEffectは順序付きのtyped execution operationを持つ。effectがcontext mutationとmodifierを併せ持つ場合もoperationを分離する。
+3. modifier operationだけがlevel／OC／limit break別modifier valueとoptional value expressionを持つ。
+4. context mutationはcanonical trait名とscope policyを持ち、raw trait IDやmodifier valueを保持しない。
+5. targetはcanonical policyへ正規化する。executorはpolicyとsource originからattacker／target／not-applicableを解決し、raw target文字列を解釈しない。
+6. damage modifier、modifier rate change、ignore defense、ignore damage cut、card mutation、context mutation、non-damage、unresolvedを型で判別する。
+7. raw parameter、buff、target、Functionは監査evidenceへ隔離する。canonical operationへのfallbackに使用しない。
+8. unsupported、projection、operation trace、damage input、damage値は移行前後で完全一致させる。意味変更が必要と判明した場合は移行を停止する。
+9. master schema、artifact、engine versionを更新し、旧artifactの互換読込経路は設けない。scenario、共有、保存形式は変更しない。
+
+# Canonical target policy
+
+target policyはAtlas名ではなく、次の適用意図を表す。
+
+- source self: attacker自身のsourceならattacker、support／mystic sourceなら計算対象外
+- party member: source originによらず計算対象attackerへ適用
+- party other: support sourceなら計算対象attacker、それ以外は計算対象外
+- enemy: 計算対象targetへ適用
+- attacker NP card: attacker／passive／CE／NP sourceによるNP card mutationだけを対象
+- unresolved: 正確なrecipientを決定できず、damage関連ならtyped unsupported
+
+recipientの期待方向はmodifier semanticsに含める。たとえば防御低下はenemy policyからtargetへ到達する場合だけattack modifierとなり、防御上昇をattacker向けattack modifierへ誤変換しない。
+
+# Consequences
+
+- executorからraw routing tableと`parameter()`を削除できる。
+- raw `Value`を一律にmodifierとして扱えないことをschemaで表現できる。
+- 新しいraw buff／target／parameter familyはnormalization時またはproduction ratchetで検出され、runtimeでsilent fallbackしない。
+- MasterEffect schemaは破壊的変更となるが、scenarioとfrontendの入出力契約は維持される。

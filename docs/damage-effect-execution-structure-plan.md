@@ -1,6 +1,6 @@
 ---
 title: "Damage effect execution 構造監査・責務収束計画"
-status: "Implementation planned"
+status: "Canonical execution IR migration in progress"
 created_at: "2026-08-26"
 baseline_head: "8730c91"
 ---
@@ -9,7 +9,23 @@ baseline_head: "8730c91"
 
 E3.4後の計算意味論を変えず、damage effect executionの所有責務、依存方向、テスト目的を明確にする。ファイル行数やpackage数は評価指標にせず、master正規化からdamage inputまでの各判断が一箇所だけに存在することを完了条件とする。
 
-このフェーズでは画面構成、入力項目、操作順、共有・保存形式、damage値、unsupported判定を意図的に変更しない。新package、canonical IR、scenario schemaも追加・変更しない。
+このフェーズでは画面構成、入力項目、操作順、共有・保存形式、damage値、unsupported判定を意図的に変更しない。新packageとscenario schemaは追加・変更しない。構造分割後の監査でexecutorに残存していたAtlas固有語彙を除去するため、MasterEffectのcanonical execution IRは破壊的に更新する。
+
+# 1.1 Canonical execution IR移行
+
+構造分割後もbattle-executionが`parameterSets.Value`、raw buff type、raw target文字列を解釈していた。この状態では、同じ`Value`がmodifier、field trait ID、recipient trait ID、非damage値のどれであるかをruntimeがAtlas語彙から再判定するため、正規化責務が二重化する。
+
+data-pipelineをAtlas固有語彙の唯一の解釈箇所とし、MasterEffectは次の用途別operation列を保持する。
+
+- damage modifier: modifier kind、sign、target policy、card scope、level／OC／limit break別value、optional value expression
+- modifier rate change
+- ignore defense／damage cut
+- card type mutation
+- context mutation: field／recipient traitをtyped traitとして保持し、modifier valueとは分離
+- non-damage
+- unresolved semantics: runtimeが推測せずtyped unsupportedへ落とす候補
+
+raw parameter、buff、target、Function情報はproduction inventoryと出典確認のためのevidenceへ隔離する。canonical operationとのfallbackや二重実装は作らない。effectはcontext mutationとdamage modifier等を同時に持ち得るため、単一分類ではなく順序付きoperation列とする。
 
 # 2. 変更前baseline
 
@@ -39,6 +55,12 @@ E3.4後の計算意味論を変えず、damage effect executionの所有責務�
 今回の静的監査と変更前production ratchetでは、新しい誤計算またはfail-openを確認していない。これは未発見を保証するものではないため、既存のconstraint、unsupported、context mutation ratchetを変更後も全件実行する。
 
 ## P1
+
+### P1-0 Atlas execution semanticsの二重所有
+
+`effectNormalization.ts`がparameter意味を一部正規化する一方、`effectRouting.ts`と`sourceCollection.ts`がraw buff、target、`Value`を再解釈している。特にproductionの`Value`保有effect 10,432件は、現行分類でmodifier 3,733件、modifier-rate 1件、context trait ID 73件、その他の非damage値 6,625件であり、汎用value seriesへ統合できない。
+
+MasterEffectへtyped execution semanticsを追加し、data-pipelineだけがraw occurrenceからcanonical operationを生成する。executorはcanonical target policyをoriginと組み合わせてrecipientを解決するが、Atlas文字列を知らない。
 
 ### P1-1 operation lifecycleの破壊的な組立
 
@@ -92,8 +114,8 @@ data-pipeline
 battle-execution
   contracts + conditionSemantics
     -> condition / constraints
-    -> effectRouting
-    -> sourceCollection
+    -> canonicalTargetPolicy
+    -> sourceCollection (canonical value selection only)
       -> operationCompiler
         -> activationPlan (pure)
           -> orderedExecution
@@ -117,9 +139,9 @@ web
 ## battle-execution
 
 - `contracts.ts`: ConditionExpression、BattleOperation、BattleState、OperationResult、EffectProjection等のdomain contract。
-- `effectRouting.ts`: normalized MasterEffectからdamage関連routeとrecipientを決める唯一の場所。
-- `sourceCollection.ts`: scenarioとmasterから順序付きsource occurrenceを収集する。意味論compileはしない。
-- `operationCompiler.ts`: source occurrenceをConditionExpressionとBattleOperationへcompileする。stateを読まない。
+  - `effectRouting.ts`: canonical target policyをsource originに対して解決する。buff名やtarget文字列は扱わない。
+- `sourceCollection.ts`: scenarioとmasterから順序付きsource occurrenceを収集し、typed operationのlevel／OC／limit break valueを選択する。raw parameterは扱わない。
+- `operationCompiler.ts`: typed execution semanticsをConditionExpressionとBattleOperationへcompileする。stateとAtlas語彙を読まない。
 - `activation.ts`: immutableなoperation列からlinked activationを計画し、decisionから有効性を解決する。
 - `constraints.ts`: fixed factとsatisfiable expressionを検証するcanonical solver。UI projectionを知らない。
 - `state.ts`: initial state、candidate clone、world fact適用、trait count、damage input fold。
@@ -130,7 +152,8 @@ web
 
 - `artifact.ts`: sha256、manifest生成、version identity、published artifact検証。
 - `atlasContract.ts`: 入力raw shapeだけを表現するinternal contract。
-- `effectNormalization.ts`: raw Function/buff/parameter/conditionをcanonical MasterEffect / damage IRへ変換する唯一の場所。
+- `effectNormalization.ts`: raw Function/buff/target/parameter/conditionをcanonical MasterEffect / damage IRへ変換する唯一の場所。modifier、context mutation、non-damage、unresolvedの用途を確定する。
+- `atlasEvidence`: raw occurrenceのparameter、buff、target、Functionを監査用に保持する。runtime execution APIから値を選択しない。
 - `snapshotNormalization.ts`: servant、CE、mystic code、itemを組み立て、schemaで検証する。
 - `index.ts`: CLIと外部利用向けの明示的exportだけを持つ。
 
@@ -151,17 +174,22 @@ web
 
 # 7. 実装順序とfail-closed条件
 
-1. contractとrouting/source/compile/activationを分離し、compileされたoperationとprojectionの全production inventoryを不変にする。
-2. state/projection/foldを分離し、operation trace、final damage input、damage rowsを不変にする。
-3. data pipelineをmechanicalに分割し、normalized master goldenとpublished artifact hashを不変にする。
-4. application effect commandへsupport参照同期を移し、scenario/share round-tripを不変にする。
-5. production auditを目的別に分け、前後inventoryを同じ期待値で検証する。
+1. raw occurrenceと10,432件の`Value`用途別inventoryを固定する。
+2. MasterEffectへtyped execution semanticsとevidence境界を定義する。
+3. data-pipelineでraw Function/buff/target/parameterをcanonical operationへ一度だけ変換する。
+4. executorの`parameterSets`、raw buff、raw target、raw routing tableを削除する。
+5. master schema、artifact、engine versionを更新し、旧artifactを現行schemaで拒否する。
+6. 全production occurrenceについて従来operation、projection、unsupported、damage input、damage値とのparityを検証する。
 
 分割中に未知condition、operation、raw parameterが見つかった場合は既存のtyped unsupportedを維持する。値やunsupported判定の変更が必要なら、このフェーズでは実装せず利用者確認へ戻す。
 
 # 8. 完了条件
 
-- package追加、scenario schema変更、UI入力変更なし。
+- package追加、scenario/share schema変更、UI入力変更なし。
+- battle-execution内の`parameterSets`、`['Value']`、Atlas buff名、Atlas target文字列参照が0件である。
+- 10,432件の`Value`保有effectが用途別typed semanticsへ分類され、modifier以外の値がmodifier seriesへ混入しない。
+- raw occurrenceとcanonical operationの対応件数がproduction ratchetで固定される。
+- 旧master artifactはschema不一致として拒否され、互換fallbackが存在しない。
 - raw Atlas semanticsはdata-pipeline、condition/operation/state semanticsはbattle-execution、scenario commandはcalculation-applicationに一意に所有される。
 - compileとactivation planningが入力配列を変更しない。
 - Webにsupport effect decisionの個別同期ロジックが残らない。
