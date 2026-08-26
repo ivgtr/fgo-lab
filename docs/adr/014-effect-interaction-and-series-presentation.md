@@ -26,10 +26,11 @@ DOM属性の暗黙契約に依存していた。
 operation familyから生成する。サーヴァントID、名称、labelは使用しない。各effect occurrence、値、
 condition、Atlas evidenceは独立したまま保持する。
 
-`HP_LOWER`は`attackerHpPermille <= threshold`へ正規化する。thresholdは0〜1000の任意の整数を許容し、
-範囲外、非整数、複数値、重複、condition方向・target policy・operation semanticsの不一致はartifact生成を
-失敗させる。無条件operationはseries先頭の最大1件に限る。HP条件を満たさないmemberは`notApplied`であり、
-skill全体を`unsupported`にしない。
+`HP_LOWER`は`attackerHpPermille <= threshold`、`HP_HIGHER`は
+`attackerHpPermille >= threshold`へ正規化する。series判定はraw keyではなく、このcanonical比較方向を使う。
+thresholdは0〜1000の任意の整数を許容し、範囲外、非整数、複数値、重複、比較方向の混在、target policy・
+operation semanticsの不一致はartifact生成を失敗させる。無条件operationはseries先頭の最大1件に限る。
+HP条件を満たさないmemberは`notApplied`であり、skill全体を`unsupported`にしない。
 
 raw target teamはtarget typeと同時にcanonical target policyへ正規化する。敵側actorへ適用される
 同型effectを攻撃役自身のmodifierへroutingしない。

@@ -108,7 +108,11 @@ describe('canonical actor count normalization', () => {
 });
 
 describe('HP threshold series normalization', () => {
-  const attackFunction = (funcId: number, hpLower?: unknown): AtlasFunction => ({
+  const attackFunction = (
+    funcId: number,
+    hpThreshold?: unknown,
+    conditionKey: 'HP_LOWER' | 'HP_HIGHER' = 'HP_LOWER',
+  ): AtlasFunction => ({
     funcId,
     funcType: 'addStateShort',
     funcTargetType: 'ptAll',
@@ -117,14 +121,14 @@ describe('HP threshold series normalization', () => {
     buffs: [
       {
         type: 'upAtk',
-        ...(hpLower === undefined ? {} : { script: { HP_LOWER: hpLower } }),
+        ...(hpThreshold === undefined ? {} : { script: { [conditionKey]: hpThreshold } }),
       },
     ],
     svals: valueSets({
       Rate: 1_000,
       Turn: 3,
       Count: -1,
-      Value: hpLower === undefined ? 200 : 100,
+      Value: hpThreshold === undefined ? 200 : 100,
     }),
   });
 
@@ -196,6 +200,47 @@ describe('HP threshold series normalization', () => {
         1,
       ),
     ).toThrow('unsupported_hp_condition_target');
+  });
+
+  it('normalizes standalone and cumulative higher thresholds through the same canonical series', () => {
+    const [single] = normalizeFunctions(
+      [attackFunction(1, 500, 'HP_HIGHER')],
+      new Map(),
+      'skill',
+      1,
+    );
+    expect(single).toMatchObject({
+      interaction: null,
+      quantityConditions: [{ quantity: 'attackerHpPermille', comparison: 'atLeast', value: 500 }],
+    });
+
+    const cumulative = normalizeFunctions(
+      [
+        attackFunction(1),
+        attackFunction(2, 500, 'HP_HIGHER'),
+        attackFunction(3, 1_000, 'HP_HIGHER'),
+      ],
+      new Map(),
+      'skill',
+      1,
+    );
+    expect(cumulative.map((effect) => effect.quantityConditions)).toEqual([
+      [],
+      [{ quantity: 'attackerHpPermille', comparison: 'atLeast', value: 500 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atLeast', value: 1_000 }],
+    ]);
+    expect(cumulative.map((effect) => effect.interaction?.kind)).toEqual([
+      'quantityThresholdSeries',
+      'quantityThresholdSeries',
+      'quantityThresholdSeries',
+    ]);
+    expect(new Set(cumulative.map((effect) => effect.interaction?.key)).size).toBe(1);
+  });
+
+  it('rejects mixed canonical threshold directions within one semantic series', () => {
+    expect(() =>
+      normalizeFunctions([attackFunction(1, 500), attackFunction(2, 750, 'HP_HIGHER')], new Map()),
+    ).toThrow('mixed_hp_threshold_direction');
   });
 
   it('rejects duplicate thresholds within one semantic series', () => {

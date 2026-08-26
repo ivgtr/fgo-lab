@@ -483,6 +483,12 @@ function modifierSeriesIdentity(effect: MasterEffect): string | null {
   });
 }
 
+function hpThresholdConditions(effect: MasterEffect) {
+  return effect.quantityConditions.filter(
+    (condition) => condition.quantity === 'attackerHpPermille',
+  );
+}
+
 function assignHpThresholdSeries(effects: readonly MasterEffect[]): MasterEffect[] {
   const result = [...effects];
   for (let start = 0; start < result.length;) {
@@ -495,30 +501,34 @@ function assignHpThresholdSeries(effects: readonly MasterEffect[]): MasterEffect
     )
       end += 1;
     const members = result.slice(start, end);
-    const conditioned = members.filter((effect) =>
-      effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'),
-    );
+    const conditioned =
+      identity === null ? [] : members.filter((effect) => hpThresholdConditions(effect).length > 0);
     if (identity !== null && members.length > 1 && conditioned.length > 0) {
-      const firstConditionedIndex = members.findIndex((effect) =>
-        effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'),
+      const firstConditionedIndex = members.findIndex(
+        (effect) => hpThresholdConditions(effect).length > 0,
       );
       if (
         firstConditionedIndex > 1 ||
         members
           .slice(firstConditionedIndex)
-          .some((effect) => !effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'))
+          .some((effect) => hpThresholdConditions(effect).length === 0)
       )
         throw new TypeError(
           `ambiguous_hp_threshold_series:${members.map((effect) => effect.occurrenceId).join(',')}`,
         );
-      const thresholds = conditioned.map((effect) => {
-        const hpConditions = effect.quantityConditions.filter(
-          (condition) => condition.quantity === 'attackerHpPermille',
-        );
-        if (hpConditions.length !== 1 || hpConditions[0]!.comparison !== 'atMost')
+      const conditions = conditioned.map((effect) => {
+        const hpConditions = hpThresholdConditions(effect);
+        if (hpConditions.length !== 1)
           throw new TypeError(`invalid_hp_threshold_series:${effect.occurrenceId}`);
-        return hpConditions[0]!.value;
+        return hpConditions[0]!;
       });
+      if (new Set(conditions.map((condition) => condition.comparison)).size !== 1)
+        throw new TypeError(
+          `mixed_hp_threshold_direction:${conditioned
+            .map((effect) => effect.occurrenceId)
+            .join(',')}`,
+        );
+      const thresholds = conditions.map((condition) => condition.value);
       if (new Set(thresholds).size !== thresholds.length)
         throw new TypeError(`duplicate_hp_threshold:${JSON.stringify(thresholds)}`);
       const key = `attackerHpPermille:${result[start]!.occurrenceId}`;

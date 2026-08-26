@@ -73,6 +73,8 @@ HP conditionは0〜1000の整数とcanonical target policyをbuild時に検証�
 正規化した。単独conditionは独立したautomatic effect、同一activationの複数modifierだけを
 `quantityThresholdSeries`とする。operation ID、condition、Atlas evidence、outcomeはoccurrence単位で
 保持し、UI合計へ置換しない。
+production ratchetはcanonical化後の全9件を固定し、`HP_LOWER` 7件を`atMost`、`HP_HIGHER` 2件を
+`atLeast`として検証する。seriesの比較方向が混在するartifactは生成しない。
 
 ## 代表UIとdamage
 
@@ -96,11 +98,11 @@ HP conditionは0〜1000の整数とcanonical target policyをbuild時に検証�
 ## 品質ゲート
 
 - format / lint / typecheck: 成功
-- unit / integration / property / golden: 47 files、254 tests
-- master validation: 6 files、49 tests
+- unit / integration / property / golden: 47 files、256 tests
+- master validation: 6 files、51 tests
 - evidence validation: 2 files、10 tests
 - production build: 181 modules、main 475.59 kB（gzip 136.45 kB）、ranking worker 99.14 kB
-- benchmark: 343.27 ops/s、mean 2.9132 ms
+- benchmark: 385.36 ops/s、mean 2.5950 ms
 - Playwright Chromium / mobile Chromium: 51 passed、21 skipped
 - desktop / 390px / 320px、keyboard、a11y、share/save: 成功
 - `git diff --check`: 成功

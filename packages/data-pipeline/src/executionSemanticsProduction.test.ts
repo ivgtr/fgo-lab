@@ -63,20 +63,51 @@ describe('production canonical execution semantics', () => {
     );
     const effects = allEffects(master);
     const hpEvidence = effects.filter((effect) =>
-      effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'),
+      effect.atlasEvidence.buffConditionKeys.some(
+        (key) => key === 'HP_LOWER' || key === 'HP_HIGHER',
+      ),
     );
     const thresholdSeries = effects.filter(
       (effect) => effect.interaction?.kind === 'quantityThresholdSeries',
     );
 
-    expect(hpEvidence).toHaveLength(7);
+    expect(hpEvidence).toHaveLength(9);
     expect(
       hpEvidence.reduce<Record<string, number>>((counts, effect) => {
         for (const key of effect.atlasEvidence.buffConditionKeys)
           counts[key] = (counts[key] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ HP_LOWER: 7 });
+    ).toEqual({ HP_LOWER: 7, HP_HIGHER: 2 });
+    expect(
+      hpEvidence.flatMap((effect) =>
+        effect.atlasEvidence.buffConditionKeys.flatMap((key) =>
+          key === 'HP_LOWER' || key === 'HP_HIGHER'
+            ? [
+                {
+                  key,
+                  comparisons: effect.quantityConditions
+                    .filter((condition) => condition.quantity === 'attackerHpPermille')
+                    .map((condition) => condition.comparison),
+                  values: effect.quantityConditions
+                    .filter((condition) => condition.quantity === 'attackerHpPermille')
+                    .map((condition) => condition.value),
+                },
+              ]
+            : [],
+        ),
+      ),
+    ).toEqual([
+      { key: 'HP_LOWER', comparisons: ['atMost'], values: [500] },
+      { key: 'HP_LOWER', comparisons: ['atMost'], values: [990] },
+      { key: 'HP_LOWER', comparisons: ['atMost'], values: [750] },
+      { key: 'HP_LOWER', comparisons: ['atMost'], values: [500] },
+      { key: 'HP_LOWER', comparisons: ['atMost'], values: [250] },
+      { key: 'HP_LOWER', comparisons: ['atLeast', 'atMost'], values: [0, 500] },
+      { key: 'HP_HIGHER', comparisons: ['atLeast'], values: [500] },
+      { key: 'HP_HIGHER', comparisons: ['atLeast'], values: [1000] },
+      { key: 'HP_LOWER', comparisons: ['atMost'], values: [500] },
+    ]);
     expect(thresholdSeries).toHaveLength(5);
     expect(new Set(thresholdSeries.map((effect) => effect.interaction?.key)).size).toBe(1);
     expect(
@@ -108,7 +139,7 @@ describe('production canonical execution semantics', () => {
       hpRangeLinear: 1,
       quantityThresholdModifier: 4,
       standaloneConditionalModifier: 1,
-      nonDamage: 1,
+      nonDamage: 3,
     });
   });
 
