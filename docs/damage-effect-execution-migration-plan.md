@@ -293,6 +293,14 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 E4着手前にE3.4として`docs/damage-effect-unsupported-convergence-plan.md`を実施する。順序はstable occurrence identity、typed non-damage/metadata、field/state mutation、既存quantity入力、choice/value expression、残存reason ratchetとする。各semantic familyでnormalizer、executor、application、production、shareのテストを揃え、旧key・raw parameter allowlist・projection上書き経路を同じフェーズ内で削除する。
 
+E3.4進捗（master v26、schema 14、engine 12.5.0）:
+
+- effect occurrence identity、field mutation、class relation責務、raw parameter分類、Battle Point guard、HP value expressionをcanonical IRへ移行した。
+- `ActSet`／`ActSelectIndex`をeffect-local choice constraintへ置換した。異なる候補はall-or-nothingで`choiceConflict`、同じ候補の複数modifierは共存する。
+- action choice 17 effect occurrence・7騎をexact calculationへ移行し、own-effect選択時unsupportedは39騎・63 occurrenceとなった。
+- choiceをworld factへ変換する経路、raw action parameterをexecutorで解釈する経路、候補を暗黙選択するfallbackは存在しない。
+- E3.4は継続中であり、残存familyの根拠・入力可能性を再監査してから完了判定する。E4には着手しない。
+
 作業:
 
 - ranking workerを同じscenario compiler、executor、kernelへ接続する。

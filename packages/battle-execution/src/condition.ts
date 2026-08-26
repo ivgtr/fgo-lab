@@ -75,6 +75,8 @@ export function evaluateCondition(
     }
     case 'card':
       return state.card === condition.card;
+    case 'choice':
+      return null;
     case 'quantity': {
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];

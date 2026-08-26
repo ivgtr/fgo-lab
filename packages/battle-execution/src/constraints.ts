@@ -59,7 +59,8 @@ type Literal =
       max: number;
       sourceKey: string;
     }
-  | { kind: 'card'; card: CardType; sourceKey: string };
+  | { kind: 'card'; card: CardType; sourceKey: string }
+  | { kind: 'choice'; group: string; candidate: string; sourceKey: string };
 
 type Alternatives = readonly (readonly Literal[])[];
 type CompileResult =
@@ -156,6 +157,22 @@ function compileExpression(
         ).map((card) => [{ kind: 'card' as const, card, sourceKey }]),
       };
     }
+    case 'choice':
+      return negated
+        ? { status: 'unsupported', reason: 'unsupportedCondition' }
+        : {
+            status: 'supported',
+            alternatives: [
+              [
+                {
+                  kind: 'choice',
+                  group: expression.group,
+                  candidate: expression.candidate,
+                  sourceKey,
+                },
+              ],
+            ],
+          };
     case 'quantity': {
       const ranges = quantityRanges(
         expression.quantity,
@@ -227,8 +244,23 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
     Partial<Record<'initial' | 'state' | 'combined', Extract<Literal, { kind: 'trait' }>>>
   >();
   const quantities = new Map<string, { min: number; max: number; sourceKeys: readonly string[] }>();
+  const choices = new Map<string, Extract<Literal, { kind: 'choice' }>>();
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
+    if (literal.kind === 'choice') {
+      const prior = choices.get(literal.group);
+      if (prior && prior.candidate !== literal.candidate)
+        conflicts.push({
+          conflict: {
+            kind: 'choiceConflict',
+            group: literal.group,
+            candidates: [prior.candidate, literal.candidate],
+          },
+          sourceKeys: unique([prior.sourceKey, literal.sourceKey]),
+        });
+      choices.set(literal.group, literal);
+      continue;
+    }
     if (literal.kind === 'card') {
       if (card && card.card !== literal.card)
         conflicts.push({
@@ -346,7 +378,9 @@ function literalKey(literal: Literal): string {
     ? `trait:${literal.scope}:${literal.trait}:${String(literal.present)}`
     : literal.kind === 'card'
       ? `card:${literal.card}`
-      : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
+      : literal.kind === 'choice'
+        ? `choice:${literal.group}:${literal.candidate}`
+        : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }
 
 function deduplicate(alternatives: Alternatives): Alternatives {

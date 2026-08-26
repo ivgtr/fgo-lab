@@ -184,6 +184,8 @@ function effectCondition(
   effect: MasterEffect,
   origin: Origin,
   sourceId: string,
+  sourceInstanceId: string,
+  skillId: string,
 ): ConditionExpression {
   const recipient = targetRecipient(origin, effect.target) ?? 'attacker';
   const holder: TraitScope = recipient;
@@ -208,6 +210,15 @@ function effectCondition(
         value: condition.value,
       };
     }),
+    ...(effect.choice
+      ? [
+          {
+            kind: 'choice' as const,
+            group: `${sourceInstanceId}:${skillId}:${effect.choice.family}`,
+            candidate: String(effect.choice.candidate),
+          },
+        ]
+      : []),
   ]);
 }
 
@@ -293,7 +304,13 @@ function sourceIdentity(source: SourceEffect): OperationSource {
 
 function baseOperation(source: SourceEffect, order: number, suffix: string) {
   const key = decisionKey(source);
-  const condition = effectCondition(source.effect, source.origin, source.sourceId);
+  const condition = effectCondition(
+    source.effect,
+    source.origin,
+    source.sourceId,
+    source.sourceInstanceId,
+    source.skillId,
+  );
   const plan = decisionPlan(source, condition);
   return {
     operationId: `${key}:${suffix}`,
@@ -324,7 +341,13 @@ interface CompiledOperations {
 function compileEffect(source: SourceEffect, startOrder: number): CompiledOperations {
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
-  const condition = effectCondition(source.effect, source.origin, source.sourceId);
+  const condition = effectCondition(
+    source.effect,
+    source.origin,
+    source.sourceId,
+    source.sourceInstanceId,
+    source.skillId,
+  );
   const key = decisionKey(source);
   let order = startOrder;
   for (const trait of source.effect.contextChanges.addedFieldTraits)

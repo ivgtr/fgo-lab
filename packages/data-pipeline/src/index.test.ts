@@ -594,6 +594,7 @@ describe('immutable publish pipeline', () => {
                   presentation: [],
                   condition: [],
                   contextMutation: [],
+                  choice: [],
                   valueExpression: [],
                   unresolved: ['ParamAddMaxCount'],
                 },
@@ -648,6 +649,13 @@ describe('immutable publish pipeline', () => {
                   ],
                 },
                 {
+                  funcId: 5,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [{ type: 'upNpdamage' }],
+                  svals: [{ Rate: 1000, Value: 200, ActSelectIndex: 2 }],
+                },
+                {
                   funcId: 4,
                   funcType: 'addStateShort',
                   funcTargetType: 'self',
@@ -685,7 +693,7 @@ describe('immutable publish pipeline', () => {
         },
       ],
     });
-    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[1]).toMatchObject({
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[2]).toMatchObject({
       parameterSemantics: {
         valueExpression: ['RatioHPHigh', 'RatioHPLow', 'RatioHPRangeHigh', 'RatioHPRangeLow'],
         unresolved: [],
@@ -718,6 +726,13 @@ describe('immutable publish pipeline', () => {
           value: 500,
         },
       ],
+    });
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[1]).toMatchObject({
+      choice: { family: 'actSelectIndex', candidate: 2 },
+      parameterSemantics: {
+        choice: ['ActSelectIndex'],
+        unresolved: [],
+      },
     });
   });
 });

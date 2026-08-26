@@ -296,6 +296,8 @@ quantity guardはmaster正規化時に比較式へ変換し、source identityを
 
 quantityがmodifier値を変える場合はtyped value expressionとして実行し、effect-localな成立宣言で具体値を代用しない。projectionは必要quantityとownerを返し、attacker HPは既存入力欄を必要時に再利用する。support source HPなど現行UIにないquantityは、攻撃役の値を流用せず選択時unsupportedにする。
 
+action choiceはeffect-localな候補制約として扱う。同じsource instance・skill・family内の同一候補に属するmodifierは共存し、異なる候補を同時選択した場合は全候補を非適用としてtyped conflictにする。choiceをtrait、field、quantityへ変換せず、scenarioへmaster由来のgroup metadataを保存しない。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

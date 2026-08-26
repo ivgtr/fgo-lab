@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 13,
+    schemaVersion: 14,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -569,10 +569,36 @@ function normalizeModifierValueExpressions(
   };
 }
 
+function normalizeEffectChoice(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
+  const parameters = parameterSets.flatMap((set) => set);
+  const candidate = (key: 'ActSet' | 'ActSelectIndex') => {
+    const values = [
+      ...new Set(
+        parameters.flatMap((parameter) =>
+          typeof parameter[key] === 'number' && Number.isInteger(parameter[key])
+            ? [parameter[key]]
+            : parameter[key] === undefined
+              ? []
+              : [Number.NaN],
+        ),
+      ),
+    ];
+    return values.length === 1 && Number.isInteger(values[0]) ? values[0]! : null;
+  };
+  const actSet = candidate('ActSet');
+  const actSelectIndex = candidate('ActSelectIndex');
+  if (actSet !== null && actSelectIndex === null)
+    return { family: 'actSet' as const, candidate: actSet };
+  if (actSelectIndex !== null && actSet === null)
+    return { family: 'actSelectIndex' as const, candidate: actSelectIndex };
+  return null;
+}
+
 function classifyParameterSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   quantityConditions: readonly NormalizedQuantityCondition[],
   valueExpressionKeys: readonly string[],
+  choice: ReturnType<typeof normalizeEffectChoice>,
 ) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
@@ -583,12 +609,20 @@ function classifyParameterSemantics(
       ? ['CheckBattlePointPhaseRange']
       : [],
   );
+  const choiceKeys = new Set(
+    choice?.family === 'actSet'
+      ? ['ActSet', ...(keys.includes('ActSetWeight') ? ['ActSetWeight'] : [])]
+      : choice?.family === 'actSelectIndex'
+        ? ['ActSelectIndex']
+        : [],
+  );
   const known = new Set([
     ...VALUE_PARAMETER_KEYS,
     ...LIFECYCLE_PARAMETER_KEYS,
     ...PRESENTATION_PARAMETER_KEYS,
     ...conditionKeys,
     ...CONTEXT_MUTATION_PARAMETER_KEYS,
+    ...choiceKeys,
     ...valueExpressionKeys,
   ]);
   return {
@@ -597,6 +631,7 @@ function classifyParameterSemantics(
     presentation: select(PRESENTATION_PARAMETER_KEYS),
     condition: select(conditionKeys),
     contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
+    choice: select(choiceKeys),
     valueExpression: keys.filter((key) => valueExpressionKeys.includes(key)),
     unresolved: keys.filter((key) => !known.has(key)),
   };
@@ -634,6 +669,7 @@ function normalizeFunctions(
     ];
     const quantityConditions = normalizeQuantityConditions(parameterSets);
     const modifierValues = normalizeModifierValueExpressions(parameterSets);
+    const choice = normalizeEffectChoice(parameterSets);
     return [
       {
         id: String(fn.funcId),
@@ -646,8 +682,10 @@ function normalizeFunctions(
           parameterSets,
           quantityConditions,
           modifierValues.recognizedKeys,
+          choice,
         ),
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
+        choice,
         quantityConditions,
         modifierValueExpressionSets: modifierValues.sets,
         conditions: {

@@ -39,9 +39,6 @@ const expectedUnsupportedFamilies = {
 
 const expectedUnresolvedDamageSemantics = {
   parameters: {
-    ActSelectIndex: 17,
-    ActSet: 8,
-    ActSetWeight: 5,
     AddIndividualty: 7,
     AddIndividualtyList: 7,
     AddLinkageTargetIndividualty: 5,
@@ -375,6 +372,72 @@ describe('production master damage quality ratchet', () => {
     );
     expect(unresolvedSupportHp.result.status).toBe('unsupported');
     expect(unresolvedSupportHp.input.attackBuff).toBe(0);
+  });
+
+  it('executes action candidates locally and rejects different candidates together', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '101000')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const baseline = calculateScenario(scenario, master, versions);
+    const buster = baseline.effects.find(
+      (effect) =>
+        effect.skillName === '真紅の勇者伝説・劇場版 EX' && effect.modifier === 'cardBuff',
+    )!;
+    const attack = baseline.effects.find(
+      (effect) =>
+        effect.skillName === '真紅の勇者伝説・劇場版 EX' && effect.modifier === 'attackBuff',
+    )!;
+    const busterOnly = calculateScenario(
+      applyEffectProjectionDecision(scenario, buster, true),
+      master,
+      versions,
+    );
+    const attackOnly = calculateScenario(
+      applyEffectProjectionDecision(scenario, attack, true),
+      master,
+      versions,
+    );
+    const conflict = calculateScenario(
+      applyEffectProjectionDecision(
+        applyEffectProjectionDecision(scenario, buster, true),
+        attack,
+        true,
+      ),
+      master,
+      versions,
+    );
+
+    expect(busterOnly.result.status).toBe('calculated');
+    expect(busterOnly.input.cardBuff).toBeGreaterThan(0);
+    expect(busterOnly.input.attackBuff).toBe(0);
+    expect(attackOnly.result.status).toBe('calculated');
+    expect(attackOnly.input.attackBuff).toBeGreaterThan(0);
+    expect(attackOnly.input.cardBuff).toBe(0);
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.input.cardBuff).toBe(0);
+    expect(conflict.input.attackBuff).toBe(0);
+    expect(
+      conflict.effects
+        .filter(
+          (effect) =>
+            effect.projectionKey === buster.projectionKey ||
+            effect.projectionKey === attack.projectionKey,
+        )
+        .map((effect) => effect.outcome),
+    ).not.toContain('applied');
+    expect(conflict.effectWarnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('choiceConflict')]),
+    );
   });
 
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
@@ -1066,7 +1129,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_554, automaticVisible: 439, hidden: 683 });
+    }).toEqual({ user: 1_554, automaticVisible: 439, hidden: 687 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -1079,6 +1142,7 @@ describe('production master damage quality ratchet', () => {
       'all',
       'always',
       'any',
+      'choice',
       'partialTrait',
       'quantity',
       'trait',
@@ -1090,14 +1154,14 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 46, effects: 80 });
-    expect(exclusivePairCount).toBe(8);
-    expect(conflictPairs).toEqual({ effectEffect: 7, factFact: 1, factEffect: 0 });
+    }).toEqual({ servants: 39, effects: 63 });
+    expect(exclusivePairCount).toBe(20);
+    expect(conflictPairs).toEqual({ effectEffect: 19, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 221, effects: 57, servants: 50 });
+    }).toEqual({ combinations: 245, effects: 63, servants: 52 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');

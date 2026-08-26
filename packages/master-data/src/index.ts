@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(13),
+  schemaVersion: z.literal(14),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -48,6 +48,7 @@ const effectParameterSemanticsSchema = z.object({
   presentation: z.array(z.string().min(1)),
   condition: z.array(z.string().min(1)),
   contextMutation: z.array(z.string().min(1)),
+  choice: z.array(z.string().min(1)),
   valueExpression: z.array(z.string().min(1)),
   unresolved: z.array(z.string().min(1)),
 });
@@ -103,6 +104,12 @@ const masterEffectSchema = z.object({
   limitBreakModifierValueExpressionSets: modifierValueExpressionSetsSchema.optional(),
   parameterSemantics: effectParameterSemanticsSchema,
   unresolvedSemanticKeys: z.array(z.string().min(1)),
+  choice: z
+    .object({
+      family: z.enum(['actSet', 'actSelectIndex']),
+      candidate: z.number().int(),
+    })
+    .nullable(),
   quantityConditions: z.array(effectQuantityConditionSchema),
   conditions: effectConditionsSchema,
   contextChanges: z.object({

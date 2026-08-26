@@ -61,3 +61,16 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 - 初期の統合制約検証に失敗した場合、その検証へ入力された選択中のcondition operationをすべて`notApplied`とする。最初に発見した競合だけを無効化対象にする部分適用は行わない。
 
 この変更によりschemaは14、engineは11.2.0となる。旧値を維持する互換クランプや別検証経路は設けない。
+
+## E3.4 amendment: effect-local action choices
+
+`ActSet`と`ActSelectIndex`はworld stateではなく、一つのaction内で選ばれる候補を表す。これらをraw parameterのままexecutorで判定せず、normalizerが`family`と整数`candidate`からなるchoice IRへ変換する。
+
+- choice groupはsource instance、skill、choice familyからcanonicalに導出し、scenarioへgroupや候補条件を複製しない。
+- choiceは選択されたeffect-local conditionとして統合constraint solverへ入る。同一groupの同一candidateは共存でき、異なるcandidateはtyped `choiceConflict`となる。
+- choice成立はtrait、field、quantityを生成しない。別operationのworld factへ伝播させない。
+- `ActSetWeight`は抽選候補の重みでありmodifier値ではない。対応する`ActSet`が一意に正規化できる場合だけchoice metadataとして受理する。
+- candidateまたはfamilyを一意に正規化できない入力、choiceの否定、複数familyの混在は近似せずunsupportedにする。
+- 初期統合制約が失敗した場合は既存のall-or-nothing規則により、選択中の条件付きoperationをすべて非適用にする。
+
+この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。

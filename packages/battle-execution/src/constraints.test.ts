@@ -359,4 +359,31 @@ describe('unified constraint validation', () => {
       }).status,
     ).toBe('satisfied');
   });
+
+  it('allows the same action candidate and rejects different candidates atomically', () => {
+    const choice = (sourceKey: string, candidate: string) =>
+      condition(sourceKey, {
+        kind: 'choice',
+        group: 'source:skill:actSet',
+        candidate,
+      });
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [choice('effect:a', '1'), choice('effect:b', '1')],
+      }).status,
+    ).toBe('satisfied');
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [choice('effect:a', '1'), choice('effect:b', '2')],
+      }),
+    ).toMatchObject({
+      status: 'conflict',
+      issue: {
+        sourceKeys: ['effect:a', 'effect:b'],
+        conflicts: [{ kind: 'choiceConflict', candidates: ['1', '2'] }],
+      },
+    });
+  });
 });

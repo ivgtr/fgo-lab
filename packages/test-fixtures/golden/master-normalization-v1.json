@@ -1,11 +1,11 @@
 {
-  "caseId": "master-normalization-v25",
+  "caseId": "master-normalization-v26",
   "reviewedAt": "2026-08-26",
-  "masterSchemaVersion": 13,
-  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v25",
+  "masterSchemaVersion": 14,
+  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v26",
   "artifact": {
-    "bytes": 24502297,
-    "sha256": "8d541a64f203bf0e9fdb01dd75017a4e53460044cb522c4f2ae18abe99ca31c8"
+    "bytes": 24851158,
+    "sha256": "d75406142f47d82de72d7448467fc1d60804f5d38aeccc99f434cb6bf713d3d8"
   },
   "counts": {
     "sourceAttackFunctions": 627,

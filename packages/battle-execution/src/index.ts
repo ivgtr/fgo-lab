@@ -18,6 +18,7 @@ export type ConditionExpression =
       count: number;
     }
   | { kind: 'card'; card: CardType }
+  | { kind: 'choice'; group: string; candidate: string }
   | {
       kind: 'quantity';
       quantity: 'attackerHpPermille' | 'targetRarity' | 'battlePointPhase';
@@ -199,6 +200,7 @@ export type ConditionConstraintConflict =
       ranges: readonly { min: number; max: number }[];
     }
   | { kind: 'cardMismatch'; cards: readonly CardType[] }
+  | { kind: 'choiceConflict'; group: string; candidates: readonly string[] }
   | { kind: 'unsatisfiableExpression' };
 
 export type OperationOutcome =
