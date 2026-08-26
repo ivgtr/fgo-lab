@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import effectSources from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
 import externalDifferentials from '../../test-fixtures/golden/external-differentials-v1.json';
 import masterNormalization from '../../test-fixtures/golden/master-normalization-v1.json';
+import mlbOnlyEffects from '../../test-fixtures/golden/mlb-only-effects-v1.json';
 import npDamage from '../../test-fixtures/golden/np-damage-v1.json';
 import npFunctions from '../../test-fixtures/golden/np-functions-v1.json';
 import { calculationEvidenceRegistry } from './evidence';
@@ -39,6 +40,7 @@ const goldenCaseIds = new Set([
   npDamage.caseId,
   effectSources.caseId,
   masterNormalization.caseId,
+  mlbOnlyEffects.caseId,
   ...npFunctions.cases.map((testCase) => testCase.caseId),
 ]);
 const differentialCaseIds = new Set(externalDifferentials.cases.map((testCase) => testCase.caseId));

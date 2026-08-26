@@ -99,7 +99,9 @@ const entries: CalculationEvidence[] = [
         ? ['all-effect-sources-ordered-execution', 'defense-piercing-np-row']
         : kind === 'cardTypeChange'
           ? ['master-normalization-v37']
-          : ['all-effect-sources-ordered-execution'],
+          : ['cardBuff', 'npDamageBuff', 'flatDamage'].includes(kind)
+            ? ['all-effect-sources-ordered-execution', 'mlb-only-effects-v1']
+            : ['all-effect-sources-ordered-execution'],
     ),
   ),
   evidence(
