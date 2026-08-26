@@ -68,6 +68,10 @@ master v30、master schema 17、scenario schema 18、engine 12.8.0で`TriggeredF
 
 effect-local trigger decisionは具体的なworld stateを追加せず、同じoperationのmodifierだけを有効化する。位置が複数、非整数、欠落のeffectは正規化せず、選択またはautomatic実行時にfail-closedを維持する。この段階で既定unsupportedは12騎、選択時unsupportedは20騎・39 effect occurrence、projectionはuser 1,541、automatic visible 438、hidden 687である。
 
+master v31、master schema 18、scenario schema 19、engine 12.9.0で、actor traitとbuff instance identityを分離した。`AddIndividualty`、`AddIndividualtyList`、`AddLinkageTargetIndividualty`はbuffの識別・連動解除metadataであり、actorへのtrait付与ではない。これらを`buffIdentity`として正規化し、modifier、condition、context mutationへ流用しない。Nemo／NoahのArts 20%とMashのNP前Buster 20%は、このmetadataを無視したのではなくdamage semanticsから分離したことでexactに実行可能となった。
+
+同時に`faceCard`条件を`commandCard` scopeへ正規化した。該当17効果・11騎はNP cardに適用されず、宮本武蔵2騎のヒット数連動ゼロ値damage効果をNP projectionから除外した。scope付きeffectはroute生成より前に除外し、modifier typeだけでNP operationへ戻らないようにした。この段階で既定unsupportedは11騎、選択時unsupportedは16騎・35 effect occurrence、projectionはuser 1,538、automatic visible 439、hidden 687である。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -98,7 +102,7 @@ effect-local trigger decisionは具体的なworld stateを追加せず、同じo
 | state unlink/removal | `subIndividuality` | 黄飛虎 | 1 | state trait解除。後続damage条件が読む場合だけ実行 |
 | presentation metadata | `AuraEffectId`、`HideMiss`、`HideNoEffect`、`ShowState`、`DisplayNoEffectCauses` | マシュ、玉兎ほか | occurrence再集計 | 数値・条件・順序へ作用しないtyped metadata |
 | trait source semantics | `IncludeIgnoreIndividuality`、`IgnoreIndivUnreleaseable`、`IncludePassiveIndividuality`、`FuncCheckTargetIndividualityTargetType` | メドゥーサ、ゴルゴーン、ビショーネ、セミラミス、アルジュナ〔オルタ〕、テスカトリポカ、玉兎 | 9 | initial/state/combinedのどのtrait集合を読むかIRへ保持 |
-| linked trait grant | `AddIndividualty/List/LinkageTarget` | 宮本武蔵2種、ネモ／ノア、マシュ | 4 | modifierとstate付与を別operationへcompileし同じsource順で実行 |
+| buff instance identity | `AddIndividualty/List/LinkageTarget` | 宮本武蔵2種、ネモ／ノア、マシュほか | damage候補4 | 対応完了。actor traitへ付与せずbuff identity metadataへ分離。command-card限定2効果はNP scope外、Nemo／NoahとMashはexact |
 | HP-dependent modifier | `RatioHPLow`、`RatioHPHigh`、`RatioHPRangeLow/High` | クー・フーリン、パッションリップ | 2 | 自身効果は既存HP入力からexact。支援元HP依存は別ownerとして入力不足を維持 |
 | BP-dependent modifier | `TriggeredTargetBattlePointRateRange` | 紅閻魔 | 2 | 既存BP入力からbranchを決定 |
 | random/action choice | `ActSet/ActSetWeight`、`ActSelectIndex` | Braveエリザ、エルキドゥ、ゴッホ〔マイナー〕、シャルロット、ククルカン、岸波白野、玉兎 | 17 | 対応完了。同じchoice groupの候補を排他decisionとして扱い、選択候補だけ適用 |

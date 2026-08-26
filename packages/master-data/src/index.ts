@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(17),
+  schemaVersion: z.literal(18),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -50,6 +50,7 @@ const effectParameterSemanticsSchema = z.object({
   contextMutation: z.array(z.string().min(1)),
   choice: z.array(z.string().min(1)),
   valueExpression: z.array(z.string().min(1)),
+  buffIdentity: z.array(z.string().min(1)),
   unresolved: z.array(z.string().min(1)),
 });
 export type EffectParameterSemantics = z.infer<typeof effectParameterSemanticsSchema>;
@@ -111,7 +112,7 @@ const masterEffectSchema = z.object({
     })
     .nullable(),
   npCardTypeChange: z.enum(['buster', 'arts', 'quick']).nullable(),
-  triggerScope: z.enum(['commandCardAttack']).nullable(),
+  triggerScope: z.enum(['commandCard', 'commandCardAttack']).nullable(),
   operationTrigger: z
     .object({ kind: z.literal('functionPosition'), position: z.number().int() })
     .nullable(),

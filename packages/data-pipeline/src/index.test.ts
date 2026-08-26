@@ -596,6 +596,7 @@ describe('immutable publish pipeline', () => {
                   contextMutation: [],
                   choice: [],
                   valueExpression: [],
+                  buffIdentity: [],
                   unresolved: ['ParamAddMaxCount'],
                 },
                 unresolvedSemanticKeys: ['script:customFlag'],
@@ -699,6 +700,26 @@ describe('immutable publish pipeline', () => {
                     },
                   ],
                 },
+                {
+                  funcId: 9,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [
+                    {
+                      type: 'upDamage',
+                      ckSelfIndv: [{ name: 'faceCard' }],
+                    },
+                  ],
+                  svals: [
+                    {
+                      Rate: 1000,
+                      Value: 0,
+                      AddIndividualty: 100,
+                      AddIndividualtyList: [100],
+                      AddLinkageTargetIndividualty: 100,
+                    },
+                  ],
+                },
               ],
             },
           ],
@@ -778,6 +799,13 @@ describe('immutable publish pipeline', () => {
       parameterSemantics: {
         condition: ['TriggeredFuncPosition'],
         presentation: ['DisplayLastFuncInvalidType'],
+        unresolved: [],
+      },
+    });
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[6]).toMatchObject({
+      triggerScope: 'commandCard',
+      parameterSemantics: {
+        buffIdentity: ['AddIndividualty', 'AddIndividualtyList', 'AddLinkageTargetIndividualty'],
         unresolved: [],
       },
     });

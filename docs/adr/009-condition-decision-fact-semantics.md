@@ -83,4 +83,10 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 - positionが複数、非整数、欠落の場合や、成立が後続stateへ伝播しなければ値が確定しない場合はtyped unsupportedとする。
 - 表示上の無効理由を数値・条件・順序判定へ流用しない。
 
+## E3.4 amendment: buff identity and command-card scope
+
+`AddIndividualty`、`AddIndividualtyList`、`AddLinkageTargetIndividualty`はbuff instanceの識別・連動解除metadataとして保持する。名前にindividualityを含んでも、actorのinitial/state/combined traitへ追加しない。actor traitを変える`addIndividuality` buffの`Value`とは別のIR責務である。
+
+`faceCard`条件はNP cardと共通のcard traitにせず、command-card execution scopeとして正規化する。scope外effectはoperation route生成前に除外し、upDamage等のmodifier typeだけを理由にNP projectionを生成しない。これによりUI側にカード種別判定を追加せず、executorのprojectionだけでNPに無関係な操作を非表示にする。
+
 この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。

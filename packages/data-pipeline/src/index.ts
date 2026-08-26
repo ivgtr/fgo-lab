@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 17,
+    schemaVersion: 18,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -418,6 +418,11 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
   'ShowState',
 ]);
 const CONTEXT_MUTATION_PARAMETER_KEYS = new Set(['FieldIndividuality', 'TargetList']);
+const BUFF_IDENTITY_PARAMETER_KEYS = new Set([
+  'AddIndividualty',
+  'AddIndividualtyList',
+  'AddLinkageTargetIndividualty',
+]);
 
 interface NormalizedQuantityCondition {
   quantity: 'attackerHpPermille' | 'battlePointPhase';
@@ -611,7 +616,12 @@ function normalizeNpCardTypeChange(buffs: AtlasFunction['buffs']) {
 }
 
 function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: 'skill' | 'np') {
-  return source === 'skill' && (buffs ?? []).some((buff) => buff.type === 'attackBeforeFunction')
+  if (source !== 'skill') return null;
+  if (
+    (buffs ?? []).some((buff) => (buff.ckSelfIndv ?? []).some((trait) => trait.name === 'faceCard'))
+  )
+    return 'commandCard' as const;
+  return (buffs ?? []).some((buff) => buff.type === 'attackBeforeFunction')
     ? ('commandCardAttack' as const)
     : null;
 }
@@ -668,6 +678,7 @@ function classifyParameterSemantics(
     ...CONTEXT_MUTATION_PARAMETER_KEYS,
     ...choiceKeys,
     ...triggerKeys,
+    ...BUFF_IDENTITY_PARAMETER_KEYS,
     ...valueExpressionKeys,
   ]);
   return {
@@ -678,6 +689,7 @@ function classifyParameterSemantics(
     contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
     choice: select(choiceKeys),
     valueExpression: keys.filter((key) => valueExpressionKeys.includes(key)),
+    buffIdentity: select(BUFF_IDENTITY_PARAMETER_KEYS),
     unresolved: keys.filter((key) => !known.has(key)),
   };
 }

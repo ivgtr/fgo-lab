@@ -302,6 +302,8 @@ action choiceはeffect-localな候補制約として扱う。同じsource instan
 
 同一action内のFunction位置で成立する火力効果は、整数positionをlosslessに保持したeffect-local trigger制約として扱う。位置成立decisionはworld fact、trait、field、quantityを生成せず、当該operationだけを有効化する。damage operation後の効果を最終inputへ遡及させず、位置が複数・非整数・欠落して一意に正規化できない場合はtyped unsupportedとする。
 
+buff instanceへ付くidentity・linkage metadataはactor traitやstate mutationへ変換しない。modifierの値と条件が独立に確定する場合はidentity metadataを保持したままdamage operationを実行する。`faceCard`はcommand-card scopeとしてNP executionから分離し、route可能なmodifier typeを持っていてもNP projectionを生成しない。
+
 参照Functionは実行containerのscopeを保持する。通常攻撃だけで発火するtriggerはNP火力UIと計算を阻害させず、宝具Function列のNP前triggerへ同じ非damage分類を流用しない。参照先がartifactから解決できないNP前triggerは値を推測せずfail-closedにする。
 
 ## 9. 受入条件

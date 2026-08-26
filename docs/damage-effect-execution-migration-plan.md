@@ -303,6 +303,7 @@ E3.4進捗（master v26、schema 14、engine 12.5.0）:
 - master v27では明示的NP card mutation 8効果・4騎をexact operationへ移行した。最終cardで色modifierをfoldし、異なるcard候補の競合時は元stateを維持する。連動stateの意味が未解決な3効果は近似せず残した。
 - master v29ではskill／passiveの通常攻撃前trigger 22効果・20騎をNP damage scopeから分離した。宝具内の同型参照は除外せずfail-closedを維持し、選択時unsupportedは22騎・41 occurrenceとなった。
 - master v30では`TriggeredFuncPosition` 23 occurrence・13騎をeffect-localな発動位置制約へ正規化した。damage前に到達する3 projectionは具体的なworld factを生成せず既存のオン・オフでexactに実行し、damage後の位置付き効果は入力へ遡及させない。既定unsupportedは12騎、選択時unsupportedは20騎・39 occurrenceとなった。
+- master v31ではbuff instance identityをactor traitから分離し、`faceCard` 17効果・11騎をcommand-card scopeへ正規化した。Nemo／NoahとMashのlinked buffはexact、宮本武蔵2騎のcommand-card限定効果はNP projection外となり、既定unsupportedは11騎、選択時unsupportedは16騎・35 occurrenceとなった。
 
 作業:
 

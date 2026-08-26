@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 18 as const;
-export const ENGINE_VERSION = '12.8.0' as const;
+export const SCHEMA_VERSION = 19 as const;
+export const ENGINE_VERSION = '12.9.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({

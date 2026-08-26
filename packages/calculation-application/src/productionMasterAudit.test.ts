@@ -28,7 +28,6 @@ const expectedUnsupportedFamilies = {
   '305800': ['unsupportedOperation'],
   '400900': ['missing_attacker_hp_ratio'],
   '702500': ['missing_attacker_hp_ratio'],
-  '800100': ['unsupportedOperation'],
   '1102000': ['unsupportedOperation'],
   '1102300': ['unsupportedOperation'],
   '2300600': ['unsupportedOperation'],
@@ -38,9 +37,6 @@ const expectedUnsupportedFamilies = {
 
 const expectedUnresolvedDamageSemantics = {
   parameters: {
-    AddIndividualty: 7,
-    AddIndividualtyList: 7,
-    AddLinkageTargetIndividualty: 5,
     BehaveAsFamilyBuff: 2,
     ForceAddState: 4,
     FuncCheckTargetIndividualityTargetType: 3,
@@ -546,6 +542,81 @@ describe('production master damage quality ratchet', () => {
     expect(
       calculation.effects.some((effect) => effect.label.includes('攻撃ダメージ前追加効果')),
     ).toBe(false);
+  });
+
+  it('separates command-card scope and buff identity from NP damage semantics', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const commandCardEffects = master.servants.flatMap((servant) =>
+      [...servant.skills, ...servant.passives].flatMap((skill) =>
+        skill.effects.flatMap((effect) =>
+          effect.triggerScope === 'commandCard' ? [{ servantId: servant.id, effect }] : [],
+        ),
+      ),
+    );
+    expect({
+      servants: new Set(commandCardEffects.map((item) => item.servantId)).size,
+      effects: commandCardEffects.length,
+    }).toEqual({ servants: 11, effects: 17 });
+    expect(
+      commandCardEffects.every(({ effect }) => !canNormalizeDamageEffect(effect, 'attacker')),
+    ).toBe(true);
+
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    for (const servantId of ['101700', '703600']) {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const calculation = calculateScenario(
+        createDefaultResolvedScenario(master, undefined, servant),
+        master,
+        versions,
+      );
+      expect(
+        calculation.effects.some((effect) =>
+          JSON.stringify(effect.explanation.condition).includes('faceCard'),
+        ),
+      ).toBe(false);
+    }
+
+    const nemo = master.servants.find((servant) => servant.id === '405700')!;
+    const nemoScenario = createDefaultResolvedScenario(master, undefined, nemo);
+    const nemoInitial = calculateScenario(nemoScenario, master, versions);
+    const linkedArts = nemoInitial.effects.find(
+      (effect) => effect.label === 'アーツアップ' && effect.source.skillId === '2554650',
+    )!;
+    const nemoSelected = calculateScenario(
+      applyEffectProjectionDecision(nemoScenario, linkedArts, true),
+      master,
+      versions,
+    );
+    expect(nemoSelected.result.status).toBe('calculated');
+    expect(nemoSelected.input.cardBuff - nemoInitial.input.cardBuff).toBeCloseTo(
+      linkedArts.value!,
+      10,
+    );
+    expect(
+      nemoSelected.effects.find((effect) => effect.projectionKey === linkedArts.projectionKey),
+    ).toMatchObject({ outcome: 'applied' });
+
+    const mash = master.servants.find((servant) => servant.id === '800100')!;
+    const mashCalculation = calculateScenario(
+      createDefaultResolvedScenario(master, undefined, mash),
+      master,
+      versions,
+    );
+    const linkedBuster = mashCalculation.effects.find(
+      (effect) => effect.label === 'バスターアップ' && effect.source.origin === 'np',
+    );
+    expect(mashCalculation.result.status).toBe('calculated');
+    expect(linkedBuster).toMatchObject({ controllability: 'automatic', outcome: 'applied' });
+    expect(mashCalculation.input.cardBuff).toBeGreaterThan(0);
   });
 
   it('executes function-position guards as effect-local decisions', async () => {
@@ -1323,7 +1394,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_541, automaticVisible: 438, hidden: 687 });
+    }).toEqual({ user: 1_538, automaticVisible: 439, hidden: 687 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -1350,7 +1421,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 20, effects: 39 });
+    }).toEqual({ servants: 16, effects: 35 });
     expect(exclusivePairCount).toBe(24);
     expect(conflictPairs).toEqual({ effectEffect: 23, factFact: 1, factEffect: 0 });
     expect({

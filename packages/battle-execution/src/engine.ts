@@ -173,7 +173,7 @@ function route(effect: MasterEffect, origin: Origin): Route | null {
 }
 
 export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): boolean {
-  if (effect.triggerScope === 'commandCardAttack') return false;
+  if (effect.triggerScope !== null) return false;
   const recipient = targetRecipient(origin, effect.target);
   const types = effect.buffTypes ?? [];
   const potentiallyRelevant =
@@ -360,6 +360,7 @@ interface CompiledOperations {
 function compileEffect(source: SourceEffect, startOrder: number): CompiledOperations {
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
+  if (source.effect.triggerScope !== null) return { operations, unsupported };
   const condition = effectCondition(
     source.effect,
     source.origin,
