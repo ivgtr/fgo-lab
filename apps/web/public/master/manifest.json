@@ -1,21 +1,21 @@
 {
   "manifestVersion": 1,
-  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v29",
-  "createdAt": "2026-08-26T02:27:13.209Z",
+  "masterDataVersion": "2026-08-25-atlas-jp-calculator-v30",
+  "createdAt": "2026-08-26T02:35:49.146Z",
   "source": {
     "name": "Atlas Academy",
     "region": "JP",
-    "retrievedAt": "2026-08-26T02:27:13.209Z"
+    "retrievedAt": "2026-08-26T02:35:49.146Z"
   },
   "artifactKind": "production",
   "minimalAppVersion": "0.1.0",
-  "schemaVersion": 16,
+  "schemaVersion": 17,
   "files": [
     {
       "key": "master",
       "file": "master.json",
-      "bytes": 25437362,
-      "sha256": "7e81a4b71b3bb7862658779097439a603b64c09fd32fecb7b0d4b470ad509275",
+      "bytes": 25757705,
+      "sha256": "1d4ebce03865951dc1efc86396fb6b866520bfdd9cc7443b290c45ba8b202d65",
       "required": true
     }
   ],

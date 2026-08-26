@@ -64,6 +64,10 @@ master v29、master schema 16、scenario schema 17、engine 12.7.0で、skill／
 
 この分離により、操作してもNP damageへ作用しない21 user projectionを削除し、選択時unsupportedは22騎・41 effect occurrenceとなった。projectionはuser 1,540、automatic visible 439、hidden 687である。raw `Value2`の未解決damage候補は25件から、宝具内参照2件とfield-change参照1件の計3件へ縮小した。インドラのOR火力効果は従来どおり操作可能で、同じskillのQuick通常攻撃前追加効果は「自身の適用内容」へ表示しない。
 
+master v30、master schema 17、scenario schema 18、engine 12.8.0で`TriggeredFuncPosition`を、world factではなく同一source operation列の位置を保持するeffect-local trigger制約へ正規化した。位置は整数値のまま保持し、OR候補やtraitへ変換しない。`DisplayLastFuncInvalidType`は表示metadataとして分離する。productionでは23 occurrence・13騎を正規化し、damage候補5件のうち実際に宝具前projectionへ到達するUDKバーゲスト、キングプロテア、テノチティトランの3効果を既存のオン・オフ操作でexactに実行する。呪腕のハサンと徐福の位置付き効果はdamage operation後にあるため、宝具damage inputへ遡及させない。
+
+effect-local trigger decisionは具体的なworld stateを追加せず、同じoperationのmodifierだけを有効化する。位置が複数、非整数、欠落のeffectは正規化せず、選択またはautomatic実行時にfail-closedを維持する。この段階で既定unsupportedは12騎、選択時unsupportedは20騎・39 effect occurrence、projectionはuser 1,541、automatic visible 438、hidden 687である。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -98,7 +102,7 @@ master v29、master schema 16、scenario schema 17、engine 12.7.0で、skill／
 | HP-dependent modifier | `RatioHPLow`、`RatioHPHigh`、`RatioHPRangeLow/High` | クー・フーリン、パッションリップ | 2 | 自身効果は既存HP入力からexact。支援元HP依存は別ownerとして入力不足を維持 |
 | BP-dependent modifier | `TriggeredTargetBattlePointRateRange` | 紅閻魔 | 2 | 既存BP入力からbranchを決定 |
 | random/action choice | `ActSet/ActSetWeight`、`ActSelectIndex` | Braveエリザ、エルキドゥ、ゴッホ〔マイナー〕、シャルロット、ククルカン、岸波白野、玉兎 | 17 | 対応完了。同じchoice groupの候補を排他decisionとして扱い、選択候補だけ適用 |
-| function position guard | `TriggeredFuncPosition` | テノチティトラン、キングプロテアほか | occurrence再集計 | raw effect occurrence順からguard対象を解決。曖昧ならunsupported |
+| function position guard | `TriggeredFuncPosition` | UDKバーゲスト、キングプロテア、テノチティトランほか | 23 | 対応完了。整数positionをeffect-local trigger制約として保持し、選択effectだけを実行。damage後のoperationは遡及させない |
 | class relation responsibility | `overwriteClassRelation` | ネロ、セミラミス、カーマ、ヘファイスティオン、キアラ、C.I.E.L、ハベトロット | 7 | calculatorの最終クラス相性入力が唯一のdamage fact。operationは二重適用しない |
 | NP card type mutation | `tdTypeChangeArts`、`tdTypeChangeBuster`、`tdTypeChangeQuick` | エミヤ、UDKバーゲスト、スペース・イシュタル、BBドバイ、玉兎 | 11 | 8効果は対応完了。ordered stateで宝具cardを変更し、最終cardで色modifierとdamage inputを再評価。連動state未解決の玉兎3効果はfail-closed |
 | non-damage filtering | damage modifier、宝具card、後続conditionのいずれも変更しないoperation | 全masterから意味論抽出 | family別ratchet | hiddenかつnon-blocking。raw type名だけでは判定しない |

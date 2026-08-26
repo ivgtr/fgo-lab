@@ -685,6 +685,20 @@ describe('immutable publish pipeline', () => {
                   buffs: [{ type: 'attackBeforeFunction' }],
                   svals: [{ Rate: 1000, Value2: 1234 }],
                 },
+                {
+                  funcId: 8,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [{ type: 'upAtk' }],
+                  svals: [
+                    {
+                      Rate: 1000,
+                      Value: 300,
+                      TriggeredFuncPosition: 2,
+                      DisplayLastFuncInvalidType: 1,
+                    },
+                  ],
+                },
               ],
             },
           ],
@@ -758,6 +772,14 @@ describe('immutable publish pipeline', () => {
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[4]).toMatchObject({
       triggerScope: 'commandCardAttack',
       parameterSemantics: { unresolved: ['Value2'] },
+    });
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[5]).toMatchObject({
+      operationTrigger: { kind: 'functionPosition', position: 2 },
+      parameterSemantics: {
+        condition: ['TriggeredFuncPosition'],
+        presentation: ['DisplayLastFuncInvalidType'],
+        unresolved: [],
+      },
     });
   });
 });

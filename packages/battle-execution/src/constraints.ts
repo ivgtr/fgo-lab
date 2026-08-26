@@ -60,7 +60,8 @@ type Literal =
       sourceKey: string;
     }
   | { kind: 'card'; card: CardType; sourceKey: string }
-  | { kind: 'choice'; group: string; candidate: string; sourceKey: string };
+  | { kind: 'choice'; group: string; candidate: string; sourceKey: string }
+  | { kind: 'operationTrigger'; source: string; position: number; sourceKey: string };
 
 type Alternatives = readonly (readonly Literal[])[];
 type CompileResult =
@@ -173,6 +174,22 @@ function compileExpression(
               ],
             ],
           };
+    case 'operationTrigger':
+      return negated
+        ? { status: 'unsupported', reason: 'unsupportedCondition' }
+        : {
+            status: 'supported',
+            alternatives: [
+              [
+                {
+                  kind: 'operationTrigger',
+                  source: expression.source,
+                  position: expression.position,
+                  sourceKey,
+                },
+              ],
+            ],
+          };
     case 'quantity': {
       const ranges = quantityRanges(
         expression.quantity,
@@ -247,6 +264,7 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   const choices = new Map<string, Extract<Literal, { kind: 'choice' }>>();
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
+    if (literal.kind === 'operationTrigger') continue;
     if (literal.kind === 'choice') {
       const prior = choices.get(literal.group);
       if (prior && prior.candidate !== literal.candidate)
@@ -380,7 +398,9 @@ function literalKey(literal: Literal): string {
       ? `card:${literal.card}`
       : literal.kind === 'choice'
         ? `choice:${literal.group}:${literal.candidate}`
-        : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
+        : literal.kind === 'operationTrigger'
+          ? `operation-trigger:${literal.source}:${String(literal.position)}`
+          : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }
 
 function deduplicate(alternatives: Alternatives): Alternatives {

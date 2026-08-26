@@ -229,6 +229,15 @@ function effectCondition(
           },
         ]
       : []),
+    ...(effect.operationTrigger
+      ? [
+          {
+            kind: 'operationTrigger' as const,
+            source: `${sourceInstanceId}:${skillId}`,
+            position: effect.operationTrigger.position,
+          },
+        ]
+      : []),
   ]);
 }
 

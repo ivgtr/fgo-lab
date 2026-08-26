@@ -386,4 +386,34 @@ describe('unified constraint validation', () => {
       },
     });
   });
+
+  it('keeps a function-position trigger as an effect-local satisfiable constraint', () => {
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [
+          condition('effect:position', {
+            kind: 'operationTrigger',
+            source: 'attacker:skill',
+            position: 2,
+          }),
+        ],
+      }),
+    ).toEqual({ status: 'satisfied', alternativeCount: 1 });
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [
+          condition('effect:negated-position', {
+            kind: 'not',
+            expression: {
+              kind: 'operationTrigger',
+              source: 'attacker:skill',
+              position: 2,
+            },
+          }),
+        ],
+      }),
+    ).toMatchObject({ status: 'unsupported' });
+  });
 });

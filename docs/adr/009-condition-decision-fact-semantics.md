@@ -73,4 +73,14 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 - candidateまたはfamilyを一意に正規化できない入力、choiceの否定、複数familyの混在は近似せずunsupportedにする。
 - 初期統合制約が失敗した場合は既存のall-or-nothing規則により、選択中の条件付きoperationをすべて非適用にする。
 
+## E3.4 amendment: effect-local operation triggers
+
+`TriggeredFuncPosition`はtraitや数量ではなく、一つのsource operation列の特定位置で効果が成立することを表す。normalizerは一意な整数positionだけをcanonical operation-trigger IRへ変換し、`DisplayLastFuncInvalidType`はpresentation metadataとして分離する。
+
+- operation triggerは選択されたeffect-local conditionとして統合constraint solverへ入り、world factやderived battle stateへ追加しない。
+- user decisionは最終火力operationの成立だけを宣言する。別operationのconditionを暗黙に成立させない。
+- NP damage operationより後に置かれたmodifierはdamage inputへ遡及させない。
+- positionが複数、非整数、欠落の場合や、成立が後続stateへ伝播しなければ値が確定しない場合はtyped unsupportedとする。
+- 表示上の無効理由を数値・条件・順序判定へ流用しない。
+
 この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。

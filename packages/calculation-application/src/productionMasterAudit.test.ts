@@ -32,7 +32,6 @@ const expectedUnsupportedFamilies = {
   '1102000': ['unsupportedOperation'],
   '1102300': ['unsupportedOperation'],
   '2300600': ['unsupportedOperation'],
-  '2301200': ['unsupportedOperation'],
   '2801300': ['unsupportedOperation'],
   '3300200': ['missing_battle_point_phase'],
 } as const;
@@ -43,7 +42,6 @@ const expectedUnresolvedDamageSemantics = {
     AddIndividualtyList: 7,
     AddLinkageTargetIndividualty: 5,
     BehaveAsFamilyBuff: 2,
-    DisplayLastFuncInvalidType: 5,
     ForceAddState: 4,
     FuncCheckTargetIndividualityTargetType: 3,
     IgnoreIndivUnreleaseable: 1,
@@ -68,7 +66,6 @@ const expectedUnresolvedDamageSemantics = {
     StarHigher: 10,
     TriggeredFieldCountRange: 1,
     TriggeredFieldCountTarget: 1,
-    TriggeredFuncPosition: 5,
     TriggeredTargetBattlePointRateRange: 3,
     TypeIndividualityEachFunc: 1,
     UnSubState: 4,
@@ -549,6 +546,82 @@ describe('production master damage quality ratchet', () => {
     expect(
       calculation.effects.some((effect) => effect.label.includes('攻撃ダメージ前追加効果')),
     ).toBe(false);
+  });
+
+  it('executes function-position guards as effect-local decisions', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const occurrences = master.servants.flatMap((servant) =>
+      [
+        ...servant.skills.map((skill) => ({ origin: 'attacker' as const, skill })),
+        ...servant.passives.map((skill) => ({ origin: 'passive' as const, skill })),
+        ...servant.noblePhantasms.map((skill) => ({ origin: 'np' as const, skill })),
+      ].flatMap(({ origin, skill }) =>
+        skill.effects.flatMap((effect) =>
+          effect.operationTrigger ? [{ servantId: servant.id, origin, effect }] : [],
+        ),
+      ),
+    );
+    expect({
+      servants: new Set(occurrences.map((item) => item.servantId)).size,
+      effects: occurrences.length,
+      damageCandidates: occurrences.filter(({ effect, origin }) =>
+        canNormalizeDamageEffect(effect, origin),
+      ).length,
+    }).toEqual({ servants: 13, effects: 23, damageCandidates: 5 });
+    expect(
+      occurrences.every(({ effect }) =>
+        effect.parameterSemantics.condition.includes('TriggeredFuncPosition'),
+      ),
+    ).toBe(true);
+
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const cases = [
+      ['204900', '攻撃力アップ', 'attackBuff', 0.2],
+      ['2301200', '宝具威力アップ', 'npDamageBuff', 0.2],
+      ['2800500', '防御力ダウン', 'attackBuff', 0.5],
+    ] as const;
+    for (const [servantId, label, inputKey, value] of cases) {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const initial = calculateScenario(scenario, master, versions);
+      const projection = initial.effects.find(
+        (effect) =>
+          effect.label === label &&
+          effect.explanation.condition !== null &&
+          (() => {
+            const kinds = new Set<string>();
+            collectConditionKinds(effect.explanation.condition, kinds);
+            return kinds.has('operationTrigger');
+          })(),
+      )!;
+      expect(projection).toMatchObject({
+        controllability: 'user',
+        outcome: 'notApplied',
+        decision: { kind: 'effect', plan: { condition: 'userMayAssume' } },
+      });
+      const selectedScenario = applyEffectProjectionDecision(scenario, projection, true);
+      expect(selectedScenario.worldFactAssertions).toEqual(scenario.worldFactAssertions);
+      const selected = calculateScenario(selectedScenario, master, versions);
+      expect(selected.result.status, `${servantId}:${label}`).toBe('calculated');
+      expect(
+        selected.input[inputKey] - initial.input[inputKey],
+        `${servantId}:${label}`,
+      ).toBeCloseTo(value, 10);
+      expect(
+        selected.effects.find((effect) => effect.projectionKey === projection.projectionKey),
+      ).toMatchObject({ outcome: 'applied', decision: { state: 'enabled' } });
+      expect(selected.input.target.traits).toEqual([]);
+      expect(selected.input.fieldTraits).toEqual([]);
+    }
   });
 
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
@@ -1250,7 +1323,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_540, automaticVisible: 439, hidden: 687 });
+    }).toEqual({ user: 1_541, automaticVisible: 438, hidden: 687 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -1265,6 +1338,7 @@ describe('production master damage quality ratchet', () => {
       'any',
       'card',
       'choice',
+      'operationTrigger',
       'partialTrait',
       'quantity',
       'trait',
@@ -1276,7 +1350,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 22, effects: 41 });
+    }).toEqual({ servants: 20, effects: 39 });
     expect(exclusivePairCount).toBe(24);
     expect(conflictPairs).toEqual({ effectEffect: 23, factFact: 1, factEffect: 0 });
     expect({

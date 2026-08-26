@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 16,
+    schemaVersion: 17,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -413,6 +413,7 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
   'HideMiss',
   'HideNoEffect',
   'InvalidHide',
+  'DisplayLastFuncInvalidType',
   'ShowQuestNoEffect',
   'ShowState',
 ]);
@@ -615,11 +616,32 @@ function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: 'skill' | 
     : null;
 }
 
+function normalizeOperationTrigger(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
+  const values = [
+    ...new Set(
+      parameterSets.flatMap((set) =>
+        set.flatMap((parameter) =>
+          typeof parameter.TriggeredFuncPosition === 'number' &&
+          Number.isInteger(parameter.TriggeredFuncPosition)
+            ? [parameter.TriggeredFuncPosition]
+            : parameter.TriggeredFuncPosition === undefined
+              ? []
+              : [Number.NaN],
+        ),
+      ),
+    ),
+  ];
+  return values.length === 1 && Number.isInteger(values[0])
+    ? { kind: 'functionPosition' as const, position: values[0]! }
+    : null;
+}
+
 function classifyParameterSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   quantityConditions: readonly NormalizedQuantityCondition[],
   valueExpressionKeys: readonly string[],
   choice: ReturnType<typeof normalizeEffectChoice>,
+  operationTrigger: ReturnType<typeof normalizeOperationTrigger>,
 ) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
@@ -637,6 +659,7 @@ function classifyParameterSemantics(
         ? ['ActSelectIndex']
         : [],
   );
+  const triggerKeys = new Set(operationTrigger ? ['TriggeredFuncPosition'] : []);
   const known = new Set([
     ...VALUE_PARAMETER_KEYS,
     ...LIFECYCLE_PARAMETER_KEYS,
@@ -644,13 +667,14 @@ function classifyParameterSemantics(
     ...conditionKeys,
     ...CONTEXT_MUTATION_PARAMETER_KEYS,
     ...choiceKeys,
+    ...triggerKeys,
     ...valueExpressionKeys,
   ]);
   return {
     value: select(VALUE_PARAMETER_KEYS),
     lifecycle: select(LIFECYCLE_PARAMETER_KEYS),
     presentation: select(PRESENTATION_PARAMETER_KEYS),
-    condition: select(conditionKeys),
+    condition: keys.filter((key) => conditionKeys.has(key) || triggerKeys.has(key)),
     contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
     choice: select(choiceKeys),
     valueExpression: keys.filter((key) => valueExpressionKeys.includes(key)),
@@ -693,6 +717,7 @@ function normalizeFunctions(
     const modifierValues = normalizeModifierValueExpressions(parameterSets);
     const choice = normalizeEffectChoice(parameterSets);
     const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs);
+    const operationTrigger = normalizeOperationTrigger(parameterSets);
     return [
       {
         id: String(fn.funcId),
@@ -706,11 +731,13 @@ function normalizeFunctions(
           quantityConditions,
           modifierValues.recognizedKeys,
           choice,
+          operationTrigger,
         ),
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         choice,
         npCardTypeChange,
         triggerScope: normalizeTriggerScope(fn.buffs, source),
+        operationTrigger,
         quantityConditions,
         modifierValueExpressionSets: modifierValues.sets,
         conditions: {

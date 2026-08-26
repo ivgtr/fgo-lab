@@ -19,6 +19,7 @@ export type ConditionExpression =
     }
   | { kind: 'card'; card: CardType }
   | { kind: 'choice'; group: string; candidate: string }
+  | { kind: 'operationTrigger'; source: string; position: number }
   | {
       kind: 'quantity';
       quantity: 'attackerHpPermille' | 'targetRarity' | 'battlePointPhase';

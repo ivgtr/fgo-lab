@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(16),
+  schemaVersion: z.literal(17),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -112,6 +112,9 @@ const masterEffectSchema = z.object({
     .nullable(),
   npCardTypeChange: z.enum(['buster', 'arts', 'quick']).nullable(),
   triggerScope: z.enum(['commandCardAttack']).nullable(),
+  operationTrigger: z
+    .object({ kind: z.literal('functionPosition'), position: z.number().int() })
+    .nullable(),
   quantityConditions: z.array(effectQuantityConditionSchema),
   conditions: effectConditionsSchema,
   contextChanges: z.object({
