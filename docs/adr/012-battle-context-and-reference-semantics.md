@@ -19,6 +19,10 @@ applicationはscenario明示値、既存HP/BP入力、canonical default policy�
 
 turn、star threshold、trait/buff stack、field population、matching actor population、available master skillは別kindとして保持する。値を変える式と成立条件を区別し、effect-local条件成立を具体的countへ変換しない。countはowner、target population、survival predicate、trait provenance、上限を保持する。
 
+matching actor countは単なる人数ではなく、canonical target population、source/other actor predicate、生存条件、count方式の積として保持する。trait ID `canBeInBattle`のようなactor propertyはtrait文字列のままexecutorへ渡さない。`ParamAddSelf*`と`ParamAddOp*`は別predicateとして正規化し、同じactorが別effectの複数predicateへ一致する場合はeffectごとに数える。
+
+scenarioの明示値は導出済み最低値への追加分ではなく、そのeffectが消費する最終countである。executorはsourceの恒常trait、現在の宝具対象がin-battleであること、canonical populationから保証できる最低値を導出する。scenarioで値を省略した場合はこの最低値を使用し、明示値が最低値未満ならclampせずtyped `inputRequired`でfail-closedにする。一般に保証できない他actorの存在やtraitは0として推測せず、利用者の最終count入力だけで補う。
+
 ### Trait provenance and linked identity
 
 initial trait、active state trait、passive state trait、ignore対象trait、unremovable stateを同じ集合へ潰さない。conditionは必要なprovenance policyを持つ。linked familyはstable buff instance/family identityとdependencyを持ち、traitの文字列一致だけで解除・抑制しない。初期traitを一時的に無効化するoperationはstate trait削除ではなくtyped suppressionとして表す。
@@ -37,4 +41,5 @@ initial trait、active state trait、passive state trait、ignore対象trait、u
 - 通常サーヴァントのUIは変えず、必要なeffectだけ汎用context inputを表示できる。
 - raw Atlas語彙の解釈はdata-pipelineに限定される。
 - scenario/master/engine schemaは破壊的に更新し、旧quantity fallbackやraw unresolved経路を削除する。
+- matching actor countのcanonical化により、本人のtrait一致と現在対象1体を無視していた旧既定値は維持しない。
 - 単発計算を正本として完成させ、ランキング統合は後続フェーズに残す。

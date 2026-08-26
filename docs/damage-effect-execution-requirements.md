@@ -320,13 +320,15 @@ NP executionでは`cardNP`、`faceCard`、`cardExtra`をtrait factではなく�
 1. production攻撃宝具420件と全user projection単独選択で、実装未対応を理由とする`unsupported`を0件にする。
 2. 利用者しか決められないturn、star、stack、field population、actor population、available master skill等は、canonical quantity/factとしてscenarioへ入力可能にする。
 3. 入力定義はowner、scope、範囲、default policy、consuming occurrenceを持つ。欠落はtyped `inputRequired`とし、`unsupported`や黙示的な0へ変換しない。
-4. HP 100%、Battle Point 0、turn 1、star 0、外部stack 0、現在の敵数1、追加の一致actor数0、available master skill 0を、ゲーム開始状態または現在の単一対象scenarioから導出できる初期値とする。
+4. HP 100%、Battle Point 0、turn 1、star 0、外部stack 0、available master skill 0をゲーム開始状態から導出する。actor population countは一律0にせず、canonical target populationとtrait predicateから攻撃役本人・現在の宝具対象について保証できる最低値を導出する。
 5. trait provenance、linked buff identity、参照skill、population/survival、count expressionをmaster IRで判別し、raw parameter名をexecutorへ渡さない。
 6. `checkIndvType=4`はsigned trait候補のpartial-match ORとしてlosslessに正規化し、trait countや先頭候補へ読み替えない。
 7. 参照skillはbuild時に解決し、参照先のcanonical operationを呼出位置へ展開する。欠落、循環、対象不一致、未分類operationはartifact生成を失敗させる。
 8. operation、state、modifier、evidence、damage inputはeffect単位のtransactionとし、依存または入力不足時に部分commitしない。
 9. 通常画面では追加入力を表示せず、必要な対象だけ既存の戦闘状況領域へapplication提供descriptorから表示する。
 10. scenario、share、saveのversionは一方向に更新し、旧context表現とのfallbackや二重解釈を残さない。
+
+matching actor countの明示入力は「最低値への追加分」ではなく最終合計値とする。同一actorが別々のtrait predicateへ一致する場合は各predicateで独立に数え、UIも単純な合計人数として表示しない。明示値がcanonical最低値未満なら入力境界・実行境界でclampせずfail-closedにする。入力省略時はshare/saveからの再計算を含めて最低値を再導出する。
 
 E3.8は単発計算を正本として完了させるフェーズであり、E4ランキング統合は開始しない。
 

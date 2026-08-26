@@ -1,6 +1,6 @@
 # Damage effect implementation-unsupported 0 収束計画
 
-- Status: implementation approved
+- Status: completed
 - Date: 2026-08-26
 - Base: `033d5da`
 - Scope: 単発宝具ダメージ計算。ランキング統合は含めない。
@@ -9,7 +9,7 @@
 
 productionの攻撃宝具420件と、全user projectionの単独選択について、実装不足を理由とする`unsupported`を0件にする。利用者が決める戦闘状況はcanonical battle-context inputとして入力可能にし、不足は`unsupported`ではなくeffect occurrenceへ結び付いたtyped `inputRequired`として返す。未解決条件の無視、0倍／1倍への置換、先頭候補の採用、通常値へのfallbackは行わない。
 
-既定値はゲーム上の開始状態または現在の単一対象計算から導出できる値だけにする。HP 100%、Battle Point 0、現在turn 1、critical star 0、外部から付与されたstack 0、現在の敵数1、追加の一致actor数0、利用可能なマスタースキル数0を採用する。scenarioに明示値がない場合もapplicationがこのpolicyを一度だけ具体化し、executor内で欠落値を補わない。
+既定値はゲーム上の開始状態または現在の単一対象計算から導出できる値だけにする。HP 100%、Battle Point 0、現在turn 1、critical star 0、外部から付与されたstack 0、利用可能なマスタースキル数0を採用する。actor population countは一律値を置かず、canonical populationとpredicateから攻撃役本人・現在対象について保証できる最低値をruntime descriptorへ具体化する。scenarioに明示値がない場合もapplicationがこのpolicyを一度だけ具体化し、executor内で根拠のない値を補わない。
 
 ## 2. 現HEAD inventory
 
@@ -60,6 +60,8 @@ productionの攻撃宝具420件と、全user projectionの単独選択につい�
 
 quantity kindはHP、Battle Point、turn、critical star、trait/buff stack、field population、matching actor population、available master skill countを判別する。動的なtrait/count対象はtyped subjectに保持し、ラベルやraw parameter名からruntimeで復元しない。
 
+matching actor populationはpopulation、alive-only、source predicate、other predicate、matching-trait/matching-clause方式を保持する。scenario入力は最終countであり、executorがsource master traitと現在の宝具対象から導出した保証済み最低値以上でなければならない。ジョン・ラックランドの〔王〕・〔悪〕は別入力、ハベトロットは敵の合計数とし、サーヴァントID別の最低値は持たない。
+
 ### 3.2 execution semantics
 
 - `valueExpression`: turn-linear、trait-stack-linear、population-linear、available-skill-linear
@@ -109,6 +111,6 @@ scenarioは`battleContextInputs`をstable canonical keyからinteger valueへの
 
 ## 8. 検証とコミット境界
 
-familyごとにnormalizer、schema、executor、application、UI、share/save、fixture、production ratchetを同じ系列で完了し、旧表現を削除してから次へ進む。既存calculated 1,954 parity digestは維持し、unsupportedからexactへ移る対象は別goldenへNP1〜5、final input、operation traceを固定する。
+familyごとにnormalizer、schema、executor、application、UI、share/save、fixture、production ratchetを同じ系列で完了し、旧表現を削除してから次へ進む。canonical IR移行時の1,954ケースdigestに加え、収束開始時点でcalculatedだった1,504ケースを固定fixtureから再計算する。unsupportedからexactへ移る対象は別goldenへNP1〜5、final input、operation traceを固定する。
 
 現在calculatedの値が変わる、default policyが一意でない、外部根拠が矛盾する、完全な戦闘simulatorが必要になる場合は実装前に停止する。unsupportedからexactへの新規値はこの停止条件に含めない。

@@ -480,3 +480,13 @@ E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選
 - 参照operationと複数operation effectがtransactionalである。
 - PC、390px、320px、share/save、production build、全品質ゲートが成功する。
 - E4ランキング統合へは着手していない。
+
+### E3.8.1 actor population countの既定値是正
+
+`ParamAddIndividualityTargetType`を一律の`matchingActorCount=0`へ落とした実装は、canonical対象集合から確定できるactorまで除外していた。ジョン・ラックランドは攻撃役本人が〔王〕と〔悪〕へそれぞれ一致するため二つのeffectで最低1ずつ、水着ハベトロットは現在の宝具対象がin-battleであるため敵populationの最低1を持つ。これはunsupportedからexactへ移すだけでなく、旧既定計算の誤算を修正する承認済み差分である。
+
+- master schema 26はpopulation、alive-only、source/other predicate、matching-trait/matching-clause countをtyped IRとして保持する。
+- engine 14.0.0はsource master traitと現在対象のactor propertyから保証済み最低値を導出する。サーヴァントID別の補正値は持たない。
+- ジョンは`〔王〕一致数`と`〔悪〕一致数`を分離し、同一actorの重複計上を説明する。ハベトロットは`敵の合計数`とする。
+- scenario明示値は最終countであり、最低値未満はtyped `inputRequired`となる。入力省略時は共有・保存後も最低値を再導出する。
+- artifact v49でcanonical count occurrenceを全件ratchetし、ジョン／ハベトロットの最低値、複数敵、NP1〜5をgolden化する。既存calculated parity 1,504件はdigest不変を必須とし、この2件以外の差分があれば停止する。
