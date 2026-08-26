@@ -1,4 +1,4 @@
-import type { ActorScope, CanonicalExclusiveGroup, TraitScope } from './index';
+import type { ActorScope, CanonicalExclusiveGroup, TraitScope } from './contracts';
 
 export type TraitConstraintScope =
   | 'attackerInitial'

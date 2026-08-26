@@ -1,5 +1,5 @@
 import type { TraitCondition } from '@fgo-lab/master-data';
-import type { BattleState, ConditionExpression, TraitScope } from './index';
+import type { BattleState, ConditionExpression, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
 
 export function normalizeTraitCondition(

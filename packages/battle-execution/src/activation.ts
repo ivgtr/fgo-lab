@@ -1,4 +1,4 @@
-import type { BattleOperation, ConditionExpression, EffectDecision, TraitScope } from './index';
+import type { BattleOperation, ConditionExpression, EffectDecision, TraitScope } from './contracts';
 
 function conditionContainsChoice(expression: ConditionExpression): boolean {
   if (expression.kind === 'choice') return true;
@@ -48,19 +48,21 @@ export function conditionRequiresTrait(
         );
 }
 
-export function linkAttackerSkillMutations(operations: BattleOperation[]): void {
+export function planOperationActivations(
+  operations: readonly BattleOperation[],
+): BattleOperation[] {
   const decisionOperations = operations.filter(
     (operation): operation is BattleOperation & { decisionKey: string } =>
       operation.decisionKey !== null,
   );
-  for (const operation of operations) {
+  return operations.map((operation) => {
     if (
       operation.phase !== 'attackerSkill' ||
       operation.enabledByDefault ||
       operation.decisionKey !== null ||
       (operation.kind !== 'addTrait' && operation.kind !== 'removeTrait')
     )
-      continue;
+      return operation;
     const present = operation.kind === 'addTrait';
     const links = decisionOperations.flatMap((candidate) => {
       const sameSkill =
@@ -85,15 +87,18 @@ export function linkAttackerSkillMutations(operations: BattleOperation[]): void 
         },
       ];
     });
-    operation.activation = {
-      kind: 'linkedDecisions',
-      links: [
-        ...new Map(
-          links.map((link) => [`${link.decisionKey}:${link.reason}:${link.selection}`, link]),
-        ).values(),
-      ],
+    return {
+      ...operation,
+      activation: {
+        kind: 'linkedDecisions',
+        links: [
+          ...new Map(
+            links.map((link) => [`${link.decisionKey}:${link.reason}:${link.selection}`, link]),
+          ).values(),
+        ],
+      },
     };
-  }
+  });
 }
 
 export function resolveOperationActivation(

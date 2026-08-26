@@ -6,7 +6,7 @@ import type {
   ConditionExpression,
   ConstraintValidationIssue,
   WorldFactAssertion,
-} from './index';
+} from './contracts';
 import {
   isQuantityFactValueInDomain,
   QUANTITY_FACT_DOMAINS,
