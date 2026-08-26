@@ -457,7 +457,7 @@ E0で利用箇所を再確認したうえで、少なくとも次を削除対象
 
 ## 11. E3.8: implementation-unsupported 0
 
-状態: 実装中
+状態: 完了（2026-08-26）
 
 E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選択時14騎25 occurrenceを確認した。固定値は期待値として流用せず、`docs/damage-effect-zero-unsupported-plan.md`へorigin、occurrence、raw semantics、damage影響、不足context、共通解決方式を再記録した。
 
@@ -519,3 +519,13 @@ E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選
 - 420既定計算、全user projection、implementation unsupported 0、既存golden digestが不変である。
 - schema/engineを更新し、旧scenario値map、旧Web loop、互換fallbackが残らない。
 - E4実装は行わず、再利用するapplication APIだけを確定する。
+
+完了結果:
+
+- scenario schema 23、master schema 27、artifact v50、engine 15.0.0へ一方向更新した。
+- runtime入力13 keyのうち、火力へ到達する12 keyを9騎のeffect近傍へ投影した。非火力の
+  friendship level 1 keyは通常UIへ投影しない。
+- `canonicalInputValues`はtyped integer valueだけを保存し、未知keyは`unsupported`、既知keyの
+  欠落・範囲外・導出minimum未満は`inputRequired`としてfail-closedにする。
+- 420既定計算、既存calculated 1,504 scenario digest、全user projectionのimplementation
+  unsupported 0を維持した。詳細は`docs/reports/damage-effect-execution-e3-9.md`に記録する。

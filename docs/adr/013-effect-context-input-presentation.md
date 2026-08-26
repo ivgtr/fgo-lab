@@ -118,5 +118,5 @@ ranking workerへdefinition解釈、default導出、validation、effect固有入
 - 通常ケースの操作量と主要な画面順は変わらない。
 - 特殊入力と影響する火力effectが隣接し、中間状態は引き続き表示されない。
 - scenario/share/save schemaとengine versionを破壊的に更新し、旧number mapを削除する。
-- master IRの計算意味論は変えないためmaster schemaとartifact値は変更しない。
+- master IRの入力definition名もcanonical inputへ統一するため、master schemaとartifact versionを更新する。
 - 既存calculated scenarioのfinal damage inputとNP1〜5は変えない。
