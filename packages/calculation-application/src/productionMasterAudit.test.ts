@@ -1409,8 +1409,22 @@ describe('production master damage quality ratchet', () => {
     };
     const mutationKeys: string[] = [];
     const reachableKeys = new Set<string>();
+    let rawFieldMutationCount = 0;
+    let rawRecipientMutationCount = 0;
 
     for (const servant of master.servants) {
+      for (const effect of servant.skills.flatMap((skill) => skill.effects)) {
+        if (
+          effect.contextChanges.addedFieldTraits.length > 0 ||
+          effect.contextChanges.removedFieldTraits.length > 0
+        )
+          rawFieldMutationCount += 1;
+        if (
+          effect.contextChanges.addedRecipientTraits.length > 0 ||
+          effect.contextChanges.removedRecipientTraits.length > 0
+        )
+          rawRecipientMutationCount += 1;
+      }
       let scenario: ReturnType<typeof createDefaultResolvedScenario>;
       try {
         scenario = createDefaultResolvedScenario(master, undefined, servant);
@@ -1463,6 +1477,8 @@ describe('production master damage quality ratchet', () => {
     const unreachableKeys = mutationKeys
       .filter((key) => !reachableKeys.has(key))
       .sort((left, right) => left.localeCompare(right));
+    expect(rawFieldMutationCount).toBe(15);
+    expect(rawRecipientMutationCount).toBe(15);
     expect(mutationKeys).toHaveLength(24);
     expect(reachableKeys.size).toBe(15);
     expect(unreachableKeys).toEqual([

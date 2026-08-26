@@ -35,7 +35,7 @@ Production 469騎、攻撃宝具scenario 420件を現行masterとexecutorから�
 
 engine 12.12.0では、攻撃役スキルのhidden context mutationを一律automaticにせず、選択された火力effectとのactivation linkをcanonical operationへ追加した。linkは同一source skillの使用、または全condition branchが要求するtrait prerequisiteから導出する。operation enable型の選択とcondition satisfaction型の選択を区別し、conditional effectをオフへ戻したときに旧decisionがmutationを起動し続けない。
 
-production masterの攻撃役スキル由来mutationは24 occurrenceである。未選択時は24件すべて`notApplied`、現在のNP火力decisionから到達可能なものは15件である。残る9件は現在のNPダメージへ寄与する選択がないか、選択候補を一意に確定できないため実行しない。ガレスは陽射し条件の攻撃力30%を選択すると陽射し付与を先にcommitし、ダンテは対天／対地に対応する天国／地獄だけをcommitする。テスカトリポカは同一skillの火力effect選択時だけ陽射しを解除する。recipient traitはfieldと同じactivation経路を通り、専用分岐を持たない。
+production masterの攻撃役スキル由来mutationはfield 15、recipient 15の計30 raw occurrenceである。このうち現在のNP実行へ投影される24件は未選択時にすべて`notApplied`、現在のNP火力decisionから到達可能なものは15件である。残る9件は現在のNPダメージへ寄与する選択がないか、選択候補を一意に確定できないため実行しない。NP scope外の6件は火力operationとして生成しない。ガレスは陽射し条件の攻撃力30%を選択すると陽射し付与を先にcommitし、ダンテは対天／対地に対応する天国／地獄だけをcommitする。テスカトリポカは同一skillの火力effect選択時だけ陽射しを解除する。recipient traitはfieldと同じactivation経路を通り、専用分岐を持たない。
 
 エレシュキガルの冥界の護りによる`blessedByKur`付与は、現行artifactでは現在のNPダメージ後に実行される効果だけが参照する。現在のNP damage inputへ遡及させず、hiddenかつ`notApplied`をproduction regressionとして固定した。
 
@@ -54,7 +54,7 @@ production masterの攻撃役スキル由来mutationは24 occurrenceである。
 - canonical fact-condition conflicts: 250組、68効果、52騎
 - conflict中のcalculated、conflict operationのapplied、矛盾stateの最終input残存: 0
 - inert user projection、未成立automatic火力、literal unknown trait: 0
-- attacker-skill context mutation: 24 occurrence、未選択commit 0、火力decisionから到達可能15、現在のNP damageへ非寄与または候補未確定9
+- attacker-skill context mutation: raw 30 occurrence（field 15、recipient 15）、NP projection 24、未選択commit 0、火力decisionから到達可能15、現在のNP damageへ非寄与または候補未確定9
 
 ## UI and validation
 
