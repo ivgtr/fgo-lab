@@ -222,3 +222,14 @@ production raw監査の結果、MLB skill保有898礼装中8礼装にはMLB-only
 E3.6では`craftEssenceNormalization.ts`がshared／MLB-only分類、semantic identity、MLB値統合を所有し、`snapshotNormalization.ts`はskill選択とsnapshot組立だけを担当する。`sourceCollection.ts`はcanonical availabilityだけでLB0〜3／LB4を解決し、Atlasのlimit countを知らない。`operationCompiler.ts`は全operationの順序付きcompileとcompile時all-or-nothingを所有する。
 
 production buildは178 modules、main 454.16 kB（gzip 130.45 kB）、ranking worker 95.71 kBとなった。v36比はmain +0.54 kB、worker +0.18 kBで、availability判定と厳密照合型の追加に対応する。単独benchmarkは403.13 ops/s、mean 2.4806 msであり、kernelと既存1,954実行結果の変更はない。
+
+# 11. E3.7 MLB値完全性と実行時原子性
+
+E3.6後のレビューで、MLB値が欠落したvalued operationをexecutorが通常値で計算するfail-open、礼装専用availabilityを他sourceへ配置できるartifact境界の欠落、同一effectの後半operationが実行時quantity不足となった際に前半だけcommitされる経路を確認した。現行productionの承認済み5礼装修正と既存1,954ケースに既知の誤差はないが、将来の正規化漏れや複合effect追加で誤ったtrace/stateを残し得るため、次の契約へ収束させる。
+
+- data-pipelineは全CE valued operationへLB4系列を必ず生成する。MLB skillなしは通常系列の明示的複製、shared effectは厳密照合したMLB系列、MLB-only effectは独立occurrence自身の系列を用いる。
+- battle-executionはLB4系列欠落を通常値へfallbackせず、effect全体をtyped unsupportedとする。
+- master snapshotは`maximumLimitBreakOnly`をCE effect以外で拒否する。source collectorは正当なartifactのavailability評価だけを担う。
+- ordered executionは`origin / source instance / skill / effect occurrence`でeffect transactionを識別する。同一effectのoperation列をcandidate state/inputへ順序通り適用し、一件でもruntime unsupportedとなれば全列をnon-appliedとして元のstate/inputを維持する。
+- MLB skill保有CE 898件、MLB evidence shared effect 2,077件、実値override 745件、shared MLB canonical値digestを固定する。通常系列を明示複製したeffectも別件数で監査し、evidence由来overrideと混同しない。
+- 既存1,954ケースdigestとMLB-only 5礼装goldenは変更しない。UI、scenario、URL共有、保存形式は変更しない。
