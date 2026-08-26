@@ -41,3 +41,9 @@ recipientの期待方向はmodifier semanticsに含める。たとえば防御�
 - raw `Value`を一律にmodifierとして扱えないことをschemaで表現できる。
 - 新しいraw buff／target／parameter familyはnormalization時またはproduction ratchetで検出され、runtimeでsilent fallbackしない。
 - MasterEffect schemaは破壊的変更となるが、scenarioとfrontendの入出力契約は維持される。
+
+# Verification
+
+production 13,314 effect occurrenceを同数のtyped operationへ変換した。`Value`保有10,432 effectはmodifier 3,733、modifier rate 1、context trait ID 73、その他non-damage 6,625へ用途分類し、modifier用途以外の値をmodifier seriesへ入れていない。canonical traitへ解決できないrecipient trait参照25件は、無条件の`nonDamage`へ潰さず`unresolved`かつ`damageRelevant: false`として監査可能に保持する。
+
+移行前後の既定420 scenarioとuser projection選択1,534ケースを、version/evidence metadataを除いて比較した。scenario input、final damage input、projection、operation trace、damage rowは1,954件すべて一致した。master schema 21、artifact v36、engine 12.13.0へ更新し、旧schema artifactは拒否する。

@@ -287,6 +287,19 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 - 未承認レビューで検出した範囲外quantity、actor/stateの評価器・solver不一致、複数競合時の部分適用を修正した。HP 0〜1,000、レアリティ0〜5、Battle Point 0〜10をschema／executor共通定義とし、初期制約失敗時は選択中condition operationをall-or-nothingで非適用にする。
 - trait制約IRを初期、state、combinedへ分離した。actor条件は初期とstateの三値論理ORとして毎operation再導出し、初期negativeを維持したまま後続state付与・解除を正しく扱う。水着武則天の初期`undead: false`からの死霊付与をproduction ratchetへ固定した。
 
+### E3.5：canonical execution IRへの収束
+
+状態: 完了（2026-08-26）
+
+- data-pipelineをraw Function、buff、target、parameterの唯一の解釈箇所とし、MasterEffectを用途別typed operation列へ破壊的更新した。
+- modifier値はdamage modifier 3,733件とmodifier rate change 1件だけへ保持した。context trait ID 73件とその他non-damage値6,625件はmodifier seriesへ入れていない。
+- production 13,314 effect occurrenceを同数のcanonical operationへ正規化した。内訳はdamage modifier 3,733、modifier rate change 1、ignore defense 35、ignore damage cut 1、card type mutation 12、context mutation 55、non-damage 9,417、unresolved 60である。
+- 未解決recipient trait参照25件は`contextReference / damageRelevant: false`として意味を保持し、現行damage実行を阻害しない。damage関連のunresolvedは従来どおりfail-closedとする。
+- battle-executionからraw `parameterSets`、`Value`、buff名、target名、Function routing、`parameter()`を削除した。raw occurrenceは`atlasEvidence`に隔離し、runtime fallbackには使用しない。
+- master schema 21、artifact v36、engine 12.13.0へ更新した。scenario schema 21、frontend、共有・保存形式は変更せず、旧artifactの互換読込経路は追加していない。
+- 移行前後の既定420 scenarioとuser projection選択1,534件、合計1,954件でscenario input、final input、projection、operation trace、damage rowが完全一致した。digestは双方`825dcf95b265e585cce9343ed6d4b7a180f531794ca3f0e173516220c5d0bc3a`である。
+- 既定unsupported 12騎、選択時unsupported 14騎25 occurrence、user 1,534、automatic visible 443、hidden 687、inert user 0を維持した。E4には着手していない。
+
 ### E4：ランキング統合と全master収束
 
 状態: 未着手

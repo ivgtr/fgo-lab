@@ -1,6 +1,6 @@
 ---
 title: "Damage effect execution 構造監査・責務収束計画"
-status: "Canonical execution IR migration in progress"
+status: "Canonical execution IR migration complete"
 created_at: "2026-08-26"
 baseline_head: "8730c91"
 ---
@@ -139,7 +139,7 @@ web
 ## battle-execution
 
 - `contracts.ts`: ConditionExpression、BattleOperation、BattleState、OperationResult、EffectProjection等のdomain contract。
-  - `effectRouting.ts`: canonical target policyをsource originに対して解決する。buff名やtarget文字列は扱わない。
+- `effectRouting.ts`: canonical target policyをsource originに対して解決する。buff名やtarget文字列は扱わない。
 - `sourceCollection.ts`: scenarioとmasterから順序付きsource occurrenceを収集し、typed operationのlevel／OC／limit break valueを選択する。raw parameterは扱わない。
 - `operationCompiler.ts`: typed execution semanticsをConditionExpressionとBattleOperationへcompileする。stateとAtlas語彙を読まない。
 - `activation.ts`: immutableなoperation列からlinked activationを計画し、decisionから有効性を解決する。
@@ -196,3 +196,17 @@ web
 - 変更前baselineのinventory、代表damage input、damage値、goldenが一致する。
 - bundleとbenchmarkの変動を記録し、意味論または依存境界に説明できない退行を残さない。
 - 全品質ゲートが成功する。
+
+# 9. 実装結果
+
+2026-08-26にmaster schema 21、artifact `2026-08-26-atlas-jp-calculator-v36`、engine 12.13.0へ一方向更新した。scenario schema、共有形式、保存形式、frontend入力は変更していない。旧artifactはschema不一致で拒否し、互換adapterは設けていない。
+
+production 13,314 effect occurrenceを13,314 canonical operationへ正規化した。内訳はdamage modifier 3,733、modifier rate change 1、ignore defense 35、ignore damage cut 1、card type mutation 12、context mutation 55、non-damage 9,417、unresolved 60である。unresolvedのうち25件は、modifierではないrecipient trait参照を`contextReference / damageRelevant: false`として明示したもので、値をmodifier seriesへ移さず現行runtime結果も変更しない。
+
+`Value`保有10,432 effectはmodifier 3,733、modifier rate 1、context trait ID 73、その他non-damage 6,625へ用途分類した。valued canonical operation 3,734件はlevel／OC／limit break別の全値が移行前の実行値と一致する。battle-execution内の`parameterSets`、`['Value']`、raw buff名、raw target名、`parameter()`、raw routing table参照は0件である。
+
+移行前HEADと、既定420 scenarioおよびuser projection単独選択1,534件の合計1,954ケースを比較した。version/evidence metadataだけを除外し、scenario input、final damage input、projection、operation outcome/trace、NP1〜5 damage rowが全件一致した。双方のdigestは`825dcf95b265e585cce9343ed6d4b7a180f531794ca3f0e173516220c5d0bc3a`である。
+
+production inventoryは既定unsupported 12騎、選択時unsupported 14騎25 occurrence、user projection 1,534、automatic visible 443、hidden 687、inert user 0を維持した。constraint conflict中のapplied operationとhidden mutationの未選択commitは0、到達可能hidden mutationは15である。
+
+production buildは178 modules、main 453.50 kB（gzip 130.28 kB）、ranking worker 95.49 kBとなった。構造監査前baseline比でmainは同等、workerはtyped master schemaの追加により1.10 kB増加した。計算benchmarkは418.63 ops/s、mean 2.3887 msであり、環境揺らぎを考慮しても意味論上の退行は確認していない。
