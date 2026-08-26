@@ -77,6 +77,16 @@ interface OperationBase {
   decisionKey: string | null;
   decisionPlan: OperationDecisionPlan;
   enabledByDefault: boolean;
+  activation:
+    | { kind: 'sourceDefault' }
+    | {
+        kind: 'linkedDecisions';
+        links: readonly {
+          decisionKey: string;
+          reason: 'sourceSkill' | 'traitPrerequisite';
+          selection: 'operationEnabled' | 'conditionSatisfied';
+        }[];
+      };
   evidence: OperationEvidence;
   presentation: { label: string; sourceName: string; skillName: string };
 }

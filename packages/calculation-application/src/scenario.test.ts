@@ -218,6 +218,138 @@ describe('scenario calculation facade', () => {
       'applied',
     );
   });
+
+  it('activates attacker-skill context mutations only from linked firepower decisions', () => {
+    const fieldEffect = {
+      ...modifierEffect('field-sunshine', 'fieldIndividuality', 2_038),
+      label: 'field mutation',
+      contextChanges: {
+        addedFieldTraits: ['fieldSunlight'],
+        removedFieldTraits: [],
+        addedRecipientTraits: [],
+        removedRecipientTraits: [],
+      },
+    };
+    const recipientEffect = {
+      ...modifierEffect('recipient-blessing', 'addIndividuality', 2_038, [], 'self'),
+      label: 'recipient mutation',
+      contextChanges: {
+        addedFieldTraits: [],
+        removedFieldTraits: [],
+        addedRecipientTraits: ['blessedByKur'],
+        removedRecipientTraits: [],
+      },
+    };
+    const conditional = {
+      ...modifierEffect('sunshine-power', 'upAtk', 300, [], 'self', {
+        ...unconditionalConditions,
+        field: {
+          operator: 'all',
+          traits: [{ name: 'fieldSunlight', negative: false }],
+        },
+      }),
+      timing: 'beforeDamage' as const,
+    };
+    const alternativeField = {
+      ...modifierEffect('alternative-field-power', 'upNpdamage', 250, [], 'self', {
+        ...unconditionalConditions,
+        field: {
+          operator: 'any',
+          traits: [
+            { name: 'fieldSunlight', negative: false },
+            { name: 'fieldShore', negative: false },
+          ],
+        },
+      }),
+      timing: 'beforeDamage' as const,
+    };
+    const sameSkillPower = modifierEffect('skill-power', 'upDamage', 200);
+    const baseServant = fixture.servants[0]!;
+    const linkedMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'mutation-skill',
+              slot: 1,
+              priority: 1,
+              name: 'mutation skill',
+              detail: '',
+              imageKey: null,
+              effects: [fieldEffect, recipientEffect, sameSkillPower],
+            },
+          ],
+          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
+            ...np,
+            effects: [conditional, alternativeField],
+          })),
+        },
+      ],
+    });
+    const scenario = {
+      ...createDefaultResolvedScenario(linkedMaster, undefined),
+      attackerSkills: [{ skillId: 'mutation-skill', skillLevel: 10 }],
+    };
+    const versionContext = { ...versions, masterDataVersion: linkedMaster.version };
+    const initial = calculateScenario(scenario, linkedMaster, versionContext);
+    const conditionalProjection = initial.effects.find(
+      (effect) => effect.label === 'sunshine-power',
+    )!;
+    const skillProjection = initial.effects.find((effect) => effect.label === 'skill-power')!;
+    const alternativeProjection = initial.effects.find(
+      (effect) => effect.label === 'alternative-field-power',
+    )!;
+
+    expect(initial.input.fieldTraits).toEqual([]);
+    expect(initial.input.attackerStateTraits).toEqual([]);
+    expect(initial.effects.find((effect) => effect.label === 'field mutation')).toMatchObject({
+      visibility: 'hidden',
+      outcome: 'notApplied',
+    });
+    expect(initial.effects.find((effect) => effect.label === 'recipient mutation')).toMatchObject({
+      visibility: 'hidden',
+      outcome: 'notApplied',
+    });
+
+    const fieldSelected = calculateScenario(
+      applyEffectProjectionDecision(scenario, conditionalProjection, true),
+      linkedMaster,
+      versionContext,
+    );
+    expect(fieldSelected.result.status).toBe('calculated');
+    expect(fieldSelected.input.fieldTraits).toEqual(['fieldSunlight']);
+    expect(fieldSelected.input.attackBuff).toBe(0.3);
+    expect(fieldSelected.effects.find((effect) => effect.label === 'field mutation')?.outcome).toBe(
+      'applied',
+    );
+
+    const alternativeSelected = calculateScenario(
+      applyEffectProjectionDecision(scenario, alternativeProjection, true),
+      linkedMaster,
+      versionContext,
+    );
+    expect(alternativeSelected.result.status).toBe('calculated');
+    expect(alternativeSelected.input.fieldTraits).toEqual([]);
+    expect(alternativeSelected.input.npDamageBuff).toBe(0.25);
+    expect(
+      alternativeSelected.effects.find((effect) => effect.label === 'field mutation')?.outcome,
+    ).toBe('notApplied');
+
+    const skillSelected = calculateScenario(
+      applyEffectProjectionDecision(scenario, skillProjection, true),
+      linkedMaster,
+      versionContext,
+    );
+    expect(skillSelected.result.status).toBe('calculated');
+    expect(skillSelected.input.attackerStateTraits).toEqual(['blessedByKur']);
+    expect(skillSelected.input.powerMod).toBe(0.2);
+    expect(
+      skillSelected.effects.find((effect) => effect.label === 'recipient mutation')?.outcome,
+    ).toBe('applied');
+  });
+
   it('calculates a resolved scenario without a UI selection adapter', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
     const calculation = calculateScenario(scenario, master, versions);

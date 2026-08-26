@@ -21,6 +21,7 @@ import type {
   OperationSource,
   TraitScope,
 } from './index';
+import { linkAttackerSkillMutations, resolveOperationActivation } from './activation';
 import {
   combineConditions,
   containsUnsupportedCondition,
@@ -348,6 +349,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     decisionKey: plan.activation === 'user' || plan.condition === 'userMayAssume' ? key : null,
     decisionPlan: plan,
     enabledByDefault: source.enabledByDefault,
+    activation: { kind: 'sourceDefault' as const },
     evidence: { rawPath: key, functionId: source.effect.id, parameterKeys: [] },
     presentation: {
       label: source.effect.label,
@@ -1166,6 +1168,7 @@ export function executeOrderedScenario(
           : null,
       decisionPlan: npDecisionPlan,
       enabledByDefault: true,
+      activation: { kind: 'sourceDefault' },
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId, parameterKeys: [] },
       presentation: {
         label: damage.kind === 'targetRarity' ? 'レアリティ特攻宝具' : '特攻宝具',
@@ -1181,6 +1184,7 @@ export function executeOrderedScenario(
       ) as [number, number, number, number, number],
     });
   }
+  linkAttackerSkillMutations(operations);
   const phaseOrder: Record<ExecutionPhase, number> = {
     passive: 0,
     attackerSkill: 1,
@@ -1200,6 +1204,12 @@ export function executeOrderedScenario(
   const decisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
+  const activations = new Map(
+    operations.map((operation) => [
+      operation.operationId,
+      resolveOperationActivation(operation, decisions),
+    ]),
+  );
   const conditionByDecisionKey = new Map(
     operations.flatMap((operation) =>
       operation.decisionKey ? [[operation.decisionKey, operation.condition] as const] : [],
@@ -1214,6 +1224,14 @@ export function executeOrderedScenario(
         ? [{ sourceKey: decision.decisionKey, expression }]
         : [];
     });
+  const activeMutationConstraints: SatisfiableConditionConstraint[] = operations.flatMap(
+    (operation) => {
+      const activation = activations.get(operation.operationId)!;
+      return activation.assumesLocalCondition
+        ? [{ sourceKey: operation.operationId, expression: operation.condition }]
+        : [];
+    },
+  );
   const selectedCardMutations = operations.filter((operation) => {
     if (operation.kind !== 'changeCardType') return false;
     if (operation.decisionPlan.activation === 'automatic') return operation.enabledByDefault;
@@ -1241,7 +1259,7 @@ export function executeOrderedScenario(
         fact: assertion.fact,
       })),
     ],
-    expressions: activeConditionConstraints,
+    expressions: [...activeConditionConstraints, ...activeMutationConstraints],
   });
   const constraintIssues =
     initialConstraintValidation.status === 'satisfied' ? [] : [initialConstraintValidation.issue];
@@ -1250,7 +1268,12 @@ export function executeOrderedScenario(
   const invalidDecisionKeys = new Set(
     initialConstraintValidation.status === 'satisfied'
       ? []
-      : activeConditionConstraints.map((constraint) => constraint.sourceKey),
+      : [
+          ...activeConditionConstraints.map((constraint) => constraint.sourceKey),
+          ...operations.flatMap(
+            (operation) => activations.get(operation.operationId)!.activeDecisionKeys,
+          ),
+        ],
   );
   const resolvedCompileProjections = compileProjections.map((projection) => {
     const choice = decisions.get(projection.projectionKey);
@@ -1296,20 +1319,22 @@ export function executeOrderedScenario(
   let input = baseInput;
   for (const operation of operations) {
     const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
-    const enabled =
-      operation.decisionPlan.activation === 'automatic'
-        ? operation.enabledByDefault
-        : (choice?.operationEnabled ?? operation.enabledByDefault);
+    const activation = activations.get(operation.operationId)!;
+    const enabled = activation.enabled;
     const condition = evaluateConditionExpression(operation.condition, state);
     const resolvedModifierValue =
       operation.kind === 'addModifier' ? resolveModifierValue(operation, state) : null;
-    const localConditionSatisfied =
+    const decisionConditionSatisfied =
       choice?.conditionSatisfaction === 'assumeSatisfied' &&
       operation.decisionPlan.condition === 'userMayAssume';
+    const localConditionSatisfied = decisionConditionSatisfied || activation.assumesLocalCondition;
     let outcome: OperationResult['outcome'] = 'applied';
     let code: EffectProjection['explanation']['code'] = 'applied';
     let issue: ExecutionIssue | null = null;
-    if (operation.decisionKey && invalidDecisionKeys.has(operation.decisionKey)) {
+    if (
+      (operation.decisionKey && invalidDecisionKeys.has(operation.decisionKey)) ||
+      activation.activeDecisionKeys.some((key) => invalidDecisionKeys.has(key))
+    ) {
       outcome = 'notApplied';
       code = 'conditionNotMet';
     } else if (!enabled) {
@@ -1332,7 +1357,7 @@ export function executeOrderedScenario(
         detail: 'modifier_value_quantity_missing',
       };
     } else if (
-      localConditionSatisfied &&
+      decisionConditionSatisfied &&
       (operation.kind === 'addTrait' || operation.kind === 'removeTrait')
     ) {
       outcome = 'unsupported';
@@ -1438,9 +1463,9 @@ export function executeOrderedScenario(
         operation.kind === 'changeCardType'
           ? validateConstraintSet({
               fixedFacts: fixedConstraintFactsFromState(candidateState, operation.operationId),
-              expressions: activeConditionConstraints.filter(
-                (constraint) => !invalidDecisionKeys.has(constraint.sourceKey),
-              ),
+              expressions: activeConditionConstraints
+                .filter((constraint) => !invalidDecisionKeys.has(constraint.sourceKey))
+                .concat(activeMutationConstraints),
             })
           : { status: 'satisfied' as const, alternativeCount: 1 };
       if (mutationValidation.status !== 'satisfied') {
@@ -1448,6 +1473,7 @@ export function executeOrderedScenario(
         code = 'unresolved';
         issue = mutationValidation.issue;
         mutationValidation.issue.sourceKeys.forEach((key) => invalidDecisionKeys.add(key));
+        activation.activeDecisionKeys.forEach((key) => invalidDecisionKeys.add(key));
       } else {
         state = candidateState;
         state.evidence = [...state.evidence, operation.evidence];
