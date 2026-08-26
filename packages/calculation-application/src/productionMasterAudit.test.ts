@@ -1080,6 +1080,8 @@ describe('production master damage quality ratchet', () => {
     expect(earthAfterConflict.input.powerMod).toBe(0.5);
     expect(earthAfterConflict.effects.find((effect) => effect.label === sky.label)).toMatchObject({
       outcome: 'notApplied',
+      visibility: 'visible',
+      controllability: 'user',
       explanation: { code: 'conditionNotMet' },
     });
     expect(earthAfterConflict.effects.find((effect) => effect.label === earth.label)).toMatchObject(

@@ -59,6 +59,7 @@ export function createOperationProjection(
   condition: boolean | null,
   choice: EffectDecision | undefined,
   resolvedModifierValue: number | null,
+  preserveSiblingChoice: boolean,
 ): EffectProjection {
   const hidden =
     operation.kind === 'addTrait' ||
@@ -92,7 +93,17 @@ export function createOperationProjection(
       ? enabled
       : choice?.conditionSatisfaction === 'assumeSatisfied';
   const conditionSatisfiedInternally = condition === true;
-  const knownImpossibleBeforeSelection = condition === false && choice === undefined;
+  // A user-activated effect must remain reachable when another selected operation
+  // makes its condition false. Selecting it may intentionally expose a typed
+  // constraint conflict, and the user must still be able to switch the choice.
+  const knownImpossibleBeforeSelection =
+    condition === false &&
+    choice === undefined &&
+    !(
+      preserveSiblingChoice &&
+      (operation.decisionPlan.activation === 'user' ||
+        operation.decisionPlan.condition === 'userMayAssume')
+    );
   const userControllable =
     !knownImpossibleBeforeSelection &&
     operation.decisionKey !== null &&

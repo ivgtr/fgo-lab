@@ -269,6 +269,11 @@ export function executeOrderedScenario(
       resolveOperationActivation(operation, decisions),
     ]),
   );
+  const activeDecisionSourceInstances = new Set(
+    operations
+      .filter((operation) => activations.get(operation.operationId)!.activeDecisionKeys.length > 0)
+      .map((operation) => operation.source.sourceInstanceId),
+  );
   const conditionByDecisionKey = new Map(
     operations.flatMap((operation) =>
       operation.decisionKey ? [[operation.decisionKey, operation.condition] as const] : [],
@@ -584,6 +589,7 @@ export function executeOrderedScenario(
           condition,
           choice,
           resolvedModifierValue,
+          activeDecisionSourceInstances.has(operation.source.sourceInstanceId),
         ),
         issue,
       });

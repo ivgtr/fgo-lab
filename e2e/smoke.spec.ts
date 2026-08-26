@@ -1042,7 +1042,7 @@ test('canonical actor counts derive safe minima and reject lower final totals', 
   const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
   await attackerDialog.getByRole('tab', { name: '全DB' }).click();
   await attackerDialog.getByLabel('名前で検索').fill('ジョン・ラックランド');
-  await attackerDialog.getByRole('button', { name: /ジョン・ラックランド.*Lv70/ }).click();
+  await attackerDialog.getByRole('button', { name: /ジョン・ラックランド.*Lv90/ }).click();
 
   const king = page.getByLabel('〔王〕一致数');
   const evil = page.getByLabel('〔悪〕一致数');
@@ -1054,7 +1054,7 @@ test('canonical actor counts derive safe minima and reject lower final totals', 
 
   await king.fill('0');
   await expect(table).toHaveCount(0);
-  await expect(page.getByRole('alert')).toContainText('入力が必要');
+  await expect(page.getByRole('alert')).toContainText('正確な計算に必要な戦闘情報');
   await king.fill('1');
   await expect(table).toBeVisible();
   await expect(table.getByRole('row', { name: /NP1.*現在/ })).toContainText('31,827');
@@ -1092,7 +1092,7 @@ test('Habetrot uses the final enemy total from one through three', async ({ page
   await expect(row).toContainText('59,557');
   await count.fill('0');
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
-  await expect(page.getByRole('alert')).toContainText('入力が必要');
+  await expect(page.getByRole('alert')).toContainText('正確な計算に必要な戦闘情報');
 });
 
 test('Gareth commits hidden sunlight only while its linked NP effect is selected', async ({
@@ -1128,14 +1128,14 @@ test('Gareth commits hidden sunlight only while its linked NP effect is selected
 
   await page.getByText('計算内訳・根拠・仮定・警告').click();
   await expect(
-    page.getByText(/attackerSkill:addTrait:.*8411:0:add-field:fieldSunlight:applied/),
+    page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:applied/),
   ).toBeVisible();
 
   await sunlightPower.click();
   await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
   await expect(np1Average).toHaveText(initialAverage ?? '');
   await expect(
-    page.getByText(/attackerSkill:addTrait:.*8411:0:add-field:fieldSunlight:notApplied/),
+    page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:notApplied/),
   ).toBeVisible();
 });
 
@@ -1562,7 +1562,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('408件を計算・計算対象外 12件');
+  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );
