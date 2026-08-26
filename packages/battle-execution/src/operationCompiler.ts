@@ -205,7 +205,11 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
     if (semantic.kind === 'contextMutation') {
       if (semantic.scope === 'field')
         operations.push({
-          ...baseOperation(source, order++, `${semantic.mutation}-field:${semantic.trait}`),
+          ...baseOperation(
+            source,
+            order++,
+            `${semantic.mutation === 'addTrait' ? 'add' : 'remove'}-field:${semantic.trait}`,
+          ),
           decisionKey: null,
           decisionPlan: { activation: 'automatic', condition: 'evaluate' },
           kind: semantic.mutation,
@@ -214,7 +218,11 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
         });
       else if (recipient)
         operations.push({
-          ...baseOperation(source, order++, `${semantic.mutation}-${recipient}:${semantic.trait}`),
+          ...baseOperation(
+            source,
+            order++,
+            `${semantic.mutation === 'addTrait' ? 'add' : 'remove'}-${recipient}:${semantic.trait}`,
+          ),
           decisionKey: null,
           decisionPlan: { activation: 'automatic', condition: 'evaluate' },
           kind: semantic.mutation,
