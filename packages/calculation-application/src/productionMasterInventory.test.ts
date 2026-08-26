@@ -11,12 +11,25 @@ import {
 } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { applyEffectProjectionDecision } from './effectDecision';
+import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import { setEffectSourceEnabled } from './scenarioCommands';
+import { createEffectControlViewModels } from './effectControls';
 
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
 
+function assumeProjectedCondition(
+  scenario: Parameters<typeof applyEffectProjectionDecision>[0],
+  projection: EffectProjection,
+  peers: readonly EffectProjection[] = [],
+) {
+  return projection.decision.state !== 'none' &&
+    projection.decision.kind === 'effect' &&
+    projection.decision.plan.condition === 'userMayAssume'
+    ? applyEffectConditionDecision(scenario, projection, true, peers)
+    : scenario;
+}
 function loadProductionMaster() {
   productionMaster ??= readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
     (content) => masterSnapshotSchema.parse(JSON.parse(content)),
@@ -221,7 +234,9 @@ describe('production master inventory ratchet', () => {
     const canonicalConflictServants = new Set<string>();
     let exclusivePairCount = 0;
     for (const { servant, scenario, calculation } of calculations) {
-      const userEffects = calculation.effects.filter((effect) => effect.controllability === 'user');
+      const userEffects = createEffectControlViewModels(calculation.effects)
+        .map((control) => control.projection)
+        .filter((effect) => effect.controllability === 'user');
       const selectedCalculations = new Map<string, ReturnType<typeof calculateScenario>>();
       for (const effect of calculation.effects) {
         if (
@@ -240,20 +255,41 @@ describe('production master inventory ratchet', () => {
           effect.requiredQuantityOwner === 'attacker'
             ? { ...scenario, attackerHpPermille: 500 }
             : scenario;
-        const selectedScenario = applyEffectProjectionDecision(decisionScenario, effect, true);
+        const selectedScenario = assumeProjectedCondition(
+          applyEffectProjectionDecision(
+            setEffectSourceEnabled(decisionScenario, effect, true),
+            effect,
+            true,
+          ),
+          effect,
+          userEffects,
+        );
         const active = calculateScenario(selectedScenario, master, versions);
         selectedCalculations.set(effect.projectionKey, active);
         const activeEffect = active.effects.find(
           (candidate) => candidate.projectionKey === effect.projectionKey,
         );
-        if (active.result.status !== 'calculated' || activeEffect?.outcome === 'unsupported')
+        const constraintOnlyFailure =
+          active.result.status === 'unsupported' &&
+          active.result.missingEvidence.length > 0 &&
+          active.result.missingEvidence.every((reason) => reason.startsWith('constraintConflict:'));
+        if (
+          (active.result.status !== 'calculated' && !constraintOnlyFailure) ||
+          (activeEffect?.outcome === 'unsupported' && !constraintOnlyFailure)
+        )
           selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
+        const excludedScenario =
+          effect.decision.state !== 'none' &&
+          effect.decision.kind === 'effect' &&
+          effect.decision.plan.activation === 'automatic' &&
+          effect.decision.plan.condition === 'userMayAssume'
+            ? applyEffectConditionDecision(selectedScenario, activeEffect ?? effect, false)
+            : applyEffectProjectionDecision(selectedScenario, activeEffect ?? effect, false);
+        const excluded = calculateScenario(excludedScenario, master, versions);
         if (
           !activeEffect ||
-          (activeEffect.outcome === effect.outcome &&
-            activeEffect.decision.state === effect.decision.state &&
-            JSON.stringify(active.input) === JSON.stringify(calculation.input) &&
-            JSON.stringify(active.result) === JSON.stringify(calculation.result))
+          (JSON.stringify(active.input) === JSON.stringify(excluded.input) &&
+            JSON.stringify(active.result) === JSON.stringify(excluded.result))
         )
           inertUserProjections.push(`${servant.id}:${effect.projectionKey}`);
       }
@@ -271,7 +307,10 @@ describe('production master inventory ratchet', () => {
           const pairKey = `${left.projectionKey}|${right.projectionKey}`;
           if (checkedPairs.has(pairKey)) continue;
           checkedPairs.add(pairKey);
-          const leftSelected = applyEffectProjectionDecision(scenario, left, true);
+          const leftSelected = assumeProjectedCondition(
+            applyEffectProjectionDecision(setEffectSourceEnabled(scenario, left, true), left, true),
+            left,
+          );
           const leftOnly = selectedCalculations.get(left.projectionKey)!;
           const rightOnly = selectedCalculations.get(right.projectionKey)!;
           if (
@@ -280,7 +319,14 @@ describe('production master inventory ratchet', () => {
           )
             continue;
           const conflict = calculateScenario(
-            applyEffectProjectionDecision(leftSelected, right, true),
+            assumeProjectedCondition(
+              applyEffectProjectionDecision(
+                setEffectSourceEnabled(leftSelected, right, true),
+                right,
+                true,
+              ),
+              right,
+            ),
             master,
             versions,
           );
@@ -323,7 +369,15 @@ describe('production master inventory ratchet', () => {
             const factKey = `${atom.scope}:${conflictingTrait}`;
             if (checkedFacts.has(factKey)) continue;
             checkedFacts.add(factKey);
-            const selected = applyEffectProjectionDecision(scenario, effect, true);
+            const selected = assumeProjectedCondition(
+              applyEffectProjectionDecision(
+                setEffectSourceEnabled(scenario, effect, true),
+                effect,
+                true,
+              ),
+              effect,
+              userEffects,
+            );
             const conflict = calculateScenario(
               {
                 ...selected,
@@ -374,7 +428,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_158, automaticVisible: 440, hidden: 703 });
+    }).toEqual({ user: 1_606, automaticVisible: 0, hidden: 695 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -411,13 +465,13 @@ describe('production master inventory ratchet', () => {
           ]),
       ),
     ).toEqual({});
-    expect(exclusivePairCount).toBe(23);
-    expect(conflictPairs).toEqual({ effectEffect: 22, factFact: 1, factEffect: 0 });
+    expect(exclusivePairCount).toBe(26);
+    expect(conflictPairs).toEqual({ effectEffect: 25, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 245, effects: 63, servants: 52 });
+    }).toEqual({ combinations: 247, effects: 65, servants: 52 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
@@ -453,7 +507,7 @@ describe('production master inventory ratchet', () => {
       outcome: 'notApplied',
       explanation: { code: 'unresolved' },
     });
-  }, 30_000);
+  }, 60_000);
 
   it('calculates every support projection when selected through the shared decision path', async () => {
     const master = await loadProductionMaster();
@@ -480,10 +534,10 @@ describe('production master inventory ratchet', () => {
                 {
                   sourceInstanceId: `audit:${source.id}:${skill.id}`,
                   servantId: source.id,
-                  skills: [{ skillId: skill.id, skillLevel: 10 }],
+                  skills: [{ skillId: skill.id, skillLevel: 10, enabled: true }],
                 },
               ],
-              selectedEffects: [],
+              effectInclusions: [],
             },
           },
         };
@@ -531,7 +585,7 @@ describe('production master inventory ratchet', () => {
         }
       }
     }
-    expect(projectionCount).toBe(376);
+    expect(projectionCount).toBe(379);
     expect(failures).toEqual([]);
   }, 120_000);
 
@@ -596,12 +650,12 @@ describe('production master inventory ratchet', () => {
             ...base,
             mysticCode: {
               mysticCodeId: code.id,
-              skills: [{ skillId: skill.id, skillLevel: 10 }],
+              skills: [{ skillId: skill.id, skillLevel: 10, enabled: true }],
             },
           },
           'mysticCode',
         );
-    expect(projectionCount).toBe(355);
+    expect(projectionCount).toBe(1_592);
     expect(failures).toEqual([]);
   }, 180_000);
 });

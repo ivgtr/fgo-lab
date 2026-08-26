@@ -44,7 +44,7 @@ describe('production special input inventory', () => {
     expect(
       calculations.every(({ calculation }) => calculation.result.status === 'calculated'),
     ).toBe(true);
-    expect(inputs).toHaveLength(12);
+    expect(inputs).toHaveLength(13);
     expect(counts).toEqual({
       availableSkillCount: 1,
       criticalStars: 1,
@@ -52,9 +52,10 @@ describe('production special input inventory', () => {
       effectStackCount: 4,
       fieldActorCount: 1,
       matchingActorCount: 3,
+      procSuccessCount: 1,
     });
     expect(inputs.filter((input) => input.control === 'segmented')).toHaveLength(3);
-    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(9);
+    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(10);
     expect(inputs.filter((input) => input.section === 'support')).toHaveLength(0);
     expect(duplicateControls).toEqual([]);
     expect(inputs.some((input) => input.kind === 'friendshipLevel')).toBe(false);
@@ -98,16 +99,16 @@ describe('production special input inventory', () => {
     expect(unreachableInputs).toEqual([]);
 
     const singleChoiceControls = calculations.flatMap(({ calculation }) =>
-      calculation.effectControls.filter((control) => control.control === 'singleChoice'),
+      calculation.effectControls.filter((control) => control.conditionControl === 'singleChoice'),
     );
-    expect(singleChoiceControls).toHaveLength(30);
+    expect(singleChoiceControls).toHaveLength(31);
     expect(
       new Set(
         singleChoiceControls.flatMap((control) =>
           control.projection.selectionGroups.map((group) => group.groupKey),
         ),
       ).size,
-    ).toBe(11);
+    ).toBe(12);
 
     const repeatedUserLabels = calculations.flatMap(({ servant, calculation }) => {
       const counts = new Map<string, number>();

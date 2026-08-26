@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { applyCanonicalInputCommand, resolveCanonicalInputValues } from './canonicalInputs';
 import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import { setEffectSourceEnabled } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
 let master: ReturnType<typeof masterSnapshotSchema.parse>;
@@ -104,7 +105,7 @@ describe('canonical special input application boundary', () => {
       ),
     ).toHaveLength(1);
     const enabled = applyEffectProjectionDecision(
-      scenario,
+      setEffectSourceEnabled(scenario, control.projection, true),
       control.projection,
       true,
       calculation.effects,
@@ -128,8 +129,10 @@ describe('canonical special input application boundary', () => {
 
     expect(resolved.result.status).toBe('calculated');
     expect(resolved.input.attackBuff).toBe(0.5);
+    expect(resolved.input.cardBuff).toBe(0.4);
+    expect(resolved.input.npDamageBuff).toBe(0.1);
     expect(resolved.result.status === 'calculated' ? resolved.result.rows[0].average : null).toBe(
-      75_591.115,
+      96_206.99,
     );
     expect(
       resolved.effects.filter(
@@ -206,7 +209,12 @@ describe('canonical special input application boundary', () => {
       ).toBe(true);
 
       const enabled = calculateScenario(
-        applyEffectProjectionDecision(hpScenario, control.projection, true, calculation.effects),
+        applyEffectProjectionDecision(
+          setEffectSourceEnabled(hpScenario, control.projection, true),
+          control.projection,
+          true,
+          calculation.effects,
+        ),
         master,
         versions,
       );

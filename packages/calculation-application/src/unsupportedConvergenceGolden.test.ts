@@ -4,8 +4,41 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { applyEffectProjectionDecision } from './effectDecision';
+import {
+  applyEffectConditionDecision,
+  applyEffectProjectionDecision as applyEffectInclusionDecision,
+} from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import { setEffectSourceEnabled } from './scenarioCommands';
+import { createEffectControlViewModels } from './effectControls';
+
+function selectProjectionAlone(
+  scenario: Parameters<typeof applyEffectInclusionDecision>[0],
+  projection: Parameters<typeof applyEffectInclusionDecision>[1],
+  peers: Parameters<typeof applyEffectInclusionDecision>[3],
+) {
+  const sourceEnabled = setEffectSourceEnabled(scenario, projection, true);
+  const withoutSiblings = createEffectControlViewModels(peers)
+    .map((control) => control.projection)
+    .filter(
+      (peer) =>
+        peer.projectionKey !== projection.projectionKey &&
+        peer.source.origin === projection.source.origin &&
+        peer.source.sourceInstanceId === projection.source.sourceInstanceId &&
+        peer.source.skillId === projection.source.skillId &&
+        peer.controllability === 'user',
+    )
+    .reduce(
+      (current, peer) => applyEffectInclusionDecision(current, peer, false, peers),
+      sourceEnabled,
+    );
+  const included = applyEffectInclusionDecision(withoutSiblings, projection, true, peers);
+  return projection.decision.state !== 'none' &&
+    projection.decision.kind === 'effect' &&
+    projection.decision.plan.condition === 'userMayAssume'
+    ? applyEffectConditionDecision(included, projection, true, peers)
+    : included;
+}
 
 const root = resolve(import.meta.dirname, '../../..');
 const formerlyUnsupportedDefaults = [
@@ -336,7 +369,7 @@ describe('unsupported convergence production golden', () => {
       const selected = calculateScenario(
         automaticInput
           ? scenario
-          : applyEffectProjectionDecision(scenario, currentProjection, true),
+          : selectProjectionAlone(scenario, currentProjection, withInputs.effects),
         master,
         versions,
       );

@@ -1,6 +1,6 @@
 {
   "caseId": "mlb-only-effects-v1",
-  "engineVersion": "17.0.0",
+  "engineVersion": "18.0.0",
   "modifierOrder": ["attackBuff", "cardBuff", "npDamageBuff", "flatDamage"],
   "cases": [
     {

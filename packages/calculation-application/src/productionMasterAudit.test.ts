@@ -13,10 +13,29 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { applyEffectProjectionDecision } from './effectDecision';
+import {
+  applyEffectConditionDecision,
+  applyEffectProjectionDecision as applyEffectInclusionDecision,
+} from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import { setAttackerSkillEnabled, setEffectSourceEnabled } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
+function applyEffectProjectionDecision(...args: Parameters<typeof applyEffectInclusionDecision>) {
+  const [scenario, projection, enabled, peers = []] = args;
+  const included = applyEffectInclusionDecision(
+    enabled ? setEffectSourceEnabled(scenario, projection, true) : scenario,
+    projection,
+    enabled,
+    peers,
+  );
+  return enabled &&
+    projection.decision.state !== 'none' &&
+    projection.decision.kind === 'effect' &&
+    projection.decision.plan.condition === 'userMayAssume'
+    ? applyEffectConditionDecision(included, projection, true, peers)
+    : included;
+}
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
 
 function loadProductionMaster() {
@@ -137,7 +156,7 @@ describe('production master damage quality ratchet', () => {
     expect(afterDefencePierce.input.damageFunction).toMatchObject({ ignoreDefense: true });
     expect(afterDefencePierce.effects.find((effect) => effect.label === '防御無視')).toMatchObject({
       outcome: 'applied',
-      controllability: 'automatic',
+      controllability: 'user',
     });
 
     const beniEnma = master.servants.find((servant) => servant.id === '705300')!;
@@ -167,9 +186,9 @@ describe('production master damage quality ratchet', () => {
     );
 
     expect(compatible.result.status).toBe('calculated');
-    expect(compatible.input.npDamageBuff).toBe(0.2);
+    expect(compatible.input.npDamageBuff).toBe(0.4);
     expect(conflict.result.status).toBe('unsupported');
-    expect(conflict.input.npDamageBuff).toBe(0);
+    expect(conflict.input.npDamageBuff).toBe(0.2);
     expect(
       conflict.effects.find((effect) => effect.projectionKey === conditionalNpDamage.projectionKey)
         ?.outcome,
@@ -254,10 +273,10 @@ describe('production master damage quality ratchet', () => {
             {
               sourceInstanceId: 'support:leonidas',
               servantId: '300900',
-              skills: [{ skillId: '49650', skillLevel: 10 }],
+              skills: [{ skillId: '49650', skillLevel: 10, enabled: true }],
             },
           ],
-          selectedEffects: [],
+          effectInclusions: [],
         },
       },
     };
@@ -460,7 +479,7 @@ describe('production master damage quality ratchet', () => {
   it('changes the NP card transactionally before evaluating card-specific modifiers', async () => {
     const master = await loadProductionMaster();
     const servant = master.servants.find((candidate) => candidate.id === '200100')!;
-    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const inactiveScenario = createDefaultResolvedScenario(master, undefined, servant);
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,
       engineVersion: ENGINE_VERSION,
@@ -469,13 +488,15 @@ describe('production master damage quality ratchet', () => {
       masterDataLocale: 'ja-JP',
       masterDataVersion: master.version,
     };
-    const baseline = calculateScenario(scenario, master, versions);
-    const artsChange = baseline.effects.find(
+    const inactive = calculateScenario(inactiveScenario, master, versions);
+    const artsChange = inactive.effects.find(
       (effect) =>
         effect.skillName === '回路接続 EX' &&
         effect.modifier === 'cardTypeChange' &&
         effect.label.includes('Arts'),
     )!;
+    const scenario = setEffectSourceEnabled(inactiveScenario, artsChange, true);
+    const baseline = calculateScenario(scenario, master, versions);
     const changedScenario = applyEffectProjectionDecision(scenario, artsChange, true);
     const changed = calculateScenario(changedScenario, master, versions);
     const busterChange = baseline.effects.find(
@@ -511,7 +532,7 @@ describe('production master damage quality ratchet', () => {
     expect(changed.result.status).toBe('calculated');
     expect(changed.input.cardType).toBe('arts');
     expect(changed.result.rows[0]?.average).not.toBe(baseline.result.rows[0]?.average);
-    expect(artsChange.decision.state).toBe('disabled');
+    expect(artsChange).toMatchObject({ sourceActive: false, decision: { state: 'enabled' } });
     expect(
       changed.effects.find((effect) => effect.projectionKey === artsChange.projectionKey),
     ).toMatchObject({ outcome: 'applied', decision: { state: 'enabled' } });
@@ -576,7 +597,7 @@ describe('production master damage quality ratchet', () => {
       baseline.effects.find(
         (effect) => effect.modifier === 'cardTypeChange' && effect.source.origin === 'passive',
       ),
-    ).toMatchObject({ controllability: 'automatic', outcome: 'applied' });
+    ).toMatchObject({ controllability: 'user', outcome: 'applied' });
 
     const busterScenario = [busterAttack, busterNp].reduce(
       (current, effect) => applyEffectProjectionDecision(current, effect, true),
@@ -613,7 +634,7 @@ describe('production master damage quality ratchet', () => {
       versions,
     );
     expect(missingForm.result.status).toBe('unsupported');
-    expect(missingForm.input.attackBuff).toBe(0);
+    expect(missingForm.input.attackBuff).toBe(0.3);
 
     const conflictingForms = calculateScenario(
       applyEffectProjectionDecision(
@@ -715,13 +736,15 @@ describe('production master damage quality ratchet', () => {
     const linkedArts = nemoInitial.effects.find(
       (effect) => effect.label === 'アーツアップ' && effect.source.skillId === '2554650',
     )!;
-    const nemoSelected = calculateScenario(
-      applyEffectProjectionDecision(nemoScenario, linkedArts, true),
+    const nemoUsedScenario = setEffectSourceEnabled(nemoScenario, linkedArts, true);
+    const nemoSelected = calculateScenario(nemoUsedScenario, master, versions);
+    const nemoWithoutArts = calculateScenario(
+      applyEffectProjectionDecision(nemoUsedScenario, linkedArts, false),
       master,
       versions,
     );
     expect(nemoSelected.result.status).toBe('calculated');
-    expect(nemoSelected.input.cardBuff - nemoInitial.input.cardBuff).toBeCloseTo(
+    expect(nemoSelected.input.cardBuff - nemoWithoutArts.input.cardBuff).toBeCloseTo(
       linkedArts.value!,
       10,
     );
@@ -739,7 +762,7 @@ describe('production master damage quality ratchet', () => {
       (effect) => effect.label === 'バスターアップ' && effect.source.origin === 'np',
     );
     expect(mashCalculation.result.status).toBe('calculated');
-    expect(linkedBuster).toMatchObject({ controllability: 'automatic', outcome: 'applied' });
+    expect(linkedBuster).toMatchObject({ controllability: 'user', outcome: 'applied' });
     expect(mashCalculation.input.cardBuff).toBeGreaterThan(0);
   });
 
@@ -801,14 +824,16 @@ describe('production master damage quality ratchet', () => {
         outcome: 'notApplied',
         decision: { kind: 'effect', plan: { condition: 'userMayAssume' } },
       });
-      const selectedScenario = applyEffectProjectionDecision(scenario, projection, true);
+      const usedScenario = setEffectSourceEnabled(scenario, projection, true);
+      const used = calculateScenario(usedScenario, master, versions);
+      const selectedScenario = applyEffectProjectionDecision(usedScenario, projection, true);
       expect(selectedScenario.worldFactAssertions).toEqual(scenario.worldFactAssertions);
       const selected = calculateScenario(selectedScenario, master, versions);
       expect(selected.result.status, `${servantId}:${label}`).toBe('calculated');
-      expect(
-        selected.input[inputKey] - initial.input[inputKey],
-        `${servantId}:${label}`,
-      ).toBeCloseTo(value, 10);
+      expect(selected.input[inputKey] - used.input[inputKey], `${servantId}:${label}`).toBeCloseTo(
+        value,
+        10,
+      );
       expect(
         selected.effects.find((effect) => effect.projectionKey === projection.projectionKey),
       ).toMatchObject({ outcome: 'applied', decision: { state: 'enabled' } });
@@ -966,14 +991,21 @@ describe('production master damage quality ratchet', () => {
       'アーツアップ：水辺または虚数空間',
       '宝具威力アップ：水辺または虚数空間',
     ].map((label) => initial.effects.find((effect) => effect.label === label)!);
+    const usedScenario = projections.reduce(
+      (current, projection) => setEffectSourceEnabled(current, projection, true),
+      scenario,
+    );
+    const used = calculateScenario(usedScenario, master, versions);
     const selectedScenario = projections.reduce(
       (current, projection) => applyEffectProjectionDecision(current, projection, true),
-      scenario,
+      usedScenario,
     );
     const selected = calculateScenario(selectedScenario, master, versions);
     expect(selected.result.status).toBe('calculated');
     expect(projections.every((projection) => projection.controllability === 'user')).toBe(true);
-    expect(selected.input).toMatchObject({ attackBuff: 0.2, cardBuff: 0.2, npDamageBuff: 0.3 });
+    expect(selected.input.attackBuff - used.input.attackBuff).toBeCloseTo(0.2, 10);
+    expect(selected.input.cardBuff - used.input.cardBuff).toBeCloseTo(0.2, 10);
+    expect(selected.input.npDamageBuff - used.input.npDamageBuff).toBeCloseTo(0.2, 10);
     expect(selected.input.fieldTraits).toEqual([]);
   });
 
@@ -1009,17 +1041,18 @@ describe('production master damage quality ratchet', () => {
 
     expect(fieldChanges).not.toHaveLength(0);
     expect(fieldChanges.every((effect) => effect.visibility === 'hidden')).toBe(true);
-    expect(passive).toMatchObject({ controllability: 'automatic', decision: { state: 'none' } });
+    expect(passive).toMatchObject({ controllability: 'user', decision: { state: 'enabled' } });
     expect(automaticNpEffect).toMatchObject({
       outcome: 'applied',
-      controllability: 'automatic',
-      decision: { state: 'none' },
+      controllability: 'user',
+      decision: { state: 'enabled' },
     });
     expect(mismatchedCardEffects).not.toHaveLength(0);
     expect(mismatchedCardEffects.every((effect) => effect.visibility === 'hidden')).toBe(true);
 
-    const skyScenario = applyEffectProjectionDecision(scenario, sky, true);
-    const earthScenario = applyEffectProjectionDecision(scenario, earth, true);
+    const realmSkillScenario = setAttackerSkillEnabled(scenario, '2468551', true);
+    const skyScenario = applyEffectProjectionDecision(realmSkillScenario, sky, true);
+    const earthScenario = applyEffectProjectionDecision(realmSkillScenario, earth, true);
     for (const [selected, selectedScenario] of [
       [sky, skyScenario],
       [earth, earthScenario],
@@ -1028,7 +1061,9 @@ describe('production master damage quality ratchet', () => {
       expect(calculation.result.status).toBe('calculated');
       if (calculation.result.status !== 'calculated')
         throw new Error('Dante selected realm must calculate');
-      expect(calculation.result.rows[0].average).toBeCloseTo(45_629.59);
+      expect(calculation.result.rows[0].average).toBeCloseTo(
+        selected === sky ? 54_304.5 : 53_681.965,
+      );
       expect(calculation.input.powerMod).toBe(0.5);
       expect(calculation.input.target.traits).toEqual([]);
       expect(calculation.input.fieldTraits).toEqual([
@@ -1084,7 +1119,7 @@ describe('production master damage quality ratchet', () => {
       outcome: 'notApplied',
       visibility: 'visible',
       controllability: 'user',
-      explanation: { code: 'conditionNotMet' },
+      explanation: { code: 'disabled' },
     });
     expect(earthAfterConflict.effects.find((effect) => effect.label === earth.label)).toMatchObject(
       {
@@ -1225,7 +1260,7 @@ describe('production master damage quality ratchet', () => {
     }
   });
 
-  it('links production attacker-skill mutations without enabling the skill wholesale', async () => {
+  it('commits production attacker-skill mutations only when their source is used', async () => {
     const master = await loadProductionMaster();
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,
@@ -1253,7 +1288,7 @@ describe('production master damage quality ratchet', () => {
     ).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
 
     const garethSelected = calculateScenario(
-      applyEffectProjectionDecision(garethScenario, sunlightPower, true),
+      setAttackerSkillEnabled(garethScenario, '2109451', true),
       master,
       versions,
     );
@@ -1294,7 +1329,7 @@ describe('production master damage quality ratchet', () => {
     ).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
 
     const tezcatlipocaSelected = calculateScenario(
-      applyEffectProjectionDecision(tezcatlipocaScenario, arts, true),
+      setAttackerSkillEnabled(tezcatlipocaScenario, arts.source.skillId, true),
       master,
       versions,
     );
@@ -1387,11 +1422,32 @@ describe('production master damage quality ratchet', () => {
         mutationKeys.push(key);
         expect(mutation, key).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
       }
+      for (const skill of servant.skills) {
+        const used = calculateScenario(
+          setAttackerSkillEnabled(scenario, skill.id, true),
+          master,
+          versions,
+        );
+        for (const mutation of used.effects.filter(
+          (effect) =>
+            effect.source.origin === 'attacker' &&
+            effect.modifier === null &&
+            effect.outcome === 'applied' &&
+            rawMutationKeys.has(`${effect.source.skillId}:${effect.source.effectOccurrenceId}`),
+        ))
+          reachableKeys.add(
+            `${servant.id}:${mutation.source.skillId}:${mutation.source.effectOccurrenceId}`,
+          );
+      }
       for (const projection of initial.effects.filter(
         (effect) => effect.visibility === 'visible' && effect.controllability === 'user',
       )) {
         const selected = calculateScenario(
-          applyEffectProjectionDecision(scenario, projection, true),
+          applyEffectProjectionDecision(
+            setEffectSourceEnabled(scenario, projection, true),
+            projection,
+            true,
+          ),
           master,
           versions,
         );
@@ -1414,17 +1470,7 @@ describe('production master damage quality ratchet', () => {
     expect(rawFieldMutationCount).toBe(15);
     expect(rawRecipientMutationCount).toBe(17);
     expect(mutationKeys).toHaveLength(26);
-    expect(reachableKeys.size).toBe(17);
-    expect(unreachableKeys).toEqual([
-      '1101500:2180550:20766:0',
-      '1101500:2180550:8691:0',
-      '203400:2242450:21097:0',
-      '2800500:2184550:8412:0',
-      '303200:433650:2065:0',
-      '304000:670450:8412:0',
-      '505100:2075650:3767:0',
-      '505100:2075650:8411:0',
-      '505100:2075650:8412:0',
-    ]);
-  }, 15_000);
+    expect(reachableKeys.size).toBe(25);
+    expect(unreachableKeys).toEqual(['203400:2242450:21097:0']);
+  }, 30_000);
 });
