@@ -165,9 +165,13 @@ describe('production master inventory ratchet', () => {
       effect: (typeof master.servants)[number]['skills'][number]['effects'][number],
       origin: 'attacker' | 'passive' | 'np',
     ) => {
-      const semanticKeys = Object.values(effect.parameterSemantics).flat();
+      const semanticKeys = Object.values(effect.atlasEvidence.parameterSemantics).flat();
       const rawKeys = [
-        ...new Set(effect.parameterSets.flatMap((set) => set.flatMap((item) => Object.keys(item)))),
+        ...new Set(
+          effect.atlasEvidence.parameterSets.flatMap((set) =>
+            set.flatMap((item) => Object.keys(item)),
+          ),
+        ),
       ];
       if (
         semanticKeys.length !== new Set(semanticKeys).size ||
@@ -183,9 +187,9 @@ describe('production master inventory ratchet', () => {
         if (condition.traits.some((trait) => trait.name === 'unknown'))
           literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
       if (!canNormalizeDamageEffect(effect, origin)) return;
-      for (const key of effect.parameterSemantics.unresolved)
+      for (const key of effect.atlasEvidence.parameterSemantics.unresolved)
         semanticInventory.parameters[key] = (semanticInventory.parameters[key] ?? 0) + 1;
-      for (const key of effect.unresolvedSemanticKeys)
+      for (const key of effect.atlasEvidence.unresolvedSemanticKeys)
         semanticInventory.scripts[key] = (semanticInventory.scripts[key] ?? 0) + 1;
     };
     for (const servant of master.servants) {

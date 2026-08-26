@@ -17,50 +17,16 @@ function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): Mast
   ];
 }
 
-const nonDamageBuffs = new Set([
-  'changeCommandCardType',
-  'downTolerance',
-  'upCriticaldamage',
-  'upExtraattack',
-  'upTolerance',
-  'upToleranceSubstate',
-]);
-const directModifierBuffs = new Set([
-  'addDamage',
-  'downAtk',
-  'downDefence',
-  'downDefenceNpdamage',
-  'downNpdamage',
-  'pierceDefence',
-  'pierceSubdamage',
-  'upAtk',
-  'upDamage',
-  'upDamageIndividuality',
-  'upDamageIndividualityActiveonly',
-  'upDefence',
-  'upDefenceNpdamage',
-  'upNpdamage',
-]);
-const cardModifierBuffs = new Set([
-  'downCommandall',
-  'downDefencecommandall',
-  'upCommandall',
-  'upCommandatk',
-  'upDefencecommandall',
-]);
-
-function rawValuePurpose(effect: MasterEffect) {
-  const buffs = effect.buffTypes ?? [];
-  if (buffs.some((buff) => buff === 'fieldIndividuality' || buff === 'addIndividuality'))
-    return 'contextTraitId';
-  if (buffs.includes('buffRate') && effect.buffRateTargets?.includes('buffNpDamageUp'))
-    return 'modifierRate';
+function atlasValuePurpose(effect: MasterEffect) {
   if (
-    !buffs.some((buff) => nonDamageBuffs.has(buff)) &&
-    (buffs.some((buff) => directModifierBuffs.has(buff)) ||
-      (effect.cardTypes.length > 0 && buffs.some((buff) => cardModifierBuffs.has(buff))))
+    effect.atlasEvidence.buffTypes.some(
+      (buff) => buff === 'fieldIndividuality' || buff === 'addIndividuality',
+    )
   )
-    return 'modifier';
+    return 'contextTraitId';
+  if (effect.execution.some((operation) => operation.kind === 'modifierRateChange'))
+    return 'modifierRate';
+  if (effect.execution.some((operation) => operation.kind === 'damageModifier')) return 'modifier';
   return 'nonDamage';
 }
 
@@ -89,10 +55,8 @@ describe('E0 production master execution inventory', () => {
         effect.conditions.field.operator,
       ]),
     );
-    const contextProducers = effects.filter(
-      (effect) =>
-        effect.contextChanges.addedFieldTraits.length > 0 ||
-        effect.contextChanges.addedRecipientTraits.length > 0,
+    const contextProducers = effects.filter((effect) =>
+      effect.execution.some((operation) => operation.kind === 'contextMutation'),
     );
     const contextConsumers = effects.filter(
       (effect) =>
@@ -122,27 +86,31 @@ describe('E0 production master execution inventory', () => {
     expect(conditionOperators).toEqual(['all', 'any', 'partial']);
     expect(contextProducers.length).toBeGreaterThan(0);
     expect(contextConsumers.length).toBeGreaterThan(0);
-    expect(sorted(effects.map((effect) => effect.type))).toMatchSnapshot('effect-types');
-    expect(sorted(effects.flatMap((effect) => effect.buffTypes ?? []))).toMatchSnapshot(
+    expect(sorted(effects.map((effect) => effect.atlasEvidence.functionType))).toMatchSnapshot(
+      'effect-types',
+    );
+    expect(sorted(effects.flatMap((effect) => effect.atlasEvidence.buffTypes))).toMatchSnapshot(
       'buff-types',
     );
     expect(
       sorted(
         effects.flatMap((effect) =>
-          effect.parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter))),
+          effect.atlasEvidence.parameterSets.flatMap((set) =>
+            set.flatMap((parameter) => Object.keys(parameter)),
+          ),
         ),
       ),
     ).toMatchSnapshot('parameter-keys');
 
     const valueEffects = effects.filter((effect) =>
-      effect.parameterSemantics.value.includes('Value'),
+      effect.atlasEvidence.parameterSemantics.value.includes('Value'),
     );
     expect(valueEffects).toHaveLength(10_432);
     expect(
       Object.fromEntries(
         Object.entries(
           valueEffects.reduce<Record<string, number>>((counts, effect) => {
-            const purpose = rawValuePurpose(effect);
+            const purpose = atlasValuePurpose(effect);
             counts[purpose] = (counts[purpose] ?? 0) + 1;
             return counts;
           }, {}),

@@ -1,4 +1,8 @@
-import type { MasterEffect, ModifierValueExpression } from '@fgo-lab/master-data';
+import type {
+  EffectExecutionOperation,
+  MasterEffect,
+  ModifierValueExpression,
+} from '@fgo-lab/master-data';
 import type {
   BattleOperation,
   ConditionExpression,
@@ -14,12 +18,16 @@ import {
 } from './condition';
 import {
   canNormalizeDamageEffect,
-  changesAttackerNpCard,
-  damageEffectRoute,
-  targetRecipient,
+  operationRecipient,
+  resolveTargetPolicy,
   type Origin,
 } from './effectRouting';
 import type { SourceEffect } from './sourceCollection';
+
+type ValuedOperation = Extract<
+  EffectExecutionOperation,
+  { kind: 'damageModifier' | 'modifierRateChange' }
+>;
 
 function effectCondition(
   effect: MasterEffect,
@@ -28,7 +36,7 @@ function effectCondition(
   sourceInstanceId: string,
   skillId: string,
 ): ConditionExpression {
-  const recipient = targetRecipient(origin, effect.target) ?? 'attacker';
+  const recipient = resolveTargetPolicy(origin, effect.conditionTargetPolicy) ?? 'attacker';
   const holder: TraitScope = recipient;
   const opponent: TraitScope = recipient === 'target' ? 'attacker' : 'target';
   return combineConditions([
@@ -107,6 +115,23 @@ function signedModifierValueExpression(
       };
 }
 
+function selectedValue(source: SourceEffect, operation: ValuedOperation): number | undefined {
+  const sets =
+    source.limitBreak && operation.limitBreakValues ? operation.limitBreakValues : operation.values;
+  return sets[source.valueSetIndex]?.[source.valueIndex] ?? undefined;
+}
+
+function selectedValueExpression(
+  source: SourceEffect,
+  operation: ValuedOperation,
+): ModifierValueExpression | null {
+  const sets =
+    source.limitBreak && operation.limitBreakValueExpressions
+      ? operation.limitBreakValueExpressions
+      : operation.valueExpressions;
+  return sets[source.valueSetIndex]?.[source.valueIndex] ?? null;
+}
+
 function decisionKey(source: SourceEffect): string {
   return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
 }
@@ -172,130 +197,166 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
   );
   const key = decisionKey(source);
   let order = startOrder;
-  for (const trait of source.effect.contextChanges.addedFieldTraits)
-    operations.push({
-      ...baseOperation(source, order++, `add-field:${trait}`),
-      decisionKey: null,
-      decisionPlan: { activation: 'automatic', condition: 'evaluate' },
-      kind: 'addTrait',
-      scope: 'field',
-      trait,
-    });
-  for (const trait of source.effect.contextChanges.removedFieldTraits)
-    operations.push({
-      ...baseOperation(source, order++, `remove-field:${trait}`),
-      decisionKey: null,
-      decisionPlan: { activation: 'automatic', condition: 'evaluate' },
-      kind: 'removeTrait',
-      scope: 'field',
-      trait,
-    });
-  const recipient = targetRecipient(source.origin, source.effect.target);
-  if (recipient)
-    for (const trait of source.effect.contextChanges.addedRecipientTraits)
-      operations.push({
-        ...baseOperation(source, order++, `add-${recipient}:${trait}`),
-        decisionKey: null,
-        decisionPlan: { activation: 'automatic', condition: 'evaluate' },
-        kind: 'addTrait',
-        scope: recipient === 'attacker' ? 'attackerState' : 'targetState',
-        trait,
+  const applicable: EffectExecutionOperation[] = [];
+
+  for (const semantic of source.effect.execution) {
+    if (semantic.kind === 'nonDamage') continue;
+    const recipient = operationRecipient(semantic, source.origin);
+    if (semantic.kind === 'contextMutation') {
+      if (semantic.scope === 'field')
+        operations.push({
+          ...baseOperation(source, order++, `${semantic.mutation}-field:${semantic.trait}`),
+          decisionKey: null,
+          decisionPlan: { activation: 'automatic', condition: 'evaluate' },
+          kind: semantic.mutation,
+          scope: 'field',
+          trait: semantic.trait,
+        });
+      else if (recipient)
+        operations.push({
+          ...baseOperation(source, order++, `${semantic.mutation}-${recipient}:${semantic.trait}`),
+          decisionKey: null,
+          decisionPlan: { activation: 'automatic', condition: 'evaluate' },
+          kind: semantic.mutation,
+          scope: recipient === 'attacker' ? 'attackerState' : 'targetState',
+          trait: semantic.trait,
+        });
+      continue;
+    }
+    if (semantic.kind === 'cardTypeMutation' || semantic.kind === 'unresolved') {
+      if (recipient) applicable.push(semantic);
+      continue;
+    }
+    if (recipient === semantic.expectedRecipient) applicable.push(semantic);
+    else if (recipient !== null && semantic.targetMismatch === 'unsupported')
+      applicable.push({
+        kind: 'unresolved',
+        targetPolicy: semantic.targetPolicy,
+        reason: 'operationSemantics',
       });
-  const routed = damageEffectRoute(source.effect, source.origin);
-  const cardTypeChange = changesAttackerNpCard(source.effect, source.origin)
-    ? source.effect.npCardTypeChange
-    : null;
-  const rateChange =
-    source.effect.buffTypes?.includes('buffRate') &&
-    source.effect.buffRateTargets?.includes('buffNpDamageUp');
-  if (containsUnsupportedCondition(condition) && (routed || rateChange || cardTypeChange)) {
+  }
+
+  const primary = applicable.find((semantic) => semantic.kind !== 'unresolved');
+  const unresolved = applicable.some(
+    (semantic) =>
+      semantic.kind === 'unresolved' ||
+      ('semanticSupport' in semantic && semantic.semanticSupport === 'unresolved'),
+  );
+  const valued =
+    primary?.kind === 'damageModifier' || primary?.kind === 'modifierRateChange' ? primary : null;
+  const value = (valued ? selectedValue(source, valued) : null) ?? null;
+  const valueExpression = valued ? selectedValueExpression(source, valued) : null;
+  const projectionModifier =
+    primary?.kind === 'damageModifier'
+      ? primary.modifier
+      : primary?.kind === 'modifierRateChange'
+        ? primary.modifier
+        : primary?.kind === 'cardTypeMutation'
+          ? 'cardTypeChange'
+          : null;
+
+  if (containsUnsupportedCondition(condition) && primary) {
     unsupported.push(
       makeProjection(
         source,
         key,
         'unsupported',
         'unresolved',
-        routed?.modifier ??
-          (rateChange ? 'npDamageBuff' : cardTypeChange ? 'cardTypeChange' : null),
-        source.rawValue ?? null,
+        projectionModifier,
+        value,
+        valueExpression,
         condition,
       ),
     );
     return { operations, unsupported };
   }
-  if (!routed && !rateChange && !cardTypeChange) {
+  if (unresolved) {
+    unsupported.push(
+      makeProjection(
+        source,
+        key,
+        'unsupported',
+        'unresolved',
+        projectionModifier,
+        value,
+        valueExpression,
+        condition,
+      ),
+    );
+    return { operations, unsupported };
+  }
+  if (!primary) {
     if (operations.length === 0 && canNormalizeDamageEffect(source.effect, source.origin))
       unsupported.push(
-        makeProjection(source, key, 'unsupported', 'unresolved', null, null, condition),
+        makeProjection(source, key, 'unsupported', 'unresolved', null, null, null, condition),
       );
     return { operations, unsupported };
   }
-  if (
-    source.effect.parameterSemantics.unresolved.length ||
-    source.effect.unresolvedSemanticKeys.length
-  ) {
-    unsupported.push(
-      makeProjection(
-        source,
-        key,
-        'unsupported',
-        'unresolved',
-        routed?.modifier ?? (cardTypeChange ? 'cardTypeChange' : null),
-        source.rawValue ?? null,
-        condition,
-      ),
-    );
-    return { operations, unsupported };
-  }
-  if (cardTypeChange) {
+
+  if (primary.kind === 'cardTypeMutation')
     operations.push({
-      ...baseOperation(source, order++, `card:${cardTypeChange}`),
+      ...baseOperation(source, order++, `card:${primary.card}`),
       kind: 'changeCardType',
-      card: cardTypeChange,
-      stateTraits: source.effect.npCardTypeStateTraits,
+      card: primary.card,
+      stateTraits: primary.stateTraits,
     });
-  } else if (rateChange) {
-    if (source.rawValue === undefined)
+  else if (primary.kind === 'modifierRateChange') {
+    if (value === null)
       unsupported.push(
-        makeProjection(source, key, 'unsupported', 'unresolved', 'npDamageBuff', null, condition),
+        makeProjection(
+          source,
+          key,
+          'unsupported',
+          'unresolved',
+          'npDamageBuff',
+          null,
+          valueExpression,
+          condition,
+        ),
       );
     else
       operations.push({
         ...baseOperation(source, order++, 'rate'),
         kind: 'changeModifierRate',
-        modifier: 'npDamageBuff',
-        ratePermille: source.rawValue,
+        modifier: primary.modifier,
+        ratePermille: value,
       });
-  } else if (routed?.modifier === 'ignoreDefense')
+  } else if (primary.kind === 'ignoreDefense')
     operations.push({ ...baseOperation(source, order++, 'ignore-defense'), kind: 'ignoreDefense' });
-  else if (routed?.modifier === 'ignoreDamageCut')
+  else if (primary.kind === 'ignoreDamageCut')
     operations.push({
       ...baseOperation(source, order++, 'ignore-damage-cut'),
       kind: 'ignoreDamageCut',
     });
-  else if (routed) {
-    if (source.rawValue === undefined)
+  else if (primary.kind === 'damageModifier') {
+    if (value === null)
       unsupported.push(
-        makeProjection(source, key, 'unsupported', 'unresolved', routed.modifier, null, condition),
+        makeProjection(
+          source,
+          key,
+          'unsupported',
+          'unresolved',
+          primary.modifier,
+          null,
+          valueExpression,
+          condition,
+        ),
       );
     else
       operations.push({
-        ...baseOperation(source, order++, `modifier:${routed.modifier}`),
+        ...baseOperation(source, order++, `modifier:${primary.modifier}`),
         kind: 'addModifier',
-        modifier: routed.modifier,
-        valuePermille: source.rawValue * routed.sign,
-        valueExpression: source.valueExpression
+        modifier: primary.modifier,
+        valuePermille: value * primary.sign,
+        valueExpression: valueExpression
           ? {
-              ...signedModifierValueExpression(source.valueExpression, routed.sign),
+              ...signedModifierValueExpression(valueExpression, primary.sign),
               ...(['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
                 ? {}
                 : { subjectId: source.sourceId }),
             }
           : null,
-        card:
-          routed.modifier === 'cardBuff' || routed.modifier === 'cardResistance'
-            ? (source.effect.cardTypes[0] ?? null)
-            : null,
+        card: primary.card,
       });
   }
   return { operations, unsupported };
@@ -307,7 +368,8 @@ function makeProjection(
   outcome: EffectProjection['outcome'],
   code: EffectProjection['explanation']['code'],
   modifier: EffectProjection['modifier'],
-  rawValue: number | null,
+  valuePermille: number | null,
+  valueExpression: ModifierValueExpression | null,
   condition: ConditionExpression,
 ): EffectProjection {
   const plan = decisionPlan(source, condition);
@@ -318,10 +380,15 @@ function makeProjection(
     label: source.effect.label,
     sourceName: source.sourceName,
     skillName: source.skillName,
-    valuePermille: modifier === 'flatDamage' ? null : rawValue,
-    value: rawValue === null ? null : modifier === 'flatDamage' ? rawValue : rawValue / 1000,
-    requiredQuantity: source.valueExpression ? 'attackerHpPermille' : null,
-    requiredQuantityOwner: source.valueExpression
+    valuePermille: modifier === 'flatDamage' ? null : valuePermille,
+    value:
+      valuePermille === null
+        ? null
+        : modifier === 'flatDamage'
+          ? valuePermille
+          : valuePermille / 1000,
+    requiredQuantity: valueExpression ? 'attackerHpPermille' : null,
+    requiredQuantityOwner: valueExpression
       ? ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
         ? 'attacker'
         : 'source'

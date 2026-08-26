@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(20),
+  schemaVersion: z.literal(21),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -99,26 +99,111 @@ const modifierValueExpressionSetsSchema = z.tuple([
   z.array(modifierValueExpressionSchema.nullable()).max(10),
 ]);
 export type ModifierValueExpression = z.infer<typeof modifierValueExpressionSchema>;
+
+const canonicalTargetPolicySchema = z.enum([
+  'sourceSelf',
+  'partyMember',
+  'partyOther',
+  'enemy',
+  'attackerNpCard',
+  'unresolved',
+]);
+export type CanonicalTargetPolicy = z.infer<typeof canonicalTargetPolicySchema>;
+
+const canonicalValueSetsSchema = z.tuple([
+  z.array(z.number().nullable()).max(10),
+  z.array(z.number().nullable()).max(10),
+  z.array(z.number().nullable()).max(10),
+  z.array(z.number().nullable()).max(10),
+  z.array(z.number().nullable()).max(10),
+]);
+export type CanonicalValueSets = z.infer<typeof canonicalValueSetsSchema>;
+
+const valuedExecutionFields = {
+  targetPolicy: canonicalTargetPolicySchema,
+  expectedRecipient: z.enum(['attacker', 'target']),
+  targetMismatch: z.enum(['ignore', 'unsupported']),
+  values: canonicalValueSetsSchema,
+  limitBreakValues: canonicalValueSetsSchema.optional(),
+  valueExpressions: modifierValueExpressionSetsSchema,
+  limitBreakValueExpressions: modifierValueExpressionSetsSchema.optional(),
+  semanticSupport: z.enum(['supported', 'unresolved']),
+};
+const effectExecutionOperationSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('damageModifier'),
+    modifier: z.enum([
+      'attackBuff',
+      'cardBuff',
+      'npDamageBuff',
+      'powerMod',
+      'flatDamage',
+      'defenseBuff',
+      'cardResistance',
+      'npResistance',
+    ]),
+    sign: z.union([z.literal(1), z.literal(-1)]),
+    card: z.enum(['buster', 'arts', 'quick']).nullable(),
+    ...valuedExecutionFields,
+  }),
+  z.object({
+    kind: z.literal('modifierRateChange'),
+    modifier: z.literal('npDamageBuff'),
+    ...valuedExecutionFields,
+  }),
+  z.object({
+    kind: z.enum(['ignoreDefense', 'ignoreDamageCut']),
+    targetPolicy: canonicalTargetPolicySchema,
+    expectedRecipient: z.enum(['attacker', 'target']),
+    targetMismatch: z.enum(['ignore', 'unsupported']),
+    semanticSupport: z.enum(['supported', 'unresolved']),
+  }),
+  z.object({
+    kind: z.literal('cardTypeMutation'),
+    targetPolicy: z.literal('attackerNpCard'),
+    card: z.enum(['buster', 'arts', 'quick']),
+    stateTraits: z.array(z.string().min(1)),
+    semanticSupport: z.enum(['supported', 'unresolved']),
+  }),
+  z.object({
+    kind: z.literal('contextMutation'),
+    mutation: z.enum(['addTrait', 'removeTrait']),
+    scope: z.enum(['field', 'recipientState']),
+    targetPolicy: canonicalTargetPolicySchema,
+    trait: z.string().min(1),
+    damageRelevant: z.boolean(),
+  }),
+  z.object({ kind: z.literal('nonDamage') }),
+  z.object({
+    kind: z.literal('unresolved'),
+    targetPolicy: canonicalTargetPolicySchema,
+    reason: z.enum(['operationSemantics', 'targetPolicy']),
+  }),
+]);
+export type EffectExecutionOperation = z.infer<typeof effectExecutionOperationSchema>;
+
+const atlasEffectEvidenceSchema = z.object({
+  functionType: z.string(),
+  target: z.string(),
+  parameterSets: effectParameterSetsSchema,
+  limitBreakParameterSets: effectParameterSetsSchema.optional(),
+  parameterSemantics: effectParameterSemanticsSchema,
+  unresolvedSemanticKeys: z.array(z.string().min(1)),
+  buffTypes: z.array(z.string()),
+  buffRateTargets: z.array(z.string()),
+});
+export type AtlasEffectEvidence = z.infer<typeof atlasEffectEvidenceSchema>;
+
 const masterEffectSchema = z.object({
   id: z.string(),
   occurrenceId: z.string().min(1),
-  type: z.string(),
-  target: z.string(),
   label: z.string(),
-  parameterSets: effectParameterSetsSchema,
-  limitBreakParameterSets: effectParameterSetsSchema.optional(),
-  modifierValueExpressionSets: modifierValueExpressionSetsSchema,
-  limitBreakModifierValueExpressionSets: modifierValueExpressionSetsSchema.optional(),
-  parameterSemantics: effectParameterSemanticsSchema,
-  unresolvedSemanticKeys: z.array(z.string().min(1)),
   choice: z
     .object({
       family: z.enum(['actSet', 'actSelectIndex']),
       candidate: z.number().int(),
     })
     .nullable(),
-  npCardTypeChange: z.enum(['buster', 'arts', 'quick']).nullable(),
-  npCardTypeStateTraits: z.array(z.string().min(1)),
   triggerScope: z.enum(['commandCard', 'commandCardAttack']).nullable(),
   operationTrigger: z
     .object({ kind: z.literal('functionPosition'), position: z.number().int() })
@@ -126,15 +211,9 @@ const masterEffectSchema = z.object({
   quantityConditions: z.array(effectQuantityConditionSchema),
   sourceQuantityConditions: z.array(effectSourceQuantityConditionSchema),
   conditions: effectConditionsSchema,
-  contextChanges: z.object({
-    addedFieldTraits: z.array(z.string().min(1)),
-    removedFieldTraits: z.array(z.string().min(1)),
-    addedRecipientTraits: z.array(z.string().min(1)),
-    removedRecipientTraits: z.array(z.string().min(1)),
-  }),
-  buffTypes: z.array(z.string()).optional(),
-  buffRateTargets: z.array(z.string()).optional(),
-  cardTypes: z.array(z.enum(['buster', 'arts', 'quick'])).max(3),
+  conditionTargetPolicy: canonicalTargetPolicySchema,
+  execution: z.array(effectExecutionOperationSchema).min(1),
+  atlasEvidence: atlasEffectEvidenceSchema,
 });
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
 

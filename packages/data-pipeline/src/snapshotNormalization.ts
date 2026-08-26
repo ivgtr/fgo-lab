@@ -271,11 +271,30 @@ export function normalizeAtlasSnapshot(input: {
           const limitBreakEffect = limitBreakEffects.filter(
             (candidate) => candidate.id === effect.id,
           )[occurrence];
+          const limitBreakExecution = effect.execution.map((operation, operationIndex) => {
+            const limitBreakOperation = limitBreakEffect?.execution[operationIndex];
+            if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
+              return operation;
+            return {
+              ...operation,
+              limitBreakValues:
+                limitBreakOperation?.kind === operation.kind
+                  ? limitBreakOperation.values
+                  : operation.values,
+              limitBreakValueExpressions:
+                limitBreakOperation?.kind === operation.kind
+                  ? limitBreakOperation.valueExpressions
+                  : operation.valueExpressions,
+            };
+          });
           return {
             ...effect,
-            limitBreakParameterSets: limitBreakEffect?.parameterSets ?? effect.parameterSets,
-            limitBreakModifierValueExpressionSets:
-              limitBreakEffect?.modifierValueExpressionSets ?? effect.modifierValueExpressionSets,
+            execution: limitBreakExecution,
+            atlasEvidence: {
+              ...effect.atlasEvidence,
+              limitBreakParameterSets:
+                limitBreakEffect?.atlasEvidence.parameterSets ?? effect.atlasEvidence.parameterSets,
+            },
           };
         }),
       },

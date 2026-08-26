@@ -734,7 +734,7 @@ describe('production master damage quality ratchet', () => {
     }).toEqual({ servants: 13, effects: 23, damageCandidates: 5 });
     expect(
       occurrences.every(({ effect }) =>
-        effect.parameterSemantics.condition.includes('TriggeredFuncPosition'),
+        effect.atlasEvidence.parameterSemantics.condition.includes('TriggeredFuncPosition'),
       ),
     ).toBe(true);
 
@@ -1304,13 +1304,16 @@ describe('production master damage quality ratchet', () => {
     for (const servant of master.servants) {
       for (const effect of servant.skills.flatMap((skill) => skill.effects)) {
         if (
-          effect.contextChanges.addedFieldTraits.length > 0 ||
-          effect.contextChanges.removedFieldTraits.length > 0
+          effect.execution.some(
+            (operation) => operation.kind === 'contextMutation' && operation.scope === 'field',
+          )
         )
           rawFieldMutationCount += 1;
         if (
-          effect.contextChanges.addedRecipientTraits.length > 0 ||
-          effect.contextChanges.removedRecipientTraits.length > 0
+          effect.execution.some(
+            (operation) =>
+              operation.kind === 'contextMutation' && operation.scope === 'recipientState',
+          )
         )
           rawRecipientMutationCount += 1;
       }
@@ -1324,10 +1327,7 @@ describe('production master damage quality ratchet', () => {
       const rawMutationKeys = new Set(
         servant.skills.flatMap((skill) =>
           skill.effects.flatMap((effect) =>
-            effect.contextChanges.addedFieldTraits.length > 0 ||
-            effect.contextChanges.removedFieldTraits.length > 0 ||
-            effect.contextChanges.addedRecipientTraits.length > 0 ||
-            effect.contextChanges.removedRecipientTraits.length > 0
+            effect.execution.some((operation) => operation.kind === 'contextMutation')
               ? [`${skill.id}:${effect.occurrenceId}`]
               : [],
           ),

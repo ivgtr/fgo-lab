@@ -96,16 +96,24 @@ describe('immutable publish pipeline', () => {
     ]);
     expect(snapshot.servants[0]?.skills[0]?.effects).toMatchObject([
       {
-        contextChanges: {
-          addedFieldTraits: ['fieldSunlight'],
-          removedFieldTraits: [],
-        },
+        execution: [
+          {
+            kind: 'contextMutation',
+            mutation: 'addTrait',
+            scope: 'field',
+            trait: 'fieldSunlight',
+          },
+        ],
       },
       {
-        contextChanges: {
-          addedFieldTraits: [],
-          removedFieldTraits: ['fieldSunlight'],
-        },
+        execution: [
+          {
+            kind: 'contextMutation',
+            mutation: 'removeTrait',
+            scope: 'field',
+            trait: 'fieldSunlight',
+          },
+        ],
       },
     ]);
   });
@@ -300,8 +308,10 @@ describe('immutable publish pipeline', () => {
       maximumBattlePointPhase: 10,
     });
     expect(snapshot.craftEssences[0]?.effects[0]).toMatchObject({
-      parameterSets: [[{ Value: 600 }], [], [], [], []],
-      limitBreakParameterSets: [[{ Value: 800 }], [], [], [], []],
+      atlasEvidence: {
+        parameterSets: [[{ Value: 600 }], [], [], [], []],
+        limitBreakParameterSets: [[{ Value: 800 }], [], [], [], []],
+      },
     });
   });
 
@@ -491,8 +501,8 @@ describe('immutable publish pipeline', () => {
     });
     expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '13')).toMatchObject({
       label: '表示名に依存しない色バフ',
-      buffTypes: ['upCommandall'],
-      cardTypes: ['buster'],
+      atlasEvidence: { buffTypes: ['upCommandall'] },
+      execution: [{ kind: 'damageModifier', modifier: 'cardBuff', card: 'buster' }],
       conditions: {
         field: {
           operator: 'any',
@@ -501,14 +511,18 @@ describe('immutable publish pipeline', () => {
       },
     });
     expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '14')).toMatchObject({
-      buffTypes: ['buffRate'],
-      buffRateTargets: ['buffNpDamageUp'],
+      atlasEvidence: { buffTypes: ['buffRate'], buffRateTargets: ['buffNpDamageUp'] },
+      execution: [{ kind: 'modifierRateChange', modifier: 'npDamageBuff' }],
     });
     expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '15')).toMatchObject({
-      contextChanges: {
-        addedFieldTraits: ['fieldDarkness'],
-        addedRecipientTraits: [],
-      },
+      execution: [
+        {
+          kind: 'contextMutation',
+          mutation: 'addTrait',
+          scope: 'field',
+          trait: 'fieldDarkness',
+        },
+      ],
     });
     expect(snapshot.servants.find((servant) => servant.id === '1')?.noblePhantasms[0]?.card).toBe(
       'arts',
@@ -556,7 +570,7 @@ describe('immutable publish pipeline', () => {
       items: [],
     });
 
-    expect(snapshot.mysticCodes).toEqual([
+    expect(snapshot.mysticCodes).toMatchObject([
       {
         id: '1',
         name: '魔術礼装･カルデア',
@@ -569,37 +583,14 @@ describe('immutable publish pipeline', () => {
             effects: [
               expect.objectContaining({
                 id: '150',
-                buffTypes: ['upAtk'],
-                parameterSets: [
-                  [
-                    { Rate: 5000, Turn: 1, Value: 300 },
-                    { Rate: 5000, Turn: 1, Value: 320 },
-                    { Rate: 5000, Turn: 1, Value: 340 },
-                    { Rate: 5000, Turn: 1, Value: 360 },
-                    { Rate: 5000, Turn: 1, Value: 380 },
-                    { Rate: 5000, Turn: 1, Value: 400 },
-                    { Rate: 5000, Turn: 1, Value: 420 },
-                    { Rate: 5000, Turn: 1, Value: 440 },
-                    { Rate: 5000, Turn: 1, Value: 460 },
-                    { Rate: 5000, Turn: 1, Value: 480 },
-                  ],
-                  [{ Value: 999, ParamAddMaxCount: 2 }],
-                  [],
-                  [],
-                  [],
+                execution: [
+                  expect.objectContaining({
+                    kind: 'damageModifier',
+                    modifier: 'attackBuff',
+                    values: [[300, 320, 340, 360, 380, 400, 420, 440, 460, 480], [999], [], [], []],
+                    semanticSupport: 'unresolved',
+                  }),
                 ],
-                parameterSemantics: {
-                  value: ['Rate', 'Value'],
-                  lifecycle: ['Turn'],
-                  presentation: [],
-                  condition: [],
-                  contextMutation: [],
-                  choice: [],
-                  valueExpression: [],
-                  buffIdentity: [],
-                  unresolved: ['ParamAddMaxCount'],
-                },
-                unresolvedSemanticKeys: ['script:customFlag'],
               }),
             ],
           }),
@@ -615,10 +606,15 @@ describe('immutable publish pipeline', () => {
           },
         ],
       },
-      parameterSemantics: {
-        unresolved: ['ParamAddMaxCount'],
+      atlasEvidence: {
+        buffTypes: ['upAtk'],
+        parameterSemantics: {
+          value: ['Rate', 'Value'],
+          lifecycle: ['Turn'],
+          unresolved: ['ParamAddMaxCount'],
+        },
+        unresolvedSemanticKeys: ['script:customFlag'],
       },
-      unresolvedSemanticKeys: ['script:customFlag'],
     });
   });
 
@@ -757,9 +753,11 @@ describe('immutable publish pipeline', () => {
     });
 
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[0]).toMatchObject({
-      parameterSemantics: {
-        condition: ['CheckBattlePointPhaseRange'],
-        unresolved: [],
+      atlasEvidence: {
+        parameterSemantics: {
+          condition: ['CheckBattlePointPhaseRange'],
+          unresolved: [],
+        },
       },
       quantityConditions: [
         {
@@ -771,25 +769,31 @@ describe('immutable publish pipeline', () => {
       ],
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[2]).toMatchObject({
-      parameterSemantics: {
-        valueExpression: ['RatioHPHigh', 'RatioHPLow', 'RatioHPRangeHigh', 'RatioHPRangeLow'],
-        unresolved: [],
+      atlasEvidence: {
+        parameterSemantics: {
+          valueExpression: ['RatioHPHigh', 'RatioHPLow', 'RatioHPRangeHigh', 'RatioHPRangeLow'],
+          unresolved: [],
+        },
       },
-      modifierValueExpressionSets: [
-        [
-          {
-            kind: 'hpRangeLinear',
-            basePermille: 0,
-            minimumHpPermille: 0,
-            maximumHpPermille: 500,
-            valueAtMinimumHpPermille: 300,
-            valueAtMaximumHpPermille: 100,
-          },
-        ],
-        [],
-        [],
-        [],
-        [],
+      execution: [
+        {
+          valueExpressions: [
+            [
+              {
+                kind: 'hpRangeLinear',
+                basePermille: 0,
+                minimumHpPermille: 0,
+                maximumHpPermille: 500,
+                valueAtMinimumHpPermille: 300,
+                valueAtMaximumHpPermille: 100,
+              },
+            ],
+            [],
+            [],
+            [],
+            [],
+          ],
+        },
       ],
       quantityConditions: [
         {
@@ -814,39 +818,52 @@ describe('immutable publish pipeline', () => {
           value: 999,
         },
       ],
-      parameterSemantics: {
-        choice: ['ActSelectIndex'],
-        condition: ['TriggeredTargetBattlePointRateRange'],
-        unresolved: [],
+      atlasEvidence: {
+        parameterSemantics: {
+          choice: ['ActSelectIndex'],
+          condition: ['TriggeredTargetBattlePointRateRange'],
+          unresolved: [],
+        },
       },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[3]).toMatchObject({
-      npCardTypeChange: 'arts',
-      npCardTypeStateTraits: ['jadeRabbitSunForm'],
-      parameterSemantics: {
-        condition: ['FuncCheckTargetIndividualityTargetType'],
-        lifecycle: ['ForceAddState', 'ProcActive', 'Turn', 'UnSubState'],
-        presentation: ['InvalidHide', 'SetPassiveFrame'],
-        unresolved: [],
+      execution: [
+        expect.objectContaining({
+          kind: 'cardTypeMutation',
+          card: 'arts',
+          stateTraits: ['jadeRabbitSunForm'],
+        }),
+      ],
+      atlasEvidence: {
+        parameterSemantics: {
+          condition: ['FuncCheckTargetIndividualityTargetType'],
+          lifecycle: ['ForceAddState', 'ProcActive', 'Turn', 'UnSubState'],
+          presentation: ['InvalidHide', 'SetPassiveFrame'],
+          unresolved: [],
+        },
       },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[4]).toMatchObject({
       triggerScope: 'commandCardAttack',
-      parameterSemantics: { unresolved: ['Value2'] },
+      atlasEvidence: { parameterSemantics: { unresolved: ['Value2'] } },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[5]).toMatchObject({
       operationTrigger: { kind: 'functionPosition', position: 2 },
-      parameterSemantics: {
-        condition: ['TriggeredFuncPosition'],
-        presentation: ['DisplayLastFuncInvalidType'],
-        unresolved: [],
+      atlasEvidence: {
+        parameterSemantics: {
+          condition: ['TriggeredFuncPosition'],
+          presentation: ['DisplayLastFuncInvalidType'],
+          unresolved: [],
+        },
       },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[6]).toMatchObject({
       triggerScope: 'commandCard',
-      parameterSemantics: {
-        buffIdentity: ['AddIndividualty', 'AddIndividualtyList', 'AddLinkageTargetIndividualty'],
-        unresolved: [],
+      atlasEvidence: {
+        parameterSemantics: {
+          buffIdentity: ['AddIndividualty', 'AddIndividualtyList', 'AddLinkageTargetIndividualty'],
+          unresolved: [],
+        },
       },
     });
   });

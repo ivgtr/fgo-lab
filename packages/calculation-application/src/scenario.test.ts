@@ -47,32 +47,74 @@ function modifierEffect(
   target = 'self',
   conditions: MasterEffect['conditions'] = unconditionalConditions,
 ) {
+  const targetPolicy = target.startsWith('enemy')
+    ? ('enemy' as const)
+    : target === 'ptOther' || target === 'ptOtherFull'
+      ? ('partyOther' as const)
+      : target === 'ptOne' || target === 'ptAll' || target === 'ptFull'
+        ? ('partyMember' as const)
+        : ('sourceSelf' as const);
+  const modifier =
+    buffType === 'upAtk'
+      ? ('attackBuff' as const)
+      : buffType === 'upDamage'
+        ? ('powerMod' as const)
+        : buffType === 'upNpdamage'
+          ? ('npDamageBuff' as const)
+          : buffType === 'upCommandall' && cardTypes.length > 0
+            ? ('cardBuff' as const)
+            : null;
+  const values = [Array.from({ length: 10 }, () => value), [], [], [], []] as const;
   return {
     id,
     occurrenceId: `${id}:0`,
-    type: 'addStateShort',
-    target,
     label: id,
-    parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
-    modifierValueExpressionSets: [[], [], [], [], []],
-    parameterSemantics: emptyParameterSemantics,
-    unresolvedSemanticKeys: [],
     choice: null,
-    npCardTypeChange: null,
-    npCardTypeStateTraits: [],
     triggerScope: null,
     operationTrigger: null,
     quantityConditions: [],
     sourceQuantityConditions: [],
-    buffTypes: [buffType],
     conditions,
-    contextChanges: {
-      addedFieldTraits: [],
-      removedFieldTraits: [],
-      addedRecipientTraits: [],
-      removedRecipientTraits: [],
+    conditionTargetPolicy: targetPolicy,
+    execution:
+      buffType === 'pierceDefence' || buffType === 'pierceSubdamage'
+        ? [
+            {
+              kind:
+                buffType === 'pierceDefence'
+                  ? ('ignoreDefense' as const)
+                  : ('ignoreDamageCut' as const),
+              targetPolicy,
+              expectedRecipient: 'attacker' as const,
+              targetMismatch: 'unsupported' as const,
+              semanticSupport: 'supported' as const,
+            },
+          ]
+        : modifier
+          ? [
+              {
+                kind: 'damageModifier' as const,
+                modifier,
+                sign: 1 as const,
+                targetPolicy,
+                expectedRecipient: 'attacker' as const,
+                targetMismatch: 'unsupported' as const,
+                card: cardTypes[0] ?? null,
+                values,
+                valueExpressions: [[], [], [], [], []] as const,
+                semanticSupport: 'supported' as const,
+              },
+            ]
+          : [{ kind: 'nonDamage' as const }],
+    atlasEvidence: {
+      functionType: 'addStateShort',
+      target,
+      parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
+      parameterSemantics: emptyParameterSemantics,
+      unresolvedSemanticKeys: [],
+      buffTypes: [buffType],
+      buffRateTargets: [],
     },
-    cardTypes,
   };
 }
 
@@ -153,12 +195,16 @@ describe('scenario calculation facade', () => {
       ...modifierEffect('field-sunshine', 'fieldIndividuality', 2_038),
       label: 'field mutation',
       timing: 'beforeDamage' as const,
-      contextChanges: {
-        addedFieldTraits: ['fieldSunlight'],
-        removedFieldTraits: [],
-        addedRecipientTraits: [],
-        removedRecipientTraits: [],
-      },
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'field' as const,
+          targetPolicy: 'sourceSelf' as const,
+          trait: 'fieldSunlight',
+          damageRelevant: true,
+        },
+      ],
     };
     const conditional = {
       ...modifierEffect('sunshine-power', 'upAtk', 300, [], 'self', {
@@ -223,22 +269,30 @@ describe('scenario calculation facade', () => {
     const fieldEffect = {
       ...modifierEffect('field-sunshine', 'fieldIndividuality', 2_038),
       label: 'field mutation',
-      contextChanges: {
-        addedFieldTraits: ['fieldSunlight'],
-        removedFieldTraits: [],
-        addedRecipientTraits: [],
-        removedRecipientTraits: [],
-      },
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'field' as const,
+          targetPolicy: 'sourceSelf' as const,
+          trait: 'fieldSunlight',
+          damageRelevant: true,
+        },
+      ],
     };
     const recipientEffect = {
       ...modifierEffect('recipient-blessing', 'addIndividuality', 2_038, [], 'self'),
       label: 'recipient mutation',
-      contextChanges: {
-        addedFieldTraits: [],
-        removedFieldTraits: [],
-        addedRecipientTraits: ['blessedByKur'],
-        removedRecipientTraits: [],
-      },
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'recipientState' as const,
+          targetPolicy: 'sourceSelf' as const,
+          trait: 'blessedByKur',
+          damageRelevant: false,
+        },
+      ],
     };
     const conditional = {
       ...modifierEffect('sunshine-power', 'upAtk', 300, [], 'self', {
@@ -654,12 +708,16 @@ describe('scenario calculation facade', () => {
     const baseServant = fixture.servants[0]!;
     const heavenContext = {
       ...modifierEffect('heaven-context', 'nonDamageContext', 0),
-      contextChanges: {
-        addedFieldTraits: ['fieldHeaven'],
-        removedFieldTraits: [],
-        addedRecipientTraits: [],
-        removedRecipientTraits: [],
-      },
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'field' as const,
+          targetPolicy: 'sourceSelf' as const,
+          trait: 'fieldHeaven',
+          damageRelevant: false,
+        },
+      ],
     };
     const transactionalMaster = masterSnapshotSchema.parse({
       ...fixture,
@@ -839,12 +897,16 @@ describe('scenario calculation facade', () => {
     const burn = { id: 99, name: 'buffBurn' };
     const stackEffect = (id: string) => ({
       ...modifierEffect(id, 'addIndividuality', 0, [], 'enemyAll'),
-      contextChanges: {
-        addedFieldTraits: [],
-        removedFieldTraits: [],
-        addedRecipientTraits: [burn.name],
-        removedRecipientTraits: [],
-      },
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'recipientState' as const,
+          targetPolicy: 'enemy' as const,
+          trait: burn.name,
+          damageRelevant: false,
+        },
+      ],
       timing: 'beforeDamage' as const,
     });
     const stackedMaster = masterSnapshotSchema.parse({

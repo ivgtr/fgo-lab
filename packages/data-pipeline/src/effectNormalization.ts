@@ -1,5 +1,6 @@
 import type { ModifierValueExpression, NpDamageSpec } from '@fgo-lab/master-data';
 import type { AtlasBuff, AtlasFunction, AtlasFunctionValue, AtlasTraitRef } from './atlasContract';
+import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
 
 export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
   1: 'arts',
@@ -577,32 +578,96 @@ export function normalizeFunctions(
       ['tdTypeChange', 'tdTypeChangeArts', 'tdTypeChangeBuster', 'tdTypeChangeQuick'].includes(
         buffType ?? '',
       ) && trait.id === ownerId;
+    const contextChanges = {
+      addedFieldTraits:
+        fn.funcType === 'addFieldChangeToField' ||
+        (fn.buffs ?? []).some((buff) => buff.type === 'fieldIndividuality')
+          ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+              .flatMap((parameters) => parameters ?? [])
+              .flatMap((parameter) => [
+                ...(parameter.FieldIndividuality ?? []),
+                ...((fn.buffs ?? []).some((buff) => buff.type === 'fieldIndividuality') &&
+                typeof parameter.Value === 'number'
+                  ? [parameter.Value]
+                  : []),
+              ])
+              .flatMap((id) => {
+                const name = traitNameById.get(id);
+                return name ? [name] : [];
+              })
+              .filter((name, index, all) => all.indexOf(name) === index)
+          : [],
+      removedFieldTraits: (fn.buffs ?? []).some((buff) => buff.type === 'subFieldIndividuality')
+        ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+            .flatMap((parameters) => parameters ?? [])
+            .flatMap((parameter) => parameter.TargetList ?? [])
+            .flatMap((id) => {
+              const name = traitNameById.get(id);
+              return name ? [name] : [];
+            })
+            .filter((name, index, all) => all.indexOf(name) === index)
+        : [],
+      addedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'addIndividuality')
+        ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+            .flatMap((parameters) => parameters ?? [])
+            .flatMap((parameter) => (typeof parameter.Value === 'number' ? [parameter.Value] : []))
+            .flatMap((id) => {
+              const name = traitNameById.get(id);
+              return name ? [name] : [];
+            })
+            .filter((name, index, all) => all.indexOf(name) === index)
+        : [],
+      removedRecipientTraits: [],
+    };
+    const cardTypes = [
+      ...new Set(
+        (fn.buffs ?? []).flatMap((buff) =>
+          [...(buff.tvals ?? []), ...(buff.ckSelfIndv ?? [])].flatMap((trait) => {
+            const card = trait.name ? cardTypeByTrait[trait.name] : undefined;
+            return card ? [card] : [];
+          }),
+        ),
+      ),
+    ];
+    const parameterSemantics = classifyParameterSemantics(
+      parameterSets,
+      quantityConditions,
+      sourceQuantityConditions,
+      modifierValues.recognizedKeys,
+      choice,
+      operationTrigger,
+      hasNormalizedConditionRouting,
+    );
+    const buffTypes = (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
+    let execution = normalizeExecutionSemantics({
+      fn,
+      parameterSets,
+      valueExpressions: modifierValues.sets,
+      cardTypes,
+      cardTypeMutation: npCardTypeChange,
+      contextChanges,
+    });
+    const unresolvedSemanticKeys = unresolvedFunctionScriptKeys(fn.script);
+    if (parameterSemantics.unresolved.length > 0 || unresolvedSemanticKeys.length > 0)
+      execution = execution.map((operation) =>
+        operation.kind === 'damageModifier' ||
+        operation.kind === 'modifierRateChange' ||
+        operation.kind === 'ignoreDefense' ||
+        operation.kind === 'ignoreDamageCut' ||
+        operation.kind === 'cardTypeMutation'
+          ? { ...operation, semanticSupport: 'unresolved' as const }
+          : operation,
+      );
     return [
       {
         id: String(fn.funcId),
         occurrenceId: `${String(fn.funcId)}:${String(occurrence)}`,
-        type: fn.funcType ?? 'unknown',
-        target: fn.funcTargetType ?? 'unknown',
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
-        parameterSets,
-        parameterSemantics: classifyParameterSemantics(
-          parameterSets,
-          quantityConditions,
-          sourceQuantityConditions,
-          modifierValues.recognizedKeys,
-          choice,
-          operationTrigger,
-          hasNormalizedConditionRouting,
-        ),
-        unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         choice,
-        npCardTypeChange: npCardTypeChange?.card ?? null,
-        npCardTypeStateTraits: npCardTypeChange?.stateTraits ?? [],
         triggerScope: normalizeTriggerScope(fn.buffs, source),
         operationTrigger,
         quantityConditions,
         sourceQuantityConditions,
-        modifierValueExpressionSets: modifierValues.sets,
         conditions: {
           recipient:
             (fn.overWriteTvalsList ?? []).length > 0
@@ -648,60 +713,17 @@ export function normalizeFunctions(
             ]),
           },
         },
-        contextChanges: {
-          addedFieldTraits:
-            fn.funcType === 'addFieldChangeToField' ||
-            (fn.buffs ?? []).some((buff) => buff.type === 'fieldIndividuality')
-              ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
-                  .flatMap((parameters) => parameters ?? [])
-                  .flatMap((parameter) => [
-                    ...(parameter.FieldIndividuality ?? []),
-                    ...((fn.buffs ?? []).some((buff) => buff.type === 'fieldIndividuality') &&
-                    typeof parameter.Value === 'number'
-                      ? [parameter.Value]
-                      : []),
-                  ])
-                  .flatMap((id) => {
-                    const name = traitNameById.get(id);
-                    return name ? [name] : [];
-                  })
-                  .filter((name, index, all) => all.indexOf(name) === index)
-              : [],
-          removedFieldTraits: (fn.buffs ?? []).some((buff) => buff.type === 'subFieldIndividuality')
-            ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
-                .flatMap((parameters) => parameters ?? [])
-                .flatMap((parameter) => parameter.TargetList ?? [])
-                .flatMap((id) => {
-                  const name = traitNameById.get(id);
-                  return name ? [name] : [];
-                })
-                .filter((name, index, all) => all.indexOf(name) === index)
-            : [],
-          addedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'addIndividuality')
-            ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
-                .flatMap((parameters) => parameters ?? [])
-                .flatMap((parameter) =>
-                  typeof parameter.Value === 'number' ? [parameter.Value] : [],
-                )
-                .flatMap((id) => {
-                  const name = traitNameById.get(id);
-                  return name ? [name] : [];
-                })
-                .filter((name, index, all) => all.indexOf(name) === index)
-            : [],
-          removedRecipientTraits: [],
+        conditionTargetPolicy: normalizeTargetPolicy(fn.funcTargetType ?? 'unknown'),
+        execution,
+        atlasEvidence: {
+          functionType: fn.funcType ?? 'unknown',
+          target: fn.funcTargetType ?? 'unknown',
+          parameterSets,
+          parameterSemantics,
+          unresolvedSemanticKeys,
+          buffTypes,
+          buffRateTargets: buffRateTargets(fn.buffs),
         },
-        buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
-        ...(buffRateTargets(fn.buffs).length ? { buffRateTargets: buffRateTargets(fn.buffs) } : {}),
-        cardTypes: [
-          ...new Set(
-            (fn.buffs ?? []).flatMap((buff) =>
-              [...(buff.tvals ?? []), ...(buff.ckSelfIndv ?? [])].flatMap((trait) =>
-                trait.name && cardTypeByTrait[trait.name] ? [cardTypeByTrait[trait.name]] : [],
-              ),
-            ),
-          ),
-        ],
       },
     ];
   });

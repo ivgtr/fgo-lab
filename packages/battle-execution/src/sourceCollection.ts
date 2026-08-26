@@ -2,7 +2,6 @@ import {
   getPrimaryNoblePhantasm,
   type MasterDataSnapshot,
   type MasterEffect,
-  type ModifierValueExpression,
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 import type { ExecutionIssue, ExecutionPhase } from './contracts';
@@ -19,36 +18,10 @@ export interface SourceEffect {
   skillId: string;
   skillName: string;
   effect: MasterEffect;
-  rawValue: number | undefined;
-  valueExpression: ModifierValueExpression | null;
+  valueSetIndex: number;
+  valueIndex: number;
+  limitBreak: boolean;
   enabledByDefault: boolean;
-}
-
-function parameter(
-  effect: MasterEffect,
-  setIndex: number,
-  valueIndex: number,
-  limitBreak = false,
-): number | undefined {
-  const sets =
-    limitBreak && effect.limitBreakParameterSets
-      ? effect.limitBreakParameterSets
-      : effect.parameterSets;
-  const value = sets[setIndex]?.[valueIndex]?.['Value'];
-  return typeof value === 'number' ? value : undefined;
-}
-
-function modifierValueExpression(
-  effect: MasterEffect,
-  setIndex: number,
-  valueIndex: number,
-  limitBreak = false,
-): ModifierValueExpression | null {
-  const sets =
-    limitBreak && effect.limitBreakModifierValueExpressionSets
-      ? effect.limitBreakModifierValueExpressionSets
-      : effect.modifierValueExpressionSets;
-  return sets[setIndex]?.[valueIndex] ?? null;
 }
 
 export function collectOperationSources(
@@ -101,8 +74,9 @@ export function collectOperationSources(
         skillId,
         skillName: skill.name,
         effect,
-        rawValue: parameter(effect, 0, skillLevel - 1),
-        valueExpression: modifierValueExpression(effect, 0, skillLevel - 1),
+        valueSetIndex: 0,
+        valueIndex: skillLevel - 1,
+        limitBreak: false,
         enabledByDefault,
       });
   };
@@ -139,13 +113,9 @@ export function collectOperationSources(
           skillId: `ce:${ce.id}`,
           skillName: ce.name,
           effect,
-          rawValue: parameter(effect, 0, 0, scenario.craftEssence.limitBreak === 4),
-          valueExpression: modifierValueExpression(
-            effect,
-            0,
-            0,
-            scenario.craftEssence.limitBreak === 4,
-          ),
+          valueSetIndex: 0,
+          valueIndex: 0,
+          limitBreak: scenario.craftEssence.limitBreak === 4,
           enabledByDefault: true,
         });
   }
@@ -192,8 +162,9 @@ export function collectOperationSources(
             skillId: skill.id,
             skillName: skill.name,
             effect,
-            rawValue: parameter(effect, 0, selected.skillLevel - 1),
-            valueExpression: modifierValueExpression(effect, 0, selected.skillLevel - 1),
+            valueSetIndex: 0,
+            valueIndex: selected.skillLevel - 1,
+            limitBreak: false,
             enabledByDefault: false,
           });
       }
@@ -210,8 +181,9 @@ export function collectOperationSources(
         skillId: `np:${attacker.id}`,
         skillName: '宝具前効果',
         effect,
-        rawValue: parameter(effect, input.overcharge - 1, input.npLevel - 1),
-        valueExpression: modifierValueExpression(effect, input.overcharge - 1, input.npLevel - 1),
+        valueSetIndex: input.overcharge - 1,
+        valueIndex: input.npLevel - 1,
+        limitBreak: false,
         enabledByDefault: true,
       });
   return { sources, issues };
