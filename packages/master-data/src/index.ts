@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(22),
+  schemaVersion: z.literal(23),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });

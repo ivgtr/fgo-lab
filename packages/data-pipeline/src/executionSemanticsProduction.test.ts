@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
@@ -152,5 +153,56 @@ describe('production canonical execution semantics', () => {
       { id: '364', kind: 'nonDamage', modifier: null },
       { id: '199', kind: 'nonDamage', modifier: null },
     ]);
+  });
+
+  it('ratchets complete shared MLB value evidence without runtime fallbacks', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const sharedValues: unknown[] = [];
+    let mlbSkillCraftEssences = 0;
+    let sharedEffects = 0;
+    let sharedValuedOperations = 0;
+    let differingValueOperations = 0;
+    let explicitCraftEssenceValuedOperations = 0;
+    for (const craftEssence of master.craftEssences) {
+      let hasLimitBreakEvidence = false;
+      for (const effect of craftEssence.effects) {
+        const shared = effect.atlasEvidence.limitBreakParameterSets !== undefined;
+        if (shared) {
+          hasLimitBreakEvidence = true;
+          sharedEffects += 1;
+        }
+        for (const [operationIndex, operation] of effect.execution.entries()) {
+          if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
+            continue;
+          explicitCraftEssenceValuedOperations += 1;
+          expect(operation.limitBreakValues).toBeDefined();
+          expect(operation.limitBreakValueExpressions).toBeDefined();
+          if (!shared) continue;
+          sharedValuedOperations += 1;
+          if (JSON.stringify(operation.values) !== JSON.stringify(operation.limitBreakValues))
+            differingValueOperations += 1;
+          sharedValues.push({
+            craftEssenceId: craftEssence.id,
+            occurrenceId: effect.occurrenceId,
+            operationIndex,
+            values: operation.limitBreakValues,
+            expressions: operation.limitBreakValueExpressions,
+          });
+        }
+      }
+      if (hasLimitBreakEvidence) mlbSkillCraftEssences += 1;
+    }
+    sharedValues.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+
+    expect(mlbSkillCraftEssences).toBe(898);
+    expect(sharedEffects).toBe(2_077);
+    expect(sharedValuedOperations).toBe(745);
+    expect(differingValueOperations).toBe(735);
+    expect(explicitCraftEssenceValuedOperations).toBe(1_307);
+    expect(createHash('sha256').update(JSON.stringify(sharedValues)).digest('hex')).toBe(
+      '9a70f2009c272e7818d66b6937ee9f10abc7aa74566b935227835840beebada6',
+    );
   });
 });

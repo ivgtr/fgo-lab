@@ -52,7 +52,7 @@ const nonDamageEffect = {
 describe('master validation', () => {
   it('accepts only the current master manifest schema', () => {
     expect(masterManifestSchema.safeParse(manifest).success).toBe(true);
-    expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 21 }).success).toBe(false);
+    expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 22 }).success).toBe(false);
     expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 6 }).success).toBe(false);
   });
   it('accepts the legal minimal fixture', () =>
