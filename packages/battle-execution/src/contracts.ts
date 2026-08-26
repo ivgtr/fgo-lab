@@ -1,5 +1,5 @@
 import type {
-  BattleContextInputDefinition,
+  CanonicalInputDefinition,
   ModifierValueExpression,
   NpDamageSpec,
   TraitReadPolicy,
@@ -49,7 +49,7 @@ export type ConditionExpression =
       value: number;
     }
   | {
-      kind: 'contextQuantity';
+      kind: 'inputQuantity';
       inputKey: string;
       comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
       value: number;
@@ -105,7 +105,7 @@ interface OperationBase {
       };
   evidence: OperationEvidence;
   presentation: { label: string; sourceName: string; skillName: string };
-  contextInputs: readonly BattleContextInputDefinition[];
+  inputDefinitions: readonly CanonicalInputDefinition[];
 }
 
 export type ModifierKind =
@@ -123,9 +123,9 @@ export type ModifierKind =
   | 'ignoreDamageCut';
 
 export type OperationModifierValueExpression =
-  | Extract<ModifierValueExpression, { kind: 'contextLinear' }>
+  | Extract<ModifierValueExpression, { kind: 'inputLinear' }>
   | (Extract<ModifierValueExpression, { kind: 'inverseHpLinear' | 'hpRangeLinear' }> & {
-      quantitySource: { kind: 'attackerHpPermille' } | { kind: 'battleContext'; inputKey: string };
+      quantitySource: { kind: 'attackerHpPermille' } | { kind: 'canonicalInput'; inputKey: string };
     });
 
 export type BattleOperation =
@@ -193,7 +193,7 @@ export interface BattleState {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  contextValues: Readonly<Record<string, number>>;
+  resolvedInputValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
   ignoreDefense: boolean;
@@ -216,6 +216,7 @@ export type WorldFactAssertion = {
 };
 
 export type ExecutionIssue =
+  | { kind: 'invalidCanonicalInput'; inputKey: string; detail: 'unknownInputKey' }
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }
   | { kind: 'unsupportedParameter'; operationId: string; parameter: string }
@@ -248,12 +249,12 @@ export type ConditionConstraintConflict =
   | { kind: 'traitPolarity'; scope: TraitScope; trait: string }
   | {
       kind: 'quantityEquality';
-      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `context:${string}`;
+      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `input:${string}`;
       values: readonly number[];
     }
   | {
       kind: 'quantityRange';
-      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `context:${string}`;
+      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `input:${string}`;
       ranges: readonly { min: number; max: number }[];
     }
   | { kind: 'cardMismatch'; cards: readonly CardType[] }
@@ -285,7 +286,7 @@ export interface EffectProjection {
   value: number | null;
   requiredQuantity: 'attackerHpPermille' | null;
   requiredQuantityOwner: 'attacker' | 'source' | null;
-  requiredInputs: readonly BattleContextInputDefinition[];
+  requiredInputs: readonly CanonicalInputDefinition[];
   modifier: ModifierKind | 'npSpecial' | 'cardTypeChange' | null;
   source: OperationSource;
   executionSupport: 'supported' | 'unsupported';
@@ -330,6 +331,6 @@ export interface BattleExecutionResult {
   projections: readonly EffectProjection[];
   precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
   issues: readonly ExecutionIssue[];
-  requiredInputs: readonly (BattleContextInputDefinition & { effectOccurrenceIds: string[] })[];
-  contextInputs: readonly BattleContextInputDefinition[];
+  requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
+  inputDefinitions: readonly CanonicalInputDefinition[];
 }

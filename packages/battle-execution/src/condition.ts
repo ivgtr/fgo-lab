@@ -87,7 +87,7 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some(requiresUserAssumption);
   if (condition.kind === 'not') return requiresUserAssumption(condition.expression);
-  return !['always', 'card', 'contextQuantity'].includes(condition.kind);
+  return !['always', 'card', 'inputQuantity'].includes(condition.kind);
 }
 
 export function evaluateCondition(
@@ -149,8 +149,8 @@ export function evaluateCondition(
       if (condition.comparison === 'atLeast') return actual >= condition.value;
       return actual > condition.value;
     }
-    case 'contextQuantity': {
-      const actual = state.contextValues[condition.inputKey];
+    case 'inputQuantity': {
+      const actual = state.resolvedInputValues[condition.inputKey];
       if (actual === undefined) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;
       if (condition.comparison === 'atMost') return actual <= condition.value;

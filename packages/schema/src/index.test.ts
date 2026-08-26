@@ -29,7 +29,7 @@ describe('portable schema boundaries', () => {
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
-      battleContext: { values: {} },
+      canonicalInputValues: {},
       assumptions: { classAffinity: 2, attributeAffinity: 1 },
       craftEssence: null,
       attackerSkills: [],
@@ -53,6 +53,39 @@ describe('portable schema boundaries', () => {
     ).toThrow();
   });
 
+  it('rejects the removed untyped battle-context value map', () => {
+    const base = calculationScenarioSchema.parse({
+      mode: 'resolved',
+      attacker: { servantId: '1', source: 'master', level: 90, npLevel: 1, fouAtk: 1000 },
+      overcharge: 1,
+      target: { classId: 'lancer', attribute: 'earth' },
+      attackerHpPermille: 1000,
+      battleState: { battlePointPhase: null },
+      canonicalInputValues: {},
+      assumptions: { classAffinity: 2, attributeAffinity: 1 },
+      craftEssence: null,
+      attackerSkills: [],
+      mysticCode: null,
+      support: null,
+      effectDecisions: [],
+      worldFactAssertions: [],
+      explicitOverrides: {},
+    });
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...base,
+        canonicalInputValues: undefined,
+        battleContext: { values: { 'field:enemyCount': 2 } },
+      }).success,
+    ).toBe(false);
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...base,
+        canonicalInputValues: { 'field:enemyCount': 2 },
+      }).success,
+    ).toBe(false);
+  });
+
   it('rejects out-of-domain quantity world facts at the portable input boundary', () => {
     const scenario = calculationScenarioSchema.parse({
       mode: 'resolved',
@@ -67,7 +100,7 @@ describe('portable schema boundaries', () => {
       target: { classId: 'lancer', attribute: 'earth' },
       attackerHpPermille: null,
       battleState: { battlePointPhase: null },
-      battleContext: { values: {} },
+      canonicalInputValues: {},
       assumptions: { classAffinity: 2, attributeAffinity: 1 },
       craftEssence: null,
       attackerSkills: [],

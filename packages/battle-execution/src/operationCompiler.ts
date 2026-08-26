@@ -1,6 +1,6 @@
 import type {
   ActorCountPredicate,
-  BattleContextInputDefinition,
+  CanonicalInputDefinition,
   EffectExecutionOperation,
   MasterEffect,
   ModifierValueExpression,
@@ -69,7 +69,7 @@ function guaranteedPredicateCount(
 
 function resolveMatchingActorMinimum(
   source: SourceEffect,
-  definition: Extract<BattleContextInputDefinition, { kind: 'matchingActorCount' }>,
+  definition: Extract<CanonicalInputDefinition, { kind: 'matchingActorCount' }>,
 ): number {
   const { countSemantics } = definition;
   const sourceCount = ['allActors', 'allies'].includes(countSemantics.population)
@@ -83,7 +83,7 @@ function resolveMatchingActorMinimum(
 }
 
 function runtimeContextInputs(source: SourceEffect) {
-  const normalized = source.effect.contextInputs.map((definition) => {
+  const normalized = source.effect.inputDefinitions.map((definition) => {
     const minimum =
       definition.kind === 'matchingActorCount'
         ? resolveMatchingActorMinimum(source, definition)
@@ -164,8 +164,8 @@ function effectCondition(
       kind: 'sourceQuantity',
       ...condition,
     })),
-    ...effect.contextQuantityConditions.map<ConditionExpression>((condition) => ({
-      kind: 'contextQuantity',
+    ...effect.inputQuantityConditions.map<ConditionExpression>((condition) => ({
+      kind: 'inputQuantity',
       ...condition,
       inputKey: runtimeContextKey(
         origin,
@@ -253,7 +253,7 @@ function selectedValueExpression(
   if (!sets) return null;
   const expression = sets[source.valueSetIndex]?.[source.valueIndex] ?? null;
   if (!expression) return null;
-  if (expression.kind === 'contextLinear')
+  if (expression.kind === 'inputLinear')
     return {
       ...expression,
       inputKey: runtimeContextKey(
@@ -268,7 +268,7 @@ function selectedValueExpression(
     ...expression,
     quantitySource: ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
       ? ({ kind: 'attackerHpPermille' } as const)
-      : ({ kind: 'battleContext', inputKey: sourceHpContextKey(source) } as const),
+      : ({ kind: 'canonicalInput', inputKey: sourceHpContextKey(source) } as const),
   };
 }
 
@@ -319,7 +319,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
       sourceName: source.sourceName,
       skillName: source.skillName,
     },
-    contextInputs: runtimeContextInputs(source),
+    inputDefinitions: runtimeContextInputs(source),
   };
 }
 

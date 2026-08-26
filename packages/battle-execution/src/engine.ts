@@ -1,6 +1,7 @@
 import {
   getPrimaryNoblePhantasm,
   getPrimaryNpDamage,
+  type CanonicalInputDefinition,
   type MasterDataSnapshot,
   type NpDamageSpec,
 } from '@fgo-lab/master-data';
@@ -54,6 +55,23 @@ type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface OrderedScenarioExecution extends BattleExecutionResult {
   input: DamageResolutionInput;
+}
+
+export interface PreparedOrderedScenario {
+  baseInput: DamageResolutionInput;
+  scenario: ResolvedScenario;
+  attackerTraits: readonly string[];
+  damage: NpDamageSpec | undefined;
+  operations: readonly BattleOperation[];
+  compileProjections: readonly EffectProjection[];
+  sourceIssues: readonly ExecutionIssue[];
+  inputDefinitions: readonly CanonicalInputDefinition[];
+}
+
+export interface ResolvedCanonicalInputSet {
+  values: Readonly<Record<string, number>>;
+  missingDefinitions: readonly CanonicalInputDefinition[];
+  invalidInputKeys: readonly string[];
 }
 
 function applyNp(
@@ -150,11 +168,11 @@ function evaluateConditionAgainstKnownFacts(
   return satisfiable.status === 'conflict' ? false : null;
 }
 
-export function executeOrderedScenario(
+export function prepareOrderedScenario(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
   master: MasterDataSnapshot,
-): OrderedScenarioExecution {
+): PreparedOrderedScenario {
   const attacker = master.servants.find((servant) => servant.id === baseInput.attackerId);
   const collected = collectOperationSources(baseInput, scenario, master);
   const compiledOperations: BattleOperation[] = [];
@@ -214,7 +232,7 @@ export function executeOrderedScenario(
         sourceName: attacker.name,
         skillName: np.name,
       },
-      contextInputs: [],
+      inputDefinitions: [],
       kind: 'executeNpDamage',
       damage,
       overcharge: baseInput.overcharge,
@@ -242,24 +260,37 @@ export function executeOrderedScenario(
     .map((operation, order) => ({ ...operation, order }));
   const inputDefinitions = new Map(
     operations.flatMap((operation) =>
-      operation.contextInputs.map((definition) => [definition.key, definition] as const),
+      operation.inputDefinitions.map((definition) => [definition.key, definition] as const),
     ),
   );
-  const contextValues: Record<string, number> = {};
-  const missingDefinitions = [];
-  for (const definition of inputDefinitions.values()) {
-    const explicit = scenario.battleContext.values[definition.key];
-    const value = explicit ?? definition.defaultValue;
-    if (value === null) missingDefinitions.push(definition);
-    else if (
-      value < definition.minimum ||
-      value > definition.maximum ||
-      (value - definition.minimum) % definition.step !== 0
-    )
-      missingDefinitions.push({ ...definition, defaultValue: null, defaultReason: null });
-    else contextValues[definition.key] = value;
-  }
-  let state = createInitialBattleState(baseInput, attacker?.traits ?? [], contextValues);
+  return {
+    baseInput,
+    scenario,
+    attackerTraits: attacker?.traits ?? [],
+    damage,
+    operations,
+    compileProjections,
+    sourceIssues: collected.issues,
+    inputDefinitions: [...inputDefinitions.values()],
+  };
+}
+
+export function executeOrderedScenario(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+): OrderedScenarioExecution {
+  const {
+    baseInput,
+    scenario,
+    attackerTraits,
+    damage,
+    operations,
+    compileProjections,
+    sourceIssues,
+    inputDefinitions,
+  } = prepared;
+  const { values: resolvedInputValues, missingDefinitions, invalidInputKeys } = resolvedInputs;
+  let state = createInitialBattleState(baseInput, attackerTraits, resolvedInputValues);
   const decisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
@@ -616,8 +647,13 @@ export function executeOrderedScenario(
     }
   }
   const issues = [
+    ...invalidInputKeys.map<ExecutionIssue>((inputKey) => ({
+      kind: 'invalidCanonicalInput',
+      inputKey,
+      detail: 'unknownInputKey',
+    })),
     ...constraintIssues,
-    ...collected.issues,
+    ...sourceIssues,
     ...resolvedCompileProjections
       .filter((projection) => projection.outcome === 'unsupported')
       .map<ExecutionIssue>((projection) => ({
@@ -651,10 +687,12 @@ export function executeOrderedScenario(
     requiredInputs: missingDefinitions.map((definition) => ({
       ...definition,
       effectOccurrenceIds: operations
-        .filter((operation) => operation.contextInputs.some((item) => item.key === definition.key))
+        .filter((operation) =>
+          operation.inputDefinitions.some((item) => item.key === definition.key),
+        )
         .map((operation) => operation.source.effectOccurrenceId)
         .filter((value, index, all) => all.indexOf(value) === index),
     })),
-    contextInputs: [...inputDefinitions.values()],
+    inputDefinitions: [...inputDefinitions],
   };
 }

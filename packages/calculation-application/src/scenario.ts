@@ -1,4 +1,8 @@
-import { executeOrderedScenario, type EffectProjection } from '@fgo-lab/battle-execution';
+import {
+  executeOrderedScenario,
+  prepareOrderedScenario,
+  type EffectProjection,
+} from '@fgo-lab/battle-execution';
 import { classAttackRate } from '@fgo-lab/calc-core';
 import {
   deriveCraftEssenceAtk,
@@ -8,7 +12,7 @@ import {
   naturalServantLevel,
   type MasterDataSnapshot,
   type ServantMaster,
-  type BattleContextInputDefinition,
+  type CanonicalInputDefinition,
 } from '@fgo-lab/master-data';
 import type {
   CalculationResult,
@@ -19,6 +23,11 @@ import type {
 } from '@fgo-lab/schema';
 import { calculateDamageResolution } from './damageResolution';
 import { evaluateCalculationEvidence } from './evidence';
+import {
+  createEffectInputViewModels,
+  resolveCanonicalInputValues,
+  type EffectInputViewModel,
+} from './canonicalInputs';
 
 export interface ResolvedCalculationInput {
   input: DamageResolutionInput;
@@ -28,7 +37,7 @@ export interface ResolvedCalculationInput {
   trace: { step: string; detail: string }[];
   effects: EffectProjection[];
   requiredInputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
-  contextInputs: BattleContextInputDefinition[];
+  inputDefinitions: CanonicalInputDefinition[];
 }
 
 export interface CalculationExecution {
@@ -38,7 +47,8 @@ export interface CalculationExecution {
   effects: EffectProjection[];
   effectWarnings: string[];
   result: CalculationResult;
-  contextInputs: BattleContextInputDefinition[];
+  inputDefinitions: CanonicalInputDefinition[];
+  effectInputs: EffectInputViewModel[];
 }
 
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -64,7 +74,7 @@ export function createDefaultResolvedScenario(
     target: { classId: 'affinity:2', attribute: 'unknown' },
     attackerHpPermille: 1_000,
     battleState: { battlePointPhase: 0 },
-    battleContext: { values: {} },
+    canonicalInputValues: {},
     assumptions: { classAffinity: 2, attributeAffinity: 1 },
     craftEssence: null,
     attackerSkills: servant.skills.slice(0, 3).map((skill, index) => ({
@@ -156,11 +166,18 @@ export function resolveScenario(
       trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
       effects: [],
       requiredInputs: [],
-      contextInputs: [],
+      inputDefinitions: [],
     };
   const baseInput = resolvedScenarioBaseInput(scenario, master);
-  const execution = executeOrderedScenario(baseInput, scenario, master);
+  const prepared = prepareOrderedScenario(baseInput, scenario, master);
+  const canonicalInputs = resolveCanonicalInputValues(
+    prepared.inputDefinitions,
+    scenario.canonicalInputValues,
+  );
+  const execution = executeOrderedScenario(prepared, canonicalInputs);
   const warnings = execution.issues.map((issue) => {
+    if (issue.kind === 'invalidCanonicalInput')
+      return `${issue.kind}:${issue.inputKey}:${issue.detail}`;
     if (issue.kind === 'constraintValidationUnsupported')
       return `${issue.kind}:${issue.sourceKeys.join(',')}:${issue.reason}`;
     if (issue.kind === 'constraintConflict')
@@ -196,6 +213,10 @@ export function resolveScenario(
         ? `${assertion.decisionKey}:trait:${assertion.fact.scope}:${assertion.fact.trait}:${String(assertion.fact.present)}`
         : `${assertion.decisionKey}:quantity:${assertion.fact.quantity}:${String(assertion.fact.value)}`,
   }));
+  const canonicalInputTrace = Object.entries(canonicalInputs.values).map(([key, value]) => ({
+    step: 'canonical-input',
+    detail: `${key}:${String(value)}:${scenario.canonicalInputValues[key] ? 'explicit' : 'default'}`,
+  }));
   return {
     input: execution.input,
     precision: execution.precision,
@@ -212,10 +233,11 @@ export function resolveScenario(
     warnings,
     effects: [...execution.projections],
     requiredInputs: [...execution.requiredInputs],
-    contextInputs: [...execution.contextInputs],
+    inputDefinitions: [...execution.inputDefinitions],
     trace: [
       ...decisionTrace,
       ...worldFactTrace,
+      ...canonicalInputTrace,
       ...execution.operations.map((operation) => ({
         step: `${operation.operation.phase}:${operation.operation.kind}`,
         detail: `${operation.operation.order}:${operation.operation.operationId}:${operation.outcome}`,
@@ -287,7 +309,16 @@ function evaluateResolvedCalculation(
     effects: resolved.effects,
     effectWarnings: resolved.warnings,
     result,
-    contextInputs: resolved.contextInputs,
+    inputDefinitions: resolved.inputDefinitions,
+    effectInputs:
+      scenario.mode === 'resolved'
+        ? createEffectInputViewModels({
+            definitions: resolved.inputDefinitions,
+            effects: resolved.effects,
+            requiredInputs: resolved.requiredInputs,
+            explicitValues: scenario.canonicalInputValues,
+          })
+        : [],
   };
 }
 

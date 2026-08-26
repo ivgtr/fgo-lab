@@ -18,7 +18,9 @@ function calculate(attackerId: string, values: Record<string, number> = {}) {
   const servant = master.servants.find((candidate) => candidate.id === attackerId)!;
   const scenario = {
     ...createDefaultResolvedScenario(master, undefined, servant),
-    battleContext: { values },
+    canonicalInputValues: Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [key, { kind: 'integer' as const, value }]),
+    ),
   };
   return {
     scenario,
@@ -43,7 +45,7 @@ describe('canonical actor population counts', () => {
     const occurrences = master.servants.flatMap((servant) =>
       [...servant.skills, ...servant.passives, ...servant.noblePhantasms].flatMap((source) =>
         source.effects.flatMap((effect) =>
-          effect.contextInputs.flatMap((input) =>
+          effect.inputDefinitions.flatMap((input) =>
             input.kind === 'matchingActorCount'
               ? [
                   {
@@ -88,7 +90,9 @@ describe('canonical actor population counts', () => {
 
   it('counts John himself once for King and once for Evil without servant-specific bonuses', () => {
     const { scenario, calculation } = calculate('1102000');
-    const inputs = calculation.contextInputs.filter((input) => input.kind === 'matchingActorCount');
+    const inputs = calculation.inputDefinitions.filter(
+      (input) => input.kind === 'matchingActorCount',
+    );
     expect(
       inputs.map(({ label, minimum, defaultValue }) => ({ label, minimum, defaultValue })),
     ).toEqual([
@@ -101,7 +105,7 @@ describe('canonical actor population counts', () => {
     ]);
     const parsedScenario = calculationScenarioSchema.parse(scenario);
     if (parsedScenario.mode !== 'resolved') throw new Error('expected resolved scenario');
-    expect(parsedScenario.battleContext.values).toEqual({});
+    expect(parsedScenario.canonicalInputValues).toEqual({});
 
     const explicitMinimum = calculate(
       '1102000',
@@ -113,7 +117,7 @@ describe('canonical actor population counts', () => {
 
   it('treats the Habetrot input as the final enemy total and supports one to three enemies', () => {
     const baseline = calculate('2801300').calculation;
-    const input = baseline.contextInputs.find(
+    const input = baseline.inputDefinitions.find(
       (candidate) => candidate.kind === 'matchingActorCount',
     )!;
     expect(input).toMatchObject({ label: '敵の合計数', minimum: 1, maximum: 3, defaultValue: 1 });
@@ -132,7 +136,9 @@ describe('canonical actor population counts', () => {
   it('fails closed when an explicit final count is below the canonical minimum', () => {
     for (const attackerId of ['1102000', '2801300']) {
       const baseline = calculate(attackerId).calculation;
-      const inputs = baseline.contextInputs.filter((input) => input.kind === 'matchingActorCount');
+      const inputs = baseline.inputDefinitions.filter(
+        (input) => input.kind === 'matchingActorCount',
+      );
       const invalid = calculate(
         attackerId,
         Object.fromEntries(inputs.map((input) => [input.key, input.minimum - 1])),

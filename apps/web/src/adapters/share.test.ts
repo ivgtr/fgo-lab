@@ -74,13 +74,13 @@ describe('portable input limits', () => {
       result: calculation.result,
     };
 
-    expect(scenario.battleContext.values).toEqual({});
+    expect(scenario.canonicalInputValues).toEqual({});
     const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
     expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
     const recalculated = calculateScenario(restored.scenario, productionMaster, productionVersions);
     expect(recalculated.input.npDamageBuff).toBe(0.2);
     expect(
-      recalculated.contextInputs
+      recalculated.inputDefinitions
         .filter((input) => input.kind === 'matchingActorCount')
         .map((input) => input.defaultValue),
     ).toEqual([1, 1]);
@@ -182,7 +182,7 @@ describe('portable input limits', () => {
                   },
                   quantityConditions: [],
                   sourceQuantityConditions: [],
-                  contextInputs: [
+                  inputDefinitions: [
                     {
                       key: 'field:enemyCount',
                       kind: 'fieldActorCount',
@@ -196,7 +196,7 @@ describe('portable input limits', () => {
                       defaultReason: '単体対象1体',
                     },
                   ],
-                  contextQuantityConditions: [],
+                  inputQuantityConditions: [],
                   conditions: {
                     recipient: [{ operator: 'any', traits: [] }],
                     holder: { operator: 'any', traits: [] },
@@ -308,7 +308,9 @@ describe('portable input limits', () => {
 
     const invalidContextScenario = {
       ...selected,
-      battleContext: { values: { 'field:enemyCount': 0 } },
+      canonicalInputValues: {
+        'field:enemyCount': { kind: 'integer' as const, value: 0 },
+      },
     };
     const invalidContext = calculateScenario(
       invalidContextScenario,
@@ -322,7 +324,9 @@ describe('portable input limits', () => {
     };
     const decoded = readShareFragment(`#${createShareFragment(invalidSnapshot)}`)!;
     if (decoded.scenario.mode !== 'resolved') throw new Error('resolved share required');
-    expect(decoded.scenario.battleContext.values).toEqual({ 'field:enemyCount': 0 });
+    expect(decoded.scenario.canonicalInputValues).toEqual({
+      'field:enemyCount': { kind: 'integer', value: 0 },
+    });
     expect(invalidContext.result).toMatchObject({ status: 'inputRequired', rows: [] });
     expect(() => validateCalculationShareSnapshot(decoded, craftedMaster)).toThrow(
       'share_result_mismatch',

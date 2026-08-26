@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
-import { executeOrderedScenario } from '@fgo-lab/battle-execution';
+import { executeOrderedScenario, prepareOrderedScenario } from '@fgo-lab/battle-execution';
 import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
 import {
   calculationScenarioSchema,
@@ -11,6 +11,7 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import { applyEffectProjectionDecision } from './effectDecision';
+import { resolveCanonicalInputValues } from './canonicalInputs';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -83,8 +84,8 @@ function modifierEffect(
     },
     quantityConditions: [],
     sourceQuantityConditions: [],
-    contextInputs: [],
-    contextQuantityConditions: [],
+    inputDefinitions: [],
+    inputQuantityConditions: [],
     conditions,
     conditionTargetPolicy: targetPolicy,
     execution:
@@ -867,10 +868,14 @@ describe('scenario calculation facade', () => {
     });
     const projection = initial.effects.find((effect) => effect.label === 'compound')!;
     const selectedScenario = applyEffectProjectionDecision(scenario, projection, true);
-    const execution = executeOrderedScenario(
+    const prepared = prepareOrderedScenario(
       initial.scenarioInput,
       selectedScenario,
       compoundMaster,
+    );
+    const execution = executeOrderedScenario(
+      prepared,
+      resolveCanonicalInputValues(prepared.inputDefinitions, selectedScenario.canonicalInputValues),
     );
     const compoundOperations = execution.operations.filter(
       ({ operation }) => operation.source.effectOccurrenceId === 'compound:0',

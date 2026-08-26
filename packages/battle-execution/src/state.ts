@@ -24,7 +24,7 @@ export function cloneBattleState(state: BattleState): BattleState {
       target: new Set(state.initialTraitSuppressions.target),
     },
     quantities: { ...state.quantities },
-    contextValues: { ...state.contextValues },
+    resolvedInputValues: { ...state.resolvedInputValues },
     modifiers: [...state.modifiers],
     modifierRates: { ...state.modifierRates },
     evidence: [...state.evidence],
@@ -35,7 +35,7 @@ export function cloneBattleState(state: BattleState): BattleState {
 export function createInitialBattleState(
   input: DamageResolutionInput,
   attackerTraits: readonly string[],
-  contextValues: Readonly<Record<string, number>> = {},
+  resolvedInputValues: Readonly<Record<string, number>> = {},
 ): BattleState {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
@@ -60,7 +60,7 @@ export function createInitialBattleState(
       targetRarity: input.targetRarity,
       battlePointPhase: input.battlePointPhase,
     },
-    contextValues: { ...contextValues },
+    resolvedInputValues: { ...resolvedInputValues },
     modifiers: [],
     modifierRates: {},
     ignoreDefense: input.damageFunction.status === 'resolved' && input.damageFunction.ignoreDefense,

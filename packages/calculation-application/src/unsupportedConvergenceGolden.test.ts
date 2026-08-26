@@ -322,11 +322,12 @@ describe('unsupported convergence production golden', () => {
       expect(projection, `${servantId}:${occurrenceId}`).toBeDefined();
       scenario = {
         ...scenario,
-        battleContext: {
-          values: Object.fromEntries(
-            projection!.requiredInputs.map((definition) => [definition.key, definition.maximum]),
-          ),
-        },
+        canonicalInputValues: Object.fromEntries(
+          projection!.requiredInputs.map((definition) => [
+            definition.key,
+            { kind: 'integer' as const, value: definition.maximum },
+          ]),
+        ),
       };
       const withInputs = calculateScenario(scenario, master, versions);
       const currentProjection = withInputs.effects.find(
@@ -688,7 +689,12 @@ describe('unsupported convergence production golden', () => {
     expect(fieldEffect.outcome).toBe('applied');
 
     const multiple = calculateScenario(
-      { ...scenario, battleContext: { values: { 'field:enemyCount': 2 } } },
+      {
+        ...scenario,
+        canonicalInputValues: {
+          'field:enemyCount': { kind: 'integer', value: 2 },
+        },
+      },
       master,
       versions,
     );
@@ -699,7 +705,12 @@ describe('unsupported convergence production golden', () => {
     ).toBe('notApplied');
 
     const invalid = calculateScenario(
-      { ...scenario, battleContext: { values: { 'field:enemyCount': 0 } } },
+      {
+        ...scenario,
+        canonicalInputValues: {
+          'field:enemyCount': { kind: 'integer', value: 0 },
+        },
+      },
       master,
       versions,
     );

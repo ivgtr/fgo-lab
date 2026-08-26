@@ -253,7 +253,7 @@ describe('production canonical execution semantics', () => {
     );
     expect(fieldCountEffects).toHaveLength(1);
     expect(fieldCountEffects[0]).toMatchObject({
-      contextInputs: [
+      inputDefinitions: [
         {
           kind: 'fieldActorCount',
           owner: 'field',
@@ -262,7 +262,7 @@ describe('production canonical execution semantics', () => {
           defaultValue: 1,
         },
       ],
-      contextQuantityConditions: [{ comparison: 'atMost', value: 1 }],
+      inputQuantityConditions: [{ comparison: 'atMost', value: 1 }],
     });
   });
 
@@ -349,9 +349,9 @@ describe('production canonical execution semantics', () => {
       ?.effects.find((effect) => effect.occurrenceId === '267:0')?.execution[0];
     expect(purelyBloom).toMatchObject({
       kind: 'damageModifier',
-      valueExpressions: [[{ kind: 'contextLinear', maximumUnits: 9 }], [], [], [], []],
+      valueExpressions: [[{ kind: 'inputLinear', maximumUnits: 9 }], [], [], [], []],
       limitBreakValueExpressions: [
-        [{ kind: 'contextLinear', maximumUnits: 11, maximumValuePermille: 500 }],
+        [{ kind: 'inputLinear', maximumUnits: 11, maximumValuePermille: 500 }],
         [],
         [],
         [],
@@ -360,9 +360,9 @@ describe('production canonical execution semantics', () => {
     });
     expect(crimson).toMatchObject({
       kind: 'damageModifier',
-      valueExpressions: [[{ kind: 'contextLinear', maximumUnits: 11 }], [], [], [], []],
+      valueExpressions: [[{ kind: 'inputLinear', maximumUnits: 11 }], [], [], [], []],
       limitBreakValueExpressions: [
-        [{ kind: 'contextLinear', maximumUnits: 13, maximumValuePermille: 1200 }],
+        [{ kind: 'inputLinear', maximumUnits: 13, maximumValuePermille: 1200 }],
         [],
         [],
         [],
@@ -370,7 +370,7 @@ describe('production canonical execution semantics', () => {
       ],
     });
     expect(createHash('sha256').update(JSON.stringify(sharedValues)).digest('hex')).toBe(
-      '0c16bf94be179288f63b131c320b631b436728d0bdacd4bc9e1ee548455f48ff',
+      'eaf94a1c80ddd684e7f1b09b12c9b3591273afd2842392f11409d5b522f55575',
     );
   });
 });

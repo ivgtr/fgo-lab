@@ -48,7 +48,7 @@ describe('production execution parity ratchet', () => {
         ...baseline,
         attackerHpPermille: null,
         battleState: { battlePointPhase: null },
-        battleContext: { values: {} },
+        canonicalInputValues: {},
         effectDecisions: testCase.effectDecisions,
         worldFactAssertions: testCase.worldFactAssertions,
       };

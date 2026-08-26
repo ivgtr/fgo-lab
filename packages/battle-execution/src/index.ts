@@ -25,7 +25,13 @@ export type {
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
-export { executeOrderedScenario, type OrderedScenarioExecution } from './engine';
+export {
+  executeOrderedScenario,
+  prepareOrderedScenario,
+  type OrderedScenarioExecution,
+  type PreparedOrderedScenario,
+  type ResolvedCanonicalInputSet,
+} from './engine';
 export {
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,

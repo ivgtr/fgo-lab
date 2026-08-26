@@ -1,3 +1,4 @@
+export * from './canonicalInputs';
 export * from './damageResolution';
 export * from './evidence';
 export * from './effectDecision';

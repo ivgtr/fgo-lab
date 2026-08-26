@@ -35,7 +35,7 @@ describe('canonical actor count normalization', () => {
       ParamAddOpCheckDead: 1,
     });
 
-    expect(effect.contextInputs).toEqual([
+    expect(effect.inputDefinitions).toEqual([
       expect.objectContaining({
         kind: 'matchingActorCount',
         label: '〔王〕一致数',
@@ -66,8 +66,8 @@ describe('canonical actor count normalization', () => {
       ParamAddOpCheckDead: 1,
     });
 
-    expect(effect.contextInputs).toHaveLength(1);
-    const input = effect.contextInputs[0]!;
+    expect(effect.inputDefinitions).toHaveLength(1);
+    const input = effect.inputDefinitions[0]!;
     expect(input).toMatchObject({
       kind: 'matchingActorCount',
       label: '敵の合計数',

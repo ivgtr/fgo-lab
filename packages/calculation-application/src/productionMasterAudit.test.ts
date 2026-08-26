@@ -277,7 +277,9 @@ describe('production master damage quality ratchet', () => {
     );
     const halfHpScenario = {
       ...supportScenario,
-      battleContext: { values: { [sourceHpInput.key]: 500 } },
+      canonicalInputValues: {
+        [sourceHpInput.key]: { kind: 'integer' as const, value: 500 },
+      },
     };
     const halfHpBaseline = calculateScenario(halfHpScenario, master, versions);
     const halfHp = calculateScenario(

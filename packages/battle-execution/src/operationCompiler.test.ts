@@ -31,8 +31,8 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
     stateIdentity: null,
     quantityConditions: [],
     sourceQuantityConditions: [],
-    contextInputs: [],
-    contextQuantityConditions: [],
+    inputDefinitions: [],
+    inputQuantityConditions: [],
     traitReadPolicy: {
       stateSources: 'activeOnly',
       ignoredStateTraits: 'exclude',
@@ -125,7 +125,7 @@ describe('canonical operation compilation', () => {
     sourceCount.sourceTraits = ['king'];
     sourceCount.effect = {
       ...sourceCount.effect,
-      contextInputs: [
+      inputDefinitions: [
         {
           key: 'effect:count',
           kind: 'matchingActorCount',
@@ -150,7 +150,7 @@ describe('canonical operation compilation', () => {
       ],
     };
     const sourceCompiled = compileEffect(sourceCount, 0);
-    expect(sourceCompiled.operations[0]?.contextInputs[0]).toMatchObject({
+    expect(sourceCompiled.operations[0]?.inputDefinitions[0]).toMatchObject({
       minimum: 1,
       defaultValue: 1,
     });
@@ -158,7 +158,7 @@ describe('canonical operation compilation', () => {
     const enemyCount = source([modifier('npDamageBuff', 0)]);
     enemyCount.effect = {
       ...enemyCount.effect,
-      contextInputs: [
+      inputDefinitions: [
         {
           key: 'effect:enemies',
           kind: 'matchingActorCount',
@@ -183,7 +183,7 @@ describe('canonical operation compilation', () => {
       ],
     };
     const enemyCompiled = compileEffect(enemyCount, 0);
-    expect(enemyCompiled.operations[0]?.contextInputs[0]).toMatchObject({
+    expect(enemyCompiled.operations[0]?.inputDefinitions[0]).toMatchObject({
       minimum: 1,
       defaultValue: 1,
     });
@@ -283,11 +283,11 @@ describe('canonical operation compilation', () => {
         valueExpression: {
           kind: 'inverseHpLinear',
           quantitySource: {
-            kind: 'battleContext',
+            kind: 'canonicalInput',
             inputKey: 'source:support:support:leonidas:hpPermille',
           },
         },
-        contextInputs: [
+        inputDefinitions: [
           {
             kind: 'sourceHpPermille',
             owner: 'source',

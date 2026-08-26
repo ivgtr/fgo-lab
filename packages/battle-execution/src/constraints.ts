@@ -71,7 +71,7 @@ type Literal =
       sourceKey: string;
     }
   | {
-      kind: 'contextQuantityRange';
+      kind: 'inputQuantityRange';
       inputKey: string;
       min: number;
       max: number;
@@ -255,7 +255,7 @@ function compileExpression(
         ]),
       };
     }
-    case 'contextQuantity': {
+    case 'inputQuantity': {
       if (!Number.isSafeInteger(expression.value))
         return { status: 'unsupported', reason: 'unrepresentableQuantityRange' };
       const comparison = negated
@@ -288,7 +288,7 @@ function compileExpression(
         status: 'supported',
         alternatives: ranges.map((range) => [
           {
-            kind: 'contextQuantityRange' as const,
+            kind: 'inputQuantityRange' as const,
             inputKey: expression.inputKey,
             ...range,
             sourceKey,
@@ -349,11 +349,11 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
     if (literal.kind === 'operationTrigger') continue;
-    if (literal.kind === 'sourceQuantityRange' || literal.kind === 'contextQuantityRange') {
+    if (literal.kind === 'sourceQuantityRange' || literal.kind === 'inputQuantityRange') {
       const quantityKey =
         literal.kind === 'sourceQuantityRange'
           ? `${literal.quantity}:${literal.subjectId}`
-          : `context:${literal.inputKey}`;
+          : `input:${literal.inputKey}`;
       const prior = quantities.get(quantityKey);
       if (!prior) {
         quantities.set(quantityKey, {
@@ -373,7 +373,7 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
             quantity:
               literal.kind === 'sourceQuantityRange'
                 ? literal.quantity
-                : (`context:${literal.inputKey}` as const),
+                : (`input:${literal.inputKey}` as const),
             ranges: [
               { min: prior.min, max: prior.max },
               { min: literal.min, max: literal.max },
@@ -521,7 +521,7 @@ function literalKey(literal: Literal): string {
           ? `operation-trigger:${literal.source}:${String(literal.position)}`
           : literal.kind === 'sourceQuantityRange'
             ? `source-quantity:${literal.quantity}:${literal.subjectId}:${String(literal.min)}:${String(literal.max)}`
-            : literal.kind === 'contextQuantityRange'
+            : literal.kind === 'inputQuantityRange'
               ? `context-quantity:${literal.inputKey}:${String(literal.min)}:${String(literal.max)}`
               : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }

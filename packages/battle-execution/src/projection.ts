@@ -14,8 +14,8 @@ export function resolveModifierValue(
 ): number | null {
   const expression = operation.valueExpression;
   if (!expression) return operation.valuePermille;
-  if (expression.kind === 'contextLinear') {
-    const units = state.contextValues[expression.inputKey];
+  if (expression.kind === 'inputLinear') {
+    const units = state.resolvedInputValues[expression.inputKey];
     if (units === undefined) return null;
     const value =
       expression.basePermille +
@@ -29,7 +29,7 @@ export function resolveModifierValue(
   const hp =
     expression.quantitySource.kind === 'attackerHpPermille'
       ? state.quantities.attackerHpPermille
-      : (state.contextValues[expression.quantitySource.inputKey] ?? null);
+      : (state.resolvedInputValues[expression.quantitySource.inputKey] ?? null);
   if (hp === null) return null;
   if (expression.kind === 'inverseHpLinear')
     return (
@@ -126,18 +126,18 @@ export function createOperationProjection(
     requiredQuantity:
       operation.kind === 'addModifier' &&
       operation.valueExpression &&
-      operation.valueExpression.kind !== 'contextLinear' &&
+      operation.valueExpression.kind !== 'inputLinear' &&
       operation.valueExpression.quantitySource.kind === 'attackerHpPermille'
         ? 'attackerHpPermille'
         : null,
     requiredQuantityOwner:
       operation.kind === 'addModifier' &&
       operation.valueExpression &&
-      operation.valueExpression.kind !== 'contextLinear' &&
+      operation.valueExpression.kind !== 'inputLinear' &&
       operation.valueExpression.quantitySource.kind === 'attackerHpPermille'
         ? 'attacker'
         : null,
-    requiredInputs: operation.contextInputs,
+    requiredInputs: operation.inputDefinitions,
     modifier,
     source: operation.source,
     executionSupport: 'supported',

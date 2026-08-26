@@ -389,7 +389,7 @@ describe('production master inventory ratchet', () => {
       'any',
       'card',
       'choice',
-      'contextQuantity',
+      'inputQuantity',
       'operationTrigger',
       'quantity',
       'sourceQuantity',
@@ -501,7 +501,12 @@ describe('production master inventory ratchet', () => {
           );
           const scenarioWithInputs = {
             ...scenario,
-            battleContext: { values },
+            canonicalInputValues: Object.fromEntries(
+              Object.entries(values).map(([key, value]) => [
+                key,
+                { kind: 'integer' as const, value },
+              ]),
+            ),
           };
           const withInputs = calculateScenario(scenarioWithInputs, master, versions);
           const current = withInputs.effects.find(

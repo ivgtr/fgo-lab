@@ -1,6 +1,6 @@
 import type {
   ActorCountPredicate,
-  BattleContextInputDefinition,
+  CanonicalInputDefinition,
   ModifierValueExpression,
   NpDamageSpec,
   TraitReadPolicy,
@@ -468,7 +468,7 @@ const HP_VALUE_PARAMETER_KEYS = new Set([
 
 function normalizeModifierValueExpressions(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
-  contextInputKey: string,
+  canonicalInputKey: string,
 ) {
   const presentKeys = [
     ...new Set(
@@ -493,8 +493,8 @@ function normalizeModifierValueExpressions(
             ? Math.max(1, Math.floor((maximumValue - basePermille) / paramAdd) + 1)
             : 99;
         return {
-          kind: 'contextLinear' as const,
-          inputKey: contextInputKey,
+          kind: 'inputLinear' as const,
+          inputKey: canonicalInputKey,
           basePermille: basePermille - paramAdd,
           perUnitPermille: paramAdd,
           maximumUnits,
@@ -503,8 +503,8 @@ function normalizeModifierValueExpressions(
       }
       if (typeof basePermille === 'number' && typeof paramAddValue === 'number')
         return {
-          kind: 'contextLinear' as const,
-          inputKey: contextInputKey,
+          kind: 'inputLinear' as const,
+          inputKey: canonicalInputKey,
           basePermille,
           perUnitPermille: paramAddValue,
           maximumUnits:
@@ -514,8 +514,8 @@ function normalizeModifierValueExpressions(
         };
       if (typeof basePermille === 'number' && Array.isArray(typeEach))
         return {
-          kind: 'contextLinear' as const,
-          inputKey: contextInputKey,
+          kind: 'inputLinear' as const,
+          inputKey: canonicalInputKey,
           basePermille: 0,
           perUnitPermille: basePermille,
           maximumUnits:
@@ -573,12 +573,12 @@ function normalizeModifierValueExpressions(
   };
 }
 
-function normalizeContextSemantics(
+function normalizeCanonicalInputSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   inputKey: string,
   traitNameById: ReadonlyMap<number, string>,
 ): {
-  inputs: BattleContextInputDefinition[];
+  inputs: CanonicalInputDefinition[];
   conditions: {
     inputKey: string;
     comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
@@ -590,15 +590,15 @@ function normalizeContextSemantics(
   const first = parameters[0] ?? {};
   const has = (key: string) => parameters.some((parameter) => parameter[key] !== undefined);
   const input = (
-    kind: Exclude<BattleContextInputDefinition['kind'], 'matchingActorCount'>,
-    owner: BattleContextInputDefinition['owner'],
+    kind: Exclude<CanonicalInputDefinition['kind'], 'matchingActorCount'>,
+    owner: CanonicalInputDefinition['owner'],
     label: string,
     description: string,
     minimum: number,
     maximum: number,
     defaultValue: number,
     defaultReason: string,
-  ): BattleContextInputDefinition => ({
+  ): CanonicalInputDefinition => ({
     key: inputKey,
     kind,
     owner,
@@ -1044,7 +1044,7 @@ export function normalizeFunctions(
     const traitReadPolicy = normalizeTraitReadPolicy(parameterSets);
     const stateIdentity = normalizeStateIdentity(parameterSets);
     const sourceQuantityConditions = normalizeSourceQuantityConditions(parameterSets);
-    const contextInputKey = parameterSets
+    const canonicalInputKey = parameterSets
       .flatMap((set) => set)
       .some((parameter) => parameter.StarHigher !== undefined)
       ? 'battle:criticalStars'
@@ -1055,8 +1055,12 @@ export function normalizeFunctions(
             )
           ? 'field:enemyCount'
           : `effect:${String(ownerId ?? 'external')}:${String(fn.funcId)}:${String(occurrence)}`;
-    const context = normalizeContextSemantics(parameterSets, contextInputKey, traitNameById);
-    const modifierValues = normalizeModifierValueExpressions(parameterSets, contextInputKey);
+    const canonicalInput = normalizeCanonicalInputSemantics(
+      parameterSets,
+      canonicalInputKey,
+      traitNameById,
+    );
+    const modifierValues = normalizeModifierValueExpressions(parameterSets, canonicalInputKey);
     const choice = normalizeEffectChoice(parameterSets);
     const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs, traitNameById);
     const operationTrigger = normalizeOperationTrigger(parameterSets);
@@ -1170,7 +1174,7 @@ export function normalizeFunctions(
       choice,
       operationTrigger,
       hasNormalizedConditionRouting,
-      context.recognizedKeys,
+      canonicalInput.recognizedKeys,
       referenceRecognizedKeys,
     );
     let execution = normalizeExecutionSemantics({
@@ -1316,8 +1320,8 @@ export function normalizeFunctions(
         stateIdentity,
         quantityConditions,
         sourceQuantityConditions,
-        contextInputs: context.inputs,
-        contextQuantityConditions: context.conditions,
+        inputDefinitions: canonicalInput.inputs,
+        inputQuantityConditions: canonicalInput.conditions,
         traitReadPolicy,
         conditions: {
           recipient:

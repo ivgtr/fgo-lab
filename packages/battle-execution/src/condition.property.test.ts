@@ -27,7 +27,7 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
     },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
-    contextValues: {},
+    resolvedInputValues: {},
     modifiers: [],
     modifierRates: {},
     ignoreDefense: false,

@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(26),
+  schemaVersion: z.literal(27),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -98,7 +98,7 @@ const modifierValueExpressionSchema = z.discriminatedUnion('kind', [
     valueAtMaximumHpPermille: z.number().int(),
   }),
   z.object({
-    kind: z.literal('contextLinear'),
+    kind: z.literal('inputLinear'),
     inputKey: z.string().min(1),
     basePermille: z.number().int(),
     perUnitPermille: z.number().int(),
@@ -134,7 +134,7 @@ const canonicalValueSetsSchema = z.tuple([
 ]);
 export type CanonicalValueSets = z.infer<typeof canonicalValueSetsSchema>;
 
-const battleContextInputBaseSchema = z.object({
+const canonicalInputBaseSchema = z.object({
   key: z.string().min(1),
   owner: z.enum(['attacker', 'target', 'field', 'party', 'source']),
   label: z.string().min(1),
@@ -145,7 +145,7 @@ const battleContextInputBaseSchema = z.object({
   defaultReason: z.string().min(1).nullable(),
 });
 
-const fixedBattleContextInputDefinitionSchema = battleContextInputBaseSchema.extend({
+const fixedCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
   kind: z.enum([
     'currentTurn',
     'criticalStars',
@@ -174,7 +174,7 @@ const actorCountPredicateSchema = z.discriminatedUnion('counting', [
   }),
 ]);
 
-const matchingActorCountInputDefinitionSchema = battleContextInputBaseSchema.extend({
+const matchingActorCountCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
   kind: z.literal('matchingActorCount'),
   owner: z.literal('field'),
   defaultValue: z.number().int().nullable(),
@@ -186,14 +186,14 @@ const matchingActorCountInputDefinitionSchema = battleContextInputBaseSchema.ext
   }),
 });
 
-export const battleContextInputDefinitionSchema = z.discriminatedUnion('kind', [
-  fixedBattleContextInputDefinitionSchema,
-  matchingActorCountInputDefinitionSchema,
+export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
+  fixedCanonicalInputDefinitionSchema,
+  matchingActorCountCanonicalInputDefinitionSchema,
 ]);
-export type BattleContextInputDefinition = z.infer<typeof battleContextInputDefinitionSchema>;
+export type CanonicalInputDefinition = z.infer<typeof canonicalInputDefinitionSchema>;
 export type ActorCountPredicate = z.infer<typeof actorCountPredicateSchema>;
 
-const effectContextQuantityConditionSchema = z.object({
+const effectInputQuantityConditionSchema = z.object({
   inputKey: z.string().min(1),
   comparison: z.enum(['lessThan', 'atMost', 'equal', 'atLeast', 'greaterThan']),
   value: z.number().int(),
@@ -312,8 +312,8 @@ export const masterEffectSchema = z.object({
     .nullable(),
   quantityConditions: z.array(effectQuantityConditionSchema),
   sourceQuantityConditions: z.array(effectSourceQuantityConditionSchema),
-  contextInputs: z.array(battleContextInputDefinitionSchema),
-  contextQuantityConditions: z.array(effectContextQuantityConditionSchema),
+  inputDefinitions: z.array(canonicalInputDefinitionSchema),
+  inputQuantityConditions: z.array(effectInputQuantityConditionSchema),
   traitReadPolicy: traitReadPolicySchema,
   conditions: effectConditionsSchema,
   conditionTargetPolicy: canonicalTargetPolicySchema,

@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 22 as const;
-export const ENGINE_VERSION = '14.0.0' as const;
+export const SCHEMA_VERSION = 23 as const;
+export const ENGINE_VERSION = '15.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -218,9 +218,10 @@ const scenarioBaseSchema = z
     battleState: z.object({
       battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
     }),
-    battleContext: z.object({
-      values: z.record(z.string().min(1).max(300), z.number().int()),
-    }),
+    canonicalInputValues: z.record(
+      z.string().min(1).max(300),
+      z.object({ kind: z.literal('integer'), value: z.number().int() }).strict(),
+    ),
     assumptions: z.object({
       classAffinity: z.number().min(0).max(5),
       attributeAffinity: z.number().min(0).max(5),

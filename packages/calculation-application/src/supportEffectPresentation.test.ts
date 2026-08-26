@@ -26,8 +26,8 @@ const effectContract = {
   },
   quantityConditions: [],
   sourceQuantityConditions: [],
-  contextInputs: [],
-  contextQuantityConditions: [],
+  inputDefinitions: [],
+  inputQuantityConditions: [],
   atlasEvidence: {
     functionType: 'addStateShort',
     target: 'ptOne',

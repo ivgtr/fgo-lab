@@ -125,7 +125,9 @@ describe('external damage differential', () => {
     const single = calculateScenario(
       {
         ...scenario,
-        battleContext: { values: { 'field:enemyCount': testCase.input.singleEnemyCount } },
+        canonicalInputValues: {
+          'field:enemyCount': { kind: 'integer', value: testCase.input.singleEnemyCount },
+        },
       },
       master,
       versions,
@@ -133,7 +135,9 @@ describe('external damage differential', () => {
     const multiple = calculateScenario(
       {
         ...scenario,
-        battleContext: { values: { 'field:enemyCount': testCase.input.multipleEnemyCount } },
+        canonicalInputValues: {
+          'field:enemyCount': { kind: 'integer', value: testCase.input.multipleEnemyCount },
+        },
       },
       master,
       versions,
@@ -174,11 +178,13 @@ describe('external damage differential', () => {
         expect({ npDamageBuff: baseline.input.npDamageBuff }).toEqual(testCase.externalExpected);
         continue;
       }
-      const count = baseline.contextInputs.find((input) => input.kind === 'matchingActorCount')!;
+      const count = baseline.inputDefinitions.find((input) => input.kind === 'matchingActorCount')!;
       const maximum = calculateScenario(
         {
           ...scenario,
-          battleContext: { values: { [count.key]: testCase.input.maximumEnemyCount! } },
+          canonicalInputValues: {
+            [count.key]: { kind: 'integer', value: testCase.input.maximumEnemyCount! },
+          },
         },
         master,
         versions,
