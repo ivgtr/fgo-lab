@@ -216,3 +216,5 @@ production buildは178 modules、main 453.62 kB（gzip 130.29 kB）、ranking wo
 レビューで、限界突破礼装のcanonical値が通常値へfallbackする経路と、複数の非context operationの先頭だけをcompileする経路を確認した。現行productionでは前者の不一致と複数operation effectは存在せず実測差分はないが、将来artifactで誤値を正常計算として通し得るためE3.6で閉鎖する。
 
 限界突破skillが存在する場合、通常／限界突破effectはoccurrence identityと値以外のcanonical semanticsで完全照合する。executorは一effectの全operationをcanonical順にcompileし、一部だけ成功させない。1,954ケースparityは固定digestを再計算するtestへ移し、移行結果を再現可能にする。
+
+production raw監査の結果、MLB skill保有898礼装中8礼装にはMLB-only effectが存在した。5件はNP damageへ直接作用し、3件は現行NP計算外である。したがって「通常／MLB集合は常に同一」という制約は採用せず、shared occurrenceの厳密照合とMLB-only occurrenceのtyped availabilityを分ける必要がある。damage値変更の確認を受けるまでは、旧fallback削除、複数operation compiler、artifact更新を開始しない。

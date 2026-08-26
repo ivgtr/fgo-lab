@@ -302,13 +302,17 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 ### E3.6：canonical IR fail-open閉鎖
 
-状態: 実装中（2026-08-26）
+状態: canonical IR変更によるdamage差分の確認待ち（2026-08-26）
 
 - 限界突破skillなしと、限界突破skillありだが対応effect不一致のケースを分離する。前者だけを通常値同一として扱い、後者はstable occurrence identityとcanonical semantic identityの不一致でartifact生成を停止する。
 - effect配列やoperation配列のindexをsemantic対応付けに使わない。effect順序変更はoccurrence identityで安全に照合し、欠落、余剰、kind／target／modifier／condition変更は拒否する。
 - executorは一effect内の全canonical operationを配列順にcompileする。部分的な値欠落、unsupported semantics、target mismatchはeffect単位でall-or-nothingにする。
 - 1,954ケースの固定digestをproduction testで再計算し、scenario input、final input、projection、trace、damage rowの変更を通常の品質ゲートで検出する。
 - 現行productionは全effectが単一operationのため、この修正でdamage値、unsupported、projection inventoryを変更しないことをratchetで確認する。変化が生じた場合はE3.6を完了扱いにしない。
+
+実装前監査では、MLB skillを持つ898礼装のうち8礼装でMLB側だけにeffectが追加されていた。内訳はNP damageに関係する5件（flat damage、Buster、Quick、Arts、NP damage）と、現行NP計算に関係しない3件（damage cut、star weight、critical damage）である。通常側effectの欠落、shared occurrenceのsemantic変更、effect順序変更は0件だった。
+
+この8件を単なる集合不一致としてartifact生成失敗にすると現行masterを生成できない。一方、無視すると現行v36と同じMLB effect欠落が残る。正確な収束にはMasterEffectへcanonicalな適用範囲（all limit-break states／maximum limit break only）を追加し、MLB-only effectを独立occurrenceとして保持する必要がある。これにより5礼装を装備したMLB scenarioのdamage値が修正されるため、指定された中断条件に従い実装前で停止した。
 
 ### E4：ランキング統合と全master収束
 

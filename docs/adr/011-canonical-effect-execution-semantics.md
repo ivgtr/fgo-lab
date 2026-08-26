@@ -55,3 +55,5 @@ production 13,314 effect occurrenceを同数のtyped operationへ変換した。
 - valued operationの限界突破値は、対応するcanonical operationのsemantic identityで照合して取り込む。配列indexだけでは対応付けない。
 - 一つのeffectが複数のdamage／card／ignore／context operationを持つ場合、executorはcanonical配列順にすべてcompileする。未解決operationまたは値欠落が一つでもあればeffect全体をcompileせずfail-closedとする。
 - 移行前後比較は一度限りの作業メモにせず、production 420既定scenarioと1,534 user projection選択を再計算するdigest ratchetとしてrepositoryに保持する。
+
+production監査により、MLB skill保有898礼装のうち8礼装はMLB側だけにeffectを追加することが判明した。この場合はshared effectの値fallbackとは別概念として扱う必要がある。採用候補はeffect-levelのcanonical availabilityで`maximumLimitBreakOnly`を表現し、shared occurrenceを厳密照合しつつ、MLB-only occurrenceを通常時に存在するeffectへ偽装しない方式である。damage値変更の確認までは未決とする。
