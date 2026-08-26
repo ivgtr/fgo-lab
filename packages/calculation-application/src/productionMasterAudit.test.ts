@@ -1107,7 +1107,9 @@ describe('production master damage quality ratchet', () => {
       expect(calculation.result.rows[0].average).toBeCloseTo(45_629.59);
       expect(calculation.input.powerMod).toBe(0.5);
       expect(calculation.input.target.traits).toEqual([]);
-      expect(calculation.input.fieldTraits).toEqual([]);
+      expect(calculation.input.fieldTraits).toEqual([
+        selected === sky ? 'fieldHeaven' : 'fieldHell',
+      ]);
       expect(
         calculation.result.trace.some(
           (entry) =>
@@ -1138,6 +1140,7 @@ describe('production master damage quality ratchet', () => {
     );
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.powerMod).toBe(0);
+    expect(conflict.input.fieldTraits).toEqual([]);
     expect(conflict.effectWarnings).toEqual(
       expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
     );
@@ -1295,6 +1298,182 @@ describe('production master damage quality ratchet', () => {
       );
     }
   });
+
+  it('links production attacker-skill mutations without enabling the skill wholesale', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+
+    const gareth = master.servants.find((candidate) => candidate.id === '105400')!;
+    const garethScenario = createDefaultResolvedScenario(master, undefined, gareth);
+    const garethInitial = calculateScenario(garethScenario, master, versions);
+    const sunlightPower = garethInitial.effects.find(
+      (effect) =>
+        effect.label === '攻撃力アップ' &&
+        effect.explanation.condition?.kind === 'any' &&
+        effect.explanation.condition.expressions.some(
+          (condition) => condition.kind === 'trait' && condition.trait === 'fieldSunlight',
+        ),
+    )!;
+    expect(garethInitial.input.fieldTraits).toEqual([]);
+    expect(
+      garethInitial.effects.find((effect) => effect.label === 'フィールドセット〔陽射し〕'),
+    ).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
+
+    const garethSelected = calculateScenario(
+      applyEffectProjectionDecision(garethScenario, sunlightPower, true),
+      master,
+      versions,
+    );
+    expect(garethSelected.result.status).toBe('calculated');
+    expect(garethSelected.input.fieldTraits).toEqual(['fieldSunlight']);
+    expect(garethSelected.input.attackBuff).toBeCloseTo(0.3);
+    expect(
+      garethSelected.effects.find((effect) => effect.label === 'フィールドセット〔陽射し〕'),
+    ).toMatchObject({ visibility: 'hidden', outcome: 'applied' });
+
+    const tezcatlipoca = master.servants.find((candidate) => candidate.id === '604700')!;
+    const tezcatlipocaScenario = {
+      ...createDefaultResolvedScenario(master, undefined, tezcatlipoca),
+      worldFactAssertions: [
+        {
+          decisionKey: 'world:field:sunlight',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'field' as const,
+            trait: 'fieldSunlight',
+            present: true,
+          },
+        },
+      ],
+    };
+    const tezcatlipocaInitial = calculateScenario(tezcatlipocaScenario, master, versions);
+    const arts = tezcatlipocaInitial.effects.find(
+      (effect) => effect.label === 'アーツアップ' && effect.source.skillId === '2178550',
+    )!;
+    expect(tezcatlipocaInitial.input.fieldTraits).toEqual(['fieldSunlight']);
+    expect(
+      tezcatlipocaInitial.effects.find(
+        (effect) => effect.label === 'フィールド特性打ち消し〔陽射し〕',
+      ),
+    ).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
+
+    const tezcatlipocaSelected = calculateScenario(
+      applyEffectProjectionDecision(tezcatlipocaScenario, arts, true),
+      master,
+      versions,
+    );
+    expect(tezcatlipocaSelected.result.status).toBe('calculated');
+    expect(tezcatlipocaSelected.input.fieldTraits).toEqual([]);
+    expect(
+      tezcatlipocaSelected.effects.find(
+        (effect) => effect.label === 'フィールド特性打ち消し〔陽射し〕',
+      ),
+    ).toMatchObject({ visibility: 'hidden', outcome: 'applied' });
+
+    const ereshkigal = master.servants.find((candidate) => candidate.id === '303200')!;
+    const ereshkigalCalculation = calculateScenario(
+      createDefaultResolvedScenario(master, undefined, ereshkigal),
+      master,
+      versions,
+    );
+    expect(ereshkigalCalculation.result.status).toBe('calculated');
+    expect(ereshkigalCalculation.input.attackerStateTraits).not.toContain('blessedByKur');
+    expect(
+      ereshkigalCalculation.effects.find((effect) => effect.label === '冥界の護り'),
+    ).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
+  });
+
+  it('ratchets attacker-skill context mutation decision reachability across production master', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const mutationKeys: string[] = [];
+    const reachableKeys = new Set<string>();
+
+    for (const servant of master.servants) {
+      let scenario: ReturnType<typeof createDefaultResolvedScenario>;
+      try {
+        scenario = createDefaultResolvedScenario(master, undefined, servant);
+      } catch {
+        continue;
+      }
+      const initial = calculateScenario(scenario, master, versions);
+      const rawMutationKeys = new Set(
+        servant.skills.flatMap((skill) =>
+          skill.effects.flatMap((effect) =>
+            effect.contextChanges.addedFieldTraits.length > 0 ||
+            effect.contextChanges.removedFieldTraits.length > 0 ||
+            effect.contextChanges.addedRecipientTraits.length > 0 ||
+            effect.contextChanges.removedRecipientTraits.length > 0
+              ? [`${skill.id}:${effect.occurrenceId}`]
+              : [],
+          ),
+        ),
+      );
+      const mutations = initial.effects.filter(
+        (effect) =>
+          effect.source.origin === 'attacker' &&
+          rawMutationKeys.has(`${effect.source.skillId}:${effect.source.effectOccurrenceId}`),
+      );
+      for (const mutation of mutations) {
+        const key = `${servant.id}:${mutation.source.skillId}:${mutation.source.effectOccurrenceId}`;
+        mutationKeys.push(key);
+        expect(mutation).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
+      }
+      for (const projection of initial.effects.filter(
+        (effect) => effect.visibility === 'visible' && effect.controllability === 'user',
+      )) {
+        const selected = calculateScenario(
+          applyEffectProjectionDecision(scenario, projection, true),
+          master,
+          versions,
+        );
+        for (const mutation of selected.effects.filter(
+          (effect) =>
+            effect.source.origin === 'attacker' &&
+            effect.outcome === 'applied' &&
+            rawMutationKeys.has(`${effect.source.skillId}:${effect.source.effectOccurrenceId}`),
+        ))
+          reachableKeys.add(
+            `${servant.id}:${mutation.source.skillId}:${mutation.source.effectOccurrenceId}`,
+          );
+      }
+    }
+
+    const unreachableKeys = mutationKeys
+      .filter((key) => !reachableKeys.has(key))
+      .sort((left, right) => left.localeCompare(right));
+    expect(mutationKeys).toHaveLength(24);
+    expect(reachableKeys.size).toBe(15);
+    expect(unreachableKeys).toEqual([
+      '1101500:2180550:20766:0',
+      '1101500:2180550:8691:0',
+      '203400:2242450:21097:0',
+      '2800500:2184550:8412:0',
+      '303200:433650:2065:0',
+      '304000:670450:8412:0',
+      '505100:2075650:3767:0',
+      '505100:2075650:8411:0',
+      '505100:2075650:8412:0',
+    ]);
+  }, 15_000);
 
   it('keeps known candidate values and bounds fail-closed servants', async () => {
     const master = masterSnapshotSchema.parse(
