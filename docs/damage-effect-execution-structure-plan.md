@@ -218,3 +218,7 @@ production buildは178 modules、main 453.62 kB（gzip 130.29 kB）、ranking wo
 限界突破skillが存在する場合、通常／限界突破effectはoccurrence identityと値以外のcanonical semanticsで完全照合する。executorは一effectの全operationをcanonical順にcompileし、一部だけ成功させない。1,954ケースparityは固定digestを再計算するtestへ移し、移行結果を再現可能にする。
 
 production raw監査の結果、MLB skill保有898礼装中8礼装にはMLB-only effectが存在した。5件はNP damageへ直接作用し、3件は現行NP計算外である。したがって「通常／MLB集合は常に同一」という制約は採用せず、shared occurrenceの厳密照合とMLB-only occurrenceのtyped availabilityを分ける。承認済みのdamage修正として実装し、5件はLB0／LB4のdamage inputとNP1〜5、残り3件はartifact availabilityをproduction ratchetへ固定する。
+
+E3.6では`craftEssenceNormalization.ts`がshared／MLB-only分類、semantic identity、MLB値統合を所有し、`snapshotNormalization.ts`はskill選択とsnapshot組立だけを担当する。`sourceCollection.ts`はcanonical availabilityだけでLB0〜3／LB4を解決し、Atlasのlimit countを知らない。`operationCompiler.ts`は全operationの順序付きcompileとcompile時all-or-nothingを所有する。
+
+production buildは178 modules、main 454.16 kB（gzip 130.45 kB）、ranking worker 95.71 kBとなった。v36比はmain +0.54 kB、worker +0.18 kBで、availability判定と厳密照合型の追加に対応する。単独benchmarkは403.13 ops/s、mean 2.4806 msであり、kernelと既存1,954実行結果の変更はない。

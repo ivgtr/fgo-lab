@@ -302,7 +302,7 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 ### E3.6：canonical IR fail-open閉鎖
 
-状態: 実装中（2026-08-26、MLB-only damage差分承認済み）
+状態: 完了（2026-08-26、MLB-only damage差分承認済み）
 
 - 限界突破skillなしと、限界突破skillありだが対応effect不一致のケースを分離する。前者だけを通常値同一として扱い、後者はstable occurrence identityとcanonical semantic identityの不一致でartifact生成を停止する。
 - effect配列やoperation配列のindexをsemantic対応付けに使わない。effect順序変更はoccurrence identityで安全に照合し、欠落、余剰、kind／target／modifier／condition変更は拒否する。
@@ -313,6 +313,16 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 実装前監査では、MLB skillを持つ898礼装のうち8礼装でMLB側だけにeffectが追加されていた。内訳はNP damageに関係する5件（flat damage、Buster、Quick、Arts、NP damage）と、現行NP計算に関係しない3件（damage cut、star weight、critical damage）である。通常側effectの欠落、shared occurrenceのsemantic変更、effect順序変更は0件だった。
 
 この8件を単なる集合不一致としてartifact生成失敗にすると現行masterを生成できない。一方、無視すると現行v36と同じMLB effect欠落が残る。MasterEffectへ`availability: allLimitBreakStates | maximumLimitBreakOnly`を追加し、MLB-only effectを独立occurrenceとして保持する。5礼装を装備したMLB scenarioのdamage値変更は、v36で欠落していた正しい効果を復元する意図的差分として承認された。LB0〜3では非適用、LB4だけで自動適用し、UI、scenario、共有、保存形式は変更しない。
+
+完了記録:
+
+- master schema 22、artifact v37、engine 12.14.0へ更新した。scenario schema、共有、保存、frontend入力は変更していない。
+- production effectは13,314件から13,322件となり、追加8件はすべて独立した`maximumLimitBreakOnly` occurrenceである。canonical operationはdamage modifier 3,738、non-damage 9,420を含む13,322件である。
+- MLB-only damage 5件はflat damage +17、Buster +2.1%、Quick +2.2%、NP damage +2.3%、Arts +2.4%としてLB4だけに反映する。残り3件のexecution semanticsはnon-damageだが、通常effectへ統合せずMLB-only occurrenceとしてartifactに保持する。
+- shared occurrenceは値以外のsemantic identityと順序を厳密照合する。通常側欠落、kind／semantic変更、順序変更、重複曖昧性のfixtureはすべてartifact生成失敗を確認した。
+- compilerはcontextを含む全operationをcanonical順に生成する。値欠落またはunresolvedを含むeffectはall-or-nothingでoperation 0件となる。
+- 既存420既定scenarioと1,534 user projection選択の1,954件は従来digestと完全一致した。MLB差分5件はLB0／LB4のdamage input digestとNP1〜5、LB1〜3の非適用を専用goldenへ固定した。
+- production unsupportedとprojection inventoryは変化していない。PlaywrightはPC／mobile Chromiumで43成功、21 project-specific skip、0失敗だった。
 
 ### E4：ランキング統合と全master収束
 
