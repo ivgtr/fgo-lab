@@ -28,6 +28,7 @@ docs/*-comparison.md
 docs/*-options.md
 docs/*-plan.md
 !docs/damage-effect-execution-migration-plan.md
+!docs/damage-effect-execution-structure-plan.md
 !docs/damage-effect-unsupported-convergence-plan.md
 docs/*-review.md
 docs/game-tool-ui-research.md
