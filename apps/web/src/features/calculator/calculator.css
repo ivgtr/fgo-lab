@@ -334,6 +334,20 @@
 .effect-input-default {
   display: block;
 }
+.effect-condition-control {
+  min-height: 32px;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #b8c0bb;
+  background: white;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.effect-condition-control[aria-pressed='true'],
+.effect-condition-control[aria-checked='true'] {
+  border-color: #7d9a87;
+  background: #eaf4ed;
+  color: #285c3e;
+}
 .modifier-chip {
   display: inline-grid;
   grid-template-columns: minmax(0, 1fr) auto;

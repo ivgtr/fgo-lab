@@ -10,12 +10,14 @@ export function SupportSourceCard({
   displayName,
   onRemove,
   onSkillLevelChange,
+  onSkillEnabledChange,
 }: {
   source: SupportSource;
   servant: ServantMaster | undefined;
   displayName: string;
   onRemove: () => void;
   onSkillLevelChange: (skillId: string, skillLevel: number) => void;
+  onSkillEnabledChange: (skillId: string, enabled: boolean) => void;
 }) {
   const damageSkills = supportDamageSkillViews(source, servant);
 
@@ -52,6 +54,14 @@ export function SupportSourceCard({
                   <strong>{name}</strong>
                   <small>{skill.effectLabels.join('・') || '宝具火力への効果なし'}</small>
                 </span>
+                <button
+                  type="button"
+                  className="support-skill-use"
+                  aria-pressed={skill.enabled}
+                  onClick={() => onSkillEnabledChange(skill.skillId, !skill.enabled)}
+                >
+                  {skill.enabled ? '使用中' : '使用する'}
+                </button>
                 <label className="support-skill-level">
                   <span>Lv</span>
                   <select

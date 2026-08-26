@@ -41,7 +41,7 @@ export function SupportTemplates({
     templateId: string,
     sourceInstanceId: string,
     skillId: string,
-    skillLevel: number,
+    patch: { skillLevel?: number; enabled?: boolean },
   ) => Promise<void>;
   onToggleEffect: (
     templateId: string,
@@ -206,7 +206,15 @@ export function SupportTemplates({
                         selected.templateId,
                         sourceGroup.sourceInstanceId,
                         skillId,
-                        skillLevel,
+                        { skillLevel },
+                      )
+                    }
+                    onSkillEnabledChange={(skillId, enabled) =>
+                      void onUpdateSkill(
+                        selected.templateId,
+                        sourceGroup.sourceInstanceId,
+                        skillId,
+                        { enabled },
                       )
                     }
                   />

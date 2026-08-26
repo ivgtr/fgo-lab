@@ -9,6 +9,10 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
     label: '攻撃力アップ',
     sourceName: 'source',
     skillName: 'skill',
+    gameActivation: 'skillUse',
+    sourceActive: true,
+    proc: { kind: 'guaranteed' },
+    procRatePermille: 1_000,
     valuePermille: 300,
     value: 0.3,
     requiredQuantity: null,
@@ -34,6 +38,7 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
       kind: 'effect',
       plan: { activation: 'user', condition: 'evaluate' },
     },
+    conditionDecision: 'none',
     explanation: { code: 'applied', condition: null },
     ...patch,
   };

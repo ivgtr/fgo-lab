@@ -53,6 +53,7 @@ export function ModifierChip({
   onToggle,
   bare = false,
   selection = 'toggle',
+  disabled = false,
 }: {
   active: boolean;
   label: string;
@@ -61,12 +62,14 @@ export function ModifierChip({
   onToggle?: (active: boolean) => void;
   bare?: boolean;
   selection?: 'toggle' | 'singleChoice';
+  disabled?: boolean;
 }) {
   const content = <ModifierChipContent label={label} detail={detail} sources={sources} />;
   const control = onToggle ? (
     <button
       type="button"
       className="modifier-chip"
+      disabled={disabled}
       {...(selection === 'singleChoice'
         ? { role: 'radio', 'aria-checked': active }
         : { 'aria-pressed': active })}

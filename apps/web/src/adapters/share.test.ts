@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   createShareFragment,
   importBackup,
@@ -8,9 +10,9 @@ import {
   validateCalculationShareSnapshot,
 } from './share';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
-import productionFixture from '../../public/master/master.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  applyEffectConditionDecision,
   applyEffectProjectionDecision,
   calculateScenario,
   createDefaultResolvedScenario,
@@ -23,6 +25,15 @@ import {
 } from '@fgo-lab/schema';
 
 const master = masterSnapshotSchema.parse(fixture);
+let productionMaster: ReturnType<typeof masterSnapshotSchema.parse>;
+
+beforeAll(async () => {
+  productionMaster = masterSnapshotSchema.parse(
+    JSON.parse(
+      await readFile(resolve(import.meta.dirname, '../../public/master/master.json'), 'utf8'),
+    ),
+  );
+});
 const versions = {
   schemaVersion: SCHEMA_VERSION,
   masterDataVersion: master.version,
@@ -58,7 +69,6 @@ describe('portable input limits', () => {
   });
 
   it('re-derives canonical count minima when a shared scenario omits explicit counts', () => {
-    const productionMaster = masterSnapshotSchema.parse(productionFixture);
     const servant = productionMaster.servants.find((candidate) => candidate.id === '1102000')!;
     const scenario = createDefaultResolvedScenario(productionMaster, undefined, servant);
     const productionVersions = {
@@ -169,6 +179,9 @@ describe('portable input limits', () => {
                   id: 'earth-power',
                   occurrenceId: 'earth-power:0',
                   availability: 'allLimitBreakStates',
+                  inclusionPolicy: { default: 'include' },
+                  gameActivation: 'skillUse',
+                  proc: { kind: 'guaranteed' },
                   interaction: null,
                   label: '対地威力アップ',
                   choice: null,
@@ -261,11 +274,15 @@ describe('portable input limits', () => {
     const craftedVersions = { ...versions, masterDataVersion: craftedMaster.version };
     const baseScenario = {
       ...createDefaultResolvedScenario(craftedMaster, undefined),
-      attackerSkills: [{ skillId: 'earth-skill', skillLevel: 10 }],
+      attackerSkills: [{ skillId: 'earth-skill', skillLevel: 10, enabled: true }],
     };
     const initial = calculateScenario(baseScenario, craftedMaster, craftedVersions);
     const earth = initial.effects.find((effect) => effect.label === '対地威力アップ')!;
-    const selected = applyEffectProjectionDecision(baseScenario, earth, true);
+    const selected = applyEffectConditionDecision(
+      applyEffectProjectionDecision(baseScenario, earth, true),
+      earth,
+      true,
+    );
     const compatibleResult = calculateScenario(selected, craftedMaster, craftedVersions).result;
     const conflictingScenario = {
       ...selected,

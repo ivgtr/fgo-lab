@@ -18,10 +18,13 @@ import type {
 import {
   applyCanonicalInputCommand,
   appendCalculationSupportSource,
+  applyEffectConditionDecision,
   applyEffectProjectionDecision,
   removeCalculationSupportSource as removeSupportSourceFromScenario,
   setAttackerSkillLevel,
+  setAttackerSkillEnabled,
   setCalculationSupportSkillLevel,
+  setCalculationSupportSkillEnabled,
 } from '@fgo-lab/calculation-application';
 import type {
   AttackerSkillSelection,
@@ -285,6 +288,7 @@ export function Calculator({
       attackerSkills: (attacker?.skills ?? []).slice(0, 3).map((skill, index) => ({
         skillId: skill.id,
         skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
+        enabled: false,
       })),
       mysticCode: null,
       support: null,
@@ -334,6 +338,7 @@ export function Calculator({
         attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
           skillId: skill.id,
           skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
+          enabled: false,
         })),
         effectDecisions: [],
         worldFactAssertions: [],
@@ -389,14 +394,29 @@ export function Calculator({
     if (scenario.mode === 'manual') changeManualInput({ craftEssenceId: null, craftEssenceAtk: 0 });
     else void onScenarioChange({ ...scenario, craftEssence: null });
   }
-  function changeAttackerSkill(skillId: string, patch: Pick<AttackerSkillSelection, 'skillLevel'>) {
+  function changeAttackerSkill(
+    skillId: string,
+    patch: Partial<Pick<AttackerSkillSelection, 'skillLevel' | 'enabled'>>,
+  ) {
     if (!resolvedScenario) return;
-    void onScenarioChange(setAttackerSkillLevel(resolvedScenario, skillId, patch.skillLevel));
+    const next =
+      patch.skillLevel === undefined
+        ? resolvedScenario
+        : setAttackerSkillLevel(resolvedScenario, skillId, patch.skillLevel);
+    void onScenarioChange(
+      patch.enabled === undefined ? next : setAttackerSkillEnabled(next, skillId, patch.enabled),
+    );
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
     void onScenarioChange(
       applyEffectProjectionDecision(resolvedScenario, effect, active, resolvedEffects),
+    );
+  }
+  function changeEffectCondition(effect: EffectProjection, satisfied: boolean) {
+    if (!resolvedScenario) return;
+    void onScenarioChange(
+      applyEffectConditionDecision(resolvedScenario, effect, satisfied, resolvedEffects),
     );
   }
   function addSupportServant(servant: ServantMaster) {
@@ -410,6 +430,7 @@ export function Calculator({
         skills: servant.skills.map((skill) => ({
           skillId: skill.id,
           skillLevel: savedLevels[String(skill.slot)] ?? 10,
+          enabled: false,
         })),
       }),
     );
@@ -425,6 +446,12 @@ export function Calculator({
     if (!resolvedScenario?.support) return;
     void onScenarioChange(
       setCalculationSupportSkillLevel(resolvedScenario, sourceInstanceId, skillId, skillLevel),
+    );
+  }
+  function changeSupportSkillEnabled(sourceInstanceId: string, skillId: string, enabled: boolean) {
+    if (!resolvedScenario?.support) return;
+    void onScenarioChange(
+      setCalculationSupportSkillEnabled(resolvedScenario, sourceInstanceId, skillId, enabled),
     );
   }
   function closeAttackerDialog() {
@@ -898,6 +925,7 @@ export function Calculator({
             servants={servants}
             craftEssence={selectedCraftEssence}
             onToggle={changeEffect}
+            onConditionChange={changeEffectCondition}
             onInputChange={changeCanonicalInput}
           />
         ) : null}
@@ -987,6 +1015,9 @@ export function Calculator({
                       onSkillLevelChange={(skillId, skillLevel) =>
                         changeSupportSkillLevel(supportSource.sourceInstanceId, skillId, skillLevel)
                       }
+                      onSkillEnabledChange={(skillId, enabled) =>
+                        changeSupportSkillEnabled(supportSource.sourceInstanceId, skillId, enabled)
+                      }
                     />
                   );
                 })}
@@ -1000,6 +1031,7 @@ export function Calculator({
                 servants={servants}
                 craftEssence={selectedCraftEssence}
                 onToggle={changeEffect}
+                onConditionChange={changeEffectCondition}
                 onInputChange={changeCanonicalInput}
                 action={
                   <button

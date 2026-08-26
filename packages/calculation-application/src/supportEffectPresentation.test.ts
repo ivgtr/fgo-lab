@@ -14,6 +14,9 @@ const conditions = {
   field: { operator: 'any' as const, traits: [] },
 };
 const effectContract = {
+  inclusionPolicy: { default: 'exclude' as const },
+  gameActivation: 'skillUse' as const,
+  proc: { kind: 'guaranteed' as const },
   interaction: null,
   choice: null,
   triggerScope: null,
@@ -110,7 +113,7 @@ describe('support effect application view model', () => {
     const source = {
       sourceInstanceId: 'support:1',
       servantId: servant.id,
-      skills: [{ skillId: 'support-skill', skillLevel: 10 }],
+      skills: [{ skillId: 'support-skill', skillLevel: 10, enabled: true }],
     };
     const composition = { sources: [source], selectedEffects: [] };
 

@@ -282,11 +282,11 @@ export function App() {
     templateId: string,
     sourceInstanceId: string,
     skillId: string,
-    skillLevel: number,
+    patch: { skillLevel?: number; enabled?: boolean },
   ) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) =>
-      patchSupportSkill(current, templateId, sourceInstanceId, skillId, skillLevel, now),
+      patchSupportSkill(current, templateId, sourceInstanceId, skillId, patch, now),
     );
   }
   async function updateSupportEffect(

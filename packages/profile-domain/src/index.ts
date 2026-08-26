@@ -6,6 +6,7 @@ import type {
   ServantBuild,
   ServantTarget,
   SupportEffectRef,
+  SupportSkill,
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -209,6 +210,7 @@ export function addSupportServant(
         skills: source.skills.map((skill) => ({
           skillId: skill.id,
           skillLevel: Math.min(10, Math.max(1, skillLevels[String(skill.slot)] ?? 10)),
+          enabled: false,
         })),
       };
       return {
@@ -281,7 +283,7 @@ export function updateSupportSkill(
   templateId: string,
   sourceInstanceId: string,
   skillId: string,
-  skillLevel: number,
+  patch: Partial<Pick<SupportSkill, 'skillLevel' | 'enabled'>>,
   now: string,
 ): LocalProfile {
   return {
@@ -297,7 +299,7 @@ export function updateSupportSkill(
                   ? {
                       ...source,
                       skills: source.skills.map((skill) =>
-                        skill.skillId === skillId ? { ...skill, skillLevel } : skill,
+                        skill.skillId === skillId ? { ...skill, ...patch } : skill,
                       ),
                     }
                   : source,

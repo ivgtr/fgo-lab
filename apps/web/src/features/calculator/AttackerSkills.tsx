@@ -16,7 +16,10 @@ export function AttackerSkills({
   selectedSkills: readonly AttackerSkillSelection[];
   savedBuild: ServantBuild | undefined;
   hidden: boolean;
-  onChange: (skillId: string, patch: Pick<AttackerSkillSelection, 'skillLevel'>) => void;
+  onChange: (
+    skillId: string,
+    patch: Partial<Pick<AttackerSkillSelection, 'skillLevel' | 'enabled'>>,
+  ) => void;
 }) {
   return (
     <section className="attacker-skills" aria-label="攻撃役の自身スキル" hidden={hidden}>
@@ -69,6 +72,14 @@ export function AttackerSkills({
                     </button>
                   ) : null}
                 </div>
+                <button
+                  type="button"
+                  className="skill-use-toggle"
+                  aria-pressed={selectedSkill.enabled}
+                  onClick={() => onChange(skill.id, { enabled: !selectedSkill.enabled })}
+                >
+                  {selectedSkill.enabled ? '使用中' : '使用する'}
+                </button>
                 <label className="skill-level-control">
                   <span>Lv</span>
                   <select

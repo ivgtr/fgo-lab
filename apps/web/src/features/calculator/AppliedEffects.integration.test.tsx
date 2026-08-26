@@ -12,6 +12,7 @@ describe('applied effect interaction rendering', () => {
       key: 'effect',
       operationIds: ['operation'],
       control: 'toggle',
+      conditionControl: 'none',
       valueDisplay: 'single',
       projection: {
         projectionKey: 'effect',
@@ -19,6 +20,10 @@ describe('applied effect interaction rendering', () => {
         label: '攻撃力アップ',
         sourceName: 'source',
         skillName: 'skill',
+        gameActivation: 'skillUse',
+        sourceActive: true,
+        proc: { kind: 'guaranteed' },
+        procRatePermille: 1_000,
         valuePermille: 200,
         value: 0.2,
         requiredQuantity: null,
@@ -44,6 +49,7 @@ describe('applied effect interaction rendering', () => {
           kind: 'effect',
           plan: { activation: 'user', condition: 'evaluate' },
         },
+        conditionDecision: 'none',
         explanation: { code: 'applied', condition: null },
       },
     };
@@ -55,6 +61,7 @@ describe('applied effect interaction rendering', () => {
         servants={[]}
         craftEssence={undefined}
         onToggle={vi.fn()}
+        onConditionChange={vi.fn()}
         onInputChange={vi.fn()}
       />,
     );

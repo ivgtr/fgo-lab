@@ -14,6 +14,7 @@ export interface SupportEffectOption {
 export interface SupportDamageSkillView {
   skillId: string;
   skillLevel: number;
+  enabled: boolean;
   name: string;
   imageKey: string | null;
   effectLabels: readonly string[];
@@ -67,6 +68,7 @@ export function supportDamageSkillViews(
           {
             skillId: selection.skillId,
             skillLevel: selection.skillLevel,
+            enabled: selection.enabled,
             name: skill?.name ?? selection.skillId,
             imageKey: skill?.imageKey ?? null,
             effectLabels,

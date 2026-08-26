@@ -8,6 +8,10 @@ function canonicalValue(input: EffectInputViewModel, value: number): number {
   return input.control === 'percentage' ? value * 10 : value;
 }
 
+function segmentedLabel(input: EffectInputViewModel, value: number): string {
+  return String(displayedValue(input, value));
+}
+
 export function EffectInlineInput({
   input,
   onChange,
@@ -39,7 +43,7 @@ export function EffectInlineInput({
               aria-pressed={input.value === value}
               onClick={() => onChange(input.key, value)}
             >
-              {displayedValue(input, value)}
+              {segmentedLabel(input, value)}
             </button>
           ))}
         </div>

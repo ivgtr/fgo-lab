@@ -192,7 +192,7 @@ describe('profile domain', () => {
       templateId,
       'support-instance-2',
       'skill-1',
-      7,
+      { skillLevel: 7 },
       clock.now().toISOString(),
     );
     const selected = toggleSupportEffect(
