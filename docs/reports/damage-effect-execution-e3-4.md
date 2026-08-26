@@ -3,7 +3,7 @@ title: "Damage effect execution E3.4 unsupported semantics convergence"
 status: "Complete"
 created_at: "2026-08-26"
 schema_version: 21
-engine_version: "12.11.0"
+engine_version: "12.12.0"
 master_data_version: "2026-08-25-atlas-jp-calculator-v34"
 ---
 
@@ -31,6 +31,14 @@ Production 469騎、攻撃宝具scenario 420件を現行masterとexecutorから�
 - 玉兎はArts形態でNP威力20%、Buster形態を選び攻撃力／NP威力を選択するとBuster、攻撃力30%、NP威力50%となる。形態なしのBuster連動火力、またはArts/Buster形態同時選択はunsupportedとなりmodifierを残さない。
 - ビショーネの宝具内未解決NP前参照は、通常攻撃scopeとして黙って除外せず、既定scenarioをunsupportedに変更した。これは誤った`calculated`を止める正確性修正である。
 
+## Hidden mutation activation review closure
+
+engine 12.12.0では、攻撃役スキルのhidden context mutationを一律automaticにせず、選択された火力effectとのactivation linkをcanonical operationへ追加した。linkは同一source skillの使用、または全condition branchが要求するtrait prerequisiteから導出する。operation enable型の選択とcondition satisfaction型の選択を区別し、conditional effectをオフへ戻したときに旧decisionがmutationを起動し続けない。
+
+production masterの攻撃役スキル由来mutationは24 occurrenceである。未選択時は24件すべて`notApplied`、現在のNP火力decisionから到達可能なものは15件である。残る9件は現在のNPダメージへ寄与する選択がないか、選択候補を一意に確定できないため実行しない。ガレスは陽射し条件の攻撃力30%を選択すると陽射し付与を先にcommitし、ダンテは対天／対地に対応する天国／地獄だけをcommitする。テスカトリポカは同一skillの火力effect選択時だけ陽射しを解除する。recipient traitはfieldと同じactivation経路を通り、専用分岐を持たない。
+
+エレシュキガルの冥界の護りによる`blessedByKur`付与は、現行artifactでは現在のNPダメージ後に実行される効果だけが参照する。現在のNP damage inputへ遡及させず、hiddenかつ`notApplied`をproduction regressionとして固定した。
+
 ## Remaining unsupported
 
 選択時の25 occurrenceは、trait provenance／解除可能性5、linked state removal 1、turn比例2、state stack比例5、critical-star閾値10、参照skill／Function不足2である。対象14騎と各件数はproduction ratchetに固定した。既定12騎のうちHP不足4騎とBP不足1騎は既存入力で解消し、残る7騎はartifact、field count、編成・生存、trait count、partial条件の不足によりfail-closedを維持する。
@@ -46,6 +54,7 @@ Production 469騎、攻撃宝具scenario 420件を現行masterとexecutorから�
 - canonical fact-condition conflicts: 250組、68効果、52騎
 - conflict中のcalculated、conflict operationのapplied、矛盾stateの最終input残存: 0
 - inert user projection、未成立automatic火力、literal unknown trait: 0
+- attacker-skill context mutation: 24 occurrence、未選択commit 0、火力decisionから到達可能15、現在のNP damageへ非寄与または候補未確定9
 
 ## UI and validation
 
@@ -54,13 +63,13 @@ Production 469騎、攻撃宝具scenario 420件を現行masterとexecutorから�
 最終品質ゲートはすべて成功した。
 
 - format check、ESLint、TypeScript: pass
-- unit／integration／property／golden: 29 files、171 tests pass
+- unit／integration／property／golden: 30 files、177 tests pass
 - production master validation: 3 files、17 tests pass
 - evidence validation: 2 files、10 tests pass
-- production build: 170 modules、pass
-- Playwright Chromium／mobile Chromium: 41 pass、21 project-specific skip、0 failure
-- PC、390px、320pxでDante、OR条件、HP効果、支援、共有、NP card choiceを実操作。玉兎はArts→Buster、形態競合時の結果非表示、競合解除後のArts復帰を両projectで確認
-- benchmark NP1-5／200 random values: 381.84 ops/s、mean 2.6189 ms
+- production build: 171 modules、pass
+- Playwright Chromium／mobile Chromium: 43 pass、21 project-specific skip、0 failure
+- PC、390px、320pxでDante、OR条件、HP効果、支援、共有、NP card choiceを実操作。ガレスは条件付き攻撃力選択時のhidden陽射しcommit、解除時のnon-commit、ボタン状態、ダメージ値、traceを両projectで確認
+- benchmark NP1-5／200 random values: 310.93 ops/s、mean 3.2162 ms
 - `git diff --check`: pass
 
 ## Commits
@@ -81,5 +90,10 @@ Production 469騎、攻撃宝具scenario 420件を現行masterとexecutorから�
 - `a52fe35` test(calc): migrate fixtures to current execution contract
 - `277bb07` test(web): ratchet current master UI baselines
 - `be78f9c` test(web): verify Jade Rabbit form decisions
+- `8a70077` docs(calc): define hidden mutation activation semantics
+- `bd25ad1` refactor(calc)!: link hidden mutations to effect decisions
+- `d5680ea` test(calc): ratchet hidden mutation reachability
+- `abaf219` fix(calc): preserve linked effect decision controls
+- `1a001d3` test(web): update engine baseline and E2E readiness waits
 
 E4には着手していない。
