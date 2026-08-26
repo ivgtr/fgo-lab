@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 8,
+    schemaVersion: 9,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -393,102 +393,101 @@ function normalizeFunctions(
   functions: AtlasFunction[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
 ) {
-  return (functions ?? []).flatMap((fn) =>
-    typeof fn.funcId === 'number'
-      ? [
-          {
-            id: String(fn.funcId),
-            type: fn.funcType ?? 'unknown',
-            target: fn.funcTargetType ?? 'unknown',
-            label: fn.funcPopupText ?? fn.funcType ?? '効果',
-            parameterSets: [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].map(
-              (parameters) => (parameters ?? []).slice(0, 10),
-            ) as [
-              AtlasFunctionValue[],
-              AtlasFunctionValue[],
-              AtlasFunctionValue[],
-              AtlasFunctionValue[],
-              AtlasFunctionValue[],
-            ],
-            ...(fn.script ? { functionScript: fn.script } : {}),
-            ...(fn.overWriteTvalsList ? { overwriteTargetValues: fn.overWriteTvalsList } : {}),
-            conditions: {
-              recipient:
-                (fn.overWriteTvalsList ?? []).length > 0
-                  ? fn.overWriteTvalsList!.map((group) => ({
-                      operator: 'all' as const,
-                      traits: signedTraits(Array.isArray(group) ? (group as AtlasTraitRef[]) : []),
-                    }))
-                  : [
-                      {
-                        operator: 'any' as const,
-                        traits: signedTraits(fn.functvals),
-                      },
-                    ],
-              holder: {
-                operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-                traits: signedTraits(fn.buffs?.[0]?.ckSelfIndv),
-              },
-              opponent: {
-                operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-                traits: signedTraits(fn.buffs?.[0]?.ckOpIndv),
-              },
-              field: {
-                operator: 'any' as const,
-                traits: uniqueTraits([
-                  ...signedTraits(fn.funcquestTvals),
-                  ...(fn.buffs ?? []).flatMap((buff) =>
-                    buff.script?.INDIVIDUALITIE?.name
-                      ? [{ name: buff.script.INDIVIDUALITIE.name, negative: false }]
-                      : [],
-                  ),
-                ]),
-              },
-            },
-            contextChanges: {
-              addedFieldTraits:
-                fn.funcType === 'addFieldChangeToField'
-                  ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
-                      .flatMap((parameters) => parameters ?? [])
-                      .flatMap((parameter) => parameter.FieldIndividuality ?? [])
-                      .flatMap((id) => {
-                        const name = traitNameById.get(id);
-                        return name ? [name] : [];
-                      })
-                      .filter((name, index, all) => all.indexOf(name) === index)
-                  : [],
-              addedRecipientTraits: (fn.buffs ?? []).some(
-                (buff) => buff.type === 'addIndividuality',
-              )
-                ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
-                    .flatMap((parameters) => parameters ?? [])
-                    .flatMap((parameter) =>
-                      typeof parameter.Value === 'number' ? [parameter.Value] : [],
-                    )
-                    .flatMap((id) => {
-                      const name = traitNameById.get(id);
-                      return name ? [name] : [];
-                    })
-                    .filter((name, index, all) => all.indexOf(name) === index)
-                : [],
-            },
-            buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
-            ...(buffRateTargets(fn.buffs).length
-              ? { buffRateTargets: buffRateTargets(fn.buffs) }
-              : {}),
-            cardTypes: [
-              ...new Set(
-                (fn.buffs ?? []).flatMap((buff) =>
-                  [...(buff.tvals ?? []), ...(buff.ckSelfIndv ?? [])].flatMap((trait) =>
-                    trait.name && cardTypeByTrait[trait.name] ? [cardTypeByTrait[trait.name]] : [],
-                  ),
-                ),
-              ),
-            ],
+  const occurrencesByFunctionId = new Map<number, number>();
+  return (functions ?? []).flatMap((fn) => {
+    if (typeof fn.funcId !== 'number') return [];
+    const occurrence = occurrencesByFunctionId.get(fn.funcId) ?? 0;
+    occurrencesByFunctionId.set(fn.funcId, occurrence + 1);
+    return [
+      {
+        id: String(fn.funcId),
+        occurrenceId: `${String(fn.funcId)}:${String(occurrence)}`,
+        type: fn.funcType ?? 'unknown',
+        target: fn.funcTargetType ?? 'unknown',
+        label: fn.funcPopupText ?? fn.funcType ?? '効果',
+        parameterSets: [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].map((parameters) =>
+          (parameters ?? []).slice(0, 10),
+        ) as [
+          AtlasFunctionValue[],
+          AtlasFunctionValue[],
+          AtlasFunctionValue[],
+          AtlasFunctionValue[],
+          AtlasFunctionValue[],
+        ],
+        ...(fn.script ? { functionScript: fn.script } : {}),
+        ...(fn.overWriteTvalsList ? { overwriteTargetValues: fn.overWriteTvalsList } : {}),
+        conditions: {
+          recipient:
+            (fn.overWriteTvalsList ?? []).length > 0
+              ? fn.overWriteTvalsList!.map((group) => ({
+                  operator: 'all' as const,
+                  traits: signedTraits(Array.isArray(group) ? (group as AtlasTraitRef[]) : []),
+                }))
+              : [
+                  {
+                    operator: 'any' as const,
+                    traits: signedTraits(fn.functvals),
+                  },
+                ],
+          holder: {
+            operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+            traits: signedTraits(fn.buffs?.[0]?.ckSelfIndv),
           },
-        ]
-      : [],
-  );
+          opponent: {
+            operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv),
+          },
+          field: {
+            operator: 'any' as const,
+            traits: uniqueTraits([
+              ...signedTraits(fn.funcquestTvals),
+              ...(fn.buffs ?? []).flatMap((buff) =>
+                buff.script?.INDIVIDUALITIE?.name
+                  ? [{ name: buff.script.INDIVIDUALITIE.name, negative: false }]
+                  : [],
+              ),
+            ]),
+          },
+        },
+        contextChanges: {
+          addedFieldTraits:
+            fn.funcType === 'addFieldChangeToField'
+              ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+                  .flatMap((parameters) => parameters ?? [])
+                  .flatMap((parameter) => parameter.FieldIndividuality ?? [])
+                  .flatMap((id) => {
+                    const name = traitNameById.get(id);
+                    return name ? [name] : [];
+                  })
+                  .filter((name, index, all) => all.indexOf(name) === index)
+              : [],
+          addedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'addIndividuality')
+            ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+                .flatMap((parameters) => parameters ?? [])
+                .flatMap((parameter) =>
+                  typeof parameter.Value === 'number' ? [parameter.Value] : [],
+                )
+                .flatMap((id) => {
+                  const name = traitNameById.get(id);
+                  return name ? [name] : [];
+                })
+                .filter((name, index, all) => all.indexOf(name) === index)
+            : [],
+        },
+        buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
+        ...(buffRateTargets(fn.buffs).length ? { buffRateTargets: buffRateTargets(fn.buffs) } : {}),
+        cardTypes: [
+          ...new Set(
+            (fn.buffs ?? []).flatMap((buff) =>
+              [...(buff.tvals ?? []), ...(buff.ckSelfIndv ?? [])].flatMap((trait) =>
+                trait.name && cardTypeByTrait[trait.name] ? [cardTypeByTrait[trait.name]] : [],
+              ),
+            ),
+          ),
+        ],
+      },
+    ];
+  });
 }
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
@@ -637,6 +636,13 @@ export function normalizeAtlasSnapshot(input: {
           `missing_np_id:servants[${String(servantIndex)}].noblePhantasms[${String(npIndex)}]`,
         );
       const firstDamageIndex = damageFunctions[0]?.functionIndex ?? -1;
+      const effectFunctions = indexedFunctions.filter(
+        ({ fn }) => !fn.funcType?.startsWith('damageNp') && typeof fn.funcId === 'number',
+      );
+      const normalizedEffects = normalizeFunctions(
+        effectFunctions.map(({ fn }) => fn),
+        traitNameById,
+      );
       return [
         {
           id: String(np.id),
@@ -651,17 +657,13 @@ export function normalizeAtlasSnapshot(input: {
               maximumBattlePointPhaseById,
             ),
           ),
-          effects: indexedFunctions.flatMap(({ fn, functionIndex }) =>
-            fn.funcType?.startsWith('damageNp')
-              ? []
-              : normalizeFunctions([fn], traitNameById).map((effect) => ({
-                  ...effect,
-                  timing:
-                    firstDamageIndex >= 0 && functionIndex < firstDamageIndex
-                      ? ('beforeDamage' as const)
-                      : ('afterDamage' as const),
-                })),
-          ),
+          effects: normalizedEffects.map((effect, index) => ({
+            ...effect,
+            timing:
+              firstDamageIndex >= 0 && effectFunctions[index]!.functionIndex < firstDamageIndex
+                ? ('beforeDamage' as const)
+                : ('afterDamage' as const),
+          })),
         },
       ];
     });

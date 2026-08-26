@@ -202,6 +202,7 @@ describe('profile domain', () => {
         sourceInstanceId: 'support-instance-2',
         skillId: 'skill-1',
         effectId: 'attack-up',
+        effectOccurrenceId: 'attack-up:0',
       },
       true,
       clock.now().toISOString(),

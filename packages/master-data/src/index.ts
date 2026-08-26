@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(8),
+  schemaVersion: z.literal(9),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -52,6 +52,7 @@ const effectParameterSetsSchema = z.tuple([
 ]);
 const masterEffectSchema = z.object({
   id: z.string(),
+  occurrenceId: z.string().min(1),
   type: z.string(),
   target: z.string(),
   label: z.string(),
@@ -374,11 +375,46 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
   for (const servant of parsed.data.servants) {
     if (ids.has(servant.id)) errors.push(`duplicate servant:${servant.id}`);
     ids.add(servant.id);
+    for (const [origin, skills] of [
+      ['skill', servant.skills],
+      ['passive', servant.passives],
+      ['np', servant.noblePhantasms],
+    ] as const)
+      for (const skill of skills) {
+        const occurrenceIds = new Set<string>();
+        for (const effect of skill.effects) {
+          if (occurrenceIds.has(effect.occurrenceId))
+            errors.push(
+              `duplicate effect occurrence:${servant.id}:${origin}:${skill.id}:${effect.occurrenceId}`,
+            );
+          occurrenceIds.add(effect.occurrenceId);
+        }
+      }
   }
   const mysticCodeIds = new Set<string>();
   for (const mysticCode of parsed.data.mysticCodes) {
     if (mysticCodeIds.has(mysticCode.id)) errors.push(`duplicate mystic code:${mysticCode.id}`);
     mysticCodeIds.add(mysticCode.id);
+    for (const skill of mysticCode.skills) {
+      const occurrenceIds = new Set<string>();
+      for (const effect of skill.effects) {
+        if (occurrenceIds.has(effect.occurrenceId))
+          errors.push(
+            `duplicate effect occurrence:mysticCode:${mysticCode.id}:${skill.id}:${effect.occurrenceId}`,
+          );
+        occurrenceIds.add(effect.occurrenceId);
+      }
+    }
+  }
+  for (const craftEssence of parsed.data.craftEssences) {
+    const occurrenceIds = new Set<string>();
+    for (const effect of craftEssence.effects) {
+      if (occurrenceIds.has(effect.occurrenceId))
+        errors.push(
+          `duplicate effect occurrence:craftEssence:${craftEssence.id}:${effect.occurrenceId}`,
+        );
+      occurrenceIds.add(effect.occurrenceId);
+    }
   }
   const includedAttackFunctions = parsed.data.servants.reduce(
     (count, servant) =>

@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 14 as const;
-export const ENGINE_VERSION = '11.2.0' as const;
+export const SCHEMA_VERSION = 15 as const;
+export const ENGINE_VERSION = '12.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -69,6 +69,7 @@ export const supportEffectRefSchema = z.object({
   sourceInstanceId: z.string().min(1).max(160),
   skillId: z.string().min(1).max(80),
   effectId: z.string().min(1).max(80),
+  effectOccurrenceId: z.string().min(1).max(80),
 });
 export type SupportEffectRef = z.infer<typeof supportEffectRefSchema>;
 

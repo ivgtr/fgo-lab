@@ -18,6 +18,7 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
       sourceId: 'source',
       skillId: 'skill',
       effectId: 'effect',
+      effectOccurrenceId: 'effect:0',
     },
     executionSupport: 'supported',
     outcome: 'applied',

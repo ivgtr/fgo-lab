@@ -403,12 +403,14 @@ export function Calculator({
         sourceInstanceId: effect.source.sourceInstanceId,
         skillId: effect.source.skillId,
         effectId: effect.source.effectId,
+        effectOccurrenceId: effect.source.effectOccurrenceId,
       };
       const current = resolvedScenario.support.composition.selectedEffects;
       const matches = (candidate: typeof ref) =>
         candidate.sourceInstanceId === ref.sourceInstanceId &&
         candidate.skillId === ref.skillId &&
-        candidate.effectId === ref.effectId;
+        candidate.effectId === ref.effectId &&
+        candidate.effectOccurrenceId === ref.effectOccurrenceId;
       void onScenarioChange({
         ...decidedScenario,
         support: {

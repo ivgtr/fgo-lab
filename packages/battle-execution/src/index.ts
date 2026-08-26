@@ -45,6 +45,7 @@ export interface OperationSource {
   sourceId: string;
   skillId: string;
   effectId: string;
+  effectOccurrenceId: string;
 }
 
 export type ExecutionPhase =

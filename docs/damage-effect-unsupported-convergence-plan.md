@@ -32,6 +32,10 @@ production 469騎のうち攻撃宝具scenarioを構築できる420騎につい�
 
 90は最終的なraw effect件数ではない。現行decision keyが`origin/source instance/skill/effect ID`であり、effect occurrenceを含まないため、同一skill内の同じIDが一つのprojectionへ潰れる。したがって最初にstable occurrence identityへ置換し、その後に正式なservant、effect、family件数を再固定する。ID重複を無視したままunsupportedを減らす実装は行わない。
 
+### 2.1 occurrence identity置換後の正式基準値
+
+master v20、schema 15、engine 12.0.0でoccurrence identityへ置換した結果、既定unsupportedは15騎のまま、選択時unsupportedは58騎・100 effect occurrenceとなった。従来の90 projectionは10 occurrenceを欠落していた。全projectionはuser 1,567、automatic visible 445、hidden 671であり、projection key衝突は0件である。以後のratchetはこのoccurrence単位を母数とする。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |

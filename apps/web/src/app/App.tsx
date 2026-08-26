@@ -87,7 +87,8 @@ function selectedSupportEffects(template: SupportTemplate, effects: readonly Eff
         (selected) =>
           selected.sourceInstanceId === effect.source.sourceInstanceId &&
           selected.skillId === effect.source.skillId &&
-          selected.effectId === effect.source.effectId,
+          selected.effectId === effect.source.effectId &&
+          selected.effectOccurrenceId === effect.source.effectOccurrenceId,
       ),
   );
 }

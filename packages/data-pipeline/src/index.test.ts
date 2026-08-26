@@ -15,6 +15,61 @@ const content = JSON.stringify({
   materials: [],
 });
 describe('immutable publish pipeline', () => {
+  it('assigns distinct stable occurrences to repeated Function IDs', () => {
+    const repeated = (value: number) => ({
+      funcId: 248,
+      funcType: 'addStateShort',
+      funcTargetType: 'self',
+      funcPopupText: '宝具威力アップ',
+      svals: [{ Value: value }],
+      buffs: [{ type: 'upNpdamage' }],
+    });
+    const snapshot = normalizeAtlasSnapshot({
+      version: 'occurrence-test',
+      servants: [
+        {
+          id: 100100,
+          collectionNo: 1,
+          type: 'normal',
+          name: 'occurrence tester',
+          className: 'saber',
+          attribute: 'earth',
+          rarity: 5,
+          atkGrowth: [1_000],
+          noblePhantasms: [
+            {
+              id: 100101,
+              name: 'test NP',
+              card: 'buster',
+              priority: 1,
+              functions: [
+                repeated(100),
+                repeated(200),
+                {
+                  funcId: 13,
+                  funcType: 'damageNp',
+                  funcTargetType: 'enemyAll',
+                  svals: Array.from({ length: 5 }, () => ({ Rate: 1_000, Value: 3_000 })),
+                  svals2: Array.from({ length: 5 }, () => ({ Rate: 1_000, Value: 3_000 })),
+                  svals3: Array.from({ length: 5 }, () => ({ Rate: 1_000, Value: 3_000 })),
+                  svals4: Array.from({ length: 5 }, () => ({ Rate: 1_000, Value: 3_000 })),
+                  svals5: Array.from({ length: 5 }, () => ({ Rate: 1_000, Value: 3_000 })),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      equips: [],
+      mysticCodes: [],
+      items: [],
+    });
+
+    expect(snapshot.servants[0]?.noblePhantasms[0]?.effects).toMatchObject([
+      { id: '248', occurrenceId: '248:0' },
+      { id: '248', occurrenceId: '248:1' },
+    ]);
+  });
   it('creates and validates a checksum manifest', () => {
     const manifest = createManifest({
       masterDataVersion: 'v1',

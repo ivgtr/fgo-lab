@@ -796,7 +796,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_545, automaticVisible: 439, hidden: 671 });
+    }).toEqual({ user: 1_567, automaticVisible: 445, hidden: 671 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -820,7 +820,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 58, effects: 90 });
+    }).toEqual({ servants: 58, effects: 100 });
     expect(exclusivePairCount).toBe(8);
     expect(conflictPairs).toEqual({ effectEffect: 7, factFact: 1, factEffect: 0 });
     expect({

@@ -33,6 +33,7 @@ describe('support effect application view model', () => {
               effects: [
                 {
                   id: 'attack-up',
+                  occurrenceId: 'attack-up:0',
                   type: 'addStateShort',
                   target: 'ptOne',
                   label: '攻撃力アップ',
@@ -50,6 +51,7 @@ describe('support effect application view model', () => {
                 },
                 {
                   id: 'critical-only',
+                  occurrenceId: 'critical-only:0',
                   type: 'addStateShort',
                   target: 'ptOne',
                   label: 'クリティカル威力アップ',

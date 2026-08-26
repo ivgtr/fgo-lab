@@ -38,6 +38,7 @@ function modifierEffect(
 ) {
   return {
     id,
+    occurrenceId: `${id}:0`,
     type: 'addStateShort',
     target,
     label: id,
@@ -64,6 +65,62 @@ function traitConditions(opponent: string, field: string) {
 }
 
 describe('scenario calculation facade', () => {
+  it('keeps repeated Function IDs as independent decisions and operations', () => {
+    const first = modifierEffect('shared-function', 'upAtk', 100);
+    const second = {
+      ...modifierEffect('shared-function', 'upAtk', 200),
+      occurrenceId: 'shared-function:1',
+    };
+    const baseServant = fixture.servants[0]!;
+    const occurrenceMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'occurrence-skill',
+              slot: 1,
+              priority: 1,
+              name: 'occurrence skill',
+              detail: '',
+              imageKey: null,
+              effects: [first, second],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario = createDefaultResolvedScenario(occurrenceMaster, undefined);
+    const inactive = calculateScenario(scenario, occurrenceMaster, {
+      ...versions,
+      masterDataVersion: occurrenceMaster.version,
+    });
+    const effects = inactive.effects.filter(
+      (effect) => effect.source.effectId === 'shared-function',
+    );
+
+    expect(effects.map((effect) => effect.source.effectOccurrenceId)).toEqual([
+      'shared-function:0',
+      'shared-function:1',
+    ]);
+    expect(new Set(effects.map((effect) => effect.projectionKey)).size).toBe(2);
+
+    const selected = effects.reduce(
+      (current, effect) => applyEffectProjectionDecision(current, effect, true),
+      scenario,
+    );
+    const calculation = calculateScenario(selected, occurrenceMaster, {
+      ...versions,
+      masterDataVersion: occurrenceMaster.version,
+    });
+    expect(calculation.input.attackBuff).toBe(0.3);
+    expect(
+      calculation.effects.filter(
+        (effect) => effect.source.effectId === 'shared-function' && effect.outcome === 'applied',
+      ),
+    ).toHaveLength(2);
+  });
   it('calculates a resolved scenario without a UI selection adapter', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
     const calculation = calculateScenario(scenario, master, versions);
@@ -711,17 +768,17 @@ describe('scenario calculation facade', () => {
       },
       effectDecisions: [
         {
-          decisionKey: 'attacker:attacker:fixture-saber:attacker-skill:attacker-attack',
+          decisionKey: 'attacker:attacker:fixture-saber:attacker-skill:attacker-attack:0',
           operationEnabled: true,
           conditionSatisfaction: 'evaluate' as const,
         },
         {
-          decisionKey: 'mysticCode:mysticCode:combo-mc:mc-skill:mc-card',
+          decisionKey: 'mysticCode:mysticCode:combo-mc:mc-skill:mc-card:0',
           operationEnabled: true,
           conditionSatisfaction: 'evaluate' as const,
         },
         {
-          decisionKey: 'support:support-1:support-skill:support-power',
+          decisionKey: 'support:support-1:support-skill:support-power:0',
           operationEnabled: true,
           conditionSatisfaction: 'evaluate' as const,
         },
@@ -741,6 +798,7 @@ describe('scenario calculation facade', () => {
               sourceInstanceId: 'support-1',
               skillId: 'support-skill',
               effectId: 'support-power',
+              effectOccurrenceId: 'support-power:0',
             },
           ],
         },

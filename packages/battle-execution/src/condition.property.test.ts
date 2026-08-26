@@ -231,6 +231,7 @@ describe('condition expression properties', () => {
         sourceId: 'source',
         skillId: 'skill',
         effectId: 'effect',
+        effectOccurrenceId: 'effect:0',
       },
       executionSupport: 'supported',
       outcome: 'notApplied',

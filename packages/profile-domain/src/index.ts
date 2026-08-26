@@ -331,7 +331,8 @@ export function toggleSupportEffect(
                     (candidate) =>
                       candidate.sourceInstanceId === effect.sourceInstanceId &&
                       candidate.skillId === effect.skillId &&
-                      candidate.effectId === effect.effectId,
+                      candidate.effectId === effect.effectId &&
+                      candidate.effectOccurrenceId === effect.effectOccurrenceId,
                   )
                   ? template.composition.selectedEffects
                   : [...template.composition.selectedEffects, effect]
@@ -339,7 +340,8 @@ export function toggleSupportEffect(
                     (candidate) =>
                       candidate.sourceInstanceId !== effect.sourceInstanceId ||
                       candidate.skillId !== effect.skillId ||
-                      candidate.effectId !== effect.effectId,
+                      candidate.effectId !== effect.effectId ||
+                      candidate.effectOccurrenceId !== effect.effectOccurrenceId,
                   ),
             },
             updatedAt: now,

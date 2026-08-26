@@ -43,6 +43,7 @@ export function supportEffectOptions(
             sourceInstanceId: source.sourceInstanceId,
             skillId: selection.skillId,
             effectId: effect.id,
+            effectOccurrenceId: effect.occurrenceId,
           },
           label: effect.label,
           skillLevel: selection.skillLevel,

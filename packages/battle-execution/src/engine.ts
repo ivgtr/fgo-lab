@@ -240,7 +240,7 @@ function parameter(
 }
 
 function decisionKey(source: SourceEffect): string {
-  return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.id}`;
+  return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
 }
 
 function sourceIdentity(source: SourceEffect): OperationSource {
@@ -250,6 +250,7 @@ function sourceIdentity(source: SourceEffect): OperationSource {
     sourceId: source.sourceId,
     skillId: source.skillId,
     effectId: source.effect.id,
+    effectOccurrenceId: source.effect.occurrenceId,
   };
 }
 
@@ -963,6 +964,7 @@ export function executeOrderedScenario(
       sourceId: attacker.id,
       skillId: `np:${attacker.id}`,
       effectId: damage.functionId,
+      effectOccurrenceId: `damage:${damage.functionId}`,
     };
     compileProjections.push(
       ...traitCountProjections(

@@ -7,7 +7,8 @@ function sameEffect(left: SupportEffectRef, right: SupportEffectRef) {
   return (
     left.sourceInstanceId === right.sourceInstanceId &&
     left.skillId === right.skillId &&
-    left.effectId === right.effectId
+    left.effectId === right.effectId &&
+    left.effectOccurrenceId === right.effectOccurrenceId
   );
 }
 
@@ -35,7 +36,7 @@ export function SupportEffectSelector({
             );
             return (
               <ModifierChip
-                key={`${ref.sourceInstanceId}:${ref.skillId}:${ref.effectId}`}
+                key={`${ref.sourceInstanceId}:${ref.skillId}:${ref.effectOccurrenceId}`}
                 active={selected}
                 label={label}
                 detail={`Lv${skillLevel}・${selected ? 'セットから除外' : 'セットに含める'}`}
