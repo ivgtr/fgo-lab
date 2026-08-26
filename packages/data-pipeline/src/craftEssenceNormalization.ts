@@ -14,11 +14,16 @@ function expressionShape(expression: ModifierValueExpression | null) {
   if (expression === null) return null;
   return expression.kind === 'inverseHpLinear'
     ? { kind: expression.kind }
-    : {
-        kind: expression.kind,
-        minimumHpPermille: expression.minimumHpPermille,
-        maximumHpPermille: expression.maximumHpPermille,
-      };
+    : expression.kind === 'hpRangeLinear'
+      ? {
+          kind: expression.kind,
+          minimumHpPermille: expression.minimumHpPermille,
+          maximumHpPermille: expression.maximumHpPermille,
+        }
+      : {
+          kind: expression.kind,
+          inputKey: expression.inputKey,
+        };
 }
 
 function operationSemanticIdentity(operation: EffectExecutionOperation): string {
@@ -56,6 +61,8 @@ function effectSemanticIdentity(effect: MasterEffect): string {
     choice: effect.choice,
     triggerScope: effect.triggerScope,
     operationTrigger: effect.operationTrigger,
+    operationReference: effect.operationReference,
+    stateIdentity: effect.stateIdentity,
     quantityConditions: effect.quantityConditions,
     sourceQuantityConditions: effect.sourceQuantityConditions,
     conditions: effect.conditions,

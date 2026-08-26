@@ -11,7 +11,7 @@ import { evaluateCalculationEvidence } from './evidence';
 export function calculateDamageResolution(
   rawInput: DamageResolutionInput,
   versions: VersionContext,
-): CalculationResult {
+): Exclude<CalculationResult, { status: 'inputRequired' }> {
   const input = damageResolutionInputSchema.parse(rawInput);
   const functionKind = input.damageFunction.kind;
   const prepared = prepareDamageEvaluation(input);

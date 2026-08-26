@@ -39,13 +39,26 @@ if (command === 'validate') {
   const currentManifest = await readFile(manifestPath, 'utf8')
     .then((content) => masterManifestSchema.parse(JSON.parse(content)))
     .catch(() => undefined);
-  const [servants, equips, mysticCodes, items] = await Promise.all(
-    ['nice_servant.json', 'nice_equip.json', 'nice_mystic_code.json', 'nice_item.json'].map(
+  const [servants, equips, mysticCodes, items, referencedSkills] = await Promise.all(
+    [
+      'nice_servant.json',
+      'nice_equip.json',
+      'nice_mystic_code.json',
+      'nice_item.json',
+      'referenced_skills.json',
+    ].map(
       async (file) =>
         JSON.parse(await readFile(resolve(root, 'data/raw', file), 'utf8')) as unknown,
     ),
   );
-  const snapshot = normalizeAtlasSnapshot({ version, servants, equips, mysticCodes, items });
+  const snapshot = normalizeAtlasSnapshot({
+    version,
+    servants,
+    equips,
+    mysticCodes,
+    items,
+    referencedSkills,
+  });
   const content = `${JSON.stringify(snapshot)}\n`;
   const timestamp = new Date().toISOString();
   const manifest = createManifest({

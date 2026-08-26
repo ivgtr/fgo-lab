@@ -433,6 +433,7 @@ export function App() {
             scenarioInput={resolvedCalculation.scenarioInput}
             resolvedEffects={resolvedCalculation.effects}
             effectWarnings={resolvedCalculation.effectWarnings}
+            contextInputs={resolvedCalculation.contextInputs}
             result={result}
             scenario={currentScenario}
             servants={currentMaster.servants}

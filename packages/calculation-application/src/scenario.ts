@@ -8,6 +8,7 @@ import {
   naturalServantLevel,
   type MasterDataSnapshot,
   type ServantMaster,
+  type BattleContextInputDefinition,
 } from '@fgo-lab/master-data';
 import type {
   CalculationResult,
@@ -21,11 +22,13 @@ import { evaluateCalculationEvidence } from './evidence';
 
 export interface ResolvedCalculationInput {
   input: DamageResolutionInput;
-  precision: 'exact' | 'approximate' | 'unsupported';
+  precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
   evidenceKeys: string[];
   warnings: string[];
   trace: { step: string; detail: string }[];
   effects: EffectProjection[];
+  requiredInputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
+  contextInputs: BattleContextInputDefinition[];
 }
 
 export interface CalculationExecution {
@@ -35,6 +38,7 @@ export interface CalculationExecution {
   effects: EffectProjection[];
   effectWarnings: string[];
   result: CalculationResult;
+  contextInputs: BattleContextInputDefinition[];
 }
 
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -58,8 +62,9 @@ export function createDefaultResolvedScenario(
     },
     overcharge: 1,
     target: { classId: 'affinity:2', attribute: 'unknown' },
-    attackerHpPermille: null,
-    battleState: { battlePointPhase: null },
+    attackerHpPermille: 1_000,
+    battleState: { battlePointPhase: 0 },
+    battleContext: { values: {} },
     assumptions: { classAffinity: 2, attributeAffinity: 1 },
     craftEssence: null,
     attackerSkills: servant.skills.slice(0, 3).map((skill, index) => ({
@@ -150,6 +155,8 @@ export function resolveScenario(
       warnings: [],
       trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
       effects: [],
+      requiredInputs: [],
+      contextInputs: [],
     };
   const baseInput = resolvedScenarioBaseInput(scenario, master);
   const execution = executeOrderedScenario(baseInput, scenario, master);
@@ -204,6 +211,8 @@ export function resolveScenario(
     ],
     warnings,
     effects: [...execution.projections],
+    requiredInputs: [...execution.requiredInputs],
+    contextInputs: [...execution.contextInputs],
     trace: [
       ...decisionTrace,
       ...worldFactTrace,
@@ -233,32 +242,44 @@ function evaluateResolvedCalculation(
   }));
   const resolutionIssues = resolved.warnings.map((warning) => ({ code: warning, detail: warning }));
   const result: CalculationResult =
-    calculation.status === 'unsupported' ||
-    resolved.precision === 'unsupported' ||
-    evidence.status === 'unsupported'
+    resolved.precision === 'inputRequired'
       ? {
-          status: 'unsupported',
+          status: 'inputRequired',
           rows: [],
+          requiredInputs: resolved.requiredInputs,
           effects,
           assumptions: calculation.assumptions,
           issues: [...calculation.issues, ...resolutionIssues],
           trace: [...calculation.trace, ...resolved.trace],
-          missingEvidence: [
-            ...(calculation.status === 'unsupported' ? calculation.missingEvidence : []),
-            ...resolved.warnings,
-            ...(evidence.status === 'unsupported' ? evidence.missingEvidence : []),
-          ],
           versions,
           evidence: evidence.evidence,
         }
-      : {
-          ...calculation,
-          effects,
-          precision: evidence.precision,
-          evidence: evidence.evidence,
-          issues: [...calculation.issues, ...resolutionIssues],
-          trace: [...calculation.trace, ...resolved.trace],
-        };
+      : calculation.status === 'unsupported' ||
+          resolved.precision === 'unsupported' ||
+          evidence.status === 'unsupported'
+        ? {
+            status: 'unsupported',
+            rows: [],
+            effects,
+            assumptions: calculation.assumptions,
+            issues: [...calculation.issues, ...resolutionIssues],
+            trace: [...calculation.trace, ...resolved.trace],
+            missingEvidence: [
+              ...(calculation.status === 'unsupported' ? calculation.missingEvidence : []),
+              ...resolved.warnings,
+              ...(evidence.status === 'unsupported' ? evidence.missingEvidence : []),
+            ],
+            versions,
+            evidence: evidence.evidence,
+          }
+        : {
+            ...calculation,
+            effects,
+            precision: evidence.precision,
+            evidence: evidence.evidence,
+            issues: [...calculation.issues, ...resolutionIssues],
+            trace: [...calculation.trace, ...resolved.trace],
+          };
   return {
     scenario,
     scenarioInput,
@@ -266,6 +287,7 @@ function evaluateResolvedCalculation(
     effects: resolved.effects,
     effectWarnings: resolved.warnings,
     result,
+    contextInputs: resolved.contextInputs,
   };
 }
 

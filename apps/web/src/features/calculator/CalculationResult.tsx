@@ -125,9 +125,11 @@ export function CalculationResult({
             <dd>{supportSummary}</dd>
           </div>
         </dl>
-        {result.status === 'unsupported' ? (
+        {result.status !== 'calculated' ? (
           <p className="empty" role="alert">
-            現在の条件は正確に計算できないため、ダメージ値を表示していません。
+            {result.status === 'inputRequired'
+              ? '正確な計算に必要な戦闘情報を入力してください。'
+              : '現在の条件は正確に計算できないため、ダメージ値を表示していません。'}
           </p>
         ) : (
           <table className="np-result-table">
@@ -207,6 +209,18 @@ export function CalculationResult({
             <ul>
               {result.missingEvidence.map((item) => (
                 <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {result.status === 'inputRequired' && (
+          <section>
+            <h3>必要な入力</h3>
+            <ul>
+              {result.requiredInputs.map((item) => (
+                <li key={item.key}>
+                  {item.label}: {item.description}
+                </li>
               ))}
             </ul>
           </section>

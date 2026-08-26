@@ -27,6 +27,7 @@ const nonDamageBuffs = new Set([
   'upExtraattack',
   'upTolerance',
   'upToleranceSubstate',
+  'subIndividuality',
 ]);
 const possiblyDamageBuffs = new Set([
   'attackBeforeFunction',
@@ -39,7 +40,6 @@ const possiblyDamageBuffs = new Set([
   'fieldIndividualityChangedFunction',
   'npattackPrevBuff',
   'subFieldIndividuality',
-  'subIndividuality',
   'subSelfdamage',
   'tdTypeChange',
   'tdTypeChangeArts',
@@ -139,6 +139,7 @@ export function normalizeExecutionSemantics(input: {
     addedRecipientTraits: string[];
     removedRecipientTraits: string[];
   };
+  quantityApplicationTiming: 'duringExecution' | 'representedByCurrentInput';
 }): EffectExecutionOperation[] {
   const target = input.fn.funcTargetType ?? 'unknown';
   const policy = normalizeTargetPolicy(target);
@@ -146,6 +147,44 @@ export function normalizeExecutionSemantics(input: {
   const potentiallyDamageRelevant = isPotentiallyDamageRelevant(target, buffTypes);
   const targetMismatch = potentiallyDamageRelevant ? ('unsupported' as const) : ('ignore' as const);
   const operations: EffectExecutionOperation[] = [];
+
+  if (input.fn.funcType === 'addBattlePoint') {
+    const values = input.parameterSets.flatMap((set) => set);
+    const quantities = [
+      ...new Set(
+        values.flatMap((value) =>
+          typeof value.BattlePointValue === 'number' ? [value.BattlePointValue] : [],
+        ),
+      ),
+    ];
+    const subjectIds = [
+      ...new Set(
+        values.flatMap((value) =>
+          typeof value.BattlePointId === 'number' ? [String(value.BattlePointId)] : [],
+        ),
+      ),
+    ];
+    if (quantities.length !== 1 || subjectIds.length !== 1)
+      return [
+        {
+          kind: 'unresolved',
+          targetPolicy: policy,
+          reason: 'operationSemantics',
+          damageRelevant: true,
+        },
+      ];
+    return [
+      {
+        kind: 'contextMutation',
+        mutation: 'addQuantity',
+        quantity: 'battlePointPhase',
+        subjectId: subjectIds[0]!,
+        amount: quantities[0]!,
+        applicationTiming: input.quantityApplicationTiming,
+        damageRelevant: true,
+      },
+    ];
+  }
 
   for (const trait of input.contextChanges.addedFieldTraits)
     operations.push({
@@ -177,7 +216,7 @@ export function normalizeExecutionSemantics(input: {
   for (const trait of input.contextChanges.removedRecipientTraits)
     operations.push({
       kind: 'contextMutation',
-      mutation: 'removeTrait',
+      mutation: 'suppressInitialTrait',
       scope: 'recipientState',
       targetPolicy: policy,
       trait,

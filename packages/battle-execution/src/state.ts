@@ -1,5 +1,6 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import type { BattleState, ModifierKind, WorldFactAssertion } from './contracts';
+import type { BattleOperation, BattleState, ModifierKind, WorldFactAssertion } from './contracts';
+import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 
 export function cloneBattleState(state: BattleState): BattleState {
   return {
@@ -18,7 +19,12 @@ export function cloneBattleState(state: BattleState): BattleState {
       targetState: { ...state.traitCounts.targetState },
       field: { ...state.traitCounts.field },
     },
+    initialTraitSuppressions: {
+      attacker: new Set(state.initialTraitSuppressions.attacker),
+      target: new Set(state.initialTraitSuppressions.target),
+    },
     quantities: { ...state.quantities },
+    contextValues: { ...state.contextValues },
     modifiers: [...state.modifiers],
     modifierRates: { ...state.modifierRates },
     evidence: [...state.evidence],
@@ -29,6 +35,7 @@ export function cloneBattleState(state: BattleState): BattleState {
 export function createInitialBattleState(
   input: DamageResolutionInput,
   attackerTraits: readonly string[],
+  contextValues: Readonly<Record<string, number>> = {},
 ): BattleState {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
@@ -47,11 +54,13 @@ export function createInitialBattleState(
       targetState: traitCounts(input.targetStateTraits),
       field: traitCounts(input.fieldTraits),
     },
+    initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: {
       attackerHpPermille: input.attackerHpPermille,
       targetRarity: input.targetRarity,
       battlePointPhase: input.battlePointPhase,
     },
+    contextValues: { ...contextValues },
     modifiers: [],
     modifierRates: {},
     ignoreDefense: input.damageFunction.status === 'resolved' && input.damageFunction.ignoreDefense,
@@ -82,6 +91,32 @@ export function applyWorldFacts(
           }
         : withoutTraitCount(candidate.traitCounts[fact.scope], fact.trait);
     }
+  }
+  return candidate;
+}
+
+export function applyCardTypeMutation(
+  state: BattleState,
+  operation: Extract<BattleOperation, { kind: 'changeCardType' }>,
+): BattleState {
+  const candidate = cloneBattleState(state);
+  candidate.card = operation.card;
+  for (const trait of operation.stateTraits) {
+    const group = canonicalExclusiveGroup('attackerState', trait);
+    if (group)
+      for (const conflictingTrait of canonicalExclusiveTraits('attackerState', group)) {
+        if (conflictingTrait === trait) continue;
+        (candidate.traits.attackerState as Map<string, boolean>).set(conflictingTrait, false);
+        candidate.traitCounts.attackerState = withoutTraitCount(
+          candidate.traitCounts.attackerState,
+          conflictingTrait,
+        );
+      }
+    (candidate.traits.attackerState as Map<string, boolean>).set(trait, true);
+    candidate.traitCounts.attackerState = {
+      ...candidate.traitCounts.attackerState,
+      [trait]: Math.max(1, candidate.traitCounts.attackerState[trait] ?? 0),
+    };
   }
   return candidate;
 }

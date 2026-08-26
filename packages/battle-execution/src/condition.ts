@@ -1,17 +1,32 @@
-import type { TraitCondition } from '@fgo-lab/master-data';
+import type { TraitCondition, TraitReadPolicy } from '@fgo-lab/master-data';
 import type { BattleState, ConditionExpression, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
+
+const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
+  stateSources: 'activeOnly',
+  ignoredStateTraits: 'exclude',
+  unremovableStateTraits: 'include',
+};
+
+function requiresProvenanceDecision(readPolicy: TraitReadPolicy | undefined): boolean {
+  return (
+    readPolicy !== undefined &&
+    (readPolicy.stateSources !== DEFAULT_TRAIT_READ_POLICY.stateSources ||
+      readPolicy.ignoredStateTraits !== DEFAULT_TRAIT_READ_POLICY.ignoredStateTraits ||
+      readPolicy.unremovableStateTraits !== DEFAULT_TRAIT_READ_POLICY.unremovableStateTraits)
+  );
+}
 
 export function normalizeTraitCondition(
   condition: TraitCondition,
   scope: TraitScope,
+  readPolicy: TraitReadPolicy = DEFAULT_TRAIT_READ_POLICY,
 ): ConditionExpression {
   if (condition.traits.length === 0) return { kind: 'always' };
   const traits = condition.traits.map((trait) => ({
     trait: trait.name,
     present: !trait.negative,
   }));
-  if (condition.operator === 'partial') return { kind: 'partialTrait', scope, traits };
   const onlyTrait = traits.length === 1 ? traits[0] : undefined;
   if (
     onlyTrait &&
@@ -44,7 +59,7 @@ export function normalizeTraitCondition(
       return trait.present
         ? { kind: 'card', card }
         : { kind: 'not', expression: { kind: 'card', card } };
-    return { kind: 'trait', scope, ...trait };
+    return { kind: 'trait', scope, ...trait, readPolicy };
   });
   return condition.operator === 'all' ? { kind: 'all', expressions } : { kind: 'any', expressions };
 }
@@ -59,7 +74,6 @@ export function combineConditions(expressions: ConditionExpression[]): Condition
 }
 
 export function containsUnsupportedCondition(condition: ConditionExpression): boolean {
-  if (condition.kind === 'partialTrait') return true;
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some(containsUnsupportedCondition);
   return condition.kind === 'not' && containsUnsupportedCondition(condition.expression);
@@ -69,12 +83,25 @@ export function isConditional(condition: ConditionExpression): boolean {
   return condition.kind !== 'always' && condition.kind !== 'card';
 }
 
+export function requiresUserAssumption(condition: ConditionExpression): boolean {
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some(requiresUserAssumption);
+  if (condition.kind === 'not') return requiresUserAssumption(condition.expression);
+  return !['always', 'card', 'contextQuantity'].includes(condition.kind);
+}
+
 export function evaluateCondition(
   condition: ConditionExpression,
   state: BattleState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
     const readScopes = traitConditionReadScopes(scope);
+    if (scope === 'attacker' || scope === 'target') {
+      const stateScope = scope === 'attacker' ? 'attackerState' : 'targetState';
+      const stateValue = state.traits[stateScope].get(trait);
+      if (stateValue === true) return true;
+      if (state.initialTraitSuppressions[scope].has(trait)) return false;
+    }
     const values = readScopes.flatMap((candidate) => {
       const value = state.traits[candidate].get(trait);
       return value === undefined ? [] : [value];
@@ -87,11 +114,13 @@ export function evaluateCondition(
     case 'always':
       return true;
     case 'trait': {
+      // Scenario trait facts intentionally do not claim buff provenance. Exceptional Atlas
+      // read policies therefore require the effect-local decision instead of being inferred
+      // from a combined trait set.
+      if (requiresProvenanceDecision(condition.readPolicy)) return null;
       const actual = traitValue(condition.scope, condition.trait);
       return actual === undefined ? null : actual === condition.present;
     }
-    case 'partialTrait':
-      return null;
     case 'traitCount': {
       const values = condition.traits.map((trait) => traitValue(condition.scope, trait));
       if (values.includes(undefined)) return null;
@@ -114,6 +143,15 @@ export function evaluateCondition(
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];
       if (actual === null) return null;
+      if (condition.comparison === 'lessThan') return actual < condition.value;
+      if (condition.comparison === 'atMost') return actual <= condition.value;
+      if (condition.comparison === 'equal') return actual === condition.value;
+      if (condition.comparison === 'atLeast') return actual >= condition.value;
+      return actual > condition.value;
+    }
+    case 'contextQuantity': {
+      const actual = state.contextValues[condition.inputKey];
+      if (actual === undefined) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;
       if (condition.comparison === 'atMost') return actual <= condition.value;
       if (condition.comparison === 'equal') return actual === condition.value;

@@ -50,6 +50,10 @@ export type AtlasFunctionValue = Record<string, unknown> & {
   HideNoEffect?: number;
   FieldIndividuality?: number[];
 };
+export type AtlasReferencedSkill = {
+  id?: number;
+  functions?: AtlasFunction[];
+};
 export type AtlasServant = {
   id?: number;
   collectionNo?: number;

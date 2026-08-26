@@ -1,14 +1,20 @@
 import type { BattleOperation, ConditionExpression, EffectDecision, TraitScope } from './contracts';
 
-function conditionContainsChoice(expression: ConditionExpression): boolean {
-  if (expression.kind === 'choice') return true;
+function choiceKeys(expression: ConditionExpression): string[] {
+  if (expression.kind === 'choice') return [`${expression.group}:${expression.candidate}`];
   if (expression.kind === 'all' || expression.kind === 'any')
-    return expression.expressions.some(conditionContainsChoice);
-  return expression.kind === 'not' && conditionContainsChoice(expression.expression);
+    return expression.expressions.flatMap(choiceKeys);
+  return expression.kind === 'not' ? choiceKeys(expression.expression) : [];
 }
 
 function conditionIsActivationLocal(expression: ConditionExpression): boolean {
-  if (expression.kind === 'always' || expression.kind === 'choice') return true;
+  if (
+    expression.kind === 'always' ||
+    expression.kind === 'choice' ||
+    expression.kind === 'sourceQuantity' ||
+    expression.kind === 'operationTrigger'
+  )
+    return true;
   if (expression.kind === 'all') return expression.expressions.every(conditionIsActivationLocal);
   return false;
 }
@@ -60,30 +66,37 @@ export function planOperationActivations(
       operation.phase !== 'attackerSkill' ||
       operation.enabledByDefault ||
       operation.decisionKey !== null ||
-      (operation.kind !== 'addTrait' && operation.kind !== 'removeTrait')
+      (operation.kind !== 'addTrait' &&
+        operation.kind !== 'removeTrait' &&
+        operation.kind !== 'suppressInitialTrait' &&
+        operation.kind !== 'addQuantity')
     )
       return operation;
     const present = operation.kind === 'addTrait';
     const links = decisionOperations.flatMap((candidate) => {
+      const operationChoices = choiceKeys(operation.condition);
+      const candidateChoices = choiceKeys(candidate.condition);
       const sameSkill =
-        !conditionContainsChoice(operation.condition) &&
         candidate.source.sourceInstanceId === operation.source.sourceInstanceId &&
-        candidate.source.skillId === operation.source.skillId;
-      const prerequisite = conditionRequiresTrait(
-        candidate.condition,
-        operation.scope,
-        operation.trait,
-        present,
-      );
+        candidate.source.skillId === operation.source.skillId &&
+        (operationChoices.length === 0 ||
+          operationChoices.some((choice) => candidateChoices.includes(choice)));
+      const prerequisite =
+        operation.kind === 'addQuantity' || operation.kind === 'suppressInitialTrait'
+          ? false
+          : conditionRequiresTrait(candidate.condition, operation.scope, operation.trait, present);
       if (!sameSkill && !prerequisite) return [];
       return [
         {
           decisionKey: candidate.decisionKey,
           reason: prerequisite ? ('traitPrerequisite' as const) : ('sourceSkill' as const),
           selection:
-            candidate.decisionPlan.activation === 'user'
-              ? ('operationEnabled' as const)
-              : ('conditionSatisfied' as const),
+            conditionIsActivationLocal(operation.condition) &&
+            candidate.decisionPlan.condition === 'userMayAssume'
+              ? ('conditionSatisfied' as const)
+              : candidate.decisionPlan.activation === 'user'
+                ? ('operationEnabled' as const)
+                : ('conditionSatisfied' as const),
         },
       ];
     });
@@ -131,7 +144,7 @@ export function resolveOperationActivation(
     enabled: activeLinks.length > 0,
     activeDecisionKeys: [...new Set(activeLinks.map((link) => link.decisionKey))],
     assumesLocalCondition:
-      activeLinks.some((link) => link.reason === 'traitPrerequisite') &&
+      activeLinks.some((link) => link.selection === 'conditionSatisfied') &&
       conditionIsActivationLocal(operation.condition),
   };
 }

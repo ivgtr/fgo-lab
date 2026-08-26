@@ -14,8 +14,22 @@ export function resolveModifierValue(
 ): number | null {
   const expression = operation.valueExpression;
   if (!expression) return operation.valuePermille;
-  if (expression.subjectId !== undefined) return null;
-  const hp = state.quantities.attackerHpPermille;
+  if (expression.kind === 'contextLinear') {
+    const units = state.contextValues[expression.inputKey];
+    if (units === undefined) return null;
+    const value =
+      expression.basePermille +
+      Math.min(expression.maximumUnits, Math.max(0, units)) * expression.perUnitPermille;
+    return expression.maximumValuePermille === null
+      ? value
+      : expression.perUnitPermille >= 0
+        ? Math.min(value, expression.maximumValuePermille)
+        : Math.max(value, expression.maximumValuePermille);
+  }
+  const hp =
+    expression.quantitySource.kind === 'attackerHpPermille'
+      ? state.quantities.attackerHpPermille
+      : (state.contextValues[expression.quantitySource.inputKey] ?? null);
   if (hp === null) return null;
   if (expression.kind === 'inverseHpLinear')
     return (
@@ -46,7 +60,11 @@ export function createOperationProjection(
   choice: EffectDecision | undefined,
   resolvedModifierValue: number | null,
 ): EffectProjection {
-  const hidden = operation.kind === 'addTrait' || operation.kind === 'removeTrait';
+  const hidden =
+    operation.kind === 'addTrait' ||
+    operation.kind === 'removeTrait' ||
+    operation.kind === 'suppressInitialTrait' ||
+    operation.kind === 'addQuantity';
   const valuePermille =
     operation.kind === 'addModifier'
       ? resolvedModifierValue
@@ -74,7 +92,9 @@ export function createOperationProjection(
       ? enabled
       : choice?.conditionSatisfaction === 'assumeSatisfied';
   const conditionSatisfiedInternally = condition === true;
+  const knownImpossibleBeforeSelection = condition === false && choice === undefined;
   const userControllable =
+    !knownImpossibleBeforeSelection &&
     operation.decisionKey !== null &&
     (operation.decisionPlan.activation === 'user' ||
       (operation.decisionPlan.condition === 'userMayAssume' &&
@@ -93,19 +113,27 @@ export function createOperationProjection(
           ? valuePermille
           : valuePermille / 1000,
     requiredQuantity:
-      operation.kind === 'addModifier' && operation.valueExpression ? 'attackerHpPermille' : null,
-    requiredQuantityOwner:
-      operation.kind === 'addModifier' && operation.valueExpression
-        ? operation.valueExpression.subjectId === undefined
-          ? 'attacker'
-          : 'source'
+      operation.kind === 'addModifier' &&
+      operation.valueExpression &&
+      operation.valueExpression.kind !== 'contextLinear' &&
+      operation.valueExpression.quantitySource.kind === 'attackerHpPermille'
+        ? 'attackerHpPermille'
         : null,
+    requiredQuantityOwner:
+      operation.kind === 'addModifier' &&
+      operation.valueExpression &&
+      operation.valueExpression.kind !== 'contextLinear' &&
+      operation.valueExpression.quantitySource.kind === 'attackerHpPermille'
+        ? 'attacker'
+        : null,
+    requiredInputs: operation.contextInputs,
     modifier,
     source: operation.source,
     executionSupport: 'supported',
     outcome,
     visibility:
       hidden ||
+      knownImpossibleBeforeSelection ||
       code === 'cardMismatch' ||
       (operation.kind === 'executeNpDamage' && operation.condition.kind === 'always')
         ? 'hidden'
@@ -141,6 +169,8 @@ export function projectAtDamageEvaluation(
     ...result.projection,
     outcome: 'impossible',
     visibility: 'hidden',
+    controllability: 'automatic',
+    decision: { state: 'none' },
     explanation: { ...result.projection.explanation, code: 'cardMismatch' },
   };
 }
@@ -169,6 +199,7 @@ export function traitCountProjections(
       value: valuePermille / 1_000,
       requiredQuantity: null,
       requiredQuantityOwner: null,
+      requiredInputs: [],
       modifier: 'npSpecial',
       source,
       executionSupport: 'supported',

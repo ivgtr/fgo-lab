@@ -1,5 +1,17 @@
-import type { ModifierValueExpression, NpDamageSpec } from '@fgo-lab/master-data';
-import type { AtlasBuff, AtlasFunction, AtlasFunctionValue, AtlasTraitRef } from './atlasContract';
+import type {
+  ActorCountPredicate,
+  BattleContextInputDefinition,
+  ModifierValueExpression,
+  NpDamageSpec,
+  TraitReadPolicy,
+} from '@fgo-lab/master-data';
+import type {
+  AtlasBuff,
+  AtlasFunction,
+  AtlasFunctionValue,
+  AtlasReferencedSkill,
+  AtlasTraitRef,
+} from './atlasContract';
 import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
 
 export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
@@ -141,10 +153,106 @@ function signedTraits(
   );
 }
 
-function buffConditionOperator(value: number | undefined): 'any' | 'all' | 'partial' {
+function buffConditionOperator(value: number | undefined): 'any' | 'all' {
   if (value === 1 || value === 3) return 'all';
-  if (value === 4) return 'partial';
+  if (value === 4) return 'any';
   return 'any';
+}
+
+function normalizeForcedEqualRange(range: unknown): {
+  comparison: 'atMost' | 'atLeast' | 'equal';
+  value: number;
+} | null {
+  if (typeof range !== 'string') return null;
+  const match = /^(<=|<|>=|>|=*)(\d+)$/.exec(range.trim());
+  if (!match) return null;
+  const value = Number(match[2]);
+  const operator = match[1];
+  if (operator === '<' || operator === '<=') return { comparison: 'atMost', value };
+  if (operator === '>' || operator === '>=') return { comparison: 'atLeast', value };
+  return { comparison: 'equal', value };
+}
+
+type ActorCountPredicateAtom =
+  | { kind: 'trait'; trait: { name: string; negative: boolean } }
+  | { kind: 'actorProperty'; property: 'inBattle' };
+
+function normalizeActorCountAtom(
+  value: number,
+  traitNameById: ReadonlyMap<number, string>,
+): ActorCountPredicateAtom | null {
+  if (Math.abs(value) === 10_000) return null;
+  const id = Math.abs(value);
+  const name = traitNameById.get(id);
+  if (!name) throw new TypeError(`unknown_param_add_trait:${String(value)}`);
+  if (name === 'canBeInBattle') return { kind: 'actorProperty', property: 'inBattle' };
+  return { kind: 'trait', trait: { name, negative: value < 0 } };
+}
+
+function normalizeActorCountPredicate(
+  rawTraits: unknown,
+  rawClauses: unknown,
+  traitNameById: ReadonlyMap<number, string>,
+): ActorCountPredicate | null {
+  if (rawTraits !== undefined && rawClauses !== undefined)
+    throw new TypeError('ambiguous_param_add_predicate');
+  if (rawTraits !== undefined) {
+    if (!Array.isArray(rawTraits) || !rawTraits.every((value) => typeof value === 'number'))
+      throw new TypeError(`invalid_param_add_traits:${JSON.stringify(rawTraits)}`);
+    const atoms = rawTraits.flatMap((value) => {
+      const atom = normalizeActorCountAtom(value, traitNameById);
+      return atom ? [atom] : [];
+    });
+    if (atoms.length === 0) throw new TypeError('empty_param_add_traits');
+    return { counting: 'matchingTraits', atoms };
+  }
+  if (rawClauses !== undefined) {
+    if (
+      !Array.isArray(rawClauses) ||
+      !rawClauses.every(
+        (clause) => Array.isArray(clause) && clause.every((value) => typeof value === 'number'),
+      )
+    )
+      throw new TypeError(`invalid_param_add_clauses:${JSON.stringify(rawClauses)}`);
+    const clauses = rawClauses.map((clause) =>
+      clause.flatMap((value) => {
+        const atom = normalizeActorCountAtom(value, traitNameById);
+        return atom ? [atom] : [];
+      }),
+    );
+    if (clauses.length === 0 || clauses.some((clause) => clause.length === 0))
+      throw new TypeError('empty_param_add_clause');
+    return { counting: 'matchingClauses', clauses };
+  }
+  return null;
+}
+
+const countTraitLabels: Readonly<Record<string, string>> = {
+  king: '王',
+  alignmentEvil: '悪',
+};
+
+function singlePositiveTraitLabel(predicate: ActorCountPredicate | null): string | null {
+  if (!predicate) return null;
+  const atoms =
+    predicate.counting === 'matchingTraits'
+      ? predicate.atoms
+      : predicate.clauses.length === 1
+        ? predicate.clauses[0]!
+        : [];
+  if (atoms.length !== 1 || atoms[0]?.kind !== 'trait' || atoms[0].trait.negative) return null;
+  return countTraitLabels[atoms[0].trait.name] ?? null;
+}
+
+function predicateIsInBattle(predicate: ActorCountPredicate | null): boolean {
+  if (!predicate) return false;
+  const atoms =
+    predicate.counting === 'matchingTraits'
+      ? predicate.atoms
+      : predicate.clauses.length === 1
+        ? predicate.clauses[0]!
+        : [];
+  return atoms.length === 1 && atoms[0]?.kind === 'actorProperty';
 }
 
 function uniqueTraits(traits: readonly { name: string; negative: boolean }[]) {
@@ -174,13 +282,61 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
   'ShowQuestNoEffect',
   'ShowState',
   'SetPassiveFrame',
+  'ShowCardOnly',
 ]);
 const CONTEXT_MUTATION_PARAMETER_KEYS = new Set(['FieldIndividuality', 'TargetList']);
 const BUFF_IDENTITY_PARAMETER_KEYS = new Set([
   'AddIndividualty',
   'AddIndividualtyList',
   'AddLinkageTargetIndividualty',
+  'BehaveAsFamilyBuff',
+  'UnSubStateWhileLinkedToOthers',
 ]);
+const TRAIT_PROVENANCE_PARAMETER_KEYS = new Set([
+  'IncludeIgnoreIndividuality',
+  'IncludePassiveIndividuality',
+  'IgnoreIndivUnreleaseable',
+]);
+
+function normalizeTraitReadPolicy(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+): TraitReadPolicy {
+  const flag = (key: keyof AtlasFunctionValue) => {
+    const values = [
+      ...new Set(
+        parameterSets.flatMap((set) =>
+          set.flatMap((parameter) => (parameter[key] === undefined ? [] : [parameter[key]])),
+        ),
+      ),
+    ];
+    if (values.some((value) => value !== 0 && value !== 1) || values.length > 1)
+      throw new TypeError(`ambiguous_trait_read_policy:${key}:${JSON.stringify(values)}`);
+    return values[0] === 1;
+  };
+  return {
+    stateSources: flag('IncludePassiveIndividuality') ? 'activeAndPassive' : 'activeOnly',
+    ignoredStateTraits: flag('IncludeIgnoreIndividuality') ? 'include' : 'exclude',
+    unremovableStateTraits: flag('IgnoreIndivUnreleaseable') ? 'exclude' : 'include',
+  };
+}
+
+function normalizeStateIdentity(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+): { kind: 'linkedTraitFamily'; key: string } | null {
+  const ids = [
+    ...new Set(
+      parameterSets.flatMap((set) =>
+        set.flatMap((parameter) =>
+          typeof parameter.AddLinkageTargetIndividualty === 'number'
+            ? [parameter.AddLinkageTargetIndividualty]
+            : [],
+        ),
+      ),
+    ),
+  ];
+  if (ids.length > 1) throw new TypeError(`ambiguous_linked_trait_identity:${JSON.stringify(ids)}`);
+  return ids.length === 1 ? { kind: 'linkedTraitFamily', key: `trait:${String(ids[0])}` } : null;
+}
 
 interface NormalizedQuantityCondition {
   quantity: 'attackerHpPermille' | 'battlePointPhase';
@@ -312,6 +468,7 @@ const HP_VALUE_PARAMETER_KEYS = new Set([
 
 function normalizeModifierValueExpressions(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
+  contextInputKey: string,
 ) {
   const presentKeys = [
     ...new Set(
@@ -325,8 +482,47 @@ function normalizeModifierValueExpressions(
   const sets = parameterSets.map((set) =>
     set.map((parameter) => {
       const hpKeys = Object.keys(parameter).filter((key) => HP_VALUE_PARAMETER_KEYS.has(key));
-      if (hpKeys.length === 0) return null;
       const basePermille = parameter['Value'];
+      const paramAdd = parameter['ParamAdd'];
+      const paramAddValue = parameter['ParamAddValue'];
+      const typeEach = parameter['TypeIndividualityEachFunc'];
+      if (typeof basePermille === 'number' && typeof paramAdd === 'number') {
+        const maximumValue = parameter['ParamMax'];
+        const maximumUnits =
+          typeof maximumValue === 'number' && paramAdd !== 0
+            ? Math.max(1, Math.floor((maximumValue - basePermille) / paramAdd) + 1)
+            : 99;
+        return {
+          kind: 'contextLinear' as const,
+          inputKey: contextInputKey,
+          basePermille: basePermille - paramAdd,
+          perUnitPermille: paramAdd,
+          maximumUnits,
+          maximumValuePermille: typeof maximumValue === 'number' ? maximumValue : null,
+        };
+      }
+      if (typeof basePermille === 'number' && typeof paramAddValue === 'number')
+        return {
+          kind: 'contextLinear' as const,
+          inputKey: contextInputKey,
+          basePermille,
+          perUnitPermille: paramAddValue,
+          maximumUnits:
+            typeof parameter.ParamAddMaxCount === 'number' ? parameter.ParamAddMaxCount : 6,
+          maximumValuePermille:
+            typeof parameter.ParamAddMaxValue === 'number' ? parameter.ParamAddMaxValue : null,
+        };
+      if (typeof basePermille === 'number' && Array.isArray(typeEach))
+        return {
+          kind: 'contextLinear' as const,
+          inputKey: contextInputKey,
+          basePermille: 0,
+          perUnitPermille: basePermille,
+          maximumUnits:
+            typeof parameter.ParamAddMaxCount === 'number' ? parameter.ParamAddMaxCount : 3,
+          maximumValuePermille: null,
+        };
+      if (hpKeys.length === 0) return null;
       const low = parameter['RatioHPLow'];
       const high = parameter['RatioHPHigh'];
       const rangeLow = parameter['RatioHPRangeLow'];
@@ -364,13 +560,282 @@ function normalizeModifierValueExpressions(
   const sourceExpressionCount = parameterSets
     .flatMap((set) => set)
     .filter((parameter) =>
-      Object.keys(parameter).some((key) => HP_VALUE_PARAMETER_KEYS.has(key)),
+      Object.keys(parameter).some(
+        (key) =>
+          HP_VALUE_PARAMETER_KEYS.has(key) ||
+          ['ParamAdd', 'ParamAddValue', 'TypeIndividualityEachFunc'].includes(key),
+      ),
     ).length;
   const normalizedExpressionCount = sets.flat().filter((expression) => expression !== null).length;
   return {
     sets,
     recognizedKeys: sourceExpressionCount === normalizedExpressionCount ? presentKeys : [],
   };
+}
+
+function normalizeContextSemantics(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+  inputKey: string,
+  traitNameById: ReadonlyMap<number, string>,
+): {
+  inputs: BattleContextInputDefinition[];
+  conditions: {
+    inputKey: string;
+    comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+    value: number;
+  }[];
+  recognizedKeys: string[];
+} {
+  const parameters = parameterSets.flatMap((set) => set);
+  const first = parameters[0] ?? {};
+  const has = (key: string) => parameters.some((parameter) => parameter[key] !== undefined);
+  const input = (
+    kind: Exclude<BattleContextInputDefinition['kind'], 'matchingActorCount'>,
+    owner: BattleContextInputDefinition['owner'],
+    label: string,
+    description: string,
+    minimum: number,
+    maximum: number,
+    defaultValue: number,
+    defaultReason: string,
+  ): BattleContextInputDefinition => ({
+    key: inputKey,
+    kind,
+    owner,
+    label,
+    description,
+    minimum,
+    maximum,
+    step: 1,
+    defaultValue,
+    defaultReason,
+  });
+  if (has('FriendShipAbove')) {
+    const threshold = first.FriendShipAbove;
+    if (typeof threshold !== 'number') return { inputs: [], conditions: [], recognizedKeys: [] };
+    return {
+      inputs: [
+        input(
+          'friendshipLevel',
+          'attacker',
+          '絆レベル',
+          '攻撃役サーヴァントの現在の絆レベル',
+          0,
+          15,
+          0,
+          '未指定の育成状態では絆効果を適用しない',
+        ),
+      ],
+      conditions: [{ inputKey, comparison: 'greaterThan', value: threshold }],
+      recognizedKeys: ['FriendShipAbove'],
+    };
+  }
+  if (has('StarHigher')) {
+    const threshold = first.StarHigher;
+    if (typeof threshold !== 'number') return { inputs: [], conditions: [], recognizedKeys: [] };
+    return {
+      inputs: [
+        input(
+          'criticalStars',
+          'party',
+          'クリティカルスター数',
+          '宝具を使用する時点のクリティカルスター数',
+          0,
+          99,
+          0,
+          '戦闘開始時のスター所持数',
+        ),
+      ],
+      conditions: [{ inputKey, comparison: 'atLeast', value: threshold }],
+      recognizedKeys: ['StarHigher'],
+    };
+  }
+  if (has('TriggeredFieldCountTarget') || has('TriggeredFieldCountRange')) {
+    const ranges = [
+      ...new Set(
+        parameters.flatMap((parameter) =>
+          parameter.TriggeredFieldCountRange === undefined
+            ? []
+            : [parameter.TriggeredFieldCountRange],
+        ),
+      ),
+    ];
+    const targetTypes = [
+      ...new Set(
+        parameters.flatMap((parameter) =>
+          parameter.TriggeredFieldCountTarget === undefined
+            ? []
+            : [parameter.TriggeredFieldCountTarget],
+        ),
+      ),
+    ];
+    const normalizedRange = ranges.length === 1 ? normalizeForcedEqualRange(ranges[0]) : null;
+    if (targetTypes.length !== 1 || targetTypes[0] !== 1 || normalizedRange === null)
+      throw new TypeError(
+        `unsupported_triggered_field_count:${JSON.stringify({ ranges, targetTypes })}`,
+      );
+    return {
+      inputs: [
+        input(
+          'fieldActorCount',
+          'field',
+          '敵の数',
+          '宝具対象を含むフィールド上の生存中の敵数',
+          1,
+          3,
+          1,
+          '単体の宝具ダメージ計算における対象1体',
+        ),
+      ],
+      conditions: [{ inputKey, ...normalizedRange }],
+      recognizedKeys: ['TriggeredFieldCountRange', 'TriggeredFieldCountTarget'].filter(has),
+    };
+  }
+  if (has('ParamAdd') && !has('ParamAddValue'))
+    return {
+      inputs: [
+        input(
+          'currentTurn',
+          'field',
+          '現在ターン',
+          '効果が適用されてから経過した自己ターンを含む現在ターン',
+          1,
+          99,
+          1,
+          '戦闘開始時の第1ターン',
+        ),
+      ],
+      conditions: [],
+      recognizedKeys: ['ParamAdd', 'ParamMax'].filter(has),
+    };
+  if (has('TypeIndividualityEachFunc'))
+    return {
+      inputs: [
+        input(
+          'availableSkillCount',
+          'attacker',
+          '使用可能なマスタースキル数',
+          '条件traitを持ち現在使用可能なマスタースキル数',
+          0,
+          typeof first.ParamAddMaxCount === 'number' ? first.ParamAddMaxCount : 3,
+          0,
+          'マスター礼装を未選択の初期状態',
+        ),
+      ],
+      conditions: [],
+      recognizedKeys: ['TypeIndividualityEachFunc', 'ParamAddMaxCount'].filter(has),
+    };
+  if (has('ParamAddValue')) {
+    const population = has('ParamAddIndividualityTargetType') || has('ParamAddOpCheckDead');
+    if (population) {
+      const targetTypes = [
+        ...new Set(
+          parameters.flatMap((parameter) =>
+            typeof parameter.ParamAddIndividualityTargetType === 'number'
+              ? [parameter.ParamAddIndividualityTargetType]
+              : [],
+          ),
+        ),
+      ];
+      const canonicalPopulation =
+        targetTypes.length === 1 && targetTypes[0] === 32
+          ? ('allActors' as const)
+          : targetTypes.length === 1 && targetTypes[0] === 6
+            ? ('enemies' as const)
+            : null;
+      if (!canonicalPopulation)
+        throw new TypeError(`unsupported_param_add_population:${JSON.stringify(targetTypes)}`);
+      const sourcePredicate = normalizeActorCountPredicate(
+        first.ParamAddSelfIndividuality,
+        first.ParamAddSelfIndividualityAndCheck,
+        traitNameById,
+      );
+      const otherPredicate = normalizeActorCountPredicate(
+        first.ParamAddOpIndividuality,
+        first.ParamAddOpIndividualityAndCheck,
+        traitNameById,
+      );
+      const effectiveSourcePredicate = sourcePredicate ?? otherPredicate;
+      if (!effectiveSourcePredicate && !otherPredicate)
+        throw new TypeError(`missing_param_add_predicate:${inputKey}`);
+      const displayTrait = singlePositiveTraitLabel(effectiveSourcePredicate);
+      const enemyPopulation =
+        canonicalPopulation === 'enemies' && predicateIsInBattle(otherPredicate);
+      const maximum =
+        typeof first.ParamAddMaxCount === 'number'
+          ? first.ParamAddMaxCount
+          : canonicalPopulation === 'allActors'
+            ? 6
+            : 3;
+      return {
+        inputs: [
+          {
+            key: inputKey,
+            kind: 'matchingActorCount',
+            owner: 'field',
+            label: enemyPopulation
+              ? '敵の合計数'
+              : displayTrait
+                ? `〔${displayTrait}〕一致数`
+                : '特性一致数（同一対象の重複計上あり）',
+            description: enemyPopulation
+              ? '宝具対象を含むフィールド上の生存中の敵の合計数'
+              : 'フィールド上の生存中の対象が、この効果の特性条件に一致した回数。同一対象は別の特性条件で重複計上されます',
+            minimum: 0,
+            maximum,
+            step: 1,
+            defaultValue: null,
+            defaultReason: '攻撃役本人と宝具対象から保証できる最低一致数を実行時に導出する',
+            countSemantics: {
+              population: canonicalPopulation,
+              aliveOnly: first.ParamAddOpCheckDead === 1,
+              sourcePredicate: effectiveSourcePredicate,
+              otherPredicate,
+            },
+          },
+        ],
+        conditions: [],
+        recognizedKeys: [
+          'ParamAddValue',
+          'ParamAddMaxCount',
+          'ParamAddMaxValue',
+          'ParamAddIndividualityTargetType',
+          'ParamAddSelfIndividuality',
+          'ParamAddSelfIndividualityAndCheck',
+          'ParamAddOpIndividuality',
+          'ParamAddOpIndividualityAndCheck',
+          'ParamAddOpCheckDead',
+        ].filter(has),
+      };
+    }
+    return {
+      inputs: [
+        input(
+          'effectStackCount',
+          'attacker',
+          '対象状態の付与数',
+          '指定された状態・buffの有効な付与数',
+          0,
+          typeof first.ParamAddMaxCount === 'number' ? first.ParamAddMaxCount : 6,
+          0,
+          '外部からの状態付与なし',
+        ),
+      ],
+      conditions: [],
+      recognizedKeys: [
+        'ParamAddValue',
+        'ParamAddMaxCount',
+        'ParamAddMaxValue',
+        'ParamAddIndividualityTargetType',
+        'ParamAddSelfIndividuality',
+        'ParamAddSelfIndividualityAndCheck',
+        'ParamAddOpIndividuality',
+        'ParamAddOpIndividualityAndCheck',
+        'ParamAddOpCheckDead',
+      ].filter(has),
+    };
+  }
+  return { inputs: [], conditions: [], recognizedKeys: [] };
 }
 
 function normalizeEffectChoice(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
@@ -433,8 +898,11 @@ function normalizeNpCardTypeChange(
   return { card, stateTraits };
 }
 
-function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: 'skill' | 'np') {
-  if (source !== 'skill') return null;
+function normalizeTriggerScope(
+  buffs: AtlasFunction['buffs'],
+  source: 'skill' | 'passive' | 'np' | 'reference',
+) {
+  if (source === 'np' || source === 'reference') return null;
   if (
     (buffs ?? []).some((buff) => (buff.ckSelfIndv ?? []).some((trait) => trait.name === 'faceCard'))
   )
@@ -472,6 +940,8 @@ function classifyParameterSemantics(
   choice: ReturnType<typeof normalizeEffectChoice>,
   operationTrigger: ReturnType<typeof normalizeOperationTrigger>,
   hasNormalizedConditionRouting: boolean,
+  contextRecognizedKeys: readonly string[],
+  referenceRecognizedKeys: readonly string[],
 ) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
@@ -502,16 +972,34 @@ function classifyParameterSemantics(
     ...triggerKeys,
     ...BUFF_IDENTITY_PARAMETER_KEYS,
     ...valueExpressionKeys,
+    ...contextRecognizedKeys,
+    ...TRAIT_PROVENANCE_PARAMETER_KEYS,
+    ...referenceRecognizedKeys,
+    ...['BattlePointId', 'BattlePointValue', 'StartingPosition'].filter((key) =>
+      keys.includes(key),
+    ),
   ]);
   return {
     value: select(VALUE_PARAMETER_KEYS),
     lifecycle: select(LIFECYCLE_PARAMETER_KEYS),
     presentation: select(PRESENTATION_PARAMETER_KEYS),
-    condition: keys.filter((key) => conditionKeys.has(key) || triggerKeys.has(key)),
-    contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
+    condition: keys.filter(
+      (key) =>
+        conditionKeys.has(key) ||
+        triggerKeys.has(key) ||
+        contextRecognizedKeys.includes(key) ||
+        TRAIT_PROVENANCE_PARAMETER_KEYS.has(key),
+    ),
+    contextMutation: keys.filter(
+      (key) =>
+        CONTEXT_MUTATION_PARAMETER_KEYS.has(key) ||
+        ['BattlePointId', 'BattlePointValue', 'StartingPosition'].includes(key),
+    ),
     choice: select(choiceKeys),
     valueExpression: keys.filter((key) => valueExpressionKeys.includes(key)),
-    buffIdentity: select(BUFF_IDENTITY_PARAMETER_KEYS),
+    buffIdentity: keys.filter(
+      (key) => BUFF_IDENTITY_PARAMETER_KEYS.has(key) || referenceRecognizedKeys.includes(key),
+    ),
     unresolved: keys.filter((key) => !known.has(key)),
   };
 }
@@ -531,8 +1019,12 @@ function unresolvedFunctionScriptKeys(script: AtlasFunction['script']): string[]
 export function normalizeFunctions(
   functions: AtlasFunction[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
-  source: 'skill' | 'np' = 'skill',
+  source: 'skill' | 'passive' | 'np' | 'reference' = 'skill',
   ownerId?: number,
+  referencedSkills: ReadonlyMap<number, AtlasReferencedSkill> = new Map(),
+  quantityApplicationTiming: 'duringExecution' | 'representedByCurrentInput' = source === 'passive'
+    ? 'representedByCurrentInput'
+    : 'duringExecution',
 ) {
   const occurrencesByFunctionId = new Map<number, number>();
   return (functions ?? []).flatMap((fn) => {
@@ -549,11 +1041,26 @@ export function normalizeFunctions(
       AtlasFunctionValue[],
     ];
     const quantityConditions = normalizeQuantityConditions(parameterSets);
+    const traitReadPolicy = normalizeTraitReadPolicy(parameterSets);
+    const stateIdentity = normalizeStateIdentity(parameterSets);
     const sourceQuantityConditions = normalizeSourceQuantityConditions(parameterSets);
-    const modifierValues = normalizeModifierValueExpressions(parameterSets);
+    const contextInputKey = parameterSets
+      .flatMap((set) => set)
+      .some((parameter) => parameter.StarHigher !== undefined)
+      ? 'battle:criticalStars'
+      : parameterSets.some((set) => set.some((parameter) => parameter.ParamAdd !== undefined))
+        ? `effect:${String(ownerId ?? 'external')}:${String(fn.funcId)}:${String(occurrence)}`
+        : parameterSets.some((set) =>
+              set.some((parameter) => parameter.TriggeredFieldCountTarget !== undefined),
+            )
+          ? 'field:enemyCount'
+          : `effect:${String(ownerId ?? 'external')}:${String(fn.funcId)}:${String(occurrence)}`;
+    const context = normalizeContextSemantics(parameterSets, contextInputKey, traitNameById);
+    const modifierValues = normalizeModifierValueExpressions(parameterSets, contextInputKey);
     const choice = normalizeEffectChoice(parameterSets);
     const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs, traitNameById);
     const operationTrigger = normalizeOperationTrigger(parameterSets);
+    const triggerScope = normalizeTriggerScope(fn.buffs, source);
     const conditionRoutingValues = [
       ...new Set(
         parameterSets.flatMap((set) =>
@@ -610,6 +1117,21 @@ export function normalizeFunctions(
       addedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'addIndividuality')
         ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
             .flatMap((parameters) => parameters ?? [])
+            .flatMap((parameter) =>
+              (fn.buffs ?? []).some((buff) => buff.type === 'addIndividuality') &&
+              typeof parameter.Value === 'number'
+                ? [parameter.Value]
+                : [],
+            )
+            .flatMap((id) => {
+              const name = traitNameById.get(id);
+              return name ? [name] : [];
+            })
+            .filter((name, index, all) => all.indexOf(name) === index)
+        : [],
+      removedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'subIndividuality')
+        ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+            .flatMap((parameters) => parameters ?? [])
             .flatMap((parameter) => (typeof parameter.Value === 'number' ? [parameter.Value] : []))
             .flatMap((id) => {
               const name = traitNameById.get(id);
@@ -617,7 +1139,6 @@ export function normalizeFunctions(
             })
             .filter((name, index, all) => all.indexOf(name) === index)
         : [],
-      removedRecipientTraits: [],
     };
     const cardTypes = [
       ...new Set(
@@ -629,6 +1150,18 @@ export function normalizeFunctions(
         ),
       ),
     ];
+    const buffTypes = (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
+    const hasReferenceSemantics =
+      parameterSets.some((set) => set.some((parameter) => parameter.SkillID !== undefined)) ||
+      (buffTypes.some((type) =>
+        ['attackBeforeFunction', 'fieldIndividualityChangedFunction'].includes(type),
+      ) &&
+        parameterSets.some((set) => set.some((parameter) => typeof parameter.Value === 'number')));
+    const referenceRecognizedKeys = hasReferenceSemantics
+      ? ['SkillID', 'SkillLV', 'Value2'].filter((key) =>
+          parameterSets.some((set) => set.some((parameter) => parameter[key] !== undefined)),
+        )
+      : [];
     const parameterSemantics = classifyParameterSemantics(
       parameterSets,
       quantityConditions,
@@ -637,8 +1170,9 @@ export function normalizeFunctions(
       choice,
       operationTrigger,
       hasNormalizedConditionRouting,
+      context.recognizedKeys,
+      referenceRecognizedKeys,
     );
-    const buffTypes = (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
     let execution = normalizeExecutionSemantics({
       fn,
       parameterSets,
@@ -646,8 +1180,119 @@ export function normalizeFunctions(
       cardTypes,
       cardTypeMutation: npCardTypeChange,
       contextChanges,
+      quantityApplicationTiming,
     });
-    const unresolvedSemanticKeys = unresolvedFunctionScriptKeys(fn.script);
+    const referenceCandidates = parameterSets
+      .flatMap((set) => set)
+      .flatMap((parameter) => {
+        if (typeof parameter.SkillID === 'number')
+          return [
+            {
+              id: parameter.SkillID,
+              level: typeof parameter.SkillLV === 'number' ? parameter.SkillLV : 1,
+            },
+          ];
+        if (
+          (fn.buffs ?? []).some((buff) =>
+            ['attackBeforeFunction', 'fieldIndividualityChangedFunction'].includes(buff.type ?? ''),
+          ) &&
+          typeof parameter.Value === 'number'
+        )
+          return [
+            {
+              id: parameter.Value,
+              level: typeof parameter.Value2 === 'number' ? parameter.Value2 : 1,
+            },
+          ];
+        return [];
+      });
+    const uniqueReferenceIds = [...new Set(referenceCandidates.map((reference) => reference.id))];
+    if (uniqueReferenceIds.length > 1 && triggerScope === null)
+      throw new TypeError(`ambiguous_referenced_skill:${String(fn.funcId)}`);
+    const referenceId = triggerScope === null ? uniqueReferenceIds[0] : undefined;
+    const operationReference =
+      referenceId === undefined
+        ? null
+        : {
+            kind: 'resolvedSkill' as const,
+            skillId: String(referenceId),
+            levelSource: parameterSets.some((set) =>
+              set.some((parameter) => parameter.SkillID === referenceId),
+            )
+              ? ('skillLevelParameter' as const)
+              : ('secondaryValueParameter' as const),
+            defaultLevel: 1,
+          };
+    if (referenceId !== undefined) {
+      const skill = referencedSkills.get(referenceId);
+      if (!skill) throw new TypeError(`missing_referenced_skill:${String(referenceId)}`);
+      const normalized = normalizeFunctions(
+        skill.functions,
+        traitNameById,
+        'reference',
+        ownerId,
+        referencedSkills,
+        quantityApplicationTiming,
+      );
+      const referencedStateMutations = (skill.functions ?? []).flatMap((referencedFunction) =>
+        ['addState', 'addStateShort'].includes(referencedFunction.funcType ?? '')
+          ? (referencedFunction.buffs ?? []).flatMap((buff) =>
+              (buff.vals ?? []).flatMap((trait) =>
+                trait.name?.startsWith('buff') &&
+                ![
+                  'buffPositiveEffect',
+                  'buffNegativeEffect',
+                  'buffIncreaseDamage',
+                  'buffDecreaseDefence',
+                ].includes(trait.name)
+                  ? [
+                      {
+                        kind: 'contextMutation' as const,
+                        mutation: 'addTrait' as const,
+                        scope: 'recipientState' as const,
+                        targetPolicy: normalizeTargetPolicy(
+                          referencedFunction.funcTargetType ?? 'unknown',
+                        ),
+                        trait: trait.name,
+                        damageRelevant: true,
+                      },
+                    ]
+                  : [],
+              ),
+            )
+          : [],
+      );
+      execution = [
+        ...referencedStateMutations,
+        ...normalized.flatMap((effect) =>
+          effect.execution.map((operation) => {
+            if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
+              return operation;
+            const select = <T>(sets: readonly (readonly T[])[]) =>
+              parameterSets.map((parentSet) =>
+                parentSet.map((parameter) => {
+                  const level =
+                    typeof parameter.SkillLV === 'number'
+                      ? parameter.SkillLV
+                      : typeof parameter.Value2 === 'number'
+                        ? parameter.Value2
+                        : 1;
+                  const sourceSet = sets.find((set) => set.length > 0) ?? [];
+                  return sourceSet[Math.min(level, sourceSet.length) - 1]!;
+                }),
+              ) as [T[], T[], T[], T[], T[]];
+            return {
+              ...operation,
+              values: select(operation.values),
+              valueExpressions: select(operation.valueExpressions),
+            };
+          }),
+        ),
+      ];
+    }
+    const unresolvedSemanticKeys = unresolvedFunctionScriptKeys(fn.script).filter(
+      (key) => key !== 'script:funcIndividuality',
+    );
     if (parameterSemantics.unresolved.length > 0 || unresolvedSemanticKeys.length > 0)
       execution = execution.map((operation) =>
         operation.kind === 'damageModifier' ||
@@ -665,10 +1310,15 @@ export function normalizeFunctions(
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
         availability: 'allLimitBreakStates' as const,
         choice,
-        triggerScope: normalizeTriggerScope(fn.buffs, source),
+        triggerScope,
         operationTrigger,
+        operationReference,
+        stateIdentity,
         quantityConditions,
         sourceQuantityConditions,
+        contextInputs: context.inputs,
+        contextQuantityConditions: context.conditions,
+        traitReadPolicy,
         conditions: {
           recipient:
             (fn.overWriteTvalsList ?? []).length > 0

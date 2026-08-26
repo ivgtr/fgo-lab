@@ -6,6 +6,7 @@ import type {
   AtlasItem,
   AtlasMaterialStep,
   AtlasMysticCode,
+  AtlasReferencedSkill,
   AtlasServant,
 } from './atlasContract';
 import { inventoryAtlasAttackFunctions } from './atlasInventory';
@@ -83,6 +84,7 @@ export function normalizeAtlasSnapshot(input: {
   equips: unknown;
   mysticCodes: unknown;
   items: unknown;
+  referencedSkills?: unknown;
 }): MasterDataSnapshot {
   if (
     !Array.isArray(input.servants) ||
@@ -94,6 +96,12 @@ export function normalizeAtlasSnapshot(input: {
   const atlasServants = input.servants as AtlasServant[];
   const atlasEquips = input.equips as AtlasEquip[];
   const atlasMysticCodes = input.mysticCodes as AtlasMysticCode[];
+  const atlasReferencedSkills = (input.referencedSkills ?? []) as AtlasReferencedSkill[];
+  const referencedSkills = new Map(
+    atlasReferencedSkills.flatMap((skill) =>
+      typeof skill.id === 'number' ? ([[skill.id, skill]] as const) : [],
+    ),
+  );
   const attackInventory = inventoryAtlasAttackFunctions(atlasServants);
   if (attackInventory.unknown.length > 0)
     throw new TypeError(`unknown_attack_functions:${attackInventory.unknown.join(',')}`);
@@ -126,6 +134,11 @@ export function normalizeAtlasSnapshot(input: {
     );
   });
   const traitNameById = collectTraitNameById(atlasServants, atlasEquips, atlasMysticCodes);
+  for (const trait of atlasReferencedSkills.flatMap((skill) =>
+    collectFunctionTraitNames(skill.functions),
+  ))
+    if (typeof trait.id === 'number' && trait.name && trait.name !== 'unknown')
+      traitNameById.set(trait.id, trait.name);
   const servants = atlasServants.flatMap((servant, servantIndex) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
     if (
@@ -166,6 +179,7 @@ export function normalizeAtlasSnapshot(input: {
         traitNameById,
         'np',
         servant.id,
+        referencedSkills,
       );
       return [
         {
@@ -199,14 +213,23 @@ export function normalizeAtlasSnapshot(input: {
         (skill, index, all) => all.findIndex((candidate) => candidate.num === skill.num) === index,
       )
       .sort((a, b) => (a.num ?? 0) - (b.num ?? 0));
-    const normalizeSkill = (skill: NonNullable<AtlasServant['skills']>[number]) => ({
+    const normalizeSkill = (
+      skill: NonNullable<AtlasServant['skills']>[number],
+      source: 'skill' | 'passive',
+    ) => ({
       id: String(skill.id),
       slot: skill.num ?? 0,
       priority: skill.priority ?? 0,
       name: skill.name ?? '不明なスキル',
       detail: skill.detail ?? '',
       imageKey: skill.icon ?? null,
-      effects: normalizeFunctions(skill.functions, traitNameById, 'skill', servant.id),
+      effects: normalizeFunctions(
+        skill.functions,
+        traitNameById,
+        source,
+        servant.id,
+        referencedSkills,
+      ),
     });
     return [
       {
@@ -225,10 +248,10 @@ export function normalizeAtlasSnapshot(input: {
         imageKey: image,
         skills: activeSkills
           .filter((skill) => typeof skill.id === 'number' && skill.name)
-          .map(normalizeSkill),
+          .map((skill) => normalizeSkill(skill, 'skill')),
         passives: (servant.classPassive ?? [])
           .filter((skill) => typeof skill.id === 'number' && skill.name)
-          .map(normalizeSkill),
+          .map((skill) => normalizeSkill(skill, 'passive')),
         growth: [
           ...growthSteps(servant.ascensionMaterials, 'ascension'),
           ...growthSteps(servant.skillMaterials, 'skill', 3),
@@ -253,9 +276,21 @@ export function normalizeAtlasSnapshot(input: {
     const limitBreakSkill = [...(equip.skills ?? [])]
       .filter((skill) => skill.condLimitCount === 4)
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
-    const normalEffects = normalizeFunctions(normalSkill?.functions, traitNameById);
+    const normalEffects = normalizeFunctions(
+      normalSkill?.functions,
+      traitNameById,
+      'skill',
+      undefined,
+      referencedSkills,
+    );
     const limitBreakEffects = limitBreakSkill
-      ? normalizeFunctions(limitBreakSkill.functions, traitNameById)
+      ? normalizeFunctions(
+          limitBreakSkill.functions,
+          traitNameById,
+          'skill',
+          undefined,
+          referencedSkills,
+        )
       : null;
     const effects = normalizeCraftEssenceLimitBreakEffects({
       equipId: equip.id,
@@ -293,7 +328,13 @@ export function normalizeAtlasSnapshot(input: {
               name: skill.name,
               detail: skill.detail ?? '',
               imageKey: skill.icon ?? null,
-              effects: normalizeFunctions(skill.functions, traitNameById),
+              effects: normalizeFunctions(
+                skill.functions,
+                traitNameById,
+                'skill',
+                undefined,
+                referencedSkills,
+              ),
             },
           ]
         : [],

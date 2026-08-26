@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(23),
+  schemaVersion: z.literal(26),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -29,10 +29,17 @@ const signedTraitSchema = z.object({
   negative: z.boolean(),
 });
 export const traitConditionSchema = z.object({
-  operator: z.enum(['any', 'all', 'partial']),
+  operator: z.enum(['any', 'all']),
   traits: z.array(signedTraitSchema),
 });
 export type TraitCondition = z.infer<typeof traitConditionSchema>;
+
+export const traitReadPolicySchema = z.object({
+  stateSources: z.enum(['activeOnly', 'activeAndPassive']),
+  ignoredStateTraits: z.enum(['exclude', 'include']),
+  unremovableStateTraits: z.enum(['include', 'exclude']),
+});
+export type TraitReadPolicy = z.infer<typeof traitReadPolicySchema>;
 
 export const effectConditionsSchema = z.object({
   recipient: z.array(traitConditionSchema),
@@ -90,6 +97,14 @@ const modifierValueExpressionSchema = z.discriminatedUnion('kind', [
     valueAtMinimumHpPermille: z.number().int(),
     valueAtMaximumHpPermille: z.number().int(),
   }),
+  z.object({
+    kind: z.literal('contextLinear'),
+    inputKey: z.string().min(1),
+    basePermille: z.number().int(),
+    perUnitPermille: z.number().int(),
+    maximumUnits: z.number().int().nonnegative(),
+    maximumValuePermille: z.number().int().nullable(),
+  }),
 ]);
 const modifierValueExpressionSetsSchema = z.tuple([
   z.array(modifierValueExpressionSchema.nullable()).max(10),
@@ -119,6 +134,71 @@ const canonicalValueSetsSchema = z.tuple([
 ]);
 export type CanonicalValueSets = z.infer<typeof canonicalValueSetsSchema>;
 
+const battleContextInputBaseSchema = z.object({
+  key: z.string().min(1),
+  owner: z.enum(['attacker', 'target', 'field', 'party', 'source']),
+  label: z.string().min(1),
+  description: z.string().min(1),
+  minimum: z.number().int(),
+  maximum: z.number().int(),
+  step: z.number().int().positive(),
+  defaultReason: z.string().min(1).nullable(),
+});
+
+const fixedBattleContextInputDefinitionSchema = battleContextInputBaseSchema.extend({
+  kind: z.enum([
+    'currentTurn',
+    'criticalStars',
+    'effectStackCount',
+    'fieldActorCount',
+    'availableSkillCount',
+    'friendshipLevel',
+    'sourceHpPermille',
+  ]),
+  defaultValue: z.number().int().nullable(),
+});
+
+const actorCountPredicateAtomSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('trait'), trait: signedTraitSchema }),
+  z.object({ kind: z.literal('actorProperty'), property: z.literal('inBattle') }),
+]);
+
+const actorCountPredicateSchema = z.discriminatedUnion('counting', [
+  z.object({
+    counting: z.literal('matchingTraits'),
+    atoms: z.array(actorCountPredicateAtomSchema).min(1),
+  }),
+  z.object({
+    counting: z.literal('matchingClauses'),
+    clauses: z.array(z.array(actorCountPredicateAtomSchema).min(1)).min(1),
+  }),
+]);
+
+const matchingActorCountInputDefinitionSchema = battleContextInputBaseSchema.extend({
+  kind: z.literal('matchingActorCount'),
+  owner: z.literal('field'),
+  defaultValue: z.number().int().nullable(),
+  countSemantics: z.object({
+    population: z.enum(['allActors', 'allies', 'enemies']),
+    aliveOnly: z.boolean(),
+    sourcePredicate: actorCountPredicateSchema.nullable(),
+    otherPredicate: actorCountPredicateSchema.nullable(),
+  }),
+});
+
+export const battleContextInputDefinitionSchema = z.discriminatedUnion('kind', [
+  fixedBattleContextInputDefinitionSchema,
+  matchingActorCountInputDefinitionSchema,
+]);
+export type BattleContextInputDefinition = z.infer<typeof battleContextInputDefinitionSchema>;
+export type ActorCountPredicate = z.infer<typeof actorCountPredicateSchema>;
+
+const effectContextQuantityConditionSchema = z.object({
+  inputKey: z.string().min(1),
+  comparison: z.enum(['lessThan', 'atMost', 'equal', 'atLeast', 'greaterThan']),
+  value: z.number().int(),
+});
+
 const valuedExecutionFields = {
   targetPolicy: canonicalTargetPolicySchema,
   expectedRecipient: z.enum(['attacker', 'target']),
@@ -129,7 +209,7 @@ const valuedExecutionFields = {
   limitBreakValueExpressions: modifierValueExpressionSetsSchema.optional(),
   semanticSupport: z.enum(['supported', 'unresolved']),
 };
-const effectExecutionOperationSchema = z.discriminatedUnion('kind', [
+const effectExecutionOperationSchema = z.union([
   z.object({
     kind: z.literal('damageModifier'),
     modifier: z.enum([
@@ -167,10 +247,19 @@ const effectExecutionOperationSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('contextMutation'),
-    mutation: z.enum(['addTrait', 'removeTrait']),
+    mutation: z.enum(['addTrait', 'removeTrait', 'suppressInitialTrait']),
     scope: z.enum(['field', 'recipientState']),
     targetPolicy: canonicalTargetPolicySchema,
     trait: z.string().min(1),
+    damageRelevant: z.boolean(),
+  }),
+  z.object({
+    kind: z.literal('contextMutation'),
+    mutation: z.literal('addQuantity'),
+    quantity: z.literal('battlePointPhase'),
+    subjectId: z.string().min(1),
+    amount: z.number().int(),
+    applicationTiming: z.enum(['duringExecution', 'representedByCurrentInput']),
     damageRelevant: z.boolean(),
   }),
   z.object({ kind: z.literal('nonDamage') }),
@@ -210,8 +299,22 @@ export const masterEffectSchema = z.object({
   operationTrigger: z
     .object({ kind: z.literal('functionPosition'), position: z.number().int() })
     .nullable(),
+  operationReference: z
+    .object({
+      kind: z.literal('resolvedSkill'),
+      skillId: z.string().min(1),
+      levelSource: z.enum(['skillLevelParameter', 'secondaryValueParameter']),
+      defaultLevel: z.number().int().min(1).max(10),
+    })
+    .nullable(),
+  stateIdentity: z
+    .object({ kind: z.literal('linkedTraitFamily'), key: z.string().min(1) })
+    .nullable(),
   quantityConditions: z.array(effectQuantityConditionSchema),
   sourceQuantityConditions: z.array(effectSourceQuantityConditionSchema),
+  contextInputs: z.array(battleContextInputDefinitionSchema),
+  contextQuantityConditions: z.array(effectContextQuantityConditionSchema),
+  traitReadPolicy: traitReadPolicySchema,
   conditions: effectConditionsSchema,
   conditionTargetPolicy: canonicalTargetPolicySchema,
   execution: z.array(effectExecutionOperationSchema).min(1),

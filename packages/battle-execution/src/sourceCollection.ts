@@ -15,6 +15,7 @@ export interface SourceEffect {
   sourceInstanceId: string;
   sourceId: string;
   sourceName: string;
+  sourceTraits: readonly string[];
   skillId: string;
   skillName: string;
   effect: MasterEffect;
@@ -71,6 +72,7 @@ export function collectOperationSources(
         sourceInstanceId,
         sourceId,
         sourceName: servant.name,
+        sourceTraits: servant.traits,
         skillId,
         skillName: skill.name,
         effect,
@@ -115,6 +117,7 @@ export function collectOperationSources(
           sourceInstanceId: `craftEssence:${ce.id}`,
           sourceId: ce.id,
           sourceName: ce.name,
+          sourceTraits: [],
           skillId: `ce:${ce.id}`,
           skillName: ce.name,
           effect,
@@ -165,6 +168,7 @@ export function collectOperationSources(
             sourceInstanceId: `mysticCode:${code.id}`,
             sourceId: code.id,
             sourceName: code.name,
+            sourceTraits: [],
             skillId: skill.id,
             skillName: skill.name,
             effect,
@@ -184,6 +188,7 @@ export function collectOperationSources(
         sourceInstanceId: `np:${attacker.id}`,
         sourceId: attacker.id,
         sourceName: attacker.name,
+        sourceTraits: attacker.traits,
         skillId: `np:${attacker.id}`,
         skillName: '宝具前効果',
         effect,

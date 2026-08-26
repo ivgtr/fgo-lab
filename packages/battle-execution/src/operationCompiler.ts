@@ -1,4 +1,6 @@
 import type {
+  ActorCountPredicate,
+  BattleContextInputDefinition,
   EffectExecutionOperation,
   MasterEffect,
   ModifierValueExpression,
@@ -7,14 +9,15 @@ import type {
   BattleOperation,
   ConditionExpression,
   EffectProjection,
+  OperationModifierValueExpression,
   OperationSource,
   TraitScope,
 } from './contracts';
 import {
   combineConditions,
   containsUnsupportedCondition,
-  isConditional,
   normalizeTraitCondition,
+  requiresUserAssumption,
 } from './condition';
 import {
   canNormalizeDamageEffect,
@@ -29,6 +32,102 @@ type ValuedOperation = Extract<
   { kind: 'damageModifier' | 'modifierRateChange' }
 >;
 
+function runtimeContextKey(
+  origin: Origin,
+  sourceInstanceId: string,
+  skillId: string,
+  occurrenceId: string,
+  key: string,
+): string {
+  return key.startsWith('effect:')
+    ? `source:${origin}:${sourceInstanceId}:${skillId}:${occurrenceId}:${key.slice('effect:'.length)}`
+    : key;
+}
+
+function sourceHpContextKey(source: SourceEffect): string {
+  return `source:${source.origin}:${source.sourceInstanceId}:hpPermille`;
+}
+
+function guaranteedPredicateCount(
+  predicate: ActorCountPredicate | null,
+  traits: ReadonlySet<string> | null,
+): number {
+  if (!predicate) return 0;
+  const atomMatches = (
+    atom:
+      | { kind: 'trait'; trait: { name: string; negative: boolean } }
+      | { kind: 'actorProperty'; property: 'inBattle' },
+  ): boolean => {
+    if (atom.kind === 'actorProperty') return true;
+    if (!traits) return false;
+    const present = traits.has(atom.trait.name);
+    return atom.trait.negative ? !present : present;
+  };
+  if (predicate.counting === 'matchingTraits') return predicate.atoms.filter(atomMatches).length;
+  return predicate.clauses.filter((clause) => clause.every(atomMatches)).length;
+}
+
+function resolveMatchingActorMinimum(
+  source: SourceEffect,
+  definition: Extract<BattleContextInputDefinition, { kind: 'matchingActorCount' }>,
+): number {
+  const { countSemantics } = definition;
+  const sourceCount = ['allActors', 'allies'].includes(countSemantics.population)
+    ? guaranteedPredicateCount(countSemantics.sourcePredicate, new Set(source.sourceTraits))
+    : 0;
+  const targetCount =
+    countSemantics.population === 'enemies'
+      ? guaranteedPredicateCount(countSemantics.otherPredicate, null)
+      : 0;
+  return Math.min(definition.maximum, sourceCount + targetCount);
+}
+
+function runtimeContextInputs(source: SourceEffect) {
+  const normalized = source.effect.contextInputs.map((definition) => {
+    const minimum =
+      definition.kind === 'matchingActorCount'
+        ? resolveMatchingActorMinimum(source, definition)
+        : definition.minimum;
+    return {
+      ...definition,
+      key: runtimeContextKey(
+        source.origin,
+        source.sourceInstanceId,
+        source.skillId,
+        source.effect.occurrenceId,
+        definition.key,
+      ),
+      minimum,
+      ...(definition.kind === 'matchingActorCount' ? { defaultValue: minimum } : {}),
+    };
+  });
+  const requiresSourceHp =
+    !['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin) &&
+    source.effect.execution.some((operation) => {
+      if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
+        return false;
+      const expression = selectedValueExpression(source, operation);
+      return expression?.kind === 'inverseHpLinear' || expression?.kind === 'hpRangeLinear';
+    });
+  return requiresSourceHp
+    ? [
+        ...normalized,
+        {
+          key: sourceHpContextKey(source),
+          kind: 'sourceHpPermille' as const,
+          owner: 'source' as const,
+          label: `${source.sourceName}のHP割合（%）`,
+          description: '効果を使用する支援元の現在HP割合',
+          minimum: 0,
+          maximum: 1_000,
+          step: 10,
+          defaultValue: 1_000,
+          defaultReason: '支援元の初期HPは100%として扱う',
+        },
+      ]
+    : normalized;
+}
+
 function effectCondition(
   effect: MasterEffect,
   origin: Origin,
@@ -40,10 +139,12 @@ function effectCondition(
   const holder: TraitScope = recipient;
   const opponent: TraitScope = recipient === 'target' ? 'attacker' : 'target';
   return combineConditions([
-    ...effect.conditions.recipient.map((condition) => normalizeTraitCondition(condition, holder)),
-    normalizeTraitCondition(effect.conditions.holder, holder),
-    normalizeTraitCondition(effect.conditions.opponent, opponent),
-    normalizeTraitCondition(effect.conditions.field, 'field'),
+    ...effect.conditions.recipient.map((condition) =>
+      normalizeTraitCondition(condition, holder, effect.traitReadPolicy),
+    ),
+    normalizeTraitCondition(effect.conditions.holder, holder, effect.traitReadPolicy),
+    normalizeTraitCondition(effect.conditions.opponent, opponent, effect.traitReadPolicy),
+    normalizeTraitCondition(effect.conditions.field, 'field', effect.traitReadPolicy),
     ...effect.quantityConditions.map<ConditionExpression>((condition) => {
       const currentAttackerSource = ['attacker', 'passive', 'np', 'craftEssence'].includes(origin);
       const subjectId =
@@ -62,6 +163,17 @@ function effectCondition(
     ...effect.sourceQuantityConditions.map<ConditionExpression>((condition) => ({
       kind: 'sourceQuantity',
       ...condition,
+    })),
+    ...effect.contextQuantityConditions.map<ConditionExpression>((condition) => ({
+      kind: 'contextQuantity',
+      ...condition,
+      inputKey: runtimeContextKey(
+        origin,
+        sourceInstanceId,
+        skillId,
+        effect.occurrenceId,
+        condition.inputKey,
+      ),
     })),
     ...(effect.choice
       ? [
@@ -91,28 +203,38 @@ function decisionPlan(source: SourceEffect, condition: ConditionExpression) {
       : ('automatic' as const),
     condition: containsUnsupportedCondition(condition)
       ? ('unsupported' as const)
-      : isConditional(condition)
+      : requiresUserAssumption(condition)
         ? ('userMayAssume' as const)
         : ('evaluate' as const),
   };
 }
 
 function signedModifierValueExpression(
-  expression: ModifierValueExpression,
+  expression: OperationModifierValueExpression,
   sign: 1 | -1,
-): ModifierValueExpression {
+): OperationModifierValueExpression {
   return expression.kind === 'inverseHpLinear'
     ? {
         ...expression,
         basePermille: expression.basePermille * sign,
         bonusAtZeroHpPermille: expression.bonusAtZeroHpPermille * sign,
       }
-    : {
-        ...expression,
-        basePermille: expression.basePermille * sign,
-        valueAtMinimumHpPermille: expression.valueAtMinimumHpPermille * sign,
-        valueAtMaximumHpPermille: expression.valueAtMaximumHpPermille * sign,
-      };
+    : expression.kind === 'hpRangeLinear'
+      ? {
+          ...expression,
+          basePermille: expression.basePermille * sign,
+          valueAtMinimumHpPermille: expression.valueAtMinimumHpPermille * sign,
+          valueAtMaximumHpPermille: expression.valueAtMaximumHpPermille * sign,
+        }
+      : {
+          ...expression,
+          basePermille: expression.basePermille * sign,
+          perUnitPermille: expression.perUnitPermille * sign,
+          maximumValuePermille:
+            expression.maximumValuePermille === null
+              ? null
+              : expression.maximumValuePermille * sign,
+        };
 }
 
 function selectedValue(source: SourceEffect, operation: ValuedOperation): number | undefined {
@@ -124,12 +246,30 @@ function selectedValue(source: SourceEffect, operation: ValuedOperation): number
 function selectedValueExpression(
   source: SourceEffect,
   operation: ValuedOperation,
-): ModifierValueExpression | null {
+): OperationModifierValueExpression | null {
   const sets = source.limitBreak
     ? operation.limitBreakValueExpressions
     : operation.valueExpressions;
   if (!sets) return null;
-  return sets[source.valueSetIndex]?.[source.valueIndex] ?? null;
+  const expression = sets[source.valueSetIndex]?.[source.valueIndex] ?? null;
+  if (!expression) return null;
+  if (expression.kind === 'contextLinear')
+    return {
+      ...expression,
+      inputKey: runtimeContextKey(
+        source.origin,
+        source.sourceInstanceId,
+        source.skillId,
+        source.effect.occurrenceId,
+        expression.inputKey,
+      ),
+    };
+  return {
+    ...expression,
+    quantitySource: ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
+      ? ({ kind: 'attackerHpPermille' } as const)
+      : ({ kind: 'battleContext', inputKey: sourceHpContextKey(source) } as const),
+  };
 }
 
 function decisionKey(source: SourceEffect): string {
@@ -144,6 +284,9 @@ function sourceIdentity(source: SourceEffect): OperationSource {
     skillId: source.skillId,
     effectId: source.effect.id,
     effectOccurrenceId: source.effect.occurrenceId,
+    ...(source.effect.stateIdentity === null
+      ? {}
+      : { transactionGroupId: `${source.skillId}:${source.effect.stateIdentity.key}` }),
   };
 }
 
@@ -176,6 +319,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
       sourceName: source.sourceName,
       skillName: source.skillName,
     },
+    contextInputs: runtimeContextInputs(source),
   };
 }
 
@@ -203,7 +347,8 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
     if (semantic.kind === 'nonDamage') continue;
     const recipient = operationRecipient(semantic, source.origin);
     if (semantic.kind === 'contextMutation') {
-      if (semantic.scope === 'field' || recipient) applicable.push(semantic);
+      if (semantic.mutation === 'addQuantity' || semantic.scope === 'field' || recipient)
+        applicable.push(semantic);
       continue;
     }
     if (semantic.kind === 'cardTypeMutation') {
@@ -311,6 +456,19 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
   for (const semantic of applicable) {
     const recipient = operationRecipient(semantic, source.origin);
     if (semantic.kind === 'contextMutation') {
+      if (semantic.mutation === 'addQuantity') {
+        operations.push({
+          ...baseOperation(source, order++, uniqueSuffix(`quantity:${semantic.quantity}`)),
+          decisionKey: null,
+          decisionPlan: { activation: 'automatic', condition: 'evaluate' },
+          kind: 'addQuantity',
+          quantity: semantic.quantity,
+          subjectId: semantic.subjectId,
+          amount: semantic.amount,
+          applicationTiming: semantic.applicationTiming,
+        });
+        continue;
+      }
       const scope =
         semantic.scope === 'field'
           ? 'field'
@@ -318,20 +476,23 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
             ? 'attackerState'
             : 'targetState';
       const suffixScope = semantic.scope === 'field' ? 'field' : recipient;
-      operations.push({
+      const base = {
         ...baseOperation(
           source,
           order++,
-          uniqueSuffix(
-            `${semantic.mutation === 'addTrait' ? 'add' : 'remove'}-${String(suffixScope)}:${semantic.trait}`,
-          ),
+          uniqueSuffix(`${semantic.mutation}-${String(suffixScope)}:${semantic.trait}`),
         ),
         decisionKey: null,
-        decisionPlan: { activation: 'automatic', condition: 'evaluate' },
-        kind: semantic.mutation,
-        scope,
+        decisionPlan: { activation: 'automatic' as const, condition: 'evaluate' as const },
         trait: semantic.trait,
-      });
+      };
+      if (semantic.mutation === 'suppressInitialTrait')
+        operations.push({
+          ...base,
+          kind: 'suppressInitialTrait',
+          scope: recipient === 'attacker' ? 'attacker' : 'target',
+        });
+      else operations.push({ ...base, kind: semantic.mutation, scope });
     } else if (semantic.kind === 'cardTypeMutation')
       operations.push({
         ...baseOperation(source, order++, uniqueSuffix(`card:${semantic.card}`)),
@@ -365,12 +526,7 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
         modifier: semantic.modifier,
         valuePermille: operationValue * semantic.sign,
         valueExpression: operationExpression
-          ? {
-              ...signedModifierValueExpression(operationExpression, semantic.sign),
-              ...(['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
-                ? {}
-                : { subjectId: source.sourceId }),
-            }
+          ? signedModifierValueExpression(operationExpression, semantic.sign)
           : null,
         card: semantic.card,
       });
@@ -410,6 +566,7 @@ function makeProjection(
         ? 'attacker'
         : 'source'
       : null,
+    requiredInputs: runtimeContextInputs(source),
     modifier,
     source: sourceIdentity(source),
     executionSupport: 'unsupported',

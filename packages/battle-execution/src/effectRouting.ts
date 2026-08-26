@@ -26,6 +26,8 @@ export function operationRecipient(
   operation: EffectExecutionOperation,
   origin: Origin,
 ): Recipient | null {
+  if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
+    return 'attacker';
   return operation.kind === 'nonDamage'
     ? null
     : resolveTargetPolicy(origin, operation.targetPolicy);

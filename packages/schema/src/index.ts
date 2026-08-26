@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 21 as const;
-export const ENGINE_VERSION = '12.15.0' as const;
+export const SCHEMA_VERSION = 22 as const;
+export const ENGINE_VERSION = '14.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -218,6 +218,9 @@ const scenarioBaseSchema = z
     battleState: z.object({
       battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
     }),
+    battleContext: z.object({
+      values: z.record(z.string().min(1).max(300), z.number().int()),
+    }),
     assumptions: z.object({
       classAffinity: z.number().min(0).max(5),
       attributeAffinity: z.number().min(0).max(5),
@@ -348,8 +351,25 @@ const unsupportedResultSchema = resultBaseSchema.extend({
   rows: z.tuple([]),
   missingEvidence: z.array(z.string()),
 });
+const inputRequiredResultSchema = resultBaseSchema.extend({
+  status: z.literal('inputRequired'),
+  rows: z.tuple([]),
+  requiredInputs: z.array(
+    z.object({
+      key: z.string().min(1),
+      owner: z.enum(['attacker', 'target', 'field', 'party', 'source']),
+      label: z.string().min(1),
+      description: z.string().min(1),
+      minimum: z.number().int(),
+      maximum: z.number().int(),
+      step: z.number().int().positive(),
+      effectOccurrenceIds: z.array(z.string().min(1)).min(1),
+    }),
+  ),
+});
 export const calculationResultSchema = z.discriminatedUnion('status', [
   calculatedResultSchema,
+  inputRequiredResultSchema,
   unsupportedResultSchema,
 ]);
 export type CalculationResult = z.infer<typeof calculationResultSchema>;

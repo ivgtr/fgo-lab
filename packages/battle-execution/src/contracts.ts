@@ -1,4 +1,9 @@
-import type { ModifierValueExpression, NpDamageSpec } from '@fgo-lab/master-data';
+import type {
+  BattleContextInputDefinition,
+  ModifierValueExpression,
+  NpDamageSpec,
+  TraitReadPolicy,
+} from '@fgo-lab/master-data';
 
 export type ActorScope = 'attacker' | 'target';
 export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
@@ -11,11 +16,18 @@ export interface OperationDecisionPlan {
 
 export type ConditionExpression =
   | { kind: 'always' }
-  | { kind: 'trait'; scope: TraitScope; trait: string; present: boolean }
+  | {
+      kind: 'trait';
+      scope: TraitScope;
+      trait: string;
+      present: boolean;
+      readPolicy?: TraitReadPolicy;
+    }
   | {
       kind: 'traitCount';
       scope: TraitScope;
       traits: readonly string[];
+      readPolicy?: TraitReadPolicy;
       comparison: 'atLeast' | 'atMost' | 'equal';
       count: number;
     }
@@ -36,14 +48,15 @@ export type ConditionExpression =
       comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
       value: number;
     }
+  | {
+      kind: 'contextQuantity';
+      inputKey: string;
+      comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+      value: number;
+    }
   | { kind: 'all'; expressions: readonly ConditionExpression[] }
   | { kind: 'any'; expressions: readonly ConditionExpression[] }
-  | { kind: 'not'; expression: ConditionExpression }
-  | {
-      kind: 'partialTrait';
-      scope: TraitScope;
-      traits: readonly { trait: string; present: boolean }[];
-    };
+  | { kind: 'not'; expression: ConditionExpression };
 
 export interface OperationEvidence {
   rawPath: string;
@@ -58,6 +71,7 @@ export interface OperationSource {
   skillId: string;
   effectId: string;
   effectOccurrenceId: string;
+  transactionGroupId?: string;
 }
 
 export type ExecutionPhase =
@@ -91,6 +105,7 @@ interface OperationBase {
       };
   evidence: OperationEvidence;
   presentation: { label: string; sourceName: string; skillName: string };
+  contextInputs: readonly BattleContextInputDefinition[];
 }
 
 export type ModifierKind =
@@ -107,6 +122,12 @@ export type ModifierKind =
   | 'ignoreDefense'
   | 'ignoreDamageCut';
 
+export type OperationModifierValueExpression =
+  | Extract<ModifierValueExpression, { kind: 'contextLinear' }>
+  | (Extract<ModifierValueExpression, { kind: 'inverseHpLinear' | 'hpRangeLinear' }> & {
+      quantitySource: { kind: 'attackerHpPermille' } | { kind: 'battleContext'; inputKey: string };
+    });
+
 export type BattleOperation =
   | (OperationBase & {
       kind: 'addTrait';
@@ -119,10 +140,22 @@ export type BattleOperation =
       trait: string;
     })
   | (OperationBase & {
+      kind: 'suppressInitialTrait';
+      scope: ActorScope;
+      trait: string;
+    })
+  | (OperationBase & {
+      kind: 'addQuantity';
+      quantity: 'battlePointPhase';
+      subjectId: string;
+      amount: number;
+      applicationTiming: 'duringExecution' | 'representedByCurrentInput';
+    })
+  | (OperationBase & {
       kind: 'addModifier';
       modifier: ModifierKind;
       valuePermille: number;
-      valueExpression: (ModifierValueExpression & { subjectId?: string }) | null;
+      valueExpression: OperationModifierValueExpression | null;
       card: CardType | null;
     })
   | (OperationBase & {
@@ -154,11 +187,13 @@ export interface BattleState {
   card: CardType;
   traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
   traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
+  initialTraitSuppressions: Record<ActorScope, ReadonlySet<string>>;
   quantities: {
     attackerHpPermille: number | null;
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
+  contextValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
   ignoreDefense: boolean;
@@ -213,12 +248,12 @@ export type ConditionConstraintConflict =
   | { kind: 'traitPolarity'; scope: TraitScope; trait: string }
   | {
       kind: 'quantityEquality';
-      quantity: keyof BattleState['quantities'] | 'battlePointRate';
+      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `context:${string}`;
       values: readonly number[];
     }
   | {
       kind: 'quantityRange';
-      quantity: keyof BattleState['quantities'] | 'battlePointRate';
+      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `context:${string}`;
       ranges: readonly { min: number; max: number }[];
     }
   | { kind: 'cardMismatch'; cards: readonly CardType[] }
@@ -250,6 +285,7 @@ export interface EffectProjection {
   value: number | null;
   requiredQuantity: 'attackerHpPermille' | null;
   requiredQuantityOwner: 'attacker' | 'source' | null;
+  requiredInputs: readonly BattleContextInputDefinition[];
   modifier: ModifierKind | 'npSpecial' | 'cardTypeChange' | null;
   source: OperationSource;
   executionSupport: 'supported' | 'unsupported';
@@ -292,6 +328,8 @@ export interface BattleExecutionResult {
   state: BattleState;
   operations: readonly OperationResult[];
   projections: readonly EffectProjection[];
-  precision: 'exact' | 'approximate' | 'unsupported';
+  precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
   issues: readonly ExecutionIssue[];
+  requiredInputs: readonly (BattleContextInputDefinition & { effectOccurrenceIds: string[] })[];
+  contextInputs: readonly BattleContextInputDefinition[];
 }

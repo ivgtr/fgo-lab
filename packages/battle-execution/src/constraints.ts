@@ -69,6 +69,13 @@ type Literal =
       min: number;
       max: number;
       sourceKey: string;
+    }
+  | {
+      kind: 'contextQuantityRange';
+      inputKey: string;
+      min: number;
+      max: number;
+      sourceKey: string;
     };
 
 type Alternatives = readonly (readonly Literal[])[];
@@ -248,7 +255,47 @@ function compileExpression(
         ]),
       };
     }
-    case 'partialTrait':
+    case 'contextQuantity': {
+      if (!Number.isSafeInteger(expression.value))
+        return { status: 'unsupported', reason: 'unrepresentableQuantityRange' };
+      const comparison = negated
+        ? expression.comparison === 'lessThan'
+          ? 'atLeast'
+          : expression.comparison === 'atMost'
+            ? 'greaterThan'
+            : expression.comparison === 'atLeast'
+              ? 'lessThan'
+              : expression.comparison === 'greaterThan'
+                ? 'atMost'
+                : 'notEqual'
+        : expression.comparison;
+      const ranges =
+        comparison === 'lessThan'
+          ? [{ min: Number.MIN_SAFE_INTEGER, max: expression.value - 1 }]
+          : comparison === 'atMost'
+            ? [{ min: Number.MIN_SAFE_INTEGER, max: expression.value }]
+            : comparison === 'equal'
+              ? [{ min: expression.value, max: expression.value }]
+              : comparison === 'atLeast'
+                ? [{ min: expression.value, max: Number.MAX_SAFE_INTEGER }]
+                : comparison === 'greaterThan'
+                  ? [{ min: expression.value + 1, max: Number.MAX_SAFE_INTEGER }]
+                  : [
+                      { min: Number.MIN_SAFE_INTEGER, max: expression.value - 1 },
+                      { min: expression.value + 1, max: Number.MAX_SAFE_INTEGER },
+                    ];
+      return {
+        status: 'supported',
+        alternatives: ranges.map((range) => [
+          {
+            kind: 'contextQuantityRange' as const,
+            inputKey: expression.inputKey,
+            ...range,
+            sourceKey,
+          },
+        ]),
+      };
+    }
     case 'traitCount':
       return { status: 'unsupported', reason: 'unsupportedCondition' };
     case 'not':
@@ -302,8 +349,11 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
     if (literal.kind === 'operationTrigger') continue;
-    if (literal.kind === 'sourceQuantityRange') {
-      const quantityKey = `${literal.quantity}:${literal.subjectId}`;
+    if (literal.kind === 'sourceQuantityRange' || literal.kind === 'contextQuantityRange') {
+      const quantityKey =
+        literal.kind === 'sourceQuantityRange'
+          ? `${literal.quantity}:${literal.subjectId}`
+          : `context:${literal.inputKey}`;
       const prior = quantities.get(quantityKey);
       if (!prior) {
         quantities.set(quantityKey, {
@@ -320,7 +370,10 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
         conflicts.push({
           conflict: {
             kind: 'quantityRange',
-            quantity: literal.quantity,
+            quantity:
+              literal.kind === 'sourceQuantityRange'
+                ? literal.quantity
+                : (`context:${literal.inputKey}` as const),
             ranges: [
               { min: prior.min, max: prior.max },
               { min: literal.min, max: literal.max },
@@ -468,7 +521,9 @@ function literalKey(literal: Literal): string {
           ? `operation-trigger:${literal.source}:${String(literal.position)}`
           : literal.kind === 'sourceQuantityRange'
             ? `source-quantity:${literal.quantity}:${literal.subjectId}:${String(literal.min)}:${String(literal.max)}`
-            : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
+            : literal.kind === 'contextQuantityRange'
+              ? `context-quantity:${literal.inputKey}:${String(literal.min)}:${String(literal.max)}`
+              : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }
 
 function deduplicate(alternatives: Alternatives): Alternatives {
