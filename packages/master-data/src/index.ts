@@ -285,6 +285,13 @@ const effectProcSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('guaranteed') }),
   z.object({ kind: z.literal('singleRoll'), ratePermille: procRateSetsSchema }),
   z.object({
+    kind: z.literal('independentRolls'),
+    ratePermille: procRateSetsSchema,
+    groupKey: z.string().min(1),
+    index: z.number().int().nonnegative(),
+    total: z.number().int().positive(),
+  }),
+  z.object({
     kind: z.literal('chainedRolls'),
     ratePermille: procRateSetsSchema,
     seriesKey: z.string().min(1),

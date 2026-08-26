@@ -1160,6 +1160,26 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
     );
     if (invalid) throw new TypeError(`unresolved_chained_proc:${invalid.occurrenceId}`);
   }
+  const independent = result
+    .map((effect, index) => ({ effect, index }))
+    .filter(({ effect }) => effect.proc.kind === 'singleRoll');
+  if (independent.length > 1) {
+    const groupKey = `activation:proc-group:${independent[0]!.effect.occurrenceId}`;
+    for (let index = 0; index < independent.length; index += 1) {
+      const member = independent[index]!;
+      if (member.effect.proc.kind !== 'singleRoll') throw new TypeError('invalid_proc_group');
+      result[member.index] = {
+        ...member.effect,
+        proc: {
+          kind: 'independentRolls',
+          ratePermille: member.effect.proc.ratePermille,
+          groupKey,
+          index,
+          total: independent.length,
+        },
+      };
+    }
+  }
   return result;
 }
 

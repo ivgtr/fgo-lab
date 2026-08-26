@@ -39,13 +39,15 @@ describe('production canonical execution semantics', () => {
         counts[effect.proc.kind] = (counts[effect.proc.kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ chainedRolls: 5, singleRoll: 38 });
+    ).toEqual({ chainedRolls: 5, independentRolls: 35, singleRoll: 3 });
     expect(new Set(probabilistic.map((effect) => effect.gameActivation))).toEqual(
       new Set(['npBeforeDamage', 'skillUse']),
     );
     expect(
       probabilistic.filter(
-        (effect) => effect.proc.kind === 'singleRoll' && effect.inputDefinitions.length !== 0,
+        (effect) =>
+          (effect.proc.kind === 'singleRoll' || effect.proc.kind === 'independentRolls') &&
+          effect.inputDefinitions.length !== 0,
       ),
     ).toEqual([]);
     expect(
