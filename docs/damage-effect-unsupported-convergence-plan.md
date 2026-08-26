@@ -40,6 +40,10 @@ master v21、engine 12.1.0でfield mutationと最終クラス相性の責務を�
 
 この段階で既定unsupportedは12騎、選択時unsupportedは49騎・84 effect occurrenceとなった。projectionはuser 1,551、automatic visible 442、hidden 683である。
 
+master v23、schema 11、engine 12.2.0でraw parameter allowlistを廃止した。normalizerはparameterを`value`、`lifecycle`、`presentation`、`condition`、`contextMutation`、`unresolved`へ分類し、executorは分類済みIRだけを読む。`Value2`を一律に既知とは扱わず、役割が確定していない場合は`unresolved`とする。`overWriteTvalsList`はlosslessなrecipient conditionへ正規化した時点でraw重複を破棄し、同じ条件を二重に判定しない。名前が得られないtraitは文字列`unknown`ではなく`traitId:<id>`としてidentityを保持する。
+
+この段階で既定unsupportedは12騎、選択時unsupportedは48騎・83 effect occurrenceとなった。Gilgameshの`overWriteTvalsList`付き特攻宝具威力効果1件は、既に正規化済みのAND条件を用いてexactに操作可能となった。projectionはuser 1,553、automatic visible 440、hidden 683、literal `unknown` traitは0件である。condition-source、choice、可変値、参照positionは分類できても意味論を実行できるまでは引き続き`unresolved`とする。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -114,7 +118,7 @@ raw parameterの未知key allowlistではなく、次のtyped IRへ正規化す�
 - `reference`: 参照先skillと、artifact解決状態
 - `nonDamage`: damage inputも後続damage conditionも変更しないと証明されたoperation
 
-未知parameterをexecutorで黙認しない。normalizerが全keyを上のいずれかへ分類し、未分類はmaster validationを失敗させる。
+未知parameterをexecutorで黙認しない。normalizerは全keyを役割別に分類し、未実装の意味論は`unresolved`へ明示する。production ratchetはdamage候補に現れる`unresolved` keyの集合と件数を固定し、新規keyまたは件数増加を検出する。executorはraw keyの許可リストを持たない。
 
 ## 6. 実行順序
 

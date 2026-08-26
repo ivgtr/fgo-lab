@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  canNormalizeDamageEffect,
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
   type ConditionExpression,
@@ -34,6 +35,55 @@ const expectedUnsupportedFamilies = {
   '2301200': ['unsupportedOperation'],
   '2801300': ['unsupportedOperation'],
   '3300200': ['missing_battle_point_phase', 'unsupportedOperation'],
+} as const;
+
+const expectedUnresolvedDamageSemantics = {
+  parameters: {
+    ActSelectIndex: 17,
+    ActSet: 8,
+    ActSetWeight: 5,
+    AddIndividualty: 7,
+    AddIndividualtyList: 7,
+    AddLinkageTargetIndividualty: 5,
+    BehaveAsFamilyBuff: 2,
+    CheckBattlePointPhaseRange: 3,
+    DisplayLastFuncInvalidType: 5,
+    ForceAddState: 4,
+    FuncCheckTargetIndividualityTargetType: 3,
+    IgnoreIndivUnreleaseable: 1,
+    IncludeIgnoreIndividuality: 5,
+    IncludePassiveIndividuality: 1,
+    ParamAdd: 4,
+    ParamAddIndividualityTargetType: 3,
+    ParamAddMaxCount: 4,
+    ParamAddMaxValue: 3,
+    ParamAddOpCheckDead: 3,
+    ParamAddOpIndividuality: 2,
+    ParamAddOpIndividualityAndCheck: 3,
+    ParamAddSelfIndividuality: 2,
+    ParamAddSelfIndividualityAndCheck: 2,
+    ParamAddValue: 7,
+    ParamMax: 4,
+    ProcActive: 1,
+    RatioHPHigh: 1,
+    RatioHPLow: 3,
+    RatioHPRangeHigh: 1,
+    RatioHPRangeLow: 1,
+    SetPassiveFrame: 4,
+    ShowCardOnly: 1,
+    SkillID: 1,
+    SkillLV: 1,
+    StarHigher: 10,
+    TriggeredFieldCountRange: 1,
+    TriggeredFieldCountTarget: 1,
+    TriggeredFuncPosition: 5,
+    TriggeredTargetBattlePointRateRange: 3,
+    TypeIndividualityEachFunc: 1,
+    UnSubState: 4,
+    UnSubStateWhileLinkedToOthers: 1,
+    Value2: 25,
+  },
+  scripts: { 'script:funcIndividuality': 4 },
 } as const;
 
 function reasonFamily(reason: string): string {
@@ -594,6 +644,48 @@ describe('production master damage quality ratchet', () => {
         return [];
       }
     });
+    const semanticInventory = {
+      parameters: {} as Record<string, number>,
+      scripts: {} as Record<string, number>,
+    };
+    const normalizationErrors: string[] = [];
+    const literalUnknownTraits: string[] = [];
+    const inspectEffect = (
+      servantId: string,
+      effect: (typeof master.servants)[number]['skills'][number]['effects'][number],
+      origin: 'attacker' | 'passive' | 'np',
+    ) => {
+      const semanticKeys = Object.values(effect.parameterSemantics).flat();
+      const rawKeys = [
+        ...new Set(effect.parameterSets.flatMap((set) => set.flatMap((item) => Object.keys(item)))),
+      ];
+      if (
+        semanticKeys.length !== new Set(semanticKeys).size ||
+        [...rawKeys].sort().join('|') !== [...semanticKeys].sort().join('|')
+      )
+        normalizationErrors.push(`${servantId}:${effect.occurrenceId}`);
+      for (const condition of [
+        ...effect.conditions.recipient,
+        effect.conditions.holder,
+        effect.conditions.opponent,
+        effect.conditions.field,
+      ])
+        if (condition.traits.some((trait) => trait.name === 'unknown'))
+          literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
+      if (!canNormalizeDamageEffect(effect, origin)) return;
+      for (const key of effect.parameterSemantics.unresolved)
+        semanticInventory.parameters[key] = (semanticInventory.parameters[key] ?? 0) + 1;
+      for (const key of effect.unresolvedSemanticKeys)
+        semanticInventory.scripts[key] = (semanticInventory.scripts[key] ?? 0) + 1;
+    };
+    for (const servant of master.servants) {
+      for (const skill of servant.skills)
+        for (const effect of skill.effects) inspectEffect(servant.id, effect, 'attacker');
+      for (const passive of servant.passives)
+        for (const effect of passive.effects) inspectEffect(servant.id, effect, 'passive');
+      for (const noblePhantasm of servant.noblePhantasms)
+        for (const effect of noblePhantasm.effects) inspectEffect(servant.id, effect, 'np');
+    }
     const unsupported = calculations.filter(
       ({ calculation }) => calculation.result.status === 'unsupported',
     );
@@ -788,13 +880,19 @@ describe('production master damage quality ratchet', () => {
 
     expect(master.servants).toHaveLength(469);
     expect(calculations).toHaveLength(420);
+    expect(normalizationErrors).toEqual([]);
+    expect(literalUnknownTraits).toEqual([]);
+    expect({
+      parameters: Object.fromEntries(Object.entries(semanticInventory.parameters).sort()),
+      scripts: Object.fromEntries(Object.entries(semanticInventory.scripts).sort()),
+    }).toEqual(expectedUnresolvedDamageSemantics);
     expect({
       user: allProjections.filter((effect) => effect.controllability === 'user').length,
       automaticVisible: allProjections.filter(
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_551, automaticVisible: 442, hidden: 683 });
+    }).toEqual({ user: 1_553, automaticVisible: 440, hidden: 683 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -818,7 +916,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 49, effects: 84 });
+    }).toEqual({ servants: 48, effects: 83 });
     expect(exclusivePairCount).toBe(8);
     expect(conflictPairs).toEqual({ effectEffect: 7, factFact: 1, factEffect: 0 });
     expect({

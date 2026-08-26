@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 10,
+    schemaVersion: 11,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -378,9 +378,11 @@ function signedTraits(
       ? [{ name: trait.name, negative: Boolean(trait.negative) }]
       : typeof trait.id === 'number' && traitNameById.has(trait.id)
         ? [{ name: traitNameById.get(trait.id)!, negative: Boolean(trait.negative) }]
-        : trait.name
-          ? [{ name: trait.name, negative: Boolean(trait.negative) }]
-          : [],
+        : typeof trait.id === 'number'
+          ? [{ name: `traitId:${String(trait.id)}`, negative: Boolean(trait.negative) }]
+          : trait.name
+            ? [{ name: trait.name, negative: Boolean(trait.negative) }]
+            : [],
   );
 }
 
@@ -398,6 +400,53 @@ function uniqueTraits(traits: readonly { name: string; negative: boolean }[]) {
   ];
 }
 
+const VALUE_PARAMETER_KEYS = new Set(['Rate', 'Value']);
+const LIFECYCLE_PARAMETER_KEYS = new Set(['Count', 'OnField', 'Turn']);
+const PRESENTATION_PARAMETER_KEYS = new Set([
+  'AuraEffectId',
+  'DisplayNoEffectCauses',
+  'HideMiss',
+  'HideNoEffect',
+  'ShowQuestNoEffect',
+  'ShowState',
+]);
+const CONDITION_PARAMETER_KEYS = new Set<string>();
+const CONTEXT_MUTATION_PARAMETER_KEYS = new Set(['FieldIndividuality', 'TargetList']);
+
+function classifyParameterSemantics(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
+  const keys = [
+    ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
+  ].sort();
+  const select = (accepted: ReadonlySet<string>) => keys.filter((key) => accepted.has(key));
+  const known = new Set([
+    ...VALUE_PARAMETER_KEYS,
+    ...LIFECYCLE_PARAMETER_KEYS,
+    ...PRESENTATION_PARAMETER_KEYS,
+    ...CONDITION_PARAMETER_KEYS,
+    ...CONTEXT_MUTATION_PARAMETER_KEYS,
+  ]);
+  return {
+    value: select(VALUE_PARAMETER_KEYS),
+    lifecycle: select(LIFECYCLE_PARAMETER_KEYS),
+    presentation: select(PRESENTATION_PARAMETER_KEYS),
+    condition: select(CONDITION_PARAMETER_KEYS),
+    contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
+    unresolved: keys.filter((key) => !known.has(key)),
+  };
+}
+
+function unresolvedFunctionScriptKeys(script: AtlasFunction['script']): string[] {
+  if (!script) return [];
+  return Object.entries(script)
+    .filter(([key, value]) => {
+      if (key === 'overwriteTvals') return false;
+      if (key === 'funcIndividuality' && Array.isArray(value) && value.length === 0) return false;
+      return true;
+    })
+    .map(([key]) => `script:${key}`)
+    .sort();
+}
+
 function normalizeFunctions(
   functions: AtlasFunction[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
@@ -407,6 +456,15 @@ function normalizeFunctions(
     if (typeof fn.funcId !== 'number') return [];
     const occurrence = occurrencesByFunctionId.get(fn.funcId) ?? 0;
     occurrencesByFunctionId.set(fn.funcId, occurrence + 1);
+    const parameterSets = [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].map((parameters) =>
+      (parameters ?? []).slice(0, 10),
+    ) as [
+      AtlasFunctionValue[],
+      AtlasFunctionValue[],
+      AtlasFunctionValue[],
+      AtlasFunctionValue[],
+      AtlasFunctionValue[],
+    ];
     return [
       {
         id: String(fn.funcId),
@@ -414,17 +472,9 @@ function normalizeFunctions(
         type: fn.funcType ?? 'unknown',
         target: fn.funcTargetType ?? 'unknown',
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
-        parameterSets: [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].map((parameters) =>
-          (parameters ?? []).slice(0, 10),
-        ) as [
-          AtlasFunctionValue[],
-          AtlasFunctionValue[],
-          AtlasFunctionValue[],
-          AtlasFunctionValue[],
-          AtlasFunctionValue[],
-        ],
-        ...(fn.script ? { functionScript: fn.script } : {}),
-        ...(fn.overWriteTvalsList ? { overwriteTargetValues: fn.overWriteTvalsList } : {}),
+        parameterSets,
+        parameterSemantics: classifyParameterSemantics(parameterSets),
+        unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         conditions: {
           recipient:
             (fn.overWriteTvalsList ?? []).length > 0
@@ -454,9 +504,10 @@ function normalizeFunctions(
             traits: uniqueTraits([
               ...signedTraits(fn.funcquestTvals, traitNameById),
               ...(fn.buffs ?? []).flatMap((buff) =>
-                buff.script?.INDIVIDUALITIE?.name
-                  ? [{ name: buff.script.INDIVIDUALITIE.name, negative: false }]
-                  : [],
+                signedTraits(
+                  buff.script?.INDIVIDUALITIE ? [buff.script.INDIVIDUALITIE] : [],
+                  traitNameById,
+                ),
               ),
             ]),
           },

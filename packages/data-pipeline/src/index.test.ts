@@ -546,7 +546,7 @@ describe('immutable publish pipeline', () => {
                   })),
                   svals2: [{ Value: 999, ParamAddMaxCount: 2 }],
                   script: { funcIndividuality: [], customFlag: 7 },
-                  overWriteTvalsList: [{ id: 4002 }],
+                  overWriteTvalsList: [[{ id: 4002 }]],
                 },
               ],
             },
@@ -588,13 +588,34 @@ describe('immutable publish pipeline', () => {
                   [],
                   [],
                 ],
-                functionScript: { funcIndividuality: [], customFlag: 7 },
-                overwriteTargetValues: [{ id: 4002 }],
+                parameterSemantics: {
+                  value: ['Rate', 'Value'],
+                  lifecycle: ['Turn'],
+                  presentation: [],
+                  condition: [],
+                  contextMutation: [],
+                  unresolved: ['ParamAddMaxCount'],
+                },
+                unresolvedSemanticKeys: ['script:customFlag'],
               }),
             ],
           }),
         ],
       },
     ]);
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[0]).toMatchObject({
+      conditions: {
+        recipient: [
+          {
+            operator: 'all',
+            traits: [{ name: 'traitId:4002', negative: false }],
+          },
+        ],
+      },
+      parameterSemantics: {
+        unresolved: ['ParamAddMaxCount'],
+      },
+      unresolvedSemanticKeys: ['script:customFlag'],
+    });
   });
 });

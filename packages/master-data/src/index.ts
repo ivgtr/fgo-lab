@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(10),
+  schemaVersion: z.literal(11),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -42,6 +42,16 @@ export const effectConditionsSchema = z.object({
 });
 export type EffectConditions = z.infer<typeof effectConditionsSchema>;
 
+const effectParameterSemanticsSchema = z.object({
+  value: z.array(z.string().min(1)),
+  lifecycle: z.array(z.string().min(1)),
+  presentation: z.array(z.string().min(1)),
+  condition: z.array(z.string().min(1)),
+  contextMutation: z.array(z.string().min(1)),
+  unresolved: z.array(z.string().min(1)),
+});
+export type EffectParameterSemantics = z.infer<typeof effectParameterSemanticsSchema>;
+
 const effectParameterSchema = z.record(z.string(), z.json());
 const effectParameterSetsSchema = z.tuple([
   z.array(effectParameterSchema).max(10),
@@ -58,8 +68,8 @@ const masterEffectSchema = z.object({
   label: z.string(),
   parameterSets: effectParameterSetsSchema,
   limitBreakParameterSets: effectParameterSetsSchema.optional(),
-  functionScript: z.record(z.string(), z.json()).optional(),
-  overwriteTargetValues: z.array(z.json()).optional(),
+  parameterSemantics: effectParameterSemanticsSchema,
+  unresolvedSemanticKeys: z.array(z.string().min(1)),
   conditions: effectConditionsSchema,
   contextChanges: z.object({
     addedFieldTraits: z.array(z.string().min(1)),

@@ -72,20 +72,6 @@ const DEFENSIVE = new Set([
   'upDefenceNpdamage',
   'upDefencecommandall',
 ]);
-const SUPPORTED_PARAMETER_KEYS = new Set([
-  'AuraEffectId',
-  'Count',
-  'HideMiss',
-  'HideNoEffect',
-  'OnField',
-  'Rate',
-  'ShowQuestNoEffect',
-  'ShowState',
-  'Turn',
-  'Value',
-  'Value2',
-]);
-
 type Origin = OperationSource['origin'];
 type Recipient = 'attacker' | 'target';
 
@@ -343,19 +329,9 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
       );
     return { operations, unsupported };
   }
-  const unknownParameters = [
-    ...new Set(
-      source.effect.parameterSets.flatMap((set) =>
-        set.flatMap((item) =>
-          Object.keys(item).filter((name) => !SUPPORTED_PARAMETER_KEYS.has(name)),
-        ),
-      ),
-    ),
-  ].sort();
   if (
-    unknownParameters.length ||
-    (source.effect.functionScript && Object.keys(source.effect.functionScript).length) ||
-    source.effect.overwriteTargetValues?.length
+    source.effect.parameterSemantics.unresolved.length ||
+    source.effect.unresolvedSemanticKeys.length
   ) {
     unsupported.push(
       makeProjection(

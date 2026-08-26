@@ -13,6 +13,8 @@ master正規化でraw effect occurrenceへstable identityを付ける。Function
 
 raw effectはFunction/buff/parameterの組み合わせから、modifier、state mutation、choice、guard、metadata、reference、non-damageのtyped canonical IRへ正規化する。executorはraw parameter keyを直接allowlist判定せず、canonical IRだけをcompileする。未分類parameterと未解決referenceはtyped unsupportedであり、automaticまたは選択済みdamage operationに関与すればfail-closedにする。
 
+parameterの役割分類はmaster生成時に完了させる。数値本体、lifecycle、表示metadata、condition、context mutation、未解決意味論を別のfieldへ保存し、executorはraw parameter名から安全性を推測しない。複数用途を持つ`Value2`のようなkeyはFunction family側の意味が確定するまで未解決とする。raw `overWriteTvalsList`はrecipient conditionへ変換後に保持せず、trait名が得られない場合もIDを失わないcanonical identityを用いる。
+
 presentation metadataと、damage inputにも後続damage conditionにも影響しないことをnormalizerが証明したnon-damage operationは計算を阻害しない。state mutationはhiddenなordered operationとしてcandidate stateへ適用し、constraint validation成功時だけcommitする。
 
 ## Consequences
@@ -23,4 +25,3 @@ presentation metadataと、damage inputにも後続damage conditionにも影響�
 - scenarioへmaster条件やparameter式を保存しない。
 - 旧decision keyの曖昧なfallbackは設けない。
 - frontendはapplication facadeのprojectionとcommandだけを扱い、raw semanticsを解釈しない。
-
