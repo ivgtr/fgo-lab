@@ -258,3 +258,99 @@ describe('HP threshold series normalization', () => {
     ).toThrow('ambiguous_hp_threshold_series');
   });
 });
+
+describe('canonical proc normalization', () => {
+  const procFunction = (
+    funcId: number,
+    rate: number,
+    value = 100,
+    overchargeRates?: readonly number[],
+  ): AtlasFunction => ({
+    funcId,
+    funcType: 'addStateShort',
+    funcTargetType: 'self',
+    funcPopupText: '攻撃力アップ',
+    buffs: [{ type: 'upAtk' }],
+    svals: valueSets({ Rate: rate, Turn: 1, Count: -1, Value: value }),
+    ...(overchargeRates
+      ? Object.fromEntries(
+          overchargeRates.map((item, index) => [
+            `svals${index === 0 ? '' : String(index + 1)}`,
+            valueSets({ Rate: item, Turn: 1, Count: -1, Value: value }),
+          ]),
+        )
+      : {}),
+  });
+
+  it('separates guaranteed and single-roll activation', () => {
+    const [guaranteed] = normalizeFunctions([procFunction(1, 1_000)], new Map(), 'np', 1);
+    const [single] = normalizeFunctions([procFunction(2, 700)], new Map(), 'np', 1);
+    expect(guaranteed?.proc).toEqual({ kind: 'guaranteed' });
+    expect(single?.proc).toMatchObject({ kind: 'singleRoll' });
+    expect(single?.inputDefinitions).toEqual([]);
+    expect(single?.inputQuantityConditions).toEqual([]);
+  });
+
+  it('keeps positive rolls independent and groups a signed chain into one success count', () => {
+    const independent = normalizeFunctions(
+      [procFunction(1, 700), procFunction(2, 550)],
+      new Map(),
+      'np',
+      1,
+    );
+    expect(independent.map((effect) => effect.interaction)).toEqual([null, null]);
+    expect(independent.flatMap((effect) => effect.inputDefinitions)).toEqual([]);
+
+    const chained = normalizeFunctions(
+      [procFunction(1, 800), procFunction(1, -800), procFunction(1, -800)],
+      new Map(),
+      'np',
+      1,
+    );
+    expect(chained.map((effect) => effect.proc.kind)).toEqual([
+      'chainedRolls',
+      'chainedRolls',
+      'chainedRolls',
+    ]);
+    expect(new Set(chained.map((effect) => effect.interaction?.key)).size).toBe(1);
+    expect(chained[0]?.inputDefinitions[0]).toMatchObject({
+      kind: 'procSuccessCount',
+      minimum: 0,
+      maximum: 3,
+      defaultValue: 3,
+    });
+    expect(chained.map((effect) => effect.inputQuantityConditions[0]?.value)).toEqual([1, 2, 3]);
+  });
+
+  it('preserves overcharge-dependent rates and rejects invalid or ambiguous structures', () => {
+    const [effect] = normalizeFunctions(
+      [procFunction(1, 600, 200, [600, 700, 800, 900, 1_000])],
+      new Map(),
+      'np',
+      1,
+    );
+    expect(effect?.proc.kind).toBe('singleRoll');
+    if (effect?.proc.kind !== 'singleRoll') throw new Error('single roll required');
+    expect(effect.proc.ratePermille.map((set) => [...new Set(set)])).toEqual([
+      [600],
+      [700],
+      [800],
+      [900],
+      [1_000],
+    ]);
+    expect(() => normalizeFunctions([procFunction(1, 1_001.5)], new Map(), 'np', 1)).toThrow(
+      'invalid_proc_rate_series',
+    );
+    expect(() => normalizeFunctions([procFunction(1, -800)], new Map(), 'np', 1)).toThrow(
+      'orphan_chained_proc',
+    );
+    expect(() =>
+      normalizeFunctions(
+        [procFunction(1, 800), { ...procFunction(2, -800), buffs: [{ type: 'upNpdamage' }] }],
+        new Map(),
+        'np',
+        1,
+      ),
+    ).toThrow('ambiguous_chained_proc');
+  });
+});

@@ -240,7 +240,7 @@ describe('portable schema boundaries', () => {
           {
             sourceInstanceId: 'support-instance-1',
             servantId: 'support-1',
-            skills: [{ skillId: 'skill-1', skillLevel: 10 }],
+            skills: [{ skillId: 'skill-1', skillLevel: 10, enabled: true }],
           },
         ],
         selectedEffects: [

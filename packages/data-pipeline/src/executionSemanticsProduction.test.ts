@@ -29,6 +29,43 @@ function evidenceValues(effect: MasterEffect, limitBreak = false) {
 }
 
 describe('production canonical execution semantics', () => {
+  it('ratchets every probabilistic terminal damage occurrence into canonical proc semantics', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const probabilistic = allEffects(master).filter((effect) => effect.proc.kind !== 'guaranteed');
+    expect(
+      probabilistic.reduce<Record<string, number>>((counts, effect) => {
+        counts[effect.proc.kind] = (counts[effect.proc.kind] ?? 0) + 1;
+        return counts;
+      }, {}),
+    ).toEqual({ chainedRolls: 5, singleRoll: 38 });
+    expect(new Set(probabilistic.map((effect) => effect.gameActivation))).toEqual(
+      new Set(['npBeforeDamage', 'skillUse']),
+    );
+    expect(
+      probabilistic.filter(
+        (effect) => effect.proc.kind === 'singleRoll' && effect.inputDefinitions.length !== 0,
+      ),
+    ).toEqual([]);
+    expect(
+      probabilistic.filter(
+        (effect) =>
+          effect.proc.kind === 'chainedRolls' &&
+          effect.inputDefinitions.every((input) => input.kind !== 'procSuccessCount'),
+      ),
+    ).toEqual([]);
+    expect(
+      probabilistic.filter((effect) =>
+        effect.atlasEvidence.parameterSets.some((set) =>
+          set.some(
+            (parameter) => typeof parameter.Rate === 'number' && Math.abs(parameter.Rate) < 1_000,
+          ),
+        ),
+      ),
+    ).toHaveLength(43);
+  });
+
   it('ratchets every raw HP condition before damage relevance filtering', async () => {
     const count = (value: unknown, result = { HP_LOWER: 0, HP_HIGHER: 0 }) => {
       if (!value || typeof value !== 'object') return result;

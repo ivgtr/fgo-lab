@@ -1025,10 +1025,10 @@ function normalizeNpCardTypeChange(
   return { card, stateTraits };
 }
 
-function normalizeTriggerScope(
-  buffs: AtlasFunction['buffs'],
-  source: 'skill' | 'passive' | 'np' | 'reference',
-) {
+type NormalizeEffectSource =
+  'skill' | 'passive' | 'np' | 'reference' | 'craftEssence' | 'mysticCode';
+
+function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: NormalizeEffectSource) {
   if (source === 'np' || source === 'reference') return null;
   if (
     (buffs ?? []).some((buff) => (buff.ckSelfIndv ?? []).some((trait) => trait.name === 'faceCard'))
@@ -1037,6 +1037,130 @@ function normalizeTriggerScope(
   return (buffs ?? []).some((buff) => buff.type === 'attackBeforeFunction')
     ? ('commandCardAttack' as const)
     : null;
+}
+
+function procRateSeries(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+  execution: readonly MasterEffect['execution'][number][],
+  source: NormalizeEffectSource,
+): MasterEffect['proc'] {
+  const terminal = execution.some((operation) =>
+    [
+      'damageModifier',
+      'modifierRateChange',
+      'ignoreDefense',
+      'ignoreDamageCut',
+      'cardTypeMutation',
+    ].includes(operation.kind),
+  );
+  if (!terminal) return { kind: 'guaranteed' };
+  const values = parameterSets.map((set, index) =>
+    source === 'np' || index === 0 ? set.map((value) => value.Rate) : [],
+  );
+  const hasRate = values.some((set) => set.some((rate) => rate !== undefined));
+  if (!hasRate) return { kind: 'guaranteed' };
+  if (values.some((set) => set.some((rate) => typeof rate !== 'number')))
+    throw new TypeError(`invalid_proc_rate_series:${JSON.stringify(values)}`);
+  const concreteRates = values.flatMap((set) => set as number[]);
+  if (concreteRates.every((rate) => Number.isInteger(rate) && Math.abs(rate) >= 1_000))
+    return { kind: 'guaranteed' };
+  if (concreteRates.some((rate) => !Number.isInteger(rate) || Math.abs(rate) > 1_000))
+    throw new TypeError(`invalid_proc_rate_series:${JSON.stringify(values)}`);
+  const rates = values.map((set) => set.map((rate) => Math.abs(rate as number))) as [
+    number[],
+    number[],
+    number[],
+    number[],
+    number[],
+  ];
+  return concreteRates.every((rate) => Math.abs(rate) === 1_000)
+    ? { kind: 'guaranteed' }
+    : { kind: 'singleRoll', ratePermille: rates };
+}
+
+function hasNegativeProcRate(effect: MasterEffect): boolean {
+  return effect.atlasEvidence.parameterSets.some((set) =>
+    set.some(
+      (parameter) =>
+        typeof parameter.Rate === 'number' && parameter.Rate < 0 && parameter.Rate > -1_000,
+    ),
+  );
+}
+
+function procInputDefinition(key: string, maximum: number): CanonicalInputDefinition {
+  return {
+    key,
+    kind: 'procSuccessCount',
+    owner: 'source',
+    label: '確率効果の成功回数',
+    description: '前の判定が成功した場合だけ次へ進む連鎖判定の成功回数',
+    minimum: 0,
+    maximum,
+    step: 1,
+    defaultValue: maximum,
+    defaultReason: '成功scenarioを既定とする',
+  };
+}
+
+function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
+  const result = [...effects];
+  for (let index = 0; index < result.length; index += 1) {
+    const effect = result[index]!;
+    if (effect.proc.kind !== 'singleRoll') continue;
+    if (hasNegativeProcRate(effect)) {
+      if (index === 0 || result[index - 1]!.proc.kind !== 'singleRoll')
+        throw new TypeError(`orphan_chained_proc:${effect.occurrenceId}`);
+      continue;
+    }
+    let end = index + 1;
+    while (end < result.length && hasNegativeProcRate(result[end]!)) end += 1;
+    if (end > index + 1) {
+      const members = result.slice(index, end);
+      const identity = modifierSeriesIdentity(effect);
+      if (
+        identity === null ||
+        members.some(
+          (member) =>
+            modifierSeriesIdentity(member) !== identity ||
+            member.proc.kind !== 'singleRoll' ||
+            JSON.stringify(member.proc.ratePermille) !==
+              JSON.stringify(effect.proc.kind === 'singleRoll' && effect.proc.ratePermille),
+        )
+      )
+        throw new TypeError(
+          `ambiguous_chained_proc:${members.map((member) => member.occurrenceId).join(',')}`,
+        );
+      const key = `activation:proc:${effect.occurrenceId}`;
+      const input = procInputDefinition(key, members.length);
+      for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1)
+        result[index + memberIndex] = {
+          ...members[memberIndex]!,
+          interaction: { kind: 'procSeries', key },
+          proc: {
+            kind: 'chainedRolls',
+            ratePermille: effect.proc.ratePermille,
+            seriesKey: key,
+            index: memberIndex,
+            maximumSuccesses: members.length,
+          },
+          inputDefinitions: [...members[memberIndex]!.inputDefinitions, input],
+          inputQuantityConditions: [
+            ...members[memberIndex]!.inputQuantityConditions,
+            { inputKey: key, comparison: 'atLeast', value: memberIndex + 1 },
+          ],
+        };
+      index = end - 1;
+      continue;
+    }
+    result[index] = effect;
+  }
+  if (result.some(hasNegativeProcRate)) {
+    const invalid = result.find(
+      (effect) => hasNegativeProcRate(effect) && effect.proc.kind !== 'chainedRolls',
+    );
+    if (invalid) throw new TypeError(`unresolved_chained_proc:${invalid.occurrenceId}`);
+  }
+  return result;
 }
 
 function normalizeOperationTrigger(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
@@ -1146,7 +1270,7 @@ function unresolvedFunctionScriptKeys(script: AtlasFunction['script']): string[]
 export function normalizeFunctions(
   functions: AtlasFunction[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
-  source: 'skill' | 'passive' | 'np' | 'reference' = 'skill',
+  source: NormalizeEffectSource = 'skill',
   ownerId?: number,
   referencedSkills: ReadonlyMap<number, AtlasReferencedSkill> = new Map(),
   quantityApplicationTiming: 'duringExecution' | 'representedByCurrentInput' = source === 'passive'
@@ -1459,6 +1583,16 @@ export function normalizeFunctions(
         occurrenceId: `${String(fn.funcId)}:${String(occurrence)}`,
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
         availability: 'allLimitBreakStates' as const,
+        inclusionPolicy: { default: 'include' as const },
+        gameActivation:
+          source === 'skill' || source === 'mysticCode'
+            ? ('skillUse' as const)
+            : source === 'np'
+              ? ('npBeforeDamage' as const)
+              : source === 'reference'
+                ? ('derived' as const)
+                : ('constant' as const),
+        proc: procRateSeries(parameterSets, execution, source),
         interaction:
           (criticalStarSeriesCounts.get(fn.funcId) ?? 0) > 1
             ? {
@@ -1544,5 +1678,5 @@ export function normalizeFunctions(
       },
     ];
   });
-  return assignHpThresholdSeries(normalized);
+  return assignHpThresholdSeries(assignProcSemantics(normalized));
 }

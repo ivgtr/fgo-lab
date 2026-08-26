@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 23 as const;
-export const ENGINE_VERSION = '17.0.0' as const;
+export const SCHEMA_VERSION = 24 as const;
+export const ENGINE_VERSION = '18.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -55,6 +55,7 @@ export type CraftEssenceCopy = z.infer<typeof craftEssenceCopySchema>;
 export const supportSkillSchema = z.object({
   skillId: z.string().min(1).max(80),
   skillLevel: z.number().int().min(1).max(10),
+  enabled: z.boolean(),
 });
 export type SupportSkill = z.infer<typeof supportSkillSchema>;
 
@@ -193,6 +194,7 @@ export type DamageKernelInput = z.infer<typeof damageKernelInputSchema>;
 export const attackerSkillSelectionSchema = z.object({
   skillId: z.string().min(1).max(80),
   skillLevel: z.number().int().min(1).max(10),
+  enabled: z.boolean(),
 });
 export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema>;
 

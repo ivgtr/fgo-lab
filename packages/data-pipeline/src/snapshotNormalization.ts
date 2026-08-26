@@ -279,7 +279,7 @@ export function normalizeAtlasSnapshot(input: {
     const normalEffects = normalizeFunctions(
       normalSkill?.functions,
       traitNameById,
-      'skill',
+      'craftEssence',
       undefined,
       referencedSkills,
     );
@@ -287,7 +287,7 @@ export function normalizeAtlasSnapshot(input: {
       ? normalizeFunctions(
           limitBreakSkill.functions,
           traitNameById,
-          'skill',
+          'craftEssence',
           undefined,
           referencedSkills,
         )
@@ -331,7 +331,7 @@ export function normalizeAtlasSnapshot(input: {
               effects: normalizeFunctions(
                 skill.functions,
                 traitNameById,
-                'skill',
+                'mysticCode',
                 undefined,
                 referencedSkills,
               ),

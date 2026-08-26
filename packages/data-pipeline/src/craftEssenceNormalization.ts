@@ -58,6 +58,9 @@ function operationSemanticIdentity(operation: EffectExecutionOperation): string 
 function effectSemanticIdentity(effect: MasterEffect): string {
   return JSON.stringify({
     id: effect.id,
+    inclusionPolicy: effect.inclusionPolicy,
+    gameActivation: effect.gameActivation,
+    proc: effect.proc,
     choice: effect.choice,
     triggerScope: effect.triggerScope,
     operationTrigger: effect.operationTrigger,
@@ -65,6 +68,9 @@ function effectSemanticIdentity(effect: MasterEffect): string {
     stateIdentity: effect.stateIdentity,
     quantityConditions: effect.quantityConditions,
     sourceQuantityConditions: effect.sourceQuantityConditions,
+    inputQuantityConditions: effect.inputQuantityConditions,
+    inputDefinitions: effect.inputDefinitions,
+    interaction: effect.interaction,
     conditions: effect.conditions,
     conditionTargetPolicy: effect.conditionTargetPolicy,
     execution: effect.execution.map(operationSemanticIdentity),

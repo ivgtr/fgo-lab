@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(29),
+  schemaVersion: z.literal(30),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -154,6 +154,7 @@ const fixedCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
     'availableSkillCount',
     'friendshipLevel',
     'sourceHpPermille',
+    'procSuccessCount',
   ]),
   defaultValue: z.number().int().nullable(),
 });
@@ -272,6 +273,27 @@ const effectExecutionOperationSchema = z.union([
 ]);
 export type EffectExecutionOperation = z.infer<typeof effectExecutionOperationSchema>;
 
+const procRateSetsSchema = z.tuple([
+  z.array(z.number().int().min(0).max(1000)).max(10),
+  z.array(z.number().int().min(0).max(1000)).max(10),
+  z.array(z.number().int().min(0).max(1000)).max(10),
+  z.array(z.number().int().min(0).max(1000)).max(10),
+  z.array(z.number().int().min(0).max(1000)).max(10),
+]);
+
+const effectProcSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('guaranteed') }),
+  z.object({ kind: z.literal('singleRoll'), ratePermille: procRateSetsSchema }),
+  z.object({
+    kind: z.literal('chainedRolls'),
+    ratePermille: procRateSetsSchema,
+    seriesKey: z.string().min(1),
+    index: z.number().int().nonnegative(),
+    maximumSuccesses: z.number().int().positive(),
+  }),
+]);
+export type EffectProc = z.infer<typeof effectProcSchema>;
+
 const atlasEffectEvidenceSchema = z.object({
   functionType: z.string(),
   target: z.string(),
@@ -290,6 +312,9 @@ export const masterEffectSchema = z.object({
   occurrenceId: z.string().min(1),
   label: z.string(),
   availability: z.enum(['allLimitBreakStates', 'maximumLimitBreakOnly']),
+  inclusionPolicy: z.object({ default: z.enum(['include', 'exclude']) }),
+  gameActivation: z.enum(['constant', 'skillUse', 'npBeforeDamage', 'derived']),
+  proc: effectProcSchema,
   interaction: z
     .discriminatedUnion('kind', [
       z.object({
@@ -300,6 +325,10 @@ export const masterEffectSchema = z.object({
         kind: z.literal('quantityThresholdSeries'),
         key: z.string().min(1),
         quantity: z.literal('attackerHpPermille'),
+      }),
+      z.object({
+        kind: z.literal('procSeries'),
+        key: z.string().min(1),
       }),
     ])
     .nullable(),
