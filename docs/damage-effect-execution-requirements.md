@@ -280,6 +280,18 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 11. 初期制約検証が失敗した場合、選択中の条件付きoperationをall-or-nothingで非適用とし、競合後のdamage inputへmodifierを残さない。
 12. context mutationは初期traitを書き換えずstate traitだけを更新し、各operationのcandidate stateからcombined predicateを再導出する。付与後と解除後の条件評価は同じ時点のstateを使用する。
 
+### 8.9 E3.4 unsupported semantics convergence
+
+残存unsupportedは件数ではなくraw semantics単位で収束させる。完全なinventory、優先度、canonical IR、残存理由は`docs/damage-effect-unsupported-convergence-plan.md`を正本とする。
+
+1. Function IDとraw effect occurrenceを別識別子とし、decision、operation、projection、evidenceはoccurrence単位で一意にする。
+2. raw parameterはmodifier、state mutation、choice、guard、metadata、reference、non-damageへlosslessに分類する。未知keyをexecutorのallowlistで黙認しない。
+3. damage inputまたは後続damage conditionへ影響するoperationだけが計算precisionを左右する。表示metadataと証明済みnon-damage効果は計算を阻害しない。
+4. 可変値は既知quantityとcommit済みstateからexactに評価する。必要な値がunknownなら0倍・1倍へ置換せずtyped unsupportedとする。
+5. field/state mutationはhiddenなordered operation、random/action候補はcanonical choice groupの排他decisionとして扱う。
+6. 現行UIにない敵trait、star、turn、編成生存入力を追加しない。不足familyは個別理由を付けてfail-closedを維持する。
+7. production ratchetはunknown family、occurrence key衝突、非damageによる阻害、choice同時適用、unsupported operation適用を0件に固定する。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

@@ -291,6 +291,8 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 状態: 未着手
 
+E4着手前にE3.4として`docs/damage-effect-unsupported-convergence-plan.md`を実施する。順序はstable occurrence identity、typed non-damage/metadata、field/state mutation、既存quantity入力、choice/value expression、残存reason ratchetとする。各semantic familyでnormalizer、executor、application、production、shareのテストを揃え、旧key・raw parameter allowlist・projection上書き経路を同じフェーズ内で削除する。
+
 作業:
 
 - ranking workerを同じscenario compiler、executor、kernelへ接続する。

@@ -1,0 +1,26 @@
+# ADR-010: effect occurrenceとoperation semanticsを正規化する
+
+- Status: accepted
+- Date: 2026-08-26
+
+## Context
+
+現行masterのFunction IDはskill内で一意ではない。67 group、193 raw occurrenceで同じIDが繰り返され、現行executorのdecision/projection keyはそれらを区別できない。さらにraw parameter keyのallowlistで「既知」と「未知」を分けているため、表示metadata、condition guard、可変値式、state mutation、参照skillが同じunsupported理由へ潰れている。
+
+## Decision
+
+master正規化でraw effect occurrenceへstable identityを付ける。Function IDはゲームデータ上の意味を保持する属性、occurrence identityはoperation、decision、projection、evidenceを一意に結ぶ識別子とし、相互に代用しない。
+
+raw effectはFunction/buff/parameterの組み合わせから、modifier、state mutation、choice、guard、metadata、reference、non-damageのtyped canonical IRへ正規化する。executorはraw parameter keyを直接allowlist判定せず、canonical IRだけをcompileする。未分類parameterと未解決referenceはtyped unsupportedであり、automaticまたは選択済みdamage operationに関与すればfail-closedにする。
+
+presentation metadataと、damage inputにも後続damage conditionにも影響しないことをnormalizerが証明したnon-damage operationは計算を阻害しない。state mutationはhiddenなordered operationとしてcandidate stateへ適用し、constraint validation成功時だけcommitする。
+
+## Consequences
+
+- 同じFunction IDを持つ複数効果を独立して適用、選択、traceできる。
+- projection mapで後勝ち・先勝ちの暗黙上書きを行わない。
+- parameter追加時はnormalizerまたはproduction auditが失敗し、silent fallbackしない。
+- scenarioへmaster条件やparameter式を保存しない。
+- 旧decision keyの曖昧なfallbackは設けない。
+- frontendはapplication facadeのprojectionとcommandだけを扱い、raw semanticsを解釈しない。
+
