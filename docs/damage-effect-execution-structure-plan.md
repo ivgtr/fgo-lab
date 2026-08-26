@@ -209,4 +209,4 @@ production 13,314 effect occurrenceを13,314 canonical operationへ正規化し�
 
 production inventoryは既定unsupported 12騎、選択時unsupported 14騎25 occurrence、user projection 1,534、automatic visible 443、hidden 687、inert user 0を維持した。constraint conflict中のapplied operationとhidden mutationの未選択commitは0、到達可能hidden mutationは15である。
 
-production buildは178 modules、main 453.50 kB（gzip 130.28 kB）、ranking worker 95.49 kBとなった。構造監査前baseline比でmainは同等、workerはtyped master schemaの追加により1.10 kB増加した。計算benchmarkは418.63 ops/s、mean 2.3887 msであり、環境揺らぎを考慮しても意味論上の退行は確認していない。
+production buildは178 modules、main 453.62 kB（gzip 130.29 kB）、ranking worker 95.53 kBとなった。構造監査前baseline比でmainは同等、workerはtyped master schemaの追加により1.14 kB増加した。計算benchmarkは418.88 ops/s、mean 2.3873 msであり、環境揺らぎを考慮しても意味論上の退行は確認していない。
