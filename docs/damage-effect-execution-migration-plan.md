@@ -490,3 +490,32 @@ E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選
 - ジョンは`〔王〕一致数`と`〔悪〕一致数`を分離し、同一actorの重複計上を説明する。ハベトロットは`敵の合計数`とする。
 - scenario明示値は最終countであり、最低値未満はtyped `inputRequired`となる。入力省略時は共有・保存後も最低値を再導出する。
 - artifact v49でcanonical count occurrenceを全件ratchetし、ジョン／ハベトロットの最低値、複数敵、NP1〜5をgolden化する。既存calculated parity 1,504件はdigest不変を必須とし、この2件以外の差分があれば停止する。
+
+## 12. E3.9: 特殊入力interfaceの再実装
+
+状態: 実装中
+
+現行executorから再計測したruntime inputは13 unique key、7 kindである。11 keyは最終火力effectへ
+直接関連付けでき、critical star 1 keyは値によって到達可能になる火力effect群へ共有入力として
+関連付ける。friendship level 1 keyは現行damage inputを変えない非火力mutationだけの入力なので
+通常UIから除外する。HP/BPは既存基本設定、trait/field/linked stateはeffect toggleまたは自動導出を
+維持する。
+
+実装順序:
+
+1. scenarioの`Record<string, number>`をbounded integerのtyped canonical value mapへ破壊的に置換する。
+2. applicationへinput resolution、effect association、presentation policy、update commandを集約する。
+3. `Calculator`の基本設定末尾にある汎用context input loopを削除する。
+4. `AppliedEffects`へ汎用inline rendererを接続し、shared inputを一度だけ表示する。
+5. result/share image/traceへresolved canonical inputを記録する。
+6. production input inventory、重複input、inert UI input、projection到達性、share/saveをratchet化する。
+7. ジョン、ハベトロット、アーキタイプ：アース、ダンテ、一般特攻、PC/390px/320pxをE2E確認する。
+
+完了ゲート:
+
+- inputの配置またはcontrol選択にID、名称、label分岐がない。
+- 同じcanonical keyの入力controlは画面に一つだけである。
+- non-damage inputは通常UIへ出ず、必要な入力はeffect近傍から操作できる。
+- 420既定計算、全user projection、implementation unsupported 0、既存golden digestが不変である。
+- schema/engineを更新し、旧scenario値map、旧Web loop、互換fallbackが残らない。
+- E4実装は行わず、再利用するapplication APIだけを確定する。

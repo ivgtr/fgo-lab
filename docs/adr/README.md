@@ -12,3 +12,8 @@ ADRは採用時点の判断を記録する。状態は`accepted`、重要な契�
 | 006 | backupと匿名share snapshotの分離              |
 | 007 | GitHub Pages base pathとhash routing          |
 | 008 | 現行要件へ収束させるリファクタリング契約    |
+| 009 | condition、decision、factの意味論分離        |
+| 010 | effect occurrenceとoperationの原子性         |
+| 011 | canonical effect execution semantics          |
+| 012 | battle contextと参照operationのcanonical化   |
+| 013 | 特殊入力のeffect近接presentation              |

@@ -332,6 +332,28 @@ matching actor countの明示入力は「最低値への追加分」ではなく
 
 E3.8は単発計算を正本として完了させるフェーズであり、E4ランキング統合は開始しない。
 
+### 8.11 E3.9 特殊入力interfaceの収束
+
+E3.8のcanonical battle-context inputを内部状態editorとして露出せず、最終火力effectへ近接した
+入力へ投影する。詳細なinventory、型、wireframe、依存方向は
+`docs/adr/013-effect-context-input-presentation.md`を正本とする。
+
+1. HPとBattle Pointは攻撃全体の基礎条件として既存の基本設定欄に残す。
+2. turn、star、stack、actor population、trait一致count、available skill、支援元HPは、消費する
+   最終火力effectの行またはeffect group内へ表示する。
+3. trait、field、特攻成立条件は既存のeffect toggleを維持し、独立したworld fact editorを作らない。
+4. field、trait、linked state等の中間mutationは自動導出してhiddenとし、traceだけへ残す。
+5. 同じcanonical input keyを複数effectが消費する場合、applicationが一つのshared inputへまとめる。
+6. scenario値はtyped canonical valueとし、旧number mapとのfallbackを持たない。
+7. Webはapplication view modelとcommandだけを扱い、master definitionやconditionから配置・controlを
+   再解釈しない。
+8. `inputRequired`は該当inline inputにも表示し、欠落・範囲外・導出minimum未満をclampしない。
+9. E4は同じinput resolver、scenario validation、command、executorを再利用し、ranking専用意味論を
+   作らない。
+
+この変更で入力位置と表示部品は改善するが、「攻撃役→スキル→自身の適用内容→支援→結果」という
+主要な操作順、共有・保存導線、damage値は変更しない。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。
