@@ -62,6 +62,19 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 
 この変更によりschemaは14、engineは11.2.0となる。旧値を維持する互換クランプや別検証経路は設けない。
 
+## 攻撃役スキルのactivationとhidden mutation
+
+攻撃役スキルをscenarioへ配置することは、スキル内の全operationを使用する意思決定ではない。既存UIでは最終的な火力effectを個別に選択するため、配置済みスキルを一律に自動実行すると、複数候補のfield変更や選択されていない火力effectまで同時に適用してしまう。一方、field・state traitのmutationを単にhiddenかつautomaticにすると、既定無効の攻撃役スキルでは到達不能になる。
+
+そこでoperationのactivationを次の二種類に分離する。
+
+- `sourceDefault`: passive、NP前effectなど、source契約だけで実行可否が確定するoperation。
+- `linkedDecisions`: 選択された最終火力effectと同じskill activation、またはそのeffect conditionが要求するtrait prerequisiteに結び付くhidden mutation。
+
+同一skillの無条件mutationは、そのskill内の火力effectが一つ以上選択されたときだけ実行する。choiceを持つmutationは同一skillという理由だけでは実行せず、選択されたeffect conditionがmutation後のtraitを論理的に必須とする場合だけ候補を確定する。OR条件の一枝だけがtraitを要求する場合は「必須」とみなさず、具体的traitを捏造しない。複数枝のすべてが同じtraitを要求するときだけprerequisiteとして扱う。
+
+activation linkはworld factではなくoperation実行依存である。linked decisionをeffect-local conditionからtrait assertionへ変換せず、mutationをcandidate stateへ適用して既存のcanonical constraint validationを通過した場合だけcommitする。未選択時、競合時、または対応するchoiceを一意に確定できない場合はmutationをcommitしない。hidden mutationが現在のNPダメージへ寄与する火力effectと結び付かない場合も、画面に新しい操作を増やすためだけには実行しない。
+
 ## E3.4 amendment: effect-local action choices
 
 `ActSet`と`ActSelectIndex`はworld stateではなく、一つのaction内で選ばれる候補を表す。これらをraw parameterのままexecutorで判定せず、normalizerが`family`と整数`candidate`からなるchoice IRへ変換する。

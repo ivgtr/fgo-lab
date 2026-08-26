@@ -36,7 +36,7 @@ production 469騎のうち攻撃宝具scenarioを構築できる420騎につい�
 
 master v20、schema 15、engine 12.0.0でoccurrence identityへ置換した結果、既定unsupportedは15騎のまま、選択時unsupportedは58騎・100 effect occurrenceとなった。従来の90 projectionは10 occurrenceを欠落していた。全projectionはuser 1,567、automatic visible 445、hidden 671であり、projection key衝突は0件である。以後のratchetはこのoccurrence単位を母数とする。
 
-master v21、engine 12.1.0でfield mutationと最終クラス相性の責務を分離した。`fieldIndividuality` 11効果と`subFieldIndividuality` 1効果はhiddenなadd/remove operationへ正規化し、automatic sourceだけが順序どおりstateへcommitする。ユーザー効果のeffect-local成立をfield factへ昇格させたり、同じskillの全field候補を一括適用したりしない。`overwriteClassRelation` 7効果は、敵classではなく適用後の最終クラス相性を直接入力するcalculator契約へ集約し、二重適用も操作projectionも生成しない。
+master v21、engine 12.1.0でfield mutationと最終クラス相性の責務を分離した。`fieldIndividuality` 11効果と`subFieldIndividuality` 1効果はhiddenなadd/remove operationへ正規化した。ただし、この時点の「automatic sourceだけcommit」という規則では、既定無効の攻撃役スキルに属するhidden mutationが到達不能になる欠陥が残った。`overwriteClassRelation` 7効果は、敵classではなく適用後の最終クラス相性を直接入力するcalculator契約へ集約し、二重適用も操作projectionも生成しない。
 
 この段階で既定unsupportedは12騎、選択時unsupportedは49騎・84 effect occurrenceとなった。projectionはuser 1,551、automatic visible 442、hidden 683である。
 
@@ -126,6 +126,7 @@ master v34、master schema 20、scenario schema 21、engine 12.11.0で、NP実�
 | canonical family | raw semantics | 対象例 | 不足 | 扱い |
 |---|---|---|---|---|
 | referenced trigger skill | NP内`attackBeforeFunction`、`npattackPrevBuff`、`fieldIndividualityChangedFunction` | ジャック・ド・モレー、ビショーネ、北斎、エレシュキガルほか | `Value/SkillID`が参照するskill定義が現行artifactにない | 選択・automatic時はtyped unsupported。skill/passive内の通常攻撃trigger 22効果は`commandCardAttack`としてNP計算から分離済み |
+
 | target/state stack scaling | `ParamAddOpIndividuality`、`ParamAddMaxCount/Value` | ビショーネ、カーマ | 対象状態のstack数入力 | typed missing quantity |
 | self stack scaling | `ParamAddSelfIndividuality` | キングプロテア、ハベトロット | 自身stack数入力または先行operation | derived stateで一意な場合だけ計算、それ以外unsupported |
 | turn scaling | `ParamAdd/ParamMax` | 茶々、魔王信長 | 経過turn | typed missing quantity |
@@ -135,6 +136,19 @@ master v34、master schema 20、scenario schema 21、engine 12.11.0で、NP実�
 | partial condition | `partialTrait` | BBドバイ | losslessな条件意味論 | typed unsupported |
 
 このフェーズでは新しい敵trait editor、field editor、star、turn、編成生存入力を追加しない。不足familyは値を0倍・1倍へ置換せず、選択時またはautomatic時に数値行を返さない。
+
+### 4.3 hidden context mutation activation修正
+
+攻撃役スキルのfield・recipient state mutationは、最終火力effectのdecisionからsource skill activationまたはtrait prerequisiteとして到達させる。攻撃役スキル全体を`enabledByDefault`へ変更してはならない。無条件mutationは同一skillの選択済み火力effectへ、choice mutationはそのtraitを論理的に必須とする選択済みeffectへだけlinkする。
+
+完了ratchetは次を固定する。
+
+- ガレスは陽射し条件の宝具前攻撃力アップを選択した場合だけ陽射しをcommitする。
+- ダンテは対天・対地の選択に対応する天国・地獄だけをcommitし、両方選択は従来どおりfail-closedとする。
+- テスカトリポカは同一skillの火力effectを選択した場合だけ陽射し解除をcommitする。
+- recipient state traitも同じactivation契約で扱い、専用分岐を作らない。
+- 現在のNPダメージへ作用する選択がないmutationは実行しない。エレシュキガルの冥界の護りによる付与は後続NPのafter-damage effect向けであり、現行NPダメージ入力へ流入させないことをproduction regressionで固定する。
+- 未選択、card mismatchだけ、またはORの一枝にしか依存しない場合はmutationをcommitしない。
 
 ## 5. Canonical IR
 

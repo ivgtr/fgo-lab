@@ -279,6 +279,9 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 10. trait制約IRはactorの初期trait、後から付与・解除されるstate trait、両者の論理和であるcombined predicateを別scopeとして保持する。actor条件はcombined、state専用条件はstateだけを読む。初期negativeだけではstateを否定せず、positive stateはcombinedを成立させる。この規則をcondition evaluatorとsolverで共有する。
 11. 初期制約検証が失敗した場合、選択中の条件付きoperationをall-or-nothingで非適用とし、競合後のdamage inputへmodifierを残さない。
 12. context mutationは初期traitを書き換えずstate traitだけを更新し、各operationのcandidate stateからcombined predicateを再導出する。付与後と解除後の条件評価は同じ時点のstateを使用する。
+13. 攻撃役スキル由来のhidden context mutationは、スキルがmaster上に存在することだけでは自動実行しない。選択された最終火力effectとのsource skill activationまたは論理的trait prerequisiteをcanonical operationへ保持し、対応するdecisionが有効な場合だけ候補stateを生成する。
+14. choiceを持つhidden mutationは、同一skillという理由だけで全候補を有効化しない。選択effectのconditionが候補traitをすべての充足枝で要求する場合だけ結び付け、ORの一枝を暗黙採用しない。
+15. hidden mutationのactivation linkはworld factではない。effect-local成立を具体的traitへ変換せず、候補stateの制約検証に成功したoperationだけをcommitする。
 
 ### 8.9 E3.4 unsupported semantics convergence
 

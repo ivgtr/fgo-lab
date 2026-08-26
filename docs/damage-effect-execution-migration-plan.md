@@ -309,6 +309,7 @@ E3.4進捗（master v26、schema 14、engine 12.5.0）:
 E3.4完了記録（2026-08-26）:
 
 - master v34、master schema 20、scenario schema 21、engine 12.11.0へ一方向更新した。
+- engine 12.12.0で、既定無効の攻撃役スキルに属するhidden field／recipient mutationを最終火力decisionへ結び付けるactivation IRへ置換した。同一skillの無条件mutationと、全論理枝で必須となるtrait producerだけをlinkし、choice候補の一括適用とOR先頭候補の採用を禁止した。
 - 現行masterと既存UI入力でexactに解けるoccurrence identity、field mutation、parameter role、BP/HP value expression、action choice、NP card change、command-card scope、function position、buff identity、source-owned BP guardを一つのnormalization／execution経路へ収束した。
 - `cardNP`をNP execution scopeとして確定し、宝具内の未解決参照を通常攻撃triggerとして除外しない。玉兎のcardと形態stateはtransactionalに置換し、競合時はどちらもcommitしない。
 - 既定unsupportedは12騎、選択時unsupportedは14騎25 occurrenceとなった。残存はtrait provenance、linked state、turn、stack、star、参照artifact不足だけであり、現行UI入力だけでは値が一意にならない。
