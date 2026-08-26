@@ -97,27 +97,86 @@ describe('master validation', () => {
       }),
     ).toMatchObject({ valid: true, unknownAttackFunctions: [] }));
   it('rejects maximum-limit-break-only availability outside craft essences', () => {
+    const skill = {
+      id: 'test-skill',
+      slot: 1,
+      priority: 0,
+      name: 'test',
+      detail: '',
+      imageKey: null,
+      effects: [nonDamageEffect],
+    };
+    const invalidSnapshots = [
+      {
+        ...fixture,
+        servants: [{ ...fixture.servants[0], skills: [skill] }],
+      },
+      {
+        ...fixture,
+        servants: [{ ...fixture.servants[0], passives: [skill] }],
+      },
+      {
+        ...fixture,
+        servants: [
+          {
+            ...fixture.servants[0],
+            noblePhantasms: fixture.servants[0]!.noblePhantasms.map((np) => ({
+              ...np,
+              effects: [{ ...nonDamageEffect, timing: 'beforeDamage' as const }],
+            })),
+          },
+        ],
+      },
+      {
+        ...fixture,
+        mysticCodes: [
+          { id: 'test-code', name: 'test', maxLevel: 10, imageKey: null, skills: [skill] },
+        ],
+      },
+    ];
+    for (const snapshot of invalidSnapshots) {
+      const result = validateMasterSnapshot(snapshot);
+      expect(result).toMatchObject({ valid: false });
+      expect(result.errors.join('\n')).toContain('maximumLimitBreakOnly is only valid');
+    }
+  });
+  it('rejects a CE valued operation without an explicit MLB value series', () => {
+    const values = [[100], [], [], [], []] as const;
     const result = validateMasterSnapshot({
       ...fixture,
-      servants: [
+      craftEssences: [
         {
-          ...fixture.servants[0],
-          skills: [
+          id: 'test-ce',
+          name: 'test',
+          maxLevelByLimitBreak: [20, 20, 20, 20, 100],
+          atkMin: 0,
+          atkMax: 0,
+          imageKey: null,
+          effects: [
             {
-              id: 'test-skill',
-              slot: 1,
-              priority: 0,
-              name: 'test',
-              detail: '',
-              imageKey: null,
-              effects: [nonDamageEffect],
+              ...nonDamageEffect,
+              availability: 'allLimitBreakStates',
+              execution: [
+                {
+                  kind: 'damageModifier',
+                  modifier: 'attackBuff',
+                  sign: 1,
+                  card: null,
+                  targetPolicy: 'sourceSelf',
+                  expectedRecipient: 'attacker',
+                  targetMismatch: 'unsupported',
+                  values,
+                  valueExpressions: [[], [], [], [], []],
+                  semanticSupport: 'supported',
+                },
+              ],
             },
           ],
         },
       ],
     });
     expect(result).toMatchObject({ valid: false });
-    expect(result.errors.join('\n')).toContain('maximumLimitBreakOnly is only valid');
+    expect(result.errors.join('\n')).toContain('require explicit limit-break values');
   });
   it('rejects an incomplete NP parameter matrix', () =>
     expect(

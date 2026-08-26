@@ -66,4 +66,4 @@ production監査により、MLB skill保有898礼装のうち8礼装はMLB側だ
 
 executorは一effect内の全canonical operationを配列順にcompileする。値欠落またはdamage-relevant unresolvedが一件でもあればoperationを一件も返さず、部分compileしない。既存1,954ケースのdigestは`825dcf95b265e585cce9343ed6d4b7a180f531794ca3f0e173516220c5d0bc3a`のまま維持し、承認済み5礼装は別goldenでLB0／LB4の全damage input digestとNP1〜5を固定した。
 
-レビューで、LB4時に`limitBreakValues`が欠落すると通常値へ戻るruntime fallback、`maximumLimitBreakOnly`を礼装以外にも配置できるschema、複数operation effectの後半が実行時に失敗した際の部分commitを確認した。E3.7では上記三契約を破壊的に閉鎖する。MLB skill保有礼装898件、MLB evidenceを持つshared effect 2,077件、値が通常系列と異なるshared valued operation 745件、およびshared MLB値全体のdigestをproduction ratchetへ固定する。scenario、共有、保存、UI契約は変更しない。
+レビューで、LB4時に`limitBreakValues`が欠落すると通常値へ戻るruntime fallback、`maximumLimitBreakOnly`を礼装以外にも配置できるschema、複数operation effectの後半が実行時に失敗した際の部分commitを確認した。E3.7では上記三契約を破壊的に閉鎖した。MLB skill保有礼装898件、MLB evidenceを持つshared effect 2,077件、shared valued operation 745件（通常系列と値が異なるもの735件）、およびshared MLB値全体のdigestをproduction ratchetへ固定した。全CE valued operation 1,307件はLB4系列を明示保持する。master schema 23、artifact v38、engine 12.15.0へ更新し、scenario、共有、保存、UI契約は変更していない。

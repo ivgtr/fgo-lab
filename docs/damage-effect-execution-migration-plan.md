@@ -321,6 +321,14 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 - MLB-only damage 5件はflat damage +17、Buster +2.1%、Quick +2.2%、NP damage +2.3%、Arts +2.4%としてLB4だけに反映する。残り3件のexecution semanticsはnon-damageだが、通常effectへ統合せずMLB-only occurrenceとしてartifactに保持する。
 - shared occurrenceは値以外のsemantic identityと順序を厳密照合する。通常側欠落、kind／semantic変更、順序変更、重複曖昧性のfixtureはすべてartifact生成失敗を確認した。
 - compilerはcontextを含む全operationをcanonical順に生成する。値欠落またはunresolvedを含むeffectはall-or-nothingでoperation 0件となる。
+
+## E3.7: MLB値完全性とruntime transaction
+
+- CE valued operationは全1,307件でLB4系列を明示する。MLB skillなしはnormalizerが通常系列を複製し、shared effectはsemantic identity照合後のMLB系列、MLB-only effectは独立occurrence自身の系列を保持する。executorのLB4→通常値fallbackは削除した。
+- MLB skill保有CE 898件、shared evidence effect 2,077件、shared valued operation 745件（差分値735件）と値digestをproduction ratchetへ固定した。
+- `maximumLimitBreakOnly`はCE effectだけに許可し、servant skill／passive／NP／mystic codeへの不正配置をmaster schemaで拒否する。
+- 同一effect occurrenceのoperation列はcandidate state/inputで実行し、後半のquantity不足やconstraint conflictを含むruntime failure時に全operationをrollbackする。部分commitされたmodifier、trait、evidence、damage inputを後続へ渡さない。
+- master schema 23、artifact v38、engine 12.15.0へ更新した。既存1,954ケースとMLB-only 5礼装goldenは不変で、frontend入力、scenario、共有、保存形式は変更していない。
 - 既存420既定scenarioと1,534 user projection選択の1,954件は従来digestと完全一致した。MLB差分5件はLB0／LB4のdamage input digestとNP1〜5、LB1〜3の非適用を専用goldenへ固定した。
 - production unsupportedとprojection inventoryは変化していない。PlaywrightはPC／mobile Chromiumで43成功、21 project-specific skip、0失敗だった。
 

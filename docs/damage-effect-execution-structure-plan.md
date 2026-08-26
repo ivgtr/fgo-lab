@@ -231,5 +231,9 @@ E3.6後のレビューで、MLB値が欠落したvalued operationをexecutorが�
 - battle-executionはLB4系列欠落を通常値へfallbackせず、effect全体をtyped unsupportedとする。
 - master snapshotは`maximumLimitBreakOnly`をCE effect以外で拒否する。source collectorは正当なartifactのavailability評価だけを担う。
 - ordered executionは`origin / source instance / skill / effect occurrence`でeffect transactionを識別する。同一effectのoperation列をcandidate state/inputへ順序通り適用し、一件でもruntime unsupportedとなれば全列をnon-appliedとして元のstate/inputを維持する。
-- MLB skill保有CE 898件、MLB evidence shared effect 2,077件、実値override 745件、shared MLB canonical値digestを固定する。通常系列を明示複製したeffectも別件数で監査し、evidence由来overrideと混同しない。
+- MLB skill保有CE 898件、MLB evidence shared effect 2,077件、shared valued operation 745件、そのうち実値が異なる735件、shared MLB canonical値digestを固定する。通常系列を明示複製したeffectも別件数で監査し、evidence由来overrideと混同しない。
 - 既存1,954ケースdigestとMLB-only 5礼装goldenは変更しない。UI、scenario、URL共有、保存形式は変更しない。
+
+実装では全CE valued operation 1,307件へ`limitBreakValues`／`limitBreakValueExpressions`を生成し、LB4で欠落した系列を通常値へ戻すcompiler fallbackを削除した。shared MLB値digestは`9a70f2009c272e7818d66b6937ee9f10abc7aa74566b935227835840beebada6`である。snapshot validationはservant skill、passive、NP、mystic code上の`maximumLimitBreakOnly`を拒否する。
+
+ordered executionは同一effect occurrenceのoperation列をcandidate state/inputで評価し、実行時unsupported時にmodifier、trait、evidence、damage inputを全rollbackする。複合effectの前半modifier＋後半HP quantity不足を回帰testへ固定した。既存1,954ケースdigestとMLB-only 5礼装goldenは不変で、unit/integration 39ファイル204件、master 31件、evidence 10件、Playwright 43件が成功した。production buildは178 modules、main 455.61 kB（gzip 130.90 kB）、ranking worker 96.67 kB、benchmarkは417.61 ops/s、mean 2.3946 msだった。VRT差分はartifact／engine version表示だけであることを画像確認して更新した。
