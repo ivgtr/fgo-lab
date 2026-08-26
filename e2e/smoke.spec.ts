@@ -930,6 +930,44 @@ test('NP card choices update final-card buffs and fail closed on conflicting cho
   }
 });
 
+test('Jade Rabbit replaces NP form state with the selected final card', async ({ page }) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('玉兎');
+  await attackerDialog.getByRole('button', { name: /玉兎.*ムーンキャンサー.*Lv90/ }).click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const busterForm = ownEffects.getByRole('button', { name: /^月下 / });
+  const artsForm = ownEffects.getByRole('button', { name: /^日輪 / });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await effectiveInput.locator('summary').click();
+
+  await expect(table).toBeVisible();
+  await expect(effectiveInput).toContainText('ARTS性能／耐性');
+  await busterForm.click();
+  await expect(busterForm).toHaveAttribute('aria-pressed', 'true');
+  await expect(table).toBeVisible();
+  await expect(effectiveInput).toContainText('BUSTER性能／耐性');
+
+  await artsForm.click();
+  await expect(table).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
+  await expect(busterForm).toHaveAttribute('aria-pressed', 'true');
+  await expect(artsForm).toHaveAttribute('aria-pressed', 'true');
+
+  await busterForm.click();
+  await expect(table).toBeVisible();
+  await expect(effectiveInput).toContainText('ARTS性能／耐性');
+});
+
 test('Dante realm decisions are exclusive and preserve the damage UI on desktop and mobile', async ({
   page,
 }) => {
