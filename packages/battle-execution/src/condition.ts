@@ -12,7 +12,28 @@ export function normalizeTraitCondition(
     present: !trait.negative,
   }));
   if (condition.operator === 'partial') return { kind: 'partialTrait', scope, traits };
+  const onlyTrait = traits.length === 1 ? traits[0] : undefined;
+  if (
+    onlyTrait &&
+    (scope === 'attacker' || scope === 'attackerState') &&
+    ['cardNP', 'faceCard', 'cardExtra'].includes(onlyTrait.trait)
+  ) {
+    const actual = onlyTrait.trait === 'cardNP';
+    return actual === onlyTrait.present
+      ? { kind: 'always' }
+      : { kind: 'not', expression: { kind: 'always' } };
+  }
   const expressions = traits.map<ConditionExpression>((trait) => {
+    const fixedCardScope =
+      scope === 'attacker' || scope === 'attackerState'
+        ? ({ cardNP: true, faceCard: false, cardExtra: false } as const)[
+            trait.trait as 'cardNP' | 'faceCard' | 'cardExtra'
+          ]
+        : undefined;
+    if (fixedCardScope !== undefined) {
+      const matches = fixedCardScope === trait.present;
+      return matches ? { kind: 'always' } : { kind: 'not', expression: { kind: 'always' } };
+    }
     const card =
       scope === 'attacker' || scope === 'attackerState'
         ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[

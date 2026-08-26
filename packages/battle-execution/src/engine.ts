@@ -33,6 +33,7 @@ import {
   validateConstraintSet,
   type SatisfiableConditionConstraint,
 } from './constraints';
+import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { applyNpDamageOperation } from './npDamageOperation';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -454,6 +455,7 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
       ...baseOperation(source, order++, `card:${cardTypeChange}`),
       kind: 'changeCardType',
       card: cardTypeChange,
+      stateTraits: source.effect.npCardTypeStateTraits,
     });
   } else if (rateChange) {
     if (source.rawValue === undefined)
@@ -1313,6 +1315,14 @@ export function executeOrderedScenario(
     } else if (!enabled) {
       outcome = 'notApplied';
       code = 'disabled';
+    } else if (
+      operation.kind === 'changeCardType' &&
+      finalSelectedCardMutation !== undefined &&
+      operation.operationId !== finalSelectedCardMutation.operationId &&
+      operation.order < finalSelectedCardMutation.order
+    ) {
+      outcome = 'notRelevant';
+      code = 'disabled';
     } else if (operation.kind === 'addModifier' && resolvedModifierValue === null) {
       outcome = 'unsupported';
       code = 'unresolved';
@@ -1399,6 +1409,26 @@ export function executeOrderedScenario(
         };
       else if (operation.kind === 'changeCardType') {
         candidateState.card = operation.card;
+        for (const trait of operation.stateTraits) {
+          const group = canonicalExclusiveGroup('attackerState', trait);
+          if (group)
+            for (const conflictingTrait of canonicalExclusiveTraits('attackerState', group)) {
+              if (conflictingTrait === trait) continue;
+              (candidateState.traits.attackerState as Map<string, boolean>).set(
+                conflictingTrait,
+                false,
+              );
+              candidateState.traitCounts.attackerState = withoutTraitCount(
+                candidateState.traitCounts.attackerState,
+                conflictingTrait,
+              );
+            }
+          (candidateState.traits.attackerState as Map<string, boolean>).set(trait, true);
+          candidateState.traitCounts.attackerState = {
+            ...candidateState.traitCounts.attackerState,
+            [trait]: 1,
+          };
+        }
       } else if (operation.kind === 'ignoreDefense') candidateState.ignoreDefense = true;
       else if (operation.kind === 'ignoreDamageCut') candidateState.ignoreDamageCut = true;
       else input = applyNp(input, operation, state, localConditionSatisfied);

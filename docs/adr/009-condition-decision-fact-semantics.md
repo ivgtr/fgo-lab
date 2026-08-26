@@ -94,3 +94,11 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 `TriggeredTargetBattlePointRateRange`はattackerのBP phase入力とは別のsource-owned quantityである。normalizerはsubject IDと整数rangeを保持し、effect-local `sourceQuantity` conditionへ変換する。成立decisionは具体的なrateをscenarioやworld factへ保存しないが、選択された複数rangeは同一subjectごとにsolverで積を取り、空積をtyped conflictにする。rangeが複数、構文不明、非整数の場合はunsupportedを維持する。
 
 この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。
+
+## E3.4 amendment: execution scope and NP form state
+
+`cardNP`、`faceCard`、`cardExtra`はactor traitではなくcard execution scopeである。NP executorは`cardNP`を成立、`faceCard`と`cardExtra`を不成立として正規化し、scope外effectを火力decisionへ投影しない。宝具container内の参照operationはNP前実行の可能性を持つため、同じbuff typeのskill/passive operationをcommand-card限定と判定した事実を流用しない。参照先をartifactから解決できなければautomatic operationをtyped unsupportedにして数値行を返さない。
+
+NP card changeに連動する形態traitはworld factでもeffect-local成立factでもなくderived stateである。normalizerはcard buffに付随するtraitを保持し、executorはcard変更と形態traitの排他置換を一つのcandidate stateへ適用する。後続の最終card mutationは先行mutationをsupersedeし、同一形態groupの別traitをcandidateから除去してから新traitを追加する。競合するuser decisionは統合constraintで先に拒否し、いずれのmutationもcommitしない。
+
+この設計では玉兎のArts／Buster形態と連動火力が、具体的な形態traitをscenarioへ複製せず順序付きtraceから説明できる。サーヴァント、skill、effect、表示名による分岐は持たず、card buff、付随trait、execution container、canonical exclusive semanticsだけで処理する。

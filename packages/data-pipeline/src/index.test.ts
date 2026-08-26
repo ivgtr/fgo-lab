@@ -685,8 +685,27 @@ describe('immutable publish pipeline', () => {
                   funcId: 6,
                   funcType: 'addStateShort',
                   funcTargetType: 'self',
-                  buffs: [{ type: 'tdTypeChangeArts' }],
-                  svals: [{ Rate: 1000, Turn: 1, InvalidHide: 1 }],
+                  buffs: [
+                    {
+                      type: 'tdTypeChangeArts',
+                      vals: [
+                        { id: 3004, name: 'buffPositiveEffect' },
+                        { id: 3122, name: 'jadeRabbitSunForm' },
+                      ],
+                    },
+                  ],
+                  svals: [
+                    {
+                      Rate: 1000,
+                      Turn: 1,
+                      ForceAddState: 1,
+                      ProcActive: 1,
+                      UnSubState: 1,
+                      SetPassiveFrame: 1,
+                      InvalidHide: 1,
+                      FuncCheckTargetIndividualityTargetType: 0,
+                    },
+                  ],
                 },
                 {
                   funcId: 7,
@@ -803,8 +822,11 @@ describe('immutable publish pipeline', () => {
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[3]).toMatchObject({
       npCardTypeChange: 'arts',
+      npCardTypeStateTraits: ['jadeRabbitSunForm'],
       parameterSemantics: {
-        presentation: ['InvalidHide'],
+        condition: ['FuncCheckTargetIndividualityTargetType'],
+        lifecycle: ['ForceAddState', 'ProcActive', 'Turn', 'UnSubState'],
+        presentation: ['InvalidHide', 'SetPassiveFrame'],
         unresolved: [],
       },
     });

@@ -27,6 +27,7 @@ const expectedUnsupportedFamilies = {
   '203300': ['missing_attacker_hp_ratio'],
   '305800': ['unsupportedOperation'],
   '400900': ['missing_attacker_hp_ratio'],
+  '506000': ['unsupportedOperation'],
   '702500': ['missing_attacker_hp_ratio'],
   '1102000': ['unsupportedOperation'],
   '1102300': ['unsupportedOperation'],
@@ -38,8 +39,6 @@ const expectedUnsupportedFamilies = {
 const expectedUnresolvedDamageSemantics = {
   parameters: {
     BehaveAsFamilyBuff: 2,
-    ForceAddState: 4,
-    FuncCheckTargetIndividualityTargetType: 3,
     IgnoreIndivUnreleaseable: 1,
     IncludeIgnoreIndividuality: 5,
     IncludePassiveIndividuality: 1,
@@ -54,8 +53,6 @@ const expectedUnresolvedDamageSemantics = {
     ParamAddSelfIndividualityAndCheck: 2,
     ParamAddValue: 7,
     ParamMax: 4,
-    ProcActive: 1,
-    SetPassiveFrame: 4,
     ShowCardOnly: 1,
     SkillID: 1,
     SkillLV: 1,
@@ -63,7 +60,6 @@ const expectedUnresolvedDamageSemantics = {
     TriggeredFieldCountRange: 1,
     TriggeredFieldCountTarget: 1,
     TypeIndividualityEachFunc: 1,
-    UnSubState: 4,
     UnSubStateWhileLinkedToOthers: 1,
     Value2: 3,
   },
@@ -494,6 +490,35 @@ describe('production master damage quality ratchet', () => {
     );
   });
 
+  it('fails closed on an unresolved automatic NP-card pre-damage reference', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '506000')!;
+    const calculation = calculateScenario(
+      createDefaultResolvedScenario(master, undefined, servant),
+      master,
+      {
+        schemaVersion: SCHEMA_VERSION,
+        engineVersion: ENGINE_VERSION,
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+        masterDataVersion: master.version,
+      },
+    );
+    const preDamageReference = calculation.effects.find(
+      (effect) => effect.label === '宝具攻撃ダメージ前追加効果',
+    );
+    expect(calculation.result.status).toBe('unsupported');
+    expect(calculation.result.rows).toEqual([]);
+    expect(preDamageReference).toMatchObject({
+      controllability: 'automatic',
+      outcome: 'unsupported',
+      decision: { state: 'none' },
+    });
+  });
+
   it('changes the NP card transactionally before evaluating card-specific modifiers', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
@@ -564,6 +589,112 @@ describe('production master damage quality ratchet', () => {
     expect(
       conflict.effects
         .filter((effect) => effect.modifier === 'cardTypeChange')
+        .map((effect) => effect.outcome),
+    ).not.toContain('applied');
+  });
+
+  it('replaces Jade Rabbit NP form traits atomically with the card type', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '2301100')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const baseline = calculateScenario(scenario, master, versions);
+    const busterForm = baseline.effects.find(
+      (effect) => effect.modifier === 'cardTypeChange' && effect.label === '月下',
+    )!;
+    const artsForm = baseline.effects.find(
+      (effect) =>
+        effect.modifier === 'cardTypeChange' &&
+        effect.skillName === '望月に踊る A' &&
+        effect.label === '日輪',
+    )!;
+    const busterAttack = baseline.effects.find(
+      (effect) =>
+        effect.modifier === 'attackBuff' &&
+        JSON.stringify(effect.explanation.condition).includes('traitId:3121'),
+    )!;
+    const busterNp = baseline.effects.find(
+      (effect) =>
+        effect.modifier === 'npDamageBuff' &&
+        JSON.stringify(effect.explanation.condition).includes('traitId:3121'),
+    )!;
+    const artsAttack = baseline.effects.find(
+      (effect) =>
+        effect.modifier === 'attackBuff' &&
+        JSON.stringify(effect.explanation.condition).includes('traitId:3122'),
+    )!;
+    expect(baseline).toMatchObject({
+      result: { status: 'calculated' },
+      input: { cardType: 'arts', attackBuff: 0, npDamageBuff: 0.2 },
+    });
+    expect(
+      baseline.effects.find(
+        (effect) => effect.modifier === 'cardTypeChange' && effect.source.origin === 'passive',
+      ),
+    ).toMatchObject({ controllability: 'automatic', outcome: 'applied' });
+
+    const busterScenario = [busterForm, busterAttack, busterNp].reduce(
+      (current, effect) => applyEffectProjectionDecision(current, effect, true),
+      scenario,
+    );
+    const buster = calculateScenario(busterScenario, master, versions);
+    expect(buster.result.status).toBe('calculated');
+    expect(buster.input).toMatchObject({ cardType: 'buster', attackBuff: 0.3, npDamageBuff: 0.5 });
+    expect(
+      buster.effects
+        .filter((effect) =>
+          [busterForm.projectionKey, busterAttack.projectionKey, busterNp.projectionKey].includes(
+            effect.projectionKey,
+          ),
+        )
+        .map((effect) => effect.outcome),
+    ).toEqual(['applied', 'applied', 'applied']);
+
+    const arts = calculateScenario(
+      applyEffectProjectionDecision(
+        applyEffectProjectionDecision(scenario, artsForm, true),
+        artsAttack,
+        true,
+      ),
+      master,
+      versions,
+    );
+    expect(arts.result.status).toBe('calculated');
+    expect(arts.input).toMatchObject({ cardType: 'arts', attackBuff: 0.3 });
+
+    const missingForm = calculateScenario(
+      applyEffectProjectionDecision(scenario, busterAttack, true),
+      master,
+      versions,
+    );
+    expect(missingForm.result.status).toBe('unsupported');
+    expect(missingForm.input.attackBuff).toBe(0);
+
+    const conflictingForms = calculateScenario(
+      applyEffectProjectionDecision(
+        applyEffectProjectionDecision(scenario, busterForm, true),
+        artsForm,
+        true,
+      ),
+      master,
+      versions,
+    );
+    expect(conflictingForms.result.status).toBe('unsupported');
+    expect(conflictingForms.input.cardType).toBe('arts');
+    expect(
+      conflictingForms.effects
+        .filter((effect) =>
+          [busterForm.projectionKey, artsForm.projectionKey].includes(effect.projectionKey),
+        )
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
   });
@@ -1455,7 +1586,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_538, automaticVisible: 439, hidden: 687 });
+    }).toEqual({ user: 1_534, automaticVisible: 443, hidden: 687 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -1463,7 +1594,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
       effects: multiBranchOrEffects.length,
-    }).toEqual({ servants: 16, effects: 19 });
+    }).toEqual({ servants: 18, effects: 21 });
     expect([...conditionKinds].sort()).toEqual([
       'all',
       'always',
@@ -1483,14 +1614,40 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 15, effects: 32 });
-    expect(exclusivePairCount).toBe(26);
-    expect(conflictPairs).toEqual({ effectEffect: 25, factFact: 1, factEffect: 0 });
+    }).toEqual({ servants: 14, effects: 25 });
+    expect(
+      Object.fromEntries(
+        [...new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0]))]
+          .sort()
+          .map((servantId) => [
+            servantId,
+            selectedUnsupportedProjections.filter((item) => item.startsWith(`${servantId}:`))
+              .length,
+          ]),
+      ),
+    ).toEqual({
+      '1000900': 1,
+      '1100400': 1,
+      '1100700': 1,
+      '1101100': 1,
+      '2500200': 1,
+      '2801300': 11,
+      '3300200': 1,
+      '400100': 1,
+      '404900': 1,
+      '506000': 2,
+      '603200': 1,
+      '604700': 1,
+      '702600': 1,
+      '703300': 1,
+    });
+    expect(exclusivePairCount).toBe(29);
+    expect(conflictPairs).toEqual({ effectEffect: 28, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 245, effects: 63, servants: 52 });
+    }).toEqual({ combinations: 250, effects: 68, servants: 52 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');

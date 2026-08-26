@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 19,
+    schemaVersion: 20,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -406,7 +406,14 @@ function uniqueTraits(traits: readonly { name: string; negative: boolean }[]) {
 }
 
 const VALUE_PARAMETER_KEYS = new Set(['Rate', 'Value']);
-const LIFECYCLE_PARAMETER_KEYS = new Set(['Count', 'OnField', 'Turn']);
+const LIFECYCLE_PARAMETER_KEYS = new Set([
+  'Count',
+  'ForceAddState',
+  'OnField',
+  'ProcActive',
+  'Turn',
+  'UnSubState',
+]);
 const PRESENTATION_PARAMETER_KEYS = new Set([
   'AuraEffectId',
   'DisplayNoEffectCauses',
@@ -416,6 +423,7 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
   'DisplayLastFuncInvalidType',
   'ShowQuestNoEffect',
   'ShowState',
+  'SetPassiveFrame',
 ]);
 const CONTEXT_MUTATION_PARAMETER_KEYS = new Set(['FieldIndividuality', 'TargetList']);
 const BUFF_IDENTITY_PARAMETER_KEYS = new Set([
@@ -640,7 +648,10 @@ function normalizeEffectChoice(parameterSets: readonly (readonly AtlasFunctionVa
   return null;
 }
 
-function normalizeNpCardTypeChange(buffs: AtlasFunction['buffs']) {
+function normalizeNpCardTypeChange(
+  buffs: AtlasFunction['buffs'],
+  traitNameById: ReadonlyMap<number, string>,
+) {
   const cards = [
     ...new Set(
       (buffs ?? []).flatMap((buff) => {
@@ -651,7 +662,25 @@ function normalizeNpCardTypeChange(buffs: AtlasFunction['buffs']) {
       }),
     ),
   ];
-  return cards.length === 1 ? cards[0]! : null;
+  if (cards.length !== 1) return null;
+  const card = cards[0]!;
+  const matchingType =
+    card === 'arts'
+      ? 'tdTypeChangeArts'
+      : card === 'buster'
+        ? 'tdTypeChangeBuster'
+        : 'tdTypeChangeQuick';
+  const stateTraits = uniqueTraits(
+    (buffs ?? []).flatMap((buff) =>
+      buff.type === matchingType
+        ? signedTraits(
+            (buff.vals ?? []).filter((trait) => trait.id !== 3004),
+            traitNameById,
+          )
+        : [],
+    ),
+  ).map((trait) => trait.name);
+  return { card, stateTraits };
 }
 
 function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: 'skill' | 'np') {
@@ -692,6 +721,7 @@ function classifyParameterSemantics(
   valueExpressionKeys: readonly string[],
   choice: ReturnType<typeof normalizeEffectChoice>,
   operationTrigger: ReturnType<typeof normalizeOperationTrigger>,
+  hasNormalizedConditionRouting: boolean,
 ) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
@@ -703,6 +733,7 @@ function classifyParameterSemantics(
       : [],
   );
   if (sourceQuantityConditions.length > 0) conditionKeys.add('TriggeredTargetBattlePointRateRange');
+  if (hasNormalizedConditionRouting) conditionKeys.add('FuncCheckTargetIndividualityTargetType');
   const choiceKeys = new Set(
     choice?.family === 'actSet'
       ? ['ActSet', ...(keys.includes('ActSetWeight') ? ['ActSetWeight'] : [])]
@@ -751,6 +782,7 @@ function normalizeFunctions(
   functions: AtlasFunction[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
   source: 'skill' | 'np' = 'skill',
+  ownerId?: number,
 ) {
   const occurrencesByFunctionId = new Map<number, number>();
   return (functions ?? []).flatMap((fn) => {
@@ -770,8 +802,32 @@ function normalizeFunctions(
     const sourceQuantityConditions = normalizeSourceQuantityConditions(parameterSets);
     const modifierValues = normalizeModifierValueExpressions(parameterSets);
     const choice = normalizeEffectChoice(parameterSets);
-    const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs);
+    const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs, traitNameById);
     const operationTrigger = normalizeOperationTrigger(parameterSets);
+    const conditionRoutingValues = [
+      ...new Set(
+        parameterSets.flatMap((set) =>
+          set.flatMap((parameter) =>
+            parameter['FuncCheckTargetIndividualityTargetType'] === undefined
+              ? []
+              : [parameter['FuncCheckTargetIndividualityTargetType']],
+          ),
+        ),
+      ),
+    ];
+    const hasNormalizedConditionRouting =
+      conditionRoutingValues.length === 1 && conditionRoutingValues[0] === 0;
+    const scriptTraits = (fn.buffs ?? []).flatMap((buff) =>
+      buff.script?.INDIVIDUALITIE
+        ? [{ buffType: buff.type, trait: buff.script.INDIVIDUALITIE }]
+        : [],
+    );
+    const isFieldTrait = (trait: AtlasTraitRef) =>
+      trait.name?.startsWith('field') === true || trait.name === 'milleniumCastle';
+    const isCardChangeOwnerIdentity = ({ buffType, trait }: (typeof scriptTraits)[number]) =>
+      ['tdTypeChange', 'tdTypeChangeArts', 'tdTypeChangeBuster', 'tdTypeChangeQuick'].includes(
+        buffType ?? '',
+      ) && trait.id === ownerId;
     return [
       {
         id: String(fn.funcId),
@@ -787,10 +843,12 @@ function normalizeFunctions(
           modifierValues.recognizedKeys,
           choice,
           operationTrigger,
+          hasNormalizedConditionRouting,
         ),
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         choice,
-        npCardTypeChange,
+        npCardTypeChange: npCardTypeChange?.card ?? null,
+        npCardTypeStateTraits: npCardTypeChange?.stateTraits ?? [],
         triggerScope: normalizeTriggerScope(fn.buffs, source),
         operationTrigger,
         quantityConditions,
@@ -814,7 +872,16 @@ function normalizeFunctions(
                 ],
           holder: {
             operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById),
+            traits: uniqueTraits([
+              ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById),
+              ...scriptTraits.flatMap((entry) =>
+                entry.buffType === 'upCommandall' &&
+                fn.funcTargetType === 'self' &&
+                !isFieldTrait(entry.trait)
+                  ? signedTraits([entry.trait], traitNameById)
+                  : [],
+              ),
+            ]),
           },
           opponent: {
             operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
@@ -824,11 +891,10 @@ function normalizeFunctions(
             operator: 'any' as const,
             traits: uniqueTraits([
               ...signedTraits(fn.funcquestTvals, traitNameById),
-              ...(fn.buffs ?? []).flatMap((buff) =>
-                signedTraits(
-                  buff.script?.INDIVIDUALITIE ? [buff.script.INDIVIDUALITIE] : [],
-                  traitNameById,
-                ),
+              ...scriptTraits.flatMap((entry) =>
+                isFieldTrait(entry.trait) && !isCardChangeOwnerIdentity(entry)
+                  ? signedTraits([entry.trait], traitNameById)
+                  : [],
               ),
             ]),
           },
@@ -1045,6 +1111,7 @@ export function normalizeAtlasSnapshot(input: {
         effectFunctions.map(({ fn }) => fn),
         traitNameById,
         'np',
+        servant.id,
       );
       return [
         {
@@ -1085,7 +1152,7 @@ export function normalizeAtlasSnapshot(input: {
       name: skill.name ?? '不明なスキル',
       detail: skill.detail ?? '',
       imageKey: skill.icon ?? null,
-      effects: normalizeFunctions(skill.functions, traitNameById),
+      effects: normalizeFunctions(skill.functions, traitNameById, 'skill', servant.id),
     });
     return [
       {

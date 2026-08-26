@@ -100,6 +100,7 @@ const EXCLUSIVE_TRAIT_GROUPS = {
     'attributeBeast',
   ]),
   fieldRealm: new Set(['fieldHeaven', 'fieldHell']),
+  npCardForm: new Set(['traitId:3121', 'traitId:3122']),
 } satisfies Record<CanonicalExclusiveGroup, ReadonlySet<string>>;
 
 export function canonicalExclusiveGroup(
@@ -109,6 +110,7 @@ export function canonicalExclusiveGroup(
   const canonical = actorScopeForTrait(scope);
   if (canonical === 'field')
     return EXCLUSIVE_TRAIT_GROUPS.fieldRealm.has(trait) ? 'fieldRealm' : null;
+  if (EXCLUSIVE_TRAIT_GROUPS.npCardForm.has(trait)) return 'npCardForm';
   return EXCLUSIVE_TRAIT_GROUPS.worldAttribute.has(trait) ? 'worldAttribute' : null;
 }
 
@@ -119,6 +121,10 @@ export function canonicalExclusiveTraits(
   const canonical = actorScopeForTrait(scope);
   if (group === 'fieldRealm')
     return canonical === 'field' ? [...EXCLUSIVE_TRAIT_GROUPS.fieldRealm] : [];
+  if (group === 'npCardForm')
+    return canonical === 'attacker' || canonical === 'target'
+      ? [...EXCLUSIVE_TRAIT_GROUPS.npCardForm]
+      : [];
   return canonical === 'attacker' || canonical === 'target'
     ? [...EXCLUSIVE_TRAIT_GROUPS.worldAttribute]
     : [];

@@ -1,7 +1,7 @@
 export type ActorScope = 'attacker' | 'target';
 export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
 export type CardType = 'buster' | 'arts' | 'quick';
-export type CanonicalExclusiveGroup = 'worldAttribute' | 'fieldRealm';
+export type CanonicalExclusiveGroup = 'worldAttribute' | 'fieldRealm' | 'npCardForm';
 export interface OperationDecisionPlan {
   activation: 'automatic' | 'user';
   condition: 'evaluate' | 'userMayAssume' | 'unsupported';
@@ -118,7 +118,7 @@ export type BattleOperation =
       modifier: ModifierKind;
       ratePermille: number;
     })
-  | (OperationBase & { kind: 'changeCardType'; card: CardType })
+  | (OperationBase & { kind: 'changeCardType'; card: CardType; stateTraits: readonly string[] })
   | (OperationBase & { kind: 'ignoreDefense' })
   | (OperationBase & { kind: 'ignoreDamageCut' })
   | (OperationBase & {

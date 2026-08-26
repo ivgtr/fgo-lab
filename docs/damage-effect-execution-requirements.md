@@ -308,6 +308,8 @@ source-owned quantity guardは、同名に近いscenario quantityへ読み替え
 
 参照Functionは実行containerのscopeを保持する。通常攻撃だけで発火するtriggerはNP火力UIと計算を阻害させず、宝具Function列のNP前triggerへ同じ非damage分類を流用しない。参照先がartifactから解決できないNP前triggerは値を推測せずfail-closedにする。
 
+NP executionでは`cardNP`、`faceCard`、`cardExtra`をtrait factではなく実行scopeとして評価する。NPでは`cardNP`だけが成立し、scope外conditionを成立decisionへ投影しない。宝具card形態を表すstate traitがmasterのcard change buffから一意に得られる場合、cardと形態stateを一つのtransactional operationで置換する。形態traitはscenarioへ保存せずderived stateだけへcommitし、排他的な形態decisionはall-or-nothingでfail-closedにする。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

@@ -1,8 +1,8 @@
 # Damage effect unsupported収束計画
 
-- Status: active
+- Status: complete for currently exact-solvable families
 - Baseline: `9387f66`
-- Master: `2026-08-25-atlas-jp-calculator-v18`
+- Master: `2026-08-25-atlas-jp-calculator-v34`
 - Date: 2026-08-26
 
 ## 1. 目的
@@ -76,6 +76,10 @@ master v32、master schema 19、scenario schema 20、engine 12.10.0で`Triggered
 
 紅閻魔の3 damage effectは、通常候補の攻撃力20%、特殊候補の攻撃力20%と宝具威力20%として既存のオン・オフでexactに実行できる。通常候補と特殊候補の同時選択は従来どおりchoice conflictで全modifierを非適用にする。具体的なBP rateをworld factへ追加しない。この段階で選択時unsupportedは15騎・32 effect occurrenceとなり、排他候補は26組、競合中の正常計算は0件である。
 
+master v34、master schema 20、scenario schema 21、engine 12.11.0で、NP実行時の`cardNP`を実行scopeとして確定し、`faceCard`／`cardExtra`をNP条件から除外した。宝具内の参照triggerは同じbuff typeの通常攻撃triggerへ読み替えない。これによりビショーネの未解決NP前参照はautomaticかつtyped unsupportedとなり、不完全なdamage inputを`calculated`として返さない。
+
+玉兎の`tdTypeChangeArts`／`tdTypeChangeBuster`は、card変更と連動する形態traitを一つのatomic operationへ正規化した。汎用buff traitは除外し、形態traitだけをstate layerへ追加する。後から選択された最終card mutationは先行形態を置換し、同じ`npCardForm`排他groupのtraitをcandidate stateから除去してから追加する。競合する形態decisionはどちらもcommitしない。これにより玉兎のcard mutation 3 occurrenceと連動火力3 occurrenceを、具体traitをscenarioへ捏造せずexactに実行できる。選択時unsupportedは14騎・25 effect occurrence、projectionはuser 1,534、automatic visible 443、hidden 687となった。排他候補29組とcanonical fact-condition競合250組はいずれも正常計算0件である。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -105,14 +109,14 @@ master v32、master schema 19、scenario schema 20、engine 12.10.0で`Triggered
 | field removal | `subFieldIndividuality` | テスカトリポカ | 1 | field stateからtraitを解除しhiddenでcommit |
 | state unlink/removal | `subIndividuality` | 黄飛虎 | 1 | state trait解除。後続damage条件が読む場合だけ実行 |
 | presentation metadata | `AuraEffectId`、`HideMiss`、`HideNoEffect`、`ShowState`、`DisplayNoEffectCauses` | マシュ、玉兎ほか | occurrence再集計 | 数値・条件・順序へ作用しないtyped metadata |
-| trait source semantics | `IncludeIgnoreIndividuality`、`IgnoreIndivUnreleaseable`、`IncludePassiveIndividuality`、`FuncCheckTargetIndividualityTargetType` | メドゥーサ、ゴルゴーン、ビショーネ、セミラミス、アルジュナ〔オルタ〕、テスカトリポカ、玉兎 | 9 | initial/state/combinedのどのtrait集合を読むかIRへ保持 |
+| trait source semantics | `IncludeIgnoreIndividuality`、`IgnoreIndivUnreleaseable`、`IncludePassiveIndividuality` | メドゥーサ、ゴルゴーン、ビショーネ、セミラミス、アルジュナ〔オルタ〕、テスカトリポカ | 7 | provenance・解除可能性を含むtrait集合が必要。根拠のないcombined化はしない |
 | buff instance identity | `AddIndividualty/List/LinkageTarget` | 宮本武蔵2種、ネモ／ノア、マシュほか | damage候補4 | 対応完了。actor traitへ付与せずbuff identity metadataへ分離。command-card限定2効果はNP scope外、Nemo／NoahとMashはexact |
 | HP-dependent modifier | `RatioHPLow`、`RatioHPHigh`、`RatioHPRangeLow/High` | クー・フーリン、パッションリップ | 2 | 自身効果は既存HP入力からexact。支援元HP依存は別ownerとして入力不足を維持 |
 | BP rate guard | `TriggeredTargetBattlePointRateRange` | 紅閻魔 | 3 | 対応完了。phaseへ読み替えずsource-owned rangeとして保持し、choiceとeffect-localに検証 |
 | random/action choice | `ActSet/ActSetWeight`、`ActSelectIndex` | Braveエリザ、エルキドゥ、ゴッホ〔マイナー〕、シャルロット、ククルカン、岸波白野、玉兎 | 17 | 対応完了。同じchoice groupの候補を排他decisionとして扱い、選択候補だけ適用 |
 | function position guard | `TriggeredFuncPosition` | UDKバーゲスト、キングプロテア、テノチティトランほか | 23 | 対応完了。整数positionをeffect-local trigger制約として保持し、選択effectだけを実行。damage後のoperationは遡及させない |
 | class relation responsibility | `overwriteClassRelation` | ネロ、セミラミス、カーマ、ヘファイスティオン、キアラ、C.I.E.L、ハベトロット | 7 | calculatorの最終クラス相性入力が唯一のdamage fact。operationは二重適用しない |
-| NP card type mutation | `tdTypeChangeArts`、`tdTypeChangeBuster`、`tdTypeChangeQuick` | エミヤ、UDKバーゲスト、スペース・イシュタル、BBドバイ、玉兎 | 11 | 8効果は対応完了。ordered stateで宝具cardを変更し、最終cardで色modifierとdamage inputを再評価。連動state未解決の玉兎3効果はfail-closed |
+| NP card type mutation | `tdTypeChangeArts`、`tdTypeChangeBuster`、`tdTypeChangeQuick` | エミヤ、UDKバーゲスト、スペース・イシュタル、BBドバイ、玉兎 | 11 | 対応完了。ordered stateで宝具cardと連動形態stateをatomicに変更し、最終cardで色modifierとdamage inputを再評価 |
 | non-damage filtering | damage modifier、宝具card、後続conditionのいずれも変更しないoperation | 全masterから意味論抽出 | family別ratchet | hiddenかつnon-blocking。raw type名だけでは判定しない |
 
 `class relation responsibility`は効果を無視する意味ではない。このcalculatorは敵classを入力せず、適用後の最終クラス相性を直接入力する契約であるため、executorが同じ相性変更を再適用すると二重計上になる。projectionとtraceには「最終入力で解決」と記録する。
@@ -203,3 +207,20 @@ ratchetはservant IDの期待一覧ではなく、canonical familyとraw signatu
 - 数値が変わる代表例はoperation、fact、value expression、最終damage inputをtraceで説明できる。
 - UI入出力、URL共有、保存・復元、PC/390px/320pxを維持する。
 - 全品質ゲートとproduction ratchetが成功する。
+
+## 11. 最終残存inventory
+
+現行masterと既存UI入力でexactに解けるfamilyは実装済みである。選択時に残る14騎25 occurrenceは次のとおりで、新しい入力またはartifact上の根拠なしには値が一意にならない。
+
+| 原因family | 対象 | occurrence | 残す根拠 |
+|---|---|---:|---|
+| trait provenance／解除可能性 | メドゥーサ、ゴルゴーン、セミラミス、テスカトリポカ、アルジュナ〔オルタ〕 | 5 | initial/stateだけではignore・passive・解除不能を区別できない |
+| linked state removal | 黄飛虎 | 1 | 連動buff instanceの存在と解除順序が必要 |
+| 経過turn比例 | 茶々、魔王信長 | 2 | 現行UIにturn factがない |
+| state stack比例 | ビショーネ、キングプロテア、カーマ、ハベトロット | 5 | stack数または先行付与数が不明 |
+| critical-star閾値 | ハベトロット | 10 | 現行NP damage入力にstar数がない |
+| 参照skill／Function不足 | 葛飾北斎、エレシュキガル | 2 | 参照先の実行定義をartifactから復元できない |
+
+既定unsupportedは12騎である。4騎は既存HP入力、1騎は既存Battle Point入力を与えればexactに計算できる。残るジャック・ド・モレー、アショカ王、ビショーネ、ジョン・ラックランド、キングプロテア・オルタ、BBドバイ、ハベトロットは参照定義、field count、編成・生存、trait count、partial条件などの根拠または入力不足であり、automaticまたは宝具本体に関与するため数値行を返さない。
+
+production ratchetは既定unsupportedのservant/reason一覧、選択時unsupportedの14騎別occurrence数、未解決raw parameter/script件数、projection総数、排他29組、canonical交差250組を固定する。未知familyまたは残存件数の増加はmaster更新時に失敗する。

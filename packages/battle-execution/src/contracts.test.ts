@@ -12,6 +12,21 @@ import { canonicalExclusiveGroup } from './index';
 import { normalizeTraitCondition } from './condition';
 
 describe('ordered battle execution contracts', () => {
+  it('normalizes NP and command-card scopes for the NP execution path', () => {
+    expect(
+      normalizeTraitCondition(
+        { operator: 'any', traits: [{ name: 'cardNP', negative: false }] },
+        'attacker',
+      ),
+    ).toEqual({ kind: 'always' });
+    expect(
+      normalizeTraitCondition(
+        { operator: 'any', traits: [{ name: 'faceCard', negative: false }] },
+        'attacker',
+      ),
+    ).toEqual({ kind: 'not', expression: { kind: 'always' } });
+  });
+
   it('keeps conditions, effect decisions, and world facts as separate contracts', () => {
     const condition: ConditionExpression = {
       kind: 'all',

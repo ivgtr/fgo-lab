@@ -306,6 +306,15 @@ E3.4進捗（master v26、schema 14、engine 12.5.0）:
 - master v31ではbuff instance identityをactor traitから分離し、`faceCard` 17効果・11騎をcommand-card scopeへ正規化した。Nemo／NoahとMashのlinked buffはexact、宮本武蔵2騎のcommand-card限定効果はNP projection外となり、既定unsupportedは11騎、選択時unsupportedは16騎・35 occurrenceとなった。
 - master v32では`TriggeredTargetBattlePointRateRange`をBP phaseと分離したsource-owned rangeへ正規化した。紅閻魔の3火力効果はaction choiceと同じeffect-local solverでexactとなり、異なる候補の同時選択は全modifierを非適用にする。選択時unsupportedは15騎・32 occurrenceとなった。
 
+E3.4完了記録（2026-08-26）:
+
+- master v34、master schema 20、scenario schema 21、engine 12.11.0へ一方向更新した。
+- 現行masterと既存UI入力でexactに解けるoccurrence identity、field mutation、parameter role、BP/HP value expression、action choice、NP card change、command-card scope、function position、buff identity、source-owned BP guardを一つのnormalization／execution経路へ収束した。
+- `cardNP`をNP execution scopeとして確定し、宝具内の未解決参照を通常攻撃triggerとして除外しない。玉兎のcardと形態stateはtransactionalに置換し、競合時はどちらもcommitしない。
+- 既定unsupportedは12騎、選択時unsupportedは14騎25 occurrenceとなった。残存はtrait provenance、linked state、turn、stack、star、参照artifact不足だけであり、現行UI入力だけでは値が一意にならない。
+- production projectionはuser 1,534、automatic visible 443、hidden 687。排他29組、canonical fact-condition交差250組で、競合中の正常計算、競合operation適用、矛盾state残存は0件である。
+- 画面構造や入力項目は追加せず、火力effectの既存ボタン、HP/BP入力、共有・保存 semanticsを維持した。E4には着手していない。
+
 作業:
 
 - ranking workerを同じscenario compiler、executor、kernelへ接続する。
