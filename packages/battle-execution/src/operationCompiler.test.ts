@@ -59,7 +59,7 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
   };
 }
 
-function source(execution: EffectExecutionOperation[]): SourceEffect {
+function source(execution: EffectExecutionOperation[], limitBreak = false): SourceEffect {
   return {
     phase: 'craftEssence',
     origin: 'craftEssence',
@@ -71,7 +71,7 @@ function source(execution: EffectExecutionOperation[]): SourceEffect {
     effect: effect(execution),
     valueSetIndex: 0,
     valueIndex: 0,
-    limitBreak: false,
+    limitBreak,
     enabledByDefault: true,
   };
 }
@@ -124,6 +124,12 @@ describe('canonical operation compilation', () => {
       source([modifier('attackBuff', 100), modifier('npDamageBuff', null)]),
       0,
     );
+    expect(compiled.operations).toEqual([]);
+    expect(compiled.unsupported).toHaveLength(1);
+  });
+
+  it('does not fall back to normal values when an MLB value series is missing', () => {
+    const compiled = compileEffect(source([modifier('attackBuff', 100)], true), 0);
     expect(compiled.operations).toEqual([]);
     expect(compiled.unsupported).toHaveLength(1);
   });

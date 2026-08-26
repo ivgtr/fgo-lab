@@ -477,7 +477,7 @@ export const materialMasterSchema = z.object({
   imageKey: z.string().nullable(),
 });
 export type MaterialMaster = z.infer<typeof materialMasterSchema>;
-export const masterSnapshotSchema = z.object({
+const masterSnapshotBaseSchema = z.object({
   version: z.string(),
   normalization: z.object({
     attackFunctions: z.object({
@@ -502,6 +502,54 @@ export const masterSnapshotSchema = z.object({
   craftEssences: z.array(craftEssenceMasterSchema),
   mysticCodes: z.array(mysticCodeMasterSchema),
   materials: z.array(materialMasterSchema),
+});
+export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapshot, context) => {
+  const rejectMlbOnly = (effects: readonly MasterEffect[], path: (string | number)[]) => {
+    effects.forEach((effect, effectIndex) => {
+      if (effect.availability !== 'maximumLimitBreakOnly') return;
+      context.addIssue({
+        code: 'custom',
+        message: 'maximumLimitBreakOnly is only valid for craft essence effects',
+        path: [...path, effectIndex, 'availability'],
+      });
+    });
+  };
+  snapshot.servants.forEach((servant, servantIndex) => {
+    servant.skills.forEach((skill, skillIndex) =>
+      rejectMlbOnly(skill.effects, ['servants', servantIndex, 'skills', skillIndex, 'effects']),
+    );
+    servant.passives.forEach((skill, skillIndex) =>
+      rejectMlbOnly(skill.effects, ['servants', servantIndex, 'passives', skillIndex, 'effects']),
+    );
+    servant.noblePhantasms.forEach((np, npIndex) =>
+      rejectMlbOnly(np.effects, ['servants', servantIndex, 'noblePhantasms', npIndex, 'effects']),
+    );
+  });
+  snapshot.mysticCodes.forEach((code, codeIndex) =>
+    code.skills.forEach((skill, skillIndex) =>
+      rejectMlbOnly(skill.effects, ['mysticCodes', codeIndex, 'skills', skillIndex, 'effects']),
+    ),
+  );
+  snapshot.craftEssences.forEach((craftEssence, craftEssenceIndex) =>
+    craftEssence.effects.forEach((effect, effectIndex) =>
+      effect.execution.forEach((operation, operationIndex) => {
+        if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') return;
+        if (operation.limitBreakValues && operation.limitBreakValueExpressions) return;
+        context.addIssue({
+          code: 'custom',
+          message: 'craft essence valued operations require explicit limit-break values',
+          path: [
+            'craftEssences',
+            craftEssenceIndex,
+            'effects',
+            effectIndex,
+            'execution',
+            operationIndex,
+          ],
+        });
+      }),
+    ),
+  );
 });
 export type MasterDataSnapshot = z.infer<typeof masterSnapshotSchema>;
 

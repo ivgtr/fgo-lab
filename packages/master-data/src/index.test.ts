@@ -10,6 +10,44 @@ import {
 } from './index';
 
 const parsedFixture = masterSnapshotSchema.parse(fixture);
+const nonDamageEffect = {
+  id: 'test-effect',
+  occurrenceId: 'test-effect:0',
+  label: 'test',
+  availability: 'maximumLimitBreakOnly' as const,
+  choice: null,
+  triggerScope: null,
+  operationTrigger: null,
+  quantityConditions: [],
+  sourceQuantityConditions: [],
+  conditions: {
+    recipient: [],
+    holder: { operator: 'all' as const, traits: [] },
+    opponent: { operator: 'all' as const, traits: [] },
+    field: { operator: 'all' as const, traits: [] },
+  },
+  conditionTargetPolicy: 'sourceSelf' as const,
+  execution: [{ kind: 'nonDamage' as const }],
+  atlasEvidence: {
+    functionType: 'test',
+    target: 'self',
+    parameterSets: [[], [], [], [], []],
+    parameterSemantics: {
+      value: [],
+      lifecycle: [],
+      presentation: [],
+      condition: [],
+      contextMutation: [],
+      choice: [],
+      valueExpression: [],
+      buffIdentity: [],
+      unresolved: [],
+    },
+    unresolvedSemanticKeys: [],
+    buffTypes: [],
+    buffRateTargets: [],
+  },
+};
 
 describe('master validation', () => {
   it('accepts only the current master manifest schema', () => {
@@ -58,6 +96,29 @@ describe('master validation', () => {
         ],
       }),
     ).toMatchObject({ valid: true, unknownAttackFunctions: [] }));
+  it('rejects maximum-limit-break-only availability outside craft essences', () => {
+    const result = validateMasterSnapshot({
+      ...fixture,
+      servants: [
+        {
+          ...fixture.servants[0],
+          skills: [
+            {
+              id: 'test-skill',
+              slot: 1,
+              priority: 0,
+              name: 'test',
+              detail: '',
+              imageKey: null,
+              effects: [nonDamageEffect],
+            },
+          ],
+        },
+      ],
+    });
+    expect(result).toMatchObject({ valid: false });
+    expect(result.errors.join('\n')).toContain('maximumLimitBreakOnly is only valid');
+  });
   it('rejects an incomplete NP parameter matrix', () =>
     expect(
       validateMasterSnapshot({

@@ -26,9 +26,14 @@ describe('craft essence limit-break normalization', () => {
     });
     expect(effects[0]).toMatchObject({
       availability: 'allLimitBreakStates',
-      execution: [{ kind: 'damageModifier', values: [[600], [], [], [], []] }],
+      execution: [
+        {
+          kind: 'damageModifier',
+          values: [[600], [], [], [], []],
+          limitBreakValues: [[600], [], [], [], []],
+        },
+      ],
     });
-    expect(effects[0]?.execution[0]).not.toHaveProperty('limitBreakValues');
   });
 
   it('copies MLB values only from a semantically identical shared occurrence', () => {
@@ -59,9 +64,14 @@ describe('craft essence limit-break normalization', () => {
     expect(effects[1]).toMatchObject({
       occurrenceId: '21:0',
       availability: 'maximumLimitBreakOnly',
-      execution: [{ kind: 'damageModifier', values: [[200], [], [], [], []] }],
+      execution: [
+        {
+          kind: 'damageModifier',
+          values: [[200], [], [], [], []],
+          limitBreakValues: [[200], [], [], [], []],
+        },
+      ],
     });
-    expect(effects[1]?.execution[0]).not.toHaveProperty('limitBreakValues');
   });
 
   it('rejects a normal-side-only occurrence', () => {

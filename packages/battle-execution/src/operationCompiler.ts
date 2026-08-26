@@ -116,8 +116,8 @@ function signedModifierValueExpression(
 }
 
 function selectedValue(source: SourceEffect, operation: ValuedOperation): number | undefined {
-  const sets =
-    source.limitBreak && operation.limitBreakValues ? operation.limitBreakValues : operation.values;
+  const sets = source.limitBreak ? operation.limitBreakValues : operation.values;
+  if (!sets) return undefined;
   return sets[source.valueSetIndex]?.[source.valueIndex] ?? undefined;
 }
 
@@ -125,10 +125,10 @@ function selectedValueExpression(
   source: SourceEffect,
   operation: ValuedOperation,
 ): ModifierValueExpression | null {
-  const sets =
-    source.limitBreak && operation.limitBreakValueExpressions
-      ? operation.limitBreakValueExpressions
-      : operation.valueExpressions;
+  const sets = source.limitBreak
+    ? operation.limitBreakValueExpressions
+    : operation.valueExpressions;
+  if (!sets) return null;
   return sets[source.valueSetIndex]?.[source.valueIndex] ?? null;
 }
 

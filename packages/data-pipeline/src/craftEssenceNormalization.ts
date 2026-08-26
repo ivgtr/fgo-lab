@@ -64,6 +64,22 @@ function effectSemanticIdentity(effect: MasterEffect): string {
   });
 }
 
+function withExplicitLimitBreakValues(effect: MasterEffect): MasterEffect {
+  return {
+    ...effect,
+    execution: effect.execution.map((operation) =>
+      operation.kind === 'damageModifier' || operation.kind === 'modifierRateChange'
+        ? {
+            ...operation,
+            limitBreakValues: operation.limitBreakValues ?? operation.values,
+            limitBreakValueExpressions:
+              operation.limitBreakValueExpressions ?? operation.valueExpressions,
+          }
+        : operation,
+    ),
+  };
+}
+
 function mergeSharedEffect(
   equipId: number,
   normal: MasterEffect,
@@ -105,7 +121,7 @@ export function normalizeCraftEssenceLimitBreakEffects(input: {
   limitBreakEffects: readonly unknown[] | null;
 }): MasterEffect[] {
   const normalEffects = input.normalEffects.map((effect) => masterEffectSchema.parse(effect));
-  if (input.limitBreakEffects === null) return normalEffects;
+  if (input.limitBreakEffects === null) return normalEffects.map(withExplicitLimitBreakValues);
   const limitBreakEffects = input.limitBreakEffects.map((effect) =>
     masterEffectSchema.parse(effect),
   );
@@ -138,8 +154,10 @@ export function normalizeCraftEssenceLimitBreakEffects(input: {
 
   return limitBreakEffects.map((limitBreak) => {
     const normal = normalByOccurrence.get(limitBreak.occurrenceId);
-    return normal
-      ? mergeSharedEffect(input.equipId, normal, limitBreak)
-      : { ...limitBreak, availability: 'maximumLimitBreakOnly' };
+    return withExplicitLimitBreakValues(
+      normal
+        ? mergeSharedEffect(input.equipId, normal, limitBreak)
+        : { ...limitBreak, availability: 'maximumLimitBreakOnly' },
+    );
   });
 }
