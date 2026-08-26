@@ -61,7 +61,7 @@ export function appendCalculationSupportSource(
   scenario: ResolvedScenario,
   source: SupportSource,
 ): ResolvedScenario {
-  const composition = scenario.support?.composition ?? { sources: [], selectedEffects: [] };
+  const composition = scenario.support?.composition ?? { sources: [], effectInclusions: [] };
   return {
     ...scenario,
     support: {
@@ -96,7 +96,7 @@ export function removeCalculationSupportSource(
         sources: scenario.support.composition.sources.filter(
           (source) => source.sourceInstanceId !== sourceInstanceId,
         ),
-        selectedEffects: scenario.support.composition.selectedEffects.filter(
+        effectInclusions: scenario.support.composition.effectInclusions.filter(
           (effect) => effect.sourceInstanceId !== sourceInstanceId,
         ),
       },

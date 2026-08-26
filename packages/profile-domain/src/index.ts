@@ -175,7 +175,7 @@ export function addSupportTemplate(
     templateId,
     name: `支援条件 ${String(profile.supportTemplates.length + 1)}`,
     masterDataVersion,
-    composition: { sources: [], selectedEffects: [] },
+    composition: { sources: [], effectInclusions: [] },
     updatedAt: now,
     lastUsedAt: null,
   };
@@ -266,7 +266,7 @@ export function removeSupportSource(
               sources: template.composition.sources.filter(
                 (source) => source.sourceInstanceId !== sourceInstanceId,
               ),
-              selectedEffects: template.composition.selectedEffects.filter(
+              effectInclusions: template.composition.effectInclusions.filter(
                 (effect) => effect.sourceInstanceId !== sourceInstanceId,
               ),
             },
@@ -328,23 +328,23 @@ export function toggleSupportEffect(
             ...template,
             composition: {
               ...template.composition,
-              selectedEffects: selected
-                ? template.composition.selectedEffects.some(
-                    (candidate) =>
-                      candidate.sourceInstanceId === effect.sourceInstanceId &&
-                      candidate.skillId === effect.skillId &&
-                      candidate.effectId === effect.effectId &&
-                      candidate.effectOccurrenceId === effect.effectOccurrenceId,
-                  )
-                  ? template.composition.selectedEffects
-                  : [...template.composition.selectedEffects, effect]
-                : template.composition.selectedEffects.filter(
+              effectInclusions: selected
+                ? template.composition.effectInclusions.filter(
                     (candidate) =>
                       candidate.sourceInstanceId !== effect.sourceInstanceId ||
                       candidate.skillId !== effect.skillId ||
                       candidate.effectId !== effect.effectId ||
                       candidate.effectOccurrenceId !== effect.effectOccurrenceId,
-                  ),
+                  )
+                : template.composition.effectInclusions.some(
+                      (candidate) =>
+                        candidate.sourceInstanceId === effect.sourceInstanceId &&
+                        candidate.skillId === effect.skillId &&
+                        candidate.effectId === effect.effectId &&
+                        candidate.effectOccurrenceId === effect.effectOccurrenceId,
+                    )
+                  ? template.composition.effectInclusions
+                  : [...template.composition.effectInclusions, { ...effect, included: false }],
             },
             updatedAt: now,
           }

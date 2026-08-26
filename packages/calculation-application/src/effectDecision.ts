@@ -89,7 +89,7 @@ export function applyEffectProjectionDecision(
     effectId: projection.source.effectId,
     effectOccurrenceId: projection.source.effectOccurrenceId,
   };
-  const selected = decided.support.composition.selectedEffects;
+  const overrides = decided.support.composition.effectInclusions;
   const matches = (candidate: typeof reference) =>
     candidate.sourceInstanceId === reference.sourceInstanceId &&
     candidate.skillId === reference.skillId &&
@@ -101,11 +101,11 @@ export function applyEffectProjectionDecision(
       ...decided.support,
       composition: {
         ...decided.support.composition,
-        selectedEffects: enabled
-          ? selected.some(matches)
-            ? selected
-            : [...selected, reference]
-          : selected.filter((candidate) => !matches(candidate)),
+        effectInclusions: enabled
+          ? overrides.filter((candidate) => !matches(candidate))
+          : overrides.some(matches)
+            ? overrides
+            : [...overrides, { ...reference, included: false }],
       },
     },
   };

@@ -18,7 +18,7 @@ export function SupportTemplateRow({
   onSelect: () => void;
 }) {
   const sources = groupSupportSources(template);
-  const selectedCount = template.composition.selectedEffects.length;
+  const excludedCount = template.composition.effectInclusions.length;
   return (
     <button
       type="button"
@@ -42,7 +42,7 @@ export function SupportTemplateRow({
       <span className="list-row-main">
         <strong>{template.name}</strong>
         <small>
-          {sources.length}騎・選択中{selectedCount}効果
+          {sources.length}騎・除外{excludedCount}効果
         </small>
       </span>
       <span className="support-template-row-trailing">

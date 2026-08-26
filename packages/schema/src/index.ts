@@ -9,7 +9,7 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 24 as const;
+export const SCHEMA_VERSION = 25 as const;
 export const ENGINE_VERSION = '18.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
@@ -73,10 +73,14 @@ export const supportEffectRefSchema = z.object({
   effectOccurrenceId: z.string().min(1).max(80),
 });
 export type SupportEffectRef = z.infer<typeof supportEffectRefSchema>;
+export const supportEffectInclusionSchema = supportEffectRefSchema.extend({
+  included: z.literal(false),
+});
+export type SupportEffectInclusion = z.infer<typeof supportEffectInclusionSchema>;
 
 export const supportCompositionSchema = z.object({
   sources: z.array(supportSourceSchema).max(20),
-  selectedEffects: z.array(supportEffectRefSchema).max(200),
+  effectInclusions: z.array(supportEffectInclusionSchema).max(200),
 });
 export type SupportComposition = z.infer<typeof supportCompositionSchema>;
 

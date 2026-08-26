@@ -243,12 +243,13 @@ describe('portable schema boundaries', () => {
             skills: [{ skillId: 'skill-1', skillLevel: 10, enabled: true }],
           },
         ],
-        selectedEffects: [
+        effectInclusions: [
           {
             sourceInstanceId: 'support-instance-1',
             skillId: 'skill-1',
             effectId: 'attack-up',
             effectOccurrenceId: 'attack-up:0',
+            included: false,
           },
         ],
       },
@@ -256,7 +257,7 @@ describe('portable schema boundaries', () => {
       lastUsedAt: null,
     });
 
-    expect(template.composition.selectedEffects).toHaveLength(1);
+    expect(template.composition.effectInclusions).toHaveLength(1);
   });
 
   it('rejects legacy profiles instead of maintaining a compatibility migration', () => {

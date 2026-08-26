@@ -44,12 +44,13 @@ describe('resolved scenario commands', () => {
         ...configured.support!,
         composition: {
           ...configured.support!.composition,
-          selectedEffects: [
+          effectInclusions: [
             {
               sourceInstanceId: 'support:1',
               skillId: '20',
               effectId: '200',
               effectOccurrenceId: '200:0',
+              included: false as const,
             },
           ],
         },
@@ -63,7 +64,7 @@ describe('resolved scenario commands', () => {
     const removed = removeCalculationSupportSource(scenario, 'support:1', [projection]);
 
     expect(configured.support?.composition.sources[0]?.skills[0]?.skillLevel).toBe(10);
-    expect(removed.support?.composition).toEqual({ sources: [], selectedEffects: [] });
+    expect(removed.support?.composition).toEqual({ sources: [], effectInclusions: [] });
     expect(removed.effectDecisions).toEqual([]);
     expect(removed.worldFactAssertions).toEqual([]);
   });

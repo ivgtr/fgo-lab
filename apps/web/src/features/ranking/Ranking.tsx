@@ -47,7 +47,7 @@ export function Ranking({
           <strong>支援条件</strong>
           <small>
             {selectedSupport
-              ? `${selectedSupport.name}・選択中${String(selectedSupport.composition.selectedEffects.length)}効果`
+              ? `${selectedSupport.name}・除外${String(selectedSupport.composition.effectInclusions.length)}効果`
               : '支援なし'}
           </small>
         </span>

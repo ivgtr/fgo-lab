@@ -25,7 +25,7 @@ export function createCalculatorViewModel({
   const ownEffects = effects.filter((effect) => effect.source.origin !== 'support');
   const supportEffects = effects.filter((effect) => effect.source.origin === 'support');
   const supportSources = supportComposition?.sources ?? [];
-  const selectedSupportEffectCount = supportComposition?.selectedEffects.length ?? 0;
+  const excludedSupportEffectCount = supportComposition?.effectInclusions.length ?? 0;
   const classSituationLabel =
     input.classAffinity === 2
       ? '有利'
@@ -55,7 +55,7 @@ export function createCalculatorViewModel({
           effect.requiredQuantityOwner === 'attacker',
       ),
     supportSources,
-    selectedSupportEffectCount,
+    excludedSupportEffectCount,
     supportModified: Boolean(
       selectedSupport &&
       supportComposition &&
@@ -77,9 +77,9 @@ export function createCalculatorViewModel({
         ? `${selectedCraftEssence.name} Lv.${craftEssenceSelection.level}`
         : '礼装なし',
     supportSummary: selectedSupport
-      ? `${selectedSupport.name}（${selectedSupportEffectCount}効果）`
+      ? `${selectedSupport.name}（除外${excludedSupportEffectCount}効果）`
       : supportSources.length
-        ? `未保存の支援構成（${selectedSupportEffectCount}効果）`
+        ? `未保存の支援構成（除外${excludedSupportEffectCount}効果）`
         : '支援なし',
   };
 }

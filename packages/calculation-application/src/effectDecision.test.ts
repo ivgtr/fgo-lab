@@ -22,7 +22,7 @@ describe('effect decision application command', () => {
               skills: [{ skillId: '20', skillLevel: 10, enabled: true }],
             },
           ],
-          selectedEffects: [],
+          effectInclusions: [],
         },
       },
     };
@@ -76,15 +76,16 @@ describe('effect decision application command', () => {
         conditionSatisfaction: 'evaluate',
       },
     ]);
-    expect(enabledAgain.support?.composition.selectedEffects).toEqual([
+    expect(enabledAgain.support?.composition.effectInclusions).toEqual([]);
+    expect(disabled.support?.composition.effectInclusions).toEqual([
       {
         sourceInstanceId: 'support:1',
         skillId: '20',
         effectId: '200',
         effectOccurrenceId: '200:0',
+        included: false,
       },
     ]);
-    expect(disabled.support?.composition.selectedEffects).toEqual([]);
     expect(disabled.effectDecisions).toEqual([
       {
         decisionKey: projection.projectionKey,

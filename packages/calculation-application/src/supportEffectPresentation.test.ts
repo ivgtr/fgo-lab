@@ -115,7 +115,7 @@ describe('support effect application view model', () => {
       servantId: servant.id,
       skills: [{ skillId: 'support-skill', skillLevel: 10, enabled: true }],
     };
-    const composition = { sources: [source], selectedEffects: [] };
+    const composition = { sources: [source], effectInclusions: [] };
 
     expect(supportEffectOptions(composition, [servant])).toEqual([
       expect.objectContaining({ label: '攻撃力アップ', skillLevel: 10 }),

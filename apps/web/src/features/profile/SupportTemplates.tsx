@@ -176,7 +176,7 @@ export function SupportTemplates({
               />
             </label>
             <p className="support-template-summary">
-              支援元 {sources.length}騎・選択中 {selected.composition.selectedEffects.length}効果
+              支援元 {sources.length}騎・除外 {selected.composition.effectInclusions.length}効果
             </p>
 
             <div className="support-source-stack">

@@ -138,7 +138,7 @@ export function Calculator({
     supportEffects,
     requiresAttackerHp,
     supportSources,
-    selectedSupportEffectCount,
+    excludedSupportEffectCount,
     supportModified,
     damageEffectStacks,
     enabledAttackerSkillCount,
@@ -984,7 +984,7 @@ export function Calculator({
               </strong>
               <span>
                 {supportSources.length
-                  ? `${String(supportSources.length)}騎・選択中${String(selectedSupportEffectCount)}効果`
+                  ? `${String(supportSources.length)}騎・除外${String(excludedSupportEffectCount)}効果`
                   : '支援役を直接追加するか、保存セットを呼び出します'}
               </span>
             </span>

@@ -204,7 +204,7 @@ describe('profile domain', () => {
         effectId: 'attack-up',
         effectOccurrenceId: 'attack-up:0',
       },
-      true,
+      false,
       clock.now().toISOString(),
     );
     const withoutFirst = removeSupportSource(
@@ -220,7 +220,7 @@ describe('profile domain', () => {
         skills: [expect.objectContaining({ skillLevel: 7 })],
       }),
     ]);
-    expect(withoutFirst.supportTemplates[0]?.composition.selectedEffects).toHaveLength(1);
+    expect(withoutFirst.supportTemplates[0]?.composition.effectInclusions).toHaveLength(1);
     const withoutSelectedSource = removeSupportSource(
       withoutFirst,
       templateId,
@@ -229,7 +229,7 @@ describe('profile domain', () => {
     );
     expect(withoutSelectedSource.supportTemplates[0]?.composition).toEqual({
       sources: [],
-      selectedEffects: [],
+      effectInclusions: [],
     });
     expect(removeSupportTemplate(withoutSelectedSource, templateId).supportTemplates).toEqual([]);
   });

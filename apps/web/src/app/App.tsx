@@ -79,16 +79,17 @@ function supportDecisionKeys(effects: readonly EffectProjection[]) {
   );
 }
 
-function selectedSupportEffects(template: SupportTemplate, effects: readonly EffectProjection[]) {
+function excludedSupportEffects(template: SupportTemplate, effects: readonly EffectProjection[]) {
   return effects.filter(
     (effect) =>
       effect.source.origin === 'support' &&
-      template.composition.selectedEffects.some(
-        (selected) =>
-          selected.sourceInstanceId === effect.source.sourceInstanceId &&
-          selected.skillId === effect.source.skillId &&
-          selected.effectId === effect.source.effectId &&
-          selected.effectOccurrenceId === effect.source.effectOccurrenceId,
+      template.composition.effectInclusions.some(
+        (override) =>
+          !override.included &&
+          override.sourceInstanceId === effect.source.sourceInstanceId &&
+          override.skillId === effect.source.skillId &&
+          override.effectId === effect.source.effectId &&
+          override.effectOccurrenceId === effect.source.effectOccurrenceId,
       ),
   );
 }
@@ -478,8 +479,8 @@ export function App() {
               await saveScenarioDraft(
                 applyEffectProjectionDecisions(
                   candidate,
-                  selectedSupportEffects(template, candidateEffects),
-                  true,
+                  excludedSupportEffects(template, candidateEffects),
+                  false,
                 ),
               );
             }}
@@ -566,11 +567,11 @@ export function App() {
                 const scenario = rankingSupport
                   ? applyEffectProjectionDecisions(
                       baseScenario,
-                      selectedSupportEffects(
+                      excludedSupportEffects(
                         rankingSupport,
                         resolveScenario(baseScenario, currentMaster).effects,
                       ),
-                      true,
+                      false,
                     )
                   : baseScenario;
                 const resolved = resolveScenario(scenario, currentMaster);

@@ -732,7 +732,7 @@ describe('scenario calculation facade', () => {
               skills: [{ skillId: 'support-condition-skill', skillLevel: 10, enabled: true }],
             },
           ],
-          selectedEffects: [],
+          effectInclusions: [],
         },
       },
     };
@@ -1277,12 +1277,13 @@ describe('scenario calculation facade', () => {
               skills: [{ skillId: 'support-skill', skillLevel: 10, enabled: true }],
             },
           ],
-          selectedEffects: [
+          effectInclusions: [
             {
               sourceInstanceId: 'support-1',
               skillId: 'support-skill',
               effectId: 'support-power',
               effectOccurrenceId: 'support-power:0',
+              included: false as const,
             },
           ],
         },

@@ -26,12 +26,12 @@ export function SupportEffectSelector({
   return (
     <fieldset className="modifier-group support-effect-selector">
       <legend>
-        適用内容 <small>{composition.selectedEffects.length}件選択中</small>
+        適用内容 <small>{composition.effectInclusions.length}件を除外</small>
       </legend>
       {effects.length ? (
         <ul className="modifier-chip-list">
           {effects.map(({ ref, label, skillName, sourceName, imageKey, skillLevel }) => {
-            const selected = composition.selectedEffects.some((candidate) =>
+            const selected = !composition.effectInclusions.some((candidate) =>
               sameEffect(candidate, ref),
             );
             return (
@@ -39,7 +39,7 @@ export function SupportEffectSelector({
                 key={`${ref.sourceInstanceId}:${ref.skillId}:${ref.effectOccurrenceId}`}
                 active={selected}
                 label={label}
-                detail={`Lv${skillLevel}・${selected ? 'セットから除外' : 'セットに含める'}`}
+                detail={`Lv${skillLevel}・${selected ? 'セットに含める' : 'セットから除外'}`}
                 sources={[
                   {
                     key: `${ref.sourceInstanceId}:${ref.skillId}`,
