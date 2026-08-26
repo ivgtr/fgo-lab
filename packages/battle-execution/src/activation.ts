@@ -63,8 +63,6 @@ export function planOperationActivations(
   );
   return operations.map((operation) => {
     if (
-      operation.phase !== 'attackerSkill' ||
-      operation.enabledByDefault ||
       operation.decisionKey !== null ||
       (operation.kind !== 'addTrait' &&
         operation.kind !== 'removeTrait' &&
@@ -72,9 +70,10 @@ export function planOperationActivations(
         operation.kind !== 'addQuantity')
     )
       return operation;
+    const operationChoices = choiceKeys(operation.condition);
+    if (operationChoices.length === 0) return operation;
     const present = operation.kind === 'addTrait';
     const links = decisionOperations.flatMap((candidate) => {
-      const operationChoices = choiceKeys(operation.condition);
       const candidateChoices = choiceKeys(candidate.condition);
       const sameSkill =
         candidate.source.sourceInstanceId === operation.source.sourceInstanceId &&
@@ -91,6 +90,7 @@ export function planOperationActivations(
           decisionKey: candidate.decisionKey,
           reason: prerequisite ? ('traitPrerequisite' as const) : ('sourceSkill' as const),
           selection:
+            operationChoices.length > 0 &&
             conditionIsActivationLocal(operation.condition) &&
             candidate.decisionPlan.condition === 'userMayAssume'
               ? ('conditionSatisfied' as const)
@@ -100,6 +100,7 @@ export function planOperationActivations(
         },
       ];
     });
+    if (links.length === 0) return operation;
     return {
       ...operation,
       activation: {
@@ -126,9 +127,9 @@ export function resolveOperationActivation(
     const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
     return {
       enabled:
-        operation.decisionPlan.activation === 'automatic'
+        operation.sourceEnabled && operation.decisionPlan.activation === 'automatic'
           ? operation.enabledByDefault
-          : (choice?.operationEnabled ?? operation.enabledByDefault),
+          : operation.sourceEnabled && (choice?.operationEnabled ?? operation.enabledByDefault),
       activeDecisionKeys:
         choice?.operationEnabled && operation.decisionKey ? [operation.decisionKey] : [],
       assumesLocalCondition: false,
@@ -138,10 +139,10 @@ export function resolveOperationActivation(
     const decision = decisions.get(link.decisionKey);
     return link.selection === 'operationEnabled'
       ? decision?.operationEnabled === true
-      : decision?.conditionSatisfaction === 'assumeSatisfied';
+      : decision?.operationEnabled === true && decision.conditionSatisfaction === 'assumeSatisfied';
   });
   return {
-    enabled: activeLinks.length > 0,
+    enabled: operation.sourceEnabled && activeLinks.length > 0,
     activeDecisionKeys: [...new Set(activeLinks.map((link) => link.decisionKey))],
     assumesLocalCondition:
       activeLinks.some((link) => link.selection === 'conditionSatisfied') &&

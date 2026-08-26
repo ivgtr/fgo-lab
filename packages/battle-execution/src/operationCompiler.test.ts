@@ -24,6 +24,9 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
     occurrenceId: '1:0',
     label: '複合効果',
     availability: 'allLimitBreakStates',
+    inclusionPolicy: { default: 'exclude' },
+    gameActivation: 'skillUse',
+    proc: { kind: 'guaranteed' },
     interaction: null,
     choice: null,
     triggerScope: null,
@@ -84,6 +87,7 @@ function source(execution: EffectExecutionOperation[], limitBreak = false): Sour
     valueSetIndex: 0,
     valueIndex: 0,
     limitBreak,
+    sourceEnabled: true,
     enabledByDefault: true,
   };
 }

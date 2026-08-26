@@ -82,6 +82,7 @@ export function createDefaultResolvedScenario(
     attackerSkills: servant.skills.slice(0, 3).map((skill, index) => ({
       skillId: skill.id,
       skillLevel: build?.npLevel ? (build.skills[String(index + 1)] ?? 1) : 10,
+      enabled: false,
     })),
     mysticCode: null,
     support: null,

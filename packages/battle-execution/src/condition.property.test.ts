@@ -253,6 +253,10 @@ describe('condition expression properties', () => {
       label: 'compound condition',
       sourceName: 'source',
       skillName: 'skill',
+      gameActivation: 'npBeforeDamage',
+      sourceActive: true,
+      proc: { kind: 'guaranteed' },
+      procRatePermille: 1_000,
       valuePermille: 1_500,
       value: 1.5,
       requiredQuantity: null,
@@ -278,6 +282,7 @@ describe('condition expression properties', () => {
         kind: 'effect',
         plan: { activation: 'user', condition: 'userMayAssume' },
       },
+      conditionDecision: 'evaluate',
       explanation: {
         code: 'conditionNotMet',
         condition: {

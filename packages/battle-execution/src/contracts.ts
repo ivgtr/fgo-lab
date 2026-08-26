@@ -1,5 +1,6 @@
 import type {
   CanonicalInputDefinition,
+  EffectProc,
   ModifierValueExpression,
   NpDamageSpec,
   TraitReadPolicy,
@@ -92,7 +93,11 @@ interface OperationBase {
   condition: ConditionExpression;
   decisionKey: string | null;
   decisionPlan: OperationDecisionPlan;
+  sourceEnabled: boolean;
   enabledByDefault: boolean;
+  gameActivation: 'constant' | 'skillUse' | 'npBeforeDamage' | 'derived';
+  proc: EffectProc;
+  procRatePermille: number | null;
   activation:
     | { kind: 'sourceDefault' }
     | {
@@ -282,6 +287,10 @@ export interface EffectProjection {
   label: string;
   sourceName: string;
   skillName: string;
+  gameActivation: 'constant' | 'skillUse' | 'npBeforeDamage' | 'derived';
+  sourceActive: boolean;
+  proc: EffectProc;
+  procRatePermille: number | null;
   valuePermille: number | null;
   value: number | null;
   requiredQuantity: 'attackerHpPermille' | null;
@@ -317,6 +326,7 @@ export interface EffectProjection {
         fact: WorldFactAssertion['fact'];
       }
     | { state: 'none' };
+  conditionDecision: 'none' | 'evaluate' | 'assumeSatisfied';
   explanation: ProjectionExplanation;
 }
 

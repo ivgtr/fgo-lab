@@ -3,6 +3,34 @@ import type { CalculationScenario, SupportSource } from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
+export function setEffectSourceEnabled(
+  scenario: ResolvedScenario,
+  projection: EffectProjection,
+  enabled: boolean,
+): ResolvedScenario {
+  if (projection.gameActivation !== 'skillUse') return scenario;
+  if (projection.source.origin === 'attacker')
+    return setAttackerSkillEnabled(scenario, projection.source.skillId, enabled);
+  if (projection.source.origin === 'support')
+    return setCalculationSupportSkillEnabled(
+      scenario,
+      projection.source.sourceInstanceId,
+      projection.source.skillId,
+      enabled,
+    );
+  if (projection.source.origin === 'mysticCode' && scenario.mysticCode)
+    return {
+      ...scenario,
+      mysticCode: {
+        ...scenario.mysticCode,
+        skills: scenario.mysticCode.skills.map((skill) =>
+          skill.skillId === projection.source.skillId ? { ...skill, enabled } : skill,
+        ),
+      },
+    };
+  return scenario;
+}
+
 export function setAttackerSkillLevel(
   scenario: ResolvedScenario,
   skillId: string,
@@ -12,6 +40,19 @@ export function setAttackerSkillLevel(
     ...scenario,
     attackerSkills: scenario.attackerSkills.map((skill) =>
       skill.skillId === skillId ? { ...skill, skillLevel } : skill,
+    ),
+  };
+}
+
+export function setAttackerSkillEnabled(
+  scenario: ResolvedScenario,
+  skillId: string,
+  enabled: boolean,
+): ResolvedScenario {
+  return {
+    ...scenario,
+    attackerSkills: scenario.attackerSkills.map((skill) =>
+      skill.skillId === skillId ? { ...skill, enabled } : skill,
     ),
   };
 }
@@ -82,6 +123,34 @@ export function setCalculationSupportSkillLevel(
                 ...source,
                 skills: source.skills.map((skill) =>
                   skill.skillId === skillId ? { ...skill, skillLevel } : skill,
+                ),
+              }
+            : source,
+        ),
+      },
+    },
+  };
+}
+
+export function setCalculationSupportSkillEnabled(
+  scenario: ResolvedScenario,
+  sourceInstanceId: string,
+  skillId: string,
+  enabled: boolean,
+): ResolvedScenario {
+  if (!scenario.support) return scenario;
+  return {
+    ...scenario,
+    support: {
+      ...scenario.support,
+      composition: {
+        ...scenario.support.composition,
+        sources: scenario.support.composition.sources.map((source) =>
+          source.sourceInstanceId === sourceInstanceId
+            ? {
+                ...source,
+                skills: source.skills.map((skill) =>
+                  skill.skillId === skillId ? { ...skill, enabled } : skill,
                 ),
               }
             : source,

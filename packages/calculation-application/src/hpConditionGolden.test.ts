@@ -53,9 +53,9 @@ describe('production HP condition golden', () => {
         )!;
         expect(calculation.result.status).toBe('calculated');
         expect(effect).toMatchObject({
-          controllability: 'automatic',
+          controllability: 'user',
           visibility: 'visible',
-          decision: { state: 'none' },
+          decision: { state: 'enabled' },
           requiredQuantity: 'attackerHpPermille',
           requiredQuantityOwner: 'attacker',
         });

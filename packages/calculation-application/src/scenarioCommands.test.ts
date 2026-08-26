@@ -17,7 +17,7 @@ describe('resolved scenario commands', () => {
     const added = appendCalculationSupportSource(base, {
       sourceInstanceId: 'support:1',
       servantId: '2',
-      skills: [{ skillId: '20', skillLevel: 1 }],
+      skills: [{ skillId: '20', skillLevel: 1, enabled: true }],
     });
     const configured = setCalculationSupportSkillLevel(added, 'support:1', '20', 10);
     const scenario = {

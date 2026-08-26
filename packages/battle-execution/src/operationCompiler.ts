@@ -41,6 +41,8 @@ function runtimeInputKey(
   occurrenceId: string,
   key: string,
 ): string {
+  if (key.startsWith('activation:'))
+    return `source:${origin}:${sourceInstanceId}:${skillId}:${key}`;
   return key.startsWith('effect:')
     ? `source:${origin}:${sourceInstanceId}:${skillId}:${occurrenceId}:${key.slice('effect:'.length)}`
     : key;
@@ -212,9 +214,7 @@ function effectCondition(
 
 function decisionPlan(source: SourceEffect, condition: ConditionExpression) {
   return {
-    activation: ['attacker', 'support', 'mysticCode'].includes(source.origin)
-      ? ('user' as const)
-      : ('automatic' as const),
+    activation: 'user' as const,
     condition: containsUnsupportedCondition(condition)
       ? ('unsupported' as const)
       : requiresUserAssumption(condition)
@@ -332,7 +332,14 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     condition,
     decisionKey: plan.activation === 'user' || plan.condition === 'userMayAssume' ? key : null,
     decisionPlan: plan,
+    sourceEnabled: source.sourceEnabled,
     enabledByDefault: source.enabledByDefault,
+    gameActivation: source.effect.gameActivation,
+    proc: source.effect.proc,
+    procRatePermille:
+      source.effect.proc.kind === 'guaranteed'
+        ? 1_000
+        : (source.effect.proc.ratePermille[source.valueSetIndex]?.[source.valueIndex] ?? null),
     activation: { kind: 'sourceDefault' as const },
     evidence: {
       rawPath: identity,
@@ -582,6 +589,13 @@ function makeProjection(
     label: source.effect.label,
     sourceName: source.sourceName,
     skillName: source.skillName,
+    gameActivation: source.effect.gameActivation,
+    sourceActive: source.sourceEnabled,
+    proc: source.effect.proc,
+    procRatePermille:
+      source.effect.proc.kind === 'guaranteed'
+        ? 1_000
+        : (source.effect.proc.ratePermille[source.valueSetIndex]?.[source.valueIndex] ?? null),
     valuePermille: modifier === 'flatDamage' ? null : valuePermille,
     value:
       valuePermille === null
@@ -613,6 +627,7 @@ function makeProjection(
           plan,
         }
       : { state: 'none' },
+    conditionDecision: plan.condition === 'userMayAssume' ? 'evaluate' : 'none',
     explanation: { code: userControllable ? 'disabled' : code, condition },
   };
 }

@@ -224,7 +224,11 @@ export function prepareOrderedScenario(
           ? `np:${attacker.id}:${damage.functionId}:condition`
           : null,
       decisionPlan: npDecisionPlan,
+      sourceEnabled: true,
       enabledByDefault: true,
+      gameActivation: 'npBeforeDamage',
+      proc: { kind: 'guaranteed' },
+      procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' },
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId, parameterKeys: [] },
       presentation: {
@@ -329,10 +333,12 @@ export function executeOrderedScenario(
   );
   const selectedCardMutations = operations.filter((operation) => {
     if (operation.kind !== 'changeCardType') return false;
-    if (operation.decisionPlan.activation === 'automatic') return operation.enabledByDefault;
-    return operation.decisionKey
-      ? (decisions.get(operation.decisionKey)?.operationEnabled ?? operation.enabledByDefault)
-      : operation.enabledByDefault;
+    if (activations.get(operation.operationId)?.enabled !== true) return false;
+    if (operation.decisionPlan.condition !== 'userMayAssume') return true;
+    return (
+      operation.decisionKey !== null &&
+      decisions.get(operation.decisionKey)?.conditionSatisfaction === 'assumeSatisfied'
+    );
   }) as Extract<BattleOperation, { kind: 'changeCardType' }>[];
   const finalSelectedCardMutation = selectedCardMutations.at(-1);
   const initialConstraintValidation = validateConstraintSet({
@@ -616,7 +622,6 @@ export function executeOrderedScenario(
           operation,
           outcome,
           code,
-          enabled,
           condition,
           choice,
           resolvedModifierValue,
@@ -667,22 +672,43 @@ export function executeOrderedScenario(
     ...resolvedCompileProjections,
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
   ];
+  const relevantInputOperationIds = new Set(
+    projections.flatMap((projection) =>
+      projection.visibility === 'visible' &&
+      operations.some(
+        (operation) =>
+          operation.operationId === projection.operationId &&
+          activations.get(operation.operationId)?.enabled,
+      )
+        ? [projection.operationId]
+        : [],
+    ),
+  );
+  const relevantMissingDefinitions = missingDefinitions.filter((definition) =>
+    operations.some(
+      (operation) =>
+        relevantInputOperationIds.has(operation.operationId) &&
+        operation.inputDefinitions.some((item) => item.key === definition.key),
+    ),
+  );
   return {
     input: foldDamageInput(input, state),
     state,
     operations: results,
     projections,
-    precision: missingDefinitions.length
+    precision: relevantMissingDefinitions.length
       ? 'inputRequired'
       : issues.length
         ? 'unsupported'
         : 'exact',
     issues,
-    requiredInputs: missingDefinitions.map((definition) => ({
+    requiredInputs: relevantMissingDefinitions.map((definition) => ({
       ...definition,
       effectOccurrenceIds: operations
-        .filter((operation) =>
-          operation.inputDefinitions.some((item) => item.key === definition.key),
+        .filter(
+          (operation) =>
+            relevantInputOperationIds.has(operation.operationId) &&
+            operation.inputDefinitions.some((item) => item.key === definition.key),
         )
         .map((operation) => operation.source.effectOccurrenceId)
         .filter((value, index, all) => all.indexOf(value) === index),

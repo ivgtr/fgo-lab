@@ -79,7 +79,6 @@ export function createOperationProjection(
   operation: BattleOperation,
   outcome: EffectProjection['outcome'],
   code: EffectProjection['explanation']['code'],
-  enabled: boolean,
   condition: boolean | null,
   choice: EffectDecision | undefined,
   resolvedModifierValue: number | null,
@@ -118,7 +117,7 @@ export function createOperationProjection(
               : null;
   const decisionSelected =
     operation.decisionPlan.activation === 'user'
-      ? enabled
+      ? (choice?.operationEnabled ?? operation.enabledByDefault)
       : choice?.conditionSatisfaction === 'assumeSatisfied';
   const conditionSatisfiedInternally = condition === true;
   // A user-activated effect must remain reachable when another selected operation
@@ -128,10 +127,8 @@ export function createOperationProjection(
     condition === false &&
     choice === undefined &&
     !(
-      (preserveSiblingChoice &&
-        (operation.decisionPlan.activation === 'user' ||
-          operation.decisionPlan.condition === 'userMayAssume')) ||
-      (operation.inputDefinitions.length > 0 && operation.decisionPlan.activation === 'user')
+      operation.decisionPlan.activation === 'user' ||
+      (preserveSiblingChoice && operation.decisionPlan.condition === 'userMayAssume')
     );
   const userControllable =
     !knownImpossibleBeforeSelection &&
@@ -145,6 +142,10 @@ export function createOperationProjection(
     label: operation.presentation.label,
     sourceName: operation.presentation.sourceName,
     skillName: operation.presentation.skillName,
+    gameActivation: operation.gameActivation,
+    sourceActive: operation.sourceEnabled,
+    proc: operation.proc,
+    procRatePermille: operation.procRatePermille,
     valuePermille,
     value:
       valuePermille === null
@@ -192,6 +193,10 @@ export function createOperationProjection(
             plan: operation.decisionPlan,
           }
         : { state: 'none' },
+    conditionDecision:
+      operation.decisionPlan.condition === 'userMayAssume'
+        ? (choice?.conditionSatisfaction ?? 'evaluate')
+        : 'none',
     explanation: {
       code,
       condition: operation.condition.kind === 'always' ? null : operation.condition,
@@ -215,6 +220,7 @@ export function projectAtDamageEvaluation(
     visibility: 'hidden',
     controllability: 'automatic',
     decision: { state: 'none' },
+    conditionDecision: 'none',
     explanation: { ...result.projection.explanation, code: 'cardMismatch' },
   };
 }
@@ -239,6 +245,10 @@ export function traitCountProjections(
       label: '特攻宝具',
       sourceName,
       skillName,
+      gameActivation: 'npBeforeDamage',
+      sourceActive: true,
+      proc: { kind: 'guaranteed' },
+      procRatePermille: 1_000,
       valuePermille,
       value: valuePermille / 1_000,
       requiredQuantity: null,
@@ -262,6 +272,7 @@ export function traitCountProjections(
         kind: 'worldFact',
         fact: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
       },
+      conditionDecision: 'none',
       explanation: {
         code: 'applied',
         condition: { kind: 'trait', scope: 'target', trait: trait.name, present: true },

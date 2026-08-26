@@ -22,6 +22,7 @@ export interface SourceEffect {
   valueSetIndex: number;
   valueIndex: number;
   limitBreak: boolean;
+  sourceEnabled: boolean;
   enabledByDefault: boolean;
 }
 
@@ -51,7 +52,7 @@ export function collectOperationSources(
     sourceId: string,
     skillId: string,
     skillLevel: number,
-    enabledByDefault: boolean,
+    sourceEnabled: boolean,
   ) => {
     const servant = master.servants.find((candidate) => candidate.id === sourceId);
     const skill = [...(servant?.skills ?? []), ...(servant?.passives ?? [])].find(
@@ -79,7 +80,8 @@ export function collectOperationSources(
         valueSetIndex: 0,
         valueIndex: skillLevel - 1,
         limitBreak: false,
-        enabledByDefault,
+        sourceEnabled,
+        enabledByDefault: effect.inclusionPolicy.default === 'include',
       });
   };
   for (const passive of attacker.passives)
@@ -92,7 +94,7 @@ export function collectOperationSources(
       attacker.id,
       selected.skillId,
       selected.skillLevel,
-      false,
+      selected.enabled,
     );
   if (scenario.craftEssence) {
     const ce = master.craftEssences.find(
@@ -124,7 +126,8 @@ export function collectOperationSources(
           valueSetIndex: 0,
           valueIndex: 0,
           limitBreak: scenario.craftEssence.limitBreak === 4,
-          enabledByDefault: true,
+          sourceEnabled: true,
+          enabledByDefault: effect.inclusionPolicy.default === 'include',
         });
       }
   }
@@ -138,7 +141,7 @@ export function collectOperationSources(
           source.servantId,
           skill.skillId,
           skill.skillLevel,
-          false,
+          skill.enabled,
         );
   if (scenario.mysticCode) {
     const code = master.mysticCodes.find(
@@ -175,7 +178,8 @@ export function collectOperationSources(
             valueSetIndex: 0,
             valueIndex: selected.skillLevel - 1,
             limitBreak: false,
-            enabledByDefault: false,
+            sourceEnabled: selected.enabled,
+            enabledByDefault: effect.inclusionPolicy.default === 'include',
           });
       }
   }
@@ -195,7 +199,8 @@ export function collectOperationSources(
         valueSetIndex: input.overcharge - 1,
         valueIndex: input.npLevel - 1,
         limitBreak: false,
-        enabledByDefault: true,
+        sourceEnabled: true,
+        enabledByDefault: effect.inclusionPolicy.default === 'include',
       });
   return { sources, issues };
 }

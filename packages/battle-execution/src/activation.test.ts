@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { conditionRequiresTrait, planOperationActivations } from './activation';
+import {
+  conditionRequiresTrait,
+  planOperationActivations,
+  resolveOperationActivation,
+} from './activation';
 import type { BattleOperation, ConditionExpression, OperationSource } from './contracts';
 
 const sunlight: ConditionExpression = {
@@ -16,7 +20,7 @@ const shore: ConditionExpression = {
 };
 
 describe('attacker skill mutation activation planning', () => {
-  it('returns a linked plan without mutating compiled operations', () => {
+  it('uses source activation for an unconditional hidden mutation', () => {
     const source: OperationSource = {
       origin: 'attacker',
       sourceInstanceId: 'attacker:1',
@@ -31,7 +35,11 @@ describe('attacker skill mutation activation planning', () => {
       source,
       condition: { kind: 'always' as const },
       decisionPlan: { activation: 'automatic' as const, condition: 'evaluate' as const },
-      enabledByDefault: false,
+      sourceEnabled: true,
+      enabledByDefault: true,
+      gameActivation: 'skillUse' as const,
+      proc: { kind: 'guaranteed' as const },
+      procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' as const },
       evidence: { rawPath: 'test', functionId: '100', parameterKeys: [] },
       presentation: { label: 'test', sourceName: 'test', skillName: 'test' },
@@ -62,17 +70,12 @@ describe('attacker skill mutation activation planning', () => {
     const planned = planOperationActivations(compiled);
 
     expect(compiled[0]?.activation).toEqual({ kind: 'sourceDefault' });
-    expect(planned[0]?.activation).toEqual({
-      kind: 'linkedDecisions',
-      links: [
-        {
-          decisionKey: 'effect:modifier',
-          reason: 'sourceSkill',
-          selection: 'operationEnabled',
-        },
-      ],
-    });
-    expect(planned[0]).not.toBe(compiled[0]);
+    expect(planned[0]?.activation).toEqual({ kind: 'sourceDefault' });
+    expect(planned[0]).toBe(compiled[0]);
+    expect(resolveOperationActivation(planned[0]!, new Map()).enabled).toBe(true);
+    expect(
+      resolveOperationActivation({ ...planned[0]!, sourceEnabled: false }, new Map()).enabled,
+    ).toBe(false);
   });
 
   it('requires a trait from an AND clause but not from only one OR branch', () => {

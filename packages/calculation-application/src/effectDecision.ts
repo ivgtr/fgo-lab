@@ -20,6 +20,7 @@ export type EffectDecisionCommand =
 export function commandForEffectProjection(
   projection: EffectProjection,
   enabled: boolean,
+  conditionSatisfaction: 'evaluate' | 'assumeSatisfied' = 'evaluate',
 ): EffectDecisionCommand {
   if (projection.decision.state === 'none')
     throw new TypeError(`effect_projection_not_controllable:${projection.projectionKey}`);
@@ -34,10 +35,7 @@ export function commandForEffectProjection(
     kind: 'setEffectDecision',
     decisionKey: projection.decision.decisionKey,
     operationEnabled: projection.decision.plan.activation === 'user' ? enabled : true,
-    conditionSatisfaction:
-      enabled && projection.decision.plan.condition === 'userMayAssume'
-        ? 'assumeSatisfied'
-        : 'evaluate',
+    conditionSatisfaction,
   };
 }
 
@@ -76,34 +74,13 @@ export function applyEffectProjectionDecision(
   enabled: boolean,
   peers: readonly EffectProjection[] = [],
 ): ResolvedScenario {
-  const exclusiveDecisionKeys = new Set(
-    enabled
-      ? peers.flatMap((peer) => {
-          if (peer.decision.state === 'none' || peer.projectionKey === projection.projectionKey)
-            return [];
-          const conflicts = projection.selectionGroups.some((selectedGroup) =>
-            peer.selectionGroups.some(
-              (peerGroup) =>
-                peerGroup.groupKey === selectedGroup.groupKey &&
-                peerGroup.candidateKey !== selectedGroup.candidateKey,
-            ),
-          );
-          return conflicts ? [peer.decision.decisionKey] : [];
-        })
-      : [],
-  );
-  const withoutExclusivePeers: ResolvedScenario = {
-    ...scenario,
-    effectDecisions: scenario.effectDecisions.filter(
-      (decision) => !exclusiveDecisionKeys.has(decision.decisionKey),
-    ),
-    worldFactAssertions: scenario.worldFactAssertions.filter(
-      (assertion) => !exclusiveDecisionKeys.has(assertion.decisionKey),
-    ),
-  };
+  if (projection.decision.state === 'none')
+    throw new TypeError(`effect_projection_not_controllable:${projection.projectionKey}`);
+  const decisionKey = projection.decision.decisionKey;
+  const current = scenario.effectDecisions.find((decision) => decision.decisionKey === decisionKey);
   const decided = applyEffectDecisionCommand(
-    withoutExclusivePeers,
-    commandForEffectProjection(projection, enabled),
+    scenario,
+    commandForEffectProjection(projection, enabled, current?.conditionSatisfaction ?? 'evaluate'),
   );
   if (projection.source.origin !== 'support' || !decided.support) return decided;
   const reference = {
@@ -112,21 +89,7 @@ export function applyEffectProjectionDecision(
     effectId: projection.source.effectId,
     effectOccurrenceId: projection.source.effectOccurrenceId,
   };
-  const exclusiveReferences = peers.flatMap((peer) =>
-    peer.decision.state !== 'none' && exclusiveDecisionKeys.has(peer.decision.decisionKey)
-      ? [peer.source]
-      : [],
-  );
-  const selected = decided.support.composition.selectedEffects.filter(
-    (candidate) =>
-      !exclusiveReferences.some(
-        (reference) =>
-          candidate.sourceInstanceId === reference.sourceInstanceId &&
-          candidate.skillId === reference.skillId &&
-          candidate.effectId === reference.effectId &&
-          candidate.effectOccurrenceId === reference.effectOccurrenceId,
-      ),
-  );
+  const selected = decided.support.composition.selectedEffects;
   const matches = (candidate: typeof reference) =>
     candidate.sourceInstanceId === reference.sourceInstanceId &&
     candidate.skillId === reference.skillId &&
@@ -146,6 +109,52 @@ export function applyEffectProjectionDecision(
       },
     },
   };
+}
+
+export function applyEffectConditionDecision(
+  scenario: ResolvedScenario,
+  projection: EffectProjection,
+  satisfied: boolean,
+  peers: readonly EffectProjection[] = [],
+): ResolvedScenario {
+  if (projection.decision.state === 'none' || projection.decision.kind !== 'effect')
+    throw new TypeError(`effect_condition_not_controllable:${projection.projectionKey}`);
+  const decisionKey = projection.decision.decisionKey;
+  const current = scenario.effectDecisions.find((decision) => decision.decisionKey === decisionKey);
+  let next = scenario;
+  if (satisfied)
+    for (const peer of peers) {
+      if (
+        peer.projectionKey === projection.projectionKey ||
+        peer.decision.state === 'none' ||
+        peer.decision.kind !== 'effect'
+      )
+        continue;
+      const conflicts = projection.selectionGroups.some((selectedGroup) =>
+        peer.selectionGroups.some(
+          (peerGroup) =>
+            peerGroup.groupKey === selectedGroup.groupKey &&
+            peerGroup.candidateKey !== selectedGroup.candidateKey,
+        ),
+      );
+      if (!conflicts) continue;
+      const peerDecisionKey = peer.decision.decisionKey;
+      const peerDecision = next.effectDecisions.find(
+        (decision) => decision.decisionKey === peerDecisionKey,
+      );
+      next = applyEffectDecisionCommand(next, {
+        kind: 'setEffectDecision',
+        decisionKey: peerDecisionKey,
+        operationEnabled: peerDecision?.operationEnabled ?? peer.decision.state === 'enabled',
+        conditionSatisfaction: 'evaluate',
+      });
+    }
+  return applyEffectDecisionCommand(next, {
+    kind: 'setEffectDecision',
+    decisionKey: projection.decision.decisionKey,
+    operationEnabled: current?.operationEnabled ?? projection.decision.state === 'enabled',
+    conditionSatisfaction: satisfied ? 'assumeSatisfied' : 'evaluate',
+  });
 }
 
 export function applyEffectProjectionDecisions(

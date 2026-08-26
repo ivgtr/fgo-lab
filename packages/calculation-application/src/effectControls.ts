@@ -4,7 +4,8 @@ export interface EffectControlViewModel {
   key: string;
   projection: EffectProjection;
   operationIds: readonly string[];
-  control: 'toggle' | 'singleChoice' | 'automatic';
+  control: 'none' | 'toggle' | 'proc';
+  conditionControl: 'none' | 'toggle' | 'singleChoice';
   valueDisplay: 'single' | 'sum';
 }
 
@@ -83,11 +84,21 @@ export function createEffectControlViewModels(
       operationIds,
       valueDisplay: operationIds.length > 1 ? 'sum' : 'single',
       control:
-        projection.controllability !== 'user'
-          ? 'automatic'
-          : belongsToChoice
+        projection.decision.state !== 'none' &&
+        projection.decision.kind === 'effect' &&
+        projection.decision.plan.activation === 'user'
+          ? projection.proc.kind === 'chainedRolls'
+            ? 'proc'
+            : 'toggle'
+          : 'none',
+      conditionControl:
+        projection.decision.state !== 'none' &&
+        projection.decision.kind === 'effect' &&
+        projection.decision.plan.condition === 'userMayAssume'
+          ? belongsToChoice
             ? 'singleChoice'
-            : 'toggle',
+            : 'toggle'
+          : 'none',
     };
   });
 }

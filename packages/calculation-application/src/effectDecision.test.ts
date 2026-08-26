@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
-import { applyEffectProjectionDecision } from './effectDecision';
+import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
 import { createDefaultResolvedScenario } from './scenario';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -19,7 +19,7 @@ describe('effect decision application command', () => {
             {
               sourceInstanceId: 'support:1',
               servantId: '2',
-              skills: [{ skillId: '20', skillLevel: 10 }],
+              skills: [{ skillId: '20', skillLevel: 10, enabled: true }],
             },
           ],
           selectedEffects: [],
@@ -32,6 +32,10 @@ describe('effect decision application command', () => {
       label: '攻撃力アップ',
       sourceName: 'support',
       skillName: 'skill',
+      gameActivation: 'skillUse',
+      sourceActive: true,
+      proc: { kind: 'guaranteed' },
+      procRatePermille: 1_000,
       valuePermille: 200,
       value: 0.2,
       requiredQuantity: null,
@@ -57,6 +61,7 @@ describe('effect decision application command', () => {
         kind: 'effect',
         plan: { activation: 'user', condition: 'evaluate' },
       },
+      conditionDecision: 'none',
       explanation: { code: 'disabled', condition: null },
     };
 
@@ -89,7 +94,7 @@ describe('effect decision application command', () => {
     ]);
   });
 
-  it('replaces a selected canonical sibling while preserving executor conflict defense', () => {
+  it('keeps inclusion independent while replacing an exclusive condition decision', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
     const baseProjection: EffectProjection = {
       projectionKey: 'effect:sky',
@@ -97,6 +102,10 @@ describe('effect decision application command', () => {
       label: '対天',
       sourceName: 'source',
       skillName: 'skill',
+      gameActivation: 'skillUse',
+      sourceActive: true,
+      proc: { kind: 'guaranteed' },
+      procRatePermille: 1_000,
       valuePermille: 500,
       value: 0.5,
       requiredQuantity: null,
@@ -122,6 +131,7 @@ describe('effect decision application command', () => {
         kind: 'effect',
         plan: { activation: 'user', condition: 'userMayAssume' },
       },
+      conditionDecision: 'evaluate',
       explanation: { code: 'disabled', condition: null },
     };
     const earth: EffectProjection = {
@@ -139,16 +149,23 @@ describe('effect decision application command', () => {
         plan: { activation: 'user', condition: 'userMayAssume' },
       },
     };
-    const skySelected = applyEffectProjectionDecision(scenario, baseProjection, true, [
+    const skyIncluded = applyEffectProjectionDecision(scenario, baseProjection, true);
+    const skySelected = applyEffectConditionDecision(skyIncluded, baseProjection, true, [
       baseProjection,
       earth,
     ]);
-    const earthSelected = applyEffectProjectionDecision(skySelected, earth, true, [
+    const earthIncluded = applyEffectProjectionDecision(skySelected, earth, true);
+    const earthSelected = applyEffectConditionDecision(earthIncluded, earth, true, [
       baseProjection,
       earth,
     ]);
 
     expect(earthSelected.effectDecisions).toEqual([
+      {
+        decisionKey: 'effect:sky',
+        operationEnabled: true,
+        conditionSatisfaction: 'evaluate',
+      },
       {
         decisionKey: 'effect:earth',
         operationEnabled: true,
