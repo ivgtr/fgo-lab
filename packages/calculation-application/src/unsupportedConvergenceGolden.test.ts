@@ -8,6 +8,20 @@ import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
+const formerlyUnsupportedDefaults = [
+  '106600',
+  '202500',
+  '203300',
+  '305800',
+  '400900',
+  '506000',
+  '702500',
+  '1102000',
+  '1102300',
+  '2300600',
+  '2801300',
+  '3300200',
+] as const;
 const formerlyUnsupportedSelections = [
   ['400100', '22457:0'],
   ['506000', '23549:0'],
@@ -28,6 +42,238 @@ const formerlyUnsupportedSelections = [
 ] as const;
 
 describe('unsupported convergence production golden', () => {
+  it('goldens every formerly unsupported default damage input and NP1-5 result', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const records = formerlyUnsupportedDefaults.map((servantId) => {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const calculation = calculateScenario(
+        createDefaultResolvedScenario(master, undefined, servant),
+        master,
+        versions,
+      );
+      expect(calculation.result.status, `${servantId}:${servant.name}`).toBe('calculated');
+      if (calculation.result.status !== 'calculated') throw new Error('exact result required');
+      return {
+        servantId,
+        name: servant.name,
+        inputDigest: createHash('sha256').update(JSON.stringify(calculation.input)).digest('hex'),
+        np1To5Average: calculation.result.rows.map((row) => row.average),
+        appliedOperations: calculation.effects
+          .filter((effect) => effect.outcome === 'applied')
+          .map((effect) => effect.operationId),
+      };
+    });
+    expect(records).toHaveLength(12);
+    expect(records).toMatchInlineSnapshot(`
+      [
+        {
+          "appliedOperations": [
+            "np:np:106600:np:106600:248:0:modifier:npDamageBuff",
+            "np:np:106600:np:106600:23291:0:addTrait-target:buffBurn",
+            "np:106600:5337:damage",
+          ],
+          "inputDigest": "2171014d75b10e7e844cd03781e45674bd7f6b285016ba5a3938e25064ee3a9a",
+          "name": "ジャック・ド・モレー",
+          "np1To5Average": [
+            31998.575,
+            42664.93,
+            47998.095,
+            50664.69,
+            53331.28,
+          ],
+          "servantId": "106600",
+        },
+        {
+          "appliedOperations": [
+            "np:202500:22:damage",
+          ],
+          "inputDigest": "921d828caa2ee08f398509662f85ad197e148b7516a9ee57c0c14042338c6734",
+          "name": "アン・ボニー＆メアリー・リード",
+          "np1To5Average": [
+            41063.075,
+            54750.935,
+            61594.87,
+            65016.84,
+            68438.805,
+          ],
+          "servantId": "202500",
+        },
+        {
+          "appliedOperations": [
+            "passive:passive:203300:62551:265:0:modifier:flatDamage",
+            "passive:passive:203300:607650:118:0:modifier:cardBuff",
+            "np:203300:22:damage",
+          ],
+          "inputDigest": "99326d382590c13b906d0610dda335a144f3cb35904bbd33474674b2e8de257f",
+          "name": "アシュヴァッターマン",
+          "np1To5Average": [
+            46640.68,
+            62117.775,
+            69856.31,
+            73725.57,
+            77594.84,
+          ],
+          "servantId": "203300",
+        },
+        {
+          "appliedOperations": [
+            "passive:passive:305800:62450:265:0:modifier:flatDamage",
+            "np:np:305800:np:305800:249:0:modifier:npDamageBuff",
+            "np:305800:13:damage",
+          ],
+          "inputDigest": "69c0cdacb603a10369b4a61f575e1a4e66dc63afc26134504c21b1d85f89f48e",
+          "name": "アショカ王",
+          "np1To5Average": [
+            34888.58,
+            46459.94,
+            52245.615,
+            55138.445,
+            58031.31,
+          ],
+          "servantId": "305800",
+        },
+        {
+          "appliedOperations": [
+            "np:400900:22:damage",
+          ],
+          "inputDigest": "25161d2e5db78da066c52fa027ab1b9538ec5dbfcb7a9242f73621c2c80ab7bc",
+          "name": "アン・ボニー＆メアリー・リード",
+          "np1To5Average": [
+            59020.73,
+            73776.035,
+            81153.69,
+            84842.52,
+            88531.345,
+          ],
+          "servantId": "400900",
+        },
+        {
+          "appliedOperations": [
+            "np:np:506000:np:506000:110:0:modifier:cardBuff",
+            "np:506000:13:damage",
+          ],
+          "inputDigest": "12fd35ca43149ea5f8ba3371254033d5d9e02763089de73c957ed2c5abba140b",
+          "name": "ビショーネ",
+          "np1To5Average": [
+            20697.33,
+            27596.605,
+            31046.25,
+            32771.06,
+            34495.865,
+          ],
+          "servantId": "506000",
+        },
+        {
+          "appliedOperations": [
+            "passive:passive:702500:54251:118:0:modifier:cardBuff",
+            "np:702500:22:damage",
+          ],
+          "inputDigest": "4d00403d0f74592f1f11059bb8ee9eb55d2c8f7773577a95bb2449da30298c28",
+          "name": "土方歳三",
+          "np1To5Average": [
+            83408.01,
+            104260.125,
+            114686.205,
+            119899.23,
+            125112.26,
+          ],
+          "servantId": "702500",
+        },
+        {
+          "appliedOperations": [
+            "np:np:1102000:np:1102000:249:0:modifier:npDamageBuff",
+            "np:np:1102000:np:1102000:249:1:modifier:npDamageBuff",
+            "np:1102000:13:damage",
+          ],
+          "inputDigest": "7862de39912e50d115934c963a2f967a86a85154e09596d5068be6f28fc49f0f",
+          "name": "ジョン・ラックランド",
+          "np1To5Average": [
+            31826.97,
+            42436.13,
+            47740.715,
+            50393,
+            53045.29,
+          ],
+          "servantId": "1102000",
+        },
+        {
+          "appliedOperations": [
+            "np:np:1102300:np:1102300:23468:0:modifier:npDamageBuff",
+            "passive:passive:1102300:54149:118:0:modifier:cardBuff",
+            "np:1102300:14:damage",
+          ],
+          "inputDigest": "2f2e9a11125891fcbccd018a4e342d9ef3e9203fe56cda0dbf546ac09728bf50",
+          "name": "キングプロテア・オルタ",
+          "np1To5Average": [
+            64172.38,
+            85563.345,
+            96258.835,
+            101606.57,
+            106954.255,
+          ],
+          "servantId": "1102300",
+        },
+        {
+          "appliedOperations": [
+            "passive:passive:2300600:30550:265:0:modifier:flatDamage",
+          ],
+          "inputDigest": "619ce5c3498a79aec697ee0e9f5c3b52653b460ffdfde3466bc96df6a55c5177",
+          "name": "ＢＢドバイ",
+          "np1To5Average": [
+            24566.05,
+            32671.56,
+            36724.325,
+            38750.7,
+            40777.08,
+          ],
+          "servantId": "2300600",
+        },
+        {
+          "appliedOperations": [
+            "np:np:2801300:np:2801300:119:0:modifier:cardBuff",
+            "np:np:2801300:np:2801300:249:0:modifier:npDamageBuff",
+          ],
+          "inputDigest": "f0644d8c7e6e6f9557775bfdd1e4369fa563682bafc101e110dab06044b1df63",
+          "name": "ハベトロット",
+          "np1To5Average": [
+            50393.91,
+            67192.04,
+            75591.115,
+            79790.65,
+            83990.17,
+          ],
+          "servantId": "2801300",
+        },
+        {
+          "appliedOperations": [
+            "passive:passive:3300200:30149:265:0:modifier:flatDamage",
+            "np:3300200:21836:damage",
+          ],
+          "inputDigest": "4787efec17d3a5cc92e469f00b59676eb052141f827727f993ec4ef56471a22e",
+          "name": "エレシュキガル",
+          "np1To5Average": [
+            25850.53,
+            34420.875,
+            38706.045,
+            40848.63,
+            42991.215,
+          ],
+          "servantId": "3300200",
+        },
+      ]
+    `);
+  });
+
   it('calculates all 420 attacking NPs and the 25 formerly unsupported selections exactly', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
