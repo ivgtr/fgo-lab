@@ -203,32 +203,7 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
     if (semantic.kind === 'nonDamage') continue;
     const recipient = operationRecipient(semantic, source.origin);
     if (semantic.kind === 'contextMutation') {
-      if (semantic.scope === 'field')
-        operations.push({
-          ...baseOperation(
-            source,
-            order++,
-            `${semantic.mutation === 'addTrait' ? 'add' : 'remove'}-field:${semantic.trait}`,
-          ),
-          decisionKey: null,
-          decisionPlan: { activation: 'automatic', condition: 'evaluate' },
-          kind: semantic.mutation,
-          scope: 'field',
-          trait: semantic.trait,
-        });
-      else if (recipient)
-        operations.push({
-          ...baseOperation(
-            source,
-            order++,
-            `${semantic.mutation === 'addTrait' ? 'add' : 'remove'}-${recipient}:${semantic.trait}`,
-          ),
-          decisionKey: null,
-          decisionPlan: { activation: 'automatic', condition: 'evaluate' },
-          kind: semantic.mutation,
-          scope: recipient === 'attacker' ? 'attackerState' : 'targetState',
-          trait: semantic.trait,
-        });
+      if (semantic.scope === 'field' || recipient) applicable.push(semantic);
       continue;
     }
     if (semantic.kind === 'cardTypeMutation') {
@@ -249,7 +224,8 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
       });
   }
 
-  const primary = applicable.find((semantic) => semantic.kind !== 'unresolved');
+  const projectable = applicable.filter((semantic) => semantic.kind !== 'contextMutation');
+  const primary = projectable.find((semantic) => semantic.kind !== 'unresolved');
   const unresolved = applicable.some(
     (semantic) =>
       semantic.kind === 'unresolved' ||
@@ -298,79 +274,107 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
     );
     return { operations, unsupported };
   }
-  if (!primary) {
-    if (operations.length === 0 && canNormalizeDamageEffect(source.effect, source.origin))
+  const missingValue = applicable.find(
+    (semantic) =>
+      (semantic.kind === 'damageModifier' || semantic.kind === 'modifierRateChange') &&
+      selectedValue(source, semantic) === undefined,
+  );
+  if (missingValue?.kind === 'damageModifier' || missingValue?.kind === 'modifierRateChange') {
+    unsupported.push(
+      makeProjection(
+        source,
+        key,
+        'unsupported',
+        'unresolved',
+        missingValue.modifier,
+        null,
+        selectedValueExpression(source, missingValue),
+        condition,
+      ),
+    );
+    return { operations, unsupported };
+  }
+  if (applicable.length === 0) {
+    if (canNormalizeDamageEffect(source.effect, source.origin))
       unsupported.push(
         makeProjection(source, key, 'unsupported', 'unresolved', null, null, null, condition),
       );
     return { operations, unsupported };
   }
 
-  if (primary.kind === 'cardTypeMutation')
-    operations.push({
-      ...baseOperation(source, order++, `card:${primary.card}`),
-      kind: 'changeCardType',
-      card: primary.card,
-      stateTraits: primary.stateTraits,
-    });
-  else if (primary.kind === 'modifierRateChange') {
-    if (value === null)
-      unsupported.push(
-        makeProjection(
-          source,
-          key,
-          'unsupported',
-          'unresolved',
-          'npDamageBuff',
-          null,
-          valueExpression,
-          condition,
-        ),
-      );
-    else
+  const suffixCounts = new Map<string, number>();
+  const uniqueSuffix = (suffix: string) => {
+    const count = suffixCounts.get(suffix) ?? 0;
+    suffixCounts.set(suffix, count + 1);
+    return count === 0 ? suffix : `${suffix}:${String(count)}`;
+  };
+  for (const semantic of applicable) {
+    const recipient = operationRecipient(semantic, source.origin);
+    if (semantic.kind === 'contextMutation') {
+      const scope =
+        semantic.scope === 'field'
+          ? 'field'
+          : recipient === 'attacker'
+            ? 'attackerState'
+            : 'targetState';
+      const suffixScope = semantic.scope === 'field' ? 'field' : recipient;
       operations.push({
-        ...baseOperation(source, order++, 'rate'),
-        kind: 'changeModifierRate',
-        modifier: primary.modifier,
-        ratePermille: value,
+        ...baseOperation(
+          source,
+          order++,
+          uniqueSuffix(
+            `${semantic.mutation === 'addTrait' ? 'add' : 'remove'}-${String(suffixScope)}:${semantic.trait}`,
+          ),
+        ),
+        decisionKey: null,
+        decisionPlan: { activation: 'automatic', condition: 'evaluate' },
+        kind: semantic.mutation,
+        scope,
+        trait: semantic.trait,
       });
-  } else if (primary.kind === 'ignoreDefense')
-    operations.push({ ...baseOperation(source, order++, 'ignore-defense'), kind: 'ignoreDefense' });
-  else if (primary.kind === 'ignoreDamageCut')
-    operations.push({
-      ...baseOperation(source, order++, 'ignore-damage-cut'),
-      kind: 'ignoreDamageCut',
-    });
-  else if (primary.kind === 'damageModifier') {
-    if (value === null)
-      unsupported.push(
-        makeProjection(
-          source,
-          key,
-          'unsupported',
-          'unresolved',
-          primary.modifier,
-          null,
-          valueExpression,
-          condition,
-        ),
-      );
-    else
+    } else if (semantic.kind === 'cardTypeMutation')
       operations.push({
-        ...baseOperation(source, order++, `modifier:${primary.modifier}`),
+        ...baseOperation(source, order++, uniqueSuffix(`card:${semantic.card}`)),
+        kind: 'changeCardType',
+        card: semantic.card,
+        stateTraits: semantic.stateTraits,
+      });
+    else if (semantic.kind === 'modifierRateChange')
+      operations.push({
+        ...baseOperation(source, order++, uniqueSuffix('rate')),
+        kind: 'changeModifierRate',
+        modifier: semantic.modifier,
+        ratePermille: selectedValue(source, semantic)!,
+      });
+    else if (semantic.kind === 'ignoreDefense')
+      operations.push({
+        ...baseOperation(source, order++, uniqueSuffix('ignore-defense')),
+        kind: 'ignoreDefense',
+      });
+    else if (semantic.kind === 'ignoreDamageCut')
+      operations.push({
+        ...baseOperation(source, order++, uniqueSuffix('ignore-damage-cut')),
+        kind: 'ignoreDamageCut',
+      });
+    else if (semantic.kind === 'damageModifier') {
+      const operationValue = selectedValue(source, semantic)!;
+      const operationExpression = selectedValueExpression(source, semantic);
+      operations.push({
+        ...baseOperation(source, order++, uniqueSuffix(`modifier:${semantic.modifier}`)),
         kind: 'addModifier',
-        modifier: primary.modifier,
-        valuePermille: value * primary.sign,
-        valueExpression: valueExpression
+        modifier: semantic.modifier,
+        valuePermille: operationValue * semantic.sign,
+        valueExpression: operationExpression
           ? {
-              ...signedModifierValueExpression(valueExpression, primary.sign),
+              ...signedModifierValueExpression(operationExpression, semantic.sign),
               ...(['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
                 ? {}
                 : { subjectId: source.sourceId }),
             }
           : null,
-        card: primary.card,
+        card: semantic.card,
       });
+    }
   }
   return { operations, unsupported };
 }
