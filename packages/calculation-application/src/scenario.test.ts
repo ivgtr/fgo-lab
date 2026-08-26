@@ -27,6 +27,17 @@ const unconditionalConditions = {
   opponent: { operator: 'any' as const, traits: [] },
   field: { operator: 'any' as const, traits: [] },
 };
+const emptyParameterSemantics = {
+  value: [],
+  lifecycle: [],
+  presentation: [],
+  condition: [],
+  contextMutation: [],
+  choice: [],
+  valueExpression: [],
+  buffIdentity: [],
+  unresolved: [],
+};
 
 function modifierEffect(
   id: string,
@@ -43,6 +54,16 @@ function modifierEffect(
     target,
     label: id,
     parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
+    modifierValueExpressionSets: [[], [], [], [], []],
+    parameterSemantics: emptyParameterSemantics,
+    unresolvedSemanticKeys: [],
+    choice: null,
+    npCardTypeChange: null,
+    npCardTypeStateTraits: [],
+    triggerScope: null,
+    operationTrigger: null,
+    quantityConditions: [],
+    sourceQuantityConditions: [],
     buffTypes: [buffType],
     conditions,
     contextChanges: {

@@ -13,6 +13,28 @@ const conditions = {
   opponent: { operator: 'any' as const, traits: [] },
   field: { operator: 'any' as const, traits: [] },
 };
+const effectContract = {
+  modifierValueExpressionSets: [[], [], [], [], []],
+  parameterSemantics: {
+    value: [],
+    lifecycle: [],
+    presentation: [],
+    condition: [],
+    contextMutation: [],
+    choice: [],
+    valueExpression: [],
+    buffIdentity: [],
+    unresolved: [],
+  },
+  unresolvedSemanticKeys: [],
+  choice: null,
+  npCardTypeChange: null,
+  npCardTypeStateTraits: [],
+  triggerScope: null,
+  operationTrigger: null,
+  quantityConditions: [],
+  sourceQuantityConditions: [],
+};
 
 describe('support effect application view model', () => {
   it('keeps runtime routing inside calculation-application', () => {
@@ -32,6 +54,7 @@ describe('support effect application view model', () => {
               imageKey: null,
               effects: [
                 {
+                  ...effectContract,
                   id: 'attack-up',
                   occurrenceId: 'attack-up:0',
                   type: 'addStateShort',
@@ -55,6 +78,7 @@ describe('support effect application view model', () => {
                   cardTypes: [],
                 },
                 {
+                  ...effectContract,
                   id: 'critical-only',
                   occurrenceId: 'critical-only:0',
                   type: 'addStateShort',

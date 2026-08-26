@@ -213,6 +213,7 @@ describe('portable schema boundaries', () => {
             sourceInstanceId: 'support-instance-1',
             skillId: 'skill-1',
             effectId: 'attack-up',
+            effectOccurrenceId: 'attack-up:0',
           },
         ],
       },
