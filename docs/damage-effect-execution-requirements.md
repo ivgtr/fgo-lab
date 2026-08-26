@@ -62,6 +62,8 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 - 表示される最終火力効果は、ゲーム内で確定発動するものも含めて原則操作可能にする。確定効果は既定onとし、offは比較のため計算から除外することを意味する。
 - on/offによる計算への包含、ゲーム内の発動形態、条件成立、確率結果を別概念として保持する。onは条件やworld factを強制成立させない。
 - 単純な確率火力effectでは、onを成功scenario、offを失敗scenarioとして使用し、確率だけを理由に別入力や`inputRequired`を追加しない。連鎖判定は成功回数へ集約する。
+- 使用スキルの有効化、effectの包含、condition成立、proc成立を互いから推論しない。skillをoffにすると同一sourceのterminal effectとhidden mutationをすべて計算外にする。
+- 条件付き特攻宝具は基礎宝具ダメージを常に実行し、特攻補正の包含とcondition成立だけを個別に操作する。
 - onでもカード不一致、付与対象不一致、効果順違反、未解決parameterを迂回してはならない。
 
 ### 3.3 出力体験

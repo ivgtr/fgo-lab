@@ -21,6 +21,7 @@ date: 2026-08-27
 ## Scenario契約
 
 - visibleな確定effectは既定includeであり、除外差分だけを保存する。
+- 支援保存セットも同じく除外差分だけを`effectInclusions`へ保存し、旧selected-effect列挙は保持しない。
 - 使用スキル由来effectは従来どおり使用decisionが有効な場合だけ候補にする。
 - 単純な確率effectはeffect inclusionをproc selectionとしても用いる。includeは成功scenario、excludeは失敗scenarioを表し、別の成功入力を保存しない。
 - 連鎖判定だけは不可能な飛び石選択を防ぐため、成功回数をcanonical inputとして保存する。既定値は最大成功回数とする。
@@ -46,9 +47,10 @@ Atlas固有の`Rate`はdata-pipelineだけが解釈する。
 - 連鎖判定は成功回数controlを使い、複数の独立toggleへ分解しない。
 - 通常表示へsource kind、source名、確定／確率、条件成立状態、包含状態を出す。
 - 同一activationの連鎖operationは一つの表示effectへ集約するが、traceでは各operationと根拠を保持する。
+- 条件付き特攻宝具は基礎宝具ダメージと特攻補正を分け、特攻補正のinclusionとcondition成立を別操作にする。
 - カード不一致effectと中間state mutationは表示しない。
 
-## Production inventory（移行前）
+## Production inventory
 
 2026-08-27のnormalized master v53 / schema 29 / engine 17.0.0では、visible automatic effectは440件（NP 180、passive 260）。同一modifier・label群にautomaticとuser controlが混在するものは152群（NP-before 68群、passive 92群、重複を含む）。
 
@@ -60,7 +62,7 @@ production artifact全体のcanonical procは43 occurrenceである。primary NP
 | independent | 杉谷善住坊 | 4 | 判定共有単位ごとのeffect toggle |
 | OC single roll | ドゥリーヨダナ | 3 | per-effect success decision + OC rate |
 
-移行後は、visibleだが包含操作不能、`Rate<1000`なのに確定適用、unknown proc semanticsをすべて0件でratchetする。
+移行後のmaster `20260827` / master schema 30 / scenario schema 25 / engine 18.0.0では、13,322 effectを`guaranteed` 13,279、`singleRoll` 3、`independentRolls` 35、`chainedRolls` 5へ正規化した。420攻撃宝具の既定projectionはuser 1,606、automatic visible 0、hidden 695である。visibleだが包含操作不能、単純確率だけを理由とする`inputRequired`、unknown proc semantics、inert control、implementation unsupportedは0件でratchetする。
 
 ## E4契約
 

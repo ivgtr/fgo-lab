@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
 document_version: "1.1.0"
-status: "E3.2 Complete - Awaiting User UX Confirmation"
+status: "E3.10 Validation - E4 Blocked"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -22,6 +22,8 @@ E4ランキング統合前に、`automatic`へ混在した計算包含、ゲー�
 5. applicationがtoggle、single choice、proc success、proc success countをview model化し、Webは汎用rendererだけを持つ。
 6. schema、artifact、engineを更新し、旧decision形式のfallbackを残さない。
 7. 420攻撃宝具、全visible projection、既知golden、share/save、desktop/390px/320pxを検証する。
+
+実装はsource activation、effect inclusion、deterministic condition、proc selection、visibilityを分離した。単純procはeffect toggleを成功／失敗scenarioとして再利用し、`chainedRolls`だけを成功回数入力へ集約した。支援保存形式は既定includeからの除外差分へ破壊的に置換し、条件付き特攻宝具もinclusionとconditionを別操作にした。master 20260827 / master schema 30 / scenario schema 25 / engine 18.0.0を正とし、旧形式のruntime fallbackは持たない。
 
 完了までE4はblockedとする。既知3騎以外のcalculated値差分、unknown proc semantics、入力とdamage inputの因果関係不明が見つかった場合は実装を止めて差分を提示する。
 
