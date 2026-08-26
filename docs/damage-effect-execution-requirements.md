@@ -59,8 +59,8 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 - 対象カードと一致しない色バフは表示しない。
 - 弱体耐性、NP獲得、スター、フィールド設定そのもの、特性付与そのもの等、ダメージを変えない中間効果は表示しない。
 - 中間効果によって成立した最終的な火力効果は表示する。
-- 自動的に成立する効果は自動適用し、利用者の判断が必要な条件付き火力効果だけを操作可能にする。
-- onは「効果を無条件に強制適用」ではなく、「表示された成立条件をこの計算で満たす」という利用者の宣言として扱う。
+- 表示される最終火力効果は、ゲーム内で確定発動するものも含めて原則操作可能にする。確定効果は既定onとし、offは比較のため計算から除外することを意味する。
+- on/offによる計算への包含、ゲーム内の発動形態、条件成立、確率結果を別概念として保持する。onは条件やworld factを強制成立させない。
 - onでもカード不一致、付与対象不一致、効果順違反、未解決parameterを迂回してはならない。
 
 ### 3.3 出力体験
@@ -244,7 +244,7 @@ E3.2では次を最終契約とする。
 3. `WorldFact`はscenarioの定量入力、masterの恒常trait、executorが順序付きcontext mutationから生成したtraitだけで構成する。排他groupは保存せず、executorがcanonical trait semanticsから導出する。
 4. 選択されたeffect-local condition同士は、完全な条件式を論理制約として検証する。両立する選択肢が一つもない場合は型付き`conditionDecisionConflict`として両方を適用せずfail-closedにする。
 5. effect-local成立は当該火力operationだけに作用し、別効果のcondition evaluatorやworld factへ伝播しない。状態変更operationへeffect-local成立を使う必要がある場合はexactとせずtyped unsupportedにする。
-6. `automatic`は、無条件であるか、現在のworld/derived factだけで条件を決定でき、ユーザー判断を必要としないoperationに限定する。未成立・未解決の条件付き火力をautomaticへfallbackしない。
+6. 条件を入力なしで評価できることをUI操作不可と同一視しない。未成立・未解決の条件付き火力を確定適用へfallbackしない。
 7. UIはapplication facadeが返すprojectionとcommandだけを扱う。webがcondition IRを解釈してscenario入力を再構築しない。
 8. 未選択の任意効果のunsupportedは計算全体を止めない。選択済み、automatic、または宝具本体のunsupportedは必ず結果全体をfail-closedにする。
 

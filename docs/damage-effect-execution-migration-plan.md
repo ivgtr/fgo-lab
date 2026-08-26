@@ -9,6 +9,22 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 
 # FGO Lab ダメージ効果実行エンジン移行計画
 
+## E3.10 効果包含・発動条件・確率結果の分離
+
+E4ランキング統合前に、`automatic`へ混在した計算包含、ゲーム内発動、条件評価、確率結果、UI表示可否を中央置換する。正本はADR 015とし、visibleな確定火力effectは既定includeかつ比較除外可能、確率effectは未指定時`inputRequired`とする。
+
+実装順序は次とする。
+
+1. productionのvisible automatic、混在label群、`Rate`保有damage effectを固定する。
+2. master IRへinclusion policy、activation kind、proc model、source presentationを追加し、raw `Rate`をdata-pipelineでのみ解釈する。
+3. scenario decisionを包含とcondition satisfactionへ分離し、proc結果はcanonical inputとして保存する。
+4. executorで包含、condition、procを順に評価し、effect transactionの失敗時は部分commitしない。
+5. applicationがtoggle、single choice、proc success、proc success countをview model化し、Webは汎用rendererだけを持つ。
+6. schema、artifact、engineを更新し、旧decision形式のfallbackを残さない。
+7. 420攻撃宝具、全visible projection、既知golden、share/save、desktop/390px/320pxを検証する。
+
+完了までE4はblockedとする。既知3騎以外のcalculated値差分、unknown proc semantics、入力とdamage inputの因果関係不明が見つかった場合は実装を止めて差分を提示する。
+
 ## 1. 目的と優先度
 
 本計画は、`docs/damage-effect-execution-requirements.md`を実装、検証、削除、確認の単位へ分解する。ダメージ計算品質を最優先とし、Q6のランキング完成や新しい効果対応より先に実施する。
