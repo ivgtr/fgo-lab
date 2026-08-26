@@ -11,7 +11,13 @@ import {
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
 import type { EffectProjection } from '@fgo-lab/calculation-application';
-import { applyEffectProjectionDecision } from '@fgo-lab/calculation-application';
+import {
+  appendCalculationSupportSource,
+  applyEffectProjectionDecision,
+  removeCalculationSupportSource as removeSupportSourceFromScenario,
+  setAttackerSkillLevel,
+  setCalculationSupportSkillLevel,
+} from '@fgo-lab/calculation-application';
 import type {
   AttackerSkillSelection,
   DamageResolutionInput,
@@ -31,7 +37,7 @@ import {
   SupportTemplatePicker,
 } from './CalculatorPickers';
 import { CalculationResult } from './CalculationResult';
-import { collectDamageEffectStacks } from './damageEffectStacks';
+import { createCalculatorViewModel } from './calculatorViewModel';
 import { AttackerSkills } from './AttackerSkills';
 import { AppliedEffects } from './AppliedEffects';
 import { EffectiveInputDetails } from './EffectiveInputDetails';
@@ -115,61 +121,29 @@ export function Calculator({
         (copy) => copy.craftEssenceId === craftEssenceSelection.craftEssenceId,
       )
     : undefined;
-  const ownEffects = resolvedEffects.filter((effect) => effect.source.origin !== 'support');
-  const supportEffects = resolvedEffects.filter((effect) => effect.source.origin === 'support');
-  const requiresAttackerHp =
-    attackerDamage?.kind === 'hpRatioLow' ||
-    resolvedEffects.some(
-      (effect) =>
-        effect.requiredQuantity === 'attackerHpPermille' &&
-        effect.requiredQuantityOwner === 'attacker',
-    );
   const supportComposition = resolvedScenario?.support?.composition;
-  const supportSources = supportComposition?.sources ?? [];
-  const selectedSupportEffectCount = supportComposition?.selectedEffects.length ?? 0;
-  const supportModified = Boolean(
-    selectedSupport &&
-    supportComposition &&
-    JSON.stringify(selectedSupport.composition) !== JSON.stringify(supportComposition),
-  );
-  const damageEffectStacks = collectDamageEffectStacks({
+  const {
+    ownEffects,
+    supportEffects,
+    requiresAttackerHp,
+    supportSources,
+    selectedSupportEffectCount,
+    supportModified,
+    damageEffectStacks,
+    enabledAttackerSkillCount,
+    targetSummary,
+    craftEssenceSummary,
+    supportSummary,
+  } = createCalculatorViewModel({
+    input,
     effects: resolvedEffects,
     servants,
-    craftEssence: selectedCraftEssence,
+    attackerDamage,
+    selectedCraftEssence,
+    craftEssenceSelection,
+    selectedSupport,
+    supportComposition,
   });
-  const enabledAttackerSkillCount = new Set(
-    resolvedEffects
-      .filter((effect) => effect.source.origin === 'attacker' && effect.outcome === 'applied')
-      .map((effect) => effect.source.skillId),
-  ).size;
-  const classSituationLabel =
-    input.classAffinity === 2
-      ? '有利'
-      : input.classAffinity === 1.5
-        ? '攻撃有利'
-        : input.classAffinity === 0.5
-          ? '不利'
-          : input.classAffinity === 1
-            ? '等倍'
-            : '直接入力';
-  const attributeSituationLabel =
-    input.attributeAffinity === 1.1
-      ? '有利'
-      : input.attributeAffinity === 0.9
-        ? '不利'
-        : input.attributeAffinity === 1
-          ? '等倍'
-          : '直接入力';
-  const targetSummary = `クラス${classSituationLabel}（${input.classAffinity.toFixed(2)}倍）・属性${attributeSituationLabel}（${input.attributeAffinity.toFixed(2)}倍）`;
-  const craftEssenceSummary =
-    selectedCraftEssence && craftEssenceSelection
-      ? `${selectedCraftEssence.name} Lv.${craftEssenceSelection.level}`
-      : '礼装なし';
-  const supportSummary = selectedSupport
-    ? `${selectedSupport.name}（${selectedSupportEffectCount}効果）`
-    : supportSources.length
-      ? `未保存の支援構成（${selectedSupportEffectCount}効果）`
-      : '支援なし';
   function changeManualInput(patch: Partial<DamageResolutionInput>) {
     if (scenario.mode !== 'manual') return;
     void onScenarioChange({ ...scenario, manual: { ...scenario.manual, ...patch } });
@@ -397,123 +371,39 @@ export function Calculator({
   }
   function changeAttackerSkill(skillId: string, patch: Pick<AttackerSkillSelection, 'skillLevel'>) {
     if (!resolvedScenario) return;
-    const attackerSkills = resolvedScenario.attackerSkills.map((skill) =>
-      skill.skillId === skillId ? { ...skill, ...patch } : skill,
-    );
-    void onScenarioChange({ ...resolvedScenario, attackerSkills });
+    void onScenarioChange(setAttackerSkillLevel(resolvedScenario, skillId, patch.skillLevel));
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
-    const decidedScenario = applyEffectProjectionDecision(resolvedScenario, effect, active);
-    if (effect.source.origin === 'support' && resolvedScenario.support) {
-      const ref = {
-        sourceInstanceId: effect.source.sourceInstanceId,
-        skillId: effect.source.skillId,
-        effectId: effect.source.effectId,
-        effectOccurrenceId: effect.source.effectOccurrenceId,
-      };
-      const current = resolvedScenario.support.composition.selectedEffects;
-      const matches = (candidate: typeof ref) =>
-        candidate.sourceInstanceId === ref.sourceInstanceId &&
-        candidate.skillId === ref.skillId &&
-        candidate.effectId === ref.effectId &&
-        candidate.effectOccurrenceId === ref.effectOccurrenceId;
-      void onScenarioChange({
-        ...decidedScenario,
-        support: {
-          ...resolvedScenario.support,
-          composition: {
-            ...resolvedScenario.support.composition,
-            selectedEffects: active
-              ? current.some(matches)
-                ? current
-                : [...current, ref]
-              : current.filter((candidate) => !matches(candidate)),
-          },
-        },
-      });
-      return;
-    }
-    void onScenarioChange({
-      ...decidedScenario,
-    });
+    void onScenarioChange(applyEffectProjectionDecision(resolvedScenario, effect, active));
   }
   function addSupportServant(servant: ServantMaster) {
     const sourceInstanceId = crypto.randomUUID();
     const savedLevels = builds[servant.id]?.skills ?? {};
-    const composition = supportComposition ?? { sources: [], selectedEffects: [] };
     if (!resolvedScenario) return;
-    void onScenarioChange({
-      ...resolvedScenario,
-      support: {
-        sourceTemplateId: resolvedScenario.support?.sourceTemplateId ?? null,
-        composition: {
-          ...composition,
-          sources: [
-            ...composition.sources,
-            {
-              sourceInstanceId,
-              servantId: servant.id,
-              skills: servant.skills.map((skill) => ({
-                skillId: skill.id,
-                skillLevel: savedLevels[String(skill.slot)] ?? 10,
-              })),
-            },
-          ],
-        },
-      },
-    });
+    void onScenarioChange(
+      appendCalculationSupportSource(resolvedScenario, {
+        sourceInstanceId,
+        servantId: servant.id,
+        skills: servant.skills.map((skill) => ({
+          skillId: skill.id,
+          skillLevel: savedLevels[String(skill.slot)] ?? 10,
+        })),
+      }),
+    );
     setSupportServantDialogOpen(false);
   }
   function removeCalculationSupportSource(sourceInstanceId: string) {
     if (!resolvedScenario?.support) return;
-    const removedDecisionKeys = new Set(
-      supportEffects
-        .filter((effect) => effect.source.sourceInstanceId === sourceInstanceId)
-        .map((effect) => effect.projectionKey),
+    void onScenarioChange(
+      removeSupportSourceFromScenario(resolvedScenario, sourceInstanceId, supportEffects),
     );
-    void onScenarioChange({
-      ...resolvedScenario,
-      effectDecisions: resolvedScenario.effectDecisions.filter(
-        (decision) => !removedDecisionKeys.has(decision.decisionKey),
-      ),
-      worldFactAssertions: resolvedScenario.worldFactAssertions.filter(
-        (assertion) => !removedDecisionKeys.has(assertion.decisionKey),
-      ),
-      support: {
-        ...resolvedScenario.support,
-        composition: {
-          sources: resolvedScenario.support.composition.sources.filter(
-            (source) => source.sourceInstanceId !== sourceInstanceId,
-          ),
-          selectedEffects: resolvedScenario.support.composition.selectedEffects.filter(
-            (effect) => effect.sourceInstanceId !== sourceInstanceId,
-          ),
-        },
-      },
-    });
   }
   function changeSupportSkillLevel(sourceInstanceId: string, skillId: string, skillLevel: number) {
     if (!resolvedScenario?.support) return;
-    void onScenarioChange({
-      ...resolvedScenario,
-      support: {
-        ...resolvedScenario.support,
-        composition: {
-          ...resolvedScenario.support.composition,
-          sources: resolvedScenario.support.composition.sources.map((source) =>
-            source.sourceInstanceId === sourceInstanceId
-              ? {
-                  ...source,
-                  skills: source.skills.map((skill) =>
-                    skill.skillId === skillId ? { ...skill, skillLevel } : skill,
-                  ),
-                }
-              : source,
-          ),
-        },
-      },
-    });
+    void onScenarioChange(
+      setCalculationSupportSkillLevel(resolvedScenario, sourceInstanceId, skillId, skillLevel),
+    );
   }
   function closeAttackerDialog() {
     setAttackerDialogOpen(false);

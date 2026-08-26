@@ -75,7 +75,37 @@ export function applyEffectProjectionDecision(
   projection: EffectProjection,
   enabled: boolean,
 ): ResolvedScenario {
-  return applyEffectDecisionCommand(scenario, commandForEffectProjection(projection, enabled));
+  const decided = applyEffectDecisionCommand(
+    scenario,
+    commandForEffectProjection(projection, enabled),
+  );
+  if (projection.source.origin !== 'support' || !decided.support) return decided;
+  const reference = {
+    sourceInstanceId: projection.source.sourceInstanceId,
+    skillId: projection.source.skillId,
+    effectId: projection.source.effectId,
+    effectOccurrenceId: projection.source.effectOccurrenceId,
+  };
+  const selected = decided.support.composition.selectedEffects;
+  const matches = (candidate: typeof reference) =>
+    candidate.sourceInstanceId === reference.sourceInstanceId &&
+    candidate.skillId === reference.skillId &&
+    candidate.effectId === reference.effectId &&
+    candidate.effectOccurrenceId === reference.effectOccurrenceId;
+  return {
+    ...decided,
+    support: {
+      ...decided.support,
+      composition: {
+        ...decided.support.composition,
+        selectedEffects: enabled
+          ? selected.some(matches)
+            ? selected
+            : [...selected, reference]
+          : selected.filter((candidate) => !matches(candidate)),
+      },
+    },
+  };
 }
 
 export function applyEffectProjectionDecisions(
