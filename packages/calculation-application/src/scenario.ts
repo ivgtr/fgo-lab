@@ -28,6 +28,7 @@ import {
   resolveCanonicalInputValues,
   type EffectInputViewModel,
 } from './canonicalInputs';
+import { createEffectControlViewModels, type EffectControlViewModel } from './effectControls';
 
 export interface ResolvedCalculationInput {
   input: DamageResolutionInput;
@@ -49,6 +50,7 @@ export interface CalculationExecution {
   result: CalculationResult;
   inputDefinitions: CanonicalInputDefinition[];
   effectInputs: EffectInputViewModel[];
+  effectControls: EffectControlViewModel[];
 }
 
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -302,6 +304,15 @@ function evaluateResolvedCalculation(
             issues: [...calculation.issues, ...resolutionIssues],
             trace: [...calculation.trace, ...resolved.trace],
           };
+  const effectInputs =
+    scenario.mode === 'resolved'
+      ? createEffectInputViewModels({
+          definitions: resolved.inputDefinitions,
+          effects: resolved.effects,
+          requiredInputs: resolved.requiredInputs,
+          explicitValues: scenario.canonicalInputValues,
+        })
+      : [];
   return {
     scenario,
     scenarioInput,
@@ -310,15 +321,8 @@ function evaluateResolvedCalculation(
     effectWarnings: resolved.warnings,
     result,
     inputDefinitions: resolved.inputDefinitions,
-    effectInputs:
-      scenario.mode === 'resolved'
-        ? createEffectInputViewModels({
-            definitions: resolved.inputDefinitions,
-            effects: resolved.effects,
-            requiredInputs: resolved.requiredInputs,
-            explicitValues: scenario.canonicalInputValues,
-          })
-        : [],
+    effectInputs,
+    effectControls: createEffectControlViewModels(resolved.effects),
   };
 }
 

@@ -354,6 +354,15 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 この変更で入力位置と表示部品は改善するが、「攻撃役→スキル→自身の適用内容→支援→結果」という
 主要な操作順、共有・保存導線、damage値は変更しない。
 
+### 8.12 effect interactionと条件付きseries
+
+1. effect toggle、single choice、inline quantityはapplicationの型付きinteraction view modelから表示する。
+2. 同じスキル使用で発生する累積閾値operationを任意選択可能な複数toggleへ分解しない。
+3. seriesの各condition、operation、outcome、evidenceはexecutorで独立に保持し、表示時だけ合計する。
+4. single choiceはcanonical choiceまたはcanonical exclusive factから導出し、ID・名称・labelでgroup化しない。
+5. 選択commandは競合candidateを解除するが、外部入力された競合scenarioはexecutorでfail-closedにする。
+6. input値変更が関連operationまたはdamageへ到達しないcontrolをproductionへ生成しない。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

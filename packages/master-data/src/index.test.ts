@@ -15,6 +15,7 @@ const nonDamageEffect = {
   occurrenceId: 'test-effect:0',
   label: 'test',
   availability: 'maximumLimitBreakOnly' as const,
+  interaction: null,
   choice: null,
   triggerScope: null,
   operationTrigger: null,
@@ -61,7 +62,7 @@ const nonDamageEffect = {
 describe('master validation', () => {
   it('accepts only the current master manifest schema', () => {
     expect(masterManifestSchema.safeParse(manifest).success).toBe(true);
-    expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 26 }).success).toBe(false);
+    expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 27 }).success).toBe(false);
     expect(masterManifestSchema.safeParse({ ...manifest, schemaVersion: 6 }).success).toBe(false);
   });
   it('accepts the legal minimal fixture', () =>

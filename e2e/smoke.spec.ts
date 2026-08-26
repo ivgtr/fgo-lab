@@ -982,8 +982,8 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await attackerDialog.getByRole('button', { name: /ダンテ・アリギエーリ.*Lv90/ }).click();
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const sky = ownEffects.getByRole('button', { name: /威力アップ・対 天の力/ });
-  const earth = ownEffects.getByRole('button', { name: /威力アップ・対 地の力/ });
+  const sky = ownEffects.getByRole('radio', { name: /威力アップ・対 天の力/ });
+  const earth = ownEffects.getByRole('radio', { name: /威力アップ・対 地の力/ });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const np1Average = table
     .getByRole('row', { name: /NP1.*現在/ })
@@ -991,8 +991,8 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
     .first();
   const initialAverage = await np1Average.textContent();
 
-  await expect(sky).toHaveAttribute('aria-pressed', 'false');
-  await expect(earth).toHaveAttribute('aria-pressed', 'false');
+  await expect(sky).toHaveAttribute('aria-checked', 'false');
+  await expect(earth).toHaveAttribute('aria-checked', 'false');
   await expect(ownEffects).not.toContainText('フィールド変化');
   await expect(ownEffects).not.toContainText('クイックアップ');
   await expect(ownEffects).not.toContainText('バスターアップ');
@@ -1002,8 +1002,8 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(ownEffects.getByRole('button', { name: /アーツアップ.*陣地作成/ })).toHaveCount(0);
 
   await sky.click();
-  await expect(sky).toHaveAttribute('aria-pressed', 'true');
-  await expect(earth).toHaveAttribute('aria-pressed', 'false');
+  await expect(sky).toHaveAttribute('aria-checked', 'true');
+  await expect(earth).toHaveAttribute('aria-checked', 'false');
   await expect(np1Average).not.toHaveText(initialAverage ?? '');
   const skyAverage = await np1Average.textContent();
   const effectiveInput = page.getByLabel('計算に使用する最終値');
@@ -1011,17 +1011,8 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
 
   await earth.click();
-  await expect(sky).toHaveAttribute('aria-pressed', 'true');
-  await expect(earth).toHaveAttribute('aria-pressed', 'true');
-  await expect(table).toHaveCount(0);
-  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
-  const resultDetails = page.getByText('計算内訳・根拠・仮定・警告');
-  await resultDetails.click();
-  await expect(page.getByText(/constraintConflict:/).first()).toBeVisible();
-
-  await sky.click();
-  await expect(sky).toHaveAttribute('aria-pressed', 'false');
-  await expect(earth).toHaveAttribute('aria-pressed', 'true');
+  await expect(sky).toHaveAttribute('aria-checked', 'false');
+  await expect(earth).toHaveAttribute('aria-checked', 'true');
   await expect(table).toBeVisible();
   await expect(np1Average).toHaveText(skyAverage ?? '');
   await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
@@ -1096,6 +1087,16 @@ test('Habetrot uses the final enemy total from one through three', async ({ page
   await count.getByRole('button', { name: '1' }).focus();
   await count.getByRole('button', { name: '1' }).press('Enter');
   await expect(row).toContainText('50,394');
+
+  const starAttack = ownEffects.getByRole('button', { name: /攻撃力アップ/ });
+  const stars = ownEffects.getByRole('spinbutton', { name: 'クリティカルスター数' });
+  await expect(starAttack).toHaveCount(1);
+  await expect(stars).toHaveValue('0');
+  await starAttack.click();
+  await expect(starAttack).toHaveAttribute('aria-pressed', 'true');
+  await stars.fill('99');
+  await expect(row).toContainText('75,591');
+  await expect(ownEffects.getByRole('button', { name: /攻撃力アップ/ })).toHaveCount(1);
 });
 
 test('Gareth commits hidden sunlight only while its linked NP effect is selected', async ({

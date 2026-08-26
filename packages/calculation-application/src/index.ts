@@ -2,6 +2,7 @@ export * from './canonicalInputs';
 export * from './damageResolution';
 export * from './evidence';
 export * from './effectDecision';
+export * from './effectControls';
 export * from './scenario';
 export * from './scenarioCommands';
 export * from './supportEffectPresentation';

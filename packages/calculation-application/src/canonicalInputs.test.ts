@@ -4,6 +4,7 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { applyCanonicalInputCommand, resolveCanonicalInputValues } from './canonicalInputs';
+import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -81,8 +82,60 @@ describe('canonical special input application boundary', () => {
       value: 0,
       relatedEffectLabels: ['攻撃力アップ'],
     });
-    expect(stars.relatedProjectionKeys).toHaveLength(10);
+    expect(stars.relatedProjectionKeys).toHaveLength(1);
+    expect(
+      calculation.effectControls.filter(
+        (control) => control.key === stars.relatedProjectionKeys[0],
+      ),
+    ).toHaveLength(1);
     expect(calculation.effectInputs.filter((input) => input.key === stars.key)).toHaveLength(1);
+  });
+
+  it('routes Habetrot stars through one decision and ten internal thresholds', () => {
+    const { scenario, calculation } = calculate('2801300');
+    const control = calculation.effectControls.find(
+      (candidate) => candidate.projection.label === '攻撃力アップ',
+    )!;
+    expect(control.control).toBe('toggle');
+    expect(control.operationIds).toHaveLength(10);
+    expect(
+      calculation.effectControls.filter(
+        (candidate) => candidate.projection.label === '攻撃力アップ',
+      ),
+    ).toHaveLength(1);
+    const enabled = applyEffectProjectionDecision(
+      scenario,
+      control.projection,
+      true,
+      calculation.effects,
+    );
+    const resolved = calculateScenario(
+      applyCanonicalInputCommand(enabled, {
+        kind: 'setCanonicalIntegerInput',
+        key: 'battle:criticalStars',
+        value: 99,
+      }),
+      master,
+      {
+        schemaVersion: SCHEMA_VERSION,
+        engineVersion: ENGINE_VERSION,
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+        masterDataVersion: master.version,
+      },
+    );
+
+    expect(resolved.result.status).toBe('calculated');
+    expect(resolved.input.attackBuff).toBe(0.5);
+    expect(resolved.result.status === 'calculated' ? resolved.result.rows[0].average : null).toBe(
+      75_591.115,
+    );
+    expect(
+      resolved.effects.filter(
+        (effect) => effect.projectionKey === control.key && effect.outcome === 'applied',
+      ),
+    ).toHaveLength(10);
   });
 
   it('does not project input consumed only by a non-damage operation', () => {

@@ -50,6 +50,7 @@ describe('effect decision application command', () => {
       outcome: 'notApplied',
       visibility: 'visible',
       controllability: 'user',
+      selectionGroups: [],
       decision: {
         state: 'disabled',
         decisionKey: 'support:1:20:200:0',
@@ -84,6 +85,74 @@ describe('effect decision application command', () => {
         decisionKey: projection.projectionKey,
         operationEnabled: false,
         conditionSatisfaction: 'evaluate',
+      },
+    ]);
+  });
+
+  it('replaces a selected canonical sibling while preserving executor conflict defense', () => {
+    const scenario = createDefaultResolvedScenario(master, undefined);
+    const baseProjection: EffectProjection = {
+      projectionKey: 'effect:sky',
+      operationId: 'operation:sky',
+      label: '対天',
+      sourceName: 'source',
+      skillName: 'skill',
+      valuePermille: 500,
+      value: 0.5,
+      requiredQuantity: null,
+      requiredQuantityOwner: null,
+      requiredInputs: [],
+      modifier: 'powerMod',
+      source: {
+        origin: 'attacker',
+        sourceInstanceId: 'attacker:1',
+        sourceId: '1',
+        skillId: 'skill',
+        effectId: 'sky',
+        effectOccurrenceId: 'sky:0',
+      },
+      executionSupport: 'supported',
+      outcome: 'notApplied',
+      visibility: 'visible',
+      controllability: 'user',
+      selectionGroups: [{ groupKey: 'trait:target:worldAttribute', candidateKey: 'attributeSky' }],
+      decision: {
+        state: 'disabled',
+        decisionKey: 'effect:sky',
+        kind: 'effect',
+        plan: { activation: 'user', condition: 'userMayAssume' },
+      },
+      explanation: { code: 'disabled', condition: null },
+    };
+    const earth: EffectProjection = {
+      ...baseProjection,
+      projectionKey: 'effect:earth',
+      operationId: 'operation:earth',
+      label: '対地',
+      selectionGroups: [
+        { groupKey: 'trait:target:worldAttribute', candidateKey: 'attributeEarth' },
+      ],
+      decision: {
+        state: 'disabled',
+        decisionKey: 'effect:earth',
+        kind: 'effect',
+        plan: { activation: 'user', condition: 'userMayAssume' },
+      },
+    };
+    const skySelected = applyEffectProjectionDecision(scenario, baseProjection, true, [
+      baseProjection,
+      earth,
+    ]);
+    const earthSelected = applyEffectProjectionDecision(skySelected, earth, true, [
+      baseProjection,
+      earth,
+    ]);
+
+    expect(earthSelected.effectDecisions).toEqual([
+      {
+        decisionKey: 'effect:earth',
+        operationEnabled: true,
+        conditionSatisfaction: 'assumeSatisfied',
       },
     ]);
   });

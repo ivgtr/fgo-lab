@@ -7,6 +7,29 @@ import type {
   OperationResult,
   OperationSource,
 } from './contracts';
+import {
+  canonicalExclusiveGroup,
+  traitConditionConstraintScope,
+  traitConstraintActorScope,
+} from './conditionSemantics';
+
+export function selectionGroupsForCondition(
+  condition: EffectProjection['explanation']['condition'],
+): EffectProjection['selectionGroups'] {
+  if (!condition) return [];
+  if (condition.kind === 'choice')
+    return [{ groupKey: `choice:${condition.group}`, candidateKey: condition.candidate }];
+  if (condition.kind === 'trait' && condition.present) {
+    const group = canonicalExclusiveGroup(condition.scope, condition.trait);
+    if (!group) return [];
+    const actor = traitConstraintActorScope(traitConditionConstraintScope(condition.scope));
+    return [{ groupKey: `trait:${actor}:${group}`, candidateKey: condition.trait }];
+  }
+  if (condition.kind === 'all') return condition.expressions.flatMap(selectionGroupsForCondition);
+  if (condition.kind === 'any' && condition.expressions.length === 1)
+    return selectionGroupsForCondition(condition.expressions[0]!);
+  return [];
+}
 
 export function resolveModifierValue(
   operation: Extract<BattleOperation, { kind: 'addModifier' }>,
@@ -100,9 +123,10 @@ export function createOperationProjection(
     condition === false &&
     choice === undefined &&
     !(
-      preserveSiblingChoice &&
-      (operation.decisionPlan.activation === 'user' ||
-        operation.decisionPlan.condition === 'userMayAssume')
+      (preserveSiblingChoice &&
+        (operation.decisionPlan.activation === 'user' ||
+          operation.decisionPlan.condition === 'userMayAssume')) ||
+      (operation.inputDefinitions.length > 0 && operation.decisionPlan.activation === 'user')
     );
   const userControllable =
     !knownImpossibleBeforeSelection &&
@@ -150,6 +174,7 @@ export function createOperationProjection(
         ? 'hidden'
         : 'visible',
     controllability: userControllable ? 'user' : 'automatic',
+    selectionGroups: userControllable ? selectionGroupsForCondition(operation.condition) : [],
     decision:
       userControllable && operation.decisionKey
         ? {
@@ -217,6 +242,12 @@ export function traitCountProjections(
       outcome: 'applied',
       visibility: 'visible',
       controllability: 'user',
+      selectionGroups: selectionGroupsForCondition({
+        kind: 'trait',
+        scope: 'target',
+        trait: trait.name,
+        present: true,
+      }),
       decision: {
         state: 'disabled',
         decisionKey: projectionKey,

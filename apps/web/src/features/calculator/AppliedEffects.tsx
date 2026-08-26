@@ -1,4 +1,8 @@
-import type { EffectInputViewModel, EffectProjection } from '@fgo-lab/calculation-application';
+import type {
+  EffectControlViewModel,
+  EffectInputViewModel,
+  EffectProjection,
+} from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ReactNode } from 'react';
 import { effectSourceImage } from './effectSourcePresentation';
@@ -68,7 +72,7 @@ export function AppliedEffects({
   action,
 }: {
   title: string;
-  effects: readonly EffectProjection[];
+  effects: readonly EffectControlViewModel[];
   inputs: readonly EffectInputViewModel[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
@@ -76,12 +80,12 @@ export function AppliedEffects({
   onInputChange: (key: string, value: number | null) => void;
   action?: ReactNode;
 }) {
-  const visibleEffects = visibleAppliedEffects(effects);
+  const visibleEffects = effects;
   const firstVisibleProjectionForInput = new Map(
     inputs.map((input) => [
       input.key,
       input.relatedProjectionKeys.find((key) =>
-        visibleEffects.some((effect) => effect.projectionKey === key),
+        visibleEffects.some((effect) => effect.projection.projectionKey === key),
       ) ?? null,
     ]),
   );
@@ -101,7 +105,8 @@ export function AppliedEffects({
       </legend>
       {visibleEffects.length || inputs.length ? (
         <ul className="modifier-chip-list">
-          {visibleEffects.map((effect) => {
+          {visibleEffects.map((control) => {
+            const effect = control.projection;
             const attachedInputs = inputs.filter(
               (input) => firstVisibleProjectionForInput.get(input.key) === effect.projectionKey,
             );
@@ -109,10 +114,12 @@ export function AppliedEffects({
               <li
                 className="applied-effect-item"
                 key={effect.projectionKey}
+                data-active={isEffectSelected(effect)}
                 data-has-input={attachedInputs.length > 0 || undefined}
               >
                 <ModifierChip
                   bare
+                  selection={control.control === 'singleChoice' ? 'singleChoice' : 'toggle'}
                   active={isEffectSelected(effect)}
                   label={effectLabel(effect)}
                   detail={effectStateLabel(effect)}

@@ -27,6 +27,7 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
     outcome: 'applied',
     visibility,
     controllability: 'user',
+    selectionGroups: [],
     decision: {
       state: 'enabled',
       decisionKey: visibility,

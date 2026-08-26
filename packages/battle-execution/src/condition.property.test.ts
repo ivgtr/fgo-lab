@@ -271,6 +271,7 @@ describe('condition expression properties', () => {
       outcome: 'notApplied',
       visibility: 'visible',
       controllability: 'user',
+      selectionGroups: [],
       decision: {
         state: 'enabled',
         decisionKey: 'projection',

@@ -1026,6 +1026,16 @@ export function normalizeFunctions(
     ? 'representedByCurrentInput'
     : 'duringExecution',
 ) {
+  const criticalStarSeriesCounts = new Map<number, number>();
+  for (const fn of functions ?? []) {
+    if (
+      typeof fn.funcId === 'number' &&
+      [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+        .flatMap((parameters) => parameters ?? [])
+        .some((parameter) => parameter.StarHigher !== undefined)
+    )
+      criticalStarSeriesCounts.set(fn.funcId, (criticalStarSeriesCounts.get(fn.funcId) ?? 0) + 1);
+  }
   const occurrencesByFunctionId = new Map<number, number>();
   return (functions ?? []).flatMap((fn) => {
     if (typeof fn.funcId !== 'number') return [];
@@ -1256,6 +1266,7 @@ export function normalizeFunctions(
                         scope: 'recipientState' as const,
                         targetPolicy: normalizeTargetPolicy(
                           referencedFunction.funcTargetType ?? 'unknown',
+                          referencedFunction.funcTargetTeam,
                         ),
                         trait: trait.name,
                         damageRelevant: true,
@@ -1313,6 +1324,13 @@ export function normalizeFunctions(
         occurrenceId: `${String(fn.funcId)}:${String(occurrence)}`,
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
         availability: 'allLimitBreakStates' as const,
+        interaction:
+          (criticalStarSeriesCounts.get(fn.funcId) ?? 0) > 1
+            ? {
+                kind: 'inputThresholdSeries' as const,
+                key: `criticalStars:${String(fn.funcId)}`,
+              }
+            : null,
         choice,
         triggerScope,
         operationTrigger,
@@ -1368,7 +1386,10 @@ export function normalizeFunctions(
             ]),
           },
         },
-        conditionTargetPolicy: normalizeTargetPolicy(fn.funcTargetType ?? 'unknown'),
+        conditionTargetPolicy: normalizeTargetPolicy(
+          fn.funcTargetType ?? 'unknown',
+          fn.funcTargetTeam,
+        ),
         execution,
         atlasEvidence: {
           functionType: fn.funcType ?? 'unknown',

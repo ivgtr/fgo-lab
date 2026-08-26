@@ -19,6 +19,7 @@ export type AtlasFunction = {
   funcId?: number;
   funcType?: string;
   funcTargetType?: string;
+  funcTargetTeam?: 'player' | 'enemy' | 'playerAndEnemy';
   funcPopupText?: string;
   functvals?: AtlasTraitRef[];
   funcquestTvals?: AtlasTraitRef[];

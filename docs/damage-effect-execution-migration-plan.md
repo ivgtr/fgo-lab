@@ -520,6 +520,19 @@ E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選
 - schema/engineを更新し、旧scenario値map、旧Web loop、互換fallbackが残らない。
 - E4実装は行わず、再利用するapplication APIだけを確定する。
 
+### E3.9.1 effect interactionの収束
+
+数値inputだけをeffectへ近接させた状態では、共有閾値operationと排他candidateを表現できなかった。
+ADR 014に従い、次をE3.9の完了条件へ追加する。
+
+1. input threshold seriesは一つのskill decision、一つのinput、一つの表示controlへ集約する。
+2. operation occurrenceとevidenceは集約せず、executor traceへ個別に残す。
+3. canonical choiceとexclusive traitからsingle-choice groupをprojectionする。
+4. 通常操作では新candidate選択時に兄弟を解除し、crafted scenarioの競合はexecutorでfail-closedにする。
+5. production全inputで最小値から最大値への変更が関連damageへ到達することをratchet化する。
+6. 同一skill・同一labelのuser controlが3件以上残るfamilyをinventory化する。
+7. Habetrotのcritical star 10段階とトネリコのHP累積5段階を別々のsemantic familyとしてgolden化する。
+
 完了結果:
 
 - scenario schema 23、master schema 27、artifact v50、engine 15.0.0へ一方向更新した。

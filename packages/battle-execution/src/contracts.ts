@@ -293,6 +293,10 @@ export interface EffectProjection {
   outcome: OperationOutcome;
   visibility: 'visible' | 'hidden';
   controllability: 'automatic' | 'user';
+  selectionGroups: readonly {
+    groupKey: string;
+    candidateKey: string;
+  }[];
   decision:
     | {
         state: 'enabled';

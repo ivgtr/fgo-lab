@@ -62,7 +62,11 @@ type DamageRoute = Pick<
   'modifier' | 'sign' | 'card'
 > & { expectedRecipient: 'attacker' | 'target' };
 
-export function normalizeTargetPolicy(target: string): CanonicalTargetPolicy {
+export function normalizeTargetPolicy(
+  target: string,
+  targetTeam: string | undefined = undefined,
+): CanonicalTargetPolicy {
+  if (targetTeam === 'enemy' && (target === 'self' || target.startsWith('pt'))) return 'enemy';
   if (target.startsWith('enemy')) return 'enemy';
   if (target === 'self') return 'sourceSelf';
   if (target === 'ptOther' || target === 'ptOtherFull') return 'partyOther';
@@ -142,7 +146,7 @@ export function normalizeExecutionSemantics(input: {
   quantityApplicationTiming: 'duringExecution' | 'representedByCurrentInput';
 }): EffectExecutionOperation[] {
   const target = input.fn.funcTargetType ?? 'unknown';
-  const policy = normalizeTargetPolicy(target);
+  const policy = normalizeTargetPolicy(target, input.fn.funcTargetTeam);
   const buffTypes = (input.fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
   const potentiallyDamageRelevant = isPotentiallyDamageRelevant(target, buffTypes);
   const targetMismatch = potentiallyDamageRelevant ? ('unsupported' as const) : ('ignore' as const);

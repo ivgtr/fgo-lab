@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(27),
+  schemaVersion: z.literal(28),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -289,6 +289,12 @@ export const masterEffectSchema = z.object({
   occurrenceId: z.string().min(1),
   label: z.string(),
   availability: z.enum(['allLimitBreakStates', 'maximumLimitBreakOnly']),
+  interaction: z
+    .object({
+      kind: z.literal('inputThresholdSeries'),
+      key: z.string().min(1),
+    })
+    .nullable(),
   choice: z
     .object({
       family: z.enum(['actSet', 'actSelectIndex']),

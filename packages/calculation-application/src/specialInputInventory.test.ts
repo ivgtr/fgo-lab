@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
+import { applyCanonicalInputCommand } from './canonicalInputs';
+import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -23,25 +25,25 @@ describe('production special input inventory', () => {
     const calculations = master.servants.flatMap((servant) => {
       try {
         const scenario = createDefaultResolvedScenario(master, undefined, servant);
-        return [calculateScenario(scenario, master, versions)];
+        return [{ servant, scenario, calculation: calculateScenario(scenario, master, versions) }];
       } catch {
         return [];
       }
     });
-    const inputs = calculations.flatMap((calculation) => calculation.effectInputs);
+    const inputs = calculations.flatMap(({ calculation }) => calculation.effectInputs);
     const counts = inputs.reduce<Record<string, number>>((result, input) => {
       result[input.kind] = (result[input.kind] ?? 0) + 1;
       return result;
     }, {});
-    const duplicateControls = calculations.flatMap((calculation) => {
+    const duplicateControls = calculations.flatMap(({ calculation }) => {
       const keys = calculation.effectInputs.map((input) => input.key);
       return keys.filter((key, index) => keys.indexOf(key) !== index);
     });
 
     expect(calculations).toHaveLength(420);
-    expect(calculations.every((calculation) => calculation.result.status === 'calculated')).toBe(
-      true,
-    );
+    expect(
+      calculations.every(({ calculation }) => calculation.result.status === 'calculated'),
+    ).toBe(true);
     expect(inputs).toHaveLength(12);
     expect(counts).toEqual({
       availableSkillCount: 1,
@@ -57,5 +59,68 @@ describe('production special input inventory', () => {
     expect(duplicateControls).toEqual([]);
     expect(inputs.some((input) => input.kind === 'friendshipLevel')).toBe(false);
     expect(inputs.every((input) => input.relatedProjectionKeys.length > 0)).toBe(true);
+
+    const unreachableInputs = calculations.flatMap(({ servant, scenario, calculation }) =>
+      calculation.effectInputs.flatMap((input) => {
+        const related = calculation.effectControls.filter((control) =>
+          input.relatedProjectionKeys.includes(control.key),
+        );
+        const enabled = related.reduce(
+          (current, control) =>
+            control.projection.controllability === 'user'
+              ? applyEffectProjectionDecision(
+                  current,
+                  control.projection,
+                  true,
+                  calculation.effects,
+                )
+              : current,
+          scenario,
+        );
+        const evaluate = (value: number) =>
+          calculateScenario(
+            applyCanonicalInputCommand(enabled, {
+              kind: 'setCanonicalIntegerInput',
+              key: input.key,
+              value,
+            }),
+            master,
+            versions,
+          );
+        const minimum = evaluate(input.minimum);
+        const maximum = evaluate(input.maximum);
+        return JSON.stringify({ input: minimum.input, result: minimum.result }) ===
+          JSON.stringify({ input: maximum.input, result: maximum.result })
+          ? [`${servant.id}:${input.key}`]
+          : [];
+      }),
+    );
+    expect(unreachableInputs).toEqual([]);
+
+    const singleChoiceControls = calculations.flatMap(({ calculation }) =>
+      calculation.effectControls.filter((control) => control.control === 'singleChoice'),
+    );
+    expect(singleChoiceControls).toHaveLength(30);
+    expect(
+      new Set(
+        singleChoiceControls.flatMap((control) =>
+          control.projection.selectionGroups.map((group) => group.groupKey),
+        ),
+      ).size,
+    ).toBe(11);
+
+    const repeatedUserLabels = calculations.flatMap(({ servant, calculation }) => {
+      const counts = new Map<string, number>();
+      for (const control of calculation.effectControls.filter(
+        (candidate) => candidate.projection.controllability === 'user',
+      )) {
+        const key = `${control.projection.skillName}:${control.projection.label}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      return [...counts.entries()].flatMap(([key, count]) =>
+        count >= 3 ? [`${servant.id}:${key}:${String(count)}`] : [],
+      );
+    });
+    expect(repeatedUserLabels).toEqual(['505300:逆境のカリスマ A:攻撃力アップ:5']);
   }, 20_000);
 });

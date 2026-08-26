@@ -24,6 +24,7 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
     occurrenceId: '1:0',
     label: '複合効果',
     availability: 'allLimitBreakStates',
+    interaction: null,
     choice: null,
     triggerScope: null,
     operationTrigger: null,

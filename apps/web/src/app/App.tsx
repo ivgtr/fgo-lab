@@ -432,6 +432,7 @@ export function App() {
             resolvedInput={input}
             scenarioInput={resolvedCalculation.scenarioInput}
             resolvedEffects={resolvedCalculation.effects}
+            effectControls={resolvedCalculation.effectControls}
             effectWarnings={resolvedCalculation.effectWarnings}
             effectInputs={resolvedCalculation.effectInputs}
             result={result}

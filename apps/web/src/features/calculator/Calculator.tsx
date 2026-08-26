@@ -10,7 +10,11 @@ import {
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import type { EffectInputViewModel, EffectProjection } from '@fgo-lab/calculation-application';
+import type {
+  EffectControlViewModel,
+  EffectInputViewModel,
+  EffectProjection,
+} from '@fgo-lab/calculation-application';
 import {
   applyCanonicalInputCommand,
   appendCalculationSupportSource,
@@ -50,6 +54,7 @@ export function Calculator({
   resolvedInput,
   scenarioInput,
   resolvedEffects,
+  effectControls,
   effectWarnings,
   effectInputs,
   result,
@@ -70,6 +75,7 @@ export function Calculator({
   resolvedInput: DamageResolutionInput;
   scenarioInput: DamageResolutionInput;
   resolvedEffects: readonly EffectProjection[];
+  effectControls: readonly EffectControlViewModel[];
   effectWarnings: readonly string[];
   effectInputs: readonly EffectInputViewModel[];
   result: CalculationResultValue;
@@ -126,7 +132,6 @@ export function Calculator({
     : undefined;
   const supportComposition = resolvedScenario?.support?.composition;
   const {
-    ownEffects,
     supportEffects,
     requiresAttackerHp,
     supportSources,
@@ -390,7 +395,9 @@ export function Calculator({
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
-    void onScenarioChange(applyEffectProjectionDecision(resolvedScenario, effect, active));
+    void onScenarioChange(
+      applyEffectProjectionDecision(resolvedScenario, effect, active, resolvedEffects),
+    );
   }
   function addSupportServant(servant: ServantMaster) {
     const sourceInstanceId = crypto.randomUUID();
@@ -884,7 +891,9 @@ export function Calculator({
         {mode === 'quick' ? (
           <AppliedEffects
             title="自身の適用内容"
-            effects={ownEffects}
+            effects={effectControls.filter(
+              (control) => control.projection.source.origin !== 'support',
+            )}
             inputs={effectInputs.filter((input) => input.section === 'own')}
             servants={servants}
             craftEssence={selectedCraftEssence}
@@ -984,7 +993,9 @@ export function Calculator({
               </div>
               <AppliedEffects
                 title="支援の適用内容"
-                effects={supportEffects}
+                effects={effectControls.filter(
+                  (control) => control.projection.source.origin === 'support',
+                )}
                 inputs={effectInputs.filter((input) => input.section === 'support')}
                 servants={servants}
                 craftEssence={selectedCraftEssence}

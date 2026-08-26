@@ -26,6 +26,7 @@ import {
   type Origin,
 } from './effectRouting';
 import type { SourceEffect } from './sourceCollection';
+import { selectionGroupsForCondition } from './projection';
 
 type ValuedOperation = Extract<
   EffectExecutionOperation,
@@ -285,6 +286,8 @@ function selectedValueExpression(
 }
 
 function decisionKey(source: SourceEffect): string {
+  if (source.effect.interaction)
+    return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:interaction:${source.effect.interaction.key}`;
   return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
 }
 
@@ -585,6 +588,7 @@ function makeProjection(
     outcome: userControllable ? 'notApplied' : outcome,
     visibility: 'visible',
     controllability: userControllable ? 'user' : 'automatic',
+    selectionGroups: userControllable ? selectionGroupsForCondition(condition) : [],
     decision: userControllable
       ? {
           state: 'disabled',

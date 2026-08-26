@@ -663,16 +663,10 @@ export function executeOrderedScenario(
       })),
     ...state.unresolved,
   ];
-  const projectionByKey = new Map<string, EffectProjection>();
-  for (const projection of [
+  const projections = [
     ...resolvedCompileProjections,
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
-  ]) {
-    const prior = projectionByKey.get(projection.projectionKey);
-    if (!prior || (prior.visibility === 'hidden' && projection.visibility === 'visible'))
-      projectionByKey.set(projection.projectionKey, projection);
-  }
-  const projections = [...projectionByKey.values()];
+  ];
   return {
     input: foldDamageInput(input, state),
     state,
