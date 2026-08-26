@@ -454,3 +454,29 @@ E0で利用箇所を再確認したうえで、少なくとも次を削除対象
 ## 10. 着手順
 
 本計画の確認後はE0から開始する。E0とE1はproduction挙動を変更しない。E1確認後、E2で計算経路とUI投影を一度に置換し、E3の実画面確認が必要な段階まで自動検証を含めて進める。E4はE3のUI確認後に着手する。
+
+## 11. E3.8: implementation-unsupported 0
+
+状態: 実装中
+
+E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選択時14騎25 occurrenceを確認した。固定値は期待値として流用せず、`docs/damage-effect-zero-unsupported-plan.md`へorigin、occurrence、raw semantics、damage影響、不足context、共通解決方式を再記録した。
+
+実装順序:
+
+1. 参照skill resourceをnormalization入力へ追加し、参照operationをbuild時解決する。
+2. battle-context quantity definitionとtyped `inputRequired`契約をmaster/scenario/resultへ導入する。
+3. HP/BPのdefault policy、turn、star、stack、field/actor population、available master skillを一つのquantity経路へ統合する。
+4. provenance-aware trait condition、linked buff identity、initial trait suppressionをcanonical IRへ統合する。
+5. `checkIndvType=4`をsigned partial-match OR、ParamAdd群をtyped count/value expressionとして正規化する。
+6. application descriptorから必要時だけcontext UIを生成し、share/save round-tripを一方向schemaで更新する。
+7. raw unknown semantic key、implementation unsupported、inert projection、partial commitをproduction全件で0へratchetする。
+8. unsupportedからexactへ移る全対象のNP1〜5、final input、traceをgolden化し、既存calculated parityを維持する。
+
+確認ゲート:
+
+- 攻撃宝具420件とuser projection単独選択にimplementation unsupportedがない。
+- 入力不足はtyped `inputRequired`でdescriptorを返し、入力後exactへ到達する。
+- executorがraw Function、buff、parameter、script、targetを解釈しない。
+- 参照operationと複数operation effectがtransactionalである。
+- PC、390px、320px、share/save、production build、全品質ゲートが成功する。
+- E4ランキング統合へは着手していない。
