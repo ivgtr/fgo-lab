@@ -409,9 +409,7 @@ export function Calculator({
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
-    void onScenarioChange(
-      applyEffectProjectionDecision(resolvedScenario, effect, active, resolvedEffects),
-    );
+    void onScenarioChange(applyEffectProjectionDecision(resolvedScenario, effect, active));
   }
   function changeEffectCondition(effect: EffectProjection, satisfied: boolean) {
     if (!resolvedScenario) return;

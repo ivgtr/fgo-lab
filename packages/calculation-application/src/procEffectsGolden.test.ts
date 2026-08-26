@@ -49,7 +49,7 @@ function withProcResults(
       (candidate.proc.kind === 'singleRoll' || candidate.proc.kind === 'independentRolls'),
   )) {
     scenario = setEffectSourceEnabled(scenario, effect, true);
-    scenario = applyEffectProjectionDecision(scenario, effect, value(0, 1) === 1, initial.effects);
+    scenario = applyEffectProjectionDecision(scenario, effect, value(0, 1) === 1);
   }
   for (const input of initial.effectInputs.filter(
     (candidate) => candidate.kind === 'procSuccessCount',
@@ -65,7 +65,7 @@ function withProcResults(
 function np1Average(calculation: ReturnType<typeof calculateScenario>) {
   expect(calculation.result.status).toBe('calculated');
   if (calculation.result.status !== 'calculated') throw new TypeError('calculation_not_resolved');
-  return calculation.result.rows[0]!.average;
+  return calculation.result.rows[0].average;
 }
 
 describe('production probabilistic NP-before damage effects', () => {
@@ -154,12 +154,12 @@ describe('production probabilistic NP-before damage effects', () => {
       )!;
       scenario = setEffectSourceEnabled(scenario, proc, true);
       const failure = calculateScenario(
-        applyEffectProjectionDecision(scenario, proc, false, initial.effects),
+        applyEffectProjectionDecision(scenario, proc, false),
         master,
         versions,
       );
       const success = calculateScenario(
-        applyEffectProjectionDecision(scenario, proc, true, initial.effects),
+        applyEffectProjectionDecision(scenario, proc, true),
         master,
         versions,
       );
@@ -220,12 +220,12 @@ describe('production probabilistic NP-before damage effects', () => {
     )!;
     const used = setEffectSourceEnabled(scenario, proc, true);
     const failure = calculateScenario(
-      applyEffectProjectionDecision(used, proc, false, initial.effects),
+      applyEffectProjectionDecision(used, proc, false),
       master,
       versions,
     );
     const success = calculateScenario(
-      applyEffectProjectionDecision(used, proc, true, initial.effects),
+      applyEffectProjectionDecision(used, proc, true),
       master,
       versions,
     );

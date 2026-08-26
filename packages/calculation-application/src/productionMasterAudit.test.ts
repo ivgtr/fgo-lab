@@ -4,6 +4,7 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
   type ConditionExpression,
+  type EffectProjection,
   type TraitScope,
 } from '@fgo-lab/battle-execution';
 import {
@@ -21,13 +22,16 @@ import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { setAttackerSkillEnabled, setEffectSourceEnabled } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
-function applyEffectProjectionDecision(...args: Parameters<typeof applyEffectInclusionDecision>) {
-  const [scenario, projection, enabled, peers = []] = args;
+function applyEffectProjectionDecision(
+  scenario: Parameters<typeof applyEffectInclusionDecision>[0],
+  projection: EffectProjection,
+  enabled: boolean,
+  peers: readonly EffectProjection[] = [],
+) {
   const included = applyEffectInclusionDecision(
     enabled ? setEffectSourceEnabled(scenario, projection, true) : scenario,
     projection,
     enabled,
-    peers,
   );
   return enabled &&
     projection.decision.state !== 'none' &&

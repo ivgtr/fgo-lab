@@ -69,12 +69,7 @@ describe('production special input inventory', () => {
         const enabled = related.reduce(
           (current, control) =>
             control.projection.controllability === 'user'
-              ? applyEffectProjectionDecision(
-                  current,
-                  control.projection,
-                  true,
-                  calculation.effects,
-                )
+              ? applyEffectProjectionDecision(current, control.projection, true)
               : current,
           scenario,
         );

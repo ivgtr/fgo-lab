@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,7 +16,7 @@ import { createEffectControlViewModels } from './effectControls';
 function selectProjectionAlone(
   scenario: Parameters<typeof applyEffectInclusionDecision>[0],
   projection: Parameters<typeof applyEffectInclusionDecision>[1],
-  peers: Parameters<typeof applyEffectInclusionDecision>[3],
+  peers: readonly EffectProjection[],
 ) {
   const sourceEnabled = setEffectSourceEnabled(scenario, projection, true);
   const withoutSiblings = createEffectControlViewModels(peers)
@@ -28,11 +29,8 @@ function selectProjectionAlone(
         peer.source.skillId === projection.source.skillId &&
         peer.controllability === 'user',
     )
-    .reduce(
-      (current, peer) => applyEffectInclusionDecision(current, peer, false, peers),
-      sourceEnabled,
-    );
-  const included = applyEffectInclusionDecision(withoutSiblings, projection, true, peers);
+    .reduce((current, peer) => applyEffectInclusionDecision(current, peer, false), sourceEnabled);
+  const included = applyEffectInclusionDecision(withoutSiblings, projection, true);
   return projection.decision.state !== 'none' &&
     projection.decision.kind === 'effect' &&
     projection.decision.plan.condition === 'userMayAssume'

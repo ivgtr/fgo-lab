@@ -212,7 +212,7 @@ function effectCondition(
   ]);
 }
 
-function decisionPlan(source: SourceEffect, condition: ConditionExpression) {
+function decisionPlan(condition: ConditionExpression) {
   return {
     activation: 'user' as const,
     condition: containsUnsupportedCondition(condition)
@@ -320,7 +320,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     source.sourceInstanceId,
     source.skillId,
   );
-  const plan = decisionPlan(source, condition);
+  const plan = decisionPlan(condition);
   return {
     operationId: `${identity}:${suffix}`,
     order,
@@ -330,7 +330,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
         : source.phase,
     source: sourceIdentity(source),
     condition,
-    decisionKey: plan.activation === 'user' || plan.condition === 'userMayAssume' ? key : null,
+    decisionKey: key,
     decisionPlan: plan,
     sourceEnabled: source.sourceEnabled,
     enabledByDefault: source.enabledByDefault,
@@ -576,9 +576,8 @@ function makeProjection(
   valueExpression: ModifierValueExpression | null,
   condition: ConditionExpression,
 ): EffectProjection {
-  const plan = decisionPlan(source, condition);
+  const plan = decisionPlan(condition);
   const requiresAttackerHp = conditionRequiresQuantity(condition, 'attackerHpPermille');
-  const userControllable = plan.activation === 'user' || plan.condition === 'userMayAssume';
   return {
     projectionKey: key,
     operationId: operationKey(source),
@@ -611,19 +610,17 @@ function makeProjection(
     modifier,
     source: sourceIdentity(source),
     executionSupport: 'unsupported',
-    outcome: userControllable ? 'notApplied' : outcome,
+    outcome: 'notApplied',
     visibility: 'visible',
-    controllability: userControllable ? 'user' : 'automatic',
-    selectionGroups: userControllable ? selectionGroupsForCondition(condition) : [],
-    decision: userControllable
-      ? {
-          state: 'disabled',
-          decisionKey: key,
-          kind: 'effect',
-          plan,
-        }
-      : { state: 'none' },
+    controllability: 'user',
+    selectionGroups: selectionGroupsForCondition(condition),
+    decision: {
+      state: 'disabled',
+      decisionKey: key,
+      kind: 'effect',
+      plan,
+    },
     conditionDecision: plan.condition === 'userMayAssume' ? 'evaluate' : 'none',
-    explanation: { code: userControllable ? 'disabled' : code, condition },
+    explanation: { code: 'disabled', condition },
   };
 }

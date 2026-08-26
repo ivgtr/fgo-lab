@@ -108,7 +108,6 @@ describe('canonical special input application boundary', () => {
       setEffectSourceEnabled(scenario, control.projection, true),
       control.projection,
       true,
-      calculation.effects,
     );
     const resolved = calculateScenario(
       applyCanonicalInputCommand(enabled, {
@@ -213,7 +212,6 @@ describe('canonical special input application boundary', () => {
           setEffectSourceEnabled(hpScenario, control.projection, true),
           control.projection,
           true,
-          calculation.effects,
         ),
         master,
         versions,

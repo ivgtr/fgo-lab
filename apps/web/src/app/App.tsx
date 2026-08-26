@@ -85,7 +85,6 @@ function excludedSupportEffects(template: SupportTemplate, effects: readonly Eff
       effect.source.origin === 'support' &&
       template.composition.effectInclusions.some(
         (override) =>
-          !override.included &&
           override.sourceInstanceId === effect.source.sourceInstanceId &&
           override.skillId === effect.source.skillId &&
           override.effectId === effect.source.effectId &&

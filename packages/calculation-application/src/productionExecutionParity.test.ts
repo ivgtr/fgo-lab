@@ -8,7 +8,7 @@ import type {
   WorldFactAssertion,
 } from '@fgo-lab/battle-execution';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { ENGINE_VERSION, SCHEMA_VERSION, type CalculationScenario } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
@@ -33,10 +33,7 @@ function selectProjectionAlone(
         peer.source.skillId === projection.source.skillId &&
         peer.controllability === 'user',
     )
-    .reduce(
-      (current, peer) => applyEffectProjectionDecision(current, peer, false, peers),
-      sourceEnabled,
-    );
+    .reduce((current, peer) => applyEffectProjectionDecision(current, peer, false), sourceEnabled);
   return withoutSiblings;
 }
 
@@ -73,7 +70,7 @@ describe('production execution parity ratchet', () => {
     };
     const records = fixture.cases.map((testCase) => {
       const servant = master.servants.find((candidate) => candidate.id === testCase.attackerId)!;
-      let scenario = {
+      let scenario: Extract<CalculationScenario, { mode: 'resolved' }> = {
         ...createDefaultResolvedScenario(master, undefined, servant),
         attackerHpPermille: null,
         battleState: { battlePointPhase: null },
@@ -104,12 +101,7 @@ describe('production execution parity ratchet', () => {
         const current = sourceEnabled.effects.find(
           (effect) => effect.projectionKey === projection.projectionKey,
         )!;
-        scenario = applyEffectProjectionDecision(
-          scenario,
-          current,
-          oldDecision.operationEnabled,
-          sourceEnabled.effects,
-        );
+        scenario = applyEffectProjectionDecision(scenario, current, oldDecision.operationEnabled);
         if (
           oldDecision.conditionSatisfaction === 'assumeSatisfied' &&
           projection.decision.state !== 'none' &&

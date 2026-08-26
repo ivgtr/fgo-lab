@@ -72,7 +72,6 @@ export function applyEffectProjectionDecision(
   scenario: ResolvedScenario,
   projection: EffectProjection,
   enabled: boolean,
-  peers: readonly EffectProjection[] = [],
 ): ResolvedScenario {
   if (projection.decision.state === 'none')
     throw new TypeError(`effect_projection_not_controllable:${projection.projectionKey}`);
