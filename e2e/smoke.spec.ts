@@ -1412,7 +1412,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('405件を計算・計算対象外 15件');
+  await expect(page.getByRole('status')).toContainText('408件を計算・計算対象外 12件');
   await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
     'アルトリア・ペンドラゴン',
   );
