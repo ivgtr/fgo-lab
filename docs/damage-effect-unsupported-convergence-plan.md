@@ -48,6 +48,10 @@ master v24、schema 12、engine 12.3.0で`CheckBattlePointPhaseRange`をsubject�
 
 既定unsupportedは12騎のままだが、Ereshkigalの理由から`unsupportedOperation`が除かれ、必要なBP入力不足だけになった。選択時unsupportedは48騎・82 effect occurrence、projectionはuser 1,554、automatic visible 439、hidden 683である。`TriggeredTargetBattlePointRateRange`はaction choiceの状態遷移と不可分なため、この段階では同じ条件へ読み替えない。
 
+master v25、schema 13、engine 12.4.0でHP比例modifierをcanonical value expressionへ正規化した。`inverseHpLinear`は`base + bonusAtZeroHp × (1000 - HP) / 1000`、`hpRangeLinear`は指定HP範囲の両端値を整数演算で線形補間する。Cu ChulainnはHP100%／50%／0%で攻撃力20%／35%／50%、Passionlipはskill level 10でHP50%／0%に攻撃力30%／50%となる。HP範囲外と成立decisionの組合せはconstraint conflictとなり、modifierをcommitしない。
+
+値式はquantity ownerを保持する。自身skillの値式には既存の「自身の残りHP」入力を再利用し、同じ入力欄をHP依存宝具以外にも必要時だけ表示する。support sourceのHP依存効果は攻撃役HPで代用せず、source HP入力がない現行UIでは選択時typed unsupportedを維持する。この段階のown-effect監査では、既存入力を補った選択時unsupportedは46騎・80 effect occurrenceとなった。HP未入力のまま選択した場合は数値行を返さない。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -79,7 +83,7 @@ master v24、schema 12、engine 12.3.0で`CheckBattlePointPhaseRange`をsubject�
 | presentation metadata | `AuraEffectId`、`HideMiss`、`HideNoEffect`、`ShowState`、`DisplayNoEffectCauses` | マシュ、玉兎ほか | occurrence再集計 | 数値・条件・順序へ作用しないtyped metadata |
 | trait source semantics | `IncludeIgnoreIndividuality`、`IgnoreIndivUnreleaseable`、`IncludePassiveIndividuality`、`FuncCheckTargetIndividualityTargetType` | メドゥーサ、ゴルゴーン、ビショーネ、セミラミス、アルジュナ〔オルタ〕、テスカトリポカ、玉兎 | 9 | initial/state/combinedのどのtrait集合を読むかIRへ保持 |
 | linked trait grant | `AddIndividualty/List/LinkageTarget` | 宮本武蔵2種、ネモ／ノア、マシュ | 4 | modifierとstate付与を別operationへcompileし同じsource順で実行 |
-| HP-dependent modifier | `RatioHPLow`、`RatioHPHigh`、`RatioHPRangeLow/High` | クー・フーリン、パッションリップ | 2 | 既存HP入力から条件と値をexactに決定 |
+| HP-dependent modifier | `RatioHPLow`、`RatioHPHigh`、`RatioHPRangeLow/High` | クー・フーリン、パッションリップ | 2 | 自身効果は既存HP入力からexact。支援元HP依存は別ownerとして入力不足を維持 |
 | BP-dependent modifier | `TriggeredTargetBattlePointRateRange` | 紅閻魔 | 2 | 既存BP入力からbranchを決定 |
 | random/action choice | `ActSet/ActSetWeight`、`ActSelectIndex` | Braveエリザ、エルキドゥ、ゴッホ〔マイナー〕、シャルロット、ククルカン、岸波白野、玉兎 | 18 | 同じchoice groupの候補を排他decisionとして扱い、選択候補だけ適用 |
 | function position guard | `TriggeredFuncPosition` | テノチティトラン、キングプロテアほか | occurrence再集計 | raw effect occurrence順からguard対象を解決。曖昧ならunsupported |

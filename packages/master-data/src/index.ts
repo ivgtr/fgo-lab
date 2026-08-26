@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(12),
+  schemaVersion: z.literal(13),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -48,13 +48,14 @@ const effectParameterSemanticsSchema = z.object({
   presentation: z.array(z.string().min(1)),
   condition: z.array(z.string().min(1)),
   contextMutation: z.array(z.string().min(1)),
+  valueExpression: z.array(z.string().min(1)),
   unresolved: z.array(z.string().min(1)),
 });
 export type EffectParameterSemantics = z.infer<typeof effectParameterSemanticsSchema>;
 
 const effectQuantityConditionSchema = z.object({
-  quantity: z.literal('battlePointPhase'),
-  subjectId: z.string().min(1),
+  quantity: z.enum(['attackerHpPermille', 'battlePointPhase']),
+  subjectId: z.string().min(1).optional(),
   comparison: z.enum(['atMost', 'atLeast']),
   value: z.number().int(),
 });
@@ -67,6 +68,29 @@ const effectParameterSetsSchema = z.tuple([
   z.array(effectParameterSchema).max(10),
   z.array(effectParameterSchema).max(10),
 ]);
+const modifierValueExpressionSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('inverseHpLinear'),
+    basePermille: z.number().int(),
+    bonusAtZeroHpPermille: z.number().int(),
+  }),
+  z.object({
+    kind: z.literal('hpRangeLinear'),
+    basePermille: z.number().int(),
+    minimumHpPermille: z.number().int(),
+    maximumHpPermille: z.number().int(),
+    valueAtMinimumHpPermille: z.number().int(),
+    valueAtMaximumHpPermille: z.number().int(),
+  }),
+]);
+const modifierValueExpressionSetsSchema = z.tuple([
+  z.array(modifierValueExpressionSchema.nullable()).max(10),
+  z.array(modifierValueExpressionSchema.nullable()).max(10),
+  z.array(modifierValueExpressionSchema.nullable()).max(10),
+  z.array(modifierValueExpressionSchema.nullable()).max(10),
+  z.array(modifierValueExpressionSchema.nullable()).max(10),
+]);
+export type ModifierValueExpression = z.infer<typeof modifierValueExpressionSchema>;
 const masterEffectSchema = z.object({
   id: z.string(),
   occurrenceId: z.string().min(1),
@@ -75,6 +99,8 @@ const masterEffectSchema = z.object({
   label: z.string(),
   parameterSets: effectParameterSetsSchema,
   limitBreakParameterSets: effectParameterSetsSchema.optional(),
+  modifierValueExpressionSets: modifierValueExpressionSetsSchema,
+  limitBreakModifierValueExpressionSets: modifierValueExpressionSetsSchema.optional(),
   parameterSemantics: effectParameterSemanticsSchema,
   unresolvedSemanticKeys: z.array(z.string().min(1)),
   quantityConditions: z.array(effectQuantityConditionSchema),

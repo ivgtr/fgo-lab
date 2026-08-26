@@ -294,6 +294,8 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 
 quantity guardはmaster正規化時に比較式へ変換し、source identityを保持する。attackerのHP・Battle Pointとsupport sourceのHP・Battle Pointを同一の値として評価してはならない。現在の入力に対応するsourceだけを具体値で評価し、effect-local成立だけで結果が一意な別source条件はworld factへ変換せず当該operationに限定する。
 
+quantityがmodifier値を変える場合はtyped value expressionとして実行し、effect-localな成立宣言で具体値を代用しない。projectionは必要quantityとownerを返し、attacker HPは既存入力欄を必要時に再利用する。support source HPなど現行UIにないquantityは、攻撃役の値を流用せず選択時unsupportedにする。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

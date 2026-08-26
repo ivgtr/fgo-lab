@@ -224,6 +224,8 @@ describe('condition expression properties', () => {
       skillName: 'skill',
       valuePermille: 1_500,
       value: 1.5,
+      requiredQuantity: null,
+      requiredQuantityOwner: null,
       modifier: 'npSpecial',
       source: {
         origin: 'np',

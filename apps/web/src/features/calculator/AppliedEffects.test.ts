@@ -11,6 +11,8 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
     skillName: 'skill',
     valuePermille: 300,
     value: 0.3,
+    requiredQuantity: null,
+    requiredQuantityOwner: null,
     modifier: 'attackBuff',
     source: {
       origin: 'attacker',

@@ -821,6 +821,55 @@ test('executes Dante and Summer Wu production effects through the ordered path',
   await expect(ownEffects).not.toContainText('防御力ダウン');
 });
 
+test('reuses the existing HP input for HP-linear own effects at desktop and narrow widths', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('クー・フーリン');
+  await attackerDialog
+    .getByRole('button', { name: /クー・フーリン.*ランサー.*Lv70/ })
+    .first()
+    .click();
+
+  const hp = page.getByRole('spinbutton', { name: '自身の残りHP（%）' });
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const hpAttack = ownEffects.getByRole('button', { name: /攻撃力アップ.*四枝の浅瀬/ });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+
+  await expect(hp).toBeVisible();
+  await expect(hp).toHaveValue('');
+  await expect(hpAttack).toHaveAttribute('aria-pressed', 'false');
+  await hpAttack.click();
+  await expect(hpAttack).toHaveAttribute('aria-pressed', 'true');
+  await expect(table).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
+
+  await hp.fill('50');
+  await expect(table).toBeVisible();
+  await expect(hpAttack).toContainText('+35%');
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await effectiveInput.locator('summary').click();
+  await expect(effectiveInput).toContainText('攻撃バフ／敵防御35.0%／0.0%');
+
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(hp).toBeVisible();
+    await expect(hpAttack).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(false);
+  }
+});
+
 test('Dante realm decisions are exclusive and preserve the damage UI on desktop and mobile', async ({
   page,
 }) => {

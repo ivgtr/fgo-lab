@@ -594,6 +594,7 @@ describe('immutable publish pipeline', () => {
                   presentation: [],
                   condition: [],
                   contextMutation: [],
+                  valueExpression: [],
                   unresolved: ['ParamAddMaxCount'],
                 },
                 unresolvedSemanticKeys: ['script:customFlag'],
@@ -646,6 +647,22 @@ describe('immutable publish pipeline', () => {
                     },
                   ],
                 },
+                {
+                  funcId: 4,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [{ type: 'upAtk' }],
+                  svals: [
+                    {
+                      Rate: 1000,
+                      Value: 0,
+                      RatioHPLow: 300,
+                      RatioHPHigh: 100,
+                      RatioHPRangeLow: 0,
+                      RatioHPRangeHigh: 500,
+                    },
+                  ],
+                },
               ],
             },
           ],
@@ -665,6 +682,40 @@ describe('immutable publish pipeline', () => {
           subjectId: '3300200',
           comparison: 'atLeast',
           value: 7,
+        },
+      ],
+    });
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[1]).toMatchObject({
+      parameterSemantics: {
+        valueExpression: ['RatioHPHigh', 'RatioHPLow', 'RatioHPRangeHigh', 'RatioHPRangeLow'],
+        unresolved: [],
+      },
+      modifierValueExpressionSets: [
+        [
+          {
+            kind: 'hpRangeLinear',
+            basePermille: 0,
+            minimumHpPermille: 0,
+            maximumHpPermille: 500,
+            valueAtMinimumHpPermille: 300,
+            valueAtMaximumHpPermille: 100,
+          },
+        ],
+        [],
+        [],
+        [],
+        [],
+      ],
+      quantityConditions: [
+        {
+          quantity: 'attackerHpPermille',
+          comparison: 'atLeast',
+          value: 0,
+        },
+        {
+          quantity: 'attackerHpPermille',
+          comparison: 'atMost',
+          value: 500,
         },
       ],
     });

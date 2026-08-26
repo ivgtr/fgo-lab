@@ -101,6 +101,7 @@ export type BattleOperation =
       kind: 'addModifier';
       modifier: ModifierKind;
       valuePermille: number;
+      valueExpression: (ModifierValueExpression & { subjectId?: string }) | null;
       card: CardType | null;
     })
   | (OperationBase & {
@@ -223,6 +224,8 @@ export interface EffectProjection {
   skillName: string;
   valuePermille: number | null;
   value: number | null;
+  requiredQuantity: 'attackerHpPermille' | null;
+  requiredQuantityOwner: 'attacker' | 'source' | null;
   modifier: ModifierKind | 'npSpecial' | null;
   source: OperationSource;
   executionSupport: 'supported' | 'unsupported';
@@ -292,4 +295,4 @@ export {
   type NpDamageOperationContext,
   type NpDamageOperationResult,
 } from './npDamageOperation';
-import type { NpDamageSpec } from '@fgo-lab/master-data';
+import type { ModifierValueExpression, NpDamageSpec } from '@fgo-lab/master-data';

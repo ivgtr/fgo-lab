@@ -117,6 +117,13 @@ export function Calculator({
     : undefined;
   const ownEffects = resolvedEffects.filter((effect) => effect.source.origin !== 'support');
   const supportEffects = resolvedEffects.filter((effect) => effect.source.origin === 'support');
+  const requiresAttackerHp =
+    attackerDamage?.kind === 'hpRatioLow' ||
+    resolvedEffects.some(
+      (effect) =>
+        effect.requiredQuantity === 'attackerHpPermille' &&
+        effect.requiredQuantityOwner === 'attacker',
+    );
   const supportComposition = resolvedScenario?.support?.composition;
   const supportSources = supportComposition?.sources ?? [];
   const selectedSupportEffectCount = supportComposition?.selectedEffects.length ?? 0;
@@ -787,7 +794,7 @@ export function Calculator({
               ) : null}
             </select>
           </label>
-          {attackerDamage?.kind === 'hpRatioLow' ? (
+          {requiresAttackerHp ? (
             <label className="damage-context-input form-grid-wide">
               自身の残りHP（%）
               <input
@@ -806,7 +813,11 @@ export function Calculator({
                   )
                 }
               />
-              <small>HPが少ないほど威力が上がる宝具の計算に必要です</small>
+              <small>
+                {attackerDamage?.kind === 'hpRatioLow'
+                  ? 'HPが少ないほど威力が上がる宝具の計算に必要です'
+                  : 'HPに応じて変化する火力効果の計算に必要です'}
+              </small>
             </label>
           ) : null}
           {attackerDamage?.kind === 'battlePointPhase' ? (

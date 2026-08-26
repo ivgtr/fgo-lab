@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
-import type { MasterDataSnapshot, MasterManifest, NpDamageSpec } from '@fgo-lab/master-data';
+import type {
+  MasterDataSnapshot,
+  MasterManifest,
+  ModifierValueExpression,
+  NpDamageSpec,
+} from '@fgo-lab/master-data';
 import {
   masterManifestSchema,
   masterSnapshotSchema,
@@ -30,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 12,
+    schemaVersion: 13,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -413,15 +418,16 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
 const CONTEXT_MUTATION_PARAMETER_KEYS = new Set(['FieldIndividuality', 'TargetList']);
 
 interface NormalizedQuantityCondition {
-  quantity: 'battlePointPhase';
-  subjectId: string;
+  quantity: 'attackerHpPermille' | 'battlePointPhase';
+  subjectId?: string;
   comparison: 'atMost' | 'atLeast';
   value: number;
 }
 
-function normalizeBattlePointConditions(
+function normalizeQuantityConditions(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
 ): NormalizedQuantityCondition[] {
+  const conditions: NormalizedQuantityCondition[] = [];
   const values = parameterSets
     .flatMap((set) => set)
     .flatMap((parameter) =>
@@ -429,40 +435,153 @@ function normalizeBattlePointConditions(
         ? []
         : [parameter['CheckBattlePointPhaseRange']],
     );
-  if (values.length === 0) return [];
-  const uniqueValues = [...new Set(values.map((value) => JSON.stringify(value)))];
-  if (uniqueValues.length !== 1) return [];
-  const value = values[0];
-  if (!Array.isArray(value) || value.length !== 1) return [];
-  const item: unknown = value[0];
-  if (!item || typeof item !== 'object') return [];
-  const battlePointId = (item as Record<string, unknown>)['battlePointId'];
-  const range = (item as Record<string, unknown>)['range'];
-  if (typeof battlePointId !== 'number' || !Number.isInteger(battlePointId)) return [];
-  if (!Array.isArray(range) || range.length !== 1 || typeof range[0] !== 'string') return [];
-  const atMost = /^<=(-?\d+)$/.exec(range[0]);
-  const atLeast = /^(-?\d+)<=$/.exec(range[0]);
-  if (!atMost && !atLeast) return [];
-  return [
-    {
-      quantity: 'battlePointPhase',
-      subjectId: String(battlePointId),
-      comparison: atMost ? 'atMost' : 'atLeast',
-      value: Number((atMost ?? atLeast)![1]),
-    },
+  if (values.length > 0) {
+    const uniqueValues = [...new Set(values.map((value) => JSON.stringify(value)))];
+    const value = values[0];
+    if (uniqueValues.length === 1 && Array.isArray(value) && value.length === 1) {
+      const item: unknown = value[0];
+      if (item && typeof item === 'object') {
+        const battlePointId = (item as Record<string, unknown>)['battlePointId'];
+        const range = (item as Record<string, unknown>)['range'];
+        if (
+          typeof battlePointId === 'number' &&
+          Number.isInteger(battlePointId) &&
+          Array.isArray(range) &&
+          range.length === 1 &&
+          typeof range[0] === 'string'
+        ) {
+          const atMost = /^<=(-?\d+)$/.exec(range[0]);
+          const atLeast = /^(-?\d+)<=$/.exec(range[0]);
+          if (atMost || atLeast)
+            conditions.push({
+              quantity: 'battlePointPhase',
+              subjectId: String(battlePointId),
+              comparison: atMost ? 'atMost' : 'atLeast',
+              value: Number((atMost ?? atLeast)![1]),
+            });
+        }
+      }
+    }
+  }
+  const hpRanges = parameterSets
+    .flatMap((set) => set)
+    .flatMap((parameter) =>
+      typeof parameter['RatioHPRangeLow'] === 'number' &&
+      typeof parameter['RatioHPRangeHigh'] === 'number'
+        ? [
+            {
+              minimum: parameter['RatioHPRangeLow'],
+              maximum: parameter['RatioHPRangeHigh'],
+            },
+          ]
+        : [],
+    );
+  const uniqueHpRanges = [
+    ...new Map(
+      hpRanges.map((range) => [`${String(range.minimum)}:${String(range.maximum)}`, range]),
+    ),
   ];
+  if (uniqueHpRanges.length === 1) {
+    const range = uniqueHpRanges[0]![1];
+    conditions.push(
+      {
+        quantity: 'attackerHpPermille',
+        comparison: 'atLeast',
+        value: range.minimum,
+      },
+      {
+        quantity: 'attackerHpPermille',
+        comparison: 'atMost',
+        value: range.maximum,
+      },
+    );
+  }
+  return conditions;
+}
+
+const HP_VALUE_PARAMETER_KEYS = new Set([
+  'RatioHPHigh',
+  'RatioHPLow',
+  'RatioHPRangeHigh',
+  'RatioHPRangeLow',
+]);
+
+function normalizeModifierValueExpressions(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+) {
+  const presentKeys = [
+    ...new Set(
+      parameterSets.flatMap((set) =>
+        set.flatMap((parameter) =>
+          Object.keys(parameter).filter((key) => HP_VALUE_PARAMETER_KEYS.has(key)),
+        ),
+      ),
+    ),
+  ].sort();
+  const sets = parameterSets.map((set) =>
+    set.map((parameter) => {
+      const hpKeys = Object.keys(parameter).filter((key) => HP_VALUE_PARAMETER_KEYS.has(key));
+      if (hpKeys.length === 0) return null;
+      const basePermille = parameter['Value'];
+      const low = parameter['RatioHPLow'];
+      const high = parameter['RatioHPHigh'];
+      const rangeLow = parameter['RatioHPRangeLow'];
+      const rangeHigh = parameter['RatioHPRangeHigh'];
+      if (typeof basePermille !== 'number' || typeof low !== 'number') return null;
+      if (rangeLow === undefined && rangeHigh === undefined && high === undefined)
+        return {
+          kind: 'inverseHpLinear' as const,
+          basePermille,
+          bonusAtZeroHpPermille: low,
+        };
+      if (
+        typeof high === 'number' &&
+        typeof rangeLow === 'number' &&
+        typeof rangeHigh === 'number' &&
+        rangeLow < rangeHigh
+      )
+        return {
+          kind: 'hpRangeLinear' as const,
+          basePermille,
+          minimumHpPermille: rangeLow,
+          maximumHpPermille: rangeHigh,
+          valueAtMinimumHpPermille: low,
+          valueAtMaximumHpPermille: high,
+        };
+      return null;
+    }),
+  ) as [
+    (ModifierValueExpression | null)[],
+    (ModifierValueExpression | null)[],
+    (ModifierValueExpression | null)[],
+    (ModifierValueExpression | null)[],
+    (ModifierValueExpression | null)[],
+  ];
+  const sourceExpressionCount = parameterSets
+    .flatMap((set) => set)
+    .filter((parameter) =>
+      Object.keys(parameter).some((key) => HP_VALUE_PARAMETER_KEYS.has(key)),
+    ).length;
+  const normalizedExpressionCount = sets.flat().filter((expression) => expression !== null).length;
+  return {
+    sets,
+    recognizedKeys: sourceExpressionCount === normalizedExpressionCount ? presentKeys : [],
+  };
 }
 
 function classifyParameterSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   quantityConditions: readonly NormalizedQuantityCondition[],
+  valueExpressionKeys: readonly string[],
 ) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
   ].sort();
   const select = (accepted: ReadonlySet<string>) => keys.filter((key) => accepted.has(key));
   const conditionKeys = new Set(
-    quantityConditions.length > 0 ? ['CheckBattlePointPhaseRange'] : [],
+    quantityConditions.some((condition) => condition.quantity === 'battlePointPhase')
+      ? ['CheckBattlePointPhaseRange']
+      : [],
   );
   const known = new Set([
     ...VALUE_PARAMETER_KEYS,
@@ -470,6 +589,7 @@ function classifyParameterSemantics(
     ...PRESENTATION_PARAMETER_KEYS,
     ...conditionKeys,
     ...CONTEXT_MUTATION_PARAMETER_KEYS,
+    ...valueExpressionKeys,
   ]);
   return {
     value: select(VALUE_PARAMETER_KEYS),
@@ -477,6 +597,7 @@ function classifyParameterSemantics(
     presentation: select(PRESENTATION_PARAMETER_KEYS),
     condition: select(conditionKeys),
     contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
+    valueExpression: keys.filter((key) => valueExpressionKeys.includes(key)),
     unresolved: keys.filter((key) => !known.has(key)),
   };
 }
@@ -511,7 +632,8 @@ function normalizeFunctions(
       AtlasFunctionValue[],
       AtlasFunctionValue[],
     ];
-    const quantityConditions = normalizeBattlePointConditions(parameterSets);
+    const quantityConditions = normalizeQuantityConditions(parameterSets);
+    const modifierValues = normalizeModifierValueExpressions(parameterSets);
     return [
       {
         id: String(fn.funcId),
@@ -520,9 +642,14 @@ function normalizeFunctions(
         target: fn.funcTargetType ?? 'unknown',
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
         parameterSets,
-        parameterSemantics: classifyParameterSemantics(parameterSets, quantityConditions),
+        parameterSemantics: classifyParameterSemantics(
+          parameterSets,
+          quantityConditions,
+          modifierValues.recognizedKeys,
+        ),
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         quantityConditions,
+        modifierValueExpressionSets: modifierValues.sets,
         conditions: {
           recipient:
             (fn.overWriteTvalsList ?? []).length > 0
@@ -880,6 +1007,8 @@ export function normalizeAtlasSnapshot(input: {
           return {
             ...effect,
             limitBreakParameterSets: limitBreakEffect?.parameterSets ?? effect.parameterSets,
+            limitBreakModifierValueExpressionSets:
+              limitBreakEffect?.modifierValueExpressionSets ?? effect.modifierValueExpressionSets,
           };
         }),
       },

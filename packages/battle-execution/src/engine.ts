@@ -3,6 +3,7 @@ import {
   getPrimaryNpDamage,
   type MasterDataSnapshot,
   type MasterEffect,
+  type ModifierValueExpression,
   type NpDamageSpec,
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
@@ -91,6 +92,7 @@ interface SourceEffect {
   skillName: string;
   effect: MasterEffect;
   rawValue: number | undefined;
+  valueExpression: ModifierValueExpression | null;
   enabledByDefault: boolean;
 }
 
@@ -178,7 +180,11 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
   );
 }
 
-function effectCondition(effect: MasterEffect, origin: Origin): ConditionExpression {
+function effectCondition(
+  effect: MasterEffect,
+  origin: Origin,
+  sourceId: string,
+): ConditionExpression {
   const recipient = targetRecipient(origin, effect.target) ?? 'attacker';
   const holder: TraitScope = recipient;
   const opponent: TraitScope = recipient === 'target' ? 'attacker' : 'target';
@@ -187,15 +193,21 @@ function effectCondition(effect: MasterEffect, origin: Origin): ConditionExpress
     normalizeTraitCondition(effect.conditions.holder, holder),
     normalizeTraitCondition(effect.conditions.opponent, opponent),
     normalizeTraitCondition(effect.conditions.field, 'field'),
-    ...effect.quantityConditions.map<ConditionExpression>((condition) => ({
-      kind: 'quantity',
-      quantity: condition.quantity,
-      ...(origin === 'attacker' || origin === 'passive' || origin === 'np'
-        ? {}
-        : { subjectId: condition.subjectId }),
-      comparison: condition.comparison,
-      value: condition.value,
-    })),
+    ...effect.quantityConditions.map<ConditionExpression>((condition) => {
+      const currentAttackerSource = ['attacker', 'passive', 'np', 'craftEssence'].includes(origin);
+      const subjectId =
+        currentAttackerSource &&
+        (condition.subjectId === undefined || condition.subjectId === sourceId)
+          ? undefined
+          : (condition.subjectId ?? sourceId);
+      return {
+        kind: 'quantity',
+        quantity: condition.quantity,
+        ...(subjectId === undefined ? {} : { subjectId }),
+        comparison: condition.comparison,
+        value: condition.value,
+      };
+    }),
   ]);
 }
 
@@ -233,6 +245,37 @@ function parameter(
   return typeof value === 'number' ? value : undefined;
 }
 
+function modifierValueExpression(
+  effect: MasterEffect,
+  setIndex: number,
+  valueIndex: number,
+  limitBreak = false,
+): ModifierValueExpression | null {
+  const sets =
+    limitBreak && effect.limitBreakModifierValueExpressionSets
+      ? effect.limitBreakModifierValueExpressionSets
+      : effect.modifierValueExpressionSets;
+  return sets[setIndex]?.[valueIndex] ?? null;
+}
+
+function signedModifierValueExpression(
+  expression: ModifierValueExpression,
+  sign: 1 | -1,
+): ModifierValueExpression {
+  return expression.kind === 'inverseHpLinear'
+    ? {
+        ...expression,
+        basePermille: expression.basePermille * sign,
+        bonusAtZeroHpPermille: expression.bonusAtZeroHpPermille * sign,
+      }
+    : {
+        ...expression,
+        basePermille: expression.basePermille * sign,
+        valueAtMinimumHpPermille: expression.valueAtMinimumHpPermille * sign,
+        valueAtMaximumHpPermille: expression.valueAtMaximumHpPermille * sign,
+      };
+}
+
 function decisionKey(source: SourceEffect): string {
   return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
 }
@@ -250,7 +293,7 @@ function sourceIdentity(source: SourceEffect): OperationSource {
 
 function baseOperation(source: SourceEffect, order: number, suffix: string) {
   const key = decisionKey(source);
-  const condition = effectCondition(source.effect, source.origin);
+  const condition = effectCondition(source.effect, source.origin, source.sourceId);
   const plan = decisionPlan(source, condition);
   return {
     operationId: `${key}:${suffix}`,
@@ -281,7 +324,7 @@ interface CompiledOperations {
 function compileEffect(source: SourceEffect, startOrder: number): CompiledOperations {
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
-  const condition = effectCondition(source.effect, source.origin);
+  const condition = effectCondition(source.effect, source.origin, source.sourceId);
   const key = decisionKey(source);
   let order = startOrder;
   for (const trait of source.effect.contextChanges.addedFieldTraits)
@@ -385,6 +428,14 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
         kind: 'addModifier',
         modifier: routed.modifier,
         valuePermille: source.rawValue * routed.sign,
+        valueExpression: source.valueExpression
+          ? {
+              ...signedModifierValueExpression(source.valueExpression, routed.sign),
+              ...(['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
+                ? {}
+                : { subjectId: source.sourceId }),
+            }
+          : null,
         card:
           routed.modifier === 'cardBuff' || routed.modifier === 'cardResistance'
             ? (source.effect.cardTypes[0] ?? null)
@@ -445,6 +496,7 @@ function collectSources(
         skillName: skill.name,
         effect,
         rawValue: parameter(effect, 0, skillLevel - 1),
+        valueExpression: modifierValueExpression(effect, 0, skillLevel - 1),
         enabledByDefault,
       });
   };
@@ -482,6 +534,12 @@ function collectSources(
           skillName: ce.name,
           effect,
           rawValue: parameter(effect, 0, 0, scenario.craftEssence.limitBreak === 4),
+          valueExpression: modifierValueExpression(
+            effect,
+            0,
+            0,
+            scenario.craftEssence.limitBreak === 4,
+          ),
           enabledByDefault: true,
         });
   }
@@ -529,6 +587,7 @@ function collectSources(
             skillName: skill.name,
             effect,
             rawValue: parameter(effect, 0, selected.skillLevel - 1),
+            valueExpression: modifierValueExpression(effect, 0, selected.skillLevel - 1),
             enabledByDefault: false,
           });
       }
@@ -546,6 +605,7 @@ function collectSources(
         skillName: '宝具前効果',
         effect,
         rawValue: parameter(effect, input.overcharge - 1, input.npLevel - 1),
+        valueExpression: modifierValueExpression(effect, input.overcharge - 1, input.npLevel - 1),
         enabledByDefault: true,
       });
   return { sources, issues };
@@ -595,6 +655,12 @@ function makeProjection(
     skillName: source.skillName,
     valuePermille: modifier === 'flatDamage' ? null : rawValue,
     value: rawValue === null ? null : modifier === 'flatDamage' ? rawValue : rawValue / 1000,
+    requiredQuantity: source.valueExpression ? 'attackerHpPermille' : null,
+    requiredQuantityOwner: source.valueExpression
+      ? ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
+        ? 'attacker'
+        : 'source'
+      : null,
     modifier,
     source: sourceIdentity(source),
     executionSupport: 'unsupported',
@@ -613,6 +679,35 @@ function makeProjection(
   };
 }
 
+function resolveModifierValue(
+  operation: Extract<BattleOperation, { kind: 'addModifier' }>,
+  state: BattleState,
+): number | null {
+  const expression = operation.valueExpression;
+  if (!expression) return operation.valuePermille;
+  if (expression.subjectId !== undefined) return null;
+  const hp = state.quantities.attackerHpPermille;
+  if (hp === null) return null;
+  if (expression.kind === 'inverseHpLinear')
+    return (
+      expression.basePermille +
+      Math.trunc((expression.bonusAtZeroHpPermille * (1_000 - hp)) / 1_000)
+    );
+  const clampedHp = Math.min(
+    expression.maximumHpPermille,
+    Math.max(expression.minimumHpPermille, hp),
+  );
+  return (
+    expression.basePermille +
+    expression.valueAtMinimumHpPermille +
+    Math.trunc(
+      ((expression.valueAtMaximumHpPermille - expression.valueAtMinimumHpPermille) *
+        (clampedHp - expression.minimumHpPermille)) /
+        (expression.maximumHpPermille - expression.minimumHpPermille),
+    )
+  );
+}
+
 function projectionFor(
   operation: BattleOperation,
   outcome: EffectProjection['outcome'],
@@ -620,11 +715,12 @@ function projectionFor(
   enabled: boolean,
   condition: boolean | null,
   choice: EffectDecision | undefined,
+  resolvedModifierValue: number | null,
 ): EffectProjection {
   const hidden = operation.kind === 'addTrait' || operation.kind === 'removeTrait';
   const valuePermille =
     operation.kind === 'addModifier'
-      ? operation.valuePermille
+      ? resolvedModifierValue
       : operation.kind === 'changeModifierRate'
         ? operation.ratePermille
         : operation.kind === 'executeNpDamage' && operation.condition.kind !== 'always'
@@ -664,6 +760,14 @@ function projectionFor(
         : modifier === 'flatDamage'
           ? valuePermille
           : valuePermille / 1000,
+    requiredQuantity:
+      operation.kind === 'addModifier' && operation.valueExpression ? 'attackerHpPermille' : null,
+    requiredQuantityOwner:
+      operation.kind === 'addModifier' && operation.valueExpression
+        ? operation.valueExpression.subjectId === undefined
+          ? 'attacker'
+          : 'source'
+        : null,
     modifier,
     source: operation.source,
     executionSupport: 'supported',
@@ -867,6 +971,8 @@ function traitCountProjections(
       skillName,
       valuePermille,
       value: valuePermille / 1_000,
+      requiredQuantity: null,
+      requiredQuantityOwner: null,
       modifier: 'npSpecial',
       source,
       executionSupport: 'supported',
@@ -1098,6 +1204,8 @@ export function executeOrderedScenario(
         ? operation.enabledByDefault
         : (choice?.operationEnabled ?? operation.enabledByDefault);
     const condition = evaluateConditionExpression(operation.condition, state);
+    const resolvedModifierValue =
+      operation.kind === 'addModifier' ? resolveModifierValue(operation, state) : null;
     const localConditionSatisfied =
       choice?.conditionSatisfaction === 'assumeSatisfied' &&
       operation.decisionPlan.condition === 'userMayAssume';
@@ -1117,6 +1225,14 @@ export function executeOrderedScenario(
     } else if (!enabled) {
       outcome = 'notApplied';
       code = 'disabled';
+    } else if (operation.kind === 'addModifier' && resolvedModifierValue === null) {
+      outcome = 'unsupported';
+      code = 'unresolved';
+      issue = {
+        kind: 'unsupportedOperation',
+        operationId: operation.operationId,
+        detail: 'modifier_value_quantity_missing',
+      };
     } else if (
       localConditionSatisfied &&
       (operation.kind === 'addTrait' || operation.kind === 'removeTrait')
@@ -1180,7 +1296,7 @@ export function executeOrderedScenario(
             operationId: operation.operationId,
             source: operation.source,
             modifier: operation.modifier,
-            valuePermille: operation.valuePermille,
+            valuePermille: resolvedModifierValue!,
             order: operation.order,
           },
         ];
@@ -1220,7 +1336,15 @@ export function executeOrderedScenario(
       outcome,
       condition: condition === null ? 'unresolved' : condition ? 'satisfied' : 'unsatisfied',
       state: cloneState(state),
-      projection: projectionFor(operation, outcome, code, enabled, condition, choice),
+      projection: projectionFor(
+        operation,
+        outcome,
+        code,
+        enabled,
+        condition,
+        choice,
+        resolvedModifierValue,
+      ),
       issue,
     });
   }

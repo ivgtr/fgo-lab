@@ -64,10 +64,6 @@ const expectedUnresolvedDamageSemantics = {
     ParamAddValue: 7,
     ParamMax: 4,
     ProcActive: 1,
-    RatioHPHigh: 1,
-    RatioHPLow: 3,
-    RatioHPRangeHigh: 1,
-    RatioHPRangeLow: 1,
     SetPassiveFrame: 4,
     ShowCardOnly: 1,
     SkillID: 1,
@@ -276,6 +272,109 @@ describe('production master damage quality ratchet', () => {
       conflict.effects.find((effect) => effect.projectionKey === conditionalNpDamage.projectionKey)
         ?.outcome,
     ).toBe('notApplied');
+  });
+
+  it('evaluates HP-linear modifier values from the attacker HP quantity', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const calculateEnabled = (servantId: string, skillName: string, hp: number) => {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const scenario = {
+        ...createDefaultResolvedScenario(master, undefined, servant),
+        attackerHpPermille: hp,
+      };
+      const baseline = calculateScenario(scenario, master, versions);
+      const projection = baseline.effects.find(
+        (effect) =>
+          effect.skillName === skillName &&
+          effect.label === '攻撃力アップ' &&
+          effect.requiredQuantity === 'attackerHpPermille',
+      )!;
+      return {
+        projection,
+        result: calculateScenario(
+          applyEffectProjectionDecision(scenario, projection, true),
+          master,
+          versions,
+        ),
+      };
+    };
+
+    const cuFull = calculateEnabled('300100', '四枝の浅瀬 A', 1_000);
+    const cuHalf = calculateEnabled('300100', '四枝の浅瀬 A', 500);
+    const cuZero = calculateEnabled('300100', '四枝の浅瀬 A', 0);
+    expect(cuFull.result.input.attackBuff).toBe(0.2);
+    expect(cuHalf.result.input.attackBuff).toBe(0.35);
+    expect(cuZero.result.input.attackBuff).toBe(0.5);
+    expect(cuHalf.projection.value).toBe(0.35);
+
+    const lipHalf = calculateEnabled('1000100', '被虐体質 A+', 500);
+    const lipZero = calculateEnabled('1000100', '被虐体質 A+', 0);
+    expect(lipHalf.result.result.status).toBe('calculated');
+    expect(lipHalf.result.input.attackBuff).toBe(0.3);
+    expect(lipZero.result.input.attackBuff).toBe(0.5);
+
+    const passionLip = master.servants.find((servant) => servant.id === '1000100');
+    if (!passionLip) throw new Error('production Passionlip missing');
+    const incompatible = calculateScenario(
+      {
+        ...applyEffectProjectionDecision(
+          {
+            ...createDefaultResolvedScenario(master, undefined, passionLip),
+            attackerHpPermille: 500,
+          },
+          lipHalf.projection,
+          true,
+        ),
+        attackerHpPermille: 600,
+      },
+      master,
+      versions,
+    );
+    expect(incompatible.result.status).toBe('unsupported');
+    expect(incompatible.input.attackBuff).toBe(0);
+
+    const attacker = master.servants.find((servant) => servant.id === '100100')!;
+    const supportScenario = {
+      ...createDefaultResolvedScenario(master, undefined, attacker),
+      attackerHpPermille: 500,
+      support: {
+        sourceTemplateId: null,
+        composition: {
+          sources: [
+            {
+              sourceInstanceId: 'support:leonidas',
+              servantId: '300900',
+              skills: [{ skillId: '49650', skillLevel: 10 }],
+            },
+          ],
+          selectedEffects: [],
+        },
+      },
+    };
+    const supportBaseline = calculateScenario(supportScenario, master, versions);
+    const supportHpEffect = supportBaseline.effects.find(
+      (effect) =>
+        effect.source.origin === 'support' &&
+        effect.requiredQuantity === 'attackerHpPermille' &&
+        effect.requiredQuantityOwner === 'source',
+    )!;
+    const unresolvedSupportHp = calculateScenario(
+      applyEffectProjectionDecision(supportScenario, supportHpEffect, true),
+      master,
+      versions,
+    );
+    expect(unresolvedSupportHp.result.status).toBe('unsupported');
+    expect(unresolvedSupportHp.input.attackBuff).toBe(0);
   });
 
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
@@ -762,6 +861,7 @@ describe('production master damage quality ratchet', () => {
       calculation.effects.flatMap((effect) =>
         effect.explanation.code === 'disabled' &&
         effect.modifier !== null &&
+        effect.requiredQuantity === null &&
         effect.modifier !== 'ignoreDefense' &&
         effect.modifier !== 'ignoreDamageCut' &&
         effect.value === null
@@ -835,7 +935,12 @@ describe('production master damage quality ratchet', () => {
           invalidAutomaticConditions.push(`${servant.id}:${effect.projectionKey}`);
       }
       for (const effect of userEffects) {
-        const selectedScenario = applyEffectProjectionDecision(scenario, effect, true);
+        const decisionScenario =
+          effect.requiredQuantity === 'attackerHpPermille' &&
+          effect.requiredQuantityOwner === 'attacker'
+            ? { ...scenario, attackerHpPermille: 500 }
+            : scenario;
+        const selectedScenario = applyEffectProjectionDecision(decisionScenario, effect, true);
         const active = calculateScenario(selectedScenario, master, versions);
         const activeEffect = active.effects.find(
           (candidate) => candidate.projectionKey === effect.projectionKey,
@@ -985,7 +1090,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 48, effects: 82 });
+    }).toEqual({ servants: 46, effects: 80 });
     expect(exclusivePairCount).toBe(8);
     expect(conflictPairs).toEqual({ effectEffect: 7, factFact: 1, factEffect: 0 });
     expect({
