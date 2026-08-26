@@ -297,7 +297,7 @@ test('replaces an older active master with the current published version', async
                   id: string;
                   skills: Array<{
                     id: string;
-                    effects: Array<{ id: string; buffRateTargets?: string[] }>;
+                    effects: Array<{ id: string; execution: unknown[] }>;
                   }>;
                 }>;
               };
@@ -309,7 +309,7 @@ test('replaces an older active master with the current published version', async
               .find((servant) => servant.id === '2800100')
               ?.skills.find((skill) => skill.id === '904650')
               ?.effects.find((effect) => effect.id === '7366');
-            if (boost) delete boost.buffRateTargets;
+            if (boost) boost.execution = [];
             store.put(active, 'active');
             transaction.oncomplete = () => {
               resolve(current);
@@ -326,44 +326,42 @@ test('replaces an older active master with the current published version', async
     .poll(() =>
       page.evaluate(
         () =>
-          new Promise<{ version: string; buffRateTargets: string[] | undefined }>(
-            (resolve, reject) => {
-              const request = indexedDB.open('fgo-lab', 1);
-              request.onerror = () => reject(request.error);
-              request.onsuccess = () => {
-                const db = request.result;
-                const transaction = db.transaction('master', 'readonly');
-                const activeRequest = transaction.objectStore('master').get('active');
-                transaction.onerror = () => reject(transaction.error);
-                activeRequest.onsuccess = () => {
-                  const active = activeRequest.result as {
-                    manifest: { masterDataVersion: string };
-                    snapshot: {
-                      servants: Array<{
+          new Promise<{ version: string; operation: string | undefined }>((resolve, reject) => {
+            const request = indexedDB.open('fgo-lab', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+              const db = request.result;
+              const transaction = db.transaction('master', 'readonly');
+              const activeRequest = transaction.objectStore('master').get('active');
+              transaction.onerror = () => reject(transaction.error);
+              activeRequest.onsuccess = () => {
+                const active = activeRequest.result as {
+                  manifest: { masterDataVersion: string };
+                  snapshot: {
+                    servants: Array<{
+                      id: string;
+                      skills: Array<{
                         id: string;
-                        skills: Array<{
-                          id: string;
-                          effects: Array<{ id: string; buffRateTargets?: string[] }>;
-                        }>;
+                        effects: Array<{ id: string; execution: Array<{ kind: string }> }>;
                       }>;
-                    };
+                    }>;
                   };
-                  const boost = active.snapshot.servants
-                    .find((servant) => servant.id === '2800100')
-                    ?.skills.find((skill) => skill.id === '904650')
-                    ?.effects.find((effect) => effect.id === '7366');
-                  resolve({
-                    version: active.manifest.masterDataVersion,
-                    buffRateTargets: boost?.buffRateTargets,
-                  });
-                  db.close();
                 };
+                const boost = active.snapshot.servants
+                  .find((servant) => servant.id === '2800100')
+                  ?.skills.find((skill) => skill.id === '904650')
+                  ?.effects.find((effect) => effect.id === '7366');
+                resolve({
+                  version: active.manifest.masterDataVersion,
+                  operation: boost?.execution[0]?.kind,
+                });
+                db.close();
               };
-            },
-          ),
+            };
+          }),
       ),
     )
-    .toEqual({ version: currentVersion, buffRateTargets: ['buffNpDamageUp'] });
+    .toEqual({ version: currentVersion, operation: 'modifierRateChange' });
 });
 
 test('discards an incompatible master cache without deleting user data', async ({
