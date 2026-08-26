@@ -41,7 +41,7 @@ describe('attacker skill mutation activation planning', () => {
       proc: { kind: 'guaranteed' as const },
       procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' as const },
-      evidence: { rawPath: 'test', functionId: '100', parameterKeys: [] },
+      evidence: { rawPath: 'test', functionId: '100' },
       presentation: { label: 'test', sourceName: 'test', skillName: 'test' },
       inputDefinitions: [],
     };

@@ -344,10 +344,6 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     evidence: {
       rawPath: identity,
       functionId: source.effect.id,
-      parameterKeys: [
-        ...source.effect.atlasEvidence.parameterSemantics.condition,
-        ...source.effect.atlasEvidence.buffConditionKeys,
-      ],
     },
     presentation: {
       label: source.effect.label,

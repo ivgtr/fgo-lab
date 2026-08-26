@@ -62,7 +62,6 @@ export type ConditionExpression =
 export interface OperationEvidence {
   rawPath: string;
   functionId: string;
-  parameterKeys: readonly string[];
 }
 
 export interface OperationSource {

@@ -230,7 +230,7 @@ export function prepareOrderedScenario(
       proc: { kind: 'guaranteed' },
       procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' },
-      evidence: { rawPath: damage.rawPath, functionId: damage.functionId, parameterKeys: [] },
+      evidence: { rawPath: damage.rawPath, functionId: damage.functionId },
       presentation: {
         label: damage.kind === 'targetRarity' ? 'レアリティ特攻宝具' : '特攻宝具',
         sourceName: attacker.name,
