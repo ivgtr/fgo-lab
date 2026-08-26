@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
+import { executeOrderedScenario } from '@fgo-lab/battle-execution';
 import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
 import {
   calculationScenarioSchema,
@@ -102,7 +103,9 @@ function modifierEffect(
                 targetMismatch: 'unsupported' as const,
                 card: cardTypes[0] ?? null,
                 values,
+                limitBreakValues: values,
                 valueExpressions: [[], [], [], [], []] as const,
+                limitBreakValueExpressions: [[], [], [], [], []] as const,
                 semanticSupport: 'supported' as const,
               },
             ]
@@ -785,6 +788,82 @@ describe('scenario calculation facade', () => {
     );
     expect(conflict.input.fieldTraits).toEqual([]);
     expect(conflict.input.powerMod).toBe(0);
+  });
+
+  it('rolls back every operation in an effect when a later runtime value is unresolved', () => {
+    const baseServant = fixture.servants[0]!;
+    const staticModifier = modifierEffect('compound', 'upAtk', 100).execution[0]!;
+    const hpValues = [Array.from({ length: 10 }, () => 200), [], [], [], []] as const;
+    const hpExpressions = [
+      Array.from({ length: 10 }, () => ({
+        kind: 'inverseHpLinear' as const,
+        basePermille: 200,
+        bonusAtZeroHpPermille: 300,
+      })),
+      [],
+      [],
+      [],
+      [],
+    ] as const;
+    const compoundEffect = {
+      ...modifierEffect('compound', 'upAtk', 100),
+      execution: [
+        staticModifier,
+        {
+          ...staticModifier,
+          modifier: 'powerMod' as const,
+          values: hpValues,
+          limitBreakValues: hpValues,
+          valueExpressions: hpExpressions,
+          limitBreakValueExpressions: hpExpressions,
+        },
+      ],
+    };
+    const compoundMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'compound-skill',
+              slot: 1,
+              priority: 1,
+              name: 'compound skill',
+              detail: '',
+              imageKey: null,
+              effects: [compoundEffect],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario = {
+      ...createDefaultResolvedScenario(compoundMaster, undefined),
+      attackerHpPermille: null,
+      attackerSkills: [{ skillId: 'compound-skill', skillLevel: 10 }],
+    };
+    const initial = calculateScenario(scenario, compoundMaster, {
+      ...versions,
+      masterDataVersion: compoundMaster.version,
+    });
+    const projection = initial.effects.find((effect) => effect.label === 'compound')!;
+    const selectedScenario = applyEffectProjectionDecision(scenario, projection, true);
+    const execution = executeOrderedScenario(
+      initial.scenarioInput,
+      selectedScenario,
+      compoundMaster,
+    );
+    const compoundOperations = execution.operations.filter(
+      ({ operation }) => operation.source.effectOccurrenceId === 'compound:0',
+    );
+
+    expect(execution.precision).toBe('unsupported');
+    expect(compoundOperations).toHaveLength(2);
+    expect(compoundOperations.every((result) => result.outcome === 'unsupported')).toBe(true);
+    expect(execution.state.modifiers).toEqual([]);
+    expect(execution.input.attackBuff).toBe(0);
+    expect(execution.input.powerMod).toBe(0);
   });
 
   it('routes conditional passives and craft essences through the same effect-local decision', () => {
