@@ -105,7 +105,7 @@ describe('E0 production master execution inventory', () => {
     const valueEffects = effects.filter((effect) =>
       effect.atlasEvidence.parameterSemantics.value.includes('Value'),
     );
-    expect(valueEffects).toHaveLength(10_432);
+    expect(valueEffects).toHaveLength(10_440);
     expect(
       Object.fromEntries(
         Object.entries(
@@ -116,7 +116,7 @@ describe('E0 production master execution inventory', () => {
           }, {}),
         ).sort(),
       ),
-    ).toEqual({ contextTraitId: 73, modifier: 3_733, modifierRate: 1, nonDamage: 6_625 });
+    ).toEqual({ contextTraitId: 73, modifier: 3_738, modifierRate: 1, nonDamage: 6_628 });
   });
 
   it('locks mandatory real-master scenarios without production branching', async () => {

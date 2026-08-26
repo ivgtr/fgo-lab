@@ -103,7 +103,12 @@ export function collectOperationSources(
         detail: 'source_missing',
       });
     else
-      for (const effect of ce.effects)
+      for (const effect of ce.effects) {
+        if (
+          effect.availability === 'maximumLimitBreakOnly' &&
+          scenario.craftEssence.limitBreak !== 4
+        )
+          continue;
         sources.push({
           phase: 'craftEssence',
           origin: 'craftEssence',
@@ -118,6 +123,7 @@ export function collectOperationSources(
           limitBreak: scenario.craftEssence.limitBreak === 4,
           enabledByDefault: true,
         });
+      }
   }
   if (scenario.support)
     for (const source of scenario.support.composition.sources)

@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(21),
+  schemaVersion: z.literal(22),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -195,10 +195,11 @@ const atlasEffectEvidenceSchema = z.object({
 });
 export type AtlasEffectEvidence = z.infer<typeof atlasEffectEvidenceSchema>;
 
-const masterEffectSchema = z.object({
+export const masterEffectSchema = z.object({
   id: z.string(),
   occurrenceId: z.string().min(1),
   label: z.string(),
+  availability: z.enum(['allLimitBreakStates', 'maximumLimitBreakOnly']),
   choice: z
     .object({
       family: z.enum(['actSet', 'actSelectIndex']),

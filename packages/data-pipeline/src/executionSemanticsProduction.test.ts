@@ -39,16 +39,16 @@ describe('production canonical execution semantics', () => {
       return result;
     }, {});
 
-    expect(effects).toHaveLength(13_314);
-    expect(operations).toHaveLength(13_314);
+    expect(effects).toHaveLength(13_322);
+    expect(operations).toHaveLength(13_322);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       cardTypeMutation: 12,
       contextMutation: 55,
-      damageModifier: 3_733,
+      damageModifier: 3_738,
       ignoreDamageCut: 1,
       ignoreDefense: 35,
       modifierRateChange: 1,
-      nonDamage: 9_417,
+      nonDamage: 9_420,
       unresolved: 60,
     });
   });
@@ -68,10 +68,10 @@ describe('production canonical execution semantics', () => {
           expect(operation.limitBreakValues).toEqual(evidenceValues(effect, true));
         compared += 1;
       }
-    expect(compared).toBe(3_734);
+    expect(compared).toBe(3_739);
   });
 
-  it('classifies all 10,432 Value effects without placing trait IDs in modifier series', async () => {
+  it('classifies all 10,440 Value effects without placing trait IDs in modifier series', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
@@ -92,12 +92,12 @@ describe('production canonical execution semantics', () => {
         purposeCounts.modifier += 1;
       else purposeCounts.nonDamage += 1;
     }
-    expect(valueEffects).toHaveLength(10_432);
+    expect(valueEffects).toHaveLength(10_440);
     expect(purposeCounts).toEqual({
-      modifier: 3_733,
+      modifier: 3_738,
       modifierRate: 1,
       contextTraitId: 73,
-      nonDamage: 6_625,
+      nonDamage: 6_628,
     });
     expect(
       valueEffects
@@ -123,5 +123,34 @@ describe('production canonical execution semantics', () => {
         ),
       ),
     ).toHaveLength(25);
+  });
+
+  it('retains every MLB-only effect with explicit availability', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const effects = allEffects(master);
+    expect(effects.filter((effect) => effect.availability === 'allLimitBreakStates')).toHaveLength(
+      13_314,
+    );
+    expect(
+      effects
+        .filter((effect) => effect.availability === 'maximumLimitBreakOnly')
+        .map((effect) => ({
+          id: effect.id,
+          kind: effect.execution[0]?.kind,
+          modifier:
+            effect.execution[0]?.kind === 'damageModifier' ? effect.execution[0].modifier : null,
+        })),
+    ).toEqual([
+      { id: '265', kind: 'damageModifier', modifier: 'flatDamage' },
+      { id: '274', kind: 'nonDamage', modifier: null },
+      { id: '118', kind: 'damageModifier', modifier: 'cardBuff' },
+      { id: '100', kind: 'damageModifier', modifier: 'cardBuff' },
+      { id: '247', kind: 'damageModifier', modifier: 'npDamageBuff' },
+      { id: '109', kind: 'damageModifier', modifier: 'cardBuff' },
+      { id: '364', kind: 'nonDamage', modifier: null },
+      { id: '199', kind: 'nonDamage', modifier: null },
+    ]);
   });
 });

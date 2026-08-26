@@ -663,6 +663,7 @@ export function normalizeFunctions(
         id: String(fn.funcId),
         occurrenceId: `${String(fn.funcId)}:${String(occurrence)}`,
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
+        availability: 'allLimitBreakStates' as const,
         choice,
         triggerScope: normalizeTriggerScope(fn.buffs, source),
         operationTrigger,

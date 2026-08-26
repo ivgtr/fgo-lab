@@ -10,6 +10,7 @@ import type {
 } from './atlasContract';
 import { inventoryAtlasAttackFunctions } from './atlasInventory';
 import { cardMap, normalizeFunctions, normalizeNpDamageFunction } from './effectNormalization';
+import { normalizeCraftEssenceLimitBreakEffects } from './craftEssenceNormalization';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
   const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
@@ -253,7 +254,14 @@ export function normalizeAtlasSnapshot(input: {
       .filter((skill) => skill.condLimitCount === 4)
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
     const normalEffects = normalizeFunctions(normalSkill?.functions, traitNameById);
-    const limitBreakEffects = normalizeFunctions(limitBreakSkill?.functions, traitNameById);
+    const limitBreakEffects = limitBreakSkill
+      ? normalizeFunctions(limitBreakSkill.functions, traitNameById)
+      : null;
+    const effects = normalizeCraftEssenceLimitBreakEffects({
+      equipId: equip.id,
+      normalEffects,
+      limitBreakEffects,
+    });
     return [
       {
         id: String(equip.id),
@@ -264,39 +272,7 @@ export function normalizeAtlasSnapshot(input: {
         atkMin: equip.atkBase ?? 0,
         atkMax: equip.atkMax ?? 0,
         imageKey: equip.extraAssets?.equipFace?.equip?.[String(equip.id)] ?? null,
-        effects: normalEffects.map((effect, index) => {
-          const occurrence = normalEffects
-            .slice(0, index)
-            .filter((candidate) => candidate.id === effect.id).length;
-          const limitBreakEffect = limitBreakEffects.filter(
-            (candidate) => candidate.id === effect.id,
-          )[occurrence];
-          const limitBreakExecution = effect.execution.map((operation, operationIndex) => {
-            const limitBreakOperation = limitBreakEffect?.execution[operationIndex];
-            if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
-              return operation;
-            return {
-              ...operation,
-              limitBreakValues:
-                limitBreakOperation?.kind === operation.kind
-                  ? limitBreakOperation.values
-                  : operation.values,
-              limitBreakValueExpressions:
-                limitBreakOperation?.kind === operation.kind
-                  ? limitBreakOperation.valueExpressions
-                  : operation.valueExpressions,
-            };
-          });
-          return {
-            ...effect,
-            execution: limitBreakExecution,
-            atlasEvidence: {
-              ...effect.atlasEvidence,
-              limitBreakParameterSets:
-                limitBreakEffect?.atlasEvidence.parameterSets ?? effect.atlasEvidence.parameterSets,
-            },
-          };
-        }),
+        effects,
       },
     ];
   });
