@@ -68,6 +68,7 @@ function modifierEffect(
   return {
     id,
     occurrenceId: `${id}:0`,
+    availability: 'allLimitBreakStates' as const,
     label: id,
     choice: null,
     triggerScope: null,
@@ -138,6 +139,7 @@ describe('scenario calculation facade', () => {
     const second = {
       ...modifierEffect('shared-function', 'upAtk', 200),
       occurrenceId: 'shared-function:1',
+      availability: 'allLimitBreakStates' as const,
     };
     const baseServant = fixture.servants[0]!;
     const occurrenceMaster = masterSnapshotSchema.parse({

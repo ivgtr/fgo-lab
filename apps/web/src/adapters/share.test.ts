@@ -138,6 +138,7 @@ describe('portable input limits', () => {
                 {
                   id: 'earth-power',
                   occurrenceId: 'earth-power:0',
+                  availability: 'allLimitBreakStates',
                   label: '対地威力アップ',
                   choice: null,
                   triggerScope: null,
