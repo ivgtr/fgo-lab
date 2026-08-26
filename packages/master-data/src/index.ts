@@ -177,7 +177,8 @@ const effectExecutionOperationSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('unresolved'),
     targetPolicy: canonicalTargetPolicySchema,
-    reason: z.enum(['operationSemantics', 'targetPolicy']),
+    reason: z.enum(['contextReference', 'operationSemantics', 'targetPolicy']),
+    damageRelevant: z.boolean(),
   }),
 ]);
 export type EffectExecutionOperation = z.infer<typeof effectExecutionOperationSchema>;

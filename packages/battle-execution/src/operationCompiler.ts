@@ -231,8 +231,12 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
         });
       continue;
     }
-    if (semantic.kind === 'cardTypeMutation' || semantic.kind === 'unresolved') {
+    if (semantic.kind === 'cardTypeMutation') {
       if (recipient) applicable.push(semantic);
+      continue;
+    }
+    if (semantic.kind === 'unresolved') {
+      if (semantic.damageRelevant && recipient) applicable.push(semantic);
       continue;
     }
     if (recipient === semantic.expectedRecipient) applicable.push(semantic);
@@ -241,6 +245,7 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
         kind: 'unresolved',
         targetPolicy: semantic.targetPolicy,
         reason: 'operationSemantics',
+        damageRelevant: true,
       });
   }
 

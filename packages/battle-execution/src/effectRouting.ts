@@ -37,8 +37,8 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
     if (operation.kind === 'nonDamage') return false;
     const recipient = operationRecipient(operation, origin);
     if (operation.kind === 'contextMutation') return operation.damageRelevant && recipient !== null;
-    if (operation.kind === 'cardTypeMutation' || operation.kind === 'unresolved')
-      return recipient !== null;
+    if (operation.kind === 'cardTypeMutation') return recipient !== null;
+    if (operation.kind === 'unresolved') return operation.damageRelevant && recipient !== null;
     return (
       recipient === operation.expectedRecipient ||
       (recipient !== null && operation.targetMismatch === 'unsupported')

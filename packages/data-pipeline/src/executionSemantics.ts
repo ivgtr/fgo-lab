@@ -235,8 +235,21 @@ export function normalizeExecutionSemantics(input: {
         kind: 'unresolved',
         targetPolicy: policy,
         reason: policy === 'unresolved' ? 'targetPolicy' : 'operationSemantics',
+        damageRelevant: true,
       });
   }
+
+  if (
+    operations.length === 0 &&
+    buffTypes.includes('addIndividuality') &&
+    input.parameterSets.some((set) => set.some((parameter) => typeof parameter.Value === 'number'))
+  )
+    operations.push({
+      kind: 'unresolved',
+      targetPolicy: policy,
+      reason: 'contextReference',
+      damageRelevant: false,
+    });
 
   if (operations.length === 0) operations.push({ kind: 'nonDamage' });
   return operations;

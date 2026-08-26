@@ -48,8 +48,8 @@ describe('production canonical execution semantics', () => {
       ignoreDamageCut: 1,
       ignoreDefense: 35,
       modifierRateChange: 1,
-      nonDamage: 9_442,
-      unresolved: 35,
+      nonDamage: 9_417,
+      unresolved: 60,
     });
   });
 
@@ -113,5 +113,15 @@ describe('production canonical execution semantics', () => {
           ),
         ),
     ).toBe(false);
+    expect(
+      valueEffects.filter((effect) =>
+        effect.execution.some(
+          (operation) =>
+            operation.kind === 'unresolved' &&
+            operation.reason === 'contextReference' &&
+            !operation.damageRelevant,
+        ),
+      ),
+    ).toHaveLength(25);
   });
 });
