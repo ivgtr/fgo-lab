@@ -25,6 +25,8 @@ action candidateはsource instance、skill、choice familyから導出するeffe
 
 NP card typeがbuff typeに明示されたeffectは`changeCardType` state mutationへ正規化する。card種別が明示されない親Functionから候補を推測しない。card固有modifierは付与時のcardで破棄せず、順序付きoperationをすべて実行した最終cardと一致するものだけをdamage inputへfoldする。UI projectionのcard mismatchも同じ最終cardから導出する。選択済みの決定的mutationがある場合は、最後に実行されるmutationのcardを計画上のfinal fixed factとして初期constraint validationへ加え、矛盾する選択operationを実行前にすべて非適用にする。
 
+trigger Functionはbuff typeだけでなくcontainer scopeを含めて正規化する。skill／passiveの`attackBeforeFunction`はcommand-card attack triggerであり、NP damage projectionを生成しない。同じbuff typeが宝具Function列にある場合はNP前参照であるため、参照先を解決できるまでunsupportedを維持する。executorは表示名やsource IDで両者を分岐しない。
+
 ## Consequences
 
 - 同じFunction IDを持つ複数効果を独立して適用、選択、traceできる。

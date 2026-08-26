@@ -60,6 +60,10 @@ master v27、master schema 15、scenario schema 16、engine 12.6.0で、カー�
 
 カード色modifierは付与時のcardではなく、全operation実行後の最終NP cardでdamage inputへfoldする。これにより、先に付与された色バフも後続のcard mutation後に正しく再評価される。選択された決定的card mutationから計画上の最終cardを導出して初期統合制約へ加え、競合する色modifierとchoiceをoperation実行前にall-or-nothingで止める。candidate stateの検証に失敗した場合も元のNP cardを維持する。productionでは8効果・4騎をexact operationとして投影し、玉兎の連動state semanticsを含む3効果・1騎はtyped unsupportedに維持した。選択時unsupportedは39騎・62 effect occurrence、projectionはuser 1,561、automatic visible 439、hidden 687である。単独選択でも既知cardと矛盾する候補を除いた排他候補は24組で、競合中の正常計算は0件である。
 
+master v29、master schema 16、scenario schema 17、engine 12.7.0で、skill／passiveにある`attackBeforeFunction` 22効果・20騎を`commandCardAttack` scopeへ正規化した。これらは通常攻撃の直前に別Functionを起動する効果であり、単体NP damage inputもその前段stateも変更しないため、NP火力projectionから除外する。宝具Function列に置かれた同buff type 2効果は実行scopeが異なり、NP前参照として従来どおりfail-closedに残す。containerを見ずにbuff typeだけで除外する処理は行わない。
+
+この分離により、操作してもNP damageへ作用しない21 user projectionを削除し、選択時unsupportedは22騎・41 effect occurrenceとなった。projectionはuser 1,540、automatic visible 439、hidden 687である。raw `Value2`の未解決damage候補は25件から、宝具内参照2件とfield-change参照1件の計3件へ縮小した。インドラのOR火力効果は従来どおり操作可能で、同じskillのQuick通常攻撃前追加効果は「自身の適用内容」へ表示しない。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -105,7 +109,7 @@ master v27、master schema 15、scenario schema 16、engine 12.6.0で、カー�
 
 | canonical family | raw semantics | 対象例 | 不足 | 扱い |
 |---|---|---|---|---|
-| referenced trigger skill | `attackBeforeFunction`、`npattackPrevBuff`、`fieldIndividualityChangedFunction` | フラン、アシュヴァッターマン、ビーマ、インドラ、ビショーネ、北斎、エレシュキガルほか | `Value/SkillID`が参照するskill定義が現行artifactにない | 選択・automatic時はtyped unsupported。非damageと証明できた参照だけ非blocking |
+| referenced trigger skill | NP内`attackBeforeFunction`、`npattackPrevBuff`、`fieldIndividualityChangedFunction` | ジャック・ド・モレー、ビショーネ、北斎、エレシュキガルほか | `Value/SkillID`が参照するskill定義が現行artifactにない | 選択・automatic時はtyped unsupported。skill/passive内の通常攻撃trigger 22効果は`commandCardAttack`としてNP計算から分離済み |
 | target/state stack scaling | `ParamAddOpIndividuality`、`ParamAddMaxCount/Value` | ビショーネ、カーマ | 対象状態のstack数入力 | typed missing quantity |
 | self stack scaling | `ParamAddSelfIndividuality` | キングプロテア、ハベトロット | 自身stack数入力または先行operation | derived stateで一意な場合だけ計算、それ以外unsupported |
 | turn scaling | `ParamAdd/ParamMax` | 茶々、魔王信長 | 経過turn | typed missing quantity |

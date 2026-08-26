@@ -73,7 +73,7 @@ const expectedUnresolvedDamageSemantics = {
     TypeIndividualityEachFunc: 1,
     UnSubState: 4,
     UnSubStateWhileLinkedToOthers: 1,
-    Value2: 25,
+    Value2: 3,
   },
   scripts: { 'script:funcIndividuality': 4 },
 } as const;
@@ -512,6 +512,43 @@ describe('production master damage quality ratchet', () => {
         .filter((effect) => effect.modifier === 'cardTypeChange')
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
+  });
+
+  it('keeps command-card attack triggers outside NP damage projections', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const occurrences = master.servants.flatMap((servant) =>
+      [...servant.skills, ...servant.passives].flatMap((skill) =>
+        skill.effects.flatMap((effect) =>
+          effect.triggerScope === 'commandCardAttack'
+            ? [{ servantId: servant.id, skillId: skill.id, effect }]
+            : [],
+        ),
+      ),
+    );
+    expect({
+      servants: new Set(occurrences.map((item) => item.servantId)).size,
+      effects: occurrences.length,
+    }).toEqual({ servants: 20, effects: 22 });
+    expect(occurrences.every(({ effect }) => !canNormalizeDamageEffect(effect, 'attacker'))).toBe(
+      true,
+    );
+
+    const indra = master.servants.find((servant) => servant.id === '305900')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, indra);
+    const calculation = calculateScenario(scenario, master, {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    });
+    expect(calculation.result.status).toBe('calculated');
+    expect(
+      calculation.effects.some((effect) => effect.label.includes('攻撃ダメージ前追加効果')),
+    ).toBe(false);
   });
 
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
@@ -1213,7 +1250,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_561, automaticVisible: 439, hidden: 687 });
+    }).toEqual({ user: 1_540, automaticVisible: 439, hidden: 687 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -1239,7 +1276,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 39, effects: 62 });
+    }).toEqual({ servants: 22, effects: 41 });
     expect(exclusivePairCount).toBe(24);
     expect(conflictPairs).toEqual({ effectEffect: 23, factFact: 1, factEffect: 0 });
     expect({

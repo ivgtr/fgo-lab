@@ -300,6 +300,8 @@ action choiceはeffect-localな候補制約として扱う。同じsource instan
 
 宝具card mutationはcard種別がmasterから一意に確定する場合だけordered stateへ適用する。card固有modifierは付与時点ではなく最終cardに対して評価し、damage input、UI visibility、traceで同じ判定を使う。競合したcard choiceはcandidate stateをcommitせず、元のcardとmodifier入力を維持する。
 
+参照Functionは実行containerのscopeを保持する。通常攻撃だけで発火するtriggerはNP火力UIと計算を阻害させず、宝具Function列のNP前triggerへ同じ非damage分類を流用しない。参照先がartifactから解決できないNP前triggerは値を推測せずfail-closedにする。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

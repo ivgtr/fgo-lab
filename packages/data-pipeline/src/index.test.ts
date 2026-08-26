@@ -678,6 +678,13 @@ describe('immutable publish pipeline', () => {
                   buffs: [{ type: 'tdTypeChangeArts' }],
                   svals: [{ Rate: 1000, Turn: 1, InvalidHide: 1 }],
                 },
+                {
+                  funcId: 7,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [{ type: 'attackBeforeFunction' }],
+                  svals: [{ Rate: 1000, Value2: 1234 }],
+                },
               ],
             },
           ],
@@ -747,6 +754,10 @@ describe('immutable publish pipeline', () => {
         presentation: ['InvalidHide'],
         unresolved: [],
       },
+    });
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[4]).toMatchObject({
+      triggerScope: 'commandCardAttack',
+      parameterSemantics: { unresolved: ['Value2'] },
     });
   });
 });

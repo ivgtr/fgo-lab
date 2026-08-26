@@ -301,6 +301,7 @@ E3.4進捗（master v26、schema 14、engine 12.5.0）:
 - choiceをworld factへ変換する経路、raw action parameterをexecutorで解釈する経路、候補を暗黙選択するfallbackは存在しない。
 - E3.4は継続中であり、残存familyの根拠・入力可能性を再監査してから完了判定する。E4には着手しない。
 - master v27では明示的NP card mutation 8効果・4騎をexact operationへ移行した。最終cardで色modifierをfoldし、異なるcard候補の競合時は元stateを維持する。連動stateの意味が未解決な3効果は近似せず残した。
+- master v29ではskill／passiveの通常攻撃前trigger 22効果・20騎をNP damage scopeから分離した。宝具内の同型参照は除外せずfail-closedを維持し、選択時unsupportedは22騎・41 occurrenceとなった。
 
 作業:
 

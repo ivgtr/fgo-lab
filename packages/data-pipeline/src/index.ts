@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 15,
+    schemaVersion: 16,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -609,6 +609,12 @@ function normalizeNpCardTypeChange(buffs: AtlasFunction['buffs']) {
   return cards.length === 1 ? cards[0]! : null;
 }
 
+function normalizeTriggerScope(buffs: AtlasFunction['buffs'], source: 'skill' | 'np') {
+  return source === 'skill' && (buffs ?? []).some((buff) => buff.type === 'attackBeforeFunction')
+    ? ('commandCardAttack' as const)
+    : null;
+}
+
 function classifyParameterSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   quantityConditions: readonly NormalizedQuantityCondition[],
@@ -667,6 +673,7 @@ function unresolvedFunctionScriptKeys(script: AtlasFunction['script']): string[]
 function normalizeFunctions(
   functions: AtlasFunction[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
+  source: 'skill' | 'np' = 'skill',
 ) {
   const occurrencesByFunctionId = new Map<number, number>();
   return (functions ?? []).flatMap((fn) => {
@@ -703,6 +710,7 @@ function normalizeFunctions(
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         choice,
         npCardTypeChange,
+        triggerScope: normalizeTriggerScope(fn.buffs, source),
         quantityConditions,
         modifierValueExpressionSets: modifierValues.sets,
         conditions: {
@@ -953,6 +961,7 @@ export function normalizeAtlasSnapshot(input: {
       const normalizedEffects = normalizeFunctions(
         effectFunctions.map(({ fn }) => fn),
         traitNameById,
+        'np',
       );
       return [
         {

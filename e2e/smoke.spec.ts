@@ -1006,6 +1006,7 @@ test('OR condition effects stay operable and causal at PC, 390px, and 320px', as
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
   const orEffect = ownEffects.getByRole('button', { name: /威力アップ〔蛇・竜〕/ });
+  await expect(ownEffects).not.toContainText('Quick攻撃ダメージ前追加効果');
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const average = table
     .getByRole('row', { name: /NP1.*現在/ })
