@@ -440,6 +440,80 @@ describe('production master damage quality ratchet', () => {
     );
   });
 
+  it('changes the NP card transactionally before evaluating card-specific modifiers', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '200100')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const baseline = calculateScenario(scenario, master, versions);
+    const artsChange = baseline.effects.find(
+      (effect) =>
+        effect.skillName === '回路接続 EX' &&
+        effect.modifier === 'cardTypeChange' &&
+        effect.label.includes('Arts'),
+    )!;
+    const changedScenario = applyEffectProjectionDecision(scenario, artsChange, true);
+    const changed = calculateScenario(changedScenario, master, versions);
+    const busterChange = baseline.effects.find(
+      (effect) =>
+        effect.skillName === '回路接続 EX' &&
+        effect.modifier === 'cardTypeChange' &&
+        effect.label.includes('Buster'),
+    )!;
+    const artsBuff = changed.effects.find(
+      (effect) =>
+        effect.skillName === '回路接続 EX' &&
+        effect.modifier === 'cardBuff' &&
+        effect.label === 'アーツアップ',
+    )!;
+    const busterBuff = changed.effects.find(
+      (effect) =>
+        effect.skillName === '回路接続 EX' &&
+        effect.modifier === 'cardBuff' &&
+        effect.label === 'バスターアップ',
+    )!;
+    const buffed = calculateScenario(
+      applyEffectProjectionDecision(changedScenario, artsBuff, true),
+      master,
+      versions,
+    );
+    const conflict = calculateScenario(
+      applyEffectProjectionDecision(changedScenario, busterChange, true),
+      master,
+      versions,
+    );
+
+    expect(baseline.input.cardType).toBe('buster');
+    expect(changed.result.status).toBe('calculated');
+    expect(changed.input.cardType).toBe('arts');
+    expect(changed.result.rows[0]?.average).not.toBe(baseline.result.rows[0]?.average);
+    expect(artsChange.decision.state).toBe('disabled');
+    expect(
+      changed.effects.find((effect) => effect.projectionKey === artsChange.projectionKey),
+    ).toMatchObject({ outcome: 'applied', decision: { state: 'enabled' } });
+    expect(artsBuff.visibility).toBe('visible');
+    expect(busterBuff.visibility).toBe('hidden');
+    expect(buffed.result.status).toBe('calculated');
+    expect(buffed.input.cardType).toBe('arts');
+    expect(buffed.input.cardBuff).toBeGreaterThan(0);
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.input.cardType).toBe('buster');
+    expect(
+      conflict.effects
+        .filter((effect) => effect.modifier === 'cardTypeChange')
+        .map((effect) => effect.outcome),
+    ).not.toContain('applied');
+  });
+
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
@@ -927,6 +1001,7 @@ describe('production master damage quality ratchet', () => {
         effect.requiredQuantity === null &&
         effect.modifier !== 'ignoreDefense' &&
         effect.modifier !== 'ignoreDamageCut' &&
+        effect.modifier !== 'cardTypeChange' &&
         effect.value === null
           ? [`${servant.id}:${effect.source.skillId}:${effect.source.effectId}`]
           : [],
@@ -986,6 +1061,7 @@ describe('production master damage quality ratchet', () => {
     let exclusivePairCount = 0;
     for (const { servant, scenario, calculation } of calculations) {
       const userEffects = calculation.effects.filter((effect) => effect.controllability === 'user');
+      const selectedCalculations = new Map<string, ReturnType<typeof calculateScenario>>();
       for (const effect of calculation.effects) {
         if (
           effect.visibility === 'visible' &&
@@ -1005,6 +1081,7 @@ describe('production master damage quality ratchet', () => {
             : scenario;
         const selectedScenario = applyEffectProjectionDecision(decisionScenario, effect, true);
         const active = calculateScenario(selectedScenario, master, versions);
+        selectedCalculations.set(effect.projectionKey, active);
         const activeEffect = active.effects.find(
           (candidate) => candidate.projectionKey === effect.projectionKey,
         );
@@ -1034,6 +1111,13 @@ describe('production master damage quality ratchet', () => {
           if (checkedPairs.has(pairKey)) continue;
           checkedPairs.add(pairKey);
           const leftSelected = applyEffectProjectionDecision(scenario, left, true);
+          const leftOnly = selectedCalculations.get(left.projectionKey)!;
+          const rightOnly = selectedCalculations.get(right.projectionKey)!;
+          if (
+            leftOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:')) ||
+            rightOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:'))
+          )
+            continue;
           const conflict = calculateScenario(
             applyEffectProjectionDecision(leftSelected, right, true),
             master,
@@ -1129,7 +1213,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_554, automaticVisible: 439, hidden: 687 });
+    }).toEqual({ user: 1_561, automaticVisible: 439, hidden: 687 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -1142,6 +1226,7 @@ describe('production master damage quality ratchet', () => {
       'all',
       'always',
       'any',
+      'card',
       'choice',
       'partialTrait',
       'quantity',
@@ -1154,9 +1239,9 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 39, effects: 63 });
-    expect(exclusivePairCount).toBe(20);
-    expect(conflictPairs).toEqual({ effectEffect: 19, factFact: 1, factEffect: 0 });
+    }).toEqual({ servants: 39, effects: 62 });
+    expect(exclusivePairCount).toBe(24);
+    expect(conflictPairs).toEqual({ effectEffect: 23, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,

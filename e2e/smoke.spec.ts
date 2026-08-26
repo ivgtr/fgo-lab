@@ -870,6 +870,66 @@ test('reuses the existing HP input for HP-linear own effects at desktop and narr
   }
 });
 
+test('NP card choices update final-card buffs and fail closed on conflicting choices', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('エミヤ');
+  await attackerDialog
+    .getByRole('button', { name: /エミヤ.*アーチャー.*Lv80/ })
+    .first()
+    .click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const artsChange = ownEffects.getByRole('button', { name: /宝具タイプチェンジ：Arts/ });
+  const busterChange = ownEffects.getByRole('button', { name: /宝具タイプチェンジ：Buster/ });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  const average = table
+    .getByRole('row', { name: /NP1.*現在/ })
+    .locator('td')
+    .first();
+  const initialAverage = await average.textContent();
+
+  await expect(ownEffects.getByRole('button', { name: /バスターアップ/ })).toBeVisible();
+  await expect(ownEffects.getByRole('button', { name: /アーツアップ/ })).toHaveCount(0);
+  await artsChange.click();
+  await expect(artsChange).toHaveAttribute('aria-pressed', 'true');
+  await expect(average).not.toHaveText(initialAverage ?? '');
+  const artsBuff = ownEffects.getByRole('button', { name: /アーツアップ/ });
+  await expect(artsBuff).toBeVisible();
+  await expect(ownEffects.getByRole('button', { name: /バスターアップ/ })).toHaveCount(0);
+  await artsBuff.click();
+  await expect(artsBuff).toHaveAttribute('aria-pressed', 'true');
+  const effectiveInput = page.getByLabel('計算に使用する最終値');
+  await effectiveInput.locator('summary').click();
+  await expect(effectiveInput).toContainText('ARTS性能／耐性50.0%／0.0%');
+
+  await busterChange.click();
+  await expect(table).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
+  await busterChange.click();
+  await expect(table).toBeVisible();
+  await expect(artsChange).toHaveAttribute('aria-pressed', 'true');
+
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(artsChange).toBeVisible();
+    await expect(artsBuff).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(false);
+  }
+});
+
 test('Dante realm decisions are exclusive and preserve the damage UI on desktop and mobile', async ({
   page,
 }) => {

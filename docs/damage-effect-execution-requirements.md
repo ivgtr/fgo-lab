@@ -298,6 +298,8 @@ quantityがmodifier値を変える場合はtyped value expressionとして実行
 
 action choiceはeffect-localな候補制約として扱う。同じsource instance・skill・family内の同一候補に属するmodifierは共存し、異なる候補を同時選択した場合は全候補を非適用としてtyped conflictにする。choiceをtrait、field、quantityへ変換せず、scenarioへmaster由来のgroup metadataを保存しない。
 
+宝具card mutationはcard種別がmasterから一意に確定する場合だけordered stateへ適用する。card固有modifierは付与時点ではなく最終cardに対して評価し、damage input、UI visibility、traceで同じ判定を使う。競合したcard choiceはcandidate stateをcommitせず、元のcardとmodifier入力を維持する。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 14,
+    schemaVersion: 15,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -412,6 +412,7 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
   'DisplayNoEffectCauses',
   'HideMiss',
   'HideNoEffect',
+  'InvalidHide',
   'ShowQuestNoEffect',
   'ShowState',
 ]);
@@ -594,6 +595,20 @@ function normalizeEffectChoice(parameterSets: readonly (readonly AtlasFunctionVa
   return null;
 }
 
+function normalizeNpCardTypeChange(buffs: AtlasFunction['buffs']) {
+  const cards = [
+    ...new Set(
+      (buffs ?? []).flatMap((buff) => {
+        if (buff.type === 'tdTypeChangeArts') return ['arts' as const];
+        if (buff.type === 'tdTypeChangeBuster') return ['buster' as const];
+        if (buff.type === 'tdTypeChangeQuick') return ['quick' as const];
+        return [];
+      }),
+    ),
+  ];
+  return cards.length === 1 ? cards[0]! : null;
+}
+
 function classifyParameterSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   quantityConditions: readonly NormalizedQuantityCondition[],
@@ -670,6 +685,7 @@ function normalizeFunctions(
     const quantityConditions = normalizeQuantityConditions(parameterSets);
     const modifierValues = normalizeModifierValueExpressions(parameterSets);
     const choice = normalizeEffectChoice(parameterSets);
+    const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs);
     return [
       {
         id: String(fn.funcId),
@@ -686,6 +702,7 @@ function normalizeFunctions(
         ),
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
         choice,
+        npCardTypeChange,
         quantityConditions,
         modifierValueExpressionSets: modifierValues.sets,
         conditions: {

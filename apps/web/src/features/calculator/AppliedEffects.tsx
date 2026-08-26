@@ -23,7 +23,12 @@ function effectLabel(effect: EffectProjection): string {
 }
 
 function effectValueLabel(effect: EffectProjection) {
-  if (effect.modifier === 'ignoreDefense' || effect.modifier === 'ignoreDamageCut') return '有効';
+  if (
+    effect.modifier === 'ignoreDefense' ||
+    effect.modifier === 'ignoreDamageCut' ||
+    effect.modifier === 'cardTypeChange'
+  )
+    return '有効';
   if (effect.value === null) return '倍率不明';
   if (effect.modifier === 'flatDamage') return `+${effect.value.toLocaleString('ja-JP')}`;
   if (effect.modifier === 'npSpecial') return `${effect.value.toFixed(2)}倍`;

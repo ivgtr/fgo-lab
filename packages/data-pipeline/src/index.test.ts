@@ -671,6 +671,13 @@ describe('immutable publish pipeline', () => {
                     },
                   ],
                 },
+                {
+                  funcId: 6,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [{ type: 'tdTypeChangeArts' }],
+                  svals: [{ Rate: 1000, Turn: 1, InvalidHide: 1 }],
+                },
               ],
             },
           ],
@@ -731,6 +738,13 @@ describe('immutable publish pipeline', () => {
       choice: { family: 'actSelectIndex', candidate: 2 },
       parameterSemantics: {
         choice: ['ActSelectIndex'],
+        unresolved: [],
+      },
+    });
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[3]).toMatchObject({
+      npCardTypeChange: 'arts',
+      parameterSemantics: {
+        presentation: ['InvalidHide'],
         unresolved: [],
       },
     });

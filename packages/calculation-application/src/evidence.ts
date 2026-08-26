@@ -51,7 +51,7 @@ const entries: CalculationEvidence[] = [
     'Atlas JP damage Function, battle point, and effect normalization',
     'validated',
     ['Atlas Academy JP nice servant, craft essence, and mystic code datasets'],
-    ['master-normalization-v17'],
+    ['master-normalization-v27'],
   ),
   ...(
     [
@@ -87,6 +87,7 @@ const entries: CalculationEvidence[] = [
       'ignoreDefense',
       'ignoreDamageCut',
       'npDamageBuffRate',
+      'cardTypeChange',
     ] as const
   ).map((kind) =>
     evidence(
@@ -96,7 +97,9 @@ const entries: CalculationEvidence[] = [
       [ATLAS_DAMAGE],
       kind === 'ignoreDefense'
         ? ['all-effect-sources-ordered-execution', 'defense-piercing-np-row']
-        : ['all-effect-sources-ordered-execution'],
+        : kind === 'cardTypeChange'
+          ? ['master-normalization-v27']
+          : ['all-effect-sources-ordered-execution'],
     ),
   ),
   evidence(

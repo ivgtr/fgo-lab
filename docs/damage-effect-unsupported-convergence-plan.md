@@ -56,6 +56,10 @@ master v26、schema 14、engine 12.5.0で`ActSet`と`ActSelectIndex`をcanonical
 
 BraveエリザベートのBuster候補と攻撃力候補は単独でそれぞれ正確に適用され、同時選択はmodifierを残さずfail-closedになる。action choiceを持つ全production effectのうち、17 effect occurrence・7騎が選択時unsupportedからexact calculationへ移行した。既存quantityを補ったown-effect監査の残存は39騎・63 effect occurrence、projectionはuser 1,554、automatic visible 439、hidden 687である。choice由来の排他候補は12組、全排他候補は20組で、同時選択が`calculated`となる組合せは0件である。
 
+master v27、master schema 15、scenario schema 16、engine 12.6.0で、カード種別がbuff typeに明示された`tdTypeChangeArts`、`tdTypeChangeBuster`、`tdTypeChangeQuick`を`changeCardType` operationへ正規化した。カード種別を持たない親`tdTypeChange`から値を推測しない。`InvalidHide`は表示制御metadataとして分類し、damage semanticsへ流用しない。
+
+カード色modifierは付与時のcardではなく、全operation実行後の最終NP cardでdamage inputへfoldする。これにより、先に付与された色バフも後続のcard mutation後に正しく再評価される。選択された決定的card mutationから計画上の最終cardを導出して初期統合制約へ加え、競合する色modifierとchoiceをoperation実行前にall-or-nothingで止める。candidate stateの検証に失敗した場合も元のNP cardを維持する。productionでは8効果・4騎をexact operationとして投影し、玉兎の連動state semanticsを含む3効果・1騎はtyped unsupportedに維持した。選択時unsupportedは39騎・62 effect occurrence、projectionはuser 1,561、automatic visible 439、hidden 687である。単独選択でも既知cardと矛盾する候補を除いた排他候補は24組で、競合中の正常計算は0件である。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -92,7 +96,7 @@ BraveエリザベートのBuster候補と攻撃力候補は単独でそれぞれ
 | random/action choice | `ActSet/ActSetWeight`、`ActSelectIndex` | Braveエリザ、エルキドゥ、ゴッホ〔マイナー〕、シャルロット、ククルカン、岸波白野、玉兎 | 17 | 対応完了。同じchoice groupの候補を排他decisionとして扱い、選択候補だけ適用 |
 | function position guard | `TriggeredFuncPosition` | テノチティトラン、キングプロテアほか | occurrence再集計 | raw effect occurrence順からguard対象を解決。曖昧ならunsupported |
 | class relation responsibility | `overwriteClassRelation` | ネロ、セミラミス、カーマ、ヘファイスティオン、キアラ、C.I.E.L、ハベトロット | 7 | calculatorの最終クラス相性入力が唯一のdamage fact。operationは二重適用しない |
-| NP card type mutation | `tdTypeChangeArts`、`tdTypeChangeBuster` | UDKバーゲスト、玉兎 | 3 | ordered stateで宝具cardを変更し、後続のcard条件とdamage inputを再評価 |
+| NP card type mutation | `tdTypeChangeArts`、`tdTypeChangeBuster`、`tdTypeChangeQuick` | エミヤ、UDKバーゲスト、スペース・イシュタル、BBドバイ、玉兎 | 11 | 8効果は対応完了。ordered stateで宝具cardを変更し、最終cardで色modifierとdamage inputを再評価。連動state未解決の玉兎3効果はfail-closed |
 | non-damage filtering | damage modifier、宝具card、後続conditionのいずれも変更しないoperation | 全masterから意味論抽出 | family別ratchet | hiddenかつnon-blocking。raw type名だけでは判定しない |
 
 `class relation responsibility`は効果を無視する意味ではない。このcalculatorは敵classを入力せず、適用後の最終クラス相性を直接入力する契約であるため、executorが同じ相性変更を再適用すると二重計上になる。projectionとtraceには「最終入力で解決」と記録する。

@@ -110,6 +110,7 @@ export type BattleOperation =
       modifier: ModifierKind;
       ratePermille: number;
     })
+  | (OperationBase & { kind: 'changeCardType'; card: CardType })
   | (OperationBase & { kind: 'ignoreDefense' })
   | (OperationBase & { kind: 'ignoreDamageCut' })
   | (OperationBase & {
@@ -125,6 +126,7 @@ export interface AppliedModifier {
   source: OperationSource;
   modifier: ModifierKind;
   valuePermille: number;
+  card: CardType | null;
   order: number;
 }
 
@@ -228,7 +230,7 @@ export interface EffectProjection {
   value: number | null;
   requiredQuantity: 'attackerHpPermille' | null;
   requiredQuantityOwner: 'attacker' | 'source' | null;
-  modifier: ModifierKind | 'npSpecial' | null;
+  modifier: ModifierKind | 'npSpecial' | 'cardTypeChange' | null;
   source: OperationSource;
   executionSupport: 'supported' | 'unsupported';
   outcome: OperationOutcome;

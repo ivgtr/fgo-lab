@@ -109,6 +109,14 @@ function targetRecipient(origin: Origin, target: string): Recipient | null {
   return null;
 }
 
+function changesAttackerNpCard(effect: MasterEffect, origin: Origin): boolean {
+  return (
+    effect.npCardTypeChange !== null &&
+    ['attacker', 'passive', 'craftEssence', 'np'].includes(origin) &&
+    (effect.target === 'self' || effect.target === 'commandTypeSelfTreasureDevice')
+  );
+}
+
 function rawRoute(effect: MasterEffect): Omit<Route, 'recipient'> | null {
   const types = effect.buffTypes ?? [];
   if (types.some((type) => NON_DAMAGE.has(type))) return null;
@@ -172,6 +180,7 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
     !(!effect.target.startsWith('enemy') && types.some((type) => DEFENSIVE.has(type))) &&
     types.some((type) => POSSIBLY_DAMAGE.has(type));
   return Boolean(
+    changesAttackerNpCard(effect, origin) ||
     route(effect, origin) ||
     (recipient === 'attacker' &&
       effect.buffTypes?.includes('buffRate') &&
@@ -380,24 +389,28 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
         trait,
       });
   const routed = route(source.effect, source.origin);
+  const cardTypeChange = changesAttackerNpCard(source.effect, source.origin)
+    ? source.effect.npCardTypeChange
+    : null;
   const rateChange =
     source.effect.buffTypes?.includes('buffRate') &&
     source.effect.buffRateTargets?.includes('buffNpDamageUp');
-  if (containsUnsupportedCondition(condition) && (routed || rateChange)) {
+  if (containsUnsupportedCondition(condition) && (routed || rateChange || cardTypeChange)) {
     unsupported.push(
       makeProjection(
         source,
         key,
         'unsupported',
         'unresolved',
-        routed?.modifier ?? (rateChange ? 'npDamageBuff' : null),
+        routed?.modifier ??
+          (rateChange ? 'npDamageBuff' : cardTypeChange ? 'cardTypeChange' : null),
         source.rawValue ?? null,
         condition,
       ),
     );
     return { operations, unsupported };
   }
-  if (!routed && !rateChange) {
+  if (!routed && !rateChange && !cardTypeChange) {
     if (operations.length === 0 && canNormalizeDamageEffect(source.effect, source.origin))
       unsupported.push(
         makeProjection(source, key, 'unsupported', 'unresolved', null, null, condition),
@@ -414,14 +427,20 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
         key,
         'unsupported',
         'unresolved',
-        routed?.modifier ?? null,
+        routed?.modifier ?? (cardTypeChange ? 'cardTypeChange' : null),
         source.rawValue ?? null,
         condition,
       ),
     );
     return { operations, unsupported };
   }
-  if (rateChange) {
+  if (cardTypeChange) {
+    operations.push({
+      ...baseOperation(source, order++, `card:${cardTypeChange}`),
+      kind: 'changeCardType',
+      card: cardTypeChange,
+    });
+  } else if (rateChange) {
     if (source.rawValue === undefined)
       unsupported.push(
         makeProjection(source, key, 'unsupported', 'unresolved', 'npDamageBuff', null, condition),
@@ -754,13 +773,15 @@ function projectionFor(
   const modifier =
     operation.kind === 'addModifier' || operation.kind === 'changeModifierRate'
       ? operation.modifier
-      : operation.kind === 'executeNpDamage' && operation.condition.kind !== 'always'
-        ? 'npSpecial'
-        : operation.kind === 'ignoreDefense'
-          ? 'ignoreDefense'
-          : operation.kind === 'ignoreDamageCut'
-            ? 'ignoreDamageCut'
-            : null;
+      : operation.kind === 'changeCardType'
+        ? 'cardTypeChange'
+        : operation.kind === 'executeNpDamage' && operation.condition.kind !== 'always'
+          ? 'npSpecial'
+          : operation.kind === 'ignoreDefense'
+            ? 'ignoreDefense'
+            : operation.kind === 'ignoreDamageCut'
+              ? 'ignoreDamageCut'
+              : null;
   const decisionSelected =
     operation.decisionPlan.activation === 'user'
       ? enabled
@@ -818,15 +839,29 @@ function projectionFor(
   };
 }
 
+function projectionAtDamageEvaluation(
+  result: OperationResult,
+  finalState: BattleState,
+): EffectProjection {
+  if (
+    result.operation.kind !== 'addModifier' ||
+    result.operation.card === null ||
+    result.operation.card === finalState.card
+  )
+    return result.projection;
+  return {
+    ...result.projection,
+    outcome: 'impossible',
+    visibility: 'hidden',
+    explanation: { ...result.projection.explanation, code: 'cardMismatch' },
+  };
+}
+
 function initialState(
   input: DamageResolutionInput,
   attackerTraits: readonly string[],
 ): BattleState {
-  const attacker = [
-    ...attackerTraits,
-    'cardNP',
-    `card${input.cardType[0]!.toUpperCase()}${input.cardType.slice(1)}`,
-  ];
+  const attacker = [...attackerTraits, 'cardNP'];
   return {
     card: input.cardType,
     traits: {
@@ -1018,13 +1053,16 @@ function traitCountProjections(
 
 function foldInput(input: DamageResolutionInput, state: BattleState): DamageResolutionInput {
   const sums: Partial<Record<ModifierKind, number>> = {};
-  for (const modifier of state.modifiers)
+  for (const modifier of state.modifiers) {
+    if (modifier.card !== null && modifier.card !== state.card) continue;
     sums[modifier.modifier] = (sums[modifier.modifier] ?? 0) + modifier.valuePermille;
+  }
   const value = (kind: ModifierKind) => (sums[kind] ?? 0) / 1000;
   const npBase = input.npDamageBuff + value('npDamageBuff');
   const npRate = (state.modifierRates.npDamageBuff ?? 0) / 1000;
   return {
     ...input,
+    cardType: state.card,
     fieldTraits: [...state.traits.field].flatMap(([trait, present]) => (present ? [trait] : [])),
     attackerStateTraits: expandedTraits(state.traitCounts.attackerState),
     targetStateTraits: expandedTraits(state.traitCounts.targetState),
@@ -1159,9 +1197,28 @@ export function executeOrderedScenario(
         ? [{ sourceKey: decision.decisionKey, expression }]
         : [];
     });
+  const selectedCardMutations = operations.filter((operation) => {
+    if (operation.kind !== 'changeCardType') return false;
+    if (operation.decisionPlan.activation === 'automatic') return operation.enabledByDefault;
+    return operation.decisionKey
+      ? (decisions.get(operation.decisionKey)?.operationEnabled ?? operation.enabledByDefault)
+      : operation.enabledByDefault;
+  }) as Extract<BattleOperation, { kind: 'changeCardType' }>[];
+  const finalSelectedCardMutation = selectedCardMutations.at(-1);
   const initialConstraintValidation = validateConstraintSet({
     fixedFacts: [
-      ...fixedConstraintFactsFromState(state, 'initial'),
+      ...fixedConstraintFactsFromState(state, 'initial').filter(
+        ({ fact }) => !finalSelectedCardMutation || fact.kind !== 'card',
+      ),
+      ...(finalSelectedCardMutation
+        ? [
+            {
+              sourceKey:
+                finalSelectedCardMutation.decisionKey ?? finalSelectedCardMutation.operationId,
+              fact: { kind: 'card' as const, card: finalSelectedCardMutation.card },
+            },
+          ]
+        : []),
       ...scenario.worldFactAssertions.map((assertion) => ({
         sourceKey: assertion.decisionKey,
         fact: assertion.fact,
@@ -1238,13 +1295,6 @@ export function executeOrderedScenario(
     if (operation.decisionKey && invalidDecisionKeys.has(operation.decisionKey)) {
       outcome = 'notApplied';
       code = 'conditionNotMet';
-    } else if (
-      operation.kind === 'addModifier' &&
-      operation.card &&
-      operation.card !== state.card
-    ) {
-      outcome = 'impossible';
-      code = 'cardMismatch';
     } else if (!enabled) {
       outcome = 'notApplied';
       code = 'disabled';
@@ -1320,6 +1370,7 @@ export function executeOrderedScenario(
             source: operation.source,
             modifier: operation.modifier,
             valuePermille: resolvedModifierValue!,
+            card: operation.card,
             order: operation.order,
           },
         ];
@@ -1331,11 +1382,15 @@ export function executeOrderedScenario(
             operation.ratePermille,
           ),
         };
-      else if (operation.kind === 'ignoreDefense') candidateState.ignoreDefense = true;
+      else if (operation.kind === 'changeCardType') {
+        candidateState.card = operation.card;
+      } else if (operation.kind === 'ignoreDefense') candidateState.ignoreDefense = true;
       else if (operation.kind === 'ignoreDamageCut') candidateState.ignoreDamageCut = true;
       else input = applyNp(input, operation, state, localConditionSatisfied);
       const mutationValidation =
-        operation.kind === 'addTrait' || operation.kind === 'removeTrait'
+        operation.kind === 'addTrait' ||
+        operation.kind === 'removeTrait' ||
+        operation.kind === 'changeCardType'
           ? validateConstraintSet({
               fixedFacts: fixedConstraintFactsFromState(candidateState, operation.operationId),
               expressions: activeConditionConstraints.filter(
@@ -1386,7 +1441,7 @@ export function executeOrderedScenario(
   const projectionByKey = new Map<string, EffectProjection>();
   for (const projection of [
     ...resolvedCompileProjections,
-    ...results.map((result) => result.projection),
+    ...results.map((result) => projectionAtDamageEvaluation(result, state)),
   ]) {
     const prior = projectionByKey.get(projection.projectionKey);
     if (!prior || (prior.visibility === 'hidden' && projection.visibility === 'visible'))

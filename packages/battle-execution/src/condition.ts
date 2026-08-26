@@ -12,11 +12,19 @@ export function normalizeTraitCondition(
     present: !trait.negative,
   }));
   if (condition.operator === 'partial') return { kind: 'partialTrait', scope, traits };
-  const expressions = traits.map<ConditionExpression>((trait) => ({
-    kind: 'trait',
-    scope,
-    ...trait,
-  }));
+  const expressions = traits.map<ConditionExpression>((trait) => {
+    const card =
+      scope === 'attacker' || scope === 'attackerState'
+        ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[
+            trait.trait as 'cardArts' | 'cardBuster' | 'cardQuick'
+          ]
+        : undefined;
+    if (card)
+      return trait.present
+        ? { kind: 'card', card }
+        : { kind: 'not', expression: { kind: 'card', card } };
+    return { kind: 'trait', scope, ...trait };
+  });
   return condition.operator === 'all' ? { kind: 'all', expressions } : { kind: 'any', expressions };
 }
 

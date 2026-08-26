@@ -9,6 +9,7 @@ import type {
   WorldFactAssertion,
 } from './index';
 import { canonicalExclusiveGroup } from './index';
+import { normalizeTraitCondition } from './condition';
 
 describe('ordered battle execution contracts', () => {
   it('keeps conditions, effect decisions, and world facts as separate contracts', () => {
@@ -79,12 +80,34 @@ describe('ordered battle execution contracts', () => {
     expect(canonicalExclusiveGroup('target', 'dragon')).toBeNull();
   });
 
+  it('normalizes attacker card traits into the derived card predicate', () => {
+    expect(
+      normalizeTraitCondition(
+        {
+          operator: 'all',
+          traits: [
+            { name: 'cardArts', negative: false },
+            { name: 'cardBuster', negative: true },
+          ],
+        },
+        'attacker',
+      ),
+    ).toEqual({
+      kind: 'all',
+      expressions: [
+        { kind: 'card', card: 'arts' },
+        { kind: 'not', expression: { kind: 'card', card: 'buster' } },
+      ],
+    });
+  });
+
   it('models every R1 operation as a discriminated union without servant identity', () => {
     expectTypeOf<BattleOperation['kind']>().toEqualTypeOf<
       | 'addTrait'
       | 'removeTrait'
       | 'addModifier'
       | 'changeModifierRate'
+      | 'changeCardType'
       | 'ignoreDefense'
       | 'ignoreDamageCut'
       | 'executeNpDamage'
