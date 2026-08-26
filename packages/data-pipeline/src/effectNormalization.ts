@@ -1,7 +1,9 @@
 import type {
   ActorCountPredicate,
   CanonicalInputDefinition,
+  CanonicalTargetPolicy,
   ModifierValueExpression,
+  MasterEffect,
   NpDamageSpec,
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
@@ -418,6 +420,121 @@ function normalizeQuantityConditions(
     );
   }
   return conditions;
+}
+
+function normalizeBuffHpConditions(
+  buffs: readonly AtlasBuff[] | undefined,
+  targetPolicy: CanonicalTargetPolicy,
+) {
+  const raw = (buffs ?? []).flatMap((buff) =>
+    (['HP_LOWER', 'HP_HIGHER'] as const).flatMap((key) =>
+      buff.script && Object.hasOwn(buff.script, key) ? [{ key, value: buff.script[key] }] : [],
+    ),
+  );
+  if (raw.length === 0) return [];
+  if (!['sourceSelf', 'partyMember', 'partyOther'].includes(targetPolicy))
+    throw new TypeError(`unsupported_hp_condition_target:${targetPolicy}`);
+  if (
+    raw.some(
+      ({ value }) =>
+        typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 1_000,
+    )
+  )
+    throw new TypeError(`invalid_hp_condition_threshold:${JSON.stringify(raw)}`);
+  const conditions = [
+    ...new Map(raw.map(({ key, value }) => [`${key}:${String(value)}`, { key, value }])).values(),
+  ];
+  if (conditions.length !== 1)
+    throw new TypeError(`ambiguous_hp_condition:${JSON.stringify(conditions)}`);
+  const condition = conditions[0]!;
+  return [
+    {
+      quantity: 'attackerHpPermille' as const,
+      comparison: condition.key === 'HP_LOWER' ? ('atMost' as const) : ('atLeast' as const),
+      value: condition.value as number,
+    },
+  ];
+}
+
+function modifierSeriesIdentity(effect: MasterEffect): string | null {
+  const operations = effect.execution.filter((operation) => operation.kind !== 'nonDamage');
+  if (operations.length !== 1) return null;
+  const operation = operations[0]!;
+  if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') return null;
+  if (operation.valueExpressions.flat().some((expression) => expression !== null)) return null;
+  return JSON.stringify({
+    kind: operation.kind,
+    modifier: operation.modifier,
+    targetPolicy: operation.targetPolicy,
+    expectedRecipient: operation.expectedRecipient,
+    targetMismatch: operation.targetMismatch,
+    ...(operation.kind === 'damageModifier' ? { sign: operation.sign, card: operation.card } : {}),
+    conditions: effect.conditions,
+    conditionTargetPolicy: effect.conditionTargetPolicy,
+    quantityConditions: effect.quantityConditions.filter(
+      (condition) => condition.quantity !== 'attackerHpPermille',
+    ),
+    sourceQuantityConditions: effect.sourceQuantityConditions,
+    inputQuantityConditions: effect.inputQuantityConditions,
+    inputDefinitions: effect.inputDefinitions,
+    choice: effect.choice,
+    operationTrigger: effect.operationTrigger,
+    traitReadPolicy: effect.traitReadPolicy,
+  });
+}
+
+function assignHpThresholdSeries(effects: readonly MasterEffect[]): MasterEffect[] {
+  const result = [...effects];
+  for (let start = 0; start < result.length;) {
+    const identity = modifierSeriesIdentity(result[start]!);
+    let end = start + 1;
+    while (
+      identity !== null &&
+      end < result.length &&
+      modifierSeriesIdentity(result[end]!) === identity
+    )
+      end += 1;
+    const members = result.slice(start, end);
+    const conditioned = members.filter((effect) =>
+      effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'),
+    );
+    if (identity !== null && members.length > 1 && conditioned.length > 0) {
+      const firstConditionedIndex = members.findIndex((effect) =>
+        effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'),
+      );
+      if (
+        firstConditionedIndex > 1 ||
+        members
+          .slice(firstConditionedIndex)
+          .some((effect) => !effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'))
+      )
+        throw new TypeError(
+          `ambiguous_hp_threshold_series:${members.map((effect) => effect.occurrenceId).join(',')}`,
+        );
+      const thresholds = conditioned.map((effect) => {
+        const hpConditions = effect.quantityConditions.filter(
+          (condition) => condition.quantity === 'attackerHpPermille',
+        );
+        if (hpConditions.length !== 1 || hpConditions[0]!.comparison !== 'atMost')
+          throw new TypeError(`invalid_hp_threshold_series:${effect.occurrenceId}`);
+        return hpConditions[0]!.value;
+      });
+      if (new Set(thresholds).size !== thresholds.length)
+        throw new TypeError(`duplicate_hp_threshold:${JSON.stringify(thresholds)}`);
+      const key = `attackerHpPermille:${result[start]!.occurrenceId}`;
+      for (let index = start; index < end; index += 1)
+        result[index] = {
+          ...result[index]!,
+          interaction: {
+            kind: 'quantityThresholdSeries',
+            key,
+            quantity: 'attackerHpPermille',
+          },
+        };
+    }
+    start = end;
+  }
+  return result;
 }
 
 function normalizeSourceQuantityConditions(
@@ -1037,7 +1154,7 @@ export function normalizeFunctions(
       criticalStarSeriesCounts.set(fn.funcId, (criticalStarSeriesCounts.get(fn.funcId) ?? 0) + 1);
   }
   const occurrencesByFunctionId = new Map<number, number>();
-  return (functions ?? []).flatMap((fn) => {
+  const normalized = (functions ?? []).flatMap((fn) => {
     if (typeof fn.funcId !== 'number') return [];
     const occurrence = occurrencesByFunctionId.get(fn.funcId) ?? 0;
     occurrencesByFunctionId.set(fn.funcId, occurrence + 1);
@@ -1050,7 +1167,15 @@ export function normalizeFunctions(
       AtlasFunctionValue[],
       AtlasFunctionValue[],
     ];
-    const quantityConditions = normalizeQuantityConditions(parameterSets);
+    const targetPolicy = normalizeTargetPolicy(fn.funcTargetType ?? 'unknown', fn.funcTargetTeam);
+    const quantityConditions = [
+      ...new Map(
+        [
+          ...normalizeQuantityConditions(parameterSets),
+          ...normalizeBuffHpConditions(fn.buffs, targetPolicy),
+        ].map((condition) => [JSON.stringify(condition), condition]),
+      ).values(),
+    ];
     const traitReadPolicy = normalizeTraitReadPolicy(parameterSets);
     const stateIdentity = normalizeStateIdentity(parameterSets);
     const sourceQuantityConditions = normalizeSourceQuantityConditions(parameterSets);
@@ -1386,21 +1511,28 @@ export function normalizeFunctions(
             ]),
           },
         },
-        conditionTargetPolicy: normalizeTargetPolicy(
-          fn.funcTargetType ?? 'unknown',
-          fn.funcTargetTeam,
-        ),
+        conditionTargetPolicy: targetPolicy,
         execution,
         atlasEvidence: {
           functionType: fn.funcType ?? 'unknown',
           target: fn.funcTargetType ?? 'unknown',
-          parameterSets,
+          parameterSets: parameterSets as MasterEffect['atlasEvidence']['parameterSets'],
           parameterSemantics,
           unresolvedSemanticKeys,
           buffTypes,
           buffRateTargets: buffRateTargets(fn.buffs),
+          buffConditionKeys: [
+            ...new Set(
+              (fn.buffs ?? []).flatMap((buff) =>
+                (['HP_LOWER', 'HP_HIGHER'] as const).filter(
+                  (key) => buff.script && Object.hasOwn(buff.script, key),
+                ),
+              ),
+            ),
+          ],
         },
       },
     ];
   });
+  return assignHpThresholdSeries(normalized);
 }

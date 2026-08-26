@@ -653,7 +653,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'f18629cd2894bfc40b01780ccdc86f9f345f09048e41f3121797c1f027f7e887',
+      'f08bebaaeaa638ae8910cb74cf4f81f29d725e9fb710a6ee923ce5df4df3d17f',
     );
   }, 30_000);
 

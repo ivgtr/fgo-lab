@@ -44,9 +44,9 @@ function effectValueLabel(effect: EffectProjection) {
   });
 }
 
-function effectStateLabel(effect: EffectProjection) {
+function effectStateLabel(effect: EffectProjection, valueDisplay: 'single' | 'sum') {
   if (effect.outcome === 'unsupported') return '未対応';
-  const value = effectValueLabel(effect);
+  const value = `${valueDisplay === 'sum' ? '合計' : ''}${effectValueLabel(effect)}`;
   return effect.outcome === 'applied' ? `${value}・計算中` : `${value}・計算外`;
 }
 
@@ -122,7 +122,7 @@ export function AppliedEffects({
                   selection={control.control === 'singleChoice' ? 'singleChoice' : 'toggle'}
                   active={isEffectSelected(effect)}
                   label={effectLabel(effect)}
-                  detail={effectStateLabel(effect)}
+                  detail={effectStateLabel(effect, control.valueDisplay)}
                   sources={[
                     {
                       key: `${effect.projectionKey}:source`,

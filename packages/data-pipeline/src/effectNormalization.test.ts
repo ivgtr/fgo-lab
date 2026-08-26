@@ -106,3 +106,110 @@ describe('canonical actor count normalization', () => {
     ).toThrow('unknown_param_add_trait');
   });
 });
+
+describe('HP threshold series normalization', () => {
+  const attackFunction = (funcId: number, hpLower?: unknown): AtlasFunction => ({
+    funcId,
+    funcType: 'addStateShort',
+    funcTargetType: 'ptAll',
+    funcTargetTeam: 'playerAndEnemy',
+    funcPopupText: '攻撃力アップ',
+    buffs: [
+      {
+        type: 'upAtk',
+        ...(hpLower === undefined ? {} : { script: { HP_LOWER: hpLower } }),
+      },
+    ],
+    svals: valueSets({
+      Rate: 1_000,
+      Turn: 3,
+      Count: -1,
+      Value: hpLower === undefined ? 200 : 100,
+    }),
+  });
+
+  it('keeps arbitrary valid thresholds as ordered attacker HP conditions under one decision', () => {
+    const effects = normalizeFunctions(
+      [
+        attackFunction(1),
+        attackFunction(2, 990),
+        attackFunction(3, 750),
+        attackFunction(4, 500),
+        attackFunction(5, 250),
+      ],
+      new Map(),
+      'skill',
+      1,
+    );
+
+    expect(effects).toHaveLength(5);
+    expect(new Set(effects.map((effect) => effect.interaction?.key)).size).toBe(1);
+    expect(effects.map((effect) => effect.interaction?.kind)).toEqual(
+      Array.from({ length: 5 }, () => 'quantityThresholdSeries'),
+    );
+    expect(effects.map((effect) => effect.quantityConditions)).toEqual([
+      [],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 990 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 750 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 250 }],
+    ]);
+    expect(effects.map((effect) => effect.atlasEvidence.buffConditionKeys)).toEqual([
+      [],
+      ['HP_LOWER'],
+      ['HP_LOWER'],
+      ['HP_LOWER'],
+      ['HP_LOWER'],
+    ]);
+  });
+
+  it('accepts the full integer domain including zero', () => {
+    const effects = normalizeFunctions(
+      [attackFunction(1), attackFunction(2, 0)],
+      new Map(),
+      'skill',
+      1,
+    );
+
+    expect(effects[1]!.quantityConditions).toEqual([
+      { quantity: 'attackerHpPermille', comparison: 'atMost', value: 0 },
+    ]);
+  });
+
+  it.each([-1, 1_001, 500.5, '500'])('rejects an invalid HP threshold %j', (threshold) => {
+    expect(() => normalizeFunctions([attackFunction(1, threshold)], new Map())).toThrow(
+      'invalid_hp_condition_threshold',
+    );
+  });
+
+  it('keeps one conditional effect independent and rejects an unrepresentable recipient', () => {
+    const [single] = normalizeFunctions([attackFunction(1, 500)], new Map(), 'skill', 1);
+    expect(single).toMatchObject({
+      interaction: null,
+      quantityConditions: [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
+    });
+    expect(() =>
+      normalizeFunctions(
+        [{ ...attackFunction(1, 500), funcTargetType: 'enemyAll' }],
+        new Map(),
+        'skill',
+        1,
+      ),
+    ).toThrow('unsupported_hp_condition_target');
+  });
+
+  it('rejects duplicate thresholds within one semantic series', () => {
+    expect(() =>
+      normalizeFunctions(
+        [attackFunction(1), attackFunction(2, 500), attackFunction(3, 500)],
+        new Map(),
+      ),
+    ).toThrow('duplicate_hp_threshold');
+  });
+
+  it('rejects more than one unconditional operation before a threshold series', () => {
+    expect(() =>
+      normalizeFunctions([attackFunction(1), attackFunction(2), attackFunction(3, 500)], new Map()),
+    ).toThrow('ambiguous_hp_threshold_series');
+  });
+});

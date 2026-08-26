@@ -13,6 +13,8 @@ export type AtlasBuff = {
     UpBuffRateBuffIndiv?: AtlasTraitRef[];
     checkIndvType?: number;
     INDIVIDUALITIE?: AtlasTraitRef;
+    HP_LOWER?: unknown;
+    HP_HIGHER?: unknown;
   };
 };
 export type AtlasFunction = {

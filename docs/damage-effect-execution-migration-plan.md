@@ -533,12 +533,20 @@ ADR 014に従い、次をE3.9の完了条件へ追加する。
 6. 同一skill・同一labelのuser controlが3件以上残るfamilyをinventory化する。
 7. Habetrotのcritical star 10段階とトネリコのHP累積5段階を別々のsemantic familyとしてgolden化する。
 
+HP累積familyはraw `HP_LOWER`を0〜1000の整数`attackerHpPermille <= threshold`として正規化する。
+固定threshold配列やservant IDは使用せず、同一canonical modifier routing、target、HP以外のconditionが
+一致するseriesだけを一つのdecisionへまとめる。無条件baseは先頭の最大1件、threshold重複や
+意味論不一致はartifact生成エラーとする。UIは一つの「攻撃力アップ 合計」を表示し、executor traceは
+5 occurrenceを別々のoperation IDで保持する。
+
 完了結果:
 
-- scenario schema 23、master schema 27、artifact v50、engine 15.0.0へ一方向更新した。
+- scenario schema 23、master schema 29、artifact v53、engine 17.0.0へ一方向更新した。
 - runtime入力13 keyのうち、火力へ到達する12 keyを9騎のeffect近傍へ投影した。非火力の
   friendship level 1 keyは通常UIへ投影しない。
 - `canonicalInputValues`はtyped integer valueだけを保存し、未知keyは`unsupported`、既知keyの
   欠落・範囲外・導出minimum未満は`inputRequired`としてfail-closedにする。
 - 420既定計算、既存calculated 1,504 scenario digest、全user projectionのimplementation
-  unsupported 0を維持した。詳細は`docs/reports/damage-effect-execution-e3-9.md`に記録する。
+  unsupported 0を維持した。承認済みHP条件差分はトネリコの旧個別decision 4件と一夏の城の
+  HP50%超scenarioへ限定し、他case不変をdifferential ratchetで確認する。詳細は
+  `docs/reports/damage-effect-execution-e3-9.md`に記録する。

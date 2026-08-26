@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(28),
+  schemaVersion: z.literal(29),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -281,6 +281,7 @@ const atlasEffectEvidenceSchema = z.object({
   unresolvedSemanticKeys: z.array(z.string().min(1)),
   buffTypes: z.array(z.string()),
   buffRateTargets: z.array(z.string()),
+  buffConditionKeys: z.array(z.string().min(1)),
 });
 export type AtlasEffectEvidence = z.infer<typeof atlasEffectEvidenceSchema>;
 
@@ -290,10 +291,17 @@ export const masterEffectSchema = z.object({
   label: z.string(),
   availability: z.enum(['allLimitBreakStates', 'maximumLimitBreakOnly']),
   interaction: z
-    .object({
-      kind: z.literal('inputThresholdSeries'),
-      key: z.string().min(1),
-    })
+    .discriminatedUnion('kind', [
+      z.object({
+        kind: z.literal('inputThresholdSeries'),
+        key: z.string().min(1),
+      }),
+      z.object({
+        kind: z.literal('quantityThresholdSeries'),
+        key: z.string().min(1),
+        quantity: z.literal('attackerHpPermille'),
+      }),
+    ])
     .nullable(),
   choice: z
     .object({

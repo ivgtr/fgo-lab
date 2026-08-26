@@ -12,6 +12,7 @@ import {
   traitConditionConstraintScope,
   traitConstraintActorScope,
 } from './conditionSemantics';
+import { conditionRequiresQuantity } from './condition';
 
 export function selectionGroupsForCondition(
   condition: EffectProjection['explanation']['condition'],
@@ -84,6 +85,10 @@ export function createOperationProjection(
   resolvedModifierValue: number | null,
   preserveSiblingChoice: boolean,
 ): EffectProjection {
+  const operationRequiresAttackerHp = conditionRequiresQuantity(
+    operation.condition,
+    'attackerHpPermille',
+  );
   const hidden =
     operation.kind === 'addTrait' ||
     operation.kind === 'removeTrait' ||
@@ -148,17 +153,19 @@ export function createOperationProjection(
           ? valuePermille
           : valuePermille / 1000,
     requiredQuantity:
-      operation.kind === 'addModifier' &&
-      operation.valueExpression &&
-      operation.valueExpression.kind !== 'inputLinear' &&
-      operation.valueExpression.quantitySource.kind === 'attackerHpPermille'
+      operationRequiresAttackerHp ||
+      (operation.kind === 'addModifier' &&
+        operation.valueExpression &&
+        operation.valueExpression.kind !== 'inputLinear' &&
+        operation.valueExpression.quantitySource.kind === 'attackerHpPermille')
         ? 'attackerHpPermille'
         : null,
     requiredQuantityOwner:
-      operation.kind === 'addModifier' &&
-      operation.valueExpression &&
-      operation.valueExpression.kind !== 'inputLinear' &&
-      operation.valueExpression.quantitySource.kind === 'attackerHpPermille'
+      operationRequiresAttackerHp ||
+      (operation.kind === 'addModifier' &&
+        operation.valueExpression &&
+        operation.valueExpression.kind !== 'inputLinear' &&
+        operation.valueExpression.quantitySource.kind === 'attackerHpPermille')
         ? 'attacker'
         : null,
     requiredInputs: operation.inputDefinitions,
@@ -168,7 +175,8 @@ export function createOperationProjection(
     outcome,
     visibility:
       hidden ||
-      knownImpossibleBeforeSelection ||
+      (knownImpossibleBeforeSelection &&
+        !(operationRequiresAttackerHp && operation.decisionPlan.activation === 'automatic')) ||
       code === 'cardMismatch' ||
       (operation.kind === 'executeNpDamage' && operation.condition.kind === 'always')
         ? 'hidden'

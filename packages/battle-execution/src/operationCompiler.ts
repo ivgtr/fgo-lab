@@ -15,6 +15,7 @@ import type {
 } from './contracts';
 import {
   combineConditions,
+  conditionRequiresQuantity,
   containsUnsupportedCondition,
   normalizeTraitCondition,
   requiresUserAssumption,
@@ -291,6 +292,10 @@ function decisionKey(source: SourceEffect): string {
   return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
 }
 
+function operationKey(source: SourceEffect): string {
+  return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
+}
+
 function sourceIdentity(source: SourceEffect): OperationSource {
   return {
     origin: source.origin,
@@ -307,6 +312,7 @@ function sourceIdentity(source: SourceEffect): OperationSource {
 
 function baseOperation(source: SourceEffect, order: number, suffix: string) {
   const key = decisionKey(source);
+  const identity = operationKey(source);
   const condition = effectCondition(
     source.effect,
     source.origin,
@@ -316,7 +322,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
   );
   const plan = decisionPlan(source, condition);
   return {
-    operationId: `${key}:${suffix}`,
+    operationId: `${identity}:${suffix}`,
     order,
     phase:
       source.origin === 'passive' && condition.kind !== 'always'
@@ -328,7 +334,14 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     decisionPlan: plan,
     enabledByDefault: source.enabledByDefault,
     activation: { kind: 'sourceDefault' as const },
-    evidence: { rawPath: key, functionId: source.effect.id, parameterKeys: [] },
+    evidence: {
+      rawPath: identity,
+      functionId: source.effect.id,
+      parameterKeys: [
+        ...source.effect.atlasEvidence.parameterSemantics.condition,
+        ...source.effect.atlasEvidence.buffConditionKeys,
+      ],
+    },
     presentation: {
       label: source.effect.label,
       sourceName: source.sourceName,
@@ -561,10 +574,11 @@ function makeProjection(
   condition: ConditionExpression,
 ): EffectProjection {
   const plan = decisionPlan(source, condition);
+  const requiresAttackerHp = conditionRequiresQuantity(condition, 'attackerHpPermille');
   const userControllable = plan.activation === 'user' || plan.condition === 'userMayAssume';
   return {
     projectionKey: key,
-    operationId: key,
+    operationId: operationKey(source),
     label: source.effect.label,
     sourceName: source.sourceName,
     skillName: source.skillName,
@@ -575,12 +589,14 @@ function makeProjection(
         : modifier === 'flatDamage'
           ? valuePermille
           : valuePermille / 1000,
-    requiredQuantity: valueExpression ? 'attackerHpPermille' : null,
+    requiredQuantity: valueExpression || requiresAttackerHp ? 'attackerHpPermille' : null,
     requiredQuantityOwner: valueExpression
       ? ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
         ? 'attacker'
         : 'source'
-      : null,
+      : requiresAttackerHp
+        ? 'attacker'
+        : null,
     requiredInputs: runtimeInputDefinitions(source),
     modifier,
     source: sourceIdentity(source),

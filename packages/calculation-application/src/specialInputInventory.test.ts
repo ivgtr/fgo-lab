@@ -121,6 +121,6 @@ describe('production special input inventory', () => {
         count >= 3 ? [`${servant.id}:${key}:${String(count)}`] : [],
       );
     });
-    expect(repeatedUserLabels).toEqual(['505300:逆境のカリスマ A:攻撃力アップ:5']);
+    expect(repeatedUserLabels).toEqual([]);
   }, 20_000);
 });

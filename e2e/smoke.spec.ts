@@ -868,9 +868,102 @@ test('reuses the existing HP input for HP-linear own effects at desktop and narr
   }
 });
 
-test('NP card choices update final-card buffs and fail closed on conflicting choices', async ({
+test('Tonelico uses one skill decision for the cumulative HP attack buff', async ({ page }) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('雨の魔女トネリコ');
+  await attackerDialog.getByRole('button', { name: /雨の魔女トネリコ.*キャスター.*Lv90/ }).click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const attack = ownEffects.getByRole('button', {
+    name: /攻撃力アップ.*逆境のカリスマ/,
+  });
+  const hp = page.getByRole('spinbutton', { name: '自身の残りHP（%）' });
+  const row = page.getByRole('row', { name: /NP1.*現在/ });
+
+  await expect(attack).toHaveCount(1);
+  await expect(hp).toHaveValue('');
+  await hp.fill('100');
+  await expect(row).toContainText('31,052');
+  await attack.click();
+  await expect(attack).toHaveAttribute('aria-pressed', 'true');
+  await expect(attack).toContainText('合計+20%');
+  await expect(row).toContainText('37,263');
+
+  await hp.fill('25');
+  await expect(attack).toContainText('合計+60%');
+  await expect(row).toContainText('49,684');
+  await attack.click();
+  await expect(attack).toHaveAttribute('aria-pressed', 'false');
+  await expect(row).toContainText('31,052');
+
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(attack).toBeVisible();
+    await expect(hp).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+  }
+});
+
+test('One Summer Castle applies automatically only at fifty percent HP or below', async ({
   page,
 }) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('アルトリア・ペンドラゴン');
+  await attackerDialog
+    .getByRole('button', { name: /アルトリア・ペンドラゴン.*セイバー.*Lv90/ })
+    .first()
+    .click();
+
+  await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
+  const ceDialog = page.getByRole('dialog', { name: '概念礼装を選択' });
+  await ceDialog.getByRole('tab', { name: '全DB' }).click();
+  await ceDialog.getByLabel('礼装名').fill('一夏の城');
+  await ceDialog
+    .getByRole('button', { name: /一夏の城/ })
+    .first()
+    .click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const effect = ownEffects.getByRole('img', { name: /一夏の城/ }).locator('xpath=ancestor::li[1]');
+  const hp = page.getByRole('spinbutton', { name: '自身の残りHP（%）' });
+  const row = page.getByRole('row', { name: /NP1.*現在/ });
+
+  await expect(hp).toHaveValue('');
+  await hp.fill('100');
+  await expect(effect).toContainText('宝具威力アップ');
+  await expect(effect).toContainText('+30%・計算外');
+  await expect(effect.getByRole('button')).toHaveCount(0);
+  await expect(row).toContainText('33,988');
+
+  await hp.fill('50');
+  await expect(effect).toContainText('+30%・計算中');
+  await expect(row).toContainText('44,185');
+  await hp.fill('51');
+  await expect(effect).toContainText('+30%・計算外');
+  await expect(row).toContainText('33,988');
+});
+
+test('NP card choices replace exclusive siblings and update final-card buffs', async ({ page }) => {
   await page.goto('/');
   await completeSetup(page);
   await page
@@ -887,8 +980,8 @@ test('NP card choices update final-card buffs and fail closed on conflicting cho
     .click();
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const artsChange = ownEffects.getByRole('button', { name: /宝具タイプチェンジ：Arts/ });
-  const busterChange = ownEffects.getByRole('button', { name: /宝具タイプチェンジ：Buster/ });
+  const artsChange = ownEffects.getByRole('radio', { name: /宝具タイプチェンジ：Arts/ });
+  const busterChange = ownEffects.getByRole('radio', { name: /宝具タイプチェンジ：Buster/ });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const average = table
     .getByRole('row', { name: /NP1.*現在/ })
@@ -899,7 +992,8 @@ test('NP card choices update final-card buffs and fail closed on conflicting cho
   await expect(ownEffects.getByRole('button', { name: /バスターアップ/ })).toBeVisible();
   await expect(ownEffects.getByRole('button', { name: /アーツアップ/ })).toHaveCount(0);
   await artsChange.click();
-  await expect(artsChange).toHaveAttribute('aria-pressed', 'true');
+  await expect(artsChange).toHaveAttribute('aria-checked', 'true');
+  await expect(busterChange).toHaveAttribute('aria-checked', 'false');
   await expect(average).not.toHaveText(initialAverage ?? '');
   const artsBuff = ownEffects.getByRole('button', { name: /アーツアップ/ });
   await expect(artsBuff).toBeVisible();
@@ -911,11 +1005,15 @@ test('NP card choices update final-card buffs and fail closed on conflicting cho
   await expect(effectiveInput).toContainText('ARTS性能／耐性50.0%／0.0%');
 
   await busterChange.click();
-  await expect(table).toHaveCount(0);
-  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
-  await busterChange.click();
   await expect(table).toBeVisible();
-  await expect(artsChange).toHaveAttribute('aria-pressed', 'true');
+  await expect(busterChange).toHaveAttribute('aria-checked', 'true');
+  await expect(artsChange).toHaveAttribute('aria-checked', 'false');
+  await expect(effectiveInput).toContainText('BUSTER性能／耐性');
+
+  await artsChange.click();
+  await expect(table).toBeVisible();
+  await expect(artsChange).toHaveAttribute('aria-checked', 'true');
+  await expect(busterChange).toHaveAttribute('aria-checked', 'false');
 
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 800 });
@@ -942,8 +1040,8 @@ test('Jade Rabbit replaces NP form state with the selected final card', async ({
   await attackerDialog.getByRole('button', { name: /玉兎.*ムーンキャンサー.*Lv90/ }).click();
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const busterForm = ownEffects.getByRole('button', { name: /^月下 / });
-  const artsForm = ownEffects.getByRole('button', { name: /^日輪 / });
+  const busterForm = ownEffects.getByRole('radio', { name: /^月下 / });
+  const artsForm = ownEffects.getByRole('radio', { name: /^日輪 / });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const effectiveInput = page.getByLabel('計算に使用する最終値');
   await effectiveInput.locator('summary').click();
@@ -951,18 +1049,15 @@ test('Jade Rabbit replaces NP form state with the selected final card', async ({
   await expect(table).toBeVisible();
   await expect(effectiveInput).toContainText('ARTS性能／耐性');
   await busterForm.click();
-  await expect(busterForm).toHaveAttribute('aria-pressed', 'true');
+  await expect(busterForm).toHaveAttribute('aria-checked', 'true');
+  await expect(artsForm).toHaveAttribute('aria-checked', 'false');
   await expect(table).toBeVisible();
   await expect(effectiveInput).toContainText('BUSTER性能／耐性');
 
   await artsForm.click();
-  await expect(table).toHaveCount(0);
-  await expect(page.getByRole('alert')).toContainText('正確に計算できない');
-  await expect(busterForm).toHaveAttribute('aria-pressed', 'true');
-  await expect(artsForm).toHaveAttribute('aria-pressed', 'true');
-
-  await busterForm.click();
   await expect(table).toBeVisible();
+  await expect(artsForm).toHaveAttribute('aria-checked', 'true');
+  await expect(busterForm).toHaveAttribute('aria-checked', 'false');
   await expect(effectiveInput).toContainText('ARTS性能／耐性');
 });
 

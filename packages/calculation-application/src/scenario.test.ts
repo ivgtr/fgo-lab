@@ -71,6 +71,7 @@ function modifierEffect(
     id,
     occurrenceId: `${id}:0`,
     availability: 'allLimitBreakStates' as const,
+    interaction: null,
     label: id,
     choice: null,
     triggerScope: null,
@@ -128,6 +129,7 @@ function modifierEffect(
       unresolvedSemanticKeys: [],
       buffTypes: [buffType],
       buffRateTargets: [],
+      buffConditionKeys: [],
     },
   };
 }

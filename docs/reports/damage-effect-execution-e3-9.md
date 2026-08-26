@@ -4,9 +4,9 @@
 - Base: `1b8c260`
 - Scope: 単発宝具ダメージ計算の特殊入力。E4ランキング統合は未着手。
 - Scenario schema: 23
-- Master schema: 27
-- Artifact: `2026-08-26-atlas-jp-calculator-v50`
-- Engine: `15.0.0`
+- Master schema: 29
+- Artifact: `2026-08-26-atlas-jp-calculator-v53`
+- Engine: `17.0.0`
 
 ## 結果
 
@@ -62,6 +62,18 @@ clampせずtyped `inputRequired`となり、damage rowを返さない。artifact
 resolved inputは計算traceへdefault/explicitの別と共に残し、結果カード・画像対象と計算内訳にも
 表示する。
 
+## Effect interactionとHP condition
+
+applicationはtoggle、single choice、threshold seriesを`EffectControlViewModel`へ統一した。Habetrotの
+critical star 10段階は一つの入力、一つのdecision、一つの合計表示となり、Danteを含む11 canonical
+choice groupはsingle-choice操作で兄弟を解除する。crafted scenarioの競合はexecutorが引き続き拒否する。
+
+raw inventoryはservant `HP_LOWER` 6件、`HP_HIGHER` 2件、craft essence `HP_LOWER` 1件である。
+HP conditionは0〜1000の整数とcanonical target policyをbuild時に検証し、`attackerHpPermille`条件へ
+正規化した。単独conditionは独立したautomatic effect、同一activationの複数modifierだけを
+`quantityThresholdSeries`とする。operation ID、condition、Atlas evidence、outcomeはoccurrence単位で
+保持し、UI合計へ置換しない。
+
 ## 代表UIとdamage
 
 - ジョン: 宝具威力アップ2行へ〔王〕一致数・〔悪〕一致数を各stepperで配置。本人から最低1ずつを
@@ -70,24 +82,28 @@ resolved inputは計算traceへdefault/explicitの別と共に残し、結果カ
   最低1を導出し、既定`npDamageBuff=0.1`、3体時`0.3`。
 - アーキタイプ：アース: 千年城fieldは表示せず、成立した最終火力effectだけを表示する。
 - ダンテ: field mutationは表示せず、選択宝具cardと一致する火力effectと排他的な天・地decisionを
-  従来どおり操作する。
+  single-choiceとして操作する。
+- 雨の魔女トネリコ: 逆境のカリスマは一つのdecision、一つの「攻撃力アップ 合計」として表示する。
+  HP1000/990/760/750/510/500/260/250/0で20/30/30/40/40/50/50/60/60%を適用し、5 operationの
+  traceは独立している。OFF時は全memberが`notApplied`となる。
+- 一夏の城: `interaction: null`のautomatic effectである。HP501以上は`npDamageBuff=0`、HP500以下は
+  `0.3`となり、LB0/LB4で同じ境界をgolden化した。HP100%の旧常時30%は誤算として削除した。
 
-このフェーズでdamage値は変更していない。承認済みのジョン／水着ハベトロット修正値を含む
-canonical actor count golden、Dante排他、アーキタイプ：アース、水着武則天、hidden mutation、
-一般OR特攻の回帰を維持した。
+意図的なdamage変更は承認済みのジョン、水着ハベトロット、雨の魔女トネリコ、一夏の城に限定した。
+既存1,504 scenarioのHP条件差分はトネリコの旧個別decision 4件だけで、他1,500件はtest内differentialで
+不変を確認した。一夏の城はLB0/LB4・HP1000/501/500/0の独立goldenへ固定した。
 
 ## 品質ゲート
 
 - format / lint / typecheck: 成功
-- unit / integration / property / golden: 45 files、238 tests
-- master validation: 6 files、38 tests
+- unit / integration / property / golden: 47 files、254 tests
+- master validation: 6 files、49 tests
 - evidence validation: 2 files、10 tests
-- production build: 180 modules、main 472.00 kB（gzip 135.55 kB）、ranking worker 98.94 kB
-- benchmark: 413.70 ops/s、mean 2.4172 ms
-- Playwright Chromium / mobile Chromium: 47 passed、21 skipped
+- production build: 181 modules、main 475.59 kB（gzip 136.45 kB）、ranking worker 99.14 kB
+- benchmark: 343.27 ops/s、mean 2.9132 ms
+- Playwright Chromium / mobile Chromium: 51 passed、21 skipped
 - desktop / 390px / 320px、keyboard、a11y、share/save: 成功
 - `git diff --check`: 成功
 
-buildの既定4 GiB heapではTypeScript検査がOOMとなったため、typecheckとproduction buildは
-`NODE_OPTIONS=--max-old-space-size=8192`で完走した。E3.8比でmain bundleは+5.07 kB
-（gzip +1.61 kB）、workerは+0.03 kBで、application view modelと汎用inline rendererの追加に対応する。
+E3.9の前回記録比でmain bundleは+3.59 kB（gzip +0.90 kB）、workerは+0.20 kBである。
+canonical HP condition、effect aggregation、single-choice view modelと回帰検証の追加に対応する。

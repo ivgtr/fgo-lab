@@ -29,6 +29,89 @@ function evidenceValues(effect: MasterEffect, limitBreak = false) {
 }
 
 describe('production canonical execution semantics', () => {
+  it('ratchets every raw HP condition before damage relevance filtering', async () => {
+    const count = (value: unknown, result = { HP_LOWER: 0, HP_HIGHER: 0 }) => {
+      if (!value || typeof value !== 'object') return result;
+      if (Object.hasOwn(value, 'HP_LOWER')) result.HP_LOWER += 1;
+      if (Object.hasOwn(value, 'HP_HIGHER')) result.HP_HIGHER += 1;
+      for (const child of Object.values(value)) count(child, result);
+      return result;
+    };
+    const servants = JSON.parse(
+      await readFile(resolve(root, 'data/raw/nice_servant.json'), 'utf8'),
+    ) as unknown;
+    const craftEssences = JSON.parse(
+      await readFile(resolve(root, 'data/raw/nice_equip.json'), 'utf8'),
+    ) as unknown;
+
+    // script and originalScript contain the same condition; divide by the two evidence copies.
+    const servantCounts = count(servants);
+    const craftEssenceCounts = count(craftEssences);
+    expect({
+      HP_LOWER: servantCounts.HP_LOWER / 2,
+      HP_HIGHER: servantCounts.HP_HIGHER / 2,
+    }).toEqual({ HP_LOWER: 6, HP_HIGHER: 2 });
+    expect({
+      HP_LOWER: craftEssenceCounts.HP_LOWER / 2,
+      HP_HIGHER: craftEssenceCounts.HP_HIGHER / 2,
+    }).toEqual({ HP_LOWER: 1, HP_HIGHER: 0 });
+  });
+
+  it('ratchets every normalized HP condition family and cumulative series', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const effects = allEffects(master);
+    const hpEvidence = effects.filter((effect) =>
+      effect.atlasEvidence.buffConditionKeys.includes('HP_LOWER'),
+    );
+    const thresholdSeries = effects.filter(
+      (effect) => effect.interaction?.kind === 'quantityThresholdSeries',
+    );
+
+    expect(hpEvidence).toHaveLength(7);
+    expect(
+      hpEvidence.reduce<Record<string, number>>((counts, effect) => {
+        for (const key of effect.atlasEvidence.buffConditionKeys)
+          counts[key] = (counts[key] ?? 0) + 1;
+        return counts;
+      }, {}),
+    ).toEqual({ HP_LOWER: 7 });
+    expect(thresholdSeries).toHaveLength(5);
+    expect(new Set(thresholdSeries.map((effect) => effect.interaction?.key)).size).toBe(1);
+    expect(
+      thresholdSeries.flatMap((effect) =>
+        effect.quantityConditions
+          .filter((condition) => condition.quantity === 'attackerHpPermille')
+          .map((condition) => condition.value),
+      ),
+    ).toEqual([990, 750, 500, 250]);
+    expect(
+      hpEvidence.reduce<Record<string, number>>((counts, effect) => {
+        const operation = effect.execution.find((candidate) => candidate.kind !== 'nonDamage');
+        const family =
+          operation?.kind === 'damageModifier' &&
+          operation.valueExpressions
+            .flat()
+            .some((expression) => expression?.kind === 'hpRangeLinear')
+            ? 'hpRangeLinear'
+            : operation?.kind === 'damageModifier' &&
+                effect.interaction?.kind === 'quantityThresholdSeries'
+              ? 'quantityThresholdModifier'
+              : operation?.kind === 'damageModifier'
+                ? 'standaloneConditionalModifier'
+                : 'nonDamage';
+        counts[family] = (counts[family] ?? 0) + 1;
+        return counts;
+      }, {}),
+    ).toEqual({
+      hpRangeLinear: 1,
+      quantityThresholdModifier: 4,
+      standaloneConditionalModifier: 1,
+      nonDamage: 1,
+    });
+  });
+
   it('maps every raw occurrence to a typed operation family', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),

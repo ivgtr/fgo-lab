@@ -51,7 +51,7 @@ const entries: CalculationEvidence[] = [
     'Atlas JP damage Function, battle point, and effect normalization',
     'validated',
     ['Atlas Academy JP nice servant, craft essence, and mystic code datasets'],
-    ['master-normalization-v51'],
+    ['master-normalization-v53'],
   ),
   ...(
     [
@@ -98,7 +98,7 @@ const entries: CalculationEvidence[] = [
       kind === 'ignoreDefense'
         ? ['all-effect-sources-ordered-execution', 'defense-piercing-np-row']
         : kind === 'cardTypeChange'
-          ? ['master-normalization-v51']
+          ? ['master-normalization-v53']
           : ['cardBuff', 'npDamageBuff', 'flatDamage'].includes(kind)
             ? ['all-effect-sources-ordered-execution', 'mlb-only-effects-v1']
             : ['all-effect-sources-ordered-execution'],

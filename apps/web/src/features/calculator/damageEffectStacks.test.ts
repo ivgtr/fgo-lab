@@ -14,6 +14,7 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
     requiredQuantity: null,
     requiredQuantityOwner: null,
     requiredInputs: [],
+    selectionGroups: [],
     modifier: 'attackBuff',
     source: {
       origin: 'attacker',

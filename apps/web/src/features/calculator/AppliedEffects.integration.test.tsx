@@ -12,6 +12,7 @@ describe('applied effect interaction rendering', () => {
       key: 'effect',
       operationIds: ['operation'],
       control: 'toggle',
+      valueDisplay: 'single',
       projection: {
         projectionKey: 'effect',
         operationId: 'operation',

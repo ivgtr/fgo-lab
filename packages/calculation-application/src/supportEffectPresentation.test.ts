@@ -14,6 +14,7 @@ const conditions = {
   field: { operator: 'any' as const, traits: [] },
 };
 const effectContract = {
+  interaction: null,
   choice: null,
   triggerScope: null,
   operationTrigger: null,
@@ -46,6 +47,7 @@ const effectContract = {
     unresolvedSemanticKeys: [],
     buffTypes: [],
     buffRateTargets: [],
+    buffConditionKeys: [],
   },
 };
 

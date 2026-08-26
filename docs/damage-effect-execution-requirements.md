@@ -362,6 +362,11 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 4. single choiceはcanonical choiceまたはcanonical exclusive factから導出し、ID・名称・labelでgroup化しない。
 5. 選択commandは競合candidateを解除するが、外部入力された競合scenarioはexecutorでfail-closedにする。
 6. input値変更が関連operationまたはdamageへ到達しないcontrolをproductionへ生成しない。
+7. `HP_LOWER`は0〜1000の整数閾値として既存`attackerHpPermille`へ正規化し、IDや固定閾値表を用いない。
+8. 同一skillの無条件baseとHP閾値memberは一つのdecision・一つの合計表示へ投影するが、operation、
+   condition、Atlas evidence、outcomeはoccurrence単位で保持する。
+9. HP閾値不成立はmemberの`notApplied`であり、skill全体を`unsupported`にしない。範囲外、非整数、
+   重複、condition方向・target・operation semantics不一致はartifact生成を失敗させる。
 
 ## 9. 受入条件
 

@@ -65,6 +65,7 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
       unresolvedSemanticKeys: [],
       buffTypes: [],
       buffRateTargets: [],
+      buffConditionKeys: [],
     },
   };
 }

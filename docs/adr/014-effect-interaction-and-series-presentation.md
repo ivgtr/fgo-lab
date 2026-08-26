@@ -21,16 +21,22 @@ DOM属性の暗黙契約に依存していた。
 
 ### canonical master IR
 
-入力閾値で累積する同一Function familyは`inputThresholdSeries` interactionを持つ。series keyは
-data-pipelineがraw Functionとcanonical input familyから生成する。サーヴァントID、名称、labelは
-使用しない。各effect occurrence、値、condition、Atlas evidenceは独立したまま保持する。
+入力閾値で累積する同一Function familyは`inputThresholdSeries`、既存battle quantityで累積するfamilyは
+`quantityThresholdSeries` interactionを持つ。series keyはdata-pipelineがcanonical input/quantityと
+operation familyから生成する。サーヴァントID、名称、labelは使用しない。各effect occurrence、値、
+condition、Atlas evidenceは独立したまま保持する。
+
+`HP_LOWER`は`attackerHpPermille <= threshold`へ正規化する。thresholdは0〜1000の任意の整数を許容し、
+範囲外、非整数、複数値、重複、condition方向・target policy・operation semanticsの不一致はartifact生成を
+失敗させる。無条件operationはseries先頭の最大1件に限る。HP条件を満たさないmemberは`notApplied`であり、
+skill全体を`unsupported`にしない。
 
 raw target teamはtarget typeと同時にcanonical target policyへ正規化する。敵側actorへ適用される
 同型effectを攻撃役自身のmodifierへroutingしない。
 
 ### battle execution
 
-series memberは一つのdecision keyを共有する。decision OFFなら全memberが不適用、ONなら各memberの
+series memberは一つのdecision keyを共有するが、operation IDはoccurrenceごとに一意である。decision OFFなら全memberが不適用、ONなら各memberの
 conditionを順序どおり評価する。成立しない閾値だけを`notApplied`とし、他memberやeffect全体を
 unsupportedにしない。operation resultとevidenceは集約せず、trace上でoccurrenceごとに保持する。
 
@@ -62,7 +68,7 @@ Webは`EffectControlViewModel`を汎用rendererで表示する。
 
 ## Validation rules
 
-- `inputThresholdSeries`のmemberは同じskill、input key、modifier routing、target policyを持つ。
+- threshold seriesのmemberは同じskill、quantity/input key、condition semantics、modifier routing、target policyを持つ。
 - 閾値はcanonical domain内の整数で、重複してはならない。
 - threshold conditionの方向とquantity ownerがseries内で一致する。
 - UI controlを切り替えたとき、decision、operation outcome、final input、damageのいずれかが変化する。
@@ -70,6 +76,6 @@ Webは`EffectControlViewModel`を汎用rendererで表示する。
 
 ## Consequences
 
-master schemaは28、artifactはv51、engineは16.0.0となる。scenario、共有、保存形式は変更しない。
+master schemaは29、artifactはv53、engineは17.0.0となる。scenario、共有、保存形式は変更しない。
 E4は`EffectControlViewModel`ではなく、同じcanonical input resolver、decision command、executor、damage
 resolutionを再利用する。

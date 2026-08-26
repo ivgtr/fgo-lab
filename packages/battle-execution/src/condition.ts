@@ -8,6 +8,19 @@ const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
   unremovableStateTraits: 'include',
 };
 
+export function conditionRequiresQuantity(
+  condition: ConditionExpression,
+  quantity: Extract<ConditionExpression, { kind: 'quantity' }>['quantity'],
+): boolean {
+  if (condition.kind === 'quantity') return condition.quantity === quantity;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some((expression) =>
+      conditionRequiresQuantity(expression, quantity),
+    );
+  if (condition.kind === 'not') return conditionRequiresQuantity(condition.expression, quantity);
+  return false;
+}
+
 function requiresProvenanceDecision(readPolicy: TraitReadPolicy | undefined): boolean {
   return (
     readPolicy !== undefined &&

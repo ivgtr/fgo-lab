@@ -138,6 +138,95 @@ describe('canonical special input application boundary', () => {
     ).toHaveLength(10);
   });
 
+  it('evaluates one Tonelico skill decision as an ordered cumulative HP threshold series', () => {
+    const servant = master.servants.find((candidate) => candidate.id === '505300')!;
+    const skill = servant.skills.find((candidate) => candidate.id === '2239550')!;
+    const series = skill.effects.filter(
+      (effect) => effect.interaction?.kind === 'quantityThresholdSeries',
+    );
+    expect(series).toHaveLength(5);
+    expect(new Set(series.map((effect) => effect.interaction?.key)).size).toBe(1);
+    expect(series.map((effect) => effect.quantityConditions)).toEqual([
+      [],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 990 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 750 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
+      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 250 }],
+    ]);
+    expect(series.map((effect) => effect.atlasEvidence.buffConditionKeys)).toEqual([
+      [],
+      ['HP_LOWER'],
+      ['HP_LOWER'],
+      ['HP_LOWER'],
+      ['HP_LOWER'],
+    ]);
+
+    const { scenario, calculation } = calculate('505300');
+    const control = calculation.effectControls.find(
+      (candidate) => candidate.operationIds.length === 5,
+    )!;
+    expect(control).toMatchObject({
+      valueDisplay: 'sum',
+      projection: {
+        label: '攻撃力アップ',
+        requiredQuantity: 'attackerHpPermille',
+        requiredQuantityOwner: 'attacker',
+      },
+    });
+    expect(new Set(control.operationIds).size).toBe(5);
+
+    const expected = [
+      [1_000, 0.2, [37_262.615, 49_683.66, 55_894.18, 58_999.44, 62_104.685], 1],
+      [990, 0.3, [40_367.875, 53_824, 60_552.07, 63_916.09, 67_280.115], 2],
+      [760, 0.3, [40_367.875, 53_824, 60_552.07, 63_916.09, 67_280.115], 2],
+      [750, 0.4, [43_473.15, 57_964.375, 65_209.955, 68_832.755, 72_455.565], 3],
+      [510, 0.4, [43_473.15, 57_964.375, 65_209.955, 68_832.755, 72_455.565], 3],
+      [500, 0.5, [46_578.4, 62_104.685, 69_867.85, 73_749.425, 77_631], 4],
+      [260, 0.5, [46_578.4, 62_104.685, 69_867.85, 73_749.425, 77_631], 4],
+      [250, 0.6, [49_683.655, 66_245.04, 74_525.74, 78_666.06, 82_806.43], 5],
+      [0, 0.6, [49_683.655, 66_245.04, 74_525.74, 78_666.06, 82_806.43], 5],
+    ] as const;
+    const versions = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP' as const,
+      masterDataLocale: 'ja-JP' as const,
+      masterDataVersion: master.version,
+    };
+    for (const [hp, attackBuff, averages, appliedCount] of expected) {
+      const hpScenario = { ...scenario, attackerHpPermille: hp };
+      const disabled = calculateScenario(hpScenario, master, versions);
+      expect(disabled.input.attackBuff, `disabled at HP ${String(hp)}`).toBe(0);
+      expect(
+        disabled.effects
+          .filter((effect) => control.operationIds.includes(effect.operationId))
+          .every((effect) => effect.outcome === 'notApplied'),
+        `disabled outcomes at HP ${String(hp)}`,
+      ).toBe(true);
+
+      const enabled = calculateScenario(
+        applyEffectProjectionDecision(hpScenario, control.projection, true, calculation.effects),
+        master,
+        versions,
+      );
+      expect(enabled.result.status).toBe('calculated');
+      expect(enabled.input.attackBuff, `HP ${String(hp)}`).toBe(attackBuff);
+      expect(
+        enabled.result.status === 'calculated' ? enabled.result.rows.map((row) => row.average) : [],
+      ).toEqual(averages);
+      expect(
+        enabled.effects.filter(
+          (effect) =>
+            control.operationIds.includes(effect.operationId) && effect.outcome === 'applied',
+        ),
+      ).toHaveLength(appliedCount);
+      expect(
+        enabled.effectControls.find((candidate) => candidate.key === control.key)?.projection.value,
+      ).toBe(attackBuff);
+    }
+  });
+
   it('does not project input consumed only by a non-damage operation', () => {
     const { calculation } = calculate('3300200');
     expect(calculation.inputDefinitions.some((input) => input.kind === 'friendshipLevel')).toBe(
