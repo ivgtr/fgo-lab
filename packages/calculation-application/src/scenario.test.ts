@@ -321,8 +321,31 @@ describe('scenario calculation facade', () => {
     expect(fieldSelected.result.status).toBe('calculated');
     expect(fieldSelected.input.fieldTraits).toEqual(['fieldSunlight']);
     expect(fieldSelected.input.attackBuff).toBe(0.3);
+    expect(fieldSelected.effects.find((effect) => effect.label === 'sunshine-power')).toMatchObject(
+      {
+        controllability: 'user',
+        decision: { state: 'enabled' },
+        outcome: 'applied',
+      },
+    );
     expect(fieldSelected.effects.find((effect) => effect.label === 'field mutation')?.outcome).toBe(
       'applied',
+    );
+
+    const fieldDisabled = calculateScenario(
+      applyEffectProjectionDecision(
+        scenario,
+        fieldSelected.effects.find((effect) => effect.label === 'sunshine-power')!,
+        false,
+      ),
+      linkedMaster,
+      versionContext,
+    );
+    expect(fieldDisabled.result.status).toBe('calculated');
+    expect(fieldDisabled.input.fieldTraits).toEqual([]);
+    expect(fieldDisabled.input.attackBuff).toBe(0);
+    expect(fieldDisabled.effects.find((effect) => effect.label === 'field mutation')?.outcome).toBe(
+      'notApplied',
     );
 
     const alternativeSelected = calculateScenario(

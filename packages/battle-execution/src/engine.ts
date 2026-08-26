@@ -809,7 +809,8 @@ function projectionFor(
   const userControllable =
     operation.decisionKey !== null &&
     (operation.decisionPlan.activation === 'user' ||
-      (operation.decisionPlan.condition === 'userMayAssume' && !conditionSatisfiedInternally));
+      (operation.decisionPlan.condition === 'userMayAssume' &&
+        (!conditionSatisfiedInternally || choice !== undefined)));
   return {
     projectionKey: operation.decisionKey ?? operation.operationId,
     operationId: operation.operationId,

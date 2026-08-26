@@ -1029,6 +1029,50 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
 });
 
+test('Gareth commits hidden sunlight only while its linked NP effect is selected', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('ガレス');
+  await attackerDialog.getByRole('button', { name: /ガレス.*セイバー.*Lv80/ }).click();
+
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const sunlightPower = ownEffects.getByRole('button', { name: /攻撃力アップ/ });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  const np1Average = table
+    .getByRole('row', { name: /NP1.*現在/ })
+    .locator('td')
+    .first();
+  await expect(np1Average).toHaveText(/\d/);
+  const initialAverage = await np1Average.textContent();
+
+  await expect(ownEffects).not.toContainText('フィールドセット');
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
+  await sunlightPower.click();
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'true');
+  await expect(np1Average).not.toHaveText(initialAverage ?? '');
+
+  await page.getByText('計算内訳・根拠・仮定・警告').click();
+  await expect(
+    page.getByText(/attackerSkill:addTrait:.*8411:0:add-field:fieldSunlight:applied/),
+  ).toBeVisible();
+
+  await sunlightPower.click();
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
+  await expect(np1Average).toHaveText(initialAverage ?? '');
+  await expect(
+    page.getByText(/attackerSkill:addTrait:.*8411:0:add-field:fieldSunlight:notApplied/),
+  ).toBeVisible();
+});
+
 test('OR condition effects stay operable and causal at PC, 390px, and 320px', async ({ page }) => {
   await page.goto('/');
   await completeSetup(page);

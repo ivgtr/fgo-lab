@@ -1337,6 +1337,9 @@ describe('production master damage quality ratchet', () => {
     expect(garethSelected.input.fieldTraits).toEqual(['fieldSunlight']);
     expect(garethSelected.input.attackBuff).toBeCloseTo(0.3);
     expect(
+      garethSelected.effects.find((effect) => effect.projectionKey === sunlightPower.projectionKey),
+    ).toMatchObject({ controllability: 'user', decision: { state: 'enabled' } });
+    expect(
       garethSelected.effects.find((effect) => effect.label === 'フィールドセット〔陽射し〕'),
     ).toMatchObject({ visibility: 'hidden', outcome: 'applied' });
 
