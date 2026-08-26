@@ -187,7 +187,7 @@ export function prepareOrderedScenario(
     const np = getPrimaryNoblePhantasm(attacker)!;
     const condition = npCondition(damage, baseInput.overcharge);
     const npDecisionPlan = {
-      activation: 'automatic' as const,
+      activation: condition.kind === 'always' ? ('automatic' as const) : ('user' as const),
       condition: containsUnsupportedCondition(condition)
         ? ('unsupported' as const)
         : requiresUserAssumption(condition)
@@ -220,7 +220,7 @@ export function prepareOrderedScenario(
       source,
       condition,
       decisionKey:
-        npDecisionPlan.condition === 'userMayAssume'
+        npDecisionPlan.activation === 'user' || npDecisionPlan.condition === 'userMayAssume'
           ? `np:${attacker.id}:${damage.functionId}:condition`
           : null,
       decisionPlan: npDecisionPlan,

@@ -506,6 +506,8 @@ describe('scenario calculation facade', () => {
       outcome: 'notApplied',
       explanation: { code: 'unresolved' },
       value: 1.5,
+      controllability: 'user',
+      decision: { state: 'enabled', plan: { activation: 'user' } },
     });
     expect(inactive.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
 
@@ -527,6 +529,21 @@ describe('scenario calculation facade', () => {
       explanation: { code: 'applied' },
     });
     expect(active.result.status).toBe('calculated');
+
+    const excluded = calculateScenario(
+      applyEffectProjectionDecision(
+        applyEffectConditionDecision(scenario, condition!, true),
+        condition!,
+        false,
+      ),
+      conditionalMaster,
+      { ...versions, masterDataVersion: conditionalMaster.version },
+    );
+    expect(excluded.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(
+      excluded.effects.find((effect) => effect.projectionKey === condition!.projectionKey),
+    ).toMatchObject({ outcome: 'notApplied', explanation: { code: 'disabled' } });
+    expect(excluded.result.status).toBe('calculated');
   });
 
   it('applies one exclusive conditional modifier and fails closed when both are selected', () => {
