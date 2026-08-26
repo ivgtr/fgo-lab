@@ -11,13 +11,13 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 
 ## E3.10 効果包含・発動条件・確率結果の分離
 
-E4ランキング統合前に、`automatic`へ混在した計算包含、ゲーム内発動、条件評価、確率結果、UI表示可否を中央置換する。正本はADR 015とし、visibleな確定火力effectは既定includeかつ比較除外可能、確率effectは未指定時`inputRequired`とする。
+E4ランキング統合前に、`automatic`へ混在した計算包含、ゲーム内発動、条件評価、確率結果、UI表示可否を中央置換する。正本はADR 015とし、visibleな確定火力effectは既定includeかつ比較除外可能、単純確率effectは既定ONの成功scenarioとOFFの失敗scenarioで表す。連鎖判定だけを成功回数入力へ集約する。
 
 実装順序は次とする。
 
 1. productionのvisible automatic、混在label群、`Rate`保有damage effectを固定する。
 2. master IRへinclusion policy、activation kind、proc model、source presentationを追加し、raw `Rate`をdata-pipelineでのみ解釈する。
-3. scenario decisionを包含とcondition satisfactionへ分離し、proc結果はcanonical inputとして保存する。
+3. scenario decisionを包含とcondition satisfactionへ分離する。単純procはeffect decision、連鎖procはcanonical成功回数として保存する。
 4. executorで包含、condition、procを順に評価し、effect transactionの失敗時は部分commitしない。
 5. applicationがtoggle、single choice、proc success、proc success countをview model化し、Webは汎用rendererだけを持つ。
 6. schema、artifact、engineを更新し、旧decision形式のfallbackを残さない。
