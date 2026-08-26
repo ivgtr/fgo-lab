@@ -24,16 +24,29 @@ function expressionShape(expression: ModifierValueExpression | null) {
 function operationSemanticIdentity(operation: EffectExecutionOperation): string {
   if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
     return JSON.stringify(operation);
-  const {
-    values: _values,
-    limitBreakValues: _limitBreakValues,
-    valueExpressions,
-    limitBreakValueExpressions: _limitBreakValueExpressions,
-    ...semantics
-  } = operation;
+  const semantics =
+    operation.kind === 'damageModifier'
+      ? {
+          kind: operation.kind,
+          modifier: operation.modifier,
+          sign: operation.sign,
+          card: operation.card,
+          targetPolicy: operation.targetPolicy,
+          expectedRecipient: operation.expectedRecipient,
+          targetMismatch: operation.targetMismatch,
+          semanticSupport: operation.semanticSupport,
+        }
+      : {
+          kind: operation.kind,
+          modifier: operation.modifier,
+          targetPolicy: operation.targetPolicy,
+          expectedRecipient: operation.expectedRecipient,
+          targetMismatch: operation.targetMismatch,
+          semanticSupport: operation.semanticSupport,
+        };
   return JSON.stringify({
     ...semantics,
-    valueExpressionShape: valueExpressions.map((set) => set.map(expressionShape)),
+    valueExpressionShape: operation.valueExpressions.map((set) => set.map(expressionShape)),
   });
 }
 
