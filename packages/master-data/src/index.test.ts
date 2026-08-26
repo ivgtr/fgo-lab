@@ -18,8 +18,17 @@ const nonDamageEffect = {
   choice: null,
   triggerScope: null,
   operationTrigger: null,
+  operationReference: null,
+  stateIdentity: null,
+  traitReadPolicy: {
+    stateSources: 'activeOnly' as const,
+    ignoredStateTraits: 'exclude' as const,
+    unremovableStateTraits: 'include' as const,
+  },
   quantityConditions: [],
   sourceQuantityConditions: [],
+  contextInputs: [],
+  contextQuantityConditions: [],
   conditions: {
     recipient: [],
     holder: { operator: 'all' as const, traits: [] },

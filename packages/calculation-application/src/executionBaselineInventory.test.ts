@@ -83,7 +83,7 @@ describe('E0 production master execution inventory', () => {
       traitCount: 20,
       traitExpression: 1,
     });
-    expect(conditionOperators).toEqual(['all', 'any', 'partial']);
+    expect(conditionOperators).toEqual(['all', 'any']);
     expect(contextProducers.length).toBeGreaterThan(0);
     expect(contextConsumers.length).toBeGreaterThan(0);
     expect(sorted(effects.map((effect) => effect.atlasEvidence.functionType))).toMatchSnapshot(
@@ -116,7 +116,7 @@ describe('E0 production master execution inventory', () => {
           }, {}),
         ).sort(),
       ),
-    ).toEqual({ contextTraitId: 73, modifier: 3_738, modifierRate: 1, nonDamage: 6_628 });
+    ).toEqual({ contextTraitId: 73, modifier: 3_739, modifierRate: 1, nonDamage: 6_627 });
   });
 
   it('locks mandatory real-master scenarios without production branching', async () => {

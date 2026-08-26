@@ -1,28 +1,17 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { gunzipSync } from 'node:zlib';
+import type { EffectDecision, WorldFactAssertion } from '@fgo-lab/battle-execution';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { applyEffectProjectionDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
 
-function withoutVersionEvidence(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutVersionEvidence);
-  if (!value || typeof value !== 'object') return value;
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .filter(
-        ([key]) => !['versions', 'masterDataVersion', 'engineVersion', 'evidence'].includes(key),
-      )
-      .map(([key, child]) => [key, withoutVersionEvidence(child)]),
-  );
-}
-
 describe('production execution parity ratchet', () => {
-  it('reproduces the 1,954 pre-MLB-fix scenarios exactly', async () => {
+  it('reproduces every scenario that was calculated before unsupported convergence', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
@@ -34,35 +23,46 @@ describe('production execution parity ratchet', () => {
       masterDataLocale: 'ja-JP' as const,
       masterDataVersion: master.version,
     };
-    const records: unknown[] = [];
-    let defaults = 0;
-    let selected = 0;
-    for (const servant of master.servants) {
-      let scenario;
-      try {
-        scenario = createDefaultResolvedScenario(master, undefined, servant);
-      } catch {
-        continue;
-      }
-      const initial = calculateScenario(scenario, master, versions);
-      records.push(['default', servant.id, withoutVersionEvidence(initial)]);
-      defaults += 1;
-      for (const projection of initial.effects.filter(
-        (effect) => effect.controllability === 'user',
-      )) {
-        const decision = applyEffectProjectionDecision(scenario, projection, true);
-        records.push([
-          'selected',
-          servant.id,
-          projection.projectionKey,
-          withoutVersionEvidence(calculateScenario(decision, master, versions)),
-        ]);
-        selected += 1;
-      }
-    }
-    expect({ defaults, selected }).toEqual({ defaults: 420, selected: 1_534 });
+    const fixture = JSON.parse(
+      gunzipSync(
+        await readFile(
+          resolve(
+            root,
+            'packages/test-fixtures/golden/pre-existing-calculated-scenarios-v1.json.gz',
+          ),
+        ),
+      ).toString('utf8'),
+    ) as {
+      version: 1;
+      cases: Array<{
+        key: string;
+        attackerId: string;
+        effectDecisions: EffectDecision[];
+        worldFactAssertions: WorldFactAssertion[];
+      }>;
+    };
+    const records = fixture.cases.map((testCase) => {
+      const servant = master.servants.find((candidate) => candidate.id === testCase.attackerId)!;
+      const baseline = createDefaultResolvedScenario(master, undefined, servant);
+      const scenario = {
+        ...baseline,
+        attackerHpPermille: null,
+        battleState: { battlePointPhase: null },
+        battleContext: { values: {} },
+        effectDecisions: testCase.effectDecisions,
+        worldFactAssertions: testCase.worldFactAssertions,
+      };
+      const calculation = calculateScenario(scenario, master, versions);
+      expect(calculation.result.status, testCase.key).toBe('calculated');
+      return {
+        key: testCase.key,
+        input: calculation.input,
+        rows: calculation.result.rows,
+      };
+    });
+    expect(records).toHaveLength(1_504);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '825dcf95b265e585cce9343ed6d4b7a180f531794ca3f0e173516220c5d0bc3a',
+      '3a13bdfbc13c83e0279ee58311dd212537ed6c667a9d290f97be3916a9fea6ec',
     );
   }, 30_000);
 });

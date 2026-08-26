@@ -74,8 +74,17 @@ function modifierEffect(
     choice: null,
     triggerScope: null,
     operationTrigger: null,
+    operationReference: null,
+    stateIdentity: null,
+    traitReadPolicy: {
+      stateSources: 'activeOnly' as const,
+      ignoredStateTraits: 'exclude' as const,
+      unremovableStateTraits: 'include' as const,
+    },
     quantityConditions: [],
     sourceQuantityConditions: [],
+    contextInputs: [],
+    contextQuantityConditions: [],
     conditions,
     conditionTargetPolicy: targetPolicy,
     execution:
@@ -772,7 +781,16 @@ describe('scenario calculation facade', () => {
     });
     const hell = initial.effects.find((effect) => effect.label === 'hell-power')!;
     const conflict = calculateScenario(
-      applyEffectProjectionDecision(scenario, hell, true),
+      {
+        ...scenario,
+        effectDecisions: [
+          {
+            decisionKey: hell.projectionKey,
+            operationEnabled: true,
+            conditionSatisfaction: 'assumeSatisfied' as const,
+          },
+        ],
+      },
       transactionalMaster,
       { ...versions, masterDataVersion: transactionalMaster.version },
     );

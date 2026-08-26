@@ -13,6 +13,7 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
     value: 0.3,
     requiredQuantity: null,
     requiredQuantityOwner: null,
+    requiredInputs: [],
     modifier: 'attackBuff',
     source: {
       origin: 'attacker',

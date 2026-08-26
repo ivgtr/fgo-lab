@@ -8,6 +8,7 @@ import {
   validateCalculationShareSnapshot,
 } from './share';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
+import productionFixture from '../../public/master/master.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   applyEffectProjectionDecision,
@@ -54,6 +55,35 @@ describe('portable input limits', () => {
     const restored = readShareFragment(`#${createShareFragment(snapshot)}`);
 
     expect(restored && validateCalculationShareSnapshot(restored, master)).toEqual(snapshot);
+  });
+
+  it('re-derives canonical count minima when a shared scenario omits explicit counts', () => {
+    const productionMaster = masterSnapshotSchema.parse(productionFixture);
+    const servant = productionMaster.servants.find((candidate) => candidate.id === '1102000')!;
+    const scenario = createDefaultResolvedScenario(productionMaster, undefined, servant);
+    const productionVersions = {
+      ...versions,
+      masterDataVersion: productionMaster.version,
+    };
+    const calculation = calculateScenario(scenario, productionMaster, productionVersions);
+    const snapshot: CalculationShareSnapshot = {
+      kind: 'fgo-lab-calculation-share',
+      schemaVersion: SCHEMA_VERSION,
+      sharedAt: '2026-08-26T00:00:00.000Z',
+      scenario,
+      result: calculation.result,
+    };
+
+    expect(scenario.battleContext.values).toEqual({});
+    const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
+    expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
+    const recalculated = calculateScenario(restored.scenario, productionMaster, productionVersions);
+    expect(recalculated.input.npDamageBuff).toBe(0.2);
+    expect(
+      recalculated.contextInputs
+        .filter((input) => input.kind === 'matchingActorCount')
+        .map((input) => input.defaultValue),
+    ).toEqual([1, 1]);
   });
 
   it('rejects a shared result that does not match its scenario', () => {
@@ -143,8 +173,30 @@ describe('portable input limits', () => {
                   choice: null,
                   triggerScope: null,
                   operationTrigger: null,
+                  operationReference: null,
+                  stateIdentity: null,
+                  traitReadPolicy: {
+                    stateSources: 'activeOnly',
+                    ignoredStateTraits: 'exclude',
+                    unremovableStateTraits: 'include',
+                  },
                   quantityConditions: [],
                   sourceQuantityConditions: [],
+                  contextInputs: [
+                    {
+                      key: 'field:enemyCount',
+                      kind: 'fieldActorCount',
+                      owner: 'field',
+                      label: '敵の数',
+                      description: '宝具対象を含む生存中の敵数',
+                      minimum: 1,
+                      maximum: 3,
+                      step: 1,
+                      defaultValue: 1,
+                      defaultReason: '単体対象1体',
+                    },
+                  ],
+                  contextQuantityConditions: [],
                   conditions: {
                     recipient: [{ operator: 'any', traits: [] }],
                     holder: { operator: 'any', traits: [] },
@@ -251,6 +303,28 @@ describe('portable input limits', () => {
     );
     expect(recalculated.input.powerMod).toBe(0);
     expect(() => validateCalculationShareSnapshot(snapshot, craftedMaster)).toThrow(
+      'share_result_mismatch',
+    );
+
+    const invalidContextScenario = {
+      ...selected,
+      battleContext: { values: { 'field:enemyCount': 0 } },
+    };
+    const invalidContext = calculateScenario(
+      invalidContextScenario,
+      craftedMaster,
+      craftedVersions,
+    );
+    const invalidSnapshot = {
+      ...snapshot,
+      scenario: invalidContextScenario,
+      result: compatibleResult,
+    };
+    const decoded = readShareFragment(`#${createShareFragment(invalidSnapshot)}`)!;
+    if (decoded.scenario.mode !== 'resolved') throw new Error('resolved share required');
+    expect(decoded.scenario.battleContext.values).toEqual({ 'field:enemyCount': 0 });
+    expect(invalidContext.result).toMatchObject({ status: 'inputRequired', rows: [] });
+    expect(() => validateCalculationShareSnapshot(decoded, craftedMaster)).toThrow(
       'share_result_mismatch',
     );
   });

@@ -35,6 +35,7 @@ describe('attacker skill mutation activation planning', () => {
       activation: { kind: 'sourceDefault' as const },
       evidence: { rawPath: 'test', functionId: '100', parameterKeys: [] },
       presentation: { label: 'test', sourceName: 'test', skillName: 'test' },
+      contextInputs: [],
     };
     const mutation = {
       ...base,

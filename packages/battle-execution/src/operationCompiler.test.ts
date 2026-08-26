@@ -27,8 +27,17 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
     choice: null,
     triggerScope: null,
     operationTrigger: null,
+    operationReference: null,
+    stateIdentity: null,
     quantityConditions: [],
     sourceQuantityConditions: [],
+    contextInputs: [],
+    contextQuantityConditions: [],
+    traitReadPolicy: {
+      stateSources: 'activeOnly',
+      ignoredStateTraits: 'exclude',
+      unremovableStateTraits: 'include',
+    },
     conditions: {
       recipient: [],
       holder: { operator: 'all', traits: [] },
@@ -66,6 +75,7 @@ function source(execution: EffectExecutionOperation[], limitBreak = false): Sour
     sourceInstanceId: 'craftEssence:1',
     sourceId: '1',
     sourceName: '礼装',
+    sourceTraits: [],
     skillId: 'ce:1',
     skillName: '礼装',
     effect: effect(execution),
@@ -73,6 +83,21 @@ function source(execution: EffectExecutionOperation[], limitBreak = false): Sour
     valueIndex: 0,
     limitBreak,
     enabledByDefault: true,
+  };
+}
+
+function supportSource(execution: EffectExecutionOperation[]): SourceEffect {
+  return {
+    ...source(execution),
+    phase: 'support',
+    origin: 'support',
+    sourceInstanceId: 'support:leonidas',
+    sourceId: '300900',
+    sourceName: 'レオニダス一世',
+    skillId: '49650',
+    skillName: '殿の矜持',
+    limitBreak: false,
+    enabledByDefault: false,
   };
 }
 
@@ -95,6 +120,75 @@ function modifier(
 }
 
 describe('canonical operation compilation', () => {
+  it('derives matching-count defaults from canonical source and target guarantees', () => {
+    const sourceCount = source([modifier('npDamageBuff', 0)]);
+    sourceCount.sourceTraits = ['king'];
+    sourceCount.effect = {
+      ...sourceCount.effect,
+      contextInputs: [
+        {
+          key: 'effect:count',
+          kind: 'matchingActorCount',
+          owner: 'field',
+          label: '〔王〕一致数',
+          description: 'final count',
+          minimum: 0,
+          maximum: 6,
+          step: 1,
+          defaultValue: null,
+          defaultReason: 'derived',
+          countSemantics: {
+            population: 'allActors',
+            aliveOnly: true,
+            sourcePredicate: {
+              counting: 'matchingClauses',
+              clauses: [[{ kind: 'trait', trait: { name: 'king', negative: false } }]],
+            },
+            otherPredicate: null,
+          },
+        },
+      ],
+    };
+    const sourceCompiled = compileEffect(sourceCount, 0);
+    expect(sourceCompiled.operations[0]?.contextInputs[0]).toMatchObject({
+      minimum: 1,
+      defaultValue: 1,
+    });
+
+    const enemyCount = source([modifier('npDamageBuff', 0)]);
+    enemyCount.effect = {
+      ...enemyCount.effect,
+      contextInputs: [
+        {
+          key: 'effect:enemies',
+          kind: 'matchingActorCount',
+          owner: 'field',
+          label: '敵の合計数',
+          description: 'final count',
+          minimum: 0,
+          maximum: 3,
+          step: 1,
+          defaultValue: null,
+          defaultReason: 'derived',
+          countSemantics: {
+            population: 'enemies',
+            aliveOnly: true,
+            sourcePredicate: null,
+            otherPredicate: {
+              counting: 'matchingClauses',
+              clauses: [[{ kind: 'actorProperty', property: 'inBattle' }]],
+            },
+          },
+        },
+      ],
+    };
+    const enemyCompiled = compileEffect(enemyCount, 0);
+    expect(enemyCompiled.operations[0]?.contextInputs[0]).toMatchObject({
+      minimum: 1,
+      defaultValue: 1,
+    });
+  });
+
   it('compiles every operation in canonical order', () => {
     const compiled = compileEffect(
       source([
@@ -159,6 +253,50 @@ describe('canonical operation compilation', () => {
     expect(compiled.operations.map((operation) => operation.operationId)).toEqual([
       'craftEssence:craftEssence:1:ce:1:1:0:modifier:attackBuff',
       'craftEssence:craftEssence:1:ce:1:1:0:modifier:attackBuff:1',
+    ]);
+  });
+
+  it('binds a support-owned HP expression to a typed source context input', () => {
+    const hpModifier: EffectExecutionOperation = {
+      kind: 'damageModifier',
+      targetPolicy: 'partyMember',
+      expectedRecipient: 'attacker',
+      targetMismatch: 'unsupported',
+      semanticSupport: 'supported',
+      modifier: 'attackBuff',
+      sign: 1,
+      card: null,
+      values: values(100),
+      valueExpressions: [
+        [{ kind: 'inverseHpLinear', basePermille: 100, bonusAtZeroHpPermille: 300 }],
+        [],
+        [],
+        [],
+        [],
+      ],
+    };
+    const compiled = compileEffect(supportSource([hpModifier]), 0);
+    expect(compiled.unsupported).toEqual([]);
+    expect(compiled.operations).toMatchObject([
+      {
+        kind: 'addModifier',
+        valueExpression: {
+          kind: 'inverseHpLinear',
+          quantitySource: {
+            kind: 'battleContext',
+            inputKey: 'source:support:support:leonidas:hpPermille',
+          },
+        },
+        contextInputs: [
+          {
+            kind: 'sourceHpPermille',
+            owner: 'source',
+            minimum: 0,
+            maximum: 1_000,
+            defaultValue: 1_000,
+          },
+        ],
+      },
     ]);
   });
 });

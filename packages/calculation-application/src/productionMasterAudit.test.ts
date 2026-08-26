@@ -265,16 +265,38 @@ describe('production master damage quality ratchet', () => {
     const supportHpEffect = supportBaseline.effects.find(
       (effect) =>
         effect.source.origin === 'support' &&
-        effect.requiredQuantity === 'attackerHpPermille' &&
-        effect.requiredQuantityOwner === 'source',
+        effect.requiredInputs.some((input) => input.kind === 'sourceHpPermille'),
     )!;
-    const unresolvedSupportHp = calculateScenario(
+    const sourceHpInput = supportHpEffect.requiredInputs.find(
+      (input) => input.kind === 'sourceHpPermille',
+    )!;
+    const fullHp = calculateScenario(
       applyEffectProjectionDecision(supportScenario, supportHpEffect, true),
       master,
       versions,
     );
-    expect(unresolvedSupportHp.result.status).toBe('unsupported');
-    expect(unresolvedSupportHp.input.attackBuff).toBe(0);
+    const halfHpScenario = {
+      ...supportScenario,
+      battleContext: { values: { [sourceHpInput.key]: 500 } },
+    };
+    const halfHpBaseline = calculateScenario(halfHpScenario, master, versions);
+    const halfHp = calculateScenario(
+      applyEffectProjectionDecision(
+        halfHpScenario,
+        halfHpBaseline.effects.find(
+          (effect) => effect.projectionKey === supportHpEffect.projectionKey,
+        )!,
+        true,
+      ),
+      master,
+      versions,
+    );
+    expect(fullHp.result.status).toBe('calculated');
+    expect(halfHp.result.status).toBe('calculated');
+    expect(halfHp.input.attackBuff).toBeGreaterThan(fullHp.input.attackBuff);
+    expect(
+      halfHp.effects.find((effect) => effect.projectionKey === supportHpEffect.projectionKey),
+    ).toMatchObject({ outcome: 'applied', executionSupport: 'supported' });
   });
 
   it('executes action candidates locally and rejects different candidates together', async () => {
@@ -354,8 +376,10 @@ describe('production master damage quality ratchet', () => {
       masterDataVersion: master.version,
     };
     const baseline = calculateScenario(scenario, master, versions);
-    const guarded = baseline.effects.filter((effect) =>
-      JSON.stringify(effect.explanation.condition).includes('sourceQuantity'),
+    const guarded = baseline.effects.filter(
+      (effect) =>
+        effect.modifier !== null &&
+        JSON.stringify(effect.explanation.condition).includes('sourceQuantity'),
     );
     expect(guarded).toHaveLength(3);
     expect(guarded.every((effect) => effect.controllability === 'user')).toBe(true);
@@ -401,7 +425,7 @@ describe('production master damage quality ratchet', () => {
     );
   });
 
-  it('fails closed on an unresolved automatic NP-card pre-damage reference', async () => {
+  it('resolves an automatic NP-card pre-damage reference at artifact build time', async () => {
     const master = await loadProductionMaster();
     const servant = master.servants.find((candidate) => candidate.id === '506000')!;
     const calculation = calculateScenario(
@@ -419,12 +443,15 @@ describe('production master damage quality ratchet', () => {
     const preDamageReference = calculation.effects.find(
       (effect) => effect.label === '宝具攻撃ダメージ前追加効果',
     );
-    expect(calculation.result.status).toBe('unsupported');
-    expect(calculation.result.rows).toEqual([]);
-    expect(preDamageReference).toMatchObject({
-      controllability: 'automatic',
-      outcome: 'unsupported',
-      decision: { state: 'none' },
+    expect(calculation.result.status).toBe('calculated');
+    expect(calculation.result.rows).toHaveLength(5);
+    expect(preDamageReference).toBeUndefined();
+    expect(
+      servant.noblePhantasms
+        .flatMap((np) => np.effects)
+        .find((effect) => effect.operationReference?.skillId === '970936'),
+    ).toMatchObject({
+      operationReference: { kind: 'resolvedSkill', levelSource: 'secondaryValueParameter' },
     });
   });
 
@@ -522,12 +549,14 @@ describe('production master damage quality ratchet', () => {
         effect.skillName === '望月に踊る A' &&
         effect.label === '日輪',
     )!;
-    const busterAttack = baseline.effects.find(
+    const busterFormScenario = applyEffectProjectionDecision(scenario, busterForm, true);
+    const withBusterForm = calculateScenario(busterFormScenario, master, versions);
+    const busterAttack = withBusterForm.effects.find(
       (effect) =>
         effect.modifier === 'attackBuff' &&
         JSON.stringify(effect.explanation.condition).includes('traitId:3121'),
     )!;
-    const busterNp = baseline.effects.find(
+    const busterNp = withBusterForm.effects.find(
       (effect) =>
         effect.modifier === 'npDamageBuff' &&
         JSON.stringify(effect.explanation.condition).includes('traitId:3121'),
@@ -547,9 +576,9 @@ describe('production master damage quality ratchet', () => {
       ),
     ).toMatchObject({ controllability: 'automatic', outcome: 'applied' });
 
-    const busterScenario = [busterForm, busterAttack, busterNp].reduce(
+    const busterScenario = [busterAttack, busterNp].reduce(
       (current, effect) => applyEffectProjectionDecision(current, effect, true),
-      scenario,
+      busterFormScenario,
     );
     const buster = calculateScenario(busterScenario, master, versions);
     expect(buster.result.status).toBe('calculated');
@@ -814,7 +843,7 @@ describe('production master damage quality ratchet', () => {
       );
       expect(calculation.result.status, String(value)).toBe('unsupported');
       expect(calculation.result.rows, String(value)).toEqual([]);
-      expect(calculation.input.attackerHpPermille, String(value)).toBeNull();
+      expect(calculation.input.attackerHpPermille, String(value)).toBe(1_000);
       expect(calculation.effectWarnings, String(value)).toEqual(
         expect.arrayContaining([
           expect.stringContaining(
@@ -1051,7 +1080,7 @@ describe('production master damage quality ratchet', () => {
     expect(earthAfterConflict.input.powerMod).toBe(0.5);
     expect(earthAfterConflict.effects.find((effect) => effect.label === sky.label)).toMatchObject({
       outcome: 'notApplied',
-      explanation: { code: 'unresolved' },
+      explanation: { code: 'conditionNotMet' },
     });
     expect(earthAfterConflict.effects.find((effect) => effect.label === earth.label)).toMatchObject(
       {
@@ -1305,14 +1334,19 @@ describe('production master damage quality ratchet', () => {
       for (const effect of servant.skills.flatMap((skill) => skill.effects)) {
         if (
           effect.execution.some(
-            (operation) => operation.kind === 'contextMutation' && operation.scope === 'field',
+            (operation) =>
+              operation.kind === 'contextMutation' &&
+              operation.mutation !== 'addQuantity' &&
+              operation.scope === 'field',
           )
         )
           rawFieldMutationCount += 1;
         if (
           effect.execution.some(
             (operation) =>
-              operation.kind === 'contextMutation' && operation.scope === 'recipientState',
+              operation.kind === 'contextMutation' &&
+              operation.mutation !== 'addQuantity' &&
+              operation.scope === 'recipientState',
           )
         )
           rawRecipientMutationCount += 1;
@@ -1328,7 +1362,12 @@ describe('production master damage quality ratchet', () => {
         servant.skills.flatMap((skill) =>
           skill.effects.flatMap((effect) =>
             effect.execution.some((operation) => operation.kind === 'contextMutation')
-              ? [`${skill.id}:${effect.occurrenceId}`]
+              ? effect.execution.some(
+                  (operation) =>
+                    operation.kind === 'contextMutation' && operation.mutation !== 'addQuantity',
+                )
+                ? [`${skill.id}:${effect.occurrenceId}`]
+                : []
               : [],
           ),
         ),
@@ -1336,12 +1375,13 @@ describe('production master damage quality ratchet', () => {
       const mutations = initial.effects.filter(
         (effect) =>
           effect.source.origin === 'attacker' &&
+          effect.modifier === null &&
           rawMutationKeys.has(`${effect.source.skillId}:${effect.source.effectOccurrenceId}`),
       );
       for (const mutation of mutations) {
         const key = `${servant.id}:${mutation.source.skillId}:${mutation.source.effectOccurrenceId}`;
         mutationKeys.push(key);
-        expect(mutation).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
+        expect(mutation, key).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
       }
       for (const projection of initial.effects.filter(
         (effect) => effect.visibility === 'visible' && effect.controllability === 'user',
@@ -1354,6 +1394,7 @@ describe('production master damage quality ratchet', () => {
         for (const mutation of selected.effects.filter(
           (effect) =>
             effect.source.origin === 'attacker' &&
+            effect.modifier === null &&
             effect.outcome === 'applied' &&
             rawMutationKeys.has(`${effect.source.skillId}:${effect.source.effectOccurrenceId}`),
         ))
@@ -1367,9 +1408,9 @@ describe('production master damage quality ratchet', () => {
       .filter((key) => !reachableKeys.has(key))
       .sort((left, right) => left.localeCompare(right));
     expect(rawFieldMutationCount).toBe(15);
-    expect(rawRecipientMutationCount).toBe(15);
-    expect(mutationKeys).toHaveLength(24);
-    expect(reachableKeys.size).toBe(15);
+    expect(rawRecipientMutationCount).toBe(17);
+    expect(mutationKeys).toHaveLength(26);
+    expect(reachableKeys.size).toBe(17);
     expect(unreachableKeys).toEqual([
       '1101500:2180550:20766:0',
       '1101500:2180550:8691:0',

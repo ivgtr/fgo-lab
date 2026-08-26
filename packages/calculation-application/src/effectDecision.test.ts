@@ -36,6 +36,7 @@ describe('effect decision application command', () => {
       value: 0.2,
       requiredQuantity: null,
       requiredQuantityOwner: null,
+      requiredInputs: [],
       modifier: 'attackBuff',
       source: {
         origin: 'support',

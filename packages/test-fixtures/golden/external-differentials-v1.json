@@ -1,7 +1,7 @@
 {
   "description": "公開計算機との入力・出力差分を固定する外部differential",
-  "reviewedAt": "2026-08-25",
-  "engineVersion": "12.15.0",
+  "reviewedAt": "2026-08-26",
+  "engineVersion": "14.0.0",
   "cases": [
     {
       "caseId": "appmedia-lilith-neutral-np5",
@@ -31,6 +31,49 @@
         "maximum": 0,
         "average": "AppMediaは200乱数点の算術平均をoracleとして公開しない"
       }
+    },
+    {
+      "caseId": "appmedia-ashoka-single-enemy-np-buff",
+      "source": "https://appmedia.jp/fategrandorder/78844550",
+      "inputMeaning": "フィールド上の生存中の敵が1体なら宝具威力+50%、2体以上なら非適用。",
+      "input": {
+        "servantId": "305800",
+        "effectOccurrenceId": "249:0",
+        "singleEnemyCount": 1,
+        "multipleEnemyCount": 2
+      },
+      "externalExpected": {
+        "singleEnemyNpDamageBuff": 0.5,
+        "multipleEnemyNpDamageBuff": 0
+      },
+      "fgoLabExpected": {
+        "singleEnemyNpDamageBuff": 0.5,
+        "multipleEnemyNpDamageBuff": 0
+      },
+      "difference": {
+        "condition": 0,
+        "modifier": 0
+      }
+    },
+    {
+      "caseId": "appmedia-john-trait-match-counts",
+      "source": "https://appmedia.jp/fategrandorder/79995691",
+      "sourceImplementation": "https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/models/buff.dart#L201-L280",
+      "inputMeaning": "フィールド上の生存中actorを〔王〕と〔悪〕で別々に数え、同一actorの重複一致を許す。本人は両方へ一致する。",
+      "input": { "servantId": "1102000", "kingMatches": 1, "evilMatches": 1 },
+      "externalExpected": { "npDamageBuff": 0.2 },
+      "fgoLabExpected": { "npDamageBuff": 0.2 },
+      "difference": { "modifier": 0 }
+    },
+    {
+      "caseId": "appmedia-habetrot-enemy-population",
+      "source": "https://appmedia.jp/fategrandorder/80270005",
+      "sourceImplementation": "https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/models/buff.dart#L201-L280",
+      "inputMeaning": "フィールド上の生存中の敵数ごとに宝具威力+10%。現在の宝具対象を含む。",
+      "input": { "servantId": "2801300", "singleEnemyCount": 1, "maximumEnemyCount": 3 },
+      "externalExpected": { "singleEnemyNpDamageBuff": 0.1, "maximumEnemyNpDamageBuff": 0.3 },
+      "fgoLabExpected": { "singleEnemyNpDamageBuff": 0.1, "maximumEnemyNpDamageBuff": 0.3 },
+      "difference": { "modifier": 0 }
     }
   ]
 }

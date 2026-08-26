@@ -17,8 +17,17 @@ const effectContract = {
   choice: null,
   triggerScope: null,
   operationTrigger: null,
+  operationReference: null,
+  stateIdentity: null,
+  traitReadPolicy: {
+    stateSources: 'activeOnly' as const,
+    ignoredStateTraits: 'exclude' as const,
+    unremovableStateTraits: 'include' as const,
+  },
   quantityConditions: [],
   sourceQuantityConditions: [],
+  contextInputs: [],
+  contextQuantityConditions: [],
   atlasEvidence: {
     functionType: 'addStateShort',
     target: 'ptOne',

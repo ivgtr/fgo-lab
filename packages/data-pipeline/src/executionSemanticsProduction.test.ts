@@ -41,16 +41,16 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_322);
-    expect(operations).toHaveLength(13_322);
+    expect(operations).toHaveLength(13_325);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       cardTypeMutation: 12,
-      contextMutation: 55,
-      damageModifier: 3_738,
+      contextMutation: 64,
+      damageModifier: 3_739,
       ignoreDamageCut: 1,
       ignoreDefense: 35,
       modifierRateChange: 1,
-      nonDamage: 9_420,
-      unresolved: 60,
+      nonDamage: 9_418,
+      unresolved: 55,
     });
   });
 
@@ -60,7 +60,8 @@ describe('production canonical execution semantics', () => {
     );
     const effects = allEffects(master);
     let compared = 0;
-    for (const effect of effects)
+    for (const effect of effects) {
+      if (effect.operationReference !== null) continue;
       for (const operation of effect.execution) {
         if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
           continue;
@@ -69,6 +70,7 @@ describe('production canonical execution semantics', () => {
           expect(operation.limitBreakValues).toEqual(evidenceValues(effect, true));
         compared += 1;
       }
+    }
     expect(compared).toBe(3_739);
   });
 
@@ -95,10 +97,10 @@ describe('production canonical execution semantics', () => {
     }
     expect(valueEffects).toHaveLength(10_440);
     expect(purposeCounts).toEqual({
-      modifier: 3_738,
+      modifier: 3_739,
       modifierRate: 1,
       contextTraitId: 73,
-      nonDamage: 6_628,
+      nonDamage: 6_627,
     });
     expect(
       valueEffects
@@ -124,6 +126,144 @@ describe('production canonical execution semantics', () => {
         ),
       ),
     ).toHaveLength(25);
+  });
+
+  it('ratchets build-time referenced skills and their ordered canonical operations', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    expect(
+      allEffects(master)
+        .filter((effect) => effect.operationReference !== null)
+        .map((effect) => ({
+          effectId: effect.id,
+          reference: effect.operationReference,
+          operations: effect.execution.map((operation) => operation.kind),
+        })),
+    ).toEqual([
+      {
+        effectId: '23291',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970869',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['contextMutation', 'nonDamage'],
+      },
+      {
+        effectId: '23560',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970936',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['nonDamage', 'nonDamage'],
+      },
+      {
+        effectId: '2096',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '961313',
+          levelSource: 'skillLevelParameter',
+          defaultLevel: 1,
+        },
+        operations: ['contextMutation', 'damageModifier'],
+      },
+      {
+        effectId: '21814',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970535',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['contextMutation'],
+      },
+    ]);
+  });
+
+  it('retains trait provenance policies instead of reducing them to combined traits', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const counts = allEffects(master).reduce<Record<string, number>>((result, effect) => {
+      const key = [
+        effect.traitReadPolicy.stateSources,
+        effect.traitReadPolicy.ignoredStateTraits,
+        effect.traitReadPolicy.unremovableStateTraits,
+      ].join(':');
+      result[key] = (result[key] ?? 0) + 1;
+      return result;
+    }, {});
+    expect(counts).toEqual({
+      'activeOnly:exclude:include': 13_306,
+      'activeAndPassive:exclude:include': 6,
+      'activeOnly:include:include': 7,
+      'activeOnly:exclude:exclude': 3,
+    });
+  });
+
+  it('keeps linked trait grants and suppressions under one canonical state identity', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const linked = allEffects(master).filter((effect) => effect.stateIdentity !== null);
+    expect(linked).toHaveLength(25);
+    const paired = linked.filter((effect) => effect.stateIdentity?.key === 'trait:2841');
+    expect(
+      paired.map((effect) => ({
+        effectId: effect.id,
+        identity: effect.stateIdentity,
+        operations: effect.execution,
+      })),
+    ).toEqual([
+      {
+        effectId: '9619',
+        identity: { kind: 'linkedTraitFamily', key: 'trait:2841' },
+        operations: [
+          expect.objectContaining({
+            kind: 'contextMutation',
+            mutation: 'addTrait',
+            trait: 'alignmentLawful',
+          }),
+        ],
+      },
+      {
+        effectId: '9620',
+        identity: { kind: 'linkedTraitFamily', key: 'trait:2841' },
+        operations: [
+          expect.objectContaining({
+            kind: 'contextMutation',
+            mutation: 'suppressInitialTrait',
+            trait: 'alignmentChaotic',
+          }),
+        ],
+      },
+    ]);
+  });
+
+  it('normalizes forced-equality field counts without widening a single-enemy condition', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const fieldCountEffects = allEffects(master).filter((effect) =>
+      effect.atlasEvidence.parameterSemantics.condition.includes('TriggeredFieldCountRange'),
+    );
+    expect(fieldCountEffects).toHaveLength(1);
+    expect(fieldCountEffects[0]).toMatchObject({
+      contextInputs: [
+        {
+          kind: 'fieldActorCount',
+          owner: 'field',
+          minimum: 1,
+          maximum: 3,
+          defaultValue: 1,
+        },
+      ],
+      contextQuantityConditions: [{ comparison: 'atMost', value: 1 }],
+    });
   });
 
   it('retains every MLB-only effect with explicit availability', async () => {
@@ -201,8 +341,36 @@ describe('production canonical execution semantics', () => {
     expect(sharedValuedOperations).toBe(745);
     expect(differingValueOperations).toBe(735);
     expect(explicitCraftEssenceValuedOperations).toBe(1_307);
+    const purelyBloom = master.craftEssences
+      .find((craftEssence) => craftEssence.id === '9400810')
+      ?.effects.find((effect) => effect.occurrenceId === '249:0')?.execution[0];
+    const crimson = master.craftEssences
+      .find((craftEssence) => craftEssence.id === '9400850')
+      ?.effects.find((effect) => effect.occurrenceId === '267:0')?.execution[0];
+    expect(purelyBloom).toMatchObject({
+      kind: 'damageModifier',
+      valueExpressions: [[{ kind: 'contextLinear', maximumUnits: 9 }], [], [], [], []],
+      limitBreakValueExpressions: [
+        [{ kind: 'contextLinear', maximumUnits: 11, maximumValuePermille: 500 }],
+        [],
+        [],
+        [],
+        [],
+      ],
+    });
+    expect(crimson).toMatchObject({
+      kind: 'damageModifier',
+      valueExpressions: [[{ kind: 'contextLinear', maximumUnits: 11 }], [], [], [], []],
+      limitBreakValueExpressions: [
+        [{ kind: 'contextLinear', maximumUnits: 13, maximumValuePermille: 1200 }],
+        [],
+        [],
+        [],
+        [],
+      ],
+    });
     expect(createHash('sha256').update(JSON.stringify(sharedValues)).digest('hex')).toBe(
-      '9a70f2009c272e7818d66b6937ee9f10abc7aa74566b935227835840beebada6',
+      '0c16bf94be179288f63b131c320b631b436728d0bdacd4bc9e1ee548455f48ff',
     );
   });
 });

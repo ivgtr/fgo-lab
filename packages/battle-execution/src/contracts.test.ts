@@ -68,25 +68,6 @@ describe('ordered battle execution contracts', () => {
     });
   });
 
-  it('preserves partial trait conditions without pretending they are a trait count', () => {
-    const condition: ConditionExpression = {
-      kind: 'partialTrait',
-      scope: 'target',
-      traits: [
-        { trait: 'divine', present: true },
-        { trait: 'undead', present: false },
-      ],
-    };
-    expect(condition).toEqual({
-      kind: 'partialTrait',
-      scope: 'target',
-      traits: [
-        { trait: 'divine', present: true },
-        { trait: 'undead', present: false },
-      ],
-    });
-  });
-
   it('classifies mutually exclusive condition traits without effect identity', () => {
     expect(canonicalExclusiveGroup('target', 'attributeSky')).toBe('worldAttribute');
     expect(canonicalExclusiveGroup('target', 'attributeEarth')).toBe('worldAttribute');
@@ -120,6 +101,8 @@ describe('ordered battle execution contracts', () => {
     expectTypeOf<BattleOperation['kind']>().toEqualTypeOf<
       | 'addTrait'
       | 'removeTrait'
+      | 'suppressInitialTrait'
+      | 'addQuantity'
       | 'addModifier'
       | 'changeModifierRate'
       | 'changeCardType'

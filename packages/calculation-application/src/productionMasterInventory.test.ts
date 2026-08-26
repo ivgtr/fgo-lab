@@ -24,50 +24,9 @@ function loadProductionMaster() {
   return productionMaster;
 }
 
-const expectedUnsupportedFamilies = {
-  '106600': ['unsupportedOperation'],
-  '202500': ['missing_attacker_hp_ratio'],
-  '203300': ['missing_attacker_hp_ratio'],
-  '305800': ['unsupportedOperation'],
-  '400900': ['missing_attacker_hp_ratio'],
-  '506000': ['unsupportedOperation'],
-  '702500': ['missing_attacker_hp_ratio'],
-  '1102000': ['unsupportedOperation'],
-  '1102300': ['unsupportedOperation'],
-  '2300600': ['unsupportedOperation'],
-  '2801300': ['unsupportedOperation'],
-  '3300200': ['missing_battle_point_phase'],
-} as const;
+const expectedUnsupportedFamilies = {} as const;
 
-const expectedUnresolvedDamageSemantics = {
-  parameters: {
-    BehaveAsFamilyBuff: 2,
-    IgnoreIndivUnreleaseable: 1,
-    IncludeIgnoreIndividuality: 5,
-    IncludePassiveIndividuality: 1,
-    ParamAdd: 4,
-    ParamAddIndividualityTargetType: 3,
-    ParamAddMaxCount: 4,
-    ParamAddMaxValue: 3,
-    ParamAddOpCheckDead: 3,
-    ParamAddOpIndividuality: 2,
-    ParamAddOpIndividualityAndCheck: 3,
-    ParamAddSelfIndividuality: 2,
-    ParamAddSelfIndividualityAndCheck: 2,
-    ParamAddValue: 7,
-    ParamMax: 4,
-    ShowCardOnly: 1,
-    SkillID: 1,
-    SkillLV: 1,
-    StarHigher: 10,
-    TriggeredFieldCountRange: 1,
-    TriggeredFieldCountTarget: 1,
-    TypeIndividualityEachFunc: 1,
-    UnSubStateWhileLinkedToOthers: 1,
-    Value2: 3,
-  },
-  scripts: { 'script:funcIndividuality': 4 },
-} as const;
+const expectedUnresolvedDamageSemantics = { parameters: {}, scripts: {} } as const;
 
 function reasonFamily(reason: string): string {
   return reason.split(':', 1)[0] ?? reason;
@@ -251,13 +210,6 @@ describe('production master inventory ratchet', () => {
       ),
     );
     const allProjections = calculations.flatMap(({ calculation }) => calculation.effects);
-    const partialConditionProjections = calculations.flatMap(({ servant, calculation }) =>
-      calculation.effects.flatMap((effect) =>
-        effect.explanation.condition?.kind === 'partialTrait'
-          ? [{ servantId: servant.id, projectionKey: effect.projectionKey }]
-          : [],
-      ),
-    );
     const inertUserProjections: string[] = [];
     const selectedUnsupportedProjections: string[] = [];
     const invalidAutomaticConditions: string[] = [];
@@ -294,7 +246,7 @@ describe('production master inventory ratchet', () => {
         const activeEffect = active.effects.find(
           (candidate) => candidate.projectionKey === effect.projectionKey,
         );
-        if (active.result.status === 'unsupported' && activeEffect?.outcome === 'unsupported')
+        if (active.result.status !== 'calculated' || activeEffect?.outcome === 'unsupported')
           selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
         if (
           !activeEffect ||
@@ -422,23 +374,23 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_534, automaticVisible: 443, hidden: 687 });
-    expect({
-      servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
-      effects: partialConditionProjections.length,
-    }).toEqual({ servants: 1, effects: 1 });
+    }).toEqual({ user: 1_162, automaticVisible: 440, hidden: 709 });
+    expect(
+      allProjections.filter(
+        (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
+      ),
+    ).toEqual([]);
     expect({
       servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
       effects: multiBranchOrEffects.length,
-    }).toEqual({ servants: 18, effects: 21 });
+    }).toEqual({ servants: 18, effects: 22 });
     expect([...conditionKinds].sort()).toEqual([
       'all',
-      'always',
       'any',
       'card',
       'choice',
+      'contextQuantity',
       'operationTrigger',
-      'partialTrait',
       'quantity',
       'sourceQuantity',
       'trait',
@@ -447,10 +399,7 @@ describe('production master inventory ratchet', () => {
     expect(missingCandidateValues).toEqual([]);
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
-    expect({
-      servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
-      effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 14, effects: 25 });
+    expect(selectedUnsupportedProjections).toEqual([]);
     expect(
       Object.fromEntries(
         [...new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0]))]
@@ -461,29 +410,14 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({
-      '1000900': 1,
-      '1100400': 1,
-      '1100700': 1,
-      '1101100': 1,
-      '2500200': 1,
-      '2801300': 11,
-      '3300200': 1,
-      '400100': 1,
-      '404900': 1,
-      '506000': 2,
-      '603200': 1,
-      '604700': 1,
-      '702600': 1,
-      '703300': 1,
-    });
-    expect(exclusivePairCount).toBe(29);
-    expect(conflictPairs).toEqual({ effectEffect: 28, factFact: 1, factEffect: 0 });
+    ).toEqual({});
+    expect(exclusivePairCount).toBe(23);
+    expect(conflictPairs).toEqual({ effectEffect: 22, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 250, effects: 68, servants: 52 });
+    }).toEqual({ combinations: 245, effects: 63, servants: 52 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
@@ -520,4 +454,149 @@ describe('production master inventory ratchet', () => {
       explanation: { code: 'unresolved' },
     });
   }, 30_000);
+
+  it('calculates every support projection when selected through the shared decision path', async () => {
+    const master = await loadProductionMaster();
+    const attacker = master.servants.find((servant) => servant.id === '100100')!;
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const failures: string[] = [];
+    let projectionCount = 0;
+    for (const source of master.servants) {
+      for (const skill of source.skills) {
+        const scenario = {
+          ...createDefaultResolvedScenario(master, undefined, attacker),
+          attackerSkills: [],
+          support: {
+            sourceTemplateId: null,
+            composition: {
+              sources: [
+                {
+                  sourceInstanceId: `audit:${source.id}:${skill.id}`,
+                  servantId: source.id,
+                  skills: [{ skillId: skill.id, skillLevel: 10 }],
+                },
+              ],
+              selectedEffects: [],
+            },
+          },
+        };
+        const baseline = calculateScenario(scenario, master, versions);
+        const projections = baseline.effects.filter(
+          (effect) => effect.source.origin === 'support' && effect.controllability === 'user',
+        );
+        projectionCount += projections.length;
+        for (const projection of projections) {
+          const values = Object.fromEntries(
+            projection.requiredInputs.map((input) => [
+              input.key,
+              input.defaultValue ?? input.minimum,
+            ]),
+          );
+          const scenarioWithInputs = {
+            ...scenario,
+            battleContext: { values },
+          };
+          const withInputs = calculateScenario(scenarioWithInputs, master, versions);
+          const current = withInputs.effects.find(
+            (effect) => effect.projectionKey === projection.projectionKey,
+          );
+          if (!current) {
+            failures.push(`${source.id}:${skill.id}:${projection.projectionKey}:missing`);
+            continue;
+          }
+          const selected = calculateScenario(
+            applyEffectProjectionDecision(scenarioWithInputs, current, true),
+            master,
+            versions,
+          );
+          const outcome = selected.effects.find(
+            (effect) => effect.projectionKey === projection.projectionKey,
+          )?.outcome;
+          if (selected.result.status !== 'calculated' || outcome === 'unsupported')
+            failures.push(
+              `${source.id}:${skill.id}:${projection.projectionKey}:${selected.result.status}:${String(outcome)}:${selected.effectWarnings.join('|')}`,
+            );
+        }
+      }
+    }
+    expect(projectionCount).toBe(376);
+    expect(failures).toEqual([]);
+  }, 120_000);
+
+  it('calculates every craft-essence and mystic-code user projection', async () => {
+    const master = await loadProductionMaster();
+    const attacker = master.servants.find((servant) => servant.id === '100100')!;
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const base = {
+      ...createDefaultResolvedScenario(master, undefined, attacker),
+      attackerSkills: [],
+    };
+    const failures: string[] = [];
+    let projectionCount = 0;
+    const verify = (scenario: typeof base, origin: 'craftEssence' | 'mysticCode') => {
+      const baseline = calculateScenario(scenario, master, versions);
+      if (baseline.result.status !== 'calculated') {
+        failures.push(`${origin}:baseline:${baseline.result.status}`);
+        return;
+      }
+      for (const projection of baseline.effects.filter(
+        (effect) => effect.source.origin === origin && effect.controllability === 'user',
+      )) {
+        projectionCount += 1;
+        const selected = calculateScenario(
+          applyEffectProjectionDecision(scenario, projection, true),
+          master,
+          versions,
+        );
+        const outcome = selected.effects.find(
+          (effect) => effect.projectionKey === projection.projectionKey,
+        )?.outcome;
+        if (selected.result.status !== 'calculated' || outcome === 'unsupported')
+          failures.push(
+            `${origin}:${projection.projectionKey}:${selected.result.status}:${String(outcome)}`,
+          );
+      }
+    };
+    for (const craftEssence of master.craftEssences)
+      for (const limitBreak of [0, 4] as const)
+        verify(
+          {
+            ...base,
+            craftEssence: {
+              craftEssenceId: craftEssence.id,
+              level: craftEssence.maxLevelByLimitBreak[limitBreak],
+              limitBreak,
+            },
+          },
+          'craftEssence',
+        );
+    for (const code of master.mysticCodes)
+      for (const skill of code.skills)
+        verify(
+          {
+            ...base,
+            mysticCode: {
+              mysticCodeId: code.id,
+              skills: [{ skillId: skill.id, skillLevel: 10 }],
+            },
+          },
+          'mysticCode',
+        );
+    expect(projectionCount).toBe(355);
+    expect(failures).toEqual([]);
+  }, 180_000);
 });

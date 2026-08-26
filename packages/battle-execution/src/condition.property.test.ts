@@ -25,7 +25,9 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
       targetState: Object.fromEntries(targetState.map((trait) => [trait, 1])),
       field: {},
     },
+    initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
+    contextValues: {},
     modifiers: [],
     modifierRates: {},
     ignoreDefense: false,
@@ -36,6 +38,35 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
 }
 
 describe('condition expression properties', () => {
+  it('does not infer provenance-sensitive traits from an unqualified scenario fact', () => {
+    const expression: ConditionExpression = {
+      kind: 'trait',
+      scope: 'target',
+      trait: 'buffPoison',
+      present: true,
+      readPolicy: {
+        stateSources: 'activeOnly',
+        ignoredStateTraits: 'include',
+        unremovableStateTraits: 'include',
+      },
+    };
+    expect(evaluateConditionExpression(expression, state([], ['buffPoison']))).toBeNull();
+  });
+
+  it('keeps linked initial-trait suppression distinct from an absent state trait', () => {
+    const current = state();
+    (current.traits.attacker as Map<string, boolean>).set('alignmentChaotic', true);
+    const expression: ConditionExpression = {
+      kind: 'trait',
+      scope: 'attacker',
+      trait: 'alignmentChaotic',
+      present: true,
+    };
+    expect(evaluateConditionExpression(expression, current)).toBe(true);
+    current.initialTraitSuppressions.attacker = new Set(['alignmentChaotic']);
+    expect(evaluateConditionExpression(expression, current)).toBe(false);
+  });
+
   it('keeps evaluator and solver aligned across initial, state, and combined actor traits', () => {
     const values = [undefined, false, true] as const;
     for (const actor of ['attacker', 'target'] as const) {
@@ -226,6 +257,7 @@ describe('condition expression properties', () => {
       value: 1.5,
       requiredQuantity: null,
       requiredQuantityOwner: null,
+      requiredInputs: [],
       modifier: 'npSpecial',
       source: {
         origin: 'np',

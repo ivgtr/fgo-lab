@@ -1027,6 +1027,74 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(effectiveInput).toContainText('特攻状態＋イベント50.0%');
 });
 
+test('canonical actor counts derive safe minima and reject lower final totals', async ({
+  page,
+  isMobile,
+}) => {
+  if (isMobile) await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('ジョン・ラックランド');
+  await attackerDialog.getByRole('button', { name: /ジョン・ラックランド.*Lv70/ }).click();
+
+  const king = page.getByLabel('〔王〕一致数');
+  const evil = page.getByLabel('〔悪〕一致数');
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  await expect(king).toHaveValue('1');
+  await expect(evil).toHaveValue('1');
+  await expect(page.getByText(/同一対象は別の特性条件で重複計上/).first()).toBeVisible();
+  await expect(table.getByRole('row', { name: /NP1.*現在/ })).toContainText('31,827');
+
+  await king.fill('0');
+  await expect(table).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('入力が必要');
+  await king.fill('1');
+  await expect(table).toBeVisible();
+  await expect(table.getByRole('row', { name: /NP1.*現在/ })).toContainText('31,827');
+
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(king).toBeVisible();
+    await expect(evil).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+  }
+});
+
+test('Habetrot uses the final enemy total from one through three', async ({ page }) => {
+  await page.goto('/');
+  await completeSetup(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const attackerDialog = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await attackerDialog.getByRole('tab', { name: '全DB' }).click();
+  await attackerDialog.getByLabel('名前で検索').fill('ハベトロット');
+  await attackerDialog.getByRole('button', { name: /ハベトロット.*プリテンダー.*Lv80/ }).click();
+
+  const count = page.getByLabel('敵の合計数');
+  const row = page.getByRole('row', { name: /NP1.*現在/ });
+  await expect(count).toHaveValue('1');
+  await expect(row).toContainText('50,394');
+  await count.fill('3');
+  await expect(row).toContainText('59,557');
+  await count.fill('0');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+  await expect(page.getByRole('alert')).toContainText('入力が必要');
+});
+
 test('Gareth commits hidden sunlight only while its linked NP effect is selected', async ({
   page,
 }) => {
