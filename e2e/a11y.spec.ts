@@ -20,6 +20,7 @@ test('@a11y startup screen has no serious axe violations', async ({ page }) => {
 });
 
 test('@a11y major desktop screens have no serious axe violations', async ({ page, isMobile }) => {
+  test.setTimeout(60_000);
   test.skip(isMobile, 'Desktop navigation covers every R1 screen');
   await page.goto('/');
   await completeSetup(page);

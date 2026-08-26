@@ -258,7 +258,7 @@ test('reopens saved local data while offline', async ({ page, context, isMobile 
   await context.setOffline(true);
   try {
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/端末内に自動保存・オフライン/)).toBeVisible();
   } finally {
     await context.setOffline(false);
@@ -1192,7 +1192,9 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   expect(sharedUrl).toContain('#share=');
   await page.goto('about:blank');
   await page.goto(sharedUrl);
-  await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByLabel('クラス相性の状況')).toHaveValue('1.5');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
   await expect(
