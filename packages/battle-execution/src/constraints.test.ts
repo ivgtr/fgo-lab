@@ -18,6 +18,15 @@ const condition = (sourceKey: string, expression: ConditionExpression) => ({
   expression,
 });
 
+const quantity = (
+  sourceKey: string,
+  name: QuantityFactName,
+  value: number,
+): FixedConstraintFact => ({
+  sourceKey,
+  fact: { kind: 'quantity', quantity: name, value },
+});
+
 describe('unified constraint validation', () => {
   it('detects canonical trait and field conflicts across fixed facts and conditions', () => {
     expect(
@@ -332,5 +341,22 @@ describe('unified constraint validation', () => {
         ],
       }).status,
     ).toBe('conflict');
+  });
+
+  it('does not equate a source-owned quantity with the current attacker quantity', () => {
+    expect(
+      validateConstraintSet({
+        fixedFacts: [quantity('world:bp', 'battlePointPhase', 10)],
+        expressions: [
+          condition('support:bp', {
+            kind: 'quantity',
+            quantity: 'battlePointPhase',
+            subjectId: 'support-source',
+            comparison: 'atMost',
+            value: 1,
+          }),
+        ],
+      }).status,
+    ).toBe('satisfied');
   });
 });

@@ -76,6 +76,7 @@ export function evaluateCondition(
     case 'card':
       return state.card === condition.card;
     case 'quantity': {
+      if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];
       if (actual === null) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;

@@ -34,7 +34,7 @@ const expectedUnsupportedFamilies = {
   '2300600': ['unsupportedOperation'],
   '2301200': ['unsupportedOperation'],
   '2801300': ['unsupportedOperation'],
-  '3300200': ['missing_battle_point_phase', 'unsupportedOperation'],
+  '3300200': ['missing_battle_point_phase'],
 } as const;
 
 const expectedUnresolvedDamageSemantics = {
@@ -46,7 +46,6 @@ const expectedUnresolvedDamageSemantics = {
     AddIndividualtyList: 7,
     AddLinkageTargetIndividualty: 5,
     BehaveAsFamilyBuff: 2,
-    CheckBattlePointPhaseRange: 3,
     DisplayLastFuncInvalidType: 5,
     ForceAddState: 4,
     FuncCheckTargetIndividualityTargetType: 3,
@@ -207,6 +206,76 @@ describe('production master damage quality ratchet', () => {
     expect(Math.min(...maximumPhases)).toBeGreaterThanOrEqual(
       QUANTITY_FACT_DOMAINS.battlePointPhase.min,
     );
+  });
+
+  it('executes normalized Battle Point guards and rejects contradictory decisions', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const ereshkigal = master.servants.find((servant) => servant.id === '3300200')!;
+    const ereshkigalScenario = createDefaultResolvedScenario(master, undefined, ereshkigal);
+    const beforeDefencePierce = calculateScenario(
+      { ...ereshkigalScenario, battleState: { battlePointPhase: 6 } },
+      master,
+      versions,
+    );
+    const afterDefencePierce = calculateScenario(
+      { ...ereshkigalScenario, battleState: { battlePointPhase: 7 } },
+      master,
+      versions,
+    );
+
+    expect(beforeDefencePierce.result.status).toBe('calculated');
+    expect(beforeDefencePierce.input.damageFunction).toMatchObject({ ignoreDefense: false });
+    expect(afterDefencePierce.result.status).toBe('calculated');
+    expect(afterDefencePierce.input.damageFunction).toMatchObject({ ignoreDefense: true });
+    expect(afterDefencePierce.effects.find((effect) => effect.label === '防御無視')).toMatchObject({
+      outcome: 'applied',
+      controllability: 'automatic',
+    });
+
+    const beniEnma = master.servants.find((servant) => servant.id === '705300')!;
+    const beniScenario = createDefaultResolvedScenario(master, undefined, beniEnma);
+    const baseline = calculateScenario(
+      { ...beniScenario, battleState: { battlePointPhase: 0 } },
+      master,
+      versions,
+    );
+    const conditionalNpDamage = baseline.effects.find(
+      (effect) =>
+        effect.skillName === '首取り翁の針山剣 EX' &&
+        effect.label === '宝具威力アップ' &&
+        effect.controllability === 'user' &&
+        effect.explanation.condition !== null,
+    )!;
+    const enabled = applyEffectProjectionDecision(
+      { ...beniScenario, battleState: { battlePointPhase: 0 } },
+      conditionalNpDamage,
+      true,
+    );
+    const compatible = calculateScenario(enabled, master, versions);
+    const conflict = calculateScenario(
+      { ...enabled, battleState: { battlePointPhase: 2 } },
+      master,
+      versions,
+    );
+
+    expect(compatible.result.status).toBe('calculated');
+    expect(compatible.input.npDamageBuff).toBe(0.2);
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.input.npDamageBuff).toBe(0);
+    expect(
+      conflict.effects.find((effect) => effect.projectionKey === conditionalNpDamage.projectionKey)
+        ?.outcome,
+    ).toBe('notApplied');
   });
 
   it('fails closed on out-of-domain HP facts for the production HP-ratio NP', async () => {
@@ -892,7 +961,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_553, automaticVisible: 440, hidden: 683 });
+    }).toEqual({ user: 1_554, automaticVisible: 439, hidden: 683 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -916,7 +985,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 48, effects: 83 });
+    }).toEqual({ servants: 48, effects: 82 });
     expect(exclusivePairCount).toBe(8);
     expect(conflictPairs).toEqual({ effectEffect: 7, factFact: 1, factEffect: 0 });
     expect({

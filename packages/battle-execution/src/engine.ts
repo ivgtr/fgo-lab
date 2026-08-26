@@ -187,6 +187,15 @@ function effectCondition(effect: MasterEffect, origin: Origin): ConditionExpress
     normalizeTraitCondition(effect.conditions.holder, holder),
     normalizeTraitCondition(effect.conditions.opponent, opponent),
     normalizeTraitCondition(effect.conditions.field, 'field'),
+    ...effect.quantityConditions.map<ConditionExpression>((condition) => ({
+      kind: 'quantity',
+      quantity: condition.quantity,
+      ...(origin === 'attacker' || origin === 'passive' || origin === 'np'
+        ? {}
+        : { subjectId: condition.subjectId }),
+      comparison: condition.comparison,
+      value: condition.value,
+    })),
   ]);
 }
 

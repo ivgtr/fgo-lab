@@ -44,6 +44,10 @@ master v23、schema 11、engine 12.2.0でraw parameter allowlistを廃止した�
 
 この段階で既定unsupportedは12騎、選択時unsupportedは48騎・83 effect occurrenceとなった。Gilgameshの`overWriteTvalsList`付き特攻宝具威力効果1件は、既に正規化済みのAND条件を用いてexactに操作可能となった。projectionはuser 1,553、automatic visible 440、hidden 683、literal `unknown` traitは0件である。condition-source、choice、可変値、参照positionは分類できても意味論を実行できるまでは引き続き`unresolved`とする。
 
+master v24、schema 12、engine 12.3.0で`CheckBattlePointPhaseRange`をsubject付きquantity conditionへ正規化した。`7<=`と`<=1`をそれぞれ`atLeast 7`、`atMost 1`として保持し、範囲文字列をexecutorで再解釈しない。自身・passive・NPの条件は現在のattacker BP入力で評価し、支援元など別sourceのBPはattacker BPと同一視せずeffect-localな成立制約として扱う。これによりEreshkigalのBP7防御無視がautomaticに適用され、Beni-enmaのBP空腹時宝具威力効果は操作可能となった。既知BPと矛盾する成立decisionはconstraint conflictでmodifierをcommitしない。
+
+既定unsupportedは12騎のままだが、Ereshkigalの理由から`unsupportedOperation`が除かれ、必要なBP入力不足だけになった。選択時unsupportedは48騎・82 effect occurrence、projectionはuser 1,554、automatic visible 439、hidden 683である。`TriggeredTargetBattlePointRateRange`はaction choiceの状態遷移と不可分なため、この段階では同じ条件へ読み替えない。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |

@@ -261,4 +261,21 @@ describe('condition expression properties', () => {
       plan: { condition: 'userMayAssume' },
     });
   });
+
+  it('does not read the attacker quantity for another source owner', () => {
+    const input = state();
+    input.quantities.battlePointPhase = 10;
+    expect(
+      evaluateConditionExpression(
+        {
+          kind: 'quantity',
+          quantity: 'battlePointPhase',
+          subjectId: 'support-source',
+          comparison: 'atMost',
+          value: 1,
+        },
+        input,
+      ),
+    ).toBeNull();
+  });
 });

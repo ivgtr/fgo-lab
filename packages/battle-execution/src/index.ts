@@ -21,6 +21,7 @@ export type ConditionExpression =
   | {
       kind: 'quantity';
       quantity: 'attackerHpPermille' | 'targetRarity' | 'battlePointPhase';
+      subjectId?: string;
       comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
       value: number;
     }

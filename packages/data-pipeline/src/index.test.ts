@@ -618,4 +618,55 @@ describe('immutable publish pipeline', () => {
       unresolvedSemanticKeys: ['script:customFlag'],
     });
   });
+
+  it('normalizes Battle Point ranges into subject-scoped quantity conditions', () => {
+    const snapshot = normalizeAtlasSnapshot({
+      version: 'battle-point-condition',
+      servants: [],
+      equips: [],
+      mysticCodes: [
+        {
+          id: 1,
+          name: 'test',
+          maxLv: 10,
+          skills: [
+            {
+              id: 2,
+              name: 'test skill',
+              functions: [
+                {
+                  funcId: 3,
+                  funcType: 'addStateShort',
+                  funcTargetType: 'self',
+                  buffs: [{ type: 'pierceDefence' }],
+                  svals: [
+                    {
+                      Rate: 1000,
+                      CheckBattlePointPhaseRange: [{ battlePointId: 33_002_00, range: ['7<='] }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      items: [],
+    });
+
+    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[0]).toMatchObject({
+      parameterSemantics: {
+        condition: ['CheckBattlePointPhaseRange'],
+        unresolved: [],
+      },
+      quantityConditions: [
+        {
+          quantity: 'battlePointPhase',
+          subjectId: '3300200',
+          comparison: 'atLeast',
+          value: 7,
+        },
+      ],
+    });
+  });
 });

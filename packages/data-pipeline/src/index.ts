@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 11,
+    schemaVersion: 12,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -410,26 +410,72 @@ const PRESENTATION_PARAMETER_KEYS = new Set([
   'ShowQuestNoEffect',
   'ShowState',
 ]);
-const CONDITION_PARAMETER_KEYS = new Set<string>();
 const CONTEXT_MUTATION_PARAMETER_KEYS = new Set(['FieldIndividuality', 'TargetList']);
 
-function classifyParameterSemantics(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
+interface NormalizedQuantityCondition {
+  quantity: 'battlePointPhase';
+  subjectId: string;
+  comparison: 'atMost' | 'atLeast';
+  value: number;
+}
+
+function normalizeBattlePointConditions(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+): NormalizedQuantityCondition[] {
+  const values = parameterSets
+    .flatMap((set) => set)
+    .flatMap((parameter) =>
+      parameter['CheckBattlePointPhaseRange'] === undefined
+        ? []
+        : [parameter['CheckBattlePointPhaseRange']],
+    );
+  if (values.length === 0) return [];
+  const uniqueValues = [...new Set(values.map((value) => JSON.stringify(value)))];
+  if (uniqueValues.length !== 1) return [];
+  const value = values[0];
+  if (!Array.isArray(value) || value.length !== 1) return [];
+  const item: unknown = value[0];
+  if (!item || typeof item !== 'object') return [];
+  const battlePointId = (item as Record<string, unknown>)['battlePointId'];
+  const range = (item as Record<string, unknown>)['range'];
+  if (typeof battlePointId !== 'number' || !Number.isInteger(battlePointId)) return [];
+  if (!Array.isArray(range) || range.length !== 1 || typeof range[0] !== 'string') return [];
+  const atMost = /^<=(-?\d+)$/.exec(range[0]);
+  const atLeast = /^(-?\d+)<=$/.exec(range[0]);
+  if (!atMost && !atLeast) return [];
+  return [
+    {
+      quantity: 'battlePointPhase',
+      subjectId: String(battlePointId),
+      comparison: atMost ? 'atMost' : 'atLeast',
+      value: Number((atMost ?? atLeast)![1]),
+    },
+  ];
+}
+
+function classifyParameterSemantics(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+  quantityConditions: readonly NormalizedQuantityCondition[],
+) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
   ].sort();
   const select = (accepted: ReadonlySet<string>) => keys.filter((key) => accepted.has(key));
+  const conditionKeys = new Set(
+    quantityConditions.length > 0 ? ['CheckBattlePointPhaseRange'] : [],
+  );
   const known = new Set([
     ...VALUE_PARAMETER_KEYS,
     ...LIFECYCLE_PARAMETER_KEYS,
     ...PRESENTATION_PARAMETER_KEYS,
-    ...CONDITION_PARAMETER_KEYS,
+    ...conditionKeys,
     ...CONTEXT_MUTATION_PARAMETER_KEYS,
   ]);
   return {
     value: select(VALUE_PARAMETER_KEYS),
     lifecycle: select(LIFECYCLE_PARAMETER_KEYS),
     presentation: select(PRESENTATION_PARAMETER_KEYS),
-    condition: select(CONDITION_PARAMETER_KEYS),
+    condition: select(conditionKeys),
     contextMutation: select(CONTEXT_MUTATION_PARAMETER_KEYS),
     unresolved: keys.filter((key) => !known.has(key)),
   };
@@ -465,6 +511,7 @@ function normalizeFunctions(
       AtlasFunctionValue[],
       AtlasFunctionValue[],
     ];
+    const quantityConditions = normalizeBattlePointConditions(parameterSets);
     return [
       {
         id: String(fn.funcId),
@@ -473,8 +520,9 @@ function normalizeFunctions(
         target: fn.funcTargetType ?? 'unknown',
         label: fn.funcPopupText ?? fn.funcType ?? '効果',
         parameterSets,
-        parameterSemantics: classifyParameterSemantics(parameterSets),
+        parameterSemantics: classifyParameterSemantics(parameterSets, quantityConditions),
         unresolvedSemanticKeys: unresolvedFunctionScriptKeys(fn.script),
+        quantityConditions,
         conditions: {
           recipient:
             (fn.overWriteTvalsList ?? []).length > 0

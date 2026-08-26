@@ -292,6 +292,8 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 6. 現行UIにない敵trait、star、turn、編成生存入力を追加しない。不足familyは個別理由を付けてfail-closedを維持する。
 7. production ratchetはunknown family、occurrence key衝突、非damageによる阻害、choice同時適用、unsupported operation適用を0件に固定する。
 
+quantity guardはmaster正規化時に比較式へ変換し、source identityを保持する。attackerのHP・Battle Pointとsupport sourceのHP・Battle Pointを同一の値として評価してはならない。現在の入力に対応するsourceだけを具体値で評価し、effect-local成立だけで結果が一意な別source条件はworld factへ変換せず当該operationに限定する。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

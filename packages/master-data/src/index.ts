@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(11),
+  schemaVersion: z.literal(12),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -52,6 +52,13 @@ const effectParameterSemanticsSchema = z.object({
 });
 export type EffectParameterSemantics = z.infer<typeof effectParameterSemanticsSchema>;
 
+const effectQuantityConditionSchema = z.object({
+  quantity: z.literal('battlePointPhase'),
+  subjectId: z.string().min(1),
+  comparison: z.enum(['atMost', 'atLeast']),
+  value: z.number().int(),
+});
+
 const effectParameterSchema = z.record(z.string(), z.json());
 const effectParameterSetsSchema = z.tuple([
   z.array(effectParameterSchema).max(10),
@@ -70,6 +77,7 @@ const masterEffectSchema = z.object({
   limitBreakParameterSets: effectParameterSetsSchema.optional(),
   parameterSemantics: effectParameterSemanticsSchema,
   unresolvedSemanticKeys: z.array(z.string().min(1)),
+  quantityConditions: z.array(effectQuantityConditionSchema),
   conditions: effectConditionsSchema,
   contextChanges: z.object({
     addedFieldTraits: z.array(z.string().min(1)),

@@ -54,6 +54,7 @@ type Literal =
   | {
       kind: 'quantityRange';
       quantity: QuantityName;
+      subjectId: string | null;
       min: number;
       max: number;
       sourceKey: string;
@@ -169,6 +170,7 @@ function compileExpression(
           {
             kind: 'quantityRange' as const,
             quantity: expression.quantity,
+            subjectId: expression.subjectId ?? null,
             ...range,
             sourceKey,
           },
@@ -224,10 +226,7 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
     string,
     Partial<Record<'initial' | 'state' | 'combined', Extract<Literal, { kind: 'trait' }>>>
   >();
-  const quantities = new Map<
-    QuantityName,
-    { min: number; max: number; sourceKeys: readonly string[] }
-  >();
+  const quantities = new Map<string, { min: number; max: number; sourceKeys: readonly string[] }>();
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
     if (literal.kind === 'card') {
@@ -240,9 +239,10 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
       continue;
     }
     if (literal.kind === 'quantityRange') {
-      const prior = quantities.get(literal.quantity);
+      const quantityKey = `${literal.quantity}:${literal.subjectId ?? 'attacker'}`;
+      const prior = quantities.get(quantityKey);
       if (!prior) {
-        quantities.set(literal.quantity, {
+        quantities.set(quantityKey, {
           min: literal.min,
           max: literal.max,
           sourceKeys: [literal.sourceKey],
@@ -271,7 +271,7 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
                 },
           sourceKeys,
         });
-      quantities.set(literal.quantity, { min, max, sourceKeys });
+      quantities.set(quantityKey, { min, max, sourceKeys });
       continue;
     }
     const traitKey = `${literal.scope}:${literal.trait}`;
@@ -346,7 +346,7 @@ function literalKey(literal: Literal): string {
     ? `trait:${literal.scope}:${literal.trait}:${String(literal.present)}`
     : literal.kind === 'card'
       ? `card:${literal.card}`
-      : `quantity:${literal.quantity}:${String(literal.min)}:${String(literal.max)}`;
+      : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }
 
 function deduplicate(alternatives: Alternatives): Alternatives {
@@ -376,6 +376,7 @@ function fixedLiterals(item: FixedConstraintFact): Literal[] {
     {
       kind: 'quantityRange',
       quantity: item.fact.quantity,
+      subjectId: null,
       min: item.fact.value,
       max: item.fact.value,
       sourceKey: item.sourceKey,
