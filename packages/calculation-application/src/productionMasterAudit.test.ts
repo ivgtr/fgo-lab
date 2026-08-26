@@ -62,7 +62,6 @@ const expectedUnresolvedDamageSemantics = {
     StarHigher: 10,
     TriggeredFieldCountRange: 1,
     TriggeredFieldCountTarget: 1,
-    TriggeredTargetBattlePointRateRange: 3,
     TypeIndividualityEachFunc: 1,
     UnSubState: 4,
     UnSubStateWhileLinkedToOthers: 1,
@@ -428,6 +427,68 @@ describe('production master damage quality ratchet', () => {
         )
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
+    expect(conflict.effectWarnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('choiceConflict')]),
+    );
+  });
+
+  it('keeps Battle Point rate guards effect-local to Beni-enma action candidates', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const servant = master.servants.find((candidate) => candidate.id === '705300')!;
+    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const baseline = calculateScenario(scenario, master, versions);
+    const guarded = baseline.effects.filter((effect) =>
+      JSON.stringify(effect.explanation.condition).includes('sourceQuantity'),
+    );
+    expect(guarded).toHaveLength(3);
+    expect(guarded.every((effect) => effect.controllability === 'user')).toBe(true);
+    const firstAttack = guarded.find(
+      (effect) =>
+        effect.modifier === 'attackBuff' &&
+        JSON.stringify(effect.explanation.condition).includes('"candidate":"1"'),
+    )!;
+    const rareAttack = guarded.find(
+      (effect) =>
+        effect.modifier === 'attackBuff' &&
+        JSON.stringify(effect.explanation.condition).includes('"candidate":"2"'),
+    )!;
+    const rareNp = guarded.find((effect) => effect.modifier === 'npDamageBuff')!;
+    const rareScenario = applyEffectProjectionDecision(
+      applyEffectProjectionDecision(scenario, rareAttack, true),
+      rareNp,
+      true,
+    );
+    expect(rareScenario.worldFactAssertions).toEqual(scenario.worldFactAssertions);
+    const rare = calculateScenario(rareScenario, master, versions);
+    expect(rare.result.status).toBe('calculated');
+    expect(rare.input.attackBuff).toBeCloseTo(0.2, 10);
+    expect(rare.input.npDamageBuff).toBeCloseTo(0.2, 10);
+    expect(
+      rare.effects
+        .filter((effect) =>
+          [rareAttack.projectionKey, rareNp.projectionKey].includes(effect.projectionKey),
+        )
+        .map((effect) => effect.outcome),
+    ).toEqual(['applied', 'applied']);
+
+    const conflict = calculateScenario(
+      applyEffectProjectionDecision(rareScenario, firstAttack, true),
+      master,
+      versions,
+    );
+    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.input.attackBuff).toBe(0);
+    expect(conflict.input.npDamageBuff).toBe(0);
     expect(conflict.effectWarnings).toEqual(
       expect.arrayContaining([expect.stringContaining('choiceConflict')]),
     );
@@ -1412,6 +1473,7 @@ describe('production master damage quality ratchet', () => {
       'operationTrigger',
       'partialTrait',
       'quantity',
+      'sourceQuantity',
       'trait',
     ]);
     expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
@@ -1421,9 +1483,9 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 16, effects: 35 });
-    expect(exclusivePairCount).toBe(24);
-    expect(conflictPairs).toEqual({ effectEffect: 23, factFact: 1, factEffect: 0 });
+    }).toEqual({ servants: 15, effects: 32 });
+    expect(exclusivePairCount).toBe(26);
+    expect(conflictPairs).toEqual({ effectEffect: 25, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,

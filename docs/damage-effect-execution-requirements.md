@@ -304,6 +304,8 @@ action choiceはeffect-localな候補制約として扱う。同じsource instan
 
 buff instanceへ付くidentity・linkage metadataはactor traitやstate mutationへ変換しない。modifierの値と条件が独立に確定する場合はidentity metadataを保持したままdamage operationを実行する。`faceCard`はcommand-card scopeとしてNP executionから分離し、route可能なmodifier typeを持っていてもNP projectionを生成しない。
 
+source-owned quantity guardは、同名に近いscenario quantityへ読み替えず、subject、比較、境界を保持したeffect-local rangeとして扱う。選択されたrange同士はsolverで交差検証し、共通の充足値がなければ全operationを非適用にする。成立宣言から具体的なquantity world factは生成しない。modifier値そのものがquantityに依存する場合はこの成立宣言だけで値を決めず、具体入力がなければunsupportedとする。
+
 参照Functionは実行containerのscopeを保持する。通常攻撃だけで発火するtriggerはNP火力UIと計算を阻害させず、宝具Function列のNP前triggerへ同じ非damage分類を流用しない。参照先がartifactから解決できないNP前triggerは値を推測せずfail-closedにする。
 
 ## 9. 受入条件

@@ -87,6 +87,8 @@ export function evaluateCondition(
       return null;
     case 'operationTrigger':
       return null;
+    case 'sourceQuantity':
+      return null;
     case 'quantity': {
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];

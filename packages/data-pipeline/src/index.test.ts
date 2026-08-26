@@ -654,7 +654,16 @@ describe('immutable publish pipeline', () => {
                   funcType: 'addStateShort',
                   funcTargetType: 'self',
                   buffs: [{ type: 'upNpdamage' }],
-                  svals: [{ Rate: 1000, Value: 200, ActSelectIndex: 2 }],
+                  svals: [
+                    {
+                      Rate: 1000,
+                      Value: 200,
+                      ActSelectIndex: 2,
+                      TriggeredTargetBattlePointRateRange: [
+                        { battlePointId: 705300, range: ['<=999'] },
+                      ],
+                    },
+                  ],
                 },
                 {
                   funcId: 4,
@@ -778,8 +787,17 @@ describe('immutable publish pipeline', () => {
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[1]).toMatchObject({
       choice: { family: 'actSelectIndex', candidate: 2 },
+      sourceQuantityConditions: [
+        {
+          quantity: 'battlePointRate',
+          subjectId: '705300',
+          comparison: 'atMost',
+          value: 999,
+        },
+      ],
       parameterSemantics: {
         choice: ['ActSelectIndex'],
+        condition: ['TriggeredTargetBattlePointRateRange'],
         unresolved: [],
       },
     });

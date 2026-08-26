@@ -61,7 +61,15 @@ type Literal =
     }
   | { kind: 'card'; card: CardType; sourceKey: string }
   | { kind: 'choice'; group: string; candidate: string; sourceKey: string }
-  | { kind: 'operationTrigger'; source: string; position: number; sourceKey: string };
+  | { kind: 'operationTrigger'; source: string; position: number; sourceKey: string }
+  | {
+      kind: 'sourceQuantityRange';
+      quantity: 'battlePointRate';
+      subjectId: string;
+      min: number;
+      max: number;
+      sourceKey: string;
+    };
 
 type Alternatives = readonly (readonly Literal[])[];
 type CompileResult =
@@ -190,6 +198,35 @@ function compileExpression(
               ],
             ],
           };
+    case 'sourceQuantity': {
+      const comparison = negated
+        ? expression.comparison === 'atMost'
+          ? 'atLeast'
+          : 'atMost'
+        : expression.comparison;
+      const value = negated
+        ? expression.comparison === 'atMost'
+          ? expression.value + 1
+          : expression.value - 1
+        : expression.value;
+      if (!Number.isSafeInteger(value))
+        return { status: 'unsupported', reason: 'unrepresentableQuantityRange' };
+      return {
+        status: 'supported',
+        alternatives: [
+          [
+            {
+              kind: 'sourceQuantityRange',
+              quantity: expression.quantity,
+              subjectId: expression.subjectId,
+              min: comparison === 'atLeast' ? value : Number.MIN_SAFE_INTEGER,
+              max: comparison === 'atMost' ? value : Number.MAX_SAFE_INTEGER,
+              sourceKey,
+            },
+          ],
+        ],
+      };
+    }
     case 'quantity': {
       const ranges = quantityRanges(
         expression.quantity,
@@ -265,6 +302,35 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
     if (literal.kind === 'operationTrigger') continue;
+    if (literal.kind === 'sourceQuantityRange') {
+      const quantityKey = `${literal.quantity}:${literal.subjectId}`;
+      const prior = quantities.get(quantityKey);
+      if (!prior) {
+        quantities.set(quantityKey, {
+          min: literal.min,
+          max: literal.max,
+          sourceKeys: [literal.sourceKey],
+        });
+        continue;
+      }
+      const min = Math.max(prior.min, literal.min);
+      const max = Math.min(prior.max, literal.max);
+      const sourceKeys = unique([...prior.sourceKeys, literal.sourceKey]);
+      if (min > max)
+        conflicts.push({
+          conflict: {
+            kind: 'quantityRange',
+            quantity: literal.quantity,
+            ranges: [
+              { min: prior.min, max: prior.max },
+              { min: literal.min, max: literal.max },
+            ],
+          },
+          sourceKeys,
+        });
+      quantities.set(quantityKey, { min, max, sourceKeys });
+      continue;
+    }
     if (literal.kind === 'choice') {
       const prior = choices.get(literal.group);
       if (prior && prior.candidate !== literal.candidate)
@@ -400,7 +466,9 @@ function literalKey(literal: Literal): string {
         ? `choice:${literal.group}:${literal.candidate}`
         : literal.kind === 'operationTrigger'
           ? `operation-trigger:${literal.source}:${String(literal.position)}`
-          : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
+          : literal.kind === 'sourceQuantityRange'
+            ? `source-quantity:${literal.quantity}:${literal.subjectId}:${String(literal.min)}:${String(literal.max)}`
+            : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }
 
 function deduplicate(alternatives: Alternatives): Alternatives {

@@ -416,4 +416,39 @@ describe('unified constraint validation', () => {
       }),
     ).toMatchObject({ status: 'unsupported' });
   });
+
+  it('intersects source-owned quantity ranges without creating world facts', () => {
+    const sourceRange = (sourceKey: string, comparison: 'atMost' | 'atLeast', value: number) =>
+      condition(sourceKey, {
+        kind: 'sourceQuantity',
+        quantity: 'battlePointRate',
+        subjectId: '705300',
+        comparison,
+        value,
+      });
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [
+          sourceRange('effect:min', 'atLeast', 0),
+          sourceRange('effect:max', 'atMost', 999),
+        ],
+      }).status,
+    ).toBe('satisfied');
+    expect(
+      validateConstraintSet({
+        fixedFacts: [],
+        expressions: [
+          sourceRange('effect:min', 'atLeast', 1_000),
+          sourceRange('effect:max', 'atMost', 999),
+        ],
+      }),
+    ).toMatchObject({
+      status: 'conflict',
+      issue: {
+        sourceKeys: ['effect:min', 'effect:max'],
+        conflicts: [{ kind: 'quantityRange', quantity: 'battlePointRate' }],
+      },
+    });
+  });
 });

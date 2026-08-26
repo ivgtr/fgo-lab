@@ -35,7 +35,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 18,
+    schemaVersion: 19,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -506,6 +506,45 @@ function normalizeQuantityConditions(
   return conditions;
 }
 
+function normalizeSourceQuantityConditions(
+  parameterSets: readonly (readonly AtlasFunctionValue[])[],
+) {
+  const values = parameterSets
+    .flatMap((set) => set)
+    .flatMap((parameter) =>
+      parameter['TriggeredTargetBattlePointRateRange'] === undefined
+        ? []
+        : [parameter['TriggeredTargetBattlePointRateRange']],
+    );
+  if (values.length === 0) return [];
+  const uniqueValues = [...new Set(values.map((value) => JSON.stringify(value)))];
+  const value = values[0];
+  if (uniqueValues.length !== 1 || !Array.isArray(value) || value.length !== 1) return [];
+  const item: unknown = value[0];
+  if (!item || typeof item !== 'object') return [];
+  const battlePointId = (item as Record<string, unknown>)['battlePointId'];
+  const range = (item as Record<string, unknown>)['range'];
+  if (
+    typeof battlePointId !== 'number' ||
+    !Number.isInteger(battlePointId) ||
+    !Array.isArray(range) ||
+    range.length !== 1 ||
+    typeof range[0] !== 'string'
+  )
+    return [];
+  const atMost = /^<=(-?\d+)$/.exec(range[0]);
+  const atLeast = /^(-?\d+)<=$/.exec(range[0]);
+  if (!atMost && !atLeast) return [];
+  return [
+    {
+      quantity: 'battlePointRate' as const,
+      subjectId: String(battlePointId),
+      comparison: atMost ? ('atMost' as const) : ('atLeast' as const),
+      value: Number((atMost ?? atLeast)![1]),
+    },
+  ];
+}
+
 const HP_VALUE_PARAMETER_KEYS = new Set([
   'RatioHPHigh',
   'RatioHPLow',
@@ -649,6 +688,7 @@ function normalizeOperationTrigger(parameterSets: readonly (readonly AtlasFuncti
 function classifyParameterSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   quantityConditions: readonly NormalizedQuantityCondition[],
+  sourceQuantityConditions: ReturnType<typeof normalizeSourceQuantityConditions>,
   valueExpressionKeys: readonly string[],
   choice: ReturnType<typeof normalizeEffectChoice>,
   operationTrigger: ReturnType<typeof normalizeOperationTrigger>,
@@ -662,6 +702,7 @@ function classifyParameterSemantics(
       ? ['CheckBattlePointPhaseRange']
       : [],
   );
+  if (sourceQuantityConditions.length > 0) conditionKeys.add('TriggeredTargetBattlePointRateRange');
   const choiceKeys = new Set(
     choice?.family === 'actSet'
       ? ['ActSet', ...(keys.includes('ActSetWeight') ? ['ActSetWeight'] : [])]
@@ -726,6 +767,7 @@ function normalizeFunctions(
       AtlasFunctionValue[],
     ];
     const quantityConditions = normalizeQuantityConditions(parameterSets);
+    const sourceQuantityConditions = normalizeSourceQuantityConditions(parameterSets);
     const modifierValues = normalizeModifierValueExpressions(parameterSets);
     const choice = normalizeEffectChoice(parameterSets);
     const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs);
@@ -741,6 +783,7 @@ function normalizeFunctions(
         parameterSemantics: classifyParameterSemantics(
           parameterSets,
           quantityConditions,
+          sourceQuantityConditions,
           modifierValues.recognizedKeys,
           choice,
           operationTrigger,
@@ -751,6 +794,7 @@ function normalizeFunctions(
         triggerScope: normalizeTriggerScope(fn.buffs, source),
         operationTrigger,
         quantityConditions,
+        sourceQuantityConditions,
         modifierValueExpressionSets: modifierValues.sets,
         conditions: {
           recipient:

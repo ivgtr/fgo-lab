@@ -304,6 +304,7 @@ E3.4進捗（master v26、schema 14、engine 12.5.0）:
 - master v29ではskill／passiveの通常攻撃前trigger 22効果・20騎をNP damage scopeから分離した。宝具内の同型参照は除外せずfail-closedを維持し、選択時unsupportedは22騎・41 occurrenceとなった。
 - master v30では`TriggeredFuncPosition` 23 occurrence・13騎をeffect-localな発動位置制約へ正規化した。damage前に到達する3 projectionは具体的なworld factを生成せず既存のオン・オフでexactに実行し、damage後の位置付き効果は入力へ遡及させない。既定unsupportedは12騎、選択時unsupportedは20騎・39 occurrenceとなった。
 - master v31ではbuff instance identityをactor traitから分離し、`faceCard` 17効果・11騎をcommand-card scopeへ正規化した。Nemo／NoahとMashのlinked buffはexact、宮本武蔵2騎のcommand-card限定効果はNP projection外となり、既定unsupportedは11騎、選択時unsupportedは16騎・35 occurrenceとなった。
+- master v32では`TriggeredTargetBattlePointRateRange`をBP phaseと分離したsource-owned rangeへ正規化した。紅閻魔の3火力効果はaction choiceと同じeffect-local solverでexactとなり、異なる候補の同時選択は全modifierを非適用にする。選択時unsupportedは15騎・32 occurrenceとなった。
 
 作業:
 

@@ -89,4 +89,8 @@ E3.3では分離した入力型を維持しつつ、実行時検証を一つのc
 
 `faceCard`条件はNP cardと共通のcard traitにせず、command-card execution scopeとして正規化する。scope外effectはoperation route生成前に除外し、upDamage等のmodifier typeだけを理由にNP projectionを生成しない。これによりUI側にカード種別判定を追加せず、executorのprojectionだけでNPに無関係な操作を非表示にする。
 
+## E3.4 amendment: source-owned quantity ranges
+
+`TriggeredTargetBattlePointRateRange`はattackerのBP phase入力とは別のsource-owned quantityである。normalizerはsubject IDと整数rangeを保持し、effect-local `sourceQuantity` conditionへ変換する。成立decisionは具体的なrateをscenarioやworld factへ保存しないが、選択された複数rangeは同一subjectごとにsolverで積を取り、空積をtyped conflictにする。rangeが複数、構文不明、非整数の場合はunsupportedを維持する。
+
 この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。

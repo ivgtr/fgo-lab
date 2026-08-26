@@ -72,6 +72,10 @@ master v31、master schema 18、scenario schema 19、engine 12.9.0で、actor tr
 
 同時に`faceCard`条件を`commandCard` scopeへ正規化した。該当17効果・11騎はNP cardに適用されず、宮本武蔵2騎のヒット数連動ゼロ値damage効果をNP projectionから除外した。scope付きeffectはroute生成より前に除外し、modifier typeだけでNP operationへ戻らないようにした。この段階で既定unsupportedは11騎、選択時unsupportedは16騎・35 effect occurrence、projectionはuser 1,538、automatic visible 439、hidden 687である。
 
+master v32、master schema 19、scenario schema 20、engine 12.10.0で`TriggeredTargetBattlePointRateRange`をsource-owned quantity rangeへ正規化した。これは既存のBP phaseではなく、紅閻魔のまんぷくゲージrateを対象とするため、attacker BP入力へ読み替えない。subject ID、`atMost`／`atLeast`、整数境界をlosslessに保持し、effect-local成立制約としてaction choiceと同じsolverへ入力する。range同士の積が空ならtyped quantity conflictとなる。
+
+紅閻魔の3 damage effectは、通常候補の攻撃力20%、特殊候補の攻撃力20%と宝具威力20%として既存のオン・オフでexactに実行できる。通常候補と特殊候補の同時選択は従来どおりchoice conflictで全modifierを非適用にする。具体的なBP rateをworld factへ追加しない。この段階で選択時unsupportedは15騎・32 effect occurrenceとなり、排他候補は26組、競合中の正常計算は0件である。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |
@@ -104,7 +108,7 @@ master v31、master schema 18、scenario schema 19、engine 12.9.0で、actor tr
 | trait source semantics | `IncludeIgnoreIndividuality`、`IgnoreIndivUnreleaseable`、`IncludePassiveIndividuality`、`FuncCheckTargetIndividualityTargetType` | メドゥーサ、ゴルゴーン、ビショーネ、セミラミス、アルジュナ〔オルタ〕、テスカトリポカ、玉兎 | 9 | initial/state/combinedのどのtrait集合を読むかIRへ保持 |
 | buff instance identity | `AddIndividualty/List/LinkageTarget` | 宮本武蔵2種、ネモ／ノア、マシュほか | damage候補4 | 対応完了。actor traitへ付与せずbuff identity metadataへ分離。command-card限定2効果はNP scope外、Nemo／NoahとMashはexact |
 | HP-dependent modifier | `RatioHPLow`、`RatioHPHigh`、`RatioHPRangeLow/High` | クー・フーリン、パッションリップ | 2 | 自身効果は既存HP入力からexact。支援元HP依存は別ownerとして入力不足を維持 |
-| BP-dependent modifier | `TriggeredTargetBattlePointRateRange` | 紅閻魔 | 2 | 既存BP入力からbranchを決定 |
+| BP rate guard | `TriggeredTargetBattlePointRateRange` | 紅閻魔 | 3 | 対応完了。phaseへ読み替えずsource-owned rangeとして保持し、choiceとeffect-localに検証 |
 | random/action choice | `ActSet/ActSetWeight`、`ActSelectIndex` | Braveエリザ、エルキドゥ、ゴッホ〔マイナー〕、シャルロット、ククルカン、岸波白野、玉兎 | 17 | 対応完了。同じchoice groupの候補を排他decisionとして扱い、選択候補だけ適用 |
 | function position guard | `TriggeredFuncPosition` | UDKバーゲスト、キングプロテア、テノチティトランほか | 23 | 対応完了。整数positionをeffect-local trigger制約として保持し、選択effectだけを実行。damage後のoperationは遡及させない |
 | class relation responsibility | `overwriteClassRelation` | ネロ、セミラミス、カーマ、ヘファイスティオン、キアラ、C.I.E.L、ハベトロット | 7 | calculatorの最終クラス相性入力が唯一のdamage fact。operationは二重適用しない |

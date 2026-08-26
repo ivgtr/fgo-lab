@@ -21,6 +21,13 @@ export type ConditionExpression =
   | { kind: 'choice'; group: string; candidate: string }
   | { kind: 'operationTrigger'; source: string; position: number }
   | {
+      kind: 'sourceQuantity';
+      quantity: 'battlePointRate';
+      subjectId: string;
+      comparison: 'atMost' | 'atLeast';
+      value: number;
+    }
+  | {
       kind: 'quantity';
       quantity: 'attackerHpPermille' | 'targetRarity' | 'battlePointPhase';
       subjectId?: string;
@@ -194,12 +201,12 @@ export type ConditionConstraintConflict =
   | { kind: 'traitPolarity'; scope: TraitScope; trait: string }
   | {
       kind: 'quantityEquality';
-      quantity: keyof BattleState['quantities'];
+      quantity: keyof BattleState['quantities'] | 'battlePointRate';
       values: readonly number[];
     }
   | {
       kind: 'quantityRange';
-      quantity: keyof BattleState['quantities'];
+      quantity: keyof BattleState['quantities'] | 'battlePointRate';
       ranges: readonly { min: number; max: number }[];
     }
   | { kind: 'cardMismatch'; cards: readonly CardType[] }

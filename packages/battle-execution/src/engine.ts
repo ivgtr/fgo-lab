@@ -220,6 +220,10 @@ function effectCondition(
         value: condition.value,
       };
     }),
+    ...effect.sourceQuantityConditions.map<ConditionExpression>((condition) => ({
+      kind: 'sourceQuantity',
+      ...condition,
+    })),
     ...(effect.choice
       ? [
           {

@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(18),
+  schemaVersion: z.literal(19),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -58,6 +58,12 @@ export type EffectParameterSemantics = z.infer<typeof effectParameterSemanticsSc
 const effectQuantityConditionSchema = z.object({
   quantity: z.enum(['attackerHpPermille', 'battlePointPhase']),
   subjectId: z.string().min(1).optional(),
+  comparison: z.enum(['atMost', 'atLeast']),
+  value: z.number().int(),
+});
+const effectSourceQuantityConditionSchema = z.object({
+  quantity: z.literal('battlePointRate'),
+  subjectId: z.string().min(1),
   comparison: z.enum(['atMost', 'atLeast']),
   value: z.number().int(),
 });
@@ -117,6 +123,7 @@ const masterEffectSchema = z.object({
     .object({ kind: z.literal('functionPosition'), position: z.number().int() })
     .nullable(),
   quantityConditions: z.array(effectQuantityConditionSchema),
+  sourceQuantityConditions: z.array(effectSourceQuantityConditionSchema),
   conditions: effectConditionsSchema,
   contextChanges: z.object({
     addedFieldTraits: z.array(z.string().min(1)),
