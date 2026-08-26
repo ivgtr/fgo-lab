@@ -51,6 +51,35 @@ Production 469騎、攻撃宝具scenario 420件を現行masterとexecutorから�
 
 画面構造、入力項目、操作順、共有・保存形式の意味は変更していない。中間field/state、command-card限定効果は通常表示せず、既存の火力ボタンとHP/BP入力だけを使用する。
 
-最終品質ゲート結果は、このreportの完了commit前に実行し、format、lint、typecheck、unit/integration/property/golden、master/evidence validation、production build、Playwright、benchmark、`git diff --check`をすべて成功させる。
+最終品質ゲートはすべて成功した。
+
+- format check、ESLint、TypeScript: pass
+- unit／integration／property／golden: 29 files、171 tests pass
+- production master validation: 3 files、17 tests pass
+- evidence validation: 2 files、10 tests pass
+- production build: 170 modules、pass
+- Playwright Chromium／mobile Chromium: 41 pass、21 project-specific skip、0 failure
+- PC、390px、320pxでDante、OR条件、HP効果、支援、共有、NP card choiceを実操作。玉兎はArts→Buster、形態競合時の結果非表示、競合解除後のArts復帰を両projectで確認
+- benchmark NP1-5／200 random values: 381.84 ops/s、mean 2.6189 ms
+- `git diff --check`: pass
+
+## Commits
+
+- `568ba73` docs(calc): inventory unsupported operation semantics
+- `71669e9` refactor(calc)!: identify effect occurrences independently
+- `ada4033` refactor(calc): normalize field mutation semantics
+- `2441aa1` refactor(calc)!: classify effect parameter semantics
+- `bc7ac39` feat(calc): execute subject-scoped Battle Point guards
+- `e7dca9a` feat(calc): evaluate HP-dependent modifier expressions
+- `89ef945` feat(calc): enforce action candidate choices
+- `2924b0f` feat(calc): execute NP card type mutations
+- `c51b1e1` refactor(calc): separate command-card trigger scope
+- `3952c8b` feat(calc): execute function-position guards
+- `0f1fbf8` refactor(calc): separate buff identity and card scope
+- `cb2d749` feat(calc): validate source-owned quantity guards
+- `ca8950e` feat(calc): execute NP form state transitions
+- `a52fe35` test(calc): migrate fixtures to current execution contract
+- `277bb07` test(web): ratchet current master UI baselines
+- `be78f9c` test(web): verify Jade Rabbit form decisions
 
 E4には着手していない。
