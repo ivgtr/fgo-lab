@@ -36,6 +36,10 @@ production 469騎のうち攻撃宝具scenarioを構築できる420騎につい�
 
 master v20、schema 15、engine 12.0.0でoccurrence identityへ置換した結果、既定unsupportedは15騎のまま、選択時unsupportedは58騎・100 effect occurrenceとなった。従来の90 projectionは10 occurrenceを欠落していた。全projectionはuser 1,567、automatic visible 445、hidden 671であり、projection key衝突は0件である。以後のratchetはこのoccurrence単位を母数とする。
 
+master v21、engine 12.1.0でfield mutationと最終クラス相性の責務を分離した。`fieldIndividuality` 11効果と`subFieldIndividuality` 1効果はhiddenなadd/remove operationへ正規化し、automatic sourceだけが順序どおりstateへcommitする。ユーザー効果のeffect-local成立をfield factへ昇格させたり、同じskillの全field候補を一括適用したりしない。`overwriteClassRelation` 7効果は、敵classではなく適用後の最終クラス相性を直接入力するcalculator契約へ集約し、二重適用も操作projectionも生成しない。
+
+この段階で既定unsupportedは12騎、選択時unsupportedは49騎・84 effect occurrenceとなった。projectionはuser 1,551、automatic visible 442、hidden 683である。
+
 ## 3. 既定scenarioの完全インベントリ
 
 | 原因family | 対象 | damage影響 | 現行入力で解決 | 根拠データ |

@@ -54,7 +54,6 @@ const POSSIBLY_DAMAGE = new Set([
   'fieldIndividuality',
   'fieldIndividualityChangedFunction',
   'npattackPrevBuff',
-  'overwriteClassRelation',
   'subFieldIndividuality',
   'subIndividuality',
   'subSelfdamage',
@@ -299,6 +298,15 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
       scope: 'field',
       trait,
     });
+  for (const trait of source.effect.contextChanges.removedFieldTraits)
+    operations.push({
+      ...baseOperation(source, order++, `remove-field:${trait}`),
+      decisionKey: null,
+      decisionPlan: { activation: 'automatic', condition: 'evaluate' },
+      kind: 'removeTrait',
+      scope: 'field',
+      trait,
+    });
   const recipient = targetRecipient(source.origin, source.effect.target);
   if (recipient)
     for (const trait of source.effect.contextChanges.addedRecipientTraits)
@@ -329,7 +337,7 @@ function compileEffect(source: SourceEffect, startOrder: number): CompiledOperat
     return { operations, unsupported };
   }
   if (!routed && !rateChange) {
-    if (canNormalizeDamageEffect(source.effect, source.origin))
+    if (operations.length === 0 && canNormalizeDamageEffect(source.effect, source.origin))
       unsupported.push(
         makeProjection(source, key, 'unsupported', 'unresolved', null, null, condition),
       );

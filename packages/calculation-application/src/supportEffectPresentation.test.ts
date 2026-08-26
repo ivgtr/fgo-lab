@@ -46,7 +46,12 @@ describe('support effect application view model', () => {
                   ],
                   buffTypes: ['upAtk'],
                   conditions,
-                  contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+                  contextChanges: {
+                    addedFieldTraits: [],
+                    removedFieldTraits: [],
+                    addedRecipientTraits: [],
+                    removedRecipientTraits: [],
+                  },
                   cardTypes: [],
                 },
                 {
@@ -64,7 +69,12 @@ describe('support effect application view model', () => {
                   ],
                   buffTypes: ['upCriticaldamage'],
                   conditions,
-                  contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+                  contextChanges: {
+                    addedFieldTraits: [],
+                    removedFieldTraits: [],
+                    addedRecipientTraits: [],
+                    removedRecipientTraits: [],
+                  },
                   cardTypes: [],
                 },
               ],

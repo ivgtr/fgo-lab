@@ -45,7 +45,12 @@ function modifierEffect(
     parameterSets: [Array.from({ length: 10 }, () => ({ Value: value })), [], [], [], []],
     buffTypes: [buffType],
     conditions,
-    contextChanges: { addedFieldTraits: [], addedRecipientTraits: [] },
+    contextChanges: {
+      addedFieldTraits: [],
+      removedFieldTraits: [],
+      addedRecipientTraits: [],
+      removedRecipientTraits: [],
+    },
     cardTypes,
   };
 }
@@ -120,6 +125,77 @@ describe('scenario calculation facade', () => {
         (effect) => effect.source.effectId === 'shared-function' && effect.outcome === 'applied',
       ),
     ).toHaveLength(2);
+  });
+
+  it('executes hidden automatic field mutations before dependent modifiers', () => {
+    const fieldEffect = {
+      ...modifierEffect('field-sunshine', 'fieldIndividuality', 2_038),
+      label: 'field mutation',
+      timing: 'beforeDamage' as const,
+      contextChanges: {
+        addedFieldTraits: ['fieldSunlight'],
+        removedFieldTraits: [],
+        addedRecipientTraits: [],
+        removedRecipientTraits: [],
+      },
+    };
+    const conditional = {
+      ...modifierEffect('sunshine-power', 'upAtk', 300, [], 'self', {
+        ...unconditionalConditions,
+        field: {
+          operator: 'all',
+          traits: [{ name: 'fieldSunlight', negative: false }],
+        },
+      }),
+      timing: 'beforeDamage' as const,
+    };
+    const classRelation = {
+      ...modifierEffect('class-relation', 'overwriteClassRelation', 0),
+      type: 'addState',
+      label: 'class relation override',
+    };
+    const baseServant = fixture.servants[0]!;
+    const fieldMaster = masterSnapshotSchema.parse({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
+            ...np,
+            effects: [fieldEffect, conditional],
+          })),
+          passives: [
+            {
+              id: 'class-passive',
+              slot: 0,
+              priority: 1,
+              name: 'class passive',
+              detail: '',
+              imageKey: null,
+              effects: [classRelation],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario = createDefaultResolvedScenario(fieldMaster, undefined);
+    const calculation = calculateScenario(scenario, fieldMaster, {
+      ...versions,
+      masterDataVersion: fieldMaster.version,
+    });
+
+    expect(
+      calculation.effects.find((effect) => effect.label === 'field mutation')?.visibility,
+    ).toBe('hidden');
+    expect(calculation.effects.some((effect) => effect.label === 'class relation override')).toBe(
+      false,
+    );
+    expect(calculation.result.status).toBe('calculated');
+    expect(calculation.input.attackBuff).toBe(0.3);
+    expect(calculation.input.fieldTraits).toContain('fieldSunlight');
+    expect(calculation.effects.find((effect) => effect.label === 'field mutation')?.outcome).toBe(
+      'applied',
+    );
   });
   it('calculates a resolved scenario without a UI selection adapter', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
@@ -402,7 +478,12 @@ describe('scenario calculation facade', () => {
     const baseServant = fixture.servants[0]!;
     const heavenContext = {
       ...modifierEffect('heaven-context', 'nonDamageContext', 0),
-      contextChanges: { addedFieldTraits: ['fieldHeaven'], addedRecipientTraits: [] },
+      contextChanges: {
+        addedFieldTraits: ['fieldHeaven'],
+        removedFieldTraits: [],
+        addedRecipientTraits: [],
+        removedRecipientTraits: [],
+      },
     };
     const transactionalMaster = masterSnapshotSchema.parse({
       ...fixture,
@@ -582,7 +663,12 @@ describe('scenario calculation facade', () => {
     const burn = { id: 99, name: 'buffBurn' };
     const stackEffect = (id: string) => ({
       ...modifierEffect(id, 'addIndividuality', 0, [], 'enemyAll'),
-      contextChanges: { addedFieldTraits: [], addedRecipientTraits: [burn.name] },
+      contextChanges: {
+        addedFieldTraits: [],
+        removedFieldTraits: [],
+        addedRecipientTraits: [burn.name],
+        removedRecipientTraits: [],
+      },
       timing: 'beforeDamage' as const,
     });
     const stackedMaster = masterSnapshotSchema.parse({

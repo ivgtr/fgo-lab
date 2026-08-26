@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(9),
+  schemaVersion: z.literal(10),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -63,7 +63,9 @@ const masterEffectSchema = z.object({
   conditions: effectConditionsSchema,
   contextChanges: z.object({
     addedFieldTraits: z.array(z.string().min(1)),
+    removedFieldTraits: z.array(z.string().min(1)),
     addedRecipientTraits: z.array(z.string().min(1)),
+    removedRecipientTraits: z.array(z.string().min(1)),
   }),
   buffTypes: z.array(z.string()).optional(),
   buffRateTargets: z.array(z.string()).optional(),

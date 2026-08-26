@@ -30,7 +30,7 @@ export function createManifest(input: {
     createdAt: input.createdAt,
     source: { name: 'Atlas Academy', region: 'JP', retrievedAt: input.retrievedAt },
     minimalAppVersion: input.minimalAppVersion,
-    schemaVersion: 9,
+    schemaVersion: 10,
     artifactKind: input.artifactKind,
     imagesEnabled: input.imagesEnabled,
     files: input.files.map((file) => ({
@@ -369,9 +369,18 @@ function buffRateTargets(buffs: AtlasBuff[] | undefined) {
   );
 }
 
-function signedTraits(traits: readonly AtlasTraitRef[] | undefined) {
+function signedTraits(
+  traits: readonly AtlasTraitRef[] | undefined,
+  traitNameById: ReadonlyMap<number, string>,
+) {
   return (traits ?? []).flatMap((trait) =>
-    trait.name ? [{ name: trait.name, negative: Boolean(trait.negative) }] : [],
+    trait.name && trait.name !== 'unknown'
+      ? [{ name: trait.name, negative: Boolean(trait.negative) }]
+      : typeof trait.id === 'number' && traitNameById.has(trait.id)
+        ? [{ name: traitNameById.get(trait.id)!, negative: Boolean(trait.negative) }]
+        : trait.name
+          ? [{ name: trait.name, negative: Boolean(trait.negative) }]
+          : [],
   );
 }
 
@@ -421,26 +430,29 @@ function normalizeFunctions(
             (fn.overWriteTvalsList ?? []).length > 0
               ? fn.overWriteTvalsList!.map((group) => ({
                   operator: 'all' as const,
-                  traits: signedTraits(Array.isArray(group) ? (group as AtlasTraitRef[]) : []),
+                  traits: signedTraits(
+                    Array.isArray(group) ? (group as AtlasTraitRef[]) : [],
+                    traitNameById,
+                  ),
                 }))
               : [
                   {
                     operator: 'any' as const,
-                    traits: signedTraits(fn.functvals),
+                    traits: signedTraits(fn.functvals, traitNameById),
                   },
                 ],
           holder: {
             operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: signedTraits(fn.buffs?.[0]?.ckSelfIndv),
+            traits: signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById),
           },
           opponent: {
             operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv),
+            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById),
           },
           field: {
             operator: 'any' as const,
             traits: uniqueTraits([
-              ...signedTraits(fn.funcquestTvals),
+              ...signedTraits(fn.funcquestTvals, traitNameById),
               ...(fn.buffs ?? []).flatMap((buff) =>
                 buff.script?.INDIVIDUALITIE?.name
                   ? [{ name: buff.script.INDIVIDUALITIE.name, negative: false }]
@@ -451,16 +463,33 @@ function normalizeFunctions(
         },
         contextChanges: {
           addedFieldTraits:
-            fn.funcType === 'addFieldChangeToField'
+            fn.funcType === 'addFieldChangeToField' ||
+            (fn.buffs ?? []).some((buff) => buff.type === 'fieldIndividuality')
               ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
                   .flatMap((parameters) => parameters ?? [])
-                  .flatMap((parameter) => parameter.FieldIndividuality ?? [])
+                  .flatMap((parameter) => [
+                    ...(parameter.FieldIndividuality ?? []),
+                    ...((fn.buffs ?? []).some((buff) => buff.type === 'fieldIndividuality') &&
+                    typeof parameter.Value === 'number'
+                      ? [parameter.Value]
+                      : []),
+                  ])
                   .flatMap((id) => {
                     const name = traitNameById.get(id);
                     return name ? [name] : [];
                   })
                   .filter((name, index, all) => all.indexOf(name) === index)
               : [],
+          removedFieldTraits: (fn.buffs ?? []).some((buff) => buff.type === 'subFieldIndividuality')
+            ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
+                .flatMap((parameters) => parameters ?? [])
+                .flatMap((parameter) => parameter.TargetList ?? [])
+                .flatMap((id) => {
+                  const name = traitNameById.get(id);
+                  return name ? [name] : [];
+                })
+                .filter((name, index, all) => all.indexOf(name) === index)
+            : [],
           addedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'addIndividuality')
             ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
                 .flatMap((parameters) => parameters ?? [])
@@ -473,6 +502,7 @@ function normalizeFunctions(
                 })
                 .filter((name, index, all) => all.indexOf(name) === index)
             : [],
+          removedRecipientTraits: [],
         },
         buffTypes: (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : [])),
         ...(buffRateTargets(fn.buffs).length ? { buffRateTargets: buffRateTargets(fn.buffs) } : {}),

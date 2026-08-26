@@ -36,6 +36,31 @@ describe('immutable publish pipeline', () => {
           attribute: 'earth',
           rarity: 5,
           atkGrowth: [1_000],
+          traits: [{ id: 2_038, name: 'fieldSunlight' }],
+          skills: [
+            {
+              id: 100150,
+              num: 1,
+              priority: 1,
+              name: 'field skill',
+              functions: [
+                {
+                  funcId: 8_411,
+                  funcType: 'addState',
+                  funcTargetType: 'self',
+                  svals: [{ Value: 2_038 }],
+                  buffs: [{ type: 'fieldIndividuality' }],
+                },
+                {
+                  funcId: 20_780,
+                  funcType: 'addState',
+                  funcTargetType: 'self',
+                  svals: [{ TargetList: [2_038] }],
+                  buffs: [{ type: 'subFieldIndividuality' }],
+                },
+              ],
+            },
+          ],
           noblePhantasms: [
             {
               id: 100101,
@@ -68,6 +93,20 @@ describe('immutable publish pipeline', () => {
     expect(snapshot.servants[0]?.noblePhantasms[0]?.effects).toMatchObject([
       { id: '248', occurrenceId: '248:0' },
       { id: '248', occurrenceId: '248:1' },
+    ]);
+    expect(snapshot.servants[0]?.skills[0]?.effects).toMatchObject([
+      {
+        contextChanges: {
+          addedFieldTraits: ['fieldSunlight'],
+          removedFieldTraits: [],
+        },
+      },
+      {
+        contextChanges: {
+          addedFieldTraits: [],
+          removedFieldTraits: ['fieldSunlight'],
+        },
+      },
     ]);
   });
   it('creates and validates a checksum manifest', () => {

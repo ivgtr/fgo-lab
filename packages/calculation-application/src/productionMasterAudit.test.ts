@@ -28,11 +28,9 @@ const expectedUnsupportedFamilies = {
   '400900': ['missing_attacker_hp_ratio'],
   '702500': ['missing_attacker_hp_ratio'],
   '800100': ['unsupportedOperation'],
-  '1000300': ['unsupportedOperation'],
   '1102000': ['unsupportedOperation'],
   '1102300': ['unsupportedOperation'],
   '2300600': ['unsupportedOperation'],
-  '2300900': ['unsupportedOperation'],
   '2301200': ['unsupportedOperation'],
   '2801300': ['unsupportedOperation'],
   '3300200': ['missing_battle_point_phase', 'unsupportedOperation'],
@@ -796,7 +794,7 @@ describe('production master damage quality ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_567, automaticVisible: 445, hidden: 671 });
+    }).toEqual({ user: 1_551, automaticVisible: 442, hidden: 683 });
     expect({
       servants: new Set(partialConditionProjections.map((item) => item.servantId)).size,
       effects: partialConditionProjections.length,
@@ -820,7 +818,7 @@ describe('production master damage quality ratchet', () => {
     expect({
       servants: new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0])).size,
       effects: selectedUnsupportedProjections.length,
-    }).toEqual({ servants: 58, effects: 100 });
+    }).toEqual({ servants: 49, effects: 84 });
     expect(exclusivePairCount).toBe(8);
     expect(conflictPairs).toEqual({ effectEffect: 7, factFact: 1, factEffect: 0 });
     expect({
