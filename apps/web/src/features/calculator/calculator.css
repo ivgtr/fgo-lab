@@ -246,6 +246,94 @@
   min-height: 0;
   max-width: 100%;
 }
+.modifier-chip-list .applied-effect-item {
+  display: grid;
+  width: max-content;
+  gap: 0.4rem;
+}
+.modifier-chip-list .applied-effect-item[data-has-input],
+.modifier-chip-list .applied-effect-input-only {
+  width: min(100%, 28rem);
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  background: #fafaf8;
+}
+.applied-effect-input-only > p {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0;
+  color: #40495b;
+  font-size: 0.78rem;
+}
+.applied-effect-input-only > p small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 400;
+}
+.effect-inline-input {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.45rem;
+  border: 1px solid #d9b7aa;
+  background: #fff8f5;
+}
+.effect-inline-input legend {
+  margin: 0;
+  padding: 0 0.2rem;
+  font-size: 0.75rem;
+}
+.effect-inline-input > small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 400;
+}
+.effect-inline-input[data-invalid] {
+  border-color: #a43a2c;
+}
+.effect-inline-input[data-invalid] > small {
+  color: #8f2f24;
+}
+.effect-input-segments,
+.effect-input-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+.effect-input-segments button {
+  min-width: 2.5rem;
+  min-height: 36px;
+  padding: 0.3rem 0.55rem;
+}
+.effect-input-segments button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: #f6ece8;
+  color: var(--accent);
+  font-weight: 800;
+}
+.effect-input-stepper input {
+  width: 5rem;
+  min-width: 0;
+  text-align: center;
+}
+.effect-input-stepper button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0.2rem;
+}
+.effect-inline-input .effect-input-reset {
+  justify-self: start;
+  min-height: 28px;
+  padding: 0.2rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+.effect-input-default {
+  display: block;
+}
 .modifier-chip {
   display: inline-grid;
   grid-template-columns: minmax(0, 1fr) auto;

@@ -8,11 +8,11 @@ import {
   naturalServantLevel,
   type CraftEssenceMaster,
   type ServantMaster,
-  type BattleContextInputDefinition,
 } from '@fgo-lab/master-data';
 import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
-import type { EffectProjection } from '@fgo-lab/calculation-application';
+import type { EffectInputViewModel, EffectProjection } from '@fgo-lab/calculation-application';
 import {
+  applyCanonicalInputCommand,
   appendCalculationSupportSource,
   applyEffectProjectionDecision,
   removeCalculationSupportSource as removeSupportSourceFromScenario,
@@ -51,7 +51,7 @@ export function Calculator({
   scenarioInput,
   resolvedEffects,
   effectWarnings,
-  contextInputs,
+  effectInputs,
   result,
   scenario,
   servants,
@@ -71,7 +71,7 @@ export function Calculator({
   scenarioInput: DamageResolutionInput;
   resolvedEffects: readonly EffectProjection[];
   effectWarnings: readonly string[];
-  contextInputs: readonly BattleContextInputDefinition[];
+  effectInputs: readonly EffectInputViewModel[];
   result: CalculationResultValue;
   scenario: CalculationScenario;
   servants: ServantMaster[];
@@ -200,17 +200,15 @@ export function Calculator({
       battleState: { ...scenario.battleState, battlePointPhase: value },
     });
   }
-  function changeBattleContext(key: string, value: number | null) {
+  function changeCanonicalInput(key: string, value: number | null) {
     if (scenario.mode !== 'resolved') return;
-    const values =
-      value === null
-        ? Object.fromEntries(
-            Object.entries(scenario.battleContext.values).filter(
-              ([candidate]) => candidate !== key,
-            ),
-          )
-        : { ...scenario.battleContext.values, [key]: value };
-    void onScenarioChange({ ...scenario, battleContext: { values } });
+    void onScenarioChange(
+      applyCanonicalInputCommand(scenario, {
+        kind: 'setCanonicalIntegerInput',
+        key,
+        value,
+      }),
+    );
   }
   function changeAttackerLevel(level: number) {
     if (scenario.mode === 'manual') {
@@ -273,7 +271,7 @@ export function Calculator({
       },
       attackerHpPermille: input.attackerHpPermille,
       battleState: { battlePointPhase: input.battlePointPhase },
-      battleContext: { values: {} },
+      canonicalInputValues: {},
       assumptions: {
         classAffinity: input.classAffinity,
         attributeAffinity: input.attributeAffinity,
@@ -336,7 +334,7 @@ export function Calculator({
         worldFactAssertions: [],
         attackerHpPermille: null,
         battleState: { battlePointPhase: null },
-        battleContext: { values: {} },
+        canonicalInputValues: {},
         explicitOverrides: {},
       });
     }
@@ -754,37 +752,6 @@ export function Calculator({
               <small>0〜{attackerDamage.maximumBattlePointPhase}の現在段階を入力します</small>
             </label>
           ) : null}
-          {resolvedScenario
-            ? contextInputs.map((definition) => {
-                const explicit = resolvedScenario.battleContext.values[definition.key];
-                const canonicalValue = explicit ?? definition.defaultValue;
-                const percent = definition.kind === 'sourceHpPermille';
-                const value =
-                  canonicalValue === null ? '' : percent ? canonicalValue / 10 : canonicalValue;
-                return (
-                  <label className="damage-context-input form-grid-wide" key={definition.key}>
-                    {definition.label}
-                    <input
-                      type="number"
-                      min={percent ? definition.minimum / 10 : definition.minimum}
-                      max={percent ? definition.maximum / 10 : definition.maximum}
-                      step={percent ? definition.step / 10 : definition.step}
-                      required={definition.defaultValue === null}
-                      value={value}
-                      onChange={(event) =>
-                        changeBattleContext(
-                          definition.key,
-                          event.target.value === ''
-                            ? null
-                            : Number(event.target.value) * (percent ? 10 : 1),
-                        )
-                      }
-                    />
-                    <small>{definition.description}</small>
-                  </label>
-                );
-              })
-            : null}
           {mode === 'direct' && (
             <>
               <div className="direct-input-summary form-grid-wide">
@@ -918,9 +885,11 @@ export function Calculator({
           <AppliedEffects
             title="自身の適用内容"
             effects={ownEffects}
+            inputs={effectInputs.filter((input) => input.section === 'own')}
             servants={servants}
             craftEssence={selectedCraftEssence}
             onToggle={changeEffect}
+            onInputChange={changeCanonicalInput}
           />
         ) : null}
         <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>
@@ -1016,9 +985,11 @@ export function Calculator({
               <AppliedEffects
                 title="支援の適用内容"
                 effects={supportEffects}
+                inputs={effectInputs.filter((input) => input.section === 'support')}
                 servants={servants}
                 craftEssence={selectedCraftEssence}
                 onToggle={changeEffect}
+                onInputChange={changeCanonicalInput}
                 action={
                   <button
                     type="button"
@@ -1055,6 +1026,7 @@ export function Calculator({
         craftEssenceSummary={craftEssenceSummary}
         supportSummary={supportSummary}
         enabledAttackerSkillCount={enabledAttackerSkillCount}
+        effectInputs={effectInputs}
         onFinalize={onFinalize}
       />
       {attackerDialogOpen && (

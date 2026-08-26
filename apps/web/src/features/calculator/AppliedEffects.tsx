@@ -1,8 +1,9 @@
-import type { EffectProjection } from '@fgo-lab/calculation-application';
+import type { EffectInputViewModel, EffectProjection } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ReactNode } from 'react';
 import { effectSourceImage } from './effectSourcePresentation';
 import { ModifierChip } from './ModifierChip';
+import { EffectInlineInput } from './EffectInlineInput';
 import { traitLabel } from './traitPresentation';
 
 function conditionLabel(condition: EffectProjection['explanation']['condition']): string {
@@ -59,20 +60,35 @@ export function visibleAppliedEffects(effects: readonly EffectProjection[]) {
 export function AppliedEffects({
   title,
   effects,
+  inputs,
   servants,
   craftEssence,
   onToggle,
+  onInputChange,
   action,
 }: {
   title: string;
   effects: readonly EffectProjection[];
+  inputs: readonly EffectInputViewModel[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
   onToggle: (projection: EffectProjection, active: boolean) => void;
+  onInputChange: (key: string, value: number | null) => void;
   action?: ReactNode;
 }) {
   const visibleEffects = visibleAppliedEffects(effects);
-  if (visibleEffects.length === 0 && !action) return null;
+  const firstVisibleProjectionForInput = new Map(
+    inputs.map((input) => [
+      input.key,
+      input.relatedProjectionKeys.find((key) =>
+        visibleEffects.some((effect) => effect.projectionKey === key),
+      ) ?? null,
+    ]),
+  );
+  const unattachedInputs = inputs.filter(
+    (input) => firstVisibleProjectionForInput.get(input.key) === null,
+  );
+  if (visibleEffects.length === 0 && inputs.length === 0 && !action) return null;
 
   return (
     <fieldset className="modifier-group calculator-applied-effect-group">
@@ -83,25 +99,48 @@ export function AppliedEffects({
         </span>
         {action}
       </legend>
-      {visibleEffects.length ? (
+      {visibleEffects.length || inputs.length ? (
         <ul className="modifier-chip-list">
-          {visibleEffects.map((effect) => (
-            <ModifierChip
-              key={effect.projectionKey}
-              active={isEffectSelected(effect)}
-              label={effectLabel(effect)}
-              detail={effectStateLabel(effect)}
-              sources={[
-                {
-                  key: `${effect.projectionKey}:source`,
-                  label: `${effect.sourceName}・${effect.skillName}`,
-                  imageKey: effectSourceImage(effect, servants, craftEssence),
-                },
-              ]}
-              {...(effect.controllability === 'user'
-                ? { onToggle: (active: boolean) => onToggle(effect, active) }
-                : {})}
-            />
+          {visibleEffects.map((effect) => {
+            const attachedInputs = inputs.filter(
+              (input) => firstVisibleProjectionForInput.get(input.key) === effect.projectionKey,
+            );
+            return (
+              <li
+                className="applied-effect-item"
+                key={effect.projectionKey}
+                data-has-input={attachedInputs.length > 0 || undefined}
+              >
+                <ModifierChip
+                  bare
+                  active={isEffectSelected(effect)}
+                  label={effectLabel(effect)}
+                  detail={effectStateLabel(effect)}
+                  sources={[
+                    {
+                      key: `${effect.projectionKey}:source`,
+                      label: `${effect.sourceName}・${effect.skillName}`,
+                      imageKey: effectSourceImage(effect, servants, craftEssence),
+                    },
+                  ]}
+                  {...(effect.controllability === 'user'
+                    ? { onToggle: (active: boolean) => onToggle(effect, active) }
+                    : {})}
+                />
+                {attachedInputs.map((input) => (
+                  <EffectInlineInput key={input.key} input={input} onChange={onInputChange} />
+                ))}
+              </li>
+            );
+          })}
+          {unattachedInputs.map((input) => (
+            <li className="applied-effect-item applied-effect-input-only" key={input.key}>
+              <p>
+                <strong>{input.relatedEffectLabels.join('・')}</strong>
+                <small>成立条件の入力</small>
+              </p>
+              <EffectInlineInput input={input} onChange={onInputChange} />
+            </li>
           ))}
         </ul>
       ) : (

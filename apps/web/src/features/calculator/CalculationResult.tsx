@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import type { EffectInputViewModel } from '@fgo-lab/calculation-application';
 import type {
   DamageResolutionInput,
   CalculationResult as CalculationResultValue,
@@ -11,6 +12,11 @@ import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
 import './calculation-result.css';
 
+function effectInputValue(input: EffectInputViewModel): string | null {
+  if (input.value === null) return null;
+  return input.control === 'percentage' ? `${String(input.value / 10)}%` : String(input.value);
+}
+
 export function CalculationResult({
   input,
   result,
@@ -21,6 +27,7 @@ export function CalculationResult({
   craftEssenceSummary,
   supportSummary,
   enabledAttackerSkillCount,
+  effectInputs,
   onFinalize,
 }: {
   input: DamageResolutionInput;
@@ -32,6 +39,7 @@ export function CalculationResult({
   craftEssenceSummary: string;
   supportSummary: string;
   enabledAttackerSkillCount: number;
+  effectInputs: readonly EffectInputViewModel[];
   onFinalize: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
@@ -43,6 +51,10 @@ export function CalculationResult({
     scenario,
     result,
   } satisfies CalculationShareSnapshot;
+  const specialInputSummary = effectInputs.flatMap((item) => {
+    const value = effectInputValue(item);
+    return value === null ? [] : [`${item.label} ${value}`];
+  });
   async function copyUrl() {
     try {
       await onFinalize();
@@ -124,6 +136,12 @@ export function CalculationResult({
             <dt>支援</dt>
             <dd>{supportSummary}</dd>
           </div>
+          {specialInputSummary.length ? (
+            <div>
+              <dt>特殊条件</dt>
+              <dd>{specialInputSummary.join('・')}</dd>
+            </div>
+          ) : null}
         </dl>
         {result.status !== 'calculated' ? (
           <p className="empty" role="alert">
@@ -237,6 +255,19 @@ export function CalculationResult({
             <p>追加の仮定はありません。</p>
           )}
         </section>
+        {specialInputSummary.length ? (
+          <section>
+            <h3>特殊入力</h3>
+            <ul>
+              {effectInputs.map((item) => (
+                <li key={item.key}>
+                  {item.label}: {effectInputValue(item) ?? '未入力'}
+                  {item.explicit ? '（明示入力）' : '（自動導出）'}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <section>
           <h3>警告</h3>
           {result.issues.length ? (

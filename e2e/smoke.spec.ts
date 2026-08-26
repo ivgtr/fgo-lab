@@ -1044,8 +1044,9 @@ test('canonical actor counts derive safe minima and reject lower final totals', 
   await attackerDialog.getByLabel('名前で検索').fill('ジョン・ラックランド');
   await attackerDialog.getByRole('button', { name: /ジョン・ラックランド.*Lv90/ }).click();
 
-  const king = page.getByLabel('〔王〕一致数');
-  const evil = page.getByLabel('〔悪〕一致数');
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const king = ownEffects.getByRole('spinbutton', { name: '〔王〕一致数' });
+  const evil = ownEffects.getByRole('spinbutton', { name: '〔悪〕一致数' });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   await expect(king).toHaveValue('1');
   await expect(evil).toHaveValue('1');
@@ -1084,15 +1085,17 @@ test('Habetrot uses the final enemy total from one through three', async ({ page
   await attackerDialog.getByLabel('名前で検索').fill('ハベトロット');
   await attackerDialog.getByRole('button', { name: /ハベトロット.*プリテンダー.*Lv80/ }).click();
 
-  const count = page.getByLabel('敵の合計数');
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  const count = ownEffects.getByRole('group', { name: '敵の合計数' });
   const row = page.getByRole('row', { name: /NP1.*現在/ });
-  await expect(count).toHaveValue('1');
+  await expect(count.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
   await expect(row).toContainText('50,394');
-  await count.fill('3');
+  await count.getByRole('button', { name: '3' }).click();
+  await expect(count.getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true');
   await expect(row).toContainText('59,557');
-  await count.fill('0');
-  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
-  await expect(page.getByRole('alert')).toContainText('正確な計算に必要な戦闘情報');
+  await count.getByRole('button', { name: '1' }).focus();
+  await count.getByRole('button', { name: '1' }).press('Enter');
+  await expect(row).toContainText('50,394');
 });
 
 test('Gareth commits hidden sunlight only while its linked NP effect is selected', async ({

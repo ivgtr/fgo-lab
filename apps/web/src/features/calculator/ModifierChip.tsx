@@ -51,28 +51,28 @@ export function ModifierChip({
   detail,
   sources = [],
   onToggle,
+  bare = false,
 }: {
   active: boolean;
   label: string;
   detail: string;
   sources?: readonly ModifierChipSource[];
   onToggle?: (active: boolean) => void;
+  bare?: boolean;
 }) {
   const content = <ModifierChipContent label={label} detail={detail} sources={sources} />;
-  return (
-    <li data-active={active}>
-      {onToggle ? (
-        <button
-          type="button"
-          className="modifier-chip"
-          aria-pressed={active}
-          onClick={() => onToggle(!active)}
-        >
-          {content}
-        </button>
-      ) : (
-        <div className="modifier-chip">{content}</div>
-      )}
-    </li>
+  const control = onToggle ? (
+    <button
+      type="button"
+      className="modifier-chip"
+      aria-pressed={active}
+      onClick={() => onToggle(!active)}
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="modifier-chip">{content}</div>
   );
+  if (bare) return control;
+  return <li data-active={active}>{control}</li>;
 }
