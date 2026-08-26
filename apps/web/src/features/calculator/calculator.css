@@ -248,7 +248,7 @@
 }
 .modifier-chip-list .applied-effect-item {
   display: grid;
-  width: max-content;
+  width: min(100%, 28rem);
   gap: 0.4rem;
 }
 .modifier-chip-list .applied-effect-item[data-has-input],
@@ -353,7 +353,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.4rem;
-  width: max-content;
+  width: min(100%, 28rem);
   max-width: 100%;
   min-height: 42px;
   padding: 0.35rem 0.55rem;

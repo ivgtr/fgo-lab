@@ -165,6 +165,7 @@ export function AppliedEffects({
                     type="button"
                     className="effect-condition-control"
                     disabled={!effect.sourceActive}
+                    aria-label={`${effectLabel(effect)}：条件成立として計算`}
                     aria-pressed={effect.conditionDecision === 'assumeSatisfied'}
                     onClick={() =>
                       onConditionChange(effect, effect.conditionDecision !== 'assumeSatisfied')
@@ -178,6 +179,7 @@ export function AppliedEffects({
                     className="effect-condition-control"
                     disabled={!effect.sourceActive}
                     role="radio"
+                    aria-label={`${effectLabel(effect)}：この条件を選択`}
                     aria-checked={effect.conditionDecision === 'assumeSatisfied'}
                     onClick={() => onConditionChange(effect, true)}
                   >

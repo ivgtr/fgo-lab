@@ -8,7 +8,7 @@
 }
 .attacker-skill-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 78px;
+  grid-template-columns: 36px minmax(0, 1fr) auto 78px;
   align-items: center;
   gap: 0.65rem;
   min-height: 62px;
@@ -78,5 +78,9 @@
   .skill-level-control {
     grid-column: 3;
     grid-row: 1;
+  }
+  .skill-use-toggle {
+    grid-column: 3;
+    grid-row: 2;
   }
 }
