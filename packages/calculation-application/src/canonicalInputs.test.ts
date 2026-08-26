@@ -41,6 +41,7 @@ describe('canonical special input application boundary', () => {
         control: 'stepper',
         value: 1,
         defaultValue: 1,
+        defaultReason: '攻撃役本人を含む保証済み最低値',
         section: 'own',
         relatedEffectLabels: ['宝具威力アップ'],
       },
@@ -65,6 +66,7 @@ describe('canonical special input application boundary', () => {
       minimum: 1,
       maximum: 3,
       value: 1,
+      defaultReason: '現在の宝具対象1体を含む保証済み最低値',
       relatedEffectLabels: ['宝具威力アップ'],
     });
     expect(calculation.input.npDamageBuff).toBe(0.1);

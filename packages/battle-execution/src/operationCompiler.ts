@@ -32,7 +32,7 @@ type ValuedOperation = Extract<
   { kind: 'damageModifier' | 'modifierRateChange' }
 >;
 
-function runtimeContextKey(
+function runtimeInputKey(
   origin: Origin,
   sourceInstanceId: string,
   skillId: string,
@@ -44,7 +44,7 @@ function runtimeContextKey(
     : key;
 }
 
-function sourceHpContextKey(source: SourceEffect): string {
+function sourceHpInputKey(source: SourceEffect): string {
   return `source:${source.origin}:${source.sourceInstanceId}:hpPermille`;
 }
 
@@ -70,7 +70,7 @@ function guaranteedPredicateCount(
 function resolveMatchingActorMinimum(
   source: SourceEffect,
   definition: Extract<CanonicalInputDefinition, { kind: 'matchingActorCount' }>,
-): number {
+): { minimum: number; defaultReason: string } {
   const { countSemantics } = definition;
   const sourceCount = ['allActors', 'allies'].includes(countSemantics.population)
     ? guaranteedPredicateCount(countSemantics.sourcePredicate, new Set(source.sourceTraits))
@@ -79,26 +79,38 @@ function resolveMatchingActorMinimum(
     countSemantics.population === 'enemies'
       ? guaranteedPredicateCount(countSemantics.otherPredicate, null)
       : 0;
-  return Math.min(definition.maximum, sourceCount + targetCount);
+  return {
+    minimum: Math.min(definition.maximum, sourceCount + targetCount),
+    defaultReason:
+      sourceCount > 0 && targetCount > 0
+        ? '攻撃役本人と現在の宝具対象から保証できる最低値'
+        : sourceCount > 0
+          ? '攻撃役本人を含む保証済み最低値'
+          : targetCount > 0
+            ? '現在の宝具対象1体を含む保証済み最低値'
+            : '外部のactorを追加しない保証済み最低値',
+  };
 }
 
-function runtimeContextInputs(source: SourceEffect) {
+function runtimeInputDefinitions(source: SourceEffect) {
   const normalized = source.effect.inputDefinitions.map((definition) => {
-    const minimum =
+    const derived =
       definition.kind === 'matchingActorCount'
         ? resolveMatchingActorMinimum(source, definition)
-        : definition.minimum;
+        : { minimum: definition.minimum, defaultReason: definition.defaultReason };
     return {
       ...definition,
-      key: runtimeContextKey(
+      key: runtimeInputKey(
         source.origin,
         source.sourceInstanceId,
         source.skillId,
         source.effect.occurrenceId,
         definition.key,
       ),
-      minimum,
-      ...(definition.kind === 'matchingActorCount' ? { defaultValue: minimum } : {}),
+      minimum: derived.minimum,
+      ...(definition.kind === 'matchingActorCount'
+        ? { defaultValue: derived.minimum, defaultReason: derived.defaultReason }
+        : {}),
     };
   });
   const requiresSourceHp =
@@ -113,7 +125,7 @@ function runtimeContextInputs(source: SourceEffect) {
     ? [
         ...normalized,
         {
-          key: sourceHpContextKey(source),
+          key: sourceHpInputKey(source),
           kind: 'sourceHpPermille' as const,
           owner: 'source' as const,
           label: `${source.sourceName}のHP割合（%）`,
@@ -167,7 +179,7 @@ function effectCondition(
     ...effect.inputQuantityConditions.map<ConditionExpression>((condition) => ({
       kind: 'inputQuantity',
       ...condition,
-      inputKey: runtimeContextKey(
+      inputKey: runtimeInputKey(
         origin,
         sourceInstanceId,
         skillId,
@@ -256,7 +268,7 @@ function selectedValueExpression(
   if (expression.kind === 'inputLinear')
     return {
       ...expression,
-      inputKey: runtimeContextKey(
+      inputKey: runtimeInputKey(
         source.origin,
         source.sourceInstanceId,
         source.skillId,
@@ -268,7 +280,7 @@ function selectedValueExpression(
     ...expression,
     quantitySource: ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
       ? ({ kind: 'attackerHpPermille' } as const)
-      : ({ kind: 'canonicalInput', inputKey: sourceHpContextKey(source) } as const),
+      : ({ kind: 'canonicalInput', inputKey: sourceHpInputKey(source) } as const),
   };
 }
 
@@ -319,7 +331,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
       sourceName: source.sourceName,
       skillName: source.skillName,
     },
-    inputDefinitions: runtimeContextInputs(source),
+    inputDefinitions: runtimeInputDefinitions(source),
   };
 }
 
@@ -566,7 +578,7 @@ function makeProjection(
         ? 'attacker'
         : 'source'
       : null,
-    requiredInputs: runtimeContextInputs(source),
+    requiredInputs: runtimeInputDefinitions(source),
     modifier,
     source: sourceIdentity(source),
     executionSupport: 'unsupported',
