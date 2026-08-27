@@ -1505,7 +1505,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
 });
 
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   test.skip(isMobile, 'Desktop navigation covers all management pages');
   await page.goto('/');
   await completeSetup(page);
@@ -1673,22 +1673,33 @@ test('persists servant, target, CE copies, and support templates', async ({ page
   expect(supportedDamage).toBeGreaterThan(baseDamage);
 
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  const rankingCondition = page.getByRole('region', { name: 'ランキングの共通支援条件' });
-  await page.getByRole('combobox', { name: 'クラス', exact: true }).selectOption('saber');
-  const rankingRow = page.getByRole('row', {
-    name: /^\d+ アルトリア・ペンドラゴン [\d,]+$/,
-  });
+  const rankingCondition = page.getByRole('region', { name: 'ランキングの計算条件' });
+  await expect(page.getByRole('status')).toContainText('420件を計算', { timeout: 30_000 });
+  const rankingFilters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
+  await rankingFilters.getByText('絞り込み', { exact: true }).click();
+  await rankingFilters.getByRole('combobox', { name: 'クラス', exact: true }).selectOption('saber');
+  const rankingRow = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .filter({ has: page.getByText('アルトリア・ペンドラゴン', { exact: true }) });
   await expect(rankingRow).toBeVisible();
   const rankingWithoutSupport = Number(
-    (await rankingRow.locator('td.average').textContent())?.replaceAll(',', ''),
+    (await rankingRow.locator('.ranking-primary-damage strong').textContent())?.replaceAll(',', ''),
   );
-  await rankingCondition.getByRole('button', { name: '選択' }).click();
+  await rankingCondition.getByRole('button', { name: '支援: なし' }).click();
   const rankingSupportDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
   await rankingSupportDialog.getByRole('button', { name: '呼び出す' }).click();
-  await expect(rankingCondition).toContainText('周回支援・除外0効果');
+  await expect(rankingCondition).toContainText('支援: 周回支援');
   await expect
-    .poll(async () =>
-      Number((await rankingRow.locator('td.average').textContent())?.replaceAll(',', '')),
+    .poll(
+      async () =>
+        Number(
+          (await rankingRow.locator('.ranking-primary-damage strong').textContent())?.replaceAll(
+            ',',
+            '',
+          ),
+        ),
+      { timeout: 30_000 },
     )
     .toBeGreaterThan(rankingWithoutSupport);
 
@@ -1777,18 +1788,55 @@ test('finalizes one deduplicated history entry per calculation input', async ({
 });
 
 test('calculates ranking in a worker', async ({ page, isMobile }) => {
+  test.setTimeout(90_000);
   test.skip(isMobile, 'Desktop navigation exposes the ranking page');
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算');
-  await expect(page.getByRole('table', { name: '共通条件の平均ダメージ順' })).toContainText(
+  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算', {
+    timeout: 30_000,
+  });
+  await expect(page.getByRole('list', { name: '宝具火力ランキング' })).toContainText(
     'アルトリア・ペンドラゴン',
   );
-  await page.getByLabel('宝具カード').selectOption('arts');
-  await expect(page.getByRole('status')).not.toContainText('415件表示');
-  await page.getByLabel('クラス').selectOption('saber');
-  await expect(page.getByRole('status')).not.toContainText('415件表示');
-  await page.getByLabel('対象範囲').selectOption('owned');
+  const conditions = page.getByRole('region', { name: 'ランキングの計算条件' });
+  await conditions.getByLabel('宝具Lv').selectOption('2');
+  await conditions.getByLabel('宝具Lv').selectOption('5');
+  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算', {
+    timeout: 45_000,
+  });
+  await expect(page).toHaveURL(/rNp=5/);
+  const filters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
+  await filters.getByText('絞り込み', { exact: true }).click();
+  await filters.getByLabel('宝具カード').selectOption('arts');
+  await expect(page.getByRole('status')).not.toContainText('420件表示');
+  await expect(page.getByRole('status')).not.toContainText('更新中');
+  await filters.getByLabel('クラス').selectOption('saber');
+  await filters.getByLabel('所持状態').selectOption('owned');
   await expect(page.getByRole('status')).toContainText('0件表示');
+  await filters.getByRole('button', { name: '絞り込みを解除' }).click();
+  await filters.getByLabel('名前検索').fill('カエサル');
+  const caesar = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .filter({ hasText: 'ガイウス・ユリウス・カエサル' });
+  await expect(caesar).toHaveCount(1);
+  const rankingAverage = Number(
+    (await caesar.locator('.ranking-primary-damage strong').textContent())?.replaceAll(',', ''),
+  );
+  await caesar.getByRole('button', { name: '詳細' }).click();
+  const detail = caesar.getByRole('region', { name: /の計算詳細/ });
+  await expect(detail).toContainText('連続成功', { timeout: 15_000 });
+  await detail.getByRole('button', { name: '同じ条件で計算機を開く' }).click();
+  await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
+  await expect(page.getByLabel('宝具Lv')).toHaveValue('5');
+  const calculatorAverage = Number(
+    (
+      await page
+        .getByRole('row', { name: /NP5.*現在/ })
+        .locator('td.average')
+        .textContent()
+    )?.replaceAll(',', ''),
+  );
+  expect(calculatorAverage).toBe(rankingAverage);
 });

@@ -35,7 +35,7 @@ test('@a11y major desktop screens have no serious axe violations', async ({ page
     'データ管理',
   ]) {
     await page.getByRole('button', { name }).click();
-    await expect(page.getByRole('heading', { name })).toBeVisible();
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     await expectNoSeriousViolations(page);
   }
 });
