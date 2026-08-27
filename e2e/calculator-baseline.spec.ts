@@ -31,9 +31,10 @@ test('selected effect state remains visible at 390px', async ({ page, isMobile }
   test.skip(isMobile, 'The desktop project owns the explicit 390px interaction baseline');
   await page.setViewportSize({ width: 390, height: 844 });
   await openCalculator(page);
-  const firstSkill = page.getByLabel('攻撃役の自身スキル').getByRole('listitem').first();
-  await firstSkill.getByRole('button', { name: /を使用する$/ }).click();
+  const skillSection = page.getByLabel('攻撃役の自身スキル');
+  await expect(skillSection.locator('[aria-pressed]')).toHaveCount(0);
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  await ownEffects.getByRole('button', { name: /攻撃力アップ/ }).first().click();
   await expect(ownEffects.getByRole('button', { name: /攻撃力アップ/ }).first()).toHaveAttribute(
     'aria-pressed',
     'true',
