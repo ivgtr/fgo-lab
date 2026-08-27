@@ -615,3 +615,20 @@ HP累積familyはraw `HP_LOWER`を0〜1000の整数`attackerHpPermille <= thresh
   unsupported 0を維持した。承認済みHP条件差分はトネリコの旧個別decision 4件と一夏の城の
   HP50%超scenarioへ限定し、他case不変をdifferential ratchetで確認する。詳細は
   `docs/reports/damage-effect-execution-e3-9.md`に記録する。
+
+## 13. E4.1 prerequisite: canonical TargetContext
+
+E4.1の5項目ranking条件を実装する前に、class／attribute identity、family membership、relative
+affinityをADR 017の一つのtarget constraintへ置換する。
+
+1. production class／attribute／family inventoryとAtlas witnessを固定する。
+2. master artifactへidentity、family membership、実在target witnessを追加する。
+3. resolved scenarioの`target`と`assumptions`を排他的な`TargetContext`へ置換する。
+4. executorでrelative relationとconcrete predicateの共通候補を有限列挙し、矛盾をfail-closedにする。
+5. 具体attribute採用時はattribute affinityも同じcandidateから導出する。
+6. Calculatorの既存selectorをrelative context commandへ接続し、visible UIとVRTを変更しない。
+7. schema／master artifact／engineを更新し、疑似class IDと旧scenario readerを削除する。
+8. 全420攻撃宝具、共有・保存、既存golden、PC／390px／320px VRTのparityを確認する。
+
+TargetContext基盤を独立コミットした後だけ、ranking contractを5項目へ縮小し、同じcandidate resolverで
+単一の`specialAttack: inactive | active`を実装する。

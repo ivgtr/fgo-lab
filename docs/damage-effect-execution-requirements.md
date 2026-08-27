@@ -401,6 +401,19 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 - [x] 単発計算とランキングが同じapplication facadeを使う。
 - [x] schema、master、engineの版変更とデータ影響が記録されている。
 
+### 8.14 canonical TargetContext
+
+1. resolved scenarioはclass／attribute identityと相性倍率を別々に保存せず、ADR 017の排他的な
+   `TargetContext`を正本とする。
+2. class identity、class family、attribute identity、通常traitを別のtyped predicateとして保持する。
+3. `classDemonGodPillar`と`classBeast`はfamily membershipであり、class identityや名称から推測しない。
+4. concrete identityの倍率はcanonical relationから導出する。relative contextと具体predicateは有限な実在
+   target witnessの存在で検証する。
+5. attribute特攻が具体属性を要求する場合、属性相性もその具体属性から再導出する。
+6. 計算機の相性UI、visible text、配置、VRTを維持し、内部commandだけをrelative contextへ置換する。
+7. 旧`target`＋`assumptions`、疑似class ID、identity traitの自由assertion、互換fallbackを残さない。
+8. TargetContext基盤の420件parity完了前にE4.1 ranking UIへ進まない。
+
 ## 10. 設計根拠の追跡
 
 計算仕様はAtlas Academyの構造化データとfgo-docs、正規化manifest、golden／property test、production master監査を根拠として追跡する。外部実装の挙動は計算根拠や正解データとして扱わない。
