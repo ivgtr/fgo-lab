@@ -676,6 +676,11 @@ export function executeOrderedScenario(
     ...resolvedCompileProjections,
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
   ];
+  const actorOwnedOrigins = new Set<OperationSource['origin']>(['attacker', 'np', 'passive']);
+  const sourcesShareActor = (left: OperationSource, right: OperationSource) =>
+    left.sourceId === right.sourceId &&
+    ((actorOwnedOrigins.has(left.origin) && actorOwnedOrigins.has(right.origin)) ||
+      (left.origin === right.origin && left.sourceInstanceId === right.sourceInstanceId));
   const activationSourcesByDecisionKey = new Map<string, OperationSource[]>();
   for (const operation of operations) {
     if (operation.activation.kind !== 'linkedDecisions') continue;
@@ -701,9 +706,7 @@ export function executeOrderedScenario(
         (mutation.kind !== 'addTrait' &&
           mutation.kind !== 'removeTrait' &&
           mutation.kind !== 'suppressInitialTrait') ||
-        mutation.source.origin !== decisionOperation.source.origin ||
-        mutation.source.sourceInstanceId !== decisionOperation.source.sourceInstanceId ||
-        mutation.source.sourceId !== decisionOperation.source.sourceId ||
+        !sourcesShareActor(mutation.source, decisionOperation.source) ||
         !conditionRequiresTrait(
           decisionOperation.condition,
           mutation.scope,

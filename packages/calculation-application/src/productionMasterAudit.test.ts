@@ -1295,11 +1295,17 @@ describe('production master damage quality ratchet', () => {
       garethInitial.effects.find((effect) => effect.label === 'フィールドセット〔陽射し〕'),
     ).toMatchObject({ visibility: 'hidden', outcome: 'notApplied' });
 
-    const garethSelected = calculateScenario(
-      setAttackerSkillEnabled(garethScenario, '2109451', true),
-      master,
-      versions,
+    const garethPresentationScenario = applyEffectPresentationDecision(
+      garethScenario,
+      sunlightPower,
+      true,
+      garethInitial.effects,
     );
+    expect(
+      garethPresentationScenario.attackerSkills.find((skill) => skill.skillId === '2109451')
+        ?.enabled,
+    ).toBe(true);
+    const garethSelected = calculateScenario(garethPresentationScenario, master, versions);
     expect(garethSelected.result.status).toBe('calculated');
     expect(garethSelected.input.fieldTraits).toEqual(['fieldSunlight']);
     expect(garethSelected.input.attackBuff).toBeCloseTo(0.3);
