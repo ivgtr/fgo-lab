@@ -120,32 +120,41 @@ function accessibleEffectLabel(
   inputs: readonly EffectInputViewModel[],
 ) {
   const effect = control.projection;
+  const chainedInput = inputs.find((candidate) => candidate.kind === 'procSuccessCount');
+  const chainedCount = chainedInput?.value ?? chainedInput?.defaultValue ?? 0;
   const selection =
-    chainedProcLabel(control, inputs) ?? scenarioSelectionLabel(effect, control.active);
-  const sourceState =
-    effect.gameActivation === 'skillUse' &&
-    (effect.source.origin === 'support' || effect.source.origin === 'mysticCode')
-      ? effect.sourceActive
-        ? 'スキル使用中'
-        : 'スキル未使用'
-      : '';
-  const conditionState =
-    control.interaction !== 'singleChoice'
-      ? effect.outcome === 'applied'
-        ? '条件成立'
-        : '条件不成立'
-      : effect.conditionDecision === 'assumeSatisfied'
-        ? '条件成立として計算'
-        : '条件未選択';
+    effect.proc.kind === 'chainedRolls'
+      ? chainedCount === 0
+        ? `失敗・成功0/${String(effect.proc.maximumSuccesses)}`
+        : `成功${String(chainedCount)}/${String(effect.proc.maximumSuccesses)}`
+      : scenarioSelectionLabel(effect, control.active);
+  const stateLabel = (() => {
+    switch (control.presentationState) {
+      case 'sourceInactive':
+        return 'スキル未使用';
+      case 'conditionUnsatisfied':
+        return '条件不成立';
+      case 'conditionUnselected':
+        return '条件未選択';
+      case 'unsupported':
+        return '未対応';
+      case 'impossible':
+        return '成立不能';
+      case 'applied':
+        return effect.explanation.condition === null ? '' : '条件成立';
+      case 'manuallyExcluded':
+      case 'procFailed':
+        return '';
+    }
+  })();
   return [
     effectLabel(effect),
     effectValueLabel(effect),
     effectOriginLabel(effect),
     effect.sourceName,
     effect.skillName,
-    sourceState,
     selection,
-    conditionState,
+    stateLabel,
   ]
     .filter(Boolean)
     .join('、');

@@ -14,6 +14,7 @@ describe('applied effect interaction rendering', () => {
       interaction: 'toggle',
       active: true,
       valueDisplay: 'single',
+      presentationState: 'applied',
       projection: {
         projectionKey: 'effect',
         operationId: 'operation',
@@ -71,9 +72,8 @@ describe('applied effect interaction rendering', () => {
         .closest('li')
         ?.getAttribute('data-active'),
     ).toBe('true');
-    const chip = getByRole('button', {
-      name: /攻撃力アップ、\+20%.*確定、条件成立/,
-    });
+    const chip = getByRole('button', { name: /攻撃力アップ、\+20%.*確定/ });
+    expect(chip.getAttribute('aria-label')).not.toContain('条件成立');
     expect(chip.textContent).toContain('+20%・スキル');
     expect(chip.textContent).not.toContain('計算中');
     expect(chip.textContent).not.toContain('スキル使用中');

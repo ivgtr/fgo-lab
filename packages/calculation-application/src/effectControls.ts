@@ -7,7 +7,18 @@ export interface EffectControlViewModel {
   interaction: 'none' | 'toggle' | 'singleChoice';
   active: boolean;
   valueDisplay: 'single' | 'sum';
+  presentationState: EffectPresentationState;
 }
+
+export type EffectPresentationState =
+  | 'applied'
+  | 'manuallyExcluded'
+  | 'procFailed'
+  | 'sourceInactive'
+  | 'conditionUnsatisfied'
+  | 'conditionUnselected'
+  | 'unsupported'
+  | 'impossible';
 
 export function conditionAllowsEffectLocalDecision(condition: ConditionExpression | null): boolean {
   if (condition === null) return false;
@@ -57,6 +68,38 @@ function aggregateProjection(members: readonly EffectProjection[]): EffectProjec
   };
 }
 
+function projectionSelected(projection: EffectProjection): boolean {
+  return (
+    projection.decision.state === 'enabled' ||
+    (projection.decision.state === 'none' && projection.outcome === 'applied')
+  );
+}
+
+export function deriveEffectPresentationState(
+  projection: EffectProjection,
+  active: boolean,
+  conditionSelectable: boolean,
+): EffectPresentationState {
+  if (projection.outcome === 'unsupported') return 'unsupported';
+  if (projection.outcome === 'impossible') return 'impossible';
+  if (!projection.sourceActive) return 'sourceInactive';
+  if (projection.proc.kind === 'chainedRolls' && !active) return 'procFailed';
+  if (conditionSelectable && projection.conditionDecision !== 'assumeSatisfied')
+    return 'conditionUnselected';
+  if (!projectionSelected(projection))
+    return projection.proc.kind === 'guaranteed' || projection.procRatePermille === 1_000
+      ? 'manuallyExcluded'
+      : 'procFailed';
+  if (projection.outcome === 'applied') return 'applied';
+  if (
+    projection.explanation.condition !== null &&
+    (projection.explanation.code === 'conditionNotMet' ||
+      projection.explanation.code === 'targetMismatch')
+  )
+    return 'conditionUnsatisfied';
+  return 'impossible';
+}
+
 export function createEffectControlViewModels(
   effects: readonly EffectProjection[],
   canonicalInputValues: Readonly<Record<string, number>> = {},
@@ -97,9 +140,7 @@ export function createEffectControlViewModels(
     const chainedInput = projection.requiredInputs.find(
       (input) => input.kind === 'procSuccessCount',
     );
-    const selected =
-      projection.decision.state === 'enabled' ||
-      (projection.decision.state === 'none' && projection.outcome === 'applied');
+    const selected = projectionSelected(projection);
     const active =
       projection.proc.kind === 'chainedRolls' && chainedInput
         ? (canonicalInputValues[chainedInput.key] ?? chainedInput.defaultValue ?? 0) >
@@ -112,6 +153,7 @@ export function createEffectControlViewModels(
       projection,
       operationIds,
       active,
+      presentationState: deriveEffectPresentationState(projection, active, conditionSelectable),
       valueDisplay: operationIds.length > 1 ? 'sum' : 'single',
       interaction:
         projection.proc.kind === 'chainedRolls' || projection.decision.state !== 'none'
