@@ -4,15 +4,21 @@ import { completeSetup } from './setup';
 
 async function useAttackerSkill(page: Page, name: string | RegExp) {
   const row = page.getByLabel('攻撃役の自身スキル').getByRole('listitem').filter({ hasText: name });
-  const toggle = row.getByRole('button', { name: '使用する' });
+  const toggle = row.getByRole('button', { name: /を使用する$/ });
   await toggle.click();
-  await expect(row.getByRole('button', { name: '使用中' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(row.getByRole('button', { name: /を使用しない$/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 }
 
 async function useAllAttackerSkills(page: Page) {
   const group = page.getByLabel('攻撃役の自身スキル');
-  while ((await group.getByRole('button', { name: '使用する' }).count()) > 0)
-    await group.getByRole('button', { name: '使用する' }).first().click();
+  while ((await group.getByRole('button', { name: /を使用する$/ }).count()) > 0)
+    await group
+      .getByRole('button', { name: /を使用する$/ })
+      .first()
+      .click();
 }
 
 async function selectAttacker(page: Page, name: string) {
@@ -129,7 +135,10 @@ test('adds a support servant directly and optionally saves the composition', asy
     .getByRole('group', { name: /支援の適用内容/ })
     .getByRole('button', { name: /攻撃力アップ.*アルトリア・キャスター/ })
     .first();
-  await support.getByRole('button', { name: '使用する' }).first().click();
+  await support
+    .getByRole('button', { name: /を使用する$/ })
+    .first()
+    .click();
   await expect(attackEffect).toHaveAttribute('aria-pressed', 'true');
   await expect
     .poll(async () => Number((await damage.textContent())?.replaceAll(',', '')))
@@ -757,14 +766,14 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await attackerDialog.getByRole('button', { name: /ジークフリート.*セイバー.*Lv80/ }).click();
   await useAllAttackerSkills(page);
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const dragonPower = ownEffects.getByRole('button', { name: /威力アップ・対竜 \+/ });
-  const dragonNpSpecial = ownEffects.getByRole('button', { name: /竜・特攻宝具 .*計算/ });
+  const dragonPower = ownEffects.getByRole('button', { name: /威力アップ・対竜/ });
+  const dragonNpSpecial = ownEffects.getByRole('button', { name: /竜・特攻宝具/ });
   const damage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
   const withoutTrait = Number((await damage.textContent())?.replaceAll(',', ''));
-  await expect(dragonPower).toHaveAttribute('aria-pressed', 'true');
-  await expect(dragonNpSpecial).toHaveAttribute('aria-pressed', 'true');
-  await ownEffects.getByRole('button', { name: /竜・特攻宝具：条件成立として計算/ }).click();
-  await ownEffects.getByRole('button', { name: /威力アップ・対竜：条件成立として計算/ }).click();
+  await expect(dragonPower).toHaveAttribute('aria-pressed', 'false');
+  await expect(dragonNpSpecial).toHaveAttribute('aria-pressed', 'false');
+  await dragonNpSpecial.click();
+  await dragonPower.click();
   await expect(dragonPower).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('150.0%');
   const withTrait = Number((await damage.textContent())?.replaceAll(',', ''));
@@ -776,17 +785,18 @@ test('separates final direct inputs from resolved CE and trait effects', async (
   await attackerDialog
     .getByRole('button', { name: /アーキタイプ：アース.*ムーンキャンサー.*Lv90/ })
     .click();
+  await useAllAttackerSkills(page);
   const archetypeEffects = page.getByRole('group', { name: /自身の適用内容/ });
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   await expect(archetypeEffects).toContainText('防御力ダウン');
-  await expect(archetypeEffects).toContainText('+20%・計算外');
+  await expect(archetypeEffects).toContainText('+20%・S1');
   await expect(archetypeEffects).toContainText('攻撃力アップ');
-  await expect(archetypeEffects).toContainText('+30%・計算外');
+  await expect(archetypeEffects).toContainText('+30%・S1');
   await expect(archetypeEffects).toContainText('宝具威力アップ');
-  await expect(archetypeEffects).toContainText('+20%・計算外');
+  await expect(archetypeEffects).toContainText('+20%・S2');
   await expect(archetypeEffects).not.toContainText('千年城フィールドを適用');
   await expect(archetypeEffects).toContainText('バスターアップ：千年城');
-  await expect(archetypeEffects).toContainText('+30%・計算中');
+  await expect(archetypeEffects).toContainText('+30%・S1');
   await expect(archetypeEffects).not.toContainText('倍率不明');
   await expect(archetypeEffects).not.toContainText('未対応');
   await page.getByLabel('宝具Lv').selectOption('5');
@@ -795,10 +805,8 @@ test('separates final direct inputs from resolved CE and trait effects', async (
     .getByRole('button', { name: /混沌・特攻宝具/ })
     .first();
   await expect(chaoticTrait).toContainText('2.00倍');
-  await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'true');
-  await archetypeEffects
-    .getByRole('button', { name: /混沌・特攻宝具：条件成立として計算/ })
-    .click();
+  await expect(chaoticTrait).toHaveAttribute('aria-pressed', 'false');
+  await chaoticTrait.click();
   await expect(page.getByLabel('計算に使用する最終値')).toContainText('2.00倍');
 });
 
@@ -988,18 +996,19 @@ test('One Summer Castle applies automatically only at fifty percent HP or below'
   await expect(hp).toHaveValue('');
   await hp.fill('100');
   await expect(effect).toContainText('宝具威力アップ');
-  await expect(effect).toContainText('+30%・計算外');
-  await expect(effect.getByRole('button', { name: /宝具威力アップ \+/ })).toHaveAttribute(
+  await expect(effect).toContainText('+30%・礼装・条件外');
+  await expect(effect.getByRole('button', { name: /宝具威力アップ/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
   await expect(row).toContainText('33,988');
 
   await hp.fill('50');
-  await expect(effect).toContainText('+30%・計算中');
+  await expect(effect).toContainText('+30%・礼装');
+  await expect(effect).not.toContainText('条件外');
   await expect(row).toContainText('44,185');
   await hp.fill('51');
-  await expect(effect).toContainText('+30%・計算外');
+  await expect(effect).toContainText('+30%・礼装・条件外');
   await expect(row).toContainText('33,988');
 });
 
@@ -1233,8 +1242,18 @@ test('Habetrot uses the final enemy total from one through three', async ({ page
   const stars = ownEffects.getByRole('spinbutton', { name: 'クリティカルスター数' });
   await expect(starAttack).toHaveCount(1);
   await expect(stars).toHaveValue('0');
-  await useAttackerSkill(page, '南海の大決戦');
+  await expect(starAttack).toHaveAttribute('aria-pressed', 'false');
+  await expect(starAttack).toContainText('未使用');
+  await starAttack.click();
   await expect(starAttack).toHaveAttribute('aria-pressed', 'true');
+  const sourceToggle = page
+    .getByLabel('攻撃役の自身スキル')
+    .getByRole('button', { name: /南海の大決戦.*使用しない/ });
+  await expect(sourceToggle).toHaveAttribute('aria-pressed', 'true');
+  await starAttack.click();
+  await expect(starAttack).toHaveAttribute('aria-pressed', 'false');
+  await expect(sourceToggle).toHaveAttribute('aria-pressed', 'true');
+  await starAttack.click();
   await stars.fill('99');
   await expect(row).toContainText('96,207');
   await expect(ownEffects.getByRole('button', { name: /攻撃力アップ/ })).toHaveCount(1);
@@ -1292,7 +1311,7 @@ test('probabilistic NP effects use scenario switches and one chained success cou
   ).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('Gareth commits hidden sunlight only while its linked NP effect is selected', async ({
+test('Gareth activates required hidden sunlight and preserves its source when excluded', async ({
   page,
 }) => {
   await page.goto('/');
@@ -1308,7 +1327,7 @@ test('Gareth commits hidden sunlight only while its linked NP effect is selected
   await attackerDialog.getByRole('button', { name: /ガレス.*セイバー.*Lv80/ }).click();
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const sunlightPower = ownEffects.getByRole('button', { name: /攻撃力アップ \+20/ });
+  const sunlightPower = ownEffects.getByRole('button', { name: /^攻撃力アップ、\+20%/ });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const np1Average = table
     .getByRole('row', { name: /NP1.*現在/ })
@@ -1318,10 +1337,11 @@ test('Gareth commits hidden sunlight only while its linked NP effect is selected
   const initialAverage = await np1Average.textContent();
 
   await expect(ownEffects).not.toContainText('フィールドセット');
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
+  await expect(sunlightPower).toContainText('条件外');
+  await sunlightPower.click();
   await expect(sunlightPower).toHaveAttribute('aria-pressed', 'true');
-  await expect(sunlightPower).toContainText('計算外');
-  await useAttackerSkill(page, '太陽のようなガレス');
-  await expect(sunlightPower).toContainText('計算中');
+  await expect(sunlightPower).not.toContainText('条件外');
   await expect(np1Average).not.toHaveText(initialAverage ?? '');
 
   await page.getByText('計算内訳・根拠・仮定・警告').click();
@@ -1329,17 +1349,12 @@ test('Gareth commits hidden sunlight only while its linked NP effect is selected
     page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:applied/),
   ).toBeVisible();
 
-  await page
-    .getByLabel('攻撃役の自身スキル')
-    .getByRole('listitem')
-    .filter({ hasText: '太陽のようなガレス' })
-    .getByRole('button', { name: '使用中' })
-    .click();
-  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'true');
-  await expect(sunlightPower).toContainText('計算外');
+  await sunlightPower.click();
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
+  await expect(sunlightPower).toContainText('除外');
   await expect(np1Average).toHaveText(initialAverage ?? '');
   await expect(
-    page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:notApplied/),
+    page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:applied/),
   ).toBeVisible();
 });
 
@@ -1358,7 +1373,7 @@ test('OR condition effects stay operable and causal at PC, 390px, and 320px', as
   await useAllAttackerSkills(page);
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const orEffect = ownEffects.getByRole('button', { name: /威力アップ〔蛇・竜〕 \+/ });
+  const orEffect = ownEffects.getByRole('button', { name: /威力アップ〔蛇・竜〕/ });
   await expect(ownEffects).not.toContainText('Quick攻撃ダメージ前追加効果');
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const average = table
@@ -1367,11 +1382,10 @@ test('OR condition effects stay operable and causal at PC, 390px, and 320px', as
     .first();
   const initialAverage = await average.textContent();
 
+  await expect(orEffect).toHaveAttribute('aria-pressed', 'false');
+  await orEffect.click();
   await expect(orEffect).toHaveAttribute('aria-pressed', 'true');
-  await ownEffects
-    .getByRole('button', { name: /威力アップ〔蛇・竜〕：条件成立として計算/ })
-    .click();
-  await expect(orEffect).toContainText('計算中');
+  await expect(orEffect).not.toContainText('条件外');
   await expect(average).not.toHaveText(initialAverage ?? '');
   await expect(table).toBeVisible();
 
@@ -1572,7 +1586,10 @@ test('persists servant, target, CE copies, and support templates', async ({ page
     .click();
   await page.getByLabel('理想郷の騎士 EXのスキルレベル').selectOption('8');
   const supportEditor = page.getByRole('region', { name: '支援条件の編集' });
-  await supportEditor.getByRole('button', { name: '使用する' }).first().click();
+  await supportEditor
+    .getByRole('button', { name: /を使用する$/ })
+    .first()
+    .click();
   const presetAttackEffect = page
     .getByRole('region', { name: '支援条件の編集' })
     .getByRole('button', { name: /攻撃力アップ/ })
@@ -1609,7 +1626,10 @@ test('persists servant, target, CE copies, and support templates', async ({ page
     .getByRole('group', { name: /自身の適用内容/ })
     .getByRole('button', { name: /攻撃力アップ.*理想郷の騎士 EX/ })
     .first();
-  await selfSkillRegion.getByRole('button', { name: '使用する' }).first().click();
+  await selfSkillRegion
+    .getByRole('button', { name: /を使用する$/ })
+    .first()
+    .click();
   await expect(selfAttackEffect).toHaveAttribute('aria-pressed', 'true');
   const damageWithSelfSkill = Number((await currentDamage.textContent())?.replaceAll(',', ''));
   expect(damageWithSelfSkill).toBeGreaterThan(damageBeforeSelfSkill);

@@ -32,11 +32,65 @@ test('selected effect state remains visible at 390px', async ({ page, isMobile }
   await page.setViewportSize({ width: 390, height: 844 });
   await openCalculator(page);
   const firstSkill = page.getByLabel('攻撃役の自身スキル').getByRole('listitem').first();
-  await firstSkill.getByRole('button', { name: '使用する' }).click();
+  await firstSkill.getByRole('button', { name: /を使用する$/ }).click();
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
   await expect(ownEffects.getByRole('button', { name: /攻撃力アップ/ }).first()).toHaveAttribute(
     'aria-pressed',
     'true',
   );
   await expect(ownEffects).toHaveScreenshot('selected-effects-390px.png');
+  await expect(page).toHaveScreenshot('calculator-390px.png', { fullPage: true });
+});
+
+test('compact skill and effect layout stays within density limits', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The desktop project measures the three explicit viewports');
+  const limits = {
+    1280: { skillHeight: 250, effectHeight: 150, averageChipHeight: 55 },
+    390: { skillHeight: 290, effectHeight: 190, averageChipHeight: 60 },
+    320: { skillHeight: 310, effectHeight: 220, averageChipHeight: 70 },
+  } as const;
+  for (const width of [1280, 390, 320] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await openCalculator(page);
+    const skills = page.locator('.attacker-skills');
+    const effects = page.locator('.calculator-applied-effect-group');
+    const chips = effects.locator('.applied-effect-item:not([data-has-input])');
+    await expect(skills).toBeVisible();
+    await expect(effects).toBeVisible();
+    await expect(chips).toHaveCount(4);
+    const metrics = await page.evaluate(() => {
+      const skillSection = document.querySelector<HTMLElement>('.attacker-skills')!;
+      const effectSection = document.querySelector<HTMLElement>(
+        '.calculator-applied-effect-group',
+      )!;
+      const inputlessChips = [
+        ...effectSection.querySelectorAll<HTMLElement>(
+          '.applied-effect-item:not([data-has-input])',
+        ),
+      ];
+      const effectWidth = effectSection.getBoundingClientRect().width;
+      return {
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        skillHeight: skillSection.getBoundingClientRect().height,
+        effectHeight: effectSection.getBoundingClientRect().height,
+        averageChipHeight:
+          inputlessChips.reduce((sum, chip) => sum + chip.getBoundingClientRect().height, 0) /
+          inputlessChips.length,
+        fullWidthChipCount: inputlessChips.filter(
+          (chip) => chip.getBoundingClientRect().width >= effectWidth - 2,
+        ).length,
+      };
+    });
+    expect(metrics.overflow, `${String(width)}px horizontal overflow`).toBe(0);
+    expect(metrics.fullWidthChipCount, `${String(width)}px full-width inputless chips`).toBe(0);
+    expect(metrics.skillHeight, `${String(width)}px skill section height`).toBeLessThanOrEqual(
+      limits[width].skillHeight,
+    );
+    expect(metrics.effectHeight, `${String(width)}px effect section height`).toBeLessThanOrEqual(
+      limits[width].effectHeight,
+    );
+    expect(metrics.averageChipHeight, `${String(width)}px average chip height`).toBeLessThanOrEqual(
+      limits[width].averageChipHeight,
+    );
+  }
 });
