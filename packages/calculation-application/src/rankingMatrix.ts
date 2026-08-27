@@ -24,6 +24,7 @@ export function rankingMatrixPolicyKey(conditions: Omit<RankingConditions, 'npLe
     conditions.classAffinity,
     conditions.selfBuffs,
     conditions.specialAttack,
+    conditions.field,
   ].join(':');
 }
 

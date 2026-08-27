@@ -49,13 +49,14 @@ export function createInitialBattleState(
   resolvedInputValues: Readonly<Record<string, number>> = {},
   targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
   attackerPredicateAssertions: readonly TargetPredicateAssertion[] = [],
+  knownAttackerTraits: readonly string[] = [],
 ): BattleState {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
     card: input.cardType,
     traits: {
-      attacker: traitFacts(attacker),
-      attackerState: traitFacts(input.attackerStateTraits),
+      attacker: traitFacts(attacker, knownAttackerTraits),
+      attackerState: traitFacts(input.attackerStateTraits, knownAttackerTraits),
       target: traitFacts(input.target.traits),
       targetState: traitFacts(input.targetStateTraits),
       field: traitFacts(input.fieldTraits),
@@ -97,8 +98,14 @@ export function createInitialBattleState(
   };
 }
 
-function traitFacts(traits: Iterable<string>): ReadonlyMap<string, boolean> {
-  return new Map([...traits].map((trait) => [trait, true] as const));
+function traitFacts(
+  traits: Iterable<string>,
+  knownTraits: Iterable<string> = [],
+): ReadonlyMap<string, boolean> {
+  return new Map([
+    ...[...knownTraits].map((trait) => [trait, false] as const),
+    ...[...traits].map((trait) => [trait, true] as const),
+  ]);
 }
 
 export function applyWorldFacts(

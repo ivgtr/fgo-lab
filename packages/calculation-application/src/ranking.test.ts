@@ -135,8 +135,9 @@ describe('canonical ranking scenarios', () => {
       classAffinity: DEFAULT_RANKING_CONDITIONS.classAffinity,
       selfBuffs: DEFAULT_RANKING_CONDITIONS.selfBuffs,
       specialAttack: DEFAULT_RANKING_CONDITIONS.specialAttack,
+      field: DEFAULT_RANKING_CONDITIONS.field,
     };
-    expect(rankingMatrixPolicyKey(policy)).toBe('standard:neutral:included:inactive');
+    expect(rankingMatrixPolicyKey(policy)).toBe('standard:neutral:included:inactive:inactive');
     expect(
       rankingMatrixPolicyKey({
         ...policy,

@@ -12,6 +12,11 @@ import {
   compileRankingExecutionPolicy,
 } from './rankingExecutionPolicy';
 import {
+  createRankingFieldCandidates,
+  materializeRankingField,
+  type RankingFieldCandidate,
+} from './rankingFieldWorld';
+import {
   applyRankingCanonicalMinimums,
   createRankingBaseScenario,
   type ResolvedScenario,
@@ -30,6 +35,11 @@ export interface RankingExecutionPlan {
   rankingScenarios: readonly ResolvedScenario[];
   withoutAreaScenarios: readonly ResolvedScenario[];
   worldCandidateCount: number;
+}
+
+interface RankingWorld {
+  target: RankingWorldCandidate | null;
+  field: RankingFieldCandidate;
 }
 
 export function selectedKeysForScope(
@@ -75,14 +85,17 @@ function scenarioForPolicy(
   baseline: CalculationExecution,
   conditions: RankingConditions,
   scope: 'ranking' | 'withoutArea',
-  candidate: RankingWorldCandidate | null,
+  worldCandidate: RankingWorld,
   master: MasterDataSnapshot,
 ): ResolvedScenario {
-  const world = candidate ? materializeRankingWorld(scenario, candidate) : scenario;
+  const targetWorld = worldCandidate.target
+    ? materializeRankingWorld(scenario, worldCandidate.target)
+    : scenario;
+  const world = materializeRankingField(targetWorld, worldCandidate.field);
   const policy = compileRankingExecutionPolicy(
     world.targetContext,
     baseline.effectControls,
-    selectedKeysForScope(baseline.effectControls, conditions, scope, candidate, master),
+    selectedKeysForScope(baseline.effectControls, conditions, scope, worldCandidate.target, master),
   );
   return applyRankingExecutionPolicy(world, policy, baseline.effectInputs);
 }
@@ -105,7 +118,14 @@ export function compileRankingExecutionPlan(
     conditions.specialAttack === 'active'
       ? createRankingWorldCandidates(servant, master, canonical, specialControls)
       : [];
-  const worlds = candidates.length > 0 ? candidates : [null];
+  const targetWorlds = candidates.length > 0 ? candidates : [null];
+  const fieldWorlds = createRankingFieldCandidates(
+    baseline.effectControls,
+    conditions.field === 'active',
+  );
+  const worlds: RankingWorld[] = targetWorlds.flatMap((target) =>
+    fieldWorlds.map((field) => ({ target, field })),
+  );
   const rankingScenarios = worlds.map((candidate) =>
     scenarioForPolicy(canonical, baseline, conditions, 'ranking', candidate, master),
   );
@@ -136,6 +156,15 @@ function selectedAverage(
   return execution.result.rows[npLevel - 1]?.average ?? null;
 }
 
+function rankingExternalFieldFactCount(execution: CalculationExecution): number {
+  return execution.scenario.mode === 'resolved'
+    ? execution.scenario.worldFactAssertions.filter(
+        ({ decisionKey, fact }) =>
+          decisionKey.startsWith('ranking:field:') && fact.kind === 'trait' && fact.present,
+      ).length
+    : 0;
+}
+
 export function executeRankingScenarios(
   scenarios: readonly ResolvedScenario[],
   master: MasterDataSnapshot,
@@ -157,6 +186,8 @@ export function selectRankingExecutionIndex(
     .sort(
       (left, right) =>
         right.average - left.average ||
+        rankingExternalFieldFactCount(left.execution) -
+          rankingExternalFieldFactCount(right.execution) ||
         JSON.stringify(left.execution.scenario).localeCompare(
           JSON.stringify(right.execution.scenario),
         ),

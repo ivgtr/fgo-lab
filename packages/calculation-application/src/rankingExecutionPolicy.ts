@@ -1,7 +1,7 @@
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import type { TargetContext } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
-import { conditionAllowsEffectLocalDecision, type EffectControlViewModel } from './effectControls';
+import type { EffectControlViewModel } from './effectControls';
 import type { ResolvedScenario } from './rankingPolicy';
 
 interface RankingEffectPolicy {
@@ -34,12 +34,6 @@ function setDecision(
 ): ResolvedScenario {
   const decision = projection.decision;
   if (decision.state === 'none' || decision.kind !== 'effect') return scenario;
-  const conditionSatisfaction =
-    included &&
-    decision.plan.condition === 'userMayAssume' &&
-    conditionAllowsEffectLocalDecision(projection.explanation.condition)
-      ? 'assumeSatisfied'
-      : 'evaluate';
   return {
     ...scenario,
     effectDecisions: [
@@ -47,7 +41,7 @@ function setDecision(
       {
         decisionKey: decision.decisionKey,
         operationEnabled: decision.plan.activation === 'user' ? included : true,
-        conditionSatisfaction,
+        conditionSatisfaction: 'evaluate',
       },
     ],
   };

@@ -418,8 +418,8 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 
 1. raw Atlas targetはdata-pipelineでcanonical contribution scopeへ変換し、master operationからprojectionまで保持する。
 2. originを効果の寄与範囲として再解釈しない。味方全体、味方単体、味方他、敵付与、外部支援をtypedに区別する。
-3. ranking主順位は自己火力と自身が敵へ与えるdebuffを使用し、area effectを主順位へ混入させない。
-4. area effect込みdamageと増加量は同じcanonical world candidateの別executionとして詳細へ提示し、ranking条件を増やさない。
+3. ranking主順位は攻撃役本人へ実際に適用されるpersonal、party-wide、enemy-applied effectを使用し、party-otherを除外する。
+4. area contributionは同じcanonical world candidateから本人適用済みparty-wideだけを除いた別executionとの差分として詳細へ提示し、ranking条件を増やさない。
 5. rankingはpresentation controlを一件ずつ操作せず、一騎につき宣言的なexecution planを一度compileする。
 6. 特攻はeffectの任意部分集合ではなくtarget／condition candidateを探索し、同一targetで成立する効果をすべて適用する。
 7. candidate executionはNP1〜5 seriesを返し、NP切替でsource compileまたはeffect探索を再実行しない。

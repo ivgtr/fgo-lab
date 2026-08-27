@@ -3,7 +3,10 @@ import {
   targetAttributeCandidates,
   targetClassCandidates,
 } from '@fgo-lab/calc-core';
-import { validateTargetCandidateConstraint } from '@fgo-lab/battle-execution';
+import {
+  canonicalExclusiveGroup,
+  validateTargetCandidateConstraint,
+} from '@fgo-lab/battle-execution';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type {
   CanonicalTargetAttribute,
@@ -23,6 +26,7 @@ export interface RankingWorldCandidate {
   attribute: CanonicalTargetAttribute;
   familyIds: readonly CanonicalTargetFamilyId[];
   selections: Readonly<Record<string, string>>;
+  targetTraitFacts: Readonly<Record<string, boolean>>;
 }
 
 function collectTargetPredicates(
@@ -34,6 +38,39 @@ function collectTargetPredicates(
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.flatMap(collectTargetPredicates);
   return condition.kind === 'not' ? collectTargetPredicates(condition.expression) : [];
+}
+
+function collectTargetTraits(
+  condition: EffectControlViewModel['projection']['explanation']['condition'],
+): string[] {
+  if (!condition) return [];
+  if (condition.kind === 'trait' && condition.scope === 'target') return [condition.trait];
+  if (condition.kind === 'traitCount' && condition.scope === 'target') return [...condition.traits];
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.flatMap(collectTargetTraits);
+  return condition.kind === 'not' ? collectTargetTraits(condition.expression) : [];
+}
+
+function traitFactCandidates(traits: readonly string[]): Readonly<Record<string, boolean>>[] {
+  if (2 ** traits.length > MAX_RANKING_WORLD_CANDIDATES)
+    throw new RangeError(`ranking_world_candidate_limit:${String(2 ** traits.length)}`);
+  let candidates: Readonly<Record<string, boolean>>[] = [{}];
+  for (const trait of traits)
+    candidates = candidates.flatMap((candidate) => [
+      { ...candidate, [trait]: false },
+      { ...candidate, [trait]: true },
+    ]);
+  return candidates.filter((candidate) => {
+    const groups = new Set<string>();
+    for (const [trait, present] of Object.entries(candidate)) {
+      if (!present) continue;
+      const group = canonicalExclusiveGroup('target', trait);
+      if (group === null) continue;
+      if (groups.has(group)) return false;
+      groups.add(group);
+    }
+    return true;
+  });
 }
 
 function selectionCandidates(
@@ -105,6 +142,13 @@ export function createRankingWorldCandidates(
       ),
     ),
   ].sort();
+  const targetTraits = [
+    ...new Set(
+      specialControls.flatMap((control) =>
+        collectTargetTraits(control.projection.explanation.condition),
+      ),
+    ),
+  ].sort();
   const relationClasses = targetClassCandidates(
     servant.classId,
     scenario.targetContext.class,
@@ -128,18 +172,23 @@ export function createRankingWorldCandidates(
     ]),
   ];
   const selections = selectionCandidates(specialControls);
-  const candidateCount = classes.length * attributes.length * selections.length;
+  const targetTraitFacts = traitFactCandidates(targetTraits);
+  const candidateCount =
+    classes.length * attributes.length * selections.length * targetTraitFacts.length;
   if (candidateCount > MAX_RANKING_WORLD_CANDIDATES)
     throw new RangeError(`ranking_world_candidate_limit:${String(candidateCount)}`);
   return classes.flatMap((classId) =>
     attributes.flatMap((attribute) =>
-      selections.map((selected) => ({
-        key: JSON.stringify({ classId, attribute, familyIds, selected }),
-        classId,
-        attribute,
-        familyIds,
-        selections: selected,
-      })),
+      selections.flatMap((selected) =>
+        targetTraitFacts.map((facts) => ({
+          key: JSON.stringify({ classId, attribute, familyIds, selected, facts }),
+          classId,
+          attribute,
+          familyIds,
+          selections: selected,
+          targetTraitFacts: facts,
+        })),
+      ),
     ),
   );
 }
@@ -162,5 +211,17 @@ export function materializeRankingWorld(
       familyId,
       enabled: true,
     });
-  return { ...scenario, targetContext };
+  return {
+    ...scenario,
+    targetContext,
+    worldFactAssertions: [
+      ...scenario.worldFactAssertions.filter(
+        ({ decisionKey }) => !decisionKey.startsWith('ranking:target-trait:'),
+      ),
+      ...Object.entries(candidate.targetTraitFacts).map(([trait, present]) => ({
+        decisionKey: `ranking:target-trait:${trait}`,
+        fact: { kind: 'trait' as const, scope: 'target' as const, trait, present },
+      })),
+    ],
+  };
 }

@@ -16,6 +16,7 @@ describe('ranking URL state', () => {
         classAffinity: 'favorable' as const,
         selfBuffs: 'excluded' as const,
         specialAttack: 'active' as const,
+        field: 'active' as const,
       },
       metric: 'maximum' as const,
       filters: {
@@ -29,7 +30,7 @@ describe('ranking URL state', () => {
 
   it('rejects out-of-domain values without preserving invalid input', () => {
     const state = parseRankingUrlState(
-      '?rNp=9&rMode=unknown&rAffinity=invalid&rSelf=invalid&rSpecial=invalid',
+      '?rNp=9&rMode=unknown&rAffinity=invalid&rSelf=invalid&rSpecial=invalid&rField=invalid',
     );
     expect(state.conditions).toMatchObject({
       comparisonMode: 'standard',
@@ -37,6 +38,7 @@ describe('ranking URL state', () => {
       classAffinity: 'neutral',
       selfBuffs: 'included',
       specialAttack: 'inactive',
+      field: 'inactive',
     });
   });
 });

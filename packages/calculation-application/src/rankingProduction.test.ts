@@ -3,11 +3,13 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { canonicalExclusiveGroup } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario } from './scenario';
 import { createDefaultResolvedScenario } from './scenario';
 import { calculateRanking, DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './ranking';
 import { calculateStandardRankingMatrix } from './rankingMatrix';
+import { fieldTraitsRequiredByCondition } from './conditionProvenance';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -18,32 +20,32 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    '143960d6bab38f2ee68c1ecd8a9658e6f49dae91fab42ecf1a526ebb5b1b0ffb',
-    'b003cad586cdb7240b42be391e739eb6474fa291051ce889fa18d88dbf41601d',
-    'fbcba002283e3fa447ffc4e31565e8c713a4b338c3373d585eb4b6b4ada74260',
-    '67d88881d5b8b605bc42bd9f33f3edb49f20dbb4421a2102f267a0f2e3dca8b2',
-    'ef24643431136540d83dcc5b48d9aa7938f450ed66ccfefbef34859d2544058b',
+    '3514f2d3d896d21448c831e62750f5aac2ba5ee48aef396fe9b83ff26621917a',
+    '8679c0c6b994a882f5fa87fed514eb3360da97db8675eaa77866aa89feed1a7a',
+    '1acf5556660b613375c158d11847143afca4b28a9ad9c1b4bd93c5c1387eb979',
+    '6662c68fe6c17523e6a3115230cd87bd269d8e3c155c477851eb3838fb2625b3',
+    '2c36ddb9cbc0fd1b5d6beac80a09c243e348f75ba72f6360145163a5fbb9c899',
   ],
   'neutral:active': [
-    '1e4e8a2301c293eed4b2d3b7a7cce73383300933f8fc13786adb1b625278c477',
-    'b4943d4d51e5ec6b15475e561e819ffe2041730c06f323d115d0221ce373fd48',
-    'ddf4af53625223198bcef069967f9f1d63330f241b4cb7cca8704883daafadb0',
-    '7c08bf10f39d597b06f56e42f0a5244ad1d0d9d4f41ae2e18afde528c136813d',
-    '6940e04855b0448eca74f4c05dd0a9ff13ec310f44d211022a45ddce39f9a94f',
+    'ee9b7fd1c335f170daf3d03d93801ba4c19ffb2fb374525c8d694a584da471c6',
+    'e0aa57cfe3fef3e62bcb92be695a894a43e72839cd329834512dd9b305c2d22f',
+    '4cd3ac92ee1272300f9671120c37123071e857d938b21eedb180872a0a2b04e0',
+    'f285019ef9374d1a1daf4c2df2c15a1aca022858554af0a96d137c9e61533cea',
+    '2438acc47763a7f2b8e0838afa864b91792b1b73381b5a13cc3ec3bbe28dc526',
   ],
   'favorable:inactive': [
-    'a13599507b91012b973ae0d31e15e7a7c37da314678823e9735b46da7372ad0b',
-    'd8e1e77fbd29eec688fecc8e07ead2fb94eac625698fe1de80f341282266df2f',
-    'd17c9bd03cd3b426bce1335aeade1f30b33a57c7766e614d1b6cc9e6da3cf7a7',
-    '8786de657f46b63c412dd0d86c7fd09b7c7ce66ab33f08a8c8eb8b06e515318c',
-    '762715368fe68d22868d82b4d9f1a0e368bb18b467e62cc81cf7dfc92dba71d1',
+    '070c8f088d44b40d8c8de84660cb0cd8771329dd2cf97ee99079e3916110e9c0',
+    '7174a3b60e8eaa0726e431fee50e9cb443c7ae07c561d291659f407962de48e3',
+    'cf6597b2bd6ca53dedc1725201449b845c74f81aa6c7ce705c0f6fd7676f8e6f',
+    'c55a8c581dc9f17e6c870ee86cc669e159d4069fc91d2e025e92514a2d958e03',
+    '7477c01dab8ceb974a580cadfee10865f8ca579e8ef3223471ac4eeff4f86857',
   ],
   'favorable:active': [
-    '2678d1fadb3402139cde114e50d0bd2d371e5c5342729ff0b68c4ed3399c94b6',
-    '36262bc679d2b31f7183d33cb798064732c6ae38668b6e1697614659cbc646cb',
-    'b7f4a228daae044d9fdfbd66d498ae7a827b6f527543c88c617de4362ad60aab',
-    '589f2d178e38b196422a2f70087aedf905f439a431725a997c34221b770ca967',
-    'e2105a5c902459306cd558c7ae7c25e62bf67d02f2713110b04d8ea39cff7911',
+    'ca64a6a3f43a1b79ca76dd633a4d11e473ea1bcba99029f4b738aed9d660adb2',
+    '7ad1018490ba8dd537be931da7589773864c4e774b0bee0be45905ac9ccb8cba',
+    '9a6eb70b7698c1c2b201ef878b2586f2dc2e5f279d35a2bbf04b2dfa7db5d639',
+    'a6cc1fcb02fbe60a022925cd8ba0ebff8f63de8c43d058081c362e4687ed5319',
+    '338e88ed3b6a5c2d11afbbfdb4fb696db6e80e281a8f994428247a5b69687a40',
   ],
 } as const;
 
@@ -128,7 +130,7 @@ describe('production canonical ranking', () => {
         detail.result.rows[index]!.average
       );
     });
-    expect(areaDetails).toHaveLength(176);
+    expect(areaDetails).toHaveLength(172);
     expect(
       areaDetails.reduce(
         (count, detail) =>
@@ -143,7 +145,7 @@ describe('production canonical ranking', () => {
           ).size,
         0,
       ),
-    ).toBe(246);
+    ).toBe(230);
     const tonelico = ranking.details['505300']!;
     expect(tonelico.result.status === 'calculated' ? tonelico.result.rows[0] : null).toEqual({
       npLevel: 1,
@@ -158,12 +160,12 @@ describe('production canonical ranking', () => {
     ).toEqual({ npLevel: 1, minimum: 16_776, average: 18_631.06, maximum: 20_486 });
 
     const jalter = ranking.details['1100300']!;
-    expect(jalter.input).toMatchObject({ classAffinity: 1, attackBuff: 0.4, cardBuff: 0.5 });
+    expect(jalter.input).toMatchObject({ classAffinity: 1, attackBuff: 0.2, cardBuff: 0.5 });
     expect(jalter.result.status === 'calculated' ? jalter.result.rows[0] : null).toEqual({
       npLevel: 1,
-      minimum: 81_732,
-      average: 90_768.145,
-      maximum: 99_804,
+      minimum: 70_056,
+      average: 77_801.205,
+      maximum: 85_546,
     });
     expect(jalter.areaContribution?.withoutAreaInput.attackBuff).toBe(0);
 
@@ -204,7 +206,7 @@ describe('production canonical ranking', () => {
     ).toMatchInlineSnapshot(`
       [
         {
-          "average": 90768.145,
+          "average": 77801.205,
           "name": "ジャンヌ・ダルク〔オルタ〕",
           "servantId": "1100300",
         },
@@ -217,11 +219,6 @@ describe('production canonical ranking', () => {
           "average": 74212.83,
           "name": "クー・フーリン〔オルタ〕",
           "servantId": "702000",
-        },
-        {
-          "average": 70660.61,
-          "name": "ネモ",
-          "servantId": "403700",
         },
         {
           "average": 70129.565,
@@ -249,14 +246,19 @@ describe('production canonical ranking', () => {
           "servantId": "700600",
         },
         {
-          "average": 63138.515,
-          "name": "エリザベート・バートリー〔ブレイブ〕",
-          "servantId": "101000",
+          "average": 61162.615,
+          "name": "謎のヒロインX〔オルタ〕",
+          "servantId": "702400",
+        },
+        {
+          "average": 58447.99,
+          "name": "沖田総司",
+          "servantId": "102700",
         },
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"f5b7dc1746ac07387c797d683d695ff434fa5fbfea0a79ad01d810908d29dd2d"`,
+      `"c837a70cba633cd466a859dd73a22b8ecdaea887972e24309a17266f1740ba80"`,
     );
     expect(
       [...ranking.rows]
@@ -296,15 +298,99 @@ describe('production canonical ranking', () => {
           ({ executionMetrics }) => executionMetrics.worldCandidateCount,
         ),
       ),
-    ).toBe(12);
+    ).toBe(16);
     expect(
       Math.max(
         ...Object.values(ranking.details).map(
           ({ executionMetrics }) => executionMetrics.scenarioCalculationCount,
         ),
       ),
-    ).toBe(14);
+    ).toBe(17);
   }, 60_000);
+
+  it('uses canonical witnesses for recipient and field conditions', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions = {
+      schemaVersion: SCHEMA_VERSION,
+      masterDataVersion: master.version,
+      engineVersion: ENGINE_VERSION,
+      appVersion: APP_VERSION,
+      gameRegion: 'JP' as const,
+      masterDataLocale: 'ja-JP' as const,
+    };
+    for (const field of ['inactive', 'active'] as const) {
+      const ranking = calculateRanking(
+        master,
+        profile,
+        { ...DEFAULT_RANKING_CONDITIONS, field },
+        versions,
+      );
+      expect(ranking.failures, field).toEqual([]);
+      expect(ranking.rows).toHaveLength(420);
+      for (const detail of Object.values(ranking.details)) {
+        expect(
+          detail.scenario.effectDecisions.filter(
+            ({ conditionSatisfaction }) => conditionSatisfaction === 'assumeSatisfied',
+          ),
+          detail.servantId,
+        ).toEqual([]);
+        const externalFieldFacts = detail.scenario.worldFactAssertions.filter(
+          ({ decisionKey, fact }) =>
+            decisionKey.startsWith('ranking:field:') && fact.kind === 'trait' && fact.present,
+        );
+        if (field === 'inactive') expect(externalFieldFacts, detail.servantId).toEqual([]);
+        const exclusiveGroups = externalFieldFacts.flatMap(({ fact }) => {
+          if (fact.kind !== 'trait') return [];
+          const group = canonicalExclusiveGroup('field', fact.trait);
+          return group ? [group] : [];
+        });
+        expect(new Set(exclusiveGroups).size, detail.servantId).toBe(exclusiveGroups.length);
+        for (const effect of detail.effects) {
+          if (effect.outcome !== 'applied') continue;
+          const fieldTraits = fieldTraitsRequiredByCondition(effect.explanation.condition);
+          if (fieldTraits.length === 0) continue;
+          expect(
+            fieldTraits.some((trait) => detail.input.fieldTraits.includes(trait)),
+            `${detail.servantId}:${effect.source.effectOccurrenceId}`,
+          ).toBe(true);
+        }
+        expect(detail.input.classAffinity, detail.servantId).toBe(1);
+      }
+    }
+  }, 120_000);
+
+  it('ratchets the field-active NP series', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const versions = {
+      schemaVersion: SCHEMA_VERSION,
+      masterDataVersion: master.version,
+      engineVersion: ENGINE_VERSION,
+      appVersion: APP_VERSION,
+      gameRegion: 'JP' as const,
+      masterDataLocale: 'ja-JP' as const,
+    };
+    const { npLevel: _npLevel, ...conditions } = {
+      ...DEFAULT_RANKING_CONDITIONS,
+      field: 'active' as const,
+    };
+    const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
+    const digests = [
+      '6d257727013c2d791bee7b65fab4dae3d4b6cd4483ecca8e389aa1f590218e90',
+      '766b20110a7be9a681979f10d30e350dee4602ed74dda3f3510fbe72f8d21031',
+      '7d345d765bfe6d1f06f7ef81fdfff880c2e22fe765b8dbd08b4244cbec762240',
+      '514b828057e0fcf8410392e33b5703dd2709925e88f041a17c66f8a3ca015dee',
+      'f53b15b9bf6a97e4e3113b8ccd114cfa7c86b05a1996e61f9ea28e93a6bb0e06',
+    ];
+    for (const [index, ranking] of matrix.entries()) {
+      expect(ranking.failures, `field:active:NP${String(index + 1)}`).toEqual([]);
+      expect(ranking.rows).toHaveLength(420);
+      expect(rankingDigest(ranking.rows)).toBe(digests[index]);
+    }
+  }, 120_000);
 
   it('ratchets NP-before-damage operations to one execution-valid value across NP levels', async () => {
     const master = masterSnapshotSchema.parse(
@@ -445,6 +531,7 @@ describe('production canonical ranking', () => {
           classAffinity,
           selfBuffs: DEFAULT_RANKING_CONDITIONS.selfBuffs,
           specialAttack,
+          field: DEFAULT_RANKING_CONDITIONS.field,
         };
         const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
         for (const [index, ranking] of matrix.entries()) {
@@ -453,7 +540,7 @@ describe('production canonical ranking', () => {
           expect(ranking.rows).toHaveLength(420);
           expect(
             ranking.rows.filter(({ specialAttackApplied }) => specialAttackApplied),
-          ).toHaveLength(specialAttack === 'active' ? 206 : 0);
+          ).toHaveLength(specialAttack === 'active' ? 189 : 0);
           expect(rankingDigest(ranking.rows)).toBe(
             policyDigests[`${classAffinity}:${specialAttack}`][npLevel - 1],
           );

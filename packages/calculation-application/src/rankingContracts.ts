@@ -15,6 +15,7 @@ export type RankingNpLevel = 1 | 2 | 3 | 4 | 5;
 export type RankingClassAffinity = 'neutral' | 'favorable';
 export type RankingSelfBuffs = 'included' | 'excluded';
 export type RankingSpecialAttack = 'inactive' | 'active';
+export type RankingField = 'inactive' | 'active';
 
 export interface RankingConditions {
   comparisonMode: RankingComparisonMode;
@@ -22,6 +23,7 @@ export interface RankingConditions {
   classAffinity: RankingClassAffinity;
   selfBuffs: RankingSelfBuffs;
   specialAttack: RankingSpecialAttack;
+  field: RankingField;
 }
 
 export const DEFAULT_RANKING_CONDITIONS: RankingConditions = {
@@ -30,6 +32,7 @@ export const DEFAULT_RANKING_CONDITIONS: RankingConditions = {
   classAffinity: 'neutral',
   selfBuffs: 'included',
   specialAttack: 'inactive',
+  field: 'inactive',
 };
 
 export const STANDARD_RANKING_SCENARIO_POLICY = {

@@ -70,6 +70,7 @@ export function parseRankingUrlState(search: string): RankingUrlState {
       ),
       selfBuffs: enumValue(params, 'rSelf', ['included', 'excluded'], defaults.selfBuffs),
       specialAttack: enumValue(params, 'rSpecial', ['inactive', 'active'], defaults.specialAttack),
+      field: enumValue(params, 'rField', ['inactive', 'active'], defaults.field),
     },
     metric: enumValue(params, 'rMetric', ['average', 'minimum', 'maximum'], 'average'),
     filters: {
@@ -102,6 +103,7 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
   setIf(params, 'rAffinity', conditions.classAffinity, conditions.classAffinity !== 'neutral');
   setIf(params, 'rSelf', conditions.selfBuffs, conditions.selfBuffs !== 'included');
   setIf(params, 'rSpecial', conditions.specialAttack, conditions.specialAttack !== 'inactive');
+  setIf(params, 'rField', conditions.field, conditions.field !== 'inactive');
   setIf(params, 'rMetric', state.metric, state.metric !== 'average');
   setIf(params, 'rSearch', state.filters.search, state.filters.search.length > 0);
   setIf(params, 'rClass', state.filters.classId, state.filters.classId !== null);

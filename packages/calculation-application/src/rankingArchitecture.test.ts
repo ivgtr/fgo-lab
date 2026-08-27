@@ -6,10 +6,11 @@ import { DEFAULT_RANKING_CONDITIONS } from './rankingContracts';
 const root = resolve(import.meta.dirname, '../../..');
 
 describe('ranking architecture', () => {
-  it('exposes only the five comparison policies', () => {
+  it('exposes only the compact comparison policies', () => {
     expect(Object.keys(DEFAULT_RANKING_CONDITIONS).sort()).toEqual([
       'classAffinity',
       'comparisonMode',
+      'field',
       'npLevel',
       'selfBuffs',
       'specialAttack',
