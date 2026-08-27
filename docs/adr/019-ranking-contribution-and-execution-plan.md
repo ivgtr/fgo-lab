@@ -10,8 +10,9 @@ controlを一件ずつ操作し、その都度`calculateScenario`を再実行し
 列挙していたため、計算量はeffect数に対する反復と最大`2^N`の探索になっていた。
 
 また、masterのtyped `targetPolicy`はoperationの適用先判定に使った後に失われ、projectionには発生源だけが
-残っていた。このためrankingはattacker／passive／NP originをすべて「自己効果」とみなし、味方全体へ提供する
-area effectまで主順位へ含めていた。originは「誰が発生させたか」であり、「誰へ寄与するか」の代用にはならない。
+残っていた。このためrankingはattacker／passive／NP originをすべて「自己効果」とみなしていた。その後の
+暫定整理では`partyWide`を主順位から除外したが、味方全体効果は攻撃役本人にも適用されるため、これも誤りだった。
+originは「誰が発生させたか」、scopeは「誰へ寄与するか」であり、本人への最終適用可否をscope名だけで代用しない。
 
 ## Decision
 
@@ -29,14 +30,17 @@ data-pipelineはraw Atlas targetを、実行recipientとは別の`EffectContribu
 battle operation、projectionへtyped scopeを保持する。executorはscopeをmodifier枠として解釈せず、従来どおり
 target policyとrecipient契約で正確な適用可否を決める。scopeはapplication policyとevidenceの分類軸である。
 
-rankingの主順位は`personal`と攻撃役自身が与える`enemyApplied`を含み、`partyWide`と`partyOther`を除く。
-支援なしの標準policyでは`external`は存在しない。area effectを持つ行は、同じworld candidateでarea effectも含めた
-別executionを作り、詳細にarea込みdamageと主順位との差分を表示する。新しいranking入力条件は追加しない。
+rankingの主順位は、攻撃役自身へ最終的に適用される自前効果を含む。したがって`personal`、攻撃役本人も受ける
+`partyWide`、攻撃対象へ与える`enemyApplied`を含み、本人へ適用されない`partyOther`を除く。支援なしの標準policyでは
+`external`は存在しない。area effectを持つ行は、主順位と同じworld candidateから`partyWide`だけを除いた反実仮想を
+一度実行し、詳細に「効果なし」「効果込み」「増加量」を表示する。areaの別枠説明と主火力からの除外を混同せず、
+新しいranking入力条件も追加しない。
 
 ### Declarative ranking plan
 
-rankingはUI presentation commandを逐次実行してscenarioを組み立てない。application層が一騎・buildごとに
-`RankingExecutionPlan`をcompileし、以下を所有する。
+rankingはUI presentation commandを逐次実行してscenarioを組み立てない。application層が完全な
+`RankingExecutionPolicy`をcompileし、ranking条件が`TargetContext`とeffect集合を所有する。そのpolicyから
+一騎・buildごとの`RankingExecutionPlan`をcompileし、以下を所有する。
 
 - fixed standard／owned scenario
 - terminal effectのscope分類
@@ -46,6 +50,8 @@ rankingはUI presentation commandを逐次実行してscenarioを組み立てな
 - 有限target/world candidate
 
 effect decision、source dependency、hidden mutationは選択されたterminal effect集合から一度だけ導出する。
+effectの包含／除外はrankingが所有する`TargetContext`を変更しない。UI操作用のcondition fallbackや
+`applyEffectDecisionCommand`をranking scenario生成へ流用しない。
 特攻成立はeffectのON/OFF部分集合を探索せず、canonical target／condition candidateを列挙する。同じcandidateで
 成立する特攻operationはすべて同時に評価し、candidateごとにexecutorを一回だけ実行する。排他・AND／OR・
 trait／class／attribute／familyは既存のconstraint evaluatorを正本とする。
@@ -71,8 +77,10 @@ trait／class／attribute／familyは既存のconstraint evaluatorを正本と�
 - raw target／label／servant IDによるscope判定は0件
 - 一騎・一world candidateあたりのplan compileは1回
 - NP切替によるplan再compileは0回
-- area effectを主順位へ含める件数は0件
-- area detailは同一candidate／同一NP levelのcanonical execution差分である
+- `partyWide`は本人へ適用される主順位へ含み、`partyOther`の主順位適用は0件
+- area contributionは同一candidate／同一NP levelから`partyWide`だけを除いたcanonical execution差分である
+- ranking effect policyによる`TargetContext`変更は0件
+- class neutralの全420騎で最終`classAffinity`は1
 - implementation unsupported、partial commit、inert controlは0件
 - calculator handoffは採用したcanonical scenarioを渡し、rankingと再計算結果が一致する
 
@@ -87,9 +95,9 @@ trait／class／attribute／familyは既存のconstraint evaluatorを正本と�
 ## Production result
 
 master artifact `20260828.2`では、terminal operationのscopeは`personal: 2,574`、
-`partyWide: 849`、`partyOther: 34`、`enemyApplied: 331`である。標準NP1の主順位に適用された
-`partyWide`／`partyOther`は0件、area-supported damageが主順位と異なるサーヴァントは176騎、
-そこで適用された一意な`partyWide` projectionは246件である。
+`partyWide: 849`、`partyOther: 34`、`enemyApplied: 331`である。標準NP1でarea contributionが0より大きい
+サーヴァントは176騎、主順位へ適用された一意な`partyWide` projectionは246件、`partyOther`は0件である。
+class neutralの全420騎は`classAffinity === 1`を満たす。
 
 特攻成立時の最大world candidate数は12、detail一件の最大scenario calculation数は14となった。
 旧実装の最大4,096 effect subset探索とeffectごとの再compileは存在しない。standard workerは

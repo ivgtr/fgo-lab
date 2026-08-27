@@ -70,7 +70,7 @@ test('ranking desktop UI baseline', async ({ page, isMobile }) => {
   await expect(page).toHaveScreenshot('ranking-detail-desktop.png');
 });
 
-test('ranking keeps area support outside the primary row and explains it in details', async ({
+test('ranking includes self-applicable area buffs and explains their contribution', async ({
   page,
   isMobile,
 }) => {
@@ -82,13 +82,15 @@ test('ranking keeps area support outside the primary row and explains it in deta
     .getByRole('list', { name: '宝具火力ランキング' })
     .getByRole('listitem')
     .filter({ hasText: '雨の魔女トネリコ' });
-  await expect(row.locator('.ranking-primary-damage strong')).toHaveText('18,631');
+  await expect(row.locator('.ranking-primary-damage strong')).toHaveText('27,947');
+  const primaryDamage = await row.locator('.ranking-primary-damage strong').textContent();
   await row.getByRole('button', { name: '詳細' }).click();
   const detail = row.getByRole('region', { name: /雨の魔女トネリコの計算詳細/ });
-  await expect(detail.getByRole('region', { name: 'エリア支援込みダメージ' })).toContainText(
-    '27,947',
-  );
-  await expect(detail).toContainText('平均増加');
+  const area = detail.getByRole('region', { name: 'エリア貢献' });
+  await expect(area).toContainText('18,631');
+  await expect(area).toContainText('27,947');
+  await expect(area).toContainText('増加量');
+  await expect(row.locator('.ranking-primary-damage strong')).toHaveText(primaryDamage ?? '');
 });
 
 for (const viewport of [

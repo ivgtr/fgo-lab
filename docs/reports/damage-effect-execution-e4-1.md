@@ -1,7 +1,7 @@
 ---
 title: "Damage effect execution E4.1 comparison policy evidence"
 status: "Complete"
-date: "2026-08-27"
+date: "2026-08-28"
 ---
 
 # E4.1 ranking comparison policy evidence
@@ -16,9 +16,13 @@ rankingはcalculatorの全入力を再掲する画面ではなく、同じ固定
 自然上限、Fou+1000、skill Lv10、OC1、attribute等倍、HP100%、star 0、turn 1、BP 0、quantity minimum、
 proc成功、chained最大、礼装・魔術礼装・支援なしはtyped fixed policyが一度だけ所有する。
 
-追補として、effectの発生源と寄与範囲を分離した。主順位は攻撃役自身の`personal`および対象へ与える
-`enemyApplied`だけを含み、味方全体の`partyWide`は同じ条件・同じtarget candidateの別executionとして
-詳細へ「エリア支援込み」damageと平均増加を表示する。ランキング条件は5項目のままである。
+追補として、effectの発生源と寄与範囲を分離した。主順位は攻撃役本人へ実際に適用される`personal`、
+`partyWide`、`enemyApplied`を含み、本人へ適用されない`partyOther`を除く。`partyWide`は主火力へ含めたうえで、
+同じ条件・同じtarget candidateからarea効果だけを除いた反実仮想との差を「エリア貢献」として詳細表示する。
+ランキング条件は5項目のままである。
+
+ranking scenarioはUI presentation commandを再利用しない。`RankingExecutionPolicy`がranking条件由来の
+`TargetContext`とterminal effect包含集合を所有し、effectのON／OFFはTargetContextを変更しない。
 
 TargetContext基盤は先行する`66a21f3`で独立確定した。engine 996行へ意味論を足す構造を廃止し、
 compile plan、target resolution、candidate execution、candidate comparison、result assemblyへ分割した。
@@ -27,20 +31,19 @@ family runtime semanticsとAtlas evidenceを分離し、typed predicateだけを
 ## Production inventory and digests
 
 全条件で420行、implementation unsupported 0、inputRequired 0である。特攻inactiveの適用badgeは0、activeは
-198騎で、一騎を複数行へ分割しない。旧206騎との差8騎は、主順位へ混入していたparty-wide specialを
-canonical contribution scopeに従って分離した結果である。
+206騎で、一騎を複数行へ分割しない。neutral policyでは全420騎の最終`classAffinity`が1である。
 
 | class | special | NP1 | NP2 | NP3 | NP4 | NP5 |
 |---|---|---|---|---|---|---|
-| neutral | inactive | `c05a527f` | `4b64710c` | `d0fd1363` | `ecb5be52` | `f3fd03fc` |
-| neutral | active | `546b863c` | `51e2d292` | `87e12bb5` | `d1844e0f` | `fabc4f8c` |
-| favorable | inactive | `33321423` | `3bdb8d3b` | `089008ce` | `cda1e06b` | `97dc1761` |
-| favorable | active | `89e8d1f4` | `9b45cc55` | `d15b2442` | `50b703ea` | `41455bc7` |
+| neutral | inactive | `143960d6` | `b003cad5` | `fbcba002` | `67d88881` | `ef246434` |
+| neutral | active | `1e4e8a23` | `b4943d4d` | `ddf4af53` | `7c08bf10` | `6940e048` |
+| favorable | inactive | `a1359950` | `d8e1e77f` | `d17c9bd0` | `8786de65` | `76271536` |
+| favorable | active | `2678d1fa` | `36262bc6` | `b7f4a228` | `589f2d17` | `e2105a5c` |
 
 テストは省略表記ではなく各64桁digestを保持する。NP Lv依存特攻の平均damageは次のとおり。
 
 - エウリュアレ: 41,345.805 / 55,027.875 / 61,868.985 / 65,289.450 / 68,709.995
-- 雨の魔女トネリコ: 27,946.830 / 43,473.150 / 52,400.755 / 57,170.400 / 62,104.685
+- 雨の魔女トネリコ: 41,920.510 / 65,209.955 / 78,601.400 / 85,755.900 / 93,157.300
 - アーキタイプ：アース: 45,754.140 / 71,173.420 / 85,789.500 / 93,598.280 / 101,676.515
 
 ## UI and worker
@@ -56,8 +59,10 @@ reasonを保持する。該当行だけerrorとretryを表示し、loading表示
 
 標準比較workerはNP levelを除いたpolicy keyでNP1〜5 matrixをcacheする。NP selector変更では420騎の
 scenarioを再compileせず、保持済みseriesを選択する。summaryではarea executionを行わず、展開した一行のdetailだけを
-遅延計算する。productionでは主順位とarea-supported値が異なる176騎、246 projectionをratchetし、主順位へ
-visible `partyWide`／`partyOther`が適用される件数を0へ固定した。
+遅延計算する。productionでは主順位とareaなし反実仮想が異なる176騎、主順位へ適用された一意な`partyWide`
+246 projectionをratchetし、`partyOther`の主順位適用を0へ固定した。ジャンヌ〔オルタ〕は本人に適用される
+全体攻撃力アップを含み、neutral NP1平均90,768.145となる。XX〔オルタ〕の特攻inactiveはTargetContextを変更せず、
+class affinity 1、power modifier 0、NP特攻倍率1のNP1平均39,381.220となる。
 
 ## Versions
 

@@ -302,8 +302,8 @@
   font-size: 0.82rem;
 }
 
-.ranking-area-support .ranking-damage-range {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.ranking-area-contribution .ranking-damage-range {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .ranking-effect-stacks {

@@ -10,32 +10,29 @@ import { numberFormatter } from '../../ui/i18n';
 import { servantClassLabels } from '../../ui/servantFilterOptions';
 import { traitLabel } from '../calculator/traitPresentation';
 
-function AreaSupportSummary({ detail }: { detail: RankingDetail }) {
-  const area = detail.areaSupport;
-  if (detail.result.status !== 'calculated' || area?.result.status !== 'calculated') return null;
+function AreaContributionSummary({ detail }: { detail: RankingDetail }) {
+  const area = detail.areaContribution;
+  if (detail.result.status !== 'calculated' || area?.withoutAreaResult.status !== 'calculated')
+    return null;
   const npIndex = detail.scenario.attacker.npLevel - 1;
-  const personalRow = detail.result.rows[npIndex];
-  const areaRow = area.result.rows[npIndex];
-  if (!personalRow || !areaRow || areaRow.average === personalRow.average) return null;
+  const rankingRow = detail.result.rows[npIndex];
+  const withoutAreaRow = area.withoutAreaResult.rows[npIndex];
+  if (!rankingRow || !withoutAreaRow || rankingRow.average === withoutAreaRow.average) return null;
   return (
-    <section className="ranking-area-support" aria-label="エリア支援込みダメージ">
-      <h4>エリア支援込み</h4>
+    <section className="ranking-area-contribution" aria-label="エリア貢献">
+      <h4>エリア貢献</h4>
       <dl className="ranking-damage-range">
         <div>
-          <dt>最低</dt>
-          <dd>{numberFormatter.format(areaRow.minimum)}</dd>
+          <dt>効果なし</dt>
+          <dd>{numberFormatter.format(withoutAreaRow.average)}</dd>
         </div>
         <div>
-          <dt>平均</dt>
-          <dd>{numberFormatter.format(areaRow.average)}</dd>
+          <dt>効果込み</dt>
+          <dd>{numberFormatter.format(rankingRow.average)}</dd>
         </div>
         <div>
-          <dt>最大</dt>
-          <dd>{numberFormatter.format(areaRow.maximum)}</dd>
-        </div>
-        <div>
-          <dt>平均増加</dt>
-          <dd>+{numberFormatter.format(areaRow.average - personalRow.average)}</dd>
+          <dt>増加量</dt>
+          <dd>+{numberFormatter.format(rankingRow.average - withoutAreaRow.average)}</dd>
         </div>
       </dl>
     </section>
@@ -89,7 +86,7 @@ export function RankingEffectDetails({
               </dd>
             </div>
           </dl>
-          <AreaSupportSummary detail={detail} />
+          <AreaContributionSummary detail={detail} />
           <dl className="ranking-input-summary">
             <div>
               <dt>最終ATK</dt>

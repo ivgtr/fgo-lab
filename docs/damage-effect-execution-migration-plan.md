@@ -652,12 +652,13 @@ E4.1の計算経路はcanonical executorへ統合済みだったが、ranking po
 操作して再計算し、originだけで自己効果を判定していた。ADR 019に従い、次へ収束させる。
 
 1. raw targetをdata-pipelineでtyped `EffectContributionScope`へ正規化し、master operationからprojectionまで保持する。
-2. 主順位は`personal`と`enemyApplied`だけを含め、`partyWide`は同じworld candidateのarea-supported detailとして分離する。
-3. presentation controlの逐次操作を削除し、terminal effect集合からdecision、source dependency、hidden mutationを一括導出する。
-4. 特攻effectの任意部分集合探索を削除し、typed target／condition world candidateを有限列挙する。
-5. candidateごとにexecutorを一度だけ実行し、NP1〜5のrow seriesから各levelの最大候補を選ぶ。
-6. standard workerはNP levelを除くcanonical policyでmatrixをcacheし、NP切替では再compileしない。
-7. production gateでarea混入0、最大world candidate数、scenario calculation数、20 digestを固定する。
+2. 主順位は攻撃役本人へ適用される`personal`、`partyWide`、`enemyApplied`を含め、本人へ適用されない`partyOther`を除く。
+3. area contributionは同じworld candidateから`partyWide`だけを除いた反実仮想との差分として詳細表示する。
+4. presentation controlの逐次操作を削除し、rankingが所有する`TargetContext`とterminal effect集合からdecision、source dependency、hidden mutationを一括導出する。effect操作由来のfallbackでTargetContextを変更しない。
+5. 特攻effectの任意部分集合探索を削除し、typed target／condition world candidateを有限列挙する。
+6. candidateごとにexecutorを一度だけ実行し、NP1〜5のrow seriesから各levelの最大候補を選ぶ。
+7. standard workerはNP levelを除くcanonical policyでmatrixをcacheし、NP切替では再compileしない。
+8. production gateで全420騎のneutral affinity、partyOther混入0、area contribution、最大world candidate数、scenario calculation数、20 digestを固定する。
 
 calculator、E4.1の5項目condition UI、ranking closed rowは変更しない。area contributionは詳細だけへ表示し、
 新しいranking inputを追加しない。E5は本節の全gate完了後に開始する。
