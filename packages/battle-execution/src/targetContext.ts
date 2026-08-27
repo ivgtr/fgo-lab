@@ -12,6 +12,7 @@ import type {
   CanonicalTargetFamilyId,
   DamageResolutionInput,
   TargetContext,
+  TargetPredicate,
 } from '@fgo-lab/schema';
 import type { ConstraintValidationIssue, TargetPredicateAssertion } from './contracts';
 import { validateConstraintSet, type SatisfiableConditionConstraint } from './constraints';
