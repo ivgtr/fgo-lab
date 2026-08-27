@@ -18,10 +18,9 @@ import type {
 import {
   applyCanonicalInputCommand,
   appendCalculationSupportSource,
-  applyEffectPresentationDecision,
+  applyEffectControlPresentationDecision,
   removeCalculationSupportSource as removeSupportSourceFromScenario,
   setAttackerSkillLevel,
-  setAttackerSkillEnabled,
   setCalculationSupportSkillLevel,
   setCalculationSupportSkillEnabled,
 } from '@fgo-lab/calculation-application';
@@ -395,21 +394,25 @@ export function Calculator({
   }
   function changeAttackerSkill(
     skillId: string,
-    patch: Partial<Pick<AttackerSkillSelection, 'skillLevel' | 'enabled'>>,
+    patch: Partial<Pick<AttackerSkillSelection, 'skillLevel'>>,
   ) {
     if (!resolvedScenario) return;
     const next =
       patch.skillLevel === undefined
         ? resolvedScenario
         : setAttackerSkillLevel(resolvedScenario, skillId, patch.skillLevel);
-    void onScenarioChange(
-      patch.enabled === undefined ? next : setAttackerSkillEnabled(next, skillId, patch.enabled),
-    );
+    void onScenarioChange(next);
   }
-  function changeEffect(effect: EffectProjection, active: boolean) {
+  function changeEffect(control: EffectControlViewModel, active: boolean) {
     if (!resolvedScenario) return;
     void onScenarioChange(
-      applyEffectPresentationDecision(resolvedScenario, effect, active, resolvedEffects),
+      applyEffectControlPresentationDecision(
+        resolvedScenario,
+        control,
+        active,
+        resolvedEffects,
+        effectInputs,
+      ),
     );
   }
   function addSupportServant(servant: ServantMaster) {

@@ -16,10 +16,7 @@ export function AttackerSkills({
   selectedSkills: readonly AttackerSkillSelection[];
   savedBuild: ServantBuild | undefined;
   hidden: boolean;
-  onChange: (
-    skillId: string,
-    patch: Partial<Pick<AttackerSkillSelection, 'skillLevel' | 'enabled'>>,
-  ) => void;
+  onChange: (skillId: string, patch: Partial<Pick<AttackerSkillSelection, 'skillLevel'>>) => void;
 }) {
   return (
     <section className="attacker-skills" aria-label="攻撃役の自身スキル" hidden={hidden}>
@@ -47,13 +44,7 @@ export function AttackerSkills({
               state === 'modified' ? '一時変更' : state === 'saved' ? '保存値' : '仮想値';
             return (
               <li key={skill.id} className="attacker-skill-row" data-state={state}>
-                <button
-                  type="button"
-                  className="skill-activation-toggle"
-                  aria-label={`${skill.name}を${selectedSkill.enabled ? '使用しない' : '使用する'}`}
-                  aria-pressed={selectedSkill.enabled}
-                  onClick={() => onChange(skill.id, { enabled: !selectedSkill.enabled })}
-                >
+                <div className="skill-presentation">
                   <MasterImage
                     src={skill.imageKey}
                     alt=""
@@ -68,10 +59,7 @@ export function AttackerSkills({
                       <small className={`skill-state skill-state-${state}`}>{stateLabel}</small>
                     </span>
                   </span>
-                  <span className="skill-activation-mark" aria-hidden="true">
-                    {selectedSkill.enabled ? '✓' : ''}
-                  </span>
-                </button>
+                </div>
                 <label className="skill-level-control">
                   <span>Lv</span>
                   <select

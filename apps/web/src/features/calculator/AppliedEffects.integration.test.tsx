@@ -11,8 +11,8 @@ describe('applied effect interaction rendering', () => {
     const control: EffectControlViewModel = {
       key: 'effect',
       operationIds: ['operation'],
-      control: 'toggle',
-      conditionControl: 'none',
+      interaction: 'toggle',
+      active: true,
       valueDisplay: 'single',
       projection: {
         projectionKey: 'effect',
@@ -72,7 +72,7 @@ describe('applied effect interaction rendering', () => {
         ?.getAttribute('data-active'),
     ).toBe('true');
     const chip = getByRole('button', {
-      name: /攻撃力アップ、\+20%.*スキル使用中、確定、条件成立/,
+      name: /攻撃力アップ、\+20%.*確定、条件成立/,
     });
     expect(chip.textContent).toContain('+20%・スキル');
     expect(chip.textContent).not.toContain('計算中');

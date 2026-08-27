@@ -107,6 +107,20 @@
   text-align: left;
 }
 
+.support-skill-toggle .skill-activation-mark {
+  position: absolute;
+  top: 2px;
+  left: 28px;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid #aeb6b1;
+  border-radius: 50%;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
 .support-skill-toggle[aria-pressed='true'] {
   border-color: #7d9a87;
   background: #eaf4ed;

@@ -77,45 +77,60 @@ function scenarioSelectionLabel(effect: EffectProjection, selected: boolean): st
   return selected ? `成功時・${rateLabel}` : `失敗扱い・${rateLabel}`;
 }
 
-function isControlActive(control: EffectControlViewModel) {
-  const effect = control.projection;
-  if (!effect.sourceActive || !isEffectSelected(effect)) return false;
-  return control.conditionControl === 'none'
-    ? true
-    : effect.conditionDecision === 'assumeSatisfied';
+function chainedProcLabel(
+  control: EffectControlViewModel,
+  inputs: readonly EffectInputViewModel[],
+): string | null {
+  if (control.projection.proc.kind !== 'chainedRolls') return null;
+  const input = inputs.find((candidate) => candidate.kind === 'procSuccessCount');
+  const value = input?.value ?? input?.defaultValue ?? 0;
+  return value === 0
+    ? '失敗'
+    : `成功${String(value)}/${String(control.projection.proc.maximumSuccesses)}`;
 }
 
-function compactEffectDetail(control: EffectControlViewModel, servants: readonly ServantMaster[]) {
+function compactEffectDetail(
+  control: EffectControlViewModel,
+  servants: readonly ServantMaster[],
+  inputs: readonly EffectInputViewModel[],
+) {
   const effect = control.projection;
   const value = `${control.valueDisplay === 'sum' ? '合計' : ''}${effectValueLabel(effect)}`;
   const origin = effectOriginShortLabel(effect, servants);
   if (effect.outcome === 'unsupported') return `${value}・${origin}・未対応`;
   if (!effect.sourceActive) return `${value}・${origin}・未使用`;
-  const selected = isEffectSelected(effect);
+  const proc = chainedProcLabel(control, inputs);
+  if (proc) return `${value}・${origin}・${proc}`;
+  const selected = control.active;
   if (!selected) {
     const selection = scenarioSelectionLabel(effect, false);
     return `${value}・${origin}・${selection === '比較のため除外' ? '除外' : selection}`;
   }
-  if (control.conditionControl !== 'none' && effect.conditionDecision !== 'assumeSatisfied')
+  if (control.interaction === 'singleChoice' && effect.conditionDecision !== 'assumeSatisfied')
     return `${value}・${origin}・条件外`;
-  if (effect.outcome !== 'applied' && control.conditionControl === 'none')
+  if (effect.outcome !== 'applied' && control.interaction !== 'singleChoice')
     return `${value}・${origin}・条件外`;
   if (effect.proc.kind !== 'guaranteed' && effect.procRatePermille !== 1_000)
     return `${value}・${origin}・${scenarioSelectionLabel(effect, true).replace('時・', '')}`;
   return `${value}・${origin}`;
 }
 
-function accessibleEffectLabel(control: EffectControlViewModel) {
+function accessibleEffectLabel(
+  control: EffectControlViewModel,
+  inputs: readonly EffectInputViewModel[],
+) {
   const effect = control.projection;
-  const selection = scenarioSelectionLabel(effect, isEffectSelected(effect));
+  const selection =
+    chainedProcLabel(control, inputs) ?? scenarioSelectionLabel(effect, control.active);
   const sourceState =
-    effect.gameActivation === 'skillUse'
+    effect.gameActivation === 'skillUse' &&
+    (effect.source.origin === 'support' || effect.source.origin === 'mysticCode')
       ? effect.sourceActive
         ? 'スキル使用中'
         : 'スキル未使用'
       : '';
   const conditionState =
-    control.conditionControl === 'none'
+    control.interaction !== 'singleChoice'
       ? effect.outcome === 'applied'
         ? '条件成立'
         : '条件不成立'
@@ -162,7 +177,7 @@ export function AppliedEffects({
   inputs: readonly EffectInputViewModel[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
-  onToggle: (projection: EffectProjection, active: boolean) => void;
+  onToggle: (control: EffectControlViewModel, active: boolean) => void;
   onInputChange: (key: string, value: number | null) => void;
   action?: ReactNode;
 }) {
@@ -196,7 +211,7 @@ export function AppliedEffects({
             const attachedInputs = inputs.filter(
               (input) => firstVisibleProjectionForInput.get(input.key) === effect.projectionKey,
             );
-            const active = isControlActive(control);
+            const active = control.active;
             return (
               <li
                 className="applied-effect-item"
@@ -208,8 +223,8 @@ export function AppliedEffects({
                   bare
                   active={active}
                   label={effectLabel(effect)}
-                  detail={compactEffectDetail(control, servants)}
-                  accessibleLabel={accessibleEffectLabel(control)}
+                  detail={compactEffectDetail(control, servants, attachedInputs)}
+                  accessibleLabel={accessibleEffectLabel(control, attachedInputs)}
                   sources={[
                     {
                       key: `${effect.projectionKey}:source`,
@@ -217,13 +232,10 @@ export function AppliedEffects({
                       imageKey: effectSourceImage(effect, servants, craftEssence),
                     },
                   ]}
-                  {...((control.control === 'toggle' || control.conditionControl !== 'none') &&
-                  effect.controllability === 'user'
-                    ? { onToggle: (active: boolean) => onToggle(effect, active) }
+                  {...(control.interaction !== 'none'
+                    ? { onToggle: (active: boolean) => onToggle(control, active) }
                     : {})}
-                  selection={
-                    control.conditionControl === 'singleChoice' ? 'singleChoice' : 'toggle'
-                  }
+                  selection={control.interaction === 'singleChoice' ? 'singleChoice' : 'toggle'}
                 />
                 {attachedInputs.map((input) => (
                   <EffectInlineInput key={input.key} input={input} onChange={onInputChange} />

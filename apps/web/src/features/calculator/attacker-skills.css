@@ -14,8 +14,7 @@
   min-height: 56px;
   padding: 0.35rem 0;
 }
-.skill-activation-toggle {
-  position: relative;
+.skill-presentation {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
@@ -23,33 +22,8 @@
   min-width: 0;
   min-height: 48px;
   padding: 0.25rem 0.4rem;
-  border: 1px solid transparent;
-  background: transparent;
   color: inherit;
   text-align: left;
-}
-.skill-activation-toggle[aria-pressed='true'] {
-  border-color: #7d9a87;
-  background: #eaf4ed;
-  color: #285c3e;
-}
-.skill-activation-mark {
-  position: absolute;
-  top: 2px;
-  left: 28px;
-  display: grid;
-  width: 16px;
-  height: 16px;
-  place-items: center;
-  border: 1px solid #aeb6b1;
-  border-radius: 50%;
-  font-size: 0.58rem;
-  font-weight: 900;
-}
-.skill-activation-toggle[aria-pressed='true'] .skill-activation-mark {
-  border-color: #7d9a87;
-  background: #285c3e;
-  color: white;
 }
 .attacker-skill-copy {
   min-width: 0;
@@ -109,7 +83,7 @@
     grid-column: 2;
     grid-row: 1;
   }
-  .skill-activation-toggle {
+  .skill-presentation {
     grid-column: 1;
     grid-row: 1;
   }
