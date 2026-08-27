@@ -277,6 +277,7 @@ describe('portable input limits', () => {
                       modifier: 'powerMod',
                       sign: 1,
                       targetPolicy: 'sourceSelf',
+                      contributionScope: 'personal',
                       expectedRecipient: 'attacker',
                       targetMismatch: 'unsupported',
                       card: null,

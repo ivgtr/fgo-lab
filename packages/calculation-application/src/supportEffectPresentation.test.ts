@@ -86,6 +86,7 @@ describe('support effect application view model', () => {
                       modifier: 'attackBuff',
                       sign: 1,
                       targetPolicy: 'partyMember',
+                      contributionScope: 'partyWide',
                       expectedRecipient: 'attacker',
                       targetMismatch: 'unsupported',
                       card: null,
