@@ -42,13 +42,28 @@ Atlas固有の`Rate`はdata-pipelineだけが解釈する。
 
 ## UI投影
 
-- toggleは「計算へ含める／比較のため除外」を表す。
+- domain上の分離数とUI操作数を一致させない。applicationのpresentation commandは、一つのeffect chip操作をsource activation、effect inclusion、必要なeffect-local condition decisionへatomicに展開する。executorとscenarioでは各状態を引き続き分離する。
+- skill rowはsource activationを保持するが、独立した常設テキストbutton列を設けない。skill iconと名称のまとまりを一つのcompact toggleとし、skill level controlは外に置く。
+- effect chipをONにした際、skill sourceが未使用ならsourceも有効化する。既存の兄弟effect exclusionは変更しない。effectをOFFにしてもsource全体は無効化しない。sourceをOFFにした場合だけ、同sourceのterminal effectとhidden mutationを実行候補から外す。
+- toggleは「計算へ含める／比較のため除外」を表す。effect-localな条件成立を利用者が選ぶeffectでは、同じchip操作がcondition decisionも更新し、別の条件buttonを表示しない。HP、star、count等のcanonical入力から評価する条件は強制成立させない。
+- 排他的conditionはeffect chip群自体をsingle-choiceとし、選択時に兄弟conditionを解除する。選択済みchipの再操作で未選択へ戻せる。
 - 単純な確率effectのtoggleは、ONを成功scenario、OFFを失敗scenarioとして表示する。確定effectの同じtoggleは、ONを包含、OFFを比較除外として表示する。
 - 連鎖判定は成功回数controlを使い、複数の独立toggleへ分解しない。
-- 通常表示へsource kind、source名、確定／確率、条件成立状態、包含状態を出す。
+- 通常表示は効果名と「値・短いsource」を原則2行以内にする。ON時の`計算中`、`スキル使用中`、`確定`は押下状態と色で伝わるため重複表示しない。除外、失敗、条件外、成功率は短い状態語として表示し、完全なsource名と状態説明はaccessible nameとtooltipへ残す。
+- inputなしeffectは内容幅で横並びにし、input付きeffectだけ必要幅を確保する。320pxでもdocument overflowを作らない。
 - 同一activationの連鎖operationは一つの表示effectへ集約するが、traceでは各operationと根拠を保持する。
-- 条件付き特攻宝具は基礎宝具ダメージと特攻補正を分け、特攻補正のinclusionとcondition成立を別操作にする。
+- 条件付き特攻宝具は基礎宝具ダメージと特攻補正を分けるが、特攻補正のinclusionとeffect-local condition成立は一つのpresentation操作へまとめる。
 - カード不一致effectと中間state mutationは表示しない。
+
+### Compactness ratchet
+
+`9e3db3d^`のskill rowとeffect chip densityを比較基準とする。VRT画像の更新だけを受入根拠にせず、Playwrightで次を測定する。
+
+- desktop / 390px / 320pxでhorizontal overflow 0。
+- inputなしの通常effectが常にcontainer全幅となる件数 0。
+- 自身skill 3行はactivation toggle追加前と同じ一段gridを維持し、常設button列を持たない。
+- 通常effect 4件はdesktopで4枚の全幅縦積みにせず、390pxでも内容幅に応じて折り返す。
+- chipのtap targetは42px以上、skill activation targetは44px以上を維持する。
 
 ## Production inventory
 

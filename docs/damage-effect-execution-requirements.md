@@ -61,6 +61,10 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 - 中間効果によって成立した最終的な火力効果は表示する。
 - 表示される最終火力効果は、ゲーム内で確定発動するものも含めて原則操作可能にする。確定効果は既定onとし、offは比較のため計算から除外することを意味する。
 - on/offによる計算への包含、ゲーム内の発動形態、条件成立、確率結果を別概念として保持する。onは条件やworld factを強制成立させない。
+- 上記の内部状態数をUI操作数へ直接投影しない。applicationはeffect chip一操作を、必要なsource activation、effect inclusion、effect-local condition decisionへatomicに展開する。HP、star、count等のcanonical入力条件はこのcommandで強制成立させない。
+- skill activationはiconと名称をまとめたcompact toggleで操作し、独立した常設の「使用する／使用中」button列を設けない。skill level入力はtoggle外に保つ。
+- inputなしeffectは内容幅で横並びにし、通常表示は効果名と「値・短い由来」を原則2行以内とする。完全なsource・状態説明はaccessible nameとtooltipへ保持する。
+- 条件成立を利用者が選ぶeffectと排他effectは、effect chip自体をtoggleまたはsingle-choiceとする。別の全幅condition buttonを追加しない。
 - 単純な確率火力effectでは、onを成功scenario、offを失敗scenarioとして使用し、確率だけを理由に別入力や`inputRequired`を追加しない。連鎖判定は成功回数へ集約する。
 - 使用スキルの有効化、effectの包含、condition成立、proc成立を互いから推論しない。skillをoffにすると同一sourceのterminal effectとhidden mutationをすべて計算外にする。
 - 条件付き特攻宝具は基礎宝具ダメージを常に実行し、特攻補正の包含とcondition成立だけを個別に操作する。
