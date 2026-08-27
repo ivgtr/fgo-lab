@@ -248,7 +248,8 @@
 }
 .modifier-chip-list .applied-effect-item {
   display: grid;
-  width: min(100%, 28rem);
+  width: max-content;
+  max-width: 100%;
   gap: 0.4rem;
 }
 .modifier-chip-list .applied-effect-item[data-has-input],
@@ -334,26 +335,12 @@
 .effect-input-default {
   display: block;
 }
-.effect-condition-control {
-  min-height: 32px;
-  padding: 0.25rem 0.55rem;
-  border: 1px solid #b8c0bb;
-  background: white;
-  color: var(--muted);
-  font-size: 0.68rem;
-}
-.effect-condition-control[aria-pressed='true'],
-.effect-condition-control[aria-checked='true'] {
-  border-color: #7d9a87;
-  background: #eaf4ed;
-  color: #285c3e;
-}
 .modifier-chip {
   display: inline-grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.4rem;
-  width: min(100%, 28rem);
+  width: max-content;
   max-width: 100%;
   min-height: 42px;
   padding: 0.35rem 0.55rem;

@@ -44,7 +44,7 @@
 
 .support-source-head {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.75rem;
   align-items: center;
   padding: 0.75rem 0.7rem;
@@ -74,11 +74,11 @@
 
 .support-skill-list > li {
   display: grid;
-  min-height: 68px;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 58px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.75rem;
-  align-items: start;
-  padding: 0.75rem 0.7rem;
+  align-items: center;
+  padding: 0.45rem 0.7rem;
   border-bottom: 1px solid #e8e9ec;
 }
 
@@ -90,6 +90,33 @@
   display: grid;
   min-width: 0;
   gap: 0.12rem;
+}
+
+.support-skill-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.support-skill-toggle[aria-pressed='true'] {
+  border-color: #7d9a87;
+  background: #eaf4ed;
+  color: #285c3e;
+}
+
+.support-skill-toggle[aria-pressed='true'] .skill-activation-mark {
+  border-color: #7d9a87;
+  background: #285c3e;
+  color: white;
 }
 
 .support-skill-copy > strong {
@@ -134,11 +161,7 @@
 
 @media (max-width: 760px) {
   .support-skill-list > li {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-  .support-skill-use,
-  .support-skill-level {
-    grid-column: 2;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 

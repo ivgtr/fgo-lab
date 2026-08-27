@@ -44,12 +44,6 @@ function effectValueLabel(effect: EffectProjection) {
   });
 }
 
-function effectStateLabel(effect: EffectProjection, valueDisplay: 'single' | 'sum') {
-  if (effect.outcome === 'unsupported') return '未対応';
-  const value = `${valueDisplay === 'sum' ? '合計' : ''}${effectValueLabel(effect)}`;
-  return effect.outcome === 'applied' ? `${value}・計算中` : `${value}・計算外`;
-}
-
 function effectOriginLabel(effect: EffectProjection): string {
   if (effect.gameActivation === 'npBeforeDamage') return '宝具前';
   if (effect.gameActivation === 'skillUse') return effect.skillName;
@@ -59,8 +53,22 @@ function effectOriginLabel(effect: EffectProjection): string {
   return '常時効果';
 }
 
-function scenarioSelectionLabel(effect: EffectProjection): string {
-  const selected = isEffectSelected(effect);
+function effectOriginShortLabel(
+  effect: EffectProjection,
+  servants: readonly ServantMaster[],
+): string {
+  if (effect.gameActivation === 'npBeforeDamage') return '宝具前';
+  if (effect.source.origin === 'passive') return '常時';
+  if (effect.source.origin === 'craftEssence') return '礼装';
+  if (effect.source.origin === 'mysticCode') return '魔術礼装';
+  if (effect.gameActivation === 'derived') return '派生';
+  if (effect.gameActivation !== 'skillUse') return '常時';
+  const source = servants.find((servant) => servant.id === effect.source.sourceId);
+  const skill = source?.skills.find((candidate) => candidate.id === effect.source.skillId);
+  return skill ? `S${String(skill.slot)}` : 'スキル';
+}
+
+function scenarioSelectionLabel(effect: EffectProjection, selected: boolean): string {
   if (effect.proc.kind === 'guaranteed' || effect.procRatePermille === 1_000)
     return selected ? '確定' : '比較のため除外';
   const rate = effect.procRatePermille;
@@ -69,9 +77,63 @@ function scenarioSelectionLabel(effect: EffectProjection): string {
   return selected ? `成功時・${rateLabel}` : `失敗扱い・${rateLabel}`;
 }
 
-function sourceActivationLabel(effect: EffectProjection): string {
-  if (effect.gameActivation !== 'skillUse') return '';
-  return effect.sourceActive ? 'スキル使用中' : 'スキル未使用';
+function isControlActive(control: EffectControlViewModel) {
+  const effect = control.projection;
+  if (!effect.sourceActive || !isEffectSelected(effect)) return false;
+  return control.conditionControl === 'none'
+    ? true
+    : effect.conditionDecision === 'assumeSatisfied';
+}
+
+function compactEffectDetail(control: EffectControlViewModel, servants: readonly ServantMaster[]) {
+  const effect = control.projection;
+  const value = `${control.valueDisplay === 'sum' ? '合計' : ''}${effectValueLabel(effect)}`;
+  const origin = effectOriginShortLabel(effect, servants);
+  if (effect.outcome === 'unsupported') return `${value}・${origin}・未対応`;
+  if (!effect.sourceActive) return `${value}・${origin}・未使用`;
+  const selected = isEffectSelected(effect);
+  if (!selected) {
+    const selection = scenarioSelectionLabel(effect, false);
+    return `${value}・${origin}・${selection === '比較のため除外' ? '除外' : selection}`;
+  }
+  if (control.conditionControl !== 'none' && effect.conditionDecision !== 'assumeSatisfied')
+    return `${value}・${origin}・条件外`;
+  if (effect.outcome !== 'applied' && control.conditionControl === 'none')
+    return `${value}・${origin}・条件外`;
+  if (effect.proc.kind !== 'guaranteed' && effect.procRatePermille !== 1_000)
+    return `${value}・${origin}・${scenarioSelectionLabel(effect, true).replace('時・', '')}`;
+  return `${value}・${origin}`;
+}
+
+function accessibleEffectLabel(control: EffectControlViewModel) {
+  const effect = control.projection;
+  const selection = scenarioSelectionLabel(effect, isEffectSelected(effect));
+  const sourceState =
+    effect.gameActivation === 'skillUse'
+      ? effect.sourceActive
+        ? 'スキル使用中'
+        : 'スキル未使用'
+      : '';
+  const conditionState =
+    control.conditionControl === 'none'
+      ? effect.outcome === 'applied'
+        ? '条件成立'
+        : '条件不成立'
+      : effect.conditionDecision === 'assumeSatisfied'
+        ? '条件成立として計算'
+        : '条件未選択';
+  return [
+    effectLabel(effect),
+    effectValueLabel(effect),
+    effectOriginLabel(effect),
+    effect.sourceName,
+    effect.skillName,
+    sourceState,
+    selection,
+    conditionState,
+  ]
+    .filter(Boolean)
+    .join('、');
 }
 
 export function isEffectSelected(effect: EffectProjection) {
@@ -92,7 +154,6 @@ export function AppliedEffects({
   servants,
   craftEssence,
   onToggle,
-  onConditionChange,
   onInputChange,
   action,
 }: {
@@ -102,7 +163,6 @@ export function AppliedEffects({
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
   onToggle: (projection: EffectProjection, active: boolean) => void;
-  onConditionChange: (projection: EffectProjection, satisfied: boolean) => void;
   onInputChange: (key: string, value: number | null) => void;
   action?: ReactNode;
 }) {
@@ -136,18 +196,20 @@ export function AppliedEffects({
             const attachedInputs = inputs.filter(
               (input) => firstVisibleProjectionForInput.get(input.key) === effect.projectionKey,
             );
+            const active = isControlActive(control);
             return (
               <li
                 className="applied-effect-item"
                 key={effect.projectionKey}
-                data-active={isEffectSelected(effect)}
+                data-active={active}
                 data-has-input={attachedInputs.length > 0 || undefined}
               >
                 <ModifierChip
                   bare
-                  active={isEffectSelected(effect)}
+                  active={active}
                   label={effectLabel(effect)}
-                  detail={`${effectStateLabel(effect, control.valueDisplay)}・${effectOriginLabel(effect)}・${sourceActivationLabel(effect) ? `${sourceActivationLabel(effect)}・` : ''}${scenarioSelectionLabel(effect)}`}
+                  detail={compactEffectDetail(control, servants)}
+                  accessibleLabel={accessibleEffectLabel(control)}
                   sources={[
                     {
                       key: `${effect.projectionKey}:source`,
@@ -155,37 +217,14 @@ export function AppliedEffects({
                       imageKey: effectSourceImage(effect, servants, craftEssence),
                     },
                   ]}
-                  {...(control.control === 'toggle' && effect.controllability === 'user'
+                  {...((control.control === 'toggle' || control.conditionControl !== 'none') &&
+                  effect.controllability === 'user'
                     ? { onToggle: (active: boolean) => onToggle(effect, active) }
                     : {})}
-                  disabled={!effect.sourceActive}
+                  selection={
+                    control.conditionControl === 'singleChoice' ? 'singleChoice' : 'toggle'
+                  }
                 />
-                {control.conditionControl === 'toggle' ? (
-                  <button
-                    type="button"
-                    className="effect-condition-control"
-                    disabled={!effect.sourceActive}
-                    aria-label={`${effectLabel(effect)}：条件成立として計算`}
-                    aria-pressed={effect.conditionDecision === 'assumeSatisfied'}
-                    onClick={() =>
-                      onConditionChange(effect, effect.conditionDecision !== 'assumeSatisfied')
-                    }
-                  >
-                    条件成立として計算
-                  </button>
-                ) : control.conditionControl === 'singleChoice' ? (
-                  <button
-                    type="button"
-                    className="effect-condition-control"
-                    disabled={!effect.sourceActive}
-                    role="radio"
-                    aria-label={`${effectLabel(effect)}：この条件を選択`}
-                    aria-checked={effect.conditionDecision === 'assumeSatisfied'}
-                    onClick={() => onConditionChange(effect, true)}
-                  >
-                    この条件を選択
-                  </button>
-                ) : null}
                 {attachedInputs.map((input) => (
                   <EffectInlineInput key={input.key} input={input} onChange={onInputChange} />
                 ))}

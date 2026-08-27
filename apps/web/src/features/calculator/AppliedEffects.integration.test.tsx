@@ -38,6 +38,7 @@ describe('applied effect interaction rendering', () => {
           effectId: 'effect',
           effectOccurrenceId: 'effect:0',
         },
+        activationSources: [],
         executionSupport: 'supported',
         outcome: 'applied',
         visibility: 'visible',
@@ -61,7 +62,6 @@ describe('applied effect interaction rendering', () => {
         servants={[]}
         craftEssence={undefined}
         onToggle={vi.fn()}
-        onConditionChange={vi.fn()}
         onInputChange={vi.fn()}
       />,
     );
@@ -71,5 +71,12 @@ describe('applied effect interaction rendering', () => {
         .closest('li')
         ?.getAttribute('data-active'),
     ).toBe('true');
+    const chip = getByRole('button', {
+      name: /攻撃力アップ、\+20%.*スキル使用中、確定、条件成立/,
+    });
+    expect(chip.textContent).toContain('+20%・スキル');
+    expect(chip.textContent).not.toContain('計算中');
+    expect(chip.textContent).not.toContain('スキル使用中');
+    expect(chip.textContent).not.toContain('確定');
   });
 });

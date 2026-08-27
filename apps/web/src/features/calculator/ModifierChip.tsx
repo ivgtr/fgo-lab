@@ -51,6 +51,7 @@ export function ModifierChip({
   detail,
   sources = [],
   onToggle,
+  accessibleLabel,
   bare = false,
   selection = 'toggle',
   disabled = false,
@@ -60,6 +61,7 @@ export function ModifierChip({
   detail: string;
   sources?: readonly ModifierChipSource[];
   onToggle?: (active: boolean) => void;
+  accessibleLabel?: string;
   bare?: boolean;
   selection?: 'toggle' | 'singleChoice';
   disabled?: boolean;
@@ -70,6 +72,8 @@ export function ModifierChip({
       type="button"
       className="modifier-chip"
       disabled={disabled}
+      aria-label={accessibleLabel}
+      title={accessibleLabel}
       {...(selection === 'singleChoice'
         ? { role: 'radio', 'aria-checked': active }
         : { 'aria-pressed': active })}

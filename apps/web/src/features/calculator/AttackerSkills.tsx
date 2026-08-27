@@ -47,38 +47,30 @@ export function AttackerSkills({
               state === 'modified' ? '一時変更' : state === 'saved' ? '保存値' : '仮想値';
             return (
               <li key={skill.id} className="attacker-skill-row" data-state={state}>
-                <MasterImage
-                  src={skill.imageKey}
-                  alt=""
-                  fallback={skill.name}
-                  className="skill-icon"
-                />
-                <div className="attacker-skill-copy">
-                  <div>
-                    <strong>
-                      スキル{index + 1}：{skill.name}
-                    </strong>
-                    <small className={`skill-state skill-state-${state}`}>{stateLabel}</small>
-                  </div>
-                  {modified ? (
-                    <button
-                      type="button"
-                      className="skill-reset"
-                      onClick={() => onChange(skill.id, { skillLevel: savedLevel })}
-                    >
-                      {attackerSource === 'owned'
-                        ? `保存Lv${savedLevel}へ戻す`
-                        : `既定Lv${savedLevel}へ戻す`}
-                    </button>
-                  ) : null}
-                </div>
                 <button
                   type="button"
-                  className="skill-use-toggle"
+                  className="skill-activation-toggle"
+                  aria-label={`${skill.name}を${selectedSkill.enabled ? '使用しない' : '使用する'}`}
                   aria-pressed={selectedSkill.enabled}
                   onClick={() => onChange(skill.id, { enabled: !selectedSkill.enabled })}
                 >
-                  {selectedSkill.enabled ? '使用中' : '使用する'}
+                  <MasterImage
+                    src={skill.imageKey}
+                    alt=""
+                    fallback={skill.name}
+                    className="skill-icon"
+                  />
+                  <span className="attacker-skill-copy">
+                    <span>
+                      <strong>
+                        スキル{index + 1}：{skill.name}
+                      </strong>
+                      <small className={`skill-state skill-state-${state}`}>{stateLabel}</small>
+                    </span>
+                  </span>
+                  <span className="skill-activation-mark" aria-hidden="true">
+                    {selectedSkill.enabled ? '✓' : ''}
+                  </span>
                 </button>
                 <label className="skill-level-control">
                   <span>Lv</span>
@@ -96,6 +88,17 @@ export function AttackerSkills({
                     ))}
                   </select>
                 </label>
+                {modified ? (
+                  <button
+                    type="button"
+                    className="skill-reset"
+                    onClick={() => onChange(skill.id, { skillLevel: savedLevel })}
+                  >
+                    {attackerSource === 'owned'
+                      ? `保存Lv${savedLevel}へ戻す`
+                      : `既定Lv${savedLevel}へ戻す`}
+                  </button>
+                ) : null}
               </li>
             );
           })}

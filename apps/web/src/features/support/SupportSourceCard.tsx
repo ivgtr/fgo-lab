@@ -49,18 +49,21 @@ export function SupportSourceCard({
             const name = skill.name;
             return (
               <li key={`${source.sourceInstanceId}:${skill.skillId}`}>
-                <MasterImage src={skill.imageKey} alt="" fallback={name} className="skill-icon" />
-                <span className="support-skill-copy">
-                  <strong>{name}</strong>
-                  <small>{skill.effectLabels.join('・') || '宝具火力への効果なし'}</small>
-                </span>
                 <button
                   type="button"
-                  className="support-skill-use"
+                  className="support-skill-toggle"
+                  aria-label={`${name}を${skill.enabled ? '使用しない' : '使用する'}`}
                   aria-pressed={skill.enabled}
                   onClick={() => onSkillEnabledChange(skill.skillId, !skill.enabled)}
                 >
-                  {skill.enabled ? '使用中' : '使用する'}
+                  <MasterImage src={skill.imageKey} alt="" fallback={name} className="skill-icon" />
+                  <span className="support-skill-copy">
+                    <strong>{name}</strong>
+                    <small>{skill.effectLabels.join('・') || '宝具火力への効果なし'}</small>
+                  </span>
+                  <span className="skill-activation-mark" aria-hidden="true">
+                    {skill.enabled ? '✓' : ''}
+                  </span>
                 </button>
                 <label className="support-skill-level">
                   <span>Lv</span>

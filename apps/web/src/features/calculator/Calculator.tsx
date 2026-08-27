@@ -18,8 +18,7 @@ import type {
 import {
   applyCanonicalInputCommand,
   appendCalculationSupportSource,
-  applyEffectConditionDecision,
-  applyEffectProjectionDecision,
+  applyEffectPresentationDecision,
   removeCalculationSupportSource as removeSupportSourceFromScenario,
   setAttackerSkillLevel,
   setAttackerSkillEnabled,
@@ -409,12 +408,8 @@ export function Calculator({
   }
   function changeEffect(effect: EffectProjection, active: boolean) {
     if (!resolvedScenario) return;
-    void onScenarioChange(applyEffectProjectionDecision(resolvedScenario, effect, active));
-  }
-  function changeEffectCondition(effect: EffectProjection, satisfied: boolean) {
-    if (!resolvedScenario) return;
     void onScenarioChange(
-      applyEffectConditionDecision(resolvedScenario, effect, satisfied, resolvedEffects),
+      applyEffectPresentationDecision(resolvedScenario, effect, active, resolvedEffects),
     );
   }
   function addSupportServant(servant: ServantMaster) {
@@ -923,7 +918,6 @@ export function Calculator({
             servants={servants}
             craftEssence={selectedCraftEssence}
             onToggle={changeEffect}
-            onConditionChange={changeEffectCondition}
             onInputChange={changeCanonicalInput}
           />
         ) : null}
@@ -1029,7 +1023,6 @@ export function Calculator({
                 servants={servants}
                 craftEssence={selectedCraftEssence}
                 onToggle={changeEffect}
-                onConditionChange={changeEffectCondition}
                 onInputChange={changeCanonicalInput}
                 action={
                   <button
