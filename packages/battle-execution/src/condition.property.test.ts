@@ -271,6 +271,7 @@ describe('condition expression properties', () => {
         effectId: 'effect',
         effectOccurrenceId: 'effect:0',
       },
+      activationSources: [],
       executionSupport: 'supported',
       outcome: 'notApplied',
       visibility: 'visible',

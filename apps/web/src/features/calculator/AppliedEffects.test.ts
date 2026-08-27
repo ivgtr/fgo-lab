@@ -27,6 +27,7 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
       effectId: 'effect',
       effectOccurrenceId: 'effect:0',
     },
+    activationSources: [],
     executionSupport: 'supported',
     outcome: 'applied',
     visibility,

@@ -21,7 +21,11 @@ import type {
   OperationResult,
   OperationSource,
 } from './contracts';
-import { planOperationActivations, resolveOperationActivation } from './activation';
+import {
+  conditionRequiresTrait,
+  planOperationActivations,
+  resolveOperationActivation,
+} from './activation';
 import {
   containsUnsupportedCondition,
   evaluateCondition,
@@ -668,10 +672,66 @@ export function executeOrderedScenario(
       })),
     ...state.unresolved,
   ];
-  const projections = [
+  const baseProjections = [
     ...resolvedCompileProjections,
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
   ];
+  const activationSourcesByDecisionKey = new Map<string, OperationSource[]>();
+  for (const operation of operations) {
+    if (operation.activation.kind !== 'linkedDecisions') continue;
+    for (const link of operation.activation.links) {
+      const sources = activationSourcesByDecisionKey.get(link.decisionKey) ?? [];
+      if (
+        !sources.some(
+          (source) =>
+            source.origin === operation.source.origin &&
+            source.sourceInstanceId === operation.source.sourceInstanceId &&
+            source.skillId === operation.source.skillId,
+        )
+      )
+        sources.push(operation.source);
+      activationSourcesByDecisionKey.set(link.decisionKey, sources);
+    }
+  }
+  for (const decisionOperation of operations) {
+    if (decisionOperation.decisionKey === null) continue;
+    for (const mutation of operations) {
+      if (
+        mutation.gameActivation !== 'skillUse' ||
+        (mutation.kind !== 'addTrait' &&
+          mutation.kind !== 'removeTrait' &&
+          mutation.kind !== 'suppressInitialTrait') ||
+        mutation.source.origin !== decisionOperation.source.origin ||
+        mutation.source.sourceInstanceId !== decisionOperation.source.sourceInstanceId ||
+        mutation.source.sourceId !== decisionOperation.source.sourceId ||
+        !conditionRequiresTrait(
+          decisionOperation.condition,
+          mutation.scope,
+          mutation.trait,
+          mutation.kind === 'addTrait',
+        )
+      )
+        continue;
+      const sources = activationSourcesByDecisionKey.get(decisionOperation.decisionKey) ?? [];
+      if (
+        !sources.some(
+          (source) =>
+            source.origin === mutation.source.origin &&
+            source.sourceInstanceId === mutation.source.sourceInstanceId &&
+            source.skillId === mutation.source.skillId,
+        )
+      )
+        sources.push(mutation.source);
+      activationSourcesByDecisionKey.set(decisionOperation.decisionKey, sources);
+    }
+  }
+  const projections = baseProjections.map((projection) => ({
+    ...projection,
+    activationSources:
+      projection.decision.state === 'none'
+        ? []
+        : (activationSourcesByDecisionKey.get(projection.decision.decisionKey) ?? []),
+  }));
   const relevantInputOperationIds = new Set(
     projections.flatMap((projection) =>
       projection.visibility === 'visible' &&

@@ -172,6 +172,7 @@ export function createOperationProjection(
     requiredInputs: operation.inputDefinitions,
     modifier,
     source: operation.source,
+    activationSources: [],
     executionSupport: 'supported',
     outcome,
     visibility:
@@ -256,6 +257,7 @@ export function traitCountProjections(
       requiredInputs: [],
       modifier: 'npSpecial',
       source,
+      activationSources: [],
       executionSupport: 'supported',
       outcome: 'applied',
       visibility: 'visible',

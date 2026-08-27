@@ -1,6 +1,7 @@
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import type { CalculationScenario } from '@fgo-lab/schema';
-import { setEffectSourceEnabled } from './scenarioCommands';
+import { conditionAllowsEffectLocalDecision } from './effectControls';
+import { setEffectSourceEnabled, setOperationSourceEnabled } from './scenarioCommands';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -178,12 +179,16 @@ export function applyEffectPresentationDecision(
   enabled: boolean,
   peers: readonly EffectProjection[] = [],
 ): ResolvedScenario {
-  const sourceResolved = enabled ? setEffectSourceEnabled(scenario, projection, true) : scenario;
+  let sourceResolved = enabled ? setEffectSourceEnabled(scenario, projection, true) : scenario;
+  if (enabled)
+    for (const source of projection.activationSources)
+      sourceResolved = setOperationSourceEnabled(sourceResolved, source, true);
   const inclusionResolved = applyEffectProjectionDecision(sourceResolved, projection, enabled);
   if (
     projection.decision.state === 'none' ||
     projection.decision.kind !== 'effect' ||
-    projection.decision.plan.condition !== 'userMayAssume'
+    projection.decision.plan.condition !== 'userMayAssume' ||
+    !conditionAllowsEffectLocalDecision(projection.explanation.condition)
   )
     return inclusionResolved;
   return applyEffectConditionDecision(inclusionResolved, projection, enabled, peers);

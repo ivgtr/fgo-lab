@@ -1,4 +1,4 @@
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { ConditionExpression, EffectProjection } from '@fgo-lab/battle-execution';
 
 export interface EffectControlViewModel {
   key: string;
@@ -7,6 +7,16 @@ export interface EffectControlViewModel {
   control: 'none' | 'toggle' | 'proc';
   conditionControl: 'none' | 'toggle' | 'singleChoice';
   valueDisplay: 'single' | 'sum';
+}
+
+export function conditionAllowsEffectLocalDecision(condition: ConditionExpression | null): boolean {
+  if (condition === null) return false;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some(conditionAllowsEffectLocalDecision);
+  if (condition.kind === 'not') return conditionAllowsEffectLocalDecision(condition.expression);
+  return (
+    condition.kind === 'trait' || condition.kind === 'traitCount' || condition.kind === 'choice'
+  );
 }
 
 function aggregateProjection(members: readonly EffectProjection[]): EffectProjection {
@@ -94,7 +104,8 @@ export function createEffectControlViewModels(
       conditionControl:
         projection.decision.state !== 'none' &&
         projection.decision.kind === 'effect' &&
-        projection.decision.plan.condition === 'userMayAssume'
+        projection.decision.plan.condition === 'userMayAssume' &&
+        conditionAllowsEffectLocalDecision(projection.explanation.condition)
           ? belongsToChoice
             ? 'singleChoice'
             : 'toggle'

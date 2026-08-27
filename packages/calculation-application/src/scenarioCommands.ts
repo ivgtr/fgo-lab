@@ -1,4 +1,4 @@
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { EffectProjection, OperationSource } from '@fgo-lab/battle-execution';
 import type { CalculationScenario, SupportSource } from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -9,22 +9,30 @@ export function setEffectSourceEnabled(
   enabled: boolean,
 ): ResolvedScenario {
   if (projection.gameActivation !== 'skillUse') return scenario;
-  if (projection.source.origin === 'attacker')
-    return setAttackerSkillEnabled(scenario, projection.source.skillId, enabled);
-  if (projection.source.origin === 'support')
+  return setOperationSourceEnabled(scenario, projection.source, enabled);
+}
+
+export function setOperationSourceEnabled(
+  scenario: ResolvedScenario,
+  source: OperationSource,
+  enabled: boolean,
+): ResolvedScenario {
+  if (source.origin === 'attacker')
+    return setAttackerSkillEnabled(scenario, source.skillId, enabled);
+  if (source.origin === 'support')
     return setCalculationSupportSkillEnabled(
       scenario,
-      projection.source.sourceInstanceId,
-      projection.source.skillId,
+      source.sourceInstanceId,
+      source.skillId,
       enabled,
     );
-  if (projection.source.origin === 'mysticCode' && scenario.mysticCode)
+  if (source.origin === 'mysticCode' && scenario.mysticCode)
     return {
       ...scenario,
       mysticCode: {
         ...scenario.mysticCode,
         skills: scenario.mysticCode.skills.map((skill) =>
-          skill.skillId === projection.source.skillId ? { ...skill, enabled } : skill,
+          skill.skillId === source.skillId ? { ...skill, enabled } : skill,
         ),
       },
     };

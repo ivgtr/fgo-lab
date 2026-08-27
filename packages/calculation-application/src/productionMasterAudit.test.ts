@@ -16,6 +16,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import {
   applyEffectConditionDecision,
+  applyEffectPresentationDecision,
   applyEffectProjectionDecision as applyEffectInclusionDecision,
 } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
@@ -1286,6 +1287,9 @@ describe('production master damage quality ratchet', () => {
           (condition) => condition.kind === 'trait' && condition.trait === 'fieldSunlight',
         ),
     )!;
+    expect(sunlightPower.activationSources).toEqual([
+      expect.objectContaining({ origin: 'attacker', skillId: '2109451' }),
+    ]);
     expect(garethInitial.input.fieldTraits).toEqual([]);
     expect(
       garethInitial.effects.find((effect) => effect.label === 'フィールドセット〔陽射し〕'),
@@ -1370,6 +1374,7 @@ describe('production master damage quality ratchet', () => {
     };
     const mutationKeys: string[] = [];
     const reachableKeys = new Set<string>();
+    const ambiguousActivationDependencies: string[] = [];
     let rawFieldMutationCount = 0;
     let rawRecipientMutationCount = 0;
 
@@ -1446,12 +1451,14 @@ describe('production master damage quality ratchet', () => {
       for (const projection of initial.effects.filter(
         (effect) => effect.visibility === 'visible' && effect.controllability === 'user',
       )) {
+        if (projection.activationSources.length > 1)
+          ambiguousActivationDependencies.push(
+            `${servant.id}:${projection.projectionKey}:${projection.activationSources
+              .map((source) => `${source.origin}:${source.skillId}`)
+              .join(',')}`,
+          );
         const selected = calculateScenario(
-          applyEffectProjectionDecision(
-            setEffectSourceEnabled(scenario, projection, true),
-            projection,
-            true,
-          ),
+          applyEffectPresentationDecision(scenario, projection, true, initial.effects),
           master,
           versions,
         );
@@ -1476,5 +1483,6 @@ describe('production master damage quality ratchet', () => {
     expect(mutationKeys).toHaveLength(26);
     expect(reachableKeys.size).toBe(25);
     expect(unreachableKeys).toEqual(['203400:2242450:21097:0']);
+    expect(ambiguousActivationDependencies).toEqual([]);
   }, 30_000);
 });

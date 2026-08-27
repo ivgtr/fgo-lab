@@ -28,6 +28,7 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
       effectId: 'effect',
       effectOccurrenceId: 'effect:0',
     },
+    activationSources: [],
     executionSupport: 'supported',
     outcome: 'applied',
     visibility: 'visible',

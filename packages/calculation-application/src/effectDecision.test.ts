@@ -54,6 +54,7 @@ describe('effect decision application command', () => {
         effectId: '200',
         effectOccurrenceId: '200:0',
       },
+      activationSources: [],
       executionSupport: 'supported',
       outcome: 'notApplied',
       visibility: 'visible',
@@ -125,6 +126,7 @@ describe('effect decision application command', () => {
         effectId: 'sky',
         effectOccurrenceId: 'sky:0',
       },
+      activationSources: [],
       executionSupport: 'supported',
       outcome: 'notApplied',
       visibility: 'visible',
@@ -137,7 +139,10 @@ describe('effect decision application command', () => {
         plan: { activation: 'user', condition: 'userMayAssume' },
       },
       conditionDecision: 'evaluate',
-      explanation: { code: 'disabled', condition: null },
+      explanation: {
+        code: 'disabled',
+        condition: { kind: 'trait', scope: 'target', trait: 'attributeSky', present: true },
+      },
     };
     const earth: EffectProjection = {
       ...baseProjection,
@@ -152,6 +157,10 @@ describe('effect decision application command', () => {
         decisionKey: 'effect:earth',
         kind: 'effect',
         plan: { activation: 'user', condition: 'userMayAssume' },
+      },
+      explanation: {
+        code: 'disabled',
+        condition: { kind: 'trait', scope: 'target', trait: 'attributeEarth', present: true },
       },
     };
     const skyIncluded = applyEffectProjectionDecision(scenario, baseProjection, true);
@@ -183,13 +192,27 @@ describe('effect decision application command', () => {
       attackerSkills: [
         ...scenario.attackerSkills,
         { skillId: 'skill', skillLevel: 10, enabled: false },
+        { skillId: 'prerequisite', skillLevel: 10, enabled: false },
+      ],
+    };
+    const projectionWithPrerequisite: EffectProjection = {
+      ...baseProjection,
+      activationSources: [
+        {
+          origin: 'attacker',
+          sourceInstanceId: 'attacker:1',
+          sourceId: '1',
+          skillId: 'prerequisite',
+          effectId: 'mutation',
+          effectOccurrenceId: 'mutation:0',
+        },
       ],
     };
     const compactSky = applyEffectPresentationDecision(
       inactiveSkillScenario,
-      baseProjection,
+      projectionWithPrerequisite,
       true,
-      [baseProjection, earth],
+      [projectionWithPrerequisite, earth],
     );
     const compactEarth = applyEffectPresentationDecision(compactSky, earth, true, [
       baseProjection,
@@ -198,6 +221,9 @@ describe('effect decision application command', () => {
     expect(compactEarth.attackerSkills.find((skill) => skill.skillId === 'skill')?.enabled).toBe(
       true,
     );
+    expect(
+      compactEarth.attackerSkills.find((skill) => skill.skillId === 'prerequisite')?.enabled,
+    ).toBe(true);
     expect(compactEarth.effectDecisions).toEqual([
       {
         decisionKey: 'effect:sky',
@@ -218,6 +244,9 @@ describe('effect decision application command', () => {
     expect(compactEarthOff.attackerSkills.find((skill) => skill.skillId === 'skill')?.enabled).toBe(
       true,
     );
+    expect(
+      compactEarthOff.attackerSkills.find((skill) => skill.skillId === 'prerequisite')?.enabled,
+    ).toBe(true);
     expect(compactEarthOff.effectDecisions.at(-1)).toEqual({
       decisionKey: 'effect:earth',
       operationEnabled: false,

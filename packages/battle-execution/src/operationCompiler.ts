@@ -329,6 +329,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
         ? ('damageEvaluation' as const)
         : source.phase,
     source: sourceIdentity(source),
+    activationSources: [],
     condition,
     decisionKey: key,
     decisionPlan: plan,
@@ -609,6 +610,7 @@ function makeProjection(
     requiredInputs: runtimeInputDefinitions(source),
     modifier,
     source: sourceIdentity(source),
+    activationSources: [],
     executionSupport: 'unsupported',
     outcome: 'notApplied',
     visibility: 'visible',

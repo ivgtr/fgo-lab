@@ -297,6 +297,7 @@ export interface EffectProjection {
   requiredInputs: readonly CanonicalInputDefinition[];
   modifier: ModifierKind | 'npSpecial' | 'cardTypeChange' | null;
   source: OperationSource;
+  activationSources: readonly OperationSource[];
   executionSupport: 'supported' | 'unsupported';
   outcome: OperationOutcome;
   visibility: 'visible' | 'hidden';
