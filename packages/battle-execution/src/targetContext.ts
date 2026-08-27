@@ -27,6 +27,11 @@ export interface TargetCandidate {
   facts: readonly TargetPredicateAssertion[];
 }
 
+export type TargetCandidateConstraintResult =
+  | { kind: 'compatible' }
+  | { kind: 'conflict' }
+  | { kind: 'unsupported'; issue: ConstraintValidationIssue };
+
 export type TargetResolution =
   | { kind: 'candidates'; candidates: readonly TargetCandidate[] }
   | { kind: 'impossible'; sourceKeys: readonly string[] }
@@ -90,6 +95,27 @@ function predicateAssertions(
     }
     return { sourceKey: `target-context:${predicate.kind}`, predicate, present };
   });
+}
+
+export function validateTargetCandidateConstraint(
+  candidate: Pick<TargetCandidate, 'classId' | 'attribute' | 'families'>,
+  domain: CanonicalTargetDomain,
+  expression: SatisfiableConditionConstraint['expression'],
+): TargetCandidateConstraintResult {
+  const validation = validateConstraintSet({
+    fixedFacts: predicateAssertions(candidate, domain).map((assertion) => ({
+      sourceKey: assertion.sourceKey,
+      fact: {
+        kind: 'targetPredicate' as const,
+        scope: 'target' as const,
+        predicate: assertion.predicate,
+        present: assertion.present,
+      },
+    })),
+    expressions: [{ sourceKey: 'ranking-target-candidate', expression }],
+  });
+  if (validation.status === 'unsupported') return { kind: 'unsupported', issue: validation.issue };
+  return validation.status === 'conflict' ? { kind: 'conflict' } : { kind: 'compatible' };
 }
 
 function familySelections(

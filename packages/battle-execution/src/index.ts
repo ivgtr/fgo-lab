@@ -37,7 +37,9 @@ export {
   MAX_TARGET_CANDIDATES,
   materializeTargetCandidate,
   resolveTargetCandidates,
+  validateTargetCandidateConstraint,
   type TargetCandidate,
+  type TargetCandidateConstraintResult,
   type TargetResolution,
 } from './targetContext';
 export {

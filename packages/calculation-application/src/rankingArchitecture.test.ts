@@ -29,6 +29,24 @@ describe('ranking architecture', () => {
     expect(factory.split('\n').length).toBeLessThanOrEqual(250);
     expect(facade).not.toMatch(/targetContext\s*:/);
     expect(factory).not.toMatch(/servant\.id\s*===|servant\.name\s*===/);
+    const world = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingWorld.ts'),
+      'utf8',
+    );
+    expect(world).not.toMatch(/function targetCompatibility|switch \(condition\.kind\)/);
+    expect(world).toContain('validateTargetCandidateConstraint');
+    expect(factory).not.toMatch(/for \(const .*effectControls[\s\S]*calculateScenario/);
+    expect(factory).not.toContain('MAX_SPECIAL_ATTACK_SCENARIOS');
+  });
+
+  it('reuses one standard matrix when only NP level changes', async () => {
+    const worker = await readFile(
+      resolve(root, 'apps/web/src/features/ranking/ranking.worker.ts'),
+      'utf8',
+    );
+    expect(worker).toContain('standardMatrixCache');
+    expect(worker).toContain('rankingMatrixPolicyKey');
+    expect(worker).not.toMatch(/matrixKey.*npLevel/);
   });
 
   it('does not retain removed ranking conditions or raw Atlas vocabulary', async () => {

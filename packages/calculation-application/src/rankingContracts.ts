@@ -92,6 +92,17 @@ export interface RankingDetail {
   effects: CalculationExecution['effects'];
   effectInputs: CalculationExecution['effectInputs'];
   warnings: CalculationExecution['effectWarnings'];
+  areaSupport: {
+    scenario: ResolvedScenario;
+    input: DamageResolutionInput;
+    result: CalculationResult;
+    effects: CalculationExecution['effects'];
+    warnings: CalculationExecution['effectWarnings'];
+  } | null;
+  executionMetrics: {
+    worldCandidateCount: number;
+    scenarioCalculationCount: number;
+  };
 }
 
 export interface RankingCalculation {
@@ -104,3 +115,11 @@ export interface RankingSummary {
   rows: RankingRowSummary[];
   failures: RankingFailure[];
 }
+
+export type RankingSummaryMatrix = readonly [
+  RankingSummary,
+  RankingSummary,
+  RankingSummary,
+  RankingSummary,
+  RankingSummary,
+];

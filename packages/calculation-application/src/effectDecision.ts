@@ -310,3 +310,20 @@ export function applyEffectControlPresentationDecision(
     value: enabled ? procInput.maximum : procInput.minimum,
   });
 }
+
+/** Applies one complete terminal-effect policy from a single projection snapshot. */
+export function applyEffectControlPolicy(
+  scenario: ResolvedScenario,
+  controls: readonly EffectControlViewModel[],
+  selectedKeys: ReadonlySet<string>,
+  peers: readonly EffectProjection[],
+  inputs: readonly EffectInputViewModel[],
+): ResolvedScenario {
+  return controls.reduce((current, control) => {
+    const selected = selectedKeys.has(control.key);
+    const decisionSelected = control.projection.decision.state === 'enabled';
+    return control.interaction === 'none' || (!selected && !decisionSelected)
+      ? current
+      : applyEffectControlPresentationDecision(current, control, selected, peers, inputs);
+  }, scenario);
+}
