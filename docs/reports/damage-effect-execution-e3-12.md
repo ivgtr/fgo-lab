@@ -3,7 +3,7 @@
 - Date: 2026-08-27
 - Scope: 攻撃役の火力effect操作を`自身の適用内容`へ一本化。E4は未着手。
 - Scenario schema: 26
-- Master schema: 30
+- Master schema: 31
 - Master data: `20260827`
 - Engine: `19.0.0`
 
@@ -97,3 +97,46 @@ activation closureと厳格なscenario validationによる。benchmarkの短期�
 
 E4ランキング統合は実装していない。単発計算の唯一操作点、scenario、dependency closure、executor、layout ratchetが
 確定した状態で停止する。
+
+## E3.12.1 accessible stateとchained activation
+
+accessible nameはapplicationの排他的なpresentation stateを正本とする。手動除外、単純proc失敗、chained成功0回、
+source未使用、condition不成立、condition未選択、unsupported、impossibleを`outcome`から推測しない。`条件不成立`は
+canonical conditionを実際に評価してfalseになった場合だけ使用し、Garethの未選択状態は`条件未選択`として固定した。
+visible text、DOM layout、CSS、操作位置には変更がない。
+
+`chainedRolls`は確率構造だけを所有する。master schema 31では全effectが`procSelection`を持ち、通常effectは
+`effectInclusion`、chained effectは成功回数inputとminimum／maximumのcanonical defaultを持つ。宝具前・常時はmaximum、
+skill use・derivedはminimumであり、artifact validationがactivation、input range、interaction identityの不一致を拒否する。
+executorはresolved成功回数から一時的なeffect decisionを導出し、scenarioに通常のeffect decisionが重ねられた場合は
+`invalidProcSelection`としてfail-closedにする。chip commandは通常effectと同じsource／`activationSources`処理を通り、
+成功回数とeffect exclusionを二重保存しない。
+
+production chained inventoryは5 occurrenceで、すべてNP-before-damageの同一seriesである。skill、passive、CE、
+mystic codeのchained occurrenceは0件。カエサルの成功回数0〜5とNP1平均、成功回数0／2のshare round-trip、
+active/count一致を維持した。420件既定damage digestは
+`9d67d4d84b715e3f2eda8f5ed317496c1df69d175982f25c09e732280f7a3603`、1,504 parity digestは
+`54b6ca9663afd95c5b686c49a33bd679246deb43bd7fae45a87b32b91fa4ca48`のままである。
+
+VRT snapshotは更新していない。desktop、390px、320px、selected-effectsのSHA-256はそれぞれ
+`cb70edbe4b31012d8dc7825d413204f9becaf9f8e11701e585eef3e0ce6e29ef`、
+`ec774c61486bcdb10c2e8c7e22766c5d5f6e1147eda1c3d94f1fb5f4989dba09`、
+`5b87fa6bf7c2ef8933586062ae8ba1eaf7434902f66e9c57dac7dc252c876b64`、
+`7598c83ff8d51e464e1daf4429ec15f8e39642eaba3cc7796ee9ac9a2e38af3e`でE3.12 baselineと一致する。
+
+versionはmaster data `20260827`、master schema 31、scenario schema 26、engine 19.0.0。Atlas snapshot、scenario、
+damage outputの意味は不変なのでmaster data／engine versionは維持し、旧master artifactはschema 31で拒否する。
+E4ランキング統合は未着手である。
+
+E3.12.1の最終品質ゲートは、format、ESLint、TypeScript、unit／integration／property／golden 51 files・281 tests、
+master validation 6 files・56 tests、evidence validation 2 files・10 tests、production build、Playwright Chromium／
+mobile Chromium 55 passed・23 skipped、a11y、benchmark、`git diff --check`がすべて成功した。buildはmain
+487.73 kB（gzip 139.30 kB）、CSS 38.35 kB（gzip 8.24 kB）、worker 101.14 kB。benchmarkは395.28 ops/s、
+mean 2.5299 msである。
+
+E3.12.1のコミットは次のとおり。
+
+- `7c9b9d1 docs(calc): separate accessible and chained activation semantics`
+- `b39a862 fix(a11y): classify effect presentation states exactly`
+- `a748b3c refactor(calc)!: separate chained proc activation selection`
+- `575ee64 fix(calc): preserve exact UI state semantics`

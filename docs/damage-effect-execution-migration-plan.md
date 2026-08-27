@@ -33,7 +33,7 @@ productionのchained inventory、active/count不一致、二重状態、accessib
 0、chip ONはcanonical maximumへ更新する。攻撃役skill行のbutton、`aria-pressed`、check mark、旧source
 activation commandは削除する。支援構成のskill単位選択は攻撃役とは別の利用者入力なので維持する。
 
-master `20260827` / master schema 30 / scenario schema 26 / engine 19.0.0を正とする。420件の既定damage
+master `20260827` / master schema 31 / scenario schema 26 / engine 19.0.0を正とする。420件の既定damage
 digest、既知golden、compact layoutを維持し、source依存欠落、解除後のstale mutation、操作不能visible effect、
 proc countとchip状態の不一致をproduction／E2E ratchetで0件に固定する。完了証跡は
 `docs/reports/damage-effect-execution-e3-12.md`に記録する。E4は未着手のまま止める。
