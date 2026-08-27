@@ -1297,9 +1297,9 @@ test('probabilistic NP effects use scenario switches and one chained success cou
   await expect(artsResistance).toHaveAttribute('aria-pressed', 'true');
   await expect(ownEffects).not.toContainText('クイック耐性ダウン');
   await expect(ownEffects).not.toContainText('バスター耐性ダウン');
-  await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('28,427');
+  await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('21,320');
   await artsResistance.click();
-  await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('23,689');
+  await expect(page.getByRole('row', { name: /NP1.*現在/ })).toContainText('17,767');
   await page.getByLabel('OC').selectOption('5');
   await expect(
     ownEffects.getByRole('button', { name: /アーツ耐性ダウン.*比較のため除外/ }),
@@ -1466,7 +1466,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
     .getByRole('spinbutton', { name: '確率効果の成功回数' });
   await procSuccessCount.fill('2');
   const currentDamage = page.getByRole('row', { name: /NP1.*現在/ }).locator('td.average');
-  await page.getByLabel('クラス相性の状況').selectOption('1.5');
+  await page.getByLabel('クラス相性の状況').selectOption('0.5');
   const sharedDamage = await currentDamage.textContent();
   await page.getByRole('button', { name: 'URLをコピー' }).click();
   await expect(page.getByText('共有URLをコピーしました')).toBeVisible();
@@ -1477,7 +1477,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByLabel('クラス相性の状況')).toHaveValue('1.5');
+  await expect(page.getByLabel('クラス相性の状況')).toHaveValue('0.5');
   await expect(currentDamage).toHaveText(sharedDamage ?? '');
   await expect(procSuccessCount).toHaveValue('2');
 
