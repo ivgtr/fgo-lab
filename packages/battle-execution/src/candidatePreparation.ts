@@ -8,7 +8,6 @@ import type {
   TargetPredicateAssertion,
 } from './contracts';
 import { resolveOperationActivation } from './activation';
-import { conditionTraitNames } from './condition';
 import {
   fixedConstraintFactsFromState,
   validateConstraintSet,
@@ -158,13 +157,6 @@ export function prepareCandidateExecution(
     : { input: baseInput, facts: [] };
   const candidateInput = materialized.input;
   const targetFacts = materialized.facts;
-  const knownAttackerTraits = [
-    ...new Set(
-      operations.flatMap((operation) =>
-        conditionTraitNames(operation.condition, new Set(['attacker', 'attackerState'] as const)),
-      ),
-    ),
-  ];
   let state = createInitialBattleState(
     candidateInput,
     attackerTraits,
@@ -175,7 +167,6 @@ export function prepareCandidateExecution(
       predicate,
       present: true,
     })),
-    knownAttackerTraits,
   );
   const scenarioDecisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),

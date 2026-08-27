@@ -22,18 +22,6 @@ export function conditionRequiresQuantity(
   return false;
 }
 
-export function conditionTraitNames(
-  condition: ConditionExpression,
-  scopes: ReadonlySet<TraitScope>,
-): readonly string[] {
-  if (condition.kind === 'trait') return scopes.has(condition.scope) ? [condition.trait] : [];
-  if (condition.kind === 'traitCount')
-    return scopes.has(condition.scope) ? [...condition.traits] : [];
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.flatMap((expression) => conditionTraitNames(expression, scopes));
-  return condition.kind === 'not' ? conditionTraitNames(condition.expression, scopes) : [];
-}
-
 function requiresProvenanceDecision(readPolicy: TraitReadPolicy | undefined): boolean {
   return (
     readPolicy !== undefined &&

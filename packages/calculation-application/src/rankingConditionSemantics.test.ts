@@ -70,7 +70,11 @@ describe('ranking condition semantics', () => {
       DEFAULT_RANKING_CONDITIONS,
       versions,
     );
-    expect(inactive.scenario.worldFactAssertions).toEqual([]);
+    expect(
+      inactive.scenario.worldFactAssertions.filter(({ decisionKey }) =>
+        decisionKey.startsWith('ranking:field:'),
+      ),
+    ).toEqual([]);
     expect(inactive.input).toMatchObject({ attackBuff: 0.15, cardBuff: 0.2, npDamageBuff: 0.25 });
     expect(inactive.result.status === 'calculated' ? inactive.result.rows : null).toEqual([
       { npLevel: 1, minimum: 40_136, average: 44_551.025, maximum: 48_966 },
@@ -86,7 +90,11 @@ describe('ranking condition semantics', () => {
       { ...DEFAULT_RANKING_CONDITIONS, field: 'active' },
       versions,
     );
-    expect(active.scenario.worldFactAssertions).toEqual([
+    expect(
+      active.scenario.worldFactAssertions.filter(({ decisionKey }) =>
+        decisionKey.startsWith('ranking:field:'),
+      ),
+    ).toEqual([
       {
         decisionKey: 'ranking:field:fieldImaginarySpace',
         fact: {
@@ -116,7 +124,11 @@ describe('ranking condition semantics', () => {
       DEFAULT_RANKING_CONDITIONS,
       versions,
     );
-    expect(detail.scenario.worldFactAssertions).toEqual([]);
+    expect(
+      detail.scenario.worldFactAssertions.filter(({ decisionKey }) =>
+        decisionKey.startsWith('ranking:field:'),
+      ),
+    ).toEqual([]);
     expect(detail.input.fieldTraits).toContain('fieldSunlight');
     expect(
       detail.effects.some(

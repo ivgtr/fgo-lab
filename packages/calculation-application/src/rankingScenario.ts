@@ -11,6 +11,7 @@ import {
   applyRankingExecutionPolicy,
   compileRankingExecutionPolicy,
 } from './rankingExecutionPolicy';
+import { materializeRankingAttackerFacts } from './rankingActorWorld';
 import {
   createRankingFieldCandidates,
   materializeRankingField,
@@ -81,6 +82,7 @@ export function selectedKeysForScope(
 }
 
 function scenarioForPolicy(
+  servant: ServantMaster,
   scenario: ResolvedScenario,
   baseline: CalculationExecution,
   conditions: RankingConditions,
@@ -91,7 +93,8 @@ function scenarioForPolicy(
   const targetWorld = worldCandidate.target
     ? materializeRankingWorld(scenario, worldCandidate.target)
     : scenario;
-  const world = materializeRankingField(targetWorld, worldCandidate.field);
+  const fieldWorld = materializeRankingField(targetWorld, worldCandidate.field);
+  const world = materializeRankingAttackerFacts(fieldWorld, servant, baseline.effectControls);
   const policy = compileRankingExecutionPolicy(
     world.targetContext,
     baseline.effectControls,
@@ -127,7 +130,7 @@ export function compileRankingExecutionPlan(
     fieldWorlds.map((field) => ({ target, field })),
   );
   const rankingScenarios = worlds.map((candidate) =>
-    scenarioForPolicy(canonical, baseline, conditions, 'ranking', candidate, master),
+    scenarioForPolicy(servant, canonical, baseline, conditions, 'ranking', candidate, master),
   );
   const hasArea = baseline.effectControls.some((control) =>
     contributesAreaSupport(control.projection),
@@ -135,7 +138,15 @@ export function compileRankingExecutionPlan(
   const withoutAreaScenarios =
     conditions.selfBuffs === 'included' && hasArea
       ? worlds.map((candidate) =>
-          scenarioForPolicy(canonical, baseline, conditions, 'withoutArea', candidate, master),
+          scenarioForPolicy(
+            servant,
+            canonical,
+            baseline,
+            conditions,
+            'withoutArea',
+            candidate,
+            master,
+          ),
         )
       : [];
   return {

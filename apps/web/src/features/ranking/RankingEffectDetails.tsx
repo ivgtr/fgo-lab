@@ -150,20 +150,22 @@ export function RankingEffectDetails({
                     <strong>{input.value === null ? '未入力' : input.value}</strong>
                   </li>
                 ))}
-                {detail.scenario.worldFactAssertions.map((assertion) => (
-                  <li key={assertion.decisionKey}>
-                    <span>
-                      {assertion.fact.kind === 'trait' && assertion.fact.scope === 'field'
-                        ? 'フィールド条件'
-                        : '共通条件'}
-                    </span>
-                    <strong>
-                      {assertion.fact.kind === 'trait'
-                        ? `${traitLabel(assertion.fact.trait)}${assertion.fact.present ? '' : 'ではない'}`
-                        : `${assertion.fact.quantity}=${String(assertion.fact.value)}`}
-                    </strong>
-                  </li>
-                ))}
+                {detail.scenario.worldFactAssertions
+                  .filter(({ fact }) => fact.kind !== 'trait' || fact.present)
+                  .map((assertion) => (
+                    <li key={assertion.decisionKey}>
+                      <span>
+                        {assertion.fact.kind === 'trait' && assertion.fact.scope === 'field'
+                          ? 'フィールド条件'
+                          : '共通条件'}
+                      </span>
+                      <strong>
+                        {assertion.fact.kind === 'trait'
+                          ? `${traitLabel(assertion.fact.trait)}${assertion.fact.present ? '' : 'ではない'}`
+                          : `${assertion.fact.quantity}=${String(assertion.fact.value)}`}
+                      </strong>
+                    </li>
+                  ))}
                 {detail.scenario.targetContext.class.kind === 'concrete' ? (
                   <li>
                     <span>対象クラス</span>

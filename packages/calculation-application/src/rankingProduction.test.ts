@@ -373,8 +373,11 @@ describe('production canonical ranking', () => {
       gameRegion: 'JP' as const,
       masterDataLocale: 'ja-JP' as const,
     };
-    const { npLevel: _npLevel, ...conditions } = {
-      ...DEFAULT_RANKING_CONDITIONS,
+    const conditions = {
+      comparisonMode: DEFAULT_RANKING_CONDITIONS.comparisonMode,
+      classAffinity: DEFAULT_RANKING_CONDITIONS.classAffinity,
+      selfBuffs: DEFAULT_RANKING_CONDITIONS.selfBuffs,
+      specialAttack: DEFAULT_RANKING_CONDITIONS.specialAttack,
       field: 'active' as const,
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
