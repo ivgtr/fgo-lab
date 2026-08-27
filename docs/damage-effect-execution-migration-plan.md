@@ -1,13 +1,29 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
 document_version: "1.1.0"
-status: "E3.10 Validation - E4 Blocked"
+status: "E3.12 Validation - E4 Blocked"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 ---
 
 # FGO Lab ダメージ効果実行エンジン移行計画
+
+## E3.12 攻撃役effect操作の一本化
+
+攻撃役の自身skill欄はLv設定だけを所有し、火力effectのON/OFFは`自身の適用内容`だけで行う。
+`attackerSkills`から独立した`enabled`を削除し、選択中のvisible terminal effect、そのeffect自身のsource、
+`activationSources`の依存閉包からexecutorが必要sourceを毎回導出する。最後の依存effectを外した時点で
+不要なsourceとhidden mutationは実行候補から外れ、同じsourceを使う別effectが残る場合だけ維持する。
+
+連鎖procは包含decisionと成功回数を二重保存しない。成功回数0をOFF、1以上をONの唯一状態とし、chip OFFは
+0、chip ONはcanonical maximumへ更新する。攻撃役skill行のbutton、`aria-pressed`、check mark、旧source
+activation commandは削除する。支援構成のskill単位選択は攻撃役とは別の利用者入力なので維持する。
+
+master `20260827` / master schema 30 / scenario schema 26 / engine 19.0.0を正とする。420件の既定damage
+digest、既知golden、compact layoutを維持し、source依存欠落、解除後のstale mutation、操作不能visible effect、
+proc countとchip状態の不一致をproduction／E2E ratchetで0件に固定する。完了証跡は
+`docs/reports/damage-effect-execution-e3-12.md`に記録する。E4は未着手のまま止める。
 
 ## E3.10 効果包含・発動条件・確率結果の分離
 

@@ -77,7 +77,7 @@ production artifact全体のcanonical procは43 occurrenceである。primary NP
 | independent | 杉谷善住坊 | 4 | 判定共有単位ごとのeffect toggle |
 | OC single roll | ドゥリーヨダナ | 3 | per-effect success decision + OC rate |
 
-移行後のmaster `20260827` / master schema 30 / scenario schema 25 / engine 18.0.0では、13,322 effectを`guaranteed` 13,279、`singleRoll` 3、`independentRolls` 35、`chainedRolls` 5へ正規化した。420攻撃宝具の既定projectionはuser 1,606、automatic visible 0、hidden 695である。visibleだが包含操作不能、単純確率だけを理由とする`inputRequired`、unknown proc semantics、inert control、implementation unsupportedは0件でratchetする。
+移行後のmaster `20260827` / master schema 30 / scenario schema 26 / engine 19.0.0では、13,322 effectを`guaranteed` 13,279、`singleRoll` 3、`independentRolls` 35、`chainedRolls` 5へ正規化した。420攻撃宝具の既定projectionはuser 1,606、automatic visible 0、hidden 695である。visibleだが包含操作不能、単純確率だけを理由とする`inputRequired`、unknown proc semantics、inert control、implementation unsupportedは0件でratchetする。攻撃役skillの独立activation入力も0件であり、field／trait hidden mutation 26件について選択時の依存source欠落と最後の依存解除後のstale適用を0件に固定する。
 
 ## E4契約
 

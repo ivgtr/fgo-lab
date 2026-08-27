@@ -1,5 +1,7 @@
 # Damage effect execution E3.11 completion report
 
+> この文書はE3.11時点の履歴である。攻撃役skill rowのactivation toggleと、effect除外後もsourceを維持する記述はE3.12で置換した。現行契約と検証結果は`damage-effect-execution-e3-12.md`を正とする。
+
 - Date: 2026-08-27
 - Scope: canonical計算契約を維持した、スキル・火力効果UIのコンパクト化。E4は未着手。
 - Scenario schema: 25
