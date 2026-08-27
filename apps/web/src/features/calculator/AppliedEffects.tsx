@@ -5,7 +5,7 @@ import type {
 } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ReactNode } from 'react';
-import { effectSourceImage } from './effectSourcePresentation';
+import { effectSourceImage } from '../../presentation/effectSourcePresentation';
 import { ModifierChip } from './ModifierChip';
 import { EffectInlineInput } from './EffectInlineInput';
 import { traitLabel } from './traitPresentation';

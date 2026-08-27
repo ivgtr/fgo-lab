@@ -1,7 +1,7 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { numberFormatter } from '../../ui/i18n';
-import type { DamageEffectStack } from './damageEffectStacks';
-import { damageEffectStateLabel } from './damageEffectStacks';
+import type { DamageEffectStack } from '../../presentation/damageEffectStacks';
+import { damageEffectStateLabel } from '../../presentation/damageEffectStacks';
 import { ModifierChip } from './ModifierChip';
 import './effective-input.css';
 

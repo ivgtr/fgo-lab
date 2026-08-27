@@ -1,7 +1,7 @@
 import type { EffectProjection } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, NpDamageSpec, ServantMaster } from '@fgo-lab/master-data';
 import type { DamageResolutionInput, SupportComposition, SupportTemplate } from '@fgo-lab/schema';
-import { collectDamageEffectStacks } from './damageEffectStacks';
+import { collectDamageEffectStacks } from '../../presentation/damageEffectStacks';
 
 export function createCalculatorViewModel({
   input,

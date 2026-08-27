@@ -1,6 +1,6 @@
 import './shell.css';
 import { useEffect, useState } from 'react';
-import { getPrimaryNpPresentation, type MasterDataSnapshot } from '@fgo-lab/master-data';
+import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   activeProfile,
   addCraftEssenceCopy,
@@ -136,7 +136,10 @@ export function App() {
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
-  const [page, setPage] = useState<Page>('home');
+  const [page, setPage] = useState<Page>(() => {
+    const requested = new URLSearchParams(location.search).get('page');
+    return nav.some(([candidate]) => candidate === requested) ? (requested as Page) : 'home';
+  });
   const {
     profiles,
     undoSnapshot,
@@ -149,7 +152,6 @@ export function App() {
     scenario: undefined,
     shared: undefined,
   });
-  const [rankingSupportId, setRankingSupportId] = useState<string | null>(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
@@ -196,9 +198,6 @@ export function App() {
     );
   const currentMaster = master;
   const profile = activeProfile(profiles);
-  const rankingSupport = profile.supportTemplates.find(
-    (template) => template.templateId === rankingSupportId,
-  );
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
   const currentScenario =
@@ -370,6 +369,10 @@ export function App() {
     if (page === 'calculate' && nextPage !== 'calculate') await finalizeCurrentCalculation();
     if (page !== 'calculate' && nextPage === 'calculate')
       setCalculationSessionId(crypto.randomUUID());
+    const url = new URL(location.href);
+    if (nextPage === 'home') url.searchParams.delete('page');
+    else url.searchParams.set('page', nextPage);
+    history.replaceState(history.state, '', url);
     setPage(nextPage);
   }
   return (
@@ -544,60 +547,21 @@ export function App() {
         )}{' '}
         {page === 'ranking' && (
           <Ranking
-            candidates={currentMaster.servants
-              .filter((candidate) => candidate.noblePhantasms.length > 0)
-              .map((candidate) => {
-                const np = getPrimaryNpPresentation(candidate);
-                if (!np) throw new TypeError(`attack_np_missing:${candidate.id}`);
-                const baseScenario = {
-                  ...createDefaultResolvedScenario(
-                    currentMaster,
-                    profile.servantBuilds[candidate.id],
-                    candidate,
-                  ),
-                  attackerSkills: [],
-                  support: rankingSupport
-                    ? {
-                        sourceTemplateId: rankingSupport.templateId,
-                        composition: rankingSupport.composition,
-                      }
-                    : null,
-                };
-                const scenario = rankingSupport
-                  ? applyEffectProjectionDecisions(
-                      baseScenario,
-                      excludedSupportEffects(
-                        rankingSupport,
-                        resolveScenario(baseScenario, currentMaster).effects,
-                      ),
-                      false,
-                    )
-                  : baseScenario;
-                const resolved = resolveScenario(scenario, currentMaster);
-                return {
-                  servantId: candidate.id,
-                  name: candidate.name,
-                  input: resolved.input,
-                  resolutionUnsupported: resolved.precision === 'unsupported',
-                  resolutionEvidenceKeys: resolved.evidenceKeys,
-                  resolutionWarnings: resolved.warnings,
-                  classId: candidate.classId,
-                  rarity: candidate.rarity,
-                  npCard: np.card,
-                  npTarget: np.target,
-                  owned: (profile.servantBuilds[candidate.id]?.npLevel ?? 0) > 0,
-                };
-              })}
+            master={currentMaster}
+            profile={{
+              servantBuilds: profile.servantBuilds,
+              craftEssences: profile.craftEssences,
+              supportTemplates: profile.supportTemplates,
+            }}
             versions={versions}
-            supportTemplates={profile.supportTemplates}
-            servants={currentMaster.servants}
-            selectedSupport={rankingSupport}
-            onSupportSelect={async (template) => {
-              setRankingSupportId(template?.templateId ?? null);
-              if (template)
-                await updateSupportTemplate(template.templateId, {
-                  lastUsedAt: new Date().toISOString(),
-                });
+            onOpenCalculator={(scenario) => {
+              const sessionId = crypto.randomUUID();
+              setCalculationSessionId(sessionId);
+              void saveScenarioDraft(scenario, sessionId);
+              const url = new URL(location.href);
+              url.searchParams.set('page', 'calculate');
+              history.replaceState(history.state, '', url);
+              setPage('calculate');
             }}
           />
         )}{' '}

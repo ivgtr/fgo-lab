@@ -136,17 +136,23 @@ export interface RankingFailure {
 
 export interface RankingDetail {
   servantId: string;
-  scenario: CalculationScenario;
+  scenario: ResolvedScenario;
   input: DamageResolutionInput;
   result: CalculationResult;
   effects: CalculationExecution['effects'];
   effectInputs: CalculationExecution['effectInputs'];
+  warnings: CalculationExecution['effectWarnings'];
 }
 
 export interface RankingCalculation {
   rows: RankingRowSummary[];
   failures: RankingFailure[];
   details: Record<string, RankingDetail>;
+}
+
+export interface RankingSummary {
+  rows: RankingRowSummary[];
+  failures: RankingFailure[];
 }
 
 export interface RankingTraitInventory {

@@ -1,6 +1,9 @@
 import type { EffectProjection } from '@fgo-lab/calculation-application';
 import { describe, expect, it } from 'vitest';
-import { collectDamageEffectStacks, damageEffectStateLabel } from './damageEffectStacks';
+import {
+  collectDamageEffectStacks,
+  damageEffectStateLabel,
+} from '../../presentation/damageEffectStacks';
 
 function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
   return {

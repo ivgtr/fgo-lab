@@ -30,6 +30,7 @@ import type {
   RankingLevelRule,
   RankingProfileInput,
   RankingRowSummary,
+  RankingSummary,
 } from './rankingContracts';
 
 export * from './rankingContracts';
@@ -229,6 +230,21 @@ function inputPolicyValue(
   policy: RankingCanonicalInputPolicy,
 ): number | null {
   if (definition.kind === 'matchingActorCount') {
+    const predicates = [
+      definition.countSemantics.sourcePredicate,
+      definition.countSemantics.otherPredicate,
+    ].filter((predicate) => predicate !== null);
+    const countsWholePopulation =
+      predicates.length > 0 &&
+      predicates.every((predicate) => {
+        const clauses =
+          predicate.counting === 'matchingTraits' ? [predicate.atoms] : predicate.clauses;
+        return clauses.every((clause) => clause.every((atom) => atom.kind === 'actorProperty'));
+      });
+    // Trait-match counts (for example 〔王〕 and 〔悪〕) are distinct canonical
+    // inputs even when they inspect the same actor population. A common party
+    // size must not overwrite those effect-local counts.
+    if (!countsWholePopulation) return null;
     if (definition.countSemantics.population === 'enemies') return policy.enemyCount;
     if (definition.countSemantics.population === 'allies') return policy.allyCount;
     return policy.allActorCount;
@@ -326,6 +342,101 @@ function resultFailure(servant: ServantMaster, result: CalculationResult): Ranki
   };
 }
 
+function includedRankingServants(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  conditions: RankingConditions,
+): ServantMaster[] {
+  return master.servants.filter((servant) => {
+    if (!getPrimaryNoblePhantasm(servant) || !getPrimaryNpDamage(servant)) return false;
+    if (conditions.comparisonMode === 'standard') return true;
+    return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
+  });
+}
+
+export function calculateRankingDetail(
+  servant: ServantMaster,
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  conditions: RankingConditions,
+  versions: VersionContext,
+): RankingDetail {
+  const scenario = createRankingScenario(servant, master, profile, conditions, versions);
+  const execution = calculateScenario(scenario, master, versions);
+  return {
+    servantId: servant.id,
+    scenario,
+    input: execution.input,
+    result: execution.result,
+    effects: execution.effects,
+    effectInputs: execution.effectInputs,
+    warnings: execution.effectWarnings,
+  };
+}
+
+function rankingRow(
+  servant: ServantMaster,
+  detail: RankingDetail,
+  profile: RankingProfileInput,
+): RankingRowSummary | RankingFailure {
+  if (detail.result.status !== 'calculated') return resultFailure(servant, detail.result);
+  const presentation = getPrimaryNpPresentation(servant);
+  if (!presentation) throw new TypeError(`ranking_np_presentation_missing:${servant.id}`);
+  const selected = detail.result.rows[detail.scenario.attacker.npLevel - 1];
+  if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
+  const applied = detail.effects.filter(
+    (effect) => effect.visibility === 'visible' && effect.outcome === 'applied',
+  );
+  const supportSources = new Set(
+    applied
+      .filter((effect) => effect.source.origin === 'support')
+      .map((effect) => effect.source.sourceInstanceId),
+  );
+  return {
+    servantId: servant.id,
+    name: servant.name,
+    imageKey: servant.imageKey,
+    classId: servant.classId,
+    rarity: servant.rarity,
+    npCard: presentation.card,
+    npTarget: presentation.target,
+    minimum: selected.minimum,
+    average: selected.average,
+    maximum: selected.maximum,
+    precision: detail.result.precision,
+    appliedEffectCount: new Set(applied.map((effect) => effect.projectionKey)).size,
+    supportEffectCount: new Set(
+      applied
+        .filter((effect) => effect.source.origin === 'support')
+        .map((effect) => effect.projectionKey),
+    ).size,
+    supportSourceCount: supportSources.size,
+    level: detail.scenario.attacker.level,
+    npLevel: detail.scenario.attacker.npLevel,
+    owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
+  };
+}
+
+export function calculateRankingSummary(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  conditions: RankingConditions,
+  versions: VersionContext,
+): RankingSummary {
+  const rows: RankingRowSummary[] = [];
+  const failures: RankingFailure[] = [];
+  for (const servant of includedRankingServants(master, profile, conditions)) {
+    const candidate = rankingRow(
+      servant,
+      calculateRankingDetail(servant, master, profile, conditions, versions),
+      profile,
+    );
+    if ('status' in candidate) failures.push(candidate);
+    else rows.push(candidate);
+  }
+  return { rows, failures };
+}
+
 export function calculateRanking(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
@@ -335,61 +446,12 @@ export function calculateRanking(
   const rows: RankingRowSummary[] = [];
   const failures: RankingFailure[] = [];
   const details: Record<string, RankingDetail> = {};
-  const servants = master.servants.filter((servant) => {
-    if (!getPrimaryNoblePhantasm(servant) || !getPrimaryNpDamage(servant)) return false;
-    if (conditions.comparisonMode === 'standard') return true;
-    return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
-  });
-  for (const servant of servants) {
-    const presentation = getPrimaryNpPresentation(servant);
-    if (!presentation) continue;
-    const scenario = createRankingScenario(servant, master, profile, conditions, versions);
-    const execution = calculateScenario(scenario, master, versions);
-    details[servant.id] = {
-      servantId: servant.id,
-      scenario,
-      input: execution.input,
-      result: execution.result,
-      effects: execution.effects,
-      effectInputs: execution.effectInputs,
-    };
-    if (execution.result.status !== 'calculated') {
-      failures.push(resultFailure(servant, execution.result));
-      continue;
-    }
-    const selected = execution.result.rows[scenario.attacker.npLevel - 1];
-    if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
-    const applied = execution.effects.filter(
-      (effect) => effect.visibility === 'visible' && effect.outcome === 'applied',
-    );
-    const supportSources = new Set(
-      applied
-        .filter((effect) => effect.source.origin === 'support')
-        .map((effect) => effect.source.sourceInstanceId),
-    );
-    rows.push({
-      servantId: servant.id,
-      name: servant.name,
-      imageKey: servant.imageKey,
-      classId: servant.classId,
-      rarity: servant.rarity,
-      npCard: presentation.card,
-      npTarget: presentation.target,
-      minimum: selected.minimum,
-      average: selected.average,
-      maximum: selected.maximum,
-      precision: execution.result.precision,
-      appliedEffectCount: new Set(applied.map((effect) => effect.projectionKey)).size,
-      supportEffectCount: new Set(
-        applied
-          .filter((effect) => effect.source.origin === 'support')
-          .map((effect) => effect.projectionKey),
-      ).size,
-      supportSourceCount: supportSources.size,
-      level: scenario.attacker.level,
-      npLevel: scenario.attacker.npLevel,
-      owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
-    });
+  for (const servant of includedRankingServants(master, profile, conditions)) {
+    const detail = calculateRankingDetail(servant, master, profile, conditions, versions);
+    details[servant.id] = detail;
+    const candidate = rankingRow(servant, detail, profile);
+    if ('status' in candidate) failures.push(candidate);
+    else rows.push(candidate);
   }
   return { rows, failures, details };
 }

@@ -36,6 +36,7 @@ describe('canonical ranking scenarios', () => {
       expect(recalculated.input).toEqual(detail.input);
       expect(recalculated.result).toEqual(detail.result);
       expect(recalculated.effects).toEqual(detail.effects);
+      expect(recalculated.effectWarnings).toEqual(detail.warnings);
       expect(row).toMatchObject({
         minimum:
           recalculated.result.status === 'calculated' ? recalculated.result.rows[0].minimum : 0,
@@ -115,7 +116,6 @@ describe('canonical ranking scenarios', () => {
     expect(ranking.rows).toHaveLength(1);
     expect(ranking.rows[0]).toMatchObject({ level: 73, npLevel: 3, owned: true });
     const scenario = ranking.details[servant.id]!.scenario;
-    if (scenario.mode !== 'resolved') throw new TypeError('resolved scenario expected');
     expect(scenario.attacker.fouAtk).toBe(1_420);
     expect(scenario.attackerSkills.map((skill) => skill.skillLevel)).toEqual(
       servant.skills.slice(0, 3).map((_, index) => build.skills[String(index + 1)] ?? 1),
