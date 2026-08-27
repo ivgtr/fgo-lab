@@ -1334,7 +1334,8 @@ test('Gareth derives hidden sunlight only while its terminal effect is selected'
   await expect(ownEffects).not.toContainText('フィールドセット');
   await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
   await expect(sunlightPower).toContainText('除外');
-  await expect(sunlightPower).toHaveAccessibleName(/条件不成立/);
+  await expect(sunlightPower).toHaveAccessibleName(/条件未選択/);
+  await expect(sunlightPower).not.toHaveAccessibleName(/条件不成立/);
   await sunlightPower.click();
   await expect(sunlightPower).toHaveAttribute('aria-pressed', 'true');
   await expect(sunlightPower).not.toContainText('条件外');

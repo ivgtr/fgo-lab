@@ -127,7 +127,11 @@ function accessibleEffectLabel(
       ? chainedCount === 0
         ? `失敗・成功0/${String(effect.proc.maximumSuccesses)}`
         : `成功${String(chainedCount)}/${String(effect.proc.maximumSuccesses)}`
-      : scenarioSelectionLabel(effect, control.active);
+      : scenarioSelectionLabel(
+          effect,
+          control.presentationState !== 'manuallyExcluded' &&
+            control.presentationState !== 'procFailed',
+        );
   const stateLabel = (() => {
     switch (control.presentationState) {
       case 'sourceInactive':

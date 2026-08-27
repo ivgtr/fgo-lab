@@ -84,12 +84,12 @@ export function deriveEffectPresentationState(
   if (projection.outcome === 'impossible') return 'impossible';
   if (!projection.sourceActive) return 'sourceInactive';
   if (projection.proc.kind === 'chainedRolls' && !active) return 'procFailed';
-  if (conditionSelectable && projection.conditionDecision !== 'assumeSatisfied')
-    return 'conditionUnselected';
   if (!projectionSelected(projection))
     return projection.proc.kind === 'guaranteed' || projection.procRatePermille === 1_000
       ? 'manuallyExcluded'
       : 'procFailed';
+  if (conditionSelectable && projection.conditionDecision !== 'assumeSatisfied')
+    return 'conditionUnselected';
   if (projection.outcome === 'applied') return 'applied';
   if (
     projection.explanation.condition !== null &&
