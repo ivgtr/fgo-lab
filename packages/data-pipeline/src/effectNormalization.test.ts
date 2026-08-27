@@ -319,7 +319,41 @@ describe('canonical proc normalization', () => {
       maximum: 3,
       defaultValue: 3,
     });
+    expect(chained.map((effect) => effect.procSelection)).toEqual([
+      {
+        kind: 'successCount',
+        inputKey: chained[0]?.interaction?.key,
+        defaultSelection: 'maximum',
+      },
+      {
+        kind: 'successCount',
+        inputKey: chained[0]?.interaction?.key,
+        defaultSelection: 'maximum',
+      },
+      {
+        kind: 'successCount',
+        inputKey: chained[0]?.interaction?.key,
+        defaultSelection: 'maximum',
+      },
+    ]);
     expect(chained.map((effect) => effect.inputQuantityConditions[0]?.value)).toEqual([1, 2, 3]);
+
+    const skillChain = normalizeFunctions(
+      [procFunction(1, 800), procFunction(1, -800), procFunction(1, -800)],
+      new Map(),
+      'skill',
+      1,
+    );
+    expect(skillChain[0]?.procSelection).toMatchObject({
+      kind: 'successCount',
+      defaultSelection: 'minimum',
+    });
+    expect(skillChain[0]?.inputDefinitions[0]).toMatchObject({
+      kind: 'procSuccessCount',
+      minimum: 0,
+      maximum: 3,
+      defaultValue: 0,
+    });
   });
 
   it('preserves overcharge-dependent rates and rejects invalid or ambiguous structures', () => {

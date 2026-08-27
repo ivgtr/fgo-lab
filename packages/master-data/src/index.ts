@@ -18,7 +18,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(30),
+  schemaVersion: z.literal(31),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -301,6 +301,16 @@ const effectProcSchema = z.discriminatedUnion('kind', [
 ]);
 export type EffectProc = z.infer<typeof effectProcSchema>;
 
+const effectProcSelectionSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('effectInclusion') }),
+  z.object({
+    kind: z.literal('successCount'),
+    inputKey: z.string().min(1),
+    defaultSelection: z.enum(['minimum', 'maximum']),
+  }),
+]);
+export type EffectProcSelection = z.infer<typeof effectProcSelectionSchema>;
+
 const atlasEffectEvidenceSchema = z.object({
   functionType: z.string(),
   target: z.string(),
@@ -322,6 +332,7 @@ export const masterEffectSchema = z.object({
   inclusionPolicy: z.object({ default: z.enum(['include', 'exclude']) }),
   gameActivation: z.enum(['constant', 'skillUse', 'npBeforeDamage', 'derived']),
   proc: effectProcSchema,
+  procSelection: effectProcSelectionSchema,
   interaction: z
     .discriminatedUnion('kind', [
       z.object({
@@ -657,6 +668,52 @@ const masterSnapshotBaseSchema = z.object({
   materials: z.array(materialMasterSchema),
 });
 export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapshot, context) => {
+  const validateProcSelection = (effects: readonly MasterEffect[], path: (string | number)[]) => {
+    effects.forEach((effect, effectIndex) => {
+      const effectPath = [...path, effectIndex];
+      if (effect.proc.kind !== 'chainedRolls') {
+        if (effect.procSelection.kind !== 'effectInclusion')
+          context.addIssue({
+            code: 'custom',
+            message: 'non-chained proc requires effectInclusion selection',
+            path: [...effectPath, 'procSelection'],
+          });
+        return;
+      }
+      if (effect.procSelection.kind !== 'successCount') {
+        context.addIssue({
+          code: 'custom',
+          message: 'chainedRolls requires successCount selection',
+          path: [...effectPath, 'procSelection'],
+        });
+        return;
+      }
+      const procSelection = effect.procSelection;
+      const expectedDefaultSelection =
+        effect.gameActivation === 'npBeforeDamage' || effect.gameActivation === 'constant'
+          ? 'maximum'
+          : 'minimum';
+      const definition = effect.inputDefinitions.find(
+        (input) => input.key === procSelection.inputKey,
+      );
+      if (
+        definition?.kind !== 'procSuccessCount' ||
+        definition.minimum !== 0 ||
+        definition.maximum !== effect.proc.maximumSuccesses ||
+        procSelection.defaultSelection !== expectedDefaultSelection ||
+        definition.defaultValue !==
+          (procSelection.defaultSelection === 'maximum' ? definition.maximum : 0) ||
+        effect.interaction?.kind !== 'procSeries' ||
+        effect.interaction.key !== procSelection.inputKey ||
+        effect.choice !== null
+      )
+        context.addIssue({
+          code: 'custom',
+          message: 'invalid chained proc selection contract',
+          path: [...effectPath, 'procSelection'],
+        });
+    });
+  };
   const rejectMlbOnly = (effects: readonly MasterEffect[], path: (string | number)[]) => {
     effects.forEach((effect, effectIndex) => {
       if (effect.availability !== 'maximumLimitBreakOnly') return;
@@ -668,22 +725,31 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
     });
   };
   snapshot.servants.forEach((servant, servantIndex) => {
-    servant.skills.forEach((skill, skillIndex) =>
-      rejectMlbOnly(skill.effects, ['servants', servantIndex, 'skills', skillIndex, 'effects']),
-    );
-    servant.passives.forEach((skill, skillIndex) =>
-      rejectMlbOnly(skill.effects, ['servants', servantIndex, 'passives', skillIndex, 'effects']),
-    );
-    servant.noblePhantasms.forEach((np, npIndex) =>
-      rejectMlbOnly(np.effects, ['servants', servantIndex, 'noblePhantasms', npIndex, 'effects']),
-    );
+    servant.skills.forEach((skill, skillIndex) => {
+      const path = ['servants', servantIndex, 'skills', skillIndex, 'effects'];
+      rejectMlbOnly(skill.effects, path);
+      validateProcSelection(skill.effects, path);
+    });
+    servant.passives.forEach((skill, skillIndex) => {
+      const path = ['servants', servantIndex, 'passives', skillIndex, 'effects'];
+      rejectMlbOnly(skill.effects, path);
+      validateProcSelection(skill.effects, path);
+    });
+    servant.noblePhantasms.forEach((np, npIndex) => {
+      const path = ['servants', servantIndex, 'noblePhantasms', npIndex, 'effects'];
+      rejectMlbOnly(np.effects, path);
+      validateProcSelection(np.effects, path);
+    });
   });
   snapshot.mysticCodes.forEach((code, codeIndex) =>
-    code.skills.forEach((skill, skillIndex) =>
-      rejectMlbOnly(skill.effects, ['mysticCodes', codeIndex, 'skills', skillIndex, 'effects']),
-    ),
+    code.skills.forEach((skill, skillIndex) => {
+      const path = ['mysticCodes', codeIndex, 'skills', skillIndex, 'effects'];
+      rejectMlbOnly(skill.effects, path);
+      validateProcSelection(skill.effects, path);
+    }),
   );
-  snapshot.craftEssences.forEach((craftEssence, craftEssenceIndex) =>
+  snapshot.craftEssences.forEach((craftEssence, craftEssenceIndex) => {
+    validateProcSelection(craftEssence.effects, ['craftEssences', craftEssenceIndex, 'effects']);
     craftEssence.effects.forEach((effect, effectIndex) =>
       effect.execution.forEach((operation, operationIndex) => {
         if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') return;
@@ -701,8 +767,8 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
           ],
         });
       }),
-    ),
-  );
+    );
+  });
 });
 export type MasterDataSnapshot = z.infer<typeof masterSnapshotSchema>;
 

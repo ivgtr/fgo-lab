@@ -115,10 +115,8 @@ export function createOperationProjection(
             : operation.kind === 'ignoreDamageCut'
               ? 'ignoreDamageCut'
               : null;
-  const procSelectable = operation.proc.kind === 'chainedRolls';
-  const decisionSelected = procSelectable
-    ? true
-    : operation.decisionPlan.activation === 'user'
+  const decisionSelected =
+    operation.decisionPlan.activation === 'user'
       ? (choice?.operationEnabled ?? operation.enabledByDefault)
       : choice?.conditionSatisfaction === 'assumeSatisfied';
   const conditionSatisfiedInternally = condition === true;
@@ -128,7 +126,6 @@ export function createOperationProjection(
   const knownImpossibleBeforeSelection =
     condition === false &&
     choice === undefined &&
-    !procSelectable &&
     !(
       operation.decisionPlan.activation === 'user' ||
       (preserveSiblingChoice && operation.decisionPlan.condition === 'userMayAssume')
@@ -136,8 +133,7 @@ export function createOperationProjection(
   const userControllable =
     !knownImpossibleBeforeSelection &&
     operation.decisionKey !== null &&
-    (procSelectable ||
-      operation.decisionPlan.activation === 'user' ||
+    (operation.decisionPlan.activation === 'user' ||
       (operation.decisionPlan.condition === 'userMayAssume' &&
         (!conditionSatisfiedInternally || choice !== undefined)));
   return {

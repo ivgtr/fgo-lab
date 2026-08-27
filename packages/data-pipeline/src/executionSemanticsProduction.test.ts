@@ -50,6 +50,35 @@ describe('production canonical execution semantics', () => {
           effect.inputDefinitions.length !== 0,
       ),
     ).toEqual([]);
+    const chained = probabilistic.filter((effect) => effect.proc.kind === 'chainedRolls');
+    expect(chained).toHaveLength(5);
+    expect(new Set(chained.map((effect) => effect.gameActivation))).toEqual(
+      new Set(['npBeforeDamage']),
+    );
+    expect(
+      chained.every(
+        (effect) =>
+          effect.procSelection.kind === 'successCount' &&
+          effect.procSelection.defaultSelection === 'maximum',
+      ),
+    ).toBe(true);
+    expect(
+      master.servants.flatMap((servant) =>
+        servant.noblePhantasms.flatMap((np) =>
+          np.effects.filter((effect) => effect.proc.kind === 'chainedRolls'),
+        ),
+      ),
+    ).toHaveLength(5);
+    expect(
+      master.servants.flatMap((servant) => [
+        ...servant.skills.flatMap((skill) =>
+          skill.effects.filter((effect) => effect.proc.kind === 'chainedRolls'),
+        ),
+        ...servant.passives.flatMap((skill) =>
+          skill.effects.filter((effect) => effect.proc.kind === 'chainedRolls'),
+        ),
+      ]),
+    ).toEqual([]);
     expect(
       probabilistic.filter(
         (effect) =>

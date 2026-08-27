@@ -175,6 +175,41 @@ describe('production probabilistic NP-before damage effects', () => {
       true,
     );
     expect(np1Average(twice)).toBe(64_931.4);
+    if (
+      control.projection.decision.state === 'none' ||
+      control.projection.decision.kind !== 'effect'
+    )
+      throw new TypeError('chained effect decision required');
+    expect(disabledScenario.effectDecisions).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ decisionKey: control.projection.decision.decisionKey }),
+      ]),
+    );
+    const invalidDoubleState = calculateScenario(
+      {
+        ...scenario,
+        effectDecisions: [
+          ...scenario.effectDecisions,
+          {
+            decisionKey: control.projection.decision.decisionKey,
+            operationEnabled: true,
+            conditionSatisfaction: 'evaluate' as const,
+          },
+        ],
+      },
+      master,
+      versions,
+    );
+    expect(invalidDoubleState.result.status).toBe('unsupported');
+    expect(invalidDoubleState.input.attackBuff).toBe(0);
+    expect(
+      invalidDoubleState.effects
+        .filter((effect) => effect.proc.kind === 'chainedRolls')
+        .map((effect) => effect.outcome),
+    ).not.toContain('applied');
+    expect(invalidDoubleState.effectWarnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('invalidProcSelection')]),
+    );
   });
 
   it('evaluates Sugiya independent rolls without coupling their results', () => {

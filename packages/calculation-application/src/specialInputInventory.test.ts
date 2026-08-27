@@ -141,5 +141,15 @@ describe('production special input inventory', () => {
       }),
     );
     expect(chainedStateMismatches).toEqual([]);
+
+    const conditionlessUnsatisfied = calculations.flatMap(({ servant, calculation }) =>
+      calculation.effectControls.flatMap((control) =>
+        control.presentationState === 'conditionUnsatisfied' &&
+        control.projection.explanation.condition === null
+          ? [`${servant.id}:${control.key}`]
+          : [],
+      ),
+    );
+    expect(conditionlessUnsatisfied).toEqual([]);
   }, 20_000);
 });

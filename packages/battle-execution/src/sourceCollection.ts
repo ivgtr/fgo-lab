@@ -83,8 +83,7 @@ export function collectOperationSources(
         limitBreak: false,
         sourceEnabled,
         enabledByDefault:
-          (defaultInclusion === 'master' || effect.proc.kind === 'chainedRolls') &&
-          effect.inclusionPolicy.default === 'include',
+          defaultInclusion === 'master' && effect.inclusionPolicy.default === 'include',
       });
   };
   for (const passive of attacker.passives)

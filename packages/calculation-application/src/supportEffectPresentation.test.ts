@@ -17,6 +17,7 @@ const effectContract = {
   inclusionPolicy: { default: 'exclude' as const },
   gameActivation: 'skillUse' as const,
   proc: { kind: 'guaranteed' as const },
+  procSelection: { kind: 'effectInclusion' as const },
   interaction: null,
   choice: null,
   triggerScope: null,

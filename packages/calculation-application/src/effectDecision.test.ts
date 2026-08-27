@@ -4,6 +4,7 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import {
   applyEffectConditionDecision,
+  applyEffectControlPresentationDecision,
   applyEffectPresentationDecision,
   applyEffectProjectionDecision,
 } from './effectDecision';
@@ -243,4 +244,150 @@ describe('effect decision application command', () => {
       conditionSatisfaction: 'evaluate',
     });
   });
+
+  it('routes chained proc controls through source dependencies without a second decision state', () => {
+    const base = createDefaultResolvedScenario(master, undefined);
+    const scenario = {
+      ...base,
+      support: {
+        sourceTemplateId: null,
+        composition: {
+          sources: [
+            {
+              sourceInstanceId: 'support:chain',
+              servantId: '2',
+              skills: [
+                { skillId: 'chain', skillLevel: 10, enabled: false },
+                { skillId: 'prerequisite', skillLevel: 10, enabled: false },
+              ],
+            },
+          ],
+          effectInclusions: [],
+        },
+      },
+    };
+    const inputKey = 'support:support:chain:chain:chain:0:activation:proc:chain:0';
+    const projection: EffectProjection = {
+      projectionKey: 'support:chain:chain:chain:0:interaction:proc',
+      operationId: 'support:chain:chain:chain:0:modifier',
+      label: '攻撃力アップ',
+      sourceName: 'support',
+      skillName: 'chain skill',
+      gameActivation: 'skillUse',
+      sourceActive: false,
+      proc: {
+        kind: 'chainedRolls',
+        ratePermille: [
+          Array<number>(10).fill(800),
+          Array<number>(10).fill(800),
+          Array<number>(10).fill(800),
+          Array<number>(10).fill(800),
+          Array<number>(10).fill(800),
+        ],
+        seriesKey: inputKey,
+        index: 0,
+        maximumSuccesses: 5,
+      },
+      procRatePermille: 800,
+      valuePermille: 500,
+      value: 0.5,
+      requiredQuantity: null,
+      requiredQuantityOwner: null,
+      requiredInputs: [
+        {
+          key: inputKey,
+          kind: 'procSuccessCount',
+          owner: 'attacker',
+          label: '成功回数',
+          description: 'test',
+          minimum: 0,
+          maximum: 5,
+          step: 1,
+          defaultValue: 0,
+          defaultReason: 'source inactive',
+        },
+      ],
+      modifier: 'attackBuff',
+      source: {
+        origin: 'support',
+        sourceInstanceId: 'support:chain',
+        sourceId: '2',
+        skillId: 'chain',
+        effectId: 'chain',
+        effectOccurrenceId: 'chain:0',
+      },
+      activationSources: [
+        {
+          origin: 'support',
+          sourceInstanceId: 'support:chain',
+          sourceId: '2',
+          skillId: 'prerequisite',
+          effectId: 'mutation',
+          effectOccurrenceId: 'mutation:0',
+        },
+      ],
+      executionSupport: 'supported',
+      outcome: 'notApplied',
+      visibility: 'visible',
+      controllability: 'user',
+      selectionGroups: [],
+      decision: {
+        state: 'disabled',
+        decisionKey: projectionKeyForTest(),
+        kind: 'effect',
+        plan: { activation: 'user', condition: 'evaluate' },
+      },
+      conditionDecision: 'none',
+      explanation: { code: 'disabled', condition: null },
+    };
+    const control = {
+      key: projection.projectionKey,
+      projection,
+      operationIds: [projection.operationId],
+      interaction: 'toggle' as const,
+      active: false,
+      valueDisplay: 'sum' as const,
+      presentationState: 'sourceInactive' as const,
+    };
+    const input = {
+      key: inputKey,
+      kind: 'procSuccessCount' as const,
+      owner: 'attacker' as const,
+      label: '成功回数',
+      description: 'test',
+      control: 'stepper' as const,
+      minimum: 0,
+      maximum: 5,
+      step: 1,
+      value: 0,
+      defaultValue: 0,
+      defaultReason: 'source inactive',
+      explicit: false,
+      invalid: false,
+      section: 'support' as const,
+      relatedProjectionKeys: [projection.projectionKey],
+      relatedEffectLabels: [projection.label],
+    };
+
+    expect(() => applyEffectPresentationDecision(scenario, projection, true)).toThrow(
+      'chained_proc_requires_control_command',
+    );
+    const enabled = applyEffectControlPresentationDecision(
+      scenario,
+      control,
+      true,
+      [projection],
+      [input],
+    );
+    expect(enabled.support?.composition.sources[0]?.skills).toEqual([
+      { skillId: 'chain', skillLevel: 10, enabled: true },
+      { skillId: 'prerequisite', skillLevel: 10, enabled: true },
+    ]);
+    expect(enabled.canonicalInputValues[inputKey]).toEqual({ kind: 'integer', value: 5 });
+    expect(enabled.effectDecisions).toEqual([]);
+  });
 });
+
+function projectionKeyForTest() {
+  return 'support:chain:chain:chain:0:interaction:proc';
+}

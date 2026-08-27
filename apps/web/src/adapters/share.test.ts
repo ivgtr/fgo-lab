@@ -228,6 +228,7 @@ describe('portable input limits', () => {
                   inclusionPolicy: { default: 'include' },
                   gameActivation: 'skillUse',
                   proc: { kind: 'guaranteed' },
+                  procSelection: { kind: 'effectInclusion' },
                   interaction: null,
                   label: '対地威力アップ',
                   choice: null,

@@ -1087,7 +1087,11 @@ function hasNegativeProcRate(effect: MasterEffect): boolean {
   );
 }
 
-function procInputDefinition(key: string, maximum: number): CanonicalInputDefinition {
+function procInputDefinition(
+  key: string,
+  maximum: number,
+  defaultSelection: 'minimum' | 'maximum',
+): CanonicalInputDefinition {
   return {
     key,
     kind: 'procSuccessCount',
@@ -1097,9 +1101,20 @@ function procInputDefinition(key: string, maximum: number): CanonicalInputDefini
     minimum: 0,
     maximum,
     step: 1,
-    defaultValue: maximum,
-    defaultReason: '成功scenarioを既定とする',
+    defaultValue: defaultSelection === 'maximum' ? maximum : 0,
+    defaultReason:
+      defaultSelection === 'maximum'
+        ? '発動候補となるsourceの成功scenarioを既定とする'
+        : 'sourceが選択されていない状態を既定とする',
   };
+}
+
+function chainedProcDefaultSelection(
+  gameActivation: MasterEffect['gameActivation'],
+): 'minimum' | 'maximum' {
+  return gameActivation === 'npBeforeDamage' || gameActivation === 'constant'
+    ? 'maximum'
+    : 'minimum';
 }
 
 function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
@@ -1131,7 +1146,8 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
           `ambiguous_chained_proc:${members.map((member) => member.occurrenceId).join(',')}`,
         );
       const key = `activation:proc:${effect.occurrenceId}`;
-      const input = procInputDefinition(key, members.length);
+      const defaultSelection = chainedProcDefaultSelection(effect.gameActivation);
+      const input = procInputDefinition(key, members.length, defaultSelection);
       for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1)
         result[index + memberIndex] = {
           ...members[memberIndex]!,
@@ -1143,6 +1159,7 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
             index: memberIndex,
             maximumSuccesses: members.length,
           },
+          procSelection: { kind: 'successCount', inputKey: key, defaultSelection },
           inputDefinitions: [...members[memberIndex]!.inputDefinitions, input],
           inputQuantityConditions: [
             ...members[memberIndex]!.inputQuantityConditions,
@@ -1613,6 +1630,7 @@ export function normalizeFunctions(
                 ? ('derived' as const)
                 : ('constant' as const),
         proc: procRateSeries(parameterSets, execution, source),
+        procSelection: { kind: 'effectInclusion' as const },
         interaction:
           (criticalStarSeriesCounts.get(fn.funcId) ?? 0) > 1
             ? {

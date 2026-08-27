@@ -182,10 +182,9 @@ export function applyEffectPresentationDecision(
   enabled: boolean,
   peers: readonly EffectProjection[] = [],
 ): ResolvedScenario {
-  let sourceResolved = enabled ? setEffectSourceEnabled(scenario, projection, true) : scenario;
-  if (enabled)
-    for (const source of projection.activationSources)
-      sourceResolved = setOperationSourceEnabled(sourceResolved, source, true);
+  if (projection.proc.kind === 'chainedRolls')
+    throw new TypeError(`chained_proc_requires_control_command:${projection.projectionKey}`);
+  const sourceResolved = applyPresentationSourceDependencies(scenario, projection, enabled);
   const inclusionResolved = applyEffectProjectionDecision(sourceResolved, projection, enabled);
   if (
     projection.decision.state === 'none' ||
@@ -195,6 +194,18 @@ export function applyEffectPresentationDecision(
   )
     return inclusionResolved;
   return applyEffectConditionDecision(inclusionResolved, projection, enabled, peers);
+}
+
+function applyPresentationSourceDependencies(
+  scenario: ResolvedScenario,
+  projection: EffectProjection,
+  enabled: boolean,
+): ResolvedScenario {
+  let sourceResolved = enabled ? setEffectSourceEnabled(scenario, projection, true) : scenario;
+  if (enabled)
+    for (const source of projection.activationSources)
+      sourceResolved = setOperationSourceEnabled(sourceResolved, source, true);
+  return sourceResolved;
 }
 
 export function applyEffectControlPresentationDecision(
@@ -213,7 +224,20 @@ export function applyEffectControlPresentationDecision(
   );
   if (!procInput)
     throw new TypeError(`chained_proc_input_missing:${control.projection.projectionKey}`);
-  return applyCanonicalInputCommand(scenario, {
+  if (
+    control.projection.decision.state !== 'none' &&
+    control.projection.decision.kind === 'effect' &&
+    control.projection.decision.plan.condition === 'userMayAssume'
+  )
+    throw new TypeError(
+      `chained_proc_condition_decision_unsupported:${control.projection.projectionKey}`,
+    );
+  const dependencyResolved = applyPresentationSourceDependencies(
+    scenario,
+    control.projection,
+    enabled,
+  );
+  return applyCanonicalInputCommand(dependencyResolved, {
     kind: 'setCanonicalIntegerInput',
     key: procInput.key,
     value: enabled ? procInput.maximum : procInput.minimum,

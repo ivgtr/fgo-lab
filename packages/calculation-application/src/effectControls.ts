@@ -143,8 +143,11 @@ export function createEffectControlViewModels(
     const selected = projectionSelected(projection);
     const active =
       projection.proc.kind === 'chainedRolls' && chainedInput
-        ? (canonicalInputValues[chainedInput.key] ?? chainedInput.defaultValue ?? 0) >
-          chainedInput.minimum
+        ? projection.sourceActive &&
+          selected &&
+          (!conditionSelectable || projection.conditionDecision === 'assumeSatisfied') &&
+          (canonicalInputValues[chainedInput.key] ?? chainedInput.defaultValue ?? 0) >
+            chainedInput.minimum
         : projection.sourceActive &&
           selected &&
           (!conditionSelectable || projection.conditionDecision === 'assumeSatisfied');

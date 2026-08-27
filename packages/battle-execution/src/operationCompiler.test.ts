@@ -27,6 +27,7 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
     inclusionPolicy: { default: 'exclude' },
     gameActivation: 'skillUse',
     proc: { kind: 'guaranteed' },
+    procSelection: { kind: 'effectInclusion' },
     interaction: null,
     choice: null,
     triggerScope: null,

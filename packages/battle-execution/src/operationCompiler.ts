@@ -212,9 +212,9 @@ function effectCondition(
   ]);
 }
 
-function decisionPlan(condition: ConditionExpression, proc: MasterEffect['proc']) {
+function decisionPlan(condition: ConditionExpression) {
   return {
-    activation: proc.kind === 'chainedRolls' ? ('automatic' as const) : ('user' as const),
+    activation: 'user' as const,
     condition: containsUnsupportedCondition(condition)
       ? ('unsupported' as const)
       : requiresUserAssumption(condition)
@@ -320,7 +320,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     source.sourceInstanceId,
     source.skillId,
   );
-  const plan = decisionPlan(condition, source.effect.proc);
+  const plan = decisionPlan(condition);
   return {
     operationId: `${identity}:${suffix}`,
     order,
@@ -337,6 +337,19 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     enabledByDefault: source.enabledByDefault,
     gameActivation: source.effect.gameActivation,
     proc: source.effect.proc,
+    procSelection:
+      source.effect.procSelection.kind === 'successCount'
+        ? {
+            ...source.effect.procSelection,
+            inputKey: runtimeInputKey(
+              source.origin,
+              source.sourceInstanceId,
+              source.skillId,
+              source.effect.occurrenceId,
+              source.effect.procSelection.inputKey,
+            ),
+          }
+        : source.effect.procSelection,
     procRatePermille:
       source.effect.proc.kind === 'guaranteed'
         ? 1_000
@@ -577,7 +590,7 @@ function makeProjection(
   valueExpression: ModifierValueExpression | null,
   condition: ConditionExpression,
 ): EffectProjection {
-  const plan = decisionPlan(condition, source.effect.proc);
+  const plan = decisionPlan(condition);
   const requiresAttackerHp = conditionRequiresQuantity(condition, 'attackerHpPermille');
   return {
     projectionKey: key,

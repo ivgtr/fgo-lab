@@ -18,6 +18,7 @@ const nonDamageEffect = {
   inclusionPolicy: { default: 'include' as const },
   gameActivation: 'constant' as const,
   proc: { kind: 'guaranteed' as const },
+  procSelection: { kind: 'effectInclusion' as const },
   interaction: null,
   choice: null,
   triggerScope: null,
@@ -191,6 +192,59 @@ describe('master validation', () => {
     });
     expect(result).toMatchObject({ valid: false });
     expect(result.errors.join('\n')).toContain('require explicit limit-break values');
+  });
+  it('requires proc selection to match the proc and activation contracts', () => {
+    const skill = {
+      id: 'test-skill',
+      slot: 1,
+      priority: 0,
+      name: 'test',
+      detail: '',
+      imageKey: null,
+      effects: [
+        {
+          ...nonDamageEffect,
+          availability: 'allLimitBreakStates' as const,
+          gameActivation: 'skillUse' as const,
+          proc: {
+            kind: 'chainedRolls' as const,
+            ratePermille: Array.from({ length: 5 }, () => Array<number>(10).fill(800)),
+            seriesKey: 'proc:test',
+            index: 0,
+            maximumSuccesses: 1,
+          },
+          procSelection: {
+            kind: 'successCount' as const,
+            inputKey: 'proc:test',
+            defaultSelection: 'maximum' as const,
+          },
+          interaction: { kind: 'procSeries' as const, key: 'proc:test' },
+          inputDefinitions: [
+            {
+              key: 'proc:test',
+              kind: 'procSuccessCount' as const,
+              owner: 'attacker' as const,
+              label: 'successes',
+              description: 'test',
+              minimum: 0,
+              maximum: 1,
+              step: 1,
+              defaultValue: 1,
+              defaultReason: 'invalid skill default',
+            },
+          ],
+          inputQuantityConditions: [
+            { inputKey: 'proc:test', comparison: 'atLeast' as const, value: 1 },
+          ],
+        },
+      ],
+    };
+    const result = validateMasterSnapshot({
+      ...fixture,
+      servants: [{ ...fixture.servants[0], skills: [skill] }],
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors.join('\n')).toContain('invalid chained proc selection contract');
   });
   it('rejects an incomplete NP parameter matrix', () =>
     expect(

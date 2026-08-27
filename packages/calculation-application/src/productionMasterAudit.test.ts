@@ -16,6 +16,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import {
   applyEffectConditionDecision,
+  applyEffectControlPresentationDecision,
   applyEffectPresentationDecision,
   applyEffectProjectionDecision as applyEffectInclusionDecision,
 } from './effectDecision';
@@ -1445,6 +1446,10 @@ describe('production master damage quality ratchet', () => {
       for (const projection of initial.effects.filter(
         (effect) => effect.visibility === 'visible' && effect.controllability === 'user',
       )) {
+        const control = initial.effectControls.find(
+          (candidate) => candidate.projection.projectionKey === projection.projectionKey,
+        );
+        if (!control) throw new Error(`effect_control_missing:${projection.projectionKey}`);
         if (projection.activationSources.length > 1)
           ambiguousActivationDependencies.push(
             `${servant.id}:${projection.projectionKey}:${projection.activationSources
@@ -1452,7 +1457,13 @@ describe('production master damage quality ratchet', () => {
               .join(',')}`,
           );
         const selected = calculateScenario(
-          applyEffectPresentationDecision(scenario, projection, true, initial.effects),
+          applyEffectControlPresentationDecision(
+            scenario,
+            control,
+            true,
+            initial.effects,
+            initial.effectInputs,
+          ),
           master,
           versions,
         );
@@ -1481,11 +1492,24 @@ describe('production master damage quality ratchet', () => {
           reachableKeys.add(
             `${servant.id}:${mutation.source.skillId}:${mutation.source.effectOccurrenceId}`,
           );
-        const deselectedScenario = applyEffectPresentationDecision(
-          applyEffectPresentationDecision(scenario, projection, true, initial.effects),
-          projection,
+        const selectedScenario = applyEffectControlPresentationDecision(
+          scenario,
+          control,
+          true,
+          initial.effects,
+          initial.effectInputs,
+        );
+        const selectedControl = selected.effectControls.find(
+          (candidate) => candidate.projection.projectionKey === projection.projectionKey,
+        );
+        if (!selectedControl)
+          throw new Error(`selected_effect_control_missing:${projection.projectionKey}`);
+        const deselectedScenario = applyEffectControlPresentationDecision(
+          selectedScenario,
+          selectedControl,
           false,
           selected.effects,
+          selected.effectInputs,
         );
         const deselected = calculateScenario(deselectedScenario, master, versions);
         for (const source of projection.activationSources) {

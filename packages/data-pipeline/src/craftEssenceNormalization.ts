@@ -61,6 +61,7 @@ function effectSemanticIdentity(effect: MasterEffect): string {
     inclusionPolicy: effect.inclusionPolicy,
     gameActivation: effect.gameActivation,
     proc: effect.proc,
+    procSelection: effect.procSelection,
     choice: effect.choice,
     triggerScope: effect.triggerScope,
     operationTrigger: effect.operationTrigger,

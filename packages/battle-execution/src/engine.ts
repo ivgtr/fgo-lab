@@ -232,6 +232,7 @@ export function prepareOrderedScenario(
       enabledByDefault: true,
       gameActivation: 'npBeforeDamage',
       proc: { kind: 'guaranteed' },
+      procSelection: { kind: 'effectInclusion' },
       procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' },
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId },
@@ -299,9 +300,54 @@ export function executeOrderedScenario(
   } = prepared;
   const { values: resolvedInputValues, missingDefinitions, invalidInputKeys } = resolvedInputs;
   let state = createInitialBattleState(baseInput, attackerTraits, resolvedInputValues);
-  const decisions = new Map(
+  const scenarioDecisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
+  const decisions = new Map(scenarioDecisions);
+  const procSelectionIssues: ExecutionIssue[] = [];
+  const invalidProcDecisionKeys = new Set<string>();
+  for (const operation of operations) {
+    if (operation.procSelection.kind !== 'successCount' || operation.decisionKey === null) continue;
+    const procSelection = operation.procSelection;
+    const definition = operation.inputDefinitions.find(
+      (candidate) =>
+        candidate.kind === 'procSuccessCount' && candidate.key === procSelection.inputKey,
+    );
+    if (!definition) {
+      procSelectionIssues.push({
+        kind: 'invalidProcSelection',
+        operationId: operation.operationId,
+        detail: 'missingSuccessCountDefinition',
+      });
+      decisions.set(operation.decisionKey, {
+        decisionKey: operation.decisionKey,
+        operationEnabled: false,
+        conditionSatisfaction: 'evaluate',
+      });
+      continue;
+    }
+    if (scenarioDecisions.has(operation.decisionKey)) {
+      if (!invalidProcDecisionKeys.has(operation.decisionKey))
+        procSelectionIssues.push({
+          kind: 'invalidProcSelection',
+          operationId: operation.operationId,
+          detail: 'duplicateEffectDecision',
+        });
+      invalidProcDecisionKeys.add(operation.decisionKey);
+      decisions.set(operation.decisionKey, {
+        decisionKey: operation.decisionKey,
+        operationEnabled: false,
+        conditionSatisfaction: 'evaluate',
+      });
+      continue;
+    }
+    decisions.set(operation.decisionKey, {
+      decisionKey: operation.decisionKey,
+      operationEnabled:
+        (resolvedInputValues[procSelection.inputKey] ?? definition.minimum) > definition.minimum,
+      conditionSatisfaction: 'evaluate',
+    });
+  }
   const activations = new Map(
     operations.map((operation) => [
       operation.operationId,
@@ -662,6 +708,7 @@ export function executeOrderedScenario(
       detail: 'unknownInputKey',
     })),
     ...constraintIssues,
+    ...procSelectionIssues,
     ...sourceIssues,
     ...resolvedCompileProjections
       .filter((projection) => projection.outcome === 'unsupported')

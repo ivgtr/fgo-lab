@@ -1,6 +1,7 @@
 import type {
   CanonicalInputDefinition,
   EffectProc,
+  EffectProcSelection,
   ModifierValueExpression,
   NpDamageSpec,
   TraitReadPolicy,
@@ -96,6 +97,7 @@ interface OperationBase {
   enabledByDefault: boolean;
   gameActivation: 'constant' | 'skillUse' | 'npBeforeDamage' | 'derived';
   proc: EffectProc;
+  procSelection: EffectProcSelection;
   procRatePermille: number | null;
   activation:
     | { kind: 'sourceDefault' }
@@ -221,6 +223,11 @@ export type WorldFactAssertion = {
 
 export type ExecutionIssue =
   | { kind: 'invalidCanonicalInput'; inputKey: string; detail: 'unknownInputKey' }
+  | {
+      kind: 'invalidProcSelection';
+      operationId: string;
+      detail: 'duplicateEffectDecision' | 'missingSuccessCountDefinition';
+    }
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }
   | { kind: 'unsupportedParameter'; operationId: string; parameter: string }

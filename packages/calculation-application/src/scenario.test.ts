@@ -43,6 +43,7 @@ function parseTestMaster(input: unknown) {
         effect['inclusionPolicy'] ??= { default: defaultInclusion };
         effect['gameActivation'] ??= gameActivation;
         effect['proc'] ??= { kind: 'guaranteed' };
+        effect['procSelection'] ??= { kind: 'effectInclusion' };
       }
   };
   for (const servant of candidate.servants) {
