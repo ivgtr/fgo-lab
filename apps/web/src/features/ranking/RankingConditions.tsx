@@ -81,6 +81,18 @@ export function RankingConditions({
             <option value="active">成立</option>
           </select>
         </label>
+        <label>
+          フィールド
+          <select
+            value={conditions.field}
+            onChange={(event) =>
+              patch({ field: event.target.value as RankingConditionsValue['field'] })
+            }
+          >
+            <option value="inactive">なし</option>
+            <option value="active">成立</option>
+          </select>
+        </label>
       </div>
       <details className="ranking-calculation-details">
         <summary>計算基準</summary>

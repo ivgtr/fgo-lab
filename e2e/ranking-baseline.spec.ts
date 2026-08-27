@@ -30,17 +30,18 @@ async function openRanking(
   });
 }
 
-test('ranking exposes only five calculation policies', async ({ page, isMobile }) => {
+test('ranking exposes only six calculation policies', async ({ page, isMobile }) => {
   test.setTimeout(60_000);
   test.skip(isMobile, 'The desktop project owns the semantic controls baseline');
   await openRanking(page, 1440, 1000);
   const conditions = page.getByRole('region', { name: 'ランキングの計算条件' });
-  await expect(conditions.getByRole('combobox')).toHaveCount(5);
+  await expect(conditions.getByRole('combobox')).toHaveCount(6);
   await expect(conditions.getByLabel('比較')).toHaveValue('standard');
   await expect(conditions.getByLabel('宝具Lv')).toHaveValue('1');
   await expect(conditions.getByLabel('クラス相性')).toHaveValue('neutral');
   await expect(conditions.getByLabel('自己バフ')).toHaveValue('included');
   await expect(conditions.getByLabel('特攻')).toHaveValue('inactive');
+  await expect(conditions.getByLabel('フィールド')).toHaveValue('inactive');
   await expect(conditions).toContainText('自然上限・Fou1000・OC1・スキルLv10');
   await expect(conditions.locator('input')).toHaveCount(0);
 });

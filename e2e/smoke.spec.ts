@@ -1797,14 +1797,37 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
     'アルトリア・ペンドラゴン',
   );
   const conditions = page.getByRole('region', { name: 'ランキングの計算条件' });
+  const filters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
+  await filters.getByText('絞り込み', { exact: true }).click();
+  await filters.getByLabel('名前検索').fill('ネモ');
+  const nemo = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .filter({ hasText: 'ネモ' })
+    .first();
+  await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('44,551');
+  await conditions.getByLabel('フィールド').selectOption('active');
+  await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('70,661', {
+    timeout: 45_000,
+  });
+  await expect(page).toHaveURL(/rField=active/);
+  await nemo.getByRole('button', { name: '詳細' }).click();
+  await expect(nemo.getByRole('region', { name: /ネモの計算詳細/ })).toContainText(
+    'フィールド条件',
+    { timeout: 15_000 },
+  );
+  await expect(nemo.getByRole('region', { name: /ネモの計算詳細/ })).toContainText('虚数空間');
+  await conditions.getByLabel('フィールド').selectOption('inactive');
+  await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('44,551', {
+    timeout: 45_000,
+  });
+  await filters.getByLabel('名前検索').fill('');
   await conditions.getByLabel('宝具Lv').selectOption('2');
   await conditions.getByLabel('宝具Lv').selectOption('5');
   await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算', {
     timeout: 45_000,
   });
   await expect(page).toHaveURL(/rNp=5/);
-  const filters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
-  await filters.getByText('絞り込み', { exact: true }).click();
   await filters.getByLabel('宝具カード').selectOption('arts');
   await expect(page.getByRole('status')).not.toContainText('420件表示');
   await expect(page.getByRole('status')).not.toContainText('更新中');

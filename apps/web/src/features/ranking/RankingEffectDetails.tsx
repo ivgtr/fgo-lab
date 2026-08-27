@@ -152,10 +152,14 @@ export function RankingEffectDetails({
                 ))}
                 {detail.scenario.worldFactAssertions.map((assertion) => (
                   <li key={assertion.decisionKey}>
-                    <span>共通条件</span>
+                    <span>
+                      {assertion.fact.kind === 'trait' && assertion.fact.scope === 'field'
+                        ? 'フィールド条件'
+                        : '共通条件'}
+                    </span>
                     <strong>
                       {assertion.fact.kind === 'trait'
-                        ? traitLabel(assertion.fact.trait)
+                        ? `${traitLabel(assertion.fact.trait)}${assertion.fact.present ? '' : 'ではない'}`
                         : `${assertion.fact.quantity}=${String(assertion.fact.value)}`}
                     </strong>
                   </li>
