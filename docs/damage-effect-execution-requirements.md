@@ -427,6 +427,19 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 9. workerはcanonical plan／resultをcacheし、React presentationやlabelを計算key・意味判定へ使わない。
 10. E4.1の5項目UIとE3.12.1 calculator UIを変更せず、完了までE5を開始しない。
 
+### 8.16 ranking condition provenanceとfield policy
+
+1. rankingのeffect inclusionはsource／effectを計算候補へ含めるだけで、conditionを成立させない。
+2. intrinsic、derived、external field、target、proc／quantityのfact provenanceをADR 020の境界で扱う。
+3. rankingはUI用`conditionAllowsEffectLocalDecision()`と`assumeSatisfied`を使用しない。
+4. `partyWide`は本人もrecipient条件を満たす場合だけ主火力へ適用し、scopeだけでeligibilityを決めない。
+5. field policyは`inactive | active`の一項目とし、inactiveは外部field assertion 0、activeは関連fieldだけを有限探索する。
+6. 自身がordered operationで生成したfieldはexternal policyに依存せず、通常のexecutor stateから成立する。
+7. field候補の排他矛盾と探索上限をfail-closedにし、全field付与や通常値fallbackを行わない。
+8. 採用field、recipient condition、適用effectにはcanonical condition witnessを残す。
+9. URL／worker cache／share stateはfield policyを含む単一契約へ破壊的に更新し、旧形式fallbackを持たない。
+10. production 73 occurrenceとfield 24騎26 occurrenceをratchetし、E5は全品質gate完了まで開始しない。
+
 ## 10. 設計根拠の追跡
 
 計算仕様はAtlas Academyの構造化データとfgo-docs、正規化manifest、golden／property test、production master監査を根拠として追跡する。外部実装の挙動は計算根拠や正解データとして扱わない。

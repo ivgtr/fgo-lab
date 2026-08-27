@@ -662,3 +662,14 @@ E4.1の計算経路はcanonical executorへ統合済みだったが、ranking po
 
 calculator、E4.1の5項目condition UI、ranking closed rowは変更しない。area contributionは詳細だけへ表示し、
 新しいranking inputを追加しない。E5は本節の全gate完了後に開始する。
+
+## 16. E4.1.2: condition provenance and finite field worlds
+
+1. 旧ranking policyが`assumeSatisfied`へ変換していた73 occurrenceをcanonical fact provenanceで固定する。
+2. ranking専用policyからUI用condition decision判定を削除し、全included effectを通常評価へ戻す。
+3. field参照24騎26 occurrenceについて、external field 0の既定worldと関連fieldだけの有限candidateを生成する。
+4. candidateはcanonical排他groupで検証し、探索上限をtyped failureとして返す。
+5. main／without-areaは同じworld candidateを使用し、recipient不一致のparty-wide effectを双方へ適用しない。
+6. `RankingConditions`、URL、worker matrix keyへ`field: inactive | active`を追加し、旧key fallbackを残さない。
+7. ジャンヌ・ダルク〔オルタ〕、ネモ、自身field生成代表、全420騎parityとcondition witnessをgolden化する。
+8. UI密度、row、accordion、icon、calculator UIは変更せず、ranking headerへ一つのcompact selectだけを追加する。

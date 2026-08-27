@@ -32,7 +32,7 @@ export interface RankingExecutionPlan {
   worldCandidateCount: number;
 }
 
-function selectedKeysForScope(
+export function selectedKeysForScope(
   controls: readonly EffectControlViewModel[],
   conditions: RankingConditions,
   scope: 'ranking' | 'withoutArea',
