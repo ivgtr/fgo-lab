@@ -34,7 +34,10 @@ test('selected effect state remains visible at 390px', async ({ page, isMobile }
   const skillSection = page.getByLabel('攻撃役の自身スキル');
   await expect(skillSection.locator('[aria-pressed]')).toHaveCount(0);
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  await ownEffects.getByRole('button', { name: /攻撃力アップ/ }).first().click();
+  await ownEffects
+    .getByRole('button', { name: /攻撃力アップ/ })
+    .first()
+    .click();
   await expect(ownEffects.getByRole('button', { name: /攻撃力アップ/ }).first()).toHaveAttribute(
     'aria-pressed',
     'true',

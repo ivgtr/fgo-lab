@@ -1499,6 +1499,7 @@ describe('production master damage quality ratchet', () => {
               effect.outcome === 'applied',
           );
           const neededByAnotherIncludedEffect = deselected.effects.some((effect) => {
+            const effectDecision = effect.decision;
             if (
               effect.projectionKey === projection.projectionKey ||
               effect.visibility !== 'visible' ||
@@ -1509,13 +1510,14 @@ describe('production master damage quality ratchet', () => {
                   candidate.skillId === source.skillId &&
                   candidate.effectOccurrenceId === source.effectOccurrenceId,
               ) ||
-              effect.decision.state === 'none'
+              effectDecision.state === 'none' ||
+              effectDecision.kind !== 'effect'
             )
               return false;
             const decision = deselectedScenario.effectDecisions.find(
-              (candidate) => candidate.decisionKey === effect.decision.decisionKey,
+              (candidate) => candidate.decisionKey === effectDecision.decisionKey,
             );
-            return decision?.operationEnabled ?? effect.decision.plan.activation === 'automatic';
+            return decision?.operationEnabled ?? effectDecision.plan.activation === 'automatic';
           });
           if (sourceStillApplied && !neededByAnotherIncludedEffect)
             staleDeselectedSources.push(
