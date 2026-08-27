@@ -51,6 +51,12 @@ describe('portable schema boundaries', () => {
     expect(() =>
       calculationScenarioSchema.parse({ ...scenario, npMultipliers: [1, 1, 1, 1, 1] }),
     ).toThrow();
+    expect(() =>
+      calculationScenarioSchema.parse({
+        ...scenario,
+        attackerSkills: [{ skillId: 'skill-1', skillLevel: 10, enabled: true }],
+      }),
+    ).toThrow();
   });
 
   it('rejects the removed untyped battle-context value map', () => {

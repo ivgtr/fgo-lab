@@ -4,13 +4,12 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { applyCanonicalInputCommand } from './canonicalInputs';
-import { applyEffectProjectionDecision } from './effectDecision';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import {
-  appendCalculationSupportSource,
-  setAttackerSkillLevel,
-  setEffectSourceEnabled,
-} from './scenarioCommands';
+  applyEffectControlPresentationDecision,
+  applyEffectPresentationDecision,
+} from './effectDecision';
+import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import { appendCalculationSupportSource, setAttackerSkillLevel } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
 let master: ReturnType<typeof masterSnapshotSchema.parse>;
@@ -43,14 +42,34 @@ function withProcResults(
   let scenario = { ...scenarioFor(servantId), overcharge };
   const initial = calculateScenario(scenario, master, versions);
   expect(initial.result.status).toBe('calculated');
-  for (const effect of initial.effects.filter(
-    (candidate) =>
-      candidate.visibility === 'visible' &&
-      (candidate.proc.kind === 'singleRoll' || candidate.proc.kind === 'independentRolls'),
-  )) {
-    scenario = setEffectSourceEnabled(scenario, effect, true);
-    scenario = applyEffectProjectionDecision(scenario, effect, value(0, 1) === 1);
-  }
+  const procControls = initial.effectControls.filter(
+    ({ projection }) =>
+      projection.proc.kind === 'singleRoll' || projection.proc.kind === 'independentRolls',
+  );
+  const procSourceKeys = new Set(
+    procControls.map(
+      ({ projection }) =>
+        `${projection.source.origin}:${projection.source.sourceInstanceId}:${projection.source.skillId}`,
+    ),
+  );
+  for (const control of initial.effectControls.filter(
+    ({ projection }) =>
+      procSourceKeys.has(
+        `${projection.source.origin}:${projection.source.sourceInstanceId}:${projection.source.skillId}`,
+      ) &&
+      (projection.proc.kind === 'singleRoll' ||
+        projection.proc.kind === 'independentRolls' ||
+        projection.source.origin === 'attacker' ||
+        projection.source.origin === 'support' ||
+        projection.source.origin === 'mysticCode'),
+  ))
+    scenario = applyEffectControlPresentationDecision(
+      scenario,
+      control,
+      procControls.includes(control) ? value(0, 1) === 1 : true,
+      initial.effects,
+      initial.effectInputs,
+    );
   for (const input of initial.effectInputs.filter(
     (candidate) => candidate.kind === 'procSuccessCount',
   ))
@@ -104,6 +123,60 @@ describe('production probabilistic NP-before damage effects', () => {
     expect(averages).toEqual([54_130.23, 59_530.825, 64_931.4, 70_331.98, 75_732.555, 81_133.125]);
   });
 
+  it('uses Caesar success count as the sole chip-active state', () => {
+    const scenario = scenarioFor('101300');
+    const initial = calculateScenario(scenario, master, versions);
+    const control = initial.effectControls.find(
+      (candidate) => candidate.projection.proc.kind === 'chainedRolls',
+    )!;
+    const input = initial.effectInputs.find((candidate) => candidate.kind === 'procSuccessCount')!;
+    expect(control).toMatchObject({ interaction: 'toggle', active: true });
+    expect(input).toMatchObject({ value: 5, minimum: 0, maximum: 5 });
+    expect(np1Average(initial)).toBe(81_133.125);
+
+    const disabledScenario = applyEffectControlPresentationDecision(
+      scenario,
+      control,
+      false,
+      initial.effects,
+      initial.effectInputs,
+    );
+    const disabled = calculateScenario(disabledScenario, master, versions);
+    expect(disabled.effectControls.find((candidate) => candidate.key === control.key)?.active).toBe(
+      false,
+    );
+    expect(disabled.effectInputs.find((candidate) => candidate.key === input.key)?.value).toBe(0);
+    expect(np1Average(disabled)).toBe(54_130.23);
+
+    const restoredScenario = applyEffectControlPresentationDecision(
+      disabledScenario,
+      disabled.effectControls.find((candidate) => candidate.key === control.key)!,
+      true,
+      disabled.effects,
+      disabled.effectInputs,
+    );
+    const restored = calculateScenario(restoredScenario, master, versions);
+    expect(restored.effectControls.find((candidate) => candidate.key === control.key)?.active).toBe(
+      true,
+    );
+    expect(restored.effectInputs.find((candidate) => candidate.key === input.key)?.value).toBe(5);
+    expect(np1Average(restored)).toBe(81_133.125);
+
+    const twice = calculateScenario(
+      applyCanonicalInputCommand(restoredScenario, {
+        kind: 'setCanonicalIntegerInput',
+        key: input.key,
+        value: 2,
+      }),
+      master,
+      versions,
+    );
+    expect(twice.effectControls.find((candidate) => candidate.key === control.key)?.active).toBe(
+      true,
+    );
+    expect(np1Average(twice)).toBe(64_931.4);
+  });
+
   it('evaluates Sugiya independent rolls without coupling their results', () => {
     const failure = withProcResults('205100', (minimum) => minimum);
     const success = withProcResults('205100', (_minimum, maximum) => maximum);
@@ -145,21 +218,20 @@ describe('production probabilistic NP-before damage effects', () => {
 
   it('updates Sitonai proc metadata by skill level without changing the decision identity', () => {
     const records = [1, 9, 10].map((skillLevel) => {
-      let scenario = setAttackerSkillLevel(scenarioFor('1000800'), '532551', skillLevel);
+      const scenario = setAttackerSkillLevel(scenarioFor('1000800'), '532551', skillLevel);
       const initial = calculateScenario(scenario, master, versions);
       const proc = initial.effects.find(
         (effect) =>
           effect.visibility === 'visible' &&
           (effect.proc.kind === 'singleRoll' || effect.proc.kind === 'independentRolls'),
       )!;
-      scenario = setEffectSourceEnabled(scenario, proc, true);
       const failure = calculateScenario(
-        applyEffectProjectionDecision(scenario, proc, false),
+        applyEffectPresentationDecision(scenario, proc, false, initial.effects),
         master,
         versions,
       );
       const success = calculateScenario(
-        applyEffectProjectionDecision(scenario, proc, true),
+        applyEffectPresentationDecision(scenario, proc, true, initial.effects),
         master,
         versions,
       );
@@ -218,14 +290,14 @@ describe('production probabilistic NP-before damage effects', () => {
         effect.visibility === 'visible' &&
         (effect.proc.kind === 'singleRoll' || effect.proc.kind === 'independentRolls'),
     )!;
-    const used = setEffectSourceEnabled(scenario, proc, true);
+    const used = applyEffectPresentationDecision(scenario, proc, true, initial.effects);
     const failure = calculateScenario(
-      applyEffectProjectionDecision(used, proc, false),
+      applyEffectPresentationDecision(used, proc, false, initial.effects),
       master,
       versions,
     );
     const success = calculateScenario(
-      applyEffectProjectionDecision(used, proc, true),
+      applyEffectPresentationDecision(used, proc, true, initial.effects),
       master,
       versions,
     );

@@ -212,9 +212,9 @@ function effectCondition(
   ]);
 }
 
-function decisionPlan(condition: ConditionExpression) {
+function decisionPlan(condition: ConditionExpression, proc: MasterEffect['proc']) {
   return {
-    activation: 'user' as const,
+    activation: proc.kind === 'chainedRolls' ? ('automatic' as const) : ('user' as const),
     condition: containsUnsupportedCondition(condition)
       ? ('unsupported' as const)
       : requiresUserAssumption(condition)
@@ -320,7 +320,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
     source.sourceInstanceId,
     source.skillId,
   );
-  const plan = decisionPlan(condition);
+  const plan = decisionPlan(condition, source.effect.proc);
   return {
     operationId: `${identity}:${suffix}`,
     order,
@@ -577,7 +577,7 @@ function makeProjection(
   valueExpression: ModifierValueExpression | null,
   condition: ConditionExpression,
 ): EffectProjection {
-  const plan = decisionPlan(condition);
+  const plan = decisionPlan(condition, source.effect.proc);
   const requiresAttackerHp = conditionRequiresQuantity(condition, 'attackerHpPermille');
   return {
     projectionKey: key,

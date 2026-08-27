@@ -53,6 +53,7 @@ export function collectOperationSources(
     skillId: string,
     skillLevel: number,
     sourceEnabled: boolean,
+    defaultInclusion: 'master' | 'exclude' = 'master',
   ) => {
     const servant = master.servants.find((candidate) => candidate.id === sourceId);
     const skill = [...(servant?.skills ?? []), ...(servant?.passives ?? [])].find(
@@ -81,7 +82,9 @@ export function collectOperationSources(
         valueIndex: skillLevel - 1,
         limitBreak: false,
         sourceEnabled,
-        enabledByDefault: effect.inclusionPolicy.default === 'include',
+        enabledByDefault:
+          (defaultInclusion === 'master' || effect.proc.kind === 'chainedRolls') &&
+          effect.inclusionPolicy.default === 'include',
       });
   };
   for (const passive of attacker.passives)
@@ -94,7 +97,8 @@ export function collectOperationSources(
       attacker.id,
       selected.skillId,
       selected.skillLevel,
-      selected.enabled,
+      true,
+      'exclude',
     );
   if (scenario.craftEssence) {
     const ce = master.craftEssences.find(

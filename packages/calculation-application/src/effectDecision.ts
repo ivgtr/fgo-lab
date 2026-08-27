@@ -1,6 +1,7 @@
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import type { CalculationScenario } from '@fgo-lab/schema';
-import { conditionAllowsEffectLocalDecision } from './effectControls';
+import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
+import { conditionAllowsEffectLocalDecision, type EffectControlViewModel } from './effectControls';
 import { setEffectSourceEnabled, setOperationSourceEnabled } from './scenarioCommands';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -192,4 +193,27 @@ export function applyEffectPresentationDecision(
   )
     return inclusionResolved;
   return applyEffectConditionDecision(inclusionResolved, projection, enabled, peers);
+}
+
+export function applyEffectControlPresentationDecision(
+  scenario: ResolvedScenario,
+  control: EffectControlViewModel,
+  enabled: boolean,
+  peers: readonly EffectProjection[] = [],
+  inputs: readonly EffectInputViewModel[] = [],
+): ResolvedScenario {
+  if (control.projection.proc.kind !== 'chainedRolls')
+    return applyEffectPresentationDecision(scenario, control.projection, enabled, peers);
+  const procInput = inputs.find(
+    (input) =>
+      input.kind === 'procSuccessCount' &&
+      input.relatedProjectionKeys.includes(control.projection.projectionKey),
+  );
+  if (!procInput)
+    throw new TypeError(`chained_proc_input_missing:${control.projection.projectionKey}`);
+  return applyCanonicalInputCommand(scenario, {
+    kind: 'setCanonicalIntegerInput',
+    key: procInput.key,
+    value: enabled ? procInput.maximum : procInput.minimum,
+  });
 }

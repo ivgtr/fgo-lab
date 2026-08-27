@@ -94,7 +94,7 @@ describe('production special input inventory', () => {
     expect(unreachableInputs).toEqual([]);
 
     const singleChoiceControls = calculations.flatMap(({ calculation }) =>
-      calculation.effectControls.filter((control) => control.conditionControl === 'singleChoice'),
+      calculation.effectControls.filter((control) => control.interaction === 'singleChoice'),
     );
     expect(singleChoiceControls).toHaveLength(31);
     expect(
@@ -118,5 +118,28 @@ describe('production special input inventory', () => {
       );
     });
     expect(repeatedUserLabels).toEqual([]);
+
+    const inoperableVisibleEffects = calculations.flatMap(({ servant, calculation }) =>
+      calculation.effectControls.flatMap((control) =>
+        control.projection.visibility === 'visible' && control.interaction === 'none'
+          ? [`${servant.id}:${control.key}`]
+          : [],
+      ),
+    );
+    expect(inoperableVisibleEffects).toEqual([]);
+
+    const chainedStateMismatches = calculations.flatMap(({ servant, calculation }) =>
+      calculation.effectControls.flatMap((control) => {
+        if (control.projection.proc.kind !== 'chainedRolls') return [];
+        const input = calculation.effectInputs.find(
+          (candidate) =>
+            candidate.kind === 'procSuccessCount' &&
+            candidate.relatedProjectionKeys.includes(control.key),
+        );
+        const active = (input?.value ?? input?.defaultValue ?? 0) > (input?.minimum ?? 0);
+        return input && control.active === active ? [] : [`${servant.id}:${control.key}`];
+      }),
+    );
+    expect(chainedStateMismatches).toEqual([]);
   }, 20_000);
 });

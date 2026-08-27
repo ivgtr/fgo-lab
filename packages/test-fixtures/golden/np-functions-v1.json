@@ -1,7 +1,7 @@
 {
   "description": "Atlas JPの実パラメータとChaldeaのFunction分岐規則から独立に作成したNP Function handler行列",
   "reviewedAt": "2026-08-25",
-  "engineVersion": "18.0.0",
+  "engineVersion": "19.0.0",
   "sources": [
     "data/raw/nice_servant.json",
     "https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart#L80-L161"

@@ -71,7 +71,7 @@ export function planOperationActivations(
     )
       return operation;
     const operationChoices = choiceKeys(operation.condition);
-    if (operationChoices.length === 0) return operation;
+    if (operationChoices.length === 0 && operation.source.origin !== 'attacker') return operation;
     const present = operation.kind === 'addTrait';
     const links = decisionOperations.flatMap((candidate) => {
       const candidateChoices = choiceKeys(candidate.condition);

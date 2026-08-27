@@ -11,7 +11,11 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION, type CalculationScenario } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
-import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
+import {
+  applyEffectConditionDecision,
+  applyEffectControlPresentationDecision,
+  applyEffectProjectionDecision,
+} from './effectDecision';
 import { createEffectControlViewModels } from './effectControls';
 import { setEffectSourceEnabled } from './scenarioCommands';
 
@@ -96,6 +100,20 @@ describe('production execution parity ratchet', () => {
               effect.decision.decisionKey.includes(':interaction:'),
           );
         if (!projection) throw new Error(`projection_missing:${testCase.key}`);
+        if (projection.proc.kind === 'chainedRolls') {
+          const control = before.effectControls.find(
+            (candidate) => candidate.projection.projectionKey === projection.projectionKey,
+          );
+          if (!control) throw new Error(`chained_control_missing:${testCase.key}`);
+          scenario = applyEffectControlPresentationDecision(
+            scenario,
+            control,
+            oldDecision.operationEnabled,
+            before.effects,
+            before.effectInputs,
+          );
+          continue;
+        }
         scenario = selectProjectionAlone(scenario, projection, before.effects);
         const sourceEnabled = calculateScenario(scenario, master, versions);
         const current = sourceEnabled.effects.find(
@@ -118,7 +136,7 @@ describe('production execution parity ratchet', () => {
 
     expect(records).toHaveLength(1_504);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'f2cd026c4b29bf83da41ffd9d343ead0ae8464b4badf335ad2501edbcb7b129d',
+      '54b6ca9663afd95c5b686c49a33bd679246deb43bd7fae45a87b32b91fa4ca48',
     );
   }, 120_000);
 

@@ -187,12 +187,12 @@ describe('effect decision application command', () => {
       },
     ]);
 
-    const inactiveSkillScenario = {
+    const skillScenario = {
       ...scenario,
       attackerSkills: [
         ...scenario.attackerSkills,
-        { skillId: 'skill', skillLevel: 10, enabled: false },
-        { skillId: 'prerequisite', skillLevel: 10, enabled: false },
+        { skillId: 'skill', skillLevel: 10 },
+        { skillId: 'prerequisite', skillLevel: 10 },
       ],
     };
     const projectionWithPrerequisite: EffectProjection = {
@@ -209,7 +209,7 @@ describe('effect decision application command', () => {
       ],
     };
     const compactSky = applyEffectPresentationDecision(
-      inactiveSkillScenario,
+      skillScenario,
       projectionWithPrerequisite,
       true,
       [projectionWithPrerequisite, earth],
@@ -218,12 +218,7 @@ describe('effect decision application command', () => {
       baseProjection,
       earth,
     ]);
-    expect(compactEarth.attackerSkills.find((skill) => skill.skillId === 'skill')?.enabled).toBe(
-      true,
-    );
-    expect(
-      compactEarth.attackerSkills.find((skill) => skill.skillId === 'prerequisite')?.enabled,
-    ).toBe(true);
+    expect(compactEarth.attackerSkills).toEqual(skillScenario.attackerSkills);
     expect(compactEarth.effectDecisions).toEqual([
       {
         decisionKey: 'effect:sky',
@@ -241,12 +236,7 @@ describe('effect decision application command', () => {
       baseProjection,
       earth,
     ]);
-    expect(compactEarthOff.attackerSkills.find((skill) => skill.skillId === 'skill')?.enabled).toBe(
-      true,
-    );
-    expect(
-      compactEarthOff.attackerSkills.find((skill) => skill.skillId === 'prerequisite')?.enabled,
-    ).toBe(true);
+    expect(compactEarthOff.attackerSkills).toEqual(skillScenario.attackerSkills);
     expect(compactEarthOff.effectDecisions.at(-1)).toEqual({
       decisionKey: 'effect:earth',
       operationEnabled: false,

@@ -4,8 +4,8 @@ export interface EffectControlViewModel {
   key: string;
   projection: EffectProjection;
   operationIds: readonly string[];
-  control: 'none' | 'toggle' | 'proc';
-  conditionControl: 'none' | 'toggle' | 'singleChoice';
+  interaction: 'none' | 'toggle' | 'singleChoice';
+  active: boolean;
   valueDisplay: 'single' | 'sum';
 }
 
@@ -59,6 +59,7 @@ function aggregateProjection(members: readonly EffectProjection[]): EffectProjec
 
 export function createEffectControlViewModels(
   effects: readonly EffectProjection[],
+  canonicalInputValues: Readonly<Record<string, number>> = {},
 ): EffectControlViewModel[] {
   const groups = new Map<string, EffectProjection[]>();
   for (const effect of effects) {
@@ -88,25 +89,33 @@ export function createEffectControlViewModels(
     const belongsToChoice = projection.selectionGroups.some(
       (group) => (candidatesByGroup.get(group.groupKey)?.size ?? 0) > 1,
     );
+    const conditionSelectable =
+      projection.decision.state !== 'none' &&
+      projection.decision.kind === 'effect' &&
+      projection.decision.plan.condition === 'userMayAssume' &&
+      conditionAllowsEffectLocalDecision(projection.explanation.condition);
+    const chainedInput = projection.requiredInputs.find(
+      (input) => input.kind === 'procSuccessCount',
+    );
+    const selected =
+      projection.decision.state === 'enabled' ||
+      (projection.decision.state === 'none' && projection.outcome === 'applied');
+    const active =
+      projection.proc.kind === 'chainedRolls' && chainedInput
+        ? (canonicalInputValues[chainedInput.key] ?? chainedInput.defaultValue ?? 0) >
+          chainedInput.minimum
+        : projection.sourceActive &&
+          selected &&
+          (!conditionSelectable || projection.conditionDecision === 'assumeSatisfied');
     return {
       key,
       projection,
       operationIds,
+      active,
       valueDisplay: operationIds.length > 1 ? 'sum' : 'single',
-      control:
-        projection.decision.state !== 'none' &&
-        projection.decision.kind === 'effect' &&
-        projection.decision.plan.activation === 'user'
-          ? projection.proc.kind === 'chainedRolls'
-            ? 'proc'
-            : 'toggle'
-          : 'none',
-      conditionControl:
-        projection.decision.state !== 'none' &&
-        projection.decision.kind === 'effect' &&
-        projection.decision.plan.condition === 'userMayAssume' &&
-        conditionAllowsEffectLocalDecision(projection.explanation.condition)
-          ? belongsToChoice
+      interaction:
+        projection.proc.kind === 'chainedRolls' || projection.decision.state !== 'none'
+          ? conditionSelectable && belongsToChoice
             ? 'singleChoice'
             : 'toggle'
           : 'none',

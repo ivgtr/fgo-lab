@@ -11,10 +11,13 @@ import {
 } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
+import {
+  applyEffectConditionDecision,
+  applyEffectControlPresentationDecision,
+  applyEffectProjectionDecision,
+} from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { setEffectSourceEnabled } from './scenarioCommands';
-import { createEffectControlViewModels } from './effectControls';
 
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
@@ -234,9 +237,10 @@ describe('production master inventory ratchet', () => {
     const canonicalConflictServants = new Set<string>();
     let exclusivePairCount = 0;
     for (const { servant, scenario, calculation } of calculations) {
-      const userEffects = createEffectControlViewModels(calculation.effects)
-        .map((control) => control.projection)
-        .filter((effect) => effect.controllability === 'user');
+      const userControls = calculation.effectControls.filter(
+        (control) => control.projection.controllability === 'user',
+      );
+      const userEffects = userControls.map((control) => control.projection);
       const selectedCalculations = new Map<string, ReturnType<typeof calculateScenario>>();
       for (const effect of calculation.effects) {
         if (
@@ -250,19 +254,18 @@ describe('production master inventory ratchet', () => {
           invalidAutomaticConditions.push(`${servant.id}:${effect.projectionKey}`);
       }
       for (const effect of userEffects) {
+        const control = userControls.find((candidate) => candidate.key === effect.projectionKey)!;
         const decisionScenario =
           effect.requiredQuantity === 'attackerHpPermille' &&
           effect.requiredQuantityOwner === 'attacker'
             ? { ...scenario, attackerHpPermille: 500 }
             : scenario;
-        const selectedScenario = assumeProjectedCondition(
-          applyEffectProjectionDecision(
-            setEffectSourceEnabled(decisionScenario, effect, true),
-            effect,
-            true,
-          ),
-          effect,
+        const selectedScenario = applyEffectControlPresentationDecision(
+          decisionScenario,
+          control,
+          true,
           userEffects,
+          calculation.effectInputs,
         );
         const active = calculateScenario(selectedScenario, master, versions);
         selectedCalculations.set(effect.projectionKey, active);
@@ -278,13 +281,16 @@ describe('production master inventory ratchet', () => {
           (activeEffect?.outcome === 'unsupported' && !constraintOnlyFailure)
         )
           selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
-        const excludedScenario =
-          effect.decision.state !== 'none' &&
-          effect.decision.kind === 'effect' &&
-          effect.decision.plan.activation === 'automatic' &&
-          effect.decision.plan.condition === 'userMayAssume'
-            ? applyEffectConditionDecision(selectedScenario, activeEffect ?? effect, false)
-            : applyEffectProjectionDecision(selectedScenario, activeEffect ?? effect, false);
+        const activeControl = active.effectControls.find(
+          (candidate) => candidate.key === effect.projectionKey,
+        );
+        const excludedScenario = applyEffectControlPresentationDecision(
+          selectedScenario,
+          activeControl ?? control,
+          false,
+          active.effects,
+          active.effectInputs,
+        );
         const excluded = calculateScenario(excludedScenario, master, versions);
         if (
           !activeEffect ||
@@ -465,8 +471,8 @@ describe('production master inventory ratchet', () => {
           ]),
       ),
     ).toEqual({});
-    expect(exclusivePairCount).toBe(26);
-    expect(conflictPairs).toEqual({ effectEffect: 25, factFact: 1, factEffect: 0 });
+    expect(exclusivePairCount).toBe(29);
+    expect(conflictPairs).toEqual({ effectEffect: 28, factFact: 1, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,

@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 25 as const;
-export const ENGINE_VERSION = '18.0.0' as const;
+export const SCHEMA_VERSION = 26 as const;
+export const ENGINE_VERSION = '19.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -195,11 +195,12 @@ export const damageKernelInputSchema = z
   .strict();
 export type DamageKernelInput = z.infer<typeof damageKernelInputSchema>;
 
-export const attackerSkillSelectionSchema = z.object({
-  skillId: z.string().min(1).max(80),
-  skillLevel: z.number().int().min(1).max(10),
-  enabled: z.boolean(),
-});
+export const attackerSkillSelectionSchema = z
+  .object({
+    skillId: z.string().min(1).max(80),
+    skillLevel: z.number().int().min(1).max(10),
+  })
+  .strict();
 export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema>;
 
 const scenarioBaseSchema = z
@@ -249,7 +250,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
     mysticCode: z
       .object({
         mysticCodeId: z.string().min(1).max(80),
-        skills: z.array(attackerSkillSelectionSchema).min(1).max(3),
+        skills: z.array(supportSkillSchema).min(1).max(3),
       })
       .nullable(),
     support: z

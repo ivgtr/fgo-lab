@@ -4,9 +4,8 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { applyCanonicalInputCommand, resolveCanonicalInputValues } from './canonicalInputs';
-import { applyEffectProjectionDecision } from './effectDecision';
+import { applyEffectPresentationDecision } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
-import { setEffectSourceEnabled } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
 let master: ReturnType<typeof masterSnapshotSchema.parse>;
@@ -97,17 +96,24 @@ describe('canonical special input application boundary', () => {
     const control = calculation.effectControls.find(
       (candidate) => candidate.projection.label === '攻撃力アップ',
     )!;
-    expect(control.control).toBe('toggle');
+    expect(control.interaction).toBe('toggle');
     expect(control.operationIds).toHaveLength(10);
     expect(
       calculation.effectControls.filter(
         (candidate) => candidate.projection.label === '攻撃力アップ',
       ),
     ).toHaveLength(1);
-    const enabled = applyEffectProjectionDecision(
-      setEffectSourceEnabled(scenario, control.projection, true),
-      control.projection,
+    const buster = calculation.effects.find(
+      (effect) =>
+        effect.source.origin === 'attacker' &&
+        effect.source.skillId === control.projection.source.skillId &&
+        effect.label === 'バスターアップ',
+    )!;
+    const enabled = applyEffectPresentationDecision(
+      applyEffectPresentationDecision(scenario, control.projection, true, calculation.effects),
+      buster,
       true,
+      calculation.effects,
     );
     const resolved = calculateScenario(
       applyCanonicalInputCommand(enabled, {
@@ -208,11 +214,7 @@ describe('canonical special input application boundary', () => {
       ).toBe(true);
 
       const enabled = calculateScenario(
-        applyEffectProjectionDecision(
-          setEffectSourceEnabled(hpScenario, control.projection, true),
-          control.projection,
-          true,
-        ),
+        applyEffectPresentationDecision(hpScenario, control.projection, true, disabled.effects),
         master,
         versions,
       );

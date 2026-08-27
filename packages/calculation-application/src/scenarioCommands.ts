@@ -17,8 +17,8 @@ export function setOperationSourceEnabled(
   source: OperationSource,
   enabled: boolean,
 ): ResolvedScenario {
-  if (source.origin === 'attacker')
-    return setAttackerSkillEnabled(scenario, source.skillId, enabled);
+  if (source.origin === 'attacker' || source.origin === 'np' || source.origin === 'passive')
+    return scenario;
   if (source.origin === 'support')
     return setCalculationSupportSkillEnabled(
       scenario,
@@ -48,19 +48,6 @@ export function setAttackerSkillLevel(
     ...scenario,
     attackerSkills: scenario.attackerSkills.map((skill) =>
       skill.skillId === skillId ? { ...skill, skillLevel } : skill,
-    ),
-  };
-}
-
-export function setAttackerSkillEnabled(
-  scenario: ResolvedScenario,
-  skillId: string,
-  enabled: boolean,
-): ResolvedScenario {
-  return {
-    ...scenario,
-    attackerSkills: scenario.attackerSkills.map((skill) =>
-      skill.skillId === skillId ? { ...skill, enabled } : skill,
     ),
   };
 }

@@ -99,7 +99,7 @@ describe('portable input limits', () => {
     ).toEqual([1, 1]);
   });
 
-  it('round-trips an explicit chained proc result without changing its damage', () => {
+  it('round-trips zero and partial chained proc results without changing damage', () => {
     const servant = productionMaster.servants.find((candidate) => candidate.id === '101300')!;
     const base = createDefaultResolvedScenario(productionMaster, undefined, servant);
     const initial = calculateScenario(base, productionMaster, {
@@ -107,37 +107,39 @@ describe('portable input limits', () => {
       masterDataVersion: productionMaster.version,
     });
     const input = initial.effectInputs.find((candidate) => candidate.kind === 'procSuccessCount')!;
-    const scenario = applyCanonicalInputCommand(base, {
-      kind: 'setCanonicalIntegerInput',
-      key: input.key,
-      value: 2,
-    });
-    const calculation = calculateScenario(scenario, productionMaster, {
-      ...versions,
-      masterDataVersion: productionMaster.version,
-    });
-    const snapshot: CalculationShareSnapshot = {
-      kind: 'fgo-lab-calculation-share',
-      schemaVersion: SCHEMA_VERSION,
-      sharedAt: '2026-08-27T00:00:00.000Z',
-      scenario,
-      result: calculation.result,
-    };
+    for (const value of [0, 2]) {
+      const scenario = applyCanonicalInputCommand(base, {
+        kind: 'setCanonicalIntegerInput',
+        key: input.key,
+        value,
+      });
+      const calculation = calculateScenario(scenario, productionMaster, {
+        ...versions,
+        masterDataVersion: productionMaster.version,
+      });
+      const snapshot: CalculationShareSnapshot = {
+        kind: 'fgo-lab-calculation-share',
+        schemaVersion: SCHEMA_VERSION,
+        sharedAt: '2026-08-27T00:00:00.000Z',
+        scenario,
+        result: calculation.result,
+      };
 
-    const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
-    expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
-    expect(restored.scenario.mode).toBe('resolved');
-    if (restored.scenario.mode !== 'resolved') throw new Error('resolved share required');
-    expect(restored.scenario.canonicalInputValues[input.key]).toEqual({
-      kind: 'integer',
-      value: 2,
-    });
-    const recalculated = calculateScenario(restored.scenario, productionMaster, {
-      ...versions,
-      masterDataVersion: productionMaster.version,
-    });
-    expect(recalculated.input).toEqual(calculation.input);
-    expect(recalculated.result).toEqual(calculation.result);
+      const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
+      expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
+      expect(restored.scenario.mode).toBe('resolved');
+      if (restored.scenario.mode !== 'resolved') throw new Error('resolved share required');
+      expect(restored.scenario.canonicalInputValues[input.key]).toEqual({
+        kind: 'integer',
+        value,
+      });
+      const recalculated = calculateScenario(restored.scenario, productionMaster, {
+        ...versions,
+        masterDataVersion: productionMaster.version,
+      });
+      expect(recalculated.input).toEqual(calculation.input);
+      expect(recalculated.result).toEqual(calculation.result);
+    }
   });
 
   it('rejects a shared result that does not match its scenario', () => {
@@ -318,7 +320,7 @@ describe('portable input limits', () => {
     const craftedVersions = { ...versions, masterDataVersion: craftedMaster.version };
     const baseScenario = {
       ...createDefaultResolvedScenario(craftedMaster, undefined),
-      attackerSkills: [{ skillId: 'earth-skill', skillLevel: 10, enabled: true }],
+      attackerSkills: [{ skillId: 'earth-skill', skillLevel: 10 }],
     };
     const initial = calculateScenario(baseScenario, craftedMaster, craftedVersions);
     const earth = initial.effects.find((effect) => effect.label === '対地威力アップ')!;

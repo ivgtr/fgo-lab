@@ -10,10 +10,13 @@ import {
   type CalculationScenario,
   type VersionContext,
 } from '@fgo-lab/schema';
-import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
+import {
+  applyEffectConditionDecision,
+  applyEffectPresentationDecision,
+  applyEffectProjectionDecision,
+} from './effectDecision';
 import { resolveCanonicalInputValues } from './canonicalInputs';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
-import { setAttackerSkillEnabled } from './scenarioCommands';
 
 const master = masterSnapshotSchema.parse(fixture);
 
@@ -214,7 +217,7 @@ describe('scenario calculation facade', () => {
     });
     const scenario = {
       ...createDefaultResolvedScenario(occurrenceMaster, undefined),
-      attackerSkills: [{ skillId: 'occurrence-skill', skillLevel: 10, enabled: true }],
+      attackerSkills: [{ skillId: 'occurrence-skill', skillLevel: 10 }],
     };
     const inactive = calculateScenario(scenario, occurrenceMaster, {
       ...versions,
@@ -373,7 +376,14 @@ describe('scenario calculation facade', () => {
       }),
       timing: 'beforeDamage' as const,
     };
-    const sameSkillPower = modifierEffect('skill-power', 'upDamage', 200);
+    const sameSkillPower = {
+      ...modifierEffect('skill-power', 'upDamage', 200),
+      label: 'same-skill-power',
+    };
+    const siblingSkillPower = {
+      ...modifierEffect('skill-np-power', 'upNpdamage', 100),
+      label: 'sibling-skill-power',
+    };
     const baseServant = fixture.servants[0]!;
     const linkedMaster = parseTestMaster({
       ...fixture,
@@ -388,7 +398,7 @@ describe('scenario calculation facade', () => {
               name: 'mutation skill',
               detail: '',
               imageKey: null,
-              effects: [fieldEffect, recipientEffect, sameSkillPower],
+              effects: [fieldEffect, recipientEffect, sameSkillPower, siblingSkillPower],
             },
           ],
           noblePhantasms: baseServant.noblePhantasms.map((np) => ({
@@ -400,7 +410,7 @@ describe('scenario calculation facade', () => {
     });
     const scenario = {
       ...createDefaultResolvedScenario(linkedMaster, undefined),
-      attackerSkills: [{ skillId: 'mutation-skill', skillLevel: 10, enabled: false }],
+      attackerSkills: [{ skillId: 'mutation-skill', skillLevel: 10 }],
     };
     const versionContext = { ...versions, masterDataVersion: linkedMaster.version };
     const initial = calculateScenario(scenario, linkedMaster, versionContext);
@@ -415,37 +425,54 @@ describe('scenario calculation facade', () => {
       outcome: 'notApplied',
     });
 
-    const usedScenario = setAttackerSkillEnabled(scenario, 'mutation-skill', true);
+    const sameSkillPowerProjection = initial.effects.find(
+      (effect) => effect.label === 'same-skill-power',
+    )!;
+    const siblingSkillPowerProjection = initial.effects.find(
+      (effect) => effect.label === 'sibling-skill-power',
+    )!;
+    const usedScenario = applyEffectPresentationDecision(
+      applyEffectPresentationDecision(scenario, sameSkillPowerProjection, true, initial.effects),
+      siblingSkillPowerProjection,
+      true,
+      initial.effects,
+    );
     const used = calculateScenario(usedScenario, linkedMaster, versionContext);
     expect(used.result.status).toBe('calculated');
     expect(used.input.fieldTraits).toEqual(['fieldSunlight']);
     expect(used.input.attackerStateTraits).toEqual(['blessedByKur']);
     expect(used.input.attackBuff).toBe(0.3);
-    expect(used.input.npDamageBuff).toBe(0.25);
+    expect(used.input.npDamageBuff).toBe(0.35);
     expect(used.input.powerMod).toBe(0.2);
     expect(used.effects.find((effect) => effect.label === 'recipient mutation')?.outcome).toBe(
       'applied',
     );
 
-    const sunshine = used.effects.find((effect) => effect.label === 'sunshine-power')!;
-    const excluded = calculateScenario(
-      applyEffectProjectionDecision(usedScenario, sunshine, false),
+    const sunshine = used.effects.find((effect) => effect.label === 'same-skill-power')!;
+    const siblingMaintainedScenario = applyEffectProjectionDecision(usedScenario, sunshine, false);
+    const siblingMaintained = calculateScenario(
+      siblingMaintainedScenario,
       linkedMaster,
       versionContext,
     );
-    expect(excluded.input.fieldTraits).toEqual(['fieldSunlight']);
-    expect(excluded.input.attackBuff).toBe(0);
-    expect(excluded.input.powerMod).toBe(0.2);
+    expect(siblingMaintained.input.fieldTraits).toEqual(['fieldSunlight']);
+    expect(siblingMaintained.input.attackerStateTraits).toEqual(['blessedByKur']);
+    expect(siblingMaintained.input.attackBuff).toBe(0.3);
+    expect(siblingMaintained.input.npDamageBuff).toBe(0.35);
+    expect(siblingMaintained.input.powerMod).toBe(0);
 
-    const unused = calculateScenario(
-      setAttackerSkillEnabled(usedScenario, 'mutation-skill', false),
+    const sibling = siblingMaintained.effects.find(
+      (effect) => effect.label === 'sibling-skill-power',
+    )!;
+    const excluded = calculateScenario(
+      applyEffectProjectionDecision(siblingMaintainedScenario, sibling, false),
       linkedMaster,
       versionContext,
     );
-    expect(unused.input.fieldTraits).toEqual([]);
-    expect(unused.input.attackerStateTraits).toEqual([]);
-    expect(unused.input.attackBuff).toBe(0);
-    expect(unused.input.powerMod).toBe(0);
+    expect(excluded.input.fieldTraits).toEqual([]);
+    expect(excluded.input.attackBuff).toBe(0);
+    expect(excluded.input.powerMod).toBe(0);
+    expect(excluded.input.attackerStateTraits).toEqual([]);
   });
 
   it('calculates a resolved scenario without a UI selection adapter', () => {
@@ -594,7 +621,7 @@ describe('scenario calculation facade', () => {
     });
     const scenario = {
       ...createDefaultResolvedScenario(exclusiveMaster, undefined),
-      attackerSkills: [{ skillId: 'realm-skill', skillLevel: 10, enabled: true }],
+      attackerSkills: [{ skillId: 'realm-skill', skillLevel: 10 }],
     };
     const inactive = calculateScenario(scenario, exclusiveMaster, {
       ...versions,
@@ -842,7 +869,7 @@ describe('scenario calculation facade', () => {
     });
     const scenario = {
       ...createDefaultResolvedScenario(transactionalMaster, undefined),
-      attackerSkills: [{ skillId: 'hell-power-skill', skillLevel: 10, enabled: true }],
+      attackerSkills: [{ skillId: 'hell-power-skill', skillLevel: 10 }],
     };
     const initial = calculateScenario(scenario, transactionalMaster, {
       ...versions,
@@ -928,7 +955,7 @@ describe('scenario calculation facade', () => {
     const scenario = {
       ...createDefaultResolvedScenario(compoundMaster, undefined),
       attackerHpPermille: null,
-      attackerSkills: [{ skillId: 'compound-skill', skillLevel: 10, enabled: true }],
+      attackerSkills: [{ skillId: 'compound-skill', skillLevel: 10 }],
     };
     const initial = calculateScenario(scenario, compoundMaster, {
       ...versions,
@@ -1262,7 +1289,7 @@ describe('scenario calculation facade', () => {
       ...createDefaultResolvedScenario(combinationMaster, undefined),
       assumptions: { classAffinity: 1, attributeAffinity: 1 },
       craftEssence: { craftEssenceId: 'fixture-ce', level: 1, limitBreak: 0 },
-      attackerSkills: [{ skillId: 'attacker-skill', skillLevel: 10, enabled: true }],
+      attackerSkills: [{ skillId: 'attacker-skill', skillLevel: 10 }],
       mysticCode: {
         mysticCodeId: 'combo-mc',
         skills: [{ skillId: 'mc-skill', skillLevel: 10, enabled: true }],
