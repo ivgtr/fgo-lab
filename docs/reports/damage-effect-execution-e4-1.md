@@ -16,6 +16,10 @@ rankingはcalculatorの全入力を再掲する画面ではなく、同じ固定
 自然上限、Fou+1000、skill Lv10、OC1、attribute等倍、HP100%、star 0、turn 1、BP 0、quantity minimum、
 proc成功、chained最大、礼装・魔術礼装・支援なしはtyped fixed policyが一度だけ所有する。
 
+追補として、effectの発生源と寄与範囲を分離した。主順位は攻撃役自身の`personal`および対象へ与える
+`enemyApplied`だけを含み、味方全体の`partyWide`は同じ条件・同じtarget candidateの別executionとして
+詳細へ「エリア支援込み」damageと平均増加を表示する。ランキング条件は5項目のままである。
+
 TargetContext基盤は先行する`66a21f3`で独立確定した。engine 996行へ意味論を足す構造を廃止し、
 compile plan、target resolution、candidate execution、candidate comparison、result assemblyへ分割した。
 family runtime semanticsとAtlas evidenceを分離し、typed predicateだけをsingle constraint evaluatorへ渡す。
@@ -23,19 +27,20 @@ family runtime semanticsとAtlas evidenceを分離し、typed predicateだけを
 ## Production inventory and digests
 
 全条件で420行、implementation unsupported 0、inputRequired 0である。特攻inactiveの適用badgeは0、activeは
-206騎で、一騎を複数行へ分割しない。
+198騎で、一騎を複数行へ分割しない。旧206騎との差8騎は、主順位へ混入していたparty-wide specialを
+canonical contribution scopeに従って分離した結果である。
 
 | class | special | NP1 | NP2 | NP3 | NP4 | NP5 |
 |---|---|---|---|---|---|---|
-| neutral | inactive | `143960d6` | `b003cad5` | `fbcba002` | `67d88881` | `ef246434` |
-| neutral | active | `ad225574` | `cf27f22b` | `fadfaf8e` | `ff422353` | `7b19c240` |
-| favorable | inactive | `a1359950` | `d8e1e77f` | `d17c9bd0` | `8786de65` | `76271536` |
-| favorable | active | `eb307083` | `82084f98` | `bebccf12` | `682ba3fa` | `2fd56359` |
+| neutral | inactive | `c05a527f` | `4b64710c` | `d0fd1363` | `ecb5be52` | `f3fd03fc` |
+| neutral | active | `546b863c` | `51e2d292` | `87e12bb5` | `d1844e0f` | `fabc4f8c` |
+| favorable | inactive | `33321423` | `3bdb8d3b` | `089008ce` | `cda1e06b` | `97dc1761` |
+| favorable | active | `89e8d1f4` | `9b45cc55` | `d15b2442` | `50b703ea` | `41455bc7` |
 
 テストは省略表記ではなく各64桁digestを保持する。NP Lv依存特攻の平均damageは次のとおり。
 
 - エウリュアレ: 41,345.805 / 55,027.875 / 61,868.985 / 65,289.450 / 68,709.995
-- 雨の魔女トネリコ: 41,920.510 / 65,209.955 / 78,601.400 / 85,755.900 / 93,157.300
+- 雨の魔女トネリコ: 27,946.830 / 43,473.150 / 52,400.755 / 57,170.400 / 62,104.685
 - アーキタイプ：アース: 45,754.140 / 71,173.420 / 85,789.500 / 93,598.280 / 101,676.515
 
 ## UI and worker
@@ -49,12 +54,17 @@ reasonを保持する。該当行だけerrorとretryを表示し、loading表示
 
 通常icon VRTはlocal deterministic PNGをAtlas成功responseとして使用し、network abort時fallbackは別snapshotで固定する。
 
+標準比較workerはNP levelを除いたpolicy keyでNP1〜5 matrixをcacheする。NP selector変更では420騎の
+scenarioを再compileせず、保持済みseriesを選択する。summaryではarea executionを行わず、展開した一行のdetailだけを
+遅延計算する。productionでは主順位とarea-supported値が異なる176騎、246 projectionをratchetし、主順位へ
+visible `partyWide`／`partyOther`が適用される件数を0へ固定した。
+
 ## Versions
 
 - scenario schema: 27
-- engine: 20.0.0
-- master artifact: 20260827.4
-- master manifest schema: 32
+- engine: 21.0.0
+- master artifact: 20260828.2
+- master manifest schema: 33
 
 TargetContextの破壊的契約変更による更新であり、旧scenario／URL fallbackは持たない。E3.12.1 calculatorのlayout、
 操作位置、visible controlsは変更していない。承認済み46騎だけは存在しない2.0倍既定値をcanonical最大有利へ修正した。
@@ -62,18 +72,19 @@ TargetContextの破壊的契約変更による更新であり、旧scenario／UR
 ## Validation and performance
 
 - format／ESLint／TypeScript: success
-- unit／integration／property／golden: 61 files、318 tests、475.48s
-- master validation: 6 files、56 tests
+- unit／integration／property／golden: 63 files、336 tests、80.72s
+- master validation: 7 files、68 tests
 - evidence validation: 2 files、10 tests
 - production build: success
-- Playwright Chromium／mobile Chromium／VRT／a11y: 61 passed、29 project-specific skipped
+- Playwright Chromium／mobile Chromium／VRT／a11y: 62 passed、30 project-specific skipped
 - `git diff --check`: success
-- main JS: 520.44 kB、gzip 147.89 kB
-- ranking worker: 192.86 kB
-- CSS: 44.73 kB、gzip 9.26 kB
-- damage kernel benchmark: 328.73 ops/s、mean 3.0420 ms
-- ranking summary実測: 特攻なし約11〜13秒／420件、特攻成立約22〜26秒／420件
+- main JS: 522.05 kB、gzip 148.23 kB
+- ranking worker: 197.59 kB
+- CSS: 44.93 kB、gzip 9.28 kB
+- damage kernel benchmark: 411.80 ops/s、mean 2.4284 ms
+- ranking matrix実測: policy一組のNP1〜5全420件を約2.7〜3.4秒で生成する。
+- 特攻成立detail全420件は約4.1秒、最大world candidate 12、最大scenario calculation 14である。
 
-E4比でworkerが増えた主因はTargetContext candidate resolverと単一special-attack policyである。main threadは
-420件を計算せず、filter変更はworker requestを発行しない。production 20-policy ratchetは約7分を要するため、
-通常unitの速度と区別して継続監視する。
+旧11〜26秒の主因だったeffectごとの再compileと最大`2^N`のsubset探索を削除した。main threadは420件を
+計算せず、filter変更はworker requestを発行しない。20 policyは4 matrixで検証し、NP levelごとの同一計算を
+繰り返さない。

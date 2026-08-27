@@ -645,3 +645,19 @@ TargetContext基盤を`66a21f3`で独立確定した後、旧ranking condition m
 6. worker detail errorをsummary／initialization errorから分離し、一行だけ再試行可能にする。
 7. Atlas画像成功時はlocal deterministic fixture、失敗時はfallbackの別VRTで固定する。
 8. NP1〜5 × class neutral／favorable × special inactive／activeの20 production digestをratchetする。
+
+## 15. E4.1.1: contribution scope and prepared ranking plan
+
+E4.1の計算経路はcanonical executorへ統合済みだったが、ranking policyがeffect projectionを一件ずつ
+操作して再計算し、originだけで自己効果を判定していた。ADR 019に従い、次へ収束させる。
+
+1. raw targetをdata-pipelineでtyped `EffectContributionScope`へ正規化し、master operationからprojectionまで保持する。
+2. 主順位は`personal`と`enemyApplied`だけを含め、`partyWide`は同じworld candidateのarea-supported detailとして分離する。
+3. presentation controlの逐次操作を削除し、terminal effect集合からdecision、source dependency、hidden mutationを一括導出する。
+4. 特攻effectの任意部分集合探索を削除し、typed target／condition world candidateを有限列挙する。
+5. candidateごとにexecutorを一度だけ実行し、NP1〜5のrow seriesから各levelの最大候補を選ぶ。
+6. standard workerはNP levelを除くcanonical policyでmatrixをcacheし、NP切替では再compileしない。
+7. production gateでarea混入0、最大world candidate数、scenario calculation数、20 digestを固定する。
+
+calculator、E4.1の5項目condition UI、ranking closed rowは変更しない。area contributionは詳細だけへ表示し、
+新しいranking inputを追加しない。E5は本節の全gate完了後に開始する。
