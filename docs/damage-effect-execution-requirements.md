@@ -414,6 +414,19 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 7. 旧`target`＋`assumptions`、疑似class ID、identity traitの自由assertion、互換fallbackを残さない。
 8. TargetContext基盤の420件parity完了前にE4.1 ranking UIへ進まない。
 
+### 8.15 ranking contribution scopeと実行計画
+
+1. raw Atlas targetはdata-pipelineでcanonical contribution scopeへ変換し、master operationからprojectionまで保持する。
+2. originを効果の寄与範囲として再解釈しない。味方全体、味方単体、味方他、敵付与、外部支援をtypedに区別する。
+3. ranking主順位は自己火力と自身が敵へ与えるdebuffを使用し、area effectを主順位へ混入させない。
+4. area effect込みdamageと増加量は同じcanonical world candidateの別executionとして詳細へ提示し、ranking条件を増やさない。
+5. rankingはpresentation controlを一件ずつ操作せず、一騎につき宣言的なexecution planを一度compileする。
+6. 特攻はeffectの任意部分集合ではなくtarget／condition candidateを探索し、同一targetで成立する効果をすべて適用する。
+7. candidate executionはNP1〜5 seriesを返し、NP切替でsource compileまたはeffect探索を再実行しない。
+8. 探索上限、曖昧性、入力不足、unsupportedを別のtyped resultとしてfail-closedにする。
+9. workerはcanonical plan／resultをcacheし、React presentationやlabelを計算key・意味判定へ使わない。
+10. E4.1の5項目UIとE3.12.1 calculator UIを変更せず、完了までE5を開始しない。
+
 ## 10. 設計根拠の追跡
 
 計算仕様はAtlas Academyの構造化データとfgo-docs、正規化manifest、golden／property test、production master監査を根拠として追跡する。外部実装の挙動は計算根拠や正解データとして扱わない。

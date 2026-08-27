@@ -28,9 +28,10 @@ application facadeを呼ぶだけで、TargetContext、effect、proc、raw Atlas
 計算conditionと別stateとし、filter変更で再計算しない。
 
 特攻はUI上の一項目だが、canonical IR上の`powerMod`と`npSpecial`を潰さない。inactiveはcanonicalに操作可能な
-特攻を不成立にし、activeは同じapplication commandで成立可能な有限scenarioだけを生成する。各scenarioを
-canonical executorで実行し、最大平均damageを採用する。同値はscenarioのstable canonical keyで決める。
-探索件数は4,096を上限とし、超過を「特攻なし」と読み替えずfail-closedにする。
+特攻を不成立にし、activeはADR-019のranking execution planがtarget／condition candidateを有限生成する。
+effectの任意部分集合は探索しない。同じtargetで成立する特攻をすべてcanonical executorで評価し、NP1〜5の
+各rowで最大damageを採用する。同値はscenarioのstable canonical keyで決める。探索上限は「成立対象なし」と
+区別したtyped failureとし、通常値へ読み替えない。
 
 classの「有利」はcalc-coreの実在target relationから導出する。2.0がなければ1.5、どちらもなければneutralで、
 ranking独自倍率表や疑似targetを作らない。具体class／attributeを要求する特攻ではTargetContext resolverが実相性を
@@ -46,3 +47,5 @@ fallbackせず、礼装・支援も使用しない。
 - 特攻成立時もscenarioのNP Lvと固定OC1を別々のcanonical series軸としてexecutorが解決する。
 - 最大条件、個別target editor、support／CE比較は本phaseのrankingへ追加しない。
 - E3.12.1 calculator UIとscenario操作は変更しない。
+- attacker originだけを自己効果の根拠にしない。ADR-019のcanonical contribution scopeにより、主順位とarea寄与を
+  分離する。
