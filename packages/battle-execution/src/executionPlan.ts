@@ -65,6 +65,30 @@ function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpress
   return { kind: 'always' };
 }
 
+function conditionDecision(
+  condition: ConditionExpression,
+): 'unsupported' | 'userMayAssume' | 'evaluate' {
+  if (containsUnsupportedCondition(condition)) return 'unsupported';
+  return requiresUserAssumption(condition) ? 'userMayAssume' : 'evaluate';
+}
+
+function targetPredicateSelected(
+  scenario: ResolvedScenario,
+  target: Extract<ConditionExpression, { kind: 'targetPredicate' }>['predicate'],
+): boolean {
+  if (target.kind === 'classIdentity')
+    return (
+      scenario.targetContext.class.kind === 'concrete' &&
+      scenario.targetContext.class.classId === target.classId
+    );
+  if (target.kind === 'attributeIdentity')
+    return (
+      scenario.targetContext.attribute.kind === 'concrete' &&
+      scenario.targetContext.attribute.attribute === target.attribute
+    );
+  return scenario.targetContext.families.some(({ familyId }) => familyId === target.familyId);
+}
+
 function compileNpDamageOperation(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
@@ -77,11 +101,7 @@ function compileNpDamageOperation(
   const condition = npCondition(damage, baseInput.overcharge);
   const decisionPlan = {
     activation: condition.kind === 'always' ? ('automatic' as const) : ('user' as const),
-    condition: containsUnsupportedCondition(condition)
-      ? ('unsupported' as const)
-      : requiresUserAssumption(condition)
-        ? ('userMayAssume' as const)
-        : ('evaluate' as const),
+    condition: conditionDecision(condition),
   };
   const source: OperationSource = {
     origin: 'np',
@@ -103,14 +123,7 @@ function compileNpDamageOperation(
     if (projection.decision.state === 'none' || projection.decision.kind !== 'targetPredicate')
       return projection;
     const target = projection.decision.target;
-    const enabled =
-      target.kind === 'classIdentity'
-        ? scenario.targetContext.class.kind === 'concrete' &&
-          scenario.targetContext.class.classId === target.classId
-        : target.kind === 'attributeIdentity'
-          ? scenario.targetContext.attribute.kind === 'concrete' &&
-            scenario.targetContext.attribute.attribute === target.attribute
-          : scenario.targetContext.families.some(({ familyId }) => familyId === target.familyId);
+    const enabled = targetPredicateSelected(scenario, target);
     return {
       ...projection,
       outcome: enabled ? ('applied' as const) : ('notApplied' as const),

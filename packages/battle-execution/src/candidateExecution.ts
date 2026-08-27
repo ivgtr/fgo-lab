@@ -90,6 +90,11 @@ function evaluateConditionAgainstKnownFacts(
   return satisfiable.status === 'conflict' ? false : null;
 }
 
+function conditionResult(value: boolean | null): OperationResult['condition'] {
+  if (value === null) return 'unresolved';
+  return value ? 'satisfied' : 'unsatisfied';
+}
+
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
@@ -317,7 +322,7 @@ export function executeOrderedScenarioCandidate(
       results.push({
         operation,
         outcome,
-        condition: condition === null ? 'unresolved' : condition ? 'satisfied' : 'unsatisfied',
+        condition: conditionResult(condition),
         state: cloneBattleState(state),
         projection: createOperationProjection(
           operation,

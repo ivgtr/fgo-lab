@@ -23,4 +23,15 @@ export default tseslint.config(
       '@typescript-eslint/restrict-template-expressions': 'off',
     },
   },
+  {
+    files: [
+      'packages/battle-execution/src/{candidateExecution,candidatePreparation,candidateResult,executionPlan,targetContext}.ts',
+      'packages/calculation-application/src/{rankingScenario,targetContext}.ts',
+    ],
+    rules: {
+      'no-nested-ternary': 'error',
+      complexity: ['error', 70],
+      'max-lines-per-function': ['error', { max: 275, skipBlankLines: true, skipComments: true }],
+    },
+  },
 );
