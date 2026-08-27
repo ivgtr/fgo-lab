@@ -286,7 +286,6 @@ export function Calculator({
       attackerSkills: (attacker?.skills ?? []).slice(0, 3).map((skill, index) => ({
         skillId: skill.id,
         skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
-        enabled: false,
       })),
       mysticCode: null,
       support: null,
@@ -336,7 +335,6 @@ export function Calculator({
         attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
           skillId: skill.id,
           skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
-          enabled: false,
         })),
         effectDecisions: [],
         worldFactAssertions: [],

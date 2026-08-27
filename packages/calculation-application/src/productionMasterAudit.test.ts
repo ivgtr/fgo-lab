@@ -1384,6 +1384,8 @@ describe('production master damage quality ratchet', () => {
     const mutationKeys: string[] = [];
     const reachableKeys = new Set<string>();
     const ambiguousActivationDependencies: string[] = [];
+    const missingSelectedSources: string[] = [];
+    const staleDeselectedSources: string[] = [];
     let rawFieldMutationCount = 0;
     let rawRecipientMutationCount = 0;
 
@@ -1454,6 +1456,21 @@ describe('production master damage quality ratchet', () => {
           master,
           versions,
         );
+        for (const source of projection.activationSources) {
+          if (!rawMutationKeys.has(`${source.skillId}:${source.effectOccurrenceId}`)) continue;
+          const sourceEnabled = selected.effects.some(
+            (effect) =>
+              effect.source.origin === source.origin &&
+              effect.source.sourceInstanceId === source.sourceInstanceId &&
+              effect.source.skillId === source.skillId &&
+              effect.source.effectOccurrenceId === source.effectOccurrenceId &&
+              effect.explanation.code !== 'disabled',
+          );
+          if (!sourceEnabled)
+            missingSelectedSources.push(
+              `${servant.id}:${projection.projectionKey}:${source.skillId}:${source.effectOccurrenceId}`,
+            );
+        }
         for (const mutation of selected.effects.filter(
           (effect) =>
             effect.source.origin === 'attacker' &&
@@ -1464,6 +1481,47 @@ describe('production master damage quality ratchet', () => {
           reachableKeys.add(
             `${servant.id}:${mutation.source.skillId}:${mutation.source.effectOccurrenceId}`,
           );
+        const deselectedScenario = applyEffectPresentationDecision(
+          applyEffectPresentationDecision(scenario, projection, true, initial.effects),
+          projection,
+          false,
+          selected.effects,
+        );
+        const deselected = calculateScenario(deselectedScenario, master, versions);
+        for (const source of projection.activationSources) {
+          if (!rawMutationKeys.has(`${source.skillId}:${source.effectOccurrenceId}`)) continue;
+          const sourceStillApplied = deselected.effects.some(
+            (effect) =>
+              effect.source.origin === source.origin &&
+              effect.source.sourceInstanceId === source.sourceInstanceId &&
+              effect.source.skillId === source.skillId &&
+              effect.source.effectOccurrenceId === source.effectOccurrenceId &&
+              effect.outcome === 'applied',
+          );
+          const neededByAnotherIncludedEffect = deselected.effects.some((effect) => {
+            if (
+              effect.projectionKey === projection.projectionKey ||
+              effect.visibility !== 'visible' ||
+              !effect.activationSources.some(
+                (candidate) =>
+                  candidate.origin === source.origin &&
+                  candidate.sourceInstanceId === source.sourceInstanceId &&
+                  candidate.skillId === source.skillId &&
+                  candidate.effectOccurrenceId === source.effectOccurrenceId,
+              ) ||
+              effect.decision.state === 'none'
+            )
+              return false;
+            const decision = deselectedScenario.effectDecisions.find(
+              (candidate) => candidate.decisionKey === effect.decision.decisionKey,
+            );
+            return decision?.operationEnabled ?? effect.decision.plan.activation === 'automatic';
+          });
+          if (sourceStillApplied && !neededByAnotherIncludedEffect)
+            staleDeselectedSources.push(
+              `${servant.id}:${projection.projectionKey}:${source.skillId}:${source.effectOccurrenceId}`,
+            );
+        }
       }
     }
 
@@ -1486,5 +1544,7 @@ describe('production master damage quality ratchet', () => {
       '505100:2075650:8412:0',
     ]);
     expect(ambiguousActivationDependencies).toEqual([]);
+    expect(missingSelectedSources).toEqual([]);
+    expect(staleDeselectedSources).toEqual([]);
   }, 30_000);
 });

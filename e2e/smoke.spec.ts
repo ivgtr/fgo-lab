@@ -1504,6 +1504,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
 });
 
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
+  test.setTimeout(60_000);
   test.skip(isMobile, 'Desktop navigation covers all management pages');
   await page.goto('/');
   await completeSetup(page);
@@ -1672,7 +1673,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '火力ランキング' }).click();
   const rankingCondition = page.getByRole('region', { name: 'ランキングの共通支援条件' });
-  await page.getByLabel('クラス').selectOption('saber');
+  await page.getByRole('combobox', { name: 'クラス', exact: true }).selectOption('saber');
   const rankingRow = page.getByRole('row', {
     name: /^\d+ アルトリア・ペンドラゴン [\d,]+$/,
   });

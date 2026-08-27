@@ -147,14 +147,16 @@ export function applyEffectConditionDecision(
       next = applyEffectDecisionCommand(next, {
         kind: 'setEffectDecision',
         decisionKey: peerDecisionKey,
-        operationEnabled: peerDecision?.operationEnabled ?? peer.decision.state === 'enabled',
+        operationEnabled:
+          peerDecision?.operationEnabled ?? peer.decision.plan.activation === 'automatic',
         conditionSatisfaction: 'evaluate',
       });
     }
   return applyEffectDecisionCommand(next, {
     kind: 'setEffectDecision',
     decisionKey: projection.decision.decisionKey,
-    operationEnabled: current?.operationEnabled ?? projection.decision.state === 'enabled',
+    operationEnabled:
+      current?.operationEnabled ?? projection.decision.plan.activation === 'automatic',
     conditionSatisfaction: satisfied ? 'assumeSatisfied' : 'evaluate',
   });
 }
