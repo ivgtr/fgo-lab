@@ -47,7 +47,7 @@ function detailAtNpLevel(
     effects: execution.effects,
     effectInputs: execution.effectInputs,
     warnings: execution.effectWarnings,
-    areaSupport: null,
+    areaContribution: null,
     executionMetrics: { worldCandidateCount, scenarioCalculationCount },
   };
 }
@@ -65,7 +65,7 @@ export function calculateStandardRankingMatrix(
   const baseConditions: RankingConditions = { ...conditions, npLevel: 1 };
   for (const servant of includedRankingServants(master, profile, baseConditions)) {
     const plan = compileRankingExecutionPlan(servant, master, profile, baseConditions, versions);
-    const executions = executeRankingScenarios(plan.personalScenarios, master, versions);
+    const executions = executeRankingScenarios(plan.rankingScenarios, master, versions);
     for (const npLevel of NP_LEVELS) {
       const selected = executions[selectRankingExecutionIndex(executions, npLevel)]!;
       const detail = detailAtNpLevel(

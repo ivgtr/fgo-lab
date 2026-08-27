@@ -92,11 +92,11 @@ export interface RankingDetail {
   effects: CalculationExecution['effects'];
   effectInputs: CalculationExecution['effectInputs'];
   warnings: CalculationExecution['effectWarnings'];
-  areaSupport: {
-    scenario: ResolvedScenario;
-    input: DamageResolutionInput;
-    result: CalculationResult;
-    effects: CalculationExecution['effects'];
+  areaContribution: {
+    withoutAreaScenario: ResolvedScenario;
+    withoutAreaInput: DamageResolutionInput;
+    withoutAreaResult: CalculationResult;
+    withoutAreaEffects: CalculationExecution['effects'];
     warnings: CalculationExecution['effectWarnings'];
   } | null;
   executionMetrics: {

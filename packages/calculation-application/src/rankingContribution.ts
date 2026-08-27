@@ -1,21 +1,22 @@
-import type { EffectControlViewModel } from './effectControls';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
 
-function isAttackerEffect(control: EffectControlViewModel): boolean {
-  return ['attacker', 'passive', 'np'].includes(control.projection.source.origin);
+function isAttackerEffect(projection: EffectProjection): boolean {
+  return ['attacker', 'passive', 'np'].includes(projection.source.origin);
 }
 
-export function contributesToPersonalDamage(control: EffectControlViewModel): boolean {
+export function contributesToAttackerDamage(projection: EffectProjection): boolean {
   return (
-    isAttackerEffect(control) &&
-    (control.projection.contributionScope === 'personal' ||
-      control.projection.contributionScope === 'enemyApplied')
+    isAttackerEffect(projection) &&
+    (projection.contributionScope === 'personal' ||
+      projection.contributionScope === 'partyWide' ||
+      projection.contributionScope === 'enemyApplied')
   );
 }
 
-export function contributesAreaSupport(control: EffectControlViewModel): boolean {
-  return isAttackerEffect(control) && control.projection.contributionScope === 'partyWide';
+export function contributesAreaSupport(projection: EffectProjection): boolean {
+  return isAttackerEffect(projection) && projection.contributionScope === 'partyWide';
 }
 
-export function isSpecialAttack(control: EffectControlViewModel): boolean {
-  return control.projection.modifier === 'powerMod' || control.projection.modifier === 'npSpecial';
+export function isSpecialAttack(projection: EffectProjection): boolean {
+  return projection.modifier === 'powerMod' || projection.modifier === 'npSpecial';
 }

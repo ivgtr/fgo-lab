@@ -37,6 +37,14 @@ describe('ranking architecture', () => {
     expect(world).toContain('validateTargetCandidateConstraint');
     expect(factory).not.toMatch(/for \(const .*effectControls[\s\S]*calculateScenario/);
     expect(factory).not.toContain('MAX_SPECIAL_ATTACK_SCENARIOS');
+    expect(factory).not.toContain("from './effectDecision'");
+    const policy = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingExecutionPolicy.ts'),
+      'utf8',
+    );
+    expect(policy).not.toContain("from './effectDecision'");
+    expect(policy).not.toContain('applyTargetContextCommand');
+    expect(policy.split('\n').length).toBeLessThanOrEqual(180);
   });
 
   it('reuses one standard matrix when only NP level changes', async () => {

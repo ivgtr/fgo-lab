@@ -49,12 +49,12 @@ function calculateRankingCandidate(
   includeAreaSupport: boolean,
 ): RankingDetail {
   const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions);
-  const candidates = executeRankingScenarios(plan.personalScenarios, master, versions);
+  const candidates = executeRankingScenarios(plan.rankingScenarios, master, versions);
   const selectedIndex = selectRankingExecutionIndex(candidates, conditions.npLevel);
   const execution = candidates[selectedIndex]!;
-  const areaExecution =
-    includeAreaSupport && plan.areaScenarios[selectedIndex]
-      ? calculateScenario(plan.areaScenarios[selectedIndex], master, versions)
+  const withoutAreaExecution =
+    includeAreaSupport && plan.withoutAreaScenarios[selectedIndex]
+      ? calculateScenario(plan.withoutAreaScenarios[selectedIndex], master, versions)
       : null;
   return {
     servantId: servant.id,
@@ -64,18 +64,21 @@ function calculateRankingCandidate(
     effects: execution.effects,
     effectInputs: execution.effectInputs,
     warnings: execution.effectWarnings,
-    areaSupport: areaExecution
+    areaContribution: withoutAreaExecution
       ? {
-          scenario: areaExecution.scenario as Extract<CalculationScenario, { mode: 'resolved' }>,
-          input: areaExecution.input,
-          result: areaExecution.result,
-          effects: areaExecution.effects,
-          warnings: areaExecution.effectWarnings,
+          withoutAreaScenario: withoutAreaExecution.scenario as Extract<
+            CalculationScenario,
+            { mode: 'resolved' }
+          >,
+          withoutAreaInput: withoutAreaExecution.input,
+          withoutAreaResult: withoutAreaExecution.result,
+          withoutAreaEffects: withoutAreaExecution.effects,
+          warnings: withoutAreaExecution.effectWarnings,
         }
       : null,
     executionMetrics: {
       worldCandidateCount: plan.worldCandidateCount,
-      scenarioCalculationCount: 1 + candidates.length + (areaExecution ? 1 : 0),
+      scenarioCalculationCount: 1 + candidates.length + (withoutAreaExecution ? 1 : 0),
     },
   };
 }
