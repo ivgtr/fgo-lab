@@ -223,7 +223,7 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 | FR-RANK-010 | 単発計算と同じ計算コア、効果解決、丸め規則を使用し、ランキング専用の簡易式を持たない |
 | FR-RANK-011 | `unsupported`な候補を通常順位へ混在させず、対象外理由を確認できる |
 | FR-RANK-012 | 標準比較と所持戦力を別modeとし、保存値のない候補へ標準値をfallbackしない |
-| FR-RANK-013 | 変更可能な計算条件は比較mode、NP Lv、class等倍／有利、自己buff、特攻なし／成立の5項目だけとし、廃止条件をhidden stateやlegacy URLとして残さない |
+| FR-RANK-013 | 変更可能な計算条件は比較mode、NP Lv、class等倍／有利、自己buff、特攻なし／成立、外部fieldなし／成立の6項目だけとし、廃止条件をhidden stateやlegacy URLとして残さない |
 | FR-RANK-014 | 計算条件と表示filterを別stateとし、filter変更だけでは全候補を再計算しない |
 | FR-RANK-015 | 閉じた行は順位・対象・主damage・主要属性だけを表示し、一度に一行だけcanonical evidenceの詳細を展開する |
 | FR-RANK-016 | 使用した`CalculationScenario`をそのまま計算機へ引き継ぎ、再計算したdamage・effect・condition・procを一致させる |

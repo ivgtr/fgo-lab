@@ -660,7 +660,7 @@ E4.1の計算経路はcanonical executorへ統合済みだったが、ranking po
 7. standard workerはNP levelを除くcanonical policyでmatrixをcacheし、NP切替では再compileしない。
 8. production gateで全420騎のneutral affinity、partyOther混入0、area contribution、最大world candidate数、scenario calculation数、20 digestを固定する。
 
-calculator、E4.1の5項目condition UI、ranking closed rowは変更しない。area contributionは詳細だけへ表示し、
+calculator、E4.1のcompact condition UI、ranking closed rowは変更しない。area contributionは詳細だけへ表示し、
 新しいranking inputを追加しない。E5は本節の全gate完了後に開始する。
 
 ## 16. E4.1.2: condition provenance and finite field worlds

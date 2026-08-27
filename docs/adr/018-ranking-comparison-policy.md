@@ -1,4 +1,4 @@
-# ADR-018: rankingを5項目の比較policyへ限定する
+# ADR-018: rankingを少数の比較policyへ限定する
 
 - Status: accepted
 - Date: 2026-08-27
@@ -11,19 +11,21 @@ trait、人数、礼装、支援等をranking conditionにも露出した。こ�
 
 ## Decision
 
-共有可能な`RankingConditions`は次の5項目だけとする。
+共有可能な`RankingConditions`は次の6項目だけとする。最初の5項目はE4.1で固定し、6項目目のfield policyは
+ADR-020で外部fieldと自前生成fieldを混同しないために追加した。
 
 - 標準比較／所持戦力
 - NP1〜5
 - class等倍／正当に取り得る最大有利
 - 自己火力効果を含む／除外
 - 特攻なし／成立可能な最大damage
+- 外部fieldなし／成立可能な最大damage
 
 残りは`STANDARD_RANKING_SCENARIO_POLICY`が所有する固定基準とする。自然上限、Fou+1000、skill Lv10、
 OC1、attribute等倍、HP100%、star 0、初期turn／BP、礼装・魔術礼装・支援なし、quantity minimum、
 proc成功、chained最大である。Web、worker、testへ固定値を複製しない。
 
-`RankingPolicy -> CalculationScenario`は`rankingScenario`だけが所有する。Webは5項目を送信し、workerは
+`RankingPolicy -> CalculationScenario`は`rankingScenario`だけが所有する。Webは6項目を送信し、workerは
 application facadeを呼ぶだけで、TargetContext、effect、proc、raw Atlas語彙を解釈しない。表示filterは
 計算conditionと別stateとし、filter変更で再計算しない。
 

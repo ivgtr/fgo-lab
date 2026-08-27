@@ -90,15 +90,15 @@ trait／class／attribute／familyは既存のconstraint evaluatorを正本と�
 - worker cache keyは表示labelやobject identityではなく、buildとcanonical policyから作る。
 - production testは一つのranking matrixからclass relation×special policy×NP1〜5を検証し、unit／production／goldenの
   実行目的を分ける。production gate自体は省略しない。
-- E4.1の5項目UIとcalculator UIは変更しない。E5は本ADRの完了まで開始しない。
+- E4.1のcompact UIとcalculator UIは維持する。field policyの一項目だけはADR-020に従う。E5は本ADRの完了まで開始しない。
 
 ## Production result
 
 master artifact `20260828.2`では、terminal operationのscopeは`personal: 2,574`、
 `partyWide: 849`、`partyOther: 34`、`enemyApplied: 331`である。標準NP1でarea contributionが0より大きい
-サーヴァントは176騎、主順位へ適用された一意な`partyWide` projectionは246件、`partyOther`は0件である。
+サーヴァントはrecipient条件の通常評価後172騎、主順位へ適用された一意な`partyWide` projectionは230件、`partyOther`は0件である。
 class neutralの全420騎は`classAffinity === 1`を満たす。
 
-特攻成立時の最大world candidate数は12、detail一件の最大scenario calculation数は14となった。
+field policyを含む最大world candidate数は16、detail一件の最大scenario calculation数は17となった。
 旧実装の最大4,096 effect subset探索とeffectごとの再compileは存在しない。standard workerは
-class relation、self buff policy、special attack policyをmatrix keyとし、NP1〜5を一つのprepared executionから返す。
+class relation、self buff policy、special attack policy、field policyをmatrix keyとし、NP1〜5を一つのprepared executionから返す。

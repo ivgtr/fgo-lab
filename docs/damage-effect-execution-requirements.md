@@ -425,7 +425,7 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 7. candidate executionはNP1〜5 seriesを返し、NP切替でsource compileまたはeffect探索を再実行しない。
 8. 探索上限、曖昧性、入力不足、unsupportedを別のtyped resultとしてfail-closedにする。
 9. workerはcanonical plan／resultをcacheし、React presentationやlabelを計算key・意味判定へ使わない。
-10. E4.1の5項目UIとE3.12.1 calculator UIを変更せず、完了までE5を開始しない。
+10. E4.1の5項目へfield policy一項目だけを追加したcompact UIとE3.12.1 calculator UIを維持し、完了までE5を開始しない。
 
 ### 8.16 ranking condition provenanceとfield policy
 
