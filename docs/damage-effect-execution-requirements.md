@@ -39,7 +39,7 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 - サーヴァント変更時に仮想Lvも選択先のレアリティへ更新する挙動
 - Lvショートカットを100／120とし、90を再追加しないこと
 - クラス相性と属性相性の選択
-- 攻撃役の三つの自身スキルをスキル単位で有効化し、レベルを変更する操作
+- 攻撃役の三つの自身スキルについて、アイコン、名称、スキルLv、保存値／仮想値／一時変更、Lvリセットを確認・変更する操作
 - `自身の適用内容`で、宝具火力へ関係する条件付き効果をon/offする操作
 - 支援役の追加、保存セットの呼び出し、支援スキルの有効化とレベル変更
 - クイック操作と直接入力が同じ計算状態を表すこと
@@ -61,12 +61,13 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 - 中間効果によって成立した最終的な火力効果は表示する。
 - 表示される最終火力効果は、ゲーム内で確定発動するものも含めて原則操作可能にする。確定効果は既定onとし、offは比較のため計算から除外することを意味する。
 - on/offによる計算への包含、ゲーム内の発動形態、条件成立、確率結果を別概念として保持する。onは条件やworld factを強制成立させない。
-- 上記の内部状態数をUI操作数へ直接投影しない。applicationはeffect chip一操作を、必要なsource activation、effect inclusion、effect-local condition decisionへatomicに展開する。HP、star、count等のcanonical入力条件はこのcommandで強制成立させない。
-- skill activationはiconと名称をまとめたcompact toggleで操作し、独立した常設の「使用する／使用中」button列を設けない。skill level入力はtoggle外に保つ。
+- 上記の内部状態数をUI操作数へ直接投影しない。applicationはeffect chip一操作をeffect inclusionとeffect-local condition decisionへatomicに展開し、executorは選択後の集合からsource activationを再導出する。HP、star、count等のcanonical入力条件はこのcommandで強制成立させない。
+- 攻撃役のskill rowは静的なLv設定表示とし、source activationのtoggle、`aria-pressed`、選択枠、check markを持たせない。攻撃役の火力効果を変更する唯一のUIは`自身の適用内容`とする。
 - inputなしeffectは内容幅で横並びにし、通常表示は効果名と「値・短い由来」を原則2行以内とする。完全なsource・状態説明はaccessible nameとtooltipへ保持する。
 - 条件成立を利用者が選ぶeffectと排他effectは、effect chip自体をtoggleまたはsingle-choiceとする。別の全幅condition buttonを追加しない。
 - 単純な確率火力effectでは、onを成功scenario、offを失敗scenarioとして使用し、確率だけを理由に別入力や`inputRequired`を追加しない。連鎖判定は成功回数へ集約する。
-- 使用スキルの有効化、effectの包含、condition成立、proc成立を互いから推論しない。skillをoffにすると同一sourceのterminal effectとhidden mutationをすべて計算外にする。
+- 攻撃役source activationは独立したscenario入力にせず、選択中terminal effectのsourceと`activationSources`の依存閉包から毎回導出する。effectをoffにした後、他の選択中effectが要求しないsourceやhidden mutationを残さない。
+- 支援・魔術礼装のsource activationは、それぞれの構成・使用操作として明示入力を維持し、攻撃役の導出規則を機械的に適用しない。
 - 条件付き特攻宝具は基礎宝具ダメージを常に実行し、特攻補正の包含とcondition成立だけを個別に操作する。
 - onでもカード不一致、付与対象不一致、効果順違反、未解決parameterを迂回してはならない。
 
@@ -130,7 +131,7 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 ```text
 初期BattleState
   -> パッシブ
-  -> 選択された自身スキル
+  -> 選択されたterminal effectから導出した自身スキルoperation
   -> 概念礼装
   -> 選択された支援・魔術礼装
   -> 宝具ダメージ前Function
@@ -286,7 +287,7 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 10. trait制約IRはactorの初期trait、後から付与・解除されるstate trait、両者の論理和であるcombined predicateを別scopeとして保持する。actor条件はcombined、state専用条件はstateだけを読む。初期negativeだけではstateを否定せず、positive stateはcombinedを成立させる。この規則をcondition evaluatorとsolverで共有する。
 11. 初期制約検証が失敗した場合、選択中の条件付きoperationをall-or-nothingで非適用とし、競合後のdamage inputへmodifierを残さない。
 12. context mutationは初期traitを書き換えずstate traitだけを更新し、各operationのcandidate stateからcombined predicateを再導出する。付与後と解除後の条件評価は同じ時点のstateを使用する。
-13. 攻撃役スキル由来のhidden context mutationは、スキルがmaster上に存在することだけでは自動実行しない。選択された最終火力effectとのsource skill activationまたは論理的trait prerequisiteをcanonical operationへ保持し、対応するdecisionが有効な場合だけ候補stateを生成する。
+13. 攻撃役スキル由来のhidden context mutationは、スキルがmaster上に存在することだけでは自動実行しない。選択された最終火力effectとの同一source dependencyまたは論理的trait prerequisiteをcanonical operationへ保持し、対応するterminal decisionが有効な場合だけ候補stateを生成する。攻撃役sourceの独立したenabled入力は持たない。
 14. choiceを持つhidden mutationは、同一skillという理由だけで全候補を有効化しない。選択effectのconditionが候補traitをすべての充足枝で要求する場合だけ結び付け、ORの一枝を暗黙採用しない。
 15. hidden mutationのactivation linkはworld factではない。effect-local成立を具体的traitへ変換せず、候補stateの制約検証に成功したoperationだけをcommitする。
 
