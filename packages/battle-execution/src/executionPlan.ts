@@ -153,6 +153,7 @@ function compileNpDamageOperation(
       order: operationOrder,
       phase: 'npDamage',
       source,
+      contributionScope: 'personal',
       condition,
       decisionKey:
         decisionPlan.activation === 'user' || decisionPlan.condition === 'userMayAssume'

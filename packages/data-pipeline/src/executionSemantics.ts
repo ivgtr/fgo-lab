@@ -1,4 +1,5 @@
 import type {
+  CanonicalEffectContributionScope,
   CanonicalTargetPolicy,
   EffectExecutionOperation,
   ModifierValueExpression,
@@ -74,6 +75,32 @@ export function normalizeTargetPolicy(
   return 'unresolved';
 }
 
+export function normalizeContributionScope(
+  target: string,
+  targetTeam: string | undefined = undefined,
+): CanonicalEffectContributionScope | null {
+  if (targetTeam === 'enemy' || target.startsWith('enemy')) return 'enemyApplied';
+  if (
+    target === 'self' ||
+    target === 'commandTypeSelfTreasureDevice' ||
+    target === 'ptOne' ||
+    target === 'ptOneHpLowestRate' ||
+    target === 'ptRandom'
+  )
+    return 'personal';
+  if (target === 'ptAll' || target === 'ptFull') return 'partyWide';
+  if (
+    target === 'ptOther' ||
+    target === 'ptOtherFull' ||
+    target === 'ptSelfAnotherFirst' ||
+    target === 'ptOneOther' ||
+    target === 'ptselectOneSub' ||
+    target === 'fieldOther'
+  )
+    return 'partyOther';
+  return null;
+}
+
 function routeDamageModifier(buffTypes: readonly string[], cardTypes: readonly string[]) {
   if (buffTypes.some((type) => nonDamageBuffs.has(type))) return null;
   const expectedRecipient = buffTypes.some((type) =>
@@ -147,10 +174,26 @@ export function normalizeExecutionSemantics(input: {
 }): EffectExecutionOperation[] {
   const target = input.fn.funcTargetType ?? 'unknown';
   const policy = normalizeTargetPolicy(target, input.fn.funcTargetTeam);
+  const contributionScope = normalizeContributionScope(target, input.fn.funcTargetTeam);
   const buffTypes = (input.fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
   const potentiallyDamageRelevant = isPotentiallyDamageRelevant(target, buffTypes);
   const targetMismatch = potentiallyDamageRelevant ? ('unsupported' as const) : ('ignore' as const);
   const operations: EffectExecutionOperation[] = [];
+
+  if (
+    contributionScope === null &&
+    (potentiallyDamageRelevant ||
+      input.cardTypeMutation !== null ||
+      Object.values(input.contextChanges).some((traits) => traits.length > 0))
+  )
+    return [
+      {
+        kind: 'unresolved',
+        targetPolicy: policy,
+        reason: 'targetPolicy',
+        damageRelevant: potentiallyDamageRelevant,
+      },
+    ];
 
   if (input.fn.funcType === 'addBattlePoint') {
     const values = input.parameterSets.flatMap((set) => set);
@@ -196,6 +239,7 @@ export function normalizeExecutionSemantics(input: {
       mutation: 'addTrait',
       scope: 'field',
       targetPolicy: policy,
+      contributionScope: contributionScope!,
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -205,6 +249,7 @@ export function normalizeExecutionSemantics(input: {
       mutation: 'removeTrait',
       scope: 'field',
       targetPolicy: policy,
+      contributionScope: contributionScope!,
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -214,6 +259,7 @@ export function normalizeExecutionSemantics(input: {
       mutation: 'addTrait',
       scope: 'recipientState',
       targetPolicy: policy,
+      contributionScope: contributionScope!,
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -223,6 +269,7 @@ export function normalizeExecutionSemantics(input: {
       mutation: 'suppressInitialTrait',
       scope: 'recipientState',
       targetPolicy: policy,
+      contributionScope: contributionScope!,
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -231,6 +278,7 @@ export function normalizeExecutionSemantics(input: {
     operations.push({
       kind: 'cardTypeMutation',
       targetPolicy: 'attackerNpCard',
+      contributionScope: 'personal',
       card: input.cardTypeMutation.card,
       stateTraits: input.cardTypeMutation.stateTraits,
       semanticSupport: 'supported',
@@ -238,6 +286,7 @@ export function normalizeExecutionSemantics(input: {
 
   const common = {
     targetPolicy: policy,
+    contributionScope: contributionScope!,
     expectedRecipient: 'attacker' as const,
     targetMismatch,
     semanticSupport: 'supported' as const,
@@ -264,6 +313,7 @@ export function normalizeExecutionSemantics(input: {
       operations.push({
         kind: 'damageModifier',
         targetPolicy: policy,
+        contributionScope: contributionScope!,
         expectedRecipient: route.expectedRecipient,
         targetMismatch,
         semanticSupport: 'supported',

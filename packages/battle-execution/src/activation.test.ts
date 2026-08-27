@@ -33,6 +33,7 @@ describe('attacker skill mutation activation planning', () => {
       order: 0,
       phase: 'attackerSkill' as const,
       source,
+      contributionScope: 'personal' as const,
       condition: { kind: 'always' as const },
       decisionPlan: { activation: 'automatic' as const, condition: 'evaluate' as const },
       sourceEnabled: true,

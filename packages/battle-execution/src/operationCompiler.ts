@@ -1,6 +1,7 @@
 import type {
   ActorCountPredicate,
   CanonicalInputDefinition,
+  CanonicalEffectContributionScope,
   EffectExecutionOperation,
   MasterEffect,
   ModifierValueExpression,
@@ -23,6 +24,7 @@ import {
 import {
   canNormalizeDamageEffect,
   operationRecipient,
+  resolveContributionScope,
   resolveTargetPolicy,
   type Origin,
 } from './effectRouting';
@@ -310,7 +312,12 @@ function sourceIdentity(source: SourceEffect): OperationSource {
   };
 }
 
-function baseOperation(source: SourceEffect, order: number, suffix: string) {
+function baseOperation(
+  source: SourceEffect,
+  contributionScope: CanonicalEffectContributionScope,
+  order: number,
+  suffix: string,
+) {
   const key = decisionKey(source);
   const identity = operationKey(source);
   const condition = effectCondition(
@@ -329,6 +336,7 @@ function baseOperation(source: SourceEffect, order: number, suffix: string) {
         ? ('damageEvaluation' as const)
         : source.phase,
     source: sourceIdentity(source),
+    contributionScope: resolveContributionScope(source.origin, contributionScope),
     activationSources: [],
     condition,
     decisionKey: key,
@@ -503,7 +511,12 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
     if (semantic.kind === 'contextMutation') {
       if (semantic.mutation === 'addQuantity') {
         operations.push({
-          ...baseOperation(source, order++, uniqueSuffix(`quantity:${semantic.quantity}`)),
+          ...baseOperation(
+            source,
+            'personal',
+            order++,
+            uniqueSuffix(`quantity:${semantic.quantity}`),
+          ),
           decisionKey: null,
           decisionPlan: { activation: 'automatic', condition: 'evaluate' },
           kind: 'addQuantity',
@@ -524,6 +537,7 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
       const base = {
         ...baseOperation(
           source,
+          semantic.contributionScope,
           order++,
           uniqueSuffix(`${semantic.mutation}-${String(suffixScope)}:${semantic.trait}`),
         ),
@@ -540,33 +554,53 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
       else operations.push({ ...base, kind: semantic.mutation, scope });
     } else if (semantic.kind === 'cardTypeMutation')
       operations.push({
-        ...baseOperation(source, order++, uniqueSuffix(`card:${semantic.card}`)),
+        ...baseOperation(
+          source,
+          semantic.contributionScope,
+          order++,
+          uniqueSuffix(`card:${semantic.card}`),
+        ),
         kind: 'changeCardType',
         card: semantic.card,
         stateTraits: semantic.stateTraits,
       });
     else if (semantic.kind === 'modifierRateChange')
       operations.push({
-        ...baseOperation(source, order++, uniqueSuffix('rate')),
+        ...baseOperation(source, semantic.contributionScope, order++, uniqueSuffix('rate')),
         kind: 'changeModifierRate',
         modifier: semantic.modifier,
         ratePermille: selectedValue(source, semantic)!,
       });
     else if (semantic.kind === 'ignoreDefense')
       operations.push({
-        ...baseOperation(source, order++, uniqueSuffix('ignore-defense')),
+        ...baseOperation(
+          source,
+          semantic.contributionScope,
+          order++,
+          uniqueSuffix('ignore-defense'),
+        ),
         kind: 'ignoreDefense',
       });
     else if (semantic.kind === 'ignoreDamageCut')
       operations.push({
-        ...baseOperation(source, order++, uniqueSuffix('ignore-damage-cut')),
+        ...baseOperation(
+          source,
+          semantic.contributionScope,
+          order++,
+          uniqueSuffix('ignore-damage-cut'),
+        ),
         kind: 'ignoreDamageCut',
       });
     else if (semantic.kind === 'damageModifier') {
       const operationValue = selectedValue(source, semantic)!;
       const operationExpression = selectedValueExpression(source, semantic);
       operations.push({
-        ...baseOperation(source, order++, uniqueSuffix(`modifier:${semantic.modifier}`)),
+        ...baseOperation(
+          source,
+          semantic.contributionScope,
+          order++,
+          uniqueSuffix(`modifier:${semantic.modifier}`),
+        ),
         kind: 'addModifier',
         modifier: semantic.modifier,
         valuePermille: operationValue * semantic.sign,
@@ -623,6 +657,18 @@ function makeProjection(
     requiredInputs: runtimeInputDefinitions(source),
     modifier,
     source: sourceIdentity(source),
+    contributionScope: resolveContributionScope(
+      source.origin,
+      source.effect.execution.find(
+        (
+          operation,
+        ): operation is Exclude<
+          EffectExecutionOperation,
+          | { kind: 'nonDamage' | 'unresolved' }
+          | { kind: 'contextMutation'; mutation: 'addQuantity' }
+        > => 'contributionScope' in operation,
+      )?.contributionScope ?? 'personal',
+    ),
     activationSources: [],
     executionSupport: 'unsupported',
     outcome: 'notApplied',

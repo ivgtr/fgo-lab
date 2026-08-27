@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(32),
+  schemaVersion: z.literal(33),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -142,6 +142,14 @@ const canonicalTargetPolicySchema = z.enum([
 ]);
 export type CanonicalTargetPolicy = z.infer<typeof canonicalTargetPolicySchema>;
 
+const effectContributionScopeSchema = z.enum([
+  'personal',
+  'partyWide',
+  'partyOther',
+  'enemyApplied',
+]);
+export type CanonicalEffectContributionScope = z.infer<typeof effectContributionScopeSchema>;
+
 const canonicalValueSetsSchema = z.tuple([
   z.array(z.number().nullable()).max(10),
   z.array(z.number().nullable()).max(10),
@@ -219,6 +227,7 @@ const effectInputQuantityConditionSchema = z.object({
 
 const valuedExecutionFields = {
   targetPolicy: canonicalTargetPolicySchema,
+  contributionScope: effectContributionScopeSchema,
   expectedRecipient: z.enum(['attacker', 'target']),
   targetMismatch: z.enum(['ignore', 'unsupported']),
   values: canonicalValueSetsSchema,
@@ -252,6 +261,7 @@ const effectExecutionOperationSchema = z.union([
   z.object({
     kind: z.enum(['ignoreDefense', 'ignoreDamageCut']),
     targetPolicy: canonicalTargetPolicySchema,
+    contributionScope: effectContributionScopeSchema,
     expectedRecipient: z.enum(['attacker', 'target']),
     targetMismatch: z.enum(['ignore', 'unsupported']),
     semanticSupport: z.enum(['supported', 'unresolved']),
@@ -259,6 +269,7 @@ const effectExecutionOperationSchema = z.union([
   z.object({
     kind: z.literal('cardTypeMutation'),
     targetPolicy: z.literal('attackerNpCard'),
+    contributionScope: z.literal('personal'),
     card: z.enum(['buster', 'arts', 'quick']),
     stateTraits: z.array(z.string().min(1)),
     semanticSupport: z.enum(['supported', 'unresolved']),
@@ -268,6 +279,7 @@ const effectExecutionOperationSchema = z.union([
     mutation: z.enum(['addTrait', 'removeTrait', 'suppressInitialTrait']),
     scope: z.enum(['field', 'recipientState']),
     targetPolicy: canonicalTargetPolicySchema,
+    contributionScope: effectContributionScopeSchema,
     trait: z.string().min(1),
     damageRelevant: z.boolean(),
   }),

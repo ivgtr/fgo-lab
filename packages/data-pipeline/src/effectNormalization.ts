@@ -16,7 +16,11 @@ import type {
   AtlasTraitRef,
 } from './atlasContract';
 import { canonicalTargetPredicate } from './targetTaxonomy';
-import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
+import {
+  normalizeContributionScope,
+  normalizeExecutionSemantics,
+  normalizeTargetPolicy,
+} from './executionSemantics';
 
 export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
   1: 'arts',
@@ -1576,6 +1580,16 @@ export function normalizeFunctions(
                           referencedFunction.funcTargetType ?? 'unknown',
                           referencedFunction.funcTargetTeam,
                         ),
+                        contributionScope:
+                          normalizeContributionScope(
+                            referencedFunction.funcTargetType ?? 'unknown',
+                            referencedFunction.funcTargetTeam,
+                          ) ??
+                          (() => {
+                            throw new TypeError(
+                              `unresolved_referenced_contribution_scope:${referencedFunction.funcTargetType ?? 'unknown'}`,
+                            );
+                          })(),
                         trait: trait.name,
                         damageRelevant: true,
                       },

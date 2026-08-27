@@ -1,12 +1,22 @@
 import type {
+  CanonicalEffectContributionScope,
   CanonicalTargetPolicy,
   EffectExecutionOperation,
   MasterEffect,
 } from '@fgo-lab/master-data';
-import type { OperationSource } from './contracts';
+import type { EffectContributionScope, OperationSource } from './contracts';
 
 export type Origin = OperationSource['origin'];
 export type Recipient = 'attacker' | 'target';
+
+export function resolveContributionScope(
+  origin: Origin,
+  scope: CanonicalEffectContributionScope,
+): EffectContributionScope {
+  if (origin === 'support' || origin === 'mysticCode') return 'external';
+  if (origin === 'craftEssence') return 'personal';
+  return scope;
+}
 
 export function resolveTargetPolicy(
   origin: Origin,

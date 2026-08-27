@@ -178,6 +178,7 @@ describe('master validation', () => {
                   sign: 1,
                   card: null,
                   targetPolicy: 'sourceSelf',
+                  contributionScope: 'personal',
                   expectedRecipient: 'attacker',
                   targetMismatch: 'unsupported',
                   values,

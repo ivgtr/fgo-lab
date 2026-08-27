@@ -39,6 +39,7 @@ describe('applied effect interaction rendering', () => {
           effectId: 'effect',
           effectOccurrenceId: 'effect:0',
         },
+        contributionScope: 'personal',
         activationSources: [],
         executionSupport: 'supported',
         outcome: 'applied',

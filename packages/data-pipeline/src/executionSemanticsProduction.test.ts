@@ -236,6 +236,41 @@ describe('production canonical execution semantics', () => {
     });
   });
 
+  it('ratchets canonical contribution scopes independently from target routing', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const scoped = allEffects(master)
+      .flatMap((effect) => effect.execution)
+      .filter((operation) => 'contributionScope' in operation);
+    const terminal = scoped.filter((operation) =>
+      [
+        'damageModifier',
+        'modifierRateChange',
+        'ignoreDefense',
+        'ignoreDamageCut',
+        'cardTypeMutation',
+      ].includes(operation.kind),
+    );
+    const counts = (operations: typeof scoped) =>
+      operations.reduce<Record<string, number>>((result, operation) => {
+        result[operation.contributionScope] = (result[operation.contributionScope] ?? 0) + 1;
+        return result;
+      }, {});
+    expect(counts(scoped)).toEqual({
+      personal: 2_605,
+      partyWide: 857,
+      partyOther: 39,
+      enemyApplied: 345,
+    });
+    expect(counts(terminal)).toEqual({
+      personal: 2_574,
+      partyWide: 849,
+      partyOther: 34,
+      enemyApplied: 331,
+    });
+  });
+
   it('keeps modifier values exactly equal to the former execution value source', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),

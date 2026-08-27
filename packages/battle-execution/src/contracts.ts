@@ -9,6 +9,8 @@ import type {
 import type { TargetAttributeContext, TargetClassContext, TargetPredicate } from '@fgo-lab/schema';
 
 export type ActorScope = 'attacker' | 'target';
+export type EffectContributionScope =
+  'personal' | 'partyWide' | 'partyOther' | 'enemyApplied' | 'external';
 export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
 export type CardType = 'buster' | 'arts' | 'quick';
 export type CanonicalExclusiveGroup = 'worldAttribute' | 'fieldRealm' | 'npCardForm';
@@ -97,6 +99,7 @@ interface OperationBase {
   order: number;
   phase: ExecutionPhase;
   source: OperationSource;
+  contributionScope: EffectContributionScope;
   condition: ConditionExpression;
   decisionKey: string | null;
   decisionPlan: OperationDecisionPlan;
@@ -337,6 +340,7 @@ export interface EffectProjection {
   requiredInputs: readonly CanonicalInputDefinition[];
   modifier: ModifierKind | 'npSpecial' | 'cardTypeChange' | null;
   source: OperationSource;
+  contributionScope: EffectContributionScope;
   activationSources: readonly OperationSource[];
   executionSupport: 'supported' | 'unsupported';
   outcome: OperationOutcome;

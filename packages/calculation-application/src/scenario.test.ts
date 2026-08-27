@@ -44,6 +44,19 @@ function parseTestMaster(input: unknown) {
         effect['gameActivation'] ??= gameActivation;
         effect['proc'] ??= { kind: 'guaranteed' };
         effect['procSelection'] ??= { kind: 'effectInclusion' };
+        for (const operation of (effect['execution'] as Record<string, unknown>[] | undefined) ??
+          [])
+          if ('targetPolicy' in operation && !('contributionScope' in operation)) {
+            const policy = operation['targetPolicy'];
+            operation['contributionScope'] =
+              policy === 'enemy'
+                ? 'enemyApplied'
+                : policy === 'partyMember'
+                  ? 'partyWide'
+                  : policy === 'partyOther'
+                    ? 'partyOther'
+                    : 'personal';
+          }
       }
   };
   for (const servant of candidate.servants) {

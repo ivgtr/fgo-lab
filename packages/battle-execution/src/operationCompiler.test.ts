@@ -115,6 +115,7 @@ function modifier(
   return {
     kind: 'damageModifier',
     targetPolicy: 'sourceSelf',
+    contributionScope: 'personal',
     expectedRecipient: 'attacker',
     targetMismatch: 'unsupported',
     semanticSupport: 'supported',
@@ -205,6 +206,7 @@ describe('canonical operation compilation', () => {
           mutation: 'addTrait',
           scope: 'field',
           targetPolicy: 'sourceSelf',
+          contributionScope: 'personal',
           trait: 'fieldSunlight',
           damageRelevant: true,
         },
@@ -267,6 +269,7 @@ describe('canonical operation compilation', () => {
     const hpModifier: EffectExecutionOperation = {
       kind: 'damageModifier',
       targetPolicy: 'partyMember',
+      contributionScope: 'partyWide',
       expectedRecipient: 'attacker',
       targetMismatch: 'unsupported',
       semanticSupport: 'supported',
