@@ -1090,8 +1090,8 @@ test('Jade Rabbit replaces NP form state with the selected final card', async ({
   await useAllAttackerSkills(page);
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const busterForm = ownEffects.getByRole('radio', { name: /^月下：/ });
-  const artsForm = ownEffects.getByRole('radio', { name: /^日輪：/ });
+  const busterForm = ownEffects.getByRole('radio', { name: /^月下、有効/ });
+  const artsForm = ownEffects.getByRole('radio', { name: /^日輪、有効/ });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
   const effectiveInput = page.getByLabel('計算に使用する最終値');
   await effectiveInput.locator('summary').click();
