@@ -376,6 +376,18 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 9. HP閾値不成立はmemberの`notApplied`であり、skill全体を`unsupported`にしない。範囲外、非整数、
    重複、condition方向・target・operation semantics不一致はartifact生成を失敗させる。
 
+### 8.13 presentation stateとchained proc activation
+
+1. accessible nameの不成立理由はapplicationのtyped presentation stateから生成し、Webが`outcome`だけで推測しない。
+2. 手動除外、proc失敗、source未使用、condition不成立、condition未選択、unsupported、impossibleを相互に区別する。
+3. `条件不成立`は実在するcanonical conditionをevaluatorがfalseとした場合だけ使用する。
+4. `proc.kind`は確率判定構造だけを所有し、game activation、source activation、既定成功回数を所有しない。
+5. chained procは成功回数inputとcanonical default policyをmaster IRへ持ち、resolved countから実行時selectionを導出する。
+6. chained procのeffect exclusionはscenarioへ保存せず、成功回数0をOFF、1以上をONの唯一状態とする。
+7. chained chip commandはsource／activationSourcesの依存処理を通常のpresentation commandと共有する。
+8. chained配置、input、default、conditionを一意に正規化できないartifactは生成を失敗させ、runtime fallbackを持たない。
+9. E3.12のvisible text、DOM layout、PC／390px／320px VRT、density ratchetを変更しない。
+
 ## 9. 受入条件
 
 - [x] §3のフロントエンド入出力体験が、承認済みUI baselineと回帰テストで維持されている。

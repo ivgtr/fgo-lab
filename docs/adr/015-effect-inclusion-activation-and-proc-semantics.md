@@ -28,6 +28,15 @@ date: 2026-08-27
 - effect inclusion、proc結果、world fact、quantity inputは互いを暗黙変更しない。
 - 旧decision形式を読み替えるfallbackは持たない。
 
+### Accessible state契約
+
+applicationはvisible effectごとに、`applied`、`manuallyExcluded`、`procFailed`、
+`sourceInactive`、`conditionUnsatisfied`、`conditionUnselected`、`unsupported`、`impossible`の
+いずれか一つをpresentation stateとして導出する。Webは`outcome !== applied`を一律の
+`条件不成立`へ読み替えない。`条件不成立`はcanonical conditionが存在し、evaluatorがfalseを返した場合だけ、
+`条件未選択`はeffect-local condition decisionが未選択の場合だけ使用する。手動除外、proc失敗、source未使用、
+unsupportedは互いに排他的な理由として読み上げる。visible textとlayoutはE3.12 baselineから変更しない。
+
 ## Proc正規化
 
 Atlas固有の`Rate`はdata-pipelineだけが解釈する。
@@ -39,6 +48,14 @@ Atlas固有の`Rate`はdata-pipelineだけが解釈する。
 - 範囲外、符号列が曖昧、Rate系列がlevel内で不一致、異種operationを一意に束ねられない場合はartifact生成を失敗させる。
 
 確率は期待値や乱数へ変換しない。単純判定の具体的な結果はeffectのON/OFFで選び、確率だけを理由に`inputRequired`へしない。
+
+`proc.kind`は判定構造だけを表し、operation activationを決定しない。master effectは別の
+`procSelection`として、通常のeffect inclusionか、成功回数inputとそのcanonical default
+（minimum／maximum）を保持する。`chainedRolls`だけを理由にdecision planを`automatic`へ変更しない。
+成功回数型ではscenarioへeffect exclusionを保存せず、resolved成功回数から実行時decisionを導出する。
+宝具前・常時sourceはmaximum、使用操作または依存sourceが必要なskill／derived sourceはminimumをnormalizerが
+明示し、executorはoriginからdefaultを再推測しない。chained effectへ通常のeffect decisionが同時に渡された場合は
+二重状態としてfail-closedにする。
 
 ## UI投影
 

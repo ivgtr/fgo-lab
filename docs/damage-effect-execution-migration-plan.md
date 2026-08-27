@@ -9,6 +9,19 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 
 # FGO Lab ダメージ効果実行エンジン移行計画
 
+## E3.12.1 accessible stateとchained activationの収束
+
+E3.12のUIをpixel単位で固定したまま、applicationへ排他的なpresentation stateを追加し、手動除外、proc失敗、
+source未使用、condition不成立、condition未選択、unsupportedをaccessible name上でも分離する。
+
+chained procは`proc.kind`、`gameActivation`、`procSelection`を別契約とする。data-pipelineが成功回数inputと
+minimum／maximum defaultをcanonical化し、executorはresolved countから一時的なoperation decisionを導出する。
+scenarioへeffect exclusionを追加せず、通常のsource dependency closureとtransactional condition evaluationを通す。
+二重decision、曖昧なdefault、effect-local assumptionを一意に表せないchained配置はfail-closedにする。
+
+productionのchained inventory、active/count不一致、二重状態、accessible reason誤併記、source依存、420既定digest、
+既知golden、share/saveをratchetし、既存VRTのhashとpixel comparisonを変更なしで通す。E4は未着手のまま止める。
+
 ## E3.12 攻撃役effect操作の一本化
 
 攻撃役の自身skill欄はLv設定だけを所有し、火力effectのON/OFFは`自身の適用内容`だけで行う。
