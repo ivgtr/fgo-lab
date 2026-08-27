@@ -83,10 +83,10 @@ TargetContextの破壊的契約変更による更新であり、旧scenario／UR
 - production build: success
 - Playwright Chromium／mobile Chromium／VRT／a11y: 62 passed、30 project-specific skipped
 - `git diff --check`: success
-- main JS: 522.05 kB、gzip 148.23 kB
-- ranking worker: 197.59 kB
-- CSS: 44.93 kB、gzip 9.28 kB
-- damage kernel benchmark: 411.80 ops/s、mean 2.4284 ms
+- main JS: 521.95 kB、gzip 148.25 kB
+- ranking worker: 193.51 kB
+- CSS: 44.93 kB、gzip 9.29 kB
+- damage kernel benchmark: 399.90 ops/s、mean 2.5006 ms
 - ranking matrix実測: policy一組のNP1〜5全420件を約2.7〜3.4秒で生成する。
 - 特攻成立detail全420件は約4.1秒、最大world candidate 12、最大scenario calculation 14である。
 
