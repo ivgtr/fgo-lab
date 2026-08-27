@@ -10,8 +10,6 @@ import {
 import type {
   CalculationResult,
   CalculationScenario,
-  CraftEssenceCopy,
-  DamageResolutionInput,
   ServantBuild,
   SupportTemplate,
   VersionContext,
@@ -23,146 +21,20 @@ import {
   createDefaultResolvedScenario,
   type CalculationExecution,
 } from './scenario';
+import type {
+  RankingCalculation,
+  RankingCanonicalInputPolicy,
+  RankingConditions,
+  RankingDetail,
+  RankingFailure,
+  RankingLevelRule,
+  RankingProfileInput,
+  RankingRowSummary,
+} from './rankingContracts';
+
+export * from './rankingContracts';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
-type TargetAttribute = ResolvedScenario['target']['attribute'];
-
-export type RankingComparisonMode = 'standard' | 'owned';
-export type RankingLevelRule = 'natural' | 'level90' | 'level100' | 'level120';
-export type RankingAffinityRule =
-  'favorable' | 'attackAdvantage' | 'neutral' | 'unfavorable' | 'auto';
-export type RankingAttributeRule = 'favorable' | 'neutral' | 'unfavorable' | 'auto';
-export type RankingProcPolicy = 'success' | 'failure';
-export type RankingChainedProcPolicy = 'maximum' | 'minimum';
-
-export interface RankingCraftEssenceSelection {
-  craftEssenceId: string;
-  level: number;
-  limitBreak: number;
-}
-
-export interface RankingMysticCodeSelection {
-  mysticCodeId: string;
-  skillLevel: number;
-}
-
-export interface RankingCanonicalInputPolicy {
-  currentTurn: number | null;
-  criticalStars: number | null;
-  effectStackCount: number | null;
-  fieldActorCount: number | null;
-  availableSkillCount: number | null;
-  friendshipLevel: number | null;
-  sourceHpPermille: number | null;
-  allyCount: number | null;
-  enemyCount: number | null;
-  allActorCount: number | null;
-}
-
-export interface RankingConditions {
-  comparisonMode: RankingComparisonMode;
-  levelRule: RankingLevelRule;
-  npLevel: number;
-  fouAtk: number;
-  overcharge: number;
-  includeSelfEffects: boolean;
-  supportTemplateId: string | null;
-  craftEssence: RankingCraftEssenceSelection | null;
-  mysticCode: RankingMysticCodeSelection | null;
-  classAffinityRule: RankingAffinityRule;
-  attributeAffinityRule: RankingAttributeRule;
-  targetClassId: string;
-  targetAttribute: TargetAttribute;
-  targetTraits: readonly string[];
-  fieldTraits: readonly string[];
-  attackerHpPermille: number | null;
-  battlePointPhase: number | null;
-  procPolicy: RankingProcPolicy;
-  chainedProcPolicy: RankingChainedProcPolicy;
-  canonicalInputs: RankingCanonicalInputPolicy;
-}
-
-export const DEFAULT_RANKING_CONDITIONS: RankingConditions = {
-  comparisonMode: 'standard',
-  levelRule: 'natural',
-  npLevel: 1,
-  fouAtk: 1_000,
-  overcharge: 1,
-  includeSelfEffects: true,
-  supportTemplateId: null,
-  craftEssence: null,
-  mysticCode: null,
-  classAffinityRule: 'favorable',
-  attributeAffinityRule: 'neutral',
-  targetClassId: 'lancer',
-  targetAttribute: 'unknown',
-  targetTraits: [],
-  fieldTraits: [],
-  attackerHpPermille: 1_000,
-  battlePointPhase: 0,
-  procPolicy: 'success',
-  chainedProcPolicy: 'maximum',
-  canonicalInputs: {
-    currentTurn: null,
-    criticalStars: null,
-    effectStackCount: null,
-    fieldActorCount: null,
-    availableSkillCount: null,
-    friendshipLevel: null,
-    sourceHpPermille: null,
-    allyCount: null,
-    enemyCount: null,
-    allActorCount: null,
-  },
-};
-
-export interface RankingProfileInput {
-  servantBuilds: Readonly<Record<string, ServantBuild>>;
-  craftEssences: readonly CraftEssenceCopy[];
-  supportTemplates: readonly SupportTemplate[];
-}
-
-export interface RankingRowSummary {
-  servantId: string;
-  name: string;
-  imageKey: string | null;
-  classId: string;
-  rarity: number;
-  npCard: 'buster' | 'arts' | 'quick';
-  npTarget: 'single' | 'all';
-  minimum: number;
-  average: number;
-  maximum: number;
-  precision: 'exact' | 'approximate';
-  appliedEffectCount: number;
-  supportEffectCount: number;
-  supportSourceCount: number;
-  level: number;
-  npLevel: number;
-  owned: boolean;
-}
-
-export interface RankingFailure {
-  servantId: string;
-  name: string;
-  status: 'inputRequired' | 'unsupported';
-  reason: string;
-}
-
-export interface RankingDetail {
-  servantId: string;
-  scenario: CalculationScenario;
-  input: DamageResolutionInput;
-  result: CalculationResult;
-  effects: CalculationExecution['effects'];
-  effectInputs: CalculationExecution['effectInputs'];
-}
-
-export interface RankingCalculation {
-  rows: RankingRowSummary[];
-  failures: RankingFailure[];
-  details: Record<string, RankingDetail>;
-}
 
 function standardLevel(servant: ServantMaster, rule: RankingLevelRule): number {
   if (rule === 'natural') return naturalServantLevel(servant.rarity);
@@ -321,6 +193,9 @@ function applySelfEffectPolicy(
   for (const control of calculation.effectControls) {
     const projection = control.projection;
     if (!shouldControlSelfEffect(projection)) continue;
+    // A world-fact projection is an enemy/field condition, not a self-buff. The
+    // standard ranking never invents a favorable target fact for one servant.
+    if (projection.decision.state !== 'none' && projection.decision.kind === 'worldFact') continue;
     if (control.interaction === 'singleChoice') continue;
     if (projection.proc.kind === 'chainedRolls') {
       const procInput = calculation.effectInputs.find(
@@ -513,7 +388,7 @@ export function calculateRanking(
       supportSourceCount: supportSources.size,
       level: scenario.attacker.level,
       npLevel: scenario.attacker.npLevel,
-      owned: conditions.comparisonMode === 'owned',
+      owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
     });
   }
   return { rows, failures, details };
