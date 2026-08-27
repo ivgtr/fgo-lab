@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  canonicalTargetAttributeSchema,
+  canonicalTargetClassIdSchema,
+  canonicalTargetFamilyIdSchema,
+  targetPredicateSchema,
+  type TargetPredicate,
+} from '@fgo-lab/schema';
 
 export const masterFileSchema = z.object({
   key: z.string().min(1),
@@ -18,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(31),
+  schemaVersion: z.literal(32),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -28,9 +35,19 @@ const signedTraitSchema = z.object({
   name: z.string().min(1),
   negative: z.boolean(),
 });
+type ConditionAtom =
+  { name: string; negative: boolean } | { predicate: TargetPredicate; negative: boolean };
+const targetPredicateConditionAtomSchema = z.object({
+  predicate: targetPredicateSchema,
+  negative: z.boolean(),
+});
+const conditionAtomSchema: z.ZodType<ConditionAtom> = z.union([
+  signedTraitSchema,
+  targetPredicateConditionAtomSchema,
+]);
 export const traitConditionSchema = z.object({
   operator: z.enum(['any', 'all']),
-  traits: z.array(signedTraitSchema),
+  traits: z.array(conditionAtomSchema),
 });
 export type TraitCondition = z.infer<typeof traitConditionSchema>;
 
@@ -403,7 +420,12 @@ export const mysticCodeMasterSchema = z.object({
 });
 export type MysticCodeMaster = z.infer<typeof mysticCodeMasterSchema>;
 
-const traitReferenceSchema = z.object({ id: z.number().int(), name: z.string().min(1) });
+type DamageTraitReference =
+  { kind: 'trait'; name: string } | { kind: 'targetPredicate'; predicate: TargetPredicate };
+const traitReferenceSchema: z.ZodType<DamageTraitReference> = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('trait'), name: z.string().min(1) }),
+  z.object({ kind: z.literal('targetPredicate'), predicate: targetPredicateSchema }),
+]);
 
 const npDamageParameterSchema = z.object({
   ratePermille: z.number().int(),
@@ -536,6 +558,7 @@ export const servantMasterSchema = z.object({
   atkByLevel: z.record(z.string(), z.number().int().nonnegative()),
   noblePhantasms: z.array(noblePhantasmMasterSchema),
   traits: z.array(z.string()),
+  predicates: z.array(targetPredicateSchema).default([]),
   imageKey: z.string().nullable(),
   skills: z.array(masterSkillSchema).default([]),
   passives: z.array(masterSkillSchema).default([]),
@@ -662,11 +685,43 @@ const masterSnapshotBaseSchema = z.object({
       ),
     }),
   }),
+  targetSemantics: z.object({
+    execution: z.object({
+      classIdentities: z.array(canonicalTargetClassIdSchema),
+      attributeIdentities: z.array(canonicalTargetAttributeSchema),
+      families: z.array(
+        z.object({
+          familyId: canonicalTargetFamilyIdSchema,
+          membershipConstraints: z.object({ kind: z.literal('independent') }),
+        }),
+      ),
+    }),
+    evidence: z.object({
+      families: z.array(
+        z.object({
+          familyId: canonicalTargetFamilyIdSchema,
+          atlasTargets: z.array(
+            z.object({
+              targetId: z.string().min(1),
+              rawClassName: z.string().min(1),
+            }),
+          ),
+          sourceDigest: z.string().regex(/^[a-f0-9]{64}$/),
+        }),
+      ),
+    }),
+  }),
   servants: z.array(servantMasterSchema),
   craftEssences: z.array(craftEssenceMasterSchema),
   mysticCodes: z.array(mysticCodeMasterSchema),
   materials: z.array(materialMasterSchema),
 });
+export type CanonicalTargetDomain = z.infer<
+  typeof masterSnapshotBaseSchema
+>['targetSemantics']['execution'];
+export type TargetFamilyEvidence = z.infer<
+  typeof masterSnapshotBaseSchema
+>['targetSemantics']['evidence']['families'][number];
 export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapshot, context) => {
   const validateProcSelection = (effects: readonly MasterEffect[], path: (string | number)[]) => {
     effects.forEach((effect, effectIndex) => {

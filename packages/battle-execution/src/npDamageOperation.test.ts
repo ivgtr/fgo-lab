@@ -21,6 +21,7 @@ const context: NpDamageOperationContext = {
   targetTraitCounts: {},
   targetCombinedTraitCounts: {},
   targetStateTraitCounts: {},
+  targetPredicateValues: new Map(),
   attackerHpPermille: null,
   targetRarity: null,
   battlePointPhase: null,

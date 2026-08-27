@@ -1,6 +1,6 @@
 {
   "caseId": "mlb-only-effects-v1",
-  "engineVersion": "19.0.0",
+  "engineVersion": "20.0.0",
   "modifierOrder": ["attackBuff", "cardBuff", "npDamageBuff", "flatDamage"],
   "cases": [
     {
@@ -11,7 +11,7 @@
       "states": [
         {
           "lb": 0,
-          "input": "c83a32521701aa1d80c419efbb3dc3eef5f579218cd0ae13211fdbf27594b126",
+          "input": "aee51bfcc230696beb5d258ca60fa0d5202ee8ca26c691573b03195c495be21b",
           "mods": [0, 0, 0, 0],
           "rows": [
             [30853, 34264.32, 37675],
@@ -23,7 +23,7 @@
         },
         {
           "lb": 4,
-          "input": "66313ae2bb69c235e6371203510787d58cce1ec32e412471c8046cad1179931f",
+          "input": "b033109e2faec5cf757a1402258b8a3b5067523ea43d79388a87d6505311b860",
           "mods": [0, 0, 0, 17],
           "rows": [
             [30870, 34281.32, 37692],
@@ -43,7 +43,7 @@
       "states": [
         {
           "lb": 0,
-          "input": "95b402d73512564b9ae02329678c19614db1f0fe8fbac4e7497260d6e6299749",
+          "input": "b9e4d11e904ca1696eda207834f80f6eb3fcbf552ef9dc9dfc92463afba79874",
           "mods": [0, 0, 0, 0],
           "rows": [
             [30853, 34264.32, 37675],
@@ -55,7 +55,7 @@
         },
         {
           "lb": 4,
-          "input": "6baf9fbb98ef8e2aec1ce45f067e1312f1cf74625956b896566a5558667901fc",
+          "input": "d39c22f64a259e8d58a2591014daaf7603380760a28d33899cb9579dd19c196a",
           "mods": [0, 0.021, 0, 0],
           "rows": [
             [31501, 34983.7, 38467],
@@ -75,7 +75,7 @@
       "states": [
         {
           "lb": 0,
-          "input": "cf7a639ac13a8ebd77bc10a8b05c6f3c8824d8366d8d454ab430ceeb50d321dc",
+          "input": "ffd942342510dc4f0cb9e045d9bd4218f588cad1adfbdf9ba57129f7ae3704d0",
           "mods": [0.5, 0.08, 0, 125],
           "rows": [
             [74786, 83039.885, 91294],
@@ -87,7 +87,7 @@
         },
         {
           "lb": 4,
-          "input": "c3b5f53a2a3d02660dee1fd4c8eb5a48a96cee266ca405cec866f88385af7d09",
+          "input": "df0653ccca2545583b2374812c6ce9f1afd5724549dc375c4387c493a89878ae",
           "mods": [0.5, 0.102, 0, 125],
           "rows": [
             [76307, 84728.9, 93151],
@@ -107,7 +107,7 @@
       "states": [
         {
           "lb": 0,
-          "input": "eb1360d1185c7a4c8c0c5590b4ec382a5a91583f684b3601ed77c4cc1ce456aa",
+          "input": "f3aa9cb86b7d1d87857eca3812d11756418799970f185581f8919aeaf3daac2f",
           "mods": [0, 0, 0, 0],
           "rows": [
             [30853, 34264.32, 37675],
@@ -119,7 +119,7 @@
         },
         {
           "lb": 4,
-          "input": "989c21cb96a6f2058f4f96ebdfa017e62cded3e3ffcf1ba48e0b6307530ec686",
+          "input": "d025f8118be4d63659e398bc099f5c5a8e74bca99b113dbf331d79085b037f23",
           "mods": [0, 0, 0.023, 0],
           "rows": [
             [31563, 35052.41, 38542],
@@ -139,7 +139,7 @@
       "states": [
         {
           "lb": 0,
-          "input": "d8653aa4c87ed0aae1d81e132019edc8552bb98c952fc65aee6994f3defbbcb2",
+          "input": "42c5d68fce4356b549e47cc6a7abd952ee7b7c6526e8e65122c798d278aaa331",
           "mods": [0, 0, 0, 0],
           "rows": [
             [26452, 29376.045, 32300],
@@ -151,7 +151,7 @@
         },
         {
           "lb": 4,
-          "input": "845f1ac8409c57b606202e1edafb8bea37f1cbeb91a3d635c678bc40078ddbd1",
+          "input": "f7cf1c3f2a3c7e176ec76a0ff128e1186376abcb577d1eb2f403962e97da3725",
           "mods": [0, 0.024, 0, 0],
           "rows": [
             [27086, 30081.085, 33076],

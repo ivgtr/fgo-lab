@@ -8,6 +8,7 @@ export * from './scenarioCommands';
 export * from './ranking';
 export * from './rankingContracts';
 export * from './supportEffectPresentation';
+export * from './targetContext';
 export type {
   ConditionExpression,
   EffectProjection,

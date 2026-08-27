@@ -1,0 +1,42 @@
+import type {
+  CanonicalInputDefinition,
+  CanonicalTargetDomain,
+  NpDamageSpec,
+} from '@fgo-lab/master-data';
+import type { CombatAttribute } from '@fgo-lab/calc-core';
+import type { CalculationScenario, DamageResolutionInput, TargetPredicate } from '@fgo-lab/schema';
+import type {
+  BattleExecutionResult,
+  BattleOperation,
+  EffectProjection,
+  ExecutionIssue,
+} from './contracts';
+import type { TargetResolution } from './targetContext';
+
+export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
+
+export interface OrderedScenarioExecution extends BattleExecutionResult {
+  input: DamageResolutionInput;
+}
+
+export interface PreparedOrderedScenario {
+  baseInput: DamageResolutionInput;
+  scenario: ResolvedScenario;
+  attackerTraits: readonly string[];
+  attackerPredicates: readonly TargetPredicate[];
+  damage: NpDamageSpec | undefined;
+  operations: readonly BattleOperation[];
+  compileProjections: readonly EffectProjection[];
+  sourceIssues: readonly ExecutionIssue[];
+  targetResolution: TargetResolution;
+  targetDomain: CanonicalTargetDomain;
+  attackerClass: string;
+  attackerAttribute: CombatAttribute;
+  inputDefinitions: readonly CanonicalInputDefinition[];
+}
+
+export interface ResolvedCanonicalInputSet {
+  values: Readonly<Record<string, number>>;
+  missingDefinitions: readonly CanonicalInputDefinition[];
+  invalidInputKeys: readonly string[];
+}

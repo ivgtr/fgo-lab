@@ -64,7 +64,10 @@ function damageSpec(testCase: GoldenCase): NpDamageSpec {
       ? {}
       : {
           targetIds: parameter.TargetList,
-          targetTraits: parameter.TargetList.map((id) => ({ id, name: conditionTrait })),
+          targetTraits: parameter.TargetList.map(() => ({
+            kind: 'trait' as const,
+            name: conditionTrait,
+          })),
         }),
     ...(parameter.ParamAddMaxCount === undefined
       ? {}
@@ -77,12 +80,12 @@ function damageSpec(testCase: GoldenCase): NpDamageSpec {
       : {
           andCheckTraitIds: parameter.AndCheckIndividualityList,
           andCheckTraits: parameter.AndCheckIndividualityList.map((id, index) => ({
-            id,
+            kind: 'trait' as const,
             name: testCase.context.targetTraits?.[index] ?? `trait:${String(id)}`,
           })),
         }),
     ...(['trait', 'stateTrait'].includes(testCase.kind) && parameter.Target !== undefined
-      ? { targetTrait: { id: parameter.Target, name: conditionTrait } }
+      ? { targetTrait: { kind: 'trait' as const, name: conditionTrait } }
       : {}),
   }));
   return {
@@ -95,7 +98,7 @@ function damageSpec(testCase: GoldenCase): NpDamageSpec {
     target: 'single',
     parametersByOvercharge: Array.from({ length: 5 }, () => row),
     rawPath: `golden:${testCase.caseId}`,
-  } as NpDamageSpec;
+  } as unknown as NpDamageSpec;
 }
 
 function context(testCase: GoldenCase): NpDamageOperationContext {
@@ -108,6 +111,7 @@ function context(testCase: GoldenCase): NpDamageOperationContext {
     targetTraitCounts: counts(targetTraits),
     targetCombinedTraitCounts: counts([...targetTraits, ...targetStateTraits]),
     targetStateTraitCounts: counts(targetStateTraits),
+    targetPredicateValues: new Map(),
     attackerHpPermille: testCase.context.attackerHpPermille ?? null,
     targetRarity: testCase.context.targetRarity ?? null,
     battlePointPhase: testCase.context.battlePointPhase ?? null,

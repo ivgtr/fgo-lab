@@ -124,6 +124,9 @@ importers:
 
   packages/battle-execution:
     dependencies:
+      '@fgo-lab/calc-core':
+        specifier: workspace:*
+        version: link:../calc-core
       '@fgo-lab/master-data':
         specifier: workspace:*
         version: link:../master-data

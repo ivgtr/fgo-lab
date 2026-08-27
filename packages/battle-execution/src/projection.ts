@@ -2,11 +2,13 @@ import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
   BattleState,
+  ConditionExpression,
   EffectDecision,
   EffectProjection,
   OperationResult,
   OperationSource,
 } from './contracts';
+import type { TargetAttributeContext, TargetClassContext, TargetPredicate } from '@fgo-lab/schema';
 import {
   canonicalExclusiveGroup,
   traitConditionConstraintScope,
@@ -83,6 +85,8 @@ export function createOperationProjection(
   choice: EffectDecision | undefined,
   resolvedModifierValue: number | null,
   preserveSiblingChoice: boolean,
+  fallbackClass: TargetClassContext,
+  fallbackAttribute: TargetAttributeContext,
 ): EffectProjection {
   const operationRequiresAttackerHp = conditionRequiresQuantity(
     operation.condition,
@@ -185,15 +189,13 @@ export function createOperationProjection(
         : 'visible',
     controllability: userControllable ? 'user' : 'automatic',
     selectionGroups: userControllable ? selectionGroupsForCondition(operation.condition) : [],
-    decision:
-      userControllable && operation.decisionKey
-        ? {
-            state: decisionSelected ? ('enabled' as const) : ('disabled' as const),
-            decisionKey: operation.decisionKey,
-            kind: 'effect' as const,
-            plan: operation.decisionPlan,
-          }
-        : { state: 'none' },
+    decision: operationDecision(
+      operation,
+      userControllable,
+      decisionSelected,
+      fallbackClass,
+      fallbackAttribute,
+    ),
     conditionDecision:
       operation.decisionPlan.condition === 'userMayAssume'
         ? (choice?.conditionSatisfaction ?? 'evaluate')
@@ -203,6 +205,65 @@ export function createOperationProjection(
       condition: operation.condition.kind === 'always' ? null : operation.condition,
     },
   };
+}
+
+function singleTargetPredicate(condition: ConditionExpression): TargetPredicate | null {
+  if (condition.kind === 'targetPredicate' && condition.scope === 'target')
+    return condition.present ? condition.predicate : null;
+  if ((condition.kind === 'all' || condition.kind === 'any') && condition.expressions.length === 1)
+    return singleTargetPredicate(condition.expressions[0]!);
+  return null;
+}
+
+function requiredTargetPredicates(condition: ConditionExpression): TargetPredicate[] {
+  if (condition.kind === 'targetPredicate' && condition.scope === 'target')
+    return condition.present ? [condition.predicate] : [];
+  if (condition.kind === 'all') return condition.expressions.flatMap(requiredTargetPredicates);
+  if (condition.kind === 'any' && condition.expressions.length === 1)
+    return requiredTargetPredicates(condition.expressions[0]!);
+  return [];
+}
+
+function operationDecision(
+  operation: BattleOperation,
+  userControllable: boolean,
+  selected: boolean,
+  fallbackClass: TargetClassContext,
+  fallbackAttribute: TargetAttributeContext,
+): EffectProjection['decision'] {
+  if (!userControllable || operation.decisionKey === null) return { state: 'none' };
+  const predicate = singleTargetPredicate(operation.condition);
+  if (!predicate)
+    return {
+      state: selected ? 'enabled' : 'disabled',
+      decisionKey: operation.decisionKey,
+      kind: 'effect',
+      plan: operation.decisionPlan,
+      ...effectTargetContext(operation.condition, fallbackClass, fallbackAttribute),
+    };
+  return {
+    state: selected ? 'enabled' : 'disabled',
+    decisionKey: operation.decisionKey,
+    kind: 'targetPredicate',
+    target: predicate,
+    fallbackClass: predicate.kind === 'classIdentity' ? fallbackClass : null,
+    fallbackAttribute: predicate.kind === 'attributeIdentity' ? fallbackAttribute : null,
+  };
+}
+
+function effectTargetContext(
+  condition: ConditionExpression,
+  fallbackClass: TargetClassContext,
+  fallbackAttribute: TargetAttributeContext,
+): Pick<Extract<EffectProjection['decision'], { kind: 'effect' }>, 'targetContext'> {
+  const predicates = requiredTargetPredicates(condition);
+  if (
+    predicates.length === 0 ||
+    fallbackClass.kind !== 'relative' ||
+    fallbackAttribute.kind !== 'relative'
+  )
+    return {};
+  return { targetContext: { predicates, fallbackClass, fallbackAttribute } };
 }
 
 export function projectAtDamageEvaluation(
@@ -239,7 +300,24 @@ export function traitCountProjections(
   if (damage.kind !== 'traitCount' || item?.targetId !== 1) return [];
   const valuePermille = (item.secondaryValuePermille ?? 1_000) + (item.correctionPermille ?? 0);
   return (item.targetTraits ?? []).map((trait) => {
-    const projectionKey = `np:${attackerId}:${damage.functionId}:trait:${trait.id}`;
+    const predicateKey =
+      trait.kind === 'targetPredicate'
+        ? trait.predicate.kind === 'classIdentity'
+          ? `class:${trait.predicate.classId}`
+          : trait.predicate.kind === 'attributeIdentity'
+            ? `attribute:${trait.predicate.attribute}`
+            : `family:${trait.predicate.familyId}`
+        : `trait:${trait.name}`;
+    const projectionKey = `np:${attackerId}:${damage.functionId}:${predicateKey}`;
+    const condition: ConditionExpression =
+      trait.kind === 'targetPredicate'
+        ? {
+            kind: 'targetPredicate',
+            scope: 'target',
+            predicate: trait.predicate,
+            present: true,
+          }
+        : { kind: 'trait', scope: 'target', trait: trait.name, present: true };
     return {
       projectionKey,
       operationId: `np:${attackerId}:${damage.functionId}:damage`,
@@ -262,22 +340,32 @@ export function traitCountProjections(
       outcome: 'applied',
       visibility: 'visible',
       controllability: 'user',
-      selectionGroups: selectionGroupsForCondition({
-        kind: 'trait',
-        scope: 'target',
-        trait: trait.name,
-        present: true,
-      }),
-      decision: {
-        state: 'disabled',
-        decisionKey: projectionKey,
-        kind: 'worldFact',
-        fact: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
-      },
+      selectionGroups: selectionGroupsForCondition(condition),
+      decision:
+        trait.kind === 'targetPredicate'
+          ? {
+              state: 'disabled' as const,
+              decisionKey: projectionKey,
+              kind: 'targetPredicate' as const,
+              target: trait.predicate,
+              fallbackClass: null,
+              fallbackAttribute: null,
+            }
+          : {
+              state: 'disabled' as const,
+              decisionKey: projectionKey,
+              kind: 'worldFact' as const,
+              fact: {
+                kind: 'trait' as const,
+                scope: 'target' as const,
+                trait: trait.name,
+                present: true,
+              },
+            },
       conditionDecision: 'none',
       explanation: {
         code: 'applied',
-        condition: { kind: 'trait', scope: 'target', trait: trait.name, present: true },
+        condition,
       },
     };
   });

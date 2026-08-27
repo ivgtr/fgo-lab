@@ -96,14 +96,14 @@ describe('production special input inventory', () => {
     const singleChoiceControls = calculations.flatMap(({ calculation }) =>
       calculation.effectControls.filter((control) => control.interaction === 'singleChoice'),
     );
-    expect(singleChoiceControls).toHaveLength(31);
+    expect(singleChoiceControls).toHaveLength(29);
     expect(
       new Set(
         singleChoiceControls.flatMap((control) =>
           control.projection.selectionGroups.map((group) => group.groupKey),
         ),
       ).size,
-    ).toBe(12);
+    ).toBe(11);
 
     const repeatedUserLabels = calculations.flatMap(({ servant, calculation }) => {
       const counts = new Map<string, number>();

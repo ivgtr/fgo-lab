@@ -51,6 +51,7 @@ describe('profile domain', () => {
         atkByLevel: { '1': 1 },
         noblePhantasms: [],
         traits: [],
+        predicates: [],
         imageKey: null,
         skills: [],
         passives: [],

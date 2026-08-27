@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 26 as const;
-export const ENGINE_VERSION = '19.0.0' as const;
+export const SCHEMA_VERSION = 27 as const;
+export const ENGINE_VERSION = '20.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -94,6 +94,70 @@ export const supportTemplateSchema = z.object({
 });
 export type SupportTemplate = z.infer<typeof supportTemplateSchema>;
 
+export const canonicalTargetClassIdSchema = z.enum([
+  'saber',
+  'archer',
+  'lancer',
+  'rider',
+  'caster',
+  'assassin',
+  'berserker',
+  'shielder',
+  'ruler',
+  'alterEgo',
+  'avenger',
+  'moonCancer',
+  'foreigner',
+  'pretender',
+  'beast',
+  'beastEresh',
+  'unBeastOlgaMarie',
+]);
+export type CanonicalTargetClassId = z.infer<typeof canonicalTargetClassIdSchema>;
+
+export const canonicalTargetAttributeSchema = z.enum(['man', 'earth', 'sky', 'star', 'beast']);
+export type CanonicalTargetAttribute = z.infer<typeof canonicalTargetAttributeSchema>;
+
+export const canonicalTargetFamilyIdSchema = z.enum(['demonGodPillar', 'beast']);
+export type CanonicalTargetFamilyId = z.infer<typeof canonicalTargetFamilyIdSchema>;
+
+export const targetPredicateSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('classIdentity'), classId: canonicalTargetClassIdSchema }),
+  z.object({
+    kind: z.literal('attributeIdentity'),
+    attribute: canonicalTargetAttributeSchema,
+  }),
+  z.object({ kind: z.literal('familyMembership'), familyId: canonicalTargetFamilyIdSchema }),
+]);
+export type TargetPredicate = z.infer<typeof targetPredicateSchema>;
+
+export const targetClassContextSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('relative'),
+    relation: z.enum(['advantage2', 'advantage15', 'neutral', 'disadvantage']),
+  }),
+  z.object({ kind: z.literal('concrete'), classId: canonicalTargetClassIdSchema }),
+]);
+export type TargetClassContext = z.infer<typeof targetClassContextSchema>;
+
+export const targetAttributeContextSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('relative'),
+    relation: z.enum(['advantage', 'neutral', 'disadvantage']),
+  }),
+  z.object({ kind: z.literal('concrete'), attribute: canonicalTargetAttributeSchema }),
+]);
+export type TargetAttributeContext = z.infer<typeof targetAttributeContextSchema>;
+
+export const targetContextSchema = z
+  .object({
+    class: targetClassContextSchema,
+    attribute: targetAttributeContextSchema,
+    families: z.array(z.object({ familyId: canonicalTargetFamilyIdSchema }).strict()).max(20),
+  })
+  .strict();
+export type TargetContext = z.infer<typeof targetContextSchema>;
+
 export const damageResolutionInputSchema = z.object({
   attackerId: z.string().min(1).max(80),
   attackerLevel: z.number().int().min(1).max(120),
@@ -167,7 +231,7 @@ export const damageResolutionInputSchema = z.object({
   targetStateTraits: z.array(z.string().min(1).max(80)).max(100),
   battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
   target: z.object({
-    classId: z.string().min(1).max(40),
+    classId: canonicalTargetClassIdSchema.nullable(),
     attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
     traits: z.array(z.string().min(1).max(80)).max(100),
   }),
@@ -215,12 +279,7 @@ const scenarioBaseSchema = z
       })
       .strict(),
     overcharge: z.number().int().min(1).max(5),
-    target: z
-      .object({
-        classId: z.string().min(1).max(40),
-        attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
-      })
-      .strict(),
+    targetContext: targetContextSchema,
     attackerHpPermille: quantityFactValueSchema('attackerHpPermille').nullable(),
     battleState: z.object({
       battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
@@ -229,10 +288,6 @@ const scenarioBaseSchema = z
       z.string().min(1).max(300),
       z.object({ kind: z.literal('integer'), value: z.number().int() }).strict(),
     ),
-    assumptions: z.object({
-      classAffinity: z.number().min(0).max(5),
-      attributeAffinity: z.number().min(0).max(5),
-    }),
   })
   .strict();
 

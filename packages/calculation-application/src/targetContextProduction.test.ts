@@ -1,0 +1,223 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import {
+  CANONICAL_TARGET_CLASS_IDS,
+  attributeAffinity,
+  classAffinity,
+  defaultTargetClassRelation,
+  servantAttribute,
+  targetClassCandidates,
+} from '@fgo-lab/calc-core';
+import { getPrimaryNpDamage, masterSnapshotSchema } from '@fgo-lab/master-data';
+import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
+import { describe, expect, it } from 'vitest';
+import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import { applyEffectProjectionDecision } from './effectDecision';
+
+const root = resolve(import.meta.dirname, '../../..');
+
+async function loadMaster() {
+  return masterSnapshotSchema.parse(
+    JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+  );
+}
+
+describe('production canonical target context', () => {
+  it('derives every default relation from the canonical class relation', async () => {
+    const master = await loadMaster();
+    const attackers = master.servants.filter((servant) => getPrimaryNpDamage(servant));
+    const inventory = { advantage2: 0, advantage15: 0, neutral: 0, disadvantage: 0 };
+    for (const attacker of attackers) {
+      const relation = defaultTargetClassRelation(attacker.classId);
+      inventory[relation] += 1;
+      expect(
+        targetClassCandidates(attacker.classId, { kind: 'relative', relation }),
+      ).not.toHaveLength(0);
+      expect(
+        createDefaultResolvedScenario(master, undefined, attacker).targetContext.class,
+      ).toEqual({ kind: 'relative', relation });
+    }
+    expect(attackers).toHaveLength(420);
+    expect(inventory).toEqual({
+      advantage2: 374,
+      advantage15: 45,
+      neutral: 1,
+      disadvantage: 0,
+    });
+    expect(attackers.filter((attacker) => attacker.classId === 'berserker')).toHaveLength(44);
+  });
+
+  it('locks the approved NP1-5 default damage corrections', async () => {
+    const master = await loadMaster();
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const cases = [
+      ['700100', [43_170.205, 57_493.875, 64_655.655, 68_236.565, 71_817.46]],
+      ['800100', [16_104.32, 20_130.525, 22_143.64, 23_150.195, 24_156.735]],
+      ['3300200', [19_422.77, 25_850.53, 29_064.41, 30_671.35, 32_278.29]],
+    ] as const;
+    for (const [servantId, expected] of cases) {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const calculation = calculateScenario(
+        createDefaultResolvedScenario(master, undefined, servant),
+        master,
+        versions,
+      );
+      expect(calculation.result.status).toBe('calculated');
+      if (calculation.result.status !== 'calculated') continue;
+      expect(calculation.result.rows.map(({ average }) => average)).toEqual(expected);
+    }
+  });
+
+  it('keeps all 374 existing advantage2 default calculations unchanged', async () => {
+    const master = await loadMaster();
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    let compared = 0;
+    for (const servant of master.servants.filter((candidate) => getPrimaryNpDamage(candidate))) {
+      if (defaultTargetClassRelation(servant.classId) !== 'advantage2') continue;
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const current = calculateScenario(scenario, master, versions);
+      const explicitPrevious = calculateScenario(
+        {
+          ...scenario,
+          targetContext: {
+            ...scenario.targetContext,
+            class: { kind: 'relative', relation: 'advantage2' },
+          },
+        },
+        master,
+        versions,
+      );
+      expect(current.input, servant.id).toEqual(explicitPrevious.input);
+      expect(current.result, servant.id).toEqual(explicitPrevious.result);
+      compared += 1;
+    }
+    expect(compared).toBe(374);
+  }, 30_000);
+
+  it('derives concrete class, attribute, and independent family membership', async () => {
+    const master = await loadMaster();
+    const attacker = master.servants.find((servant) => servant.id === '100100')!;
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    for (const classId of ['saber', 'rider'] as const) {
+      const scenario = createDefaultResolvedScenario(master, undefined, attacker);
+      scenario.targetContext = {
+        class: { kind: 'concrete', classId },
+        attribute: { kind: 'concrete', attribute: 'sky' },
+        families: [{ familyId: 'demonGodPillar' }],
+      };
+      const calculation = calculateScenario(scenario, master, versions);
+      expect(calculation.result.status).toBe('calculated');
+      expect(calculation.input).toMatchObject({
+        classAffinity: classAffinity(attacker.classId, classId),
+        attributeAffinity: attributeAffinity(servantAttribute(attacker.traits), 'sky'),
+        target: { classId, attribute: 'sky' },
+      });
+      expect(calculation.input.target.traits).not.toContain('classDemonGodPillar');
+    }
+  });
+
+  it('keeps family membership independent and rejects free identity world facts', async () => {
+    const master = await loadMaster();
+    const attacker = master.servants.find((servant) => servant.id === '100100')!;
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    const independent = createDefaultResolvedScenario(master, undefined, attacker);
+    independent.targetContext = {
+      class: { kind: 'concrete', classId: 'lancer' },
+      attribute: { kind: 'relative', relation: 'neutral' },
+      families: [{ familyId: 'demonGodPillar' }],
+    };
+    expect(calculateScenario(independent, master, versions).result.status).toBe('calculated');
+
+    const forged = createDefaultResolvedScenario(master, undefined, attacker);
+    forged.worldFactAssertions = [
+      {
+        decisionKey: 'forged:attribute',
+        fact: { kind: 'trait', scope: 'target', trait: 'attributeSky', present: true },
+      },
+    ];
+    const forgedResult = calculateScenario(forged, master, versions);
+    expect(forgedResult.result.status).toBe('calculated');
+    expect(forgedResult.input.attributeAffinity).toBe(1);
+    expect(forgedResult.input.target.attribute).not.toBe('sky');
+  });
+
+  it('projects class and attribute special selections directly into TargetContext', async () => {
+    const master = await loadMaster();
+    const versions: VersionContext = {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    };
+    for (const [servantId, expected] of [
+      ['101700', { classId: 'alterEgo' }],
+      ['4000100', { attribute: 'man' }],
+    ] as const) {
+      const servant = master.servants.find((candidate) => candidate.id === servantId)!;
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const initial = calculateScenario(scenario, master, versions);
+      const projection = initial.effects.find(
+        (effect) =>
+          effect.decision.state !== 'none' &&
+          effect.decision.kind === 'targetPredicate' &&
+          (effect.decision.target.kind === 'classIdentity'
+            ? effect.decision.target.classId === expected.classId
+            : effect.decision.target.kind === 'attributeIdentity'
+              ? effect.decision.target.attribute === expected.attribute
+              : false),
+      )!;
+      const selectedScenario = applyEffectProjectionDecision(scenario, projection, true);
+      expect(selectedScenario.worldFactAssertions).toEqual([]);
+      const selected = calculateScenario(selectedScenario, master, versions);
+      expect(selected.result.status).toBe('calculated');
+      expect(selected.input.target).toMatchObject(expected);
+      const restored = applyEffectProjectionDecision(
+        selectedScenario,
+        selected.effects.find((effect) => effect.projectionKey === projection.projectionKey)!,
+        false,
+      );
+      expect(restored.targetContext).toEqual(scenario.targetContext);
+    }
+  });
+
+  it('has no calculated relation without a real target candidate', async () => {
+    const master = await loadMaster();
+    for (const attacker of master.servants.filter((servant) => getPrimaryNpDamage(servant)))
+      for (const relation of ['advantage2', 'advantage15', 'neutral', 'disadvantage'] as const) {
+        const candidates = targetClassCandidates(attacker.classId, { kind: 'relative', relation });
+        if (candidates.length > 0) continue;
+        expect(defaultTargetClassRelation(attacker.classId)).not.toBe(relation);
+      }
+    expect(CANONICAL_TARGET_CLASS_IDS).toHaveLength(17);
+  });
+});

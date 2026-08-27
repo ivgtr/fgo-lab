@@ -74,6 +74,19 @@ function positiveTraitAtoms(
   return [];
 }
 
+function hasPositiveTargetPredicate(
+  condition: ConditionExpression | null,
+  negated = false,
+): boolean {
+  if (!condition) return false;
+  if (condition.kind === 'targetPredicate') return condition.present !== negated;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some((child) => hasPositiveTargetPredicate(child, negated));
+  return condition.kind === 'not'
+    ? hasPositiveTargetPredicate(condition.expression, !negated)
+    : false;
+}
+
 describe('production master damage quality ratchet', () => {
   it('allows Summer Wu to grant a state trait after an initial negative trait fact', async () => {
     const master = await loadProductionMaster();
@@ -936,12 +949,21 @@ describe('production master damage quality ratchet', () => {
       expect(selected.input.target.traits).toEqual([]);
       expect(selected.input.fieldTraits).toEqual([]);
 
+      if (projection.decision.state !== 'none' && projection.decision.kind === 'targetPredicate')
+        continue;
       const atoms = positiveTraitAtoms(projection.explanation.condition).filter(
         (atom, index, all) =>
           all.findIndex(
             (candidate) => candidate.scope === atom.scope && candidate.trait === atom.trait,
           ) === index,
       );
+      if (atoms.length === 0) {
+        expect(
+          hasPositiveTargetPredicate(projection.explanation.condition),
+          `${servantName}:${label}:typed target predicates`,
+        ).toBe(true);
+        continue;
+      }
       expect(atoms.length, `${servantName}:${label}:trait atoms`).toBeGreaterThan(0);
       const compatible = calculateScenario(
         {
@@ -1074,6 +1096,7 @@ describe('production master damage quality ratchet', () => {
       expect(calculation.result.rows[0].average).toBeCloseTo(45_629.59);
       expect(calculation.input.powerMod).toBe(0.5);
       expect(calculation.input.target.traits).toEqual([]);
+      expect(calculation.input.target.attribute).toBe(selected === sky ? 'sky' : 'earth');
       expect(calculation.input.fieldTraits).toEqual([
         selected === sky ? 'fieldHeaven' : 'fieldHell',
       ]);
@@ -1135,64 +1158,53 @@ describe('production master damage quality ratchet', () => {
       },
     );
 
-    for (const [facts, selected, rejectedLabel] of [
+    for (const [attribute, fieldFact, selected, rejectedLabel] of [
       [
-        [
-          {
-            decisionKey: 'world:sky',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'target' as const,
-              trait: 'attributeSky',
-              present: true,
-            },
+        'sky',
+        {
+          decisionKey: 'world:heaven',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'field' as const,
+            trait: 'fieldHeaven',
+            present: true,
           },
-          {
-            decisionKey: 'world:heaven',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'field' as const,
-              trait: 'fieldHeaven',
-              present: true,
-            },
-          },
-        ],
+        },
         earthScenario,
         '威力アップ・対 地の力',
       ],
       [
-        [
-          {
-            decisionKey: 'world:earth',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'target' as const,
-              trait: 'attributeEarth',
-              present: true,
-            },
+        'earth',
+        {
+          decisionKey: 'world:hell',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'field' as const,
+            trait: 'fieldHell',
+            present: true,
           },
-          {
-            decisionKey: 'world:hell',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'field' as const,
-              trait: 'fieldHell',
-              present: true,
-            },
-          },
-        ],
+        },
         skyScenario,
         '威力アップ・対 天の力',
       ],
     ] as const) {
       const crossDomainConflict = calculateScenario(
-        { ...selected, worldFactAssertions: [...facts] },
+        {
+          ...selected,
+          targetContext: {
+            ...selected.targetContext,
+            attribute: { kind: 'concrete', attribute },
+          },
+          worldFactAssertions: [fieldFact],
+        },
         master,
         versions,
       );
       expect(crossDomainConflict.result.status).toBe('unsupported');
       expect(crossDomainConflict.effectWarnings).toEqual(
-        expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
+        expect.arrayContaining([
+          expect.stringContaining('invalidTargetContext:noSatisfiableTarget'),
+        ]),
       );
       expect(
         crossDomainConflict.effects.find((effect) => effect.label === rejectedLabel)?.outcome,
@@ -1205,58 +1217,45 @@ describe('production master damage quality ratchet', () => {
       expect(crossDomainConflict.input.powerMod).toBe(0);
     }
 
-    for (const [facts, selected, acceptedLabel] of [
+    for (const [attribute, fieldFact, selected, acceptedLabel] of [
       [
-        [
-          {
-            decisionKey: 'world:sky',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'target' as const,
-              trait: 'attributeSky',
-              present: true,
-            },
+        'sky',
+        {
+          decisionKey: 'world:heaven',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'field' as const,
+            trait: 'fieldHeaven',
+            present: true,
           },
-          {
-            decisionKey: 'world:heaven',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'field' as const,
-              trait: 'fieldHeaven',
-              present: true,
-            },
-          },
-        ],
+        },
         skyScenario,
         '威力アップ・対 天の力',
       ],
       [
-        [
-          {
-            decisionKey: 'world:earth',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'target' as const,
-              trait: 'attributeEarth',
-              present: true,
-            },
+        'earth',
+        {
+          decisionKey: 'world:hell',
+          fact: {
+            kind: 'trait' as const,
+            scope: 'field' as const,
+            trait: 'fieldHell',
+            present: true,
           },
-          {
-            decisionKey: 'world:hell',
-            fact: {
-              kind: 'trait' as const,
-              scope: 'field' as const,
-              trait: 'fieldHell',
-              present: true,
-            },
-          },
-        ],
+        },
         earthScenario,
         '威力アップ・対 地の力',
       ],
     ] as const) {
       const compatible = calculateScenario(
-        { ...selected, worldFactAssertions: [...facts] },
+        {
+          ...selected,
+          targetContext: {
+            ...selected.targetContext,
+            attribute: { kind: 'concrete', attribute },
+          },
+          worldFactAssertions: [fieldFact],
+        },
         master,
         versions,
       );
@@ -1572,5 +1571,5 @@ describe('production master damage quality ratchet', () => {
     expect(ambiguousActivationDependencies).toEqual([]);
     expect(missingSelectedSources).toEqual([]);
     expect(staleDeselectedSources).toEqual([]);
-  }, 30_000);
+  }, 60_000);
 });

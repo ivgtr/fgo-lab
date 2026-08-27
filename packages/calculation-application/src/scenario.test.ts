@@ -514,7 +514,7 @@ describe('scenario calculation facade', () => {
                 row.map((parameter) => ({
                   ...parameter,
                   targetId: 1,
-                  targetTrait: { id: 1, name: 'dragon' },
+                  targetTrait: { kind: 'trait', name: 'dragon' },
                   correctionPermille: 1_500,
                 })),
               ),
@@ -1099,7 +1099,7 @@ describe('scenario calculation facade', () => {
 
   it('preserves repeated state-trait stacks through ordered NP execution', () => {
     const baseServant = fixture.servants[0]!;
-    const burn = { id: 99, name: 'buffBurn' };
+    const burn = { kind: 'trait' as const, name: 'buffBurn' };
     const stackEffect = (id: string) => ({
       ...modifierEffect(id, 'addIndividuality', 0, [], 'enemyAll'),
       execution: [
@@ -1130,7 +1130,7 @@ describe('scenario calculation facade', () => {
                 row.map((parameter) => ({
                   ...parameter,
                   targetId: 1,
-                  targetIds: [burn.id],
+                  targetIds: [99],
                   targetTraits: [burn],
                   secondaryValuePermille: 1_000,
                   correctionPermille: 200,
@@ -1288,7 +1288,11 @@ describe('scenario calculation facade', () => {
     });
     const scenario = {
       ...createDefaultResolvedScenario(combinationMaster, undefined),
-      assumptions: { classAffinity: 1, attributeAffinity: 1 },
+      targetContext: {
+        class: { kind: 'relative' as const, relation: 'neutral' as const },
+        attribute: { kind: 'relative' as const, relation: 'neutral' as const },
+        families: [],
+      },
       craftEssence: { craftEssenceId: 'fixture-ce', level: 1, limitBreak: 0 },
       attackerSkills: [{ skillId: 'attacker-skill', skillLevel: 10 }],
       mysticCode: {

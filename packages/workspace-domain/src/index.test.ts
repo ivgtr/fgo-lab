@@ -40,7 +40,7 @@ const scenario = {
     targetRarity: null,
     targetStateTraits: [],
     battlePointPhase: null,
-    target: { classId: 'neutral', attribute: 'unknown', traits: [] },
+    target: { classId: null, attribute: 'unknown', traits: [] },
   },
 } satisfies CalculationScenario;
 

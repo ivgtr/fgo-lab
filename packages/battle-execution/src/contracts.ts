@@ -6,6 +6,7 @@ import type {
   NpDamageSpec,
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
+import type { TargetAttributeContext, TargetClassContext, TargetPredicate } from '@fgo-lab/schema';
 
 export type ActorScope = 'attacker' | 'target';
 export type TraitScope = ActorScope | 'attackerState' | 'targetState' | 'field';
@@ -24,6 +25,12 @@ export type ConditionExpression =
       trait: string;
       present: boolean;
       readPolicy?: TraitReadPolicy;
+    }
+  | {
+      kind: 'targetPredicate';
+      scope: ActorScope;
+      predicate: TargetPredicate;
+      present: boolean;
     }
   | {
       kind: 'traitCount';
@@ -192,6 +199,10 @@ export interface AppliedModifier {
 export interface BattleState {
   card: CardType;
   traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
+  actorPredicates: Record<
+    ActorScope,
+    ReadonlyMap<string, { predicate: TargetPredicate; present: boolean }>
+  >;
   traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
   initialTraitSuppressions: Record<ActorScope, ReadonlySet<string>>;
   quantities: {
@@ -221,7 +232,23 @@ export type WorldFactAssertion = {
     | { kind: 'quantity'; quantity: keyof BattleState['quantities']; value: number };
 };
 
+export type TargetPredicateAssertion = {
+  sourceKey: string;
+  predicate: TargetPredicate;
+  present: boolean;
+};
+
 export type ExecutionIssue =
+  | {
+      kind: 'invalidTargetContext';
+      detail:
+        | 'noSatisfiableTarget'
+        | 'ambiguousTargetResult'
+        | 'identityWorldFactForbidden'
+        | 'unknownFamily'
+        | 'targetSearchLimit';
+      sourceKeys: readonly string[];
+    }
   | { kind: 'invalidCanonicalInput'; inputKey: string; detail: 'unknownInputKey' }
   | {
       kind: 'invalidProcSelection';
@@ -270,6 +297,12 @@ export type ConditionConstraintConflict =
     }
   | { kind: 'cardMismatch'; cards: readonly CardType[] }
   | { kind: 'choiceConflict'; group: string; candidates: readonly string[] }
+  | { kind: 'targetPredicatePolarity'; predicate: TargetPredicate }
+  | {
+      kind: 'targetIdentityConflict';
+      axis: 'class' | 'attribute';
+      values: readonly string[];
+    }
   | { kind: 'unsatisfiableExpression' };
 
 export type OperationOutcome =
@@ -319,18 +352,36 @@ export interface EffectProjection {
         decisionKey: string;
         kind: 'effect';
         plan: OperationDecisionPlan;
+        targetContext?: {
+          predicates: readonly TargetPredicate[];
+          fallbackClass: Extract<TargetClassContext, { kind: 'relative' }>;
+          fallbackAttribute: Extract<TargetAttributeContext, { kind: 'relative' }>;
+        };
       }
     | {
         state: 'disabled';
         decisionKey: string;
         kind: 'effect';
         plan: OperationDecisionPlan;
+        targetContext?: {
+          predicates: readonly TargetPredicate[];
+          fallbackClass: Extract<TargetClassContext, { kind: 'relative' }>;
+          fallbackAttribute: Extract<TargetAttributeContext, { kind: 'relative' }>;
+        };
       }
     | {
         state: 'enabled' | 'disabled';
         decisionKey: string;
         kind: 'worldFact';
         fact: WorldFactAssertion['fact'];
+      }
+    | {
+        state: 'enabled' | 'disabled';
+        decisionKey: string;
+        kind: 'targetPredicate';
+        target: TargetPredicate;
+        fallbackClass: TargetClassContext | null;
+        fallbackAttribute: TargetAttributeContext | null;
       }
     | { state: 'none' };
   conditionDecision: 'none' | 'evaluate' | 'assumeSatisfied';

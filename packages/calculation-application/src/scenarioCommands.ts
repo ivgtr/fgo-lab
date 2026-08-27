@@ -1,7 +1,22 @@
 import type { EffectProjection, OperationSource } from '@fgo-lab/battle-execution';
 import type { CalculationScenario, SupportSource } from '@fgo-lab/schema';
+import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
+import { applyTargetContextCommand } from './targetContext';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
+
+export function resetTargetClassContextForAttacker(
+  scenario: ResolvedScenario,
+  attackerClassId: string,
+): ResolvedScenario {
+  return {
+    ...scenario,
+    targetContext: applyTargetContextCommand(scenario.targetContext, {
+      kind: 'setClassRelation',
+      relation: defaultTargetClassRelation(attackerClassId),
+    }),
+  };
+}
 
 export function setEffectSourceEnabled(
   scenario: ResolvedScenario,

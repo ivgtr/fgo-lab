@@ -113,7 +113,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:106600:np:106600:23291:0:addTrait-target:buffBurn",
             "np:106600:5337:damage",
           ],
-          "inputDigest": "2171014d75b10e7e844cd03781e45674bd7f6b285016ba5a3938e25064ee3a9a",
+          "inputDigest": "1d55420f3d2f8606be3de48bad7d231408e2d479eb69f31b9bef1fcd86ffaf31",
           "name": "ジャック・ド・モレー",
           "np1To5Average": [
             31998.575,
@@ -128,7 +128,7 @@ describe('unsupported convergence production golden', () => {
           "appliedOperations": [
             "np:202500:22:damage",
           ],
-          "inputDigest": "921d828caa2ee08f398509662f85ad197e148b7516a9ee57c0c14042338c6734",
+          "inputDigest": "5482dfd395f085426a140e99f8987852fc66934dbaa2ea842dc579eafb0dafb6",
           "name": "アン・ボニー＆メアリー・リード",
           "np1To5Average": [
             41063.075,
@@ -145,7 +145,7 @@ describe('unsupported convergence production golden', () => {
             "passive:passive:203300:607650:118:0:modifier:cardBuff",
             "np:203300:22:damage",
           ],
-          "inputDigest": "99326d382590c13b906d0610dda335a144f3cb35904bbd33474674b2e8de257f",
+          "inputDigest": "b338a060fe9fb360bfd766e371a7688d139905f6163921d7884a4ee87cb030c4",
           "name": "アシュヴァッターマン",
           "np1To5Average": [
             46640.68,
@@ -162,7 +162,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:305800:np:305800:249:0:modifier:npDamageBuff",
             "np:305800:13:damage",
           ],
-          "inputDigest": "69c0cdacb603a10369b4a61f575e1a4e66dc63afc26134504c21b1d85f89f48e",
+          "inputDigest": "d3e6989c8045bdd9453d570eab3b3a7786a7166b09d5123cb54fc340598804c8",
           "name": "アショカ王",
           "np1To5Average": [
             34888.58,
@@ -177,7 +177,7 @@ describe('unsupported convergence production golden', () => {
           "appliedOperations": [
             "np:400900:22:damage",
           ],
-          "inputDigest": "25161d2e5db78da066c52fa027ab1b9538ec5dbfcb7a9242f73621c2c80ab7bc",
+          "inputDigest": "4037732abc1dcdd11f0f86bbad861bc098b18bd6fcd4ab5c4bc2559840f7d865",
           "name": "アン・ボニー＆メアリー・リード",
           "np1To5Average": [
             59020.73,
@@ -193,7 +193,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:506000:np:506000:110:0:modifier:cardBuff",
             "np:506000:13:damage",
           ],
-          "inputDigest": "12fd35ca43149ea5f8ba3371254033d5d9e02763089de73c957ed2c5abba140b",
+          "inputDigest": "03caaeef76e04d5a60d0c7a9f6ea26c4b9f2895183f31e2425303efbf07ac052",
           "name": "ビショーネ",
           "np1To5Average": [
             20697.33,
@@ -209,14 +209,14 @@ describe('unsupported convergence production golden', () => {
             "passive:passive:702500:54251:118:0:modifier:cardBuff",
             "np:702500:22:damage",
           ],
-          "inputDigest": "4d00403d0f74592f1f11059bb8ee9eb55d2c8f7773577a95bb2449da30298c28",
+          "inputDigest": "2207d10446064828a7360d1aa5fc11e3a0128ed1f0fcccd1eb9a89e2f1035be4",
           "name": "土方歳三",
           "np1To5Average": [
-            83408.01,
-            104260.125,
-            114686.205,
-            119899.23,
-            125112.26,
+            62555.875,
+            78194.98,
+            86014.53,
+            89924.29,
+            93834.07,
           ],
           "servantId": "702500",
         },
@@ -226,7 +226,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:1102000:np:1102000:249:1:modifier:npDamageBuff",
             "np:1102000:13:damage",
           ],
-          "inputDigest": "7862de39912e50d115934c963a2f967a86a85154e09596d5068be6f28fc49f0f",
+          "inputDigest": "76807a4902a7abe6909ce7a4e5c6e7ff87ecd050beda76c6cb4ccda10ab81660",
           "name": "ジョン・ラックランド",
           "np1To5Average": [
             31826.97,
@@ -243,7 +243,7 @@ describe('unsupported convergence production golden', () => {
             "passive:passive:1102300:54149:118:0:modifier:cardBuff",
             "np:1102300:14:damage",
           ],
-          "inputDigest": "2f2e9a11125891fcbccd018a4e342d9ef3e9203fe56cda0dbf546ac09728bf50",
+          "inputDigest": "9b736b409982c8cbf9f1ef5fb7f51d8309eeaa8a297115c8f4563ed452c85ab0",
           "name": "キングプロテア・オルタ",
           "np1To5Average": [
             64172.38,
@@ -258,7 +258,7 @@ describe('unsupported convergence production golden', () => {
           "appliedOperations": [
             "passive:passive:2300600:30550:265:0:modifier:flatDamage",
           ],
-          "inputDigest": "619ce5c3498a79aec697ee0e9f5c3b52653b460ffdfde3466bc96df6a55c5177",
+          "inputDigest": "a710fbe4d0718ca70b881cc3e5889637fc551d411bdbaf2a17c65ba9c59e2cfb",
           "name": "ＢＢドバイ",
           "np1To5Average": [
             24566.05,
@@ -274,7 +274,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:2801300:np:2801300:119:0:modifier:cardBuff",
             "np:np:2801300:np:2801300:249:0:modifier:npDamageBuff",
           ],
-          "inputDigest": "f0644d8c7e6e6f9557775bfdd1e4369fa563682bafc101e110dab06044b1df63",
+          "inputDigest": "304dfcb0255fde97e6ab8cb7597b11a338e74ed2f06becf5206f6a0a53e63403",
           "name": "ハベトロット",
           "np1To5Average": [
             50393.91,
@@ -290,14 +290,14 @@ describe('unsupported convergence production golden', () => {
             "passive:passive:3300200:30149:265:0:modifier:flatDamage",
             "np:3300200:21836:damage",
           ],
-          "inputDigest": "4787efec17d3a5cc92e469f00b59676eb052141f827727f993ec4ef56471a22e",
+          "inputDigest": "2f633b96d596a2189e0a826dd30cb34a17ca968cbfedc960a7e3999b01dc6984",
           "name": "エレシュキガル",
           "np1To5Average": [
+            19422.77,
             25850.53,
-            34420.875,
-            38706.045,
-            40848.63,
-            42991.215,
+            29064.41,
+            30671.35,
+            32278.29,
           ],
           "servantId": "3300200",
         },
@@ -463,11 +463,11 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "np1To5Average": [
+            43066.35,
             57338.62,
-            76368.34,
-            85883.185,
-            90640.62,
-            95398.05,
+            64474.765,
+            68042.84,
+            71610.91,
           ],
           "occurrenceId": "3683:0",
           "servantId": "703300",
@@ -496,11 +496,11 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "np1To5Average": [
+            26226,
             34968.185,
-            46624.395,
-            52452.5,
-            55366.56,
-            58280.615,
+            39339.25,
+            41524.81,
+            43710.345,
           ],
           "occurrenceId": "194:0",
           "servantId": "702600",
@@ -672,11 +672,11 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "np1To5Average": [
+            19422.77,
             25850.53,
-            34420.875,
-            38706.045,
-            40848.63,
-            42991.215,
+            29064.41,
+            30671.35,
+            32278.29,
           ],
           "occurrenceId": "automaticReference",
           "servantId": "3300200",
@@ -684,7 +684,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'f08bebaaeaa638ae8910cb74cf4f81f29d725e9fb710a6ee923ce5df4df3d17f',
+      'd3ec63f7c40817acfe4d3252c9b25279daaacbf8827c4dd0d8be92fb0a3d262c',
     );
   }, 30_000);
 

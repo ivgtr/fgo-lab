@@ -27,11 +27,19 @@ export { canNormalizeDamageEffect } from './effectRouting';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
   executeOrderedScenario,
+  executeOrderedScenarioCandidates,
   prepareOrderedScenario,
   type OrderedScenarioExecution,
   type PreparedOrderedScenario,
   type ResolvedCanonicalInputSet,
 } from './engine';
+export {
+  MAX_TARGET_CANDIDATES,
+  materializeTargetCandidate,
+  resolveTargetCandidates,
+  type TargetCandidate,
+  type TargetResolution,
+} from './targetContext';
 export {
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,

@@ -26,7 +26,10 @@ export function conditionAllowsEffectLocalDecision(condition: ConditionExpressio
     return condition.expressions.some(conditionAllowsEffectLocalDecision);
   if (condition.kind === 'not') return conditionAllowsEffectLocalDecision(condition.expression);
   return (
-    condition.kind === 'trait' || condition.kind === 'traitCount' || condition.kind === 'choice'
+    condition.kind === 'trait' ||
+    condition.kind === 'traitCount' ||
+    condition.kind === 'choice' ||
+    condition.kind === 'targetPredicate'
   );
 }
 

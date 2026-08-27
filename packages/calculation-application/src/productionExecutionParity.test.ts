@@ -72,15 +72,58 @@ describe('production execution parity ratchet', () => {
         worldFactAssertions: WorldFactAssertion[];
       }>;
     };
+    const legacyClassByTrait = {
+      classAlterEgo: 'alterEgo',
+      classMoonCancer: 'moonCancer',
+    } as const;
+    const legacyAttributeByTrait = {
+      attributeHuman: 'man',
+      attributeStar: 'star',
+    } as const;
+    const legacySemanticTraits = new Set([
+      ...Object.keys(legacyClassByTrait),
+      ...Object.keys(legacyAttributeByTrait),
+    ]);
     const records = fixture.cases.map((testCase) => {
       const servant = master.servants.find((candidate) => candidate.id === testCase.attackerId)!;
+      const classIdentity = testCase.worldFactAssertions
+        .filter(({ fact }) => fact.kind === 'trait' && fact.scope === 'target' && fact.present)
+        .flatMap(({ fact }) =>
+          fact.kind === 'trait'
+            ? [legacyClassByTrait[fact.trait as keyof typeof legacyClassByTrait]].filter(Boolean)
+            : [],
+        )[0];
+      const attributeIdentity = testCase.worldFactAssertions
+        .filter(({ fact }) => fact.kind === 'trait' && fact.scope === 'target' && fact.present)
+        .flatMap(({ fact }) =>
+          fact.kind === 'trait'
+            ? [legacyAttributeByTrait[fact.trait as keyof typeof legacyAttributeByTrait]].filter(
+                Boolean,
+              )
+            : [],
+        )[0];
+      const initial = createDefaultResolvedScenario(master, undefined, servant);
       let scenario: Extract<CalculationScenario, { mode: 'resolved' }> = {
-        ...createDefaultResolvedScenario(master, undefined, servant),
+        ...initial,
+        targetContext: {
+          ...initial.targetContext,
+          class: classIdentity
+            ? { kind: 'concrete', classId: classIdentity }
+            : initial.targetContext.class,
+          attribute: attributeIdentity
+            ? { kind: 'concrete', attribute: attributeIdentity }
+            : initial.targetContext.attribute,
+        },
         attackerHpPermille: null,
         battleState: { battlePointPhase: null },
         canonicalInputValues: {},
         effectDecisions: [],
-        worldFactAssertions: testCase.worldFactAssertions,
+        worldFactAssertions: testCase.worldFactAssertions.filter(
+          ({ fact }) =>
+            fact.kind !== 'trait' ||
+            fact.scope !== 'target' ||
+            !legacySemanticTraits.has(fact.trait),
+        ),
       };
       for (const oldDecision of testCase.effectDecisions) {
         const before = calculateScenario(scenario, master, versions);
@@ -89,14 +132,12 @@ describe('production execution parity ratchet', () => {
           before.effects.find(
             (effect) =>
               effect.decision.state !== 'none' &&
-              effect.decision.kind === 'effect' &&
               effect.decision.decisionKey === oldDecision.decisionKey,
           ) ??
           before.effects.find(
             (effect) =>
               effect.source.effectOccurrenceId === oldOccurrenceId &&
               effect.decision.state !== 'none' &&
-              effect.decision.kind === 'effect' &&
               effect.decision.decisionKey.includes(':interaction:'),
           );
         if (!projection) throw new Error(`projection_missing:${testCase.key}`);
@@ -129,14 +170,24 @@ describe('production execution parity ratchet', () => {
           scenario = applyEffectConditionDecision(scenario, current, true, sourceEnabled.effects);
       }
       const calculation = calculateScenario(scenario, master, versions);
-      expect(calculation.result.status, testCase.key).toBe('calculated');
-      if (calculation.result.status !== 'calculated') throw new Error('exact result required');
-      return { key: testCase.key, input: calculation.input, rows: calculation.result.rows };
+      if (calculation.result.status === 'calculated')
+        return { key: testCase.key, input: calculation.input, rows: calculation.result.rows };
+      expect(calculation.effectWarnings, testCase.key).toEqual(
+        expect.arrayContaining([expect.stringContaining('invalidTargetContext:')]),
+      );
+      return {
+        key: testCase.key,
+        status: calculation.result.status,
+        targetIssues: calculation.effectWarnings.filter((warning) =>
+          warning.startsWith('invalidTargetContext:'),
+        ),
+      };
     });
 
     expect(records).toHaveLength(1_504);
+    expect(records.filter((record) => 'status' in record)).toEqual([]);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '54b6ca9663afd95c5b686c49a33bd679246deb43bd7fae45a87b32b91fa4ca48',
+      'e754617b09edeacf9661fb95d7b814bfd178e07c1827d0df16224cd02ce33b77',
     );
   }, 120_000);
 
@@ -171,7 +222,7 @@ describe('production execution parity ratchet', () => {
 
     expect(records).toHaveLength(420);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '9d67d4d84b715e3f2eda8f5ed317496c1df69d175982f25c09e732280f7a3603',
+      'a469ff71f5c4a6171a7e4d20dcb4f8f77475a38fbb08f236e4e691214e94e5e9',
     );
   }, 60_000);
 });

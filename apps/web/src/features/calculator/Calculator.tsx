@@ -9,7 +9,12 @@ import {
   type CraftEssenceMaster,
   type ServantMaster,
 } from '@fgo-lab/master-data';
-import { classAttackRate as resolveClassAttackRate } from '@fgo-lab/calc-core';
+import {
+  attributeRelationFromMultiplier,
+  availableTargetClassRelations,
+  classRelationFromMultiplier,
+  classAttackRate as resolveClassAttackRate,
+} from '@fgo-lab/calc-core';
 import type {
   EffectControlViewModel,
   EffectInputViewModel,
@@ -17,12 +22,15 @@ import type {
 } from '@fgo-lab/calculation-application';
 import {
   applyCanonicalInputCommand,
+  applyTargetContextCommand,
   appendCalculationSupportSource,
   applyEffectControlPresentationDecision,
   removeCalculationSupportSource as removeSupportSourceFromScenario,
+  resetTargetClassContextForAttacker,
   setAttackerSkillLevel,
   setCalculationSupportSkillLevel,
   setCalculationSupportSkillEnabled,
+  createDefaultTargetContext,
 } from '@fgo-lab/calculation-application';
 import type {
   AttackerSkillSelection,
@@ -114,6 +122,9 @@ export function Calculator({
   const attackerSource = resolvedScenario?.attacker.source ?? 'master';
   const craftEssenceSelection = resolvedScenario?.craftEssence ?? null;
   const attacker = servants.find((candidate) => candidate.id === input.attackerId);
+  const availableClassRelations = new Set(
+    availableTargetClassRelations(attacker?.classId ?? 'unknown'),
+  );
   const naturalAttackerLevel = attacker
     ? naturalServantLevel(attacker.rarity)
     : input.attackerLevel;
@@ -171,22 +182,17 @@ export function Calculator({
   }
   function changeAffinitySituation(key: 'classAffinity' | 'attributeAffinity', value: number) {
     if (scenario.mode === 'manual') {
-      changeManualInput({
-        [key]: value,
-        target:
-          key === 'classAffinity'
-            ? { ...input.target, classId: `affinity:${String(value)}` }
-            : { ...input.target, attribute: 'unknown' },
-      });
+      changeManualInput({ [key]: value });
       return;
     }
     void onScenarioChange({
       ...scenario,
-      assumptions: { ...scenario.assumptions, [key]: value },
-      target:
+      targetContext: applyTargetContextCommand(
+        scenario.targetContext,
         key === 'classAffinity'
-          ? { ...scenario.target, classId: `affinity:${String(value)}` }
-          : { ...scenario.target, attribute: 'unknown' },
+          ? { kind: 'setClassRelation', relation: classRelationFromMultiplier(value) }
+          : { kind: 'setAttributeRelation', relation: attributeRelationFromMultiplier(value) },
+      ),
     });
   }
   function changeDamageContext(
@@ -271,17 +277,16 @@ export function Calculator({
         fouAtk: input.fouAtk,
       },
       overcharge: input.overcharge,
-      target: {
-        classId: input.target.classId,
-        attribute: input.target.attribute,
-      },
+      targetContext: applyTargetContextCommand(
+        createDefaultTargetContext(attacker?.classId ?? 'unknown'),
+        {
+          kind: 'setAttributeRelation',
+          relation: attributeRelationFromMultiplier(input.attributeAffinity),
+        },
+      ),
       attackerHpPermille: input.attackerHpPermille,
       battleState: { battlePointPhase: input.battlePointPhase },
       canonicalInputValues: {},
-      assumptions: {
-        classAffinity: input.classAffinity,
-        attributeAffinity: input.attributeAffinity,
-      },
       craftEssence: null,
       attackerSkills: (attacker?.skills ?? []).slice(0, 3).map((skill, index) => ({
         skillId: skill.id,
@@ -323,26 +328,31 @@ export function Calculator({
         battlePointPhase: null,
       });
     } else {
-      void onScenarioChange({
-        ...scenario,
-        attacker: {
-          servantId: candidate.id,
-          source,
-          level,
-          npLevel: Math.max(1, saved?.npLevel ?? 1),
-          fouAtk: saved?.fouAtk ?? 1000,
-        },
-        attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
-          skillId: skill.id,
-          skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
-        })),
-        effectDecisions: [],
-        worldFactAssertions: [],
-        attackerHpPermille: null,
-        battleState: { battlePointPhase: null },
-        canonicalInputValues: {},
-        explicitOverrides: {},
-      });
+      void onScenarioChange(
+        resetTargetClassContextForAttacker(
+          {
+            ...scenario,
+            attacker: {
+              servantId: candidate.id,
+              source,
+              level,
+              npLevel: Math.max(1, saved?.npLevel ?? 1),
+              fouAtk: saved?.fouAtk ?? 1000,
+            },
+            attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
+              skillId: skill.id,
+              skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
+            })),
+            effectDecisions: [],
+            worldFactAssertions: [],
+            attackerHpPermille: null,
+            battleState: { battlePointPhase: null },
+            canonicalInputValues: {},
+            explicitOverrides: {},
+          },
+          candidate.classId,
+        ),
+      );
     }
     closeAttackerDialog();
   }
@@ -698,10 +708,30 @@ export function Calculator({
                 changeAffinitySituation('classAffinity', Number(event.target.value))
               }
             >
-              <option value="2">有利（2.0倍）</option>
-              <option value="1.5">攻撃有利（1.5倍）</option>
-              <option value="1">等倍（1.0倍）</option>
-              <option value="0.5">不利（0.5倍）</option>
+              <option
+                value="2"
+                disabled={mode === 'quick' && !availableClassRelations.has('advantage2')}
+              >
+                有利（2.0倍）
+              </option>
+              <option
+                value="1.5"
+                disabled={mode === 'quick' && !availableClassRelations.has('advantage15')}
+              >
+                攻撃有利（1.5倍）
+              </option>
+              <option
+                value="1"
+                disabled={mode === 'quick' && !availableClassRelations.has('neutral')}
+              >
+                等倍（1.0倍）
+              </option>
+              <option
+                value="0.5"
+                disabled={mode === 'quick' && !availableClassRelations.has('disadvantage')}
+              >
+                不利（0.5倍）
+              </option>
               {![0.5, 1, 1.5, 2].includes(input.classAffinity) ? (
                 <option value={String(input.classAffinity)}>
                   直接入力（{input.classAffinity}倍）

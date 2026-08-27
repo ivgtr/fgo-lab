@@ -1,8 +1,50 @@
-import type { DamageResolutionInput } from '@fgo-lab/schema';
+import type {
+  CanonicalTargetAttribute,
+  CanonicalTargetClassId,
+  TargetAttributeContext,
+  TargetClassContext,
+} from '@fgo-lab/schema';
 
-export type CombatAttribute = DamageResolutionInput['target']['attribute'];
+export type CombatAttribute = CanonicalTargetAttribute | 'unknown';
+export type RelativeTargetClassRelation = Extract<
+  TargetClassContext,
+  { kind: 'relative' }
+>['relation'];
+export type RelativeTargetAttributeRelation = Extract<
+  TargetAttributeContext,
+  { kind: 'relative' }
+>['relation'];
 
-const CLASS_ORDER = [
+const CLASS_AFFINITY_BY_RELATION = {
+  advantage2: 2,
+  advantage15: 1.5,
+  neutral: 1,
+  disadvantage: 0.5,
+} as const satisfies Readonly<Record<RelativeTargetClassRelation, number>>;
+
+const ATTRIBUTE_AFFINITY_BY_RELATION = {
+  advantage: 1.1,
+  neutral: 1,
+  disadvantage: 0.9,
+} as const satisfies Readonly<Record<RelativeTargetAttributeRelation, number>>;
+
+export function classRelationFromMultiplier(value: number): RelativeTargetClassRelation {
+  const entry = Object.entries(CLASS_AFFINITY_BY_RELATION).find(
+    ([, multiplier]) => multiplier === value,
+  );
+  if (!entry) throw new RangeError(`invalid_class_affinity:${String(value)}`);
+  return entry[0] as RelativeTargetClassRelation;
+}
+
+export function attributeRelationFromMultiplier(value: number): RelativeTargetAttributeRelation {
+  const entry = Object.entries(ATTRIBUTE_AFFINITY_BY_RELATION).find(
+    ([, multiplier]) => multiplier === value,
+  );
+  if (!entry) throw new RangeError(`invalid_attribute_affinity:${String(value)}`);
+  return entry[0] as RelativeTargetAttributeRelation;
+}
+
+export const CANONICAL_TARGET_CLASS_IDS = [
   'saber',
   'archer',
   'lancer',
@@ -81,8 +123,49 @@ export function classAttackRate(classId: string): number {
 }
 
 export function classAffinity(attackerClassId: string, targetClassId: string): number {
-  const targetIndex = CLASS_ORDER.indexOf(targetClassId as (typeof CLASS_ORDER)[number]);
+  const targetIndex = CANONICAL_TARGET_CLASS_IDS.indexOf(targetClassId as CanonicalTargetClassId);
   return targetIndex < 0 ? 1 : (CLASS_RELATIONS[attackerClassId]?.[targetIndex] ?? 1);
+}
+
+export function targetClassCandidates(
+  attackerClassId: string,
+  context: TargetClassContext,
+): readonly CanonicalTargetClassId[] {
+  if (context.kind === 'concrete') return [context.classId];
+  const expected = CLASS_AFFINITY_BY_RELATION[context.relation];
+  return CANONICAL_TARGET_CLASS_IDS.filter(
+    (targetClassId) => classAffinity(attackerClassId, targetClassId) === expected,
+  );
+}
+
+export function availableTargetClassRelations(
+  attackerClassId: string,
+): readonly RelativeTargetClassRelation[] {
+  const candidates = [
+    ['advantage2', 2],
+    ['advantage15', 1.5],
+    ['neutral', 1],
+    ['disadvantage', 0.5],
+  ] as const;
+  return candidates.flatMap(([relation, affinity]) =>
+    CANONICAL_TARGET_CLASS_IDS.some(
+      (targetClassId) => classAffinity(attackerClassId, targetClassId) === affinity,
+    )
+      ? [relation]
+      : [],
+  );
+}
+
+export function defaultTargetClassRelation(attackerClassId: string): RelativeTargetClassRelation {
+  const available = availableTargetClassRelations(attackerClassId);
+  if (available.includes('advantage2')) return 'advantage2';
+  if (available.includes('advantage15')) return 'advantage15';
+  return 'neutral';
+}
+
+export function resolveClassAffinity(attackerClassId: string, context: TargetClassContext): number {
+  if (context.kind === 'concrete') return classAffinity(attackerClassId, context.classId);
+  return CLASS_AFFINITY_BY_RELATION[context.relation];
 }
 
 export function servantAttribute(traits: readonly string[]): CombatAttribute {
@@ -100,4 +183,31 @@ export function attributeAffinity(
 ): number {
   if (attackerAttribute === 'unknown' || targetAttribute === 'unknown') return 1;
   return ATTRIBUTE_RELATIONS[attackerAttribute][targetAttribute];
+}
+
+export const CANONICAL_TARGET_ATTRIBUTES = [
+  'man',
+  'earth',
+  'sky',
+  'star',
+  'beast',
+] as const satisfies readonly CanonicalTargetAttribute[];
+
+export function targetAttributeCandidates(
+  attackerAttribute: CombatAttribute,
+  context: TargetAttributeContext,
+): readonly CanonicalTargetAttribute[] {
+  if (context.kind === 'concrete') return [context.attribute];
+  const expected = ATTRIBUTE_AFFINITY_BY_RELATION[context.relation];
+  return CANONICAL_TARGET_ATTRIBUTES.filter(
+    (attribute) => attributeAffinity(attackerAttribute, attribute) === expected,
+  );
+}
+
+export function resolveAttributeAffinity(
+  attackerAttribute: CombatAttribute,
+  context: TargetAttributeContext,
+): number {
+  if (context.kind === 'concrete') return attributeAffinity(attackerAttribute, context.attribute);
+  return ATTRIBUTE_AFFINITY_BY_RELATION[context.relation];
 }

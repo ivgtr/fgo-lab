@@ -23,14 +23,14 @@ describe('portable schema boundaries', () => {
         fouAtk: 1000,
       },
       overcharge: 1,
-      target: {
-        classId: 'lancer',
-        attribute: 'earth',
+      targetContext: {
+        class: { kind: 'concrete', classId: 'lancer' },
+        attribute: { kind: 'concrete', attribute: 'earth' },
+        families: [],
       },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
       canonicalInputValues: {},
-      assumptions: { classAffinity: 2, attributeAffinity: 1 },
       craftEssence: null,
       attackerSkills: [],
       mysticCode: null,
@@ -45,7 +45,7 @@ describe('portable schema boundaries', () => {
     expect(() =>
       calculationScenarioSchema.parse({
         ...scenario,
-        target: { ...scenario.target, traits: ['dragon'] },
+        targetContext: { ...scenario.targetContext, traits: ['dragon'] },
       }),
     ).toThrow();
     expect(() =>
@@ -64,11 +64,14 @@ describe('portable schema boundaries', () => {
       mode: 'resolved',
       attacker: { servantId: '1', source: 'master', level: 90, npLevel: 1, fouAtk: 1000 },
       overcharge: 1,
-      target: { classId: 'lancer', attribute: 'earth' },
+      targetContext: {
+        class: { kind: 'concrete', classId: 'lancer' },
+        attribute: { kind: 'concrete', attribute: 'earth' },
+        families: [],
+      },
       attackerHpPermille: 1000,
       battleState: { battlePointPhase: null },
       canonicalInputValues: {},
-      assumptions: { classAffinity: 2, attributeAffinity: 1 },
       craftEssence: null,
       attackerSkills: [],
       mysticCode: null,
@@ -103,11 +106,14 @@ describe('portable schema boundaries', () => {
         fouAtk: 1000,
       },
       overcharge: 1,
-      target: { classId: 'lancer', attribute: 'earth' },
+      targetContext: {
+        class: { kind: 'concrete', classId: 'lancer' },
+        attribute: { kind: 'concrete', attribute: 'earth' },
+        families: [],
+      },
       attackerHpPermille: null,
       battleState: { battlePointPhase: null },
       canonicalInputValues: {},
-      assumptions: { classAffinity: 2, attributeAffinity: 1 },
       craftEssence: null,
       attackerSkills: [],
       mysticCode: null,

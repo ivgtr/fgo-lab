@@ -79,7 +79,9 @@ function positiveTraitAtoms(
   return [];
 }
 
-function projectionDecisionKind(projection: EffectProjection): 'effect' | 'worldFact' | null {
+function projectionDecisionKind(
+  projection: EffectProjection,
+): 'effect' | 'worldFact' | 'targetPredicate' | null {
   return projection.decision.state === 'none' ? null : projection.decision.kind;
 }
 
@@ -159,7 +161,7 @@ describe('production master inventory ratchet', () => {
         effect.conditions.opponent,
         effect.conditions.field,
       ])
-        if (condition.traits.some((trait) => trait.name === 'unknown'))
+        if (condition.traits.some((trait) => 'name' in trait && trait.name === 'unknown'))
           literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
       if (!canNormalizeDamageEffect(effect, origin)) return;
       for (const key of effect.atlasEvidence.parameterSemantics.unresolved)
@@ -228,6 +230,7 @@ describe('production master inventory ratchet', () => {
     const allProjections = calculations.flatMap(({ calculation }) => calculation.effects);
     const inertUserProjections: string[] = [];
     const selectedUnsupportedProjections: string[] = [];
+    const targetContextRequiredProjections: string[] = [];
     const invalidAutomaticConditions: string[] = [];
     const invalidExclusiveCalculations: string[] = [];
     const invalidConflictInputs: string[] = [];
@@ -276,9 +279,21 @@ describe('production master inventory ratchet', () => {
           active.result.status === 'unsupported' &&
           active.result.missingEvidence.length > 0 &&
           active.result.missingEvidence.every((reason) => reason.startsWith('constraintConflict:'));
+        const targetContextFailure =
+          active.result.status === 'unsupported' &&
+          active.result.missingEvidence.length > 0 &&
+          active.result.missingEvidence.every((reason) =>
+            reason.startsWith('invalidTargetContext:'),
+          );
+        if (targetContextFailure)
+          targetContextRequiredProjections.push(`${servant.id}:${effect.projectionKey}`);
         if (
-          (active.result.status !== 'calculated' && !constraintOnlyFailure) ||
-          (activeEffect?.outcome === 'unsupported' && !constraintOnlyFailure)
+          (active.result.status !== 'calculated' &&
+            !constraintOnlyFailure &&
+            !targetContextFailure) ||
+          (activeEffect?.outcome === 'unsupported' &&
+            !constraintOnlyFailure &&
+            !targetContextFailure)
         )
           selectedUnsupportedProjections.push(`${servant.id}:${effect.projectionKey}`);
         const activeControl = active.effectControls.find(
@@ -453,6 +468,7 @@ describe('production master inventory ratchet', () => {
       'operationTrigger',
       'quantity',
       'sourceQuantity',
+      'targetPredicate',
       'trait',
     ]);
     expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
@@ -460,6 +476,7 @@ describe('production master inventory ratchet', () => {
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
     expect(selectedUnsupportedProjections).toEqual([]);
+    expect(targetContextRequiredProjections).toEqual([]);
     expect(
       Object.fromEntries(
         [...new Set(selectedUnsupportedProjections.map((item) => item.split(':', 1)[0]))]
@@ -471,13 +488,13 @@ describe('production master inventory ratchet', () => {
           ]),
       ),
     ).toEqual({});
-    expect(exclusivePairCount).toBe(29);
-    expect(conflictPairs).toEqual({ effectEffect: 28, factFact: 1, factEffect: 0 });
+    expect(exclusivePairCount).toBe(27);
+    expect(conflictPairs).toEqual({ effectEffect: 27, factFact: 0, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 247, effects: 65, servants: 52 });
+    }).toEqual({ combinations: 11, effects: 8, servants: 3 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');

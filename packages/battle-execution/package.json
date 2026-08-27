@@ -5,6 +5,7 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
+    "@fgo-lab/calc-core": "workspace:*",
     "@fgo-lab/master-data": "workspace:*",
     "@fgo-lab/schema": "workspace:*"
   }

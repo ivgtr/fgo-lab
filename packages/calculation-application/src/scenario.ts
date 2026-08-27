@@ -3,7 +3,13 @@ import {
   prepareOrderedScenario,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
-import { classAttackRate } from '@fgo-lab/calc-core';
+import {
+  classAttackRate,
+  resolveAttributeAffinity,
+  resolveClassAffinity,
+  servantAttribute,
+} from '@fgo-lab/calc-core';
+import { createDefaultTargetContext } from './targetContext';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
@@ -73,11 +79,10 @@ export function createDefaultResolvedScenario(
       fouAtk: build?.fouAtk ?? 1000,
     },
     overcharge: 1,
-    target: { classId: 'affinity:2', attribute: 'unknown' },
+    targetContext: createDefaultTargetContext(servant.classId),
     attackerHpPermille: 1_000,
     battleState: { battlePointPhase: 0 },
     canonicalInputValues: {},
-    assumptions: { classAffinity: 2, attributeAffinity: 1 },
     craftEssence: null,
     attackerSkills: servant.skills.slice(0, 3).map((skill, index) => ({
       skillId: skill.id,
@@ -129,8 +134,11 @@ function resolvedScenarioBaseInput(
     damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
     cardType: noblePhantasm.card,
     classAttackRate: scenario.explicitOverrides.classAttackRate ?? classAttackRate(servant.classId),
-    classAffinity: scenario.assumptions.classAffinity,
-    attributeAffinity: scenario.assumptions.attributeAffinity,
+    classAffinity: resolveClassAffinity(servant.classId, scenario.targetContext.class),
+    attributeAffinity: resolveAttributeAffinity(
+      servantAttribute(servant.traits),
+      scenario.targetContext.attribute,
+    ),
     attackBuff: 0,
     defenseBuff: 0,
     cardBuff: 0,
@@ -151,7 +159,17 @@ function resolvedScenarioBaseInput(
     targetRarity: null,
     targetStateTraits: [],
     battlePointPhase: scenario.battleState.battlePointPhase,
-    target: { classId: scenario.target.classId, attribute: scenario.target.attribute, traits: [] },
+    target: {
+      classId:
+        scenario.targetContext.class.kind === 'concrete'
+          ? scenario.targetContext.class.classId
+          : null,
+      attribute:
+        scenario.targetContext.attribute.kind === 'concrete'
+          ? scenario.targetContext.attribute.attribute
+          : 'unknown',
+      traits: [],
+    },
   };
 }
 
@@ -178,6 +196,8 @@ export function resolveScenario(
   );
   const execution = executeOrderedScenario(prepared, canonicalInputs);
   const warnings = execution.issues.map((issue) => {
+    if (issue.kind === 'invalidTargetContext')
+      return `${issue.kind}:${issue.detail}:${issue.sourceKeys.join(',')}`;
     if (issue.kind === 'invalidCanonicalInput')
       return `${issue.kind}:${issue.inputKey}:${issue.detail}`;
     if (issue.kind === 'constraintValidationUnsupported')

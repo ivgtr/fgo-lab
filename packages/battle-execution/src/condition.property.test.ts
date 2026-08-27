@@ -18,6 +18,7 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
       targetState: new Map(targetState.map((trait) => [trait, true])),
       field: new Map(),
     },
+    actorPredicates: { attacker: new Map(), target: new Map() },
     traitCounts: {
       attacker: {},
       attackerState: {},

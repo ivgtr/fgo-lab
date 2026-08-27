@@ -90,7 +90,7 @@ describe('external damage differential', () => {
       targetRarity: null,
       targetStateTraits: [],
       battlePointPhase: null,
-      target: { classId: 'neutral', attribute: 'unknown', traits: [] },
+      target: { classId: null, attribute: 'unknown', traits: [] },
     });
     const result = calculateDamageResolution(input, {
       schemaVersion: SCHEMA_VERSION,

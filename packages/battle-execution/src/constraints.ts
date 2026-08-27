@@ -21,11 +21,21 @@ import {
   traitFactConstraintScope,
   type TraitConstraintScope,
 } from './conditionSemantics';
+import { targetPredicateKey } from './targetPredicate';
+import type { TargetPredicate } from '@fgo-lab/schema';
 
 export const MAX_CONSTRAINT_ALTERNATIVES = 2_048;
 export const MAX_CONSTRAINT_LITERALS = 128;
 
-type FixedFact = WorldFactAssertion['fact'] | { kind: 'card'; card: CardType };
+type FixedFact =
+  | WorldFactAssertion['fact']
+  | { kind: 'card'; card: CardType }
+  | {
+      kind: 'targetPredicate';
+      scope: ActorScope;
+      predicate: TargetPredicate;
+      present: boolean;
+    };
 
 export interface FixedConstraintFact {
   sourceKey: string;
@@ -44,6 +54,13 @@ export type ConstraintValidationResult =
 
 type QuantityName = QuantityFactName;
 type Literal =
+  | {
+      kind: 'targetPredicate';
+      scope: ActorScope;
+      predicate: TargetPredicate;
+      present: boolean;
+      sourceKey: string;
+    }
   | {
       kind: 'trait';
       scope: TraitConstraintScope;
@@ -157,6 +174,21 @@ function compileExpression(
               kind: 'trait',
               scope: traitConditionConstraintScope(expression.scope),
               trait: expression.trait,
+              present: negated ? !expression.present : expression.present,
+              sourceKey,
+            },
+          ],
+        ],
+      };
+    case 'targetPredicate':
+      return {
+        status: 'supported',
+        alternatives: [
+          [
+            {
+              kind: 'targetPredicate',
+              scope: expression.scope,
+              predicate: expression.predicate,
               present: negated ? !expression.present : expression.present,
               sourceKey,
             },
@@ -339,6 +371,9 @@ function compileExpression(
 function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   const conflicts: ConflictDetail[] = [];
   const traits = new Map<string, Extract<Literal, { kind: 'trait' }>>();
+  const targetPredicates = new Map<string, Extract<Literal, { kind: 'targetPredicate' }>>();
+  const targetClasses = new Map<ActorScope, Extract<Literal, { kind: 'targetPredicate' }>>();
+  const targetAttributes = new Map<ActorScope, Extract<Literal, { kind: 'targetPredicate' }>>();
   const groups = new Map<string, Extract<Literal, { kind: 'trait' }>>();
   const actorTraits = new Map<
     string,
@@ -349,6 +384,49 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
   let card: Extract<Literal, { kind: 'card' }> | undefined;
   for (const literal of literals) {
     if (literal.kind === 'operationTrigger') continue;
+    if (literal.kind === 'targetPredicate') {
+      const key = `${literal.scope}:${targetPredicateKey(literal.predicate)}`;
+      const prior = targetPredicates.get(key);
+      if (prior && prior.present !== literal.present)
+        conflicts.push({
+          conflict: { kind: 'targetPredicatePolarity', predicate: literal.predicate },
+          sourceKeys: unique([prior.sourceKey, literal.sourceKey]),
+        });
+      targetPredicates.set(key, literal);
+      if (!literal.present) continue;
+      if (literal.predicate.kind === 'classIdentity') {
+        const targetClass = targetClasses.get(literal.scope);
+        if (
+          targetClass?.predicate.kind === 'classIdentity' &&
+          targetClass.predicate.classId !== literal.predicate.classId
+        )
+          conflicts.push({
+            conflict: {
+              kind: 'targetIdentityConflict',
+              axis: 'class',
+              values: [targetClass.predicate.classId, literal.predicate.classId],
+            },
+            sourceKeys: unique([targetClass.sourceKey, literal.sourceKey]),
+          });
+        targetClasses.set(literal.scope, literal);
+      } else if (literal.predicate.kind === 'attributeIdentity') {
+        const targetAttribute = targetAttributes.get(literal.scope);
+        if (
+          targetAttribute?.predicate.kind === 'attributeIdentity' &&
+          targetAttribute.predicate.attribute !== literal.predicate.attribute
+        )
+          conflicts.push({
+            conflict: {
+              kind: 'targetIdentityConflict',
+              axis: 'attribute',
+              values: [targetAttribute.predicate.attribute, literal.predicate.attribute],
+            },
+            sourceKeys: unique([targetAttribute.sourceKey, literal.sourceKey]),
+          });
+        targetAttributes.set(literal.scope, literal);
+      }
+      continue;
+    }
     if (literal.kind === 'sourceQuantityRange' || literal.kind === 'inputQuantityRange') {
       const quantityKey =
         literal.kind === 'sourceQuantityRange'
@@ -513,17 +591,19 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
 function literalKey(literal: Literal): string {
   return literal.kind === 'trait'
     ? `trait:${literal.scope}:${literal.trait}:${String(literal.present)}`
-    : literal.kind === 'card'
-      ? `card:${literal.card}`
-      : literal.kind === 'choice'
-        ? `choice:${literal.group}:${literal.candidate}`
-        : literal.kind === 'operationTrigger'
-          ? `operation-trigger:${literal.source}:${String(literal.position)}`
-          : literal.kind === 'sourceQuantityRange'
-            ? `source-quantity:${literal.quantity}:${literal.subjectId}:${String(literal.min)}:${String(literal.max)}`
-            : literal.kind === 'inputQuantityRange'
-              ? `context-quantity:${literal.inputKey}:${String(literal.min)}:${String(literal.max)}`
-              : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
+    : literal.kind === 'targetPredicate'
+      ? `target-predicate:${literal.scope}:${targetPredicateKey(literal.predicate)}:${String(literal.present)}`
+      : literal.kind === 'card'
+        ? `card:${literal.card}`
+        : literal.kind === 'choice'
+          ? `choice:${literal.group}:${literal.candidate}`
+          : literal.kind === 'operationTrigger'
+            ? `operation-trigger:${literal.source}:${String(literal.position)}`
+            : literal.kind === 'sourceQuantityRange'
+              ? `source-quantity:${literal.quantity}:${literal.subjectId}:${String(literal.min)}:${String(literal.max)}`
+              : literal.kind === 'inputQuantityRange'
+                ? `context-quantity:${literal.inputKey}:${String(literal.min)}:${String(literal.max)}`
+                : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
 }
 
 function deduplicate(alternatives: Alternatives): Alternatives {
@@ -549,6 +629,7 @@ function fixedLiterals(item: FixedConstraintFact): Literal[] {
     ];
   }
   if (item.fact.kind === 'card') return [{ ...item.fact, sourceKey: item.sourceKey }];
+  if (item.fact.kind === 'targetPredicate') return [{ ...item.fact, sourceKey: item.sourceKey }];
   return [
     {
       kind: 'quantityRange',
@@ -716,8 +797,15 @@ export function fixedConstraintFactsFromState(
           },
         ],
   );
+  const actorPredicates = (['attacker', 'target'] as const).flatMap((scope) =>
+    [...state.actorPredicates[scope]].map(([key, { predicate, present }]) => ({
+      sourceKey: `${sourcePrefix}:predicate:${scope}:${key}`,
+      fact: { kind: 'targetPredicate' as const, scope, predicate, present },
+    })),
+  );
   return [
     ...traits,
+    ...actorPredicates,
     ...quantities,
     { sourceKey: `${sourcePrefix}:card`, fact: { kind: 'card' as const, card: state.card } },
   ];

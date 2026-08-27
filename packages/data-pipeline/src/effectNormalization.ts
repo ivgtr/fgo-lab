@@ -5,6 +5,7 @@ import type {
   ModifierValueExpression,
   MasterEffect,
   NpDamageSpec,
+  TraitCondition,
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
 import type {
@@ -14,6 +15,7 @@ import type {
   AtlasReferencedSkill,
   AtlasTraitRef,
 } from './atlasContract';
+import { canonicalTargetPredicate } from './targetTaxonomy';
 import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
 
 export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
@@ -45,6 +47,13 @@ export function normalizeNpDamageFunction(
   traitNameById: ReadonlyMap<number, string>,
   maximumBattlePointPhaseById: ReadonlyMap<number, number>,
 ): NpDamageSpec {
+  const normalizeDamageTrait = (id: number, targetSemantic = true) => {
+    const name = traitNameById.get(id) ?? `trait:${String(id)}`;
+    const predicate = targetSemantic ? canonicalTargetPredicate(name) : null;
+    return predicate
+      ? { kind: 'targetPredicate' as const, predicate }
+      : { kind: 'trait' as const, name };
+  };
   const rawFunctionType = fn.funcType;
   if (!rawFunctionType || !(rawFunctionType in damageKindByFunction))
     throw new TypeError(`unknown_attack_function:${rawPath}:${rawFunctionType ?? 'missing'}`);
@@ -66,20 +75,16 @@ export function normalizeNpDamageFunction(
         ...(['damageNpIndividual', 'damageNpStateIndividualFix'].includes(rawFunctionType) &&
         typeof value.Target === 'number'
           ? {
-              targetTrait: {
-                id: value.Target,
-                name: traitNameById.get(value.Target) ?? `trait:${String(value.Target)}`,
-              },
+              targetTrait: normalizeDamageTrait(value.Target),
             }
           : {}),
         ...(typeof value.Correction === 'number' ? { correctionPermille: value.Correction } : {}),
         ...(value.TargetList ? { targetIds: value.TargetList } : {}),
         ...(value.TargetList
           ? {
-              targetTraits: value.TargetList.map((id) => ({
-                id,
-                name: traitNameById.get(id) ?? `trait:${String(id)}`,
-              })),
+              targetTraits: value.TargetList.map((id) =>
+                normalizeDamageTrait(id, value.Target === 1),
+              ),
             }
           : {}),
         ...(typeof value.ParamAddMaxCount === 'number'
@@ -104,10 +109,7 @@ export function normalizeNpDamageFunction(
         ...(typeof value.HideNoEffect === 'number' ? { hideNoEffect: value.HideNoEffect } : {}),
         ...(value.AndCheckIndividualityList
           ? {
-              andCheckTraits: value.AndCheckIndividualityList.map((id) => ({
-                id,
-                name: traitNameById.get(id) ?? `trait:${String(id)}`,
-              })),
+              andCheckTraits: value.AndCheckIndividualityList.map((id) => normalizeDamageTrait(id)),
             }
           : {}),
       };
@@ -141,18 +143,23 @@ function buffRateTargets(buffs: AtlasBuff[] | undefined) {
 function signedTraits(
   traits: readonly AtlasTraitRef[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
-) {
-  return (traits ?? []).flatMap((trait) =>
-    trait.name && trait.name !== 'unknown'
-      ? [{ name: trait.name, negative: Boolean(trait.negative) }]
-      : typeof trait.id === 'number' && traitNameById.has(trait.id)
-        ? [{ name: traitNameById.get(trait.id)!, negative: Boolean(trait.negative) }]
-        : typeof trait.id === 'number'
-          ? [{ name: `traitId:${String(trait.id)}`, negative: Boolean(trait.negative) }]
-          : trait.name
-            ? [{ name: trait.name, negative: Boolean(trait.negative) }]
-            : [],
-  );
+  canonicalizeTarget = false,
+): TraitCondition['traits'] {
+  return (traits ?? []).flatMap<TraitCondition['traits'][number]>((trait) => {
+    const name =
+      trait.name && trait.name !== 'unknown'
+        ? trait.name
+        : typeof trait.id === 'number' && traitNameById.has(trait.id)
+          ? traitNameById.get(trait.id)!
+          : typeof trait.id === 'number'
+            ? `traitId:${String(trait.id)}`
+            : trait.name;
+    if (!name) return [];
+    const predicate = canonicalizeTarget ? canonicalTargetPredicate(name) : null;
+    return predicate
+      ? [{ predicate, negative: Boolean(trait.negative) }]
+      : [{ name, negative: Boolean(trait.negative) }];
+  });
 }
 
 function buffConditionOperator(value: number | undefined): 'any' | 'all' {
@@ -257,10 +264,15 @@ function predicateIsInBattle(predicate: ActorCountPredicate | null): boolean {
   return atoms.length === 1 && atoms[0]?.kind === 'actorProperty';
 }
 
-function uniqueTraits(traits: readonly { name: string; negative: boolean }[]) {
+function uniqueTraits(traits: TraitCondition['traits']) {
   return [
     ...new Map(
-      traits.map((trait) => [`${trait.negative ? '!' : ''}${trait.name}`, trait]),
+      traits.map((trait) => [
+        `${trait.negative ? '!' : ''}${
+          'name' in trait ? trait.name : JSON.stringify(trait.predicate)
+        }`,
+        trait,
+      ]),
     ).values(),
   ];
 }
@@ -1021,7 +1033,7 @@ function normalizeNpCardTypeChange(
           )
         : [],
     ),
-  ).map((trait) => trait.name);
+  ).flatMap((trait) => ('name' in trait ? [trait.name] : []));
   return { card, stateTraits };
 }
 
@@ -1679,7 +1691,7 @@ export function normalizeFunctions(
           },
           opponent: {
             operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById),
+            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById, true),
           },
           field: {
             operator: 'any' as const,

@@ -1,6 +1,7 @@
 import type { TraitCondition, TraitReadPolicy } from '@fgo-lab/master-data';
 import type { BattleState, ConditionExpression, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
+import { targetPredicateKey } from './targetPredicate';
 
 const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
   stateSources: 'activeOnly',
@@ -36,10 +37,16 @@ export function normalizeTraitCondition(
   readPolicy: TraitReadPolicy = DEFAULT_TRAIT_READ_POLICY,
 ): ConditionExpression {
   if (condition.traits.length === 0) return { kind: 'always' };
-  const traits = condition.traits.map((trait) => ({
-    trait: trait.name,
-    present: !trait.negative,
-  }));
+  const targetPredicates = condition.traits.filter(
+    (trait): trait is Extract<(typeof condition.traits)[number], { predicate: unknown }> =>
+      'predicate' in trait,
+  );
+  if (targetPredicates.length > 0 && scope !== 'target' && scope !== 'attacker')
+    throw new TypeError(`target_predicate_scope:${scope}`);
+  const actorScope = scope === 'target' ? 'target' : 'attacker';
+  const traits = condition.traits.flatMap((trait) =>
+    'predicate' in trait ? [] : [{ trait: trait.name, present: !trait.negative }],
+  );
   const onlyTrait = traits.length === 1 ? traits[0] : undefined;
   if (
     onlyTrait &&
@@ -51,29 +58,37 @@ export function normalizeTraitCondition(
       ? { kind: 'always' }
       : { kind: 'not', expression: { kind: 'always' } };
   }
-  const expressions = traits.map<ConditionExpression>((trait) => {
-    const fixedCardScope =
-      scope === 'attacker' || scope === 'attackerState'
-        ? ({ cardNP: true, faceCard: false, cardExtra: false } as const)[
-            trait.trait as 'cardNP' | 'faceCard' | 'cardExtra'
-          ]
-        : undefined;
-    if (fixedCardScope !== undefined) {
-      const matches = fixedCardScope === trait.present;
-      return matches ? { kind: 'always' } : { kind: 'not', expression: { kind: 'always' } };
-    }
-    const card =
-      scope === 'attacker' || scope === 'attackerState'
-        ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[
-            trait.trait as 'cardArts' | 'cardBuster' | 'cardQuick'
-          ]
-        : undefined;
-    if (card)
-      return trait.present
-        ? { kind: 'card', card }
-        : { kind: 'not', expression: { kind: 'card', card } };
-    return { kind: 'trait', scope, ...trait, readPolicy };
-  });
+  const expressions = [
+    ...targetPredicates.map<ConditionExpression>((item) => ({
+      kind: 'targetPredicate',
+      scope: actorScope,
+      predicate: item.predicate,
+      present: !item.negative,
+    })),
+    ...traits.map<ConditionExpression>((trait) => {
+      const fixedCardScope =
+        scope === 'attacker' || scope === 'attackerState'
+          ? ({ cardNP: true, faceCard: false, cardExtra: false } as const)[
+              trait.trait as 'cardNP' | 'faceCard' | 'cardExtra'
+            ]
+          : undefined;
+      if (fixedCardScope !== undefined) {
+        const matches = fixedCardScope === trait.present;
+        return matches ? { kind: 'always' } : { kind: 'not', expression: { kind: 'always' } };
+      }
+      const card =
+        scope === 'attacker' || scope === 'attackerState'
+          ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[
+              trait.trait as 'cardArts' | 'cardBuster' | 'cardQuick'
+            ]
+          : undefined;
+      if (card)
+        return trait.present
+          ? { kind: 'card', card }
+          : { kind: 'not', expression: { kind: 'card', card } };
+      return { kind: 'trait', scope, ...trait, readPolicy };
+    }),
+  ];
   return condition.operator === 'all' ? { kind: 'all', expressions } : { kind: 'any', expressions };
 }
 
@@ -132,6 +147,12 @@ export function evaluateCondition(
       // from a combined trait set.
       if (requiresProvenanceDecision(condition.readPolicy)) return null;
       const actual = traitValue(condition.scope, condition.trait);
+      return actual === undefined ? null : actual === condition.present;
+    }
+    case 'targetPredicate': {
+      const actual = state.actorPredicates[condition.scope].get(
+        targetPredicateKey(condition.predicate),
+      )?.present;
       return actual === undefined ? null : actual === condition.present;
     }
     case 'traitCount': {

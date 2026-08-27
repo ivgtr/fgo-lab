@@ -3,6 +3,48 @@
   "normalization": {
     "attackFunctions": { "sourceCount": 1, "includedCount": 1, "excluded": [] }
   },
+  "targetSemantics": {
+    "execution": {
+      "classIdentities": [
+        "saber",
+        "archer",
+        "lancer",
+        "rider",
+        "caster",
+        "assassin",
+        "berserker",
+        "shielder",
+        "ruler",
+        "alterEgo",
+        "avenger",
+        "moonCancer",
+        "foreigner",
+        "pretender",
+        "beast",
+        "beastEresh",
+        "unBeastOlgaMarie"
+      ],
+      "attributeIdentities": ["man", "earth", "sky", "star", "beast"],
+      "families": [
+        { "familyId": "demonGodPillar", "membershipConstraints": { "kind": "independent" } },
+        { "familyId": "beast", "membershipConstraints": { "kind": "independent" } }
+      ]
+    },
+    "evidence": {
+      "families": [
+        {
+          "familyId": "demonGodPillar",
+          "atlasTargets": [],
+          "sourceDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "familyId": "beast",
+          "atlasTargets": [{ "targetId": "fixture-beast", "rawClassName": "Saber" }],
+          "sourceDigest": "1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ]
+    }
+  },
   "servants": [
     {
       "id": "fixture-saber",

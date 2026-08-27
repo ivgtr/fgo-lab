@@ -1,5 +1,6 @@
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
+import { targetPredicateKey } from './targetPredicate';
 
 export interface NpDamageOperationContext {
   overcharge: number;
@@ -7,6 +8,7 @@ export interface NpDamageOperationContext {
   targetTraitCounts: Readonly<Record<string, number>>;
   targetCombinedTraitCounts: Readonly<Record<string, number>>;
   targetStateTraitCounts: Readonly<Record<string, number>>;
+  targetPredicateValues: ReadonlyMap<string, boolean>;
   attackerHpPermille: number | null;
   targetRarity: number | null;
   battlePointPhase: number | null;
@@ -26,9 +28,37 @@ const one = (): [number, number, number, number, number] => [1, 1, 1, 1, 1];
 
 function countTraits(
   counts: Readonly<Record<string, number>>,
-  required: readonly { name: string }[],
+  targetPredicateValues: ReadonlyMap<string, boolean>,
+  required: readonly (
+    | { kind: 'trait'; name: string }
+    | {
+        kind: 'targetPredicate';
+        predicate: Parameters<typeof targetPredicateKey>[0];
+      }
+  )[],
 ): number {
-  return required.reduce((sum, trait) => sum + Math.max(0, counts[trait.name] ?? 0), 0);
+  return required.reduce(
+    (sum, trait) =>
+      sum +
+      (trait.kind === 'targetPredicate'
+        ? targetPredicateValues.get(targetPredicateKey(trait.predicate)) === true
+          ? 1
+          : 0
+        : Math.max(0, counts[trait.name] ?? 0)),
+    0,
+  );
+}
+
+function hasTrait(
+  trait:
+    | { kind: 'trait'; name: string }
+    | { kind: 'targetPredicate'; predicate: Parameters<typeof targetPredicateKey>[0] },
+  counts: Readonly<Record<string, number>>,
+  targetPredicateValues: ReadonlyMap<string, boolean>,
+): boolean {
+  return trait.kind === 'targetPredicate'
+    ? targetPredicateValues.get(targetPredicateKey(trait.predicate)) === true
+    : (counts[trait.name] ?? 0) > 0;
 }
 
 export function evaluateNpDamageOperation(
@@ -114,8 +144,8 @@ export function evaluateNpDamageOperation(
       baseMultipliers,
       parameters.map((parameter) =>
         context.effectLocalConditionSatisfied ||
-        (parameter.andCheckTraits ?? []).every(
-          (trait) => (context.targetTraitCounts[trait.name] ?? 0) > 0,
+        (parameter.andCheckTraits ?? []).every((trait) =>
+          hasTrait(trait, context.targetTraitCounts, context.targetPredicateValues),
         )
           ? (parameter.correctionPermille ?? 1_000) / 1_000
           : 1,
@@ -129,7 +159,8 @@ export function evaluateNpDamageOperation(
       baseMultipliers,
       parameters.map((parameter) =>
         context.effectLocalConditionSatisfied ||
-        (parameter.targetTrait && (conditionCounts[parameter.targetTrait.name] ?? 0) > 0)
+        (parameter.targetTrait &&
+          hasTrait(parameter.targetTrait, conditionCounts, context.targetPredicateValues))
           ? (parameter.correctionPermille ?? 1_000) / 1_000
           : 1,
       ) as [number, number, number, number, number],
@@ -140,7 +171,11 @@ export function evaluateNpDamageOperation(
   return resolved(
     baseMultipliers,
     parameters.map((parameter) => {
-      const count = countTraits(sourceCounts, parameter.targetTraits ?? []);
+      const count = countTraits(
+        sourceCounts,
+        context.targetPredicateValues,
+        parameter.targetTraits ?? [],
+      );
       if (count === 0) return 1;
       const capped =
         parameter.maximumTargetCount && parameter.maximumTargetCount > 0

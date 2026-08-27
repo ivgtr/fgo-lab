@@ -42,7 +42,7 @@ const input: DamageResolutionInput = {
   targetRarity: null,
   targetStateTraits: [],
   battlePointPhase: null,
-  target: { classId: 'neutral', attribute: 'unknown', traits: [] },
+  target: { classId: null, attribute: 'unknown', traits: [] },
 };
 const versions: VersionContext = {
   schemaVersion: SCHEMA_VERSION,

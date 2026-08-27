@@ -1,6 +1,13 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import type { BattleOperation, BattleState, ModifierKind, WorldFactAssertion } from './contracts';
+import type {
+  BattleOperation,
+  BattleState,
+  ModifierKind,
+  TargetPredicateAssertion,
+  WorldFactAssertion,
+} from './contracts';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
+import { targetPredicateKey } from './targetPredicate';
 
 export function cloneBattleState(state: BattleState): BattleState {
   return {
@@ -11,6 +18,10 @@ export function cloneBattleState(state: BattleState): BattleState {
       target: new Map(state.traits.target),
       targetState: new Map(state.traits.targetState),
       field: new Map(state.traits.field),
+    },
+    actorPredicates: {
+      attacker: new Map(state.actorPredicates.attacker),
+      target: new Map(state.actorPredicates.target),
     },
     traitCounts: {
       attacker: { ...state.traitCounts.attacker },
@@ -36,6 +47,8 @@ export function createInitialBattleState(
   input: DamageResolutionInput,
   attackerTraits: readonly string[],
   resolvedInputValues: Readonly<Record<string, number>> = {},
+  targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
+  attackerPredicateAssertions: readonly TargetPredicateAssertion[] = [],
 ): BattleState {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
@@ -46,6 +59,20 @@ export function createInitialBattleState(
       target: traitFacts(input.target.traits),
       targetState: traitFacts(input.targetStateTraits),
       field: traitFacts(input.fieldTraits),
+    },
+    actorPredicates: {
+      attacker: new Map(
+        attackerPredicateAssertions.map((assertion) => [
+          targetPredicateKey(assertion.predicate),
+          { predicate: assertion.predicate, present: assertion.present },
+        ]),
+      ),
+      target: new Map(
+        targetPredicateAssertions.map((assertion) => [
+          targetPredicateKey(assertion.predicate),
+          { predicate: assertion.predicate, present: assertion.present },
+        ]),
+      ),
     },
     traitCounts: {
       attacker: traitCounts(attacker),

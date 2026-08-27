@@ -243,11 +243,11 @@ describe('production probabilistic NP-before damage effects', () => {
       };
     });
     expect(records).toEqual([
-      { overcharge: 1, ratePermille: 600, failure: 23_688.94, success: 28_426.83 },
-      { overcharge: 2, ratePermille: 700, failure: 23_688.94, success: 28_426.83 },
-      { overcharge: 3, ratePermille: 800, failure: 23_688.94, success: 28_426.83 },
-      { overcharge: 4, ratePermille: 900, failure: 23_688.94, success: 28_426.83 },
-      { overcharge: 5, ratePermille: 1_000, failure: 23_688.94, success: 28_426.83 },
+      { overcharge: 1, ratePermille: 600, failure: 17_766.585, success: 21_320 },
+      { overcharge: 2, ratePermille: 700, failure: 17_766.585, success: 21_320 },
+      { overcharge: 3, ratePermille: 800, failure: 17_766.585, success: 21_320 },
+      { overcharge: 4, ratePermille: 900, failure: 17_766.585, success: 21_320 },
+      { overcharge: 5, ratePermille: 1_000, failure: 17_766.585, success: 21_320 },
     ]);
   });
 

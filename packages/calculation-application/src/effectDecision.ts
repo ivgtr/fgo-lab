@@ -3,6 +3,12 @@ import type { CalculationScenario } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
 import { conditionAllowsEffectLocalDecision, type EffectControlViewModel } from './effectControls';
 import { setEffectSourceEnabled, setOperationSourceEnabled } from './scenarioCommands';
+import {
+  applyTargetContextCommand,
+  targetContextCommandForEffect,
+  type TargetContextCommand,
+} from './targetContext';
+import type { TargetPredicate } from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -18,6 +24,14 @@ export type EffectDecisionCommand =
       decisionKey: string;
       enabled: boolean;
       fact: ResolvedScenario['worldFactAssertions'][number]['fact'];
+    }
+  | {
+      kind: 'setTargetPredicate';
+      enabled: boolean;
+      decision: Extract<
+        Exclude<EffectProjection['decision'], { state: 'none' }>,
+        { kind: 'targetPredicate' }
+      >;
     };
 
 export function commandForEffectProjection(
@@ -34,6 +48,8 @@ export function commandForEffectProjection(
       enabled,
       fact: projection.decision.fact,
     };
+  if (projection.decision.kind === 'targetPredicate')
+    return { kind: 'setTargetPredicate', enabled, decision: projection.decision };
   return {
     kind: 'setEffectDecision',
     decisionKey: projection.decision.decisionKey,
@@ -46,6 +62,15 @@ export function applyEffectDecisionCommand(
   scenario: ResolvedScenario,
   command: EffectDecisionCommand,
 ): ResolvedScenario {
+  if (command.kind === 'setTargetPredicate') {
+    return {
+      ...scenario,
+      targetContext: applyTargetContextCommand(
+        scenario.targetContext,
+        targetContextCommandForEffect(command.decision, command.enabled),
+      ),
+    };
+  }
   if (command.kind === 'setWorldFact')
     return {
       ...scenario,
@@ -124,6 +149,15 @@ export function applyEffectConditionDecision(
   const decisionKey = projection.decision.decisionKey;
   const current = scenario.effectDecisions.find((decision) => decision.decisionKey === decisionKey);
   let next = scenario;
+  if (projection.decision.targetContext)
+    for (const predicate of projection.decision.targetContext.predicates)
+      next = applyTargetPredicateCondition(
+        next,
+        predicate,
+        satisfied,
+        projection.decision.targetContext.fallbackClass.relation,
+        projection.decision.targetContext.fallbackAttribute.relation,
+      );
   if (satisfied)
     for (const peer of peers) {
       if (
@@ -159,6 +193,39 @@ export function applyEffectConditionDecision(
       current?.operationEnabled ?? projection.decision.plan.activation === 'automatic',
     conditionSatisfaction: satisfied ? 'assumeSatisfied' : 'evaluate',
   });
+}
+
+function applyTargetPredicateCondition(
+  scenario: ResolvedScenario,
+  predicate: TargetPredicate,
+  satisfied: boolean,
+  fallbackClass: Extract<TargetContextCommand, { kind: 'setClassRelation' }>['relation'],
+  fallbackAttribute: Extract<TargetContextCommand, { kind: 'setAttributeRelation' }>['relation'],
+): ResolvedScenario {
+  let command: TargetContextCommand;
+  switch (predicate.kind) {
+    case 'classIdentity':
+      command = satisfied
+        ? { kind: 'setConcreteClass', classId: predicate.classId }
+        : { kind: 'setClassRelation', relation: fallbackClass };
+      break;
+    case 'attributeIdentity':
+      command = satisfied
+        ? { kind: 'setConcreteAttribute', attribute: predicate.attribute }
+        : { kind: 'setAttributeRelation', relation: fallbackAttribute };
+      break;
+    case 'familyMembership':
+      command = {
+        kind: 'setFamily',
+        familyId: predicate.familyId,
+        enabled: satisfied,
+      };
+      break;
+  }
+  return {
+    ...scenario,
+    targetContext: applyTargetContextCommand(scenario.targetContext, command),
+  };
 }
 
 export function applyEffectProjectionDecisions(

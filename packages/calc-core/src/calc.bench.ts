@@ -37,7 +37,7 @@ const input = {
   targetRarity: null,
   targetStateTraits: [],
   battlePointPhase: null,
-  target: { classId: 'neutral', attribute: 'unknown', traits: [] },
+  target: { classId: null, attribute: 'unknown', traits: [] },
 } satisfies DamageResolutionInput;
 bench('NP1-5 / 200 random values', () => {
   const prepared = prepareDamageEvaluation(input);

@@ -9,6 +9,10 @@ import {
 const content = JSON.stringify({
   version: 'v1',
   normalization: { attackFunctions: { sourceCount: 0, includedCount: 0, excluded: [] } },
+  targetSemantics: {
+    execution: { classIdentities: [], attributeIdentities: [], families: [] },
+    evidence: { families: [] },
+  },
   servants: [],
   craftEssences: [],
   mysticCodes: [],
@@ -301,7 +305,7 @@ describe('immutable publish pipeline', () => {
       ratePermille: 1000,
       valuePermille: 3000,
       correctionPermille: 1500,
-      targetTrait: { id: 2002, name: 'dragon' },
+      targetTrait: { kind: 'trait', name: 'dragon' },
     });
     expect(snapshot.servants[0]?.noblePhantasms[1]?.damage[0]).toMatchObject({
       kind: 'battlePointPhase',
@@ -479,7 +483,7 @@ describe('immutable publish pipeline', () => {
     expect(lilith?.noblePhantasms[0]).toMatchObject({ card: 'quick' });
     expect(lilith?.noblePhantasms[0]?.damage[0]).toMatchObject({ kind: 'stateTrait' });
     expect(lilith?.noblePhantasms[0]?.damage[0]?.parametersByOvercharge[0][0]).toMatchObject({
-      targetTrait: { id: 3012, name: 'buffCharm' },
+      targetTrait: { kind: 'trait', name: 'buffCharm' },
       correctionPermille: 1500,
     });
     expect(lilith?.skills[0]?.effects[0]).toMatchObject({

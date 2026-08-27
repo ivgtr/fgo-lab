@@ -12,6 +12,7 @@ import type {
 import { inventoryAtlasAttackFunctions } from './atlasInventory';
 import { cardMap, normalizeFunctions, normalizeNpDamageFunction } from './effectNormalization';
 import { normalizeCraftEssenceLimitBreakEffects } from './craftEssenceNormalization';
+import { canonicalTargetPredicate, normalizeTargetSemantics } from './targetTaxonomy';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
   const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
@@ -105,6 +106,7 @@ export function normalizeAtlasSnapshot(input: {
   const attackInventory = inventoryAtlasAttackFunctions(atlasServants);
   if (attackInventory.unknown.length > 0)
     throw new TypeError(`unknown_attack_functions:${attackInventory.unknown.join(',')}`);
+  const targetSemantics = normalizeTargetSemantics(atlasServants);
   const excludedAttackFunctions = atlasServants.flatMap((servant) => {
     const reason = !servant.collectionNo
       ? ('missingCollectionNo' as const)
@@ -245,6 +247,11 @@ export function normalizeAtlasSnapshot(input: {
         ),
         noblePhantasms,
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
+        predicates: (servant.traits ?? []).flatMap((trait) => {
+          if (!trait.name) return [];
+          const predicate = canonicalTargetPredicate(trait.name);
+          return predicate ? [predicate] : [];
+        }),
         imageKey: image,
         skills: activeSkills
           .filter((skill) => typeof skill.id === 'number' && skill.name)
@@ -380,6 +387,7 @@ export function normalizeAtlasSnapshot(input: {
         excluded: excludedAttackFunctions,
       },
     },
+    targetSemantics,
     servants,
     craftEssences,
     mysticCodes,
