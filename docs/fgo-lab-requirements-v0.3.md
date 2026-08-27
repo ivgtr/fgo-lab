@@ -222,6 +222,12 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 | FR-RANK-009 | 複数条件を横に並べるシナリオ比較は設けない |
 | FR-RANK-010 | 単発計算と同じ計算コア、効果解決、丸め規則を使用し、ランキング専用の簡易式を持たない |
 | FR-RANK-011 | `unsupported`な候補を通常順位へ混在させず、対象外理由を確認できる |
+| FR-RANK-012 | 標準比較と所持戦力を別modeとし、保存値のない候補へ標準値をfallbackしない |
+| FR-RANK-013 | 自然上限／Lv90／Lv100／Lv120、NP1〜5、Fou、OC、自己効果、支援、礼装、相性、共通battle contextをcanonical scenario条件として扱う |
+| FR-RANK-014 | 計算条件と表示filterを別stateとし、filter変更だけでは全候補を再計算しない |
+| FR-RANK-015 | 閉じた行は順位・対象・主damage・主要属性だけを表示し、一度に一行だけcanonical evidenceの詳細を展開する |
+| FR-RANK-016 | 使用した`CalculationScenario`をそのまま計算機へ引き継ぎ、再計算したdamage・effect・condition・procを一致させる |
+| FR-RANK-017 | 条件、filter、sortを単一URL modelで共有可能にし、展開行等の一時UI stateとは分離する |
 
 ### 6.8 育成計画
 

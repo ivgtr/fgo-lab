@@ -17,3 +17,6 @@ ADRは採用時点の判断を記録する。状態は`accepted`、重要な契�
 | 011 | canonical effect execution semantics          |
 | 012 | battle contextと参照operationのcanonical化   |
 | 013 | 特殊入力のeffect近接presentation              |
+| 014 | effect interactionとseries presentation       |
+| 015 | effect inclusion、activation、proc semantics  |
+| 016 | ranking canonical scenarioと一覧presentation  |

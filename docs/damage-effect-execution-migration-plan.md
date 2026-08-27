@@ -381,7 +381,7 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 ### E4：ランキング統合と全master収束
 
-状態: 未着手
+状態: 実装中（ADR 016）
 
 E4着手前にE3.4として`docs/damage-effect-unsupported-convergence-plan.md`を実施する。順序はstable occurrence identity、typed non-damage/metadata、field/state mutation、既存quantity入力、choice/value expression、残存reason ratchetとする。各semantic familyでnormalizer、executor、application、production、shareのテストを揃え、旧key・raw parameter allowlist・projection上書き経路を同じフェーズ内で削除する。
 
@@ -410,11 +410,12 @@ E3.4完了記録（2026-08-26）:
 
 作業:
 
-- ranking workerを同じscenario compiler、executor、kernelへ接続する。
-- 候補別の自身効果と成立宣言を同じ規則で解決する。
-- ranking専用のeffect解決、入力集約、簡易式を削除する。
-- 全master inventory、単発対ranking differential、benchmarkをCIへ追加する。
-- 未対応をFunction family単位で分類し、サーヴァント別例外を作らず閉じる。
+- `calculation-application`へcanonical `RankingConditions`、候補scenario builder、row/evidence resolverを置く。
+- workerはmaster/profile inputを保持し、条件requestごとに同じ`calculateScenario`を実行する。flatten済み`DamageResolutionInput`を受け取る旧経路を削除する。
+- 標準比較と所持戦力を分離し、所持値欠落時の標準fallbackを禁止する。
+- 条件URL state、表示filter、worker state、展開行local stateの所有者を分離する。
+- semanticな`ol`、compact row、一行だけの遅延detail、canonical scenarioの計算機引き継ぎへ置換する。
+- 全420件のscenario/input/result/effect parity、typed failure inventory、filter非再計算、stale response、PC／390px／320px layoutをratchetする。
 
 確認ゲート E4:
 
