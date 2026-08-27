@@ -58,3 +58,22 @@ reasonを保持する。該当行だけerrorとretryを表示し、loading表示
 
 TargetContextの破壊的契約変更による更新であり、旧scenario／URL fallbackは持たない。E3.12.1 calculatorのlayout、
 操作位置、visible controlsは変更していない。承認済み46騎だけは存在しない2.0倍既定値をcanonical最大有利へ修正した。
+
+## Validation and performance
+
+- format／ESLint／TypeScript: success
+- unit／integration／property／golden: 61 files、318 tests、475.48s
+- master validation: 6 files、56 tests
+- evidence validation: 2 files、10 tests
+- production build: success
+- Playwright Chromium／mobile Chromium／VRT／a11y: 61 passed、29 project-specific skipped
+- `git diff --check`: success
+- main JS: 520.44 kB、gzip 147.89 kB
+- ranking worker: 192.86 kB
+- CSS: 44.73 kB、gzip 9.26 kB
+- damage kernel benchmark: 328.73 ops/s、mean 3.0420 ms
+- ranking summary実測: 特攻なし約11〜13秒／420件、特攻成立約22〜26秒／420件
+
+E4比でworkerが増えた主因はTargetContext candidate resolverと単一special-attack policyである。main threadは
+420件を計算せず、filter変更はworker requestを発行しない。production 20-policy ratchetは約7分を要するため、
+通常unitの速度と区別して継続監視する。
