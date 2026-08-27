@@ -1,7 +1,7 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行計画"
-document_version: "1.1.0"
-status: "E3.12 Validation - E4 Blocked"
+document_version: "1.2.0"
+status: "E4 Complete - E5 Not Started"
 created_at: "2026-08-25"
 source_requirements: "docs/damage-effect-execution-requirements.md v1.0.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -381,7 +381,7 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 ### E4：ランキング統合と全master収束
 
-状態: 実装中（ADR 016）
+状態: 完了（2026-08-27、ADR 016）
 
 E4着手前にE3.4として`docs/damage-effect-unsupported-convergence-plan.md`を実施する。順序はstable occurrence identity、typed non-damage/metadata、field/state mutation、既存quantity入力、choice/value expression、残存reason ratchetとする。各semantic familyでnormalizer、executor、application、production、shareのテストを揃え、旧key・raw parameter allowlist・projection上書き経路を同じフェーズ内で削除する。
 
@@ -423,6 +423,23 @@ E3.4完了記録（2026-08-26）:
 - 全JP攻撃宝具で未分類operationと条件が0件である。
 - unsupported候補が通常順位へ混在しない。
 - ranking中もUI操作を阻害しない。
+
+完了結果:
+
+- 旧workerのflatten済み`DamageResolutionInput`入力とranking専用kernel呼び出しを削除し、全候補を
+  `RankingConditions -> CalculationScenario -> calculateScenario`で解決する一経路へ置換した。
+- 標準比較420件は全件`calculated`となり、`inputRequired`／`unsupported`は0件だった。各rowのscenario、
+  final input、result、effect projectionをcalculator再実行と比較し、完全一致を確認した。
+- 標準比較digestは`6bf7e1358ce7f120d3e29b6490d0946f38d39b8d0a0f682360a88299d178988f`。
+  旧ランキング相当条件は`aaa11d899f7e522c6d0c4993e10978846e8ce2e940e8b480eb8b5a80ffe55d96`として
+  別ratchetに固定し、標準条件変更と同一scenario差分を混同しない。
+- 所持戦力は保存buildの`npLevel > 0`だけを候補とし、欠落サーヴァントへ標準値をfallbackしない。
+- filterは計算requestから分離し、URLの単一ranking stateからlocal presentationへ適用する。workerはrequest IDで
+  stale responseを破棄し、canonical condition fingerprintでsummaryと展開detailをcacheする。
+- semanticな`ol`と一行だけの遅延detailへ置換し、同じcanonical scenarioを計算機へ渡すE2EでNP値とeffectを
+  再確認した。desktop／390px／320pxの横overflowは0、閉じた行高は68／75.59／73.59pxである。
+- schema 26、engine 19.0.0、master 20260827は変更していない。完了証跡は
+  `docs/reports/damage-effect-execution-e4.md`に記録する。
 
 ### E5：文書、版、旧経路の最終監査
 
