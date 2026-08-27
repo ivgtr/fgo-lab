@@ -26,6 +26,7 @@ describe('battle execution architecture', () => {
       'candidateComparison.ts': 80,
       'scenarioResult.ts': 100,
       'targetContext.ts': 230,
+      'targetCandidateConstraint.ts': 100,
     } as const;
     for (const [file, maximumLines] of Object.entries(limits)) {
       const content = await source(`packages/battle-execution/src/${file}`);
