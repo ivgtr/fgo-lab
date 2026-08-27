@@ -48,7 +48,7 @@ describe('canonical ranking scenarios', () => {
     }
   });
 
-  it('applies one common育成 rule without mutating conditions into favorable facts', () => {
+  it('applies the fixed standard policy without inventing favorable facts', () => {
     const servant = master.servants[0]!;
     const scenario = createRankingScenario(
       servant,
@@ -56,24 +56,21 @@ describe('canonical ranking scenarios', () => {
       emptyProfile,
       {
         ...DEFAULT_RANKING_CONDITIONS,
-        levelRule: 'level100',
         npLevel: 2,
-        targetTraits: ['dragon'],
-        fieldTraits: ['fieldSunlight'],
       },
       versions,
     );
-    expect(scenario.attacker).toMatchObject({ level: 100, npLevel: 2, fouAtk: 1_000 });
-    expect(scenario.worldFactAssertions).toEqual([
-      {
-        decisionKey: 'ranking:target:dragon',
-        fact: { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
-      },
-      {
-        decisionKey: 'ranking:field:fieldSunlight',
-        fact: { kind: 'trait', scope: 'field', trait: 'fieldSunlight', present: true },
-      },
-    ]);
+    expect(scenario.attacker).toMatchObject({
+      level: naturalServantLevel(servant.rarity),
+      npLevel: 2,
+      fouAtk: 1_000,
+    });
+    expect(scenario.overcharge).toBe(1);
+    expect(scenario.targetContext).toMatchObject({
+      class: { kind: 'relative', relation: 'neutral' },
+      attribute: { kind: 'relative', relation: 'neutral' },
+    });
+    expect(scenario.worldFactAssertions).toEqual([]);
     expect(
       scenario.effectDecisions.every((decision) => decision.conditionSatisfaction === 'evaluate'),
     ).toBe(true);
@@ -107,9 +104,6 @@ describe('canonical ranking scenarios', () => {
       {
         ...DEFAULT_RANKING_CONDITIONS,
         comparisonMode: 'owned',
-        levelRule: 'level120',
-        npLevel: 5,
-        fouAtk: 2_000,
       },
       versions,
     );

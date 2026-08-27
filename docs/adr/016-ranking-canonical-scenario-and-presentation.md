@@ -18,7 +18,8 @@ E3.12.1までに、単発計算はsource activation、effect inclusion、conditi
 
 `calculation-application`が次を所有する。
 
-- `RankingConditions`: 比較モード、育成規則、NP/OC/Fou、自己効果、支援、礼装、相性、共通battle context、並び基準
+- `RankingConditions`のE4初期契約は比較モード、育成規則、NP/OC/Fou、自己効果、支援、礼装、相性、
+  共通battle context、並び基準を含んだ。E4.1ではADR-018により5項目の比較policyへ破壊的に置換した。
 - 候補ごとの`CalculationScenario`構築
 - visible terminal effectのcanonical default適用。effect inclusionだけを設定し、trait/field/choiceを有利に暗黙成立させない
 - `calculateScenario`による解決と、row summary・canonical evidence summaryの生成
@@ -77,4 +78,3 @@ workerはReact、画像URLの組み立て、翻訳label、開閉状態を知ら�
 - worker messageは大きくなるが、masterはworker生成後の初回同期で保持し、条件requestは小さくする。
 - 旧ランキングと新標準条件は順位が変わり得る。同一scenario parityと、標準条件差分を別々に監査する。
 - E4初回は通常の共通敵条件を正本とし、「各サーヴァントの最大特攻」モードは実装しない。
-

@@ -12,15 +12,19 @@ export function RankingList({
   rows,
   openServantId,
   details,
+  detailErrors,
   master,
   onToggle,
+  onRetryDetail,
   onOpenCalculator,
 }: {
   rows: readonly RankingPresentedRow[];
   openServantId: string | null;
   details: Readonly<Record<string, RankingDetail>>;
+  detailErrors: Readonly<Record<string, string>>;
   master: MasterDataSnapshot;
   onToggle: (servantId: string) => void;
+  onRetryDetail: (servantId: string) => void;
   onOpenCalculator: (scenario: CalculationScenario) => void;
 }) {
   return rows.length === 0 ? (
@@ -30,6 +34,7 @@ export function RankingList({
       {rows.map((row) => {
         const expanded = openServantId === row.servantId;
         const detail = details[row.servantId];
+        const detailError = detailErrors[row.servantId];
         const detailId = `ranking-detail-${row.servantId}`;
         return (
           <li key={row.servantId} className={row.rank <= 3 ? 'ranking-top' : undefined}>
@@ -49,6 +54,9 @@ export function RankingList({
                   <span className="visually-hidden">{npCardLabel(row.npCard)}</span>
                   {row.npTarget === 'all' ? '全体' : '単体'}・★{row.rarity}・
                   {servantClassLabels.get(row.classId) ?? row.classId}
+                  {row.specialAttackApplied ? (
+                    <span className="ranking-special-badge">特攻</span>
+                  ) : null}
                 </small>
                 {row.owned ? (
                   <small>
@@ -80,6 +88,13 @@ export function RankingList({
                     master={master}
                     onOpenCalculator={onOpenCalculator}
                   />
+                ) : detailError ? (
+                  <p role="alert" className="notice">
+                    詳細を読み込めませんでした: {detailError}{' '}
+                    <button type="button" onClick={() => onRetryDetail(row.servantId)}>
+                      再試行
+                    </button>
+                  </p>
                 ) : (
                   <p role="status" className="notice">
                     詳細を読み込み中…

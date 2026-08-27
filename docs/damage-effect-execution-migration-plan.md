@@ -632,3 +632,16 @@ affinityをADR 017の一つのtarget constraintへ置換する。
 
 TargetContext基盤を独立コミットした後だけ、ranking contractを5項目へ縮小し、同じcandidate resolverで
 単一の`specialAttack: inactive | active`を実装する。
+
+## 14. E4.1: five-policy ranking convergence
+
+TargetContext基盤を`66a21f3`で独立確定した後、旧ranking condition modelを削除する。
+
+1. `RankingConditions`をcomparison mode、NP Lv、class relation、self buffs、special attackの5項目へ置換する。
+2. 固定基準を`STANDARD_RANKING_SCENARIO_POLICY`へ集約し、Web／worker／testへ再定義しない。
+3. `rankingScenario`だけがpolicyからcanonical scenarioを構築し、`ranking.ts`はrow／failure assemblyだけを所有する。
+4. 特攻inactive／activeはcanonical projection commandを使い、成立候補をcalculatorと同じexecutorで計算する。
+5. 最大候補は平均damage、同値時canonical scenario keyで安定決定し、探索上限超過をfail-openしない。
+6. worker detail errorをsummary／initialization errorから分離し、一行だけ再試行可能にする。
+7. Atlas画像成功時はlocal deterministic fixture、失敗時はfallbackの別VRTで固定する。
+8. NP1〜5 × class neutral／favorable × special inactive／activeの20 production digestをratchetする。

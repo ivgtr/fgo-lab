@@ -85,10 +85,23 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
       })(),
     });
   } catch (cause) {
-    respond({
-      kind: 'error',
-      requestId: request.requestId,
-      message: cause instanceof Error ? cause.message : String(cause),
-    });
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    if (request.kind === 'detail')
+      respond({
+        kind: 'error',
+        stage: 'detail',
+        requestId: request.requestId,
+        fingerprint: request.fingerprint,
+        servantId: request.servantId,
+        reason,
+      });
+    else
+      respond({
+        kind: 'error',
+        stage: request.kind === 'initialize' ? 'initialization' : 'summary',
+        requestId: request.requestId,
+        fingerprint: request.kind === 'calculate' ? request.fingerprint : null,
+        reason,
+      });
   }
 };

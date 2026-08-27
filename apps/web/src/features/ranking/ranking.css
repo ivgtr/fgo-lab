@@ -14,6 +14,15 @@
   font-weight: 700;
 }
 
+.ranking-special-badge {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.25rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
 .ranking-condition-section,
 .ranking-filter-section {
   border: 1px solid var(--line);

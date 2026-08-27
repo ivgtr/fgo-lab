@@ -214,20 +214,21 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 | FR-RANK-001 | 初期状態は全サーヴァントを共通育成値で比較する |
 | FR-RANK-002 | 全サーヴァントと所持サーヴァントを切り替えられる |
 | FR-RANK-003 | クラス、宝具範囲、宝具カード、レアリティ等で絞り込める |
-| FR-RANK-004 | 攻撃対象、礼装、支援条件を全候補へ共通適用する |
+| FR-RANK-004 | 標準比較は自然上限、Fou+1000、skill Lv10、OC1、属性等倍、HP100%、礼装・支援なし等の単一fixed policyを全候補へ適用する |
 | FR-RANK-005 | 各候補の自身スキル、自バフ、特攻条件を候補ごとに解決する |
 | FR-RANK-006 | 順位、平均ダメージ、主要条件を一覧し、行から根拠と内訳を確認できる |
-| FR-RANK-007 | 所持範囲では保存済み現在値または育成目標を使い分けられる |
+| FR-RANK-007 | 所持戦力は保存済みLv・NP Lv・Fou・skill Lvを使い、未所持へ標準値をfallbackしない |
 | FR-RANK-008 | 計算をWorker等へ分離し、計算中も入力とスクロールを阻害しない |
 | FR-RANK-009 | 複数条件を横に並べるシナリオ比較は設けない |
 | FR-RANK-010 | 単発計算と同じ計算コア、効果解決、丸め規則を使用し、ランキング専用の簡易式を持たない |
 | FR-RANK-011 | `unsupported`な候補を通常順位へ混在させず、対象外理由を確認できる |
 | FR-RANK-012 | 標準比較と所持戦力を別modeとし、保存値のない候補へ標準値をfallbackしない |
-| FR-RANK-013 | 自然上限／Lv90／Lv100／Lv120、NP1〜5、Fou、OC、自己効果、支援、礼装、相性、共通battle contextをcanonical scenario条件として扱う |
+| FR-RANK-013 | 変更可能な計算条件は比較mode、NP Lv、class等倍／有利、自己buff、特攻なし／成立の5項目だけとし、廃止条件をhidden stateやlegacy URLとして残さない |
 | FR-RANK-014 | 計算条件と表示filterを別stateとし、filter変更だけでは全候補を再計算しない |
 | FR-RANK-015 | 閉じた行は順位・対象・主damage・主要属性だけを表示し、一度に一行だけcanonical evidenceの詳細を展開する |
 | FR-RANK-016 | 使用した`CalculationScenario`をそのまま計算機へ引き継ぎ、再計算したdamage・effect・condition・procを一致させる |
 | FR-RANK-017 | 条件、filter、sortを単一URL modelで共有可能にし、展開行等の一時UI stateとは分離する |
+| FR-RANK-018 | 特攻成立はcanonical `powerMod`／`npSpecial`の成立可能scenarioを同一executorで有限探索し、一騎一行の最大damageと採用TargetContextを返す |
 
 ### 6.8 育成計画
 

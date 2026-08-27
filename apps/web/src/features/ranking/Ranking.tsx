@@ -44,9 +44,6 @@ export function Ranking({
       </div>
       <RankingConditions
         conditions={urlState.conditions}
-        master={master}
-        craftEssenceCopies={profile.craftEssences}
-        supportTemplates={profile.supportTemplates}
         onChange={(conditions) => {
           setOpenServantId(null);
           setUrlState((current) => ({ ...current, conditions }));
@@ -73,8 +70,10 @@ export function Ranking({
         rows={rows}
         openServantId={openServantId}
         details={ranking.details}
+        detailErrors={ranking.detailErrors}
         master={master}
         onToggle={toggleDetail}
+        onRetryDetail={ranking.requestDetail}
         onOpenCalculator={onOpenCalculator}
       />
       {ranking.failures.length > 0 ? (

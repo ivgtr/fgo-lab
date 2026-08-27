@@ -1683,13 +1683,10 @@ test('persists servant, target, CE copies, and support templates', async ({ page
     .getByRole('listitem')
     .filter({ has: page.getByText('アルトリア・ペンドラゴン', { exact: true }) });
   await expect(rankingRow).toBeVisible();
-  const rankingWithoutSupport = Number(
+  const rankingWithSelfBuffs = Number(
     (await rankingRow.locator('.ranking-primary-damage strong').textContent())?.replaceAll(',', ''),
   );
-  await rankingCondition.getByRole('button', { name: '支援: なし' }).click();
-  const rankingSupportDialog = page.getByRole('dialog', { name: '保存済み支援条件' });
-  await rankingSupportDialog.getByRole('button', { name: '呼び出す' }).click();
-  await expect(rankingCondition).toContainText('支援: 周回支援');
+  await rankingCondition.getByLabel('自己バフ').selectOption('excluded');
   await expect
     .poll(
       async () =>
@@ -1701,7 +1698,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
         ),
       { timeout: 30_000 },
     )
-    .toBeGreaterThan(rankingWithoutSupport);
+    .toBeLessThan(rankingWithSelfBuffs);
 
   await page.getByRole('button', { name: '育成計画' }).click();
   await expect(page.getByRole('table', { name: '必要素材台帳' })).toContainText('剣の輝石');

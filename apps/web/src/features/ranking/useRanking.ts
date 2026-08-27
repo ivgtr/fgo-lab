@@ -55,6 +55,7 @@ export function useRanking({
     fingerprint: string;
     values: Record<string, RankingDetail>;
   }>({ fingerprint: '', values: {} });
+  const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const worker = new Worker(new URL('./ranking.worker.ts', import.meta.url), { type: 'module' });
@@ -75,6 +76,7 @@ export function useRanking({
           error: '',
         });
         setDetails({ fingerprint: response.fingerprint, values: {} });
+        setDetailErrors({});
         return;
       }
       if (response.kind === 'detail') {
@@ -92,8 +94,23 @@ export function useRanking({
           );
         return;
       }
+      if (
+        response.kind === 'error' &&
+        response.stage === 'initialization' &&
+        response.requestId === initializeRequestId
+      ) {
+        setState((current) => ({ ...current, error: response.reason }));
+        return;
+      }
+      if (response.kind === 'error' && response.stage === 'detail') {
+        if (response.fingerprint !== activeFingerprintRef.current) return;
+        if (detailRequestsRef.current.get(response.servantId) !== response.requestId) return;
+        detailRequestsRef.current.delete(response.servantId);
+        setDetailErrors((current) => ({ ...current, [response.servantId]: response.reason }));
+        return;
+      }
       if (response.kind === 'error' && response.requestId === activeRequestRef.current)
-        setState((current) => ({ ...current, error: response.message }));
+        setState((current) => ({ ...current, error: response.reason }));
     };
     const request: RankingWorkerRequest = {
       kind: 'initialize',
@@ -136,6 +153,9 @@ export function useRanking({
       )
         return;
       const requestId = crypto.randomUUID();
+      setDetailErrors((current) =>
+        Object.fromEntries(Object.entries(current).filter(([key]) => key !== servantId)),
+      );
       detailRequestsRef.current.set(servantId, requestId);
       const request: RankingWorkerRequest = {
         kind: 'detail',
@@ -151,6 +171,7 @@ export function useRanking({
   return {
     ...state,
     details: details.fingerprint === conditionsFingerprint ? details.values : {},
+    detailErrors,
     requestDetail,
     loading:
       initializedFingerprint !== contextFingerprint || state.fingerprint !== conditionsFingerprint,

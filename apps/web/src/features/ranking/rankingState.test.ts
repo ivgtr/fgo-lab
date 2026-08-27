@@ -12,15 +12,10 @@ describe('ranking URL state', () => {
       conditions: {
         ...DEFAULT_RANKING_URL_STATE.conditions,
         comparisonMode: 'owned' as const,
-        levelRule: 'level120' as const,
-        npLevel: 5,
-        supportTemplateId: '00000000-0000-4000-8000-000000000001',
-        targetTraits: ['dragon', 'divine'],
-        canonicalInputs: {
-          ...DEFAULT_RANKING_URL_STATE.conditions.canonicalInputs,
-          criticalStars: 50,
-          enemyCount: 3,
-        },
+        npLevel: 5 as const,
+        classAffinity: 'favorable' as const,
+        selfBuffs: 'excluded' as const,
+        specialAttack: 'active' as const,
       },
       metric: 'maximum' as const,
       filters: {
@@ -33,24 +28,15 @@ describe('ranking URL state', () => {
   });
 
   it('rejects out-of-domain values without preserving invalid input', () => {
-    const state = parseRankingUrlState('?rNp=9&rHp=-1&rStars=1000&rMode=unknown');
+    const state = parseRankingUrlState(
+      '?rNp=9&rMode=unknown&rAffinity=invalid&rSelf=invalid&rSpecial=invalid',
+    );
     expect(state.conditions).toMatchObject({
       comparisonMode: 'standard',
       npLevel: 1,
-      attackerHpPermille: 1_000,
-      canonicalInputs: { criticalStars: null },
+      classAffinity: 'neutral',
+      selfBuffs: 'included',
+      specialAttack: 'inactive',
     });
-  });
-
-  it('preserves an explicitly missing required battle quantity', () => {
-    const state = {
-      ...DEFAULT_RANKING_URL_STATE,
-      conditions: {
-        ...DEFAULT_RANKING_URL_STATE.conditions,
-        attackerHpPermille: null,
-        battlePointPhase: null,
-      },
-    };
-    expect(parseRankingUrlState(serializeRankingUrlState(state))).toEqual(state);
   });
 });

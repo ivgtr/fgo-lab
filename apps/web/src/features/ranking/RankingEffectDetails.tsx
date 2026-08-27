@@ -7,6 +7,7 @@ import {
 } from '../../presentation/damageEffectStacks';
 import { MasterImage } from '../../ui/MasterImage';
 import { numberFormatter } from '../../ui/i18n';
+import { servantClassLabels } from '../../ui/servantFilterOptions';
 import { traitLabel } from '../calculator/traitPresentation';
 
 export function RankingEffectDetails({
@@ -106,7 +107,10 @@ export function RankingEffectDetails({
           </section>
           {detail.effectInputs.length > 0 ||
           detail.scenario.worldFactAssertions.length > 0 ||
-          visibleProcEffects.length > 0 ? (
+          visibleProcEffects.length > 0 ||
+          detail.scenario.targetContext.class.kind === 'concrete' ||
+          detail.scenario.targetContext.attribute.kind === 'concrete' ||
+          detail.scenario.targetContext.families.length > 0 ? (
             <section className="ranking-context-evidence" aria-label="成立条件と確率結果">
               <h4>成立条件・確率結果</h4>
               <ul>
@@ -124,6 +128,27 @@ export function RankingEffectDetails({
                         ? traitLabel(assertion.fact.trait)
                         : `${assertion.fact.quantity}=${String(assertion.fact.value)}`}
                     </strong>
+                  </li>
+                ))}
+                {detail.scenario.targetContext.class.kind === 'concrete' ? (
+                  <li>
+                    <span>対象クラス</span>
+                    <strong>
+                      {servantClassLabels.get(detail.scenario.targetContext.class.classId) ??
+                        detail.scenario.targetContext.class.classId}
+                    </strong>
+                  </li>
+                ) : null}
+                {detail.scenario.targetContext.attribute.kind === 'concrete' ? (
+                  <li>
+                    <span>対象属性</span>
+                    <strong>{detail.scenario.targetContext.attribute.attribute}</strong>
+                  </li>
+                ) : null}
+                {detail.scenario.targetContext.families.map(({ familyId }) => (
+                  <li key={`family:${familyId}`}>
+                    <span>対象family</span>
+                    <strong>{familyId}</strong>
                   </li>
                 ))}
                 {visibleProcEffects.map((effect) => {

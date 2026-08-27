@@ -45,4 +45,18 @@ export type RankingWorkerResponse =
       servantId: string;
       detail: RankingDetail | null;
     }
-  | { kind: 'error'; requestId: string; message: string };
+  | {
+      kind: 'error';
+      stage: 'initialization' | 'summary';
+      requestId: string;
+      fingerprint: string | null;
+      reason: string;
+    }
+  | {
+      kind: 'error';
+      stage: 'detail';
+      requestId: string;
+      fingerprint: string;
+      servantId: string;
+      reason: string;
+    };

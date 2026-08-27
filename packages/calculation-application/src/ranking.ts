@@ -1,305 +1,24 @@
-import { attributeAffinity, classAffinity, servantAttribute } from '@fgo-lab/calc-core';
 import {
   getPrimaryNoblePhantasm,
   getPrimaryNpDamage,
   getPrimaryNpPresentation,
-  naturalServantLevel,
   type MasterDataSnapshot,
   type ServantMaster,
 } from '@fgo-lab/master-data';
-import type {
-  CalculationResult,
-  CalculationScenario,
-  ServantBuild,
-  SupportTemplate,
-  VersionContext,
-} from '@fgo-lab/schema';
-import { applyCanonicalInputCommand } from './canonicalInputs';
-import { applyEffectProjectionDecision } from './effectDecision';
-import {
-  calculateScenario,
-  createDefaultResolvedScenario,
-  type CalculationExecution,
-} from './scenario';
+import type { CalculationResult, VersionContext } from '@fgo-lab/schema';
 import type {
   RankingCalculation,
-  RankingCanonicalInputPolicy,
   RankingConditions,
   RankingDetail,
   RankingFailure,
-  RankingLevelRule,
   RankingProfileInput,
   RankingRowSummary,
   RankingSummary,
 } from './rankingContracts';
+import { createRankingScenarioFromPolicy } from './rankingScenario';
+import { calculateScenario } from './scenario';
 
 export * from './rankingContracts';
-
-type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
-
-function standardLevel(servant: ServantMaster, rule: RankingLevelRule): number {
-  if (rule === 'natural') return naturalServantLevel(servant.rarity);
-  if (rule === 'level90') return 90;
-  if (rule === 'level100') return 100;
-  return 120;
-}
-
-function selectedSupport(
-  profile: RankingProfileInput,
-  templateId: string | null,
-): SupportTemplate | undefined {
-  return templateId
-    ? profile.supportTemplates.find((candidate) => candidate.templateId === templateId)
-    : undefined;
-}
-
-function classAffinityValue(servant: ServantMaster, conditions: RankingConditions): number {
-  if (conditions.classAffinityRule === 'auto')
-    return classAffinity(servant.classId, conditions.targetClassId);
-  if (conditions.classAffinityRule === 'favorable') return 2;
-  if (conditions.classAffinityRule === 'attackAdvantage') return 1.5;
-  if (conditions.classAffinityRule === 'unfavorable') return 0.5;
-  return 1;
-}
-
-function attributeAffinityValue(servant: ServantMaster, conditions: RankingConditions): number {
-  if (conditions.attributeAffinityRule === 'auto')
-    return attributeAffinity(servantAttribute(servant.traits), conditions.targetAttribute);
-  if (conditions.attributeAffinityRule === 'favorable') return 1.1;
-  if (conditions.attributeAffinityRule === 'unfavorable') return 0.9;
-  return 1;
-}
-
-function worldFactAssertions(
-  conditions: RankingConditions,
-): ResolvedScenario['worldFactAssertions'] {
-  return [
-    ...[...new Set(conditions.targetTraits)].sort().map((trait) => ({
-      decisionKey: `ranking:target:${trait}`,
-      fact: { kind: 'trait' as const, scope: 'target' as const, trait, present: true },
-    })),
-    ...[...new Set(conditions.fieldTraits)].sort().map((trait) => ({
-      decisionKey: `ranking:field:${trait}`,
-      fact: { kind: 'trait' as const, scope: 'field' as const, trait, present: true },
-    })),
-  ];
-}
-
-function baseRankingScenario(
-  servant: ServantMaster,
-  build: ServantBuild | undefined,
-  master: MasterDataSnapshot,
-  profile: RankingProfileInput,
-  conditions: RankingConditions,
-): ResolvedScenario {
-  const owned = conditions.comparisonMode === 'owned';
-  if (owned && (!build || build.npLevel === 0))
-    throw new TypeError(`ranking_owned_build_missing:${servant.id}`);
-  const support = selectedSupport(profile, conditions.supportTemplateId);
-  const scenario = createDefaultResolvedScenario(master, owned ? build : undefined, servant);
-  const code = conditions.mysticCode
-    ? master.mysticCodes.find((candidate) => candidate.id === conditions.mysticCode?.mysticCodeId)
-    : undefined;
-  return {
-    ...scenario,
-    attacker: {
-      ...scenario.attacker,
-      source: owned ? 'owned' : 'master',
-      level: owned ? build!.level : standardLevel(servant, conditions.levelRule),
-      npLevel: owned ? build!.npLevel : conditions.npLevel,
-      fouAtk: owned ? build!.fouAtk : conditions.fouAtk,
-    },
-    overcharge: conditions.overcharge,
-    target: {
-      classId: conditions.targetClassId,
-      attribute: conditions.targetAttribute,
-    },
-    assumptions: {
-      classAffinity: classAffinityValue(servant, conditions),
-      attributeAffinity: attributeAffinityValue(servant, conditions),
-    },
-    attackerHpPermille: conditions.attackerHpPermille,
-    battleState: { battlePointPhase: conditions.battlePointPhase },
-    craftEssence: conditions.craftEssence,
-    attackerSkills: servant.skills.slice(0, 3).map((skill, index) => ({
-      skillId: skill.id,
-      skillLevel: owned ? (build!.skills[String(index + 1)] ?? 1) : 10,
-    })),
-    mysticCode:
-      code && conditions.mysticCode
-        ? {
-            mysticCodeId: code.id,
-            skills: code.skills.map((skill) => ({
-              skillId: skill.id,
-              skillLevel: conditions.mysticCode!.skillLevel,
-              enabled: true,
-            })),
-          }
-        : null,
-    support: support
-      ? {
-          sourceTemplateId: support.templateId,
-          composition: structuredClone(support.composition),
-        }
-      : null,
-    worldFactAssertions: worldFactAssertions(conditions),
-  };
-}
-
-function supportEffectExcluded(
-  template: SupportTemplate,
-  projection: CalculationExecution['effects'][number],
-) {
-  return template.composition.effectInclusions.some(
-    (override) =>
-      override.sourceInstanceId === projection.source.sourceInstanceId &&
-      override.skillId === projection.source.skillId &&
-      override.effectId === projection.source.effectId &&
-      override.effectOccurrenceId === projection.source.effectOccurrenceId,
-  );
-}
-
-function applyStoredSupportExclusions(
-  scenario: ResolvedScenario,
-  calculation: CalculationExecution,
-  support: SupportTemplate | undefined,
-): ResolvedScenario {
-  if (!support) return scenario;
-  return calculation.effects
-    .filter(
-      (projection) =>
-        projection.source.origin === 'support' && supportEffectExcluded(support, projection),
-    )
-    .reduce(
-      (current, projection) => applyEffectProjectionDecision(current, projection, false),
-      scenario,
-    );
-}
-
-function shouldControlSelfEffect(projection: CalculationExecution['effects'][number]): boolean {
-  return (
-    projection.visibility === 'visible' &&
-    (projection.source.origin === 'attacker' ||
-      projection.source.origin === 'passive' ||
-      projection.source.origin === 'np')
-  );
-}
-
-function applySelfEffectPolicy(
-  scenario: ResolvedScenario,
-  calculation: CalculationExecution,
-  conditions: RankingConditions,
-): ResolvedScenario {
-  let next = scenario;
-  for (const control of calculation.effectControls) {
-    const projection = control.projection;
-    if (!shouldControlSelfEffect(projection)) continue;
-    // A world-fact projection is an enemy/field condition, not a self-buff. The
-    // standard ranking never invents a favorable target fact for one servant.
-    if (projection.decision.state !== 'none' && projection.decision.kind === 'worldFact') continue;
-    if (control.interaction === 'singleChoice') continue;
-    if (projection.proc.kind === 'chainedRolls') {
-      const procInput = calculation.effectInputs.find(
-        (input) =>
-          input.kind === 'procSuccessCount' &&
-          input.relatedProjectionKeys.includes(projection.projectionKey),
-      );
-      if (!procInput)
-        throw new TypeError(`ranking_chained_input_missing:${projection.projectionKey}`);
-      next = applyCanonicalInputCommand(next, {
-        kind: 'setCanonicalIntegerInput',
-        key: procInput.key,
-        value:
-          conditions.includeSelfEffects && conditions.chainedProcPolicy === 'maximum'
-            ? procInput.maximum
-            : procInput.minimum,
-      });
-      continue;
-    }
-    if (projection.decision.state === 'none') continue;
-    const include =
-      conditions.includeSelfEffects &&
-      (projection.proc.kind === 'guaranteed' || conditions.procPolicy === 'success');
-    next = applyEffectProjectionDecision(next, projection, include);
-  }
-  return next;
-}
-
-function inputPolicyValue(
-  definition: CalculationExecution['inputDefinitions'][number],
-  policy: RankingCanonicalInputPolicy,
-): number | null {
-  if (definition.kind === 'matchingActorCount') {
-    const predicates = [
-      definition.countSemantics.sourcePredicate,
-      definition.countSemantics.otherPredicate,
-    ].filter((predicate) => predicate !== null);
-    const countsWholePopulation =
-      predicates.length > 0 &&
-      predicates.every((predicate) => {
-        const clauses =
-          predicate.counting === 'matchingTraits' ? [predicate.atoms] : predicate.clauses;
-        return clauses.every((clause) => clause.every((atom) => atom.kind === 'actorProperty'));
-      });
-    // Trait-match counts (for example 〔王〕 and 〔悪〕) are distinct canonical
-    // inputs even when they inspect the same actor population. A common party
-    // size must not overwrite those effect-local counts.
-    if (!countsWholePopulation) return null;
-    if (definition.countSemantics.population === 'enemies') return policy.enemyCount;
-    if (definition.countSemantics.population === 'allies') return policy.allyCount;
-    return policy.allActorCount;
-  }
-  if (definition.kind === 'procSuccessCount') return null;
-  return policy[definition.kind] ?? null;
-}
-
-function applyCanonicalInputPolicy(
-  scenario: ResolvedScenario,
-  calculation: CalculationExecution,
-  policy: RankingCanonicalInputPolicy,
-): ResolvedScenario {
-  return calculation.inputDefinitions.reduce((current, definition) => {
-    const value = inputPolicyValue(definition, policy);
-    return value === null
-      ? current
-      : applyCanonicalInputCommand(current, {
-          kind: 'setCanonicalIntegerInput',
-          key: definition.key,
-          value,
-        });
-  }, scenario);
-}
-
-function applyNonSelfProcPolicy(
-  scenario: ResolvedScenario,
-  calculation: CalculationExecution,
-  conditions: RankingConditions,
-): ResolvedScenario {
-  if (conditions.procPolicy === 'success' && conditions.chainedProcPolicy === 'maximum')
-    return scenario;
-  let next = scenario;
-  for (const control of calculation.effectControls) {
-    const projection = control.projection;
-    if (shouldControlSelfEffect(projection) || projection.proc.kind === 'guaranteed') continue;
-    if (projection.proc.kind === 'chainedRolls') {
-      const procInput = calculation.effectInputs.find(
-        (input) =>
-          input.kind === 'procSuccessCount' &&
-          input.relatedProjectionKeys.includes(projection.projectionKey),
-      );
-      if (procInput && conditions.chainedProcPolicy === 'minimum')
-        next = applyCanonicalInputCommand(next, {
-          kind: 'setCanonicalIntegerInput',
-          key: procInput.key,
-          value: procInput.minimum,
-        });
-      continue;
-    }
-    if (conditions.procPolicy === 'failure' && projection.decision.state !== 'none')
-      next = applyEffectProjectionDecision(next, projection, false);
-  }
-  return next;
-}
 
 export function createRankingScenario(
   servant: ServantMaster,
@@ -307,18 +26,8 @@ export function createRankingScenario(
   profile: RankingProfileInput,
   conditions: RankingConditions,
   versions: VersionContext,
-): ResolvedScenario {
-  const build = profile.servantBuilds[servant.id];
-  let scenario = baseRankingScenario(servant, build, master, profile, conditions);
-  let calculation = calculateScenario(scenario, master, versions);
-  const support = selectedSupport(profile, conditions.supportTemplateId);
-  scenario = applyStoredSupportExclusions(scenario, calculation, support);
-  calculation = calculateScenario(scenario, master, versions);
-  scenario = applySelfEffectPolicy(scenario, calculation, conditions);
-  calculation = calculateScenario(scenario, master, versions);
-  scenario = applyCanonicalInputPolicy(scenario, calculation, conditions.canonicalInputs);
-  calculation = calculateScenario(scenario, master, versions);
-  return applyNonSelfProcPolicy(scenario, calculation, conditions);
+) {
+  return createRankingScenarioFromPolicy(servant, master, profile, conditions, versions);
 }
 
 function resultFailure(servant: ServantMaster, result: CalculationResult): RankingFailure {
@@ -387,11 +96,7 @@ function rankingRow(
   const applied = detail.effects.filter(
     (effect) => effect.visibility === 'visible' && effect.outcome === 'applied',
   );
-  const supportSources = new Set(
-    applied
-      .filter((effect) => effect.source.origin === 'support')
-      .map((effect) => effect.source.sourceInstanceId),
-  );
+  const supportEffects = applied.filter((effect) => effect.source.origin === 'support');
   return {
     servantId: servant.id,
     name: servant.name,
@@ -405,16 +110,36 @@ function rankingRow(
     maximum: selected.maximum,
     precision: detail.result.precision,
     appliedEffectCount: new Set(applied.map((effect) => effect.projectionKey)).size,
-    supportEffectCount: new Set(
-      applied
-        .filter((effect) => effect.source.origin === 'support')
-        .map((effect) => effect.projectionKey),
-    ).size,
-    supportSourceCount: supportSources.size,
+    supportEffectCount: new Set(supportEffects.map((effect) => effect.projectionKey)).size,
+    supportSourceCount: new Set(supportEffects.map((effect) => effect.source.sourceInstanceId))
+      .size,
+    specialAttackApplied: applied.some(
+      (effect) => effect.modifier === 'powerMod' || effect.modifier === 'npSpecial',
+    ),
     level: detail.scenario.attacker.level,
     npLevel: detail.scenario.attacker.npLevel,
     owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
   };
+}
+
+function calculateRows(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  conditions: RankingConditions,
+  versions: VersionContext,
+  includeDetails: boolean,
+): RankingCalculation {
+  const rows: RankingRowSummary[] = [];
+  const failures: RankingFailure[] = [];
+  const details: Record<string, RankingDetail> = {};
+  for (const servant of includedRankingServants(master, profile, conditions)) {
+    const detail = calculateRankingDetail(servant, master, profile, conditions, versions);
+    if (includeDetails) details[servant.id] = detail;
+    const candidate = rankingRow(servant, detail, profile);
+    if ('status' in candidate) failures.push(candidate);
+    else rows.push(candidate);
+  }
+  return { rows, failures, details };
 }
 
 export function calculateRankingSummary(
@@ -423,17 +148,7 @@ export function calculateRankingSummary(
   conditions: RankingConditions,
   versions: VersionContext,
 ): RankingSummary {
-  const rows: RankingRowSummary[] = [];
-  const failures: RankingFailure[] = [];
-  for (const servant of includedRankingServants(master, profile, conditions)) {
-    const candidate = rankingRow(
-      servant,
-      calculateRankingDetail(servant, master, profile, conditions, versions),
-      profile,
-    );
-    if ('status' in candidate) failures.push(candidate);
-    else rows.push(candidate);
-  }
+  const { rows, failures } = calculateRows(master, profile, conditions, versions, false);
   return { rows, failures };
 }
 
@@ -443,15 +158,5 @@ export function calculateRanking(
   conditions: RankingConditions,
   versions: VersionContext,
 ): RankingCalculation {
-  const rows: RankingRowSummary[] = [];
-  const failures: RankingFailure[] = [];
-  const details: Record<string, RankingDetail> = {};
-  for (const servant of includedRankingServants(master, profile, conditions)) {
-    const detail = calculateRankingDetail(servant, master, profile, conditions, versions);
-    details[servant.id] = detail;
-    const candidate = rankingRow(servant, detail, profile);
-    if ('status' in candidate) failures.push(candidate);
-    else rows.push(candidate);
-  }
-  return { rows, failures, details };
+  return calculateRows(master, profile, conditions, versions, true);
 }

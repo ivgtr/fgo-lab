@@ -1,9 +1,22 @@
 import { expect, test, type Page } from '@playwright/test';
+import { resolve } from 'node:path';
 import { completeSetup } from './setup';
 
-async function openRanking(page: Page, width: number, height: number) {
+async function openRanking(
+  page: Page,
+  width: number,
+  height: number,
+  iconMode: 'fixture' | 'fallback' = 'fixture',
+) {
   await page.setViewportSize({ width, height });
-  await page.route('https://static.atlasacademy.io/**', (route) => route.abort());
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    iconMode === 'fixture'
+      ? route.fulfill({
+          path: resolve(process.cwd(), 'apps/web/public/filter-icons/class/saber.png'),
+          contentType: 'image/png',
+        })
+      : route.abort(),
+  );
   await page.goto('/');
   await completeSetup(page);
   const rankingButton = page.getByRole('button', { name: '火力ランキング' });
@@ -16,6 +29,30 @@ async function openRanking(page: Page, width: number, height: number) {
     timeout: 30_000,
   });
 }
+
+test('ranking exposes only five calculation policies', async ({ page, isMobile }) => {
+  test.setTimeout(60_000);
+  test.skip(isMobile, 'The desktop project owns the semantic controls baseline');
+  await openRanking(page, 1440, 1000);
+  const conditions = page.getByRole('region', { name: 'ランキングの計算条件' });
+  await expect(conditions.getByRole('combobox')).toHaveCount(5);
+  await expect(conditions.getByLabel('比較')).toHaveValue('standard');
+  await expect(conditions.getByLabel('宝具Lv')).toHaveValue('1');
+  await expect(conditions.getByLabel('クラス相性')).toHaveValue('neutral');
+  await expect(conditions.getByLabel('自己バフ')).toHaveValue('included');
+  await expect(conditions.getByLabel('特攻')).toHaveValue('inactive');
+  await expect(conditions).toContainText('自然上限・Fou1000・OC1・スキルLv10');
+  await expect(conditions.locator('input')).toHaveCount(0);
+});
+
+test('ranking icon fallback is deterministic', async ({ page, isMobile }) => {
+  test.setTimeout(60_000);
+  test.skip(isMobile, 'The desktop project owns the icon fallback baseline');
+  await openRanking(page, 390, 844, 'fallback');
+  await expect(
+    page.getByRole('list', { name: '宝具火力ランキング' }).getByRole('listitem').first(),
+  ).toHaveScreenshot('ranking-row-icon-fallback-390px.png');
+});
 
 test('ranking desktop UI baseline', async ({ page, isMobile }) => {
   test.setTimeout(60_000);
