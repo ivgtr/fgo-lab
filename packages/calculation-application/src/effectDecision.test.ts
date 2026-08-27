@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
-import { applyEffectConditionDecision, applyEffectProjectionDecision } from './effectDecision';
+import {
+  applyEffectConditionDecision,
+  applyEffectPresentationDecision,
+  applyEffectProjectionDecision,
+} from './effectDecision';
 import { createDefaultResolvedScenario } from './scenario';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -173,5 +177,51 @@ describe('effect decision application command', () => {
         conditionSatisfaction: 'assumeSatisfied',
       },
     ]);
+
+    const inactiveSkillScenario = {
+      ...scenario,
+      attackerSkills: [
+        ...scenario.attackerSkills,
+        { skillId: 'skill', skillLevel: 10, enabled: false },
+      ],
+    };
+    const compactSky = applyEffectPresentationDecision(
+      inactiveSkillScenario,
+      baseProjection,
+      true,
+      [baseProjection, earth],
+    );
+    const compactEarth = applyEffectPresentationDecision(compactSky, earth, true, [
+      baseProjection,
+      earth,
+    ]);
+    expect(compactEarth.attackerSkills.find((skill) => skill.skillId === 'skill')?.enabled).toBe(
+      true,
+    );
+    expect(compactEarth.effectDecisions).toEqual([
+      {
+        decisionKey: 'effect:sky',
+        operationEnabled: true,
+        conditionSatisfaction: 'evaluate',
+      },
+      {
+        decisionKey: 'effect:earth',
+        operationEnabled: true,
+        conditionSatisfaction: 'assumeSatisfied',
+      },
+    ]);
+
+    const compactEarthOff = applyEffectPresentationDecision(compactEarth, earth, false, [
+      baseProjection,
+      earth,
+    ]);
+    expect(compactEarthOff.attackerSkills.find((skill) => skill.skillId === 'skill')?.enabled).toBe(
+      true,
+    );
+    expect(compactEarthOff.effectDecisions.at(-1)).toEqual({
+      decisionKey: 'effect:earth',
+      operationEnabled: false,
+      conditionSatisfaction: 'evaluate',
+    });
   });
 });
