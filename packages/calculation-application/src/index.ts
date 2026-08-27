@@ -5,6 +5,7 @@ export * from './effectDecision';
 export * from './effectControls';
 export * from './scenario';
 export * from './scenarioCommands';
+export * from './ranking';
 export * from './supportEffectPresentation';
 export type {
   ConditionExpression,
