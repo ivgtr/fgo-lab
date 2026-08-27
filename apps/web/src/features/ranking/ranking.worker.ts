@@ -2,6 +2,8 @@
 import {
   calculateRankingDetail,
   calculateRankingSummary,
+  calculateStandardRankingMatrix,
+  rankingMatrixPolicyKey,
   type RankingConditions,
   type RankingProfileInput,
 } from '@fgo-lab/calculation-application';
@@ -18,10 +20,30 @@ let context:
   | undefined;
 const conditionCache = new Map<string, RankingConditions>();
 const summaryCache = new Map<string, ReturnType<typeof calculateRankingSummary>>();
+const standardMatrixCache = new Map<string, ReturnType<typeof calculateStandardRankingMatrix>>();
 const detailCache = new Map<string, Map<string, ReturnType<typeof calculateRankingDetail>>>();
 
 function respond(response: RankingWorkerResponse) {
   self.postMessage(response);
+}
+
+function standardSummary(
+  conditions: RankingConditions,
+): ReturnType<typeof calculateRankingSummary> {
+  if (!context) throw new TypeError('ranking_worker_not_initialized');
+  const { npLevel, ...matrixConditions } = conditions;
+  const matrixKey = rankingMatrixPolicyKey(matrixConditions);
+  let matrix = standardMatrixCache.get(matrixKey);
+  if (!matrix) {
+    matrix = calculateStandardRankingMatrix(
+      context.master,
+      context.profile,
+      matrixConditions,
+      context.versions,
+    );
+    standardMatrixCache.set(matrixKey, matrix);
+  }
+  return matrix[npLevel - 1]!;
 }
 
 self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
@@ -31,6 +53,7 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
       context = { master: request.master, profile: request.profile, versions: request.versions };
       conditionCache.clear();
       summaryCache.clear();
+      standardMatrixCache.clear();
       detailCache.clear();
       respond({ kind: 'ready', requestId: request.requestId });
       return;
@@ -39,12 +62,14 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
     if (request.kind === 'calculate') {
       const calculation =
         summaryCache.get(request.fingerprint) ??
-        calculateRankingSummary(
-          context.master,
-          context.profile,
-          request.conditions,
-          context.versions,
-        );
+        (request.conditions.comparisonMode === 'standard'
+          ? standardSummary(request.conditions)
+          : calculateRankingSummary(
+              context.master,
+              context.profile,
+              request.conditions,
+              context.versions,
+            ));
       conditionCache.set(request.fingerprint, request.conditions);
       summaryCache.set(request.fingerprint, calculation);
       respond({

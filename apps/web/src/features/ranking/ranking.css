@@ -297,6 +297,15 @@
   font-weight: 700;
 }
 
+.ranking-area-support h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+}
+
+.ranking-area-support .ranking-damage-range {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .ranking-effect-stacks {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
@@ -483,7 +492,8 @@
   }
 
   .ranking-damage-range,
-  .ranking-input-summary {
+  .ranking-input-summary,
+  .ranking-area-support .ranking-damage-range {
     grid-template-columns: 1fr;
   }
 }

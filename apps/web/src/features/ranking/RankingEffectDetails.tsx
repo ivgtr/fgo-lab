@@ -10,6 +10,38 @@ import { numberFormatter } from '../../ui/i18n';
 import { servantClassLabels } from '../../ui/servantFilterOptions';
 import { traitLabel } from '../calculator/traitPresentation';
 
+function AreaSupportSummary({ detail }: { detail: RankingDetail }) {
+  const area = detail.areaSupport;
+  if (detail.result.status !== 'calculated' || area?.result.status !== 'calculated') return null;
+  const npIndex = detail.scenario.attacker.npLevel - 1;
+  const personalRow = detail.result.rows[npIndex];
+  const areaRow = area.result.rows[npIndex];
+  if (!personalRow || !areaRow || areaRow.average === personalRow.average) return null;
+  return (
+    <section className="ranking-area-support" aria-label="エリア支援込みダメージ">
+      <h4>エリア支援込み</h4>
+      <dl className="ranking-damage-range">
+        <div>
+          <dt>最低</dt>
+          <dd>{numberFormatter.format(areaRow.minimum)}</dd>
+        </div>
+        <div>
+          <dt>平均</dt>
+          <dd>{numberFormatter.format(areaRow.average)}</dd>
+        </div>
+        <div>
+          <dt>最大</dt>
+          <dd>{numberFormatter.format(areaRow.maximum)}</dd>
+        </div>
+        <div>
+          <dt>平均増加</dt>
+          <dd>+{numberFormatter.format(areaRow.average - personalRow.average)}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
 export function RankingEffectDetails({
   detail,
   master,
@@ -57,6 +89,7 @@ export function RankingEffectDetails({
               </dd>
             </div>
           </dl>
+          <AreaSupportSummary detail={detail} />
           <dl className="ranking-input-summary">
             <div>
               <dt>最終ATK</dt>

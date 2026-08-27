@@ -9,6 +9,7 @@ import {
   DEFAULT_RANKING_CONDITIONS,
   type RankingProfileInput,
 } from './ranking';
+import { rankingMatrixPolicyKey } from './rankingMatrix';
 
 const master = masterSnapshotSchema.parse(fixture);
 const versions = {
@@ -126,5 +127,21 @@ describe('canonical ranking scenarios', () => {
       versions,
     );
     expect(scenario.attacker.level).toBe(naturalServantLevel(servant.rarity));
+  });
+
+  it('keys the prepared standard matrix independently from the selected NP level', () => {
+    const policy = {
+      comparisonMode: DEFAULT_RANKING_CONDITIONS.comparisonMode,
+      classAffinity: DEFAULT_RANKING_CONDITIONS.classAffinity,
+      selfBuffs: DEFAULT_RANKING_CONDITIONS.selfBuffs,
+      specialAttack: DEFAULT_RANKING_CONDITIONS.specialAttack,
+    };
+    expect(rankingMatrixPolicyKey(policy)).toBe('standard:neutral:included:inactive');
+    expect(
+      rankingMatrixPolicyKey({
+        ...policy,
+        specialAttack: 'active',
+      }),
+    ).not.toBe(rankingMatrixPolicyKey(policy));
   });
 });

@@ -70,6 +70,27 @@ test('ranking desktop UI baseline', async ({ page, isMobile }) => {
   await expect(page).toHaveScreenshot('ranking-detail-desktop.png');
 });
 
+test('ranking keeps area support outside the primary row and explains it in details', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(60_000);
+  test.skip(isMobile, 'The desktop project owns the ranking detail baseline');
+  await openRanking(page, 1440, 1000);
+  await page.getByPlaceholder('名前で検索').fill('雨の魔女トネリコ');
+  const row = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .filter({ hasText: '雨の魔女トネリコ' });
+  await expect(row.locator('.ranking-primary-damage strong')).toHaveText('18,631');
+  await row.getByRole('button', { name: '詳細' }).click();
+  const detail = row.getByRole('region', { name: /雨の魔女トネリコの計算詳細/ });
+  await expect(detail.getByRole('region', { name: 'エリア支援込みダメージ' })).toContainText(
+    '27,947',
+  );
+  await expect(detail).toContainText('平均増加');
+});
+
 for (const viewport of [
   { name: '390px', width: 390, height: 844 },
   { name: '320px', width: 320, height: 700 },
