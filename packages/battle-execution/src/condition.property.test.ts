@@ -14,10 +14,13 @@ function state(
   targetState: readonly string[] = [],
 ): ExecutableBattleState {
   return {
-    actorFormId: 'fixture-form',
+    actorFormId: { actorId: 'fixture-form', limitCount: 0 },
     noblePhantasmVariant: {
       kind: 'nonAttack',
-      ref: { actorFormId: 'fixture-form', noblePhantasmId: 'fixture-np' },
+      ref: {
+        actorFormId: { actorId: 'fixture-form', limitCount: 0 },
+        noblePhantasmId: 'fixture-np',
+      },
       name: 'fixture NP',
       priority: 1,
       effects: [],

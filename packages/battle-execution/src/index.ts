@@ -52,6 +52,7 @@ export {
   type OrderedScenarioExecution,
   type PreparedOrderedScenario,
   type ResolvedCanonicalInputSet,
+  type DamageContributionProjection,
 } from './engine';
 export {
   MAX_TARGET_CANDIDATES,
@@ -79,3 +80,21 @@ export {
   type NpDamageOperationContext,
   type NpDamageOperationResult,
 } from './npDamageOperation';
+export {
+  resolveAttackerFormExecution,
+  type ResolvedAttackerFormExecution,
+  type ResolvedAttackerSkillUse,
+} from './sourceCollection';
+export {
+  availablePreparationSkillCommands,
+  availableTransformNoblePhantasmCommand,
+  createPreNoblePhantasmState,
+  currentFormPassives,
+  reducePreNoblePhantasmAction,
+  type AppliedPreparationAction,
+  type AppliedPreparationEffect,
+  type PreNoblePhantasmState,
+  type PreparationFailureCode,
+  type PreparationTransitionResult,
+  type SkillSlotRef,
+} from './preNoblePhantasm';

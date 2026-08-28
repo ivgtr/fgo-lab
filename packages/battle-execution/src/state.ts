@@ -188,6 +188,9 @@ export function applyActorFormTransition(
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   candidate.actorFormId = operation.targetFormId;
+  const traits = [...operation.targetTraits, 'cardNP'];
+  candidate.traits.attacker = traitFacts(traits);
+  candidate.traitCounts.attacker = traitCounts(traits);
   return candidate;
 }
 

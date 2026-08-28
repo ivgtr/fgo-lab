@@ -39,7 +39,7 @@ export function operationRecipient(
   if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
     return 'attacker';
   if (operation.kind === 'selectNoblePhantasmVariant' || operation.kind === 'transformActorForm')
-    return origin === 'attacker' || origin === 'passive' ? 'attacker' : null;
+    return origin === 'attacker' || origin === 'passive' || origin === 'np' ? 'attacker' : null;
   return operation.kind === 'nonDamage'
     ? null
     : resolveTargetPolicy(origin, operation.targetPolicy);

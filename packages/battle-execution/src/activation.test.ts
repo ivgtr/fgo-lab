@@ -20,7 +20,7 @@ const shore: ConditionExpression = {
 };
 
 describe('attacker skill mutation activation planning', () => {
-  it('derives an unconditional hidden mutation from the selected terminal effect', () => {
+  it('keeps an applied attacker action mutation independent from contribution decisions', () => {
     const source: OperationSource = {
       origin: 'attacker',
       sourceInstanceId: 'attacker:1',
@@ -72,17 +72,8 @@ describe('attacker skill mutation activation planning', () => {
     const planned = planOperationActivations(compiled);
 
     expect(compiled[0]?.activation).toEqual({ kind: 'sourceDefault' });
-    expect(planned[0]?.activation).toEqual({
-      kind: 'linkedDecisions',
-      links: [
-        {
-          decisionKey: 'effect:modifier',
-          reason: 'sourceSkill',
-          selection: 'operationEnabled',
-        },
-      ],
-    });
-    expect(resolveOperationActivation(planned[0]!, new Map()).enabled).toBe(false);
+    expect(planned[0]?.activation).toEqual({ kind: 'sourceDefault' });
+    expect(resolveOperationActivation(planned[0]!, new Map()).enabled).toBe(true);
     expect(
       resolveOperationActivation(
         planned[0]!,

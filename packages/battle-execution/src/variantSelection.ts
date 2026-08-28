@@ -1,4 +1,8 @@
-import { noblePhantasmVariantKey, type NoblePhantasmVariant } from '@fgo-lab/master-data';
+import {
+  actorFormEquals,
+  noblePhantasmVariantKey,
+  type NoblePhantasmVariant,
+} from '@fgo-lab/master-data';
 import type { BattleOperation, ExecutableBattleState, ExecutionIssue } from './contracts';
 import type { EffectDecision } from './contracts';
 import { activationRequirementsSatisfied, evaluateCondition } from './condition';
@@ -98,7 +102,7 @@ export function applyRuntimeNoblePhantasmVariantSelection(
     (candidate) =>
       noblePhantasmVariantKey(candidate.ref) === noblePhantasmVariantKey(operation.variant),
   );
-  if (!variant || variant.ref.actorFormId !== state.actorFormId)
+  if (!variant || !actorFormEquals(variant.ref.actorFormId, state.actorFormId))
     return {
       state,
       issue: variantIssue(operation, variant ? 'formMismatch' : 'unknownVariant'),
@@ -150,7 +154,7 @@ export function applySelectedNoblePhantasmContext(
       activations.get(operation.operationId)?.enabled === true,
   );
   let state = transitions.reduce(applyActorFormTransition, initialState);
-  if (state.actorFormId !== variant.ref.actorFormId)
+  if (!actorFormEquals(state.actorFormId, variant.ref.actorFormId))
     return { state: initialState, issue: variantIssue(selection, 'formMismatch') };
   state = applyNoblePhantasmVariantSelection(state, variant);
   for (const operation of preapplied) {

@@ -1,3 +1,4 @@
+import { actorFormEquals } from '@fgo-lab/master-data';
 import type {
   ActorCountPredicate,
   CanonicalInputDefinition,
@@ -5,6 +6,7 @@ import type {
   EffectExecutionOperation,
   MasterEffect,
   ModifierValueExpression,
+  ServantMaster,
 } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
@@ -405,7 +407,61 @@ export interface CompiledOperations {
   unsupported: EffectProjection[];
 }
 
-export function compileEffect(source: SourceEffect, startOrder: number): CompiledOperations {
+const compiledEffectCache = new WeakMap<MasterEffect, Map<string, CompiledOperations>>();
+
+function compilationCacheKey(
+  source: SourceEffect,
+  actorForms: ServantMaster['actorFormGraph']['forms'],
+): string {
+  const needsActorForms = source.effect.execution.some(({ kind }) => kind === 'transformActorForm');
+  return JSON.stringify({
+    phase: source.phase,
+    origin: source.origin,
+    sourceInstanceId: source.sourceInstanceId,
+    sourceId: source.sourceId,
+    sourceName: source.sourceName,
+    sourceTraits: [...source.sourceTraits].sort(),
+    skillId: source.skillId,
+    skillName: source.skillName,
+    valueSetIndex: source.valueSetIndex,
+    valueIndex: source.valueIndex,
+    limitBreak: source.limitBreak,
+    sourceEnabled: source.sourceEnabled,
+    enabledByDefault: source.enabledByDefault,
+    noblePhantasmVariant: source.noblePhantasmVariant,
+    actorForms: needsActorForms
+      ? actorForms.map(({ id, traits }) => ({ id, traits: [...traits].sort() }))
+      : [],
+  });
+}
+
+export function compileEffectCached(
+  source: SourceEffect,
+  startOrder: number,
+  actorForms: ServantMaster['actorFormGraph']['forms'] = [],
+): CompiledOperations {
+  const byKey = compiledEffectCache.get(source.effect) ?? new Map<string, CompiledOperations>();
+  if (!compiledEffectCache.has(source.effect)) compiledEffectCache.set(source.effect, byKey);
+  const key = compilationCacheKey(source, actorForms);
+  let compiled = byKey.get(key);
+  if (!compiled) {
+    compiled = compileEffect(source, 0, actorForms);
+    byKey.set(key, compiled);
+  }
+  return {
+    operations: compiled.operations.map((operation) => ({
+      ...operation,
+      order: operation.order + startOrder,
+    })),
+    unsupported: compiled.unsupported,
+  };
+}
+
+export function compileEffect(
+  source: SourceEffect,
+  startOrder: number,
+  actorForms: ServantMaster['actorFormGraph']['forms'] = [],
+): CompiledOperations {
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
   if (source.effect.triggerScope !== null) return { operations, unsupported };
@@ -456,7 +512,7 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
       ? primary.modifier
       : primary?.kind === 'modifierRateChange'
         ? primary.modifier
-        : primary?.kind === 'selectNoblePhantasmVariant'
+        : primary?.kind === 'selectNoblePhantasmVariant' || primary?.kind === 'transformActorForm'
           ? 'npVariantSelection'
           : null;
 
@@ -581,6 +637,8 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
         ...baseOperation(source, 'personal', order++, uniqueSuffix('actor-form')),
         kind: 'transformActorForm',
         targetFormId: semantic.targetFormId,
+        targetTraits:
+          actorForms.find(({ id }) => actorFormEquals(id, semantic.targetFormId))?.traits ?? [],
       });
     else if (semantic.kind === 'modifierRateChange')
       operations.push({

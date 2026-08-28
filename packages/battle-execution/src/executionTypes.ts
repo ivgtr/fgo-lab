@@ -13,6 +13,7 @@ import type {
   ExecutionIssue,
 } from './contracts';
 import type { TargetResolution } from './targetContext';
+import type { AppliedPreparationAction } from './preNoblePhantasm';
 
 export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -36,10 +37,16 @@ export interface PreparedOrderedScenario {
   attackerClass: string;
   attackerAttribute: CombatAttribute;
   inputDefinitions: readonly CanonicalInputDefinition[];
+  appliedPreparationActions: readonly AppliedPreparationAction[];
 }
 
 export interface ResolvedCanonicalInputSet {
   values: Readonly<Record<string, number>>;
   missingDefinitions: readonly CanonicalInputDefinition[];
   invalidInputKeys: readonly string[];
+}
+
+export interface DamageContributionProjection {
+  includedOperationIds: ReadonlySet<string>;
+  excludedOperationIds: ReadonlySet<string>;
 }

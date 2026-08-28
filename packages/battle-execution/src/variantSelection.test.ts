@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeActivationFactSet, type DamageResolutionInput } from '@fgo-lab/schema';
 import type {
   AttackNoblePhantasmVariant,
+  ActorFormId,
   NoblePhantasmVariant,
   NpDamageSpec,
 } from '@fgo-lab/master-data';
@@ -30,7 +31,7 @@ const damage: NpDamageSpec = {
   rawPath: 'fixture',
 };
 const attack = (
-  actorFormId: string,
+  actorFormId: ActorFormId,
   noblePhantasmId: string,
   card: 'arts' | 'buster',
 ): AttackNoblePhantasmVariant => ({
@@ -43,11 +44,13 @@ const attack = (
   targetScope: 'all',
   damage: [damage],
 });
-const base = attack('form:base', 'np:base', 'buster');
-const changed = attack('form:changed', 'np:changed', 'arts');
+const baseForm = { actorId: 'form:base', limitCount: 1 };
+const changedForm = { actorId: 'form:changed', limitCount: 3 };
+const base = attack(baseForm, 'np:base', 'buster');
+const changed = attack(changedForm, 'np:changed', 'arts');
 const nonAttack: NoblePhantasmVariant = {
   kind: 'nonAttack',
-  ref: { actorFormId: 'form:base', noblePhantasmId: 'np:defense' },
+  ref: { actorFormId: baseForm, noblePhantasmId: 'np:defense' },
   name: 'defense',
   priority: 1,
   effects: [],
@@ -110,7 +113,7 @@ describe('noble phantasm variant selection', () => {
     );
     expect(result.issue).toBeNull();
     expect(result.state).toMatchObject({
-      actorFormId: 'form:changed',
+      actorFormId: changedForm,
       card: 'arts',
       noblePhantasmVariant: { ref: changed.ref, targetScope: 'all', damage: [damage] },
     });
@@ -142,7 +145,8 @@ describe('noble phantasm variant selection', () => {
       ...operationBase,
       operationId: 'transform',
       kind: 'transformActorForm' as const,
-      targetFormId: 'form:changed',
+      targetFormId: changedForm,
+      targetTraits: [],
     } satisfies BattleOperation;
     const trait = {
       ...operationBase,
@@ -167,7 +171,7 @@ describe('noble phantasm variant selection', () => {
       activations,
     );
     expect(result.issue).toBeNull();
-    expect(result.state).toMatchObject({ actorFormId: 'form:changed', card: 'arts' });
+    expect(result.state).toMatchObject({ actorFormId: changedForm, card: 'arts' });
     expect(result.state.traits.attackerState.get('variant:changed')).toBe(true);
   });
 

@@ -46,6 +46,7 @@ export function planOperationActivations(
   return operations.map((operation) => {
     if (
       operation.decisionKey !== null ||
+      operation.source.origin === 'attacker' ||
       (operation.kind !== 'addTrait' &&
         operation.kind !== 'removeTrait' &&
         operation.kind !== 'suppressInitialTrait' &&
@@ -53,7 +54,7 @@ export function planOperationActivations(
     )
       return operation;
     const operationChoices = activationChoiceKeys(operation.condition);
-    if (operationChoices.length === 0 && operation.source.origin !== 'attacker') return operation;
+    if (operationChoices.length === 0) return operation;
     const present = operation.kind === 'addTrait';
     const links = decisionOperations.flatMap((candidate) => {
       const candidateChoices = activationChoiceKeys(candidate.condition);

@@ -1,13 +1,24 @@
 import {
   getBaseNoblePhantasmGroup,
+  getDefaultInitialActorForm,
+  getPassivesForActorForm,
+  getSkillsForActorForm,
+  findActorForm,
   noblePhantasmVariantKey,
   type NoblePhantasmVariantRef,
+  type ActorFormId,
   type MasterDataSnapshot,
   type MasterEffect,
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 import type { ExecutionIssue, ExecutionPhase } from './contracts';
 import type { Origin } from './effectRouting';
+import {
+  createPreNoblePhantasmState,
+  reducePreNoblePhantasmAction,
+  type AppliedPreparationAction,
+  type PreNoblePhantasmState,
+} from './preNoblePhantasm';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -29,11 +40,93 @@ export interface SourceEffect {
   noblePhantasmVariant: NoblePhantasmVariantRef | null;
 }
 
+export interface ResolvedAttackerSkillUse {
+  slot: 1 | 2 | 3;
+  skillLevel: number;
+  skillId: string;
+  actorFormId: ActorFormId;
+  selectedEffects: readonly PreNoblePhantasmState['activeEffects'][number][];
+  transitionId: string | null;
+}
+
+export interface ResolvedAttackerFormExecution {
+  state: PreNoblePhantasmState;
+  actions: readonly AppliedPreparationAction[];
+  skillUses: readonly ResolvedAttackerSkillUse[];
+  preparationNoblePhantasms: readonly {
+    noblePhantasmVariant: NoblePhantasmVariantRef;
+    actorFormId: ActorFormId;
+  }[];
+  issues: readonly ExecutionIssue[];
+}
+
+export function resolveAttackerFormExecution(
+  scenario: ResolvedScenario,
+  attacker: MasterDataSnapshot['servants'][number],
+): ResolvedAttackerFormExecution {
+  const created = createPreNoblePhantasmState(attacker, scenario.attacker.initialActorFormId);
+  if (created.status === 'rejected')
+    return {
+      state: created.state,
+      actions: [],
+      skillUses: [],
+      preparationNoblePhantasms: [],
+      issues: [{ kind: 'unsupportedOperation', operationId: 'preparation', detail: created.code }],
+    };
+  let state = created.state;
+  const skillUses: ResolvedAttackerSkillUse[] = [];
+  const preparationNoblePhantasms: Array<{
+    noblePhantasmVariant: NoblePhantasmVariantRef;
+    actorFormId: ActorFormId;
+  }> = [];
+  const issues: ExecutionIssue[] = [];
+  for (const command of scenario.preNoblePhantasmPlan) {
+    const actorFormId = state.currentFormId;
+    const variantBeforeAction = state.selectedNoblePhantasmVariant;
+    const result = reducePreNoblePhantasmAction(attacker, state, command);
+    if (result.status === 'rejected') {
+      issues.push({
+        kind: 'unsupportedOperation',
+        operationId: `preparation:${attacker.id}:${command.kind}`,
+        detail: result.code,
+      });
+      break;
+    }
+    state = result.state;
+    const applied = state.appliedActions.at(-1);
+    if (command.kind === 'useSkillSlot' && applied)
+      skillUses.push({
+        slot: command.slot,
+        skillLevel: command.skillLevel,
+        skillId: applied.sourceId,
+        actorFormId,
+        selectedEffects: applied.selectedEffects,
+        transitionId: applied.transition?.id ?? null,
+      });
+    if (command.kind === 'useTransformNoblePhantasm' && variantBeforeAction)
+      preparationNoblePhantasms.push({
+        noblePhantasmVariant: variantBeforeAction,
+        actorFormId,
+      });
+  }
+  if (!state.terminated)
+    issues.push({
+      kind: 'unsupportedOperation',
+      operationId: `preparation:${attacker.id}:terminal`,
+      detail: 'attack_noble_phantasm_not_executed',
+    });
+  return { state, actions: state.appliedActions, skillUses, preparationNoblePhantasms, issues };
+}
+
 export function collectOperationSources(
   input: DamageResolutionInput,
   scenario: ResolvedScenario,
   master: MasterDataSnapshot,
-): { sources: SourceEffect[]; issues: ExecutionIssue[] } {
+): {
+  sources: SourceEffect[];
+  issues: ExecutionIssue[];
+  formExecution: ResolvedAttackerFormExecution | null;
+} {
   const sources: SourceEffect[] = [];
   const issues: ExecutionIssue[] = [];
   const attacker = master.servants.find((servant) => servant.id === input.attackerId);
@@ -47,6 +140,7 @@ export function collectOperationSources(
           detail: 'attacker_source_missing',
         },
       ],
+      formExecution: null,
     };
   const appendSkill = (
     origin: Origin,
@@ -57,11 +151,19 @@ export function collectOperationSources(
     skillLevel: number,
     sourceEnabled: boolean,
     defaultInclusion: 'master' | 'exclude' = 'master',
+    actorFormId?: ActorFormId,
   ) => {
     const servant = master.servants.find((candidate) => candidate.id === sourceId);
-    const skill = [...(servant?.skills ?? []), ...(servant?.passives ?? [])].find(
-      (candidate) => candidate.id === skillId,
-    );
+    const resolvedActorFormId =
+      actorFormId ?? (servant ? getDefaultInitialActorForm(servant)?.id : undefined);
+    const available =
+      servant && resolvedActorFormId
+        ? [
+            ...getSkillsForActorForm(servant, resolvedActorFormId),
+            ...getPassivesForActorForm(servant, resolvedActorFormId),
+          ]
+        : [];
+    const skill = available.find((candidate) => candidate.id === skillId);
     if (!servant || !skill) {
       issues.push({
         kind: 'unsupportedOperation',
@@ -77,7 +179,7 @@ export function collectOperationSources(
         sourceInstanceId,
         sourceId,
         sourceName: servant.name,
-        sourceTraits: servant.traits,
+        sourceTraits: findActorForm(servant, resolvedActorFormId!)?.traits ?? servant.traits,
         skillId,
         skillName: skill.name,
         effect,
@@ -90,19 +192,91 @@ export function collectOperationSources(
         noblePhantasmVariant: null,
       });
   };
-  for (const passive of attacker.passives)
-    appendSkill('passive', 'passive', `passive:${attacker.id}`, attacker.id, passive.id, 1, true);
-  for (const selected of scenario.attackerSkills)
+  const formExecution = resolveAttackerFormExecution(scenario, attacker);
+  issues.push(...formExecution.issues);
+  for (const passive of getPassivesForActorForm(attacker, formExecution.state.currentFormId))
     appendSkill(
-      'attacker',
-      'attackerSkill',
-      `attacker:${attacker.id}`,
+      'passive',
+      'passive',
+      `passive:${attacker.id}`,
       attacker.id,
-      selected.skillId,
-      selected.skillLevel,
+      passive.id,
+      1,
       true,
-      'exclude',
+      'master',
+      formExecution.state.currentFormId,
     );
+  for (const action of formExecution.actions) {
+    if (action.sourceKind === 'attackNoblePhantasm') continue;
+    if (action.sourceKind === 'skill')
+      for (const applied of action.selectedEffects) {
+        const form = findActorForm(attacker, action.actorFormId);
+        const skill = getSkillsForActorForm(attacker, action.actorFormId).find(
+          ({ id }) => id === action.sourceId,
+        );
+        if (!form || !skill) {
+          issues.push({
+            kind: 'unsupportedOperation',
+            operationId: `attacker:${attacker.id}:${action.sourceId}`,
+            detail: 'source_missing',
+          });
+          continue;
+        }
+        sources.push({
+          phase: 'attackerSkill',
+          origin: 'attacker',
+          sourceInstanceId: `attacker:${attacker.id}`,
+          sourceId: attacker.id,
+          sourceName: attacker.name,
+          sourceTraits: form.traits,
+          skillId: skill.id,
+          skillName: skill.name,
+          effect: applied.effect,
+          valueSetIndex: 0,
+          valueIndex: action.command.kind === 'useSkillSlot' ? action.command.skillLevel - 1 : 0,
+          limitBreak: false,
+          sourceEnabled: true,
+          enabledByDefault: true,
+          noblePhantasmVariant: null,
+        });
+      }
+    if (action.sourceKind !== 'noblePhantasm') continue;
+    const variant = attacker.noblePhantasmVariantGroups
+      .flatMap(({ variants }) => variants)
+      .find(
+        (candidate) =>
+          candidate.ref.noblePhantasmId === action.sourceId &&
+          candidate.ref.actorFormId.actorId === action.actorFormId.actorId &&
+          candidate.ref.actorFormId.limitCount === action.actorFormId.limitCount,
+      );
+    if (!variant || variant.kind !== 'nonAttack') {
+      issues.push({
+        kind: 'unsupportedOperation',
+        operationId: `preparationNp:${action.sourceId}`,
+        detail: 'source_missing',
+      });
+      continue;
+    }
+    const variantKey = noblePhantasmVariantKey(variant.ref);
+    for (const applied of action.selectedEffects)
+      sources.push({
+        phase: 'preparationNoblePhantasm',
+        origin: 'np',
+        sourceInstanceId: `np:${variantKey}`,
+        sourceId: attacker.id,
+        sourceName: attacker.name,
+        sourceTraits: findActorForm(attacker, action.actorFormId)?.traits ?? attacker.traits,
+        skillId: `np:${variantKey}`,
+        skillName: variant.name,
+        effect: applied.effect,
+        valueSetIndex: input.overcharge - 1,
+        valueIndex: input.npLevel - 1,
+        limitBreak: false,
+        sourceEnabled: true,
+        enabledByDefault: true,
+        noblePhantasmVariant: variant.ref,
+      });
+  }
   if (scenario.craftEssence) {
     const ce = master.craftEssences.find(
       (candidate) => candidate.id === scenario.craftEssence?.craftEssenceId,
@@ -202,7 +376,7 @@ export function collectOperationSources(
         sourceInstanceId: `np:${variantKey}`,
         sourceId: attacker.id,
         sourceName: attacker.name,
-        sourceTraits: attacker.traits,
+        sourceTraits: findActorForm(attacker, np.ref.actorFormId)?.traits ?? attacker.traits,
         skillId: `np:${variantKey}`,
         skillName: np.name,
         effect,
@@ -215,5 +389,5 @@ export function collectOperationSources(
       });
     }
   }
-  return { sources, issues };
+  return { sources, issues, formExecution };
 }

@@ -5,6 +5,7 @@ import type {
   ModifierValueExpression,
   NoblePhantasmVariant,
   NoblePhantasmVariantRef,
+  ActorFormId,
   NpDamageSpec,
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
@@ -89,6 +90,7 @@ export interface OperationSource {
 export type ExecutionPhase =
   | 'passive'
   | 'attackerSkill'
+  | 'preparationNoblePhantasm'
   | 'craftEssence'
   | 'support'
   | 'mysticCode'
@@ -185,7 +187,11 @@ export type BattleOperation =
       kind: 'selectNoblePhantasmVariant';
       variant: NoblePhantasmVariantRef;
     })
-  | (OperationBase & { kind: 'transformActorForm'; targetFormId: string })
+  | (OperationBase & {
+      kind: 'transformActorForm';
+      targetFormId: ActorFormId;
+      targetTraits: readonly string[];
+    })
   | (OperationBase & { kind: 'ignoreDefense' })
   | (OperationBase & { kind: 'ignoreDamageCut' })
   | (OperationBase & {
@@ -208,7 +214,7 @@ export interface AppliedModifier {
 }
 
 export interface BattleStateBase {
-  actorFormId: string;
+  actorFormId: ActorFormId;
   noblePhantasmVariant: NoblePhantasmVariant;
   card: CardType;
   traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
