@@ -22,11 +22,12 @@ export function createRankingChoiceCandidates(
   for (const [groupKey, candidates] of [...candidatesByGroup].sort(([left], [right]) =>
     left.localeCompare(right),
   )) {
-    worlds = worlds.flatMap((world) =>
-      [...candidates]
+    worlds = worlds.flatMap((world) => [
+      world,
+      ...[...candidates]
         .sort((left, right) => left.localeCompare(right))
         .map((candidate) => ({ ...world, [groupKey]: candidate })),
-    );
+    ]);
     if (worlds.length > MAX_RANKING_CHOICE_CANDIDATES)
       throw new RangeError('ranking_choice_candidate_limit');
   }

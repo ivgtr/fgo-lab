@@ -1,7 +1,5 @@
 import {
-  getPrimaryNoblePhantasm,
-  getPrimaryNpDamage,
-  getPrimaryNpPresentation,
+  getSelectableNoblePhantasmVariants,
   type MasterDataSnapshot,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -41,7 +39,8 @@ export function includedRankingServants(
   conditions: RankingConditions,
 ): ServantMaster[] {
   return master.servants.filter((servant) => {
-    if (!getPrimaryNoblePhantasm(servant) || !getPrimaryNpDamage(servant)) return false;
+    if (!getSelectableNoblePhantasmVariants(servant).some((variant) => variant.kind === 'attack'))
+      return false;
     if (conditions.comparisonMode === 'standard') return true;
     return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
   });
@@ -53,8 +52,6 @@ export function createRankingRow(
   profile: RankingProfileInput,
 ): RankingRowSummary | RankingFailure {
   if (detail.result.status !== 'calculated') return resultFailure(servant, detail.result);
-  const presentation = getPrimaryNpPresentation(servant);
-  if (!presentation) throw new TypeError(`ranking_np_presentation_missing:${servant.id}`);
   const selected = detail.result.rows[detail.scenario.attacker.npLevel - 1];
   if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
   const applied = detail.effects.filter(
@@ -62,13 +59,16 @@ export function createRankingRow(
   );
   const supportEffects = applied.filter((effect) => effect.source.origin === 'support');
   return {
+    entryId: detail.entryId,
     servantId: servant.id,
     name: servant.name,
     imageKey: servant.imageKey,
     classId: servant.classId,
     rarity: servant.rarity,
-    npCard: presentation.card,
-    npTarget: presentation.target,
+    npCard: detail.npCard,
+    npTarget: detail.npTarget,
+    noblePhantasmVariant: detail.noblePhantasmVariant,
+    noblePhantasmName: detail.noblePhantasmName,
     minimum: selected.minimum,
     average: selected.average,
     maximum: selected.maximum,

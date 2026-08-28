@@ -96,11 +96,11 @@ describe('ranking condition semantics', () => {
       ),
     ).toEqual([
       {
-        decisionKey: 'ranking:field:fieldImaginarySpace',
+        decisionKey: 'ranking:field:fieldShore',
         fact: {
           kind: 'trait',
           scope: 'field',
-          trait: 'fieldImaginarySpace',
+          trait: 'fieldShore',
           present: true,
         },
       },

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { getBaseNoblePhantasmGroup, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import {
@@ -33,7 +33,8 @@ describe('production ranking condition provenance', () => {
       masterDataLocale: 'ja-JP' as const,
     };
     const inventory = master.servants.flatMap((servant) => {
-      if (servant.noblePhantasms.length === 0) return [];
+      if (!getBaseNoblePhantasmGroup(servant)?.variants.some(({ kind }) => kind === 'attack'))
+        return [];
       const plan = compileRankingExecutionPlan(
         servant,
         master,
@@ -99,9 +100,9 @@ describe('production ranking condition provenance', () => {
       ...new Set(field.map(({ servantId, occurrenceId }) => `${servantId}:${occurrenceId}`)),
     ].sort();
     expect(inventory).toHaveLength(87);
-    expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(20);
+    expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(19);
     expect(byKind).toEqual({
-      intrinsic: 47,
+      intrinsic: 54,
       derivedOrExternalField: 27,
       externalScenarioFact: 20,
       target: 5,

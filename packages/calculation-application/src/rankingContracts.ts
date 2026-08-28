@@ -7,6 +7,7 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import type { CalculationExecution } from './scenario';
+import type { NoblePhantasmVariantRef } from '@fgo-lab/master-data';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -60,6 +61,7 @@ export interface RankingProfileInput {
 }
 
 export interface RankingRowSummary {
+  entryId: string;
   servantId: string;
   name: string;
   imageKey: string | null;
@@ -67,6 +69,8 @@ export interface RankingRowSummary {
   rarity: number;
   npCard: 'buster' | 'arts' | 'quick';
   npTarget: 'single' | 'all';
+  noblePhantasmVariant: NoblePhantasmVariantRef;
+  noblePhantasmName: string;
   minimum: number;
   average: number;
   maximum: number;
@@ -88,7 +92,12 @@ export interface RankingFailure {
 }
 
 export interface RankingDetail {
+  entryId: string;
   servantId: string;
+  noblePhantasmVariant: NoblePhantasmVariantRef;
+  noblePhantasmName: string;
+  npCard: 'buster' | 'arts' | 'quick';
+  npTarget: 'single' | 'all';
   scenario: ResolvedScenario;
   input: DamageResolutionInput;
   result: CalculationResult;

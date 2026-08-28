@@ -32,7 +32,7 @@ describe('canonical ranking scenarios', () => {
     expect(ranking.failures).toEqual([]);
     expect(ranking.rows).toHaveLength(master.servants.length);
     for (const row of ranking.rows) {
-      const detail = ranking.details[row.servantId]!;
+      const detail = ranking.details[row.entryId]!;
       const recalculated = calculateScenario(detail.scenario, master, versions);
       expect(recalculated.input).toEqual(detail.input);
       expect(recalculated.result).toEqual(detail.result);
@@ -110,7 +110,7 @@ describe('canonical ranking scenarios', () => {
     );
     expect(ranking.rows).toHaveLength(1);
     expect(ranking.rows[0]).toMatchObject({ level: 73, npLevel: 3, owned: true });
-    const scenario = ranking.details[servant.id]!.scenario;
+    const scenario = ranking.details[ranking.rows[0]!.entryId]!.scenario;
     expect(scenario.attacker.fouAtk).toBe(1_420);
     expect(scenario.attackerSkills.map((skill) => skill.skillLevel)).toEqual(
       servant.skills.slice(0, 3).map((_, index) => build.skills[String(index + 1)] ?? 1),

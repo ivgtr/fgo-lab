@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  getBaseNoblePhantasmGroup,
+  getNoblePhantasmVariants,
+  masterSnapshotSchema,
+} from '@fgo-lab/master-data';
 import { activationFactKey, APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   analyzeActivationCondition,
@@ -25,32 +29,32 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    'f1134698fb0b26ac7397563d63a656a197b6cc3a65446a3f08787034c46639a9',
-    '6cc535ba8d536bafa4597eac8897b83ffb2e8586454a423688988858974dcb86',
-    '41c1e748d0c6e4549d721d8d017413b598d5f843b9a7dd659e5f3e66611f7a54',
-    '81b93fc6b2f8ba782c2b5a8b3bd6a89bd2187c37992c53221355371ae0bd9c9c',
-    '5e884ec1b00a129a636928af7e92be80974468b2b7e4d7a947f198b1e7bc2441',
+    '0b3a5ebf92dd367eee872c75fdc64b07854e0624185eff4423bb3c65c472bf18',
+    'b92ac13955809736485546279db050a0778290d5a982c56653e31428f2523269',
+    '42575cca07289c1adcad024ad1962066adcc29b146a590ebd8eddb8ad20b0a9d',
+    '761759714ddc3874cab1cc010cfd19f21b862c8df23f0402c901a10889139085',
+    '182baae795da2dd298f4450f7a567f888b1ff6d79dc060c5904d7e639a1cbf6c',
   ],
   'neutral:active': [
-    '971168f8aa3e37874166c1d0b47d8b16d988309b37a85e641e651ff076394016',
-    '36be3215e5e434be7ecafdc8d4647548280014cc83d89062c33c498d39ee2f6e',
-    '550dc6fc5ad2a9e816bd1421afdbe9a639aa4524315d31393cf74bf289be8b40',
-    '662fd7da002ae0b89f7551a9532afd8cb5e5eeebc4f7bcaf939be561841e404b',
-    '60b33aa1379923cc2e1430c0965bb441f681a6fb66544e7d68fb6bb5ae0ea062',
+    'f027075ed12d05bc203fe60cea50e314ff0c564abb7a2732a54e796ab68371c3',
+    'b31a877d5ad06cb3ed545f81e811aa9e0be684fe7a684b12aa8baa3c7851d741',
+    'fd921d48a75dec23a60fc8e133b9a8217aec4b7a42f8f566bafd64be3193bad5',
+    '1f5aeb44648bb85c793235fbbf28547f7564cea3365102a1f0dc860af310b3a1',
+    '794609c30134f637693079018942745439939541ec75f772ce97e43d6c32156d',
   ],
   'favorable:inactive': [
-    'e3d30c9e29f12ff6966aeda704574ed37eaef56fd715226ae4eab4ad826b3ff1',
-    'af381ead48ac7c3aaf699758a0774ddf2461a3a415559a67ff02726d87c4cbbd',
-    '527dc300206e0ec4986621d527bfb1028d0672fb2107a1999662ff5ada3045e1',
-    '31df8d40344b6a63823781934eebc634c29f126d241fec564bc5465110386c7c',
-    'c4f3e5b6c05a32e3c9758fdbb49ffed7c5f641c0fac9cf24fcfec1207e0a9c93',
+    '3608e604544bb73a97a0f958ede2d2238c870dd930dd10213d13e37439d8bf35',
+    '410f3db4f52858c0353ec8c6f1db9bf59dc1a18cff2bd42aa203587a523b0575',
+    '5f5fff56199820ade9e2e7619746158cb4c246e90e47e3d013c93d37b4fc5b68',
+    '3b5ca0dff09bc8228e5b3fd8b9d60f4ad75b7a49a37cc1a4ee58dcc4165e1d22',
+    '1d03ad4dc99d5c99b236892f9785668efe64c7eda1d63e54b5817b214d5cb7a7',
   ],
   'favorable:active': [
-    '2cf4ddd5743d87db6f5204dc55855bfa03d671a054720ab029baa92036b0bf15',
-    '7023054407ac8aa58331a96e9d7bca354e7c8f5817ade8f411e720d29b1a91ce',
-    '918cd76fc0a1b80bacd0a65a0c05303f303829f1d7fcffa5b9bc044753412159',
-    '09c35193a17436f792539b22f688de0daf733b445bb3bc8edd05afaa3375ca8f',
-    '7dac51c815504192c9269185f819374e0332b2b4b6e9356a26e6f16b0310e8cd',
+    'cd97f4cf9082f17e02c58c83c5d6f6a405bb717164f0d214908e442f9713fb92',
+    'e63de2574f5a2f73ab9ed2d8d4813a7c1069e47c3647773aee5c21ef353a28a3',
+    'b2acc827d084b8c8b6c92812dc47b9bbc0c44865cc68048e5e8e1ae7e564afeb',
+    'b163bf86ee1b22965183634be109c19f5204286aa1f7d8aa839c7b01f528eb7d',
+    '9de23902121b8a5f9efb864ceb94ce418ad90ea053e0eb675a52185f357ea0b9',
   ],
 } as const;
 
@@ -103,13 +107,28 @@ describe('production canonical ranking', () => {
     };
     const ranking = calculateRanking(master, profile, DEFAULT_RANKING_CONDITIONS, versions);
     expect(ranking.failures).toEqual([]);
-    expect(ranking.rows).toHaveLength(420);
+    expect(ranking.rows).toHaveLength(422);
+    expect(new Set(ranking.rows.map(({ entryId }) => entryId)).size).toBe(422);
+    expect(ranking.rows.filter(({ npTarget }) => npTarget === 'single')).toHaveLength(177);
+    expect(ranking.rows.filter(({ npTarget }) => npTarget === 'all')).toHaveLength(245);
+    expect(
+      ranking.rows
+        .filter(({ servantId }) => servantId === '2301100')
+        .map(({ npTarget }) => npTarget),
+    ).toEqual(['single', 'all']);
+    expect(
+      ranking.rows
+        .filter(({ servantId }) => servantId === '204900')
+        .map(({ npTarget }) => npTarget),
+    ).toEqual(['single', 'all']);
     const unresolvedIncludedDamageEffects: string[] = [];
     const activationInventory = { choice: 0, operationTrigger: 0, sourceQuantity: 0 };
     const activationConditionInventory = { choice: 0, operationTrigger: 0, sourceQuantity: 0 };
     const servantsWithActivationSelections: string[] = [];
     for (const row of ranking.rows) {
-      const detail = ranking.details[row.servantId]!;
+      const detail = ranking.details[row.entryId]!;
+      expect(detail.npTarget).toBe(row.npTarget);
+      expect(detail.noblePhantasmVariant).toEqual(row.noblePhantasmVariant);
       const included = new Set(
         detail.scenario.effectDecisions
           .filter(({ operationEnabled }) => operationEnabled)
@@ -187,26 +206,24 @@ describe('production canonical ranking', () => {
     }
     expect(unresolvedIncludedDamageEffects).toEqual([]);
     expect(activationInventory).toEqual({
-      choice: 12,
-      operationTrigger: 3,
+      choice: 9,
+      operationTrigger: 4,
       sourceQuantity: 1,
     });
     expect(activationConditionInventory).toEqual({
-      choice: 30,
-      operationTrigger: 3,
+      choice: 33,
+      operationTrigger: 4,
       sourceQuantity: 3,
     });
     expect(servantsWithActivationSelections.sort()).toEqual([
       '101000',
       '1100900',
-      '200100',
       '204900',
-      '2300600',
+      '204900',
       '2301100',
       '2301200',
       '2501100',
       '2800500',
-      '2801000',
       '305600',
       '603800',
       '705300',
@@ -239,8 +256,8 @@ describe('production canonical ranking', () => {
           ).size,
         0,
       ),
-    ).toBe(233);
-    const tonelico = ranking.details['505300']!;
+    ).toBe(234);
+    const tonelico = ranking.details['505300:all']!;
     expect(tonelico.result.status === 'calculated' ? tonelico.result.rows[0] : null).toEqual({
       npLevel: 1,
       minimum: 25_165,
@@ -253,7 +270,7 @@ describe('production canonical ranking', () => {
         : null,
     ).toEqual({ npLevel: 1, minimum: 16_776, average: 18_631.06, maximum: 20_486 });
 
-    const jalter = ranking.details['1100300']!;
+    const jalter = ranking.details['1100300:single']!;
     expect(jalter.input).toMatchObject({ classAffinity: 1, attackBuff: 0.2, cardBuff: 0.5 });
     expect(jalter.result.status === 'calculated' ? jalter.result.rows[0] : null).toEqual({
       npLevel: 1,
@@ -263,7 +280,7 @@ describe('production canonical ranking', () => {
     });
     expect(jalter.areaContribution?.withoutAreaInput.attackBuff).toBe(0);
 
-    const xxAlter = ranking.details['2501600']!;
+    const xxAlter = ranking.details['2501600:single']!;
     expect(xxAlter.scenario.targetContext.class).toEqual({ kind: 'relative', relation: 'neutral' });
     expect(xxAlter.input).toMatchObject({ classAffinity: 1, powerMod: 0 });
     expect(xxAlter.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
@@ -315,11 +332,6 @@ describe('production canonical ranking', () => {
           "servantId": "702000",
         },
         {
-          "average": 73070.79,
-          "name": "玉兎",
-          "servantId": "2301100",
-        },
-        {
           "average": 70129.565,
           "name": "宮本武蔵",
           "servantId": "101700",
@@ -349,10 +361,15 @@ describe('production canonical ranking', () => {
           "name": "エリザベート・バートリー〔ブレイブ〕",
           "servantId": "101000",
         },
+        {
+          "average": 61162.615,
+          "name": "謎のヒロインX〔オルタ〕",
+          "servantId": "702400",
+        },
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"e406c6db9014a60d73517fdcd77edef5581a3c7e49f73b2751514dc6fab01afb"`,
+      `"da949087fde3947335e292a0b80f59f9a09405debe779c917a83fcdf462f2518"`,
     );
     expect(
       [...ranking.rows]
@@ -361,7 +378,7 @@ describe('production canonical ranking', () => {
     ).toBe('1100300');
 
     expect(
-      ranking.details['1102000']?.effectInputs
+      ranking.details['1102000:all']?.effectInputs
         .filter((input) => input.kind === 'matchingActorCount')
         .every((input) => input.value === input.minimum),
     ).toBe(true);
@@ -392,14 +409,14 @@ describe('production canonical ranking', () => {
           ({ executionMetrics }) => executionMetrics.worldCandidateCount,
         ),
       ),
-    ).toBe(16);
+    ).toBe(18);
     expect(
       Math.max(
         ...Object.values(ranking.details).map(
           ({ executionMetrics }) => executionMetrics.scenarioCalculationCount,
         ),
       ),
-    ).toBe(17);
+    ).toBe(20);
   }, 60_000);
 
   it('uses canonical witnesses for recipient and field conditions', async () => {
@@ -422,7 +439,7 @@ describe('production canonical ranking', () => {
         versions,
       );
       expect(ranking.failures, field).toEqual([]);
-      expect(ranking.rows).toHaveLength(420);
+      expect(ranking.rows).toHaveLength(422);
       for (const detail of Object.values(ranking.details)) {
         expect(
           detail.scenario.effectDecisions.filter(
@@ -476,16 +493,16 @@ describe('production canonical ranking', () => {
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
     const digests = [
-      '6c87ebc7aa653f43fb3fcc10200de0caa5a3b8506425bf3cff7fc1c3508e600c',
-      'c1abe21433aa16aac7608a2279921cde6cf0f08134eb66ed46f3eaae924cf5bb',
-      '8e8f4113599c3c3638edd01f01ebbfda3982802aa93b3eb91fc2bc79ebc72909',
-      'b908ce86b006a528935a33e4f55678bfa994e3f5a0d5fb91fd80167774a51435',
-      '9c0804c5e47e17af79fa736f96786a3355c8bc0f475f6a4ac2f68bc23dd9b1d2',
+      '60d739247e2a174aa4fc8bea29b57881164170a8411a229f9b4ab88ec6c1d4df',
+      'f45ed459836dd9c92643d33c28b0eeacceb9dabbd077dab2aab5a671e9a34f55',
+      '785b6aa01e7b1ed493a484ec22e2d01ed241a487de9d65c1028a817176b9cf0b',
+      '7417c2dfea4202e76414339659a02082ce24f228b970012631f22e0ce5c0ea1b',
+      '218a01de8a54540ea4fdc6e2da6e931babc842c120aac555a821e6d068577b35',
     ];
     const actualDigests: string[] = [];
     for (const [index, ranking] of matrix.entries()) {
       expect(ranking.failures, `field:active:NP${String(index + 1)}`).toEqual([]);
-      expect(ranking.rows).toHaveLength(420);
+      expect(ranking.rows).toHaveLength(422);
       actualDigests.push(rankingDigest(ranking.rows));
     }
     expect(actualDigests).toEqual(digests);
@@ -496,7 +513,7 @@ describe('production canonical ranking', () => {
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
     const varying = master.servants.flatMap((servant) =>
-      servant.noblePhantasms.flatMap((np) =>
+      getNoblePhantasmVariants(servant).flatMap((np) =>
         np.effects.flatMap((effect) =>
           effect.timing !== 'beforeDamage'
             ? []
@@ -524,7 +541,8 @@ describe('production canonical ranking', () => {
       masterDataLocale: 'ja-JP' as const,
     };
     const legacyEquivalent = master.servants.flatMap((servant) => {
-      if (servant.noblePhantasms.length === 0) return [];
+      if (!getBaseNoblePhantasmGroup(servant)?.variants.some(({ kind }) => kind === 'attack'))
+        return [];
       const scenario = {
         ...createDefaultResolvedScenario(master, undefined, servant),
         attackerSkills: [],
@@ -608,7 +626,7 @@ describe('production canonical ranking', () => {
           JSON.stringify(legacyEquivalent.sort((a, b) => a.servantId.localeCompare(b.servantId))),
         )
         .digest('hex'),
-    ).toMatchInlineSnapshot(`"a6824c8fd85b565baeab5fa6881388e4141031d383e7e1c3f3b55785c55e4d24"`);
+    ).toMatchInlineSnapshot(`"2230ac7617cd9dc634ec1ba9a9bec780b9b692c32e641e0db57080810fdc3f3a"`);
   }, 60_000);
 
   it('ratchets all E4.1 class, special-attack, and NP-level policies', async () => {
@@ -636,13 +654,38 @@ describe('production canonical ranking', () => {
         const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
         const key = `${classAffinity}:${specialAttack}`;
         actualDigests[key] = [];
+        if (classAffinity === 'neutral' && specialAttack === 'inactive') {
+          const averages = (entryId: string) =>
+            matrix.map(({ rows }) => rows.find((row) => row.entryId === entryId)?.average);
+          expect(averages('2301100:single')).toEqual([
+            47_794.55, 63_726.225, 71_692.08, 75_675.005, 79_657.925,
+          ]);
+          expect(averages('2301100:all')).toEqual([
+            31_250.115, 41_666.99, 46_875.425, 49_479.64, 52_083.865,
+          ]);
+          expect(averages('204900:single')).toEqual([
+            45_307.295, 60_409.895, 67_961.14, 71_736.845, 75_512.49,
+          ]);
+          expect(averages('204900:all')).toEqual([
+            22_653.385, 30_204.705, 33_980.14, 35_868.165, 37_755.995,
+          ]);
+          expect(averages('1100900:all')).toEqual([
+            33_578.155, 44_681.035, 50_232.475, 53_008.195, 55_783.92,
+          ]);
+          expect(averages('2300600:all')).toEqual([
+            22_377.555, 29_753.58, 33_441.59, 35_285.585, 37_129.595,
+          ]);
+          expect(
+            matrix[0].rows.find(({ entryId }) => entryId === '1100900:all')?.noblePhantasmVariant,
+          ).toEqual({ actorFormId: '1100900', noblePhantasmId: '1100998' });
+        }
         for (const [index, ranking] of matrix.entries()) {
           const npLevel = (index + 1) as 1 | 2 | 3 | 4 | 5;
           expect(ranking.failures, `${classAffinity}:${specialAttack}:NP${npLevel}`).toEqual([]);
-          expect(ranking.rows).toHaveLength(420);
+          expect(ranking.rows).toHaveLength(422);
           expect(
             ranking.rows.filter(({ specialAttackApplied }) => specialAttackApplied),
-          ).toHaveLength(specialAttack === 'active' ? 191 : 0);
+          ).toHaveLength(specialAttack === 'active' ? 190 : 0);
           actualDigests[key].push(rankingDigest(ranking.rows));
         }
       }
