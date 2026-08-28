@@ -25,10 +25,34 @@ async function openRanking(
     await page.getByRole('button', { name: 'その他' }).click();
     await page.getByLabel('その他の機能').getByRole('button', { name: '火力ランキング' }).click();
   }
-  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算', {
+  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算', {
     timeout: 30_000,
   });
 }
+
+test('ranking keeps single and all-target variants as independent entries', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(60_000);
+  test.skip(isMobile, 'The desktop project owns the target-scope entry contract');
+  await openRanking(page, 1440, 1000);
+  const filters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
+  await filters.getByText('絞り込み', { exact: true }).click();
+  await filters.getByLabel('名前検索').fill('玉兎');
+  const list = page.getByRole('list', { name: '宝具火力ランキング' });
+  const jadeRows = list.getByRole('listitem').filter({ hasText: '玉兎' });
+  await expect(jadeRows).toHaveCount(2);
+  await expect(jadeRows.filter({ hasText: '単体・末那識・十六夜残花' })).toHaveCount(1);
+  await expect(jadeRows.filter({ hasText: '全体・末那識・十六夜残花' })).toHaveCount(1);
+
+  await filters.getByLabel('宝具範囲').selectOption('single');
+  await expect(jadeRows).toHaveCount(1);
+  await expect(jadeRows.first()).toContainText('単体');
+  await filters.getByLabel('宝具範囲').selectOption('all');
+  await expect(jadeRows).toHaveCount(1);
+  await expect(jadeRows.first()).toContainText('全体');
+});
 
 test('ranking exposes only six calculation policies', async ({ page, isMobile }) => {
   test.setTimeout(60_000);

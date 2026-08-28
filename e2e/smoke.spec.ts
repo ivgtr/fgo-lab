@@ -988,7 +988,9 @@ test('One Summer Castle applies automatically only at fifty percent HP or below'
   await expect(row).toContainText('33,988');
 });
 
-test('NP card choices replace exclusive siblings and update final-card buffs', async ({ page }) => {
+test('NP variant choices replace exclusive siblings and update variant-card buffs', async ({
+  page,
+}) => {
   await page.goto('/');
   await completeSetup(page);
   await page
@@ -1019,7 +1021,7 @@ test('NP card choices replace exclusive siblings and update final-card buffs', a
   await artsChange.click();
   await expect(artsChange).toHaveAttribute('aria-checked', 'true');
   await expect(busterChange).toHaveAttribute('aria-checked', 'false');
-  await expect(average).not.toHaveText(initialAverage ?? '');
+  await expect(average).toHaveText(initialAverage ?? '');
   const artsBuff = ownEffects.getByRole('button', { name: /アーツアップ/ });
   await expect(artsBuff).toBeVisible();
   await expect(ownEffects.getByRole('button', { name: /バスターアップ/ })).toHaveCount(0);
@@ -1051,7 +1053,9 @@ test('NP card choices replace exclusive siblings and update final-card buffs', a
   }
 });
 
-test('Jade Rabbit replaces NP form state with the selected final card', async ({ page }) => {
+test('Jade Rabbit switches the complete NP variant while both variants remain Arts', async ({
+  page,
+}) => {
   await page.goto('/');
   await completeSetup(page);
   await page
@@ -1065,25 +1069,32 @@ test('Jade Rabbit replaces NP form state with the selected final card', async ({
   await attackerDialog.getByRole('button', { name: /玉兎.*ムーンキャンサー.*Lv90/ }).click();
 
   const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
-  const busterForm = ownEffects.getByRole('radio', { name: /^月下、有効/ });
-  const artsForm = ownEffects.getByRole('radio', { name: /^日輪、有効/ });
+  const moonForm = ownEffects.getByRole('radio', { name: /^月下、有効/ });
+  const sunForm = ownEffects.getByRole('radio', { name: /^日輪、有効/ });
   const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  const average = table
+    .getByRole('row', { name: /NP1.*現在/ })
+    .locator('td')
+    .first();
   const effectiveInput = page.getByLabel('計算に使用する最終値');
   await effectiveInput.locator('summary').click();
 
   await expect(table).toBeVisible();
   await expect(effectiveInput).toContainText('ARTS性能／耐性');
-  await busterForm.click();
-  await expect(busterForm).toHaveAttribute('aria-checked', 'true');
-  await expect(artsForm).toHaveAttribute('aria-checked', 'false');
+  const sunAverage = await average.textContent();
+  await moonForm.click();
+  await expect(moonForm).toHaveAttribute('aria-checked', 'true');
+  await expect(sunForm).toHaveAttribute('aria-checked', 'false');
   await expect(table).toBeVisible();
-  await expect(effectiveInput).toContainText('BUSTER性能／耐性');
+  await expect(effectiveInput).toContainText('ARTS性能／耐性6.0%／0.0%');
+  await expect(average).not.toHaveText(sunAverage ?? '');
 
-  await artsForm.click();
+  await sunForm.click();
   await expect(table).toBeVisible();
-  await expect(artsForm).toHaveAttribute('aria-checked', 'true');
-  await expect(busterForm).toHaveAttribute('aria-checked', 'false');
+  await expect(sunForm).toHaveAttribute('aria-checked', 'true');
+  await expect(moonForm).toHaveAttribute('aria-checked', 'false');
   await expect(effectiveInput).toContainText('ARTS性能／耐性');
+  await expect(average).toHaveText(sunAverage ?? '');
 });
 
 test('Dante realm decisions are exclusive and preserve the damage UI on desktop and mobile', async ({
@@ -1117,7 +1128,7 @@ test('Dante realm decisions are exclusive and preserve the damage UI on desktop 
   await expect(ownEffects).not.toContainText('クイックアップ');
   await expect(ownEffects).not.toContainText('バスターアップ');
   const npBeforeDamageBuff = ownEffects.getByRole('button', {
-    name: /宝具威力アップ.*宝具前効果/,
+    name: /宝具威力アップ.*宝具前/,
   });
   await expect(npBeforeDamageBuff).toHaveAttribute('aria-pressed', 'true');
   await npBeforeDamageBuff.click();
@@ -1674,7 +1685,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '火力ランキング' }).click();
   const rankingCondition = page.getByRole('region', { name: 'ランキングの計算条件' });
-  await expect(page.getByRole('status')).toContainText('420件を計算', { timeout: 30_000 });
+  await expect(page.getByRole('status')).toContainText('422件を計算', { timeout: 30_000 });
   const rankingFilters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
   await rankingFilters.getByText('絞り込み', { exact: true }).click();
   await rankingFilters.getByRole('combobox', { name: 'クラス', exact: true }).selectOption('saber');
@@ -1790,7 +1801,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算', {
+  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算', {
     timeout: 30_000,
   });
   await expect(page.getByRole('list', { name: '宝具火力ランキング' })).toContainText(
@@ -1824,12 +1835,12 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await filters.getByLabel('名前検索').fill('');
   await conditions.getByLabel('宝具Lv').selectOption('2');
   await conditions.getByLabel('宝具Lv').selectOption('5');
-  await expect(page.getByRole('status')).toContainText('420件表示 / 420件を計算', {
+  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算', {
     timeout: 45_000,
   });
   await expect(page).toHaveURL(/rNp=5/);
   await filters.getByLabel('宝具カード').selectOption('arts');
-  await expect(page.getByRole('status')).not.toContainText('420件表示');
+  await expect(page.getByRole('status')).not.toContainText('422件表示');
   await expect(page.getByRole('status')).not.toContainText('更新中');
   await filters.getByLabel('クラス').selectOption('saber');
   await filters.getByLabel('所持状態').selectOption('owned');
