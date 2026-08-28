@@ -1,19 +1,11 @@
-import type { ConditionExpression, EffectProjection } from '@fgo-lab/battle-execution';
+import {
+  conditionHasActivationFact,
+  type ConditionExpression,
+  type EffectProjection,
+} from '@fgo-lab/battle-execution';
 import type { ActivationFact, CalculationScenario } from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
-
-function containsActivationFact(condition: ConditionExpression): boolean {
-  if (
-    condition.kind === 'choice' ||
-    condition.kind === 'operationTrigger' ||
-    condition.kind === 'sourceQuantity'
-  )
-    return true;
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.some(containsActivationFact);
-  return condition.kind === 'not' && containsActivationFact(condition.expression);
-}
 
 export function activationFactsForCondition(
   condition: ConditionExpression | null,
@@ -27,13 +19,12 @@ export function activationFactsForCondition(
     return [condition];
   if (condition.kind === 'all') return condition.expressions.flatMap(activationFactsForCondition);
   if (condition.kind === 'any') {
-    const branches = condition.expressions.filter(containsActivationFact);
+    const branches = condition.expressions.filter(conditionHasActivationFact);
     if (branches.length === 0) return [];
-    if (condition.expressions.length !== 1)
-      throw new TypeError('ambiguous_activation_condition_alternative');
+    if (branches.length !== 1) throw new TypeError('ambiguous_activation_condition_alternative');
     return activationFactsForCondition(branches[0]!);
   }
-  if (condition.kind === 'not' && containsActivationFact(condition.expression))
+  if (condition.kind === 'not' && conditionHasActivationFact(condition.expression))
     throw new TypeError('negated_activation_condition_unsupported');
   return [];
 }

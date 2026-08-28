@@ -7,6 +7,18 @@ function choiceKeys(expression: ConditionExpression): string[] {
   return expression.kind === 'not' ? choiceKeys(expression.expression) : [];
 }
 
+export function conditionHasActivationFact(expression: ConditionExpression): boolean {
+  if (
+    expression.kind === 'choice' ||
+    expression.kind === 'sourceQuantity' ||
+    expression.kind === 'operationTrigger'
+  )
+    return true;
+  if (expression.kind === 'all' || expression.kind === 'any')
+    return expression.expressions.some(conditionHasActivationFact);
+  return expression.kind === 'not' && conditionHasActivationFact(expression.expression);
+}
+
 export function conditionIsActivationLocal(expression: ConditionExpression): boolean {
   if (
     expression.kind === 'always' ||
@@ -127,10 +139,7 @@ export function resolveOperationActivation(
   if (operation.activation.kind === 'sourceDefault') {
     const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
     return {
-      enabled:
-        operation.sourceEnabled && operation.decisionPlan.activation === 'automatic'
-          ? operation.enabledByDefault
-          : operation.sourceEnabled && (choice?.operationEnabled ?? operation.enabledByDefault),
+      enabled: operation.sourceEnabled && (choice?.operationEnabled ?? operation.enabledByDefault),
       activeDecisionKeys:
         choice?.operationEnabled && operation.decisionKey ? [operation.decisionKey] : [],
       assumesLocalCondition: false,

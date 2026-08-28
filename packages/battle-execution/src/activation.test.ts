@@ -101,6 +101,28 @@ describe('attacker skill mutation activation planning', () => {
     expect(
       resolveOperationActivation({ ...planned[0]!, sourceEnabled: false }, new Map()).enabled,
     ).toBe(false);
+
+    const automatic = {
+      ...modifier,
+      decisionPlan: { activation: 'automatic' as const, condition: 'evaluate' as const },
+      activation: { kind: 'sourceDefault' as const },
+    };
+    expect(resolveOperationActivation(automatic, new Map()).enabled).toBe(true);
+    expect(
+      resolveOperationActivation(
+        automatic,
+        new Map([
+          [
+            'effect:modifier',
+            {
+              decisionKey: 'effect:modifier',
+              operationEnabled: false,
+              conditionSatisfaction: 'evaluate',
+            },
+          ],
+        ]),
+      ).enabled,
+    ).toBe(false);
   });
 
   it('requires a trait from an AND clause but not from only one OR branch', () => {

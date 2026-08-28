@@ -25,6 +25,7 @@ export type {
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
+export { conditionHasActivationFact, conditionIsActivationLocal } from './activation';
 export {
   executeOrderedScenario,
   executeOrderedScenarioCandidates,

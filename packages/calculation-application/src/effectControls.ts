@@ -1,4 +1,8 @@
-import type { ConditionExpression, EffectProjection } from '@fgo-lab/battle-execution';
+import {
+  conditionHasActivationFact,
+  type ConditionExpression,
+  type EffectProjection,
+} from '@fgo-lab/battle-execution';
 
 export interface EffectControlViewModel {
   key: string;
@@ -146,6 +150,9 @@ export function createEffectControlViewModels(
       (input) => input.kind === 'procSuccessCount',
     );
     const selected = projectionSelected(projection);
+    const activationOwnedCondition =
+      projection.explanation.condition !== null &&
+      conditionHasActivationFact(projection.explanation.condition);
     const active =
       projection.proc.kind === 'chainedRolls' && chainedInput
         ? projection.sourceActive &&
@@ -153,7 +160,12 @@ export function createEffectControlViewModels(
           (!conditionSelectable || projection.conditionDecision === 'assumeSatisfied') &&
           (canonicalInputValues[chainedInput.key] ?? chainedInput.defaultValue ?? 0) >
             chainedInput.minimum
-        : projection.sourceActive && selected && projection.outcome === 'applied';
+        : projection.sourceActive &&
+          selected &&
+          (!conditionSelectable ||
+            (activationOwnedCondition
+              ? projection.outcome === 'applied'
+              : projection.conditionDecision === 'assumeSatisfied'));
     return {
       key,
       projection,

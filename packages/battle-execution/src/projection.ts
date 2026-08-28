@@ -119,10 +119,7 @@ export function createOperationProjection(
             : operation.kind === 'ignoreDamageCut'
               ? 'ignoreDamageCut'
               : null;
-  const decisionSelected =
-    operation.decisionPlan.activation === 'user'
-      ? (choice?.operationEnabled ?? operation.enabledByDefault)
-      : choice?.conditionSatisfaction === 'assumeSatisfied';
+  const decisionSelected = choice?.operationEnabled ?? operation.enabledByDefault;
   const conditionSatisfiedInternally = condition === true;
   // A user-activated effect must remain reachable when another selected operation
   // makes its condition false. Selecting it may intentionally expose a typed
