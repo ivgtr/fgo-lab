@@ -28,6 +28,11 @@ invalid contextは`ready | invalidActivationContext`の排他的unionで表現�
 activation、constraint validation、card mutation選択、operation実行を行わず、base inputとdecisionを
 変更しないまま`invalidActivationContext` issueだけを返す。
 
+追補で実行stateも`ExecutableBattleState | RejectedBattleState`へ分離した。condition、constraint、
+projection、operation executorはnon-nullなactivation contextを持つ`ExecutableBattleState`だけを受け取る。
+failure assemblyだけが`RejectedBattleState`を生成し、nullable stateを拒否するruntime例外は削除した。
+この整理は総コード量の削減ではなく、局所責務と将来変更時の影響範囲を縮小するものである。
+
 ## Removed duplication
 
 - application独自の`all`／`any`／`not`再帰walker

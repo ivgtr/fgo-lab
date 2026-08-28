@@ -21,6 +21,8 @@ Ownership is reduced to four boundaries:
 
 Candidate preparation becomes a discriminated union. Invalid activation context returns before operation activation, constraint validation, card mutation selection, or operation execution. Failure assembly receives the unchanged candidate input, decisions, projections, and explicit invalid issues; it never substitutes an empty context as executable state.
 
+The state boundary follows the same distinction. Condition, constraint, projection, and operation execution accept only `ExecutableBattleState`, whose activation context is non-null. Failure assembly alone creates `RejectedBattleState`; only the outer `BattleExecutionResult` exposes their `BattleExecutionState` union. Runtime null guards are not a substitute for this type boundary.
+
 ## Invariants
 
 - Validation and execution use the same immutable analyzed fact indexes.
@@ -29,3 +31,4 @@ Candidate preparation becomes a discriminated union. Invalid activation context 
 - Ranking and calculator use the same application fact-selection service and canonical executor.
 - No raw Atlas vocabulary, servant identity, labels, UI commands, legacy helpers, or compatibility fallback enter the activation path.
 - Damage input, effect outcome, typed precision, scenario serialization, versions, and UI remain byte-for-byte or pixel-for-pixel equivalent to E4.1.5.
+- The cleanup reduces local responsibility and change impact rather than claiming a reduction in total production lines.
