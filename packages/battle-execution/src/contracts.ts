@@ -7,7 +7,8 @@ import type {
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
 import type {
-  ActivationWitness,
+  ActivationFact,
+  OperationOrigin,
   TargetAttributeContext,
   TargetClassContext,
   TargetPredicate,
@@ -48,15 +49,7 @@ export type ConditionExpression =
       count: number;
     }
   | { kind: 'card'; card: CardType }
-  | { kind: 'choice'; group: string; candidate: string }
-  | { kind: 'operationTrigger'; source: string; position: number }
-  | {
-      kind: 'sourceQuantity';
-      quantity: 'battlePointRate';
-      subjectId: string;
-      comparison: 'atMost' | 'atLeast';
-      value: number;
-    }
+  | ActivationFact
   | {
       kind: 'quantity';
       quantity: 'attackerHpPermille' | 'targetRarity' | 'battlePointPhase';
@@ -80,7 +73,7 @@ export interface OperationEvidence {
 }
 
 export interface OperationSource {
-  origin: 'passive' | 'attacker' | 'craftEssence' | 'support' | 'mysticCode' | 'np';
+  origin: OperationOrigin;
   sourceInstanceId: string;
   sourceId: string;
   skillId: string;
@@ -218,7 +211,7 @@ export interface BattleState {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  activationWitnesses: readonly ActivationWitness[];
+  activationContext: ActivationContext;
   resolvedInputValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
@@ -226,6 +219,14 @@ export interface BattleState {
   ignoreDamageCut: boolean;
   evidence: readonly OperationEvidence[];
   unresolved: readonly ExecutionIssue[];
+}
+
+export interface ActivationContext {
+  facts: readonly ActivationFact[];
+  factKeys: ReadonlySet<string>;
+  choices: ReadonlyMap<string, string>;
+  operationTriggers: ReadonlySet<string>;
+  sourceQuantityRanges: ReadonlyMap<string, { min: number; max: number }>;
 }
 
 export type EffectDecision = {
@@ -263,6 +264,20 @@ export type ExecutionIssue =
       kind: 'invalidProcSelection';
       operationId: string;
       detail: 'duplicateEffectDecision' | 'missingSuccessCountDefinition';
+    }
+  | {
+      kind: 'invalidActivationContext';
+      detail:
+        | 'duplicateFact'
+        | 'nonCanonicalOrder'
+        | 'conflictingChoiceSelection'
+        | 'conflictingSourceQuantityRange'
+        | 'unknownFact'
+        | 'orphanFact'
+        | 'missingRequiredFact'
+        | 'negatedActivationRequirement';
+      factKey?: string;
+      operationId?: string;
     }
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }

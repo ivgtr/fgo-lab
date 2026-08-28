@@ -330,6 +330,7 @@ describe('portable input limits', () => {
       applyEffectProjectionDecision(baseScenario, earth, true),
       earth,
       true,
+      initial.activationRequirements,
     );
     const compatibleResult = calculateScenario(selected, craftedMaster, craftedVersions).result;
     const conflictingScenario = {

@@ -80,7 +80,7 @@ activation linkはworld factではなくoperation実行依存である。linked 
 `ActSet`と`ActSelectIndex`はworld stateではなく、一つのaction内で選ばれる候補を表す。これらをraw parameterのままexecutorで判定せず、normalizerが`family`と整数`candidate`からなるchoice IRへ変換する。
 
 - choice groupはsource instance、skill、choice familyからcanonicalに導出する。
-- E4.1.3以降、scenarioはmaster条件式を複製せず、選択結果だけをtyped activation witnessとして保持する。同一groupの同一candidateは共存でき、異なるcandidateはtyped `choiceConflict`となる。
+- schema 30以降、scenarioはmaster条件式を複製せず、選択結果だけをtyped `ActivationFact`として保持する。同一source／groupの同一candidateは一件だけ保持し、異なるcandidateはinvalid activation contextとなる。
 - choice成立はtrait、field、quantityを生成しない。別operationのworld factへ伝播させない。
 - `ActSetWeight`は抽選候補の重みでありmodifier値ではない。対応する`ActSet`が一意に正規化できる場合だけchoice metadataとして受理する。
 - candidateまたはfamilyを一意に正規化できない入力、choiceの否定、複数familyの混在は近似せずunsupportedにする。
@@ -104,11 +104,11 @@ activation linkはworld factではなくoperation実行依存である。linked 
 
 ## E3.4 amendment: source-owned quantity ranges
 
-`TriggeredTargetBattlePointRateRange`はattackerのBP phase入力とは別のsource-owned quantityである。normalizerはsubject IDと整数rangeを保持し、effect-local `sourceQuantity` conditionへ変換する。具体的なrateをworld factへ保存せず、選択結果はtyped activation witnessとして保持する。選択された複数rangeは同一subjectごとにsolverで積を取り、空積をtyped conflictにする。rangeが複数、構文不明、非整数の場合はunsupportedを維持する。
+`TriggeredTargetBattlePointRateRange`はattackerのBP phase入力とは別のsource-owned quantityである。normalizerはsubject IDと整数rangeを保持し、effect-local `sourceQuantity` conditionへ変換する。具体的なrateをworld factへ保存せず、選択結果はsource-awareなtyped `ActivationFact`として保持する。選択された複数rangeは同一source／subjectごとに積を取り、空積をinvalid activation contextにする。構文不明、非整数の場合はunsupportedを維持する。
 
 この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。
 
-## E4.1.3 amendment: activation witness is execution state
+## Schema 30 amendment: activation fact is execution state
 
 E3.4のeffect-local成立宣言はconstraint conflictを検出できた一方、成立結果をbattle stateへmaterializeしなかった。`assumeSatisfied`をrankingから削除した結果、choice、operation trigger、source-owned quantityはsolver上で充足可能でもcondition evaluatorではunknownとなり、included damage operationが黙って脱落した。
 

@@ -11,6 +11,7 @@ export * from './rankingMatrix';
 export * from './supportEffectPresentation';
 export * from './targetContext';
 export type {
+  ActivationRequirementOwner,
   ConditionExpression,
   EffectProjection,
   ModifierKind,

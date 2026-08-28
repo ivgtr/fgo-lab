@@ -1,18 +1,16 @@
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { ActivationRequirementOwner, EffectProjection } from '@fgo-lab/battle-execution';
 import type { TargetContext } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
 import type { EffectControlViewModel } from './effectControls';
 import type { ResolvedScenario } from './rankingPolicy';
-import { setActivationFactsForProjection } from './activationContext';
-
-interface RankingEffectPolicy {
-  projection: EffectProjection;
-  included: boolean;
-}
+import {
+  materializeIntrinsicActivationFacts,
+  setActivationFactsForProjection,
+} from './activationContext';
 
 export interface RankingExecutionPolicy {
   targetContext: TargetContext;
-  effects: readonly RankingEffectPolicy[];
+  effects: readonly { projection: EffectProjection; included: boolean }[];
 }
 
 export function compileRankingExecutionPolicy(
@@ -90,14 +88,22 @@ export function applyRankingExecutionPolicy(
   scenario: ResolvedScenario,
   policy: RankingExecutionPolicy,
   inputs: readonly EffectInputViewModel[],
+  activationRequirements: readonly ActivationRequirementOwner[],
 ): ResolvedScenario {
-  return policy.effects.reduce(
+  const decided = policy.effects.reduce(
     (current, { projection, included }) => {
-      const withActivation = setActivationFactsForProjection(current, projection, included);
-      const withProc = setChainedProc(withActivation, projection, included, inputs);
+      const withProc = setChainedProc(current, projection, included, inputs);
       if (projection.proc.kind === 'chainedRolls') return withProc;
       return setWorldFact(setDecision(withProc, projection, included), projection, included);
     },
     { ...scenario, targetContext: policy.targetContext },
   );
+  const selected = policy.effects.reduce(
+    (current, { projection, included }) =>
+      projection.proc.kind === 'chainedRolls'
+        ? current
+        : setActivationFactsForProjection(current, projection, included, activationRequirements),
+    decided,
+  );
+  return materializeIntrinsicActivationFacts(selected, activationRequirements);
 }

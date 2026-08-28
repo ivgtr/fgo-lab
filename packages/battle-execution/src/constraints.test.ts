@@ -27,6 +27,12 @@ const quantity = (
   fact: { kind: 'quantity', quantity: name, value },
 });
 
+const activationSource = {
+  origin: 'attacker' as const,
+  sourceInstanceId: 'attacker:self',
+  skillId: 'skill',
+};
+
 describe('unified constraint validation', () => {
   it('detects canonical trait and field conflicts across fixed facts and conditions', () => {
     expect(
@@ -364,7 +370,8 @@ describe('unified constraint validation', () => {
     const choice = (sourceKey: string, candidate: string) =>
       condition(sourceKey, {
         kind: 'choice',
-        group: 'source:skill:actSet',
+        source: activationSource,
+        family: 'actSet',
         candidate,
       });
     expect(
@@ -394,7 +401,7 @@ describe('unified constraint validation', () => {
         expressions: [
           condition('effect:position', {
             kind: 'operationTrigger',
-            source: 'attacker:skill',
+            source: activationSource,
             position: 2,
           }),
         ],
@@ -408,7 +415,7 @@ describe('unified constraint validation', () => {
             kind: 'not',
             expression: {
               kind: 'operationTrigger',
-              source: 'attacker:skill',
+              source: activationSource,
               position: 2,
             },
           }),
@@ -421,6 +428,7 @@ describe('unified constraint validation', () => {
     const sourceRange = (sourceKey: string, comparison: 'atMost' | 'atLeast', value: number) =>
       condition(sourceKey, {
         kind: 'sourceQuantity',
+        source: activationSource,
         quantity: 'battlePointRate',
         subjectId: '705300',
         comparison,
@@ -458,18 +466,18 @@ describe('unified constraint validation', () => {
         fixedFacts: [
           {
             sourceKey: 'selected:first',
-            fact: { kind: 'choice', group: 'skill:choice', candidate: '1' },
+            fact: { kind: 'choice', source: activationSource, family: 'choice', candidate: '1' },
           },
           {
             sourceKey: 'selected:second',
-            fact: { kind: 'choice', group: 'skill:choice', candidate: '2' },
+            fact: { kind: 'choice', source: activationSource, family: 'choice', candidate: '2' },
           },
         ],
         expressions: [],
       }),
     ).toMatchObject({
       status: 'conflict',
-      issue: { conflicts: [{ kind: 'choiceConflict', group: 'skill:choice' }] },
+      issue: { conflicts: [{ kind: 'choiceConflict' }] },
     });
     expect(
       validateConstraintSet({
@@ -478,6 +486,7 @@ describe('unified constraint validation', () => {
             sourceKey: 'selected:quantity',
             fact: {
               kind: 'sourceQuantity',
+              source: activationSource,
               quantity: 'battlePointRate',
               subjectId: '705300',
               comparison: 'atMost',
@@ -488,6 +497,7 @@ describe('unified constraint validation', () => {
         expressions: [
           condition('required:quantity', {
             kind: 'sourceQuantity',
+            source: activationSource,
             quantity: 'battlePointRate',
             subjectId: '705300',
             comparison: 'atLeast',

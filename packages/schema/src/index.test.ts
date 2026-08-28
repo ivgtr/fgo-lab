@@ -36,7 +36,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationWitnesses: [],
+      activationFacts: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });
@@ -61,50 +61,60 @@ describe('portable schema boundaries', () => {
     expect(
       calculationScenarioSchema.safeParse({
         ...scenario,
-        activationWitnesses: [
+        activationFacts: [
           {
-            fact: { kind: 'choice', group: 'skill:choice', candidate: 'a' },
-            consumerDecisionKeys: ['effect:a'],
+            kind: 'choice',
+            source: { origin: 'attacker', sourceInstanceId: 'self', skillId: 'skill' },
+            family: 'choice',
+            candidate: 'a',
           },
           {
-            fact: { kind: 'choice', group: 'skill:choice', candidate: 'b' },
-            consumerDecisionKeys: ['effect:b'],
+            kind: 'choice',
+            source: { origin: 'attacker', sourceInstanceId: 'self', skillId: 'skill' },
+            family: 'choice',
+            candidate: 'b',
           },
         ],
       }).success,
     ).toBe(false);
-    const sharedFact = { kind: 'choice' as const, group: 'skill:choice', candidate: 'a' };
+    const sharedFact = {
+      kind: 'choice' as const,
+      source: { origin: 'attacker' as const, sourceInstanceId: 'self', skillId: 'skill' },
+      family: 'choice',
+      candidate: 'a',
+    };
     expect(
       calculationScenarioSchema.parse({
         ...scenario,
-        activationWitnesses: [
-          {
-            fact: sharedFact,
-            consumerDecisionKeys: ['effect:a', 'effect:b'],
-          },
-        ],
+        activationFacts: [sharedFact],
       }),
-    ).toMatchObject({
-      activationWitnesses: [
-        {
-          fact: sharedFact,
-          consumerDecisionKeys: ['effect:a', 'effect:b'],
-        },
-      ],
-    });
+    ).toMatchObject({ activationFacts: [sharedFact] });
     expect(
       calculationScenarioSchema.safeParse({
         ...scenario,
-        activationWitnesses: [
-          { fact: sharedFact, consumerDecisionKeys: ['effect:a'] },
-          { fact: sharedFact, consumerDecisionKeys: ['effect:b'] },
-        ],
+        activationFacts: [sharedFact, sharedFact],
       }).success,
     ).toBe(false);
     expect(
       calculationScenarioSchema.safeParse({
         ...scenario,
-        activationWitnesses: [{ fact: sharedFact, consumerDecisionKeys: ['effect:b', 'effect:a'] }],
+        activationFacts: [{ ...sharedFact, candidate: '' }],
+      }).success,
+    ).toBe(false);
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...scenario,
+        activationFacts: [
+          {
+            kind: 'sourceQuantity',
+            source: sharedFact.source,
+            quantity: 'battlePointRate',
+            subjectId: '1',
+            comparison: 'atMost',
+            value: 999,
+          },
+          sharedFact,
+        ],
       }).success,
     ).toBe(false);
     expect(
@@ -133,7 +143,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationWitnesses: [],
+      activationFacts: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });
@@ -176,7 +186,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationWitnesses: [],
+      activationFacts: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });

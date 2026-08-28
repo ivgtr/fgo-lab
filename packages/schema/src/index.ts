@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 29 as const;
-export const ENGINE_VERSION = '23.0.0' as const;
+export const SCHEMA_VERSION = 30 as const;
+export const ENGINE_VERSION = '24.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -158,80 +158,122 @@ export const targetContextSchema = z
   .strict();
 export type TargetContext = z.infer<typeof targetContextSchema>;
 
-export const choiceSelectionSchema = z.object({
-  kind: z.literal('choice'),
-  group: z.string().min(1).max(300),
-  candidate: z.string().min(1).max(80),
-});
+export const operationOriginSchema = z.enum([
+  'passive',
+  'attacker',
+  'craftEssence',
+  'support',
+  'mysticCode',
+  'np',
+]);
+export type OperationOrigin = z.infer<typeof operationOriginSchema>;
+
+export const activationSourceRefSchema = z
+  .object({
+    origin: operationOriginSchema,
+    sourceInstanceId: z.string().min(1).max(300),
+    skillId: z.string().min(1).max(300).nullable(),
+  })
+  .strict();
+export type ActivationSourceRef = z.infer<typeof activationSourceRefSchema>;
+
+export const choiceSelectionSchema = z
+  .object({
+    kind: z.literal('choice'),
+    source: activationSourceRefSchema,
+    family: z.string().min(1).max(80),
+    candidate: z.string().min(1).max(80),
+  })
+  .strict();
 export type ChoiceSelection = z.infer<typeof choiceSelectionSchema>;
 
 export const activationFactSchema = z.discriminatedUnion('kind', [
   choiceSelectionSchema,
-  z.object({
-    kind: z.literal('operationTrigger'),
-    source: z.string().min(1).max(300),
-    position: z.number().int().nonnegative(),
-  }),
-  z.object({
-    kind: z.literal('sourceQuantity'),
-    quantity: z.literal('battlePointRate'),
-    subjectId: z.string().min(1).max(80),
-    comparison: z.enum(['atMost', 'atLeast']),
-    value: z.number().int(),
-  }),
+  z
+    .object({
+      kind: z.literal('operationTrigger'),
+      source: activationSourceRefSchema,
+      position: z.number().int().nonnegative(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('sourceQuantity'),
+      source: activationSourceRefSchema,
+      quantity: z.literal('battlePointRate'),
+      subjectId: z.string().min(1).max(80),
+      comparison: z.enum(['atMost', 'atLeast']),
+      value: z.number().int(),
+    })
+    .strict(),
 ]);
 export type ActivationFact = z.infer<typeof activationFactSchema>;
 
 export function activationFactKey(fact: ActivationFact): string {
-  if (fact.kind === 'choice') return JSON.stringify([fact.kind, fact.group, fact.candidate]);
-  if (fact.kind === 'operationTrigger')
-    return JSON.stringify([fact.kind, fact.source, fact.position]);
-  return JSON.stringify([fact.kind, fact.quantity, fact.subjectId, fact.comparison, fact.value]);
+  const source = [fact.source.origin, fact.source.sourceInstanceId, fact.source.skillId];
+  if (fact.kind === 'choice')
+    return JSON.stringify([fact.kind, source, fact.family, fact.candidate]);
+  if (fact.kind === 'operationTrigger') return JSON.stringify([fact.kind, source, fact.position]);
+  return JSON.stringify([
+    fact.kind,
+    source,
+    fact.quantity,
+    fact.subjectId,
+    fact.comparison,
+    fact.value,
+  ]);
 }
 
-export const activationWitnessSchema = z
-  .object({
-    fact: activationFactSchema,
-    consumerDecisionKeys: z.array(z.string().min(1).max(300)).min(1).max(300),
-  })
-  .strict()
-  .superRefine(({ consumerDecisionKeys }, context) => {
-    const canonical = [...new Set(consumerDecisionKeys)].sort();
-    if (
-      canonical.length !== consumerDecisionKeys.length ||
-      canonical.some((key, index) => key !== consumerDecisionKeys[index])
-    )
-      context.addIssue({
-        code: 'custom',
-        message: 'non_canonical_activation_witness_consumers',
-        path: ['consumerDecisionKeys'],
-      });
-  });
-export type ActivationWitness = z.infer<typeof activationWitnessSchema>;
-
-const activationWitnessesSchema = z
-  .array(activationWitnessSchema)
+const activationFactsSchema = z
+  .array(activationFactSchema)
   .max(300)
-  .superRefine((witnesses, context) => {
+  .superRefine((facts, context) => {
     const candidatesByChoiceGroup = new Map<string, string>();
     const factKeys = new Set<string>();
-    for (const [index, { fact }] of witnesses.entries()) {
+    const quantityRanges = new Map<string, { min: number; max: number }>();
+    for (const [index, fact] of facts.entries()) {
       const key = activationFactKey(fact);
+      if (index > 0 && activationFactKey(facts[index - 1]!).localeCompare(key) > 0)
+        context.addIssue({
+          code: 'custom',
+          message: 'non_canonical_activation_fact_order',
+          path: [index],
+        });
       if (factKeys.has(key))
         context.addIssue({
           code: 'custom',
-          message: `duplicate_activation_witness:${key}`,
-          path: [index, 'fact'],
+          message: `duplicate_activation_fact:${key}`,
+          path: [index],
         });
       factKeys.add(key);
-      if (fact.kind !== 'choice') continue;
-      const selected = candidatesByChoiceGroup.get(fact.group);
-      if (selected === undefined) candidatesByChoiceGroup.set(fact.group, fact.candidate);
-      else if (selected !== fact.candidate)
+      if (fact.kind === 'choice') {
+        const group = JSON.stringify([fact.source, fact.family]);
+        const selected = candidatesByChoiceGroup.get(group);
+        if (selected === undefined) candidatesByChoiceGroup.set(group, fact.candidate);
+        else if (selected !== fact.candidate)
+          context.addIssue({
+            code: 'custom',
+            message: `conflicting_choice_selection:${group}`,
+            path: [index],
+          });
+        continue;
+      }
+      if (fact.kind !== 'sourceQuantity') continue;
+      const rangeKey = JSON.stringify([fact.source, fact.quantity, fact.subjectId]);
+      const previous = quantityRanges.get(rangeKey) ?? {
+        min: Number.MIN_SAFE_INTEGER,
+        max: Number.MAX_SAFE_INTEGER,
+      };
+      const range =
+        fact.comparison === 'atLeast'
+          ? { min: Math.max(previous.min, fact.value), max: previous.max }
+          : { min: previous.min, max: Math.min(previous.max, fact.value) };
+      quantityRanges.set(rangeKey, range);
+      if (range.min > range.max)
         context.addIssue({
           code: 'custom',
-          message: `conflicting_choice_selection:${fact.group}`,
-          path: [index, 'fact'],
+          message: `conflicting_source_quantity_range:${rangeKey}`,
+          path: [index],
         });
     }
   });
@@ -399,7 +441,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
         conditionSatisfaction: z.enum(['evaluate', 'assumeSatisfied']),
       }),
     ),
-    activationWitnesses: activationWitnessesSchema,
+    activationFacts: activationFactsSchema,
     worldFactAssertions: z.array(
       z.object({
         decisionKey: z.string().min(1).max(300),

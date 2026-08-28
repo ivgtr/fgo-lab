@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { activationFactKey, APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { canonicalExclusiveGroup, conditionHasActivationFact } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario } from './scenario';
@@ -10,6 +10,7 @@ import { createDefaultResolvedScenario } from './scenario';
 import { calculateRanking, DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './ranking';
 import { calculateStandardRankingMatrix } from './rankingMatrix';
 import { fieldTraitsRequiredByCondition } from './conditionProvenance';
+import { activationFactsForCondition } from './activationContext';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -111,22 +112,29 @@ describe('production canonical ranking', () => {
           .filter(({ operationEnabled }) => operationEnabled)
           .map(({ decisionKey }) => decisionKey),
       );
-      for (const { fact } of detail.scenario.activationWitnesses)
-        activationInventory[fact.kind] += 1;
-      const witnessKeys = detail.scenario.activationWitnesses.map(({ fact }) =>
-        JSON.stringify(fact),
-      );
-      expect(new Set(witnessKeys).size, row.servantId).toBe(witnessKeys.length);
-      for (const { consumerDecisionKeys } of detail.scenario.activationWitnesses)
-        expect(consumerDecisionKeys, row.servantId).toEqual(
-          [...new Set(consumerDecisionKeys)].sort(),
-        );
-      if (detail.scenario.activationWitnesses.length > 0)
+      for (const fact of detail.scenario.activationFacts) activationInventory[fact.kind] += 1;
+      const factKeys = detail.scenario.activationFacts.map(activationFactKey);
+      expect(new Set(factKeys).size, row.servantId).toBe(factKeys.length);
+      if (detail.scenario.activationFacts.length > 0)
         servantsWithActivationSelections.push(row.servantId);
       for (const effect of detail.effects) {
         if (effect.modifier === null) continue;
         for (const kind of activationKinds(effect.explanation.condition))
           activationConditionInventory[kind] += 1;
+        if (
+          included.has(effect.projectionKey) &&
+          effect.explanation.condition !== null &&
+          conditionHasActivationFact(effect.explanation.condition)
+        ) {
+          for (const fact of activationFactsForCondition(effect.explanation.condition)) {
+            expect(
+              detail.scenario.activationFacts.some(
+                (candidate) => activationFactKey(candidate) === activationFactKey(fact),
+              ),
+              `${row.servantId}:${effect.projectionKey}:${activationFactKey(fact)}`,
+            ).toBe(true);
+          }
+        }
       }
       unresolvedIncludedDamageEffects.push(
         ...detail.effects.flatMap((effect) =>
@@ -171,7 +179,7 @@ describe('production canonical ranking', () => {
     }
     expect(unresolvedIncludedDamageEffects).toEqual([]);
     expect(activationInventory).toEqual({
-      choice: 11,
+      choice: 12,
       operationTrigger: 3,
       sourceQuantity: 1,
     });
@@ -190,6 +198,7 @@ describe('production canonical ranking', () => {
       '2301200',
       '2501100',
       '2800500',
+      '2801000',
       '305600',
       '603800',
       '705300',

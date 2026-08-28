@@ -2,6 +2,7 @@ import type { TraitCondition, TraitReadPolicy } from '@fgo-lab/master-data';
 import type { BattleState, ConditionExpression, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
+import { evaluateActivationRequirement } from './activationContext';
 
 const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
   stateSources: 'activeOnly',
@@ -168,45 +169,12 @@ export function evaluateCondition(
     case 'card':
       return state.card === condition.card;
     case 'choice': {
-      const selections = state.activationWitnesses.flatMap(({ fact }) =>
-        fact.kind === 'choice' && fact.group === condition.group ? [fact] : [],
-      );
-      if (selections.length === 0) return null;
-      return selections.every(({ candidate }) => candidate === condition.candidate);
+      return evaluateActivationRequirement(condition, state.activationContext);
     }
     case 'operationTrigger':
-      return state.activationWitnesses.some(
-        ({ fact }) =>
-          fact.kind === 'operationTrigger' &&
-          fact.source === condition.source &&
-          fact.position === condition.position,
-      )
-        ? true
-        : null;
-    case 'sourceQuantity': {
-      const ranges = state.activationWitnesses.flatMap(({ fact }) => {
-        if (fact.kind !== 'sourceQuantity' || fact.subjectId !== condition.subjectId) return [];
-        return [
-          fact.comparison === 'atLeast'
-            ? { min: fact.value, max: Number.MAX_SAFE_INTEGER }
-            : { min: Number.MIN_SAFE_INTEGER, max: fact.value },
-        ];
-      });
-      if (ranges.length === 0) return null;
-      const selected = ranges.reduce(
-        (range, candidate) => ({
-          min: Math.max(range.min, candidate.min),
-          max: Math.min(range.max, candidate.max),
-        }),
-        { min: Number.MIN_SAFE_INTEGER, max: Number.MAX_SAFE_INTEGER },
-      );
-      const required =
-        condition.comparison === 'atLeast'
-          ? { min: condition.value, max: Number.MAX_SAFE_INTEGER }
-          : { min: Number.MIN_SAFE_INTEGER, max: condition.value };
-      if (selected.max < required.min || selected.min > required.max) return false;
-      return selected.min >= required.min && selected.max <= required.max ? true : null;
-    }
+      return evaluateActivationRequirement(condition, state.activationContext);
+    case 'sourceQuantity':
+      return evaluateActivationRequirement(condition, state.activationContext);
     case 'quantity': {
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];

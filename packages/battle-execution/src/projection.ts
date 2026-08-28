@@ -21,7 +21,12 @@ export function selectionGroupsForCondition(
 ): EffectProjection['selectionGroups'] {
   if (!condition) return [];
   if (condition.kind === 'choice')
-    return [{ groupKey: `choice:${condition.group}`, candidateKey: condition.candidate }];
+    return [
+      {
+        groupKey: `choice:${JSON.stringify([condition.source, condition.family])}`,
+        candidateKey: condition.candidate,
+      },
+    ];
   if (condition.kind === 'trait' && condition.present) {
     const group = canonicalExclusiveGroup(condition.scope, condition.trait);
     if (!group) return [];

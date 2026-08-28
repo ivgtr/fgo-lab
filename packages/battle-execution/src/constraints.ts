@@ -24,6 +24,11 @@ import {
 import { targetPredicateKey } from './targetPredicate';
 import type { TargetPredicate } from '@fgo-lab/schema';
 import type { ActivationFact } from '@fgo-lab/schema';
+import {
+  activationChoiceGroupKey,
+  activationOperationTriggerKey,
+  activationSourceQuantityKey,
+} from './activationContext';
 
 export const MAX_CONSTRAINT_ALTERNATIVES = 2_048;
 export const MAX_CONSTRAINT_LITERALS = 128;
@@ -83,6 +88,7 @@ type Literal =
   | { kind: 'operationTrigger'; source: string; position: number; sourceKey: string }
   | {
       kind: 'sourceQuantityRange';
+      ownerKey: string;
       quantity: 'battlePointRate';
       subjectId: string;
       min: number;
@@ -216,7 +222,7 @@ function compileExpression(
               [
                 {
                   kind: 'choice',
-                  group: expression.group,
+                  group: activationChoiceGroupKey(expression.source, expression.family),
                   candidate: expression.candidate,
                   sourceKey,
                 },
@@ -232,7 +238,7 @@ function compileExpression(
               [
                 {
                   kind: 'operationTrigger',
-                  source: expression.source,
+                  source: activationOperationTriggerKey(expression.source, expression.position),
                   position: expression.position,
                   sourceKey,
                 },
@@ -258,6 +264,11 @@ function compileExpression(
           [
             {
               kind: 'sourceQuantityRange',
+              ownerKey: activationSourceQuantityKey(
+                expression.source,
+                expression.quantity,
+                expression.subjectId,
+              ),
               quantity: expression.quantity,
               subjectId: expression.subjectId,
               min: comparison === 'atLeast' ? value : Number.MIN_SAFE_INTEGER,
@@ -431,9 +442,7 @@ function analyzeLiterals(literals: readonly Literal[]): ConflictDetail[] {
     }
     if (literal.kind === 'sourceQuantityRange' || literal.kind === 'inputQuantityRange') {
       const quantityKey =
-        literal.kind === 'sourceQuantityRange'
-          ? `${literal.quantity}:${literal.subjectId}`
-          : `input:${literal.inputKey}`;
+        literal.kind === 'sourceQuantityRange' ? literal.ownerKey : `input:${literal.inputKey}`;
       const prior = quantities.get(quantityKey);
       if (!prior) {
         quantities.set(quantityKey, {
@@ -602,7 +611,7 @@ function literalKey(literal: Literal): string {
           : literal.kind === 'operationTrigger'
             ? `operation-trigger:${literal.source}:${String(literal.position)}`
             : literal.kind === 'sourceQuantityRange'
-              ? `source-quantity:${literal.quantity}:${literal.subjectId}:${String(literal.min)}:${String(literal.max)}`
+              ? `source-quantity:${literal.ownerKey}:${String(literal.min)}:${String(literal.max)}`
               : literal.kind === 'inputQuantityRange'
                 ? `context-quantity:${literal.inputKey}:${String(literal.min)}:${String(literal.max)}`
                 : `quantity:${literal.quantity}:${literal.subjectId ?? 'attacker'}:${String(literal.min)}:${String(literal.max)}`;
@@ -632,12 +641,33 @@ function fixedLiterals(item: FixedConstraintFact): Literal[] {
   }
   if (item.fact.kind === 'card') return [{ ...item.fact, sourceKey: item.sourceKey }];
   if (item.fact.kind === 'targetPredicate') return [{ ...item.fact, sourceKey: item.sourceKey }];
-  if (item.fact.kind === 'choice' || item.fact.kind === 'operationTrigger')
-    return [{ ...item.fact, sourceKey: item.sourceKey }];
+  if (item.fact.kind === 'choice')
+    return [
+      {
+        kind: 'choice',
+        group: activationChoiceGroupKey(item.fact.source, item.fact.family),
+        candidate: item.fact.candidate,
+        sourceKey: item.sourceKey,
+      },
+    ];
+  if (item.fact.kind === 'operationTrigger')
+    return [
+      {
+        kind: 'operationTrigger',
+        source: activationOperationTriggerKey(item.fact.source, item.fact.position),
+        position: item.fact.position,
+        sourceKey: item.sourceKey,
+      },
+    ];
   if (item.fact.kind === 'sourceQuantity')
     return [
       {
         kind: 'sourceQuantityRange',
+        ownerKey: activationSourceQuantityKey(
+          item.fact.source,
+          item.fact.quantity,
+          item.fact.subjectId,
+        ),
         quantity: item.fact.quantity,
         subjectId: item.fact.subjectId,
         min: item.fact.comparison === 'atLeast' ? item.fact.value : Number.MIN_SAFE_INTEGER,
@@ -822,8 +852,8 @@ export function fixedConstraintFactsFromState(
     ...traits,
     ...actorPredicates,
     ...quantities,
-    ...state.activationWitnesses.map(({ consumerDecisionKeys, fact }, index) => ({
-      sourceKey: `${sourcePrefix}:activation:${consumerDecisionKeys.join(',')}:${String(index)}`,
+    ...state.activationContext.facts.map((fact, index) => ({
+      sourceKey: `${sourcePrefix}:activation:${String(index)}`,
       fact,
     })),
     { sourceKey: `${sourcePrefix}:card`, fact: { kind: 'card' as const, card: state.card } },

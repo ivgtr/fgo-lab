@@ -1,55 +1,58 @@
-# ADR 021: canonical activation witness
+# ADR 021: canonical activation facts
 
 ## Status
 
-Accepted.
+Accepted. The former persisted consumer-list design is superseded.
 
 ## Context
 
-E4.1.2はrankingから複合conditionへの`assumeSatisfied`を削除し、trait、field、recipient、targetをcanonical stateで評価するようにした。この境界は正しいが、action内で確定する`choice`、function-position trigger、source-owned quantity rangeには対応するexecution stateがなかった。
+Choice、function-position trigger、source-owned quantity rangeはworld factではなく、一つのaction内で成立するactivation stateである。以前の形式はfactと利用effect一覧をscenarioへ重複保存したため、schema、application、evaluator、executor、share/saveの同期処理を必要とした。
 
-production masterにはdamage-relevantなchoice 34 occurrence、operation trigger 5 occurrence、source quantity 5 occurrenceがある。choiceを含む標準rankingでは12 occurrenceが`unresolved`のまま脱落し、ブレエリ、シャルロット、紅閻魔、ククルカンなどのdamageが過少になった。
+さらにconsumer単位のfilterはaction全体のchoice排他やquantity range矛盾を見落とし得る。effectの包含は`EffectDecision`が既に担当しており、fact自体をeffect別に分割する必要はない。
 
 ## Decision
 
-scenarioへworld factとは別のtyped activation contextを持たせる。
+scenarioは一次状態だけを保持する。
 
 ```ts
+interface ActivationSourceRef {
+  origin: OperationOrigin;
+  sourceInstanceId: string;
+  skillId: string | null;
+}
+
 type ActivationFact =
-  | { kind: 'choice'; group: string; candidate: string }
-  | { kind: 'operationTrigger'; source: string; position: number }
+  | { kind: 'choice'; source: ActivationSourceRef; family: string; candidate: string }
+  | { kind: 'operationTrigger'; source: ActivationSourceRef; position: number }
   | {
       kind: 'sourceQuantity';
+      source: ActivationSourceRef;
       quantity: 'battlePointRate';
       subjectId: string;
       comparison: 'atMost' | 'atLeast';
       value: number;
     };
 
-interface ActivationWitness {
-  fact: ActivationFact;
-  consumerDecisionKeys: string[];
+interface CalculationScenario {
+  activationFacts: ActivationFact[];
+  effectDecisions: EffectDecision[];
 }
 ```
 
-scenarioは同一canonical factを一件だけ保持し、そのfactを必要とするterminal effectを
-`consumerDecisionKeys`へ一意・安定順で関連付ける。effectを除外したときはconsumerだけを除き、別の
-consumerが残るwitnessは維持する。consumerが0件になったwitnessは削除する。同一factを複数witnessへ
-保存するscenarioはschemaで拒否し、constraint evaluatorは一意化済みfactを使ってchoice排他とrange交差を
-検証する。
+data-pipeline由来のconditionはoperation compile時に同じtyped `ActivationSourceRef`を得る。runtimeでgroup文字列やsource labelを解析しない。同じskill IDでもsource instanceが異なればfactを共有しない。
 
-condition evaluatorはworld state、derived state、TargetContext、canonical input、activation contextを一つのBattleStateから読む。activation-local conditionだけを別のboolean shortcutで成立させない。
+executor開始時に全compiled operationとscenarioからimmutableな`ActivationContext`を一度だけ構築する。canonical order、重複、source identity、choice排他、quantity range交差、unknown／orphan factを検証する。各実行対象operationのconditionを三値論理で検証し、必要factの欠落はscenario全体を`invalidActivationContext`としてfail-closedにする。invalid時はdecision変更、operation実行、部分damage input返却を行わない。
 
-rankingはUI presentation commandを使用しない。selected terminal effectからactivation factを生成し、choice groupごとのcandidate worldを有限列挙する。同一candidateに属する全damage operationとcard mutationを同じscenarioへ含め、各scenarioをcanonical executorで実行する。採用順は選択中NP levelのdamage降順、activation fact数昇順、stable scenario key昇順とする。
+applicationは利用者またはranking policyの選択factを追加・置換・削除し、compiled requirement indexから参照されなくなったfactだけをpruneする。requirement indexは実行計画から導出する一時情報でありscenarioへ永続化しない。visible effectだけでなくhidden mutation、card mutation、linked prerequisite、NP前context mutationも参照元に含む。
 
-operation triggerとsource quantityはchoiceのような任意部分集合探索を行わず、selected effectが要求するcanonical factをmaterializeする。未知構造やconstraint conflictはfail-closedにする。
+rankingはUI commandを呼ばず、同じpure activation scenario serviceを使用する。choice candidateを有限列挙し、operation triggerなどsource actionから確定するfactをmaterializeしたscenarioをcanonical executorへ渡す。
 
 ## Consequences
 
-- effect inclusionとcondition成立は引き続き分離される。
-- choiceの最後の配列要素を暗黙採用しない。
-- 同一candidateに属する複数modifierは一緒に成立できる。
-- linked hidden mutationとterminal effectが同じactivation witnessを読む。
-- fact数はeffect数ではなくcanonical witness数を表し、ranking tie-breakとevidence表示で共通利用する。
-- schemaとengineを破壊的に更新し、旧scenario fallbackは作らない。
-- E4.1.2 reportのchoice由来damage差分は正しいactivation witnessで再計測する。
+- ActivationFactとEffectDecisionの責務が一意になる。
+- consumer同期、consumer別filter、consumer validation、decision強制OFF処理を削除する。
+- condition evaluatorとconstraint evaluatorは同じActivationContextを読む。
+- 同じfactを共有するeffectの一方をOFFにしても、他の選択中operationが参照する間はfactを保持する。
+- 最後の参照operationをOFFにした場合だけfactを削除する。
+- schema 30、engine 24へ破壊的に更新し、旧scenario fallbackは作らない。
+- master schema／artifactはsource-independent conditionを保持し、typed source identityをcompile時に付与するためversion据え置きとする。

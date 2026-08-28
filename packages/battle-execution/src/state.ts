@@ -1,4 +1,4 @@
-import type { ActivationWitness, DamageResolutionInput } from '@fgo-lab/schema';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
   BattleOperation,
   BattleState,
@@ -8,6 +8,7 @@ import type {
 } from './contracts';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
+import { emptyActivationContext } from './activationContext';
 
 export function cloneBattleState(state: BattleState): BattleState {
   return {
@@ -35,7 +36,7 @@ export function cloneBattleState(state: BattleState): BattleState {
       target: new Set(state.initialTraitSuppressions.target),
     },
     quantities: { ...state.quantities },
-    activationWitnesses: [...state.activationWitnesses],
+    activationContext: state.activationContext,
     resolvedInputValues: { ...state.resolvedInputValues },
     modifiers: [...state.modifiers],
     modifierRates: { ...state.modifierRates },
@@ -50,7 +51,7 @@ export function createInitialBattleState(
   resolvedInputValues: Readonly<Record<string, number>> = {},
   targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
   attackerPredicateAssertions: readonly TargetPredicateAssertion[] = [],
-  activationWitnesses: readonly ActivationWitness[] = [],
+  activationContext: BattleState['activationContext'] = emptyActivationContext(),
 ): BattleState {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
@@ -89,7 +90,7 @@ export function createInitialBattleState(
       targetRarity: input.targetRarity,
       battlePointPhase: input.battlePointPhase,
     },
-    activationWitnesses: [...activationWitnesses],
+    activationContext,
     resolvedInputValues: { ...resolvedInputValues },
     modifiers: [],
     modifierRates: {},

@@ -52,10 +52,18 @@ describe('resolved scenario commands', () => {
           conditionSatisfaction: 'assumeSatisfied' as const,
         },
       ],
-      activationWitnesses: [
+      activationFacts: [
         {
-          fact: { kind: 'choice' as const, group: 'shared', candidate: 'active' },
-          consumerDecisionKeys: ['attacker:projection', 'support:projection'],
+          kind: 'choice' as const,
+          source: { origin: 'attacker' as const, sourceInstanceId: 'attacker:self', skillId: '20' },
+          family: 'shared',
+          candidate: 'active',
+        },
+        {
+          kind: 'choice' as const,
+          source: { origin: 'support' as const, sourceInstanceId: 'support:1', skillId: '20' },
+          family: 'shared',
+          candidate: 'active',
         },
       ],
       worldFactAssertions: [
@@ -95,10 +103,12 @@ describe('resolved scenario commands', () => {
     expect(configured.support?.composition.sources[0]?.skills[0]?.skillLevel).toBe(10);
     expect(removed.support?.composition).toEqual({ sources: [], effectInclusions: [] });
     expect(removed.effectDecisions).toEqual([]);
-    expect(removed.activationWitnesses).toEqual([
+    expect(removed.activationFacts).toEqual([
       {
-        fact: { kind: 'choice', group: 'shared', candidate: 'active' },
-        consumerDecisionKeys: ['attacker:projection'],
+        kind: 'choice',
+        source: { origin: 'attacker', sourceInstanceId: 'attacker:self', skillId: '20' },
+        family: 'shared',
+        candidate: 'active',
       },
     ]);
     expect(removed.worldFactAssertions).toEqual([]);

@@ -446,9 +446,16 @@ describe('scenario calculation facade', () => {
       (effect) => effect.label === 'sibling-skill-power',
     )!;
     const usedScenario = applyEffectPresentationDecision(
-      applyEffectPresentationDecision(scenario, sameSkillPowerProjection, true, initial.effects),
+      applyEffectPresentationDecision(
+        scenario,
+        sameSkillPowerProjection,
+        true,
+        initial.activationRequirements,
+        initial.effects,
+      ),
       siblingSkillPowerProjection,
       true,
+      initial.activationRequirements,
       initial.effects,
     );
     const used = calculateScenario(usedScenario, linkedMaster, versionContext);
@@ -557,6 +564,7 @@ describe('scenario calculation facade', () => {
         applyEffectProjectionDecision(scenario, condition!, true),
         condition!,
         true,
+        inactive.activationRequirements,
       ),
       conditionalMaster,
       { ...versions, masterDataVersion: conditionalMaster.version },
@@ -573,7 +581,7 @@ describe('scenario calculation facade', () => {
 
     const excluded = calculateScenario(
       applyEffectProjectionDecision(
-        applyEffectConditionDecision(scenario, condition!, true),
+        applyEffectConditionDecision(scenario, condition!, true, inactive.activationRequirements),
         condition!,
         false,
       ),
@@ -648,6 +656,7 @@ describe('scenario calculation facade', () => {
       applyEffectProjectionDecision(scenario, sky, true),
       sky,
       true,
+      inactive.activationRequirements,
       inactive.effects,
     );
 
@@ -671,6 +680,7 @@ describe('scenario calculation facade', () => {
       earthIncluded,
       earth,
       true,
+      inactive.activationRequirements,
       inactive.effects,
     );
     const earthOnly = calculateScenario(earthScenario, exclusiveMaster, {
@@ -688,7 +698,11 @@ describe('scenario calculation facade', () => {
         ...earthScenario,
         effectDecisions: earthScenario.effectDecisions.map((decision) =>
           decision.decisionKey === sky.projectionKey
-            ? { ...decision, conditionSatisfaction: 'assumeSatisfied' as const }
+            ? {
+                ...decision,
+                operationEnabled: true,
+                conditionSatisfaction: 'assumeSatisfied' as const,
+              }
             : decision,
         ),
       },
@@ -717,9 +731,11 @@ describe('scenario calculation facade', () => {
             ),
             earth,
             true,
+            inactive.activationRequirements,
           ),
           earthB,
           true,
+          inactive.activationRequirements,
         ),
         worldFactAssertions: [
           {
@@ -804,6 +820,7 @@ describe('scenario calculation facade', () => {
         applyEffectProjectionDecision(scenario, projection, true),
         projection,
         true,
+        inactive.activationRequirements,
       ),
       supportMaster,
       { ...versions, masterDataVersion: supportMaster.version },
@@ -1060,9 +1077,10 @@ describe('scenario calculation facade', () => {
       true,
     );
     const selectedScenario = applyEffectConditionDecision(
-      applyEffectConditionDecision(includedScenario, passive, true),
+      applyEffectConditionDecision(includedScenario, passive, true, initial.activationRequirements),
       craftEssence,
       true,
+      initial.activationRequirements,
     );
     const selected = calculateScenario(selectedScenario, conditionalMaster, {
       ...versions,

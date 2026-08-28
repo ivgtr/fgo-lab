@@ -167,20 +167,26 @@ describe('effect decision application command', () => {
       },
     };
     const skyIncluded = applyEffectProjectionDecision(scenario, baseProjection, true);
-    const skySelected = applyEffectConditionDecision(skyIncluded, baseProjection, true, [
+    const skySelected = applyEffectConditionDecision(
+      skyIncluded,
       baseProjection,
-      earth,
-    ]);
+      true,
+      [],
+      [baseProjection, earth],
+    );
     const earthIncluded = applyEffectProjectionDecision(skySelected, earth, true);
-    const earthSelected = applyEffectConditionDecision(earthIncluded, earth, true, [
-      baseProjection,
+    const earthSelected = applyEffectConditionDecision(
+      earthIncluded,
       earth,
-    ]);
+      true,
+      [],
+      [baseProjection, earth],
+    );
 
     expect(earthSelected.effectDecisions).toEqual([
       {
         decisionKey: 'effect:sky',
-        operationEnabled: true,
+        operationEnabled: false,
         conditionSatisfaction: 'evaluate',
       },
       {
@@ -215,17 +221,21 @@ describe('effect decision application command', () => {
       skillScenario,
       projectionWithPrerequisite,
       true,
+      [],
       [projectionWithPrerequisite, earth],
     );
-    const compactEarth = applyEffectPresentationDecision(compactSky, earth, true, [
-      baseProjection,
+    const compactEarth = applyEffectPresentationDecision(
+      compactSky,
       earth,
-    ]);
+      true,
+      [],
+      [baseProjection, earth],
+    );
     expect(compactEarth.attackerSkills).toEqual(skillScenario.attackerSkills);
     expect(compactEarth.effectDecisions).toEqual([
       {
         decisionKey: 'effect:sky',
-        operationEnabled: true,
+        operationEnabled: false,
         conditionSatisfaction: 'evaluate',
       },
       {
@@ -235,10 +245,13 @@ describe('effect decision application command', () => {
       },
     ]);
 
-    const compactEarthOff = applyEffectPresentationDecision(compactEarth, earth, false, [
-      baseProjection,
+    const compactEarthOff = applyEffectPresentationDecision(
+      compactEarth,
       earth,
-    ]);
+      false,
+      [],
+      [baseProjection, earth],
+    );
     expect(compactEarthOff.attackerSkills).toEqual(skillScenario.attackerSkills);
     expect(compactEarthOff.effectDecisions.at(-1)).toEqual({
       decisionKey: 'effect:earth',
@@ -372,13 +385,14 @@ describe('effect decision application command', () => {
       relatedEffectLabels: [projection.label],
     };
 
-    expect(() => applyEffectPresentationDecision(scenario, projection, true)).toThrow(
+    expect(() => applyEffectPresentationDecision(scenario, projection, true, [])).toThrow(
       'chained_proc_requires_control_command',
     );
     const enabled = applyEffectControlPresentationDecision(
       scenario,
       control,
       true,
+      [],
       [projection],
       [input],
     );

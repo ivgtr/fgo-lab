@@ -34,7 +34,7 @@ function selectProjectionAlone(
   return projection.decision.state !== 'none' &&
     projection.decision.kind === 'effect' &&
     projection.decision.plan.condition === 'userMayAssume'
-    ? applyEffectConditionDecision(included, projection, true, peers)
+    ? applyEffectConditionDecision(included, projection, true, [], peers)
     : included;
 }
 

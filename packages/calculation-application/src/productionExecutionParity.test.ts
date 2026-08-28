@@ -150,6 +150,7 @@ describe('production execution parity ratchet', () => {
             scenario,
             control,
             oldDecision.operationEnabled,
+            before.activationRequirements,
             before.effects,
             before.effectInputs,
           );
@@ -167,7 +168,13 @@ describe('production execution parity ratchet', () => {
           projection.decision.kind === 'effect' &&
           projection.decision.decisionKey === oldDecision.decisionKey
         )
-          scenario = applyEffectConditionDecision(scenario, current, true, sourceEnabled.effects);
+          scenario = applyEffectConditionDecision(
+            scenario,
+            current,
+            true,
+            sourceEnabled.activationRequirements,
+            sourceEnabled.effects,
+          );
       }
       const calculation = calculateScenario(scenario, master, versions);
       if (calculation.result.status === 'calculated')

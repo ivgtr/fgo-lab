@@ -28,7 +28,13 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
     },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
-    activationWitnesses: [],
+    activationContext: {
+      facts: [],
+      factKeys: new Set(),
+      choices: new Map(),
+      operationTriggers: new Set(),
+      sourceQuantityRanges: new Map(),
+    },
     resolvedInputValues: {},
     modifiers: [],
     modifierRates: {},
@@ -41,51 +47,42 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
 
 describe('condition expression properties', () => {
   it('evaluates activation-local facts without promoting them to world traits', () => {
+    const source = { origin: 'attacker' as const, sourceInstanceId: 'self', skillId: 'skill' };
     const activated: BattleState = {
       ...state(),
-      activationWitnesses: [
-        {
-          fact: { kind: 'choice', group: 'skill:choice', candidate: '2' },
-          consumerDecisionKeys: ['choice-effect'],
-        },
-        {
-          fact: { kind: 'operationTrigger', source: 'skill:source', position: 4 },
-          consumerDecisionKeys: ['trigger-effect'],
-        },
-        {
-          fact: {
-            kind: 'sourceQuantity',
-            quantity: 'battlePointRate',
-            subjectId: '705300',
-            comparison: 'atMost',
-            value: 999,
-          },
-          consumerDecisionKeys: ['quantity-effect'],
-        },
-      ],
+      activationContext: {
+        facts: [],
+        factKeys: new Set(),
+        choices: new Map([[JSON.stringify(['attacker', 'self', 'skill', 'mode']), '2']]),
+        operationTriggers: new Set([JSON.stringify(['attacker', 'self', 'skill', 4])]),
+        sourceQuantityRanges: new Map([
+          [
+            JSON.stringify(['attacker', 'self', 'skill', 'battlePointRate', '705300']),
+            { min: Number.MIN_SAFE_INTEGER, max: 999 },
+          ],
+        ]),
+      },
     };
     expect(
       evaluateConditionExpression(
-        { kind: 'choice', group: 'skill:choice', candidate: '2' },
+        { kind: 'choice', source, family: 'mode', candidate: '2' },
         activated,
       ),
     ).toBe(true);
     expect(
       evaluateConditionExpression(
-        { kind: 'choice', group: 'skill:choice', candidate: '1' },
+        { kind: 'choice', source, family: 'mode', candidate: '1' },
         activated,
       ),
     ).toBe(false);
     expect(
-      evaluateConditionExpression(
-        { kind: 'operationTrigger', source: 'skill:source', position: 4 },
-        activated,
-      ),
+      evaluateConditionExpression({ kind: 'operationTrigger', source, position: 4 }, activated),
     ).toBe(true);
     expect(
       evaluateConditionExpression(
         {
           kind: 'sourceQuantity',
+          source,
           quantity: 'battlePointRate',
           subjectId: '705300',
           comparison: 'atMost',
@@ -94,6 +91,12 @@ describe('condition expression properties', () => {
         activated,
       ),
     ).toBe(true);
+    expect(
+      evaluateConditionExpression(
+        { kind: 'choice', source, family: 'mode', candidate: '3' },
+        activated,
+      ),
+    ).toBe(false);
     expect(activated.traits.field.size).toBe(0);
   });
 

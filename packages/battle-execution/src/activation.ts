@@ -1,7 +1,24 @@
+import { activationFactKey, type ActivationFact } from '@fgo-lab/schema';
 import type { BattleOperation, ConditionExpression, EffectDecision, TraitScope } from './contracts';
 
+export function conditionRequiresActivationFact(
+  expression: ConditionExpression,
+  fact: ActivationFact,
+): boolean {
+  if (
+    expression.kind === 'choice' ||
+    expression.kind === 'operationTrigger' ||
+    expression.kind === 'sourceQuantity'
+  )
+    return activationFactKey(expression) === activationFactKey(fact);
+  if (expression.kind === 'all' || expression.kind === 'any')
+    return expression.expressions.some((child) => conditionRequiresActivationFact(child, fact));
+  return false;
+}
+
 function choiceKeys(expression: ConditionExpression): string[] {
-  if (expression.kind === 'choice') return [`${expression.group}:${expression.candidate}`];
+  if (expression.kind === 'choice')
+    return [JSON.stringify([expression.source, expression.family, expression.candidate])];
   if (expression.kind === 'all' || expression.kind === 'any')
     return expression.expressions.flatMap(choiceKeys);
   return expression.kind === 'not' ? choiceKeys(expression.expression) : [];

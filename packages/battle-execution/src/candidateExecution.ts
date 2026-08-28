@@ -126,6 +126,8 @@ export function executeOrderedScenarioCandidate(
   let { state } = candidate;
   const results: OperationResult[] = [];
   let input = candidateInput;
+  if (candidate.activationContextIssues.length > 0)
+    return assembleCandidateResult({ prepared, resolvedInputs, candidate, state, input, results });
   for (const operationGroup of effectOperationGroups(operations)) {
     const initialGroupState = cloneBattleState(state);
     const initialGroupInput = input;

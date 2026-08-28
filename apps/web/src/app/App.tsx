@@ -438,6 +438,7 @@ export function App() {
             effectControls={resolvedCalculation.effectControls}
             effectWarnings={resolvedCalculation.effectWarnings}
             effectInputs={resolvedCalculation.effectInputs}
+            activationRequirements={resolvedCalculation.activationRequirements}
             result={result}
             scenario={currentScenario}
             servants={currentMaster.servants}

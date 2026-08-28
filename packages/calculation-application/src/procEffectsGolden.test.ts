@@ -67,6 +67,7 @@ function withProcResults(
       scenario,
       control,
       procControls.includes(control) ? value(0, 1) === 1 : true,
+      initial.activationRequirements,
       initial.effects,
       initial.effectInputs,
     );
@@ -138,6 +139,7 @@ describe('production probabilistic NP-before damage effects', () => {
       scenario,
       control,
       false,
+      initial.activationRequirements,
       initial.effects,
       initial.effectInputs,
     );
@@ -152,6 +154,7 @@ describe('production probabilistic NP-before damage effects', () => {
       disabledScenario,
       disabled.effectControls.find((candidate) => candidate.key === control.key)!,
       true,
+      disabled.activationRequirements,
       disabled.effects,
       disabled.effectInputs,
     );
@@ -261,12 +264,24 @@ describe('production probabilistic NP-before damage effects', () => {
           (effect.proc.kind === 'singleRoll' || effect.proc.kind === 'independentRolls'),
       )!;
       const failure = calculateScenario(
-        applyEffectPresentationDecision(scenario, proc, false, initial.effects),
+        applyEffectPresentationDecision(
+          scenario,
+          proc,
+          false,
+          initial.activationRequirements,
+          initial.effects,
+        ),
         master,
         versions,
       );
       const success = calculateScenario(
-        applyEffectPresentationDecision(scenario, proc, true, initial.effects),
+        applyEffectPresentationDecision(
+          scenario,
+          proc,
+          true,
+          initial.activationRequirements,
+          initial.effects,
+        ),
         master,
         versions,
       );
@@ -325,14 +340,32 @@ describe('production probabilistic NP-before damage effects', () => {
         effect.visibility === 'visible' &&
         (effect.proc.kind === 'singleRoll' || effect.proc.kind === 'independentRolls'),
     )!;
-    const used = applyEffectPresentationDecision(scenario, proc, true, initial.effects);
+    const used = applyEffectPresentationDecision(
+      scenario,
+      proc,
+      true,
+      initial.activationRequirements,
+      initial.effects,
+    );
     const failure = calculateScenario(
-      applyEffectPresentationDecision(used, proc, false, initial.effects),
+      applyEffectPresentationDecision(
+        used,
+        proc,
+        false,
+        initial.activationRequirements,
+        initial.effects,
+      ),
       master,
       versions,
     );
     const success = calculateScenario(
-      applyEffectPresentationDecision(used, proc, true, initial.effects),
+      applyEffectPresentationDecision(
+        used,
+        proc,
+        true,
+        initial.activationRequirements,
+        initial.effects,
+      ),
       master,
       versions,
     );

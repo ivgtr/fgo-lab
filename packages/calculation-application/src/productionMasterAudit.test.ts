@@ -8,6 +8,7 @@ import {
   type TraitScope,
 } from '@fgo-lab/battle-execution';
 import {
+  activationFactKey,
   ENGINE_VERSION,
   QUANTITY_FACT_DOMAINS,
   SCHEMA_VERSION,
@@ -29,15 +30,11 @@ function forgeConflictingActivationFacts(
   projection: EffectProjection,
 ) {
   if (projection.decision.state === 'none') return scenario;
-  const decisionKey = projection.decision.decisionKey;
   return {
     ...scenario,
-    activationWitnesses: [
-      ...scenario.activationWitnesses,
-      ...activationFactsForCondition(projection.explanation.condition).map((fact) => ({
-        fact,
-        consumerDecisionKeys: [decisionKey],
-      })),
+    activationFacts: [
+      ...scenario.activationFacts,
+      ...activationFactsForCondition(projection.explanation.condition),
     ],
   };
 }
@@ -58,7 +55,32 @@ function applyEffectProjectionDecision(
     projection.decision.state !== 'none' &&
     projection.decision.kind === 'effect' &&
     projection.decision.plan.condition === 'userMayAssume'
-    ? applyEffectConditionDecision(included, projection, true, peers)
+    ? applyEffectConditionDecision(
+        included,
+        projection,
+        true,
+        [projection, ...peers].flatMap((effect) => {
+          const facts = activationFactsForCondition(effect.explanation.condition);
+          return facts.length === 0 || effect.decision.state === 'none'
+            ? []
+            : [
+                {
+                  operationId: effect.operationId,
+                  decisionKey: effect.decision.decisionKey,
+                  enabledByDefault: effect.decision.state === 'enabled',
+                  sourceEnabled: true,
+                  decisionPlan:
+                    effect.decision.kind === 'effect'
+                      ? effect.decision.plan
+                      : { activation: 'automatic', condition: 'evaluate' },
+                  activation: { kind: 'sourceDefault' as const },
+                  condition: effect.explanation.condition ?? { kind: 'always' as const },
+                  facts,
+                },
+              ];
+        }),
+        peers,
+      )
     : included;
 }
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
@@ -107,6 +129,70 @@ function hasPositiveTargetPredicate(
 }
 
 describe('production master damage quality ratchet', () => {
+  it('ratchets the complete canonical activation inventory', async () => {
+    const master = await loadProductionMaster();
+    const effects: {
+      servantId: string;
+      sourceKey: string;
+      factKeys: string[];
+    }[] = [];
+    for (const servant of master.servants)
+      for (const [origin, sources] of [
+        ['attacker', servant.skills],
+        ['np', servant.noblePhantasms],
+        ['passive', servant.passives],
+      ] as const)
+        for (const source of sources)
+          for (const effect of source.effects) {
+            const factKeys = [
+              ...(effect.choice ? [`choice:${JSON.stringify(effect.choice)}`] : []),
+              ...(effect.operationTrigger
+                ? [`operationTrigger:${JSON.stringify(effect.operationTrigger)}`]
+                : []),
+              ...effect.sourceQuantityConditions.map(
+                (condition) => `sourceQuantity:${JSON.stringify(condition)}`,
+              ),
+            ];
+            if (factKeys.length > 0)
+              effects.push({
+                servantId: servant.id,
+                sourceKey: `${servant.id}:${origin}:${source.id}`,
+                factKeys,
+              });
+          }
+    const factConsumers = new Map<string, number>();
+    for (const effect of effects)
+      for (const factKey of effect.factKeys) {
+        const key = `${effect.sourceKey}:${factKey}`;
+        factConsumers.set(key, (factConsumers.get(key) ?? 0) + 1);
+      }
+    const sharedConsumers = [...factConsumers.values()].filter((count) => count > 1);
+    expect({
+      servants: new Set(effects.map(({ servantId }) => servantId)).size,
+      effects: effects.length,
+      choice: effects.filter(({ factKeys }) => factKeys.some((key) => key.startsWith('choice:')))
+        .length,
+      operationTrigger: effects.filter(({ factKeys }) =>
+        factKeys.some((key) => key.startsWith('operationTrigger:')),
+      ).length,
+      sourceQuantity: effects.filter(({ factKeys }) =>
+        factKeys.some((key) => key.startsWith('sourceQuantity:')),
+      ).length,
+      sharedFacts: sharedConsumers.length,
+      sharedConsumers: sharedConsumers.reduce((sum, count) => sum + count, 0),
+      decisionsWithMultipleFacts: effects.filter(({ factKeys }) => factKeys.length > 1).length,
+    }).toEqual({
+      servants: 33,
+      effects: 106,
+      choice: 82,
+      operationTrigger: 23,
+      sourceQuantity: 13,
+      sharedFacts: 20,
+      sharedConsumers: 68,
+      decisionsWithMultipleFacts: 12,
+    });
+  });
+
   it('ratchets every canonical activation-local damage occurrence', async () => {
     const master = await loadProductionMaster();
     const inventory = { effects: 0, choice: 0, operationTrigger: 0, sourceQuantity: 0 };
@@ -442,6 +528,7 @@ describe('production master damage quality ratchet', () => {
     expect(attackOnly.result.status).toBe('calculated');
     expect(attackOnly.input.attackBuff).toBeGreaterThan(0);
     expect(attackOnly.input.cardBuff).toBe(0);
+    expect(resolvedChoice.effectWarnings).toEqual([]);
     expect(resolvedChoice.result.status).toBe('calculated');
     expect(resolvedChoice.input.attackBuff).toBeGreaterThan(0);
     expect(resolvedChoice.input.cardBuff).toBe(0);
@@ -458,7 +545,7 @@ describe('production master damage quality ratchet', () => {
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('choiceConflict')]),
+      expect.arrayContaining([expect.stringContaining('conflictingChoiceSelection')]),
     );
   });
 
@@ -525,7 +612,7 @@ describe('production master damage quality ratchet', () => {
     expect(conflict.input.attackBuff).toBe(0);
     expect(conflict.input.npDamageBuff).toBe(0);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('choiceConflict')]),
+      expect.arrayContaining([expect.stringContaining('conflictingChoiceSelection')]),
     );
   });
 
@@ -663,7 +750,13 @@ describe('production master damage quality ratchet', () => {
         effect.skillName === '望月に踊る A' &&
         effect.label === '日輪',
     )!;
-    const busterFormScenario = applyEffectProjectionDecision(scenario, busterForm, true);
+    const busterFormScenario = applyEffectPresentationDecision(
+      scenario,
+      busterForm,
+      true,
+      baseline.activationRequirements,
+      baseline.effects,
+    );
     const withBusterForm = calculateScenario(busterFormScenario, master, versions);
     const busterAttack = withBusterForm.effects.find(
       (effect) =>
@@ -691,7 +784,14 @@ describe('production master damage quality ratchet', () => {
     ).toMatchObject({ controllability: 'user', outcome: 'applied' });
 
     const busterScenario = [busterAttack, busterNp].reduce(
-      (current, effect) => applyEffectProjectionDecision(current, effect, true),
+      (current, effect) =>
+        applyEffectPresentationDecision(
+          current,
+          effect,
+          true,
+          withBusterForm.activationRequirements,
+          withBusterForm.effects,
+        ),
       busterFormScenario,
     );
     const buster = calculateScenario(busterScenario, master, versions);
@@ -708,10 +808,18 @@ describe('production master damage quality ratchet', () => {
     ).toEqual(['applied', 'applied', 'applied']);
 
     const arts = calculateScenario(
-      applyEffectProjectionDecision(
-        applyEffectProjectionDecision(scenario, artsForm, true),
+      applyEffectPresentationDecision(
+        applyEffectPresentationDecision(
+          scenario,
+          artsForm,
+          true,
+          baseline.activationRequirements,
+          baseline.effects,
+        ),
         artsAttack,
         true,
+        baseline.activationRequirements,
+        baseline.effects,
       ),
       master,
       versions,
@@ -1154,13 +1262,26 @@ describe('production master damage quality ratchet', () => {
     expect(mismatchedCardEffects).not.toHaveLength(0);
     expect(mismatchedCardEffects.every((effect) => effect.visibility === 'hidden')).toBe(true);
 
-    const skyScenario = applyEffectProjectionDecision(scenario, sky, true);
-    const earthScenario = applyEffectProjectionDecision(scenario, earth, true);
+    const skyScenario = applyEffectPresentationDecision(
+      scenario,
+      sky,
+      true,
+      initial.activationRequirements,
+      initial.effects,
+    );
+    const earthScenario = applyEffectPresentationDecision(
+      scenario,
+      earth,
+      true,
+      initial.activationRequirements,
+      initial.effects,
+    );
     for (const [selected, selectedScenario] of [
       [sky, skyScenario],
       [earth, earthScenario],
     ] as const) {
       const calculation = calculateScenario(selectedScenario, master, versions);
+      expect(calculation.effectWarnings).toEqual([]);
       expect(calculation.result.status).toBe('calculated');
       if (calculation.result.status !== 'calculated')
         throw new Error('Dante selected realm must calculate');
@@ -1194,7 +1315,10 @@ describe('production master damage quality ratchet', () => {
     const conflict = calculateScenario(
       {
         ...scenario,
-        ...applyEffectProjectionDecision(skyScenario, earth, true),
+        effectDecisions: [...skyScenario.effectDecisions, ...earthScenario.effectDecisions],
+        activationFacts: [...skyScenario.activationFacts, ...earthScenario.activationFacts].sort(
+          (left, right) => activationFactKey(left).localeCompare(activationFactKey(right)),
+        ),
       },
       master,
       versions,
@@ -1203,18 +1327,10 @@ describe('production master damage quality ratchet', () => {
     expect(conflict.input.powerMod).toBe(0);
     expect(conflict.input.fieldTraits).toEqual([]);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
+      expect.arrayContaining([expect.stringContaining('invalidActivationContext:')]),
     );
 
-    const earthAfterConflict = calculateScenario(
-      applyEffectProjectionDecision(
-        applyEffectProjectionDecision(skyScenario, earth, true),
-        sky,
-        false,
-      ),
-      master,
-      versions,
-    );
+    const earthAfterConflict = calculateScenario(earthScenario, master, versions);
     expect(earthAfterConflict.result.status).toBe('calculated');
     expect(earthAfterConflict.input.powerMod).toBe(0.5);
     expect(earthAfterConflict.effects.find((effect) => effect.label === sky.label)).toMatchObject({
@@ -1372,6 +1488,7 @@ describe('production master damage quality ratchet', () => {
       garethScenario,
       sunlightPower,
       true,
+      garethInitial.activationRequirements,
       garethInitial.effects,
     );
     const garethSelected = calculateScenario(garethPresentationScenario, master, versions);
@@ -1416,6 +1533,7 @@ describe('production master damage quality ratchet', () => {
         tezcatlipocaScenario,
         arts,
         true,
+        tezcatlipocaInitial.activationRequirements,
         tezcatlipocaInitial.effects,
       ),
       master,
@@ -1531,6 +1649,7 @@ describe('production master damage quality ratchet', () => {
             scenario,
             control,
             true,
+            initial.activationRequirements,
             initial.effects,
             initial.effectInputs,
           ),
@@ -1566,6 +1685,7 @@ describe('production master damage quality ratchet', () => {
           scenario,
           control,
           true,
+          initial.activationRequirements,
           initial.effects,
           initial.effectInputs,
         );
@@ -1578,6 +1698,7 @@ describe('production master damage quality ratchet', () => {
           selectedScenario,
           selectedControl,
           false,
+          selected.activationRequirements,
           selected.effects,
           selected.effectInputs,
         );

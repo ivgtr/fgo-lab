@@ -8,6 +8,7 @@ import type {
   TargetPredicateAssertion,
 } from './contracts';
 import { resolveOperationActivation } from './activation';
+import { buildActivationContext, emptyActivationContext } from './activationContext';
 import { activationRequirementsSatisfied, evaluateCondition } from './condition';
 import {
   assumedDecisionConstraints,
@@ -38,6 +39,7 @@ export interface PreparedCandidateExecution {
   invalidDecisionKeys: Set<string>;
   resolvedCompileProjections: readonly EffectProjection[];
   procSelectionIssues: readonly ExecutionIssue[];
+  activationContextIssues: readonly ExecutionIssue[];
 }
 
 function decisionsWithProcSelections(
@@ -162,6 +164,14 @@ export function prepareCandidateExecution(
     : { input: baseInput, facts: [] };
   const candidateInput = materialized.input;
   const targetFacts = materialized.facts;
+  const scenarioDecisions = new Map(
+    scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
+  );
+  const proc = decisionsWithProcSelections(scenarioDecisions, operations, resolvedInputs.values);
+  const decisions = proc.decisions;
+  const activation = buildActivationContext(scenario.activationFacts, operations, decisions);
+  const activationContext =
+    activation.status === 'valid' ? activation.context : emptyActivationContext();
   let state = createInitialBattleState(
     candidateInput,
     attackerTraits,
@@ -172,13 +182,8 @@ export function prepareCandidateExecution(
       predicate,
       present: true,
     })),
-    scenario.activationWitnesses,
+    activationContext,
   );
-  const scenarioDecisions = new Map(
-    scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
-  );
-  const proc = decisionsWithProcSelections(scenarioDecisions, operations, resolvedInputs.values);
-  const decisions = proc.decisions;
   const conditionsByDecisionKey = collectDecisionConditions(operations);
   const satisfiedDecisionKeys = resolveSatisfiedDecisionKeys(
     decisions,
@@ -277,7 +282,10 @@ export function prepareCandidateExecution(
     activeConditionConstraints,
     activeMutationConstraints,
     finalSelectedCardMutation,
-    constraintIssues: validation.status === 'satisfied' ? [] : [validation.issue],
+    constraintIssues: [
+      ...(activation.status === 'invalid' ? activation.issues : []),
+      ...(validation.status === 'satisfied' ? [] : [validation.issue]),
+    ],
     invalidDecisionKeys,
     resolvedCompileProjections: resolveCompileProjections(
       compileProjections,
@@ -285,5 +293,6 @@ export function prepareCandidateExecution(
       invalidDecisionKeys,
     ),
     procSelectionIssues: proc.issues,
+    activationContextIssues: activation.status === 'invalid' ? activation.issues : [],
   };
 }

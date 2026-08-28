@@ -97,12 +97,9 @@ export function removeCalculationSupportSource(
     effectDecisions: scenario.effectDecisions.filter(
       (decision) => !removedDecisionKeys.has(decision.decisionKey),
     ),
-    activationWitnesses: scenario.activationWitnesses.flatMap((witness) => {
-      const consumerDecisionKeys = witness.consumerDecisionKeys.filter(
-        (decisionKey) => !removedDecisionKeys.has(decisionKey),
-      );
-      return consumerDecisionKeys.length > 0 ? [{ ...witness, consumerDecisionKeys }] : [];
-    }),
+    activationFacts: scenario.activationFacts.filter(
+      (fact) => fact.source.sourceInstanceId !== sourceInstanceId,
+    ),
     worldFactAssertions: scenario.worldFactAssertions.filter(
       (assertion) => !removedDecisionKeys.has(assertion.decisionKey),
     ),

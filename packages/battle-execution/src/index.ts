@@ -27,6 +27,11 @@ export { canNormalizeDamageEffect } from './effectRouting';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export { conditionHasActivationFact, conditionIsActivationLocal } from './activation';
 export {
+  activationRequirementOwnerSelected,
+  collectActivationRequirementOwners,
+  type ActivationRequirementOwner,
+} from './activationContext';
+export {
   executeOrderedScenario,
   executeOrderedScenarioCandidates,
   prepareOrderedScenario,

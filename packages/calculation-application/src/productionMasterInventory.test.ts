@@ -9,7 +9,12 @@ import {
   type EffectProjection,
   type TraitScope,
 } from '@fgo-lab/battle-execution';
-import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
+import {
+  activationFactKey,
+  ENGINE_VERSION,
+  SCHEMA_VERSION,
+  type VersionContext,
+} from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import {
   applyEffectConditionDecision,
@@ -29,9 +34,23 @@ function assumeProjectedCondition(
 ) {
   return projection.decision.state !== 'none' &&
     projection.decision.kind === 'effect' &&
-    projection.decision.plan.condition === 'userMayAssume'
-    ? applyEffectConditionDecision(scenario, projection, true, peers)
+    projection.decision.plan.condition === 'userMayAssume' &&
+    !containsActivationCondition(projection.explanation.condition)
+    ? applyEffectConditionDecision(scenario, projection, true, [], peers)
     : scenario;
+}
+
+function containsActivationCondition(condition: ConditionExpression | null): boolean {
+  if (!condition) return false;
+  if (
+    condition.kind === 'choice' ||
+    condition.kind === 'operationTrigger' ||
+    condition.kind === 'sourceQuantity'
+  )
+    return true;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some(containsActivationCondition);
+  return condition.kind === 'not' && containsActivationCondition(condition.expression);
 }
 function loadProductionMaster() {
   productionMaster ??= readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
@@ -240,6 +259,7 @@ describe('production master inventory ratchet', () => {
     const canonicalConflictServants = new Set<string>();
     let exclusivePairCount = 0;
     let declaredExclusivePairCount = 0;
+    const skippedExclusivePairs: string[] = [];
     for (const { servant, scenario, calculation } of calculations) {
       const userControls = calculation.effectControls.filter(
         (control) => control.projection.controllability === 'user',
@@ -268,6 +288,7 @@ describe('production master inventory ratchet', () => {
           decisionScenario,
           control,
           true,
+          calculation.activationRequirements,
           userEffects,
           calculation.effectInputs,
         );
@@ -304,6 +325,7 @@ describe('production master inventory ratchet', () => {
           selectedScenario,
           activeControl ?? control,
           false,
+          active.activationRequirements,
           active.effects,
           active.effectInputs,
         );
@@ -329,16 +351,15 @@ describe('production master inventory ratchet', () => {
           const pairKey = `${left.projectionKey}|${right.projectionKey}`;
           if (checkedPairs.has(pairKey)) continue;
           checkedPairs.add(pairKey);
-          if (
-            left.selectionGroups.some((leftGroup) =>
-              right.selectionGroups.some(
-                (rightGroup) =>
-                  rightGroup.groupKey === leftGroup.groupKey &&
-                  rightGroup.candidateKey !== leftGroup.candidateKey,
-              ),
-            )
-          )
-            declaredExclusivePairCount += 1;
+          const isDeclaredExclusive = left.selectionGroups.some((leftGroup) =>
+            right.selectionGroups.some(
+              (rightGroup) =>
+                rightGroup.groupKey === leftGroup.groupKey &&
+                rightGroup.candidateKey !== leftGroup.candidateKey,
+            ),
+          );
+          if (!isDeclaredExclusive) continue;
+          declaredExclusivePairCount += 1;
           const leftSelected = assumeProjectedCondition(
             applyEffectProjectionDecision(setEffectSourceEnabled(scenario, left, true), left, true),
             left,
@@ -358,23 +379,32 @@ describe('production master inventory ratchet', () => {
           if (
             leftOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:')) ||
             rightOnly.effectWarnings.some((warning) => warning.startsWith('constraintConflict:'))
-          )
+          ) {
+            skippedExclusivePairs.push(`${servant.id}:${pairKey}`);
             continue;
+          }
           const conflict = calculateScenario(
             {
               ...leftSelected,
               effectDecisions: [
-                ...leftSelected.effectDecisions,
-                ...rightSelected.effectDecisions.filter(
-                  ({ decisionKey }) => decisionKey === rightDecisionKey,
-                ),
+                ...new Map(
+                  [
+                    ...leftSelected.effectDecisions,
+                    ...rightSelected.effectDecisions.filter(
+                      ({ decisionKey }) => decisionKey === rightDecisionKey,
+                    ),
+                  ].map((decision) => [decision.decisionKey, decision]),
+                ).values(),
               ],
-              activationWitnesses: [
-                ...leftSelected.activationWitnesses,
-                ...rightSelected.activationWitnesses.filter(({ consumerDecisionKeys }) =>
-                  consumerDecisionKeys.includes(rightDecisionKey),
-                ),
-              ],
+              activationFacts: [
+                ...new Map(
+                  [...leftSelected.activationFacts, ...rightSelected.activationFacts].map(
+                    (fact) => [activationFactKey(fact), fact],
+                  ),
+                ).values(),
+              ].sort((leftFact, rightFact) =>
+                activationFactKey(leftFact).localeCompare(activationFactKey(rightFact)),
+              ),
               worldFactAssertions: [
                 ...leftSelected.worldFactAssertions,
                 ...rightSelected.worldFactAssertions.filter(
@@ -385,8 +415,10 @@ describe('production master inventory ratchet', () => {
             master,
             versions,
           );
-          const hasConflict = conflict.effectWarnings.some((warning) =>
-            warning.startsWith('constraintConflict:'),
+          const hasConflict = conflict.effectWarnings.some(
+            (warning) =>
+              warning.startsWith('constraintConflict:') ||
+              warning.startsWith('invalidActivationContext:'),
           );
           if (!hasConflict) continue;
           exclusivePairCount += 1;
@@ -523,8 +555,12 @@ describe('production master inventory ratchet', () => {
       ),
     ).toEqual({});
     expect(declaredExclusivePairCount).toBe(22);
-    expect(exclusivePairCount).toBe(21);
-    expect(conflictPairs).toEqual({ effectEffect: 21, factFact: 0, factEffect: 0 });
+    expect(skippedExclusivePairs).toEqual([
+      '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
+      '2301100:attacker:attacker:2301100:2536550:22888:0|attacker:attacker:2301100:2536550:22887:0',
+    ]);
+    expect(exclusivePairCount).toBe(20);
+    expect(conflictPairs).toEqual({ effectEffect: 20, factFact: 0, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
@@ -567,7 +603,7 @@ describe('production master inventory ratchet', () => {
     });
   }, 60_000);
 
-  it('calculates every support projection when selected through the shared decision path', async () => {
+  it('calculates or rejects every support projection through the shared decision path', async () => {
     const master = await loadProductionMaster();
     const attacker = master.servants.find((servant) => servant.id === '100100')!;
     const versions: VersionContext = {
@@ -579,6 +615,7 @@ describe('production master inventory ratchet', () => {
       masterDataVersion: master.version,
     };
     const failures: string[] = [];
+    const intrinsicRecipientConflicts: string[] = [];
     let projectionCount = 0;
     for (const source of master.servants) {
       for (const skill of source.skills) {
@@ -629,13 +666,33 @@ describe('production master inventory ratchet', () => {
             continue;
           }
           const selected = calculateScenario(
-            applyEffectProjectionDecision(scenarioWithInputs, current, true),
+            applyEffectControlPresentationDecision(
+              scenarioWithInputs,
+              withInputs.effectControls.find((control) => control.key === current.projectionKey)!,
+              true,
+              withInputs.activationRequirements,
+              withInputs.effects,
+              withInputs.effectInputs,
+            ),
             master,
             versions,
           );
           const outcome = selected.effects.find(
             (effect) => effect.projectionKey === projection.projectionKey,
           )?.outcome;
+          const isIntrinsicRecipientConflict =
+            selected.result.status === 'unsupported' &&
+            selected.result.missingEvidence.length > 0 &&
+            selected.result.missingEvidence.every((reason) =>
+              reason.startsWith('constraintConflict:'),
+            ) &&
+            outcome !== 'applied';
+          if (isIntrinsicRecipientConflict) {
+            intrinsicRecipientConflicts.push(
+              `${source.id}:${skill.id}:${projection.projectionKey}`,
+            );
+            continue;
+          }
           if (selected.result.status !== 'calculated' || outcome === 'unsupported')
             failures.push(
               `${source.id}:${skill.id}:${projection.projectionKey}:${selected.result.status}:${String(outcome)}:${selected.effectWarnings.join('|')}`,
@@ -644,6 +701,10 @@ describe('production master inventory ratchet', () => {
       }
     }
     expect(projectionCount).toBe(379);
+    expect(intrinsicRecipientConflicts).toEqual([
+      '200200:2167650:support:audit:200200:2167650:2167650:9963:0',
+      '2501300:2276451:support:audit:2501300:2276451:2276451:21180:0',
+    ]);
     expect(failures).toEqual([]);
   }, 120_000);
 

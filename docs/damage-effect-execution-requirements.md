@@ -440,18 +440,20 @@ E3.8のcanonical battle-context inputを内部状態editorとして露出せず�
 9. URL／worker cache／share stateはfield policyを含む単一契約へ破壊的に更新し、旧形式fallbackを持たない。
 10. production 73 occurrenceとfield 24騎26 occurrenceをratchetし、E5は全品質gate完了まで開始しない。
 
-### 8.17 activation-local condition witness
+### 8.17 activation-local condition fact
 
-1. `choice`、`operationTrigger`、`sourceQuantity`はtraitやfieldを仮定するconditionではなく、source activation内で確定するtyped witnessとしてscenarioとexecution stateへ保持する。
+1. `choice`、`operationTrigger`、`sourceQuantity`はtraitやfieldを仮定するconditionではなく、source activation内で確定するtyped factとしてscenarioとexecution stateへ保持する。
 2. effect inclusionはoperationの使用可否だけを決め、activation-local conditionを成立させない。`assumeSatisfied`をchoice／trigger／source quantityの代替経路として使用しない。
-3. choiceはgroupごとにcandidateを一つだけ選択する。同じcandidateに属する複数operationは同じwitnessを読み、異なるcandidateの同時選択はfail-closedにする。
+3. choiceはtyped sourceとfamilyごとにcandidateを一つだけ選択する。同じcandidateに属する複数operationは同じfactを読み、異なるcandidateの同時選択はfail-closedにする。
 4. operation triggerはcanonical sourceとposition、source quantityはcanonical ownerと整数rangeで保持する。具体的なworld traitへ変換しない。
-5. condition evaluatorはactivation witnessからtrue／false／unknownを返す。witness欠落を`conditionNotMet`や通常値へ読み替えず、damage-relevantなincluded effectがunknownのままcalculatedへ到達することを禁止する。
+5. condition evaluatorはimmutableなActivationContextからtrue／false／unknownを返す。必須fact欠落を`conditionNotMet`や通常値へ読み替えず、実行対象operationがunknownのままcalculatedへ到達することを禁止する。
 6. rankingはdamage-relevantなchoice candidateを有限列挙し、同じexecutorへ通したdamage、仮定数、stable canonical keyの順で一候補を採用する。effect配列順やlabelを候補選択へ使用しない。
 7. card mutationを含む同一choice candidateは一つの候補worldとして評価する。choice candidate単位でeffectを任意部分集合へ分解しない。
-8. operation triggerとsource quantityもranking policyからtyped activation witnessとしてmaterializeし、whole-conditionの強制成立を行わない。
+8. operation triggerとsource quantityもranking policyからtyped activation factとしてmaterializeし、whole-conditionの強制成立を行わない。
 9. production inventoryはchoice damage 34 occurrence、operation trigger damage 5 occurrence、source quantity damage 5 occurrenceを正本にし、標準rankingのincluded damage effectに`unresolved`が0件であることをratchetする。
 10. E5はactivation-local inventory、代表golden、calculator／ranking parity、全品質gateが完了するまで開始しない。
+11. consumer一覧はcompiled operationから導出する一時indexに限定し、scenario、share/save、traceへ永続化しない。
+12. factとconditionの双方が同じ`ActivationSourceRef`を持ち、runtime文字列解析やoptional consumer/source引数を禁止する。
 
 ## 10. 設計根拠の追跡
 

@@ -1,8 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import {
-  activationFactsForCondition,
-  setActivationWitnessesForConsumer,
-} from './activationContext';
+import fixture from '../../test-fixtures/master/fixture.json';
+import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import type { ActivationFact } from '@fgo-lab/schema';
+import type { ActivationRequirementOwner } from '@fgo-lab/battle-execution';
+import { activationFactsForCondition, applyActivationFactSelection } from './activationContext';
+import { createDefaultResolvedScenario } from './scenario';
+
+const master = masterSnapshotSchema.parse(fixture);
+const source = { origin: 'attacker' as const, sourceInstanceId: 'self', skillId: 'skill' };
+
+function owner(decisionKey: string, fact: ActivationFact): ActivationRequirementOwner {
+  return {
+    operationId: `${decisionKey}:operation`,
+    decisionKey,
+    enabledByDefault: false,
+    sourceEnabled: true,
+    decisionPlan: { activation: 'user', condition: 'userMayAssume' },
+    activation: { kind: 'sourceDefault' },
+    condition: fact,
+    facts: [fact],
+  };
+}
 
 describe('activation fact materialization', () => {
   it('materializes the only activation-owned branch of a mixed OR condition', () => {
@@ -11,45 +29,94 @@ describe('activation fact materialization', () => {
         kind: 'any',
         expressions: [
           { kind: 'trait', scope: 'field', trait: 'fieldSunlight', present: true },
-          { kind: 'operationTrigger', source: 'skill', position: 1 },
+          { kind: 'operationTrigger', source, position: 1 },
         ],
       }),
-    ).toEqual([{ kind: 'operationTrigger', source: 'skill', position: 1 }]);
+    ).toEqual([{ kind: 'operationTrigger', source, position: 1 }]);
   });
 
-  it('rejects an OR whose activation witness is not uniquely selectable', () => {
+  it('rejects an OR whose activation selection is not unique', () => {
     expect(() =>
       activationFactsForCondition({
         kind: 'any',
         expressions: [
-          { kind: 'choice', group: 'mode', candidate: 'attack' },
-          { kind: 'choice', group: 'mode', candidate: 'npDamage' },
+          { kind: 'choice', source, family: 'mode', candidate: 'attack' },
+          { kind: 'choice', source, family: 'mode', candidate: 'npDamage' },
         ],
       }),
     ).toThrow('ambiguous_activation_condition_alternative');
   });
 
-  it('stores one canonical fact with every consumer and removes only the disabled consumer', () => {
-    const fact = { kind: 'choice' as const, group: 'skill:choice', candidate: '2' };
-    const first = setActivationWitnessesForConsumer([], 'effect:attack', [fact], true);
-    const shared = setActivationWitnessesForConsumer(first, 'effect:npDamage', [fact], true);
-    expect(shared).toEqual([
-      {
-        fact,
-        consumerDecisionKeys: ['effect:attack', 'effect:npDamage'],
-      },
+  it('keeps a shared fact until the final selected operation stops referencing it', () => {
+    const fact = { kind: 'choice' as const, source, family: 'mode', candidate: '2' };
+    const base = createDefaultResolvedScenario(master, undefined);
+    const owners = [owner('effect:attack', fact), owner('effect:npDamage', fact)];
+    const both = {
+      ...base,
+      effectDecisions: [
+        {
+          decisionKey: 'effect:attack',
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
+        },
+        {
+          decisionKey: 'effect:npDamage',
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
+        },
+      ],
+    };
+    const selected = applyActivationFactSelection(both, [fact], true, owners);
+    const one = {
+      ...selected,
+      effectDecisions: selected.effectDecisions.map((decision) =>
+        decision.decisionKey === 'effect:attack'
+          ? { ...decision, operationEnabled: false }
+          : decision,
+      ),
+    };
+    expect(applyActivationFactSelection(one, [fact], false, owners).activationFacts).toEqual([
+      fact,
     ]);
-    expect(setActivationWitnessesForConsumer(shared, 'effect:attack', [fact], false)).toEqual([
-      { fact, consumerDecisionKeys: ['effect:npDamage'] },
-    ]);
+    const none = {
+      ...one,
+      effectDecisions: one.effectDecisions.map((decision) => ({
+        ...decision,
+        operationEnabled: false,
+      })),
+    };
+    expect(applyActivationFactSelection(none, [fact], false, owners).activationFacts).toEqual([]);
   });
 
-  it('replaces an exclusive choice witness instead of retaining conflicting consumers', () => {
-    const attack = { kind: 'choice' as const, group: 'skill:choice', candidate: 'attack' };
-    const npDamage = { kind: 'choice' as const, group: 'skill:choice', candidate: 'npDamage' };
-    const initial = setActivationWitnessesForConsumer([], 'effect:attack', [attack], true);
-    expect(setActivationWitnessesForConsumer(initial, 'effect:npDamage', [npDamage], true)).toEqual(
-      [{ fact: npDamage, consumerDecisionKeys: ['effect:npDamage'] }],
-    );
+  it('retains a fact referenced only by a selected linked hidden operation', () => {
+    const fact = { kind: 'choice' as const, source, family: 'mode', candidate: 'hidden' };
+    const base = createDefaultResolvedScenario(master, undefined);
+    const hiddenOwner: ActivationRequirementOwner = {
+      ...owner('hidden:mutation', fact),
+      decisionKey: null,
+      activation: {
+        kind: 'linkedDecisions',
+        links: [
+          {
+            decisionKey: 'effect:terminal',
+            reason: 'traitPrerequisite',
+            selection: 'operationEnabled',
+          },
+        ],
+      },
+    };
+    const scenario = {
+      ...base,
+      effectDecisions: [
+        {
+          decisionKey: 'effect:terminal',
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
+        },
+      ],
+    };
+    expect(
+      applyActivationFactSelection(scenario, [fact], true, [hiddenOwner]).activationFacts,
+    ).toEqual([fact]);
   });
 });

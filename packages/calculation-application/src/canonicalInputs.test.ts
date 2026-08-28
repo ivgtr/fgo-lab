@@ -110,9 +110,16 @@ describe('canonical special input application boundary', () => {
         effect.label === 'バスターアップ',
     )!;
     const enabled = applyEffectPresentationDecision(
-      applyEffectPresentationDecision(scenario, control.projection, true, calculation.effects),
+      applyEffectPresentationDecision(
+        scenario,
+        control.projection,
+        true,
+        calculation.activationRequirements,
+        calculation.effects,
+      ),
       buster,
       true,
+      calculation.activationRequirements,
       calculation.effects,
     );
     const resolved = calculateScenario(
@@ -214,7 +221,13 @@ describe('canonical special input application boundary', () => {
       ).toBe(true);
 
       const enabled = calculateScenario(
-        applyEffectPresentationDecision(hpScenario, control.projection, true, disabled.effects),
+        applyEffectPresentationDecision(
+          hpScenario,
+          control.projection,
+          true,
+          disabled.activationRequirements,
+          disabled.effects,
+        ),
         master,
         versions,
       );

@@ -30,7 +30,7 @@ export function resolveSatisfiedDecisionKeys(
       if (!decision.operationEnabled) return [];
       const conditions = conditionsByDecisionKey.get(decisionKey);
       if (!conditions) return [];
-      return conditions.some((condition) => {
+      return conditions.every((condition) => {
         const evaluated = evaluateCondition(condition, state);
         return (
           evaluated === true ||

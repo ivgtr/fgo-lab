@@ -153,6 +153,11 @@ function effectCondition(
   sourceInstanceId: string,
   skillId: string,
 ): ConditionExpression {
+  const activationSource = {
+    origin,
+    sourceInstanceId,
+    skillId: skillId || null,
+  } as const;
   const recipient = resolveTargetPolicy(origin, effect.conditionTargetPolicy) ?? 'attacker';
   const holder: TraitScope = recipient;
   const opponent: TraitScope = recipient === 'target' ? 'attacker' : 'target';
@@ -180,6 +185,7 @@ function effectCondition(
     }),
     ...effect.sourceQuantityConditions.map<ConditionExpression>((condition) => ({
       kind: 'sourceQuantity',
+      source: activationSource,
       ...condition,
     })),
     ...effect.inputQuantityConditions.map<ConditionExpression>((condition) => ({
@@ -197,7 +203,8 @@ function effectCondition(
       ? [
           {
             kind: 'choice' as const,
-            group: `${sourceInstanceId}:${skillId}:${effect.choice.family}`,
+            source: activationSource,
+            family: effect.choice.family,
             candidate: String(effect.choice.candidate),
           },
         ]
@@ -206,7 +213,7 @@ function effectCondition(
       ? [
           {
             kind: 'operationTrigger' as const,
-            source: `${sourceInstanceId}:${skillId}`,
+            source: activationSource,
             position: effect.operationTrigger.position,
           },
         ]

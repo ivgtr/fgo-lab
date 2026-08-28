@@ -1,4 +1,4 @@
-import type { EffectProjection } from '@fgo-lab/battle-execution';
+import type { ActivationRequirementOwner, EffectProjection } from '@fgo-lab/battle-execution';
 import type { CalculationScenario } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
 import { conditionAllowsEffectLocalDecision, type EffectControlViewModel } from './effectControls';
@@ -57,7 +57,7 @@ export function commandForEffectProjection(
   return {
     kind: 'setEffectDecision',
     decisionKey: projection.decision.decisionKey,
-    operationEnabled: projection.decision.plan.activation === 'user' ? enabled : true,
+    operationEnabled: enabled,
     conditionSatisfaction,
   };
 }
@@ -146,13 +146,14 @@ export function applyEffectConditionDecision(
   scenario: ResolvedScenario,
   projection: EffectProjection,
   satisfied: boolean,
+  activationRequirements: readonly ActivationRequirementOwner[],
   peers: readonly EffectProjection[] = [],
 ): ResolvedScenario {
   if (projection.decision.state === 'none' || projection.decision.kind !== 'effect')
     throw new TypeError(`effect_condition_not_controllable:${projection.projectionKey}`);
   const decisionKey = projection.decision.decisionKey;
   const current = scenario.effectDecisions.find((decision) => decision.decisionKey === decisionKey);
-  let next = setActivationFactsForProjection(scenario, projection, satisfied);
+  let next = scenario;
   if (projection.decision.targetContext)
     for (const predicate of projection.decision.targetContext.predicates)
       next = applyTargetPredicateCondition(
@@ -179,27 +180,24 @@ export function applyEffectConditionDecision(
       );
       if (!conflicts) continue;
       const peerDecisionKey = peer.decision.decisionKey;
-      const peerDecision = next.effectDecisions.find(
-        (decision) => decision.decisionKey === peerDecisionKey,
-      );
       next = applyEffectDecisionCommand(next, {
         kind: 'setEffectDecision',
         decisionKey: peerDecisionKey,
-        operationEnabled:
-          peerDecision?.operationEnabled ?? peer.decision.plan.activation === 'automatic',
+        operationEnabled: false,
         conditionSatisfaction: 'evaluate',
       });
+      next = setActivationFactsForProjection(next, peer, false, activationRequirements);
     }
-  return applyEffectDecisionCommand(next, {
+  next = applyEffectDecisionCommand(next, {
     kind: 'setEffectDecision',
     decisionKey: projection.decision.decisionKey,
-    operationEnabled:
-      current?.operationEnabled ?? projection.decision.plan.activation === 'automatic',
+    operationEnabled: current?.operationEnabled ?? satisfied,
     conditionSatisfaction:
       satisfied && conditionHasNonActivationDecision(projection.explanation.condition)
         ? 'assumeSatisfied'
         : 'evaluate',
   });
+  return setActivationFactsForProjection(next, projection, satisfied, activationRequirements);
 }
 
 function applyTargetPredicateCondition(
@@ -254,6 +252,7 @@ export function applyEffectPresentationDecision(
   scenario: ResolvedScenario,
   projection: EffectProjection,
   enabled: boolean,
+  activationRequirements: readonly ActivationRequirementOwner[],
   peers: readonly EffectProjection[] = [],
 ): ResolvedScenario {
   if (projection.proc.kind === 'chainedRolls')
@@ -267,7 +266,13 @@ export function applyEffectPresentationDecision(
     !conditionAllowsEffectLocalDecision(projection.explanation.condition)
   )
     return inclusionResolved;
-  return applyEffectConditionDecision(inclusionResolved, projection, enabled, peers);
+  return applyEffectConditionDecision(
+    inclusionResolved,
+    projection,
+    enabled,
+    activationRequirements,
+    peers,
+  );
 }
 
 function applyPresentationSourceDependencies(
@@ -286,11 +291,18 @@ export function applyEffectControlPresentationDecision(
   scenario: ResolvedScenario,
   control: EffectControlViewModel,
   enabled: boolean,
+  activationRequirements: readonly ActivationRequirementOwner[],
   peers: readonly EffectProjection[] = [],
   inputs: readonly EffectInputViewModel[] = [],
 ): ResolvedScenario {
   if (control.projection.proc.kind !== 'chainedRolls')
-    return applyEffectPresentationDecision(scenario, control.projection, enabled, peers);
+    return applyEffectPresentationDecision(
+      scenario,
+      control.projection,
+      enabled,
+      activationRequirements,
+      peers,
+    );
   const procInput = inputs.find(
     (input) =>
       input.kind === 'procSuccessCount' &&
@@ -325,12 +337,20 @@ export function applyEffectControlPolicy(
   selectedKeys: ReadonlySet<string>,
   peers: readonly EffectProjection[],
   inputs: readonly EffectInputViewModel[],
+  activationRequirements: readonly ActivationRequirementOwner[],
 ): ResolvedScenario {
   return controls.reduce((current, control) => {
     const selected = selectedKeys.has(control.key);
     const decisionSelected = control.projection.decision.state === 'enabled';
     return control.interaction === 'none' || (!selected && !decisionSelected)
       ? current
-      : applyEffectControlPresentationDecision(current, control, selected, peers, inputs);
+      : applyEffectControlPresentationDecision(
+          current,
+          control,
+          selected,
+          activationRequirements,
+          peers,
+          inputs,
+        );
   }, scenario);
 }

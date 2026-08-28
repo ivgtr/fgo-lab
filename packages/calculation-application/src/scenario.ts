@@ -1,6 +1,8 @@
 import {
+  collectActivationRequirementOwners,
   executeOrderedScenario,
   prepareOrderedScenario,
+  type ActivationRequirementOwner,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
 import {
@@ -45,6 +47,7 @@ export interface ResolvedCalculationInput {
   effects: EffectProjection[];
   requiredInputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
   inputDefinitions: CanonicalInputDefinition[];
+  activationRequirements: ActivationRequirementOwner[];
 }
 
 export interface CalculationExecution {
@@ -57,6 +60,7 @@ export interface CalculationExecution {
   inputDefinitions: CanonicalInputDefinition[];
   effectInputs: EffectInputViewModel[];
   effectControls: EffectControlViewModel[];
+  activationRequirements: ActivationRequirementOwner[];
 }
 
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -91,7 +95,7 @@ export function createDefaultResolvedScenario(
     mysticCode: null,
     support: null,
     effectDecisions: [],
-    activationWitnesses: [],
+    activationFacts: [],
     worldFactAssertions: [],
     explicitOverrides: {},
   };
@@ -188,6 +192,7 @@ export function resolveScenario(
       effects: [],
       requiredInputs: [],
       inputDefinitions: [],
+      activationRequirements: [],
     };
   const baseInput = resolvedScenarioBaseInput(scenario, master);
   const prepared = prepareOrderedScenario(baseInput, scenario, master);
@@ -223,6 +228,8 @@ export function resolveScenario(
         .join('|')}`;
     if (issue.kind === 'unsupportedParameter')
       return `${issue.kind}:${issue.operationId}:${issue.parameter}`;
+    if (issue.kind === 'invalidActivationContext')
+      return `${issue.kind}:${issue.factKey ?? 'missing'}:${issue.detail}`;
     return `${issue.kind}:${issue.operationId}:${issue.detail}`;
   });
   const decisionTrace = scenario.effectDecisions.map((decision) => ({
@@ -236,14 +243,14 @@ export function resolveScenario(
         ? `${assertion.decisionKey}:trait:${assertion.fact.scope}:${assertion.fact.trait}:${String(assertion.fact.present)}`
         : `${assertion.decisionKey}:quantity:${assertion.fact.quantity}:${String(assertion.fact.value)}`,
   }));
-  const activationTrace = scenario.activationWitnesses.map(({ consumerDecisionKeys, fact }) => ({
+  const activationTrace = scenario.activationFacts.map((fact) => ({
     step: 'activation-fact',
     detail:
       fact.kind === 'choice'
-        ? `${consumerDecisionKeys.join(',')}:choice:${fact.group}:${fact.candidate}`
+        ? `${fact.source.sourceInstanceId}:choice:${fact.family}:${fact.candidate}`
         : fact.kind === 'operationTrigger'
-          ? `${consumerDecisionKeys.join(',')}:operation-trigger:${fact.source}:${String(fact.position)}`
-          : `${consumerDecisionKeys.join(',')}:source-quantity:${fact.quantity}:${fact.subjectId}:${fact.comparison}:${String(fact.value)}`,
+          ? `${fact.source.sourceInstanceId}:operation-trigger:${String(fact.position)}`
+          : `${fact.source.sourceInstanceId}:source-quantity:${fact.quantity}:${fact.subjectId}:${fact.comparison}:${String(fact.value)}`,
   }));
   const canonicalInputTrace = Object.entries(canonicalInputs.values).map(([key, value]) => ({
     step: 'canonical-input',
@@ -266,6 +273,7 @@ export function resolveScenario(
     effects: [...execution.projections],
     requiredInputs: [...execution.requiredInputs],
     inputDefinitions: [...execution.inputDefinitions],
+    activationRequirements: collectActivationRequirementOwners(prepared.operations),
     trace: [
       ...decisionTrace,
       ...activationTrace,
@@ -359,6 +367,7 @@ function evaluateResolvedCalculation(
         effectInputs.flatMap((input) => (input.value === null ? [] : [[input.key, input.value]])),
       ),
     ),
+    activationRequirements: resolved.activationRequirements,
   };
 }
 

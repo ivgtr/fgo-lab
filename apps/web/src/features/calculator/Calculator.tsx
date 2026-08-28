@@ -19,6 +19,7 @@ import type {
   EffectControlViewModel,
   EffectInputViewModel,
   EffectProjection,
+  ActivationRequirementOwner,
 } from '@fgo-lab/calculation-application';
 import {
   applyCanonicalInputCommand,
@@ -66,6 +67,7 @@ export function Calculator({
   effectControls,
   effectWarnings,
   effectInputs,
+  activationRequirements,
   result,
   scenario,
   servants,
@@ -87,6 +89,7 @@ export function Calculator({
   effectControls: readonly EffectControlViewModel[];
   effectWarnings: readonly string[];
   effectInputs: readonly EffectInputViewModel[];
+  activationRequirements: readonly ActivationRequirementOwner[];
   result: CalculationResultValue;
   scenario: CalculationScenario;
   servants: ServantMaster[];
@@ -295,7 +298,7 @@ export function Calculator({
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationWitnesses: [],
+      activationFacts: [],
       worldFactAssertions: [],
       explicitOverrides: {
         attackerAtk: input.attackerAtk,
@@ -419,6 +422,7 @@ export function Calculator({
         resolvedScenario,
         control,
         active,
+        activationRequirements,
         resolvedEffects,
         effectInputs,
       ),

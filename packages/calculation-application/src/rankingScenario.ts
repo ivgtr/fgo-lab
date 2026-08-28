@@ -30,7 +30,6 @@ import {
 } from './rankingWorld';
 import { calculateScenario, type CalculationExecution } from './scenario';
 import { createRankingChoiceCandidates, type RankingChoiceWorld } from './rankingChoiceWorld';
-
 export interface RankingExecutionPlan {
   baseScenario: ResolvedScenario;
   baseline: CalculationExecution;
@@ -38,7 +37,6 @@ export interface RankingExecutionPlan {
   withoutAreaScenarios: readonly ResolvedScenario[];
   worldCandidateCount: number;
 }
-
 interface RankingWorld {
   target: RankingWorldCandidate | null;
   field: RankingFieldCandidate;
@@ -108,7 +106,12 @@ function scenarioForPolicy(
       worldCandidate.choices,
     ),
   );
-  return applyRankingExecutionPolicy(world, policy, baseline.effectInputs);
+  return applyRankingExecutionPolicy(
+    world,
+    policy,
+    baseline.effectInputs,
+    baseline.activationRequirements,
+  );
 }
 
 export function compileRankingExecutionPlan(
@@ -197,9 +200,8 @@ function rankingExternalFieldFactCount(execution: CalculationExecution): number 
     : 0;
 }
 
-function rankingActivationFactCount(execution: CalculationExecution): number {
-  return execution.scenario.mode === 'resolved' ? execution.scenario.activationWitnesses.length : 0;
-}
+const rankingActivationFactCount = (execution: CalculationExecution): number =>
+  execution.scenario.mode === 'resolved' ? execution.scenario.activationFacts.length : 0;
 
 export function executeRankingScenarios(
   scenarios: readonly ResolvedScenario[],
