@@ -32,7 +32,7 @@ const expectedKeys = new Set([
     'ignoreDefense',
     'ignoreDamageCut',
     'npDamageBuffRate',
-    'cardTypeChange',
+    'npVariantSelection',
   ].map((kind) => `effect-operation:${kind}`),
   'input:manual-final-modifiers',
 ]);

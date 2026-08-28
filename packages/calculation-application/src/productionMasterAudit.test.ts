@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  getAttackNoblePhantasmVariants,
+  getNoblePhantasmVariants,
+  masterSnapshotSchema,
+  noblePhantasmVariantKey,
+} from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
   analyzeActivationCondition,
@@ -147,7 +152,7 @@ describe('production master damage quality ratchet', () => {
     for (const servant of master.servants)
       for (const [origin, sources] of [
         ['attacker', servant.skills],
-        ['np', servant.noblePhantasms],
+        ['np', getNoblePhantasmVariants(servant)],
         ['passive', servant.passives],
       ] as const)
         for (const source of sources)
@@ -164,7 +169,7 @@ describe('production master damage quality ratchet', () => {
             if (factKeys.length > 0)
               effects.push({
                 servantId: servant.id,
-                sourceKey: `${servant.id}:${origin}:${source.id}`,
+                sourceKey: `${servant.id}:${origin}:${'id' in source ? source.id : noblePhantasmVariantKey(source.ref)}`,
                 factKeys,
               });
           }
@@ -191,12 +196,12 @@ describe('production master damage quality ratchet', () => {
       decisionsWithMultipleFacts: effects.filter(({ factKeys }) => factKeys.length > 1).length,
     }).toEqual({
       servants: 33,
-      effects: 106,
+      effects: 114,
       choice: 82,
-      operationTrigger: 23,
+      operationTrigger: 31,
       sourceQuantity: 13,
-      sharedFacts: 20,
-      sharedConsumers: 68,
+      sharedFacts: 22,
+      sharedConsumers: 74,
       decisionsWithMultipleFacts: 12,
     });
   });
@@ -207,7 +212,7 @@ describe('production master damage quality ratchet', () => {
     for (const servant of master.servants)
       for (const [origin, sources] of [
         ['attacker', servant.skills],
-        ['np', servant.noblePhantasms],
+        ['np', getNoblePhantasmVariants(servant)],
         ['passive', servant.passives],
       ] as const)
         for (const source of sources)
@@ -224,8 +229,8 @@ describe('production master damage quality ratchet', () => {
             if (effect.sourceQuantityConditions.length > 0) inventory.sourceQuantity += 1;
           }
     expect(inventory).toEqual({
-      effects: 39,
-      choice: 34,
+      effects: 40,
+      choice: 35,
       operationTrigger: 5,
       sourceQuantity: 5,
     });
@@ -274,7 +279,7 @@ describe('production master damage quality ratchet', () => {
   it('keeps the canonical Battle Point domain large enough for every master phase', async () => {
     const master = await loadProductionMaster();
     const maximumPhases = master.servants.flatMap((servant) =>
-      servant.noblePhantasms.flatMap((np) =>
+      getAttackNoblePhantasmVariants(servant).flatMap((np) =>
         np.damage.flatMap((damage) =>
           damage.kind === 'battlePointPhase' ? [damage.maximumBattlePointPhase] : [],
         ),
@@ -646,7 +651,7 @@ describe('production master damage quality ratchet', () => {
     expect(calculation.result.rows).toHaveLength(5);
     expect(preDamageReference).toBeUndefined();
     expect(
-      servant.noblePhantasms
+      getNoblePhantasmVariants(servant)
         .flatMap((np) => np.effects)
         .find((effect) => effect.operationReference?.skillId === '970936'),
     ).toMatchObject({
@@ -654,7 +659,7 @@ describe('production master damage quality ratchet', () => {
     });
   });
 
-  it('changes the NP card transactionally before evaluating card-specific modifiers', async () => {
+  it('selects the complete Emiya NP variant before evaluating card-specific modifiers', async () => {
     const master = await loadProductionMaster();
     const servant = master.servants.find((candidate) => candidate.id === '200100')!;
     const inactiveScenario = createDefaultResolvedScenario(master, undefined, servant);
@@ -670,7 +675,7 @@ describe('production master damage quality ratchet', () => {
     const artsChange = inactive.effects.find(
       (effect) =>
         effect.skillName === '回路接続 EX' &&
-        effect.modifier === 'cardTypeChange' &&
+        effect.modifier === 'npVariantSelection' &&
         effect.label.includes('Arts'),
     )!;
     const scenario = setEffectSourceEnabled(inactiveScenario, artsChange, true);
@@ -680,7 +685,7 @@ describe('production master damage quality ratchet', () => {
     const busterChange = baseline.effects.find(
       (effect) =>
         effect.skillName === '回路接続 EX' &&
-        effect.modifier === 'cardTypeChange' &&
+        effect.modifier === 'npVariantSelection' &&
         effect.label.includes('Buster'),
     )!;
     const artsBuff = changed.effects.find(
@@ -715,7 +720,11 @@ describe('production master damage quality ratchet', () => {
     expect(baseline.input.cardType).toBe('buster');
     expect(changed.result.status).toBe('calculated');
     expect(changed.input.cardType).toBe('arts');
-    expect(changed.result.rows[0]?.average).not.toBe(baseline.result.rows[0]?.average);
+    expect(changed.noblePhantasmVariant).toMatchObject({
+      ref: { actorFormId: '200100', noblePhantasmId: '200197' },
+      targetScope: 'all',
+    });
+    expect(changed.result.rows).toEqual(baseline.result.rows);
     expect(artsChange).toMatchObject({ sourceActive: true, decision: { state: 'disabled' } });
     expect(
       changed.effects.find((effect) => effect.projectionKey === artsChange.projectionKey),
@@ -731,12 +740,12 @@ describe('production master damage quality ratchet', () => {
     expect(conflict.input.cardType).toBe('buster');
     expect(
       conflict.effects
-        .filter((effect) => effect.modifier === 'cardTypeChange')
+        .filter((effect) => effect.modifier === 'npVariantSelection')
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
   });
 
-  it('replaces Jade Rabbit NP form traits atomically with the card type', async () => {
+  it('replaces Jade Rabbit NP variant and its state traits atomically', async () => {
     const master = await loadProductionMaster();
     const servant = master.servants.find((candidate) => candidate.id === '2301100')!;
     const scenario = createDefaultResolvedScenario(master, undefined, servant);
@@ -749,29 +758,29 @@ describe('production master damage quality ratchet', () => {
       masterDataVersion: master.version,
     };
     const baseline = calculateScenario(scenario, master, versions);
-    const busterForm = baseline.effects.find(
-      (effect) => effect.modifier === 'cardTypeChange' && effect.label === '月下',
+    const moonForm = baseline.effects.find(
+      (effect) => effect.modifier === 'npVariantSelection' && effect.label === '月下',
     )!;
     const artsForm = baseline.effects.find(
       (effect) =>
-        effect.modifier === 'cardTypeChange' &&
+        effect.modifier === 'npVariantSelection' &&
         effect.skillName === '望月に踊る A' &&
         effect.label === '日輪',
     )!;
-    const busterFormScenario = applyEffectPresentationDecision(
+    const moonFormScenario = applyEffectPresentationDecision(
       scenario,
-      busterForm,
+      moonForm,
       true,
       baseline.activationRequirements,
       baseline.effects,
     );
-    const withBusterForm = calculateScenario(busterFormScenario, master, versions);
-    const busterAttack = withBusterForm.effects.find(
+    const withMoonForm = calculateScenario(moonFormScenario, master, versions);
+    const moonAttack = withMoonForm.effects.find(
       (effect) =>
         effect.modifier === 'attackBuff' &&
         JSON.stringify(effect.explanation.condition).includes('traitId:3121'),
     )!;
-    const busterNp = withBusterForm.effects.find(
+    const moonNp = withMoonForm.effects.find(
       (effect) =>
         effect.modifier === 'npDamageBuff' &&
         JSON.stringify(effect.explanation.condition).includes('traitId:3121'),
@@ -787,28 +796,34 @@ describe('production master damage quality ratchet', () => {
     });
     expect(
       baseline.effects.find(
-        (effect) => effect.modifier === 'cardTypeChange' && effect.source.origin === 'passive',
+        (effect) => effect.modifier === 'npVariantSelection' && effect.source.origin === 'passive',
       ),
     ).toMatchObject({ controllability: 'user', outcome: 'applied' });
 
-    const busterScenario = [busterAttack, busterNp].reduce(
+    const moonScenario = [moonAttack, moonNp].reduce(
       (current, effect) =>
         applyEffectPresentationDecision(
           current,
           effect,
           true,
-          withBusterForm.activationRequirements,
-          withBusterForm.effects,
+          withMoonForm.activationRequirements,
+          withMoonForm.effects,
         ),
-      busterFormScenario,
+      moonFormScenario,
     );
-    const buster = calculateScenario(busterScenario, master, versions);
-    expect(buster.result.status).toBe('calculated');
-    expect(buster.input).toMatchObject({ cardType: 'buster', attackBuff: 0.3, npDamageBuff: 0.5 });
+    const moon = calculateScenario(moonScenario, master, versions);
+    expect(moon.result.status).toBe('calculated');
+    expect(moon.input).toMatchObject({ cardType: 'arts', attackBuff: 0.3, npDamageBuff: 0.5 });
+    expect(moon.noblePhantasmVariant).toMatchObject({
+      ref: { actorFormId: '2301100', noblePhantasmId: '2301198' },
+      targetScope: 'all',
+    });
+    expect(JSON.stringify(moon.scenario)).not.toContain('noblePhantasmVariant');
+    expect(JSON.stringify(moon.scenario)).not.toContain('compiledOperation');
     expect(
-      buster.effects
+      moon.effects
         .filter((effect) =>
-          [busterForm.projectionKey, busterAttack.projectionKey, busterNp.projectionKey].includes(
+          [moonForm.projectionKey, moonAttack.projectionKey, moonNp.projectionKey].includes(
             effect.projectionKey,
           ),
         )
@@ -836,7 +851,7 @@ describe('production master damage quality ratchet', () => {
     expect(arts.input).toMatchObject({ cardType: 'arts', attackBuff: 0.3 });
 
     const missingForm = calculateScenario(
-      applyEffectProjectionDecision(scenario, busterAttack, true),
+      applyEffectProjectionDecision(scenario, moonAttack, true),
       master,
       versions,
     );
@@ -844,13 +859,13 @@ describe('production master damage quality ratchet', () => {
     expect(missingForm.input.attackBuff).toBe(0);
 
     const resolvedFormScenario = applyEffectProjectionDecision(
-      applyEffectProjectionDecision(scenario, busterForm, true),
+      applyEffectProjectionDecision(scenario, moonForm, true),
       artsForm,
       true,
     );
     const resolvedForms = calculateScenario(resolvedFormScenario, master, versions);
     const conflictingForms = calculateScenario(
-      forgeConflictingActivationFacts(resolvedFormScenario, busterForm),
+      forgeConflictingActivationFacts(resolvedFormScenario, moonForm),
       master,
       versions,
     );
@@ -861,7 +876,7 @@ describe('production master damage quality ratchet', () => {
     expect(
       conflictingForms.effects
         .filter((effect) =>
-          [busterForm.projectionKey, artsForm.projectionKey].includes(effect.projectionKey),
+          [moonForm.projectionKey, artsForm.projectionKey].includes(effect.projectionKey),
         )
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
@@ -983,7 +998,7 @@ describe('production master damage quality ratchet', () => {
       [
         ...servant.skills.map((skill) => ({ origin: 'attacker' as const, skill })),
         ...servant.passives.map((skill) => ({ origin: 'passive' as const, skill })),
-        ...servant.noblePhantasms.map((skill) => ({ origin: 'np' as const, skill })),
+        ...getNoblePhantasmVariants(servant).map((skill) => ({ origin: 'np' as const, skill })),
       ].flatMap(({ origin, skill }) =>
         skill.effects.flatMap((effect) =>
           effect.operationTrigger ? [{ servantId: servant.id, origin, effect }] : [],
@@ -996,7 +1011,7 @@ describe('production master damage quality ratchet', () => {
       damageCandidates: occurrences.filter(({ effect, origin }) =>
         canNormalizeDamageEffect(effect, origin),
       ).length,
-    }).toEqual({ servants: 13, effects: 23, damageCandidates: 5 });
+    }).toEqual({ servants: 14, effects: 31, damageCandidates: 5 });
     expect(
       occurrences.every(({ effect }) =>
         effect.atlasEvidence.parameterSemantics.condition.includes('TriggeredFuncPosition'),
@@ -1335,7 +1350,7 @@ describe('production master damage quality ratchet', () => {
     expect(conflict.input.powerMod).toBe(0);
     expect(conflict.input.fieldTraits).toEqual([]);
     expect(conflict.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('invalidActivationContext:')]),
+      expect.arrayContaining([expect.stringContaining('constraintConflict:')]),
     );
 
     const earthAfterConflict = calculateScenario(earthScenario, master, versions);
@@ -1479,10 +1494,7 @@ describe('production master damage quality ratchet', () => {
     const sunlightPower = garethInitial.effects.find(
       (effect) =>
         effect.label === '攻撃力アップ' &&
-        effect.explanation.condition?.kind === 'any' &&
-        effect.explanation.condition.expressions.some(
-          (condition) => condition.kind === 'trait' && condition.trait === 'fieldSunlight',
-        ),
+        JSON.stringify(effect.explanation.condition).includes('fieldSunlight'),
     )!;
     expect(sunlightPower.activationSources).toEqual([
       expect.objectContaining({ origin: 'attacker', skillId: '2109451' }),
@@ -1754,9 +1766,9 @@ describe('production master damage quality ratchet', () => {
       .filter((key) => !reachableKeys.has(key))
       .sort((left, right) => left.localeCompare(right));
     expect(rawFieldMutationCount).toBe(15);
-    expect(rawRecipientMutationCount).toBe(17);
-    expect(mutationKeys).toHaveLength(26);
-    expect(reachableKeys.size).toBe(17);
+    expect(rawRecipientMutationCount).toBe(20);
+    expect(mutationKeys).toHaveLength(28);
+    expect(reachableKeys.size).toBe(19);
     expect(unreachableKeys).toEqual([
       '1101500:2180550:20766:0',
       '1101500:2180550:8691:0',

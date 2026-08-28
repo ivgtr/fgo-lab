@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { getNoblePhantasmVariants, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { calculationScenarioSchema, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
@@ -43,21 +43,22 @@ function averages(result: ReturnType<typeof calculate>['calculation']['result'])
 describe('canonical actor population counts', () => {
   it('ratchets every production matching-count occurrence and its canonical family', () => {
     const occurrences = master.servants.flatMap((servant) =>
-      [...servant.skills, ...servant.passives, ...servant.noblePhantasms].flatMap((source) =>
-        source.effects.flatMap((effect) =>
-          effect.inputDefinitions.flatMap((input) =>
-            input.kind === 'matchingActorCount'
-              ? [
-                  {
-                    servantId: servant.id,
-                    occurrenceId: effect.occurrenceId,
-                    population: input.countSemantics.population,
-                    label: input.label,
-                  },
-                ]
-              : [],
+      [...servant.skills, ...servant.passives, ...getNoblePhantasmVariants(servant)].flatMap(
+        (source) =>
+          source.effects.flatMap((effect) =>
+            effect.inputDefinitions.flatMap((input) =>
+              input.kind === 'matchingActorCount'
+                ? [
+                    {
+                      servantId: servant.id,
+                      occurrenceId: effect.occurrenceId,
+                      population: input.countSemantics.population,
+                      label: input.label,
+                    },
+                  ]
+                : [],
+            ),
           ),
-        ),
       ),
     );
     expect(occurrences).toEqual([

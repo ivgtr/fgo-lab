@@ -1,6 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
+import {
+  getBaseAttackNoblePhantasmVariant,
+  getAttackNoblePhantasmVariants,
+  getNoblePhantasmVariants,
+  masterSnapshotSchema,
+  type MasterEffect,
+} from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -10,7 +16,7 @@ function allEffects(master: ReturnType<typeof masterSnapshotSchema.parse>): Mast
     ...master.servants.flatMap((servant) => [
       ...servant.skills.flatMap((skill) => skill.effects),
       ...servant.passives.flatMap((skill) => skill.effects),
-      ...servant.noblePhantasms.flatMap((np) => np.effects),
+      ...getNoblePhantasmVariants(servant).flatMap((np) => np.effects),
     ]),
     ...master.craftEssences.flatMap((ce) => ce.effects),
     ...master.mysticCodes.flatMap((code) => code.skills.flatMap((skill) => skill.effects)),
@@ -40,7 +46,7 @@ describe('E0 production master execution inventory', () => {
     const damageKinds = Object.fromEntries(
       Object.entries(
         master.servants
-          .flatMap((servant) => servant.noblePhantasms.flatMap((np) => np.damage))
+          .flatMap((servant) => getAttackNoblePhantasmVariants(servant).flatMap((np) => np.damage))
           .reduce<Record<string, number>>((counts, damage) => {
             counts[damage.kind] = (counts[damage.kind] ?? 0) + 1;
             return counts;
@@ -68,16 +74,14 @@ describe('E0 production master execution inventory', () => {
 
     expect(master.servants).toHaveLength(469);
     expect(
-      master.servants.filter((servant) =>
-        servant.noblePhantasms.some((np) => np.damage.length > 0),
-      ),
+      master.servants.filter((servant) => getBaseAttackNoblePhantasmVariant(servant)),
     ).toHaveLength(420);
     expect(damageKinds).toEqual({
       battlePointPhase: 2,
       defensePiercing: 67,
       hpRatioLow: 6,
       standard: 371,
-      stateTrait: 12,
+      stateTrait: 13,
       targetRarity: 1,
       trait: 141,
       traitCount: 20,
@@ -105,7 +109,7 @@ describe('E0 production master execution inventory', () => {
     const valueEffects = effects.filter((effect) =>
       effect.atlasEvidence.parameterSemantics.value.includes('Value'),
     );
-    expect(valueEffects).toHaveLength(10_440);
+    expect(valueEffects).toHaveLength(10_706);
     expect(
       Object.fromEntries(
         Object.entries(
@@ -116,7 +120,7 @@ describe('E0 production master execution inventory', () => {
           }, {}),
         ).sort(),
       ),
-    ).toEqual({ contextTraitId: 73, modifier: 3_739, modifierRate: 1, nonDamage: 6_627 });
+    ).toEqual({ contextTraitId: 74, modifier: 3_834, modifierRate: 1, nonDamage: 6_797 });
   });
 
   it('locks mandatory real-master scenarios without production branching', async () => {
@@ -133,7 +137,9 @@ describe('E0 production master execution inventory', () => {
       expect(master.servants.find((servant) => servant.id === id)?.name).toBe(name);
     const families = new Set(
       master.servants.flatMap((servant) =>
-        servant.noblePhantasms.flatMap((np) => np.damage.map((damage) => damage.kind)),
+        getAttackNoblePhantasmVariants(servant).flatMap((np) =>
+          np.damage.map((damage) => damage.kind),
+        ),
       ),
     );
     expect(families).toEqual(

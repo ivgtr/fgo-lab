@@ -127,4 +127,36 @@ describe('activation fact materialization', () => {
       applyActivationFactSelection(scenario, [fact], true, [hiddenOwner]).activationFacts,
     ).toEqual([fact]);
   });
+
+  it('does not synthesize a choice for a hidden operation that only follows a satisfied consumer', () => {
+    const fact = { kind: 'choice' as const, source, family: 'mode', candidate: 'moon' };
+    const base = createDefaultResolvedScenario(master, undefined);
+    const hiddenOwner: ActivationRequirementOwner = {
+      ...owner('hidden:mutation', fact),
+      decisionKey: null,
+      activation: {
+        kind: 'linkedDecisions',
+        links: [
+          {
+            decisionKey: 'effect:consumer',
+            reason: 'traitPrerequisite',
+            selection: 'conditionSatisfied',
+          },
+        ],
+      },
+    };
+    const scenario = {
+      ...base,
+      effectDecisions: [
+        {
+          decisionKey: 'effect:consumer',
+          operationEnabled: true,
+          conditionSatisfaction: 'evaluate' as const,
+        },
+      ],
+    };
+    expect(
+      applyActivationFactSelection(scenario, [fact], false, [hiddenOwner]).activationFacts,
+    ).toEqual([]);
+  });
 });

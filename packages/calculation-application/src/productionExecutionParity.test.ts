@@ -7,7 +7,7 @@ import type {
   EffectProjection,
   WorldFactAssertion,
 } from '@fgo-lab/battle-execution';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { getBaseAttackNoblePhantasmVariant, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION, type CalculationScenario } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
@@ -136,9 +136,14 @@ describe('production execution parity ratchet', () => {
           ) ??
           before.effects.find(
             (effect) =>
-              effect.source.effectOccurrenceId === oldOccurrenceId &&
-              effect.decision.state !== 'none' &&
-              effect.decision.decisionKey.includes(':interaction:'),
+              effect.source.effectOccurrenceId.endsWith(oldOccurrenceId) &&
+              effect.decision.state !== 'none',
+          ) ??
+          before.effects.find(
+            (effect) =>
+              effect.source.origin === 'np' &&
+              effect.source.sourceId === testCase.attackerId &&
+              oldDecision.decisionKey.endsWith(`:${effect.source.effectId}:condition`),
           );
         if (!projection) throw new Error(`projection_missing:${testCase.key}`);
         if (projection.proc.kind === 'chainedRolls') {
@@ -165,8 +170,7 @@ describe('production execution parity ratchet', () => {
         if (
           oldDecision.conditionSatisfaction === 'assumeSatisfied' &&
           projection.decision.state !== 'none' &&
-          projection.decision.kind === 'effect' &&
-          projection.decision.decisionKey === oldDecision.decisionKey
+          projection.decision.kind === 'effect'
         )
           scenario = applyEffectConditionDecision(
             scenario,
@@ -194,7 +198,7 @@ describe('production execution parity ratchet', () => {
     expect(records).toHaveLength(1_504);
     expect(records.filter((record) => 'status' in record)).toEqual([]);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'e754617b09edeacf9661fb95d7b814bfd178e07c1827d0df16224cd02ce33b77',
+      '6334faac69f97cc86b919f9e1b3d73814f9bb1234ba77ee7cb3030fd5535bb17',
     );
   }, 120_000);
 
@@ -211,7 +215,7 @@ describe('production execution parity ratchet', () => {
       masterDataVersion: master.version,
     };
     const records = master.servants
-      .filter((servant) => servant.noblePhantasms.some((np) => np.damage.length > 0))
+      .filter((servant) => getBaseAttackNoblePhantasmVariant(servant))
       .map((servant) => {
         const calculation = calculateScenario(
           createDefaultResolvedScenario(master, undefined, servant),
@@ -229,7 +233,7 @@ describe('production execution parity ratchet', () => {
 
     expect(records).toHaveLength(420);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'a469ff71f5c4a6171a7e4d20dcb4f8f77475a38fbb08f236e4e691214e94e5e9',
+      '979575b6331f00e0cc93e73a400a78e218d61fd75363530489d6f1aa57974a23',
     );
   }, 60_000);
 });

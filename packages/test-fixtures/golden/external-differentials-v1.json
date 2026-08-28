@@ -1,7 +1,7 @@
 {
   "description": "公開計算機との入力・出力差分を固定する外部differential",
   "reviewedAt": "2026-08-26",
-  "engineVersion": "24.0.0",
+  "engineVersion": "25.0.0",
   "cases": [
     {
       "caseId": "appmedia-lilith-neutral-np5",

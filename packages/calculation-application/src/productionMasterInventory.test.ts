@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { getNoblePhantasmVariants, masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
   canonicalExclusiveGroup,
@@ -193,8 +193,9 @@ describe('production master inventory ratchet', () => {
         for (const effect of skill.effects) inspectEffect(servant.id, effect, 'attacker');
       for (const passive of servant.passives)
         for (const effect of passive.effects) inspectEffect(servant.id, effect, 'passive');
-      for (const noblePhantasm of servant.noblePhantasms)
-        for (const effect of noblePhantasm.effects) inspectEffect(servant.id, effect, 'np');
+      for (const noblePhantasm of getNoblePhantasmVariants(servant))
+        if (noblePhantasm.kind === 'attack')
+          for (const effect of noblePhantasm.effects) inspectEffect(servant.id, effect, 'np');
     }
     const unsupported = calculations.filter(
       ({ calculation }) => calculation.result.status === 'unsupported',
@@ -206,7 +207,7 @@ describe('production master inventory ratchet', () => {
         effect.requiredQuantity === null &&
         effect.modifier !== 'ignoreDefense' &&
         effect.modifier !== 'ignoreDamageCut' &&
-        effect.modifier !== 'cardTypeChange' &&
+        effect.modifier !== 'npVariantSelection' &&
         effect.value === null
           ? [`${servant.id}:${effect.source.skillId}:${effect.source.effectId}`]
           : [],
@@ -508,7 +509,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_606, automaticVisible: 0, hidden: 695 });
+    }).toEqual({ user: 1_606, automaticVisible: 0, hidden: 707 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -517,13 +518,14 @@ describe('production master inventory ratchet', () => {
     expect({
       servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
       effects: multiBranchOrEffects.length,
-    }).toEqual({ servants: 18, effects: 22 });
+    }).toEqual({ servants: 17, effects: 21 });
     expect([...conditionKinds].sort()).toEqual([
       'all',
       'any',
       'card',
       'choice',
       'inputQuantity',
+      'noblePhantasmVariant',
       'operationTrigger',
       'quantity',
       'sourceQuantity',
@@ -534,7 +536,9 @@ describe('production master inventory ratchet', () => {
     expect(missingCandidateValues).toEqual([]);
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
-    expect(selectedUnsupportedProjections).toEqual([]);
+    expect(selectedUnsupportedProjections).toEqual([
+      '2300600:attacker:attacker:2300600:2403650:21986:0',
+    ]);
     expect(targetContextRequiredProjections).toEqual([]);
     expect(
       Object.fromEntries(
@@ -546,11 +550,12 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({});
-    expect(declaredExclusivePairCount).toBe(22);
+    ).toEqual({ '2300600': 1 });
+    expect(declaredExclusivePairCount).toBe(23);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
       '2301100:attacker:attacker:2301100:2536550:22888:0|attacker:attacker:2301100:2536550:22887:0',
+      '2301100:attacker:attacker:2301100:2536550:22887:0|passive:passive:2301100:2534650:22874:0',
     ]);
     expect(exclusivePairCount).toBe(20);
     expect(conflictPairs).toEqual({ effectEffect: 20, factFact: 0, factEffect: 0 });
@@ -558,7 +563,7 @@ describe('production master inventory ratchet', () => {
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 11, effects: 8, servants: 3 });
+    }).toEqual({ combinations: 12, effects: 9, servants: 3 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');

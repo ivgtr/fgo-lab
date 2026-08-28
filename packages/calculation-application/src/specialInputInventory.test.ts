@@ -96,7 +96,7 @@ describe('production special input inventory', () => {
     const singleChoiceControls = calculations.flatMap(({ calculation }) =>
       calculation.effectControls.filter((control) => control.interaction === 'singleChoice'),
     );
-    expect(singleChoiceControls).toHaveLength(29);
+    expect(singleChoiceControls).toHaveLength(30);
     expect(
       new Set(
         singleChoiceControls.flatMap((control) =>

@@ -25,6 +25,7 @@ type MutableServant = {
   skills?: MutableEffectContainer[];
   passives?: MutableEffectContainer[];
   noblePhantasms?: MutableEffectContainer[];
+  noblePhantasmVariantGroups?: { variants: MutableEffectContainer[] }[];
 };
 
 function parseTestMaster(input: unknown) {
@@ -63,6 +64,11 @@ function parseTestMaster(input: unknown) {
     decorate(servant.skills ?? [], 'skillUse', 'include');
     decorate(servant.passives ?? [], 'constant', 'include');
     decorate(servant.noblePhantasms ?? [], 'npBeforeDamage', 'include');
+    decorate(
+      servant.noblePhantasmVariantGroups?.flatMap(({ variants }) => variants) ?? [],
+      'npBeforeDamage',
+      'include',
+    );
   }
   decorate(candidate.craftEssences, 'constant', 'include');
   for (const code of candidate.mysticCodes) decorate(code.skills, 'skillUse', 'include');
@@ -300,9 +306,12 @@ describe('scenario calculation facade', () => {
       servants: [
         {
           ...baseServant,
-          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
-            ...np,
-            effects: [fieldEffect, conditional],
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              effects: [fieldEffect, conditional],
+            })),
           })),
           passives: [
             {
@@ -415,9 +424,12 @@ describe('scenario calculation facade', () => {
               effects: [fieldEffect, recipientEffect, sameSkillPower, siblingSkillPower],
             },
           ],
-          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
-            ...np,
-            effects: [conditional, alternativeField],
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              effects: [conditional, alternativeField],
+            })),
           })),
         },
       ],
@@ -524,20 +536,23 @@ describe('scenario calculation facade', () => {
       servants: [
         {
           ...baseServant,
-          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
-            ...np,
-            damage: np.damage.map((damage) => ({
-              ...damage,
-              kind: 'trait',
-              rawFunctionType: 'damageNpIndividual',
-              parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
-                row.map((parameter) => ({
-                  ...parameter,
-                  targetId: 1,
-                  targetTrait: { kind: 'trait', name: 'dragon' },
-                  correctionPermille: 1_500,
-                })),
-              ),
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              damage: np.damage.map((damage) => ({
+                ...damage,
+                kind: 'trait',
+                rawFunctionType: 'damageNpIndividual',
+                parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                  row.map((parameter) => ({
+                    ...parameter,
+                    targetId: 1,
+                    targetTrait: { kind: 'trait', name: 'dragon' },
+                    correctionPermille: 1_500,
+                  })),
+                ),
+              })),
             })),
           })),
         },
@@ -1150,24 +1165,27 @@ describe('scenario calculation facade', () => {
       servants: [
         {
           ...baseServant,
-          noblePhantasms: baseServant.noblePhantasms.map((np) => ({
-            ...np,
-            effects: [stackEffect('burn-one'), stackEffect('burn-two')],
-            damage: np.damage.map((damage) => ({
-              ...damage,
-              kind: 'traitCount',
-              rawFunctionType: 'damageNpIndividualSum',
-              parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
-                row.map((parameter) => ({
-                  ...parameter,
-                  targetId: 1,
-                  targetIds: [99],
-                  targetTraits: [burn],
-                  secondaryValuePermille: 1_000,
-                  correctionPermille: 200,
-                  maximumTargetCount: 3,
-                })),
-              ),
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              effects: [stackEffect('burn-one'), stackEffect('burn-two')],
+              damage: np.damage.map((damage) => ({
+                ...damage,
+                kind: 'traitCount',
+                rawFunctionType: 'damageNpIndividualSum',
+                parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                  row.map((parameter) => ({
+                    ...parameter,
+                    targetId: 1,
+                    targetIds: [99],
+                    targetTraits: [burn],
+                    secondaryValuePermille: 1_000,
+                    correctionPermille: 200,
+                    maximumTargetCount: 3,
+                  })),
+                ),
+              })),
             })),
           })),
         },
@@ -1255,19 +1273,22 @@ describe('scenario calculation facade', () => {
           effects: [modifierEffect('attacker-attack', 'upAtk', 200)],
         },
       ],
-      noblePhantasms: baseServant.noblePhantasms.map((np) => ({
-        ...np,
-        effects: [
-          { ...modifierEffect('np-attack', 'upAtk', 600), timing: 'beforeDamage' as const },
-          {
-            ...modifierEffect('np-ignore-defense', 'pierceDefence', 0),
-            timing: 'beforeDamage' as const,
-          },
-          {
-            ...modifierEffect('np-ignore-damage-cut', 'pierceSubdamage', 0),
-            timing: 'beforeDamage' as const,
-          },
-        ],
+      noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+        ...group,
+        variants: group.variants.map((np) => ({
+          ...np,
+          effects: [
+            { ...modifierEffect('np-attack', 'upAtk', 600), timing: 'beforeDamage' as const },
+            {
+              ...modifierEffect('np-ignore-defense', 'pierceDefence', 0),
+              timing: 'beforeDamage' as const,
+            },
+            {
+              ...modifierEffect('np-ignore-damage-cut', 'pierceSubdamage', 0),
+              timing: 'beforeDamage' as const,
+            },
+          ],
+        })),
       })),
     };
     const support = {

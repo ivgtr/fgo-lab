@@ -15,12 +15,13 @@ import { createDefaultTargetContext } from './targetContext';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
-  getPrimaryNoblePhantasm,
+  getBaseAttackNoblePhantasmVariant,
   getPrimaryNpDamage,
   naturalServantLevel,
   type MasterDataSnapshot,
   type ServantMaster,
   type CanonicalInputDefinition,
+  type NoblePhantasmVariant,
 } from '@fgo-lab/master-data';
 import type {
   CalculationResult,
@@ -39,6 +40,7 @@ import {
 import { createEffectControlViewModels, type EffectControlViewModel } from './effectControls';
 
 export interface ResolvedCalculationInput {
+  noblePhantasmVariant: NoblePhantasmVariant | null;
   input: DamageResolutionInput;
   precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
   evidenceKeys: string[];
@@ -51,6 +53,7 @@ export interface ResolvedCalculationInput {
 }
 
 export interface CalculationExecution {
+  noblePhantasmVariant: NoblePhantasmVariant | null;
   scenario: CalculationScenario;
   scenarioInput: DamageResolutionInput;
   input: DamageResolutionInput;
@@ -70,7 +73,7 @@ export function createDefaultResolvedScenario(
   build: ServantBuild | undefined,
   servant: ServantMaster = master.servants[0]!,
 ): ResolvedCalculationScenario {
-  const noblePhantasm = getPrimaryNoblePhantasm(servant);
+  const noblePhantasm = getBaseAttackNoblePhantasmVariant(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   return {
@@ -107,7 +110,7 @@ function resolvedScenarioBaseInput(
 ): DamageResolutionInput {
   const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
   if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
-  const noblePhantasm = getPrimaryNoblePhantasm(servant);
+  const noblePhantasm = getBaseAttackNoblePhantasmVariant(servant);
   const damage = getPrimaryNpDamage(servant);
   if (!noblePhantasm || !damage) throw new TypeError(`attack_np_missing:${servant.id}`);
   const craftEssence = scenario.craftEssence
@@ -193,6 +196,7 @@ export function resolveScenario(
       requiredInputs: [],
       inputDefinitions: [],
       activationRequirements: [],
+      noblePhantasmVariant: null,
     };
   const baseInput = resolvedScenarioBaseInput(scenario, master);
   const prepared = prepareOrderedScenario(baseInput, scenario, master);
@@ -257,6 +261,7 @@ export function resolveScenario(
     detail: `${key}:${String(value)}:${scenario.canonicalInputValues[key] ? 'explicit' : 'default'}`,
   }));
   return {
+    noblePhantasmVariant: execution.state.noblePhantasmVariant,
     input: execution.input,
     precision: execution.precision,
     evidenceKeys: [
@@ -353,6 +358,7 @@ function evaluateResolvedCalculation(
         })
       : [];
   return {
+    noblePhantasmVariant: resolved.noblePhantasmVariant,
     scenario,
     scenarioInput,
     input: resolved.input,

@@ -5,6 +5,8 @@ const ATLAS_FLOAT32 =
   'https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md';
 const CHALDEA_DAMAGE =
   'https://github.com/chaldea-center/chaldea/blob/main/lib/app/battle/functions/damage.dart';
+const CHALDEA_NP_VARIANT =
+  'https://github.com/chaldea-center/chaldea/blob/7b6d0c87d0fbb6f946f639c4f02e2286bd0e0c65/lib/app/battle/functions/add_state.dart#L245-L295';
 const APPMEDIA_NP_CALCULATOR = 'https://appmedia.jp/fategrandorder/5499061';
 const NP_FUNCTION_GOLDEN_CASE_IDS = {
   standard: ['standard-reference-np-row'],
@@ -51,7 +53,7 @@ const entries: CalculationEvidence[] = [
     'Atlas JP damage Function, battle point, and effect normalization',
     'validated',
     ['Atlas Academy JP nice servant, craft essence, and mystic code datasets'],
-    ['master-normalization-v59'],
+    ['master-normalization-v60'],
   ),
   ...(
     [
@@ -87,21 +89,19 @@ const entries: CalculationEvidence[] = [
       'ignoreDefense',
       'ignoreDamageCut',
       'npDamageBuffRate',
-      'cardTypeChange',
+      'npVariantSelection',
     ] as const
   ).map((kind) =>
     evidence(
       `effect-operation:${kind}`,
       `Damage effect aggregation: ${kind}`,
       'provisional',
-      [ATLAS_DAMAGE],
+      kind === 'npVariantSelection' ? [CHALDEA_NP_VARIANT] : [ATLAS_DAMAGE],
       kind === 'ignoreDefense'
         ? ['all-effect-sources-ordered-execution', 'defense-piercing-np-row']
-        : kind === 'cardTypeChange'
-          ? ['master-normalization-v59']
-          : ['cardBuff', 'npDamageBuff', 'flatDamage'].includes(kind)
-            ? ['all-effect-sources-ordered-execution', 'mlb-only-effects-v1']
-            : ['all-effect-sources-ordered-execution'],
+        : ['cardBuff', 'npDamageBuff', 'flatDamage'].includes(kind)
+          ? ['all-effect-sources-ordered-execution', 'mlb-only-effects-v1']
+          : ['all-effect-sources-ordered-execution'],
     ),
   ),
   evidence(
