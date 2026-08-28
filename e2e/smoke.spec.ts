@@ -1813,7 +1813,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
     timeout: 45_000,
   });
   await expect(page).toHaveURL(/rField=active/);
-  await nemo.getByRole('button', { name: '詳細' }).click();
+  await nemo.getByRole('button', { name: /の計算詳細を開く/ }).click();
   await expect(nemo.getByRole('region', { name: /ネモの計算詳細/ })).toContainText(
     'フィールド条件',
     { timeout: 15_000 },
@@ -1846,7 +1846,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   const rankingAverage = Number(
     (await caesar.locator('.ranking-primary-damage strong').textContent())?.replaceAll(',', ''),
   );
-  await caesar.getByRole('button', { name: '詳細' }).click();
+  await caesar.getByRole('button', { name: /の計算詳細を開く/ }).click();
   const detail = caesar.getByRole('region', { name: /の計算詳細/ });
   await expect(detail).toContainText('連続成功', { timeout: 15_000 });
   await detail.getByRole('button', { name: '同じ条件で計算機を開く' }).click();

@@ -37,7 +37,14 @@ export function RankingList({
         const detailId = `ranking-detail-${row.entryId.replace(':', '-')}`;
         return (
           <li key={row.entryId} className={row.rank <= 3 ? 'ranking-top' : undefined}>
-            <article className="ranking-row">
+            <button
+              type="button"
+              className="ranking-row"
+              aria-label={`${row.name}の計算詳細を${expanded ? '閉じる' : '開く'}`}
+              aria-expanded={expanded}
+              aria-controls={detailId}
+              onClick={() => onToggle(row)}
+            >
               <span className="ranking-position" aria-label={`${String(row.rank)}位`}>
                 {row.rank}
               </span>
@@ -75,16 +82,8 @@ export function RankingList({
                   効果{row.appliedEffectCount}・支援{row.supportSourceCount}
                 </small>
               </span>
-              <button
-                type="button"
-                className="ranking-detail-toggle"
-                aria-expanded={expanded}
-                aria-controls={detailId}
-                onClick={() => onToggle(row)}
-              >
-                {expanded ? '閉じる' : '詳細'}
-              </button>
-            </article>
+              <span className="ranking-row-disclosure" aria-hidden="true" />
+            </button>
             {expanded ? (
               <section id={detailId} aria-label={`${row.name}の計算詳細`}>
                 {detail ? (

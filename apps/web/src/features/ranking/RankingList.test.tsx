@@ -53,6 +53,28 @@ const row: RankingPresentedRow = {
 };
 
 describe('ranking row detail state', () => {
+  it('uses the whole row as the detail disclosure without a separate detail button', () => {
+    const toggle = vi.fn();
+    const { getByRole, queryByRole } = render(
+      <RankingList
+        rows={[row]}
+        openEntryId={null}
+        details={{}}
+        detailErrors={{}}
+        master={master}
+        onToggle={toggle}
+        onRetryDetail={vi.fn()}
+        onOpenCalculator={vi.fn()}
+      />,
+    );
+
+    const disclosure = getByRole('button', { name: `${row.name}の計算詳細を開く` });
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false');
+    expect(queryByRole('button', { name: '詳細' })).toBeNull();
+    fireEvent.click(disclosure);
+    expect(toggle).toHaveBeenCalledWith(row);
+  });
+
   it('renders a typed detail error and retries the same servant instead of loading forever', () => {
     const retry = vi.fn();
     const { getByRole, queryByText } = render(

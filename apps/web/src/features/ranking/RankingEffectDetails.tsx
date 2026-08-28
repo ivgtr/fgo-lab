@@ -4,9 +4,9 @@ import {
   collectDamageEffectStacks,
   damageEffectStateLabel,
 } from '../../presentation/damageEffectStacks';
-import { MasterImage } from '../../ui/MasterImage';
 import { numberFormatter } from '../../ui/i18n';
 import { servantClassLabels } from '../../ui/servantFilterOptions';
+import { ModifierChip } from '../calculator/ModifierChip';
 import { traitLabel } from '../calculator/traitPresentation';
 
 function AreaContributionSummary({ detail }: { detail: RankingDetail }) {
@@ -18,23 +18,15 @@ function AreaContributionSummary({ detail }: { detail: RankingDetail }) {
   const withoutAreaRow = area.withoutAreaResult.rows[npIndex];
   if (!rankingRow || !withoutAreaRow || rankingRow.average === withoutAreaRow.average) return null;
   return (
-    <section className="ranking-area-contribution" aria-label="エリア貢献">
-      <h4>エリア貢献</h4>
-      <dl className="ranking-damage-range">
-        <div>
-          <dt>効果なし</dt>
-          <dd>{numberFormatter.format(withoutAreaRow.average)}</dd>
-        </div>
-        <div>
-          <dt>効果込み</dt>
-          <dd>{numberFormatter.format(rankingRow.average)}</dd>
-        </div>
-        <div>
-          <dt>増加量</dt>
-          <dd>+{numberFormatter.format(rankingRow.average - withoutAreaRow.average)}</dd>
-        </div>
-      </dl>
-    </section>
+    <div className="ranking-area-contribution" role="region" aria-label="エリア貢献">
+      <strong>
+        エリア効果 +{numberFormatter.format(rankingRow.average - withoutAreaRow.average)}
+      </strong>
+      <small>
+        {numberFormatter.format(withoutAreaRow.average)} →{' '}
+        {numberFormatter.format(rankingRow.average)}
+      </small>
+    </div>
   );
 }
 
@@ -65,74 +57,70 @@ export function RankingEffectDetails({
     <div className="ranking-row-detail">
       {detail.result.status === 'calculated' ? (
         <>
-          <dl className="ranking-damage-range">
-            <div>
-              <dt>最低</dt>
-              <dd>
-                {numberFormatter.format(detail.result.rows[detail.input.npLevel - 1]!.minimum)}
-              </dd>
+          <div className="ranking-detail-summary">
+            <div className="ranking-damage-summary" aria-label="ダメージ範囲">
+              <span>
+                <small>最低</small>
+                <strong>
+                  {numberFormatter.format(detail.result.rows[detail.input.npLevel - 1]!.minimum)}
+                </strong>
+              </span>
+              <span>
+                <small>平均</small>
+                <strong>
+                  {numberFormatter.format(detail.result.rows[detail.input.npLevel - 1]!.average)}
+                </strong>
+              </span>
+              <span>
+                <small>最大</small>
+                <strong>
+                  {numberFormatter.format(detail.result.rows[detail.input.npLevel - 1]!.maximum)}
+                </strong>
+              </span>
             </div>
-            <div>
-              <dt>平均</dt>
-              <dd>
-                {numberFormatter.format(detail.result.rows[detail.input.npLevel - 1]!.average)}
-              </dd>
-            </div>
-            <div>
-              <dt>最大</dt>
-              <dd>
-                {numberFormatter.format(detail.result.rows[detail.input.npLevel - 1]!.maximum)}
-              </dd>
-            </div>
-          </dl>
-          <AreaContributionSummary detail={detail} />
-          <dl className="ranking-input-summary">
-            <div>
-              <dt>最終ATK</dt>
-              <dd>
-                {numberFormatter.format(
-                  detail.input.attackerAtk + detail.input.fouAtk + detail.input.craftEssenceAtk,
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>相性</dt>
-              <dd>
-                クラス{detail.input.classAffinity.toFixed(2)}倍・属性
+            <p className="ranking-input-summary">
+              <span>
+                最終ATK{' '}
+                <strong>
+                  {numberFormatter.format(
+                    detail.input.attackerAtk + detail.input.fouAtk + detail.input.craftEssenceAtk,
+                  )}
+                </strong>
+              </span>
+              <span>
+                相性 クラス{detail.input.classAffinity.toFixed(2)}倍・属性
                 {detail.input.attributeAffinity.toFixed(2)}倍
-              </dd>
-            </div>
-            <div>
-              <dt>HP</dt>
-              <dd>
+              </span>
+              <span>
+                HP{' '}
                 {detail.input.attackerHpPermille === null
                   ? '未入力'
                   : `${String(detail.input.attackerHpPermille / 10)}%`}
-              </dd>
-            </div>
-          </dl>
+              </span>
+            </p>
+          </div>
+          <AreaContributionSummary detail={detail} />
           <section className="ranking-effect-stacks" aria-label="適用効果と計算外効果">
-            {stacks.map((stack) => (
-              <div key={stack.kind}>
-                <h4>{stack.label}</h4>
-                <ul>
-                  {stack.sources.map((source) => (
-                    <li key={source.key} data-applied={source.applied ? 'true' : 'false'}>
-                      <MasterImage
-                        src={source.imageKey}
-                        alt=""
-                        fallback={source.effectLabel}
-                        className="ranking-effect-icon"
-                      />
-                      <span>{source.effectLabel}</span>
-                      <small>
-                        {damageEffectStateLabel(source)}・{source.effectName || source.sourceName}
-                      </small>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <h4>適用内容</h4>
+            <ul className="modifier-chip-list ranking-effect-list">
+              {stacks.flatMap((stack) =>
+                stack.sources.map((source) => (
+                  <ModifierChip
+                    key={`${stack.kind}:${source.key}`}
+                    active={source.applied}
+                    label={source.effectLabel}
+                    detail={`${damageEffectStateLabel(source)}・${source.effectName || source.sourceName}`}
+                    sources={[
+                      {
+                        key: source.key,
+                        label: source.sourceName,
+                        imageKey: source.imageKey,
+                      },
+                    ]}
+                  />
+                )),
+              )}
+            </ul>
           </section>
           {detail.effectInputs.length > 0 ||
           detail.scenario.worldFactAssertions.length > 0 ||
@@ -231,7 +219,11 @@ export function RankingEffectDetails({
           ))}
         </ul>
       ) : null}
-      <button type="button" onClick={() => onOpenCalculator(detail)}>
+      <button
+        className="ranking-open-calculator"
+        type="button"
+        onClick={() => onOpenCalculator(detail)}
+      >
         同じ条件で計算機を開く
       </button>
     </div>

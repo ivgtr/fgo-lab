@@ -67,16 +67,26 @@ export function Ranking({
           ランキングを更新できません: {ranking.error}
         </p>
       ) : null}
-      <RankingList
-        rows={rows}
-        openEntryId={openEntryId}
-        details={ranking.details}
-        detailErrors={ranking.detailErrors}
-        master={master}
-        onToggle={toggleDetail}
-        onRetryDetail={ranking.requestDetail}
-        onOpenCalculator={onOpenCalculator}
-      />
+      {ranking.loading && ranking.rows.length === 0 ? (
+        <div className="ranking-loading" aria-hidden="true">
+          <span className="ranking-loading-spinner" />
+          <span>
+            <strong>ランキングを計算しています</strong>
+            <small>サーヴァントと攻撃形態を比較中…</small>
+          </span>
+        </div>
+      ) : (
+        <RankingList
+          rows={rows}
+          openEntryId={openEntryId}
+          details={ranking.details}
+          detailErrors={ranking.detailErrors}
+          master={master}
+          onToggle={toggleDetail}
+          onRetryDetail={ranking.requestDetail}
+          onOpenCalculator={onOpenCalculator}
+        />
+      )}
       {ranking.failures.length > 0 ? (
         <details className="ranking-failures">
           <summary>順位外 {ranking.failures.length}件</summary>

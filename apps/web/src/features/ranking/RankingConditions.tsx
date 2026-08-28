@@ -96,8 +96,20 @@ export function RankingConditions({
       </div>
       <details className="ranking-calculation-details">
         <summary>計算基準</summary>
-        <p>自然上限・Fou1000・OC1・スキルLv10</p>
-        <p>属性等倍・礼装なし・支援なし</p>
+        <dl className="ranking-calculation-basis">
+          <div>
+            <dt>育成</dt>
+            <dd>自然上限・Fou1000</dd>
+          </div>
+          <div>
+            <dt>宝具・スキル</dt>
+            <dd>OC1・スキルLv10</dd>
+          </div>
+          <div>
+            <dt>外部条件</dt>
+            <dd>属性等倍・礼装なし・支援なし</dd>
+          </div>
+        </dl>
       </details>
     </section>
   );

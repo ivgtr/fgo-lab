@@ -132,6 +132,7 @@ export function RankingFilters({
           </label>
           <button
             type="button"
+            className="ranking-filter-clear"
             disabled={activeCount === 0}
             onClick={() =>
               onChange({

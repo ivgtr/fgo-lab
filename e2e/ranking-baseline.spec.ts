@@ -7,6 +7,7 @@ async function openRanking(
   width: number,
   height: number,
   iconMode: 'fixture' | 'fallback' = 'fixture',
+  waitForResult = true,
 ) {
   await page.setViewportSize({ width, height });
   await page.route('https://static.atlasacademy.io/**', (route) =>
@@ -25,10 +26,22 @@ async function openRanking(
     await page.getByRole('button', { name: 'その他' }).click();
     await page.getByLabel('その他の機能').getByRole('button', { name: '火力ランキング' }).click();
   }
-  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
-    timeout: 30_000,
-  });
+  if (waitForResult)
+    await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
+      timeout: 30_000,
+    });
 }
+
+test('ranking gives the initial calculation a dedicated loading surface', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(60_000);
+  test.skip(isMobile, 'The desktop project owns the loading presentation baseline');
+  await openRanking(page, 1440, 1000, 'fixture', false);
+  await expect(page.locator('.ranking-loading')).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('ランキングを更新中');
+});
 
 test('ranking keeps single and all-target variants as independent entries', async ({
   page,
@@ -39,6 +52,13 @@ test('ranking keeps single and all-target variants as independent entries', asyn
   await openRanking(page, 1440, 1000);
   const filters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
   await filters.getByText('絞り込み', { exact: true }).click();
+  const clearButton = filters.getByRole('button', { name: '絞り込みを解除' });
+  const targetSelect = filters.getByLabel('宝具範囲');
+  const [clearBox, targetBox] = await Promise.all([
+    clearButton.boundingBox(),
+    targetSelect.boundingBox(),
+  ]);
+  expect(clearBox?.height).toBe(targetBox?.height);
   await filters.getByLabel('名前検索').fill('玉兎');
   const list = page.getByRole('list', { name: '宝具火力ランキング' });
   const jadeRows = list.getByRole('listitem').filter({ hasText: '玉兎' });
@@ -66,7 +86,10 @@ test('ranking exposes only six calculation policies', async ({ page, isMobile })
   await expect(conditions.getByLabel('自己バフ')).toHaveValue('included');
   await expect(conditions.getByLabel('特攻')).toHaveValue('inactive');
   await expect(conditions.getByLabel('フィールド')).toHaveValue('inactive');
-  await expect(conditions).toContainText('自然上限・Fou1000・OC1・スキルLv10');
+  await expect(conditions).toContainText('自然上限・Fou1000');
+  await expect(conditions).toContainText('OC1・スキルLv10');
+  await conditions.getByText('計算基準', { exact: true }).click();
+  await expect(conditions.locator('.ranking-calculation-basis')).toBeVisible();
   await expect(conditions.locator('input')).toHaveCount(0);
 });
 
@@ -88,7 +111,7 @@ test('ranking desktop UI baseline', async ({ page, isMobile }) => {
     .getByRole('list', { name: '宝具火力ランキング' })
     .getByRole('listitem')
     .first();
-  await first.getByRole('button', { name: '詳細' }).click();
+  await first.getByRole('button', { name: /の計算詳細を開く/ }).click();
   await expect(first.getByRole('region', { name: /の計算詳細/ })).toContainText('最低', {
     timeout: 15_000,
   });
@@ -109,12 +132,12 @@ test('ranking includes self-applicable area buffs and explains their contributio
     .filter({ hasText: '雨の魔女トネリコ' });
   await expect(row.locator('.ranking-primary-damage strong')).toHaveText('27,947');
   const primaryDamage = await row.locator('.ranking-primary-damage strong').textContent();
-  await row.getByRole('button', { name: '詳細' }).click();
+  await row.getByRole('button', { name: /の計算詳細を開く/ }).click();
   const detail = row.getByRole('region', { name: /雨の魔女トネリコの計算詳細/ });
   const area = detail.getByRole('region', { name: 'エリア貢献' });
   await expect(area).toContainText('18,631');
   await expect(area).toContainText('27,947');
-  await expect(area).toContainText('増加量');
+  await expect(area).toContainText('エリア効果');
   await expect(row.locator('.ranking-primary-damage strong')).toHaveText(primaryDamage ?? '');
 });
 
@@ -127,10 +150,17 @@ for (const viewport of [
     test.skip(isMobile, 'The desktop project owns the explicit viewport baselines');
     await openRanking(page, viewport.width, viewport.height);
     await expect(page).toHaveScreenshot(`ranking-${viewport.name}.png`);
-    if (viewport.width === 320)
-      await expect(
-        page.getByRole('list', { name: '宝具火力ランキング' }).getByRole('listitem').first(),
-      ).toHaveScreenshot('ranking-row-320px.png');
+    if (viewport.width === 320) {
+      const first = page
+        .getByRole('list', { name: '宝具火力ランキング' })
+        .getByRole('listitem')
+        .first();
+      await expect(first).toHaveScreenshot('ranking-row-320px.png');
+      await first.getByRole('button', { name: /の計算詳細を開く/ }).click();
+      await expect(first.getByRole('region', { name: /の計算詳細/ })).toContainText('最低');
+      await expect(first.getByRole('button', { name: '同じ条件で計算機を開く' })).toBeVisible();
+      await expect(first).toHaveScreenshot('ranking-detail-320px.png');
+    }
   });
 }
 
@@ -167,6 +197,20 @@ test('ranking list density and responsive layout stay within limits', async ({
     expect(metrics.filterHeight, `${String(width)}px filter controls height`).toBeLessThanOrEqual(
       limits[width].filterHeight,
     );
+    if (width === 320) {
+      const firstRow = page
+        .getByRole('list', { name: '宝具火力ランキング' })
+        .getByRole('listitem')
+        .first();
+      await firstRow.getByRole('button', { name: /の計算詳細を開く/ }).click();
+      await expect(firstRow.getByRole('region', { name: /の計算詳細/ })).toContainText('最低');
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        ),
+        '320px expanded detail horizontal overflow',
+      ).toBe(0);
+    }
     measured.push({
       width,
       rowHeight: Math.round(metrics.rowHeight * 100) / 100,
@@ -176,7 +220,7 @@ test('ranking list density and responsive layout stay within limits', async ({
   }
   expect(measured).toEqual([
     { width: 1440, rowHeight: 68, filterHeight: 126.89, overflow: 0 },
-    { width: 390, rowHeight: 75.59, filterHeight: 126.89, overflow: 0 },
+    { width: 390, rowHeight: 73.59, filterHeight: 126.89, overflow: 0 },
     { width: 320, rowHeight: 73.59, filterHeight: 126.89, overflow: 0 },
   ]);
 });
