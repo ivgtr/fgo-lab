@@ -52,16 +52,33 @@ export type AtlasFunctionValue = Record<string, unknown> & {
   HideMiss?: number;
   HideNoEffect?: number;
   FieldIndividuality?: number[];
+  SetLimitCount?: number;
+  CancelTransform?: number;
 };
 export type AtlasReferencedSkill = {
   id?: number;
   functions?: AtlasFunction[];
+};
+export type AtlasReleaseCondition = {
+  condType?: string;
+  condTargetId?: number;
+  condNum?: number;
+  condGroup?: number;
+};
+export type AtlasServantAssociation = {
+  releaseConditions?: AtlasReleaseCondition[];
 };
 export type AtlasServant = {
   id?: number;
   collectionNo?: number;
   type?: string;
   name?: string;
+  script?: {
+    transformInfo?: {
+      saveTransform?: number;
+      saveTransformDefault?: number;
+    };
+  };
   className?: string;
   attribute?: string;
   rarity?: number;
@@ -76,10 +93,19 @@ export type AtlasServant = {
     detail?: string;
     icon?: string;
     functions?: AtlasFunction[];
+    skillSvts?: AtlasServantAssociation[];
   }[];
   classPassive?: AtlasServant['skills'];
   noblePhantasms?: AtlasNp[];
-  extraAssets?: { faces?: { ascension?: Record<string, string> } };
+  extraAssets?: {
+    faces?: { ascension?: Record<string, string>; costume?: Record<string, string> };
+  };
+  ascensionAdd?: {
+    individuality?: {
+      ascension?: Record<string, AtlasTraitRef[]>;
+      costume?: Record<string, AtlasTraitRef[]>;
+    };
+  };
   ascensionMaterials?: AtlasMaterialStep;
   skillMaterials?: AtlasMaterialStep;
   appendSkillMaterials?: AtlasMaterialStep;
@@ -94,6 +120,7 @@ export type AtlasNp = {
     excludeTdChangeTypes?: number[];
   };
   functions?: AtlasFunction[];
+  npSvts?: AtlasServantAssociation[];
 };
 export type AtlasEquip = {
   id?: number;

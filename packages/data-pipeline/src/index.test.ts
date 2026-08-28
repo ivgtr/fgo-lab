@@ -9,7 +9,9 @@ import {
 } from './index';
 const content = JSON.stringify({
   version: 'v1',
-  normalization: { attackFunctions: { sourceCount: 0, includedCount: 0, excluded: [] } },
+  normalization: {
+    attackFunctions: { sourceCount: 0, includedCount: 0, expansionCount: 0, excluded: [] },
+  },
   targetSemantics: {
     execution: { classIdentities: [], attributeIdentities: [], families: [] },
     evidence: { families: [] },

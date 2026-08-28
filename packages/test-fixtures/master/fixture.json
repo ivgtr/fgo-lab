@@ -1,7 +1,12 @@
 {
   "version": "fixture-1",
   "normalization": {
-    "attackFunctions": { "sourceCount": 1, "includedCount": 1, "excluded": [] }
+    "attackFunctions": {
+      "sourceCount": 1,
+      "includedCount": 1,
+      "expansionCount": 0,
+      "excluded": []
+    }
   },
   "targetSemantics": {
     "execution": {
@@ -52,20 +57,38 @@
       "classId": "saber",
       "rarity": 5,
       "atkByLevel": { "1": 1700, "90": 10000, "100": 10950, "120": 12850 },
-      "actorForms": [{ "id": "fixture-saber", "name": "検証用セイバー" }],
+      "actorFormGraph": {
+        "actorId": "fixture-saber",
+        "forms": [
+          {
+            "id": { "actorId": "fixture-saber", "limitCount": 0 },
+            "name": "検証用セイバー",
+            "traits": ["servant", "humanoid"],
+            "skillIds": [],
+            "passiveIds": [],
+            "baseNoblePhantasmVariant": {
+              "actorFormId": { "actorId": "fixture-saber", "limitCount": 0 },
+              "noblePhantasmId": "fixture-np"
+            }
+          }
+        ],
+        "initialFormIds": [{ "actorId": "fixture-saber", "limitCount": 0 }],
+        "defaultInitialFormId": { "actorId": "fixture-saber", "limitCount": 0 },
+        "transitions": []
+      },
       "baseNoblePhantasmGroupId": "fixture-np-group",
       "noblePhantasmVariantGroups": [
         {
           "id": "fixture-np-group",
           "baseVariant": {
-            "actorFormId": "fixture-saber",
+            "actorFormId": { "actorId": "fixture-saber", "limitCount": 0 },
             "noblePhantasmId": "fixture-np"
           },
           "variants": [
             {
               "kind": "attack",
               "ref": {
-                "actorFormId": "fixture-saber",
+                "actorFormId": { "actorId": "fixture-saber", "limitCount": 0 },
                 "noblePhantasmId": "fixture-np"
               },
               "name": "検証用宝具",

@@ -1254,7 +1254,9 @@ function classifyParameterSemantics(
     ),
   ]);
   return {
-    value: select(VALUE_PARAMETER_KEYS),
+    value: keys.filter(
+      (key) => VALUE_PARAMETER_KEYS.has(key) && !contextRecognizedKeys.includes(key),
+    ),
     lifecycle: select(LIFECYCLE_PARAMETER_KEYS),
     presentation: select(PRESENTATION_PARAMETER_KEYS),
     condition: keys.filter(
@@ -1466,7 +1468,7 @@ export function normalizeFunctions(
     const canonicalOperationKeys = canonicalOperations.some(
       (operation) => operation.kind === 'transformActorForm',
     )
-      ? ['Target']
+      ? ['Target', 'Value', 'SetLimitCount', 'CancelTransform', 'UseUserSpecifiedLimitCount']
       : [];
     const parameterSemantics = classifyParameterSemantics(
       parameterSets,

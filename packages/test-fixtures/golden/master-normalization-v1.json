@@ -1,26 +1,27 @@
 {
-  "caseId": "master-normalization-v60",
-  "reviewedAt": "2026-08-28",
-  "masterSchemaVersion": 34,
-  "masterDataVersion": "20260828.3",
+  "caseId": "master-normalization-v61",
+  "reviewedAt": "2026-08-29",
+  "masterSchemaVersion": 36,
+  "masterDataVersion": "20260829.3",
   "artifact": {
-    "bytes": 32661291,
-    "sha256": "cb5d3625a5708a8ea3bafe4a594d116c49809f0edbfde51360a2e51bbf020394"
+    "bytes": 33506171,
+    "sha256": "908c0116db68030530f06c8c948edefe359427a9658321fb7634b2581186a458"
   },
   "counts": {
     "sourceAttackFunctions": 627,
-    "includedAttackFunctions": 622,
-    "excludedAttackFunctions": 5,
+    "includedAttackFunctions": 630,
+    "canonicalAttackFunctionExpansions": 9,
+    "excludedAttackFunctions": 6,
     "servants": 469,
     "craftEssences": 2700,
     "mysticCodes": 28,
     "materials": 152
   },
   "normalizedFunctionCounts": {
-    "damageNp": 371,
+    "damageNp": 375,
     "damageNpPierce": 67,
-    "damageNpIndividual": 141,
-    "damageNpIndividualSum": 20,
+    "damageNpIndividual": 143,
+    "damageNpIndividualSum": 22,
     "damageNpStateIndividualFix": 13,
     "damageNpHpratioLow": 6,
     "damageNpRare": 1,

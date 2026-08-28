@@ -17,6 +17,7 @@ describe('portable schema boundaries', () => {
       mode: 'resolved',
       attacker: {
         servantId: '1',
+        initialActorFormId: { actorId: '1', limitCount: 0 },
         source: 'master',
         level: 90,
         npLevel: 1,
@@ -32,7 +33,7 @@ describe('portable schema boundaries', () => {
       battleState: { battlePointPhase: null },
       canonicalInputValues: {},
       craftEssence: null,
-      attackerSkills: [],
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
       mysticCode: null,
       support: null,
       effectDecisions: [],
@@ -55,7 +56,7 @@ describe('portable schema boundaries', () => {
     expect(() =>
       calculationScenarioSchema.parse({
         ...scenario,
-        attackerSkills: [{ skillId: 'skill-1', skillLevel: 10, enabled: true }],
+        attackerSkills: [{ skillId: 'skill-1', skillLevel: 10 }],
       }),
     ).toThrow();
     expect(
@@ -128,7 +129,14 @@ describe('portable schema boundaries', () => {
   it('rejects the removed untyped battle-context value map', () => {
     const base = calculationScenarioSchema.parse({
       mode: 'resolved',
-      attacker: { servantId: '1', source: 'master', level: 90, npLevel: 1, fouAtk: 1000 },
+      attacker: {
+        servantId: '1',
+        initialActorFormId: { actorId: '1', limitCount: 0 },
+        source: 'master',
+        level: 90,
+        npLevel: 1,
+        fouAtk: 1000,
+      },
       overcharge: 1,
       targetContext: {
         class: { kind: 'concrete', classId: 'lancer' },
@@ -139,7 +147,7 @@ describe('portable schema boundaries', () => {
       battleState: { battlePointPhase: null },
       canonicalInputValues: {},
       craftEssence: null,
-      attackerSkills: [],
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
       mysticCode: null,
       support: null,
       effectDecisions: [],
@@ -167,6 +175,7 @@ describe('portable schema boundaries', () => {
       mode: 'resolved',
       attacker: {
         servantId: '1',
+        initialActorFormId: { actorId: '1', limitCount: 0 },
         source: 'master',
         level: 90,
         npLevel: 1,
@@ -182,7 +191,7 @@ describe('portable schema boundaries', () => {
       battleState: { battlePointPhase: null },
       canonicalInputValues: {},
       craftEssence: null,
-      attackerSkills: [],
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
       mysticCode: null,
       support: null,
       effectDecisions: [],

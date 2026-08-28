@@ -25,6 +25,7 @@ describe('published master normalization golden', () => {
     expect(master.normalization.attackFunctions).toMatchObject({
       sourceCount: golden.counts.sourceAttackFunctions,
       includedCount: golden.counts.includedAttackFunctions,
+      expansionCount: golden.counts.canonicalAttackFunctionExpansions,
     });
     expect(master.normalization.attackFunctions.excluded).toHaveLength(
       golden.counts.excludedAttackFunctions,

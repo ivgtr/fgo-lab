@@ -226,18 +226,18 @@ describe('production canonical execution semantics', () => {
       return result;
     }, {});
 
-    expect(effects).toHaveLength(13_685);
-    expect(operations).toHaveLength(13_692);
+    expect(effects).toHaveLength(13_875);
+    expect(operations).toHaveLength(13_892);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
-      contextMutation: 70,
-      damageModifier: 3_834,
+      contextMutation: 71,
+      damageModifier: 3_885,
       ignoreDamageCut: 1,
-      ignoreDefense: 36,
+      ignoreDefense: 39,
       modifierRateChange: 1,
-      nonDamage: 9_684,
-      selectNoblePhantasmVariant: 12,
-      transformActorForm: 1,
-      unresolved: 53,
+      nonDamage: 9_802,
+      selectNoblePhantasmVariant: 22,
+      transformActorForm: 10,
+      unresolved: 61,
     });
 
     const variantOperations = master.servants.flatMap((servant) =>
@@ -264,118 +264,36 @@ describe('production canonical execution semantics', () => {
         );
       }),
     );
-    expect(variantOperations).toHaveLength(13);
+    expect(variantOperations).toHaveLength(26);
     expect(createHash('sha256').update(JSON.stringify(variantOperations)).digest('hex')).toBe(
-      'd9d8a55f897792568167a02c9054d442eda80e492997c35dfb4d76628805fc0a',
+      '0fa98cf2e556198548d24213b665eab70809a344c211603d472e0c416e917f9c',
     );
     expect(
-      variantOperations.map(({ servantId, origin, effectId, choice, operation }) => ({
-        servantId,
-        origin,
-        effectId,
-        choice: choice ? `${choice.family}:${String(choice.candidate)}` : 'automatic',
-        operation:
-          operation.kind === 'selectNoblePhantasmVariant'
-            ? `${operation.variant.actorFormId}:${operation.variant.noblePhantasmId}`
-            : `form:${operation.targetFormId}`,
-      })),
-    ).toEqual([
-      {
-        servantId: '200100',
-        origin: 'skill',
-        effectId: '5620',
-        choice: 'actSet:1',
-        operation: '200100:200197',
-      },
-      {
-        servantId: '200100',
-        origin: 'skill',
-        effectId: '5621',
-        choice: 'actSet:2',
-        operation: '200100:200102',
-      },
-      {
-        servantId: '204900',
-        origin: 'skill',
-        effectId: '21149',
-        choice: 'actSelectIndex:1',
-        operation: '204900:204998',
-      },
-      {
-        servantId: '1002000',
-        origin: 'skill',
-        effectId: '532',
-        choice: 'actSelectIndex:1',
-        operation: 'form:1002100',
-      },
-      {
-        servantId: '1002000',
-        origin: 'skill',
-        effectId: '23205',
-        choice: 'actSelectIndex:1',
-        operation: '1002100:1002101',
-      },
-      {
-        servantId: '1100900',
-        origin: 'skill',
-        effectId: '4784',
-        choice: 'actSet:1',
-        operation: '1100900:1100901',
-      },
-      {
-        servantId: '1100900',
-        origin: 'skill',
-        effectId: '4785',
-        choice: 'actSet:2',
-        operation: '1100900:1100997',
-      },
-      {
-        servantId: '1100900',
-        origin: 'skill',
-        effectId: '4786',
-        choice: 'actSet:3',
-        operation: '1100900:1100998',
-      },
-      {
-        servantId: '2300600',
-        origin: 'skill',
-        effectId: '21985',
-        choice: 'actSet:1',
-        operation: '2300600:2300601',
-      },
-      {
-        servantId: '2300600',
-        origin: 'skill',
-        effectId: '21986',
-        choice: 'actSet:2',
-        operation: '2300600:2300698',
-      },
-      {
-        servantId: '2301100',
-        origin: 'skill',
-        effectId: '22872',
-        choice: 'actSelectIndex:0',
-        operation: '2301100:2301198',
-      },
-      {
-        servantId: '2301100',
-        origin: 'skill',
-        effectId: '22871',
-        choice: 'actSelectIndex:1',
-        operation: '2301100:2301101',
-      },
-      {
-        servantId: '2301100',
-        origin: 'passive',
-        effectId: '22871',
-        choice: 'automatic',
-        operation: '2301100:2301101',
-      },
-    ]);
+      variantOperations.reduce<Record<string, number>>((inventory, operation) => {
+        inventory[operation.servantId] = (inventory[operation.servantId] ?? 0) + 1;
+        return inventory;
+      }, {}),
+    ).toEqual({
+      '200100': 2,
+      '204900': 1,
+      '205000': 4,
+      '304800': 2,
+      '505600': 4,
+      '1002000': 5,
+      '1100900': 3,
+      '2300600': 2,
+      '2301100': 3,
+    });
+    expect(
+      variantOperations.reduce<Record<string, number>>((inventory, { operation }) => {
+        inventory[operation.kind] = (inventory[operation.kind] ?? 0) + 1;
+        return inventory;
+      }, {}),
+    ).toEqual({ selectNoblePhantasmVariant: 19, transformActorForm: 7 });
 
     const variants = master.servants.flatMap((servant) => getNoblePhantasmVariants(servant));
-    expect(variants.filter(({ kind }) => kind === 'attack')).toHaveLength(618);
-    expect(variants.filter(({ kind }) => kind === 'nonAttack')).toHaveLength(78);
+    expect(variants.filter(({ kind }) => kind === 'attack')).toHaveLength(626);
+    expect(variants.filter(({ kind }) => kind === 'nonAttack')).toHaveLength(101);
     expect(
       master.servants.flatMap((servant) => {
         const scopes = new Set(
@@ -411,16 +329,16 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      personal: 2_611,
-      partyWide: 904,
-      partyOther: 45,
-      enemyApplied: 376,
+      personal: 2_631,
+      partyWide: 928,
+      partyOther: 51,
+      enemyApplied: 381,
     });
     expect(counts(terminal)).toEqual({
-      personal: 2_574,
-      partyWide: 896,
-      partyOther: 40,
-      enemyApplied: 362,
+      personal: 2_593,
+      partyWide: 920,
+      partyOther: 46,
+      enemyApplied: 367,
     });
   });
 
@@ -441,7 +359,7 @@ describe('production canonical execution semantics', () => {
         compared += 1;
       }
     }
-    expect(compared).toBe(3_834);
+    expect(compared).toBe(3_885);
   });
 
   it('classifies all Value effects without placing trait IDs in modifier series', async () => {
@@ -465,12 +383,12 @@ describe('production canonical execution semantics', () => {
         purposeCounts.modifier += 1;
       else purposeCounts.nonDamage += 1;
     }
-    expect(valueEffects).toHaveLength(10_706);
+    expect(valueEffects).toHaveLength(10_865);
     expect(purposeCounts).toEqual({
-      modifier: 3_834,
+      modifier: 3_885,
       modifierRate: 1,
-      contextTraitId: 74,
-      nonDamage: 6_797,
+      contextTraitId: 80,
+      nonDamage: 6_899,
     });
     expect(
       valueEffects
@@ -495,7 +413,7 @@ describe('production canonical execution semantics', () => {
             !operation.damageRelevant,
         ),
       ),
-    ).toHaveLength(26);
+    ).toHaveLength(32);
   });
 
   it('ratchets build-time referenced skills and their ordered canonical operations', async () => {
@@ -568,7 +486,7 @@ describe('production canonical execution semantics', () => {
       return result;
     }, {});
     expect(counts).toEqual({
-      'activeOnly:exclude:include': 13_669,
+      'activeOnly:exclude:include': 13_859,
       'activeAndPassive:exclude:include': 6,
       'activeOnly:include:include': 7,
       'activeOnly:exclude:exclude': 3,
@@ -580,7 +498,7 @@ describe('production canonical execution semantics', () => {
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
     const linked = allEffects(master).filter((effect) => effect.stateIdentity !== null);
-    expect(linked).toHaveLength(27);
+    expect(linked).toHaveLength(31);
     const paired = linked.filter((effect) => effect.stateIdentity?.key === 'trait:2841');
     expect(
       paired.map((effect) => ({
@@ -642,7 +560,7 @@ describe('production canonical execution semantics', () => {
     );
     const effects = allEffects(master);
     expect(effects.filter((effect) => effect.availability === 'allLimitBreakStates')).toHaveLength(
-      13_677,
+      13_867,
     );
     expect(
       effects

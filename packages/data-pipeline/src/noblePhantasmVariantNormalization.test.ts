@@ -30,7 +30,7 @@ function servant(
     id: 100,
     name: 'fixture',
     noblePhantasms,
-    skills: [{ id: 20, functions }],
+    skills: [{ id: 20, num: 1, functions }],
   };
 }
 
@@ -46,7 +46,7 @@ describe('canonical noble phantasm variant normalization', () => {
     expect(result.canonicalOperationsByFunction.get(select)).toEqual([
       {
         kind: 'selectNoblePhantasmVariant',
-        variant: { actorFormId: '100', noblePhantasmId: '198' },
+        variant: { actorFormId: { actorId: '100', limitCount: 0 }, noblePhantasmId: '198' },
       },
     ]);
     expect(
@@ -96,7 +96,7 @@ describe('canonical noble phantasm variant normalization', () => {
     const transform: AtlasFunction = {
       funcId: 11,
       funcType: 'transformServant',
-      svals: [{ Value: 200, ActSelectIndex: 1 }],
+      svals: [{ Value: 200, SetLimitCount: 0, ActSelectIndex: 1 }],
     };
     const select = {
       ...selection('tdTypeChangeQuick'),
@@ -113,12 +113,12 @@ describe('canonical noble phantasm variant normalization', () => {
       traitNameById: new Map(),
     });
     expect(result.canonicalOperationsByFunction.get(transform)).toEqual([
-      { kind: 'transformActorForm', targetFormId: '200' },
+      { kind: 'transformActorForm', targetFormId: { actorId: '200', limitCount: 0 } },
     ]);
     expect(result.canonicalOperationsByFunction.get(select)).toEqual([
       {
         kind: 'selectNoblePhantasmVariant',
-        variant: { actorFormId: '200', noblePhantasmId: '204' },
+        variant: { actorFormId: { actorId: '200', limitCount: 0 }, noblePhantasmId: '204' },
       },
     ]);
   });

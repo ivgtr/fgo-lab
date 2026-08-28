@@ -103,10 +103,19 @@ describe('master validation', () => {
     expect(
       validateMasterSnapshot({
         ...fixture,
-        normalization: { attackFunctions: { sourceCount: 0, includedCount: 0, excluded: [] } },
+        normalization: {
+          attackFunctions: { sourceCount: 0, includedCount: 0, expansionCount: 0, excluded: [] },
+        },
         servants: [
           {
             ...fixture.servants[0],
+            actorFormGraph: {
+              ...fixture.servants[0]!.actorFormGraph,
+              forms: fixture.servants[0]!.actorFormGraph.forms.map((form) => ({
+                ...form,
+                baseNoblePhantasmVariant: null,
+              })),
+            },
             baseNoblePhantasmGroupId: null,
             noblePhantasmVariantGroups: [],
           },

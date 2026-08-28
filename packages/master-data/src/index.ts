@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(34),
+  schemaVersion: z.literal(36),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -269,13 +269,19 @@ const effectExecutionOperationSchema = z.union([
   z.object({
     kind: z.literal('selectNoblePhantasmVariant'),
     variant: z.object({
-      actorFormId: z.string().min(1),
+      actorFormId: z.object({
+        actorId: z.string().min(1),
+        limitCount: z.number().int().nonnegative(),
+      }),
       noblePhantasmId: z.string().min(1),
     }),
   }),
   z.object({
     kind: z.literal('transformActorForm'),
-    targetFormId: z.string().min(1),
+    targetFormId: z.object({
+      actorId: z.string().min(1),
+      limitCount: z.number().int().nonnegative(),
+    }),
   }),
   z.object({
     kind: z.literal('contextMutation'),
@@ -554,8 +560,14 @@ export const npDamageSpecSchema = z
   });
 export type NpDamageSpec = z.infer<typeof npDamageSpecSchema>;
 
+export const actorFormIdSchema = z.object({
+  actorId: z.string().min(1),
+  limitCount: z.number().int().nonnegative(),
+});
+export type ActorFormId = z.infer<typeof actorFormIdSchema>;
+
 export const noblePhantasmVariantRefSchema = z.object({
-  actorFormId: z.string().min(1),
+  actorFormId: actorFormIdSchema,
   noblePhantasmId: z.string().min(1),
 });
 export type NoblePhantasmVariantRef = z.infer<typeof noblePhantasmVariantRefSchema>;
@@ -587,6 +599,39 @@ export const noblePhantasmVariantGroupSchema = z.object({
 });
 export type NoblePhantasmVariantGroup = z.infer<typeof noblePhantasmVariantGroupSchema>;
 
+const actorFormNodeSchema = z.object({
+  id: actorFormIdSchema,
+  name: z.string(),
+  traits: z.array(z.string()),
+  skillIds: z.array(z.string().min(1)),
+  passiveIds: z.array(z.string().min(1)),
+  baseNoblePhantasmVariant: noblePhantasmVariantRefSchema.nullable(),
+});
+
+const actorFormTransitionSchema = z.object({
+  id: z.string().min(1),
+  from: actorFormIdSchema,
+  to: actorFormIdSchema,
+  direction: z.enum(['forward', 'reverse']),
+  activation: z.object({
+    sourceKind: z.enum(['skill', 'passive', 'noblePhantasm']),
+    sourceId: z.string().min(1),
+    effectOccurrenceIds: z.array(z.string().min(1)).min(1),
+  }),
+  operations: z.array(effectExecutionOperationSchema).min(2),
+});
+
+export const actorFormGraphSchema = z.object({
+  actorId: z.string().min(1),
+  forms: z.array(actorFormNodeSchema).min(1),
+  initialFormIds: z.array(actorFormIdSchema).min(1),
+  defaultInitialFormId: actorFormIdSchema,
+  transitions: z.array(actorFormTransitionSchema),
+});
+export type ActorFormGraph = z.infer<typeof actorFormGraphSchema>;
+export type ActorFormNode = ActorFormGraph['forms'][number];
+export type ActorFormTransition = ActorFormGraph['transitions'][number];
+
 export const servantMasterSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -594,7 +639,7 @@ export const servantMasterSchema = z.object({
   attribute: z.enum(['human', 'earth', 'sky', 'star', 'beast', 'unknown']).default('unknown'),
   rarity: z.number().int().min(0).max(5),
   atkByLevel: z.record(z.string(), z.number().int().nonnegative()),
-  actorForms: z.array(z.object({ id: z.string().min(1), name: z.string() })).min(1),
+  actorFormGraph: actorFormGraphSchema,
   baseNoblePhantasmGroupId: z.string().min(1).nullable(),
   noblePhantasmVariantGroups: z.array(noblePhantasmVariantGroupSchema),
   traits: z.array(z.string()),
@@ -633,7 +678,123 @@ export function naturalServantLevel(rarity: ServantMaster['rarity']): number {
 }
 
 export function noblePhantasmVariantKey(ref: NoblePhantasmVariantRef): string {
-  return `${ref.actorFormId}:${ref.noblePhantasmId}`;
+  return JSON.stringify([ref.actorFormId.actorId, ref.actorFormId.limitCount, ref.noblePhantasmId]);
+}
+
+export function actorFormKey(id: ActorFormId): string {
+  return JSON.stringify([id.actorId, id.limitCount]);
+}
+
+export function actorFormEquals(left: ActorFormId, right: ActorFormId): boolean {
+  return left.actorId === right.actorId && left.limitCount === right.limitCount;
+}
+
+export interface ResolvedFormSkillUse {
+  slot: 1 | 2 | 3;
+  actorFormId: ActorFormId;
+  skillId: string;
+  transitionId: string | null;
+}
+
+export interface FormExecutionState {
+  initialFormId: ActorFormId;
+  currentFormId: ActorFormId;
+  selectedNoblePhantasmVariant: NoblePhantasmVariantRef | null;
+  usedSkillSlots: ReadonlySet<1 | 2 | 3>;
+  appliedSkillUses: readonly ResolvedFormSkillUse[];
+  transitions: readonly ActorFormTransition[];
+}
+
+export interface FormSkillSlotAction {
+  skill: MasterSkill;
+  transitions: readonly ActorFormTransition[];
+  allowsNoTransition: boolean;
+}
+
+export function resolveFormSkillSlotAction(
+  servant: Pick<ServantMaster, 'actorFormGraph' | 'skills'>,
+  currentFormId: ActorFormId,
+  slot: 1 | 2 | 3,
+): FormSkillSlotAction {
+  const skills = getSkillsForActorForm(servant, currentFormId).filter(
+    (skill) => skill.slot === slot,
+  );
+  if (skills.length !== 1)
+    throw new TypeError(`actor_form_skill_slot_unresolved:${actorFormKey(currentFormId)}:${slot}`);
+  const skill = skills[0]!;
+  const transitions = servant.actorFormGraph.transitions.filter(
+    (transition) =>
+      actorFormEquals(transition.from, currentFormId) &&
+      transition.activation.sourceKind === 'skill' &&
+      transition.activation.sourceId === skill.id,
+  );
+  const hasMandatoryTransition = transitions.some((transition) => {
+    const effect = skill.effects.find(({ occurrenceId }) =>
+      transition.activation.effectOccurrenceIds.includes(occurrenceId),
+    );
+    return effect?.choice === null;
+  });
+  return { skill, transitions, allowsNoTransition: !hasMandatoryTransition };
+}
+
+export function createFormExecutionState(
+  servant: Pick<ServantMaster, 'actorFormGraph'>,
+  initialFormId: ActorFormId,
+): FormExecutionState {
+  const initial = findActorForm(servant, initialFormId);
+  if (
+    !initial ||
+    !servant.actorFormGraph.initialFormIds.some((id) => actorFormEquals(id, initialFormId))
+  )
+    throw new TypeError(`unknown_initial_actor_form:${actorFormKey(initialFormId)}`);
+  return {
+    initialFormId,
+    currentFormId: initialFormId,
+    selectedNoblePhantasmVariant: initial.baseNoblePhantasmVariant,
+    usedSkillSlots: new Set(),
+    appliedSkillUses: [],
+    transitions: [],
+  };
+}
+
+export function applyFormSkillSlotUse(
+  servant: Pick<ServantMaster, 'actorFormGraph' | 'skills'>,
+  state: FormExecutionState,
+  slot: 1 | 2 | 3,
+  transitionId: string | null,
+): FormExecutionState {
+  if (state.usedSkillSlots.has(slot)) throw new TypeError(`actor_form_skill_slot_reused:${slot}`);
+  const action = resolveFormSkillSlotAction(servant, state.currentFormId, slot);
+  const transition = transitionId
+    ? action.transitions.find(({ id }) => id === transitionId)
+    : undefined;
+  if (transitionId && !transition)
+    throw new TypeError(`actor_form_transition_unavailable:${transitionId}`);
+  if (!transitionId && !action.allowsNoTransition)
+    throw new TypeError(`mandatory_actor_form_transition_missing:${action.skill.id}`);
+  const selectedNoblePhantasmVariant = transition
+    ? transition.operations.reduce(
+        (selected, operation) =>
+          operation.kind === 'selectNoblePhantasmVariant' ? operation.variant : selected,
+        state.selectedNoblePhantasmVariant,
+      )
+    : state.selectedNoblePhantasmVariant;
+  return {
+    ...state,
+    currentFormId: transition?.to ?? state.currentFormId,
+    selectedNoblePhantasmVariant,
+    usedSkillSlots: new Set([...state.usedSkillSlots, slot]),
+    appliedSkillUses: [
+      ...state.appliedSkillUses,
+      {
+        slot,
+        actorFormId: state.currentFormId,
+        skillId: action.skill.id,
+        transitionId: transition?.id ?? null,
+      },
+    ],
+    transitions: transition ? [...state.transitions, transition] : state.transitions,
+  };
 }
 
 export function getBaseNoblePhantasmGroup(
@@ -672,12 +833,20 @@ export function getAttackNoblePhantasmVariants(
 export function getSelectableNoblePhantasmVariants(
   servant: Pick<
     ServantMaster,
-    'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups' | 'skills' | 'passives'
+    | 'actorFormGraph'
+    | 'baseNoblePhantasmGroupId'
+    | 'noblePhantasmVariantGroups'
+    | 'skills'
+    | 'passives'
   >,
 ): NoblePhantasmVariant[] {
   const group = getBaseNoblePhantasmGroup(servant);
   if (!group) return [];
-  const keys = new Set([noblePhantasmVariantKey(group.baseVariant)]);
+  const keys = new Set(
+    getInitialActorForms(servant).flatMap(({ baseNoblePhantasmVariant }) =>
+      baseNoblePhantasmVariant ? [noblePhantasmVariantKey(baseNoblePhantasmVariant)] : [],
+    ),
+  );
   for (const source of [...servant.skills, ...servant.passives])
     for (const effect of source.effects)
       for (const operation of effect.execution)
@@ -694,6 +863,44 @@ export function getBaseNoblePhantasmVariant(
     (variant) =>
       noblePhantasmVariantKey(variant.ref) === noblePhantasmVariantKey(group.baseVariant),
   );
+}
+
+export function findActorForm(servant: Pick<ServantMaster, 'actorFormGraph'>, id: ActorFormId) {
+  const key = actorFormKey(id);
+  return servant.actorFormGraph.forms.find((form) => actorFormKey(form.id) === key);
+}
+
+export function getInitialActorForms(servant: Pick<ServantMaster, 'actorFormGraph'>) {
+  const keys = new Set(servant.actorFormGraph.initialFormIds.map(actorFormKey));
+  return servant.actorFormGraph.forms.filter((form) => keys.has(actorFormKey(form.id)));
+}
+
+export function getDefaultInitialActorForm(servant: Pick<ServantMaster, 'actorFormGraph'>) {
+  return findActorForm(servant, servant.actorFormGraph.defaultInitialFormId);
+}
+
+export function getBaseNoblePhantasmVariantForForm(
+  servant: Pick<ServantMaster, 'actorFormGraph' | 'noblePhantasmVariantGroups'>,
+  actorFormId: ActorFormId,
+): NoblePhantasmVariant | undefined {
+  const ref = findActorForm(servant, actorFormId)?.baseNoblePhantasmVariant;
+  return ref ? findNoblePhantasmVariant(servant, ref) : undefined;
+}
+
+export function getSkillsForActorForm(
+  servant: Pick<ServantMaster, 'actorFormGraph' | 'skills'>,
+  actorFormId: ActorFormId,
+) {
+  const ids = new Set(findActorForm(servant, actorFormId)?.skillIds ?? []);
+  return servant.skills.filter(({ id }) => ids.has(id));
+}
+
+export function getPassivesForActorForm(
+  servant: Pick<ServantMaster, 'actorFormGraph' | 'passives'>,
+  actorFormId: ActorFormId,
+) {
+  const ids = new Set(findActorForm(servant, actorFormId)?.passiveIds ?? []);
+  return servant.passives.filter(({ id }) => ids.has(id));
 }
 
 export function getBaseAttackNoblePhantasmVariant(
@@ -773,6 +980,7 @@ const masterSnapshotBaseSchema = z.object({
     attackFunctions: z.object({
       sourceCount: z.number().int().nonnegative(),
       includedCount: z.number().int().nonnegative(),
+      expansionCount: z.number().int().nonnegative(),
       excluded: z.array(
         z.object({
           servantId: z.string(),
@@ -893,7 +1101,26 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
       rejectMlbOnly(skill.effects, path);
       validateProcSelection(skill.effects, path);
     });
-    const formIds = new Set(servant.actorForms.map((form) => form.id));
+    const graph = servant.actorFormGraph;
+    const formIds = new Set(graph.forms.map((form) => actorFormKey(form.id)));
+    const initialFormKeys = graph.initialFormIds.map(actorFormKey);
+    if (new Set(initialFormKeys).size !== initialFormKeys.length)
+      context.addIssue({
+        code: 'custom',
+        message: 'actor form graph contains duplicate initial forms',
+        path: ['servants', servantIndex, 'actorFormGraph', 'initialFormIds'],
+      });
+    if (
+      initialFormKeys.some((key) => !formIds.has(key)) ||
+      !initialFormKeys.includes(actorFormKey(graph.defaultInitialFormId))
+    )
+      context.addIssue({
+        code: 'custom',
+        message: 'actor form graph initial/default form is not a graph node',
+        path: ['servants', servantIndex, 'actorFormGraph'],
+      });
+    const skillIds = new Set(servant.skills.map(({ id }) => id));
+    const passiveIds = new Set(servant.passives.map(({ id }) => id));
     const groupIds = new Set<string>();
     const variantKeys = new Set<string>();
     servant.noblePhantasmVariantGroups.forEach((group, groupIndex) => {
@@ -923,7 +1150,7 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
           variantIndex,
         ];
         const key = noblePhantasmVariantKey(variant.ref);
-        if (!formIds.has(variant.ref.actorFormId))
+        if (!formIds.has(actorFormKey(variant.ref.actorFormId)))
           context.addIssue({
             code: 'custom',
             message: 'noble phantasm variant references an unknown actor form',
@@ -964,15 +1191,47 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
         message: 'noble phantasm variants require a base group',
         path: ['servants', servantIndex, 'baseNoblePhantasmGroupId'],
       });
-    const operationRefs = [...servant.skills, ...servant.passives]
-      .flatMap((skill) => skill.effects)
-      .flatMap((effect) => effect.execution);
+    graph.forms.forEach((form, formIndex) => {
+      const path = ['servants', servantIndex, 'actorFormGraph', 'forms', formIndex];
+      if (form.skillIds.some((id) => !skillIds.has(id)))
+        context.addIssue({
+          code: 'custom',
+          message: 'actor form references an unknown skill',
+          path: [...path, 'skillIds'],
+        });
+      if (form.passiveIds.some((id) => !passiveIds.has(id)))
+        context.addIssue({
+          code: 'custom',
+          message: 'actor form references an unknown passive',
+          path: [...path, 'passiveIds'],
+        });
+      if (
+        form.baseNoblePhantasmVariant &&
+        (!variantKeys.has(noblePhantasmVariantKey(form.baseNoblePhantasmVariant)) ||
+          !actorFormEquals(form.id, form.baseNoblePhantasmVariant.actorFormId))
+      )
+        context.addIssue({
+          code: 'custom',
+          message: 'actor form base noble phantasm is not a form-qualified variant',
+          path: [...path, 'baseNoblePhantasmVariant'],
+        });
+    });
+    const operationRefs = [
+      ...servant.skills.flatMap((skill) => skill.effects),
+      ...servant.passives.flatMap((skill) => skill.effects),
+      ...servant.noblePhantasmVariantGroups.flatMap((group) =>
+        group.variants.flatMap((variant) => variant.effects),
+      ),
+    ].flatMap((effect) => effect.execution);
     for (const operation of operationRefs) {
-      if (operation.kind === 'transformActorForm' && !formIds.has(operation.targetFormId))
+      if (
+        operation.kind === 'transformActorForm' &&
+        !formIds.has(actorFormKey(operation.targetFormId))
+      )
         context.addIssue({
           code: 'custom',
           message: 'actor form transition references an unknown form',
-          path: ['servants', servantIndex, 'actorForms'],
+          path: ['servants', servantIndex, 'actorFormGraph', 'forms'],
         });
       if (
         operation.kind === 'selectNoblePhantasmVariant' &&
@@ -982,6 +1241,48 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
           code: 'custom',
           message: 'noble phantasm selection references an unknown variant',
           path: ['servants', servantIndex, 'noblePhantasmVariantGroups'],
+        });
+    }
+    const transitionIds = new Set<string>();
+    for (const [transitionIndex, transition] of graph.transitions.entries()) {
+      const path = ['servants', servantIndex, 'actorFormGraph', 'transitions', transitionIndex];
+      if (transitionIds.has(transition.id))
+        context.addIssue({ code: 'custom', message: 'duplicate actor form transition', path });
+      transitionIds.add(transition.id);
+      if (!formIds.has(actorFormKey(transition.from)) || !formIds.has(actorFormKey(transition.to)))
+        context.addIssue({
+          code: 'custom',
+          message: 'transition references an unknown form',
+          path,
+        });
+      const source = (() => {
+        switch (transition.activation.sourceKind) {
+          case 'skill':
+            return servant.skills.find(({ id }) => id === transition.activation.sourceId);
+          case 'passive':
+            return servant.passives.find(({ id }) => id === transition.activation.sourceId);
+          case 'noblePhantasm':
+            return servant.noblePhantasmVariantGroups
+              .flatMap(({ variants }) => variants)
+              .find(
+                (variant) =>
+                  variant.ref.noblePhantasmId === transition.activation.sourceId &&
+                  actorFormEquals(variant.ref.actorFormId, transition.from),
+              );
+        }
+      })();
+      const effects = transition.activation.effectOccurrenceIds.map((occurrenceId) =>
+        source?.effects.find((effect) => effect.occurrenceId === occurrenceId),
+      );
+      if (
+        effects.some((effect) => !effect) ||
+        JSON.stringify(effects.flatMap((effect) => effect?.execution ?? [])) !==
+          JSON.stringify(transition.operations)
+      )
+        context.addIssue({
+          code: 'custom',
+          message: 'transition activation does not resolve to its atomic operation group',
+          path,
         });
     }
   });
@@ -1103,9 +1404,12 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
     errors.push(
       `attack function included count:${String(attackCoverage.includedCount)}:${String(includedAttackFunctions)}`,
     );
-  if (attackCoverage.sourceCount !== attackCoverage.includedCount + attackCoverage.excluded.length)
+  if (
+    attackCoverage.sourceCount + attackCoverage.expansionCount !==
+    attackCoverage.includedCount + attackCoverage.excluded.length
+  )
     errors.push(
-      `attack function source count:${String(attackCoverage.sourceCount)}:${String(attackCoverage.includedCount + attackCoverage.excluded.length)}`,
+      `attack function source count:${String(attackCoverage.sourceCount + attackCoverage.expansionCount)}:${String(attackCoverage.includedCount + attackCoverage.excluded.length)}`,
     );
   const unknownAttackFunctions: string[] = [];
   return {

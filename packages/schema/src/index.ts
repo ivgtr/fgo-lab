@@ -23,8 +23,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 30 as const;
-export const ENGINE_VERSION = '25.0.0' as const;
+export const SCHEMA_VERSION = 31 as const;
+export const ENGINE_VERSION = '26.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -346,19 +346,59 @@ export const damageKernelInputSchema = z
   .strict();
 export type DamageKernelInput = z.infer<typeof damageKernelInputSchema>;
 
-export const attackerSkillSelectionSchema = z
+const skillSlotSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
+const preparationChoiceSchema = z
   .object({
-    skillId: z.string().min(1).max(80),
-    skillLevel: z.number().int().min(1).max(10),
+    family: z.enum(['actSet', 'actSelectIndex']),
+    candidate: z.string().min(1).max(80),
   })
   .strict();
-export type AttackerSkillSelection = z.infer<typeof attackerSkillSelectionSchema>;
+export const preNoblePhantasmCommandSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('useSkillSlot'),
+      slot: skillSlotSchema,
+      skillLevel: z.number().int().min(1).max(10),
+      choice: preparationChoiceSchema.nullable(),
+    })
+    .strict(),
+  z.object({ kind: z.literal('useTransformNoblePhantasm') }).strict(),
+  z.object({ kind: z.literal('executeAttackNoblePhantasm') }).strict(),
+]);
+export type PreNoblePhantasmCommand = z.infer<typeof preNoblePhantasmCommandSchema>;
+export type AttackerSkillUse = Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>;
+
+const preNoblePhantasmPlanSchema = z
+  .array(preNoblePhantasmCommandSchema)
+  .min(1)
+  .max(5)
+  .superRefine((commands, context) => {
+    const attackIndexes = commands.flatMap((command, index) =>
+      command.kind === 'executeAttackNoblePhantasm' ? [index] : [],
+    );
+    if (attackIndexes.length !== 1 || attackIndexes[0] !== commands.length - 1)
+      context.addIssue({
+        code: 'custom',
+        message: 'attack noble phantasm must terminate the plan',
+      });
+    if (commands.filter(({ kind }) => kind === 'useTransformNoblePhantasm').length > 1)
+      context.addIssue({ code: 'custom', message: 'transform noble phantasm may be used once' });
+    const slots = commands.flatMap((command) =>
+      command.kind === 'useSkillSlot' ? [command.slot] : [],
+    );
+    if (new Set(slots).size !== slots.length)
+      context.addIssue({ code: 'custom', message: 'skill slot may be used once' });
+  });
 
 const scenarioBaseSchema = z
   .object({
     attacker: z
       .object({
         servantId: z.string().min(1).max(80),
+        initialActorFormId: z.object({
+          actorId: z.string().min(1).max(80),
+          limitCount: z.number().int().nonnegative(),
+        }),
         source: z.enum(['owned', 'master']),
         level: z.number().int().min(1).max(120),
         npLevel: z.number().int().min(1).max(5),
@@ -388,7 +428,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
         limitBreak: z.number().int().min(0).max(4),
       })
       .nullable(),
-    attackerSkills: z.array(attackerSkillSelectionSchema).max(20),
+    preNoblePhantasmPlan: preNoblePhantasmPlanSchema,
     mysticCode: z
       .object({
         mysticCodeId: z.string().min(1).max(80),

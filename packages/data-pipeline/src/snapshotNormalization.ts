@@ -1,5 +1,5 @@
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { actorFormKey, masterSnapshotSchema } from '@fgo-lab/master-data';
 import type {
   AtlasEquip,
   AtlasFunction,
@@ -157,11 +157,11 @@ export function normalizeAtlasSnapshot(input: {
       traitNameById,
     });
     const normalizeVariant = (
-      form: AtlasServant,
+      form: (typeof noblePhantasmModel.groups)[number]['variants'][number]['form'],
       np: NonNullable<AtlasServant['noblePhantasms']>[number],
     ) => {
       const maximumBattlePointPhaseById = new Map(
-        (form.battlePoints ?? []).flatMap((battlePoint) => {
+        (form.actor.battlePoints ?? []).flatMap((battlePoint) => {
           if (typeof battlePoint.id !== 'number') return [];
           const phases = (battlePoint.phases ?? []).flatMap((phase) =>
             typeof phase.phase === 'number' ? [phase.phase] : [],
@@ -177,7 +177,7 @@ export function normalizeAtlasSnapshot(input: {
         fn.funcType?.startsWith('damageNp'),
       );
       if (typeof np.id !== 'number')
-        throw new TypeError(`missing_np_id:actorForm:${String(form.id ?? 'missing')}`);
+        throw new TypeError(`missing_np_id:actorForm:${JSON.stringify(form.id)}`);
       const firstDamageIndex = damageFunctions[0]?.functionIndex ?? -1;
       const effectFunctions = indexedFunctions.filter(
         ({ fn }) => !fn.funcType?.startsWith('damageNp') && typeof fn.funcId === 'number',
@@ -186,11 +186,14 @@ export function normalizeAtlasSnapshot(input: {
         effectFunctions.map(({ fn }) => fn),
         traitNameById,
         'np',
-        form.id,
+        Number(form.id.actorId),
         referencedSkills,
+        'duringExecution',
+        noblePhantasmModel.canonicalOperationsByFunction,
+        noblePhantasmModel.variantStateTraits,
       );
       const common = {
-        ref: { actorFormId: String(form.id), noblePhantasmId: String(np.id) },
+        ref: { actorFormId: form.id, noblePhantasmId: String(np.id) },
         name: np.name ?? '不明な宝具',
         priority: np.priority ?? 0,
         effects: normalizedEffects.map((effect, index) => ({
@@ -205,14 +208,16 @@ export function normalizeAtlasSnapshot(input: {
       const damage = damageFunctions.map(({ fn, functionIndex }) =>
         normalizeNpDamageFunction(
           fn,
-          `actorForms[${String(form.id)}].noblePhantasms[${String(np.id)}].functions[${String(functionIndex)}]`,
+          `actorForms[${form.id.actorId}:${String(form.id.limitCount)}].noblePhantasms[${String(np.id)}].functions[${String(functionIndex)}]`,
           traitNameById,
           maximumBattlePointPhaseById,
         ),
       );
       const targets = [...new Set(damage.map((spec) => spec.target))];
       if (targets.length !== 1)
-        throw new TypeError(`ambiguous_np_target_scope:${String(form.id)}:${String(np.id)}`);
+        throw new TypeError(
+          `ambiguous_np_target_scope:${JSON.stringify(form.id)}:${String(np.id)}`,
+        );
       const card = cardMap[np.card ?? ''];
       if (card === undefined) throw new TypeError(`unknown_np_card:${String(np.card)}`);
       return {
@@ -229,13 +234,7 @@ export function normalizeAtlasSnapshot(input: {
       variants: group.variants.map(({ form, np }) => normalizeVariant(form, np)),
     }));
     const image = servant.extraAssets?.faces?.ascension?.['1'] ?? null;
-    const activeSkills = [...(servant.skills ?? [])]
-      .filter((skill) => typeof skill.num === 'number' && skill.num >= 1 && skill.num <= 3)
-      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
-      .filter(
-        (skill, index, all) => all.findIndex((candidate) => candidate.num === skill.num) === index,
-      )
-      .sort((a, b) => (a.num ?? 0) - (b.num ?? 0));
+    const activeSkills = noblePhantasmModel.skills;
     const normalizeSkill = (
       skill: NonNullable<AtlasServant['skills']>[number],
       source: 'skill' | 'passive',
@@ -257,6 +256,67 @@ export function normalizeAtlasSnapshot(input: {
         noblePhantasmModel.variantStateTraits,
       ),
     });
+    const skills = activeSkills
+      .filter((skill) => typeof skill.id === 'number' && skill.name)
+      .map((skill) => normalizeSkill(skill, 'skill'));
+    const passives = noblePhantasmModel.passives
+      .filter((skill) => typeof skill.id === 'number' && skill.name)
+      .map((skill) => normalizeSkill(skill, 'passive'));
+    const actorFormTransitions = noblePhantasmModel.transitions.map((transition) => {
+      const npSource = noblePhantasmVariantGroups
+        .flatMap(({ variants }) => variants)
+        .find(
+          (variant) =>
+            transition.sourceKind === 'noblePhantasm' &&
+            variant.ref.noblePhantasmId === transition.sourceId &&
+            variant.ref.actorFormId.actorId === transition.from.actorId &&
+            variant.ref.actorFormId.limitCount === transition.from.limitCount,
+        );
+      const sources = transition.sourceKind === 'skill' ? skills : passives;
+      const source =
+        transition.sourceKind === 'noblePhantasm'
+          ? npSource
+          : sources.find(({ id }) => id === transition.sourceId);
+      const transitionEffect = source?.effects.find(
+        ({ occurrenceId }) => occurrenceId === transition.effectOccurrenceId,
+      );
+      if (!source || !transitionEffect)
+        throw new TypeError(
+          `unresolved_actor_form_transition_activation:${transition.sourceId}:${transition.effectOccurrenceId}`,
+        );
+      const activationEffects = source.effects.filter(
+        ({ choice }) => JSON.stringify(choice) === JSON.stringify(transitionEffect.choice),
+      );
+      const operations = activationEffects.flatMap(({ execution }) => execution);
+      const transformed = operations.filter((operation) => operation.kind === 'transformActorForm');
+      const selected = operations.filter(
+        (operation) => operation.kind === 'selectNoblePhantasmVariant',
+      );
+      if (transformed.length !== 1 || selected.length !== 1)
+        throw new TypeError(
+          `non_atomic_actor_form_transition:${transition.sourceId}:${transition.effectOccurrenceId}:${String(transformed.length)}:${String(selected.length)}`,
+        );
+      return {
+        id: JSON.stringify([
+          transition.from.actorId,
+          transition.from.limitCount,
+          transition.to.actorId,
+          transition.to.limitCount,
+          transition.sourceKind,
+          transition.sourceId,
+          transition.effectOccurrenceId,
+        ]),
+        from: transition.from,
+        to: transition.to,
+        direction: transition.direction,
+        activation: {
+          sourceKind: transition.sourceKind,
+          sourceId: transition.sourceId,
+          effectOccurrenceIds: activationEffects.map(({ occurrenceId }) => occurrenceId),
+        },
+        operations,
+      };
+    });
     return [
       {
         id: String(servant.id),
@@ -269,7 +329,22 @@ export function normalizeAtlasSnapshot(input: {
         atkByLevel: Object.fromEntries(
           (servant.atkGrowth ?? []).map((atk, index) => [String(index + 1), atk]),
         ),
-        actorForms: noblePhantasmModel.actorForms,
+        actorFormGraph: {
+          actorId: String(servant.id),
+          forms: noblePhantasmModel.actorForms.map(
+            ({ id, name, traits, skillIds, passiveIds, baseNoblePhantasmVariant }) => ({
+              id,
+              name,
+              traits,
+              skillIds,
+              passiveIds,
+              baseNoblePhantasmVariant,
+            }),
+          ),
+          initialFormIds: noblePhantasmModel.initialFormIds,
+          defaultInitialFormId: noblePhantasmModel.defaultInitialFormId,
+          transitions: actorFormTransitions,
+        },
         baseNoblePhantasmGroupId: noblePhantasmModel.baseNoblePhantasmGroupId,
         noblePhantasmVariantGroups,
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
@@ -279,12 +354,8 @@ export function normalizeAtlasSnapshot(input: {
           return predicate ? [predicate] : [];
         }),
         imageKey: image,
-        skills: activeSkills
-          .filter((skill) => typeof skill.id === 'number' && skill.name)
-          .map((skill) => normalizeSkill(skill, 'skill')),
-        passives: (servant.classPassive ?? [])
-          .filter((skill) => typeof skill.id === 'number' && skill.name)
-          .map((skill) => normalizeSkill(skill, 'passive')),
+        skills,
+        passives,
         growth: [
           ...growthSteps(servant.ascensionMaterials, 'ascension'),
           ...growthSteps(servant.skillMaterials, 'skill', 3),
@@ -421,7 +492,7 @@ export function normalizeAtlasSnapshot(input: {
           variant.kind === 'attack'
             ? variant.damage.map(
                 (damage) =>
-                  `${variant.ref.actorFormId}:${variant.ref.noblePhantasmId}:${damage.functionId}`,
+                  `${actorFormKey(variant.ref.actorFormId)}:${variant.ref.noblePhantasmId}:${damage.functionId}`,
               )
             : [],
         ),
@@ -440,6 +511,8 @@ export function normalizeAtlasSnapshot(input: {
       attackFunctions: {
         sourceCount: attackInventory.attackEntries,
         includedCount,
+        expansionCount:
+          includedCount + excludedAttackFunctions.length - attackInventory.attackEntries,
         excluded: excludedAttackFunctions,
       },
     },
