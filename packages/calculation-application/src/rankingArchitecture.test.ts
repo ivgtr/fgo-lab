@@ -39,6 +39,12 @@ describe('ranking architecture', () => {
     expect(factory).not.toMatch(/for \(const .*effectControls[\s\S]*calculateScenario/);
     expect(factory).not.toContain('MAX_SPECIAL_ATTACK_SCENARIOS');
     expect(factory).not.toContain("from './effectDecision'");
+    const choiceWorld = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingChoiceWorld.ts'),
+      'utf8',
+    );
+    expect(choiceWorld.split('\n').length).toBeLessThanOrEqual(100);
+    expect(choiceWorld).not.toMatch(/servant\.id\s*===|servant\.name\s*===/);
     const policy = await readFile(
       resolve(root, 'packages/calculation-application/src/rankingExecutionPolicy.ts'),
       'utf8',
