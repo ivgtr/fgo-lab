@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import {
   assertMasterVersionIdentity,
   createManifest,
@@ -94,7 +95,7 @@ describe('immutable publish pipeline', () => {
       items: [],
     });
 
-    expect(snapshot.servants[0]?.noblePhantasms[0]?.effects).toMatchObject([
+    expect(getNoblePhantasmVariants(snapshot.servants[0]!).at(0)?.effects).toMatchObject([
       { id: '248', occurrenceId: '248:0' },
       { id: '248', occurrenceId: '248:1' },
     ]);
@@ -291,23 +292,28 @@ describe('immutable publish pipeline', () => {
       skills: [{ id: '2', slot: 1, name: '強化後スキル' }],
       passives: [{ id: '3' }],
     });
-    const noblePhantasm = snapshot.servants[0]?.noblePhantasms[0];
+    const noblePhantasm = getNoblePhantasmVariants(snapshot.servants[0]!).at(0);
     expect(noblePhantasm).toMatchObject({
-      id: '100',
+      ref: { noblePhantasmId: '100' },
       card: 'buster',
       effects: [{ id: '11', timing: 'beforeDamage' }],
     });
-    expect(noblePhantasm?.damage[0]).toMatchObject({
+    expect(noblePhantasm?.kind === 'attack' ? noblePhantasm.damage[0] : null).toMatchObject({
       kind: 'trait',
       rawFunctionType: 'damageNpIndividual',
     });
-    expect(noblePhantasm?.damage[0]?.parametersByOvercharge[0][0]).toMatchObject({
+    expect(
+      noblePhantasm?.kind === 'attack'
+        ? noblePhantasm.damage[0]?.parametersByOvercharge[0][0]
+        : null,
+    ).toMatchObject({
       ratePermille: 1000,
       valuePermille: 3000,
       correctionPermille: 1500,
       targetTrait: { kind: 'trait', name: 'dragon' },
     });
-    expect(snapshot.servants[0]?.noblePhantasms[1]?.damage[0]).toMatchObject({
+    const alternateNp = getNoblePhantasmVariants(snapshot.servants[0]!).at(1);
+    expect(alternateNp?.kind === 'attack' ? alternateNp.damage[0] : null).toMatchObject({
       kind: 'battlePointPhase',
       maximumBattlePointPhase: 10,
     });
@@ -480,9 +486,14 @@ describe('immutable publish pipeline', () => {
     });
 
     const lilith = snapshot.servants.find((servant) => servant.id === '405900');
-    expect(lilith?.noblePhantasms[0]).toMatchObject({ card: 'quick' });
-    expect(lilith?.noblePhantasms[0]?.damage[0]).toMatchObject({ kind: 'stateTrait' });
-    expect(lilith?.noblePhantasms[0]?.damage[0]?.parametersByOvercharge[0][0]).toMatchObject({
+    expect(getNoblePhantasmVariants(lilith!).at(0)).toMatchObject({ card: 'quick' });
+    const lilithNp = getNoblePhantasmVariants(lilith!).at(0);
+    expect(lilithNp?.kind === 'attack' ? lilithNp.damage[0] : null).toMatchObject({
+      kind: 'stateTrait',
+    });
+    expect(
+      lilithNp?.kind === 'attack' ? lilithNp.damage[0]?.parametersByOvercharge[0][0] : null,
+    ).toMatchObject({
       targetTrait: { kind: 'trait', name: 'buffCharm' },
       correctionPermille: 1500,
     });
@@ -528,9 +539,8 @@ describe('immutable publish pipeline', () => {
         },
       ],
     });
-    expect(snapshot.servants.find((servant) => servant.id === '1')?.noblePhantasms[0]?.card).toBe(
-      'arts',
-    );
+    const saber = snapshot.servants.find((servant) => servant.id === '1');
+    expect(getNoblePhantasmVariants(saber!).at(0)).toMatchObject({ card: 'arts' });
   });
 
   it('normalizes mystic code skills through the shared effect model', () => {
@@ -831,13 +841,7 @@ describe('immutable publish pipeline', () => {
       },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[3]).toMatchObject({
-      execution: [
-        expect.objectContaining({
-          kind: 'cardTypeMutation',
-          card: 'arts',
-          stateTraits: ['jadeRabbitSunForm'],
-        }),
-      ],
+      execution: [{ kind: 'nonDamage' }],
       atlasEvidence: {
         parameterSemantics: {
           condition: ['FuncCheckTargetIndividualityTargetType'],

@@ -12,6 +12,7 @@ import type {
 import { inventoryAtlasAttackFunctions } from './atlasInventory';
 import { cardMap, normalizeFunctions, normalizeNpDamageFunction } from './effectNormalization';
 import { normalizeCraftEssenceLimitBreakEffects } from './craftEssenceNormalization';
+import { normalizeNoblePhantasmVariants } from './noblePhantasmVariantNormalization';
 import { canonicalTargetPredicate, normalizeTargetSemantics } from './targetTaxonomy';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
@@ -107,7 +108,7 @@ export function normalizeAtlasSnapshot(input: {
   if (attackInventory.unknown.length > 0)
     throw new TypeError(`unknown_attack_functions:${attackInventory.unknown.join(',')}`);
   const targetSemantics = normalizeTargetSemantics(atlasServants);
-  const excludedAttackFunctions = atlasServants.flatMap((servant) => {
+  const excludedAttackFunctionCandidates = atlasServants.flatMap((servant) => {
     const reason = !servant.collectionNo
       ? ('missingCollectionNo' as const)
       : !['normal', 'heroine'].includes(servant.type ?? '')
@@ -141,7 +142,7 @@ export function normalizeAtlasSnapshot(input: {
   ))
     if (typeof trait.id === 'number' && trait.name && trait.name !== 'unknown')
       traitNameById.set(trait.id, trait.name);
-  const servants = atlasServants.flatMap((servant, servantIndex) => {
+  const servants = atlasServants.flatMap((servant) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
     if (
       typeof servant.id !== 'number' ||
@@ -150,9 +151,17 @@ export function normalizeAtlasSnapshot(input: {
       typeof servant.rarity !== 'number'
     )
       return [];
-    const noblePhantasms = (servant.noblePhantasms ?? []).flatMap((np, npIndex) => {
+    const noblePhantasmModel = normalizeNoblePhantasmVariants({
+      servant,
+      allServants: atlasServants,
+      traitNameById,
+    });
+    const normalizeVariant = (
+      form: AtlasServant,
+      np: NonNullable<AtlasServant['noblePhantasms']>[number],
+    ) => {
       const maximumBattlePointPhaseById = new Map(
-        (servant.battlePoints ?? []).flatMap((battlePoint) => {
+        (form.battlePoints ?? []).flatMap((battlePoint) => {
           if (typeof battlePoint.id !== 'number') return [];
           const phases = (battlePoint.phases ?? []).flatMap((phase) =>
             typeof phase.phase === 'number' ? [phase.phase] : [],
@@ -167,11 +176,8 @@ export function normalizeAtlasSnapshot(input: {
       const damageFunctions = indexedFunctions.filter(({ fn }) =>
         fn.funcType?.startsWith('damageNp'),
       );
-      if (damageFunctions.length === 0) return [];
       if (typeof np.id !== 'number')
-        throw new TypeError(
-          `missing_np_id:servants[${String(servantIndex)}].noblePhantasms[${String(npIndex)}]`,
-        );
+        throw new TypeError(`missing_np_id:actorForm:${String(form.id ?? 'missing')}`);
       const firstDamageIndex = damageFunctions[0]?.functionIndex ?? -1;
       const effectFunctions = indexedFunctions.filter(
         ({ fn }) => !fn.funcType?.startsWith('damageNp') && typeof fn.funcId === 'number',
@@ -180,33 +186,48 @@ export function normalizeAtlasSnapshot(input: {
         effectFunctions.map(({ fn }) => fn),
         traitNameById,
         'np',
-        servant.id,
+        form.id,
         referencedSkills,
       );
-      return [
-        {
-          id: String(np.id),
-          name: np.name ?? '不明な宝具',
-          priority: np.priority ?? 0,
-          card: cardMap[np.card ?? ''] ?? 'buster',
-          damage: damageFunctions.map(({ fn, functionIndex }) =>
-            normalizeNpDamageFunction(
-              fn,
-              `servants[${String(servantIndex)}].noblePhantasms[${String(npIndex)}].functions[${String(functionIndex)}]`,
-              traitNameById,
-              maximumBattlePointPhaseById,
-            ),
-          ),
-          effects: normalizedEffects.map((effect, index) => ({
-            ...effect,
-            timing:
-              firstDamageIndex >= 0 && effectFunctions[index]!.functionIndex < firstDamageIndex
-                ? ('beforeDamage' as const)
-                : ('afterDamage' as const),
-          })),
-        },
-      ];
-    });
+      const common = {
+        ref: { actorFormId: String(form.id), noblePhantasmId: String(np.id) },
+        name: np.name ?? '不明な宝具',
+        priority: np.priority ?? 0,
+        effects: normalizedEffects.map((effect, index) => ({
+          ...effect,
+          timing:
+            firstDamageIndex >= 0 && effectFunctions[index]!.functionIndex < firstDamageIndex
+              ? ('beforeDamage' as const)
+              : ('afterDamage' as const),
+        })),
+      };
+      if (damageFunctions.length === 0) return { kind: 'nonAttack' as const, ...common };
+      const damage = damageFunctions.map(({ fn, functionIndex }) =>
+        normalizeNpDamageFunction(
+          fn,
+          `actorForms[${String(form.id)}].noblePhantasms[${String(np.id)}].functions[${String(functionIndex)}]`,
+          traitNameById,
+          maximumBattlePointPhaseById,
+        ),
+      );
+      const targets = [...new Set(damage.map((spec) => spec.target))];
+      if (targets.length !== 1)
+        throw new TypeError(`ambiguous_np_target_scope:${String(form.id)}:${String(np.id)}`);
+      const card = cardMap[np.card ?? ''];
+      if (card === undefined) throw new TypeError(`unknown_np_card:${String(np.card)}`);
+      return {
+        kind: 'attack' as const,
+        ...common,
+        card,
+        targetScope: targets[0]!,
+        damage,
+      };
+    };
+    const noblePhantasmVariantGroups = noblePhantasmModel.groups.map((group) => ({
+      id: group.id,
+      baseVariant: group.baseVariant,
+      variants: group.variants.map(({ form, np }) => normalizeVariant(form, np)),
+    }));
     const image = servant.extraAssets?.faces?.ascension?.['1'] ?? null;
     const activeSkills = [...(servant.skills ?? [])]
       .filter((skill) => typeof skill.num === 'number' && skill.num >= 1 && skill.num <= 3)
@@ -231,6 +252,9 @@ export function normalizeAtlasSnapshot(input: {
         source,
         servant.id,
         referencedSkills,
+        source === 'passive' ? 'representedByCurrentInput' : 'duringExecution',
+        noblePhantasmModel.canonicalOperationsByFunction,
+        noblePhantasmModel.variantStateTraits,
       ),
     });
     return [
@@ -245,7 +269,9 @@ export function normalizeAtlasSnapshot(input: {
         atkByLevel: Object.fromEntries(
           (servant.atkGrowth ?? []).map((atk, index) => [String(index + 1), atk]),
         ),
-        noblePhantasms,
+        actorForms: noblePhantasmModel.actorForms,
+        baseNoblePhantasmGroupId: noblePhantasmModel.baseNoblePhantasmGroupId,
+        noblePhantasmVariantGroups,
         traits: (servant.traits ?? []).flatMap((trait) => (trait.name ? [trait.name] : [])),
         predicates: (servant.traits ?? []).flatMap((trait) => {
           if (!trait.name) return [];
@@ -375,8 +401,38 @@ export function normalizeAtlasSnapshot(input: {
   );
   const includedCount = servants.reduce(
     (count, servant) =>
-      count + servant.noblePhantasms.reduce((npCount, np) => npCount + np.damage.length, 0),
+      count +
+      servant.noblePhantasmVariantGroups.reduce(
+        (groupCount, group) =>
+          groupCount +
+          group.variants.reduce(
+            (variantCount, variant) =>
+              variantCount + (variant.kind === 'attack' ? variant.damage.length : 0),
+            0,
+          ),
+        0,
+      ),
     0,
+  );
+  const includedAttackFunctionKeys = new Set(
+    servants.flatMap((servant) =>
+      servant.noblePhantasmVariantGroups.flatMap((group) =>
+        group.variants.flatMap((variant) =>
+          variant.kind === 'attack'
+            ? variant.damage.map(
+                (damage) =>
+                  `${variant.ref.actorFormId}:${variant.ref.noblePhantasmId}:${damage.functionId}`,
+              )
+            : [],
+        ),
+      ),
+    ),
+  );
+  const excludedAttackFunctions = excludedAttackFunctionCandidates.filter(
+    (excluded) =>
+      !includedAttackFunctionKeys.has(
+        `${excluded.servantId}:${excluded.noblePhantasmId}:${excluded.functionId}`,
+      ),
   );
   return masterSnapshotSchema.parse({
     version: input.version,

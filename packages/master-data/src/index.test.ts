@@ -83,17 +83,18 @@ describe('master validation', () => {
         servants: [
           {
             ...fixture.servants[0],
-            noblePhantasms: [
-              {
-                ...fixture.servants[0]!.noblePhantasms[0]!,
-                damage: [
-                  {
-                    ...fixture.servants[0]!.noblePhantasms[0]!.damage[0]!,
+            noblePhantasmVariantGroups: fixture.servants[0]!.noblePhantasmVariantGroups.map(
+              (group) => ({
+                ...group,
+                variants: group.variants.map((variant) => ({
+                  ...variant,
+                  damage: variant.damage.map((damage) => ({
+                    ...damage,
                     rawFunctionType: 'futureDamage',
-                  },
-                ],
-              },
-            ],
+                  })),
+                })),
+              }),
+            ),
           },
         ],
       }),
@@ -106,7 +107,8 @@ describe('master validation', () => {
         servants: [
           {
             ...fixture.servants[0],
-            noblePhantasms: [],
+            baseNoblePhantasmGroupId: null,
+            noblePhantasmVariantGroups: [],
           },
         ],
       }),
@@ -135,10 +137,15 @@ describe('master validation', () => {
         servants: [
           {
             ...fixture.servants[0],
-            noblePhantasms: fixture.servants[0]!.noblePhantasms.map((np) => ({
-              ...np,
-              effects: [{ ...nonDamageEffect, timing: 'beforeDamage' as const }],
-            })),
+            noblePhantasmVariantGroups: fixture.servants[0]!.noblePhantasmVariantGroups.map(
+              (group) => ({
+                ...group,
+                variants: group.variants.map((variant) => ({
+                  ...variant,
+                  effects: [{ ...nonDamageEffect, timing: 'beforeDamage' as const }],
+                })),
+              }),
+            ),
           },
         ],
       },
@@ -254,17 +261,18 @@ describe('master validation', () => {
         servants: [
           {
             ...fixture.servants[0],
-            noblePhantasms: [
-              {
-                ...fixture.servants[0]!.noblePhantasms[0]!,
-                damage: [
-                  {
-                    ...fixture.servants[0]!.noblePhantasms[0]!.damage[0]!,
+            noblePhantasmVariantGroups: fixture.servants[0]!.noblePhantasmVariantGroups.map(
+              (group) => ({
+                ...group,
+                variants: group.variants.map((variant) => ({
+                  ...variant,
+                  damage: variant.damage.map((damage) => ({
+                    ...damage,
                     parametersByOvercharge: [],
-                  },
-                ],
-              },
-            ],
+                  })),
+                })),
+              }),
+            ),
           },
         ],
       }),

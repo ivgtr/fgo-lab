@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(33),
+  schemaVersion: z.literal(34),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -267,12 +267,15 @@ const effectExecutionOperationSchema = z.union([
     semanticSupport: z.enum(['supported', 'unresolved']),
   }),
   z.object({
-    kind: z.literal('cardTypeMutation'),
-    targetPolicy: z.literal('attackerNpCard'),
-    contributionScope: z.literal('personal'),
-    card: z.enum(['buster', 'arts', 'quick']),
-    stateTraits: z.array(z.string().min(1)),
-    semanticSupport: z.enum(['supported', 'unresolved']),
+    kind: z.literal('selectNoblePhantasmVariant'),
+    variant: z.object({
+      actorFormId: z.string().min(1),
+      noblePhantasmId: z.string().min(1),
+    }),
+  }),
+  z.object({
+    kind: z.literal('transformActorForm'),
+    targetFormId: z.string().min(1),
   }),
   z.object({
     kind: z.literal('contextMutation'),
@@ -551,15 +554,38 @@ export const npDamageSpecSchema = z
   });
 export type NpDamageSpec = z.infer<typeof npDamageSpecSchema>;
 
-export const noblePhantasmMasterSchema = z.object({
-  id: z.string().min(1),
+export const noblePhantasmVariantRefSchema = z.object({
+  actorFormId: z.string().min(1),
+  noblePhantasmId: z.string().min(1),
+});
+export type NoblePhantasmVariantRef = z.infer<typeof noblePhantasmVariantRefSchema>;
+
+const noblePhantasmVariantBaseSchema = z.object({
+  ref: noblePhantasmVariantRefSchema,
   name: z.string(),
   priority: z.number().int(),
-  card: z.enum(['buster', 'arts', 'quick']),
-  damage: z.array(npDamageSpecSchema).min(1),
   effects: z.array(masterEffectSchema.extend({ timing: z.enum(['beforeDamage', 'afterDamage']) })),
 });
-export type NoblePhantasmMaster = z.infer<typeof noblePhantasmMasterSchema>;
+export const noblePhantasmVariantSchema = z.discriminatedUnion('kind', [
+  noblePhantasmVariantBaseSchema.extend({
+    kind: z.literal('attack'),
+    card: z.enum(['buster', 'arts', 'quick']),
+    targetScope: z.enum(['single', 'all']),
+    damage: z.array(npDamageSpecSchema).min(1),
+  }),
+  noblePhantasmVariantBaseSchema.extend({
+    kind: z.literal('nonAttack'),
+  }),
+]);
+export type NoblePhantasmVariant = z.infer<typeof noblePhantasmVariantSchema>;
+export type AttackNoblePhantasmVariant = Extract<NoblePhantasmVariant, { kind: 'attack' }>;
+
+export const noblePhantasmVariantGroupSchema = z.object({
+  id: z.string().min(1),
+  baseVariant: noblePhantasmVariantRefSchema,
+  variants: z.array(noblePhantasmVariantSchema).min(1),
+});
+export type NoblePhantasmVariantGroup = z.infer<typeof noblePhantasmVariantGroupSchema>;
 
 export const servantMasterSchema = z.object({
   id: z.string(),
@@ -568,7 +594,9 @@ export const servantMasterSchema = z.object({
   attribute: z.enum(['human', 'earth', 'sky', 'star', 'beast', 'unknown']).default('unknown'),
   rarity: z.number().int().min(0).max(5),
   atkByLevel: z.record(z.string(), z.number().int().nonnegative()),
-  noblePhantasms: z.array(noblePhantasmMasterSchema),
+  actorForms: z.array(z.object({ id: z.string().min(1), name: z.string() })).min(1),
+  baseNoblePhantasmGroupId: z.string().min(1).nullable(),
+  noblePhantasmVariantGroups: z.array(noblePhantasmVariantGroupSchema),
   traits: z.array(z.string()),
   predicates: z.array(targetPredicateSchema).default([]),
   imageKey: z.string().nullable(),
@@ -604,27 +632,90 @@ export function naturalServantLevel(rarity: ServantMaster['rarity']): number {
   }
 }
 
-export function getPrimaryNoblePhantasm(
-  servant: Pick<ServantMaster, 'noblePhantasms'>,
-): NoblePhantasmMaster | undefined {
-  return servant.noblePhantasms.reduce<NoblePhantasmMaster | undefined>(
-    (selected, candidate) =>
-      !selected || candidate.priority > selected.priority ? candidate : selected,
-    undefined,
+export function noblePhantasmVariantKey(ref: NoblePhantasmVariantRef): string {
+  return `${ref.actorFormId}:${ref.noblePhantasmId}`;
+}
+
+export function getBaseNoblePhantasmGroup(
+  servant: Pick<ServantMaster, 'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups'>,
+): NoblePhantasmVariantGroup | undefined {
+  if (servant.baseNoblePhantasmGroupId === null) return undefined;
+  return servant.noblePhantasmVariantGroups.find(
+    (group) => group.id === servant.baseNoblePhantasmGroupId,
   );
 }
 
-export function getPrimaryNpDamage(
-  servant: Pick<ServantMaster, 'noblePhantasms'>,
-): NpDamageSpec | undefined {
-  return getPrimaryNoblePhantasm(servant)?.damage[0];
+export function findNoblePhantasmVariant(
+  servant: Pick<ServantMaster, 'noblePhantasmVariantGroups'>,
+  ref: NoblePhantasmVariantRef,
+): NoblePhantasmVariant | undefined {
+  const key = noblePhantasmVariantKey(ref);
+  return servant.noblePhantasmVariantGroups
+    .flatMap((group) => group.variants)
+    .find((variant) => noblePhantasmVariantKey(variant.ref) === key);
 }
 
-export function getPrimaryNpPresentation(servant: Pick<ServantMaster, 'noblePhantasms'>): {
-  card: NoblePhantasmMaster['card'];
+export function getNoblePhantasmVariants(
+  servant: Pick<ServantMaster, 'noblePhantasmVariantGroups'>,
+): NoblePhantasmVariant[] {
+  return servant.noblePhantasmVariantGroups.flatMap((group) => group.variants);
+}
+
+export function getAttackNoblePhantasmVariants(
+  servant: Pick<ServantMaster, 'noblePhantasmVariantGroups'>,
+): AttackNoblePhantasmVariant[] {
+  return getNoblePhantasmVariants(servant).filter(
+    (variant): variant is AttackNoblePhantasmVariant => variant.kind === 'attack',
+  );
+}
+
+export function getSelectableNoblePhantasmVariants(
+  servant: Pick<
+    ServantMaster,
+    'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups' | 'skills' | 'passives'
+  >,
+): NoblePhantasmVariant[] {
+  const group = getBaseNoblePhantasmGroup(servant);
+  if (!group) return [];
+  const keys = new Set([noblePhantasmVariantKey(group.baseVariant)]);
+  for (const source of [...servant.skills, ...servant.passives])
+    for (const effect of source.effects)
+      for (const operation of effect.execution)
+        if (operation.kind === 'selectNoblePhantasmVariant')
+          keys.add(noblePhantasmVariantKey(operation.variant));
+  return group.variants.filter((variant) => keys.has(noblePhantasmVariantKey(variant.ref)));
+}
+
+export function getBaseNoblePhantasmVariant(
+  servant: Pick<ServantMaster, 'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups'>,
+): NoblePhantasmVariant | undefined {
+  const group = getBaseNoblePhantasmGroup(servant);
+  return group?.variants.find(
+    (variant) =>
+      noblePhantasmVariantKey(variant.ref) === noblePhantasmVariantKey(group.baseVariant),
+  );
+}
+
+export function getBaseAttackNoblePhantasmVariant(
+  servant: Pick<ServantMaster, 'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups'>,
+): AttackNoblePhantasmVariant | undefined {
+  const variant = getBaseNoblePhantasmVariant(servant);
+  return variant?.kind === 'attack' ? variant : undefined;
+}
+
+export function getPrimaryNpDamage(
+  servant: Pick<ServantMaster, 'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups'>,
+): NpDamageSpec | undefined {
+  return getBaseAttackNoblePhantasmVariant(servant)?.damage[0];
+}
+
+export function getPrimaryNpPresentation(
+  servant: Pick<ServantMaster, 'baseNoblePhantasmGroupId' | 'noblePhantasmVariantGroups'>,
+): {
+  card: AttackNoblePhantasmVariant['card'];
   target: NpDamageSpec['target'];
 } | null {
-  const noblePhantasm = getPrimaryNoblePhantasm(servant);
+  const noblePhantasm = getBaseAttackNoblePhantasmVariant(servant);
   const damage = noblePhantasm?.damage[0];
   return noblePhantasm && damage ? { card: noblePhantasm.card, target: damage.target } : null;
 }
@@ -802,11 +893,97 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
       rejectMlbOnly(skill.effects, path);
       validateProcSelection(skill.effects, path);
     });
-    servant.noblePhantasms.forEach((np, npIndex) => {
-      const path = ['servants', servantIndex, 'noblePhantasms', npIndex, 'effects'];
-      rejectMlbOnly(np.effects, path);
-      validateProcSelection(np.effects, path);
+    const formIds = new Set(servant.actorForms.map((form) => form.id));
+    const groupIds = new Set<string>();
+    const variantKeys = new Set<string>();
+    servant.noblePhantasmVariantGroups.forEach((group, groupIndex) => {
+      if (groupIds.has(group.id))
+        context.addIssue({
+          code: 'custom',
+          message: 'duplicate noble phantasm variant group',
+          path: ['servants', servantIndex, 'noblePhantasmVariantGroups', groupIndex, 'id'],
+        });
+      groupIds.add(group.id);
+      const memberKeys = new Set(
+        group.variants.map((variant) => noblePhantasmVariantKey(variant.ref)),
+      );
+      if (!memberKeys.has(noblePhantasmVariantKey(group.baseVariant)))
+        context.addIssue({
+          code: 'custom',
+          message: 'base noble phantasm variant is not a group member',
+          path: ['servants', servantIndex, 'noblePhantasmVariantGroups', groupIndex, 'baseVariant'],
+        });
+      group.variants.forEach((variant, variantIndex) => {
+        const variantPath = [
+          'servants',
+          servantIndex,
+          'noblePhantasmVariantGroups',
+          groupIndex,
+          'variants',
+          variantIndex,
+        ];
+        const key = noblePhantasmVariantKey(variant.ref);
+        if (!formIds.has(variant.ref.actorFormId))
+          context.addIssue({
+            code: 'custom',
+            message: 'noble phantasm variant references an unknown actor form',
+            path: [...variantPath, 'ref', 'actorFormId'],
+          });
+        if (variantKeys.has(key))
+          context.addIssue({
+            code: 'custom',
+            message: 'duplicate form-qualified noble phantasm variant',
+            path: [...variantPath, 'ref'],
+          });
+        variantKeys.add(key);
+        if (variant.kind === 'attack') {
+          if (variant.damage.some((damage) => damage.target !== variant.targetScope))
+            context.addIssue({
+              code: 'custom',
+              message: 'attack target scope differs from its damage function',
+              path: [...variantPath, 'targetScope'],
+            });
+        }
+        const effectsPath = [...variantPath, 'effects'];
+        rejectMlbOnly(variant.effects, effectsPath);
+        validateProcSelection(variant.effects, effectsPath);
+      });
     });
+    if (
+      servant.baseNoblePhantasmGroupId !== null &&
+      !groupIds.has(servant.baseNoblePhantasmGroupId)
+    )
+      context.addIssue({
+        code: 'custom',
+        message: 'base noble phantasm group does not exist',
+        path: ['servants', servantIndex, 'baseNoblePhantasmGroupId'],
+      });
+    if (servant.baseNoblePhantasmGroupId === null && servant.noblePhantasmVariantGroups.length > 0)
+      context.addIssue({
+        code: 'custom',
+        message: 'noble phantasm variants require a base group',
+        path: ['servants', servantIndex, 'baseNoblePhantasmGroupId'],
+      });
+    const operationRefs = [...servant.skills, ...servant.passives]
+      .flatMap((skill) => skill.effects)
+      .flatMap((effect) => effect.execution);
+    for (const operation of operationRefs) {
+      if (operation.kind === 'transformActorForm' && !formIds.has(operation.targetFormId))
+        context.addIssue({
+          code: 'custom',
+          message: 'actor form transition references an unknown form',
+          path: ['servants', servantIndex, 'actorForms'],
+        });
+      if (
+        operation.kind === 'selectNoblePhantasmVariant' &&
+        !variantKeys.has(noblePhantasmVariantKey(operation.variant))
+      )
+        context.addIssue({
+          code: 'custom',
+          message: 'noble phantasm selection references an unknown variant',
+          path: ['servants', servantIndex, 'noblePhantasmVariantGroups'],
+        });
+    }
   });
   snapshot.mysticCodes.forEach((code, codeIndex) =>
     code.skills.forEach((skill, skillIndex) => {
@@ -860,7 +1037,15 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
     for (const [origin, skills] of [
       ['skill', servant.skills],
       ['passive', servant.passives],
-      ['np', servant.noblePhantasms],
+      [
+        'np',
+        servant.noblePhantasmVariantGroups.flatMap((group) =>
+          group.variants.map((variant) => ({
+            id: noblePhantasmVariantKey(variant.ref),
+            effects: variant.effects,
+          })),
+        ),
+      ],
     ] as const)
       for (const skill of skills) {
         const occurrenceIds = new Set<string>();
@@ -900,7 +1085,17 @@ export function validateMasterSnapshot(value: unknown): MasterValidationReport {
   }
   const includedAttackFunctions = parsed.data.servants.reduce(
     (count, servant) =>
-      count + servant.noblePhantasms.reduce((npCount, np) => npCount + np.damage.length, 0),
+      count +
+      servant.noblePhantasmVariantGroups.reduce(
+        (groupCount, group) =>
+          groupCount +
+          group.variants.reduce(
+            (variantCount, variant) =>
+              variantCount + (variant.kind === 'attack' ? variant.damage.length : 0),
+            0,
+          ),
+        0,
+      ),
     0,
   );
   const attackCoverage = parsed.data.normalization.attackFunctions;

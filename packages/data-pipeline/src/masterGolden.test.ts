@@ -2,7 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import golden from '../../test-fixtures/golden/master-normalization-v1.json';
-import { masterManifestSchema, masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  getAttackNoblePhantasmVariants,
+  masterManifestSchema,
+  masterSnapshotSchema,
+} from '@fgo-lab/master-data';
 
 const root = resolve(import.meta.dirname, '../../..');
 
@@ -32,7 +36,7 @@ describe('published master normalization golden', () => {
 
     const functionCounts: Record<string, number> = {};
     for (const servant of master.servants)
-      for (const noblePhantasm of servant.noblePhantasms)
+      for (const noblePhantasm of getAttackNoblePhantasmVariants(servant))
         for (const damage of noblePhantasm.damage)
           functionCounts[damage.rawFunctionType] =
             (functionCounts[damage.rawFunctionType] ?? 0) + 1;

@@ -89,6 +89,10 @@ export type AtlasNp = {
   name?: string;
   card?: string;
   priority?: number;
+  script?: {
+    tdTypeChangeIDs?: number[];
+    excludeTdChangeTypes?: number[];
+  };
   functions?: AtlasFunction[];
 };
 export type AtlasEquip = {

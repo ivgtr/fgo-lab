@@ -42,10 +42,6 @@ const possiblyDamageBuffs = new Set([
   'npattackPrevBuff',
   'subFieldIndividuality',
   'subSelfdamage',
-  'tdTypeChange',
-  'tdTypeChangeArts',
-  'tdTypeChangeBuster',
-  'tdTypeChangeQuick',
   'upDefence',
   'upDefenceNpdamage',
   'upDefencecommandall',
@@ -163,7 +159,7 @@ export function normalizeExecutionSemantics(input: {
   parameterSets: readonly (readonly AtlasFunctionValue[])[];
   valueExpressions: ExpressionSets;
   cardTypes: readonly ('buster' | 'arts' | 'quick')[];
-  cardTypeMutation: { card: 'buster' | 'arts' | 'quick'; stateTraits: string[] } | null;
+  canonicalOperations: readonly EffectExecutionOperation[];
   contextChanges: {
     addedFieldTraits: string[];
     removedFieldTraits: string[];
@@ -178,12 +174,12 @@ export function normalizeExecutionSemantics(input: {
   const buffTypes = (input.fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
   const potentiallyDamageRelevant = isPotentiallyDamageRelevant(target, buffTypes);
   const targetMismatch = potentiallyDamageRelevant ? ('unsupported' as const) : ('ignore' as const);
-  const operations: EffectExecutionOperation[] = [];
+  const operations: EffectExecutionOperation[] = [...input.canonicalOperations];
 
   if (
     contributionScope === null &&
     (potentiallyDamageRelevant ||
-      input.cardTypeMutation !== null ||
+      input.canonicalOperations.length > 0 ||
       Object.values(input.contextChanges).some((traits) => traits.length > 0))
   )
     return [
@@ -274,16 +270,6 @@ export function normalizeExecutionSemantics(input: {
       damageRelevant: potentiallyDamageRelevant,
     });
 
-  if (input.cardTypeMutation && (target === 'self' || target === 'commandTypeSelfTreasureDevice'))
-    operations.push({
-      kind: 'cardTypeMutation',
-      targetPolicy: 'attackerNpCard',
-      contributionScope: 'personal',
-      card: input.cardTypeMutation.card,
-      stateTraits: input.cardTypeMutation.stateTraits,
-      semanticSupport: 'supported',
-    });
-
   const common = {
     targetPolicy: policy,
     contributionScope: contributionScope!,
@@ -309,11 +295,11 @@ export function normalizeExecutionSemantics(input: {
     });
   else {
     const route = routeDamageModifier(buffTypes, input.cardTypes);
-    if (route)
+    if (route && contributionScope !== null)
       operations.push({
         kind: 'damageModifier',
         targetPolicy: policy,
-        contributionScope: contributionScope!,
+        contributionScope,
         expectedRecipient: route.expectedRecipient,
         targetMismatch,
         semanticSupport: 'supported',

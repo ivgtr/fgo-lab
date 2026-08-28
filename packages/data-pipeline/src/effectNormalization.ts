@@ -2,6 +2,7 @@ import type {
   ActorCountPredicate,
   CanonicalInputDefinition,
   CanonicalTargetPolicy,
+  EffectExecutionOperation,
   ModifierValueExpression,
   MasterEffect,
   NpDamageSpec,
@@ -26,6 +27,9 @@ export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
   1: 'arts',
   2: 'buster',
   3: 'quick',
+  arts: 'arts',
+  buster: 'buster',
+  quick: 'quick',
 };
 const cardTypeByTrait: Record<string, 'buster' | 'arts' | 'quick'> = {
   cardArts: 'arts',
@@ -1006,41 +1010,6 @@ function normalizeEffectChoice(parameterSets: readonly (readonly AtlasFunctionVa
   return null;
 }
 
-function normalizeNpCardTypeChange(
-  buffs: AtlasFunction['buffs'],
-  traitNameById: ReadonlyMap<number, string>,
-) {
-  const cards = [
-    ...new Set(
-      (buffs ?? []).flatMap((buff) => {
-        if (buff.type === 'tdTypeChangeArts') return ['arts' as const];
-        if (buff.type === 'tdTypeChangeBuster') return ['buster' as const];
-        if (buff.type === 'tdTypeChangeQuick') return ['quick' as const];
-        return [];
-      }),
-    ),
-  ];
-  if (cards.length !== 1) return null;
-  const card = cards[0]!;
-  const matchingType =
-    card === 'arts'
-      ? 'tdTypeChangeArts'
-      : card === 'buster'
-        ? 'tdTypeChangeBuster'
-        : 'tdTypeChangeQuick';
-  const stateTraits = uniqueTraits(
-    (buffs ?? []).flatMap((buff) =>
-      buff.type === matchingType
-        ? signedTraits(
-            (buff.vals ?? []).filter((trait) => trait.id !== 3004),
-            traitNameById,
-          )
-        : [],
-    ),
-  ).flatMap((trait) => ('name' in trait ? [trait.name] : []));
-  return { card, stateTraits };
-}
-
 type NormalizeEffectSource =
   'skill' | 'passive' | 'np' | 'reference' | 'craftEssence' | 'mysticCode';
 
@@ -1066,7 +1035,8 @@ function procRateSeries(
       'modifierRateChange',
       'ignoreDefense',
       'ignoreDamageCut',
-      'cardTypeMutation',
+      'selectNoblePhantasmVariant',
+      'transformActorForm',
     ].includes(operation.kind),
   );
   if (!terminal) return { kind: 'guaranteed' };
@@ -1329,6 +1299,11 @@ export function normalizeFunctions(
   quantityApplicationTiming: 'duringExecution' | 'representedByCurrentInput' = source === 'passive'
     ? 'representedByCurrentInput'
     : 'duringExecution',
+  canonicalOperationsByFunction: ReadonlyMap<
+    AtlasFunction,
+    readonly EffectExecutionOperation[]
+  > = new Map(),
+  variantStateTraits: ReadonlySet<string> = new Set(),
 ) {
   const criticalStarSeriesCounts = new Map<number, number>();
   for (const fn of functions ?? []) {
@@ -1384,7 +1359,6 @@ export function normalizeFunctions(
     );
     const modifierValues = normalizeModifierValueExpressions(parameterSets, canonicalInputKey);
     const choice = normalizeEffectChoice(parameterSets);
-    const npCardTypeChange = normalizeNpCardTypeChange(fn.buffs, traitNameById);
     const operationTrigger = normalizeOperationTrigger(parameterSets);
     const triggerScope = normalizeTriggerScope(fn.buffs, source);
     const conditionRoutingValues = [
@@ -1488,6 +1462,12 @@ export function normalizeFunctions(
           parameterSets.some((set) => set.some((parameter) => parameter[key] !== undefined)),
         )
       : [];
+    const canonicalOperations = canonicalOperationsByFunction.get(fn) ?? [];
+    const canonicalOperationKeys = canonicalOperations.some(
+      (operation) => operation.kind === 'transformActorForm',
+    )
+      ? ['Target']
+      : [];
     const parameterSemantics = classifyParameterSemantics(
       parameterSets,
       quantityConditions,
@@ -1496,7 +1476,7 @@ export function normalizeFunctions(
       choice,
       operationTrigger,
       hasNormalizedConditionRouting,
-      canonicalInput.recognizedKeys,
+      [...canonicalInput.recognizedKeys, ...canonicalOperationKeys],
       referenceRecognizedKeys,
     );
     let execution = normalizeExecutionSemantics({
@@ -1504,7 +1484,7 @@ export function normalizeFunctions(
       parameterSets,
       valueExpressions: modifierValues.sets,
       cardTypes,
-      cardTypeMutation: npCardTypeChange,
+      canonicalOperations,
       contextChanges,
       quantityApplicationTiming,
     });
@@ -1635,8 +1615,7 @@ export function normalizeFunctions(
         operation.kind === 'damageModifier' ||
         operation.kind === 'modifierRateChange' ||
         operation.kind === 'ignoreDefense' ||
-        operation.kind === 'ignoreDamageCut' ||
-        operation.kind === 'cardTypeMutation'
+        operation.kind === 'ignoreDamageCut'
           ? { ...operation, semanticSupport: 'unresolved' as const }
           : operation,
       );
@@ -1691,7 +1670,15 @@ export function normalizeFunctions(
                   },
                 ],
           holder: {
-            operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+            operator:
+              (fn.buffs?.[0]?.ckSelfIndv ?? []).length > 0 &&
+              scriptTraits.some(({ trait }) =>
+                signedTraits([trait], traitNameById).some(
+                  (candidate) => 'name' in candidate && variantStateTraits.has(candidate.name),
+                ),
+              )
+                ? 'all'
+                : buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
             traits: uniqueTraits([
               ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById),
               ...scriptTraits.flatMap((entry) =>

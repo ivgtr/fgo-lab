@@ -1,16 +1,16 @@
 {
-  "caseId": "master-normalization-v59",
+  "caseId": "master-normalization-v60",
   "reviewedAt": "2026-08-28",
-  "masterSchemaVersion": 33,
-  "masterDataVersion": "20260828.2",
+  "masterSchemaVersion": 34,
+  "masterDataVersion": "20260828.3",
   "artifact": {
-    "bytes": 31546170,
-    "sha256": "313e4a56dd601b8075fe3b8538b549a4c2c0475a00243ca76e7ed2f80830b2d3"
+    "bytes": 32661291,
+    "sha256": "cb5d3625a5708a8ea3bafe4a594d116c49809f0edbfde51360a2e51bbf020394"
   },
   "counts": {
     "sourceAttackFunctions": 627,
-    "includedAttackFunctions": 621,
-    "excludedAttackFunctions": 6,
+    "includedAttackFunctions": 622,
+    "excludedAttackFunctions": 5,
     "servants": 469,
     "craftEssences": 2700,
     "mysticCodes": 28,
@@ -21,7 +21,7 @@
     "damageNpPierce": 67,
     "damageNpIndividual": 141,
     "damageNpIndividualSum": 20,
-    "damageNpStateIndividualFix": 12,
+    "damageNpStateIndividualFix": 13,
     "damageNpHpratioLow": 6,
     "damageNpRare": 1,
     "damageNpAndOrCheckIndividuality": 1,
