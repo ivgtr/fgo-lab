@@ -4,7 +4,12 @@ import {
   type ActivationRequirementOwner,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
-import { activationFactKey, type ActivationFact, type CalculationScenario } from '@fgo-lab/schema';
+import {
+  activationChoiceGroupKey,
+  activationFactKey,
+  type ActivationFact,
+  type CalculationScenario,
+} from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -16,10 +21,6 @@ function materializableActivationFacts(projection: EffectProjection): readonly A
   if (analysis.materialization.kind === 'ambiguous')
     throw new TypeError('ambiguous_activation_condition_alternative');
   return analysis.materialization.kind === 'deterministic' ? analysis.materialization.facts : [];
-}
-
-function choiceGroupKey(fact: Extract<ActivationFact, { kind: 'choice' }>): string {
-  return JSON.stringify([fact.source, fact.family]);
 }
 
 function selectedRequirementKeys(
@@ -47,7 +48,9 @@ export function applyActivationFactSelection(
 ): ResolvedScenario {
   const selectedChoiceGroups = new Map(
     facts.flatMap((fact) =>
-      fact.kind === 'choice' ? [[choiceGroupKey(fact), fact.candidate] as const] : [],
+      fact.kind === 'choice'
+        ? [[activationChoiceGroupKey(fact.source, fact.family), fact.candidate] as const]
+        : [],
     ),
   );
   const requestedKeys = new Set(facts.map(activationFactKey));
@@ -62,8 +65,9 @@ export function applyActivationFactSelection(
     return !(
       selected &&
       fact.kind === 'choice' &&
-      selectedChoiceGroups.has(choiceGroupKey(fact)) &&
-      selectedChoiceGroups.get(choiceGroupKey(fact)) !== fact.candidate
+      selectedChoiceGroups.has(activationChoiceGroupKey(fact.source, fact.family)) &&
+      selectedChoiceGroups.get(activationChoiceGroupKey(fact.source, fact.family)) !==
+        fact.candidate
     );
   });
   if (selected) {
