@@ -40,9 +40,32 @@ function withProcResults(
   overcharge = 1,
 ) {
   let scenario = { ...scenarioFor(servantId), overcharge };
-  const initial = calculateScenario(scenario, master, versions);
+  let initial = calculateScenario(scenario, master, versions);
   expect(initial.result.status).toBe('calculated');
-  const procControls = initial.effectControls.filter(
+  let procControls = initial.effectControls.filter(
+    ({ projection }) =>
+      projection.proc.kind === 'singleRoll' || projection.proc.kind === 'independentRolls',
+  );
+  const attackerProcSkillIds = new Set(
+    initial.effectControls.flatMap(({ projection }) =>
+      projection.source.origin === 'attacker' && projection.proc.kind !== 'guaranteed'
+        ? [projection.source.skillId]
+        : [],
+    ),
+  );
+  const commands = initial.appliedPreparationActions.flatMap((action) =>
+    action.sourceKind === 'skill' &&
+    attackerProcSkillIds.has(action.sourceId) &&
+    action.command.kind === 'useSkillSlot'
+      ? [action.command]
+      : [],
+  );
+  scenario = {
+    ...scenario,
+    preNoblePhantasmPlan: [...commands, { kind: 'executeAttackNoblePhantasm' }],
+  };
+  initial = calculateScenario(scenario, master, versions);
+  procControls = initial.effectControls.filter(
     ({ projection }) =>
       projection.proc.kind === 'singleRoll' || projection.proc.kind === 'independentRolls',
   );
@@ -125,7 +148,10 @@ describe('production probabilistic NP-before damage effects', () => {
   });
 
   it('uses Caesar success count as the sole chip-active state', () => {
-    const scenario = scenarioFor('101300');
+    const scenario = {
+      ...scenarioFor('101300'),
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+    };
     const initial = calculateScenario(scenario, master, versions);
     const control = initial.effectControls.find(
       (candidate) => candidate.projection.proc.kind === 'chainedRolls',
@@ -255,8 +281,24 @@ describe('production probabilistic NP-before damage effects', () => {
   });
 
   it('updates Sitonai proc metadata by skill level without changing the decision identity', () => {
+    const slot = master.servants
+      .find(({ id }) => id === '1000800')!
+      .skills.find(({ id }) => id === '532551')!.slot as 1 | 2 | 3;
     const records = [1, 9, 10].map((skillLevel) => {
-      const scenario = setAttackerSkillLevel(scenarioFor('1000800'), '532551', skillLevel);
+      const defaultScenario = scenarioFor('1000800');
+      const skillCommand = defaultScenario.preNoblePhantasmPlan.find(
+        (command) => command.kind === 'useSkillSlot' && command.slot === slot,
+      );
+      if (!skillCommand || skillCommand.kind !== 'useSkillSlot')
+        throw new TypeError('sitonai_proc_skill_action_missing');
+      const scenario = setAttackerSkillLevel(
+        {
+          ...defaultScenario,
+          preNoblePhantasmPlan: [skillCommand, { kind: 'executeAttackNoblePhantasm' as const }],
+        },
+        slot,
+        skillLevel,
+      );
       const initial = calculateScenario(scenario, master, versions);
       const proc = initial.effects.find(
         (effect) =>
@@ -321,8 +363,12 @@ describe('production probabilistic NP-before damage effects', () => {
   it('uses the same simple-roll decision when Calamity Jane is a support source', () => {
     const jane = master.servants.find((candidate) => candidate.id === '203700')!;
     const attacker = master.servants.find((candidate) => candidate.id === '100100')!;
+    const attackerScenario = createDefaultResolvedScenario(master, undefined, attacker);
     const scenario = appendCalculationSupportSource(
-      createDefaultResolvedScenario(master, undefined, attacker),
+      {
+        ...attackerScenario,
+        preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+      },
       {
         sourceInstanceId: 'support:jane',
         servantId: jane.id,

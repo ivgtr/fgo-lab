@@ -49,7 +49,22 @@ describe('profile domain', () => {
         attribute: 'earth' as const,
         rarity: 5,
         atkByLevel: { '1': 1 },
-        actorForms: [{ id: 'x', name: 'X' }],
+        actorFormGraph: {
+          actorId: 'x',
+          forms: [
+            {
+              id: { actorId: 'x', limitCount: 0 },
+              name: 'X',
+              traits: [],
+              skillIds: [],
+              passiveIds: [],
+              baseNoblePhantasmVariant: null,
+            },
+          ],
+          initialFormIds: [{ actorId: 'x', limitCount: 0 }],
+          defaultInitialFormId: { actorId: 'x', limitCount: 0 },
+          transitions: [],
+        },
         baseNoblePhantasmGroupId: null,
         noblePhantasmVariantGroups: [],
         traits: [],

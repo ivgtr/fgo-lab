@@ -8,11 +8,12 @@ import {
   servantAttribute,
   targetClassCandidates,
 } from '@fgo-lab/calc-core';
-import { getPrimaryNpDamage, masterSnapshotSchema } from '@fgo-lab/master-data';
+import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { applyEffectProjectionDecision } from './effectDecision';
+import { getAttackReachableInitialActorForms } from './actorFormGraph';
 
 const root = resolve(import.meta.dirname, '../../..');
 
@@ -25,7 +26,9 @@ async function loadMaster() {
 describe('production canonical target context', () => {
   it('derives every default relation from the canonical class relation', async () => {
     const master = await loadMaster();
-    const attackers = master.servants.filter((servant) => getPrimaryNpDamage(servant));
+    const attackers = master.servants.filter(
+      (servant) => getAttackReachableInitialActorForms(servant).length > 0,
+    );
     const inventory = { advantage2: 0, advantage15: 0, neutral: 0, disadvantage: 0 };
     for (const attacker of attackers) {
       const relation = defaultTargetClassRelation(attacker.classId);
@@ -37,15 +40,15 @@ describe('production canonical target context', () => {
         createDefaultResolvedScenario(master, undefined, attacker).targetContext.class,
       ).toEqual({ kind: 'relative', relation });
     }
-    expect(attackers).toHaveLength(420);
+    expect(attackers).toHaveLength(422);
     expect(inventory).toEqual({
-      advantage2: 374,
+      advantage2: 376,
       advantage15: 45,
       neutral: 1,
       disadvantage: 0,
     });
     expect(attackers.filter((attacker) => attacker.classId === 'berserker')).toHaveLength(44);
-  });
+  }, 30_000);
 
   it('locks the approved NP1-5 default damage corrections', async () => {
     const master = await loadMaster();
@@ -65,7 +68,10 @@ describe('production canonical target context', () => {
     for (const [servantId, expected] of cases) {
       const servant = master.servants.find((candidate) => candidate.id === servantId)!;
       const calculation = calculateScenario(
-        createDefaultResolvedScenario(master, undefined, servant),
+        {
+          ...createDefaultResolvedScenario(master, undefined, servant),
+          preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+        },
         master,
         versions,
       );
@@ -75,7 +81,7 @@ describe('production canonical target context', () => {
     }
   });
 
-  it('keeps all 374 existing advantage2 default calculations unchanged', async () => {
+  it('keeps all 376 reachable advantage2 default calculations unchanged', async () => {
     const master = await loadMaster();
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,
@@ -86,7 +92,9 @@ describe('production canonical target context', () => {
       masterDataVersion: master.version,
     };
     let compared = 0;
-    for (const servant of master.servants.filter((candidate) => getPrimaryNpDamage(candidate))) {
+    for (const servant of master.servants.filter(
+      (candidate) => getAttackReachableInitialActorForms(candidate).length > 0,
+    )) {
       if (defaultTargetClassRelation(servant.classId) !== 'advantage2') continue;
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
       const current = calculateScenario(scenario, master, versions);
@@ -105,7 +113,7 @@ describe('production canonical target context', () => {
       expect(current.result, servant.id).toEqual(explicitPrevious.result);
       compared += 1;
     }
-    expect(compared).toBe(374);
+    expect(compared).toBe(376);
   }, 30_000);
 
   it('derives concrete class, attribute, and independent family membership', async () => {
@@ -212,7 +220,9 @@ describe('production canonical target context', () => {
 
   it('has no calculated relation without a real target candidate', async () => {
     const master = await loadMaster();
-    for (const attacker of master.servants.filter((servant) => getPrimaryNpDamage(servant)))
+    for (const attacker of master.servants.filter(
+      (servant) => getAttackReachableInitialActorForms(servant).length > 0,
+    ))
       for (const relation of ['advantage2', 'advantage15', 'neutral', 'disadvantage'] as const) {
         const candidates = targetClassCandidates(attacker.classId, { kind: 'relative', relation });
         if (candidates.length > 0) continue;

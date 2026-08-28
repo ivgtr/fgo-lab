@@ -64,6 +64,7 @@ describe('MLB-only production damage golden', () => {
 
       for (const expected of goldenCase.states) {
         const scenario = createDefaultResolvedScenario(master, undefined, servant);
+        scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
         scenario.craftEssence = {
           craftEssenceId: craftEssence.id,
           level: 1,
@@ -100,6 +101,7 @@ describe('MLB-only production damage golden', () => {
       const lb0 = goldenCase.states.find((state) => state.lb === 0)!;
       for (const limitBreak of [0, 1, 2, 3] as const) {
         const scenario = createDefaultResolvedScenario(master, undefined, servant);
+        scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
         scenario.craftEssence = { craftEssenceId: goldenCase.ce, level: 1, limitBreak };
         const execution = calculateScenario(scenario, master, versions(master.version));
         expect(inputDigest(execution.input)).toBe(lb0.input);

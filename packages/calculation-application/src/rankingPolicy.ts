@@ -1,6 +1,8 @@
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import {
   naturalServantLevel,
+  getDefaultInitialActorForm,
+  type ActorFormId,
   type MasterDataSnapshot,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -8,7 +10,7 @@ import type { CalculationScenario, ServantBuild } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand } from './canonicalInputs';
 import type { RankingConditions, RankingProfileInput } from './rankingContracts';
 import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
-import { createDefaultResolvedScenario, type CalculationExecution } from './scenario';
+import { createDefaultResolvedScenario } from './scenario';
 import { applyTargetContextCommand, createDefaultTargetContext } from './targetContext';
 
 export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -29,6 +31,7 @@ export function createRankingBaseScenario(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
   conditions: RankingConditions,
+  initialActorFormId: ActorFormId = getDefaultInitialActorForm(servant)!.id,
 ): ResolvedScenario {
   const build = ownedBuild(servant, profile, conditions);
   const owned = conditions.comparisonMode === 'owned';
@@ -49,6 +52,7 @@ export function createRankingBaseScenario(
     ...scenario,
     attacker: {
       servantId: servant.id,
+      initialActorFormId,
       source: owned ? 'owned' : 'master',
       level: owned ? build!.level : naturalServantLevel(servant.rarity),
       npLevel: owned ? build!.npLevel : conditions.npLevel,
@@ -59,12 +63,7 @@ export function createRankingBaseScenario(
     attackerHpPermille: STANDARD_RANKING_SCENARIO_POLICY.attackerHpPermille,
     battleState: { battlePointPhase: STANDARD_RANKING_SCENARIO_POLICY.battlePointPhase },
     craftEssence: null,
-    attackerSkills: servant.skills.slice(0, 3).map((skill, index) => ({
-      skillId: skill.id,
-      skillLevel: owned
-        ? (build!.skills[String(index + 1)] ?? 1)
-        : STANDARD_RANKING_SCENARIO_POLICY.skillLevel,
-    })),
+    preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
     mysticCode: null,
     support: null,
     worldFactAssertions: [],
@@ -74,7 +73,9 @@ export function createRankingBaseScenario(
 
 export function applyRankingCanonicalMinimums(
   scenario: ResolvedScenario,
-  calculation: CalculationExecution,
+  calculation: {
+    inputDefinitions: readonly { key: string; kind: string; minimum: number; maximum: number }[];
+  },
 ): ResolvedScenario {
   return calculation.inputDefinitions.reduce(
     (current, definition) =>

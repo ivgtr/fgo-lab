@@ -176,7 +176,24 @@ describe('canonical special input application boundary', () => {
       ['HP_LOWER'],
     ]);
 
-    const { scenario, calculation } = calculate('505300');
+    const defaultExecution = calculate('505300');
+    const skillAction = defaultExecution.calculation.appliedPreparationActions.find(
+      ({ sourceKind, sourceId }) => sourceKind === 'skill' && sourceId === skill.id,
+    );
+    if (!skillAction || skillAction.command.kind !== 'useSkillSlot')
+      throw new TypeError('tonelico_skill_action_missing');
+    const scenario = {
+      ...defaultExecution.scenario,
+      preNoblePhantasmPlan: [skillAction.command, { kind: 'executeAttackNoblePhantasm' as const }],
+    };
+    const calculation = calculateScenario(scenario, master, {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    });
     const control = calculation.effectControls.find(
       (candidate) => candidate.operationIds.length === 5,
     )!;
@@ -211,7 +228,14 @@ describe('canonical special input application boundary', () => {
     };
     for (const [hp, attackBuff, averages, appliedCount] of expected) {
       const hpScenario = { ...scenario, attackerHpPermille: hp };
-      const disabled = calculateScenario(hpScenario, master, versions);
+      const disabledScenario = applyEffectPresentationDecision(
+        hpScenario,
+        control.projection,
+        false,
+        calculation.activationRequirements,
+        calculation.effects,
+      );
+      const disabled = calculateScenario(disabledScenario, master, versions);
       expect(disabled.input.attackBuff, `disabled at HP ${String(hp)}`).toBe(0);
       expect(
         disabled.effects
@@ -222,7 +246,7 @@ describe('canonical special input application boundary', () => {
 
       const enabled = calculateScenario(
         applyEffectPresentationDecision(
-          hpScenario,
+          disabledScenario,
           control.projection,
           true,
           disabled.activationRequirements,

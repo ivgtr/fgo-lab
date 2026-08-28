@@ -1,5 +1,5 @@
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
-import type { CalculationScenario, VersionContext } from '@fgo-lab/schema';
+import type { VersionContext } from '@fgo-lab/schema';
 import type {
   RankingCalculation,
   RankingConditions,
@@ -9,14 +9,12 @@ import type {
   RankingRowSummary,
   RankingSummary,
 } from './rankingContracts';
-import {
-  compileRankingExecutionPlan,
-  createRankingScenarioFromPolicy,
-  executeRankingScenarios,
-  selectRankingExecutionIndexes,
-} from './rankingScenario';
+import { createRankingScenarioFromPolicy } from './rankingScenario';
 import { createRankingRow, includedRankingServants } from './rankingRows';
-import { calculateScenario } from './scenario';
+import type { AttackProfile } from './attackProfile';
+import { calculateRankingCandidates, selectRankingDetail } from './rankingCandidates';
+import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
+import type { calculateDamageResolution } from './damageResolution';
 
 export * from './rankingContracts';
 
@@ -26,7 +24,7 @@ export function createRankingScenario(
   profile: RankingProfileInput,
   conditions: RankingConditions,
   versions: VersionContext,
-  targetScope?: 'single' | 'all',
+  attackProfile?: AttackProfile,
 ) {
   return createRankingScenarioFromPolicy(
     servant,
@@ -34,7 +32,7 @@ export function createRankingScenario(
     profile,
     conditions,
     versions,
-    targetScope,
+    attackProfile,
   );
 }
 
@@ -44,70 +42,10 @@ export function calculateRankingDetail(
   profile: RankingProfileInput,
   conditions: RankingConditions,
   versions: VersionContext,
-  targetScope?: 'single' | 'all',
+  attackProfile?: AttackProfile,
 ): RankingDetail {
   const details = calculateRankingCandidates(servant, master, profile, conditions, versions, true);
-  const detail = targetScope
-    ? details.get(targetScope)
-    : (details.get('single') ?? details.get('all'));
-  if (!detail) throw new TypeError(`ranking_scope_candidate_missing:${servant.id}`);
-  return detail;
-}
-
-function calculateRankingCandidates(
-  servant: ServantMaster,
-  master: MasterDataSnapshot,
-  profile: RankingProfileInput,
-  conditions: RankingConditions,
-  versions: VersionContext,
-  includeAreaSupport: boolean,
-): ReadonlyMap<'single' | 'all', RankingDetail> {
-  const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions);
-  const candidates = executeRankingScenarios(plan.rankingScenarios, master, versions);
-  const selected = selectRankingExecutionIndexes(candidates, conditions.npLevel);
-  return new Map(
-    [...selected].map(([scope, selectedIndex]) => {
-      const execution = candidates[selectedIndex]!;
-      const variant = execution.noblePhantasmVariant;
-      if (variant?.kind !== 'attack' || variant.targetScope !== scope)
-        throw new TypeError(`ranking_variant_scope_mismatch:${servant.id}:${scope}`);
-      const withoutAreaExecution =
-        includeAreaSupport && plan.withoutAreaScenarios[selectedIndex]
-          ? calculateScenario(plan.withoutAreaScenarios[selectedIndex], master, versions)
-          : null;
-      const detail: RankingDetail = {
-        entryId: `${servant.id}:${scope}`,
-        servantId: servant.id,
-        noblePhantasmVariant: variant.ref,
-        noblePhantasmName: variant.name,
-        npCard: variant.card,
-        npTarget: variant.targetScope,
-        scenario: execution.scenario as Extract<CalculationScenario, { mode: 'resolved' }>,
-        input: execution.input,
-        result: execution.result,
-        effects: execution.effects,
-        effectInputs: execution.effectInputs,
-        warnings: execution.effectWarnings,
-        areaContribution: withoutAreaExecution
-          ? {
-              withoutAreaScenario: withoutAreaExecution.scenario as Extract<
-                CalculationScenario,
-                { mode: 'resolved' }
-              >,
-              withoutAreaInput: withoutAreaExecution.input,
-              withoutAreaResult: withoutAreaExecution.result,
-              withoutAreaEffects: withoutAreaExecution.effects,
-              warnings: withoutAreaExecution.effectWarnings,
-            }
-          : null,
-        executionMetrics: {
-          worldCandidateCount: plan.worldCandidateCount,
-          scenarioCalculationCount: 1 + candidates.length + (withoutAreaExecution ? 1 : 0),
-        },
-      };
-      return [scope, detail] as const;
-    }),
-  );
+  return selectRankingDetail(details, servant, attackProfile);
 }
 
 function calculateRows(
@@ -120,15 +58,23 @@ function calculateRows(
   const rows: RankingRowSummary[] = [];
   const failures: RankingFailure[] = [];
   const details: Record<string, RankingDetail> = {};
+  const damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>();
   for (const servant of includedRankingServants(master, profile, conditions)) {
-    const servantDetails = calculateRankingCandidates(
-      servant,
-      master,
-      profile,
-      conditions,
-      versions,
-      includeDetails,
-    );
+    let servantDetails: ReadonlyMap<string, RankingDetail>;
+    try {
+      servantDetails = calculateRankingCandidates(
+        servant,
+        master,
+        profile,
+        conditions,
+        versions,
+        includeDetails,
+        damageCache,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'unknown';
+      throw new TypeError(`ranking_candidate_failure:${servant.id}:${detail}`);
+    }
     for (const detail of servantDetails.values()) {
       if (includeDetails) details[detail.entryId] = detail;
       const candidate = createRankingRow(servant, detail, profile);
@@ -136,7 +82,7 @@ function calculateRows(
       else rows.push(candidate);
     }
   }
-  return { rows, failures, details };
+  return { rows, failures, details, damageCache: damageCache.inventory };
 }
 
 export function calculateRankingSummary(

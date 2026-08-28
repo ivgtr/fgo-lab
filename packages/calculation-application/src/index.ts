@@ -1,7 +1,11 @@
 export * from './canonicalInputs';
+export * from './actorFormGraph';
+export * from './attackProfile';
 export * from './damageResolution';
 export * from './evidence';
 export * from './effectDecision';
+export * from './preNoblePhantasmPlanner';
+export * from './preparedDamageInputCache';
 export * from './effectControls';
 export * from './scenario';
 export * from './scenarioCommands';
@@ -15,4 +19,6 @@ export type {
   ConditionExpression,
   EffectProjection,
   ModifierKind,
+  ResolvedAttackerSkillUse,
 } from '@fgo-lab/battle-execution';
+export { resolveAttackerFormExecution } from '@fgo-lab/battle-execution';

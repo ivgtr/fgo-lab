@@ -12,6 +12,10 @@ import {
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { setEffectSourceEnabled } from './scenarioCommands';
 import { createEffectControlViewModels } from './effectControls';
+import {
+  materializePreNoblePhantasmPlan,
+  planPreNoblePhantasmCandidates,
+} from './preNoblePhantasmPlanner';
 
 function selectProjectionAlone(
   scenario: Parameters<typeof applyEffectInclusionDecision>[0],
@@ -87,11 +91,9 @@ describe('unsupported convergence production golden', () => {
     };
     const records = formerlyUnsupportedDefaults.map((servantId) => {
       const servant = master.servants.find((candidate) => candidate.id === servantId)!;
-      const calculation = calculateScenario(
-        createDefaultResolvedScenario(master, undefined, servant),
-        master,
-        versions,
-      );
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
+      const calculation = calculateScenario(scenario, master, versions);
       expect(calculation.result.status, `${servantId}:${servant.name}`).toBe('calculated');
       if (calculation.result.status !== 'calculated') throw new Error('exact result required');
       return {
@@ -109,9 +111,9 @@ describe('unsupported convergence production golden', () => {
       [
         {
           "appliedOperations": [
-            "np:np:106600:106601:np:106600:106601:248:0:modifier:npDamageBuff",
-            "np:np:106600:106601:np:106600:106601:23291:0:addTrait-target:buffBurn",
-            "np:106600:106601:5337:damage",
+            "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:248:0:modifier:npDamageBuff",
+            "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:23291:0:addTrait-target:buffBurn",
+            "np:["106600",0,"106601"]:5337:damage",
           ],
           "inputDigest": "1d55420f3d2f8606be3de48bad7d231408e2d479eb69f31b9bef1fcd86ffaf31",
           "name": "ジャック・ド・モレー",
@@ -126,7 +128,7 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "appliedOperations": [
-            "np:202500:202501:22:damage",
+            "np:["202500",0,"202501"]:22:damage",
           ],
           "inputDigest": "5482dfd395f085426a140e99f8987852fc66934dbaa2ea842dc579eafb0dafb6",
           "name": "アン・ボニー＆メアリー・リード",
@@ -143,7 +145,7 @@ describe('unsupported convergence production golden', () => {
           "appliedOperations": [
             "passive:passive:203300:62551:265:0:modifier:flatDamage",
             "passive:passive:203300:607650:118:0:modifier:cardBuff",
-            "np:203300:203301:22:damage",
+            "np:["203300",0,"203301"]:22:damage",
           ],
           "inputDigest": "b338a060fe9fb360bfd766e371a7688d139905f6163921d7884a4ee87cb030c4",
           "name": "アシュヴァッターマン",
@@ -159,8 +161,8 @@ describe('unsupported convergence production golden', () => {
         {
           "appliedOperations": [
             "passive:passive:305800:62450:265:0:modifier:flatDamage",
-            "np:np:305800:305801:np:305800:305801:249:0:modifier:npDamageBuff",
-            "np:305800:305801:13:damage",
+            "np:np:["305800",0,"305801"]:np:["305800",0,"305801"]:249:0:modifier:npDamageBuff",
+            "np:["305800",0,"305801"]:13:damage",
           ],
           "inputDigest": "d3e6989c8045bdd9453d570eab3b3a7786a7166b09d5123cb54fc340598804c8",
           "name": "アショカ王",
@@ -175,7 +177,7 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "appliedOperations": [
-            "np:400900:400902:22:damage",
+            "np:["400900",0,"400902"]:22:damage",
           ],
           "inputDigest": "4037732abc1dcdd11f0f86bbad861bc098b18bd6fcd4ab5c4bc2559840f7d865",
           "name": "アン・ボニー＆メアリー・リード",
@@ -190,8 +192,8 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "appliedOperations": [
-            "np:np:506000:506001:np:506000:506001:110:0:modifier:cardBuff",
-            "np:506000:506001:13:damage",
+            "np:np:["506000",0,"506001"]:np:["506000",0,"506001"]:110:0:modifier:cardBuff",
+            "np:["506000",0,"506001"]:13:damage",
           ],
           "inputDigest": "03caaeef76e04d5a60d0c7a9f6ea26c4b9f2895183f31e2425303efbf07ac052",
           "name": "ビショーネ",
@@ -207,7 +209,7 @@ describe('unsupported convergence production golden', () => {
         {
           "appliedOperations": [
             "passive:passive:702500:54251:118:0:modifier:cardBuff",
-            "np:702500:702502:22:damage",
+            "np:["702500",0,"702502"]:22:damage",
           ],
           "inputDigest": "2207d10446064828a7360d1aa5fc11e3a0128ed1f0fcccd1eb9a89e2f1035be4",
           "name": "土方歳三",
@@ -222,9 +224,9 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "appliedOperations": [
-            "np:np:1102000:1102001:np:1102000:1102001:249:0:modifier:npDamageBuff",
-            "np:np:1102000:1102001:np:1102000:1102001:249:1:modifier:npDamageBuff",
-            "np:1102000:1102001:13:damage",
+            "np:np:["1102000",0,"1102001"]:np:["1102000",0,"1102001"]:249:0:modifier:npDamageBuff",
+            "np:np:["1102000",0,"1102001"]:np:["1102000",0,"1102001"]:249:1:modifier:npDamageBuff",
+            "np:["1102000",0,"1102001"]:13:damage",
           ],
           "inputDigest": "76807a4902a7abe6909ce7a4e5c6e7ff87ecd050beda76c6cb4ccda10ab81660",
           "name": "ジョン・ラックランド",
@@ -239,9 +241,9 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "appliedOperations": [
-            "np:np:1102300:1102301:np:1102300:1102301:23468:0:modifier:npDamageBuff",
+            "np:np:["1102300",0,"1102301"]:np:["1102300",0,"1102301"]:23468:0:modifier:npDamageBuff",
             "passive:passive:1102300:54149:118:0:modifier:cardBuff",
-            "np:1102300:1102301:14:damage",
+            "np:["1102300",0,"1102301"]:14:damage",
           ],
           "inputDigest": "9b736b409982c8cbf9f1ef5fb7f51d8309eeaa8a297115c8f4563ed452c85ab0",
           "name": "キングプロテア・オルタ",
@@ -271,8 +273,8 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "appliedOperations": [
-            "np:np:2801300:2801301:np:2801300:2801301:119:0:modifier:cardBuff",
-            "np:np:2801300:2801301:np:2801300:2801301:249:0:modifier:npDamageBuff",
+            "np:np:["2801300",0,"2801301"]:np:["2801300",0,"2801301"]:119:0:modifier:cardBuff",
+            "np:np:["2801300",0,"2801301"]:np:["2801300",0,"2801301"]:249:0:modifier:npDamageBuff",
           ],
           "inputDigest": "304dfcb0255fde97e6ab8cb7597b11a338e74ed2f06becf5206f6a0a53e63403",
           "name": "ハベトロット",
@@ -288,7 +290,7 @@ describe('unsupported convergence production golden', () => {
         {
           "appliedOperations": [
             "passive:passive:3300200:30149:265:0:modifier:flatDamage",
-            "np:3300200:3300201:21836:damage",
+            "np:["3300200",0,"3300201"]:21836:damage",
           ],
           "inputDigest": "2f633b96d596a2189e0a826dd30cb34a17ca968cbfedc960a7e3999b01dc6984",
           "name": "エレシュキガル",
@@ -305,7 +307,7 @@ describe('unsupported convergence production golden', () => {
     `);
   });
 
-  it('calculates all 420 attacking NPs and the 25 formerly unsupported selections exactly', async () => {
+  it('calculates all 419 base attacking NPs and the 25 formerly unsupported selections exactly', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
@@ -320,13 +322,11 @@ describe('unsupported convergence production golden', () => {
     const attackingServants = master.servants.filter((servant) =>
       getBaseAttackNoblePhantasmVariant(servant),
     );
-    expect(attackingServants).toHaveLength(420);
+    expect(attackingServants).toHaveLength(419);
     for (const servant of attackingServants) {
-      const calculation = calculateScenario(
-        createDefaultResolvedScenario(master, undefined, servant),
-        master,
-        versions,
-      );
+      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
+      const calculation = calculateScenario(scenario, master, versions);
       expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe('calculated');
     }
 
@@ -334,7 +334,27 @@ describe('unsupported convergence production golden', () => {
       const automaticInput = occurrenceId === 'automaticReference';
       const initiallyHiddenByInput = occurrenceId.startsWith('23594:');
       const servant = master.servants.find((candidate) => candidate.id === servantId)!;
-      let scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const targetOccurrenceId = automaticInput ? '21814:0' : occurrenceId;
+      const candidate = planPreNoblePhantasmCandidates(servant)
+        .candidates.filter(
+          ({ terminalState }) =>
+            automaticInput ||
+            (occurrenceId === 'linkedTraitFamily'
+              ? terminalState.appliedActions.some((action) => action.sourceId === '2150650')
+              : terminalState.activeEffects.some(
+                  (effect) => effect.occurrenceId === targetOccurrenceId,
+                )),
+        )
+        .sort(
+          (left, right) =>
+            left.commands.length - right.commands.length ||
+            JSON.stringify(left.commands).localeCompare(JSON.stringify(right.commands)),
+        )[0];
+      expect(candidate, `${servantId}:${occurrenceId}:plan`).toBeDefined();
+      let scenario = materializePreNoblePhantasmPlan(
+        createDefaultResolvedScenario(master, undefined, servant),
+        candidate!,
+      );
       const baseline = calculateScenario(scenario, master, versions);
       const projection =
         occurrenceId === 'linkedTraitFamily'
@@ -346,8 +366,7 @@ describe('unsupported convergence production golden', () => {
             )
           : baseline.effects.find(
               (effect) =>
-                effect.source.effectOccurrenceId ===
-                  (occurrenceId === 'automaticReference' ? '21814:0' : occurrenceId) &&
+                effect.source.effectOccurrenceId === targetOccurrenceId &&
                 (automaticInput || initiallyHiddenByInput || effect.controllability === 'user'),
             );
       expect(projection, `${servantId}:${occurrenceId}`).toBeDefined();
@@ -684,7 +703,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'c7b346cc0c56b3ffc88eb1afb6630f2701e505d96ffd2f853c062caa1665d1cc',
+      '66aa700f024a3bd8234b8953cf413459e330df2d12c727f3c9d167fd969df2df',
     );
   }, 30_000);
 
@@ -702,6 +721,7 @@ describe('unsupported convergence production golden', () => {
       masterDataVersion: master.version,
     };
     const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
     const single = calculateScenario(scenario, master, versions);
     const fieldEffect = single.effects.find(
       (effect) => effect.source.effectOccurrenceId === '249:0',

@@ -196,14 +196,7 @@ describe('effect decision application command', () => {
       },
     ]);
 
-    const skillScenario = {
-      ...scenario,
-      attackerSkills: [
-        ...scenario.attackerSkills,
-        { skillId: 'skill', skillLevel: 10 },
-        { skillId: 'prerequisite', skillLevel: 10 },
-      ],
-    };
+    const skillScenario = scenario;
     const projectionWithPrerequisite: EffectProjection = {
       ...baseProjection,
       activationSources: [
@@ -231,7 +224,7 @@ describe('effect decision application command', () => {
       [],
       [baseProjection, earth],
     );
-    expect(compactEarth.attackerSkills).toEqual(skillScenario.attackerSkills);
+    expect(compactEarth.preNoblePhantasmPlan).toEqual(skillScenario.preNoblePhantasmPlan);
     expect(compactEarth.effectDecisions).toEqual([
       {
         decisionKey: 'effect:sky',
@@ -252,7 +245,7 @@ describe('effect decision application command', () => {
       [],
       [baseProjection, earth],
     );
-    expect(compactEarthOff.attackerSkills).toEqual(skillScenario.attackerSkills);
+    expect(compactEarthOff.preNoblePhantasmPlan).toEqual(skillScenario.preNoblePhantasmPlan);
     expect(compactEarthOff.effectDecisions.at(-1)).toEqual({
       decisionKey: 'effect:earth',
       operationEnabled: false,

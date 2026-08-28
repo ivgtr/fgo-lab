@@ -147,10 +147,9 @@ export function createEffectControlViewModels(
             chainedInput.minimum
         : projection.sourceActive &&
           selected &&
-          (!conditionSelectable ||
-            (activationOwnedCondition
-              ? projection.outcome === 'applied'
-              : projection.conditionDecision === 'assumeSatisfied'));
+          (projection.outcome === 'applied' ||
+            !conditionSelectable ||
+            (activationOwnedCondition ? true : projection.conditionDecision === 'assumeSatisfied'));
     return {
       key,
       projection,

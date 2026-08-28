@@ -13,6 +13,7 @@ import {
   activationFactKey,
   ENGINE_VERSION,
   SCHEMA_VERSION,
+  type CalculationScenario,
   type VersionContext,
 } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
@@ -26,6 +27,7 @@ import { setEffectSourceEnabled } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
 let productionMaster: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
+type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 function assumeProjectedCondition(
   scenario: Parameters<typeof applyEffectProjectionDecision>[0],
@@ -263,7 +265,8 @@ describe('production master inventory ratchet', () => {
     const skippedExclusivePairs: string[] = [];
     for (const { servant, scenario, calculation } of calculations) {
       const userControls = calculation.effectControls.filter(
-        (control) => control.projection.controllability === 'user',
+        (control) =>
+          control.projection.controllability === 'user' && control.projection.sourceActive,
       );
       const userEffects = userControls.map((control) => control.projection);
       const selectedCalculations = new Map<string, ReturnType<typeof calculateScenario>>();
@@ -496,7 +499,7 @@ describe('production master inventory ratchet', () => {
     }
 
     expect(master.servants).toHaveLength(469);
-    expect(calculations).toHaveLength(420);
+    expect(calculations).toHaveLength(422);
     expect(normalizationErrors).toEqual([]);
     expect(literalUnknownTraits).toEqual([]);
     expect({
@@ -509,7 +512,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_606, automaticVisible: 0, hidden: 707 });
+    }).toEqual({ user: 1_585, automaticVisible: 0, hidden: 714 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -528,7 +531,6 @@ describe('production master inventory ratchet', () => {
       'noblePhantasmVariant',
       'operationTrigger',
       'quantity',
-      'sourceQuantity',
       'targetPredicate',
       'trait',
     ]);
@@ -536,9 +538,7 @@ describe('production master inventory ratchet', () => {
     expect(missingCandidateValues).toEqual([]);
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
-    expect(selectedUnsupportedProjections).toEqual([
-      '2300600:attacker:attacker:2300600:2403650:21986:0',
-    ]);
+    expect(selectedUnsupportedProjections).toEqual([]);
     expect(targetContextRequiredProjections).toEqual([]);
     expect(
       Object.fromEntries(
@@ -550,20 +550,20 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({ '2300600': 1 });
-    expect(declaredExclusivePairCount).toBe(23);
+    ).toEqual({});
+    expect(declaredExclusivePairCount).toBe(4);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
       '2301100:attacker:attacker:2301100:2536550:22888:0|attacker:attacker:2301100:2536550:22887:0',
       '2301100:attacker:attacker:2301100:2536550:22887:0|passive:passive:2301100:2534650:22874:0',
     ]);
-    expect(exclusivePairCount).toBe(20);
-    expect(conflictPairs).toEqual({ effectEffect: 20, factFact: 0, factEffect: 0 });
+    expect(exclusivePairCount).toBe(1);
+    expect(conflictPairs).toEqual({ effectEffect: 1, factFact: 0, factEffect: 0 });
     expect({
       combinations: canonicalFactConditionConflicts,
       effects: canonicalConflictEffects.size,
       servants: canonicalConflictServants.size,
-    }).toEqual({ combinations: 12, effects: 9, servants: 3 });
+    }).toEqual({ combinations: 10, effects: 7, servants: 3 });
     expect(invalidExclusiveCalculations).toEqual([]);
     expect(invalidConflictInputs).toEqual([]);
     expect(archetype?.result.status).toBe('calculated');
@@ -573,8 +573,8 @@ describe('production master inventory ratchet', () => {
     ).toMatchObject({ value: 0.3, outcome: 'applied' });
     expect(archetype?.effects.find((effect) => effect.label === '防御力ダウン')).toMatchObject({
       value: 0.2,
-      outcome: 'notApplied',
-      explanation: { code: 'disabled' },
+      outcome: 'applied',
+      explanation: { code: 'applied' },
     });
     expect(soujuurou?.result.status).toBe('calculated');
     expect(soujuurou?.input.ignoreDamageCut).toBe(true);
@@ -617,9 +617,9 @@ describe('production master inventory ratchet', () => {
     let projectionCount = 0;
     for (const source of master.servants) {
       for (const skill of source.skills) {
-        const scenario = {
+        const scenario: ResolvedScenario = {
           ...createDefaultResolvedScenario(master, undefined, attacker),
-          attackerSkills: [],
+          preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
           support: {
             sourceTemplateId: null,
             composition: {
@@ -717,9 +717,9 @@ describe('production master inventory ratchet', () => {
       masterDataLocale: 'ja-JP',
       masterDataVersion: master.version,
     };
-    const base = {
+    const base: ResolvedScenario = {
       ...createDefaultResolvedScenario(master, undefined, attacker),
-      attackerSkills: [],
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
     };
     const failures: string[] = [];
     let projectionCount = 0;

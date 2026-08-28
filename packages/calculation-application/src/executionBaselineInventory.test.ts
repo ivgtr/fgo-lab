@@ -75,16 +75,16 @@ describe('E0 production master execution inventory', () => {
     expect(master.servants).toHaveLength(469);
     expect(
       master.servants.filter((servant) => getBaseAttackNoblePhantasmVariant(servant)),
-    ).toHaveLength(420);
+    ).toHaveLength(419);
     expect(damageKinds).toEqual({
       battlePointPhase: 2,
       defensePiercing: 67,
       hpRatioLow: 6,
-      standard: 371,
+      standard: 375,
       stateTrait: 13,
       targetRarity: 1,
-      trait: 141,
-      traitCount: 20,
+      trait: 143,
+      traitCount: 22,
       traitExpression: 1,
     });
     expect(conditionOperators).toEqual(['all', 'any']);
@@ -109,7 +109,7 @@ describe('E0 production master execution inventory', () => {
     const valueEffects = effects.filter((effect) =>
       effect.atlasEvidence.parameterSemantics.value.includes('Value'),
     );
-    expect(valueEffects).toHaveLength(10_706);
+    expect(valueEffects).toHaveLength(10_865);
     expect(
       Object.fromEntries(
         Object.entries(
@@ -120,7 +120,7 @@ describe('E0 production master execution inventory', () => {
           }, {}),
         ).sort(),
       ),
-    ).toEqual({ contextTraitId: 74, modifier: 3_834, modifierRate: 1, nonDamage: 6_797 });
+    ).toEqual({ contextTraitId: 80, modifier: 3_885, modifierRate: 1, nonDamage: 6_899 });
   });
 
   it('locks mandatory real-master scenarios without production branching', async () => {

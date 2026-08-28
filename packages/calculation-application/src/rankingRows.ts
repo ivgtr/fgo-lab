@@ -1,8 +1,4 @@
-import {
-  getSelectableNoblePhantasmVariants,
-  type MasterDataSnapshot,
-  type ServantMaster,
-} from '@fgo-lab/master-data';
+import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { CalculationResult } from '@fgo-lab/schema';
 import type {
   RankingConditions,
@@ -11,6 +7,8 @@ import type {
   RankingProfileInput,
   RankingRowSummary,
 } from './rankingContracts';
+import { isSpecialAttack } from './rankingContribution';
+import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 function resultFailure(servant: ServantMaster, result: CalculationResult): RankingFailure {
   if (result.status === 'inputRequired')
@@ -39,8 +37,7 @@ export function includedRankingServants(
   conditions: RankingConditions,
 ): ServantMaster[] {
   return master.servants.filter((servant) => {
-    if (!getSelectableNoblePhantasmVariants(servant).some((variant) => variant.kind === 'attack'))
-      return false;
+    if (planPreNoblePhantasmCandidates(servant).candidates.length === 0) return false;
     if (conditions.comparisonMode === 'standard') return true;
     return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
   });
@@ -69,6 +66,7 @@ export function createRankingRow(
     npTarget: detail.npTarget,
     noblePhantasmVariant: detail.noblePhantasmVariant,
     noblePhantasmName: detail.noblePhantasmName,
+    attackProfile: detail.attackProfile,
     minimum: selected.minimum,
     average: selected.average,
     maximum: selected.maximum,
@@ -78,7 +76,9 @@ export function createRankingRow(
     supportSourceCount: new Set(supportEffects.map((effect) => effect.source.sourceInstanceId))
       .size,
     specialAttackApplied: applied.some(
-      (effect) => effect.modifier === 'powerMod' || effect.modifier === 'npSpecial',
+      (effect) =>
+        isSpecialAttack(effect) &&
+        !detail.contributionProjection.excludedOperationIds.has(effect.operationId),
     ),
     level: detail.scenario.attacker.level,
     npLevel: detail.scenario.attacker.npLevel,

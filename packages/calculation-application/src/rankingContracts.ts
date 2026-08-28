@@ -8,6 +8,8 @@ import type {
 } from '@fgo-lab/schema';
 import type { CalculationExecution } from './scenario';
 import type { NoblePhantasmVariantRef } from '@fgo-lab/master-data';
+import type { AttackProfile } from './attackProfile';
+import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -15,6 +17,15 @@ export type RankingComparisonMode = 'standard' | 'owned';
 export type RankingNpLevel = 1 | 2 | 3 | 4 | 5;
 export type RankingClassAffinity = 'neutral' | 'favorable';
 export type RankingSelfBuffs = 'included' | 'excluded';
+export type RankingDamageContributionProjection =
+  'standardWithSelfSkills' | 'counterfactualWithoutVoluntarySkillModifiers';
+
+export const rankingDamageContributionProjection = (
+  selfBuffs: RankingSelfBuffs,
+): RankingDamageContributionProjection =>
+  selfBuffs === 'included'
+    ? 'standardWithSelfSkills'
+    : 'counterfactualWithoutVoluntarySkillModifiers';
 export type RankingSpecialAttack = 'inactive' | 'active';
 export type RankingField = 'inactive' | 'active';
 
@@ -71,6 +82,7 @@ export interface RankingRowSummary {
   npTarget: 'single' | 'all';
   noblePhantasmVariant: NoblePhantasmVariantRef;
   noblePhantasmName: string;
+  attackProfile: AttackProfile;
   minimum: number;
   average: number;
   maximum: number;
@@ -96,6 +108,7 @@ export interface RankingDetail {
   servantId: string;
   noblePhantasmVariant: NoblePhantasmVariantRef;
   noblePhantasmName: string;
+  attackProfile: AttackProfile;
   npCard: 'buster' | 'arts' | 'quick';
   npTarget: 'single' | 'all';
   scenario: ResolvedScenario;
@@ -104,11 +117,14 @@ export interface RankingDetail {
   effects: CalculationExecution['effects'];
   effectInputs: CalculationExecution['effectInputs'];
   warnings: CalculationExecution['effectWarnings'];
+  appliedPreparationActions: CalculationExecution['appliedPreparationActions'];
+  contributionProjection: DamageContributionProjection;
   areaContribution: {
     withoutAreaScenario: ResolvedScenario;
     withoutAreaInput: DamageResolutionInput;
     withoutAreaResult: CalculationResult;
     withoutAreaEffects: CalculationExecution['effects'];
+    contributionProjection: DamageContributionProjection;
     warnings: CalculationExecution['effectWarnings'];
   } | null;
   executionMetrics: {
@@ -121,6 +137,12 @@ export interface RankingCalculation {
   rows: RankingRowSummary[];
   failures: RankingFailure[];
   details: Record<string, RankingDetail>;
+  damageCache: {
+    requestCount: number;
+    distinctDamageInputCount: number;
+    cacheHitCount: number;
+    cacheHitRate: number;
+  };
 }
 
 export interface RankingSummary {

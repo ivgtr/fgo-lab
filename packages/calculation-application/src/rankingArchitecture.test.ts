@@ -39,19 +39,20 @@ describe('ranking architecture', () => {
     expect(factory).not.toMatch(/for \(const .*effectControls[\s\S]*calculateScenario/);
     expect(factory).not.toContain('MAX_SPECIAL_ATTACK_SCENARIOS');
     expect(factory).not.toContain("from './effectDecision'");
-    const choiceWorld = await readFile(
-      resolve(root, 'packages/calculation-application/src/rankingChoiceWorld.ts'),
+    const execution = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingExecution.ts'),
       'utf8',
     );
-    expect(choiceWorld.split('\n').length).toBeLessThanOrEqual(100);
-    expect(choiceWorld).not.toMatch(/servant\.id\s*===|servant\.name\s*===/);
-    const policy = await readFile(
-      resolve(root, 'packages/calculation-application/src/rankingExecutionPolicy.ts'),
-      'utf8',
-    );
-    expect(policy).not.toContain("from './effectDecision'");
-    expect(policy).not.toContain('applyTargetContextCommand');
-    expect(policy.split('\n').length).toBeLessThanOrEqual(180);
+    expect(execution.split('\n').length).toBeLessThanOrEqual(140);
+    expect(execution).not.toContain("from './effectDecision'");
+    expect(execution).not.toContain('applyTargetContextCommand');
+    expect(execution).not.toMatch(/activationFacts\.(push|splice)|effectDecisions\.(push|splice)/);
+    await expect(
+      readFile(resolve(root, 'packages/calculation-application/src/rankingChoiceWorld.ts')),
+    ).rejects.toThrow();
+    await expect(
+      readFile(resolve(root, 'packages/calculation-application/src/rankingExecutionPolicy.ts')),
+    ).rejects.toThrow();
   });
 
   it('reuses one standard matrix when only NP level changes', async () => {

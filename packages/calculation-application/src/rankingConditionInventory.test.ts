@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { getBaseNoblePhantasmGroup, masterSnapshotSchema } from '@fgo-lab/master-data';
-import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
+import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import {
   conditionAllowsEffectLocalDecision,
@@ -10,7 +9,8 @@ import {
 import { conditionFactRequirements } from './conditionProvenance';
 import { DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './rankingContracts';
 import { contributesToAttackerDamage, isSpecialAttack } from './rankingContribution';
-import { compileRankingExecutionPlan, selectedKeysForScope } from './rankingScenario';
+import { selectedKeysForScope } from './rankingScenario';
+import { compileRankingPreparationProgram } from './rankingPreparationProgram';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -24,39 +24,34 @@ describe('production ranking condition provenance', () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
-    const versions = {
-      schemaVersion: SCHEMA_VERSION,
-      masterDataVersion: master.version,
-      engineVersion: ENGINE_VERSION,
-      appVersion: APP_VERSION,
-      gameRegion: 'JP' as const,
-      masterDataLocale: 'ja-JP' as const,
-    };
     const inventory = master.servants.flatMap((servant) => {
-      if (!getBaseNoblePhantasmGroup(servant)?.variants.some(({ kind }) => kind === 'attack'))
-        return [];
-      const plan = compileRankingExecutionPlan(
+      const programs = compileRankingPreparationProgram(
         servant,
         master,
         profile,
         DEFAULT_RANKING_CONDITIONS,
-        versions,
       );
-      const selected = selectedKeysForScope(
-        plan.baseline.effectControls,
-        DEFAULT_RANKING_CONDITIONS,
-        'ranking',
-        null,
-        master,
+      const controls = new Map(
+        programs.flatMap(({ baseline }) => {
+          const selected = selectedKeysForScope(
+            baseline.effectControls,
+            DEFAULT_RANKING_CONDITIONS,
+            'ranking',
+            null,
+            master,
+          );
+          return baseline.effectControls.flatMap((control) => {
+            return selected.has(control.key) ? [[control.key, control] as const] : [];
+          });
+        }),
       );
-      return plan.baseline.effectControls.flatMap((control) => {
+      return [...controls.values()].flatMap((control) => {
         const decision = control.projection.decision;
         if (
           decision.state === 'none' ||
           decision.kind !== 'effect' ||
           decision.plan.condition !== 'userMayAssume' ||
           control.interaction === 'none' ||
-          !selected.has(control.key) ||
           !conditionAllowsEffectLocalDecision(control.projection.explanation.condition) ||
           !contributesToAttackerDamage(control.projection) ||
           isSpecialAttack(control.projection)

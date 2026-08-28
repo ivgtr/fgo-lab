@@ -19,6 +19,7 @@ import { resolveCanonicalInputValues } from './canonicalInputs';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 
 const master = masterSnapshotSchema.parse(fixture);
+type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 type MutableEffectContainer = { effects?: Record<string, unknown>[] };
 type MutableServant = {
@@ -26,6 +27,7 @@ type MutableServant = {
   passives?: MutableEffectContainer[];
   noblePhantasms?: MutableEffectContainer[];
   noblePhantasmVariantGroups?: { variants: MutableEffectContainer[] }[];
+  actorFormGraph?: { forms: { skillIds: string[]; passiveIds: string[] }[] };
 };
 
 function parseTestMaster(input: unknown) {
@@ -61,6 +63,11 @@ function parseTestMaster(input: unknown) {
       }
   };
   for (const servant of candidate.servants) {
+    if (servant.actorFormGraph)
+      servant.actorFormGraph = {
+        ...servant.actorFormGraph,
+        forms: servant.actorFormGraph.forms.map((form) => ({ ...form })),
+      };
     decorate(servant.skills ?? [], 'skillUse', 'include');
     decorate(servant.passives ?? [], 'constant', 'include');
     decorate(servant.noblePhantasms ?? [], 'npBeforeDamage', 'include');
@@ -69,6 +76,15 @@ function parseTestMaster(input: unknown) {
       'npBeforeDamage',
       'include',
     );
+    for (const form of servant.actorFormGraph?.forms ?? []) {
+      form.skillIds =
+        (servant.skills as { id?: string }[] | undefined)?.flatMap(({ id }) => (id ? [id] : [])) ??
+        [];
+      form.passiveIds =
+        (servant.passives as { id?: string }[] | undefined)?.flatMap(({ id }) =>
+          id ? [id] : [],
+        ) ?? [];
+    }
   }
   decorate(candidate.craftEssences, 'constant', 'include');
   for (const code of candidate.mysticCodes) decorate(code.skills, 'skillUse', 'include');
@@ -235,9 +251,12 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const scenario = {
+    const scenario: Extract<CalculationScenario, { mode: 'resolved' }> = {
       ...createDefaultResolvedScenario(occurrenceMaster, undefined),
-      attackerSkills: [{ skillId: 'occurrence-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
     };
     const inactive = calculateScenario(scenario, occurrenceMaster, {
       ...versions,
@@ -347,7 +366,7 @@ describe('scenario calculation facade', () => {
     );
   });
 
-  it('gates skill mutations by source use and terminal modifiers by inclusion', () => {
+  it('applies skill mutations from the action while gating terminal modifiers by inclusion', () => {
     const fieldEffect = {
       ...modifierEffect('field-sunshine', 'fieldIndividuality', 2_038),
       label: 'field mutation',
@@ -434,21 +453,24 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(linkedMaster, undefined),
-      attackerSkills: [{ skillId: 'mutation-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1 as const, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
     };
     const versionContext = { ...versions, masterDataVersion: linkedMaster.version };
     const initial = calculateScenario(scenario, linkedMaster, versionContext);
-    expect(initial.input.fieldTraits).toEqual([]);
-    expect(initial.input.attackerStateTraits).toEqual([]);
+    expect(initial.input.fieldTraits).toEqual(['fieldSunlight']);
+    expect(initial.input.attackerStateTraits).toEqual(['blessedByKur']);
     expect(initial.effects.find((effect) => effect.label === 'field mutation')).toMatchObject({
       visibility: 'hidden',
-      outcome: 'notApplied',
+      outcome: 'applied',
     });
     expect(initial.effects.find((effect) => effect.label === 'recipient mutation')).toMatchObject({
       visibility: 'hidden',
-      outcome: 'notApplied',
+      outcome: 'applied',
     });
 
     const sameSkillPowerProjection = initial.effects.find(
@@ -502,10 +524,10 @@ describe('scenario calculation facade', () => {
       linkedMaster,
       versionContext,
     );
-    expect(excluded.input.fieldTraits).toEqual([]);
-    expect(excluded.input.attackBuff).toBe(0);
+    expect(excluded.input.fieldTraits).toEqual(['fieldSunlight']);
+    expect(excluded.input.attackBuff).toBe(0.3);
     expect(excluded.input.powerMod).toBe(0);
-    expect(excluded.input.attackerStateTraits).toEqual([]);
+    expect(excluded.input.attackerStateTraits).toEqual(['blessedByKur']);
   });
 
   it('calculates a resolved scenario without a UI selection adapter', () => {
@@ -656,9 +678,12 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(exclusiveMaster, undefined),
-      attackerSkills: [{ skillId: 'realm-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1 as const, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
     };
     const inactive = calculateScenario(scenario, exclusiveMaster, {
       ...versions,
@@ -809,7 +834,7 @@ describe('scenario calculation facade', () => {
       ...fixture,
       servants: [attacker, support],
     });
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(supportMaster, undefined),
       support: {
         sourceTemplateId: null,
@@ -913,9 +938,12 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(transactionalMaster, undefined),
-      attackerSkills: [{ skillId: 'hell-power-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1 as const, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
     };
     const initial = calculateScenario(scenario, transactionalMaster, {
       ...versions,
@@ -998,10 +1026,13 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(compoundMaster, undefined),
       attackerHpPermille: null,
-      attackerSkills: [{ skillId: 'compound-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1 as const, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
     };
     const initial = calculateScenario(scenario, compoundMaster, {
       ...versions,
@@ -1067,7 +1098,7 @@ describe('scenario calculation facade', () => {
         effects: [modifierEffect('ce-or-power', 'upDamage', 300, [], 'self', orCondition)],
       })),
     });
-    const baseScenario = {
+    const baseScenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(conditionalMaster, undefined),
       craftEssence: {
         craftEssenceId: conditionalMaster.craftEssences[0]!.id,
@@ -1221,7 +1252,7 @@ describe('scenario calculation facade', () => {
   });
 
   it('fails closed when a resolved scenario references a missing craft essence', () => {
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(master, undefined),
       craftEssence: { craftEssenceId: 'missing', level: 1, limitBreak: 0 },
     };
@@ -1338,7 +1369,7 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const scenario = {
+    const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(combinationMaster, undefined),
       targetContext: {
         class: { kind: 'relative' as const, relation: 'neutral' as const },
@@ -1346,7 +1377,10 @@ describe('scenario calculation facade', () => {
         families: [],
       },
       craftEssence: { craftEssenceId: 'fixture-ce', level: 1, limitBreak: 0 },
-      attackerSkills: [{ skillId: 'attacker-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1 as const, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
       mysticCode: {
         mysticCodeId: 'combo-mc',
         skills: [{ skillId: 'mc-skill', skillLevel: 10, enabled: true }],

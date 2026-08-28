@@ -118,6 +118,7 @@ export function setActivationFactsForProjection(
   enabled: boolean,
   owners: readonly ActivationRequirementOwner[],
 ): ResolvedScenario {
+  if (projection.source.origin === 'attacker') return scenario;
   if (projection.decision.state === 'none') return scenario;
   const decisionKey = projection.decision.decisionKey;
   const linkedFacts = owners.flatMap((owner) => {

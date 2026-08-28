@@ -113,7 +113,10 @@ describe('external damage differential', () => {
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
     const servant = master.servants.find((candidate) => candidate.id === testCase.input.servantId)!;
-    const scenario = createDefaultResolvedScenario(master, undefined, servant);
+    const scenario = {
+      ...createDefaultResolvedScenario(master, undefined, servant),
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+    };
     const versions = {
       schemaVersion: SCHEMA_VERSION,
       masterDataVersion: master.version,
@@ -172,7 +175,10 @@ describe('external damage differential', () => {
       const servant = master.servants.find(
         (candidate) => candidate.id === testCase.input.servantId,
       )!;
-      const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      const scenario = {
+        ...createDefaultResolvedScenario(master, undefined, servant),
+        preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+      };
       const baseline = calculateScenario(scenario, master, versions);
       if (testCase.caseId === 'appmedia-john-trait-match-counts') {
         expect({ npDamageBuff: baseline.input.npDamageBuff }).toEqual(testCase.externalExpected);

@@ -1,9 +1,163 @@
-import type { EffectProjection, OperationSource } from '@fgo-lab/battle-execution';
-import type { CalculationScenario, SupportSource } from '@fgo-lab/schema';
+import {
+  resolveAttackerFormExecution,
+  type EffectProjection,
+  type OperationSource,
+} from '@fgo-lab/battle-execution';
+import type { AttackerSkillUse, CalculationScenario, SupportSource } from '@fgo-lab/schema';
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
+import {
+  actorFormEquals,
+  findActorForm,
+  getInitialActorForms,
+  getSkillsForActorForm,
+  type ActorFormId,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import { applyTargetContextCommand } from './targetContext';
+import { defaultCalculatorPreNoblePhantasmCandidateForInitialForm } from './preNoblePhantasmPlanner';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
+
+const attackerOwnedOrigin = new Set(['attacker', 'passive', 'np']);
+
+export interface PreparationChoiceOption {
+  key: string;
+  slot: 1 | 2 | 3;
+  choice: NonNullable<AttackerSkillUse['choice']>;
+  label: string;
+  skillName: string;
+  imageKey: string | null;
+  active: boolean;
+}
+
+export function preparationChoiceOptions(
+  scenario: ResolvedScenario,
+  servant: ServantMaster,
+): readonly PreparationChoiceOption[] {
+  const execution = resolveAttackerFormExecution(scenario, servant);
+  if (execution.issues.length > 0) throw new TypeError('preparation_choice_scenario_invalid');
+  return execution.actions.flatMap((action) => {
+    if (action.command.kind !== 'useSkillSlot' || action.command.choice === null) return [];
+    const command = action.command;
+    const skill = getSkillsForActorForm(servant, action.actorFormId).find(
+      ({ id }) => id === action.sourceId,
+    );
+    if (!skill) throw new TypeError(`preparation_choice_skill_missing:${action.sourceId}`);
+    const choices = new Map<
+      string,
+      { choice: NonNullable<AttackerSkillUse['choice']>; label: string; structural: boolean }
+    >();
+    for (const effect of skill.effects) {
+      if (!effect.choice) continue;
+      const key = `${effect.choice.family}:${String(effect.choice.candidate)}`;
+      const structural = effect.execution.some(
+        (operation) => operation.kind === 'selectNoblePhantasmVariant',
+      );
+      const current = choices.get(key);
+      if (!current || structural)
+        choices.set(key, {
+          choice: { family: effect.choice.family, candidate: String(effect.choice.candidate) },
+          label: effect.label,
+          structural,
+        });
+    }
+    return [...choices.values()].map(({ choice, label }) => ({
+      key: `${String(command.slot)}:${choice.family}:${choice.candidate}`,
+      slot: command.slot,
+      choice,
+      label,
+      skillName: skill.name,
+      imageKey: skill.imageKey,
+      active:
+        command.choice?.family === choice.family && command.choice.candidate === choice.candidate,
+    }));
+  });
+}
+
+export function setPreparationSkillChoice(
+  scenario: ResolvedScenario,
+  servant: ServantMaster,
+  option: PreparationChoiceOption,
+  projections: readonly EffectProjection[],
+): ResolvedScenario {
+  let replacementCount = 0;
+  const preNoblePhantasmPlan = scenario.preNoblePhantasmPlan.map((command) => {
+    if (command.kind !== 'useSkillSlot' || command.slot !== option.slot) return command;
+    replacementCount += 1;
+    return { ...command, choice: option.choice };
+  });
+  if (replacementCount !== 1) throw new TypeError('preparation_choice_command_missing');
+  const removedDecisionKeys = new Set(
+    projections
+      .filter(({ source }) => attackerOwnedOrigin.has(source.origin))
+      .map(({ projectionKey }) => projectionKey),
+  );
+  const changed: ResolvedScenario = {
+    ...scenario,
+    preNoblePhantasmPlan,
+    effectDecisions: scenario.effectDecisions.filter(
+      ({ decisionKey }) => !removedDecisionKeys.has(decisionKey),
+    ),
+    activationFacts: scenario.activationFacts.filter(
+      ({ source }) => !attackerOwnedOrigin.has(source.origin),
+    ),
+    worldFactAssertions: scenario.worldFactAssertions.filter(
+      ({ decisionKey }) => !removedDecisionKeys.has(decisionKey),
+    ),
+    canonicalInputValues: {},
+  };
+  if (resolveAttackerFormExecution(changed, servant).issues.length > 0)
+    throw new TypeError('preparation_choice_command_invalid');
+  return changed;
+}
+
+export function setInitialActorForm(
+  scenario: ResolvedScenario,
+  servant: ServantMaster,
+  initialActorFormId: ActorFormId,
+  projections: readonly EffectProjection[],
+): ResolvedScenario {
+  const targetForm = findActorForm(servant, initialActorFormId);
+  if (
+    !targetForm ||
+    !getInitialActorForms(servant).some(({ id }) => actorFormEquals(id, initialActorFormId))
+  )
+    throw new TypeError('unknown_initial_actor_form');
+  if (actorFormEquals(scenario.attacker.initialActorFormId, initialActorFormId)) return scenario;
+  const currentSkills = new Map(
+    scenario.preNoblePhantasmPlan.flatMap((command) =>
+      command.kind === 'useSkillSlot' ? [[command.slot, command.skillLevel] as const] : [],
+    ),
+  );
+  const candidate = defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
+    servant,
+    targetForm.id,
+  );
+  const removedDecisionKeys = new Set(
+    projections
+      .filter(({ source }) => attackerOwnedOrigin.has(source.origin))
+      .map(({ projectionKey }) => projectionKey),
+  );
+  return {
+    ...scenario,
+    attacker: { ...scenario.attacker, initialActorFormId },
+    preNoblePhantasmPlan: candidate.commands.map((command) =>
+      command.kind === 'useSkillSlot'
+        ? { ...command, skillLevel: currentSkills.get(command.slot) ?? command.skillLevel }
+        : command,
+    ),
+    effectDecisions: scenario.effectDecisions.filter(
+      ({ decisionKey }) => !removedDecisionKeys.has(decisionKey),
+    ),
+    activationFacts: scenario.activationFacts.filter(
+      ({ source }) => !attackerOwnedOrigin.has(source.origin),
+    ),
+    worldFactAssertions: scenario.worldFactAssertions.filter(
+      ({ decisionKey }) => !removedDecisionKeys.has(decisionKey),
+    ),
+    canonicalInputValues: {},
+  };
+}
 
 export function resetTargetClassContextForAttacker(
   scenario: ResolvedScenario,
@@ -56,13 +210,15 @@ export function setOperationSourceEnabled(
 
 export function setAttackerSkillLevel(
   scenario: ResolvedScenario,
-  skillId: string,
+  slot: 1 | 2 | 3,
   skillLevel: number,
 ): ResolvedScenario {
   return {
     ...scenario,
-    attackerSkills: scenario.attackerSkills.map((skill) =>
-      skill.skillId === skillId ? { ...skill, skillLevel } : skill,
+    preNoblePhantasmPlan: scenario.preNoblePhantasmPlan.map((command) =>
+      command.kind === 'useSkillSlot' && command.slot === slot
+        ? { ...command, skillLevel }
+        : command,
     ),
   };
 }

@@ -1,26 +1,58 @@
-import {
-  noblePhantasmVariantKey,
-  type MasterDataSnapshot,
-  type ServantMaster,
-} from '@fgo-lab/master-data';
+import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
+import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
 import type { RankingConditions, RankingProfileInput } from './rankingContracts';
-import {
-  applyRankingCanonicalMinimums,
-  createRankingBaseScenario,
-  type ResolvedScenario,
-} from './rankingPolicy';
+import { type ResolvedScenario } from './rankingPolicy';
 import { compileRankingScenarioWorlds } from './rankingScenarioWorlds';
-import { calculateScenario, type CalculationExecution } from './scenario';
+import { attackProfileKey, type AttackProfile } from './attackProfile';
+import {
+  prepareCalculationScenarioWithContributionProjection,
+  projectPreparedCalculationContribution,
+  type PreparedCalculationProjection,
+  type PreparedCalculationScenario,
+} from './scenario';
+import { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
+import { compileRankingPreparationProgram } from './rankingPreparationProgram';
 
 export { selectedKeysForScope } from './rankingScenarioWorlds';
+export { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
 
 export interface RankingExecutionPlan {
   baseScenario: ResolvedScenario;
-  baseline: CalculationExecution;
+  baseline: PreparedCalculationProjection;
   rankingScenarios: readonly ResolvedScenario[];
-  withoutAreaScenarios: readonly ResolvedScenario[];
+  preparedRankingScenarios: readonly PreparedCalculationScenario[];
+  attackProfiles: readonly AttackProfile[];
+  contributionProjections: readonly DamageContributionProjection[];
+  withoutAreaScenarios: readonly (ResolvedScenario | null)[];
+  preparedWithoutAreaScenarios: readonly (PreparedCalculationScenario | null)[];
+  withoutAreaContributionProjections: readonly (DamageContributionProjection | null)[];
   worldCandidateCount: number;
+}
+
+function prepareOptionalRankingScenario(
+  scenario: ResolvedScenario | null,
+  canonical: ResolvedScenario,
+  canonicalPrepared: PreparedCalculationScenario,
+  master: MasterDataSnapshot,
+  projection: DamageContributionProjection | null,
+): PreparedCalculationScenario | null {
+  if (scenario === null || projection === null) return null;
+  return prepareRankingScenario(scenario, canonical, canonicalPrepared, master, projection);
+}
+
+function prepareRankingScenario(
+  scenario: ResolvedScenario,
+  canonical: ResolvedScenario,
+  canonicalPrepared: PreparedCalculationScenario,
+  master: MasterDataSnapshot,
+  projection: DamageContributionProjection,
+): PreparedCalculationScenario {
+  if (scenario !== canonical)
+    return prepareCalculationScenarioWithContributionProjection(scenario, master, projection);
+  return projection.excludedOperationIds.size === 0
+    ? canonicalPrepared
+    : projectPreparedCalculationContribution(canonicalPrepared, projection);
 }
 
 export function compileRankingExecutionPlan(
@@ -30,82 +62,66 @@ export function compileRankingExecutionPlan(
   conditions: RankingConditions,
   versions: VersionContext,
 ): RankingExecutionPlan {
-  const initial = createRankingBaseScenario(servant, master, profile, conditions);
-  const baseline = calculateScenario(initial, master, versions);
-  const canonical = applyRankingCanonicalMinimums(initial, baseline);
-  const worlds = compileRankingScenarioWorlds({
-    servant,
-    master,
-    conditions,
-    versions,
-    canonical,
-    baseline,
-  });
-  return { baseScenario: canonical, baseline, ...worlds };
-}
-
-function selectedAverage(
-  execution: CalculationExecution,
-  npLevel: 1 | 2 | 3 | 4 | 5,
-): number | null {
-  if (execution.result.status !== 'calculated' || execution.scenario.mode !== 'resolved')
-    return null;
-  return execution.result.rows[npLevel - 1]?.average ?? null;
-}
-
-function rankingExternalFieldFactCount(execution: CalculationExecution): number {
-  return execution.scenario.mode === 'resolved'
-    ? execution.scenario.worldFactAssertions.filter(
-        ({ decisionKey, fact }) =>
-          decisionKey.startsWith('ranking:field:') && fact.kind === 'trait' && fact.present,
-      ).length
-    : 0;
-}
-
-const rankingActivationFactCount = (execution: CalculationExecution): number =>
-  execution.scenario.mode === 'resolved' ? execution.scenario.activationFacts.length : 0;
-
-export function executeRankingScenarios(
-  scenarios: readonly ResolvedScenario[],
-  master: MasterDataSnapshot,
-  versions: VersionContext,
-): CalculationExecution[] {
-  return scenarios.map((scenario) => calculateScenario(scenario, master, versions));
-}
-
-export function selectRankingExecutionIndexes(
-  executions: readonly CalculationExecution[],
-  npLevel: 1 | 2 | 3 | 4 | 5,
-): ReadonlyMap<'single' | 'all', number> {
-  const candidates = executions
-    .map((execution, index) => ({ execution, index, average: selectedAverage(execution, npLevel) }))
-    .filter(
-      (candidate): candidate is typeof candidate & { average: number } =>
-        candidate.average !== null && candidate.execution.noblePhantasmVariant?.kind === 'attack',
-    );
-  const selected = new Map<'single' | 'all', number>();
-  for (const scope of ['single', 'all'] as const) {
-    const winner = candidates
-      .filter(
-        (candidate) =>
-          candidate.execution.noblePhantasmVariant?.kind === 'attack' &&
-          candidate.execution.noblePhantasmVariant.targetScope === scope,
-      )
-      .sort(
-        (left, right) =>
-          right.average - left.average ||
-          rankingExternalFieldFactCount(left.execution) -
-            rankingExternalFieldFactCount(right.execution) ||
-          rankingActivationFactCount(left.execution) -
-            rankingActivationFactCount(right.execution) ||
-          noblePhantasmVariantKey(left.execution.noblePhantasmVariant!.ref).localeCompare(
-            noblePhantasmVariantKey(right.execution.noblePhantasmVariant!.ref),
+  const plans = compileRankingPreparationProgram(servant, master, profile, conditions).map(
+    ({ canonical, baseline, canonicalPrepared, attackProfile }) => {
+      const worlds = compileRankingScenarioWorlds({
+        servant,
+        master,
+        conditions,
+        versions,
+        canonical,
+        baseline,
+      });
+      return {
+        baseScenario: canonical,
+        baseline,
+        attackProfile,
+        preparedRankingScenarios: worlds.rankingScenarios.map((scenario, index) =>
+          prepareRankingScenario(
+            scenario,
+            canonical,
+            canonicalPrepared,
+            master,
+            worlds.contributionProjections[index]!,
           ),
-      )[0];
-    if (winner) selected.set(scope, winner.index);
-  }
-  if (selected.size === 0) throw new TypeError('ranking_candidate_execution_missing');
-  return selected;
+        ),
+        preparedWithoutAreaScenarios: worlds.withoutAreaScenarios.map((scenario, index) =>
+          prepareOptionalRankingScenario(
+            scenario,
+            canonical,
+            canonicalPrepared,
+            master,
+            worlds.withoutAreaContributionProjections[index] ?? null,
+          ),
+        ),
+        ...worlds,
+      };
+    },
+  );
+  const first = plans[0];
+  if (!first) throw new TypeError(`ranking_initial_actor_form_missing:${servant.id}`);
+  return {
+    baseScenario: first.baseScenario,
+    baseline: first.baseline,
+    rankingScenarios: plans.flatMap(({ rankingScenarios }) => rankingScenarios),
+    preparedRankingScenarios: plans.flatMap(
+      ({ preparedRankingScenarios }) => preparedRankingScenarios,
+    ),
+    attackProfiles: plans.flatMap(({ rankingScenarios, attackProfile }) =>
+      rankingScenarios.map(() => attackProfile),
+    ),
+    contributionProjections: plans.flatMap(
+      ({ contributionProjections }) => contributionProjections,
+    ),
+    withoutAreaScenarios: plans.flatMap(({ withoutAreaScenarios }) => withoutAreaScenarios),
+    preparedWithoutAreaScenarios: plans.flatMap(
+      ({ preparedWithoutAreaScenarios }) => preparedWithoutAreaScenarios,
+    ),
+    withoutAreaContributionProjections: plans.flatMap(
+      ({ withoutAreaContributionProjections }) => withoutAreaContributionProjections,
+    ),
+    worldCandidateCount: plans.reduce((sum, plan) => sum + plan.worldCandidateCount, 0),
+  };
 }
 
 export function createRankingScenarioFromPolicy(
@@ -114,13 +130,26 @@ export function createRankingScenarioFromPolicy(
   profile: RankingProfileInput,
   conditions: RankingConditions,
   versions: VersionContext,
-  targetScope?: 'single' | 'all',
+  requestedAttackProfile?: AttackProfile,
 ): ResolvedScenario {
   const plan = compileRankingExecutionPlan(servant, master, profile, conditions, versions);
-  const executions = executeRankingScenarios(plan.rankingScenarios, master, versions);
-  const selected = selectRankingExecutionIndexes(executions, conditions.npLevel);
-  const scope = targetScope ?? [...selected.keys()][0]!;
-  const index = selected.get(scope);
-  if (index === undefined) throw new TypeError(`ranking_scope_candidate_missing:${scope}`);
+  const executions = executeRankingScenarios(
+    plan.preparedRankingScenarios,
+    master,
+    versions,
+    plan.contributionProjections,
+  );
+  const selected = selectRankingExecutionIndexes(
+    executions,
+    plan.attackProfiles,
+    conditions.npLevel,
+  );
+  const requestedKey = requestedAttackProfile ? attackProfileKey(requestedAttackProfile) : null;
+  const selectedEntry = [...selected].find(
+    ([profileKey]) => requestedKey === null || profileKey === requestedKey,
+  );
+  const index = selectedEntry?.[1];
+  if (index === undefined)
+    throw new TypeError(`ranking_attack_profile_candidate_missing:${requestedKey ?? 'default'}`);
   return executions[index]!.scenario as ResolvedScenario;
 }

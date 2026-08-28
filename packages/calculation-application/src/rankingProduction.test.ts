@@ -1,12 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import {
-  getBaseAttackNoblePhantasmVariant,
-  getBaseNoblePhantasmGroup,
-  getNoblePhantasmVariants,
-  masterSnapshotSchema,
-} from '@fgo-lab/master-data';
+import { getNoblePhantasmVariants, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { activationFactKey, APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   analyzeActivationCondition,
@@ -14,12 +9,17 @@ import {
   conditionHasActivationFact,
 } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
-import { calculateScenario } from './scenario';
-import { createDefaultResolvedScenario } from './scenario';
+import { calculateScenarioWithContributionProjection } from './scenario';
 import { calculateRanking, DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './ranking';
 import { calculateStandardRankingMatrix } from './rankingMatrix';
 import { fieldTraitsRequiredByCondition } from './conditionProvenance';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
+import {
+  attackProfileForTerminalState,
+  attackProfileKey,
+  createActorFormProfiles,
+} from './attackProfile';
+import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -30,32 +30,32 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    '0b3a5ebf92dd367eee872c75fdc64b07854e0624185eff4423bb3c65c472bf18',
-    'b92ac13955809736485546279db050a0778290d5a982c56653e31428f2523269',
-    '42575cca07289c1adcad024ad1962066adcc29b146a590ebd8eddb8ad20b0a9d',
-    '761759714ddc3874cab1cc010cfd19f21b862c8df23f0402c901a10889139085',
-    '182baae795da2dd298f4450f7a567f888b1ff6d79dc060c5904d7e639a1cbf6c',
+    '05d554d8626b75ccf80df44dce51e8f86d308f4b395d5c6a666d22e5e564b6f7',
+    '1b65976e536e82aac08626abc49db4bbc7eae9f91b20097dad010ddddc4b2771',
+    'c4ff865dcd7b6b0ee470a984dcb6a8946dbd582db2e94d72684556aa5f35708a',
+    '9658fcd74ef73daf7c033669bd1a1d68ac5df943f8714bae7afdae6424f156cf',
+    'f35865dac7590d068e7fee95a9f7c23c5487ad802c74eda054752bcda6bf275e',
   ],
   'neutral:active': [
-    'f027075ed12d05bc203fe60cea50e314ff0c564abb7a2732a54e796ab68371c3',
-    'b31a877d5ad06cb3ed545f81e811aa9e0be684fe7a684b12aa8baa3c7851d741',
-    'fd921d48a75dec23a60fc8e133b9a8217aec4b7a42f8f566bafd64be3193bad5',
-    '1f5aeb44648bb85c793235fbbf28547f7564cea3365102a1f0dc860af310b3a1',
-    '794609c30134f637693079018942745439939541ec75f772ce97e43d6c32156d',
+    '39740054dace7d002f951098b0d74dab8f2c0453c97b328096f20921e22e3a9b',
+    '4ebe78d1369ead4d3701e7ef658aab837ea95ec9ca48c3f30bee529b285c5c59',
+    'ea6805d2246ddc681f1f252965c54d6c4e03661165bfedc488abed5f67f3bd78',
+    'b54ad7d6fa77a8b427029dbc7685883a16f29465e5ccd96ad096aaf3062ddc9a',
+    '7bf48deb67c6a6fb44b695526ef44f416741ffa0369d42283fcf4fef10f459a9',
   ],
   'favorable:inactive': [
-    '3608e604544bb73a97a0f958ede2d2238c870dd930dd10213d13e37439d8bf35',
-    '410f3db4f52858c0353ec8c6f1db9bf59dc1a18cff2bd42aa203587a523b0575',
-    '5f5fff56199820ade9e2e7619746158cb4c246e90e47e3d013c93d37b4fc5b68',
-    '3b5ca0dff09bc8228e5b3fd8b9d60f4ad75b7a49a37cc1a4ee58dcc4165e1d22',
-    '1d03ad4dc99d5c99b236892f9785668efe64c7eda1d63e54b5817b214d5cb7a7',
+    'c34b5dab274e71fb5baa9d9a9b5b8992031c8435d31fd854e207f7cfcb7fb445',
+    'cf39a686bce367798e710e4004a832bea844bfe6162402ab44dcc894066b1c68',
+    'ca6c975e5135a3f34f7fce277388af701d5ac9dee69b8f00fc8462a19ef3bd56',
+    'a7c05ffffbde5f528db03c69ea23e088b6174a140696de8059d9e3aa73ce8d54',
+    '08222f3fcc9ea1ed22d49f8369a2e4ecb315330ad26082add86c71e2e6f25357',
   ],
   'favorable:active': [
-    'cd97f4cf9082f17e02c58c83c5d6f6a405bb717164f0d214908e442f9713fb92',
-    'e63de2574f5a2f73ab9ed2d8d4813a7c1069e47c3647773aee5c21ef353a28a3',
-    'b2acc827d084b8c8b6c92812dc47b9bbc0c44865cc68048e5e8e1ae7e564afeb',
-    'b163bf86ee1b22965183634be109c19f5204286aa1f7d8aa839c7b01f528eb7d',
-    '9de23902121b8a5f9efb864ceb94ce418ad90ea053e0eb675a52185f357ea0b9',
+    'fa77cb2a88c24795c937ed11af4a825ce51c8d21a0c44dbe4b13afb045ea08ad',
+    'b58c1a5ecd0a3d187649ba6a84210c109a9014701eb10d750ee29637b3b6eed4',
+    '01c6db0ae127dcea54d4b229445f2761cb2e19dd49426c1156e923c7f96fcdac',
+    'da59c04a247735482cbde1c3f6a38e9c992cfba6d12285d6c1886ab3dd7ad408',
+    '2113eb4b1da4abdc2b4e62ec9c4a1271c161fff23175ff8ed5d1d5b3c07c4852',
   ],
 } as const;
 
@@ -65,17 +65,44 @@ function rankingDigest(rows: ReturnType<typeof calculateRanking>['rows']): strin
       JSON.stringify(
         rows
           .map((row) => ({
-            id: row.servantId,
+            entry: row.entryId,
             min: row.minimum,
             avg: row.average,
             max: row.maximum,
             effects: row.appliedEffectCount,
             special: row.specialAttackApplied,
           }))
-          .sort((left, right) => left.id.localeCompare(right.id)),
+          .sort((left, right) => left.entry.localeCompare(right.entry)),
       ),
     )
     .digest('hex');
+}
+
+function rankingDetailFor(
+  ranking: ReturnType<typeof calculateRanking>,
+  servantId: string,
+  noblePhantasmId?: string,
+) {
+  const matches = Object.values(ranking.details).filter(
+    (detail) =>
+      detail.servantId === servantId &&
+      (noblePhantasmId === undefined ||
+        detail.noblePhantasmVariant.noblePhantasmId === noblePhantasmId),
+  );
+  if (matches.length !== 1)
+    throw new TypeError(
+      `ranking_detail_not_unique:${servantId}:${noblePhantasmId ?? 'any'}:${String(matches.length)}`,
+    );
+  return matches[0]!;
+}
+
+function groupRankingRows(
+  rows: ReturnType<typeof calculateRanking>['rows'],
+  keyFor: (row: ReturnType<typeof calculateRanking>['rows'][number]) => string,
+) {
+  const groups = new Map<string, ReturnType<typeof calculateRanking>['rows'][number][]>();
+  for (const row of rows) groups.set(keyFor(row), [...(groups.get(keyFor(row)) ?? []), row]);
+  return groups;
 }
 
 function activationKinds(
@@ -108,14 +135,44 @@ describe('production canonical ranking', () => {
     };
     const ranking = calculateRanking(master, profile, DEFAULT_RANKING_CONDITIONS, versions);
     expect(ranking.failures).toEqual([]);
-    expect(ranking.rows).toHaveLength(422);
-    expect(new Set(ranking.rows.map(({ entryId }) => entryId)).size).toBe(422);
-    expect(ranking.rows.filter(({ npTarget }) => npTarget === 'single')).toHaveLength(177);
-    expect(ranking.rows.filter(({ npTarget }) => npTarget === 'all')).toHaveLength(245);
-    const expectedAttackServantIds = master.servants
-      .filter(getBaseAttackNoblePhantasmVariant)
-      .map(({ id }) => id)
-      .sort();
+    expect(ranking.damageCache).toEqual({
+      requestCount: 3_744,
+      distinctDamageInputCount: 1_479,
+      cacheHitCount: 2_265,
+      cacheHitRate: 2_265 / 3_744,
+    });
+    expect(ranking.rows).toHaveLength(433);
+    expect(new Set(ranking.rows.map(({ entryId }) => entryId)).size).toBe(433);
+    expect(ranking.rows.filter(({ npTarget }) => npTarget === 'single')).toHaveLength(180);
+    expect(ranking.rows.filter(({ npTarget }) => npTarget === 'all')).toHaveLength(253);
+    let actorFormNodeCount = 0;
+    let actorFormProfileCount = 0;
+    const expectedAttackProfiles = master.servants.flatMap((servant) => {
+      const candidates = planPreNoblePhantasmCandidates(servant).candidates;
+      if (candidates.length === 0) return [];
+      const profiles = createActorFormProfiles(
+        servant,
+        candidates.map(({ terminalState }) => terminalState),
+      );
+      actorFormNodeCount += servant.actorFormGraph.forms.length;
+      actorFormProfileCount += profiles.length;
+      return candidates.map(({ terminalState }) =>
+        attackProfileForTerminalState(servant, profiles, terminalState),
+      );
+    });
+    const expectedAttackProfileKeys = [
+      ...new Set(expectedAttackProfiles.map(attackProfileKey)),
+    ].sort();
+    const expectedServantScopeKeys = [
+      ...new Set(
+        expectedAttackProfiles.map(
+          ({ servantLineageId, targetScope }) => `${servantLineageId}:${targetScope}`,
+        ),
+      ),
+    ].sort();
+    const expectedAttackServantIds = [
+      ...new Set(expectedServantScopeKeys.map((key) => key.split(':')[0]!)),
+    ].sort();
     const scopesByServant = new Map<string, Set<'single' | 'all'>>();
     for (const row of ranking.rows) {
       const scopes = scopesByServant.get(row.servantId) ?? new Set();
@@ -123,6 +180,57 @@ describe('production canonical ranking', () => {
       scopesByServant.set(row.servantId, scopes);
     }
     const distinctEntryServantIds = [...scopesByServant.keys()].sort();
+    expect(ranking.rows.map(({ entryId }) => entryId).sort()).toEqual(expectedAttackProfileKeys);
+    expect({ actorFormNodeCount, actorFormProfileCount }).toEqual({
+      actorFormNodeCount: 435,
+      actorFormProfileCount: 435,
+    });
+    expect(
+      Object.fromEntries(
+        [...groupRankingRows(ranking.rows, ({ servantId }) => servantId).values()]
+          .map((rows) => rows.length)
+          .reduce(
+            (counts, count) => counts.set(count, (counts.get(count) ?? 0) + 1),
+            new Map<number, number>(),
+          ),
+      ),
+    ).toEqual({ 1: 413, 2: 7, 3: 2 });
+    expect({
+      arts: ranking.rows.filter(({ npCard }) => npCard === 'arts').length,
+      buster: ranking.rows.filter(({ npCard }) => npCard === 'buster').length,
+      quick: ranking.rows.filter(({ npCard }) => npCard === 'quick').length,
+    }).toEqual({ arts: 144, buster: 182, quick: 107 });
+    expect(
+      [...groupRankingRows(ranking.rows, ({ servantId, npTarget }) => `${servantId}:${npTarget}`)]
+        .filter(([, rows]) => rows.length > 1)
+        .map(([key, rows]) => `${key}:${String(rows.length)}`)
+        .sort(),
+    ).toEqual([
+      '1100900:all:3',
+      '200100:all:2',
+      '304800:all:2',
+      '306200:single:2',
+      '4000100:all:2',
+      '800100:all:2',
+    ]);
+    expect(
+      [
+        ...groupRankingRows(
+          ranking.rows,
+          ({ servantId, noblePhantasmVariant }) =>
+            `${servantId}:${noblePhantasmVariant.noblePhantasmId}`,
+        ),
+      ]
+        .filter(([, rows]) => rows.length > 1)
+        .map(([key, rows]) => `${key}:${String(rows.length)}`)
+        .sort(),
+    ).toEqual(['304800:304802:2', '4000100:4000101:2', '800100:800108:2']);
+    expect(
+      master.servants.filter((servant) => {
+        const variants = getNoblePhantasmVariants(servant);
+        return variants.length > 0 && variants.every(({ kind }) => kind === 'nonAttack');
+      }),
+    ).toHaveLength(47);
     expect(distinctEntryServantIds).toEqual(expectedAttackServantIds);
     expect(expectedAttackServantIds.filter((id) => !scopesByServant.has(id))).toEqual([]);
     expect(distinctEntryServantIds.filter((id) => !expectedAttackServantIds.includes(id))).toEqual(
@@ -138,21 +246,28 @@ describe('production canonical ranking', () => {
     const allOnlyCount = [...scopesByServant.values()].filter(
       (scopes) => scopes.size === 1 && scopes.has('all'),
     ).length;
-    expect(dualScopeServantIds).toEqual(['204900', '2301100']);
+    expect(dualScopeServantIds).toEqual(['204900', '205000', '2301100', '304800']);
     expect({ singleOnlyCount, allOnlyCount }).toEqual({ singleOnlyCount: 175, allOnlyCount: 243 });
-    expect(singleOnlyCount + allOnlyCount + dualScopeServantIds.length * 2).toBe(
-      ranking.rows.length,
-    );
+    expect(singleOnlyCount + allOnlyCount + dualScopeServantIds.length * 2).toBe(426);
     expect(
       ranking.rows
         .filter(({ servantId }) => servantId === '2301100')
-        .map(({ npTarget }) => npTarget),
-    ).toEqual(['single', 'all']);
+        .map(({ npTarget }) => npTarget)
+        .sort(),
+    ).toEqual(['all', 'single']);
+    expect(
+      ranking.rows
+        .filter(({ servantId }) => servantId === '205000' || servantId === '304800')
+        .map(({ npTarget }) => npTarget)
+        .sort(),
+    ).toEqual(['all', 'all', 'all', 'single', 'single']);
+    expect(ranking.rows.filter(({ servantId }) => servantId === '505600')).toHaveLength(1);
     expect(
       ranking.rows
         .filter(({ servantId }) => servantId === '204900')
-        .map(({ npTarget }) => npTarget),
-    ).toEqual(['single', 'all']);
+        .map(({ npTarget }) => npTarget)
+        .sort(),
+    ).toEqual(['all', 'single']);
     const unresolvedIncludedDamageEffects: string[] = [];
     const activationInventory = { choice: 0, operationTrigger: 0, sourceQuantity: 0 };
     const activationConditionInventory = { choice: 0, operationTrigger: 0, sourceQuantity: 0 };
@@ -166,11 +281,13 @@ describe('production canonical ranking', () => {
           .filter(({ operationEnabled }) => operationEnabled)
           .map(({ decisionKey }) => decisionKey),
       );
-      for (const fact of detail.scenario.activationFacts) activationInventory[fact.kind] += 1;
-      const factKeys = detail.scenario.activationFacts.map(activationFactKey);
+      const actionFacts = detail.appliedPreparationActions.flatMap(
+        ({ activationFacts }) => activationFacts,
+      );
+      for (const fact of actionFacts) activationInventory[fact.kind] += 1;
+      const factKeys = actionFacts.map(activationFactKey);
       expect(new Set(factKeys).size, row.servantId).toBe(factKeys.length);
-      if (detail.scenario.activationFacts.length > 0)
-        servantsWithActivationSelections.push(row.servantId);
+      if (actionFacts.length > 0) servantsWithActivationSelections.push(row.servantId);
       for (const effect of detail.effects) {
         if (effect.modifier === null) continue;
         for (const kind of activationKinds(effect.explanation.condition))
@@ -187,7 +304,7 @@ describe('production canonical ranking', () => {
               : [];
           for (const fact of facts) {
             expect(
-              detail.scenario.activationFacts.some(
+              actionFacts.some(
                 (candidate) => activationFactKey(candidate) === activationFactKey(fact),
               ),
               `${row.servantId}:${effect.projectionKey}:${activationFactKey(fact)}`,
@@ -211,7 +328,12 @@ describe('production canonical ranking', () => {
         relation: 'neutral',
       });
       expect(detail.input.classAffinity, row.servantId).toBe(1);
-      const calculator = calculateScenario(detail.scenario, master, versions);
+      const calculator = calculateScenarioWithContributionProjection(
+        detail.scenario,
+        master,
+        versions,
+        detail.contributionProjection,
+      );
       expect(calculator.input).toEqual(detail.input);
       expect(calculator.result).toEqual(detail.result);
       expect(calculator.effects).toEqual(detail.effects);
@@ -224,10 +346,11 @@ describe('production canonical ranking', () => {
         ),
       ).toEqual([]);
       if (detail.areaContribution) {
-        const withoutAreaCalculator = calculateScenario(
+        const withoutAreaCalculator = calculateScenarioWithContributionProjection(
           detail.areaContribution.withoutAreaScenario,
           master,
           versions,
+          detail.areaContribution.contributionProjection,
         );
         expect(withoutAreaCalculator.input).toEqual(detail.areaContribution.withoutAreaInput);
         expect(withoutAreaCalculator.result).toEqual(detail.areaContribution.withoutAreaResult);
@@ -238,25 +361,31 @@ describe('production canonical ranking', () => {
     }
     expect(unresolvedIncludedDamageEffects).toEqual([]);
     expect(activationInventory).toEqual({
-      choice: 9,
-      operationTrigger: 4,
-      sourceQuantity: 1,
+      choice: 16,
+      operationTrigger: 3,
+      sourceQuantity: 2,
     });
     expect(activationConditionInventory).toEqual({
-      choice: 33,
+      choice: 15,
       operationTrigger: 4,
-      sourceQuantity: 3,
+      sourceQuantity: 2,
     });
     expect(servantsWithActivationSelections.sort()).toEqual([
       '101000',
       '1100900',
+      '1100900',
+      '1100900',
+      '200100',
+      '200100',
       '204900',
       '204900',
       '2301100',
-      '2301200',
       '2501100',
       '2800500',
+      '2801000',
+      '300800',
       '305600',
+      '405900',
       '603800',
       '705300',
     ]);
@@ -273,7 +402,7 @@ describe('production canonical ranking', () => {
         detail.result.rows[index]!.average
       );
     });
-    expect(areaDetails).toHaveLength(175);
+    expect(areaDetails).toHaveLength(180);
     expect(
       areaDetails.reduce(
         (count, detail) =>
@@ -288,8 +417,8 @@ describe('production canonical ranking', () => {
           ).size,
         0,
       ),
-    ).toBe(234);
-    const tonelico = ranking.details['505300:all']!;
+    ).toBe(241);
+    const tonelico = rankingDetailFor(ranking, '505300');
     expect(tonelico.result.status === 'calculated' ? tonelico.result.rows[0] : null).toEqual({
       npLevel: 1,
       minimum: 25_165,
@@ -302,7 +431,7 @@ describe('production canonical ranking', () => {
         : null,
     ).toEqual({ npLevel: 1, minimum: 16_776, average: 18_631.06, maximum: 20_486 });
 
-    const jalter = ranking.details['1100300:single']!;
+    const jalter = rankingDetailFor(ranking, '1100300');
     expect(jalter.input).toMatchObject({ classAffinity: 1, attackBuff: 0.2, cardBuff: 0.5 });
     expect(jalter.result.status === 'calculated' ? jalter.result.rows[0] : null).toEqual({
       npLevel: 1,
@@ -312,7 +441,7 @@ describe('production canonical ranking', () => {
     });
     expect(jalter.areaContribution?.withoutAreaInput.attackBuff).toBe(0);
 
-    const xxAlter = ranking.details['2501600:single']!;
+    const xxAlter = rankingDetailFor(ranking, '2501600');
     expect(xxAlter.scenario.targetContext.class).toEqual({ kind: 'relative', relation: 'neutral' });
     expect(xxAlter.input).toMatchObject({ classAffinity: 1, powerMod: 0 });
     expect(xxAlter.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
@@ -323,21 +452,7 @@ describe('production canonical ranking', () => {
       maximum: 43_302,
     });
 
-    const digest = createHash('sha256')
-      .update(
-        JSON.stringify(
-          ranking.rows
-            .map((row) => ({
-              servantId: row.servantId,
-              minimum: row.minimum,
-              average: row.average,
-              maximum: row.maximum,
-              appliedEffectCount: row.appliedEffectCount,
-            }))
-            .sort((left, right) => left.servantId.localeCompare(right.servantId)),
-        ),
-      )
-      .digest('hex');
+    const digest = rankingDigest(ranking.rows);
     expect(
       [...ranking.rows]
         .sort(
@@ -401,7 +516,7 @@ describe('production canonical ranking', () => {
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"da949087fde3947335e292a0b80f59f9a09405debe779c917a83fcdf462f2518"`,
+      `"05d554d8626b75ccf80df44dce51e8f86d308f4b395d5c6a666d22e5e564b6f7"`,
     );
     expect(
       [...ranking.rows]
@@ -410,8 +525,8 @@ describe('production canonical ranking', () => {
     ).toBe('1100300');
 
     expect(
-      ranking.details['1102000:all']?.effectInputs
-        .filter((input) => input.kind === 'matchingActorCount')
+      rankingDetailFor(ranking, '1102000')
+        .effectInputs.filter((input) => input.kind === 'matchingActorCount')
         .every((input) => input.value === input.minimum),
     ).toBe(true);
   }, 60_000);
@@ -441,14 +556,14 @@ describe('production canonical ranking', () => {
           ({ executionMetrics }) => executionMetrics.worldCandidateCount,
         ),
       ),
-    ).toBe(18);
+    ).toBe(128);
     expect(
       Math.max(
         ...Object.values(ranking.details).map(
           ({ executionMetrics }) => executionMetrics.scenarioCalculationCount,
         ),
       ),
-    ).toBe(20);
+    ).toBe(129);
   }, 60_000);
 
   it('uses canonical witnesses for recipient and field conditions', async () => {
@@ -471,7 +586,7 @@ describe('production canonical ranking', () => {
         versions,
       );
       expect(ranking.failures, field).toEqual([]);
-      expect(ranking.rows).toHaveLength(422);
+      expect(ranking.rows).toHaveLength(433);
       for (const detail of Object.values(ranking.details)) {
         expect(
           detail.scenario.effectDecisions.filter(
@@ -525,16 +640,16 @@ describe('production canonical ranking', () => {
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
     const digests = [
-      '60d739247e2a174aa4fc8bea29b57881164170a8411a229f9b4ab88ec6c1d4df',
-      'f45ed459836dd9c92643d33c28b0eeacceb9dabbd077dab2aab5a671e9a34f55',
-      '785b6aa01e7b1ed493a484ec22e2d01ed241a487de9d65c1028a817176b9cf0b',
-      '7417c2dfea4202e76414339659a02082ce24f228b970012631f22e0ce5c0ea1b',
-      '218a01de8a54540ea4fdc6e2da6e931babc842c120aac555a821e6d068577b35',
+      'd448b5598587b3b2fb36063d305956d95716b0bad9507a9294496c3fff682587',
+      'fd6531606acdbb84f2febbc4a06a21da6f6e8be227e486b497b10f4fcf6e6f86',
+      '77f11ad41411f339a8a1ce207817b23b016e8f526cf12488ff16917a3a14a765',
+      '42a5a58b0277d2d5a453c9ad38bab93c634745d9590892df5252809d6feca78e',
+      '57e5476e5921a2b99a2fa34da2cff6b34f064f990565e4a5356117cb8fb7a2ab',
     ];
     const actualDigests: string[] = [];
     for (const [index, ranking] of matrix.entries()) {
       expect(ranking.failures, `field:active:NP${String(index + 1)}`).toEqual([]);
-      expect(ranking.rows).toHaveLength(422);
+      expect(ranking.rows).toHaveLength(433);
       actualDigests.push(rankingDigest(ranking.rows));
     }
     expect(actualDigests).toEqual(digests);
@@ -559,107 +674,6 @@ describe('production canonical ranking', () => {
     );
     expect(varying).toEqual([]);
   });
-
-  it('records the former ranking scenario separately from the new standard conditions', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
-    const versions = {
-      schemaVersion: SCHEMA_VERSION,
-      masterDataVersion: master.version,
-      engineVersion: ENGINE_VERSION,
-      appVersion: APP_VERSION,
-      gameRegion: 'JP' as const,
-      masterDataLocale: 'ja-JP' as const,
-    };
-    const legacyEquivalent = master.servants.flatMap((servant) => {
-      if (!getBaseNoblePhantasmGroup(servant)?.variants.some(({ kind }) => kind === 'attack'))
-        return [];
-      const scenario = {
-        ...createDefaultResolvedScenario(master, undefined, servant),
-        attackerSkills: [],
-      };
-      const execution = calculateScenario(scenario, master, versions);
-      if (execution.result.status !== 'calculated') return [];
-      const row = execution.result.rows[0];
-      return [
-        { servantId: servant.id, minimum: row.minimum, average: row.average, maximum: row.maximum },
-      ];
-    });
-    expect(legacyEquivalent).toHaveLength(420);
-    expect([...legacyEquivalent].sort((left, right) => right.average - left.average).slice(0, 10))
-      .toMatchInlineSnapshot(`
-        [
-          {
-            "average": 93506.235,
-            "maximum": 102815,
-            "minimum": 84198,
-            "servantId": "101700",
-          },
-          {
-            "average": 88715.06,
-            "maximum": 97547,
-            "minimum": 79883,
-            "servantId": "300800",
-          },
-          {
-            "average": 88362.375,
-            "maximum": 97137,
-            "minimum": 79588,
-            "servantId": "1000200",
-          },
-          {
-            "average": 86738.25,
-            "maximum": 95358,
-            "minimum": 78118,
-            "servantId": "702000",
-          },
-          {
-            "average": 86486.235,
-            "maximum": 95074,
-            "minimum": 77899,
-            "servantId": "603700",
-          },
-          {
-            "average": 86445.835,
-            "maximum": 95052,
-            "minimum": 77840,
-            "servantId": "1100300",
-          },
-          {
-            "average": 81133.125,
-            "maximum": 89198,
-            "minimum": 73069,
-            "servantId": "101300",
-          },
-          {
-            "average": 80247.805,
-            "maximum": 88237,
-            "minimum": 72259,
-            "servantId": "603600",
-          },
-          {
-            "average": 78530.235,
-            "maximum": 86348,
-            "minimum": 70713,
-            "servantId": "102000",
-          },
-          {
-            "average": 78443.535,
-            "maximum": 86253,
-            "minimum": 70634,
-            "servantId": "102700",
-          },
-        ]
-      `);
-    expect(
-      createHash('sha256')
-        .update(
-          JSON.stringify(legacyEquivalent.sort((a, b) => a.servantId.localeCompare(b.servantId))),
-        )
-        .digest('hex'),
-    ).toMatchInlineSnapshot(`"2230ac7617cd9dc634ec1ba9a9bec780b9b692c32e641e0db57080810fdc3f3a"`);
-  }, 60_000);
 
   it('ratchets all E4.1 class, special-attack, and NP-level policies', async () => {
     const master = masterSnapshotSchema.parse(
@@ -687,37 +701,98 @@ describe('production canonical ranking', () => {
         const key = `${classAffinity}:${specialAttack}`;
         actualDigests[key] = [];
         if (classAffinity === 'neutral' && specialAttack === 'inactive') {
-          const averages = (entryId: string) =>
-            matrix.map(({ rows }) => rows.find((row) => row.entryId === entryId)?.average);
-          expect(averages('2301100:single')).toEqual([
+          const averages = (servantId: string, noblePhantasmId: string) =>
+            matrix.map(
+              ({ rows }) =>
+                rows.find(
+                  (row) =>
+                    row.servantId === servantId &&
+                    row.noblePhantasmVariant.noblePhantasmId === noblePhantasmId,
+                )?.average,
+            );
+          const formAverages = (
+            servantId: string,
+            noblePhantasmId: string,
+            actorId: string,
+            limitCount: number,
+          ) =>
+            matrix.map(
+              ({ rows }) =>
+                rows.find(
+                  (row) =>
+                    row.servantId === servantId &&
+                    row.noblePhantasmVariant.noblePhantasmId === noblePhantasmId &&
+                    row.attackProfile.terminalFormProfileId.representativeFormId.actorId ===
+                      actorId &&
+                    row.attackProfile.terminalFormProfileId.representativeFormId.limitCount ===
+                      limitCount,
+                )?.average,
+            );
+          expect(averages('2301100', '2301101')).toEqual([
             47_794.55, 63_726.225, 71_692.08, 75_675.005, 79_657.925,
           ]);
-          expect(averages('2301100:all')).toEqual([
+          expect(averages('2301100', '2301198')).toEqual([
             31_250.115, 41_666.99, 46_875.425, 49_479.64, 52_083.865,
           ]);
-          expect(averages('204900:single')).toEqual([
+          expect(averages('204900', '204998')).toEqual([
             45_307.295, 60_409.895, 67_961.14, 71_736.845, 75_512.49,
           ]);
-          expect(averages('204900:all')).toEqual([
-            22_653.385, 30_204.705, 33_980.14, 35_868.165, 37_755.995,
+          expect(averages('204900', '204901')).toEqual([
+            17_425.585, 23_234.27, 26_138.61, 27_590.79, 29_042.96,
           ]);
-          expect(averages('1100900:all')).toEqual([
+          expect(averages('1100900', '1100998')).toEqual([
             33_578.155, 44_681.035, 50_232.475, 53_008.195, 55_783.92,
           ]);
-          expect(averages('2300600:all')).toEqual([
+          expect(averages('2300600', '2300601')).toEqual([
             22_377.555, 29_753.58, 33_441.59, 35_285.585, 37_129.595,
           ]);
+          expect(formAverages('205000', '205001', '205000', 1)).toEqual([
+            44_207.22, 58_943.11, 66_311.07, 69_995.055, 73_679.035,
+          ]);
+          expect(formAverages('205000', '205002', '205000', 3)).toEqual([
+            30_162.055, 40_216.24, 45_243.325, 47_756.875, 50_270.43,
+          ]);
+          expect(formAverages('304800', '304801', '304800', 1)).toEqual([
+            43_606.36, 58_141.975, 65_409.795, 69_043.7, 72_677.645,
+          ]);
+          expect(formAverages('4000100', '4000101', '4000100', 1)).toEqual([
+            27_261.025, 36_264.88, 40_766.795, 43_017.765, 45_268.7,
+          ]);
+          expect(formAverages('4000100', '4000101', '4000100', 3)).toEqual([
+            22_249.86, 29_583.285, 33_250.015, 35_083.375, 36_916.74,
+          ]);
+          expect(formAverages('505600', '505701', '505700', 0)).toEqual([
+            21_141.64, 28_157.35, 31_665.21, 33_419.14, 35_173.06,
+          ]);
+          expect(formAverages('2501400', '2501501', '2501500', 0)).toEqual([
+            22_708.935, 30_278.745, 34_063.66, 35_956.115, 37_848.56,
+          ]);
+          expect(formAverages('800100', '800108', '800100', 17)).toEqual([
+            20_935.77, 26_169.845, 28_786.89, 30_095.385, 31_403.91,
+          ]);
+          expect(averages('2301200', '2301201')).toEqual([
+            24_649.355, 32_782.645, 36_849.285, 38_882.615, 40_915.93,
+          ]);
+          expect(averages('2801000', '2801001')).toEqual([
+            23_957.595, 31_943.62, 35_936.64, 37_933.155, 39_929.65,
+          ]);
           expect(
-            matrix[0].rows.find(({ entryId }) => entryId === '1100900:all')?.noblePhantasmVariant,
-          ).toEqual({ actorFormId: '1100900', noblePhantasmId: '1100998' });
+            matrix[0].rows.find(
+              ({ servantId, noblePhantasmVariant }) =>
+                servantId === '1100900' && noblePhantasmVariant.noblePhantasmId === '1100998',
+            )?.noblePhantasmVariant,
+          ).toEqual({
+            actorFormId: { actorId: '1100900', limitCount: 0 },
+            noblePhantasmId: '1100998',
+          });
         }
         for (const [index, ranking] of matrix.entries()) {
           const npLevel = (index + 1) as 1 | 2 | 3 | 4 | 5;
           expect(ranking.failures, `${classAffinity}:${specialAttack}:NP${npLevel}`).toEqual([]);
-          expect(ranking.rows).toHaveLength(422);
+          expect(ranking.rows).toHaveLength(433);
           expect(
             ranking.rows.filter(({ specialAttackApplied }) => specialAttackApplied),
-          ).toHaveLength(specialAttack === 'active' ? 190 : 0);
+          ).toHaveLength(specialAttack === 'active' ? 202 : 0);
           actualDigests[key].push(rankingDigest(ranking.rows));
         }
       }

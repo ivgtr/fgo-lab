@@ -40,7 +40,7 @@ describe('production special input inventory', () => {
       return keys.filter((key, index) => keys.indexOf(key) !== index);
     });
 
-    expect(calculations).toHaveLength(420);
+    expect(calculations).toHaveLength(422);
     expect(
       calculations.every(({ calculation }) => calculation.result.status === 'calculated'),
     ).toBe(true);
@@ -96,14 +96,14 @@ describe('production special input inventory', () => {
     const singleChoiceControls = calculations.flatMap(({ calculation }) =>
       calculation.effectControls.filter((control) => control.interaction === 'singleChoice'),
     );
-    expect(singleChoiceControls).toHaveLength(30);
+    expect(singleChoiceControls).toHaveLength(6);
     expect(
       new Set(
         singleChoiceControls.flatMap((control) =>
           control.projection.selectionGroups.map((group) => group.groupKey),
         ),
       ).size,
-    ).toBe(11);
+    ).toBe(2);
 
     const repeatedUserLabels = calculations.flatMap(({ servant, calculation }) => {
       const counts = new Map<string, number>();

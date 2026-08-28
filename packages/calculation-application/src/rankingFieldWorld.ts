@@ -58,6 +58,13 @@ export function materializeRankingField(
   scenario: ResolvedScenario,
   candidate: RankingFieldCandidate,
 ): ResolvedScenario {
+  if (
+    candidate.traits.length === 0 &&
+    !scenario.worldFactAssertions.some(({ decisionKey }) =>
+      decisionKey.startsWith('ranking:field:'),
+    )
+  )
+    return scenario;
   return {
     ...scenario,
     worldFactAssertions: [

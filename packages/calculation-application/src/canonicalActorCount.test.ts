@@ -18,6 +18,7 @@ function calculate(attackerId: string, values: Record<string, number> = {}) {
   const servant = master.servants.find((candidate) => candidate.id === attackerId)!;
   const scenario = {
     ...createDefaultResolvedScenario(master, undefined, servant),
+    preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
     canonicalInputValues: Object.fromEntries(
       Object.entries(values).map(([key, value]) => [key, { kind: 'integer' as const, value }]),
     ),

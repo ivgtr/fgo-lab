@@ -1,84 +1,38 @@
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
-import { activationChoiceGroupKey, type VersionContext } from '@fgo-lab/schema';
-import { applyActivationFactSelection } from './activationContext';
+import type { VersionContext } from '@fgo-lab/schema';
+import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
 import type { EffectControlViewModel } from './effectControls';
-import { materializeRankingAttackerFacts } from './rankingActorWorld';
-import { createRankingChoiceCandidates, type RankingChoiceWorld } from './rankingChoiceWorld';
 import {
   contributesAreaSupport,
   contributesToAttackerDamage,
   isSpecialAttack,
 } from './rankingContribution';
-import type { RankingConditions } from './rankingContracts';
-import {
-  applyRankingExecutionPolicy,
-  compileRankingExecutionPolicy,
-} from './rankingExecutionPolicy';
+import { rankingDamageContributionProjection, type RankingConditions } from './rankingContracts';
 import {
   createRankingFieldCandidates,
   materializeRankingField,
   type RankingFieldCandidate,
 } from './rankingFieldWorld';
-import { applyRankingCanonicalMinimums, type ResolvedScenario } from './rankingPolicy';
+import type { ResolvedScenario } from './rankingPolicy';
 import {
   createRankingWorldCandidates,
   effectMatchesRankingWorld,
   materializeRankingWorld,
   type RankingWorldCandidate,
 } from './rankingWorld';
-import { calculateScenario, type CalculationExecution } from './scenario';
+import type { PreparedCalculationProjection } from './scenario';
 
 interface RankingWorld {
   target: RankingWorldCandidate | null;
   field: RankingFieldCandidate;
-  choices: RankingChoiceWorld;
 }
 
 export interface CompiledRankingScenarioWorlds {
   rankingScenarios: readonly ResolvedScenario[];
-  withoutAreaScenarios: readonly ResolvedScenario[];
+  withoutAreaScenarios: readonly (ResolvedScenario | null)[];
+  contributionProjections: readonly DamageContributionProjection[];
+  withoutAreaContributionProjections: readonly (DamageContributionProjection | null)[];
   worldCandidateCount: number;
-}
-
-function applyRankingChoices(
-  scenario: ResolvedScenario,
-  choices: RankingChoiceWorld,
-  baseline: CalculationExecution,
-): ResolvedScenario {
-  const selectedKeys = new Set(
-    baseline.effectControls.flatMap((control) => {
-      const groups = control.projection.selectionGroups.filter(({ groupKey }) =>
-        groupKey.startsWith('choice:'),
-      );
-      const selected =
-        groups.length > 0 &&
-        groups.every(({ groupKey, candidateKey }) => choices[groupKey] === candidateKey);
-      return selected ? [control.key] : [];
-    }),
-  );
-  const policy = compileRankingExecutionPolicy(
-    scenario.targetContext,
-    baseline.effectControls,
-    selectedKeys,
-  );
-  const choiceScenario = applyRankingExecutionPolicy(
-    scenario,
-    policy,
-    baseline.effectInputs,
-    baseline.activationRequirements,
-  );
-  return Object.entries(choices).reduce((current, [groupKey, candidate]) => {
-    const fact = baseline.activationRequirements
-      .flatMap((requirement) => requirement.facts)
-      .find(
-        (item) =>
-          item.kind === 'choice' &&
-          `choice:${activationChoiceGroupKey(item.source, item.family)}` === groupKey &&
-          item.candidate === candidate,
-      );
-    if (!fact) throw new TypeError(`ranking_choice_fact_missing:${groupKey}:${candidate}`);
-    return applyActivationFactSelection(current, [fact], true, baseline.activationRequirements);
-  }, choiceScenario);
 }
 
 export function selectedKeysForScope(
@@ -87,14 +41,19 @@ export function selectedKeysForScope(
   scope: 'ranking' | 'withoutArea',
   candidate: RankingWorldCandidate | null,
   master: MasterDataSnapshot,
-  choices: Readonly<Record<string, string>> | null = null,
 ): Set<string> {
+  const contributionProjection = rankingDamageContributionProjection(conditions.selfBuffs);
   const selected = new Set<string>();
   for (const control of controls) {
     const contributes =
       contributesToAttackerDamage(control.projection) &&
       (scope === 'ranking' || !contributesAreaSupport(control.projection));
-    if (!contributes || conditions.selfBuffs === 'excluded') continue;
+    if (!contributes) continue;
+    if (
+      contributionProjection === 'counterfactualWithoutVoluntarySkillModifiers' &&
+      control.projection.source.origin === 'attacker'
+    )
+      continue;
     if (!isSpecialAttack(control.projection)) selected.add(control.key);
     else if (
       conditions.specialAttack === 'active' &&
@@ -106,14 +65,8 @@ export function selectedKeysForScope(
   return new Set(
     controls.flatMap((control) =>
       selected.has(control.key) &&
-      control.projection.selectionGroups
-        .filter(({ groupKey }) => groupKey.startsWith('choice:'))
-        .every(
-          (group) =>
-            choices === null ||
-            (choices[group.groupKey] !== undefined &&
-              choices[group.groupKey] === group.candidateKey),
-        )
+      control.projection.outcome !== 'impossible' &&
+      control.projection.outcome !== 'unsupported'
         ? [control.key]
         : [],
     ),
@@ -123,36 +76,44 @@ export function selectedKeysForScope(
 function scenarioForPolicy(
   servant: ServantMaster,
   scenario: ResolvedScenario,
-  baseline: CalculationExecution,
+  baseline: PreparedCalculationProjection,
   conditions: RankingConditions,
   scope: 'ranking' | 'withoutArea',
   worldCandidate: RankingWorld,
   master: MasterDataSnapshot,
-): ResolvedScenario {
+): { scenario: ResolvedScenario; contributionProjection: DamageContributionProjection } {
   const targetWorld = worldCandidate.target
     ? materializeRankingWorld(scenario, worldCandidate.target)
     : scenario;
   const fieldWorld = materializeRankingField(targetWorld, worldCandidate.field);
-  const world = materializeRankingAttackerFacts(fieldWorld, servant, baseline.effectControls);
   const selectedKeys = selectedKeysForScope(
     baseline.effectControls,
     conditions,
     scope,
     worldCandidate.target,
     master,
-    worldCandidate.choices,
   );
-  const policy = compileRankingExecutionPolicy(
-    world.targetContext,
-    baseline.effectControls,
-    selectedKeys,
-  );
-  return applyRankingExecutionPolicy(
-    world,
-    policy,
-    baseline.effectInputs,
-    baseline.activationRequirements,
-  );
+  return {
+    scenario: fieldWorld,
+    contributionProjection: {
+      includedOperationIds: new Set(
+        baseline.effectControls.flatMap((control) =>
+          contributesToAttackerDamage(control.projection) && selectedKeys.has(control.key)
+            ? [control.projection.operationId]
+            : [],
+        ),
+      ),
+      excludedOperationIds: new Set(
+        baseline.effectControls.flatMap((control) =>
+          contributesToAttackerDamage(control.projection) &&
+          control.projection.outcome === 'applied' &&
+          !selectedKeys.has(control.key)
+            ? [control.projection.operationId]
+            : [],
+        ),
+      ),
+    },
+  };
 }
 
 export function compileRankingScenarioWorlds(input: {
@@ -161,29 +122,17 @@ export function compileRankingScenarioWorlds(input: {
   conditions: RankingConditions;
   versions: VersionContext;
   canonical: ResolvedScenario;
-  baseline: CalculationExecution;
+  baseline: PreparedCalculationProjection;
 }): CompiledRankingScenarioWorlds {
-  const { servant, master, conditions, versions, canonical, baseline } = input;
-  const selected = selectedKeysForScope(
-    baseline.effectControls,
-    conditions,
-    'ranking',
-    null,
-    master,
-  );
-  const choiceWorlds = createRankingChoiceCandidates(baseline.effectControls, selected);
+  const { servant, master, conditions, canonical, baseline } = input;
   const rankingScenarios: ResolvedScenario[] = [];
-  const withoutAreaScenarios: ResolvedScenario[] = [];
+  const withoutAreaScenarios: (ResolvedScenario | null)[] = [];
+  const contributionProjections: DamageContributionProjection[] = [];
+  const withoutAreaContributionProjections: (DamageContributionProjection | null)[] = [];
   let worldCandidateCount = 0;
-  for (const choices of choiceWorlds) {
-    let variantScenario = canonical;
-    let variantBaseline = baseline;
-    if (Object.keys(choices).length > 0) {
-      const selectedScenario = applyRankingChoices(canonical, choices, baseline);
-      const preliminary = calculateScenario(selectedScenario, master, versions);
-      variantScenario = applyRankingCanonicalMinimums(selectedScenario, preliminary);
-      variantBaseline = calculateScenario(variantScenario, master, versions);
-    }
+  {
+    const variantScenario = canonical;
+    const variantBaseline = baseline;
     const specialControls = variantBaseline.effectControls.filter(
       (control) =>
         isSpecialAttack(control.projection) && contributesToAttackerDamage(control.projection),
@@ -198,29 +147,30 @@ export function compileRankingScenarioWorlds(input: {
       conditions.field === 'active',
     );
     const worlds: RankingWorld[] = targetWorlds.flatMap((target) =>
-      fieldWorlds.map((field) => ({ target, field, choices })),
+      fieldWorlds.map((field) => ({ target, field })),
     );
     worldCandidateCount += worlds.length;
-    rankingScenarios.push(
-      ...worlds.map((candidate) =>
-        scenarioForPolicy(
-          servant,
-          variantScenario,
-          variantBaseline,
-          conditions,
-          'ranking',
-          candidate,
-          master,
-        ),
+    const rankedWorlds = worlds.map((candidate) =>
+      scenarioForPolicy(
+        servant,
+        variantScenario,
+        variantBaseline,
+        conditions,
+        'ranking',
+        candidate,
+        master,
       ),
+    );
+    rankingScenarios.push(...rankedWorlds.map(({ scenario }) => scenario));
+    contributionProjections.push(
+      ...rankedWorlds.map(({ contributionProjection }) => contributionProjection),
     );
     const hasArea = variantBaseline.effectControls.some((control) =>
       contributesAreaSupport(control.projection),
     );
-    if (conditions.selfBuffs === 'included' && hasArea)
-      withoutAreaScenarios.push(
-        ...worlds.map((candidate) =>
-          scenarioForPolicy(
+    const withoutAreaWorlds = worlds.map((candidate) =>
+      conditions.selfBuffs === 'included' && hasArea
+        ? scenarioForPolicy(
             servant,
             variantScenario,
             variantBaseline,
@@ -228,9 +178,19 @@ export function compileRankingScenarioWorlds(input: {
             'withoutArea',
             candidate,
             master,
-          ),
-        ),
-      );
+          )
+        : null,
+    );
+    withoutAreaScenarios.push(...withoutAreaWorlds.map((item) => item?.scenario ?? null));
+    withoutAreaContributionProjections.push(
+      ...withoutAreaWorlds.map((item) => item?.contributionProjection ?? null),
+    );
   }
-  return { rankingScenarios, withoutAreaScenarios, worldCandidateCount };
+  return {
+    rankingScenarios,
+    withoutAreaScenarios,
+    contributionProjections,
+    withoutAreaContributionProjections,
+    worldCandidateCount,
+  };
 }

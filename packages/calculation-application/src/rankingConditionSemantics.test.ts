@@ -31,7 +31,7 @@ describe('ranking condition semantics', () => {
     versions.masterDataVersion = master.version;
   });
 
-  it('evaluates party-wide recipient eligibility against the attacker', () => {
+  it('does not apply a party-wide recipient modifier without a matching attacker trait', () => {
     const servant = master.servants.find(({ id }) => id === '1100300')!;
     const detail = calculateRankingDetail(
       servant,
@@ -50,15 +50,15 @@ describe('ranking condition semantics', () => {
     ]);
     const dragonOnly = detail.effects.filter(
       (effect) =>
+        effect.sourceActive &&
+        effect.decision.state === 'enabled' &&
         effect.contributionScope === 'partyWide' &&
         effect.explanation.condition !== null &&
         JSON.stringify(effect.explanation.condition).includes('dragon'),
     );
     expect(dragonOnly.length).toBeGreaterThan(0);
     expect(dragonOnly.every(({ outcome }) => outcome === 'notApplied')).toBe(true);
-    expect(dragonOnly.every(({ explanation }) => explanation.code === 'conditionNotMet')).toBe(
-      true,
-    );
+    expect(dragonOnly.every(({ explanation }) => explanation.code === 'unresolved')).toBe(true);
   });
 
   it('keeps external field facts absent by default and materializes a finite active witness', () => {

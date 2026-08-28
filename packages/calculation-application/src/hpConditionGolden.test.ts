@@ -38,6 +38,7 @@ describe('production HP condition golden', () => {
         const calculation = calculateScenario(
           {
             ...createDefaultResolvedScenario(master, undefined, servant),
+            preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
             attackerHpPermille: hp,
             craftEssence: {
               craftEssenceId: craftEssence.id,
