@@ -38,10 +38,7 @@ describe('activation fact set analyzer', () => {
     const result = analyzeActivationFactSet([canonical[1]!, canonical[0]!, canonical[0]!]);
     expect(result.status).toBe('invalid');
     if (result.status !== 'invalid') throw new Error('expected invalid fact set');
-    expect(result.issues.map(({ kind }) => kind)).toEqual([
-      'nonCanonicalOrder',
-      'duplicateFact',
-    ]);
+    expect(result.issues.map(({ kind }) => kind)).toEqual(['nonCanonicalOrder', 'duplicateFact']);
   });
 
   it('rejects conflicting choice candidates but scopes choices by source instance', () => {
@@ -71,13 +68,9 @@ describe('activation fact set analyzer', () => {
     expect(valid.status).toBe('valid');
     if (valid.status !== 'valid') throw new Error('expected valid fact set');
     expect([...valid.factSet.sourceQuantityRanges.values()]).toEqual([{ min: 500, max: 999 }]);
-    const impossible = analyzeActivationFactSet(
-      sorted([atLeast, { ...atMost, value: 499 }]),
-    );
+    const impossible = analyzeActivationFactSet(sorted([atLeast, { ...atMost, value: 499 }]));
     expect(impossible.status).toBe('invalid');
     if (impossible.status !== 'invalid') throw new Error('expected invalid fact set');
-    expect(impossible.issues.map(({ kind }) => kind)).toContain(
-      'conflictingSourceQuantityRange',
-    );
+    expect(impossible.issues.map(({ kind }) => kind)).toContain('conflictingSourceQuantityRange');
   });
 });

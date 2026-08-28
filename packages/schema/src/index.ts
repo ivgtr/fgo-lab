@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { activationFactKey, analyzeActivationFactSet } from './activationFactSet';
+import { analyzeActivationFactSet } from './activationFactSet';
 import { quantityFactValueSchema, worldFactQuantitySchema } from './quantityFacts';
 
 export {
