@@ -31,7 +31,6 @@ interface PreparedCandidateBase {
   candidateInput: DamageResolutionInput;
   targetFacts: readonly TargetPredicateAssertion[];
   decisions: ReadonlyMap<string, EffectDecision>;
-  resolvedCompileProjections: readonly EffectProjection[];
   procSelectionIssues: readonly ExecutionIssue[];
 }
 
@@ -45,11 +44,13 @@ export interface ReadyCandidateExecution extends PreparedCandidateBase {
   finalSelectedCardMutation: Extract<BattleOperation, { kind: 'changeCardType' }> | undefined;
   constraintIssues: readonly ExecutionIssue[];
   invalidDecisionKeys: Set<string>;
+  resolvedCompileProjections: readonly EffectProjection[];
 }
 
 export interface InvalidActivationCandidateExecution extends PreparedCandidateBase {
   status: 'invalidActivationContext';
   issues: readonly ExecutionIssue[];
+  resolvedCompileProjections: readonly EffectProjection[];
 }
 
 export type PreparedCandidateExecution =
@@ -60,7 +61,7 @@ function prepareCandidateBase(
   resolvedInputs: ResolvedCanonicalInputSet,
   targetCandidate: TargetCandidate | null,
 ): PreparedCandidateBase {
-  const { baseInput, scenario, operations, compileProjections } = prepared;
+  const { baseInput, scenario, operations } = prepared;
   const materialized = targetCandidate
     ? materializeTargetCandidate(
         baseInput,
@@ -79,11 +80,6 @@ function prepareCandidateBase(
     candidateInput,
     targetFacts,
     decisions: proc.decisions,
-    resolvedCompileProjections: resolveCompileProjections(
-      compileProjections,
-      proc.decisions,
-      new Set(),
-    ),
     procSelectionIssues: proc.issues,
   };
 }
@@ -227,6 +223,15 @@ export function prepareCandidateExecution(
     base.decisions,
   );
   if (activation.status === 'invalid')
-    return { ...base, status: 'invalidActivationContext', issues: activation.issues };
+    return {
+      ...base,
+      status: 'invalidActivationContext',
+      issues: activation.issues,
+      resolvedCompileProjections: resolveCompileProjections(
+        prepared.compileProjections,
+        base.decisions,
+        new Set(),
+      ),
+    };
   return prepareExecutableCandidate(prepared, resolvedInputs, base, activation.context);
 }

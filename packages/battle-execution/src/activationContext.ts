@@ -10,6 +10,7 @@ import {
   analyzeActivationCondition,
   evaluateActivationRequirement,
   hasMissingMandatoryActivationFact,
+  type ActivationConditionAnalysis,
 } from './activationCondition';
 import type {
   ActivationContext,
@@ -34,6 +35,11 @@ export interface ActivationRequirementOwner {
   facts: readonly ActivationFact[];
 }
 
+interface AnalyzedOperationRequirement {
+  operation: BattleOperation;
+  analysis: ActivationConditionAnalysis;
+}
+
 export function activationSourceRefForOperation(operation: BattleOperation): ActivationSourceRef {
   return {
     origin: operation.source.origin,
@@ -45,8 +51,7 @@ export function activationSourceRefForOperation(operation: BattleOperation): Act
 export function collectActivationRequirementOwners(
   operations: readonly BattleOperation[],
 ): ActivationRequirementOwner[] {
-  return operations.flatMap((operation) => {
-    const analysis = analyzeActivationCondition(operation.condition);
+  return analyzeOperationRequirements(operations).flatMap(({ operation, analysis }) => {
     return analysis.status === 'supported' && analysis.atoms.length > 0
       ? [
           {
@@ -62,6 +67,15 @@ export function collectActivationRequirementOwners(
         ]
       : [];
   });
+}
+
+function analyzeOperationRequirements(
+  operations: readonly BattleOperation[],
+): AnalyzedOperationRequirement[] {
+  return operations.map((operation) => ({
+    operation,
+    analysis: analyzeActivationCondition(operation.condition),
+  }));
 }
 
 export function activationRequirementOwnerSelected(
@@ -108,14 +122,16 @@ function factSetIssue(issue: ActivationFactSetIssue): ExecutionIssue {
 
 function validateFactReachability(
   facts: readonly ActivationFact[],
-  operations: readonly BattleOperation[],
+  analyzedOperations: readonly AnalyzedOperationRequirement[],
 ): ExecutionIssue[] {
   const operationSources = new Set(
-    operations.map((operation) => activationSourceKey(activationSourceRefForOperation(operation))),
+    analyzedOperations.map(({ operation }) =>
+      activationSourceKey(activationSourceRefForOperation(operation)),
+    ),
   );
   const requirementKeys = new Set(
-    collectActivationRequirementOwners(operations).flatMap(({ facts: required }) =>
-      required.map(activationFactKey),
+    analyzedOperations.flatMap(({ analysis }) =>
+      analysis.status === 'supported' ? analysis.atoms.map(activationFactKey) : [],
     ),
   );
   const issues: ExecutionIssue[] = [];
@@ -130,13 +146,12 @@ function validateFactReachability(
 }
 
 function validateSelectedOperationRequirements(
-  operations: readonly BattleOperation[],
+  analyzedOperations: readonly AnalyzedOperationRequirement[],
   decisions: ReadonlyMap<string, EffectDecision>,
   context: ActivationContext,
 ): ExecutionIssue[] {
   const issues: ExecutionIssue[] = [];
-  for (const operation of operations) {
-    const analysis = analyzeActivationCondition(operation.condition);
+  for (const { operation, analysis } of analyzedOperations) {
     if (analysis.status === 'unsupported') {
       issues.push({
         kind: 'invalidActivationContext',
@@ -169,9 +184,10 @@ export function buildActivationContext(
   const factSet = analyzeActivationFactSet(facts);
   if (factSet.status === 'invalid')
     return { status: 'invalid', issues: factSet.issues.map(factSetIssue) };
-  const reachabilityIssues = validateFactReachability(facts, operations);
+  const analyzedOperations = analyzeOperationRequirements(operations);
+  const reachabilityIssues = validateFactReachability(facts, analyzedOperations);
   const requirementIssues = validateSelectedOperationRequirements(
-    operations,
+    analyzedOperations,
     decisions,
     factSet.factSet,
   );
