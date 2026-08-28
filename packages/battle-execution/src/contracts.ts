@@ -6,7 +6,12 @@ import type {
   NpDamageSpec,
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
-import type { TargetAttributeContext, TargetClassContext, TargetPredicate } from '@fgo-lab/schema';
+import type {
+  ActivationDecision,
+  TargetAttributeContext,
+  TargetClassContext,
+  TargetPredicate,
+} from '@fgo-lab/schema';
 
 export type ActorScope = 'attacker' | 'target';
 export type EffectContributionScope =
@@ -213,6 +218,7 @@ export interface BattleState {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
+  activationDecisions: readonly ActivationDecision[];
   resolvedInputValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;

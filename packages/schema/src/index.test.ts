@@ -36,6 +36,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
+      activationDecisions: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });
@@ -57,6 +58,21 @@ describe('portable schema boundaries', () => {
         attackerSkills: [{ skillId: 'skill-1', skillLevel: 10, enabled: true }],
       }),
     ).toThrow();
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...scenario,
+        activationDecisions: [
+          {
+            decisionKey: 'effect:a',
+            fact: { kind: 'choice', group: 'skill:choice', candidate: 'a' },
+          },
+          {
+            decisionKey: 'effect:b',
+            fact: { kind: 'choice', group: 'skill:choice', candidate: 'b' },
+          },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects the removed untyped battle-context value map', () => {
@@ -77,6 +93,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
+      activationDecisions: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });
@@ -119,6 +136,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
+      activationDecisions: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });

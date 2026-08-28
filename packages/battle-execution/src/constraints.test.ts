@@ -451,4 +451,50 @@ describe('unified constraint validation', () => {
       },
     });
   });
+
+  it('validates typed activation facts in the same constraint set', () => {
+    expect(
+      validateConstraintSet({
+        fixedFacts: [
+          {
+            sourceKey: 'selected:first',
+            fact: { kind: 'choice', group: 'skill:choice', candidate: '1' },
+          },
+          {
+            sourceKey: 'selected:second',
+            fact: { kind: 'choice', group: 'skill:choice', candidate: '2' },
+          },
+        ],
+        expressions: [],
+      }),
+    ).toMatchObject({
+      status: 'conflict',
+      issue: { conflicts: [{ kind: 'choiceConflict', group: 'skill:choice' }] },
+    });
+    expect(
+      validateConstraintSet({
+        fixedFacts: [
+          {
+            sourceKey: 'selected:quantity',
+            fact: {
+              kind: 'sourceQuantity',
+              quantity: 'battlePointRate',
+              subjectId: '705300',
+              comparison: 'atMost',
+              value: 999,
+            },
+          },
+        ],
+        expressions: [
+          condition('required:quantity', {
+            kind: 'sourceQuantity',
+            quantity: 'battlePointRate',
+            subjectId: '705300',
+            comparison: 'atLeast',
+            value: 1_000,
+          }),
+        ],
+      }),
+    ).toMatchObject({ status: 'conflict' });
+  });
 });

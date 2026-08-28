@@ -7,7 +7,7 @@ function choiceKeys(expression: ConditionExpression): string[] {
   return expression.kind === 'not' ? choiceKeys(expression.expression) : [];
 }
 
-function conditionIsActivationLocal(expression: ConditionExpression): boolean {
+export function conditionIsActivationLocal(expression: ConditionExpression): boolean {
   if (
     expression.kind === 'always' ||
     expression.kind === 'choice' ||
@@ -118,6 +118,7 @@ export function planOperationActivations(
 export function resolveOperationActivation(
   operation: BattleOperation,
   decisions: ReadonlyMap<string, EffectDecision>,
+  satisfiedDecisionKeys: ReadonlySet<string> = new Set(),
 ): {
   enabled: boolean;
   activeDecisionKeys: readonly string[];
@@ -139,7 +140,7 @@ export function resolveOperationActivation(
     const decision = decisions.get(link.decisionKey);
     return link.selection === 'operationEnabled'
       ? decision?.operationEnabled === true
-      : decision?.operationEnabled === true && decision.conditionSatisfaction === 'assumeSatisfied';
+      : decision?.operationEnabled === true && satisfiedDecisionKeys.has(link.decisionKey);
   });
   return {
     enabled: operation.sourceEnabled && activeLinks.length > 0,

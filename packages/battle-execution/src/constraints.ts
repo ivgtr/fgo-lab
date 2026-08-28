@@ -23,12 +23,14 @@ import {
 } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import type { TargetPredicate } from '@fgo-lab/schema';
+import type { ActivationFact } from '@fgo-lab/schema';
 
 export const MAX_CONSTRAINT_ALTERNATIVES = 2_048;
 export const MAX_CONSTRAINT_LITERALS = 128;
 
 type FixedFact =
   | WorldFactAssertion['fact']
+  | ActivationFact
   | { kind: 'card'; card: CardType }
   | {
       kind: 'targetPredicate';
@@ -630,6 +632,19 @@ function fixedLiterals(item: FixedConstraintFact): Literal[] {
   }
   if (item.fact.kind === 'card') return [{ ...item.fact, sourceKey: item.sourceKey }];
   if (item.fact.kind === 'targetPredicate') return [{ ...item.fact, sourceKey: item.sourceKey }];
+  if (item.fact.kind === 'choice' || item.fact.kind === 'operationTrigger')
+    return [{ ...item.fact, sourceKey: item.sourceKey }];
+  if (item.fact.kind === 'sourceQuantity')
+    return [
+      {
+        kind: 'sourceQuantityRange',
+        quantity: item.fact.quantity,
+        subjectId: item.fact.subjectId,
+        min: item.fact.comparison === 'atLeast' ? item.fact.value : Number.MIN_SAFE_INTEGER,
+        max: item.fact.comparison === 'atMost' ? item.fact.value : Number.MAX_SAFE_INTEGER,
+        sourceKey: item.sourceKey,
+      },
+    ];
   return [
     {
       kind: 'quantityRange',
@@ -807,6 +822,10 @@ export function fixedConstraintFactsFromState(
     ...traits,
     ...actorPredicates,
     ...quantities,
+    ...state.activationDecisions.map(({ decisionKey, fact }, index) => ({
+      sourceKey: `${sourcePrefix}:activation:${decisionKey}:${String(index)}`,
+      fact,
+    })),
     { sourceKey: `${sourcePrefix}:card`, fact: { kind: 'card' as const, card: state.card } },
   ];
 }

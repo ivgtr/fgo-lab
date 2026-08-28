@@ -22,6 +22,25 @@ import {
 } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { setEffectSourceEnabled } from './scenarioCommands';
+import { activationFactsForCondition } from './activationContext';
+
+function appendActivationFacts(
+  scenario: Parameters<typeof applyEffectInclusionDecision>[0],
+  projection: EffectProjection,
+) {
+  if (projection.decision.state === 'none') return scenario;
+  const decisionKey = projection.decision.decisionKey;
+  return {
+    ...scenario,
+    activationDecisions: [
+      ...scenario.activationDecisions,
+      ...activationFactsForCondition(projection.explanation.condition).map((fact) => ({
+        decisionKey,
+        fact,
+      })),
+    ],
+  };
+}
 
 const root = resolve(import.meta.dirname, '../../..');
 function applyEffectProjectionDecision(
@@ -88,6 +107,36 @@ function hasPositiveTargetPredicate(
 }
 
 describe('production master damage quality ratchet', () => {
+  it('ratchets every canonical activation-local damage occurrence', async () => {
+    const master = await loadProductionMaster();
+    const inventory = { effects: 0, choice: 0, operationTrigger: 0, sourceQuantity: 0 };
+    for (const servant of master.servants)
+      for (const [origin, sources] of [
+        ['attacker', servant.skills],
+        ['np', servant.noblePhantasms],
+        ['passive', servant.passives],
+      ] as const)
+        for (const source of sources)
+          for (const effect of source.effects) {
+            if (!canNormalizeDamageEffect(effect, origin)) continue;
+            const hasActivationCondition =
+              effect.choice !== null ||
+              effect.operationTrigger !== null ||
+              effect.sourceQuantityConditions.length > 0;
+            if (!hasActivationCondition) continue;
+            inventory.effects += 1;
+            if (effect.choice !== null) inventory.choice += 1;
+            if (effect.operationTrigger !== null) inventory.operationTrigger += 1;
+            if (effect.sourceQuantityConditions.length > 0) inventory.sourceQuantity += 1;
+          }
+    expect(inventory).toEqual({
+      effects: 39,
+      choice: 34,
+      operationTrigger: 5,
+      sourceQuantity: 5,
+    });
+  });
+
   it('allows Summer Wu to grant a state trait after an initial negative trait fact', async () => {
     const master = await loadProductionMaster();
     const servant = master.servants.find((candidate) => candidate.id === '505200')!;
@@ -211,7 +260,7 @@ describe('production master damage quality ratchet', () => {
       ),
     ).toMatchObject({ outcome: 'applied' });
     expect(compatible.input.npDamageBuff).toBe(0.2);
-    expect(conflict.result.status).toBe('unsupported');
+    expect(conflict.result.status).toBe('calculated');
     expect(conflict.input.npDamageBuff).toBe(0);
     expect(
       conflict.effects.find((effect) => effect.projectionKey === conditionalNpDamage.projectionKey)
@@ -283,7 +332,7 @@ describe('production master damage quality ratchet', () => {
       master,
       versions,
     );
-    expect(incompatible.result.status).toBe('unsupported');
+    expect(incompatible.result.status).toBe('calculated');
     expect(incompatible.input.attackBuff).toBe(0);
 
     const attacker = master.servants.find((servant) => servant.id === '100100')!;
@@ -375,12 +424,14 @@ describe('production master damage quality ratchet', () => {
       master,
       versions,
     );
+    const resolvedChoiceScenario = applyEffectProjectionDecision(
+      applyEffectProjectionDecision(scenario, buster, true),
+      attack,
+      true,
+    );
+    const resolvedChoice = calculateScenario(resolvedChoiceScenario, master, versions);
     const conflict = calculateScenario(
-      applyEffectProjectionDecision(
-        applyEffectProjectionDecision(scenario, buster, true),
-        attack,
-        true,
-      ),
+      appendActivationFacts(resolvedChoiceScenario, buster),
       master,
       versions,
     );
@@ -391,6 +442,9 @@ describe('production master damage quality ratchet', () => {
     expect(attackOnly.result.status).toBe('calculated');
     expect(attackOnly.input.attackBuff).toBeGreaterThan(0);
     expect(attackOnly.input.cardBuff).toBe(0);
+    expect(resolvedChoice.result.status).toBe('calculated');
+    expect(resolvedChoice.input.attackBuff).toBeGreaterThan(0);
+    expect(resolvedChoice.input.cardBuff).toBe(0);
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.cardBuff).toBe(0);
     expect(conflict.input.attackBuff).toBe(0);
@@ -457,11 +511,16 @@ describe('production master damage quality ratchet', () => {
         .map((effect) => effect.outcome),
     ).toEqual(['applied', 'applied']);
 
+    const resolvedChoiceScenario = applyEffectProjectionDecision(rareScenario, firstAttack, true);
+    const resolvedChoice = calculateScenario(resolvedChoiceScenario, master, versions);
     const conflict = calculateScenario(
-      applyEffectProjectionDecision(rareScenario, firstAttack, true),
+      appendActivationFacts(resolvedChoiceScenario, rareAttack),
       master,
       versions,
     );
+    expect(resolvedChoice.result.status).toBe('calculated');
+    expect(resolvedChoice.input.attackBuff).toBeCloseTo(0.2, 10);
+    expect(resolvedChoice.input.npDamageBuff).toBe(0);
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.attackBuff).toBe(0);
     expect(conflict.input.npDamageBuff).toBe(0);
@@ -546,8 +605,14 @@ describe('production master damage quality ratchet', () => {
       master,
       versions,
     );
+    const resolvedChoiceScenario = applyEffectProjectionDecision(
+      changedScenario,
+      busterChange,
+      true,
+    );
+    const resolvedChoice = calculateScenario(resolvedChoiceScenario, master, versions);
     const conflict = calculateScenario(
-      applyEffectProjectionDecision(changedScenario, busterChange, true),
+      appendActivationFacts(resolvedChoiceScenario, artsChange),
       master,
       versions,
     );
@@ -565,6 +630,8 @@ describe('production master damage quality ratchet', () => {
     expect(buffed.result.status).toBe('calculated');
     expect(buffed.input.cardType).toBe('arts');
     expect(buffed.input.cardBuff).toBeGreaterThan(0);
+    expect(resolvedChoice.result.status).toBe('calculated');
+    expect(resolvedChoice.input.cardType).toBe('buster');
     expect(conflict.result.status).toBe('unsupported');
     expect(conflict.input.cardType).toBe('buster');
     expect(
@@ -660,15 +727,19 @@ describe('production master damage quality ratchet', () => {
     expect(missingForm.result.status).toBe('unsupported');
     expect(missingForm.input.attackBuff).toBe(0);
 
+    const resolvedFormScenario = applyEffectProjectionDecision(
+      applyEffectProjectionDecision(scenario, busterForm, true),
+      artsForm,
+      true,
+    );
+    const resolvedForms = calculateScenario(resolvedFormScenario, master, versions);
     const conflictingForms = calculateScenario(
-      applyEffectProjectionDecision(
-        applyEffectProjectionDecision(scenario, busterForm, true),
-        artsForm,
-        true,
-      ),
+      appendActivationFacts(resolvedFormScenario, busterForm),
       master,
       versions,
     );
+    expect(resolvedForms.result.status).toBe('calculated');
+    expect(resolvedForms.input.cardType).toBe('arts');
     expect(conflictingForms.result.status).toBe('unsupported');
     expect(conflictingForms.input.cardType).toBe('arts');
     expect(

@@ -7,7 +7,7 @@ import type {
   ExecutionIssue,
   OperationResult,
 } from './contracts';
-import { evaluateCondition } from './condition';
+import { activationRequirementsSatisfied, evaluateCondition } from './condition';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import { applyNpDamageOperation } from './npDamageOperation';
 import { createOperationProjection, resolveModifierValue } from './projection';
@@ -139,8 +139,10 @@ export function executeOrderedScenarioCandidate(
       const resolvedModifierValue =
         operation.kind === 'addModifier' ? resolveModifierValue(operation, state) : null;
       const decisionConditionSatisfied =
+        condition === null &&
         choice?.conditionSatisfaction === 'assumeSatisfied' &&
-        operation.decisionPlan.condition === 'userMayAssume';
+        operation.decisionPlan.condition === 'userMayAssume' &&
+        activationRequirementsSatisfied(operation.condition, state);
       const localConditionSatisfied =
         decisionConditionSatisfied || activation.assumesLocalCondition;
       let outcome: OperationResult['outcome'] = 'applied';

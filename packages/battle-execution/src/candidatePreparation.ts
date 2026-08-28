@@ -8,6 +8,12 @@ import type {
   TargetPredicateAssertion,
 } from './contracts';
 import { resolveOperationActivation } from './activation';
+import { activationRequirementsSatisfied, evaluateCondition } from './condition';
+import {
+  assumedDecisionConstraints,
+  collectDecisionConditions,
+  resolveSatisfiedDecisionKeys,
+} from './decisionConditions';
 import {
   fixedConstraintFactsFromState,
   validateConstraintSet,
@@ -18,7 +24,6 @@ import { materializeTargetCandidate, type TargetCandidate } from './targetContex
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
 
 export type OperationActivation = ReturnType<typeof resolveOperationActivation>;
-
 export interface PreparedCandidateExecution {
   candidateInput: DamageResolutionInput;
   targetFacts: readonly TargetPredicateAssertion[];
@@ -167,16 +172,23 @@ export function prepareCandidateExecution(
       predicate,
       present: true,
     })),
+    scenario.activationDecisions,
   );
   const scenarioDecisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
   const proc = decisionsWithProcSelections(scenarioDecisions, operations, resolvedInputs.values);
   const decisions = proc.decisions;
+  const conditionsByDecisionKey = collectDecisionConditions(operations);
+  const satisfiedDecisionKeys = resolveSatisfiedDecisionKeys(
+    decisions,
+    conditionsByDecisionKey,
+    state,
+  );
   const activations = new Map(
     operations.map((operation) => [
       operation.operationId,
-      resolveOperationActivation(operation, decisions),
+      resolveOperationActivation(operation, decisions, satisfiedDecisionKeys),
     ]),
   );
   const activeDecisionSourceInstances = new Set(
@@ -184,20 +196,11 @@ export function prepareCandidateExecution(
       .filter((operation) => activations.get(operation.operationId)!.activeDecisionKeys.length > 0)
       .map((operation) => operation.source.sourceInstanceId),
   );
-  const conditionByDecisionKey = new Map(
-    operations.flatMap((operation) =>
-      operation.decisionKey ? [[operation.decisionKey, operation.condition] as const] : [],
-    ),
+  const activeConditionConstraints = assumedDecisionConstraints(
+    scenario.effectDecisions,
+    conditionsByDecisionKey,
+    state,
   );
-  const activeConditionConstraints: SatisfiableConditionConstraint[] =
-    scenario.effectDecisions.flatMap((decision) => {
-      const expression = conditionByDecisionKey.get(decision.decisionKey);
-      return decision.operationEnabled &&
-        decision.conditionSatisfaction === 'assumeSatisfied' &&
-        expression
-        ? [{ sourceKey: decision.decisionKey, expression }]
-        : [];
-    });
   const activeMutationConstraints: SatisfiableConditionConstraint[] = operations.flatMap(
     (operation) => {
       const activation = activations.get(operation.operationId)!;
@@ -210,9 +213,13 @@ export function prepareCandidateExecution(
     if (operation.kind !== 'changeCardType') return false;
     if (activations.get(operation.operationId)?.enabled !== true) return false;
     if (operation.decisionPlan.condition !== 'userMayAssume') return true;
+    const evaluated = evaluateCondition(operation.condition, state);
+    if (evaluated === true) return true;
     return (
+      evaluated === null &&
       operation.decisionKey !== null &&
-      decisions.get(operation.decisionKey)?.conditionSatisfaction === 'assumeSatisfied'
+      decisions.get(operation.decisionKey)?.conditionSatisfaction === 'assumeSatisfied' &&
+      activationRequirementsSatisfied(operation.condition, state)
     );
   }) as Extract<BattleOperation, { kind: 'changeCardType' }>[];
   const finalSelectedCardMutation = selectedCardMutations.at(-1);

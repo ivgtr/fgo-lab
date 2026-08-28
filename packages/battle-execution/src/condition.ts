@@ -167,12 +167,46 @@ export function evaluateCondition(
     }
     case 'card':
       return state.card === condition.card;
-    case 'choice':
-      return null;
+    case 'choice': {
+      const selections = state.activationDecisions.flatMap(({ fact }) =>
+        fact.kind === 'choice' && fact.group === condition.group ? [fact] : [],
+      );
+      if (selections.length === 0) return null;
+      return selections.every(({ candidate }) => candidate === condition.candidate);
+    }
     case 'operationTrigger':
-      return null;
-    case 'sourceQuantity':
-      return null;
+      return state.activationDecisions.some(
+        ({ fact }) =>
+          fact.kind === 'operationTrigger' &&
+          fact.source === condition.source &&
+          fact.position === condition.position,
+      )
+        ? true
+        : null;
+    case 'sourceQuantity': {
+      const ranges = state.activationDecisions.flatMap(({ fact }) => {
+        if (fact.kind !== 'sourceQuantity' || fact.subjectId !== condition.subjectId) return [];
+        return [
+          fact.comparison === 'atLeast'
+            ? { min: fact.value, max: Number.MAX_SAFE_INTEGER }
+            : { min: Number.MIN_SAFE_INTEGER, max: fact.value },
+        ];
+      });
+      if (ranges.length === 0) return null;
+      const selected = ranges.reduce(
+        (range, candidate) => ({
+          min: Math.max(range.min, candidate.min),
+          max: Math.min(range.max, candidate.max),
+        }),
+        { min: Number.MIN_SAFE_INTEGER, max: Number.MAX_SAFE_INTEGER },
+      );
+      const required =
+        condition.comparison === 'atLeast'
+          ? { min: condition.value, max: Number.MAX_SAFE_INTEGER }
+          : { min: Number.MIN_SAFE_INTEGER, max: condition.value };
+      if (selected.max < required.min || selected.min > required.max) return false;
+      return selected.min >= required.min && selected.max <= required.max ? true : null;
+    }
     case 'quantity': {
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];
@@ -205,4 +239,22 @@ export function evaluateCondition(
       return value === null ? null : !value;
     }
   }
+}
+
+export function activationRequirementsSatisfied(
+  condition: ConditionExpression,
+  state: BattleState,
+): boolean {
+  if (
+    condition.kind === 'choice' ||
+    condition.kind === 'operationTrigger' ||
+    condition.kind === 'sourceQuantity'
+  )
+    return evaluateCondition(condition, state) === true;
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.every((expression) =>
+      activationRequirementsSatisfied(expression, state),
+    );
+  if (condition.kind === 'not') return activationRequirementsSatisfied(condition.expression, state);
+  return true;
 }

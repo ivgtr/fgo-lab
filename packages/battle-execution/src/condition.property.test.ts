@@ -28,6 +28,7 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
     },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
+    activationDecisions: [],
     resolvedInputValues: {},
     modifiers: [],
     modifierRates: {},
@@ -39,6 +40,63 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
 }
 
 describe('condition expression properties', () => {
+  it('evaluates activation-local facts without promoting them to world traits', () => {
+    const activated: BattleState = {
+      ...state(),
+      activationDecisions: [
+        {
+          decisionKey: 'choice-effect',
+          fact: { kind: 'choice', group: 'skill:choice', candidate: '2' },
+        },
+        {
+          decisionKey: 'trigger-effect',
+          fact: { kind: 'operationTrigger', source: 'skill:source', position: 4 },
+        },
+        {
+          decisionKey: 'quantity-effect',
+          fact: {
+            kind: 'sourceQuantity',
+            quantity: 'battlePointRate',
+            subjectId: '705300',
+            comparison: 'atMost',
+            value: 999,
+          },
+        },
+      ],
+    };
+    expect(
+      evaluateConditionExpression(
+        { kind: 'choice', group: 'skill:choice', candidate: '2' },
+        activated,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateConditionExpression(
+        { kind: 'choice', group: 'skill:choice', candidate: '1' },
+        activated,
+      ),
+    ).toBe(false);
+    expect(
+      evaluateConditionExpression(
+        { kind: 'operationTrigger', source: 'skill:source', position: 4 },
+        activated,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateConditionExpression(
+        {
+          kind: 'sourceQuantity',
+          quantity: 'battlePointRate',
+          subjectId: '705300',
+          comparison: 'atMost',
+          value: 999,
+        },
+        activated,
+      ),
+    ).toBe(true);
+    expect(activated.traits.field.size).toBe(0);
+  });
+
   it('does not infer provenance-sensitive traits from an unqualified scenario fact', () => {
     const expression: ConditionExpression = {
       kind: 'trait',

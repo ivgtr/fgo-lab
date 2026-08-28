@@ -29,6 +29,8 @@ export function conditionAllowsEffectLocalDecision(condition: ConditionExpressio
     condition.kind === 'trait' ||
     condition.kind === 'traitCount' ||
     condition.kind === 'choice' ||
+    condition.kind === 'operationTrigger' ||
+    condition.kind === 'sourceQuantity' ||
     condition.kind === 'targetPredicate'
   );
 }
@@ -91,9 +93,9 @@ export function deriveEffectPresentationState(
     return projection.proc.kind === 'guaranteed' || projection.procRatePermille === 1_000
       ? 'manuallyExcluded'
       : 'procFailed';
+  if (projection.outcome === 'applied') return 'applied';
   if (conditionSelectable && projection.conditionDecision !== 'assumeSatisfied')
     return 'conditionUnselected';
-  if (projection.outcome === 'applied') return 'applied';
   if (
     projection.explanation.condition !== null &&
     (projection.explanation.code === 'conditionNotMet' ||
@@ -151,9 +153,7 @@ export function createEffectControlViewModels(
           (!conditionSelectable || projection.conditionDecision === 'assumeSatisfied') &&
           (canonicalInputValues[chainedInput.key] ?? chainedInput.defaultValue ?? 0) >
             chainedInput.minimum
-        : projection.sourceActive &&
-          selected &&
-          (!conditionSelectable || projection.conditionDecision === 'assumeSatisfied');
+        : projection.sourceActive && selected && projection.outcome === 'applied';
     return {
       key,
       projection,

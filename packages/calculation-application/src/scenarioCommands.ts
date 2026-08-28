@@ -97,6 +97,9 @@ export function removeCalculationSupportSource(
     effectDecisions: scenario.effectDecisions.filter(
       (decision) => !removedDecisionKeys.has(decision.decisionKey),
     ),
+    activationDecisions: scenario.activationDecisions.filter(
+      (decision) => !removedDecisionKeys.has(decision.decisionKey),
+    ),
     worldFactAssertions: scenario.worldFactAssertions.filter(
       (assertion) => !removedDecisionKeys.has(assertion.decisionKey),
     ),

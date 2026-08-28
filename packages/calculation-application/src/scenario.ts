@@ -91,6 +91,7 @@ export function createDefaultResolvedScenario(
     mysticCode: null,
     support: null,
     effectDecisions: [],
+    activationDecisions: [],
     worldFactAssertions: [],
     explicitOverrides: {},
   };
@@ -235,6 +236,15 @@ export function resolveScenario(
         ? `${assertion.decisionKey}:trait:${assertion.fact.scope}:${assertion.fact.trait}:${String(assertion.fact.present)}`
         : `${assertion.decisionKey}:quantity:${assertion.fact.quantity}:${String(assertion.fact.value)}`,
   }));
+  const activationTrace = scenario.activationDecisions.map(({ decisionKey, fact }) => ({
+    step: 'activation-fact',
+    detail:
+      fact.kind === 'choice'
+        ? `${decisionKey}:choice:${fact.group}:${fact.candidate}`
+        : fact.kind === 'operationTrigger'
+          ? `${decisionKey}:operation-trigger:${fact.source}:${String(fact.position)}`
+          : `${decisionKey}:source-quantity:${fact.quantity}:${fact.subjectId}:${fact.comparison}:${String(fact.value)}`,
+  }));
   const canonicalInputTrace = Object.entries(canonicalInputs.values).map(([key, value]) => ({
     step: 'canonical-input',
     detail: `${key}:${String(value)}:${scenario.canonicalInputValues[key] ? 'explicit' : 'default'}`,
@@ -258,6 +268,7 @@ export function resolveScenario(
     inputDefinitions: [...execution.inputDefinitions],
     trace: [
       ...decisionTrace,
+      ...activationTrace,
       ...worldFactTrace,
       ...canonicalInputTrace,
       ...execution.operations.map((operation) => ({

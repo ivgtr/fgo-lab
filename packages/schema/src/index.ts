@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 27 as const;
-export const ENGINE_VERSION = '21.0.0' as const;
+export const SCHEMA_VERSION = 28 as const;
+export const ENGINE_VERSION = '22.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -157,6 +157,56 @@ export const targetContextSchema = z
   })
   .strict();
 export type TargetContext = z.infer<typeof targetContextSchema>;
+
+export const choiceSelectionSchema = z.object({
+  kind: z.literal('choice'),
+  group: z.string().min(1).max(300),
+  candidate: z.string().min(1).max(80),
+});
+export type ChoiceSelection = z.infer<typeof choiceSelectionSchema>;
+
+export const activationFactSchema = z.discriminatedUnion('kind', [
+  choiceSelectionSchema,
+  z.object({
+    kind: z.literal('operationTrigger'),
+    source: z.string().min(1).max(300),
+    position: z.number().int().nonnegative(),
+  }),
+  z.object({
+    kind: z.literal('sourceQuantity'),
+    quantity: z.literal('battlePointRate'),
+    subjectId: z.string().min(1).max(80),
+    comparison: z.enum(['atMost', 'atLeast']),
+    value: z.number().int(),
+  }),
+]);
+export type ActivationFact = z.infer<typeof activationFactSchema>;
+
+export const activationDecisionSchema = z
+  .object({
+    decisionKey: z.string().min(1).max(300),
+    fact: activationFactSchema,
+  })
+  .strict();
+export type ActivationDecision = z.infer<typeof activationDecisionSchema>;
+
+const activationDecisionsSchema = z
+  .array(activationDecisionSchema)
+  .max(300)
+  .superRefine((decisions, context) => {
+    const candidatesByChoiceGroup = new Map<string, string>();
+    for (const [index, { fact }] of decisions.entries()) {
+      if (fact.kind !== 'choice') continue;
+      const selected = candidatesByChoiceGroup.get(fact.group);
+      if (selected === undefined) candidatesByChoiceGroup.set(fact.group, fact.candidate);
+      else if (selected !== fact.candidate)
+        context.addIssue({
+          code: 'custom',
+          message: `conflicting_choice_selection:${fact.group}`,
+          path: [index, 'fact'],
+        });
+    }
+  });
 
 export const damageResolutionInputSchema = z.object({
   attackerId: z.string().min(1).max(80),
@@ -321,6 +371,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
         conditionSatisfaction: z.enum(['evaluate', 'assumeSatisfied']),
       }),
     ),
+    activationDecisions: activationDecisionsSchema,
     worldFactAssertions: z.array(
       z.object({
         decisionKey: z.string().min(1).max(300),

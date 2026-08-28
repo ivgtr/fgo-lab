@@ -9,6 +9,10 @@ import {
   type TargetContextCommand,
 } from './targetContext';
 import type { TargetPredicate } from '@fgo-lab/schema';
+import {
+  conditionHasNonActivationDecision,
+  setActivationFactsForProjection,
+} from './activationContext';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -148,7 +152,7 @@ export function applyEffectConditionDecision(
     throw new TypeError(`effect_condition_not_controllable:${projection.projectionKey}`);
   const decisionKey = projection.decision.decisionKey;
   const current = scenario.effectDecisions.find((decision) => decision.decisionKey === decisionKey);
-  let next = scenario;
+  let next = setActivationFactsForProjection(scenario, projection, satisfied);
   if (projection.decision.targetContext)
     for (const predicate of projection.decision.targetContext.predicates)
       next = applyTargetPredicateCondition(
@@ -191,7 +195,10 @@ export function applyEffectConditionDecision(
     decisionKey: projection.decision.decisionKey,
     operationEnabled:
       current?.operationEnabled ?? projection.decision.plan.activation === 'automatic',
-    conditionSatisfaction: satisfied ? 'assumeSatisfied' : 'evaluate',
+    conditionSatisfaction:
+      satisfied && conditionHasNonActivationDecision(projection.explanation.condition)
+        ? 'assumeSatisfied'
+        : 'evaluate',
   });
 }
 
