@@ -1,48 +1,21 @@
 import {
+  analyzeActivationCondition,
   activationRequirementOwnerSelected,
-  conditionHasActivationFact,
   type ActivationRequirementOwner,
-  type ConditionExpression,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
 import { activationFactKey, type ActivationFact, type CalculationScenario } from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
-export function activationFactsForCondition(
-  condition: ConditionExpression | null,
-): ActivationFact[] {
-  if (condition === null) return [];
-  if (
-    condition.kind === 'choice' ||
-    condition.kind === 'operationTrigger' ||
-    condition.kind === 'sourceQuantity'
-  )
-    return [condition];
-  if (condition.kind === 'all') return condition.expressions.flatMap(activationFactsForCondition);
-  if (condition.kind === 'any') {
-    const branches = condition.expressions.filter(conditionHasActivationFact);
-    if (branches.length === 0) return [];
-    if (branches.length !== 1) throw new TypeError('ambiguous_activation_condition_alternative');
-    return activationFactsForCondition(branches[0]!);
-  }
-  if (condition.kind === 'not' && conditionHasActivationFact(condition.expression))
+function materializableActivationFacts(projection: EffectProjection): readonly ActivationFact[] {
+  if (projection.explanation.condition === null) return [];
+  const analysis = analyzeActivationCondition(projection.explanation.condition);
+  if (analysis.status === 'unsupported')
     throw new TypeError('negated_activation_condition_unsupported');
-  return [];
-}
-
-export function conditionHasNonActivationDecision(condition: ConditionExpression | null): boolean {
-  if (condition === null) return false;
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.some(conditionHasNonActivationDecision);
-  if (condition.kind === 'not') return conditionHasNonActivationDecision(condition.expression);
-  return (
-    condition.kind === 'trait' ||
-    condition.kind === 'traitCount' ||
-    condition.kind === 'targetPredicate' ||
-    condition.kind === 'quantity' ||
-    condition.kind === 'inputQuantity'
-  );
+  if (analysis.materialization.kind === 'ambiguous')
+    throw new TypeError('ambiguous_activation_condition_alternative');
+  return analysis.materialization.kind === 'deterministic' ? analysis.materialization.facts : [];
 }
 
 function choiceGroupKey(fact: Extract<ActivationFact, { kind: 'choice' }>): string {
@@ -151,9 +124,10 @@ export function setActivationFactsForProjection(
     return linked ? owner.facts : [];
   });
   const factsByKey = new Map(
-    [...activationFactsForCondition(projection.explanation.condition), ...linkedFacts].map(
-      (fact) => [activationFactKey(fact), fact],
-    ),
+    [...materializableActivationFacts(projection), ...linkedFacts].map((fact) => [
+      activationFactKey(fact),
+      fact,
+    ]),
   );
   return applyActivationFactSelection(scenario, [...factsByKey.values()], enabled, owners);
 }

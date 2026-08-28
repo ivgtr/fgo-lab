@@ -22,13 +22,13 @@ import {
   type TraitConstraintScope,
 } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
-import type { TargetPredicate } from '@fgo-lab/schema';
-import type { ActivationFact } from '@fgo-lab/schema';
 import {
   activationChoiceGroupKey,
   activationOperationTriggerKey,
   activationSourceQuantityKey,
-} from './activationContext';
+  type ActivationFact,
+  type TargetPredicate,
+} from '@fgo-lab/schema';
 
 export const MAX_CONSTRAINT_ALTERNATIVES = 2_048;
 export const MAX_CONSTRAINT_LITERALS = 128;

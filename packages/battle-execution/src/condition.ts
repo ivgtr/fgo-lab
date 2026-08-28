@@ -2,7 +2,7 @@ import type { TraitCondition, TraitReadPolicy } from '@fgo-lab/master-data';
 import type { BattleState, ConditionExpression, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
-import { evaluateActivationRequirement } from './activationContext';
+import { evaluateActivationRequirement } from './activationCondition';
 
 const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
   stateSources: 'activeOnly',

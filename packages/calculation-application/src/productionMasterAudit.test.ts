@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
+  analyzeActivationCondition,
   type ConditionExpression,
   type EffectProjection,
   type TraitScope,
@@ -23,7 +24,14 @@ import {
 } from './effectDecision';
 import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { setEffectSourceEnabled } from './scenarioCommands';
-import { activationFactsForCondition } from './activationContext';
+
+function activationFactsForCondition(condition: ConditionExpression | null) {
+  if (condition === null) return [];
+  const analysis = analyzeActivationCondition(condition);
+  return analysis.status === 'supported' && analysis.materialization.kind === 'deterministic'
+    ? analysis.materialization.facts
+    : [];
+}
 
 function forgeConflictingActivationFacts(
   scenario: Parameters<typeof applyEffectInclusionDecision>[0],

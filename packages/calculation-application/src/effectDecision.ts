@@ -1,7 +1,12 @@
-import type { ActivationRequirementOwner, EffectProjection } from '@fgo-lab/battle-execution';
+import {
+  conditionAllowsEffectLocalDecision,
+  conditionHasNonActivationDecision,
+  type ActivationRequirementOwner,
+  type EffectProjection,
+} from '@fgo-lab/battle-execution';
 import type { CalculationScenario } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
-import { conditionAllowsEffectLocalDecision, type EffectControlViewModel } from './effectControls';
+import type { EffectControlViewModel } from './effectControls';
 import { setEffectSourceEnabled, setOperationSourceEnabled } from './scenarioCommands';
 import {
   applyTargetContextCommand,
@@ -9,10 +14,7 @@ import {
   type TargetContextCommand,
 } from './targetContext';
 import type { TargetPredicate } from '@fgo-lab/schema';
-import {
-  conditionHasNonActivationDecision,
-  setActivationFactsForProjection,
-} from './activationContext';
+import { setActivationFactsForProjection } from './activationContext';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 

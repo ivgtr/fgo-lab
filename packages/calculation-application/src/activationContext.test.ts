@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import type { ActivationFact } from '@fgo-lab/schema';
-import type { ActivationRequirementOwner } from '@fgo-lab/battle-execution';
-import { activationFactsForCondition, applyActivationFactSelection } from './activationContext';
+import {
+  analyzeActivationCondition,
+  type ActivationRequirementOwner,
+} from '@fgo-lab/battle-execution';
+import { applyActivationFactSelection } from './activationContext';
 import { createDefaultResolvedScenario } from './scenario';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -24,27 +27,32 @@ function owner(decisionKey: string, fact: ActivationFact): ActivationRequirement
 
 describe('activation fact materialization', () => {
   it('materializes the only activation-owned branch of a mixed OR condition', () => {
-    expect(
-      activationFactsForCondition({
-        kind: 'any',
-        expressions: [
-          { kind: 'trait', scope: 'field', trait: 'fieldSunlight', present: true },
-          { kind: 'operationTrigger', source, position: 1 },
-        ],
-      }),
-    ).toEqual([{ kind: 'operationTrigger', source, position: 1 }]);
+    const analysis = analyzeActivationCondition({
+      kind: 'any',
+      expressions: [
+        { kind: 'trait', scope: 'field', trait: 'fieldSunlight', present: true },
+        { kind: 'operationTrigger', source, position: 1 },
+      ],
+    });
+    expect(analysis).toMatchObject({
+      status: 'supported',
+      materialization: {
+        kind: 'deterministic',
+        facts: [{ kind: 'operationTrigger', source, position: 1 }],
+      },
+    });
   });
 
   it('rejects an OR whose activation selection is not unique', () => {
-    expect(() =>
-      activationFactsForCondition({
+    expect(
+      analyzeActivationCondition({
         kind: 'any',
         expressions: [
           { kind: 'choice', source, family: 'mode', candidate: 'attack' },
           { kind: 'choice', source, family: 'mode', candidate: 'npDamage' },
         ],
       }),
-    ).toThrow('ambiguous_activation_condition_alternative');
+    ).toMatchObject({ status: 'supported', materialization: { kind: 'ambiguous' } });
   });
 
   it('keeps a shared fact until the final selected operation stops referencing it', () => {

@@ -1,52 +1,5 @@
-import { activationFactKey, type ActivationFact } from '@fgo-lab/schema';
 import type { BattleOperation, ConditionExpression, EffectDecision, TraitScope } from './contracts';
-
-export function conditionRequiresActivationFact(
-  expression: ConditionExpression,
-  fact: ActivationFact,
-): boolean {
-  if (
-    expression.kind === 'choice' ||
-    expression.kind === 'operationTrigger' ||
-    expression.kind === 'sourceQuantity'
-  )
-    return activationFactKey(expression) === activationFactKey(fact);
-  if (expression.kind === 'all' || expression.kind === 'any')
-    return expression.expressions.some((child) => conditionRequiresActivationFact(child, fact));
-  return false;
-}
-
-function choiceKeys(expression: ConditionExpression): string[] {
-  if (expression.kind === 'choice')
-    return [JSON.stringify([expression.source, expression.family, expression.candidate])];
-  if (expression.kind === 'all' || expression.kind === 'any')
-    return expression.expressions.flatMap(choiceKeys);
-  return expression.kind === 'not' ? choiceKeys(expression.expression) : [];
-}
-
-export function conditionHasActivationFact(expression: ConditionExpression): boolean {
-  if (
-    expression.kind === 'choice' ||
-    expression.kind === 'sourceQuantity' ||
-    expression.kind === 'operationTrigger'
-  )
-    return true;
-  if (expression.kind === 'all' || expression.kind === 'any')
-    return expression.expressions.some(conditionHasActivationFact);
-  return expression.kind === 'not' && conditionHasActivationFact(expression.expression);
-}
-
-export function conditionIsActivationLocal(expression: ConditionExpression): boolean {
-  if (
-    expression.kind === 'always' ||
-    expression.kind === 'choice' ||
-    expression.kind === 'sourceQuantity' ||
-    expression.kind === 'operationTrigger'
-  )
-    return true;
-  if (expression.kind === 'all') return expression.expressions.every(conditionIsActivationLocal);
-  return false;
-}
+import { activationChoiceKeys, conditionIsActivationLocal } from './activationCondition';
 
 export function conditionRequiresTrait(
   expression: ConditionExpression,
@@ -99,11 +52,11 @@ export function planOperationActivations(
         operation.kind !== 'addQuantity')
     )
       return operation;
-    const operationChoices = choiceKeys(operation.condition);
+    const operationChoices = activationChoiceKeys(operation.condition);
     if (operationChoices.length === 0 && operation.source.origin !== 'attacker') return operation;
     const present = operation.kind === 'addTrait';
     const links = decisionOperations.flatMap((candidate) => {
-      const candidateChoices = choiceKeys(candidate.condition);
+      const candidateChoices = activationChoiceKeys(candidate.condition);
       const sameSkill =
         candidate.source.sourceInstanceId === operation.source.sourceInstanceId &&
         candidate.source.skillId === operation.source.skillId &&

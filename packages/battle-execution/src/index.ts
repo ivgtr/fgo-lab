@@ -25,7 +25,17 @@ export type {
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
-export { conditionHasActivationFact, conditionIsActivationLocal } from './activation';
+export {
+  analyzeActivationCondition,
+  conditionAllowsEffectLocalDecision,
+  conditionHasActivationFact,
+  conditionHasNonActivationDecision,
+  conditionIsActivationLocal,
+  conditionRequiresActivationFact,
+  evaluateActivationRequirement,
+  hasMissingMandatoryActivationFact,
+  type ActivationConditionAnalysis,
+} from './activationCondition';
 export {
   activationRequirementOwnerSelected,
   collectActivationRequirementOwners,

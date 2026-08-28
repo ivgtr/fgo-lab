@@ -8,6 +8,7 @@ import type {
 } from '@fgo-lab/master-data';
 import type {
   ActivationFact,
+  AnalyzedActivationFactSet,
   OperationOrigin,
   TargetAttributeContext,
   TargetClassContext,
@@ -221,13 +222,7 @@ export interface BattleState {
   unresolved: readonly ExecutionIssue[];
 }
 
-export interface ActivationContext {
-  facts: readonly ActivationFact[];
-  factKeys: ReadonlySet<string>;
-  choices: ReadonlyMap<string, string>;
-  operationTriggers: ReadonlySet<string>;
-  sourceQuantityRanges: ReadonlyMap<string, { min: number; max: number }>;
-}
+export type ActivationContext = AnalyzedActivationFactSet;
 
 export type EffectDecision = {
   decisionKey: string;

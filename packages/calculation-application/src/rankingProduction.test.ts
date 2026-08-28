@@ -3,14 +3,17 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { activationFactKey, APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { canonicalExclusiveGroup, conditionHasActivationFact } from '@fgo-lab/battle-execution';
+import {
+  analyzeActivationCondition,
+  canonicalExclusiveGroup,
+  conditionHasActivationFact,
+} from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import { calculateScenario } from './scenario';
 import { createDefaultResolvedScenario } from './scenario';
 import { calculateRanking, DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './ranking';
 import { calculateStandardRankingMatrix } from './rankingMatrix';
 import { fieldTraitsRequiredByCondition } from './conditionProvenance';
-import { activationFactsForCondition } from './activationContext';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -126,7 +129,12 @@ describe('production canonical ranking', () => {
           effect.explanation.condition !== null &&
           conditionHasActivationFact(effect.explanation.condition)
         ) {
-          for (const fact of activationFactsForCondition(effect.explanation.condition)) {
+          const analysis = analyzeActivationCondition(effect.explanation.condition);
+          const facts =
+            analysis.status === 'supported' && analysis.materialization.kind === 'deterministic'
+              ? analysis.materialization.facts
+              : [];
+          for (const fact of facts) {
             expect(
               detail.scenario.activationFacts.some(
                 (candidate) => activationFactKey(candidate) === activationFactKey(fact),

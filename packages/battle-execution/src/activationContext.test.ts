@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ActivationFact, ActivationSourceRef } from '@fgo-lab/schema';
 import type { BattleOperation, ConditionExpression, EffectDecision } from './contracts';
-import { buildActivationContext, evaluateActivationRequirement } from './activationContext';
+import { evaluateActivationRequirement } from './activationCondition';
+import { buildActivationContext } from './activationContext';
 
 const source: ActivationSourceRef = {
   origin: 'attacker',

@@ -3,9 +3,11 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { conditionIsActivationLocal } from '@fgo-lab/battle-execution';
+import {
+  conditionAllowsEffectLocalDecision,
+  conditionIsActivationLocal,
+} from '@fgo-lab/battle-execution';
 import { conditionFactRequirements } from './conditionProvenance';
-import { conditionAllowsEffectLocalDecision } from './effectControls';
 import { DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './rankingContracts';
 import { contributesToAttackerDamage, isSpecialAttack } from './rankingContribution';
 import { compileRankingExecutionPlan, selectedKeysForScope } from './rankingScenario';

@@ -1,6 +1,6 @@
 import {
   conditionHasActivationFact,
-  type ConditionExpression,
+  conditionAllowsEffectLocalDecision,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
 
@@ -23,21 +23,6 @@ export type EffectPresentationState =
   | 'conditionUnselected'
   | 'unsupported'
   | 'impossible';
-
-export function conditionAllowsEffectLocalDecision(condition: ConditionExpression | null): boolean {
-  if (condition === null) return false;
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.some(conditionAllowsEffectLocalDecision);
-  if (condition.kind === 'not') return conditionAllowsEffectLocalDecision(condition.expression);
-  return (
-    condition.kind === 'trait' ||
-    condition.kind === 'traitCount' ||
-    condition.kind === 'choice' ||
-    condition.kind === 'operationTrigger' ||
-    condition.kind === 'sourceQuantity' ||
-    condition.kind === 'targetPredicate'
-  );
-}
 
 function aggregateProjection(members: readonly EffectProjection[]): EffectProjection {
   const representative = members[0]!;
