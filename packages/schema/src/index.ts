@@ -1,5 +1,18 @@
 import { z } from 'zod';
+import { activationFactKey, analyzeActivationFactSet } from './activationFactSet';
 import { quantityFactValueSchema, worldFactQuantitySchema } from './quantityFacts';
+
+export {
+  activationChoiceGroupKey,
+  activationFactKey,
+  activationOperationTriggerKey,
+  activationSourceQuantityKey,
+  analyzeActivationFactSet,
+  type ActivationFactSetAnalysis,
+  type ActivationFactSetIssue,
+  type ActivationQuantityRange,
+  type AnalyzedActivationFactSet,
+} from './activationFactSet';
 
 export {
   isQuantityFactValueInDomain,
@@ -209,72 +222,25 @@ export const activationFactSchema = z.discriminatedUnion('kind', [
 ]);
 export type ActivationFact = z.infer<typeof activationFactSchema>;
 
-export function activationFactKey(fact: ActivationFact): string {
-  const source = [fact.source.origin, fact.source.sourceInstanceId, fact.source.skillId];
-  if (fact.kind === 'choice')
-    return JSON.stringify([fact.kind, source, fact.family, fact.candidate]);
-  if (fact.kind === 'operationTrigger') return JSON.stringify([fact.kind, source, fact.position]);
-  return JSON.stringify([
-    fact.kind,
-    source,
-    fact.quantity,
-    fact.subjectId,
-    fact.comparison,
-    fact.value,
-  ]);
-}
-
 const activationFactsSchema = z
   .array(activationFactSchema)
   .max(300)
   .superRefine((facts, context) => {
-    const candidatesByChoiceGroup = new Map<string, string>();
-    const factKeys = new Set<string>();
-    const quantityRanges = new Map<string, { min: number; max: number }>();
-    for (const [index, fact] of facts.entries()) {
-      const key = activationFactKey(fact);
-      if (index > 0 && activationFactKey(facts[index - 1]!).localeCompare(key) > 0)
-        context.addIssue({
-          code: 'custom',
-          message: 'non_canonical_activation_fact_order',
-          path: [index],
-        });
-      if (factKeys.has(key))
-        context.addIssue({
-          code: 'custom',
-          message: `duplicate_activation_fact:${key}`,
-          path: [index],
-        });
-      factKeys.add(key);
-      if (fact.kind === 'choice') {
-        const group = JSON.stringify([fact.source, fact.family]);
-        const selected = candidatesByChoiceGroup.get(group);
-        if (selected === undefined) candidatesByChoiceGroup.set(group, fact.candidate);
-        else if (selected !== fact.candidate)
-          context.addIssue({
-            code: 'custom',
-            message: `conflicting_choice_selection:${group}`,
-            path: [index],
-          });
-        continue;
-      }
-      if (fact.kind !== 'sourceQuantity') continue;
-      const rangeKey = JSON.stringify([fact.source, fact.quantity, fact.subjectId]);
-      const previous = quantityRanges.get(rangeKey) ?? {
-        min: Number.MIN_SAFE_INTEGER,
-        max: Number.MAX_SAFE_INTEGER,
-      };
-      const range =
-        fact.comparison === 'atLeast'
-          ? { min: Math.max(previous.min, fact.value), max: previous.max }
-          : { min: previous.min, max: Math.min(previous.max, fact.value) };
-      quantityRanges.set(rangeKey, range);
-      if (range.min > range.max)
-        context.addIssue({
-          code: 'custom',
-          message: `conflicting_source_quantity_range:${rangeKey}`,
-          path: [index],
-        });
+    const analysis = analyzeActivationFactSet(facts);
+    if (analysis.status === 'valid') return;
+    for (const issue of analysis.issues) {
+      let message: string;
+      if (issue.kind === 'nonCanonicalOrder') message = 'non_canonical_activation_fact_order';
+      else if (issue.kind === 'duplicateFact')
+        message = `duplicate_activation_fact:${issue.factKey}`;
+      else if (issue.kind === 'conflictingChoiceSelection')
+        message = `conflicting_choice_selection:${issue.groupKey}`;
+      else message = `conflicting_source_quantity_range:${issue.ownerKey}`;
+      context.addIssue({
+        code: 'custom',
+        message,
+        path: [issue.index],
+      });
     }
   });
 
