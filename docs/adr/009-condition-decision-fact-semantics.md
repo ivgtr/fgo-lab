@@ -79,8 +79,8 @@ activation linkはworld factではなくoperation実行依存である。linked 
 
 `ActSet`と`ActSelectIndex`はworld stateではなく、一つのaction内で選ばれる候補を表す。これらをraw parameterのままexecutorで判定せず、normalizerが`family`と整数`candidate`からなるchoice IRへ変換する。
 
-- choice groupはsource instance、skill、choice familyからcanonicalに導出し、scenarioへgroupや候補条件を複製しない。
-- choiceは選択されたeffect-local conditionとして統合constraint solverへ入る。同一groupの同一candidateは共存でき、異なるcandidateはtyped `choiceConflict`となる。
+- choice groupはsource instance、skill、choice familyからcanonicalに導出する。
+- E4.1.3以降、scenarioはmaster条件式を複製せず、選択結果だけをtyped activation witnessとして保持する。同一groupの同一candidateは共存でき、異なるcandidateはtyped `choiceConflict`となる。
 - choice成立はtrait、field、quantityを生成しない。別operationのworld factへ伝播させない。
 - `ActSetWeight`は抽選候補の重みでありmodifier値ではない。対応する`ActSet`が一意に正規化できる場合だけchoice metadataとして受理する。
 - candidateまたはfamilyを一意に正規化できない入力、choiceの否定、複数familyの混在は近似せずunsupportedにする。
@@ -104,9 +104,21 @@ activation linkはworld factではなくoperation実行依存である。linked 
 
 ## E3.4 amendment: source-owned quantity ranges
 
-`TriggeredTargetBattlePointRateRange`はattackerのBP phase入力とは別のsource-owned quantityである。normalizerはsubject IDと整数rangeを保持し、effect-local `sourceQuantity` conditionへ変換する。成立decisionは具体的なrateをscenarioやworld factへ保存しないが、選択された複数rangeは同一subjectごとにsolverで積を取り、空積をtyped conflictにする。rangeが複数、構文不明、非整数の場合はunsupportedを維持する。
+`TriggeredTargetBattlePointRateRange`はattackerのBP phase入力とは別のsource-owned quantityである。normalizerはsubject IDと整数rangeを保持し、effect-local `sourceQuantity` conditionへ変換する。具体的なrateをworld factへ保存せず、選択結果はtyped activation witnessとして保持する。選択された複数rangeは同一subjectごとにsolverで積を取り、空積をtyped conflictにする。rangeが複数、構文不明、非整数の場合はunsupportedを維持する。
 
 この変更は具体的な世界状態の選択UIを追加しない。既存の火力effectボタンが候補decisionとなり、同じ候補の複数modifierは一つの選択結果として適用される。
+
+## E4.1.3 amendment: activation witness is execution state
+
+E3.4のeffect-local成立宣言はconstraint conflictを検出できた一方、成立結果をbattle stateへmaterializeしなかった。`assumeSatisfied`をrankingから削除した結果、choice、operation trigger、source-owned quantityはsolver上で充足可能でもcondition evaluatorではunknownとなり、included damage operationが黙って脱落した。
+
+これら三つを`ActivationFact`へ統合する。scenarioはdecision keyとtyped factだけを保存し、executorは初期battle stateへmaterializeして単一condition evaluatorと単一constraint validatorの双方へ渡す。
+
+- `choice`: groupとcandidate。group内で排他的であり、別candidateはfalse、未選択はunknown。
+- `operationTrigger`: canonical sourceとfunction position。完全一致するtriggerだけがtrue、未記録はunknown。
+- `sourceQuantity`: canonical quantity ownerと整数range。既知rangeがcondition rangeを包含するときtrue、交差しないときfalse、部分的な重なりまたは未記録はunknown。
+
+effect-local `assumeSatisfied`はこの三familyへ適用しない。linked hidden mutationも同じactivation factを読み、terminal operationと別の成立経路を持たない。rankingはchoice groupを有限列挙し、operation triggerとsource quantityをselected terminal effectからtyped factとして構築する。included damage-relevant operationがunknownのままcalculatedへ到達した場合はproduction gate違反である。
 
 ## E3.4 amendment: execution scope and NP form state
 

@@ -1,10 +1,12 @@
 ---
 title: "E4.1.2 ranking condition provenance completion"
-status: "Complete"
+status: "Superseded by E4.1.3 activation witness closure"
 date: "2026-08-28"
 ---
 
 # E4.1.2 ranking condition provenance completion
+
+> Review correction: field／recipient provenanceの修正は維持するが、choice、operation trigger、source-owned quantityのactivation witnessが未実装だった。choice由来のdamage差分を完成値として扱わず、ADR 021の再計測結果で置換する。
 
 ## Outcome and removed path
 
