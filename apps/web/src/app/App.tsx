@@ -30,11 +30,12 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import type { EffectProjection } from '@fgo-lab/calculation-application';
+import type { EffectProjection, RankingDetail } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
   calculateScenario,
-  createDefaultResolvedScenario,
+  calculateScenarioWithContributionProjection,
+  createDefaultCalculatorScenario,
   resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
@@ -69,6 +70,7 @@ const ids: IdGenerator = { next: () => crypto.randomUUID() };
 interface CalculationWorkspace {
   scenario: CalculationScenario | undefined;
   shared: CalculationShareSnapshot | undefined;
+  contributionProjection?: RankingDetail['contributionProjection'];
 }
 
 function supportDecisionKeys(effects: readonly EffectProjection[]) {
@@ -202,7 +204,7 @@ export function App() {
   const defaultBuild = profile.servantBuilds[defaultServant.id];
   const currentScenario =
     calculation.scenario ??
-    createDefaultResolvedScenario(currentMaster, defaultBuild, defaultServant);
+    createDefaultCalculatorScenario(currentMaster, defaultBuild, defaultServant);
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -211,7 +213,14 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const resolvedCalculation = calculateScenario(currentScenario, currentMaster, versions);
+  const resolvedCalculation = calculation.contributionProjection
+    ? calculateScenarioWithContributionProjection(
+        currentScenario,
+        currentMaster,
+        versions,
+        calculation.contributionProjection,
+      )
+    : calculateScenario(currentScenario, currentMaster, versions);
   const input = resolvedCalculation.input;
   const selectedAttacker =
     currentMaster.servants.find((candidate) => candidate.id === input.attackerId) ?? defaultServant;
@@ -317,9 +326,21 @@ export function App() {
   async function saveScenarioDraft(
     scenario: CalculationScenario,
     sessionId = calculationSessionId,
+    contributionProjection?: RankingDetail['contributionProjection'],
   ) {
-    setCalculation({ scenario, shared: undefined });
-    const nextCalculation = calculateScenario(scenario, currentMaster, versions);
+    setCalculation(
+      contributionProjection
+        ? { scenario, shared: undefined, contributionProjection }
+        : { scenario, shared: undefined },
+    );
+    const nextCalculation = contributionProjection
+      ? calculateScenarioWithContributionProjection(
+          scenario,
+          currentMaster,
+          versions,
+          contributionProjection,
+        )
+      : calculateScenario(scenario, currentMaster, versions);
     const fingerprint = await scenarioFingerprint(
       scenario,
       currentMaster.version,
@@ -432,6 +453,7 @@ export function App() {
         )}{' '}
         {page === 'calculate' && (
           <Calculator
+            master={currentMaster}
             resolvedInput={input}
             scenarioInput={resolvedCalculation.scenarioInput}
             resolvedEffects={resolvedCalculation.effects}
@@ -555,10 +577,10 @@ export function App() {
               supportTemplates: profile.supportTemplates,
             }}
             versions={versions}
-            onOpenCalculator={(scenario) => {
+            onOpenCalculator={(detail) => {
               const sessionId = crypto.randomUUID();
               setCalculationSessionId(sessionId);
-              void saveScenarioDraft(scenario, sessionId);
+              void saveScenarioDraft(detail.scenario, sessionId, detail.contributionProjection);
               const url = new URL(location.href);
               url.searchParams.set('page', 'calculate');
               history.replaceState(history.state, '', url);

@@ -2,6 +2,7 @@ import type {
   EffectControlViewModel,
   EffectInputViewModel,
   EffectProjection,
+  PreparationChoiceOption,
 } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import type { ReactNode } from 'react';
@@ -183,6 +184,8 @@ export function AppliedEffects({
   craftEssence,
   onToggle,
   onInputChange,
+  preparationChoices = [],
+  onPreparationChoice,
   action,
 }: {
   title: string;
@@ -192,6 +195,8 @@ export function AppliedEffects({
   craftEssence: CraftEssenceMaster | undefined;
   onToggle: (control: EffectControlViewModel, active: boolean) => void;
   onInputChange: (key: string, value: number | null) => void;
+  preparationChoices?: readonly PreparationChoiceOption[];
+  onPreparationChoice?: (option: PreparationChoiceOption) => void;
   action?: ReactNode;
 }) {
   const visibleEffects = effects;
@@ -206,19 +211,45 @@ export function AppliedEffects({
   const unattachedInputs = inputs.filter(
     (input) => firstVisibleProjectionForInput.get(input.key) === null,
   );
-  if (visibleEffects.length === 0 && inputs.length === 0 && !action) return null;
+  if (
+    visibleEffects.length === 0 &&
+    inputs.length === 0 &&
+    preparationChoices.length === 0 &&
+    !action
+  )
+    return null;
 
   return (
     <fieldset className="modifier-group calculator-applied-effect-group">
       <legend className="calculator-support-effect-legend">
         <span>
           <strong>{title}</strong>
-          <small>{visibleEffects.length}件</small>
+          <small>{visibleEffects.length + preparationChoices.length}件</small>
         </span>
         {action}
       </legend>
-      {visibleEffects.length || inputs.length ? (
+      {visibleEffects.length || inputs.length || preparationChoices.length ? (
         <ul className="modifier-chip-list">
+          {preparationChoices.map((option) => (
+            <ModifierChip
+              key={option.key}
+              active={option.active}
+              label={option.label}
+              detail={`${option.skillName}・${option.active ? '有効' : '候補'}`}
+              accessibleLabel={`${option.label}、有効、${option.active ? '選択中' : '候補'}`}
+              sources={[
+                {
+                  key: `${option.key}:source`,
+                  label: option.skillName,
+                  imageKey: option.imageKey,
+                },
+              ]}
+              selection="singleChoice"
+              onToggle={() => {
+                if (!option.active) onPreparationChoice?.(option);
+              }}
+            />
+          ))}
           {visibleEffects.map((control) => {
             const effect = control.projection;
             const attachedInputs = inputs.filter(

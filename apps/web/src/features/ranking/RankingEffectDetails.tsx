@@ -1,6 +1,5 @@
 import type { RankingDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import type { CalculationScenario } from '@fgo-lab/schema';
 import {
   collectDamageEffectStacks,
   damageEffectStateLabel,
@@ -46,7 +45,7 @@ export function RankingEffectDetails({
 }: {
   detail: RankingDetail;
   master: MasterDataSnapshot;
-  onOpenCalculator: (scenario: CalculationScenario) => void;
+  onOpenCalculator: (detail: RankingDetail) => void;
 }) {
   const craftEssenceId = detail.scenario.craftEssence?.craftEssenceId;
   const craftEssence = master.craftEssences.find((candidate) => candidate.id === craftEssenceId);
@@ -232,7 +231,7 @@ export function RankingEffectDetails({
           ))}
         </ul>
       ) : null}
-      <button type="button" onClick={() => onOpenCalculator(detail.scenario)}>
+      <button type="button" onClick={() => onOpenCalculator(detail)}>
         同じ条件で計算機を開く
       </button>
     </div>

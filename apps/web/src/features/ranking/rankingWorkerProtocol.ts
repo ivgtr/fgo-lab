@@ -4,6 +4,7 @@ import type {
   RankingFailure,
   RankingProfileInput,
   RankingRowSummary,
+  AttackProfile,
 } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
@@ -28,7 +29,7 @@ export type RankingWorkerRequest =
       fingerprint: string;
       entryId: string;
       servantId: string;
-      targetScope: 'single' | 'all';
+      attackProfile: AttackProfile;
     };
 
 export type RankingWorkerResponse =

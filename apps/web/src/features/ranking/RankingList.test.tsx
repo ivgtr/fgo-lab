@@ -19,8 +19,22 @@ const row: RankingPresentedRow = {
   npCard: 'buster',
   npTarget: 'single',
   noblePhantasmVariant: {
-    actorFormId: master.servants[0]!.id,
+    actorFormId: { actorId: master.servants[0]!.id, limitCount: 0 },
     noblePhantasmId: 'fixture-np',
+  },
+  attackProfile: {
+    servantLineageId: master.servants[0]!.id,
+    terminalFormProfileId: {
+      servantLineageId: master.servants[0]!.id,
+      representativeFormId: { actorId: master.servants[0]!.id, limitCount: 0 },
+    },
+    noblePhantasmVariant: {
+      actorFormId: { actorId: master.servants[0]!.id, limitCount: 0 },
+      noblePhantasmId: 'fixture-np',
+    },
+    targetScope: 'single',
+    cardType: 'buster',
+    terminalFormLabel: null,
   },
   noblePhantasmName: '検証用宝具',
   minimum: 80,

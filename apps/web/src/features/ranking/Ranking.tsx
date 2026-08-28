@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { RankingProfileInput } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import type { CalculationScenario, VersionContext } from '@fgo-lab/schema';
+import type { VersionContext } from '@fgo-lab/schema';
+import type { RankingDetail } from '@fgo-lab/calculation-application';
 import { RankingConditions } from './RankingConditions';
 import { RankingFilters } from './RankingFilters';
 import { RankingList } from './RankingList';
@@ -19,7 +20,7 @@ export function Ranking({
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
   versions: VersionContext;
-  onOpenCalculator: (scenario: CalculationScenario) => void;
+  onOpenCalculator: (detail: RankingDetail) => void;
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);

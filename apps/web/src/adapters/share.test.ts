@@ -23,10 +23,12 @@ import {
   APP_VERSION,
   ENGINE_VERSION,
   SCHEMA_VERSION,
+  type CalculationScenario,
   type CalculationShareSnapshot,
 } from '@fgo-lab/schema';
 
 const master = masterSnapshotSchema.parse(fixture);
+type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 let productionMaster: ReturnType<typeof masterSnapshotSchema.parse>;
 
 beforeAll(async () => {
@@ -212,6 +214,15 @@ describe('portable input limits', () => {
       servants: [
         {
           ...base,
+          actorFormGraph: {
+            ...base.actorFormGraph,
+            forms: base.actorFormGraph.forms.map((form) =>
+              form.id.actorId === base.actorFormGraph.defaultInitialFormId.actorId &&
+              form.id.limitCount === base.actorFormGraph.defaultInitialFormId.limitCount
+                ? { ...form, skillIds: ['earth-skill'] }
+                : form,
+            ),
+          },
           skills: [
             {
               id: 'earth-skill',
@@ -320,9 +331,12 @@ describe('portable input limits', () => {
       ],
     });
     const craftedVersions = { ...versions, masterDataVersion: craftedMaster.version };
-    const baseScenario = {
+    const baseScenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(craftedMaster, undefined),
-      attackerSkills: [{ skillId: 'earth-skill', skillLevel: 10 }],
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1 as const, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
     };
     const initial = calculateScenario(baseScenario, craftedMaster, craftedVersions);
     const earth = initial.effects.find((effect) => effect.label === '対地威力アップ')!;

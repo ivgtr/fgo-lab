@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
-  getBaseAttackNoblePhantasmVariant,
+  findNoblePhantasmVariant,
   getPrimaryNpDamage,
   getPrimaryNpPresentation,
   naturalServantLevel,
   type CraftEssenceMaster,
+  type MasterDataSnapshot,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import {
@@ -20,21 +21,29 @@ import type {
   EffectInputViewModel,
   EffectProjection,
   ActivationRequirementOwner,
+  PreparationChoiceOption,
 } from '@fgo-lab/calculation-application';
 import {
   applyCanonicalInputCommand,
   applyTargetContextCommand,
   appendCalculationSupportSource,
   applyEffectControlPresentationDecision,
+  excludeDefaultAttackerSkillContributions,
   removeCalculationSupportSource as removeSupportSourceFromScenario,
   resetTargetClassContextForAttacker,
+  setInitialActorForm,
   setAttackerSkillLevel,
   setCalculationSupportSkillLevel,
   setCalculationSupportSkillEnabled,
   createDefaultTargetContext,
+  getAttackReachableInitialActorForms,
+  defaultCalculatorPreNoblePhantasmCandidate,
+  preparationChoiceOptions,
+  resolveAttackerFormExecution,
+  setPreparationSkillChoice,
 } from '@fgo-lab/calculation-application';
 import type {
-  AttackerSkillSelection,
+  AttackerSkillUse,
   DamageResolutionInput,
   CalculationHistoryEntry,
   CalculationResult as CalculationResultValue,
@@ -61,6 +70,7 @@ import './calculator.css';
 import './calculator-form.css';
 
 export function Calculator({
+  master,
   resolvedInput,
   scenarioInput,
   resolvedEffects,
@@ -83,6 +93,7 @@ export function Calculator({
   onFinalize,
   onHistorySelect,
 }: {
+  master: MasterDataSnapshot;
   resolvedInput: DamageResolutionInput;
   scenarioInput: DamageResolutionInput;
   resolvedEffects: readonly EffectProjection[];
@@ -137,6 +148,13 @@ export function Calculator({
       : naturalAttackerLevel;
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
   const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : null;
+  const initialActorForms = attacker ? getAttackReachableInitialActorForms(attacker) : [];
+  const resolvedAttackerSkillUses =
+    attacker && resolvedScenario
+      ? resolveAttackerFormExecution(resolvedScenario, attacker).skillUses
+      : [];
+  const preparationChoices =
+    attacker && resolvedScenario ? preparationChoiceOptions(resolvedScenario, attacker) : [];
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
@@ -270,49 +288,62 @@ export function Calculator({
     }
     const saved = builds[input.attackerId];
     const source = saved?.npLevel ? 'owned' : 'master';
-    void onScenarioChange({
-      mode: 'resolved',
-      attacker: {
-        servantId: input.attackerId,
-        source,
-        level: input.attackerLevel,
-        npLevel: input.npLevel,
-        fouAtk: input.fouAtk,
-      },
-      overcharge: input.overcharge,
-      targetContext: applyTargetContextCommand(
-        createDefaultTargetContext(attacker?.classId ?? 'unknown'),
+    if (!attacker) return;
+    const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(attacker);
+    void onScenarioChange(
+      excludeDefaultAttackerSkillContributions(
         {
-          kind: 'setAttributeRelation',
-          relation: attributeRelationFromMultiplier(input.attributeAffinity),
+          mode: 'resolved',
+          attacker: {
+            servantId: input.attackerId,
+            initialActorFormId: defaultPlan.terminalState.initialFormId,
+            source,
+            level: input.attackerLevel,
+            npLevel: input.npLevel,
+            fouAtk: input.fouAtk,
+          },
+          overcharge: input.overcharge,
+          targetContext: applyTargetContextCommand(createDefaultTargetContext(attacker.classId), {
+            kind: 'setAttributeRelation',
+            relation: attributeRelationFromMultiplier(input.attributeAffinity),
+          }),
+          attackerHpPermille: input.attackerHpPermille,
+          battleState: { battlePointPhase: input.battlePointPhase },
+          canonicalInputValues: {},
+          craftEssence: null,
+          preNoblePhantasmPlan: defaultPlan.commands.map((command) =>
+            command.kind === 'useSkillSlot'
+              ? {
+                  ...command,
+                  skillLevel: source === 'owned' ? (saved?.skills[String(command.slot)] ?? 1) : 10,
+                }
+              : command,
+          ),
+          mysticCode: null,
+          support: null,
+          effectDecisions: [],
+          activationFacts: [],
+          worldFactAssertions: [],
+          explicitOverrides: {
+            attackerAtk: input.attackerAtk,
+            fouAtk: input.fouAtk,
+            craftEssenceAtk: input.craftEssenceAtk,
+            classAttackRate: input.classAttackRate,
+          },
         },
+        master,
       ),
-      attackerHpPermille: input.attackerHpPermille,
-      battleState: { battlePointPhase: input.battlePointPhase },
-      canonicalInputValues: {},
-      craftEssence: null,
-      attackerSkills: (attacker?.skills ?? []).slice(0, 3).map((skill, index) => ({
-        skillId: skill.id,
-        skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
-      })),
-      mysticCode: null,
-      support: null,
-      effectDecisions: [],
-      activationFacts: [],
-      worldFactAssertions: [],
-      explicitOverrides: {
-        attackerAtk: input.attackerAtk,
-        fouAtk: input.fouAtk,
-        craftEssenceAtk: input.craftEssenceAtk,
-        classAttackRate: input.classAttackRate,
-      },
-    });
+    );
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
-    const noblePhantasm = getBaseAttackNoblePhantasmVariant(candidate);
-    const damage = getPrimaryNpDamage(candidate);
-    if (!noblePhantasm || !damage) return;
+    const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(candidate);
+    const noblePhantasm = defaultPlan.terminalState.selectedNoblePhantasmVariant
+      ? findNoblePhantasmVariant(candidate, defaultPlan.terminalState.selectedNoblePhantasmVariant)
+      : undefined;
+    if (noblePhantasm?.kind !== 'attack') return;
+    const damage = noblePhantasm.damage[0];
+    if (!damage) return;
     const level = saved?.level ?? naturalServantLevel(candidate.rarity);
     if (scenario.mode === 'manual') {
       changeManualInput({
@@ -333,28 +364,37 @@ export function Calculator({
       });
     } else {
       void onScenarioChange(
-        resetTargetClassContextForAttacker(
-          {
-            ...scenario,
-            attacker: {
-              servantId: candidate.id,
-              source,
-              level,
-              npLevel: Math.max(1, saved?.npLevel ?? 1),
-              fouAtk: saved?.fouAtk ?? 1000,
+        excludeDefaultAttackerSkillContributions(
+          resetTargetClassContextForAttacker(
+            {
+              ...scenario,
+              attacker: {
+                servantId: candidate.id,
+                initialActorFormId: defaultPlan.terminalState.initialFormId,
+                source,
+                level,
+                npLevel: Math.max(1, saved?.npLevel ?? 1),
+                fouAtk: saved?.fouAtk ?? 1000,
+              },
+              preNoblePhantasmPlan: defaultPlan.commands.map((command) =>
+                command.kind === 'useSkillSlot'
+                  ? {
+                      ...command,
+                      skillLevel:
+                        source === 'owned' ? (saved?.skills[String(command.slot)] ?? 1) : 10,
+                    }
+                  : command,
+              ),
+              effectDecisions: [],
+              worldFactAssertions: [],
+              attackerHpPermille: null,
+              battleState: { battlePointPhase: null },
+              canonicalInputValues: {},
+              explicitOverrides: {},
             },
-            attackerSkills: candidate.skills.slice(0, 3).map((skill, index) => ({
-              skillId: skill.id,
-              skillLevel: source === 'owned' ? (saved?.skills[String(index + 1)] ?? 1) : 10,
-            })),
-            effectDecisions: [],
-            worldFactAssertions: [],
-            attackerHpPermille: null,
-            battleState: { battlePointPhase: null },
-            canonicalInputValues: {},
-            explicitOverrides: {},
-          },
-          candidate.classId,
+            candidate.classId,
+          ),
+          master,
         ),
       );
     }
@@ -405,15 +445,24 @@ export function Calculator({
     else void onScenarioChange({ ...scenario, craftEssence: null });
   }
   function changeAttackerSkill(
-    skillId: string,
-    patch: Partial<Pick<AttackerSkillSelection, 'skillLevel'>>,
+    slot: 1 | 2 | 3,
+    patch: Partial<Pick<AttackerSkillUse, 'skillLevel'>>,
   ) {
     if (!resolvedScenario) return;
     const next =
       patch.skillLevel === undefined
         ? resolvedScenario
-        : setAttackerSkillLevel(resolvedScenario, skillId, patch.skillLevel);
+        : setAttackerSkillLevel(resolvedScenario, slot, patch.skillLevel);
     void onScenarioChange(next);
+  }
+  function changeInitialActorForm(actorId: string, limitCount: number) {
+    if (!resolvedScenario || !attacker) return;
+    void onScenarioChange(
+      excludeDefaultAttackerSkillContributions(
+        setInitialActorForm(resolvedScenario, attacker, { actorId, limitCount }, resolvedEffects),
+        master,
+      ),
+    );
   }
   function changeEffect(control: EffectControlViewModel, active: boolean) {
     if (!resolvedScenario) return;
@@ -425,6 +474,15 @@ export function Calculator({
         activationRequirements,
         resolvedEffects,
         effectInputs,
+      ),
+    );
+  }
+  function changePreparationChoice(option: PreparationChoiceOption) {
+    if (!resolvedScenario || !attacker) return;
+    void onScenarioChange(
+      excludeDefaultAttackerSkillContributions(
+        setPreparationSkillChoice(resolvedScenario, attacker, option, resolvedEffects),
+        master,
       ),
     );
   }
@@ -519,6 +577,28 @@ export function Calculator({
           </button>
         </div>
         <div className="form-grid">
+          {mode === 'quick' && initialActorForms.length > 1 ? (
+            <label>
+              初期形態
+              <select
+                aria-label="初期形態"
+                value={JSON.stringify(resolvedScenario?.attacker.initialActorFormId)}
+                onChange={(event) => {
+                  const selected = initialActorForms[event.target.selectedIndex];
+                  if (selected) changeInitialActorForm(selected.id.actorId, selected.id.limitCount);
+                }}
+              >
+                {initialActorForms.map((form) => (
+                  <option
+                    key={`${form.id.actorId}:${String(form.id.limitCount)}`}
+                    value={JSON.stringify(form.id)}
+                  >
+                    {form.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label>
             サーヴァントLv
             <input
@@ -939,7 +1019,12 @@ export function Calculator({
         <AttackerSkills
           attacker={attacker}
           attackerSource={attackerSource}
-          selectedSkills={resolvedScenario?.attackerSkills ?? []}
+          selectedSkills={
+            resolvedScenario?.preNoblePhantasmPlan.filter(
+              (command): command is AttackerSkillUse => command.kind === 'useSkillSlot',
+            ) ?? []
+          }
+          resolvedSkillUses={resolvedAttackerSkillUses}
           savedBuild={builds[input.attackerId]}
           hidden={mode === 'direct'}
           onChange={changeAttackerSkill}
@@ -955,6 +1040,8 @@ export function Calculator({
             craftEssence={selectedCraftEssence}
             onToggle={changeEffect}
             onInputChange={changeCanonicalInput}
+            preparationChoices={preparationChoices}
+            onPreparationChoice={changePreparationChoice}
           />
         ) : null}
         <section className="support-composition" aria-label="支援・バフ" hidden={mode === 'direct'}>

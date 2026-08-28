@@ -20,15 +20,43 @@ const artsArcher: ServantMaster = {
   name: '検証用アーチャー',
   classId: 'archer',
   rarity: 4,
-  actorForms: [{ id: 'arts-archer', name: '検証用アーチャー' }],
+  actorFormGraph: {
+    ...saber.actorFormGraph,
+    actorId: 'arts-archer',
+    forms: saber.actorFormGraph.forms.map((form) => ({
+      ...form,
+      id: { actorId: 'arts-archer', limitCount: form.id.limitCount },
+      baseNoblePhantasmVariant: form.baseNoblePhantasmVariant
+        ? {
+            ...form.baseNoblePhantasmVariant,
+            actorFormId: { actorId: 'arts-archer', limitCount: form.id.limitCount },
+          }
+        : null,
+    })),
+    initialFormIds: saber.actorFormGraph.initialFormIds.map((form) => ({
+      actorId: 'arts-archer',
+      limitCount: form.limitCount,
+    })),
+    defaultInitialFormId: {
+      actorId: 'arts-archer',
+      limitCount: saber.actorFormGraph.defaultInitialFormId.limitCount,
+    },
+    transitions: [],
+  },
   noblePhantasmVariantGroups: saber.noblePhantasmVariantGroups.map((group) => ({
     ...group,
-    baseVariant: { actorFormId: 'arts-archer', noblePhantasmId: 'fixture-np' },
+    baseVariant: {
+      actorFormId: { actorId: 'arts-archer', limitCount: 0 },
+      noblePhantasmId: 'fixture-np',
+    },
     variants: group.variants.map((np) => {
       if (np.kind !== 'attack') throw new TypeError('fixture_attack_np_required');
       return {
         ...np,
-        ref: { actorFormId: 'arts-archer', noblePhantasmId: np.ref.noblePhantasmId },
+        ref: {
+          actorFormId: { actorId: 'arts-archer', limitCount: np.ref.actorFormId.limitCount },
+          noblePhantasmId: np.ref.noblePhantasmId,
+        },
         card: 'arts',
         targetScope: 'single',
         damage: np.damage.map((damage) => ({ ...damage, target: 'single' })),
@@ -41,7 +69,22 @@ const supportCaster: ServantMaster = {
   id: 'support-caster',
   name: '非攻撃キャスター',
   classId: 'caster',
-  actorForms: [{ id: 'support-caster', name: '非攻撃キャスター' }],
+  actorFormGraph: {
+    actorId: 'support-caster',
+    forms: [
+      {
+        id: { actorId: 'support-caster', limitCount: 0 },
+        name: '非攻撃キャスター',
+        traits: [],
+        skillIds: [],
+        passiveIds: [],
+        baseNoblePhantasmVariant: null,
+      },
+    ],
+    initialFormIds: [{ actorId: 'support-caster', limitCount: 0 }],
+    defaultInitialFormId: { actorId: 'support-caster', limitCount: 0 },
+    transitions: [],
+  },
   baseNoblePhantasmGroupId: null,
   noblePhantasmVariantGroups: [],
 };

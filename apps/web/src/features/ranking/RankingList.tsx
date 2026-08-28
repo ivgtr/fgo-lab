@@ -1,6 +1,5 @@
 import type { RankingDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import type { CalculationScenario } from '@fgo-lab/schema';
 import { MasterImage } from '../../ui/MasterImage';
 import { ServantFilterIcon } from '../../ui/ServantFilterIcon';
 import { numberFormatter } from '../../ui/i18n';
@@ -25,7 +24,7 @@ export function RankingList({
   master: MasterDataSnapshot;
   onToggle: (row: RankingPresentedRow) => void;
   onRetryDetail: (row: RankingPresentedRow) => void;
-  onOpenCalculator: (scenario: CalculationScenario) => void;
+  onOpenCalculator: (detail: RankingDetail) => void;
 }) {
   return rows.length === 0 ? (
     <p className="empty">条件に一致する計算済みサーヴァントはいません。</p>
@@ -53,7 +52,11 @@ export function RankingList({
                   />
                   <span className="visually-hidden">{npCardLabel(row.npCard)}</span>
                   <span className="ranking-np-summary">
-                    {row.npTarget === 'all' ? '全体' : '単体'}・{row.noblePhantasmName}・★
+                    {row.npTarget === 'all' ? '全体' : '単体'}・
+                    {row.attackProfile.terminalFormLabel
+                      ? `${row.attackProfile.terminalFormLabel}・`
+                      : ''}
+                    {row.noblePhantasmName}・★
                     {row.rarity}・{servantClassLabels.get(row.classId) ?? row.classId}
                   </span>
                   {row.specialAttackApplied ? (

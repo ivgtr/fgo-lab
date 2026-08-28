@@ -25,7 +25,7 @@ async function openRanking(
     await page.getByRole('button', { name: 'その他' }).click();
     await page.getByLabel('その他の機能').getByRole('button', { name: '火力ランキング' }).click();
   }
-  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算', {
+  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
     timeout: 30_000,
   });
 }

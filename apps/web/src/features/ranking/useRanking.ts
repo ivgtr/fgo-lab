@@ -143,7 +143,7 @@ export function useRanking({
   }, [conditions, conditionsFingerprint, contextFingerprint, initializedFingerprint]);
 
   const requestDetail = useCallback(
-    (row: Pick<RankingRowSummary, 'entryId' | 'servantId' | 'npTarget'>) => {
+    (row: Pick<RankingRowSummary, 'entryId' | 'servantId' | 'attackProfile'>) => {
       const worker = workerRef.current;
       if (
         !worker ||
@@ -163,7 +163,7 @@ export function useRanking({
         fingerprint: conditionsFingerprint,
         entryId: row.entryId,
         servantId: row.servantId,
-        targetScope: row.npTarget,
+        attackProfile: row.attackProfile,
       };
       worker.postMessage(request);
     },

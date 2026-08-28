@@ -100,7 +100,7 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
           context.profile,
           conditions,
           context.versions,
-          request.targetScope,
+          request.attackProfile,
         );
         const details =
           detailCache.get(request.fingerprint) ??

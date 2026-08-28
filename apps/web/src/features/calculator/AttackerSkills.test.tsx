@@ -12,6 +12,13 @@ const attacker = masterSnapshotSchema.parse({
   servants: [
     {
       ...fixture.servants[0],
+      actorFormGraph: {
+        ...fixture.servants[0]!.actorFormGraph,
+        forms: fixture.servants[0]!.actorFormGraph.forms.map((form) => ({
+          ...form,
+          skillIds: ['skill-1'],
+        })),
+      },
       skills: [
         {
           id: 'skill-1',
@@ -34,7 +41,17 @@ describe('attacker skill level presentation', () => {
       <AttackerSkills
         attacker={attacker}
         attackerSource="master"
-        selectedSkills={[{ skillId: 'skill-1', skillLevel: 10 }]}
+        selectedSkills={[{ kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null }]}
+        resolvedSkillUses={[
+          {
+            slot: 1,
+            skillLevel: 10,
+            skillId: 'skill-1',
+            actorFormId: attacker.actorFormGraph.defaultInitialFormId,
+            selectedEffects: [],
+            transitionId: null,
+          },
+        ]}
         savedBuild={undefined}
         hidden={false}
         onChange={onChange}
@@ -48,6 +65,6 @@ describe('attacker skill level presentation', () => {
     fireEvent.change(getByLabelText('検証スキルのスキルレベル'), {
       target: { value: '8' },
     });
-    expect(onChange).toHaveBeenCalledWith('skill-1', { skillLevel: 8 });
+    expect(onChange).toHaveBeenCalledWith(1, { skillLevel: 8 });
   });
 });

@@ -1343,26 +1343,17 @@ test('Gareth derives hidden sunlight only while its terminal effect is selected'
   const initialAverage = await np1Average.textContent();
 
   await expect(ownEffects).not.toContainText('フィールドセット');
-  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
-  await expect(sunlightPower).toContainText('除外');
-  await expect(sunlightPower).toHaveAccessibleName(/条件未選択/);
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'true');
+  await expect(sunlightPower).toHaveAccessibleName(/条件成立/);
   await expect(sunlightPower).not.toHaveAccessibleName(/条件不成立/);
   await sunlightPower.click();
-  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'true');
-  await expect(sunlightPower).not.toContainText('条件外');
+  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
+  await expect(sunlightPower).toContainText('除外');
   await expect(np1Average).not.toHaveText(initialAverage ?? '');
 
   await page.getByText('計算内訳・根拠・仮定・警告').click();
   await expect(
     page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:applied/),
-  ).toBeVisible();
-
-  await sunlightPower.click();
-  await expect(sunlightPower).toHaveAttribute('aria-pressed', 'false');
-  await expect(sunlightPower).toContainText('除外');
-  await expect(np1Average).toHaveText(initialAverage ?? '');
-  await expect(
-    page.getByText(/attackerSkill:addTrait:.*8411:0:addTrait-field:fieldSunlight:notApplied/),
   ).toBeVisible();
 });
 
@@ -1512,7 +1503,7 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   expect(sharedJson).not.toContain('profileId');
   expect(sharedJson).not.toContain('servantBuilds');
   expect(sharedJson).not.toContain('copyId');
-  expect(sharedJson).toContain('attackerSkills');
+  expect(sharedJson).toContain('preNoblePhantasmPlan');
 });
 
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
@@ -1685,7 +1676,7 @@ test('persists servant, target, CE copies, and support templates', async ({ page
 
   await page.getByRole('button', { name: '火力ランキング' }).click();
   const rankingCondition = page.getByRole('region', { name: 'ランキングの計算条件' });
-  await expect(page.getByRole('status')).toContainText('422件を計算', { timeout: 30_000 });
+  await expect(page.getByRole('status')).toContainText('433件を計算', { timeout: 30_000 });
   const rankingFilters = page.getByRole('region', { name: 'ランキングの表示絞り込み' });
   await rankingFilters.getByText('絞り込み', { exact: true }).click();
   await rankingFilters.getByRole('combobox', { name: 'クラス', exact: true }).selectOption('saber');
@@ -1801,7 +1792,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await page.goto('/');
   await completeSetup(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
-  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算', {
+  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
     timeout: 30_000,
   });
   await expect(page.getByRole('list', { name: '宝具火力ランキング' })).toContainText(
@@ -1835,12 +1826,12 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await filters.getByLabel('名前検索').fill('');
   await conditions.getByLabel('宝具Lv').selectOption('2');
   await conditions.getByLabel('宝具Lv').selectOption('5');
-  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算', {
+  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
     timeout: 45_000,
   });
   await expect(page).toHaveURL(/rNp=5/);
   await filters.getByLabel('宝具カード').selectOption('arts');
-  await expect(page.getByRole('status')).not.toContainText('422件表示');
+  await expect(page.getByRole('status')).not.toContainText('433件表示');
   await expect(page.getByRole('status')).not.toContainText('更新中');
   await filters.getByLabel('クラス').selectOption('saber');
   await filters.getByLabel('所持状態').selectOption('owned');

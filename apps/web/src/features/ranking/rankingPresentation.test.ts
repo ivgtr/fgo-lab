@@ -13,7 +13,24 @@ const rows: RankingRowSummary[] = [
     rarity: 5,
     npCard: 'buster',
     npTarget: 'all',
-    noblePhantasmVariant: { actorFormId: '1', noblePhantasmId: '101' },
+    noblePhantasmVariant: {
+      actorFormId: { actorId: '1', limitCount: 0 },
+      noblePhantasmId: '101',
+    },
+    attackProfile: {
+      servantLineageId: '1',
+      terminalFormProfileId: {
+        servantLineageId: '1',
+        representativeFormId: { actorId: '1', limitCount: 0 },
+      },
+      noblePhantasmVariant: {
+        actorFormId: { actorId: '1', limitCount: 0 },
+        noblePhantasmId: '101',
+      },
+      targetScope: 'all',
+      cardType: 'buster',
+      terminalFormLabel: null,
+    },
     noblePhantasmName: 'A全体',
     minimum: 80,
     average: 100,
@@ -36,7 +53,24 @@ const rows: RankingRowSummary[] = [
     rarity: 4,
     npCard: 'arts',
     npTarget: 'single',
-    noblePhantasmVariant: { actorFormId: '2', noblePhantasmId: '201' },
+    noblePhantasmVariant: {
+      actorFormId: { actorId: '2', limitCount: 0 },
+      noblePhantasmId: '201',
+    },
+    attackProfile: {
+      servantLineageId: '2',
+      terminalFormProfileId: {
+        servantLineageId: '2',
+        representativeFormId: { actorId: '2', limitCount: 0 },
+      },
+      noblePhantasmVariant: {
+        actorFormId: { actorId: '2', limitCount: 0 },
+        noblePhantasmId: '201',
+      },
+      targetScope: 'single',
+      cardType: 'arts',
+      terminalFormLabel: null,
+    },
     noblePhantasmName: 'B単体',
     minimum: 90,
     average: 95,
