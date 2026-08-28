@@ -79,7 +79,7 @@ function analyzeOperationRequirements(
 }
 
 export function activationRequirementOwnerSelected(
-  owner: ActivationRequirementOwner,
+  owner: Omit<ActivationRequirementOwner, 'operationId' | 'condition' | 'facts'>,
   decisions: ReadonlyMap<string, EffectDecision>,
 ): boolean {
   if (!owner.sourceEnabled) return false;
@@ -97,19 +97,7 @@ function operationSelected(
   operation: BattleOperation,
   decisions: ReadonlyMap<string, EffectDecision>,
 ): boolean {
-  return activationRequirementOwnerSelected(
-    {
-      operationId: operation.operationId,
-      decisionKey: operation.decisionKey,
-      enabledByDefault: operation.enabledByDefault,
-      sourceEnabled: operation.sourceEnabled,
-      decisionPlan: operation.decisionPlan,
-      activation: operation.activation,
-      condition: operation.condition,
-      facts: [],
-    },
-    decisions,
-  );
+  return activationRequirementOwnerSelected(operation, decisions);
 }
 
 function factSetIssue(issue: ActivationFactSetIssue): ExecutionIssue {
