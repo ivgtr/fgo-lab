@@ -456,15 +456,8 @@ describe('production master inventory ratchet', () => {
             const factKey = `${atom.scope}:${conflictingTrait}`;
             if (checkedFacts.has(factKey)) continue;
             checkedFacts.add(factKey);
-            const selected = assumeProjectedCondition(
-              applyEffectProjectionDecision(
-                setEffectSourceEnabled(scenario, effect, true),
-                effect,
-                true,
-              ),
-              effect,
-              userEffects,
-            );
+            const selected = selectedCalculations.get(effect.projectionKey)!.scenario;
+            if (selected.mode !== 'resolved') throw new Error('expected resolved scenario');
             const conflict = calculateScenario(
               {
                 ...selected,

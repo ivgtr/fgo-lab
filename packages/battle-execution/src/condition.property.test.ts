@@ -7,6 +7,7 @@ import {
   type TraitScope,
 } from './index';
 import { validateConstraintSet, type FixedConstraintFact } from './constraints';
+import { activationFactKey, analyzeActivationFactSet } from '@fgo-lab/schema';
 
 function state(target: readonly string[] = [], targetState: readonly string[] = []): BattleState {
   return {
@@ -48,20 +49,23 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
 describe('condition expression properties', () => {
   it('evaluates activation-local facts without promoting them to world traits', () => {
     const source = { origin: 'attacker' as const, sourceInstanceId: 'self', skillId: 'skill' };
+    const facts = [
+      { kind: 'choice' as const, source, family: 'mode', candidate: '2' },
+      { kind: 'operationTrigger' as const, source, position: 4 },
+      {
+        kind: 'sourceQuantity' as const,
+        source,
+        quantity: 'battlePointRate' as const,
+        subjectId: '705300',
+        comparison: 'atMost' as const,
+        value: 999,
+      },
+    ].sort((left, right) => activationFactKey(left).localeCompare(activationFactKey(right)));
+    const activation = analyzeActivationFactSet(facts);
+    if (activation.status !== 'valid') throw new Error('expected valid activation context');
     const activated: BattleState = {
       ...state(),
-      activationContext: {
-        facts: [],
-        factKeys: new Set(),
-        choices: new Map([[JSON.stringify(['attacker', 'self', 'skill', 'mode']), '2']]),
-        operationTriggers: new Set([JSON.stringify(['attacker', 'self', 'skill', 4])]),
-        sourceQuantityRanges: new Map([
-          [
-            JSON.stringify(['attacker', 'self', 'skill', 'battlePointRate', '705300']),
-            { min: Number.MIN_SAFE_INTEGER, max: 999 },
-          ],
-        ]),
-      },
+      activationContext: activation.factSet,
     };
     expect(
       evaluateConditionExpression(
