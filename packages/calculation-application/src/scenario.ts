@@ -91,7 +91,7 @@ export function createDefaultResolvedScenario(
     mysticCode: null,
     support: null,
     effectDecisions: [],
-    activationDecisions: [],
+    activationWitnesses: [],
     worldFactAssertions: [],
     explicitOverrides: {},
   };
@@ -236,14 +236,14 @@ export function resolveScenario(
         ? `${assertion.decisionKey}:trait:${assertion.fact.scope}:${assertion.fact.trait}:${String(assertion.fact.present)}`
         : `${assertion.decisionKey}:quantity:${assertion.fact.quantity}:${String(assertion.fact.value)}`,
   }));
-  const activationTrace = scenario.activationDecisions.map(({ decisionKey, fact }) => ({
+  const activationTrace = scenario.activationWitnesses.map(({ consumerDecisionKeys, fact }) => ({
     step: 'activation-fact',
     detail:
       fact.kind === 'choice'
-        ? `${decisionKey}:choice:${fact.group}:${fact.candidate}`
+        ? `${consumerDecisionKeys.join(',')}:choice:${fact.group}:${fact.candidate}`
         : fact.kind === 'operationTrigger'
-          ? `${decisionKey}:operation-trigger:${fact.source}:${String(fact.position)}`
-          : `${decisionKey}:source-quantity:${fact.quantity}:${fact.subjectId}:${fact.comparison}:${String(fact.value)}`,
+          ? `${consumerDecisionKeys.join(',')}:operation-trigger:${fact.source}:${String(fact.position)}`
+          : `${consumerDecisionKeys.join(',')}:source-quantity:${fact.quantity}:${fact.subjectId}:${fact.comparison}:${String(fact.value)}`,
   }));
   const canonicalInputTrace = Object.entries(canonicalInputs.values).map(([key, value]) => ({
     step: 'canonical-input',

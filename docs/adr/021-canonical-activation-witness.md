@@ -26,13 +26,17 @@ type ActivationFact =
       value: number;
     };
 
-interface ActivationDecision {
-  decisionKey: string;
+interface ActivationWitness {
   fact: ActivationFact;
+  consumerDecisionKeys: string[];
 }
 ```
 
-`decisionKey`はfactの所有元を示し、同じchoice candidateやrangeを複数のterminal effectが共有できる。effectを除外したときはそのeffectが所有するfactだけを除き、同一candidateを必要とする別effectのfactは維持する。constraint evaluatorは全factを合わせてchoice排他とrange交差を検証する。
+scenarioは同一canonical factを一件だけ保持し、そのfactを必要とするterminal effectを
+`consumerDecisionKeys`へ一意・安定順で関連付ける。effectを除外したときはconsumerだけを除き、別の
+consumerが残るwitnessは維持する。consumerが0件になったwitnessは削除する。同一factを複数witnessへ
+保存するscenarioはschemaで拒否し、constraint evaluatorは一意化済みfactを使ってchoice排他とrange交差を
+検証する。
 
 condition evaluatorはworld state、derived state、TargetContext、canonical input、activation contextを一つのBattleStateから読む。activation-local conditionだけを別のboolean shortcutで成立させない。
 
@@ -46,5 +50,6 @@ operation triggerとsource quantityはchoiceのような任意部分集合探索
 - choiceの最後の配列要素を暗黙採用しない。
 - 同一candidateに属する複数modifierは一緒に成立できる。
 - linked hidden mutationとterminal effectが同じactivation witnessを読む。
+- fact数はeffect数ではなくcanonical witness数を表し、ranking tie-breakとevidence表示で共通利用する。
 - schemaとengineを破壊的に更新し、旧scenario fallbackは作らない。
 - E4.1.2 reportのchoice由来damage差分は正しいactivation witnessで再計測する。

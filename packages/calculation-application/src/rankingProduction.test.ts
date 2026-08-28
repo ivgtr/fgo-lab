@@ -111,9 +111,17 @@ describe('production canonical ranking', () => {
           .filter(({ operationEnabled }) => operationEnabled)
           .map(({ decisionKey }) => decisionKey),
       );
-      for (const { fact } of detail.scenario.activationDecisions)
+      for (const { fact } of detail.scenario.activationWitnesses)
         activationInventory[fact.kind] += 1;
-      if (detail.scenario.activationDecisions.length > 0)
+      const witnessKeys = detail.scenario.activationWitnesses.map(({ fact }) =>
+        JSON.stringify(fact),
+      );
+      expect(new Set(witnessKeys).size, row.servantId).toBe(witnessKeys.length);
+      for (const { consumerDecisionKeys } of detail.scenario.activationWitnesses)
+        expect(consumerDecisionKeys, row.servantId).toEqual(
+          [...new Set(consumerDecisionKeys)].sort(),
+        );
+      if (detail.scenario.activationWitnesses.length > 0)
         servantsWithActivationSelections.push(row.servantId);
       for (const effect of detail.effects) {
         if (effect.modifier === null) continue;
@@ -163,9 +171,9 @@ describe('production canonical ranking', () => {
     }
     expect(unresolvedIncludedDamageEffects).toEqual([]);
     expect(activationInventory).toEqual({
-      choice: 12,
+      choice: 11,
       operationTrigger: 3,
-      sourceQuantity: 2,
+      sourceQuantity: 1,
     });
     expect(activationConditionInventory).toEqual({
       choice: 30,

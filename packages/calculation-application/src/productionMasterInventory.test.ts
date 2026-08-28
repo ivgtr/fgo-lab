@@ -369,10 +369,10 @@ describe('production master inventory ratchet', () => {
                   ({ decisionKey }) => decisionKey === rightDecisionKey,
                 ),
               ],
-              activationDecisions: [
-                ...leftSelected.activationDecisions,
-                ...rightSelected.activationDecisions.filter(
-                  ({ decisionKey }) => decisionKey === rightDecisionKey,
+              activationWitnesses: [
+                ...leftSelected.activationWitnesses,
+                ...rightSelected.activationWitnesses.filter(({ consumerDecisionKeys }) =>
+                  consumerDecisionKeys.includes(rightDecisionKey),
                 ),
               ],
               worldFactAssertions: [

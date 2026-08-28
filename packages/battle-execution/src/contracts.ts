@@ -7,7 +7,7 @@ import type {
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
 import type {
-  ActivationDecision,
+  ActivationWitness,
   TargetAttributeContext,
   TargetClassContext,
   TargetPredicate,
@@ -218,7 +218,7 @@ export interface BattleState {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  activationDecisions: readonly ActivationDecision[];
+  activationWitnesses: readonly ActivationWitness[];
   resolvedInputValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;

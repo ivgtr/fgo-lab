@@ -822,8 +822,8 @@ export function fixedConstraintFactsFromState(
     ...traits,
     ...actorPredicates,
     ...quantities,
-    ...state.activationDecisions.map(({ decisionKey, fact }, index) => ({
-      sourceKey: `${sourcePrefix}:activation:${decisionKey}:${String(index)}`,
+    ...state.activationWitnesses.map(({ consumerDecisionKeys, fact }, index) => ({
+      sourceKey: `${sourcePrefix}:activation:${consumerDecisionKeys.join(',')}:${String(index)}`,
       fact,
     })),
     { sourceKey: `${sourcePrefix}:card`, fact: { kind: 'card' as const, card: state.card } },

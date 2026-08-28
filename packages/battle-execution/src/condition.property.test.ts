@@ -28,7 +28,7 @@ function state(target: readonly string[] = [], targetState: readonly string[] = 
     },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: { attackerHpPermille: null, targetRarity: null, battlePointPhase: null },
-    activationDecisions: [],
+    activationWitnesses: [],
     resolvedInputValues: {},
     modifiers: [],
     modifierRates: {},
@@ -43,17 +43,16 @@ describe('condition expression properties', () => {
   it('evaluates activation-local facts without promoting them to world traits', () => {
     const activated: BattleState = {
       ...state(),
-      activationDecisions: [
+      activationWitnesses: [
         {
-          decisionKey: 'choice-effect',
           fact: { kind: 'choice', group: 'skill:choice', candidate: '2' },
+          consumerDecisionKeys: ['choice-effect'],
         },
         {
-          decisionKey: 'trigger-effect',
           fact: { kind: 'operationTrigger', source: 'skill:source', position: 4 },
+          consumerDecisionKeys: ['trigger-effect'],
         },
         {
-          decisionKey: 'quantity-effect',
           fact: {
             kind: 'sourceQuantity',
             quantity: 'battlePointRate',
@@ -61,6 +60,7 @@ describe('condition expression properties', () => {
             comparison: 'atMost',
             value: 999,
           },
+          consumerDecisionKeys: ['quantity-effect'],
         },
       ],
     };

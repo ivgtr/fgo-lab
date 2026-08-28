@@ -9,8 +9,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 28 as const;
-export const ENGINE_VERSION = '22.0.0' as const;
+export const SCHEMA_VERSION = 29 as const;
+export const ENGINE_VERSION = '23.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -182,20 +182,48 @@ export const activationFactSchema = z.discriminatedUnion('kind', [
 ]);
 export type ActivationFact = z.infer<typeof activationFactSchema>;
 
-export const activationDecisionSchema = z
-  .object({
-    decisionKey: z.string().min(1).max(300),
-    fact: activationFactSchema,
-  })
-  .strict();
-export type ActivationDecision = z.infer<typeof activationDecisionSchema>;
+export function activationFactKey(fact: ActivationFact): string {
+  if (fact.kind === 'choice') return JSON.stringify([fact.kind, fact.group, fact.candidate]);
+  if (fact.kind === 'operationTrigger')
+    return JSON.stringify([fact.kind, fact.source, fact.position]);
+  return JSON.stringify([fact.kind, fact.quantity, fact.subjectId, fact.comparison, fact.value]);
+}
 
-const activationDecisionsSchema = z
-  .array(activationDecisionSchema)
+export const activationWitnessSchema = z
+  .object({
+    fact: activationFactSchema,
+    consumerDecisionKeys: z.array(z.string().min(1).max(300)).min(1).max(300),
+  })
+  .strict()
+  .superRefine(({ consumerDecisionKeys }, context) => {
+    const canonical = [...new Set(consumerDecisionKeys)].sort();
+    if (
+      canonical.length !== consumerDecisionKeys.length ||
+      canonical.some((key, index) => key !== consumerDecisionKeys[index])
+    )
+      context.addIssue({
+        code: 'custom',
+        message: 'non_canonical_activation_witness_consumers',
+        path: ['consumerDecisionKeys'],
+      });
+  });
+export type ActivationWitness = z.infer<typeof activationWitnessSchema>;
+
+const activationWitnessesSchema = z
+  .array(activationWitnessSchema)
   .max(300)
-  .superRefine((decisions, context) => {
+  .superRefine((witnesses, context) => {
     const candidatesByChoiceGroup = new Map<string, string>();
-    for (const [index, { fact }] of decisions.entries()) {
+    const factKeys = new Set<string>();
+    for (const [index, { fact }] of witnesses.entries()) {
+      const key = activationFactKey(fact);
+      if (factKeys.has(key))
+        context.addIssue({
+          code: 'custom',
+          message: `duplicate_activation_witness:${key}`,
+          path: [index, 'fact'],
+        });
+      factKeys.add(key);
       if (fact.kind !== 'choice') continue;
       const selected = candidatesByChoiceGroup.get(fact.group);
       if (selected === undefined) candidatesByChoiceGroup.set(fact.group, fact.candidate);
@@ -371,7 +399,7 @@ const resolvedScenarioSchema = scenarioBaseSchema
         conditionSatisfaction: z.enum(['evaluate', 'assumeSatisfied']),
       }),
     ),
-    activationDecisions: activationDecisionsSchema,
+    activationWitnesses: activationWitnessesSchema,
     worldFactAssertions: z.array(
       z.object({
         decisionKey: z.string().min(1).max(300),

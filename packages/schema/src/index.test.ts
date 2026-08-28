@@ -36,7 +36,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationDecisions: [],
+      activationWitnesses: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });
@@ -61,16 +61,56 @@ describe('portable schema boundaries', () => {
     expect(
       calculationScenarioSchema.safeParse({
         ...scenario,
-        activationDecisions: [
+        activationWitnesses: [
           {
-            decisionKey: 'effect:a',
             fact: { kind: 'choice', group: 'skill:choice', candidate: 'a' },
+            consumerDecisionKeys: ['effect:a'],
           },
           {
-            decisionKey: 'effect:b',
             fact: { kind: 'choice', group: 'skill:choice', candidate: 'b' },
+            consumerDecisionKeys: ['effect:b'],
           },
         ],
+      }).success,
+    ).toBe(false);
+    const sharedFact = { kind: 'choice' as const, group: 'skill:choice', candidate: 'a' };
+    expect(
+      calculationScenarioSchema.parse({
+        ...scenario,
+        activationWitnesses: [
+          {
+            fact: sharedFact,
+            consumerDecisionKeys: ['effect:a', 'effect:b'],
+          },
+        ],
+      }),
+    ).toMatchObject({
+      activationWitnesses: [
+        {
+          fact: sharedFact,
+          consumerDecisionKeys: ['effect:a', 'effect:b'],
+        },
+      ],
+    });
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...scenario,
+        activationWitnesses: [
+          { fact: sharedFact, consumerDecisionKeys: ['effect:a'] },
+          { fact: sharedFact, consumerDecisionKeys: ['effect:b'] },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...scenario,
+        activationWitnesses: [{ fact: sharedFact, consumerDecisionKeys: ['effect:b', 'effect:a'] }],
+      }).success,
+    ).toBe(false);
+    expect(
+      calculationScenarioSchema.safeParse({
+        ...scenario,
+        activationDecisions: [],
       }).success,
     ).toBe(false);
   });
@@ -93,7 +133,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationDecisions: [],
+      activationWitnesses: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });
@@ -136,7 +176,7 @@ describe('portable schema boundaries', () => {
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationDecisions: [],
+      activationWitnesses: [],
       worldFactAssertions: [],
       explicitOverrides: {},
     });

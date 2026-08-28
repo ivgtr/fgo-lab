@@ -198,7 +198,7 @@ function rankingExternalFieldFactCount(execution: CalculationExecution): number 
 }
 
 function rankingActivationFactCount(execution: CalculationExecution): number {
-  return execution.scenario.mode === 'resolved' ? execution.scenario.activationDecisions.length : 0;
+  return execution.scenario.mode === 'resolved' ? execution.scenario.activationWitnesses.length : 0;
 }
 
 export function executeRankingScenarios(

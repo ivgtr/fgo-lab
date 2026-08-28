@@ -57,9 +57,9 @@ describe('ranking activation-local condition witnesses', () => {
         (effect) => included.has(effect.projectionKey) && effect.explanation.code === 'unresolved',
       ),
     ).toEqual([]);
-    expect(detail.scenario.activationDecisions.length).toBeGreaterThan(0);
+    expect(detail.scenario.activationWitnesses.length).toBeGreaterThan(0);
     const candidatesByGroup = new Map<string, Set<string>>();
-    for (const { fact } of detail.scenario.activationDecisions) {
+    for (const { fact } of detail.scenario.activationWitnesses) {
       if (fact.kind !== 'choice') continue;
       const candidates = candidatesByGroup.get(fact.group) ?? new Set<string>();
       candidates.add(fact.candidate);
@@ -82,7 +82,7 @@ describe('ranking activation-local condition witnesses', () => {
       versions,
     );
     expect(
-      detail.scenario.activationDecisions.some(({ fact }) => fact.kind === 'operationTrigger'),
+      detail.scenario.activationWitnesses.some(({ fact }) => fact.kind === 'operationTrigger'),
     ).toBe(true);
     expect(detail.result.status).toBe('calculated');
     expect(detail.result.rows.map(({ average }) => average)).toEqual(averages);
@@ -107,10 +107,11 @@ describe('ranking activation-local condition witnesses', () => {
       DEFAULT_RANKING_CONDITIONS,
       versions,
     );
-    const selectedChoiceFacts = detail.scenario.activationDecisions.filter(
+    const selectedChoiceFacts = detail.scenario.activationWitnesses.filter(
       ({ fact }) => fact.kind === 'choice',
     );
-    expect(new Set(selectedChoiceFacts.map(({ fact }) => JSON.stringify(fact))).size).toBe(1);
+    expect(selectedChoiceFacts).toHaveLength(1);
+    expect(selectedChoiceFacts[0]?.consumerDecisionKeys).toHaveLength(2);
     expect(
       detail.effects
         .filter(
@@ -122,9 +123,11 @@ describe('ranking activation-local condition witnesses', () => {
         .map(({ modifier }) => modifier)
         .sort(),
     ).toEqual(['attackBuff', 'npDamageBuff']);
-    expect(
-      detail.scenario.activationDecisions.filter(({ fact }) => fact.kind === 'sourceQuantity'),
-    ).toHaveLength(2);
+    const sourceQuantityWitnesses = detail.scenario.activationWitnesses.filter(
+      ({ fact }) => fact.kind === 'sourceQuantity',
+    );
+    expect(sourceQuantityWitnesses).toHaveLength(1);
+    expect(sourceQuantityWitnesses[0]?.consumerDecisionKeys).toHaveLength(2);
   });
 });
 

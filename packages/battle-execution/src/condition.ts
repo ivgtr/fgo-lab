@@ -168,14 +168,14 @@ export function evaluateCondition(
     case 'card':
       return state.card === condition.card;
     case 'choice': {
-      const selections = state.activationDecisions.flatMap(({ fact }) =>
+      const selections = state.activationWitnesses.flatMap(({ fact }) =>
         fact.kind === 'choice' && fact.group === condition.group ? [fact] : [],
       );
       if (selections.length === 0) return null;
       return selections.every(({ candidate }) => candidate === condition.candidate);
     }
     case 'operationTrigger':
-      return state.activationDecisions.some(
+      return state.activationWitnesses.some(
         ({ fact }) =>
           fact.kind === 'operationTrigger' &&
           fact.source === condition.source &&
@@ -184,7 +184,7 @@ export function evaluateCondition(
         ? true
         : null;
     case 'sourceQuantity': {
-      const ranges = state.activationDecisions.flatMap(({ fact }) => {
+      const ranges = state.activationWitnesses.flatMap(({ fact }) => {
         if (fact.kind !== 'sourceQuantity' || fact.subjectId !== condition.subjectId) return [];
         return [
           fact.comparison === 'atLeast'

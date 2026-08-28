@@ -3,7 +3,12 @@ import {
   type ConditionExpression,
   type EffectProjection,
 } from '@fgo-lab/battle-execution';
-import type { ActivationFact, CalculationScenario } from '@fgo-lab/schema';
+import {
+  activationFactKey,
+  type ActivationFact,
+  type ActivationWitness,
+  type CalculationScenario,
+} from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -51,24 +56,60 @@ export function setActivationFactsForProjection(
   if (projection.decision.state === 'none') return scenario;
   const decisionKey = projection.decision.decisionKey;
   const facts = activationFactsForCondition(projection.explanation.condition);
+  return {
+    ...scenario,
+    activationWitnesses: setActivationWitnessesForConsumer(
+      scenario.activationWitnesses,
+      decisionKey,
+      facts,
+      enabled,
+    ),
+  };
+}
+
+export function setActivationWitnessesForConsumer(
+  currentWitnesses: readonly ActivationWitness[],
+  decisionKey: string,
+  facts: readonly ActivationFact[],
+  enabled: boolean,
+): ActivationWitness[] {
   const selectedChoices = new Map(
     facts.flatMap((fact) =>
       fact.kind === 'choice' ? [[fact.group, fact.candidate] as const] : [],
     ),
   );
-  return {
-    ...scenario,
-    activationDecisions: [
-      ...scenario.activationDecisions.filter(({ decisionKey: currentKey, fact }) => {
-        if (currentKey === decisionKey) return false;
-        return !(
-          enabled &&
-          fact.kind === 'choice' &&
-          selectedChoices.has(fact.group) &&
-          selectedChoices.get(fact.group) !== fact.candidate
+  const withoutConsumer = currentWitnesses.flatMap((witness) => {
+    const consumerDecisionKeys = witness.consumerDecisionKeys.filter((key) => key !== decisionKey);
+    return consumerDecisionKeys.length > 0 ? [{ ...witness, consumerDecisionKeys }] : [];
+  });
+  const compatible = withoutConsumer.filter(
+    ({ fact }) =>
+      !(
+        enabled &&
+        fact.kind === 'choice' &&
+        selectedChoices.has(fact.group) &&
+        selectedChoices.get(fact.group) !== fact.candidate
+      ),
+  );
+  const activationWitnesses = enabled
+    ? facts.reduce<ActivationWitness[]>((witnesses, fact) => {
+        const factKey = activationFactKey(fact);
+        const existing = witnesses.find((witness) => activationFactKey(witness.fact) === factKey);
+        if (!existing)
+          return [...witnesses, { fact, consumerDecisionKeys: [decisionKey] }].sort((left, right) =>
+            activationFactKey(left.fact).localeCompare(activationFactKey(right.fact)),
+          );
+        return witnesses.map((witness) =>
+          witness === existing
+            ? {
+                ...witness,
+                consumerDecisionKeys: [
+                  ...new Set([...witness.consumerDecisionKeys, decisionKey]),
+                ].sort(),
+              }
+            : witness,
         );
-      }),
-      ...(enabled ? facts.map((fact) => ({ decisionKey, fact })) : []),
-    ],
-  };
+      }, compatible)
+    : compatible;
+  return activationWitnesses;
 }

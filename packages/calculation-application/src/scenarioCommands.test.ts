@@ -52,6 +52,12 @@ describe('resolved scenario commands', () => {
           conditionSatisfaction: 'assumeSatisfied' as const,
         },
       ],
+      activationWitnesses: [
+        {
+          fact: { kind: 'choice' as const, group: 'shared', candidate: 'active' },
+          consumerDecisionKeys: ['attacker:projection', 'support:projection'],
+        },
+      ],
       worldFactAssertions: [
         {
           decisionKey: 'support:projection',
@@ -89,6 +95,12 @@ describe('resolved scenario commands', () => {
     expect(configured.support?.composition.sources[0]?.skills[0]?.skillLevel).toBe(10);
     expect(removed.support?.composition).toEqual({ sources: [], effectInclusions: [] });
     expect(removed.effectDecisions).toEqual([]);
+    expect(removed.activationWitnesses).toEqual([
+      {
+        fact: { kind: 'choice', group: 'shared', candidate: 'active' },
+        consumerDecisionKeys: ['attacker:projection'],
+      },
+    ]);
     expect(removed.worldFactAssertions).toEqual([]);
   });
 });

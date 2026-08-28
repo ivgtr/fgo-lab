@@ -172,7 +172,7 @@ export function prepareCandidateExecution(
       predicate,
       present: true,
     })),
-    scenario.activationDecisions,
+    scenario.activationWitnesses,
   );
   const scenarioDecisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),

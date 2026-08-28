@@ -295,7 +295,7 @@ export function Calculator({
       mysticCode: null,
       support: null,
       effectDecisions: [],
-      activationDecisions: [],
+      activationWitnesses: [],
       worldFactAssertions: [],
       explicitOverrides: {
         attackerAtk: input.attackerAtk,

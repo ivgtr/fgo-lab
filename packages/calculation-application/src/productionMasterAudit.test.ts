@@ -24,7 +24,7 @@ import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 import { setEffectSourceEnabled } from './scenarioCommands';
 import { activationFactsForCondition } from './activationContext';
 
-function appendActivationFacts(
+function forgeConflictingActivationFacts(
   scenario: Parameters<typeof applyEffectInclusionDecision>[0],
   projection: EffectProjection,
 ) {
@@ -32,11 +32,11 @@ function appendActivationFacts(
   const decisionKey = projection.decision.decisionKey;
   return {
     ...scenario,
-    activationDecisions: [
-      ...scenario.activationDecisions,
+    activationWitnesses: [
+      ...scenario.activationWitnesses,
       ...activationFactsForCondition(projection.explanation.condition).map((fact) => ({
-        decisionKey,
         fact,
+        consumerDecisionKeys: [decisionKey],
       })),
     ],
   };
@@ -431,7 +431,7 @@ describe('production master damage quality ratchet', () => {
     );
     const resolvedChoice = calculateScenario(resolvedChoiceScenario, master, versions);
     const conflict = calculateScenario(
-      appendActivationFacts(resolvedChoiceScenario, buster),
+      forgeConflictingActivationFacts(resolvedChoiceScenario, buster),
       master,
       versions,
     );
@@ -514,7 +514,7 @@ describe('production master damage quality ratchet', () => {
     const resolvedChoiceScenario = applyEffectProjectionDecision(rareScenario, firstAttack, true);
     const resolvedChoice = calculateScenario(resolvedChoiceScenario, master, versions);
     const conflict = calculateScenario(
-      appendActivationFacts(resolvedChoiceScenario, rareAttack),
+      forgeConflictingActivationFacts(resolvedChoiceScenario, rareAttack),
       master,
       versions,
     );
@@ -612,7 +612,7 @@ describe('production master damage quality ratchet', () => {
     );
     const resolvedChoice = calculateScenario(resolvedChoiceScenario, master, versions);
     const conflict = calculateScenario(
-      appendActivationFacts(resolvedChoiceScenario, artsChange),
+      forgeConflictingActivationFacts(resolvedChoiceScenario, artsChange),
       master,
       versions,
     );
@@ -734,7 +734,7 @@ describe('production master damage quality ratchet', () => {
     );
     const resolvedForms = calculateScenario(resolvedFormScenario, master, versions);
     const conflictingForms = calculateScenario(
-      appendActivationFacts(resolvedFormScenario, busterForm),
+      forgeConflictingActivationFacts(resolvedFormScenario, busterForm),
       master,
       versions,
     );
