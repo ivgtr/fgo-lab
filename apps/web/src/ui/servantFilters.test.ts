@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import {
   masterSnapshotSchema,
-  type NoblePhantasmMaster,
+  type AttackNoblePhantasmVariant,
   type NpDamageSpec,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -20,10 +20,20 @@ const artsArcher: ServantMaster = {
   name: '検証用アーチャー',
   classId: 'archer',
   rarity: 4,
-  noblePhantasms: saber.noblePhantasms.map((np) => ({
-    ...np,
-    card: 'arts',
-    damage: np.damage.map((damage) => ({ ...damage, target: 'single' })),
+  actorForms: [{ id: 'arts-archer', name: '検証用アーチャー' }],
+  noblePhantasmVariantGroups: saber.noblePhantasmVariantGroups.map((group) => ({
+    ...group,
+    baseVariant: { actorFormId: 'arts-archer', noblePhantasmId: 'fixture-np' },
+    variants: group.variants.map((np) => {
+      if (np.kind !== 'attack') throw new TypeError('fixture_attack_np_required');
+      return {
+        ...np,
+        ref: { actorFormId: 'arts-archer', noblePhantasmId: np.ref.noblePhantasmId },
+        card: 'arts',
+        targetScope: 'single',
+        damage: np.damage.map((damage) => ({ ...damage, target: 'single' })),
+      };
+    }),
   })),
 };
 const supportCaster: ServantMaster = {
@@ -31,7 +41,9 @@ const supportCaster: ServantMaster = {
   id: 'support-caster',
   name: '非攻撃キャスター',
   classId: 'caster',
-  noblePhantasms: [],
+  actorForms: [{ id: 'support-caster', name: '非攻撃キャスター' }],
+  baseNoblePhantasmGroupId: null,
+  noblePhantasmVariantGroups: [],
 };
 const servants = [saber, artsArcher, supportCaster];
 
@@ -40,7 +52,7 @@ describe('servant filters', () => {
     const filters = {
       ...createEmptyServantFilters(),
       rarities: new Set([4, 5]),
-      npCards: new Set<NoblePhantasmMaster['card']>(['arts']),
+      npCards: new Set<AttackNoblePhantasmVariant['card']>(['arts']),
     };
     expect(filterServants(servants, filters, '')).toEqual([artsArcher]);
   });

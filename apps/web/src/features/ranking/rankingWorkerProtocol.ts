@@ -26,7 +26,9 @@ export type RankingWorkerRequest =
       kind: 'detail';
       requestId: string;
       fingerprint: string;
+      entryId: string;
       servantId: string;
+      targetScope: 'single' | 'all';
     };
 
 export type RankingWorkerResponse =
@@ -42,7 +44,7 @@ export type RankingWorkerResponse =
       kind: 'detail';
       requestId: string;
       fingerprint: string;
-      servantId: string;
+      entryId: string;
       detail: RankingDetail | null;
     }
   | {
@@ -57,6 +59,6 @@ export type RankingWorkerResponse =
       stage: 'detail';
       requestId: string;
       fingerprint: string;
-      servantId: string;
+      entryId: string;
       reason: string;
     };

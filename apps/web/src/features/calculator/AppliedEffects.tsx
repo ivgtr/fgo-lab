@@ -31,7 +31,7 @@ function effectValueLabel(effect: EffectProjection) {
   if (
     effect.modifier === 'ignoreDefense' ||
     effect.modifier === 'ignoreDamageCut' ||
-    effect.modifier === 'cardTypeChange'
+    effect.modifier === 'npVariantSelection'
   )
     return '有効';
   if (effect.value === null) return '倍率不明';

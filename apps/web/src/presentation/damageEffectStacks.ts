@@ -2,7 +2,8 @@ import type { EffectProjection, ModifierKind } from '@fgo-lab/calculation-applic
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import { effectSourceImage } from './effectSourcePresentation';
 
-export type DamageEffectStackKind = ModifierKind | 'npSpecial' | 'cardTypeChange' | 'unresolved';
+export type DamageEffectStackKind =
+  ModifierKind | 'npSpecial' | 'npVariantSelection' | 'unresolved';
 
 export interface DamageEffectSource {
   key: string;
@@ -36,7 +37,7 @@ const STACK_LABELS: Record<DamageEffectStackKind, string> = {
   powerMod: '特攻状態',
   flatDamage: '固定ダメージ',
   npSpecial: '特攻宝具',
-  cardTypeChange: '宝具カード種別',
+  npVariantSelection: '宝具形態',
   unresolved: '未解決の火力効果',
 };
 
@@ -51,7 +52,7 @@ const STACK_ORDER: DamageEffectStackKind[] = [
   'ignoreDamageCut',
   'powerMod',
   'npSpecial',
-  'cardTypeChange',
+  'npVariantSelection',
   'eventDamageBuff',
   'specialDamageBuff',
   'flatDamage',
@@ -93,7 +94,7 @@ export function damageEffectValueLabel(source: DamageEffectSource): string {
   if (
     source.kind === 'ignoreDefense' ||
     source.kind === 'ignoreDamageCut' ||
-    source.kind === 'cardTypeChange'
+    source.kind === 'npVariantSelection'
   )
     return '適用';
   if (source.value === null) return '倍率不明';

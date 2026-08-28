@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
-  getPrimaryNoblePhantasm,
+  getBaseAttackNoblePhantasmVariant,
   getPrimaryNpDamage,
   getPrimaryNpPresentation,
   naturalServantLevel,
@@ -310,7 +310,7 @@ export function Calculator({
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
-    const noblePhantasm = getPrimaryNoblePhantasm(candidate);
+    const noblePhantasm = getBaseAttackNoblePhantasmVariant(candidate);
     const damage = getPrimaryNpDamage(candidate);
     if (!noblePhantasm || !damage) return;
     const level = saved?.level ?? naturalServantLevel(candidate.rarity);

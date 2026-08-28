@@ -10,7 +10,7 @@ import { RankingEffectDetails } from './RankingEffectDetails';
 
 export function RankingList({
   rows,
-  openServantId,
+  openEntryId,
   details,
   detailErrors,
   master,
@@ -19,12 +19,12 @@ export function RankingList({
   onOpenCalculator,
 }: {
   rows: readonly RankingPresentedRow[];
-  openServantId: string | null;
+  openEntryId: string | null;
   details: Readonly<Record<string, RankingDetail>>;
   detailErrors: Readonly<Record<string, string>>;
   master: MasterDataSnapshot;
-  onToggle: (servantId: string) => void;
-  onRetryDetail: (servantId: string) => void;
+  onToggle: (row: RankingPresentedRow) => void;
+  onRetryDetail: (row: RankingPresentedRow) => void;
   onOpenCalculator: (scenario: CalculationScenario) => void;
 }) {
   return rows.length === 0 ? (
@@ -32,12 +32,12 @@ export function RankingList({
   ) : (
     <ol className="ranking-list" aria-label="宝具火力ランキング">
       {rows.map((row) => {
-        const expanded = openServantId === row.servantId;
-        const detail = details[row.servantId];
-        const detailError = detailErrors[row.servantId];
-        const detailId = `ranking-detail-${row.servantId}`;
+        const expanded = openEntryId === row.entryId;
+        const detail = details[row.entryId];
+        const detailError = detailErrors[row.entryId];
+        const detailId = `ranking-detail-${row.entryId.replace(':', '-')}`;
         return (
-          <li key={row.servantId} className={row.rank <= 3 ? 'ranking-top' : undefined}>
+          <li key={row.entryId} className={row.rank <= 3 ? 'ranking-top' : undefined}>
             <article className="ranking-row">
               <span className="ranking-position" aria-label={`${String(row.rank)}位`}>
                 {row.rank}
@@ -52,8 +52,10 @@ export function RankingList({
                     fallback={row.npCard.slice(0, 1).toUpperCase()}
                   />
                   <span className="visually-hidden">{npCardLabel(row.npCard)}</span>
-                  {row.npTarget === 'all' ? '全体' : '単体'}・★{row.rarity}・
-                  {servantClassLabels.get(row.classId) ?? row.classId}
+                  <span className="ranking-np-summary">
+                    {row.npTarget === 'all' ? '全体' : '単体'}・{row.noblePhantasmName}・★
+                    {row.rarity}・{servantClassLabels.get(row.classId) ?? row.classId}
+                  </span>
                   {row.specialAttackApplied ? (
                     <span className="ranking-special-badge">特攻</span>
                   ) : null}
@@ -75,7 +77,7 @@ export function RankingList({
                 className="ranking-detail-toggle"
                 aria-expanded={expanded}
                 aria-controls={detailId}
-                onClick={() => onToggle(row.servantId)}
+                onClick={() => onToggle(row)}
               >
                 {expanded ? '閉じる' : '詳細'}
               </button>
@@ -91,7 +93,7 @@ export function RankingList({
                 ) : detailError ? (
                   <p role="alert" className="notice">
                     詳細を読み込めませんでした: {detailError}{' '}
-                    <button type="button" onClick={() => onRetryDetail(row.servantId)}>
+                    <button type="button" onClick={() => onRetryDetail(row)}>
                       再試行
                     </button>
                   </p>

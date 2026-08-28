@@ -81,14 +81,14 @@ export function useRanking({
       }
       if (response.kind === 'detail') {
         if (response.fingerprint !== activeFingerprintRef.current) return;
-        if (detailRequestsRef.current.get(response.servantId) !== response.requestId) return;
-        detailRequestsRef.current.delete(response.servantId);
+        if (detailRequestsRef.current.get(response.entryId) !== response.requestId) return;
+        detailRequestsRef.current.delete(response.entryId);
         if (response.detail)
           setDetails((current) =>
             current.fingerprint === response.fingerprint
               ? {
                   ...current,
-                  values: { ...current.values, [response.servantId]: response.detail! },
+                  values: { ...current.values, [response.entryId]: response.detail! },
                 }
               : current,
           );
@@ -104,9 +104,9 @@ export function useRanking({
       }
       if (response.kind === 'error' && response.stage === 'detail') {
         if (response.fingerprint !== activeFingerprintRef.current) return;
-        if (detailRequestsRef.current.get(response.servantId) !== response.requestId) return;
-        detailRequestsRef.current.delete(response.servantId);
-        setDetailErrors((current) => ({ ...current, [response.servantId]: response.reason }));
+        if (detailRequestsRef.current.get(response.entryId) !== response.requestId) return;
+        detailRequestsRef.current.delete(response.entryId);
+        setDetailErrors((current) => ({ ...current, [response.entryId]: response.reason }));
         return;
       }
       if (response.kind === 'error' && response.requestId === activeRequestRef.current)
@@ -143,25 +143,27 @@ export function useRanking({
   }, [conditions, conditionsFingerprint, contextFingerprint, initializedFingerprint]);
 
   const requestDetail = useCallback(
-    (servantId: string) => {
+    (row: Pick<RankingRowSummary, 'entryId' | 'servantId' | 'npTarget'>) => {
       const worker = workerRef.current;
       if (
         !worker ||
         initializedFingerprint !== contextFingerprint ||
         state.fingerprint !== conditionsFingerprint ||
-        (details.fingerprint === conditionsFingerprint && details.values[servantId])
+        (details.fingerprint === conditionsFingerprint && details.values[row.entryId])
       )
         return;
       const requestId = crypto.randomUUID();
       setDetailErrors((current) =>
-        Object.fromEntries(Object.entries(current).filter(([key]) => key !== servantId)),
+        Object.fromEntries(Object.entries(current).filter(([key]) => key !== row.entryId)),
       );
-      detailRequestsRef.current.set(servantId, requestId);
+      detailRequestsRef.current.set(row.entryId, requestId);
       const request: RankingWorkerRequest = {
         kind: 'detail',
         requestId,
         fingerprint: conditionsFingerprint,
-        servantId,
+        entryId: row.entryId,
+        servantId: row.servantId,
+        targetScope: row.npTarget,
       };
       worker.postMessage(request);
     },

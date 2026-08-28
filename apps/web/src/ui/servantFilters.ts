@@ -1,7 +1,7 @@
 import {
-  getPrimaryNoblePhantasm,
+  getBaseAttackNoblePhantasmVariant,
   getPrimaryNpDamage,
-  type NoblePhantasmMaster,
+  type AttackNoblePhantasmVariant,
   type NpDamageSpec,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -10,7 +10,7 @@ import { allServantClasses } from './servantFilterOptions';
 export type ServantFilterState = {
   classId: string | null;
   rarities: Set<number>;
-  npCards: Set<NoblePhantasmMaster['card']>;
+  npCards: Set<AttackNoblePhantasmVariant['card']>;
   npTargets: Set<NpDamageSpec['target']>;
 };
 
@@ -51,7 +51,7 @@ export function filterServants(
   const normalizedSearch = search.trim().toLocaleLowerCase('ja');
   const selectedClass = allServantClasses.find((option) => option.id === filters.classId);
   return servants.filter((candidate) => {
-    const noblePhantasm = getPrimaryNoblePhantasm(candidate);
+    const noblePhantasm = getBaseAttackNoblePhantasmVariant(candidate);
     const damage = getPrimaryNpDamage(candidate);
     return (
       (normalizedSearch.length === 0 ||

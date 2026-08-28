@@ -85,14 +85,14 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
       kind: 'detail',
       requestId: request.requestId,
       fingerprint: request.fingerprint,
-      servantId: request.servantId,
+      entryId: request.entryId,
       detail: (() => {
         const conditions = conditionCache.get(request.fingerprint);
         const servant = context.master.servants.find(
           (candidate) => candidate.id === request.servantId,
         );
         if (!conditions || !servant) return null;
-        const cached = detailCache.get(request.fingerprint)?.get(request.servantId);
+        const cached = detailCache.get(request.fingerprint)?.get(request.entryId);
         if (cached) return cached;
         const detail = calculateRankingDetail(
           servant,
@@ -100,11 +100,12 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
           context.profile,
           conditions,
           context.versions,
+          request.targetScope,
         );
         const details =
           detailCache.get(request.fingerprint) ??
           new Map<string, ReturnType<typeof calculateRankingDetail>>();
-        details.set(request.servantId, detail);
+        details.set(request.entryId, detail);
         detailCache.set(request.fingerprint, details);
         return detail;
       })(),
@@ -117,7 +118,7 @@ self.onmessage = (event: MessageEvent<RankingWorkerRequest>) => {
         stage: 'detail',
         requestId: request.requestId,
         fingerprint: request.fingerprint,
-        servantId: request.servantId,
+        entryId: request.entryId,
         reason,
       });
     else

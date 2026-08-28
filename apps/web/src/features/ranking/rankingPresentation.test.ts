@@ -5,6 +5,7 @@ import { DEFAULT_RANKING_URL_STATE } from './rankingState';
 
 const rows: RankingRowSummary[] = [
   {
+    entryId: '1:all',
     servantId: '1',
     name: 'A',
     imageKey: null,
@@ -12,6 +13,8 @@ const rows: RankingRowSummary[] = [
     rarity: 5,
     npCard: 'buster',
     npTarget: 'all',
+    noblePhantasmVariant: { actorFormId: '1', noblePhantasmId: '101' },
+    noblePhantasmName: 'A全体',
     minimum: 80,
     average: 100,
     maximum: 120,
@@ -25,6 +28,7 @@ const rows: RankingRowSummary[] = [
     owned: false,
   },
   {
+    entryId: '2:single',
     servantId: '2',
     name: 'B',
     imageKey: null,
@@ -32,6 +36,8 @@ const rows: RankingRowSummary[] = [
     rarity: 4,
     npCard: 'arts',
     npTarget: 'single',
+    noblePhantasmVariant: { actorFormId: '2', noblePhantasmId: '201' },
+    noblePhantasmName: 'B単体',
     minimum: 90,
     average: 95,
     maximum: 130,

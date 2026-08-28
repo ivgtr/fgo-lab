@@ -10,6 +10,7 @@ afterEach(cleanup);
 
 const master = masterSnapshotSchema.parse(fixture);
 const row: RankingPresentedRow = {
+  entryId: `${master.servants[0]!.id}:single`,
   servantId: master.servants[0]!.id,
   name: master.servants[0]!.name,
   imageKey: null,
@@ -17,6 +18,11 @@ const row: RankingPresentedRow = {
   rarity: master.servants[0]!.rarity,
   npCard: 'buster',
   npTarget: 'single',
+  noblePhantasmVariant: {
+    actorFormId: master.servants[0]!.id,
+    noblePhantasmId: 'fixture-np',
+  },
+  noblePhantasmName: '検証用宝具',
   minimum: 80,
   average: 100,
   maximum: 120,
@@ -38,9 +44,9 @@ describe('ranking row detail state', () => {
     const { getByRole, queryByText } = render(
       <RankingList
         rows={[row]}
-        openServantId={row.servantId}
+        openEntryId={row.entryId}
         details={{}}
-        detailErrors={{ [row.servantId]: 'detail_fixture_failure' }}
+        detailErrors={{ [row.entryId]: 'detail_fixture_failure' }}
         master={master}
         onToggle={vi.fn()}
         onRetryDetail={retry}
@@ -51,6 +57,6 @@ describe('ranking row detail state', () => {
     expect(queryByText('詳細を読み込み中…')).toBeNull();
     expect(getByRole('alert').textContent).toContain('detail_fixture_failure');
     fireEvent.click(getByRole('button', { name: '再試行' }));
-    expect(retry).toHaveBeenCalledWith(row.servantId);
+    expect(retry).toHaveBeenCalledWith(row);
   });
 });

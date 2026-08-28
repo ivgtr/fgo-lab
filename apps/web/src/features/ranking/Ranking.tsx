@@ -22,16 +22,16 @@ export function Ranking({
   onOpenCalculator: (scenario: CalculationScenario) => void;
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
-  const [openServantId, setOpenServantId] = useState<string | null>(null);
+  const [openEntryId, setOpenEntryId] = useState<string | null>(null);
   const ranking = useRanking({ master, profile, conditions: urlState.conditions, versions });
   const rows = useMemo(
     () => filterAndRankRows(ranking.rows, urlState.filters, urlState.metric),
     [ranking.rows, urlState.filters, urlState.metric],
   );
-  const toggleDetail = (servantId: string) => {
-    const next = openServantId === servantId ? null : servantId;
-    setOpenServantId(next);
-    if (next) ranking.requestDetail(next);
+  const toggleDetail = (row: (typeof rows)[number]) => {
+    const next = openEntryId === row.entryId ? null : row.entryId;
+    setOpenEntryId(next);
+    if (next) ranking.requestDetail(row);
   };
   return (
     <section className="ranking-page">
@@ -45,7 +45,7 @@ export function Ranking({
       <RankingConditions
         conditions={urlState.conditions}
         onChange={(conditions) => {
-          setOpenServantId(null);
+          setOpenEntryId(null);
           setUrlState((current) => ({ ...current, conditions }));
         }}
       />
@@ -68,7 +68,7 @@ export function Ranking({
       ) : null}
       <RankingList
         rows={rows}
-        openServantId={openServantId}
+        openEntryId={openEntryId}
         details={ranking.details}
         detailErrors={ranking.detailErrors}
         master={master}
