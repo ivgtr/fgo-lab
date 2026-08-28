@@ -119,6 +119,11 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
   return !['always', 'card', 'inputQuantity'].includes(condition.kind);
 }
 
+function requiredActivationContext(state: BattleState) {
+  if (state.activationContext === null) throw new Error('activation_context_unavailable');
+  return state.activationContext;
+}
+
 export function evaluateCondition(
   condition: ConditionExpression,
   state: BattleState,
@@ -169,12 +174,12 @@ export function evaluateCondition(
     case 'card':
       return state.card === condition.card;
     case 'choice': {
-      return evaluateActivationRequirement(condition, state.activationContext);
+      return evaluateActivationRequirement(condition, requiredActivationContext(state));
     }
     case 'operationTrigger':
-      return evaluateActivationRequirement(condition, state.activationContext);
+      return evaluateActivationRequirement(condition, requiredActivationContext(state));
     case 'sourceQuantity':
-      return evaluateActivationRequirement(condition, state.activationContext);
+      return evaluateActivationRequirement(condition, requiredActivationContext(state));
     case 'quantity': {
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];

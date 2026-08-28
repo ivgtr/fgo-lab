@@ -821,6 +821,7 @@ export function fixedConstraintFactsFromState(
   state: BattleState,
   sourcePrefix = 'battle-state',
 ): FixedConstraintFact[] {
+  if (state.activationContext === null) throw new Error('activation_context_unavailable');
   const traits = (['attacker', 'attackerState', 'target', 'targetState', 'field'] as const).flatMap(
     (scope) =>
       [...state.traits[scope]].map(([trait, present]) => ({

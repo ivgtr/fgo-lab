@@ -25,6 +25,7 @@ import type {
 } from './executionTypes';
 import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
+import { assembleInvalidActivationResult } from './candidateFailure';
 
 function applyNp(
   input: DamageResolutionInput,
@@ -113,6 +114,8 @@ export function executeOrderedScenarioCandidate(
 ): OrderedScenarioExecution {
   const { baseInput, damage, operations, attackerClass } = prepared;
   const candidate = prepareCandidateExecution(prepared, resolvedInputs, targetCandidate);
+  if (candidate.status === 'invalidActivationContext')
+    return assembleInvalidActivationResult({ prepared, resolvedInputs, candidate });
   const {
     candidateInput,
     decisions,
@@ -126,8 +129,6 @@ export function executeOrderedScenarioCandidate(
   let { state } = candidate;
   const results: OperationResult[] = [];
   let input = candidateInput;
-  if (candidate.activationContextIssues.length > 0)
-    return assembleCandidateResult({ prepared, resolvedInputs, candidate, state, input, results });
   for (const operationGroup of effectOperationGroups(operations)) {
     const initialGroupState = cloneBattleState(state);
     const initialGroupInput = input;

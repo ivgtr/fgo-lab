@@ -1,8 +1,8 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import { conditionRequiresTrait } from './activation';
-import type { BattleState, ExecutionIssue, OperationResult, OperationSource } from './contracts';
+import type { BattleState, ExecutionIssue, OperationResult } from './contracts';
 import { targetResolutionIssues } from './executionIssues';
-import type { PreparedCandidateExecution } from './candidatePreparation';
+import type { ReadyCandidateExecution } from './candidatePreparation';
+import { attachActivationSources } from './candidateProjection';
 import type {
   OrderedScenarioExecution,
   PreparedOrderedScenario,
@@ -11,64 +11,10 @@ import type {
 import { projectAtDamageEvaluation } from './projection';
 import { foldDamageInput } from './state';
 
-function sourcesShareActor(left: OperationSource, right: OperationSource): boolean {
-  const actorOwnedOrigins = new Set<OperationSource['origin']>(['attacker', 'np', 'passive']);
-  return (
-    left.sourceId === right.sourceId &&
-    ((actorOwnedOrigins.has(left.origin) && actorOwnedOrigins.has(right.origin)) ||
-      (left.origin === right.origin && left.sourceInstanceId === right.sourceInstanceId))
-  );
-}
-
-function activationSourcesByDecision(
-  prepared: PreparedOrderedScenario,
-): ReadonlyMap<string, readonly OperationSource[]> {
-  const { operations } = prepared;
-  const sourcesByDecision = new Map<string, OperationSource[]>();
-  const addSource = (decisionKey: string, source: OperationSource) => {
-    const sources = sourcesByDecision.get(decisionKey) ?? [];
-    if (
-      !sources.some(
-        (candidate) =>
-          candidate.origin === source.origin &&
-          candidate.sourceInstanceId === source.sourceInstanceId &&
-          candidate.skillId === source.skillId,
-      )
-    )
-      sources.push(source);
-    sourcesByDecision.set(decisionKey, sources);
-  };
-  for (const operation of operations) {
-    if (operation.activation.kind !== 'linkedDecisions') continue;
-    for (const link of operation.activation.links) addSource(link.decisionKey, operation.source);
-  }
-  for (const decisionOperation of operations) {
-    if (decisionOperation.decisionKey === null) continue;
-    for (const mutation of operations) {
-      if (
-        mutation.gameActivation !== 'skillUse' ||
-        (mutation.kind !== 'addTrait' &&
-          mutation.kind !== 'removeTrait' &&
-          mutation.kind !== 'suppressInitialTrait') ||
-        !sourcesShareActor(mutation.source, decisionOperation.source) ||
-        !conditionRequiresTrait(
-          decisionOperation.condition,
-          mutation.scope,
-          mutation.trait,
-          mutation.kind === 'addTrait',
-        )
-      )
-        continue;
-      addSource(decisionOperation.decisionKey, mutation.source);
-    }
-  }
-  return sourcesByDecision;
-}
-
 function executionIssues(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
-  candidate: PreparedCandidateExecution,
+  candidate: ReadyCandidateExecution,
   state: BattleState,
 ): ExecutionIssue[] {
   return [
@@ -102,24 +48,17 @@ export function assembleCandidateResult({
 }: {
   prepared: PreparedOrderedScenario;
   resolvedInputs: ResolvedCanonicalInputSet;
-  candidate: PreparedCandidateExecution;
+  candidate: ReadyCandidateExecution;
   state: BattleState;
   input: DamageResolutionInput;
   results: readonly OperationResult[];
 }): OrderedScenarioExecution {
   const { operations, inputDefinitions } = prepared;
   const issues = executionIssues(prepared, resolvedInputs, candidate, state);
-  const activationSources = activationSourcesByDecision(prepared);
-  const projections = [
+  const projections = attachActivationSources(prepared, [
     ...candidate.resolvedCompileProjections,
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
-  ].map((projection) => ({
-    ...projection,
-    activationSources:
-      projection.decision.state === 'none'
-        ? []
-        : (activationSources.get(projection.decision.decisionKey) ?? []),
-  }));
+  ]);
   const relevantInputOperationIds = new Set(
     projections.flatMap((projection) =>
       projection.visibility === 'visible' &&

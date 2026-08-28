@@ -1,5 +1,6 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
+  ActivationContext,
   BattleOperation,
   BattleState,
   EffectDecision,
@@ -8,7 +9,7 @@ import type {
   TargetPredicateAssertion,
 } from './contracts';
 import { resolveOperationActivation } from './activation';
-import { buildActivationContext, emptyActivationContext } from './activationContext';
+import { buildActivationContext } from './activationContext';
 import { activationRequirementsSatisfied, evaluateCondition } from './condition';
 import {
   assumedDecisionConstraints,
@@ -23,13 +24,20 @@ import {
 import { applyCardTypeMutation, applyWorldFacts, createInitialBattleState } from './state';
 import { materializeTargetCandidate, type TargetCandidate } from './targetContext';
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
+import { decisionsWithProcSelections, resolveCompileProjections } from './candidateDecisions';
 
 export type OperationActivation = ReturnType<typeof resolveOperationActivation>;
-export interface PreparedCandidateExecution {
+interface PreparedCandidateBase {
   candidateInput: DamageResolutionInput;
   targetFacts: readonly TargetPredicateAssertion[];
-  state: BattleState;
   decisions: ReadonlyMap<string, EffectDecision>;
+  resolvedCompileProjections: readonly EffectProjection[];
+  procSelectionIssues: readonly ExecutionIssue[];
+}
+
+export interface ReadyCandidateExecution extends PreparedCandidateBase {
+  status: 'ready';
+  state: BattleState;
   activations: ReadonlyMap<string, OperationActivation>;
   activeDecisionSourceInstances: ReadonlySet<string>;
   activeConditionConstraints: readonly SatisfiableConditionConstraint[];
@@ -37,123 +45,22 @@ export interface PreparedCandidateExecution {
   finalSelectedCardMutation: Extract<BattleOperation, { kind: 'changeCardType' }> | undefined;
   constraintIssues: readonly ExecutionIssue[];
   invalidDecisionKeys: Set<string>;
-  resolvedCompileProjections: readonly EffectProjection[];
-  procSelectionIssues: readonly ExecutionIssue[];
-  activationContextIssues: readonly ExecutionIssue[];
 }
 
-function decisionsWithProcSelections(
-  scenarioDecisions: ReadonlyMap<string, EffectDecision>,
-  operations: readonly BattleOperation[],
-  inputValues: Readonly<Record<string, number>>,
-): { decisions: Map<string, EffectDecision>; issues: ExecutionIssue[] } {
-  const decisions = new Map(scenarioDecisions);
-  const issues: ExecutionIssue[] = [];
-  const invalidKeys = new Set<string>();
-  for (const operation of operations) {
-    if (operation.procSelection.kind !== 'successCount' || operation.decisionKey === null) continue;
-    const selection = operation.procSelection;
-    const definition = operation.inputDefinitions.find(
-      (candidate) => candidate.kind === 'procSuccessCount' && candidate.key === selection.inputKey,
-    );
-    if (!definition) {
-      issues.push({
-        kind: 'invalidProcSelection',
-        operationId: operation.operationId,
-        detail: 'missingSuccessCountDefinition',
-      });
-      decisions.set(operation.decisionKey, {
-        decisionKey: operation.decisionKey,
-        operationEnabled: false,
-        conditionSatisfaction: 'evaluate',
-      });
-      continue;
-    }
-    if (scenarioDecisions.has(operation.decisionKey)) {
-      if (!invalidKeys.has(operation.decisionKey))
-        issues.push({
-          kind: 'invalidProcSelection',
-          operationId: operation.operationId,
-          detail: 'duplicateEffectDecision',
-        });
-      invalidKeys.add(operation.decisionKey);
-      decisions.set(operation.decisionKey, {
-        decisionKey: operation.decisionKey,
-        operationEnabled: false,
-        conditionSatisfaction: 'evaluate',
-      });
-      continue;
-    }
-    decisions.set(operation.decisionKey, {
-      decisionKey: operation.decisionKey,
-      operationEnabled:
-        (inputValues[selection.inputKey] ?? definition.minimum) > definition.minimum,
-      conditionSatisfaction: 'evaluate',
-    });
-  }
-  return { decisions, issues };
+export interface InvalidActivationCandidateExecution extends PreparedCandidateBase {
+  status: 'invalidActivationContext';
+  issues: readonly ExecutionIssue[];
 }
 
-function resolveCompileProjections(
-  projections: readonly EffectProjection[],
-  decisions: ReadonlyMap<string, EffectDecision>,
-  invalidDecisionKeys: ReadonlySet<string>,
-): EffectProjection[] {
-  return projections.map((projection) => {
-    const choice = decisions.get(projection.projectionKey);
-    const enabled =
-      choice?.operationEnabled ??
-      (projection.decision.state === 'none' || projection.decision.state === 'enabled');
-    if (invalidDecisionKeys.has(projection.projectionKey))
-      return {
-        ...projection,
-        outcome: 'notApplied' as const,
-        decision:
-          projection.decision.state === 'none'
-            ? projection.decision
-            : {
-                ...projection.decision,
-                state: enabled ? ('enabled' as const) : ('disabled' as const),
-              },
-        explanation: { ...projection.explanation, code: 'conditionNotMet' as const },
-      };
-    if (projection.executionSupport === 'unsupported' && enabled)
-      return {
-        ...projection,
-        outcome: 'unsupported' as const,
-        decision:
-          projection.decision.state === 'none'
-            ? projection.decision
-            : { ...projection.decision, state: 'enabled' as const },
-        explanation: { ...projection.explanation, code: 'unresolved' as const },
-      };
-    return enabled
-      ? projection
-      : {
-          ...projection,
-          outcome: 'notApplied' as const,
-          decision:
-            projection.decision.state === 'none'
-              ? projection.decision
-              : { ...projection.decision, state: 'disabled' as const },
-          explanation: { ...projection.explanation, code: 'disabled' as const },
-        };
-  });
-}
+export type PreparedCandidateExecution =
+  ReadyCandidateExecution | InvalidActivationCandidateExecution;
 
-export function prepareCandidateExecution(
+function prepareCandidateBase(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
   targetCandidate: TargetCandidate | null,
-): PreparedCandidateExecution {
-  const {
-    baseInput,
-    scenario,
-    attackerTraits,
-    attackerPredicates,
-    operations,
-    compileProjections,
-  } = prepared;
+): PreparedCandidateBase {
+  const { baseInput, scenario, operations, compileProjections } = prepared;
   const materialized = targetCandidate
     ? materializeTargetCandidate(
         baseInput,
@@ -168,10 +75,27 @@ export function prepareCandidateExecution(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
   const proc = decisionsWithProcSelections(scenarioDecisions, operations, resolvedInputs.values);
-  const decisions = proc.decisions;
-  const activation = buildActivationContext(scenario.activationFacts, operations, decisions);
-  const activationContext =
-    activation.status === 'valid' ? activation.context : emptyActivationContext();
+  return {
+    candidateInput,
+    targetFacts,
+    decisions: proc.decisions,
+    resolvedCompileProjections: resolveCompileProjections(
+      compileProjections,
+      proc.decisions,
+      new Set(),
+    ),
+    procSelectionIssues: proc.issues,
+  };
+}
+
+function prepareExecutableCandidate(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+  base: PreparedCandidateBase,
+  activationContext: ActivationContext,
+): ReadyCandidateExecution {
+  const { scenario, attackerTraits, attackerPredicates, operations, compileProjections } = prepared;
+  const { candidateInput, targetFacts, decisions } = base;
   let state = createInitialBattleState(
     candidateInput,
     attackerTraits,
@@ -273,26 +197,36 @@ export function prepareCandidateExecution(
         ],
   );
   return {
-    candidateInput,
-    targetFacts,
+    ...base,
+    status: 'ready',
     state,
-    decisions,
     activations,
     activeDecisionSourceInstances,
     activeConditionConstraints,
     activeMutationConstraints,
     finalSelectedCardMutation,
-    constraintIssues: [
-      ...(activation.status === 'invalid' ? activation.issues : []),
-      ...(validation.status === 'satisfied' ? [] : [validation.issue]),
-    ],
+    constraintIssues: validation.status === 'satisfied' ? [] : [validation.issue],
     invalidDecisionKeys,
     resolvedCompileProjections: resolveCompileProjections(
       compileProjections,
       decisions,
       invalidDecisionKeys,
     ),
-    procSelectionIssues: proc.issues,
-    activationContextIssues: activation.status === 'invalid' ? activation.issues : [],
   };
+}
+
+export function prepareCandidateExecution(
+  prepared: PreparedOrderedScenario,
+  resolvedInputs: ResolvedCanonicalInputSet,
+  targetCandidate: TargetCandidate | null,
+): PreparedCandidateExecution {
+  const base = prepareCandidateBase(prepared, resolvedInputs, targetCandidate);
+  const activation = buildActivationContext(
+    prepared.scenario.activationFacts,
+    prepared.operations,
+    base.decisions,
+  );
+  if (activation.status === 'invalid')
+    return { ...base, status: 'invalidActivationContext', issues: activation.issues };
+  return prepareExecutableCandidate(prepared, resolvedInputs, base, activation.context);
 }

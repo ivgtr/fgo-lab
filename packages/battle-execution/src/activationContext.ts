@@ -179,9 +179,3 @@ export function buildActivationContext(
     ? { status: 'invalid', issues }
     : { status: 'valid', context: factSet.factSet };
 }
-
-export function emptyActivationContext(): ActivationContext {
-  const analysis = analyzeActivationFactSet([]);
-  if (analysis.status !== 'valid') throw new Error('empty_activation_context_invalid');
-  return analysis.factSet;
-}

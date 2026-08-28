@@ -20,9 +20,14 @@ describe('battle execution architecture', () => {
   it('keeps ordered execution stages within explicit responsibility boundaries', async () => {
     const limits = {
       'executionPlan.ts': 280,
+      'activationCondition.ts': 210,
+      'activationContext.ts': 190,
+      'candidateDecisions.ts': 110,
       'candidatePreparation.ts': 300,
       'candidateExecution.ts': 400,
       'candidateResult.ts': 200,
+      'candidateFailure.ts': 100,
+      'candidateProjection.ts': 100,
       'candidateComparison.ts': 80,
       'scenarioResult.ts': 100,
       'targetContext.ts': 230,

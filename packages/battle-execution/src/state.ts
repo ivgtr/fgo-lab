@@ -8,7 +8,6 @@ import type {
 } from './contracts';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
-import { emptyActivationContext } from './activationContext';
 
 export function cloneBattleState(state: BattleState): BattleState {
   return {
@@ -51,7 +50,7 @@ export function createInitialBattleState(
   resolvedInputValues: Readonly<Record<string, number>> = {},
   targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
   attackerPredicateAssertions: readonly TargetPredicateAssertion[] = [],
-  activationContext: BattleState['activationContext'] = emptyActivationContext(),
+  activationContext: BattleState['activationContext'],
 ): BattleState {
   const attacker = [...attackerTraits, 'cardNP'];
   return {

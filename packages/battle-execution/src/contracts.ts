@@ -212,7 +212,7 @@ export interface BattleState {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  activationContext: ActivationContext;
+  activationContext: ActivationContext | null;
   resolvedInputValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
