@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   evaluateConditionExpression,
-  type BattleState,
   type ConditionExpression,
   type EffectProjection,
+  type ExecutableBattleState,
   type TraitScope,
 } from './index';
 import { validateConstraintSet, type FixedConstraintFact } from './constraints';
 import { activationFactKey, analyzeActivationFactSet } from '@fgo-lab/schema';
 
-function state(target: readonly string[] = [], targetState: readonly string[] = []): BattleState {
+function state(
+  target: readonly string[] = [],
+  targetState: readonly string[] = [],
+): ExecutableBattleState {
   return {
     card: 'buster',
     traits: {
@@ -63,7 +66,7 @@ describe('condition expression properties', () => {
     ].sort((left, right) => activationFactKey(left).localeCompare(activationFactKey(right)));
     const activation = analyzeActivationFactSet(facts);
     if (activation.status !== 'valid') throw new Error('expected valid activation context');
-    const activated: BattleState = {
+    const activated: ExecutableBattleState = {
       ...state(),
       activationContext: activation.factSet,
     };

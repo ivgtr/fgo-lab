@@ -12,9 +12,9 @@ import {
 } from './decisionConditions';
 import type {
   BattleOperation,
-  BattleState,
   EffectDecision,
   ExecutionIssue,
+  ExecutableBattleState,
   TargetPredicateAssertion,
 } from './contracts';
 import type { PreparedOrderedScenario } from './executionTypes';
@@ -31,7 +31,7 @@ export interface CandidateSelections {
 }
 
 export interface CandidateConstraintResult {
-  state: BattleState;
+  state: ExecutableBattleState;
   constraintIssues: readonly ExecutionIssue[];
   invalidDecisionKeys: Set<string>;
 }
@@ -39,7 +39,7 @@ export interface CandidateConstraintResult {
 export function resolveCandidateSelections(
   prepared: PreparedOrderedScenario,
   decisions: ReadonlyMap<string, EffectDecision>,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): CandidateSelections {
   const { operations, scenario } = prepared;
   const conditionsByDecisionKey = collectDecisionConditions(operations);
@@ -95,7 +95,7 @@ export function resolveCandidateSelections(
 export function validateCandidateSelections(
   prepared: PreparedOrderedScenario,
   targetFacts: readonly TargetPredicateAssertion[],
-  initialState: BattleState,
+  initialState: ExecutableBattleState,
   selections: CandidateSelections,
 ): CandidateConstraintResult {
   const { operations, scenario } = prepared;

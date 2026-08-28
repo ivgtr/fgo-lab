@@ -1,11 +1,15 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type {
+  ActivationContext,
+  BattleExecutionResult,
+  BattleExecutionState,
   BattleOperation,
-  BattleState,
   ConditionExpression,
   EffectDecision,
   EffectProjection,
+  ExecutableBattleState,
   OperationResult,
+  RejectedBattleState,
   WorldFactAssertion,
 } from './index';
 import { canonicalExclusiveGroup } from './index';
@@ -111,7 +115,16 @@ describe('ordered battle execution contracts', () => {
       | 'executeNpDamage'
     >();
     expectTypeOf<BattleOperation>().not.toHaveProperty('servantId');
-    expectTypeOf<BattleState>().not.toHaveProperty('servantId');
+    expectTypeOf<ExecutableBattleState>().not.toHaveProperty('servantId');
+  });
+
+  it('keeps rejected activation state outside executable evaluator state', () => {
+    expectTypeOf<ExecutableBattleState['activationContext']>().toEqualTypeOf<ActivationContext>();
+    expectTypeOf<OperationResult['state']>().toEqualTypeOf<ExecutableBattleState>();
+    expectTypeOf<BattleExecutionState>().toEqualTypeOf<
+      ExecutableBattleState | RejectedBattleState
+    >();
+    expectTypeOf<BattleExecutionResult['state']>().toEqualTypeOf<BattleExecutionState>();
   });
 
   it('projects visibility and controls without parsing explanations', () => {

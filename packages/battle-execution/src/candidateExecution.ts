@@ -2,9 +2,9 @@ import { QUANTITY_FACT_DOMAINS, type DamageResolutionInput } from '@fgo-lab/sche
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import type {
   BattleOperation,
-  BattleState,
   EffectProjection,
   ExecutionIssue,
+  ExecutableBattleState,
   OperationResult,
 } from './contracts';
 import { activationRequirementsSatisfied, evaluateCondition } from './condition';
@@ -30,7 +30,7 @@ import { assembleInvalidActivationResult } from './candidateFailure';
 function applyNp(
   input: DamageResolutionInput,
   operation: Extract<BattleOperation, { kind: 'executeNpDamage' }>,
-  state: BattleState,
+  state: ExecutableBattleState,
   effectLocalConditionSatisfied: boolean,
 ): DamageResolutionInput {
   const attackerTraits = combinedTraitCounts(
@@ -80,7 +80,7 @@ function effectOperationGroups(operations: readonly BattleOperation[]): BattleOp
 
 function evaluateConditionAgainstKnownFacts(
   operation: BattleOperation,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): boolean | null {
   const evaluated = evaluateCondition(operation.condition, state);
   if (evaluated !== null) return evaluated;

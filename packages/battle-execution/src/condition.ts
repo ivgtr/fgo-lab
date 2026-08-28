@@ -1,5 +1,5 @@
 import type { TraitCondition, TraitReadPolicy } from '@fgo-lab/master-data';
-import type { BattleState, ConditionExpression, TraitScope } from './contracts';
+import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
@@ -119,14 +119,9 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
   return !['always', 'card', 'inputQuantity'].includes(condition.kind);
 }
 
-function requiredActivationContext(state: BattleState) {
-  if (state.activationContext === null) throw new Error('activation_context_unavailable');
-  return state.activationContext;
-}
-
 export function evaluateCondition(
   condition: ConditionExpression,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
     const readScopes = traitConditionReadScopes(scope);
@@ -174,12 +169,12 @@ export function evaluateCondition(
     case 'card':
       return state.card === condition.card;
     case 'choice': {
-      return evaluateActivationRequirement(condition, requiredActivationContext(state));
+      return evaluateActivationRequirement(condition, state.activationContext);
     }
     case 'operationTrigger':
-      return evaluateActivationRequirement(condition, requiredActivationContext(state));
+      return evaluateActivationRequirement(condition, state.activationContext);
     case 'sourceQuantity':
-      return evaluateActivationRequirement(condition, requiredActivationContext(state));
+      return evaluateActivationRequirement(condition, state.activationContext);
     case 'quantity': {
       if (condition.subjectId !== undefined) return null;
       const actual = state.quantities[condition.quantity];
@@ -216,7 +211,7 @@ export function evaluateCondition(
 
 export function activationRequirementsSatisfied(
   condition: ConditionExpression,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): boolean {
   if (
     condition.kind === 'choice' ||

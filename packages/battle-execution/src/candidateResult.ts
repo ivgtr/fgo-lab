@@ -1,5 +1,5 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import type { BattleState, ExecutionIssue, OperationResult } from './contracts';
+import type { ExecutableBattleState, ExecutionIssue, OperationResult } from './contracts';
 import { targetResolutionIssues } from './executionIssues';
 import type { ReadyCandidateExecution } from './candidatePreparation';
 import { attachActivationSources } from './candidateProjection';
@@ -15,7 +15,7 @@ function executionIssues(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
   candidate: ReadyCandidateExecution,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): ExecutionIssue[] {
   return [
     ...targetResolutionIssues(prepared.targetResolution),
@@ -49,7 +49,7 @@ export function assembleCandidateResult({
   prepared: PreparedOrderedScenario;
   resolvedInputs: ResolvedCanonicalInputSet;
   candidate: ReadyCandidateExecution;
-  state: BattleState;
+  state: ExecutableBattleState;
   input: DamageResolutionInput;
   results: readonly OperationResult[];
 }): OrderedScenarioExecution {

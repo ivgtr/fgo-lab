@@ -1,6 +1,6 @@
 import type {
   BattleOperation,
-  BattleState,
+  ExecutableBattleState,
   ConditionExpression,
   EffectDecision,
 } from './contracts';
@@ -23,7 +23,7 @@ export function collectDecisionConditions(
 export function resolveSatisfiedDecisionKeys(
   decisions: ReadonlyMap<string, EffectDecision>,
   conditionsByDecisionKey: ReadonlyMap<string, readonly ConditionExpression[]>,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): ReadonlySet<string> {
   return new Set(
     [...decisions].flatMap(([decisionKey, decision]) => {
@@ -48,7 +48,7 @@ export function resolveSatisfiedDecisionKeys(
 export function assumedDecisionConstraints(
   decisions: readonly EffectDecision[],
   conditionsByDecisionKey: ReadonlyMap<string, readonly ConditionExpression[]>,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): readonly SatisfiableConditionConstraint[] {
   return decisions.flatMap((decision) => {
     const expressions = conditionsByDecisionKey.get(decision.decisionKey);

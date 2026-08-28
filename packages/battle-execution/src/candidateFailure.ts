@@ -7,7 +7,7 @@ import type {
   PreparedOrderedScenario,
   ResolvedCanonicalInputSet,
 } from './executionTypes';
-import { createInitialBattleState } from './state';
+import { createRejectedBattleState } from './state';
 
 export function assembleInvalidActivationResult({
   prepared,
@@ -18,7 +18,7 @@ export function assembleInvalidActivationResult({
   resolvedInputs: ResolvedCanonicalInputSet;
   candidate: InvalidActivationCandidateExecution;
 }): OrderedScenarioExecution {
-  const state = createInitialBattleState(
+  const state = createRejectedBattleState(
     candidate.candidateInput,
     prepared.attackerTraits,
     resolvedInputs.values,
@@ -28,7 +28,6 @@ export function assembleInvalidActivationResult({
       predicate,
       present: true,
     })),
-    null,
   );
   const projections = attachActivationSources(prepared, candidate.resolvedCompileProjections);
   const issues = [

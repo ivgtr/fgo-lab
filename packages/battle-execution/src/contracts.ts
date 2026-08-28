@@ -198,7 +198,7 @@ export interface AppliedModifier {
   order: number;
 }
 
-export interface BattleState {
+export interface BattleStateBase {
   card: CardType;
   traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
   actorPredicates: Record<
@@ -212,7 +212,6 @@ export interface BattleState {
     targetRarity: number | null;
     battlePointPhase: number | null;
   };
-  activationContext: ActivationContext | null;
   resolvedInputValues: Readonly<Record<string, number>>;
   modifiers: readonly AppliedModifier[];
   modifierRates: Partial<Record<ModifierKind, number>>;
@@ -221,6 +220,16 @@ export interface BattleState {
   evidence: readonly OperationEvidence[];
   unresolved: readonly ExecutionIssue[];
 }
+
+export interface ExecutableBattleState extends BattleStateBase {
+  activationContext: ActivationContext;
+}
+
+export interface RejectedBattleState extends BattleStateBase {
+  activationContext: null;
+}
+
+export type BattleExecutionState = ExecutableBattleState | RejectedBattleState;
 
 export type ActivationContext = AnalyzedActivationFactSet;
 
@@ -234,7 +243,7 @@ export type WorldFactAssertion = {
   decisionKey: string;
   fact:
     | { kind: 'trait'; scope: TraitScope; trait: string; present: boolean }
-    | { kind: 'quantity'; quantity: keyof BattleState['quantities']; value: number };
+    | { kind: 'quantity'; quantity: keyof BattleStateBase['quantities']; value: number };
 };
 
 export type TargetPredicateAssertion = {
@@ -306,12 +315,12 @@ export type ConditionConstraintConflict =
   | { kind: 'traitPolarity'; scope: TraitScope; trait: string }
   | {
       kind: 'quantityEquality';
-      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `input:${string}`;
+      quantity: keyof BattleStateBase['quantities'] | 'battlePointRate' | `input:${string}`;
       values: readonly number[];
     }
   | {
       kind: 'quantityRange';
-      quantity: keyof BattleState['quantities'] | 'battlePointRate' | `input:${string}`;
+      quantity: keyof BattleStateBase['quantities'] | 'battlePointRate' | `input:${string}`;
       ranges: readonly { min: number; max: number }[];
     }
   | { kind: 'cardMismatch'; cards: readonly CardType[] }
@@ -412,13 +421,13 @@ export interface OperationResult {
   operation: BattleOperation;
   outcome: OperationOutcome;
   condition: 'satisfied' | 'unsatisfied' | 'unresolved';
-  state: BattleState;
+  state: ExecutableBattleState;
   projection: EffectProjection;
   issue: ExecutionIssue | null;
 }
 
 export interface BattleExecutionResult {
-  state: BattleState;
+  state: BattleExecutionState;
   operations: readonly OperationResult[];
   projections: readonly EffectProjection[];
   precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';

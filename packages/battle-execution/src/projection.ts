@@ -1,10 +1,10 @@
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
-  BattleState,
   ConditionExpression,
   EffectDecision,
   EffectProjection,
+  ExecutableBattleState,
   OperationResult,
   OperationSource,
 } from './contracts';
@@ -41,7 +41,7 @@ export function selectionGroupsForCondition(
 
 export function resolveModifierValue(
   operation: Extract<BattleOperation, { kind: 'addModifier' }>,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): number | null {
   const expression = operation.valueExpression;
   if (!expression) return operation.valuePermille;
@@ -271,7 +271,7 @@ function effectTargetContext(
 
 export function projectAtDamageEvaluation(
   result: OperationResult,
-  finalState: BattleState,
+  finalState: ExecutableBattleState,
 ): EffectProjection {
   if (
     result.operation.kind !== 'addModifier' ||

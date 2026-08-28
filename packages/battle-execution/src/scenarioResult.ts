@@ -1,10 +1,10 @@
-import type { BattleState } from './contracts';
+import type { BattleExecutionState } from './contracts';
 import type { OrderedScenarioExecution, PreparedOrderedScenario } from './executionTypes';
 
-function redactRelativeTargetWitnesses(
+function redactRelativeTargetWitnesses<T extends BattleExecutionState>(
   prepared: PreparedOrderedScenario,
-  state: BattleState,
-): BattleState {
+  state: T,
+): T {
   const { targetContext } = prepared.scenario;
   if (targetContext.class.kind === 'concrete' && targetContext.attribute.kind === 'concrete')
     return state;
@@ -22,7 +22,7 @@ function redactRelativeTargetWitnesses(
         }),
       ),
     },
-  };
+  } as T;
 }
 
 export function assembleAmbiguousTargetResult(
@@ -52,7 +52,6 @@ export function assembleEquivalentTargetResult(
   execution: OrderedScenarioExecution,
 ): OrderedScenarioExecution {
   const { targetContext } = prepared.scenario;
-  const redactState = (state: BattleState) => redactRelativeTargetWitnesses(prepared, state);
   return {
     ...execution,
     input: {
@@ -66,10 +65,10 @@ export function assembleEquivalentTargetResult(
             : 'unknown',
       },
     },
-    state: redactState(execution.state),
+    state: redactRelativeTargetWitnesses(prepared, execution.state),
     operations: execution.operations.map((result) => ({
       ...result,
-      state: redactState(result.state),
+      state: redactRelativeTargetWitnesses(prepared, result.state),
     })),
   };
 }

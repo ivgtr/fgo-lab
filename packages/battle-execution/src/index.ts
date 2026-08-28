@@ -1,9 +1,11 @@
 export type {
   ActorScope,
+  ActivationContext,
   AppliedModifier,
   BattleExecutionResult,
+  BattleExecutionState,
   BattleOperation,
-  BattleState,
+  BattleStateBase,
   CanonicalExclusiveGroup,
   CardType,
   ConditionConstraintConflict,
@@ -13,6 +15,7 @@ export type {
   EffectProjection,
   ExecutionIssue,
   ExecutionPhase,
+  ExecutableBattleState,
   ModifierKind,
   OperationDecisionPlan,
   OperationEvidence,
@@ -20,6 +23,7 @@ export type {
   OperationResult,
   OperationSource,
   ProjectionExplanation,
+  RejectedBattleState,
   TraitScope,
   WorldFactAssertion,
 } from './contracts';

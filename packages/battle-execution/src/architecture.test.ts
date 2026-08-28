@@ -73,6 +73,19 @@ describe('battle execution architecture', () => {
     expect(execution).toContain("candidate.status === 'invalidActivationContext'");
   });
 
+  it('keeps rejected activation state outside executable evaluators', async () => {
+    const contracts = await source('packages/battle-execution/src/contracts.ts');
+    const condition = await source('packages/battle-execution/src/condition.ts');
+    const constraints = await source('packages/battle-execution/src/constraints.ts');
+    const failure = await source('packages/battle-execution/src/candidateFailure.ts');
+    expect(contracts).not.toMatch(/activationContext:\s*ActivationContext\s*\|\s*null/);
+    expect(contracts).toContain('type BattleExecutionState =');
+    expect(condition).not.toContain('activation_context_unavailable');
+    expect(constraints).not.toContain('activation_context_unavailable');
+    expect(failure).toContain('createRejectedBattleState');
+    expect(failure).not.toContain('createInitialBattleState');
+  });
+
   it('keeps Atlas vocabulary outside runtime target semantics', async () => {
     for (const path of [
       'packages/battle-execution/src/targetContext.ts',

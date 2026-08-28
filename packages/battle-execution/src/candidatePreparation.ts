@@ -2,10 +2,10 @@ import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
   ActivationContext,
   BattleOperation,
-  BattleState,
   EffectDecision,
   EffectProjection,
   ExecutionIssue,
+  ExecutableBattleState,
   TargetPredicateAssertion,
 } from './contracts';
 import { buildActivationContext } from './activationContext';
@@ -29,7 +29,7 @@ interface PreparedCandidateBase {
 
 export interface ReadyCandidateExecution extends PreparedCandidateBase {
   status: 'ready';
-  state: BattleState;
+  state: ExecutableBattleState;
   activations: ReadonlyMap<string, OperationActivation>;
   activeDecisionSourceInstances: ReadonlySet<string>;
   activeConditionConstraints: readonly SatisfiableConditionConstraint[];

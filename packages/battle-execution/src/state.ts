@@ -1,15 +1,17 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
   BattleOperation,
-  BattleState,
+  BattleStateBase,
+  ExecutableBattleState,
   ModifierKind,
+  RejectedBattleState,
   TargetPredicateAssertion,
   WorldFactAssertion,
 } from './contracts';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 
-export function cloneBattleState(state: BattleState): BattleState {
+export function cloneBattleState(state: ExecutableBattleState): ExecutableBattleState {
   return {
     ...state,
     traits: {
@@ -50,8 +52,45 @@ export function createInitialBattleState(
   resolvedInputValues: Readonly<Record<string, number>> = {},
   targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
   attackerPredicateAssertions: readonly TargetPredicateAssertion[] = [],
-  activationContext: BattleState['activationContext'],
-): BattleState {
+  activationContext: ExecutableBattleState['activationContext'],
+): ExecutableBattleState {
+  return createBattleStateBase(
+    input,
+    attackerTraits,
+    resolvedInputValues,
+    targetPredicateAssertions,
+    attackerPredicateAssertions,
+    activationContext,
+  );
+}
+
+export function createRejectedBattleState(
+  input: DamageResolutionInput,
+  attackerTraits: readonly string[],
+  resolvedInputValues: Readonly<Record<string, number>> = {},
+  targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
+  attackerPredicateAssertions: readonly TargetPredicateAssertion[] = [],
+): RejectedBattleState {
+  return createBattleStateBase(
+    input,
+    attackerTraits,
+    resolvedInputValues,
+    targetPredicateAssertions,
+    attackerPredicateAssertions,
+    null,
+  );
+}
+
+function createBattleStateBase<
+  TActivationContext extends ExecutableBattleState['activationContext'] | null,
+>(
+  input: DamageResolutionInput,
+  attackerTraits: readonly string[],
+  resolvedInputValues: Readonly<Record<string, number>>,
+  targetPredicateAssertions: readonly TargetPredicateAssertion[],
+  attackerPredicateAssertions: readonly TargetPredicateAssertion[],
+  activationContext: TActivationContext,
+): BattleStateBase & { activationContext: TActivationContext } {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
     card: input.cardType,
@@ -105,9 +144,9 @@ function traitFacts(traits: Iterable<string>): ReadonlyMap<string, boolean> {
 }
 
 export function applyWorldFacts(
-  state: BattleState,
+  state: ExecutableBattleState,
   assertions: readonly WorldFactAssertion[],
-): BattleState {
+): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   for (const assertion of assertions) {
     const fact = assertion.fact;
@@ -126,9 +165,9 @@ export function applyWorldFacts(
 }
 
 export function applyCardTypeMutation(
-  state: BattleState,
+  state: ExecutableBattleState,
   operation: Extract<BattleOperation, { kind: 'changeCardType' }>,
-): BattleState {
+): ExecutableBattleState {
   const candidate = cloneBattleState(state);
   candidate.card = operation.card;
   for (const trait of operation.stateTraits) {
@@ -182,7 +221,7 @@ function expandedTraits(counts: Readonly<Record<string, number>>): string[] {
 
 export function foldDamageInput(
   input: DamageResolutionInput,
-  state: BattleState,
+  state: ExecutableBattleState,
 ): DamageResolutionInput {
   const sums: Partial<Record<ModifierKind, number>> = {};
   for (const modifier of state.modifiers) {

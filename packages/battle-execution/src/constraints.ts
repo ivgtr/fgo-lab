@@ -1,6 +1,6 @@
 import type {
   ActorScope,
-  BattleState,
+  ExecutableBattleState,
   CardType,
   ConditionConstraintConflict,
   ConditionExpression,
@@ -818,10 +818,9 @@ export function validateConstraintSet({
 }
 
 export function fixedConstraintFactsFromState(
-  state: BattleState,
+  state: ExecutableBattleState,
   sourcePrefix = 'battle-state',
 ): FixedConstraintFact[] {
-  if (state.activationContext === null) throw new Error('activation_context_unavailable');
   const traits = (['attacker', 'attackerState', 'target', 'targetState', 'field'] as const).flatMap(
     (scope) =>
       [...state.traits[scope]].map(([trait, present]) => ({
@@ -837,7 +836,7 @@ export function fixedConstraintFactsFromState(
             sourceKey: `${sourcePrefix}:quantity:${quantity}`,
             fact: {
               kind: 'quantity' as const,
-              quantity: quantity as keyof BattleState['quantities'],
+              quantity: quantity as keyof ExecutableBattleState['quantities'],
               value,
             },
           },
