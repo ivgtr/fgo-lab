@@ -8,13 +8,56 @@ import type {
   OperationResult,
   OperationSource,
 } from './contracts';
-import type { TargetAttributeContext, TargetClassContext, TargetPredicate } from '@fgo-lab/schema';
+import {
+  activationChoiceGroupKey,
+  type TargetAttributeContext,
+  type TargetClassContext,
+  type TargetPredicate,
+} from '@fgo-lab/schema';
 import {
   canonicalExclusiveGroup,
   traitConditionConstraintScope,
   traitConstraintActorScope,
 } from './conditionSemantics';
-import { conditionRequiresQuantity } from './condition';
+import { conditionRequiresQuantity, evaluateCondition } from './condition';
+
+export function resolveOperationProjectionEvaluation(
+  operation: BattleOperation,
+  outcome: OperationResult['outcome'],
+  code: EffectProjection['explanation']['code'],
+  condition: boolean | null,
+  choice: EffectDecision | undefined,
+  state: ExecutableBattleState,
+  decisions: ReadonlyMap<string, EffectDecision>,
+) {
+  if (operation.kind !== 'executeNpDamage') return { outcome, code, condition, choice };
+  const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
+  const specialChoice = operation.specialAttackDecisionKey
+    ? decisions.get(operation.specialAttackDecisionKey)
+    : undefined;
+  const assumed =
+    specialCondition === null && specialChoice?.conditionSatisfaction === 'assumeSatisfied';
+  if (specialChoice?.operationEnabled === false)
+    return {
+      outcome: 'notApplied' as const,
+      code: 'disabled' as const,
+      condition: specialCondition,
+      choice: specialChoice,
+    };
+  if (specialCondition === true || assumed)
+    return {
+      outcome: 'applied' as const,
+      code: 'applied' as const,
+      condition: specialCondition,
+      choice: specialChoice,
+    };
+  return {
+    outcome: 'notApplied' as const,
+    code: specialCondition === false ? ('conditionNotMet' as const) : ('unresolved' as const),
+    condition: specialCondition,
+    choice: specialChoice,
+  };
+}
 
 export function selectionGroupsForCondition(
   condition: EffectProjection['explanation']['condition'],
@@ -23,7 +66,7 @@ export function selectionGroupsForCondition(
   if (condition.kind === 'choice')
     return [
       {
-        groupKey: `choice:${JSON.stringify([condition.source, condition.family])}`,
+        groupKey: `choice:${activationChoiceGroupKey(condition.source, condition.family)}`,
         candidateKey: condition.candidate,
       },
     ];
@@ -93,8 +136,18 @@ export function createOperationProjection(
   fallbackClass: TargetClassContext,
   fallbackAttribute: TargetAttributeContext,
 ): EffectProjection {
+  const projectionCondition =
+    operation.kind === 'executeNpDamage' ? operation.specialAttackCondition : operation.condition;
+  const projectionDecisionKey =
+    operation.kind === 'executeNpDamage'
+      ? operation.specialAttackDecisionKey
+      : operation.decisionKey;
+  const projectionDecisionPlan =
+    operation.kind === 'executeNpDamage'
+      ? ({ activation: 'user', condition: 'userMayAssume' } as const)
+      : operation.decisionPlan;
   const operationRequiresAttackerHp = conditionRequiresQuantity(
-    operation.condition,
+    projectionCondition,
     'attackerHpPermille',
   );
   const hidden =
@@ -107,7 +160,7 @@ export function createOperationProjection(
       ? resolvedModifierValue
       : operation.kind === 'changeModifierRate'
         ? operation.ratePermille
-        : operation.kind === 'executeNpDamage' && operation.condition.kind !== 'always'
+        : operation.kind === 'executeNpDamage' && projectionCondition.kind !== 'always'
           ? (operation.damage.parametersByOvercharge[operation.overcharge - 1]?.[
               operation.selectedNpLevel - 1
             ]?.correctionPermille ?? null)
@@ -115,9 +168,9 @@ export function createOperationProjection(
   const modifier =
     operation.kind === 'addModifier' || operation.kind === 'changeModifierRate'
       ? operation.modifier
-      : operation.kind === 'changeCardType'
-        ? 'cardTypeChange'
-        : operation.kind === 'executeNpDamage' && operation.condition.kind !== 'always'
+      : operation.kind === 'selectNoblePhantasmVariant'
+        ? 'npVariantSelection'
+        : operation.kind === 'executeNpDamage' && projectionCondition.kind !== 'always'
           ? 'npSpecial'
           : operation.kind === 'ignoreDefense'
             ? 'ignoreDefense'
@@ -133,14 +186,14 @@ export function createOperationProjection(
     condition === false &&
     choice === undefined &&
     !(
-      operation.decisionPlan.activation === 'user' ||
-      (preserveSiblingChoice && operation.decisionPlan.condition === 'userMayAssume')
+      projectionDecisionPlan.activation === 'user' ||
+      (preserveSiblingChoice && projectionDecisionPlan.condition === 'userMayAssume')
     );
   const userControllable =
     !knownImpossibleBeforeSelection &&
-    operation.decisionKey !== null &&
-    (operation.decisionPlan.activation === 'user' ||
-      (operation.decisionPlan.condition === 'userMayAssume' &&
+    projectionDecisionKey !== null &&
+    (projectionDecisionPlan.activation === 'user' ||
+      (projectionDecisionPlan.condition === 'userMayAssume' &&
         (!conditionSatisfiedInternally || choice !== undefined)));
   return {
     projectionKey: operation.decisionKey ?? operation.operationId,
@@ -187,25 +240,27 @@ export function createOperationProjection(
       (knownImpossibleBeforeSelection &&
         !(operationRequiresAttackerHp && operation.decisionPlan.activation === 'automatic')) ||
       code === 'cardMismatch' ||
-      (operation.kind === 'executeNpDamage' && operation.condition.kind === 'always')
+      (operation.kind === 'executeNpDamage' && projectionCondition.kind === 'always')
         ? 'hidden'
         : 'visible',
     controllability: userControllable ? 'user' : 'automatic',
-    selectionGroups: userControllable ? selectionGroupsForCondition(operation.condition) : [],
+    selectionGroups: userControllable ? selectionGroupsForCondition(projectionCondition) : [],
     decision: operationDecision(
-      operation,
+      projectionCondition,
+      projectionDecisionKey,
+      projectionDecisionPlan,
       userControllable,
       decisionSelected,
       fallbackClass,
       fallbackAttribute,
     ),
     conditionDecision:
-      operation.decisionPlan.condition === 'userMayAssume'
+      projectionDecisionPlan.condition === 'userMayAssume'
         ? (choice?.conditionSatisfaction ?? 'evaluate')
         : 'none',
     explanation: {
       code,
-      condition: operation.condition.kind === 'always' ? null : operation.condition,
+      condition: projectionCondition.kind === 'always' ? null : projectionCondition,
     },
   };
 }
@@ -228,25 +283,27 @@ function requiredTargetPredicates(condition: ConditionExpression): TargetPredica
 }
 
 function operationDecision(
-  operation: BattleOperation,
+  condition: ConditionExpression,
+  decisionKey: string | null,
+  decisionPlan: BattleOperation['decisionPlan'],
   userControllable: boolean,
   selected: boolean,
   fallbackClass: TargetClassContext,
   fallbackAttribute: TargetAttributeContext,
 ): EffectProjection['decision'] {
-  if (!userControllable || operation.decisionKey === null) return { state: 'none' };
-  const predicate = singleTargetPredicate(operation.condition);
+  if (!userControllable || decisionKey === null) return { state: 'none' };
+  const predicate = singleTargetPredicate(condition);
   if (!predicate)
     return {
       state: selected ? 'enabled' : 'disabled',
-      decisionKey: operation.decisionKey,
+      decisionKey,
       kind: 'effect',
-      plan: operation.decisionPlan,
-      ...effectTargetContext(operation.condition, fallbackClass, fallbackAttribute),
+      plan: decisionPlan,
+      ...effectTargetContext(condition, fallbackClass, fallbackAttribute),
     };
   return {
     state: selected ? 'enabled' : 'disabled',
-    decisionKey: operation.decisionKey,
+    decisionKey,
     kind: 'targetPredicate',
     target: predicate,
     fallbackClass: predicate.kind === 'classIdentity' ? fallbackClass : null,
@@ -273,6 +330,25 @@ export function projectAtDamageEvaluation(
   result: OperationResult,
   finalState: ExecutableBattleState,
 ): EffectProjection {
+  const selectedVariant = finalState.noblePhantasmVariant.ref;
+  const variantRefs = collectNoblePhantasmVariantConditions(result.operation.condition);
+  if (
+    variantRefs.length > 0 &&
+    !variantRefs.some(
+      (variant) =>
+        variant.actorFormId === selectedVariant.actorFormId &&
+        variant.noblePhantasmId === selectedVariant.noblePhantasmId,
+    )
+  )
+    return {
+      ...result.projection,
+      outcome: 'impossible',
+      visibility: 'hidden',
+      controllability: 'automatic',
+      decision: { state: 'none' },
+      conditionDecision: 'none',
+      explanation: { ...result.projection.explanation, code: 'conditionNotMet' },
+    };
   if (
     result.operation.kind !== 'addModifier' ||
     result.operation.card === null ||
@@ -288,6 +364,16 @@ export function projectAtDamageEvaluation(
     conditionDecision: 'none',
     explanation: { ...result.projection.explanation, code: 'cardMismatch' },
   };
+}
+
+function collectNoblePhantasmVariantConditions(
+  condition: ConditionExpression,
+): Extract<ConditionExpression, { kind: 'noblePhantasmVariant' }>['variant'][] {
+  if (condition.kind === 'noblePhantasmVariant') return [condition.variant];
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.flatMap(collectNoblePhantasmVariantConditions);
+  if (condition.kind === 'not') return collectNoblePhantasmVariantConditions(condition.expression);
+  return [];
 }
 
 export function traitCountProjections(

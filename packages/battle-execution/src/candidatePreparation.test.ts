@@ -61,6 +61,13 @@ const input = {
   damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
   ignoreDamageCut: false,
 } as unknown as DamageResolutionInput;
+const noblePhantasmVariant = {
+  kind: 'nonAttack' as const,
+  ref: { actorFormId: 'servant:1', noblePhantasmId: 'np:1' },
+  name: 'NP',
+  priority: 1,
+  effects: [],
+};
 
 describe('candidate activation preparation boundary', () => {
   it('returns a fail-closed result without running operations or mutating base state', () => {
@@ -78,6 +85,8 @@ describe('candidate activation preparation boundary', () => {
         activationFacts: [],
       },
       attackerTraits: [],
+      baseNoblePhantasmVariant: noblePhantasmVariant,
+      noblePhantasmVariants: [noblePhantasmVariant],
       attackerPredicates: [],
       operations: [operation],
       compileProjections: [],

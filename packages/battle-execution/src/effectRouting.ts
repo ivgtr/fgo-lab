@@ -38,6 +38,8 @@ export function operationRecipient(
 ): Recipient | null {
   if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
     return 'attacker';
+  if (operation.kind === 'selectNoblePhantasmVariant' || operation.kind === 'transformActorForm')
+    return origin === 'attacker' || origin === 'passive' ? 'attacker' : null;
   return operation.kind === 'nonDamage'
     ? null
     : resolveTargetPolicy(origin, operation.targetPolicy);
@@ -49,7 +51,8 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
     if (operation.kind === 'nonDamage') return false;
     const recipient = operationRecipient(operation, origin);
     if (operation.kind === 'contextMutation') return operation.damageRelevant && recipient !== null;
-    if (operation.kind === 'cardTypeMutation') return recipient !== null;
+    if (operation.kind === 'selectNoblePhantasmVariant' || operation.kind === 'transformActorForm')
+      return recipient !== null;
     if (operation.kind === 'unresolved') return operation.damageRelevant && recipient !== null;
     return (
       recipient === operation.expectedRecipient ||

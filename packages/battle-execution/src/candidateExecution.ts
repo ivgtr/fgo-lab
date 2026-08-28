@@ -3,6 +3,7 @@ import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import type {
   BattleOperation,
   EffectProjection,
+  EffectDecision,
   ExecutionIssue,
   ExecutableBattleState,
   OperationResult,
@@ -10,9 +11,14 @@ import type {
 import { activationRequirementsSatisfied, evaluateCondition } from './condition';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import { applyNpDamageOperation } from './npDamageOperation';
-import { createOperationProjection, resolveModifierValue } from './projection';
 import {
-  applyCardTypeMutation,
+  createOperationProjection,
+  resolveModifierValue,
+  resolveOperationProjectionEvaluation,
+} from './projection';
+import {
+  applyActorFormTransition,
+  applyTraitAddition,
   cloneBattleState,
   combinedTraitCounts,
   withoutTraitCount,
@@ -26,13 +32,25 @@ import type {
 import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
-
+import {
+  applyRuntimeNoblePhantasmVariantSelection,
+  needsMutationValidation,
+} from './variantSelection';
 function applyNp(
   input: DamageResolutionInput,
   operation: Extract<BattleOperation, { kind: 'executeNpDamage' }>,
   state: ExecutableBattleState,
-  effectLocalConditionSatisfied: boolean,
+  decisions: ReadonlyMap<string, EffectDecision>,
 ): DamageResolutionInput {
+  const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
+  const specialDecision = operation.specialAttackDecisionKey
+    ? decisions.get(operation.specialAttackDecisionKey)
+    : undefined;
+  const effectLocalConditionSatisfied =
+    specialDecision === undefined
+      ? specialCondition === true
+      : specialDecision.operationEnabled &&
+        (specialCondition === true || specialDecision.conditionSatisfaction === 'assumeSatisfied');
   const attackerTraits = combinedTraitCounts(
     state.traitCounts.attacker,
     state.traitCounts.attackerState,
@@ -57,7 +75,6 @@ function applyNp(
     effectLocalConditionSatisfied,
   });
 }
-
 function effectTransactionKey(operation: BattleOperation): string {
   const { source } = operation;
   return [
@@ -66,7 +83,6 @@ function effectTransactionKey(operation: BattleOperation): string {
     source.transactionGroupId ?? `${source.skillId}:${source.effectOccurrenceId}`,
   ].join(':');
 }
-
 function effectOperationGroups(operations: readonly BattleOperation[]): BattleOperation[][] {
   const groups: BattleOperation[][] = [];
   for (const operation of operations) {
@@ -77,7 +93,6 @@ function effectOperationGroups(operations: readonly BattleOperation[]): BattleOp
   }
   return groups;
 }
-
 function evaluateConditionAgainstKnownFacts(
   operation: BattleOperation,
   state: ExecutableBattleState,
@@ -90,12 +105,10 @@ function evaluateConditionAgainstKnownFacts(
   });
   return satisfiable.status === 'conflict' ? false : null;
 }
-
 function conditionResult(value: boolean | null): OperationResult['condition'] {
   if (value === null) return 'unresolved';
   return value ? 'satisfied' : 'unsatisfied';
 }
-
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
@@ -123,7 +136,8 @@ export function executeOrderedScenarioCandidate(
     activeDecisionSourceInstances,
     activeConditionConstraints,
     activeMutationConstraints,
-    finalSelectedCardMutation,
+    preappliedOperationIds,
+    supersededVariantTransactionKeys,
     invalidDecisionKeys,
   } = candidate;
   let { state } = candidate;
@@ -173,10 +187,10 @@ export function executeOrderedScenarioCandidate(
         outcome = 'notRelevant';
         code = 'disabled';
       } else if (
-        operation.kind === 'changeCardType' &&
-        finalSelectedCardMutation !== undefined &&
-        operation.operationId !== finalSelectedCardMutation.operationId &&
-        operation.order < finalSelectedCardMutation.order
+        supersededVariantTransactionKeys.has(
+          operation.source.transactionGroupId ??
+            `${operation.source.skillId}:${operation.source.effectOccurrenceId}`,
+        )
       ) {
         outcome = 'notRelevant';
         code = 'disabled';
@@ -233,16 +247,13 @@ export function executeOrderedScenarioCandidate(
       }
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
-        if (operation.kind === 'addTrait') {
-          (candidateState.traits[operation.scope] as Map<string, boolean>).set(
-            operation.trait,
-            true,
-          );
-          candidateState.traitCounts[operation.scope] = {
-            ...candidateState.traitCounts[operation.scope],
-            [operation.trait]:
-              (candidateState.traitCounts[operation.scope][operation.trait] ?? 0) + 1,
-          };
+        if (preappliedOperationIds.has(operation.operationId)) {
+          // Canonical form/variant context is derived before any damage-reachable operation.
+          // The operation remains applied evidence but is not committed twice.
+        } else if (operation.kind === 'addTrait') {
+          const changed = applyTraitAddition(candidateState, operation.scope, operation.trait);
+          candidateState.traits = changed.traits;
+          candidateState.traitCounts = changed.traitCounts;
         } else if (operation.kind === 'removeTrait') {
           (candidateState.traits[operation.scope] as Map<string, boolean>).set(
             operation.trait,
@@ -292,26 +303,34 @@ export function executeOrderedScenarioCandidate(
               operation.ratePermille,
             ),
           };
-        else if (operation.kind === 'changeCardType') {
-          const changed = applyCardTypeMutation(candidateState, operation);
-          candidateState.card = changed.card;
-          candidateState.traits = changed.traits;
-          candidateState.traitCounts = changed.traitCounts;
+        else if (operation.kind === 'transformActorForm') {
+          const changed = applyActorFormTransition(candidateState, operation);
+          candidateState.actorFormId = changed.actorFormId;
+        } else if (operation.kind === 'selectNoblePhantasmVariant') {
+          const selection = applyRuntimeNoblePhantasmVariantSelection(
+            candidateState,
+            operation,
+            prepared.noblePhantasmVariants,
+          );
+          if (selection.issue) {
+            outcome = 'unsupported';
+            code = 'unresolved';
+            issue = selection.issue;
+          } else {
+            candidateState.card = selection.state.card;
+            candidateState.noblePhantasmVariant = selection.state.noblePhantasmVariant;
+          }
         } else if (operation.kind === 'ignoreDefense') candidateState.ignoreDefense = true;
         else if (operation.kind === 'ignoreDamageCut') candidateState.ignoreDamageCut = true;
-        else input = applyNp(input, operation, state, localConditionSatisfied);
-        const mutationValidation =
-          operation.kind === 'addTrait' ||
-          operation.kind === 'removeTrait' ||
-          operation.kind === 'suppressInitialTrait' ||
-          operation.kind === 'changeCardType'
-            ? validateConstraintSet({
-                fixedFacts: fixedConstraintFactsFromState(candidateState, operation.operationId),
-                expressions: activeConditionConstraints
-                  .filter((constraint) => !invalidDecisionKeys.has(constraint.sourceKey))
-                  .concat(activeMutationConstraints),
-              })
-            : { status: 'satisfied' as const, alternativeCount: 1 };
+        else input = applyNp(input, operation, state, decisions);
+        const mutationValidation = needsMutationValidation(operation)
+          ? validateConstraintSet({
+              fixedFacts: fixedConstraintFactsFromState(candidateState, operation.operationId),
+              expressions: activeConditionConstraints
+                .filter((constraint) => !invalidDecisionKeys.has(constraint.sourceKey))
+                .concat(activeMutationConstraints),
+            })
+          : { status: 'satisfied' as const, alternativeCount: 1 };
         if (mutationValidation.status !== 'satisfied') {
           outcome = 'unsupported';
           code = 'unresolved';
@@ -324,6 +343,15 @@ export function executeOrderedScenarioCandidate(
         }
       }
       if (issue) groupIssues.push(issue);
+      const projected = resolveOperationProjectionEvaluation(
+        operation,
+        outcome,
+        code,
+        condition,
+        choice,
+        state,
+        decisions,
+      );
       results.push({
         operation,
         outcome,
@@ -331,10 +359,10 @@ export function executeOrderedScenarioCandidate(
         state: cloneBattleState(state),
         projection: createOperationProjection(
           operation,
-          outcome,
-          code,
-          condition,
-          choice,
+          projected.outcome,
+          projected.code,
+          projected.condition,
+          projected.choice,
           resolvedModifierValue,
           activeDecisionSourceInstances.has(operation.source.sourceInstanceId),
           {

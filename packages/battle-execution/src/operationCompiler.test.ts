@@ -82,6 +82,7 @@ function source(execution: EffectExecutionOperation[], limitBreak = false): Sour
     sourceId: '1',
     sourceName: '礼装',
     sourceTraits: [],
+    noblePhantasmVariant: null,
     skillId: 'ce:1',
     skillName: '礼装',
     effect: effect(execution),

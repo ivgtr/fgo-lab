@@ -3,6 +3,8 @@ import type {
   EffectProc,
   EffectProcSelection,
   ModifierValueExpression,
+  NoblePhantasmVariant,
+  NoblePhantasmVariantRef,
   NpDamageSpec,
   TraitReadPolicy,
 } from '@fgo-lab/master-data';
@@ -50,6 +52,7 @@ export type ConditionExpression =
       count: number;
     }
   | { kind: 'card'; card: CardType }
+  | { kind: 'noblePhantasmVariant'; variant: NoblePhantasmVariantRef }
   | ActivationFact
   | {
       kind: 'quantity';
@@ -178,7 +181,11 @@ export type BattleOperation =
       modifier: ModifierKind;
       ratePermille: number;
     })
-  | (OperationBase & { kind: 'changeCardType'; card: CardType; stateTraits: readonly string[] })
+  | (OperationBase & {
+      kind: 'selectNoblePhantasmVariant';
+      variant: NoblePhantasmVariantRef;
+    })
+  | (OperationBase & { kind: 'transformActorForm'; targetFormId: string })
   | (OperationBase & { kind: 'ignoreDefense' })
   | (OperationBase & { kind: 'ignoreDamageCut' })
   | (OperationBase & {
@@ -187,6 +194,8 @@ export type BattleOperation =
       overcharge: number;
       selectedNpLevel: number;
       npMultipliers: readonly [number, number, number, number, number];
+      specialAttackCondition: ConditionExpression;
+      specialAttackDecisionKey: string | null;
     });
 
 export interface AppliedModifier {
@@ -199,6 +208,8 @@ export interface AppliedModifier {
 }
 
 export interface BattleStateBase {
+  actorFormId: string;
+  noblePhantasmVariant: NoblePhantasmVariant;
   card: CardType;
   traits: Record<TraitScope, ReadonlyMap<string, boolean>>;
   actorPredicates: Record<
@@ -285,6 +296,16 @@ export type ExecutionIssue =
     }
   | { kind: 'unsupportedCondition'; operationId: string; detail: string }
   | { kind: 'unsupportedOperation'; operationId: string; detail: string }
+  | {
+      kind: 'invalidNoblePhantasmVariant';
+      operationId: string;
+      detail:
+        | 'unknownVariant'
+        | 'formMismatch'
+        | 'conflictingSelection'
+        | 'nonAttackDamage'
+        | 'partialActivation';
+    }
   | { kind: 'unsupportedParameter'; operationId: string; parameter: string }
   | ConstraintValidationIssue
   | { kind: 'unsafeLocalConditionDecision'; operationId: string; detail: string };
@@ -363,7 +384,7 @@ export interface EffectProjection {
   requiredQuantity: 'attackerHpPermille' | null;
   requiredQuantityOwner: 'attacker' | 'source' | null;
   requiredInputs: readonly CanonicalInputDefinition[];
-  modifier: ModifierKind | 'npSpecial' | 'cardTypeChange' | null;
+  modifier: ModifierKind | 'npSpecial' | 'npVariantSelection' | null;
   source: OperationSource;
   contributionScope: EffectContributionScope;
   activationSources: readonly OperationSource[];

@@ -1,4 +1,5 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
+import type { NoblePhantasmVariant } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
   BattleStateBase,
@@ -8,8 +9,8 @@ import type {
   TargetPredicateAssertion,
   WorldFactAssertion,
 } from './contracts';
-import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
+import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 
 export function cloneBattleState(state: ExecutableBattleState): ExecutableBattleState {
   return {
@@ -48,6 +49,7 @@ export function cloneBattleState(state: ExecutableBattleState): ExecutableBattle
 
 export function createInitialBattleState(
   input: DamageResolutionInput,
+  noblePhantasmVariant: NoblePhantasmVariant,
   attackerTraits: readonly string[],
   resolvedInputValues: Readonly<Record<string, number>> = {},
   targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
@@ -56,6 +58,7 @@ export function createInitialBattleState(
 ): ExecutableBattleState {
   return createBattleStateBase(
     input,
+    noblePhantasmVariant,
     attackerTraits,
     resolvedInputValues,
     targetPredicateAssertions,
@@ -66,6 +69,7 @@ export function createInitialBattleState(
 
 export function createRejectedBattleState(
   input: DamageResolutionInput,
+  noblePhantasmVariant: NoblePhantasmVariant,
   attackerTraits: readonly string[],
   resolvedInputValues: Readonly<Record<string, number>> = {},
   targetPredicateAssertions: readonly TargetPredicateAssertion[] = [],
@@ -73,6 +77,7 @@ export function createRejectedBattleState(
 ): RejectedBattleState {
   return createBattleStateBase(
     input,
+    noblePhantasmVariant,
     attackerTraits,
     resolvedInputValues,
     targetPredicateAssertions,
@@ -85,6 +90,7 @@ function createBattleStateBase<
   TActivationContext extends ExecutableBattleState['activationContext'] | null,
 >(
   input: DamageResolutionInput,
+  noblePhantasmVariant: NoblePhantasmVariant,
   attackerTraits: readonly string[],
   resolvedInputValues: Readonly<Record<string, number>>,
   targetPredicateAssertions: readonly TargetPredicateAssertion[],
@@ -93,6 +99,8 @@ function createBattleStateBase<
 ): BattleStateBase & { activationContext: TActivationContext } {
   const attacker = [...attackerTraits, 'cardNP'];
   return {
+    actorFormId: noblePhantasmVariant.ref.actorFormId,
+    noblePhantasmVariant,
     card: input.cardType,
     traits: {
       attacker: traitFacts(attacker),
@@ -164,29 +172,48 @@ export function applyWorldFacts(
   return candidate;
 }
 
-export function applyCardTypeMutation(
+export function applyNoblePhantasmVariantSelection(
   state: ExecutableBattleState,
-  operation: Extract<BattleOperation, { kind: 'changeCardType' }>,
+  variant: NoblePhantasmVariant,
 ): ExecutableBattleState {
   const candidate = cloneBattleState(state);
-  candidate.card = operation.card;
-  for (const trait of operation.stateTraits) {
-    const group = canonicalExclusiveGroup('attackerState', trait);
-    if (group)
-      for (const conflictingTrait of canonicalExclusiveTraits('attackerState', group)) {
-        if (conflictingTrait === trait) continue;
-        (candidate.traits.attackerState as Map<string, boolean>).set(conflictingTrait, false);
-        candidate.traitCounts.attackerState = withoutTraitCount(
-          candidate.traitCounts.attackerState,
-          conflictingTrait,
-        );
-      }
-    (candidate.traits.attackerState as Map<string, boolean>).set(trait, true);
-    candidate.traitCounts.attackerState = {
-      ...candidate.traitCounts.attackerState,
-      [trait]: Math.max(1, candidate.traitCounts.attackerState[trait] ?? 0),
-    };
-  }
+  candidate.noblePhantasmVariant = variant;
+  if (variant.kind === 'attack') candidate.card = variant.card;
+  return candidate;
+}
+
+export function applyActorFormTransition(
+  state: ExecutableBattleState,
+  operation: Extract<BattleOperation, { kind: 'transformActorForm' }>,
+): ExecutableBattleState {
+  const candidate = cloneBattleState(state);
+  candidate.actorFormId = operation.targetFormId;
+  return candidate;
+}
+
+export function applyTraitAddition(
+  state: ExecutableBattleState,
+  scope: Extract<BattleOperation, { kind: 'addTrait' }>['scope'],
+  trait: string,
+): ExecutableBattleState {
+  const candidate = cloneBattleState(state);
+  const group = canonicalExclusiveGroup(scope, trait);
+  if (group)
+    for (const conflictingTrait of canonicalExclusiveTraits(scope, group)) {
+      if (conflictingTrait === trait) continue;
+      (candidate.traits[scope] as Map<string, boolean>).set(conflictingTrait, false);
+      candidate.traitCounts[scope] = withoutTraitCount(
+        candidate.traitCounts[scope],
+        conflictingTrait,
+      );
+    }
+  (candidate.traits[scope] as Map<string, boolean>).set(trait, true);
+  candidate.traitCounts[scope] = {
+    ...candidate.traitCounts[scope],
+    [trait]: group
+      ? Math.max(1, candidate.traitCounts[scope][trait] ?? 0)
+      : (candidate.traitCounts[scope][trait] ?? 0) + 1,
+  };
   return candidate;
 }
 

@@ -3,6 +3,7 @@ import type { ConditionExpression, ExecutableBattleState, TraitScope } from './c
 import { traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
+import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
 
 const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
   stateSources: 'activeOnly',
@@ -109,14 +110,14 @@ export function containsUnsupportedCondition(condition: ConditionExpression): bo
 }
 
 export function isConditional(condition: ConditionExpression): boolean {
-  return condition.kind !== 'always' && condition.kind !== 'card';
+  return !['always', 'card', 'noblePhantasmVariant'].includes(condition.kind);
 }
 
 export function requiresUserAssumption(condition: ConditionExpression): boolean {
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some(requiresUserAssumption);
   if (condition.kind === 'not') return requiresUserAssumption(condition.expression);
-  return !['always', 'card', 'inputQuantity'].includes(condition.kind);
+  return !['always', 'card', 'noblePhantasmVariant', 'inputQuantity'].includes(condition.kind);
 }
 
 export function evaluateCondition(
@@ -168,6 +169,11 @@ export function evaluateCondition(
     }
     case 'card':
       return state.card === condition.card;
+    case 'noblePhantasmVariant':
+      return (
+        noblePhantasmVariantKey(state.noblePhantasmVariant.ref) ===
+        noblePhantasmVariantKey(condition.variant)
+      );
     case 'choice': {
       return evaluateActivationRequirement(condition, state.activationContext);
     }

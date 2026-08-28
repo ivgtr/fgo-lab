@@ -305,7 +305,16 @@ function operationKey(source: SourceEffect): string {
   return `${source.origin}:${source.sourceInstanceId}:${source.skillId}:${source.effect.occurrenceId}`;
 }
 
+function transactionGroupId(source: SourceEffect): string | null {
+  if (source.effect.choice)
+    return `${source.skillId}:choice:${source.effect.choice.family}:${String(source.effect.choice.candidate)}`;
+  if (source.effect.stateIdentity !== null)
+    return `${source.skillId}:${source.effect.stateIdentity.key}`;
+  return null;
+}
+
 function sourceIdentity(source: SourceEffect): OperationSource {
+  const groupId = transactionGroupId(source);
   return {
     origin: source.origin,
     sourceInstanceId: source.sourceInstanceId,
@@ -313,10 +322,24 @@ function sourceIdentity(source: SourceEffect): OperationSource {
     skillId: source.skillId,
     effectId: source.effect.id,
     effectOccurrenceId: source.effect.occurrenceId,
-    ...(source.effect.stateIdentity === null
-      ? {}
-      : { transactionGroupId: `${source.skillId}:${source.effect.stateIdentity.key}` }),
+    ...(groupId === null ? {} : { transactionGroupId: groupId }),
   };
+}
+
+function sourceCondition(source: SourceEffect): ConditionExpression {
+  const effect = effectCondition(
+    source.effect,
+    source.origin,
+    source.sourceId,
+    source.sourceInstanceId,
+    source.skillId,
+  );
+  return source.noblePhantasmVariant
+    ? combineConditions([
+        effect,
+        { kind: 'noblePhantasmVariant', variant: source.noblePhantasmVariant },
+      ])
+    : effect;
 }
 
 function baseOperation(
@@ -327,13 +350,7 @@ function baseOperation(
 ) {
   const key = decisionKey(source);
   const identity = operationKey(source);
-  const condition = effectCondition(
-    source.effect,
-    source.origin,
-    source.sourceId,
-    source.sourceInstanceId,
-    source.skillId,
-  );
+  const condition = sourceCondition(source);
   const plan = decisionPlan(condition);
   return {
     operationId: `${identity}:${suffix}`,
@@ -392,27 +409,21 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
   if (source.effect.triggerScope !== null) return { operations, unsupported };
-  const condition = effectCondition(
-    source.effect,
-    source.origin,
-    source.sourceId,
-    source.sourceInstanceId,
-    source.skillId,
-  );
+  const condition = sourceCondition(source);
   const key = decisionKey(source);
   let order = startOrder;
   const applicable: EffectExecutionOperation[] = [];
 
   for (const semantic of source.effect.execution) {
     if (semantic.kind === 'nonDamage') continue;
+    if (semantic.kind === 'selectNoblePhantasmVariant' || semantic.kind === 'transformActorForm') {
+      if (operationRecipient(semantic, source.origin)) applicable.push(semantic);
+      continue;
+    }
     const recipient = operationRecipient(semantic, source.origin);
     if (semantic.kind === 'contextMutation') {
       if (semantic.mutation === 'addQuantity' || semantic.scope === 'field' || recipient)
         applicable.push(semantic);
-      continue;
-    }
-    if (semantic.kind === 'cardTypeMutation') {
-      if (recipient) applicable.push(semantic);
       continue;
     }
     if (semantic.kind === 'unresolved') {
@@ -445,8 +456,8 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
       ? primary.modifier
       : primary?.kind === 'modifierRateChange'
         ? primary.modifier
-        : primary?.kind === 'cardTypeMutation'
-          ? 'cardTypeChange'
+        : primary?.kind === 'selectNoblePhantasmVariant'
+          ? 'npVariantSelection'
           : null;
 
   if (containsUnsupportedCondition(condition) && primary) {
@@ -559,17 +570,17 @@ export function compileEffect(source: SourceEffect, startOrder: number): Compile
           scope: recipient === 'attacker' ? 'attacker' : 'target',
         });
       else operations.push({ ...base, kind: semantic.mutation, scope });
-    } else if (semantic.kind === 'cardTypeMutation')
+    } else if (semantic.kind === 'selectNoblePhantasmVariant')
       operations.push({
-        ...baseOperation(
-          source,
-          semantic.contributionScope,
-          order++,
-          uniqueSuffix(`card:${semantic.card}`),
-        ),
-        kind: 'changeCardType',
-        card: semantic.card,
-        stateTraits: semantic.stateTraits,
+        ...baseOperation(source, 'personal', order++, uniqueSuffix('np-variant')),
+        kind: 'selectNoblePhantasmVariant',
+        variant: semantic.variant,
+      });
+    else if (semantic.kind === 'transformActorForm')
+      operations.push({
+        ...baseOperation(source, 'personal', order++, uniqueSuffix('actor-form')),
+        kind: 'transformActorForm',
+        targetFormId: semantic.targetFormId,
       });
     else if (semantic.kind === 'modifierRateChange')
       operations.push({
@@ -666,15 +677,8 @@ function makeProjection(
     source: sourceIdentity(source),
     contributionScope: resolveContributionScope(
       source.origin,
-      source.effect.execution.find(
-        (
-          operation,
-        ): operation is Exclude<
-          EffectExecutionOperation,
-          | { kind: 'nonDamage' | 'unresolved' }
-          | { kind: 'contextMutation'; mutation: 'addQuantity' }
-        > => 'contributionScope' in operation,
-      )?.contributionScope ?? 'personal',
+      source.effect.execution.find((operation) => 'contributionScope' in operation)
+        ?.contributionScope ?? 'personal',
     ),
     activationSources: [],
     executionSupport: 'unsupported',

@@ -127,8 +127,7 @@ export function evaluateNpDamageOperation(
           number,
         ],
       );
-    if (context.targetRarity === null)
-      return { status: 'unsupported', missingEvidence: 'missing_target_rarity' };
+    if (context.targetRarity === null) return resolved();
     const targetRarity = context.targetRarity;
     return resolved(
       baseMultipliers,

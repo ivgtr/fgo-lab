@@ -34,7 +34,10 @@ export interface ReadyCandidateExecution extends PreparedCandidateBase {
   activeDecisionSourceInstances: ReadonlySet<string>;
   activeConditionConstraints: readonly SatisfiableConditionConstraint[];
   activeMutationConstraints: readonly SatisfiableConditionConstraint[];
-  finalSelectedCardMutation: Extract<BattleOperation, { kind: 'changeCardType' }> | undefined;
+  finalSelectedNoblePhantasmVariant:
+    Extract<BattleOperation, { kind: 'selectNoblePhantasmVariant' }> | undefined;
+  preappliedOperationIds: ReadonlySet<string>;
+  supersededVariantTransactionKeys: ReadonlySet<string>;
   constraintIssues: readonly ExecutionIssue[];
   invalidDecisionKeys: Set<string>;
   resolvedCompileProjections: readonly EffectProjection[];
@@ -87,6 +90,7 @@ function prepareExecutableCandidate(
   const { candidateInput, targetFacts, decisions } = base;
   const initialState = createInitialBattleState(
     candidateInput,
+    prepared.baseNoblePhantasmVariant,
     attackerTraits,
     resolvedInputs.values,
     targetFacts,

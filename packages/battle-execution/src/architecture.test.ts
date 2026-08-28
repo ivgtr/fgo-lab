@@ -25,6 +25,7 @@ describe('battle execution architecture', () => {
       'candidateDecisions.ts': 110,
       'candidatePreparation.ts': 300,
       'candidateSelection.ts': 180,
+      'variantSelection.ts': 180,
       'candidateExecution.ts': 400,
       'candidateResult.ts': 200,
       'candidateFailure.ts': 100,

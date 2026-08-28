@@ -192,7 +192,7 @@ describe('NP damage operation', () => {
     });
   });
 
-  it('fails closed for every missing external handler input', () => {
+  it('uses the inactive rarity-special baseline and fails closed for required inputs', () => {
     const rarity = {
       ...base,
       kind: 'targetRarity',
@@ -206,9 +206,10 @@ describe('NP damage operation', () => {
       maximumBattlePointPhase: 10,
       parametersByOvercharge: matrix({ secondaryValuePermille: 1_000, correctionPermille: 100 }),
     } as NpDamageSpec;
-    expect(evaluateNpDamageOperation(rarity, context)).toEqual({
-      status: 'unsupported',
-      missingEvidence: 'missing_target_rarity',
+    expect(evaluateNpDamageOperation(rarity, context)).toMatchObject({
+      status: 'resolved',
+      npMultipliers: [300, 400, 500, 600, 700],
+      npSpecialMultipliers: [1, 1, 1, 1, 1],
     });
     expect(evaluateNpDamageOperation(battle, context)).toEqual({
       status: 'unsupported',

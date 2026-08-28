@@ -14,6 +14,14 @@ function state(
   targetState: readonly string[] = [],
 ): ExecutableBattleState {
   return {
+    actorFormId: 'fixture-form',
+    noblePhantasmVariant: {
+      kind: 'nonAttack',
+      ref: { actorFormId: 'fixture-form', noblePhantasmId: 'fixture-np' },
+      name: 'fixture NP',
+      priority: 1,
+      effects: [],
+    },
     card: 'buster',
     traits: {
       attacker: new Map(),

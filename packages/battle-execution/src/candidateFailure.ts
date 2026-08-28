@@ -20,6 +20,7 @@ export function assembleInvalidActivationResult({
 }): OrderedScenarioExecution {
   const state = createRejectedBattleState(
     candidate.candidateInput,
+    prepared.baseNoblePhantasmVariant,
     prepared.attackerTraits,
     resolvedInputs.values,
     candidate.targetFacts,

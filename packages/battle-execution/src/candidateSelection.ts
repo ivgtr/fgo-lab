@@ -1,5 +1,4 @@
 import { resolveOperationActivation } from './activation';
-import { activationRequirementsSatisfied, evaluateCondition } from './condition';
 import {
   fixedConstraintFactsFromState,
   validateConstraintSet,
@@ -18,24 +17,29 @@ import type {
   TargetPredicateAssertion,
 } from './contracts';
 import type { PreparedOrderedScenario } from './executionTypes';
-import { applyCardTypeMutation, applyWorldFacts } from './state';
+import { applyWorldFacts } from './state';
+import {
+  applySelectedNoblePhantasmContext,
+  resolveActiveVariantTransactions,
+  resolveSelectedNoblePhantasmVariant,
+} from './variantSelection';
 
 export type OperationActivation = ReturnType<typeof resolveOperationActivation>;
-
 export interface CandidateSelections {
   activations: ReadonlyMap<string, OperationActivation>;
   activeDecisionSourceInstances: ReadonlySet<string>;
   activeConditionConstraints: readonly SatisfiableConditionConstraint[];
   activeMutationConstraints: readonly SatisfiableConditionConstraint[];
-  finalSelectedCardMutation: Extract<BattleOperation, { kind: 'changeCardType' }> | undefined;
+  finalSelectedNoblePhantasmVariant:
+    Extract<BattleOperation, { kind: 'selectNoblePhantasmVariant' }> | undefined;
+  preappliedOperationIds: ReadonlySet<string>;
+  supersededVariantTransactionKeys: ReadonlySet<string>;
 }
-
 export interface CandidateConstraintResult {
   state: ExecutableBattleState;
   constraintIssues: readonly ExecutionIssue[];
   invalidDecisionKeys: Set<string>;
 }
-
 export function resolveCandidateSelections(
   prepared: PreparedOrderedScenario,
   decisions: ReadonlyMap<string, EffectDecision>,
@@ -70,28 +74,22 @@ export function resolveCandidateSelections(
         ? [{ sourceKey: operation.operationId, expression: operation.condition }]
         : [],
   );
-  const selectedCardMutations = operations.filter((operation) => {
-    if (operation.kind !== 'changeCardType') return false;
-    if (activations.get(operation.operationId)?.enabled !== true) return false;
-    if (operation.decisionPlan.condition !== 'userMayAssume') return true;
-    const evaluated = evaluateCondition(operation.condition, state);
-    return (
-      evaluated === true ||
-      (evaluated === null &&
-        operation.decisionKey !== null &&
-        decisions.get(operation.decisionKey)?.conditionSatisfaction === 'assumeSatisfied' &&
-        activationRequirementsSatisfied(operation.condition, state))
-    );
-  }) as Extract<BattleOperation, { kind: 'changeCardType' }>[];
+  const variantTransactions = resolveActiveVariantTransactions(
+    operations,
+    activations,
+    decisions,
+    state,
+  );
   return {
     activations,
     activeDecisionSourceInstances,
     activeConditionConstraints,
     activeMutationConstraints,
-    finalSelectedCardMutation: selectedCardMutations.at(-1),
+    finalSelectedNoblePhantasmVariant: variantTransactions.finalSelection,
+    preappliedOperationIds: variantTransactions.preappliedOperationIds,
+    supersededVariantTransactionKeys: variantTransactions.supersededTransactionKeys,
   };
 }
-
 export function validateCandidateSelections(
   prepared: PreparedOrderedScenario,
   targetFacts: readonly TargetPredicateAssertion[],
@@ -99,19 +97,34 @@ export function validateCandidateSelections(
   selections: CandidateSelections,
 ): CandidateConstraintResult {
   const { operations, scenario } = prepared;
-  const { finalSelectedCardMutation, activeConditionConstraints, activeMutationConstraints } =
-    selections;
+  const {
+    finalSelectedNoblePhantasmVariant,
+    activeConditionConstraints,
+    activeMutationConstraints,
+  } = selections;
+  const resolvedVariant = resolveSelectedNoblePhantasmVariant(
+    prepared,
+    finalSelectedNoblePhantasmVariant,
+  );
+  if (resolvedVariant.status === 'rejected')
+    return {
+      state: initialState,
+      constraintIssues: [resolvedVariant.issue],
+      invalidDecisionKeys: new Set(),
+    };
+  const selectedVariant = resolvedVariant.variant;
   const validation = validateConstraintSet({
     fixedFacts: [
       ...fixedConstraintFactsFromState(initialState, 'initial').filter(
-        ({ fact }) => !finalSelectedCardMutation || fact.kind !== 'card',
+        ({ fact }) => !finalSelectedNoblePhantasmVariant || fact.kind !== 'card',
       ),
-      ...(finalSelectedCardMutation
+      ...(finalSelectedNoblePhantasmVariant && selectedVariant.kind === 'attack'
         ? [
             {
               sourceKey:
-                finalSelectedCardMutation.decisionKey ?? finalSelectedCardMutation.operationId,
-              fact: { kind: 'card' as const, card: finalSelectedCardMutation.card },
+                finalSelectedNoblePhantasmVariant.decisionKey ??
+                finalSelectedNoblePhantasmVariant.operationId,
+              fact: { kind: 'card' as const, card: selectedVariant.card },
             },
           ]
         : []),
@@ -143,10 +156,22 @@ export function validateCandidateSelections(
       ]),
     };
   const withWorldFacts = applyWorldFacts(initialState, scenario.worldFactAssertions);
+  const applied = applySelectedNoblePhantasmContext(
+    withWorldFacts,
+    selectedVariant,
+    finalSelectedNoblePhantasmVariant,
+    operations,
+    selections.preappliedOperationIds,
+    selections.activations,
+  );
+  if (applied.issue)
+    return {
+      state: initialState,
+      constraintIssues: [applied.issue],
+      invalidDecisionKeys: new Set(),
+    };
   return {
-    state: finalSelectedCardMutation
-      ? applyCardTypeMutation(withWorldFacts, finalSelectedCardMutation)
-      : withWorldFacts,
+    state: applied.state,
     constraintIssues: [],
     invalidDecisionKeys: new Set(),
   };

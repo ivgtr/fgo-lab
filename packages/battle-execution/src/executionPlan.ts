@@ -1,13 +1,15 @@
 import {
-  getPrimaryNoblePhantasm,
+  getBaseNoblePhantasmGroup,
+  getBaseNoblePhantasmVariant,
   getPrimaryNpDamage,
   type MasterDataSnapshot,
   type NpDamageSpec,
+  type AttackNoblePhantasmVariant,
+  noblePhantasmVariantKey,
 } from '@fgo-lab/master-data';
 import { defaultTargetClassRelation, servantAttribute } from '@fgo-lab/calc-core';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { planOperationActivations } from './activation';
-import { containsUnsupportedCondition, requiresUserAssumption } from './condition';
 import type {
   BattleOperation,
   ConditionExpression,
@@ -20,7 +22,6 @@ import { compileEffect } from './operationCompiler';
 import { traitCountProjections } from './projection';
 import { collectOperationSources } from './sourceCollection';
 import { resolveTargetCandidates } from './targetContext';
-
 function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpression {
   const item = damage.parametersByOvercharge[overcharge - 1]?.[0];
   if (!item) return { kind: 'always' };
@@ -64,14 +65,6 @@ function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpress
     };
   return { kind: 'always' };
 }
-
-function conditionDecision(
-  condition: ConditionExpression,
-): 'unsupported' | 'userMayAssume' | 'evaluate' {
-  if (containsUnsupportedCondition(condition)) return 'unsupported';
-  return requiresUserAssumption(condition) ? 'userMayAssume' : 'evaluate';
-}
-
 function targetPredicateSelected(
   scenario: ResolvedScenario,
   target: Extract<ConditionExpression, { kind: 'targetPredicate' }>['predicate'],
@@ -88,26 +81,25 @@ function targetPredicateSelected(
     );
   return scenario.targetContext.families.some(({ familyId }) => familyId === target.familyId);
 }
-
 function compileNpDamageOperation(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
   master: MasterDataSnapshot,
   attacker: MasterDataSnapshot['servants'][number],
+  np: AttackNoblePhantasmVariant,
   damage: NpDamageSpec,
   operationOrder: number,
 ): { operation: BattleOperation; projections: readonly EffectProjection[] } {
-  const np = getPrimaryNoblePhantasm(attacker)!;
-  const condition = npCondition(damage, baseInput.overcharge);
-  const decisionPlan = {
-    activation: condition.kind === 'always' ? ('automatic' as const) : ('user' as const),
-    condition: conditionDecision(condition),
-  };
+  const variantKey = noblePhantasmVariantKey(np.ref);
+  const damageCondition = npCondition(damage, baseInput.overcharge);
+  const condition = { kind: 'noblePhantasmVariant' as const, variant: np.ref };
+  const specialAttackDecisionKey =
+    damageCondition.kind === 'always' ? null : `np:${variantKey}:${damage.functionId}:condition`;
   const source: OperationSource = {
     origin: 'np',
-    sourceInstanceId: `np:${attacker.id}`,
+    sourceInstanceId: `np:${variantKey}`,
     sourceId: attacker.id,
-    skillId: `np:${attacker.id}`,
+    skillId: `np:${variantKey}`,
     effectId: damage.functionId,
     effectOccurrenceId: `damage:${damage.functionId}`,
   };
@@ -149,17 +141,14 @@ function compileNpDamageOperation(
   return {
     projections,
     operation: {
-      operationId: `np:${attacker.id}:${damage.functionId}:damage`,
+      operationId: `np:${noblePhantasmVariantKey(np.ref)}:${damage.functionId}:damage`,
       order: operationOrder,
       phase: 'npDamage',
       source,
       contributionScope: 'personal',
       condition,
-      decisionKey:
-        decisionPlan.activation === 'user' || decisionPlan.condition === 'userMayAssume'
-          ? `np:${attacker.id}:${damage.functionId}:condition`
-          : null,
-      decisionPlan,
+      decisionKey: null,
+      decisionPlan: { activation: 'automatic', condition: 'evaluate' },
       sourceEnabled: true,
       enabledByDefault: true,
       gameActivation: 'npBeforeDamage',
@@ -181,10 +170,11 @@ function compileNpDamageOperation(
       npMultipliers: damage.parametersByOvercharge[baseInput.overcharge - 1]!.map(
         (item) => item.valuePermille / 10,
       ) as [number, number, number, number, number],
+      specialAttackCondition: damageCondition,
+      specialAttackDecisionKey,
     },
   };
 }
-
 export function compileExecutionPlan(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
@@ -199,19 +189,28 @@ export function compileExecutionPlan(
     compiledOperations.push(...compiled.operations);
     compileProjections.push(...compiled.unsupported);
   }
+  const baseVariant = attacker ? getBaseNoblePhantasmVariant(attacker) : undefined;
+  const variantGroup = attacker ? getBaseNoblePhantasmGroup(attacker) : undefined;
   const damage = attacker ? getPrimaryNpDamage(attacker) : undefined;
-  if (attacker && damage) {
-    const np = compileNpDamageOperation(
-      baseInput,
-      scenario,
-      master,
-      attacker,
-      damage,
-      compiledOperations.length,
-    );
-    compileProjections.push(...np.projections);
-    compiledOperations.push(np.operation);
-  }
+  if (attacker)
+    for (const variant of variantGroup?.variants ?? []) {
+      if (variant.kind !== 'attack') continue;
+      const variantDamage = variant.damage[0];
+      if (!variantDamage) throw new TypeError('attack_variant_damage_function_missing');
+      const np = compileNpDamageOperation(
+        baseInput,
+        scenario,
+        master,
+        attacker,
+        variant,
+        variantDamage,
+        compiledOperations.length,
+      );
+      compileProjections.push(...np.projections);
+      compiledOperations.push(np.operation);
+    }
+  if (!baseVariant)
+    throw new TypeError(`missing_base_noble_phantasm_variant:${baseInput.attackerId}`);
   const phaseOrder: Record<ExecutionPhase, number> = {
     passive: 0,
     attackerSkill: 1,
@@ -258,6 +257,8 @@ export function compileExecutionPlan(
     baseInput,
     scenario,
     attackerTraits: attacker?.traits ?? [],
+    baseNoblePhantasmVariant: baseVariant,
+    noblePhantasmVariants: variantGroup?.variants ?? [],
     attackerPredicates: attacker?.predicates ?? [],
     damage,
     operations,

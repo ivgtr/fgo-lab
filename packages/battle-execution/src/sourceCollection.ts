@@ -1,5 +1,7 @@
 import {
-  getPrimaryNoblePhantasm,
+  getBaseNoblePhantasmGroup,
+  noblePhantasmVariantKey,
+  type NoblePhantasmVariantRef,
   type MasterDataSnapshot,
   type MasterEffect,
 } from '@fgo-lab/master-data';
@@ -24,6 +26,7 @@ export interface SourceEffect {
   limitBreak: boolean;
   sourceEnabled: boolean;
   enabledByDefault: boolean;
+  noblePhantasmVariant: NoblePhantasmVariantRef | null;
 }
 
 export function collectOperationSources(
@@ -84,6 +87,7 @@ export function collectOperationSources(
         sourceEnabled,
         enabledByDefault:
           defaultInclusion === 'master' && effect.inclusionPolicy.default === 'include',
+        noblePhantasmVariant: null,
       });
   };
   for (const passive of attacker.passives)
@@ -131,6 +135,7 @@ export function collectOperationSources(
           limitBreak: scenario.craftEssence.limitBreak === 4,
           sourceEnabled: true,
           enabledByDefault: effect.inclusionPolicy.default === 'include',
+          noblePhantasmVariant: null,
         });
       }
   }
@@ -183,27 +188,32 @@ export function collectOperationSources(
             limitBreak: false,
             sourceEnabled: selected.enabled,
             enabledByDefault: effect.inclusionPolicy.default === 'include',
+            noblePhantasmVariant: null,
           });
       }
   }
-  const np = getPrimaryNoblePhantasm(attacker);
-  if (np)
-    for (const effect of np.effects.filter((candidate) => candidate.timing === 'beforeDamage'))
+  const npGroup = getBaseNoblePhantasmGroup(attacker);
+  for (const np of npGroup?.variants ?? []) {
+    const variantKey = noblePhantasmVariantKey(np.ref);
+    for (const effect of np.effects.filter((candidate) => candidate.timing === 'beforeDamage')) {
       sources.push({
         phase: 'beforeNpDamage',
         origin: 'np',
-        sourceInstanceId: `np:${attacker.id}`,
+        sourceInstanceId: `np:${variantKey}`,
         sourceId: attacker.id,
         sourceName: attacker.name,
         sourceTraits: attacker.traits,
-        skillId: `np:${attacker.id}`,
-        skillName: '宝具前効果',
+        skillId: `np:${variantKey}`,
+        skillName: np.name,
         effect,
         valueSetIndex: input.overcharge - 1,
         valueIndex: input.npLevel - 1,
         limitBreak: false,
         sourceEnabled: true,
         enabledByDefault: effect.inclusionPolicy.default === 'include',
+        noblePhantasmVariant: np.ref,
       });
+    }
+  }
   return { sources, issues };
 }

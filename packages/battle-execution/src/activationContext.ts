@@ -85,7 +85,9 @@ export function activationRequirementOwnerSelected(
   if (!owner.sourceEnabled) return false;
   if (owner.activation.kind === 'linkedDecisions')
     return owner.activation.links.some(
-      (link) => decisions.get(link.decisionKey)?.operationEnabled === true,
+      (link) =>
+        link.selection === 'operationEnabled' &&
+        decisions.get(link.decisionKey)?.operationEnabled === true,
     );
   if (owner.decisionKey === null) return owner.enabledByDefault;
   const decision = decisions.get(owner.decisionKey);

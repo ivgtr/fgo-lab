@@ -213,6 +213,10 @@ function compileExpression(
         ).map((card) => [{ kind: 'card' as const, card, sourceKey }]),
       };
     }
+    case 'noblePhantasmVariant':
+      return negated
+        ? { status: 'unsupported', reason: 'unsupportedCondition' }
+        : { status: 'supported', alternatives: [[]] };
     case 'choice':
       return negated
         ? { status: 'unsupported', reason: 'unsupportedCondition' }

@@ -1,6 +1,7 @@
 import type {
   CanonicalInputDefinition,
   CanonicalTargetDomain,
+  NoblePhantasmVariant,
   NpDamageSpec,
 } from '@fgo-lab/master-data';
 import type { CombatAttribute } from '@fgo-lab/calc-core';
@@ -23,6 +24,8 @@ export interface PreparedOrderedScenario {
   baseInput: DamageResolutionInput;
   scenario: ResolvedScenario;
   attackerTraits: readonly string[];
+  baseNoblePhantasmVariant: NoblePhantasmVariant;
+  noblePhantasmVariants: readonly NoblePhantasmVariant[];
   attackerPredicates: readonly TargetPredicate[];
   damage: NpDamageSpec | undefined;
   operations: readonly BattleOperation[];
