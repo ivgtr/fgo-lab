@@ -20,3 +20,10 @@ ADRは採用時点の判断を記録する。状態は`accepted`、重要な契�
 | 014 | effect interactionとseries presentation       |
 | 015 | effect inclusion、activation、proc semantics  |
 | 016 | ranking canonical scenarioと一覧presentation  |
+| 017 | canonical target context                     |
+| 018 | ranking comparison policy                    |
+| 019 | ranking contribution and execution plan      |
+| 020 | ranking condition provenance and field policy |
+| 021 | canonical activation witness                 |
+| 022 | activation structure cleanup                 |
+| 023 | canonical noble phantasm variant selection   |
