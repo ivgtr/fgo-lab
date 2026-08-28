@@ -41,7 +41,10 @@ export interface RankingExecutionPlan {
 interface RankingWorld {
   target: RankingWorldCandidate | null;
   field: RankingFieldCandidate;
+  choices: Readonly<Record<string, string>>;
 }
+
+const MAX_RANKING_CHOICE_CANDIDATES = 256;
 
 export function selectedKeysForScope(
   controls: readonly EffectControlViewModel[],
@@ -49,6 +52,7 @@ export function selectedKeysForScope(
   scope: 'ranking' | 'withoutArea',
   candidate: RankingWorldCandidate | null,
   master: MasterDataSnapshot,
+  choices: Readonly<Record<string, string>> = {},
 ): Set<string> {
   const selected = new Set<string>();
   for (const control of controls) {
@@ -64,21 +68,48 @@ export function selectedKeysForScope(
     )
       selected.add(control.key);
   }
-  const selectedCandidateByGroup = new Map<string, string>();
-  for (const control of controls)
-    if (selected.has(control.key))
-      for (const group of control.projection.selectionGroups)
-        selectedCandidateByGroup.set(group.groupKey, group.candidateKey);
   return new Set(
     controls.flatMap((control) =>
       selected.has(control.key) &&
-      control.projection.selectionGroups.every(
-        (group) => selectedCandidateByGroup.get(group.groupKey) === group.candidateKey,
-      )
+      control.projection.selectionGroups
+        .filter(({ groupKey }) => groupKey.startsWith('choice:'))
+        .every(
+          (group) =>
+            choices[group.groupKey] === undefined || choices[group.groupKey] === group.candidateKey,
+        )
         ? [control.key]
         : [],
     ),
   );
+}
+
+function createRankingChoiceCandidates(
+  controls: readonly EffectControlViewModel[],
+  selectedKeys: ReadonlySet<string>,
+): readonly Readonly<Record<string, string>>[] {
+  const candidatesByGroup = new Map<string, Set<string>>();
+  for (const control of controls) {
+    if (!selectedKeys.has(control.key)) continue;
+    for (const group of control.projection.selectionGroups) {
+      if (!group.groupKey.startsWith('choice:')) continue;
+      const candidates = candidatesByGroup.get(group.groupKey) ?? new Set<string>();
+      candidates.add(group.candidateKey);
+      candidatesByGroup.set(group.groupKey, candidates);
+    }
+  }
+  let worlds: Readonly<Record<string, string>>[] = [{}];
+  for (const [groupKey, candidates] of [...candidatesByGroup].sort(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
+    worlds = worlds.flatMap((world) =>
+      [...candidates]
+        .sort((left, right) => left.localeCompare(right))
+        .map((candidate) => ({ ...world, [groupKey]: candidate })),
+    );
+    if (worlds.length > MAX_RANKING_CHOICE_CANDIDATES)
+      throw new RangeError('ranking_choice_candidate_limit');
+  }
+  return worlds;
 }
 
 function scenarioForPolicy(
@@ -98,7 +129,14 @@ function scenarioForPolicy(
   const policy = compileRankingExecutionPolicy(
     world.targetContext,
     baseline.effectControls,
-    selectedKeysForScope(baseline.effectControls, conditions, scope, worldCandidate.target, master),
+    selectedKeysForScope(
+      baseline.effectControls,
+      conditions,
+      scope,
+      worldCandidate.target,
+      master,
+      worldCandidate.choices,
+    ),
   );
   return applyRankingExecutionPolicy(world, policy, baseline.effectInputs);
 }
@@ -127,7 +165,20 @@ export function compileRankingExecutionPlan(
     conditions.field === 'active',
   );
   const worlds: RankingWorld[] = targetWorlds.flatMap((target) =>
-    fieldWorlds.map((field) => ({ target, field })),
+    fieldWorlds.flatMap((field) => {
+      const selected = selectedKeysForScope(
+        baseline.effectControls,
+        conditions,
+        'ranking',
+        target,
+        master,
+      );
+      return createRankingChoiceCandidates(baseline.effectControls, selected).map((choices) => ({
+        target,
+        field,
+        choices,
+      }));
+    }),
   );
   const rankingScenarios = worlds.map((candidate) =>
     scenarioForPolicy(servant, canonical, baseline, conditions, 'ranking', candidate, master),
@@ -176,6 +227,10 @@ function rankingExternalFieldFactCount(execution: CalculationExecution): number 
     : 0;
 }
 
+function rankingActivationFactCount(execution: CalculationExecution): number {
+  return execution.scenario.mode === 'resolved' ? execution.scenario.activationDecisions.length : 0;
+}
+
 export function executeRankingScenarios(
   scenarios: readonly ResolvedScenario[],
   master: MasterDataSnapshot,
@@ -199,6 +254,7 @@ export function selectRankingExecutionIndex(
         right.average - left.average ||
         rankingExternalFieldFactCount(left.execution) -
           rankingExternalFieldFactCount(right.execution) ||
+        rankingActivationFactCount(left.execution) - rankingActivationFactCount(right.execution) ||
         JSON.stringify(left.execution.scenario).localeCompare(
           JSON.stringify(right.execution.scenario),
         ),

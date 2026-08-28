@@ -3,6 +3,7 @@ import type { TargetContext } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand, type EffectInputViewModel } from './canonicalInputs';
 import type { EffectControlViewModel } from './effectControls';
 import type { ResolvedScenario } from './rankingPolicy';
+import { setActivationFactsForProjection } from './activationContext';
 
 interface RankingEffectPolicy {
   projection: EffectProjection;
@@ -92,7 +93,8 @@ export function applyRankingExecutionPolicy(
 ): ResolvedScenario {
   return policy.effects.reduce(
     (current, { projection, included }) => {
-      const withProc = setChainedProc(current, projection, included, inputs);
+      const withActivation = setActivationFactsForProjection(current, projection, included);
+      const withProc = setChainedProc(withActivation, projection, included, inputs);
       if (projection.proc.kind === 'chainedRolls') return withProc;
       return setWorldFact(setDecision(withProc, projection, included), projection, included);
     },
