@@ -28,7 +28,7 @@ export type ActivationFactSetAnalysis =
   | { status: 'valid'; factSet: AnalyzedActivationFactSet }
   | { status: 'invalid'; issues: readonly ActivationFactSetIssue[] };
 
-function activationSourceKey(source: ActivationSourceRef): string {
+export function activationSourceKey(source: ActivationSourceRef): string {
   return JSON.stringify([source.origin, source.sourceInstanceId, source.skillId]);
 }
 
@@ -100,11 +100,7 @@ export function analyzeActivationFactSet(
     } else if (fact.kind === 'operationTrigger')
       operationTriggers.add(activationOperationTriggerKey(fact.source, fact.position));
     else {
-      const ownerKey = activationSourceQuantityKey(
-        fact.source,
-        fact.quantity,
-        fact.subjectId,
-      );
+      const ownerKey = activationSourceQuantityKey(fact.source, fact.quantity, fact.subjectId);
       const range = intersectQuantityRange(
         sourceQuantityRanges.get(ownerKey) ?? {
           min: Number.MIN_SAFE_INTEGER,

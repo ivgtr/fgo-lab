@@ -1,5 +1,6 @@
 import {
   activationFactKey,
+  activationSourceKey,
   analyzeActivationFactSet,
   type ActivationFact,
   type ActivationFactSetIssue,
@@ -110,7 +111,7 @@ function validateFactReachability(
   operations: readonly BattleOperation[],
 ): ExecutionIssue[] {
   const operationSources = new Set(
-    operations.map((operation) => JSON.stringify(activationSourceRefForOperation(operation))),
+    operations.map((operation) => activationSourceKey(activationSourceRefForOperation(operation))),
   );
   const requirementKeys = new Set(
     collectActivationRequirementOwners(operations).flatMap(({ facts: required }) =>
@@ -120,7 +121,7 @@ function validateFactReachability(
   const issues: ExecutionIssue[] = [];
   for (const fact of facts) {
     const factKey = activationFactKey(fact);
-    if (!operationSources.has(JSON.stringify(fact.source)))
+    if (!operationSources.has(activationSourceKey(fact.source)))
       issues.push({ kind: 'invalidActivationContext', detail: 'unknownFact', factKey });
     else if (!requirementKeys.has(factKey))
       issues.push({ kind: 'invalidActivationContext', detail: 'orphanFact', factKey });

@@ -48,6 +48,30 @@ describe('battle execution architecture', () => {
     expect(result).not.toContain('resolveOperationActivation');
   });
 
+  it('keeps activation semantics behind one analyzer and one fact-set implementation', async () => {
+    const condition = await source('packages/battle-execution/src/activationCondition.ts');
+    const context = await source('packages/battle-execution/src/activationContext.ts');
+    const application = await source('packages/calculation-application/src/activationContext.ts');
+    const factSet = await source('packages/schema/src/activationFactSet.ts');
+    expect(condition).toContain('analyzeActivationCondition');
+    expect(context).toContain('analyzeActivationCondition');
+    expect(context).toContain('analyzeActivationFactSet');
+    expect(context).not.toContain('JSON.stringify');
+    expect(application).toContain('analyzeActivationCondition');
+    expect(application).not.toMatch(/condition\.kind\s*===\s*['"](?:all|any|not)['"]/);
+    expect(factSet.split('\n').length).toBeLessThanOrEqual(150);
+  });
+
+  it('does not use an empty activation context as invalid preparation fallback', async () => {
+    const context = await source('packages/battle-execution/src/activationContext.ts');
+    const preparation = await source('packages/battle-execution/src/candidatePreparation.ts');
+    const execution = await source('packages/battle-execution/src/candidateExecution.ts');
+    expect(context).not.toContain('emptyActivationContext');
+    expect(preparation).toContain("status: 'invalidActivationContext'");
+    expect(preparation).not.toContain('emptyActivationContext');
+    expect(execution).toContain("candidate.status === 'invalidActivationContext'");
+  });
+
   it('keeps Atlas vocabulary outside runtime target semantics', async () => {
     for (const path of [
       'packages/battle-execution/src/targetContext.ts',

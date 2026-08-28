@@ -6,6 +6,7 @@ export {
   activationChoiceGroupKey,
   activationFactKey,
   activationOperationTriggerKey,
+  activationSourceKey,
   activationSourceQuantityKey,
   analyzeActivationFactSet,
   type ActivationFactSetAnalysis,
