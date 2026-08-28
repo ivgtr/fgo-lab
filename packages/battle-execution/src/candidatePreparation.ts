@@ -8,25 +8,18 @@ import type {
   ExecutionIssue,
   TargetPredicateAssertion,
 } from './contracts';
-import { resolveOperationActivation } from './activation';
 import { buildActivationContext } from './activationContext';
-import { activationRequirementsSatisfied, evaluateCondition } from './condition';
-import {
-  assumedDecisionConstraints,
-  collectDecisionConditions,
-  resolveSatisfiedDecisionKeys,
-} from './decisionConditions';
-import {
-  fixedConstraintFactsFromState,
-  validateConstraintSet,
-  type SatisfiableConditionConstraint,
-} from './constraints';
-import { applyCardTypeMutation, applyWorldFacts, createInitialBattleState } from './state';
+import type { SatisfiableConditionConstraint } from './constraints';
+import { createInitialBattleState } from './state';
 import { materializeTargetCandidate, type TargetCandidate } from './targetContext';
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
 import { decisionsWithProcSelections, resolveCompileProjections } from './candidateDecisions';
+import {
+  resolveCandidateSelections,
+  validateCandidateSelections,
+  type OperationActivation,
+} from './candidateSelection';
 
-export type OperationActivation = ReturnType<typeof resolveOperationActivation>;
 interface PreparedCandidateBase {
   candidateInput: DamageResolutionInput;
   targetFacts: readonly TargetPredicateAssertion[];
@@ -90,9 +83,9 @@ function prepareExecutableCandidate(
   base: PreparedCandidateBase,
   activationContext: ActivationContext,
 ): ReadyCandidateExecution {
-  const { scenario, attackerTraits, attackerPredicates, operations, compileProjections } = prepared;
+  const { attackerTraits, attackerPredicates, compileProjections } = prepared;
   const { candidateInput, targetFacts, decisions } = base;
-  let state = createInitialBattleState(
+  const initialState = createInitialBattleState(
     candidateInput,
     attackerTraits,
     resolvedInputs.values,
@@ -104,109 +97,17 @@ function prepareExecutableCandidate(
     })),
     activationContext,
   );
-  const conditionsByDecisionKey = collectDecisionConditions(operations);
-  const satisfiedDecisionKeys = resolveSatisfiedDecisionKeys(
-    decisions,
-    conditionsByDecisionKey,
-    state,
-  );
-  const activations = new Map(
-    operations.map((operation) => [
-      operation.operationId,
-      resolveOperationActivation(operation, decisions, satisfiedDecisionKeys),
-    ]),
-  );
-  const activeDecisionSourceInstances = new Set(
-    operations
-      .filter((operation) => activations.get(operation.operationId)!.activeDecisionKeys.length > 0)
-      .map((operation) => operation.source.sourceInstanceId),
-  );
-  const activeConditionConstraints = assumedDecisionConstraints(
-    scenario.effectDecisions,
-    conditionsByDecisionKey,
-    state,
-  );
-  const activeMutationConstraints: SatisfiableConditionConstraint[] = operations.flatMap(
-    (operation) => {
-      const activation = activations.get(operation.operationId)!;
-      return activation.assumesLocalCondition
-        ? [{ sourceKey: operation.operationId, expression: operation.condition }]
-        : [];
-    },
-  );
-  const selectedCardMutations = operations.filter((operation) => {
-    if (operation.kind !== 'changeCardType') return false;
-    if (activations.get(operation.operationId)?.enabled !== true) return false;
-    if (operation.decisionPlan.condition !== 'userMayAssume') return true;
-    const evaluated = evaluateCondition(operation.condition, state);
-    if (evaluated === true) return true;
-    return (
-      evaluated === null &&
-      operation.decisionKey !== null &&
-      decisions.get(operation.decisionKey)?.conditionSatisfaction === 'assumeSatisfied' &&
-      activationRequirementsSatisfied(operation.condition, state)
-    );
-  }) as Extract<BattleOperation, { kind: 'changeCardType' }>[];
-  const finalSelectedCardMutation = selectedCardMutations.at(-1);
-  const validation = validateConstraintSet({
-    fixedFacts: [
-      ...fixedConstraintFactsFromState(state, 'initial').filter(
-        ({ fact }) => !finalSelectedCardMutation || fact.kind !== 'card',
-      ),
-      ...(finalSelectedCardMutation
-        ? [
-            {
-              sourceKey:
-                finalSelectedCardMutation.decisionKey ?? finalSelectedCardMutation.operationId,
-              fact: { kind: 'card' as const, card: finalSelectedCardMutation.card },
-            },
-          ]
-        : []),
-      ...targetFacts.map((assertion) => ({
-        sourceKey: assertion.sourceKey,
-        fact: {
-          kind: 'targetPredicate' as const,
-          scope: 'target' as const,
-          predicate: assertion.predicate,
-          present: assertion.present,
-        },
-      })),
-      ...scenario.worldFactAssertions.map((assertion) => ({
-        sourceKey: assertion.decisionKey,
-        fact: assertion.fact,
-      })),
-    ],
-    expressions: [...activeConditionConstraints, ...activeMutationConstraints],
-  });
-  if (validation.status === 'satisfied') {
-    state = applyWorldFacts(state, scenario.worldFactAssertions);
-    if (finalSelectedCardMutation) state = applyCardTypeMutation(state, finalSelectedCardMutation);
-  }
-  const invalidDecisionKeys = new Set(
-    validation.status === 'satisfied'
-      ? []
-      : [
-          ...activeConditionConstraints.map((constraint) => constraint.sourceKey),
-          ...operations.flatMap(
-            (operation) => activations.get(operation.operationId)!.activeDecisionKeys,
-          ),
-        ],
-  );
+  const selections = resolveCandidateSelections(prepared, decisions, initialState);
+  const validated = validateCandidateSelections(prepared, targetFacts, initialState, selections);
   return {
     ...base,
     status: 'ready',
-    state,
-    activations,
-    activeDecisionSourceInstances,
-    activeConditionConstraints,
-    activeMutationConstraints,
-    finalSelectedCardMutation,
-    constraintIssues: validation.status === 'satisfied' ? [] : [validation.issue],
-    invalidDecisionKeys,
+    ...selections,
+    ...validated,
     resolvedCompileProjections: resolveCompileProjections(
       compileProjections,
       decisions,
-      invalidDecisionKeys,
+      validated.invalidDecisionKeys,
     ),
   };
 }
