@@ -40,6 +40,9 @@ entry identityを保存しない。
   - フローラ: `1002100:1002101` Quick non-attack
 - ranking対象servant: 420
 - `Servant × AttackTargetScope` entry: 422（single 177、all 245）
+- ranking entry distinct servant ID: 420
+- single-only: 175、all-only: 243、ranking上のdual-scope: 2
+- entry式: `175 + 243 + 2 × 2 = 422`
 - non-attack ranking entry: 0
 - unknown variant / partial commit / mixed variant: 0
 - calculator default / rankingのimplementation unsupported、意図しないinputRequired: 0
@@ -90,14 +93,21 @@ identityだけが修正された。承認済み4騎以外の既存calculated NP1
 同じscope内だけでdamage、外部仮定数、activation fact数、stable variant keyの順に候補を選ぶ。通常表示は
 single/allをdamage順に混在させ、filterは計算済み422 entryをpartitionするだけで再計算しない。
 
-両scopeを持つservantと採用variant:
+ranking上で両scope entryを持つservantと採用variant:
 
 | servant | single | all |
 | --- | --- | --- |
 | UDK－バーゲスト | `204900:204998` | `204900:204901` |
-| プトレマイオス | `205000:205001` | `205000:205002` |
-| メリュジーヌ | `304800:304801` | `304800:304802` |
 | 玉兎 | `2301100:2301101` | `2301100:2301198` |
+
+master inventory上ではプトレマイオスとメリュジーヌもsingle/all両方のattack variantを持つ。ただし今回の
+canonical masterには対応するselection operationまたはform transitionがなく、通常操作からactivation可能なのは
+baseのall variant（プトレマイオス`205000:205002`、メリュジーヌ`304800:304802`）だけである。このため両者は
+all-only entryであり、未選択variantをranking専用に有効化していない。calculator defaultも同じbase variantで
+calculatedとなる。プトレマイオスはNP1-5平均`24,129.550 / 32,172.895 / 36,194.570 / 38,205.400 /
+40,216.240`、混在270位・all 105位。メリュジーヌは`31,204.410 / 41,606.050 / 46,806.865 /
+49,407.275 / 52,007.690`、混在167位・all 25位で、いずれもranking detailをcalculatorで再実行したinput/resultが
+一致した。entry欠落やdamage・順位の修正は発生していない。
 
 NP1混在順位の修正は、玉兎 旧4位 → single 41位 / all 166位、UDK 旧287位 → single 54位 /
 all 288位、Space Ishtar 旧88位 → all 143位、BBドバイ 旧271位 → all 293位。scope内では玉兎
@@ -125,6 +135,7 @@ kernelは336.97、394.45、383.87 ops/sの3回を測定し、初回outlierを含
 ない。warm production profileはmaster read 81ms、schema parse 1,208ms、execution plan compile 2,106ms、
 variant candidate生成203ms、candidate execution 1,883ms、NP1-5 matrix 3,928ms、digest/serialization 13ms。
 生成候補は440で、scopeごとに420 servantsを再compileしていない。
+E4.1以後のproduction ranking suite性能baselineは63.65秒、+10%上限は70.02秒とする。
 
 ## Validation and VRT
 

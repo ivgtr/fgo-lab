@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  getBaseAttackNoblePhantasmVariant,
   getBaseNoblePhantasmGroup,
   getNoblePhantasmVariants,
   masterSnapshotSchema,
@@ -111,6 +112,37 @@ describe('production canonical ranking', () => {
     expect(new Set(ranking.rows.map(({ entryId }) => entryId)).size).toBe(422);
     expect(ranking.rows.filter(({ npTarget }) => npTarget === 'single')).toHaveLength(177);
     expect(ranking.rows.filter(({ npTarget }) => npTarget === 'all')).toHaveLength(245);
+    const expectedAttackServantIds = master.servants
+      .filter(getBaseAttackNoblePhantasmVariant)
+      .map(({ id }) => id)
+      .sort();
+    const scopesByServant = new Map<string, Set<'single' | 'all'>>();
+    for (const row of ranking.rows) {
+      const scopes = scopesByServant.get(row.servantId) ?? new Set();
+      scopes.add(row.npTarget);
+      scopesByServant.set(row.servantId, scopes);
+    }
+    const distinctEntryServantIds = [...scopesByServant.keys()].sort();
+    expect(distinctEntryServantIds).toEqual(expectedAttackServantIds);
+    expect(expectedAttackServantIds.filter((id) => !scopesByServant.has(id))).toEqual([]);
+    expect(distinctEntryServantIds.filter((id) => !expectedAttackServantIds.includes(id))).toEqual(
+      [],
+    );
+    const dualScopeServantIds = [...scopesByServant]
+      .filter(([, scopes]) => scopes.size === 2)
+      .map(([id]) => id)
+      .sort();
+    const singleOnlyCount = [...scopesByServant.values()].filter(
+      (scopes) => scopes.size === 1 && scopes.has('single'),
+    ).length;
+    const allOnlyCount = [...scopesByServant.values()].filter(
+      (scopes) => scopes.size === 1 && scopes.has('all'),
+    ).length;
+    expect(dualScopeServantIds).toEqual(['204900', '2301100']);
+    expect({ singleOnlyCount, allOnlyCount }).toEqual({ singleOnlyCount: 175, allOnlyCount: 243 });
+    expect(singleOnlyCount + allOnlyCount + dualScopeServantIds.length * 2).toBe(
+      ranking.rows.length,
+    );
     expect(
       ranking.rows
         .filter(({ servantId }) => servantId === '2301100')
