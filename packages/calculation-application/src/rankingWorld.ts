@@ -26,8 +26,12 @@ export interface RankingWorldCandidate {
   attribute: CanonicalTargetAttribute;
   familyIds: readonly CanonicalTargetFamilyId[];
   selections: Readonly<Record<string, string>>;
-  targetTraitFacts: Readonly<Record<string, boolean>>;
+  traitFacts: readonly RankingTraitFact[];
 }
+
+export type RankingTraitFact =
+  | { scope: 'target'; trait: string; present: boolean }
+  | { scope: 'targetState'; trait: string; present: boolean };
 
 function collectTargetPredicates(
   condition: EffectControlViewModel['projection']['explanation']['condition'],
@@ -42,29 +46,42 @@ function collectTargetPredicates(
 
 function collectTargetTraits(
   condition: EffectControlViewModel['projection']['explanation']['condition'],
-): string[] {
+): Omit<RankingTraitFact, 'present'>[] {
   if (!condition) return [];
-  if (condition.kind === 'trait' && condition.scope === 'target') return [condition.trait];
-  if (condition.kind === 'traitCount' && condition.scope === 'target') return [...condition.traits];
+  if (
+    condition.kind === 'trait' &&
+    (condition.scope === 'target' || condition.scope === 'targetState')
+  )
+    return [{ scope: condition.scope, trait: condition.trait }];
+  if (
+    condition.kind === 'traitCount' &&
+    (condition.scope === 'target' || condition.scope === 'targetState')
+  )
+    return condition.traits.map((trait) => ({
+      scope: condition.scope === 'targetState' ? ('targetState' as const) : ('target' as const),
+      trait,
+    }));
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.flatMap(collectTargetTraits);
   return condition.kind === 'not' ? collectTargetTraits(condition.expression) : [];
 }
 
-function traitFactCandidates(traits: readonly string[]): Readonly<Record<string, boolean>>[] {
+function traitFactCandidates(
+  traits: readonly Omit<RankingTraitFact, 'present'>[],
+): readonly RankingTraitFact[][] {
   if (2 ** traits.length > MAX_RANKING_WORLD_CANDIDATES)
     throw new RangeError(`ranking_world_candidate_limit:${String(2 ** traits.length)}`);
-  let candidates: Readonly<Record<string, boolean>>[] = [{}];
+  let candidates: readonly RankingTraitFact[][] = [[]];
   for (const trait of traits)
     candidates = candidates.flatMap((candidate) => [
-      { ...candidate, [trait]: false },
-      { ...candidate, [trait]: true },
+      [...candidate, { ...trait, present: false }],
+      [...candidate, { ...trait, present: true }],
     ]);
   return candidates.filter((candidate) => {
     const groups = new Set<string>();
-    for (const [trait, present] of Object.entries(candidate)) {
-      if (!present) continue;
-      const group = canonicalExclusiveGroup('target', trait);
+    for (const fact of candidate) {
+      if (!fact.present) continue;
+      const group = canonicalExclusiveGroup(fact.scope, fact.trait);
       if (group === null) continue;
       if (groups.has(group)) return false;
       groups.add(group);
@@ -121,6 +138,7 @@ export function createRankingWorldCandidates(
   master: MasterDataSnapshot,
   scenario: ResolvedScenario,
   specialControls: readonly EffectControlViewModel[],
+  plannedTargetStateTraits: ReadonlySet<string> = new Set(),
 ): RankingWorldCandidate[] {
   const predicates = specialControls.flatMap((control) =>
     collectTargetPredicates(control.projection.explanation.condition),
@@ -143,12 +161,17 @@ export function createRankingWorldCandidates(
     ),
   ].sort();
   const targetTraits = [
-    ...new Set(
-      specialControls.flatMap((control) =>
-        collectTargetTraits(control.projection.explanation.condition),
-      ),
-    ),
-  ].sort();
+    ...new Map(
+      specialControls
+        .flatMap((control) => collectTargetTraits(control.projection.explanation.condition))
+        .filter(
+          ({ scope, trait }) => scope !== 'targetState' || !plannedTargetStateTraits.has(trait),
+        )
+        .map((fact) => [`${fact.scope}:${fact.trait}`, fact]),
+    ).values(),
+  ].sort((left, right) =>
+    `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
+  );
   const relationClasses = targetClassCandidates(
     servant.classId,
     scenario.targetContext.class,
@@ -172,21 +195,20 @@ export function createRankingWorldCandidates(
     ]),
   ];
   const selections = selectionCandidates(specialControls);
-  const targetTraitFacts = traitFactCandidates(targetTraits);
-  const candidateCount =
-    classes.length * attributes.length * selections.length * targetTraitFacts.length;
+  const traitFacts = traitFactCandidates(targetTraits);
+  const candidateCount = classes.length * attributes.length * selections.length * traitFacts.length;
   if (candidateCount > MAX_RANKING_WORLD_CANDIDATES)
     throw new RangeError(`ranking_world_candidate_limit:${String(candidateCount)}`);
   return classes.flatMap((classId) =>
     attributes.flatMap((attribute) =>
       selections.flatMap((selected) =>
-        targetTraitFacts.map((facts) => ({
+        traitFacts.map((facts) => ({
           key: JSON.stringify({ classId, attribute, familyIds, selected, facts }),
           classId,
           attribute,
           familyIds,
           selections: selected,
-          targetTraitFacts: facts,
+          traitFacts: facts,
         })),
       ),
     ),
@@ -216,11 +238,13 @@ export function materializeRankingWorld(
     targetContext,
     worldFactAssertions: [
       ...scenario.worldFactAssertions.filter(
-        ({ decisionKey }) => !decisionKey.startsWith('ranking:target-trait:'),
+        ({ decisionKey }) =>
+          !decisionKey.startsWith('ranking:target:') &&
+          !decisionKey.startsWith('ranking:targetState:'),
       ),
-      ...Object.entries(candidate.targetTraitFacts).map(([trait, present]) => ({
-        decisionKey: `ranking:target-trait:${trait}`,
-        fact: { kind: 'trait' as const, scope: 'target' as const, trait, present },
+      ...candidate.traitFacts.map(({ scope, trait, present }) => ({
+        decisionKey: `ranking:${scope}:${trait}`,
+        fact: { kind: 'trait' as const, scope, trait, present },
       })),
     ],
   };

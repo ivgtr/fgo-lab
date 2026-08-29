@@ -60,6 +60,8 @@ export interface ResolvedCalculationInput {
   inputDefinitions: CanonicalInputDefinition[];
   activationRequirements: ActivationRequirementOwner[];
   appliedPreparationActions: readonly AppliedPreparationAction[];
+  targetStateTraitsAtDamage: readonly string[];
+  intrinsicTargetStateTraitsAtDamage: readonly string[];
 }
 
 export interface CalculationExecution {
@@ -299,6 +301,23 @@ function resolvePreparedOrderedScenario(
   canonicalInputs: ResolvedCanonicalInputSet,
   execution: OrderedScenarioExecution,
 ): ResolvedCalculationInput {
+  const damageState = execution.operations.find(
+    ({ operation, outcome }) => operation.kind === 'executeNpDamage' && outcome === 'applied',
+  )?.state;
+  const intrinsicTargetState = new Set<string>();
+  for (const result of execution.operations) {
+    if (result.operation.kind === 'executeNpDamage') break;
+    if (
+      result.outcome !== 'applied' ||
+      result.operation.source.origin !== 'np' ||
+      result.operation.phase !== 'beforeNpDamage' ||
+      (result.operation.kind !== 'addTrait' && result.operation.kind !== 'removeTrait') ||
+      result.operation.scope !== 'targetState'
+    )
+      continue;
+    if (result.operation.kind === 'addTrait') intrinsicTargetState.add(result.operation.trait);
+    else intrinsicTargetState.delete(result.operation.trait);
+  }
   const warnings = execution.issues.map((issue) => {
     if (issue.kind === 'invalidTargetContext')
       return `${issue.kind}:${issue.detail}:${issue.sourceKeys.join(',')}`;
@@ -374,6 +393,12 @@ function resolvePreparedOrderedScenario(
     inputDefinitions: [...execution.inputDefinitions],
     activationRequirements: collectActivationRequirementOwners(prepared.operations),
     appliedPreparationActions: prepared.appliedPreparationActions,
+    targetStateTraitsAtDamage: damageState
+      ? [...damageState.traits.targetState.entries()].flatMap(([trait, present]) =>
+          present ? [trait] : [],
+        )
+      : [],
+    intrinsicTargetStateTraitsAtDamage: [...intrinsicTargetState].sort(),
     trace: [
       ...decisionTrace,
       ...activationTrace,
@@ -401,6 +426,8 @@ function manualResolvedInput(
     inputDefinitions: [],
     activationRequirements: [],
     appliedPreparationActions: [],
+    targetStateTraitsAtDamage: scenario.manual.targetStateTraits,
+    intrinsicTargetStateTraitsAtDamage: [],
     noblePhantasmVariant: null,
   };
 }
@@ -680,7 +707,11 @@ function sameContributionProjection(
   if (
     !left ||
     left.includedOperationIds.size !== right.includedOperationIds.size ||
-    left.excludedOperationIds.size !== right.excludedOperationIds.size
+    left.excludedOperationIds.size !== right.excludedOperationIds.size ||
+    left.excludedStateTraitContributions.attackerState.size !==
+      right.excludedStateTraitContributions.attackerState.size ||
+    left.excludedStateTraitContributions.targetState.size !==
+      right.excludedStateTraitContributions.targetState.size
   )
     return false;
   return (
@@ -689,6 +720,12 @@ function sameContributionProjection(
     ) &&
     [...left.excludedOperationIds].every((operationId) =>
       right.excludedOperationIds.has(operationId),
+    ) &&
+    [...left.excludedStateTraitContributions.attackerState].every((trait) =>
+      right.excludedStateTraitContributions.attackerState.has(trait),
+    ) &&
+    [...left.excludedStateTraitContributions.targetState].every((trait) =>
+      right.excludedStateTraitContributions.targetState.has(trait),
     )
   );
 }

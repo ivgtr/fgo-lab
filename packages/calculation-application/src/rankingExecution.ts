@@ -22,11 +22,11 @@ function selectedAverage(
   return execution.result.rows[npLevel - 1]?.average ?? null;
 }
 
-function externalFieldFactCount(execution: CalculationExecution): number {
+function externalFactCount(execution: CalculationExecution): number {
   if (execution.scenario.mode !== 'resolved') return 0;
   return execution.scenario.worldFactAssertions.filter(
     ({ decisionKey, fact }) =>
-      decisionKey.startsWith('ranking:field:') && fact.kind === 'trait' && fact.present,
+      decisionKey.startsWith('ranking:') && fact.kind === 'trait' && fact.present,
   ).length;
 }
 
@@ -43,7 +43,7 @@ export interface RankingSelectionCandidate {
   index: number;
   attackProfile: AttackProfile;
   average: number | null;
-  externalFieldFactCount: number;
+  externalFactCount: number;
   activationFactCount: number;
   transitionCount: number;
   noblePhantasmVariantKey: string;
@@ -65,7 +65,7 @@ export function selectRankingCandidateIndexes(
       .sort(
         (left, right) =>
           right.average - left.average ||
-          left.externalFieldFactCount - right.externalFieldFactCount ||
+          left.externalFactCount - right.externalFactCount ||
           left.activationFactCount - right.activationFactCount ||
           left.transitionCount - right.transitionCount ||
           left.noblePhantasmVariantKey.localeCompare(right.noblePhantasmVariantKey),
@@ -91,7 +91,10 @@ export function executeRankingScenarios(
   const projected = prepared.map((candidate, index) => {
     const projection = contributionProjections?.[index];
     return projection &&
-      (projection.includedOperationIds.size > 0 || projection.excludedOperationIds.size > 0)
+      (projection.includedOperationIds.size > 0 ||
+        projection.excludedOperationIds.size > 0 ||
+        projection.excludedStateTraitContributions.attackerState.size > 0 ||
+        projection.excludedStateTraitContributions.targetState.size > 0)
       ? projectPreparedCalculationContribution(candidate, projection)
       : candidate;
   });
@@ -118,7 +121,7 @@ export function selectRankingExecutionIndexes(
       attackProfile: attackProfiles[index]!,
       index,
       average: selectedAverage(execution, npLevel),
-      externalFieldFactCount: externalFieldFactCount(execution),
+      externalFactCount: externalFactCount(execution),
       activationFactCount: activationFactCount(execution),
       transitionCount: transitionCount(execution),
       noblePhantasmVariantKey:

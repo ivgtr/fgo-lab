@@ -21,6 +21,7 @@ import {
   type RankingWorldCandidate,
 } from './rankingWorld';
 import type { PreparedCalculationProjection } from './scenario';
+import { stateTraitsRequiredByCondition } from './conditionProvenance';
 
 interface RankingWorld {
   target: RankingWorldCandidate | null;
@@ -81,6 +82,7 @@ function scenarioForPolicy(
   scope: 'ranking' | 'withoutArea',
   worldCandidate: RankingWorld,
   master: MasterDataSnapshot,
+  intrinsicTargetStateTraits: ReadonlySet<string>,
 ): { scenario: ResolvedScenario; contributionProjection: DamageContributionProjection } {
   const targetWorld = worldCandidate.target
     ? materializeRankingWorld(scenario, worldCandidate.target)
@@ -98,7 +100,9 @@ function scenarioForPolicy(
     contributionProjection: {
       includedOperationIds: new Set(
         baseline.effectControls.flatMap((control) =>
-          contributesToAttackerDamage(control.projection) && selectedKeys.has(control.key)
+          contributesToAttackerDamage(control.projection) &&
+          selectedKeys.has(control.key) &&
+          control.projection.contributionControl === 'operation'
             ? [control.projection.operationId]
             : [],
         ),
@@ -106,12 +110,29 @@ function scenarioForPolicy(
       excludedOperationIds: new Set(
         baseline.effectControls.flatMap((control) =>
           contributesToAttackerDamage(control.projection) &&
+          control.projection.contributionControl === 'operation' &&
           control.projection.outcome === 'applied' &&
           !selectedKeys.has(control.key)
             ? [control.projection.operationId]
             : [],
         ),
       ),
+      excludedStateTraitContributions: {
+        attackerState: new Set(),
+        targetState: new Set(
+          conditions.specialAttack === 'inactive'
+            ? baseline.effectControls.flatMap((control) =>
+                isSpecialAttack(control.projection) &&
+                control.projection.contributionControl === 'worldAssumption'
+                  ? stateTraitsRequiredByCondition(
+                      control.projection.explanation.condition,
+                      'targetState',
+                    ).filter((trait) => !intrinsicTargetStateTraits.has(trait))
+                  : [],
+              )
+            : [],
+        ),
+      },
     },
   };
 }
@@ -123,8 +144,18 @@ export function compileRankingScenarioWorlds(input: {
   versions: VersionContext;
   canonical: ResolvedScenario;
   baseline: PreparedCalculationProjection;
+  plannedTargetStateTraits: ReadonlySet<string>;
+  intrinsicTargetStateTraits: ReadonlySet<string>;
 }): CompiledRankingScenarioWorlds {
-  const { servant, master, conditions, canonical, baseline } = input;
+  const {
+    servant,
+    master,
+    conditions,
+    canonical,
+    baseline,
+    plannedTargetStateTraits,
+    intrinsicTargetStateTraits,
+  } = input;
   const rankingScenarios: ResolvedScenario[] = [];
   const withoutAreaScenarios: (ResolvedScenario | null)[] = [];
   const contributionProjections: DamageContributionProjection[] = [];
@@ -139,7 +170,13 @@ export function compileRankingScenarioWorlds(input: {
     );
     const candidates =
       conditions.specialAttack === 'active'
-        ? createRankingWorldCandidates(servant, master, variantScenario, specialControls)
+        ? createRankingWorldCandidates(
+            servant,
+            master,
+            variantScenario,
+            specialControls,
+            plannedTargetStateTraits,
+          )
         : [];
     const targetWorlds = candidates.length > 0 ? candidates : [null];
     const fieldWorlds = createRankingFieldCandidates(
@@ -159,6 +196,7 @@ export function compileRankingScenarioWorlds(input: {
         'ranking',
         candidate,
         master,
+        intrinsicTargetStateTraits,
       ),
     );
     rankingScenarios.push(...rankedWorlds.map(({ scenario }) => scenario));
@@ -178,6 +216,7 @@ export function compileRankingScenarioWorlds(input: {
             'withoutArea',
             candidate,
             master,
+            intrinsicTargetStateTraits,
           )
         : null,
     );

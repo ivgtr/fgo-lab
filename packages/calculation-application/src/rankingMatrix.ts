@@ -89,7 +89,9 @@ export function calculateStandardRankingMatrix(
     const candidates = plan.preparedRankingScenarios.map((prepared, index) => {
       const projection = plan.contributionProjections[index]!;
       const projected =
-        projection.excludedOperationIds.size > 0
+        projection.excludedOperationIds.size > 0 ||
+        projection.excludedStateTraitContributions.attackerState.size > 0 ||
+        projection.excludedStateTraitContributions.targetState.size > 0
           ? projectPreparedCalculationContribution(prepared, projection)
           : prepared;
       const variant = projected.resolved.noblePhantasmVariant;
@@ -119,13 +121,11 @@ export function calculateStandardRankingMatrix(
               attackProfile: plan.attackProfiles[index]!,
               average:
                 result.status === 'calculated' ? (result.rows[npLevel - 1]?.average ?? null) : null,
-              externalFieldFactCount:
+              externalFactCount:
                 scenario.mode === 'resolved'
                   ? scenario.worldFactAssertions.filter(
                       ({ decisionKey, fact }) =>
-                        decisionKey.startsWith('ranking:field:') &&
-                        fact.kind === 'trait' &&
-                        fact.present,
+                        decisionKey.startsWith('ranking:') && fact.kind === 'trait' && fact.present,
                     ).length
                   : 0,
               activationFactCount: actions.reduce(

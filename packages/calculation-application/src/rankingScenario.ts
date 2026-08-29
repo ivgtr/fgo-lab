@@ -50,7 +50,9 @@ function prepareRankingScenario(
 ): PreparedCalculationScenario {
   if (scenario !== canonical)
     return prepareCalculationScenarioWithContributionProjection(scenario, master, projection);
-  return projection.excludedOperationIds.size === 0
+  return projection.excludedOperationIds.size === 0 &&
+    projection.excludedStateTraitContributions.attackerState.size === 0 &&
+    projection.excludedStateTraitContributions.targetState.size === 0
     ? canonicalPrepared
     : projectPreparedCalculationContribution(canonicalPrepared, projection);
 }
@@ -71,6 +73,10 @@ export function compileRankingExecutionPlan(
         versions,
         canonical,
         baseline,
+        plannedTargetStateTraits: new Set(canonicalPrepared.resolved.targetStateTraitsAtDamage),
+        intrinsicTargetStateTraits: new Set(
+          canonicalPrepared.resolved.intrinsicTargetStateTraitsAtDamage,
+        ),
       });
       return {
         baseScenario: canonical,

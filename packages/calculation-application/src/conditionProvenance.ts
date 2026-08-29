@@ -59,3 +59,18 @@ export function fieldTraitsRequiredByCondition(
     ),
   ].sort();
 }
+
+export function stateTraitsRequiredByCondition(
+  condition: ConditionExpression | null,
+  scope: 'attackerState' | 'targetState',
+): readonly string[] {
+  return [
+    ...new Set(
+      conditionFactRequirements(condition).flatMap(({ condition: leaf }) => {
+        if (leaf.kind === 'trait' && leaf.scope === scope) return [leaf.trait];
+        if (leaf.kind === 'traitCount' && leaf.scope === scope) return leaf.traits;
+        return [];
+      }),
+    ),
+  ].sort();
+}

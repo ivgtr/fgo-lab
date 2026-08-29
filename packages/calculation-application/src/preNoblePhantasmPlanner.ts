@@ -69,7 +69,10 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
     usedSkillSlots: [...state.usedSkillSlots].sort((left, right) => left - right),
     transformNoblePhantasmUsed: state.transformNoblePhantasmUsed,
     activeEffects: state.activeEffects.map(canonicalEffectKey).sort(),
-    activeStateTraits: [...state.activeStateTraits].sort(),
+    stateTraits: {
+      attackerState: [...state.stateTraits.attackerState].sort(),
+      targetState: [...state.stateTraits.targetState].sort(),
+    },
     choices: state.appliedActions
       .flatMap(({ command }) =>
         command.kind === 'useSkillSlot' && command.choice
