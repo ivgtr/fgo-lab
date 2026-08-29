@@ -25,6 +25,7 @@ export type AtlasFunction = {
   funcPopupText?: string;
   functvals?: AtlasTraitRef[];
   funcquestTvals?: AtlasTraitRef[];
+  traitVals?: AtlasTraitRef[];
   script?: Record<string, unknown> & { funcIndividuality?: AtlasTraitRef[] };
   buffs?: AtlasBuff[];
   overWriteTvalsList?: unknown[];

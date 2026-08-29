@@ -855,7 +855,7 @@ describe('immutable publish pipeline', () => {
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[4]).toMatchObject({
       triggerScope: 'commandCardAttack',
-      atlasEvidence: { parameterSemantics: { unresolved: ['Value2'] } },
+      atlasEvidence: { parameterSemantics: { lifecycle: ['Value2'], unresolved: [] } },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[5]).toMatchObject({
       operationTrigger: { kind: 'functionPosition', position: 2 },

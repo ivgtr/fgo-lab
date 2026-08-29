@@ -14,6 +14,7 @@ import { cardMap, normalizeFunctions, normalizeNpDamageFunction } from './effect
 import { normalizeCraftEssenceLimitBreakEffects } from './craftEssenceNormalization';
 import { normalizeNoblePhantasmVariants } from './noblePhantasmVariantNormalization';
 import { canonicalTargetPredicate, normalizeTargetSemantics } from './targetTaxonomy';
+import { collectDamageReachableStateCatalog } from './targetStateNormalization';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
   const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
@@ -142,6 +143,15 @@ export function normalizeAtlasSnapshot(input: {
   ))
     if (typeof trait.id === 'number' && trait.name && trait.name !== 'unknown')
       traitNameById.set(trait.id, trait.name);
+  const stateCatalog = collectDamageReachableStateCatalog(
+    {
+      servants: atlasServants,
+      equips: atlasEquips,
+      mysticCodes: atlasMysticCodes,
+      referencedSkills: atlasReferencedSkills,
+    },
+    traitNameById,
+  );
   const servants = atlasServants.flatMap((servant) => {
     if (!servant.collectionNo || !['normal', 'heroine'].includes(servant.type ?? '')) return [];
     if (
@@ -191,6 +201,7 @@ export function normalizeAtlasSnapshot(input: {
         'duringExecution',
         noblePhantasmModel.canonicalOperationsByFunction,
         noblePhantasmModel.variantStateTraits,
+        stateCatalog,
       );
       const common = {
         ref: { actorFormId: form.id, noblePhantasmId: String(np.id) },
@@ -211,6 +222,7 @@ export function normalizeAtlasSnapshot(input: {
           `actorForms[${form.id.actorId}:${String(form.id.limitCount)}].noblePhantasms[${String(np.id)}].functions[${String(functionIndex)}]`,
           traitNameById,
           maximumBattlePointPhaseById,
+          stateCatalog,
         ),
       );
       const targets = [...new Set(damage.map((spec) => spec.target))];
@@ -254,6 +266,7 @@ export function normalizeAtlasSnapshot(input: {
         source === 'passive' ? 'representedByCurrentInput' : 'duringExecution',
         noblePhantasmModel.canonicalOperationsByFunction,
         noblePhantasmModel.variantStateTraits,
+        stateCatalog,
       ),
     });
     const skills = activeSkills
@@ -386,6 +399,10 @@ export function normalizeAtlasSnapshot(input: {
       'craftEssence',
       undefined,
       referencedSkills,
+      undefined,
+      undefined,
+      undefined,
+      stateCatalog,
     );
     const limitBreakEffects = limitBreakSkill
       ? normalizeFunctions(
@@ -394,6 +411,10 @@ export function normalizeAtlasSnapshot(input: {
           'craftEssence',
           undefined,
           referencedSkills,
+          undefined,
+          undefined,
+          undefined,
+          stateCatalog,
         )
       : null;
     const effects = normalizeCraftEssenceLimitBreakEffects({
@@ -438,6 +459,10 @@ export function normalizeAtlasSnapshot(input: {
                 'mysticCode',
                 undefined,
                 referencedSkills,
+                undefined,
+                undefined,
+                undefined,
+                stateCatalog,
               ),
             },
           ]

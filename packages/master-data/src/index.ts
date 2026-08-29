@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(36),
+  schemaVersion: z.literal(37),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -35,14 +35,21 @@ const signedTraitSchema = z.object({
   name: z.string().min(1),
   negative: z.boolean(),
 });
+const conditionSignedTraitSchema = signedTraitSchema.extend({
+  layer: z.enum(['combined', 'state']),
+});
 type ConditionAtom =
-  { name: string; negative: boolean } | { predicate: TargetPredicate; negative: boolean };
+  | { name: string; negative: boolean; layer: 'combined' | 'state' }
+  | {
+      predicate: TargetPredicate;
+      negative: boolean;
+    };
 const targetPredicateConditionAtomSchema = z.object({
   predicate: targetPredicateSchema,
   negative: z.boolean(),
 });
 const conditionAtomSchema: z.ZodType<ConditionAtom> = z.union([
-  signedTraitSchema,
+  conditionSignedTraitSchema,
   targetPredicateConditionAtomSchema,
 ]);
 export const traitConditionSchema = z.object({
@@ -487,6 +494,7 @@ const npDamageBaseSchema = z.object({
   functionId: z.string().min(1),
   target: z.enum(['single', 'all']),
   parametersByOvercharge: npDamageParameterMatrixSchema,
+  stateTraitNames: z.array(z.string().min(1)),
   rawPath: z.string().min(1),
 });
 export const npDamageSpecSchema = z

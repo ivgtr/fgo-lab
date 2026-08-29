@@ -227,17 +227,17 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(13_892);
+    expect(operations).toHaveLength(14_623);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
-      contextMutation: 71,
+      contextMutation: 1_488,
       damageModifier: 3_885,
       ignoreDamageCut: 1,
       ignoreDefense: 39,
       modifierRateChange: 1,
-      nonDamage: 9_802,
+      nonDamage: 9_124,
       selectNoblePhantasmVariant: 22,
       transformActorForm: 10,
-      unresolved: 61,
+      unresolved: 53,
     });
 
     const variantOperations = master.servants.flatMap((servant) =>
@@ -332,7 +332,7 @@ describe('production canonical execution semantics', () => {
       personal: 2_631,
       partyWide: 928,
       partyOther: 51,
-      enemyApplied: 381,
+      enemyApplied: 1_798,
     });
     expect(counts(terminal)).toEqual({
       personal: 2_593,
@@ -413,7 +413,7 @@ describe('production canonical execution semantics', () => {
             !operation.damageRelevant,
         ),
       ),
-    ).toHaveLength(32);
+    ).toHaveLength(29);
   });
 
   it('ratchets build-time referenced skills and their ordered canonical operations', async () => {
@@ -437,7 +437,7 @@ describe('production canonical execution semantics', () => {
           levelSource: 'secondaryValueParameter',
           defaultLevel: 1,
         },
-        operations: ['contextMutation', 'nonDamage'],
+        operations: ['contextMutation', 'contextMutation'],
       },
       {
         effectId: '23560',

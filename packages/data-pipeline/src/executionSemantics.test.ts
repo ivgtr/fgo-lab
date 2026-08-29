@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeContributionScope } from './executionSemantics';
+import { normalizeContributionScope, normalizeExecutionSemantics } from './executionSemantics';
 
 describe('canonical effect contribution scope', () => {
   it.each([
@@ -19,5 +19,36 @@ describe('canonical effect contribution scope', () => {
 
   it('does not guess an unknown raw target', () => {
     expect(normalizeContributionScope('unknownTarget')).toBeNull();
+  });
+
+  it('coalesces duplicate state evidence into one damage-relevant mutation', () => {
+    expect(
+      normalizeExecutionSemantics({
+        fn: { funcType: 'addState', funcTargetType: 'enemy' },
+        parameterSets: [[]],
+        valueExpressions: [[], [], [], [], []],
+        cardTypes: [],
+        canonicalOperations: [],
+        contextChanges: {
+          addedFieldTraits: [],
+          removedFieldTraits: [],
+          addedRecipientTraits: ['marking'],
+          addedRecipientStateTraits: ['marking'],
+          removedRecipientTraits: [],
+          removedRecipientStateTraits: [],
+        },
+        quantityApplicationTiming: 'duringExecution',
+      }),
+    ).toEqual([
+      {
+        kind: 'contextMutation',
+        mutation: 'addTrait',
+        scope: 'recipientState',
+        targetPolicy: 'enemy',
+        contributionScope: 'enemyApplied',
+        trait: 'marking',
+        damageRelevant: true,
+      },
+    ]);
   });
 });

@@ -17,11 +17,14 @@ import type {
   AtlasTraitRef,
 } from './atlasContract';
 import { canonicalTargetPredicate } from './targetTaxonomy';
+import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
 import {
-  normalizeContributionScope,
-  normalizeExecutionSemantics,
-  normalizeTargetPolicy,
-} from './executionSemantics';
+  normalizeDamageReachableStateMutations,
+  stateMutationTraitName,
+  type DamageReachableStateCatalog,
+} from './targetStateNormalization';
+
+const EMPTY_STATE_CATALOG: DamageReachableStateCatalog = { stateOnlyTraits: new Set() };
 
 export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
   1: 'arts',
@@ -54,9 +57,10 @@ export function normalizeNpDamageFunction(
   rawPath: string,
   traitNameById: ReadonlyMap<number, string>,
   maximumBattlePointPhaseById: ReadonlyMap<number, number>,
+  stateCatalog: DamageReachableStateCatalog = EMPTY_STATE_CATALOG,
 ): NpDamageSpec {
   const normalizeDamageTrait = (id: number, targetSemantic = true) => {
-    const name = traitNameById.get(id) ?? `trait:${String(id)}`;
+    const name = traitNameById.get(id) ?? `traitId:${String(id)}`;
     const predicate = targetSemantic ? canonicalTargetPredicate(name) : null;
     return predicate
       ? { kind: 'targetPredicate' as const, predicate }
@@ -131,12 +135,28 @@ export function normalizeNpDamageFunction(
       : undefined;
   if (kind === 'battlePointPhase' && maximumBattlePointPhase === undefined)
     throw new TypeError(`missing_battle_point_definition:${rawPath}:${String(battlePointId)}`);
+  const stateTraitNames = [
+    ...new Set(
+      parametersByOvercharge.flatMap((parameters) =>
+        parameters.flatMap((parameter) => [
+          ...(parameter.targetTrait?.kind === 'trait' ? [parameter.targetTrait.name] : []),
+          ...(parameter.targetTraits ?? []).flatMap((trait) =>
+            trait.kind === 'trait' ? [trait.name] : [],
+          ),
+          ...(parameter.andCheckTraits ?? []).flatMap((trait) =>
+            trait.kind === 'trait' ? [trait.name] : [],
+          ),
+        ]),
+      ),
+    ),
+  ].filter((trait) => stateCatalog.stateOnlyTraits.has(trait));
   return {
     kind,
     rawFunctionType: rawFunctionType as NpDamageSpec['rawFunctionType'],
     functionId: String(fn.funcId),
     target: fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
     parametersByOvercharge: parametersByOvercharge as NpDamageSpec['parametersByOvercharge'],
+    stateTraitNames,
     ...(maximumBattlePointPhase === undefined ? {} : { maximumBattlePointPhase }),
     rawPath,
   } as NpDamageSpec;
@@ -152,21 +172,31 @@ function signedTraits(
   traits: readonly AtlasTraitRef[] | undefined,
   traitNameById: ReadonlyMap<number, string>,
   canonicalizeTarget = false,
+  stateCatalog: DamageReachableStateCatalog = EMPTY_STATE_CATALOG,
 ): TraitCondition['traits'] {
   return (traits ?? []).flatMap<TraitCondition['traits'][number]>((trait) => {
+    const stateName = stateMutationTraitName(trait, traitNameById);
     const name =
-      trait.name && trait.name !== 'unknown'
-        ? trait.name
-        : typeof trait.id === 'number' && traitNameById.has(trait.id)
-          ? traitNameById.get(trait.id)!
-          : typeof trait.id === 'number'
-            ? `traitId:${String(trait.id)}`
-            : trait.name;
+      stateName && stateCatalog.stateOnlyTraits.has(stateName)
+        ? stateName
+        : trait.name && trait.name !== 'unknown'
+          ? trait.name
+          : typeof trait.id === 'number' && traitNameById.has(trait.id)
+            ? traitNameById.get(trait.id)!
+            : typeof trait.id === 'number'
+              ? `traitId:${String(trait.id)}`
+              : trait.name;
     if (!name) return [];
     const predicate = canonicalizeTarget ? canonicalTargetPredicate(name) : null;
     return predicate
       ? [{ predicate, negative: Boolean(trait.negative) }]
-      : [{ name, negative: Boolean(trait.negative) }];
+      : [
+          {
+            name,
+            negative: Boolean(trait.negative),
+            layer: stateCatalog.stateOnlyTraits.has(name) ? 'state' : 'combined',
+          },
+        ];
   });
 }
 
@@ -287,12 +317,18 @@ function uniqueTraits(traits: TraitCondition['traits']) {
 
 const VALUE_PARAMETER_KEYS = new Set(['Rate', 'Value']);
 const LIFECYCLE_PARAMETER_KEYS = new Set([
+  'CheckDead',
   'Count',
+  'ExcludeUnSubStateIndiv',
   'ForceAddState',
   'OnField',
   'ProcActive',
+  'SelfTurnProgressGroup',
   'Turn',
+  'TriggeredFuncPositionSameTarget',
   'UnSubState',
+  'UseRate',
+  'Value2',
 ]);
 const PRESENTATION_PARAMETER_KEYS = new Set([
   'AuraEffectId',
@@ -1257,7 +1293,12 @@ function classifyParameterSemantics(
     value: keys.filter(
       (key) => VALUE_PARAMETER_KEYS.has(key) && !contextRecognizedKeys.includes(key),
     ),
-    lifecycle: select(LIFECYCLE_PARAMETER_KEYS),
+    lifecycle: keys.filter(
+      (key) =>
+        LIFECYCLE_PARAMETER_KEYS.has(key) &&
+        !contextRecognizedKeys.includes(key) &&
+        !referenceRecognizedKeys.includes(key),
+    ),
     presentation: select(PRESENTATION_PARAMETER_KEYS),
     condition: keys.filter(
       (key) =>
@@ -1306,6 +1347,7 @@ export function normalizeFunctions(
     readonly EffectExecutionOperation[]
   > = new Map(),
   variantStateTraits: ReadonlySet<string> = new Set(),
+  stateCatalog: DamageReachableStateCatalog = EMPTY_STATE_CATALOG,
 ) {
   const criticalStarSeriesCounts = new Map<number, number>();
   for (const fn of functions ?? []) {
@@ -1431,6 +1473,7 @@ export function normalizeFunctions(
             })
             .filter((name, index, all) => all.indexOf(name) === index)
         : [],
+      addedRecipientStateTraits: [] as string[],
       removedRecipientTraits: (fn.buffs ?? []).some((buff) => buff.type === 'subIndividuality')
         ? [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
             .flatMap((parameters) => parameters ?? [])
@@ -1441,7 +1484,17 @@ export function normalizeFunctions(
             })
             .filter((name, index, all) => all.indexOf(name) === index)
         : [],
+      removedRecipientStateTraits: [] as string[],
     };
+    if (targetPolicy === 'enemy') {
+      const stateMutations = normalizeDamageReachableStateMutations(
+        fn,
+        stateCatalog,
+        traitNameById,
+      );
+      contextChanges.addedRecipientStateTraits.push(...stateMutations.added);
+      contextChanges.removedRecipientStateTraits.push(...stateMutations.removed);
+    }
     const cardTypes = [
       ...new Set(
         (fn.buffs ?? []).flatMap((buff) =>
@@ -1541,48 +1594,11 @@ export function normalizeFunctions(
         ownerId,
         referencedSkills,
         quantityApplicationTiming,
-      );
-      const referencedStateMutations = (skill.functions ?? []).flatMap((referencedFunction) =>
-        ['addState', 'addStateShort'].includes(referencedFunction.funcType ?? '')
-          ? (referencedFunction.buffs ?? []).flatMap((buff) =>
-              (buff.vals ?? []).flatMap((trait) =>
-                trait.name?.startsWith('buff') &&
-                ![
-                  'buffPositiveEffect',
-                  'buffNegativeEffect',
-                  'buffIncreaseDamage',
-                  'buffDecreaseDefence',
-                ].includes(trait.name)
-                  ? [
-                      {
-                        kind: 'contextMutation' as const,
-                        mutation: 'addTrait' as const,
-                        scope: 'recipientState' as const,
-                        targetPolicy: normalizeTargetPolicy(
-                          referencedFunction.funcTargetType ?? 'unknown',
-                          referencedFunction.funcTargetTeam,
-                        ),
-                        contributionScope:
-                          normalizeContributionScope(
-                            referencedFunction.funcTargetType ?? 'unknown',
-                            referencedFunction.funcTargetTeam,
-                          ) ??
-                          (() => {
-                            throw new TypeError(
-                              `unresolved_referenced_contribution_scope:${referencedFunction.funcTargetType ?? 'unknown'}`,
-                            );
-                          })(),
-                        trait: trait.name,
-                        damageRelevant: true,
-                      },
-                    ]
-                  : [],
-              ),
-            )
-          : [],
+        new Map(),
+        new Set(),
+        stateCatalog,
       );
       execution = [
-        ...referencedStateMutations,
         ...normalized.flatMap((effect) =>
           effect.execution.map((operation) => {
             if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
@@ -1663,46 +1679,48 @@ export function normalizeFunctions(
                   traits: signedTraits(
                     Array.isArray(group) ? (group as AtlasTraitRef[]) : [],
                     traitNameById,
+                    false,
+                    stateCatalog,
                   ),
                 }))
               : [
                   {
                     operator: 'any' as const,
-                    traits: signedTraits(fn.functvals, traitNameById),
+                    traits: signedTraits(fn.functvals, traitNameById, false, stateCatalog),
                   },
                 ],
           holder: {
             operator:
               (fn.buffs?.[0]?.ckSelfIndv ?? []).length > 0 &&
               scriptTraits.some(({ trait }) =>
-                signedTraits([trait], traitNameById).some(
+                signedTraits([trait], traitNameById, false, stateCatalog).some(
                   (candidate) => 'name' in candidate && variantStateTraits.has(candidate.name),
                 ),
               )
                 ? 'all'
                 : buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
             traits: uniqueTraits([
-              ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById),
+              ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById, false, stateCatalog),
               ...scriptTraits.flatMap((entry) =>
                 entry.buffType === 'upCommandall' &&
                 fn.funcTargetType === 'self' &&
                 !isFieldTrait(entry.trait)
-                  ? signedTraits([entry.trait], traitNameById)
+                  ? signedTraits([entry.trait], traitNameById, false, stateCatalog)
                   : [],
               ),
             ]),
           },
           opponent: {
             operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById, true),
+            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById, true, stateCatalog),
           },
           field: {
             operator: 'any' as const,
             traits: uniqueTraits([
-              ...signedTraits(fn.funcquestTvals, traitNameById),
+              ...signedTraits(fn.funcquestTvals, traitNameById, false, stateCatalog),
               ...scriptTraits.flatMap((entry) =>
                 isFieldTrait(entry.trait) && !isCardChangeOwnerIdentity(entry)
-                  ? signedTraits([entry.trait], traitNameById)
+                  ? signedTraits([entry.trait], traitNameById, false, stateCatalog)
                   : [],
               ),
             ]),

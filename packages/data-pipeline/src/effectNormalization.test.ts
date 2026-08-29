@@ -26,6 +26,30 @@ function normalizeCountEffect(parameter: Record<string, unknown>) {
 }
 
 describe('canonical actor count normalization', () => {
+  it('classifies delayed-state trigger metadata separately from application proc rate', () => {
+    const effect = normalizeCountEffect({
+      CheckDead: 1,
+      ExcludeUnSubStateIndiv: 1,
+      SelfTurnProgressGroup: 2,
+      TriggeredFuncPositionSameTarget: -5,
+      UseRate: 300,
+      Value2: 1,
+    });
+
+    expect(effect.atlasEvidence.parameterSemantics.lifecycle).toEqual([
+      'CheckDead',
+      'Count',
+      'ExcludeUnSubStateIndiv',
+      'SelfTurnProgressGroup',
+      'TriggeredFuncPositionSameTarget',
+      'Turn',
+      'UseRate',
+      'Value2',
+    ]);
+    expect(effect.atlasEvidence.parameterSemantics.value).toEqual(['Rate', 'Value']);
+    expect(effect.atlasEvidence.parameterSemantics.unresolved).toEqual([]);
+  });
+
   it('keeps each all-actor trait predicate as an independent final count input', () => {
     const effect = normalizeCountEffect({
       ParamAddValue: 100,

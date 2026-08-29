@@ -140,6 +140,54 @@ function routeDamageModifier(buffTypes: readonly string[], cardTypes: readonly s
   return null;
 }
 
+export function functionReachesDamageModifier(fn: AtlasFunction): boolean {
+  const buffTypes = (fn.buffs ?? []).flatMap((buff) => (buff.type ? [buff.type] : []));
+  if (
+    buffTypes.includes('buffRate') &&
+    fn.buffs?.some((buff) =>
+      buff.script?.UpBuffRateBuffIndiv?.some((trait) => trait.name === 'buffNpDamageUp'),
+    )
+  )
+    return true;
+  return routeDamageModifier(buffTypes, ['buster']) !== null;
+}
+
+function coalesceDamageRelevantContextMutations(
+  operations: readonly EffectExecutionOperation[],
+): EffectExecutionOperation[] {
+  const result: EffectExecutionOperation[] = [];
+  const mutationIndex = new Map<string, number>();
+  for (const operation of operations) {
+    if (
+      operation.kind !== 'contextMutation' ||
+      (operation.mutation !== 'addTrait' && operation.mutation !== 'removeTrait')
+    ) {
+      result.push(operation);
+      continue;
+    }
+    const key = [
+      operation.mutation,
+      operation.scope,
+      operation.targetPolicy,
+      operation.contributionScope,
+      operation.trait,
+    ].join(':');
+    const priorIndex = mutationIndex.get(key);
+    const prior = priorIndex === undefined ? undefined : result[priorIndex];
+    if (
+      prior?.kind === 'contextMutation' &&
+      (prior.mutation === 'addTrait' || prior.mutation === 'removeTrait') &&
+      prior.damageRelevant !== operation.damageRelevant
+    ) {
+      result[priorIndex!] = { ...prior, damageRelevant: true };
+      continue;
+    }
+    mutationIndex.set(key, result.length);
+    result.push(operation);
+  }
+  return result;
+}
+
 function modifierValues(parameterSets: readonly (readonly AtlasFunctionValue[])[]): ValueSets {
   return parameterSets.map((set) =>
     set.map((parameter) => (typeof parameter.Value === 'number' ? parameter.Value : null)),
@@ -164,7 +212,9 @@ export function normalizeExecutionSemantics(input: {
     addedFieldTraits: string[];
     removedFieldTraits: string[];
     addedRecipientTraits: string[];
+    addedRecipientStateTraits: string[];
     removedRecipientTraits: string[];
+    removedRecipientStateTraits: string[];
   };
   quantityApplicationTiming: 'duringExecution' | 'representedByCurrentInput';
 }): EffectExecutionOperation[] {
@@ -259,6 +309,16 @@ export function normalizeExecutionSemantics(input: {
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
+  for (const trait of input.contextChanges.addedRecipientStateTraits)
+    operations.push({
+      kind: 'contextMutation',
+      mutation: 'addTrait',
+      scope: 'recipientState',
+      targetPolicy: policy,
+      contributionScope: contributionScope!,
+      trait,
+      damageRelevant: true,
+    });
   for (const trait of input.contextChanges.removedRecipientTraits)
     operations.push({
       kind: 'contextMutation',
@@ -268,6 +328,16 @@ export function normalizeExecutionSemantics(input: {
       contributionScope: contributionScope!,
       trait,
       damageRelevant: potentiallyDamageRelevant,
+    });
+  for (const trait of input.contextChanges.removedRecipientStateTraits)
+    operations.push({
+      kind: 'contextMutation',
+      mutation: 'removeTrait',
+      scope: 'recipientState',
+      targetPolicy: policy,
+      contributionScope: contributionScope!,
+      trait,
+      damageRelevant: true,
     });
 
   const common = {
@@ -331,5 +401,5 @@ export function normalizeExecutionSemantics(input: {
     });
 
   if (operations.length === 0) operations.push({ kind: 'nonDamage' });
-  return operations;
+  return coalesceDamageRelevantContextMutations(operations);
 }
