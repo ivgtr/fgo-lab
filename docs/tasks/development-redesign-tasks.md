@@ -32,8 +32,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | ID | Task | Status | Depends on | Primary source |
 | --- | --- | --- | --- | --- |
 | TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
-| TSK-00.2 | Canonical documentation layout cutover | in_progress | TSK-00.1 | documentation maintenance DOC-P3.1 |
-| TSK-00 | Baseline固定 | blocked | TSK-00.2 | 全要件書 |
+| TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
+| TSK-00 | Baseline固定 | ready | TSK-00.2 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -80,11 +80,11 @@ Handoff:
 
 Depends on: TSK-00.1
 
-- [ ] tracked文書の移動mapと、code／CI／README／Markdown／外部公開pathを含むincoming referenceを固定する。
-- [ ] current requirementsを`docs/requirements/`、Tasks／phase planを`docs/tasks/`、evidenceを`docs/evidence/`、guideを`docs/guides/`へ移す。
-- [ ] tracked historical requirements／completed plansを`docs/archive/`へ移し、ADR、license、入口READMEは責務別directoryに維持する。
-- [ ] root README、registry、frontmatter、全tracked local link、command例を新pathへ一括切替する。
-- [ ] old pathとの二重正本やcompatibility copyを残さず、fresh clone相当のtracked treeを検証する。
+- [x] tracked文書の移動mapと、code／CI／README／Markdown／外部公開pathを含むincoming referenceを固定する。
+- [x] current requirementsを`docs/requirements/`、Tasks／phase planを`docs/tasks/`、evidenceを`docs/evidence/`、guideを`docs/guides/`へ移す。
+- [x] tracked historical requirements／completed plansを`docs/archive/`へ移し、ADR、license、入口READMEは責務別directoryに維持する。
+- [x] root README、registry、frontmatter、全tracked local link、command例を新pathへ一括切替する。
+- [x] old pathとの二重正本やcompatibility copyを残さず、fresh clone相当のtracked treeを検証する。
 
 Done gate:
 
@@ -99,11 +99,12 @@ Done gate:
 Handoff:
 
 - Start baseline: `c1cc433cc0c2f2f7613d99a8c0b0feb9d42b4db9`、clean worktree
-- Commit: 未記録
-- Move map: 未記録
-- Repaired references: 未記録
-- Verification: 未記録
-- Next command: 未記録
+- Commit: `f7cb45f` (start)、`86ed536` (requirements)、`1b50421` (Tasks)、`ef467cb` (evidence)、`bca4344` (guide)、`2e7e8b4` (archive)、`5d861f8` (baseline evidence path correction)、本completion commit
+- Move map: current requirements 7件を`docs/requirements/`、Tasks／phase plan 2件を`docs/tasks/`、inventory／index／report 18件を`docs/evidence/`、guide 1件を`docs/guides/`、historical requirement／complete plan 5件を`docs/archive/`へ移動。ADR 26件、license 1件、`docs/README.md`は既存責務directory／入口に維持
+- Incoming references: tracked code／CI／GitHub Pages／外部公開pathに旧path契約0件。root READMEは`docs/README.md`だけを公開入口として参照。tracked Markdown、frontmatter、command例、registry、`.gitignore`の旧tracked pathを同一family commitで切替
+- Repaired references: current canonical pathの旧参照0件。TSK-00.1 inventoryの旧pathはbaseline evidenceとして明示的に保持し、canonical successorだけを新pathへ更新。compatibility copy／stubなし
+- Verification: tracked `docs/` 61 Markdownは直下`README.md`と7責務directoryだけ。全tracked 63 Markdownのlocal link解決、registry 20 unit、ADR 25件、evidence report 16件、`in_progress` 0件を確認。ignored／untracked Markdown 31件とHTML 6件は未移動・未削除・未track
+- Next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
 
 ### TSK-00: Baseline固定
 
