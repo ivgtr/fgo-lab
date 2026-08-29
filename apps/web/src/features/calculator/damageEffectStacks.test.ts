@@ -57,7 +57,9 @@ describe('typed damage effect stacks', () => {
       servants: [],
       craftEssence: undefined,
     });
-    expect(stacks).toMatchObject([{ kind: 'attackBuff', sources: [{ applied: true }, {}] }]);
+    expect(stacks).toMatchObject([
+      { kind: 'attackBuff', sources: [{ executionApplied: true }, {}] },
+    ]);
   });
 
   it('maps typed explanations to display copy', () => {
@@ -106,8 +108,31 @@ describe('typed damage effect stacks', () => {
       contributionState: () => 'excludedByRankingPolicy',
     });
     const source = stacks[0]!.sources[0]!;
-    expect(source).toMatchObject({ applied: false, contributionState: 'excludedByRankingPolicy' });
+    expect(source).toMatchObject({
+      executionApplied: true,
+      contributionState: 'excludedByRankingPolicy',
+    });
     expect(damageEffectStateLabel(source)).toBe('計算外');
+  });
+
+  it('preserves a failed execution reason even when ranking policy excludes the operation', () => {
+    const stacks = collectDamageEffectStacks({
+      effects: [
+        projection({
+          outcome: 'impossible',
+          explanation: { code: 'cardMismatch', condition: null },
+        }),
+      ],
+      servants: [],
+      craftEssence: undefined,
+      contributionState: () => 'excludedByRankingPolicy',
+    });
+    const source = stacks[0]!.sources[0]!;
+    expect(source).toMatchObject({
+      executionApplied: false,
+      contributionState: 'excludedByRankingPolicy',
+    });
+    expect(damageEffectStateLabel(source)).toBe('カード不一致');
   });
 
   it('aggregates a logical effect by semantic priority instead of operation order', () => {
@@ -125,7 +150,7 @@ describe('typed damage effect stacks', () => {
         craftEssence: undefined,
         contributionState: () => 'included',
       })[0]!.sources[0]!;
-    expect(collect([inactive, active])).toMatchObject({ applied: true, value: 0.3 });
-    expect(collect([active, inactive])).toMatchObject({ applied: true, value: 0.3 });
+    expect(collect([inactive, active])).toMatchObject({ executionApplied: true, value: 0.3 });
+    expect(collect([active, inactive])).toMatchObject({ executionApplied: true, value: 0.3 });
   });
 });

@@ -1,7 +1,10 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { numberFormatter } from '../../ui/i18n';
 import type { DamageEffectStack } from '../../presentation/damageEffectStacks';
-import { damageEffectStateLabel } from '../../presentation/damageEffectStacks';
+import {
+  damageEffectContributes,
+  damageEffectStateLabel,
+} from '../../presentation/damageEffectStacks';
 import { ModifierChip } from './ModifierChip';
 import './effective-input.css';
 
@@ -88,7 +91,7 @@ export function EffectiveInputDetails({
               {damageEffectStacks.map((stack) => (
                 <ModifierChip
                   key={stack.kind}
-                  active={stack.sources.some((source) => source.applied)}
+                  active={stack.sources.some(damageEffectContributes)}
                   label={stack.label}
                   detail={stack.sources
                     .map((source) => `${source.effectLabel} ${damageEffectStateLabel(source)}`)

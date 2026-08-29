@@ -5,6 +5,7 @@ import {
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   collectDamageEffectStacks,
+  damageEffectContributes,
   damageEffectStateLabel,
 } from '../../presentation/damageEffectStacks';
 import { numberFormatter } from '../../ui/i18n';
@@ -112,7 +113,7 @@ export function RankingEffectDetails({
                 stack.sources.map((source) => (
                   <ModifierChip
                     key={`${stack.kind}:${source.key}`}
-                    active={source.applied}
+                    active={damageEffectContributes(source)}
                     label={source.effectLabel}
                     detail={`${damageEffectStateLabel(source)}・${source.effectName || source.sourceName}`}
                     sources={[

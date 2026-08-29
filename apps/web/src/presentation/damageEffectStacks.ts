@@ -16,7 +16,7 @@ export interface DamageEffectSource {
   effectLabel: string;
   imageKey: string | null;
   value: number | null;
-  applied: boolean;
+  executionApplied: boolean;
   contributionState: RankingContributionPolicyState | null;
   explanation: EffectProjection['explanation']['code'];
   kind: DamageEffectStackKind;
@@ -156,8 +156,7 @@ export function collectDamageEffectStacks({
             effectLabel: effect.label,
             imageKey: effectSourceImage(effect, servants, craftEssence),
             value: effect.value,
-            applied:
-              effect.outcome === 'applied' && selectedContribution !== 'excludedByRankingPolicy',
+            executionApplied: effect.outcome === 'applied',
             contributionState: selectedContribution,
             explanation: effect.explanation.code,
             kind,
@@ -186,8 +185,6 @@ export function damageEffectValueLabel(source: DamageEffectSource): string {
 }
 
 export function damageEffectStateLabel(source: DamageEffectSource): string {
-  if (source.contributionState === 'excludedByRankingPolicy') return '計算外';
-  if (source.applied) return damageEffectValueLabel(source);
   const labels: Record<DamageEffectSource['explanation'], string> = {
     applied: damageEffectValueLabel(source),
     disabled: '計算外',
@@ -197,5 +194,11 @@ export function damageEffectStateLabel(source: DamageEffectSource): string {
     stateMutationOnly: '状態反映',
     unresolved: '未対応',
   };
-  return labels[source.explanation];
+  if (!source.executionApplied) return labels[source.explanation];
+  if (source.contributionState === 'excludedByRankingPolicy') return '計算外';
+  return damageEffectValueLabel(source);
+}
+
+export function damageEffectContributes(source: DamageEffectSource): boolean {
+  return source.executionApplied && source.contributionState !== 'excludedByRankingPolicy';
 }
