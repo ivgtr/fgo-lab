@@ -1,4 +1,8 @@
-import type { EffectProjection, ModifierKind } from '@fgo-lab/calculation-application';
+import type {
+  EffectiveRankingContributionState,
+  EffectProjection,
+  ModifierKind,
+} from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import { effectSourceImage } from './effectSourcePresentation';
 
@@ -13,6 +17,7 @@ export interface DamageEffectSource {
   imageKey: string | null;
   value: number | null;
   applied: boolean;
+  contributionState: EffectiveRankingContributionState | null;
   explanation: EffectProjection['explanation']['code'];
   kind: DamageEffectStackKind;
 }
@@ -59,21 +64,32 @@ const STACK_ORDER: DamageEffectStackKind[] = [
   'unresolved',
 ];
 
+function effectContributes(
+  effect: EffectProjection,
+  contributionState: EffectiveRankingContributionState | null,
+): boolean {
+  if (contributionState === null) return effect.outcome === 'applied';
+  return contributionState === 'contributing';
+}
+
 export function collectDamageEffectStacks({
   effects,
   servants,
   craftEssence,
+  contributionState,
 }: {
   effects: readonly EffectProjection[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
+  contributionState?: (effect: EffectProjection) => EffectiveRankingContributionState;
 }): DamageEffectStack[] {
   const stacks = new Map<DamageEffectStackKind, DamageEffectStack>();
   for (const effect of effects) {
     const kind = effect.modifier ?? (effect.outcome === 'unsupported' ? 'unresolved' : null);
     if (!kind) continue;
     const stack = stacks.get(kind) ?? { kind, label: STACK_LABELS[kind], sources: [] };
-    if (!stack.sources.some((source) => source.key === effect.projectionKey))
+    if (!stack.sources.some((source) => source.key === effect.projectionKey)) {
+      const resolvedContribution = contributionState?.(effect) ?? null;
       stack.sources.push({
         key: effect.projectionKey,
         sourceName: effect.sourceName,
@@ -81,10 +97,12 @@ export function collectDamageEffectStacks({
         effectLabel: effect.label,
         imageKey: effectSourceImage(effect, servants, craftEssence),
         value: effect.value,
-        applied: effect.outcome === 'applied',
+        applied: effectContributes(effect, resolvedContribution),
+        contributionState: resolvedContribution,
         explanation: effect.explanation.code,
         kind,
       });
+    }
     stacks.set(kind, stack);
   }
   return STACK_ORDER.flatMap((kind) => (stacks.has(kind) ? [stacks.get(kind)!] : []));
@@ -108,6 +126,9 @@ export function damageEffectValueLabel(source: DamageEffectSource): string {
 }
 
 export function damageEffectStateLabel(source: DamageEffectSource): string {
+  if (source.contributionState === 'excludedByRankingPolicy') return '計算外';
+  if (source.contributionState === 'conditionNotMet') return '条件不成立';
+  if (source.contributionState === 'unsupported') return '未対応';
   if (source.applied) return damageEffectValueLabel(source);
   const labels: Record<DamageEffectSource['explanation'], string> = {
     applied: damageEffectValueLabel(source),

@@ -1,4 +1,7 @@
-import type { RankingDetail } from '@fgo-lab/calculation-application';
+import {
+  resolveRankingEffectContribution,
+  type RankingDetail,
+} from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   collectDamageEffectStacks,
@@ -45,6 +48,8 @@ export function RankingEffectDetails({
     effects: detail.effects,
     servants: master.servants,
     craftEssence,
+    contributionState: (effect) =>
+      resolveRankingEffectContribution(effect, detail.contributionProjection),
   });
   const visibleProcEffects = [
     ...new Map(

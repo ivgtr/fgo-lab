@@ -73,4 +73,16 @@ describe('typed damage effect stacks', () => {
     });
     expect(damageEffectStateLabel(stacks[0]!.sources[0]!)).toBe('カード不一致');
   });
+
+  it('renders an applied effect as excluded when the ranking contribution policy omits it', () => {
+    const stacks = collectDamageEffectStacks({
+      effects: [projection()],
+      servants: [],
+      craftEssence: undefined,
+      contributionState: () => 'excludedByRankingPolicy',
+    });
+    const source = stacks[0]!.sources[0]!;
+    expect(source).toMatchObject({ applied: false, contributionState: 'excludedByRankingPolicy' });
+    expect(damageEffectStateLabel(source)).toBe('計算外');
+  });
 });
