@@ -8,6 +8,8 @@ source_requirements:
   - "docs/test-strategy-redesign.md"
   - "docs/ranking-self-and-conditional-effects-requirements.md"
   - "docs/development-execution-efficiency-requirements.md"
+source_plans:
+  - "docs/documentation-maintenance-phases.md"
 ---
 
 # FGO Lab テスト・ランキング再設計 Tasks
@@ -29,7 +31,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 
 | ID | Task | Status | Depends on | Primary source |
 | --- | --- | --- | --- | --- |
-| TSK-00 | Baseline固定 | ready | - | 全要件書 |
+| TSK-00.1 | Documentation source normalization | ready | - | documentation maintenance DOC-P0〜P3 |
+| TSK-00 | Baseline固定 | blocked | TSK-00.1 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -38,16 +41,41 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
-| TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-08 | test strategy T5／全完了条件 |
+| TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
+| TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04
-       -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09
+TSK-00.1 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04
+          -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
 
+### TSK-00.1: Documentation source normalization
+
+- [ ] `docs/documentation-maintenance-phases.md`のDOC-P0 inventoryを固定する。
+- [ ] DOC-P1として`docs/README.md`と文書registryを追加する。
+- [ ] DOC-P2としてactive tracked文書からignored／untracked canonical targetへの参照を閉じる。
+- [ ] DOC-P3としてstatus、version、Task owner、ADR indexを収束させる。
+
+Done gate:
+
+- fresh cloneでcurrent requirementsとactive Tasksを一意に辿れる。
+- active tracked Markdownからuntracked `.md`への参照0件。
+- active実装順序を本Tasksだけが所有する。
+- ADR-001〜025とstatusをindexから確認できる。
+- report／archiveの削除は行わず、TSK-09.1の判定inventoryへ残している。
+
+Handoff:
+
+- Commit: 未記録
+- Registry: 未記録
+- Repaired references: 未記録
+- Next command: 未記録
+
 ### TSK-00: Baseline固定
+
+Depends on: TSK-00.1
 
 - [ ] test file、suite、CI step、master load、digest inventoryを記録する。
 - [ ] 現行`RankingConditions`、AttackProfile、condition／resource familyをproduction全件で監査する。
@@ -214,9 +242,27 @@ Done gate:
 
 Handoff: 未記録
 
-### TSK-09: Performance、運用移行、旧経路削除
+### TSK-09.1: Documentation evidence／archive finalization
 
 Depends on: TSK-08
+
+- [ ] `docs/documentation-maintenance-phases.md`のDOC-P4としてevidenceとphase reportを収束させる。
+- [ ] DOC-P5としてsuperseded文書、complete plan、ignored local資料、`.gitignore`を整理する。
+- [ ] DOC-P6としてtracked reference、registry、frontmatter、ADR、Tasksの静的checkを追加する。
+
+Done gate:
+
+- intentional damage差分、canonical input、semantic rule、inventory、digestを失っていない。
+- tracked report集合とtracking policyが一致する。
+- superseded／complete／historical文書をcurrent contractと誤認しない。
+- docs integrity checkがcanonical quality pathで成功する。
+- ignored local資料のmaterialな物理削除は、別の明示承認なしに行っていない。
+
+Handoff: 未記録
+
+### TSK-09: Performance、運用移行、旧経路削除
+
+Depends on: TSK-09.1
 
 - [ ] 変更前後を同一環境で3回測定し、中央値を記録する。
 - [ ] wall-clock、import、parse、candidate、damage request、stdout bytesを比較する。
