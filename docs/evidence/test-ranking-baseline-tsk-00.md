@@ -111,7 +111,7 @@ field activeのNP1〜5 digestは`c7aa7d74…`、`0c82e52f…`、`8381b6bf…`、
 
 ## 6. Runtime and output baseline
 
-Node 24、pnpm 11.20.0、Vitest 4.1.11の同一worktreeで`pnpm test`を3回連続実行した。
+Node 26.3.1、pnpm 11.20.0、Vitest 4.1.11の同一worktreeで`pnpm test`を3回連続実行した。CIの対象Node 24とは異なるため、CI時間へ外挿しない。
 
 | Run | Vitest duration | Wall clock | Import | Cumulative tests | Output |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -143,4 +143,4 @@ model callはsession transcriptのmodel response event数を数え、input／cac
 
 Canonical artifactは本report、`packages/calculation-application/src/productionExecutionParity.test.ts`、`productionMasterAudit.test.ts`、`productionMasterInventory.test.ts`、`rankingConditionInventory.test.ts`、`rankingProduction.test.ts`、`executionBaselineInventory.test.ts`とそのsnapshot、`apps/web/public/master/manifest.json`、`e2e/*-baseline.spec.ts-snapshots/`である。raw `/tmp/tsk00-*` logは測定中間物であり、正本ではない。
 
-TSK-00ではproduction code、test expectation、snapshot、masterを変更していない。開始commit以後の差分はTask状態、本report、evidence index、handoffだけである。次のTSK-01はこのinventory、digest、成功10行、failure artifact到達性、82.01秒のVitest中央値を変更前baselineとして開始する。
+TSK-00ではproduction code、test expectation、snapshot、masterを変更していない。開始commit以後の差分はTask状態、本report、evidence index、handoffだけである。要件承認後のTSK-01はこのinventory、digest、成功10行、failure artifact到達性、82.01秒のVitest中央値を変更前baselineとして開始する。

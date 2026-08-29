@@ -35,7 +35,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
 | TSK-00.3 | Ignored documentation disposition and quarantine | done | TSK-00.2 | documentation maintenance DOC-P3.2 |
 | TSK-00.4 | Documentation entrypoint and archive compaction | done | TSK-00.3 | documentation maintenance DOC-P3.3 |
-| TSK-00 | Baseline固定 | in_progress | TSK-00.4 | 全要件書 |
+| TSK-00 | Baseline固定 | done | TSK-00.4 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -174,10 +174,10 @@ Handoff:
 
 Depends on: TSK-00.4
 
-- [ ] test file、suite、CI step、master load、digest inventoryを記録する。
-- [ ] 現行`RankingConditions`、AttackProfile、condition／resource familyをproduction全件で監査する。
-- [ ] calculator/rankingのdamage、entry、policy差分baselineを固定する。
-- [ ] 成功／失敗ログ量、model call、polling、tool outputの測定方法を固定する。
+- [x] test file、suite、CI step、master load、digest inventoryを記録する。
+- [x] 現行`RankingConditions`、AttackProfile、condition／resource familyをproduction全件で監査する。
+- [x] calculator/rankingのdamage、entry、policy差分baselineを固定する。
+- [x] 成功／失敗ログ量、model call、polling、tool outputの測定方法を固定する。
 
 Done gate:
 
@@ -188,10 +188,11 @@ Done gate:
 Handoff:
 
 - Start baseline: `a49591996cd0951cc82109c252d96e2fd3991fd9`、clean worktree
-- Commit: 未記録
-- Artifacts: 未記録
-- Inventory／digest: 未記録
-- Next command: 未記録
+- Commit: `09486bf` (start)、`aa7529b` (baseline evidence)、本completion commit
+- Artifacts: `docs/evidence/test-ranking-baseline-tsk-00.md`、production audit／parity／ranking canonical tests、execution inventory snapshot、versioned calculator／ranking PNG 11件
+- Inventory／digest: Vitest 77 files／397 tests、Playwright 4 files／96 project cases、published master 33,850,263 bytes、calculator parity 422 records、ranking 433 entries、production condition 10 kinds、resource独立stateなし。full digestと再現commandはbaseline evidenceに記録
+- Verification: `pnpm test`は3回とも77 files／397 tests passed、wall-clock中央値82.01秒、成功出力10行／242 bytes。local parallel E2Eは60 passed／32 skipped／4 failed、同4 pathsのChromium 1 worker再実行は4 passed。failureを既存問題とは断定せず、CIのNode 24／1 worker／2 retriesとも区別。product／test／snapshot／master差分0
+- Next command: test strategy／execution efficiencyのapproval gateを確認後、`git status --short && git rev-parse HEAD`でTSK-01のbaseline identityを開始する
 
 ### TSK-01: Compact runnerとagent command契約
 
