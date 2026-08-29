@@ -1,10 +1,11 @@
 ---
 title: "FGO Lab プロダクト要件定義書"
-document_version: "0.3.5"
-status: "Baseline"
+document_version: "0.3.6"
+status: "Active"
 created_at: "2026-08-24"
+updated_at: "2026-08-30"
 supersedes: "docs/fgo-lab-requirements.md v0.2.2"
-ui_baseline: "docs/ui-design-spec.md v1.3.9"
+ui_baseline: "docs/ui-design-spec.md v1.4.0"
 ---
 
 # FGO Lab プロダクト要件定義書
@@ -17,10 +18,11 @@ ui_baseline: "docs/ui-design-spec.md v1.3.9"
 
 - 本書: プロダクト目的、機能範囲、データ境界、非機能要件、受入条件
 - `docs/ui-design-spec.md`: 承認済みの情報構造、操作モデル、レスポンシブ、画面受入条件
-- `docs/implementation-plan.md`: 実装順、依存関係、成果物、品質ゲート
+- `docs/development-redesign-tasks.md`: 唯一の実装順、依存関係、進捗、phase handoff
 - `docs/damage-calculation-review.md`: 計算式調査、実装境界、検証基準、配信方針
 - `docs/damage-effect-execution-requirements.md`: 条件、状態変化、補正を順序付きで実行する計算要件とUI不変条件
-- 比較デモとoptions文書: 判断理由と実装時の参照資料
+
+比較デモとoptions文書はローカルな検討履歴であり、実装要件または正本として使用しない。
 
 本書と旧要件書が衝突する場合は本書を優先する。本書とUI仕様が衝突する場合、機能範囲とデータ境界は本書、画面構造と操作モデルはUI仕様を優先し、片方だけを変更せず両文書を更新する。
 
@@ -599,13 +601,9 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 ## 17. 参照資料
 
 - `docs/ui-design-spec.md`
-- `docs/implementation-plan.md`
+- `docs/development-redesign-tasks.md`
 - `docs/damage-calculation-review.md`
 - `docs/damage-effect-execution-requirements.md`
 - `docs/damage-effect-execution-migration-plan.md`
-- `docs/home-ui-options.md`
-- `docs/my-chaldea-ui-options.md`
-- `docs/craft-essence-ui-options.md`
-- `docs/support-template-ui-options.md`
-- `docs/growth-plan-ui-options.md`
-- 各比較デモHTML
+- `docs/ranking-self-and-conditional-effects-requirements.md`
+- `docs/test-strategy-redesign.md`

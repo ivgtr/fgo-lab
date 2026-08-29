@@ -1,10 +1,11 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行要件"
-document_version: "1.1.0"
-status: "E3.2 Redesign Approved"
+document_version: "1.2.0"
+status: "Active"
 created_at: "2026-08-25"
+updated_at: "2026-08-30"
 source_requirements: "docs/fgo-lab-requirements-v0.3.md v0.3.5"
-ui_baseline: "docs/ui-design-spec.md v1.3.9"
+ui_baseline: "docs/ui-design-spec.md v1.4.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 ---
 
