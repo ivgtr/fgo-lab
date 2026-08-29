@@ -41,7 +41,7 @@ updated_at: "2026-08-30"
 | [docs/damage-effect-execution-structure-plan.md](damage-effect-execution-structure-plan.md) | historical plan | Complete | execution ownershipとE3.5〜E3.7完了記録 | succeeded by active damage requirement／Tasks | - | canonical IR、MLB inventory／digest |
 | [docs/damage-effect-unsupported-convergence-plan.md](damage-effect-unsupported-convergence-plan.md) | historical plan | Complete | exact-solvable familyと残存unsupportedの完了記録 | succeeded by zero-unsupported plan | - | unsupported inventory |
 | [docs/damage-effect-zero-unsupported-plan.md](damage-effect-zero-unsupported-plan.md) | historical plan | Complete | implementation-unsupported 0の完了記録 | succeeded by active damage requirement／Tasks | - | production ratchet contract |
-| [docs/prompt-engineering-guidelines.md](prompt-engineering-guidelines.md) | guide | Guideline v1.0.0 | 開発promptとhandoffの運用。product semanticsは所有しない | - | all Tasks | operational examples |
+| [docs/guides/prompt-engineering-guidelines.md](guides/prompt-engineering-guidelines.md) | guide | Guideline v1.0.0 | 開発promptとhandoffの運用。product semanticsは所有しない | - | all Tasks | operational examples |
 | [docs/licenses/data-sources.md](licenses/data-sources.md) | license registry | Active | data source、license、attribution | - | data updates | provenance evidence |
 | [docs/adr/README.md](adr/README.md) | ADR sub-index | Active | ADR-001〜025のpath、status、decision | individual ADRを直接登録 | relevant semantic Tasks | accepted decision history |
 | [docs/evidence/README.md](evidence/README.md) | evidence sub-index | Active v1.0.0 | tracked report 16件のstatus、role、successor、commit | individual reportsを直接登録 | TSK-09.1 retention review | canonical／supporting evidence |
