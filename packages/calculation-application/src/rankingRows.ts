@@ -7,8 +7,7 @@ import type {
   RankingProfileInput,
   RankingRowSummary,
 } from './rankingContracts';
-import { isSpecialAttack } from './rankingContribution';
-import { stateTraitsRequiredByCondition } from './conditionProvenance';
+import { isSpecialAttack, resolveRankingEffectContribution } from './rankingContribution';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 function resultFailure(servant: ServantMaster, result: CalculationResult): RankingFailure {
@@ -52,19 +51,10 @@ export function createRankingRow(
   if (detail.result.status !== 'calculated') return resultFailure(servant, detail.result);
   const selected = detail.result.rows[detail.scenario.attacker.npLevel - 1];
   if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
-  const contributes = (effect: RankingDetail['effects'][number]): boolean => {
-    if (detail.contributionProjection.excludedOperationIds.has(effect.operationId)) return false;
-    const requiredTargetState = stateTraitsRequiredByCondition(
-      effect.explanation.condition,
-      'targetState',
-    );
-    return !requiredTargetState.some((trait) =>
-      detail.contributionProjection.excludedStateTraitContributions.targetState.has(trait),
-    );
-  };
   const applied = detail.effects.filter(
     (effect) =>
-      effect.visibility === 'visible' && effect.outcome === 'applied' && contributes(effect),
+      effect.visibility === 'visible' &&
+      resolveRankingEffectContribution(effect, detail.contributionProjection) === 'contributing',
   );
   const supportEffects = applied.filter((effect) => effect.source.origin === 'support');
   return {

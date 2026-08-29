@@ -20,6 +20,7 @@ import {
   createActorFormProfiles,
 } from './attackProfile';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
+import { resolveRankingEffectContribution } from './rankingContribution';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -166,6 +167,25 @@ describe('production canonical ranking', () => {
           )
         : null,
     ).toEqual([]);
+    const excludedVisibleEffects = Object.values(ranking.details).flatMap((detail) =>
+      detail.effects.flatMap((effect) =>
+        effect.visibility === 'visible' &&
+        resolveRankingEffectContribution(effect, detail.contributionProjection) ===
+          'excludedByRankingPolicy'
+          ? [{ entryId: detail.entryId, effect }]
+          : [],
+      ),
+    );
+    expect({
+      entries: new Set(excludedVisibleEffects.map(({ entryId }) => entryId)).size,
+      effects: excludedVisibleEffects.length,
+    }).toEqual({ entries: 13, effects: 14 });
+    expect(
+      excludedVisibleEffects
+        .filter(({ entryId }) => entryId === summerLilithDetail?.entryId)
+        .map(({ effect }) => effect.modifier)
+        .sort(),
+    ).toEqual(['npSpecial', 'powerMod']);
     let actorFormNodeCount = 0;
     let actorFormProfileCount = 0;
     const expectedAttackProfiles = master.servants.flatMap((servant) => {
