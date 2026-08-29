@@ -1,7 +1,7 @@
 ---
 title: "TSK-00.3 ignored documentation disposition"
-document_version: "1.0.0"
-status: "In Progress"
+document_version: "1.1.0"
+status: "Complete"
 created_at: "2026-08-30"
 baseline_head: "256c2d2c"
 implementation_task: "docs/tasks/development-redesign-tasks.md TSK-00.3"
@@ -59,4 +59,23 @@ TSK-00.3開始時のHEADは`256c2d2c`、working treeはcleanだった。`git ls-
 
 ## Audit result
 
-監査中。classification count、canonical delta、tracked move、quarantine hash verificationは処遇完了後に固定する。
+| Classification | Files | Final treatment |
+| --- | ---: | --- |
+| Canonical delta | 1 | 元snapshotを`docs/archive/data-flow.md`へ同一SHAで保持し、現行code／ADRに基づく`docs/guides/data-flow.md`へ再構成 |
+| Retained evidence | 15 | basenameを保って`docs/evidence/`へtracked昇格し、evidence indexへrole／successor／commitを登録 |
+| Historical decision | 12 | basenameを保って`docs/archive/`へtracked昇格し、registryで現行authorityとsuccessorを明示 |
+| Local-only | 9 | 相対pathを保って`.local-docs/docs/`へ移動 |
+
+### Canonical delta closure
+
+旧`data-flow.md`のmaster／user／image分離、`ProfileCollection`の所有、書込直列化は現行codeとADR-001〜003に一致した。一方、旧図の`calculation / specialTraits -> calc-core`は、現行の`calculation-application -> battle-execution -> calc-core`とranking workerの共有実行経路を表していなかった。validな不変条件を保持しつつ、raw Atlas解釈境界、transactional execution、calculator／ranking parity、portable data境界をcanonical guideへ統合した。guideのSHA-256は`ae6e8129fed1e34343e2a2315253212c7833d1c0f383f235c5b3a163d7e4096e`である。
+
+UI options 5件の採用判断はUI requirement §7、§15〜19へ既に統合済みだった。旧implementation／quality／restoration planの残存項目はactive Tasks TSK-04〜09とdamage execution requirementへ移管済みで、active実装順序の未移管は0件である。
+
+### Evidence retention closure
+
+15 reportは、intentional schema／engine差分、canonical input、implementation commit、golden／differential、production 469／420 inventory、unsupported ratchet、artifact／source SHA-256、performance baselineのいずれかを持つ。後続reportがある資料も中間差分を復元するsource evidenceとして保持し、damage evidenceの未判定は0件とした。
+
+### Hash and quarantine closure
+
+baseline 37件は、archive 13件（canonical delta元snapshot 1件を含む）、evidence 15件、`.local-docs/docs/` 9件の各destinationで移動前SHA-256と一致した。物理削除は0件である。`.gitignore`は`docs/`を対象にする11規則を削除し、`.local-docs/docs/**`の一規則へ集約した。これにより今後`docs/`へ追加された未登録fileはignoredにならず、Git statusへ現れる。

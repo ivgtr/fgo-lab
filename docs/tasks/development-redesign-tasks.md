@@ -33,8 +33,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | --- | --- | --- | --- | --- |
 | TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
 | TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
-| TSK-00.3 | Ignored documentation disposition and quarantine | in_progress | TSK-00.2 | documentation maintenance DOC-P3.2 |
-| TSK-00 | Baseline固定 | blocked | TSK-00.3 | 全要件書 |
+| TSK-00.3 | Ignored documentation disposition and quarantine | done | TSK-00.2 | documentation maintenance DOC-P3.2 |
+| TSK-00 | Baseline固定 | ready | TSK-00.3 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -112,10 +112,10 @@ Handoff:
 Depends on: TSK-00.2
 
 - [x] ignored 29 Markdown＋8 HTMLのpath、bytes、SHA-256と開始HEADを固定する。
-- [ ] architecture／review、旧plan、UI options／demo、damage／master reportをfamily単位で現行正本と比較する。
-- [ ] 各資料を`Canonical delta | Retained evidence | Historical decision | Local-only`へ分類し、canonical deltaとdamage evidenceの未判定を0件にする。
-- [ ] canonical deltaはauthorityと受入条件を確定して現行requirements／ADR／guideへ統合し、evidence／historicalは責務directoryへtracked化する。
-- [ ] local-onlyだけを`.local-docs/docs/<docs以下の相対path>`へ内容不変で移動し、個別・広域の`docs/` ignoreを単一quarantine規則へ置換する。
+- [x] architecture／review、旧plan、UI options／demo、damage／master reportをfamily単位で現行正本と比較する。
+- [x] 各資料を`Canonical delta | Retained evidence | Historical decision | Local-only`へ分類し、canonical deltaとdamage evidenceの未判定を0件にする。
+- [x] canonical deltaはauthorityと受入条件を確定して現行requirements／ADR／guideへ統合し、evidence／historicalは責務directoryへtracked化する。
+- [x] local-onlyだけを`.local-docs/docs/<docs以下の相対path>`へ内容不変で移動し、個別・広域の`docs/` ignoreを単一quarantine規則へ置換する。
 
 Done gate:
 
@@ -131,10 +131,10 @@ Handoff:
 
 - Start baseline: `256c2d2c`、clean worktree
 - Inventory: `docs/evidence/ignored-documentation-disposition.md`
-- Commit: 未記録
-- Disposition: 監査中
-- Verification: 未記録
-- Next command: 未記録
+- Commit: `c19d273` (start／inventory)、`1b419a8` (historical)、`1d2ee71` (evidence)、`c2d9863` (canonical data flow)、`cd1500a` (quarantine policy)、本completion commit
+- Disposition: Canonical delta 1、Retained evidence 15、Historical decision 12、Local-only 9。baseline source 37件はarchive 13、evidence 15、local quarantine 9へ内容hashを保って処遇
+- Verification: baseline 37件のdestination SHA-256一致、local-only 9件、削除0件、`docs/`対象ignore 0件、tracked local link／registry／ADR／evidence index closure、active canonicalからlocal-only参照0件を確認
+- Next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
 
 ### TSK-00: Baseline固定
 
