@@ -1,8 +1,9 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.1.0"
-status: "Draft - design review required"
+document_version: "0.2.0"
+status: "Draft - core product policy fixed; implementation design review required"
 created_at: "2026-08-30"
+updated_at: "2026-08-30"
 related_adrs:
   - "docs/adr/018-ranking-comparison-policy.md"
   - "docs/adr/019-ranking-contribution-and-execution-plan.md"
@@ -37,7 +38,7 @@ related_adrs:
 4. 同時成立する一つのcanonical scenarioを構築できた効果だけを計算する。
 5. NP不足、排他choice、対象不一致、form不一致等をranking policyで迂回しない。
 6. サーヴァントID、名称、効果label、raw Atlas keyによるruntime分岐を追加しない。
-7. 旧policyとの互換性のために新旧経路を併存させない。採用時はschemaを破壊的に更新してよい。
+7. 旧policyとの互換性のために新旧経路を併存させない。実装時はschemaを破壊的に更新する。
 8. 完全な戦闘シミュレーターへ拡張せず、宝具前の有限planに必要な状態だけを扱う。
 
 ## 3. 対象範囲
@@ -71,7 +72,7 @@ related_adrs:
 4. 自己バフ: `なし | あり`
 5. 条件効果: `通常のみ | 成立込み`
 
-ADR-018の`特攻なし | 成立`とADR-020の`フィールドなし | 成立`は、採用時に
+ADR-018の`特攻なし | 成立`とADR-020の`フィールドなし | 成立`は、実装時に
 `条件効果`へ破壊的に統合する。旧二項目を非表示で残したり、内部fallbackとして読み取ったりしない。
 
 ### 4.1 既定値
@@ -291,7 +292,7 @@ skill reducerはrequirement、resource mutation、choice、proc、effect、form 
 
 ### 8.4 Ranking resource policy
 
-推奨policyは次のとおりである。
+resource policyは次で確定する。
 
 - `通常のみ`: 全員が開始NP100%、外部NP供給なし。
 - `成立込み`: 実際のNP gauge capacity内で、planを成立させる開始NP候補を有限生成できる。
@@ -304,7 +305,7 @@ skill reducerはrequirement、resource mutation、choice、proc、effect、form 
 
 ### 8.5 Calculator
 
-resolved scenarioは開始NPを暗黙のglobal定数ではなく`preparationContext`として明示する方向を推奨する。
+resolved scenarioは開始NPを暗黙のglobal定数ではなく`preparationContext`として明示する。
 
 ```ts
 preparationContext: {
@@ -332,8 +333,8 @@ preparationContext: {
 | 自身が生成したfieldを読む後続効果 | あり | 通常のみ | field stateは保持し、条件寄与は除外 |
 | 自身が生成したfieldを読む後続効果 | あり | 成立込み | derivedAction witnessとして適用 |
 
-最後の二行はADR-020の「自前生成fieldはfield inactiveでも適用する」契約からの意図的なpolicy変更候補である。
-採用前にproduction差分を全件提示して承認を得る。
+最後の二行はADR-020の「自前生成fieldはfield inactiveでも適用する」契約からの意図的なpolicy変更である。
+実装確定前にproduction差分を全件提示し、数値差分の承認を得る。
 
 ## 10. Canonical condition planning
 
@@ -353,7 +354,7 @@ AttackProfile
 複数条件を同時成立させる場合も、一つのTargetContext、field set、input set、resource stateとして表現する。
 候補0件は`impossible`、未知semantics、曖昧性、探索上限超過はtyped failureとし、通常値へfallbackしない。
 
-選択順は次を推奨する。
+選択順は次で固定する。
 
 1. damage
 2. external assumption数
@@ -400,7 +401,7 @@ AttackProfile
 
 ## 12. 移行方針
 
-採用時は次の単一構造へ破壊的に移行する。
+実装時は次の単一構造へ破壊的に移行する。
 
 1. `RankingConditions.specialAttack`と`RankingConditions.field`を削除する。
 2. `RankingConditions.conditionalEffects: 'baseline' | 'satisfied'`を追加する。
@@ -410,7 +411,7 @@ AttackProfile
 6. NP resource semanticsをpreparation reducerへ追加する。
 7. ranking側でeffect inclusion、condition fact、resource stateを再構築する旧経路を削除する。
 8. 旧URL parameter、reader fallback、互換flag、旧fixtureを残さない。
-9. 採用判断を新ADRへ記録し、ADR-018とADR-020の該当policyをsupersedeする。
+9. 実装判断を新ADRへ記録し、ADR-018とADR-020の該当policyをsupersedeする。
 
 新しいpackageは原則追加しない。既存責務内のfocused moduleへ分割し、ranking orchestrator、engine、Web componentへ
 条件分岐を集積しない。
@@ -455,22 +456,53 @@ masterを一度だけload／compileした共有inventoryから次を検証する
 - 主要suiteまたはhot pathが理由なく10%を超えて悪化した場合は設計未完了として停止する
 - 候補上限の緩和やtest timeout延長だけで性能gateを通さない
 
-## 14. 実装前の設計判断
+## 14. 確定事項と実装前gate
 
-次を承認してからproduction実装へ進む。
+### 14.1 確定した製品仕様
 
-| 論点 | 推奨案 | 影響 |
+次は本書の他の要件から一意に決まるため、追加承認を待たず確定事項とする。実装者が別案へ変更しない。
+
+| 論点 | 確定仕様 | 理由・影響 |
 | --- | --- | --- |
-| UI名称 | `条件効果: 通常のみ／成立込み` | 特攻・field以外も含むことを明確化 |
-| 自己生成condition | 通常のみでは寄与を除外、成立込みで許可 | ADR-020からdamage差分が生じる |
-| 確率／choice | 成立込みで最大の合法結果を候補化 | 通常順位からランダム最大値を除外 |
-| 開始NP | 通常100%、成立込みはcapacity内の合法候補 | NP Lvにより成立可能planが変わり得る |
-| HP／quantity | 通常は固定baseline、成立込みは有限候補 | 最大ポテンシャルmodeの意味が広がる |
-| calculator NP入力 | scenarioへ明示し、常設UI追加は保留 | share/save parityを先に確保 |
-| 旧URL／保存 | fallbackなしで拒否 | schema移行は破壊的になる |
+| UI名称 | `条件効果: 通常のみ／成立込み` | 特攻、field、HP、状態、確率、resource条件を同じ上位概念で表す |
+| 既定mode | `自己バフあり・条件効果通常のみ` | 同じ通常条件で各AttackProfileの標準性能を比較する |
+| 自己生成condition | 通常のみでは寄与を除外し、成立込みで許可 | witnessの由来でUI policyを変えず、条件効果の意味を一貫させる |
+| 確率／choice | 通常のみでは条件寄与を除外し、成立込みで最大の合法結果を候補化 | ランダム最大値を通常順位へ混入させない |
+| 特攻／field | 条件効果へ統合し、旧独立入力を削除 | 条件項目の増殖を止める |
+| 開始NP | 通常のみは100%、成立込みはcapacity内の合法候補 | NP条件を迂回せず、最大ポテンシャルを有限に評価する |
+| HP／quantity | 通常のみは固定baseline、成立込みは有限なcanonical候補 | 個別editorなしで条件効果へ統合する |
+| 実行合法性 | 両modeで常に強制し、policyによる上書きを禁止 | NP不足や排他矛盾から数値を返さない |
+| intrinsic condition | 両modeで通常評価し、成立込みでも追加・変更しない | 本人が持たないtrait等を捏造しない |
+| calculator scenario | 開始NPを一次入力として明示し、暗黙global値にしない | share/saveとranking parityを確保する |
+| calculator UI | 第一段階では開始NPの常設入力を追加しない | ranking統合に不要なUI拡張を避ける |
+| 旧URL／保存 | fallbackなしで明示拒否 | 後方互換用の二重policyを残さない |
 
-特に「自己生成field／targetStateを通常のみで寄与させるか」と「成立込みで開始NPを変更できるか」は、
-順位へ直接影響する製品判断である。実装者が作業中に独断で決めない。
+自己生成field／targetStateの扱いはADR-020からの意図的変更である。execution stateとevidenceは維持し、
+`通常のみ`ではcondition-dependent contributionだけを除外する。これにより外部条件と自己生成条件で
+UI上の例外を作らない。
+
+`成立込み`の開始NPは「十分なNPがあると仮定して無制限に成立させる」という意味ではない。選択したNP Lvと
+canonical masterから導出したcapacity内だけを候補とし、resource-aware reducerが最後のattack NPまで実行できる
+planだけを採用する。
+
+### 14.2 Production監査で確定する実装詳細
+
+次は製品仕様ではなく、productionデータと性能測定から決める実装詳細である。事前に値を推測せず、監査結果を
+ADRと完了証跡へ固定する。
+
+| 論点 | 監査で決める内容 | Gate |
+| --- | --- | --- |
+| NP capacity | NP Lv、特殊form、variantごとのcanonical導出元 | 名称・servant ID分岐なしで全件一意に解決できる |
+| NP増減 | self `gainNp`／`lossNp`、固定消費／全消費、target policyの全inventory | unknown、曖昧target、二重適用が0件 |
+| 条件候補domain | HP、quantity、field、target、state、procごとの有限値集合 | damage-reachableな値だけをlosslessに列挙できる |
+| condition signature | candidate deduplicateとcacheに使うtyped key | evidenceを失わず完全同値だけを統合する |
+| candidate cap | 全AttackProfileの実測最大値と余裕 | cap緩和ではなく構造上の有限性を説明できる |
+| calculator詳細入力 | NP入力を必要とするeffectと既存UIで表現不能なcase | 必要caseがある場合だけ近接UI案を別途提示する |
+| schema／engine version | 実際に変わる保存・master・execution契約 | 旧形式fallbackなしで一度だけ更新する |
+| 意図的damage差分 | 旧policyとの全entry／NP1〜5差分 | canonical input、witness、採用planで全件説明する |
+
+上記監査で新しいsemantic familyや説明不能なdamage差分が見つかった場合だけ実装を止める。既に確定した
+製品仕様そのものを、途中で見つけた個別caseに合わせて再び未決定へ戻さない。
 
 ## 15. 実装停止条件
 
