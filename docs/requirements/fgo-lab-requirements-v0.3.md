@@ -18,7 +18,7 @@ ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
 
 - 本書: プロダクト目的、機能範囲、データ境界、非機能要件、受入条件
 - `docs/requirements/ui-design-spec.md`: 承認済みの情報構造、操作モデル、レスポンシブ、画面受入条件
-- `docs/development-redesign-tasks.md`: 唯一の実装順、依存関係、進捗、phase handoff
+- `docs/tasks/development-redesign-tasks.md`: 唯一の実装順、依存関係、進捗、phase handoff
 - `docs/requirements/damage-calculation-review.md`: 計算式調査、実装境界、検証基準、配信方針
 - `docs/requirements/damage-effect-execution-requirements.md`: 条件、状態変化、補正を順序付きで実行する計算要件とUI不変条件
 
@@ -601,7 +601,7 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 ## 17. 参照資料
 
 - `docs/requirements/ui-design-spec.md`
-- `docs/development-redesign-tasks.md`
+- `docs/tasks/development-redesign-tasks.md`
 - `docs/requirements/damage-calculation-review.md`
 - `docs/requirements/damage-effect-execution-requirements.md`
 - `docs/damage-effect-execution-migration-plan.md`

@@ -4,7 +4,7 @@ document_version: "1.0.0"
 status: "Complete"
 created_at: "2026-08-30"
 baseline_head: "e4cb665c1dbc6abbbc8291ffc6f44656251453cd"
-implementation_task: "docs/development-redesign-tasks.md TSK-00.1"
+implementation_task: "docs/tasks/development-redesign-tasks.md TSK-00.1"
 ---
 
 # TSK-00.1 documentation inventory
@@ -46,7 +46,7 @@ TSK-00.1で新たに正本化する`ui-design-spec.md`と`damage-calculation-rev
 | --- | --- | --- | --- |
 | `docs/requirements/ui-design-spec.md` | product requirements、damage execution requirements | 内容監査後にtracked UI requirementへ昇格 | `docs/requirements/ui-design-spec.md` v1.4.0 |
 | `docs/requirements/damage-calculation-review.md` | product requirements | 計算式根拠を保持するためtracked requirementへ昇格 | `docs/requirements/damage-calculation-review.md` v1.0.1、ADR-004 |
-| `docs/implementation-plan.md` | product requirements、UI specification | active実装順序から除外。local履歴として保持 | `docs/development-redesign-tasks.md` |
+| `docs/implementation-plan.md` | product requirements、UI specification | active実装順序から除外。local履歴として保持 | `docs/tasks/development-redesign-tasks.md` |
 | `docs/home-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §19 |
 | `docs/my-chaldea-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §17 |
 | `docs/craft-essence-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §17.6〜17.7 |

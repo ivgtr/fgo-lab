@@ -8,7 +8,7 @@ created_at: "2026-08-30"
 updated_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
-implementation_tasks: "docs/development-redesign-tasks.md"
+implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 ---
 
 # FGO Lab テスト戦略 再設計計画・仕様書

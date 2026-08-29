@@ -4,7 +4,7 @@ document_version: "1.1.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
-execution_tasks: "docs/development-redesign-tasks.md"
+execution_tasks: "docs/tasks/development-redesign-tasks.md"
 governing_documents:
   - "AGENTS.md"
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
@@ -22,7 +22,7 @@ governing_documents:
 - blocking maintenance: product／test／ranking実装を開始する前に、入口、正本参照、active task ownerを閉じる。
 - closure maintenance: 新しい意味論とquality pathが確定した後に、phase report、旧計画、archive、automationを最終整理する。
 
-実行順序と進捗は`docs/development-redesign-tasks.md`が所有し、本書は各Phaseの対象、判断規則、成果物、Done gateを所有する。
+実行順序と進捗は`docs/tasks/development-redesign-tasks.md`が所有し、本書は各Phaseの対象、判断規則、成果物、Done gateを所有する。
 
 ## 2. 利用者成果と不変条件
 
@@ -207,7 +207,7 @@ Done gate:
 
 Done gate:
 
-- active実装順序は`docs/development-redesign-tasks.md`だけが所有する。
+- active実装順序は`docs/tasks/development-redesign-tasks.md`だけが所有する。
 - 旧migration planの未完了E5はTasksへ移管され、旧計画のstatusが実態と一致する。
 - current requirementsのstatusから着手可否を判断できる。
 - ADR-001〜025がclickable indexへ全件掲載される。
@@ -325,7 +325,7 @@ DOC-P4〜P6は`TSK-09.1`として、新ranking semanticsとtest quality pathの�
 
 ## 7. 実行手順
 
-Task共通の開始、検証、handoff、commit手順は`docs/development-redesign-tasks.md`の更新規則に従う。本書では文書整備固有の順序だけを定義する。
+Task共通の開始、検証、handoff、commit手順は`docs/tasks/development-redesign-tasks.md`の更新規則に従う。本書では文書整備固有の順序だけを定義する。
 
 ### 7.1 Blocking maintenanceの進め方
 

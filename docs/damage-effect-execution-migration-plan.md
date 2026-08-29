@@ -4,7 +4,7 @@ document_version: "1.3.0"
 status: "Complete"
 created_at: "2026-08-25"
 updated_at: "2026-08-30"
-remaining_work_transferred_to: "docs/development-redesign-tasks.md TSK-08, TSK-09.1, TSK-09"
+remaining_work_transferred_to: "docs/tasks/development-redesign-tasks.md TSK-08, TSK-09.1, TSK-09"
 source_requirements: "docs/requirements/damage-effect-execution-requirements.md v1.2.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 ---
@@ -60,7 +60,7 @@ E4ランキング統合前に、`automatic`へ混在した計算包含、ゲー�
 
 ## 1. 目的と優先度
 
-本書はE0〜E4の完了履歴であり、activeな実装順序を所有しない。旧E5の未完了作業は`docs/development-redesign-tasks.md`のTSK-08、TSK-09.1、TSK-09へ移管済みである。
+本書はE0〜E4の完了履歴であり、activeな実装順序を所有しない。旧E5の未完了作業は`docs/tasks/development-redesign-tasks.md`のTSK-08、TSK-09.1、TSK-09へ移管済みである。
 
 本計画は、`docs/requirements/damage-effect-execution-requirements.md`を実装、検証、削除、確認の単位へ分解する。ダメージ計算品質を最優先とし、Q6のランキング完成や新しい効果対応より先に実施する。
 
@@ -447,7 +447,7 @@ E3.4完了記録（2026-08-26）:
 
 ### E5：文書、版、旧経路の最終監査（新Tasksへ移管）
 
-状態: 本計画では終了。`docs/development-redesign-tasks.md`のTSK-08、TSK-09.1、TSK-09へ移管済み
+状態: 本計画では終了。`docs/tasks/development-redesign-tasks.md`のTSK-08、TSK-09.1、TSK-09へ移管済み
 
 作業:
 

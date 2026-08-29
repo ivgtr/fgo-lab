@@ -5,7 +5,7 @@ status: "Guideline"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 related_documents:
-  - "docs/development-redesign-tasks.md"
+  - "docs/tasks/development-redesign-tasks.md"
   - "docs/requirements/development-execution-efficiency-requirements.md"
   - "AGENTS.md"
 ---
@@ -52,7 +52,7 @@ OpenAI Docsでは、promptにGoal、Context、Constraints、Done whenを含め�
 
 - repository-wide invariant: `AGENTS.md`
 - product semantics: requirements／ADR
-- 実装順序と進捗: `docs/development-redesign-tasks.md`
+- 実装順序と進捗: `docs/tasks/development-redesign-tasks.md`
 - 実行効率契約: `docs/requirements/development-execution-efficiency-requirements.md`
 - 完了済み変更: commit
 - 完全なtest結果: artifact manifest
@@ -135,7 +135,7 @@ bug finding
 
 ```text
 Task:
-- docs/development-redesign-tasks.md の TSK-xx を実装してください。
+- docs/tasks/development-redesign-tasks.md の TSK-xx を実装してください。
 
 Goal:
 - <利用者に見える一つの成果>
@@ -222,7 +222,7 @@ Done when:
 
 成果物:
 - requirements／ADRの調査結果
-- docs/development-redesign-tasks.mdの再計画
+- docs/tasks/development-redesign-tasks.mdの再計画
 
 実装、fallback、個別case分岐、commitは行わないでください。
 ```
@@ -232,7 +232,7 @@ Done when:
 new sessionでは過去の会話要約を長文で貼らず、repository stateから再開する。
 
 ```text
-docs/development-redesign-tasks.md の TSK-xx を開始してください。
+docs/tasks/development-redesign-tasks.md の TSK-xx を開始してください。
 
 Starting point:
 - HEAD: <commit>

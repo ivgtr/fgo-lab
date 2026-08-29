@@ -14,7 +14,7 @@ updated_at: "2026-08-30"
 - 現行product scope: [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md)
 - 現行UI contract: [UI design specification](requirements/ui-design-spec.md)
 - 現行damage contract: [damage calculation review](requirements/damage-calculation-review.md) と [damage effect execution requirements](requirements/damage-effect-execution-requirements.md)
-- 唯一のactive implementation ledger: [development redesign Tasks](development-redesign-tasks.md)
+- 唯一のactive implementation ledger: [development redesign Tasks](tasks/development-redesign-tasks.md)
 - 採用済み判断: [ADR index](adr/README.md)
 - damage／ranking証跡: [evidence report index](reports/README.md)
 - 文書監査baseline: [documentation inventory](documentation-inventory.md)
@@ -34,8 +34,8 @@ updated_at: "2026-08-30"
 | [docs/requirements/ranking-self-and-conditional-effects-requirements.md](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement | Proposed v0.6.1 | ranking policy、canonical scenario、candidate、parity | - | approval required before TSK-04 | production audit required |
 | [docs/requirements/test-strategy-redesign.md](requirements/test-strategy-redesign.md) | requirement | Proposed v1.1.1 | test suite、runner、quality gate、diagnostics | - | approval required before TSK-01 | test／performance baseline contract |
 | [docs/requirements/development-execution-efficiency-requirements.md](requirements/development-execution-efficiency-requirements.md) | requirement | Proposed v1.0.1 | bounded output、artifact、handoff、command efficiency | - | approval required before TSK-01 | execution measurement contract |
-| [docs/development-redesign-tasks.md](development-redesign-tasks.md) | Tasks | Active v1.1.0 | 唯一の実装順序、依存、status、handoff | old implementation planとmigration E5を引継ぎ | TSK-00.1〜TSK-09 | commit／artifact handoff |
-| [docs/documentation-maintenance-phases.md](documentation-maintenance-phases.md) | phase plan | Active v1.1.0 | 文書整備固有の判断規則とDone gate。実装順序は所有しない | - | TSK-00.1、TSK-00.2、TSK-09.1 | documentation baseline／layout／closure gate |
+| [docs/tasks/development-redesign-tasks.md](tasks/development-redesign-tasks.md) | Tasks | Active v1.1.0 | 唯一の実装順序、依存、status、handoff | old implementation planとmigration E5を引継ぎ | TSK-00.1〜TSK-09 | commit／artifact handoff |
+| [docs/tasks/documentation-maintenance-phases.md](tasks/documentation-maintenance-phases.md) | phase plan | Active v1.1.0 | 文書整備固有の判断規則とDone gate。実装順序は所有しない | - | TSK-00.1、TSK-00.2、TSK-09.1 | documentation baseline／layout／closure gate |
 | [docs/fgo-lab-requirements.md](fgo-lab-requirements.md) | historical requirement | Superseded v0.2.2 | 初期product検討履歴。実装判断には使用しない | superseded by v0.3 | - | Git history only |
 | [docs/damage-effect-execution-migration-plan.md](damage-effect-execution-migration-plan.md) | historical plan | Complete v1.3.0 | E0〜E4の完了履歴。active順序は所有しない | remaining E5 transferred to TSK-08／09.1／09 | - | phase resultと旧gate |
 | [docs/damage-effect-execution-structure-plan.md](damage-effect-execution-structure-plan.md) | historical plan | Complete | execution ownershipとE3.5〜E3.7完了記録 | succeeded by active damage requirement／Tasks | - | canonical IR、MLB inventory／digest |

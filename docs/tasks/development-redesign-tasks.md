@@ -9,7 +9,7 @@ source_requirements:
   - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
   - "docs/requirements/development-execution-efficiency-requirements.md"
 source_plans:
-  - "docs/documentation-maintenance-phases.md"
+  - "docs/tasks/documentation-maintenance-phases.md"
 ---
 
 # FGO Lab テスト・ランキング再設計 Tasks
@@ -53,7 +53,7 @@ TSK-00.1 -> TSK-00.2 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05
 
 ### TSK-00.1: Documentation source normalization
 
-- [x] `docs/documentation-maintenance-phases.md`のDOC-P0 inventoryを固定する。
+- [x] `docs/tasks/documentation-maintenance-phases.md`のDOC-P0 inventoryを固定する。
 - [x] DOC-P1として`docs/README.md`と文書registryを追加する。
 - [x] DOC-P2としてactive tracked文書からignored／untracked canonical targetへの参照を閉じる。
 - [x] DOC-P3としてstatus、version、Task owner、ADR indexを収束させる。
@@ -278,7 +278,7 @@ Handoff: 未記録
 
 Depends on: TSK-08
 
-- [ ] `docs/documentation-maintenance-phases.md`のDOC-P4としてevidenceとphase reportを収束させる。
+- [ ] `docs/tasks/documentation-maintenance-phases.md`のDOC-P4としてevidenceとphase reportを収束させる。
 - [ ] DOC-P5としてsuperseded文書、complete plan、ignored local資料、`.gitignore`を整理する。
 - [ ] DOC-P6としてtracked reference、registry、frontmatter、ADR、Tasksの静的checkを追加する。
 
