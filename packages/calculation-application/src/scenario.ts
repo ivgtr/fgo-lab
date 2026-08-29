@@ -61,7 +61,6 @@ export interface ResolvedCalculationInput {
   activationRequirements: ActivationRequirementOwner[];
   appliedPreparationActions: readonly AppliedPreparationAction[];
   targetStateTraitsAtDamage: readonly string[];
-  intrinsicTargetStateTraitsAtDamage: readonly string[];
 }
 
 export interface CalculationExecution {
@@ -304,20 +303,6 @@ function resolvePreparedOrderedScenario(
   const damageState = execution.operations.find(
     ({ operation, outcome }) => operation.kind === 'executeNpDamage' && outcome === 'applied',
   )?.state;
-  const intrinsicTargetState = new Set<string>();
-  for (const result of execution.operations) {
-    if (result.operation.kind === 'executeNpDamage') break;
-    if (
-      result.outcome !== 'applied' ||
-      result.operation.source.origin !== 'np' ||
-      result.operation.phase !== 'beforeNpDamage' ||
-      (result.operation.kind !== 'addTrait' && result.operation.kind !== 'removeTrait') ||
-      result.operation.scope !== 'targetState'
-    )
-      continue;
-    if (result.operation.kind === 'addTrait') intrinsicTargetState.add(result.operation.trait);
-    else intrinsicTargetState.delete(result.operation.trait);
-  }
   const warnings = execution.issues.map((issue) => {
     if (issue.kind === 'invalidTargetContext')
       return `${issue.kind}:${issue.detail}:${issue.sourceKeys.join(',')}`;
@@ -398,7 +383,6 @@ function resolvePreparedOrderedScenario(
           present ? [trait] : [],
         )
       : [],
-    intrinsicTargetStateTraitsAtDamage: [...intrinsicTargetState].sort(),
     trace: [
       ...decisionTrace,
       ...activationTrace,
@@ -427,7 +411,6 @@ function manualResolvedInput(
     activationRequirements: [],
     appliedPreparationActions: [],
     targetStateTraitsAtDamage: scenario.manual.targetStateTraits,
-    intrinsicTargetStateTraitsAtDamage: [],
     noblePhantasmVariant: null,
   };
 }

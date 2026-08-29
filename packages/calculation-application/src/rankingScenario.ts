@@ -74,9 +74,6 @@ export function compileRankingExecutionPlan(
         canonical,
         baseline,
         plannedTargetStateTraits: new Set(canonicalPrepared.resolved.targetStateTraitsAtDamage),
-        intrinsicTargetStateTraits: new Set(
-          canonicalPrepared.resolved.intrinsicTargetStateTraitsAtDamage,
-        ),
       });
       return {
         baseScenario: canonical,

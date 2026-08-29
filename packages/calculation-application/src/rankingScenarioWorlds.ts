@@ -82,7 +82,6 @@ function scenarioForPolicy(
   scope: 'ranking' | 'withoutArea',
   worldCandidate: RankingWorld,
   master: MasterDataSnapshot,
-  intrinsicTargetStateTraits: ReadonlySet<string>,
 ): { scenario: ResolvedScenario; contributionProjection: DamageContributionProjection } {
   const targetWorld = worldCandidate.target
     ? materializeRankingWorld(scenario, worldCandidate.target)
@@ -127,7 +126,7 @@ function scenarioForPolicy(
                   ? stateTraitsRequiredByCondition(
                       control.projection.explanation.condition,
                       'targetState',
-                    ).filter((trait) => !intrinsicTargetStateTraits.has(trait))
+                    )
                   : [],
               )
             : [],
@@ -145,17 +144,8 @@ export function compileRankingScenarioWorlds(input: {
   canonical: ResolvedScenario;
   baseline: PreparedCalculationProjection;
   plannedTargetStateTraits: ReadonlySet<string>;
-  intrinsicTargetStateTraits: ReadonlySet<string>;
 }): CompiledRankingScenarioWorlds {
-  const {
-    servant,
-    master,
-    conditions,
-    canonical,
-    baseline,
-    plannedTargetStateTraits,
-    intrinsicTargetStateTraits,
-  } = input;
+  const { servant, master, conditions, canonical, baseline, plannedTargetStateTraits } = input;
   const rankingScenarios: ResolvedScenario[] = [];
   const withoutAreaScenarios: (ResolvedScenario | null)[] = [];
   const contributionProjections: DamageContributionProjection[] = [];
@@ -196,7 +186,6 @@ export function compileRankingScenarioWorlds(input: {
         'ranking',
         candidate,
         master,
-        intrinsicTargetStateTraits,
       ),
     );
     rankingScenarios.push(...rankedWorlds.map(({ scenario }) => scenario));
@@ -216,7 +205,6 @@ export function compileRankingScenarioWorlds(input: {
             'withoutArea',
             candidate,
             master,
-            intrinsicTargetStateTraits,
           )
         : null,
     );

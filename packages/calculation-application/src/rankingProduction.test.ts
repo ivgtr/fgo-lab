@@ -30,11 +30,11 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    'c82ea0f04bd9bb3e3da444e4f8d70bf313d0a9338a9df0a3af5cc4c7d8c7ece3',
-    '0f4388775a59943f3ecc874d0fe7a3eb58b18fd1a1a31422c35ab92de92f5191',
-    '00707fed20256eda4e3bd85c7b8766dfcabad020af5e787f01c326e6d40e7ee1',
-    'c069e175ce1c5ebccb818c20eb03de08fa99eac5ea1f0b6622b22e3249962b5a',
-    '4fb7da6edc71e1dae7fc31340f206a5bdcf1c1c1adc39ed9eaad5f74ff2e94ba',
+    'e603a5720446122604882448fa0b0394e9c644ccaf79334a7e8e06b3608c78cf',
+    '711b6fc65a8dd0ce5eb2aa69e1ed0406f9b20a3cfe0751dea404fb6f15938923',
+    'fa890b04d09c098e98c285b30ce3412069fd885a4b04a9da4f0b90a52c8cf324',
+    'aee4daa4fb1662048df5118d0e9acea5970f1cbc0a7a0860c52816814b63c81c',
+    'f24422789540a519ad534ffd4a2f5407fa1fc384a04be71775fe8b3a99247cbf',
   ],
   'neutral:active': [
     '00e85977f9e33cf211b0c49c5cc448b9264fd7b7fc91c67d8f1789b1239fb5b9',
@@ -44,11 +44,11 @@ const policyDigests = {
     '544489fd3cb737e6315d2e21e17f1216a8e661e11c8ba7139c68bc1f346e9ce6',
   ],
   'favorable:inactive': [
-    '772fef535545aea9a41026b2b61ee0a3a6eb3e6c9673d778131c3bc5079c1808',
-    '5f470f7fab0bafa14f34a211857299c1f32cc970b022ed199c0359136e55ddd9',
-    '6aa735bcf55356be07afe86722ae1e83b056addc2173768b4784b14bea989397',
-    '6c88df4a78a1ceb385ce41c6853bce09fa86f2c1b5ff3f57a6acac1c7afa1158',
-    'dd272ef1c5af28a22fc85dd0e7c8654d9aa5ae99229b75dd5b5c1bcee9a986d2',
+    '8b7e31841179f8522026629ddbe22fb808f6e3c773acf6f641288a65579520c2',
+    '79f871f835a4be66496ad9af4ef858fb741432e42bc5993842f82a1dc1f69d1b',
+    '42ab73db51a247331ba8479de49412cbdac73f2696bdea1dafb0d1218a1e858f',
+    '92ab0ce560bde4d0cf029915badc229557350457ba6ccf64869746049343ec63',
+    '6dc590e257c5508e5cfd2f474d58ab9349705d4caaa686ad1db8138d9342d1ce',
   ],
   'favorable:active': [
     '744a518bb3d808b591af3beddd117558a9247b8fa9c57b3bac03ad5cc40b4d58',
@@ -537,7 +537,7 @@ describe('production canonical ranking', () => {
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"c82ea0f04bd9bb3e3da444e4f8d70bf313d0a9338a9df0a3af5cc4c7d8c7ece3"`,
+      `"e603a5720446122604882448fa0b0394e9c644ccaf79334a7e8e06b3608c78cf"`,
     );
     expect(
       [...ranking.rows]
@@ -661,11 +661,11 @@ describe('production canonical ranking', () => {
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
     const digests = [
-      'e260fcbdb1e590f48d8eb637a6d199d168319aa658de464765773ef3d479c465',
-      '39185795a3440f0d5c17f22046ae40769c5eda519b524f9c9776ef9274394443',
-      '1d31c75d3195e37756b87e0880f3ed572a9ded943d9fd68e1172d52b7b657f26',
-      'ea02fbe3d55f62bd18cd9b61e578cfe9d251861f3a11dae8970b8addb0bb76b3',
-      '8eb345a94f6df8f30b843955816b0c18bcd823c7189faaa96df34699e328f352',
+      'c7aa7d74d07ce773f4dfd2880954d55c8eb6960be7db2fc527f4bad7466e62b2',
+      '0c82e52f1fdaecfcb8ac6198dc3cce48b7145d2907d998a16e9f92253d51f415',
+      '8381b6bf4f81b48d2a4d443e182e673c44cb0a748ab922c5e4b404bde7afada4',
+      'd279d1d0b2e54e9eece7ef2ad35097392daac5a2477fea070918f2017c03e3c9',
+      'b964bad5aaf72846b8f882672ca7e97772ff5fef5d42288883f863a58865c4c5',
     ];
     const actualDigests: string[] = [];
     for (const [index, ranking] of matrix.entries()) {
@@ -825,6 +825,15 @@ describe('production canonical ranking', () => {
           ]);
           expect(averages('405900', '405901')).toEqual([
             22_846.02, 30_403.195, 34_181.785, 36_071.07, 37_960.365,
+          ]);
+          expect(averages('204300', '204302')).toEqual([
+            43_838.4, 54_798.11, 60_277.97, 63_017.9, 65_757.83,
+          ]);
+          expect(averages('305700', '305701')).toEqual([
+            36_133.395, 48_178.025, 54_200.34, 57_211.5, 60_222.66,
+          ]);
+          expect(averages('604800', '604801')).toEqual([
+            25_781.7, 34_375.775, 38_672.81, 40_821.315, 42_969.9,
           ]);
           expect(
             matrix[0].rows.find(
