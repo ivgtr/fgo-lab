@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 文書体系整備 Phase計画"
-document_version: "1.3.0"
+document_version: "1.3.1"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -137,6 +137,20 @@ Git history
 - 本文内のstatusはsnapshot当時の値であり、現在の進捗や実装順序を所有しない。
 - unique evidenceまたはpath契約があるsnapshotだけをcurrent treeへ保持する。
 - current実装に不要で復元可能な全文はGit historyへ置き、初期navigationとrepo-wide searchから外す。
+
+### 4.7 Frontmatter status vocabulary
+
+`status`は文書kindごとに次のcase-sensitiveな値だけを使用する。この語彙はfrontmatterの文書statusを対象とし、Tasks本文のtask進捗（`ready | blocked | in_progress | done`）やarchive indexが記録するsnapshot当時のstatusとは区別する。
+
+| Document kind | Allowed status |
+| --- | --- |
+| Requirement／registry | `Active | Proposed | Superseded` |
+| Tasks／phase plan | `Active | Complete` |
+| Evidence／historical | `Active | Complete | Superseded` |
+| ADR | `accepted | superseded` |
+| Guide | `Guideline` |
+
+DOC-P6の静的checkは、文書path／registry kindからkindを一意に決定し、この集合以外の値、kind不明、status欠落をfail-closedで拒否する。
 
 ## 5. Blocking maintenance
 

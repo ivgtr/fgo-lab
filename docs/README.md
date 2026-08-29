@@ -35,7 +35,7 @@ updated_at: "2026-08-30"
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Proposed v1.1.1 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Proposed v1.0.1 | bounded output、artifact、handoff、command efficiency |
 | [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.3.0 | 唯一の実装順序、依存、status、handoff |
-| [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.0 | 文書整備固有の判断規則とDone gate |
+| [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.1 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.2.0 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
