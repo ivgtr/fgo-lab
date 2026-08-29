@@ -47,7 +47,9 @@ export function normalizeTraitCondition(
     throw new TypeError(`target_predicate_scope:${scope}`);
   const actorScope = scope === 'target' ? 'target' : 'attacker';
   const traits = condition.traits.flatMap((trait) =>
-    'predicate' in trait ? [] : [{ trait: trait.name, present: !trait.negative }],
+    'predicate' in trait
+      ? []
+      : [{ trait: trait.name, present: !trait.negative, layer: trait.layer }],
   );
   const onlyTrait = traits.length === 1 ? traits[0] : undefined;
   if (
@@ -88,7 +90,21 @@ export function normalizeTraitCondition(
         return trait.present
           ? { kind: 'card', card }
           : { kind: 'not', expression: { kind: 'card', card } };
-      return { kind: 'trait', scope, ...trait, readPolicy };
+      const traitScope =
+        trait.layer === 'state'
+          ? scope === 'target' || scope === 'targetState'
+            ? 'targetState'
+            : scope === 'attacker' || scope === 'attackerState'
+              ? 'attackerState'
+              : scope
+          : scope;
+      return {
+        kind: 'trait',
+        scope: traitScope,
+        trait: trait.trait,
+        present: trait.present,
+        readPolicy,
+      };
     }),
   ];
   return condition.operator === 'all' ? { kind: 'all', expressions } : { kind: 'any', expressions };

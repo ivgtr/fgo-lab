@@ -393,6 +393,7 @@ export interface EffectProjection {
   modifier: ModifierKind | 'npSpecial' | 'npVariantSelection' | null;
   source: OperationSource;
   contributionScope: EffectContributionScope;
+  contributionControl: 'operation' | 'worldAssumption';
   activationSources: readonly OperationSource[];
   executionSupport: 'supported' | 'unsupported';
   outcome: OperationOutcome;

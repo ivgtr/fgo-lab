@@ -30,6 +30,7 @@ import type {
 import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
+import { markOperationGroupUnsupported } from './candidateRollback';
 import {
   applyRuntimeNoblePhantasmVariantSelection,
   needsMutationValidation,
@@ -95,6 +96,7 @@ function operationTransactionKey(operation: BattleOperation): string {
     `${operation.source.skillId}:${operation.source.effectOccurrenceId}`
   );
 }
+
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
@@ -309,7 +311,14 @@ export function executeOrderedScenarioCandidate(
         } else if (operation.kind === 'ignoreDamageCut') {
           if (contributes) candidateState.ignoreDamageCut = true;
         } else if (operation.kind === 'executeNpDamage') {
-          if (contributes) input = applyNoblePhantasmDamage(input, operation, state, decisions);
+          if (contributes)
+            input = applyNoblePhantasmDamage(
+              input,
+              operation,
+              state,
+              decisions,
+              contributionProjection,
+            );
         }
         const mutationValidation = needsMutationValidation(operation)
           ? validateConstraintSet({
@@ -368,20 +377,7 @@ export function executeOrderedScenarioCandidate(
       unresolved: [...initialGroupState.unresolved, ...groupIssues],
     };
     input = initialGroupInput;
-    for (let index = initialGroupResultIndex; index < results.length; index += 1) {
-      const result = results[index]!;
-      results[index] = {
-        ...result,
-        outcome: 'unsupported',
-        state: cloneBattleState(state),
-        projection: {
-          ...result.projection,
-          outcome: 'unsupported',
-          explanation: { ...result.projection.explanation, code: 'unresolved' },
-        },
-        issue: result.issue ?? groupIssues[0]!,
-      };
-    }
+    markOperationGroupUnsupported(results, initialGroupResultIndex, state, groupIssues);
   }
   return assembleCandidateResult({ prepared, resolvedInputs, candidate, state, input, results });
 }

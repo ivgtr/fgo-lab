@@ -352,6 +352,7 @@ describe('condition expression properties', () => {
         effectOccurrenceId: 'effect:0',
       },
       contributionScope: 'personal',
+      contributionControl: 'operation',
       activationSources: [],
       executionSupport: 'supported',
       outcome: 'notApplied',

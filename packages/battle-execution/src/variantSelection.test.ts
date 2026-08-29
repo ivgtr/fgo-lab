@@ -27,6 +27,7 @@ const damage: NpDamageSpec = {
   rawFunctionType: 'damageNp' as const,
   functionId: 'damage',
   target: 'all' as const,
+  stateTraitNames: [],
   parametersByOvercharge: [row, row, row, row, row],
   rawPath: 'fixture',
 };

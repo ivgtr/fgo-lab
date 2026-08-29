@@ -46,7 +46,7 @@ export function reducePreparationSkillAction(
         state.currentFormId,
         effects,
       ),
-      activeStateTraits: structural.activeStateTraits,
+      stateTraits: structural.stateTraits,
       appliedActions: [
         ...state.appliedActions,
         {

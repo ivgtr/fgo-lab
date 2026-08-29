@@ -57,7 +57,7 @@ export function reducePreparationTransformNoblePhantasmAction(
         state.currentFormId,
         variant.effects,
       ),
-      activeStateTraits: structural.activeStateTraits,
+      stateTraits: structural.stateTraits,
       appliedActions: [
         ...state.appliedActions,
         {

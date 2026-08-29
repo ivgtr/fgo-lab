@@ -43,7 +43,12 @@ function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpress
               predicate: trait.predicate,
               present: true,
             }
-          : { kind: 'trait', scope: 'target', trait: trait.name, present: true },
+          : {
+              kind: 'trait',
+              scope: damage.stateTraitNames.includes(trait.name) ? 'targetState' : 'target',
+              trait: trait.name,
+              present: true,
+            },
       ),
     };
   if (damage.kind === 'targetRarity' && item.targetRarities)
@@ -97,7 +102,7 @@ export function compileNoblePhantasmDamageOperation(
     effectOccurrenceId: `damage:${damage.functionId}`,
   };
   const projections = traitCountProjections(
-    attacker.id,
+    variantKey,
     damage,
     baseInput.overcharge,
     baseInput.npLevel,

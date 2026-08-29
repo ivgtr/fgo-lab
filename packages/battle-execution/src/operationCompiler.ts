@@ -608,15 +608,19 @@ export function compileEffect(
             ? 'attackerState'
             : 'targetState';
       const suffixScope = semantic.scope === 'field' ? 'field' : recipient;
+      const compiledBase = baseOperation(
+        source,
+        semantic.contributionScope,
+        order++,
+        uniqueSuffix(`${semantic.mutation}-${String(suffixScope)}:${semantic.trait}`),
+      );
+      const probabilistic = source.effect.proc.kind !== 'guaranteed';
       const base = {
-        ...baseOperation(
-          source,
-          semantic.contributionScope,
-          order++,
-          uniqueSuffix(`${semantic.mutation}-${String(suffixScope)}:${semantic.trait}`),
-        ),
-        decisionKey: null,
-        decisionPlan: { activation: 'automatic' as const, condition: 'evaluate' as const },
+        ...compiledBase,
+        decisionKey: probabilistic ? compiledBase.decisionKey : null,
+        decisionPlan: probabilistic
+          ? compiledBase.decisionPlan
+          : { activation: 'automatic' as const, condition: 'evaluate' as const },
         trait: semantic.trait,
       };
       if (semantic.mutation === 'suppressInitialTrait')
@@ -738,6 +742,7 @@ function makeProjection(
       source.effect.execution.find((operation) => 'contributionScope' in operation)
         ?.contributionScope ?? 'personal',
     ),
+    contributionControl: 'operation',
     activationSources: [],
     executionSupport: 'unsupported',
     outcome: 'notApplied',

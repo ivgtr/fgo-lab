@@ -49,4 +49,8 @@ export interface ResolvedCanonicalInputSet {
 export interface DamageContributionProjection {
   includedOperationIds: ReadonlySet<string>;
   excludedOperationIds: ReadonlySet<string>;
+  excludedStateTraitContributions: {
+    attackerState: ReadonlySet<string>;
+    targetState: ReadonlySet<string>;
+  };
 }

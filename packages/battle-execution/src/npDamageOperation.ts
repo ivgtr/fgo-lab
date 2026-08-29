@@ -5,6 +5,7 @@ import { targetPredicateKey } from './targetPredicate';
 export interface NpDamageOperationContext {
   overcharge: number;
   attackerTraitCounts: Readonly<Record<string, number>>;
+  attackerStateTraitCounts: Readonly<Record<string, number>>;
   targetTraitCounts: Readonly<Record<string, number>>;
   targetCombinedTraitCounts: Readonly<Record<string, number>>;
   targetStateTraitCounts: Readonly<Record<string, number>>;
@@ -27,7 +28,9 @@ export type NpDamageOperationResult =
 const one = (): [number, number, number, number, number] => [1, 1, 1, 1, 1];
 
 function countTraits(
-  counts: Readonly<Record<string, number>>,
+  combinedCounts: Readonly<Record<string, number>>,
+  stateCounts: Readonly<Record<string, number>>,
+  stateTraitNames: ReadonlySet<string>,
   targetPredicateValues: ReadonlyMap<string, boolean>,
   required: readonly (
     | { kind: 'trait'; name: string }
@@ -44,7 +47,10 @@ function countTraits(
         ? targetPredicateValues.get(targetPredicateKey(trait.predicate)) === true
           ? 1
           : 0
-        : Math.max(0, counts[trait.name] ?? 0)),
+        : Math.max(
+            0,
+            (stateTraitNames.has(trait.name) ? stateCounts : combinedCounts)[trait.name] ?? 0,
+          )),
     0,
   );
 }
@@ -167,11 +173,18 @@ export function evaluateNpDamageOperation(
 
   const sourceCounts =
     parameters[0].targetId === 1 ? context.targetCombinedTraitCounts : context.attackerTraitCounts;
+  const sourceStateCounts =
+    parameters[0].targetId === 1
+      ? context.targetStateTraitCounts
+      : context.attackerStateTraitCounts;
+  const stateTraitNames = new Set(damage.stateTraitNames);
   return resolved(
     baseMultipliers,
     parameters.map((parameter) => {
       const count = countTraits(
         sourceCounts,
+        sourceStateCounts,
+        stateTraitNames,
         context.targetPredicateValues,
         parameter.targetTraits ?? [],
       );

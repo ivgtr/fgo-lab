@@ -16,6 +16,7 @@ import type {
   PreparationTransitionResult,
 } from './preparationContracts';
 import { rejectPreparation } from './preparationContracts';
+import { resolveTargetPolicy } from './effectRouting';
 
 type CanonicalOperation = MasterEffect['execution'][number];
 type FormTransformOperation = Extract<CanonicalOperation, { kind: 'transformActorForm' }>;
@@ -53,7 +54,7 @@ export function resolvePreparationStructuralOutcome(
   | {
       currentFormId: ActorFormId;
       selectedVariant: NoblePhantasmVariantRef | null;
-      activeStateTraits: ReadonlySet<string>;
+      stateTraits: PreNoblePhantasmState['stateTraits'];
     }
   | PreparationFailureCode {
   const operations = operationsOf(effects);
@@ -69,35 +70,18 @@ export function resolvePreparationStructuralOutcome(
     if (!variant) return 'variantUnavailable';
     if (!actorFormEquals(variant.ref.actorFormId, currentFormId)) return 'variantFormMismatch';
   }
-  const traits = new Set(state.activeStateTraits);
+  const attackerState = new Set(state.stateTraits.attackerState);
   for (const operation of operations) {
     if (!isRecipientTraitMutation(operation)) continue;
-    if (operation.mutation === 'addTrait') traits.add(operation.trait);
-    if (operation.mutation === 'removeTrait') traits.delete(operation.trait);
+    if (resolveTargetPolicy('attacker', operation.targetPolicy) !== 'attacker') continue;
+    if (operation.mutation === 'addTrait') attackerState.add(operation.trait);
+    if (operation.mutation === 'removeTrait') attackerState.delete(operation.trait);
   }
-  return { currentFormId, selectedVariant, activeStateTraits: traits };
-}
-
-function removeExplicitlyClearedEffects(
-  active: readonly AppliedPreparationEffect[],
-  effects: readonly MasterEffect[],
-): readonly AppliedPreparationEffect[] {
-  const removedTraits = new Set(
-    operationsOf(effects).flatMap((operation) =>
-      isRecipientTraitMutation(operation) && operation.mutation === 'removeTrait'
-        ? [operation.trait]
-        : [],
-    ),
-  );
-  if (removedTraits.size === 0) return active;
-  return active.filter(({ effect }) =>
-    operationsOf([effect]).every(
-      (operation) =>
-        !isRecipientTraitMutation(operation) ||
-        operation.mutation !== 'addTrait' ||
-        !removedTraits.has(operation.trait),
-    ),
-  );
+  return {
+    currentFormId,
+    selectedVariant,
+    stateTraits: { ...state.stateTraits, attackerState },
+  };
 }
 
 export function appendPreparationEffects(
@@ -107,9 +91,8 @@ export function appendPreparationEffects(
   actorFormId: ActorFormId,
   effects: readonly MasterEffect[],
 ): readonly AppliedPreparationEffect[] {
-  const retained = removeExplicitlyClearedEffects(state.activeEffects, effects);
   return [
-    ...retained,
+    ...state.activeEffects,
     ...effects.map((effect) => ({
       sourceKind,
       sourceId,
@@ -172,7 +155,7 @@ export function createPreparationState(
     usedSkillSlots: new Set(),
     transformNoblePhantasmUsed: false,
     activeEffects: [],
-    activeStateTraits: new Set(),
+    stateTraits: { attackerState: new Set(), targetState: new Set() },
     appliedActions: [],
     terminated: false,
   };

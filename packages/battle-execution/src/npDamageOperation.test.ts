@@ -14,10 +14,12 @@ const base = {
   functionId: 'fixture',
   target: 'single' as const,
   rawPath: 'fixture',
+  stateTraitNames: [],
 };
 const context: NpDamageOperationContext = {
   overcharge: 1,
   attackerTraitCounts: {},
+  attackerStateTraitCounts: {},
   targetTraitCounts: {},
   targetCombinedTraitCounts: {},
   targetStateTraitCounts: {},

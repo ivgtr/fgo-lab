@@ -36,7 +36,10 @@ export interface PreNoblePhantasmState {
   usedSkillSlots: ReadonlySet<1 | 2 | 3>;
   transformNoblePhantasmUsed: boolean;
   activeEffects: readonly AppliedPreparationEffect[];
-  activeStateTraits: ReadonlySet<string>;
+  stateTraits: {
+    attackerState: ReadonlySet<string>;
+    targetState: ReadonlySet<string>;
+  };
   appliedActions: readonly AppliedPreparationAction[];
   terminated: boolean;
 }

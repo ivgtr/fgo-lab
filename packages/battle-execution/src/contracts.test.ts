@@ -19,13 +19,13 @@ describe('ordered battle execution contracts', () => {
   it('normalizes NP and command-card scopes for the NP execution path', () => {
     expect(
       normalizeTraitCondition(
-        { operator: 'any', traits: [{ name: 'cardNP', negative: false }] },
+        { operator: 'any', traits: [{ name: 'cardNP', negative: false, layer: 'combined' }] },
         'attacker',
       ),
     ).toEqual({ kind: 'always' });
     expect(
       normalizeTraitCondition(
-        { operator: 'any', traits: [{ name: 'faceCard', negative: false }] },
+        { operator: 'any', traits: [{ name: 'faceCard', negative: false, layer: 'combined' }] },
         'attacker',
       ),
     ).toEqual({ kind: 'not', expression: { kind: 'always' } });
@@ -86,8 +86,8 @@ describe('ordered battle execution contracts', () => {
         {
           operator: 'all',
           traits: [
-            { name: 'cardArts', negative: false },
-            { name: 'cardBuster', negative: true },
+            { name: 'cardArts', negative: false, layer: 'combined' },
+            { name: 'cardBuster', negative: true, layer: 'combined' },
           ],
         },
         'attacker',

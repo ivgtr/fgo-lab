@@ -7,6 +7,7 @@ import type {
   ExecutableBattleState,
   OperationResult,
   OperationSource,
+  TraitScope,
 } from './contracts';
 import {
   activationChoiceGroupKey,
@@ -190,13 +191,16 @@ export function createOperationProjection(
       (preserveSiblingChoice && projectionDecisionPlan.condition === 'userMayAssume')
     );
   const userControllable =
+    !hidden &&
     !knownImpossibleBeforeSelection &&
     projectionDecisionKey !== null &&
     (projectionDecisionPlan.activation === 'user' ||
       (projectionDecisionPlan.condition === 'userMayAssume' &&
         (!conditionSatisfiedInternally || choice !== undefined)));
   return {
-    projectionKey: operation.decisionKey ?? operation.operationId,
+    projectionKey: hidden
+      ? operation.operationId
+      : (operation.decisionKey ?? operation.operationId),
     operationId: operation.operationId,
     label: operation.presentation.label,
     sourceName: operation.presentation.sourceName,
@@ -232,6 +236,7 @@ export function createOperationProjection(
     modifier,
     source: operation.source,
     contributionScope: operation.contributionScope,
+    contributionControl: 'operation',
     activationSources: [],
     executionSupport: 'supported',
     outcome,
@@ -376,8 +381,13 @@ function collectNoblePhantasmVariantConditions(
   return [];
 }
 
+function traitScopeForActor(actorScope: 'attacker' | 'target', stateOnly: boolean): TraitScope {
+  if (!stateOnly) return actorScope;
+  return actorScope === 'target' ? 'targetState' : 'attackerState';
+}
+
 export function traitCountProjections(
-  attackerId: string,
+  noblePhantasmVariantKey: string,
   damage: NpDamageSpec,
   overcharge: number,
   selectedNpLevel: number,
@@ -386,7 +396,8 @@ export function traitCountProjections(
   skillName: string,
 ): EffectProjection[] {
   const item = damage.parametersByOvercharge[overcharge - 1]?.[selectedNpLevel - 1];
-  if (damage.kind !== 'traitCount' || item?.targetId !== 1) return [];
+  if (damage.kind !== 'traitCount' || (item?.targetId !== 0 && item?.targetId !== 1)) return [];
+  const actorScope = item.targetId === 1 ? 'target' : 'attacker';
   const valuePermille = (item.secondaryValuePermille ?? 1_000) + (item.correctionPermille ?? 0);
   return (item.targetTraits ?? []).map((trait) => {
     const predicateKey =
@@ -397,19 +408,28 @@ export function traitCountProjections(
             ? `attribute:${trait.predicate.attribute}`
             : `family:${trait.predicate.familyId}`
         : `trait:${trait.name}`;
-    const projectionKey = `np:${attackerId}:${damage.functionId}:${predicateKey}`;
+    const projectionKey = `np:${noblePhantasmVariantKey}:${damage.functionId}:${predicateKey}`;
+    const traitScope =
+      trait.kind === 'trait'
+        ? traitScopeForActor(actorScope, damage.stateTraitNames.includes(trait.name))
+        : actorScope;
     const condition: ConditionExpression =
       trait.kind === 'targetPredicate'
         ? {
             kind: 'targetPredicate',
-            scope: 'target',
+            scope: actorScope,
             predicate: trait.predicate,
             present: true,
           }
-        : { kind: 'trait', scope: 'target', trait: trait.name, present: true };
+        : {
+            kind: 'trait',
+            scope: traitScope,
+            trait: trait.name,
+            present: true,
+          };
     return {
       projectionKey,
-      operationId: `np:${attackerId}:${damage.functionId}:damage`,
+      operationId: `np:${noblePhantasmVariantKey}:${damage.functionId}:damage`,
       label: '特攻宝具',
       sourceName,
       skillName,
@@ -425,6 +445,7 @@ export function traitCountProjections(
       modifier: 'npSpecial',
       source,
       contributionScope: 'personal',
+      contributionControl: 'worldAssumption',
       activationSources: [],
       executionSupport: 'supported',
       outcome: 'applied',
@@ -447,7 +468,7 @@ export function traitCountProjections(
               kind: 'worldFact' as const,
               fact: {
                 kind: 'trait' as const,
-                scope: 'target' as const,
+                scope: traitScope,
                 trait: trait.name,
                 present: true,
               },

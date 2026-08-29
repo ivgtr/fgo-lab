@@ -151,7 +151,14 @@ describe('canonical operation compilation', () => {
             aliveOnly: true,
             sourcePredicate: {
               counting: 'matchingClauses',
-              clauses: [[{ kind: 'trait', trait: { name: 'king', negative: false } }]],
+              clauses: [
+                [
+                  {
+                    kind: 'trait',
+                    trait: { name: 'king', negative: false },
+                  },
+                ],
+              ],
             },
             otherPredicate: null,
           },
