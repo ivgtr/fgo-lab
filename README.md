@@ -2,6 +2,8 @@
 
 Fate/Grand Orderの所持・育成状態を端末内で管理し、宝具ダメージ、火力順位、必要素材を確認する非公式・非営利の静的Webアプリです。ユーザーデータはブラウザのIndexedDBだけに保存します。
 
+要件、ADR、実装Tasks、evidence、開発guideの正本は[文書index](docs/README.md)から辿れます。
+
 ## 開発
 
 ```sh
