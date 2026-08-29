@@ -1,21 +1,21 @@
 {
   "manifestVersion": 1,
-  "masterDataVersion": "20260829.3",
-  "createdAt": "2026-08-28T19:43:28.105Z",
+  "masterDataVersion": "20260829.8",
+  "createdAt": "2026-08-29T00:10:11.638Z",
   "source": {
     "name": "Atlas Academy",
     "region": "JP",
-    "retrievedAt": "2026-08-28T19:43:28.105Z"
+    "retrievedAt": "2026-08-29T00:10:11.638Z"
   },
   "artifactKind": "production",
   "minimalAppVersion": "0.1.0",
-  "schemaVersion": 36,
+  "schemaVersion": 37,
   "files": [
     {
       "key": "master",
       "file": "master.json",
-      "bytes": 33506171,
-      "sha256": "908c0116db68030530f06c8c948edefe359427a9658321fb7634b2581186a458",
+      "bytes": 33850263,
+      "sha256": "c88fb68d2735f54151de3b965c1d80861cd922159119f47072f9e62ed1a4d9f1",
       "required": true
     }
   ],
