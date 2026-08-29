@@ -35,7 +35,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
 | TSK-00.3 | Ignored documentation disposition and quarantine | done | TSK-00.2 | documentation maintenance DOC-P3.2 |
 | TSK-00.4 | Documentation entrypoint and archive compaction | done | TSK-00.3 | documentation maintenance DOC-P3.3 |
-| TSK-00 | Baseline固定 | ready | TSK-00.4 | 全要件書 |
+| TSK-00 | Baseline固定 | in_progress | TSK-00.4 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -187,6 +187,7 @@ Done gate:
 
 Handoff:
 
+- Start baseline: `a49591996cd0951cc82109c252d96e2fd3991fd9`、clean worktree
 - Commit: 未記録
 - Artifacts: 未記録
 - Inventory／digest: 未記録
