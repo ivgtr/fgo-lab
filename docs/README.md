@@ -7,7 +7,7 @@ updated_at: "2026-08-30"
 
 # FGO Lab documentation registry
 
-ここをfresh cloneからの唯一の文書入口とする。実装順序と進捗は[development-redesign-tasks.md](development-redesign-tasks.md)だけが所有する。要件は利用者成果と受入条件、ADRは採用時点の判断、evidenceはcanonical input・inventory・digest・commitを所有し、互いの責務を上書きしない。
+ここをfresh cloneからの唯一の文書入口とする。実装順序と進捗は[development-redesign-tasks.md](tasks/development-redesign-tasks.md)だけが所有する。要件は利用者成果と受入条件、ADRは採用時点の判断、evidenceはcanonical input・inventory・digest・commitを所有し、互いの責務を上書きしない。
 
 ## Start here
 
@@ -16,8 +16,8 @@ updated_at: "2026-08-30"
 - 現行damage contract: [damage calculation review](requirements/damage-calculation-review.md) と [damage effect execution requirements](requirements/damage-effect-execution-requirements.md)
 - 唯一のactive implementation ledger: [development redesign Tasks](tasks/development-redesign-tasks.md)
 - 採用済み判断: [ADR index](adr/README.md)
-- damage／ranking証跡: [evidence report index](reports/README.md)
-- 文書監査baseline: [documentation inventory](documentation-inventory.md)
+- damage／ranking証跡: [evidence report index](evidence/README.md)
+- 文書監査baseline: [documentation inventory](evidence/documentation-inventory.md)
 
 `Proposed` requirementは意味論が固定されていても未承認であり、各rowのapproval gateより前に実装してはならない。baseline取得や文書整備など、その意味論を実装しない先行Taskは進められる。
 
@@ -26,7 +26,7 @@ updated_at: "2026-08-30"
 | Path | Kind | Status | Authority／scope | Supersedes／superseded by | Implementation task | Evidence role |
 | --- | --- | --- | --- | --- | --- | --- |
 | [docs/README.md](README.md) | registry | Active v1.1.0 | 唯一のdocumentation navigation entry | - | TSK-00.1、TSK-00.2、TSK-09.1 | tracked文書の分類と入口 |
-| [docs/documentation-inventory.md](documentation-inventory.md) | inventory | Complete | TSK-00.1開始時のtracked／ignored／reference baseline | - | TSK-00.1 | HEAD、件数、closure判断 |
+| [docs/evidence/documentation-inventory.md](evidence/documentation-inventory.md) | inventory | Complete | TSK-00.1開始時のtracked／ignored／reference baseline | - | TSK-00.1 | HEAD、件数、closure判断 |
 | [docs/requirements/fgo-lab-requirements-v0.3.md](requirements/fgo-lab-requirements-v0.3.md) | requirement | Active v0.3.6 | product目的、機能範囲、データ境界、横断受入条件 | supersedes v0.2.2 | 全product Task | product contract |
 | [docs/requirements/ui-design-spec.md](requirements/ui-design-spec.md) | requirement | Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 | local UI optionsの採用結論を統合 | TSK-07 | approved UI baseline |
 | [docs/requirements/damage-calculation-review.md](requirements/damage-calculation-review.md) | requirement | Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 | - | TSK-00、TSK-03、TSK-08 | calculation evidence policy |
@@ -44,7 +44,7 @@ updated_at: "2026-08-30"
 | [docs/prompt-engineering-guidelines.md](prompt-engineering-guidelines.md) | guide | Guideline v1.0.0 | 開発promptとhandoffの運用。product semanticsは所有しない | - | all Tasks | operational examples |
 | [docs/licenses/data-sources.md](licenses/data-sources.md) | license registry | Active | data source、license、attribution | - | data updates | provenance evidence |
 | [docs/adr/README.md](adr/README.md) | ADR sub-index | Active | ADR-001〜025のpath、status、decision | individual ADRを直接登録 | relevant semantic Tasks | accepted decision history |
-| [docs/reports/README.md](reports/README.md) | evidence sub-index | Active v1.0.0 | tracked report 16件のstatus、role、successor、commit | individual reportsを直接登録 | TSK-09.1 retention review | canonical／supporting evidence |
+| [docs/evidence/README.md](evidence/README.md) | evidence sub-index | Active v1.0.0 | tracked report 16件のstatus、role、successor、commit | individual reportsを直接登録 | TSK-09.1 retention review | canonical／supporting evidence |
 
 ## Status vocabulary
 

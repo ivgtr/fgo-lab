@@ -38,7 +38,7 @@ activation commandは削除する。支援構成のskill単位選択は攻撃役
 master `20260827` / master schema 31 / scenario schema 26 / engine 19.0.0を正とする。420件の既定damage
 digest、既知golden、compact layoutを維持し、source依存欠落、解除後のstale mutation、操作不能visible effect、
 proc countとchip状態の不一致をproduction／E2E ratchetで0件に固定する。完了証跡は
-`docs/reports/damage-effect-execution-e3-12.md`に記録する。E4は未着手のまま止める。
+`docs/evidence/damage-effect-execution-e3-12.md`に記録する。E4は未着手のまま止める。
 
 ## E3.10 効果包含・発動条件・確率結果の分離
 
@@ -443,7 +443,7 @@ E3.4完了記録（2026-08-26）:
 - semanticな`ol`と一行だけの遅延detailへ置換し、同じcanonical scenarioを計算機へ渡すE2EでNP値とeffectを
   再確認した。desktop／390px／320pxの横overflowは0、閉じた行高は68／75.59／73.59pxである。
 - schema 26、engine 19.0.0、master 20260827は変更していない。完了証跡は
-  `docs/reports/damage-effect-execution-e4.md`に記録する。
+  `docs/evidence/damage-effect-execution-e4.md`に記録する。
 
 ### E5：文書、版、旧経路の最終監査（新Tasksへ移管）
 
@@ -618,7 +618,7 @@ HP累積familyはraw `HP_LOWER`を0〜1000の整数`attackerHpPermille <= thresh
 - 420既定計算、既存calculated 1,504 scenario digest、全user projectionのimplementation
   unsupported 0を維持した。承認済みHP条件差分はトネリコの旧個別decision 4件と一夏の城の
   HP50%超scenarioへ限定し、他case不変をdifferential ratchetで確認する。詳細は
-  `docs/reports/damage-effect-execution-e3-9.md`に記録する。
+  `docs/evidence/damage-effect-execution-e3-9.md`に記録する。
 
 ## 13. E4.1 prerequisite: canonical TargetContext
 

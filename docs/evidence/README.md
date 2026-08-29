@@ -28,4 +28,4 @@ updated_at: "2026-08-30"
 | [damage-effect-execution-e4-1-5](damage-effect-execution-e4-1-5.md) | Complete | canonical: activation facts | TSK-03／08 inventory | `66bc848` |
 | [damage-effect-execution-e4-1-attack-profiles](damage-effect-execution-e4-1-attack-profiles.md) | Complete | canonical: AttackProfile inventory／digest | TSK-03／04／08 | `9314a1d` |
 
-ignoredなlocal report 15件は[documentation inventory](../documentation-inventory.md)に列挙している。内容監査とcanonical evidenceへの統合前に、tracked昇格または物理削除を行わない。
+ignoredなlocal report 15件は[documentation inventory](documentation-inventory.md)に列挙している。内容監査とcanonical evidenceへの統合前に、tracked昇格または物理削除を行わない。

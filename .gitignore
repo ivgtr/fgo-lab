@@ -21,13 +21,6 @@ Thumbs.db
 docs/**/*.html
 docs/architecture/
 docs/reports/*
-!docs/reports/damage-effect-execution-e3-2.md
-!docs/reports/damage-effect-execution-e3-3.md
-!docs/reports/damage-effect-execution-e3-4.md
-!docs/reports/damage-effect-execution-e3-8.md
-!docs/reports/damage-effect-execution-e3-9.md
-!docs/reports/damage-effect-execution-e3-12.md
-!docs/reports/damage-effect-execution-e4.md
 docs/*-comparison.md
 docs/*-options.md
 docs/*-plan.md

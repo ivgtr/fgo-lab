@@ -23,7 +23,7 @@ TSK-00.1開始commit `e4cb665c1dbc6abbbc8291ffc6f44656251453cd` を基準とす�
 | ignored／untracked reports | 15 |
 | active tracked documents referencing untracked canonical `.md` targets | 8 targets |
 
-計画初版の55／86は再計測で1件不足していたため、[documentation maintenance phases](documentation-maintenance-phases.md)のbaselineも56／87へ訂正した。削除候補の判定に件数、更新日、incoming link数だけを使用していない。
+計画初版の55／86は再計測で1件不足していたため、[documentation maintenance phases](../tasks/documentation-maintenance-phases.md)のbaselineも56／87へ訂正した。削除候補の判定に件数、更新日、incoming link数だけを使用していない。
 
 ## Tracked inventory and classification
 
@@ -31,12 +31,12 @@ TSK-00.1開始commit `e4cb665c1dbc6abbbc8291ffc6f44656251453cd` を基準とす�
 
 | Registry unit | Files at baseline | Kind／status | Incoming registration | Outgoing authority |
 | --- | ---: | --- | --- | --- |
-| [Documentation registry](README.md)のtop-level文書 | 13 | requirements、Tasks、plans、guide、license | root READMEおよび本inventory | 各rowのauthority／scopeに限定 |
-| [ADR index](adr/README.md) | 25 ADR + index | decision／accepted | documentation registry | ADR内の採用時点の根拠。実装順序を所有しない |
-| [Evidence report index](reports/README.md) | 16 reports | evidence／CompleteまたはSuperseded | documentation registry | canonical input、inventory、digest、関連commit。実装順序を所有しない |
-| [Data source registry](licenses/data-sources.md) | 1 | license／Active | documentation registry | data provenance。実装順序を所有しない |
+| [Documentation registry](../README.md)のtop-level文書 | 13 | requirements、Tasks、plans、guide、license | root READMEおよび本inventory | 各rowのauthority／scopeに限定 |
+| [ADR index](../adr/README.md) | 25 ADR + index | decision／accepted | documentation registry | ADR内の採用時点の根拠。実装順序を所有しない |
+| [Evidence report index](README.md) | 16 reports | evidence／CompleteまたはSuperseded | documentation registry | canonical input、inventory、digest、関連commit。実装順序を所有しない |
+| [Data source registry](../licenses/data-sources.md) | 1 | license／Active | documentation registry | data provenance。実装順序を所有しない |
 
-TSK-00.1で新たに正本化する`ui-design-spec.md`と`damage-calculation-review.md`、および三つのindex／inventoryはbaseline件数に含めない。完了時のtracked集合は[Documentation registry](README.md)を正とする。
+TSK-00.1で新たに正本化する`ui-design-spec.md`と`damage-calculation-review.md`、および三つのindex／inventoryはbaseline件数に含めない。完了時のtracked集合は[Documentation registry](../README.md)を正とする。
 
 ## Untracked canonical reference closure
 
@@ -69,4 +69,4 @@ UI specification内のignored HTML demo参照も正本から除外した。比�
 
 ## Report retention boundary
 
-tracked report 16件は[Evidence report index](reports/README.md)にevidence role、successor、関連commitを記録した。ignored report 15件を含め、TSK-00.1ではreport／archiveを削除・統合していない。intentional damage差分、production inventory、calculator／ranking parity、digestの保持判定はTSK-09.1へ渡す。
+tracked report 16件は[Evidence report index](README.md)にevidence role、successor、関連commitを記録した。ignored report 15件を含め、TSK-00.1ではreport／archiveを削除・統合していない。intentional damage差分、production inventory、calculator／ranking parity、digestの保持判定はTSK-09.1へ渡す。
