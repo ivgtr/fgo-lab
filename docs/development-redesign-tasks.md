@@ -31,7 +31,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 
 | ID | Task | Status | Depends on | Primary source |
 | --- | --- | --- | --- | --- |
-| TSK-00.1 | Documentation source normalization | ready | - | documentation maintenance DOC-P0〜P3 |
+| TSK-00.1 | Documentation source normalization | in_progress | - | documentation maintenance DOC-P0〜P3 |
 | TSK-00 | Baseline固定 | blocked | TSK-00.1 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
