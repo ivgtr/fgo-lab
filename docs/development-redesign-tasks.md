@@ -31,8 +31,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 
 | ID | Task | Status | Depends on | Primary source |
 | --- | --- | --- | --- | --- |
-| TSK-00.1 | Documentation source normalization | in_progress | - | documentation maintenance DOC-P0〜P3 |
-| TSK-00 | Baseline固定 | blocked | TSK-00.1 | 全要件書 |
+| TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
+| TSK-00 | Baseline固定 | ready | TSK-00.1 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -53,10 +53,10 @@ TSK-00.1 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04
 
 ### TSK-00.1: Documentation source normalization
 
-- [ ] `docs/documentation-maintenance-phases.md`のDOC-P0 inventoryを固定する。
-- [ ] DOC-P1として`docs/README.md`と文書registryを追加する。
-- [ ] DOC-P2としてactive tracked文書からignored／untracked canonical targetへの参照を閉じる。
-- [ ] DOC-P3としてstatus、version、Task owner、ADR indexを収束させる。
+- [x] `docs/documentation-maintenance-phases.md`のDOC-P0 inventoryを固定する。
+- [x] DOC-P1として`docs/README.md`と文書registryを追加する。
+- [x] DOC-P2としてactive tracked文書からignored／untracked canonical targetへの参照を閉じる。
+- [x] DOC-P3としてstatus、version、Task owner、ADR indexを収束させる。
 
 Done gate:
 
@@ -68,10 +68,12 @@ Done gate:
 
 Handoff:
 
-- Commit: 未記録
-- Registry: 未記録
-- Repaired references: 未記録
-- Next command: 未記録
+- Commit: `e0abdc8` (DOC-P0)、`2a18be4` (DOC-P1)、`02d4b98` (DOC-P2)、`08880c1` (DOC-P3)、本completion commit
+- Registry: `docs/README.md`、`docs/documentation-inventory.md`、`docs/adr/README.md`、`docs/reports/README.md`
+- Repaired references: UI baselineとdamage reviewをtracked正本化。旧implementation planとhome／my chaldea／craft essence／support／growth optionsのcanonical参照をTasksまたはUI正本へ収束
+- Retained evidence: tracked report 16件とignored local report 15件を削除せず、TSK-09.1の判定inventoryへ保持
+- Verification: fresh-clone相当のtracked集合で61 Markdown登録、active canonical untracked参照0、ADR file／index各25、`in_progress` 1件を確認
+- Next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
 
 ### TSK-00: Baseline固定
 
