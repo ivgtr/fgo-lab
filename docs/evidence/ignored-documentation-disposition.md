@@ -1,6 +1,6 @@
 ---
 title: "TSK-00.3 ignored documentation disposition"
-document_version: "1.1.0"
+document_version: "1.2.0"
 status: "Complete"
 created_at: "2026-08-30"
 baseline_head: "256c2d2c"
@@ -61,9 +61,9 @@ TSK-00.3開始時のHEADは`256c2d2c`、working treeはcleanだった。`git ls-
 
 | Classification | Files | Final treatment |
 | --- | ---: | --- |
-| Canonical delta | 1 | 元snapshotを`docs/archive/data-flow.md`へ同一SHAで保持し、現行code／ADRに基づく`docs/guides/data-flow.md`へ再構成 |
+| Canonical delta | 1 | 元snapshotの同一SHAとGit復元情報を`docs/archive/README.md`へ保持し、現行code／ADRに基づく`docs/guides/data-flow.md`へ再構成 |
 | Retained evidence | 15 | basenameを保って`docs/evidence/`へtracked昇格し、evidence indexへrole／successor／commitを登録 |
-| Historical decision | 12 | basenameを保って`docs/archive/`へtracked昇格し、registryで現行authorityとsuccessorを明示 |
+| Historical decision | 12 | TSK-00.3ではbasenameを保ってtracked昇格。TSK-00.4で全文をGit-only化し、`docs/archive/README.md`に現行authority、successor、blob／SHA-256を保持 |
 | Local-only | 9 | 相対pathを保って`.local-docs/docs/`へ移動 |
 
 ### Canonical delta closure

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.1.0"
+document_version: "1.2.0"
 status: "Active"
 updated_at: "2026-08-30"
 ---
@@ -44,3 +44,8 @@ updated_at: "2026-08-30"
 | [damage-effect-execution-e4-1-attack-profiles](damage-effect-execution-e4-1-attack-profiles.md) | Complete | canonical: AttackProfile inventory／digest | TSK-03／04／08 | `9314a1d` |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
+
+## Documentation maintenance evidence
+
+- [Documentation inventory](documentation-inventory.md): TSK-00.1開始時のtracked／ignored／reference baseline
+- [Ignored documentation disposition](ignored-documentation-disposition.md): TSK-00.3の37件分類、移動前hash、quarantine検証
