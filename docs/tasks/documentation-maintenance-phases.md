@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 文書体系整備 Phase計画"
-document_version: "1.1.0"
+document_version: "1.2.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -246,7 +246,38 @@ Done gate:
 - product semantics、damage rule、status、evidence内容に差分がない。
 - TSK-00が新pathとclean worktreeをbaseline identityとして使用できる。
 
-DOC-P3.1は`TSK-00.2`として実行し、完了するまで`TSK-00`を開始しない。DOC-P5は移動済みhistorical／evidenceの保持、統合、削除判断を担当し、物理配置の初回cutoverを担当しない。
+DOC-P3.1は`TSK-00.2`として実行する。DOC-P5は移動済みhistorical／evidenceの保持、統合、削除判断を担当し、物理配置の初回cutoverを担当しない。
+
+### DOC-P3.2: Ignored documentation disposition and quarantine
+
+DOC-P3.1で意図的に保持したignored 29 Markdown＋8 HTMLを内容監査し、fresh cloneの正本体系とlocal-only資料の物理境界を閉じる。filename、旧status、incoming linkの有無だけでは判定しない。
+
+分類と処理:
+
+- `Canonical delta`: 現行requirements／ADRに存在しない意味論を特定し、authorityと受入条件を決めて正本へ統合する。元資料をそのままactive正本へ昇格しない。
+- `Retained evidence`: canonical input、damage差分、production inventory、digest、version、commit等を持つ資料を`docs/evidence/`へtracked化する。
+- `Historical decision`: 後継正本から復元できない判断経緯を持つ資料を`docs/archive/`へtracked化し、active task ownerではないことを明示する。
+- `Local-only`: 実装要件・保持evidence・判断履歴を所有しない比較demo、作業prompt等だけを`.local-docs/docs/<元のdocs/以下の相対path>`へ内容不変で移動する。
+
+実行規則:
+
+- 処遇前に全37件のpath、bytes、SHA-256を固定する。
+- architecture／review、旧plan、UI options／demo、damage／master reportをfamily単位で現行正本と比較する。
+- statusが`In Progress`等でも、後続実装、commit、現行Tasksへの責務移管を確認して現行性を判定する。
+- canonical統合後に元資料をevidence、archive、local-onlyのどれとして保持するか記録する。
+- local-only移動は相対pathを保持し、移動前後のSHA-256を照合する。物理削除は行わない。
+- 処遇完了後、`docs/`配下の個別・glob ignoreを削除し、`.local-docs/docs/**`だけをignoreする。
+
+Done gate:
+
+- 29 Markdown＋8 HTMLを全件分類済みである。
+- canonical deltaの未移管とdamage evidenceの未判定が0件である。
+- local-only資料の移動前後SHA-256が一致し、ignored資料の削除が0件である。
+- `docs/`を対象にするignore規則が0件である。
+- active tracked文書からlocal-only資料への参照が0件である。
+- TSK-00のbaselineが最終的な正本体系だけを対象にできる。
+
+DOC-P3.2は`TSK-00.3`として実行し、完了するまで`TSK-00`を開始しない。
 
 ## 6. Closure maintenance
 

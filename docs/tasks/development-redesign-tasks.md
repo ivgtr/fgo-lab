@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.1.0"
+document_version: "1.2.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -33,7 +33,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | --- | --- | --- | --- | --- |
 | TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
 | TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
-| TSK-00 | Baseline固定 | ready | TSK-00.2 | 全要件書 |
+| TSK-00.3 | Ignored documentation disposition and quarantine | in_progress | TSK-00.2 | documentation maintenance DOC-P3.2 |
+| TSK-00 | Baseline固定 | blocked | TSK-00.3 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -46,7 +47,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -106,9 +107,38 @@ Handoff:
 - Verification: tracked `docs/` 61 Markdownは直下`README.md`と7責務directoryだけ。全tracked 63 Markdownのlocal link解決、registry 20 unit、ADR 25件、evidence report 16件、`in_progress` 0件を確認。TSK-00.2開始時点のignored／untracked Markdown 29件とHTML 8件は未移動・未削除・未track
 - Next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
 
-### TSK-00: Baseline固定
+### TSK-00.3: Ignored documentation disposition and quarantine
 
 Depends on: TSK-00.2
+
+- [x] ignored 29 Markdown＋8 HTMLのpath、bytes、SHA-256と開始HEADを固定する。
+- [ ] architecture／review、旧plan、UI options／demo、damage／master reportをfamily単位で現行正本と比較する。
+- [ ] 各資料を`Canonical delta | Retained evidence | Historical decision | Local-only`へ分類し、canonical deltaとdamage evidenceの未判定を0件にする。
+- [ ] canonical deltaはauthorityと受入条件を確定して現行requirements／ADR／guideへ統合し、evidence／historicalは責務directoryへtracked化する。
+- [ ] local-onlyだけを`.local-docs/docs/<docs以下の相対path>`へ内容不変で移動し、個別・広域の`docs/` ignoreを単一quarantine規則へ置換する。
+
+Done gate:
+
+- 29 Markdown＋8 HTMLが全件分類され、判定理由とsuccessor／retention roleをinventoryから確認できる。
+- 移動対象の移動前後SHA-256が一致し、ignored資料の削除が0件である。
+- canonical deltaの未移管とdamage evidenceの未判定がともに0件である。
+- local-only資料は元の相対pathを保持して`.local-docs/docs/`にだけ存在する。
+- `docs/`を対象にするignore規則が0件で、新規の未登録文書をGit statusが検出できる。
+- active tracked文書からlocal-only資料への参照が0件である。
+- TSK-00が最終的なtracked正本体系だけをbaseline対象にできる。
+
+Handoff:
+
+- Start baseline: `256c2d2c`、clean worktree
+- Inventory: `docs/evidence/ignored-documentation-disposition.md`
+- Commit: 未記録
+- Disposition: 監査中
+- Verification: 未記録
+- Next command: 未記録
+
+### TSK-00: Baseline固定
+
+Depends on: TSK-00.3
 
 - [ ] test file、suite、CI step、master load、digest inventoryを記録する。
 - [ ] 現行`RankingConditions`、AttackProfile、condition／resource familyをproduction全件で監査する。
