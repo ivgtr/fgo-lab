@@ -51,8 +51,8 @@ read-only監査で次を確認した。
 
 | 指標 | baseline |
 | --- | ---: |
-| tracked Markdown | 55 |
-| working treeに存在するMarkdown | 86 |
+| tracked Markdown | 56 |
+| working treeに存在するMarkdown | 87 |
 | ignored／untracked Markdown | 31 |
 | tracked reports | 16 |
 | ignored／untracked reports | 15 |
@@ -71,6 +71,8 @@ read-only監査で次を確認した。
 - `docs/README.md`が存在せず、tracked文書全体の入口がない。
 
 baseline値は削除件数の目標ではない。Phase完了時は、件数差よりも正本参照のclosureとevidence保存を優先する。
+
+上記件数はTSK-00.1開始時のGit inventoryで再計測し、計画初版の55／86から56／87へ訂正した。ignored／untracked 31件と参照対象8件は不変である。
 
 ## 4. 目標文書モデル
 
