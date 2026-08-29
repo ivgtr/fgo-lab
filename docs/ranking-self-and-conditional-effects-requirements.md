@@ -1,6 +1,6 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.5.0"
+document_version: "0.6.0"
 status: "Draft - product semantics fixed; production audit required"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -10,6 +10,7 @@ related_adrs:
   - "docs/adr/020-ranking-condition-provenance-and-field-policy.md"
   - "docs/adr/024-pre-noble-phantasm-plans-and-attack-profiles.md"
   - "docs/adr/025-canonical-target-state-damage-semantics.md"
+implementation_tasks: "docs/development-redesign-tasks.md"
 ---
 
 # ランキング自己バフ・条件効果統合仕様
