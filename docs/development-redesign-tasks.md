@@ -287,3 +287,23 @@ Handoff: 未記録
 - blocking conditionは対象taskのHandoffへ記録し、要件を推測で緩和しない。
 - task分割が必要な場合は`TSK-xx.y`を追加し、元taskのDone gateを変更しない。
 - 実装順変更は依存関係と理由を本書へ反映し、各要件書へ順序説明を複製しない。
+
+### 4.1 Task実行手順
+
+1. Task indexから`ready`なTaskを一件選び、依存TaskのDone gateとHandoffを確認する。
+2. 作業開始時のHEAD、作業ツリー、対象family、利用者成果、domain invariant、semantic ownerを確認する。
+3. 開始commitで対象Taskを`in_progress`へ変更し、Handoffの`Next command`に最初のbounded commandを記録する。
+4. production familyをread-onlyで監査し、変更前baselineとfail-closed条件を固定する。
+5. 一つの責務単位で実装し、関係する小さいsemantic testから検証する。
+6. production inventory、calculator/ranking parity、UI、performanceをTaskのriskに応じて検証する。
+7. 対象fileだけをstageし、staged diff、file list、format、必要なtest結果を確認してcommitする。
+8. Done gateを満たすまで手順4〜7を繰り返す。新しい例外familyを発見した場合は局所分岐を追加せず、modelまたはTask分割を再検討する。
+9. Handoffへ実装commit、canonical evidence、検証commandと結果、残課題、次のentry conditionを記録する。
+10. completion commitで対象Taskを`done`、直接の後続Taskを`ready`へ変更する。
+
+### 4.2 中断・再開手順
+
+- authority競合、damage根拠不足、部分適用可能な意味論、想定外のruntime増加を検出したら変更を拡張せず停止する。
+- Handoffへblocking condition、確認済み事実、未確定事項、影響path、安全な再開commandを記録する。
+- 次のsessionは会話履歴ではなく、Task、Handoff、記録済みcommit、canonical evidenceから再開する。
+- 一時的なraw logや巨大なtool outputをHandoffへ貼らず、必要なpath、digest、要約だけを残す。

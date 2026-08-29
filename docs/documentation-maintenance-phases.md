@@ -282,7 +282,41 @@ Done gate:
 
 DOC-P4〜P6は`TSK-09.1`として、新ranking semanticsとtest quality pathの確定後、最終運用移行前に実行する。
 
-## 7. Phase handoff
+## 7. 実行手順
+
+Task共通の開始、検証、handoff、commit手順は`docs/development-redesign-tasks.md`の更新規則に従う。本書では文書整備固有の順序だけを定義する。
+
+### 7.1 Blocking maintenanceの進め方
+
+1. `TSK-00.1`のentry conditionと作業ツリーを確認し、開始commitでstatusを`in_progress`へ変更する。
+2. DOC-P0をread-onlyで実行し、開始HEAD、文書inventory、参照関係、tracking状態、evidence候補を固定する。
+3. DOC-P1で`docs/README.md`とregistryを追加する。この時点では既存文書のauthorityを推測で変更しない。
+4. DOC-P2でuntracked canonical referenceを一familyずつ解消する。UI、damage、optionsを同じ変更へ混在させない。
+5. DOC-P3でstatus、version、Task owner、ADR indexを収束させる。採用済みADRの判断変更が必要なら新ADRへ切り出す。
+6. fresh clone相当のtracked file集合を基準に、local link、registry、ADR index、formatを検証する。
+7. DOC-P0〜P3のDone gateを確認し、Handoffへ変更path、修復参照、保持evidence、検証command、次のentry conditionを記録する。
+8. completion commitで`TSK-00.1`を`done`、`TSK-00`を`ready`へ更新する。
+
+### 7.2 Closure maintenanceの進め方
+
+1. `TSK-08`のDone gateと、新ranking semantics／test quality pathが確定済みであることを確認する。
+2. `TSK-09.1`を`in_progress`へ変更し、tracked／ignored reportと旧計画のinventoryを再取得する。
+3. DOC-P4でcanonical evidenceへ必要情報を統合する。統合先の検証前に元reportを削除しない。
+4. DOC-P5でsuperseded／complete／historical／local-onlyを分類し、参照を後継正本へ切り替える。
+5. tracked文書の移動・削除は参照検証後に行う。ignored local資料の物理削除は本Taskに含めず、別の明示承認を得る。
+6. DOC-P6の静的checkを追加し、失敗fixtureと成功時のcompact outputを確認する。
+7. docs integrity checkと影響範囲のquality gateを実行し、damage evidence、inventory、digestが保持されていることを確認する。
+8. Handoffを記録し、completion commitで`TSK-09.1`を`done`、`TSK-09`を`ready`へ更新する。
+
+### 7.3 変更単位
+
+- 一つのcommitは、一つのDOC-Pまたは一つの明確な文書familyへ限定する。
+- inventory、registry、reference修復、archive整理、automationを同じcommitへ束ねない。
+- 各commit前に対象pathだけをstageし、`git diff --cached --check`とstaged name listを確認する。
+- formatのみの変更をsemanticな文書変更へ混在させない。
+- 途中で停止する場合も、未確定事項と安全な再開commandをTasksのHandoffへ残す。
+
+## 8. Phase handoff
 
 各Phase完了時に次をTasksへ記録する。
 
@@ -297,7 +331,7 @@ DOC-P4〜P6は`TSK-09.1`として、新ranking semanticsとtest quality pathの�
 
 raw document dumpや全Git logをhandoffへ貼らない。
 
-## 8. 停止条件
+## 9. 停止条件
 
 次の場合は整理を停止し、対象文書のauthorityを確認する。
 
@@ -311,7 +345,7 @@ raw document dumpや全Git logをhandoffへ貼らない。
 
 停止時は、競合するauthority、参照元、実装との一致、選択肢、推奨正本を提示してから再開する。
 
-## 9. 完了条件
+## 10. 完了条件
 
 - fresh cloneでcurrent requirements、ADR、Tasks、evidence、guideが閉じている。
 - `docs/README.md`から全tracked文書の役割とstatusを判定できる。
