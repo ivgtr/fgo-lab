@@ -1,6 +1,6 @@
 import type { DamageContributionProjection, EffectProjection } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
-import { resolveRankingEffectContribution } from './rankingContribution';
+import { rankingEffectContributes, resolveRankingEffectContribution } from './rankingContribution';
 
 function effect(patch: Partial<EffectProjection> = {}): EffectProjection {
   return {
@@ -63,7 +63,7 @@ function projection(
 
 describe('effective ranking contribution state', () => {
   it('separates execution outcome from ranking-policy contribution', () => {
-    expect(resolveRankingEffectContribution(effect(), projection())).toBe('contributing');
+    expect(resolveRankingEffectContribution(effect(), projection())).toBe('included');
     expect(
       resolveRankingEffectContribution(
         effect(),
@@ -71,11 +71,13 @@ describe('effective ranking contribution state', () => {
       ),
     ).toBe('excludedByRankingPolicy');
     expect(resolveRankingEffectContribution(effect({ outcome: 'notApplied' }), projection())).toBe(
-      'conditionNotMet',
+      'included',
     );
     expect(resolveRankingEffectContribution(effect({ outcome: 'unsupported' }), projection())).toBe(
-      'unsupported',
+      'included',
     );
+    expect(rankingEffectContributes(effect({ outcome: 'notApplied' }), projection())).toBe(false);
+    expect(rankingEffectContributes(effect({ outcome: 'unsupported' }), projection())).toBe(false);
   });
 
   it('honors scoped state contribution exclusions without changing the effect outcome', () => {

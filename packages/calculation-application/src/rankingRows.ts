@@ -7,7 +7,7 @@ import type {
   RankingProfileInput,
   RankingRowSummary,
 } from './rankingContracts';
-import { isSpecialAttack, resolveRankingEffectContribution } from './rankingContribution';
+import { isSpecialAttack, rankingEffectContributes } from './rankingContribution';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 function resultFailure(servant: ServantMaster, result: CalculationResult): RankingFailure {
@@ -54,7 +54,7 @@ export function createRankingRow(
   const applied = detail.effects.filter(
     (effect) =>
       effect.visibility === 'visible' &&
-      resolveRankingEffectContribution(effect, detail.contributionProjection) === 'contributing',
+      rankingEffectContributes(effect, detail.contributionProjection),
   );
   const supportEffects = applied.filter((effect) => effect.source.origin === 'support');
   return {

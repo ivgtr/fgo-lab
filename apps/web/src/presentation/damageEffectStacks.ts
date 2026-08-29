@@ -1,7 +1,7 @@
 import type {
-  EffectiveRankingContributionState,
   EffectProjection,
   ModifierKind,
+  RankingContributionPolicyState,
 } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import { effectSourceImage } from './effectSourcePresentation';
@@ -17,7 +17,7 @@ export interface DamageEffectSource {
   imageKey: string | null;
   value: number | null;
   applied: boolean;
-  contributionState: EffectiveRankingContributionState | null;
+  contributionState: RankingContributionPolicyState | null;
   explanation: EffectProjection['explanation']['code'];
   kind: DamageEffectStackKind;
 }
@@ -64,12 +64,52 @@ const STACK_ORDER: DamageEffectStackKind[] = [
   'unresolved',
 ];
 
-function effectContributes(
-  effect: EffectProjection,
-  contributionState: EffectiveRankingContributionState | null,
-): boolean {
-  if (contributionState === null) return effect.outcome === 'applied';
-  return contributionState === 'contributing';
+const NON_APPLIED_REASON_PRIORITY: Record<EffectProjection['explanation']['code'], number> = {
+  unresolved: 0,
+  disabled: 1,
+  cardMismatch: 2,
+  targetMismatch: 3,
+  conditionNotMet: 4,
+  stateMutationOnly: 5,
+  applied: 6,
+};
+
+interface EffectPresentationCandidate {
+  effect: EffectProjection;
+  contributionState: RankingContributionPolicyState | null;
+}
+
+function stableCandidateOrder(
+  left: EffectPresentationCandidate,
+  right: EffectPresentationCandidate,
+): number {
+  const byReason =
+    NON_APPLIED_REASON_PRIORITY[left.effect.explanation.code] -
+    NON_APPLIED_REASON_PRIORITY[right.effect.explanation.code];
+  if (byReason !== 0) return byReason;
+  return left.effect.operationId.localeCompare(right.effect.operationId);
+}
+
+function selectEffectPresentation(
+  candidates: readonly EffectPresentationCandidate[],
+): EffectPresentationCandidate {
+  const applied = candidates
+    .filter(
+      ({ effect, contributionState }) =>
+        effect.outcome === 'applied' && contributionState !== 'excludedByRankingPolicy',
+    )
+    .sort(stableCandidateOrder)[0];
+  if (applied) return applied;
+  const excluded = candidates
+    .filter(
+      ({ effect, contributionState }) =>
+        effect.outcome === 'applied' && contributionState === 'excludedByRankingPolicy',
+    )
+    .sort(stableCandidateOrder)[0];
+  if (excluded) return excluded;
+  const fallback = [...candidates].sort(stableCandidateOrder)[0];
+  if (!fallback) throw new TypeError('empty_effect_presentation_group');
+  return fallback;
 }
 
 export function collectDamageEffectStacks({
@@ -81,31 +121,51 @@ export function collectDamageEffectStacks({
   effects: readonly EffectProjection[];
   servants: readonly ServantMaster[];
   craftEssence: CraftEssenceMaster | undefined;
-  contributionState?: (effect: EffectProjection) => EffectiveRankingContributionState;
+  contributionState?: (effect: EffectProjection) => RankingContributionPolicyState;
 }): DamageEffectStack[] {
-  const stacks = new Map<DamageEffectStackKind, DamageEffectStack>();
+  const groups = new Map<DamageEffectStackKind, Map<string, EffectProjection[]>>();
   for (const effect of effects) {
     const kind = effect.modifier ?? (effect.outcome === 'unsupported' ? 'unresolved' : null);
     if (!kind) continue;
-    const stack = stacks.get(kind) ?? { kind, label: STACK_LABELS[kind], sources: [] };
-    if (!stack.sources.some((source) => source.key === effect.projectionKey)) {
-      const resolvedContribution = contributionState?.(effect) ?? null;
-      stack.sources.push({
-        key: effect.projectionKey,
-        sourceName: effect.sourceName,
-        effectName: effect.skillName,
-        effectLabel: effect.label,
-        imageKey: effectSourceImage(effect, servants, craftEssence),
-        value: effect.value,
-        applied: effectContributes(effect, resolvedContribution),
-        contributionState: resolvedContribution,
-        explanation: effect.explanation.code,
-        kind,
-      });
-    }
-    stacks.set(kind, stack);
+    const byProjection = groups.get(kind) ?? new Map<string, EffectProjection[]>();
+    byProjection.set(effect.projectionKey, [
+      ...(byProjection.get(effect.projectionKey) ?? []),
+      effect,
+    ]);
+    groups.set(kind, byProjection);
   }
-  return STACK_ORDER.flatMap((kind) => (stacks.has(kind) ? [stacks.get(kind)!] : []));
+  return STACK_ORDER.flatMap((kind) => {
+    const byProjection = groups.get(kind);
+    if (!byProjection) return [];
+    return [
+      {
+        kind,
+        label: STACK_LABELS[kind],
+        sources: [...byProjection.values()].map((group) => {
+          const selected = selectEffectPresentation(
+            group.map((effect) => ({
+              effect,
+              contributionState: contributionState?.(effect) ?? null,
+            })),
+          );
+          const { effect, contributionState: selectedContribution } = selected;
+          return {
+            key: effect.projectionKey,
+            sourceName: effect.sourceName,
+            effectName: effect.skillName,
+            effectLabel: effect.label,
+            imageKey: effectSourceImage(effect, servants, craftEssence),
+            value: effect.value,
+            applied:
+              effect.outcome === 'applied' && selectedContribution !== 'excludedByRankingPolicy',
+            contributionState: selectedContribution,
+            explanation: effect.explanation.code,
+            kind,
+          };
+        }),
+      },
+    ];
+  });
 }
 
 export function damageEffectValueLabel(source: DamageEffectSource): string {
@@ -127,8 +187,6 @@ export function damageEffectValueLabel(source: DamageEffectSource): string {
 
 export function damageEffectStateLabel(source: DamageEffectSource): string {
   if (source.contributionState === 'excludedByRankingPolicy') return '計算外';
-  if (source.contributionState === 'conditionNotMet') return '条件不成立';
-  if (source.contributionState === 'unsupported') return '未対応';
   if (source.applied) return damageEffectValueLabel(source);
   const labels: Record<DamageEffectSource['explanation'], string> = {
     applied: damageEffectValueLabel(source),

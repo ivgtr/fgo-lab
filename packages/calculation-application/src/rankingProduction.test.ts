@@ -20,7 +20,7 @@ import {
   createActorFormProfiles,
 } from './attackProfile';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
-import { resolveRankingEffectContribution } from './rankingContribution';
+import { rankingEffectContributes, resolveRankingEffectContribution } from './rankingContribution';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -179,13 +179,41 @@ describe('production canonical ranking', () => {
     expect({
       entries: new Set(excludedVisibleEffects.map(({ entryId }) => entryId)).size,
       effects: excludedVisibleEffects.length,
+    }).toEqual({ entries: 20, effects: 22 });
+    const appliedExcludedVisibleEffects = excludedVisibleEffects.filter(
+      ({ effect }) => effect.outcome === 'applied',
+    );
+    expect({
+      entries: new Set(appliedExcludedVisibleEffects.map(({ entryId }) => entryId)).size,
+      effects: appliedExcludedVisibleEffects.length,
     }).toEqual({ entries: 13, effects: 14 });
     expect(
-      excludedVisibleEffects
+      appliedExcludedVisibleEffects
         .filter(({ entryId }) => entryId === summerLilithDetail?.entryId)
         .map(({ effect }) => effect.modifier)
         .sort(),
     ).toEqual(['npSpecial', 'powerMod']);
+    const nonAppliedReasonCounts = Object.values(ranking.details)
+      .flatMap((detail) => detail.effects)
+      .filter((effect) => effect.visibility === 'visible' && effect.outcome !== 'applied')
+      .reduce<Record<string, number>>((counts, effect) => {
+        counts[effect.explanation.code] = (counts[effect.explanation.code] ?? 0) + 1;
+        return counts;
+      }, {});
+    expect(nonAppliedReasonCounts.unresolved).toBe(303);
+    expect(nonAppliedReasonCounts.disabled).toBe(30);
+    const mixedProjectionGroups = Object.values(ranking.details).flatMap((detail) => {
+      const groups = new Map<string, typeof detail.effects>();
+      for (const effect of detail.effects)
+        groups.set(effect.projectionKey, [...(groups.get(effect.projectionKey) ?? []), effect]);
+      return [...groups.values()].filter(
+        (effects) =>
+          effects.some((effect) =>
+            rankingEffectContributes(effect, detail.contributionProjection),
+          ) && effects.some((effect) => effect.outcome !== 'applied'),
+      );
+    });
+    expect(mixedProjectionGroups).toHaveLength(1);
     let actorFormNodeCount = 0;
     let actorFormProfileCount = 0;
     const expectedAttackProfiles = master.servants.flatMap((servant) => {

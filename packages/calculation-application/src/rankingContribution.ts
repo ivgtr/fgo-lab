@@ -1,16 +1,12 @@
 import type { DamageContributionProjection, EffectProjection } from '@fgo-lab/battle-execution';
 import { stateTraitsRequiredByCondition } from './conditionProvenance';
 
-export type EffectiveRankingContributionState =
-  'contributing' | 'excludedByRankingPolicy' | 'conditionNotMet' | 'unsupported';
+export type RankingContributionPolicyState = 'included' | 'excludedByRankingPolicy';
 
 export function resolveRankingEffectContribution(
   effect: EffectProjection,
   projection: DamageContributionProjection,
-): EffectiveRankingContributionState {
-  if (effect.executionSupport === 'unsupported' || effect.outcome === 'unsupported')
-    return 'unsupported';
-  if (effect.outcome !== 'applied') return 'conditionNotMet';
+): RankingContributionPolicyState {
   if (projection.excludedOperationIds.has(effect.operationId)) return 'excludedByRankingPolicy';
   for (const scope of ['attackerState', 'targetState'] as const) {
     const excludedTraits = projection.excludedStateTraitContributions[scope];
@@ -21,7 +17,17 @@ export function resolveRankingEffectContribution(
     )
       return 'excludedByRankingPolicy';
   }
-  return 'contributing';
+  return 'included';
+}
+
+export function rankingEffectContributes(
+  effect: EffectProjection,
+  projection: DamageContributionProjection,
+): boolean {
+  return (
+    effect.outcome === 'applied' &&
+    resolveRankingEffectContribution(effect, projection) === 'included'
+  );
 }
 
 function isAttackerEffect(projection: EffectProjection): boolean {
