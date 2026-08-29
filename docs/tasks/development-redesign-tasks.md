@@ -34,7 +34,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
 | TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
 | TSK-00.3 | Ignored documentation disposition and quarantine | done | TSK-00.2 | documentation maintenance DOC-P3.2 |
-| TSK-00.4 | Documentation entrypoint and archive compaction | ready | TSK-00.3 | documentation maintenance DOC-P3.3 |
+| TSK-00.4 | Documentation entrypoint and archive compaction | in_progress | TSK-00.3 | documentation maintenance DOC-P3.3 |
 | TSK-00 | Baseline固定 | blocked | TSK-00.4 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
@@ -161,7 +161,7 @@ Done gate:
 
 Handoff:
 
-- Start baseline: 未記録
+- Start baseline: `d37f52e`、clean worktree。`docs/README.md` 1件／73行／10,907 bytes／registry 35 rows、`docs/archive/` 18件／5,013行／335,535 bytes、`docs/evidence/` 33件／3,631行／235,915 bytes
 - Entrypoint before／after: 未記録
 - Archive disposition: 未記録
 - Git-only recovery map: 未記録
