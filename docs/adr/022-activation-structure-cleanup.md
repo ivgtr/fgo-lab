@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted for E4.1 cleanup. This ADR changes ownership and control flow only; schema 30, engine 24.0.0, damage semantics, UI, and persisted scenario values remain unchanged.
+accepted
+
+This ADR changes ownership and control flow only; schema 30, engine 24.0.0, damage semantics, UI, and persisted scenario values remain unchanged.
 
 ## Context
 

@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted for E4.1. E5 is out of scope.
+accepted
+
+E5 is out of scope.
 
 ## Context
 

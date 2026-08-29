@@ -1,6 +1,8 @@
 # ADR 025: target-state mutationをdamage executionへ接続する
 
-Status: Accepted for E4.1 correctness work. E5 is out of scope.
+Status: accepted
+
+E5 is out of scope.
 
 ## Context
 

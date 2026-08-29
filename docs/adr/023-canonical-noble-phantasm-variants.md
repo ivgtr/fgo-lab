@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted for E4.1. This replaces the card-type mutation interpretation of Atlas
+accepted
+
+This replaces the card-type mutation interpretation of Atlas
 `tdTypeChange*`; it does not begin E5.
 
 ## Context
@@ -78,4 +80,3 @@ breaking changes. The twelve production operations previously normalized as
 card mutations must either resolve to canonical variant selection (including
 the form-qualified Flora transition) or fail artifact generation. No servant
 identity, name, skill ID, or effect label may participate in runtime dispatch.
-

@@ -1,6 +1,6 @@
 ---
 title: "ADR-011 Canonical effect execution semantics"
-status: "Accepted"
+status: accepted
 date: "2026-08-26"
 ---
 

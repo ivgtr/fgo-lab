@@ -1,7 +1,10 @@
 ---
 title: "FGO Lab 開発実行効率要件・統合実装計画"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "Proposed"
+approval_gate: "Required before TSK-01"
+updated_at: "2026-08-30"
+implementation_tasks: "docs/development-redesign-tasks.md"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 related_documents:

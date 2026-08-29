@@ -1,6 +1,6 @@
 # ADR 014: effect interactionと条件付きseriesの表示契約
 
-- Status: Accepted
+- Status: accepted
 - Date: 2026-08-27
 
 ## Context

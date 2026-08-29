@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted. The former persisted consumer-list design is superseded.
+accepted
+
+The former persisted consumer-list design is superseded.
 
 ## Context
 
