@@ -387,7 +387,7 @@ E3.1完了後に実画面確認で停止する。E4は引き続き開始しな�
 
 状態: 完了（2026-08-27、ADR 016）
 
-E4着手前にE3.4として`docs/damage-effect-unsupported-convergence-plan.md`を実施する。順序はstable occurrence identity、typed non-damage/metadata、field/state mutation、既存quantity入力、choice/value expression、残存reason ratchetとする。各semantic familyでnormalizer、executor、application、production、shareのテストを揃え、旧key・raw parameter allowlist・projection上書き経路を同じフェーズ内で削除する。
+E4着手前にE3.4として`docs/archive/damage-effect-unsupported-convergence-plan.md`を実施する。順序はstable occurrence identity、typed non-damage/metadata、field/state mutation、既存quantity入力、choice/value expression、残存reason ratchetとする。各semantic familyでnormalizer、executor、application、production、shareのテストを揃え、旧key・raw parameter allowlist・projection上書き経路を同じフェーズ内で削除する。
 
 E3.4進捗（master v26、schema 14、engine 12.5.0）:
 
@@ -528,7 +528,7 @@ E0で利用箇所を再確認したうえで、少なくとも次を削除対象
 
 状態: 完了（2026-08-26）
 
-E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選択時14騎25 occurrenceを確認した。固定値は期待値として流用せず、`docs/damage-effect-zero-unsupported-plan.md`へorigin、occurrence、raw semantics、damage影響、不足context、共通解決方式を再記録した。
+E3.7完了時点の現行artifactを再計測し、既定unsupported 12騎、選択時14騎25 occurrenceを確認した。固定値は期待値として流用せず、`docs/archive/damage-effect-zero-unsupported-plan.md`へorigin、occurrence、raw semantics、damage影響、不足context、共通解決方式を再記録した。
 
 実装順序:
 

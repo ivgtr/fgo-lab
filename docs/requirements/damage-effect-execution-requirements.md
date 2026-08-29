@@ -294,7 +294,7 @@ E3.2で型分離したworld factとeffect-local decisionを、実行時には一
 
 ### 8.9 E3.4 unsupported semantics convergence
 
-残存unsupportedは件数ではなくraw semantics単位で収束させる。完全なinventory、優先度、canonical IR、残存理由は`docs/damage-effect-unsupported-convergence-plan.md`を正本とする。
+残存unsupportedは件数ではなくraw semantics単位で収束させる。完全なinventory、優先度、canonical IR、残存理由は`docs/archive/damage-effect-unsupported-convergence-plan.md`を正本とする。
 
 1. Function IDとraw effect occurrenceを別識別子とし、decision、operation、projection、evidenceはoccurrence単位で一意にする。
 2. raw parameterはmodifier、state mutation、choice、guard、metadata、reference、non-damageへlosslessに分類する。未知keyをexecutorのallowlistで黙認しない。
@@ -324,7 +324,7 @@ NP executionでは`cardNP`、`faceCard`、`cardExtra`をtrait factではなく�
 
 ### 8.10 E3.8 implementation-unsupported 0
 
-ランキング統合前に、単発宝具計算の実装不足を完全に解消する。正本inventoryと実装計画は`docs/damage-effect-zero-unsupported-plan.md`とする。
+ランキング統合前に、単発宝具計算の実装不足を完全に解消する。正本inventoryと実装計画は`docs/archive/damage-effect-zero-unsupported-plan.md`とする。
 
 1. production攻撃宝具420件と全user projection単独選択で、実装未対応を理由とする`unsupported`を0件にする。
 2. 利用者しか決められないturn、star、stack、field population、actor population、available master skill等は、canonical quantity/factとしてscenarioへ入力可能にする。

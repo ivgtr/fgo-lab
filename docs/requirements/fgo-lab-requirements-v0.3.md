@@ -4,7 +4,7 @@ document_version: "0.3.6"
 status: "Active"
 created_at: "2026-08-24"
 updated_at: "2026-08-30"
-supersedes: "docs/fgo-lab-requirements.md v0.2.2"
+supersedes: "docs/archive/fgo-lab-requirements.md v0.2.2"
 ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
 ---
 
@@ -604,6 +604,6 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 - `docs/tasks/development-redesign-tasks.md`
 - `docs/requirements/damage-calculation-review.md`
 - `docs/requirements/damage-effect-execution-requirements.md`
-- `docs/damage-effect-execution-migration-plan.md`
+- `docs/archive/damage-effect-execution-migration-plan.md`
 - `docs/requirements/ranking-self-and-conditional-effects-requirements.md`
 - `docs/requirements/test-strategy-redesign.md`
