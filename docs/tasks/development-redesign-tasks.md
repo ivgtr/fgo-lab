@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.2.0"
+document_version: "1.3.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -34,7 +34,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
 | TSK-00.2 | Canonical documentation layout cutover | done | TSK-00.1 | documentation maintenance DOC-P3.1 |
 | TSK-00.3 | Ignored documentation disposition and quarantine | done | TSK-00.2 | documentation maintenance DOC-P3.2 |
-| TSK-00 | Baseline固定 | ready | TSK-00.3 | 全要件書 |
+| TSK-00.4 | Documentation entrypoint and archive compaction | ready | TSK-00.3 | documentation maintenance DOC-P3.3 |
+| TSK-00 | Baseline固定 | blocked | TSK-00.4 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -47,7 +48,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -134,11 +135,42 @@ Handoff:
 - Commit: `c19d273` (start／inventory)、`1b419a8` (historical)、`1d2ee71` (evidence)、`c2d9863` (canonical data flow)、`cd1500a` (quarantine policy)、本completion commit
 - Disposition: Canonical delta 1、Retained evidence 15、Historical decision 12、Local-only 9。baseline source 37件はarchive 13、evidence 15、local quarantine 9へ内容hashを保って処遇
 - Verification: baseline 37件のdestination SHA-256一致、local-only 9件、削除0件、`docs/`対象ignore 0件、tracked local link／registry／ADR／evidence index closure、active canonicalからlocal-only参照0件を確認
-- Next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
+- Original next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
+- Current next task: TSK-00.3完了後のentrypoint監査により、TSK-00.4を先行する
+
+### TSK-00.4: Documentation entrypoint and archive compaction
+
+Depends on: TSK-00.3
+
+- [ ] `docs/README.md`、`docs/archive/`、`docs/evidence/`のfile数、lines、bytes、registry rowと初回読込範囲をbaseline化する。
+- [ ] `docs/README.md`をcurrent authorityと責務別sub-indexだけへ縮小し、archive個別文書とprocess inventoryをStart here／root registryから外す。
+- [ ] `docs/archive/README.md`を追加し、historical文書をdecision family、snapshot status、canonical successor、source commit、blob／SHA-256で索引化する。
+- [ ] archive 18件を内容監査し、未移管Task、canonical delta、保持すべきdamage／production evidenceを0件まで判定する。
+- [ ] Git-only条件を満たす全文snapshotはcurrent treeから除き、復元情報だけをarchive indexへ保持する。
+- [ ] damage evidence 31件は本Taskで統合・削除せず、`docs/evidence/README.md`配下へ維持してTSK-09.1へ渡す。
+
+Done gate:
+
+- `docs/README.md`がcurrent requirements、active Tasks、ADR／evidence／archive index、guide、licenseだけを案内し、archive／evidence個別文書を列挙しない。
+- `docs/README.md`が8 KiB以下で、変更前後のlines、bytes、registry row、概算token差分をHandoffへ記録している。
+- historical decision chainと現在のsuccessorを`docs/archive/README.md`から一意に判定できる。
+- archive本文の旧`Ready for Implementation`／`In Progress`を現在statusと誤認しない。
+- Git-only化した文書はsource commit、blob／SHA-256、canonical successorから復元できる。
+- product semantics、active Task、damage evidence、production inventory、digestを失っていない。
+- tracked local link、registry、ADR／evidence／archive indexが閉じている。
+
+Handoff:
+
+- Start baseline: 未記録
+- Entrypoint before／after: 未記録
+- Archive disposition: 未記録
+- Git-only recovery map: 未記録
+- Verification: 未記録
+- Next command: 未記録
 
 ### TSK-00: Baseline固定
 
-Depends on: TSK-00.3
+Depends on: TSK-00.4
 
 - [ ] test file、suite、CI step、master load、digest inventoryを記録する。
 - [ ] 現行`RankingConditions`、AttackProfile、condition／resource familyをproduction全件で監査する。

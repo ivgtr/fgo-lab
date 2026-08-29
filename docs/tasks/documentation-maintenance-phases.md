@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 文書体系整備 Phase計画"
-document_version: "1.2.0"
+document_version: "1.3.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -89,9 +89,11 @@ docs/evidence/
 docs/guides/
   prompt、contributor、運用上の非product guidance
 docs/archive/
-  superseded requirementsとcomplete planのtracked履歴
+  historical decision indexと、current tree保持が必要なsnapshot
 docs/licenses/
   data source、license、attribution
+Git history
+  indexから復元可能なGit-only全文snapshot
 ```
 
 このtreeはtracked文書の物理配置を表す。ignored／untracked local資料はDOC-P3.1で移動せず、DOC-P5の内容監査まで現状を保持する。
@@ -128,6 +130,13 @@ docs/licenses/
 - prompt engineeringやcontributor workflowなど、product semanticsではない運用を扱う。
 - guideはrequirementsを上書きしない。
 - docs indexから必要時だけ読めるようにし、AGENTS.mdへ全文を複製しない。
+
+### 4.6 Archive
+
+- `docs/archive/README.md`がdecision chain、snapshot status、canonical successor、復元情報を所有する。
+- 本文内のstatusはsnapshot当時の値であり、現在の進捗や実装順序を所有しない。
+- unique evidenceまたはpath契約があるsnapshotだけをcurrent treeへ保持する。
+- current実装に不要で復元可能な全文はGit historyへ置き、初期navigationとrepo-wide searchから外す。
 
 ## 5. Blocking maintenance
 
@@ -279,11 +288,59 @@ Done gate:
 
 DOC-P3.2は`TSK-00.3`として実行し、完了するまで`TSK-00`を開始しない。
 
+### DOC-P3.3: Entrypoint and archive compaction
+
+TSK-00.3完了時点の`docs/README.md`は73行／10,894 bytesで、registry約35項目のうち18項目をarchive個別文書が占める。`docs/archive/`は18文書／5,013行／335,535 bytesで、複数世代のplanとdecision snapshotを保持する。履歴保持自体ではなく、それらを唯一の初期入口へ個別列挙し、repo-wide searchの標準対象へ残すことを解消する。
+
+責務:
+
+- `docs/README.md`: current authorityと責務別sub-indexだけを案内する。
+- `docs/archive/README.md`: historical decision chain、snapshot status、canonical successor、復元情報を所有する。
+- Git history: current実装に不要な全文snapshotのblobを保持する。
+- `docs/evidence/README.md`: damage差分、canonical input、inventory、digest、commitを持つevidenceを引き続き所有する。
+
+Git-only判定条件:
+
+1. current requirements／ADR／Tasksへ有効な判断と未完了作業が移管済みである。
+2. intentional damage差分、production inventory、digest等のcanonical evidenceがevidence側へ保持される。
+3. active tracked文書、code、CI、公開URLからarchive本文へのpath契約がない。
+4. source commit、Git blobまたはSHA-256、canonical successorをarchive indexへ記録できる。
+5. 削除後も判断の採用順と現在authorityをarchive indexから再構成できる。
+
+対象family:
+
+- product requirement evolution
+- damage execution／condition／dependency／unsupported／quality plan chain
+- implementation／demo restoration ledger
+- UI research／options decision chain
+- master delivery／data-flow upstream decision
+
+実行規則:
+
+- filename、行数、旧statusだけでGit-only化しない。
+- `Ready for Implementation`／`In Progress`はsnapshot当時のstatusとして扱い、現在statusはarchive indexが所有する。
+- canonical deltaを発見した場合は、削除せずrequirements／ADR／Tasksのauthority競合として停止する。
+- unique evidenceを発見した場合は、canonical input、rule、version、commitとともにevidenceへ移してからGit-only化を再判定する。
+- damage evidence 31件の統合・削除は本Phaseへ含めず、DOC-P4／TSK-09.1へ残す。
+- tracked文書のHEADからの除去は、staged deletion listとrecoverabilityを検証してfamily単位でcommitする。
+
+Done gate:
+
+- `docs/README.md`がarchive／evidence個別文書を列挙せず、8 KiB以下である。
+- current requirements、active Tasks、ADR、evidence、archive、guide、licenseへ一意に到達できる。
+- archive 18件すべてにretain／Git-only、current successor、source commit、blob／SHA-256、判定理由がある。
+- 未移管Task、canonical delta、未判定damage evidenceが0件である。
+- Git-only文書をarchive indexの情報だけから復元できる。
+- README縮小前後のlines、bytes、registry row、概算token差分を記録する。
+- tracked local linkとregistryが閉じ、product semanticsとdamage evidenceに差分がない。
+
+DOC-P3.3は`TSK-00.4`として実行し、完了するまで`TSK-00`を開始しない。DOC-P4〜P5は実装後に増えたevidenceと残存archiveを再監査し、DOC-P3.3のGit-only判定を理由なく再実行しない。
+
 ## 6. Closure maintenance
 
 ### DOC-P4: Evidenceとphase reportの収束
 
-tracked 16件、local ignored 15件のreportを、正しさの証拠として必要な情報から監査する。
+TSK-00.3完了時点でtracked化された31件のreportを、正しさの証拠として必要な情報から再監査する。ignored reportは0件であり、local quarantine 9件はcanonical evidenceを持たないと判定済みである。
 
 保持判定:
 
@@ -378,7 +435,23 @@ Task共通の開始、検証、handoff、commit手順は`docs/tasks/development-
 5. 全family移動後にfresh clone相当のtracked treeを検証し、Handoffへmove mapと検証結果を記録する。
 6. completion commitで`TSK-00.2`を`done`、`TSK-00`を`ready`へ更新する。
 
-### 7.3 Closure maintenanceの進め方
+### 7.3 Ignored documentation dispositionの進め方
+
+1. TSK-00.2のHandoffを確認し、`TSK-00.3`を`in_progress`へ変更する。
+2. ignored資料のpath、bytes、SHA-256を固定し、family単位でcanonical delta、evidence、history、local-onlyへ分類する。
+3. canonical deltaとevidenceをtracked責務へ収束させ、local-onlyだけを`.local-docs/docs/`へ隔離する。
+4. hash、削除0件、ignore、link、registryを検証し、completion commitで`TSK-00.3`を`done`、`TSK-00.4`を`ready`へする。
+
+### 7.4 Entrypoint and archive compactionの進め方
+
+1. TSK-00.3のHandoffを確認し、`TSK-00.4`を`in_progress`へ変更する。
+2. README、archive、evidenceのlines、bytes、registry rowとarchive 18件のincoming referenceを固定する。
+3. archive indexを先に作り、familyごとのsuccessor、source commit、blob／SHA-256、snapshot statusを記録する。
+4. canonical deltaとunique evidenceがないfamilyだけをGit-only化し、各commitでrecoverabilityとtracked linkを検証する。
+5. `docs/README.md`をcurrent authorityとsub-indexだけへ縮小し、変更前後のcontext指標を記録する。
+6. completion commitで`TSK-00.4`を`done`、`TSK-00`を`ready`へ更新する。
+
+### 7.5 Closure maintenanceの進め方
 
 1. `TSK-08`のDone gateと、新ranking semantics／test quality pathが確定済みであることを確認する。
 2. `TSK-09.1`を`in_progress`へ変更し、tracked／ignored reportと旧計画のinventoryを再取得する。
@@ -389,7 +462,7 @@ Task共通の開始、検証、handoff、commit手順は`docs/tasks/development-
 7. docs integrity checkと影響範囲のquality gateを実行し、damage evidence、inventory、digestが保持されていることを確認する。
 8. Handoffを記録し、completion commitで`TSK-09.1`を`done`、`TSK-09`を`ready`へ更新する。
 
-### 7.4 変更単位
+### 7.6 変更単位
 
 - 一つのcommitは、一つのDOC-Pまたは一つの明確な文書familyへ限定する。
 - inventory、registry、reference修復、archive整理、automationを同じcommitへ束ねない。
