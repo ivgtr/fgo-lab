@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.0.0"
+document_version: "1.1.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -32,7 +32,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | ID | Task | Status | Depends on | Primary source |
 | --- | --- | --- | --- | --- |
 | TSK-00.1 | Documentation source normalization | done | - | documentation maintenance DOC-P0〜P3 |
-| TSK-00 | Baseline固定 | ready | TSK-00.1 | 全要件書 |
+| TSK-00.2 | Canonical documentation layout cutover | ready | TSK-00.1 | documentation maintenance DOC-P3.1 |
+| TSK-00 | Baseline固定 | blocked | TSK-00.2 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
@@ -45,8 +46,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04
-          -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -73,11 +73,40 @@ Handoff:
 - Repaired references: UI baselineとdamage reviewをtracked正本化。旧implementation planとhome／my chaldea／craft essence／support／growth optionsのcanonical参照をTasksまたはUI正本へ収束
 - Retained evidence: tracked report 16件とignored local report 15件を削除せず、TSK-09.1の判定inventoryへ保持
 - Verification: fresh-clone相当のtracked集合で61 Markdown登録、active canonical untracked参照0、ADR file／index各25、`in_progress` 1件を確認
-- Next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
+- Original next command: `git status --short && git rev-parse HEAD`でTSK-00のbaseline identityを開始する
+- Current next task: TSK-00.1完了後の体系見直しにより、TSK-00.2を先行する
+
+### TSK-00.2: Canonical documentation layout cutover
+
+Depends on: TSK-00.1
+
+- [ ] tracked文書の移動mapと、code／CI／README／Markdown／外部公開pathを含むincoming referenceを固定する。
+- [ ] current requirementsを`docs/requirements/`、Tasks／phase planを`docs/tasks/`、evidenceを`docs/evidence/`、guideを`docs/guides/`へ移す。
+- [ ] tracked historical requirements／completed plansを`docs/archive/`へ移し、ADR、license、入口READMEは責務別directoryに維持する。
+- [ ] root README、registry、frontmatter、全tracked local link、command例を新pathへ一括切替する。
+- [ ] old pathとの二重正本やcompatibility copyを残さず、fresh clone相当のtracked treeを検証する。
+
+Done gate:
+
+- fresh cloneの`docs/`直下は`README.md`と責務別directoryだけで、tracked文書が無分類に混在しない。
+- Requirements／ADR／Tasks／Evidence／Guides／Archive／Licensesをpathから判定できる。
+- 全tracked Markdownのlocal link targetがtracked新pathに存在する。
+- current requirements、active Tasks、ADR／evidence indexを`docs/README.md`から一意に辿れる。
+- 文書内容のproduct semantics、damage rule、status、evidence、Git上の履歴を変更していない。
+- ignored／untracked local資料を移動、削除、tracked化していない。
+- runtime、CI、公開URL、外部linkに旧path契約がある場合は推測でstubを作らず、影響と選択肢をHandoffへ記録して停止する。
+
+Handoff:
+
+- Commit: 未記録
+- Move map: 未記録
+- Repaired references: 未記録
+- Verification: 未記録
+- Next command: 未記録
 
 ### TSK-00: Baseline固定
 
-Depends on: TSK-00.1
+Depends on: TSK-00.2
 
 - [ ] test file、suite、CI step、master load、digest inventoryを記録する。
 - [ ] 現行`RankingConditions`、AttackProfile、condition／resource familyをproduction全件で監査する。

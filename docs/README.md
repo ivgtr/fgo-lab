@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab documentation registry"
-document_version: "1.0.0"
+document_version: "1.1.0"
 status: "Active"
 updated_at: "2026-08-30"
 ---
@@ -25,7 +25,7 @@ updated_at: "2026-08-30"
 
 | Path | Kind | Status | Authority／scope | Supersedes／superseded by | Implementation task | Evidence role |
 | --- | --- | --- | --- | --- | --- | --- |
-| [docs/README.md](README.md) | registry | Active | 唯一のdocumentation navigation entry | - | TSK-00.1、TSK-09.1 | tracked文書の分類と入口 |
+| [docs/README.md](README.md) | registry | Active v1.1.0 | 唯一のdocumentation navigation entry | - | TSK-00.1、TSK-00.2、TSK-09.1 | tracked文書の分類と入口 |
 | [docs/documentation-inventory.md](documentation-inventory.md) | inventory | Complete | TSK-00.1開始時のtracked／ignored／reference baseline | - | TSK-00.1 | HEAD、件数、closure判断 |
 | [docs/fgo-lab-requirements-v0.3.md](fgo-lab-requirements-v0.3.md) | requirement | Active v0.3.6 | product目的、機能範囲、データ境界、横断受入条件 | supersedes v0.2.2 | 全product Task | product contract |
 | [docs/ui-design-spec.md](ui-design-spec.md) | requirement | Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 | local UI optionsの採用結論を統合 | TSK-07 | approved UI baseline |
@@ -34,8 +34,8 @@ updated_at: "2026-08-30"
 | [docs/ranking-self-and-conditional-effects-requirements.md](ranking-self-and-conditional-effects-requirements.md) | requirement | Proposed v0.6.1 | ranking policy、canonical scenario、candidate、parity | - | approval required before TSK-04 | production audit required |
 | [docs/test-strategy-redesign.md](test-strategy-redesign.md) | requirement | Proposed v1.1.1 | test suite、runner、quality gate、diagnostics | - | approval required before TSK-01 | test／performance baseline contract |
 | [docs/development-execution-efficiency-requirements.md](development-execution-efficiency-requirements.md) | requirement | Proposed v1.0.1 | bounded output、artifact、handoff、command efficiency | - | approval required before TSK-01 | execution measurement contract |
-| [docs/development-redesign-tasks.md](development-redesign-tasks.md) | Tasks | Active v1.0.0 | 唯一の実装順序、依存、status、handoff | old implementation planとmigration E5を引継ぎ | TSK-00.1〜TSK-09 | commit／artifact handoff |
-| [docs/documentation-maintenance-phases.md](documentation-maintenance-phases.md) | phase plan | Active v1.0.0 | 文書整備固有の判断規則とDone gate。実装順序は所有しない | - | TSK-00.1、TSK-09.1 | documentation baseline／closure gate |
+| [docs/development-redesign-tasks.md](development-redesign-tasks.md) | Tasks | Active v1.1.0 | 唯一の実装順序、依存、status、handoff | old implementation planとmigration E5を引継ぎ | TSK-00.1〜TSK-09 | commit／artifact handoff |
+| [docs/documentation-maintenance-phases.md](documentation-maintenance-phases.md) | phase plan | Active v1.1.0 | 文書整備固有の判断規則とDone gate。実装順序は所有しない | - | TSK-00.1、TSK-00.2、TSK-09.1 | documentation baseline／layout／closure gate |
 | [docs/fgo-lab-requirements.md](fgo-lab-requirements.md) | historical requirement | Superseded v0.2.2 | 初期product検討履歴。実装判断には使用しない | superseded by v0.3 | - | Git history only |
 | [docs/damage-effect-execution-migration-plan.md](damage-effect-execution-migration-plan.md) | historical plan | Complete v1.3.0 | E0〜E4の完了履歴。active順序は所有しない | remaining E5 transferred to TSK-08／09.1／09 | - | phase resultと旧gate |
 | [docs/damage-effect-execution-structure-plan.md](damage-effect-execution-structure-plan.md) | historical plan | Complete | execution ownershipとE3.5〜E3.7完了記録 | succeeded by active damage requirement／Tasks | - | canonical IR、MLB inventory／digest |

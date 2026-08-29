@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 文書体系整備 Phase計画"
-document_version: "1.0.0"
+document_version: "1.1.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -78,17 +78,23 @@ baseline値は削除件数の目標ではない。Phase完了時は、件数差�
 
 ```text
 docs/README.md
-  |- Requirements
-  |    現在のproduct／calculation／ranking／test契約
-  |- ADR
-  |    採用時点のarchitecture decisionとsupersession
-  |- Tasks
-  |    唯一のactive実装順序、依存、進捗、handoff
-  |- Evidence
-  |    canonical input、damage差分、inventory、digest、commit
-  `- Guides
-       prompt、contributor、運用上の非product guidance
+docs/requirements/
+  現在のproduct／calculation／ranking／test契約
+docs/adr/
+  採用時点のarchitecture decisionとsupersession
+docs/tasks/
+  唯一のactive実装順序、依存、進捗、handoff
+docs/evidence/
+  canonical input、damage差分、inventory、digest、commit
+docs/guides/
+  prompt、contributor、運用上の非product guidance
+docs/archive/
+  superseded requirementsとcomplete planのtracked履歴
+docs/licenses/
+  data source、license、attribution
 ```
+
+このtreeはtracked文書の物理配置を表す。ignored／untracked local資料はDOC-P3.1で移動せず、DOC-P5の内容監査まで現状を保持する。
 
 ### 4.1 Requirements
 
@@ -209,6 +215,39 @@ Done gate:
 
 DOC-P0〜P3は`TSK-00.1`として実行し、完了するまでproduct／test／ranking baselineの`TSK-00`を開始しない。
 
+### DOC-P3.1: Canonical physical layout cutover
+
+DOC-P0〜P3で確定したauthorityを、fresh cloneで役割がpathから判定できる物理配置へ移す。これは文書内容の再設計ではなく、tracked正本の一括path cutoverである。
+
+移動先:
+
+- current requirements: `docs/requirements/`
+- active Tasks／phase plan: `docs/tasks/`
+- inventory／report index／tracked reports: `docs/evidence/`
+- contributor／prompt guidance: `docs/guides/`
+- superseded requirements／complete plans: `docs/archive/`
+- ADRとlicense: 既存の`docs/adr/`、`docs/licenses/`を維持
+
+実行規則:
+
+- basename変更はauthority衝突の解消に必要な場合だけ行う。
+- 移動前にcode、CI、README、frontmatter、Markdown、command例、公開URLのincoming referenceを監査する。
+- 全tracked参照を同じcutoverで新pathへ更新し、old pathとの二重正本を残さない。
+- Git履歴から追跡できる移動を優先し、内容変更やformat変更を混在させない。
+- ignored／untracked local資料は移動、削除、tracked化しない。
+- 外部path契約が判明した場合は、compatibility stubを推測で追加せず停止条件として扱う。
+
+Done gate:
+
+- trackedな`docs/`直下は`README.md`と責務別directoryだけである。
+- tracked文書のkindをpathから判定でき、registry分類と一致する。
+- 全tracked local linkが新pathで解決し、旧pathをcanonical sourceとして参照しない。
+- root README、docs registry、ADR／evidence sub-index、frontmatterが新pathと一致する。
+- product semantics、damage rule、status、evidence内容に差分がない。
+- TSK-00が新pathとclean worktreeをbaseline identityとして使用できる。
+
+DOC-P3.1は`TSK-00.2`として実行し、完了するまで`TSK-00`を開始しない。DOC-P5は移動済みhistorical／evidenceの保持、統合、削除判断を担当し、物理配置の初回cutoverを担当しない。
+
 ## 6. Closure maintenance
 
 ### DOC-P4: Evidenceとphase reportの収束
@@ -297,9 +336,18 @@ Task共通の開始、検証、handoff、commit手順は`docs/development-redesi
 5. DOC-P3でstatus、version、Task owner、ADR indexを収束させる。採用済みADRの判断変更が必要なら新ADRへ切り出す。
 6. fresh clone相当のtracked file集合を基準に、local link、registry、ADR index、formatを検証する。
 7. DOC-P0〜P3のDone gateを確認し、Handoffへ変更path、修復参照、保持evidence、検証command、次のentry conditionを記録する。
-8. completion commitで`TSK-00.1`を`done`、`TSK-00`を`ready`へ更新する。
+8. completion commitで`TSK-00.1`を`done`、`TSK-00.2`を`ready`へ更新する。
 
-### 7.2 Closure maintenanceの進め方
+### 7.2 Canonical physical layout cutoverの進め方
+
+1. TSK-00.1のHandoffとregistryを確認し、`TSK-00.2`を`in_progress`へ変更する。
+2. tracked文書だけを対象にmove mapとincoming reference inventoryを固定する。
+3. requirements、Tasks、evidence、guides、archiveの順に、責務familyごとのbounded commitで移動と参照修復を行う。
+4. 各familyでtracked link、frontmatter、registry、root READMEを検証し、旧path参照を残さない。
+5. 全family移動後にfresh clone相当のtracked treeを検証し、Handoffへmove mapと検証結果を記録する。
+6. completion commitで`TSK-00.2`を`done`、`TSK-00`を`ready`へ更新する。
+
+### 7.3 Closure maintenanceの進め方
 
 1. `TSK-08`のDone gateと、新ranking semantics／test quality pathが確定済みであることを確認する。
 2. `TSK-09.1`を`in_progress`へ変更し、tracked／ignored reportと旧計画のinventoryを再取得する。
@@ -310,7 +358,7 @@ Task共通の開始、検証、handoff、commit手順は`docs/development-redesi
 7. docs integrity checkと影響範囲のquality gateを実行し、damage evidence、inventory、digestが保持されていることを確認する。
 8. Handoffを記録し、completion commitで`TSK-09.1`を`done`、`TSK-09`を`ready`へ更新する。
 
-### 7.3 変更単位
+### 7.4 変更単位
 
 - 一つのcommitは、一つのDOC-Pまたは一つの明確な文書familyへ限定する。
 - inventory、registry、reference修復、archive整理、automationを同じcommitへ束ねない。
