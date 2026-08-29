@@ -209,16 +209,16 @@ function modifierEffect(
   };
 }
 
-function traitConditions(opponent: string, field: string) {
+function traitConditions(opponent: string, field: string): MasterEffect['conditions'] {
   return {
     ...unconditionalConditions,
     opponent: {
       operator: 'all' as const,
-      traits: [{ name: opponent, negative: false }],
+      traits: [{ name: opponent, negative: false, layer: 'combined' }],
     },
     field: {
       operator: 'all' as const,
-      traits: [{ name: field, negative: false }],
+      traits: [{ name: field, negative: false, layer: 'combined' }],
     },
   };
 }
@@ -309,7 +309,7 @@ describe('scenario calculation facade', () => {
         ...unconditionalConditions,
         field: {
           operator: 'all',
-          traits: [{ name: 'fieldSunlight', negative: false }],
+          traits: [{ name: 'fieldSunlight', negative: false, layer: 'combined' }],
         },
       }),
       timing: 'beforeDamage' as const,
@@ -400,7 +400,7 @@ describe('scenario calculation facade', () => {
         ...unconditionalConditions,
         field: {
           operator: 'all',
-          traits: [{ name: 'fieldSunlight', negative: false }],
+          traits: [{ name: 'fieldSunlight', negative: false, layer: 'combined' }],
         },
       }),
       timing: 'beforeDamage' as const,
@@ -411,8 +411,8 @@ describe('scenario calculation facade', () => {
         field: {
           operator: 'any',
           traits: [
-            { name: 'fieldSunlight', negative: false },
-            { name: 'fieldShore', negative: false },
+            { name: 'fieldSunlight', negative: false, layer: 'combined' },
+            { name: 'fieldShore', negative: false, layer: 'combined' },
           ],
         },
       }),
@@ -929,7 +929,7 @@ describe('scenario calculation facade', () => {
                   ...unconditionalConditions,
                   field: {
                     operator: 'all',
-                    traits: [{ name: 'fieldHell', negative: false }],
+                    traits: [{ name: 'fieldHell', negative: false, layer: 'combined' }],
                   },
                 }),
               ],
@@ -1063,13 +1063,13 @@ describe('scenario calculation facade', () => {
 
   it('routes conditional passives and craft essences through the same effect-local decision', () => {
     const baseServant = fixture.servants[0]!;
-    const orCondition = {
+    const orCondition: MasterEffect['conditions'] = {
       ...unconditionalConditions,
       opponent: {
         operator: 'any' as const,
         traits: [
-          { name: 'dragon', negative: false },
-          { name: 'lamia', negative: false },
+          { name: 'dragon', negative: false, layer: 'combined' },
+          { name: 'lamia', negative: false, layer: 'combined' },
         ],
       },
     };
@@ -1231,6 +1231,161 @@ describe('scenario calculation facade', () => {
 
     expect(calculation.input.targetStateTraits).toEqual(['buffBurn', 'buffBurn']);
     expect(calculation.input.npSpecialMultipliers).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
+  });
+
+  it('applies NP-before target state and explicit removal without leaking NP-after state', () => {
+    const baseServant = fixture.servants[0]!;
+    const burn = { kind: 'trait' as const, name: 'buffBurn' };
+    const stateEffect = (
+      id: string,
+      mutation: 'addTrait' | 'removeTrait',
+      timing: 'beforeDamage' | 'afterDamage',
+    ) => ({
+      ...modifierEffect(id, mutation === 'addTrait' ? 'addState' : 'subState', 0, [], 'enemyAll'),
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation,
+          scope: 'recipientState' as const,
+          targetPolicy: 'enemy' as const,
+          trait: burn.name,
+          damageRelevant: true,
+        },
+      ],
+      timing,
+    });
+    const stateMaster = (
+      effects: ReturnType<typeof stateEffect>[],
+    ): ReturnType<typeof parseTestMaster> =>
+      parseTestMaster({
+        ...fixture,
+        servants: [
+          {
+            ...baseServant,
+            noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+              ...group,
+              variants: group.variants.map((np) => ({
+                ...np,
+                effects,
+                damage: np.damage.map((damage) => ({
+                  ...damage,
+                  kind: 'stateTrait',
+                  rawFunctionType: 'damageNpStateIndividualFix',
+                  stateTraitNames: [burn.name],
+                  parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                    row.map((parameter) => ({
+                      ...parameter,
+                      targetId: 1,
+                      targetTrait: burn,
+                      correctionPermille: 1_500,
+                    })),
+                  ),
+                })),
+              })),
+            })),
+          },
+        ],
+      });
+    const multiplier = (candidate: ReturnType<typeof parseTestMaster>) =>
+      calculateScenario(createDefaultResolvedScenario(candidate, undefined), candidate, {
+        ...versions,
+        masterDataVersion: candidate.version,
+      }).input.npSpecialMultipliers;
+
+    expect(multiplier(stateMaster([stateEffect('before', 'addTrait', 'beforeDamage')]))).toEqual([
+      1.5, 1.5, 1.5, 1.5, 1.5,
+    ]);
+    expect(multiplier(stateMaster([stateEffect('after', 'addTrait', 'afterDamage')]))).toEqual([
+      1, 1, 1, 1, 1,
+    ]);
+    expect(
+      multiplier(
+        stateMaster([
+          stateEffect('before', 'addTrait', 'beforeDamage'),
+          stateEffect('remove', 'removeTrait', 'beforeDamage'),
+        ]),
+      ),
+    ).toEqual([1, 1, 1, 1, 1]);
+  });
+
+  it('commits a target-state mutation only when its proc succeeds', () => {
+    const baseServant = fixture.servants[0]!;
+    const poison = { kind: 'trait' as const, name: 'buffPoison' };
+    const visibleProcEffect = modifierEffect('poison-proc', 'upAtk', 0);
+    const procEffect = {
+      ...visibleProcEffect,
+      proc: {
+        kind: 'singleRoll' as const,
+        ratePermille: [[500], [500], [500], [500], [500]],
+      },
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'recipientState' as const,
+          targetPolicy: 'enemy' as const,
+          trait: poison.name,
+          damageRelevant: true,
+        },
+        ...visibleProcEffect.execution,
+      ],
+      timing: 'beforeDamage' as const,
+    };
+    const procMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              effects: [procEffect],
+              damage: np.damage.map((damage) => ({
+                ...damage,
+                kind: 'stateTrait',
+                rawFunctionType: 'damageNpStateIndividualFix',
+                stateTraitNames: [poison.name],
+                parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                  row.map((parameter) => ({
+                    ...parameter,
+                    targetId: 1,
+                    targetTrait: poison,
+                    correctionPermille: 1_500,
+                  })),
+                ),
+              })),
+            })),
+          })),
+        },
+      ],
+    });
+    const initialScenario = createDefaultResolvedScenario(procMaster, undefined);
+    const initial = calculateScenario(initialScenario, procMaster, {
+      ...versions,
+      masterDataVersion: procMaster.version,
+    });
+    const control = initial.effectControls.find(
+      ({ projection }) => projection.proc.kind === 'singleRoll',
+    )!;
+    const calculateProc = (enabled: boolean) => {
+      const scenario = applyEffectPresentationDecision(
+        initialScenario,
+        control.projection,
+        enabled,
+        initial.activationRequirements,
+        initial.effects,
+      );
+      return calculateScenario(scenario, procMaster, {
+        ...versions,
+        masterDataVersion: procMaster.version,
+      });
+    };
+
+    expect(calculateProc(false).input.targetStateTraits).toEqual([]);
+    expect(calculateProc(false).input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(calculateProc(true).input.targetStateTraits).toEqual(['buffPoison']);
+    expect(calculateProc(true).input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
   });
 
   it('returns identical NP rows for equivalent resolved and manual inputs', () => {

@@ -4,15 +4,15 @@
   "createdAt": "2026-08-24T00:00:00.000Z",
   "source": { "name": "Atlas Academy", "region": "JP", "retrievedAt": "2026-08-24T00:00:00.000Z" },
   "minimalAppVersion": "0.1.0",
-  "schemaVersion": 36,
+  "schemaVersion": 37,
   "artifactKind": "diagnostic",
   "imagesEnabled": false,
   "files": [
     {
       "key": "master",
       "file": "fixture.json",
-      "bytes": 4432,
-      "sha256": "52b6ae0cd50b717572898d7e284ddc36ca43b02d887df7feb9045b3694b5d8d2",
+      "bytes": 8332,
+      "sha256": "b9131080342d448910f94c4834324cc986e80f53d98adc6de17cb2023eedd838",
       "required": true
     }
   ]

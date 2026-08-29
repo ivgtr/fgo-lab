@@ -1,6 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { getNoblePhantasmVariants, masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  getNoblePhantasmVariants,
+  masterSnapshotSchema,
+  type MasterEffect,
+} from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
   canonicalExclusiveGroup,
@@ -128,6 +132,133 @@ function hasCanonicalInputConflict(input: {
 }
 
 describe('production master inventory ratchet', () => {
+  it('preserves every damage-reachable target-state grant and removal', async () => {
+    const master = await loadProductionMaster();
+    const targetStateTraits = [
+      'buffBound',
+      'buffBurn',
+      'buffCharm',
+      'buffConfusion',
+      'buffCurse',
+      'buffDeathResistDown',
+      'buffEvade',
+      'buffImmobilize',
+      'buffMentalEffect',
+      'buffNegativeEffect',
+      'buffPoison',
+      'buffTerrorStunChanceAfterTurn',
+      'marking',
+      'skillSeal',
+      'traitId:10047',
+      'traitId:10052',
+    ] as const;
+    const targetStateTraitSet = new Set<string>(targetStateTraits);
+    const effects: {
+      ownerId: string;
+      source: string;
+      effect: MasterEffect;
+      timing: 'beforeDamage' | 'afterDamage' | null;
+    }[] = [
+      ...master.servants.flatMap((servant) => [
+        ...[...servant.skills, ...servant.passives].flatMap((skill) =>
+          skill.effects.map((effect) => ({
+            ownerId: servant.id,
+            source: 'skill',
+            effect,
+            timing: null,
+          })),
+        ),
+        ...getNoblePhantasmVariants(servant).flatMap((variant) =>
+          variant.effects.map((effect) => ({
+            ownerId: servant.id,
+            source: 'np',
+            effect,
+            timing: effect.timing,
+          })),
+        ),
+      ]),
+      ...master.craftEssences.flatMap((craftEssence) =>
+        craftEssence.effects.map((effect) => ({
+          ownerId: craftEssence.id,
+          source: 'equip',
+          effect,
+          timing: null,
+        })),
+      ),
+      ...master.mysticCodes.flatMap((mysticCode) =>
+        mysticCode.skills.flatMap((skill) =>
+          skill.effects.map((effect) => ({
+            ownerId: mysticCode.id,
+            source: 'mysticCode',
+            effect,
+            timing: null,
+          })),
+        ),
+      ),
+    ];
+    const mutations = effects.flatMap((item) =>
+      item.effect.execution.flatMap((operation) =>
+        operation.kind === 'contextMutation' &&
+        'scope' in operation &&
+        operation.scope === 'recipientState' &&
+        (operation.mutation === 'addTrait' || operation.mutation === 'removeTrait') &&
+        targetStateTraitSet.has(operation.trait)
+          ? [{ ...item, operation }]
+          : [],
+      ),
+    );
+    const additions = mutations.filter(({ operation }) => operation.mutation === 'addTrait');
+    const removals = mutations.filter(({ operation }) => operation.mutation === 'removeTrait');
+    expect([...new Set(additions.map(({ operation }) => operation.trait))].sort()).toEqual(
+      targetStateTraits.filter((trait) => trait !== 'traitId:10052'),
+    );
+    const consumerTraits = new Set<string>();
+    for (const { effect } of effects)
+      for (const condition of [
+        ...effect.conditions.recipient,
+        effect.conditions.holder,
+        effect.conditions.opponent,
+        effect.conditions.field,
+      ])
+        for (const trait of condition.traits)
+          if ('name' in trait && trait.layer === 'state') consumerTraits.add(trait.name);
+    for (const servant of master.servants)
+      for (const variant of getNoblePhantasmVariants(servant))
+        if (variant.kind === 'attack')
+          for (const damage of variant.damage)
+            for (const trait of damage.stateTraitNames) consumerTraits.add(trait);
+    expect([...consumerTraits].sort()).toEqual(targetStateTraits);
+    expect({
+      operations: additions.length,
+      effectOccurrences: new Set(
+        additions.map(
+          ({ ownerId, source, effect }) => `${source}:${ownerId}:${effect.occurrenceId}`,
+        ),
+      ).size,
+      owners: new Set(additions.map(({ ownerId }) => ownerId)).size,
+      guaranteed: additions.filter(({ effect }) => effect.proc.kind === 'guaranteed').length,
+      probabilistic: additions.filter(({ effect }) => effect.proc.kind !== 'guaranteed').length,
+      beforeDamage: additions.filter(({ timing }) => timing === 'beforeDamage').length,
+      afterDamage: additions.filter(({ timing }) => timing === 'afterDamage').length,
+      removals: removals.length,
+    }).toEqual({
+      operations: 1_411,
+      effectOccurrences: 814,
+      owners: 322,
+      guaranteed: 1_402,
+      probabilistic: 9,
+      beforeDamage: 90,
+      afterDamage: 816,
+      removals: 9,
+    });
+    expect(
+      additions.filter(
+        ({ effect }) => !['addState', 'addStateShort'].includes(effect.atlasEvidence.functionType),
+      ),
+    ).toEqual([]);
+    expect(additions.every(({ operation }) => operation.damageRelevant)).toBe(true);
+  });
+
   it('keeps known candidate values and bounds fail-closed servants', async () => {
     const master = await loadProductionMaster();
     const versions: VersionContext = {
@@ -512,7 +643,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_585, automaticVisible: 0, hidden: 714 });
+    }).toEqual({ user: 1_592, automaticVisible: 0, hidden: 1_217 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -571,7 +702,11 @@ describe('production master inventory ratchet', () => {
     expect(
       archetype?.effects.find((effect) => effect.label === 'バスターアップ：千年城'),
     ).toMatchObject({ value: 0.3, outcome: 'applied' });
-    expect(archetype?.effects.find((effect) => effect.label === '防御力ダウン')).toMatchObject({
+    expect(
+      archetype?.effects.find(
+        (effect) => effect.label === '防御力ダウン' && effect.visibility === 'visible',
+      ),
+    ).toMatchObject({
       value: 0.2,
       outcome: 'applied',
       explanation: { code: 'applied' },

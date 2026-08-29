@@ -110,7 +110,7 @@ describe('production special input inventory', () => {
       for (const control of calculation.effectControls.filter(
         (candidate) => candidate.projection.controllability === 'user',
       )) {
-        const key = `${control.projection.skillName}:${control.projection.label}`;
+        const key = `${control.projection.source.sourceInstanceId}:${control.projection.label}`;
         counts.set(key, (counts.get(key) ?? 0) + 1);
       }
       return [...counts.entries()].flatMap(([key, count]) =>

@@ -30,32 +30,32 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    '05d554d8626b75ccf80df44dce51e8f86d308f4b395d5c6a666d22e5e564b6f7',
-    '1b65976e536e82aac08626abc49db4bbc7eae9f91b20097dad010ddddc4b2771',
-    'c4ff865dcd7b6b0ee470a984dcb6a8946dbd582db2e94d72684556aa5f35708a',
-    '9658fcd74ef73daf7c033669bd1a1d68ac5df943f8714bae7afdae6424f156cf',
-    'f35865dac7590d068e7fee95a9f7c23c5487ad802c74eda054752bcda6bf275e',
+    'c82ea0f04bd9bb3e3da444e4f8d70bf313d0a9338a9df0a3af5cc4c7d8c7ece3',
+    '0f4388775a59943f3ecc874d0fe7a3eb58b18fd1a1a31422c35ab92de92f5191',
+    '00707fed20256eda4e3bd85c7b8766dfcabad020af5e787f01c326e6d40e7ee1',
+    'c069e175ce1c5ebccb818c20eb03de08fa99eac5ea1f0b6622b22e3249962b5a',
+    '4fb7da6edc71e1dae7fc31340f206a5bdcf1c1c1adc39ed9eaad5f74ff2e94ba',
   ],
   'neutral:active': [
-    '39740054dace7d002f951098b0d74dab8f2c0453c97b328096f20921e22e3a9b',
-    '4ebe78d1369ead4d3701e7ef658aab837ea95ec9ca48c3f30bee529b285c5c59',
-    'ea6805d2246ddc681f1f252965c54d6c4e03661165bfedc488abed5f67f3bd78',
-    'b54ad7d6fa77a8b427029dbc7685883a16f29465e5ccd96ad096aaf3062ddc9a',
-    '7bf48deb67c6a6fb44b695526ef44f416741ffa0369d42283fcf4fef10f459a9',
+    '00e85977f9e33cf211b0c49c5cc448b9264fd7b7fc91c67d8f1789b1239fb5b9',
+    '7c312b9bee3a6c0777aa718d20c52b88aebc32b1ade52546fb972f32efc7ceb1',
+    '17a854faba65031bd8f7c2c4fd952c951b37128b056ca5c8805bad3a4402d2fe',
+    '68b38df9e234208bece4779ecf9b6a506adc84e325dc82444e79728bc683b3e4',
+    '544489fd3cb737e6315d2e21e17f1216a8e661e11c8ba7139c68bc1f346e9ce6',
   ],
   'favorable:inactive': [
-    'c34b5dab274e71fb5baa9d9a9b5b8992031c8435d31fd854e207f7cfcb7fb445',
-    'cf39a686bce367798e710e4004a832bea844bfe6162402ab44dcc894066b1c68',
-    'ca6c975e5135a3f34f7fce277388af701d5ac9dee69b8f00fc8462a19ef3bd56',
-    'a7c05ffffbde5f528db03c69ea23e088b6174a140696de8059d9e3aa73ce8d54',
-    '08222f3fcc9ea1ed22d49f8369a2e4ecb315330ad26082add86c71e2e6f25357',
+    '772fef535545aea9a41026b2b61ee0a3a6eb3e6c9673d778131c3bc5079c1808',
+    '5f470f7fab0bafa14f34a211857299c1f32cc970b022ed199c0359136e55ddd9',
+    '6aa735bcf55356be07afe86722ae1e83b056addc2173768b4784b14bea989397',
+    '6c88df4a78a1ceb385ce41c6853bce09fa86f2c1b5ff3f57a6acac1c7afa1158',
+    'dd272ef1c5af28a22fc85dd0e7c8654d9aa5ae99229b75dd5b5c1bcee9a986d2',
   ],
   'favorable:active': [
-    'fa77cb2a88c24795c937ed11af4a825ce51c8d21a0c44dbe4b13afb045ea08ad',
-    'b58c1a5ecd0a3d187649ba6a84210c109a9014701eb10d750ee29637b3b6eed4',
-    '01c6db0ae127dcea54d4b229445f2761cb2e19dd49426c1156e923c7f96fcdac',
-    'da59c04a247735482cbde1c3f6a38e9c992cfba6d12285d6c1886ab3dd7ad408',
-    '2113eb4b1da4abdc2b4e62ec9c4a1271c161fff23175ff8ed5d1d5b3c07c4852',
+    '744a518bb3d808b591af3beddd117558a9247b8fa9c57b3bac03ad5cc40b4d58',
+    '792277adb9817d8e8e8a80ddeb5aeb81d780d1f1fe1b1710e8039fb04db1f268',
+    'b46acf45940ce1f939cf1e21a923773e26a02bc35d744f140e07613ec587cf9f',
+    'caba6b9c475f7a1a6601bd426cd2d8096a07faab4efc9fd9d28f20e9bfefbfae',
+    '8dc58b3b15c17649c6bf463523dc92b2ef010382baf23252d341d0a2d657412b',
   ],
 } as const;
 
@@ -137,14 +137,35 @@ describe('production canonical ranking', () => {
     expect(ranking.failures).toEqual([]);
     expect(ranking.damageCache).toEqual({
       requestCount: 3_744,
-      distinctDamageInputCount: 1_479,
-      cacheHitCount: 2_265,
-      cacheHitRate: 2_265 / 3_744,
+      distinctDamageInputCount: 1_644,
+      cacheHitCount: 2_100,
+      cacheHitRate: 2_100 / 3_744,
     });
     expect(ranking.rows).toHaveLength(433);
     expect(new Set(ranking.rows.map(({ entryId }) => entryId)).size).toBe(433);
     expect(ranking.rows.filter(({ npTarget }) => npTarget === 'single')).toHaveLength(180);
     expect(ranking.rows.filter(({ npTarget }) => npTarget === 'all')).toHaveLength(253);
+    const summerLilithRow = ranking.rows.find(
+      ({ servantId, noblePhantasmVariant }) =>
+        servantId === '405900' && noblePhantasmVariant.noblePhantasmId === '405901',
+    );
+    expect(summerLilithRow).toBeDefined();
+    const summerLilithDetail = summerLilithRow
+      ? ranking.details[summerLilithRow.entryId]
+      : undefined;
+    expect(summerLilithDetail?.input.targetStateTraits).toEqual(
+      expect.arrayContaining(['buffCharm', 'buffConfusion']),
+    );
+    expect(
+      summerLilithDetail?.scenario.mode === 'resolved'
+        ? summerLilithDetail.scenario.worldFactAssertions.filter(
+            ({ decisionKey, fact }) =>
+              decisionKey.startsWith('ranking:targetState:') &&
+              fact.kind === 'trait' &&
+              fact.present,
+          )
+        : null,
+    ).toEqual([]);
     let actorFormNodeCount = 0;
     let actorFormProfileCount = 0;
     const expectedAttackProfiles = master.servants.flatMap((servant) => {
@@ -516,7 +537,7 @@ describe('production canonical ranking', () => {
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"05d554d8626b75ccf80df44dce51e8f86d308f4b395d5c6a666d22e5e564b6f7"`,
+      `"c82ea0f04bd9bb3e3da444e4f8d70bf313d0a9338a9df0a3af5cc4c7d8c7ece3"`,
     );
     expect(
       [...ranking.rows]
@@ -640,11 +661,11 @@ describe('production canonical ranking', () => {
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
     const digests = [
-      'd448b5598587b3b2fb36063d305956d95716b0bad9507a9294496c3fff682587',
-      'fd6531606acdbb84f2febbc4a06a21da6f6e8be227e486b497b10f4fcf6e6f86',
-      '77f11ad41411f339a8a1ce207817b23b016e8f526cf12488ff16917a3a14a765',
-      '42a5a58b0277d2d5a453c9ad38bab93c634745d9590892df5252809d6feca78e',
-      '57e5476e5921a2b99a2fa34da2cff6b34f064f990565e4a5356117cb8fb7a2ab',
+      'e260fcbdb1e590f48d8eb637a6d199d168319aa658de464765773ef3d479c465',
+      '39185795a3440f0d5c17f22046ae40769c5eda519b524f9c9776ef9274394443',
+      '1d31c75d3195e37756b87e0880f3ed572a9ded943d9fd68e1172d52b7b657f26',
+      'ea02fbe3d55f62bd18cd9b61e578cfe9d251861f3a11dae8970b8addb0bb76b3',
+      '8eb345a94f6df8f30b843955816b0c18bcd823c7189faaa96df34699e328f352',
     ];
     const actualDigests: string[] = [];
     for (const [index, ranking] of matrix.entries()) {
@@ -688,6 +709,17 @@ describe('production canonical ranking', () => {
       masterDataLocale: 'ja-JP' as const,
     };
     const actualDigests: Record<string, string[]> = {};
+    const stateTraitVariantKeys = new Set(
+      master.servants.flatMap((servant) =>
+        getNoblePhantasmVariants(servant).flatMap((variant) =>
+          variant.kind === 'attack' && variant.damage.some(({ kind }) => kind === 'stateTrait')
+            ? [`${servant.id}:${variant.ref.noblePhantasmId}`]
+            : [],
+        ),
+      ),
+    );
+    const stateTraitMatrices: Record<string, unknown> = {};
+    expect(stateTraitVariantKeys.size).toBe(13);
     for (const classAffinity of ['neutral', 'favorable'] as const)
       for (const specialAttack of ['inactive', 'active'] as const) {
         const conditions = {
@@ -700,6 +732,21 @@ describe('production canonical ranking', () => {
         const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
         const key = `${classAffinity}:${specialAttack}`;
         actualDigests[key] = [];
+        if (classAffinity === 'neutral')
+          stateTraitMatrices[specialAttack] = matrix.map(({ rows }) =>
+            rows
+              .filter((row) =>
+                stateTraitVariantKeys.has(
+                  `${row.servantId}:${row.noblePhantasmVariant.noblePhantasmId}`,
+                ),
+              )
+              .map(({ entryId, average, specialAttackApplied }) => ({
+                entryId,
+                average,
+                specialAttackApplied,
+              }))
+              .sort((left, right) => left.entryId.localeCompare(right.entryId)),
+          );
         if (classAffinity === 'neutral' && specialAttack === 'inactive') {
           const averages = (servantId: string, noblePhantasmId: string) =>
             matrix.map(
@@ -776,6 +823,9 @@ describe('production canonical ranking', () => {
           expect(averages('2801000', '2801001')).toEqual([
             23_957.595, 31_943.62, 35_936.64, 37_933.155, 39_929.65,
           ]);
+          expect(averages('405900', '405901')).toEqual([
+            22_846.02, 30_403.195, 34_181.785, 36_071.07, 37_960.365,
+          ]);
           expect(
             matrix[0].rows.find(
               ({ servantId, noblePhantasmVariant }) =>
@@ -792,11 +842,28 @@ describe('production canonical ranking', () => {
           expect(ranking.rows).toHaveLength(433);
           expect(
             ranking.rows.filter(({ specialAttackApplied }) => specialAttackApplied),
-          ).toHaveLength(specialAttack === 'active' ? 202 : 0);
+          ).toHaveLength(specialAttack === 'active' ? 210 : 0);
           actualDigests[key].push(rankingDigest(ranking.rows));
+        }
+        if (classAffinity === 'neutral' && specialAttack === 'active') {
+          const averages = (servantId: string, noblePhantasmId: string) =>
+            matrix.map(
+              ({ rows }) =>
+                rows.find(
+                  (row) =>
+                    row.servantId === servantId &&
+                    row.noblePhantasmVariant.noblePhantasmId === noblePhantasmId,
+                )?.average,
+            );
+          expect(averages('405900', '405901')).toEqual([
+            48_351.47, 64_410.47, 72_439.96, 76_454.715, 80_469.455,
+          ]);
         }
       }
     expect(actualDigests).toEqual(policyDigests);
+    expect(createHash('sha256').update(JSON.stringify(stateTraitMatrices)).digest('hex')).toBe(
+      '6b1fe2e60e812f4b009c3909cfc1f0adb5f8c25e6f29c5a5998a928909a157b2',
+    );
   }, 600_000);
 
   it('uses the selected NP level for NP-dependent special attack series', async () => {

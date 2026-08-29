@@ -274,11 +274,11 @@ describe('portable input limits', () => {
                     holder: { operator: 'any', traits: [] },
                     opponent: {
                       operator: 'all',
-                      traits: [{ name: 'attributeEarth', negative: false }],
+                      traits: [{ name: 'attributeEarth', negative: false, layer: 'combined' }],
                     },
                     field: {
                       operator: 'all',
-                      traits: [{ name: 'fieldHell', negative: false }],
+                      traits: [{ name: 'fieldHell', negative: false, layer: 'combined' }],
                     },
                   },
                   conditionTargetPolicy: 'sourceSelf',

@@ -28,6 +28,7 @@ function projection(overrides: Partial<EffectProjection> = {}): EffectProjection
       effectOccurrenceId: 'effect:0',
     },
     contributionScope: 'personal',
+    contributionControl: 'operation',
     activationSources: [],
     executionSupport: 'supported',
     outcome: 'applied',

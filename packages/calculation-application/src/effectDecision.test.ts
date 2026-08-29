@@ -56,6 +56,7 @@ describe('effect decision application command', () => {
         effectOccurrenceId: '200:0',
       },
       contributionScope: 'external',
+      contributionControl: 'operation',
       activationSources: [],
       executionSupport: 'supported',
       outcome: 'notApplied',
@@ -129,6 +130,7 @@ describe('effect decision application command', () => {
         effectOccurrenceId: 'sky:0',
       },
       contributionScope: 'personal',
+      contributionControl: 'operation',
       activationSources: [],
       executionSupport: 'supported',
       outcome: 'notApplied',
@@ -325,6 +327,7 @@ describe('effect decision application command', () => {
         effectOccurrenceId: 'chain:0',
       },
       contributionScope: 'external',
+      contributionControl: 'operation',
       activationSources: [
         {
           origin: 'support',

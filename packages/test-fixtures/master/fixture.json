@@ -31,8 +31,18 @@
       ],
       "attributeIdentities": ["man", "earth", "sky", "star", "beast"],
       "families": [
-        { "familyId": "demonGodPillar", "membershipConstraints": { "kind": "independent" } },
-        { "familyId": "beast", "membershipConstraints": { "kind": "independent" } }
+        {
+          "familyId": "demonGodPillar",
+          "membershipConstraints": {
+            "kind": "independent"
+          }
+        },
+        {
+          "familyId": "beast",
+          "membershipConstraints": {
+            "kind": "independent"
+          }
+        }
       ]
     },
     "evidence": {
@@ -44,7 +54,12 @@
         },
         {
           "familyId": "beast",
-          "atlasTargets": [{ "targetId": "fixture-beast", "rawClassName": "Saber" }],
+          "atlasTargets": [
+            {
+              "targetId": "fixture-beast",
+              "rawClassName": "Saber"
+            }
+          ],
           "sourceDigest": "1111111111111111111111111111111111111111111111111111111111111111"
         }
       ]
@@ -56,24 +71,43 @@
       "name": "検証用セイバー",
       "classId": "saber",
       "rarity": 5,
-      "atkByLevel": { "1": 1700, "90": 10000, "100": 10950, "120": 12850 },
+      "atkByLevel": {
+        "1": 1700,
+        "90": 10000,
+        "100": 10950,
+        "120": 12850
+      },
       "actorFormGraph": {
         "actorId": "fixture-saber",
         "forms": [
           {
-            "id": { "actorId": "fixture-saber", "limitCount": 0 },
+            "id": {
+              "actorId": "fixture-saber",
+              "limitCount": 0
+            },
             "name": "検証用セイバー",
             "traits": ["servant", "humanoid"],
             "skillIds": [],
             "passiveIds": [],
             "baseNoblePhantasmVariant": {
-              "actorFormId": { "actorId": "fixture-saber", "limitCount": 0 },
+              "actorFormId": {
+                "actorId": "fixture-saber",
+                "limitCount": 0
+              },
               "noblePhantasmId": "fixture-np"
             }
           }
         ],
-        "initialFormIds": [{ "actorId": "fixture-saber", "limitCount": 0 }],
-        "defaultInitialFormId": { "actorId": "fixture-saber", "limitCount": 0 },
+        "initialFormIds": [
+          {
+            "actorId": "fixture-saber",
+            "limitCount": 0
+          }
+        ],
+        "defaultInitialFormId": {
+          "actorId": "fixture-saber",
+          "limitCount": 0
+        },
         "transitions": []
       },
       "baseNoblePhantasmGroupId": "fixture-np-group",
@@ -81,14 +115,20 @@
         {
           "id": "fixture-np-group",
           "baseVariant": {
-            "actorFormId": { "actorId": "fixture-saber", "limitCount": 0 },
+            "actorFormId": {
+              "actorId": "fixture-saber",
+              "limitCount": 0
+            },
             "noblePhantasmId": "fixture-np"
           },
           "variants": [
             {
               "kind": "attack",
               "ref": {
-                "actorFormId": { "actorId": "fixture-saber", "limitCount": 0 },
+                "actorFormId": {
+                  "actorId": "fixture-saber",
+                  "limitCount": 0
+                },
                 "noblePhantasmId": "fixture-np"
               },
               "name": "検証用宝具",
@@ -103,42 +143,118 @@
                   "target": "all",
                   "parametersByOvercharge": [
                     [
-                      { "ratePermille": 1000, "valuePermille": 3000 },
-                      { "ratePermille": 1000, "valuePermille": 4000 },
-                      { "ratePermille": 1000, "valuePermille": 4500 },
-                      { "ratePermille": 1000, "valuePermille": 4750 },
-                      { "ratePermille": 1000, "valuePermille": 5000 }
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 3000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4500
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4750
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 5000
+                      }
                     ],
                     [
-                      { "ratePermille": 1000, "valuePermille": 3000 },
-                      { "ratePermille": 1000, "valuePermille": 4000 },
-                      { "ratePermille": 1000, "valuePermille": 4500 },
-                      { "ratePermille": 1000, "valuePermille": 4750 },
-                      { "ratePermille": 1000, "valuePermille": 5000 }
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 3000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4500
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4750
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 5000
+                      }
                     ],
                     [
-                      { "ratePermille": 1000, "valuePermille": 3000 },
-                      { "ratePermille": 1000, "valuePermille": 4000 },
-                      { "ratePermille": 1000, "valuePermille": 4500 },
-                      { "ratePermille": 1000, "valuePermille": 4750 },
-                      { "ratePermille": 1000, "valuePermille": 5000 }
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 3000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4500
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4750
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 5000
+                      }
                     ],
                     [
-                      { "ratePermille": 1000, "valuePermille": 3000 },
-                      { "ratePermille": 1000, "valuePermille": 4000 },
-                      { "ratePermille": 1000, "valuePermille": 4500 },
-                      { "ratePermille": 1000, "valuePermille": 4750 },
-                      { "ratePermille": 1000, "valuePermille": 5000 }
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 3000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4500
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4750
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 5000
+                      }
                     ],
                     [
-                      { "ratePermille": 1000, "valuePermille": 3000 },
-                      { "ratePermille": 1000, "valuePermille": 4000 },
-                      { "ratePermille": 1000, "valuePermille": 4500 },
-                      { "ratePermille": 1000, "valuePermille": 4750 },
-                      { "ratePermille": 1000, "valuePermille": 5000 }
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 3000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4000
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4500
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 4750
+                      },
+                      {
+                        "ratePermille": 1000,
+                        "valuePermille": 5000
+                      }
                     ]
                   ],
-                  "rawPath": "fixture.servants[0].noblePhantasms[0].functions[0]"
+                  "rawPath": "fixture.servants[0].noblePhantasms[0].functions[0]",
+                  "stateTraitNames": []
                 }
               ],
               "effects": []

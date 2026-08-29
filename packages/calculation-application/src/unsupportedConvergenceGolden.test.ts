@@ -112,10 +112,11 @@ describe('unsupported convergence production golden', () => {
         {
           "appliedOperations": [
             "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:248:0:modifier:npDamageBuff",
+            "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:23291:0:addTrait-target:buffNegativeEffect",
             "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:23291:0:addTrait-target:buffBurn",
             "np:["106600",0,"106601"]:5337:damage",
           ],
-          "inputDigest": "1d55420f3d2f8606be3de48bad7d231408e2d479eb69f31b9bef1fcd86ffaf31",
+          "inputDigest": "e39255a9b5f4d4648bbdc1cfe7aef0a9a0550f502949c53c9e5e0527ce3c3961",
           "name": "ジャック・ド・モレー",
           "np1To5Average": [
             31998.575,
@@ -703,7 +704,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '66aa700f024a3bd8234b8953cf413459e330df2d12c727f3c9d167fd969df2df',
+      'eb833fed8d31ffb16c33a4b2c5314b6d8dba209d3979da3faf6449d2419aac3d',
     );
   }, 30_000);
 

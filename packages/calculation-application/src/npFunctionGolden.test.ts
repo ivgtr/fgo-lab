@@ -108,6 +108,7 @@ function context(testCase: GoldenCase): NpDamageOperationContext {
   return {
     overcharge: 1,
     attackerTraitCounts: counts(attackerTraits),
+    attackerStateTraitCounts: counts(attackerTraits),
     targetTraitCounts: counts(targetTraits),
     targetCombinedTraitCounts: counts([...targetTraits, ...targetStateTraits]),
     targetStateTraitCounts: counts(targetStateTraits),
