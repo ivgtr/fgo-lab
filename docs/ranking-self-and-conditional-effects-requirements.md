@@ -1,6 +1,6 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.2.0"
+document_version: "0.3.0"
 status: "Draft - core product policy fixed; implementation design review required"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -59,6 +59,7 @@ related_adrs:
 - supportや礼装を含めた最大火力編成探索
 - cooldown回復、同一skill slotの再使用
 - ranking上の個別field、対象trait、HP、スター、人数editor
+- calculator／rankingの開始NP editorまたは第3のresource条件軸
 - 条件ごとのランキング列や個別toggleの追加
 - 旧ranking URL／保存形式を暗黙変換するcompatibility layer
 
@@ -313,8 +314,13 @@ preparationContext: {
 }
 ```
 
-第一段階ではcalculatorの常設入力を増やさず、100%を明示的な既定scenarioとして保存する。NP条件を持つ
-火力効果が選択された場合だけ詳細入力を提示する案は将来拡張とし、rankingの条件項目には追加しない。
+この値は利用者入力ではなく、application policyが生成する再現可能なcanonical前提である。calculatorは100%を
+明示的な既定scenarioとして保存し、開始NPを変更するUI、command、URL parameterを持たない。NP条件を持つ
+火力効果が100%開始からattack NPへ到達できない場合は、その効果を合法化する追加入力を求めず、typedな
+非適用理由を表示する。
+
+rankingの`条件効果: 成立込み`だけが、同じresource-aware reducerへcapacity内の開始NP候補を内部入力として渡す。
+採用した開始NPはdetail evidenceへ表示できるが、利用者が個別編集するUIにはしない。
 
 ## 9. 代表例の期待挙動
 
@@ -473,8 +479,8 @@ masterを一度だけload／compileした共有inventoryから次を検証する
 | HP／quantity | 通常のみは固定baseline、成立込みは有限なcanonical候補 | 個別editorなしで条件効果へ統合する |
 | 実行合法性 | 両modeで常に強制し、policyによる上書きを禁止 | NP不足や排他矛盾から数値を返さない |
 | intrinsic condition | 両modeで通常評価し、成立込みでも追加・変更しない | 本人が持たないtrait等を捏造しない |
-| calculator scenario | 開始NPを一次入力として明示し、暗黙global値にしない | share/saveとranking parityを確保する |
-| calculator UI | 第一段階では開始NPの常設入力を追加しない | ranking統合に不要なUI拡張を避ける |
+| calculator scenario | 開始NPをpolicy生成値として明示し、暗黙global値にしない | share/saveとranking parityを確保する |
+| 開始NP UI | calculator／rankingとも入力を追加しない | 自己バフ／条件効果の二軸を維持する |
 | 旧URL／保存 | fallbackなしで明示拒否 | 後方互換用の二重policyを残さない |
 
 自己生成field／targetStateの扱いはADR-020からの意図的変更である。execution stateとevidenceは維持し、
@@ -497,7 +503,6 @@ ADRと完了証跡へ固定する。
 | 条件候補domain | HP、quantity、field、target、state、procごとの有限値集合 | damage-reachableな値だけをlosslessに列挙できる |
 | condition signature | candidate deduplicateとcacheに使うtyped key | evidenceを失わず完全同値だけを統合する |
 | candidate cap | 全AttackProfileの実測最大値と余裕 | cap緩和ではなく構造上の有限性を説明できる |
-| calculator詳細入力 | NP入力を必要とするeffectと既存UIで表現不能なcase | 必要caseがある場合だけ近接UI案を別途提示する |
 | schema／engine version | 実際に変わる保存・master・execution契約 | 旧形式fallbackなしで一度だけ更新する |
 | 意図的damage差分 | 旧policyとの全entry／NP1〜5差分 | canonical input、witness、採用planで全件説明する |
 
@@ -524,6 +529,7 @@ ADRと完了証跡へ固定する。
 ## 16. 完了条件
 
 - ranking UIの火力条件が`自己バフ`と`条件効果`の二項目へ収束している
+- calculator／rankingに開始NP入力またはresource専用の第3軸が存在しない
 - 特攻／fieldの旧独立入力、URL parameter、fallbackが0件
 - execution、source contribution、conditional contribution、resource legalityが型で分離されている
 - 全candidateが一つの矛盾しないscenarioとordered planを持つ
