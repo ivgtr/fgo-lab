@@ -6,7 +6,7 @@ created_at: "2026-08-30"
 updated_at: "2026-08-30"
 related_documents:
   - "docs/development-redesign-tasks.md"
-  - "docs/development-execution-efficiency-requirements.md"
+  - "docs/requirements/development-execution-efficiency-requirements.md"
   - "AGENTS.md"
 ---
 
@@ -53,7 +53,7 @@ OpenAI Docsでは、promptにGoal、Context、Constraints、Done whenを含め�
 - repository-wide invariant: `AGENTS.md`
 - product semantics: requirements／ADR
 - 実装順序と進捗: `docs/development-redesign-tasks.md`
-- 実行効率契約: `docs/development-execution-efficiency-requirements.md`
+- 実行効率契約: `docs/requirements/development-execution-efficiency-requirements.md`
 - 完了済み変更: commit
 - 完全なtest結果: artifact manifest
 

@@ -38,7 +38,6 @@ docs/*-plan.md
 docs/*-review.md
 docs/game-tool-ui-research.md
 docs/next-implementer-prompt.md
-docs/ui-design-spec.md
 docs/licenses/*
 !docs/licenses/data-sources.md
 data/raw/*

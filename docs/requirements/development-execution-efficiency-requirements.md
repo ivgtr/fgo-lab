@@ -8,8 +8,8 @@ implementation_tasks: "docs/development-redesign-tasks.md"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 related_documents:
-  - "docs/test-strategy-redesign.md"
-  - "docs/ranking-self-and-conditional-effects-requirements.md"
+  - "docs/requirements/test-strategy-redesign.md"
+  - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
   - "docs/development-redesign-tasks.md"
   - "docs/adr/004-calculation-accuracy.md"
   - "docs/adr/008-refactoring-contract.md"
@@ -115,7 +115,7 @@ phase requirement
 
 ### 5.1 Command出力契約
 
-`docs/test-strategy-redesign.md`の出力仕様を、テストだけでなく開発用の長時間commandにも適用する。
+`docs/requirements/test-strategy-redesign.md`の出力仕様を、テストだけでなく開発用の長時間commandにも適用する。
 
 - 成功時は原則10行以内。
 - assertion failureは原則200行または32 KiBの小さい方まで。

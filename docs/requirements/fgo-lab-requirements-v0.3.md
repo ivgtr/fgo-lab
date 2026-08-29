@@ -5,7 +5,7 @@ status: "Active"
 created_at: "2026-08-24"
 updated_at: "2026-08-30"
 supersedes: "docs/fgo-lab-requirements.md v0.2.2"
-ui_baseline: "docs/ui-design-spec.md v1.4.0"
+ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
 ---
 
 # FGO Lab プロダクト要件定義書
@@ -17,10 +17,10 @@ ui_baseline: "docs/ui-design-spec.md v1.4.0"
 文書の責務を次のように分ける。
 
 - 本書: プロダクト目的、機能範囲、データ境界、非機能要件、受入条件
-- `docs/ui-design-spec.md`: 承認済みの情報構造、操作モデル、レスポンシブ、画面受入条件
+- `docs/requirements/ui-design-spec.md`: 承認済みの情報構造、操作モデル、レスポンシブ、画面受入条件
 - `docs/development-redesign-tasks.md`: 唯一の実装順、依存関係、進捗、phase handoff
-- `docs/damage-calculation-review.md`: 計算式調査、実装境界、検証基準、配信方針
-- `docs/damage-effect-execution-requirements.md`: 条件、状態変化、補正を順序付きで実行する計算要件とUI不変条件
+- `docs/requirements/damage-calculation-review.md`: 計算式調査、実装境界、検証基準、配信方針
+- `docs/requirements/damage-effect-execution-requirements.md`: 条件、状態変化、補正を順序付きで実行する計算要件とUI不変条件
 
 比較デモとoptions文書はローカルな検討履歴であり、実装要件または正本として使用しない。
 
@@ -367,7 +367,7 @@ CalcResult + Breakdown + Assumptions + Warnings + Trace
 - 対象、特性、強化状態、宝具前後効果、OC、NP1〜5
 - ダメージ乱数の最低、平均、最大
 
-乱数は整数900〜1099の離散分布とし、平均は各乱数で最終floorまで行った200結果の算術平均とする。詳細な根拠、効果発動順、特殊Functionの分類、比較先と品質ゲートは`docs/damage-calculation-review.md`を正とする。
+乱数は整数900〜1099の離散分布とし、平均は各乱数で最終floorまで行った200結果の算術平均とする。詳細な根拠、効果発動順、特殊Functionの分類、比較先と品質ゲートは`docs/requirements/damage-calculation-review.md`を正とする。
 
 敵HP、撃破確率、NP回収、スター、Wave遷移、通常攻撃・クリティカル専用計算はR1契約へ含めない。
 
@@ -388,7 +388,7 @@ CalcResult + Breakdown + Assumptions + Warnings + Trace
 - UIはreason文字列、表示名、サーヴァントIDから効果の表示可否または操作可否を推測しない。
 - 内部の破壊的移行後も、ダメージ計算画面の入力項目、操作順、結果表、内訳導線、共有導線を維持する。
 - 誤計算修正による数値、適用効果、内訳、precisionの変化は旧出力との互換対象にしない。
-- 詳細な目標契約と受入条件は`docs/damage-effect-execution-requirements.md`を正とする。
+- 詳細な目標契約と受入条件は`docs/requirements/damage-effect-execution-requirements.md`を正とする。
 
 ## 9. マスターデータ要件
 
@@ -412,7 +412,7 @@ R1が提供するゲームデータと表示言語はJP・日本語を正とす�
 
 ## 10. UI・デザイン要件
 
-詳細は`docs/ui-design-spec.md`を正とし、本書では横断原則を定める。
+詳細は`docs/requirements/ui-design-spec.md`を正とし、本書では横断原則を定める。
 
 ### 10.1 視覚原則
 
@@ -600,10 +600,10 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 
 ## 17. 参照資料
 
-- `docs/ui-design-spec.md`
+- `docs/requirements/ui-design-spec.md`
 - `docs/development-redesign-tasks.md`
-- `docs/damage-calculation-review.md`
-- `docs/damage-effect-execution-requirements.md`
+- `docs/requirements/damage-calculation-review.md`
+- `docs/requirements/damage-effect-execution-requirements.md`
 - `docs/damage-effect-execution-migration-plan.md`
-- `docs/ranking-self-and-conditional-effects-requirements.md`
-- `docs/test-strategy-redesign.md`
+- `docs/requirements/ranking-self-and-conditional-effects-requirements.md`
+- `docs/requirements/test-strategy-redesign.md`

@@ -11,9 +11,9 @@ updated_at: "2026-08-30"
 
 ## Start here
 
-- 現行product scope: [FGO Lab product requirements](fgo-lab-requirements-v0.3.md)
-- 現行UI contract: [UI design specification](ui-design-spec.md)
-- 現行damage contract: [damage calculation review](damage-calculation-review.md) と [damage effect execution requirements](damage-effect-execution-requirements.md)
+- 現行product scope: [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md)
+- 現行UI contract: [UI design specification](requirements/ui-design-spec.md)
+- 現行damage contract: [damage calculation review](requirements/damage-calculation-review.md) と [damage effect execution requirements](requirements/damage-effect-execution-requirements.md)
 - 唯一のactive implementation ledger: [development redesign Tasks](development-redesign-tasks.md)
 - 採用済み判断: [ADR index](adr/README.md)
 - damage／ranking証跡: [evidence report index](reports/README.md)
@@ -27,13 +27,13 @@ updated_at: "2026-08-30"
 | --- | --- | --- | --- | --- | --- | --- |
 | [docs/README.md](README.md) | registry | Active v1.1.0 | 唯一のdocumentation navigation entry | - | TSK-00.1、TSK-00.2、TSK-09.1 | tracked文書の分類と入口 |
 | [docs/documentation-inventory.md](documentation-inventory.md) | inventory | Complete | TSK-00.1開始時のtracked／ignored／reference baseline | - | TSK-00.1 | HEAD、件数、closure判断 |
-| [docs/fgo-lab-requirements-v0.3.md](fgo-lab-requirements-v0.3.md) | requirement | Active v0.3.6 | product目的、機能範囲、データ境界、横断受入条件 | supersedes v0.2.2 | 全product Task | product contract |
-| [docs/ui-design-spec.md](ui-design-spec.md) | requirement | Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 | local UI optionsの採用結論を統合 | TSK-07 | approved UI baseline |
-| [docs/damage-calculation-review.md](damage-calculation-review.md) | requirement | Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 | - | TSK-00、TSK-03、TSK-08 | calculation evidence policy |
-| [docs/damage-effect-execution-requirements.md](damage-effect-execution-requirements.md) | requirement | Active v1.2.0 | condition、state mutation、ordered damage execution、UI不変条件 | 旧resolver契約を置換 | TSK-03〜TSK-08 | acceptanceとproduction inventory |
-| [docs/ranking-self-and-conditional-effects-requirements.md](ranking-self-and-conditional-effects-requirements.md) | requirement | Proposed v0.6.1 | ranking policy、canonical scenario、candidate、parity | - | approval required before TSK-04 | production audit required |
-| [docs/test-strategy-redesign.md](test-strategy-redesign.md) | requirement | Proposed v1.1.1 | test suite、runner、quality gate、diagnostics | - | approval required before TSK-01 | test／performance baseline contract |
-| [docs/development-execution-efficiency-requirements.md](development-execution-efficiency-requirements.md) | requirement | Proposed v1.0.1 | bounded output、artifact、handoff、command efficiency | - | approval required before TSK-01 | execution measurement contract |
+| [docs/requirements/fgo-lab-requirements-v0.3.md](requirements/fgo-lab-requirements-v0.3.md) | requirement | Active v0.3.6 | product目的、機能範囲、データ境界、横断受入条件 | supersedes v0.2.2 | 全product Task | product contract |
+| [docs/requirements/ui-design-spec.md](requirements/ui-design-spec.md) | requirement | Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 | local UI optionsの採用結論を統合 | TSK-07 | approved UI baseline |
+| [docs/requirements/damage-calculation-review.md](requirements/damage-calculation-review.md) | requirement | Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 | - | TSK-00、TSK-03、TSK-08 | calculation evidence policy |
+| [docs/requirements/damage-effect-execution-requirements.md](requirements/damage-effect-execution-requirements.md) | requirement | Active v1.2.0 | condition、state mutation、ordered damage execution、UI不変条件 | 旧resolver契約を置換 | TSK-03〜TSK-08 | acceptanceとproduction inventory |
+| [docs/requirements/ranking-self-and-conditional-effects-requirements.md](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement | Proposed v0.6.1 | ranking policy、canonical scenario、candidate、parity | - | approval required before TSK-04 | production audit required |
+| [docs/requirements/test-strategy-redesign.md](requirements/test-strategy-redesign.md) | requirement | Proposed v1.1.1 | test suite、runner、quality gate、diagnostics | - | approval required before TSK-01 | test／performance baseline contract |
+| [docs/requirements/development-execution-efficiency-requirements.md](requirements/development-execution-efficiency-requirements.md) | requirement | Proposed v1.0.1 | bounded output、artifact、handoff、command efficiency | - | approval required before TSK-01 | execution measurement contract |
 | [docs/development-redesign-tasks.md](development-redesign-tasks.md) | Tasks | Active v1.1.0 | 唯一の実装順序、依存、status、handoff | old implementation planとmigration E5を引継ぎ | TSK-00.1〜TSK-09 | commit／artifact handoff |
 | [docs/documentation-maintenance-phases.md](documentation-maintenance-phases.md) | phase plan | Active v1.1.0 | 文書整備固有の判断規則とDone gate。実装順序は所有しない | - | TSK-00.1、TSK-00.2、TSK-09.1 | documentation baseline／layout／closure gate |
 | [docs/fgo-lab-requirements.md](fgo-lab-requirements.md) | historical requirement | Superseded v0.2.2 | 初期product検討履歴。実装判断には使用しない | superseded by v0.3 | - | Git history only |

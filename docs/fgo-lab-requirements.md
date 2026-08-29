@@ -7,12 +7,12 @@ updated_at: "2026-08-24"
 project_name: "FGO Lab"
 project_id: "fgo-lab"
 primary_region: "JP"
-superseded_by: "docs/fgo-lab-requirements-v0.3.md v0.3.0"
+superseded_by: "docs/requirements/fgo-lab-requirements-v0.3.md v0.3.0"
 ---
 
 # FGO Lab 要件定義書
 
-> **この文書は旧版です。** 実装上の正本は `docs/fgo-lab-requirements-v0.3.md` v0.3.0です。本書は初期検討の履歴としてのみ参照します。
+> **この文書は旧版です。** 実装上の正本は `docs/requirements/fgo-lab-requirements-v0.3.md` v0.3.0です。本書は初期検討の履歴としてのみ参照します。
 
 > Fate/Grand Order向けの非公式ファンツールとして、ユーザーの保有・育成状況を基点に、ダメージ計算、編成比較、周回検証を一貫して行えるWebアプリケーションを定義する。
 

@@ -5,7 +5,7 @@ status: "Complete"
 created_at: "2026-08-25"
 updated_at: "2026-08-30"
 remaining_work_transferred_to: "docs/development-redesign-tasks.md TSK-08, TSK-09.1, TSK-09"
-source_requirements: "docs/damage-effect-execution-requirements.md v1.2.0"
+source_requirements: "docs/requirements/damage-effect-execution-requirements.md v1.2.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 ---
 
@@ -62,7 +62,7 @@ E4ランキング統合前に、`automatic`へ混在した計算包含、ゲー�
 
 本書はE0〜E4の完了履歴であり、activeな実装順序を所有しない。旧E5の未完了作業は`docs/development-redesign-tasks.md`のTSK-08、TSK-09.1、TSK-09へ移管済みである。
 
-本計画は、`docs/damage-effect-execution-requirements.md`を実装、検証、削除、確認の単位へ分解する。ダメージ計算品質を最優先とし、Q6のランキング完成や新しい効果対応より先に実施する。
+本計画は、`docs/requirements/damage-effect-execution-requirements.md`を実装、検証、削除、確認の単位へ分解する。ダメージ計算品質を最優先とし、Q6のランキング完成や新しい効果対応より先に実施する。
 
 内部は破壊的に置換するが、フロントエンドの入出力体験は変えない。移行のためだけの互換層や新旧runtime経路は作らない。
 
@@ -459,7 +459,7 @@ E3.4完了記録（2026-08-26）:
 
 確認ゲート E5:
 
-- `docs/damage-effect-execution-requirements.md`の受入条件をすべて追跡できる。
+- `docs/requirements/damage-effect-execution-requirements.md`の受入条件をすべて追跡できる。
 - 新旧実装が併存していない。
 - 公開可否と残るunsupported範囲を文書とreportから判断できる。
 - UI baselineと計算品質の双方が公開ゲートを通る。

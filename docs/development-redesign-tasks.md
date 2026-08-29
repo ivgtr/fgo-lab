@@ -5,9 +5,9 @@ status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 source_requirements:
-  - "docs/test-strategy-redesign.md"
-  - "docs/ranking-self-and-conditional-effects-requirements.md"
-  - "docs/development-execution-efficiency-requirements.md"
+  - "docs/requirements/test-strategy-redesign.md"
+  - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
+  - "docs/requirements/development-execution-efficiency-requirements.md"
 source_plans:
   - "docs/documentation-maintenance-phases.md"
 ---

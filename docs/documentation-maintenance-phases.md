@@ -7,7 +7,7 @@ updated_at: "2026-08-30"
 execution_tasks: "docs/development-redesign-tasks.md"
 governing_documents:
   - "AGENTS.md"
-  - "docs/fgo-lab-requirements-v0.3.md"
+  - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/adr/008-refactoring-contract.md"
 ---
 
@@ -62,9 +62,9 @@ read-only監査で次を確認した。
 
 主な不整合:
 
-- `docs/fgo-lab-requirements-v0.3.md`が、trackedされないUI仕様、旧implementation plan、damage review、options文書を正本または関連資料として参照している。
-- `docs/damage-effect-execution-requirements.md`がtrackedされない`docs/ui-design-spec.md`をUI baselineとして参照している。
-- `docs/damage-effect-execution-requirements.md`はstatusがE3.2のまま、旧migration planはE4 complete／E5 not started、新Tasksはactiveであり、進捗の正本が複数ある。
+- `docs/requirements/fgo-lab-requirements-v0.3.md`が、trackedされないUI仕様、旧implementation plan、damage review、options文書を正本または関連資料として参照している。
+- `docs/requirements/damage-effect-execution-requirements.md`がtrackedされない`docs/requirements/ui-design-spec.md`をUI baselineとして参照している。
+- `docs/requirements/damage-effect-execution-requirements.md`はstatusがE3.2のまま、旧migration planはE4 complete／E5 not started、新Tasksはactiveであり、進捗の正本が複数ある。
 - `docs/adr/README.md`はADR-024／025を掲載しておらず、各ADRのstatus表記も統一されていない。
 - `docs/reports/*`のignore規則と、既にtrackedされているreport集合が一致していない。
 - supersededな旧product requirementsが現行requirementsと同じtop-levelに全文で残る。

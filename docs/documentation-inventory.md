@@ -44,14 +44,14 @@ TSK-00.1で新たに正本化する`ui-design-spec.md`と`damage-calculation-rev
 
 | Untracked target at baseline | Incoming active source | Decision | Canonical successor／retained evidence |
 | --- | --- | --- | --- |
-| `docs/ui-design-spec.md` | product requirements、damage execution requirements | 内容監査後にtracked UI requirementへ昇格 | `docs/ui-design-spec.md` v1.4.0 |
-| `docs/damage-calculation-review.md` | product requirements | 計算式根拠を保持するためtracked requirementへ昇格 | `docs/damage-calculation-review.md` v1.0.1、ADR-004 |
+| `docs/requirements/ui-design-spec.md` | product requirements、damage execution requirements | 内容監査後にtracked UI requirementへ昇格 | `docs/requirements/ui-design-spec.md` v1.4.0 |
+| `docs/requirements/damage-calculation-review.md` | product requirements | 計算式根拠を保持するためtracked requirementへ昇格 | `docs/requirements/damage-calculation-review.md` v1.0.1、ADR-004 |
 | `docs/implementation-plan.md` | product requirements、UI specification | active実装順序から除外。local履歴として保持 | `docs/development-redesign-tasks.md` |
-| `docs/home-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/ui-design-spec.md` §19 |
-| `docs/my-chaldea-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/ui-design-spec.md` §17 |
-| `docs/craft-essence-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/ui-design-spec.md` §17.6〜17.7 |
-| `docs/support-template-ui-options.md` | product requirements、UI specification | canonical参照から除外。local比較履歴として保持 | `docs/ui-design-spec.md` §7、§15〜16 |
-| `docs/growth-plan-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/ui-design-spec.md` §18 |
+| `docs/home-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §19 |
+| `docs/my-chaldea-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §17 |
+| `docs/craft-essence-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §17.6〜17.7 |
+| `docs/support-template-ui-options.md` | product requirements、UI specification | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §7、§15〜16 |
+| `docs/growth-plan-ui-options.md` | product requirements | canonical参照から除外。local比較履歴として保持 | `docs/requirements/ui-design-spec.md` §18 |
 
 UI specification内のignored HTML demo参照も正本から除外した。比較資料とHTMLは物理削除せず、TSK-09.1の再判定対象に残す。
 
@@ -62,9 +62,9 @@ UI specification内のignored HTML demo参照も正本から除外した。比�
 | Family | Paths | TSK-00.1 decision |
 | --- | --- | --- |
 | architecture／review | `docs/architecture/data-flow.md`、`docs/chaldea-data-update-review.md`、`docs/game-tool-ui-research.md` | local-only。TSK-09.1で内容監査 |
-| current canonical candidates | `docs/ui-design-spec.md`、`docs/damage-calculation-review.md` | 内容監査後にtracked昇格 |
+| current canonical candidates | `docs/requirements/ui-design-spec.md`、`docs/requirements/damage-calculation-review.md` | 内容監査後にtracked昇格 |
 | old implementation／quality plans | `docs/implementation-plan.md`、`docs/damage-condition-application-plan.md`、`docs/damage-effect-dependency-plan.md`、`docs/damage-quality-convergence-plan.md`、`docs/demo-feature-restoration-plan.md`、`docs/next-implementer-prompt.md` | local historical。active task ownerにしない |
-| UI options | `docs/home-ui-options.md`、`docs/my-chaldea-ui-options.md`、`docs/craft-essence-ui-options.md`、`docs/support-template-ui-options.md`、`docs/growth-plan-ui-options.md` | local decision history。UI正本は`docs/ui-design-spec.md` |
+| UI options | `docs/home-ui-options.md`、`docs/my-chaldea-ui-options.md`、`docs/craft-essence-ui-options.md`、`docs/support-template-ui-options.md`、`docs/growth-plan-ui-options.md` | local decision history。UI正本は`docs/requirements/ui-design-spec.md` |
 | reports | `docs/reports/damage-condition-application.md`、`damage-effect-dependency-audit.md`、`damage-effect-execution-e0.md`、`damage-effect-execution-e1.md`、`damage-effect-execution-e2.md`、`damage-effect-execution-e3.md`、`damage-effect-routing-audit.md`、`damage-quality-q0.md`〜`damage-quality-q5.md`、`master-data-2026-08-24.md`、`r1-implementation-status.md` | local evidence candidate 15件。TSK-09.1でcanonical input、digest、commit、後継を監査 |
 
 ## Report retention boundary
