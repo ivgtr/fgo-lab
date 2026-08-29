@@ -1,7 +1,7 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.3.0"
-status: "Draft - core product policy fixed; implementation design review required"
+document_version: "0.5.0"
+status: "Draft - product semantics fixed; production audit required"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 related_adrs:
@@ -14,58 +14,73 @@ related_adrs:
 
 # ランキング自己バフ・条件効果統合仕様
 
-## 1. 目的
+## 1. WHY
 
-本書は、宝具威力ランキングの比較条件を増やし続けず、利用者向けには「自己バフ」と
-「条件効果」の二軸へ整理するための製品仕様と実装境界を定める。
+宝具威力ランキングは、個別の戦闘状況を再現する画面ではなく、同じ基準でサーヴァントの火力を比較する画面である。
 
-達成する利用者体験は次のとおりである。
+特攻、field、HP、対象状態、確率結果、人数、NP条件を個別入力として増やすと、比較基準が読み取りにくくなり、
+一覧より条件editorが主役になる。一方、内部でもこれらを一つのbooleanへ潰すと、矛盾する条件、実行不能なskill、
+異なる宝具variantを組み合わせた誤算が生じる。
 
-- 通常時の性能と、条件成立時の最大ポテンシャルを迷わず切り替えられる。
-- 特攻、フィールド、HP、対象状態、確率結果、NP条件を個別の見出しへ増やさない。
-- 一覧行の情報密度を維持し、採用した詳細条件は展開時だけ確認できる。
-- 全サーヴァントを同じ比較policyで評価し、成立不能な効果を最大値へ混入させない。
-- calculatorとrankingは同じcanonical state、ordered action reducer、damage executorを使う。
+そのため、利用者向けの条件は「自己バフ」と「条件効果」の二軸へ集約し、内部では次を独立した契約として保持する。
 
-最優先事項はダメージ計算品質である。UIを二項目へ統合するために、異なるゲーム意味論を
-一つのbooleanや`assumeSatisfied`へ潰してはならない。
+- どのAttackProfileを比較するか
+- どの行動を実行できるか
+- 実行によりどのstateが生成されたか
+- effectが実際に成立したか
+- 成立したeffectを比較policy上のdamageへ含めるか
+
+UIを単純にし、domain modelは正確に保つことが本仕様の目的である。
 
 ## 2. 最上位原則
 
-1. UI上の単純化とdomain model上の単純化を混同しない。
-2. 効果の実行、ダメージへの寄与、条件成立、行動の合法性を別契約として保持する。
-3. 「条件効果：成立込み」は条件を無条件にtrueへ書き換える機能ではない。
-4. 同時成立する一つのcanonical scenarioを構築できた効果だけを計算する。
-5. NP不足、排他choice、対象不一致、form不一致等をranking policyで迂回しない。
-6. サーヴァントID、名称、効果label、raw Atlas keyによるruntime分岐を追加しない。
-7. 旧policyとの互換性のために新旧経路を併存させない。実装時はschemaを破壊的に更新する。
-8. 完全な戦闘シミュレーターへ拡張せず、宝具前の有限planに必要な状態だけを扱う。
+1. 最優先はdamage計算品質である。
+2. 一つの数値は、一つの矛盾しないcanonical scenarioとordered planから生成する。
+3. rankingとcalculatorは同じmaster、reducer、condition evaluator、damage executorを使う。
+4. ranking policyはexecution outcomeやconditionを改変せず、候補生成とdamage contributionを制御する。
+5. UI上の二軸を、domain上の二つのbooleanとして実装しない。
+6. servant ID、名称、effect label、raw Atlas keyによるruntime分岐を追加しない。
+7. 旧policyとの後方互換のために新旧経路を併存させない。
+8. 完全な戦闘シミュレーターへ拡張せず、宝具直前の有限な準備phaseだけを扱う。
 
-## 3. 対象範囲
+## 3. 比較単位
 
-### 3.1 対象
+### 3.1 Ranking entry
 
-- rankingの比較条件、URL、worker request、cache key
-- 自己火力効果の寄与policy
-- 特攻、フィールド、HP、対象状態、定量条件、確率・choiceの寄与policy
-- 宝具前skill／変身NP／攻撃NPの実行可能性
-- NP条件、NP増減、攻撃宝具実行に必要なNP resource
-- 採用条件のdetail evidence
-- calculatorとrankingのscenario／executor parity
+ランキングの比較単位は`Servant × AttackProfile`である。
 
-### 3.2 非対象
+AttackProfileは少なくとも次のidentityを持つ。
 
-- ターン進行、Wave、敵HP、撃破、通常攻撃、NP回収、カード選択
-- supportや礼装を含めた最大火力編成探索
-- cooldown回復、同一skill slotの再使用
-- ranking上の個別field、対象trait、HP、スター、人数editor
-- calculator／rankingの開始NP editorまたは第3のresource条件軸
-- 条件ごとのランキング列や個別toggleの追加
-- 旧ranking URL／保存形式を暗黙変換するcompatibility layer
+- servant lineage
+- terminal ActorFormProfile
+- attack Noble Phantasm variant
 
-## 4. 利用者向けランキング条件
+target scopeとcard typeはAttackProfileの属性であり、一覧filterにも使用する。同じサーヴァントが同一scopeの
+異なる攻撃宝具、異なるcard、異なるformを持つ場合は別entryとして保持する。
 
-ランキング上部の計算条件は、次の5項目へ収束させる。
+条件成立探索はAttackProfileを変更しない。NP variant、terminal form、card、scopeが異なる候補を一つのentryへ
+混成しない。
+
+### 3.2 Policyごとの可用性
+
+AttackProfile inventoryは比較policyから独立して生成する。各policyで合法な攻撃planが存在するかは、次の型で
+別に評価する。
+
+```ts
+type RankingProfileResult =
+  | { status: 'calculated'; detail: RankingDetail }
+  | { status: 'unavailableUnderPolicy'; reason: PolicyUnavailabilityReason }
+  | { status: 'invalid'; issues: readonly ExecutionIssue[] };
+```
+
+- `unavailableUnderPolicy`: 正しいprofileだが、選択条件では攻撃宝具まで到達できない。
+- `invalid`: master、scenario、未知semantics、探索上限等の異常である。
+
+`unavailableUnderPolicy`を0 damage、通常値、別profileへfallbackしない。数値ランキングは`calculated`だけを並べる。
+
+## 4. 利用者向け条件
+
+ランキング上部の計算条件は次の5項目に限定する。
 
 1. 比較対象: `標準比較 | 所持戦力`
 2. 宝具Lv: `NP1 | NP2 | NP3 | NP4 | NP5`
@@ -73,8 +88,11 @@ related_adrs:
 4. 自己バフ: `なし | あり`
 5. 条件効果: `通常のみ | 成立込み`
 
-ADR-018の`特攻なし | 成立`とADR-020の`フィールドなし | 成立`は、実装時に
-`条件効果`へ破壊的に統合する。旧二項目を非表示で残したり、内部fallbackとして読み取ったりしない。
+最低／平均／最大の表示metric、class／rarity／card／scope／所持状態等の一覧filterは表示stateであり、上記5項目の
+計算条件へ含めない。表示stateの変更だけではscenarioを再計算しない。
+
+旧`特攻なし | 成立`と`フィールドなし | 成立`は`条件効果`へ破壊的に統合する。旧入力を非表示state、URL fallback、
+内部互換flagとして残さない。
 
 ### 4.1 既定値
 
@@ -84,126 +102,172 @@ ADR-018の`特攻なし | 成立`とADR-020の`フィールドなし | 成立`�
 - 自己バフ: あり
 - 条件効果: 通常のみ
 
-既定ランキングは「全員へ共通の通常条件で、無条件の自己火力効果を含めた比較」とする。
-`成立込み`は通常順位を置き換えるものではなく、合法な最大ポテンシャルを比較する別modeである。
+### 4.2 共通の固定条件
 
-### 4.2 表示
+二軸へ統合しても、全entryの比較母集団を揃える条件は変更しない。
 
-閉じた一覧行へ個別条件を追加しない。ranking見出しまたはdetail summaryには、例えば
-`自己バフあり・条件効果成立`のように現在の二軸だけを表示する。
+- 標準比較: 自然上限Lv、Fou ATK+1,000、skill Lv10
+- 所持戦力: 保存済みLv、宝具Lv、Fou、skill Lv。欠落値を標準値で補完しない
+- OC1、属性等倍、HP100%、スター0、初期turn、Battle Point 0
+- 礼装、魔術礼装、支援なし
+- 外部field、外部target state、追加target traitなし
+- 人数、stack等の定量入力はcanonical baseline値
+- 準備actionから攻撃宝具までは同一turn
+- turn経過、effect期限切れ、skill再使用なし
 
-採用した条件は、展開したdetail内の一つの「成立条件」領域へまとめる。
-
-```text
-成立条件
-・対象: 〔混沌〕
-・フィールド: 水辺
-・対象状態: 混乱
-・開始NP: 150%
-・確率結果: 攻撃力アップ成功
-```
-
-条件のない行では領域自体を省略する。詳細の開閉によって主順位やdamageを再計算しない。
+固定条件は一つの`RankingComparisonPolicy`が所有し、Web、worker、testへ複製しない。
 
 ## 5. 二軸の意味
 
-### 5.1 自己バフpolicy
+### 5.1 自己バフ
 
-`自己バフ`は、攻撃役の任意行動に由来するdamage modifierを寄与へ含めるかを決める。
+自己バフは、攻撃役の任意skillに由来するdamage contributionを含めるかを制御する。
 
-`あり`で含め得るもの:
+`あり`では、合法な準備actionから得られる次の寄与を含める。
 
-- 攻撃力、カード性能、宝具威力、特攻付与等の自己強化
-- 攻撃役本人もrecipient条件を満たす味方全体効果
-- 攻撃役が対象へ付与する防御力低下等のdebuff
-- 攻撃役が生成した状態を読むdamage modifier
+- 攻撃力、card性能、宝具威力、特攻付与等の自己強化
+- 本人がrecipient条件を満たす味方全体効果
+- 攻撃対象へ付与する防御力低下等のdebuff
+- 利用者が確定的に選べるskill branchのdamage modifier
 
-`なし`でも維持するもの:
+`なし`では、任意skill由来のdamage modifierだけを反実仮想として除外する。次は維持する。
 
 - legal initial formとform transition
 - NP variant、card、scope、倍率、damage function
 - passiveとform intrinsic trait
 - NP固有の強制的な宝具前effect
-- ordered actionとそのevidence
+- ordered action、state mutation、activation evidence
 
-`なし`は戦闘stateを書き換える操作ではなく、既存の
-`counterfactualWithoutVoluntarySkillModifiers`を明確化した寄与projectionである。
+`なし`はskillを使用しなかった戦闘stateへ巻き戻す機能ではない。AttackProfileへ到達する構造的actionを保持したまま、
+任意skill由来のdamage寄与だけを除外する。
 
-### 5.2 条件効果policy
+### 5.2 条件効果
 
-`条件効果`は、通常比較を超える条件を必要とするdamage contributionを含めるかを決める。
+条件効果は、共通の通常条件を超えるrequirementを持つdamage contributionを含めるかを制御する。
 
-対象familyは少なくとも次を含む。
+対象familyは次を含む。
 
-- `powerMod`および`npSpecial`の対象条件
-- 外部または自己生成fieldを読む効果
-- 対象の一時状態を読む効果
-- attacker／target HP閾値
-- star、人数、turn、Battle Point、その他のcanonical quantity
-- 確率proc、連鎖成功回数、damageに影響するchoice
-- NP resource条件を持つ任意skill由来のdamage contribution
+- target identity／trait／state
+- field
+- attacker／target HP
+- 人数、star、turn、Battle Point、stack等のquantity
+- stochastic procと連鎖成功回数
+- NP resource condition
+- その他のtyped external assumption
 
-`通常のみ`ではこれらのcondition-dependent contributionを除外する。ただしconditionを作った
-state mutation、field mutation、choice evidence、form transition自体は削除しない。
+`通常のみ`では、これらに依存するdamage contributionを除外する。conditionを生成したstate mutation、field mutation、
+ordered action、form transition、evidence自体は削除しない。stochastic outcomeは失敗／最小結果を使用する。
 
-`成立込み`では、有限なcanonical候補から一つの矛盾しないscenarioを生成し、ordered reducerで
-実行可能な候補だけをdamage計算へ含める。同じeffect groupの一部だけを任意に抜き出さない。
+`成立込み`では、同時成立可能なcanonical候補を有限生成し、合法な最大結果を使用する。conditionを無条件にtrueへ
+書き換えたり、effectを個別にONへしたりしない。
 
-### 5.3 二軸の組み合わせ
+分類はmodifier名ではなくcanonical requirementで行う。`powerMod`／`npSpecial`というkindだけで条件効果へ入れず、
+通常modifierという理由で条件付き寄与を通常扱いしない。
 
-| 自己バフ | 条件効果 | 比較する内容 |
+### 5.3 利用者選択と確率結果
+
+排他的な効果を`choice`という一語で扱わない。
+
+```ts
+type SelectionSemantics =
+  | { kind: 'playerChoice'; group: CanonicalChoiceGroup }
+  | { kind: 'stochasticOutcome'; group: CanonicalOutcomeGroup };
+```
+
+- `playerChoice`: action planの一部。追加条件がなければ自己バフ`あり・通常のみ`でも候補化する。
+- `stochasticOutcome`: condition witness。通常のみは失敗／最小、成立込みは合法な最大を候補化する。
+
+choice branchがfield、target、resource等のrequirementを持つ場合は、branchの選択とcondition成立を別々に評価する。
+raw `ActSet`等の格納形式だけからselection semanticsを推測しない。
+
+### 5.4 二軸の組み合わせ
+
+| 自己バフ | 条件効果 | 比較内容 |
 | --- | --- | --- |
-| なし | 通常のみ | 宝具本体、passive、intrinsic condition中心の基礎性能 |
-| あり | 通常のみ | 無条件の自己火力効果を含む標準性能 |
-| なし | 成立込み | 自己skill modifierを除いた条件付き宝具性能 |
-| あり | 成立込み | 一つの合法scenarioで到達できる最大自己完結火力 |
+| なし | 通常のみ | 構造、宝具本体、passive、intrinsic効果を中心とする基礎性能 |
+| あり | 通常のみ | 無条件・確定的な自己火力効果を含む標準性能 |
+| なし | 成立込み | 任意skill modifierを除いた条件付き宝具性能 |
+| あり | 成立込み | 一つの合法scenarioで到達できる最大条件成立火力 |
 
-## 6. conditionのcanonical分類
+source軸とcondition軸は直交する。NP固有効果やpassiveでも条件付き寄与なら条件効果policyに従い、任意skillでも
+無条件かつ確定的な寄与なら自己バフpolicyだけに従う。
 
-UIは二軸でも、domainでは次を区別する。
+### 5.5 代表ケース
 
-### 6.1 Intrinsic condition
+| ケース | 自己バフ | 条件効果 | 期待結果 |
+| --- | --- | --- | --- |
+| ジャンヌ〔オルタ〕の本人が持たない〔竜〕限定効果 | あり | 成立込み | intrinsic不一致のため非適用 |
+| ネモの水辺／虚数空間Artsアップ | あり | 通常のみ | field寄与を除外 |
+| ネモの水辺／虚数空間Artsアップ | あり | 成立込み | 一つの合法field候補で適用可能 |
+| 水着リリスの自己生成target state特攻 | あり | 通常のみ | stateは保持し、特攻寄与を除外 |
+| 水着リリスの自己生成target state特攻 | あり | 成立込み | ordered grant後にconsumerを適用 |
+| ダンテの確定的な天／地選択 | あり | 通常のみ | player choiceとして合法な最大branchを評価 |
+| ブレエリのランダム効果 | あり | 通常のみ | stochastic damage寄与を除外 |
+| ブレエリのランダム効果 | あり | 成立込み | 成功結果とNP resourceを同時に満たすplanだけ適用 |
 
-scenarioの追加仮定なしにidentityから確定する条件である。条件効果policyの対象外とし、常に通常評価する。
+## 6. Condition model
 
-- attacker自身のclass、attribute、gender、alignment、固定trait
+UIは二軸でも、domainではconditionを次の三種類へ分ける。
+
+### 6.1 Intrinsic fact
+
+identityまたは選択済みAttackProfileから追加仮定なしに確定する。
+
+- attacker class、attribute、gender、alignment、固定trait
 - current ActorFormとform-qualified skill／NP
-- NP card type、target scope、recipient
-- canonical TargetContextから一意に導出されるclass／attribute relation
+- NP card、target scope、recipient
+- concrete TargetContextから導出されるclass／attribute relation
 
-条件効果`成立込み`でも、attackerが持たないintrinsic traitを追加してはならない。例えば、本人が〔竜〕でない
-攻撃役へ「味方全体の〔竜〕」効果を適用しない。
+intrinsic factは条件効果policyで変更しない。成立込みでも、本人が持たない〔竜〕等のtraitを追加しない。
 
 ### 6.2 Conditional contribution requirement
 
-damage contributionの包含を条件効果policyが制御する条件である。
+damage contributionへ条件効果policyを適用するrequirementである。
 
 - target／targetState predicate
 - field predicate
 - HP／quantity predicate
-- stochastic proc／choice
+- stochastic outcome
 - resource-gated voluntary skill contribution
 
-condition witnessは`intrinsic | derivedAction | externalAssumption | explicitInput | stochastic`
-のprovenanceを保持する。provenanceは説明とtie-breakに使い、execution outcomeの代わりにしない。
+condition witnessは`intrinsic | derivedAction | externalAssumption | explicitInput | stochastic`のprovenanceを持つ。
+provenanceは説明とtie-breakに使用し、execution outcomeの代わりにしない。
 
 ### 6.3 Execution precondition
 
-actionを実行できるかを決める条件であり、条件効果policyで上書きできない。
+actionの実行可能性を決める。
 
-- NPが一定値以上ある
+- resourceが必要量以上ある
 - skill slotが未使用である
 - current formにskill variantが存在する
-- choiceが排他的である
+- player choiceが合法かつ排他的である
 - transform NPが未使用である
-- attack NP実行時にNPが100%以上ある
+- attack NPを実行できるresourceがある
 
-execution preconditionを満たさないplanは`calculated`候補へ入れない。これは「条件効果通常のみ」と
-「成立込み」の双方に適用する。
+execution preconditionは両condition modeで常に強制する。ranking policyで上書きしない。
 
-## 7. 実行と寄与の契約
+## 7. 実行と寄与
 
-既存の「execution state」と「ranking contribution policy」の分離を維持し、寄与除外理由を二軸にする。
+### 7.1 単一の準備phase
+
+評価する行動列は次に限定する。
+
+```text
+legal initial actor form
+  -> 0..N回の合法なself skill action（各slot最大1回）
+  -> 0..1回の合法なnon-attack transform NP
+  -> 1回のattack NP（終端）
+```
+
+`N`はmasterのcanonical skill slot数から導出し、サーヴァント別定数にしない。support、礼装、魔術礼装、通常攻撃、
+NP回収、turn進行、cooldown回復はこのplanへ含めない。
+
+一つのtransactional reducerが、requirement、choice、proc、resource、effect、state mutation、form transition、
+NP variant selectionを順に検証する。actionの一部だけをcommitしない。
+
+### 7.2 Executionとcontributionの分離
+
+effect評価は次の二層を保持する。
 
 ```ts
 interface RankingEffectEvaluation {
@@ -219,326 +283,289 @@ interface RankingEffectEvaluation {
 }
 ```
 
-最終的なdamage寄与は次をすべて満たした場合だけ適用する。
+damageへ寄与するのは、executionが`applied`で、両policyが`included`の場合だけである。
+
+ranking policyは`unresolved`、`procFailed`、`conditionNotMet`、`targetMismatch`等のexecution reasonを
+「計算外」へ再分類しない。表示集約はoperation順や最初のeffectではなく、executionとpolicyの二軸から安定決定する。
+
+### 7.3 Contribution scope
+
+`personal | partyWide | partyOther | enemyApplied | external`はrecipient／寄与範囲であり、条件分類ではない。
+
+- `personal`: 本人へ適用可能なら主火力へ含める。
+- `partyWide`: 本人がrecipient条件を満たす場合は主火力へ含める。
+- `partyOther`: 本人へ適用されないため主火力へ含めない。
+- `enemyApplied`: 攻撃対象へ正しく適用された場合は主火力へ含める。
+- `external`: 支援なしのランキングでは含めない。
+
+エリア寄与は同一scenarioから`partyWide`寄与だけを除外した詳細用の反実仮想であり、ランキング条件軸にしない。
+
+## 8. TargetContext
+
+class、attribute、target identity、trait、state、family predicateを一つのTargetContext候補として扱う。
+
+- concrete identityからclass／attribute relationとpredicateを導出する。
+- relative relationとtarget predicateを併用する場合は、実在する有限candidateへ解決する。
+- class相性だけ有利、target traitだけ別対象という合成を禁止する。
+- 排他的trait、class、attributeを同時成立させない。
+- 候補0件は`impossible`とし、通常値へfallbackしない。
+
+条件成立plannerはeffect単位でtargetを最大化せず、一つのTargetContextで成立する全effectを同時評価する。
+
+## 9. NP resource
+
+### 9.1 製品仕様
+
+開始NPを第6のランキング条件または常設UIとして追加しない。
+
+- calculator: canonicalな開始NP100%固定
+- ranking通常のみ: 開始NP100%、外部NP供給なし
+- ranking成立込み: 選択NP Lvのcapacity内で、必要な開始NP候補を内部生成可能
+- 自身のNP増減はordered actionとして評価
+- attack NPまで到達できないplanは`unavailableUnderPolicy`
+- 採用開始NPはdetail evidenceへ表示できるが編集UIを持たない
+
+NP Lvに応じて開始時NP上限が変わることは公式仕様にも明記されているため、capacityは選択NP Lvとcanonical masterから
+導出する（[FGO公式](https://news.fate-go.jp/2025/cil_final_chapter_cp/)）。
+
+### 9.2 Canonical resource semantics
+
+resource requirement、skill resource mutation、NP使用時のresource mutationを分離する。
 
 ```text
-execution outcome is applied
-AND source policy is included
-AND condition policy is included
+requirementを検証
+  -> action全operationを検証
+  -> canonical resource mutation
+  -> state/effect/form mutation
+  -> 全体をatomic commit
 ```
 
-ranking policyは`unresolved`、`cardMismatch`、`targetMismatch`、`conditionNotMet`等のexecution reasonを
-「計算外」へ再分類しない。表示集約はoperation順ではなく、execution outcomeと二つのpolicy decisionから
-安定して決定する。
+raw `NP_HIGHER`、`lossNp`、`gainNp`をruntimeが直接解釈しない。pipelineが単位、target、固定増減、全消費、上限処理を
+全production inventoryと根拠からtyped IRへ正規化する。曖昧な値はartifact生成時に拒否する。
 
-## 8. NP resource semantics
+NP command自体のgauge消費とOC導出はskillの`lossNp`とは別のsemantic familyとして保持する。ランキングのOC1固定は、
+開始NP gaugeから導出されるbase OCを1に固定する意味である。canonicalなOC段階アップeffectは通常のordered executionで
+別に評価する。開始NPによるbase OC上昇を暗黙に無視したり、固定100%減算を仮定したりしない。
 
-### 8.1 背景
+resource stateはpreparation stateとsemantic fingerprintへ含める。現時点ではNP gaugeだけを閉じたresource unionとして扱い、
+将来用途を想定した汎用resource frameworkを先に作らない。
 
-現在の`PreNoblePhantasmState`はNP gaugeを保持せず、raw `lossNp`は`nonDamage`として扱われる。
-このためNPを消費するskillのmodifierを適用した直後に、NP不足を無視してattack NPを実行できる。
+## 10. Candidate planning
 
-raw productionには、`NP_HIGHER`を持つskill variant、固定NP消費、NP全消費、自己NP増加が存在する。
-特定サーヴァントだけを除外せず、宝具前有限planのresource semanticsとして扱う。
-
-### 8.2 Canonical action semantics
-
-使用条件とresource mutationを分離する。
-
-```ts
-interface PreparationActionSemantics {
-  requirements: readonly PreparationRequirement[];
-  resourceMutations: readonly PreparationResourceMutation[];
-}
-
-type PreparationRequirement = {
-  kind: 'resourceAtLeast';
-  resource: 'npGauge';
-  valuePermyriad: number;
-};
-
-type PreparationResourceMutation =
-  | {
-      kind: 'decreaseClamped';
-      resource: 'npGauge';
-      valuePermyriad: number;
-    }
-  | {
-      kind: 'increaseClamped';
-      resource: 'npGauge';
-      valuePermyriad: number;
-    };
-```
-
-`NP_HIGHER=100`かつ`lossNp=30000`は「NP300%を要求する」意味ではない。100%以上で使用可能かを
-先に判定し、その後300%減少を0でclampすることで「NPをすべて消費」を表現する。
-
-### 8.3 Preparation state
-
-```ts
-interface PreparationResourceState {
-  npGauge: {
-    currentPermyriad: number;
-    capacityPermyriad: number;
-  };
-}
-```
-
-resource stateは`PreNoblePhantasmState`とsemantic fingerprintへ含める。新しい汎用resource frameworkを
-先に作らず、production上の必要性が確認できた`npGauge`だけを閉じたunionとして導入する。
-
-skill reducerはrequirement、resource mutation、choice、proc、effect、form transitionをcandidate state上で
-検証し、全体が成功した場合だけcommitする。非攻撃transform NPはNP100%以上を要求して消費し、attack NPは
-終端でNP100%以上を要求する。
-
-### 8.4 Ranking resource policy
-
-resource policyは次で確定する。
-
-- `通常のみ`: 全員が開始NP100%、外部NP供給なし。
-- `成立込み`: 実際のNP gauge capacity内で、planを成立させる開始NP候補を有限生成できる。
-- 自身のskillによるNP増減は、どちらもordered actionとして反映する。
-- NP不足をfieldやtarget conditionと同様の外部factで補わない。
-- 候補選択ではdamageの次に、外部仮定数、追加開始NP量、action数、stable keyを使う。
-
-`成立込み`でもNP Lv由来のcapacityを超える開始NPを生成しない。開始NPを増やしても、NP全消費後に
-再充填できないplanはattack NPへ到達しない。
-
-### 8.5 Calculator
-
-resolved scenarioは開始NPを暗黙のglobal定数ではなく`preparationContext`として明示する。
-
-```ts
-preparationContext: {
-  initialNpGaugePermyriad: 10_000;
-}
-```
-
-この値は利用者入力ではなく、application policyが生成する再現可能なcanonical前提である。calculatorは100%を
-明示的な既定scenarioとして保存し、開始NPを変更するUI、command、URL parameterを持たない。NP条件を持つ
-火力効果が100%開始からattack NPへ到達できない場合は、その効果を合法化する追加入力を求めず、typedな
-非適用理由を表示する。
-
-rankingの`条件効果: 成立込み`だけが、同じresource-aware reducerへcapacity内の開始NP候補を内部入力として渡す。
-採用した開始NPはdetail evidenceへ表示できるが、利用者が個別編集するUIにはしない。
-
-## 9. 代表例の期待挙動
-
-| 対象 | 自己バフ | 条件効果 | 期待挙動 |
-| --- | --- | --- | --- |
-| ジャンヌ〔オルタ〕の通常全体攻撃力アップ | あり | 通常のみ | 本人へ適用 |
-| ジャンヌ〔オルタ〕の〔竜〕限定効果 | あり | 成立込み | 本人のintrinsic trait不一致なら非適用 |
-| ネモの水辺／虚数空間Artsアップ | あり | 通常のみ | 条件寄与を除外 |
-| ネモの水辺／虚数空間Artsアップ | あり | 成立込み | 矛盾しないfield witnessで適用可能 |
-| 水着リリスの自己生成状態を読む特攻 | あり | 通常のみ | stateは保持し、特攻寄与を除外 |
-| 水着リリスの自己生成状態を読む特攻 | あり | 成立込み | ordered grant後にconsumerを適用 |
-| トネリコの無条件20%とHP段階 | あり | 通常のみ | 無条件20%だけ適用 |
-| トネリコの無条件20%とHP段階 | あり | 成立込み | 一つのHP witnessで成立する累積値を適用 |
-| ブレエリのランダム攻撃力アップ | あり | 通常のみ | 条件寄与を除外 |
-| ブレエリのランダム攻撃力アップ | あり | 成立込み | proc成功かつNP消費後にattack NP可能なplanだけ適用 |
-| 自身が生成したfieldを読む後続効果 | あり | 通常のみ | field stateは保持し、条件寄与は除外 |
-| 自身が生成したfieldを読む後続効果 | あり | 成立込み | derivedAction witnessとして適用 |
-
-最後の二行はADR-020の「自前生成fieldはfield inactiveでも適用する」契約からの意図的なpolicy変更である。
-実装確定前にproduction差分を全件提示し、数値差分の承認を得る。
-
-## 10. Canonical condition planning
-
-`成立込み`はeffectの任意部分集合を探索せず、damage-reachable requirementから有限なworld候補を作る。
+### 10.1 候補生成
 
 ```text
 AttackProfile
-  -> damage-reachable conditional requirementsを収集
-  -> typed target / field / input / stochastic候補を生成
-  -> global constraintで矛盾を除外
-  -> preparation resource candidateを設定
-  -> single transactional reducerでordered planを実行
-  -> canonical executorでdamageを計算
-  -> 同一AttackProfile内で最大候補を選択
+  -> legal preparation plans
+  -> damage-reachable condition requirements
+  -> typed target / field / quantity / stochastic / resource candidates
+  -> global constraint validation
+  -> transactional reducer
+  -> canonical damage executor
+  -> policy result
 ```
 
-複数条件を同時成立させる場合も、一つのTargetContext、field set、input set、resource stateとして表現する。
-候補0件は`impossible`、未知semantics、曖昧性、探索上限超過はtyped failureとし、通常値へfallbackしない。
+effectの任意部分集合を探索しない。effect inclusionを候補生成の入力にせず、canonical worldとaction planを先に作り、
+そのworldで成立するeffectをexecutorが一括評価する。
 
-選択順は次で固定する。
+### 10.2 Baseline包含
 
-1. damage
-2. external assumption数
-3. baselineからのinput deviation
-4. preparation action数
-5. transition数
-6. stable typed candidate key
+`成立込み`の候補集合は、同一AttackProfileの`通常のみ`候補を必ず含む。
 
-## 11. Layer ownership
+- 追加条件が成立しなければ通常候補を採用する。
+- 条件候補0件とAttackProfile実行候補0件を区別する。
+- 通常候補がcalculatedなら、成立込みの同じNP Lv平均damageは通常値未満にならない。
+- 未知semantics、曖昧性、探索上限超過を通常候補で隠さない。
+
+### 10.3 候補選択
+
+同一AttackProfile、選択されたNP Lvの中で次の順に選ぶ。
+
+1. 平均damageが大きい
+2. external assumptionが少ない
+3. baselineからのinput deviationが小さい
+4. preparation actionが少ない
+5. form transitionが少ない
+6. stable typed candidate keyが小さい
+
+NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均／最大へ切り替えても、採用scenarioは平均damage最大候補から
+変更せず、その候補の最低／平均／最大を並べ替えに使用する。
+
+## 11. UI／表示
+
+### 11.1 一覧
+
+- 閉じた行へ個別condition、開始NP、field、target入力を追加しない。
+- 現在の二軸は見出しに`自己バフあり・条件効果成立`のように表示する。
+- 特攻badge等は実際にdamageへ寄与したeffectだけから導出する。
+- policy除外、条件不成立、確率失敗、未対応を同じ「計算外」へ潰さない。
+- detail開閉や表示filter変更で主damageを再計算しない。
+
+### 11.2 Detail evidence
+
+採用した場合だけ、一つの「成立条件」領域へまとめる。
+
+```text
+成立条件
+・対象: 〔混沌〕
+・フィールド: 水辺
+・対象状態: 混乱
+・開始NP: 150%
+・確率結果: 攻撃力アップ成功
+```
+
+条件がなければ領域を省略する。AttackProfile、initial／terminal form、NP variant、ordered action、effect適用理由を
+同じcanonical evidenceから表示する。
+
+### 11.3 UI品質
+
+- 既存の一覧密度とaccordion構造を維持する。
+- desktop、390px、320pxで横overflowを出さない。
+- keyboard、accessible name、expanded state、focus orderを維持する。
+- calculator UIへ開始NP入力やランキング専用condition editorを追加しない。
+
+## 12. Layer ownership
 
 ### data-pipeline
 
-- Atlas raw condition、target、field、proc、choice、`NP_HIGHER`、`lossNp`、`gainNp`を解釈する唯一の層
-- typed condition requirement、resource requirement／mutation、evidenceへ正規化
-- target team、recipient、固定消費、全消費を名称やdetail文字列から推測しない
-- 未知値、曖昧なtarget、conditionとmutationの不整合をartifact生成時に拒否
+- raw Atlas condition、target、proc、choice、resource、transformを解釈する唯一の層
+- player choiceとstochastic outcomeをtyped IRへ分離
+- target、recipient、resource単位、固定増減／全消費を根拠付きで正規化
+- 未知値、曖昧性、重複identityをartifact生成時に拒否
 
 ### master-data／schema
 
-- canonical condition family、witness provenance、preparation resource contractを保持
-- scenarioには利用者／policyの一次入力だけを保存
-- derived field、targetState、current form、resolved skill、selected NP、validation結果は保存しない
-- 配列順序、重複、範囲、identityをschemaで検証
+- AttackProfile材料、condition requirement、selection semantics、resource semanticsを保持
+- scenarioには利用者またはpolicyの一次入力とordered commandだけを保存
+- current form、derived state、resolved skill／NP、compiled operation、validation結果を保存しない
 
 ### battle-execution
 
-- immutableなcondition contextとresource-aware preparation stateを所有
-- action requirement、resource mutation、state mutation、modifier、evidenceをtransactionalに適用
-- execution outcomeをranking policyから独立して返す
-- executable stateとrejected stateを型で分離
+- 単一のtransactional preparation reducer
+- immutableなcondition／resource context
+- executable stateとrejected stateの型分離
+- execution outcomeとevidenceをpolicyから独立して返す
 
 ### calculation-application
 
-- `RankingComparisonPolicy`をcompile
-- self contribution、conditional contribution、resource候補を所有
-- world candidate、finite preparation plan、AttackProfile grouping、stable selectionを所有
-- calculatorとrankingで同じscenario service／reducer／executorを使う
+- RankingComparisonPolicyのcompile
+- AttackProfile inventoryとpolicy可用性
+- finite preparation plan、condition candidate、contribution projection
+- stable candidate selectionとprepared damage matrix cache
 
 ### Web／worker
 
-- Webは5項目をdispatchし、canonical evidenceを表示するだけにする
-- workerはrequest orderingとcacheを所有し、effect conditionを解釈しない
-- label、tooltip、servant IDからcondition familyを推測しない
+- Webは5項目をdispatchし、presentation modelを描画するだけ
+- workerはrequest ordering、stale response破棄、cacheを所有
+- raw condition、effect label、servant IDから意味論を再構築しない
 
-## 12. 移行方針
+## 13. 移行方針
 
-実装時は次の単一構造へ破壊的に移行する。
+1. 本仕様をsuperseding ADRとして確定する。
+2. `RankingConditions.specialAttack`と`field`を削除する。
+3. `conditionalEffects: 'baseline' | 'satisfied'`を追加する。
+4. URL、worker protocol、cache key、test matrixを一度に置換する。
+5. player choice／stochastic outcomeとNP resourceをpipelineでcanonical化する。
+6. condition plannerを既存target／field／state resolverの上位へ置く。
+7. rankingによるeffect decision、condition fact、resource stateの再構築を削除する。
+8. 旧URL reader、compatibility flag、旧fixture、旧policy fallbackを削除する。
+9. artifact、master schema、scenario schema、engine versionを実際の契約変更に合わせて一度だけ更新する。
 
-1. `RankingConditions.specialAttack`と`RankingConditions.field`を削除する。
-2. `RankingConditions.conditionalEffects: 'baseline' | 'satisfied'`を追加する。
-3. URL、worker message、cache key、test matrixを新policyへ置換する。
-4. special attack worldとfield worldの上位に一つのcondition plannerを置く。
-5. target resolver、field resolver、condition evaluator自体はtyped domain serviceとして再利用する。
-6. NP resource semanticsをpreparation reducerへ追加する。
-7. ranking側でeffect inclusion、condition fact、resource stateを再構築する旧経路を削除する。
-8. 旧URL parameter、reader fallback、互換flag、旧fixtureを残さない。
-9. 実装判断を新ADRへ記録し、ADR-018とADR-020の該当policyをsupersedeする。
-
-新しいpackageは原則追加しない。既存責務内のfocused moduleへ分割し、ranking orchestrator、engine、Web componentへ
+新しいpackageは原則追加しない。既存のlayer責務内でfocused moduleへ分割し、orchestrator、worker、React componentへ
 条件分岐を集積しない。
 
-## 13. 性能・テスト要件
+## 14. 実装前production audit
 
-### 13.1 Unit／domain fixture
+次は推測で固定せず、実装開始前に一度の共有master compileから全数監査する。
 
-- intrinsic conditionはpolicyで変更されない
-- external／derived condition contributionのbaseline／satisfied
-- self policyとconditional policyの4組み合わせ
-- 矛盾するtarget／field candidate
-- 自己生成field／targetStateはstateへ残り、寄与だけpolicyで変わる
-- fixed NP consume、consume-all、gain、clamp、capacity
-- resource requirement不足、cost後のattack NP不足
-- cost後に自己NP増加してattackへ到達する合法順序
-- non-attack transform NP後のresource state
-- choice／proc／resource／modifierのatomic rollback
-- rejected actionを数値結果へ読み替えない
+| 監査対象 | 確認内容 | Gate |
+| --- | --- | --- |
+| selection | player choice／stochastic／複合conditionの全occurrence | 未分類・raw形状推測0件 |
+| condition family | target、field、state、HP、quantity、proc、resource | damage-reachable requirementの欠落0件 |
+| contribution scope | personal、partyWide、partyOther、enemyApplied、external | recipientとの矛盾0件 |
+| target candidate | class、attribute、trait、state、family | 矛盾candidate 0件 |
+| NP capacity | NP Lv、form、variantごとの導出元 | ID・名称分岐なしで一意に解決 |
+| NP skill mutation | gain／loss、固定／全消費、target、単位 | unknown・二重適用0件 |
+| NP use／OC | non-attack／attack NPの消費とOC導出 | OC1固定との矛盾0件 |
+| profile可用性 | baselineのみ、satisfiedのみ、両方、どちらも不可 | 暗黙のrow欠落0件 |
+| candidate規模 | profile別generated／deduplicated／executed数 | 有限性とcapを構造で説明 |
+| damage差分 | 全entry、NP1〜5、四policy組合せ | input、witness、planで全件説明 |
 
-### 13.2 Production ratchet
+既知のpolicy変更で説明できる差分と、未知semantics／回帰を分ける。前者は本仕様の結果として記録し、後者を
+個別補正せず設計gateへ戻す。
 
-masterを一度だけload／compileした共有inventoryから次を検証する。
+## 15. Test／performance gate
 
-- condition family別effect／operation／owner件数
-- resource requirement／mutation別skill／servant件数
-- 全AttackProfileの通常／成立、自己バフあり／なし、NP1〜5 matrix
+### 15.1 Domain tests
+
+- deterministic player choiceが通常候補へ残る
+- stochastic failure／minimumとsatisfied maximum
+- self／condition policyの四組合せ
+- intrinsic factをsatisfiedで捏造しない
+- TargetContext内のclass／attribute／trait整合
+- self-generated field／targetStateはstateへ残り、寄与だけ変わる
+- partyWide、partyOther、enemyAppliedのrecipient
+- resource requirement、固定増減、全消費、capacity、base OCとOC段階アップ
+- resource不足後にattack NPへ到達しない
+- choice、proc、resource、effect、transitionのatomic rollback
+- baseline包含と同一profileでのdamage単調性
+
+### 15.2 Production ratchet
+
+- 全AttackProfile × NP1〜5 × 自己バフ二値 × 条件効果二値
+- policy別calculated／unavailable／invalid inventory
 - calculator／ranking canonical parity
-- implementation unsupported、inputRequired、partial commit、inert control
-- 採用condition witnessと適用effectの整合
-- 旧特攻／field policyからの全damage・順位・entry差分
+- implementation unsupported、partial commit、inert control、stale mutation
+- 適用effect、policy除外、表示理由、condition witnessの整合
+- 旧policyからの全damage、順位、entry差分
 
-代表goldenだけを個別fixture化し、全production masterをtest caseごとに再load／再compileしない。
+全masterをtestごとに再load／compileしない。共有inventoryから複数assertionを行い、代表familyだけをfocused goldenにする。
 
-### 13.3 性能gate
+### 15.3 Performance
 
-- effect subsetの`2^N`探索を再導入しない
-- damage-reachable condition signatureだけを候補化する
-- world／resource candidateをcanonical keyでdeduplicateする
-- prepared damage inputとNP1〜5 matrixだけをcacheし、evidenceをcacheしない
-- 変更前後でproduction ranking、全Vitest、entry生成、policy matrixを同一環境で比較する
-- 主要suiteまたはhot pathが理由なく10%を超えて悪化した場合は設計未完了として停止する
-- 候補上限の緩和やtest timeout延長だけで性能gateを通さない
+- effect subsetの`2^N`探索を行わない。
+- damage-reachable condition signatureだけを候補化する。
+- semantic stateとworld candidateをcanonical keyでdeduplicateする。
+- prepared damage inputとNP1〜5 matrixだけをcacheし、evidenceをcacheしない。
+- baselineと同一環境でproduction ranking、全Vitest、entry生成、policy matrixを比較する。
+- 主要suiteまたはhot pathが理由なく10%を超えて悪化したら設計未完了とする。
+- candidate cap緩和、timeout延長、production assertion削減だけでgateを通さない。
 
-## 14. 確定事項と実装前gate
+## 16. 実装停止条件
 
-### 14.1 確定した製品仕様
+次を検出した場合は、その場でcase分岐を追加せず、実装を一度止めて全体設計とproduction inventoryを再確認する。
 
-次は本書の他の要件から一意に決まるため、追加承認を待たず確定事項とする。実装者が別案へ変更しない。
+- servant ID、名称、effect labelによる補正が必要
+- player choiceとstochastic outcomeをcanonicalに区別できない
+- condition plannerがAttackProfileを変更または混成する
+- 一つのcandidateで矛盾するTargetContext／field／quantityを成立させる
+- contribution policyがexecution preconditionを上書きする
+- 正常actionの一部operationだけがcommitされる
+- rankingとcalculatorで別evaluatorが必要になる
+- 新旧policyまたはscenario形式をruntimeで併存させる必要が生じる
+- damage差分をcanonical input、witness、planで説明できない
+- candidate数、bundle、test時間が想定外に増える
+- UI二軸化のためにdetail evidenceまたはaccessibilityを失う
 
-| 論点 | 確定仕様 | 理由・影響 |
-| --- | --- | --- |
-| UI名称 | `条件効果: 通常のみ／成立込み` | 特攻、field、HP、状態、確率、resource条件を同じ上位概念で表す |
-| 既定mode | `自己バフあり・条件効果通常のみ` | 同じ通常条件で各AttackProfileの標準性能を比較する |
-| 自己生成condition | 通常のみでは寄与を除外し、成立込みで許可 | witnessの由来でUI policyを変えず、条件効果の意味を一貫させる |
-| 確率／choice | 通常のみでは条件寄与を除外し、成立込みで最大の合法結果を候補化 | ランダム最大値を通常順位へ混入させない |
-| 特攻／field | 条件効果へ統合し、旧独立入力を削除 | 条件項目の増殖を止める |
-| 開始NP | 通常のみは100%、成立込みはcapacity内の合法候補 | NP条件を迂回せず、最大ポテンシャルを有限に評価する |
-| HP／quantity | 通常のみは固定baseline、成立込みは有限なcanonical候補 | 個別editorなしで条件効果へ統合する |
-| 実行合法性 | 両modeで常に強制し、policyによる上書きを禁止 | NP不足や排他矛盾から数値を返さない |
-| intrinsic condition | 両modeで通常評価し、成立込みでも追加・変更しない | 本人が持たないtrait等を捏造しない |
-| calculator scenario | 開始NPをpolicy生成値として明示し、暗黙global値にしない | share/saveとranking parityを確保する |
-| 開始NP UI | calculator／rankingとも入力を追加しない | 自己バフ／条件効果の二軸を維持する |
-| 旧URL／保存 | fallbackなしで明示拒否 | 後方互換用の二重policyを残さない |
+停止時は個別caseの修正案ではなく、影響するsemantic family、全production件数、責務重複、単一のcanonical構造、
+damage差分、性能見積もりを提示してから再開する。
 
-自己生成field／targetStateの扱いはADR-020からの意図的変更である。execution stateとevidenceは維持し、
-`通常のみ`ではcondition-dependent contributionだけを除外する。これにより外部条件と自己生成条件で
-UI上の例外を作らない。
+## 17. 完了条件
 
-`成立込み`の開始NPは「十分なNPがあると仮定して無制限に成立させる」という意味ではない。選択したNP Lvと
-canonical masterから導出したcapacity内だけを候補とし、resource-aware reducerが最後のattack NPまで実行できる
-planだけを採用する。
-
-### 14.2 Production監査で確定する実装詳細
-
-次は製品仕様ではなく、productionデータと性能測定から決める実装詳細である。事前に値を推測せず、監査結果を
-ADRと完了証跡へ固定する。
-
-| 論点 | 監査で決める内容 | Gate |
-| --- | --- | --- |
-| NP capacity | NP Lv、特殊form、variantごとのcanonical導出元 | 名称・servant ID分岐なしで全件一意に解決できる |
-| NP増減 | self `gainNp`／`lossNp`、固定消費／全消費、target policyの全inventory | unknown、曖昧target、二重適用が0件 |
-| 条件候補domain | HP、quantity、field、target、state、procごとの有限値集合 | damage-reachableな値だけをlosslessに列挙できる |
-| condition signature | candidate deduplicateとcacheに使うtyped key | evidenceを失わず完全同値だけを統合する |
-| candidate cap | 全AttackProfileの実測最大値と余裕 | cap緩和ではなく構造上の有限性を説明できる |
-| schema／engine version | 実際に変わる保存・master・execution契約 | 旧形式fallbackなしで一度だけ更新する |
-| 意図的damage差分 | 旧policyとの全entry／NP1〜5差分 | canonical input、witness、採用planで全件説明する |
-
-上記監査で新しいsemantic familyや説明不能なdamage差分が見つかった場合だけ実装を止める。既に確定した
-製品仕様そのものを、途中で見つけた個別caseに合わせて再び未決定へ戻さない。
-
-## 15. 実装停止条件
-
-次を検出した場合はその場で例外分岐を追加せず、実装を一度止めて全体設計とproduction inventoryを再確認する。
-
-- servant ID、名称、effect labelによる補正が必要になった
-- 一つのcondition modeで矛盾するworld factを同時成立させる
-- execution preconditionをcontribution policyが上書きする
-- rankingとcalculatorで別のresource／condition evaluatorが必要になった
-- 正常planの一部operationだけがcommitされる
-- 新旧policyまたは新旧scenarioをruntimeで併存させる必要が出た
-- damage差分をcanonical inputとwitnessで説明できない
-- production candidate数またはtest時間が想定外に増加した
-- UIを二項目へ減らすためにdetail evidenceを失う
-
-停止時は、症状単位の修正案ではなく、影響するsemantic family、全production件数、責務重複、候補となる
-単一構造、意図的damage差分、性能見積もりを提示してから再開判断を求める。
-
-## 16. 完了条件
-
-- ranking UIの火力条件が`自己バフ`と`条件効果`の二項目へ収束している
-- calculator／rankingに開始NP入力またはresource専用の第3軸が存在しない
-- 特攻／fieldの旧独立入力、URL parameter、fallbackが0件
-- execution、source contribution、conditional contribution、resource legalityが型で分離されている
-- 全candidateが一つの矛盾しないscenarioとordered planを持つ
-- NP条件を持つskillがNP不足を迂回してattack NPへ到達しない
+- ranking UIが5項目、火力条件が自己バフ／条件効果の二軸へ収束している
+- 開始NP、field、特攻、対象条件の追加editorが存在しない
+- 旧特攻／field入力、URL、fallbackが0件
+- RankingEntryがAttackProfile単位で、variant／form／scope混成が0件
+- player choiceとstochastic outcomeがtyped semanticsで分離されている
+- execution、source contribution、condition contribution、resource legalityが型で分離されている
+- 全数値が一つのscenario、ordered plan、TargetContextを持つ
+- baseline候補をsatisfied候補集合が包含する
+- NP不足、OC不一致、排他矛盾を迂回して数値を返さない
 - 通常のみでconditional contributionの混入が0件
-- 成立込みで成立可能なconditional effectの欠落が0件
-- intrinsic不一致を成立込みで捏造する経路が0件
+- 成立込みで成立可能なconditional contributionの欠落が0件
+- intrinsic不一致の捏造、partyOther混入、policyによる理由改変が0件
 - implementation unsupported、partial commit、stale mutationが0件
 - calculator／ranking parity差分が0件
-- 全damage差分がsemantic ruleとcondition witnessで説明され、承認されている
-- PC／390px／320pxで横overflowがなく、閉じた一覧行の情報密度が維持されている
+- 全damage差分がsemantic ruleとevidenceで説明されている
+- desktop、390px、320pxの密度、overflow、keyboard、a11y gateを満たす
 - production rankingと全test suiteが性能gateを満たす
