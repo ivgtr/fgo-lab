@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 文書体系整備 Phase計画"
-document_version: "1.3.1"
+document_version: "1.3.2"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -144,13 +144,25 @@ Git history
 
 | Document kind | Allowed status |
 | --- | --- |
-| Requirement／registry | `Active | Proposed | Superseded` |
+| Requirement | `Active | Proposed | Superseded` |
+| Registry／sub-index／license registry | `Active` |
 | Tasks／phase plan | `Active | Complete` |
-| Evidence／historical | `Active | Complete | Superseded` |
+| Evidence | `Active | Complete | Superseded` |
+| Historical | `Active | Complete | Superseded` |
 | ADR | `accepted | superseded` |
 | Guide | `Guideline` |
 
 DOC-P6の静的checkは、文書path／registry kindからkindを一意に決定し、この集合以外の値、kind不明、status欠落をfail-closedで拒否する。
+
+DOC-P6実装前baseline（HEAD `7d4041a`）では、`docs/`配下のtracked Markdown 74件のうちfrontmatterの`status`欠落が42件、許可語彙へ未収束の独自statusが4件ある。独自値は次の3種類である。
+
+| Existing status | Files |
+| --- | ---: |
+| `Complete - Awaiting User UX Confirmation` | 2 |
+| `Complete - Review Findings Corrected` | 1 |
+| `Superseded by E4.1.3 activation witness closure` | 1 |
+
+欠落42件と独自status 4件はDOC-P6実装時に文書kindと意味を確認して正規化する。この既知baselineはTSK-00.4を再開せず、TSK-00の開始を妨げない。
 
 ## 5. Blocking maintenance
 
