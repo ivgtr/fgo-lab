@@ -37,4 +37,20 @@ describe('canonical production audit records', () => {
       'first_difference:actor:2:rows[0]',
     );
   });
+
+  it('fails closed before digesting or diffing duplicate identities', () => {
+    const duplicates: CanonicalAuditRecord[] = [
+      { identity: 'actor:1', value: 1 },
+      { identity: 'actor:1', value: 2 },
+    ];
+    expect(() => canonicalAuditDigest(duplicates)).toThrow(
+      'duplicate_canonical_audit_identity:records:actor:1',
+    );
+    expect(() => firstCanonicalAuditDifference(duplicates, [duplicates[1]!])).toThrow(
+      'duplicate_canonical_audit_identity:expected:actor:1',
+    );
+    expect(() => formatCanonicalAuditMismatch(duplicates, [duplicates[1]!])).toThrow(
+      'duplicate_canonical_audit_identity:records:actor:1',
+    );
+  });
 });

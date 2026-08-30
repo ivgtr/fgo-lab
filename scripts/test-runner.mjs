@@ -2,7 +2,7 @@
 
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runCapturedTest } from './test-runner-lib.mjs';
+import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const requestedMode = process.argv[2];
@@ -42,6 +42,10 @@ if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
   console.error('FGO_TEST_TIMEOUT_MS must be a positive integer.');
   process.exit(2);
 }
+const requiredRuntimeCounters =
+  userArgs.length === 0 && (suite === 'all' || suite === 'production')
+    ? PRODUCTION_RUNTIME_COUNTER_CONTRACT
+    : null;
 
 try {
   const result = await runCapturedTest({
@@ -62,6 +66,7 @@ try {
     suite,
     timeoutMs,
     forwardSignals: true,
+    requiredRuntimeCounters,
   });
   process.stdout.write(result.summary);
   process.exitCode = result.exitCode;

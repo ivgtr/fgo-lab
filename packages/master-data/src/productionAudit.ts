@@ -18,6 +18,19 @@ export interface CanonicalAuditDifference {
   actual: CanonicalAuditValue | undefined;
 }
 
+function assertUniqueCanonicalAuditIdentities(
+  records: readonly CanonicalAuditRecord[],
+  side: 'expected' | 'actual' | 'records',
+): void {
+  const identities = new Set<string>();
+  for (const { identity } of records) {
+    if (identity.length === 0) throw new TypeError(`empty_canonical_audit_identity:${side}`);
+    if (identities.has(identity))
+      throw new TypeError(`duplicate_canonical_audit_identity:${side}:${identity}`);
+    identities.add(identity);
+  }
+}
+
 function canonicalize(value: CanonicalAuditValue): CanonicalAuditValue {
   if (value === null || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(canonicalize);
@@ -29,6 +42,7 @@ function canonicalize(value: CanonicalAuditValue): CanonicalAuditValue {
 }
 
 export function canonicalAuditJson(records: readonly CanonicalAuditRecord[]): string {
+  assertUniqueCanonicalAuditIdentities(records, 'records');
   return JSON.stringify(
     records
       .map(({ identity, value }) => ({ identity, value: canonicalize(value) }))
@@ -88,6 +102,8 @@ export function firstCanonicalAuditDifference(
   expected: readonly CanonicalAuditRecord[],
   actual: readonly CanonicalAuditRecord[],
 ): CanonicalAuditDifference | null {
+  assertUniqueCanonicalAuditIdentities(expected, 'expected');
+  assertUniqueCanonicalAuditIdentities(actual, 'actual');
   const expectedByIdentity = new Map(expected.map((record) => [record.identity, record.value]));
   const actualByIdentity = new Map(actual.map((record) => [record.identity, record.value]));
   const identities = [

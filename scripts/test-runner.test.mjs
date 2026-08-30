@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { runCapturedTest } from './test-runner-lib.mjs';
+import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
 import { PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -58,7 +58,7 @@ function fixtureScript({
   `;
 }
 
-async function runFixture(name, script, timeoutMs = 2_000) {
+async function runFixture(name, script, timeoutMs = 2_000, options = {}) {
   const artifactRoot = mkdtempSync(resolve(tmpdir(), `fgo-lab-runner-${name}-`));
   return runCapturedTest({
     root,
@@ -68,6 +68,7 @@ async function runFixture(name, script, timeoutMs = 2_000) {
     timeoutMs,
     artifactRoot,
     runId: 'run',
+    ...options,
   });
 }
 
@@ -96,29 +97,95 @@ test('success writes a compact manifest and preserves captured streams', async (
   assert.match(result.summary, /Warnings: 1/);
 });
 
-test('production audit artifacts add validated runtime counters to the manifest', async () => {
+test('production audit artifacts satisfy every required runtime counter', async () => {
   const result = await runFixture(
     'runtime-counters',
     `
       const fs = require('node:fs');
       const path = require('node:path');
-      fs.writeFileSync(
-        path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'production-audit-fixture.json'),
-        JSON.stringify({ boundary: 'fixture', runtimeCounters: { masterReadCount: 1, compileCount: 1 } }),
-      );
+      const artifacts = ${JSON.stringify([
+        {
+          name: 'production-audit-calculation-application.json',
+          boundary: 'calculation-application',
+          runtimeCounters: {
+            masterReadCount: 1,
+            masterParseCount: 1,
+            compileCount: 1,
+            candidateCount: 10,
+            deduplicatedCandidateCount: 8,
+            damageRequestCount: 7,
+            distinctDamageRequestCount: 6,
+          },
+        },
+        {
+          name: 'production-audit-data-pipeline.json',
+          boundary: 'data-pipeline',
+          runtimeCounters: {
+            masterReadCount: 1,
+            masterParseCount: 1,
+            compileCount: 1,
+            candidateCount: 0,
+            damageRequestCount: 0,
+          },
+        },
+      ])};
+      for (const { name, ...artifact } of artifacts)
+        fs.writeFileSync(path.join(process.env.FGO_TEST_ARTIFACT_DIR, name), JSON.stringify(artifact));
       fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
     `,
+    2_000,
+    { requiredRuntimeCounters: PRODUCTION_RUNTIME_COUNTER_CONTRACT },
   );
-  assert.deepEqual(result.manifest.runtimeCounters, [
-    {
-      artifact: 'production-audit-fixture.json',
-      boundary: 'fixture',
-      counters: { masterReadCount: 1, compileCount: 1 },
-      error: null,
-    },
-  ]);
-  assert.ok(result.manifest.artifacts.includes('production-audit-fixture.json'));
+  assert.equal(result.manifest.outcome, 'success');
+  assert.deepEqual(result.manifest.runtimeCounterContract.errors, []);
+  assert.equal(result.manifest.runtimeCounters.length, 2);
 });
+
+test('missing production audit artifacts fail the runtime counter contract', async () => {
+  const result = await runFixture(
+    'missing-runtime-counters',
+    fixtureScript({ reportValue: report(true) }),
+    2_000,
+    { requiredRuntimeCounters: PRODUCTION_RUNTIME_COUNTER_CONTRACT },
+  );
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'contract_failure');
+  assert.match(result.summary, /data-pipeline:expected_one_artifact:received_0/);
+  assert.match(result.summary, /calculation-application:expected_one_artifact:received_0/);
+});
+
+for (const fixture of [
+  { name: 'empty', counters: {}, error: 'invalid_runtime_counters' },
+  {
+    name: 'missing',
+    counters: { masterReadCount: 1 },
+    error: 'missing_counter:masterParseCount',
+  },
+  { name: 'invalid', counters: { masterReadCount: -1 }, error: 'invalid_runtime_counters' },
+])
+  test(`${fixture.name} runtime counters fail the production contract`, async () => {
+    const result = await runFixture(
+      `${fixture.name}-runtime-counters`,
+      `
+        const fs = require('node:fs');
+        const path = require('node:path');
+        fs.writeFileSync(
+          path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'production-audit-data-pipeline.json'),
+          JSON.stringify({ boundary: 'data-pipeline', runtimeCounters: ${JSON.stringify(fixture.counters)} }),
+        );
+        fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+      `,
+      2_000,
+      {
+        requiredRuntimeCounters: {
+          'data-pipeline': PRODUCTION_RUNTIME_COUNTER_CONTRACT['data-pipeline'],
+        },
+      },
+    );
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.manifest.outcome, 'contract_failure');
+    assert.match(result.summary, new RegExp(fixture.error));
+  });
 
 test('assertion failure keeps the child exit code and bounded structured detail', async () => {
   const result = await runFixture(

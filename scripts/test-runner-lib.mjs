@@ -8,6 +8,25 @@ const MAX_SUMMARY_BYTES = 32 * 1024;
 const MAX_FAILURES = 5;
 const ABNORMAL_TAIL_LINES = 100;
 
+export const PRODUCTION_RUNTIME_COUNTER_CONTRACT = {
+  'calculation-application': [
+    'masterReadCount',
+    'masterParseCount',
+    'compileCount',
+    'candidateCount',
+    'deduplicatedCandidateCount',
+    'damageRequestCount',
+    'distinctDamageRequestCount',
+  ],
+  'data-pipeline': [
+    'masterReadCount',
+    'masterParseCount',
+    'compileCount',
+    'candidateCount',
+    'damageRequestCount',
+  ],
+};
+
 function createRunId(now = new Date()) {
   return `${now.toISOString().replaceAll(':', '-').replaceAll('.', '-')}-${process.pid}-${randomBytes(3).toString('hex')}`;
 }
@@ -52,17 +71,24 @@ function runtimeCounterArtifacts(runDirectory) {
     .map((name) => {
       try {
         const artifact = JSON.parse(readFileSync(resolve(runDirectory, name), 'utf8'));
+        const validBoundary = typeof artifact.boundary === 'string' && artifact.boundary.length > 0;
         const validCounters =
           artifact.runtimeCounters &&
           typeof artifact.runtimeCounters === 'object' &&
+          !Array.isArray(artifact.runtimeCounters) &&
+          Object.keys(artifact.runtimeCounters).length > 0 &&
           Object.values(artifact.runtimeCounters).every(
             (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0,
           );
         return {
           artifact: name,
-          boundary: typeof artifact.boundary === 'string' ? artifact.boundary : null,
+          boundary: validBoundary ? artifact.boundary : null,
           counters: validCounters ? artifact.runtimeCounters : null,
-          error: validCounters ? null : 'invalid_runtime_counters',
+          error: !validBoundary
+            ? 'invalid_runtime_counter_boundary'
+            : validCounters
+              ? null
+              : 'invalid_runtime_counters',
         };
       } catch (cause) {
         return {
@@ -73,6 +99,25 @@ function runtimeCounterArtifacts(runDirectory) {
         };
       }
     });
+}
+
+function runtimeCounterContractErrors(artifacts, requiredCounters) {
+  if (!requiredCounters) return [];
+  const errors = artifacts.flatMap(({ artifact, error }) =>
+    error ? [`${artifact}:${error}`] : [],
+  );
+  for (const [boundary, requiredNames] of Object.entries(requiredCounters)) {
+    const matches = artifacts.filter((artifact) => artifact.boundary === boundary);
+    if (matches.length !== 1) {
+      errors.push(`${boundary}:expected_one_artifact:received_${matches.length}`);
+      continue;
+    }
+    const counters = matches[0].counters;
+    if (!counters) continue;
+    for (const name of requiredNames)
+      if (!Object.hasOwn(counters, name)) errors.push(`${boundary}:missing_counter:${name}`);
+  }
+  return errors;
 }
 
 function reportCounts(report) {
@@ -102,12 +147,21 @@ function warningCount(stdout, stderr) {
     .filter((line) => /\b(?:warn(?:ing)?|deprecated|unhandled|resource leak)\b/i.test(line)).length;
 }
 
-function outcomeFor({ code, signal, timedOut, runnerError, report, reportError }) {
+function outcomeFor({
+  code,
+  signal,
+  timedOut,
+  runnerError,
+  report,
+  reportError,
+  runtimeCounterErrors,
+}) {
   if (runnerError) return 'runner_failure';
   if (timedOut) return 'timeout';
   if (signal) return 'signal';
   if (!report) return code === 0 ? 'reporter_failure' : 'test_failure';
   if (code !== 0 || report.success === false) return 'test_failure';
+  if (runtimeCounterErrors.length > 0) return 'contract_failure';
   if ((report.numPendingTests ?? 0) > 0 || (report.numTodoTests ?? 0) > 0)
     return 'contract_failure';
   return reportError ? 'reporter_failure' : 'success';
@@ -208,6 +262,12 @@ function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirect
       semanticallyTruncated ||= tailWasTrimmed || tail.length > ABNORMAL_TAIL_LINES;
       lines.push(...tail.slice(-ABNORMAL_TAIL_LINES));
     }
+  } else if (
+    manifest.outcome === 'contract_failure' &&
+    manifest.runtimeCounterContract.errors.length > 0
+  ) {
+    lines.push('Runtime counter contract failures:');
+    lines.push(...manifest.runtimeCounterContract.errors);
   } else {
     if (manifest.runner.error) lines.push(`Runner: ${manifest.runner.error}`);
     if (manifest.reporter.error) lines.push(`Reporter: ${manifest.reporter.error}`);
@@ -234,6 +294,7 @@ export async function runCapturedTest(options) {
     runId = createRunId(),
     extraEnv = {},
     forwardSignals = false,
+    requiredRuntimeCounters = null,
   } = options;
   const startedAt = new Date();
   const runDirectory = resolve(artifactRoot, runId);
@@ -351,6 +412,11 @@ export async function runCapturedTest(options) {
   writeFileSync(stdoutPath, stdout);
   writeFileSync(stderrPath, stderr);
   const { report, error: reportError } = parseReport(reportPath);
+  const runtimeCounters = runtimeCounterArtifacts(runDirectory);
+  const runtimeCounterErrors = runtimeCounterContractErrors(
+    runtimeCounters,
+    requiredRuntimeCounters,
+  );
   const outcome = outcomeFor({
     code: processResult.code,
     signal: processResult.signal,
@@ -358,10 +424,10 @@ export async function runCapturedTest(options) {
     runnerError: processResult.runnerError,
     report,
     reportError,
+    runtimeCounterErrors,
   });
   const durationMs = Date.now() - startedAt.getTime();
   const counts = { ...reportCounts(report), warnings: warningCount(stdout, stderr) };
-  const runtimeCounters = runtimeCounterArtifacts(runDirectory);
   const exit = processResult.runnerError
     ? { kind: 'runner_failure', code: null, signal: null }
     : timedOut
@@ -386,6 +452,10 @@ export async function runCapturedTest(options) {
       summaryLimits: { lines: MAX_SUMMARY_LINES, bytes: MAX_SUMMARY_BYTES },
     },
     runtimeCounters,
+    runtimeCounterContract: {
+      required: requiredRuntimeCounters ?? {},
+      errors: runtimeCounterErrors,
+    },
     artifacts: [
       'manifest.json',
       ...(existsSync(reportPath) ? ['vitest.json'] : []),
