@@ -48,28 +48,32 @@ export function preparationChoiceOptions(
       { choice: NonNullable<AttackerSkillUse['choice']>; label: string; structural: boolean }
     >();
     for (const effect of skill.effects) {
-      if (!effect.choice) continue;
-      const key = `${effect.choice.family}:${String(effect.choice.candidate)}`;
+      if (effect.selection?.kind !== 'playerChoice') continue;
+      const key = `${effect.selection.group.key}:${effect.selection.group.candidate}`;
       const structural = effect.execution.some(
         (operation) => operation.kind === 'selectNoblePhantasmVariant',
       );
       const current = choices.get(key);
       if (!current || structural)
         choices.set(key, {
-          choice: { family: effect.choice.family, candidate: String(effect.choice.candidate) },
+          choice: {
+            groupKey: effect.selection.group.key,
+            candidateKey: effect.selection.group.candidate,
+          },
           label: effect.label,
           structural,
         });
     }
     return [...choices.values()].map(({ choice, label }) => ({
-      key: `${String(command.slot)}:${choice.family}:${choice.candidate}`,
+      key: `${String(command.slot)}:${choice.groupKey}:${choice.candidateKey}`,
       slot: command.slot,
       choice,
       label,
       skillName: skill.name,
       imageKey: skill.imageKey,
       active:
-        command.choice?.family === choice.family && command.choice.candidate === choice.candidate,
+        command.choice?.groupKey === choice.groupKey &&
+        command.choice.candidateKey === choice.candidateKey,
     }));
   });
 }

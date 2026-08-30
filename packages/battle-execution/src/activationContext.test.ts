@@ -34,7 +34,7 @@ function operation(
     enabledByDefault: false,
     gameActivation: 'skillUse',
     proc: { kind: 'guaranteed' },
-    procSelection: { kind: 'effectInclusion' },
+    stochasticOutcome: null,
     procRatePermille: 1_000,
     activation: { kind: 'sourceDefault' },
     evidence: { rawPath: 'test', functionId: 'test' },

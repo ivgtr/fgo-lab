@@ -237,7 +237,7 @@ describe('production probabilistic NP-before damage effects', () => {
         .map((effect) => effect.outcome),
     ).not.toContain('applied');
     expect(invalidDoubleState.effectWarnings).toEqual(
-      expect.arrayContaining([expect.stringContaining('invalidProcSelection')]),
+      expect.arrayContaining([expect.stringContaining('invalidStochasticOutcome')]),
     );
   });
 

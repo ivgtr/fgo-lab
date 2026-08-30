@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(39),
+  schemaVersion: z.literal(40),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -346,15 +346,32 @@ const effectProcSchema = z.discriminatedUnion('kind', [
 ]);
 export type EffectProc = z.infer<typeof effectProcSchema>;
 
-const effectProcSelectionSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('effectInclusion') }),
+const canonicalChoiceGroupSchema = z.object({
+  key: z.string().min(1),
+  candidate: z.string().min(1),
+});
+export type CanonicalChoiceGroup = z.infer<typeof canonicalChoiceGroupSchema>;
+
+const canonicalOutcomeGroupSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('binary'),
+    key: z.string().min(1),
+    defaultOutcome: z.enum(['failure', 'success']),
+  }),
   z.object({
     kind: z.literal('successCount'),
-    inputKey: z.string().min(1),
-    defaultSelection: z.enum(['minimum', 'maximum']),
+    key: z.string().min(1),
+    maximumSuccesses: z.number().int().positive(),
+    defaultOutcome: z.enum(['minimum', 'maximum']),
   }),
 ]);
-export type EffectProcSelection = z.infer<typeof effectProcSelectionSchema>;
+export type CanonicalOutcomeGroup = z.infer<typeof canonicalOutcomeGroupSchema>;
+
+const selectionSemanticsSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('playerChoice'), group: canonicalChoiceGroupSchema }),
+  z.object({ kind: z.literal('stochasticOutcome'), group: canonicalOutcomeGroupSchema }),
+]);
+export type SelectionSemantics = z.infer<typeof selectionSemanticsSchema>;
 
 const atlasEffectEvidenceSchema = z.object({
   functionType: z.string(),
@@ -377,7 +394,7 @@ export const masterEffectSchema = z.object({
   inclusionPolicy: z.object({ default: z.enum(['include', 'exclude']) }),
   gameActivation: z.enum(['constant', 'skillUse', 'npBeforeDamage', 'derived']),
   proc: effectProcSchema,
-  procSelection: effectProcSelectionSchema,
+  selection: selectionSemanticsSchema.nullable(),
   interaction: z
     .discriminatedUnion('kind', [
       z.object({
@@ -394,12 +411,6 @@ export const masterEffectSchema = z.object({
         key: z.string().min(1),
       }),
     ])
-    .nullable(),
-  choice: z
-    .object({
-      family: z.enum(['actSet', 'actSelectIndex']),
-      candidate: z.number().int(),
-    })
     .nullable(),
   triggerScope: z.enum(['commandCard', 'commandCardAttack']).nullable(),
   operationTrigger: z
@@ -779,7 +790,7 @@ export function resolveFormSkillSlotAction(
     const effect = skill.effects.find(({ occurrenceId }) =>
       transition.activation.effectOccurrenceIds.includes(occurrenceId),
     );
-    return effect?.choice === null;
+    return effect?.selection?.kind !== 'playerChoice';
   });
   return { skill, transitions, allowsNoTransition: !hasMandatoryTransition };
 }
@@ -1081,49 +1092,67 @@ export type TargetFamilyEvidence = z.infer<
   typeof masterSnapshotBaseSchema
 >['targetSemantics']['evidence']['families'][number];
 export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapshot, context) => {
-  const validateProcSelection = (effects: readonly MasterEffect[], path: (string | number)[]) => {
+  const validateSelectionSemantics = (
+    effects: readonly MasterEffect[],
+    path: (string | number)[],
+  ) => {
     effects.forEach((effect, effectIndex) => {
       const effectPath = [...path, effectIndex];
-      if (effect.proc.kind !== 'chainedRolls') {
-        if (effect.procSelection.kind !== 'effectInclusion')
+      if (effect.proc.kind === 'guaranteed') {
+        if (effect.selection?.kind === 'stochasticOutcome')
           context.addIssue({
             code: 'custom',
-            message: 'non-chained proc requires effectInclusion selection',
-            path: [...effectPath, 'procSelection'],
+            message: 'guaranteed effect cannot declare stochastic outcome',
+            path: [...effectPath, 'selection'],
           });
         return;
       }
-      if (effect.procSelection.kind !== 'successCount') {
+      if (effect.selection?.kind !== 'stochasticOutcome') {
         context.addIssue({
           code: 'custom',
-          message: 'chainedRolls requires successCount selection',
-          path: [...effectPath, 'procSelection'],
+          message: 'probabilistic effect requires stochastic outcome semantics',
+          path: [...effectPath, 'selection'],
         });
         return;
       }
-      const procSelection = effect.procSelection;
+      const outcome = effect.selection.group;
+      if (effect.proc.kind !== 'chainedRolls') {
+        if (outcome.kind !== 'binary')
+          context.addIssue({
+            code: 'custom',
+            message: 'single or independent roll requires binary outcome',
+            path: [...effectPath, 'selection'],
+          });
+        return;
+      }
+      if (outcome.kind !== 'successCount') {
+        context.addIssue({
+          code: 'custom',
+          message: 'chained rolls require success-count outcome',
+          path: [...effectPath, 'selection'],
+        });
+        return;
+      }
       const expectedDefaultSelection =
         effect.gameActivation === 'npBeforeDamage' || effect.gameActivation === 'constant'
           ? 'maximum'
           : 'minimum';
-      const definition = effect.inputDefinitions.find(
-        (input) => input.key === procSelection.inputKey,
-      );
+      const definition = effect.inputDefinitions.find((input) => input.key === outcome.key);
       if (
         definition?.kind !== 'procSuccessCount' ||
         definition.minimum !== 0 ||
         definition.maximum !== effect.proc.maximumSuccesses ||
-        procSelection.defaultSelection !== expectedDefaultSelection ||
+        outcome.maximumSuccesses !== effect.proc.maximumSuccesses ||
+        outcome.defaultOutcome !== expectedDefaultSelection ||
         definition.defaultValue !==
-          (procSelection.defaultSelection === 'maximum' ? definition.maximum : 0) ||
+          (outcome.defaultOutcome === 'maximum' ? definition.maximum : 0) ||
         effect.interaction?.kind !== 'procSeries' ||
-        effect.interaction.key !== procSelection.inputKey ||
-        effect.choice !== null
+        effect.interaction.key !== outcome.key
       )
         context.addIssue({
           code: 'custom',
-          message: 'invalid chained proc selection contract',
-          path: [...effectPath, 'procSelection'],
+          message: 'invalid chained stochastic outcome contract',
+          path: [...effectPath, 'selection'],
         });
     });
   };
@@ -1141,12 +1170,12 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
     servant.skills.forEach((skill, skillIndex) => {
       const path = ['servants', servantIndex, 'skills', skillIndex, 'effects'];
       rejectMlbOnly(skill.effects, path);
-      validateProcSelection(skill.effects, path);
+      validateSelectionSemantics(skill.effects, path);
     });
     servant.passives.forEach((skill, skillIndex) => {
       const path = ['servants', servantIndex, 'passives', skillIndex, 'effects'];
       rejectMlbOnly(skill.effects, path);
-      validateProcSelection(skill.effects, path);
+      validateSelectionSemantics(skill.effects, path);
     });
     const graph = servant.actorFormGraph;
     const formIds = new Set(graph.forms.map((form) => actorFormKey(form.id)));
@@ -1240,7 +1269,7 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
         }
         const effectsPath = [...variantPath, 'effects'];
         rejectMlbOnly(variant.effects, effectsPath);
-        validateProcSelection(variant.effects, effectsPath);
+        validateSelectionSemantics(variant.effects, effectsPath);
       });
     });
     if (
@@ -1357,11 +1386,15 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
     code.skills.forEach((skill, skillIndex) => {
       const path = ['mysticCodes', codeIndex, 'skills', skillIndex, 'effects'];
       rejectMlbOnly(skill.effects, path);
-      validateProcSelection(skill.effects, path);
+      validateSelectionSemantics(skill.effects, path);
     }),
   );
   snapshot.craftEssences.forEach((craftEssence, craftEssenceIndex) => {
-    validateProcSelection(craftEssence.effects, ['craftEssences', craftEssenceIndex, 'effects']);
+    validateSelectionSemantics(craftEssence.effects, [
+      'craftEssences',
+      craftEssenceIndex,
+      'effects',
+    ]);
     craftEssence.effects.forEach((effect, effectIndex) =>
       effect.execution.forEach((operation, operationIndex) => {
         if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') return;

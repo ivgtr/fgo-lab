@@ -1,10 +1,12 @@
 ---
 title: "効果包含・ゲーム内発動・確率結果の分離"
-status: accepted
+status: superseded
 date: 2026-08-27
 ---
 
 # ADR 015: 効果包含・ゲーム内発動・確率結果の分離
+
+player choiceとstochastic outcomeのselection契約は[ADR 026](026-canonical-selection-semantics.md)が置き換える。inclusion、activation、condition、presentationの契約は引き続き本ADRを参照する。
 
 ## 決定
 

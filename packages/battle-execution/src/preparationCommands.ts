@@ -9,28 +9,32 @@ export function selectPreparationEffects(
   const choices = [
     ...new Map(
       effects.flatMap((effect) =>
-        effect.choice
-          ? [[`${effect.choice.family}:${String(effect.choice.candidate)}`, effect.choice]]
+        effect.selection?.kind === 'playerChoice'
+          ? [
+              [
+                `${effect.selection.group.key}:${effect.selection.group.candidate}`,
+                effect.selection.group,
+              ],
+            ]
           : [],
       ),
     ).values(),
   ];
   if (choices.length === 0)
     return command.choice === null
-      ? effects.filter(({ choice }) => choice === null)
+      ? effects.filter(({ selection }) => selection?.kind !== 'playerChoice')
       : 'choiceUnavailable';
   if (command.choice === null) return 'choiceRequired';
   const matched = choices.some(
     (choice) =>
-      choice.family === command.choice?.family &&
-      String(choice.candidate) === command.choice.candidate,
+      choice.key === command.choice?.groupKey && choice.candidate === command.choice.candidateKey,
   );
   if (!matched) return 'choiceUnavailable';
   return effects.filter(
-    ({ choice }) =>
-      choice === null ||
-      (choice.family === command.choice?.family &&
-        String(choice.candidate) === command.choice.candidate),
+    ({ selection }) =>
+      selection?.kind !== 'playerChoice' ||
+      (selection.group.key === command.choice?.groupKey &&
+        selection.group.candidate === command.choice.candidateKey),
   );
 }
 
@@ -45,8 +49,13 @@ export function availablePreparationSkillCommands(
     const choices = [
       ...new Map(
         skill.effects.flatMap((effect) =>
-          effect.choice
-            ? [[`${effect.choice.family}:${String(effect.choice.candidate)}`, effect.choice]]
+          effect.selection?.kind === 'playerChoice'
+            ? [
+                [
+                  `${effect.selection.group.key}:${effect.selection.group.candidate}`,
+                  effect.selection.group,
+                ],
+              ]
             : [],
         ),
       ).values(),
@@ -61,7 +70,7 @@ export function availablePreparationSkillCommands(
         kind: 'useSkillSlot' as const,
         slot,
         skillLevel: 10,
-        choice: { family: choice.family, candidate: String(choice.candidate) },
+        choice: { groupKey: choice.key, candidateKey: choice.candidate },
       })),
     );
   }

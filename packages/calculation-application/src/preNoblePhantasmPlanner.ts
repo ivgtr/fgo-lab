@@ -50,7 +50,7 @@ function canonicalEffectKey(effect: PreNoblePhantasmState['activeEffects'][numbe
     actorFormId: actorFormKey(effect.actorFormId),
     occurrenceId: effect.occurrenceId,
     execution: effect.effect.execution,
-    choice: effect.effect.choice,
+    selection: effect.effect.selection,
     conditions: effect.effect.conditions,
     quantityConditions: effect.effect.quantityConditions,
     sourceQuantityConditions: effect.effect.sourceQuantityConditions,
@@ -76,7 +76,7 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
     choices: state.appliedActions
       .flatMap(({ command }) =>
         command.kind === 'useSkillSlot' && command.choice
-          ? [`${command.slot}:${command.choice.family}:${command.choice.candidate}`]
+          ? [`${command.slot}:${command.choice.groupKey}:${command.choice.candidateKey}`]
           : [],
       )
       .sort(),

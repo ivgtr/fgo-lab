@@ -151,7 +151,7 @@ export function compileNoblePhantasmDamageOperation(
       enabledByDefault: true,
       gameActivation: 'npBeforeDamage',
       proc: { kind: 'guaranteed' },
-      procSelection: { kind: 'effectInclusion' },
+      stochasticOutcome: null,
       procRatePermille: 1_000,
       activation: { kind: 'sourceDefault' },
       evidence: { rawPath: damage.rawPath, functionId: damage.functionId },

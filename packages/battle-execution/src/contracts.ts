@@ -1,7 +1,7 @@
 import type {
   CanonicalInputDefinition,
+  CanonicalOutcomeGroup,
   EffectProc,
-  EffectProcSelection,
   ModifierValueExpression,
   NoblePhantasmVariant,
   NoblePhantasmVariantRef,
@@ -111,7 +111,7 @@ interface OperationBase {
   enabledByDefault: boolean;
   gameActivation: 'constant' | 'skillUse' | 'npBeforeDamage' | 'derived';
   proc: EffectProc;
-  procSelection: EffectProcSelection;
+  stochasticOutcome?: CanonicalOutcomeGroup | null;
   procRatePermille: number | null;
   activation:
     | { kind: 'sourceDefault' }
@@ -282,9 +282,14 @@ export type ExecutionIssue =
     }
   | { kind: 'invalidCanonicalInput'; inputKey: string; detail: 'unknownInputKey' }
   | {
-      kind: 'invalidProcSelection';
+      kind: 'invalidStochasticOutcome';
       operationId: string;
-      detail: 'duplicateEffectDecision' | 'missingSuccessCountDefinition';
+      detail:
+        | 'duplicateEffectDecision'
+        | 'missingSuccessCountDefinition'
+        | 'missingStochasticOutcome'
+        | 'contradictoryStochasticOutcome'
+        | 'partialStochasticOutcome';
     }
   | {
       kind: 'invalidActivationContext';

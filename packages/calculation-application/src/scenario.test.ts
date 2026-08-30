@@ -46,7 +46,7 @@ function parseTestMaster(input: unknown) {
         effect['inclusionPolicy'] ??= { default: defaultInclusion };
         effect['gameActivation'] ??= gameActivation;
         effect['proc'] ??= { kind: 'guaranteed' };
-        effect['procSelection'] ??= { kind: 'effectInclusion' };
+        effect['selection'] ??= null;
         for (const operation of (effect['execution'] as Record<string, unknown>[] | undefined) ??
           [])
           if ('targetPolicy' in operation && !('contributionScope' in operation)) {
@@ -1317,6 +1317,14 @@ describe('scenario calculation facade', () => {
       proc: {
         kind: 'singleRoll' as const,
         ratePermille: [[500], [500], [500], [500], [500]],
+      },
+      selection: {
+        kind: 'stochasticOutcome' as const,
+        group: {
+          kind: 'binary' as const,
+          key: 'stochastic-outcome:poison-proc',
+          defaultOutcome: 'success' as const,
+        },
       },
       execution: [
         {

@@ -32,6 +32,12 @@ export interface DataPipelineProductionAudit {
     rawFunctionTypes: number;
     rawBuffTypes: number;
     rawParameterKeys: number;
+    rawPlayerChoiceOccurrences: number;
+    probabilisticOccurrences: number;
+    playerChoiceSelections: number;
+    stochasticOutcomeSelections: number;
+    binaryOutcomeSelections: number;
+    successCountOutcomeSelections: number;
   };
   failures: readonly {
     kind: 'normalizationExclusion';
@@ -135,6 +141,7 @@ export function compileDataPipelineProductionAudit(
         ),
       ),
       proc: effect.proc.kind,
+      selection: jsonValue(effect.selection),
     },
   }));
   const damageRecords: CanonicalAuditRecord[] = master.servants.flatMap((servant) =>
@@ -165,6 +172,36 @@ export function compileDataPipelineProductionAudit(
       ),
     ),
   );
+  const rawPlayerChoiceOccurrences = occurrences.filter(({ effect }) =>
+    effect.atlasEvidence.parameterSemantics.choice.some(
+      (key) => key === 'ActSet' || key === 'ActSelectIndex',
+    ),
+  ).length;
+  const probabilisticOccurrences = occurrences.filter(
+    ({ effect }) => effect.proc.kind !== 'guaranteed',
+  ).length;
+  const playerChoiceSelections = occurrences.filter(
+    ({ effect }) => effect.selection?.kind === 'playerChoice',
+  ).length;
+  const stochasticOutcomeSelections = occurrences.filter(
+    ({ effect }) => effect.selection?.kind === 'stochasticOutcome',
+  ).length;
+  const binaryOutcomeSelections = occurrences.filter(
+    ({ effect }) =>
+      effect.selection?.kind === 'stochasticOutcome' && effect.selection.group.kind === 'binary',
+  ).length;
+  const successCountOutcomeSelections = occurrences.filter(
+    ({ effect }) =>
+      effect.selection?.kind === 'stochasticOutcome' &&
+      effect.selection.group.kind === 'successCount',
+  ).length;
+  if (rawPlayerChoiceOccurrences !== playerChoiceSelections)
+    throw new TypeError('production_audit_player_choice_classification_mismatch');
+  if (
+    probabilisticOccurrences !== stochasticOutcomeSelections ||
+    stochasticOutcomeSelections !== binaryOutcomeSelections + successCountOutcomeSelections
+  )
+    throw new TypeError('production_audit_stochastic_outcome_classification_mismatch');
   const inventory = {
     servants: master.servants.length,
     craftEssences: master.craftEssences.length,
@@ -176,6 +213,12 @@ export function compileDataPipelineProductionAudit(
     rawFunctionTypes: rawFunctionTypes.length,
     rawBuffTypes: rawBuffTypes.length,
     rawParameterKeys: rawParameterKeys.length,
+    rawPlayerChoiceOccurrences,
+    probabilisticOccurrences,
+    playerChoiceSelections,
+    stochasticOutcomeSelections,
+    binaryOutcomeSelections,
+    successCountOutcomeSelections,
   };
   const failures = master.normalization.attackFunctions.excluded.map((failure) => ({
     kind: 'normalizationExclusion' as const,

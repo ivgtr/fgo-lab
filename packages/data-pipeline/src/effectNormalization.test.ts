@@ -311,8 +311,48 @@ describe('canonical proc normalization', () => {
     const [single] = normalizeFunctions([procFunction(2, 700)], new Map(), 'np', 1);
     expect(guaranteed?.proc).toEqual({ kind: 'guaranteed' });
     expect(single?.proc).toMatchObject({ kind: 'singleRoll' });
+    expect(single?.selection).toMatchObject({
+      kind: 'stochasticOutcome',
+      group: { kind: 'binary', defaultOutcome: 'success' },
+    });
     expect(single?.inputDefinitions).toEqual([]);
     expect(single?.inputQuantityConditions).toEqual([]);
+  });
+
+  it('separates deterministic player choices from stochastic outcomes and rejects overlap', () => {
+    const playerChoice = {
+      ...procFunction(3, 1_000),
+      svals: valueSets({
+        Rate: 1_000,
+        Turn: 1,
+        Count: -1,
+        Value: 100,
+        ActSelectIndex: 2,
+      }),
+    };
+    expect(normalizeFunctions([playerChoice], new Map(), 'skill', 1)[0]?.selection).toEqual({
+      kind: 'playerChoice',
+      group: { key: 'player-choice:1', candidate: '2' },
+    });
+    expect(() =>
+      normalizeFunctions(
+        [
+          {
+            ...playerChoice,
+            svals: valueSets({
+              Rate: 700,
+              Turn: 1,
+              Count: -1,
+              Value: 100,
+              ActSelectIndex: 2,
+            }),
+          },
+        ],
+        new Map(),
+        'skill',
+        1,
+      ),
+    ).toThrow('contradictory_selection_semantics');
   });
 
   it('keeps positive rolls independent and groups a signed chain into one success count', () => {
@@ -343,21 +383,33 @@ describe('canonical proc normalization', () => {
       maximum: 3,
       defaultValue: 3,
     });
-    expect(chained.map((effect) => effect.procSelection)).toEqual([
+    expect(chained.map((effect) => effect.selection)).toEqual([
       {
-        kind: 'successCount',
-        inputKey: chained[0]?.interaction?.key,
-        defaultSelection: 'maximum',
+        kind: 'stochasticOutcome',
+        group: {
+          kind: 'successCount',
+          key: chained[0]?.interaction?.key,
+          maximumSuccesses: 3,
+          defaultOutcome: 'maximum',
+        },
       },
       {
-        kind: 'successCount',
-        inputKey: chained[0]?.interaction?.key,
-        defaultSelection: 'maximum',
+        kind: 'stochasticOutcome',
+        group: {
+          kind: 'successCount',
+          key: chained[0]?.interaction?.key,
+          maximumSuccesses: 3,
+          defaultOutcome: 'maximum',
+        },
       },
       {
-        kind: 'successCount',
-        inputKey: chained[0]?.interaction?.key,
-        defaultSelection: 'maximum',
+        kind: 'stochasticOutcome',
+        group: {
+          kind: 'successCount',
+          key: chained[0]?.interaction?.key,
+          maximumSuccesses: 3,
+          defaultOutcome: 'maximum',
+        },
       },
     ]);
     expect(chained.map((effect) => effect.inputQuantityConditions[0]?.value)).toEqual([1, 2, 3]);
@@ -368,9 +420,9 @@ describe('canonical proc normalization', () => {
       'skill',
       1,
     );
-    expect(skillChain[0]?.procSelection).toMatchObject({
-      kind: 'successCount',
-      defaultSelection: 'minimum',
+    expect(skillChain[0]?.selection).toMatchObject({
+      kind: 'stochasticOutcome',
+      group: { kind: 'successCount', defaultOutcome: 'minimum' },
     });
     expect(skillChain[0]?.inputDefinitions[0]).toMatchObject({
       kind: 'procSuccessCount',

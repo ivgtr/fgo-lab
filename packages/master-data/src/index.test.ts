@@ -18,9 +18,8 @@ const nonDamageEffect = {
   inclusionPolicy: { default: 'include' as const },
   gameActivation: 'constant' as const,
   proc: { kind: 'guaranteed' as const },
-  procSelection: { kind: 'effectInclusion' as const },
+  selection: null,
   interaction: null,
-  choice: null,
   triggerScope: null,
   operationTrigger: null,
   operationReference: null,
@@ -340,7 +339,7 @@ describe('master validation', () => {
     expect(result).toMatchObject({ valid: false });
     expect(result.errors.join('\n')).toContain('require explicit limit-break values');
   });
-  it('requires proc selection to match the proc and activation contracts', () => {
+  it('requires stochastic outcome semantics to match the proc and activation contracts', () => {
     const skill = {
       id: 'test-skill',
       slot: 1,
@@ -360,10 +359,14 @@ describe('master validation', () => {
             index: 0,
             maximumSuccesses: 1,
           },
-          procSelection: {
-            kind: 'successCount' as const,
-            inputKey: 'proc:test',
-            defaultSelection: 'maximum' as const,
+          selection: {
+            kind: 'stochasticOutcome' as const,
+            group: {
+              kind: 'successCount' as const,
+              key: 'proc:test',
+              maximumSuccesses: 1,
+              defaultOutcome: 'maximum' as const,
+            },
           },
           interaction: { kind: 'procSeries' as const, key: 'proc:test' },
           inputDefinitions: [
@@ -391,7 +394,7 @@ describe('master validation', () => {
       servants: [{ ...fixture.servants[0], skills: [skill] }],
     });
     expect(result.valid).toBe(false);
-    expect(result.errors.join('\n')).toContain('invalid chained proc selection contract');
+    expect(result.errors.join('\n')).toContain('invalid chained stochastic outcome contract');
   });
   it('rejects an incomplete NP parameter matrix', () =>
     expect(

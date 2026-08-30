@@ -13,7 +13,8 @@ import type { SatisfiableConditionConstraint } from './constraints';
 import { createInitialBattleState } from './state';
 import { materializeTargetCandidate, type TargetCandidate } from './targetContext';
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
-import { decisionsWithProcSelections, resolveCompileProjections } from './candidateDecisions';
+import { resolveCompileProjections } from './candidateDecisions';
+import { resolveDecisionsWithStochasticOutcomes } from './stochasticOutcomes';
 import {
   resolveCandidateSelections,
   validateCandidateSelections,
@@ -24,7 +25,7 @@ interface PreparedCandidateBase {
   candidateInput: DamageResolutionInput;
   targetFacts: readonly TargetPredicateAssertion[];
   decisions: ReadonlyMap<string, EffectDecision>;
-  procSelectionIssues: readonly ExecutionIssue[];
+  stochasticOutcomeIssues: readonly ExecutionIssue[];
 }
 
 export interface ReadyCandidateExecution extends PreparedCandidateBase {
@@ -71,12 +72,16 @@ function prepareCandidateBase(
   const scenarioDecisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
-  const proc = decisionsWithProcSelections(scenarioDecisions, operations, resolvedInputs.values);
+  const stochastic = resolveDecisionsWithStochasticOutcomes(
+    scenarioDecisions,
+    operations,
+    resolvedInputs.values,
+  );
   return {
     candidateInput,
     targetFacts,
-    decisions: proc.decisions,
-    procSelectionIssues: proc.issues,
+    decisions: stochastic.decisions,
+    stochasticOutcomeIssues: stochastic.issues,
   };
 }
 

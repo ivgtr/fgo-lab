@@ -825,7 +825,10 @@ describe('immutable publish pipeline', () => {
       ],
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[1]).toMatchObject({
-      choice: { family: 'actSelectIndex', candidate: 2 },
+      selection: {
+        kind: 'playerChoice',
+        group: { key: 'player-choice:1', candidate: '2' },
+      },
       sourceQuantityConditions: [
         {
           quantity: 'battlePointRate',

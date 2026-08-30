@@ -62,8 +62,9 @@ describe('production canonical execution semantics', () => {
     expect(
       chained.every(
         (effect) =>
-          effect.procSelection.kind === 'successCount' &&
-          effect.procSelection.defaultSelection === 'maximum',
+          effect.selection?.kind === 'stochasticOutcome' &&
+          effect.selection.group.kind === 'successCount' &&
+          effect.selection.group.defaultOutcome === 'maximum',
       ),
     ).toBe(true);
     expect(
@@ -254,7 +255,7 @@ describe('production canonical execution semantics', () => {
                       origin,
                       skillId: skill.id,
                       effectId: effect.id,
-                      choice: effect.choice,
+                      selection: effect.selection,
                       operation,
                     },
                   ]
@@ -266,7 +267,7 @@ describe('production canonical execution semantics', () => {
     );
     expect(variantOperations).toHaveLength(26);
     expect(createHash('sha256').update(JSON.stringify(variantOperations)).digest('hex')).toBe(
-      '0fa98cf2e556198548d24213b665eab70809a344c211603d472e0c416e917f9c',
+      '5aced1c50587b30e913e2df00e21122465a6de6b70a18138012f1544ac5c2f8f',
     );
     expect(
       variantOperations.reduce<Record<string, number>>((inventory, operation) => {

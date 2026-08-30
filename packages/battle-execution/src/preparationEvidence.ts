@@ -37,13 +37,13 @@ export function assemblePreparationActivationFacts(
 ): readonly ActivationFact[] {
   const source = preparationActivationSource(servant, sourceKind, sourceId, actorFormId);
   const facts = effects.flatMap<ActivationFact>((effect) => [
-    ...(effect.choice
+    ...(effect.selection?.kind === 'playerChoice'
       ? [
           {
             kind: 'choice' as const,
             source,
-            family: effect.choice.family,
-            candidate: String(effect.choice.candidate),
+            family: effect.selection.group.key,
+            candidate: effect.selection.group.candidate,
           },
         ]
       : []),

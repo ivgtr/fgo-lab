@@ -201,13 +201,13 @@ function effectCondition(
         condition.inputKey,
       ),
     })),
-    ...(effect.choice
+    ...(effect.selection?.kind === 'playerChoice'
       ? [
           {
             kind: 'choice' as const,
             source: activationSource,
-            family: effect.choice.family,
-            candidate: String(effect.choice.candidate),
+            family: effect.selection.group.key,
+            candidate: effect.selection.group.candidate,
           },
         ]
       : []),
@@ -308,8 +308,8 @@ function operationKey(source: SourceEffect): string {
 }
 
 function transactionGroupId(source: SourceEffect): string | null {
-  if (source.effect.choice)
-    return `${source.skillId}:choice:${source.effect.choice.family}:${String(source.effect.choice.candidate)}`;
+  if (source.effect.selection?.kind === 'playerChoice')
+    return `${source.skillId}:player-choice:${source.effect.selection.group.key}:${source.effect.selection.group.candidate}`;
   if (source.effect.stateIdentity !== null)
     return `${source.skillId}:${source.effect.stateIdentity.key}`;
   return null;
@@ -371,19 +371,19 @@ function baseOperation(
     enabledByDefault: source.enabledByDefault,
     gameActivation: source.effect.gameActivation,
     proc: source.effect.proc,
-    procSelection:
-      source.effect.procSelection.kind === 'successCount'
+    stochasticOutcome:
+      source.effect.selection?.kind === 'stochasticOutcome'
         ? {
-            ...source.effect.procSelection,
-            inputKey: runtimeInputKey(
+            ...source.effect.selection.group,
+            key: runtimeInputKey(
               source.origin,
               source.sourceInstanceId,
               source.skillId,
               source.effect.occurrenceId,
-              source.effect.procSelection.inputKey,
+              source.effect.selection.group.key,
             ),
           }
-        : source.effect.procSelection,
+        : null,
     procRatePermille:
       source.effect.proc.kind === 'guaranteed'
         ? 1_000

@@ -25,7 +25,7 @@ function executionIssues(
       detail: 'unknownInputKey',
     })),
     ...candidate.constraintIssues,
-    ...candidate.procSelectionIssues,
+    ...candidate.stochasticOutcomeIssues,
     ...prepared.sourceIssues,
     ...candidate.resolvedCompileProjections
       .filter((projection) => projection.outcome === 'unsupported')

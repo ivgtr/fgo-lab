@@ -23,8 +23,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 31 as const;
-export const ENGINE_VERSION = '27.0.0' as const;
+export const SCHEMA_VERSION = 32 as const;
+export const ENGINE_VERSION = '28.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -349,8 +349,8 @@ export type DamageKernelInput = z.infer<typeof damageKernelInputSchema>;
 const skillSlotSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const preparationChoiceSchema = z
   .object({
-    family: z.enum(['actSet', 'actSelectIndex']),
-    candidate: z.string().min(1).max(80),
+    groupKey: z.string().min(1).max(80),
+    candidateKey: z.string().min(1).max(80),
   })
   .strict();
 export const preNoblePhantasmCommandSchema = z.discriminatedUnion('kind', [

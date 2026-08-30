@@ -39,7 +39,7 @@ export function assembleInvalidActivationResult({
       detail: 'unknownInputKey',
     })),
     ...candidate.issues,
-    ...candidate.procSelectionIssues,
+    ...candidate.stochasticOutcomeIssues,
     ...prepared.sourceIssues,
     ...projections
       .filter((projection) => projection.outcome === 'unsupported')

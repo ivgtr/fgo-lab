@@ -44,7 +44,7 @@ describe('production execution parity ratchet', () => {
 
     expect(records).toHaveLength(422);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '72a6fefe6faaab95ad2d9d9562b06f42ea88e635d26415aa9108485c517e54e9',
+      '20e2d5f5e1ea018c957ae823af2a3d28f9b43a9818596c7cc265db2bc2e42127',
     );
   }, 60_000);
 });

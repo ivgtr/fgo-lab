@@ -23,6 +23,7 @@ describe('battle execution architecture', () => {
       'activationCondition.ts': 210,
       'activationContext.ts': 190,
       'candidateDecisions.ts': 110,
+      'stochasticOutcomes.ts': 115,
       'candidatePreparation.ts': 300,
       'candidateSelection.ts': 180,
       'variantSelection.ts': 180,

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-ADRは採用時点の判断を記録する。statusは`accepted`または`superseded`とし、重要な契約変更は新しいADRで置き換えて相互に参照する。現在、ADR-001〜025はすべて`accepted`であり、文書自体が`superseded`のADRはない。
+ADRは採用時点の判断を記録する。statusは`accepted`または`superseded`とし、重要な契約変更は新しいADRで置き換えて相互に参照する。現在、ADR-001〜026のうちADR-015のselection契約をADR-026が置き換える。
 
 | ADR | Status | 判断 |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ ADRは採用時点の判断を記録する。statusは`accepted`または`supers
 | [012](012-battle-context-and-reference-semantics.md) | accepted | battle contextと参照operationのcanonical化 |
 | [013](013-effect-context-input-presentation.md) | accepted | 特殊入力のeffect近接presentation |
 | [014](014-effect-interaction-and-series-presentation.md) | accepted | effect interactionとseries presentation |
-| [015](015-effect-inclusion-activation-and-proc-semantics.md) | accepted | effect inclusion、activation、proc semantics |
+| [015](015-effect-inclusion-activation-and-proc-semantics.md) | superseded | effect inclusion、activation、旧proc selection semantics |
 | [016](016-ranking-canonical-scenario-and-presentation.md) | accepted | ranking canonical scenarioと一覧presentation |
 | [017](017-canonical-target-context.md) | accepted | canonical target context |
 | [018](018-ranking-comparison-policy.md) | accepted | ranking comparison policy |
@@ -29,3 +29,4 @@ ADRは採用時点の判断を記録する。statusは`accepted`または`supers
 | [023](023-canonical-noble-phantasm-variants.md) | accepted | canonical noble phantasm variant selection |
 | [024](024-pre-noble-phantasm-plans-and-attack-profiles.md) | accepted | 宝具前有限planとAttackProfile ranking |
 | [025](025-canonical-target-state-damage-semantics.md) | accepted | target-state mutationとdamage execution |
+| [026](026-canonical-selection-semantics.md) | accepted | player choiceとstochastic outcomeのcanonical分離 |

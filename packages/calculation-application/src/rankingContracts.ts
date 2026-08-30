@@ -60,8 +60,8 @@ export const STANDARD_RANKING_SCENARIO_POLICY = {
   criticalStars: 0,
   currentTurn: 1,
   battlePointPhase: 0,
-  procSelection: 'success',
-  chainedProcSelection: 'maximum',
+  stochasticOutcome: 'success',
+  chainedStochasticOutcome: 'maximum',
   quantitySelection: 'canonicalMinimum',
 } as const;
 

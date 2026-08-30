@@ -533,7 +533,7 @@ function modifierSeriesIdentity(effect: MasterEffect): string | null {
     sourceQuantityConditions: effect.sourceQuantityConditions,
     inputQuantityConditions: effect.inputQuantityConditions,
     inputDefinitions: effect.inputDefinitions,
-    choice: effect.choice,
+    selection: effect.selection,
     operationTrigger: effect.operationTrigger,
     traitReadPolicy: effect.traitReadPolicy,
   });
@@ -1181,7 +1181,15 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
             index: memberIndex,
             maximumSuccesses: members.length,
           },
-          procSelection: { kind: 'successCount', inputKey: key, defaultSelection },
+          selection: {
+            kind: 'stochasticOutcome',
+            group: {
+              kind: 'successCount',
+              key,
+              maximumSuccesses: members.length,
+              defaultOutcome: defaultSelection,
+            },
+          },
           inputDefinitions: [...members[memberIndex]!.inputDefinitions, input],
           inputQuantityConditions: [
             ...members[memberIndex]!.inputQuantityConditions,
@@ -1219,7 +1227,30 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
       };
     }
   }
-  return result;
+  return result.map((effect) => {
+    if (effect.proc.kind === 'guaranteed') return effect;
+    if (effect.selection?.kind === 'playerChoice')
+      throw new TypeError(`contradictory_selection_semantics:${effect.occurrenceId}`);
+    if (effect.proc.kind === 'chainedRolls') {
+      if (
+        effect.selection?.kind !== 'stochasticOutcome' ||
+        effect.selection.group.kind !== 'successCount'
+      )
+        throw new TypeError(`missing_stochastic_outcome_semantics:${effect.occurrenceId}`);
+      return effect;
+    }
+    return {
+      ...effect,
+      selection: {
+        kind: 'stochasticOutcome',
+        group: {
+          kind: 'binary',
+          key: `stochastic-outcome:${effect.occurrenceId}`,
+          defaultOutcome: 'success',
+        },
+      },
+    };
+  });
 }
 
 function normalizeOperationTrigger(parameterSets: readonly (readonly AtlasFunctionValue[])[]) {
@@ -1653,7 +1684,15 @@ export function normalizeFunctions(
                 ? ('derived' as const)
                 : ('constant' as const),
         proc: procRateSeries(parameterSets, execution, source),
-        procSelection: { kind: 'effectInclusion' as const },
+        selection: choice
+          ? {
+              kind: 'playerChoice' as const,
+              group: {
+                key: choice.family === 'actSet' ? 'player-choice:0' : 'player-choice:1',
+                candidate: String(choice.candidate),
+              },
+            }
+          : null,
         interaction:
           (criticalStarSeriesCounts.get(fn.funcId) ?? 0) > 1
             ? {
@@ -1661,7 +1700,6 @@ export function normalizeFunctions(
                 key: `criticalStars:${String(fn.funcId)}`,
               }
             : null,
-        choice,
         triggerScope,
         operationTrigger,
         operationReference,

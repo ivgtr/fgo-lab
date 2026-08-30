@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation } from './contracts';
+import { resolveDecisionsWithStochasticOutcomes } from './stochasticOutcomes';
 import { executeOrderedScenarioCandidate } from './candidateExecution';
 import type { PreparedOrderedScenario } from './executionTypes';
 
@@ -35,7 +36,7 @@ const operation: BattleOperation = {
   enabledByDefault: false,
   gameActivation: 'skillUse',
   proc: { kind: 'guaranteed' },
-  procSelection: { kind: 'effectInclusion' },
+  stochasticOutcome: null,
   procRatePermille: 1_000,
   activation: { kind: 'sourceDefault' },
   evidence: { rawPath: 'test', functionId: 'test' },
@@ -71,6 +72,47 @@ const noblePhantasmVariant = {
 };
 
 describe('candidate activation preparation boundary', () => {
+  it('fails closed for missing, contradictory, and partially applicable stochastic semantics', () => {
+    const probabilistic = {
+      ...operation,
+      proc: {
+        kind: 'singleRoll' as const,
+        ratePermille: [[700], [], [], [], []] as [number[], number[], number[], number[], number[]],
+      },
+    };
+    const cases: BattleOperation[] = [
+      { ...probabilistic, stochasticOutcome: null },
+      {
+        ...operation,
+        stochasticOutcome: {
+          kind: 'binary',
+          key: 'outcome:test',
+          defaultOutcome: 'success',
+        },
+      },
+      {
+        ...probabilistic,
+        stochasticOutcome: {
+          kind: 'successCount',
+          key: 'outcome:test',
+          maximumSuccesses: 1,
+          defaultOutcome: 'maximum',
+        },
+      },
+    ];
+    const resolved = resolveDecisionsWithStochasticOutcomes(new Map(), cases, {});
+    expect(
+      resolved.issues.map((issue) =>
+        issue.kind === 'invalidStochasticOutcome' ? issue.detail : issue.kind,
+      ),
+    ).toEqual([
+      'missingStochasticOutcome',
+      'contradictoryStochasticOutcome',
+      'partialStochasticOutcome',
+    ]);
+    expect(resolved.decisions.get('effect:attack')?.operationEnabled).toBe(false);
+  });
+
   it('returns a fail-closed result without running operations or mutating base state', () => {
     const effectDecisions = [
       {

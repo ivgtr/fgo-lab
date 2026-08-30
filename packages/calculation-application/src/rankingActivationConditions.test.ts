@@ -191,7 +191,7 @@ describe('ranking activation-local canonical facts', () => {
       ...detail.scenario,
       preNoblePhantasmPlan: detail.scenario.preNoblePhantasmPlan.map((command) =>
         command.kind === 'useSkillSlot' && command.choice
-          ? { ...command, choice: { ...command.choice, candidate: 'unavailable' } }
+          ? { ...command, choice: { ...command.choice, candidateKey: 'unavailable' } }
           : command,
       ),
     };

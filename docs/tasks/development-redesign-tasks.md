@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.2"
+document_version: "1.5.3"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-08-30"
+updated_at: "2026-08-31"
 source_requirements:
   - "docs/requirements/test-strategy-redesign.md"
   - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
@@ -354,7 +354,7 @@ Handoff:
 Depends on: TSK-03
 
 - [x] AttackProfile identityをcanonical化する。
-- [ ] player choiceとstochastic outcomeをtyped semanticsへ分離する。
+- [x] player choiceとstochastic outcomeをtyped semanticsへ分離する。
 - [ ] condition requirement、provenance、target、recipient、contribution scopeをcanonical化する。
 - [ ] NP capacity、resource requirement、gain／loss／all-consume、base OCをcanonical化する。
 - [ ] 旧schema reader、raw fallback、compatibility flagを削除する。
@@ -370,9 +370,9 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-IR-001` | Apply | `pnpm test:diagnostic -- <pipeline-and-schema-filter>`、`pnpm test:production` | `docs/evidence/<tsk-04-report>.md` |
+| `RK-IR-001` | Apply | `pnpm test:diagnostic -- <pipeline-and-schema-filter>`、`pnpm test:production` | `docs/evidence/canonical-selection-semantics-tsk-04.md` |
 | `RK-AUDIT-001` | Deferred: TSK-08 | - | TSK-08 |
-| `TS-PERF-002` | Apply | affected production gateを変更前後各3回 | `docs/evidence/<tsk-04-report>.md` |
+| `TS-PERF-002` | Apply | affected production gateを変更前後各3回 | `docs/evidence/canonical-selection-semantics-tsk-04.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `RK-EXEC-001` | Deferred: TSK-05 | - | TSK-05 |
 | `RK-POLICY-001` | Deferred: TSK-06 | - | TSK-06 |
@@ -397,7 +397,13 @@ Handoff:
 - Base-variant inventory／digest: published master `20260830.4`、33,909,150 bytes、SHA-256 `803e61e73a9ce278b803d50bd4de037ee8565291ee4e361d9933f5aade9594e6`、schema 39。raw 727 NP variantsは706 canonical identitiesへ収束し、data-pipeline digestは`96c0795337dbf34308c67a6c9ae1f938d6503fe424cead81116a99d596f15323`、application digestは`bcedb95a4aac751f1925c1186db4435a39591f3ad6d29aad6bd5edc4c3f1836d`。AttackProfile／ranking rows 433、damage function 630、servants／plans／outcome、runtime counter 1／1／1、6,508／4,009、3,744／1,644はbaseline一致。
 - Base-variant verification: focused schema／ActorFormProfile 2 files／21 tests、unit 55 files／293 tests、production 25 files／117 testsが成功。最終production artifact `.test-results/2026-08-30T13-44-19-739Z-15-01a7c4`。stable artifactはtest 410件、semantic digest `d8edd868f34275a079879d9ec8468b31562ef45edc921e675c0ff8840227bfa4`、test-name digest `a463f44c72fa2d809ef35866c183ed29fd22484594f00124509d4131c2b881a5`、artifact digest `bd37d3d416b13eec725e6e274ef3403ce0d794d3c2cc885b4a6c3ec59bbfbd50`へ更新した。
 - Base-variant review commit: 本review correction commit。
-- Next command: player choiceとstochastic outcomeのraw occurrence／現行runtime branchをinventory化し、一つのexhaustive typed semanticsへcutoverする。
+- Selection baseline: `d280bb3a5cfb409347e0f74df8e4dd1a16e1fba9`、clean worktree。利用者成果は利用者が選ぶ入力と確率的に決まる結果を別union memberとして表し、曖昧・矛盾・部分適用を数値へfallbackしないこと。semantic ownerはraw vocabularyを解釈するdata-pipelineと、canonical selectionだけを消費するapplication／execution。damage correctness、calculator／ranking parity、production counterを不変とする。
+- Selection cutover: master effectの`choice`／`procSelection`を単一のexhaustive `SelectionSemantics`へ置換し、`playerChoice`はcanonical choice group、`stochasticOutcome`はbinary／success-count outcome groupとして分離した。scenario commandはraw familyを廃止してcanonical group／candidate keyを受け取り、executionはmissing、guaranteedとの矛盾、proc kindとの不一致、部分適用を`invalidStochasticOutcome`としてoperation単位で無効化する。
+- Selection inventory／digest: published master `20260830.5`、schema 40、33,362,482 bytes、SHA-256 `5ca2a62e10c59af87cc143164e3375b8e204f94ecb1126c659601c5fd3796c0c`。13,875 effect中raw player choice 88／canonical 88、probabilistic 49／canonical 49（binary 44、success-count 5）、unclassified／overlap 0。data-pipeline digestは`ead6e8483212bbb3daa24d742e40f5077b352b8a051ffa35eb3f9a7c4befd60b`、application digestは`047d988cb6deb721b08494b04bf1614084aa544a22dc3955c8f131ce83b67231`。422／422 calculator、433 ranking rows、runtime counter 1／1／1、6,508／4,009、3,744／1,644を維持し、representative damage assertionとexecution parityの数値差分0。
+- Selection performance: production 3 runはbaseline 79.44／79.35／79.90秒（中央値79.44秒）、変更後79.34／79.39／77.62秒（中央値79.34秒）。差分-0.10秒／-0.13%でratchet内。詳細は`docs/evidence/canonical-selection-semantics-tsk-04.md`。
+- Selection verification: focused 4 files／40 tests、unit 55 files／295 tests、production 25 files／117 tests、typecheck、published master validation、TSK-00 auditorが成功。最終`pnpm quality`はproduction artifact `.test-results/2026-08-30T14-51-08-537Z-795-647647`、build、E2E 64 passed／32 skipped（10.3分）まで成功した。master schema 40、scenario schema 32、engine 28.0.0へbreaking cutoverし、旧selection reader／runtime fallbackは残していない。
+- Selection commit: 本selection semantics cutover commit。
+- Next command: condition requirement、provenance、target、recipient、contribution scopeのraw occurrenceと現runtime branchをinventory化し、data-pipeline発行のcanonical semanticsへcutoverする。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
 
 ### TSK-05: Transactional preparation execution
 

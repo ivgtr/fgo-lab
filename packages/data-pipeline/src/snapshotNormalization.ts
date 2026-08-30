@@ -313,7 +313,7 @@ export function normalizeAtlasSnapshot(input: {
           `unresolved_actor_form_transition_activation:${transition.sourceId}:${transition.effectOccurrenceId}`,
         );
       const activationEffects = source.effects.filter(
-        ({ choice }) => JSON.stringify(choice) === JSON.stringify(transitionEffect.choice),
+        ({ selection }) => JSON.stringify(selection) === JSON.stringify(transitionEffect.selection),
       );
       const operations = activationEffects.flatMap(({ execution }) => execution);
       const transformed = operations.filter((operation) => operation.kind === 'transformActorForm');
