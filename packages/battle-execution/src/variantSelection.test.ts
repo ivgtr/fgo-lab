@@ -37,6 +37,7 @@ const attack = (
   card: 'arts' | 'buster',
 ): AttackNoblePhantasmVariant => ({
   kind: 'attack',
+  canonicalId: noblePhantasmId,
   ref: { actorFormId, noblePhantasmId },
   name: noblePhantasmId,
   priority: 1,

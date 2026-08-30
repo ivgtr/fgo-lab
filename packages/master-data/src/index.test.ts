@@ -76,6 +76,60 @@ describe('master validation', () => {
       errors: [],
       unknownAttackFunctions: [],
     }));
+  it('rejects conflicting semantics for one canonical attack NP variant ID', () => {
+    const source = fixture.servants[0]!;
+    const sourceForm = source.actorFormGraph.forms[0]!;
+    const sourceVariant = source.noblePhantasmVariantGroups[0]!.variants[0]!;
+    if (sourceVariant.kind !== 'attack') throw new TypeError('attack fixture required');
+    const duplicateFormId = { actorId: 'fixture-saber-duplicate', limitCount: 0 };
+    const duplicateRef = {
+      actorFormId: duplicateFormId,
+      noblePhantasmId: sourceVariant.ref.noblePhantasmId,
+    };
+    const snapshotWithDuplicateCard = (
+      card: typeof sourceVariant.card,
+      canonicalId = sourceVariant.canonicalId,
+    ) => ({
+      ...fixture,
+      servants: [
+        {
+          ...source,
+          actorFormGraph: {
+            ...source.actorFormGraph,
+            forms: [
+              ...source.actorFormGraph.forms,
+              { ...sourceForm, id: duplicateFormId, baseNoblePhantasmVariant: duplicateRef },
+            ],
+          },
+          noblePhantasmVariantGroups: source.noblePhantasmVariantGroups.map((group, index) =>
+            index === 0
+              ? {
+                  ...group,
+                  variants: [
+                    ...group.variants,
+                    { ...sourceVariant, ref: duplicateRef, card, canonicalId },
+                  ],
+                }
+              : group,
+          ),
+        },
+      ],
+    });
+
+    expect(
+      masterSnapshotSchema.safeParse(snapshotWithDuplicateCard(sourceVariant.card)).success,
+    ).toBe(true);
+    expect(
+      masterSnapshotSchema.safeParse(snapshotWithDuplicateCard('quick', '0'.repeat(64))).success,
+    ).toBe(true);
+    const parsed = masterSnapshotSchema.safeParse(snapshotWithDuplicateCard('quick'));
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success)
+      expect(parsed.error.issues.map(({ message }) => message)).toContain(
+        'conflicting canonical attack noble phantasm variant semantics',
+      );
+  });
   it('rejects an unknown attack function in the normalized master', () =>
     expect(
       validateMasterSnapshot({

@@ -1,5 +1,9 @@
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import { actorFormKey, masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  actorFormKey,
+  canonicalAttackNoblePhantasmVariantSemanticsKey,
+  masterSnapshotSchema,
+} from '@fgo-lab/master-data';
 import type {
   AtlasEquip,
   AtlasFunction,
@@ -15,6 +19,7 @@ import { normalizeCraftEssenceLimitBreakEffects } from './craftEssenceNormalizat
 import { normalizeNoblePhantasmVariants } from './noblePhantasmVariantNormalization';
 import { canonicalTargetPredicate, normalizeTargetSemantics } from './targetTaxonomy';
 import { collectDamageReachableStateCatalog } from './targetStateNormalization';
+import { sha256 } from './artifact';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
   const result: { from: string; to: string; materialId: string; amount: number; qp: number }[] = [];
@@ -232,12 +237,16 @@ export function normalizeAtlasSnapshot(input: {
         );
       const card = cardMap[np.card ?? ''];
       if (card === undefined) throw new TypeError(`unknown_np_card:${String(np.card)}`);
-      return {
+      const attackVariant = {
         kind: 'attack' as const,
         ...common,
         card,
         targetScope: targets[0]!,
         damage,
+      };
+      return {
+        ...attackVariant,
+        canonicalId: sha256(canonicalAttackNoblePhantasmVariantSemanticsKey(attackVariant)),
       };
     };
     const noblePhantasmVariantGroups = noblePhantasmModel.groups.map((group) => ({

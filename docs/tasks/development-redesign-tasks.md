@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.0"
+document_version: "1.5.1"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -387,6 +387,11 @@ Handoff:
 - Inventory／digest: AttackProfile 433件をshared production auditの独立canonical recordへ追加し、ranking entryとのidentity不一致と重複をblocking errorにした。application digestは`ae10885eca8be39e17419770e7b76b082e7577085b783f108ea1476489034456`。servants 422、plans 3,559、ranking rows 433、calculated 422、invalid／unsupported／inputRequired 0、runtime counter 1／1／1、6,508／4,009、3,744／1,644はbaseline一致。20 policy digestとstate-trait digestはentry identity変更分だけを更新し、代表damage assertionは不変。
 - Identity verification: focused 3 files／15 tests、unit 55 files／289 tests、production 25 files／117 tests、typecheckが成功。production artifact `.test-results/2026-08-30T12-42-52-966Z-15-3675b6`。TSK-00 stable artifactはtest 406件、test-name digest `4300f95dd41efe236abcb3d4ee64039222eaf7cb2989da51dce149f9984e9ddd`、artifact digest `16fdc5a4183c84c12208cad320e9121e38aa753299b754ab3914c7a96497ea3f`へ更新した。
 - Commits: `4609add` (start)、本identity cutover commit。
+- Identity review baseline: `434004441f40846f3406ecbdcb3b20faa1f0c4e5`、clean worktree。同一raw NP ID、同値なform fields、異なるform-qualified ref／cardを持つ合法schema fixtureで`attackProfileKey`衝突を再現した。ranking集約後のrows／details重複検査では検出不能であり、identity矛盾のfail-closed条件を再オープンした。
+- Identity review resolution: data-pipelineがactor form／nameを除くNP ID、priority、card、scope、damage、effect semanticsのSHA-256を`canonicalId`として全attack variantへ発行する。master schema 38は同一canonical IDのsemantic一致と同一semanticsのcanonical ID一致を双方向に要求する。ActorFormProfile reachable identityとAttackProfile identityはこのcanonical IDだけを消費し、form-qualified refはexecution属性に限定した。review fixtureは同semantic／別refを同一identityとして許可し、card差分へ別IDを与えれば別profile、同じIDを再利用すればschema errorになる。
+- Review inventory／digest: published master `20260830.3`、33,900,969 bytes、SHA-256 `dd22fba1aafdd38df98278438f2b6c9f403afed9780155fb2d616c5dc493fc15`。data-pipelineは626 canonical attack-NP variant identitiesをranking前に監査し、digestは`83e010c27894945a21d0413d2376d5964c634dc1f1aeb3d4ad58efc5475fcb1b`。application digestは`5c54c334d01059fc233428eab5d2e59d19c1ddc6b01045a5715a4ec096004bd0`。AttackProfile／ranking rows 433、damage function 630、servants／plans／outcome、runtime counter 1／1／1、6,508／4,009、3,744／1,644はbaseline一致。canonical serializationはobject keyをUTF-16 code-unit順で再帰sortし、schema parse後の全626 ID再計算差分0。canonical IDとversionを除くmasterはreview baselineとbyte-equivalentなJSONである。
+- Review verification: focused schema／identity 2 files／19 tests、unit 55 files／291 tests、production 25 files／117 tests、typecheck、master validation、TSK-00 auditorが成功。最終production artifact `.test-results/2026-08-30T13-23-57-632Z-15-78afa1`。stable artifactはtest 408件、semantic digest `b1e41a5c8251cdb04041a33ac7ee96f6d24166aef568b7796b368426115b6b9c`、test-name digest `3945581ad402e76048e84082163f06925be5cf2770a9d79aeae204cb7daf614c`、artifact digest `d6b4e8821902b9522f8b026679f3f5f9d49b08918bf88b84d88622ec03336e48`へ更新した。
+- Review commit: 本review correction commit。
 - Next command: player choiceとstochastic outcomeのraw occurrence／現行runtime branchをinventory化し、一つのexhaustive typed semanticsへcutoverする。
 
 ### TSK-05: Transactional preparation execution

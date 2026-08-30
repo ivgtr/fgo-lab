@@ -26,8 +26,9 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'a6766e7ecce70f876515a1fbf01e599b5d3fdff5b0adf4d1d41f7fe77e0f517e',
+          digest: '83e010c27894945a21d0413d2376d5964c634dc1f1aeb3d4ad58efc5475fcb1b',
           inventory: {
+            attackNoblePhantasmVariantIdentities: 626,
             craftEssences: 2_700,
             damageFunctions: 630,
             effects: 13_875,

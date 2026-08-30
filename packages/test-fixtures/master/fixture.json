@@ -124,6 +124,7 @@
           "variants": [
             {
               "kind": "attack",
+              "canonicalId": "4703d71a7469f98239b33ca5efe5c249d941f35a0c3d98bd3ac134a88a4259a2",
               "ref": {
                 "actorFormId": {
                   "actorId": "fixture-saber",

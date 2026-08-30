@@ -87,6 +87,43 @@ describe('ActorFormProfile canonical equivalence', () => {
     ).toBe(attackProfileKey(attackProfileForTerminalState(source, [originalProfile], original)));
   });
 
+  it('keeps form-qualified variants with one raw NP ID separate by canonical semantics', () => {
+    const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
+    const sourceVariant = servant.noblePhantasmVariantGroups[0]!.variants[0]!;
+    if (sourceVariant.kind !== 'attack') throw new TypeError('attack fixture required');
+    const duplicateRef = {
+      actorFormId: duplicateFormId,
+      noblePhantasmId: sourceVariant.ref.noblePhantasmId,
+    };
+    const conflictingVariant = {
+      ...sourceVariant,
+      ref: duplicateRef,
+      canonicalId: 'form-qualified-quick-variant',
+      card: 'quick' as const,
+    };
+    const conflictingServant: ServantMaster = {
+      ...servant,
+      noblePhantasmVariantGroups: servant.noblePhantasmVariantGroups.map((group, index) =>
+        index === 0 ? { ...group, variants: [...group.variants, conflictingVariant] } : group,
+      ),
+    };
+    const conflictingDuplicate = {
+      ...duplicate,
+      selectedNoblePhantasmVariant: duplicateRef,
+    };
+    const profiles = createActorFormProfiles(conflictingServant, [original, conflictingDuplicate]);
+    const originalAttack = attackProfileForTerminalState(conflictingServant, profiles, original);
+    const duplicateAttack = attackProfileForTerminalState(
+      conflictingServant,
+      profiles,
+      conflictingDuplicate,
+    );
+
+    expect(originalAttack.cardType).toBe('buster');
+    expect(duplicateAttack.cardType).toBe('quick');
+    expect(attackProfileKey(originalAttack)).not.toBe(attackProfileKey(duplicateAttack));
+  });
+
   it('does not merge forms with a different skill set', () => {
     const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
     const skillVariant = {

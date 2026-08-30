@@ -1,4 +1,5 @@
 import {
+  canonicalAttackNoblePhantasmVariantSemanticsKey,
   getNoblePhantasmVariants,
   noblePhantasmVariantKey,
   type MasterDataSnapshot,
@@ -8,6 +9,7 @@ import {
   canonicalAuditDigest,
   type CanonicalAuditRecord,
 } from '@fgo-lab/master-data/production-audit';
+import { sha256 } from './artifact';
 
 export interface DataPipelineAuditCounters {
   candidateCount: number;
@@ -26,6 +28,7 @@ export interface DataPipelineProductionAudit {
     effects: number;
     operations: number;
     damageFunctions: number;
+    attackNoblePhantasmVariantIdentities: number;
     rawFunctionTypes: number;
     rawBuffTypes: number;
     rawParameterKeys: number;
@@ -90,6 +93,32 @@ export function compileDataPipelineProductionAudit(
   master: MasterDataSnapshot,
 ): DataPipelineProductionAudit {
   const occurrences = effectOccurrences(master);
+  const attackVariantRecords: CanonicalAuditRecord[] = master.servants.flatMap((servant) => {
+    const variantsByCanonicalId = new Map<
+      string,
+      { card: string; targetScope: string; formQualifiedRefs: string[] }
+    >();
+    for (const variant of getNoblePhantasmVariants(servant)) {
+      if (variant.kind !== 'attack') continue;
+      if (variant.canonicalId !== sha256(canonicalAttackNoblePhantasmVariantSemanticsKey(variant)))
+        throw new TypeError(
+          `attack_noble_phantasm_variant_canonical_id_mismatch:${servant.id}:${noblePhantasmVariantKey(variant.ref)}`,
+        );
+      const current = variantsByCanonicalId.get(variant.canonicalId);
+      variantsByCanonicalId.set(variant.canonicalId, {
+        card: variant.card,
+        targetScope: variant.targetScope,
+        formQualifiedRefs: [
+          ...(current?.formQualifiedRefs ?? []),
+          noblePhantasmVariantKey(variant.ref),
+        ].sort(),
+      });
+    }
+    return [...variantsByCanonicalId].map(([canonicalId, value]) => ({
+      identity: `attack-np-variant:${servant.id}:${canonicalId}`,
+      value,
+    }));
+  });
   const effectRecords: CanonicalAuditRecord[] = occurrences.map(({ identity, effect }) => ({
     identity: `effect:${identity}`,
     value: {
@@ -143,6 +172,7 @@ export function compileDataPipelineProductionAudit(
     effects: occurrences.length,
     operations: occurrences.reduce((count, { effect }) => count + effect.execution.length, 0),
     damageFunctions: damageRecords.length,
+    attackNoblePhantasmVariantIdentities: attackVariantRecords.length,
     rawFunctionTypes: rawFunctionTypes.length,
     rawBuffTypes: rawBuffTypes.length,
     rawParameterKeys: rawParameterKeys.length,
@@ -166,6 +196,7 @@ export function compileDataPipelineProductionAudit(
       identity: `normalization-exclusion:${identity}`,
       value: { reason },
     })),
+    ...attackVariantRecords,
     ...effectRecords,
     ...damageRecords,
   ];

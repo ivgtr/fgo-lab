@@ -41,6 +41,7 @@ const row: RankingPresentedRow = {
       actorFormId: { actorId: master.servants[0]!.id, limitCount: 0 },
       noblePhantasmId: 'fixture-np',
     },
+    noblePhantasmVariantCanonicalId: 'fixture-np',
     targetScope: 'single',
     cardType: 'buster',
     terminalFormLabel: null,

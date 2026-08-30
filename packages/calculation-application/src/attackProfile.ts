@@ -38,6 +38,7 @@ export interface AttackProfileId {
 export interface AttackProfile {
   id: AttackProfileId;
   noblePhantasmVariant: NoblePhantasmVariantRef;
+  noblePhantasmVariantCanonicalId: string;
   targetScope: 'single' | 'all';
   cardType: 'buster' | 'arts' | 'quick';
   terminalFormLabel: string | null;
@@ -85,7 +86,7 @@ export function actorFormProfileIdKey(id: ActorFormProfileId): string {
 export function attackProfileKey(profile: AttackProfile): string {
   if (profile.id.servantLineageId !== profile.id.terminalActorFormProfileId.servantLineageId)
     throw new TypeError('attack_profile_lineage_mismatch');
-  if (profile.id.attackNoblePhantasmVariantId !== profile.noblePhantasmVariant.noblePhantasmId)
+  if (profile.id.attackNoblePhantasmVariantId !== profile.noblePhantasmVariantCanonicalId)
     throw new TypeError('attack_profile_variant_mismatch');
   return JSON.stringify([
     profile.id.servantLineageId,
@@ -99,12 +100,22 @@ export function createActorFormProfiles(
   terminalStates: readonly PreNoblePhantasmState[],
 ): readonly ActorFormProfile[] {
   const reachableByForm = new Map<string, Set<string>>();
+  const attackVariantsByRef = new Map(
+    servant.noblePhantasmVariantGroups.flatMap(({ variants }) =>
+      variants.flatMap((variant) =>
+        variant.kind === 'attack' ? [[noblePhantasmVariantKey(variant.ref), variant] as const] : [],
+      ),
+    ),
+  );
   for (const state of terminalStates) {
-    const variant = state.selectedNoblePhantasmVariant;
-    if (!variant) continue;
+    const variantRef = state.selectedNoblePhantasmVariant;
+    if (!variantRef) continue;
+    const variant = attackVariantsByRef.get(noblePhantasmVariantKey(variantRef));
+    if (!variant)
+      throw new TypeError(`terminal_attack_variant_invalid:${noblePhantasmVariantKey(variantRef)}`);
     const formKey = actorFormKey(state.currentFormId);
     const variants = reachableByForm.get(formKey) ?? new Set<string>();
-    variants.add(variant.noblePhantasmId);
+    variants.add(variant.canonicalId);
     reachableByForm.set(formKey, variants);
   }
   const formsByIdentity = new Map<string, { id: ActorFormProfileId; formIds: ActorFormId[] }>();
@@ -162,11 +173,7 @@ export function attackProfileForTerminalState(
   const profile = matchingProfiles[0]!;
   if (profile.id.servantLineageId !== servant.id)
     throw new TypeError(`terminal_actor_form_profile_lineage_mismatch:${servant.id}`);
-  if (
-    !profile.id.semantics.reachableAttackNoblePhantasmVariantIds.includes(
-      variant.ref.noblePhantasmId,
-    )
-  )
+  if (!profile.id.semantics.reachableAttackNoblePhantasmVariantIds.includes(variant.canonicalId))
     throw new TypeError(
       `terminal_attack_variant_unreachable:${noblePhantasmVariantKey(variantRef)}`,
     );
@@ -174,9 +181,10 @@ export function attackProfileForTerminalState(
     id: {
       servantLineageId: servant.id,
       terminalActorFormProfileId: profile.id,
-      attackNoblePhantasmVariantId: variant.ref.noblePhantasmId,
+      attackNoblePhantasmVariantId: variant.canonicalId,
     },
     noblePhantasmVariant: variant.ref,
+    noblePhantasmVariantCanonicalId: variant.canonicalId,
     targetScope: variant.targetScope,
     cardType: variant.card,
     terminalFormLabel: profiles.length > 1 ? profile.displayName : null,

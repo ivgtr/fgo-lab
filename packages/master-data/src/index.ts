@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(37),
+  schemaVersion: z.literal(38),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -589,6 +589,7 @@ const noblePhantasmVariantBaseSchema = z.object({
 export const noblePhantasmVariantSchema = z.discriminatedUnion('kind', [
   noblePhantasmVariantBaseSchema.extend({
     kind: z.literal('attack'),
+    canonicalId: z.string().regex(/^[a-f0-9]{64}$/),
     card: z.enum(['buster', 'arts', 'quick']),
     targetScope: z.enum(['single', 'all']),
     damage: z.array(npDamageSpecSchema).min(1),
@@ -599,6 +600,35 @@ export const noblePhantasmVariantSchema = z.discriminatedUnion('kind', [
 ]);
 export type NoblePhantasmVariant = z.infer<typeof noblePhantasmVariantSchema>;
 export type AttackNoblePhantasmVariant = Extract<NoblePhantasmVariant, { kind: 'attack' }>;
+
+function canonicalJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalJsonValue);
+  if (value !== null && typeof value === 'object')
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+        .map(([key, nested]) => [key, canonicalJsonValue(nested)]),
+    );
+  return value;
+}
+
+export function canonicalAttackNoblePhantasmVariantSemanticsKey(
+  variant: Pick<
+    AttackNoblePhantasmVariant,
+    'ref' | 'priority' | 'card' | 'targetScope' | 'damage' | 'effects'
+  >,
+): string {
+  return JSON.stringify(
+    canonicalJsonValue({
+      noblePhantasmId: variant.ref.noblePhantasmId,
+      priority: variant.priority,
+      card: variant.card,
+      targetScope: variant.targetScope,
+      damage: variant.damage,
+      effects: variant.effects,
+    }),
+  );
+}
 
 export const noblePhantasmVariantGroupSchema = z.object({
   id: z.string().min(1),
@@ -1131,6 +1161,8 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
     const passiveIds = new Set(servant.passives.map(({ id }) => id));
     const groupIds = new Set<string>();
     const variantKeys = new Set<string>();
+    const attackVariantSemanticsByCanonicalId = new Map<string, string>();
+    const attackVariantCanonicalIdBySemantics = new Map<string, string>();
     servant.noblePhantasmVariantGroups.forEach((group, groupIndex) => {
       if (groupIds.has(group.id))
         context.addIssue({
@@ -1172,6 +1204,24 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
           });
         variantKeys.add(key);
         if (variant.kind === 'attack') {
+          const canonicalId = variant.canonicalId;
+          const semanticsKey = canonicalAttackNoblePhantasmVariantSemanticsKey(variant);
+          const canonicalSemantics = attackVariantSemanticsByCanonicalId.get(canonicalId);
+          if (canonicalSemantics !== undefined && canonicalSemantics !== semanticsKey)
+            context.addIssue({
+              code: 'custom',
+              message: 'conflicting canonical attack noble phantasm variant semantics',
+              path: [...variantPath, 'ref', 'noblePhantasmId'],
+            });
+          else attackVariantSemanticsByCanonicalId.set(canonicalId, semanticsKey);
+          const semanticCanonicalId = attackVariantCanonicalIdBySemantics.get(semanticsKey);
+          if (semanticCanonicalId !== undefined && semanticCanonicalId !== canonicalId)
+            context.addIssue({
+              code: 'custom',
+              message: 'equivalent attack noble phantasm semantics use different canonical IDs',
+              path: [...variantPath, 'canonicalId'],
+            });
+          else attackVariantCanonicalIdBySemantics.set(semanticsKey, canonicalId);
           if (variant.damage.some((damage) => damage.target !== variant.targetScope))
             context.addIssue({
               code: 'custom',

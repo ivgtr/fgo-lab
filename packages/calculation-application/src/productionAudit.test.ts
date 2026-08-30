@@ -26,7 +26,7 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'ae10885eca8be39e17419770e7b76b082e7577085b783f108ea1476489034456',
+          digest: '5c54c334d01059fc233428eab5d2e59d19c1ddc6b01045a5715a4ec096004bd0',
           inventory: {
             attackProfiles: 433,
             attackServants: 422,
