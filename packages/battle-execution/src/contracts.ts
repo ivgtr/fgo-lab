@@ -285,8 +285,8 @@ export type ExecutionIssue =
       kind: 'invalidStochasticOutcome';
       operationId: string;
       detail:
-        | 'duplicateEffectDecision'
         | 'missingSuccessCountDefinition'
+        | 'invalidSuccessCountValue'
         | 'missingStochasticOutcome'
         | 'contradictoryStochasticOutcome'
         | 'partialStochasticOutcome';

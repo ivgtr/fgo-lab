@@ -2,9 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   conditionRequiresTrait,
   planOperationActivations,
-  resolveOperationActivation,
+  resolveOperationActivation as resolveCanonicalOperationActivation,
 } from './activation';
 import type { BattleOperation, ConditionExpression, OperationSource } from './contracts';
+
+function resolveOperationActivation(
+  operation: BattleOperation,
+  decisions: Parameters<typeof resolveCanonicalOperationActivation>[1],
+) {
+  return resolveCanonicalOperationActivation(
+    operation,
+    decisions,
+    new Map([[operation.operationId, { status: 'success' as const }]]),
+  );
+}
 
 const sunlight: ConditionExpression = {
   kind: 'trait',

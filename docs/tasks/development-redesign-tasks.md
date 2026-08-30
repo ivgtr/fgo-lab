@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.3"
+document_version: "1.5.4"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -403,6 +403,10 @@ Handoff:
 - Selection performance: production 3 runはbaseline 79.44／79.35／79.90秒（中央値79.44秒）、変更後79.34／79.39／77.62秒（中央値79.34秒）。差分-0.10秒／-0.13%でratchet内。詳細は`docs/evidence/canonical-selection-semantics-tsk-04.md`。
 - Selection verification: focused 4 files／40 tests、unit 55 files／295 tests、production 25 files／117 tests、typecheck、published master validation、TSK-00 auditorが成功。最終`pnpm quality`はproduction artifact `.test-results/2026-08-30T14-51-08-537Z-795-647647`、build、E2E 64 passed／32 skipped（10.3分）まで成功した。master schema 40、scenario schema 32、engine 28.0.0へbreaking cutoverし、旧selection reader／runtime fallbackは残していない。
 - Selection commit: 本selection semantics cutover commit。
+- Selection execution review baseline: `c70835b3dd31adc40acc20f2c598287d3f090cd3`、clean worktree。binary failureがactivationを通過し、invalid stochastic semanticsを`EffectDecision`へ変換していたため`decisionKey: null`のoperationを停止できないことを再現し、第2項を再オープンした。
+- Selection execution review resolution: operation単位の`ResolvedStochasticOutcome`を`success`／`failure`／`invalid`で保持し、effect inclusion decisionとは別にactivationへ渡す。binary default failure、success-count member index、invalidをdecision identityに依存せず解決し、contribution projectionもfailure／invalidを上書きしない。旧`resolveDecisionsWithStochasticOutcomes`と`duplicateEffectDecision`契約は削除した。
+- Selection execution review verification: matrix／integration 5 files／26 tests、unit 55 files／298 tests、production 25 files／117 testsが成功。production artifact `.test-results/2026-08-30T15-36-45-202Z-15-95cb5b`でdamage／calculator-ranking parity／runtime counter差分0。成功production 3 run中央値82.96秒はbaseline比+3.52秒／+4.43%でratchet内。最終`pnpm quality`はunit artifact `.test-results/2026-08-30T15-42-29-371Z-320-6c836c`、production artifact `.test-results/2026-08-30T15-42-33-894Z-795-ea6f54`（72.60秒）、master validation、build、E2E 64 passed／32 project-specific skipped（9.3分）まで成功した。
+- Selection execution review commit: 本review correction commit。
 - Next command: condition requirement、provenance、target、recipient、contribution scopeのraw occurrenceと現runtime branchをinventory化し、data-pipeline発行のcanonical semanticsへcutoverする。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
 
 ### TSK-05: Transactional preparation execution

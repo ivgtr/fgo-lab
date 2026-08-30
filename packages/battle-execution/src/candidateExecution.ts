@@ -148,7 +148,9 @@ export function executeOrderedScenarioCandidate(
       const activation = activations.get(operation.operationId)!;
       const contributionIncluded =
         contributionProjection?.includedOperationIds.has(operation.operationId) ?? false;
-      const enabled = activation.enabled || contributionIncluded;
+      const enabled =
+        activation.stochasticOutcome.status === 'success' &&
+        (activation.enabled || (operation.sourceEnabled && contributionIncluded));
       const condition = evaluateConditionAgainstKnownFacts(operation, state);
       const resolvedModifierValue =
         operation.kind === 'addModifier' ? resolveModifierValue(operation, state) : null;

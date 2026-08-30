@@ -1,85 +1,87 @@
-import type { BattleOperation, EffectDecision, ExecutionIssue } from './contracts';
+import type { BattleOperation, ExecutionIssue } from './contracts';
+import type { ResolvedCanonicalInputSet } from './executionTypes';
 
-export function resolveDecisionsWithStochasticOutcomes(
-  scenarioDecisions: ReadonlyMap<string, EffectDecision>,
-  operations: readonly BattleOperation[],
-  inputValues: Readonly<Record<string, number>>,
-): { decisions: Map<string, EffectDecision>; issues: ExecutionIssue[] } {
-  const decisions = new Map(scenarioDecisions);
-  const issues: ExecutionIssue[] = [];
-  const invalidKeys = new Set<string>();
-  const reject = (operation: BattleOperation) => {
-    if (operation.decisionKey === null) return;
-    decisions.set(operation.decisionKey, {
-      decisionKey: operation.decisionKey,
-      operationEnabled: false,
-      conditionSatisfaction: 'evaluate',
-    });
+export type ResolvedStochasticOutcome =
+  { status: 'success' } | { status: 'failure' } | { status: 'invalid'; issue: ExecutionIssue };
+
+export interface ResolvedStochasticOutcomeSet {
+  outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>;
+  issues: readonly ExecutionIssue[];
+}
+
+const guaranteedSuccess: ResolvedStochasticOutcome = { status: 'success' };
+
+function invalidOutcome(
+  operation: BattleOperation,
+  detail: Extract<ExecutionIssue, { kind: 'invalidStochasticOutcome' }>['detail'],
+): Extract<ResolvedStochasticOutcome, { status: 'invalid' }> {
+  return {
+    status: 'invalid',
+    issue: { kind: 'invalidStochasticOutcome', operationId: operation.operationId, detail },
   };
+}
+
+function resolveOperationStochasticOutcome(
+  operation: BattleOperation,
+  resolvedInputs: ResolvedCanonicalInputSet,
+): ResolvedStochasticOutcome {
+  if (operation.proc.kind === 'guaranteed')
+    return operation.stochasticOutcome
+      ? invalidOutcome(operation, 'contradictoryStochasticOutcome')
+      : { status: 'success' };
+  const group = operation.stochasticOutcome;
+  if (!group) return invalidOutcome(operation, 'missingStochasticOutcome');
+  const chained = operation.proc.kind === 'chainedRolls';
+  if (chained !== (group.kind === 'successCount'))
+    return invalidOutcome(operation, 'partialStochasticOutcome');
+  if (group.kind === 'binary') return { status: group.defaultOutcome };
+  if (operation.proc.kind !== 'chainedRolls')
+    return invalidOutcome(operation, 'partialStochasticOutcome');
+  const definition = operation.inputDefinitions.find(
+    (candidate) => candidate.kind === 'procSuccessCount' && candidate.key === group.key,
+  );
+  if (
+    !definition ||
+    definition.minimum !== 0 ||
+    definition.maximum !== group.maximumSuccesses ||
+    definition.maximum !== operation.proc.maximumSuccesses
+  )
+    return invalidOutcome(operation, 'missingSuccessCountDefinition');
+  if (resolvedInputs.missingDefinitions.some(({ key }) => key === group.key))
+    return invalidOutcome(operation, 'invalidSuccessCountValue');
+  const successes = resolvedInputs.values[group.key] ?? definition.defaultValue;
+  if (
+    successes === null ||
+    !Number.isInteger(successes) ||
+    successes < definition.minimum ||
+    successes > definition.maximum
+  )
+    return invalidOutcome(operation, 'invalidSuccessCountValue');
+  return { status: successes > operation.proc.index ? 'success' : 'failure' };
+}
+
+export function resolvedStochasticOutcomeForOperation(
+  operation: BattleOperation,
+  outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
+): ResolvedStochasticOutcome {
+  if (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome)
+    return guaranteedSuccess;
+  const resolved = outcomes.get(operation.operationId);
+  if (resolved) return resolved;
+  return invalidOutcome(operation, 'missingStochasticOutcome');
+}
+
+export function resolveStochasticOutcomes(
+  operations: readonly BattleOperation[],
+  resolvedInputs: ResolvedCanonicalInputSet,
+): ResolvedStochasticOutcomeSet {
+  const outcomes = new Map<string, ResolvedStochasticOutcome>();
+  const issues: ExecutionIssue[] = [];
   for (const operation of operations) {
-    if (operation.proc.kind === 'guaranteed') {
-      if (operation.stochasticOutcome) {
-        issues.push({
-          kind: 'invalidStochasticOutcome',
-          operationId: operation.operationId,
-          detail: 'contradictoryStochasticOutcome',
-        });
-        reject(operation);
-      }
-      continue;
-    }
-    if (!operation.stochasticOutcome) {
-      issues.push({
-        kind: 'invalidStochasticOutcome',
-        operationId: operation.operationId,
-        detail: 'missingStochasticOutcome',
-      });
-      reject(operation);
-      continue;
-    }
-    if (
-      (operation.proc.kind === 'chainedRolls') !==
-      (operation.stochasticOutcome.kind === 'successCount')
-    ) {
-      issues.push({
-        kind: 'invalidStochasticOutcome',
-        operationId: operation.operationId,
-        detail: 'partialStochasticOutcome',
-      });
-      reject(operation);
-      continue;
-    }
-    if (operation.stochasticOutcome.kind !== 'successCount' || operation.decisionKey === null)
-      continue;
-    const outcome = operation.stochasticOutcome;
-    const definition = operation.inputDefinitions.find(
-      (candidate) => candidate.kind === 'procSuccessCount' && candidate.key === outcome.key,
-    );
-    if (!definition) {
-      issues.push({
-        kind: 'invalidStochasticOutcome',
-        operationId: operation.operationId,
-        detail: 'missingSuccessCountDefinition',
-      });
-      reject(operation);
-      continue;
-    }
-    if (scenarioDecisions.has(operation.decisionKey)) {
-      if (!invalidKeys.has(operation.decisionKey))
-        issues.push({
-          kind: 'invalidStochasticOutcome',
-          operationId: operation.operationId,
-          detail: 'duplicateEffectDecision',
-        });
-      invalidKeys.add(operation.decisionKey);
-      reject(operation);
-      continue;
-    }
-    decisions.set(operation.decisionKey, {
-      decisionKey: operation.decisionKey,
-      operationEnabled: (inputValues[outcome.key] ?? definition.minimum) > definition.minimum,
-      conditionSatisfaction: 'evaluate',
-    });
+    if (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome) continue;
+    const outcome = resolveOperationStochasticOutcome(operation, resolvedInputs);
+    outcomes.set(operation.operationId, outcome);
+    if (outcome.status === 'invalid') issues.push(outcome.issue);
   }
-  return { decisions, issues };
+  return { outcomes, issues };
 }

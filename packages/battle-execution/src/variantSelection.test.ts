@@ -162,7 +162,12 @@ describe('noble phantasm variant selection', () => {
     const activations = new Map(
       operations.map(({ operationId }) => [
         operationId,
-        { enabled: true, activeDecisionKeys: [], assumesLocalCondition: false },
+        {
+          enabled: true,
+          stochasticOutcome: { status: 'success' as const },
+          activeDecisionKeys: [],
+          assumesLocalCondition: false,
+        },
       ]),
     );
     const result = applySelectedNoblePhantasmContext(
@@ -186,7 +191,15 @@ describe('noble phantasm variant selection', () => {
       [selection],
       new Set(['select']),
       new Map([
-        ['select', { enabled: true, activeDecisionKeys: [], assumesLocalCondition: false }],
+        [
+          'select',
+          {
+            enabled: true,
+            stochasticOutcome: { status: 'success' as const },
+            activeDecisionKeys: [],
+            assumesLocalCondition: false,
+          },
+        ],
       ]),
     );
     expect(result.issue).toMatchObject({ detail: 'formMismatch' });

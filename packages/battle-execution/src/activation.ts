@@ -1,5 +1,9 @@
 import type { BattleOperation, ConditionExpression, EffectDecision, TraitScope } from './contracts';
 import { activationChoiceKeys, conditionIsActivationLocal } from './activationCondition';
+import {
+  resolvedStochasticOutcomeForOperation,
+  type ResolvedStochasticOutcome,
+} from './stochasticOutcomes';
 
 export function conditionRequiresTrait(
   expression: ConditionExpression,
@@ -101,18 +105,26 @@ export function planOperationActivations(
 export function resolveOperationActivation(
   operation: BattleOperation,
   decisions: ReadonlyMap<string, EffectDecision>,
+  stochasticOutcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
   satisfiedDecisionKeys: ReadonlySet<string> = new Set(),
 ): {
   enabled: boolean;
+  stochasticOutcome: ResolvedStochasticOutcome;
   activeDecisionKeys: readonly string[];
   assumesLocalCondition: boolean;
 } {
+  const stochasticOutcome = resolvedStochasticOutcomeForOperation(operation, stochasticOutcomes);
+  const stochasticSucceeded = stochasticOutcome.status === 'success';
   if (operation.activation.kind === 'sourceDefault') {
     const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
+    const included = choice?.operationEnabled ?? operation.enabledByDefault;
     return {
-      enabled: operation.sourceEnabled && (choice?.operationEnabled ?? operation.enabledByDefault),
+      enabled: operation.sourceEnabled && included && stochasticSucceeded,
+      stochasticOutcome,
       activeDecisionKeys:
-        choice?.operationEnabled && operation.decisionKey ? [operation.decisionKey] : [],
+        choice?.operationEnabled && stochasticSucceeded && operation.decisionKey
+          ? [operation.decisionKey]
+          : [],
       assumesLocalCondition: false,
     };
   }
@@ -123,9 +135,13 @@ export function resolveOperationActivation(
       : decision?.operationEnabled === true && satisfiedDecisionKeys.has(link.decisionKey);
   });
   return {
-    enabled: operation.sourceEnabled && activeLinks.length > 0,
-    activeDecisionKeys: [...new Set(activeLinks.map((link) => link.decisionKey))],
+    enabled: operation.sourceEnabled && activeLinks.length > 0 && stochasticSucceeded,
+    stochasticOutcome,
+    activeDecisionKeys: stochasticSucceeded
+      ? [...new Set(activeLinks.map((link) => link.decisionKey))]
+      : [],
     assumesLocalCondition:
+      stochasticSucceeded &&
       activeLinks.some((link) => link.selection === 'conditionSatisfied') &&
       conditionIsActivationLocal(operation.condition),
   };

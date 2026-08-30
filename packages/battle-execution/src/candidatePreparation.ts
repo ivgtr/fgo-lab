@@ -14,7 +14,7 @@ import { createInitialBattleState } from './state';
 import { materializeTargetCandidate, type TargetCandidate } from './targetContext';
 import type { PreparedOrderedScenario, ResolvedCanonicalInputSet } from './executionTypes';
 import { resolveCompileProjections } from './candidateDecisions';
-import { resolveDecisionsWithStochasticOutcomes } from './stochasticOutcomes';
+import { resolveStochasticOutcomes, type ResolvedStochasticOutcome } from './stochasticOutcomes';
 import {
   resolveCandidateSelections,
   validateCandidateSelections,
@@ -25,6 +25,7 @@ interface PreparedCandidateBase {
   candidateInput: DamageResolutionInput;
   targetFacts: readonly TargetPredicateAssertion[];
   decisions: ReadonlyMap<string, EffectDecision>;
+  stochasticOutcomes: ReadonlyMap<string, ResolvedStochasticOutcome>;
   stochasticOutcomeIssues: readonly ExecutionIssue[];
 }
 
@@ -72,15 +73,12 @@ function prepareCandidateBase(
   const scenarioDecisions = new Map(
     scenario.effectDecisions.map((decision) => [decision.decisionKey, decision]),
   );
-  const stochastic = resolveDecisionsWithStochasticOutcomes(
-    scenarioDecisions,
-    operations,
-    resolvedInputs.values,
-  );
+  const stochastic = resolveStochasticOutcomes(operations, resolvedInputs);
   return {
     candidateInput,
     targetFacts,
-    decisions: stochastic.decisions,
+    decisions: scenarioDecisions,
+    stochasticOutcomes: stochastic.outcomes,
     stochasticOutcomeIssues: stochastic.issues,
   };
 }
@@ -92,7 +90,7 @@ function prepareExecutableCandidate(
   activationContext: ActivationContext,
 ): ReadyCandidateExecution {
   const { attackerTraits, attackerPredicates, compileProjections } = prepared;
-  const { candidateInput, targetFacts, decisions } = base;
+  const { candidateInput, targetFacts, decisions, stochasticOutcomes } = base;
   const initialState = createInitialBattleState(
     candidateInput,
     prepared.baseNoblePhantasmVariant,
@@ -106,7 +104,12 @@ function prepareExecutableCandidate(
     })),
     activationContext,
   );
-  const selections = resolveCandidateSelections(prepared, decisions, initialState);
+  const selections = resolveCandidateSelections(
+    prepared,
+    decisions,
+    stochasticOutcomes,
+    initialState,
+  );
   const validated = validateCandidateSelections(prepared, targetFacts, initialState, selections);
   return {
     ...base,
@@ -131,6 +134,7 @@ export function prepareCandidateExecution(
     prepared.scenario.activationFacts,
     prepared.operations,
     base.decisions,
+    base.stochasticOutcomes,
   );
   if (activation.status === 'invalid')
     return {

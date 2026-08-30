@@ -28,6 +28,7 @@ export type {
   WorldFactAssertion,
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
+export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
   analyzeActivationCondition,

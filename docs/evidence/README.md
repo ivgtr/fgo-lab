@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.3"
+document_version: "1.4.4"
 status: "Active"
 updated_at: "2026-08-31"
 ---

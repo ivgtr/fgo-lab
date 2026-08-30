@@ -19,6 +19,10 @@ import type {
   EffectDecision,
   ExecutionIssue,
 } from './contracts';
+import {
+  resolvedStochasticOutcomeForOperation,
+  type ResolvedStochasticOutcome,
+} from './stochasticOutcomes';
 
 export type ActivationContextResult =
   | { status: 'valid'; context: ActivationContext }
@@ -95,13 +99,6 @@ export function activationRequirementOwnerSelected(
   return owner.decisionPlan.condition === 'userMayAssume' ? false : owner.enabledByDefault;
 }
 
-function operationSelected(
-  operation: BattleOperation,
-  decisions: ReadonlyMap<string, EffectDecision>,
-): boolean {
-  return activationRequirementOwnerSelected(operation, decisions);
-}
-
 function factSetIssue(issue: ActivationFactSetIssue): ExecutionIssue {
   return {
     kind: 'invalidActivationContext',
@@ -138,6 +135,7 @@ function validateFactReachability(
 function validateSelectedOperationRequirements(
   analyzedOperations: readonly AnalyzedOperationRequirement[],
   decisions: ReadonlyMap<string, EffectDecision>,
+  stochasticOutcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
   context: ActivationContext,
 ): ExecutionIssue[] {
   const issues: ExecutionIssue[] = [];
@@ -151,7 +149,8 @@ function validateSelectedOperationRequirements(
       continue;
     }
     if (
-      !operationSelected(operation, decisions) ||
+      resolvedStochasticOutcomeForOperation(operation, stochasticOutcomes).status !== 'success' ||
+      !activationRequirementOwnerSelected(operation, decisions) ||
       analysis.atoms.length === 0 ||
       evaluateActivationRequirement(operation.condition, context) === false ||
       !hasMissingMandatoryActivationFact(operation.condition, context)
@@ -170,6 +169,7 @@ export function buildActivationContext(
   facts: readonly ActivationFact[],
   operations: readonly BattleOperation[],
   decisions: ReadonlyMap<string, EffectDecision>,
+  stochasticOutcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
 ): ActivationContextResult {
   const factSet = analyzeActivationFactSet(facts);
   if (factSet.status === 'invalid')
@@ -179,6 +179,7 @@ export function buildActivationContext(
   const requirementIssues = validateSelectedOperationRequirements(
     analyzedOperations,
     decisions,
+    stochasticOutcomes,
     factSet.factSet,
   );
   const issues = [...reachabilityIssues, ...requirementIssues];

@@ -56,3 +56,27 @@ focused 4 files／40 tests（artifact
 （10.3分）まで成功した。published master version表示だけを更新したversioned PNG 5枚を再検証し、TSK-00 PNG digestは
 `cdc06ab6cd42d67eb5e5168cfd514bbb8e9d854c0eae317d67ebfe415efb4561`、stable artifact digestは
 `bde40d86ebceab812e468e1aa9ef92f079c91628c791a24f3c8703063acad40f`。
+
+## Execution ownership review correction
+
+Review baseline `c70835b3dd31adc40acc20f2c598287d3f090cd3`で、binary failureを消費せず、invalidを
+`EffectDecision.operationEnabled = false`へ変換していたため、`decisionKey: null`のoperationを停止できないことを再現した。
+
+executionはoperation単位の`ResolvedStochasticOutcome`（`success`／`failure`／`invalid`）を保持し、scenarioの
+effect inclusion decisionを書き換えない。activationはsource enabled、effect inclusion、condition satisfaction、
+stochastic outcomeを独立に合成し、contribution projectionもfailure／invalidを有効化できない。success-countは各memberの
+chain indexに対して解決し、0回なら全member、N回ならN member以降を非適用にする。
+
+review matrixはbinary success／failure × decision keyあり／なし、inclusion disabled、invalid × decision keyなし、
+success-count 0／Nを含む5 files／26 tests（artifact
+`.test-results/2026-08-30T15-36-34-904Z-15-8f6011`）。unitは55 files／298 tests（artifact
+`.test-results/2026-08-30T15-36-34-917Z-15-ba2b9b`）、productionは25 files／117 tests（artifact
+`.test-results/2026-08-30T15-36-45-202Z-15-95cb5b`）でdamage／parity／counter差分0。
+
+review修正後の成功production 3 runは83.00／81.65／82.96秒（中央値82.96秒）。開始baseline中央値79.44秒との差は
++3.52秒／+4.43%で5秒／10% ratchet内。途中のsuite timeout sampleは成功runに含めず、timeout設定は変更していない。
+TSK-00 stable artifact digestは`e39eb3d8c636a1fec4a67e5ebdadbc52436627ed16e8fd5f08f4210e226f5c4e`。
+最終`pnpm quality`はunit 55 files／298 tests（artifact
+`.test-results/2026-08-30T15-42-29-371Z-320-6c836c`）、production 25 files／117 tests（72.60秒、artifact
+`.test-results/2026-08-30T15-42-33-894Z-795-ea6f54`）、master validation、build、E2E 64 passed／32
+project-specific skipped（9.3分）まで成功した。

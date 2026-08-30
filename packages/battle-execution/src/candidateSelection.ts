@@ -18,12 +18,12 @@ import type {
 } from './contracts';
 import type { PreparedOrderedScenario } from './executionTypes';
 import { applyWorldFacts } from './state';
+import type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 import {
   applySelectedNoblePhantasmContext,
   resolveActiveVariantTransactions,
   resolveSelectedNoblePhantasmVariant,
 } from './variantSelection';
-
 export type OperationActivation = ReturnType<typeof resolveOperationActivation>;
 export interface CandidateSelections {
   activations: ReadonlyMap<string, OperationActivation>;
@@ -43,6 +43,7 @@ export interface CandidateConstraintResult {
 export function resolveCandidateSelections(
   prepared: PreparedOrderedScenario,
   decisions: ReadonlyMap<string, EffectDecision>,
+  stochasticOutcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
   state: ExecutableBattleState,
 ): CandidateSelections {
   const { operations, scenario } = prepared;
@@ -55,7 +56,7 @@ export function resolveCandidateSelections(
   const activations = new Map(
     operations.map((operation) => [
       operation.operationId,
-      resolveOperationActivation(operation, decisions, satisfiedDecisionKeys),
+      resolveOperationActivation(operation, decisions, stochasticOutcomes, satisfiedDecisionKeys),
     ]),
   );
   const activeDecisionSourceInstances = new Set(

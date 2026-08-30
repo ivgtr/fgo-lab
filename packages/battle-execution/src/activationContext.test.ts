@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActivationFact, ActivationSourceRef } from '@fgo-lab/schema';
 import type { BattleOperation, ConditionExpression, EffectDecision } from './contracts';
 import { evaluateActivationRequirement } from './activationCondition';
-import { buildActivationContext } from './activationContext';
+import { buildActivationContext as buildCanonicalActivationContext } from './activationContext';
 
 const source: ActivationSourceRef = {
   origin: 'attacker',
@@ -58,6 +58,19 @@ const enabled = new Map<string, EffectDecision>([
     },
   ],
 ]);
+
+function buildActivationContext(
+  facts: Parameters<typeof buildCanonicalActivationContext>[0],
+  operations: readonly BattleOperation[],
+  decisions: ReadonlyMap<string, EffectDecision>,
+) {
+  return buildCanonicalActivationContext(
+    facts,
+    operations,
+    decisions,
+    new Map(operations.map(({ operationId }) => [operationId, { status: 'success' as const }])),
+  );
+}
 
 describe('canonical activation context', () => {
   it('rejects an all-expression when one of two required facts is missing', () => {

@@ -214,7 +214,7 @@ describe('production probabilistic NP-before damage effects', () => {
         expect.objectContaining({ decisionKey: control.projection.decision.decisionKey }),
       ]),
     );
-    const invalidDoubleState = calculateScenario(
+    const independentlyIncludedState = calculateScenario(
       {
         ...scenario,
         effectDecisions: [
@@ -229,14 +229,14 @@ describe('production probabilistic NP-before damage effects', () => {
       master,
       versions,
     );
-    expect(invalidDoubleState.result.status).toBe('unsupported');
-    expect(invalidDoubleState.input.attackBuff).toBe(0);
+    expect(independentlyIncludedState.result.status).toBe('calculated');
+    expect(np1Average(independentlyIncludedState)).toBe(81_133.125);
     expect(
-      invalidDoubleState.effects
+      independentlyIncludedState.effects
         .filter((effect) => effect.proc.kind === 'chainedRolls')
         .map((effect) => effect.outcome),
-    ).not.toContain('applied');
-    expect(invalidDoubleState.effectWarnings).toEqual(
+    ).toContain('applied');
+    expect(independentlyIncludedState.effectWarnings).not.toEqual(
       expect.arrayContaining([expect.stringContaining('invalidStochasticOutcome')]),
     );
   });
