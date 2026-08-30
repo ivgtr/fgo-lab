@@ -1,6 +1,6 @@
 ---
 title: "TSK-03 shared production audit foundation evidence"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "Complete"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -23,13 +23,13 @@ master `20260829.8`、schema 31、engine `27.0.0`は不変である。既存prod
 | data-pipeline | servants 469、CE 2,700、Mystic Code 28、effects 13,875、operations 14,623、damage functions 630、raw function 54／buff 133／parameter key 124 | canonical normalization exclusions 6 | `a6766e7ecce70f876515a1fbf01e599b5d3fdff5b0adf4d1d41f7fe77e0f517e` |
 | calculation-application | attack servants 422、preparation plans 3,559、calculator scenarios 422、ranking rows 433 | calculated 422、inputRequired 0、unsupported 0、invalid 0、ranking failure 0 | `8dcffe8a09c91ce1d9ee3f6cd1626c7d70c7d1f3f56f41f55be064f70dcf82e3` |
 
-`@fgo-lab/master-data/production-audit`はstable identity順とobject key順でcanonical JSONを生成し、SHA-256と最初のidentity／field差分を返す。formatter fixtureはrecord順／object insertion順でdigestが変わらないことと、`actor:2`の`rows[0]`差分を最初に報告することを確認する。production ratchetはdigestだけでなく上表のtyped inventoryを比較するため、件数差と最初のcanonical fieldへ到達できる。
+`@fgo-lab/master-data/production-audit`はstable identity順とobject key順でcanonical JSONを生成し、SHA-256と最初のidentity／field差分を返す。formatter fixtureはrecord順／object insertion順でdigestが変わらないことと、`actor:2`の`rows[0]`差分を最初に報告することを確認する。空または重複identityはdigest生成と差分化の前にfail-closedとなるため、`[{x:1},{x:2}]`と`[{x:2}]`のような曖昧な入力を`audit_match`と誤報しない。production ratchetはdigestだけでなく上表のtyped inventoryを比較するため、件数差と最初のcanonical fieldへ到達できる。
 
-application recordは各scenario identityについてavailable actions、used input、applied operation IDs、execution issues、ordered trace、NP1〜5 rowsを同じcompile結果に保持する。現行policyは`current-default`としてdamage semanticsと別fieldに置いた。TSK-04は`compileCalculationApplicationProductionAudit`の一回のshared compileと3,559 preparation planからAttackProfile canonical化を開始できる。
+application recordは各scenario identityについてavailable actions、used input、applied operation IDs、execution issues、ordered trace、NP1〜5 rowsを同じcompile結果に保持する。現行policyは`current-default`としてdamage semanticsと別fieldに置いた。全AttackProfile、4 policy、NP1〜5、calculator／ranking parity、invalid／unsupportedを不可分に要求する`RK-AUDIT-001`は、このfoundationでは満たした扱いにせずTSK-08へ延期した。TSK-04は`compileCalculationApplicationProductionAudit`の一回のshared compileと3,559 preparation planからAttackProfile canonical化を開始できる。
 
 ## 3. Runtime counters and artifacts
 
-runnerは各run directoryを`FGO_TEST_ARTIFACT_DIR`としてproduction testへ渡し、`production-audit-*.json`の非負有限runtime counterをmanifestへ登録する。runnerはboundary名とcounter構造だけを扱い、FGO domain語彙、inventory、digestを解釈しない。malformed counterはmanifest上のtyped errorとなる。
+runnerは各run directoryを`FGO_TEST_ARTIFACT_DIR`としてproduction testへ渡し、`production-audit-*.json`の非負有限runtime counterをmanifestへ登録する。canonical production gateはcalculation-application／data-pipeline各1 artifactと、境界ごとのread／parse／compile／candidate／damage request counterを必須とする。missing artifact、空counter、必須counter欠落、invalid counterはmanifestへtyped errorを残すだけでなく、exit code 1の`contract_failure`として`pnpm test:production`と`pnpm quality`を停止する。runnerはboundary名とcounter構造だけを扱い、FGO domain語彙、inventory、digestを解釈しない。
 
 | Boundary | read | parse | compile | candidate | damage request |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -51,13 +51,14 @@ focused diagnostic `.test-results/2026-08-30T10-37-41-645Z-194-dae33c`は2 files
 
 変更前run 3は`unsupportedConvergenceGolden.test.ts`でVitest内部の`STACK_TRACE_ERROR`となり、artifact `.test-results/2026-08-30T10-21-44-300Z-648-76a419`に114 pass／1 structured failureを保持した。semantic期待値の不一致とは判定していない。3 attempt中央値同士では-0.69秒／-0.82%で、10%以上または5秒以上の構造変更ratchetに抵触しない。変更後3 runはすべて25 files／117 tests passした。
 
-TSK-00 aggregate auditorはunit 55 files／284 tests、production 25 files／117 tests、全80 files／401 identities、重複0／未分類0へ更新した。semantic／resource／PNG digestは不変で、audit source、Suite、runner counter contractを含むstable aggregate digestだけを`14c8f4ecf7abd78337e37f1ab4cddd9f66fed079562b5ef37aa98282edd40f33`へ更新した。
+TSK-00 aggregate auditorはunit 55 files／285 tests、production 25 files／117 tests、全80 files／402 identities、重複0／未分類0へ更新した。semantic／resource／PNG digestは不変で、audit source、Suite、runner counter contractを含むstable aggregate digestだけを`3ebac45415ab49a739fd8cd0fb234fda7b81f484d6589b09f1c75353d403a798`へ更新した。
 
 ## 5. Verification and handoff
 
 - `pnpm test:diagnostic -- packages/data-pipeline/src/productionAudit.test.ts packages/calculation-application/src/productionAudit.test.ts`: 2／2 pass、artifact `.test-results/2026-08-30T10-37-41-645Z-194-dae33c`
-- `pnpm test:runner`: 11／11 pass。runtime counter manifest contractを含む
+- `pnpm test:diagnostic -- packages/master-data/src/productionAudit.test.ts`: 3／3 pass、artifact `.test-results/2026-08-30T11-11-49-250Z-172-0244ff`
+- `pnpm test:runner`: 15／15 pass。必須artifact／counterのsuccess、missing、empty、missing key、invalidをblocking contractとして含む
 - `node packages/data-pipeline/scripts/audit-tsk00-baseline.mjs --check`: pass
-- `pnpm quality`: format、lint、typecheck、runner 11／11、docs 5／5、unit 55 files／284 tests（artifact `.test-results/2026-08-30T10-43-56-814Z-239-3ccc94`）、production 25 files／117 tests（artifact `.test-results/2026-08-30T10-44-02-256Z-714-f6632a`）、master valid、build、E2E 64 passed／32 skipped（10.4分）まで成功
-- Start commit: `840cf08`。Implementation commit: `07b63c0`。Completion metadata: TSK-03 completion commit
+- `pnpm quality`: format、lint、typecheck、runner 15／15、docs 5／5、unit 55 files／285 tests（artifact `.test-results/2026-08-30T11-17-17-318Z-275-31a8c1`）、production 25 files／117 tests（artifact `.test-results/2026-08-30T11-17-22-488Z-750-adb768`、runtime counter contract errors 0）、master valid、build、E2E 64 passed／32 skipped（9.9分）まで成功
+- Start commit: `840cf08`。Implementation commit: `07b63c0`。Initial completion: `c77e707`。Review reopen: `273b1a3`。Review correction: `10c5af3`。Completion metadata: TSK-03 review completion commit
 - TSK-04 entry: shared application auditのAttackProfile／preparation／scenario recordsを入力にし、Proposed IRへ一括cutoverする。旧監査loader／scanの最終削除はTSK-08のまま延期し、TSK-04でparallel runtime modelを作らない

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.0"
+document_version: "1.4.1"
 status: "Active"
 updated_at: "2026-08-30"
 ---
@@ -44,7 +44,7 @@ updated_at: "2026-08-30"
 | [damage-effect-execution-e4-1-attack-profiles](damage-effect-execution-e4-1-attack-profiles.md) | Complete | canonical: AttackProfile inventory／digest | TSK-03／04／08 | `9314a1d` |
 | [test-ranking-baseline-tsk-00](test-ranking-baseline-tsk-00.md) | Complete | canonical: test／CI／ranking／performance baseline | TSK-01〜09 | TSK-00 completion |
 | [test-suite-quality-gate-tsk-02](test-suite-quality-gate-tsk-02.md) | Complete | canonical: Suite classification／quality gate／performance／artifact | TSK-03〜09 | TSK-02 completion |
-| [shared-production-audit-tsk-03](shared-production-audit-tsk-03.md) | Complete | canonical: shared production inventory／digest／runtime counters／performance | TSK-04〜09 | `07b63c0`／TSK-03 completion |
+| [shared-production-audit-tsk-03](shared-production-audit-tsk-03.md) | Complete | canonical: shared production inventory／digest／blocking runtime counters／performance | TSK-04〜09 | `07b63c0`／`10c5af3`／TSK-03 completion |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
 

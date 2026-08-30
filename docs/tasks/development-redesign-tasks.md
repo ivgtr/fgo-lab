@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.3"
+document_version: "1.4.4"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -40,8 +40,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
-| TSK-03 | 共有production audit foundation | in_progress | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
+| TSK-04 | Ranking canonical IR cutover | ready | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
@@ -317,7 +317,7 @@ Contract closure matrix:
 | `TS-AUDIT-001` | Apply | `pnpm test:diagnostic -- <production-audit-filter>`、`pnpm test:production` | `docs/evidence/shared-production-audit-tsk-03.md` |
 | `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/shared-production-audit-tsk-03.md` |
 | `TS-REPORT-001` | Apply | runtime counter manifest check | `docs/evidence/shared-production-audit-tsk-03.md` |
-| `RK-AUDIT-001` | Apply | shared compile inventory check | `docs/evidence/shared-production-audit-tsk-03.md` |
+| `RK-AUDIT-001` | Deferred: TSK-08 | - | TSK-08 |
 | `RK-IR-001` | N/A: Proposed ranking semanticsを実装せず監査基盤だけを作る | `git diff --check` | Handoff |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
@@ -334,6 +334,12 @@ Handoff:
 - Next command: `git status --short && git rev-parse HEAD`でTSK-04のbaseline identityを固定し、`compileCalculationApplicationProductionAudit`のAttackProfile／preparation／scenario recordsからcanonical IR cutoverを開始する。旧loader／scanの最終削除はTSK-08のままとし、parallel runtime modelを作らない。
 - Review correction baseline: `c77e707`、clean worktree。TSK-03の`RK-AUDIT-001` disposition、runtime counter blocking gate、duplicate canonical identity fail-closedの3件を再オープンする。damage／ranking semantics、新policy、IR、UIは変更対象外。
 - Review next command: `pnpm test:runner`のfixtureへmissing／empty／invalid counter artifactを追加し、production suiteの必須boundary／counter contractをfail-closedにする。
+- Review resolution: `RK-AUDIT-001`は全AttackProfile、4 policy、NP1〜5、calculator／ranking parity、invalid／unsupportedを不可分に閉じる契約のため、現行`current-default`だけを保持するTSK-03では適用せずTSK-08へ延期した。TSK-03が所有するのは一回のshared compile、canonical inventory／digest、runtime counter foundationまでで、新ranking意味論は追加していない。
+- Blocking counters: `10c5af3`でproduction gateにcalculation-application／data-pipeline各1 artifactと必須counter名を要求した。missing artifact、空counter、必須counter欠落、負数をrunner fixtureで`contract_failure`へ収束させ、最終production manifest `.test-results/2026-08-30T11-17-22-488Z-750-adb768`はrequired contract errors 0、read／parse／compile各1、candidate 6,508／4,009、damage request 3,744／1,644を記録した。
+- Canonical formatter: digest／difference／formatterの入口で空または重複identityを例外終了させ、`[{x:1},{x:2}]`と`[{x:2}]`を`audit_match`と誤報しない。unit fixtureで3経路を固定した。
+- Review verification: focused formatter 3／3、runner 15／15、unit 55 files／285 tests、production 25 files／117 tests、TSK-00 auditor、master validationが成功。最終`pnpm quality`はunit artifact `.test-results/2026-08-30T11-17-17-318Z-275-31a8c1`、上記production artifact、build、E2E 64 passed／32 skipped（9.9分）まで成功し、damage／inventory digest差分0。
+- Review commits: `273b1a3` (reopen)、`10c5af3` (contract enforcement)、本review completion commit。
+- Next command: `git status --short && git rev-parse HEAD`でTSK-04のbaseline identityを固定し、`RK-AUDIT-001`のfull matrixはTSK-08まで未充足として維持したままcanonical IR cutoverを開始する。
 
 ### TSK-04: Ranking canonical IR cutover
 
