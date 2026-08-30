@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.1"
+document_version: "1.4.2"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -40,8 +40,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
-| TSK-03 | 共有production audit foundation | in_progress | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
+| TSK-04 | Ranking canonical IR cutover | ready | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
@@ -298,10 +298,10 @@ Handoff:
 
 Depends on: TSK-02.1
 
-- [ ] package境界ごとにmaster load／compileを一回へ収束させる。
-- [ ] 複数assertionが共有するread-only typed inventoryを作る。
-- [ ] 現行digestと最初のcanonical差分を報告するformatterを作る。
-- [ ] master load、compile、candidate、damage request数を計測する。
+- [x] package境界ごとにmaster load／compileを一回へ収束させる。
+- [x] 複数assertionが共有するread-only typed inventoryを作る。
+- [x] 現行digestと最初のcanonical差分を報告するformatterを作る。
+- [x] master load、compile、candidate、damage request数を計測する。
 
 Done gate:
 
@@ -314,10 +314,10 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `TS-AUDIT-001` | Apply | `pnpm test:diagnostic -- <production-audit-filter>`、`pnpm test:production` | `docs/evidence/<tsk-03-report>.md` |
-| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-03-report>.md` |
-| `TS-REPORT-001` | Apply | runtime counter manifest check | `docs/evidence/<tsk-03-report>.md` |
-| `RK-AUDIT-001` | Apply | shared compile inventory check | `docs/evidence/<tsk-03-report>.md` |
+| `TS-AUDIT-001` | Apply | `pnpm test:diagnostic -- <production-audit-filter>`、`pnpm test:production` | `docs/evidence/shared-production-audit-tsk-03.md` |
+| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/shared-production-audit-tsk-03.md` |
+| `TS-REPORT-001` | Apply | runtime counter manifest check | `docs/evidence/shared-production-audit-tsk-03.md` |
+| `RK-AUDIT-001` | Apply | shared compile inventory check | `docs/evidence/shared-production-audit-tsk-03.md` |
 | `RK-IR-001` | N/A: Proposed ranking semanticsを実装せず監査基盤だけを作る | `git diff --check` | Handoff |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
@@ -326,7 +326,12 @@ Contract closure matrix:
 Handoff:
 
 - Start baseline: `030d6e20a3d26465acc91a794dc7b08847482275`、`main`、clean worktree。利用者成果はproduction全件監査の意味とdamage結果を変えず、TSK-04が共有済みtyped inventoryを一回のcompileから再利用できること。semantic ownerはdata-pipelineのcanonical IR監査とcalculation-applicationのscenario／execution監査。production全件、現行inventory／digest、calculator／ranking経路、fail-closedを不変とし、Proposed ranking semanticsは実装しない。
-- Next command: `pnpm test:production`を同一環境で3回実行し、変更前wall-clockとartifact identityを固定する。
+- Implementation: data-pipelineはraw vocabulary／canonical operation／damage function／normalization exclusion、calculation-applicationはavailable actions／used input／applied effects／issues／trace／exhaustive outcome／現行policyを別のread-only audit modelで所有する。stable canonical recordのdigestとfirst identity／field diffだけをmaster-data subpathで共有する。runnerはdomainを解釈せずartifactのcounter contractだけをmanifestに登録する。
+- Inventory／digest: master `20260829.8`、schema 31、engine `27.0.0`。data-pipelineは469 servants／13,875 effects／14,623 operations／630 damage functions／6 typed exclusions、digest `a6766e7ecce70f876515a1fbf01e599b5d3fdff5b0adf4d1d41f7fe77e0f517e`。applicationは422／422 calculated、3,559 plans、433 ranking rows、invalid／unsupported／inputRequired 0、digest `8dcffe8a09c91ce1d9ee3f6cd1626c7d70c7d1f3f56f41f55be064f70dcf82e3`。既存semantic／resource／PNG／damage差分0。
+- Counters／performance: 両境界ともread 1／parse 1／compile 1。applicationはcandidate 6,508 generated／4,009 deduplicated、damage request 3,744／distinct 1,644。変更前3 attemptは82.83／84.41秒pass、88.40秒collector failure（中央値84.41秒）、変更後は82.69／84.87／83.72秒全pass（中央値83.72秒、-0.82%）。完全artifactとfailureの詳細は`docs/evidence/shared-production-audit-tsk-03.md`。
+- Verification: focused 2／2、runner 11／11、unit 55 files／284 tests、production 25 files／117 tests、TSK-00 auditor、master validationが成功。`pnpm quality`はproduction artifact `.test-results/2026-08-30T10-44-02-256Z-714-f6632a`、build、E2E 64 passed／32 skipped（10.4分）まで成功した。
+- Commits: `840cf08` (start)、`07b63c0` (implementation)、本completion commit。
+- Next command: `git status --short && git rev-parse HEAD`でTSK-04のbaseline identityを固定し、`compileCalculationApplicationProductionAudit`のAttackProfile／preparation／scenario recordsからcanonical IR cutoverを開始する。旧loader／scanの最終削除はTSK-08のままとし、parallel runtime modelを作らない。
 
 ### TSK-04: Ranking canonical IR cutover
 
