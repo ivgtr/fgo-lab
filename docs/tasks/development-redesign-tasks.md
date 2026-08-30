@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.4"
+document_version: "1.5.5"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -407,6 +407,11 @@ Handoff:
 - Selection execution review resolution: operation単位の`ResolvedStochasticOutcome`を`success`／`failure`／`invalid`で保持し、effect inclusion decisionとは別にactivationへ渡す。binary default failure、success-count member index、invalidをdecision identityに依存せず解決し、contribution projectionもfailure／invalidを上書きしない。旧`resolveDecisionsWithStochasticOutcomes`と`duplicateEffectDecision`契約は削除した。
 - Selection execution review verification: matrix／integration 5 files／26 tests、unit 55 files／298 tests、production 25 files／117 testsが成功。production artifact `.test-results/2026-08-30T15-36-45-202Z-15-95cb5b`でdamage／calculator-ranking parity／runtime counter差分0。成功production 3 run中央値82.96秒はbaseline比+3.52秒／+4.43%でratchet内。最終`pnpm quality`はunit artifact `.test-results/2026-08-30T15-42-29-371Z-320-6c836c`、production artifact `.test-results/2026-08-30T15-42-33-894Z-795-ea6f54`（72.60秒）、master validation、build、E2E 64 passed／32 project-specific skipped（9.3分）まで成功した。
 - Selection execution review commit: 本review correction commit。
+- Selection execution family review baseline: `d3e12fef188eba730732975a70cdf945692395bd`、clean worktree。NP variant transactionのpreapplyがtrait mutationのstochastic failure／invalidを迂回し、Caesar success-count範囲外がcanonical `inputRequired`ではなく`unsupported`へ分類される反証を再現して、第2項を再オープンした。
+- Selection execution family resolution: preapply対象全体を`OperationActivation.enabled`で絞り、通常operation loopと同じ適用判定へ統一した。resolved stochastic stateへ修正可能な`inputRequired`を追加し、semantic `invalid`から分離した。activationはstochastic判定前のsource／effect inclusionを保持し、candidate resultはvisibleかつstochastic以外が有効なoperationからmissing definitionを回収する。
+- Selection execution family verification: preapply failure／invalidのadd／remove／suppress trait非適用とCaesar最大値+1の`inputRequired` recoveryをfixture化した。focused 9 files／55 tests、unit 55 files／299 tests、production 25 files／118 testsが成功。production artifact `.test-results/2026-08-30T16-29-24-499Z-15-06322a`は71.18秒で直前quality 72.60秒から増加せず、damage／calculator-ranking parity／runtime counter差分0。test-name digestは`6abb0076f48d0db8f88d953bd6b97a241752a2e17cef14fd4732433aea732dde`、stable artifact digestは`fa8a2fe3c4c3e8b0144a1024d26b4a0d92f5efce1153bb0bd462309e4edc4c51`。
+- Selection execution family quality: 最終`pnpm quality`はunit artifact `.test-results/2026-08-30T16-33-49-913Z-320-822115`、production artifact `.test-results/2026-08-30T16-33-54-342Z-795-195ec2`（72.00秒）、master validation、build、E2E 64 passed／32 project-specific skipped（9.4分）まで成功した。
+- Selection execution family review commit: 本review correction commit。
 - Next command: condition requirement、provenance、target、recipient、contribution scopeのraw occurrenceと現runtime branchをinventory化し、data-pipeline発行のcanonical semanticsへcutoverする。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
 
 ### TSK-05: Transactional preparation execution

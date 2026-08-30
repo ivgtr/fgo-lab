@@ -164,6 +164,7 @@ describe('noble phantasm variant selection', () => {
         operationId,
         {
           enabled: true,
+          enabledBeforeStochasticOutcome: true,
           stochasticOutcome: { status: 'success' as const },
           activeDecisionKeys: [],
           assumesLocalCondition: false,
@@ -183,6 +184,82 @@ describe('noble phantasm variant selection', () => {
     expect(result.state.traits.attackerState.get('variant:changed')).toBe(true);
   });
 
+  it('does not preapply transaction mutations whose stochastic outcome did not succeed', () => {
+    const transform = {
+      ...operationBase,
+      operationId: 'transform',
+      kind: 'transformActorForm' as const,
+      targetFormId: changedForm,
+      targetTraits: ['kept-trait'],
+    } satisfies BattleOperation;
+    const addTrait = {
+      ...operationBase,
+      operationId: 'add-trait',
+      kind: 'addTrait' as const,
+      scope: 'attackerState' as const,
+      trait: 'failed-addition',
+    } satisfies BattleOperation;
+    const removeTrait = {
+      ...operationBase,
+      operationId: 'remove-trait',
+      kind: 'removeTrait' as const,
+      scope: 'attacker' as const,
+      trait: 'kept-trait',
+    } satisfies BattleOperation;
+    const suppressTrait = {
+      ...operationBase,
+      operationId: 'suppress-trait',
+      kind: 'suppressInitialTrait' as const,
+      scope: 'attacker' as const,
+      trait: 'kept-trait',
+    } satisfies BattleOperation;
+    const operations = [transform, selection, addTrait, removeTrait, suppressTrait];
+    const activations = new Map(
+      operations.map((operation) => [
+        operation.operationId,
+        operation === transform || operation === selection
+          ? {
+              enabled: true,
+              enabledBeforeStochasticOutcome: true,
+              stochasticOutcome: { status: 'success' as const },
+              activeDecisionKeys: [],
+              assumesLocalCondition: false,
+            }
+          : {
+              enabled: false,
+              enabledBeforeStochasticOutcome: true,
+              stochasticOutcome:
+                operation === removeTrait
+                  ? {
+                      status: 'invalid' as const,
+                      issue: {
+                        kind: 'invalidStochasticOutcome' as const,
+                        operationId: operation.operationId,
+                        detail: 'missingStochasticOutcome' as const,
+                      },
+                    }
+                  : { status: 'failure' as const },
+              activeDecisionKeys: [],
+              assumesLocalCondition: false,
+            },
+      ]),
+    );
+    const initialState = createInitialBattleState(input, base, [], {}, [], [], activation.factSet);
+    const result = applySelectedNoblePhantasmContext(
+      initialState,
+      changed,
+      selection,
+      operations,
+      new Set(operations.map(({ operationId }) => operationId)),
+      activations,
+    );
+    expect(result.issue).toBeNull();
+    expect(result.state).toMatchObject({ actorFormId: changedForm, card: 'arts' });
+    expect(result.state.traits.attackerState.has('failed-addition')).toBe(false);
+    expect(result.state.traits.attacker.get('kept-trait')).toBe(true);
+    expect(result.state.initialTraitSuppressions.attacker.has('kept-trait')).toBe(false);
+  });
+
   it('returns the untouched initial state when the prepared transaction cannot resolve', () => {
     const result = applySelectedNoblePhantasmContext(
       state,
@@ -195,6 +272,7 @@ describe('noble phantasm variant selection', () => {
           'select',
           {
             enabled: true,
+            enabledBeforeStochasticOutcome: true,
             stochasticOutcome: { status: 'success' as const },
             activeDecisionKeys: [],
             assumesLocalCondition: false,

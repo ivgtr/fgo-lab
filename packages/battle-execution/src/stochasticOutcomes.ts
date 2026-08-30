@@ -2,7 +2,10 @@ import type { BattleOperation, ExecutionIssue } from './contracts';
 import type { ResolvedCanonicalInputSet } from './executionTypes';
 
 export type ResolvedStochasticOutcome =
-  { status: 'success' } | { status: 'failure' } | { status: 'invalid'; issue: ExecutionIssue };
+  | { status: 'success' }
+  | { status: 'failure' }
+  | { status: 'inputRequired'; inputKey: string }
+  | { status: 'invalid'; issue: ExecutionIssue };
 
 export interface ResolvedStochasticOutcomeSet {
   outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>;
@@ -48,7 +51,7 @@ function resolveOperationStochasticOutcome(
   )
     return invalidOutcome(operation, 'missingSuccessCountDefinition');
   if (resolvedInputs.missingDefinitions.some(({ key }) => key === group.key))
-    return invalidOutcome(operation, 'invalidSuccessCountValue');
+    return { status: 'inputRequired', inputKey: group.key };
   const successes = resolvedInputs.values[group.key] ?? definition.defaultValue;
   if (
     successes === null ||

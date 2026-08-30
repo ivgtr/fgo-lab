@@ -147,6 +147,32 @@ describe('production probabilistic NP-before damage effects', () => {
     expect(averages).toEqual([54_130.23, 59_530.825, 64_931.4, 70_331.98, 75_732.555, 81_133.125]);
   });
 
+  it('keeps an out-of-range Caesar success count recoverable as required input', () => {
+    const scenario = {
+      ...scenarioFor('101300'),
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+    };
+    const initial = calculateScenario(scenario, master, versions);
+    const input = initial.effectInputs.find((candidate) => candidate.kind === 'procSuccessCount')!;
+    const invalid = calculateScenario(
+      applyCanonicalInputCommand(scenario, {
+        kind: 'setCanonicalIntegerInput',
+        key: input.key,
+        value: input.maximum + 1,
+      }),
+      master,
+      versions,
+    );
+    expect(invalid.result.status).toBe('inputRequired');
+    if (invalid.result.status !== 'inputRequired') throw new TypeError('input recovery required');
+    expect(invalid.result.requiredInputs).toHaveLength(1);
+    expect(invalid.result.requiredInputs[0]).toMatchObject({
+      key: input.key,
+      defaultValue: null,
+      defaultReason: null,
+    });
+  });
+
   it('uses Caesar success count as the sole chip-active state', () => {
     const scenario = {
       ...scenarioFor('101300'),

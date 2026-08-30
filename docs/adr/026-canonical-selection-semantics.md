@@ -34,7 +34,8 @@ type CanonicalOutcomeGroup =
 - `playerChoice`はordered preparation commandの一部で、raw family名をschemaへ保存しない。
 - `stochasticOutcome`は確率構造を持つeffectだけが宣言する。single／independent rollはbinary、chained rollはsuccess countとする。
 - inclusion、condition satisfaction、player choice、stochastic outcomeは別責務とする。
-- executionは各operationの確率結果を`success`／`failure`／`invalid`のresolved stateとして保持し、`EffectDecision`へ変換しない。activationがsource、effect inclusion、condition、stochastic outcomeを独立に合成する。
+- executionは各operationの確率結果を`success`／`failure`／`inputRequired`／`invalid`のresolved stateとして保持し、`EffectDecision`へ変換しない。activationがsource、effect inclusion、condition、stochastic outcomeを独立に合成する。`inputRequired`はcanonical input pipelineが修正可能な入力として分類し、semantic errorを表す`invalid`とは混在させない。
+- NP variant transactionのpreapplyを含む全state mutationはresolved activationの`enabled`だけを適用判定とし、failure／inputRequired／invalidを迂回しない。
 - missing、guaranteedとの重複、proc kindとの不一致、success-count definition欠落は`invalidStochasticOutcome`としてoperationを無効化し、数値fallbackしない。
 - application、battle-execution、Webは`ActSet`、`ActSelectIndex`、`procSelection`を解釈しない。
 

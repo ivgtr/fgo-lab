@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.4"
+document_version: "1.4.5"
 status: "Active"
 updated_at: "2026-08-31"
 ---
@@ -45,7 +45,7 @@ updated_at: "2026-08-31"
 | [test-ranking-baseline-tsk-00](test-ranking-baseline-tsk-00.md) | Complete | canonical: test／CI／ranking／performance baseline | TSK-01〜09 | TSK-00 completion |
 | [test-suite-quality-gate-tsk-02](test-suite-quality-gate-tsk-02.md) | Complete | canonical: Suite classification／quality gate／performance／artifact | TSK-03〜09 | TSK-02 completion |
 | [shared-production-audit-tsk-03](shared-production-audit-tsk-03.md) | Complete | canonical: shared production inventory／digest／measured exact counter ratchet／performance | TSK-04〜09 | `07b63c0`／`10c5af3`／`a06532a`／TSK-03 completion |
-| [canonical-selection-semantics-tsk-04](canonical-selection-semantics-tsk-04.md) | Complete | canonical: player choice／stochastic outcome inventory、fail-closed、parity、performance | TSK-04〜08 | TSK-04 selection completion |
+| [canonical-selection-semantics-tsk-04](canonical-selection-semantics-tsk-04.md) | Complete | canonical: player choice／stochastic outcome inventory、runtime activation／input recovery、fail-closed、parity、performance | TSK-04〜08 | TSK-04 selection completion |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
 

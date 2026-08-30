@@ -250,6 +250,21 @@ describe('candidate activation preparation boundary', () => {
     };
     expect(enabledMembers(0)).toEqual([false, false, false]);
     expect(enabledMembers(2)).toEqual([true, true, false]);
+    const missing = resolveStochasticOutcomes(operations, {
+      values: {},
+      missingDefinitions: [{ ...definition, defaultValue: null, defaultReason: null }],
+      invalidInputKeys: [],
+    });
+    expect([...missing.outcomes.values()].map(({ status }) => status)).toEqual([
+      'inputRequired',
+      'inputRequired',
+      'inputRequired',
+    ]);
+    expect(missing.issues).toEqual([]);
+    expect(resolveOperationActivation(operations[0]!, decisions, missing.outcomes)).toMatchObject({
+      enabled: false,
+      enabledBeforeStochasticOutcome: true,
+    });
   });
 
   it('does not apply an invalid stochastic operation without a decision key', () => {

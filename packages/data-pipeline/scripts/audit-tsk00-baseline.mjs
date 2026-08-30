@@ -14,13 +14,13 @@ const check = process.argv.includes('--check');
 const expectedDigests = {
   semanticInventory: 'da9c8148599db8a8269520ef2ec9c3e4562ed42499384171d7b2ea5d7dd50fe1',
   testFiles: '8ec36912229b62cb3f5631b68367ca1c714a057d0adb3f5437f5bfb79e1adb51',
-  testNames: '51aed2fe2f659e072380436ab946e0a629e1715b5daaad349ac9c283a9e1515f',
+  testNames: '6abb0076f48d0db8f88d953bd6b97a241752a2e17cef14fd4732433aea732dde',
   productionTestFiles: '621885fe435ebf4e63e02a3027a8d76738fcc67e8304ac52e1885302d4c95880',
   unitFixtureTestFiles: '4292e559a733b07f9bc5f9fa363e19854d0c8f4d676ca5570207c249ff3200e0',
   pngBaselines: 'cdc06ab6cd42d67eb5e5168cfd514bbb8e9d854c0eae317d67ebfe415efb4561',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
-  stableArtifact: 'e39eb3d8c636a1fec4a67e5ebdadbc52436627ed16e8fd5f08f4210e226f5c4e',
+  stableArtifact: 'fa8a2fe3c4c3e8b0144a1024d26b4a0d92f5efce1153bb0bd462309e4edc4c51',
 };
 
 function sha256(value) {

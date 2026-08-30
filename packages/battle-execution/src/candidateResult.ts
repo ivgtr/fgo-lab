@@ -62,11 +62,15 @@ export function assembleCandidateResult({
   const relevantInputOperationIds = new Set(
     projections.flatMap((projection) =>
       projection.visibility === 'visible' &&
-      operations.some(
-        (operation) =>
-          operation.operationId === projection.operationId &&
-          candidate.activations.get(operation.operationId)?.enabled,
-      )
+      operations.some((operation) => {
+        if (operation.operationId !== projection.operationId) return false;
+        const activation = candidate.activations.get(operation.operationId);
+        return (
+          activation?.enabled === true ||
+          (activation?.enabledBeforeStochasticOutcome === true &&
+            activation.stochasticOutcome.status === 'inputRequired')
+        );
+      })
         ? [projection.operationId]
         : [],
     ),

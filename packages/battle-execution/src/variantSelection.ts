@@ -145,13 +145,13 @@ export function applySelectedNoblePhantasmContext(
   preappliedOperationIds: ReadonlySet<string>,
   activations: ReadonlyMap<string, OperationActivation>,
 ): { state: ExecutableBattleState; issue: ExecutionIssue | null } {
-  const preapplied = operations.filter(({ operationId }) =>
-    preappliedOperationIds.has(operationId),
+  const preapplied = operations.filter(
+    ({ operationId }) =>
+      preappliedOperationIds.has(operationId) && activations.get(operationId)?.enabled === true,
   );
   const transitions = preapplied.filter(
     (operation): operation is Extract<BattleOperation, { kind: 'transformActorForm' }> =>
-      operation.kind === 'transformActorForm' &&
-      activations.get(operation.operationId)?.enabled === true,
+      operation.kind === 'transformActorForm',
   );
   let state = transitions.reduce(applyActorFormTransition, initialState);
   if (!actorFormEquals(state.actorFormId, variant.ref.actorFormId))

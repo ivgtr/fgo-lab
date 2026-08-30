@@ -109,6 +109,7 @@ export function resolveOperationActivation(
   satisfiedDecisionKeys: ReadonlySet<string> = new Set(),
 ): {
   enabled: boolean;
+  enabledBeforeStochasticOutcome: boolean;
   stochasticOutcome: ResolvedStochasticOutcome;
   activeDecisionKeys: readonly string[];
   assumesLocalCondition: boolean;
@@ -118,8 +119,10 @@ export function resolveOperationActivation(
   if (operation.activation.kind === 'sourceDefault') {
     const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
     const included = choice?.operationEnabled ?? operation.enabledByDefault;
+    const enabledBeforeStochasticOutcome = operation.sourceEnabled && included;
     return {
-      enabled: operation.sourceEnabled && included && stochasticSucceeded,
+      enabled: enabledBeforeStochasticOutcome && stochasticSucceeded,
+      enabledBeforeStochasticOutcome,
       stochasticOutcome,
       activeDecisionKeys:
         choice?.operationEnabled && stochasticSucceeded && operation.decisionKey
@@ -134,8 +137,10 @@ export function resolveOperationActivation(
       ? decision?.operationEnabled === true
       : decision?.operationEnabled === true && satisfiedDecisionKeys.has(link.decisionKey);
   });
+  const enabledBeforeStochasticOutcome = operation.sourceEnabled && activeLinks.length > 0;
   return {
-    enabled: operation.sourceEnabled && activeLinks.length > 0 && stochasticSucceeded,
+    enabled: enabledBeforeStochasticOutcome && stochasticSucceeded,
+    enabledBeforeStochasticOutcome,
     stochasticOutcome,
     activeDecisionKeys: stochasticSucceeded
       ? [...new Set(activeLinks.map((link) => link.decisionKey))]

@@ -80,3 +80,28 @@ TSK-00 stable artifact digestは`e39eb3d8c636a1fec4a67e5ebdadbc52436627ed16e8fd5
 `.test-results/2026-08-30T15-42-29-371Z-320-6c836c`）、production 25 files／117 tests（72.60秒、artifact
 `.test-results/2026-08-30T15-42-33-894Z-795-ea6f54`）、master validation、build、E2E 64 passed／32
 project-specific skipped（9.3分）まで成功した。
+
+## Execution family review correction
+
+Second review baseline `d3e12fef188eba730732975a70cdf945692395bd`で、NP variant transactionのpreapplyが
+trait mutationのresolved activationを確認せず、success-countの修正可能な範囲外入力をsemantic
+`invalid`へ畳んでcanonical input recoveryを失うことを再現した。
+
+preapply対象の`transformActorForm`／`addTrait`／`removeTrait`／`suppressInitialTrait`／variant selectionは、
+すべてoperation単位の`OperationActivation.enabled`を通す。resolved stochastic stateへ`inputRequired`を追加し、
+activationはstochastic判定前のsource／effect inclusionも保持する。candidate resultはこの状態からvisible operationの
+missing definitionを回収するため、semantic `invalid`は`unsupported`、修正可能な範囲外success-countは
+`inputRequired`へ分離される。
+
+反証fixtureはpreapply failure／invalidのadd／remove／suppress trait非適用と、Caesar success-count最大値+1の
+`inputRequired` recoveryを固定した。focusedは9 files／55 tests（artifact
+`.test-results/2026-08-30T16-28-35-448Z-15-19e81a`）、unitは55 files／299 tests（artifact
+`.test-results/2026-08-30T16-29-14-070Z-15-dc709d`）、productionは25 files／118 tests、71.18秒（artifact
+`.test-results/2026-08-30T16-29-24-499Z-15-06322a`）で成功した。直前qualityの72.60秒から増加せず、
+damage／calculator-ranking parity／runtime counterはproduction gateで一致した。test-name digestは
+`6abb0076f48d0db8f88d953bd6b97a241752a2e17cef14fd4732433aea732dde`、stable artifact digestは
+`fa8a2fe3c4c3e8b0144a1024d26b4a0d92f5efce1153bb0bd462309e4edc4c51`。
+最終`pnpm quality`はunit 55 files／299 tests（artifact
+`.test-results/2026-08-30T16-33-49-913Z-320-822115`）、production 25 files／118 tests（72.00秒、artifact
+`.test-results/2026-08-30T16-33-54-342Z-795-195ec2`）、master validation、build、E2E 64 passed／32
+project-specific skipped（9.4分）まで成功した。
