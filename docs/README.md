@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab documentation registry"
-document_version: "1.5.9"
+document_version: "1.5.10"
 status: "Active"
 updated_at: "2026-08-31"
 ---
@@ -27,7 +27,7 @@ updated_at: "2026-08-31"
 
 | Path | Kind／status | Authority／scope |
 | --- | --- | --- |
-| [docs/README.md](README.md) | registry／Active v1.5.9 | 唯一のdocumentation navigation entry |
+| [docs/README.md](README.md) | registry／Active v1.5.10 | 唯一のdocumentation navigation entry |
 | [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.7 | product目的、機能範囲、データ境界、横断受入条件 |
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
@@ -35,14 +35,14 @@ updated_at: "2026-08-31"
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.7.0 | ranking policy、canonical scenario、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.2.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.6 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.7 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.4.5 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
 | [canonical data flow](guides/data-flow.md) | guide／Guideline v1.0.0 | master、calculation／ranking、user stateの依存方向 |
 | [document governance contract](guides/document-governance.md) | guide／Guideline v1.0.0 | Contract ID、Task closure、要件改訂、docs lint |
-| [prompt engineering guidelines](guides/prompt-engineering-guidelines.md) | guide／Guideline v1.1.0 | execution family flow、反証計画、開発promptとhandoffの運用。product semanticsは所有しない |
+| [prompt engineering guidelines](guides/prompt-engineering-guidelines.md) | guide／Guideline v1.1.1 | bounded execution flow、delta反証計画、開発promptとhandoffの運用。product semanticsは所有しない |
 | [data source licenses](licenses/data-sources.md) | license registry／Active | data source、license、attribution |
 
 `Proposed`から`Active`への変更は、要件本文の承認とTasksのapproval gate更新を同じ変更で記録する。ADRの判断を置換する場合は既存本文を現行化せず、新ADRと`superseded_by`を追加する。

@@ -8,10 +8,12 @@
 
 ## Plan the whole execution family
 
-- Before implementation, trace each canonical state through both the forward execution flow and any recovery flow back to application or UI. Inventory every consumer and every state-writing path, including preparation, preapply, the normal operation loop, projection, commit/rollback, fallback, cache, and aggregation where applicable.
+- Apply flow closure when a task changes canonical state, outcome classification, or multiple execution/write paths. Otherwise close it with one `N/A: reason` line.
+- For an applicable change, trace each canonical state through the forward execution flow and any recovery flow back to application or UI. Scope the inventory to direct readers/writers and paths that can change damage, precision, operation outcome, required input, or UI commands; include indirect dependencies only when they transform one of those results.
 - Define externally meaningful outcome classes before composing them. Do not collapse stochastic failure, disabled inclusion, repairable user input, semantic invalidity, and unsupported execution merely because they all avoid a numeric result.
 - Plan counterexamples as a state-by-path matrix. Cover alternate execution paths and schema-legal states absent from production, rather than proving only the central path or current production defaults.
-- Record assumptions, unverified paths, and production-negative cases in the plan and handoff. Passing tests, unchanged damage, or zero production occurrences do not make an uninspected path complete.
+- Keep one canonical flow note per semantic family. After its initial inventory, update only changed or newly discovered producers, consumers, writers, and counterexamples; plans and handoffs reference the note and current delta instead of copying it.
+- Classify each scoped path as `Verified`, `N/A: reason`, `Deferred: TSK-ID`, or `Blocking: reason`. Completion requires zero `Blocking` items. A production-negative case can become `Verified` through a schema-legal focused fixture.
 - Treat a structural review finding as evidence that the flow inventory or ownership model may be incomplete. Update the plan and its counterexamples before adding another patch. Review iteration is acceptable; minimizing or hiding the unresolved scope before resubmission is not.
 
 ## Converge on one canonical model

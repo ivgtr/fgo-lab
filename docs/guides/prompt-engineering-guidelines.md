@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 開発プロンプト運用ガイド"
-document_version: "1.1.0"
+document_version: "1.1.1"
 status: "Guideline"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -133,16 +133,20 @@ bug finding
 
 ### 3.4 Execution familyを閉じる計画手順
 
-中心moduleの入力と出力だけではなく、そのstateを読む全consumer、stateを書き換える全経路、利用者が修正するためのrecoveryを計画対象にする。これはレビュー差し戻しをなくす保証ではなく、未監査範囲を完了済みとして提出しにくくするための反証手順である。
+この手順はcanonical state、outcome classification、または複数のexecution／write pathを変更する作業に適用する。文書整理、単純な性能計測、CI／archive処理などstateful semantic changeを含まない作業は`Flow closure: N/A: <理由>`の一行で閉じる。これはレビュー差し戻しをなくす保証ではなく、未監査範囲を完了済みとして提出しにくくするための反証手順である。
 
-計画時は次の順序で一枚のflow closure noteを作る。
+探索対象は、現在のsemantic familyが所有、生成、変換するstateの直接reader／writerと、damage、precision、operation outcome、required input、UI commandを変える経路に限定する。間接依存はこれらの結果を変換する場合だけ含め、列挙したpreapply、projection、cache等が該当しない場合は`N/A: <根拠>`で閉じる。
+
+familyごとにtrackedなflow closure noteを一つだけ正本として置き、Tasksのclosure matrixまたはHandoffからpath、status、未解決項目だけを参照する。promptとhandoffは正本pathと今回のdeltaだけを記録し、flowやmatrixを複製しない。初回inventory後は、baseline commitから変更または新規発見されたproducer、consumer、writer、recovery、反証cellだけを再監査する。
+
+適用時は次の順序でflow closure noteを作る。
 
 1. 利用者から観測可能なoutcomeをexhaustiveに列挙する。少なくともsuccess、正常な非適用、修正可能な入力、semantic invalid、unsupportedを同値扱いしない。
 2. raw producerからcanonical IR、application command、resolver、activation、state mutation、result assembly、UI／rankingまでのforward flowを記録する。
 3. input validation、required-input収集、error classification、retry commandのように下流から利用者へ戻るrecovery flowを別に記録する。
 4. stateを書き換える場所を検索し、通常loop以外のpreapply、preparation transaction、projection override、commit／rollback、fallback、cache／aggregationを該当有無つきで列挙する。
 5. outcome stateとexecution pathの積から反証matrixを作り、特殊経路とproductionに存在しないschema-legal stateが少なくとも一度交差するfixtureを選ぶ。
-6. 未確認経路、production occurrence 0、仮定したownershipを明記し、それらをpass、非増加、対象外へ読み替えない。
+6. 各対象を`Verified`、`N/A: <理由>`、`Deferred: <TSK-ID>`、`Blocking: <理由>`のいずれかに分類する。`Blocking`が0件ならself-checkを終了でき、production occurrence 0もschema-legal fixtureがあれば`Verified`にできる。
 
 例:
 
@@ -169,6 +173,13 @@ canonical input / command
 
 review findingで新しい経路が見つかった場合は、期待値を一件追加する前にflow closure noteへconsumer、write site、recovery、反証cellを追加する。同じ中心ロジックのtestが通ることやproduction occurrenceが0件であることだけを再提出根拠にしない。
 
+通常はnoteをself-checkして同じsessionで実装へ進む。次の場合だけ計画レビューを要求して停止する。
+
+- ownershipが複数案に分かれる。
+- product requirementの拡張が必要になる。
+- scoped inventoryに`Blocking`なwrite pathが残る。
+- schema-legal stateの期待outcomeを正本から決められない。
+
 ## 4. 初回実装promptの型
 
 ```text
@@ -190,11 +201,9 @@ Scope:
 - 必要な依存変更は同じcanonical modelへ収束する範囲で許可する
 
 Flow closure:
-- outcome classes: <success / non-application / repairable input / invalid / unsupported>
-- forward consumers and state-writing paths: <paths>
-- recovery paths: <required-input / error / retry flow>
-- alternate paths: <preapply / projection / commit / fallback / none with evidence>
-- unverified or production-negative cases: <cases>
+- canonical note: <tracked path> | N/A: <reason>
+- baseline and delta: <changed/new producer, consumer, writer, recovery, counterexample>
+- status: <Verified / N/A / Deferred / Blocking summary>
 
 Invariants:
 - damage correctness最優先
@@ -209,8 +218,8 @@ Do not:
 
 Done when:
 - <TaskのDone gateを参照>
-- state × pathの反証matrixで中心経路以外を確認
-- 未確認経路とproduction occurrence 0をhandoffへ記録
+- <flow closure適用時> state × pathの反証matrixで中心経路以外を確認
+- <flow closure適用時> canonical noteの`Blocking`が0件
 - focused testsと必要なproduction gateが成功
 - inventory、digest、parity、performance差分を説明
 - requested filesだけをcommit
@@ -247,7 +256,7 @@ Scope:
 
 Done when:
 - reproductionが正しいtyped outcomeになる
-- findingで判明したconsumer／write site／recovery pathをflow inventoryへ追加
+- findingで判明したconsumer／write site／recovery pathのdeltaをcanonical noteへ追加
 - 同じstateが通常経路とalternate pathで同じ適用判定になる
 - 同familyのproduction inventoryを確認
 - calculator/ranking parityを維持
@@ -408,11 +417,13 @@ focused／production testsに加え、inventory、calculator/ranking parity、fa
 - [ ] 正本をpathで示し、全文を複製していないか。
 - [ ] actualとexpectedをcanonical inputで説明したか。
 - [ ] semantic familyと変更範囲を示したか。
-- [ ] observable outcomeをfailure／repairable input／invalid／unsupportedまで分けたか。
-- [ ] forward flowとrecovery flowを別々に追ったか。
-- [ ] 通常loop以外のstate mutation／projection／fallback経路を確認したか。
-- [ ] state × pathの反証matrixがあるか。
-- [ ] 未確認経路とproduction occurrence 0を明記したか。
+- [ ] flow closureの適用可否を判定し、非適用なら`N/A: 理由`で閉じたか。
+- [ ] 適用時、observable outcomeをfailure／repairable input／invalid／unsupportedまで分けたか。
+- [ ] 適用時、forward flowとrecovery flowを別々に追ったか。
+- [ ] 適用時、通常loop以外のstate mutation／projection／fallback経路を確認したか。
+- [ ] 適用時、state × pathの反証matrixがあるか。
+- [ ] 適用時、各対象をVerified／N/A／Deferred／Blockingへ分類し、Blockingを0件にしたか。
+- [ ] 適用時、prompt／handoffはcanonical noteのpathとdeltaだけを参照しているか。
 - [ ] 維持するinvariantを書いたか。
 - [ ] Done whenがtest成功以外も含むか。
 - [ ] 別問題を発見した場合の停止条件があるか。

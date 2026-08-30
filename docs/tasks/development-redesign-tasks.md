@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.6"
+document_version: "1.5.7"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -28,9 +28,11 @@ governance_contract: "docs/guides/document-governance.md"
 
 Task開始時に状態とbaseline identityを更新し、完了時にcommit、artifact manifest、inventory／digest差分、次taskの開始条件を記録する。raw test log、全source listing、全screenshotは本書へ貼らない。
 
-未完了Taskまたは未完了sub-itemは、実装前にflow closure noteをHandoffまたは対応evidenceへ記録する。noteは(1) observable outcome分類、(2) raw producerからresult consumerまでのforward flow、(3) required input／error／retryのrecovery flow、(4) normal loop以外のpreapply、transaction、projection、commit／rollback、fallback、cache／aggregationの該当有無、(5) state × path反証matrix、(6) 未確認経路とproduction occurrence 0を含む。これは全cellのfixture化や一般battle simulator化を要求せず、現在Taskのsemantic familyに限定する。
+flow closureはcanonical state、outcome classification、または複数のexecution／write pathを変更する未完了Task／sub-itemだけに適用する。それ以外は`Flow closure: N/A: <理由>`の一行で閉じる。対象範囲はsemantic familyの直接reader／writerと、damage、precision、operation outcome、required input、UI commandを変える経路に限定し、間接依存はこれらを変換する場合だけ含める。
 
-reviewで新しいconsumer、write site、recovery pathが判明した場合、局所patchより先にflow closure noteと反証matrixを更新する。手戻り回数自体をfailure metricにせず、未確認範囲の矮小化、production不在を安全性とみなすこと、中心経路だけの成功を完了承認へ使うことを禁止する。
+flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksはpath、status、未解決項目、prompt／handoffは正本pathと今回のdeltaだけを記録する。初回inventory後はbaselineから変更または新規発見されたproducer、consumer、writer、recovery、反証cellだけを再監査する。各対象を`Verified`、`N/A: <理由>`、`Deferred: <TSK-ID>`、`Blocking: <理由>`に分類し、`Blocking` 0件を完了条件とする。
+
+通常はnoteのself-check後に同じsessionで実装へ進む。ownershipが複数案に分かれる、product requirementを拡張する、`Blocking`なwrite pathが残る、schema-legal stateの期待outcomeを決められない場合だけ計画レビューを要求して停止する。reviewで新しい経路が判明した場合は局所patchより先に正本noteのdeltaを更新するが、手戻り回数自体はfailure metricにしない。
 
 ## 2. Task index
 
@@ -359,7 +361,7 @@ Depends on: TSK-03
 
 - [x] AttackProfile identityをcanonical化する。
 - [x] player choiceとstochastic outcomeをtyped semanticsへ分離する。
-- [ ] 残る各semantic familyについてforward／recovery／alternate mutation pathとstate × path反証matrixを実装前に記録する。
+- [ ] 残る各stateful semantic familyについて一意なflow closure noteを作り、全scoped pathをVerified／N/A／Deferredへ収束させる。
 - [ ] condition requirement、provenance、target、recipient、contribution scopeをcanonical化する。
 - [ ] NP capacity、resource requirement、gain／loss／all-consume、base OCをcanonical化する。
 - [ ] 旧schema reader、raw fallback、compatibility flagを削除する。
@@ -370,7 +372,7 @@ Done gate:
 - executionへraw key、raw target、raw buff typeを渡していない。
 - 新旧IRをruntimeで併存させていない。
 - 全production occurrenceがtyped inventoryへ分類されるか、型付きでfail-closedになる。
-- 中心経路以外のconsumer／state mutation／recovery pathと未確認範囲がflow closure noteで明示される。
+- flow closure noteの正本pathが記録され、scoped consumer／state mutation／recovery pathの`Blocking`が0件になる。
 
 Contract closure matrix:
 
@@ -419,7 +421,8 @@ Handoff:
 - Selection execution family quality: 最終`pnpm quality`はunit artifact `.test-results/2026-08-30T16-33-49-913Z-320-822115`、production artifact `.test-results/2026-08-30T16-33-54-342Z-795-195ec2`（72.00秒）、master validation、build、E2E 64 passed／32 project-specific skipped（9.4分）まで成功した。
 - Selection execution family review commit: 本review correction commit。
 - Planning correction baseline: `6c36607ac552792b9b6680bb4e49d936fbd2d66f`、clean worktree。selection reviewで見つかったpreapply迂回とcanonical input recovery消失を、個別findingではなくforward／recovery／alternate mutation pathの計画漏れとして一般化した。今後は各未完了familyの実装前にflow closure noteとstate × path反証matrixを作り、未確認経路とproduction occurrence 0を明示してから実装へ進む。
-- Next command: condition requirement、provenance、target、recipient、contribution scopeについて、まずobservable outcome、forward／recovery flow、alternate write path、state × path反証matrix、未確認範囲をflow closure noteへ記録する。その後raw occurrenceと現runtime branchをinventory化し、noteのレビュー後にdata-pipeline発行のcanonical semanticsへcutoverする。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
+- Planning scope correction baseline: `3300791c368fc8ff11ecfc8d0a68ab9cfaff46a5`、clean worktree。flow closureをstateful semantic changeへ限定し、familyごとの正本一意性、初回後のdelta監査、Verified／N/A／Deferred／BlockingとBlocking 0件の停止条件を追加した。通常はself-check後に実装へ進み、ownership分岐、requirement拡張、Blocking writer、期待outcome未確定の場合だけ計画レビューへ止める。
+- Next command: condition requirement、provenance、target、recipient、contribution scopeについて一つのcanonical flow closure noteを作り、observable outcome、forward／recovery flow、alternate write path、state × path反証matrixをscoped inventory化する。Blocking 0件をself-checkできれば同じsessionでdata-pipeline発行のcanonical semanticsへcutoverし、停止条件に該当する場合だけ計画レビューを要求する。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
 
 ### TSK-05: Transactional preparation execution
 
