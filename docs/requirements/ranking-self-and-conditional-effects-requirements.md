@@ -1,8 +1,8 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
 document_version: "0.7.0"
-status: "Proposed"
-approval_gate: "Required before TSK-04"
+status: "Active"
+approved_at: "2026-08-30"
 updated_at: "2026-08-30"
 created_at: "2026-08-30"
 related_adrs:
@@ -588,4 +588,4 @@ damage差分、性能見積もりを提示してから再開する。
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
-| 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | required before TSK-04: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: Proposed要件のinventory／digest baselineは変更しない |
+| 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | approved 2026-08-30: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: 承認状態の変更のみでinventory／digest baselineは変更しない |

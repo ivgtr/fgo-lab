@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.7"
+document_version: "1.4.8"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -371,12 +371,14 @@ Contract closure matrix:
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
 | `RK-IR-001` | Apply | `pnpm test:diagnostic -- <pipeline-and-schema-filter>`、`pnpm test:production` | `docs/evidence/<tsk-04-report>.md` |
-| `RK-AUDIT-001` | Apply | production inventory／digest check | `docs/evidence/<tsk-04-report>.md` |
+| `RK-AUDIT-001` | Deferred: TSK-08 | - | TSK-08 |
 | `TS-PERF-002` | Apply | affected production gateを変更前後各3回 | `docs/evidence/<tsk-04-report>.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `RK-EXEC-001` | Deferred: TSK-05 | - | TSK-05 |
 | `RK-POLICY-001` | Deferred: TSK-06 | - | TSK-06 |
 | `RK-UI-001` | Deferred: TSK-07 | - | TSK-07 |
+
+`RK-AUDIT-001`は四policy、NP1〜5、calculator／ranking parity、invalid／unsupportedを不可分に閉じるため、policy実装前のTSK-04では適用せずTSK-08へ延期する。TSK-04のcanonical IR inventory／digestは`RK-IR-001`で検証する。
 
 Handoff: 未記録
 

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab documentation registry"
-document_version: "1.5.4"
+document_version: "1.5.5"
 status: "Active"
 updated_at: "2026-08-30"
 ---
@@ -27,15 +27,15 @@ updated_at: "2026-08-30"
 
 | Path | Kind／status | Authority／scope |
 | --- | --- | --- |
-| [docs/README.md](README.md) | registry／Active v1.5.4 | 唯一のdocumentation navigation entry |
+| [docs/README.md](README.md) | registry／Active v1.5.5 | 唯一のdocumentation navigation entry |
 | [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.7 | product目的、機能範囲、データ境界、横断受入条件 |
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
 | [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.1 | condition、state mutation、ordered damage execution、UI不変条件 |
-| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Proposed v0.7.0 | ranking policy、canonical scenario、candidate、parity |
+| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.7.0 | ranking policy、canonical scenario、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.2.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.4.7 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.4.8 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.4.2 | damage／production／documentation evidence |
