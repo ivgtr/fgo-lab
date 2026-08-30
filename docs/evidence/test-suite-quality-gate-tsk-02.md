@@ -1,6 +1,6 @@
 ---
 title: "TSK-02 canonical test suites and quality gate evidence"
-document_version: "1.0.1"
+document_version: "1.0.2"
 status: "Complete"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -55,6 +55,27 @@ Product source、test assertion、snapshot、published master、damage／ranking
 
 このphaseではruntime master read／parse counterを実装しておらず、静的な20 files／42 source referencesをruntime回数または非増加の根拠にはしない。共有production audit modelがcounterを所有するT3から、runtime read／parse、compile、candidate生成、damage requestをblocking指標とする。T2は既存のcanonical assertionsからpreparation 422 servants／6,508 generated／4,009 deduplicated／3,559 terminal、ranking damage request 3,744／distinct input 1,644／hit 2,100、calculator parity 422、ranking 433を引き渡す。これらのassertion source、test identity、master、digestに差分はない。
 
+### 4.1 Output and detailed timing
+
+compact commandをUTF-8でcaptureし、末尾LFを含むstdout bytesと物理行を測定した。
+
+| Command／outcome | stdout | stderr | Artifact |
+| --- | ---: | ---: | --- |
+| `pnpm test:unit` success | 6行／185 bytes | 1行／52 bytes（pnpm command表示） | `.test-results/2026-08-30T06-48-19-774Z-22-b0ce0e` |
+| `pnpm test:production` success | 6行／193 bytes | 1行／58 bytes（pnpm command表示） | `.test-results/2026-08-30T06-48-24-453Z-490-f2df37` |
+| unit missing-filter diagnostic failure | 10行／393 bytes | 0行／0 bytes | `.test-results/2026-08-30T06-49-48-345Z-9-8bd114` |
+
+成功summaryはfile／test／skip／warning、duration、artifact pathを保持して10行ratchet内である。failure summaryもstatus、集計、diagnostic、完全artifact pathを保持して10行／393 bytesであり、上限200行／32 KiB内である。failure artifactにはmanifest、Vitest JSON、stdout、stderrが残る。
+
+Vitest default reporterを同じ環境で各Suite一回実行し、worker累積時間をwall-clockと分離して記録した。
+
+| Suite | Files／tests | wall-clock | transform | import | tests | environment | Slowest file |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| unit | 54／282 | 7.70秒 | 8.65秒 | 20.30秒 | 2.06秒 | 37.90秒 | `AppliedEffects.accessibility.test.tsx` 223ms |
+| production | 23／115 | 70.71秒 | 4.44秒 | 11.55秒 | 238.38秒 | 3ms | `rankingProduction.test.ts` 69.528秒 |
+
+setupは両Suiteとも0msだった。transform、import、tests、environmentはparallel worker累積値で、3-run wall-clock中央値と加算比較しない。productionの次点は`productionMasterInventory.test.ts` 27.013秒、`executionSemanticsProduction.test.ts` 26.146秒、`targetContextProduction.test.ts` 21.060秒であり、TSK-03の共有audit収束対象へ引き渡す。
+
 Auditorは次を再確認した。
 
 - semantic inventory digest: `5da30c87c74e36e1e9ca0ae7f4686df88259c8c3d6aa99cc2ec05650609d55d4`
@@ -70,5 +91,7 @@ Suite分類とrunner／workflow変更を含むaggregate digestは`0a326da93671ab
 最初のlocal `quality`は既定6 workersでChromium 4 casesがbrowser session closeまたは画面待機timeoutになったため中断した。同じ4 casesをChromium 1 workerで再実行すると4／4 pass、1.4分だった。この比較に基づき、`test:e2e`はCIの従来設定と同じ1 workerへ固定した。test selectionはChromium／mobile Chromiumの4 files／96 project casesから変更していない。
 
 review修正後の最終`pnpm quality`ではrunner contracts 10／10、unit 5.11秒（artifact `.test-results/2026-08-30T06-13-14-401Z-197-e4a4dc`）、production 80.64秒（artifact `.test-results/2026-08-30T06-13-20-053Z-665-cf76ab`）、published master valid、build成功、E2E 64 passed／32 project-specific skipped、10.3分だった。production suite内のevidence testsを含む397 Vitest contractsが通っており、damage、ranking、test assertion、snapshot、master差分は0である。
+
+Playwrightのlocal HTML artifactは`playwright-report/index.html`、run stateは`test-results/.last-run.json`である。CIは成功／失敗にかかわらず`playwright-report/`をartifact名`playwright-report`、retention 14日でuploadする。screenshotは失敗時だけ`test-results/<case>/test-failed-1.png`へ保存し、traceはlocalで失敗時、CIで初回retry時に`test-results/<case>/trace.zip`へ保存する設定である。
 
 最終runの一つ前は`unsupportedConvergenceGolden` 1 testが5.272秒でtimeoutし、qualityが非0終了した。同じfileのfocused production runは3／3 pass、7.15秒だった。TSK-00でも同じfileのfull-suite timeoutとfocused passが記録され、今回のdiffに当該test／product sourceは含まれないことを比較した。timeout値やassertionは変更せず、上記canonical gateの再実行成功を最終結果とした。
