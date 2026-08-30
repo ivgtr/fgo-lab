@@ -5,6 +5,8 @@ import {
   getSkillsForActorForm,
   noblePhantasmVariantKey,
   type ActorFormId,
+  type NoblePhantasmVariant,
+  type NoblePhantasmVariantCanonicalId,
   type NoblePhantasmVariantRef,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -18,8 +20,8 @@ export interface ActorFormProfileId {
     }[];
     passiveVariantIds: readonly string[];
     intrinsicTraits: readonly string[];
-    baseNoblePhantasmVariantId: string | null;
-    reachableAttackNoblePhantasmVariantIds: readonly string[];
+    baseNoblePhantasmVariantCanonicalId: NoblePhantasmVariantCanonicalId | null;
+    reachableAttackNoblePhantasmVariantCanonicalIds: readonly NoblePhantasmVariantCanonicalId[];
   };
 }
 
@@ -32,13 +34,13 @@ export interface ActorFormProfile {
 export interface AttackProfileId {
   servantLineageId: string;
   terminalActorFormProfileId: ActorFormProfileId;
-  attackNoblePhantasmVariantId: string;
+  attackNoblePhantasmVariantCanonicalId: NoblePhantasmVariantCanonicalId;
 }
 
 export interface AttackProfile {
   id: AttackProfileId;
   noblePhantasmVariant: NoblePhantasmVariantRef;
-  noblePhantasmVariantCanonicalId: string;
+  noblePhantasmVariantCanonicalId: NoblePhantasmVariantCanonicalId;
   targetScope: 'single' | 'all';
   cardType: 'buster' | 'arts' | 'quick';
   terminalFormLabel: string | null;
@@ -47,12 +49,21 @@ export interface AttackProfile {
 function formProfileId(
   servant: ServantMaster,
   formId: ActorFormId,
-  reachableAttackVariantIds: readonly string[],
+  reachableAttackVariantIds: readonly NoblePhantasmVariantCanonicalId[],
+  variantsByRef: ReadonlyMap<string, NoblePhantasmVariant>,
 ): ActorFormProfileId {
   const form = servant.actorFormGraph.forms.find(
     ({ id }) => actorFormKey(id) === actorFormKey(formId),
   );
   if (!form) throw new TypeError(`actor_form_missing:${actorFormKey(formId)}`);
+  const baseVariantRef = form.baseNoblePhantasmVariant;
+  const baseVariant = baseVariantRef
+    ? variantsByRef.get(noblePhantasmVariantKey(baseVariantRef))
+    : null;
+  if (baseVariantRef && !baseVariant)
+    throw new TypeError(
+      `base_noble_phantasm_variant_missing:${noblePhantasmVariantKey(baseVariantRef)}`,
+    );
   return {
     servantLineageId: servant.id,
     semantics: {
@@ -66,8 +77,8 @@ function formProfileId(
         .map(({ id }) => id)
         .sort(),
       intrinsicTraits: [...form.traits].sort(),
-      baseNoblePhantasmVariantId: form.baseNoblePhantasmVariant?.noblePhantasmId ?? null,
-      reachableAttackNoblePhantasmVariantIds: [...reachableAttackVariantIds].sort(),
+      baseNoblePhantasmVariantCanonicalId: baseVariant?.canonicalId ?? null,
+      reachableAttackNoblePhantasmVariantCanonicalIds: [...reachableAttackVariantIds].sort(),
     },
   };
 }
@@ -78,40 +89,46 @@ export function actorFormProfileIdKey(id: ActorFormProfileId): string {
     id.semantics.skillSlots.map(({ slot, skillVariantId }) => [slot, skillVariantId]),
     id.semantics.passiveVariantIds,
     id.semantics.intrinsicTraits,
-    id.semantics.baseNoblePhantasmVariantId,
-    id.semantics.reachableAttackNoblePhantasmVariantIds,
+    id.semantics.baseNoblePhantasmVariantCanonicalId,
+    id.semantics.reachableAttackNoblePhantasmVariantCanonicalIds,
   ]);
 }
 
 export function attackProfileKey(profile: AttackProfile): string {
   if (profile.id.servantLineageId !== profile.id.terminalActorFormProfileId.servantLineageId)
     throw new TypeError('attack_profile_lineage_mismatch');
-  if (profile.id.attackNoblePhantasmVariantId !== profile.noblePhantasmVariantCanonicalId)
+  if (profile.id.attackNoblePhantasmVariantCanonicalId !== profile.noblePhantasmVariantCanonicalId)
     throw new TypeError('attack_profile_variant_mismatch');
   return JSON.stringify([
     profile.id.servantLineageId,
     profile.id.terminalActorFormProfileId.semantics,
-    profile.id.attackNoblePhantasmVariantId,
+    profile.id.attackNoblePhantasmVariantCanonicalId,
   ]);
+}
+
+function indexNoblePhantasmVariants(
+  servant: ServantMaster,
+): ReadonlyMap<string, NoblePhantasmVariant> {
+  const variantsByRef = new Map<string, NoblePhantasmVariant>();
+  for (const variant of servant.noblePhantasmVariantGroups.flatMap(({ variants }) => variants)) {
+    const key = noblePhantasmVariantKey(variant.ref);
+    if (variantsByRef.has(key)) throw new TypeError(`noble_phantasm_variant_ambiguous:${key}`);
+    variantsByRef.set(key, variant);
+  }
+  return variantsByRef;
 }
 
 export function createActorFormProfiles(
   servant: ServantMaster,
   terminalStates: readonly PreNoblePhantasmState[],
 ): readonly ActorFormProfile[] {
-  const reachableByForm = new Map<string, Set<string>>();
-  const attackVariantsByRef = new Map(
-    servant.noblePhantasmVariantGroups.flatMap(({ variants }) =>
-      variants.flatMap((variant) =>
-        variant.kind === 'attack' ? [[noblePhantasmVariantKey(variant.ref), variant] as const] : [],
-      ),
-    ),
-  );
+  const reachableByForm = new Map<string, Set<NoblePhantasmVariantCanonicalId>>();
+  const variantsByRef = indexNoblePhantasmVariants(servant);
   for (const state of terminalStates) {
     const variantRef = state.selectedNoblePhantasmVariant;
     if (!variantRef) continue;
-    const variant = attackVariantsByRef.get(noblePhantasmVariantKey(variantRef));
-    if (!variant)
+    const variant = variantsByRef.get(noblePhantasmVariantKey(variantRef));
+    if (!variant || variant.kind !== 'attack')
       throw new TypeError(`terminal_attack_variant_invalid:${noblePhantasmVariantKey(variantRef)}`);
     const formKey = actorFormKey(state.currentFormId);
     const variants = reachableByForm.get(formKey) ?? new Set<string>();
@@ -120,9 +137,12 @@ export function createActorFormProfiles(
   }
   const formsByIdentity = new Map<string, { id: ActorFormProfileId; formIds: ActorFormId[] }>();
   for (const form of servant.actorFormGraph.forms) {
-    const id = formProfileId(servant, form.id, [
-      ...(reachableByForm.get(actorFormKey(form.id)) ?? []),
-    ]);
+    const id = formProfileId(
+      servant,
+      form.id,
+      [...(reachableByForm.get(actorFormKey(form.id)) ?? [])],
+      variantsByRef,
+    );
     const key = actorFormProfileIdKey(id);
     const existing = formsByIdentity.get(key);
     formsByIdentity.set(key, {
@@ -156,9 +176,7 @@ export function attackProfileForTerminalState(
 ): AttackProfile {
   const variantRef = state.selectedNoblePhantasmVariant;
   if (!variantRef) throw new TypeError(`terminal_attack_variant_missing:${servant.id}`);
-  const variant = servant.noblePhantasmVariantGroups
-    .flatMap(({ variants }) => variants)
-    .find(({ ref }) => noblePhantasmVariantKey(ref) === noblePhantasmVariantKey(variantRef));
+  const variant = indexNoblePhantasmVariants(servant).get(noblePhantasmVariantKey(variantRef));
   if (!variant || variant.kind !== 'attack')
     throw new TypeError(`terminal_attack_variant_invalid:${noblePhantasmVariantKey(variantRef)}`);
   const matchingProfiles = profiles.filter(({ formIds }) =>
@@ -173,7 +191,11 @@ export function attackProfileForTerminalState(
   const profile = matchingProfiles[0]!;
   if (profile.id.servantLineageId !== servant.id)
     throw new TypeError(`terminal_actor_form_profile_lineage_mismatch:${servant.id}`);
-  if (!profile.id.semantics.reachableAttackNoblePhantasmVariantIds.includes(variant.canonicalId))
+  if (
+    !profile.id.semantics.reachableAttackNoblePhantasmVariantCanonicalIds.includes(
+      variant.canonicalId,
+    )
+  )
     throw new TypeError(
       `terminal_attack_variant_unreachable:${noblePhantasmVariantKey(variantRef)}`,
     );
@@ -181,7 +203,7 @@ export function attackProfileForTerminalState(
     id: {
       servantLineageId: servant.id,
       terminalActorFormProfileId: profile.id,
-      attackNoblePhantasmVariantId: variant.canonicalId,
+      attackNoblePhantasmVariantCanonicalId: variant.canonicalId,
     },
     noblePhantasmVariant: variant.ref,
     noblePhantasmVariantCanonicalId: variant.canonicalId,

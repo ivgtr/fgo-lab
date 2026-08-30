@@ -63,6 +63,7 @@ const input = {
 } as unknown as DamageResolutionInput;
 const noblePhantasmVariant = {
   kind: 'nonAttack' as const,
+  canonicalId: 'np:1',
   ref: { actorFormId: 'servant:1', noblePhantasmId: 'np:1' },
   name: 'NP',
   priority: 1,

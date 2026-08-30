@@ -1,5 +1,5 @@
 import {
-  canonicalAttackNoblePhantasmVariantSemanticsKey,
+  canonicalNoblePhantasmVariantSemanticsKey,
   getNoblePhantasmVariants,
   noblePhantasmVariantKey,
   type MasterDataSnapshot,
@@ -28,7 +28,7 @@ export interface DataPipelineProductionAudit {
     effects: number;
     operations: number;
     damageFunctions: number;
-    attackNoblePhantasmVariantIdentities: number;
+    noblePhantasmVariantIdentities: number;
     rawFunctionTypes: number;
     rawBuffTypes: number;
     rawParameterKeys: number;
@@ -93,21 +93,21 @@ export function compileDataPipelineProductionAudit(
   master: MasterDataSnapshot,
 ): DataPipelineProductionAudit {
   const occurrences = effectOccurrences(master);
-  const attackVariantRecords: CanonicalAuditRecord[] = master.servants.flatMap((servant) => {
+  const variantRecords: CanonicalAuditRecord[] = master.servants.flatMap((servant) => {
     const variantsByCanonicalId = new Map<
       string,
-      { card: string; targetScope: string; formQualifiedRefs: string[] }
+      { kind: string; card: string | null; targetScope: string | null; formQualifiedRefs: string[] }
     >();
     for (const variant of getNoblePhantasmVariants(servant)) {
-      if (variant.kind !== 'attack') continue;
-      if (variant.canonicalId !== sha256(canonicalAttackNoblePhantasmVariantSemanticsKey(variant)))
+      if (variant.canonicalId !== sha256(canonicalNoblePhantasmVariantSemanticsKey(variant)))
         throw new TypeError(
-          `attack_noble_phantasm_variant_canonical_id_mismatch:${servant.id}:${noblePhantasmVariantKey(variant.ref)}`,
+          `noble_phantasm_variant_canonical_id_mismatch:${servant.id}:${noblePhantasmVariantKey(variant.ref)}`,
         );
       const current = variantsByCanonicalId.get(variant.canonicalId);
       variantsByCanonicalId.set(variant.canonicalId, {
-        card: variant.card,
-        targetScope: variant.targetScope,
+        kind: variant.kind,
+        card: variant.kind === 'attack' ? variant.card : null,
+        targetScope: variant.kind === 'attack' ? variant.targetScope : null,
         formQualifiedRefs: [
           ...(current?.formQualifiedRefs ?? []),
           noblePhantasmVariantKey(variant.ref),
@@ -115,7 +115,7 @@ export function compileDataPipelineProductionAudit(
       });
     }
     return [...variantsByCanonicalId].map(([canonicalId, value]) => ({
-      identity: `attack-np-variant:${servant.id}:${canonicalId}`,
+      identity: `np-variant:${servant.id}:${canonicalId}`,
       value,
     }));
   });
@@ -172,7 +172,7 @@ export function compileDataPipelineProductionAudit(
     effects: occurrences.length,
     operations: occurrences.reduce((count, { effect }) => count + effect.execution.length, 0),
     damageFunctions: damageRecords.length,
-    attackNoblePhantasmVariantIdentities: attackVariantRecords.length,
+    noblePhantasmVariantIdentities: variantRecords.length,
     rawFunctionTypes: rawFunctionTypes.length,
     rawBuffTypes: rawBuffTypes.length,
     rawParameterKeys: rawParameterKeys.length,
@@ -196,7 +196,7 @@ export function compileDataPipelineProductionAudit(
       identity: `normalization-exclusion:${identity}`,
       value: { reason },
     })),
-    ...attackVariantRecords,
+    ...variantRecords,
     ...effectRecords,
     ...damageRecords,
   ];

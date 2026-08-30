@@ -76,7 +76,7 @@ describe('master validation', () => {
       errors: [],
       unknownAttackFunctions: [],
     }));
-  it('rejects conflicting semantics for one canonical attack NP variant ID', () => {
+  it('rejects conflicting semantics for one canonical NP variant ID', () => {
     const source = fixture.servants[0]!;
     const sourceForm = source.actorFormGraph.forms[0]!;
     const sourceVariant = source.noblePhantasmVariantGroups[0]!.variants[0]!;
@@ -127,7 +127,83 @@ describe('master validation', () => {
     expect(parsed.success).toBe(false);
     if (!parsed.success)
       expect(parsed.error.issues.map(({ message }) => message)).toContain(
-        'conflicting canonical attack noble phantasm variant semantics',
+        'conflicting canonical noble phantasm variant semantics',
+      );
+  });
+  it('canonicalizes form-qualified non-attack base variants by semantics', () => {
+    const source = fixture.servants[0]!;
+    const sourceForm = source.actorFormGraph.forms[0]!;
+    const duplicateFormId = { actorId: 'fixture-saber-non-attack-duplicate', limitCount: 0 };
+    const baseRef = { actorFormId: sourceForm.id, noblePhantasmId: 'shared-non-attack-np' };
+    const duplicateRef = {
+      actorFormId: duplicateFormId,
+      noblePhantasmId: baseRef.noblePhantasmId,
+    };
+    const baseCanonicalId = '1'.repeat(64);
+    const differentCanonicalId = '2'.repeat(64);
+    const snapshotWithDuplicateBase = (
+      priority: number,
+      duplicateCanonicalId = baseCanonicalId,
+    ) => ({
+      ...fixture,
+      servants: [
+        {
+          ...source,
+          actorFormGraph: {
+            ...source.actorFormGraph,
+            forms: [
+              ...source.actorFormGraph.forms.map((form) =>
+                form === sourceForm ? { ...form, baseNoblePhantasmVariant: baseRef } : form,
+              ),
+              { ...sourceForm, id: duplicateFormId, baseNoblePhantasmVariant: duplicateRef },
+            ],
+          },
+          noblePhantasmVariantGroups: [
+            ...source.noblePhantasmVariantGroups,
+            {
+              id: 'shared-non-attack-group',
+              baseVariant: baseRef,
+              variants: [
+                {
+                  kind: 'nonAttack' as const,
+                  canonicalId: baseCanonicalId,
+                  ref: baseRef,
+                  name: 'base presentation',
+                  priority: 1,
+                  effects: [],
+                },
+                {
+                  kind: 'nonAttack' as const,
+                  canonicalId: duplicateCanonicalId,
+                  ref: duplicateRef,
+                  name: 'duplicate presentation',
+                  priority,
+                  effects: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(masterSnapshotSchema.safeParse(snapshotWithDuplicateBase(1)).success).toBe(true);
+    expect(
+      masterSnapshotSchema.safeParse(snapshotWithDuplicateBase(2, differentCanonicalId)).success,
+    ).toBe(true);
+    const conflicting = masterSnapshotSchema.safeParse(snapshotWithDuplicateBase(2));
+    expect(conflicting.success).toBe(false);
+    if (!conflicting.success)
+      expect(conflicting.error.issues.map(({ message }) => message)).toContain(
+        'conflicting canonical noble phantasm variant semantics',
+      );
+    const splitEquivalent = masterSnapshotSchema.safeParse(
+      snapshotWithDuplicateBase(1, differentCanonicalId),
+    );
+    expect(splitEquivalent.success).toBe(false);
+    if (!splitEquivalent.success)
+      expect(splitEquivalent.error.issues.map(({ message }) => message)).toContain(
+        'equivalent noble phantasm semantics use different canonical IDs',
       );
   });
   it('rejects an unknown attack function in the normalized master', () =>

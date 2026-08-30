@@ -35,7 +35,7 @@ updated_at: "2026-08-30"
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.7.0 | ranking policy、canonical scenario、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.2.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.1 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.2 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.4.2 | damage／production／documentation evidence |

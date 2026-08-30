@@ -17,6 +17,7 @@ function state(
     actorFormId: { actorId: 'fixture-form', limitCount: 0 },
     noblePhantasmVariant: {
       kind: 'nonAttack',
+      canonicalId: 'fixture-np',
       ref: {
         actorFormId: { actorId: 'fixture-form', limitCount: 0 },
         noblePhantasmId: 'fixture-np',

@@ -124,6 +124,116 @@ describe('ActorFormProfile canonical equivalence', () => {
     expect(attackProfileKey(originalAttack)).not.toBe(attackProfileKey(duplicateAttack));
   });
 
+  it('uses canonical semantics for form-qualified non-attack base variants', () => {
+    const build = (duplicatePriority: number, duplicateCanonicalId: string) => {
+      const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
+      const baseRef = {
+        actorFormId: original.currentFormId,
+        noblePhantasmId: 'shared-non-attack-base',
+      };
+      const duplicateRef = {
+        actorFormId: duplicateFormId,
+        noblePhantasmId: baseRef.noblePhantasmId,
+      };
+      const canonicalId = 'shared-non-attack-canonical';
+      const changed: ServantMaster = {
+        ...servant,
+        actorFormGraph: {
+          ...servant.actorFormGraph,
+          forms: servant.actorFormGraph.forms.map((form) => {
+            if (form.id.actorId === original.currentFormId.actorId)
+              return { ...form, baseNoblePhantasmVariant: baseRef };
+            if (form.id.actorId === duplicateFormId.actorId)
+              return { ...form, baseNoblePhantasmVariant: duplicateRef };
+            return form;
+          }),
+        },
+        noblePhantasmVariantGroups: [
+          ...servant.noblePhantasmVariantGroups,
+          {
+            id: 'shared-non-attack-base-group',
+            baseVariant: baseRef,
+            variants: [
+              {
+                kind: 'nonAttack' as const,
+                canonicalId,
+                ref: baseRef,
+                name: 'base presentation',
+                priority: 1,
+                effects: [],
+              },
+              {
+                kind: 'nonAttack' as const,
+                canonicalId: duplicateCanonicalId,
+                ref: duplicateRef,
+                name: 'duplicate presentation',
+                priority: duplicatePriority,
+                effects: [],
+              },
+            ],
+          },
+        ],
+      };
+      return { changed, original, duplicate, canonicalId };
+    };
+
+    const equivalent = build(1, 'shared-non-attack-canonical');
+    const equivalentProfiles = createActorFormProfiles(equivalent.changed, [
+      equivalent.original,
+      equivalent.duplicate,
+    ]);
+    expect(
+      equivalentProfiles.find(({ formIds }) =>
+        formIds.some(({ actorId }) => actorId === equivalent.original.currentFormId.actorId),
+      )?.formIds,
+    ).toHaveLength(2);
+
+    const distinct = build(2, 'different-non-attack-canonical');
+    const distinctProfiles = createActorFormProfiles(distinct.changed, [
+      distinct.original,
+      distinct.duplicate,
+    ]);
+    expect(
+      distinctProfiles.filter(({ formIds }) =>
+        formIds.some(
+          ({ actorId }) =>
+            actorId === distinct.original.currentFormId.actorId ||
+            actorId === distinct.duplicate.currentFormId.actorId,
+        ),
+      ),
+    ).toHaveLength(2);
+  });
+
+  it('fails closed when a base NP ref is unresolved or ambiguous', () => {
+    const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
+    const missingRef = { actorFormId: duplicateFormId, noblePhantasmId: 'missing-base-variant' };
+    const missing: ServantMaster = {
+      ...servant,
+      actorFormGraph: {
+        ...servant.actorFormGraph,
+        forms: servant.actorFormGraph.forms.map((form) =>
+          form.id.actorId === duplicateFormId.actorId
+            ? { ...form, baseNoblePhantasmVariant: missingRef }
+            : form,
+        ),
+      },
+    };
+    expect(() => createActorFormProfiles(missing, [original, duplicate])).toThrow(
+      'base_noble_phantasm_variant_missing',
+    );
+
+    const sourceVariant = servant.noblePhantasmVariantGroups[0]!.variants[0]!;
+    const ambiguous: ServantMaster = {
+      ...servant,
+      noblePhantasmVariantGroups: servant.noblePhantasmVariantGroups.map((group, index) =>
+        index === 0 ? { ...group, variants: [...group.variants, sourceVariant] } : group,
+      ),
+    };
+    expect(() => createActorFormProfiles(ambiguous, [original, duplicate])).toThrow(
+      'noble_phantasm_variant_ambiguous',
+    );
+  });
+
   it('does not merge forms with a different skill set', () => {
     const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
     const skillVariant = {
@@ -152,34 +262,16 @@ describe('ActorFormProfile canonical equivalence', () => {
     );
   });
 
-  it.each([
-    [
-      'trait',
-      (form: ServantMaster['actorFormGraph']['forms'][number]) => ({
-        ...form,
-        traits: [...form.traits, 'profile-test-trait'],
-      }),
-    ],
-    [
-      'base NP variant',
-      (form: ServantMaster['actorFormGraph']['forms'][number]) => ({
-        ...form,
-        baseNoblePhantasmVariant: form.baseNoblePhantasmVariant
-          ? {
-              ...form.baseNoblePhantasmVariant,
-              noblePhantasmId: `${form.baseNoblePhantasmVariant.noblePhantasmId}-profile-test`,
-            }
-          : null,
-      }),
-    ],
-  ])('does not merge forms with a different %s', (_, change) => {
+  it('does not merge forms with a different trait', () => {
     const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
     const changed: ServantMaster = {
       ...servant,
       actorFormGraph: {
         ...servant.actorFormGraph,
         forms: servant.actorFormGraph.forms.map((form) =>
-          form.id.actorId === duplicateFormId.actorId ? change(form) : form,
+          form.id.actorId === duplicateFormId.actorId
+            ? { ...form, traits: [...form.traits, 'profile-test-trait'] }
+            : form,
         ),
       },
     };
@@ -218,7 +310,10 @@ describe('ActorFormProfile canonical equivalence', () => {
     expect(() =>
       attackProfileKey({
         ...attackProfile,
-        id: { ...attackProfile.id, attackNoblePhantasmVariantId: 'contradictory-variant' },
+        id: {
+          ...attackProfile.id,
+          attackNoblePhantasmVariantCanonicalId: 'contradictory-variant',
+        },
       }),
     ).toThrow('attack_profile_variant_mismatch');
   });

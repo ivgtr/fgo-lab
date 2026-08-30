@@ -1,7 +1,7 @@
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   actorFormKey,
-  canonicalAttackNoblePhantasmVariantSemanticsKey,
+  canonicalNoblePhantasmVariantSemanticsKey,
   masterSnapshotSchema,
 } from '@fgo-lab/master-data';
 import type {
@@ -220,7 +220,13 @@ export function normalizeAtlasSnapshot(input: {
               : ('afterDamage' as const),
         })),
       };
-      if (damageFunctions.length === 0) return { kind: 'nonAttack' as const, ...common };
+      if (damageFunctions.length === 0) {
+        const nonAttackVariant = { kind: 'nonAttack' as const, ...common };
+        return {
+          ...nonAttackVariant,
+          canonicalId: sha256(canonicalNoblePhantasmVariantSemanticsKey(nonAttackVariant)),
+        };
+      }
       const damage = damageFunctions.map(({ fn, functionIndex }) =>
         normalizeNpDamageFunction(
           fn,
@@ -246,7 +252,7 @@ export function normalizeAtlasSnapshot(input: {
       };
       return {
         ...attackVariant,
-        canonicalId: sha256(canonicalAttackNoblePhantasmVariantSemanticsKey(attackVariant)),
+        canonicalId: sha256(canonicalNoblePhantasmVariantSemanticsKey(attackVariant)),
       };
     };
     const noblePhantasmVariantGroups = noblePhantasmModel.groups.map((group) => ({

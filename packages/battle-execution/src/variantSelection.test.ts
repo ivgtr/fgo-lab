@@ -52,6 +52,7 @@ const base = attack(baseForm, 'np:base', 'buster');
 const changed = attack(changedForm, 'np:changed', 'arts');
 const nonAttack: NoblePhantasmVariant = {
   kind: 'nonAttack',
+  canonicalId: 'np:defense',
   ref: { actorFormId: baseForm, noblePhantasmId: 'np:defense' },
   name: 'defense',
   priority: 1,

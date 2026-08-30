@@ -12,15 +12,15 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const check = process.argv.includes('--check');
 
 const expectedDigests = {
-  semanticInventory: 'b1e41a5c8251cdb04041a33ac7ee96f6d24166aef568b7796b368426115b6b9c',
+  semanticInventory: 'd8edd868f34275a079879d9ec8468b31562ef45edc921e675c0ff8840227bfa4',
   testFiles: '8ec36912229b62cb3f5631b68367ca1c714a057d0adb3f5437f5bfb79e1adb51',
-  testNames: '3945581ad402e76048e84082163f06925be5cf2770a9d79aeae204cb7daf614c',
+  testNames: 'a463f44c72fa2d809ef35866c183ed29fd22484594f00124509d4131c2b881a5',
   productionTestFiles: '621885fe435ebf4e63e02a3027a8d76738fcc67e8304ac52e1885302d4c95880',
   unitFixtureTestFiles: '4292e559a733b07f9bc5f9fa363e19854d0c8f4d676ca5570207c249ff3200e0',
   pngBaselines: '537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
-  stableArtifact: 'd6b4e8821902b9522f8b026679f3f5f9d49b08918bf88b84d88622ec03336e48',
+  stableArtifact: 'bd37d3d416b13eec725e6e274ef3403ce0d794d3c2cc885b4a6c3ec59bbfbd50',
 };
 
 function sha256(value) {
