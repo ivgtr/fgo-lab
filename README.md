@@ -19,6 +19,6 @@ Node.js 24以上、pnpm 11を対象とします。`pnpm build`はGitHub Pages向
 pnpm quality
 ```
 
-変更中は`pnpm test:diagnostic -- <filter>`、`pnpm test:unit`、`pnpm test:production`の順に対象を広げます。`pnpm quality`はformat、lint、typecheck、重複しないunit／production Vitest、published master検証、build、Chromium／mobile Chromium E2Eを一度ずつ実行する、local／CI／Pages共通の完了ゲートです。`validate:evidence`と`validate:master`は対象を絞った診断にも使用できます。
+変更中は`pnpm test:diagnostic -- <filter>`、`pnpm test:unit`、`pnpm test:production`の順に対象を広げます。`pnpm quality`はformat、lint、typecheck、runner／Suite／workflow contracts、重複しないunit／production Vitest、published master検証、build、Chromium／mobile Chromium E2Eを一度ずつ実行する、local／CI／Pages共通の完了ゲートです。`validate:evidence`と`validate:master`は対象を絞った診断にも使用できます。
 
 Atlas JPのraw exportを`data/raw/`へ配置した場合、`pnpm --filter @fgo-lab/data-pipeline normalize <version>`で配信用マスターを再生成できます。rawファイルはリポジトリへコミットしません。

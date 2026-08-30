@@ -1,6 +1,6 @@
 ---
 title: "TSK-02 canonical test suites and quality gate evidence"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "Complete"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -12,7 +12,7 @@ implementation_task: "docs/tasks/development-redesign-tasks.md TSK-02"
 
 ## 1. Outcome and invariant
 
-Local、CI、Pagesは`pnpm quality`を唯一の完了入口とし、format、lint、typecheck、unit、production、published master validation、build、Chromium／mobile Chromium E2Eを同じ順序と意味集合で実行する。test infrastructureはFGO domain語彙を解釈せず、production master全件監査、calculator／ranking parity、fail-closed、golden、evidenceをproduction suiteから省略しない。
+Local、CI、Pagesは`pnpm quality`を唯一の完了入口とし、format、lint、typecheck、runner／Suite／workflow contracts、unit、production、published master validation、build、Chromium／mobile Chromium E2Eを同じ順序と意味集合で実行する。test infrastructureはFGO domain語彙を解釈せず、production master全件監査、calculator／ranking parity、fail-closed、golden、evidenceをproduction suiteから省略しない。
 
 Product source、test assertion、snapshot、published master、damage／ranking semanticsは変更していない。masterはversion `20260829.8`、33,850,263 bytes、SHA-256 `c88fb68d2735f54151de3b965c1d80861cd922159119f47072f9e62ed1a4d9f1`のままである。
 
@@ -33,16 +33,27 @@ Product source、test assertion、snapshot、published master、damage／ranking
 | Scope | Command | Completion use |
 | --- | --- | --- |
 | focused diagnosis | `pnpm test:diagnostic -- <filter>` | 一つのfailureまたはsemantic family |
+| runner contracts | `pnpm test:runner` | capture、artifact、Suite partition、workflow入口 |
 | unit phase | `pnpm test:unit` | production masterを使わない高頻度feedback |
 | production phase | `pnpm test:production` | inventory、golden、parity、evidence |
 | full Vitest diagnosis | `pnpm test:agent` | 77 filesを一processで確認 |
 | canonical completion | `pnpm quality` | local／CI／Pages共通の唯一の完了gate |
 
-`validate:evidence`はproduction project内の2 filesだけをrunner経由で実行する診断aliasとして残し、`quality`からは呼ばない。`validate:master`は重複していたmaster-data／data-pipeline Vitestを外し、manifest checksum、schema、artifact validationを行うCLIだけを所有する。production suiteが同じVitest contractを一度実行する。
+`quality`はformat、lint、typecheckに続いて`test:runner`を必須実行し、capture／artifact、Suite partition、CI／Pages入口の10 Node contractsを検証する。その後にunit／productionを一度ずつ実行する。`validate:evidence`はproduction project内の2 filesだけをrunner経由で実行する診断aliasとして残し、`quality`からは呼ばない。`validate:master`は重複していたmaster-data／data-pipeline Vitestを外し、manifest checksum、schema、artifact validationを行うCLIだけを所有する。production suiteが同じVitest contractを一度実行する。
 
 ## 4. Gate and production evidence
 
-個別phase計測では`pnpm test:unit`は54 files／282 tests、4.71秒、warning 0、`pnpm test:production`は23 files／115 tests、81.75秒、warning 0で成功した。二process合計86.46秒はTSK-01 wrapped full-run中央値84.06秒より2.40秒／2.86%長い。これは排他的phase gateを二つのVitest processとして明示したstartup境界であり、test identity、master load数、candidate、damage requestを増やしていない。production共有load／compileによる短縮は依存Task TSK-03で扱う。
+同一Node 26.3.1、pnpm 11.20.0、Vitest 4.1.11、master `20260829.8`環境で変更後のsplit gateを3回測定した。
+
+| Run | unit | production | 合計 |
+| --- | ---: | ---: | ---: |
+| 1 | 4.591秒 | 79.466秒 | 84.057秒 |
+| 2 | 4.709秒 | 81.755秒 | 86.464秒 |
+| 3 | 4.562秒 | 85.776秒 | 90.338秒 |
+
+変更後中央値86.464秒は、同じ環境で取得したTSK-01変更前wrapped 83.34／84.06／84.28秒（中央値84.06秒）に対して+2.404秒／+2.86%である。二つのVitest process startupを明示した構造差であり、10%以上または5秒以上の構造変更ratchetには到達しない。
+
+このphaseではruntime master read／parse counterを実装しておらず、静的な20 files／42 source referencesをruntime回数または非増加の根拠にはしない。共有production audit modelがcounterを所有するT3から、runtime read／parse、compile、candidate生成、damage requestをblocking指標とする。T2は既存のcanonical assertionsからpreparation 422 servants／6,508 generated／4,009 deduplicated／3,559 terminal、ranking damage request 3,744／distinct input 1,644／hit 2,100、calculator parity 422、ranking 433を引き渡す。これらのassertion source、test identity、master、digestに差分はない。
 
 Auditorは次を再確認した。
 
@@ -52,10 +63,12 @@ Auditorは次を再確認した。
 - calculator default parity: 422 records、ranking default: 433 rows、production condition: 10 kinds（production suite assertionsで維持）
 - PNG baseline: 11 files、digest `537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6`
 
-Suite分類とrunner／workflow変更を含むaggregate digestは`ffc0eb340595c381e44d34d275d9c112ef43b1fd3b5d8609ed20ff8ec1d05940`へ更新した。product inventory／damage digestの変更ではない。
+Suite分類とrunner／workflow変更を含むaggregate digestは`0a326da93671ab724a7b050011a0354522416567c07a3febb1b9ccd09df67c53`へ更新した。product inventory／damage digestの変更ではない。
 
 ## 5. E2E execution
 
 最初のlocal `quality`は既定6 workersでChromium 4 casesがbrowser session closeまたは画面待機timeoutになったため中断した。同じ4 casesをChromium 1 workerで再実行すると4／4 pass、1.4分だった。この比較に基づき、`test:e2e`はCIの従来設定と同じ1 workerへ固定した。test selectionはChromium／mobile Chromiumの4 files／96 project casesから変更していない。
 
-最終`pnpm quality`ではunit 4.56秒（artifact `.test-results/2026-08-30T05-33-34-221Z-114-f3f5de`）、production 85.78秒（artifact `.test-results/2026-08-30T05-33-39-313Z-582-2f0836`）、published master valid、build成功、E2E 64 passed／32 project-specific skipped、10.3分だった。続けて`pnpm test:runner` 10／10、baseline auditor `--check`、`git diff --check`が成功した。production suite内のevidence testsを含む397 testsが通っており、damage、ranking、test assertion、snapshot、master差分は0である。
+review修正後の最終`pnpm quality`ではrunner contracts 10／10、unit 5.11秒（artifact `.test-results/2026-08-30T06-13-14-401Z-197-e4a4dc`）、production 80.64秒（artifact `.test-results/2026-08-30T06-13-20-053Z-665-cf76ab`）、published master valid、build成功、E2E 64 passed／32 project-specific skipped、10.3分だった。production suite内のevidence testsを含む397 Vitest contractsが通っており、damage、ranking、test assertion、snapshot、master差分は0である。
+
+最終runの一つ前は`unsupportedConvergenceGolden` 1 testが5.272秒でtimeoutし、qualityが非0終了した。同じfileのfocused production runは3／3 pass、7.15秒だった。TSK-00でも同じfileのfull-suite timeoutとfocused passが記録され、今回のdiffに当該test／product sourceは含まれないことを比較した。timeout値やassertionは変更せず、上記canonical gateの再実行成功を最終結果とした。

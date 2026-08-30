@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.1.1"
+document_version: "1.1.2"
 status: "Active"
 approved_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -199,6 +199,7 @@ result formatter
 | `pnpm test:production` | production audit、golden、parity | 全マスター品質ゲート |
 | `pnpm test:agent` | `pnpm test`と同じ集合 | エージェント向け固定出力 |
 | `pnpm test:diagnostic` | 指定suiteまたは全件 | verboseな対話診断 |
+| `pnpm test:runner` | Node runner／Suite／workflow contracts | canonical test基盤の自己検証 |
 | `pnpm test:e2e` | Playwright | Chromium／mobile接続確認 |
 | `pnpm test:a11y` | Playwright `@a11y` | accessibility確認 |
 | `pnpm quality` | 下記canonical gate | CIとローカルの共通入口 |
@@ -211,13 +212,15 @@ result formatter
 format:check
 lint
 typecheck
+test:runner
 test:unit
 test:production
+validate:master
 build
 test:e2e
 ```
 
-`validate:evidence`や`validate:master`は対象を絞った診断コマンドとして残してよいが、同じファイルを実行済みの`quality`から再度呼ばない。master validation CLIがtest fileと異なる検査を持つ場合は、その検査だけを独立stepとして明示する。
+`test:runner`はcapture／artifact契約に加え、unit／productionの排他的分類とlocal／CI／Pagesの同一入口を検証するため、canonical gateから省略しない。`validate:evidence`は対象を絞った診断コマンドとして残してよいが、同じfileを実行済みの`quality`から再度呼ばない。`validate:master`はtest fileと異なるpublished artifact検査だけを独立stepとして実行し、master-data／data-pipelineのVitestを再実行しない。
 
 ## 8. 出力仕様
 
@@ -399,6 +402,12 @@ wall-clock短縮が必要になった場合だけ導入する。shardはsemantic
 - 10%以上または5秒以上の未説明なwall-clock増加を完了条件違反とする。
 - candidate数、damage request数、production parse回数の増加を、単なるマシン差として無視しない。
 - 意味論変更ではdamage correctnessとparityを性能より優先するが、性能退行を未記録のまま完了扱いにしない。
+
+計測基盤の導入順序は次のとおりとする。
+
+- T0〜T2は成功／失敗出力、wall-clock、suite／file時間を測定し、構造変更前後を同一環境で最低3回比較する。production masterのsource参照file／occurrence、既存production assertionが固定するscenario、candidate、damage request、distinct input、parity件数を記録する。
+- runtimeのmaster read／parse、compile、candidate生成、damage request counterは共有production audit modelが所有可能になるT3で導入し、T3以降のblocking指標とする。T0〜T2では静的source参照数をruntime回数とみなさず、未計測を0件または非増加と表現しない。
+- T3のcounter baselineはT2の同じproduction master、test identity、静的source参照、canonical count ratchetと照合する。counter導入を理由にproduction全件監査をsample化しない。
 
 ## 14. 実装フェーズ
 
