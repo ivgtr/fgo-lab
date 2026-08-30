@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.2"
+document_version: "1.4.3"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -40,8 +40,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
-| TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | ready | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-03 | 共有production audit foundation | in_progress | TSK-02.1 | test strategy T3／ranking production audit |
+| TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
@@ -332,6 +332,8 @@ Handoff:
 - Verification: focused 2／2、runner 11／11、unit 55 files／284 tests、production 25 files／117 tests、TSK-00 auditor、master validationが成功。`pnpm quality`はproduction artifact `.test-results/2026-08-30T10-44-02-256Z-714-f6632a`、build、E2E 64 passed／32 skipped（10.4分）まで成功した。
 - Commits: `840cf08` (start)、`07b63c0` (implementation)、本completion commit。
 - Next command: `git status --short && git rev-parse HEAD`でTSK-04のbaseline identityを固定し、`compileCalculationApplicationProductionAudit`のAttackProfile／preparation／scenario recordsからcanonical IR cutoverを開始する。旧loader／scanの最終削除はTSK-08のままとし、parallel runtime modelを作らない。
+- Review correction baseline: `c77e707`、clean worktree。TSK-03の`RK-AUDIT-001` disposition、runtime counter blocking gate、duplicate canonical identity fail-closedの3件を再オープンする。damage／ranking semantics、新policy、IR、UIは変更対象外。
+- Review next command: `pnpm test:runner`のfixtureへmissing／empty／invalid counter artifactを追加し、production suiteの必須boundary／counter contractをfail-closedにする。
 
 ### TSK-04: Ranking canonical IR cutover
 
