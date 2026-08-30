@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { PRODUCTION_TEST_INCLUDES } from '../../../scripts/test-suites.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const check = process.argv.includes('--check');
@@ -14,12 +15,12 @@ const expectedDigests = {
   semanticInventory: '5da30c87c74e36e1e9ca0ae7f4686df88259c8c3d6aa99cc2ec05650609d55d4',
   testFiles: '71ffa6f7835799adbcdb306eb3484c2796c61b2e453414840547e59f54453e3b',
   testNames: '756e5e31d206bc4632df25da0fd2728fbd198a94603dca4bd858f0f633259251',
-  productionTestFiles: '9e41dfb41717969164eecf360a4b2cea683ea3b5b8a9bad9f6f31b29f8e4205f',
-  unitFixtureTestFiles: 'ab41b9743b90a6050fc9cac8f372a2edc4d320e5d855d7819f26be847570fbe0',
+  productionTestFiles: '10713e0924cb9c2369d61e656167a85b552bf91cb24073a6f221e6b45c2a336f',
+  unitFixtureTestFiles: 'a009ae0c51f87fa0226cc3a9fe846cf2903cd22f3cd7827bf9b4a094e3525a6f',
   pngBaselines: '537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
-  stableArtifact: 'c82e0fbc3ecfc7129358fbcf3def4e33528aadb9d9ac30cd4ca47e3e3dfa95ef',
+  stableArtifact: 'ffc0eb340595c381e44d34d275d9c112ef43b1fd3b5d8609ed20ff8ec1d05940',
 };
 
 function sha256(value) {
@@ -103,9 +104,15 @@ function collectTests() {
     const testFiles = sortedUnique(tests.map(({ file }) => file)).map((path) =>
       resolve(root, path),
     );
+    const canonicalProductionPaths = new Set(PRODUCTION_TEST_INCLUDES);
     const productionTestFiles = testFiles.filter((path) =>
-      /public\/master\/master\.json/.test(readFileSync(path, 'utf8')),
+      canonicalProductionPaths.has(normalizedPath(path)),
     );
+    const missingProductionFiles = [...canonicalProductionPaths].filter(
+      (path) => !testFiles.some((file) => normalizedPath(file) === path),
+    );
+    if (missingProductionFiles.length > 0)
+      throw new TypeError(`production_test_files_missing:${missingProductionFiles.join(',')}`);
     const productionPaths = new Set(productionTestFiles.map(normalizedPath));
     const unitFixtureTestFiles = testFiles.filter(
       (path) => !productionPaths.has(normalizedPath(path)),
@@ -382,6 +389,7 @@ const contractFilePaths = [
   'scripts/test-runner-lib.mjs',
   'scripts/test-runner.mjs',
   'scripts/test-runner.test.mjs',
+  'scripts/test-suites.mjs',
   'vitest.config.ts',
   'packages/calculation-application/src/attackProfile.ts',
   'packages/calculation-application/src/conditionProvenance.ts',

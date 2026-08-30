@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runCapturedTest } from './test-runner-lib.mjs';
+import { PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -168,11 +169,64 @@ test('failure summary never exceeds physical line or UTF-8 byte limits', async (
 test('CI retains hidden Vitest artifacts after a failed test step', () => {
   const workflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8');
   const uploadStart = workflow.indexOf('- name: Upload Vitest results');
-  const nextStep = workflow.indexOf('- run: pnpm validate:evidence', uploadStart);
+  const nextStep = workflow.indexOf('- uses: actions/upload-artifact@v4', uploadStart + 1);
   assert.ok(uploadStart >= 0 && nextStep > uploadStart);
   const uploadStep = workflow.slice(uploadStart, nextStep);
   assert.match(uploadStep, /uses: actions\/upload-artifact@v4/);
   assert.match(uploadStep, /if: \$\{\{ !cancelled\(\) \}\}/);
   assert.match(uploadStep, /path: \.test-results\//);
   assert.match(uploadStep, /include-hidden-files: true/);
+});
+
+function testFiles(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) return testFiles(path);
+    return /\.test\.(?:ts|tsx)$/.test(entry.name)
+      ? [relative(root, path).split(sep).join('/')]
+      : [];
+  });
+}
+
+test('unit and production suites form one exhaustive non-overlapping Vitest partition', () => {
+  const all = [...testFiles(resolve(root, 'packages')), ...testFiles(resolve(root, 'apps'))].sort();
+  const production = [...PRODUCTION_TEST_INCLUDES].sort();
+  assert.equal(new Set(production).size, production.length);
+  assert.deepEqual(
+    production.filter((file) => !all.includes(file)),
+    [],
+  );
+
+  const productionSet = new Set(production);
+  const requiredProduction = all.filter((file) => {
+    const source = readFileSync(resolve(root, file), 'utf8');
+    return (
+      source.includes('public/master/master.json') ||
+      /(?:Golden|Production|Differential|Inventory)\.test\.(?:ts|tsx)$/.test(file) ||
+      /\/evidence(?:Inventory)?\.test\.ts$/.test(file)
+    );
+  });
+  assert.deepEqual(
+    requiredProduction.filter((file) => !productionSet.has(file)),
+    [],
+  );
+  assert.equal(all.length - production.length + production.length, all.length);
+});
+
+test('local, CI, and Pages use the same canonical quality command', () => {
+  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+  assert.equal(
+    packageJson.scripts.quality,
+    'pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:production && pnpm validate:master && pnpm build && pnpm test:e2e',
+  );
+  assert.equal(
+    packageJson.scripts['validate:master'],
+    'pnpm --filter @fgo-lab/data-pipeline validate',
+  );
+  assert.equal(packageJson.scripts['test:e2e'], 'playwright test --workers=1');
+  for (const path of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {
+    const workflow = readFileSync(resolve(root, path), 'utf8');
+    assert.equal(workflow.match(/run: pnpm quality/g)?.length, 1, path);
+    assert.doesNotMatch(workflow, /run: pnpm (?:test|validate:evidence|validate:master|build)\b/);
+  }
 });

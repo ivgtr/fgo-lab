@@ -229,10 +229,10 @@ Handoff:
 
 Depends on: TSK-01
 
-- [ ] 重複しない`test:unit`と`test:production`を定義する。
-- [ ] `quality`をlocal／CI／Pagesのcanonical入口にする。
-- [ ] `validate:evidence`と`validate:master`の重複実行を整理する。
-- [ ] focused testからphase gateへ拡大するcommand matrixを実装する。
+- [x] 重複しない`test:unit`と`test:production`を定義する。
+- [x] `quality`をlocal／CI／Pagesのcanonical入口にする。
+- [x] `validate:evidence`と`validate:master`の重複実行を整理する。
+- [x] focused testからphase gateへ拡大するcommand matrixを実装する。
 
 Done gate:
 
@@ -240,7 +240,16 @@ Done gate:
 - production inventory、calculator/ranking parity、evidenceを省略していない。
 - local、CI、Pagesの意味集合が一致する。
 
-Handoff: 未記録
+Handoff:
+
+- Start baseline: `d817efb944d8a22ca1ab1c96017ad63b7a9b1c4b`、clean worktree。
+- Implementation: `scripts/test-suites.mjs`を一つの分類正本とし、Vitest projectとbaseline auditorが共有する。unit 54 files／282 tests、production 23 files／115 testsで、全77 files／397 identitiesを重複0／未分類0で分割した。productionはpublished master consumer、inventory／parity、golden／differential、evidenceを所有する。
+- Canonical gate: local、CI、Pagesは`pnpm quality`だけを呼び、format、lint、typecheck、unit、production、published artifact CLI validation、build、Chromium／mobile Chromium E2Eを同じ意味集合で実行する。`validate:evidence`はfocused診断だけに残し、`validate:master`から重複Vitestを削除した。
+- Inventory／damage parity: master `20260829.8`、test file／name、semantic inventory、resource occurrence／inventory、calculator 422 parity、ranking 433 rows、production condition 10 kinds、PNG 11 filesのidentity／digestは不変。Suite／runner／workflow contractを含むaggregate digestだけを`ffc0eb340595c381e44d34d275d9c112ef43b1fd3b5d8609ed20ff8ec1d05940`へ更新した。
+- Performance: unit 4.71秒＋production 81.75秒＝86.46秒。TSK-01 wrapped中央値84.06秒比+2.40秒／+2.86%は二つの明示process startupによる。production共有load／compileはTSK-03へ引き渡す。
+- E2E: local既定6 workersで4 Chromium casesがsession close／timeoutとなり、同じ4 casesは1 workerで4／4 passした。この比較からcanonical `test:e2e`をCIと同じ1 workerへ固定し、4 files／96 project casesの集合は維持した。
+- Evidence／verification: `docs/evidence/test-suite-quality-gate-tsk-02.md`。最終`pnpm quality`はunit artifact `.test-results/2026-08-30T05-33-34-221Z-114-f3f5de`（54／282、4.56秒）、production artifact `.test-results/2026-08-30T05-33-39-313Z-582-2f0836`（23／115、85.78秒）、master valid、build、E2E 64 passed／32 project-specific skipped（10.3分）まで成功した。`pnpm test:runner` 10／10、auditor `--check`、`git diff --check`も成功した。Completion commit: 本commit。
+- Next command: `git status --short && git rev-parse HEAD`でTSK-03のbaseline identityを開始する。
 
 ### TSK-03: 共有production audit foundation
 

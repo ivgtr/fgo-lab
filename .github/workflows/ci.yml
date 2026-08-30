@@ -18,10 +18,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Install Japanese fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk fonts-noto-color-emoji
+      - run: pnpm quality
       - name: Upload Vitest results
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -31,12 +31,6 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
-      - run: pnpm validate:evidence
-      - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
-      - name: Install Japanese fonts
-        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk fonts-noto-color-emoji
-      - run: pnpm test:e2e --project=chromium --project=mobile-chromium
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

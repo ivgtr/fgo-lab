@@ -7,10 +7,21 @@ import { runCapturedTest } from './test-runner-lib.mjs';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const requestedMode = process.argv[2];
 const mode = requestedMode === 'diagnostic' ? 'diagnostic' : 'compact';
-const forwardedArgs = process.argv.slice(
+const rawArgs = process.argv.slice(
   requestedMode === 'diagnostic' || requestedMode === 'compact' ? 3 : 2,
 );
-const userArgs = forwardedArgs[0] === '--' ? forwardedArgs.slice(1) : forwardedArgs;
+const forwardedArgs = rawArgs[0] === '--' ? rawArgs.slice(1) : rawArgs;
+const suiteArguments = forwardedArgs.filter((argument) => argument.startsWith('--suite='));
+if (suiteArguments.length > 1) {
+  console.error('Runner accepts at most one --suite argument.');
+  process.exit(2);
+}
+const suite = suiteArguments[0]?.slice('--suite='.length) ?? 'all';
+if (!['all', 'unit', 'production'].includes(suite)) {
+  console.error('Runner --suite must be all, unit, or production.');
+  process.exit(2);
+}
+const userArgs = forwardedArgs.filter((argument) => !argument.startsWith('--suite='));
 const forbidden = userArgs.find((argument) =>
   ['--reporter', '--outputFile'].some(
     (owned) =>
@@ -25,6 +36,7 @@ if (forbidden) {
 const reportArgument = mode === 'diagnostic' ? '--outputFile.json' : '--outputFile';
 const reporterArguments =
   mode === 'diagnostic' ? ['--reporter=verbose', '--reporter=json'] : ['--reporter=json'];
+const suiteArgumentsForVitest = suite === 'all' ? [] : [`--project=${suite}`];
 const timeoutMs = Number.parseInt(process.env['FGO_TEST_TIMEOUT_MS'] ?? '600000', 10);
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
   console.error('FGO_TEST_TIMEOUT_MS must be a positive integer.');
@@ -42,9 +54,12 @@ try {
       'run',
       ...reporterArguments,
       `${reportArgument}=$FGO_TEST_REPORT_PATH`,
+      ...suiteArgumentsForVitest,
       ...userArgs,
     ],
-    commandLabel: mode === 'diagnostic' ? 'test:diagnostic' : 'test:agent',
+    commandLabel:
+      mode === 'diagnostic' ? 'test:diagnostic' : suite === 'all' ? 'test:agent' : `test:${suite}`,
+    suite,
     timeoutMs,
     forwardSignals: true,
   });
