@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.5"
+document_version: "1.4.6"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -40,8 +40,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
-| TSK-03 | 共有production audit foundation | in_progress | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
+| TSK-04 | Ranking canonical IR cutover | ready | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
@@ -342,6 +342,11 @@ Handoff:
 - Next command: `git status --short && git rev-parse HEAD`でTSK-04のbaseline identityを固定し、`RK-AUDIT-001`のfull matrixはTSK-08まで未充足として維持したままcanonical IR cutoverを開始する。
 - Second review baseline: `b5ec5de`、clean worktree。必須counter名の存在確認だけでは値のratchetにならず、producerのread／parse／compile固定値も実測ではないためTSK-03を再オープンする。canonical lifecycle実測とcandidate／damage request baselineのblocking比較以外は変更対象外。
 - Second review next command: production audit testのread／parse／compile呼び出しを計測wrapperへ収束し、runner contractを境界ごとのexact baselineへ変更する。
+- Second review resolution: `a06532a`でproducerからread／parse／compileの固定値を削除し、各production audit testが共有measurement wrapper経由で実際のread、parse、compile callbackを順序付きで一度ずつ実行・計数するようにした。runner contractは必須名の配列からcanonical値のobjectへ変更し、両boundaryの全counterをsafe integerかつ完全一致で比較する。
+- Counter ratchet: calculation-applicationはread／parse／compile 1／1／1、candidate 6,508／4,009、damage request 3,744／1,644、data-pipelineは1／1／1、0、0をblocking baselineとする。read 2、parse 2、compile 3、candidate 6,509、damage request 3,745の各fixtureは`counter_mismatch`の`contract_failure`となる。最終production artifact `.test-results/2026-08-30T11-42-58-084Z-795-473969`はexpected／actual全項目一致、contract errors 0。
+- Second review verification: measurement diagnostic 4／4、runner 16／16、unit 55 files／286 tests、production 25 files／117 tests、TSK-00 auditor、master validationが成功。最終`pnpm quality`はunit artifact `.test-results/2026-08-30T11-42-53-005Z-320-aa9497`、上記production artifact、build、E2E 64 passed／32 skipped（10.1分）まで成功した。production audit digest、semantic／resource／PNG／damage差分0。
+- Second review commits: `5a32bbb` (reopen)、`a06532a` (measured exact ratchet)、本completion commit。
+- Next command: `git status --short && git rev-parse HEAD`でTSK-04 baselineを固定する。counter baselineを変更する場合は値の差分理由と新canonical inventoryを同一Handoffで承認する。
 
 ### TSK-04: Ranking canonical IR cutover
 
