@@ -1,11 +1,10 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.6.1"
+document_version: "0.7.0"
 status: "Proposed"
 approval_gate: "Required before TSK-04"
 updated_at: "2026-08-30"
 created_at: "2026-08-30"
-updated_at: "2026-08-30"
 related_adrs:
   - "docs/adr/018-ranking-comparison-policy.md"
   - "docs/adr/019-ranking-contribution-and-execution-plan.md"
@@ -572,3 +571,21 @@ damage差分、性能見積もりを提示してから再開する。
 - 全damage差分がsemantic ruleとevidenceで説明されている
 - desktop、390px、320pxの密度、overflow、keyboard、a11y gateを満たす
 - production rankingと全test suiteが性能gateを満たす
+
+## 18. Contract catalog
+
+| Contract ID | Governing sections | Contract |
+| --- | --- | --- |
+| `RK-IR-001` | 3〜8、12 | AttackProfile、condition、choice、resource、provenanceをdata pipelineがcanonical typed IRへ収束させる。 |
+| `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
+| `RK-POLICY-001` | 10、11 | ranking policyは候補とcontributionだけを制御し、execution semanticsを再実装しない。 |
+| `RK-UI-001` | 11、12 | Web／workerはcanonical stateと5入力を扱い、旧policy／URL／protocolを併存させない。 |
+| `RK-AUDIT-001` | 14、15 | 全AttackProfile、四policy、NP1〜5、parity、invalid／unsupportedを共有production inventoryで監査する。 |
+| `RK-PERF-001` | 15.3 | 2^N探索を避け、candidate／damage requestを説明し、主要suiteの10%超の未説明退行を拒否する。 |
+| `RK-FINAL-001` | 17 | 17章のUI、IR、execution、parity、damage evidenceをproject closureで全て満たす。 |
+
+## 19. Revision log
+
+| Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
+| --- | --- | --- | --- | --- |
+| 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | required before TSK-04: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: Proposed要件のinventory／digest baselineは変更しない |

@@ -1,13 +1,13 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.3.0"
+document_version: "1.3.1"
 status: "Active"
 updated_at: "2026-08-30"
 ---
 
 # Evidence report index
 
-このindexはtracked report 32件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
+このindexはtracked report 33件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
 
 | Report | Status | Evidence role | Successor | Related commit |
 | --- | --- | --- | --- | --- |
@@ -43,6 +43,7 @@ updated_at: "2026-08-30"
 | [damage-effect-execution-e4-1-5](damage-effect-execution-e4-1-5.md) | Complete | canonical: activation facts | TSK-03／08 inventory | `66bc848` |
 | [damage-effect-execution-e4-1-attack-profiles](damage-effect-execution-e4-1-attack-profiles.md) | Complete | canonical: AttackProfile inventory／digest | TSK-03／04／08 | `9314a1d` |
 | [test-ranking-baseline-tsk-00](test-ranking-baseline-tsk-00.md) | Complete | canonical: test／CI／ranking／performance baseline | TSK-01〜09 | TSK-00 completion |
+| [test-suite-quality-gate-tsk-02](test-suite-quality-gate-tsk-02.md) | Complete | canonical: Suite classification／quality gate／performance／artifact | TSK-03〜09 | TSK-02 completion |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
 

@@ -1,11 +1,10 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.1.2"
+document_version: "1.2.0"
 status: "Active"
 approved_at: "2026-08-30"
 updated_at: "2026-08-30"
 created_at: "2026-08-30"
-updated_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
 implementation_tasks: "docs/tasks/development-redesign-tasks.md"
@@ -560,3 +559,26 @@ wall-clock短縮が必要になった場合だけ導入する。shardはsemantic
 - 意図的なdamage差分がある場合のcanonical inputとsemantic rule
 
 テスト成功だけを根拠に完了を宣言せず、production inventory、calculator/ranking parity、fail-closed、性能、要求されたUI不変条件を変更範囲に応じて確認する。
+
+T0〜T2でruntime counterが存在しない項目は`not measured (counter introduced in T3)`と記録する。これはphase reportの有効な状態だが、project完了条件やT3以降のblocking指標を満たしたことにはならない。
+
+## 19. Contract catalog
+
+| Contract ID | Governing sections | Contract |
+| --- | --- | --- |
+| `TS-OUT-001` | 8 | 成功時10行以内、失敗時bounded summaryと完全結果を保持する。 |
+| `TS-ART-001` | 9 | manifest、完全log、JSON／JUnit、Playwright artifactを規定pathとretentionで保存する。 |
+| `TS-RUN-001` | 10 | child failure、timeout、signal、reporter failureを成功へ変換しない。 |
+| `TS-QUAL-001` | 7、12、T2 | unit／productionを排他的に分類し、runner contractを含む`quality`をlocal／CI／Pagesの唯一の入口にする。 |
+| `TS-AUDIT-001` | 11、T3 | package境界ごとに共有production audit modelとruntime read／parse／compile／candidate／damage request counterを所有する。 |
+| `TS-PERF-001` | 13、T1 | runnerだけの変更は同一集合の中央値で2%または1秒の大きい方をoverhead上限とする。 |
+| `TS-PERF-002` | 13、T2〜T5 | 構造変更は同一環境3回の中央値で比較し、10%以上または5秒以上の未説明増加を拒否する。 |
+| `TS-REPORT-001` | 13、18 | phaseで利用可能な指標を記録し、未導入counterは未計測と明示して後続導入Taskへ追跡する。 |
+| `TS-FINAL-001` | 16 | 16章の10項目をproject closureで全て満たす。 |
+
+## 20. Revision log
+
+| Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
+| --- | --- | --- | --- | --- |
+| 1.2.0 | phase／project closure、性能閾値、未計測counterをstable Contract IDへ収束 | retained: semantic／test集合は不変 | TSK-02.1〜09 | none: TSK-02計測値と397-test identityは不変 |
+| 1.1.2 | `quality`へrunner contractを追加し、T0〜T2のruntime counterを未計測として明確化 | approved 2026-08-30 | TSK-02〜03 | TSK-02 evidenceで再測定 |

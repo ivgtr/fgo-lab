@@ -18,12 +18,13 @@
     "test:agent": "node scripts/test-runner.mjs compact",
     "test:diagnostic": "node scripts/test-runner.mjs diagnostic",
     "test:runner": "node --test scripts/test-runner.test.mjs",
+    "test:docs": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test --workers=1",
     "test:a11y": "playwright test --grep @a11y",
     "validate:master": "pnpm --filter @fgo-lab/data-pipeline validate",
     "validate:evidence": "node scripts/test-runner.mjs compact --suite=production packages/calculation-application/src/evidenceInventory.test.ts packages/calculation-application/src/evidence.test.ts",
-    "quality": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:runner && pnpm test:unit && pnpm test:production && pnpm validate:master && pnpm build && pnpm test:e2e",
+    "quality": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:runner && pnpm test:docs && pnpm test:unit && pnpm test:production && pnpm validate:master && pnpm build && pnpm test:e2e",
     "benchmark:calc": "vitest bench --run packages/calc-core/src/calc.bench.ts"
   },
   "dependencies": {

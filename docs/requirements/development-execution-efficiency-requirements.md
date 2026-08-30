@@ -1,12 +1,11 @@
 ---
 title: "FGO Lab 開発実行効率要件・統合実装計画"
-document_version: "1.0.1"
+document_version: "1.1.0"
 status: "Active"
 approved_at: "2026-08-30"
 updated_at: "2026-08-30"
 implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 created_at: "2026-08-30"
-updated_at: "2026-08-30"
 related_documents:
   - "docs/requirements/test-strategy-redesign.md"
   - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
@@ -250,3 +249,19 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 - phaseごとにcanonical handoffからnew threadを開始できる。
 - global Codex設定がなくてもrepositoryの品質判定は同じである。
 - token効率改善を理由とするdamage、inventory、parity、fail-closed、UI品質の緩和がない。
+
+## 11. Contract catalog
+
+| Contract ID | Governing sections | Contract |
+| --- | --- | --- |
+| `DX-CMD-001` | 5、6 | bounded command、30秒以上のempty poll、artifact参照により無条件再実行と巨大出力を避ける。 |
+| `DX-ART-001` | 6、7 | compact summaryと完全artifactを両立し、failureやstderrを失わない。 |
+| `DX-HANDOFF-001` | 7 | phase closureをcommit、canonical evidence、差分、残課題、次commandだけで再開可能にする。 |
+| `DX-PERF-001` | 8 | product quality指標をblocking、model call／poll／tool outputを観測指標として分離する。 |
+| `DX-FINAL-001` | 10 | canonical quality／ranking pathとrepository内handoffだけでproject closureできる。 |
+
+## 12. Revision log
+
+| Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
+| --- | --- | --- | --- | --- |
+| 1.1.0 | phase closureとproject closureをstable Contract IDで参照可能にした | retained: 実行効率とproduct qualityの意味は不変 | TSK-02.1〜09 | none: 観測baselineとratchet値は不変 |

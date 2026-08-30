@@ -217,7 +217,7 @@ test('local, CI, and Pages use the same canonical quality command', () => {
   const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   assert.equal(
     packageJson.scripts.quality,
-    'pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:runner && pnpm test:unit && pnpm test:production && pnpm validate:master && pnpm build && pnpm test:e2e',
+    'pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:runner && pnpm test:docs && pnpm test:unit && pnpm test:production && pnpm validate:master && pnpm build && pnpm test:e2e',
   );
   assert.equal(
     packageJson.scripts['validate:master'],

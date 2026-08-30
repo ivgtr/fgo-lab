@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.3.4"
+document_version: "1.4.1"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -10,13 +10,14 @@ source_requirements:
   - "docs/requirements/development-execution-efficiency-requirements.md"
 source_plans:
   - "docs/tasks/documentation-maintenance-phases.md"
+governance_contract: "docs/guides/document-governance.md"
 ---
 
 # FGO Lab テスト・ランキング再設計 Tasks
 
 ## 1. 役割
 
-本書は、3つの要件書にまたがる実装順序、依存関係、進捗、phase handoffを所有する。意味論、品質要件、受入条件の正本は各source requirementsであり、本書では再定義しない。
+本書は、3つの要件書にまたがる実装順序、依存関係、進捗、phase handoffを所有する。意味論、品質要件、受入条件の正本は各source requirementsであり、本書では再定義しない。各未完了TaskのContract closure matrixは正本のContract IDに対する適用判断、検証command、artifact、延期先だけを所有する。
 
 状態は次だけを使用する。
 
@@ -38,7 +39,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-00 | Baseline固定 | done | TSK-00.4 | 全要件書 |
 | TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
-| TSK-03 | 共有production audit foundation | ready | TSK-02 | test strategy T3／ranking production audit |
+| TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
+| TSK-03 | 共有production audit foundation | ready | TSK-02.1 | test strategy T3／ranking production audit |
 | TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
@@ -48,7 +50,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -252,11 +254,49 @@ Handoff:
 - Output／detailed timing: compact successはunit 6行／185 bytes、production 6行／193 bytes、missing-filter failureは10行／393 bytesで完全artifactへ到達できる。default reporter計測はunit 7.70秒（transform 8.65、import 20.30、tests 2.06、environment 37.90、slowest file 223ms）、production 70.71秒（transform 4.44、import 11.55、tests 238.38、environment 3ms、slowest file 69.528秒）。Playwright HTMLは`playwright-report/index.html`、CI artifactは`playwright-report/`、run stateは`test-results/.last-run.json`。
 - E2E: local既定6 workersで4 Chromium casesがsession close／timeoutとなり、同じ4 casesは1 workerで4／4 passした。この比較からcanonical `test:e2e`をCIと同じ1 workerへ固定し、4 files／96 project casesの集合は維持した。
 - Evidence／verification: `docs/evidence/test-suite-quality-gate-tsk-02.md`。review修正後の最終`pnpm quality`はrunner 10／10、unit artifact `.test-results/2026-08-30T06-13-14-401Z-197-e4a4dc`（54／282、5.11秒）、production artifact `.test-results/2026-08-30T06-13-20-053Z-665-cf76ab`（23／115、80.64秒）、master valid、build、E2E 64 passed／32 project-specific skipped（10.3分）まで成功した。auditor `--check`、`git diff --check`も成功した。Initial completion: `5b38f6b`、review resolution: 本commit。
+- Next command: `git status --short && git rev-parse HEAD`でTSK-02.1のbaseline identityを開始する。
+
+### TSK-02.1: Documentation contract closure gate
+
+Depends on: TSK-02
+
+- [x] source requirementsへstable Contract IDとrevision logを追加する。
+- [x] 未完了TaskへContract closure matrixを追加し、phase closureとproject closureを分離する。
+- [x] registry version、Task status／依存、Contract ID、closure matrix、evidence登録を検証するdocs lintを追加する。
+- [x] docs lintをTSK-09.1から前倒しし、`quality`のblocking stepにする。
+
+Done gate:
+
+- TSK-03以降が会話履歴なしに適用契約、検証command、artifact、延期先を一意に復元できる。
+- 要件改訂がversion、理由、承認、影響Task、baseline影響を欠いたまま完了できない。
+- registry、Task依存、unknown Contract ID、matrix欠落、未登録evidenceをfixtureでfail-closedに検出する。
+- docs lintがcanonical `quality`でproduction suiteより前に実行される。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | Handoff |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | Handoff |
+| `DOC-LINT-001` | Apply | `pnpm test:docs` | Handoff |
+| `TS-QUAL-001` | Apply | `pnpm test:runner && pnpm test:docs` | Handoff |
+| `TS-PERF-002` | Apply | `pnpm test:docs`を同一環境で3回 | Handoff |
+| `DX-ART-001` | Apply | `pnpm test:docs` | Handoff |
+| `DX-HANDOFF-001` | Apply | `pnpm test:docs` | Handoff |
+
+Handoff:
+
+- Start baseline: `e5d0ead1093afa6f99c7b67a4a4898c6cd6089d7`、`main`、clean worktree。product source、test expectation、snapshot、masterは変更対象外。
+- Implementation: `docs/guides/document-governance.md`と3 source requirementsがstable Contract ID、phase／project closure、revision logを所有する。未完了Taskは適用／N/A／延期先、検証command、artifactをmatrixで閉じる。`scripts/docs-integrity*.mjs`はregistry version／status、frontmatter重複、current revision、Task dependency／status、unknown Contract ID、matrix、deferred descendant、evidence count／登録をfail-closedに検証する。
+- Canonical gate: `test:docs`をproductionより前の`quality`へ追加し、runner contractのcanonical command expectationも同時更新した。初回`quality`はこのexpectationが旧文字列のままのためrunner 9／10で停止し、変更対象内のfixtureを更新後に再実行した。
+- Performance: `pnpm test:docs`の3 runは0.64／0.62／0.61秒（中央値0.62秒）。追加step単体は構造変更閾値の5秒未満で、production master read／parse counterは本Taskの対象外かつTSK-03導入前のため`not measured (counter introduced in TSK-03)`とする。
+- Verification: 最終`pnpm quality`はformat、lint、typecheck、runner 10／10、docs 5／5、unit 54 files／282 tests（7.13秒、artifact `.test-results/2026-08-30T09-58-13-940Z-230-d76ef0`）、production 23 files／115 tests（84.41秒、artifact `.test-results/2026-08-30T09-58-21-608Z-698-681d67`）、master validation、build、E2E 64 passed／32 project-specific skipped（10.7分）まで成功した。product source、test expectation、snapshot、master、damage semanticsの変更0。
+- Commit: 本completion commit。
 - Next command: `git status --short && git rev-parse HEAD`でTSK-03のbaseline identityを開始する。
 
 ### TSK-03: 共有production audit foundation
 
-Depends on: TSK-02
+Depends on: TSK-02.1
 
 - [ ] package境界ごとにmaster load／compileを一回へ収束させる。
 - [ ] 複数assertionが共有するread-only typed inventoryを作る。
@@ -269,6 +309,19 @@ Done gate:
 - 現行inventoryとdigestが一致する。
 - production全件監査をsample化していない。
 - TSK-04のproduction auditを一回の共有compileから開始できる。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `TS-AUDIT-001` | Apply | `pnpm test:diagnostic -- <production-audit-filter>`、`pnpm test:production` | `docs/evidence/<tsk-03-report>.md` |
+| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-03-report>.md` |
+| `TS-REPORT-001` | Apply | runtime counter manifest check | `docs/evidence/<tsk-03-report>.md` |
+| `RK-AUDIT-001` | Apply | shared compile inventory check | `docs/evidence/<tsk-03-report>.md` |
+| `RK-IR-001` | N/A: Proposed ranking semanticsを実装せず監査基盤だけを作る | `git diff --check` | Handoff |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
+| `RK-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
 
 Handoff: 未記録
 
@@ -289,6 +342,18 @@ Done gate:
 - 新旧IRをruntimeで併存させていない。
 - 全production occurrenceがtyped inventoryへ分類されるか、型付きでfail-closedになる。
 
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-IR-001` | Apply | `pnpm test:diagnostic -- <pipeline-and-schema-filter>`、`pnpm test:production` | `docs/evidence/<tsk-04-report>.md` |
+| `RK-AUDIT-001` | Apply | production inventory／digest check | `docs/evidence/<tsk-04-report>.md` |
+| `TS-PERF-002` | Apply | affected production gateを変更前後各3回 | `docs/evidence/<tsk-04-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `RK-EXEC-001` | Deferred: TSK-05 | - | TSK-05 |
+| `RK-POLICY-001` | Deferred: TSK-06 | - | TSK-06 |
+| `RK-UI-001` | Deferred: TSK-07 | - | TSK-07 |
+
 Handoff: 未記録
 
 ### TSK-05: Transactional preparation execution
@@ -306,6 +371,17 @@ Done gate:
 - partial commit 0件。
 - focused semantic fixturesとproduction family inventoryが通る。
 - calculator経路に意図しないdamage差分がない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-EXEC-001` | Apply | `pnpm test:diagnostic -- <execution-filter>`、`pnpm test:production` | `docs/evidence/<tsk-05-report>.md` |
+| `RK-AUDIT-001` | Apply | partial commit／invalid inventory check | `docs/evidence/<tsk-05-report>.md` |
+| `TS-PERF-002` | Apply | affected production gateを変更前後各3回 | `docs/evidence/<tsk-05-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `RK-POLICY-001` | Deferred: TSK-06 | - | TSK-06 |
+| `RK-UI-001` | Deferred: TSK-07 | - | TSK-07 |
 
 Handoff: 未記録
 
@@ -326,6 +402,17 @@ Done gate:
 - calculator/ranking canonical parityが成立する。
 - candidate数とdamage request数の上限をsemantic inputから説明できる。
 
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-POLICY-001` | Apply | `pnpm test:diagnostic -- <ranking-policy-filter>`、`pnpm test:production` | `docs/evidence/<tsk-06-report>.md` |
+| `RK-AUDIT-001` | Apply | candidate／damage request／parity inventory check | `docs/evidence/<tsk-06-report>.md` |
+| `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/<tsk-06-report>.md` |
+| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-06-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `RK-UI-001` | Deferred: TSK-07 | - | TSK-07 |
+
 Handoff: 未記録
 
 ### TSK-07: Web／worker一括切替
@@ -343,6 +430,16 @@ Done gate:
 - desktop、390px、320pxでoverflowがない。
 - keyboard、accessible name、expanded state、focus orderを維持する。
 - stale responseが表示へ反映されない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/<tsk-07-report>.md` |
+| `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/<tsk-07-report>.md` |
+| `TS-PERF-002` | Apply | build／E2E gateを変更前後各3回 | `docs/evidence/<tsk-07-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `TS-ART-001` | Apply | Playwright manifest／artifact check | `docs/evidence/<tsk-07-report>.md` |
 
 Handoff: 未記録
 
@@ -363,6 +460,18 @@ Done gate:
 - 大量失敗でも出力上限を守り、完全結果を失わない。
 - production inventory、calculator/ranking parity、fail-closed gateが通る。
 
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `TS-AUDIT-001` | Apply | `pnpm test:production` | `docs/evidence/<tsk-08-report>.md` |
+| `TS-OUT-001` | Apply | intentional failure fixture／`pnpm test:runner` | `docs/evidence/<tsk-08-report>.md` |
+| `TS-ART-001` | Apply | manifest／complete artifact check | `docs/evidence/<tsk-08-report>.md` |
+| `RK-AUDIT-001` | Apply | full policy matrix／parity／fail-closed check | `docs/evidence/<tsk-08-report>.md` |
+| `RK-PERF-001` | Apply | production rankingを変更前後各3回 | `docs/evidence/<tsk-08-report>.md` |
+| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-08-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
 Handoff: 未記録
 
 ### TSK-09.1: Documentation evidence／archive finalization
@@ -380,6 +489,18 @@ Done gate:
 - superseded／complete／historical文書をcurrent contractと誤認しない。
 - docs integrity checkがcanonical quality pathで成功する。
 - ignored local資料のmaterialな物理削除は、別の明示承認なしに行っていない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | `docs/evidence/<tsk-09-1-report>.md` |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | `docs/evidence/<tsk-09-1-report>.md` |
+| `DOC-LINT-001` | Apply | `pnpm test:docs` | `docs/evidence/<tsk-09-1-report>.md` |
+| `DX-ART-001` | Apply | evidence／archive inventory check | `docs/evidence/<tsk-09-1-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `TS-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
+| `RK-FINAL-001` | Deferred: TSK-09 | - | TSK-09 |
 
 Handoff: 未記録
 
@@ -400,6 +521,17 @@ Done gate:
 - 1秒polling、無条件retry、巨大なfull-source出力が標準workflowに残っていない。
 - 新しいthreadがcanonical handoffだけから次作業を開始できる。
 
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `TS-FINAL-001` | Apply | `pnpm quality`、final performance comparison | `docs/evidence/<tsk-09-report>.md` |
+| `RK-FINAL-001` | Apply | full production／UI acceptance matrix | `docs/evidence/<tsk-09-report>.md` |
+| `DX-FINAL-001` | Apply | canonical handoff restart check | `docs/evidence/<tsk-09-report>.md` |
+| `TS-PERF-002` | Apply | canonical gateを変更前後各3回 | `docs/evidence/<tsk-09-report>.md` |
+| `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/<tsk-09-report>.md` |
+| `DOC-LINT-001` | Apply | `pnpm test:docs` | `docs/evidence/<tsk-09-report>.md` |
+
 Handoff: 未記録
 
 ## 4. 更新規則
@@ -410,10 +542,12 @@ Handoff: 未記録
 - blocking conditionは対象taskのHandoffへ記録し、要件を推測で緩和しない。
 - task分割が必要な場合は`TSK-xx.y`を追加し、元taskのDone gateを変更しない。
 - 実装順変更は依存関係と理由を本書へ反映し、各要件書へ順序説明を複製しない。
+- 要件改訂は[document governance contract](../guides/document-governance.md)の`DOC-REV-001`に従い、影響Taskのclosure matrixを同じ変更で更新する。
+- phase完了は当該TaskのmatrixとDone gateのclosureであり、project全体の最終条件を暗黙に満たしたことにしない。
 
 ### 4.1 Task実行手順
 
-1. Task indexから`ready`なTaskを一件選び、依存TaskのDone gateとHandoffを確認する。
+1. Task indexから`ready`なTaskを一件選び、依存TaskのDone gateとHandoff、Contract closure matrixを確認する。
 2. 作業開始時のHEAD、作業ツリー、対象family、利用者成果、domain invariant、semantic ownerを確認する。
 3. 開始commitで対象Taskを`in_progress`へ変更し、Handoffの`Next command`に最初のbounded commandを記録する。
 4. production familyをread-onlyで監査し、変更前baselineとfail-closed条件を固定する。
