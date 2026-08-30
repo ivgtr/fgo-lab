@@ -1,6 +1,6 @@
 ---
 title: "TSK-00 test and ranking baseline"
-document_version: "1.3.0"
+document_version: "1.4.0"
 status: "In Progress"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -22,16 +22,16 @@ Published masterは`20260829.8`、schemaは37、`master.json`は33,850,263 bytes
 
 `vitest.config.ts`は`packages/**/*.test.ts`と`apps/**/*.test.{ts,tsx}`を一つのsuiteとして実行する。現時点ではunit／production用の重複しないinclude契約はないため、ここではpublished `master.json`を直接参照するfileをproduction consumer、それ以外をunit／fixture consumerとして観測分類する。この分類をTSK-02のcanonical suite契約として流用しない。
 
-全値はdata pipeline所有のread-only auditor `packages/data-pipeline/scripts/audit-tsk00-baseline.mjs`で再生成する。auditor自身が分類規則、path正規化、sort、改行、serializationと期待digestを所有し、`--check`で不一致を非0終了にする。
+静的inventoryとdigestはdata pipeline所有のread-only auditor `packages/data-pipeline/scripts/audit-tsk00-baseline.mjs`で再生成する。auditor自身が分類規則、path正規化、sort、改行、serializationと期待digestを所有し、`--check`で不一致を非0終了にする。実行結果に依存するskipped数、damage／entry／policy、cache、preparation、effect-controlのassertionはSection 7のfocused testで別に再取得する。
 
 | Observed group | Files | Tests | Source lines | Source bytes | Sorted file-list SHA-256 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | unit／fixture consumer | 57 | 304 | 10,704 | 349,461 | `ab41b9743b90a6050fc9cac8f372a2edc4d320e5d855d7819f26be847570fbe0` |
 | production master consumer | 20 | 93 | 6,608 | 248,858 | `9e41dfb41717969164eecf360a4b2cea683ea3b5b8a9bad9f6f31b29f8e4205f` |
 | Vitest total | 77 | 397 | 17,312 | 598,319 | `71ffa6f7835799adbcdb306eb3484c2796c61b2e453414840547e59f54453e3b` |
-| Playwright source | 4 | 96 across 2 projects | 2,249 | 108,187 | file list is the four paths below |
+| Playwright source | 4 | 96 across 2 projects | 2,249 | 108,187 | `d5d588f55ffadb0dd29578506f2baa12688749b88b898cfff388e7704dfeadf7` |
 
-Vitestのsorted full test-name digestは`756e5e31d206bc4632df25da0fd2728fbd198a94603dca4bd858f0f633259251`である。production consumerは次の20 filesである。
+Vitestのsorted full test-name digestは`756e5e31d206bc4632df25da0fd2728fbd198a94603dca4bd858f0f633259251`、path＋source content digestは`fae8a4e9954ff313f3c983acfd45ce3af7871a5d14168a9bccdd7ebe5b29227b`である。Playwrightのpath＋source content digestは`ab27da673f8f6afc02a79f58dd52625d31b43104979ef747e0c887d01fda389c`である。production consumerは次の20 filesである。
 
 ```text
 apps/web/src/adapters/share.test.ts
@@ -154,7 +154,7 @@ Node 26.3.1、pnpm 11.20.0、Vitest 4.1.11の同一worktreeで`pnpm test`を3回
 
 ## 7. Reproduction and measurement contract
 
-Inventoryとdigestは次の一つのread-only commandで再取得・検証する。stdoutのJSONが生成artifactであり、`--check`は埋め込まれた8 digestのいずれかが異なれば非0終了する。
+静的inventoryとdigestは次の一つのread-only commandで再取得・検証する。stdoutのJSONが生成artifactであり、`--check`は8個の個別digestとstable artifact digestの計9個のいずれかが異なれば非0終了する。
 
 ```sh
 git status --short && git rev-parse HEAD
@@ -162,6 +162,31 @@ node packages/data-pipeline/scripts/audit-tsk00-baseline.mjs --check > /tmp/tsk0
 ```
 
 auditorはVitest listを一時directoryへ出力して終了時に削除し、repositoryへ書き込まない。pathはrepository-relative POSIX表記、listは重複除去後にJavaScript UTF-16 code-unit順、list digestは各要素をLFで連結して末尾にもLFを一つ付けたUTF-8列のSHA-256とする。object／occurrence digestはauditorで挿入順を固定したcompact `JSON.stringify`のUTF-8列を使い、末尾LFを含めない。PNGは`<relative path><TAB><content SHA-256>`を同じlist規則でhashする。production consumerはtest sourceに`public/master/master.json`を含むかで分類する。
+
+stable artifact digestは`a6523fd55828b97a09e86e30e2844040e64e9d9b87c989c01fbced338437ffc2`である。対象はserialization仕様、master version／bytes／SHA、VitestとPlaywrightのfile／test count・source lines／bytes・path digest・path＋content digest、production master load 20 files／42 references、PNG、semantic／resource inventory、および`RankingConditions`、`AttackProfile`、condition provenance、calculator／ranking parity、cache、preparation、effect-control、execution snapshotを所有または検証する16 contract filesのpath／bytes／SHAである。したがってtest pathとtest nameを維持した本文変更、snapshot変更、master load reference変更もstable artifact digestを変え、`--check`を失敗させる。
+
+runtime assertionは次のfocused commandで再取得する。これはSection 4〜5のRankingConditions、AttackProfile、condition provenance、calculator／ranking digest、cache、preparation、effect-control、execution snapshotを検証する正本testをまとめて実行する。
+
+```sh
+pnpm exec vitest run \
+  packages/calculation-application/src/attackProfile.test.ts \
+  packages/calculation-application/src/executionBaselineInventory.test.ts \
+  packages/calculation-application/src/productionExecutionParity.test.ts \
+  packages/calculation-application/src/productionMasterAudit.test.ts \
+  packages/calculation-application/src/productionMasterInventory.test.ts \
+  packages/calculation-application/src/rankingArchitecture.test.ts \
+  packages/calculation-application/src/rankingConditionInventory.test.ts \
+  packages/calculation-application/src/rankingProduction.test.ts \
+  packages/calculation-application/src/specialInputInventory.test.ts
+```
+
+このfocused contract suiteは9 files／26 tests pass、75.01秒で再検証した。
+
+Playwrightの32 project-specific skippedを含むruntime結果は次で再取得する。Section 6のpassed／failed／skippedは観測runの値であり、stable artifact digestには含めない。
+
+```sh
+pnpm test:e2e -- --project=chromium --project=mobile-chromium
+```
 
 実行時間とログ量はstdout／stderrを同じfileへcaptureし、`/usr/bin/time -p`の`real`をwall-clock、runner summaryをsuite内訳、`wc -l -c`を行数／bytes、`sha256sum`をraw log identityとする。成功と失敗を別artifactにし、truncate前の完全logを測る。構造変更前後は同一commandを最低3回実行しwall-clock中央値を比較する。
 

@@ -19,6 +19,7 @@ const expectedDigests = {
   pngBaselines: '537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
+  stableArtifact: 'a6523fd55828b97a09e86e30e2844040e64e9d9b87c989c01fbced338437ffc2',
 };
 
 function sha256(value) {
@@ -56,15 +57,33 @@ function listFiles(directory, predicate = () => true) {
     .sort((left, right) => compareText(normalizedPath(left), normalizedPath(right)));
 }
 
-function sourceStats(files, tests) {
+function fileStats(files) {
   const paths = files.map(normalizedPath);
-  const pathSet = new Set(paths);
   return {
     files: paths.length,
-    tests: tests.filter(({ file }) => pathSet.has(file)).length,
     lines: files.reduce((total, file) => total + readFileSync(file, 'utf8').split(/\n/).length, 0),
     bytes: files.reduce((total, file) => total + statSync(file).size, 0),
     digest: lineDigest(paths),
+    contentDigest: lineDigest(
+      files.map((file) => `${normalizedPath(file)}\t${sha256(readFileSync(file))}`),
+    ),
+  };
+}
+
+function sourceStats(files, tests) {
+  const paths = new Set(files.map(normalizedPath));
+  return {
+    ...fileStats(files),
+    tests: tests.filter(({ file }) => paths.has(file)).length,
+  };
+}
+
+function fileIdentity(path) {
+  const content = readFileSync(path);
+  return {
+    path: normalizedPath(path),
+    bytes: content.length,
+    sha256: sha256(content),
   };
 }
 
@@ -347,6 +366,7 @@ const resource = collectResourceInventory(master, effects);
 const collectedTests = collectTests();
 const testFiles = collectedTests.testFiles.map(normalizedPath);
 const testNames = collectedTests.tests.map(({ name }) => name).sort(compareText);
+const playwrightSourceFiles = listFiles(resolve(root, 'e2e'), (path) => path.endsWith('.spec.ts'));
 const pngFiles = listFiles(resolve(root, 'e2e'), (path) => path.endsWith('.png'));
 const pngEntries = pngFiles.map((path) => `${normalizedPath(path)}\t${sha256(readFileSync(path))}`);
 const loadReferences = collectedTests.testFiles.flatMap((path) => {
@@ -354,7 +374,27 @@ const loadReferences = collectedTests.testFiles.flatMap((path) => {
   return Array.from({ length: matches?.length ?? 0 }, () => normalizedPath(path));
 });
 
-const digests = {
+const contractFilePaths = [
+  '.github/workflows/ci.yml',
+  '.github/workflows/pages.yml',
+  'package.json',
+  'playwright.config.ts',
+  'vitest.config.ts',
+  'packages/calculation-application/src/attackProfile.ts',
+  'packages/calculation-application/src/conditionProvenance.ts',
+  'packages/calculation-application/src/executionBaselineInventory.test.ts',
+  'packages/calculation-application/src/__snapshots__/executionBaselineInventory.test.ts.snap',
+  'packages/calculation-application/src/productionExecutionParity.test.ts',
+  'packages/calculation-application/src/productionMasterAudit.test.ts',
+  'packages/calculation-application/src/productionMasterInventory.test.ts',
+  'packages/calculation-application/src/rankingConditionInventory.test.ts',
+  'packages/calculation-application/src/rankingContracts.ts',
+  'packages/calculation-application/src/rankingProduction.test.ts',
+  'packages/calculation-application/src/specialInputInventory.test.ts',
+].sort(compareText);
+const contractFiles = contractFilePaths.map((path) => fileIdentity(resolve(root, path)));
+
+const inventoryDigests = {
   semanticInventory: sha256(JSON.stringify(semanticInventory)),
   testFiles: lineDigest(testFiles),
   testNames: lineDigest(testNames),
@@ -365,7 +405,7 @@ const digests = {
   resourceInventory: sha256(JSON.stringify(resource.inventory)),
 };
 
-const artifact = {
+const stableArtifact = {
   serialization: {
     paths: 'repository-relative POSIX paths',
     lists: 'JavaScript UTF-16 code-unit ascending after de-duplication unless occurrence records',
@@ -383,16 +423,27 @@ const artifact = {
     unitFixture: sourceStats(collectedTests.unitFixtureTestFiles, collectedTests.tests),
     production: sourceStats(collectedTests.productionTestFiles, collectedTests.tests),
     vitest: sourceStats(collectedTests.testFiles, collectedTests.tests),
-    playwright: collectPlaywrightInventory(),
+    playwright: {
+      ...fileStats(playwrightSourceFiles),
+      ...collectPlaywrightInventory(),
+    },
     productionMasterLoadReferences: {
       files: sortedUnique(loadReferences).length,
       occurrences: loadReferences.length,
       byFile: sortedCounts(loadReferences),
     },
-    pngBaselines: { files: pngFiles.length, digest: digests.pngBaselines },
+    pngBaselines: { files: pngFiles.length, digest: inventoryDigests.pngBaselines },
   },
   semanticInventory,
   resourceInventory: resource.inventory,
+  contractFiles,
+};
+const digests = {
+  ...inventoryDigests,
+  stableArtifact: sha256(JSON.stringify(stableArtifact)),
+};
+const artifact = {
+  ...stableArtifact,
   digests,
 };
 
