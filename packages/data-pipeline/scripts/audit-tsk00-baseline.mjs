@@ -13,14 +13,14 @@ const check = process.argv.includes('--check');
 
 const expectedDigests = {
   semanticInventory: '5da30c87c74e36e1e9ca0ae7f4686df88259c8c3d6aa99cc2ec05650609d55d4',
-  testFiles: '71ffa6f7835799adbcdb306eb3484c2796c61b2e453414840547e59f54453e3b',
-  testNames: '756e5e31d206bc4632df25da0fd2728fbd198a94603dca4bd858f0f633259251',
-  productionTestFiles: '10713e0924cb9c2369d61e656167a85b552bf91cb24073a6f221e6b45c2a336f',
-  unitFixtureTestFiles: 'a009ae0c51f87fa0226cc3a9fe846cf2903cd22f3cd7827bf9b4a094e3525a6f',
+  testFiles: '8ec36912229b62cb3f5631b68367ca1c714a057d0adb3f5437f5bfb79e1adb51',
+  testNames: '0bf8f6c7dd2a3bdf4fc75c1acb7cf74d1f71abfbd0519f5270b2d652dfdaba00',
+  productionTestFiles: '621885fe435ebf4e63e02a3027a8d76738fcc67e8304ac52e1885302d4c95880',
+  unitFixtureTestFiles: '4292e559a733b07f9bc5f9fa363e19854d0c8f4d676ca5570207c249ff3200e0',
   pngBaselines: '537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
-  stableArtifact: '0a326da93671ab724a7b050011a0354522416567c07a3febb1b9ccd09df67c53',
+  stableArtifact: '14c8f4ecf7abd78337e37f1ab4cddd9f66fed079562b5ef37aa98282edd40f33',
 };
 
 function sha256(value) {
@@ -396,12 +396,18 @@ const contractFilePaths = [
   'packages/calculation-application/src/executionBaselineInventory.test.ts',
   'packages/calculation-application/src/__snapshots__/executionBaselineInventory.test.ts.snap',
   'packages/calculation-application/src/productionExecutionParity.test.ts',
+  'packages/calculation-application/src/productionAudit.ts',
+  'packages/calculation-application/src/productionAudit.test.ts',
   'packages/calculation-application/src/productionMasterAudit.test.ts',
   'packages/calculation-application/src/productionMasterInventory.test.ts',
   'packages/calculation-application/src/rankingConditionInventory.test.ts',
   'packages/calculation-application/src/rankingContracts.ts',
   'packages/calculation-application/src/rankingProduction.test.ts',
   'packages/calculation-application/src/specialInputInventory.test.ts',
+  'packages/data-pipeline/src/productionAudit.ts',
+  'packages/data-pipeline/src/productionAudit.test.ts',
+  'packages/master-data/src/productionAudit.ts',
+  'packages/master-data/src/productionAudit.test.ts',
 ].sort(compareText);
 const contractFiles = contractFilePaths.map((path) => fileIdentity(resolve(root, path)));
 

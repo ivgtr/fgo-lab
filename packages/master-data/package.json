@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./production-audit": "./src/productionAudit.ts"
+  },
   "dependencies": {
     "@fgo-lab/schema": "workspace:*",
     "zod": "4.4.3"

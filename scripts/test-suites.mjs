@@ -15,6 +15,7 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/mlbOnlyEffectsGolden.test.ts',
   'packages/calculation-application/src/npFunctionGolden.test.ts',
   'packages/calculation-application/src/procEffectsGolden.test.ts',
+  'packages/calculation-application/src/productionAudit.test.ts',
   'packages/calculation-application/src/productionExecutionParity.test.ts',
   'packages/calculation-application/src/productionMasterAudit.test.ts',
   'packages/calculation-application/src/productionMasterInventory.test.ts',
@@ -27,4 +28,5 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/unsupportedConvergenceGolden.test.ts',
   'packages/data-pipeline/src/executionSemanticsProduction.test.ts',
   'packages/data-pipeline/src/masterGolden.test.ts',
+  'packages/data-pipeline/src/productionAudit.test.ts',
 ];

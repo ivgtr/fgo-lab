@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
 const MAX_SUMMARY_LINES = 200;
@@ -43,6 +43,36 @@ function parseReport(reportPath) {
       error: cause instanceof Error ? cause.message : String(cause),
     };
   }
+}
+
+function runtimeCounterArtifacts(runDirectory) {
+  return readdirSync(runDirectory)
+    .filter((name) => /^production-audit-[a-z-]+\.json$/.test(name))
+    .sort()
+    .map((name) => {
+      try {
+        const artifact = JSON.parse(readFileSync(resolve(runDirectory, name), 'utf8'));
+        const validCounters =
+          artifact.runtimeCounters &&
+          typeof artifact.runtimeCounters === 'object' &&
+          Object.values(artifact.runtimeCounters).every(
+            (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0,
+          );
+        return {
+          artifact: name,
+          boundary: typeof artifact.boundary === 'string' ? artifact.boundary : null,
+          counters: validCounters ? artifact.runtimeCounters : null,
+          error: validCounters ? null : 'invalid_runtime_counters',
+        };
+      } catch (cause) {
+        return {
+          artifact: name,
+          boundary: null,
+          counters: null,
+          error: cause instanceof Error ? cause.message : String(cause),
+        };
+      }
+    });
 }
 
 function reportCounts(report) {
@@ -249,7 +279,12 @@ export async function runCapturedTest(options) {
   try {
     child = spawn(command, resolvedArgs, {
       cwd: root,
-      env: { ...process.env, ...extraEnv, FGO_TEST_REPORT_PATH: reportPath },
+      env: {
+        ...process.env,
+        ...extraEnv,
+        FGO_TEST_REPORT_PATH: reportPath,
+        FGO_TEST_ARTIFACT_DIR: runDirectory,
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
       detached,
     });
@@ -326,6 +361,7 @@ export async function runCapturedTest(options) {
   });
   const durationMs = Date.now() - startedAt.getTime();
   const counts = { ...reportCounts(report), warnings: warningCount(stdout, stderr) };
+  const runtimeCounters = runtimeCounterArtifacts(runDirectory);
   const exit = processResult.runnerError
     ? { kind: 'runner_failure', code: null, signal: null }
     : timedOut
@@ -349,11 +385,13 @@ export async function runCapturedTest(options) {
       truncated: false,
       summaryLimits: { lines: MAX_SUMMARY_LINES, bytes: MAX_SUMMARY_BYTES },
     },
+    runtimeCounters,
     artifacts: [
       'manifest.json',
       ...(existsSync(reportPath) ? ['vitest.json'] : []),
       'stdout.log',
       'stderr.log',
+      ...runtimeCounters.map(({ artifact }) => artifact),
     ],
   };
   const formattedSummary = formatSummary({

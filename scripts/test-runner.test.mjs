@@ -96,6 +96,30 @@ test('success writes a compact manifest and preserves captured streams', async (
   assert.match(result.summary, /Warnings: 1/);
 });
 
+test('production audit artifacts add validated runtime counters to the manifest', async () => {
+  const result = await runFixture(
+    'runtime-counters',
+    `
+      const fs = require('node:fs');
+      const path = require('node:path');
+      fs.writeFileSync(
+        path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'production-audit-fixture.json'),
+        JSON.stringify({ boundary: 'fixture', runtimeCounters: { masterReadCount: 1, compileCount: 1 } }),
+      );
+      fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+    `,
+  );
+  assert.deepEqual(result.manifest.runtimeCounters, [
+    {
+      artifact: 'production-audit-fixture.json',
+      boundary: 'fixture',
+      counters: { masterReadCount: 1, compileCount: 1 },
+      error: null,
+    },
+  ]);
+  assert.ok(result.manifest.artifacts.includes('production-audit-fixture.json'));
+});
+
 test('assertion failure keeps the child exit code and bounded structured detail', async () => {
   const result = await runFixture(
     'failure',
