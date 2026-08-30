@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
 document_version: "1.1.1"
-status: "Proposed"
-approval_gate: "Required before TSK-01"
+status: "Active"
+approved_at: "2026-08-30"
 updated_at: "2026-08-30"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"

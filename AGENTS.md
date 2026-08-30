@@ -32,3 +32,4 @@
 - Preserve unrelated user changes. Stage and commit only the requested files, and verify the staged diff explicitly.
 - Record intentional damage changes with canonical inputs and the governing semantic rule, not only snapshots of final numbers.
 - Do not claim completion from passing tests alone: confirm production inventory, calculator/ranking parity, fail-closed behavior, performance, and the requested UI invariants in proportion to the change.
+- Use `pnpm test:agent` for bounded output and `pnpm test:diagnostic -- <filter>` for verbose diagnosis. Long-running commands should wait at least 30 seconds between empty polls; inspect the referenced `.test-results/` artifact instead of replaying full logs.

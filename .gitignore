@@ -5,6 +5,7 @@ build/
 coverage/
 playwright-report/
 test-results/
+.test-results/
 .vite/
 .turbo/
 .pnpm-store/

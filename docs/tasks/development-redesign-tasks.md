@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.3.0"
+document_version: "1.3.1"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -36,7 +36,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-00.3 | Ignored documentation disposition and quarantine | done | TSK-00.2 | documentation maintenance DOC-P3.2 |
 | TSK-00.4 | Documentation entrypoint and archive compaction | done | TSK-00.3 | documentation maintenance DOC-P3.3 |
 | TSK-00 | Baseline固定 | done | TSK-00.4 | 全要件書 |
-| TSK-01 | Compact runnerとagent command契約 | blocked | TSK-00 | test strategy T1／execution efficiency |
+| TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | blocked | TSK-01 | test strategy T2 |
 | TSK-03 | 共有production audit foundation | blocked | TSK-02 | test strategy T3／ranking production audit |
 | TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
@@ -198,11 +198,11 @@ Handoff:
 
 Depends on: TSK-00
 
-- [ ] process、capture、structured report、summaryを所有するfocused runnerを実装する。
-- [ ] `test:agent`と`test:diagnostic`を追加する。
-- [ ] success、assertion failure、timeout、signal、reporter failureをrunner testで固定する。
-- [ ] full log、manifest、`.test-results/` ignoreを実装する。
-- [ ] 30秒以上のpoll間隔とbounded command outputを短いrepository guidanceへ追加する。
+- [x] process、capture、structured report、summaryを所有するfocused runnerを実装する。
+- [x] `test:agent`と`test:diagnostic`を追加する。
+- [x] success、assertion failure、timeout、signal、reporter failureをrunner testで固定する。
+- [x] full log、manifest、`.test-results/` ignoreを実装する。
+- [x] 30秒以上のpoll間隔とbounded command outputを短いrepository guidanceへ追加する。
 
 Done gate:
 
@@ -211,7 +211,17 @@ Done gate:
 - exit code、stderr、timeoutを失わない。
 - test集合、damage、ranking期待値に差分がない。
 
-Handoff: 未記録
+Handoff:
+
+- Start baseline: `8943f19f5c3e143780cd9fcd3689124cfedbc29f`、clean worktree。`test-strategy-redesign` v1.1.1と`development-execution-efficiency-requirements` v1.0.1を2026-08-30に承認し、両方を`Active`へ変更してから着手した。
+- Commit: 本completion commit。
+- Implementation: `scripts/test-runner.mjs`とfocused libraryがprocess、10分timeout、SIGINT／SIGTERM伝播、stdout／stderr capture、Vitest JSON、代表5 failure、200行／32 KiB summary、last 100 lines、version／Git identity付きmanifestを所有する。`pnpm test`と`test:agent`はcompact、`test:diagnostic`はverbose＋同一JSON artifact、`test:runner`は基盤契約だけを実行する。
+- Abnormal exits: Node runner test 5／5でsuccess、assertion failureのexit code 7、timeout、SIGTERM、reporter output欠落を固定し、後4状態が非0終了でmanifest上も区別されることを確認した。
+- Artifacts: `.test-results/2026-08-30T02-19-08-632Z-16-c4ea80/manifest.json`。最終full runは77 files／397 tests、skip／todo／warning 0、82.80秒、compact summary 6行（pnpm script表示を含め7行）。full `vitest.json` 145,049 bytes、stdout 115 bytes、stderr 0 bytesを保持した。
+- Inventory／damage parity: Vitest 77 files／既存397 identity、test file／name digest `71ffa6f7835799adbcdb306eb3484c2796c61b2e453414840547e59f54453e3b`／`756e5e31d206bc4632df25da0fd2728fbd198a94603dca4bd858f0f633259251`は不変。semantic inventory、resource occurrence／inventory、production test file、PNG baseline digestもTSK-00と一致し、product source、test expectation、snapshot、master差分0。runner commandを含む新aggregate digestだけを`11bb3e3bdecbd8edb013f064554529172c679ed4d2a7fc13bd7bf3c79e471140`へ更新した。
+- Performance: 同じJSON reporter／397 test集合を3回ずつ測定し、direct wall-clock 83.76／84.39／85.00秒（中央値84.39秒）、wrapped 83.34／84.06／84.28秒（中央値84.06秒）。差は-0.33秒／-0.39%で、2%または1秒のratchet内。
+- Verification: `pnpm test:runner`、compact／diagnostic focused smoke、`pnpm lint`、`pnpm typecheck`、対象Prettier、baseline auditor `--check`、full `pnpm test` 3回連続397／397 pass、`git diff --check`成功。
+- Next command: `git status --short && git rev-parse HEAD`でTSK-02のbaseline identityを開始する。
 
 ### TSK-02: Suite分類とcanonical quality gate
 
