@@ -19,7 +19,7 @@ const expectedDigests = {
   pngBaselines: '537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
-  stableArtifact: '11bb3e3bdecbd8edb013f064554529172c679ed4d2a7fc13bd7bf3c79e471140',
+  stableArtifact: 'c82e0fbc3ecfc7129358fbcf3def4e33528aadb9d9ac30cd4ca47e3e3dfa95ef',
 };
 
 function sha256(value) {

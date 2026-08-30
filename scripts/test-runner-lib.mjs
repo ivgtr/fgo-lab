@@ -66,13 +66,14 @@ function reportCounts(report) {
   };
 }
 
-function warningCount(stderr) {
-  return stderr
+function warningCount(stdout, stderr) {
+  return `${stdout}\n${stderr}`
     .split(/\r?\n/)
     .filter((line) => /\b(?:warn(?:ing)?|deprecated|unhandled|resource leak)\b/i.test(line)).length;
 }
 
-function outcomeFor({ code, signal, timedOut, report, reportError }) {
+function outcomeFor({ code, signal, timedOut, runnerError, report, reportError }) {
+  if (runnerError) return 'runner_failure';
   if (timedOut) return 'timeout';
   if (signal) return 'signal';
   if (!report) return code === 0 ? 'reporter_failure' : 'test_failure';
@@ -82,20 +83,49 @@ function outcomeFor({ code, signal, timedOut, report, reportError }) {
   return reportError ? 'reporter_failure' : 'success';
 }
 
+function prefixWithinBytes(value, maxBytes) {
+  if (Buffer.byteLength(value) <= maxBytes) return value;
+  const characters = Array.from(value);
+  let low = 0;
+  let high = characters.length;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (Buffer.byteLength(characters.slice(0, middle).join('')) <= maxBytes) low = middle;
+    else high = middle - 1;
+  }
+  return characters.slice(0, low).join('');
+}
+
 function bounded(lines) {
-  let truncated = lines.length > MAX_SUMMARY_LINES;
-  const selected = lines.slice(0, MAX_SUMMARY_LINES);
-  while (Buffer.byteLength(selected.join('\n')) > MAX_SUMMARY_BYTES && selected.length > 1) {
-    truncated = true;
-    selected.pop();
+  const physicalLines = lines.flatMap((line) => String(line).split(/\r?\n/));
+  let truncated = physicalLines.length > MAX_SUMMARY_LINES;
+  const artifactLine = prefixWithinBytes(physicalLines.at(-1) ?? '', 4 * 1024);
+  let selected = physicalLines;
+  if (physicalLines.length > MAX_SUMMARY_LINES) {
+    const keptBodyLines = MAX_SUMMARY_LINES - 2;
+    const omitted = physicalLines.length - keptBodyLines - 1;
+    selected = [
+      ...physicalLines.slice(0, keptBodyLines),
+      `... ${omitted} lines omitted`,
+      artifactLine,
+    ];
+  } else if (physicalLines.length > 0) {
+    selected = [...physicalLines.slice(0, -1), artifactLine];
   }
-  if (selected.length < lines.length)
-    selected.push(`... ${lines.length - selected.length} lines omitted`);
-  while (Buffer.byteLength(selected.join('\n')) > MAX_SUMMARY_BYTES && selected.length > 1) {
+
+  let text = `${selected.join('\n')}\n`;
+  if (Buffer.byteLength(text) > MAX_SUMMARY_BYTES) {
     truncated = true;
-    selected.splice(-2, 1);
+    const marker = '... output truncated';
+    const suffix = `\n${artifactLine}\n`;
+    const available = Math.max(
+      0,
+      MAX_SUMMARY_BYTES - Buffer.byteLength(marker) - Buffer.byteLength(suffix),
+    );
+    const body = selected.slice(0, -1).join('\n');
+    text = `${prefixWithinBytes(body, available)}${marker}${suffix}`;
   }
-  return { text: `${selected.join('\n')}\n`, truncated };
+  return { text, truncated };
 }
 
 function failedAssertions(report) {
@@ -149,6 +179,7 @@ function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirect
       lines.push(...tail.slice(-ABNORMAL_TAIL_LINES));
     }
   } else {
+    if (manifest.runner.error) lines.push(`Runner: ${manifest.runner.error}`);
     if (manifest.reporter.error) lines.push(`Reporter: ${manifest.reporter.error}`);
     lines.push('Last output:');
     semanticallyTruncated ||= tailWasTrimmed || tail.length > ABNORMAL_TAIL_LINES;
@@ -209,55 +240,74 @@ export async function runCapturedTest(options) {
     argument.replaceAll('$FGO_TEST_REPORT_PATH', reportPath),
   );
   const detached = forwardSignals && process.platform !== 'win32';
-  const child = spawn(command, resolvedArgs, {
-    cwd: root,
-    env: { ...process.env, ...extraEnv, FGO_TEST_REPORT_PATH: reportPath },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached,
-  });
-  const terminateChild = (signal) => {
-    if (detached) {
-      try {
-        process.kill(-child.pid, signal);
-        return;
-      } catch {
-        // The process group may already have exited between the close check and signal delivery.
+  let child;
+  let forceKillTimer;
+  let timer;
+  let terminateChild = () => {};
+  const forwardedSignals = new Map();
+  let processResult;
+  try {
+    child = spawn(command, resolvedArgs, {
+      cwd: root,
+      env: { ...process.env, ...extraEnv, FGO_TEST_REPORT_PATH: reportPath },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached,
+    });
+    terminateChild = (signal) => {
+      if (detached) {
+        try {
+          process.kill(-child.pid, signal);
+          return;
+        } catch {
+          // The process group may already have exited between the close check and signal delivery.
+        }
+      }
+      child.kill(signal);
+    };
+    if (forwardSignals) {
+      for (const signal of ['SIGINT', 'SIGTERM']) {
+        const handler = () => terminateChild(signal);
+        forwardedSignals.set(signal, handler);
+        process.on(signal, handler);
       }
     }
-    child.kill(signal);
-  };
-  const forwardedSignals = new Map();
-  if (forwardSignals) {
-    for (const signal of ['SIGINT', 'SIGTERM']) {
-      const handler = () => terminateChild(signal);
-      forwardedSignals.set(signal, handler);
-      process.on(signal, handler);
-    }
-  }
-  child.stdout.on('data', (chunk) => {
-    appendTail('stdout', chunk);
-    if (mode === 'diagnostic') process.stdout.write(chunk);
-  });
-  child.stderr.on('data', (chunk) => {
-    appendTail('stderr', chunk);
-    if (mode === 'diagnostic') process.stderr.write(chunk);
-  });
+    child.stdout.on('data', (chunk) => {
+      appendTail('stdout', chunk);
+      if (mode === 'diagnostic') process.stdout.write(chunk);
+    });
+    child.stderr.on('data', (chunk) => {
+      appendTail('stderr', chunk);
+      if (mode === 'diagnostic') process.stderr.write(chunk);
+    });
 
-  let forceKillTimer;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    terminateChild('SIGTERM');
-    forceKillTimer = setTimeout(() => terminateChild('SIGKILL'), 2_000);
-    forceKillTimer.unref();
-  }, timeoutMs);
-  timer.unref();
-  const processResult = await new Promise((resolveProcess, rejectProcess) => {
-    child.once('error', rejectProcess);
-    child.once('close', (code, signal) => resolveProcess({ code, signal }));
-  });
-  clearTimeout(timer);
-  if (forceKillTimer) clearTimeout(forceKillTimer);
-  for (const [signal, handler] of forwardedSignals) process.off(signal, handler);
+    timer = setTimeout(() => {
+      timedOut = true;
+      terminateChild('SIGTERM');
+      forceKillTimer = setTimeout(() => terminateChild('SIGKILL'), 2_000);
+      forceKillTimer.unref();
+    }, timeoutMs);
+    timer.unref();
+    processResult = await new Promise((resolveProcess) => {
+      child.once('error', (cause) =>
+        resolveProcess({
+          code: null,
+          signal: null,
+          runnerError: cause instanceof Error ? cause.message : String(cause),
+        }),
+      );
+      child.once('close', (code, signal) => resolveProcess({ code, signal, runnerError: null }));
+    });
+  } catch (cause) {
+    processResult = {
+      code: null,
+      signal: null,
+      runnerError: cause instanceof Error ? cause.message : String(cause),
+    };
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (forceKillTimer) clearTimeout(forceKillTimer);
+    for (const [signal, handler] of forwardedSignals) process.off(signal, handler);
+  }
   if (partialStdout) tail.push(`stdout: ${partialStdout}`);
   if (partialStderr) tail.push(`stderr: ${partialStderr}`);
 
@@ -270,16 +320,19 @@ export async function runCapturedTest(options) {
     code: processResult.code,
     signal: processResult.signal,
     timedOut,
+    runnerError: processResult.runnerError,
     report,
     reportError,
   });
   const durationMs = Date.now() - startedAt.getTime();
-  const counts = { ...reportCounts(report), warnings: warningCount(stderr) };
-  const exit = timedOut
-    ? { kind: 'timeout', code: null, signal: processResult.signal }
-    : processResult.signal
-      ? { kind: 'signal', code: null, signal: processResult.signal }
-      : { kind: 'code', code: processResult.code, signal: null };
+  const counts = { ...reportCounts(report), warnings: warningCount(stdout, stderr) };
+  const exit = processResult.runnerError
+    ? { kind: 'runner_failure', code: null, signal: null }
+    : timedOut
+      ? { kind: 'timeout', code: null, signal: processResult.signal }
+      : processResult.signal
+        ? { kind: 'signal', code: null, signal: processResult.signal }
+        : { kind: 'code', code: processResult.code, signal: null };
   const manifest = {
     manifestVersion: 1,
     command: { label: commandLabel, executable: command, args: resolvedArgs, suite, mode },
@@ -290,6 +343,7 @@ export async function runCapturedTest(options) {
     versions: packageVersions(root),
     repository: repositoryIdentity(root),
     counts,
+    runner: { error: processResult.runnerError },
     reporter: { format: 'vitest-json', available: report !== null, error: reportError },
     output: {
       truncated: false,
