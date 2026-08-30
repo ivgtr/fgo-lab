@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab 開発プロンプト運用ガイド"
-document_version: "1.0.0"
+document_version: "1.1.0"
 status: "Guideline"
 created_at: "2026-08-30"
-updated_at: "2026-08-30"
+updated_at: "2026-08-31"
 related_documents:
   - "docs/tasks/development-redesign-tasks.md"
   - "docs/requirements/development-execution-efficiency-requirements.md"
@@ -131,6 +131,44 @@ bug finding
 
 この場合のoutcomeは「バグ修正」から「設計監査」へ変わっている。現在sessionでは調査結果と正本文書の更新までに限定し、実装は更新後のTaskを使ってnew sessionで開始する。
 
+### 3.4 Execution familyを閉じる計画手順
+
+中心moduleの入力と出力だけではなく、そのstateを読む全consumer、stateを書き換える全経路、利用者が修正するためのrecoveryを計画対象にする。これはレビュー差し戻しをなくす保証ではなく、未監査範囲を完了済みとして提出しにくくするための反証手順である。
+
+計画時は次の順序で一枚のflow closure noteを作る。
+
+1. 利用者から観測可能なoutcomeをexhaustiveに列挙する。少なくともsuccess、正常な非適用、修正可能な入力、semantic invalid、unsupportedを同値扱いしない。
+2. raw producerからcanonical IR、application command、resolver、activation、state mutation、result assembly、UI／rankingまでのforward flowを記録する。
+3. input validation、required-input収集、error classification、retry commandのように下流から利用者へ戻るrecovery flowを別に記録する。
+4. stateを書き換える場所を検索し、通常loop以外のpreapply、preparation transaction、projection override、commit／rollback、fallback、cache／aggregationを該当有無つきで列挙する。
+5. outcome stateとexecution pathの積から反証matrixを作り、特殊経路とproductionに存在しないschema-legal stateが少なくとも一度交差するfixtureを選ぶ。
+6. 未確認経路、production occurrence 0、仮定したownershipを明記し、それらをpass、非増加、対象外へ読み替えない。
+
+例:
+
+```text
+canonical input / command
+  -> resolver
+  -> typed state
+  -> activation
+       |- preparation / preapply
+       |- normal operation loop
+       |- contribution projection
+       `- result classification
+            `- required-input / error recovery -> application / UI
+```
+
+計画に残す最小matrixは次の形とする。全セルに個別fixtureを作るのではなく、空欄を無意識に残さないことが目的である。
+
+| Outcome state | Normal loop | Alternate mutation path | Projection／aggregation | Recovery classification |
+| --- | --- | --- | --- | --- |
+| success | expected transition | expected transition | allowed contribution | exact |
+| normal non-application | no transition | no transition | cannot revive | exact |
+| repairable input | no transition | no transition | cannot revive | input required |
+| semantic invalid | no transition | no transition | cannot revive | unsupported／invalid |
+
+review findingで新しい経路が見つかった場合は、期待値を一件追加する前にflow closure noteへconsumer、write site、recovery、反証cellを追加する。同じ中心ロジックのtestが通ることやproduction occurrenceが0件であることだけを再提出根拠にしない。
+
 ## 4. 初回実装promptの型
 
 ```text
@@ -151,6 +189,13 @@ Scope:
 - 主対象: <package / semantic family>
 - 必要な依存変更は同じcanonical modelへ収束する範囲で許可する
 
+Flow closure:
+- outcome classes: <success / non-application / repairable input / invalid / unsupported>
+- forward consumers and state-writing paths: <paths>
+- recovery paths: <required-input / error / retry flow>
+- alternate paths: <preapply / projection / commit / fallback / none with evidence>
+- unverified or production-negative cases: <cases>
+
 Invariants:
 - damage correctness最優先
 - calculator/rankingは同じexecution path
@@ -164,6 +209,8 @@ Do not:
 
 Done when:
 - <TaskのDone gateを参照>
+- state × pathの反証matrixで中心経路以外を確認
+- 未確認経路とproduction occurrence 0をhandoffへ記録
 - focused testsと必要なproduction gateが成功
 - inventory、digest、parity、performance差分を説明
 - requested filesだけをcommit
@@ -200,6 +247,8 @@ Scope:
 
 Done when:
 - reproductionが正しいtyped outcomeになる
+- findingで判明したconsumer／write site／recovery pathをflow inventoryへ追加
+- 同じstateが通常経路とalternate pathで同じ適用判定になる
 - 同familyのproduction inventoryを確認
 - calculator/ranking parityを維持
 - unrelatedなdamage差分がない
@@ -359,6 +408,11 @@ focused／production testsに加え、inventory、calculator/ranking parity、fa
 - [ ] 正本をpathで示し、全文を複製していないか。
 - [ ] actualとexpectedをcanonical inputで説明したか。
 - [ ] semantic familyと変更範囲を示したか。
+- [ ] observable outcomeをfailure／repairable input／invalid／unsupportedまで分けたか。
+- [ ] forward flowとrecovery flowを別々に追ったか。
+- [ ] 通常loop以外のstate mutation／projection／fallback経路を確認したか。
+- [ ] state × pathの反証matrixがあるか。
+- [ ] 未確認経路とproduction occurrence 0を明記したか。
 - [ ] 維持するinvariantを書いたか。
 - [ ] Done whenがtest成功以外も含むか。
 - [ ] 別問題を発見した場合の停止条件があるか。

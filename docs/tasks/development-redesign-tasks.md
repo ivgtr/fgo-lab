@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.5"
+document_version: "1.5.6"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -27,6 +27,10 @@ governance_contract: "docs/guides/document-governance.md"
 - `done`: Done gateとhandoffを記録済み
 
 Task開始時に状態とbaseline identityを更新し、完了時にcommit、artifact manifest、inventory／digest差分、次taskの開始条件を記録する。raw test log、全source listing、全screenshotは本書へ貼らない。
+
+未完了Taskまたは未完了sub-itemは、実装前にflow closure noteをHandoffまたは対応evidenceへ記録する。noteは(1) observable outcome分類、(2) raw producerからresult consumerまでのforward flow、(3) required input／error／retryのrecovery flow、(4) normal loop以外のpreapply、transaction、projection、commit／rollback、fallback、cache／aggregationの該当有無、(5) state × path反証matrix、(6) 未確認経路とproduction occurrence 0を含む。これは全cellのfixture化や一般battle simulator化を要求せず、現在Taskのsemantic familyに限定する。
+
+reviewで新しいconsumer、write site、recovery pathが判明した場合、局所patchより先にflow closure noteと反証matrixを更新する。手戻り回数自体をfailure metricにせず、未確認範囲の矮小化、production不在を安全性とみなすこと、中心経路だけの成功を完了承認へ使うことを禁止する。
 
 ## 2. Task index
 
@@ -355,6 +359,7 @@ Depends on: TSK-03
 
 - [x] AttackProfile identityをcanonical化する。
 - [x] player choiceとstochastic outcomeをtyped semanticsへ分離する。
+- [ ] 残る各semantic familyについてforward／recovery／alternate mutation pathとstate × path反証matrixを実装前に記録する。
 - [ ] condition requirement、provenance、target、recipient、contribution scopeをcanonical化する。
 - [ ] NP capacity、resource requirement、gain／loss／all-consume、base OCをcanonical化する。
 - [ ] 旧schema reader、raw fallback、compatibility flagを削除する。
@@ -365,6 +370,7 @@ Done gate:
 - executionへraw key、raw target、raw buff typeを渡していない。
 - 新旧IRをruntimeで併存させていない。
 - 全production occurrenceがtyped inventoryへ分類されるか、型付きでfail-closedになる。
+- 中心経路以外のconsumer／state mutation／recovery pathと未確認範囲がflow closure noteで明示される。
 
 Contract closure matrix:
 
@@ -412,7 +418,8 @@ Handoff:
 - Selection execution family verification: preapply failure／invalidのadd／remove／suppress trait非適用とCaesar最大値+1の`inputRequired` recoveryをfixture化した。focused 9 files／55 tests、unit 55 files／299 tests、production 25 files／118 testsが成功。production artifact `.test-results/2026-08-30T16-29-24-499Z-15-06322a`は71.18秒で直前quality 72.60秒から増加せず、damage／calculator-ranking parity／runtime counter差分0。test-name digestは`6abb0076f48d0db8f88d953bd6b97a241752a2e17cef14fd4732433aea732dde`、stable artifact digestは`fa8a2fe3c4c3e8b0144a1024d26b4a0d92f5efce1153bb0bd462309e4edc4c51`。
 - Selection execution family quality: 最終`pnpm quality`はunit artifact `.test-results/2026-08-30T16-33-49-913Z-320-822115`、production artifact `.test-results/2026-08-30T16-33-54-342Z-795-195ec2`（72.00秒）、master validation、build、E2E 64 passed／32 project-specific skipped（9.4分）まで成功した。
 - Selection execution family review commit: 本review correction commit。
-- Next command: condition requirement、provenance、target、recipient、contribution scopeのraw occurrenceと現runtime branchをinventory化し、data-pipeline発行のcanonical semanticsへcutoverする。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
+- Planning correction baseline: `6c36607ac552792b9b6680bb4e49d936fbd2d66f`、clean worktree。selection reviewで見つかったpreapply迂回とcanonical input recovery消失を、個別findingではなくforward／recovery／alternate mutation pathの計画漏れとして一般化した。今後は各未完了familyの実装前にflow closure noteとstate × path反証matrixを作り、未確認経路とproduction occurrence 0を明示してから実装へ進む。
+- Next command: condition requirement、provenance、target、recipient、contribution scopeについて、まずobservable outcome、forward／recovery flow、alternate write path、state × path反証matrix、未確認範囲をflow closure noteへ記録する。その後raw occurrenceと現runtime branchをinventory化し、noteのレビュー後にdata-pipeline発行のcanonical semanticsへcutoverする。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
 
 ### TSK-05: Transactional preparation execution
 
