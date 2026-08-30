@@ -1,7 +1,7 @@
 ---
 title: "TSK-00 test and ranking baseline"
-document_version: "1.1.0"
-status: "In Progress"
+document_version: "1.2.0"
+status: "Complete"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 baseline_commit: "a49591996cd0951cc82109c252d96e2fd3991fd9"
