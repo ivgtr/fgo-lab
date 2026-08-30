@@ -21,7 +21,14 @@ describe('production HP condition golden', () => {
     const masterEffect = craftEssence.effects.find((effect) => effect.occurrenceId === '21041:0')!;
     expect(masterEffect).toMatchObject({
       interaction: null,
-      quantityConditions: [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
+      requirement: {
+        expression: {
+          kind: 'quantity',
+          quantity: 'attackerHpPermille',
+          comparison: 'atMost',
+          value: 500,
+        },
+      },
       atlasEvidence: { buffConditionKeys: ['HP_LOWER'] },
     });
 

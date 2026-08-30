@@ -74,8 +74,11 @@ describe('damage-reachable target-state normalization', () => {
       kind: 'contextMutation',
       mutation: 'addTrait',
       scope: 'recipientState',
-      targetPolicy: 'enemy',
-      contributionScope: 'enemyApplied',
+      route: {
+        target: 'enemy',
+        contributionScope: 'enemyApplied',
+        eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+      },
       trait: 'buffPoison',
       damageRelevant: true,
     });

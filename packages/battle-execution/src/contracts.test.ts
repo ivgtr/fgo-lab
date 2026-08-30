@@ -13,24 +13,8 @@ import type {
   WorldFactAssertion,
 } from './index';
 import { canonicalExclusiveGroup } from './index';
-import { normalizeTraitCondition } from './condition';
 
 describe('ordered battle execution contracts', () => {
-  it('normalizes NP and command-card scopes for the NP execution path', () => {
-    expect(
-      normalizeTraitCondition(
-        { operator: 'any', traits: [{ name: 'cardNP', negative: false, layer: 'combined' }] },
-        'attacker',
-      ),
-    ).toEqual({ kind: 'always' });
-    expect(
-      normalizeTraitCondition(
-        { operator: 'any', traits: [{ name: 'faceCard', negative: false, layer: 'combined' }] },
-        'attacker',
-      ),
-    ).toEqual({ kind: 'not', expression: { kind: 'always' } });
-  });
-
   it('keeps conditions, effect decisions, and world facts as separate contracts', () => {
     const condition: ConditionExpression = {
       kind: 'all',
@@ -78,27 +62,6 @@ describe('ordered battle execution contracts', () => {
     expect(canonicalExclusiveGroup('field', 'fieldHeaven')).toBe('fieldRealm');
     expect(canonicalExclusiveGroup('field', 'fieldHell')).toBe('fieldRealm');
     expect(canonicalExclusiveGroup('target', 'dragon')).toBeNull();
-  });
-
-  it('normalizes attacker card traits into the derived card predicate', () => {
-    expect(
-      normalizeTraitCondition(
-        {
-          operator: 'all',
-          traits: [
-            { name: 'cardArts', negative: false, layer: 'combined' },
-            { name: 'cardBuster', negative: true, layer: 'combined' },
-          ],
-        },
-        'attacker',
-      ),
-    ).toEqual({
-      kind: 'all',
-      expressions: [
-        { kind: 'card', card: 'arts' },
-        { kind: 'not', expression: { kind: 'card', card: 'buster' } },
-      ],
-    });
   });
 
   it('models every R1 operation as a discriminated union without servant identity', () => {

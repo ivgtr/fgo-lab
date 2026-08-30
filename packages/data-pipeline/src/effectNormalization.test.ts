@@ -1,8 +1,29 @@
 import { describe, expect, it } from 'vitest';
+import type { CanonicalEffectRequirement } from '@fgo-lab/master-data';
 import type { AtlasFunction } from './atlasContract';
 import { normalizeFunctions } from './effectNormalization';
 
 const valueSets = (value: Record<string, unknown>) => Array.from({ length: 10 }, () => value);
+
+function requirementLeaves(requirement: CanonicalEffectRequirement): CanonicalEffectRequirement[] {
+  if (requirement.kind === 'all' || requirement.kind === 'any')
+    return requirement.requirements.flatMap(requirementLeaves);
+  return requirement.kind === 'not' ? requirementLeaves(requirement.requirement) : [requirement];
+}
+
+const quantityRequirements = (effect: ReturnType<typeof normalizeFunctions>[number]) =>
+  requirementLeaves(effect.requirement.expression)
+    .filter((requirement) => requirement.kind === 'quantity')
+    .map((requirement) => ({
+      quantity: requirement.quantity,
+      ...(requirement.subjectId === undefined ? {} : { subjectId: requirement.subjectId }),
+      comparison: requirement.comparison,
+      value: requirement.value,
+    }));
+const inputQuantityRequirements = (effect: ReturnType<typeof normalizeFunctions>[number]) =>
+  requirementLeaves(effect.requirement.expression).filter(
+    (requirement) => requirement.kind === 'inputQuantity',
+  );
 
 function normalizeCountEffect(parameter: Record<string, unknown>) {
   const fn: AtlasFunction = {
@@ -175,7 +196,7 @@ describe('HP threshold series normalization', () => {
     expect(effects.map((effect) => effect.interaction?.kind)).toEqual(
       Array.from({ length: 5 }, () => 'quantityThresholdSeries'),
     );
-    expect(effects.map((effect) => effect.quantityConditions)).toEqual([
+    expect(effects.map(quantityRequirements)).toEqual([
       [],
       [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 990 }],
       [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 750 }],
@@ -199,7 +220,7 @@ describe('HP threshold series normalization', () => {
       1,
     );
 
-    expect(effects[1]!.quantityConditions).toEqual([
+    expect(quantityRequirements(effects[1]!)).toEqual([
       { quantity: 'attackerHpPermille', comparison: 'atMost', value: 0 },
     ]);
   });
@@ -214,7 +235,14 @@ describe('HP threshold series normalization', () => {
     const [single] = normalizeFunctions([attackFunction(1, 500)], new Map(), 'skill', 1);
     expect(single).toMatchObject({
       interaction: null,
-      quantityConditions: [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
+      requirement: {
+        expression: {
+          kind: 'quantity',
+          quantity: 'attackerHpPermille',
+          comparison: 'atMost',
+          value: 500,
+        },
+      },
     });
     expect(() =>
       normalizeFunctions(
@@ -235,7 +263,14 @@ describe('HP threshold series normalization', () => {
     );
     expect(single).toMatchObject({
       interaction: null,
-      quantityConditions: [{ quantity: 'attackerHpPermille', comparison: 'atLeast', value: 500 }],
+      requirement: {
+        expression: {
+          kind: 'quantity',
+          quantity: 'attackerHpPermille',
+          comparison: 'atLeast',
+          value: 500,
+        },
+      },
     });
 
     const cumulative = normalizeFunctions(
@@ -248,7 +283,7 @@ describe('HP threshold series normalization', () => {
       'skill',
       1,
     );
-    expect(cumulative.map((effect) => effect.quantityConditions)).toEqual([
+    expect(cumulative.map(quantityRequirements)).toEqual([
       [],
       [{ quantity: 'attackerHpPermille', comparison: 'atLeast', value: 500 }],
       [{ quantity: 'attackerHpPermille', comparison: 'atLeast', value: 1_000 }],
@@ -316,7 +351,7 @@ describe('canonical proc normalization', () => {
       group: { kind: 'binary', defaultOutcome: 'success' },
     });
     expect(single?.inputDefinitions).toEqual([]);
-    expect(single?.inputQuantityConditions).toEqual([]);
+    expect(single ? inputQuantityRequirements(single) : []).toEqual([]);
   });
 
   it('separates deterministic player choices from stochastic outcomes and rejects overlap', () => {
@@ -412,7 +447,7 @@ describe('canonical proc normalization', () => {
         },
       },
     ]);
-    expect(chained.map((effect) => effect.inputQuantityConditions[0]?.value)).toEqual([1, 2, 3]);
+    expect(chained.map((effect) => inputQuantityRequirements(effect)[0]?.value)).toEqual([1, 2, 3]);
 
     const skillChain = normalizeFunctions(
       [procFunction(1, 800), procFunction(1, -800), procFunction(1, -800)],

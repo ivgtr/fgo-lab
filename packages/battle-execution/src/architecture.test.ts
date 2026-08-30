@@ -98,4 +98,27 @@ describe('battle execution architecture', () => {
       expect(content).not.toMatch(/classSaber|classBeast|attributeSky|predicateTrait/);
     }
   });
+
+  it('consumes only canonical requirement and route state at runtime', async () => {
+    for (const path of [
+      'packages/battle-execution/src/operationCompiler.ts',
+      'packages/battle-execution/src/effectRouting.ts',
+      'packages/battle-execution/src/preparationEvidence.ts',
+      'packages/battle-execution/src/preparationState.ts',
+      'packages/calculation-application/src/preNoblePhantasmPlanner.ts',
+    ]) {
+      const content = await source(path);
+      expect(content, path).not.toMatch(
+        /quantityConditions|sourceQuantityConditions|inputQuantityConditions|conditionTargetPolicy|expectedRecipient|targetMismatch|traitReadPolicy|\.targetPolicy/,
+      );
+      expect(content, path).not.toMatch(/funcTargetType|funcTargetTeam|buffTypes|buff\.type/);
+    }
+  });
+
+  it('does not expose a legacy master condition or route reader', async () => {
+    const master = await source('packages/master-data/src/index.ts');
+    expect(master).not.toMatch(
+      /traitConditionSchema|effectConditionsSchema|quantityConditions|sourceQuantityConditions|inputQuantityConditions|conditionTargetPolicy|expectedRecipient|targetMismatch|traitReadPolicy|targetPolicy:/,
+    );
+  });
 });

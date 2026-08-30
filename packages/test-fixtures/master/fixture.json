@@ -1,5 +1,18 @@
 {
   "version": "fixture-1",
+  "npResourceSemantics": {
+    "unit": "basisPoints",
+    "capacityByNpLevel": [10000, 20000, 20000, 20000, 30000],
+    "noblePhantasmUse": {
+      "requirement": 10000,
+      "consumption": "all",
+      "baseOvercharge": {
+        "gaugePerStage": 10000,
+        "minimumStage": 1,
+        "maximumBaseStage": 3
+      }
+    }
+  },
   "normalization": {
     "attackFunctions": {
       "sourceCount": 1,

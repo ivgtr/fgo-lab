@@ -7,12 +7,6 @@ import {
   supportEffectOptions,
 } from './supportEffectPresentation';
 
-const conditions = {
-  recipient: [{ operator: 'any' as const, traits: [] }],
-  holder: { operator: 'any' as const, traits: [] },
-  opponent: { operator: 'any' as const, traits: [] },
-  field: { operator: 'any' as const, traits: [] },
-};
 const effectContract = {
   inclusionPolicy: { default: 'exclude' as const },
   gameActivation: 'skillUse' as const,
@@ -23,15 +17,8 @@ const effectContract = {
   operationTrigger: null,
   operationReference: null,
   stateIdentity: null,
-  traitReadPolicy: {
-    stateSources: 'activeOnly' as const,
-    ignoredStateTraits: 'exclude' as const,
-    unremovableStateTraits: 'include' as const,
-  },
-  quantityConditions: [],
-  sourceQuantityConditions: [],
   inputDefinitions: [],
-  inputQuantityConditions: [],
+  resourceTransition: null,
   atlasEvidence: {
     functionType: 'addStateShort',
     target: 'ptOne',
@@ -70,6 +57,7 @@ describe('support effect application view model', () => {
               name: '支援火力',
               detail: '',
               imageKey: null,
+              resourceRequirement: null,
               effects: [
                 {
                   ...effectContract,
@@ -77,17 +65,22 @@ describe('support effect application view model', () => {
                   occurrenceId: 'attack-up:0',
                   availability: 'allLimitBreakStates',
                   label: '攻撃力アップ',
-                  conditions,
-                  conditionTargetPolicy: 'partyMember',
+                  requirement: { recipient: 'partyMember', expression: { kind: 'always' } },
                   execution: [
                     {
                       kind: 'damageModifier',
                       modifier: 'attackBuff',
                       sign: 1,
-                      targetPolicy: 'partyMember',
-                      contributionScope: 'partyWide',
-                      expectedRecipient: 'attacker',
-                      targetMismatch: 'unsupported',
+                      route: {
+                        target: 'partyMember',
+                        contributionScope: 'partyWide',
+                        eligibility: {
+                          kind: 'requiredRecipient',
+                          recipient: 'attacker',
+                          onMissing: 'ignore',
+                          onMismatch: 'unsupported',
+                        },
+                      },
                       card: null,
                       values: [Array.from({ length: 10 }, () => 200), [], [], [], []],
                       valueExpressions: [[], [], [], [], []],
@@ -101,8 +94,7 @@ describe('support effect application view model', () => {
                   occurrenceId: 'critical-only:0',
                   availability: 'allLimitBreakStates',
                   label: 'クリティカル威力アップ',
-                  conditions,
-                  conditionTargetPolicy: 'partyMember',
+                  requirement: { recipient: 'partyMember', expression: { kind: 'always' } },
                   execution: [{ kind: 'nonDamage' }],
                 },
               ],

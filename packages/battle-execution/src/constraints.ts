@@ -173,6 +173,8 @@ function compileExpression(
   switch (expression.kind) {
     case 'always':
       return { status: 'supported', alternatives: negated ? [] : [[]] };
+    case 'unsupported':
+      return { status: 'unsupported', reason: 'unsupportedCondition' };
     case 'trait':
       return {
         status: 'supported',

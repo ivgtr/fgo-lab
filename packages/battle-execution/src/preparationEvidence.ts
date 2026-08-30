@@ -2,6 +2,7 @@ import {
   findNoblePhantasmVariant,
   noblePhantasmVariantKey,
   type ActorFormId,
+  type CanonicalEffectRequirement,
   type MasterEffect,
   type ServantMaster,
 } from '@fgo-lab/master-data';
@@ -28,6 +29,15 @@ function preparationActivationSource(
   return { origin: 'np', sourceInstanceId: `np:${key}`, skillId: `np:${key}` };
 }
 
+function sourceQuantityRequirements(
+  requirement: CanonicalEffectRequirement,
+): Extract<CanonicalEffectRequirement, { kind: 'sourceQuantity' }>[] {
+  if (requirement.kind === 'sourceQuantity') return [requirement];
+  if (requirement.kind === 'all' || requirement.kind === 'any')
+    return requirement.requirements.flatMap(sourceQuantityRequirements);
+  return requirement.kind === 'not' ? sourceQuantityRequirements(requirement.requirement) : [];
+}
+
 export function assemblePreparationActivationFacts(
   servant: ServantMaster,
   sourceKind: 'skill' | 'noblePhantasm',
@@ -47,10 +57,9 @@ export function assemblePreparationActivationFacts(
           },
         ]
       : []),
-    ...effect.sourceQuantityConditions.map((condition) => ({
-      kind: 'sourceQuantity' as const,
-      source,
+    ...sourceQuantityRequirements(effect.requirement.expression).map((condition) => ({
       ...condition,
+      source,
     })),
     ...(effect.operationTrigger
       ? [

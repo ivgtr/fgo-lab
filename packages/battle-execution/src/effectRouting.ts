@@ -1,5 +1,6 @@
 import type {
   CanonicalEffectContributionScope,
+  CanonicalEffectRoute,
   CanonicalTargetPolicy,
   EffectExecutionOperation,
   MasterEffect,
@@ -20,9 +21,11 @@ export function resolveContributionScope(
 
 export function resolveTargetPolicy(
   origin: Origin,
-  policy: CanonicalTargetPolicy,
+  policy: CanonicalTargetPolicy | CanonicalEffectRoute['target'],
 ): Recipient | null {
   if (policy === 'enemy') return 'target';
+  if (policy === 'sourceActor')
+    return origin === 'attacker' || origin === 'passive' || origin === 'np' ? 'attacker' : null;
   if (policy === 'sourceSelf')
     return origin === 'support' || origin === 'mysticCode' ? null : 'attacker';
   if (policy === 'partyOther') return origin === 'support' ? 'attacker' : null;
@@ -38,11 +41,9 @@ export function operationRecipient(
 ): Recipient | null {
   if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
     return 'attacker';
-  if (operation.kind === 'selectNoblePhantasmVariant' || operation.kind === 'transformActorForm')
-    return origin === 'attacker' || origin === 'passive' || origin === 'np' ? 'attacker' : null;
-  return operation.kind === 'nonDamage'
-    ? null
-    : resolveTargetPolicy(origin, operation.targetPolicy);
+  if (operation.kind === 'nonDamage') return null;
+  if (operation.kind === 'unresolved') return resolveTargetPolicy(origin, operation.route.target);
+  return resolveTargetPolicy(origin, operation.route.target);
 }
 
 export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): boolean {
@@ -50,13 +51,14 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
   return effect.execution.some((operation) => {
     if (operation.kind === 'nonDamage') return false;
     const recipient = operationRecipient(operation, origin);
-    if (operation.kind === 'contextMutation') return operation.damageRelevant && recipient !== null;
-    if (operation.kind === 'selectNoblePhantasmVariant' || operation.kind === 'transformActorForm')
-      return recipient !== null;
     if (operation.kind === 'unresolved') return operation.damageRelevant && recipient !== null;
+    if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
+      return operation.damageRelevant;
+    if (operation.kind === 'contextMutation' && !operation.damageRelevant) return false;
+    if (operation.route.eligibility.kind === 'anyRecipient') return recipient !== null;
     return (
-      recipient === operation.expectedRecipient ||
-      (recipient !== null && operation.targetMismatch === 'unsupported')
+      recipient === operation.route.eligibility.recipient ||
+      (recipient !== null && operation.route.eligibility.onMismatch === 'unsupported')
     );
   });
 }

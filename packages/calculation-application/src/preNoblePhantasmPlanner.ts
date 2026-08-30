@@ -51,10 +51,7 @@ function canonicalEffectKey(effect: PreNoblePhantasmState['activeEffects'][numbe
     occurrenceId: effect.occurrenceId,
     execution: effect.effect.execution,
     selection: effect.effect.selection,
-    conditions: effect.effect.conditions,
-    quantityConditions: effect.effect.quantityConditions,
-    sourceQuantityConditions: effect.effect.sourceQuantityConditions,
-    inputQuantityConditions: effect.effect.inputQuantityConditions,
+    requirement: effect.effect.requirement,
     proc: effect.effect.proc,
   });
 }

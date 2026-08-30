@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.7"
+document_version: "1.5.8"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -47,8 +47,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
 | TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | in_progress | TSK-03 | ranking layer ownership／移行方針 |
-| TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
+| TSK-04 | Ranking canonical IR cutover | done | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-05 | Transactional preparation execution | ready | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -361,10 +361,10 @@ Depends on: TSK-03
 
 - [x] AttackProfile identityをcanonical化する。
 - [x] player choiceとstochastic outcomeをtyped semanticsへ分離する。
-- [ ] 残る各stateful semantic familyについて一意なflow closure noteを作り、全scoped pathをVerified／N/A／Deferredへ収束させる。
-- [ ] condition requirement、provenance、target、recipient、contribution scopeをcanonical化する。
-- [ ] NP capacity、resource requirement、gain／loss／all-consume、base OCをcanonical化する。
-- [ ] 旧schema reader、raw fallback、compatibility flagを削除する。
+- [x] 残る各stateful semantic familyについて一意なflow closure noteを作り、全scoped pathをVerified／N/A／Deferredへ収束させる。
+- [x] condition requirement、provenance、target、recipient、contribution scopeをcanonical化する。
+- [x] NP capacity、resource requirement、gain／loss／all-consume、base OCをcanonical化する。
+- [x] 旧schema reader、raw fallback、compatibility flagを削除する。
 
 Done gate:
 
@@ -423,6 +423,13 @@ Handoff:
 - Planning correction baseline: `6c36607ac552792b9b6680bb4e49d936fbd2d66f`、clean worktree。selection reviewで見つかったpreapply迂回とcanonical input recovery消失を、個別findingではなくforward／recovery／alternate mutation pathの計画漏れとして一般化した。今後は各未完了familyの実装前にflow closure noteとstate × path反証matrixを作り、未確認経路とproduction occurrence 0を明示してから実装へ進む。
 - Planning scope correction baseline: `3300791c368fc8ff11ecfc8d0a68ab9cfaff46a5`、clean worktree。flow closureをstateful semantic changeへ限定し、familyごとの正本一意性、初回後のdelta監査、Verified／N/A／Deferred／BlockingとBlocking 0件の停止条件を追加した。通常はself-check後に実装へ進み、ownership分岐、requirement拡張、Blocking writer、期待outcome未確定の場合だけ計画レビューへ止める。
 - Next command: condition requirement、provenance、target、recipient、contribution scopeについて一つのcanonical flow closure noteを作り、observable outcome、forward／recovery flow、alternate write path、state × path反証matrixをscoped inventory化する。Blocking 0件をself-checkできれば同じsessionでdata-pipeline発行のcanonical semanticsへcutoverし、停止条件に該当する場合だけ計画レビューを要求する。NP resource semanticsと旧reader／fallback削除までTSK-04を継続し、すべてを閉じるまでTSK-05へ進まない。
+- Final family closure: condition／target／provenanceは`docs/evidence/condition-target-provenance-flow-tsk-04.md`、NP resourceは`docs/evidence/np-resource-semantics-flow-tsk-04.md`、旧経路削除は`docs/evidence/legacy-runtime-removal-tsk-04.md`を正本とし、全pathを`Verified`／`N/A`／`Deferred: TSK-05〜07`へ分類した。各noteは`Blocking: 0`であり、schema-legal production-negative fixture、restore/reapply、ranking alternate path、transaction rollbackを含む。
+- Final cutover: master schema 42／`20260831.10`はcondition requirement tree、trait provenance、canonical route、NP capacity／requirement／fixed-or-unsupported transitionだけを発行する。旧condition/route schema、execution-side raw normalizer、compatibility fixture adapterを削除し、strict schemaとarchitecture ratchetで旧単独／新旧混在artifactを拒否する。
+- Final inventory／digest: master 29,902,484 bytes、SHA-256 `76848894dc47f5c3783463d821d7f6dd0b016406e8fe20aafd381848dd4308d8`。NP gauge 743件はfixed 729／dependent typed unsupported 14／unclassified 0、`NP_HIGHER`は7 occurrences／6 skill identities。data-pipeline digest `e116e91fad16fb6348826f26b5e29fc4db5239e26b49c1c8cad50eb0dd5c2fc2`、application digest `2980e6abfbf8685f64dee737a3390defdd077642df55d0690609c0675c2727d8`。
+- Final parity／counter: HEADと変更後をstable servant／NP identityで比較したfield 2 × class 2 × special 2 × NP1〜5の40 matrixはdamage、applied effect count、special outcomeが全件一致。422／422 calculator、433 ranking rows、runtime counter 1／1／1、6,508／4,009、3,744／1,644を維持した。canonical quantity bindingで攻撃者自身のsubject IDをexecution stateへ正しく束縛する反証を追加した。
+- Final performance／verification: production 25 files／119 testsの3 runは68.92／69.17／68.23秒、中央値68.92秒で直前72.00秒比-4.28%。unit 56 files／310 tests、typecheck、lint、docs gate、production、published master validation、build、E2Eを最終`pnpm quality`で検証する。
+- Completion commit: 本TSK-04 completion commit。TSK-05は本完了まで`blocked`を維持し、完了後に`ready`へ遷移した。resource-aware preparation plan integrationは`RK-EXEC-001`としてTSK-05が所有し、TSK-04へ先取りしていない。
+- Next command: TSK-05開始baselineをclean HEADで固定し、condition／choice／resource／state mutationを一つのordered transactional preparation planへ統合するflow deltaを作る。
 
 ### TSK-05: Transactional preparation execution
 

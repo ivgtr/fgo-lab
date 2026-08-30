@@ -31,6 +31,16 @@ export { canNormalizeDamageEffect } from './effectRouting';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
+  applyNpResourceTransaction,
+  createNpResourceState,
+  deriveBaseOvercharge,
+  npCapacityForLevel,
+  type NpResourceMutation,
+  type NpResourceState,
+  type NpResourceTransaction,
+  type NpResourceTransactionResult,
+} from './npResource';
+export {
   analyzeActivationCondition,
   conditionAllowsEffectLocalDecision,
   conditionHasActivationFact,

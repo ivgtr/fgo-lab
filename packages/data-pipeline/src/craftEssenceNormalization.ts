@@ -36,17 +36,13 @@ function operationSemanticIdentity(operation: EffectExecutionOperation): string 
           modifier: operation.modifier,
           sign: operation.sign,
           card: operation.card,
-          targetPolicy: operation.targetPolicy,
-          expectedRecipient: operation.expectedRecipient,
-          targetMismatch: operation.targetMismatch,
+          route: operation.route,
           semanticSupport: operation.semanticSupport,
         }
       : {
           kind: operation.kind,
           modifier: operation.modifier,
-          targetPolicy: operation.targetPolicy,
-          expectedRecipient: operation.expectedRecipient,
-          targetMismatch: operation.targetMismatch,
+          route: operation.route,
           semanticSupport: operation.semanticSupport,
         };
   return JSON.stringify({
@@ -66,13 +62,9 @@ function effectSemanticIdentity(effect: MasterEffect): string {
     operationTrigger: effect.operationTrigger,
     operationReference: effect.operationReference,
     stateIdentity: effect.stateIdentity,
-    quantityConditions: effect.quantityConditions,
-    sourceQuantityConditions: effect.sourceQuantityConditions,
-    inputQuantityConditions: effect.inputQuantityConditions,
     inputDefinitions: effect.inputDefinitions,
     interaction: effect.interaction,
-    conditions: effect.conditions,
-    conditionTargetPolicy: effect.conditionTargetPolicy,
+    requirement: effect.requirement,
     execution: effect.execution.map(operationSemanticIdentity),
   });
 }

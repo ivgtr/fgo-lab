@@ -1,6 +1,7 @@
 import { actorFormEquals } from '@fgo-lab/master-data';
 import type {
   ActorCountPredicate,
+  CanonicalEffectRequirement,
   CanonicalInputDefinition,
   CanonicalEffectContributionScope,
   EffectExecutionOperation,
@@ -20,7 +21,6 @@ import {
   combineConditions,
   conditionRequiresQuantity,
   containsUnsupportedCondition,
-  normalizeTraitCondition,
   requiresUserAssumption,
 } from './condition';
 import {
@@ -160,67 +160,114 @@ function effectCondition(
     sourceInstanceId,
     skillId: skillId || null,
   } as const;
-  const recipient = resolveTargetPolicy(origin, effect.conditionTargetPolicy) ?? 'attacker';
-  const holder: TraitScope = recipient;
-  const opponent: TraitScope = recipient === 'target' ? 'attacker' : 'target';
-  return combineConditions([
-    ...effect.conditions.recipient.map((condition) =>
-      normalizeTraitCondition(condition, holder, effect.traitReadPolicy),
-    ),
-    normalizeTraitCondition(effect.conditions.holder, holder, effect.traitReadPolicy),
-    normalizeTraitCondition(effect.conditions.opponent, opponent, effect.traitReadPolicy),
-    normalizeTraitCondition(effect.conditions.field, 'field', effect.traitReadPolicy),
-    ...effect.quantityConditions.map<ConditionExpression>((condition) => {
+  const recipient = resolveTargetPolicy(origin, effect.requirement.recipient);
+  const actorScope = (
+    scope: Extract<CanonicalEffectRequirement, { kind: 'trait' }>['scope'],
+  ): TraitScope | null => {
+    if (scope === 'field') return 'field';
+    if (recipient === null) return null;
+    const actor =
+      scope === 'recipient' || scope === 'recipientState'
+        ? recipient
+        : recipient === 'target'
+          ? 'attacker'
+          : 'target';
+    return scope === 'recipientState' || scope === 'opponentState'
+      ? actor === 'attacker'
+        ? 'attackerState'
+        : 'targetState'
+      : actor;
+  };
+  const bind = (requirement: CanonicalEffectRequirement): ConditionExpression => {
+    if (requirement.kind === 'always') return requirement;
+    if (requirement.kind === 'trait') {
+      const scope = actorScope(requirement.scope);
+      if (scope === null) return { kind: 'unsupported', reason: 'unresolvedRecipient' };
+      if (
+        (scope === 'attacker' || scope === 'attackerState') &&
+        ['cardNP', 'faceCard', 'cardExtra'].includes(requirement.trait)
+      ) {
+        const actual = requirement.trait === 'cardNP';
+        return actual === requirement.present
+          ? { kind: 'always' }
+          : { kind: 'not', expression: { kind: 'always' } };
+      }
+      const card =
+        scope === 'attacker' || scope === 'attackerState'
+          ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[
+              requirement.trait as 'cardArts' | 'cardBuster' | 'cardQuick'
+            ]
+          : undefined;
+      if (card)
+        return requirement.present
+          ? { kind: 'card', card }
+          : { kind: 'not', expression: { kind: 'card', card } };
+      return {
+        kind: 'trait',
+        scope,
+        trait: requirement.trait,
+        present: requirement.present,
+        provenance: requirement.provenance,
+      };
+    }
+    if (requirement.kind === 'targetPredicate') {
+      if (recipient === null) return { kind: 'unsupported', reason: 'unresolvedRecipient' };
+      const scope =
+        requirement.scope === 'recipient'
+          ? recipient
+          : recipient === 'target'
+            ? 'attacker'
+            : 'target';
+      return { ...requirement, scope };
+    }
+    if (requirement.kind === 'card')
+      return requirement.present
+        ? { kind: 'card', card: requirement.card }
+        : { kind: 'not', expression: { kind: 'card', card: requirement.card } };
+    if (requirement.kind === 'attackType') {
+      const actual = requirement.attack === 'noblePhantasm';
+      return actual === requirement.present
+        ? { kind: 'always' }
+        : { kind: 'not', expression: { kind: 'always' } };
+    }
+    if (requirement.kind === 'quantity') {
       const currentAttackerSource = ['attacker', 'passive', 'np', 'craftEssence'].includes(origin);
       const subjectId =
         currentAttackerSource &&
-        (condition.subjectId === undefined || condition.subjectId === sourceId)
+        (requirement.subjectId === undefined || requirement.subjectId === sourceId)
           ? undefined
-          : (condition.subjectId ?? sourceId);
+          : (requirement.subjectId ?? sourceId);
       return {
         kind: 'quantity',
-        quantity: condition.quantity,
+        quantity: requirement.quantity,
+        comparison: requirement.comparison,
+        value: requirement.value,
         ...(subjectId === undefined ? {} : { subjectId }),
-        comparison: condition.comparison,
-        value: condition.value,
       };
-    }),
-    ...effect.sourceQuantityConditions.map<ConditionExpression>((condition) => ({
-      kind: 'sourceQuantity',
-      source: activationSource,
-      ...condition,
-    })),
-    ...effect.inputQuantityConditions.map<ConditionExpression>((condition) => ({
-      kind: 'inputQuantity',
-      ...condition,
-      inputKey: runtimeInputKey(
-        origin,
-        sourceInstanceId,
-        skillId,
-        effect.occurrenceId,
-        condition.inputKey,
-      ),
-    })),
-    ...(effect.selection?.kind === 'playerChoice'
-      ? [
-          {
-            kind: 'choice' as const,
-            source: activationSource,
-            family: effect.selection.group.key,
-            candidate: effect.selection.group.candidate,
-          },
-        ]
-      : []),
-    ...(effect.operationTrigger
-      ? [
-          {
-            kind: 'operationTrigger' as const,
-            source: activationSource,
-            position: effect.operationTrigger.position,
-          },
-        ]
-      : []),
-  ]);
+    }
+    if (requirement.kind === 'sourceQuantity') return { ...requirement, source: activationSource };
+    if (requirement.kind === 'inputQuantity')
+      return {
+        ...requirement,
+        inputKey: runtimeInputKey(
+          origin,
+          sourceInstanceId,
+          skillId,
+          effect.occurrenceId,
+          requirement.inputKey,
+        ),
+      };
+    if (requirement.kind === 'choice') return { ...requirement, source: activationSource };
+    if (requirement.kind === 'operationTrigger')
+      return { ...requirement, source: activationSource };
+    if (requirement.kind === 'not')
+      return { kind: 'not', expression: bind(requirement.requirement) };
+    return {
+      kind: requirement.kind,
+      expressions: requirement.requirements.map(bind),
+    };
+  };
+  return bind(effect.requirement.expression);
 }
 
 function decisionPlan(condition: ConditionExpression) {
@@ -472,25 +519,33 @@ export function compileEffect(
 
   for (const semantic of source.effect.execution) {
     if (semantic.kind === 'nonDamage') continue;
-    if (semantic.kind === 'selectNoblePhantasmVariant' || semantic.kind === 'transformActorForm') {
-      if (operationRecipient(semantic, source.origin)) applicable.push(semantic);
-      continue;
-    }
-    const recipient = operationRecipient(semantic, source.origin);
-    if (semantic.kind === 'contextMutation') {
-      if (semantic.mutation === 'addQuantity' || semantic.scope === 'field' || recipient)
-        applicable.push(semantic);
-      continue;
-    }
     if (semantic.kind === 'unresolved') {
+      const recipient = operationRecipient(semantic, source.origin);
       if (semantic.damageRelevant && recipient) applicable.push(semantic);
       continue;
     }
-    if (recipient === semantic.expectedRecipient) applicable.push(semantic);
-    else if (recipient !== null && semantic.targetMismatch === 'unsupported')
+    if (semantic.kind === 'contextMutation' && semantic.mutation === 'addQuantity') {
+      applicable.push(semantic);
+      continue;
+    }
+    const recipient = operationRecipient(semantic, source.origin);
+    const fieldMutation = semantic.kind === 'contextMutation' && semantic.scope === 'field';
+    const eligibility = semantic.route.eligibility;
+    const eligible =
+      eligibility.kind === 'anyRecipient'
+        ? recipient !== null || fieldMutation
+        : recipient === eligibility.recipient;
+    if (eligible) applicable.push(semantic);
+    else if (
+      (eligibility.kind === 'anyRecipient'
+        ? eligibility.onMissing
+        : recipient === null
+          ? eligibility.onMissing
+          : eligibility.onMismatch) === 'unsupported'
+    )
       applicable.push({
         kind: 'unresolved',
-        targetPolicy: semantic.targetPolicy,
+        route: semantic.route,
         reason: 'operationSemantics',
         damageRelevant: true,
       });
@@ -610,7 +665,7 @@ export function compileEffect(
       const suffixScope = semantic.scope === 'field' ? 'field' : recipient;
       const compiledBase = baseOperation(
         source,
-        semantic.contributionScope,
+        semantic.route.contributionScope,
         order++,
         uniqueSuffix(`${semantic.mutation}-${String(suffixScope)}:${semantic.trait}`),
       );
@@ -632,13 +687,23 @@ export function compileEffect(
       else operations.push({ ...base, kind: semantic.mutation, scope });
     } else if (semantic.kind === 'selectNoblePhantasmVariant')
       operations.push({
-        ...baseOperation(source, 'personal', order++, uniqueSuffix('np-variant')),
+        ...baseOperation(
+          source,
+          semantic.route.contributionScope,
+          order++,
+          uniqueSuffix('np-variant'),
+        ),
         kind: 'selectNoblePhantasmVariant',
         variant: semantic.variant,
       });
     else if (semantic.kind === 'transformActorForm')
       operations.push({
-        ...baseOperation(source, 'personal', order++, uniqueSuffix('actor-form')),
+        ...baseOperation(
+          source,
+          semantic.route.contributionScope,
+          order++,
+          uniqueSuffix('actor-form'),
+        ),
         kind: 'transformActorForm',
         targetFormId: semantic.targetFormId,
         targetTraits:
@@ -646,7 +711,7 @@ export function compileEffect(
       });
     else if (semantic.kind === 'modifierRateChange')
       operations.push({
-        ...baseOperation(source, semantic.contributionScope, order++, uniqueSuffix('rate')),
+        ...baseOperation(source, semantic.route.contributionScope, order++, uniqueSuffix('rate')),
         kind: 'changeModifierRate',
         modifier: semantic.modifier,
         ratePermille: selectedValue(source, semantic)!,
@@ -655,7 +720,7 @@ export function compileEffect(
       operations.push({
         ...baseOperation(
           source,
-          semantic.contributionScope,
+          semantic.route.contributionScope,
           order++,
           uniqueSuffix('ignore-defense'),
         ),
@@ -665,7 +730,7 @@ export function compileEffect(
       operations.push({
         ...baseOperation(
           source,
-          semantic.contributionScope,
+          semantic.route.contributionScope,
           order++,
           uniqueSuffix('ignore-damage-cut'),
         ),
@@ -677,7 +742,7 @@ export function compileEffect(
       operations.push({
         ...baseOperation(
           source,
-          semantic.contributionScope,
+          semantic.route.contributionScope,
           order++,
           uniqueSuffix(`modifier:${semantic.modifier}`),
         ),
@@ -739,8 +804,8 @@ function makeProjection(
     source: sourceIdentity(source),
     contributionScope: resolveContributionScope(
       source.origin,
-      source.effect.execution.find((operation) => 'contributionScope' in operation)
-        ?.contributionScope ?? 'personal',
+      source.effect.execution.find((operation) => 'route' in operation)?.route.contributionScope ??
+        'personal',
     ),
     contributionControl: 'operation',
     activationSources: [],

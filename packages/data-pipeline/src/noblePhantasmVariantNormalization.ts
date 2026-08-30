@@ -84,11 +84,25 @@ export function normalizeNoblePhantasmVariants(input: {
     const targetRef = primaryByForm.get(actorFormKey(transition.target.id));
     if (!targetRef)
       throw new TypeError(`missing_form_base_variant:${actorFormKey(transition.target.id)}`);
+    const selfRoute = {
+      target: 'sourceActor' as const,
+      contributionScope: 'personal' as const,
+      eligibility: {
+        kind: 'requiredRecipient' as const,
+        recipient: 'attacker' as const,
+        onMissing: 'ignore' as const,
+        onMismatch: 'ignore' as const,
+      },
+    };
     const transformOperations: EffectExecutionOperation[] = [
-      { kind: 'transformActorForm', targetFormId: transition.target.id },
+      { kind: 'transformActorForm', route: selfRoute, targetFormId: transition.target.id },
     ];
     if (!transition.hasVariantSelection)
-      transformOperations.push({ kind: 'selectNoblePhantasmVariant', variant: targetRef });
+      transformOperations.push({
+        kind: 'selectNoblePhantasmVariant',
+        route: selfRoute,
+        variant: targetRef,
+      });
     operations.set(transition.fn, transformOperations);
     const rawTarget = transition.fn.svals?.[0]?.Target;
     transitions.push({
@@ -129,13 +143,29 @@ export function normalizeNoblePhantasmVariants(input: {
           return name ? [name] : [];
         });
         operations.set(fn, [
-          { kind: 'selectNoblePhantasmVariant', variant: ref },
+          {
+            kind: 'selectNoblePhantasmVariant',
+            route: {
+              target: 'sourceActor',
+              contributionScope: 'personal',
+              eligibility: {
+                kind: 'requiredRecipient',
+                recipient: 'attacker',
+                onMissing: 'ignore',
+                onMismatch: 'ignore',
+              },
+            },
+            variant: ref,
+          },
           ...stateTraits.map((trait): EffectExecutionOperation => ({
             kind: 'contextMutation',
             mutation: 'addTrait',
             scope: 'recipientState',
-            targetPolicy: 'sourceSelf',
-            contributionScope: 'personal',
+            route: {
+              target: 'sourceActor',
+              contributionScope: 'personal',
+              eligibility: { kind: 'anyRecipient', onMissing: 'ignore' },
+            },
             trait,
             damageRelevant: true,
           })),

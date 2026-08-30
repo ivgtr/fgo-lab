@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(40),
+  schemaVersion: z.literal(42),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -35,43 +35,138 @@ const signedTraitSchema = z.object({
   name: z.string().min(1),
   negative: z.boolean(),
 });
-const conditionSignedTraitSchema = signedTraitSchema.extend({
-  layer: z.enum(['combined', 'state']),
-});
-type ConditionAtom =
-  | { name: string; negative: boolean; layer: 'combined' | 'state' }
-  | {
-      predicate: TargetPredicate;
-      negative: boolean;
-    };
-const targetPredicateConditionAtomSchema = z.object({
-  predicate: targetPredicateSchema,
-  negative: z.boolean(),
-});
-const conditionAtomSchema: z.ZodType<ConditionAtom> = z.union([
-  conditionSignedTraitSchema,
-  targetPredicateConditionAtomSchema,
-]);
-export const traitConditionSchema = z.object({
-  operator: z.enum(['any', 'all']),
-  traits: z.array(conditionAtomSchema),
-});
-export type TraitCondition = z.infer<typeof traitConditionSchema>;
-
-export const traitReadPolicySchema = z.object({
+export const canonicalTraitProvenanceSchema = z.object({
   stateSources: z.enum(['activeOnly', 'activeAndPassive']),
   ignoredStateTraits: z.enum(['exclude', 'include']),
   unremovableStateTraits: z.enum(['include', 'exclude']),
 });
-export type TraitReadPolicy = z.infer<typeof traitReadPolicySchema>;
+export type CanonicalTraitProvenance = z.infer<typeof canonicalTraitProvenanceSchema>;
 
-export const effectConditionsSchema = z.object({
-  recipient: z.array(traitConditionSchema),
-  holder: traitConditionSchema,
-  opponent: traitConditionSchema,
-  field: traitConditionSchema,
-});
-export type EffectConditions = z.infer<typeof effectConditionsSchema>;
+export type CanonicalRequirementScope =
+  'recipient' | 'recipientState' | 'opponent' | 'opponentState' | 'field';
+
+export type CanonicalEffectRequirement =
+  | { kind: 'always' }
+  | {
+      kind: 'trait';
+      scope: CanonicalRequirementScope;
+      trait: string;
+      present: boolean;
+      provenance: CanonicalTraitProvenance;
+    }
+  | {
+      kind: 'targetPredicate';
+      scope: 'recipient' | 'opponent';
+      predicate: TargetPredicate;
+      present: boolean;
+    }
+  | { kind: 'card'; card: 'buster' | 'arts' | 'quick'; present: boolean }
+  | {
+      kind: 'attackType';
+      attack: 'noblePhantasm' | 'faceCard' | 'extraCard';
+      present: boolean;
+    }
+  | {
+      kind: 'quantity';
+      quantity: 'attackerHpPermille' | 'battlePointPhase';
+      subjectId?: string | undefined;
+      comparison: 'atMost' | 'atLeast';
+      value: number;
+    }
+  | {
+      kind: 'sourceQuantity';
+      quantity: 'battlePointRate';
+      subjectId: string;
+      comparison: 'atMost' | 'atLeast';
+      value: number;
+    }
+  | {
+      kind: 'inputQuantity';
+      inputKey: string;
+      comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
+      value: number;
+    }
+  | { kind: 'choice'; family: string; candidate: string }
+  | { kind: 'operationTrigger'; position: number }
+  | { kind: 'all' | 'any'; requirements: CanonicalEffectRequirement[] }
+  | { kind: 'not'; requirement: CanonicalEffectRequirement };
+
+const canonicalRequirementScopeSchema = z.enum([
+  'recipient',
+  'recipientState',
+  'opponent',
+  'opponentState',
+  'field',
+]);
+
+export const canonicalEffectRequirementSchema: z.ZodType<CanonicalEffectRequirement> = z.lazy(() =>
+  z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('always') }),
+    z.object({
+      kind: z.literal('trait'),
+      scope: canonicalRequirementScopeSchema,
+      trait: z.string().min(1),
+      present: z.boolean(),
+      provenance: canonicalTraitProvenanceSchema,
+    }),
+    z.object({
+      kind: z.literal('targetPredicate'),
+      scope: z.enum(['recipient', 'opponent']),
+      predicate: targetPredicateSchema,
+      present: z.boolean(),
+    }),
+    z.object({
+      kind: z.literal('card'),
+      card: z.enum(['buster', 'arts', 'quick']),
+      present: z.boolean(),
+    }),
+    z.object({
+      kind: z.literal('attackType'),
+      attack: z.enum(['noblePhantasm', 'faceCard', 'extraCard']),
+      present: z.boolean(),
+    }),
+    z.object({
+      kind: z.literal('quantity'),
+      quantity: z.enum(['attackerHpPermille', 'battlePointPhase']),
+      subjectId: z.string().min(1).optional(),
+      comparison: z.enum(['atMost', 'atLeast']),
+      value: z.number().int(),
+    }),
+    z.object({
+      kind: z.literal('sourceQuantity'),
+      quantity: z.literal('battlePointRate'),
+      subjectId: z.string().min(1),
+      comparison: z.enum(['atMost', 'atLeast']),
+      value: z.number().int(),
+    }),
+    z.object({
+      kind: z.literal('inputQuantity'),
+      inputKey: z.string().min(1),
+      comparison: z.enum(['lessThan', 'atMost', 'equal', 'atLeast', 'greaterThan']),
+      value: z.number().int(),
+    }),
+    z.object({
+      kind: z.literal('choice'),
+      family: z.string().min(1),
+      candidate: z.string().min(1),
+    }),
+    z.object({ kind: z.literal('operationTrigger'), position: z.number().int() }),
+    z.object({
+      kind: z.enum(['all', 'any']),
+      requirements: z.array(canonicalEffectRequirementSchema),
+    }),
+    z.object({ kind: z.literal('not'), requirement: canonicalEffectRequirementSchema }),
+  ]),
+);
+
+export function canonicalRequirementLeaves(
+  requirement: CanonicalEffectRequirement,
+): Exclude<CanonicalEffectRequirement, { kind: 'all' | 'any' | 'not' }>[] {
+  if (requirement.kind === 'all' || requirement.kind === 'any')
+    return requirement.requirements.flatMap(canonicalRequirementLeaves);
+  if (requirement.kind === 'not') return canonicalRequirementLeaves(requirement.requirement);
+  return [requirement as Exclude<CanonicalEffectRequirement, { kind: 'all' | 'any' | 'not' }>];
+}
 
 const effectParameterSemanticsSchema = z.object({
   value: z.array(z.string().min(1)),
@@ -85,19 +180,6 @@ const effectParameterSemanticsSchema = z.object({
   unresolved: z.array(z.string().min(1)),
 });
 export type EffectParameterSemantics = z.infer<typeof effectParameterSemanticsSchema>;
-
-const effectQuantityConditionSchema = z.object({
-  quantity: z.enum(['attackerHpPermille', 'battlePointPhase']),
-  subjectId: z.string().min(1).optional(),
-  comparison: z.enum(['atMost', 'atLeast']),
-  value: z.number().int(),
-});
-const effectSourceQuantityConditionSchema = z.object({
-  quantity: z.literal('battlePointRate'),
-  subjectId: z.string().min(1),
-  comparison: z.enum(['atMost', 'atLeast']),
-  value: z.number().int(),
-});
 
 const effectParameterSchema = z.record(z.string(), z.json());
 const effectParameterSetsSchema = z.tuple([
@@ -156,6 +238,35 @@ const effectContributionScopeSchema = z.enum([
   'enemyApplied',
 ]);
 export type CanonicalEffectContributionScope = z.infer<typeof effectContributionScopeSchema>;
+
+const canonicalRouteTargetSchema = z.enum([
+  'sourceActor',
+  'sourceSelf',
+  'partyMember',
+  'partyOther',
+  'enemy',
+  'attackerNpCard',
+  'unresolved',
+]);
+
+const canonicalRouteEligibilitySchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('anyRecipient'), onMissing: z.enum(['ignore', 'unsupported']) }),
+  z.object({
+    kind: z.literal('requiredRecipient'),
+    recipient: z.enum(['attacker', 'target']),
+    onMissing: z.enum(['ignore', 'unsupported']),
+    onMismatch: z.enum(['ignore', 'unsupported']),
+  }),
+]);
+
+export const canonicalEffectRouteSchema = z
+  .object({
+    target: canonicalRouteTargetSchema,
+    contributionScope: effectContributionScopeSchema,
+    eligibility: canonicalRouteEligibilitySchema,
+  })
+  .strict();
+export type CanonicalEffectRoute = z.infer<typeof canonicalEffectRouteSchema>;
 
 const canonicalValueSetsSchema = z.tuple([
   z.array(z.number().nullable()).max(10),
@@ -226,17 +337,8 @@ export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
 export type CanonicalInputDefinition = z.infer<typeof canonicalInputDefinitionSchema>;
 export type ActorCountPredicate = z.infer<typeof actorCountPredicateSchema>;
 
-const effectInputQuantityConditionSchema = z.object({
-  inputKey: z.string().min(1),
-  comparison: z.enum(['lessThan', 'atMost', 'equal', 'atLeast', 'greaterThan']),
-  value: z.number().int(),
-});
-
 const valuedExecutionFields = {
-  targetPolicy: canonicalTargetPolicySchema,
-  contributionScope: effectContributionScopeSchema,
-  expectedRecipient: z.enum(['attacker', 'target']),
-  targetMismatch: z.enum(['ignore', 'unsupported']),
+  route: canonicalEffectRouteSchema,
   values: canonicalValueSetsSchema,
   limitBreakValues: canonicalValueSetsSchema.optional(),
   valueExpressions: modifierValueExpressionSetsSchema,
@@ -267,14 +369,12 @@ const effectExecutionOperationSchema = z.union([
   }),
   z.object({
     kind: z.enum(['ignoreDefense', 'ignoreDamageCut']),
-    targetPolicy: canonicalTargetPolicySchema,
-    contributionScope: effectContributionScopeSchema,
-    expectedRecipient: z.enum(['attacker', 'target']),
-    targetMismatch: z.enum(['ignore', 'unsupported']),
+    route: canonicalEffectRouteSchema,
     semanticSupport: z.enum(['supported', 'unresolved']),
   }),
   z.object({
     kind: z.literal('selectNoblePhantasmVariant'),
+    route: canonicalEffectRouteSchema,
     variant: z.object({
       actorFormId: z.object({
         actorId: z.string().min(1),
@@ -285,6 +385,7 @@ const effectExecutionOperationSchema = z.union([
   }),
   z.object({
     kind: z.literal('transformActorForm'),
+    route: canonicalEffectRouteSchema,
     targetFormId: z.object({
       actorId: z.string().min(1),
       limitCount: z.number().int().nonnegative(),
@@ -294,8 +395,7 @@ const effectExecutionOperationSchema = z.union([
     kind: z.literal('contextMutation'),
     mutation: z.enum(['addTrait', 'removeTrait', 'suppressInitialTrait']),
     scope: z.enum(['field', 'recipientState']),
-    targetPolicy: canonicalTargetPolicySchema,
-    contributionScope: effectContributionScopeSchema,
+    route: canonicalEffectRouteSchema,
     trait: z.string().min(1),
     damageRelevant: z.boolean(),
   }),
@@ -311,8 +411,8 @@ const effectExecutionOperationSchema = z.union([
   z.object({ kind: z.literal('nonDamage') }),
   z.object({
     kind: z.literal('unresolved'),
-    targetPolicy: canonicalTargetPolicySchema,
-    reason: z.enum(['contextReference', 'operationSemantics', 'targetPolicy']),
+    route: canonicalEffectRouteSchema,
+    reason: z.enum(['contextReference', 'operationSemantics', 'unresolvedTarget']),
     damageRelevant: z.boolean(),
   }),
 ]);
@@ -367,6 +467,66 @@ const canonicalOutcomeGroupSchema = z.discriminatedUnion('kind', [
 ]);
 export type CanonicalOutcomeGroup = z.infer<typeof canonicalOutcomeGroupSchema>;
 
+const canonicalNpGaugeRecipientSchema = z.enum([
+  'sourceActor',
+  'selectedAlly',
+  'allAllies',
+  'otherAllies',
+  'sourceAndFirstOtherAlly',
+  'selectedEnemy',
+  'allEnemies',
+]);
+export type CanonicalNpGaugeRecipient = z.infer<typeof canonicalNpGaugeRecipientSchema>;
+
+const canonicalNpGaugeTransitionSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('fixed'),
+    recipient: canonicalNpGaugeRecipientSchema,
+    direction: z.enum(['gain', 'loss']),
+    amounts: canonicalValueSetsSchema,
+    overflow: z.literal('clampToCapacity'),
+    underflow: z.literal('clampToZero'),
+  }),
+  z.object({
+    kind: z.literal('unsupported'),
+    recipient: canonicalNpGaugeRecipientSchema,
+    family: z.enum([
+      'currentGaugeMultiplier',
+      'matchingTargetCount',
+      'matchingBuffCount',
+      'dependentTargetResult',
+    ]),
+  }),
+]);
+export type CanonicalNpGaugeTransition = z.infer<typeof canonicalNpGaugeTransitionSchema>;
+
+const canonicalNpGaugeRequirementSchema = z.object({
+  kind: z.literal('atLeast'),
+  amountsBySkillLevel: z.array(z.number().int().nonnegative()).length(10),
+});
+export type CanonicalNpGaugeRequirement = z.infer<typeof canonicalNpGaugeRequirementSchema>;
+
+export const canonicalNpResourceSemanticsSchema = z.object({
+  unit: z.literal('basisPoints'),
+  capacityByNpLevel: z.tuple([
+    z.literal(10_000),
+    z.literal(20_000),
+    z.literal(20_000),
+    z.literal(20_000),
+    z.literal(30_000),
+  ]),
+  noblePhantasmUse: z.object({
+    requirement: z.literal(10_000),
+    consumption: z.literal('all'),
+    baseOvercharge: z.object({
+      gaugePerStage: z.literal(10_000),
+      minimumStage: z.literal(1),
+      maximumBaseStage: z.literal(3),
+    }),
+  }),
+});
+export type CanonicalNpResourceSemantics = z.infer<typeof canonicalNpResourceSemanticsSchema>;
+
 const selectionSemanticsSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('playerChoice'), group: canonicalChoiceGroupSchema }),
   z.object({ kind: z.literal('stochasticOutcome'), group: canonicalOutcomeGroupSchema }),
@@ -386,57 +546,58 @@ const atlasEffectEvidenceSchema = z.object({
 });
 export type AtlasEffectEvidence = z.infer<typeof atlasEffectEvidenceSchema>;
 
-export const masterEffectSchema = z.object({
-  id: z.string(),
-  occurrenceId: z.string().min(1),
-  label: z.string(),
-  availability: z.enum(['allLimitBreakStates', 'maximumLimitBreakOnly']),
-  inclusionPolicy: z.object({ default: z.enum(['include', 'exclude']) }),
-  gameActivation: z.enum(['constant', 'skillUse', 'npBeforeDamage', 'derived']),
-  proc: effectProcSchema,
-  selection: selectionSemanticsSchema.nullable(),
-  interaction: z
-    .discriminatedUnion('kind', [
-      z.object({
-        kind: z.literal('inputThresholdSeries'),
-        key: z.string().min(1),
-      }),
-      z.object({
-        kind: z.literal('quantityThresholdSeries'),
-        key: z.string().min(1),
-        quantity: z.literal('attackerHpPermille'),
-      }),
-      z.object({
-        kind: z.literal('procSeries'),
-        key: z.string().min(1),
-      }),
-    ])
-    .nullable(),
-  triggerScope: z.enum(['commandCard', 'commandCardAttack']).nullable(),
-  operationTrigger: z
-    .object({ kind: z.literal('functionPosition'), position: z.number().int() })
-    .nullable(),
-  operationReference: z
-    .object({
-      kind: z.literal('resolvedSkill'),
-      skillId: z.string().min(1),
-      levelSource: z.enum(['skillLevelParameter', 'secondaryValueParameter']),
-      defaultLevel: z.number().int().min(1).max(10),
-    })
-    .nullable(),
-  stateIdentity: z
-    .object({ kind: z.literal('linkedTraitFamily'), key: z.string().min(1) })
-    .nullable(),
-  quantityConditions: z.array(effectQuantityConditionSchema),
-  sourceQuantityConditions: z.array(effectSourceQuantityConditionSchema),
-  inputDefinitions: z.array(canonicalInputDefinitionSchema),
-  inputQuantityConditions: z.array(effectInputQuantityConditionSchema),
-  traitReadPolicy: traitReadPolicySchema,
-  conditions: effectConditionsSchema,
-  conditionTargetPolicy: canonicalTargetPolicySchema,
-  execution: z.array(effectExecutionOperationSchema).min(1),
-  atlasEvidence: atlasEffectEvidenceSchema,
-});
+export const masterEffectSchema = z
+  .object({
+    id: z.string(),
+    occurrenceId: z.string().min(1),
+    label: z.string(),
+    availability: z.enum(['allLimitBreakStates', 'maximumLimitBreakOnly']),
+    inclusionPolicy: z.object({ default: z.enum(['include', 'exclude']) }),
+    gameActivation: z.enum(['constant', 'skillUse', 'npBeforeDamage', 'derived']),
+    proc: effectProcSchema,
+    selection: selectionSemanticsSchema.nullable(),
+    interaction: z
+      .discriminatedUnion('kind', [
+        z.object({
+          kind: z.literal('inputThresholdSeries'),
+          key: z.string().min(1),
+        }),
+        z.object({
+          kind: z.literal('quantityThresholdSeries'),
+          key: z.string().min(1),
+          quantity: z.literal('attackerHpPermille'),
+        }),
+        z.object({
+          kind: z.literal('procSeries'),
+          key: z.string().min(1),
+        }),
+      ])
+      .nullable(),
+    triggerScope: z.enum(['commandCard', 'commandCardAttack']).nullable(),
+    operationTrigger: z
+      .object({ kind: z.literal('functionPosition'), position: z.number().int() })
+      .nullable(),
+    operationReference: z
+      .object({
+        kind: z.literal('resolvedSkill'),
+        skillId: z.string().min(1),
+        levelSource: z.enum(['skillLevelParameter', 'secondaryValueParameter']),
+        defaultLevel: z.number().int().min(1).max(10),
+      })
+      .nullable(),
+    stateIdentity: z
+      .object({ kind: z.literal('linkedTraitFamily'), key: z.string().min(1) })
+      .nullable(),
+    inputDefinitions: z.array(canonicalInputDefinitionSchema),
+    requirement: z.object({
+      recipient: canonicalTargetPolicySchema,
+      expression: canonicalEffectRequirementSchema,
+    }),
+    resourceTransition: canonicalNpGaugeTransitionSchema.nullable(),
+    execution: z.array(effectExecutionOperationSchema).min(1),
+    atlasEvidence: atlasEffectEvidenceSchema,
+  })
+  .strict();
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
 
 const masterSkillSchema = z.object({
@@ -446,6 +607,7 @@ const masterSkillSchema = z.object({
   name: z.string(),
   detail: z.string(),
   imageKey: z.string().nullable(),
+  resourceRequirement: canonicalNpGaugeRequirementSchema.nullable(),
   effects: z.array(masterEffectSchema),
 });
 export type MasterSkill = z.infer<typeof masterSkillSchema>;
@@ -1034,6 +1196,7 @@ export const materialMasterSchema = z.object({
 export type MaterialMaster = z.infer<typeof materialMasterSchema>;
 const masterSnapshotBaseSchema = z.object({
   version: z.string(),
+  npResourceSemantics: canonicalNpResourceSemanticsSchema,
   normalization: z.object({
     attackFunctions: z.object({
       sourceCount: z.number().int().nonnegative(),

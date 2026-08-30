@@ -35,6 +35,16 @@ function servant(
 }
 
 describe('canonical noble phantasm variant normalization', () => {
+  const sourceRoute = {
+    target: 'sourceActor' as const,
+    contributionScope: 'personal' as const,
+    eligibility: {
+      kind: 'requiredRecipient' as const,
+      recipient: 'attacker' as const,
+      onMissing: 'ignore' as const,
+      onMismatch: 'ignore' as const,
+    },
+  };
   it('uses the td suffix only as an index and preserves the selected variant identity', () => {
     const select = selection('tdTypeChangeBuster');
     const source = servant([select], [np(101, '1', 2, [197, 198]), np(197, '2'), np(198, '1')]);
@@ -46,6 +56,7 @@ describe('canonical noble phantasm variant normalization', () => {
     expect(result.canonicalOperationsByFunction.get(select)).toEqual([
       {
         kind: 'selectNoblePhantasmVariant',
+        route: sourceRoute,
         variant: { actorFormId: { actorId: '100', limitCount: 0 }, noblePhantasmId: '198' },
       },
     ]);
@@ -113,11 +124,16 @@ describe('canonical noble phantasm variant normalization', () => {
       traitNameById: new Map(),
     });
     expect(result.canonicalOperationsByFunction.get(transform)).toEqual([
-      { kind: 'transformActorForm', targetFormId: { actorId: '200', limitCount: 0 } },
+      {
+        kind: 'transformActorForm',
+        route: sourceRoute,
+        targetFormId: { actorId: '200', limitCount: 0 },
+      },
     ]);
     expect(result.canonicalOperationsByFunction.get(select)).toEqual([
       {
         kind: 'selectNoblePhantasmVariant',
+        route: sourceRoute,
         variant: { actorFormId: { actorId: '200', limitCount: 0 }, noblePhantasmId: '204' },
       },
     ]);

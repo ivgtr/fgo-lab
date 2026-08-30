@@ -243,6 +243,7 @@ describe('ActorFormProfile canonical equivalence', () => {
       name: 'profile test skill',
       detail: '',
       imageKey: null,
+      resourceRequirement: null,
       effects: [],
     };
     const changed: ServantMaster = {

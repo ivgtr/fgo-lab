@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import { canonicalRequirementLeaves, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { applyCanonicalInputCommand, resolveCanonicalInputValues } from './canonicalInputs';
@@ -161,12 +161,18 @@ describe('canonical special input application boundary', () => {
     );
     expect(series).toHaveLength(5);
     expect(new Set(series.map((effect) => effect.interaction?.key)).size).toBe(1);
-    expect(series.map((effect) => effect.quantityConditions)).toEqual([
+    expect(
+      series.map((effect) =>
+        canonicalRequirementLeaves(effect.requirement.expression).filter(
+          (requirement) => requirement.kind === 'quantity',
+        ),
+      ),
+    ).toEqual([
       [],
-      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 990 }],
-      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 750 }],
-      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
-      [{ quantity: 'attackerHpPermille', comparison: 'atMost', value: 250 }],
+      [{ kind: 'quantity', quantity: 'attackerHpPermille', comparison: 'atMost', value: 990 }],
+      [{ kind: 'quantity', quantity: 'attackerHpPermille', comparison: 'atMost', value: 750 }],
+      [{ kind: 'quantity', quantity: 'attackerHpPermille', comparison: 'atMost', value: 500 }],
+      [{ kind: 'quantity', quantity: 'attackerHpPermille', comparison: 'atMost', value: 250 }],
     ]);
     expect(series.map((effect) => effect.atlasEvidence.buffConditionKeys)).toEqual([
       [],

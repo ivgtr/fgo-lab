@@ -159,6 +159,7 @@ describe('profile domain', () => {
           name: '支援スキル',
           detail: '',
           imageKey: null,
+          resourceRequirement: null,
           effects: [],
         },
       ],

@@ -4,6 +4,7 @@ import {
   getBaseAttackNoblePhantasmVariant,
   getAttackNoblePhantasmVariants,
   getNoblePhantasmVariants,
+  canonicalRequirementLeaves,
   masterSnapshotSchema,
   type MasterEffect,
 } from '@fgo-lab/master-data';
@@ -54,22 +55,23 @@ describe('E0 production master execution inventory', () => {
       ).sort(),
     );
     const conditionOperators = sorted(
-      effects.flatMap((effect) => [
-        ...effect.conditions.recipient.map((condition) => condition.operator),
-        effect.conditions.holder.operator,
-        effect.conditions.opponent.operator,
-        effect.conditions.field.operator,
-      ]),
+      effects.flatMap((effect) => {
+        const collect = (requirement: typeof effect.requirement.expression): string[] =>
+          requirement.kind === 'all' || requirement.kind === 'any'
+            ? [requirement.kind, ...requirement.requirements.flatMap(collect)]
+            : requirement.kind === 'not'
+              ? collect(requirement.requirement)
+              : [];
+        return collect(effect.requirement.expression);
+      }),
     );
     const contextProducers = effects.filter((effect) =>
       effect.execution.some((operation) => operation.kind === 'contextMutation'),
     );
-    const contextConsumers = effects.filter(
-      (effect) =>
-        effect.conditions.field.traits.length > 0 ||
-        effect.conditions.recipient.some((condition) => condition.traits.length > 0) ||
-        effect.conditions.holder.traits.length > 0 ||
-        effect.conditions.opponent.traits.length > 0,
+    const contextConsumers = effects.filter((effect) =>
+      canonicalRequirementLeaves(effect.requirement.expression).some(
+        (requirement) => requirement.kind === 'trait' || requirement.kind === 'targetPredicate',
+      ),
     );
 
     expect(master.servants).toHaveLength(469);

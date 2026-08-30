@@ -1,5 +1,6 @@
 import type {
   CanonicalEffectContributionScope,
+  CanonicalEffectRoute,
   CanonicalTargetPolicy,
   EffectExecutionOperation,
   ModifierValueExpression,
@@ -168,8 +169,12 @@ function coalesceDamageRelevantContextMutations(
     const key = [
       operation.mutation,
       operation.scope,
-      operation.targetPolicy,
-      operation.contributionScope,
+      operation.route.target,
+      operation.route.contributionScope,
+      operation.route.eligibility.kind,
+      operation.route.eligibility.kind === 'requiredRecipient'
+        ? operation.route.eligibility.recipient
+        : 'any',
       operation.trait,
     ].join(':');
     const priorIndex = mutationIndex.get(key);
@@ -179,7 +184,7 @@ function coalesceDamageRelevantContextMutations(
       (prior.mutation === 'addTrait' || prior.mutation === 'removeTrait') &&
       prior.damageRelevant !== operation.damageRelevant
     ) {
-      result[priorIndex!] = { ...prior, damageRelevant: true };
+      result[priorIndex!] = { ...operation, damageRelevant: true };
       continue;
     }
     mutationIndex.set(key, result.length);
@@ -226,6 +231,29 @@ export function normalizeExecutionSemantics(input: {
   const targetMismatch = potentiallyDamageRelevant ? ('unsupported' as const) : ('ignore' as const);
   const operations: EffectExecutionOperation[] = [...input.canonicalOperations];
 
+  const canonicalRoute = (
+    recipient: 'attacker' | 'target' | null,
+    mismatch: 'ignore' | 'unsupported',
+  ): CanonicalEffectRoute => {
+    if (contributionScope === null)
+      throw new TypeError(
+        `canonical_effect_route_unresolved:${target}:${policy}:${String(contributionScope)}`,
+      );
+    return {
+      target: policy,
+      contributionScope,
+      eligibility:
+        recipient === null
+          ? { kind: 'anyRecipient', onMissing: mismatch }
+          : { kind: 'requiredRecipient', recipient, onMissing: 'ignore', onMismatch: mismatch },
+    };
+  };
+  const unresolvedRoute = (): CanonicalEffectRoute => ({
+    target: 'unresolved',
+    contributionScope: 'personal',
+    eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+  });
+
   if (
     contributionScope === null &&
     (potentiallyDamageRelevant ||
@@ -235,8 +263,8 @@ export function normalizeExecutionSemantics(input: {
     return [
       {
         kind: 'unresolved',
-        targetPolicy: policy,
-        reason: 'targetPolicy',
+        route: unresolvedRoute(),
+        reason: 'unresolvedTarget',
         damageRelevant: potentiallyDamageRelevant,
       },
     ];
@@ -261,7 +289,8 @@ export function normalizeExecutionSemantics(input: {
       return [
         {
           kind: 'unresolved',
-          targetPolicy: policy,
+          route:
+            contributionScope === null ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
           reason: 'operationSemantics',
           damageRelevant: true,
         },
@@ -284,8 +313,7 @@ export function normalizeExecutionSemantics(input: {
       kind: 'contextMutation',
       mutation: 'addTrait',
       scope: 'field',
-      targetPolicy: policy,
-      contributionScope: contributionScope!,
+      route: canonicalRoute(null, targetMismatch),
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -294,8 +322,7 @@ export function normalizeExecutionSemantics(input: {
       kind: 'contextMutation',
       mutation: 'removeTrait',
       scope: 'field',
-      targetPolicy: policy,
-      contributionScope: contributionScope!,
+      route: canonicalRoute(null, targetMismatch),
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -304,8 +331,7 @@ export function normalizeExecutionSemantics(input: {
       kind: 'contextMutation',
       mutation: 'addTrait',
       scope: 'recipientState',
-      targetPolicy: policy,
-      contributionScope: contributionScope!,
+      route: canonicalRoute(null, targetMismatch),
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -314,8 +340,7 @@ export function normalizeExecutionSemantics(input: {
       kind: 'contextMutation',
       mutation: 'addTrait',
       scope: 'recipientState',
-      targetPolicy: policy,
-      contributionScope: contributionScope!,
+      route: canonicalRoute(null, 'unsupported'),
       trait,
       damageRelevant: true,
     });
@@ -324,8 +349,7 @@ export function normalizeExecutionSemantics(input: {
       kind: 'contextMutation',
       mutation: 'suppressInitialTrait',
       scope: 'recipientState',
-      targetPolicy: policy,
-      contributionScope: contributionScope!,
+      route: canonicalRoute(null, targetMismatch),
       trait,
       damageRelevant: potentiallyDamageRelevant,
     });
@@ -334,22 +358,18 @@ export function normalizeExecutionSemantics(input: {
       kind: 'contextMutation',
       mutation: 'removeTrait',
       scope: 'recipientState',
-      targetPolicy: policy,
-      contributionScope: contributionScope!,
+      route: canonicalRoute(null, 'unsupported'),
       trait,
       damageRelevant: true,
     });
 
-  const common = {
-    targetPolicy: policy,
-    contributionScope: contributionScope!,
-    expectedRecipient: 'attacker' as const,
-    targetMismatch,
+  const common = () => ({
+    route: canonicalRoute('attacker', targetMismatch),
     semanticSupport: 'supported' as const,
-  };
-  if (buffTypes.includes('pierceDefence')) operations.push({ kind: 'ignoreDefense', ...common });
+  });
+  if (buffTypes.includes('pierceDefence')) operations.push({ kind: 'ignoreDefense', ...common() });
   else if (buffTypes.includes('pierceSubdamage'))
-    operations.push({ kind: 'ignoreDamageCut', ...common });
+    operations.push({ kind: 'ignoreDamageCut', ...common() });
   else if (
     buffTypes.includes('buffRate') &&
     input.fn.buffs?.some((buff) =>
@@ -359,7 +379,7 @@ export function normalizeExecutionSemantics(input: {
     operations.push({
       kind: 'modifierRateChange',
       modifier: 'npDamageBuff',
-      ...common,
+      ...common(),
       values: modifierValues(input.parameterSets),
       valueExpressions: input.valueExpressions,
     });
@@ -368,10 +388,7 @@ export function normalizeExecutionSemantics(input: {
     if (route && contributionScope !== null)
       operations.push({
         kind: 'damageModifier',
-        targetPolicy: policy,
-        contributionScope,
-        expectedRecipient: route.expectedRecipient,
-        targetMismatch,
+        route: canonicalRoute(route.expectedRecipient, targetMismatch),
         semanticSupport: 'supported',
         modifier: route.modifier,
         sign: route.sign,
@@ -382,8 +399,8 @@ export function normalizeExecutionSemantics(input: {
     else if (potentiallyDamageRelevant && operations.length === 0)
       operations.push({
         kind: 'unresolved',
-        targetPolicy: policy,
-        reason: policy === 'unresolved' ? 'targetPolicy' : 'operationSemantics',
+        route: policy === 'unresolved' ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
+        reason: policy === 'unresolved' ? 'unresolvedTarget' : 'operationSemantics',
         damageRelevant: true,
       });
   }
@@ -395,7 +412,7 @@ export function normalizeExecutionSemantics(input: {
   )
     operations.push({
       kind: 'unresolved',
-      targetPolicy: policy,
+      route: policy === 'unresolved' ? unresolvedRoute() : canonicalRoute(null, 'ignore'),
       reason: 'contextReference',
       damageRelevant: false,
     });

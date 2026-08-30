@@ -7,7 +7,7 @@ import type {
   NoblePhantasmVariantRef,
   ActorFormId,
   NpDamageSpec,
-  TraitReadPolicy,
+  CanonicalTraitProvenance,
 } from '@fgo-lab/master-data';
 import type {
   ActivationFact,
@@ -31,12 +31,13 @@ export interface OperationDecisionPlan {
 
 export type ConditionExpression =
   | { kind: 'always' }
+  | { kind: 'unsupported'; reason: 'unresolvedRecipient' }
   | {
       kind: 'trait';
       scope: TraitScope;
       trait: string;
       present: boolean;
-      readPolicy?: TraitReadPolicy;
+      provenance?: CanonicalTraitProvenance;
     }
   | {
       kind: 'targetPredicate';
@@ -48,7 +49,7 @@ export type ConditionExpression =
       kind: 'traitCount';
       scope: TraitScope;
       traits: readonly string[];
-      readPolicy?: TraitReadPolicy;
+      provenance?: CanonicalTraitProvenance;
       comparison: 'atLeast' | 'atMost' | 'equal';
       count: number;
     }
@@ -58,7 +59,7 @@ export type ConditionExpression =
   | {
       kind: 'quantity';
       quantity: 'attackerHpPermille' | 'targetRarity' | 'battlePointPhase';
-      subjectId?: string;
+      subjectId?: string | undefined;
       comparison: 'lessThan' | 'atMost' | 'equal' | 'atLeast' | 'greaterThan';
       value: number;
     }

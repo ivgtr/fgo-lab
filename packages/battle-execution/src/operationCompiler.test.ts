@@ -33,22 +33,12 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
     operationTrigger: null,
     operationReference: null,
     stateIdentity: null,
-    quantityConditions: [],
-    sourceQuantityConditions: [],
     inputDefinitions: [],
-    inputQuantityConditions: [],
-    traitReadPolicy: {
-      stateSources: 'activeOnly',
-      ignoredStateTraits: 'exclude',
-      unremovableStateTraits: 'include',
+    requirement: {
+      recipient: 'sourceSelf',
+      expression: { kind: 'always' },
     },
-    conditions: {
-      recipient: [],
-      holder: { operator: 'all', traits: [] },
-      opponent: { operator: 'all', traits: [] },
-      field: { operator: 'all', traits: [] },
-    },
-    conditionTargetPolicy: 'sourceSelf',
+    resourceTransition: null,
     execution,
     atlasEvidence: {
       functionType: 'test',
@@ -111,13 +101,19 @@ function supportSource(execution: EffectExecutionOperation[]): SourceEffect {
 function modifier(
   kind: 'attackBuff' | 'npDamageBuff',
   value: number | null,
-): EffectExecutionOperation {
+): Extract<EffectExecutionOperation, { kind: 'damageModifier' }> {
   return {
     kind: 'damageModifier',
-    targetPolicy: 'sourceSelf',
-    contributionScope: 'personal',
-    expectedRecipient: 'attacker',
-    targetMismatch: 'unsupported',
+    route: {
+      target: 'sourceSelf',
+      contributionScope: 'personal',
+      eligibility: {
+        kind: 'requiredRecipient',
+        recipient: 'attacker',
+        onMissing: 'ignore',
+        onMismatch: 'unsupported',
+      },
+    },
     semanticSupport: 'supported',
     modifier: kind,
     sign: 1,
@@ -212,8 +208,11 @@ describe('canonical operation compilation', () => {
           kind: 'contextMutation',
           mutation: 'addTrait',
           scope: 'field',
-          targetPolicy: 'sourceSelf',
-          contributionScope: 'personal',
+          route: {
+            target: 'sourceSelf',
+            contributionScope: 'personal',
+            eligibility: { kind: 'anyRecipient', onMissing: 'ignore' },
+          },
           trait: 'fieldSunlight',
           damageRelevant: true,
         },
@@ -250,7 +249,11 @@ describe('canonical operation compilation', () => {
         modifier('attackBuff', 100),
         {
           kind: 'unresolved',
-          targetPolicy: 'sourceSelf',
+          route: {
+            target: 'sourceSelf',
+            contributionScope: 'personal',
+            eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+          },
           reason: 'operationSemantics',
           damageRelevant: true,
         },
@@ -259,6 +262,90 @@ describe('canonical operation compilation', () => {
     );
     expect(compiled.operations).toEqual([]);
     expect(compiled.unsupported).toHaveLength(1);
+  });
+
+  it('keeps an absent route non-applicable when the canonical policy says to ignore it', () => {
+    const operation = modifier('attackBuff', 100);
+    operation.route = {
+      target: 'sourceSelf',
+      contributionScope: 'personal',
+      eligibility: {
+        kind: 'requiredRecipient',
+        recipient: 'attacker',
+        onMissing: 'ignore',
+        onMismatch: 'unsupported',
+      },
+    };
+    const compiled = compileEffect(supportSource([operation]), 0);
+    expect(compiled).toEqual({ operations: [], unsupported: [] });
+  });
+
+  it('fails closed when a requirement needs an unresolved recipient', () => {
+    const unresolved = source([modifier('attackBuff', 100)]);
+    unresolved.effect = {
+      ...unresolved.effect,
+      requirement: {
+        recipient: 'unresolved',
+        expression: {
+          kind: 'trait',
+          scope: 'recipient',
+          trait: 'testTrait',
+          present: true,
+          provenance: {
+            stateSources: 'activeOnly',
+            ignoredStateTraits: 'exclude',
+            unremovableStateTraits: 'include',
+          },
+        },
+      },
+    };
+    const compiled = compileEffect(unresolved, 0);
+    expect(compiled.operations).toEqual([]);
+    expect(compiled.unsupported).toMatchObject([
+      {
+        executionSupport: 'unsupported',
+        explanation: {
+          condition: { kind: 'unsupported', reason: 'unresolvedRecipient' },
+        },
+      },
+    ]);
+  });
+
+  it('binds the current attacker quantity subject to the executable state', () => {
+    const attacker = source([modifier('npDamageBuff', 200)]);
+    attacker.origin = 'attacker';
+    attacker.phase = 'attackerSkill';
+    attacker.sourceInstanceId = 'attacker:705300';
+    attacker.sourceId = '705300';
+    attacker.skillId = '2657650';
+    attacker.effect = {
+      ...attacker.effect,
+      requirement: {
+        recipient: 'sourceSelf',
+        expression: {
+          kind: 'quantity',
+          quantity: 'battlePointPhase',
+          subjectId: '705300',
+          comparison: 'atMost',
+          value: 1,
+        },
+      },
+    };
+
+    const compiled = compileEffect(attacker, 0);
+
+    expect(compiled.unsupported).toEqual([]);
+    expect(compiled.operations).toMatchObject([
+      {
+        condition: {
+          kind: 'quantity',
+          quantity: 'battlePointPhase',
+          comparison: 'atMost',
+          value: 1,
+        },
+      },
+    ]);
+    expect(compiled.operations[0]?.condition).not.toHaveProperty('subjectId');
   });
 
   it('assigns unique trace IDs to repeated operations without changing singleton IDs', () => {
@@ -275,10 +362,16 @@ describe('canonical operation compilation', () => {
   it('binds a support-owned HP expression to a typed source context input', () => {
     const hpModifier: EffectExecutionOperation = {
       kind: 'damageModifier',
-      targetPolicy: 'partyMember',
-      contributionScope: 'partyWide',
-      expectedRecipient: 'attacker',
-      targetMismatch: 'unsupported',
+      route: {
+        target: 'partyMember',
+        contributionScope: 'partyWide',
+        eligibility: {
+          kind: 'requiredRecipient',
+          recipient: 'attacker',
+          onMissing: 'ignore',
+          onMismatch: 'unsupported',
+        },
+      },
       semanticSupport: 'supported',
       modifier: 'attackBuff',
       sign: 1,

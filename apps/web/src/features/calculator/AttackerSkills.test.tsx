@@ -27,6 +27,7 @@ const attacker = masterSnapshotSchema.parse({
           name: '検証スキル',
           detail: '',
           imageKey: null,
+          resourceRequirement: null,
           effects: [],
         },
       ],

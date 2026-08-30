@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
 import { executeOrderedScenario, prepareOrderedScenario } from '@fgo-lab/battle-execution';
-import { masterSnapshotSchema, type MasterEffect } from '@fgo-lab/master-data';
+import { masterSnapshotSchema, type CanonicalEffectRequirement } from '@fgo-lab/master-data';
+import type { TargetPredicate } from '@fgo-lab/schema';
 import {
   calculationScenarioSchema,
   ENGINE_VERSION,
@@ -21,7 +22,10 @@ import { calculateScenario, createDefaultResolvedScenario } from './scenario';
 const master = masterSnapshotSchema.parse(fixture);
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
-type MutableEffectContainer = { effects?: Record<string, unknown>[] };
+type MutableEffectContainer = {
+  effects?: Record<string, unknown>[];
+  resourceRequirement?: unknown;
+};
 type MutableServant = {
   skills?: MutableEffectContainer[];
   passives?: MutableEffectContainer[];
@@ -47,19 +51,7 @@ function parseTestMaster(input: unknown) {
         effect['gameActivation'] ??= gameActivation;
         effect['proc'] ??= { kind: 'guaranteed' };
         effect['selection'] ??= null;
-        for (const operation of (effect['execution'] as Record<string, unknown>[] | undefined) ??
-          [])
-          if ('targetPolicy' in operation && !('contributionScope' in operation)) {
-            const policy = operation['targetPolicy'];
-            operation['contributionScope'] =
-              policy === 'enemy'
-                ? 'enemyApplied'
-                : policy === 'partyMember'
-                  ? 'partyWide'
-                  : policy === 'partyOther'
-                    ? 'partyOther'
-                    : 'personal';
-          }
+        effect['resourceTransition'] ??= null;
       }
   };
   for (const servant of candidate.servants) {
@@ -68,6 +60,8 @@ function parseTestMaster(input: unknown) {
         ...servant.actorFormGraph,
         forms: servant.actorFormGraph.forms.map((form) => ({ ...form })),
       };
+    for (const skill of [...(servant.skills ?? []), ...(servant.passives ?? [])])
+      skill['resourceRequirement'] ??= null;
     decorate(servant.skills ?? [], 'skillUse', 'include');
     decorate(servant.passives ?? [], 'constant', 'include');
     decorate(servant.noblePhantasms ?? [], 'npBeforeDamage', 'include');
@@ -87,7 +81,10 @@ function parseTestMaster(input: unknown) {
     }
   }
   decorate(candidate.craftEssences, 'constant', 'include');
-  for (const code of candidate.mysticCodes) decorate(code.skills, 'skillUse', 'include');
+  for (const code of candidate.mysticCodes) {
+    for (const skill of code.skills) skill['resourceRequirement'] ??= null;
+    decorate(code.skills, 'skillUse', 'include');
+  }
   return masterSnapshotSchema.parse(candidate);
 }
 const versions: VersionContext = {
@@ -104,6 +101,24 @@ const unconditionalConditions = {
   opponent: { operator: 'any' as const, traits: [] },
   field: { operator: 'any' as const, traits: [] },
 };
+type TestTraitCondition = {
+  operator: 'any' | 'all';
+  traits: (
+    | { name: string; negative: boolean; layer: 'combined' | 'state' }
+    | { predicate: TargetPredicate; negative: boolean }
+  )[];
+};
+type TestEffectConditions = {
+  recipient: TestTraitCondition[];
+  holder: TestTraitCondition;
+  opponent: TestTraitCondition;
+  field: TestTraitCondition;
+};
+const mutationRoute = (target: 'sourceSelf' | 'enemy') => ({
+  target,
+  contributionScope: target === 'enemy' ? ('enemyApplied' as const) : ('personal' as const),
+  eligibility: { kind: 'anyRecipient' as const, onMissing: 'ignore' as const },
+});
 const emptyParameterSemantics = {
   value: [],
   lifecycle: [],
@@ -122,7 +137,7 @@ function modifierEffect(
   value: number,
   cardTypes: ('buster' | 'arts' | 'quick')[] = [],
   target = 'self',
-  conditions: MasterEffect['conditions'] = unconditionalConditions,
+  conditions: TestEffectConditions = unconditionalConditions,
 ) {
   const targetPolicy = target.startsWith('enemy')
     ? ('enemy' as const)
@@ -142,28 +157,88 @@ function modifierEffect(
             ? ('cardBuff' as const)
             : null;
   const values = [Array.from({ length: 10 }, () => value), [], [], [], []] as const;
+  const provenance = {
+    stateSources: 'activeOnly' as const,
+    ignoredStateTraits: 'exclude' as const,
+    unremovableStateTraits: 'include' as const,
+  };
+  const bindCondition = (
+    condition: TestEffectConditions['holder'],
+    scope: 'recipient' | 'opponent' | 'field',
+  ): CanonicalEffectRequirement =>
+    condition.traits.length === 0
+      ? { kind: 'always' }
+      : {
+          kind: condition.operator,
+          requirements: condition.traits.map((trait) =>
+            'predicate' in trait
+              ? {
+                  kind: 'targetPredicate' as const,
+                  scope: scope === 'field' ? 'recipient' : scope,
+                  predicate: trait.predicate,
+                  present: !trait.negative,
+                }
+              : {
+                  kind: 'trait' as const,
+                  scope:
+                    trait.layer === 'state'
+                      ? scope === 'recipient'
+                        ? ('recipientState' as const)
+                        : scope === 'opponent'
+                          ? ('opponentState' as const)
+                          : ('field' as const)
+                      : scope,
+                  trait: trait.name,
+                  present: !trait.negative,
+                  provenance,
+                },
+          ),
+        };
+  const requirements = [
+    ...conditions.recipient.map((condition) => bindCondition(condition, 'recipient')),
+    bindCondition(conditions.holder, 'recipient'),
+    bindCondition(conditions.opponent, 'opponent'),
+    bindCondition(conditions.field, 'field'),
+  ].filter((requirement) => requirement.kind !== 'always');
+  const contributionScope =
+    targetPolicy === 'enemy'
+      ? ('enemyApplied' as const)
+      : targetPolicy === 'partyMember'
+        ? ('partyWide' as const)
+        : targetPolicy === 'partyOther'
+          ? ('partyOther' as const)
+          : ('personal' as const);
+  const route = {
+    target: targetPolicy,
+    contributionScope,
+    eligibility: {
+      kind: 'requiredRecipient' as const,
+      recipient: 'attacker' as const,
+      onMissing: 'ignore' as const,
+      onMismatch: 'unsupported' as const,
+    },
+  };
   return {
     id,
     occurrenceId: `${id}:0`,
     availability: 'allLimitBreakStates' as const,
     interaction: null,
     label: id,
-    choice: null,
     triggerScope: null,
     operationTrigger: null,
     operationReference: null,
     stateIdentity: null,
-    traitReadPolicy: {
-      stateSources: 'activeOnly' as const,
-      ignoredStateTraits: 'exclude' as const,
-      unremovableStateTraits: 'include' as const,
-    },
-    quantityConditions: [],
-    sourceQuantityConditions: [],
     inputDefinitions: [],
-    inputQuantityConditions: [],
-    conditions,
-    conditionTargetPolicy: targetPolicy,
+    requirement: {
+      recipient: targetPolicy,
+      expression:
+        requirements.length === 0
+          ? ({ kind: 'always' as const } satisfies CanonicalEffectRequirement)
+          : requirements.length === 1
+            ? requirements[0]!
+            : { kind: 'all' as const, requirements },
+    },
+    resourceTransition: null,
     execution:
       buffType === 'pierceDefence' || buffType === 'pierceSubdamage'
         ? [
@@ -172,9 +247,7 @@ function modifierEffect(
                 buffType === 'pierceDefence'
                   ? ('ignoreDefense' as const)
                   : ('ignoreDamageCut' as const),
-              targetPolicy,
-              expectedRecipient: 'attacker' as const,
-              targetMismatch: 'unsupported' as const,
+              route,
               semanticSupport: 'supported' as const,
             },
           ]
@@ -184,9 +257,7 @@ function modifierEffect(
                 kind: 'damageModifier' as const,
                 modifier,
                 sign: 1 as const,
-                targetPolicy,
-                expectedRecipient: 'attacker' as const,
-                targetMismatch: 'unsupported' as const,
+                route,
                 card: cardTypes[0] ?? null,
                 values,
                 limitBreakValues: values,
@@ -209,7 +280,7 @@ function modifierEffect(
   };
 }
 
-function traitConditions(opponent: string, field: string): MasterEffect['conditions'] {
+function traitConditions(opponent: string, field: string): TestEffectConditions {
   return {
     ...unconditionalConditions,
     opponent: {
@@ -298,7 +369,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation: 'addTrait' as const,
           scope: 'field' as const,
-          targetPolicy: 'sourceSelf' as const,
+          route: mutationRoute('sourceSelf'),
           trait: 'fieldSunlight',
           damageRelevant: true,
         },
@@ -316,7 +387,6 @@ describe('scenario calculation facade', () => {
     };
     const classRelation = {
       ...modifierEffect('class-relation', 'overwriteClassRelation', 0),
-      type: 'addState',
       label: 'class relation override',
     };
     const baseServant = fixture.servants[0]!;
@@ -375,7 +445,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation: 'addTrait' as const,
           scope: 'field' as const,
-          targetPolicy: 'sourceSelf' as const,
+          route: mutationRoute('sourceSelf'),
           trait: 'fieldSunlight',
           damageRelevant: true,
         },
@@ -389,7 +459,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation: 'addTrait' as const,
           scope: 'recipientState' as const,
-          targetPolicy: 'sourceSelf' as const,
+          route: mutationRoute('sourceSelf'),
           trait: 'blessedByKur',
           damageRelevant: false,
         },
@@ -894,7 +964,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation: 'addTrait' as const,
           scope: 'field' as const,
-          targetPolicy: 'sourceSelf' as const,
+          route: mutationRoute('sourceSelf'),
           trait: 'fieldHeaven',
           damageRelevant: false,
         },
@@ -1063,7 +1133,7 @@ describe('scenario calculation facade', () => {
 
   it('routes conditional passives and craft essences through the same effect-local decision', () => {
     const baseServant = fixture.servants[0]!;
-    const orCondition: MasterEffect['conditions'] = {
+    const orCondition: TestEffectConditions = {
       ...unconditionalConditions,
       opponent: {
         operator: 'any' as const,
@@ -1184,7 +1254,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation: 'addTrait' as const,
           scope: 'recipientState' as const,
-          targetPolicy: 'enemy' as const,
+          route: mutationRoute('enemy'),
           trait: burn.name,
           damageRelevant: false,
         },
@@ -1247,7 +1317,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation,
           scope: 'recipientState' as const,
-          targetPolicy: 'enemy' as const,
+          route: mutationRoute('enemy'),
           trait: burn.name,
           damageRelevant: true,
         },
@@ -1331,7 +1401,7 @@ describe('scenario calculation facade', () => {
           kind: 'contextMutation' as const,
           mutation: 'addTrait' as const,
           scope: 'recipientState' as const,
-          targetPolicy: 'enemy' as const,
+          route: mutationRoute('enemy'),
           trait: poison.name,
           damageRelevant: true,
         },

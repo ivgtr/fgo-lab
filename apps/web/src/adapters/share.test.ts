@@ -231,6 +231,7 @@ describe('portable input limits', () => {
               name: 'earth skill',
               detail: '',
               imageKey: null,
+              resourceRequirement: null,
               effects: [
                 {
                   id: 'earth-power',
@@ -246,13 +247,6 @@ describe('portable input limits', () => {
                   operationTrigger: null,
                   operationReference: null,
                   stateIdentity: null,
-                  traitReadPolicy: {
-                    stateSources: 'activeOnly',
-                    ignoredStateTraits: 'exclude',
-                    unremovableStateTraits: 'include',
-                  },
-                  quantityConditions: [],
-                  sourceQuantityConditions: [],
                   inputDefinitions: [
                     {
                       key: 'field:enemyCount',
@@ -267,29 +261,52 @@ describe('portable input limits', () => {
                       defaultReason: '単体対象1体',
                     },
                   ],
-                  inputQuantityConditions: [],
-                  conditions: {
-                    recipient: [{ operator: 'any', traits: [] }],
-                    holder: { operator: 'any', traits: [] },
-                    opponent: {
-                      operator: 'all',
-                      traits: [{ name: 'attributeEarth', negative: false, layer: 'combined' }],
-                    },
-                    field: {
-                      operator: 'all',
-                      traits: [{ name: 'fieldHell', negative: false, layer: 'combined' }],
+                  requirement: {
+                    recipient: 'sourceSelf',
+                    expression: {
+                      kind: 'all',
+                      requirements: [
+                        {
+                          kind: 'trait',
+                          scope: 'opponent',
+                          trait: 'attributeEarth',
+                          present: true,
+                          provenance: {
+                            stateSources: 'activeOnly',
+                            ignoredStateTraits: 'exclude',
+                            unremovableStateTraits: 'include',
+                          },
+                        },
+                        {
+                          kind: 'trait',
+                          scope: 'field',
+                          trait: 'fieldHell',
+                          present: true,
+                          provenance: {
+                            stateSources: 'activeOnly',
+                            ignoredStateTraits: 'exclude',
+                            unremovableStateTraits: 'include',
+                          },
+                        },
+                      ],
                     },
                   },
-                  conditionTargetPolicy: 'sourceSelf',
+                  resourceTransition: null,
                   execution: [
                     {
                       kind: 'damageModifier',
                       modifier: 'powerMod',
                       sign: 1,
-                      targetPolicy: 'sourceSelf',
-                      contributionScope: 'personal',
-                      expectedRecipient: 'attacker',
-                      targetMismatch: 'unsupported',
+                      route: {
+                        target: 'sourceSelf',
+                        contributionScope: 'personal',
+                        eligibility: {
+                          kind: 'requiredRecipient',
+                          recipient: 'attacker',
+                          onMissing: 'ignore',
+                          onMismatch: 'unsupported',
+                        },
+                      },
                       card: null,
                       values: [Array.from({ length: 10 }, () => 500), [], [], [], []],
                       valueExpressions: [[], [], [], [], []],

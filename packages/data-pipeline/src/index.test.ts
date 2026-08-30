@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
+import { canonicalRequirementLeaves, getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import {
   assertMasterVersionIdentity,
   createManifest,
@@ -9,6 +9,15 @@ import {
 } from './index';
 const content = JSON.stringify({
   version: 'v1',
+  npResourceSemantics: {
+    unit: 'basisPoints',
+    capacityByNpLevel: [10_000, 20_000, 20_000, 20_000, 30_000],
+    noblePhantasmUse: {
+      requirement: 10_000,
+      consumption: 'all',
+      baseOvercharge: { gaugePerStage: 10_000, minimumStage: 1, maximumBaseStage: 3 },
+    },
+  },
   normalization: {
     attackFunctions: { sourceCount: 0, includedCount: 0, expansionCount: 0, excluded: [] },
   },
@@ -499,34 +508,44 @@ describe('immutable publish pipeline', () => {
       targetTrait: { kind: 'trait', name: 'buffCharm' },
       correctionPermille: 1500,
     });
-    expect(lilith?.skills[0]?.effects[0]).toMatchObject({
-      conditions: {
-        recipient: [{ operator: 'any', traits: [] }],
-        holder: { operator: 'all', traits: [] },
-        opponent: {
-          operator: 'all',
-          traits: [
-            { name: 'superGiant', negative: true },
-            { name: 'servant', negative: false },
-          ],
-        },
-        field: {
-          operator: 'any',
-          traits: [{ name: 'fieldDarkness', negative: false }],
-        },
-      },
-    });
-    expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '13')).toMatchObject({
+    expect(
+      canonicalRequirementLeaves(lilith!.skills[0]!.effects[0]!.requirement.expression),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'trait',
+          scope: 'opponent',
+          trait: 'superGiant',
+          present: false,
+        }),
+        expect.objectContaining({
+          kind: 'trait',
+          scope: 'opponent',
+          trait: 'servant',
+          present: true,
+        }),
+        expect.objectContaining({
+          kind: 'trait',
+          scope: 'field',
+          trait: 'fieldDarkness',
+          present: true,
+        }),
+      ]),
+    );
+    const colorEffect = lilith?.skills[0]?.effects.find((effect) => effect.id === '13');
+    expect(colorEffect).toMatchObject({
       label: '表示名に依存しない色バフ',
       atlasEvidence: { buffTypes: ['upCommandall'] },
       execution: [{ kind: 'damageModifier', modifier: 'cardBuff', card: 'buster' }],
-      conditions: {
-        field: {
-          operator: 'any',
-          traits: [{ name: 'fieldDarkness', negative: false }],
-        },
-      },
     });
+    expect(canonicalRequirementLeaves(colorEffect!.requirement.expression)).toContainEqual(
+      expect.objectContaining({
+        kind: 'trait',
+        scope: 'field',
+        trait: 'fieldDarkness',
+        present: true,
+      }),
+    );
     expect(lilith?.skills[0]?.effects.find((effect) => effect.id === '14')).toMatchObject({
       atlasEvidence: { buffTypes: ['buffRate'], buffRateTargets: ['buffNpDamageUp'] },
       execution: [{ kind: 'modifierRateChange', modifier: 'npDamageBuff' }],
@@ -613,15 +632,8 @@ describe('immutable publish pipeline', () => {
         ],
       },
     ]);
-    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[0]).toMatchObject({
-      conditions: {
-        recipient: [
-          {
-            operator: 'all',
-            traits: [{ name: 'traitId:4002', negative: false }],
-          },
-        ],
-      },
+    const mysticEffect = snapshot.mysticCodes[0]?.skills[0]?.effects[0];
+    expect(mysticEffect).toMatchObject({
       atlasEvidence: {
         buffTypes: ['upAtk'],
         parameterSemantics: {
@@ -632,6 +644,14 @@ describe('immutable publish pipeline', () => {
         unresolvedSemanticKeys: ['script:customFlag'],
       },
     });
+    expect(canonicalRequirementLeaves(mysticEffect!.requirement.expression)).toContainEqual(
+      expect.objectContaining({
+        kind: 'trait',
+        scope: 'recipient',
+        trait: 'traitId:4002',
+        present: true,
+      }),
+    );
   });
 
   it('normalizes Battle Point ranges into subject-scoped quantity conditions', () => {
@@ -775,14 +795,15 @@ describe('immutable publish pipeline', () => {
           unresolved: [],
         },
       },
-      quantityConditions: [
-        {
+      requirement: {
+        expression: {
+          kind: 'quantity',
           quantity: 'battlePointPhase',
           subjectId: '3300200',
           comparison: 'atLeast',
           value: 7,
         },
-      ],
+      },
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[2]).toMatchObject({
       atlasEvidence: {
@@ -811,32 +832,32 @@ describe('immutable publish pipeline', () => {
           ],
         },
       ],
-      quantityConditions: [
-        {
-          quantity: 'attackerHpPermille',
-          comparison: 'atLeast',
-          value: 0,
+      requirement: {
+        expression: {
+          kind: 'all',
+          requirements: [
+            {
+              kind: 'quantity',
+              quantity: 'attackerHpPermille',
+              comparison: 'atLeast',
+              value: 0,
+            },
+            {
+              kind: 'quantity',
+              quantity: 'attackerHpPermille',
+              comparison: 'atMost',
+              value: 500,
+            },
+          ],
         },
-        {
-          quantity: 'attackerHpPermille',
-          comparison: 'atMost',
-          value: 500,
-        },
-      ],
+      },
     });
-    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[1]).toMatchObject({
+    const conditionalChoiceEffect = snapshot.mysticCodes[0]?.skills[0]?.effects[1];
+    expect(conditionalChoiceEffect).toMatchObject({
       selection: {
         kind: 'playerChoice',
         group: { key: 'player-choice:1', candidate: '2' },
       },
-      sourceQuantityConditions: [
-        {
-          quantity: 'battlePointRate',
-          subjectId: '705300',
-          comparison: 'atMost',
-          value: 999,
-        },
-      ],
       atlasEvidence: {
         parameterSemantics: {
           choice: ['ActSelectIndex'],
@@ -844,6 +865,17 @@ describe('immutable publish pipeline', () => {
           unresolved: [],
         },
       },
+    });
+    expect(
+      conditionalChoiceEffect
+        ? canonicalRequirementLeaves(conditionalChoiceEffect.requirement.expression)
+        : [],
+    ).toContainEqual({
+      kind: 'sourceQuantity',
+      quantity: 'battlePointRate',
+      subjectId: '705300',
+      comparison: 'atMost',
+      value: 999,
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[3]).toMatchObject({
       execution: [{ kind: 'nonDamage' }],

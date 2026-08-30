@@ -73,7 +73,7 @@ export function resolvePreparationStructuralOutcome(
   const attackerState = new Set(state.stateTraits.attackerState);
   for (const operation of operations) {
     if (!isRecipientTraitMutation(operation)) continue;
-    if (resolveTargetPolicy('attacker', operation.targetPolicy) !== 'attacker') continue;
+    if (resolveTargetPolicy('attacker', operation.route.target) !== 'attacker') continue;
     if (operation.mutation === 'addTrait') attackerState.add(operation.trait);
     if (operation.mutation === 'removeTrait') attackerState.delete(operation.trait);
   }

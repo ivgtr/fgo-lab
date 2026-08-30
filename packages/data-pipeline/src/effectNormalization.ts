@@ -1,13 +1,13 @@
 import type {
   ActorCountPredicate,
+  CanonicalEffectRequirement,
   CanonicalInputDefinition,
   CanonicalTargetPolicy,
   EffectExecutionOperation,
   ModifierValueExpression,
   MasterEffect,
   NpDamageSpec,
-  TraitCondition,
-  TraitReadPolicy,
+  CanonicalTraitProvenance,
 } from '@fgo-lab/master-data';
 import type {
   AtlasBuff,
@@ -18,6 +18,7 @@ import type {
 } from './atlasContract';
 import { canonicalTargetPredicate } from './targetTaxonomy';
 import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
+import { normalizeNpGaugeTransition } from './npResourceNormalization';
 import {
   normalizeDamageReachableStateMutations,
   stateMutationTraitName,
@@ -25,6 +26,13 @@ import {
 } from './targetStateNormalization';
 
 const EMPTY_STATE_CATALOG: DamageReachableStateCatalog = { stateOnlyTraits: new Set() };
+type NormalizedTraitCondition = {
+  operator: 'any' | 'all';
+  traits: (
+    | { name: string; negative: boolean; layer: 'combined' | 'state' }
+    | { predicate: NonNullable<ReturnType<typeof canonicalTargetPredicate>>; negative: boolean }
+  )[];
+};
 
 export const cardMap: Record<string, 'buster' | 'arts' | 'quick'> = {
   1: 'arts',
@@ -173,8 +181,8 @@ function signedTraits(
   traitNameById: ReadonlyMap<number, string>,
   canonicalizeTarget = false,
   stateCatalog: DamageReachableStateCatalog = EMPTY_STATE_CATALOG,
-): TraitCondition['traits'] {
-  return (traits ?? []).flatMap<TraitCondition['traits'][number]>((trait) => {
+): NormalizedTraitCondition['traits'] {
+  return (traits ?? []).flatMap<NormalizedTraitCondition['traits'][number]>((trait) => {
     const stateName = stateMutationTraitName(trait, traitNameById);
     const name =
       stateName && stateCatalog.stateOnlyTraits.has(stateName)
@@ -302,7 +310,7 @@ function predicateIsInBattle(predicate: ActorCountPredicate | null): boolean {
   return atoms.length === 1 && atoms[0]?.kind === 'actorProperty';
 }
 
-function uniqueTraits(traits: TraitCondition['traits']) {
+function uniqueTraits(traits: NormalizedTraitCondition['traits']) {
   return [
     ...new Map(
       traits.map((trait) => [
@@ -356,9 +364,9 @@ const TRAIT_PROVENANCE_PARAMETER_KEYS = new Set([
   'IgnoreIndivUnreleaseable',
 ]);
 
-function normalizeTraitReadPolicy(
+function normalizeTraitProvenance(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
-): TraitReadPolicy {
+): CanonicalTraitProvenance {
   const flag = (key: keyof AtlasFunctionValue) => {
     const values = [
       ...new Set(
@@ -376,6 +384,64 @@ function normalizeTraitReadPolicy(
     ignoredStateTraits: flag('IncludeIgnoreIndividuality') ? 'include' : 'exclude',
     unremovableStateTraits: flag('IgnoreIndivUnreleaseable') ? 'exclude' : 'include',
   };
+}
+
+function canonicalTraitRequirement(
+  condition: NormalizedTraitCondition,
+  scope: 'recipient' | 'opponent' | 'field',
+  provenance: CanonicalTraitProvenance,
+  cardScope: boolean,
+): CanonicalEffectRequirement {
+  if (condition.traits.length === 0) return { kind: 'always' };
+  const requirements = condition.traits.map<CanonicalEffectRequirement>((trait) => {
+    if ('predicate' in trait) {
+      if (scope === 'field') throw new TypeError('target_predicate_scope:field');
+      return {
+        kind: 'targetPredicate',
+        scope,
+        predicate: trait.predicate,
+        present: !trait.negative,
+      };
+    }
+    const card = cardScope ? cardTypeByTrait[trait.name] : undefined;
+    if (card) return { kind: 'card', card, present: !trait.negative };
+    const attack = cardScope
+      ? (
+          {
+            cardNP: 'noblePhantasm',
+            faceCard: 'faceCard',
+            cardExtra: 'extraCard',
+          } as const
+        )[trait.name as 'cardNP' | 'faceCard' | 'cardExtra']
+      : undefined;
+    if (attack) return { kind: 'attackType', attack, present: !trait.negative };
+    return {
+      kind: 'trait',
+      scope:
+        trait.layer === 'state'
+          ? scope === 'recipient'
+            ? 'recipientState'
+            : scope === 'opponent'
+              ? 'opponentState'
+              : 'field'
+          : scope,
+      trait: trait.name,
+      present: !trait.negative,
+      provenance,
+    };
+  });
+  return { kind: condition.operator, requirements };
+}
+
+function combineCanonicalRequirements(
+  requirements: CanonicalEffectRequirement[],
+): CanonicalEffectRequirement {
+  const useful = requirements.filter(({ kind }) => kind !== 'always');
+  return useful.length === 0
+    ? { kind: 'always' }
+    : useful.length === 1
+      ? useful[0]!
+      : { kind: 'all', requirements: useful };
 }
 
 function normalizeStateIdentity(
@@ -398,7 +464,7 @@ function normalizeStateIdentity(
 
 interface NormalizedQuantityCondition {
   quantity: 'attackerHpPermille' | 'battlePointPhase';
-  subjectId?: string;
+  subjectId?: string | undefined;
   comparison: 'atMost' | 'atLeast';
   value: number;
 }
@@ -521,28 +587,54 @@ function modifierSeriesIdentity(effect: MasterEffect): string | null {
   return JSON.stringify({
     kind: operation.kind,
     modifier: operation.modifier,
-    targetPolicy: operation.targetPolicy,
-    expectedRecipient: operation.expectedRecipient,
-    targetMismatch: operation.targetMismatch,
+    route: operation.route,
     ...(operation.kind === 'damageModifier' ? { sign: operation.sign, card: operation.card } : {}),
-    conditions: effect.conditions,
-    conditionTargetPolicy: effect.conditionTargetPolicy,
-    quantityConditions: effect.quantityConditions.filter(
-      (condition) => condition.quantity !== 'attackerHpPermille',
-    ),
-    sourceQuantityConditions: effect.sourceQuantityConditions,
-    inputQuantityConditions: effect.inputQuantityConditions,
+    requirement: {
+      ...effect.requirement,
+      expression: withoutAttackerHpRequirement(effect.requirement.expression),
+    },
     inputDefinitions: effect.inputDefinitions,
     selection: effect.selection,
     operationTrigger: effect.operationTrigger,
-    traitReadPolicy: effect.traitReadPolicy,
   });
 }
 
+function withoutAttackerHpRequirement(
+  requirement: CanonicalEffectRequirement,
+): CanonicalEffectRequirement {
+  if (requirement.kind === 'quantity' && requirement.quantity === 'attackerHpPermille')
+    return { kind: 'always' };
+  if (requirement.kind === 'all' || requirement.kind === 'any') {
+    const requirements = requirement.requirements
+      .map(withoutAttackerHpRequirement)
+      .filter(({ kind }) => kind !== 'always');
+    return requirements.length === 0
+      ? { kind: 'always' }
+      : requirements.length === 1
+        ? requirements[0]!
+        : { ...requirement, requirements };
+  }
+  return requirement.kind === 'not'
+    ? { kind: 'not', requirement: withoutAttackerHpRequirement(requirement.requirement) }
+    : requirement;
+}
+
 function hpThresholdConditions(effect: MasterEffect) {
-  return effect.quantityConditions.filter(
-    (condition) => condition.quantity === 'attackerHpPermille',
-  );
+  const collect = (requirement: CanonicalEffectRequirement): NormalizedQuantityCondition[] => {
+    if (requirement.kind === 'quantity' && requirement.quantity === 'attackerHpPermille')
+      return [
+        {
+          quantity: requirement.quantity,
+          ...(requirement.subjectId === undefined ? {} : { subjectId: requirement.subjectId }),
+          comparison: requirement.comparison,
+          value: requirement.value,
+        },
+      ];
+    if (requirement.kind === 'all' || requirement.kind === 'any')
+      return requirement.requirements.flatMap(collect);
+    return requirement.kind === 'not' ? collect(requirement.requirement) : [];
+  };
+  return collect(effect.requirement.expression);
 }
 
 function assignHpThresholdSeries(effects: readonly MasterEffect[]): MasterEffect[] {
@@ -1191,10 +1283,18 @@ function assignProcSemantics(effects: readonly MasterEffect[]): MasterEffect[] {
             },
           },
           inputDefinitions: [...members[memberIndex]!.inputDefinitions, input],
-          inputQuantityConditions: [
-            ...members[memberIndex]!.inputQuantityConditions,
-            { inputKey: key, comparison: 'atLeast', value: memberIndex + 1 },
-          ],
+          requirement: {
+            ...members[memberIndex]!.requirement,
+            expression: combineCanonicalRequirements([
+              members[memberIndex]!.requirement.expression,
+              {
+                kind: 'inputQuantity',
+                inputKey: key,
+                comparison: 'atLeast',
+                value: memberIndex + 1,
+              },
+            ]),
+          },
         };
       index = end - 1;
       continue;
@@ -1413,7 +1513,7 @@ export function normalizeFunctions(
         ].map((condition) => [JSON.stringify(condition), condition]),
       ).values(),
     ];
-    const traitReadPolicy = normalizeTraitReadPolicy(parameterSets);
+    const traitProvenance = normalizeTraitProvenance(parameterSets);
     const stateIdentity = normalizeStateIdentity(parameterSets);
     const sourceQuantityConditions = normalizeSourceQuantityConditions(parameterSets);
     const canonicalInputKey = parameterSets
@@ -1668,6 +1768,108 @@ export function normalizeFunctions(
           ? { ...operation, semanticSupport: 'unresolved' as const }
           : operation,
       );
+    const conditions = {
+      recipient:
+        (fn.overWriteTvalsList ?? []).length > 0
+          ? fn.overWriteTvalsList!.map((group) => ({
+              operator: 'all' as const,
+              traits: signedTraits(
+                Array.isArray(group) ? (group as AtlasTraitRef[]) : [],
+                traitNameById,
+                false,
+                stateCatalog,
+              ),
+            }))
+          : [
+              {
+                operator: 'any' as const,
+                traits: signedTraits(fn.functvals, traitNameById, false, stateCatalog),
+              },
+            ],
+      holder: {
+        operator:
+          (fn.buffs?.[0]?.ckSelfIndv ?? []).length > 0 &&
+          scriptTraits.some(({ trait }) =>
+            signedTraits([trait], traitNameById, false, stateCatalog).some(
+              (candidate) => 'name' in candidate && variantStateTraits.has(candidate.name),
+            ),
+          )
+            ? ('all' as const)
+            : buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+        traits: uniqueTraits([
+          ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById, false, stateCatalog),
+          ...scriptTraits.flatMap((entry) =>
+            entry.buffType === 'upCommandall' &&
+            fn.funcTargetType === 'self' &&
+            !isFieldTrait(entry.trait)
+              ? signedTraits([entry.trait], traitNameById, false, stateCatalog)
+              : [],
+          ),
+        ]),
+      },
+      opponent: {
+        operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
+        traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById, true, stateCatalog),
+      },
+      field: {
+        operator: 'any' as const,
+        traits: uniqueTraits([
+          ...signedTraits(fn.funcquestTvals, traitNameById, false, stateCatalog),
+          ...scriptTraits.flatMap((entry) =>
+            isFieldTrait(entry.trait) && !isCardChangeOwnerIdentity(entry)
+              ? signedTraits([entry.trait], traitNameById, false, stateCatalog)
+              : [],
+          ),
+        ]),
+      },
+    };
+    const requirement = combineCanonicalRequirements([
+      ...conditions.recipient.map((condition) =>
+        canonicalTraitRequirement(
+          condition,
+          'recipient',
+          traitProvenance,
+          targetPolicy !== 'enemy',
+        ),
+      ),
+      canonicalTraitRequirement(
+        conditions.holder,
+        'recipient',
+        traitProvenance,
+        targetPolicy !== 'enemy',
+      ),
+      canonicalTraitRequirement(
+        conditions.opponent,
+        'opponent',
+        traitProvenance,
+        targetPolicy === 'enemy',
+      ),
+      canonicalTraitRequirement(conditions.field, 'field', traitProvenance, false),
+      ...quantityConditions.map<CanonicalEffectRequirement>((condition) => ({
+        kind: 'quantity',
+        ...condition,
+      })),
+      ...sourceQuantityConditions.map<CanonicalEffectRequirement>((condition) => ({
+        kind: 'sourceQuantity',
+        ...condition,
+      })),
+      ...canonicalInput.conditions.map<CanonicalEffectRequirement>((condition) => ({
+        kind: 'inputQuantity',
+        ...condition,
+      })),
+      ...(choice
+        ? [
+            {
+              kind: 'choice' as const,
+              family: choice.family === 'actSet' ? 'player-choice:0' : 'player-choice:1',
+              candidate: String(choice.candidate),
+            },
+          ]
+        : []),
+      ...(operationTrigger
+        ? [{ kind: 'operationTrigger' as const, position: operationTrigger.position }]
+        : []),
+    ]);
     return [
       {
         id: String(fn.funcId),
@@ -1704,67 +1906,12 @@ export function normalizeFunctions(
         operationTrigger,
         operationReference,
         stateIdentity,
-        quantityConditions,
-        sourceQuantityConditions,
         inputDefinitions: canonicalInput.inputs,
-        inputQuantityConditions: canonicalInput.conditions,
-        traitReadPolicy,
-        conditions: {
-          recipient:
-            (fn.overWriteTvalsList ?? []).length > 0
-              ? fn.overWriteTvalsList!.map((group) => ({
-                  operator: 'all' as const,
-                  traits: signedTraits(
-                    Array.isArray(group) ? (group as AtlasTraitRef[]) : [],
-                    traitNameById,
-                    false,
-                    stateCatalog,
-                  ),
-                }))
-              : [
-                  {
-                    operator: 'any' as const,
-                    traits: signedTraits(fn.functvals, traitNameById, false, stateCatalog),
-                  },
-                ],
-          holder: {
-            operator:
-              (fn.buffs?.[0]?.ckSelfIndv ?? []).length > 0 &&
-              scriptTraits.some(({ trait }) =>
-                signedTraits([trait], traitNameById, false, stateCatalog).some(
-                  (candidate) => 'name' in candidate && variantStateTraits.has(candidate.name),
-                ),
-              )
-                ? 'all'
-                : buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: uniqueTraits([
-              ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById, false, stateCatalog),
-              ...scriptTraits.flatMap((entry) =>
-                entry.buffType === 'upCommandall' &&
-                fn.funcTargetType === 'self' &&
-                !isFieldTrait(entry.trait)
-                  ? signedTraits([entry.trait], traitNameById, false, stateCatalog)
-                  : [],
-              ),
-            ]),
-          },
-          opponent: {
-            operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-            traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById, true, stateCatalog),
-          },
-          field: {
-            operator: 'any' as const,
-            traits: uniqueTraits([
-              ...signedTraits(fn.funcquestTvals, traitNameById, false, stateCatalog),
-              ...scriptTraits.flatMap((entry) =>
-                isFieldTrait(entry.trait) && !isCardChangeOwnerIdentity(entry)
-                  ? signedTraits([entry.trait], traitNameById, false, stateCatalog)
-                  : [],
-              ),
-            ]),
-          },
+        requirement: {
+          recipient: targetPolicy,
+          expression: requirement,
         },
-        conditionTargetPolicy: targetPolicy,
+        resourceTransition: normalizeNpGaugeTransition(fn, parameterSets),
         execution,
         atlasEvidence: {
           functionType: fn.funcType ?? 'unknown',

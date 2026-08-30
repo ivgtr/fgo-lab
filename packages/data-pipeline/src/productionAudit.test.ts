@@ -26,7 +26,7 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'ead6e8483212bbb3daa24d742e40f5077b352b8a051ffa35eb3f9a7c4befd60b',
+          digest: 'e116e91fad16fb6348826f26b5e29fc4db5239e26b49c1c8cad50eb0dd5c2fc2',
           inventory: {
             binaryOutcomeSelections: 44,
             craftEssences: 2_700,

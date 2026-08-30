@@ -1,0 +1,108 @@
+import type { CanonicalNpResourceSemantics } from '@fgo-lab/master-data';
+
+export interface NpResourceState {
+  npLevel: 1 | 2 | 3 | 4 | 5;
+  capacity: number;
+  gauge: number;
+}
+
+export type NpResourceMutation =
+  | { kind: 'gain'; amount: number }
+  | { kind: 'loss'; amount: number }
+  | { kind: 'consumeAll' }
+  | { kind: 'unsupported'; family: string };
+
+export interface NpResourceTransaction {
+  requirement: { kind: 'atLeast'; amount: number } | null;
+  mutations: readonly NpResourceMutation[];
+}
+
+export type NpResourceTransactionResult =
+  | { status: 'applied'; state: NpResourceState; baseOvercharge: number | null }
+  | {
+      status: 'rejected';
+      code:
+        | 'invalidState'
+        | 'requirementExceedsCapacity'
+        | 'insufficientGauge'
+        | 'invalidMutation'
+        | 'unsupportedMutation';
+      state: NpResourceState;
+    };
+
+export function npCapacityForLevel(
+  semantics: CanonicalNpResourceSemantics,
+  npLevel: NpResourceState['npLevel'],
+): number {
+  return semantics.capacityByNpLevel[npLevel - 1]!;
+}
+
+export function createNpResourceState(
+  semantics: CanonicalNpResourceSemantics,
+  npLevel: NpResourceState['npLevel'],
+  gauge: number = semantics.noblePhantasmUse.requirement,
+): NpResourceState {
+  const capacity = npCapacityForLevel(semantics, npLevel);
+  if (!Number.isInteger(gauge) || gauge < 0 || gauge > capacity)
+    throw new RangeError('invalid_np_resource_initial_gauge');
+  return { npLevel, capacity, gauge };
+}
+
+export function deriveBaseOvercharge(
+  semantics: CanonicalNpResourceSemantics,
+  gauge: number,
+): number {
+  const rule = semantics.noblePhantasmUse.baseOvercharge;
+  return Math.min(
+    rule.maximumBaseStage,
+    Math.max(rule.minimumStage, Math.floor(gauge / rule.gaugePerStage)),
+  );
+}
+
+export function applyNpResourceTransaction(
+  semantics: CanonicalNpResourceSemantics,
+  state: NpResourceState,
+  transaction: NpResourceTransaction,
+): NpResourceTransactionResult {
+  const reject = (code: Extract<NpResourceTransactionResult, { status: 'rejected' }>['code']) => ({
+    status: 'rejected' as const,
+    code,
+    state,
+  });
+  if (
+    !Number.isInteger(state.gauge) ||
+    state.gauge < 0 ||
+    state.capacity !== npCapacityForLevel(semantics, state.npLevel) ||
+    state.gauge > state.capacity
+  )
+    return reject('invalidState');
+  if (transaction.requirement) {
+    const amount = transaction.requirement.amount;
+    if (!Number.isInteger(amount) || amount < 0) return reject('invalidMutation');
+    if (amount > state.capacity) return reject('requirementExceedsCapacity');
+    if (state.gauge < amount) return reject('insufficientGauge');
+  }
+  if (transaction.mutations.filter(({ kind }) => kind === 'consumeAll').length > 1)
+    return reject('invalidMutation');
+  let gauge = state.gauge;
+  let baseOvercharge: number | null = null;
+  for (const mutation of transaction.mutations) {
+    if (mutation.kind === 'unsupported') return reject('unsupportedMutation');
+    if (mutation.kind === 'consumeAll') {
+      if (gauge < semantics.noblePhantasmUse.requirement) return reject('insufficientGauge');
+      baseOvercharge = deriveBaseOvercharge(semantics, gauge);
+      gauge = 0;
+      continue;
+    }
+    if (!Number.isInteger(mutation.amount) || mutation.amount < 0) return reject('invalidMutation');
+    gauge =
+      mutation.kind === 'gain'
+        ? Math.min(state.capacity, gauge + mutation.amount)
+        : Math.max(0, gauge - mutation.amount);
+  }
+  return {
+    status: 'applied',
+    state: { ...state, gauge },
+    baseOvercharge,
+  };
+}

@@ -125,7 +125,7 @@ describe('condition expression properties', () => {
       scope: 'target',
       trait: 'buffPoison',
       present: true,
-      readPolicy: {
+      provenance: {
         stateSources: 'activeOnly',
         ignoredStateTraits: 'include',
         unremovableStateTraits: 'include',

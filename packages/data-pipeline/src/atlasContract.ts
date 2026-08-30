@@ -93,6 +93,7 @@ export type AtlasServant = {
     name?: string;
     detail?: string;
     icon?: string;
+    script?: { NP_HIGHER?: unknown };
     functions?: AtlasFunction[];
     skillSvts?: AtlasServantAssociation[];
   }[];

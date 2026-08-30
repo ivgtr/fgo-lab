@@ -44,8 +44,11 @@ describe('canonical effect contribution scope', () => {
         kind: 'contextMutation',
         mutation: 'addTrait',
         scope: 'recipientState',
-        targetPolicy: 'enemy',
-        contributionScope: 'enemyApplied',
+        route: {
+          target: 'enemy',
+          contributionScope: 'enemyApplied',
+          eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+        },
         trait: 'marking',
         damageRelevant: true,
       },

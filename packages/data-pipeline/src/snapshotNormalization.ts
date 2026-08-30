@@ -19,6 +19,10 @@ import { normalizeCraftEssenceLimitBreakEffects } from './craftEssenceNormalizat
 import { normalizeNoblePhantasmVariants } from './noblePhantasmVariantNormalization';
 import { canonicalTargetPredicate, normalizeTargetSemantics } from './targetTaxonomy';
 import { collectDamageReachableStateCatalog } from './targetStateNormalization';
+import {
+  canonicalNpResourceSemantics,
+  normalizeNpGaugeRequirement,
+} from './npResourceNormalization';
 import { sha256 } from './artifact';
 
 function growthSteps(source: AtlasMaterialStep | undefined, prefix: string, repeat = 1) {
@@ -272,6 +276,7 @@ export function normalizeAtlasSnapshot(input: {
       name: skill.name ?? '不明なスキル',
       detail: skill.detail ?? '',
       imageKey: skill.icon ?? null,
+      resourceRequirement: normalizeNpGaugeRequirement(skill.script?.NP_HIGHER),
       effects: normalizeFunctions(
         skill.functions,
         traitNameById,
@@ -468,6 +473,7 @@ export function normalizeAtlasSnapshot(input: {
               name: skill.name,
               detail: skill.detail ?? '',
               imageKey: skill.icon ?? null,
+              resourceRequirement: null,
               effects: normalizeFunctions(
                 skill.functions,
                 traitNameById,
@@ -547,6 +553,7 @@ export function normalizeAtlasSnapshot(input: {
   );
   return masterSnapshotSchema.parse({
     version: input.version,
+    npResourceSemantics: canonicalNpResourceSemantics,
     normalization: {
       attackFunctions: {
         sourceCount: attackInventory.attackEntries,

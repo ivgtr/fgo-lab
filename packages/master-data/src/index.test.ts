@@ -3,6 +3,7 @@ import fixture from '../../test-fixtures/master/fixture.json';
 import manifest from '../../test-fixtures/master/manifest.json';
 import {
   deriveCraftEssenceAtk,
+  masterEffectSchema,
   masterManifestSchema,
   masterSnapshotSchema,
   naturalServantLevel,
@@ -24,22 +25,9 @@ const nonDamageEffect = {
   operationTrigger: null,
   operationReference: null,
   stateIdentity: null,
-  traitReadPolicy: {
-    stateSources: 'activeOnly' as const,
-    ignoredStateTraits: 'exclude' as const,
-    unremovableStateTraits: 'include' as const,
-  },
-  quantityConditions: [],
-  sourceQuantityConditions: [],
   inputDefinitions: [],
-  inputQuantityConditions: [],
-  conditions: {
-    recipient: [],
-    holder: { operator: 'all' as const, traits: [] },
-    opponent: { operator: 'all' as const, traits: [] },
-    field: { operator: 'all' as const, traits: [] },
-  },
-  conditionTargetPolicy: 'sourceSelf' as const,
+  requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
+  resourceTransition: null,
   execution: [{ kind: 'nonDamage' as const }],
   atlasEvidence: {
     functionType: 'test',
@@ -75,6 +63,78 @@ describe('master validation', () => {
       errors: [],
       unknownAttackFunctions: [],
     }));
+  it('rejects contradictory NP capacity and partial resource transitions', () => {
+    expect(
+      masterSnapshotSchema.safeParse({
+        ...fixture,
+        npResourceSemantics: {
+          ...fixture.npResourceSemantics,
+          capacityByNpLevel: [10_000, 10_000, 10_000, 10_000, 10_000],
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        resourceTransition: {
+          kind: 'fixed',
+          recipient: 'sourceActor',
+          direction: 'gain',
+          amounts: [[1_000], [], [], [], []],
+          overflow: 'clampToCapacity',
+        },
+      }).success,
+    ).toBe(false);
+  });
+  it('rejects a partial canonical route and accepts an explicit unresolved route', () => {
+    const valued = {
+      kind: 'damageModifier' as const,
+      modifier: 'attackBuff' as const,
+      sign: 1 as const,
+      card: null,
+      semanticSupport: 'supported' as const,
+      values: [[100], [], [], [], []],
+      valueExpressions: [[null], [], [], [], []],
+    };
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        execution: [
+          {
+            ...valued,
+            route: {
+              target: 'sourceSelf',
+              contributionScope: 'personal',
+              eligibility: { kind: 'requiredRecipient', recipient: 'attacker' },
+            },
+          },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        execution: [
+          {
+            kind: 'unresolved',
+            route: {
+              target: 'unresolved',
+              contributionScope: 'personal',
+              eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+            },
+            reason: 'unresolvedTarget',
+            damageRelevant: true,
+          },
+        ],
+      }).success,
+    ).toBe(true);
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        quantityConditions: [],
+      }).success,
+    ).toBe(false);
+  });
   it('rejects conflicting semantics for one canonical NP variant ID', () => {
     const source = fixture.servants[0]!;
     const sourceForm = source.actorFormGraph.forms[0]!;
@@ -259,6 +319,7 @@ describe('master validation', () => {
       name: 'test',
       detail: '',
       imageKey: null,
+      resourceRequirement: null,
       effects: [nonDamageEffect],
     };
     const invalidSnapshots = [
@@ -322,10 +383,16 @@ describe('master validation', () => {
                   modifier: 'attackBuff',
                   sign: 1,
                   card: null,
-                  targetPolicy: 'sourceSelf',
-                  contributionScope: 'personal',
-                  expectedRecipient: 'attacker',
-                  targetMismatch: 'unsupported',
+                  route: {
+                    target: 'sourceSelf',
+                    contributionScope: 'personal',
+                    eligibility: {
+                      kind: 'requiredRecipient',
+                      recipient: 'attacker',
+                      onMissing: 'ignore',
+                      onMismatch: 'unsupported',
+                    },
+                  },
                   values,
                   valueExpressions: [[], [], [], [], []],
                   semanticSupport: 'supported',
@@ -347,6 +414,7 @@ describe('master validation', () => {
       name: 'test',
       detail: '',
       imageKey: null,
+      resourceRequirement: null,
       effects: [
         {
           ...nonDamageEffect,
@@ -383,9 +451,15 @@ describe('master validation', () => {
               defaultReason: 'invalid skill default',
             },
           ],
-          inputQuantityConditions: [
-            { inputKey: 'proc:test', comparison: 'atLeast' as const, value: 1 },
-          ],
+          requirement: {
+            recipient: 'sourceSelf' as const,
+            expression: {
+              kind: 'inputQuantity' as const,
+              inputKey: 'proc:test',
+              comparison: 'atLeast' as const,
+              value: 1,
+            },
+          },
         },
       ],
     };

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  canonicalRequirementLeaves,
   getNoblePhantasmVariants,
   masterSnapshotSchema,
   type MasterEffect,
@@ -214,14 +215,12 @@ describe('production master inventory ratchet', () => {
     );
     const consumerTraits = new Set<string>();
     for (const { effect } of effects)
-      for (const condition of [
-        ...effect.conditions.recipient,
-        effect.conditions.holder,
-        effect.conditions.opponent,
-        effect.conditions.field,
-      ])
-        for (const trait of condition.traits)
-          if ('name' in trait && trait.layer === 'state') consumerTraits.add(trait.name);
+      for (const requirement of canonicalRequirementLeaves(effect.requirement.expression))
+        if (
+          requirement.kind === 'trait' &&
+          (requirement.scope === 'recipientState' || requirement.scope === 'opponentState')
+        )
+          consumerTraits.add(requirement.trait);
     for (const servant of master.servants)
       for (const variant of getNoblePhantasmVariants(servant))
         if (variant.kind === 'attack')
@@ -307,14 +306,12 @@ describe('production master inventory ratchet', () => {
         [...rawKeys].sort().join('|') !== [...semanticKeys].sort().join('|')
       )
         normalizationErrors.push(`${servantId}:${effect.occurrenceId}`);
-      for (const condition of [
-        ...effect.conditions.recipient,
-        effect.conditions.holder,
-        effect.conditions.opponent,
-        effect.conditions.field,
-      ])
-        if (condition.traits.some((trait) => 'name' in trait && trait.name === 'unknown'))
-          literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
+      if (
+        canonicalRequirementLeaves(effect.requirement.expression).some(
+          (requirement) => requirement.kind === 'trait' && requirement.trait === 'unknown',
+        )
+      )
+        literalUnknownTraits.push(`${servantId}:${effect.occurrenceId}`);
       if (!canNormalizeDamageEffect(effect, origin)) return;
       for (const key of effect.atlasEvidence.parameterSemantics.unresolved)
         semanticInventory.parameters[key] = (semanticInventory.parameters[key] ?? 0) + 1;

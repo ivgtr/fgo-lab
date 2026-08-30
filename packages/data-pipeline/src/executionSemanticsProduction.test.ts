@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import {
   getNoblePhantasmVariants,
   masterSnapshotSchema,
+  type CanonicalEffectRequirement,
   type MasterEffect,
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
@@ -31,6 +32,17 @@ function evidenceValues(effect: MasterEffect, limitBreak = false) {
     set.map((parameter) => (typeof parameter['Value'] === 'number' ? parameter['Value'] : null)),
   );
 }
+
+function requirementLeaves(requirement: CanonicalEffectRequirement): CanonicalEffectRequirement[] {
+  if (requirement.kind === 'all' || requirement.kind === 'any')
+    return requirement.requirements.flatMap(requirementLeaves);
+  return requirement.kind === 'not' ? requirementLeaves(requirement.requirement) : [requirement];
+}
+
+const quantityRequirements = (effect: MasterEffect) =>
+  requirementLeaves(effect.requirement.expression).filter(
+    (requirement) => requirement.kind === 'quantity',
+  );
 
 describe('production canonical execution semantics', () => {
   it('ratchets every probabilistic terminal damage occurrence into canonical proc semantics', async () => {
@@ -159,10 +171,10 @@ describe('production canonical execution semantics', () => {
             ? [
                 {
                   key,
-                  comparisons: effect.quantityConditions
+                  comparisons: quantityRequirements(effect)
                     .filter((condition) => condition.quantity === 'attackerHpPermille')
                     .map((condition) => condition.comparison),
-                  values: effect.quantityConditions
+                  values: quantityRequirements(effect)
                     .filter((condition) => condition.quantity === 'attackerHpPermille')
                     .map((condition) => condition.value),
                 },
@@ -185,7 +197,7 @@ describe('production canonical execution semantics', () => {
     expect(new Set(thresholdSeries.map((effect) => effect.interaction?.key)).size).toBe(1);
     expect(
       thresholdSeries.flatMap((effect) =>
-        effect.quantityConditions
+        quantityRequirements(effect)
           .filter((condition) => condition.quantity === 'attackerHpPermille')
           .map((condition) => condition.value),
       ),
@@ -267,7 +279,7 @@ describe('production canonical execution semantics', () => {
     );
     expect(variantOperations).toHaveLength(26);
     expect(createHash('sha256').update(JSON.stringify(variantOperations)).digest('hex')).toBe(
-      '5aced1c50587b30e913e2df00e21122465a6de6b70a18138012f1544ac5c2f8f',
+      'fbdd7e09b315e7f3f454efb46e1d2a4d6c5d811bd2c33ba17c9aea1a54434340',
     );
     expect(
       variantOperations.reduce<Record<string, number>>((inventory, operation) => {
@@ -318,7 +330,7 @@ describe('production canonical execution semantics', () => {
     );
     const scoped = allEffects(master)
       .flatMap((effect) => effect.execution)
-      .filter((operation) => 'contributionScope' in operation);
+      .filter((operation) => 'route' in operation && operation.kind !== 'unresolved');
     const terminal = scoped.filter((operation) =>
       ['damageModifier', 'modifierRateChange', 'ignoreDefense', 'ignoreDamageCut'].includes(
         operation.kind,
@@ -326,11 +338,12 @@ describe('production canonical execution semantics', () => {
     );
     const counts = (operations: typeof scoped) =>
       operations.reduce<Record<string, number>>((result, operation) => {
-        result[operation.contributionScope] = (result[operation.contributionScope] ?? 0) + 1;
+        result[operation.route.contributionScope] =
+          (result[operation.route.contributionScope] ?? 0) + 1;
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      personal: 2_631,
+      personal: 2_663,
       partyWide: 928,
       partyOther: 51,
       enemyApplied: 1_798,
@@ -340,6 +353,46 @@ describe('production canonical execution semantics', () => {
       partyWide: 920,
       partyOther: 46,
       enemyApplied: 367,
+    });
+  });
+
+  it('classifies every production NP gauge occurrence without a raw runtime fallback', async () => {
+    const master = masterSnapshotSchema.parse(
+      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
+    );
+    const transitions = allEffects(master).flatMap(({ resourceTransition }) =>
+      resourceTransition ? [resourceTransition] : [],
+    );
+    const counts = transitions.reduce<Record<string, number>>((result, transition) => {
+      const key =
+        transition.kind === 'fixed'
+          ? `fixed:${transition.direction}`
+          : `unsupported:${transition.family}`;
+      result[key] = (result[key] ?? 0) + 1;
+      return result;
+    }, {});
+    expect(counts).toEqual({
+      'fixed:gain': 650,
+      'fixed:loss': 79,
+      'unsupported:currentGaugeMultiplier': 1,
+      'unsupported:matchingTargetCount': 6,
+      'unsupported:matchingBuffCount': 4,
+      'unsupported:dependentTargetResult': 3,
+    });
+    expect(transitions).toHaveLength(743);
+    expect(
+      master.servants
+        .flatMap(({ skills }) => skills)
+        .filter(({ resourceRequirement }) => resourceRequirement),
+    ).toHaveLength(7);
+    expect(master.npResourceSemantics).toEqual({
+      unit: 'basisPoints',
+      capacityByNpLevel: [10_000, 20_000, 20_000, 20_000, 30_000],
+      noblePhantasmUse: {
+        requirement: 10_000,
+        consumption: 'all',
+        baseOvercharge: { gaugePerStage: 10_000, minimumStage: 1, maximumBaseStage: 3 },
+      },
     });
   });
 
@@ -477,20 +530,23 @@ describe('production canonical execution semantics', () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
-    const counts = allEffects(master).reduce<Record<string, number>>((result, effect) => {
-      const key = [
-        effect.traitReadPolicy.stateSources,
-        effect.traitReadPolicy.ignoredStateTraits,
-        effect.traitReadPolicy.unremovableStateTraits,
-      ].join(':');
-      result[key] = (result[key] ?? 0) + 1;
-      return result;
-    }, {});
+    const counts = allEffects(master)
+      .flatMap((effect) => requirementLeaves(effect.requirement.expression))
+      .filter((requirement) => requirement.kind === 'trait')
+      .reduce<Record<string, number>>((result, requirement) => {
+        const key = [
+          requirement.provenance.stateSources,
+          requirement.provenance.ignoredStateTraits,
+          requirement.provenance.unremovableStateTraits,
+        ].join(':');
+        result[key] = (result[key] ?? 0) + 1;
+        return result;
+      }, {});
     expect(counts).toEqual({
-      'activeOnly:exclude:include': 13_859,
-      'activeAndPassive:exclude:include': 6,
-      'activeOnly:include:include': 7,
-      'activeOnly:exclude:exclude': 3,
+      'activeOnly:exclude:include': 2_635,
+      'activeAndPassive:exclude:include': 7,
+      'activeOnly:include:include': 6,
+      'activeOnly:exclude:exclude': 1,
     });
   });
 
@@ -551,7 +607,15 @@ describe('production canonical execution semantics', () => {
           defaultValue: 1,
         },
       ],
-      inputQuantityConditions: [{ comparison: 'atMost', value: 1 }],
+      requirement: {
+        recipient: 'sourceSelf',
+        expression: {
+          kind: 'inputQuantity',
+          inputKey: 'field:enemyCount',
+          comparison: 'atMost',
+          value: 1,
+        },
+      },
     });
   });
 

@@ -1,11 +1,11 @@
-import type { TraitCondition, TraitReadPolicy } from '@fgo-lab/master-data';
+import type { CanonicalTraitProvenance } from '@fgo-lab/master-data';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
 import { traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
 
-const DEFAULT_TRAIT_READ_POLICY: TraitReadPolicy = {
+const DEFAULT_TRAIT_PROVENANCE: CanonicalTraitProvenance = {
   stateSources: 'activeOnly',
   ignoredStateTraits: 'exclude',
   unremovableStateTraits: 'include',
@@ -24,90 +24,13 @@ export function conditionRequiresQuantity(
   return false;
 }
 
-function requiresProvenanceDecision(readPolicy: TraitReadPolicy | undefined): boolean {
+function requiresProvenanceDecision(provenance: CanonicalTraitProvenance | undefined): boolean {
   return (
-    readPolicy !== undefined &&
-    (readPolicy.stateSources !== DEFAULT_TRAIT_READ_POLICY.stateSources ||
-      readPolicy.ignoredStateTraits !== DEFAULT_TRAIT_READ_POLICY.ignoredStateTraits ||
-      readPolicy.unremovableStateTraits !== DEFAULT_TRAIT_READ_POLICY.unremovableStateTraits)
+    provenance !== undefined &&
+    (provenance.stateSources !== DEFAULT_TRAIT_PROVENANCE.stateSources ||
+      provenance.ignoredStateTraits !== DEFAULT_TRAIT_PROVENANCE.ignoredStateTraits ||
+      provenance.unremovableStateTraits !== DEFAULT_TRAIT_PROVENANCE.unremovableStateTraits)
   );
-}
-
-export function normalizeTraitCondition(
-  condition: TraitCondition,
-  scope: TraitScope,
-  readPolicy: TraitReadPolicy = DEFAULT_TRAIT_READ_POLICY,
-): ConditionExpression {
-  if (condition.traits.length === 0) return { kind: 'always' };
-  const targetPredicates = condition.traits.filter(
-    (trait): trait is Extract<(typeof condition.traits)[number], { predicate: unknown }> =>
-      'predicate' in trait,
-  );
-  if (targetPredicates.length > 0 && scope !== 'target' && scope !== 'attacker')
-    throw new TypeError(`target_predicate_scope:${scope}`);
-  const actorScope = scope === 'target' ? 'target' : 'attacker';
-  const traits = condition.traits.flatMap((trait) =>
-    'predicate' in trait
-      ? []
-      : [{ trait: trait.name, present: !trait.negative, layer: trait.layer }],
-  );
-  const onlyTrait = traits.length === 1 ? traits[0] : undefined;
-  if (
-    onlyTrait &&
-    (scope === 'attacker' || scope === 'attackerState') &&
-    ['cardNP', 'faceCard', 'cardExtra'].includes(onlyTrait.trait)
-  ) {
-    const actual = onlyTrait.trait === 'cardNP';
-    return actual === onlyTrait.present
-      ? { kind: 'always' }
-      : { kind: 'not', expression: { kind: 'always' } };
-  }
-  const expressions = [
-    ...targetPredicates.map<ConditionExpression>((item) => ({
-      kind: 'targetPredicate',
-      scope: actorScope,
-      predicate: item.predicate,
-      present: !item.negative,
-    })),
-    ...traits.map<ConditionExpression>((trait) => {
-      const fixedCardScope =
-        scope === 'attacker' || scope === 'attackerState'
-          ? ({ cardNP: true, faceCard: false, cardExtra: false } as const)[
-              trait.trait as 'cardNP' | 'faceCard' | 'cardExtra'
-            ]
-          : undefined;
-      if (fixedCardScope !== undefined) {
-        const matches = fixedCardScope === trait.present;
-        return matches ? { kind: 'always' } : { kind: 'not', expression: { kind: 'always' } };
-      }
-      const card =
-        scope === 'attacker' || scope === 'attackerState'
-          ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[
-              trait.trait as 'cardArts' | 'cardBuster' | 'cardQuick'
-            ]
-          : undefined;
-      if (card)
-        return trait.present
-          ? { kind: 'card', card }
-          : { kind: 'not', expression: { kind: 'card', card } };
-      const traitScope =
-        trait.layer === 'state'
-          ? scope === 'target' || scope === 'targetState'
-            ? 'targetState'
-            : scope === 'attacker' || scope === 'attackerState'
-              ? 'attackerState'
-              : scope
-          : scope;
-      return {
-        kind: 'trait',
-        scope: traitScope,
-        trait: trait.trait,
-        present: trait.present,
-        readPolicy,
-      };
-    }),
-  ];
-  return condition.operator === 'all' ? { kind: 'all', expressions } : { kind: 'any', expressions };
 }
 
 export function combineConditions(expressions: ConditionExpression[]): ConditionExpression {
@@ -120,6 +43,7 @@ export function combineConditions(expressions: ConditionExpression[]): Condition
 }
 
 export function containsUnsupportedCondition(condition: ConditionExpression): boolean {
+  if (condition.kind === 'unsupported') return true;
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some(containsUnsupportedCondition);
   return condition.kind === 'not' && containsUnsupportedCondition(condition.expression);
@@ -133,7 +57,9 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some(requiresUserAssumption);
   if (condition.kind === 'not') return requiresUserAssumption(condition.expression);
-  return !['always', 'card', 'noblePhantasmVariant', 'inputQuantity'].includes(condition.kind);
+  return !['always', 'unsupported', 'card', 'noblePhantasmVariant', 'inputQuantity'].includes(
+    condition.kind,
+  );
 }
 
 export function evaluateCondition(
@@ -159,11 +85,13 @@ export function evaluateCondition(
   switch (condition.kind) {
     case 'always':
       return true;
+    case 'unsupported':
+      return null;
     case 'trait': {
       // Scenario trait facts intentionally do not claim buff provenance. Exceptional Atlas
       // read policies therefore require the effect-local decision instead of being inferred
       // from a combined trait set.
-      if (requiresProvenanceDecision(condition.readPolicy)) return null;
+      if (requiresProvenanceDecision(condition.provenance)) return null;
       const actual = traitValue(condition.scope, condition.trait);
       return actual === undefined ? null : actual === condition.present;
     }
