@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.4"
+document_version: "1.4.5"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -40,8 +40,8 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-01 | Compact runnerとagent command契約 | done | TSK-00 | test strategy T1／execution efficiency |
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
-| TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | ready | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-03 | 共有production audit foundation | in_progress | TSK-02.1 | test strategy T3／ranking production audit |
+| TSK-04 | Ranking canonical IR cutover | blocked | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
@@ -340,6 +340,8 @@ Handoff:
 - Review verification: focused formatter 3／3、runner 15／15、unit 55 files／285 tests、production 25 files／117 tests、TSK-00 auditor、master validationが成功。最終`pnpm quality`はunit artifact `.test-results/2026-08-30T11-17-17-318Z-275-31a8c1`、上記production artifact、build、E2E 64 passed／32 skipped（9.9分）まで成功し、damage／inventory digest差分0。
 - Review commits: `273b1a3` (reopen)、`10c5af3` (contract enforcement)、本review completion commit。
 - Next command: `git status --short && git rev-parse HEAD`でTSK-04のbaseline identityを固定し、`RK-AUDIT-001`のfull matrixはTSK-08まで未充足として維持したままcanonical IR cutoverを開始する。
+- Second review baseline: `b5ec5de`、clean worktree。必須counter名の存在確認だけでは値のratchetにならず、producerのread／parse／compile固定値も実測ではないためTSK-03を再オープンする。canonical lifecycle実測とcandidate／damage request baselineのblocking比較以外は変更対象外。
+- Second review next command: production audit testのread／parse／compile呼び出しを計測wrapperへ収束し、runner contractを境界ごとのexact baselineへ変更する。
 
 ### TSK-04: Ranking canonical IR cutover
 
