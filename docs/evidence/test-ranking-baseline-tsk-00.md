@@ -1,7 +1,7 @@
 ---
 title: "TSK-00 test and ranking baseline"
 document_version: "1.4.0"
-status: "In Progress"
+status: "Complete"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
 baseline_commit: "a49591996cd0951cc82109c252d96e2fd3991fd9"
@@ -196,4 +196,4 @@ model callはsession transcriptのmodel response event数を数え、input／cac
 
 Canonical artifactは本report、read-only auditor `packages/data-pipeline/scripts/audit-tsk00-baseline.mjs`、`packages/calculation-application/src/productionExecutionParity.test.ts`、`productionMasterAudit.test.ts`、`productionMasterInventory.test.ts`、`rankingConditionInventory.test.ts`、`rankingProduction.test.ts`、`executionBaselineInventory.test.ts`とそのsnapshot、`apps/web/public/master/manifest.json`、`e2e/*-baseline.spec.ts-snapshots/`である。raw `/tmp/tsk00-*` logは測定中間物であり、正本ではない。
 
-TSK-00ではproduct code、test expectation、snapshot、masterを変更していない。開始commit以後の実装差分はdata pipeline責務内のread-only auditorだけで、残りはTask状態、本report、evidence index、handoffである。要件承認後のTSK-01はこのinventory、digest、成功10行、full-suite timeout変動、failure artifact到達性、成功run 82.01秒のVitest中央値を変更前baselineとして開始する。
+TSK-00ではproduct code、test expectation、snapshot、masterを変更していない。開始commit以後の実装差分はdata pipeline責務内のread-only auditorだけで、残りはTask状態、本report、evidence index、handoffである。TSK-01はこのinventory、digest、成功10行、full-suite timeout変動、failure artifact到達性、成功run 82.01秒のVitest中央値を変更前baselineとして開始する。
