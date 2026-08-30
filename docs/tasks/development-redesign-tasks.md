@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.9"
+document_version: "1.5.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -353,7 +353,7 @@ Handoff:
 
 Depends on: TSK-03
 
-- [ ] AttackProfile identityをcanonical化する。
+- [x] AttackProfile identityをcanonical化する。
 - [ ] player choiceとstochastic outcomeをtyped semanticsへ分離する。
 - [ ] condition requirement、provenance、target、recipient、contribution scopeをcanonical化する。
 - [ ] NP capacity、resource requirement、gain／loss／all-consume、base OCをcanonical化する。
@@ -383,7 +383,11 @@ Contract closure matrix:
 Handoff:
 
 - Start baseline: `907a2299900c40d9dce7d1e6f53cbb5f644ce9dc`、`main`、clean worktree。利用者成果はAttackProfileが到達planやrepresentative formの選択に依存せず、servant lineage、canonical ActorFormProfile、attack Noble Phantasm variantの同一identityへ収束すること。semantic ownerはdata-pipelineのraw vocabulary解釈とcanonical IR、calculation-applicationのscenario command／execution。target scope／cardはcanonical属性だが単独identityにせず、曖昧・矛盾・部分適用は数値へfallbackしない。production inventory／digest、calculator／ranking parity、damage結果、TSK-03 counter ratchetを不変baselineとし、`RK-AUDIT-001`のfull matrixはTSK-08まで未充足として維持する。
-- Next command: `packages/calculation-application/src/attackProfile.ts`のrepresentative form由来identityをsemantic fingerprint由来のtyped canonical identityへ置換し、shared production auditへAttackProfile inventoryを追加する。
+- Identity cutover: ActorFormProfile identityはrepresentative formを廃止し、lineage、form-qualified skill slot／variant、passive variant、intrinsic trait、base NP variant、reachable attack NP variantの構造化semanticsへ置換した。AttackProfile identityはlineage、canonical ActorFormProfile、attack NP variant IDだけを所有し、form-qualified execution ref、card、scope、labelは属性へ分離した。profile対応0件／複数件、lineage矛盾、variant矛盾、到達不能variantは例外終了する。
+- Inventory／digest: AttackProfile 433件をshared production auditの独立canonical recordへ追加し、ranking entryとのidentity不一致と重複をblocking errorにした。application digestは`ae10885eca8be39e17419770e7b76b082e7577085b783f108ea1476489034456`。servants 422、plans 3,559、ranking rows 433、calculated 422、invalid／unsupported／inputRequired 0、runtime counter 1／1／1、6,508／4,009、3,744／1,644はbaseline一致。20 policy digestとstate-trait digestはentry identity変更分だけを更新し、代表damage assertionは不変。
+- Identity verification: focused 3 files／15 tests、unit 55 files／289 tests、production 25 files／117 tests、typecheckが成功。production artifact `.test-results/2026-08-30T12-42-52-966Z-15-3675b6`。TSK-00 stable artifactはtest 406件、test-name digest `4300f95dd41efe236abcb3d4ee64039222eaf7cb2989da51dce149f9984e9ddd`、artifact digest `16fdc5a4183c84c12208cad320e9121e38aa753299b754ab3914c7a96497ea3f`へ更新した。
+- Commits: `4609add` (start)、本identity cutover commit。
+- Next command: player choiceとstochastic outcomeのraw occurrence／現行runtime branchをinventory化し、一つのexhaustive typed semanticsへcutoverする。
 
 ### TSK-05: Transactional preparation execution
 

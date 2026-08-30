@@ -14,6 +14,7 @@ import {
 import { calculateRanking, DEFAULT_RANKING_CONDITIONS } from './ranking';
 import { createDefaultResolvedScenario, calculateScenario } from './scenario';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
+import { attackProfileKey } from './attackProfile';
 
 export type ProductionAuditOutcome =
   | { status: 'calculated'; rows: CanonicalAuditValue }
@@ -39,6 +40,7 @@ export interface CalculationApplicationProductionAudit {
   digest: string;
   inventory: {
     attackServants: number;
+    attackProfiles: number;
     preparationPlans: number;
     calculatorScenarios: number;
     rankingRows: number;
@@ -159,6 +161,26 @@ export function compileCalculationApplicationProductionAudit(
       identity: `ranking:${failure.servantId}`,
       reason: `${failure.status}:${failure.reason}`,
     });
+  const rankingEntryIds = ranking.rows.map(({ entryId }) => entryId);
+  if (new Set(rankingEntryIds).size !== rankingEntryIds.length)
+    throw new TypeError('production_audit_duplicate_attack_profile_identity');
+  const attackProfileRecords: CanonicalAuditRecord[] = Object.values(ranking.details).map(
+    (detail) => {
+      const canonicalIdentity = attackProfileKey(detail.attackProfile);
+      if (detail.entryId !== canonicalIdentity)
+        throw new TypeError(`production_audit_attack_profile_identity_mismatch:${detail.entryId}`);
+      return {
+        identity: `attack-profile:${canonicalIdentity}`,
+        value: {
+          attributes: {
+            cardType: detail.attackProfile.cardType,
+            targetScope: detail.attackProfile.targetScope,
+          },
+          identity: jsonValue(detail.attackProfile.id),
+        },
+      };
+    },
+  );
   const rankingRecords: CanonicalAuditRecord[] = Object.values(ranking.details).map((detail) => ({
     identity: `ranking:${detail.entryId}`,
     value: {
@@ -175,6 +197,7 @@ export function compileCalculationApplicationProductionAudit(
   }));
   const inventory = {
     attackServants,
+    attackProfiles: attackProfileRecords.length,
     preparationPlans: candidateRecords.length,
     calculatorScenarios: calculatorRecords.length,
     rankingRows: ranking.rows.length,
@@ -188,6 +211,7 @@ export function compileCalculationApplicationProductionAudit(
     { identity: 'inventory', value: inventory },
     ...candidateRecords,
     ...calculatorRecords,
+    ...attackProfileRecords,
     ...rankingRecords,
   ];
   return {

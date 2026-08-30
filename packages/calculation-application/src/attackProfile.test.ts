@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type ActorFormId, type ServantMaster } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmState } from '@fgo-lab/battle-execution';
-import { createActorFormProfiles } from './attackProfile';
+import {
+  actorFormProfileIdKey,
+  attackProfileForTerminalState,
+  attackProfileKey,
+  createActorFormProfiles,
+} from './attackProfile';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 const master = masterSnapshotSchema.parse(fixture);
@@ -52,6 +57,34 @@ describe('ActorFormProfile canonical equivalence', () => {
     expect(profiles.find(({ formIds }) => formIds.length === 2)?.formIds).toEqual(
       expect.arrayContaining([original.currentFormId, duplicate.currentFormId]),
     );
+  });
+
+  it('keeps canonical identity independent from the representative form ordering', () => {
+    const source = master.servants[0]!;
+    const original = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+    const originalProfile = createActorFormProfiles(source, [original]).find(({ formIds }) =>
+      formIds.some(
+        ({ actorId, limitCount }) =>
+          actorId === original.currentFormId.actorId &&
+          limitCount === original.currentFormId.limitCount,
+      ),
+    )!;
+    const { servant, duplicate } = duplicatedFormFixture();
+    const reordered = {
+      ...servant,
+      actorFormGraph: {
+        ...servant.actorFormGraph,
+        forms: [...servant.actorFormGraph.forms].reverse(),
+      },
+    };
+    const mergedProfile = createActorFormProfiles(reordered, [original, duplicate]).find(
+      ({ formIds }) => formIds.length === 2,
+    )!;
+
+    expect(actorFormProfileIdKey(mergedProfile.id)).toBe(actorFormProfileIdKey(originalProfile.id));
+    expect(
+      attackProfileKey(attackProfileForTerminalState(reordered, [mergedProfile], original)),
+    ).toBe(attackProfileKey(attackProfileForTerminalState(source, [originalProfile], original)));
   });
 
   it('does not merge forms with a different skill set', () => {
@@ -115,5 +148,41 @@ describe('ActorFormProfile canonical equivalence', () => {
     };
     const profiles = createActorFormProfiles(changed, [original, duplicate]);
     expect(profiles).toHaveLength(changed.actorFormGraph.forms.length);
+  });
+
+  it('fails closed when the terminal form maps to ambiguous profiles', () => {
+    const source = master.servants[0]!;
+    const terminal = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+    const profile = createActorFormProfiles(source, [terminal]).find(({ formIds }) =>
+      formIds.some(
+        ({ actorId, limitCount }) =>
+          actorId === terminal.currentFormId.actorId &&
+          limitCount === terminal.currentFormId.limitCount,
+      ),
+    )!;
+
+    expect(() => attackProfileForTerminalState(source, [profile, profile], terminal)).toThrow(
+      `terminal_actor_form_profile_ambiguous`,
+    );
+  });
+
+  it('fails closed when an AttackProfile carries contradictory identity fields', () => {
+    const source = master.servants[0]!;
+    const terminal = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+    const profiles = createActorFormProfiles(source, [terminal]);
+    const attackProfile = attackProfileForTerminalState(source, profiles, terminal);
+
+    expect(() =>
+      attackProfileKey({
+        ...attackProfile,
+        id: { ...attackProfile.id, servantLineageId: 'contradictory-lineage' },
+      }),
+    ).toThrow('attack_profile_lineage_mismatch');
+    expect(() =>
+      attackProfileKey({
+        ...attackProfile,
+        id: { ...attackProfile.id, attackNoblePhantasmVariantId: 'contradictory-variant' },
+      }),
+    ).toThrow('attack_profile_variant_mismatch');
   });
 });

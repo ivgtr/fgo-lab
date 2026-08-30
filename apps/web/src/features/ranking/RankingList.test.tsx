@@ -23,10 +23,19 @@ const row: RankingPresentedRow = {
     noblePhantasmId: 'fixture-np',
   },
   attackProfile: {
-    servantLineageId: master.servants[0]!.id,
-    terminalFormProfileId: {
+    id: {
       servantLineageId: master.servants[0]!.id,
-      representativeFormId: { actorId: master.servants[0]!.id, limitCount: 0 },
+      terminalActorFormProfileId: {
+        servantLineageId: master.servants[0]!.id,
+        semantics: {
+          skillSlots: [],
+          passiveVariantIds: [],
+          intrinsicTraits: [],
+          baseNoblePhantasmVariantId: 'fixture-np',
+          reachableAttackNoblePhantasmVariantIds: ['fixture-np'],
+        },
+      },
+      attackNoblePhantasmVariantId: 'fixture-np',
     },
     noblePhantasmVariant: {
       actorFormId: { actorId: master.servants[0]!.id, limitCount: 0 },

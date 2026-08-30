@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { getNoblePhantasmVariants, masterSnapshotSchema } from '@fgo-lab/master-data';
+import { actorFormKey, getNoblePhantasmVariants, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { activationFactKey, APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   analyzeActivationCondition,
@@ -15,6 +15,7 @@ import { calculateStandardRankingMatrix } from './rankingMatrix';
 import { fieldTraitsRequiredByCondition } from './conditionProvenance';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
 import {
+  actorFormProfileIdKey,
   attackProfileForTerminalState,
   attackProfileKey,
   createActorFormProfiles,
@@ -31,32 +32,32 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    'e603a5720446122604882448fa0b0394e9c644ccaf79334a7e8e06b3608c78cf',
-    '711b6fc65a8dd0ce5eb2aa69e1ed0406f9b20a3cfe0751dea404fb6f15938923',
-    'fa890b04d09c098e98c285b30ce3412069fd885a4b04a9da4f0b90a52c8cf324',
-    'aee4daa4fb1662048df5118d0e9acea5970f1cbc0a7a0860c52816814b63c81c',
-    'f24422789540a519ad534ffd4a2f5407fa1fc384a04be71775fe8b3a99247cbf',
+    '1f7bde69b026717ecab75c5f33ad9041d1ce6031706c7ab3b7004e73c8b5928f',
+    '8127c655dd43dcb4488f493ad575ef47308abf927be213422ea7bc90afd24014',
+    'ebcf9caa481e15e0bacb19d285417828ea021fe787e3c39b023cfa1b9d69eec6',
+    'cbfd22ece1839b84807b8ebfd45fa49734f62dcdeb82481c507cc478f8ab25ef',
+    'c9040f08ece7a5cc77bde5cb0fc066f1b592e0122303856ce42132f07343cc5e',
   ],
   'neutral:active': [
-    '00e85977f9e33cf211b0c49c5cc448b9264fd7b7fc91c67d8f1789b1239fb5b9',
-    '7c312b9bee3a6c0777aa718d20c52b88aebc32b1ade52546fb972f32efc7ceb1',
-    '17a854faba65031bd8f7c2c4fd952c951b37128b056ca5c8805bad3a4402d2fe',
-    '68b38df9e234208bece4779ecf9b6a506adc84e325dc82444e79728bc683b3e4',
-    '544489fd3cb737e6315d2e21e17f1216a8e661e11c8ba7139c68bc1f346e9ce6',
+    'd87adcb12c62db081d4eb79840206119ea068a7cac5cb7de73fcf2cd3fe25f2d',
+    'b04dc5425e3646876530f996bb7002cd1e454b6ddc6d9b6f90296617ba5aafde',
+    '0b1e3b5e24851ddee058508ea41a1b6c90d75f2677eef1e9611c23794e5592fd',
+    'cc5c5733e762acf70db90959879cb92a5d1fa764d252006016a00344d8a5953d',
+    '59bb302f76f8bb2de690887f241acfe85e1090b73cc5ee2baeb03609f98df6dd',
   ],
   'favorable:inactive': [
-    '8b7e31841179f8522026629ddbe22fb808f6e3c773acf6f641288a65579520c2',
-    '79f871f835a4be66496ad9af4ef858fb741432e42bc5993842f82a1dc1f69d1b',
-    '42ab73db51a247331ba8479de49412cbdac73f2696bdea1dafb0d1218a1e858f',
-    '92ab0ce560bde4d0cf029915badc229557350457ba6ccf64869746049343ec63',
-    '6dc590e257c5508e5cfd2f474d58ab9349705d4caaa686ad1db8138d9342d1ce',
+    '5ac0420fce16b85a2c2837d25384b4d17852c9af2e7ca3ab330027d282127dd7',
+    '3ef79e442cce3002a2747af148bc13cb9345b601248fbd7cce1730afb1a7bdf1',
+    '5186332ce86f67182d780d3ad59d2e2ec4df1356cb8c3bd29c85123a88db7154',
+    'c580e64a7a699db7d194a2e96bf25762ced0593961cb386fdb33d93872446fd8',
+    'e0ace3e0c8d43764662e918efb6a0633394e06ea6b458618bbfb231263d41784',
   ],
   'favorable:active': [
-    '744a518bb3d808b591af3beddd117558a9247b8fa9c57b3bac03ad5cc40b4d58',
-    '792277adb9817d8e8e8a80ddeb5aeb81d780d1f1fe1b1710e8039fb04db1f268',
-    'b46acf45940ce1f939cf1e21a923773e26a02bc35d744f140e07613ec587cf9f',
-    'caba6b9c475f7a1a6601bd426cd2d8096a07faab4efc9fd9d28f20e9bfefbfae',
-    '8dc58b3b15c17649c6bf463523dc92b2ef010382baf23252d341d0a2d657412b',
+    'd709d9b96cfcbad339b52ca8d8dd6bb05a1e9f0769921cd524c2807fb84e87eb',
+    '32d323eceec69c357ccaf9639f791811dd2d6c38930a3dbfbba4c1ee96b65c50',
+    '0aa4303efc1eb4c01ee6ef8d815f17086c2fa1b7363532edd96410a2ad9faaea',
+    '0b38508c73b30960686850a5395044d1ad2f564dcf004238c8c326738a50f55d',
+    '5f50a7cb4a4724bab10b83137b6e71066249134e722bde417a40b3e62d350c7e',
   ],
 } as const;
 
@@ -235,7 +236,7 @@ describe('production canonical ranking', () => {
     const expectedServantScopeKeys = [
       ...new Set(
         expectedAttackProfiles.map(
-          ({ servantLineageId, targetScope }) => `${servantLineageId}:${targetScope}`,
+          ({ id, targetScope }) => `${id.servantLineageId}:${targetScope}`,
         ),
       ),
     ].sort();
@@ -585,7 +586,7 @@ describe('production canonical ranking', () => {
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"e603a5720446122604882448fa0b0394e9c644ccaf79334a7e8e06b3608c78cf"`,
+      `"1f7bde69b026717ecab75c5f33ad9041d1ce6031706c7ab3b7004e73c8b5928f"`,
     );
     expect(
       [...ranking.rows]
@@ -709,11 +710,11 @@ describe('production canonical ranking', () => {
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
     const digests = [
-      'c7aa7d74d07ce773f4dfd2880954d55c8eb6960be7db2fc527f4bad7466e62b2',
-      '0c82e52f1fdaecfcb8ac6198dc3cce48b7145d2907d998a16e9f92253d51f415',
-      '8381b6bf4f81b48d2a4d443e182e673c44cb0a748ab922c5e4b404bde7afada4',
-      'd279d1d0b2e54e9eece7ef2ad35097392daac5a2477fea070918f2017c03e3c9',
-      'b964bad5aaf72846b8f882672ca7e97772ff5fef5d42288883f863a58865c4c5',
+      'a67a57ab24a77cb96122b385a42dda35f9231aa64ce8dbae28d9b01a55845d7e',
+      'f2d48a32e2e9b68681e64a679500766d1528a1e85d4ab890012ee64baf6bb401',
+      '70f832bbbaac53b967ca918471a66c139a047cc47c95d4da30788a88f8bf3768',
+      'f9bf8e7e9ecada9542c8f0b3681012840b5a1324cca065c76cb5d8c06f750e4f',
+      '29026c81b149a043e07bf5e41357538fc475080fa8a715875cc26123c8cb2ac4',
     ];
     const actualDigests: string[] = [];
     for (const [index, ranking] of matrix.entries()) {
@@ -810,19 +811,29 @@ describe('production canonical ranking', () => {
             noblePhantasmId: string,
             actorId: string,
             limitCount: number,
-          ) =>
-            matrix.map(
+          ) => {
+            const servant = master.servants.find(({ id }) => id === servantId)!;
+            const candidates = planPreNoblePhantasmCandidates(servant).candidates;
+            const canonicalProfile = createActorFormProfiles(
+              servant,
+              candidates.map(({ terminalState }) => terminalState),
+            ).find(({ formIds }) =>
+              formIds.some(
+                (formId) => actorFormKey(formId) === actorFormKey({ actorId, limitCount }),
+              ),
+            )!;
+            const canonicalProfileKey = actorFormProfileIdKey(canonicalProfile.id);
+            return matrix.map(
               ({ rows }) =>
                 rows.find(
                   (row) =>
                     row.servantId === servantId &&
                     row.noblePhantasmVariant.noblePhantasmId === noblePhantasmId &&
-                    row.attackProfile.terminalFormProfileId.representativeFormId.actorId ===
-                      actorId &&
-                    row.attackProfile.terminalFormProfileId.representativeFormId.limitCount ===
-                      limitCount,
+                    actorFormProfileIdKey(row.attackProfile.id.terminalActorFormProfileId) ===
+                      canonicalProfileKey,
                 )?.average,
             );
+          };
           expect(averages('2301100', '2301101')).toEqual([
             47_794.55, 63_726.225, 71_692.08, 75_675.005, 79_657.925,
           ]);
@@ -919,7 +930,7 @@ describe('production canonical ranking', () => {
       }
     expect(actualDigests).toEqual(policyDigests);
     expect(createHash('sha256').update(JSON.stringify(stateTraitMatrices)).digest('hex')).toBe(
-      '6b1fe2e60e812f4b009c3909cfc1f0adb5f8c25e6f29c5a5998a928909a157b2',
+      '7b8b86332c0a54e7abe72f7b838fa1614dadf20dfd703495aa355bff4e845da2',
     );
   }, 600_000);
 

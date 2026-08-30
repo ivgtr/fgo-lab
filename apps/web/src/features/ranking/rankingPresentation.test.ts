@@ -18,10 +18,19 @@ const rows: RankingRowSummary[] = [
       noblePhantasmId: '101',
     },
     attackProfile: {
-      servantLineageId: '1',
-      terminalFormProfileId: {
+      id: {
         servantLineageId: '1',
-        representativeFormId: { actorId: '1', limitCount: 0 },
+        terminalActorFormProfileId: {
+          servantLineageId: '1',
+          semantics: {
+            skillSlots: [],
+            passiveVariantIds: [],
+            intrinsicTraits: [],
+            baseNoblePhantasmVariantId: '101',
+            reachableAttackNoblePhantasmVariantIds: ['101'],
+          },
+        },
+        attackNoblePhantasmVariantId: '101',
       },
       noblePhantasmVariant: {
         actorFormId: { actorId: '1', limitCount: 0 },
@@ -58,10 +67,19 @@ const rows: RankingRowSummary[] = [
       noblePhantasmId: '201',
     },
     attackProfile: {
-      servantLineageId: '2',
-      terminalFormProfileId: {
+      id: {
         servantLineageId: '2',
-        representativeFormId: { actorId: '2', limitCount: 0 },
+        terminalActorFormProfileId: {
+          servantLineageId: '2',
+          semantics: {
+            skillSlots: [],
+            passiveVariantIds: [],
+            intrinsicTraits: [],
+            baseNoblePhantasmVariantId: '201',
+            reachableAttackNoblePhantasmVariantIds: ['201'],
+          },
+        },
+        attackNoblePhantasmVariantId: '201',
       },
       noblePhantasmVariant: {
         actorFormId: { actorId: '2', limitCount: 0 },
