@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.4.8"
+document_version: "1.4.9"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-30"
@@ -41,7 +41,7 @@ Task開始時に状態とbaseline identityを更新し、完了時にcommit、ar
 | TSK-02 | Suite分類とcanonical quality gate | done | TSK-01 | test strategy T2 |
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
 | TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
-| TSK-04 | Ranking canonical IR cutover | ready | TSK-03 | ranking layer ownership／移行方針 |
+| TSK-04 | Ranking canonical IR cutover | in_progress | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | blocked | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
@@ -380,7 +380,10 @@ Contract closure matrix:
 
 `RK-AUDIT-001`は四policy、NP1〜5、calculator／ranking parity、invalid／unsupportedを不可分に閉じるため、policy実装前のTSK-04では適用せずTSK-08へ延期する。TSK-04のcanonical IR inventory／digestは`RK-IR-001`で検証する。
 
-Handoff: 未記録
+Handoff:
+
+- Start baseline: `907a2299900c40d9dce7d1e6f53cbb5f644ce9dc`、`main`、clean worktree。利用者成果はAttackProfileが到達planやrepresentative formの選択に依存せず、servant lineage、canonical ActorFormProfile、attack Noble Phantasm variantの同一identityへ収束すること。semantic ownerはdata-pipelineのraw vocabulary解釈とcanonical IR、calculation-applicationのscenario command／execution。target scope／cardはcanonical属性だが単独identityにせず、曖昧・矛盾・部分適用は数値へfallbackしない。production inventory／digest、calculator／ranking parity、damage結果、TSK-03 counter ratchetを不変baselineとし、`RK-AUDIT-001`のfull matrixはTSK-08まで未充足として維持する。
+- Next command: `packages/calculation-application/src/attackProfile.ts`のrepresentative form由来identityをsemantic fingerprint由来のtyped canonical identityへ置換し、shared production auditへAttackProfile inventoryを追加する。
 
 ### TSK-05: Transactional preparation execution
 
