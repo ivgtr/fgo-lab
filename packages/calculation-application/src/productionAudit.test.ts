@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   formatCanonicalAuditMismatch,
+  measureProductionAuditLifecycle,
   type CanonicalAuditRecord,
 } from '@fgo-lab/master-data/production-audit';
 import { describe, expect, it } from 'vitest';
@@ -12,15 +13,12 @@ const root = resolve(import.meta.dirname, '../../..');
 
 describe('shared calculation-application production audit', () => {
   it('loads, parses, and compiles every current calculator and ranking identity once', async () => {
-    const readStarted = performance.now();
-    const content = await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8');
-    const readDurationMs = performance.now() - readStarted;
-    const parseStarted = performance.now();
-    const master = masterSnapshotSchema.parse(JSON.parse(content));
-    const parseDurationMs = performance.now() - parseStarted;
-    const compileStarted = performance.now();
-    const audit = compileCalculationApplicationProductionAudit(master);
-    const compileDurationMs = performance.now() - compileStarted;
+    const measured = await measureProductionAuditLifecycle({
+      read: () => readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8'),
+      parse: (content) => masterSnapshotSchema.parse(JSON.parse(content)),
+      compile: compileCalculationApplicationProductionAudit,
+    });
+    const { audit } = measured;
     const actual: CanonicalAuditRecord[] = [
       { identity: 'manifest', value: { digest: audit.digest, inventory: audit.inventory } },
     ];
@@ -50,8 +48,8 @@ describe('shared calculation-application production audit', () => {
         `${JSON.stringify(
           {
             ...audit,
-            runtimeCounters: audit.counters,
-            timings: { readDurationMs, parseDurationMs, compileDurationMs },
+            runtimeCounters: { ...measured.runtimeCounters, ...audit.counters },
+            timings: measured.timings,
           },
           null,
           2,

@@ -3,6 +3,7 @@ import {
   canonicalAuditDigest,
   firstCanonicalAuditDifference,
   formatCanonicalAuditMismatch,
+  measureProductionAuditLifecycle,
   type CanonicalAuditRecord,
 } from './productionAudit';
 
@@ -52,5 +53,30 @@ describe('canonical production audit records', () => {
     expect(() => formatCanonicalAuditMismatch(duplicates, [duplicates[1]!])).toThrow(
       'duplicate_canonical_audit_identity:records:actor:1',
     );
+  });
+
+  it('measures one actual read, parse, and compile invocation', async () => {
+    const invocations: string[] = [];
+    const measured = await measureProductionAuditLifecycle({
+      read: () => {
+        invocations.push('read');
+        return Promise.resolve('{"value":2}');
+      },
+      parse: (serialized) => {
+        invocations.push('parse');
+        return JSON.parse(serialized) as { value: number };
+      },
+      compile: ({ value }) => {
+        invocations.push('compile');
+        return value * 3;
+      },
+    });
+    expect(invocations).toEqual(['read', 'parse', 'compile']);
+    expect(measured.audit).toBe(6);
+    expect(measured.runtimeCounters).toEqual({
+      masterReadCount: 1,
+      masterParseCount: 1,
+      compileCount: 1,
+    });
   });
 });

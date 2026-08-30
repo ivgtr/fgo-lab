@@ -14,13 +14,13 @@ const check = process.argv.includes('--check');
 const expectedDigests = {
   semanticInventory: '5da30c87c74e36e1e9ca0ae7f4686df88259c8c3d6aa99cc2ec05650609d55d4',
   testFiles: '8ec36912229b62cb3f5631b68367ca1c714a057d0adb3f5437f5bfb79e1adb51',
-  testNames: 'd121a82732d43b1b9114fac183d4dbb6597b149436829f01ecde3cfafcf52a88',
+  testNames: '6f774727cb8c9e3e35c4882b6515d96738bed8dd8f60363dc5d4671f61762524',
   productionTestFiles: '621885fe435ebf4e63e02a3027a8d76738fcc67e8304ac52e1885302d4c95880',
   unitFixtureTestFiles: '4292e559a733b07f9bc5f9fa363e19854d0c8f4d676ca5570207c249ff3200e0',
   pngBaselines: '537f27408450edaa6d0bc96e134e16751f7c7f0c00e8f788525fd56f99cbcee6',
   resourceOccurrences: '20480d1c70b0537bf89e40d902f783af94814a85e349fd358f21f25f4f968e71',
   resourceInventory: 'fc183b614f6a36cc5c3a21d5933017fd2798939a61974b3a6f862af2cac68529',
-  stableArtifact: '3ebac45415ab49a739fd8cd0fb234fda7b81f484d6589b09f1c75353d403a798',
+  stableArtifact: '3c39b40a4cbd5dcbea9d2476c09026a154dee2c5f5f6e5b7c19a98fca361c053',
 };
 
 function sha256(value) {

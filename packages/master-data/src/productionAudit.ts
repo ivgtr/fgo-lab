@@ -1,4 +1,50 @@
 import { createHash } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
+
+export interface ProductionAuditLifecycleCounters {
+  masterReadCount: number;
+  masterParseCount: number;
+  compileCount: number;
+}
+
+export interface MeasuredProductionAudit<Audit> {
+  audit: Audit;
+  runtimeCounters: ProductionAuditLifecycleCounters;
+  timings: {
+    readDurationMs: number;
+    parseDurationMs: number;
+    compileDurationMs: number;
+  };
+}
+
+export async function measureProductionAuditLifecycle<Serialized, Parsed, Audit>(operations: {
+  read: () => Promise<Serialized>;
+  parse: (serialized: Serialized) => Parsed;
+  compile: (parsed: Parsed) => Audit;
+}): Promise<MeasuredProductionAudit<Audit>> {
+  const runtimeCounters: ProductionAuditLifecycleCounters = {
+    masterReadCount: 0,
+    masterParseCount: 0,
+    compileCount: 0,
+  };
+  const readStarted = performance.now();
+  runtimeCounters.masterReadCount += 1;
+  const serialized = await operations.read();
+  const readDurationMs = performance.now() - readStarted;
+  const parseStarted = performance.now();
+  runtimeCounters.masterParseCount += 1;
+  const parsed = operations.parse(serialized);
+  const parseDurationMs = performance.now() - parseStarted;
+  const compileStarted = performance.now();
+  runtimeCounters.compileCount += 1;
+  const audit = operations.compile(parsed);
+  const compileDurationMs = performance.now() - compileStarted;
+  return {
+    audit,
+    runtimeCounters,
+    timings: { readDurationMs, parseDurationMs, compileDurationMs },
+  };
+}
 
 export type CanonicalAuditScalar = boolean | number | string | null;
 export type CanonicalAuditValue =

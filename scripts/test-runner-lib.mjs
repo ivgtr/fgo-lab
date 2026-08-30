@@ -9,22 +9,22 @@ const MAX_FAILURES = 5;
 const ABNORMAL_TAIL_LINES = 100;
 
 export const PRODUCTION_RUNTIME_COUNTER_CONTRACT = {
-  'calculation-application': [
-    'masterReadCount',
-    'masterParseCount',
-    'compileCount',
-    'candidateCount',
-    'deduplicatedCandidateCount',
-    'damageRequestCount',
-    'distinctDamageRequestCount',
-  ],
-  'data-pipeline': [
-    'masterReadCount',
-    'masterParseCount',
-    'compileCount',
-    'candidateCount',
-    'damageRequestCount',
-  ],
+  'calculation-application': {
+    masterReadCount: 1,
+    masterParseCount: 1,
+    compileCount: 1,
+    candidateCount: 6_508,
+    deduplicatedCandidateCount: 4_009,
+    damageRequestCount: 3_744,
+    distinctDamageRequestCount: 1_644,
+  },
+  'data-pipeline': {
+    masterReadCount: 1,
+    masterParseCount: 1,
+    compileCount: 1,
+    candidateCount: 0,
+    damageRequestCount: 0,
+  },
 };
 
 function createRunId(now = new Date()) {
@@ -78,7 +78,7 @@ function runtimeCounterArtifacts(runDirectory) {
           !Array.isArray(artifact.runtimeCounters) &&
           Object.keys(artifact.runtimeCounters).length > 0 &&
           Object.values(artifact.runtimeCounters).every(
-            (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0,
+            (value) => Number.isSafeInteger(value) && value >= 0,
           );
         return {
           artifact: name,
@@ -106,7 +106,7 @@ function runtimeCounterContractErrors(artifacts, requiredCounters) {
   const errors = artifacts.flatMap(({ artifact, error }) =>
     error ? [`${artifact}:${error}`] : [],
   );
-  for (const [boundary, requiredNames] of Object.entries(requiredCounters)) {
+  for (const [boundary, expectedCounters] of Object.entries(requiredCounters)) {
     const matches = artifacts.filter((artifact) => artifact.boundary === boundary);
     if (matches.length !== 1) {
       errors.push(`${boundary}:expected_one_artifact:received_${matches.length}`);
@@ -114,8 +114,19 @@ function runtimeCounterContractErrors(artifacts, requiredCounters) {
     }
     const counters = matches[0].counters;
     if (!counters) continue;
-    for (const name of requiredNames)
-      if (!Object.hasOwn(counters, name)) errors.push(`${boundary}:missing_counter:${name}`);
+    for (const [name, expected] of Object.entries(expectedCounters)) {
+      if (!Object.hasOwn(counters, name)) {
+        errors.push(`${boundary}:missing_counter:${name}`);
+        continue;
+      }
+      if (counters[name] !== expected)
+        errors.push(
+          `${boundary}:counter_mismatch:${name}:expected_${expected}:received_${counters[name]}`,
+        );
+    }
+    for (const name of Object.keys(counters))
+      if (!Object.hasOwn(expectedCounters, name))
+        errors.push(`${boundary}:unexpected_counter:${name}`);
   }
   return errors;
 }

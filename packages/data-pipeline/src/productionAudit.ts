@@ -10,9 +10,6 @@ import {
 } from '@fgo-lab/master-data/production-audit';
 
 export interface DataPipelineAuditCounters {
-  masterReadCount: number;
-  masterParseCount: number;
-  compileCount: number;
   candidateCount: number;
   damageRequestCount: number;
 }
@@ -180,9 +177,6 @@ export function compileDataPipelineProductionAudit(
     inventory,
     failures,
     counters: {
-      masterReadCount: 1,
-      masterParseCount: 1,
-      compileCount: 1,
       candidateCount: 0,
       damageRequestCount: 0,
     },

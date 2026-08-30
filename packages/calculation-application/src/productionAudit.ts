@@ -24,9 +24,6 @@ export type ProductionAuditOutcome =
 type ExecutedProductionAuditOutcome = Exclude<ProductionAuditOutcome, { status: 'invalid' }>;
 
 export interface CalculationApplicationAuditCounters {
-  masterReadCount: number;
-  masterParseCount: number;
-  compileCount: number;
   candidateCount: number;
   deduplicatedCandidateCount: number;
   damageRequestCount: number;
@@ -203,9 +200,6 @@ export function compileCalculationApplicationProductionAudit(
     inventory,
     failures,
     counters: {
-      masterReadCount: 1,
-      masterParseCount: 1,
-      compileCount: 1,
       candidateCount: generatedCandidateCount,
       deduplicatedCandidateCount,
       damageRequestCount: ranking.damageCache.requestCount,
