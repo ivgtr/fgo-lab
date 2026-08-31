@@ -198,6 +198,7 @@ export function validateRepository(root) {
   const tasksPath = resolve(root, 'docs/tasks/development-redesign-tasks.md');
   const evidencePath = resolve(root, 'docs/evidence/README.md');
   const contractPaths = [
+    'docs/requirements/fgo-lab-requirements-v0.3.md',
     'docs/requirements/test-strategy-redesign.md',
     'docs/requirements/ranking-self-and-conditional-effects-requirements.md',
     'docs/requirements/development-execution-efficiency-requirements.md',

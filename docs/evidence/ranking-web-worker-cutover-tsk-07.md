@@ -1,31 +1,33 @@
 ---
 title: "TSK-07 ranking Web and worker canonical cutover"
-status: "Complete"
+status: "Active"
 updated_at: "2026-09-01"
 ---
 
 # TSK-07 ranking Web and worker canonical cutover
 
+> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains historical verification, but portable calculation identity and evidence cache ownership were outside its original matrix. Current closure is Blocking 2; see `portable-calculation-identity-flow-tsk-06-1.md`.
+
 ## Outcome and ownership
 
 The ranking screen, public URL state, worker protocol, worker cache, response ordering, and detail
-evidence now use one `RankingPolicyConditions` contract with exactly five fields:
+evidence use one `RankingPolicyConditions` contract with exactly five fields:
 `comparisonMode`, `npLevel`, `classAffinity`, `selfBuffs`, and `conditionalEffects`. The cutover is
 destructive. The old independent `specialAttack` and `field` inputs have no reader, writer, adapter,
 fallback, compatibility flag, or runtime calculation path.
 
 The application ranking policy owns scenario selection and typed
 `calculated | unavailableUnderPolicy | invalid` outcomes. Battle execution remains the only owner of
-ordered preparation and damage semantics. The worker runtime owns request fingerprinting and caches
-complete canonical calculations. Web code renders the canonical presentation model and dispatches
+ordered preparation and damage semantics. The worker runtime currently owns request fingerprinting and caches
+complete canonical calculations, which violates the proposed evidence-free cache contract. Web code renders the canonical presentation model and dispatches
 condition/detail commands; list filters and display metrics remain local presentation state and do
 not issue worker calculations.
 
 ## Read-only entry audit and TSK-06 carry-over
 
 The entry audit started from `b325ef55a2b8ed094eee1f69464615e058d3018b` with a clean worktree.
-The TSK-06 flow note deferred only the legacy UI/worker/URL cutover and policy evidence
-presentation to TSK-07. Cross-level blueprint/cache optimization and the full NP1–NP5 × four-policy
+The original audit treated the TSK-06 deferral as only the legacy UI/worker/URL cutover and policy evidence
+presentation. Structural review found that portable start gauge/contribution handoff and cache-value ownership were also deferred. Cross-level blueprint/cache optimization and the full NP1–NP5 × four-policy
 production digest remain deferred to TSK-08.
 
 | Surface | Producer | Reader | Writer / recovery | Entry classification |
@@ -34,16 +36,17 @@ production digest remain deferred to TSK-08.
 | presentation | policy rows/details | `Ranking`, `RankingList`, `RankingEffectDetails` | local filter/sort/metric only | Verified |
 | worker request | `useRanking` | thin worker adapter/runtime | initialize, calculate, detail | Verified |
 | worker response ordering | worker runtime | `useRanking` | request ID plus canonical fingerprint rejection | Verified |
-| cache identity | five-field fingerprint | calculation/detail caches | complete result only | Verified |
+| cache identity/value | five-field fingerprint | calculation/detail caches | current complete result and accumulated evidence | Blocking: summary must be evidence-free; worker detail 0; React detail maximum 1 |
 | URL | `serializeRankingState` | `parseRankingState` | canonical `rConditional`; obsolete params removed | Verified |
 | detail evidence | selected `RankingPolicyDetail` | pure presentation builder | profile, start gauge, facts, ordered actions | Verified |
+| portable calculator handoff | scenario + separately supplied gauge/projection | calculator/workspace | draft/history/share/backup/fingerprint omit execution intent | Blocking: `CALC-PORTABLE-001` and `RK-HANDOFF-001` |
 | old policy/fallback | removed files and exports | no production reader | no compatibility recovery | Verified |
 | full four-policy production digest | application production audit | TSK-08 | shared final audit model | Deferred: TSK-08 |
 
 No unrecorded external URL contract was found. Ranking URL state is an internal query contract, and
 the requirements explicitly require old readers to be deleted. Old `rSpecial` / `rField` values are
 ignored on parse and removed on the next serialization; they are not interpreted or migrated.
-The five items therefore close as one atomic cutover with Blocking 0.
+The destructive five-field cutover remains verified, but the wider calculation identity and cache families do not close. No external URL compatibility was newly inferred; old ranking-condition URL fields remain intentionally rejected. Old calculation share schema will also be rejected under the proposed portable contract.
 
 ## Canonical flow
 
@@ -53,11 +56,11 @@ five Web commands
   -> calculate request
   -> worker-owned five-field fingerprint
   -> calculateRankingPolicy
-  -> rows + typed exclusions + complete-result cache
+  -> rows + typed exclusions + current evidence-bearing cache (Blocking)
   -> request ID/fingerprint stale-response gate
   -> local filter/sort/metric presentation
   -> detail command with the same fingerprint
-  -> canonical detail cache
+  -> current worker/React detail accumulation (Blocking)
   -> profile/fact/ordered-action evidence presentation
 ```
 
@@ -79,6 +82,8 @@ five Web commands
 | damage semantics changes | N/A: battle execution is unchanged |
 | full production digest across four policies | Deferred: TSK-08 |
 | compatibility adapter or dual runtime | N/A: prohibited by destructive cutover |
+| nonbaseline request through draft/history/share/backup/fingerprint | Blocking: portable request implementation |
+| repeated detail open/close/condition/context changes | Blocking: evidence-free bounded cache implementation |
 
 ## Inventory and parity
 
@@ -130,5 +135,11 @@ legacy field/world selectors, legacy ranking facade/candidate/matrix/scenario/pr
 their legacy-only tests. Historical evidence and baseline-audit references are retained as records,
 not runtime readers.
 
-Closure: Blocking 0. TSK-07 is complete; TSK-08 may start from the canonical policy API and owns the
-deferred cross-level optimization and full production digest.
+The recorded test and performance results are historical evidence for the five-field cutover. They do not prove portable restore parity or bounded cache values because those cases were absent from the gate design.
+
+Closure: Blocking 2
+
+- portable calculation identity: blocked by TSK-06.1 approval and implementation.
+- evidence cache ownership: TSK-07 must separate summary/detail and enforce maximum cardinality.
+
+TSK-07 is blocked and TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after these two families close.

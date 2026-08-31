@@ -1,9 +1,11 @@
 ---
 title: "FGO Lab プロダクト要件定義書"
-document_version: "0.3.7"
+document_version: "0.3.8"
 status: "Active"
+approval: "required"
+previous_approved_version: "0.3.7"
 created_at: "2026-08-24"
-updated_at: "2026-08-30"
+updated_at: "2026-09-01"
 supersedes: "FGO Lab requirements v0.2.2 (docs/archive/README.md recovery index)"
 ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
 ---
@@ -228,7 +230,7 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 | FR-RANK-013 | 変更可能な計算条件は比較mode、NP Lv、class等倍／有利、自己buff、特攻なし／成立、外部fieldなし／成立の6項目だけとし、廃止条件をhidden stateやlegacy URLとして残さない |
 | FR-RANK-014 | 計算条件と表示filterを別stateとし、filter変更だけでは全候補を再計算しない |
 | FR-RANK-015 | 閉じた行は順位・対象・主damage・主要属性だけを表示し、一度に一行だけcanonical evidenceの詳細を展開する |
-| FR-RANK-016 | 使用した`CalculationScenario`をそのまま計算機へ引き継ぎ、再計算したdamage・effect・condition・procを一致させる |
+| FR-RANK-016 | 採用したportable calculation requestを計算機へ引き継ぎ、再計算したdamage・effect・condition・procを一致させる |
 | FR-RANK-017 | 条件、filter、sortを単一URL modelで共有可能にし、展開行等の一時UI stateとは分離する |
 | FR-RANK-018 | 特攻成立はcanonical `powerMod`／`npSpecial`の成立可能scenarioを同一executorで有限探索し、一騎一行の最大damageと採用TargetContextを返す |
 
@@ -335,6 +337,71 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 - `GrowthPlanSelection`
 
 アペンド、スキル、装備枠等を固定長とせず、マスターデータに従う。
+
+### 7.4 Portable calculation identity（approval required）
+
+`PortableCalculationRequest`は、damage、precision、operation outcomeを一意に決め、workspace、
+fingerprint、draft、history、share、backupを横断できる唯一のportable inputである。scenarioだけを
+calculation identityとして扱わず、次のdiscriminated contractへ収束させる。
+
+```ts
+type CanonicalContributionIntent = 'standard' | 'excludeVoluntarySkillModifiers';
+
+type PortableCalculationRequest =
+  | {
+      scenario: Extract<CalculationScenario, { mode: 'resolved' }>;
+      executionIntent: {
+        kind: 'resolved';
+        initialNpGauge: number;
+        contribution: CanonicalContributionIntent;
+      };
+    }
+  | {
+      scenario: Extract<CalculationScenario, { mode: 'manual' }>;
+      executionIntent: { kind: 'manual' };
+    };
+```
+
+- `standard`はcanonical executionで適用可能な寄与を通常どおり含める。
+- `excludeVoluntarySkillModifiers`は、任意skill由来のdamage modifierだけを反実仮想として除外する。
+- conditional effectの成立world、ordered command、choice、canonical inputはscenarioが保持する。
+- `DamageContributionProjection`、`Set`、operation ID、compiled operation、resolved state、derived
+  resource stateをrequest、draft、history、share、backupへ保存しない。
+- `calculation-application`だけがrequestとcurrent masterからtyped contribution intentを
+  `DamageContributionProjection`へcompileする。Web、workspace、repositoryはoperationを分類しない。
+- 新しいcalculator requestはconstructorが`initialNpGauge: 10000`と`standard`を省略不能な値として生成する。
+- manual scenarioは`manual` intentだけを許可する。resolved用の開始NPやcontribution intentをmanual inputへ
+  推測適用せず、異なる組合せをschemaで拒否する。
+
+rankingから引き継いだresolved intentは、calculatorでscenarioを編集しても暗黙に変更しない。calculatorは
+「ランキングから引き継いだ条件」、開始NP、contribution intentを結果近傍へ常時表示するが、開始NP editorや
+contribution editorは追加しない。利用者が明示的な「通常の計算条件へ戻す」commandを実行した場合だけ、同じ
+scenarioから`10000 + standard`の新requestを生成する。NP level変更等で保持中の開始NPがcapacityを超えた場合、
+暗黙resetせず`invalid: initialNpGaugeExceedsCapacity`として閉じ、通常条件へ戻すactionを提示する。
+
+requestのsemantic validationは次を区別する。
+
+- schema不正、scenario参照欠落、version／master不一致、NP capacity超過、intentとscenario modeの矛盾:
+  `invalid`。damageを返さず、既定値へfallbackしない。
+- requestとmasterは整合するが、current engineが既知のcanonical semanticsを実行またはprojectionへcompile
+  できない: `unsupported`。0 damageやstandard contributionへfallbackしない。
+
+fingerprintはrequest全体、master data version、engine versionから生成する。同じscenarioでも開始NPまたは
+contribution intentが異なれば別identityである。`CalculationDraft`、`CalculationHistoryEntry`、
+`CalculationShareSnapshot`はscenario fieldを並行保持せずrequestを直接保持し、`UserDataBackup`は各profile内の
+同じdraft／history contractを包含する。
+
+schema 32から次版への移行は一方向かつtransactionalに行う。保存済み`ProfileCollection`とschema 32の
+`UserDataBackup`について、profile ID／name／timestamps、servant builds、targets、craft essence copies、support
+templates、active profile IDをstrictに検証して維持し、正しいrequestを復元できない旧draft／historyだけを破棄する。
+変換後のcurrent schema全体を検証してからcurrent形式だけを保存し、v32 domain objectとcurrent objectをruntimeで
+併存・同期しない。exact schema 32 backupは同じisolated migratorでcurrent形式へ変換してからimportできるが、
+任意の古い版とfuture版は拒否する。旧schemaのshareはprofile dataを含まず安全なrequestへ変換できないため拒否する。
+current schemaのrequestに対応するmasterがない場合は再計算を`invalid`として閉じるが、保存済みresultはD-06どおり
+「共有時の履歴値」と明示して表示でき、現行計算結果として扱わない。migration／parse失敗時はuser storeをclearせず、
+元recordを維持して復旧可能なtyped failureを返す。
+
+本節はTSK-06.1の設計proposalであり、approvalが`approved`へ変わるまでruntime実装の根拠にしてはならない。
 
 ## 8. 計算エンジン要件
 
@@ -607,3 +674,16 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 - `docs/evidence/README.md`
 - `docs/requirements/ranking-self-and-conditional-effects-requirements.md`
 - `docs/requirements/test-strategy-redesign.md`
+- `docs/adr/027-portable-calculation-request-and-ranking-presentation.md`
+
+## 18. Contract catalog
+
+| Contract ID | Governing sections | Contract |
+| --- | --- | --- |
+| `CALC-PORTABLE-001` | 6.9〜6.11、7、8、11.6、12、13.2 | `PortableCalculationRequest`を唯一のportable calculation identityとし、fingerprint、draft、history、share、backup、安全な一方向migrationを同じcontractへ収束させる。 |
+
+## 19. Revision log
+
+| Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
+| --- | --- | --- | --- | --- |
+| 0.3.8 | portable calculation identityとschema 32 migration proposalを追加（`CALC-PORTABLE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |

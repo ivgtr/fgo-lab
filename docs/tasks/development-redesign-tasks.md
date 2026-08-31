@@ -1,10 +1,11 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.17"
+document_version: "1.5.18"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
 source_requirements:
+  - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/test-strategy-redesign.md"
   - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
   - "docs/requirements/development-execution-efficiency-requirements.md"
@@ -17,7 +18,7 @@ governance_contract: "docs/guides/document-governance.md"
 
 ## 1. 役割
 
-本書は、3つの要件書にまたがる実装順序、依存関係、進捗、phase handoffを所有する。意味論、品質要件、受入条件の正本は各source requirementsであり、本書では再定義しない。各未完了TaskのContract closure matrixは正本のContract IDに対する適用判断、検証command、artifact、延期先だけを所有する。
+本書は、4つの要件書にまたがる実装順序、依存関係、進捗、phase handoffを所有する。意味論、品質要件、受入条件の正本は各source requirementsであり、本書では再定義しない。各未完了TaskのContract closure matrixは正本のContract IDに対する適用判断、検証command、artifact、延期先だけを所有する。
 
 状態は次だけを使用する。
 
@@ -50,13 +51,14 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-04 | Ranking canonical IR cutover | done | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | done | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | done | TSK-05 | ranking condition／candidate planning |
-| TSK-07 | Web／worker一括切替 | done | TSK-06 | ranking UI／移行方針 |
-| TSK-08 | Production audit最終収束とfailure diagnostics | ready | TSK-07 | test strategy T3/T4／ranking test gate |
+| TSK-06.1 | Portable calculation request and identity | in_progress | TSK-06 | product portable data／ranking handoff |
+| TSK-07 | Web／worker一括切替 | blocked | TSK-06.1 | ranking UI／handoff／cache |
+| TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -585,9 +587,50 @@ Handoff:
 - Closure: Blocking 0、TSK-06 `done`、TSK-07 `ready`。UI／worker／URL cutoverはTSK-07へ
   Deferred、cross-level cache最適化はTSK-08へDeferred。
 
-### TSK-07: Web／worker一括切替
+### TSK-06.1: Portable calculation request and identity
 
 Depends on: TSK-06
+
+- [x] `CALC-PORTABLE-001`、`RK-HANDOFF-001`、`RK-CACHE-001`のownershipとcanonical型をproposalとして固定する。
+- [x] calculator編集時のintent遷移、manual mode、invalid／unsupported分類を一意に決める。
+- [x] schema 32のprofile／backup migration、旧schema share／任意の旧版／future版の拒否方針を一意に決める。
+- [x] ADR-027とportable calculation identity familyのcanonical flow noteを作成する。
+- [ ] requirements v0.3.8／ranking v0.8.0／ADR-027のapprovalを記録する。
+- [ ] approved contractに従ってportable request、application compiler、workspace、schema、migrationを実装する。
+- [ ] immediate／draft／history／share／backup／fingerprint／migration matrixを検証する。
+
+Done gate:
+
+- `PortableCalculationRequest`だけがdamageを一意に決めるportable identityである。
+- projection、`Set`、operation ID、derived stateを永続化せず、applicationだけがcurrent masterからcompileする。
+- normal calculator、ranking handoff、calculator edit transition、manual modeが明示contractどおり動作する。
+- safe profile dataを失わず旧draft／historyだけを破棄し、旧schema shareと対象外schemaをfail-closedにする。
+- runtimeへ旧schema reader、scenario-only fingerprint、parallel request modelを残さない。
+- flow noteのportable familyがBlocking 0になり、TSK-07へhandoffできる。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `CALC-PORTABLE-001` | Apply | focused schema／workspace／repository／share tests after approval | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
+| `RK-HANDOFF-001` | Deferred: TSK-07 | - | TSK-07 |
+| `RK-CACHE-001` | Deferred: TSK-07 | - | TSK-07 |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | requirements／ADR／registry diff |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | canonical flow note／Handoff |
+
+Handoff:
+
+- Start baseline: `c5511221c0fc2ec1baabaa4838b3c7c396b20f43`、clean worktree。
+- Design ownership: product requirements owns `CALC-PORTABLE-001`; ranking requirements own `RK-HANDOFF-001` and `RK-CACHE-001`.
+- Design decision: resolved request is scenario + initial NP + two-variant contribution intent; manual is manual intent only. Explicit reset is the only edit transition to `100% + standard`.
+- Migration: exact schema 32 preserves builds／targets／CE／support and discards draft／history; exact v32 backup uses the isolated migrator; old-schema share and other old／future schema fail closed.
+- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0、Closure Blocking 2。
+- Approval gate: requirements v0.3.8、ranking v0.8.0、ADR-027 are proposed／approval required. Runtime implementation is prohibited until approval is recorded.
+- Runtime: unchanged in this design phase. Next work after approval is TSK-06.1 implementation; TSK-07 and TSK-08 remain blocked.
+
+### TSK-07: Web／worker一括切替
+
+Depends on: TSK-06.1
 
 - [x] ランキング条件を5項目へ切り替える。
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
@@ -606,6 +649,8 @@ Contract closure matrix:
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
 | `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `RK-HANDOFF-001` | Apply | handoff／restore parity matrix | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
+| `RK-CACHE-001` | Apply | worker／React cache cardinality、stale detail tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `TS-PERF-002` | Apply | build変更前後各3回／変更後E2E 1回 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
@@ -632,8 +677,8 @@ Handoff:
   64 passed／32 skipped、693.31秒。詳細とbaseline比較はcanonical flow noteに記録した。
 - Verification: focused 8 files／14 tests、unit 62 files／350 tests、production 24 files／111 tests、
   runner 17 tests、final `pnpm quality`成功。production source scanで旧reader／fallback／runtime path 0件。
-- Completion: commitは本completion commit。TSK-07 `done`、TSK-08 `ready`。cross-level cache最適化と
-  NP1〜5 × 四policy full production digestはTSK-08へDeferred。
+- Historical completion: five-field cutover commit and verification remain valid for their original scope。
+- Structural review reopening: portable calculation identity and evidence cache value／lifetime／cardinality were absent from the original matrix. Current closure is Blocking 2; TSK-07 is `blocked` by TSK-06.1 and must then implement `RK-HANDOFF-001`／`RK-CACHE-001` before TSK-08 becomes ready。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

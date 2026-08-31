@@ -1,13 +1,13 @@
 ---
 title: "FGO Lab documentation registry"
-document_version: "1.5.17"
+document_version: "1.5.18"
 status: "Active"
 updated_at: "2026-09-01"
 ---
 
 # FGO Lab documentation registry
 
-ここをfresh cloneからの唯一の文書入口とする。実装順序と進捗は[development redesign Tasks](tasks/development-redesign-tasks.md)だけが所有する。要件は利用者成果と受入条件、ADRは採用時点の判断、evidenceはcanonical input・inventory・digest・commitを所有し、互いの責務を上書きしない。historical snapshot本文は現在の実装判断に使用しない。
+ここをfresh cloneからの唯一の文書入口とする。実装順序と進捗は[development redesign Tasks](tasks/development-redesign-tasks.md)だけが所有する。要件は利用者成果と受入条件、ADRはarchitecture判断と承認状態、evidenceはcanonical input・inventory・digest・commitを所有し、互いの責務を上書きしない。historical snapshot本文は現在の実装判断に使用しない。
 
 ## Start here
 
@@ -15,7 +15,7 @@ updated_at: "2026-09-01"
 - UI contract: [UI design specification](requirements/ui-design-spec.md)
 - Damage contract: [damage calculation review](requirements/damage-calculation-review.md) と [damage effect execution requirements](requirements/damage-effect-execution-requirements.md)
 - 実装順序と進捗: [development redesign Tasks](tasks/development-redesign-tasks.md)
-- 採用済み判断: [ADR index](adr/README.md)
+- architecture判断と承認状態: [ADR index](adr/README.md)
 - 検証証跡: [evidence index](evidence/README.md)
 - 判断履歴とGit-only snapshot: [historical documentation index](archive/README.md)
 - 現行の依存方向: [canonical data flow](guides/data-flow.md)
@@ -28,18 +28,18 @@ updated_at: "2026-09-01"
 
 | Path | Kind／status | Authority／scope |
 | --- | --- | --- |
-| [docs/README.md](README.md) | registry／Active v1.5.17 | 唯一のdocumentation navigation entry |
-| [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.7 | product目的、機能範囲、データ境界、横断受入条件 |
+| [docs/README.md](README.md) | registry／Active v1.5.18 | 唯一のdocumentation navigation entry |
+| [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.8／approval required | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.4.0 | 画面構造、操作モデル、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
 | [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.1 | condition、state mutation、ordered damage execution、UI不変条件 |
-| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.7.0 | ranking policy、canonical scenario、candidate、parity |
+| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.8.0／approval required | ranking policy、portable handoff、bounded evidence cache、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.2.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.17 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.18 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
-| [evidence index](evidence/README.md) | sub-index／Active v1.4.12 | damage／production／documentation evidence |
+| [evidence index](evidence/README.md) | sub-index／Active v1.4.13 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
 | [canonical data flow](guides/data-flow.md) | guide／Guideline v1.0.0 | master、calculation／ranking、user stateの依存方向 |
 | [document governance contract](guides/document-governance.md) | guide／Guideline v1.0.0 | Contract ID、Task closure、要件改訂、docs lint |

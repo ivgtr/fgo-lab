@@ -1,11 +1,13 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.7.0"
+document_version: "0.8.0"
 status: "Active"
-approved_at: "2026-08-30"
-updated_at: "2026-08-30"
+approval: "required"
+previous_approved_version: "0.7.0"
+updated_at: "2026-09-01"
 created_at: "2026-08-30"
 related_adrs:
+  - "docs/adr/027-portable-calculation-request-and-ranking-presentation.md"
   - "docs/adr/018-ranking-comparison-policy.md"
   - "docs/adr/019-ranking-contribution-and-execution-plan.md"
   - "docs/adr/020-ranking-condition-provenance-and-field-policy.md"
@@ -37,7 +39,7 @@ UIを単純にし、domain modelは正確に保つことが本仕様の目的で
 ## 2. 最上位原則
 
 1. 最優先はdamage計算品質である。
-2. 一つの数値は、一つの矛盾しないcanonical scenarioとordered planから生成する。
+2. 一つの数値は、一つの矛盾しないportable calculation requestとordered planから生成する。
 3. rankingとcalculatorは同じmaster、reducer、condition evaluator、damage executorを使う。
 4. ranking policyはexecution outcomeやconditionを改変せず、候補生成とdamage contributionを制御する。
 5. UI上の二軸を、domain上の二つのbooleanとして実装しない。
@@ -320,7 +322,7 @@ class、attribute、target identity、trait、state、family predicateを一つ�
 
 開始NPを第6のランキング条件または常設UIとして追加しない。
 
-- calculator: canonicalな開始NP100%固定
+- normal calculatorが新規生成するrequest: canonicalな開始NP100%固定。rankingからportable requestとして引き継いだ非baseline開始NPは11.4の明示resetまで維持
 - ranking通常のみ: 開始NP100%、外部NP供給なし
 - ranking成立込み: 選択NP Lvのcapacity内で、必要な開始NP候補を内部生成可能
 - 自身のNP増減はordered actionとして評価
@@ -426,6 +428,44 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 - keyboard、accessible name、expanded state、focus orderを維持する。
 - calculator UIへ開始NP入力やランキング専用condition editorを追加しない。
 
+### 11.4 Calculator handoff（approval required）
+
+採用ranking calculationは`CALC-PORTABLE-001`の`PortableCalculationRequest`としてcalculatorへ渡す。
+
+- 採用scenarioをrequestのscenarioとする。
+- `candidateEvidence.startNpGauge`をresolved execution intentの`initialNpGauge`とする。
+- 自己バフ`あり`は`standard`、`なし`は`excludeVoluntarySkillModifiers`へ写す。
+- 条件効果`成立込み`のworld facts、canonical inputs、ordered commandsは採用scenarioが保持する。
+- `DamageContributionProjection`、operation IDの集合、ranking row、modifier合計をhandoff payloadへ保存しない。
+- calculatorはapplicationのportable request entrypointでprojectionを再compileし、ranking detailのresult、effect、
+  condition、procと一致させる。
+
+引き継いだ開始NPとcontribution intentは非編集値として結果近傍へ表示する。scenario編集後も明示的な
+「通常の計算条件へ戻す」commandまでは維持し、暗黙に`100% + standard`へ戻さない。通常条件へ戻した後は
+ranking intentをhidden stateへ保持しない。開始NP editor、contribution policy editor、汎用resource editorは
+追加しない。
+
+handoff parityはexecution parityと分け、immediate handoff、draft restore、history finalize／copy、share
+URL／JSON、backup export／import、fingerprintを同じrequestで検証する。master／engine incompatibility、capacity
+超過、旧schema shareは`CALC-PORTABLE-001`の分類でfail-closedにする。
+
+### 11.5 Worker／detail cache（approval required）
+
+cacheはkeyだけでなくvalue、lifetime、owner、maximum cardinalityを次で固定する。
+
+| Cache/state | Owner | Key | Value | Lifetime / maximum |
+| --- | --- | --- | --- | --- |
+| ranking summary | worker | context identity + canonical 5-field fingerprint | rows + typed exclusionsだけ | worker context内の直近成功1件。context変更で破棄 |
+| detail evidence | worker | N/A | cacheしない。requestごとに選択entryだけmaterializeして返す | 0件 |
+| active detail | React | request ID + fingerprint + entry ID | 現在開いている1件のdetailまたはtyped error | close、condition変更、context変更で破棄。最大1件 |
+| in-flight detail | React | request ID + fingerprint + entry ID | request identityだけ | 置換／close／condition変更／context変更で無効化。最大1件 |
+
+applicationのUI summary型はrows、typed exclusions、summary inventoryだけを返し、`RankingPolicyDetail`や
+`profileResults`を含めない。audit用のprofile resultはUI summaryと別のapplication API／artifactで生成する。
+worker summary cacheへcandidate evidence、scenario、effect、trace、projectionを保持しない。detail responseは
+request IDとfingerprintの両方が現在値に一致する場合だけReactへ適用する。TSK-08のprepared damage matrix／
+NP1〜5 cross-level cacheは本契約へ先取りしない。
+
 ## 12. Layer ownership
 
 ### data-pipeline
@@ -454,11 +494,13 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 - AttackProfile inventoryとpolicy可用性
 - finite preparation plan、condition candidate、contribution projection
 - stable candidate selectionとprepared damage matrix cache
+- portable requestのtyped contribution intentからexecution projectionをcompileする唯一の層
 
 ### Web／worker
 
 - Webは5項目をdispatchし、presentation modelを描画するだけ
 - workerはrequest ordering、stale response破棄、cacheを所有
+- summary cacheはevidence-freeな直近1件、detail evidenceはworker 0件／React最大1件
 - raw condition、effect label、servant IDから意味論を再構築しない
 
 ## 13. 移行方針
@@ -580,6 +622,8 @@ damage差分、性能見積もりを提示してから再開する。
 | `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
 | `RK-POLICY-001` | 10、11 | ranking policyは候補とcontributionだけを制御し、execution semanticsを再実装しない。 |
 | `RK-UI-001` | 11、12 | Web／workerはcanonical stateと5入力を扱い、旧policy／URL／protocolを併存させない。 |
+| `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationをportable requestとしてcalculatorへ渡し、immediate／persisted／shared経路で同一結果を再現する。 |
+| `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
 | `RK-AUDIT-001` | 14、15 | 全AttackProfile、四policy、NP1〜5、parity、invalid／unsupportedを共有production inventoryで監査する。 |
 | `RK-PERF-001` | 15.3 | 2^N探索を避け、candidate／damage requestを説明し、主要suiteの10%超の未説明退行を拒否する。 |
 | `RK-FINAL-001` | 17 | 17章のUI、IR、execution、parity、damage evidenceをproject closureで全て満たす。 |
@@ -589,3 +633,4 @@ damage差分、性能見積もりを提示してから再開する。
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
 | 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | approved 2026-08-30: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: 承認状態の変更のみでinventory／digest baselineは変更しない |
+| 0.8.0 | portable ranking handoffとbounded evidence-free cache proposalを追加（`RK-HANDOFF-001`、`RK-CACHE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでhandoff、cache inventory、schema／fingerprint artifactが変わる。TSK-08 cross-level cacheとproduction digestは未変更 |
