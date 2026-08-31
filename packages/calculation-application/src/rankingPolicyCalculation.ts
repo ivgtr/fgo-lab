@@ -14,12 +14,16 @@ import type {
   RankingProfileResult,
   RankingRowSummary,
 } from './rankingContracts';
-import { createRankingRow, includedRankingServants } from './rankingRows';
+import {
+  createRankingPolicyExclusion,
+  createRankingRow,
+  includedRankingServants,
+} from './rankingRows';
 
 function unresolvedProfileResult(
   candidateSet: RankingCandidateCalculation,
   attackProfile: AttackProfile,
-): RankingProfileResult {
+): Exclude<RankingProfileResult, { status: 'calculated' }> {
   const profileKey = attackProfileKey(attackProfile);
   const space = candidateSet.plan.candidateSpaces.find(
     (candidate) => attackProfileKey(candidate.attackProfile) === profileKey,
@@ -105,6 +109,7 @@ export function calculateRankingPolicy(
 ): RankingPolicyCalculation {
   const rows: RankingRowSummary[] = [];
   const profileResults: Record<string, RankingProfileResult> = {};
+  const exclusions: RankingPolicyCalculation['exclusions'] = [];
   const damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>();
   let generatedCount = 0;
   let semanticUpperBound = 0;
@@ -132,27 +137,33 @@ export function calculateRankingPolicy(
         const profileKey = attackProfileKey(attackProfile);
         const detail = candidateSet.details.get(profileKey);
         if (!detail) {
-          profileResults[profileKey] = unresolvedProfileResult(candidateSet, attackProfile);
+          const result = unresolvedProfileResult(candidateSet, attackProfile);
+          profileResults[profileKey] = result;
+          exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));
           continue;
         }
         profileResults[profileKey] = { status: 'calculated', detail };
-        const row = createRankingRow(servant, detail, profile);
-        if (!('status' in row)) rows.push(row);
+        rows.push(createRankingRow(servant, detail, profile));
       }
     } catch (error) {
-      for (const attackProfile of inventory)
-        profileResults[attackProfileKey(attackProfile)] = {
+      for (const attackProfile of inventory) {
+        const profileKey = attackProfileKey(attackProfile);
+        const result: RankingProfileResult = {
           status: 'invalid',
           attackProfile,
           issues: [],
           reason: 'unexpectedRankingFailure',
           detail: error instanceof Error ? error.message : String(error),
         };
+        profileResults[profileKey] = result;
+        exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));
+      }
     }
   }
   return {
     rows,
     profileResults,
+    exclusions,
     damageCache: damageCache.inventory,
     candidateInventory: {
       semanticUpperBound,

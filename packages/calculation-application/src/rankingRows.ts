@@ -1,51 +1,13 @@
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
-import type { CalculationResult } from '@fgo-lab/schema';
 import type {
   RankingPolicyConditions,
-  RankingDetail,
-  RankingFailure,
+  RankingPolicyDetail,
+  RankingPolicyExclusion,
   RankingProfileInput,
+  RankingProfileResult,
   RankingRowSummary,
 } from './rankingContracts';
 import { isSpecialAttack, rankingEffectContributes } from './rankingContribution';
-import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
-
-export function includedLegacyRankingServants(
-  master: MasterDataSnapshot,
-  profile: RankingProfileInput,
-  conditions: Pick<RankingPolicyConditions, 'comparisonMode' | 'npLevel'>,
-): ServantMaster[] {
-  return master.servants.filter((servant) => {
-    if (
-      planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, conditions.npLevel, 1)
-        .candidates.length === 0
-    )
-      return false;
-    if (conditions.comparisonMode === 'standard') return true;
-    return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
-  });
-}
-
-function resultFailure(servant: ServantMaster, result: CalculationResult): RankingFailure {
-  if (result.status === 'inputRequired')
-    return {
-      servantId: servant.id,
-      name: servant.name,
-      status: 'inputRequired',
-      reason: result.requiredInputs.map((input) => input.label).join('、') || '入力が必要です',
-    };
-  if (result.status === 'calculated')
-    throw new TypeError(`ranking_calculated_result_is_not_failure:${servant.id}`);
-  return {
-    servantId: servant.id,
-    name: servant.name,
-    status: 'unsupported',
-    reason:
-      result.issues.map((issue) => issue.code).join('、') ||
-      result.missingEvidence.join('、') ||
-      '正確に計算できません',
-  };
-}
 
 export function includedRankingServants(
   master: MasterDataSnapshot,
@@ -64,10 +26,9 @@ export function includedRankingServants(
 
 export function createRankingRow(
   servant: ServantMaster,
-  detail: RankingDetail,
+  detail: RankingPolicyDetail,
   profile: RankingProfileInput,
-): RankingRowSummary | RankingFailure {
-  if (detail.result.status !== 'calculated') return resultFailure(servant, detail.result);
+): RankingRowSummary {
   const selected = detail.result.rows[detail.scenario.attacker.npLevel - 1];
   if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
   const applied = detail.effects.filter(
@@ -96,9 +57,24 @@ export function createRankingRow(
     supportEffectCount: new Set(supportEffects.map((effect) => effect.projectionKey)).size,
     supportSourceCount: new Set(supportEffects.map((effect) => effect.source.sourceInstanceId))
       .size,
-    specialAttackApplied: applied.some((effect) => isSpecialAttack(effect)),
+    specialDamageApplied: applied.some((effect) => isSpecialAttack(effect)),
     level: detail.scenario.attacker.level,
     npLevel: detail.scenario.attacker.npLevel,
     owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
+  };
+}
+
+export function createRankingPolicyExclusion(
+  servant: ServantMaster,
+  entryId: string,
+  result: Exclude<RankingProfileResult, { status: 'calculated' }>,
+): RankingPolicyExclusion {
+  return {
+    entryId,
+    servantId: servant.id,
+    name: servant.name,
+    status: result.status,
+    reason: result.reason,
+    issues: result.status === 'invalid' ? result.issues : [],
   };
 }

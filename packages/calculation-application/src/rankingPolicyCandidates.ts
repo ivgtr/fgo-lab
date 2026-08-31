@@ -70,7 +70,7 @@ export function calculateRankingCandidateSet(
               damageCache,
             )[0]!
           : null;
-      if (execution.status !== 'executable')
+      if (execution.status !== 'executable' || execution.result.status !== 'calculated')
         throw new TypeError(`ranking_candidate_rejected:${servant.id}:${profileKey}`);
       const areaContribution =
         withoutAreaExecution?.status === 'executable' && withoutAreaProjection

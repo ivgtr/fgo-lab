@@ -1,13 +1,13 @@
-import type { RankingConditions as RankingConditionsValue } from '@fgo-lab/calculation-application';
+import type { RankingPolicyConditions } from '@fgo-lab/calculation-application';
 
 export function RankingConditions({
   conditions,
   onChange,
 }: {
-  conditions: RankingConditionsValue;
-  onChange: (conditions: RankingConditionsValue) => void;
+  conditions: RankingPolicyConditions;
+  onChange: (conditions: RankingPolicyConditions) => void;
 }) {
-  const patch = (value: Partial<RankingConditionsValue>) => onChange({ ...conditions, ...value });
+  const patch = (value: Partial<RankingPolicyConditions>) => onChange({ ...conditions, ...value });
   return (
     <section className="ranking-condition-section" aria-label="ランキングの計算条件">
       <div className="ranking-condition-primary">
@@ -17,7 +17,7 @@ export function RankingConditions({
             value={conditions.comparisonMode}
             onChange={(event) =>
               patch({
-                comparisonMode: event.target.value as RankingConditionsValue['comparisonMode'],
+                comparisonMode: event.target.value as RankingPolicyConditions['comparisonMode'],
               })
             }
           >
@@ -31,7 +31,7 @@ export function RankingConditions({
             value={conditions.npLevel}
             disabled={conditions.comparisonMode === 'owned'}
             onChange={(event) =>
-              patch({ npLevel: Number(event.target.value) as RankingConditionsValue['npLevel'] })
+              patch({ npLevel: Number(event.target.value) as RankingPolicyConditions['npLevel'] })
             }
           >
             {[1, 2, 3, 4, 5].map((value) => (
@@ -47,7 +47,7 @@ export function RankingConditions({
             value={conditions.classAffinity}
             onChange={(event) =>
               patch({
-                classAffinity: event.target.value as RankingConditionsValue['classAffinity'],
+                classAffinity: event.target.value as RankingPolicyConditions['classAffinity'],
               })
             }
           >
@@ -60,7 +60,7 @@ export function RankingConditions({
           <select
             value={conditions.selfBuffs}
             onChange={(event) =>
-              patch({ selfBuffs: event.target.value as RankingConditionsValue['selfBuffs'] })
+              patch({ selfBuffs: event.target.value as RankingPolicyConditions['selfBuffs'] })
             }
           >
             <option value="included">あり</option>
@@ -68,29 +68,18 @@ export function RankingConditions({
           </select>
         </label>
         <label>
-          特攻
+          条件効果
           <select
-            value={conditions.specialAttack}
+            value={conditions.conditionalEffects}
             onChange={(event) =>
               patch({
-                specialAttack: event.target.value as RankingConditionsValue['specialAttack'],
+                conditionalEffects: event.target
+                  .value as RankingPolicyConditions['conditionalEffects'],
               })
             }
           >
-            <option value="inactive">なし</option>
-            <option value="active">成立</option>
-          </select>
-        </label>
-        <label>
-          フィールド
-          <select
-            value={conditions.field}
-            onChange={(event) =>
-              patch({ field: event.target.value as RankingConditionsValue['field'] })
-            }
-          >
-            <option value="inactive">なし</option>
-            <option value="active">成立</option>
+            <option value="baseline">通常のみ</option>
+            <option value="satisfied">成立込み</option>
           </select>
         </label>
       </div>

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.16"
+document_version: "1.5.17"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
@@ -50,8 +50,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-04 | Ranking canonical IR cutover | done | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | done | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | done | TSK-05 | ranking condition／candidate planning |
-| TSK-07 | Web／worker一括切替 | ready | TSK-06 | ranking UI／移行方針 |
-| TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
+| TSK-07 | Web／worker一括切替 | done | TSK-06 | ranking UI／移行方針 |
+| TSK-08 | Production audit最終収束とfailure diagnostics | ready | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
@@ -589,10 +589,10 @@ Handoff:
 
 Depends on: TSK-06
 
-- [ ] ランキング条件を5項目へ切り替える。
-- [ ] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
-- [ ] 旧special attack／field入力、reader、fallbackを削除する。
-- [ ] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
+- [x] ランキング条件を5項目へ切り替える。
+- [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
+- [x] 旧special attack／field入力、reader、fallbackを削除する。
+- [x] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
 
 Done gate:
 
@@ -605,13 +605,35 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/<tsk-07-report>.md` |
-| `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/<tsk-07-report>.md` |
-| `TS-PERF-002` | Apply | build／E2E gateを変更前後各3回 | `docs/evidence/<tsk-07-report>.md` |
+| `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `TS-PERF-002` | Apply | build変更前後各3回／変更後E2E 1回 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
-| `TS-ART-001` | Apply | Playwright manifest／artifact check | `docs/evidence/<tsk-07-report>.md` |
+| `TS-ART-001` | Apply | Playwright manifest／artifact check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 
-Handoff: 未記録
+Handoff:
+
+- Start baseline: `b325ef55a2b8ed094eee1f69464615e058d3018b`、clean worktree
+- Canonical flow note: `docs/evidence/ranking-web-worker-cutover-tsk-07.md`。TSK-06から
+  DeferredされたUI／worker／URL／detail evidenceを一つの5項目contractへ切り替え、
+  producer、reader、writer、request ordering、stale rejection、cache、recoveryをBlocking 0で閉じた。
+- Ownership: application ranking policyがscenario selectionとtyped exclusion、worker runtimeが
+  fingerprint／complete-result cache、Webがpresentation／command dispatchを所有する。filter、sort、
+  display metricはworker requestに含まず、damage semanticsは変更していない。
+- Cutover: old special attack／fieldの入力、URL reader、worker protocol、fallback、legacy facade／
+  candidate／matrix／scenario runtimeを削除した。old `rSpecial`／`rField`は解釈せずserialize時に除去し、
+  compatibility flag／dual runtimeはない。
+- Correctness: worker生成detailをcalculatorで再実行してresult／effect parityを固定し、default
+  productionは433 rows／0 exclusions、satisfiedは424 rows／9 typed exclusions。request IDとcanonical
+  fingerprintの両方でstale summary／detailを表示前に拒否する。
+- UI/artifact: 5 controlのaccessible name、keyboard focus order、expanded state、およびdesktop／390px／
+  320pxのcollapsed／expanded overflowをcomponent／E2Eと7枚のreview済みsnapshotで固定した。
+- Performance: build中央値2.08秒から1.87秒（-10.1%）。変更後full E2E性能計測は指示どおり1回、
+  64 passed／32 skipped、693.31秒。詳細とbaseline比較はcanonical flow noteに記録した。
+- Verification: focused 8 files／14 tests、unit 62 files／350 tests、production 24 files／111 tests、
+  runner 17 tests、final `pnpm quality`成功。production source scanで旧reader／fallback／runtime path 0件。
+- Completion: commitは本completion commit。TSK-07 `done`、TSK-08 `ready`。cross-level cache最適化と
+  NP1〜5 × 四policy full production digestはTSK-08へDeferred。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

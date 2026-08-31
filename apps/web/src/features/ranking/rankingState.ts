@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  DEFAULT_RANKING_CONDITIONS,
-  type RankingConditions,
+  DEFAULT_RANKING_POLICY_CONDITIONS,
+  type RankingPolicyConditions,
 } from '@fgo-lab/calculation-application';
 
 export type RankingDamageMetric = 'average' | 'minimum' | 'maximum';
@@ -17,13 +17,13 @@ export interface RankingFiltersState {
 }
 
 export interface RankingUrlState {
-  conditions: RankingConditions;
+  conditions: RankingPolicyConditions;
   metric: RankingDamageMetric;
   filters: RankingFiltersState;
 }
 
 export const DEFAULT_RANKING_URL_STATE: RankingUrlState = {
-  conditions: DEFAULT_RANKING_CONDITIONS,
+  conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
   metric: 'average',
   filters: {
     search: '',
@@ -53,14 +53,14 @@ function nullableRarity(params: URLSearchParams): number | null {
 
 export function parseRankingUrlState(search: string): RankingUrlState {
   const params = new URLSearchParams(search);
-  const defaults = DEFAULT_RANKING_CONDITIONS;
+  const defaults = DEFAULT_RANKING_POLICY_CONDITIONS;
   const npLevel = Number(params.get('rNp'));
   return {
     conditions: {
       comparisonMode: enumValue(params, 'rMode', ['standard', 'owned'], defaults.comparisonMode),
       npLevel:
         Number.isInteger(npLevel) && npLevel >= 1 && npLevel <= 5
-          ? (npLevel as RankingConditions['npLevel'])
+          ? (npLevel as RankingPolicyConditions['npLevel'])
           : defaults.npLevel,
       classAffinity: enumValue(
         params,
@@ -69,8 +69,12 @@ export function parseRankingUrlState(search: string): RankingUrlState {
         defaults.classAffinity,
       ),
       selfBuffs: enumValue(params, 'rSelf', ['included', 'excluded'], defaults.selfBuffs),
-      specialAttack: enumValue(params, 'rSpecial', ['inactive', 'active'], defaults.specialAttack),
-      field: enumValue(params, 'rField', ['inactive', 'active'], defaults.field),
+      conditionalEffects: enumValue(
+        params,
+        'rConditional',
+        ['baseline', 'satisfied'],
+        defaults.conditionalEffects,
+      ),
     },
     metric: enumValue(params, 'rMetric', ['average', 'minimum', 'maximum'], 'average'),
     filters: {
@@ -102,8 +106,12 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
   setIf(params, 'rNp', conditions.npLevel, conditions.npLevel !== 1);
   setIf(params, 'rAffinity', conditions.classAffinity, conditions.classAffinity !== 'neutral');
   setIf(params, 'rSelf', conditions.selfBuffs, conditions.selfBuffs !== 'included');
-  setIf(params, 'rSpecial', conditions.specialAttack, conditions.specialAttack !== 'inactive');
-  setIf(params, 'rField', conditions.field, conditions.field !== 'inactive');
+  setIf(
+    params,
+    'rConditional',
+    conditions.conditionalEffects,
+    conditions.conditionalEffects !== 'baseline',
+  );
   setIf(params, 'rMetric', state.metric, state.metric !== 'average');
   setIf(params, 'rSearch', state.filters.search, state.filters.search.length > 0);
   setIf(params, 'rClass', state.filters.classId, state.filters.classId !== null);

@@ -1,13 +1,13 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.11"
+document_version: "1.4.12"
 status: "Active"
 updated_at: "2026-08-31"
 ---
 
 # Evidence report index
 
-このindexはtracked report 40件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
+このindexはtracked report 41件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
 
 | Report | Status | Evidence role | Successor | Related commit |
 | --- | --- | --- | --- | --- |
@@ -51,6 +51,7 @@ updated_at: "2026-08-31"
 | [legacy-runtime-removal-tsk-04](legacy-runtime-removal-tsk-04.md) | Complete | canonical: old schema reader／raw fallback／dual runtime branch removal | TSK-04〜08 | TSK-04 Phase 3 |
 | [transactional-preparation-flow-tsk-05](transactional-preparation-flow-tsk-05.md) | Complete | canonical: ordered condition／choice／NP resource／state／form／variant action transaction、typed outcome、full recovery | TSK-05〜08 | `69f8207e` baseline／second review resolution |
 | [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Complete | canonical: ranking policy／finite condition witness／candidate completeness／maximum oracle／parity／performance | TSK-06〜08 | TSK-06 review resolution |
+| [ranking-web-worker-cutover-tsk-07](ranking-web-worker-cutover-tsk-07.md) | Complete | canonical: five-item Web／URL／worker／cache／detail evidence atomic cutover | TSK-08〜09 | TSK-07 completion |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
 

@@ -27,8 +27,6 @@ export const rankingDamageContributionProjection = (
   selfBuffs === 'included'
     ? 'standardWithSelfSkills'
     : 'counterfactualWithoutVoluntarySkillModifiers';
-export type RankingSpecialAttack = 'inactive' | 'active';
-export type RankingField = 'inactive' | 'active';
 export type RankingConditionalEffects = 'baseline' | 'satisfied';
 
 export interface RankingPolicyConditions {
@@ -45,24 +43,6 @@ export const DEFAULT_RANKING_POLICY_CONDITIONS: RankingPolicyConditions = {
   classAffinity: 'neutral',
   selfBuffs: 'included',
   conditionalEffects: 'baseline',
-};
-
-export interface RankingConditions {
-  comparisonMode: RankingComparisonMode;
-  npLevel: RankingNpLevel;
-  classAffinity: RankingClassAffinity;
-  selfBuffs: RankingSelfBuffs;
-  specialAttack: RankingSpecialAttack;
-  field: RankingField;
-}
-
-export const DEFAULT_RANKING_CONDITIONS: RankingConditions = {
-  comparisonMode: 'standard',
-  npLevel: 1,
-  classAffinity: 'neutral',
-  selfBuffs: 'included',
-  specialAttack: 'inactive',
-  field: 'inactive',
 };
 
 export const STANDARD_RANKING_SCENARIO_POLICY = {
@@ -108,20 +88,13 @@ export interface RankingRowSummary {
   appliedEffectCount: number;
   supportEffectCount: number;
   supportSourceCount: number;
-  specialAttackApplied: boolean;
+  specialDamageApplied: boolean;
   level: number;
   npLevel: number;
   owned: boolean;
 }
 
-export interface RankingFailure {
-  servantId: string;
-  name: string;
-  status: 'inputRequired' | 'unsupported';
-  reason: string;
-}
-
-export interface RankingDetail {
+export interface RankingPolicyDetail {
   entryId: string;
   servantId: string;
   noblePhantasmVariant: NoblePhantasmVariantRef;
@@ -131,7 +104,7 @@ export interface RankingDetail {
   npTarget: 'single' | 'all';
   scenario: ResolvedScenario;
   input: DamageResolutionInput;
-  result: CalculationResult;
+  result: Extract<CalculationResult, { status: 'calculated' }>;
   effects: CalculationExecution['effects'];
   effectInputs: CalculationExecution['effectInputs'];
   warnings: CalculationExecution['effectWarnings'];
@@ -149,9 +122,6 @@ export interface RankingDetail {
     worldCandidateCount: number;
     scenarioCalculationCount: number;
   };
-}
-
-export interface RankingPolicyDetail extends RankingDetail {
   candidateEvidence: {
     policyKey: string;
     candidateKey: string;
@@ -185,10 +155,25 @@ export type RankingProfileResult =
       detail?: string;
     };
 
+export interface RankingPolicyExclusion {
+  entryId: string;
+  servantId: string;
+  name: string;
+  status: 'unavailableUnderPolicy' | 'invalid';
+  reason: string;
+  issues: CalculationResult['issues'];
+}
+
 export interface RankingPolicyCalculation {
   rows: RankingRowSummary[];
   profileResults: Record<string, RankingProfileResult>;
-  damageCache: RankingCalculation['damageCache'];
+  exclusions: RankingPolicyExclusion[];
+  damageCache: {
+    requestCount: number;
+    distinctDamageInputCount: number;
+    cacheHitCount: number;
+    cacheHitRate: number;
+  };
   candidateInventory: {
     semanticUpperBound: number;
     generatedCount: number;
@@ -198,28 +183,3 @@ export interface RankingPolicyCalculation {
     distinctDamageInputCount: number;
   };
 }
-
-export interface RankingCalculation {
-  rows: RankingRowSummary[];
-  failures: RankingFailure[];
-  details: Record<string, RankingDetail>;
-  damageCache: {
-    requestCount: number;
-    distinctDamageInputCount: number;
-    cacheHitCount: number;
-    cacheHitRate: number;
-  };
-}
-
-export interface RankingSummary {
-  rows: RankingRowSummary[];
-  failures: RankingFailure[];
-}
-
-export type RankingSummaryMatrix = readonly [
-  RankingSummary,
-  RankingSummary,
-  RankingSummary,
-  RankingSummary,
-  RankingSummary,
-];

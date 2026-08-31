@@ -139,11 +139,7 @@ describe('static ranking candidate space', () => {
       );
       expect(outcome.detail.input.overcharge).toBe(npLevel === 5 ? 3 : 2);
       startNpGauges.push(outcome.detail.candidateEvidence.startNpGauge);
-      actual.push(
-        outcome.detail.result.status === 'calculated'
-          ? outcome.detail.result.rows[npLevel - 1]!.average
-          : Number.NaN,
-      );
+      actual.push(outcome.detail.result.rows[npLevel - 1]!.average);
     }
     expect(startNpGauges).toEqual([10_000, 10_000, 10_000, 20_000]);
     expect(actual).toEqual([90_290.91, 108_832.9, 118_739.145, 133_764.555]);

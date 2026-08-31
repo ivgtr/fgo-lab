@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  RankingConditions,
-  RankingDetail,
-  RankingFailure,
+  RankingPolicyConditions,
+  RankingPolicyDetail,
+  RankingPolicyExclusion,
   RankingProfileInput,
   RankingRowSummary,
 } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
-import type { RankingWorkerRequest, RankingWorkerResponse } from './rankingWorkerProtocol';
+import {
+  rankingConditionsFingerprint,
+  type RankingWorkerRequest,
+  type RankingWorkerResponse,
+} from './rankingWorkerProtocol';
 
 interface RankingState {
   rows: RankingRowSummary[];
-  failures: RankingFailure[];
+  exclusions: RankingPolicyExclusion[];
   fingerprint: string;
   error: string;
 }
@@ -25,10 +29,13 @@ export function useRanking({
 }: {
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
-  conditions: RankingConditions;
+  conditions: RankingPolicyConditions;
   versions: VersionContext;
 }) {
-  const conditionsFingerprint = useMemo(() => JSON.stringify(conditions), [conditions]);
+  const conditionsFingerprint = useMemo(
+    () => rankingConditionsFingerprint(conditions),
+    [conditions],
+  );
   const profileFingerprint = useMemo(() => JSON.stringify(profile), [profile]);
   const versionsFingerprint = useMemo(() => JSON.stringify(versions), [versions]);
   const stableProfile = useMemo(
@@ -47,13 +54,13 @@ export function useRanking({
   const [initializedFingerprint, setInitializedFingerprint] = useState('');
   const [state, setState] = useState<RankingState>({
     rows: [],
-    failures: [],
+    exclusions: [],
     fingerprint: '',
     error: '',
   });
   const [details, setDetails] = useState<{
     fingerprint: string;
-    values: Record<string, RankingDetail>;
+    values: Record<string, RankingPolicyDetail>;
   }>({ fingerprint: '', values: {} });
   const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
 
@@ -69,9 +76,10 @@ export function useRanking({
       }
       if (response.kind === 'result') {
         if (response.requestId !== activeRequestRef.current) return;
+        if (response.fingerprint !== activeFingerprintRef.current) return;
         setState({
           rows: response.rows,
-          failures: response.failures,
+          exclusions: response.exclusions,
           fingerprint: response.fingerprint,
           error: '',
         });
@@ -83,15 +91,14 @@ export function useRanking({
         if (response.fingerprint !== activeFingerprintRef.current) return;
         if (detailRequestsRef.current.get(response.entryId) !== response.requestId) return;
         detailRequestsRef.current.delete(response.entryId);
-        if (response.detail)
-          setDetails((current) =>
-            current.fingerprint === response.fingerprint
-              ? {
-                  ...current,
-                  values: { ...current.values, [response.entryId]: response.detail! },
-                }
-              : current,
-          );
+        setDetails((current) =>
+          current.fingerprint === response.fingerprint
+            ? {
+                ...current,
+                values: { ...current.values, [response.entryId]: response.detail },
+              }
+            : current,
+        );
         return;
       }
       if (
@@ -109,7 +116,11 @@ export function useRanking({
         setDetailErrors((current) => ({ ...current, [response.entryId]: response.reason }));
         return;
       }
-      if (response.kind === 'error' && response.requestId === activeRequestRef.current)
+      if (
+        response.kind === 'error' &&
+        response.requestId === activeRequestRef.current &&
+        response.fingerprint === activeFingerprintRef.current
+      )
         setState((current) => ({ ...current, error: response.reason }));
     };
     const request: RankingWorkerRequest = {
@@ -136,7 +147,6 @@ export function useRanking({
     const request: RankingWorkerRequest = {
       kind: 'calculate',
       requestId,
-      fingerprint: conditionsFingerprint,
       conditions,
     };
     worker.postMessage(request);

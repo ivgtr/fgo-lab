@@ -1,29 +1,28 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RANKING_CONDITIONS } from './rankingContracts';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 
 const root = resolve(import.meta.dirname, '../../..');
 
 describe('ranking architecture', () => {
   it('exposes only the compact comparison policies', () => {
-    expect(Object.keys(DEFAULT_RANKING_CONDITIONS).sort()).toEqual([
+    expect(Object.keys(DEFAULT_RANKING_POLICY_CONDITIONS).sort()).toEqual([
       'classAffinity',
       'comparisonMode',
-      'field',
+      'conditionalEffects',
       'npLevel',
       'selfBuffs',
-      'specialAttack',
     ]);
   });
 
   it('keeps policy construction separate from ranking result assembly', async () => {
     const facade = await readFile(
-      resolve(root, 'packages/calculation-application/src/ranking.ts'),
+      resolve(root, 'packages/calculation-application/src/rankingPolicyCalculation.ts'),
       'utf8',
     );
     const factory = await readFile(
-      resolve(root, 'packages/calculation-application/src/rankingScenario.ts'),
+      resolve(root, 'packages/calculation-application/src/rankingPolicyScenario.ts'),
       'utf8',
     );
     expect(facade.split('\n').length).toBeLessThanOrEqual(180);
@@ -55,28 +54,39 @@ describe('ranking architecture', () => {
     ).rejects.toThrow();
   });
 
-  it('reuses one standard matrix when only NP level changes', async () => {
+  it('uses only canonical policy calculations and does not retain the legacy matrix', async () => {
     const worker = await readFile(
       resolve(root, 'apps/web/src/features/ranking/ranking.worker.ts'),
       'utf8',
     );
-    expect(worker).toContain('standardMatrixCache');
-    expect(worker).toContain('rankingMatrixPolicyKey');
-    expect(worker).not.toMatch(/matrixKey.*npLevel/);
+    const runtime = await readFile(
+      resolve(root, 'apps/web/src/features/ranking/rankingWorkerRuntime.ts'),
+      'utf8',
+    );
+    expect(worker).toContain('createRankingWorkerRuntime');
+    expect(runtime).toContain('calculateRankingPolicy');
+    expect(runtime).toContain('rankingConditionsFingerprint');
+    expect(runtime).not.toMatch(/calculateStandardRankingMatrix|rankingMatrixPolicyKey/);
   });
 
   it('does not retain removed ranking conditions or raw Atlas vocabulary', async () => {
     const paths = [
       'packages/calculation-application/src/rankingContracts.ts',
-      'packages/calculation-application/src/rankingScenario.ts',
+      'packages/calculation-application/src/rankingPolicyScenario.ts',
       'apps/web/src/features/ranking/RankingConditions.tsx',
       'apps/web/src/features/ranking/rankingState.ts',
     ];
     const removed =
-      /levelRule|supportTemplateId|attributeAffinityRule|targetTraits|fieldTraits|procPolicy|chainedProcPolicy|canonicalInputs\s*:|\bRate\b/;
+      /levelRule|supportTemplateId|attributeAffinityRule|targetTraits|fieldTraits|procPolicy|chainedProcPolicy|canonicalInputs\s*:|\bRate\b|rSpecial|rField|specialAttack\s*:|field\s*:/;
     for (const path of paths) {
       const content = await readFile(resolve(root, path), 'utf8');
       expect(content, path).not.toMatch(removed);
     }
+    for (const path of [
+      'packages/calculation-application/src/ranking.ts',
+      'packages/calculation-application/src/rankingMatrix.ts',
+      'packages/calculation-application/src/legacyRankingSelection.ts',
+    ])
+      await expect(readFile(resolve(root, path))).rejects.toThrow();
   });
 });

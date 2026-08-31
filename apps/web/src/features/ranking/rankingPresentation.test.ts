@@ -49,7 +49,7 @@ const rows: RankingRowSummary[] = [
     appliedEffectCount: 1,
     supportEffectCount: 0,
     supportSourceCount: 0,
-    specialAttackApplied: false,
+    specialDamageApplied: false,
     level: 90,
     npLevel: 1,
     owned: false,
@@ -99,7 +99,7 @@ const rows: RankingRowSummary[] = [
     appliedEffectCount: 1,
     supportEffectCount: 0,
     supportSourceCount: 0,
-    specialAttackApplied: false,
+    specialDamageApplied: false,
     level: 80,
     npLevel: 1,
     owned: true,
@@ -124,7 +124,7 @@ describe('ranking presentation', () => {
       countChangedRankingConditions({
         ...DEFAULT_RANKING_URL_STATE.conditions,
         npLevel: 5,
-        specialAttack: 'active',
+        conditionalEffects: 'satisfied',
       }),
     ).toBe(2);
   });

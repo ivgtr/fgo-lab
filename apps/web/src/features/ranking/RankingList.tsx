@@ -1,4 +1,4 @@
-import type { RankingDetail } from '@fgo-lab/calculation-application';
+import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import { MasterImage } from '../../ui/MasterImage';
 import { ServantFilterIcon } from '../../ui/ServantFilterIcon';
@@ -19,12 +19,12 @@ export function RankingList({
 }: {
   rows: readonly RankingPresentedRow[];
   openEntryId: string | null;
-  details: Readonly<Record<string, RankingDetail>>;
+  details: Readonly<Record<string, RankingPolicyDetail>>;
   detailErrors: Readonly<Record<string, string>>;
   master: MasterDataSnapshot;
   onToggle: (row: RankingPresentedRow) => void;
   onRetryDetail: (row: RankingPresentedRow) => void;
-  onOpenCalculator: (detail: RankingDetail) => void;
+  onOpenCalculator: (detail: RankingPolicyDetail) => void;
 }) {
   return rows.length === 0 ? (
     <p className="empty">条件に一致する計算済みサーヴァントはいません。</p>
@@ -66,7 +66,7 @@ export function RankingList({
                     {row.noblePhantasmName}・★
                     {row.rarity}・{servantClassLabels.get(row.classId) ?? row.classId}
                   </span>
-                  {row.specialAttackApplied ? (
+                  {row.specialDamageApplied ? (
                     <span className="ranking-special-badge">特攻</span>
                   ) : null}
                 </small>

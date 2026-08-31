@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { RankingProfileInput } from '@fgo-lab/calculation-application';
+import type { RankingPolicyDetail, RankingProfileInput } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
-import type { RankingDetail } from '@fgo-lab/calculation-application';
 import { RankingConditions } from './RankingConditions';
 import { RankingFilters } from './RankingFilters';
 import { RankingList } from './RankingList';
-import { filterAndRankRows } from './rankingPresentation';
+import { filterAndRankRows, rankingPolicyLabel } from './rankingPresentation';
 import { useRankingUrlState } from './rankingState';
 import { useRanking } from './useRanking';
 import './ranking.css';
@@ -20,7 +19,7 @@ export function Ranking({
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
   versions: VersionContext;
-  onOpenCalculator: (detail: RankingDetail) => void;
+  onOpenCalculator: (detail: RankingPolicyDetail) => void;
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);
@@ -41,7 +40,7 @@ export function Ranking({
           <p className="eyebrow">RANKING</p>
           <h2>宝具火力ランキング</h2>
         </div>
-        <span>{urlState.conditions.comparisonMode === 'standard' ? '標準比較' : '所持戦力'}</span>
+        <span>{rankingPolicyLabel(urlState.conditions)}</span>
       </div>
       <RankingConditions
         conditions={urlState.conditions}
@@ -60,7 +59,7 @@ export function Ranking({
       <p role="status" className="ranking-status" aria-live="polite">
         {ranking.loading
           ? `ランキングを更新中… 現在${String(rows.length)}件表示`
-          : `${String(rows.length)}件表示 / ${String(ranking.rows.length)}件を計算${ranking.failures.length > 0 ? `・順位外 ${String(ranking.failures.length)}件` : ''}`}
+          : `${String(rows.length)}件表示 / ${String(ranking.rows.length)}件を計算${ranking.exclusions.length > 0 ? `・順位外 ${String(ranking.exclusions.length)}件` : ''}`}
       </p>
       {ranking.error ? (
         <p role="alert" className="empty">
@@ -87,14 +86,15 @@ export function Ranking({
           onOpenCalculator={onOpenCalculator}
         />
       )}
-      {ranking.failures.length > 0 ? (
+      {ranking.exclusions.length > 0 ? (
         <details className="ranking-failures">
-          <summary>順位外 {ranking.failures.length}件</summary>
+          <summary>順位外 {ranking.exclusions.length}件</summary>
           <ul>
-            {ranking.failures.map((failure) => (
-              <li key={failure.servantId}>
-                <strong>{failure.name}</strong> —{' '}
-                {failure.status === 'inputRequired' ? '入力が必要' : '計算対象外'}: {failure.reason}
+            {ranking.exclusions.map((exclusion) => (
+              <li key={exclusion.entryId}>
+                <strong>{exclusion.name}</strong> —{' '}
+                {exclusion.status === 'unavailableUnderPolicy' ? '条件下で実行不可' : '無効'}:{' '}
+                {exclusion.reason}
               </li>
             ))}
           </ul>

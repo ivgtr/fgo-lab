@@ -74,23 +74,34 @@ test('ranking keeps single and all-target variants as independent entries', asyn
   await expect(jadeRows.first()).toContainText('全体');
 });
 
-test('ranking exposes only six calculation policies', async ({ page, isMobile }) => {
+test('ranking exposes only five calculation policies in keyboard order', async ({
+  page,
+  isMobile,
+}) => {
   test.setTimeout(60_000);
   test.skip(isMobile, 'The desktop project owns the semantic controls baseline');
   await openRanking(page, 1440, 1000);
   const conditions = page.getByRole('region', { name: 'ランキングの計算条件' });
-  await expect(conditions.getByRole('combobox')).toHaveCount(6);
+  const controls = conditions.getByRole('combobox');
+  await expect(controls).toHaveCount(5);
   await expect(conditions.getByLabel('比較')).toHaveValue('standard');
   await expect(conditions.getByLabel('宝具Lv')).toHaveValue('1');
   await expect(conditions.getByLabel('クラス相性')).toHaveValue('neutral');
   await expect(conditions.getByLabel('自己バフ')).toHaveValue('included');
-  await expect(conditions.getByLabel('特攻')).toHaveValue('inactive');
-  await expect(conditions.getByLabel('フィールド')).toHaveValue('inactive');
+  await expect(conditions.getByLabel('条件効果')).toHaveValue('baseline');
+  await expect(conditions.getByLabel('特攻')).toHaveCount(0);
+  await expect(conditions.getByLabel('フィールド')).toHaveCount(0);
   await expect(conditions).toContainText('自然上限・Fou1000');
   await expect(conditions).toContainText('OC1・スキルLv10');
   await conditions.getByText('計算基準', { exact: true }).click();
   await expect(conditions.locator('.ranking-calculation-basis')).toBeVisible();
   await expect(conditions.locator('input')).toHaveCount(0);
+  await controls.first().focus();
+  for (let index = 0; index < 5; index += 1) {
+    await expect(controls.nth(index)).toBeFocused();
+    await page.keyboard.press('Tab');
+  }
+  await expect(conditions.getByText('計算基準', { exact: true })).toBeFocused();
 });
 
 test('ranking icon fallback is deterministic', async ({ page, isMobile }) => {
@@ -197,20 +208,20 @@ test('ranking list density and responsive layout stay within limits', async ({
     expect(metrics.filterHeight, `${String(width)}px filter controls height`).toBeLessThanOrEqual(
       limits[width].filterHeight,
     );
-    if (width === 320) {
-      const firstRow = page
-        .getByRole('list', { name: '宝具火力ランキング' })
-        .getByRole('listitem')
-        .first();
-      await firstRow.getByRole('button', { name: /の計算詳細を開く/ }).click();
-      await expect(firstRow.getByRole('region', { name: /の計算詳細/ })).toContainText('最低');
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        ),
-        '320px expanded detail horizontal overflow',
-      ).toBe(0);
-    }
+    const firstRow = page
+      .getByRole('list', { name: '宝具火力ランキング' })
+      .getByRole('listitem')
+      .first();
+    const disclosure = firstRow.getByRole('button', { name: /の計算詳細を開く/ });
+    await disclosure.click();
+    await expect(firstRow.locator('.ranking-row')).toHaveAttribute('aria-expanded', 'true');
+    await expect(firstRow.getByRole('region', { name: /の計算詳細/ })).toContainText('最低');
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+      `${String(width)}px expanded detail horizontal overflow`,
+    ).toBe(0);
     measured.push({
       width,
       rowHeight: Math.round(metrics.rowHeight * 100) / 100,

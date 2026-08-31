@@ -11,7 +11,8 @@ import {
   type CalculationResult,
   type VersionContext,
 } from '@fgo-lab/schema';
-import { calculateRanking, DEFAULT_RANKING_CONDITIONS } from './ranking';
+import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { createDefaultResolvedScenario, calculateScenario } from './scenario';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 import { attackProfileKey } from './attackProfile';
@@ -149,52 +150,67 @@ export function compileCalculationApplicationProductionAudit(
     }
   }
 
-  const ranking = calculateRanking(
+  const ranking = calculateRankingPolicy(
     master,
     { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
-    DEFAULT_RANKING_CONDITIONS,
+    DEFAULT_RANKING_POLICY_CONDITIONS,
     versions,
   );
-  for (const failure of ranking.failures)
+  for (const exclusion of ranking.exclusions)
     failures.push({
       kind: 'rankingFailure',
-      identity: `ranking:${failure.servantId}`,
-      reason: `${failure.status}:${failure.reason}`,
+      identity: `ranking:${exclusion.entryId}`,
+      reason: `${exclusion.status}:${exclusion.reason}`,
     });
   const rankingEntryIds = ranking.rows.map(({ entryId }) => entryId);
   if (new Set(rankingEntryIds).size !== rankingEntryIds.length)
     throw new TypeError('production_audit_duplicate_attack_profile_identity');
-  const attackProfileRecords: CanonicalAuditRecord[] = Object.values(ranking.details).map(
-    (detail) => {
-      const canonicalIdentity = attackProfileKey(detail.attackProfile);
-      if (detail.entryId !== canonicalIdentity)
-        throw new TypeError(`production_audit_attack_profile_identity_mismatch:${detail.entryId}`);
+  const attackProfileRecords: CanonicalAuditRecord[] = Object.entries(ranking.profileResults).map(
+    ([profileKey, result]) => {
+      const attackProfile =
+        result.status === 'calculated' ? result.detail.attackProfile : result.attackProfile;
+      if (!attackProfile)
+        throw new TypeError(`production_audit_attack_profile_missing:${profileKey}`);
+      const canonicalIdentity = attackProfileKey(attackProfile);
+      if (profileKey !== canonicalIdentity)
+        throw new TypeError(`production_audit_attack_profile_identity_mismatch:${profileKey}`);
       return {
         identity: `attack-profile:${canonicalIdentity}`,
         value: {
           attributes: {
-            cardType: detail.attackProfile.cardType,
-            targetScope: detail.attackProfile.targetScope,
+            cardType: attackProfile.cardType,
+            targetScope: attackProfile.targetScope,
           },
-          identity: jsonValue(detail.attackProfile.id),
+          identity: jsonValue(attackProfile.id),
         },
       };
     },
   );
-  const rankingRecords: CanonicalAuditRecord[] = Object.values(ranking.details).map((detail) => ({
-    identity: `ranking:${detail.entryId}`,
-    value: {
-      appliedEffects: detail.effects
-        .filter(({ outcome }) => outcome === 'applied')
-        .map(({ operationId }) => operationId),
-      executionIssues: jsonValue([...detail.warnings, ...detail.result.issues]),
-      executionTrace: jsonValue(detail.result.trace),
-      outcome: jsonValue(auditOutcome(detail.result)),
-      policy: 'current-default',
-      scenarioIdentity: detail.entryId,
-      usedInput: jsonValue(detail.input),
+  const rankingRecords: CanonicalAuditRecord[] = Object.entries(ranking.profileResults).map(
+    ([profileKey, result]) => {
+      if (result.status !== 'calculated')
+        return {
+          identity: `ranking:${profileKey}`,
+          value: jsonValue({ status: result.status, reason: result.reason }),
+        };
+      const { detail } = result;
+      return {
+        identity: `ranking:${detail.entryId}`,
+        value: {
+          appliedEffects: detail.effects
+            .filter(({ outcome }) => outcome === 'applied')
+            .map(({ operationId }) => operationId),
+          candidateEvidence: jsonValue(detail.candidateEvidence),
+          executionIssues: jsonValue([...detail.warnings, ...detail.result.issues]),
+          executionTrace: jsonValue(detail.result.trace),
+          outcome: jsonValue(auditOutcome(detail.result)),
+          policy: 'current-default',
+          scenarioIdentity: detail.entryId,
+          usedInput: jsonValue(detail.input),
+        },
+      };
     },
-  }));
+  );
   const inventory = {
     attackServants,
     attackProfiles: attackProfileRecords.length,

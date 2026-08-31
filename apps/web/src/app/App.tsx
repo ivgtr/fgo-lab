@@ -30,7 +30,7 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import type { EffectProjection, RankingDetail } from '@fgo-lab/calculation-application';
+import type { EffectProjection, RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
   calculateScenario,
@@ -70,7 +70,7 @@ const ids: IdGenerator = { next: () => crypto.randomUUID() };
 interface CalculationWorkspace {
   scenario: CalculationScenario | undefined;
   shared: CalculationShareSnapshot | undefined;
-  contributionProjection?: RankingDetail['contributionProjection'];
+  contributionProjection?: RankingPolicyDetail['contributionProjection'];
 }
 
 function supportDecisionKeys(effects: readonly EffectProjection[]) {
@@ -330,7 +330,7 @@ export function App() {
   async function saveScenarioDraft(
     scenario: CalculationScenario,
     sessionId = calculationSessionId,
-    contributionProjection?: RankingDetail['contributionProjection'],
+    contributionProjection?: RankingPolicyDetail['contributionProjection'],
   ) {
     setCalculation(
       contributionProjection

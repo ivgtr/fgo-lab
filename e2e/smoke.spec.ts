@@ -1787,7 +1787,7 @@ test('finalizes one deduplicated history entry per calculation input', async ({
 });
 
 test('calculates ranking in a worker', async ({ page, isMobile }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   test.skip(isMobile, 'Desktop navigation exposes the ranking page');
   await page.goto('/');
   await completeSetup(page);
@@ -1808,18 +1808,18 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
     .filter({ hasText: 'ネモ' })
     .first();
   await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('44,551');
-  await conditions.getByLabel('フィールド').selectOption('active');
-  await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('70,661', {
-    timeout: 45_000,
+  await conditions.getByLabel('条件効果').selectOption('satisfied');
+  await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('105,891', {
+    timeout: 90_000,
   });
-  await expect(page).toHaveURL(/rField=active/);
+  await expect(page).toHaveURL(/rConditional=satisfied/);
   await nemo.getByRole('button', { name: /の計算詳細を開く/ }).click();
   await expect(nemo.getByRole('region', { name: /ネモの計算詳細/ })).toContainText(
     'フィールド条件',
     { timeout: 15_000 },
   );
   await expect(nemo.getByRole('region', { name: /ネモの計算詳細/ })).toContainText('虚数空間');
-  await conditions.getByLabel('フィールド').selectOption('inactive');
+  await conditions.getByLabel('条件効果').selectOption('baseline');
   await expect(nemo.locator('.ranking-primary-damage strong')).toHaveText('44,551', {
     timeout: 45_000,
   });

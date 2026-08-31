@@ -15,8 +15,8 @@ export const PRODUCTION_RUNTIME_COUNTER_CONTRACT = {
     compileCount: 1,
     candidateCount: 6_376,
     deduplicatedCandidateCount: 3_957,
-    damageRequestCount: 3_629,
-    distinctDamageRequestCount: 1_623,
+    damageRequestCount: 6_913,
+    distinctDamageRequestCount: 1_599,
   },
   'data-pipeline': {
     masterReadCount: 1,

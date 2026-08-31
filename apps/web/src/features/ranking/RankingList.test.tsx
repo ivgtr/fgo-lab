@@ -54,7 +54,7 @@ const row: RankingPresentedRow = {
   appliedEffectCount: 1,
   supportEffectCount: 0,
   supportSourceCount: 0,
-  specialAttackApplied: false,
+  specialDamageApplied: false,
   level: 90,
   npLevel: 1,
   owned: false,

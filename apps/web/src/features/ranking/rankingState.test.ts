@@ -15,8 +15,7 @@ describe('ranking URL state', () => {
         npLevel: 5 as const,
         classAffinity: 'favorable' as const,
         selfBuffs: 'excluded' as const,
-        specialAttack: 'active' as const,
-        field: 'active' as const,
+        conditionalEffects: 'satisfied' as const,
       },
       metric: 'maximum' as const,
       filters: {
@@ -30,15 +29,17 @@ describe('ranking URL state', () => {
 
   it('rejects out-of-domain values without preserving invalid input', () => {
     const state = parseRankingUrlState(
-      '?rNp=9&rMode=unknown&rAffinity=invalid&rSelf=invalid&rSpecial=invalid&rField=invalid',
+      '?rNp=9&rMode=unknown&rAffinity=invalid&rSelf=invalid&rConditional=invalid&rSpecial=active&rField=active',
     );
     expect(state.conditions).toMatchObject({
       comparisonMode: 'standard',
       npLevel: 1,
       classAffinity: 'neutral',
       selfBuffs: 'included',
-      specialAttack: 'inactive',
-      field: 'inactive',
+      conditionalEffects: 'baseline',
     });
+    expect(serializeRankingUrlState(state, '?rSpecial=active&rField=active')).not.toMatch(
+      /rSpecial|rField/,
+    );
   });
 });

@@ -1,7 +1,7 @@
 import type {
-  RankingConditions,
-  RankingDetail,
-  RankingFailure,
+  RankingPolicyConditions,
+  RankingPolicyDetail,
+  RankingPolicyExclusion,
   RankingProfileInput,
   RankingRowSummary,
   AttackProfile,
@@ -20,8 +20,7 @@ export type RankingWorkerRequest =
   | {
       kind: 'calculate';
       requestId: string;
-      fingerprint: string;
-      conditions: RankingConditions;
+      conditions: RankingPolicyConditions;
     }
   | {
       kind: 'detail';
@@ -39,14 +38,14 @@ export type RankingWorkerResponse =
       requestId: string;
       fingerprint: string;
       rows: RankingRowSummary[];
-      failures: RankingFailure[];
+      exclusions: RankingPolicyExclusion[];
     }
   | {
       kind: 'detail';
       requestId: string;
       fingerprint: string;
       entryId: string;
-      detail: RankingDetail | null;
+      detail: RankingPolicyDetail;
     }
   | {
       kind: 'error';
@@ -63,3 +62,13 @@ export type RankingWorkerResponse =
       entryId: string;
       reason: string;
     };
+
+export function rankingConditionsFingerprint(conditions: RankingPolicyConditions): string {
+  return JSON.stringify([
+    conditions.comparisonMode,
+    conditions.npLevel,
+    conditions.classAffinity,
+    conditions.selfBuffs,
+    conditions.conditionalEffects,
+  ]);
+}
