@@ -513,6 +513,16 @@ Handoff:
   ranking records差分は0。digestは`e9441e4f35eb74af80a79967ee20ea735687a899cc2b6f606ea3db5ae0297e7f`。
   production worker capはquality内で再現した5秒timeoutを解消するため75%へ下げ、timeout／suiteは不変。
   Blocking 0、TSK-05は`done`、TSK-06は`ready`。
+- Fourth review reopen: productionだけに75% worker capを設定した一方、unit／productionを同じ既定
+  `sequence.groupOrder`へ残したため、複数projectを選ぶ標準runnerがVitest設定検証で0 testsのまま失敗した。
+  suite別の`quality`経路だけを最終確認し、cap導入後の`test:agent`／複数project focused diagnosticを
+  再実行しなかったことがmissed detectionである。unitとproductionを別groupへ分離し、最終設定で両経路が
+  実testを実行するまでBlocking 1、TSK-05は`ready`、TSK-06は`blocked`へ戻す。
+- Fourth review resolution: unitを`sequence.groupOrder: 0`、productionを`groupOrder: 1`へ分離し、
+  productionの75% capと既存5秒timeoutを維持した。設定契約testを追加し、最終設定の複数project focused
+  diagnosticは3 files／55 tests、`test:agent`は83 files／458 testsを実行して成功した。`pnpm test`は
+  `test:agent`と同じcompact runner commandである。最終`pnpm quality`成功後、Blocking 0、TSK-05を
+  `done`、TSK-06を`ready`へ復帰した。
 - Deferred: satisfied-policy start-gauge／scenario-fact candidate generationは`RK-POLICY-001`として
   TSK-06が所有する。
 

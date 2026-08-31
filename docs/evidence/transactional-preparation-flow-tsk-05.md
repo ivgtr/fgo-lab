@@ -242,6 +242,44 @@ the comparison record.
 - Blocking: 0. `RK-POLICY-001` remains `Deferred: TSK-06`; it does not leave a TSK-05 execution
   writer open.
 
+## Fourth structural review delta: multi-project test execution
+
+The production-only 75% worker cap and Vitest's default `sequence.groupOrder: 0` formed an invalid
+multi-project configuration: unit and production had different worker limits inside one concurrent
+group. This is a TSK-05 integration regression introduced with the final contention cap. It prevented
+the canonical all-suite runner from reaching collection, so diagnostic and agent paths reported zero
+tests even though the individually selected projects used by `quality` passed.
+
+The execution-family closure for this delta is bounded to the Vitest project scheduler and compact
+runner: unit-only and production-only selection remain valid; all-suite execution must select both
+projects without a configuration rejection; production retains the unchanged 5s test timeout and 75%
+worker cap. Unit and production now use distinct group orders, and the runner contract guards the
+relationship between the unequal cap and those groups.
+
+| Path | Classification |
+| --- | --- |
+| `test:unit` / `test:production` explicit project selection | Verified: existing canonical quality paths remain project-local |
+| focused diagnostic selecting only unit files | Verified: 1 file / 18 tests on the failing baseline, artifact `.test-results/2026-08-31T05-47-58-915Z-15-48d532` |
+| focused diagnostic selecting unit and production files | Verified: 3 files / 55 tests, artifact `.test-results/2026-08-31T05-50-13-805Z-15-5af010` |
+| `test:agent` all-project compact runner | Verified: 83 files / 458 tests, artifact `.test-results/2026-08-31T05-50-23-531Z-15-e8b33a` |
+| `pnpm test` | Verified by command identity with `test:agent`; both dispatch the same all-suite compact runner |
+| production contention cap and 5s timeout | Verified by configuration: 75% cap retained; timeout unchanged |
+
+Confirmed mechanism: Vitest rejected the current HEAD with `Projects "production" and "unit" have
+different 'maxWorkers' but same 'sequence.groupOrder'`; artifact
+`.test-results/2026-08-31T05-48-08-684Z-15-5d0bf2`. Implementation mismatch: the cap was treated as a
+production-local performance setting although Vitest validates worker limits at the concurrent
+project-group boundary. Missed detection: the post-cap gate selected projects separately and the
+earlier focused artifact preceded the cap. Recurrence scope is any project-local worker limit added
+to an all-project runner; the minimum guardrail is distinct group-order configuration plus an actual
+all-project compact run.
+
+- Resolution: unit uses group 0 and production uses group 1. The production-only 75% cap and existing
+  5s timeout remain unchanged. The final focused diagnostic crossed both project groups and executed
+  55 tests; `test:agent` crossed the complete partition and executed 458 tests. The static runner
+  contract now detects removal of either distinct group while the cap is present.
+- Blocking: 0. TSK-05 returns to `done`; TSK-06 returns to `ready` after the final quality gate.
+
 ## Second structural review delta and resolution
 
 The preceding completion claim was withdrawn while four concrete crossings were open. Each now has

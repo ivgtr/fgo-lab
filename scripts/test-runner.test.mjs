@@ -311,6 +311,19 @@ test('unit and production suites form one exhaustive non-overlapping Vitest part
   assert.equal(all.length - production.length + production.length, all.length);
 });
 
+test('differently capped Vitest projects use distinct execution groups', () => {
+  const config = readFileSync(resolve(root, 'vitest.config.ts'), 'utf8');
+  const unitProject = config.slice(
+    config.indexOf("name: 'unit'"),
+    config.indexOf("name: 'production'"),
+  );
+  const productionProject = config.slice(config.indexOf("name: 'production'"));
+
+  assert.match(unitProject, /sequence: \{ groupOrder: 0 \}/);
+  assert.match(productionProject, /maxWorkers: '75%'/);
+  assert.match(productionProject, /sequence: \{ groupOrder: 1 \}/);
+});
+
 test('local, CI, and Pages use the same canonical quality command', () => {
   const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   assert.equal(
