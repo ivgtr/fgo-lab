@@ -104,7 +104,8 @@ function positiveExclusiveTraits(facts: readonly RankingTraitFact[]): string[] {
   ];
 }
 
-function isTargetWitnessCondition(condition: ConditionExpression): boolean {
+/** Defines the production audit population; mixed ownership is covered by focused fixtures. */
+function isWorldFactOnlyTargetCondition(condition: ConditionExpression): boolean {
   if (condition.kind === 'always') return true;
   if (condition.kind === 'trait' || condition.kind === 'traitCount')
     return (
@@ -113,8 +114,8 @@ function isTargetWitnessCondition(condition: ConditionExpression): boolean {
     );
   if (condition.kind === 'targetPredicate') return condition.scope === 'target';
   if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.every(isTargetWitnessCondition);
-  return condition.kind === 'not' && isTargetWitnessCondition(condition.expression);
+    return condition.expressions.every(isWorldFactOnlyTargetCondition);
+  return condition.kind === 'not' && isWorldFactOnlyTargetCondition(condition.expression);
 }
 
 function conditionLeaves(condition: ConditionExpression): readonly ConditionExpression[] {
@@ -210,7 +211,7 @@ describe('ranking target witness completeness', () => {
 
     for (const { condition, source } of variants) {
       expect(traitConditionEvaluationSource(condition)).toBe(source);
-      expect(isTargetWitnessCondition(condition)).toBe(source === 'worldFacts');
+      expect(isWorldFactOnlyTargetCondition(condition)).toBe(source === 'worldFacts');
       expect(targetConditionWitnessSpace(condition).traitFacts.length > 0).toBe(
         source === 'worldFacts',
       );
@@ -218,6 +219,58 @@ describe('ranking target witness completeness', () => {
         source === 'worldFacts' ? true : null,
       );
     }
+  });
+
+  it('composes mixed ownership without fabricating effect-local truth', () => {
+    const effectLocal: Extract<ConditionExpression, { kind: 'trait' }> = {
+      kind: 'trait',
+      scope: 'target',
+      trait: 'divine',
+      present: true,
+      provenance: {
+        stateSources: 'activeAndPassive',
+        ignoredStateTraits: 'exclude',
+        unremovableStateTraits: 'include',
+      },
+    };
+    const worldFact: Extract<ConditionExpression, { kind: 'trait' }> = {
+      kind: 'trait',
+      scope: 'target',
+      trait: 'dragon',
+      present: true,
+    };
+    const mixedAny: ConditionExpression = {
+      kind: 'any',
+      expressions: [effectLocal, worldFact],
+    };
+    const mixedAll: ConditionExpression = {
+      kind: 'all',
+      expressions: [effectLocal, worldFact],
+    };
+    const negatedEffectLocal: ConditionExpression = { kind: 'not', expression: effectLocal };
+
+    expect(targetConditionWitnessSpace(mixedAny).traitFacts).toEqual([
+      { scope: 'target', trait: 'dragon' },
+      { scope: 'targetState', trait: 'dragon' },
+    ]);
+    expect(
+      candidates([mixedAny]).some(
+        (candidate) =>
+          evaluateConditionExpression(mixedAny, stateFor(servant, candidate, master)) === true,
+      ),
+    ).toBe(true);
+
+    for (const condition of [mixedAny, mixedAll, negatedEffectLocal])
+      expect(isWorldFactOnlyTargetCondition(condition)).toBe(false);
+    for (const condition of [mixedAll, negatedEffectLocal]) {
+      expect(
+        candidates([condition]).some(
+          (candidate) =>
+            evaluateConditionExpression(condition, stateFor(servant, candidate, master)) === true,
+        ),
+      ).toBe(false);
+    }
+    expect(targetConditionWitnessSpace(negatedEffectLocal).traitFacts).toEqual([]);
   });
 
   it('provides a canonical true witness for leaf polarity, traitCount, and nested boolean forms', () => {
@@ -377,21 +430,38 @@ describe('ranking target witness completeness', () => {
       ).toBe(true);
   });
 
-  it('audits every production target-only condition for a canonical true witness', () => {
-    const inventory = master.servants.flatMap((candidateServant) =>
+  it('audits every production world-fact-only target condition for a canonical true witness', () => {
+    const productionConditions = master.servants.flatMap((candidateServant) =>
       compileStaticRankingPreparationPrograms(candidateServant).flatMap((program) =>
         compileStaticRankingSemantics(
           candidateServant,
           program,
           DEFAULT_RANKING_POLICY_CONDITIONS,
-        ).conditions.flatMap((condition) =>
-          isTargetWitnessCondition(condition) &&
-          (targetConditionWitnessSpace(condition).traitFacts.length > 0 ||
-            targetConditionWitnessSpace(condition).predicates.length > 0)
-            ? [{ servant: candidateServant, program, condition }]
-            : [],
-        ),
+        ).conditions.map((condition) => ({ servant: candidateServant, program, condition })),
       ),
+    );
+    const mixedOwnership = productionConditions.filter(({ condition }) => {
+      const leaves = conditionLeaves(condition);
+      return (
+        leaves.some(
+          (leaf) =>
+            leaf.kind === 'trait' && traitConditionEvaluationSource(leaf) === 'effectLocalDecision',
+        ) && leaves.some(isWorldFactOnlyTargetCondition)
+      );
+    });
+    expect({
+      conditions: mixedOwnership.length,
+      servants: new Set(mixedOwnership.map(({ servant: candidateServant }) => candidateServant.id))
+        .size,
+    }).toEqual({ conditions: 0, servants: 0 });
+
+    const inventory = productionConditions.flatMap(
+      ({ servant: candidateServant, program, condition }) =>
+        isWorldFactOnlyTargetCondition(condition) &&
+        (targetConditionWitnessSpace(condition).traitFacts.length > 0 ||
+          targetConditionWitnessSpace(condition).predicates.length > 0)
+          ? [{ servant: candidateServant, program, condition }]
+          : [],
     );
     const missing = inventory.flatMap(({ servant: candidateServant, program, condition }) => {
       const generated = createRankingWorldCandidatesForConditions(

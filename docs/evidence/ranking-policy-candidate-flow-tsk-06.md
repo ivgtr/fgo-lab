@@ -1,7 +1,7 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Complete"
-updated_at: "2026-08-31"
+updated_at: "2026-09-01"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
@@ -88,6 +88,7 @@ Optimization may cache only observable static blueprints or complete damage-inpu
 | `target` / `targetState` positive, negative, and overlapping reads | Verified: physical read-scope closure fixture |
 | traitCount `atLeast` / `atMost` / `equal` | Verified: target and field focused fixtures |
 | provenance boundary by `trait` / `traitCount` variant | Verified: shared leaf-level source matrix across executor, audit, and planner axes |
+| mixed ownership `any` / `all` / `not` | Verified: focused composition fixture and zero-production ratchet |
 | nested `all` / `any` / `not` | Verified: canonical evaluator completeness fixture |
 | exclusive traits: positive, negative, and mixed | Verified: candidate soundness fixture |
 | self-generated trait before and after mutation | Verified: 405900 ordered target-state transition fixture |
@@ -139,11 +140,33 @@ The witness correction keeps the default baseline-policy inventory above unchang
 three-servant satisfied-policy inventory, candidates increase from 404 to 1,056; included distinct
 damage inputs increase from 56 to 104 and excluded from 14 to 26. The increase represents explicit
 false/true physical target facts and the field all-absent state, not effect subsets. A production
-audit checks 13,026 target-only condition occurrences across 205 servants/program paths and finds a
+audit checks 13,026 world-fact-only target condition occurrences across 205 servants/program paths and finds a
 canonical true witness for every occurrence. The population includes 1,743 occurrences with
 canonical default provenance, including 49 with a negative trait leaf.
 
 ## Structural findings and guardrails
+
+### Fourth review reopening: nested ownership composition
+
+Confirmed fact: the production audit recursively requires every leaf to be world-fact evaluable for
+both `all` and `any`. The executor instead evaluates `any(effectLocal, worldTrue)` as true, while
+`targetConditionWitnessSpace` retains the world branch axis and omits only the effect-local leaf.
+The audit therefore excludes a schema-legal condition for which the planner can generate a true
+witness. The same test-local `every` structure exists in parent `8393c5c`; current production has
+zero mixed-ownership conditions, so the 13,026-condition inventory and ranking damage are unchanged.
+
+Implementation mismatch: the leaf-level source matrix was presented as nested closure without
+testing boolean composition. Missed detection: the added matrix covered only standalone leaves.
+Recurrence scope: `any`, `all`, and `not` combinations of world-fact and effect-local leaves.
+Minimum guardrail: name and document the production population as world-fact-only, cover mixed
+ownership in focused fixtures, retain a world-true witness for `any`, and prove that `all` and
+`not(effectLocal)` cannot be made true by fabricated world facts.
+
+Resolution: the audit predicate is named and documented as world-fact-only rather than as general
+witness eligibility. A focused schema-legal fixture proves that mixed `any` retains only the world
+axis and has a canonical true witness, while mixed `all` and `not(effectLocal)` have no fabricated
+true witness. The production gate separately ratchets mixed ownership at 0 conditions / 0 servants;
+the world-fact-only population remains 13,026 conditions / 205 servants.
 
 ### Third review reopening: provenance variant ownership
 
@@ -231,9 +254,9 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
 
 ## Verification and performance
 
-- Focused witness/policy/candidate/scenario diagnostics: 6 files / 54 tests passed.
+- Focused witness/policy/candidate/scenario diagnostics: 6 files / 55 tests passed.
 - Unit: 60 files / 352 tests passed.
-- Production: 27 files / 149 tests passed.
+- Production: 27 files / 150 tests passed.
 - Legacy production audit: 433 AttackProfiles/rows and damage cache 3,629 requests / 1,623 distinct,
   unchanged from the approved baseline.
 - Ranking hot path after witness correction: 64.56s, 65.31s, 64.70s; median 64.70s versus the
