@@ -1,4 +1,10 @@
-import type { ActorScope, CanonicalExclusiveGroup, TraitScope } from './contracts';
+import type {
+  ActorScope,
+  CanonicalExclusiveGroup,
+  ConditionExpression,
+  TraitScope,
+} from './contracts';
+import type { TargetPredicate } from '@fgo-lab/schema';
 
 export type TraitConstraintScope =
   | 'attackerInitial'
@@ -52,6 +58,54 @@ const TRAIT_SCOPE_SEMANTICS = {
 
 export function traitConditionReadScopes(scope: TraitScope): readonly TraitScope[] {
   return TRAIT_SCOPE_SEMANTICS[scope].readScopes;
+}
+
+export interface TargetConditionWitnessSpace {
+  traitFacts: readonly {
+    scope: 'target' | 'targetState';
+    trait: string;
+  }[];
+  predicates: readonly TargetPredicate[];
+}
+
+/**
+ * Returns the physical target facts whose values can change a condition result. The condition
+ * evaluator remains the owner of truth: this function only exposes its read dimensions so finite
+ * planners do not have to reinterpret polarity, boolean composition, or trait-count comparisons.
+ */
+export function targetConditionWitnessSpace(
+  condition: ConditionExpression | null,
+): TargetConditionWitnessSpace {
+  const traitFacts = new Map<string, { scope: 'target' | 'targetState'; trait: string }>();
+  const predicates = new Map<string, TargetPredicate>();
+  const visit = (expression: ConditionExpression): void => {
+    if (expression.kind === 'trait' || expression.kind === 'traitCount') {
+      if (expression.scope !== 'target' && expression.scope !== 'targetState') return;
+      const traits = expression.kind === 'trait' ? [expression.trait] : expression.traits;
+      for (const scope of traitConditionReadScopes(expression.scope)) {
+        if (scope !== 'target' && scope !== 'targetState') continue;
+        for (const trait of traits) traitFacts.set(`${scope}:${trait}`, { scope, trait });
+      }
+      return;
+    }
+    if (expression.kind === 'targetPredicate') {
+      if (expression.scope === 'target')
+        predicates.set(JSON.stringify(expression.predicate), expression.predicate);
+      return;
+    }
+    if (expression.kind === 'all' || expression.kind === 'any') {
+      for (const child of expression.expressions) visit(child);
+      return;
+    }
+    if (expression.kind === 'not') visit(expression.expression);
+  };
+  if (condition) visit(condition);
+  return {
+    traitFacts: [...traitFacts.values()].sort((left, right) =>
+      `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
+    ),
+    predicates: [...predicates.values()],
+  };
 }
 
 export function traitFactConstraintScope(scope: TraitScope): TraitConstraintScope {

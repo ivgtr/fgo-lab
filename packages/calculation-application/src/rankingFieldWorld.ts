@@ -41,9 +41,8 @@ export function createRankingFieldFactCandidates(
       traits: relevantTraits.filter((trait) => candidate[trait]),
       facts: relevantTraits.map((trait) => ({ trait, present: candidate[trait] ?? false })),
     }))
-    .filter(({ traits }) => traits.length > 0)
     .filter(({ traits }) => !hasExclusiveConflict(traits))
-    .map(({ traits, facts }) => ({ key: `field:${traits.join(',')}`, traits, facts }));
+    .map(({ traits, facts }) => ({ key: `field:${JSON.stringify(facts)}`, traits, facts }));
 }
 
 export function createRankingFieldCandidates(
@@ -65,11 +64,8 @@ export function createRankingFieldCandidates(
 export function createRankingFieldCandidatesForConditions(
   conditions: readonly (ConditionExpression | null)[],
   active: boolean,
-  plannedFieldTraits: ReadonlySet<string> = new Set(),
 ): readonly RankingFieldCandidate[] {
-  const relevantTraits = [...new Set(conditions.flatMap(fieldTraitsRequiredByCondition))].filter(
-    (trait) => !plannedFieldTraits.has(trait),
-  );
+  const relevantTraits = [...new Set(conditions.flatMap(fieldTraitsRequiredByCondition))];
   relevantTraits.sort();
   return createRankingFieldFactCandidates(relevantTraits, active);
 }

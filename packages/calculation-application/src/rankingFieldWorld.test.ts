@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createRankingFieldCandidatesForConditions,
   createRankingFieldFactCandidates,
   MAX_RANKING_FIELD_CANDIDATES,
 } from './rankingFieldWorld';
@@ -12,55 +13,24 @@ describe('ranking field worlds', () => {
   });
 
   it('enumerates only relevant satisfiable field facts', () => {
+    const candidates = createRankingFieldFactCandidates(
+      ['fieldHeaven', 'fieldHell', 'fieldShore'],
+      true,
+    );
+    expect(candidates).toHaveLength(6);
+    expect(candidates.some(({ traits }) => traits.length === 0)).toBe(true);
     expect(
-      createRankingFieldFactCandidates(['fieldHeaven', 'fieldHell', 'fieldShore'], true),
-    ).toEqual([
-      {
-        key: 'field:fieldShore',
-        traits: ['fieldShore'],
-        facts: [
-          { trait: 'fieldHeaven', present: false },
-          { trait: 'fieldHell', present: false },
-          { trait: 'fieldShore', present: true },
-        ],
-      },
-      {
-        key: 'field:fieldHell',
-        traits: ['fieldHell'],
-        facts: [
-          { trait: 'fieldHeaven', present: false },
-          { trait: 'fieldHell', present: true },
-          { trait: 'fieldShore', present: false },
-        ],
-      },
-      {
-        key: 'field:fieldHell,fieldShore',
-        traits: ['fieldHell', 'fieldShore'],
-        facts: [
-          { trait: 'fieldHeaven', present: false },
-          { trait: 'fieldHell', present: true },
-          { trait: 'fieldShore', present: true },
-        ],
-      },
-      {
-        key: 'field:fieldHeaven',
-        traits: ['fieldHeaven'],
-        facts: [
-          { trait: 'fieldHeaven', present: true },
-          { trait: 'fieldHell', present: false },
-          { trait: 'fieldShore', present: false },
-        ],
-      },
-      {
-        key: 'field:fieldHeaven,fieldShore',
-        traits: ['fieldHeaven', 'fieldShore'],
-        facts: [
-          { trait: 'fieldHeaven', present: true },
-          { trait: 'fieldHell', present: false },
-          { trait: 'fieldShore', present: true },
-        ],
-      },
-    ]);
+      candidates.every(
+        ({ traits }) => !(traits.includes('fieldHeaven') && traits.includes('fieldHell')),
+      ),
+    ).toBe(true);
+    expect(
+      candidates.every(({ facts }) =>
+        ['fieldHeaven', 'fieldHell', 'fieldShore'].every((trait) =>
+          facts.some((fact) => fact.trait === trait),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('fails closed when the finite search bound would be exceeded', () => {
@@ -72,4 +42,24 @@ describe('ranking field worlds', () => {
       /ranking_field_candidate_limit/,
     );
   });
+
+  it.each(['atLeast', 'atMost', 'equal'] as const)(
+    'enumerates field traitCount %s facts including the all-absent witness',
+    (comparison) => {
+      const candidates = createRankingFieldCandidatesForConditions(
+        [
+          {
+            kind: 'traitCount',
+            scope: 'field',
+            traits: ['fieldShore', 'fieldSunlight'],
+            comparison,
+            count: 1,
+          },
+        ],
+        true,
+      );
+      expect(candidates).toHaveLength(4);
+      expect(candidates.some(({ facts }) => facts.every(({ present }) => !present))).toBe(true);
+    },
+  );
 });

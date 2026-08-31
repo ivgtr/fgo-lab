@@ -49,8 +49,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
 | TSK-04 | Ranking canonical IR cutover | done | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | done | TSK-04 | ranking execution／NP resource |
-| TSK-06 | Ranking policyとcandidate planner | ready | TSK-05 | ranking condition／candidate planning |
-| TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
+| TSK-06 | Ranking policyとcandidate planner | done | TSK-05 | ranking condition／candidate planning |
+| TSK-07 | Web／worker一括切替 | ready | TSK-06 | ranking UI／移行方針 |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
@@ -530,11 +530,11 @@ Handoff:
 
 Depends on: TSK-05
 
-- [ ] 自己バフと条件効果の四policy組合せをcompileする。
-- [ ] finite preparation plan、TargetContext、condition candidateを生成する。
-- [ ] baseline包含とstable tie-breakを実装する。
-- [ ] `calculated | unavailableUnderPolicy | invalid`を型で分離する。
-- [ ] calculatorと同じcanonical executorからdamageを生成する。
+- [x] 自己バフと条件効果の四policy組合せをcompileする。
+- [x] finite preparation plan、TargetContext、condition candidateを生成する。
+- [x] baseline包含とstable tie-breakを実装する。
+- [x] `calculated | unavailableUnderPolicy | invalid`を型で分離する。
+- [x] calculatorと同じcanonical executorからdamageを生成する。
 
 Done gate:
 
@@ -547,14 +547,35 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-POLICY-001` | Apply | `pnpm test:diagnostic -- <ranking-policy-filter>`、`pnpm test:production` | `docs/evidence/<tsk-06-report>.md` |
-| `RK-AUDIT-001` | Apply | candidate／damage request／parity inventory check | `docs/evidence/<tsk-06-report>.md` |
-| `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/<tsk-06-report>.md` |
-| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-06-report>.md` |
+| `RK-POLICY-001` | Apply | `pnpm test:diagnostic -- <ranking-policy-filter>`、`pnpm test:production` | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | candidate／damage request／parity inventory check | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `RK-UI-001` | Deferred: TSK-07 | - | TSK-07 |
 
-Handoff: 未記録
+Handoff:
+
+- Canonical flow note: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`。structural reviewで
+  flow closureを再オープンし、leaf polarity／`traitCount`／combined target read scope／negative
+  target predicate／exclusive trait／self-generated state transitionを反例行列へ追加した。
+- Ownership: battle-executionの`targetConditionWitnessSpace`がcanonical evaluatorと同じ物理
+  trait read scopeを公開し、application plannerはその有限fact次元をschema-legalに列挙する。
+  条件真偽やdamage semanticsをranking側で再実装しない。
+- Correctness: 1102300 included:satisfied NP1は`target`／`targetState`の
+  `superGiant=false` witnessを選び、`powerMod 0.3 -> 0.5`、平均damage
+  `80,857.34 -> 88,558.08`。同4状態のcalculator総当たり最大値とplanner選択値が一致する。
+- Completeness/soundness: focused 5 files／28 tests、production target-only condition 11,283件
+  （139騎・program展開単位）すべてにcanonical true witnessあり。exclusive正負混在に矛盾0、
+  `present:true/false`、targetPredicate、traitCount三比較、nested boolean、field不存在、405900
+  self-generated target stateを固定した。
+- Inventory/performance: 三騎satisfied-policyは404から1,056 candidates、最大production profileは
+  2,880／4,096。ranking hot path中央値64.70秒（修正前60.91秒比+3.79秒／+6.22%）、最終production
+  gate中央値80.77秒（75.50秒比+5.27秒／+6.98%、21 production tests追加込み）で10% ratchet内。
+- Verification: `pnpm test:unit` 60 files／351 tests、`pnpm test:production` 27 files／148 tests。
+  final `pnpm quality`成功（E2E 64 passed／32 skipped）。
+- Closure: Blocking 0、TSK-06 `done`、TSK-07 `ready`。UI／worker／URL cutoverはTSK-07へ
+  Deferred、cross-level cache最適化はTSK-08へDeferred。
 
 ### TSK-07: Web／worker一括切替
 

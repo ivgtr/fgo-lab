@@ -54,7 +54,11 @@ export function fieldTraitsRequiredByCondition(
   return [
     ...new Set(
       conditionFactRequirements(condition).flatMap(({ condition: leaf }) =>
-        leaf.kind === 'trait' && leaf.scope === 'field' ? [leaf.trait] : [],
+        leaf.kind === 'trait' && leaf.scope === 'field'
+          ? [leaf.trait]
+          : leaf.kind === 'traitCount' && leaf.scope === 'field'
+            ? leaf.traits
+            : [],
       ),
     ),
   ].sort();

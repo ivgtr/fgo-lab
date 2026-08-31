@@ -208,7 +208,7 @@ describe('static ranking candidate space', () => {
         servantId,
         upperBound: space.upperBound,
       }));
-    expect(largest).toEqual([{ servantId: '3300200', upperBound: 1_920 }]);
+    expect(largest).toEqual([{ servantId: '3300200', upperBound: 2_880 }]);
     expect(largest[0]!.upperBound).toBeLessThanOrEqual(4_096);
   });
 });

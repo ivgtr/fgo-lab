@@ -82,11 +82,13 @@ export {
   canonicalExclusiveTraits,
   traitConditionConstraintScope,
   traitConditionReadScopes,
+  targetConditionWitnessSpace,
   traitConstraintActorScope,
   traitConstraintLayer,
   traitConstraintPublicScope,
   traitFactConstraintScope,
   type TraitConstraintScope,
+  type TargetConditionWitnessSpace,
 } from './conditionSemantics';
 export {
   applyNpDamageOperation,

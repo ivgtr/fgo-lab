@@ -11,6 +11,7 @@ import {
   DEFAULT_RANKING_POLICY_CONDITIONS,
   type RankingProfileInput,
 } from './rankingContracts';
+import { calculateScenarioWithContributionProjection } from './scenario';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -146,121 +147,180 @@ describe('ranking condition semantics', () => {
     ).toBe(true);
   });
 
-  it('evaluates the four policy crossings without forging intrinsic facts', () => {
-    const servants = ['1100300', '403700', '105400'].map((servantId) =>
-      master.servants.find(({ id }) => id === servantId)!,
+  it('selects the production 1102300 non-superGiant witness as the stronger legal candidate', () => {
+    const servant = master.servants.find(({ id }) => id === '1102300')!;
+    const outcome = calculateRankingPolicyDetail(
+      servant,
+      master,
+      profile,
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        conditionalEffects: 'satisfied',
+      },
+      versions,
     );
-    for (const servant of servants)
-      for (const selfBuffs of ['included', 'excluded'] as const)
-        for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
-          const outcome = calculateRankingPolicyDetail(
-            servant,
-            master,
-            profile,
-            {
-              ...DEFAULT_RANKING_POLICY_CONDITIONS,
-              selfBuffs,
-              conditionalEffects,
+    expect(outcome.status).toBe('calculated');
+    if (outcome.status !== 'calculated') return;
+    expect(outcome.detail.input.powerMod).toBe(0.5);
+    expect(
+      outcome.detail.result.status === 'calculated' ? outcome.detail.result.rows[0].average : null,
+    ).toBe(88_558.08);
+    expect(
+      outcome.detail.scenario.worldFactAssertions.filter(
+        ({ fact }) => fact.kind === 'trait' && fact.trait === 'superGiant',
+      ),
+    ).toEqual([
+      {
+        decisionKey: 'ranking:target:superGiant',
+        fact: { kind: 'trait', scope: 'target', trait: 'superGiant', present: false },
+      },
+      {
+        decisionKey: 'ranking:targetState:superGiant',
+        fact: { kind: 'trait', scope: 'targetState', trait: 'superGiant', present: false },
+      },
+    ]);
+    const bruteDamage = Array.from({ length: 4 }, (_, mask) => {
+      const scenario = {
+        ...outcome.detail.scenario,
+        worldFactAssertions: [
+          ...outcome.detail.scenario.worldFactAssertions.filter(
+            ({ fact }) => fact.kind !== 'trait' || fact.trait !== 'superGiant',
+          ),
+          ...(['target', 'targetState'] as const).map((scope, index) => ({
+            decisionKey: `oracle:${scope}:superGiant`,
+            fact: {
+              kind: 'trait' as const,
+              scope,
+              trait: 'superGiant',
+              present: (mask & (1 << index)) !== 0,
             },
-            versions,
-          );
-          expect(outcome.status, `${servant.id}:${selfBuffs}:${conditionalEffects}`).toBe(
-            'calculated',
-          );
-          if (outcome.status !== 'calculated') continue;
-          expect(outcome.detail.candidateEvidence.policyKey).toBe(
-            `${selfBuffs}:${conditionalEffects}`,
-          );
-          if (servant.id !== '1100300') continue;
-          const forgedDragon = outcome.detail.scenario.worldFactAssertions.some(
-            ({ fact }) =>
-              fact.kind === 'trait' &&
-              fact.scope === 'attacker' &&
-              fact.trait === 'dragon' &&
-              fact.present,
-          );
-          expect(forgedDragon).toBe(false);
-        }
+          })),
+        ],
+      };
+      const execution = calculateScenarioWithContributionProjection(
+        scenario,
+        master,
+        versions,
+        outcome.detail.contributionProjection,
+        { initialNpGauge: outcome.detail.candidateEvidence.startNpGauge },
+      );
+      return execution.result.status === 'calculated'
+        ? execution.result.rows[0].average
+        : Number.NEGATIVE_INFINITY;
+    });
+    expect(Math.max(...bruteDamage)).toBe(88_558.08);
   });
 
-  it('inventories finite production candidates and canonical damage-cache requests', () => {
-    const inventoryMaster = {
-      ...master,
-      servants: ['1100300', '403700', '105400'].map((servantId) =>
-        master.servants.find(({ id }) => id === servantId)!,
-      ),
-    };
-    const inventories = (['included', 'excluded'] as const).flatMap((selfBuffs) =>
-      (['baseline', 'satisfied'] as const).map((conditionalEffects) => {
-        const calculation = calculateRankingPolicy(
-          inventoryMaster,
-          profile,
-          {
-            ...DEFAULT_RANKING_POLICY_CONDITIONS,
-            selfBuffs,
-            conditionalEffects,
-          },
-          versions,
-        );
-        expect(
-          Object.values(calculation.profileResults).filter(({ status }) => status === 'invalid'),
-        ).toEqual([]);
-        expect(calculation.candidateInventory.generatedCount).toBeLessThanOrEqual(
-          calculation.candidateInventory.semanticUpperBound,
-        );
-        expect(calculation.candidateInventory.damageRequestCount).toBeLessThanOrEqual(
-          calculation.candidateInventory.damageRequestUpperBound,
-        );
-        return {
-          policy: `${selfBuffs}:${conditionalEffects}`,
-          ...calculation.candidateInventory,
-          cacheHitCount: calculation.damageCache.cacheHitCount,
-        };
-      }),
+  it('lets an initially absent target-state witness become true through ordered self generation', () => {
+    const servant = master.servants.find(({ id }) => id === '405900')!;
+    const outcome = calculateRankingPolicyDetail(
+      servant,
+      master,
+      profile,
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        conditionalEffects: 'satisfied',
+      },
+      versions,
     );
-    expect(inventories).toMatchInlineSnapshot(`
-      [
-        {
-          "cacheHitCount": 32,
-          "damageRequestCount": 48,
-          "damageRequestUpperBound": 48,
-          "deduplicatedCount": 48,
-          "distinctDamageInputCount": 16,
-          "generatedCount": 48,
-          "policy": "included:baseline",
-          "semanticUpperBound": 48,
-        },
-        {
-          "cacheHitCount": 348,
-          "damageRequestCount": 404,
-          "damageRequestUpperBound": 404,
-          "deduplicatedCount": 404,
-          "distinctDamageInputCount": 56,
-          "generatedCount": 404,
-          "policy": "included:satisfied",
-          "semanticUpperBound": 404,
-        },
-        {
-          "cacheHitCount": 44,
-          "damageRequestCount": 48,
-          "damageRequestUpperBound": 48,
-          "deduplicatedCount": 48,
-          "distinctDamageInputCount": 4,
-          "generatedCount": 48,
-          "policy": "excluded:baseline",
-          "semanticUpperBound": 48,
-        },
-        {
-          "cacheHitCount": 390,
-          "damageRequestCount": 404,
-          "damageRequestUpperBound": 404,
-          "deduplicatedCount": 404,
-          "distinctDamageInputCount": 14,
-          "generatedCount": 404,
-          "policy": "excluded:satisfied",
-          "semanticUpperBound": 404,
-        },
-      ]
-    `);
+    expect(outcome.status).toBe('calculated');
+    if (outcome.status !== 'calculated') return;
+    expect(outcome.detail.input.targetStateTraits).toEqual(
+      expect.arrayContaining(['buffCharm', 'buffConfusion']),
+    );
+    expect(
+      outcome.detail.scenario.worldFactAssertions.filter(
+        ({ decisionKey, fact }) =>
+          decisionKey.startsWith('ranking:targetState:') &&
+          fact.kind === 'trait' &&
+          ['buffCharm', 'buffConfusion'].includes(fact.trait),
+      ),
+    ).toEqual([
+      {
+        decisionKey: 'ranking:targetState:buffCharm',
+        fact: { kind: 'trait', scope: 'targetState', trait: 'buffCharm', present: false },
+      },
+      {
+        decisionKey: 'ranking:targetState:buffConfusion',
+        fact: { kind: 'trait', scope: 'targetState', trait: 'buffConfusion', present: false },
+      },
+    ]);
   });
+
+  it.each(
+    ['1100300', '403700', '105400'].flatMap((servantId) =>
+      (['included', 'excluded'] as const).flatMap((selfBuffs) =>
+        (['baseline', 'satisfied'] as const).map(
+          (conditionalEffects) => [servantId, selfBuffs, conditionalEffects] as const,
+        ),
+      ),
+    ),
+  )(
+    'evaluates policy crossing %s:%s:%s without forging intrinsic facts',
+    (servantId, selfBuffs, conditionalEffects) => {
+      const servant = master.servants.find(({ id }) => id === servantId)!;
+      const outcome = calculateRankingPolicyDetail(
+        servant,
+        master,
+        profile,
+        {
+          ...DEFAULT_RANKING_POLICY_CONDITIONS,
+          selfBuffs,
+          conditionalEffects,
+        },
+        versions,
+      );
+      expect(outcome.status, `${servant.id}:${selfBuffs}:${conditionalEffects}`).toBe('calculated');
+      if (outcome.status !== 'calculated') return;
+      expect(outcome.detail.candidateEvidence.policyKey).toBe(`${selfBuffs}:${conditionalEffects}`);
+      if (servant.id !== '1100300') return;
+      const forgedDragon = outcome.detail.scenario.worldFactAssertions.some(
+        ({ fact }) =>
+          fact.kind === 'trait' &&
+          fact.scope === 'attacker' &&
+          fact.trait === 'dragon' &&
+          fact.present,
+      );
+      expect(forgedDragon).toBe(false);
+    },
+  );
+
+  it.each([
+    ['included', 'baseline', 48, 16, 32],
+    ['included', 'satisfied', 1_056, 104, 952],
+    ['excluded', 'baseline', 48, 4, 44],
+    ['excluded', 'satisfied', 1_056, 26, 1_030],
+  ] as const)(
+    'inventories finite production candidates and damage requests for %s:%s',
+    (selfBuffs, conditionalEffects, candidateCount, distinctDamageInputCount, cacheHitCount) => {
+      const inventoryMaster = {
+        ...master,
+        servants: ['1100300', '403700', '105400'].map((servantId) =>
+          master.servants.find(({ id }) => id === servantId)!,
+        ),
+      };
+      const calculation = calculateRankingPolicy(
+        inventoryMaster,
+        profile,
+        {
+          ...DEFAULT_RANKING_POLICY_CONDITIONS,
+          selfBuffs,
+          conditionalEffects,
+        },
+        versions,
+      );
+      expect(
+        Object.values(calculation.profileResults).filter(({ status }) => status === 'invalid'),
+      ).toEqual([]);
+      expect(calculation.candidateInventory).toEqual({
+        semanticUpperBound: candidateCount,
+        generatedCount: candidateCount,
+        deduplicatedCount: candidateCount,
+        damageRequestUpperBound: candidateCount,
+        damageRequestCount: candidateCount,
+        distinctDamageInputCount,
+      });
+      expect(calculation.damageCache.cacheHitCount).toBe(cacheHitCount);
+    },
+  );
 });

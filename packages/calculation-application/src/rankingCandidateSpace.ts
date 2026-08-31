@@ -165,31 +165,10 @@ function compileProgramDomain(input: {
     conditions,
     program.initialFormId,
   );
-  const plannedTargetStateTraits = new Set(
-    semantics.operations.flatMap((operation) =>
-      operation.kind === 'addTrait' && operation.scope === 'targetState' ? [operation.trait] : [],
-    ),
-  );
-  const plannedFieldTraits = new Set(
-    semantics.operations.flatMap((operation) =>
-      operation.kind === 'addTrait' && operation.scope === 'field' ? [operation.trait] : [],
-    ),
-  );
   const generatedTargets = active
-    ? createRankingWorldCandidatesForConditions(
-        servant,
-        master,
-        base,
-        semantics.conditions,
-        [],
-        plannedTargetStateTraits,
-      )
+    ? createRankingWorldCandidatesForConditions(servant, master, base, semantics.conditions)
     : [];
-  const generatedFields = createRankingFieldCandidatesForConditions(
-    semantics.conditions,
-    active,
-    plannedFieldTraits,
-  );
+  const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', traits: [], facts: [] };
   return {
     program,

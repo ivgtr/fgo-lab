@@ -24,6 +24,7 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/rankingConditionInventory.test.ts',
   'packages/calculation-application/src/rankingConditionSemantics.test.ts',
   'packages/calculation-application/src/rankingProduction.test.ts',
+  'packages/calculation-application/src/rankingWorldWitness.test.ts',
   'packages/calculation-application/src/specialInputInventory.test.ts',
   'packages/calculation-application/src/targetContextProduction.test.ts',
   'packages/calculation-application/src/unsupportedConvergenceGolden.test.ts',

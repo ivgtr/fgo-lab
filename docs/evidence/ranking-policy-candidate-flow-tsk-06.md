@@ -83,6 +83,17 @@ Optimization may cache only observable static blueprints or complete damage-inpu
 
 | Counterexample | Classification |
 | --- | --- |
+| trait `present:true` / `present:false` | Verified: canonical evaluator completeness fixture |
+| targetPredicate `present:true` / `present:false` | Verified: family-membership witness fixture |
+| `target` / `targetState` positive, negative, and overlapping reads | Verified: physical read-scope closure fixture |
+| traitCount `atLeast` / `atMost` / `equal` | Verified: target and field focused fixtures |
+| nested `all` / `any` / `not` | Verified: canonical evaluator completeness fixture |
+| exclusive traits: positive, negative, and mixed | Verified: candidate soundness fixture |
+| self-generated trait before and after mutation | Verified: 405900 ordered target-state transition fixture |
+| self buffs included/excluded with witness generation | Verified: four policy crossings and inventory fixtures |
+| target traits with field, quantity, and canonical input | Verified: complete semantic-product materialization fixture |
+| schema-legal conditions absent from production | Verified: focused traitCount/nested/exclusive fixtures |
+| production 1102300 negative superGiant condition | Verified: NP1 average 88,558.08 and `powerMod` 0.5 |
 | self buffs × conditional effects, all four crossings | Verified: focused policy fixture |
 | external field absent/present | Verified: focused production fixture |
 | self-generated field satisfies a later condition | Verified: focused production fixture |
@@ -115,7 +126,7 @@ Default new-policy production inventory:
 | damage requests | 6,913 |
 | distinct damage inputs | 1,599 |
 | cache hits | 5,314 |
-| maximum one-profile product | 1,920 / 4,096 |
+| maximum one-profile product | 2,880 / 4,096 |
 
 The ordered-program correction doubled the three-servant policy fixture from 24 to 48 baseline
 candidates and from 208 to 404 satisfied candidates. Distinct damage inputs stayed 16/56 for included
@@ -123,7 +134,33 @@ and 4/14 for excluded; the extra legal orders therefore converge through the com
 Production servant 2501400 also became calculated: its former unavailable result was a false negative
 caused by unordered state deduplication.
 
+The witness correction keeps the default baseline-policy inventory above unchanged. In the focused
+three-servant satisfied-policy inventory, candidates increase from 404 to 1,056; included distinct
+damage inputs increase from 56 to 104 and excluded from 14 to 26. The increase represents explicit
+false/true physical target facts and the field all-absent state, not effect subsets. A production
+audit checks 11,283 target-only condition occurrences across 139 servants/program paths and finds a
+canonical true witness for every occurrence.
+
 ## Structural findings and guardrails
+
+### Review reopening: incomplete condition witness space
+
+Confirmed fact: `7159e27` changed `rankingWorld.ts` from enumerating both truth values for every
+referenced target trait to deriving one value from the outer `not`, while ignoring the leaf
+`present` value and the comparison/count of `traitCount`. It also treated a `target` trait as one
+initial fact although the canonical evaluator reads both `target` and `targetState`. Consequently a
+negative combined trait was left unknown or true after a state contribution, and a legal stronger
+candidate could be absent. The production review fixture for 1102300 demonstrated this mechanism:
+asserting `superGiant=false` in both physical scopes changes NP1 average from 80,857.34 to 88,558.08
+and `powerMod` from 0.3 to 0.5.
+
+Implementation mismatch: the planner partially reimplemented condition polarity instead of asking
+battle-execution for the canonical read dimensions and validating witnesses with its evaluator.
+Missed detection: parity tests replayed the selected candidate but did not compare the selected
+maximum against the complete finite state space. Recurrence scope: target/targetState traits,
+target predicates, `traitCount`, nested `all`/`any`/`not`, exclusive traits, and self-generated state
+transitions. Minimum guardrail: separate candidate soundness, per-condition completeness, a small
+exhaustive maximum oracle, and a production negative-condition damage fixture.
 
 ### Candidate discovery/execution cycle
 
@@ -159,21 +196,24 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
 
 ## Verification and performance
 
-- Focused policy/candidate/scenario diagnostics: passed.
-- Unit: 59 files / 344 tests.
-- Production: 26 files / 127 tests.
+- Focused witness/policy/candidate/scenario diagnostics: 5 files / 28 tests passed.
+- Unit: 60 files / 351 tests passed.
+- Production: 27 files / 148 tests passed.
 - Legacy production audit: 433 AttackProfiles/rows and damage cache 3,629 requests / 1,623 distinct,
   unchanged from the approved baseline.
-- Ranking hot path, three post-change runs: 60.79s, 60.91s, 62.54s; median 60.91s versus baseline
-  median 71.05s.
-- Production gate, three post-change runs: 74.46s, 75.50s, 75.91s; median 75.50s versus baseline
-  successful runs 98.28s and 101.91s.
+- Ranking hot path after witness correction: 64.56s, 65.31s, 64.70s; median 64.70s versus the
+  pre-correction median 60.91s (+3.79s / +6.22%, inside the 5s / 10% ratchet).
+- Final production gate after registering the witness audit in the production suite: 80.16s,
+  80.80s, 80.77s; median 80.77s versus the pre-correction median 75.50s (+5.27s / +6.98%). The
+  measured increase includes 21 new production tests and remains below the 10% ratchet.
 - Final `pnpm quality`: passed, including 64 executed E2E cases (32 project-filtered skips).
 
 ## Closure
 
-- Verified: all new-policy planning, execution, evidence, result, parity, inventory, legacy
-  compatibility, and performance paths listed above.
+- Verified: canonical witness generation, candidate soundness, per-condition completeness,
+  exhaustive four-state maximum-damage oracle, selected-candidate calculator parity, production
+  negative fixture, inventory, performance, ordered preparation, typed outcomes, and legacy
+  isolation.
 - N/A: support/CE/mystic-code/turn/refund expansion.
 - Deferred: TSK-07 UI/worker/URL cutover; TSK-08 cross-level blueprint caching and full four-policy
   production digest.
