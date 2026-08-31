@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  conditionTraitRequiresProvenanceDecision,
   evaluateConditionExpression,
   type ConditionExpression,
   type EffectProjection,
@@ -62,6 +63,24 @@ function state(
 }
 
 describe('condition expression properties', () => {
+  it('classifies absent and canonical default provenance as directly evaluable', () => {
+    expect(conditionTraitRequiresProvenanceDecision(undefined)).toBe(false);
+    expect(
+      conditionTraitRequiresProvenanceDecision({
+        stateSources: 'activeOnly',
+        ignoredStateTraits: 'exclude',
+        unremovableStateTraits: 'include',
+      }),
+    ).toBe(false);
+    expect(
+      conditionTraitRequiresProvenanceDecision({
+        stateSources: 'activeAndPassive',
+        ignoredStateTraits: 'exclude',
+        unremovableStateTraits: 'include',
+      }),
+    ).toBe(true);
+  });
+
   it('evaluates activation-local facts without promoting them to world traits', () => {
     const source = { origin: 'attacker' as const, sourceInstanceId: 'self', skillId: 'skill' };
     const facts = [

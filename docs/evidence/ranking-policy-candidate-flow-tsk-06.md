@@ -49,7 +49,7 @@ are not passed to damage as guessed inputs.
 | semantic-domain producer | Verified: static conditions/input definitions only; no prepare/projection read during discovery |
 | start gauge | Verified: baseline always present; satisfied policy adds legal capacities without overriding preconditions |
 | TargetContext/field/quantity | Verified: finite canonical domains with baseline candidates and exclusive-fact constraints |
-| complete product bound | Verified: checked before materialization, maximum production profile 1,920 / 4,096 |
+| complete product bound | Verified: checked before materialization, maximum production profile 2,880 / 4,096 |
 | scenario materialization | Verified: every candidate starts from a fresh base scenario |
 | ordered executor | Verified: TSK-05 transaction path; no ranking-side execution semantics |
 | damage executor/cache | Verified: complete NP variant + damage input identity; calculator parity fixture passes |
@@ -138,10 +138,21 @@ The witness correction keeps the default baseline-policy inventory above unchang
 three-servant satisfied-policy inventory, candidates increase from 404 to 1,056; included distinct
 damage inputs increase from 56 to 104 and excluded from 14 to 26. The increase represents explicit
 false/true physical target facts and the field all-absent state, not effect subsets. A production
-audit checks 11,283 target-only condition occurrences across 139 servants/program paths and finds a
-canonical true witness for every occurrence.
+audit checks 13,026 target-only condition occurrences across 205 servants/program paths and finds a
+canonical true witness for every occurrence. The population includes 1,743 occurrences with
+canonical default provenance, including 49 with a negative trait leaf.
 
 ## Structural findings and guardrails
+
+### Second review reopening: provenance audit population
+
+Confirmed fact: the production completeness test admitted only traits with absent provenance, while
+the executor also evaluates the canonical default provenance normally. This excluded 1,743
+otherwise evaluable condition occurrences, including 49 `present:false` occurrences in the
+recurrence family. The implementation already generates witnesses for the expanded population, but
+the production gate did not retain that evidence. The guardrail is to export the executor-owned
+provenance decision rule and use it directly when defining the audit population; test-local
+provenance defaults are prohibited.
 
 ### Review reopening: incomplete condition witness space
 
@@ -196,8 +207,8 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
 
 ## Verification and performance
 
-- Focused witness/policy/candidate/scenario diagnostics: 5 files / 28 tests passed.
-- Unit: 60 files / 351 tests passed.
+- Focused witness/policy/candidate/scenario diagnostics: 6 files / 53 tests passed.
+- Unit: 60 files / 352 tests passed.
 - Production: 27 files / 148 tests passed.
 - Legacy production audit: 433 AttackProfiles/rows and damage cache 3,629 requests / 1,623 distinct,
   unchanged from the approved baseline.
@@ -212,8 +223,9 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
 
 - Verified: canonical witness generation, candidate soundness, per-condition completeness,
   exhaustive four-state maximum-damage oracle, selected-candidate calculator parity, production
-  negative fixture, inventory, performance, ordered preparation, typed outcomes, and legacy
-  isolation.
+  negative fixture, executor-shared provenance eligibility, inventory, performance, ordered
+  preparation, typed outcomes, and legacy isolation. The maximum-product record is consistently
+  2,880 / 4,096.
 - N/A: support/CE/mystic-code/turn/refund expansion.
 - Deferred: TSK-07 UI/worker/URL cutover; TSK-08 cross-level blueprint caching and full four-policy
   production digest.

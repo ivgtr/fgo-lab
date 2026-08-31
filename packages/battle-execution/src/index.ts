@@ -31,7 +31,10 @@ export { canNormalizeDamageEffect } from './effectRouting';
 export { runtimeInputKey } from './runtimeInputIdentity';
 export { effectChangesPreparation } from './preparationTransaction';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
-export { evaluateCondition as evaluateConditionExpression } from './condition';
+export {
+  conditionTraitRequiresProvenanceDecision,
+  evaluateCondition as evaluateConditionExpression,
+} from './condition';
 export {
   DEFAULT_NP_RESOURCE_SEMANTICS,
   applyNpResourceTransaction,

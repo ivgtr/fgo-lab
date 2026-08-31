@@ -24,7 +24,9 @@ export function conditionRequiresQuantity(
   return false;
 }
 
-function requiresProvenanceDecision(provenance: CanonicalTraitProvenance | undefined): boolean {
+export function conditionTraitRequiresProvenanceDecision(
+  provenance: CanonicalTraitProvenance | undefined,
+): boolean {
   return (
     provenance !== undefined &&
     (provenance.stateSources !== DEFAULT_TRAIT_PROVENANCE.stateSources ||
@@ -91,7 +93,7 @@ export function evaluateCondition(
       // Scenario trait facts intentionally do not claim buff provenance. Exceptional Atlas
       // read policies therefore require the effect-local decision instead of being inferred
       // from a combined trait set.
-      if (requiresProvenanceDecision(condition.provenance)) return null;
+      if (conditionTraitRequiresProvenanceDecision(condition.provenance)) return null;
       const actual = traitValue(condition.scope, condition.trait);
       return actual === undefined ? null : actual === condition.present;
     }

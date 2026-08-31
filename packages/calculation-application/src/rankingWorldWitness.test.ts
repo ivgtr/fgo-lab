@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  conditionTraitRequiresProvenanceDecision,
   evaluateConditionExpression,
   targetConditionWitnessSpace,
   type ConditionExpression,
@@ -108,12 +109,19 @@ function isTargetWitnessCondition(condition: ConditionExpression): boolean {
   if (condition.kind === 'trait' || condition.kind === 'traitCount')
     return (
       (condition.scope === 'target' || condition.scope === 'targetState') &&
-      condition.provenance === undefined
+      !conditionTraitRequiresProvenanceDecision(condition.provenance)
     );
   if (condition.kind === 'targetPredicate') return condition.scope === 'target';
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.every(isTargetWitnessCondition);
   return condition.kind === 'not' && isTargetWitnessCondition(condition.expression);
+}
+
+function conditionLeaves(condition: ConditionExpression): readonly ConditionExpression[] {
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.flatMap(conditionLeaves);
+  if (condition.kind === 'not') return conditionLeaves(condition.expression);
+  return [condition];
 }
 
 describe('ranking target witness completeness', () => {
@@ -334,7 +342,21 @@ describe('ranking target witness completeness', () => {
     expect({
       conditions: inventory.length,
       servants: new Set(inventory.map(({ servant: candidateServant }) => candidateServant.id)).size,
-    }).toEqual({ conditions: 11_283, servants: 139 });
+    }).toEqual({ conditions: 13_026, servants: 205 });
+    const canonicalDefaultProvenance = inventory.filter(({ condition }) =>
+      conditionLeaves(condition).some(
+        (leaf) =>
+          (leaf.kind === 'trait' || leaf.kind === 'traitCount') &&
+          leaf.provenance !== undefined &&
+          !conditionTraitRequiresProvenanceDecision(leaf.provenance),
+      ),
+    );
+    expect({
+      conditions: canonicalDefaultProvenance.length,
+      negativeTraits: canonicalDefaultProvenance.filter(({ condition }) =>
+        conditionLeaves(condition).some((leaf) => leaf.kind === 'trait' && !leaf.present),
+      ).length,
+    }).toEqual({ conditions: 1_743, negativeTraits: 49 });
     const productionNegative = inventory.filter(({ condition }) =>
       JSON.stringify(condition).includes('superGiant'),
     );
@@ -343,6 +365,6 @@ describe('ranking target witness completeness', () => {
       servants: new Set(
         productionNegative.map(({ servant: candidateServant }) => candidateServant.id),
       ).size,
-    }).toEqual({ programs: 400, servants: 5 });
+    }).toEqual({ programs: 444, servants: 9 });
   });
 });
