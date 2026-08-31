@@ -8,6 +8,7 @@
 
 ## Plan the whole execution family
 
+- For structural or semantic reviews, follow `docs/guides/systematic-review-guidelines.md` before finalizing findings. If a later review expands the recurrence scope of the same mechanism, identify the earlier review gap before requesting another implementation patch.
 - Apply flow closure when a task changes canonical state, outcome classification, or multiple execution/write paths. Otherwise close it with one `N/A: reason` line.
 - For an applicable change, trace each canonical state through the forward execution flow and any recovery flow back to application or UI. Scope the inventory to direct readers/writers and paths that can change damage, precision, operation outcome, required input, or UI commands; include indirect dependencies only when they transform one of those results.
 - Define externally meaningful outcome classes before composing them. Do not collapse stochastic failure, disabled inclusion, repairable user input, semantic invalidity, and unsupported execution merely because they all avoid a numeric result.
