@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
-  conditionTraitRequiresProvenanceDecision,
   evaluateConditionExpression,
   targetConditionWitnessSpace,
+  traitConditionEvaluationSource,
   type ConditionExpression,
   type ExecutableBattleState,
 } from '@fgo-lab/battle-execution';
@@ -109,7 +109,7 @@ function isTargetWitnessCondition(condition: ConditionExpression): boolean {
   if (condition.kind === 'trait' || condition.kind === 'traitCount')
     return (
       (condition.scope === 'target' || condition.scope === 'targetState') &&
-      !conditionTraitRequiresProvenanceDecision(condition.provenance)
+      traitConditionEvaluationSource(condition) === 'worldFacts'
     );
   if (condition.kind === 'targetPredicate') return condition.scope === 'target';
   if (condition.kind === 'all' || condition.kind === 'any')
@@ -143,6 +143,82 @@ describe('ranking target witness completeness', () => {
       conditions,
     );
   }
+
+  it('shares provenance eligibility across executor, audit, and planner axes', () => {
+    const variants: readonly {
+      condition: Extract<ConditionExpression, { kind: 'trait' | 'traitCount' }>;
+      source: 'worldFacts' | 'effectLocalDecision';
+    }[] = [
+      {
+        condition: { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
+        source: 'worldFacts',
+      },
+      {
+        condition: {
+          kind: 'trait',
+          scope: 'target',
+          trait: 'dragon',
+          present: true,
+          provenance: {
+            stateSources: 'activeOnly',
+            ignoredStateTraits: 'exclude',
+            unremovableStateTraits: 'include',
+          },
+        },
+        source: 'worldFacts',
+      },
+      {
+        condition: {
+          kind: 'trait',
+          scope: 'target',
+          trait: 'dragon',
+          present: true,
+          provenance: {
+            stateSources: 'activeAndPassive',
+            ignoredStateTraits: 'exclude',
+            unremovableStateTraits: 'include',
+          },
+        },
+        source: 'effectLocalDecision',
+      },
+      {
+        condition: {
+          kind: 'traitCount',
+          scope: 'target',
+          traits: ['dragon'],
+          comparison: 'equal',
+          count: 1,
+        },
+        source: 'worldFacts',
+      },
+    ];
+    const worldState = stateFor(
+      servant,
+      {
+        key: 'dragon',
+        classId: 'saber',
+        attribute: 'man',
+        familyIds: [],
+        selections: {},
+        traitFacts: [
+          { scope: 'target', trait: 'dragon', present: true },
+          { scope: 'targetState', trait: 'dragon', present: false },
+        ],
+      },
+      master,
+    );
+
+    for (const { condition, source } of variants) {
+      expect(traitConditionEvaluationSource(condition)).toBe(source);
+      expect(isTargetWitnessCondition(condition)).toBe(source === 'worldFacts');
+      expect(targetConditionWitnessSpace(condition).traitFacts.length > 0).toBe(
+        source === 'worldFacts',
+      );
+      expect(evaluateConditionExpression(condition, worldState)).toBe(
+        source === 'worldFacts' ? true : null,
+      );
+    }
+  });
 
   it('provides a canonical true witness for leaf polarity, traitCount, and nested boolean forms', () => {
     const conditions: ConditionExpression[] = [
@@ -346,9 +422,9 @@ describe('ranking target witness completeness', () => {
     const canonicalDefaultProvenance = inventory.filter(({ condition }) =>
       conditionLeaves(condition).some(
         (leaf) =>
-          (leaf.kind === 'trait' || leaf.kind === 'traitCount') &&
+          leaf.kind === 'trait' &&
           leaf.provenance !== undefined &&
-          !conditionTraitRequiresProvenanceDecision(leaf.provenance),
+          traitConditionEvaluationSource(leaf) === 'worldFacts',
       ),
     );
     expect({

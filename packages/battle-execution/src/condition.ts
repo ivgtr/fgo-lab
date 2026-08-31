@@ -1,15 +1,8 @@
-import type { CanonicalTraitProvenance } from '@fgo-lab/master-data';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
-import { traitConditionReadScopes } from './conditionSemantics';
+import { traitConditionEvaluationSource, traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
-
-const DEFAULT_TRAIT_PROVENANCE: CanonicalTraitProvenance = {
-  stateSources: 'activeOnly',
-  ignoredStateTraits: 'exclude',
-  unremovableStateTraits: 'include',
-};
 
 export function conditionRequiresQuantity(
   condition: ConditionExpression,
@@ -22,17 +15,6 @@ export function conditionRequiresQuantity(
     );
   if (condition.kind === 'not') return conditionRequiresQuantity(condition.expression, quantity);
   return false;
-}
-
-export function conditionTraitRequiresProvenanceDecision(
-  provenance: CanonicalTraitProvenance | undefined,
-): boolean {
-  return (
-    provenance !== undefined &&
-    (provenance.stateSources !== DEFAULT_TRAIT_PROVENANCE.stateSources ||
-      provenance.ignoredStateTraits !== DEFAULT_TRAIT_PROVENANCE.ignoredStateTraits ||
-      provenance.unremovableStateTraits !== DEFAULT_TRAIT_PROVENANCE.unremovableStateTraits)
-  );
 }
 
 export function combineConditions(expressions: ConditionExpression[]): ConditionExpression {
@@ -93,7 +75,7 @@ export function evaluateCondition(
       // Scenario trait facts intentionally do not claim buff provenance. Exceptional Atlas
       // read policies therefore require the effect-local decision instead of being inferred
       // from a combined trait set.
-      if (conditionTraitRequiresProvenanceDecision(condition.provenance)) return null;
+      if (traitConditionEvaluationSource(condition) === 'effectLocalDecision') return null;
       const actual = traitValue(condition.scope, condition.trait);
       return actual === undefined ? null : actual === condition.present;
     }

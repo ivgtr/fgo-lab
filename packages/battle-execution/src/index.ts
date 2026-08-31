@@ -31,10 +31,7 @@ export { canNormalizeDamageEffect } from './effectRouting';
 export { runtimeInputKey } from './runtimeInputIdentity';
 export { effectChangesPreparation } from './preparationTransaction';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
-export {
-  conditionTraitRequiresProvenanceDecision,
-  evaluateCondition as evaluateConditionExpression,
-} from './condition';
+export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
   DEFAULT_NP_RESOURCE_SEMANTICS,
   applyNpResourceTransaction,
@@ -84,6 +81,7 @@ export {
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
   traitConditionConstraintScope,
+  traitConditionEvaluationSource,
   traitConditionReadScopes,
   targetConditionWitnessSpace,
   traitConstraintActorScope,
@@ -91,6 +89,8 @@ export {
   traitConstraintPublicScope,
   traitFactConstraintScope,
   type TraitConstraintScope,
+  type TraitConditionEvaluationSource,
+  type TraitConditionLeaf,
   type TargetConditionWitnessSpace,
 } from './conditionSemantics';
 export {

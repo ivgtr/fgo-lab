@@ -5,6 +5,30 @@ import type {
   TraitScope,
 } from './contracts';
 import type { TargetPredicate } from '@fgo-lab/schema';
+import type { CanonicalTraitProvenance } from '@fgo-lab/master-data';
+
+const DEFAULT_TRAIT_PROVENANCE: CanonicalTraitProvenance = {
+  stateSources: 'activeOnly',
+  ignoredStateTraits: 'exclude',
+  unremovableStateTraits: 'include',
+};
+
+export type TraitConditionLeaf = Extract<ConditionExpression, { kind: 'trait' | 'traitCount' }>;
+export type TraitConditionEvaluationSource = 'worldFacts' | 'effectLocalDecision';
+
+/** Owns which trait-condition variants can be evaluated from canonical world facts. */
+export function traitConditionEvaluationSource(
+  condition: TraitConditionLeaf,
+): TraitConditionEvaluationSource {
+  if (condition.kind === 'traitCount') return 'worldFacts';
+  const provenance = condition.provenance;
+  return provenance === undefined ||
+    (provenance.stateSources === DEFAULT_TRAIT_PROVENANCE.stateSources &&
+      provenance.ignoredStateTraits === DEFAULT_TRAIT_PROVENANCE.ignoredStateTraits &&
+      provenance.unremovableStateTraits === DEFAULT_TRAIT_PROVENANCE.unremovableStateTraits)
+    ? 'worldFacts'
+    : 'effectLocalDecision';
+}
 
 export type TraitConstraintScope =
   | 'attackerInitial'
@@ -80,6 +104,7 @@ export function targetConditionWitnessSpace(
   const predicates = new Map<string, TargetPredicate>();
   const visit = (expression: ConditionExpression): void => {
     if (expression.kind === 'trait' || expression.kind === 'traitCount') {
+      if (traitConditionEvaluationSource(expression) !== 'worldFacts') return;
       if (expression.scope !== 'target' && expression.scope !== 'targetState') return;
       const traits = expression.kind === 'trait' ? [expression.trait] : expression.traits;
       for (const scope of traitConditionReadScopes(expression.scope)) {

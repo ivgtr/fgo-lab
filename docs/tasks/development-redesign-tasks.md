@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.14"
+document_version: "1.5.15"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -558,15 +558,18 @@ Handoff:
 
 - Canonical flow note: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`。structural reviewで
   flow closureを再オープンし、leaf polarity／`traitCount`／combined target read scope／negative
-  target predicate／exclusive trait／self-generated state transitionを反例行列へ追加した。
-- Ownership: battle-executionの`targetConditionWitnessSpace`がcanonical evaluatorと同じ物理
-  trait read scopeを公開し、`conditionTraitRequiresProvenanceDecision`が監査対象となるprovenance
-  境界を所有する。application planner／監査はこれらを共有し、条件真偽やdamage semanticsを
-  ranking側で再実装しない。
+  target predicate／exclusive trait／self-generated state transitionを反例行列へ追加した。第三
+  reviewではprovenanceのvariant適用範囲がconsumerごとに分裂した機構を記録し、leaf-level
+  source matrixで閉じた。
+- Ownership: battle-executionの`traitConditionEvaluationSource`が`trait | traitCount` leaf全体を
+  受けて`worldFacts | effectLocalDecision`を返し、canonical evaluator、
+  `targetConditionWitnessSpace`、production監査が同じvariant適用範囲を共有する。現要件で生成
+  されない`traitCount.provenance`は型から削除した。application planner／監査は条件真偽や
+  damage semanticsをranking側で再実装しない。
 - Correctness: 1102300 included:satisfied NP1は`target`／`targetState`の
   `superGiant=false` witnessを選び、`powerMod 0.3 -> 0.5`、平均damage
   `80,857.34 -> 88,558.08`。同4状態のcalculator総当たり最大値とplanner選択値が一致する。
-- Completeness/soundness: focused 6 files／53 tests、production target-only condition 13,026件
+- Completeness/soundness: focused 6 files／54 tests、production target-only condition 13,026件
   （205騎・program展開単位）すべてにcanonical true witnessあり。canonical default provenance
   1,743件（負trait 49件）を正式母集団へ含め、exclusive正負混在に矛盾0、
   `present:true/false`、targetPredicate、traitCount三比較、nested boolean、field不存在、405900
@@ -574,7 +577,7 @@ Handoff:
 - Inventory/performance: 三騎satisfied-policyは404から1,056 candidates、最大production profileは
   2,880／4,096。ranking hot path中央値64.70秒（修正前60.91秒比+3.79秒／+6.22%）、最終production
   gate中央値80.77秒（75.50秒比+5.27秒／+6.98%、21 production tests追加込み）で10% ratchet内。
-- Verification: `pnpm test:unit` 60 files／352 tests、`pnpm test:production` 27 files／148 tests。
+- Verification: `pnpm test:unit` 60 files／352 tests、`pnpm test:production` 27 files／149 tests。
   final `pnpm quality`成功（E2E 64 passed／32 skipped）。
 - Closure: Blocking 0、TSK-06 `done`、TSK-07 `ready`。UI／worker／URL cutoverはTSK-07へ
   Deferred、cross-level cache最適化はTSK-08へDeferred。

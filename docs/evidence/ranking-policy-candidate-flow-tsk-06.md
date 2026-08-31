@@ -87,6 +87,7 @@ Optimization may cache only observable static blueprints or complete damage-inpu
 | targetPredicate `present:true` / `present:false` | Verified: family-membership witness fixture |
 | `target` / `targetState` positive, negative, and overlapping reads | Verified: physical read-scope closure fixture |
 | traitCount `atLeast` / `atMost` / `equal` | Verified: target and field focused fixtures |
+| provenance boundary by `trait` / `traitCount` variant | Verified: shared leaf-level source matrix across executor, audit, and planner axes |
 | nested `all` / `any` / `not` | Verified: canonical evaluator completeness fixture |
 | exclusive traits: positive, negative, and mixed | Verified: candidate soundness fixture |
 | self-generated trait before and after mutation | Verified: 405900 ordered target-state transition fixture |
@@ -143,6 +144,29 @@ canonical true witness for every occurrence. The population includes 1,743 occur
 canonical default provenance, including 49 with a negative trait leaf.
 
 ## Structural findings and guardrails
+
+### Third review reopening: provenance variant ownership
+
+Confirmed fact: `conditionTraitRequiresProvenanceDecision` accepts only a provenance value, so it
+cannot own which `ConditionExpression` variants use provenance. The executor applies it only to
+`trait`, while the production audit independently applies it to both `trait` and `traitCount`, and
+`targetConditionWitnessSpace` enumerates both variants without consulting the classification.
+
+Implementation mismatch: the exported value comparison was described as the executor-owned
+provenance boundary even though union-variant applicability remained in each consumer. Missed
+detection: the boundary fixture tested provenance values in isolation and did not cross executor
+evaluation, audit eligibility, and witness-axis generation for every trait condition variant.
+Recurrence scope: every new provenance-bearing leaf or consumer can choose a different applicability
+set. Minimum guardrail: remove unsupported `traitCount.provenance`, expose a discriminated leaf-level
+`worldFacts` / `effectLocalDecision` classification from battle-execution, and use it in the
+executor, witness-space producer, and production audit with one schema-legal variant matrix.
+
+Resolution: `ConditionExpression.traitCount` no longer exposes provenance because the canonical
+pipeline has no provenance-aware count requirement. Battle-execution now accepts the whole
+`trait | traitCount` leaf in `traitConditionEvaluationSource` and exhaustively returns `worldFacts`
+or `effectLocalDecision`. The evaluator, `targetConditionWitnessSpace`, and production audit share
+that classification. The variant matrix fixes absent/default/exceptional trait provenance and
+provenance-free `traitCount`, including executor result, audit eligibility, and planner axes.
 
 ### Second review reopening: provenance audit population
 
@@ -207,9 +231,9 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
 
 ## Verification and performance
 
-- Focused witness/policy/candidate/scenario diagnostics: 6 files / 53 tests passed.
+- Focused witness/policy/candidate/scenario diagnostics: 6 files / 54 tests passed.
 - Unit: 60 files / 352 tests passed.
-- Production: 27 files / 148 tests passed.
+- Production: 27 files / 149 tests passed.
 - Legacy production audit: 433 AttackProfiles/rows and damage cache 3,629 requests / 1,623 distinct,
   unchanged from the approved baseline.
 - Ranking hot path after witness correction: 64.56s, 65.31s, 64.70s; median 64.70s versus the
@@ -223,7 +247,7 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
 
 - Verified: canonical witness generation, candidate soundness, per-condition completeness,
   exhaustive four-state maximum-damage oracle, selected-candidate calculator parity, production
-  negative fixture, executor-shared provenance eligibility, inventory, performance, ordered
+  negative fixture, executor-shared leaf evaluation source, inventory, performance, ordered
   preparation, typed outcomes, and legacy isolation. The maximum-product record is consistently
   2,880 / 4,096.
 - N/A: support/CE/mystic-code/turn/refund expansion.

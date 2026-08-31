@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  conditionTraitRequiresProvenanceDecision,
   evaluateConditionExpression,
+  targetConditionWitnessSpace,
+  traitConditionEvaluationSource,
   type ConditionExpression,
   type EffectProjection,
   type ExecutableBattleState,
@@ -63,22 +64,53 @@ function state(
 }
 
 describe('condition expression properties', () => {
-  it('classifies absent and canonical default provenance as directly evaluable', () => {
-    expect(conditionTraitRequiresProvenanceDecision(undefined)).toBe(false);
-    expect(
-      conditionTraitRequiresProvenanceDecision({
+  it('shares leaf-level evaluation ownership across executor and witness axes', () => {
+    const directlyEvaluable: ConditionExpression[] = [
+      { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
+      {
+        kind: 'trait',
+        scope: 'target',
+        trait: 'dragon',
+        present: true,
+        provenance: {
+          stateSources: 'activeOnly',
+          ignoredStateTraits: 'exclude',
+          unremovableStateTraits: 'include',
+        },
+      },
+      {
+        kind: 'traitCount',
+        scope: 'target',
+        traits: ['dragon'],
+        comparison: 'equal',
+        count: 1,
+      },
+    ];
+    for (const condition of directlyEvaluable) {
+      if (condition.kind !== 'trait' && condition.kind !== 'traitCount') throw new Error('leaf');
+      expect(traitConditionEvaluationSource(condition)).toBe('worldFacts');
+      expect(evaluateConditionExpression(condition, state(['dragon']))).toBe(true);
+      expect(targetConditionWitnessSpace(condition).traitFacts).not.toEqual([]);
+    }
+
+    const effectLocal = {
+      kind: 'trait',
+      scope: 'target',
+      trait: 'dragon',
+      present: true,
+      provenance: {
         stateSources: 'activeOnly',
         ignoredStateTraits: 'exclude',
         unremovableStateTraits: 'include',
-      }),
-    ).toBe(false);
-    expect(
-      conditionTraitRequiresProvenanceDecision({
-        stateSources: 'activeAndPassive',
-        ignoredStateTraits: 'exclude',
-        unremovableStateTraits: 'include',
-      }),
-    ).toBe(true);
+      },
+    } as const satisfies Extract<ConditionExpression, { kind: 'trait' }>;
+    const exceptional = {
+      ...effectLocal,
+      provenance: { ...effectLocal.provenance, stateSources: 'activeAndPassive' as const },
+    };
+    expect(traitConditionEvaluationSource(exceptional)).toBe('effectLocalDecision');
+    expect(evaluateConditionExpression(exceptional, state(['dragon']))).toBe(null);
+    expect(targetConditionWitnessSpace(exceptional).traitFacts).toEqual([]);
   });
 
   it('evaluates activation-local facts without promoting them to world traits', () => {

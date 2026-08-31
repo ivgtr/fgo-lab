@@ -49,7 +49,6 @@ export type ConditionExpression =
       kind: 'traitCount';
       scope: TraitScope;
       traits: readonly string[];
-      provenance?: CanonicalTraitProvenance;
       comparison: 'atLeast' | 'atMost' | 'equal';
       count: number;
     }
