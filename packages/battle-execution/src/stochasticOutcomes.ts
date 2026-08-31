@@ -1,3 +1,8 @@
+import type {
+  CanonicalInputDefinition,
+  CanonicalOutcomeGroup,
+  EffectProc,
+} from '@fgo-lab/master-data';
 import type { BattleOperation, ExecutionIssue } from './contracts';
 import type { ResolvedCanonicalInputSet } from './executionTypes';
 
@@ -14,8 +19,16 @@ export interface ResolvedStochasticOutcomeSet {
 
 const guaranteedSuccess: ResolvedStochasticOutcome = { status: 'success' };
 
+export interface StochasticActivationContract {
+  operationId: string;
+  proc: EffectProc;
+  stochasticOutcome?: CanonicalOutcomeGroup | null;
+  preResolvedStochasticOutcome?: 'success' | 'failure' | null;
+  inputDefinitions: readonly CanonicalInputDefinition[];
+}
+
 function invalidOutcome(
-  operation: BattleOperation,
+  operation: StochasticActivationContract,
   detail: Extract<ExecutionIssue, { kind: 'invalidStochasticOutcome' }>['detail'],
 ): Extract<ResolvedStochasticOutcome, { status: 'invalid' }> {
   return {
@@ -24,10 +37,12 @@ function invalidOutcome(
   };
 }
 
-function resolveOperationStochasticOutcome(
-  operation: BattleOperation,
+export function resolveStochasticActivationOutcome(
+  operation: StochasticActivationContract,
   resolvedInputs: ResolvedCanonicalInputSet,
 ): ResolvedStochasticOutcome {
+  if (operation.preResolvedStochasticOutcome)
+    return { status: operation.preResolvedStochasticOutcome };
   if (operation.proc.kind === 'guaranteed')
     return operation.stochasticOutcome
       ? invalidOutcome(operation, 'contradictoryStochasticOutcome')
@@ -82,7 +97,7 @@ export function resolveStochasticOutcomes(
   const issues: ExecutionIssue[] = [];
   for (const operation of operations) {
     if (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome) continue;
-    const outcome = resolveOperationStochasticOutcome(operation, resolvedInputs);
+    const outcome = resolveStochasticActivationOutcome(operation, resolvedInputs);
     outcomes.set(operation.operationId, outcome);
     if (outcome.status === 'invalid') issues.push(outcome.issue);
   }

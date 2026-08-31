@@ -17,6 +17,9 @@ export default defineConfig({
         test: {
           name: 'production',
           include: PRODUCTION_TEST_INCLUDES,
+          // Published-master suites are CPU-bound and each parse a large artifact. Capping the
+          // worker share prevents file-level contention from violating the unchanged 5s test ratchet.
+          maxWorkers: '75%',
         },
       },
     ],

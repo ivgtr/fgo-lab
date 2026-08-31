@@ -10,7 +10,13 @@ import {
   SCHEMA_VERSION,
 } from '@fgo-lab/schema';
 import { calculateDamageResolution } from './damageResolution';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 
 const root = resolve(import.meta.dirname, '../../..');
 

@@ -11,6 +11,7 @@ import {
   getInitialActorForms,
   getSkillsForActorForm,
   type ActorFormId,
+  type CanonicalNpResourceSemantics,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { applyTargetContextCommand } from './targetContext';
@@ -33,9 +34,14 @@ export interface PreparationChoiceOption {
 export function preparationChoiceOptions(
   scenario: ResolvedScenario,
   servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
 ): readonly PreparationChoiceOption[] {
-  const execution = resolveAttackerFormExecution(scenario, servant);
-  if (execution.issues.length > 0) throw new TypeError('preparation_choice_scenario_invalid');
+  const execution = resolveAttackerFormExecution(scenario, servant, resourceSemantics);
+  if (
+    execution.issues.length > 0 ||
+    (execution.rejection && execution.rejection.code !== 'preparationInputRequired')
+  )
+    throw new TypeError('preparation_choice_scenario_invalid');
   return execution.actions.flatMap((action) => {
     if (action.command.kind !== 'useSkillSlot' || action.command.choice === null) return [];
     const command = action.command;
@@ -81,6 +87,7 @@ export function preparationChoiceOptions(
 export function setPreparationSkillChoice(
   scenario: ResolvedScenario,
   servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
   option: PreparationChoiceOption,
   projections: readonly EffectProjection[],
 ): ResolvedScenario {
@@ -110,7 +117,11 @@ export function setPreparationSkillChoice(
     ),
     canonicalInputValues: {},
   };
-  if (resolveAttackerFormExecution(changed, servant).issues.length > 0)
+  const execution = resolveAttackerFormExecution(changed, servant, resourceSemantics);
+  if (
+    execution.issues.length > 0 ||
+    (execution.rejection && execution.rejection.code !== 'preparationInputRequired')
+  )
     throw new TypeError('preparation_choice_command_invalid');
   return changed;
 }
@@ -118,6 +129,7 @@ export function setPreparationSkillChoice(
 export function setInitialActorForm(
   scenario: ResolvedScenario,
   servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
   initialActorFormId: ActorFormId,
   projections: readonly EffectProjection[],
 ): ResolvedScenario {
@@ -136,6 +148,8 @@ export function setInitialActorForm(
   const candidate = defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
     servant,
     targetForm.id,
+    resourceSemantics,
+    scenario.attacker.npLevel as 1 | 2 | 3 | 4 | 5,
   );
   const removedDecisionKeys = new Set(
     projections

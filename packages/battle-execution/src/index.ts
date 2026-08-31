@@ -31,6 +31,7 @@ export { canNormalizeDamageEffect } from './effectRouting';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
+  DEFAULT_NP_RESOURCE_SEMANTICS,
   applyNpResourceTransaction,
   createNpResourceState,
   deriveBaseOvercharge,
@@ -106,6 +107,7 @@ export {
   type AppliedPreparationEffect,
   type PreNoblePhantasmState,
   type PreparationFailureCode,
+  type PreparationExecutionContext,
   type PreparationTransitionResult,
   type SkillSlotRef,
 } from './preNoblePhantasm';

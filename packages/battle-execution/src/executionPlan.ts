@@ -9,7 +9,7 @@ import { activationFactKey, type DamageResolutionInput } from '@fgo-lab/schema';
 import { planOperationActivations } from './activation';
 import type { BattleOperation, EffectProjection, ExecutionPhase } from './contracts';
 import type { PreparedOrderedScenario, ResolvedScenario } from './executionTypes';
-import { compileEffectCached } from './operationCompiler';
+import { compileEffectCached, runtimeInputDefinitionsForSource } from './operationCompiler';
 import { collectOperationSources } from './sourceCollection';
 import {
   activationRequirementOwnerSelected,
@@ -17,13 +17,16 @@ import {
 } from './activationContext';
 import { resolveTargetCandidates } from './targetContext';
 import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
+import { effectChangesPreparation } from './preparationTransaction';
+import type { ResolvedAttackerFormExecution } from './sourceCollection';
 export function compileExecutionPlan(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
   master: MasterDataSnapshot,
+  resolvedFormExecution?: ResolvedAttackerFormExecution,
 ): PreparedOrderedScenario {
   const attacker = master.servants.find((servant) => servant.id === baseInput.attackerId);
-  const collected = collectOperationSources(baseInput, scenario, master);
+  const collected = collectOperationSources(baseInput, scenario, master, resolvedFormExecution);
   const compiledOperations: BattleOperation[] = [];
   const compileProjections: EffectProjection[] = [];
   for (const source of collected.sources) {
@@ -146,10 +149,15 @@ export function compileExecutionPlan(
     domain: master.targetSemantics.execution,
     constraints: targetConstraints,
   });
+  const preparationInputDefinitions = collected.sources
+    .filter(({ effect }) => effectChangesPreparation(effect))
+    .flatMap(runtimeInputDefinitionsForSource);
   const inputDefinitions = new Map(
-    operations.flatMap((operation) =>
-      operation.inputDefinitions.map((definition) => [definition.key, definition] as const),
-    ),
+    [
+      ...operations.flatMap((operation) => operation.inputDefinitions),
+      ...preparationInputDefinitions,
+      ...(collected.formExecution?.requiredInputs ?? []),
+    ].map((definition) => [definition.key, definition] as const),
   );
   return {
     baseInput,
@@ -167,6 +175,11 @@ export function compileExecutionPlan(
     attackerClass,
     attackerAttribute,
     inputDefinitions: [...inputDefinitions.values()],
+    preparationRequiredInputs: collected.formExecution?.requiredInputs ?? [],
+    preparationInputKeys: new Set([
+      ...preparationInputDefinitions.map(({ key }) => key),
+      ...(collected.formExecution?.requiredInputs.map(({ key }) => key) ?? []),
+    ]),
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };
 }

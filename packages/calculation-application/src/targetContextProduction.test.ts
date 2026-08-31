@@ -11,7 +11,13 @@ import {
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { applyEffectProjectionDecision } from './effectDecision';
 import { getAttackReachableInitialActorForms } from './actorFormGraph';
 
@@ -27,7 +33,8 @@ describe('production canonical target context', () => {
   it('derives every default relation from the canonical class relation', async () => {
     const master = await loadMaster();
     const attackers = master.servants.filter(
-      (servant) => getAttackReachableInitialActorForms(servant).length > 0,
+      (servant) =>
+        getAttackReachableInitialActorForms(servant, master.npResourceSemantics, 1).length > 0,
     );
     const inventory = { advantage2: 0, advantage15: 0, neutral: 0, disadvantage: 0 };
     for (const attacker of attackers) {
@@ -93,7 +100,8 @@ describe('production canonical target context', () => {
     };
     let compared = 0;
     for (const servant of master.servants.filter(
-      (candidate) => getAttackReachableInitialActorForms(candidate).length > 0,
+      (candidate) =>
+        getAttackReachableInitialActorForms(candidate, master.npResourceSemantics, 1).length > 0,
     )) {
       if (defaultTargetClassRelation(servant.classId) !== 'advantage2') continue;
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
@@ -221,7 +229,8 @@ describe('production canonical target context', () => {
   it('has no calculated relation without a real target candidate', async () => {
     const master = await loadMaster();
     for (const attacker of master.servants.filter(
-      (servant) => getAttackReachableInitialActorForms(servant).length > 0,
+      (servant) =>
+        getAttackReachableInitialActorForms(servant, master.npResourceSemantics, 1).length > 0,
     ))
       for (const relation of ['advantage2', 'advantage15', 'neutral', 'disadvantage'] as const) {
         const candidates = targetClassCandidates(attacker.classId, { kind: 'relative', relation });

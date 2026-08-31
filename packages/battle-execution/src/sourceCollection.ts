@@ -9,6 +9,8 @@ import {
   type ActorFormId,
   type MasterDataSnapshot,
   type MasterEffect,
+  type CanonicalInputDefinition,
+  type CanonicalNpResourceSemantics,
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 import type { ExecutionIssue, ExecutionPhase } from './contracts';
@@ -18,6 +20,8 @@ import {
   reducePreNoblePhantasmAction,
   type AppliedPreparationAction,
   type PreNoblePhantasmState,
+  type PreparationExecutionContext,
+  type PreparationFailureCode,
 } from './preNoblePhantasm';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -38,6 +42,7 @@ export interface SourceEffect {
   sourceEnabled: boolean;
   enabledByDefault: boolean;
   noblePhantasmVariant: NoblePhantasmVariantRef | null;
+  preparationStochasticOutcome: 'success' | 'failure' | null;
 }
 
 export interface ResolvedAttackerSkillUse {
@@ -58,19 +63,41 @@ export interface ResolvedAttackerFormExecution {
     actorFormId: ActorFormId;
   }[];
   issues: readonly ExecutionIssue[];
+  requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
+  rejection: { code: PreparationFailureCode; operationId: string } | null;
 }
 
 export function resolveAttackerFormExecution(
   scenario: ResolvedScenario,
   attacker: MasterDataSnapshot['servants'][number],
+  resourceSemantics: CanonicalNpResourceSemantics,
 ): ResolvedAttackerFormExecution {
-  const created = createPreNoblePhantasmState(attacker, scenario.attacker.initialActorFormId);
+  const context: PreparationExecutionContext = {
+    resourceSemantics,
+    npLevel: scenario.attacker.npLevel as PreparationExecutionContext['npLevel'],
+    initialGauge: resourceSemantics.noblePhantasmUse.requirement,
+    overcharge: scenario.overcharge as PreparationExecutionContext['overcharge'],
+    canonicalInputValues: Object.fromEntries(
+      Object.entries(scenario.canonicalInputValues).map(([key, value]) => [key, value.value]),
+    ),
+    ...(scenario.attackerHpPermille === null
+      ? {}
+      : { attackerHpPermille: scenario.attackerHpPermille }),
+    battlePointPhase: scenario.battleState.battlePointPhase,
+  };
+  const created = createPreNoblePhantasmState(
+    attacker,
+    scenario.attacker.initialActorFormId,
+    context,
+  );
   if (created.status === 'rejected')
     return {
       state: created.state,
       actions: [],
       skillUses: [],
       preparationNoblePhantasms: [],
+      requiredInputs: [],
+      rejection: { code: created.code, operationId: 'preparation:create' },
       issues: [{ kind: 'unsupportedOperation', operationId: 'preparation', detail: created.code }],
     };
   let state = created.state;
@@ -80,16 +107,26 @@ export function resolveAttackerFormExecution(
     actorFormId: ActorFormId;
   }> = [];
   const issues: ExecutionIssue[] = [];
+  const requiredInputs: Array<CanonicalInputDefinition & { effectOccurrenceIds: string[] }> = [];
+  let rejection: ResolvedAttackerFormExecution['rejection'] = null;
   for (const command of scenario.preNoblePhantasmPlan) {
     const actorFormId = state.currentFormId;
     const variantBeforeAction = state.selectedNoblePhantasmVariant;
-    const result = reducePreNoblePhantasmAction(attacker, state, command);
+    const result = reducePreNoblePhantasmAction(attacker, state, command, context);
     if (result.status === 'rejected') {
-      issues.push({
-        kind: 'unsupportedOperation',
+      if (
+        result.code === 'preparationInputRequired' &&
+        result.requiredInput &&
+        result.requiredInputEffectOccurrenceId
+      )
+        requiredInputs.push({
+          ...result.requiredInput,
+          effectOccurrenceIds: [result.requiredInputEffectOccurrenceId],
+        });
+      rejection = {
+        code: result.code,
         operationId: `preparation:${attacker.id}:${command.kind}`,
-        detail: result.code,
-      });
+      };
       break;
     }
     state = result.state;
@@ -109,19 +146,27 @@ export function resolveAttackerFormExecution(
         actorFormId,
       });
   }
-  if (!state.terminated)
-    issues.push({
-      kind: 'unsupportedOperation',
+  if (!state.terminated && requiredInputs.length === 0 && rejection === null)
+    rejection = {
+      code: 'attackNoblePhantasmUnavailable',
       operationId: `preparation:${attacker.id}:terminal`,
-      detail: 'attack_noble_phantasm_not_executed',
-    });
-  return { state, actions: state.appliedActions, skillUses, preparationNoblePhantasms, issues };
+    };
+  return {
+    state,
+    actions: state.appliedActions,
+    skillUses,
+    preparationNoblePhantasms,
+    issues,
+    requiredInputs,
+    rejection,
+  };
 }
 
 export function collectOperationSources(
   input: DamageResolutionInput,
   scenario: ResolvedScenario,
   master: MasterDataSnapshot,
+  resolvedFormExecution?: ResolvedAttackerFormExecution,
 ): {
   sources: SourceEffect[];
   issues: ExecutionIssue[];
@@ -190,10 +235,26 @@ export function collectOperationSources(
         enabledByDefault:
           defaultInclusion === 'master' && effect.inclusionPolicy.default === 'include',
         noblePhantasmVariant: null,
+        preparationStochasticOutcome: null,
       });
   };
-  const formExecution = resolveAttackerFormExecution(scenario, attacker);
+  const formExecution =
+    resolvedFormExecution ??
+    resolveAttackerFormExecution(scenario, attacker, master.npResourceSemantics);
   issues.push(...formExecution.issues);
+  if (formExecution.rejection)
+    return {
+      sources: [],
+      issues: [
+        ...issues,
+        {
+          kind: 'unsupportedOperation',
+          operationId: formExecution.rejection.operationId,
+          detail: formExecution.rejection.code,
+        },
+      ],
+      formExecution,
+    };
   for (const passive of getPassivesForActorForm(attacker, formExecution.state.currentFormId))
     appendSkill(
       'passive',
@@ -238,6 +299,7 @@ export function collectOperationSources(
           sourceEnabled: true,
           enabledByDefault: true,
           noblePhantasmVariant: null,
+          preparationStochasticOutcome: applied.stochasticOutcome,
         });
       }
     if (action.sourceKind !== 'noblePhantasm') continue;
@@ -275,6 +337,7 @@ export function collectOperationSources(
         sourceEnabled: true,
         enabledByDefault: true,
         noblePhantasmVariant: variant.ref,
+        preparationStochasticOutcome: applied.stochasticOutcome,
       });
   }
   if (scenario.craftEssence) {
@@ -310,6 +373,7 @@ export function collectOperationSources(
           sourceEnabled: true,
           enabledByDefault: effect.inclusionPolicy.default === 'include',
           noblePhantasmVariant: null,
+          preparationStochasticOutcome: null,
         });
       }
   }
@@ -363,6 +427,7 @@ export function collectOperationSources(
             sourceEnabled: selected.enabled,
             enabledByDefault: effect.inclusionPolicy.default === 'include',
             noblePhantasmVariant: null,
+            preparationStochasticOutcome: null,
           });
       }
   }
@@ -386,6 +451,7 @@ export function collectOperationSources(
         sourceEnabled: true,
         enabledByDefault: effect.inclusionPolicy.default === 'include',
         noblePhantasmVariant: np.ref,
+        preparationStochasticOutcome: null,
       });
     }
   }

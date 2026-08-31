@@ -37,6 +37,10 @@ export interface PreparedOrderedScenario {
   attackerClass: string;
   attackerAttribute: CombatAttribute;
   inputDefinitions: readonly CanonicalInputDefinition[];
+  preparationRequiredInputs: readonly (CanonicalInputDefinition & {
+    effectOccurrenceIds: string[];
+  })[];
+  preparationInputKeys: ReadonlySet<string>;
   appliedPreparationActions: readonly AppliedPreparationAction[];
 }
 

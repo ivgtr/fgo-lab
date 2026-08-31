@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.9"
+document_version: "1.5.13"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -48,8 +48,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-02.1 | Documentation contract closure gate | done | TSK-02 | document governance／early DOC-P6 |
 | TSK-03 | 共有production audit foundation | done | TSK-02.1 | test strategy T3／ranking production audit |
 | TSK-04 | Ranking canonical IR cutover | done | TSK-03 | ranking layer ownership／移行方針 |
-| TSK-05 | Transactional preparation execution | ready | TSK-04 | ranking execution／NP resource |
-| TSK-06 | Ranking policyとcandidate planner | blocked | TSK-05 | ranking condition／candidate planning |
+| TSK-05 | Transactional preparation execution | done | TSK-04 | ranking execution／NP resource |
+| TSK-06 | Ranking policyとcandidate planner | ready | TSK-05 | ranking condition／candidate planning |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06 | ranking UI／移行方針 |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
@@ -437,10 +437,10 @@ Handoff:
 
 Depends on: TSK-04
 
-- [ ] condition、choice、resource、state mutationをordered operationとして実行する。
-- [ ] form transition、NP variant、non-attack NP、attack NPを一つのplanで扱う。
-- [ ] executable stateとrejected stateを型で分ける。
-- [ ] action全体をatomic commitし、partial commitを拒否する。
+- [x] condition、choice、resource、state mutationをordered operationとして実行する。
+- [x] form transition、NP variant、non-attack NP、attack NPを一つのplanで扱う。
+- [x] executable stateとrejected stateを型で分ける。
+- [x] action全体をatomic commitし、partial commitを拒否する。
 
 Done gate:
 
@@ -460,7 +460,61 @@ Contract closure matrix:
 | `RK-POLICY-001` | Deferred: TSK-06 | - | TSK-06 |
 | `RK-UI-001` | Deferred: TSK-07 | - | TSK-07 |
 
-Handoff: 未記録
+Handoff:
+
+- Baseline: clean `69f8207e6252f8991b42ee7c55b578dba3c5f359`。flow closure正本は
+  `docs/evidence/transactional-preparation-flow-tsk-05.md`、全pathをVerified／N/A／Deferredへ
+  分類しBlocking 0で実装開始・完了した。
+- Implementation: condition／choiceでpreparation mutation対象を確定し、NP requirement、ordered
+  resource mutation、trait／form／variantをimmutable action-start stateから検証して一括commitする。
+  attack NPも同じtransactionでbase OC導出後に全消費する。曖昧条件、修正可能入力、矛盾、unsupported、
+  insufficient gaugeはtyped rejectionとして分離し、ranking policyはpreconditionを上書きしない。
+- Inventory: preparationは`6,376 / 3,957 / 3,446`、rejectはunsupported resource 64／insufficient
+  gauge 6。calculator 422/422、ranking 433、failure 0、runtime `1 / 1 / 1`、damage cache
+  `3,629 / 1,623`。意図的damage差分はunsupported resourceと固定loss順序のcanonical ruleへ限定した。
+- Structural review resolution: preparationの`inputRequired`をrequired-input付きapplication outcomeまで
+  保持し、preparation input変更時はpersisted commandとcurrent masterからsource collection／plan／executionを
+  全再生成する。確率activationはpreparationと通常executorへ同じresolved outcomeを渡し、plannerのresource
+  semantics／NP levelを全direct readerの必須identityとcache keyにした。damage-only inputの既存rematerializeは
+  preparation stateを変え得ないため`N/A`とし、resource-only repairの実application fixtureで逆経路を反証した。
+- Review verification: focused transaction 12/12、scenario facade 20/20、planner identity 2/2、activation
+  handoff 11/11、unit 58 files／327 tests、production 25 files／119 tests。calculator/ranking 855 recordsの
+  outcome／used input／applied effects／issuesは不変、runtime counterとdamage cacheも不変。production digest
+  `beb6f9f13b74acd52d0c384095a1fe82b8194a8d2cb500781e55b959d98cfe4b`はstochastic identityとinput traceを
+  記録する。85% workerでの3 runは81.81／82.42／82.11秒（median 82.11秒、baseline比+2.98%）、既存5秒
+  timeoutは緩和していない。
+- Completion gate: 最終`pnpm quality`はformat／lint／typecheck、runner 16/16、docs 5/5、unit 327、
+  production 119、master validation、build、E2E 64 passed／32 skippedまで成功した。calculator snapshot 3件の
+  差分はengine `28.0.0`から`29.0.0`へのfooter更新だけで、targeted／full E2Eとも成功した。Blocking 0、
+  TSK-05は`done`、TSK-06は`ready`へ遷移した。
+- Second review reopen: 上記完了遷移を撤回する。non-attack formのstructural input待ちが
+  `DamageResolutionInput`生成前に公開outcomeへ到達しない、preparation対象外の確率effectをsuccessとして
+  pre-resolveする、範囲／step違反inputがmutation後に拒否される、非repairable rejectionがgeneric issueと
+  throwへ崩れる4 pathを正本で`Blocking`へ戻した。resource-only recoveryとcache／NP level移行はVerifiedの
+  まま維持するが、指定4交差fixtureとapplication unionが閉じるまでTSK-05は`ready`、TSK-06は`blocked`。
+- Second review resolution: executable／rejectedを`ScenarioPreparationOutcome`で`DamageResolutionInput`
+  生成前に分離し、non-attack formからinput-dependent transitionを修復後にcalculator／ranking双方で全再適用
+  した。preparationで評価しないordinary stochastic effectは`null`を保持し、minimum／maximum／step違反は
+  mutation前にrequired inputへ戻す。insufficient／unsupported／ambiguous／invalidは公開resultの
+  `preparation:<code>`へ区別して伝搬する。focused 54/54、proc production 8/8、unit 338、production 119。
+  4,735 production recordsのうちcalculator/ranking core 855件はoutcome／input／effects／issues差分0、digest
+  `80a63a7be083c68dc80c844aa99a891d5fa4cfe2491e0c69cb0358d71d990f25`はordinary stochastic ownershipの
+  `null`化を記録する。92% workerの3 runは81.95／75.04／75.34秒（median 75.34秒、baseline 79.73秒以下）、
+  timeout／suite／runtime counterは不変。最終`pnpm quality`成功後、Blocking 0、TSK-05を`done`、TSK-06を
+  `ready`へ遷移した。
+- Third review resolution: rejected branchからpresentation attack NP fallbackを削除し、
+  `ResolvedCalculationInput`／`PreparedCalculationScenario`／`CalculationExecution`をdamage inputなしの
+  discriminated unionまで貫通した。calculator UIはrejected状態からmanual damage commandを生成せず、
+  repairable canonical inputだけを更新する。preparation activationは`procOutcome`と`conditionOutcome`を
+  分離し、resource／form mutation可否だけを合成する。guaranteed success／stochastic success × condition
+  falseとattack NP variantなしのschema-legal fixtureを追加した。focused 55/55、unit 339、production 119、
+  final quality（runner 16、docs 5、master validation、build、E2E 64 passed／32 skipped）が成功した。
+  4,735 production records中の差分はcondition-false traceを訂正したpreparation 32件だけで、calculator／
+  ranking records差分は0。digestは`e9441e4f35eb74af80a79967ee20ea735687a899cc2b6f606ea3db5ae0297e7f`。
+  production worker capはquality内で再現した5秒timeoutを解消するため75%へ下げ、timeout／suiteは不変。
+  Blocking 0、TSK-05は`done`、TSK-06は`ready`。
+- Deferred: satisfied-policy start-gauge／scenario-fact candidate generationは`RK-POLICY-001`として
+  TSK-06が所有する。
 
 ### TSK-06: Ranking policyとcandidate planner
 

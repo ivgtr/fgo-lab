@@ -4,6 +4,8 @@ import {
   createPreNoblePhantasmState,
   reducePreNoblePhantasmAction,
   type PreNoblePhantasmState,
+  type PreparationExecutionContext,
+  type PreparationFailureCode,
 } from '@fgo-lab/battle-execution';
 import {
   actorFormKey,
@@ -13,13 +15,17 @@ import {
   getInitialActorForms,
   noblePhantasmVariantKey,
   type ActorFormId,
+  type CanonicalNpResourceSemantics,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { CalculationScenario } from '@fgo-lab/schema';
 
 const MAX_SEMANTIC_STATES_PER_SERVANT = 512;
-const productionPlanCache = new WeakMap<ServantMaster, PlannedPreNoblePhantasmCandidates>();
+const productionPlanCache = new WeakMap<
+  ServantMaster,
+  Map<string, PlannedPreNoblePhantasmCandidates>
+>();
 
 export interface PreNoblePhantasmPlanCandidate {
   commands: readonly PreNoblePhantasmCommand[];
@@ -33,6 +39,7 @@ export interface PreNoblePhantasmPlanInventory {
   terminalPlanCount: number;
   exactDuplicateCount: number;
   rejectedActionCount: number;
+  rejectedActionCounts: Readonly<Partial<Record<PreparationFailureCode, number>>>;
   maximumPreparationActionCount: number;
 }
 
@@ -53,6 +60,8 @@ function canonicalEffectKey(effect: PreNoblePhantasmState['activeEffects'][numbe
     selection: effect.effect.selection,
     requirement: effect.effect.requirement,
     proc: effect.effect.proc,
+    resourceTransition: effect.effect.resourceTransition,
+    stochasticOutcome: effect.stochasticOutcome,
   });
 }
 
@@ -70,6 +79,8 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
       attackerState: [...state.stateTraits.attackerState].sort(),
       targetState: [...state.stateTraits.targetState].sort(),
     },
+    npResource: state.npResource,
+    baseOvercharge: state.baseOvercharge,
     choices: state.appliedActions
       .flatMap(({ command }) =>
         command.kind === 'useSkillSlot' && command.choice
@@ -92,8 +103,9 @@ function planKey(commands: readonly PreNoblePhantasmCommand[]): string {
 function preparationCommands(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
+  context: PreparationExecutionContext,
 ): readonly PreNoblePhantasmCommand[] {
-  const transform = availableTransformNoblePhantasmCommand(servant, state);
+  const transform = availableTransformNoblePhantasmCommand(servant, state, context);
   return [
     ...availablePreparationSkillCommands(servant, state),
     ...(transform ? [transform] : []),
@@ -102,15 +114,31 @@ function preparationCommands(
 
 export function planPreNoblePhantasmCandidates(
   servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: PreparationExecutionContext['npLevel'],
+  overcharge: PreparationExecutionContext['overcharge'],
+  initialGauge: number = resourceSemantics.noblePhantasmUse.requirement,
 ): PlannedPreNoblePhantasmCandidates {
-  const cached = productionPlanCache.get(servant);
+  const cacheKey = JSON.stringify({ resourceSemantics, npLevel, overcharge, initialGauge });
+  let servantCache = productionPlanCache.get(servant);
+  if (!servantCache) {
+    servantCache = new Map();
+    productionPlanCache.set(servant, servantCache);
+  }
+  const cached = servantCache.get(cacheKey);
   if (cached) return cached;
+  const context: PreparationExecutionContext = {
+    resourceSemantics,
+    npLevel,
+    initialGauge,
+    overcharge,
+  };
   const pending: Array<{
     state: PreNoblePhantasmState;
     commands: readonly PreNoblePhantasmCommand[];
   }> = [];
   for (const form of getInitialActorForms(servant)) {
-    const created = createPreNoblePhantasmState(servant, form.id);
+    const created = createPreNoblePhantasmState(servant, form.id, context);
     if (created.status === 'rejected') throw new TypeError(created.code);
     pending.push({ state: created.state, commands: [] });
   }
@@ -119,6 +147,7 @@ export function planPreNoblePhantasmCandidates(
   let generatedStateCount = 0;
   let exactDuplicateCount = 0;
   let rejectedActionCount = 0;
+  const rejectedActionCounts: Partial<Record<PreparationFailureCode, number>> = {};
   let maximumPreparationActionCount = 0;
   while (pending.length > 0) {
     const item = pending.shift()!;
@@ -133,9 +162,12 @@ export function planPreNoblePhantasmCandidates(
     if (visited.size > MAX_SEMANTIC_STATES_PER_SERVANT)
       throw new RangeError(`pre_noble_phantasm_state_limit:${servant.id}`);
     maximumPreparationActionCount = Math.max(maximumPreparationActionCount, item.commands.length);
-    const attack = reducePreNoblePhantasmAction(servant, item.state, {
-      kind: 'executeAttackNoblePhantasm',
-    });
+    const attack = reducePreNoblePhantasmAction(
+      servant,
+      item.state,
+      { kind: 'executeAttackNoblePhantasm' },
+      context,
+    );
     if (attack.status === 'applied') {
       const commands = [...item.commands, { kind: 'executeAttackNoblePhantasm' as const }];
       candidates.push({
@@ -144,10 +176,11 @@ export function planPreNoblePhantasmCandidates(
         semanticStateKey: preNoblePhantasmSemanticStateKey(attack.state),
       });
     }
-    for (const command of preparationCommands(servant, item.state)) {
-      const result = reducePreNoblePhantasmAction(servant, item.state, command);
+    for (const command of preparationCommands(servant, item.state, context)) {
+      const result = reducePreNoblePhantasmAction(servant, item.state, command, context);
       if (result.status === 'rejected') {
         rejectedActionCount += 1;
+        rejectedActionCounts[result.code] = (rejectedActionCounts[result.code] ?? 0) + 1;
         continue;
       }
       pending.push({ state: result.state, commands: [...item.commands, command] });
@@ -168,27 +201,42 @@ export function planPreNoblePhantasmCandidates(
       terminalPlanCount: stableCandidates.length,
       exactDuplicateCount,
       rejectedActionCount,
+      rejectedActionCounts,
       maximumPreparationActionCount,
     },
   };
-  productionPlanCache.set(servant, planned);
+  servantCache.set(cacheKey, planned);
   return planned;
 }
 
 export function defaultPreNoblePhantasmCandidate(
   servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
   const defaultForm = getDefaultInitialActorForm(servant);
   if (!defaultForm) throw new TypeError(`default_initial_actor_form_missing:${servant.id}`);
-  return defaultPreNoblePhantasmCandidateForInitialForm(servant, defaultForm.id);
+  return defaultPreNoblePhantasmCandidateForInitialForm(
+    servant,
+    defaultForm.id,
+    resourceSemantics,
+    npLevel,
+  );
 }
 
 export function defaultPreNoblePhantasmCandidateForInitialForm(
   servant: ServantMaster,
   initialFormId: ActorFormId,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
-  const candidates = planPreNoblePhantasmCandidates(servant).candidates.filter(
-    ({ terminalState }) => actorFormEquals(terminalState.initialFormId, initialFormId),
+  const candidates = planPreNoblePhantasmCandidates(
+    servant,
+    resourceSemantics,
+    npLevel,
+    1,
+  ).candidates.filter(({ terminalState }) =>
+    actorFormEquals(terminalState.initialFormId, initialFormId),
   );
   if (candidates.length === 0)
     throw new TypeError(`default_preparation_plan_missing:${servant.id}`);
@@ -232,9 +280,16 @@ export function defaultPreNoblePhantasmCandidateForInitialForm(
 export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
   servant: ServantMaster,
   initialFormId: ActorFormId,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
-  const candidates = planPreNoblePhantasmCandidates(servant).candidates.filter(
-    ({ terminalState }) => actorFormEquals(terminalState.initialFormId, initialFormId),
+  const candidates = planPreNoblePhantasmCandidates(
+    servant,
+    resourceSemantics,
+    npLevel,
+    1,
+  ).candidates.filter(({ terminalState }) =>
+    actorFormEquals(terminalState.initialFormId, initialFormId),
   );
   const minimumTransformNpCount = Math.min(
     ...candidates.map(
@@ -267,7 +322,12 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
     );
   });
   if (explicitBaseVariantCandidates.length === 0)
-    return defaultPreNoblePhantasmCandidateForInitialForm(servant, initialFormId);
+    return defaultPreNoblePhantasmCandidateForInitialForm(
+      servant,
+      initialFormId,
+      resourceSemantics,
+      npLevel,
+    );
   return explicitBaseVariantCandidates.sort(
     (left, right) =>
       right.terminalState.usedSkillSlots.size - left.terminalState.usedSkillSlots.size ||
@@ -277,10 +337,17 @@ export function defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
 
 export function defaultCalculatorPreNoblePhantasmCandidate(
   servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: PreparationExecutionContext['npLevel'],
 ): PreNoblePhantasmPlanCandidate {
   const defaultForm = getDefaultInitialActorForm(servant);
   if (!defaultForm) throw new TypeError(`default_initial_actor_form_missing:${servant.id}`);
-  return defaultCalculatorPreNoblePhantasmCandidateForInitialForm(servant, defaultForm.id);
+  return defaultCalculatorPreNoblePhantasmCandidateForInitialForm(
+    servant,
+    defaultForm.id,
+    resourceSemantics,
+    npLevel,
+  );
 }
 
 export function materializePreNoblePhantasmPlan(

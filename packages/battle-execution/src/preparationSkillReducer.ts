@@ -4,6 +4,7 @@ import { selectPreparationEffects } from './preparationCommands';
 import {
   rejectPreparation,
   type PreNoblePhantasmState,
+  type PreparationExecutionContext,
   type PreparationTransitionResult,
 } from './preparationContracts';
 import { assemblePreparationActivationFacts } from './preparationEvidence';
@@ -12,11 +13,13 @@ import {
   findPreparationTransition,
   resolvePreparationStructuralOutcome,
 } from './preparationState';
+import { planPreparationResourceTransaction } from './preparationTransaction';
 
 export function reducePreparationSkillAction(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
   command: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>,
+  context: PreparationExecutionContext,
 ): PreparationTransitionResult {
   if (state.usedSkillSlots.has(command.slot)) return rejectPreparation(state, 'skillSlotReused');
   const skills = getSkillsForActorForm(servant, state.currentFormId).filter(
@@ -26,9 +29,42 @@ export function reducePreparationSkillAction(
   const skill = skills[0]!;
   const effects = selectPreparationEffects(skill.effects, command);
   if (typeof effects === 'string') return rejectPreparation(state, effects);
-  const transition = findPreparationTransition(servant, state, 'skill', skill.id, effects);
+  const resource = planPreparationResourceTransaction({
+    context,
+    servant,
+    state,
+    command,
+    skill,
+    effects,
+    valueSetIndex: 0,
+    valueIndex: command.skillLevel - 1,
+    consumeNoblePhantasm: false,
+    inputSource: {
+      origin: 'attacker',
+      sourceInstanceId: `attacker:${servant.id}`,
+      skillId: skill.id,
+    },
+  });
+  if (resource.status === 'rejected')
+    return rejectPreparation(
+      state,
+      resource.code,
+      resource.requiredInput,
+      resource.requiredInputEffectOccurrenceId,
+    );
+  const transition = findPreparationTransition(
+    servant,
+    state,
+    'skill',
+    skill.id,
+    resource.preparationEffects,
+  );
   if (typeof transition === 'string') return rejectPreparation(state, transition);
-  const structural = resolvePreparationStructuralOutcome(servant, state, effects);
+  const structural = resolvePreparationStructuralOutcome(
+    servant,
+    state,
+    resource.preparationEffects,
+  );
   if (typeof structural === 'string') return rejectPreparation(state, structural);
   if (transition && !actorFormEquals(transition.to, structural.currentFormId))
     return rejectPreparation(state, 'transitionAtomicity');
@@ -45,8 +81,11 @@ export function reducePreparationSkillAction(
         skill.id,
         state.currentFormId,
         effects,
+        resource.activation,
       ),
       stateTraits: structural.stateTraits,
+      npResource: resource.resource.state,
+      baseOvercharge: resource.resource.baseOvercharge,
       appliedActions: [
         ...state.appliedActions,
         {
@@ -60,6 +99,7 @@ export function reducePreparationSkillAction(
             actorFormId: state.currentFormId,
             occurrenceId: effect.occurrenceId,
             effect,
+            stochasticOutcome: resource.activation.get(effect)?.procOutcome ?? null,
           })),
           activationFacts: assemblePreparationActivationFacts(
             servant,
@@ -69,6 +109,9 @@ export function reducePreparationSkillAction(
             effects,
           ),
           transition,
+          resourceBefore: state.npResource,
+          resourceAfter: resource.resource.state,
+          baseOvercharge: resource.resource.baseOvercharge,
         },
       ],
     },

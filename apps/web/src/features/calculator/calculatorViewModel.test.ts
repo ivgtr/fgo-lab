@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
-import { calculateScenario, createDefaultResolvedScenario } from '@fgo-lab/calculation-application';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from '@fgo-lab/calculation-application';
 import { getPrimaryNpDamage, masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createCalculatorViewModel } from './calculatorViewModel';
 
 const master = masterSnapshotSchema.parse(fixture);
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 
 describe('calculator view model', () => {
   it('derives effect groups and summaries without interpreting condition semantics', () => {

@@ -85,7 +85,7 @@ export function createEffectInputViewModels(input: {
   const invalidKeys = new Set(input.requiredInputs.map((definition) => definition.key));
   return input.definitions.flatMap((definition) => {
     const related = relatedDamageEffects(definition, input.effects);
-    if (related.length === 0) return [];
+    if (related.length === 0 && !invalidKeys.has(definition.key)) return [];
     const explicit = input.explicitValues[definition.key];
     return [
       {
@@ -103,7 +103,10 @@ export function createEffectInputViewModels(input: {
         defaultReason: definition.defaultReason,
         explicit: explicit !== undefined,
         invalid: invalidKeys.has(definition.key),
-        section: related.some((effect) => effect.source.origin !== 'support') ? 'own' : 'support',
+        section:
+          related.length === 0 || related.some((effect) => effect.source.origin !== 'support')
+            ? 'own'
+            : 'support',
         relatedProjectionKeys: [...new Set(related.map((effect) => effect.projectionKey))],
         relatedEffectLabels: [...new Set(related.map((effect) => effect.label).filter(Boolean))],
       },

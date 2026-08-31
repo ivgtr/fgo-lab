@@ -37,7 +37,11 @@ export function includedRankingServants(
   conditions: RankingConditions,
 ): ServantMaster[] {
   return master.servants.filter((servant) => {
-    if (planPreNoblePhantasmCandidates(servant).candidates.length === 0) return false;
+    if (
+      planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, conditions.npLevel, 1)
+        .candidates.length === 0
+    )
+      return false;
     if (conditions.comparisonMode === 'standard') return true;
     return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
   });

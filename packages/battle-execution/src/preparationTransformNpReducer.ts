@@ -1,12 +1,14 @@
 import {
   actorFormEquals,
   findNoblePhantasmVariant,
+  noblePhantasmVariantKey,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import {
   rejectPreparation,
   type PreNoblePhantasmState,
+  type PreparationExecutionContext,
   type PreparationTransitionResult,
 } from './preparationContracts';
 import { assemblePreparationActivationFacts } from './preparationEvidence';
@@ -16,11 +18,13 @@ import {
   formCanReachAttackWithoutPreparationNp,
   resolvePreparationStructuralOutcome,
 } from './preparationState';
+import { planPreparationResourceTransaction } from './preparationTransaction';
 
 export function reducePreparationTransformNoblePhantasmAction(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
   command: Extract<PreNoblePhantasmCommand, { kind: 'useTransformNoblePhantasm' }>,
+  context: PreparationExecutionContext,
 ): PreparationTransitionResult {
   if (state.transformNoblePhantasmUsed)
     return rejectPreparation(state, 'transformNoblePhantasmReused');
@@ -28,16 +32,43 @@ export function reducePreparationTransformNoblePhantasmAction(
   const variant = ref ? findNoblePhantasmVariant(servant, ref) : undefined;
   if (!variant || variant.kind !== 'nonAttack')
     return rejectPreparation(state, 'transformNoblePhantasmUnavailable');
+  const resource = planPreparationResourceTransaction({
+    context,
+    servant,
+    state,
+    command,
+    skill: null,
+    effects: variant.effects,
+    valueSetIndex: context.overcharge - 1,
+    valueIndex: context.npLevel - 1,
+    consumeNoblePhantasm: true,
+    inputSource: {
+      origin: 'np',
+      sourceInstanceId: `np:${noblePhantasmVariantKey(variant.ref)}`,
+      skillId: `np:${noblePhantasmVariantKey(variant.ref)}`,
+    },
+  });
+  if (resource.status === 'rejected')
+    return rejectPreparation(
+      state,
+      resource.code,
+      resource.requiredInput,
+      resource.requiredInputEffectOccurrenceId,
+    );
   const transition = findPreparationTransition(
     servant,
     state,
     'noblePhantasm',
     variant.ref.noblePhantasmId,
-    variant.effects,
+    resource.preparationEffects,
   );
   if (typeof transition === 'string') return rejectPreparation(state, transition);
   if (!transition) return rejectPreparation(state, 'transformNoblePhantasmUnavailable');
-  const structural = resolvePreparationStructuralOutcome(servant, state, variant.effects);
+  const structural = resolvePreparationStructuralOutcome(
+    servant,
+    state,
+    resource.preparationEffects,
+  );
   if (typeof structural === 'string') return rejectPreparation(state, structural);
   if (!actorFormEquals(transition.to, structural.currentFormId))
     return rejectPreparation(state, 'transitionAtomicity');
@@ -56,8 +87,11 @@ export function reducePreparationTransformNoblePhantasmAction(
         variant.ref.noblePhantasmId,
         state.currentFormId,
         variant.effects,
+        resource.activation,
       ),
       stateTraits: structural.stateTraits,
+      npResource: resource.resource.state,
+      baseOvercharge: resource.resource.baseOvercharge,
       appliedActions: [
         ...state.appliedActions,
         {
@@ -71,6 +105,7 @@ export function reducePreparationTransformNoblePhantasmAction(
             actorFormId: state.currentFormId,
             occurrenceId: effect.occurrenceId,
             effect,
+            stochasticOutcome: resource.activation.get(effect)?.procOutcome ?? null,
           })),
           activationFacts: assemblePreparationActivationFacts(
             servant,
@@ -80,6 +115,9 @@ export function reducePreparationTransformNoblePhantasmAction(
             variant.effects,
           ),
           transition,
+          resourceBefore: state.npResource,
+          resourceAfter: resource.resource.state,
+          baseOvercharge: resource.resource.baseOvercharge,
         },
       ],
     },

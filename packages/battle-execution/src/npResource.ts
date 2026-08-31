@@ -1,5 +1,15 @@
 import type { CanonicalNpResourceSemantics } from '@fgo-lab/master-data';
 
+export const DEFAULT_NP_RESOURCE_SEMANTICS: CanonicalNpResourceSemantics = {
+  unit: 'basisPoints',
+  capacityByNpLevel: [10_000, 20_000, 20_000, 20_000, 30_000],
+  noblePhantasmUse: {
+    requirement: 10_000,
+    consumption: 'all',
+    baseOvercharge: { gaugePerStage: 10_000, minimumStage: 1, maximumBaseStage: 3 },
+  },
+};
+
 export interface NpResourceState {
   npLevel: 1 | 2 | 3 | 4 | 5;
   capacity: number;

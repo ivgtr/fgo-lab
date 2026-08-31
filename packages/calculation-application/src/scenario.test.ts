@@ -17,10 +17,23 @@ import {
   applyEffectProjectionDecision,
 } from './effectDecision';
 import { resolveCanonicalInputValues } from './canonicalInputs';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  evaluatePreparedCalculationScenario,
+  prepareCalculationScenario,
+  rematerializePreparedCalculationInputs,
+  requireExecutableCalculation,
+  resolveScenarioPreparationOutcome,
+} from './scenario';
+import { compileRankingPreparationProgram } from './rankingPreparationProgram';
+import { executeRankingScenarios } from './rankingExecution';
+import { DEFAULT_RANKING_CONDITIONS } from './rankingContracts';
 
 const master = masterSnapshotSchema.parse(fixture);
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 
 type MutableEffectContainer = {
   effects?: Record<string, unknown>[];
@@ -1465,6 +1478,659 @@ describe('scenario calculation facade', () => {
     expect(calculateProc(true).input.targetStateTraits).toEqual(['buffPoison']);
     expect(calculateProc(true).input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
   });
+
+  it('propagates preparation inputRequired and fully re-prepares after repair', () => {
+    const baseServant = fixture.servants[0]!;
+    const resourceEffect = {
+      ...modifierEffect('input-resource', 'nonDamageContext', 0),
+      inputDefinitions: [
+        {
+          key: 'preparation:value',
+          kind: 'procSuccessCount' as const,
+          owner: 'attacker' as const,
+          label: '準備値',
+          description: 'NP獲得を適用するための入力',
+          minimum: 0,
+          maximum: 1,
+          step: 1,
+          defaultValue: null,
+          defaultReason: '明示入力が必要',
+        },
+      ],
+      requirement: {
+        recipient: 'sourceSelf' as const,
+        expression: {
+          kind: 'inputQuantity' as const,
+          inputKey: 'preparation:value',
+          comparison: 'atLeast' as const,
+          value: 1,
+        },
+      },
+      resourceTransition: {
+        kind: 'fixed' as const,
+        recipient: 'sourceActor' as const,
+        direction: 'gain' as const,
+        amounts: [Array<number>(10).fill(2_000), [], [], [], []] as [
+          number[],
+          number[],
+          number[],
+          number[],
+          number[],
+        ],
+        overflow: 'clampToCapacity' as const,
+        underflow: 'clampToZero' as const,
+      },
+    };
+    const preparationMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'input-resource-skill',
+              slot: 1,
+              priority: 1,
+              name: 'input resource',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [resourceEffect],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario: ResolvedScenario = {
+      ...createDefaultResolvedScenario(preparationMaster, undefined),
+      attacker: {
+        ...createDefaultResolvedScenario(preparationMaster, undefined).attacker,
+        npLevel: 2,
+      },
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+    };
+    const prepared = prepareCalculationScenario(scenario, preparationMaster);
+    const initial = evaluatePreparedCalculationScenario(prepared, {
+      ...versions,
+      masterDataVersion: preparationMaster.version,
+    });
+
+    expect(initial.result).toMatchObject({
+      status: 'inputRequired',
+      requiredInputs: [{ key: 'preparation:value', effectOccurrenceIds: ['input-resource:0'] }],
+    });
+    expect(initial.effectInputs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'preparation:value', invalid: true }),
+      ]),
+    );
+
+    const repairedScenario: ResolvedScenario = {
+      ...scenario,
+      canonicalInputValues: {
+        'preparation:value': { kind: 'integer', value: 1 },
+      },
+    };
+    const repaired = rematerializePreparedCalculationInputs(
+      prepared,
+      repairedScenario,
+      preparationMaster,
+    );
+    expect(repaired.orderedScenario?.inputDefinitions.map(({ key }) => key)).toContain(
+      'preparation:value',
+    );
+    const execution = evaluatePreparedCalculationScenario(repaired, {
+      ...versions,
+      masterDataVersion: preparationMaster.version,
+    });
+
+    expect(execution.effectWarnings).toEqual([]);
+    expect(execution.result.status).toBe('calculated');
+    expect(execution.appliedPreparationActions).toHaveLength(2);
+    expect(execution.appliedPreparationActions[0]).toMatchObject({
+      sourceId: 'input-resource-skill',
+      resourceBefore: { gauge: 10_000 },
+      resourceAfter: { gauge: 12_000 },
+    });
+
+    const rankingMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'input-resource-skill',
+              slot: 1,
+              priority: 1,
+              name: 'input resource',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [
+                {
+                  ...resourceEffect,
+                  inputDefinitions: resourceEffect.inputDefinitions.map((definition) => ({
+                    ...definition,
+                    defaultValue: 0,
+                  })),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const rankingCandidates = compileRankingPreparationProgram(
+      rankingMaster.servants[0]!,
+      rankingMaster,
+      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { ...DEFAULT_RANKING_CONDITIONS, npLevel: 2 },
+    );
+    const rankingSkillCandidate = rankingCandidates.find(({ canonical }) =>
+      canonical.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot'),
+    );
+
+    expect(rankingSkillCandidate?.canonical.canonicalInputValues['preparation:value']).toEqual({
+      kind: 'integer',
+      value: 1,
+    });
+    expect(rankingSkillCandidate?.canonicalPrepared.resolved.precision).toBe('exact');
+    expect(
+      rankingSkillCandidate?.canonicalPrepared.resolved.appliedPreparationActions[0],
+    ).toMatchObject({ resourceBefore: { gauge: 10_000 }, resourceAfter: { gauge: 12_000 } });
+  });
+
+  it('repairs an input-dependent non-attack form transition before creating an executable damage input', () => {
+    const baseServant = fixture.servants[0]!;
+    const initialForm = baseServant.actorFormGraph.forms[0]!.id;
+    const attackForm = { actorId: initialForm.actorId, limitCount: 1 };
+    const initialNpRef = { actorFormId: initialForm, noblePhantasmId: 'fixture-preparation-np' };
+    const attackNpRef = { actorFormId: attackForm, noblePhantasmId: 'fixture-transition-attack' };
+    const originalAttack = baseServant.noblePhantasmVariantGroups[0]!.variants[0]!;
+    if (originalAttack.kind !== 'attack') throw new TypeError('fixture_attack_required');
+    const transitionEffect = {
+      ...modifierEffect('input-transition', 'nonDamageContext', 0),
+      inputDefinitions: [
+        {
+          key: 'preparation:transition',
+          kind: 'procSuccessCount' as const,
+          owner: 'attacker' as const,
+          label: '変身条件',
+          description: '攻撃宝具形態へ遷移する条件',
+          minimum: 0,
+          maximum: 4,
+          step: 2,
+          defaultValue: null,
+          defaultReason: '明示入力が必要',
+        },
+      ],
+      requirement: {
+        recipient: 'sourceSelf' as const,
+        expression: {
+          kind: 'inputQuantity' as const,
+          inputKey: 'preparation:transition',
+          comparison: 'atLeast' as const,
+          value: 2,
+        },
+      },
+      execution: [
+        {
+          kind: 'transformActorForm' as const,
+          route: mutationRoute('sourceSelf'),
+          targetFormId: attackForm,
+        },
+        {
+          kind: 'selectNoblePhantasmVariant' as const,
+          route: mutationRoute('sourceSelf'),
+          variant: attackNpRef,
+        },
+      ],
+    };
+    const structuralMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          actorFormGraph: {
+            ...baseServant.actorFormGraph,
+            forms: [
+              {
+                ...baseServant.actorFormGraph.forms[0]!,
+                baseNoblePhantasmVariant: initialNpRef,
+              },
+              {
+                ...baseServant.actorFormGraph.forms[0]!,
+                id: attackForm,
+                name: '攻撃宝具形態',
+                baseNoblePhantasmVariant: attackNpRef,
+              },
+            ],
+            transitions: [
+              {
+                id: 'input-transition',
+                from: initialForm,
+                to: attackForm,
+                direction: 'forward' as const,
+                activation: {
+                  sourceKind: 'skill' as const,
+                  sourceId: 'transition-skill',
+                  effectOccurrenceIds: ['input-transition:0'],
+                },
+                operations: transitionEffect.execution,
+              },
+            ],
+          },
+          baseNoblePhantasmGroupId: 'fixture-preparation-group',
+          noblePhantasmVariantGroups: [
+            {
+              id: 'fixture-preparation-group',
+              baseVariant: initialNpRef,
+              variants: [
+                {
+                  kind: 'nonAttack' as const,
+                  canonicalId: '1'.repeat(64),
+                  ref: initialNpRef,
+                  name: '変身宝具',
+                  priority: 1,
+                  effects: [],
+                },
+                {
+                  ...originalAttack,
+                  canonicalId: '2'.repeat(64),
+                  ref: attackNpRef,
+                  name: '遷移後攻撃宝具',
+                },
+              ],
+            },
+          ],
+          skills: [
+            {
+              id: 'transition-skill',
+              slot: 1,
+              priority: 1,
+              name: '変身スキル',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [transitionEffect],
+            },
+          ],
+        },
+      ],
+    });
+    const baseScenario = createDefaultResolvedScenario(master, undefined);
+    const scenario: ResolvedScenario = {
+      ...baseScenario,
+      attacker: { ...baseScenario.attacker, initialActorFormId: initialForm },
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+    };
+    const prepared = prepareCalculationScenario(scenario, structuralMaster);
+    const preparationOutcome = resolveScenarioPreparationOutcome(scenario, structuralMaster);
+    expect(preparationOutcome).toMatchObject({
+      status: 'rejected',
+      rejection: { code: 'preparationInputRequired' },
+    });
+    expect('input' in preparationOutcome).toBe(false);
+    const initial = evaluatePreparedCalculationScenario(prepared, {
+      ...versions,
+      masterDataVersion: structuralMaster.version,
+    });
+
+    expect(initial.result).toMatchObject({
+      status: 'inputRequired',
+      requiredInputs: [
+        { key: 'preparation:transition', effectOccurrenceIds: ['input-transition:0'] },
+      ],
+    });
+    expect(initial.appliedPreparationActions).toEqual([]);
+    expect(initial.status).toBe('rejected');
+    expect('input' in initial).toBe(false);
+    expect('scenarioInput' in initial).toBe(false);
+    expect(
+      executeRankingScenarios([prepared], structuralMaster, {
+        ...versions,
+        masterDataVersion: structuralMaster.version,
+      })[0]?.result.status,
+    ).toBe('inputRequired');
+
+    const nonAttackOnlyServant = structuralMaster.servants[0]!;
+    const nonAttackOnlyMaster = parseTestMaster({
+      ...structuralMaster,
+      servants: [
+        {
+          ...nonAttackOnlyServant,
+          actorFormGraph: {
+            ...nonAttackOnlyServant.actorFormGraph,
+            forms: [nonAttackOnlyServant.actorFormGraph.forms[0]!],
+            initialFormIds: [initialForm],
+            defaultInitialFormId: initialForm,
+            transitions: [],
+          },
+          noblePhantasmVariantGroups: nonAttackOnlyServant.noblePhantasmVariantGroups.map(
+            (group) => ({
+              ...group,
+              variants: group.variants.filter(({ kind }) => kind === 'nonAttack'),
+            }),
+          ),
+          skills: [],
+        },
+      ],
+    });
+    const noAttack = calculateScenarioOutcome(
+      {
+        ...scenario,
+        preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+      },
+      nonAttackOnlyMaster,
+      { ...versions, masterDataVersion: nonAttackOnlyMaster.version },
+    );
+    expect(noAttack).toMatchObject({
+      status: 'rejected',
+      result: {
+        status: 'unsupported',
+        issues: [{ code: 'preparation:attackNoblePhantasmUnavailable' }],
+      },
+    });
+    expect('input' in noAttack).toBe(false);
+    expect('scenarioInput' in noAttack).toBe(false);
+
+    for (const value of [-2, 6, 1]) {
+      const invalid = calculateScenarioOutcome(
+        {
+          ...scenario,
+          canonicalInputValues: {
+            'preparation:transition': { kind: 'integer', value },
+          },
+        },
+        structuralMaster,
+        { ...versions, masterDataVersion: structuralMaster.version },
+      );
+      expect(invalid.result.status, String(value)).toBe('inputRequired');
+      expect(invalid.appliedPreparationActions, String(value)).toEqual([]);
+    }
+
+    const repairedScenario: ResolvedScenario = {
+      ...scenario,
+      canonicalInputValues: {
+        'preparation:transition': { kind: 'integer', value: 2 },
+      },
+    };
+    const repaired = rematerializePreparedCalculationInputs(
+      prepared,
+      repairedScenario,
+      structuralMaster,
+    );
+    const execution = evaluatePreparedCalculationScenario(repaired, {
+      ...versions,
+      masterDataVersion: structuralMaster.version,
+    });
+
+    expect(execution.effectWarnings).toEqual([]);
+    expect(execution.result.status).toBe('calculated');
+    expect(execution.noblePhantasmVariant?.ref).toEqual(attackNpRef);
+    expect(execution.appliedPreparationActions[0]).toMatchObject({
+      transition: { id: 'input-transition' },
+    });
+    expect(
+      executeRankingScenarios([repaired], structuralMaster, {
+        ...versions,
+        masterDataVersion: structuralMaster.version,
+      })[0]?.result.status,
+    ).toBe('calculated');
+  });
+
+  it('keeps ordinary stochastic ownership in the executor for a mixed preparation skill', () => {
+    const baseServant = fixture.servants[0]!;
+    const preparationEffect = {
+      ...modifierEffect('mixed-preparation', 'nonDamageContext', 0),
+      proc: {
+        kind: 'singleRoll' as const,
+        ratePermille: [Array<number>(10).fill(800), [], [], [], []],
+      },
+      selection: {
+        kind: 'stochasticOutcome' as const,
+        group: {
+          kind: 'binary' as const,
+          key: 'mixed:preparation',
+          defaultOutcome: 'success' as const,
+        },
+      },
+      resourceTransition: {
+        kind: 'fixed' as const,
+        recipient: 'sourceActor' as const,
+        direction: 'gain' as const,
+        amounts: [Array<number>(10).fill(2_000), [], [], [], []],
+        overflow: 'clampToCapacity' as const,
+        underflow: 'clampToZero' as const,
+      },
+    };
+    const ordinaryEffect = {
+      ...modifierEffect('mixed-ordinary', 'upAtk', 500),
+      proc: {
+        kind: 'singleRoll' as const,
+        ratePermille: [Array<number>(10).fill(500), [], [], [], []],
+      },
+      selection: {
+        kind: 'stochasticOutcome' as const,
+        group: {
+          kind: 'binary' as const,
+          key: 'mixed:ordinary',
+          defaultOutcome: 'failure' as const,
+        },
+      },
+    };
+    const conditionFalseEffect = {
+      ...modifierEffect('mixed-condition-false', 'upAtk', 900),
+      proc: {
+        kind: 'singleRoll' as const,
+        ratePermille: [Array<number>(10).fill(700), [], [], [], []],
+      },
+      selection: {
+        kind: 'stochasticOutcome' as const,
+        group: {
+          kind: 'binary' as const,
+          key: 'mixed:condition-false',
+          defaultOutcome: 'success' as const,
+        },
+      },
+      requirement: {
+        recipient: 'sourceSelf' as const,
+        expression: {
+          kind: 'quantity' as const,
+          quantity: 'attackerHpPermille' as const,
+          comparison: 'atLeast' as const,
+          value: 500,
+        },
+      },
+      resourceTransition: {
+        kind: 'fixed' as const,
+        recipient: 'sourceActor' as const,
+        direction: 'gain' as const,
+        amounts: [Array<number>(10).fill(3_000), [], [], [], []],
+        overflow: 'clampToCapacity' as const,
+        underflow: 'clampToZero' as const,
+      },
+    };
+    const mixedMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'mixed-skill',
+              slot: 1,
+              priority: 1,
+              name: 'mixed skill',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [preparationEffect, ordinaryEffect, conditionFalseEffect],
+            },
+          ],
+        },
+      ],
+    });
+    const baseScenario = createDefaultResolvedScenario(mixedMaster, undefined);
+    const execution = calculateScenario(
+      {
+        ...baseScenario,
+        attacker: { ...baseScenario.attacker, npLevel: 2 },
+        attackerHpPermille: 100,
+        preNoblePhantasmPlan: [
+          { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+          { kind: 'executeAttackNoblePhantasm' },
+        ],
+      },
+      mixedMaster,
+      { ...versions, masterDataVersion: mixedMaster.version },
+    );
+
+    expect(execution.result.status).toBe('calculated');
+    expect(execution.appliedPreparationActions[0]?.selectedEffects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          occurrenceId: 'mixed-preparation:0',
+          stochasticOutcome: 'success',
+        }),
+        expect.objectContaining({ occurrenceId: 'mixed-ordinary:0', stochasticOutcome: null }),
+      ]),
+    );
+    expect(execution.effects.find(({ label }) => label === 'mixed-ordinary')).toMatchObject({
+      outcome: 'notApplied',
+    });
+    expect(execution.appliedPreparationActions[0]?.selectedEffects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          occurrenceId: 'mixed-condition-false:0',
+          stochasticOutcome: 'success',
+        }),
+      ]),
+    );
+    expect(execution.effects.find(({ label }) => label === 'mixed-condition-false')).toMatchObject({
+      outcome: 'notApplied',
+      explanation: { code: 'conditionNotMet' },
+    });
+    expect(execution.input.attackBuff).toBe(0);
+  });
+
+  it.each([
+    [
+      'insufficient',
+      'insufficientNpGauge',
+      {
+        ...modifierEffect('loss-before-attack', 'nonDamageContext', 0),
+        resourceTransition: {
+          kind: 'fixed' as const,
+          recipient: 'sourceActor' as const,
+          direction: 'loss' as const,
+          amounts: [Array<number>(10).fill(2_000), [], [], [], []],
+          overflow: 'clampToCapacity' as const,
+          underflow: 'clampToZero' as const,
+        },
+      },
+    ],
+    [
+      'unsupported',
+      'unsupportedResourceMutation',
+      {
+        ...modifierEffect('unsupported-resource', 'nonDamageContext', 0),
+        resourceTransition: {
+          kind: 'unsupported' as const,
+          recipient: 'sourceActor' as const,
+          family: 'dependentTargetResult',
+        },
+      },
+    ],
+    [
+      'ambiguous',
+      'ambiguousPreparationCondition',
+      {
+        ...modifierEffect('ambiguous-state', 'nonDamageContext', 0),
+        requirement: {
+          recipient: 'sourceSelf' as const,
+          expression: {
+            kind: 'sourceQuantity' as const,
+            quantity: 'battlePointRate' as const,
+            subjectId: 'fixture-saber',
+            comparison: 'atLeast' as const,
+            value: 1,
+          },
+        },
+        execution: [
+          {
+            kind: 'contextMutation' as const,
+            mutation: 'addTrait' as const,
+            scope: 'recipientState' as const,
+            route: mutationRoute('sourceSelf'),
+            trait: 'ambiguous-state',
+            damageRelevant: true,
+          },
+        ],
+      },
+    ],
+    [
+      'invalid',
+      'resourceRequirementExceedsCapacity',
+      {
+        ...modifierEffect('invalid-requirement', 'nonDamageContext', 0),
+      },
+    ],
+  ] as const)(
+    'preserves %s preparation rejection at the public calculator result',
+    (_name, code, rejectedEffect) => {
+      const baseServant = fixture.servants[0]!;
+      const rejectedMaster = parseTestMaster({
+        ...fixture,
+        servants: [
+          {
+            ...baseServant,
+            skills: [
+              {
+                id: 'rejected-skill',
+                slot: 1,
+                priority: 1,
+                name: 'rejected skill',
+                detail: '',
+                imageKey: null,
+                resourceRequirement:
+                  code === 'resourceRequirementExceedsCapacity'
+                    ? { kind: 'atLeast' as const, amountsBySkillLevel: Array(10).fill(20_000) }
+                    : null,
+                effects: [rejectedEffect],
+              },
+            ],
+          },
+        ],
+      });
+      const scenario: ResolvedScenario = {
+        ...createDefaultResolvedScenario(rejectedMaster, undefined),
+        preNoblePhantasmPlan: [
+          { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+          { kind: 'executeAttackNoblePhantasm' },
+        ],
+      };
+      const execution = calculateScenarioOutcome(scenario, rejectedMaster, {
+        ...versions,
+        masterDataVersion: rejectedMaster.version,
+      });
+
+      expect(execution.result).toMatchObject({
+        status: 'unsupported',
+        issues: [{ code: `preparation:${code}` }],
+      });
+      expect(execution.appliedPreparationActions).toHaveLength(
+        code === 'insufficientNpGauge' ? 1 : 0,
+      );
+    },
+  );
 
   it('returns identical NP rows for equivalent resolved and manual inputs', () => {
     const resolvedScenario = createDefaultResolvedScenario(master, undefined);

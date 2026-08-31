@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, naturalServantLevel } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION, type ServantBuild } from '@fgo-lab/schema';
-import { calculateScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 import {
   calculateRanking,
   createRankingScenario,

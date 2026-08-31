@@ -27,7 +27,13 @@ import {
   applyEffectControlPresentationDecision,
   applyEffectProjectionDecision,
 } from './effectDecision';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { setEffectSourceEnabled } from './scenarioCommands';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -640,7 +646,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_592, automaticVisible: 0, hidden: 1_217 });
+    }).toEqual({ user: 1_585, automaticVisible: 0, hidden: 1_214 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -649,7 +655,7 @@ describe('production master inventory ratchet', () => {
     expect({
       servants: new Set(multiBranchOrEffects.map((effect) => effect.servantId)).size,
       effects: multiBranchOrEffects.length,
-    }).toEqual({ servants: 17, effects: 21 });
+    }).toEqual({ servants: 16, effects: 20 });
     expect([...conditionKinds].sort()).toEqual([
       'all',
       'any',

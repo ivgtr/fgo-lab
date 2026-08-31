@@ -99,6 +99,8 @@ export function executeRankingScenarios(
       : candidate;
   });
   return projected.map((candidate) => {
+    if (candidate.status === 'rejected')
+      return evaluatePreparedCalculationScenario(candidate, versions);
     const variant = candidate.resolved.noblePhantasmVariant;
     if (!variant) return evaluatePreparedCalculationScenario(candidate, versions);
     const calculation = damageCache.getOrCreate(

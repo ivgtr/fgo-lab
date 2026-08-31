@@ -148,13 +148,22 @@ export function Calculator({
       : naturalAttackerLevel;
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
   const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : null;
-  const initialActorForms = attacker ? getAttackReachableInitialActorForms(attacker) : [];
+  const initialActorForms = attacker
+    ? getAttackReachableInitialActorForms(
+        attacker,
+        master.npResourceSemantics,
+        input.npLevel as 1 | 2 | 3 | 4 | 5,
+      )
+    : [];
   const resolvedAttackerSkillUses =
     attacker && resolvedScenario
-      ? resolveAttackerFormExecution(resolvedScenario, attacker).skillUses
+      ? resolveAttackerFormExecution(resolvedScenario, attacker, master.npResourceSemantics)
+          .skillUses
       : [];
   const preparationChoices =
-    attacker && resolvedScenario ? preparationChoiceOptions(resolvedScenario, attacker) : [];
+    attacker && resolvedScenario
+      ? preparationChoiceOptions(resolvedScenario, attacker, master.npResourceSemantics)
+      : [];
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
   );
@@ -289,7 +298,11 @@ export function Calculator({
     const saved = builds[input.attackerId];
     const source = saved?.npLevel ? 'owned' : 'master';
     if (!attacker) return;
-    const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(attacker);
+    const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(
+      attacker,
+      master.npResourceSemantics,
+      input.npLevel as 1 | 2 | 3 | 4 | 5,
+    );
     void onScenarioChange(
       excludeDefaultAttackerSkillContributions(
         {
@@ -337,7 +350,12 @@ export function Calculator({
   }
   function selectAttacker(candidate: ServantMaster, source: 'owned' | 'master') {
     const saved = source === 'owned' ? builds[candidate.id] : undefined;
-    const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(candidate);
+    const candidateNpLevel = Math.max(1, saved?.npLevel ?? 1) as 1 | 2 | 3 | 4 | 5;
+    const defaultPlan = defaultCalculatorPreNoblePhantasmCandidate(
+      candidate,
+      master.npResourceSemantics,
+      candidateNpLevel,
+    );
     const noblePhantasm = defaultPlan.terminalState.selectedNoblePhantasmVariant
       ? findNoblePhantasmVariant(candidate, defaultPlan.terminalState.selectedNoblePhantasmVariant)
       : undefined;
@@ -459,7 +477,13 @@ export function Calculator({
     if (!resolvedScenario || !attacker) return;
     void onScenarioChange(
       excludeDefaultAttackerSkillContributions(
-        setInitialActorForm(resolvedScenario, attacker, { actorId, limitCount }, resolvedEffects),
+        setInitialActorForm(
+          resolvedScenario,
+          attacker,
+          master.npResourceSemantics,
+          { actorId, limitCount },
+          resolvedEffects,
+        ),
         master,
       ),
     );
@@ -481,7 +505,13 @@ export function Calculator({
     if (!resolvedScenario || !attacker) return;
     void onScenarioChange(
       excludeDefaultAttackerSkillContributions(
-        setPreparationSkillChoice(resolvedScenario, attacker, option, resolvedEffects),
+        setPreparationSkillChoice(
+          resolvedScenario,
+          attacker,
+          master.npResourceSemantics,
+          option,
+          resolvedEffects,
+        ),
         master,
       ),
     );
@@ -1294,6 +1324,64 @@ export function Calculator({
           onClose={() => setSupportServantDialogOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+export function RejectedCalculator({
+  result,
+  scenario,
+  effectInputs,
+  onScenarioChange,
+}: {
+  result: CalculationResultValue;
+  scenario: Extract<CalculationScenario, { mode: 'resolved' }>;
+  effectInputs: readonly EffectInputViewModel[];
+  onScenarioChange: (scenario: CalculationScenario) => Promise<void>;
+}) {
+  function changeCanonicalInput(key: string, value: number | null) {
+    void onScenarioChange(
+      applyCanonicalInputCommand(scenario, {
+        kind: 'setCanonicalIntegerInput',
+        key,
+        value,
+      }),
+    );
+  }
+  return (
+    <div className="worksheet">
+      <section>
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">PREPARATION</p>
+            <h2>攻撃準備を完了できません</h2>
+          </div>
+        </div>
+        <p>準備状態を修正すると再計算します。この状態から直接入力へは切り替えられません。</p>
+        {effectInputs.map((input) => (
+          <label key={input.key}>
+            {input.label}
+            <input
+              type="number"
+              min={input.minimum}
+              max={input.maximum}
+              step={input.step}
+              value={input.value ?? ''}
+              onChange={(event) =>
+                changeCanonicalInput(
+                  input.key,
+                  event.target.value === '' ? null : Number(event.target.value),
+                )
+              }
+            />
+          </label>
+        ))}
+        <ul>
+          {result.issues.map((issue) => (
+            <li key={`${issue.code}:${issue.detail}`}>{issue.code}</li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

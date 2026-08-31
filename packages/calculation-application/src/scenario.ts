@@ -9,6 +9,8 @@ import {
   type EffectProjection,
   type OrderedScenarioExecution,
   type PreparedOrderedScenario,
+  type PreparationFailureCode,
+  type ResolvedAttackerFormExecution,
   type ResolvedCanonicalInputSet,
 } from '@fgo-lab/battle-execution';
 import {
@@ -48,9 +50,8 @@ import {
   defaultPreNoblePhantasmCandidate,
 } from './preNoblePhantasmPlanner';
 
-export interface ResolvedCalculationInput {
+interface ResolvedCalculationInputCommon {
   noblePhantasmVariant: NoblePhantasmVariant | null;
-  input: DamageResolutionInput;
   precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
   evidenceKeys: string[];
   warnings: string[];
@@ -63,11 +64,23 @@ export interface ResolvedCalculationInput {
   targetStateTraitsAtDamage: readonly string[];
 }
 
-export interface CalculationExecution {
+export type ResolvedCalculationInput =
+  | (ResolvedCalculationInputCommon & {
+      status: 'executable';
+      input: DamageResolutionInput;
+      preparationRejection: null;
+    })
+  | (ResolvedCalculationInputCommon & {
+      status: 'rejected';
+      preparationRejection: {
+        code: PreparationFailureCode;
+        operationId: string;
+      };
+    });
+
+interface CalculationExecutionCommon {
   noblePhantasmVariant: NoblePhantasmVariant | null;
   scenario: CalculationScenario;
-  scenarioInput: DamageResolutionInput;
-  input: DamageResolutionInput;
   effects: EffectProjection[];
   effectWarnings: string[];
   result: CalculationResult;
@@ -78,6 +91,26 @@ export interface CalculationExecution {
   appliedPreparationActions: readonly AppliedPreparationAction[];
 }
 
+export type CalculationExecution =
+  | (CalculationExecutionCommon & {
+      status: 'executable';
+      scenarioInput: DamageResolutionInput;
+      input: DamageResolutionInput;
+    })
+  | (CalculationExecutionCommon & {
+      status: 'rejected';
+    });
+
+export function requireExecutableCalculation(
+  execution: CalculationExecution,
+): Extract<CalculationExecution, { status: 'executable' }> {
+  if (execution.status === 'rejected')
+    throw new TypeError(
+      `calculation_execution_rejected:${execution.result.issues.map(({ code }) => code).join(',')}`,
+    );
+  return execution;
+}
+
 type ResolvedCalculationScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export function createDefaultResolvedScenario(
@@ -85,7 +118,8 @@ export function createDefaultResolvedScenario(
   build: ServantBuild | undefined,
   servant: ServantMaster = master.servants[0]!,
 ): ResolvedCalculationScenario {
-  const candidate = defaultPreNoblePhantasmCandidate(servant);
+  const npLevel = Math.max(1, build?.npLevel ?? 1) as 1 | 2 | 3 | 4 | 5;
+  const candidate = defaultPreNoblePhantasmCandidate(servant, master.npResourceSemantics, npLevel);
   const initialFormId = candidate.terminalState.initialFormId;
   const noblePhantasm = candidate.terminalState.selectedNoblePhantasmVariant
     ? findNoblePhantasmVariant(servant, candidate.terminalState.selectedNoblePhantasmVariant)
@@ -100,7 +134,7 @@ export function createDefaultResolvedScenario(
       initialActorFormId: initialFormId,
       source: build?.npLevel ? 'owned' : 'master',
       level: build?.level ?? naturalServantLevel(servant.rarity),
-      npLevel: Math.max(1, build?.npLevel ?? 1),
+      npLevel,
       fouAtk: build?.fouAtk ?? 1000,
     },
     overcharge: 1,
@@ -193,7 +227,12 @@ export function createDefaultCalculatorScenario(
   build: ServantBuild | undefined,
   servant: ServantMaster = master.servants[0]!,
 ): ResolvedCalculationScenario {
-  const candidate = defaultCalculatorPreNoblePhantasmCandidate(servant);
+  const npLevel = Math.max(1, build?.npLevel ?? 1) as 1 | 2 | 3 | 4 | 5;
+  const candidate = defaultCalculatorPreNoblePhantasmCandidate(
+    servant,
+    master.npResourceSemantics,
+    npLevel,
+  );
   const scenario = createDefaultResolvedScenario(master, build, servant);
   return excludeDefaultAttackerSkillContributions(
     {
@@ -212,18 +251,25 @@ export function createDefaultCalculatorScenario(
   );
 }
 
-function resolvedScenarioBaseInput(
+export type ScenarioPreparationOutcome =
+  | {
+      status: 'executable';
+      input: DamageResolutionInput;
+      formExecution: ResolvedAttackerFormExecution;
+    }
+  | {
+      status: 'rejected';
+      rejection: NonNullable<ResolvedCalculationInput['preparationRejection']>;
+      requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
+      appliedPreparationActions: readonly AppliedPreparationAction[];
+    };
+
+function damageResolutionInputForNoblePhantasm(
   scenario: ResolvedCalculationScenario,
+  servant: ServantMaster,
+  noblePhantasm: Extract<NoblePhantasmVariant, { kind: 'attack' }>,
   master: MasterDataSnapshot,
 ): DamageResolutionInput {
-  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
-  if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
-  const formExecution = resolveAttackerFormExecution(scenario, servant);
-  if (formExecution.issues.length > 0) throw new TypeError('preparation_plan_invalid');
-  const noblePhantasm = formExecution.state.selectedNoblePhantasmVariant
-    ? findNoblePhantasmVariant(servant, formExecution.state.selectedNoblePhantasmVariant)
-    : undefined;
-  if (noblePhantasm?.kind !== 'attack') throw new TypeError(`attack_np_missing:${servant.id}`);
   const damage = noblePhantasm.damage[0];
   if (!damage) throw new TypeError(`attack_np_damage_missing:${servant.id}`);
   const craftEssence = scenario.craftEssence
@@ -294,12 +340,51 @@ function resolvedScenarioBaseInput(
   };
 }
 
+export function resolveScenarioPreparationOutcome(
+  scenario: ResolvedCalculationScenario,
+  master: MasterDataSnapshot,
+): ScenarioPreparationOutcome {
+  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
+  if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
+  const formExecution = resolveAttackerFormExecution(scenario, servant, master.npResourceSemantics);
+  const selected = formExecution.state.selectedNoblePhantasmVariant
+    ? findNoblePhantasmVariant(servant, formExecution.state.selectedNoblePhantasmVariant)
+    : undefined;
+  if (formExecution.rejection || formExecution.issues.length > 0) {
+    const rejection = formExecution.rejection ?? {
+      code: 'invalidPreparationActivation' as const,
+      operationId: 'preparation:source-collection',
+    };
+    return {
+      status: 'rejected',
+      rejection,
+      requiredInputs: [...formExecution.requiredInputs],
+      appliedPreparationActions: formExecution.actions,
+    };
+  }
+  if (selected?.kind !== 'attack')
+    return {
+      status: 'rejected',
+      rejection: {
+        code: 'attackNoblePhantasmUnavailable',
+        operationId: `preparation:${servant.id}:terminal`,
+      },
+      requiredInputs: [],
+      appliedPreparationActions: formExecution.actions,
+    };
+  return {
+    status: 'executable',
+    input: damageResolutionInputForNoblePhantasm(scenario, servant, selected, master),
+    formExecution,
+  };
+}
+
 function resolvePreparedOrderedScenario(
   scenario: ResolvedCalculationScenario,
   prepared: PreparedOrderedScenario,
   canonicalInputs: ResolvedCanonicalInputSet,
   execution: OrderedScenarioExecution,
-): ResolvedCalculationInput {
+): Extract<ResolvedCalculationInput, { status: 'executable' }> {
   const damageState = execution.operations.find(
     ({ operation, outcome }) => operation.kind === 'executeNpDamage' && outcome === 'applied',
   )?.state;
@@ -359,9 +444,11 @@ function resolvePreparedOrderedScenario(
     detail: `${key}:${String(value)}:${scenario.canonicalInputValues[key] ? 'explicit' : 'default'}`,
   }));
   return {
+    status: 'executable',
     noblePhantasmVariant: execution.state.noblePhantasmVariant,
     input: execution.input,
-    precision: execution.precision,
+    precision:
+      prepared.preparationRequiredInputs.length > 0 ? 'inputRequired' : execution.precision,
     evidenceKeys: [
       'master:normalized-v7',
       ...execution.projections.flatMap((projection) =>
@@ -374,7 +461,14 @@ function resolvePreparedOrderedScenario(
     ],
     warnings,
     effects: [...execution.projections],
-    requiredInputs: [...execution.requiredInputs],
+    requiredInputs: [
+      ...new Map(
+        [...prepared.preparationRequiredInputs, ...execution.requiredInputs].map((definition) => [
+          definition.key,
+          definition,
+        ]),
+      ).values(),
+    ],
     inputDefinitions: [...execution.inputDefinitions],
     activationRequirements: collectActivationRequirementOwners(prepared.operations),
     appliedPreparationActions: prepared.appliedPreparationActions,
@@ -383,6 +477,7 @@ function resolvePreparedOrderedScenario(
           present ? [trait] : [],
         )
       : [],
+    preparationRejection: null,
     trace: [
       ...decisionTrace,
       ...activationTrace,
@@ -398,8 +493,9 @@ function resolvePreparedOrderedScenario(
 
 function manualResolvedInput(
   scenario: Extract<CalculationScenario, { mode: 'manual' }>,
-): ResolvedCalculationInput {
+): Extract<ResolvedCalculationInput, { status: 'executable' }> {
   return {
+    status: 'executable',
     input: scenario.manual,
     precision: 'exact',
     evidenceKeys: ['input:manual-final-modifiers'],
@@ -412,6 +508,33 @@ function manualResolvedInput(
     appliedPreparationActions: [],
     targetStateTraitsAtDamage: scenario.manual.targetStateTraits,
     noblePhantasmVariant: null,
+    preparationRejection: null,
+  };
+}
+
+function rejectedPreparationResolvedInput(
+  outcome: Extract<ScenarioPreparationOutcome, { status: 'rejected' }>,
+): Extract<ResolvedCalculationInput, { status: 'rejected' }> {
+  return {
+    status: 'rejected',
+    noblePhantasmVariant: null,
+    precision:
+      outcome.rejection.code === 'preparationInputRequired' ? 'inputRequired' : 'unsupported',
+    evidenceKeys: ['master:normalized-v7'],
+    warnings: [],
+    trace: [
+      {
+        step: 'preparation-rejection',
+        detail: `${outcome.rejection.operationId}:${outcome.rejection.code}`,
+      },
+    ],
+    effects: [],
+    requiredInputs: [...outcome.requiredInputs],
+    inputDefinitions: [...outcome.requiredInputs],
+    activationRequirements: [],
+    appliedPreparationActions: outcome.appliedPreparationActions,
+    targetStateTraitsAtDamage: [],
+    preparationRejection: outcome.rejection,
   };
 }
 
@@ -420,8 +543,10 @@ export function resolveScenario(
   master: MasterDataSnapshot,
 ): ResolvedCalculationInput {
   if (scenario.mode === 'manual') return manualResolvedInput(scenario);
-  const baseInput = resolvedScenarioBaseInput(scenario, master);
-  const prepared = prepareOrderedScenario(baseInput, scenario, master);
+  const base = resolveScenarioPreparationOutcome(scenario, master);
+  if (base.status === 'rejected') return rejectedPreparationResolvedInput(base);
+  const baseInput = base.input;
+  const prepared = prepareOrderedScenario(baseInput, scenario, master, base.formExecution);
   const canonicalInputs = resolveCanonicalInputValues(
     prepared.inputDefinitions,
     scenario.canonicalInputValues,
@@ -439,6 +564,33 @@ function resolvedCalculationResult(
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
 ): CalculationResult {
+  if (resolved.status === 'rejected') {
+    const evidence = evaluateCalculationEvidence(resolved.evidenceKeys);
+    const issue = {
+      code: `preparation:${resolved.preparationRejection.code}`,
+      detail: resolved.preparationRejection.operationId,
+    };
+    const common = {
+      rows: [] as [],
+      effects: [],
+      assumptions: [],
+      issues: [issue],
+      trace: resolved.trace,
+      versions,
+      evidence: evidence.evidence,
+    };
+    return resolved.preparationRejection.code === 'preparationInputRequired'
+      ? {
+          ...common,
+          status: 'inputRequired',
+          requiredInputs: resolved.requiredInputs,
+        }
+      : {
+          ...common,
+          status: 'unsupported',
+          missingEvidence: [`preparation:${resolved.preparationRejection.code}`],
+        };
+  }
   const calculation = cachedCalculation ?? calculateDamageResolution(resolved.input, versions);
   const evidence = evaluateCalculationEvidence([
     ...calculation.evidence.map((entry) => entry.key),
@@ -492,7 +644,7 @@ function resolvedCalculationResult(
 
 function evaluateResolvedCalculation(
   scenario: CalculationScenario,
-  scenarioInput: DamageResolutionInput,
+  scenarioInput: DamageResolutionInput | null,
   resolved: ResolvedCalculationInput,
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
@@ -507,11 +659,9 @@ function evaluateResolvedCalculation(
           explicitValues: scenario.canonicalInputValues,
         })
       : [];
-  return {
+  const common: CalculationExecutionCommon = {
     noblePhantasmVariant: resolved.noblePhantasmVariant,
     scenario,
-    scenarioInput,
-    input: resolved.input,
     effects: resolved.effects,
     effectWarnings: resolved.warnings,
     result,
@@ -526,16 +676,35 @@ function evaluateResolvedCalculation(
     activationRequirements: resolved.activationRequirements,
     appliedPreparationActions: resolved.appliedPreparationActions,
   };
+  if (resolved.status === 'rejected') return { status: 'rejected', ...common };
+  if (!scenarioInput) throw new TypeError('damage_resolution_input_required');
+  return {
+    status: 'executable',
+    ...common,
+    scenarioInput,
+    input: resolved.input,
+  };
 }
 
-export interface PreparedCalculationScenario {
+interface PreparedCalculationScenarioCommon {
   scenario: CalculationScenario;
-  scenarioInput: DamageResolutionInput;
-  resolved: ResolvedCalculationInput;
-  orderedScenario: PreparedOrderedScenario | null;
-  canonicalInputs: ResolvedCanonicalInputSet | null;
   contributionProjection: DamageContributionProjection | null;
 }
+
+export type PreparedCalculationScenario =
+  | (PreparedCalculationScenarioCommon & {
+      status: 'executable';
+      scenarioInput: DamageResolutionInput;
+      resolved: Extract<ResolvedCalculationInput, { status: 'executable' }>;
+      orderedScenario: PreparedOrderedScenario | null;
+      canonicalInputs: ResolvedCanonicalInputSet | null;
+    })
+  | (PreparedCalculationScenarioCommon & {
+      status: 'rejected';
+      resolved: Extract<ResolvedCalculationInput, { status: 'rejected' }>;
+      orderedScenario: null;
+      canonicalInputs: null;
+    });
 
 export interface PreparedCalculationProjection {
   scenario: CalculationScenario;
@@ -590,6 +759,7 @@ export function prepareCalculationScenarioWithContributionProjection(
 ): PreparedCalculationScenario {
   if (scenario.mode === 'manual')
     return {
+      status: 'executable',
       scenario,
       scenarioInput: scenario.manual,
       resolved: manualResolvedInput(scenario),
@@ -597,13 +767,30 @@ export function prepareCalculationScenarioWithContributionProjection(
       canonicalInputs: null,
       contributionProjection,
     };
-  const scenarioInput = resolvedScenarioBaseInput(scenario, master);
-  const orderedScenario = prepareOrderedScenario(scenarioInput, scenario, master);
+  const base = resolveScenarioPreparationOutcome(scenario, master);
+  if (base.status === 'rejected') {
+    return {
+      status: 'rejected',
+      scenario,
+      resolved: rejectedPreparationResolvedInput(base),
+      orderedScenario: null,
+      canonicalInputs: null,
+      contributionProjection,
+    };
+  }
+  const scenarioInput = base.input;
+  const orderedScenario = prepareOrderedScenario(
+    scenarioInput,
+    scenario,
+    master,
+    base.formExecution,
+  );
   const canonicalInputs = resolveCanonicalInputValues(
     orderedScenario.inputDefinitions,
     scenario.canonicalInputValues,
   );
   return {
+    status: 'executable',
     scenario,
     scenarioInput,
     resolved: resolvePreparedOrderedScenario(
@@ -621,21 +808,40 @@ export function prepareCalculationScenarioWithContributionProjection(
 export function rematerializePreparedCalculationInputs(
   prepared: PreparedCalculationScenario,
   scenario: CalculationScenario,
+  master: MasterDataSnapshot,
 ): PreparedCalculationScenario {
-  if (
-    prepared.scenario.mode === 'manual' ||
-    scenario.mode === 'manual' ||
-    !prepared.orderedScenario
-  )
+  if (prepared.scenario.mode === 'manual' || scenario.mode === 'manual')
     throw new TypeError('prepared_resolved_scenario_required');
+  if (prepared.status === 'rejected')
+    return prepareCalculationScenarioWithContributionProjection(
+      scenario,
+      master,
+      prepared.contributionProjection,
+    );
+  if (!prepared.orderedScenario) throw new TypeError('prepared_ordered_scenario_required');
+  const canonicalInputs = resolveCanonicalInputValues(
+    prepared.orderedScenario.inputDefinitions,
+    scenario.canonicalInputValues,
+  );
+  const previousMissing = new Set(
+    prepared.canonicalInputs?.missingDefinitions.map(({ key }) => key) ?? [],
+  );
+  const nextMissing = new Set(canonicalInputs.missingDefinitions.map(({ key }) => key));
+  const preparationInputChanged = [...prepared.orderedScenario.preparationInputKeys].some(
+    (key) =>
+      prepared.canonicalInputs?.values[key] !== canonicalInputs.values[key] ||
+      previousMissing.has(key) !== nextMissing.has(key),
+  );
+  if (preparationInputChanged)
+    return prepareCalculationScenarioWithContributionProjection(
+      scenario,
+      master,
+      prepared.contributionProjection,
+    );
   const orderedScenario: PreparedOrderedScenario = {
     ...prepared.orderedScenario,
     scenario,
   };
-  const canonicalInputs = resolveCanonicalInputValues(
-    orderedScenario.inputDefinitions,
-    scenario.canonicalInputValues,
-  );
   const inputsUnchanged =
     prepared.canonicalInputs !== null &&
     Object.keys(canonicalInputs.values).length ===
@@ -665,6 +871,7 @@ export function rematerializePreparedCalculationInputs(
       },
     };
   return {
+    status: 'executable',
     scenario,
     scenarioInput: prepared.scenarioInput,
     orderedScenario,
@@ -717,7 +924,12 @@ export function projectPreparedCalculationContribution(
   prepared: PreparedCalculationScenario,
   projection: DamageContributionProjection,
 ): PreparedCalculationScenario {
-  if (prepared.scenario.mode === 'manual' || !prepared.orderedScenario || !prepared.canonicalInputs)
+  if (
+    prepared.status === 'rejected' ||
+    prepared.scenario.mode === 'manual' ||
+    !prepared.orderedScenario ||
+    !prepared.canonicalInputs
+  )
     return prepared;
   if (sameContributionProjection(prepared.contributionProjection, projection)) return prepared;
   return {
@@ -739,7 +951,7 @@ export function evaluatePreparedCalculationScenario(
 ): CalculationExecution {
   return evaluateResolvedCalculation(
     prepared.scenario,
-    prepared.scenarioInput,
+    prepared.status === 'executable' ? prepared.scenarioInput : null,
     prepared.resolved,
     versions,
     cachedCalculation,

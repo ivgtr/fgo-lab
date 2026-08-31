@@ -1,10 +1,23 @@
 import type {
   ActorFormId,
   ActorFormTransition,
+  CanonicalNpResourceSemantics,
+  CanonicalInputDefinition,
   MasterEffect,
   NoblePhantasmVariantRef,
 } from '@fgo-lab/master-data';
 import type { ActivationFact, PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import type { NpResourceState } from './npResource';
+
+export interface PreparationExecutionContext {
+  resourceSemantics: CanonicalNpResourceSemantics;
+  npLevel: NpResourceState['npLevel'];
+  initialGauge: number;
+  overcharge: 1 | 2 | 3 | 4 | 5;
+  canonicalInputValues?: Readonly<Record<string, number>>;
+  attackerHpPermille?: number;
+  battlePointPhase?: number | null;
+}
 
 export interface SkillSlotRef {
   actorLineageId: string;
@@ -17,6 +30,8 @@ export interface AppliedPreparationEffect {
   actorFormId: ActorFormId;
   occurrenceId: string;
   effect: MasterEffect;
+  /** Present only when preparation itself had to resolve this effect's proc. */
+  stochasticOutcome: 'success' | 'failure' | null;
 }
 
 export interface AppliedPreparationAction {
@@ -27,6 +42,9 @@ export interface AppliedPreparationAction {
   selectedEffects: readonly AppliedPreparationEffect[];
   activationFacts: readonly ActivationFact[];
   transition: ActorFormTransition | null;
+  resourceBefore: NpResourceState;
+  resourceAfter: NpResourceState;
+  baseOvercharge: number | null;
 }
 
 export interface PreNoblePhantasmState {
@@ -40,6 +58,8 @@ export interface PreNoblePhantasmState {
     attackerState: ReadonlySet<string>;
     targetState: ReadonlySet<string>;
   };
+  npResource: NpResourceState;
+  baseOvercharge: number | null;
   appliedActions: readonly AppliedPreparationAction[];
   terminated: boolean;
 }
@@ -58,13 +78,35 @@ export type PreparationFailureCode =
   | 'transformNoblePhantasmReused'
   | 'transformNoblePhantasmUnavailable'
   | 'transformNoblePhantasmDoesNotReachAttack'
-  | 'attackNoblePhantasmUnavailable';
+  | 'attackNoblePhantasmUnavailable'
+  | 'invalidResourceState'
+  | 'resourceRequirementExceedsCapacity'
+  | 'insufficientNpGauge'
+  | 'invalidResourceMutation'
+  | 'unsupportedResourceMutation'
+  | 'invalidPreparationActivation'
+  | 'ambiguousPreparationCondition'
+  | 'preparationInputRequired';
 
 export type PreparationTransitionResult =
   | { status: 'applied'; state: PreNoblePhantasmState }
-  | { status: 'rejected'; code: PreparationFailureCode; state: PreNoblePhantasmState };
+  | {
+      status: 'rejected';
+      code: PreparationFailureCode;
+      requiredInput: CanonicalInputDefinition | null;
+      requiredInputEffectOccurrenceId: string | null;
+      state: PreNoblePhantasmState;
+    };
 
 export const rejectPreparation = (
   state: PreNoblePhantasmState,
   code: PreparationFailureCode,
-): PreparationTransitionResult => ({ status: 'rejected', code, state });
+  requiredInput: CanonicalInputDefinition | null = null,
+  requiredInputEffectOccurrenceId: string | null = null,
+): PreparationTransitionResult => ({
+  status: 'rejected',
+  code,
+  requiredInput,
+  requiredInputEffectOccurrenceId,
+  state,
+});

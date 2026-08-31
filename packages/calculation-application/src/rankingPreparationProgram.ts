@@ -74,7 +74,12 @@ export function compileRankingPreparationProgram(
   const programs = cachedPrograms(master, servant);
   const cached = programs.get(key);
   if (cached) return cached;
-  const candidates = planPreNoblePhantasmCandidates(servant).candidates;
+  const candidates = planPreNoblePhantasmCandidates(
+    servant,
+    master.npResourceSemantics,
+    conditions.npLevel,
+    1,
+  ).candidates;
   const actorFormProfiles = createActorFormProfiles(
     servant,
     candidates.map(({ terminalState }) => terminalState),
@@ -94,7 +99,7 @@ export function compileRankingPreparationProgram(
     const canonicalPrepared =
       canonical === sequenced
         ? baselinePrepared
-        : rematerializePreparedCalculationInputs(baselinePrepared, canonical);
+        : rematerializePreparedCalculationInputs(baselinePrepared, canonical, master);
     return {
       canonical,
       baseline,

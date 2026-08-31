@@ -19,7 +19,8 @@ function duplicatedFormFixture(): {
   duplicateFormId: ActorFormId;
 } {
   const source = master.servants[0]!;
-  const original = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+  const original = planPreNoblePhantasmCandidates(source, master.npResourceSemantics, 1, 1)
+    .candidates[0]!.terminalState;
   const sourceForm = source.actorFormGraph.forms.find(
     ({ id }) =>
       id.actorId === original.currentFormId.actorId &&
@@ -61,7 +62,8 @@ describe('ActorFormProfile canonical equivalence', () => {
 
   it('keeps canonical identity independent from the representative form ordering', () => {
     const source = master.servants[0]!;
-    const original = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+    const original = planPreNoblePhantasmCandidates(source, master.npResourceSemantics, 1, 1)
+      .candidates[0]!.terminalState;
     const originalProfile = createActorFormProfiles(source, [original]).find(({ formIds }) =>
       formIds.some(
         ({ actorId, limitCount }) =>
@@ -282,7 +284,8 @@ describe('ActorFormProfile canonical equivalence', () => {
 
   it('fails closed when the terminal form maps to ambiguous profiles', () => {
     const source = master.servants[0]!;
-    const terminal = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+    const terminal = planPreNoblePhantasmCandidates(source, master.npResourceSemantics, 1, 1)
+      .candidates[0]!.terminalState;
     const profile = createActorFormProfiles(source, [terminal]).find(({ formIds }) =>
       formIds.some(
         ({ actorId, limitCount }) =>
@@ -298,7 +301,8 @@ describe('ActorFormProfile canonical equivalence', () => {
 
   it('fails closed when an AttackProfile carries contradictory identity fields', () => {
     const source = master.servants[0]!;
-    const terminal = planPreNoblePhantasmCandidates(source).candidates[0]!.terminalState;
+    const terminal = planPreNoblePhantasmCandidates(source, master.npResourceSemantics, 1, 1)
+      .candidates[0]!.terminalState;
     const profiles = createActorFormProfiles(source, [terminal]);
     const attackProfile = attackProfileForTerminalState(source, profiles, terminal);
 

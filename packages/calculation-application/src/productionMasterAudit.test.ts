@@ -25,6 +25,7 @@ describe('production preparation semantics audit', () => {
       terminal: 0,
       exactDuplicates: 0,
       rejectedActions: 0,
+      rejectedActionCounts: {} as Record<string, number>,
       maximumPreparationActions: 0,
       maximumSemanticStates: 0,
       actorFormNodes: 0,
@@ -40,7 +41,7 @@ describe('production preparation semantics audit', () => {
     };
     const terminalKeys = new Set<string>();
     for (const servant of master.servants) {
-      const planned = planPreNoblePhantasmCandidates(servant);
+      const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
       const actorFormProfiles = createActorFormProfiles(
         servant,
         planned.candidates.map(({ terminalState }) => terminalState),
@@ -52,6 +53,8 @@ describe('production preparation semantics audit', () => {
       inventory.terminal += planned.inventory.terminalPlanCount;
       inventory.exactDuplicates += planned.inventory.exactDuplicateCount;
       inventory.rejectedActions += planned.inventory.rejectedActionCount;
+      for (const [code, count] of Object.entries(planned.inventory.rejectedActionCounts))
+        inventory.rejectedActionCounts[code] = (inventory.rejectedActionCounts[code] ?? 0) + count;
       inventory.maximumPreparationActions = Math.max(
         inventory.maximumPreparationActions,
         planned.inventory.maximumPreparationActionCount,
@@ -104,11 +107,15 @@ describe('production preparation semantics audit', () => {
 
     expect(inventory).toEqual({
       servants: 422,
-      generated: 6_508,
-      deduplicated: 4_009,
-      terminal: 3_559,
-      exactDuplicates: 2_499,
-      rejectedActions: 0,
+      generated: 6_376,
+      deduplicated: 3_957,
+      terminal: 3_446,
+      exactDuplicates: 2_419,
+      rejectedActions: 70,
+      rejectedActionCounts: {
+        insufficientNpGauge: 6,
+        unsupportedResourceMutation: 64,
+      },
       maximumPreparationActions: 4,
       maximumSemanticStates: 56,
       actorFormNodes: 484,
@@ -122,7 +129,7 @@ describe('production preparation semantics audit', () => {
       maximumInitialForms: 7,
       maximumTransitionEdges: 2,
     });
-    expect(terminalKeys).toHaveLength(3_559);
+    expect(terminalKeys).toHaveLength(3_446);
   }, 30_000);
 
   it('keeps applied choice and transition evidence local to its source action', async () => {
@@ -131,7 +138,12 @@ describe('production preparation semantics audit', () => {
     let choiceFactCount = 0;
     let transitionCount = 0;
     for (const servant of master.servants)
-      for (const candidate of planPreNoblePhantasmCandidates(servant).candidates)
+      for (const candidate of planPreNoblePhantasmCandidates(
+        servant,
+        master.npResourceSemantics,
+        1,
+        1,
+      ).candidates)
         for (const action of candidate.terminalState.appliedActions) {
           actionCount += 1;
           choiceFactCount += action.activationFacts.filter(({ kind }) => kind === 'choice').length;

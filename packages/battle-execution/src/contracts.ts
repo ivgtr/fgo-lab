@@ -113,6 +113,7 @@ interface OperationBase {
   gameActivation: 'constant' | 'skillUse' | 'npBeforeDamage' | 'derived';
   proc: EffectProc;
   stochasticOutcome?: CanonicalOutcomeGroup | null;
+  preResolvedStochasticOutcome?: 'success' | 'failure' | null;
   procRatePermille: number | null;
   activation:
     | { kind: 'sourceDefault' }

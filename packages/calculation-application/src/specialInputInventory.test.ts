@@ -5,7 +5,13 @@ import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
 import { applyCanonicalInputCommand } from './canonicalInputs';
 import { applyEffectProjectionDecision } from './effectDecision';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 
 const root = resolve(import.meta.dirname, '../../..');
 

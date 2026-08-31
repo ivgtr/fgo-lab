@@ -43,7 +43,7 @@ function detailAtNpLevel(
   scenarioCalculationCount: number,
   contributionProjection: DamageContributionProjection,
 ): RankingDetail {
-  if (execution.scenario.mode !== 'resolved')
+  if (execution.status !== 'executable' || execution.scenario.mode !== 'resolved')
     throw new TypeError('ranking_matrix_resolved_scenario_required');
   const scenario: Extract<CalculationScenario, { mode: 'resolved' }> = {
     ...execution.scenario,
@@ -94,6 +94,12 @@ export function calculateStandardRankingMatrix(
         projection.excludedStateTraitContributions.targetState.size > 0
           ? projectPreparedCalculationContribution(prepared, projection)
           : prepared;
+      if (projected.status === 'rejected')
+        return {
+          projected,
+          calculation: null,
+          result: evaluatePreparedCalculationResult(projected, versions),
+        };
       const variant = projected.resolved.noblePhantasmVariant;
       if (variant?.kind !== 'attack')
         throw new TypeError(`ranking_matrix_attack_variant_required:${servant.id}`);
@@ -147,7 +153,7 @@ export function calculateStandardRankingMatrix(
           execution = evaluatePreparedCalculationScenario(
             candidate.projected,
             versions,
-            candidate.calculation,
+            candidate.calculation ?? undefined,
           );
           executionCache.set(selectedIndex, execution);
         }

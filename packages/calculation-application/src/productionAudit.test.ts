@@ -26,7 +26,7 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '2980e6abfbf8685f64dee737a3390defdd077642df55d0690609c0675c2727d8',
+          digest: 'e9441e4f35eb74af80a79967ee20ea735687a899cc2b6f606ea3db5ae0297e7f',
           inventory: {
             attackProfiles: 433,
             attackServants: 422,
@@ -34,7 +34,7 @@ describe('shared calculation-application production audit', () => {
             calculatorScenarios: 422,
             inputRequired: 0,
             invalid: 0,
-            preparationPlans: 3_559,
+            preparationPlans: 3_446,
             rankingPolicy: 'current-default',
             rankingRows: 433,
             unsupported: 0,

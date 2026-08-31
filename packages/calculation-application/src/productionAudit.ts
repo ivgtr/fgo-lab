@@ -95,7 +95,7 @@ export function compileCalculationApplicationProductionAudit(
   let invalid = 0;
 
   for (const servant of master.servants) {
-    const planned = planPreNoblePhantasmCandidates(servant);
+    const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
     generatedCandidateCount += planned.inventory.generatedStateCount;
     deduplicatedCandidateCount += planned.inventory.deduplicatedStateCount;
     if (planned.candidates.length === 0) continue;
@@ -135,7 +135,7 @@ export function compileCalculationApplicationProductionAudit(
           executionIssues: jsonValue([...execution.effectWarnings, ...execution.result.issues]),
           executionTrace: jsonValue(execution.result.trace),
           outcome: jsonValue(outcome),
-          usedInput: jsonValue(execution.input),
+          usedInput: execution.status === 'executable' ? jsonValue(execution.input) : null,
         },
       });
     } catch (cause) {

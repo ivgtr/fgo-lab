@@ -9,11 +9,17 @@ import {
   conditionHasActivationFact,
 } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
-import { calculateScenarioWithContributionProjection } from './scenario';
+import {
+  calculateScenarioWithContributionProjection as calculateScenarioWithContributionProjectionOutcome,
+  requireExecutableCalculation,
+} from './scenario';
 import { calculateRanking, DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './ranking';
 import { calculateStandardRankingMatrix } from './rankingMatrix';
 import { fieldTraitsRequiredByCondition } from './conditionProvenance';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
+const calculateScenarioWithContributionProjection = (
+  ...args: Parameters<typeof calculateScenarioWithContributionProjectionOutcome>
+) => requireExecutableCalculation(calculateScenarioWithContributionProjectionOutcome(...args));
 import {
   actorFormProfileIdKey,
   attackProfileForTerminalState,
@@ -32,32 +38,32 @@ const profile: RankingProfileInput = {
 
 const policyDigests = {
   'neutral:inactive': [
-    '30dc06a2c483af711c23642bfadb6d685d1a699a9ab15497c0eeedbf7ee7a58a',
-    '031957d8cbbdd54765f9895a85fb18c07372f3a069246e4cef7a3760fbb1347c',
-    'dc925ee0de0c7b1d1e3a971f82a3c7528af6e91030234ef498ef3653facffcb7',
-    '9d2c8d5a13a4f588b00ede00c310b38de2c11aa7f8cfd26e3ae79424bf2e3a82',
-    '4f6ff02c70229cd67f1a431c9c1eb37aca3faf58249142cc13b7e6ef1298babc',
+    '3723d2737e039406399d36b874c4e830e54faace4ffd1f382ba0c12edfe5abb5',
+    '6f6ec745324eea6eb7fc89ec678ee0270496268631938d5d5df6151d3ee10247',
+    'dd91c8f85d7d0108199bbcd8a383e6973666bb68cebfdeae573c73df5b4cc6fd',
+    '19759df4d9ca76d1581f13190351bb9772672dcfe033405e93e56766861107cd',
+    '392649e6f04a1f899496ec4ff77f26a0c0933407eef17c59b4185f272e2a7b97',
   ],
   'neutral:active': [
-    '4af3e7eada032bc771e90346b659c1430cfddf97005bc4cce42a0fff872b1cea',
-    '8a02b2185ed35b84542ab83c91f509a5066704e01f4838a4b98480980d25fdfa',
-    '7cd0a4627d086d41cda237096abcc3a3383544ce4daf451ce80cf7a8f14bc3f2',
-    '9c16073293cb925dc5ea4fb17bf8703d36436ac70ed0858508f82363275278c8',
-    '883072eb83cbd2165bbd0493d3d36bedb870ae66f24d67049291c09100a8ff2a',
+    '26bc7137ae0f2d9f7264a101c1f48862cc87c7073fd125033d02f8983b648c4e',
+    '452fffc309b5cfdf67acf18c9a1191e7c5f97519d180f5958c3a6a2a5c24e72f',
+    '3b2b25a0ae810656cd4385071c6093ea4b39020824e48da07d6a9731d28dce7d',
+    '05548e96c186a8f3cc4b6dd6f435e454be41651b930ad963e76ec556043c2dfb',
+    'aae7c425c4cc8bc5ed1a911837bd7e6eeac8dbc59ae00effcb43ea102364a357',
   ],
   'favorable:inactive': [
-    '068724e2028f659d0c47b290ae23a87771339c96890594c1b712a08bf4b169e0',
-    '342364558dc7fb811fc5d777f2431f3636ca2d82fc0a7d2a316964e22419a26e',
-    '101884c75b79e820021446542bb98f333be2f002abf21d2a3d3574d7769dffa8',
-    '563d7a5bd5ec30dbe28cc1578a2218a37194d3a1216baa54df07ad9eca70fb85',
-    '503458f6bbbd5651bf492ab74fea17206d97af4d763b483e18f75506bc7cd5c7',
+    'e1d07013b51078e427dcea27f0ff5a8f0150c9bb4df08eb85420dd6f62fe99f1',
+    '307f510150a4bc5fe20e3286a9638a25a06c8b24876a062eb7c4c13d7650ef52',
+    '189189a45edf658e14feabfbb9464a58457f13600f48d515fbd9809a36cb3057',
+    '3d720067d0e047e0b16247b346bcdfaef8afd7e810bcf948d295ea7624efc42d',
+    '72d90069487449c0c3f73bf9e97fb0b3a04eb32cd855f98cb418e7eaa18f4276',
   ],
   'favorable:active': [
-    'c97acc0b8ae877ac3baee09a3351046eeeb8bed62434a7a3b52791ef3c3ab596',
-    '61d86b377434327c46037a23db8e3364152ee78d04d38add8889d1ba678c0009',
-    '00bcaec230d239da9b0ec3aada97ffa59cf9059f2a6352fe540729a675c05d82',
-    '555e94f0ec4e22a03f5c792a479b62851ecb57550eba94d5738adb7fe5eb3032',
-    '36f7426f6c34aa3afb095c891a7f62e184942999f7f8e6f96ba9a86fd23eb990',
+    '5341f2a1f897eeab7d47a7b4bae62573411835261a188ce930a192d0e6a644dd',
+    'b7e49a329885ec5152ce352c8322754f40e778918929e0fadc2a150727793263',
+    '93da2d39d8fa1ca33155a1874a1b3f7ba2ced3ca6ce7e6745551965021f0ca20',
+    '23fed44ab1b0c76bf902648c7c9c56496f897963c89b141813b97793a72535c0',
+    'f1931dd101f66149de4551ded1d966a4c683bd6dfecad7b2cb25f49af8441f09',
   ],
 } as const;
 
@@ -138,10 +144,10 @@ describe('production canonical ranking', () => {
     const ranking = calculateRanking(master, profile, DEFAULT_RANKING_CONDITIONS, versions);
     expect(ranking.failures).toEqual([]);
     expect(ranking.damageCache).toEqual({
-      requestCount: 3_744,
-      distinctDamageInputCount: 1_644,
-      cacheHitCount: 2_100,
-      cacheHitRate: 2_100 / 3_744,
+      requestCount: 3_629,
+      distinctDamageInputCount: 1_623,
+      cacheHitCount: 2_006,
+      cacheHitRate: 2_006 / 3_629,
     });
     expect(ranking.rows).toHaveLength(433);
     expect(new Set(ranking.rows.map(({ entryId }) => entryId)).size).toBe(433);
@@ -201,7 +207,7 @@ describe('production canonical ranking', () => {
         counts[effect.explanation.code] = (counts[effect.explanation.code] ?? 0) + 1;
         return counts;
       }, {});
-    expect(nonAppliedReasonCounts.unresolved).toBe(303);
+    expect(nonAppliedReasonCounts.unresolved).toBe(302);
     expect(nonAppliedReasonCounts.disabled).toBe(30);
     const mixedProjectionGroups = Object.values(ranking.details).flatMap((detail) => {
       const groups = new Map<string, typeof detail.effects>();
@@ -218,7 +224,12 @@ describe('production canonical ranking', () => {
     let actorFormNodeCount = 0;
     let actorFormProfileCount = 0;
     const expectedAttackProfiles = master.servants.flatMap((servant) => {
-      const candidates = planPreNoblePhantasmCandidates(servant).candidates;
+      const candidates = planPreNoblePhantasmCandidates(
+        servant,
+        master.npResourceSemantics,
+        1,
+        1,
+      ).candidates;
       if (candidates.length === 0) return [];
       const profiles = createActorFormProfiles(
         servant,
@@ -431,17 +442,16 @@ describe('production canonical ranking', () => {
     }
     expect(unresolvedIncludedDamageEffects).toEqual([]);
     expect(activationInventory).toEqual({
-      choice: 16,
+      choice: 15,
       operationTrigger: 3,
       sourceQuantity: 2,
     });
     expect(activationConditionInventory).toEqual({
-      choice: 15,
+      choice: 14,
       operationTrigger: 4,
       sourceQuantity: 2,
     });
     expect(servantsWithActivationSelections.sort()).toEqual([
-      '101000',
       '1100900',
       '1100900',
       '1100900',
@@ -472,7 +482,7 @@ describe('production canonical ranking', () => {
         detail.result.rows[index]!.average
       );
     });
-    expect(areaDetails).toHaveLength(180);
+    expect(areaDetails).toHaveLength(178);
     expect(
       areaDetails.reduce(
         (count, detail) =>
@@ -487,7 +497,7 @@ describe('production canonical ranking', () => {
           ).size,
         0,
       ),
-    ).toBe(241);
+    ).toBe(237);
     const tonelico = rankingDetailFor(ranking, '505300');
     expect(tonelico.result.status === 'calculated' ? tonelico.result.rows[0] : null).toEqual({
       npLevel: 1,
@@ -574,19 +584,19 @@ describe('production canonical ranking', () => {
           "servantId": "700600",
         },
         {
-          "average": 63138.515,
-          "name": "エリザベート・バートリー〔ブレイブ〕",
-          "servantId": "101000",
-        },
-        {
           "average": 61162.615,
           "name": "謎のヒロインX〔オルタ〕",
           "servantId": "702400",
         },
+        {
+          "average": 58447.99,
+          "name": "沖田総司",
+          "servantId": "102700",
+        },
       ]
     `);
     expect(digest).toMatchInlineSnapshot(
-      `"30dc06a2c483af711c23642bfadb6d685d1a699a9ab15497c0eeedbf7ee7a58a"`,
+      `"3723d2737e039406399d36b874c4e830e54faace4ffd1f382ba0c12edfe5abb5"`,
     );
     expect(
       [...ranking.rows]
@@ -626,14 +636,14 @@ describe('production canonical ranking', () => {
           ({ executionMetrics }) => executionMetrics.worldCandidateCount,
         ),
       ),
-    ).toBe(128);
+    ).toBe(96);
     expect(
       Math.max(
         ...Object.values(ranking.details).map(
           ({ executionMetrics }) => executionMetrics.scenarioCalculationCount,
         ),
       ),
-    ).toBe(129);
+    ).toBe(97);
   }, 60_000);
 
   it('uses canonical witnesses for recipient and field conditions', async () => {
@@ -710,11 +720,11 @@ describe('production canonical ranking', () => {
     };
     const matrix = calculateStandardRankingMatrix(master, profile, conditions, versions);
     const digests = [
-      '110d4b1e640770dfbcc224aaaff55f3efe1c72160082774f275d53e00680adb9',
-      'cd6f365713dfe9715e111df0643284db17ad7b62513b6742ba93b1bfe7bd6372',
-      'bffce52bb818b7424263211c2e0feff9b01a617a5578baffc710d6b30a81968c',
-      'e43109ab3e46e038af55935d0c0dd608b73dcf86569b120167a245738c232ae1',
-      '385ede6bc3d8a225690b2aaf28b3304a56f2f192bfc27cb829c1ae573e914116',
+      'cbadf19896d560ce58b42bc0daf1de53c3ec781e85f75b8622c37fa1b387ee7f',
+      '2b52f2ec728143b7458fc06fb987e4c2e70d95c514eb4170d100bb4e45d6740f',
+      'b7cedd364e2c73c8cc3bbbfaaed9e4aedd18819d750c2cd079ce259db637ad42',
+      'afaee29a1891e8c616ce3e64c373886fda70d142db360b3071992dd3c5edbaa0',
+      'a03e87f2695ac000e35d277a16db09819331fac9b255a8e5c4c3eb095e975419',
     ];
     const actualDigests: string[] = [];
     for (const [index, ranking] of matrix.entries()) {
@@ -813,7 +823,12 @@ describe('production canonical ranking', () => {
             limitCount: number,
           ) => {
             const servant = master.servants.find(({ id }) => id === servantId)!;
-            const candidates = planPreNoblePhantasmCandidates(servant).candidates;
+            const candidates = planPreNoblePhantasmCandidates(
+              servant,
+              master.npResourceSemantics,
+              1,
+              1,
+            ).candidates;
             const canonicalProfile = createActorFormProfiles(
               servant,
               candidates.map(({ terminalState }) => terminalState),
@@ -865,7 +880,7 @@ describe('production canonical ranking', () => {
             27_261.025, 36_264.88, 40_766.795, 43_017.765, 45_268.7,
           ]);
           expect(formAverages('4000100', '4000101', '4000100', 3)).toEqual([
-            22_249.86, 29_583.285, 33_250.015, 35_083.375, 36_916.74,
+            17_849.775, 23_716.53, 26_649.915, 28_116.59, 29_583.285,
           ]);
           expect(formAverages('505600', '505701', '505700', 0)).toEqual([
             21_141.64, 28_157.35, 31_665.21, 33_419.14, 35_173.06,
@@ -929,8 +944,11 @@ describe('production canonical ranking', () => {
         }
       }
     expect(actualDigests).toEqual(policyDigests);
-    expect(createHash('sha256').update(JSON.stringify(stateTraitMatrices)).digest('hex')).toBe(
-      'f184fcaea12a2a35017702aeae993b7057a23c9f6bba4a26bed9bcbc39f71817',
+    const stateTraitDigest = createHash('sha256')
+      .update(JSON.stringify(stateTraitMatrices))
+      .digest('hex');
+    expect(stateTraitDigest).toBe(
+      '61d55ba119f690eb183e1330b13046e4efc18957cfeb5368e3f2bc305723cb15',
     );
   }, 600_000);
 

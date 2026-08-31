@@ -32,25 +32,12 @@ import {
 } from './effectRouting';
 import type { SourceEffect } from './sourceCollection';
 import { selectionGroupsForCondition } from './projection';
+import { runtimeInputKey } from './runtimeInputIdentity';
 
 type ValuedOperation = Extract<
   EffectExecutionOperation,
   { kind: 'damageModifier' | 'modifierRateChange' }
 >;
-
-function runtimeInputKey(
-  origin: Origin,
-  sourceInstanceId: string,
-  skillId: string,
-  occurrenceId: string,
-  key: string,
-): string {
-  if (key.startsWith('activation:'))
-    return `source:${origin}:${sourceInstanceId}:${skillId}:${key}`;
-  return key.startsWith('effect:')
-    ? `source:${origin}:${sourceInstanceId}:${skillId}:${occurrenceId}:${key.slice('effect:'.length)}`
-    : key;
-}
 
 function sourceHpInputKey(source: SourceEffect): string {
   return `source:${source.origin}:${source.sourceInstanceId}:hpPermille`;
@@ -100,7 +87,7 @@ function resolveMatchingActorMinimum(
   };
 }
 
-function runtimeInputDefinitions(source: SourceEffect) {
+export function runtimeInputDefinitionsForSource(source: SourceEffect) {
   const normalized = source.effect.inputDefinitions.map((definition) => {
     const derived =
       definition.kind === 'matchingActorCount'
@@ -431,6 +418,7 @@ function baseOperation(
             ),
           }
         : null,
+    preResolvedStochasticOutcome: source.preparationStochasticOutcome,
     procRatePermille:
       source.effect.proc.kind === 'guaranteed'
         ? 1_000
@@ -445,7 +433,7 @@ function baseOperation(
       sourceName: source.sourceName,
       skillName: source.skillName,
     },
-    inputDefinitions: runtimeInputDefinitions(source),
+    inputDefinitions: runtimeInputDefinitionsForSource(source),
   };
 }
 
@@ -799,7 +787,7 @@ function makeProjection(
       : requiresAttackerHp
         ? 'attacker'
         : null,
-    requiredInputs: runtimeInputDefinitions(source),
+    requiredInputs: runtimeInputDefinitionsForSource(source),
     modifier,
     source: sourceIdentity(source),
     contributionScope: resolveContributionScope(

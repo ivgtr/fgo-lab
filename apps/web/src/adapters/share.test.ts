@@ -16,8 +16,9 @@ import {
   applyCanonicalInputCommand,
   applyEffectConditionDecision,
   applyEffectProjectionDecision,
-  calculateScenario,
+  calculateScenario as calculateScenarioOutcome,
   createDefaultResolvedScenario,
+  requireExecutableCalculation,
 } from '@fgo-lab/calculation-application';
 import {
   APP_VERSION,
@@ -26,6 +27,8 @@ import {
   type CalculationScenario,
   type CalculationShareSnapshot,
 } from '@fgo-lab/schema';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 
 const master = masterSnapshotSchema.parse(fixture);
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;

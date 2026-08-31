@@ -56,8 +56,10 @@ export function calculateRankingCandidates(
               damageCache,
             )[0]!
           : null;
+      if (execution.status !== 'executable')
+        throw new TypeError(`ranking_candidate_rejected:${servant.id}:${profileKey}`);
       const areaContribution =
-        withoutAreaExecution && withoutAreaProjection
+        withoutAreaExecution?.status === 'executable' && withoutAreaProjection
           ? {
               withoutAreaScenario: withoutAreaExecution.scenario as Extract<
                 CalculationScenario,

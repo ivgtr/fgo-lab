@@ -2,6 +2,7 @@ import {
   actorFormEquals,
   getInitialActorForms,
   type ActorFormId,
+  type CanonicalNpResourceSemantics,
   type ServantMaster,
 } from '@fgo-lab/master-data';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
@@ -9,16 +10,23 @@ import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 export function getAttackReachableActorFormStates(
   servant: ServantMaster,
   initialFormId: ActorFormId,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: 1 | 2 | 3 | 4 | 5,
 ) {
-  return planPreNoblePhantasmCandidates(servant)
+  return planPreNoblePhantasmCandidates(servant, resourceSemantics, npLevel, 1)
     .candidates.filter(({ terminalState }) =>
       actorFormEquals(terminalState.initialFormId, initialFormId),
     )
     .map(({ terminalState }) => terminalState);
 }
 
-export function getAttackReachableInitialActorForms(servant: ServantMaster) {
+export function getAttackReachableInitialActorForms(
+  servant: ServantMaster,
+  resourceSemantics: CanonicalNpResourceSemantics,
+  npLevel: 1 | 2 | 3 | 4 | 5,
+) {
   return getInitialActorForms(servant).filter(
-    ({ id }) => getAttackReachableActorFormStates(servant, id).length > 0,
+    ({ id }) =>
+      getAttackReachableActorFormStates(servant, id, resourceSemantics, npLevel).length > 0,
   );
 }

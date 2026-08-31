@@ -24,7 +24,7 @@ export {
 } from './quantityFacts';
 
 export const SCHEMA_VERSION = 32 as const;
-export const ENGINE_VERSION = '28.0.0' as const;
+export const ENGINE_VERSION = '29.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({

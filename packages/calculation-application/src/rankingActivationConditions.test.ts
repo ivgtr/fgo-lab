@@ -16,7 +16,12 @@ import {
   executeRankingScenarios,
   selectRankingExecutionIndexes,
 } from './rankingScenario';
-import { calculateScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
@@ -49,7 +54,6 @@ describe('ranking activation-local canonical facts', () => {
   });
 
   it.each([
-    ['101000', [63_138.515, 78_923.26, 86_815.655, 90_761.845, 94_708.025]],
     ['603800', [23_557.645, 31_410.36, 35_336.71, 37_299.905, 39_263.075]],
     ['705300', [36_795.27, 49_060.53, 55_193.155, 58_259.47, 61_325.785]],
     ['2501100', [35_622.36, 47_496.64, 53_433.785, 56_402.36, 59_370.945]],
@@ -85,6 +89,25 @@ describe('ranking activation-local canonical facts', () => {
       candidatesByGroup.set(group, candidates);
     }
     expect([...candidatesByGroup.values()].every((candidates) => candidates.size === 1)).toBe(true);
+  });
+
+  it('does not let a stronger choice override the attack-NP resource precondition', () => {
+    const servant = master.servants.find(({ id }) => id === '101000')!;
+    const detail = calculateRankingDetail(
+      servant,
+      master,
+      profile,
+      DEFAULT_RANKING_CONDITIONS,
+      versions,
+    );
+    expect(detail.result.status).toBe('calculated');
+    expect(detail.result.rows.map(({ average }) => average)).toEqual([
+      42_092.175, 52_615.345, 57_876.935, 60_507.73, 63_138.515,
+    ]);
+    expect(preparationFacts(detail)).toEqual([]);
+    expect(detail.appliedPreparationActions.map(({ command }) => command)).not.toContainEqual(
+      expect.objectContaining({ kind: 'useSkillSlot', slot: 3 }),
+    );
   });
 
   it.each([
@@ -196,7 +219,10 @@ describe('ranking activation-local canonical facts', () => {
       ),
     };
     expect(calculationScenarioSchema.safeParse(crafted).success).toBe(true);
-    expect(() => calculateScenario(crafted, master, versions)).toThrow('preparation_plan_invalid');
+    expect(calculateScenarioOutcome(crafted, master, versions).result).toMatchObject({
+      status: 'unsupported',
+      issues: [{ code: 'preparation:choiceUnavailable' }],
+    });
   });
 
   it('rejects an orphan activation fact', () => {

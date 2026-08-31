@@ -42,7 +42,7 @@ import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { DataPage } from '../features/data/DataPage';
-import { Calculator } from '../features/calculator/Calculator';
+import { Calculator, RejectedCalculator } from '../features/calculator/Calculator';
 import { CraftEssences } from '../features/profile/CraftEssences';
 import { Growth } from '../features/growth/Growth';
 import { Home } from '../features/home/Home';
@@ -221,9 +221,13 @@ export function App() {
         calculation.contributionProjection,
       )
     : calculateScenario(currentScenario, currentMaster, versions);
-  const input = resolvedCalculation.input;
+  const input = resolvedCalculation.status === 'executable' ? resolvedCalculation.input : null;
+  const selectedAttackerId =
+    input?.attackerId ??
+    (currentScenario.mode === 'resolved' ? currentScenario.attacker.servantId : defaultServant.id);
   const selectedAttacker =
-    currentMaster.servants.find((candidate) => candidate.id === input.attackerId) ?? defaultServant;
+    currentMaster.servants.find((candidate) => candidate.id === selectedAttackerId) ??
+    defaultServant;
   const selectedBuild = profile.servantBuilds[selectedAttacker.id];
   const calculationSupportTemplate = profile.supportTemplates.find(
     (template) =>
@@ -442,7 +446,14 @@ export function App() {
         {page === 'home' && (
           <Home
             result={
-              result.status === 'calculated' ? (result.rows[input.npLevel - 1]?.average ?? 0) : 0
+              result.status === 'calculated'
+                ? (result.rows[
+                    (input?.npLevel ??
+                      (currentScenario.mode === 'resolved'
+                        ? currentScenario.attacker.npLevel
+                        : 1)) - 1
+                  ]?.average ?? 0)
+                : 0
             }
             attackerName={selectedAttacker.name}
             attackerImage={selectedAttacker.imageKey}
@@ -451,10 +462,20 @@ export function App() {
             onNavigate={(next) => void navigate(next)}
           />
         )}{' '}
-        {page === 'calculate' && (
+        {page === 'calculate' &&
+          resolvedCalculation.status === 'rejected' &&
+          currentScenario.mode === 'resolved' && (
+            <RejectedCalculator
+              result={result}
+              scenario={currentScenario}
+              effectInputs={resolvedCalculation.effectInputs}
+              onScenarioChange={saveScenarioDraft}
+            />
+          )}
+        {page === 'calculate' && resolvedCalculation.status === 'executable' && (
           <Calculator
             master={currentMaster}
-            resolvedInput={input}
+            resolvedInput={resolvedCalculation.input}
             scenarioInput={resolvedCalculation.scenarioInput}
             resolvedEffects={resolvedCalculation.effects}
             effectControls={resolvedCalculation.effectControls}

@@ -12,11 +12,14 @@ import {
 import type {
   AppliedPreparationEffect,
   PreNoblePhantasmState,
+  PreparationExecutionContext,
   PreparationFailureCode,
   PreparationTransitionResult,
 } from './preparationContracts';
 import { rejectPreparation } from './preparationContracts';
 import { resolveTargetPolicy } from './effectRouting';
+import { createNpResourceState } from './npResource';
+import type { PreparationEffectActivation } from './preparationTransaction';
 
 type CanonicalOperation = MasterEffect['execution'][number];
 type FormTransformOperation = Extract<CanonicalOperation, { kind: 'transformActorForm' }>;
@@ -90,6 +93,7 @@ export function appendPreparationEffects(
   sourceId: string,
   actorFormId: ActorFormId,
   effects: readonly MasterEffect[],
+  activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>,
 ): readonly AppliedPreparationEffect[] {
   return [
     ...state.activeEffects,
@@ -99,6 +103,7 @@ export function appendPreparationEffects(
       actorFormId,
       occurrenceId: effect.occurrenceId,
       effect,
+      stochasticOutcome: activation.get(effect)?.procOutcome ?? null,
     })),
   ];
 }
@@ -146,6 +151,7 @@ export function formCanReachAttackWithoutPreparationNp(
 export function createPreparationState(
   servant: ServantMaster,
   initialFormId: ActorFormId,
+  context: PreparationExecutionContext,
 ): PreparationTransitionResult {
   const form = findActorForm(servant, initialFormId);
   const placeholder: PreNoblePhantasmState = {
@@ -156,6 +162,12 @@ export function createPreparationState(
     transformNoblePhantasmUsed: false,
     activeEffects: [],
     stateTraits: { attackerState: new Set(), targetState: new Set() },
+    npResource: createNpResourceState(
+      context.resourceSemantics,
+      context.npLevel,
+      context.initialGauge,
+    ),
+    baseOvercharge: null,
     appliedActions: [],
     terminated: false,
   };

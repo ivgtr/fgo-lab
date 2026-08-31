@@ -5,6 +5,7 @@ import type {
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import { compileEffect } from './operationCompiler';
+import { resolveStochasticOutcomes } from './stochasticOutcomes';
 import type { SourceEffect } from './sourceCollection';
 
 const values = (
@@ -72,6 +73,7 @@ function source(execution: EffectExecutionOperation[], limitBreak = false): Sour
     sourceName: '礼装',
     sourceTraits: [],
     noblePhantasmVariant: null,
+    preparationStochasticOutcome: null,
     skillId: 'ce:1',
     skillName: '礼装',
     effect: effect(execution),
@@ -124,6 +126,28 @@ function modifier(
 }
 
 describe('canonical operation compilation', () => {
+  it('passes the preparation stochastic result into ordinary execution', () => {
+    const preparedSource = source([modifier('attackBuff', 100)]);
+    preparedSource.preparationStochasticOutcome = 'failure';
+    preparedSource.effect = {
+      ...preparedSource.effect,
+      proc: { kind: 'singleRoll', ratePermille: [[800], [], [], [], []] },
+      selection: {
+        kind: 'stochasticOutcome',
+        group: { kind: 'binary', key: 'proc:test', defaultOutcome: 'success' },
+      },
+    };
+    const operation = compileEffect(preparedSource, 0).operations[0]!;
+    const outcomes = resolveStochasticOutcomes([operation], {
+      values: {},
+      missingDefinitions: [],
+      invalidInputKeys: [],
+    });
+
+    expect(operation.preResolvedStochasticOutcome).toBe('failure');
+    expect(outcomes.outcomes.get(operation.operationId)).toEqual({ status: 'failure' });
+  });
+
   it('derives matching-count defaults from canonical source and target guarantees', () => {
     const sourceCount = source([modifier('npDamageBuff', 0)]);
     sourceCount.sourceTraits = ['king'];

@@ -4,7 +4,13 @@ import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { describe, expect, it } from 'vitest';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -23,7 +29,11 @@ describe('production execution parity ratchet', () => {
       masterDataVersion: master.version,
     };
     const records = master.servants.flatMap((servant) => {
-      if (planPreNoblePhantasmCandidates(servant).candidates.length === 0) return [];
+      if (
+        planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1).candidates
+          .length === 0
+      )
+        return [];
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
       const calculation = calculateScenario(scenario, master, versions);
       expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe('calculated');
@@ -43,8 +53,7 @@ describe('production execution parity ratchet', () => {
     });
 
     expect(records).toHaveLength(422);
-    expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '20e2d5f5e1ea018c957ae823af2a3d28f9b43a9818596c7cc265db2bc2e42127',
-    );
+    const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
+    expect(digest).toBe('9c1100da17d8b7ac1e6f5c11594c2caa5236061c28647d585d23934d6b964ad1');
   }, 60_000);
 });

@@ -9,7 +9,13 @@ import {
   applyEffectConditionDecision,
   applyEffectProjectionDecision as applyEffectInclusionDecision,
 } from './effectDecision';
-import { calculateScenario, createDefaultResolvedScenario } from './scenario';
+import {
+  calculateScenario as calculateScenarioOutcome,
+  createDefaultResolvedScenario,
+  requireExecutableCalculation,
+} from './scenario';
+const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>) =>
+  requireExecutableCalculation(calculateScenarioOutcome(...args));
 import { setEffectSourceEnabled } from './scenarioCommands';
 import { createEffectControlViewModels } from './effectControls';
 import {
@@ -336,7 +342,7 @@ describe('unsupported convergence production golden', () => {
       const initiallyHiddenByInput = occurrenceId.startsWith('23594:');
       const servant = master.servants.find((candidate) => candidate.id === servantId)!;
       const targetOccurrenceId = automaticInput ? '21814:0' : occurrenceId;
-      const candidate = planPreNoblePhantasmCandidates(servant)
+      const candidate = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1)
         .candidates.filter(
           ({ terminalState }) =>
             automaticInput ||
