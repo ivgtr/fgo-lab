@@ -4,7 +4,13 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { calculateRankingDetail } from './ranking';
-import { DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './rankingContracts';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicy } from './rankingPolicyCalculation';
+import {
+  DEFAULT_RANKING_CONDITIONS,
+  DEFAULT_RANKING_POLICY_CONDITIONS,
+  type RankingProfileInput,
+} from './rankingContracts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -138,5 +144,123 @@ describe('ranking condition semantics', () => {
           JSON.stringify(effect.explanation.condition).includes('fieldSunlight'),
       ),
     ).toBe(true);
+  });
+
+  it('evaluates the four policy crossings without forging intrinsic facts', () => {
+    const servants = ['1100300', '403700', '105400'].map((servantId) =>
+      master.servants.find(({ id }) => id === servantId)!,
+    );
+    for (const servant of servants)
+      for (const selfBuffs of ['included', 'excluded'] as const)
+        for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+          const outcome = calculateRankingPolicyDetail(
+            servant,
+            master,
+            profile,
+            {
+              ...DEFAULT_RANKING_POLICY_CONDITIONS,
+              selfBuffs,
+              conditionalEffects,
+            },
+            versions,
+          );
+          expect(outcome.status, `${servant.id}:${selfBuffs}:${conditionalEffects}`).toBe(
+            'calculated',
+          );
+          if (outcome.status !== 'calculated') continue;
+          expect(outcome.detail.candidateEvidence.policyKey).toBe(
+            `${selfBuffs}:${conditionalEffects}`,
+          );
+          if (servant.id !== '1100300') continue;
+          const forgedDragon = outcome.detail.scenario.worldFactAssertions.some(
+            ({ fact }) =>
+              fact.kind === 'trait' &&
+              fact.scope === 'attacker' &&
+              fact.trait === 'dragon' &&
+              fact.present,
+          );
+          expect(forgedDragon).toBe(false);
+        }
+  });
+
+  it('inventories finite production candidates and canonical damage-cache requests', () => {
+    const inventoryMaster = {
+      ...master,
+      servants: ['1100300', '403700', '105400'].map((servantId) =>
+        master.servants.find(({ id }) => id === servantId)!,
+      ),
+    };
+    const inventories = (['included', 'excluded'] as const).flatMap((selfBuffs) =>
+      (['baseline', 'satisfied'] as const).map((conditionalEffects) => {
+        const calculation = calculateRankingPolicy(
+          inventoryMaster,
+          profile,
+          {
+            ...DEFAULT_RANKING_POLICY_CONDITIONS,
+            selfBuffs,
+            conditionalEffects,
+          },
+          versions,
+        );
+        expect(
+          Object.values(calculation.profileResults).filter(({ status }) => status === 'invalid'),
+        ).toEqual([]);
+        expect(calculation.candidateInventory.generatedCount).toBeLessThanOrEqual(
+          calculation.candidateInventory.semanticUpperBound,
+        );
+        expect(calculation.candidateInventory.damageRequestCount).toBeLessThanOrEqual(
+          calculation.candidateInventory.damageRequestUpperBound,
+        );
+        return {
+          policy: `${selfBuffs}:${conditionalEffects}`,
+          ...calculation.candidateInventory,
+          cacheHitCount: calculation.damageCache.cacheHitCount,
+        };
+      }),
+    );
+    expect(inventories).toMatchInlineSnapshot(`
+      [
+        {
+          "cacheHitCount": 32,
+          "damageRequestCount": 48,
+          "damageRequestUpperBound": 48,
+          "deduplicatedCount": 48,
+          "distinctDamageInputCount": 16,
+          "generatedCount": 48,
+          "policy": "included:baseline",
+          "semanticUpperBound": 48,
+        },
+        {
+          "cacheHitCount": 348,
+          "damageRequestCount": 404,
+          "damageRequestUpperBound": 404,
+          "deduplicatedCount": 404,
+          "distinctDamageInputCount": 56,
+          "generatedCount": 404,
+          "policy": "included:satisfied",
+          "semanticUpperBound": 404,
+        },
+        {
+          "cacheHitCount": 44,
+          "damageRequestCount": 48,
+          "damageRequestUpperBound": 48,
+          "deduplicatedCount": 48,
+          "distinctDamageInputCount": 4,
+          "generatedCount": 48,
+          "policy": "excluded:baseline",
+          "semanticUpperBound": 48,
+        },
+        {
+          "cacheHitCount": 390,
+          "damageRequestCount": 404,
+          "damageRequestUpperBound": 404,
+          "deduplicatedCount": 404,
+          "distinctDamageInputCount": 14,
+          "generatedCount": 404,
+          "policy": "excluded:satisfied",
+          "semanticUpperBound": 404,
+        },
+      ]
+    `);
   });
 });

@@ -15,7 +15,10 @@ import type {
 import type { ResolvedScenario } from './executionTypes';
 import { traitCountProjections } from './projection';
 
-function npCondition(damage: NpDamageSpec, overcharge: number): ConditionExpression {
+export function noblePhantasmDamageCondition(
+  damage: NpDamageSpec,
+  overcharge: number,
+): ConditionExpression {
   const item = damage.parametersByOvercharge[overcharge - 1]?.[0];
   if (!item) return { kind: 'always' };
   if ((damage.kind === 'trait' || damage.kind === 'stateTrait') && item.targetTrait)
@@ -90,7 +93,7 @@ export function compileNoblePhantasmDamageOperation(
   operationOrder: number,
 ): { operation: BattleOperation; projections: readonly EffectProjection[] } {
   const variantKey = noblePhantasmVariantKey(np.ref);
-  const damageCondition = npCondition(damage, baseInput.overcharge);
+  const damageCondition = noblePhantasmDamageCondition(damage, baseInput.overcharge);
   const specialAttackDecisionKey =
     damageCondition.kind === 'always' ? null : `np:${variantKey}:${damage.functionId}:condition`;
   const source: OperationSource = {

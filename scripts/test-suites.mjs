@@ -20,6 +20,7 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/productionMasterAudit.test.ts',
   'packages/calculation-application/src/productionMasterInventory.test.ts',
   'packages/calculation-application/src/rankingActivationConditions.test.ts',
+  'packages/calculation-application/src/rankingCandidateSpace.test.ts',
   'packages/calculation-application/src/rankingConditionInventory.test.ts',
   'packages/calculation-application/src/rankingConditionSemantics.test.ts',
   'packages/calculation-application/src/rankingProduction.test.ts',

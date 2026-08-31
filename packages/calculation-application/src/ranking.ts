@@ -10,7 +10,7 @@ import type {
   RankingSummary,
 } from './rankingContracts';
 import { createRankingScenarioFromPolicy } from './rankingScenario';
-import { createRankingRow, includedRankingServants } from './rankingRows';
+import { createRankingRow, includedLegacyRankingServants } from './rankingRows';
 import type { AttackProfile } from './attackProfile';
 import { calculateRankingCandidates, selectRankingDetail } from './rankingCandidates';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
@@ -59,7 +59,7 @@ function calculateRows(
   const failures: RankingFailure[] = [];
   const details: Record<string, RankingDetail> = {};
   const damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>();
-  for (const servant of includedRankingServants(master, profile, conditions)) {
+  for (const servant of includedLegacyRankingServants(master, profile, conditions)) {
     let servantDetails: ReadonlyMap<string, RankingDetail>;
     try {
       servantDetails = calculateRankingCandidates(

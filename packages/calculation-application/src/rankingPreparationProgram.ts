@@ -93,7 +93,9 @@ export function compileRankingPreparationProgram(
       candidate.terminalState.initialFormId,
     );
     const sequenced = materializePreNoblePhantasmPlan(initial, candidate);
-    const baselinePrepared = prepareCalculationScenario(sequenced, master);
+    const baselinePrepared = prepareCalculationScenario(sequenced, master, {
+      preserveScenarioOvercharge: true,
+    });
     const baseline = projectPreparedCalculationScenario(baselinePrepared);
     const canonical = applyRankingCanonicalMinimums(sequenced, baseline);
     const canonicalPrepared =

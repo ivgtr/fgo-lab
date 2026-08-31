@@ -28,6 +28,8 @@ export type {
   WorldFactAssertion,
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
+export { runtimeInputKey } from './runtimeInputIdentity';
+export { effectChangesPreparation } from './preparationTransaction';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
@@ -96,7 +98,15 @@ export {
   resolveAttackerFormExecution,
   type ResolvedAttackerFormExecution,
   type ResolvedAttackerSkillUse,
+  type SourceEffect,
 } from './sourceCollection';
+export {
+  compileEffectCached,
+  runtimeInputDefinitionsForSource,
+  type CompiledOperations,
+} from './operationCompiler';
+export { noblePhantasmDamageCondition } from './npDamageCompilation';
+export { planOperationActivations } from './activation';
 export {
   availablePreparationSkillCommands,
   availableTransformNoblePhantasmCommand,

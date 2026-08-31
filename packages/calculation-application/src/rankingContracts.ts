@@ -10,6 +10,7 @@ import type { CalculationExecution } from './scenario';
 import type { NoblePhantasmVariantRef } from '@fgo-lab/master-data';
 import type { AttackProfile } from './attackProfile';
 import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
+import type { CandidateSpaceIssue } from './rankingCandidateSpace';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
@@ -28,6 +29,23 @@ export const rankingDamageContributionProjection = (
     : 'counterfactualWithoutVoluntarySkillModifiers';
 export type RankingSpecialAttack = 'inactive' | 'active';
 export type RankingField = 'inactive' | 'active';
+export type RankingConditionalEffects = 'baseline' | 'satisfied';
+
+export interface RankingPolicyConditions {
+  comparisonMode: RankingComparisonMode;
+  npLevel: RankingNpLevel;
+  classAffinity: RankingClassAffinity;
+  selfBuffs: RankingSelfBuffs;
+  conditionalEffects: RankingConditionalEffects;
+}
+
+export const DEFAULT_RANKING_POLICY_CONDITIONS: RankingPolicyConditions = {
+  comparisonMode: 'standard',
+  npLevel: 1,
+  classAffinity: 'neutral',
+  selfBuffs: 'included',
+  conditionalEffects: 'baseline',
+};
 
 export interface RankingConditions {
   comparisonMode: RankingComparisonMode;
@@ -130,6 +148,54 @@ export interface RankingDetail {
   executionMetrics: {
     worldCandidateCount: number;
     scenarioCalculationCount: number;
+  };
+}
+
+export interface RankingPolicyDetail extends RankingDetail {
+  candidateEvidence: {
+    policyKey: string;
+    candidateKey: string;
+    preparationPlanKey: string;
+    startNpGauge: number;
+    baselineInputDeviation: number;
+    attackProfileKey: string;
+    canonicalInputValues: Readonly<Record<string, number>>;
+    targetCandidateKey: string;
+    fieldCandidateKey: string;
+    quantityCandidateKey: string;
+  };
+}
+
+export type PolicyUnavailabilityReason =
+  'attackProfileNotReachable' | 'insufficientNpGauge' | 'noSatisfiableCandidate';
+
+export type RankingProfileResult =
+  | { status: 'calculated'; detail: RankingPolicyDetail }
+  | {
+      status: 'unavailableUnderPolicy';
+      attackProfile: AttackProfile;
+      reason: PolicyUnavailabilityReason;
+    }
+  | {
+      status: 'invalid';
+      attackProfile: AttackProfile | null;
+      issues: CalculationResult['issues'];
+      reason: string;
+      candidateSpaceIssue?: CandidateSpaceIssue;
+      detail?: string;
+    };
+
+export interface RankingPolicyCalculation {
+  rows: RankingRowSummary[];
+  profileResults: Record<string, RankingProfileResult>;
+  damageCache: RankingCalculation['damageCache'];
+  candidateInventory: {
+    semanticUpperBound: number;
+    generatedCount: number;
+    deduplicatedCount: number;
+    damageRequestUpperBound: number;
+    damageRequestCount: number;
+    distinctDamageInputCount: number;
   };
 }
 

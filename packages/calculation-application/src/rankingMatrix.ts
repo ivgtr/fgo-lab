@@ -9,7 +9,7 @@ import type {
   RankingRowSummary,
   RankingSummaryMatrix,
 } from './rankingContracts';
-import { createRankingRow, includedRankingServants } from './rankingRows';
+import { createRankingRow, includedLegacyRankingServants } from './rankingRows';
 import { compileRankingExecutionPlan } from './rankingScenario';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
@@ -21,7 +21,7 @@ import {
   projectPreparedCalculationContribution,
   type CalculationExecution,
 } from './scenario';
-import { selectRankingCandidateIndexes } from './rankingExecution';
+import { selectLegacyRankingCandidateIndexes } from './legacyRankingSelection';
 
 const NP_LEVELS = [1, 2, 3, 4, 5] as const;
 
@@ -84,7 +84,7 @@ export function calculateStandardRankingMatrix(
   const failures = NP_LEVELS.map(() => [] as RankingFailure[]);
   const baseConditions: RankingConditions = { ...conditions, npLevel: 1 };
   const damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>();
-  for (const servant of includedRankingServants(master, profile, baseConditions)) {
+  for (const servant of includedLegacyRankingServants(master, profile, baseConditions)) {
     const plan = compileRankingExecutionPlan(servant, master, profile, baseConditions, versions);
     const candidates = plan.preparedRankingScenarios.map((prepared, index) => {
       const projection = plan.contributionProjections[index]!;
@@ -115,9 +115,9 @@ export function calculateStandardRankingMatrix(
     });
     const executionCache = new Map<number, CalculationExecution>();
     for (const npLevel of NP_LEVELS) {
-      let selected: ReturnType<typeof selectRankingCandidateIndexes>;
+      let selected: ReturnType<typeof selectLegacyRankingCandidateIndexes>;
       try {
-        selected = selectRankingCandidateIndexes(
+        selected = selectLegacyRankingCandidateIndexes(
           candidates.map(({ projected, result }, index) => {
             const scenario = projected.scenario;
             const actions = projected.resolved.appliedPreparationActions;

@@ -5,8 +5,9 @@ import {
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, VersionContext } from '@fgo-lab/schema';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
-import type { RankingConditions, RankingDetail, RankingProfileInput } from './rankingContracts';
-import { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
+import type { RankingDetail, RankingConditions, RankingProfileInput } from './rankingContracts';
+import { executeRankingScenarios } from './rankingExecution';
+import { selectLegacyRankingExecutionIndexes } from './legacyRankingSelection';
 import { compileRankingExecutionPlan } from './rankingScenario';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import type { calculateDamageResolution } from './damageResolution';
@@ -28,7 +29,7 @@ export function calculateRankingCandidates(
     plan.contributionProjections,
     damageCache,
   );
-  const selected = selectRankingExecutionIndexes(
+  const selected = selectLegacyRankingExecutionIndexes(
     candidates,
     plan.attackProfiles,
     conditions.npLevel,

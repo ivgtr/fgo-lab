@@ -71,11 +71,12 @@ export function resolveAttackerFormExecution(
   scenario: ResolvedScenario,
   attacker: MasterDataSnapshot['servants'][number],
   resourceSemantics: CanonicalNpResourceSemantics,
+  initialGauge: number = resourceSemantics.noblePhantasmUse.requirement,
 ): ResolvedAttackerFormExecution {
   const context: PreparationExecutionContext = {
     resourceSemantics,
     npLevel: scenario.attacker.npLevel as PreparationExecutionContext['npLevel'],
-    initialGauge: resourceSemantics.noblePhantasmUse.requirement,
+    initialGauge,
     overcharge: scenario.overcharge as PreparationExecutionContext['overcharge'],
     canonicalInputValues: Object.fromEntries(
       Object.entries(scenario.canonicalInputValues).map(([key, value]) => [key, value.value]),

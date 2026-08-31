@@ -26,9 +26,10 @@ import {
   requireExecutableCalculation,
   resolveScenarioPreparationOutcome,
 } from './scenario';
-import { compileRankingPreparationProgram } from './rankingPreparationProgram';
+import { compileRankingExecutionPlan } from './rankingPolicyScenario';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { executeRankingScenarios } from './rankingExecution';
-import { DEFAULT_RANKING_CONDITIONS } from './rankingContracts';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 
 const master = masterSnapshotSchema.parse(fixture);
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -1624,24 +1625,104 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const rankingCandidates = compileRankingPreparationProgram(
+    const rankingPlan = compileRankingExecutionPlan(
       rankingMaster.servants[0]!,
       rankingMaster,
       { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
-      { ...DEFAULT_RANKING_CONDITIONS, npLevel: 2 },
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        npLevel: 2,
+        conditionalEffects: 'satisfied',
+      },
+      { ...versions, masterDataVersion: rankingMaster.version },
     );
-    const rankingSkillCandidate = rankingCandidates.find(({ canonical }) =>
-      canonical.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot'),
+    const rankingSkillIndex = rankingPlan.rankingScenarios.findIndex(
+      (candidate) =>
+        candidate.canonicalInputValues['preparation:value']?.value === 1 &&
+        candidate.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot'),
     );
+    const rankingSkillCandidate = rankingPlan.rankingScenarios[rankingSkillIndex];
+    const rankingSkillPrepared = rankingPlan.preparedRankingScenarios[rankingSkillIndex];
 
-    expect(rankingSkillCandidate?.canonical.canonicalInputValues['preparation:value']).toEqual({
+    expect(rankingSkillCandidate?.canonicalInputValues['preparation:value']).toEqual({
       kind: 'integer',
       value: 1,
     });
-    expect(rankingSkillCandidate?.canonicalPrepared.resolved.precision).toBe('exact');
+    expect(rankingSkillPrepared?.resolved.precision).toBe('exact');
+    expect(rankingSkillPrepared?.resolved.appliedPreparationActions[0]).toMatchObject({
+      resourceBefore: { gauge: 10_000 },
+      resourceAfter: { gauge: 12_000 },
+    });
+
+    const policyPlan = compileRankingExecutionPlan(
+      preparationMaster.servants[0]!,
+      preparationMaster,
+      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        npLevel: 2,
+        conditionalEffects: 'satisfied',
+      },
+      { ...versions, masterDataVersion: preparationMaster.version },
+    );
+    const repairedPolicyIndex = policyPlan.rankingScenarios.findIndex(
+      (candidate, index) =>
+        candidate.canonicalInputValues['preparation:value']?.value === 1 &&
+        candidate.preNoblePhantasmPlan.some(({ kind }) => kind === 'useSkillSlot') &&
+        policyPlan.preparedRankingScenarios[index]?.status === 'executable',
+    );
     expect(
-      rankingSkillCandidate?.canonicalPrepared.resolved.appliedPreparationActions[0],
+      policyPlan.preparedRankingScenarios[repairedPolicyIndex]?.resolved
+        .appliedPreparationActions[0],
     ).toMatchObject({ resourceBefore: { gauge: 10_000 }, resourceAfter: { gauge: 12_000 } });
+
+    const conflictingMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'conflicting-input-skill',
+              slot: 1,
+              priority: 1,
+              name: 'conflicting input',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [
+                resourceEffect,
+                {
+                  ...resourceEffect,
+                  id: 'conflicting-input',
+                  occurrenceId: 'conflicting-input:0',
+                  inputDefinitions: resourceEffect.inputDefinitions.map((definition) => ({
+                    ...definition,
+                    maximum: 2,
+                  })),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(
+      calculateRankingPolicyDetail(
+        conflictingMaster.servants[0]!,
+        conflictingMaster,
+        { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+        { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
+        { ...versions, masterDataVersion: conflictingMaster.version },
+      ),
+    ).toMatchObject({
+      status: 'invalid',
+      reason: 'semanticDomainInvalid',
+      candidateSpaceIssue: {
+        kind: 'semanticDomainInvalid',
+        detail: 'ranking_canonical_input_definition_conflict:preparation:value',
+      },
+    });
   });
 
   it('repairs an input-dependent non-attack form transition before creating an executable damage input', () => {
@@ -1884,6 +1965,43 @@ describe('scenario calculation facade', () => {
         masterDataVersion: structuralMaster.version,
       })[0]?.result.status,
     ).toBe('calculated');
+
+    const policyPlan = compileRankingExecutionPlan(
+      structuralMaster.servants[0]!,
+      structuralMaster,
+      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        conditionalEffects: 'satisfied',
+      },
+      { ...versions, masterDataVersion: structuralMaster.version },
+    );
+    expect(
+      policyPlan.rankingScenarios.some(
+        (candidate, index) =>
+          candidate.canonicalInputValues['preparation:transition']?.value === 2 &&
+          policyPlan.attackProfiles[index]?.noblePhantasmVariant.noblePhantasmId ===
+            attackNpRef.noblePhantasmId &&
+          policyPlan.preparedRankingScenarios[index]?.status === 'executable',
+      ),
+    ).toBe(true);
+    const transitionedProfile = policyPlan.attackProfiles.find(
+      ({ noblePhantasmVariant }) =>
+        noblePhantasmVariant.noblePhantasmId === attackNpRef.noblePhantasmId,
+    )!;
+    expect(
+      calculateRankingPolicyDetail(
+        structuralMaster.servants[0]!,
+        structuralMaster,
+        { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+        DEFAULT_RANKING_POLICY_CONDITIONS,
+        { ...versions, masterDataVersion: structuralMaster.version },
+        transitionedProfile,
+      ),
+    ).toMatchObject({
+      status: 'unavailableUnderPolicy',
+      reason: 'noSatisfiableCandidate',
+    });
   });
 
   it('keeps ordinary stochastic ownership in the executor for a mixed preparation skill', () => {

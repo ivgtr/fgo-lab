@@ -12,14 +12,14 @@ import {
   createRankingFieldCandidates,
   materializeRankingField,
   type RankingFieldCandidate,
-} from './rankingFieldWorld';
+} from './legacyRankingFieldWorld';
 import type { ResolvedScenario } from './rankingPolicy';
 import {
   createRankingWorldCandidates,
   effectMatchesRankingWorld,
   materializeRankingWorld,
   type RankingWorldCandidate,
-} from './rankingWorld';
+} from './legacyRankingWorld';
 import type { PreparedCalculationProjection } from './scenario';
 import { stateTraitsRequiredByCondition } from './conditionProvenance';
 

@@ -11,11 +11,12 @@ import {
 } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { calculateRankingDetail, DEFAULT_RANKING_CONDITIONS } from './ranking';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import {
   compileRankingExecutionPlan,
   executeRankingScenarios,
   selectRankingExecutionIndexes,
-} from './rankingScenario';
+} from './rankingPolicyScenario';
 import {
   calculateScenario as calculateScenarioOutcome,
   requireExecutableCalculation,
@@ -119,7 +120,7 @@ describe('ranking activation-local canonical facts', () => {
       servant,
       master,
       profile,
-      DEFAULT_RANKING_CONDITIONS,
+      DEFAULT_RANKING_POLICY_CONDITIONS,
       versions,
     );
     const executions = executeRankingScenarios(

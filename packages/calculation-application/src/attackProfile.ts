@@ -1,6 +1,7 @@
 import type { PreNoblePhantasmState } from '@fgo-lab/battle-execution';
 import {
   actorFormKey,
+  findNoblePhantasmVariant,
   getPassivesForActorForm,
   getSkillsForActorForm,
   noblePhantasmVariantKey,
@@ -135,6 +136,14 @@ export function createActorFormProfiles(
     variants.add(variant.canonicalId);
     reachableByForm.set(formKey, variants);
   }
+  return createActorFormProfilesForReachability(servant, reachableByForm, variantsByRef);
+}
+
+function createActorFormProfilesForReachability(
+  servant: ServantMaster,
+  reachableByForm: ReadonlyMap<string, ReadonlySet<NoblePhantasmVariantCanonicalId>>,
+  variantsByRef: ReadonlyMap<string, NoblePhantasmVariant> = indexNoblePhantasmVariants(servant),
+): readonly ActorFormProfile[] {
   const formsByIdentity = new Map<string, { id: ActorFormProfileId; formIds: ActorFormId[] }>();
   for (const form of servant.actorFormGraph.forms) {
     const id = formProfileId(
@@ -167,6 +176,90 @@ export function createActorFormProfiles(
     .sort((left, right) =>
       actorFormProfileIdKey(left.id).localeCompare(actorFormProfileIdKey(right.id)),
     );
+}
+
+export function createStaticAttackProfiles(servant: ServantMaster): readonly AttackProfile[] {
+  const variants = staticReachableAttackVariants(servant);
+  const reachableByForm = new Map<string, Set<NoblePhantasmVariantCanonicalId>>();
+  for (const variant of variants) {
+    const key = actorFormKey(variant.ref.actorFormId);
+    const reachable = reachableByForm.get(key) ?? new Set<NoblePhantasmVariantCanonicalId>();
+    reachable.add(variant.canonicalId);
+    reachableByForm.set(key, reachable);
+  }
+  const profiles = createActorFormProfilesForReachability(servant, reachableByForm);
+  const variantsByCanonicalId = new Map(variants.map((variant) => [variant.canonicalId, variant]));
+  return profiles.flatMap((profile) =>
+    profile.id.semantics.reachableAttackNoblePhantasmVariantCanonicalIds.map((canonicalId) => {
+      const variant = variantsByCanonicalId.get(canonicalId);
+      if (!variant)
+        throw new TypeError(`static_attack_variant_missing:${servant.id}:${canonicalId}`);
+      return {
+        id: {
+          servantLineageId: servant.id,
+          terminalActorFormProfileId: profile.id,
+          attackNoblePhantasmVariantCanonicalId: canonicalId,
+        },
+        noblePhantasmVariant: variant.ref,
+        noblePhantasmVariantCanonicalId: canonicalId,
+        targetScope: variant.targetScope,
+        cardType: variant.card,
+        terminalFormLabel: profiles.length > 1 ? profile.displayName : null,
+      } satisfies AttackProfile;
+    }),
+  );
+}
+
+export function createStaticActorFormProfiles(servant: ServantMaster): readonly ActorFormProfile[] {
+  const reachableByForm = new Map<string, Set<NoblePhantasmVariantCanonicalId>>();
+  for (const variant of staticReachableAttackVariants(servant)) {
+    const key = actorFormKey(variant.ref.actorFormId);
+    const reachable = reachableByForm.get(key) ?? new Set<NoblePhantasmVariantCanonicalId>();
+    reachable.add(variant.canonicalId);
+    reachableByForm.set(key, reachable);
+  }
+  return createActorFormProfilesForReachability(servant, reachableByForm);
+}
+
+function staticReachableAttackVariants(
+  servant: ServantMaster,
+): readonly Extract<NoblePhantasmVariant, { kind: 'attack' }>[] {
+  const selectedRefs = [
+    ...servant.actorFormGraph.forms.flatMap(({ baseNoblePhantasmVariant }) =>
+      baseNoblePhantasmVariant ? [baseNoblePhantasmVariant] : [],
+    ),
+    ...servant.actorFormGraph.transitions.flatMap(({ operations }) =>
+      operations.flatMap((operation) =>
+        operation.kind === 'selectNoblePhantasmVariant' ? [operation.variant] : [],
+      ),
+    ),
+    ...servant.skills.flatMap(({ effects }) =>
+      effects.flatMap(({ execution }) =>
+        execution.flatMap((operation) =>
+          operation.kind === 'selectNoblePhantasmVariant' ? [operation.variant] : [],
+        ),
+      ),
+    ),
+    ...servant.noblePhantasmVariantGroups.flatMap(({ variants }) =>
+      variants.flatMap(({ effects }) =>
+        effects.flatMap(({ execution }) =>
+          execution.flatMap((operation) =>
+            operation.kind === 'selectNoblePhantasmVariant' ? [operation.variant] : [],
+          ),
+        ),
+      ),
+    ),
+  ];
+  return [
+    ...new Map(
+      selectedRefs.flatMap((ref) => {
+        const variant = findNoblePhantasmVariant(servant, ref);
+        return variant?.kind === 'attack'
+          ? [[`${actorFormKey(variant.ref.actorFormId)}:${variant.canonicalId}`, variant] as const]
+          : [];
+      }),
+    ).values(),
+  ];
 }
 
 export function attackProfileForTerminalState(

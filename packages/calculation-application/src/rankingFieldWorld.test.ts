@@ -7,7 +7,7 @@ import {
 describe('ranking field worlds', () => {
   it('does not materialize an external fact for inactive policy', () => {
     expect(createRankingFieldFactCandidates(['fieldShore'], false)).toEqual([
-      { key: 'field:none', traits: [] },
+      { key: 'field:none', traits: [], facts: [] },
     ]);
   });
 
@@ -15,17 +15,59 @@ describe('ranking field worlds', () => {
     expect(
       createRankingFieldFactCandidates(['fieldHeaven', 'fieldHell', 'fieldShore'], true),
     ).toEqual([
-      { key: 'field:fieldShore', traits: ['fieldShore'] },
-      { key: 'field:fieldHell', traits: ['fieldHell'] },
-      { key: 'field:fieldHell,fieldShore', traits: ['fieldHell', 'fieldShore'] },
-      { key: 'field:fieldHeaven', traits: ['fieldHeaven'] },
-      { key: 'field:fieldHeaven,fieldShore', traits: ['fieldHeaven', 'fieldShore'] },
+      {
+        key: 'field:fieldShore',
+        traits: ['fieldShore'],
+        facts: [
+          { trait: 'fieldHeaven', present: false },
+          { trait: 'fieldHell', present: false },
+          { trait: 'fieldShore', present: true },
+        ],
+      },
+      {
+        key: 'field:fieldHell',
+        traits: ['fieldHell'],
+        facts: [
+          { trait: 'fieldHeaven', present: false },
+          { trait: 'fieldHell', present: true },
+          { trait: 'fieldShore', present: false },
+        ],
+      },
+      {
+        key: 'field:fieldHell,fieldShore',
+        traits: ['fieldHell', 'fieldShore'],
+        facts: [
+          { trait: 'fieldHeaven', present: false },
+          { trait: 'fieldHell', present: true },
+          { trait: 'fieldShore', present: true },
+        ],
+      },
+      {
+        key: 'field:fieldHeaven',
+        traits: ['fieldHeaven'],
+        facts: [
+          { trait: 'fieldHeaven', present: true },
+          { trait: 'fieldHell', present: false },
+          { trait: 'fieldShore', present: false },
+        ],
+      },
+      {
+        key: 'field:fieldHeaven,fieldShore',
+        traits: ['fieldHeaven', 'fieldShore'],
+        facts: [
+          { trait: 'fieldHeaven', present: true },
+          { trait: 'fieldHell', present: false },
+          { trait: 'fieldShore', present: true },
+        ],
+      },
     ]);
   });
 
   it('fails closed when the finite search bound would be exceeded', () => {
-    const count = Math.log2(MAX_RANKING_FIELD_CANDIDATES + 1) + 1;
-    const traits = Array.from({ length: Math.ceil(count) }, (_, index) => `field:${index}`);
+    const traits = Array.from(
+      { length: Math.ceil(Math.log2(MAX_RANKING_FIELD_CANDIDATES + 1)) },
+      (_, index) => `field:${index}`,
+    );
     expect(() => createRankingFieldFactCandidates(traits, true)).toThrow(
       /ranking_field_candidate_limit/,
     );

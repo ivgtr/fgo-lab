@@ -15,8 +15,10 @@ import type {
   TargetPredicate,
 } from '@fgo-lab/schema';
 import type { EffectControlViewModel } from './effectControls';
+import type { ConditionExpression } from '@fgo-lab/battle-execution';
 import type { ResolvedScenario } from './rankingPolicy';
 import { applyTargetContextCommand } from './targetContext';
+import { finiteSemanticProduct } from './finiteSemanticProduct';
 
 export const MAX_RANKING_WORLD_CANDIDATES = 4_096;
 
@@ -34,25 +36,29 @@ export type RankingTraitFact =
   | { scope: 'targetState'; trait: string; present: boolean };
 
 function collectTargetPredicates(
-  condition: EffectControlViewModel['projection']['explanation']['condition'],
-): TargetPredicate[] {
+  condition: ConditionExpression | null,
+  negated = false,
+): { predicate: TargetPredicate; present: boolean }[] {
   if (!condition) return [];
   if (condition.kind === 'targetPredicate' && condition.scope === 'target')
-    return [condition.predicate];
+    return [{ predicate: condition.predicate, present: !negated }];
   if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.flatMap(collectTargetPredicates);
-  return condition.kind === 'not' ? collectTargetPredicates(condition.expression) : [];
+    return condition.expressions.flatMap((expression) =>
+      collectTargetPredicates(expression, negated),
+    );
+  return condition.kind === 'not' ? collectTargetPredicates(condition.expression, !negated) : [];
 }
 
 function collectTargetTraits(
-  condition: EffectControlViewModel['projection']['explanation']['condition'],
-): Omit<RankingTraitFact, 'present'>[] {
+  condition: ConditionExpression | null,
+  negated = false,
+): RankingTraitFact[] {
   if (!condition) return [];
   if (
     condition.kind === 'trait' &&
     (condition.scope === 'target' || condition.scope === 'targetState')
   )
-    return [{ scope: condition.scope, trait: condition.trait }];
+    return [{ scope: condition.scope, trait: condition.trait, present: !negated }];
   if (
     condition.kind === 'traitCount' &&
     (condition.scope === 'target' || condition.scope === 'targetState')
@@ -60,34 +66,49 @@ function collectTargetTraits(
     return condition.traits.map((trait) => ({
       scope: condition.scope === 'targetState' ? ('targetState' as const) : ('target' as const),
       trait,
+      present: !negated,
     }));
   if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.flatMap(collectTargetTraits);
-  return condition.kind === 'not' ? collectTargetTraits(condition.expression) : [];
+    return condition.expressions.flatMap((expression) => collectTargetTraits(expression, negated));
+  return condition.kind === 'not' ? collectTargetTraits(condition.expression, !negated) : [];
 }
 
-function traitFactCandidates(
-  traits: readonly Omit<RankingTraitFact, 'present'>[],
-): readonly RankingTraitFact[][] {
-  if (2 ** traits.length > MAX_RANKING_WORLD_CANDIDATES)
-    throw new RangeError(`ranking_world_candidate_limit:${String(2 ** traits.length)}`);
-  let candidates: readonly RankingTraitFact[][] = [[]];
-  for (const trait of traits)
-    candidates = candidates.flatMap((candidate) => [
-      [...candidate, { ...trait, present: false }],
-      [...candidate, { ...trait, present: true }],
-    ]);
-  return candidates.filter((candidate) => {
-    const groups = new Set<string>();
-    for (const fact of candidate) {
-      if (!fact.present) continue;
-      const group = canonicalExclusiveGroup(fact.scope, fact.trait);
-      if (group === null) continue;
-      if (groups.has(group)) return false;
-      groups.add(group);
-    }
-    return true;
-  });
+function traitFactCandidates(traits: readonly RankingTraitFact[]): readonly RankingTraitFact[][] {
+  const byDimension = new Map<string, RankingTraitFact[]>();
+  for (const fact of traits) {
+    const exclusiveGroup = canonicalExclusiveGroup(fact.scope, fact.trait);
+    const key = exclusiveGroup
+      ? `exclusive:${fact.scope}:${exclusiveGroup}`
+      : `trait:${fact.scope}:${fact.trait}`;
+    byDimension.set(key, [...(byDimension.get(key) ?? []), fact]);
+  }
+  const product = finiteSemanticProduct(
+    [...byDimension].map(([key, facts]) => {
+      const unique = [
+        ...new Map(facts.map((fact) => [`${fact.trait}:${String(fact.present)}`, fact])).values(),
+      ];
+      if (!key.startsWith('exclusive:')) return { key, values: unique.map((fact) => [fact]) };
+      const traitsInGroup = [...new Set(unique.map(({ trait }) => trait))];
+      const prohibited = new Set(
+        unique.filter(({ present }) => !present).map(({ trait }) => trait),
+      );
+      const positive = unique.filter(({ trait, present }) => present && !prohibited.has(trait));
+      const choices = positive.length > 0 ? positive : [null];
+      return {
+        key,
+        values: choices.map((choice) =>
+          traitsInGroup.map((trait) => ({
+            scope: unique[0]!.scope,
+            trait,
+            present: choice?.trait === trait,
+          })),
+        ),
+      };
+    }),
+    MAX_RANKING_WORLD_CANDIDATES,
+    'ranking_world_candidate_limit',
+  );
+  return product.candidates.map((candidate) => Object.values(candidate).flat());
 }
 
 function selectionCandidates(
@@ -100,16 +121,11 @@ function selectionCandidates(
       candidates.add(selection.candidateKey);
       groups.set(selection.groupKey, candidates);
     }
-  let combinations: Readonly<Record<string, string>>[] = [{}];
-  for (const [groupKey, candidates] of groups) {
-    const nextSize = combinations.length * candidates.size;
-    if (nextSize > MAX_RANKING_WORLD_CANDIDATES)
-      throw new RangeError(`ranking_world_candidate_limit:${String(nextSize)}`);
-    combinations = combinations.flatMap((combination) =>
-      [...candidates].sort().map((candidate) => ({ ...combination, [groupKey]: candidate })),
-    );
-  }
-  return combinations;
+  return finiteSemanticProduct(
+    [...groups].map(([key, candidates]) => ({ key, values: [...candidates].sort() })),
+    MAX_RANKING_WORLD_CANDIDATES,
+    'ranking_world_candidate_limit',
+  ).candidates;
 }
 
 export function effectMatchesRankingWorld(
@@ -140,34 +156,68 @@ export function createRankingWorldCandidates(
   specialControls: readonly EffectControlViewModel[],
   plannedTargetStateTraits: ReadonlySet<string> = new Set(),
 ): RankingWorldCandidate[] {
-  const predicates = specialControls.flatMap((control) =>
-    collectTargetPredicates(control.projection.explanation.condition),
+  return createRankingWorldCandidatesForConditions(
+    servant,
+    master,
+    scenario,
+    specialControls.map(({ projection }) => projection.explanation.condition),
+    specialControls,
+    plannedTargetStateTraits,
   );
+}
+
+export function createRankingWorldCandidatesForConditions(
+  servant: ServantMaster,
+  master: MasterDataSnapshot,
+  scenario: ResolvedScenario,
+  conditions: readonly (ConditionExpression | null)[],
+  selectionControls: readonly EffectControlViewModel[] = [],
+  plannedTargetStateTraits: ReadonlySet<string> = new Set(),
+): RankingWorldCandidate[] {
+  const predicates = conditions.flatMap((condition) => collectTargetPredicates(condition));
   const referencedClasses = new Set(
-    predicates.flatMap((predicate) =>
+    predicates.flatMap(({ predicate }) =>
       predicate.kind === 'classIdentity' ? [predicate.classId] : [],
     ),
   );
   const referencedAttributes = new Set(
-    predicates.flatMap((predicate) =>
+    predicates.flatMap(({ predicate }) =>
       predicate.kind === 'attributeIdentity' ? [predicate.attribute] : [],
     ),
   );
-  const familyIds = [
+  const referencedFamilyIds = [
     ...new Set(
-      predicates.flatMap((predicate) =>
+      predicates.flatMap(({ predicate }) =>
         predicate.kind === 'familyMembership' ? [predicate.familyId] : [],
       ),
     ),
   ].sort();
+  const familyRequirements = new Map<CanonicalTargetFamilyId, Set<boolean>>();
+  for (const { predicate, present } of predicates) {
+    if (predicate.kind !== 'familyMembership') continue;
+    const values = familyRequirements.get(predicate.familyId) ?? new Set<boolean>();
+    values.add(present);
+    familyRequirements.set(predicate.familyId, values);
+  }
+  const familyProduct = finiteSemanticProduct(
+    referencedFamilyIds.map((familyId) => ({
+      key: familyId,
+      values: [...(familyRequirements.get(familyId) ?? new Set([true]))],
+    })),
+    MAX_RANKING_WORLD_CANDIDATES,
+    'ranking_world_candidate_limit',
+  );
+  const familyCandidates = familyProduct.candidates.map((candidate) =>
+    referencedFamilyIds.filter((familyId) => candidate[familyId]),
+  );
   const targetTraits = [
     ...new Map(
-      specialControls
-        .flatMap((control) => collectTargetTraits(control.projection.explanation.condition))
+      conditions
+        .flatMap((condition) => collectTargetTraits(condition))
         .filter(
           ({ scope, trait }) => scope !== 'targetState' || !plannedTargetStateTraits.has(trait),
         )
-        .map((fact) => [`${fact.scope}:${fact.trait}`, fact]),
+        .map((fact) => [`${fact.scope}:${fact.trait}:${String(fact.present)}`, fact]),
     ).values(),
   ].sort((left, right) =>
     `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
@@ -194,22 +244,29 @@ export function createRankingWorldCandidates(
       ),
     ]),
   ];
-  const selections = selectionCandidates(specialControls);
+  const selections = selectionCandidates(selectionControls);
   const traitFacts = traitFactCandidates(targetTraits);
-  const candidateCount = classes.length * attributes.length * selections.length * traitFacts.length;
+  const candidateCount =
+    classes.length *
+    attributes.length *
+    familyCandidates.length *
+    selections.length *
+    traitFacts.length;
   if (candidateCount > MAX_RANKING_WORLD_CANDIDATES)
     throw new RangeError(`ranking_world_candidate_limit:${String(candidateCount)}`);
   return classes.flatMap((classId) =>
     attributes.flatMap((attribute) =>
-      selections.flatMap((selected) =>
-        traitFacts.map((facts) => ({
-          key: JSON.stringify({ classId, attribute, familyIds, selected, facts }),
-          classId,
-          attribute,
-          familyIds,
-          selections: selected,
-          traitFacts: facts,
-        })),
+      familyCandidates.flatMap((familyIds) =>
+        selections.flatMap((selected) =>
+          traitFacts.map((facts) => ({
+            key: JSON.stringify({ classId, attribute, familyIds, selected, facts }),
+            classId,
+            attribute,
+            familyIds,
+            selections: selected,
+            traitFacts: facts,
+          })),
+        ),
       ),
     ),
   );

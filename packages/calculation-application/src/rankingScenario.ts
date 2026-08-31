@@ -11,11 +11,12 @@ import {
   type PreparedCalculationProjection,
   type PreparedCalculationScenario,
 } from './scenario';
-import { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
+import { executeRankingScenarios } from './rankingExecution';
+import { selectLegacyRankingExecutionIndexes } from './legacyRankingSelection';
 import { compileRankingPreparationProgram } from './rankingPreparationProgram';
 
 export { selectedKeysForScope } from './rankingScenarioWorlds';
-export { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
+export { executeRankingScenarios } from './rankingExecution';
 
 export interface RankingExecutionPlan {
   baseScenario: ResolvedScenario;
@@ -49,7 +50,9 @@ function prepareRankingScenario(
   projection: DamageContributionProjection,
 ): PreparedCalculationScenario {
   if (scenario !== canonical)
-    return prepareCalculationScenarioWithContributionProjection(scenario, master, projection);
+    return prepareCalculationScenarioWithContributionProjection(scenario, master, projection, {
+      preserveScenarioOvercharge: true,
+    });
   return projection.excludedOperationIds.size === 0 &&
     projection.excludedStateTraitContributions.attackerState.size === 0 &&
     projection.excludedStateTraitContributions.targetState.size === 0
@@ -142,7 +145,7 @@ export function createRankingScenarioFromPolicy(
     versions,
     plan.contributionProjections,
   );
-  const selected = selectRankingExecutionIndexes(
+  const selected = selectLegacyRankingExecutionIndexes(
     executions,
     plan.attackProfiles,
     conditions.npLevel,

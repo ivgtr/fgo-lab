@@ -1,7 +1,7 @@
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { CalculationResult } from '@fgo-lab/schema';
 import type {
-  RankingConditions,
+  RankingPolicyConditions,
   RankingDetail,
   RankingFailure,
   RankingProfileInput,
@@ -9,6 +9,22 @@ import type {
 } from './rankingContracts';
 import { isSpecialAttack, rankingEffectContributes } from './rankingContribution';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
+
+export function includedLegacyRankingServants(
+  master: MasterDataSnapshot,
+  profile: RankingProfileInput,
+  conditions: Pick<RankingPolicyConditions, 'comparisonMode' | 'npLevel'>,
+): ServantMaster[] {
+  return master.servants.filter((servant) => {
+    if (
+      planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, conditions.npLevel, 1)
+        .candidates.length === 0
+    )
+      return false;
+    if (conditions.comparisonMode === 'standard') return true;
+    return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
+  });
+}
 
 function resultFailure(servant: ServantMaster, result: CalculationResult): RankingFailure {
   if (result.status === 'inputRequired')
@@ -34,14 +50,13 @@ function resultFailure(servant: ServantMaster, result: CalculationResult): Ranki
 export function includedRankingServants(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
-  conditions: RankingConditions,
+  conditions: Pick<RankingPolicyConditions, 'comparisonMode'>,
 ): ServantMaster[] {
   return master.servants.filter((servant) => {
-    if (
-      planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, conditions.npLevel, 1)
-        .candidates.length === 0
-    )
-      return false;
+    const hasAttackProfile = servant.noblePhantasmVariantGroups.some(({ variants }) =>
+      variants.some(({ kind }) => kind === 'attack'),
+    );
+    if (!hasAttackProfile) return false;
     if (conditions.comparisonMode === 'standard') return true;
     return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
   });

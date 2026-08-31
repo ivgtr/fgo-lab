@@ -7,66 +7,44 @@ import {
   conditionIsActivationLocal,
 } from '@fgo-lab/battle-execution';
 import { conditionFactRequirements } from './conditionProvenance';
-import { DEFAULT_RANKING_CONDITIONS, type RankingProfileInput } from './rankingContracts';
-import { contributesToAttackerDamage, isSpecialAttack } from './rankingContribution';
-import { selectedKeysForScope } from './rankingScenario';
-import { compileRankingPreparationProgram } from './rankingPreparationProgram';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
+import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
+import { compileStaticRankingSemantics } from './rankingStaticSemantics';
 
 const root = resolve(import.meta.dirname, '../../..');
-const profile: RankingProfileInput = {
-  servantBuilds: {},
-  craftEssences: [],
-  supportTemplates: [],
-};
-
 describe('production ranking condition provenance', () => {
   it('ratchets selectable conditions by canonical provenance and activation ownership', async () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
     const inventory = master.servants.flatMap((servant) => {
-      const programs = compileRankingPreparationProgram(
-        servant,
-        master,
-        profile,
-        DEFAULT_RANKING_CONDITIONS,
+      const operations = new Map(
+        compileStaticRankingPreparationPrograms(servant).flatMap((program) =>
+          compileStaticRankingSemantics(
+            servant,
+            program,
+            DEFAULT_RANKING_POLICY_CONDITIONS,
+          ).operations.map((operation) => [operation.operationId, operation] as const),
+        ),
       );
-      const controls = new Map(
-        programs.flatMap(({ baseline }) => {
-          const selected = selectedKeysForScope(
-            baseline.effectControls,
-            DEFAULT_RANKING_CONDITIONS,
-            'ranking',
-            null,
-            master,
-          );
-          return baseline.effectControls.flatMap((control) => {
-            return selected.has(control.key) ? [[control.key, control] as const] : [];
-          });
-        }),
-      );
-      return [...controls.values()].flatMap((control) => {
-        const decision = control.projection.decision;
+      return [...operations.values()].flatMap((operation) => {
         if (
-          decision.state === 'none' ||
-          decision.kind !== 'effect' ||
-          decision.plan.condition !== 'userMayAssume' ||
-          control.interaction === 'none' ||
-          !conditionAllowsEffectLocalDecision(control.projection.explanation.condition) ||
-          !contributesToAttackerDamage(control.projection) ||
-          isSpecialAttack(control.projection)
+          operation.decisionKey === null ||
+          operation.decisionPlan.condition !== 'userMayAssume' ||
+          !conditionAllowsEffectLocalDecision(operation.condition) ||
+          !['attacker', 'passive', 'np'].includes(operation.source.origin) ||
+          !['personal', 'partyWide', 'enemyApplied'].includes(operation.contributionScope) ||
+          (operation.kind === 'addModifier' && operation.modifier === 'powerMod')
         )
           return [];
-        const requirements = conditionFactRequirements(control.projection.explanation.condition);
+        const requirements = conditionFactRequirements(operation.condition);
         return [
           {
             servantId: servant.id,
             name: servant.name,
-            projectionKey: control.key,
-            occurrenceId: control.projection.source.effectOccurrenceId,
-            activationLocal:
-              control.projection.explanation.condition !== null &&
-              conditionIsActivationLocal(control.projection.explanation.condition),
+            projectionKey: operation.operationId,
+            occurrenceId: operation.source.effectOccurrenceId,
+            activationLocal: conditionIsActivationLocal(operation.condition),
             kinds: [...new Set(requirements.map(({ kind }) => kind))].sort(),
             fields: requirements.flatMap(({ kind, condition }) =>
               kind === 'derivedOrExternalField' &&
@@ -94,17 +72,17 @@ describe('production ranking condition provenance', () => {
     const fieldOccurrences = [
       ...new Set(field.map(({ servantId, occurrenceId }) => `${servantId}:${occurrenceId}`)),
     ].sort();
-    expect(inventory).toHaveLength(85);
-    expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(18);
+    expect(inventory).toHaveLength(106);
+    expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(23);
     expect(byKind).toEqual({
-      intrinsic: 53,
-      derivedOrExternalField: 27,
-      externalScenarioFact: 18,
+      intrinsic: 69,
+      derivedOrExternalField: 34,
+      externalScenarioFact: 28,
       target: 5,
       procOrQuantity: 6,
     });
-    expect(field).toHaveLength(27);
-    expect(fieldOccurrences).toHaveLength(27);
+    expect(field).toHaveLength(34);
+    expect(fieldOccurrences).toHaveLength(34);
     expect(new Set(field.map(({ servantId }) => servantId)).size).toBe(24);
     expect(fieldOccurrences).toMatchInlineSnapshot(`
       [
@@ -115,10 +93,15 @@ describe('production ranking condition provenance', () => {
         "1100700:7905:0",
         "1102300:23580:0",
         "204600:8875:0",
+        "2300500:8986:0",
+        "2300500:8987:0",
         "2300500:8988:0",
         "2501300:21182:0",
+        "2800900:22424:0",
+        "2800900:22427:0",
         "2800900:22430:0",
         "2801000:22548:0",
+        "2801000:22551:0",
         "2801000:22552:0",
         "305500:7616:0",
         "402400:9158:0",
@@ -128,6 +111,8 @@ describe('production ranking condition provenance', () => {
         "404500:7616:0",
         "405900:23569:0",
         "505100:8692:0",
+        "505100:8693:0",
+        "505100:8694:0",
         "505500:21680:0",
         "506000:23542:0",
         "601300:22390:0",

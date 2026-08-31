@@ -8,17 +8,15 @@ import {
 } from '@fgo-lab/master-data';
 import type { CalculationScenario, ServantBuild } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand } from './canonicalInputs';
-import type { RankingConditions, RankingProfileInput } from './rankingContracts';
+import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
-import { createDefaultResolvedScenario } from './scenario';
 import { applyTargetContextCommand, createDefaultTargetContext } from './targetContext';
 
 export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
-
 function ownedBuild(
   servant: ServantMaster,
   profile: RankingProfileInput,
-  conditions: RankingConditions,
+  conditions: Pick<RankingPolicyConditions, 'comparisonMode'>,
 ): ServantBuild | undefined {
   const build = profile.servantBuilds[servant.id];
   if (conditions.comparisonMode === 'owned' && (!build || build.npLevel === 0))
@@ -30,12 +28,11 @@ export function createRankingBaseScenario(
   servant: ServantMaster,
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
-  conditions: RankingConditions,
+  conditions: Pick<RankingPolicyConditions, 'comparisonMode' | 'npLevel' | 'classAffinity'>,
   initialActorFormId: ActorFormId = getDefaultInitialActorForm(servant)!.id,
 ): ResolvedScenario {
   const build = ownedBuild(servant, profile, conditions);
   const owned = conditions.comparisonMode === 'owned';
-  const scenario = createDefaultResolvedScenario(master, owned ? build : undefined, servant);
   let targetContext = createDefaultTargetContext(servant.classId);
   targetContext = applyTargetContextCommand(targetContext, {
     kind: 'setClassRelation',
@@ -49,7 +46,7 @@ export function createRankingBaseScenario(
     relation: STANDARD_RANKING_SCENARIO_POLICY.attributeRelation,
   });
   return {
-    ...scenario,
+    mode: 'resolved',
     attacker: {
       servantId: servant.id,
       initialActorFormId,
@@ -68,6 +65,9 @@ export function createRankingBaseScenario(
     support: null,
     worldFactAssertions: [],
     canonicalInputValues: {},
+    effectDecisions: [],
+    activationFacts: [],
+    explicitOverrides: {},
   };
 }
 

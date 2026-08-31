@@ -1,7 +1,12 @@
 import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
-import { noblePhantasmVariantKey, type MasterDataSnapshot } from '@fgo-lab/master-data';
+import {
+  actorFormKey,
+  noblePhantasmVariantKey,
+  type ActorFormId,
+  type MasterDataSnapshot,
+} from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
-import { attackProfileKey, type AttackProfile } from './attackProfile';
+import type { AttackProfile } from './attackProfile';
 import { calculateDamageResolution } from './damageResolution';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import {
@@ -12,12 +17,25 @@ import {
   type PreparedCalculationScenario,
 } from './scenario';
 import type { ResolvedScenario } from './rankingPolicy';
+import { selectRankingCandidateIndexes } from './rankingCandidateSelection';
+export { selectRankingCandidateIndexes } from './rankingCandidateSelection';
 
 function selectedAverage(
   execution: CalculationExecution,
+  attackProfile: AttackProfile,
+  expectedTerminalFormId: ActorFormId | undefined,
   npLevel: 1 | 2 | 3 | 4 | 5,
 ): number | null {
   if (execution.result.status !== 'calculated' || execution.scenario.mode !== 'resolved')
+    return null;
+  if (
+    execution.noblePhantasmVariant?.kind !== 'attack' ||
+    noblePhantasmVariantKey(execution.noblePhantasmVariant.ref) !==
+      noblePhantasmVariantKey(attackProfile.noblePhantasmVariant) ||
+    execution.terminalActorFormId === null ||
+    (expectedTerminalFormId !== undefined &&
+      actorFormKey(expectedTerminalFormId) !== actorFormKey(execution.terminalActorFormId))
+  )
     return null;
   return execution.result.rows[npLevel - 1]?.average ?? null;
 }
@@ -38,43 +56,6 @@ const activationFactCount = (execution: CalculationExecution): number =>
 
 const transitionCount = (execution: CalculationExecution): number =>
   execution.appliedPreparationActions.filter(({ transition }) => transition !== null).length;
-
-export interface RankingSelectionCandidate {
-  index: number;
-  attackProfile: AttackProfile;
-  average: number | null;
-  externalFactCount: number;
-  activationFactCount: number;
-  transitionCount: number;
-  noblePhantasmVariantKey: string;
-}
-
-export function selectRankingCandidateIndexes(
-  candidates: readonly RankingSelectionCandidate[],
-): ReadonlyMap<string, number> {
-  const selected = new Map<string, number>();
-  const profileKeys = new Set(
-    candidates.map(({ attackProfile }) => attackProfileKey(attackProfile)),
-  );
-  for (const profileKey of profileKeys) {
-    const winner = candidates
-      .filter(
-        (candidate): candidate is RankingSelectionCandidate & { average: number } =>
-          attackProfileKey(candidate.attackProfile) === profileKey && candidate.average !== null,
-      )
-      .sort(
-        (left, right) =>
-          right.average - left.average ||
-          left.externalFactCount - right.externalFactCount ||
-          left.activationFactCount - right.activationFactCount ||
-          left.transitionCount - right.transitionCount ||
-          left.noblePhantasmVariantKey.localeCompare(right.noblePhantasmVariantKey),
-      )[0];
-    if (winner) selected.set(profileKey, winner.index);
-  }
-  if (selected.size === 0) throw new TypeError('ranking_candidate_execution_missing');
-  return selected;
-}
 
 export function executeRankingScenarios(
   scenarios: readonly (ResolvedScenario | PreparedCalculationScenario)[],
@@ -115,6 +96,11 @@ export function selectRankingExecutionIndexes(
   executions: readonly CalculationExecution[],
   attackProfiles: readonly AttackProfile[],
   npLevel: 1 | 2 | 3 | 4 | 5,
+  evidence?: {
+    candidateKeys: readonly string[];
+    baselineInputDeviations: readonly number[];
+    expectedTerminalFormIds?: readonly ActorFormId[];
+  },
 ): ReadonlyMap<string, number> {
   if (executions.length !== attackProfiles.length)
     throw new TypeError('ranking_attack_profile_alignment_mismatch');
@@ -122,7 +108,12 @@ export function selectRankingExecutionIndexes(
     executions.map((execution, index) => ({
       attackProfile: attackProfiles[index]!,
       index,
-      average: selectedAverage(execution, npLevel),
+      average: selectedAverage(
+        execution,
+        attackProfiles[index]!,
+        evidence?.expectedTerminalFormIds?.[index],
+        npLevel,
+      ),
       externalFactCount: externalFactCount(execution),
       activationFactCount: activationFactCount(execution),
       transitionCount: transitionCount(execution),
@@ -130,6 +121,9 @@ export function selectRankingExecutionIndexes(
         execution.noblePhantasmVariant?.kind === 'attack'
           ? noblePhantasmVariantKey(execution.noblePhantasmVariant.ref)
           : '',
+      baselineInputDeviation: evidence?.baselineInputDeviations[index] ?? 0,
+      preparationActionCount: execution.appliedPreparationActions.length,
+      candidateKey: evidence?.candidateKeys[index] ?? String(index).padStart(8, '0'),
     })),
   );
 }

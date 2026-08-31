@@ -7,8 +7,10 @@ import {
   attackProfileForTerminalState,
   attackProfileKey,
   createActorFormProfiles,
+  createStaticAttackProfiles,
 } from './attackProfile';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
+import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 
 const master = masterSnapshotSchema.parse(fixture);
 
@@ -51,6 +53,16 @@ function duplicatedFormFixture(): {
 }
 
 describe('ActorFormProfile canonical equivalence', () => {
+  it('builds policy-independent attack profiles and static preparation programs', () => {
+    const servant = master.servants[0]!;
+    const profiles = createStaticAttackProfiles(servant);
+    const programs = compileStaticRankingPreparationPrograms(servant);
+    expect(profiles).toHaveLength(1);
+    expect(programs.map(({ attackProfile }) => attackProfileKey(attackProfile))).toEqual([
+      attackProfileKey(profiles[0]!),
+    ]);
+    expect(programs[0]?.commands).toEqual([{ kind: 'executeAttackNoblePhantasm' }]);
+  });
   it('merges presentation-only form duplicates', () => {
     const { servant, original, duplicate } = duplicatedFormFixture();
     const profiles = createActorFormProfiles(servant, [original, duplicate]);

@@ -3,12 +3,15 @@ import type { EffectControlViewModel } from './effectControls';
 import { fieldTraitsRequiredByCondition } from './conditionProvenance';
 import { contributesToAttackerDamage } from './rankingContribution';
 import type { ResolvedScenario } from './rankingPolicy';
+import { finiteSemanticProduct } from './finiteSemanticProduct';
+import type { ConditionExpression } from '@fgo-lab/battle-execution';
 
 export const MAX_RANKING_FIELD_CANDIDATES = 4_096;
 
 export interface RankingFieldCandidate {
   key: string;
   traits: readonly string[];
+  facts: readonly { trait: string; present: boolean }[];
 }
 
 function hasExclusiveConflict(traits: readonly string[]): boolean {
@@ -26,16 +29,21 @@ export function createRankingFieldFactCandidates(
   relevantTraits: readonly string[],
   active: boolean,
 ): readonly RankingFieldCandidate[] {
-  if (!active) return [{ key: 'field:none', traits: [] }];
-  if (relevantTraits.length === 0) return [{ key: 'field:none', traits: [] }];
-  if (2 ** relevantTraits.length - 1 > MAX_RANKING_FIELD_CANDIDATES)
-    throw new RangeError(`ranking_field_candidate_limit:${String(relevantTraits.length)}`);
-  let candidates: string[][] = [[]];
-  for (const trait of relevantTraits)
-    candidates = candidates.flatMap((candidate) => [candidate, [...candidate, trait]]);
-  return candidates
-    .filter((candidate) => candidate.length > 0 && !hasExclusiveConflict(candidate))
-    .map((traits) => ({ key: `field:${traits.join(',')}`, traits }));
+  if (!active) return [{ key: 'field:none', traits: [], facts: [] }];
+  if (relevantTraits.length === 0) return [{ key: 'field:none', traits: [], facts: [] }];
+  const product = finiteSemanticProduct(
+    relevantTraits.map((trait) => ({ key: trait, values: [false, true] })),
+    MAX_RANKING_FIELD_CANDIDATES + 1,
+    'ranking_field_candidate_limit',
+  );
+  return product.candidates
+    .map((candidate) => ({
+      traits: relevantTraits.filter((trait) => candidate[trait]),
+      facts: relevantTraits.map((trait) => ({ trait, present: candidate[trait] ?? false })),
+    }))
+    .filter(({ traits }) => traits.length > 0)
+    .filter(({ traits }) => !hasExclusiveConflict(traits))
+    .map(({ traits, facts }) => ({ key: `field:${traits.join(',')}`, traits, facts }));
 }
 
 export function createRankingFieldCandidates(
@@ -54,9 +62,22 @@ export function createRankingFieldCandidates(
   return createRankingFieldFactCandidates(relevantTraits, active);
 }
 
+export function createRankingFieldCandidatesForConditions(
+  conditions: readonly (ConditionExpression | null)[],
+  active: boolean,
+  plannedFieldTraits: ReadonlySet<string> = new Set(),
+): readonly RankingFieldCandidate[] {
+  const relevantTraits = [...new Set(conditions.flatMap(fieldTraitsRequiredByCondition))].filter(
+    (trait) => !plannedFieldTraits.has(trait),
+  );
+  relevantTraits.sort();
+  return createRankingFieldFactCandidates(relevantTraits, active);
+}
+
 export function materializeRankingField(
   scenario: ResolvedScenario,
   candidate: RankingFieldCandidate,
+  assertAbsentFacts: boolean = false,
 ): ResolvedScenario {
   if (
     candidate.traits.length === 0 &&
@@ -71,9 +92,12 @@ export function materializeRankingField(
       ...scenario.worldFactAssertions.filter(
         ({ decisionKey }) => !decisionKey.startsWith('ranking:field:'),
       ),
-      ...candidate.traits.map((trait) => ({
+      ...(assertAbsentFacts
+        ? candidate.facts
+        : candidate.traits.map((trait) => ({ trait, present: true }))
+      ).map(({ trait, present }) => ({
         decisionKey: `ranking:field:${trait}`,
-        fact: { kind: 'trait' as const, scope: 'field' as const, trait, present: true },
+        fact: { kind: 'trait' as const, scope: 'field' as const, trait, present },
       })),
     ],
   };

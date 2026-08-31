@@ -118,8 +118,17 @@ export function planPreNoblePhantasmCandidates(
   npLevel: PreparationExecutionContext['npLevel'],
   overcharge: PreparationExecutionContext['overcharge'],
   initialGauge: number = resourceSemantics.noblePhantasmUse.requirement,
+  canonicalInputValues: Readonly<Record<string, number>> = {},
 ): PlannedPreNoblePhantasmCandidates {
-  const cacheKey = JSON.stringify({ resourceSemantics, npLevel, overcharge, initialGauge });
+  const cacheKey = JSON.stringify({
+    resourceSemantics,
+    npLevel,
+    overcharge,
+    initialGauge,
+    canonicalInputValues: Object.entries(canonicalInputValues).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ),
+  });
   let servantCache = productionPlanCache.get(servant);
   if (!servantCache) {
     servantCache = new Map();
@@ -132,6 +141,7 @@ export function planPreNoblePhantasmCandidates(
     npLevel,
     initialGauge,
     overcharge,
+    canonicalInputValues,
   };
   const pending: Array<{
     state: PreNoblePhantasmState;
