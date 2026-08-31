@@ -15,6 +15,7 @@
 - Keep one canonical flow note per semantic family. After its initial inventory, update only changed or newly discovered producers, consumers, writers, and counterexamples; plans and handoffs reference the note and current delta instead of copying it.
 - Classify each scoped path as `Verified`, `N/A: reason`, `Deferred: TSK-ID`, or `Blocking: reason`. Completion requires zero `Blocking` items. A production-negative case can become `Verified` through a schema-legal focused fixture.
 - Treat a structural review finding as evidence that the flow inventory or ownership model may be incomplete. Update the plan and its counterexamples before adding another patch. Review iteration is acceptable; minimizing or hiding the unresolved scope before resubmission is not.
+- For a structural review finding, record the mechanism, implementation mismatch, missed detection, and recurrence scope/minimum guardrail once. Separate confirmed facts from inference and cite the supporting code or test; keep the detailed template in `docs/guides/prompt-engineering-guidelines.md`.
 
 ## Converge on one canonical model
 

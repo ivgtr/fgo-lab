@@ -135,6 +135,54 @@ describe('master validation', () => {
       }).success,
     ).toBe(false);
   });
+  it('rejects old-only and mixed contradictory operation artifacts', () => {
+    const canonicalOperation = {
+      kind: 'damageModifier' as const,
+      modifier: 'attackBuff' as const,
+      sign: 1 as const,
+      card: null,
+      route: {
+        target: 'sourceSelf' as const,
+        contributionScope: 'personal' as const,
+        eligibility: {
+          kind: 'requiredRecipient' as const,
+          recipient: 'attacker' as const,
+          onMissing: 'unsupported' as const,
+          onMismatch: 'unsupported' as const,
+        },
+      },
+      semanticSupport: 'supported' as const,
+      values: [[100], [], [], [], []],
+      valueExpressions: [[null], [], [], [], []],
+    };
+    const legacyRouteFields = {
+      targetPolicy: 'enemy',
+      contributionScope: 'enemyApplied',
+      expectedRecipient: 'target',
+      targetMismatch: 'ignore',
+    };
+    const operationWithoutCanonicalRoute: Record<string, unknown> = { ...canonicalOperation };
+    delete operationWithoutCanonicalRoute.route;
+
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        execution: [{ ...operationWithoutCanonicalRoute, ...legacyRouteFields }],
+      }).success,
+    ).toBe(false);
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        execution: [canonicalOperation],
+      }).success,
+    ).toBe(true);
+    expect(
+      masterEffectSchema.safeParse({
+        ...nonDamageEffect,
+        execution: [{ ...canonicalOperation, ...legacyRouteFields }],
+      }).success,
+    ).toBe(false);
+  });
   it('rejects conflicting semantics for one canonical NP variant ID', () => {
     const source = fixture.servants[0]!;
     const sourceForm = source.actorFormGraph.forms[0]!;

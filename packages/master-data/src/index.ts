@@ -346,75 +346,91 @@ const valuedExecutionFields = {
   semanticSupport: z.enum(['supported', 'unresolved']),
 };
 const effectExecutionOperationSchema = z.union([
-  z.object({
-    kind: z.literal('damageModifier'),
-    modifier: z.enum([
-      'attackBuff',
-      'cardBuff',
-      'npDamageBuff',
-      'powerMod',
-      'flatDamage',
-      'defenseBuff',
-      'cardResistance',
-      'npResistance',
-    ]),
-    sign: z.union([z.literal(1), z.literal(-1)]),
-    card: z.enum(['buster', 'arts', 'quick']).nullable(),
-    ...valuedExecutionFields,
-  }),
-  z.object({
-    kind: z.literal('modifierRateChange'),
-    modifier: z.literal('npDamageBuff'),
-    ...valuedExecutionFields,
-  }),
-  z.object({
-    kind: z.enum(['ignoreDefense', 'ignoreDamageCut']),
-    route: canonicalEffectRouteSchema,
-    semanticSupport: z.enum(['supported', 'unresolved']),
-  }),
-  z.object({
-    kind: z.literal('selectNoblePhantasmVariant'),
-    route: canonicalEffectRouteSchema,
-    variant: z.object({
-      actorFormId: z.object({
+  z
+    .object({
+      kind: z.literal('damageModifier'),
+      modifier: z.enum([
+        'attackBuff',
+        'cardBuff',
+        'npDamageBuff',
+        'powerMod',
+        'flatDamage',
+        'defenseBuff',
+        'cardResistance',
+        'npResistance',
+      ]),
+      sign: z.union([z.literal(1), z.literal(-1)]),
+      card: z.enum(['buster', 'arts', 'quick']).nullable(),
+      ...valuedExecutionFields,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('modifierRateChange'),
+      modifier: z.literal('npDamageBuff'),
+      ...valuedExecutionFields,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.enum(['ignoreDefense', 'ignoreDamageCut']),
+      route: canonicalEffectRouteSchema,
+      semanticSupport: z.enum(['supported', 'unresolved']),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('selectNoblePhantasmVariant'),
+      route: canonicalEffectRouteSchema,
+      variant: z.object({
+        actorFormId: z.object({
+          actorId: z.string().min(1),
+          limitCount: z.number().int().nonnegative(),
+        }),
+        noblePhantasmId: z.string().min(1),
+      }),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('transformActorForm'),
+      route: canonicalEffectRouteSchema,
+      targetFormId: z.object({
         actorId: z.string().min(1),
         limitCount: z.number().int().nonnegative(),
       }),
-      noblePhantasmId: z.string().min(1),
-    }),
-  }),
-  z.object({
-    kind: z.literal('transformActorForm'),
-    route: canonicalEffectRouteSchema,
-    targetFormId: z.object({
-      actorId: z.string().min(1),
-      limitCount: z.number().int().nonnegative(),
-    }),
-  }),
-  z.object({
-    kind: z.literal('contextMutation'),
-    mutation: z.enum(['addTrait', 'removeTrait', 'suppressInitialTrait']),
-    scope: z.enum(['field', 'recipientState']),
-    route: canonicalEffectRouteSchema,
-    trait: z.string().min(1),
-    damageRelevant: z.boolean(),
-  }),
-  z.object({
-    kind: z.literal('contextMutation'),
-    mutation: z.literal('addQuantity'),
-    quantity: z.literal('battlePointPhase'),
-    subjectId: z.string().min(1),
-    amount: z.number().int(),
-    applicationTiming: z.enum(['duringExecution', 'representedByCurrentInput']),
-    damageRelevant: z.boolean(),
-  }),
-  z.object({ kind: z.literal('nonDamage') }),
-  z.object({
-    kind: z.literal('unresolved'),
-    route: canonicalEffectRouteSchema,
-    reason: z.enum(['contextReference', 'operationSemantics', 'unresolvedTarget']),
-    damageRelevant: z.boolean(),
-  }),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('contextMutation'),
+      mutation: z.enum(['addTrait', 'removeTrait', 'suppressInitialTrait']),
+      scope: z.enum(['field', 'recipientState']),
+      route: canonicalEffectRouteSchema,
+      trait: z.string().min(1),
+      damageRelevant: z.boolean(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('contextMutation'),
+      mutation: z.literal('addQuantity'),
+      quantity: z.literal('battlePointPhase'),
+      subjectId: z.string().min(1),
+      amount: z.number().int(),
+      applicationTiming: z.enum(['duringExecution', 'representedByCurrentInput']),
+      damageRelevant: z.boolean(),
+    })
+    .strict(),
+  z.object({ kind: z.literal('nonDamage') }).strict(),
+  z
+    .object({
+      kind: z.literal('unresolved'),
+      route: canonicalEffectRouteSchema,
+      reason: z.enum(['contextReference', 'operationSemantics', 'unresolvedTarget']),
+      damageRelevant: z.boolean(),
+    })
+    .strict(),
 ]);
 export type EffectExecutionOperation = z.infer<typeof effectExecutionOperationSchema>;
 

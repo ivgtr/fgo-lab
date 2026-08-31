@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab 開発プロンプト運用ガイド"
-document_version: "1.1.1"
+document_version: "1.1.2"
 status: "Guideline"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -284,6 +284,31 @@ Done when:
 
 実装、fallback、個別case分岐、commitは行わないでください。
 ```
+
+### 5.3 構造的findingのcause analysis
+
+構造的findingでは、修正案に加えて次の4分類を一度だけ記録する。確認済み事実と推論を
+分け、推論には根拠となるcodeまたはtestを示す。根拠のない実装者の意図や心理を原因と
+断定しない。同じ原因を持つ複数findingでは分析を複製せず、共通原因としてまとめる。
+
+```text
+1. 発生機構 — 確認済み
+   問題を成立させる型、schema、分岐、execution pathを、code／reproductionとともに示す。
+
+2. 実装時のズレ — 推論
+   計画、ownership、invariantと実装の差を示し、推論の根拠となるcode／testを添える。
+
+3. 検出を逃れた理由 — 確認済み
+   fixture、state × path matrix、inventory、review scopeのうち欠けた組合せを示す。
+
+4. 再発範囲 — 推論
+   同じ発生機構が成立し得る隣接経路と、追加する最小のguardrailを示す。
+```
+
+breaking schema cutoverでは、少なくとも境界ごとに`old-only`、`canonical-only`、
+`mixed contradictory`を交差fixtureとして検討する。source scanはruntime readerの残存を
+検出できても、parserによるunknown-key除去を検出できないため、schema fixtureの代替には
+ならない。
 
 ## 6. New session用handoff prompt
 

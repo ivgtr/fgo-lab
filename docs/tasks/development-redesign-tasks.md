@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.8"
+document_version: "1.5.9"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-08-31"
@@ -430,6 +430,8 @@ Handoff:
 - Final performance／verification: production 25 files／119 testsの3 runは68.92／69.17／68.23秒、中央値68.92秒で直前72.00秒比-4.28%。unit 56 files／310 tests、typecheck、lint、docs gate、production、published master validation、build、E2Eを最終`pnpm quality`で検証する。
 - Completion commit: 本TSK-04 completion commit。TSK-05は本完了まで`blocked`を維持し、完了後に`ready`へ遷移した。resource-aware preparation plan integrationは`RK-EXEC-001`としてTSK-05が所有し、TSK-04へ先取りしていない。
 - Next command: TSK-05開始baselineをclean HEADで固定し、condition／choice／resource／state mutationを一つのordered transactional preparation planへ統合するflow deltaを作る。
+- Legacy nested-schema review baseline: `e176360c7550d3c8f09b4d3ac99a8854198cc84d`、clean worktree。完全なcanonical `damageModifier` operationへ矛盾する旧route fieldを加えても、非strictなnested operation schemaが未知keyを除去してparse成功するため、`docs/evidence/legacy-runtime-removal-tsk-04.md`を`Blocking: 1`へ再オープンした。TSK-05は修正完了まで`blocked`へ戻す。
+- Legacy nested-schema review resolution: `effectExecutionOperationSchema`の全9 union memberをstrict化し、old-only reject／canonical-only accept／mixed contradictory rejectの交差fixtureを追加した。focused 2 files／24 tests、最終`pnpm quality`（unit 56 files／311 tests、production 25 files／119 tests、master validation、build、E2E 64 passed／32 skipped）が成功し、production inventory、damage、calculator／ranking parity、runtime counterのratchetを維持した。legacy noteは`Blocking: 0`、TSK-04は`done`、TSK-05は`ready`へ復帰した。
 
 ### TSK-05: Transactional preparation execution
 

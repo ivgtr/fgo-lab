@@ -35,14 +35,14 @@ updated_at: "2026-08-31"
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.7.0 | ranking policy、canonical scenario、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.2.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.8 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.9 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.4.7 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
 | [canonical data flow](guides/data-flow.md) | guide／Guideline v1.0.0 | master、calculation／ranking、user stateの依存方向 |
 | [document governance contract](guides/document-governance.md) | guide／Guideline v1.0.0 | Contract ID、Task closure、要件改訂、docs lint |
-| [prompt engineering guidelines](guides/prompt-engineering-guidelines.md) | guide／Guideline v1.1.1 | bounded execution flow、delta反証計画、開発promptとhandoffの運用。product semanticsは所有しない |
+| [prompt engineering guidelines](guides/prompt-engineering-guidelines.md) | guide／Guideline v1.1.2 | bounded execution flow、delta反証計画、開発promptとhandoffの運用。product semanticsは所有しない |
 | [data source licenses](licenses/data-sources.md) | license registry／Active | data source、license、attribution |
 
 `Proposed`から`Active`への変更は、要件本文の承認とTasksのapproval gate更新を同じ変更で記録する。ADRの判断を置換する場合は既存本文を現行化せず、新ADRと`superseded_by`を追加する。
