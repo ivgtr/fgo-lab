@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from './observedTest';
 import { completeSetup, openTestHome } from './setup';
 
 async function openCalculator(page: Page) {

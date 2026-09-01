@@ -22,18 +22,12 @@ jobs:
       - name: Install Japanese fonts
         run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk fonts-noto-color-emoji
       - run: pnpm quality
-      - name: Upload Vitest results
+      - name: Upload quality results
         uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ always() }}
         with:
-          name: vitest-results
+          name: quality-results
           path: .test-results/
           include-hidden-files: true
-          if-no-files-found: ignore
-          retention-days: 14
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
+          if-no-files-found: error
           retention-days: 14

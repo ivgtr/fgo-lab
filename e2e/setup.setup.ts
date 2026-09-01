@@ -1,4 +1,4 @@
-import { expect, test as setup } from '@playwright/test';
+import { expect, test as setup } from './observedTest';
 import { completeSetup } from './setup';
 
 setup('[E2E-SETUP-001] verify canonical browser setup @journey', async ({ page }) => {

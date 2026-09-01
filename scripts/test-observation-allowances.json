@@ -1,0 +1,42 @@
+[
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
+    "kind": "browser.console.error",
+    "message": "Failed to load resource: net::ERR_FAILED",
+    "reason": "The VRT intentionally verifies image fallback when external Atlas images are unavailable.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
+    "kind": "browser.console.error",
+    "message": "Failed to load resource: net::ERR_FAILED",
+    "reason": "The VRT intentionally verifies layout while external Atlas images are unavailable.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
+    "kind": "browser.console.error",
+    "message": "Failed to load resource: net::ERR_FAILED",
+    "reason": "The mobile VRT intentionally verifies image fallback when external Atlas images are unavailable.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
+    "kind": "browser.console.error",
+    "message": "Failed to load resource: net::ERR_FAILED",
+    "reason": "The selected-state VRT intentionally verifies image fallback when external Atlas images are unavailable.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.console.error",
+    "message": "Failed to load resource: net::ERR_FAILED",
+    "reason": "This journey intentionally exercises picker fallback and download with unavailable external Atlas images.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  }
+]

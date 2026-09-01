@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-runner-lib.mjs';
 import { PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
+import {
+  classifyQualityOutcome,
+  verifyChildManifest,
+  writeManifestAtomically,
+} from './quality-runner-lib.mjs';
+import { sha256File, validateAllowances } from './test-observation-lib.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -41,6 +47,7 @@ function report(success, failed = false) {
 
 function fixtureScript({
   reportValue,
+  observationValue = { schemaVersion: 1, observations: [] },
   exitCode = 0,
   signal,
   delayMs = 0,
@@ -53,6 +60,7 @@ function fixtureScript({
     if (${JSON.stringify(stderr)}) process.stderr.write(${JSON.stringify(stderr)});
     setTimeout(() => {
       ${reportValue === undefined ? '' : `fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(reportValue))});`}
+      ${observationValue === undefined ? '' : `if (process.env.FGO_TEST_OBSERVATION_PATH) fs.writeFileSync(process.env.FGO_TEST_OBSERVATION_PATH, ${JSON.stringify(JSON.stringify(observationValue))});`}
       ${signal ? `process.kill(process.pid, ${JSON.stringify(signal)});` : `process.exit(${exitCode});`}
     }, ${delayMs});
   `;
@@ -88,6 +96,7 @@ function runtimeCounterScript(artifacts) {
     for (const { name, ...artifact } of artifacts)
       fs.writeFileSync(path.join(process.env.FGO_TEST_ARTIFACT_DIR, name), JSON.stringify(artifact));
     fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+    fs.writeFileSync(process.env.FGO_TEST_OBSERVATION_PATH, JSON.stringify({ schemaVersion: 1, observations: [] }));
   `;
 }
 
@@ -96,7 +105,7 @@ test('success writes a compact manifest and preserves captured streams', async (
     'success',
     fixtureScript({
       reportValue: report(true),
-      stdout: 'fixture warning\n',
+      stdout: 'fixture output\n',
       stderr: 'captured diagnostic detail\n',
     }),
   );
@@ -110,10 +119,283 @@ test('success writes a compact manifest and preserves captured streams', async (
   );
   assert.equal(
     readFileSync(resolve(result.runDirectory, 'stdout.log'), 'utf8'),
-    'fixture warning\n',
+    'fixture output\n',
   );
+  assert.equal(result.manifest.counts.warnings, 0);
+  assert.match(result.summary, /Warnings: 0/);
+});
+
+test('an unexpected structured warning is a contract failure', async () => {
+  const result = await runFixture(
+    'warning',
+    fixtureScript({
+      reportValue: report(true),
+      observationValue: {
+        schemaVersion: 1,
+        observations: [
+          { runner: 'vitest', testId: 'fixture > warning', kind: 'warning', message: 'unsafe' },
+        ],
+      },
+    }),
+  );
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'contract_failure');
   assert.equal(result.manifest.counts.warnings, 1);
-  assert.match(result.summary, /Warnings: 1/);
+  assert.match(result.summary, /fixture > warning: warning: unsafe/);
+});
+
+test('a real Node deprecation is captured structurally and cannot pass', async () => {
+  const result = await runFixture(
+    'node-warning',
+    `
+      const fs = require('node:fs');
+      process.emitWarning('legacy API', { type: 'DeprecationWarning', code: 'DEP_FIXTURE' });
+      setTimeout(() => {
+        fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+        fs.writeFileSync(process.env.FGO_TEST_OBSERVATION_PATH, JSON.stringify({ schemaVersion: 1, observations: [] }));
+      }, 10);
+    `,
+  );
+  assert.equal(result.manifest.outcome, 'contract_failure');
+  assert.equal(result.manifest.counts.warnings, 1);
+  assert.match(result.manifest.observations.unexpected[0].message, /legacy API/);
+});
+
+test('a console allowance requires one exact identity, message, reason, and future expiry', async () => {
+  const artifactRoot = mkdtempSync(resolve(tmpdir(), 'fgo-lab-allowance-'));
+  const allowancePath = resolve(artifactRoot, 'allowances.json');
+  const observation = {
+    runner: 'vitest',
+    testId: 'fixture > allowed console',
+    kind: 'console.log',
+    message: 'exact message\n',
+  };
+  writeFileSync(
+    allowancePath,
+    JSON.stringify([
+      { ...observation, reason: 'fixture contract', expiresAt: '2099-01-01T00:00:00.000Z' },
+    ]),
+  );
+  const result = await runFixture(
+    'allowed-console',
+    fixtureScript({
+      reportValue: report(true),
+      observationValue: { schemaVersion: 1, observations: [observation] },
+    }),
+    2_000,
+    { allowancePath },
+  );
+  assert.equal(result.manifest.outcome, 'success');
+  assert.equal(result.manifest.counts.allowedObservations, 1);
+  assert.equal(result.manifest.counts.unexpectedObservations, 0);
+  assert.deepEqual(
+    validateAllowances([
+      {
+        ...observation,
+        reason: 'fixture contract',
+        expiresAt: '2020-01-01T00:00:00.000Z',
+        prefix: 'exact',
+      },
+    ]),
+    ['allowances[0]:broad_message_match', 'allowances[0]:expired'],
+  );
+});
+
+test('skip and todo are contract failures even when Vitest reports success', async () => {
+  const skipped = report(true);
+  skipped.numTotalTests = 3;
+  skipped.numPendingTests = 1;
+  skipped.numTodoTests = 1;
+  const result = await runFixture('skip-todo', fixtureScript({ reportValue: skipped }));
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'contract_failure');
+  assert.equal(result.manifest.counts.tests.skipped, 1);
+  assert.equal(result.manifest.counts.tests.todo, 1);
+});
+
+test('a declared missing artifact overrides a passing child', async () => {
+  const result = await runFixture(
+    'missing-artifact',
+    fixtureScript({ reportValue: report(true) }),
+    2_000,
+    { additionalArtifacts: [{ path: 'required.json', format: 'json', allowEmpty: false }] },
+  );
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'artifact_failure');
+  assert.deepEqual(result.manifest.artifactVerification.errors, ['required.json:missing']);
+});
+
+test('the quality parent rejects missing and changed child artifacts', () => {
+  const runDirectory = mkdtempSync(resolve(tmpdir(), 'fgo-lab-parent-'));
+  const childDirectory = resolve(runDirectory, 'unit');
+  mkdirSync(childDirectory);
+  const artifactPath = resolve(childDirectory, 'vitest.json');
+  writeFileSync(artifactPath, '{}\n');
+  writeFileSync(
+    resolve(childDirectory, 'manifest.json'),
+    JSON.stringify({
+      command: { label: 'test:unit' },
+      versions: { node: process.version },
+      repository: { commit: 'fixture', dirty: false },
+      durationMs: 1,
+      outcome: 'success',
+      counts: { warnings: 0 },
+      artifacts: [
+        {
+          path: 'vitest.json',
+          bytes: 3,
+          sha256: sha256File(artifactPath),
+        },
+      ],
+    }),
+  );
+  assert.deepEqual(verifyChildManifest(runDirectory, 'unit').verificationErrors, []);
+  writeFileSync(artifactPath, '{"changed":true}\n');
+  assert.deepEqual(verifyChildManifest(runDirectory, 'unit').verificationErrors, [
+    'vitest.json:bytes',
+  ]);
+  assert.deepEqual(verifyChildManifest(runDirectory, 'production').verificationErrors, ['missing']);
+});
+
+test('the quality parent preserves child outcomes and gives artifact failure precedence', () => {
+  assert.equal(
+    classifyQualityOutcome({ signal: 'SIGTERM', failedStep: null, children: {} }),
+    'signal',
+  );
+  assert.equal(classifyQualityOutcome({ signal: null, failedStep: null, children: {} }), 'success');
+  assert.equal(
+    classifyQualityOutcome({
+      signal: null,
+      failedStep: { id: 'unit' },
+      children: { unit: { outcome: 'test_failure', verificationErrors: [] } },
+    }),
+    'test_failure',
+  );
+  assert.equal(
+    classifyQualityOutcome({
+      signal: null,
+      failedStep: { id: 'playwright' },
+      children: {
+        playwright: { outcome: 'success', verificationErrors: ['html/index.html:missing'] },
+      },
+    }),
+    'artifact_failure',
+  );
+});
+
+test('a parent manifest write failure throws instead of returning success', () => {
+  const missingDirectory = resolve(mkdtempSync(resolve(tmpdir(), 'fgo-lab-manifest-')), 'missing');
+  assert.throws(
+    () =>
+      writeManifestAtomically(resolve(missingDirectory, 'manifest.json'), { outcome: 'success' }),
+    /ENOENT/,
+  );
+});
+
+function playwrightReport(overrides = {}) {
+  return {
+    schemaVersion: 1,
+    status: 'passed',
+    startedAt: '2026-09-01T00:00:00.000Z',
+    durationMs: 10,
+    counts: { total: 1, passed: 1, failed: 0, skipped: 0, retries: 0, flaky: 0 },
+    projects: {
+      chromium: { total: 1, passed: 1, failed: 0, skipped: 0, retries: 0, flaky: 0 },
+    },
+    tests: [],
+    observations: [],
+    ...overrides,
+  };
+}
+
+async function runPlaywrightFixture(name, script, timeoutMs = 2_000, options = {}) {
+  return runFixture(name, script, timeoutMs, {
+    resultKind: 'playwright',
+    reportName: 'playwright.json',
+    observationName: null,
+    ...options,
+  });
+}
+
+test('Playwright success records project counts without skip or retry', async () => {
+  const result = await runPlaywrightFixture(
+    'playwright-success',
+    fixtureScript({ reportValue: playwrightReport() }),
+  );
+  assert.equal(result.manifest.outcome, 'success');
+  assert.equal(result.manifest.counts.files.passed, 1);
+  assert.equal(result.manifest.counts.tests.retries, 0);
+});
+
+test('Playwright assertion, timeout, signal, and reporter failures stay distinct and non-zero', async () => {
+  const assertion = await runPlaywrightFixture(
+    'playwright-assertion',
+    fixtureScript({
+      reportValue: playwrightReport({
+        status: 'failed',
+        counts: { total: 1, passed: 0, failed: 1, skipped: 0, retries: 0, flaky: 0 },
+      }),
+      exitCode: 7,
+    }),
+  );
+  const timeout = await runPlaywrightFixture(
+    'playwright-timeout',
+    fixtureScript({ delayMs: 5_000 }),
+    25,
+  );
+  const signal = await runPlaywrightFixture(
+    'playwright-signal',
+    fixtureScript({ signal: 'SIGTERM' }),
+  );
+  const reporter = await runPlaywrightFixture('playwright-reporter', fixtureScript({}));
+  assert.deepEqual(
+    [
+      assertion.manifest.outcome,
+      timeout.manifest.outcome,
+      signal.manifest.outcome,
+      reporter.manifest.outcome,
+    ],
+    ['test_failure', 'timeout', 'signal', 'reporter_failure'],
+  );
+  assert.deepEqual(
+    [assertion.exitCode, timeout.exitCode, signal.exitCode, reporter.exitCode],
+    [7, 1, 1, 1],
+  );
+});
+
+test('Playwright warning, browser console, skip, retry, and artifact loss fail the contract', async () => {
+  const observed = await runPlaywrightFixture(
+    'playwright-observed',
+    fixtureScript({
+      reportValue: playwrightReport({
+        observations: [
+          {
+            runner: 'playwright',
+            testId: 'chromium > fixture',
+            kind: 'browser.console.warning',
+            message: 'unsafe',
+          },
+        ],
+      }),
+    }),
+  );
+  const skipped = await runPlaywrightFixture(
+    'playwright-skipped',
+    fixtureScript({
+      reportValue: playwrightReport({
+        counts: { total: 1, passed: 0, failed: 0, skipped: 1, retries: 1, flaky: 1 },
+      }),
+    }),
+  );
+  const artifact = await runPlaywrightFixture(
+    'playwright-artifact',
+    fixtureScript({ reportValue: playwrightReport() }),
+    2_000,
+    { additionalArtifacts: [{ path: 'html/index.html', format: 'text', allowEmpty: false }] },
+  );
+  assert.equal(observed.manifest.outcome, 'contract_failure');
+  assert.equal(skipped.manifest.outcome, 'contract_failure');
+  assert.equal(artifact.manifest.outcome, 'artifact_failure');
 });
 
 test('production audit artifacts satisfy every required runtime counter', async () => {
@@ -161,6 +443,7 @@ for (const fixture of [
           JSON.stringify({ boundary: 'data-pipeline', runtimeCounters: ${JSON.stringify(fixture.counters)} }),
         );
         fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+        fs.writeFileSync(process.env.FGO_TEST_OBSERVATION_PATH, JSON.stringify({ schemaVersion: 1, observations: [] }));
       `,
       2_000,
       {
@@ -264,16 +547,19 @@ test('failure summary never exceeds physical line or UTF-8 byte limits', async (
   assert.equal(result.manifest.output.truncated, true);
 });
 
-test('CI retains hidden Vitest artifacts after a failed test step', () => {
-  const workflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8');
-  const uploadStart = workflow.indexOf('- name: Upload Vitest results');
-  const nextStep = workflow.indexOf('- uses: actions/upload-artifact@v4', uploadStart + 1);
-  assert.ok(uploadStart >= 0 && nextStep > uploadStart);
-  const uploadStep = workflow.slice(uploadStart, nextStep);
-  assert.match(uploadStep, /uses: actions\/upload-artifact@v4/);
-  assert.match(uploadStep, /if: \$\{\{ !cancelled\(\) \}\}/);
-  assert.match(uploadStep, /path: \.test-results\//);
-  assert.match(uploadStep, /include-hidden-files: true/);
+test('CI and Pages retain the complete parent run and make missing/upload failure blocking', () => {
+  for (const path of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {
+    const workflow = readFileSync(resolve(root, path), 'utf8');
+    const uploadStart = workflow.indexOf('- name: Upload quality results');
+    assert.ok(uploadStart >= 0, path);
+    const uploadStep = workflow.slice(uploadStart);
+    assert.match(uploadStep, /uses: actions\/upload-artifact@v4/);
+    assert.match(uploadStep, /if: \$\{\{ always\(\) \}\}/);
+    assert.match(uploadStep, /path: \.test-results\//);
+    assert.match(uploadStep, /include-hidden-files: true/);
+    assert.match(uploadStep, /if-no-files-found: error/);
+    assert.doesNotMatch(uploadStep, /continue-on-error: true/);
+  }
 });
 
 function testFiles(directory) {
@@ -326,15 +612,26 @@ test('differently capped Vitest projects use distinct execution groups', () => {
 
 test('local, CI, and Pages use the same canonical quality command', () => {
   const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
-  assert.equal(
-    packageJson.scripts.quality,
-    'pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:runner && pnpm test:docs && pnpm test:unit && pnpm test:production && pnpm validate:master && pnpm build && pnpm test:e2e',
-  );
+  assert.equal(packageJson.scripts.quality, 'node scripts/quality-runner.mjs');
   assert.equal(
     packageJson.scripts['validate:master'],
     'pnpm --filter @fgo-lab/data-pipeline validate',
   );
-  assert.equal(packageJson.scripts['test:e2e'], 'playwright test');
+  assert.equal(packageJson.scripts['test:e2e'], 'node scripts/playwright-runner.mjs');
+  const qualityRunner = readFileSync(resolve(root, 'scripts/quality-runner.mjs'), 'utf8');
+  for (const [id, script] of [
+    ['format', 'format:check'],
+    ['lint', 'lint'],
+    ['typecheck', 'typecheck'],
+    ['runner', 'test:runner'],
+    ['docs', 'test:docs'],
+    ['unit', 'test:unit'],
+    ['production', 'test:production'],
+    ['master', 'validate:master'],
+    ['build', 'build'],
+    ['playwright', 'test:e2e'],
+  ])
+    assert.match(qualityRunner, new RegExp(`\\['${id}', \\['${script}'\\]`));
   const playwrightConfig = readFileSync(resolve(root, 'playwright.config.ts'), 'utf8');
   assert.match(playwrightConfig, /workers: 2,/);
   for (const path of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {

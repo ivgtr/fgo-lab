@@ -2,6 +2,12 @@ import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
+import {
+  classifyObservations,
+  readJson,
+  readJsonLines,
+  verifyArtifactFiles,
+} from './test-observation-lib.mjs';
 
 const MAX_SUMMARY_LINES = 200;
 const MAX_SUMMARY_BYTES = 32 * 1024;
@@ -131,7 +137,31 @@ function runtimeCounterContractErrors(artifacts, requiredCounters) {
   return errors;
 }
 
-function reportCounts(report) {
+function reportCounts(report, resultKind) {
+  if (resultKind === 'playwright') {
+    const counts = report?.counts;
+    return {
+      files: {
+        total: report ? Object.keys(report.projects ?? {}).length : null,
+        passed: report
+          ? Object.values(report.projects ?? {}).filter(({ failed }) => failed === 0).length
+          : null,
+        failed: report
+          ? Object.values(report.projects ?? {}).filter(({ failed }) => failed > 0).length
+          : null,
+        skipped: 0,
+      },
+      tests: {
+        total: counts?.total ?? null,
+        passed: counts?.passed ?? null,
+        failed: counts?.failed ?? null,
+        skipped: counts?.skipped ?? null,
+        todo: 0,
+        retries: counts?.retries ?? null,
+        flaky: counts?.flaky ?? null,
+      },
+    };
+  }
   const testResults = report?.testResults ?? [];
   return {
     files: {
@@ -152,12 +182,6 @@ function reportCounts(report) {
   };
 }
 
-function warningCount(stdout, stderr) {
-  return `${stdout}\n${stderr}`
-    .split(/\r?\n/)
-    .filter((line) => /\b(?:warn(?:ing)?|deprecated|unhandled|resource leak)\b/i.test(line)).length;
-}
-
 function outcomeFor({
   code,
   signal,
@@ -166,14 +190,31 @@ function outcomeFor({
   report,
   reportError,
   runtimeCounterErrors,
+  observationErrors,
+  artifactErrors,
+  resultKind,
 }) {
   if (runnerError) return 'runner_failure';
   if (timedOut) return 'timeout';
   if (signal) return 'signal';
   if (!report) return code === 0 ? 'reporter_failure' : 'test_failure';
-  if (code !== 0 || report.success === false) return 'test_failure';
+  if (
+    code !== 0 ||
+    (resultKind === 'vitest' && report.success === false) ||
+    (resultKind === 'playwright' && report.status !== 'passed')
+  )
+    return 'test_failure';
+  if (artifactErrors.length > 0) return 'artifact_failure';
   if (runtimeCounterErrors.length > 0) return 'contract_failure';
-  if ((report.numPendingTests ?? 0) > 0 || (report.numTodoTests ?? 0) > 0)
+  if (observationErrors.length > 0) return 'contract_failure';
+  if (
+    (resultKind === 'vitest' &&
+      ((report.numPendingTests ?? 0) > 0 || (report.numTodoTests ?? 0) > 0)) ||
+    (resultKind === 'playwright' &&
+      ((report.counts?.skipped ?? 0) > 0 ||
+        (report.counts?.retries ?? 0) > 0 ||
+        (report.counts?.flaky ?? 0) > 0))
+  )
     return 'contract_failure';
   return reportError ? 'reporter_failure' : 'success';
 }
@@ -223,7 +264,15 @@ function bounded(lines) {
   return { text, truncated };
 }
 
-function failedAssertions(report) {
+function failedAssertions(report, resultKind) {
+  if (resultKind === 'playwright')
+    return (report?.tests ?? [])
+      .filter(({ status }) => ['failed', 'timedOut', 'interrupted'].includes(status))
+      .map((test) => ({
+        suite: test.titlePath?.slice(0, -1).join(' > ') ?? test.project,
+        name: test.titlePath?.join(' > ') ?? test.title,
+        messages: test.errors?.map(({ message }) => message).filter(Boolean) ?? [],
+      }));
   return (report?.testResults ?? []).flatMap((suite) =>
     (suite.assertionResults ?? [])
       .filter(({ status }) => status === 'failed')
@@ -238,6 +287,25 @@ function failedAssertions(report) {
 function displayPath(root, path) {
   const local = relative(root, path);
   return local.startsWith('..') ? path : local;
+}
+
+function artifactFiles(runDirectory, directories) {
+  const files = [];
+  const visit = (directory) => {
+    if (!existsSync(directory)) return;
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) visit(path);
+      else if (entry.isFile())
+        files.push({
+          path: relative(runDirectory, path),
+          format: entry.name.endsWith('.json') ? 'json' : 'binary',
+          allowEmpty: false,
+        });
+    }
+  };
+  for (const directory of directories) visit(resolve(runDirectory, directory));
+  return files.sort((left, right) => left.path.localeCompare(right.path));
 }
 
 function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirectory }) {
@@ -256,7 +324,10 @@ function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirect
   if (manifest.outcome === 'success') {
     lines.splice(1, 1);
   } else if (manifest.outcome === 'test_failure') {
-    const failures = failedAssertions(report);
+    const failures = failedAssertions(
+      report,
+      manifest.reporter.format === 'playwright-observation-json' ? 'playwright' : 'vitest',
+    );
     if (failures.length > 0) lines.push('Failures:');
     for (const [index, failure] of failures.slice(0, MAX_FAILURES).entries()) {
       lines.push(`${index + 1}. ${failure.name} (${displayPath(root, failure.suite)})`);
@@ -279,6 +350,19 @@ function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirect
   ) {
     lines.push('Runtime counter contract failures:');
     lines.push(...manifest.runtimeCounterContract.errors);
+  } else if (
+    manifest.outcome === 'contract_failure' &&
+    manifest.observations.unexpected.length > 0
+  ) {
+    lines.push('Unexpected observations:');
+    lines.push(
+      ...manifest.observations.unexpected
+        .slice(0, MAX_FAILURES)
+        .map(({ testId, kind, message }) => `${testId}: ${kind}: ${message}`),
+    );
+  } else if (manifest.outcome === 'artifact_failure') {
+    lines.push('Artifact contract failures:');
+    lines.push(...manifest.artifactVerification.errors);
   } else {
     if (manifest.runner.error) lines.push(`Runner: ${manifest.runner.error}`);
     if (manifest.reporter.error) lines.push(`Reporter: ${manifest.reporter.error}`);
@@ -306,12 +390,21 @@ export async function runCapturedTest(options) {
     extraEnv = {},
     forwardSignals = false,
     requiredRuntimeCounters = null,
+    resultKind = 'vitest',
+    reportName = resultKind === 'vitest' ? 'vitest.json' : 'playwright.json',
+    observationName = resultKind === 'vitest' ? 'observations.json' : null,
+    allowancePath = resolve(root, 'scripts/test-observation-allowances.json'),
+    additionalArtifacts = [],
+    additionalArtifactDirectories = [],
+    unsetEnv = [],
   } = options;
   const startedAt = new Date();
   const runDirectory = resolve(artifactRoot, runId);
   mkdirSync(artifactRoot, { recursive: true });
   mkdirSync(runDirectory, { recursive: false });
-  const reportPath = resolve(runDirectory, 'vitest.json');
+  const reportPath = resolve(runDirectory, reportName);
+  const observationPath = observationName ? resolve(runDirectory, observationName) : null;
+  const warningPath = resolve(runDirectory, 'warnings.jsonl');
   const stdoutPath = resolve(runDirectory, 'stdout.log');
   const stderrPath = resolve(runDirectory, 'stderr.log');
   const manifestPath = resolve(runDirectory, 'manifest.json');
@@ -322,6 +415,7 @@ export async function runCapturedTest(options) {
   let partialStderr = '';
   let timedOut = false;
   let tailWasTrimmed = false;
+  writeFileSync(warningPath, '');
 
   const appendTail = (kind, chunk) => {
     const text = chunk.toString();
@@ -341,6 +435,16 @@ export async function runCapturedTest(options) {
   const resolvedArgs = args.map((argument) =>
     argument.replaceAll('$FGO_TEST_REPORT_PATH', reportPath),
   );
+  const resolvedExtraEnv = Object.fromEntries(
+    Object.entries(extraEnv).map(([name, value]) => [
+      name,
+      String(value)
+        .replaceAll('$FGO_TEST_ARTIFACT_DIR', runDirectory)
+        .replaceAll('$FGO_TEST_REPORT_PATH', reportPath),
+    ]),
+  );
+  if (resolvedExtraEnv.FGO_BROWSER_OBSERVATION_PATH)
+    writeFileSync(resolvedExtraEnv.FGO_BROWSER_OBSERVATION_PATH, '');
   const detached = forwardSignals && process.platform !== 'win32';
   let child;
   let forceKillTimer;
@@ -349,14 +453,26 @@ export async function runCapturedTest(options) {
   const forwardedSignals = new Map();
   let processResult;
   try {
+    const childEnv = {
+      ...process.env,
+      ...resolvedExtraEnv,
+      FGO_TEST_REPORT_PATH: reportPath,
+      FGO_TEST_ARTIFACT_DIR: runDirectory,
+      FGO_TEST_OBSERVATION_PATH: observationPath ?? '',
+      FGO_TEST_WARNING_PATH: warningPath,
+      FGO_TEST_RUNNER_KIND: resultKind,
+      NODE_OPTIONS: [
+        process.env.NODE_OPTIONS,
+        `--require=${resolve(root, 'scripts/node-warning-observer.cjs')}`,
+        '--no-warnings',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    };
+    for (const name of unsetEnv) delete childEnv[name];
     child = spawn(command, resolvedArgs, {
       cwd: root,
-      env: {
-        ...process.env,
-        ...extraEnv,
-        FGO_TEST_REPORT_PATH: reportPath,
-        FGO_TEST_ARTIFACT_DIR: runDirectory,
-      },
+      env: childEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
       detached,
     });
@@ -423,22 +539,85 @@ export async function runCapturedTest(options) {
   writeFileSync(stdoutPath, stdout);
   writeFileSync(stderrPath, stderr);
   const { report, error: reportError } = parseReport(reportPath);
+  let structuredObservations = [];
+  let observationReportError = null;
+  if (observationPath) {
+    try {
+      structuredObservations = readJson(observationPath).observations ?? [];
+    } catch (cause) {
+      observationReportError = cause instanceof Error ? cause.message : String(cause);
+    }
+  } else if (resultKind === 'playwright') structuredObservations = report?.observations ?? [];
+  let processWarnings = [];
+  try {
+    processWarnings = readJsonLines(warningPath);
+  } catch (cause) {
+    observationReportError = cause instanceof Error ? cause.message : String(cause);
+  }
+  const allowanceErrors = [];
+  let allowances = [];
+  try {
+    allowances = readJson(allowancePath);
+  } catch (cause) {
+    allowanceErrors.push(cause instanceof Error ? cause.message : String(cause));
+  }
+  const observationClassification = classifyObservations(
+    [...structuredObservations, ...processWarnings],
+    allowances,
+  );
+  observationClassification.allowanceErrors.push(...allowanceErrors);
+  const observationErrors = [
+    ...observationClassification.allowanceErrors,
+    ...observationClassification.unexpected.map(
+      ({ testId, kind, message }) => `${testId}:${kind}:${message}`,
+    ),
+  ];
   const runtimeCounters = runtimeCounterArtifacts(runDirectory);
   const runtimeCounterErrors = runtimeCounterContractErrors(
     runtimeCounters,
     requiredRuntimeCounters,
   );
+  const artifactSpecs = [
+    ...(existsSync(reportPath) ? [{ path: reportName, format: 'json', allowEmpty: false }] : []),
+    ...(observationName ? [{ path: observationName, format: 'json', allowEmpty: false }] : []),
+    { path: 'stdout.log', format: 'text', allowEmpty: true },
+    { path: 'stderr.log', format: 'text', allowEmpty: true },
+    { path: 'warnings.jsonl', format: 'jsonl', allowEmpty: true },
+    ...runtimeCounters.map(({ artifact }) => ({
+      path: artifact,
+      format: 'json',
+      allowEmpty: false,
+    })),
+    ...additionalArtifacts,
+    ...artifactFiles(runDirectory, additionalArtifactDirectories),
+  ];
+  const uniqueArtifactSpecs = [
+    ...new Map(artifactSpecs.map((artifact) => [artifact.path, artifact])).values(),
+  ];
+  const artifactVerification = verifyArtifactFiles(runDirectory, uniqueArtifactSpecs);
   const outcome = outcomeFor({
     code: processResult.code,
     signal: processResult.signal,
     timedOut,
     runnerError: processResult.runnerError,
     report,
-    reportError,
+    reportError: reportError ?? observationReportError,
     runtimeCounterErrors,
+    observationErrors,
+    artifactErrors: artifactVerification.errors,
+    resultKind,
   });
   const durationMs = Date.now() - startedAt.getTime();
-  const counts = { ...reportCounts(report), warnings: warningCount(stdout, stderr) };
+  const counts = {
+    ...reportCounts(report, resultKind),
+    warnings:
+      processWarnings.length +
+      structuredObservations.filter(({ kind }) =>
+        ['warning', 'deprecation', 'unhandled_error', 'resource_leak'].includes(kind),
+      ).length,
+    unexpectedObservations: observationClassification.unexpected.length,
+    allowedObservations: observationClassification.allowed.length,
+  };
   const exit = processResult.runnerError
     ? { kind: 'runner_failure', code: null, signal: null }
     : timedOut
@@ -457,7 +636,16 @@ export async function runCapturedTest(options) {
     repository: repositoryIdentity(root),
     counts,
     runner: { error: processResult.runnerError },
-    reporter: { format: 'vitest-json', available: report !== null, error: reportError },
+    reporter: {
+      format: resultKind === 'vitest' ? 'vitest-json' : 'playwright-observation-json',
+      available: report !== null,
+      error: reportError ?? observationReportError,
+    },
+    observations: {
+      unexpected: observationClassification.unexpected,
+      allowed: observationClassification.allowed,
+      allowanceErrors: observationClassification.allowanceErrors,
+    },
     output: {
       truncated: false,
       summaryLimits: { lines: MAX_SUMMARY_LINES, bytes: MAX_SUMMARY_BYTES },
@@ -467,13 +655,8 @@ export async function runCapturedTest(options) {
       required: requiredRuntimeCounters ?? {},
       errors: runtimeCounterErrors,
     },
-    artifacts: [
-      'manifest.json',
-      ...(existsSync(reportPath) ? ['vitest.json'] : []),
-      'stdout.log',
-      'stderr.log',
-      ...runtimeCounters.map(({ artifact }) => artifact),
-    ],
+    artifactVerification: { errors: artifactVerification.errors },
+    artifacts: artifactVerification.verified,
   };
   const formattedSummary = formatSummary({
     manifest,

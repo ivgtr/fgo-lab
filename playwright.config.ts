@@ -8,7 +8,12 @@ export default defineConfig({
   forbidOnly: Boolean(process.env['CI']),
   retries: process.env['CI'] ? 2 : 0,
   workers: 2,
-  reporter: process.env['CI'] ? [['html'], ['github']] : [['html']],
+  reporter: [
+    ['./scripts/playwright-observation-reporter.mjs'],
+    ['html', { outputFolder: process.env['PLAYWRIGHT_HTML_OUTPUT_DIR'] ?? 'playwright-report' }],
+    ...(process.env['CI'] ? ([['github']] as const) : []),
+  ],
+  outputDir: process.env['PLAYWRIGHT_OUTPUT_DIR'] ?? 'test-results',
   webServer: {
     command: `pnpm --filter @fgo-lab/web exec vite --port ${String(port)} --host 127.0.0.1`,
     url: baseURL,

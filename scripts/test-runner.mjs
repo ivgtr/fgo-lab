@@ -33,9 +33,12 @@ if (forbidden) {
   process.exit(2);
 }
 
-const reportArgument = mode === 'diagnostic' ? '--outputFile.json' : '--outputFile';
-const reporterArguments =
-  mode === 'diagnostic' ? ['--reporter=verbose', '--reporter=json'] : ['--reporter=json'];
+const reportArgument = '--outputFile.json';
+const reporterArguments = [
+  ...(mode === 'diagnostic' ? ['--reporter=verbose'] : []),
+  '--reporter=json',
+  '--reporter=./scripts/vitest-observation-reporter.mjs',
+];
 const suiteArgumentsForVitest = suite === 'all' ? [] : [`--project=${suite}`];
 const timeoutMs = Number.parseInt(process.env['FGO_TEST_TIMEOUT_MS'] ?? '600000', 10);
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
@@ -67,6 +70,9 @@ try {
     timeoutMs,
     forwardSignals: true,
     requiredRuntimeCounters,
+    ...(process.env['FGO_QUALITY_RUN_DIR']
+      ? { artifactRoot: process.env['FGO_QUALITY_RUN_DIR'], runId: suite }
+      : {}),
   });
   process.stdout.write(result.summary);
   process.exitCode = result.exitCode;

@@ -1,13 +1,13 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.16"
+document_version: "1.4.17"
 status: "Active"
 updated_at: "2026-09-01"
 ---
 
 # Evidence report index
 
-このindexはtracked report 43件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
+このindexはtracked report 44件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
 
 | Report | Status | Evidence role | Successor | Related commit |
 | --- | --- | --- | --- | --- |
@@ -54,6 +54,7 @@ updated_at: "2026-09-01"
 | [ranking-web-worker-cutover-tsk-07](ranking-web-worker-cutover-tsk-07.md) | Active | canonical: five-item cutover retained; Web handoff／evidence cache remain TSK-07 closure items after TSK-06.1 | TSK-07〜09 | TSK-07 structural review |
 | [portable-calculation-identity-flow-tsk-06-1](portable-calculation-identity-flow-tsk-06-1.md) | Complete | canonical: schema 33 portable request／result implementation、explicit upgrade、persistence／migration、TSK-06.1 Blocking 0／TSK-07 Deferred flow | TSK-06.1〜08 | TSK-06.1 implementation closure |
 | [e2e-responsibility-flow-tsk-06-2](e2e-responsibility-flow-tsk-06-2.md) | Complete | canonical: E2E assertion ownership、browser-specific inventory、VRT／a11y、before／after 3-run、worker採否 | TSK-06.2〜09 | TSK-06.2 completion |
+| [test-observability-flow-tsk-06-3](test-observability-flow-tsk-06-3.md) | Complete | canonical: quality parent／child outcome、structured observation、artifact／CI recovery flow | TSK-06.3〜09 | TSK-06.3 completion |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
 
