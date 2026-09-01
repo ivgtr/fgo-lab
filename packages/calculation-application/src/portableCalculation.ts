@@ -1,4 +1,3 @@
-import type { BattleOperation, DamageContributionProjection } from '@fgo-lab/battle-execution';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import {
   APP_VERSION,
@@ -13,11 +12,12 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import type { RankingPolicyDetail } from './rankingContracts';
+import { compileDamageContributionProjection } from './contributionProjection';
 import {
-  calculateScenario,
-  calculateScenarioWithContributionProjection,
   createDefaultCalculatorScenario,
+  evaluatePreparedCalculationScenario,
   prepareCalculationScenario,
+  projectPreparedCalculationContribution,
   type CalculationExecution,
 } from './scenario';
 
@@ -49,6 +49,26 @@ export type PortableCalculationRecovery =
       reason: 'versionUnavailable';
       request: PortableCalculationRequest;
       result: CalculationResult;
+    };
+
+export type PortableCalculationFailure = Extract<
+  PortableCalculationOutcome,
+  { status: 'invalid' | 'unsupported' }
+>;
+
+export type PortableVersionUpgradeResult =
+  | {
+      status: 'committed';
+      request: PortableCalculationRequest;
+      result: CalculationResult;
+      execution: CalculationExecution;
+    }
+  | {
+      status: 'rejected';
+      retainedRequest: PortableCalculationRequest;
+      retainedResult: CalculationResult;
+      attemptedRequest: PortableCalculationRequest;
+      failure: PortableCalculationFailure;
     };
 
 export function currentCalculationVersionContext(
@@ -127,38 +147,6 @@ export function upgradePortableCalculationRequestVersion(
   return portableCalculationRequestSchema.parse({ ...request, versionContext });
 }
 
-function isAttackerDamageContribution(operation: BattleOperation): boolean {
-  return (
-    ['attacker', 'passive', 'np'].includes(operation.source.origin) &&
-    ['personal', 'partyWide', 'enemyApplied'].includes(operation.contributionScope)
-  );
-}
-
-function compileContributionProjection(
-  request: ResolvedRequest,
-  master: MasterDataSnapshot,
-): DamageContributionProjection | null {
-  if (request.executionIntent.contribution === 'standard') return null;
-  const prepared = prepareCalculationScenario(request.scenario, master, {
-    initialNpGauge: request.executionIntent.initialNpGauge,
-  });
-  if (!prepared.orderedScenario) return null;
-  const eligible = prepared.orderedScenario.operations.filter(isAttackerDamageContribution);
-  const excluded = eligible.filter(
-    (operation) =>
-      operation.source.origin === 'attacker' && operation.gameActivation === 'skillUse',
-  );
-  return {
-    includedOperationIds: new Set(
-      eligible
-        .filter((operation) => !excluded.includes(operation))
-        .map(({ operationId }) => operationId),
-    ),
-    excludedOperationIds: new Set(excluded.map(({ operationId }) => operationId)),
-    excludedStateTraitContributions: { attackerState: new Set(), targetState: new Set() },
-  };
-}
-
 function resultVersions(request: PortableCalculationRequest): VersionContext {
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -206,23 +194,33 @@ export function executePortableCalculation(
   }
   try {
     const versions = resultVersions(request);
-    const execution =
-      request.executionIntent.kind === 'resolved' && request.scenario.mode === 'resolved'
-        ? (() => {
-            const resolvedRequest = request as ResolvedRequest;
-            const projection = compileContributionProjection(resolvedRequest, master);
-            const preparation = { initialNpGauge: request.executionIntent.initialNpGauge };
-            return projection
-              ? calculateScenarioWithContributionProjection(
-                  request.scenario,
-                  master,
-                  versions,
-                  projection,
-                  preparation,
-                )
-              : calculateScenario(request.scenario, master, versions, preparation);
-          })()
-        : calculateScenario(request.scenario, master, versions);
+    const preparation =
+      request.executionIntent.kind === 'resolved'
+        ? { initialNpGauge: request.executionIntent.initialNpGauge }
+        : undefined;
+    const prepared = prepareCalculationScenario(request.scenario, master, preparation);
+    let executable = prepared;
+    if (
+      request.executionIntent.kind === 'resolved' &&
+      request.executionIntent.origin === 'ranking' &&
+      request.scenario.mode === 'resolved'
+    ) {
+      const resolvedRequest = request as ResolvedRequest;
+      if (prepared.status === 'executable' && !prepared.orderedScenario)
+        throw new TypeError('ranking_contribution_operations_unavailable');
+      if (prepared.status === 'executable')
+        executable = projectPreparedCalculationContribution(
+          prepared,
+          compileDamageContributionProjection(prepared.orderedScenario!.operations, {
+            selfSkill:
+              resolvedRequest.executionIntent.contribution === 'excludeVoluntarySkillModifiers'
+                ? 'excluded'
+                : 'included',
+            area: 'included',
+          }),
+        );
+    }
+    const execution = evaluatePreparedCalculationScenario(executable, versions);
     if (!resultMatchesRequestVersions(request, execution.result))
       return { status: 'invalid', request, reason: 'requestResultVersionMismatch' };
     return execution.result.status === 'unsupported'
@@ -236,6 +234,45 @@ export function executePortableCalculation(
       detail: cause instanceof Error ? cause.message : String(cause),
     };
   }
+}
+
+export function attemptPortableCalculationVersionUpgrade(
+  retainedRequest: PortableCalculationRequest,
+  retainedResult: CalculationResult,
+  versionContext: CalculationVersionContext,
+  master: MasterDataSnapshot,
+): PortableVersionUpgradeResult {
+  const attemptedRequest = upgradePortableCalculationRequestVersion(
+    retainedRequest,
+    versionContext,
+  );
+  if (!resultMatchesRequestVersions(retainedRequest, retainedResult))
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest,
+      failure: {
+        status: 'invalid',
+        request: attemptedRequest,
+        reason: 'requestResultVersionMismatch',
+      },
+    };
+  const outcome = executePortableCalculation(attemptedRequest, master);
+  if (outcome.status !== 'executed')
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest,
+      failure: outcome,
+    };
+  return {
+    status: 'committed',
+    request: attemptedRequest,
+    result: outcome.execution.result,
+    execution: outcome.execution,
+  };
 }
 
 function canonical(value: unknown): string {

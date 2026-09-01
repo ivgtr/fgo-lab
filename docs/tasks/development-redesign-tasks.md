@@ -607,14 +607,14 @@ Done gate:
 - normal calculator、manual mode、selected ranking candidateのpure request constructor、calculatorのreset／version upgradeが明示contractどおり動作する。
 - safe profile dataを失わず旧draft／historyだけを破棄し、旧schema shareと対象外schemaをfail-closedにする。
 - runtimeへ旧schema reader、scenario-only fingerprint、parallel request modelを残さない。
-- TSK-06.1所有pathがBlocking 0になり、実Webのranking handoffとcacheをTSK-07へDeferredした状態でhandoffできる。
+- TSK-06.1所有pathがBlocking 0になり、実Webのranking handoff／noticeを含め、cacheだけをTSK-07へDeferredした状態でhandoffできる。
 
 Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
 | `CALC-PORTABLE-001` | Apply | focused schema／workspace／repository／share tests after approval | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
-| `RK-HANDOFF-001` | Deferred: TSK-07 | - | TSK-07 |
+| `RK-HANDOFF-001` | Apply | production ranking→calculator parity／notice／reset E2E | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-CACHE-001` | Deferred: TSK-07 | - | TSK-07 |
 | `UI-CALC-001` | Apply | focused calculator version／reset／recovery component tests after approval | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `DOC-REV-001` | Apply | `pnpm test:docs` | requirements／ADR／registry diff |
@@ -627,14 +627,17 @@ Handoff:
 - Design decision: request embeds master／engine version context. Resolved intent is origin + initial NP + two-variant contribution; manual is manual only. Fingerprint and execution accept the request identity without parallel version arguments.
 - Version transition: restore／history copy preserves the pinned identity; unavailable versions are historical-only. Only explicit current-version recalculation creates a new identity, and request／result version mismatch is rejected.
 - Migration: exact schema 32 preserves builds／targets／CE／support and discards draft／history; exact v32 backup uses the isolated migrator; old-schema share and other old／future schema fail closed.
-- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0。TSK-06.1 pathはBlocking 0、実Web handoff／cacheはTSK-07へDeferredとして分離した。
+- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0。TSK-06.1 pathはBlocking 0、evidence-free cache／stale detailだけをTSK-07へDeferredした。
 - Approval gate: approved 2026-09-01 after design review at `245d1ee`。product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1をapprovedとし、ADR-027をacceptedで登録、ADR-016をsupersededへ変更した。承認commitはsemanticsを変更していない。
 - Runtime boundary: `historicalOnly`はapplication／workspaceのrecovery stateに限定しengineの数値resultへ混ぜない。`origin`をbattle executionの分岐条件にしない。
 - Runtime implementation: schema 33の`PortableCalculationRequest`へapplication entrypoint、workspace、fingerprint、draft／history／share／backupを収束。projection／operation ID／compiled stateは永続化せずapplicationがtyped intentから再compileする。scenario-only fingerprintとparallel persistence fieldは削除した。
 - Migration result: exact schema 32 profile／backupだけをisolated migratorで受け、profile identity／timestamps／build／target／CE／support／active profileを維持しdraft／historyを破棄する。失敗時は`profile_parse_failed`を返しuser storeをclearしない。旧share、その他の旧版、future版は拒否する。
 - Parity: 4 ranking policyすべてのselected candidateをpure constructorから再実行してresult完全一致。draft／history copy／shareはpinned identityを維持し、利用不能版は`historicalOnly`、明示upgradeだけが新requestを作る。
 - Verification: focused portable/schema/workspace/repository/share/recovery成功、unit 65 files／362 tests、production 24 files／111 tests。production inventory／counter不変、schema traceだけv32→v33、digest `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`。同条件compile 9.450s→9.250s（-2.1%）。final `pnpm quality`成功。
-- Closure: TSK-06.1 `done`、Blocking 0。TSK-07 `ready`（実Web immediate handoff、ranking-origin presentation、worker／React cache）、TSK-08 `blocked`（TSK-07待ち）。
+- Review reopening: failed version upgradeのtransactionality、projection compilerの二重owner、実装済みWeb handoff／ranking noticeのscope分類不足を同一familyのBlocking 3として記録した。以前の計画がschema cutoverのdirect Web writerをTSK-07へ分離したscope inventory不足であり、承認済みcontractは変更しない。
+- Review fix: applicationのtransactional upgrade commandは成功時だけ新request／resultをcommitし、invalid／unsupportedでは旧pairとtyped attemptを保持する。self／area policyを受ける共有compilerへranking／portable／presentation auditを収束し、portableはprepare once後にprojectionを適用する。production Web E2Eでself-buff除外のranking result parity、notice、通常条件reset、upgrade成功focus、unsupported失敗後の旧値保持／focus／retry／未上書きを検証した。
+- Review verification: final `pnpm quality`成功（unit 66 files／370 tests、production 24 files／111 tests、E2E 66 passed／34 skipped）。production audit payload／digest／inventory／counterは不変。pre-fix 18.837秒に対するpost-fix 3 runは18.219／19.178／19.689秒（-3.3%〜+4.5%）。
+- Current closure: TSK-06.1 `done`、Blocking 0、Deferred 1。TSK-07は`ready`でevidence-free cache／stale detailだけを所有し、TSK-08はTSK-07待ち。
 
 ### TSK-07: Web／worker一括切替
 
@@ -648,8 +651,8 @@ Depends on: TSK-06.1
 Done gate:
 
 - 新旧policy、URL、worker protocolをruntimeで併存させていない。
-- selected candidateの版付きrequestをWebからcalculatorへ渡し、immediate parityが成立する。
-- ranking由来intentとversionを結果近傍へ表示し、通常条件resetのcommandをdispatchする。
+- N/A: selected candidateの版付きWeb handoff／immediate parityはTSK-06.1でVerified。
+- N/A: ranking由来notice／通常条件resetはTSK-06.1でVerified。
 - worker summaryはevidence-free、worker detail cacheは0、React detailは最大1件である。
 - desktop、390px、320pxでoverflowがない。
 - keyboard、accessible name、expanded state、focus orderを維持する。
@@ -660,9 +663,9 @@ Contract closure matrix:
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
 | `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `RK-HANDOFF-001` | Apply | Web immediate handoff／calculator parity | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
+| `RK-HANDOFF-001` | N/A: Verified in TSK-06.1 | - | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-CACHE-001` | Apply | worker／React cache cardinality、stale detail tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `UI-CALC-001` | Apply | ranking handoff notice／reset／keyboard／320px tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `UI-CALC-001` | N/A: Verified in TSK-06.1 | - | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `TS-PERF-002` | Apply | build変更前後各3回／変更後E2E 1回 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
@@ -690,7 +693,7 @@ Handoff:
 - Verification: focused 8 files／14 tests、unit 62 files／350 tests、production 24 files／111 tests、
   runner 17 tests、final `pnpm quality`成功。production source scanで旧reader／fallback／runtime path 0件。
 - Historical completion: five-field cutover commit and verification remain valid for their original scope。
-- Structural review reopening: portable calculation identity and evidence cache value／lifetime／cardinality were absent from the original matrix. Current closure is Blocking 2; TSK-07 is `blocked` by TSK-06.1 and must then implement `RK-HANDOFF-001`／`RK-CACHE-001` before TSK-08 becomes ready。
+- Structural review reopening: portable identityとWeb handoff／noticeはTSK-06.1でBlocking 0へ閉じた。TSK-07は`ready`で、未完了scopeは`RK-CACHE-001`のevidence-free cache value／lifetime／cardinalityとstale detail rejectionだけである。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  attemptPortableCalculationVersionUpgrade,
   createCalculatorPortableRequest,
   createDefaultResolvedScenario,
   currentCalculationVersionContext,
@@ -89,6 +90,35 @@ describe('calculation context recovery presentation', () => {
     );
     expect(screen.getByRole('heading', { name: '履歴値・再計算されていません' })).toBeTruthy();
     expect(screen.getByText(/元の履歴値は上書きしません/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '現在のバージョンで再計算' }));
+    expect(onUpgrade).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the historical result visible with a typed failed attempt and permits retry', () => {
+    const retainedRequest = {
+      ...rankingRequest,
+      versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
+    };
+    const attempt = attemptPortableCalculationVersionUpgrade(
+      retainedRequest,
+      historicalResult,
+      currentCalculationVersionContext(master),
+      master,
+    );
+    if (attempt.status !== 'rejected') throw new Error('failed attempt required');
+    const onUpgrade = vi.fn(() => Promise.resolve());
+    render(
+      <CalculationContextNotice
+        state="historicalOnly"
+        request={retainedRequest}
+        result={historicalResult}
+        upgradeAttempt={attempt}
+        onUpgrade={onUpgrade}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '履歴値・再計算されていません' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('元の履歴値を保持しています');
     fireEvent.click(screen.getByRole('button', { name: '現在のバージョンで再計算' }));
     expect(onUpgrade).toHaveBeenCalledOnce();
   });

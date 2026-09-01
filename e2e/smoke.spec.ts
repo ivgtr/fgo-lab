@@ -12,6 +12,86 @@ async function selectAttacker(page: Page, name: string) {
     .click();
 }
 
+async function pinStoredDraftToHistorical(page: Page, unsupported: boolean) {
+  await page.evaluate(
+    (makeUnsupported) =>
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('user', 'readwrite');
+          const store = transaction.objectStore('user');
+          const profilesRequest = store.get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            resolve();
+            db.close();
+          };
+          profilesRequest.onsuccess = () => {
+            const collection = profilesRequest.result as {
+              profiles: Array<{
+                draft: {
+                  request: {
+                    versionContext: { masterDataVersion: string; engineVersion: string };
+                    scenario: { craftEssence: unknown };
+                  };
+                  result: {
+                    versions: { masterDataVersion: string; engineVersion: string };
+                  };
+                };
+              }>;
+            };
+            const draft = collection.profiles[0]!.draft;
+            draft.request.versionContext = {
+              masterDataVersion: 'historical-master',
+              engineVersion: 'historical-engine',
+            };
+            if (makeUnsupported)
+              draft.request.scenario.craftEssence = {
+                craftEssenceId: 'missing',
+                level: 1,
+                limitBreak: 0,
+              };
+            draft.result.versions.masterDataVersion = 'historical-master';
+            draft.result.versions.engineVersion = 'historical-engine';
+            store.put(collection, 'profiles');
+          };
+        };
+      }),
+    unsupported,
+  );
+}
+
+async function storedDraftVersionContext(page: Page) {
+  return await page.evaluate(
+    () =>
+      new Promise<{ masterDataVersion: string; engineVersion: string }>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction('user', 'readonly');
+          const profilesRequest = transaction.objectStore('user').get('profiles');
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => {
+            const collection = profilesRequest.result as {
+              profiles: Array<{
+                draft: {
+                  request: {
+                    versionContext: { masterDataVersion: string; engineVersion: string };
+                  };
+                };
+              }>;
+            };
+            resolve(collection.profiles[0]!.draft.request.versionContext);
+            db.close();
+          };
+        };
+      }),
+  );
+}
+
 test('diagnostic setup and main calculation flow', async ({ page }) => {
   await page.goto('/');
   await completeSetup(page);
@@ -1501,6 +1581,70 @@ test('round-trips an allowlisted calculation share', async ({ page, context, isM
   expect(sharedJson).toContain('preNoblePhantasmPlan');
 });
 
+test('commits a successful current-version recalculation and focuses its result', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers IndexedDB historical recovery');
+  await page.goto('/');
+  await completeSetup(page);
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  await ownEffects.getByRole('button', { name: /バスターアップ/ }).click();
+  await expect(page.getByRole('button', { name: '直前の操作を元に戻す' })).toBeEnabled();
+  await pinStoredDraftToHistorical(page, false);
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '履歴値・再計算されていません' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole('button', { name: '現在のバージョンで再計算' }).click();
+  const resultHeading = page.getByRole('heading', { name: '宝具ダメージ', exact: true });
+  await expect(resultHeading).toBeFocused();
+  await expect(page.getByRole('heading', { name: '履歴値・再計算されていません' })).toHaveCount(0);
+  expect(await storedDraftVersionContext(page)).not.toEqual({
+    masterDataVersion: 'historical-master',
+    engineVersion: 'historical-engine',
+  });
+});
+
+test('retains a historical draft when current-version recalculation stays unsupported', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop project covers IndexedDB historical recovery');
+  await page.goto('/');
+  await completeSetup(page);
+  await page.getByRole('button', { name: 'ダメージ計算' }).click();
+  const ownEffects = page.getByRole('group', { name: /自身の適用内容/ });
+  await ownEffects.getByRole('button', { name: /バスターアップ/ }).click();
+  await expect(page.getByRole('button', { name: '直前の操作を元に戻す' })).toBeEnabled();
+
+  await pinStoredDraftToHistorical(page, true);
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '履歴値・再計算されていません' })).toBeVisible({
+    timeout: 15_000,
+  });
+  const historicalRows = page.locator('.calculation-context-notice ol');
+  const retainedText = await historicalRows.textContent();
+  const retry = page.getByRole('button', { name: '現在のバージョンで再計算' });
+  await retry.click();
+  const error = page.getByRole('alert');
+  await expect(error).toContainText('現在のエンジンではこの計算条件を実行できません');
+  await expect(error).toContainText('元の履歴値を保持しています');
+  await expect(error).toBeFocused();
+  await expect(historicalRows).toHaveText(retainedText ?? '');
+  await retry.click();
+  await expect(error).toBeFocused();
+
+  const retained = await storedDraftVersionContext(page);
+  expect(retained).toEqual({
+    masterDataVersion: 'historical-master',
+    engineVersion: 'historical-engine',
+  });
+});
+
 test('persists servant, target, CE copies, and support templates', async ({ page, isMobile }) => {
   test.setTimeout(90_000);
   test.skip(isMobile, 'Desktop navigation covers all management pages');
@@ -1832,6 +1976,10 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await filters.getByLabel('所持状態').selectOption('owned');
   await expect(page.getByRole('status')).toContainText('0件表示');
   await filters.getByRole('button', { name: '絞り込みを解除' }).click();
+  await conditions.getByLabel('自己バフ').selectOption('excluded');
+  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
+    timeout: 45_000,
+  });
   await filters.getByLabel('名前検索').fill('カエサル');
   const caesar = page
     .getByRole('list', { name: '宝具火力ランキング' })
@@ -1847,6 +1995,9 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
   await detail.getByRole('button', { name: '同じ条件で計算機を開く' }).click();
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();
   await expect(page.getByLabel('宝具Lv')).toHaveValue('5');
+  const inheritedNotice = page.getByLabel('計算条件の版情報');
+  await expect(inheritedNotice).toContainText('ランキングから引き継いだ計算条件');
+  await expect(inheritedNotice).toContainText('任意スキル補正を除外');
   const calculatorAverage = Number(
     (
       await page
@@ -1856,4 +2007,7 @@ test('calculates ranking in a worker', async ({ page, isMobile }) => {
     )?.replaceAll(',', ''),
   );
   expect(calculatorAverage).toBe(rankingAverage);
+  await inheritedNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
+  await expect(page.getByText('ランキングから引き継いだ計算条件')).toHaveCount(0);
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });

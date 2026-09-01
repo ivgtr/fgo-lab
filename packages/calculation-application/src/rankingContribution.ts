@@ -1,5 +1,6 @@
 import type { DamageContributionProjection, EffectProjection } from '@fgo-lab/battle-execution';
 import { stateTraitsRequiredByCondition } from './conditionProvenance';
+import { isAreaDamageContribution, isAttackerDamageContribution } from './contributionProjection';
 
 export type RankingContributionPolicyState = 'included' | 'excludedByRankingPolicy';
 
@@ -30,21 +31,12 @@ export function rankingEffectContributes(
   );
 }
 
-function isAttackerEffect(projection: EffectProjection): boolean {
-  return ['attacker', 'passive', 'np'].includes(projection.source.origin);
-}
-
 export function contributesToAttackerDamage(projection: EffectProjection): boolean {
-  return (
-    isAttackerEffect(projection) &&
-    (projection.contributionScope === 'personal' ||
-      projection.contributionScope === 'partyWide' ||
-      projection.contributionScope === 'enemyApplied')
-  );
+  return isAttackerDamageContribution(projection);
 }
 
 export function contributesAreaSupport(projection: EffectProjection): boolean {
-  return isAttackerEffect(projection) && projection.contributionScope === 'partyWide';
+  return isAttackerDamageContribution(projection) && isAreaDamageContribution(projection);
 }
 
 export function isSpecialAttack(projection: EffectProjection): boolean {

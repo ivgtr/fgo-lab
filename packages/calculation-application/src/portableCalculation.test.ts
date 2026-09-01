@@ -3,6 +3,7 @@ import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, portableCalculationRequestSchema } from '@fgo-lab/schema';
 import {
+  attemptPortableCalculationVersionUpgrade,
   createCalculatorPortableRequest,
   createRankingPortableRequest,
   currentCalculationVersionContext,
@@ -149,5 +150,125 @@ describe('portable calculation application owner', () => {
         master,
       ).status,
     ).toBe('executed');
+  });
+
+  it('commits a current-version upgrade only after successful execution', () => {
+    const currentRequest = createCalculatorPortableRequest(
+      createDefaultResolvedScenario(master, undefined),
+      versionContext,
+    );
+    const current = executePortableCalculation(currentRequest, master);
+    if (current.status !== 'executed') throw new Error('current execution required');
+    const retainedRequest = upgradePortableCalculationRequestVersion(currentRequest, {
+      masterDataVersion: 'old-master',
+      engineVersion: 'old-engine',
+    });
+    const retainedResult = {
+      ...current.execution.result,
+      versions: {
+        ...current.execution.result.versions,
+        masterDataVersion: 'old-master',
+        engineVersion: 'old-engine',
+      },
+    };
+
+    const attempt = attemptPortableCalculationVersionUpgrade(
+      retainedRequest,
+      retainedResult,
+      versionContext,
+      master,
+    );
+
+    expect(attempt).toMatchObject({
+      status: 'committed',
+      request: { versionContext },
+      result: { versions: versionContext },
+    });
+  });
+
+  it('retains the historical pair when a current-version upgrade is invalid', () => {
+    const currentRequest = createCalculatorPortableRequest(
+      createDefaultResolvedScenario(master, undefined),
+      versionContext,
+    );
+    if (currentRequest.scenario.mode !== 'resolved') throw new Error('resolved request required');
+    const retainedRequest = portableCalculationRequestSchema.parse({
+      ...currentRequest,
+      versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
+      executionIntent: {
+        kind: 'resolved',
+        origin: 'ranking',
+        initialNpGauge: 20_000,
+        contribution: 'standard',
+      },
+    });
+    const current = executePortableCalculation(currentRequest, master);
+    if (current.status !== 'executed') throw new Error('current execution required');
+    const retainedResult = {
+      ...current.execution.result,
+      versions: {
+        ...current.execution.result.versions,
+        masterDataVersion: 'old-master',
+        engineVersion: 'old-engine',
+      },
+    };
+
+    const attempt = attemptPortableCalculationVersionUpgrade(
+      retainedRequest,
+      retainedResult,
+      versionContext,
+      master,
+    );
+
+    expect(attempt).toMatchObject({
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest: { versionContext },
+      failure: { status: 'invalid', reason: 'initialNpGaugeExceedsCapacity' },
+    });
+  });
+
+  it('retains the historical pair when current semantics are unsupported', () => {
+    const currentRequest = createCalculatorPortableRequest(
+      {
+        ...createDefaultResolvedScenario(master, undefined),
+        craftEssence: { craftEssenceId: 'missing', level: 1, limitBreak: 0 },
+      },
+      versionContext,
+    );
+    const retainedRequest = upgradePortableCalculationRequestVersion(currentRequest, {
+      masterDataVersion: 'old-master',
+      engineVersion: 'old-engine',
+    });
+    const baselineRequest = createCalculatorPortableRequest(
+      createDefaultResolvedScenario(master, undefined),
+      versionContext,
+    );
+    const baseline = executePortableCalculation(baselineRequest, master);
+    if (baseline.status !== 'executed') throw new Error('baseline execution required');
+    const retainedResult = {
+      ...baseline.execution.result,
+      versions: {
+        ...baseline.execution.result.versions,
+        masterDataVersion: 'old-master',
+        engineVersion: 'old-engine',
+      },
+    };
+
+    const attempt = attemptPortableCalculationVersionUpgrade(
+      retainedRequest,
+      retainedResult,
+      versionContext,
+      master,
+    );
+
+    expect(attempt).toMatchObject({
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest: { versionContext },
+      failure: { status: 'unsupported' },
+    });
   });
 });

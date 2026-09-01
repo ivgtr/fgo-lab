@@ -1,4 +1,4 @@
-import type { BattleOperation, DamageContributionProjection } from '@fgo-lab/battle-execution';
+import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
 import type { ActorFormId, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import { applyCanonicalInputCommand } from './canonicalInputs';
@@ -9,6 +9,7 @@ import {
 } from './finiteSemanticProduct';
 import { createCanonicalInputValueDomains } from './rankingCanonicalInputs';
 import { compileRankingComparisonPolicy } from './rankingComparisonPolicy';
+import { compileDamageContributionProjection } from './contributionProjection';
 import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 import {
   createRankingFieldCandidatesForConditions,
@@ -89,42 +90,6 @@ export type RankingCandidateSpace =
       programs: readonly ProgramCandidateDomain[];
       upperBound: number;
     };
-
-function isAttackerDamageContribution(operation: BattleOperation): boolean {
-  return (
-    ['attacker', 'passive', 'np'].includes(operation.source.origin) &&
-    ['personal', 'partyWide', 'enemyApplied'].includes(operation.contributionScope)
-  );
-}
-
-function contributionProjection(
-  operations: readonly BattleOperation[],
-  conditions: RankingPolicyConditions,
-  scope: 'ranking' | 'withoutArea',
-): DamageContributionProjection {
-  const eligible = operations.filter((operation) => isAttackerDamageContribution(operation));
-  const selected = eligible.filter(
-    (operation) =>
-      (scope === 'ranking' || operation.contributionScope !== 'partyWide') &&
-      !(
-        conditions.selfBuffs === 'excluded' &&
-        operation.source.origin === 'attacker' &&
-        operation.gameActivation === 'skillUse'
-      ),
-  );
-  return {
-    includedOperationIds: new Set(selected.map(({ operationId }) => operationId)),
-    excludedOperationIds: new Set(
-      eligible
-        .filter((operation) => !selected.includes(operation))
-        .map(({ operationId }) => operationId),
-    ),
-    excludedStateTraitContributions: {
-      attackerState: new Set(),
-      targetState: new Set(),
-    },
-  };
-}
 
 function dimensionIndexes(
   key: string,
@@ -328,20 +293,25 @@ function materializeProgramCandidates(input: {
       fieldCandidateKey: field.key,
       quantityCandidateKey: quantity.key,
     };
+    const contributionProjection = compileDamageContributionProjection(
+      domain.semantics.operations,
+      { selfSkill: conditions.selfBuffs, area: 'included' },
+    );
+    const withoutAreaContributionProjection = compileDamageContributionProjection(
+      domain.semantics.operations,
+      { selfSkill: conditions.selfBuffs, area: 'excluded' },
+    );
+    const hasAreaContribution = [...withoutAreaContributionProjection.excludedOperationIds].some(
+      (operationId) => !contributionProjection.excludedOperationIds.has(operationId),
+    );
     return {
       key: JSON.stringify(evidence),
       attackProfile: domain.program.attackProfile,
       expectedTerminalFormId: domain.program.expectedTerminalFormId,
       scenario,
-      contributionProjection: contributionProjection(
-        domain.semantics.operations,
-        conditions,
-        'ranking',
-      ),
-      withoutAreaContributionProjection: domain.semantics.operations.some(
-        ({ contributionScope }) => contributionScope === 'partyWide',
-      )
-        ? contributionProjection(domain.semantics.operations, conditions, 'withoutArea')
+      contributionProjection,
+      withoutAreaContributionProjection: hasAreaContribution
+        ? withoutAreaContributionProjection
         : null,
       evidence,
     };

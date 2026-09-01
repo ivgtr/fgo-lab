@@ -1,4 +1,5 @@
 import type { CalculationResult, PortableCalculationRequest } from '@fgo-lab/schema';
+import type { PortableVersionUpgradeResult } from '@fgo-lab/calculation-application';
 
 type CalculationContextNoticeProps =
   | {
@@ -10,6 +11,7 @@ type CalculationContextNoticeProps =
       state: 'historicalOnly';
       request: PortableCalculationRequest;
       result: CalculationResult;
+      upgradeAttempt?: Extract<PortableVersionUpgradeResult, { status: 'rejected' }>;
       onUpgrade: () => Promise<void>;
     }
   | {
@@ -45,6 +47,18 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
           </ol>
         )}
         <p>再計算すると結果が変わる場合があります。元の履歴値は上書きしません。</p>
+        {props.upgradeAttempt && (
+          <div role="alert" tabIndex={-1} data-calculation-error-summary>
+            <h3>現在のバージョンで再計算できませんでした</h3>
+            <p>
+              {props.upgradeAttempt.failure.status === 'invalid'
+                ? props.upgradeAttempt.failure.reason
+                : '現在のエンジンではこの計算条件を実行できません'}
+            </p>
+            <VersionMetadata request={props.upgradeAttempt.attemptedRequest} />
+            <p>元の履歴値を保持しています。条件を確認して再試行できます。</p>
+          </div>
+        )}
         <button type="button" onClick={() => void props.onUpgrade()}>
           現在のバージョンで再計算
         </button>

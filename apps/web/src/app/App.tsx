@@ -31,9 +31,13 @@ import type {
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import type { EffectProjection } from '@fgo-lab/calculation-application';
+import type {
+  EffectProjection,
+  PortableVersionUpgradeResult,
+} from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
+  attemptPortableCalculationVersionUpgrade,
   createDefaultCalculatorPortableRequest,
   createRankingPortableRequest,
   currentCalculationVersionContext,
@@ -41,7 +45,6 @@ import {
   recoverPortableCalculation,
   replacePortableCalculationScenario,
   resetPortableCalculationRequest,
-  upgradePortableCalculationRequestVersion,
   resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
@@ -78,6 +81,7 @@ interface CalculationWorkspace {
   request: PortableCalculationRequest | undefined;
   storedResult: CalculationResult | undefined;
   source: 'share' | 'draft' | 'history' | undefined;
+  upgradeAttempt?: Extract<PortableVersionUpgradeResult, { status: 'rejected' }>;
 }
 
 function supportDecisionKeys(effects: readonly EffectProjection[]) {
@@ -349,17 +353,12 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function savePortableDraft(
+  async function commitPortableDraft(
     request: PortableCalculationRequest,
+    nextResult: CalculationResult,
     sessionId = calculationSessionId,
   ) {
-    const outcome = executePortableCalculation(request, currentMaster);
-    const nextResult =
-      outcome.status === 'executed' || outcome.status === 'unsupported'
-        ? outcome.execution.result
-        : undefined;
     setCalculation({ request, storedResult: nextResult, source: 'draft' });
-    if (!nextResult) return outcome;
     const fingerprint = await portableCalculationFingerprint(request, async (data: Uint8Array) =>
       crypto.subtle.digest('SHA-256', new Uint8Array(data)),
     );
@@ -376,6 +375,21 @@ export function App() {
       },
       updatedAt: now,
     }));
+  }
+  async function savePortableDraft(
+    request: PortableCalculationRequest,
+    sessionId = calculationSessionId,
+  ) {
+    const outcome = executePortableCalculation(request, currentMaster);
+    const nextResult =
+      outcome.status === 'executed' || outcome.status === 'unsupported'
+        ? outcome.execution.result
+        : undefined;
+    if (!nextResult) {
+      setCalculation({ request, storedResult: undefined, source: 'draft' });
+      return outcome;
+    }
+    await commitPortableDraft(request, nextResult, sessionId);
     return outcome;
   }
   async function saveScenarioDraft(scenario: CalculationScenario) {
@@ -505,14 +519,21 @@ export function App() {
             state="historicalOnly"
             request={currentRequest}
             result={portableOutcome.result}
+            {...(calculation.upgradeAttempt ? { upgradeAttempt: calculation.upgradeAttempt } : {})}
             onUpgrade={async () => {
-              const outcome = await savePortableDraft(
-                upgradePortableCalculationRequestVersion(
-                  currentRequest,
-                  currentCalculationVersionContext(currentMaster),
-                ),
+              const attempt = attemptPortableCalculationVersionUpgrade(
+                currentRequest,
+                portableOutcome.result,
+                currentCalculationVersionContext(currentMaster),
+                currentMaster,
               );
-              setRecoveryFocus(outcome.status === 'executed' ? 'result' : 'error');
+              if (attempt.status === 'committed') {
+                await commitPortableDraft(attempt.request, attempt.result);
+                setRecoveryFocus('result');
+                return;
+              }
+              setCalculation((current) => ({ ...current, upgradeAttempt: attempt }));
+              setRecoveryFocus('error');
             }}
           />
         )}

@@ -7,6 +7,7 @@ import {
   conditionIsActivationLocal,
 } from '@fgo-lab/battle-execution';
 import { conditionFactRequirements } from './conditionProvenance';
+import { isAttackerDamageContribution } from './contributionProjection';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileStaticRankingSemantics } from './rankingStaticSemantics';
@@ -32,8 +33,7 @@ describe('production ranking condition provenance', () => {
           operation.decisionKey === null ||
           operation.decisionPlan.condition !== 'userMayAssume' ||
           !conditionAllowsEffectLocalDecision(operation.condition) ||
-          !['attacker', 'passive', 'np'].includes(operation.source.origin) ||
-          !['personal', 'partyWide', 'enemyApplied'].includes(operation.contributionScope) ||
+          !isAttackerDamageContribution(operation) ||
           (operation.kind === 'addModifier' && operation.modifier === 'powerMod')
         )
           return [];
