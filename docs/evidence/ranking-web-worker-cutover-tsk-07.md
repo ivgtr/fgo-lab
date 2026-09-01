@@ -6,7 +6,7 @@ updated_at: "2026-09-01"
 
 # TSK-07 ranking Web and worker canonical cutover
 
-> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains historical verification, but portable calculation identity and evidence cache ownership were outside its original matrix. Current closure is Blocking 2; see `portable-calculation-identity-flow-tsk-06-1.md`.
+> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains historical verification. Portable calculation identity is closed by TSK-06.1; TSK-06.2 closed E2E ownership with Blocking 0. Evidence cache ownership remains TSK-07 scope and is now ready to resume.
 
 ## Outcome and ownership
 
@@ -36,17 +36,17 @@ production digest remain deferred to TSK-08.
 | presentation | policy rows/details | `Ranking`, `RankingList`, `RankingEffectDetails` | local filter/sort/metric only | Verified |
 | worker request | `useRanking` | thin worker adapter/runtime | initialize, calculate, detail | Verified |
 | worker response ordering | worker runtime | `useRanking` | request ID plus canonical fingerprint rejection | Verified |
-| cache identity/value | five-field fingerprint | calculation/detail caches | current complete result and accumulated evidence | Blocking: summary must be evidence-free; worker detail 0; React detail maximum 1 |
+| cache identity/value | five-field fingerprint | calculation/detail caches | current complete result and accumulated evidence | Deferred: TSK-07; summary must be evidence-free, worker detail 0, React detail maximum 1 |
 | URL | `serializeRankingState` | `parseRankingState` | canonical `rConditional`; obsolete params removed | Verified |
 | detail evidence | selected `RankingPolicyDetail` | pure presentation builder | profile, start gauge, facts, ordered actions | Verified |
-| portable calculator handoff | current runtime uses scenario + separately supplied gauge/projection; proposed application constructor emits versioned request | calculator/workspace | TSK-06.1 owns identity/persistence; TSK-07 owns Web command wiring | Blocking: TSK-06.1 dependency, then `RK-HANDOFF-001` |
+| portable calculator handoff | versioned application request emitted from selected ranking candidate | calculator/workspace | TSK-06.1 owns identity/persistence and immediate Web wiring | Verified: `RK-HANDOFF-001` closed by TSK-06.1 |
 | old policy/fallback | removed files and exports | no production reader | no compatibility recovery | Verified |
 | full four-policy production digest | application production audit | TSK-08 | shared final audit model | Deferred: TSK-08 |
 
 No unrecorded external URL contract was found. Ranking URL state is an internal query contract, and
 the requirements explicitly require old readers to be deleted. Old `rSpecial` / `rField` values are
 ignored on parse and removed on the next serialization; they are not interpreted or migrated.
-The destructive five-field cutover remains verified, but the wider calculation identity and cache families do not close. No external URL compatibility was newly inferred; old ranking-condition URL fields remain intentionally rejected. Old calculation share schema will also be rejected under the proposed portable contract.
+The destructive five-field cutover and wider portable calculation identity remain verified, but the cache family does not close. No external URL compatibility was newly inferred; old ranking-condition URL fields remain intentionally rejected. Old calculation share schema is rejected by the implemented portable contract.
 
 ## Canonical flow
 
@@ -56,11 +56,11 @@ five Web commands
   -> calculate request
   -> worker-owned five-field fingerprint
   -> calculateRankingPolicy
-  -> rows + typed exclusions + current evidence-bearing cache (Blocking)
+  -> rows + typed exclusions + current evidence-bearing cache (Deferred: TSK-07)
   -> request ID/fingerprint stale-response gate
   -> local filter/sort/metric presentation
   -> detail command with the same fingerprint
-  -> current worker/React detail accumulation (Blocking)
+  -> current worker/React detail accumulation (Deferred: TSK-07)
   -> profile/fact/ordered-action evidence presentation
 ```
 
@@ -82,8 +82,8 @@ five Web commands
 | damage semantics changes | N/A: battle execution is unchanged |
 | full production digest across four policies | Deferred: TSK-08 |
 | compatibility adapter or dual runtime | N/A: prohibited by destructive cutover |
-| nonbaseline request through draft/history/share/backup/fingerprint | Blocking: portable request implementation |
-| repeated detail open/close/condition/context changes | Blocking: evidence-free bounded cache implementation |
+| nonbaseline request through draft/history/share/backup/fingerprint | Verified: TSK-06.1 portable request implementation |
+| repeated detail open/close/condition/context changes | Deferred: TSK-07 evidence-free bounded cache implementation |
 
 ## Inventory and parity
 
@@ -137,9 +137,9 @@ not runtime readers.
 
 The recorded test and performance results are historical evidence for the five-field cutover. They do not prove portable restore parity or bounded cache values because those cases were absent from the gate design.
 
-Closure: Blocking 2
+Closure: Blocking 0, Deferred 2
 
-- portable calculation identity dependency: TSK-06.1 owns versioned request/result, persistence, migration, and recovery; TSK-07 owns only immediate Web handoff after that dependency closes.
-- evidence cache ownership: TSK-07 must separate summary/detail and enforce maximum cardinality.
+- Verified: TSK-06.2 closed E2E case ownership, project assignment, setup/ranking repetition, and the current performance baseline.
+- Deferred: TSK-07 separates summary/detail evidence and enforces maximum cardinality.
 
-TSK-07 is blocked and TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after these two families close.
+TSK-07 is ready after TSK-06.2 reached Blocking 0; TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after TSK-07 closes.

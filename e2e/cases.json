@@ -1,0 +1,512 @@
+[
+  {
+    "id": "E2E-SETUP-001",
+    "title": "canonical initial browser setup",
+    "owner": "web/IndexedDB",
+    "failure": "initial setup cannot persist canonical browser state",
+    "project": "setup",
+    "replacement": "Playwright setup project; storageState spike rejected at 256MB",
+    "costMs": 0,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-001",
+    "title": "startup a11y",
+    "owner": "web/a11y",
+    "failure": "fresh startup DOM violates serious WCAG rules",
+    "project": "desktop",
+    "replacement": "browser axe",
+    "costMs": 3049,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-002",
+    "title": "major desktop screens a11y",
+    "owner": "web/a11y",
+    "failure": "desktop navigation screens violate serious WCAG rules",
+    "project": "desktop",
+    "replacement": "browser axe",
+    "costMs": 17145,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-003",
+    "title": "mobile calculator a11y",
+    "owner": "web/a11y",
+    "failure": "mobile dialogs or calculator violate serious WCAG rules",
+    "project": "mobile",
+    "replacement": "browser axe",
+    "costMs": 17824,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-004",
+    "title": "calculator desktop VRT",
+    "owner": "web/layout",
+    "failure": "desktop calculator pixels regress",
+    "project": "desktop",
+    "replacement": "Playwright screenshot",
+    "costMs": 5165,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-005",
+    "title": "calculator 320px VRT",
+    "owner": "web/layout",
+    "failure": "320px calculator pixels or overflow regress",
+    "project": "mobile",
+    "replacement": "Playwright screenshot",
+    "costMs": 4848,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-006",
+    "title": "selected effect 390px VRT",
+    "owner": "web/layout",
+    "failure": "selected effect browser styling regresses at 390px",
+    "project": "mobile",
+    "replacement": "AppliedEffects.integration.test.tsx plus screenshot",
+    "costMs": 5114,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-007",
+    "title": "calculator density",
+    "owner": "web/layout",
+    "failure": "browser layout exceeds density or overflow limits",
+    "project": "desktop",
+    "replacement": "browser geometry",
+    "costMs": 18686,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-008",
+    "title": "ranking loading surface",
+    "owner": "web/component",
+    "failure": "none beyond hook/component presentation",
+    "project": "desktop",
+    "replacement": "Ranking.integration.test.tsx: renders loading until the canonical worker result arrives",
+    "costMs": 5617,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-009",
+    "title": "ranking target filters",
+    "owner": "web/component",
+    "failure": "none beyond component command and presentation",
+    "project": "desktop",
+    "replacement": "RankingFilters.test.tsx; rankingPresentation.test.ts",
+    "costMs": 13716,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-010",
+    "title": "ranking five policies",
+    "owner": "web/component",
+    "failure": "none beyond component command and accessibility",
+    "project": "desktop",
+    "replacement": "RankingConditions.test.tsx",
+    "costMs": 14847,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-011",
+    "title": "ranking icon fallback VRT",
+    "owner": "web/layout",
+    "failure": "browser image failure fallback pixels regress",
+    "project": "mobile",
+    "replacement": "fixture Worker plus screenshot",
+    "costMs": 13180,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-012",
+    "title": "ranking desktop VRT",
+    "owner": "web/package connection",
+    "failure": "real module Worker result does not render in desktop browser",
+    "project": "desktop",
+    "replacement": "merged into E2E-050",
+    "costMs": 13903,
+    "status": "merged"
+  },
+  {
+    "id": "E2E-013",
+    "title": "ranking area contribution",
+    "owner": "calculation-application",
+    "failure": "none beyond detail semantics and presentation",
+    "project": "desktop",
+    "replacement": "rankingWorkerRuntime.test.ts; rankingPolicy.test.ts",
+    "costMs": 13374,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-014",
+    "title": "ranking 390px VRT",
+    "owner": "web/layout",
+    "failure": "390px ranking pixels regress",
+    "project": "mobile",
+    "replacement": "fixture Worker plus screenshot",
+    "costMs": 12606,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-015",
+    "title": "ranking 320px VRT",
+    "owner": "web/layout",
+    "failure": "320px ranking and row pixels regress",
+    "project": "mobile",
+    "replacement": "fixture Worker plus screenshot",
+    "costMs": 13907,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-016",
+    "title": "ranking density",
+    "owner": "web/layout",
+    "failure": "browser ranking layout exceeds density or overflow limits",
+    "project": "desktop",
+    "replacement": "fixture Worker plus browser geometry",
+    "costMs": 45457,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-017",
+    "title": "calculator package journey",
+    "owner": "web/package connection",
+    "failure": "setup to calculator package connection fails in a browser",
+    "project": "desktop",
+    "replacement": "representative browser journey",
+    "costMs": 10268,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-018",
+    "title": "calculator 320px overflow",
+    "owner": "web/layout",
+    "failure": "duplicated by the canonical 320px VRT and density gate",
+    "project": "mobile",
+    "replacement": "merged into E2E-005 and E2E-007",
+    "costMs": 9190,
+    "status": "merged"
+  },
+  {
+    "id": "E2E-019",
+    "title": "support persistence",
+    "owner": "web/IndexedDB",
+    "failure": "covered by the shared repository boundary",
+    "project": "desktop",
+    "replacement": "repository.test.ts; merged repository journey",
+    "costMs": 24627,
+    "status": "merged"
+  },
+  {
+    "id": "E2E-020",
+    "title": "mobile servant editor",
+    "owner": "web/layout",
+    "failure": "mobile list-to-detail browser navigation or overflow regresses",
+    "project": "mobile",
+    "replacement": "browser mobile journey",
+    "costMs": 5764,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-021",
+    "title": "mobile support editor",
+    "owner": "web/layout",
+    "failure": "mobile saved-list navigation or overflow regresses",
+    "project": "mobile",
+    "replacement": "browser mobile journey",
+    "costMs": 4614,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-022",
+    "title": "mobile picker and download",
+    "owner": "web/browser API",
+    "failure": "mobile dialogs, focus restoration, image download, or overflow fail",
+    "project": "mobile",
+    "replacement": "browser mobile journey",
+    "costMs": 6274,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-023",
+    "title": "offline reopen",
+    "owner": "web/service worker",
+    "failure": "service worker cannot reopen IndexedDB state offline",
+    "project": "desktop",
+    "replacement": "fresh browser context",
+    "costMs": 19594,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-024",
+    "title": "published master update",
+    "owner": "web/IndexedDB",
+    "failure": "covered by the incompatible-master recovery family",
+    "project": "desktop",
+    "replacement": "repository.test.ts; merged into E2E-025",
+    "costMs": 14981,
+    "status": "merged"
+  },
+  {
+    "id": "E2E-025",
+    "title": "incompatible master recovery",
+    "owner": "web/IndexedDB",
+    "failure": "browser recovery deletes user data or retains invalid master state",
+    "project": "desktop",
+    "replacement": "repository.test.ts plus fresh browser context",
+    "costMs": 19486,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-026",
+    "title": "v1 profile rejection",
+    "owner": "web/IndexedDB",
+    "failure": "none beyond repository fail-closed parsing",
+    "project": "desktop",
+    "replacement": "repository.test.ts",
+    "costMs": 8681,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-027",
+    "title": "draft autosave restore",
+    "owner": "web/IndexedDB",
+    "failure": "browser draft autosave does not survive reload",
+    "project": "desktop",
+    "replacement": "repository.test.ts plus representative reload",
+    "costMs": 12077,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-028",
+    "title": "Fou quick controls",
+    "owner": "web/component",
+    "failure": "none beyond command dispatch and application state",
+    "project": "desktop",
+    "replacement": "QuickValuePresets.test.tsx; scenario tests",
+    "costMs": 12599,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-029",
+    "title": "level quick controls",
+    "owner": "web/component",
+    "failure": "none beyond command dispatch and application state",
+    "project": "desktop",
+    "replacement": "QuickValuePresets.test.tsx; scenario tests",
+    "costMs": 5145,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-030",
+    "title": "direct inputs and trait effects",
+    "owner": "calculation-application",
+    "failure": "none beyond canonical inputs and effect presentation",
+    "project": "desktop",
+    "replacement": "canonicalInputs.test.ts; AppliedEffects tests",
+    "costMs": 6978,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-031",
+    "title": "required quantitative input",
+    "owner": "calculation-application",
+    "failure": "none beyond typed inputRequired presentation",
+    "project": "desktop",
+    "replacement": "EffectInlineInput.test.tsx; scenario.test.ts",
+    "costMs": 5210,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-032",
+    "title": "ordered production effects",
+    "owner": "battle-execution",
+    "failure": "none beyond ordered effect semantics",
+    "project": "desktop",
+    "replacement": "productionExecutionParity.test.ts; productionMasterAudit.test.ts",
+    "costMs": 5562,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-033",
+    "title": "HP-linear effect",
+    "owner": "calculation-application",
+    "failure": "none beyond HP input and layout already covered",
+    "project": "desktop",
+    "replacement": "canonicalInputs.test.ts; E2E-007",
+    "costMs": 10716,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-034",
+    "title": "Tonelico HP thresholds",
+    "owner": "calculation-application",
+    "failure": "none beyond cumulative HP semantics",
+    "project": "desktop",
+    "replacement": "canonicalInputs.test.ts",
+    "costMs": 10885,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-035",
+    "title": "CE HP threshold",
+    "owner": "calculation-application",
+    "failure": "none beyond HP boundary semantics",
+    "project": "desktop",
+    "replacement": "hpConditionGolden.test.ts",
+    "costMs": 11335,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-036",
+    "title": "exclusive NP card variant",
+    "owner": "battle-execution",
+    "failure": "none beyond transactional variant semantics",
+    "project": "desktop",
+    "replacement": "variantSelection.test.ts; attackProfile.test.ts",
+    "costMs": 11229,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-037",
+    "title": "same-card NP variant",
+    "owner": "battle-execution",
+    "failure": "none beyond canonical variant identity",
+    "project": "desktop",
+    "replacement": "variantSelection.test.ts; attackProfile.test.ts",
+    "costMs": 10872,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-038",
+    "title": "exclusive realm decisions",
+    "owner": "battle-execution",
+    "failure": "none beyond exclusive condition transaction",
+    "project": "desktop",
+    "replacement": "effectDecision.test.ts; preparationTransaction.test.ts",
+    "costMs": 11197,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-039",
+    "title": "canonical actor minima",
+    "owner": "calculation-application",
+    "failure": "none beyond count derivation and typed error",
+    "project": "desktop",
+    "replacement": "canonicalActorCount.test.ts; EffectInlineInput.test.tsx",
+    "costMs": 10656,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-040",
+    "title": "Habetrot enemy count",
+    "owner": "calculation-application",
+    "failure": "none beyond count semantics",
+    "project": "desktop",
+    "replacement": "canonicalActorCount.test.ts; canonicalInputs.test.ts",
+    "costMs": 12129,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-041",
+    "title": "probabilistic effects",
+    "owner": "calculation-application",
+    "failure": "none beyond proc outcome semantics",
+    "project": "desktop",
+    "replacement": "procEffectsGolden.test.ts; AppliedEffects.accessibility.test.tsx",
+    "costMs": 12809,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-042",
+    "title": "hidden sunlight",
+    "owner": "battle-execution",
+    "failure": "none beyond linked hidden operation semantics",
+    "project": "desktop",
+    "replacement": "activationContext.test.ts; scenario.test.ts",
+    "costMs": 10617,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-043",
+    "title": "OR condition",
+    "owner": "battle-execution",
+    "failure": "none beyond condition composition and layout already covered",
+    "project": "desktop",
+    "replacement": "condition.property.test.ts; E2E-007",
+    "costMs": 11558,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-044",
+    "title": "Water Lilith differential",
+    "owner": "calculation-application",
+    "failure": "none beyond production damage golden",
+    "project": "desktop",
+    "replacement": "externalDifferential.test.ts; productionExecutionParity.test.ts",
+    "costMs": 5892,
+    "status": "transferred"
+  },
+  {
+    "id": "E2E-045",
+    "title": "calculation share round-trip",
+    "owner": "web/browser API",
+    "failure": "browser clipboard URL navigation does not restore the portable request",
+    "project": "desktop",
+    "replacement": "share.test.ts plus browser clipboard",
+    "costMs": 12906,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-046",
+    "title": "successful version recovery",
+    "owner": "web/IndexedDB",
+    "failure": "browser recovery does not commit and focus the current result",
+    "project": "desktop",
+    "replacement": "portableCalculation.test.ts plus browser focus/reload",
+    "costMs": 12055,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-047",
+    "title": "unsupported version recovery",
+    "owner": "web/IndexedDB",
+    "failure": "browser retry overwrites historical state or loses focus",
+    "project": "desktop",
+    "replacement": "portableCalculation.test.ts plus browser focus/reload",
+    "costMs": 11915,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-048",
+    "title": "profile repository round-trip",
+    "owner": "web/IndexedDB",
+    "failure": "servant or CE records do not survive browser reload",
+    "project": "desktop",
+    "replacement": "repository.test.ts plus shortened browser round-trip",
+    "costMs": 29993,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-049",
+    "title": "history backup round-trip",
+    "owner": "web/browser API",
+    "failure": "download/upload backup does not preserve deduplicated history",
+    "project": "desktop",
+    "replacement": "repository test plus browser download/upload",
+    "costMs": 5260,
+    "status": "retained"
+  },
+  {
+    "id": "E2E-050",
+    "title": "real ranking worker",
+    "owner": "web/package connection",
+    "failure": "real module Worker cannot return 433 rows and one detail to the browser",
+    "project": "desktop",
+    "replacement": "one real Worker journey; all other ranking cases use fixture Worker",
+    "costMs": 85465,
+    "status": "retained"
+  }
+]

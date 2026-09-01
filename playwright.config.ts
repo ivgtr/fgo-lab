@@ -20,9 +20,32 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'setup', testMatch: /setup\.setup\.ts/ },
+    {
+      name: 'chromium',
+      testIgnore: /setup\.setup\.ts/,
+      grep: /@desktop/,
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'] },
+    },
     ...(process.env['PLAYWRIGHT_WEBKIT']
-      ? [{ name: 'webkit', use: { ...devices['iPhone 13 Mini'] } }]
-      : [{ name: 'mobile-chromium', use: { ...devices['Pixel 7'] } }]),
+      ? [
+          {
+            name: 'webkit',
+            testIgnore: /setup\.setup\.ts/,
+            grep: /@mobile/,
+            dependencies: ['setup'],
+            use: { ...devices['iPhone 13 Mini'] },
+          },
+        ]
+      : [
+          {
+            name: 'mobile-chromium',
+            testIgnore: /setup\.setup\.ts/,
+            grep: /@mobile/,
+            dependencies: ['setup'],
+            use: { ...devices['Pixel 7'] },
+          },
+        ]),
   ],
 });

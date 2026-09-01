@@ -66,6 +66,7 @@ import { createCalculatorViewModel } from './calculatorViewModel';
 import { AttackerSkills } from './AttackerSkills';
 import { AppliedEffects } from './AppliedEffects';
 import { EffectiveInputDetails } from './EffectiveInputDetails';
+import { QuickValuePresets } from './QuickValuePresets';
 import { SupportSourceCard } from '../support/SupportSourceCard';
 import './calculator.css';
 import './calculator-form.css';
@@ -645,28 +646,17 @@ export function Calculator({
               onChange={(event) => changeAttackerLevel(Number(event.target.value))}
             />
             {mode === 'quick' ? (
-              <span
-                className="quick-value-presets level-presets"
-                aria-label="サーヴァントLvのクイック選択"
-              >
-                {[100, 120].map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    aria-pressed={input.attackerLevel === level}
-                    onClick={() => changeAttackerLevel(level)}
-                  >
-                    {level}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  disabled={input.attackerLevel === resetAttackerLevel}
-                  onClick={() => changeAttackerLevel(resetAttackerLevel)}
-                >
-                  リセット
-                </button>
-              </span>
+              <QuickValuePresets
+                label="サーヴァントLvのクイック選択"
+                value={input.attackerLevel}
+                controls={[
+                  { kind: 'preset', label: '100', value: 100 },
+                  { kind: 'preset', label: '120', value: 120 },
+                ]}
+                resetValue={resetAttackerLevel}
+                onChange={changeAttackerLevel}
+                className="level-presets"
+              />
             ) : null}
           </label>
           {mode === 'quick' ? (
@@ -680,22 +670,20 @@ export function Calculator({
                 value={input.fouAtk}
                 onChange={(event) => changeFinalValue('fouAtk', Number(event.target.value))}
               />
-              <span className="quick-value-presets" aria-label="ATKフォウのクイック選択">
-                <button
-                  type="button"
-                  disabled={input.fouAtk >= 3000}
-                  onClick={() => changeFinalValue('fouAtk', Math.min(input.fouAtk + 1000, 3000))}
-                >
-                  +1,000
-                </button>
-                <button
-                  type="button"
-                  disabled={input.fouAtk === 0}
-                  onClick={() => changeFinalValue('fouAtk', 0)}
-                >
-                  リセット
-                </button>
-              </span>
+              <QuickValuePresets
+                label="ATKフォウのクイック選択"
+                value={input.fouAtk}
+                controls={[
+                  {
+                    kind: 'action',
+                    label: '+1,000',
+                    value: Math.min(input.fouAtk + 1_000, 3_000),
+                    disabled: input.fouAtk >= 3_000,
+                  },
+                ]}
+                resetValue={0}
+                onChange={(value) => changeFinalValue('fouAtk', value)}
+              />
               <small>合計ATKへ加算・最大+3,000</small>
             </label>
           ) : null}

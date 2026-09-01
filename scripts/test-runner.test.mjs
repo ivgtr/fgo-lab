@@ -334,7 +334,7 @@ test('local, CI, and Pages use the same canonical quality command', () => {
     packageJson.scripts['validate:master'],
     'pnpm --filter @fgo-lab/data-pipeline validate',
   );
-  assert.equal(packageJson.scripts['test:e2e'], 'playwright test --workers=1');
+  assert.equal(packageJson.scripts['test:e2e'], 'playwright test --workers=2');
   for (const path of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {
     const workflow = readFileSync(resolve(root, path), 'utf8');
     assert.equal(workflow.match(/run: pnpm quality/g)?.length, 1, path);

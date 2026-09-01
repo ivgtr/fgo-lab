@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { completeSetup } from './setup';
+import { openTestHome } from './setup';
 import type { Page } from '@playwright/test';
 
 async function expectNoSeriousViolations(page: Page) {
@@ -13,17 +13,21 @@ async function expectNoSeriousViolations(page: Page) {
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 }
 
-test('@a11y startup screen has no serious axe violations', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('.startup-screen')).toBeVisible();
-  await expectNoSeriousViolations(page);
+test('[E2E-001] startup screen @desktop @a11y', async ({ browser }) => {
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+  const page = await context.newPage();
+  try {
+    await page.goto('/');
+    await expect(page.locator('.startup-screen')).toBeVisible();
+    await expectNoSeriousViolations(page);
+  } finally {
+    await context.close();
+  }
 });
 
-test('@a11y major desktop screens have no serious axe violations', async ({ page, isMobile }) => {
+test('[E2E-002] major desktop screens @desktop @a11y', async ({ page }) => {
   test.setTimeout(60_000);
-  test.skip(isMobile, 'Desktop navigation covers every R1 screen');
-  await page.goto('/');
-  await completeSetup(page);
+  await openTestHome(page);
   for (const name of [
     'ホーム',
     'ダメージ計算',
@@ -40,10 +44,9 @@ test('@a11y major desktop screens have no serious axe violations', async ({ page
   }
 });
 
-test('@a11y mobile home and calculator have no serious axe violations', async ({ page }) => {
+test('[E2E-003] mobile home and calculator @mobile @a11y', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.goto('/');
-  await completeSetup(page);
+  await openTestHome(page);
   await expectNoSeriousViolations(page);
   await page.getByRole('button', { name: '計算', exact: true }).click();
   await expectNoSeriousViolations(page);

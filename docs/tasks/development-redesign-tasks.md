@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.20"
+document_version: "1.5.21"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
@@ -53,13 +53,14 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-05 | Transactional preparation execution | done | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | done | TSK-05 | ranking condition／candidate planning |
 | TSK-06.1 | Portable calculation request and identity | done | TSK-06 | product portable data／ranking handoff |
-| TSK-07 | Web／worker一括切替 | ready | TSK-06.1 | ranking UI／handoff／cache |
+| TSK-06.2 | E2E responsibility and execution closure | done | TSK-06.1 | test strategy Web component／E2E ownership |
+| TSK-07 | Web／worker一括切替 | ready | TSK-06.2 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -637,11 +638,69 @@ Handoff:
 - Review reopening: failed version upgradeのtransactionality、projection compilerの二重owner、実装済みWeb handoff／ranking noticeのscope分類不足を同一familyのBlocking 3として記録した。以前の計画がschema cutoverのdirect Web writerをTSK-07へ分離したscope inventory不足であり、承認済みcontractは変更しない。
 - Review fix: applicationのtransactional upgrade commandは成功時だけ新request／resultをcommitし、invalid／unsupportedでは旧pairとtyped attemptを保持する。self／area policyを受ける共有compilerへranking／portable／presentation auditを収束し、portableはprepare once後にprojectionを適用する。production Web E2Eでself-buff除外のranking result parity、notice、通常条件reset、upgrade成功focus、unsupported失敗後の旧値保持／focus／retry／未上書きを検証した。
 - Review verification: final `pnpm quality`成功（unit 66 files／370 tests、production 24 files／111 tests、E2E 66 passed／34 skipped）。production audit payload／digest／inventory／counterは不変。pre-fix 18.837秒に対するpost-fix 3 runは18.219／19.178／19.689秒（-3.3%〜+4.5%）。
-- Current closure: TSK-06.1 `done`、Blocking 0、Deferred 1。TSK-07は`ready`でevidence-free cache／stale detailだけを所有し、TSK-08はTSK-07待ち。
+- Current closure: TSK-06.1 `done`、Blocking 0、Deferred 1。TSK-06.2もBlocking 0で`done`となり、TSK-07は`ready`へ戻った。evidence-free cache／stale detailは引き続きTSK-07が所有し、TSK-08はTSK-07待ち。
+
+### TSK-06.2: E2E responsibility and execution closure
+
+Depends on: TSK-06.1
+
+- [x] TSK-06.1完了HEADを固定し、同一環境・1 worker・retryなしのfull E2Eを3回測定して中央値を記録する。
+- [x] 48個の明示的な`test()`定義と、viewport loop展開後50 cases／projectをstable case IDで台帳化する。
+- [x] 全caseへsemantic owner、E2E固有failure、project owner、移行先、代替test、実測cost、closure statusを記録する。
+- [x] component／application／battle-execution側の不足をsmall fixtureで先に閉じ、対応する意味論E2Eを削除または代表経路へ統合する。
+- [x] desktop／mobile／VRT／a11yのproject ownershipをPlaywright設定とtest metadataへ移し、project-specific runtime skipをなくす。
+- [x] 本物のranking worker／package接続は代表1経路へ限定し、loading／filter／detail／density／VRTではschema-validなtest-side response fixtureを使う。
+- [x] prepared stateをspikeして268 MB costを理由に棄却し、通常setupとfresh contextのbrowser接続を維持する。
+- [x] 変更後full E2Eを同一条件で3回測定し、その後1／2／4 workersをretryなし各3回で比較してcanonical worker数を決める。
+
+Done gate:
+
+- 各残存E2Eが、browser API、service worker、IndexedDB、real worker、responsive layout、VRT、a11yのいずれかに固有なfailureを一行で説明できる。
+- HP、NP variant、actor count、probabilistic effect、condition、個別servant damageの正本がapplication／battle-executionにあり、E2Eで組合せを再列挙していない。
+- UI command dispatch、typed input error、selection、loading、filter、detail presentationの不足がcomponent integrationで閉じてからE2Eを削除している。
+- generated case、project ownership、実行、skipを別々に集計し、project-specific runtime skipは0件である。
+- 本物の433件ranking完全計算はfull E2Eあたり代表1回で、fixture経路をpackage接続の証拠として扱っていない。
+- setup再利用はtest codeだけに閉じ、productionへtest-only branch、master bypass、共有page stateを追加していない。
+- calculator／ranking parity、production inventory、fail-closed、VRT、a11yに意図しない差分がない。
+- 変更後3-run中央値は変更前より30%以上短縮する。未達時は原因と追加scopeをBlockingとして閉じるまでworker並列度を上げない。
+- 1／2／4 workersの各3-runでfailure／timeout／session closeと中央値を比較し、3回全成功かつ実益がある最小worker数を採用する。条件を満たさなければ1 workerを維持する。
+- Flow closure: N/A: production canonical state、damage execution、outcome classification、writer／recovery pathを変更せず、test ownershipとtest execution pathだけを変更するため。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `TS-QUAL-001` | Apply | E2E case metadata contract、`pnpm test:e2e`、`pnpm quality` | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `TS-ART-001` | Apply | Playwright HTML／trace／screenshot／measurement manifest check | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `TS-PERF-002` | Apply | full E2E変更前後各3回、1／2／4 workers各3回 | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `TS-REPORT-001` | Apply | case／project／skip／duration／setup／ranking counter report | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `RK-UI-001` | Apply | focused component integration、代表ranking worker E2E、VRT | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `RK-AUDIT-001` | Apply | `pnpm test:production` calculator／ranking parity and inventory check | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `RK-CACHE-001` | Deferred: TSK-07 | - | TSK-07 |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | canonical flow note／Handoff |
+
+Handoff:
+
+- Canonical note: `docs/evidence/e2e-responsibility-flow-tsk-06-2.md`。開始HEADは`6d7608c`、
+  worktreeの既存documentation変更を保持した。50 legacy cases＋setup、42 key assertionsを台帳化し、
+  transferred／merged caseのexact replacementとretained markerをrunner contractで固定した。
+- Ownership: semantic E2Eはcomponent／application／executionへ先に移管した。残存25 generated testsはsetup 1、
+  desktop 15、mobile 9、skip 0。本物の433-row rankingは1件だけで、canonical factoryから作るfake Workerは
+  VRT専用、loadingはcomponent integration ownerである。
+- Performance: before中央値682.239秒、after workers 1中央値236.442秒（-65.3%）。workers 2は
+  147.025／147.457／172.376秒で3/3成功、workers 4は3/3で同じ4 timeoutを再現したため、canonical
+  `test:e2e`はworkers 2を採用した。268,097,500-byte prepared stateは不採用・削除済み。
+- Parity／visual: production 24 files／111 tests、calculator 422、ranking／AttackProfile 433、digest
+  `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`とruntime counterは不変。
+  VRT 9/9、a11y 4/4、新規mobile baseline 7枚を目視した。
+- Verification: final `pnpm quality`成功（unit 69 files／375 tests、production 24／111、E2E 25／25・
+  skip 0）。ClosureはBlocking 0、Deferred 1。TSK-07はevidence-free cache／stale detailだけを所有して
+  `ready`へ戻り、TSK-08はTSK-07待ちを維持する。
 
 ### TSK-07: Web／worker一括切替
 
-Depends on: TSK-06.1
+Depends on: TSK-06.2
 
 - [x] ランキング条件を5項目へ切り替える。
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
@@ -693,7 +752,7 @@ Handoff:
 - Verification: focused 8 files／14 tests、unit 62 files／350 tests、production 24 files／111 tests、
   runner 17 tests、final `pnpm quality`成功。production source scanで旧reader／fallback／runtime path 0件。
 - Historical completion: five-field cutover commit and verification remain valid for their original scope。
-- Structural review reopening: portable identityとWeb handoff／noticeはTSK-06.1でBlocking 0へ閉じた。TSK-07は`ready`で、未完了scopeは`RK-CACHE-001`のevidence-free cache value／lifetime／cardinalityとstale detail rejectionだけである。
+- Structural review reopening: portable identityとWeb handoff／noticeはTSK-06.1でBlocking 0へ閉じた。TSK-07の未完了scopeは`RK-CACHE-001`のevidence-free cache value／lifetime／cardinalityとstale detail rejectionだけである。TSK-06.2はBlocking 0で完了したため、TSK-07は`ready`へ戻した。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

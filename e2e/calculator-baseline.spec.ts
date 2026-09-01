@@ -1,10 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { completeSetup } from './setup';
+import { openTestHome } from './setup';
 
 async function openCalculator(page: Page) {
   await page.route('https://static.atlasacademy.io/**', (route) => route.abort());
-  await page.goto('/');
-  await completeSetup(page);
+  await openTestHome(page);
   await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
   await page
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
@@ -13,22 +12,19 @@ async function openCalculator(page: Page) {
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 }
 
-test('calculator desktop UI baseline', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'The desktop project owns both explicit viewport baselines');
+test('[E2E-004] calculator desktop UI baseline @desktop @vrt', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openCalculator(page);
   await expect(page).toHaveScreenshot('calculator-desktop.png', { fullPage: true });
 });
 
-test('calculator 320px UI baseline', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'The desktop project owns both explicit viewport baselines');
+test('[E2E-005] calculator 320px UI baseline @mobile @vrt', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await openCalculator(page);
   await expect(page).toHaveScreenshot('calculator-320px.png', { fullPage: true });
 });
 
-test('selected effect state remains visible at 390px', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'The desktop project owns the explicit 390px interaction baseline');
+test('[E2E-006] selected effect state at 390px @mobile @vrt', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openCalculator(page);
   const skillSection = page.getByLabel('攻撃役の自身スキル');
@@ -46,8 +42,7 @@ test('selected effect state remains visible at 390px', async ({ page, isMobile }
   await expect(page).toHaveScreenshot('calculator-390px.png', { fullPage: true });
 });
 
-test('compact skill and effect layout stays within density limits', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'The desktop project measures the three explicit viewports');
+test('[E2E-007] calculator density and overflow @desktop @vrt', async ({ page }) => {
   const limits = {
     1280: { skillHeight: 250, effectHeight: 150, averageChipHeight: 55 },
     390: { skillHeight: 290, effectHeight: 190, averageChipHeight: 60 },
@@ -86,6 +81,7 @@ test('compact skill and effect layout stays within density limits', async ({ pag
       };
     });
     expect(metrics.overflow, `${String(width)}px horizontal overflow`).toBe(0);
+    // E2E-A018-320-OVERFLOW
     expect(metrics.fullWidthChipCount, `${String(width)}px full-width inputless chips`).toBe(0);
     expect(metrics.skillHeight, `${String(width)}px skill section height`).toBeLessThanOrEqual(
       limits[width].skillHeight,
