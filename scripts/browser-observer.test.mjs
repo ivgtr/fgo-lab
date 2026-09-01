@@ -5,12 +5,14 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { resolveConfig } from 'vite';
 import {
   classifyServerObservations,
   readJson,
   readJsonLines,
   sha256File,
   validateBrowserRuntimeContract,
+  viteConnectionFailureMessage,
 } from './test-observation-lib.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -131,6 +133,7 @@ const serverRuntime = {
     clientPath: '/@vite/client',
     webSocketPath: '/',
     hmrUpdates: false,
+    forwardConsole: false,
   },
 };
 const serverTestId = 'fixture.spec.ts > server lifecycle';
@@ -153,12 +156,12 @@ function viteConsole(
   };
 }
 
-function webSocket(phase, socketId = 'page-1-socket-1') {
+function webSocket(phase, socketId = 'page-1-socket-1', message = phase) {
   return {
     runner: 'playwright',
     testId: serverTestId,
     kind: 'browser.websocket',
-    message: phase,
+    message,
     detail: {
       url: 'ws://127.0.0.1:4174/?token=fixture',
       pageUrl: `${serverRuntime.baseURL}/`,
@@ -167,6 +170,13 @@ function webSocket(phase, socketId = 'page-1-socket-1') {
       phase,
     },
   };
+}
+
+function webSocketNotification(error) {
+  return viteConsole(
+    `WebSocket connection to '${error.detail.url}' failed: ${error.message}`,
+    'error',
+  );
 }
 
 test('test-server lifecycle ownership preserves raw events and exact source identity', () => {
@@ -219,8 +229,7 @@ test('test-server lifecycle rejects unknown output and invalid transitions', () 
       '8.2.2',
     );
     assert.deepEqual(result.remaining, [unknown]);
-    if (unknown === unknownError)
-      assert.ok(result.errors.some((error) => error.includes('consoleError')));
+    assert.deepEqual(result.errors, []);
   }
 
   for (const observations of [
@@ -243,6 +252,8 @@ test('test-server lifecycle rejects unknown output and invalid transitions', () 
 });
 
 test('offline WebSocket failure is owned only by its test declaration and exact counts', () => {
+  const offlineError = 'Error in connection establishment: net::ERR_INTERNET_DISCONNECTED';
+  const connectionFailure = viteConnectionFailureMessage(serverRuntime);
   const failureDeclaration = {
     pageLoads: [{ testId: serverTestId, pages: [{ path: '/', count: 1 }] }],
     serverFailures: [
@@ -253,19 +264,22 @@ test('offline WebSocket failure is owned only by its test declaration and exact 
         connecting: 1,
         connected: 0,
         webSocketOpen: 1,
-        webSocketError: 1,
         webSocketClose: 1,
-        consoleError: 1,
+        webSocketFailures: [{ message: offlineError, count: 1 }],
+        consoleFailures: [{ kind: 'vite_connection_failure', count: 1 }],
       },
     ],
   };
+  const typedError = webSocket('error', 'page-1-socket-1', offlineError);
   const failureEvents = [
     viteConsole('[vite] connecting...'),
     webSocket('open'),
-    webSocket('error'),
-    viteConsole('dynamic browser WebSocket error', 'error'),
+    typedError,
+    webSocketNotification(typedError),
     webSocket('close'),
+    viteConsole(connectionFailure, 'error'),
   ];
+  const rawFailureEvents = structuredClone(failureEvents);
   const accepted = classifyServerObservations(
     failureEvents,
     serverRuntime,
@@ -274,6 +288,8 @@ test('offline WebSocket failure is owned only by its test declaration and exact 
   );
   assert.deepEqual(accepted.errors, []);
   assert.deepEqual(accepted.remaining, []);
+  assert.deepEqual(failureEvents, rawFailureEvents);
+  assert.ok(failureEvents.every((event) => accepted.owned.includes(event)));
 
   const wrongTest = failureEvents.map((event) => ({ ...event, testId: 'fixture.spec.ts > wrong' }));
   const wrongTestResult = classifyServerObservations(
@@ -284,19 +300,101 @@ test('offline WebSocket failure is owned only by its test declaration and exact 
   );
   assert.equal(wrongTestResult.remaining.length, wrongTest.length);
 
-  const wrongCount = classifyServerObservations(
+  const missingTypedFailure = classifyServerObservations(
     failureEvents.filter((event) => event.detail.phase !== 'error'),
     serverRuntime,
     failureDeclaration,
     '8.2.2',
   );
-  assert.ok(wrongCount.errors.some((error) => error.includes('webSocketError')));
+  assert.ok(missingTypedFailure.errors.some((error) => error.includes('webSocketError')));
+
+  const sameCountUnknownReplacement = [...failureEvents];
+  sameCountUnknownReplacement[3] = viteConsole('UNRELATED UNKNOWN VITE ERROR', 'error');
+  const unknownResult = classifyServerObservations(
+    sameCountUnknownReplacement,
+    serverRuntime,
+    failureDeclaration,
+    '8.2.2',
+  );
+  assert.ok(unknownResult.errors.some((error) => error.includes('websocket_browser_notification')));
+  assert.ok(unknownResult.remaining.includes(sameCountUnknownReplacement[3]));
+
+  const knownClassSubstitution = [...failureEvents];
+  knownClassSubstitution[3] = viteConsole(connectionFailure, 'error');
+  const substitutionResult = classifyServerObservations(
+    knownClassSubstitution,
+    serverRuntime,
+    failureDeclaration,
+    '8.2.2',
+  );
   assert.ok(
-    wrongCount.errors.some((error) => error.includes('missing_typed_websocket_correlation')),
+    substitutionResult.errors.some((error) => error.includes('websocket_browser_notification')),
+  );
+  assert.ok(substitutionResult.errors.some((error) => error.includes('vite_connection_failure')));
+
+  for (const [events, identity] of [
+    [failureEvents.filter((_, index) => index !== 3), 'websocket_browser_notification'],
+    [[...failureEvents, webSocketNotification(typedError)], 'websocket_browser_notification'],
+    [
+      failureEvents.filter((event) => event.message !== connectionFailure),
+      'vite_connection_failure',
+    ],
+    [[...failureEvents, viteConsole(connectionFailure, 'error')], 'vite_connection_failure'],
+  ]) {
+    const result = classifyServerObservations(events, serverRuntime, failureDeclaration, '8.2.2');
+    assert.ok(result.errors.some((error) => error.includes(identity)));
+  }
+
+  const applicationOwnedText = [...failureEvents];
+  applicationOwnedText[5] = viteConsole(
+    connectionFailure,
+    'error',
+    `${serverRuntime.baseURL}/src/application.ts`,
+  );
+  const applicationOwnedResult = classifyServerObservations(
+    applicationOwnedText,
+    serverRuntime,
+    failureDeclaration,
+    '8.2.2',
+  );
+  assert.ok(
+    applicationOwnedResult.errors.some((error) => error.includes('vite_connection_failure')),
+  );
+  assert.ok(applicationOwnedResult.remaining.includes(applicationOwnedText[5]));
+
+  const changedTypedError = webSocket(
+    'error',
+    'page-1-socket-1',
+    'Error in connection establishment: net::ERR_CONNECTION_REFUSED',
+  );
+  const changedFailure = [...failureEvents];
+  changedFailure[2] = changedTypedError;
+  changedFailure[3] = webSocketNotification(changedTypedError);
+  const changedFailureResult = classifyServerObservations(
+    changedFailure,
+    serverRuntime,
+    failureDeclaration,
+    '8.2.2',
+  );
+  assert.ok(changedFailureResult.errors.some((error) => error.includes(offlineError)));
+  assert.ok(changedFailureResult.remaining.includes(changedTypedError));
+
+  const legacyCounterDeclaration = structuredClone(failureDeclaration);
+  legacyCounterDeclaration.serverFailures[0].consoleError = 1;
+  const legacyCounterResult = classifyServerObservations(
+    failureEvents,
+    serverRuntime,
+    legacyCounterDeclaration,
+    '8.2.2',
+  );
+  assert.ok(
+    legacyCounterResult.errors.some((error) =>
+      error.includes('unknown_failure_field_consoleError'),
+    ),
   );
 });
 
-test('runtime contract rejects actual Vite version and client path drift', () => {
+test('runtime contract rejects actual Vite version, client path, and console forwarding drift', async () => {
   assert.deepEqual(validateBrowserRuntimeContract(serverRuntime, '8.2.2'), []);
   assert.deepEqual(validateBrowserRuntimeContract(serverRuntime, '8.2.3'), [
     'runtime:vite_version_mismatch:expected_8.2.2:received_8.2.3',
@@ -315,4 +413,16 @@ test('runtime contract rejects actual Vite version and client path drift', () =>
   );
   assert.equal(result.remaining.length, 2);
   assert.ok(result.errors.some((error) => error.includes('connecting')));
+
+  const forwarded = structuredClone(serverRuntime);
+  forwarded.server.forwardConsole = true;
+  assert.deepEqual(validateBrowserRuntimeContract(forwarded, '8.2.2'), [
+    'runtime:forward_console_must_be_false',
+  ]);
+
+  const resolved = await resolveConfig(
+    { configFile: resolve(root, 'apps/web/vite.config.ts'), mode: 'e2e' },
+    'serve',
+  );
+  assert.equal(resolved.server.forwardConsole.enabled, false);
 });

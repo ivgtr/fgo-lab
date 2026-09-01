@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.28"
+document_version: "1.5.29"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-02"
@@ -815,6 +815,25 @@ Handoff:
   runtime countersは不変。
 - Completion commit: 本commit。Flow closureはBlocking 0、Deferred 1（TSK-08 typed domain reason）。
   Next command: `git status --short && git rev-parse HEAD`でTSK-07を再開する。
+- Infrastructure failure identity reopening baseline: `7ff8e1348dbbe77bdb22954fa91229c92faddc45`、clean
+  worktree。E2E-023 scope内の`/@vite/client` errorをmessageに関係なく`consoleError`へ縮約し、typed
+  WebSocket errorとは件数だけで相関していたため、期待errorを未知messageへ同数置換してもsuccessになった。
+  前回reviewはtyped WebSocket相関とexact countまでを反例化したが、同数のclass置換を recurrence scopeへ
+  含めなかった。TSK-06.3をBlocking 1へ戻し、TSK-07は依存待ちとする。raw WebSocket URL／error textから
+  browser notificationを完全一致で導出し、Vite connection failureを別のtest-owned exact classにする。
+  Vite 8.2.2のagent判定による環境差を止めるため、`forwardConsole: false`をruntime contractとE2E server config
+  で固定し、未知message、既知class置換、missing／extraをすべてfail closedにするまで完了扱いへ戻さない。
+- Infrastructure failure identity resolution: 無型`consoleError`を削除し、test-owned exact WebSocket error textと
+  raw typed URLからbrowser notification全文を導出して一対一照合する。Vite connection failureはruntime base URLから
+  完全messageを構築する別classとし、unknown同数置換、既知class置換、両classのmissing／extra、別error text、
+  application sourceの同文言、旧counter fieldをrunner fixtureで拒否した。runtime contractの
+  `forwardConsole: false`をE2E Vite configが直接消費し、resolved configと実artifactのsecondary forwarding error 0を確認した。
+- Follow-up verification: runner 49／49、focused E2E-023 2／2、full E2E 25／25、unit 70 files／377、production
+  24／112。quality 3-runは255.57／253.16／252.45秒（中央値253.16秒）で3／3成功し、開始時中央値243.30秒比
+  +4.05%で10% ratchet内。全runは42 artifactのbytes／SHA一致、warning／unexpected／skip／todo／retry 0、
+  browser raw 335 = allowance 126＋resource correlation 88＋infrastructure 121である。production inventory、
+  calculator 422／ranking 433、両digest、runtime counterは不変。Flow closureはBlocking 0、Deferred 1。
+  TSK-06.3は`done`、TSK-07は`ready`へ戻す。Follow-up completion commit: 本commit。
 
 ### TSK-07: Web／worker一括切替
 

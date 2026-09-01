@@ -194,6 +194,8 @@ export function validateBrowserRuntimeContract(
       errors.push(`runtime:invalid_${field}`);
   }
   if (runtime?.server?.hmrUpdates !== false) errors.push('runtime:hmr_updates_must_be_false');
+  if (runtime?.server?.forwardConsole !== false)
+    errors.push('runtime:forward_console_must_be_false');
   if (baseURL && baseURL.protocol !== 'http:' && baseURL.protocol !== 'https:')
     errors.push('runtime:invalid_baseURL_protocol');
   return errors;
@@ -210,11 +212,10 @@ export function classifyServerObservations(
   const errors = validateBrowserRuntimeContract(runtime, installedViteVersion, binaryViteVersion);
   if (errors.length > 0) return { owned: [], remaining: observations, errors };
 
-  const expectations = serverExpectations(declaration, runtime.baseURL);
+  const expectations = serverExpectations(declaration, runtime);
   for (const expectation of expectations)
     if (expectation.family === 'invalid') errors.push(`server:${expectation.identity}`);
   if (errors.length > 0) return { owned: [], remaining: observations, errors };
-  const expectedByKey = new Map(expectations.map((expectation) => [expectation.key, expectation]));
   const candidatesByKey = new Map();
   const lifecycleEvents = [];
   const socketEvents = [];
@@ -235,7 +236,8 @@ export function classifyServerObservations(
   );
   const owned = [];
   const ownedSet = new Set();
-  for (const expectation of expectations) {
+  const acceptedWebSocketFailures = [];
+  for (const expectation of expectations.filter(({ family }) => family !== 'console.exact')) {
     const scope = `playwright\u0000${expectation.testId}`;
     if (!activeScopes.has(scope) && !observedScopes.has(scope)) continue;
     const matches = candidatesByKey.get(expectation.key) ?? [];
@@ -245,12 +247,25 @@ export function classifyServerObservations(
       );
       continue;
     }
-    if (
-      expectation.family === 'console.failure' &&
-      expectation.expectedCount > 0 &&
-      !webSocketFailureMatches(expectation, expectedByKey, candidatesByKey)
-    ) {
-      errors.push(`server:${expectation.identity}:missing_typed_websocket_correlation`);
+    for (const observation of matches) {
+      owned.push(observation);
+      ownedSet.add(observation);
+      if (expectation.event === 'webSocketError') acceptedWebSocketFailures.push(observation);
+    }
+  }
+  const exactExpectations = [
+    ...expectations.filter(({ family }) => family === 'console.exact'),
+    ...webSocketNotificationExpectations(acceptedWebSocketFailures, runtime),
+  ];
+  const observationsByKey = Object.groupBy(observations, observationKey);
+  for (const expectation of exactExpectations) {
+    const scope = `playwright\u0000${expectation.testId}`;
+    if (!activeScopes.has(scope) && !observedScopes.has(scope)) continue;
+    const matches = observationsByKey[expectation.key] ?? [];
+    if (matches.length !== expectation.expectedCount) {
+      errors.push(
+        `server:${expectation.identity}:count_mismatch:expected_${expectation.expectedCount}:received_${matches.length}`,
+      );
       continue;
     }
     for (const observation of matches) {
@@ -265,7 +280,8 @@ export function classifyServerObservations(
   };
 }
 
-function serverExpectations(declaration, baseURL) {
+function serverExpectations(declaration, runtime) {
+  const { baseURL } = runtime;
   const failures = new Map(
     (declaration?.serverFailures ?? []).map((failure) => [
       serverPageKey(failure.testId, new URL(failure.path, baseURL).href, failure.pageId),
@@ -278,27 +294,37 @@ function serverExpectations(declaration, baseURL) {
       const pageUrl = new URL(page.path, baseURL).href;
       const pageId = page.pageId ?? 'page-1';
       const failure = failures.get(serverPageKey(testId, pageUrl, pageId));
+      if (failure) {
+        const allowedFields = new Set([
+          'testId',
+          'path',
+          'pageId',
+          'connecting',
+          'connected',
+          'webSocketOpen',
+          'webSocketClose',
+          'webSocketFailures',
+          'consoleFailures',
+        ]);
+        for (const field of Object.keys(failure))
+          if (!allowedFields.has(field))
+            expectations.push(invalidServerExpectation(testId, `unknown_failure_field_${field}`));
+      }
       const counts = failure ?? {
         connecting: page.count,
         connected: page.count,
         webSocketOpen: page.count,
-        webSocketError: 0,
         webSocketClose: 0,
-        consoleError: 0,
+        webSocketFailures: [],
+        consoleFailures: [],
       };
       for (const [event, expectedCount] of Object.entries({
         connecting: counts.connecting,
         connected: counts.connected,
         webSocketOpen: counts.webSocketOpen,
-        webSocketError: counts.webSocketError,
         webSocketClose: counts.webSocketClose,
-        consoleError: counts.consoleError,
       })) {
-        const family = event.startsWith('webSocket')
-          ? 'websocket'
-          : event === 'consoleError'
-            ? 'console.failure'
-            : 'console.lifecycle';
+        const family = event.startsWith('webSocket') ? 'websocket' : 'console.lifecycle';
         expectations.push({
           key: serverEventKey(testId, pageUrl, pageId, event),
           testId,
@@ -308,6 +334,65 @@ function serverExpectations(declaration, baseURL) {
           family,
           expectedCount,
           identity: `${testId}:${pageId}:${pageUrl}:${event}`,
+        });
+      }
+      const webSocketFailures = exactFailureDeclarations(
+        counts.webSocketFailures,
+        testId,
+        'websocket_failures',
+        expectations,
+      );
+      for (const [index, expected] of webSocketFailures.entries()) {
+        if (
+          !hasExactKeys(expected, ['message', 'count']) ||
+          typeof expected?.message !== 'string' ||
+          expected.message.length === 0 ||
+          !Number.isSafeInteger(expected.count) ||
+          expected.count <= 0
+        ) {
+          expectations.push(invalidServerExpectation(testId, `websocket_failure_${index}`));
+          continue;
+        }
+        expectations.push({
+          key: serverEventKey(testId, pageUrl, pageId, 'webSocketError', expected.message),
+          testId,
+          pageUrl,
+          pageId,
+          event: 'webSocketError',
+          family: 'websocket',
+          expectedCount: expected.count,
+          identity: `${testId}:${pageId}:${pageUrl}:webSocketError:${expected.message}`,
+        });
+      }
+      const consoleFailures = exactFailureDeclarations(
+        counts.consoleFailures,
+        testId,
+        'console_failures',
+        expectations,
+      );
+      for (const [index, expected] of consoleFailures.entries()) {
+        if (
+          !hasExactKeys(expected, ['kind', 'count']) ||
+          expected?.kind !== 'vite_connection_failure' ||
+          !Number.isSafeInteger(expected.count) ||
+          expected.count <= 0
+        ) {
+          expectations.push(invalidServerExpectation(testId, `console_failure_${index}`));
+          continue;
+        }
+        const observation = viteConsoleObservation(
+          testId,
+          pageUrl,
+          pageId,
+          viteConnectionFailureMessage(runtime),
+          runtime,
+        );
+        expectations.push({
+          key: observationKey(observation),
+          testId,
+          family: 'console.exact',
+          expectedCount: expected.count,
+          identity: `${testId}:${pageId}:${pageUrl}:${expected.kind}`,
         });
       }
       failures.delete(serverPageKey(testId, pageUrl, pageId));
@@ -321,6 +406,30 @@ function serverExpectations(declaration, baseURL) {
       identity: `${failure.testId}:failure_without_page_load`,
     });
   return expectations;
+}
+
+function exactFailureDeclarations(value, testId, field, expectations) {
+  if (value === undefined) return [];
+  if (Array.isArray(value)) return value;
+  expectations.push(invalidServerExpectation(testId, `${field}_not_array`));
+  return [];
+}
+
+function hasExactKeys(value, expectedKeys) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const actual = Object.keys(value).sort();
+  const expected = [...expectedKeys].sort();
+  return actual.length === expected.length && actual.every((key, index) => key === expected[index]);
+}
+
+function invalidServerExpectation(testId, reason) {
+  return {
+    key: `invalid:${testId}:${reason}`,
+    testId,
+    family: 'invalid',
+    expectedCount: 0,
+    identity: `${testId}:${reason}`,
+  };
 }
 
 function serverCandidate(observation, runtime) {
@@ -341,11 +450,6 @@ function serverCandidate(observation, runtime) {
         key: serverEventKey(observation.testId, pageUrl, pageId, 'connected'),
         family: 'console.lifecycle',
       };
-    if (observation.detail.type === 'error')
-      return {
-        key: serverEventKey(observation.testId, pageUrl, pageId, 'consoleError'),
-        family: 'console.failure',
-      };
     return null;
   }
   if (observation.kind !== 'browser.websocket' || !isServerWebSocket(observation, runtime))
@@ -360,7 +464,13 @@ function serverCandidate(observation, runtime) {
           : null;
   return event
     ? {
-        key: serverEventKey(observation.testId, pageUrl, pageId, event),
+        key: serverEventKey(
+          observation.testId,
+          pageUrl,
+          pageId,
+          event,
+          event === 'webSocketError' ? observation.message : undefined,
+        ),
         family: 'websocket',
       }
     : null;
@@ -427,26 +537,59 @@ function validateWebSocketOrder(observations) {
   return errors;
 }
 
-function webSocketFailureMatches(expectation, expectedByKey, candidatesByKey) {
-  const key = serverEventKey(
-    expectation.testId,
-    expectation.pageUrl,
-    expectation.pageId,
-    'webSocketError',
-  );
-  const websocket = expectedByKey.get(key);
-  return (
-    websocket?.expectedCount > 0 &&
-    (candidatesByKey.get(key)?.length ?? 0) === websocket.expectedCount
-  );
+function webSocketNotificationExpectations(webSocketFailures, runtime) {
+  const expectations = new Map();
+  for (const failure of webSocketFailures) {
+    const message = `WebSocket connection to '${failure.detail.url}' failed: ${failure.message}`;
+    const observation = viteConsoleObservation(
+      failure.testId,
+      failure.detail.pageUrl,
+      failure.detail.pageId,
+      message,
+      runtime,
+    );
+    const key = observationKey(observation);
+    const existing = expectations.get(key);
+    if (existing) existing.expectedCount += 1;
+    else
+      expectations.set(key, {
+        key,
+        testId: failure.testId,
+        family: 'console.exact',
+        expectedCount: 1,
+        identity: `${failure.testId}:${failure.detail.pageId}:${failure.detail.pageUrl}:websocket_browser_notification:${failure.detail.url}:${failure.message}`,
+      });
+  }
+  return [...expectations.values()];
+}
+
+export function viteConnectionFailureMessage(runtime) {
+  const base = new URL(runtime.baseURL);
+  const target = `${base.host}${base.pathname}`;
+  return `[vite] failed to connect to websocket.\nyour current setup:\n  (browser) ${target} <--[HTTP]--> ${target} (server)\n  (browser) ${target} <--[WebSocket (failing)]--> ${target} (server)\nCheck out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .`;
+}
+
+function viteConsoleObservation(testId, pageUrl, pageId, message, runtime) {
+  return {
+    runner: 'playwright',
+    testId,
+    kind: 'browser.console',
+    message,
+    detail: {
+      type: 'error',
+      url: pageUrl,
+      locationUrl: new URL(runtime.server.clientPath, runtime.baseURL).href,
+      pageId,
+    },
+  };
 }
 
 function serverPageKey(testId, pageUrl, pageId) {
   return [testId, pageUrl, pageId].join('\u0000');
 }
 
-function serverEventKey(testId, pageUrl, pageId, event) {
-  return [testId, pageUrl, pageId, event].join('\u0000');
+function serverEventKey(testId, pageUrl, pageId, event, message) {
+  return [testId, pageUrl, pageId, event, message ?? ''].join('\u0000');
 }
 
 export function verifyArtifactFiles(root, artifacts) {

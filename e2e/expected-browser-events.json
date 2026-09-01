@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "expiresAt": "2026-12-01T00:00:00.000Z",
-  "reactLocationPath": "/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+  "reactLocationPath": "/node_modules/.vite/deps/react-dom_client.js?v=00e6ab84",
   "pageLoads": [
     {
       "testId": "a11y.spec.ts > [E2E-001] startup screen @desktop @a11y",
@@ -203,9 +203,19 @@
       "connecting": 3,
       "connected": 2,
       "webSocketOpen": 4,
-      "webSocketError": 2,
       "webSocketClose": 2,
-      "consoleError": 4
+      "webSocketFailures": [
+        {
+          "message": "Error in connection establishment: net::ERR_INTERNET_DISCONNECTED",
+          "count": 2
+        }
+      ],
+      "consoleFailures": [
+        {
+          "kind": "vite_connection_failure",
+          "count": 1
+        }
+      ]
     }
   ],
   "localResourceFailures": [

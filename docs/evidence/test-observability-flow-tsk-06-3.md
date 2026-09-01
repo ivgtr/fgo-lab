@@ -229,7 +229,66 @@ test-owned exact countへ相関する。未知Vite warning／error、application
 base URL、server kind、Vite version、client／WebSocket path、HMR update無効を所有し、apps/webから解決される
 `bin.vite` packageとversionをconfig、generator、runnerが照合する。
 
+このclassificationは後続reviewの同数置換反例で一度再オープンされた。parent manifest `Verified`、browser
+page／popup／resource observer `Verified`、attachment `Verified`、build／preview移行
+`N/A: build/preview migration changes the E2E execution family`、legacy aggregate audit `Deferred: TSK-08`は
+維持し、以下のfollow-upでtest-server infrastructure failure identityも`Verified`へ戻した。
+
+## Infrastructure failure identity reopening
+
+Confirmed mechanism: `serverCandidate()`はE2E-023のfailure scopeで`/@vite/client`由来の全errorをmessageに
+関係なく一つの`consoleError`へ分類する。`webSocketFailureMatches()`は同じpageのexpected WebSocket error
+件数だけを確認するため、期待WebSocket failureを残してconsole errorを未知messageへ同数置換してもownedになる。
+実artifactでも4 console errorのうち2件はbrowser WebSocket notification、1件はVite connection failure、
+1件はconsole forwardingの二次failureであり、異なるclassを一つのcounterへ縮約していた。
+
+Implementation mismatch: raw artifactと`locationUrl`は保持できている一方、外部的に意味の異なるfailure classを
+compose前に定義せず、typed WebSocket eventとconsole notificationを一対一・完全messageで照合していない。
+またVite 8.2.2の`forwardConsole`未指定値は`determineAgent().isAgent`から決まるため、Codex環境と通常CIで
+同一testのevent集合が変わり得る。
+
+Missed detection: 前回reviewはtyped WebSocket相関とexact countを要求したが、同じcountを保った未知message置換と
+既知class間置換をstate-by-path matrixへ含めなかった。追加するminimum guardrailは、typed WebSocket URL／error textから
+導出したbrowser notificationとの一対一完全一致、test-owned exact Vite connection failure class、unknown／class substitution／
+missing／extraのnegative fixture、runtime contractとE2E Vite config双方の`forwardConsole: false`一致である。
+
+| State | Path | Required result | Status |
+| --- | --- | --- | --- |
+| typed WebSocket error＋対応するbrowser notification | E2E-023 offline | URL／error textから導出したmessageを一対一でownしraw双方を保持 | Verified: focused／full raw artifact |
+| typed WebSocket error＋未知Vite errorの同数置換 | classifier counterexample | unknownを残しcontract failure | Verified: runner negative fixture |
+| browser notificationとVite connection failureの既知class置換 | classifier counterexample | missing／extra classをcontract failure | Verified: runner negative fixture |
+| expected class missing／extra | classifier counterexample | countではなくexact class identityでcontract failure | Verified: runner negative fixture |
+| `forwardConsole`のagent／CI差 | E2E server startup | runtime contractとVite configでfalseを固定・検証 | Verified: resolved config＋raw artifact |
+
+## Follow-up implementation and verification
+
+`consoleError` counterとgeneric Vite error candidateを削除した。E2E-023は
+`Error in connection establishment: net::ERR_INTERNET_DISCONNECTED`をtest-owned typed WebSocket failureとして
+exact count 2で宣言する。受理した各raw WebSocket errorの完全URLとerror textからbrowser notification全文を構築し、
+test identity、page URL／ID、`/@vite/client` location、type、messageの完全identityで一対一照合する。
+Vite connection failureは`vite_connection_failure`という別classを宣言し、canonical runtime base URLからVite 8.2.2の
+完全messageを構築する。raw console／WebSocket eventは分類後もmanifestから削除しない。
+
+`forwardConsole: false`はruntime contractが所有し、`apps/web/vite.config.ts`のE2E modeがその値を直接消費する。
+runtime validatorはtrue／missingを拒否し、fixtureはViteのresolved server configで`enabled: false`を確認する。
+実E2E-023 artifactでは従来の二次`Failed to send error to Vite server`は0件になった。React diagnosticのoptimizer
+locationはconfig変更後のstable exact pathへtest-owned declarationを更新し、full raw artifactとの完全一致だけから
+82 allowance entries（expected count合計126）を再生成した。
+
+Verificationはrunner 49／49、focused E2E-023 2／2、full E2E 25／25、unit 70 files／377 tests、production
+24 files／112 tests。canonical quality 3-runは255.57／253.16／252.45秒（中央値253.16秒）で3／3成功し、
+開始時中央値243.30秒比+4.05%で10% ratchet内である。各parentは10 steps、unit／production／Playwright
+3 child success、42 artifactを持ち、全bytes／SHA一致、artifact error 0。warning、unexpected、skip、todo、retryは0。
+Playwright raw 335件はallowance 126、resource correlation 88、test-server infrastructure 121へ完全分割された。
+final parentは`.test-results/2026-09-01T16-42-05-999Z-15-538f7c/manifest.json`。
+
+Production application digest `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`、
+data-pipeline digest `e116e91fad16fb6348826f26b5e29fc4db5239e26b49c1c8cad50eb0dd5c2fc2`、
+calculator 422／ranking 433、inputRequired／unsupported／invalid 0、read／parse／compile 1／1／1、candidate
+6,376／3,957、damage request 6,913／1,599は3 runすべてで不変。production／damage semantic family、
+TSK-06.2の61 observation、build／preview familyに変更はない。
+
 Final classificationはparent manifest `Verified`、browser page／popup／resource observer `Verified`、test-server
 infrastructure ownership `Verified`、attachment `Verified`、build／preview移行
-`N/A: build/preview migration changes the E2E execution family`、legacy aggregate audit `Deferred: TSK-08`で、
+`N/A: build/preview migration changes the E2E execution family`、legacy aggregate audit `Deferred: TSK-08`、
 Blocking 0である。

@@ -5,6 +5,7 @@
     "version": "8.2.2",
     "clientPath": "/@vite/client",
     "webSocketPath": "/",
-    "hmrUpdates": false
+    "hmrUpdates": false,
+    "forwardConsole": false
   }
 }
