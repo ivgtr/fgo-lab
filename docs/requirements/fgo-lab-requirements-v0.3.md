@@ -7,7 +7,7 @@ previous_approved_version: "0.3.7"
 created_at: "2026-08-24"
 updated_at: "2026-09-01"
 supersedes: "FGO Lab requirements v0.2.2 (docs/archive/README.md recovery index)"
-ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
+ui_baseline: "docs/requirements/ui-design-spec.md v1.4.1 approval required"
 ---
 
 # FGO Lab プロダクト要件定義書
@@ -340,23 +340,38 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 
 ### 7.4 Portable calculation identity（approval required）
 
-`PortableCalculationRequest`は、damage、precision、operation outcomeを一意に決め、workspace、
-fingerprint、draft、history、share、backupを横断できる唯一のportable inputである。scenarioだけを
-calculation identityとして扱わず、次のdiscriminated contractへ収束させる。
+`PortableCalculationRequest`は、damage、precision、operation outcome、復元後に許可するcommandを一意に決め、
+workspace、fingerprint、draft、history、share、backupを横断できる唯一の版付きportable calculation identityである。
+scenarioやversionを並行fieldとして扱わず、次のdiscriminated contractへ収束させる。
 
 ```ts
 type CanonicalContributionIntent = 'standard' | 'excludeVoluntarySkillModifiers';
 
+interface CalculationVersionContext {
+  masterDataVersion: string;
+  engineVersion: string;
+}
+
 type PortableCalculationRequest =
   | {
+      versionContext: CalculationVersionContext;
       scenario: Extract<CalculationScenario, { mode: 'resolved' }>;
-      executionIntent: {
-        kind: 'resolved';
-        initialNpGauge: number;
-        contribution: CanonicalContributionIntent;
-      };
+      executionIntent:
+        | {
+            kind: 'resolved';
+            origin: 'calculator';
+            initialNpGauge: 10000;
+            contribution: 'standard';
+          }
+        | {
+            kind: 'resolved';
+            origin: 'ranking';
+            initialNpGauge: number;
+            contribution: CanonicalContributionIntent;
+          };
     }
   | {
+      versionContext: CalculationVersionContext;
       scenario: Extract<CalculationScenario, { mode: 'manual' }>;
       executionIntent: { kind: 'manual' };
     };
@@ -369,27 +384,58 @@ type PortableCalculationRequest =
   resource stateをrequest、draft、history、share、backupへ保存しない。
 - `calculation-application`だけがrequestとcurrent masterからtyped contribution intentを
   `DamageContributionProjection`へcompileする。Web、workspace、repositoryはoperationを分類しない。
-- 新しいcalculator requestはconstructorが`initialNpGauge: 10000`と`standard`を省略不能な値として生成する。
+- 新しいcalculator requestはconstructorがcurrent version context、`origin: calculator`、
+  `initialNpGauge: 10000`、`standard`を省略不能な値として生成する。
+- ranking applicationのpure constructorはselected candidateとcurrent version contextから`origin: ranking`のrequestを
+  生成する。Webはversion、開始NP、contributionを別fieldとして組み立てない。
 - manual scenarioは`manual` intentだけを許可する。resolved用の開始NPやcontribution intentをmanual inputへ
   推測適用せず、異なる組合せをschemaで拒否する。
 
 rankingから引き継いだresolved intentは、calculatorでscenarioを編集しても暗黙に変更しない。calculatorは
 「ランキングから引き継いだ条件」、開始NP、contribution intentを結果近傍へ常時表示するが、開始NP editorや
 contribution editorは追加しない。利用者が明示的な「通常の計算条件へ戻す」commandを実行した場合だけ、同じ
-scenarioから`10000 + standard`の新requestを生成する。NP level変更等で保持中の開始NPがcapacityを超えた場合、
+scenarioと同じversion contextから`calculator + 10000 + standard`の新requestを生成する。NP level変更等で保持中の開始NPがcapacityを超えた場合、
 暗黙resetせず`invalid: initialNpGaugeExceedsCapacity`として閉じ、通常条件へ戻すactionを提示する。
 
-requestのsemantic validationは次を区別する。
+fingerprintとapplication実行入口は`PortableCalculationRequest`だけを受け取り、master／engine versionを別引数で
+identityへ追加しない。実行時に渡されたmaster snapshot／engine implementationのversionはrequestの
+`versionContext`と完全一致しなければならない。`CalculationResult.versions`の`masterDataVersion`／`engineVersion`も
+requestと完全一致させ、draft、history、shareのparse時と実行後に不一致を拒否する。同じpayloadでもmasterまたは
+engineが異なるrequestは別identity／fingerprintである。
 
-- schema不正、scenario参照欠落、version／master不一致、NP capacity超過、intentとscenario modeの矛盾:
+current schema envelope内のrequest／result version fieldは長さを制限した非空のopaque stringとしてparseし、
+`ENGINE_VERSION` literalへの一致をschema parse条件にしない。これにより以前のengineで作成したcurrent-schema recordを
+version一致の履歴値として検証できる。実行可否はapplicationが利用可能なmaster／engine inventoryと照合して決め、
+過去engineのdual runtimeを要求または暗黙fallbackしない。
+
+requestのsemantic validationとversion availabilityは次を区別する。
+
+- schema不正、scenario参照欠落、request／result version不一致、実行対象master／engineとのversion不一致、
+  NP capacity超過、intentとscenario mode／originの矛盾:
   `invalid`。damageを返さず、既定値へfallbackしない。
 - requestとmasterは整合するが、current engineが既知のcanonical semanticsを実行またはprojectionへcompile
   できない: `unsupported`。0 damageやstandard contributionへfallbackしない。
+- request／resultは整合するが一致するmaster snapshotまたはengine implementationを現在のアプリが保持しない:
+  recovery state `historicalOnly: versionUnavailable`。保存resultだけを履歴値として表示できるが実行・編集しない。
 
-fingerprintはrequest全体、master data version、engine versionから生成する。同じscenarioでも開始NPまたは
-contribution intentが異なれば別identityである。`CalculationDraft`、`CalculationHistoryEntry`、
+fingerprintはrequest全体だけから生成する。同じscenarioでもversion、origin、開始NP、contribution intentが異なれば
+別identityである。`CalculationDraft`、`CalculationHistoryEntry`、
 `CalculationShareSnapshot`はscenario fieldを並行保持せずrequestを直接保持し、`UserDataBackup`は各profile内の
 同じdraft／history contractを包含する。
+
+app更新後の復元とversion遷移は次の一方向commandだけを許可する。
+
+- draft restore／history copyは保存requestとresultを改変せず復元する。一致するversionが利用可能なら同じidentityで
+  実行でき、利用不能なら`historicalOnly`として表示する。history copyがversionをcurrentへ暗黙更新してはならない。
+  ここでいうold historyは新portable schemaで保存された以前のmaster／engine recordであり、schema 32 historyは移行時に破棄する。
+- shareはrequest／result version一致を検証し、一致するruntimeがなければ履歴値だけを表示する。不一致snapshotは
+  履歴値も信頼せず拒否する。
+- 「現在のバージョンで再計算」は利用者の明示commandとして、scenarioとexecution intentを保持し、
+  `versionContext`だけをcurrent master／engineへ置換した新requestを生成する。current masterで参照／capacity／semanticsを
+  再検証し、失敗時は元の履歴値を維持したまま`invalid | unsupported`を返す。成功時も旧request／history／shareを
+  上書きせず、新draft／resultとして保存する。
+- 「通常の計算条件へ戻す」はversion upgradeとは別commandであり、同じ利用可能versionのranking intentだけを
+  `calculator + 10000 + standard`へ置換する。二つの遷移を暗黙に合成しない。
 
 schema 32から次版への移行は一方向かつtransactionalに行う。保存済み`ProfileCollection`とschema 32の
 `UserDataBackup`について、profile ID／name／timestamps、servant builds、targets、craft essence copies、support
@@ -397,8 +443,8 @@ templates、active profile IDをstrictに検証して維持し、正しいreques
 変換後のcurrent schema全体を検証してからcurrent形式だけを保存し、v32 domain objectとcurrent objectをruntimeで
 併存・同期しない。exact schema 32 backupは同じisolated migratorでcurrent形式へ変換してからimportできるが、
 任意の古い版とfuture版は拒否する。旧schemaのshareはprofile dataを含まず安全なrequestへ変換できないため拒否する。
-current schemaのrequestに対応するmasterがない場合は再計算を`invalid`として閉じるが、保存済みresultはD-06どおり
-「共有時の履歴値」と明示して表示でき、現行計算結果として扱わない。migration／parse失敗時はuser storeをclearせず、
+current schemaのrequestに対応するversionがない場合は上記`historicalOnly`とし、保存済みresultをD-06どおり
+「共有時の履歴値」と明示して表示できるが現行計算結果として扱わない。migration／parse失敗時はuser storeをclearせず、
 元recordを維持して復旧可能なtyped failureを返す。
 
 本節はTSK-06.1の設計proposalであり、approvalが`approved`へ変わるまでruntime実装の根拠にしてはならない。
@@ -674,16 +720,15 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 - `docs/evidence/README.md`
 - `docs/requirements/ranking-self-and-conditional-effects-requirements.md`
 - `docs/requirements/test-strategy-redesign.md`
-- `docs/adr/027-portable-calculation-request-and-ranking-presentation.md`
 
 ## 18. Contract catalog
 
 | Contract ID | Governing sections | Contract |
 | --- | --- | --- |
-| `CALC-PORTABLE-001` | 6.9〜6.11、7、8、11.6、12、13.2 | `PortableCalculationRequest`を唯一のportable calculation identityとし、fingerprint、draft、history、share、backup、安全な一方向migrationを同じcontractへ収束させる。 |
+| `CALC-PORTABLE-001` | 6.9〜6.11、7、8、11.6、12、13.2 | version contextを内包する`PortableCalculationRequest`を唯一のportable calculation identityとし、result version、fingerprint、draft、history、share、backup、明示version遷移、安全な一方向migrationを同じcontractへ収束させる。 |
 
 ## 19. Revision log
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
-| 0.3.8 | portable calculation identityとschema 32 migration proposalを追加（`CALC-PORTABLE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |
+| 0.3.8 | version context／originを内包するportable calculation identity、明示version遷移、schema 32 migration proposalを追加（`CALC-PORTABLE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |

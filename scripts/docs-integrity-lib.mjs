@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 export function parseFrontmatter(text, label = 'document') {
@@ -82,6 +82,54 @@ export function validateRegistry(
         `registry: ${link} declares ${expectedStatus} but frontmatter is ${parsed.values.status ?? 'missing'}`,
       );
     }
+  }
+  return errors;
+}
+
+function adrStatus(text) {
+  const frontmatter = text.match(/^---\n([\s\S]*?)\n---/)?.[1];
+  const fromFrontmatter = frontmatter?.match(/^status:\s*["']?([a-z]+)["']?\s*$/m)?.[1];
+  if (fromFrontmatter) return fromFrontmatter;
+  const fromList = text.match(/^-\s*Status:\s*([a-z]+)\s*$/im)?.[1];
+  if (fromList) return fromList.toLowerCase();
+  const fromPlain = text.match(/^Status:\s*([a-z]+)\s*$/im)?.[1];
+  if (fromPlain) return fromPlain.toLowerCase();
+  return text.match(/^## Status\s*\n+\s*([a-z]+)\s*$/im)?.[1]?.toLowerCase();
+}
+
+export function validateAdrIndex(
+  indexPath,
+  indexText,
+  readText = (path) => readFileSync(path, 'utf8'),
+  adrFiles = [],
+) {
+  const errors = [];
+  const allowed = new Set(['accepted', 'superseded']);
+  const indexedFiles = new Set();
+  for (const row of indexText.matchAll(/^\| \[(\d{3})\]\(([^)]+)\) \| ([^|]+) \|/gm)) {
+    const [, id, link, declaredValue] = row;
+    indexedFiles.add(link);
+    const declared = declaredValue.trim();
+    if (!allowed.has(declared)) {
+      errors.push(`ADR-${id}: invalid index status ${declared}`);
+      continue;
+    }
+    let targetText;
+    try {
+      targetText = readText(resolve(dirname(indexPath), link));
+    } catch {
+      errors.push(`ADR-${id}: missing ${link}`);
+      continue;
+    }
+    const actual = adrStatus(targetText);
+    if (!actual || !allowed.has(actual)) {
+      errors.push(`ADR-${id}: invalid document status ${actual ?? 'missing'}`);
+    } else if (actual !== declared) {
+      errors.push(`ADR-${id}: index status ${declared} differs from document ${actual}`);
+    }
+  }
+  for (const file of adrFiles.filter((name) => /^\d{3}-.+\.md$/.test(name))) {
+    if (!indexedFiles.has(file)) errors.push(`ADR index: unregistered ${file}`);
   }
   return errors;
 }
@@ -197,8 +245,10 @@ export function validateRepository(root) {
   const registryPath = resolve(root, 'docs/README.md');
   const tasksPath = resolve(root, 'docs/tasks/development-redesign-tasks.md');
   const evidencePath = resolve(root, 'docs/evidence/README.md');
+  const adrIndexPath = resolve(root, 'docs/adr/README.md');
   const contractPaths = [
     'docs/requirements/fgo-lab-requirements-v0.3.md',
+    'docs/requirements/ui-design-spec.md',
     'docs/requirements/test-strategy-redesign.md',
     'docs/requirements/ranking-self-and-conditional-effects-requirements.md',
     'docs/requirements/development-execution-efficiency-requirements.md',
@@ -210,9 +260,18 @@ export function validateRepository(root) {
   const registryText = readFileSync(registryPath, 'utf8');
   const tasksText = readFileSync(tasksPath, 'utf8');
   const evidenceText = readFileSync(evidencePath, 'utf8');
+  const adrIndexText = readFileSync(adrIndexPath, 'utf8');
   errors.push(...parseFrontmatter(registryText, 'docs/README.md').errors);
   errors.push(...parseFrontmatter(tasksText, 'development-redesign-tasks.md').errors);
   errors.push(...validateRegistry(registryPath, registryText));
+  errors.push(
+    ...validateAdrIndex(
+      adrIndexPath,
+      adrIndexText,
+      undefined,
+      readdirSync(resolve(root, 'docs/adr')),
+    ),
+  );
   errors.push(...validateTaskPlan(tasksText, catalog.ids));
   errors.push(
     ...validateEvidenceRegistration(tasksText, evidenceText, resolve(root, 'docs/evidence')),

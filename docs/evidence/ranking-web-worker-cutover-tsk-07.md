@@ -39,7 +39,7 @@ production digest remain deferred to TSK-08.
 | cache identity/value | five-field fingerprint | calculation/detail caches | current complete result and accumulated evidence | Blocking: summary must be evidence-free; worker detail 0; React detail maximum 1 |
 | URL | `serializeRankingState` | `parseRankingState` | canonical `rConditional`; obsolete params removed | Verified |
 | detail evidence | selected `RankingPolicyDetail` | pure presentation builder | profile, start gauge, facts, ordered actions | Verified |
-| portable calculator handoff | scenario + separately supplied gauge/projection | calculator/workspace | draft/history/share/backup/fingerprint omit execution intent | Blocking: `CALC-PORTABLE-001` and `RK-HANDOFF-001` |
+| portable calculator handoff | current runtime uses scenario + separately supplied gauge/projection; proposed application constructor emits versioned request | calculator/workspace | TSK-06.1 owns identity/persistence; TSK-07 owns Web command wiring | Blocking: TSK-06.1 dependency, then `RK-HANDOFF-001` |
 | old policy/fallback | removed files and exports | no production reader | no compatibility recovery | Verified |
 | full four-policy production digest | application production audit | TSK-08 | shared final audit model | Deferred: TSK-08 |
 
@@ -139,7 +139,7 @@ The recorded test and performance results are historical evidence for the five-f
 
 Closure: Blocking 2
 
-- portable calculation identity: blocked by TSK-06.1 approval and implementation.
+- portable calculation identity dependency: TSK-06.1 owns versioned request/result, persistence, migration, and recovery; TSK-07 owns only immediate Web handoff after that dependency closes.
 - evidence cache ownership: TSK-07 must separate summary/detail and enforce maximum cardinality.
 
 TSK-07 is blocked and TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after these two families close.

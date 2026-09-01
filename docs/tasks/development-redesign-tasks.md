@@ -1,11 +1,12 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.18"
+document_version: "1.5.19"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
+  - "docs/requirements/ui-design-spec.md"
   - "docs/requirements/test-strategy-redesign.md"
   - "docs/requirements/ranking-self-and-conditional-effects-requirements.md"
   - "docs/requirements/development-execution-efficiency-requirements.md"
@@ -18,7 +19,7 @@ governance_contract: "docs/guides/document-governance.md"
 
 ## 1. 役割
 
-本書は、4つの要件書にまたがる実装順序、依存関係、進捗、phase handoffを所有する。意味論、品質要件、受入条件の正本は各source requirementsであり、本書では再定義しない。各未完了TaskのContract closure matrixは正本のContract IDに対する適用判断、検証command、artifact、延期先だけを所有する。
+本書は、5つの要件書にまたがる実装順序、依存関係、進捗、phase handoffを所有する。意味論、品質要件、受入条件の正本は各source requirementsであり、本書では再定義しない。各未完了TaskのContract closure matrixは正本のContract IDに対する適用判断、検証command、artifact、延期先だけを所有する。
 
 状態は次だけを使用する。
 
@@ -591,22 +592,22 @@ Handoff:
 
 Depends on: TSK-06
 
-- [x] `CALC-PORTABLE-001`、`RK-HANDOFF-001`、`RK-CACHE-001`のownershipとcanonical型をproposalとして固定する。
+- [x] `CALC-PORTABLE-001`、`RK-HANDOFF-001`、`RK-CACHE-001`、`UI-CALC-001`のownershipとcanonical型をproposalとして固定する。
 - [x] calculator編集時のintent遷移、manual mode、invalid／unsupported分類を一意に決める。
 - [x] schema 32のprofile／backup migration、旧schema share／任意の旧版／future版の拒否方針を一意に決める。
-- [x] ADR-027とportable calculation identity familyのcanonical flow noteを作成する。
-- [ ] requirements v0.3.8／ranking v0.8.0／ADR-027のapprovalを記録する。
+- [x] UI design spec v1.4.1とportable calculation identity familyのcanonical flow noteへproposalを記録する。
+- [ ] product requirements v0.3.8／ranking v0.8.0／UI spec v1.4.1のapprovalを記録し、同じapproval commitでADR-027をacceptedとして新規登録、ADR-016をsupersededへ変更する。
 - [ ] approved contractに従ってportable request、application compiler、workspace、schema、migrationを実装する。
-- [ ] immediate／draft／history／share／backup／fingerprint／migration matrixを検証する。
+- [ ] draft／history／share／backup／fingerprint／migration／version transition matrixを検証する。
 
 Done gate:
 
-- `PortableCalculationRequest`だけがdamageを一意に決めるportable identityである。
+- version contextを内包する`PortableCalculationRequest`だけがdamageと復元commandを一意に決めるportable identityである。
 - projection、`Set`、operation ID、derived stateを永続化せず、applicationだけがcurrent masterからcompileする。
-- normal calculator、ranking handoff、calculator edit transition、manual modeが明示contractどおり動作する。
+- normal calculator、manual mode、selected ranking candidateのpure request constructor、calculatorのreset／version upgradeが明示contractどおり動作する。
 - safe profile dataを失わず旧draft／historyだけを破棄し、旧schema shareと対象外schemaをfail-closedにする。
 - runtimeへ旧schema reader、scenario-only fingerprint、parallel request modelを残さない。
-- flow noteのportable familyがBlocking 0になり、TSK-07へhandoffできる。
+- TSK-06.1所有pathがBlocking 0になり、実Webのranking handoffとcacheをTSK-07へDeferredした状態でhandoffできる。
 
 Contract closure matrix:
 
@@ -615,6 +616,7 @@ Contract closure matrix:
 | `CALC-PORTABLE-001` | Apply | focused schema／workspace／repository／share tests after approval | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-HANDOFF-001` | Deferred: TSK-07 | - | TSK-07 |
 | `RK-CACHE-001` | Deferred: TSK-07 | - | TSK-07 |
+| `UI-CALC-001` | Apply | focused calculator version／reset／recovery component tests after approval | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `DOC-REV-001` | Apply | `pnpm test:docs` | requirements／ADR／registry diff |
 | `DOC-CLOSE-001` | Apply | `pnpm test:docs` | canonical flow note／Handoff |
 
@@ -622,10 +624,11 @@ Handoff:
 
 - Start baseline: `c5511221c0fc2ec1baabaa4838b3c7c396b20f43`、clean worktree。
 - Design ownership: product requirements owns `CALC-PORTABLE-001`; ranking requirements own `RK-HANDOFF-001` and `RK-CACHE-001`.
-- Design decision: resolved request is scenario + initial NP + two-variant contribution intent; manual is manual intent only. Explicit reset is the only edit transition to `100% + standard`.
+- Design decision: request embeds master／engine version context. Resolved intent is origin + initial NP + two-variant contribution; manual is manual only. Fingerprint and execution accept the request identity without parallel version arguments.
+- Version transition: restore／history copy preserves the pinned identity; unavailable versions are historical-only. Only explicit current-version recalculation creates a new identity, and request／result version mismatch is rejected.
 - Migration: exact schema 32 preserves builds／targets／CE／support and discards draft／history; exact v32 backup uses the isolated migrator; old-schema share and other old／future schema fail closed.
-- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0、Closure Blocking 2。
-- Approval gate: requirements v0.3.8、ranking v0.8.0、ADR-027 are proposed／approval required. Runtime implementation is prohibited until approval is recorded.
+- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0。TSK-06.1 pathはBlocking、TSK-07 pathはDeferredとして分離する。
+- Approval gate: product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1 are approval required. ADR-027は未登録で、approval commitに初めてacceptedとして追加する。Runtime implementation is prohibited until approval is recorded.
 - Runtime: unchanged in this design phase. Next work after approval is TSK-06.1 implementation; TSK-07 and TSK-08 remain blocked.
 
 ### TSK-07: Web／worker一括切替
@@ -640,6 +643,9 @@ Depends on: TSK-06.1
 Done gate:
 
 - 新旧policy、URL、worker protocolをruntimeで併存させていない。
+- selected candidateの版付きrequestをWebからcalculatorへ渡し、immediate parityが成立する。
+- ranking由来intentとversionを結果近傍へ表示し、通常条件resetのcommandをdispatchする。
+- worker summaryはevidence-free、worker detail cacheは0、React detailは最大1件である。
 - desktop、390px、320pxでoverflowがない。
 - keyboard、accessible name、expanded state、focus orderを維持する。
 - stale responseが表示へ反映されない。
@@ -649,8 +655,9 @@ Contract closure matrix:
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
 | `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `RK-HANDOFF-001` | Apply | handoff／restore parity matrix | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
+| `RK-HANDOFF-001` | Apply | Web immediate handoff／calculator parity | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-CACHE-001` | Apply | worker／React cache cardinality、stale detail tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `UI-CALC-001` | Apply | ranking handoff notice／reset／keyboard／320px tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `TS-PERF-002` | Apply | build変更前後各3回／変更後E2E 1回 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |

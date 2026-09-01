@@ -7,7 +7,6 @@ previous_approved_version: "0.7.0"
 updated_at: "2026-09-01"
 created_at: "2026-08-30"
 related_adrs:
-  - "docs/adr/027-portable-calculation-request-and-ranking-presentation.md"
   - "docs/adr/018-ranking-comparison-policy.md"
   - "docs/adr/019-ranking-contribution-and-execution-plan.md"
   - "docs/adr/020-ranking-condition-provenance-and-field-policy.md"
@@ -432,6 +431,8 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 
 採用ranking calculationは`CALC-PORTABLE-001`の`PortableCalculationRequest`としてcalculatorへ渡す。
 
+- ranking applicationのpure constructorがcurrent master／engineをrequestの`versionContext`へ固定し、
+  `executionIntent.origin: ranking`を生成する。
 - 採用scenarioをrequestのscenarioとする。
 - `candidateEvidence.startNpGauge`をresolved execution intentの`initialNpGauge`とする。
 - 自己バフ`あり`は`standard`、`なし`は`excludeVoluntarySkillModifiers`へ写す。
@@ -440,14 +441,15 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 - calculatorはapplicationのportable request entrypointでprojectionを再compileし、ranking detailのresult、effect、
   condition、procと一致させる。
 
-引き継いだ開始NPとcontribution intentは非編集値として結果近傍へ表示する。scenario編集後も明示的な
+引き継いだ開始NP、contribution intent、master／engine versionは非編集値として結果近傍へ表示する。scenario編集後も明示的な
 「通常の計算条件へ戻す」commandまでは維持し、暗黙に`100% + standard`へ戻さない。通常条件へ戻した後は
 ranking intentをhidden stateへ保持しない。開始NP editor、contribution policy editor、汎用resource editorは
 追加しない。
 
-handoff parityはexecution parityと分け、immediate handoff、draft restore、history finalize／copy、share
-URL／JSON、backup export／import、fingerprintを同じrequestで検証する。master／engine incompatibility、capacity
-超過、旧schema shareは`CALC-PORTABLE-001`の分類でfail-closedにする。
+handoff parityはexecution parityと分ける。TSK-06.1はselected candidateから版付きrequestを生成するpure constructorを
+検証し、TSK-07は実Webのimmediate handoffとcalculator再実行を検証する。draft restore、history finalize／copy、share
+URL／JSON、backup export／import、fingerprint、version upgradeは`CALC-PORTABLE-001`で検証する。master／engine
+incompatibility、request／result version不一致、capacity超過、旧schema shareはfail-closedにする。
 
 ### 11.5 Worker／detail cache（approval required）
 
@@ -622,7 +624,7 @@ damage差分、性能見積もりを提示してから再開する。
 | `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
 | `RK-POLICY-001` | 10、11 | ranking policyは候補とcontributionだけを制御し、execution semanticsを再実装しない。 |
 | `RK-UI-001` | 11、12 | Web／workerはcanonical stateと5入力を扱い、旧policy／URL／protocolを併存させない。 |
-| `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationをportable requestとしてcalculatorへ渡し、immediate／persisted／shared経路で同一結果を再現する。 |
+| `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
 | `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
 | `RK-AUDIT-001` | 14、15 | 全AttackProfile、四policy、NP1〜5、parity、invalid／unsupportedを共有production inventoryで監査する。 |
 | `RK-PERF-001` | 15.3 | 2^N探索を避け、candidate／damage requestを説明し、主要suiteの10%超の未説明退行を拒否する。 |
@@ -633,4 +635,4 @@ damage差分、性能見積もりを提示してから再開する。
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
 | 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | approved 2026-08-30: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: 承認状態の変更のみでinventory／digest baselineは変更しない |
-| 0.8.0 | portable ranking handoffとbounded evidence-free cache proposalを追加（`RK-HANDOFF-001`、`RK-CACHE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでhandoff、cache inventory、schema／fingerprint artifactが変わる。TSK-08 cross-level cacheとproduction digestは未変更 |
+| 0.8.0 | versioned portable ranking handoffとbounded evidence-free cache proposalを追加（`RK-HANDOFF-001`、`RK-CACHE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでhandoff、cache inventory、schema／fingerprint artifactが変わる。TSK-08 cross-level cacheとproduction digestは未変更 |

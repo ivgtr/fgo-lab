@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   collectContractIds,
   parseFrontmatter,
+  validateAdrIndex,
   validateRegistry,
   validateTaskPlan,
 } from './docs-integrity-lib.mjs';
@@ -22,6 +23,33 @@ test('registry rejects a stale document version', () => {
     () => '---\ndocument_version: "1.1.0"\nstatus: "Active"\n---',
   );
   assert.match(errors[0], /declares v1\.0\.0.*v1\.1\.0/);
+});
+
+test('ADR index rejects proposed status and status mismatch', () => {
+  const index = [
+    '| [001](001.md) | proposed | pending |',
+    '| [002](002.md) | accepted | mismatch |',
+    '| [003](003.md) | accepted | invalid document |',
+  ].join('\n');
+  const documents = new Map([
+    ['/repo/docs/adr/001.md', '---\nstatus: proposed\n---'],
+    ['/repo/docs/adr/002.md', '# ADR 002\n\n- Status: superseded'],
+    ['/repo/docs/adr/003.md', '# ADR 003\n\nStatus: proposed'],
+  ]);
+  const errors = validateAdrIndex(
+    '/repo/docs/adr/README.md',
+    index,
+    (path) => documents.get(path),
+    ['001.md', '002.md', '003.md', '004-unregistered.md'],
+  );
+  assert.ok(errors.some((error) => error.includes('ADR-001: invalid index status proposed')));
+  assert.ok(
+    errors.some((error) =>
+      error.includes('ADR-002: index status accepted differs from document superseded'),
+    ),
+  );
+  assert.ok(errors.some((error) => error.includes('ADR-003: invalid document status proposed')));
+  assert.ok(errors.some((error) => error.includes('unregistered 004-unregistered.md')));
 });
 
 test('contract catalog rejects missing revision metadata', () => {

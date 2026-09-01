@@ -1,16 +1,17 @@
 ---
 title: "FGO Lab UI設計仕様"
-document_version: "1.4.0"
+document_version: "1.4.1"
 status: "Active"
-approved_at: "2026-08-24"
-updated_at: "2026-08-30"
+approval: "required"
+previous_approved_version: "1.4.0"
+updated_at: "2026-09-01"
 ---
 
 # FGO Lab UI設計仕様
 
-更新日: 2026-08-24
+更新日: 2026-09-01
 対象: 初回セットアップ、ホーム、所持・育成管理、概念礼装、支援条件、ダメージ計算、火力ランキング、育成計画、結果共有
-本仕様は、対象欄に記載した画面と操作について承認済みの実装基準である。以後の実装では本書を画面仕様の正とする。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
+本仕様は、対象欄に記載した画面と操作の実装基準である。v1.4.0までの判断は承認済みだが、v1.4.1の§9.1と対応受入条件はapproval requiredであり、承認前に実装しない。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
 
 ## 1. 文書の目的
 
@@ -213,6 +214,44 @@ UI上で一つの「特攻バフ」へ合算しない。
 
 表の数値は右揃え、等幅数字、桁区切りを使用する。色だけで現在行を示さない。
 
+### 9.1 版付き計算条件と回復操作（approval required）
+
+`CALC-PORTABLE-001`のrequest状態は、入力editorの末尾かつ宝具レベル別結果表の直前に一つの
+`CalculationContextNotice`として表示する。結果から離れたglobal banner、toast、modalだけに状態を置かない。
+
+- normal calculatorのcurrent requestでは、master／engine versionを結果cardの静かなmetadataとして表示する。
+- ranking由来requestでは「ランキングから引き継いだ計算条件」、開始NP、自己バフの寄与条件、master／engine
+  versionを常時表示する。値は読取専用で、開始NP／contribution editorを追加しない。
+- scenario編集後もranking由来表示を維持する。「通常の計算条件へ戻す」はnotice内の明示buttonとし、同じ
+  versionの`calculator + 100% + standard`へ遷移する。実行後はranking表示を残さない。
+- request／resultは整合するが一致versionを実行できない場合は、結果を「履歴値・再計算されていません」と表示し、
+  editorを無効化する。結果card外の「現在のバージョンで再計算」buttonだけがcurrent versionへの遷移を開始する。
+- current-version再計算はscenarioとexecution intentを保持した新requestを作り、旧history／shareを上書きしない。
+  結果が変わり得ることをbutton近傍に明示する。成功後は新result headingへfocusを移し、失敗時は元の履歴値を残して
+  error summaryへfocusを移す。
+- request／result version不一致、参照欠落等で履歴値も信頼できない場合はresultを表示せず、理由と利用可能な
+  recoveryだけをerror summaryに表示する。
+- ranking開始NPが変更後NP levelのcapacityを超えた場合は`開始NPが現在の宝具Lv上限を超えています`を入力と関連付け、
+  damageを表示しない。「通常の計算条件へ戻す」で回復できる。version upgradeと通常条件resetを一操作へ合成しない。
+
+画面例:
+
+```text
+ランキングから引き継いだ計算条件
+開始NP 200% ・ 自己バフなし
+DB 2026-09-01 ・ Engine 30.0.0
+[通常の計算条件へ戻す]
+
+履歴値・再計算されていません
+この計算のDB／Engineは現在利用できません。結果は共有時の値です。
+[現在のバージョンで再計算]
+```
+
+noticeのheading、status、説明、buttonをDOM順に置き、buttonのaccessible nameだけで遷移先を判別できるようにする。
+状態変化を`aria-live`で通知するが、自動でbuttonへfocusを奪わない。320pxではversion metadataを折り返し、buttonを
+利用可能幅内の一列へ置く。notice、error、button、結果表のいずれもdocument横overflowを発生させず、44pxの操作領域を
+維持する。
+
 ## 10. 結果共有
 
 共有単位は画面全体ではなく結果カードとする。結果カードは切り出された状態で意味が通じなければならない。
@@ -373,6 +412,8 @@ R1はプロフィールごとに直近20件を保持する。独立ページは�
 - NP1〜5の平均・最低・最大が同時表示される。
 - 現在の宝具Lvだけが強調される。
 - 敵HP、撃破率、不足・余剰が主結果に現れない。
+- ranking由来の開始NP、contribution、master／engine versionを結果近傍で確認でき、通常条件へのresetを明示操作で行える。
+- version unavailable、capacity超過、version不一致を区別し、履歴値を現行結果として誤表示せず適切な回復actionへ到達できる。
 
 ### 火力ランキング
 
@@ -391,6 +432,7 @@ R1はプロフィールごとに直近20件を保持する。独立ページは�
 - 同じデータ版、エンジン版、入力なら共有元と共有先で同じ結果になる。
 - 共有URLだけから計算条件を復元でき、共有データのサーバー保存を必要としない。
 - 画像の直接保存が使えない端末でも、保存方法のヘルプへ到達できる。
+- 対応versionがないshareは履歴値と明示し、request／result versionが一致する場合だけ現在版で新しい計算を作れる。
 
 ### 品質
 
@@ -398,6 +440,8 @@ R1はプロフィールごとに直近20件を保持する。独立ページは�
 - キーボードだけで入力、効果追加、タブ切替、共有へ到達できる。
 - 重大なaxe違反がない。
 - サーヴァント画像や外部画像が失敗しても名称で操作できる。
+- calculator context notice、reset、version upgrade、invalid recoveryをkeyboardだけで操作でき、focus結果が予測可能である。
+- calculator context noticeと回復actionは320pxで横overflowせず、accessible nameとstatusの関連を維持する。
 
 ## 17. 所持・育成管理
 
@@ -590,3 +634,16 @@ R1は個人・非営利用途としてAtlas Academy由来のサーヴァント�
 データ管理ページでは、`UserDataBackup`のexport/import、データ版確認、マスターデータ再取得、全ユーザーデータ初期化という機能境界を固定する。詳細レイアウトは実データとブラウザのファイル操作を確認して実装時に決めるが、バックアップと共有用`CalculationShareSnapshot`を同じ導線へ混在させない。
 
 保存schemaと状態管理は複数プロフィールを扱える境界にするが、R1ではプロフィール切替UIを表示しない。UI文言は翻訳キーから取得し、R1では日本語だけを配信する。地域、UI locale、マスターデータ言語を一つの値として扱わない。
+
+## 21. Contract catalog
+
+| Contract ID | Governing sections | Contract |
+| --- | --- | --- |
+| `UI-CALC-001` | 9.1、10、13〜16 | 版付きcalculator context、ranking intent、通常条件reset、historical-only、current-version再計算、invalid recoveryを結果近傍で表示し、keyboard／focus／320px契約を維持する。 |
+
+## 22. Revision log
+
+| Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
+| --- | --- | --- | --- | --- |
+| 1.4.0 | ダメージ計算、ranking、管理、育成計画、homeの承認済みUI基準 | approved 2026-08-24 | current product baseline | none |
+| 1.4.1 | portable calculation identityのversion／intent表示と明示的なreset／upgrade／invalid recoveryを追加（`UI-CALC-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07 | docs phaseはnone。implementationでcalculator context notice、focus、responsive artifactが変わる |

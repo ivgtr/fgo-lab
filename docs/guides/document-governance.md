@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab document governance contract"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "Guideline"
-updated_at: "2026-08-30"
+updated_at: "2026-09-01"
 ---
 
 # FGO Lab document governance contract
@@ -15,7 +15,7 @@ updated_at: "2026-08-30"
 | --- | --- |
 | `DOC-REV-001` | Active／Proposedな要件改訂はversion、変更理由、承認状態、影響Task、baselineへの影響を同じ変更で記録する。 |
 | `DOC-CLOSE-001` | 未完了TaskはContract closure matrixを持ち、適用、N/A、延期先のいずれかを一意に記録する。 |
-| `DOC-LINT-001` | registry version、Task status／依存、Contract ID、closure matrix、evidence登録をcanonical quality pathで静的検証する。 |
+| `DOC-LINT-001` | registry version、Task status／依存、Contract ID、closure matrix、evidence登録、ADR statusをcanonical quality pathで静的検証する。 |
 
 ## Contract closure matrix
 
@@ -47,8 +47,16 @@ Activeまたはapproval gateを持つ要件を改訂する場合、同じ変更�
 
 承認前の意味論を実装してはならない。誤記、リンク、registryだけの変更で承認を維持する場合も、semantic contractが不変である理由をrevision logへ残す。過去versionを実装後に改変して整合させず、新versionとして影響Taskを明示する。
 
+## ADR lifecycle
+
+ADRは採用済み判断だけを登録し、statusは`accepted | superseded`に限定する。承認前proposalをADR file／indexへ
+`proposed`等の局所statusで登録せず、approval requiredなrequirementsとcanonical flow noteで保持する。判断承認時は、
+新ADRを`accepted`で追加し、置換対象ADRを`superseded`へ変更し、相互linkとADR indexを同じcommitで更新する。
+`pnpm test:docs`はindexとADR本文のstatus語彙および一致をfail-closedに検証する。
+
 ## Revision log
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
 | 1.0.0 | Task closure、要件改訂、docs lintの運用契約を新設（`DOC-REV-001`、`DOC-CLOSE-001`、`DOC-LINT-001`） | approved 2026-08-30 | TSK-02.1以降 | none: product／damage semanticsと計測baselineは変更しない |
+| 1.0.1 | 既存ADR lifecycleの`accepted | superseded`限定とstatus lintを明文化（`DOC-LINT-001`） | retained: lifecycle semanticsは既存documentation maintenance契約から不変 | TSK-06.1以降 | none: docs validation only |

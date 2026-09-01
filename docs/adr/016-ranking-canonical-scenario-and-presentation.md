@@ -2,12 +2,9 @@
 title: "ランキングのcanonical scenarioと一覧presentation"
 status: accepted
 date: "2026-08-27"
-proposed_successor: "ADR-027"
 ---
 
 # ADR 016: ランキングのcanonical scenarioと一覧presentation
-
-> ADR-027が本ADRの全判断を引き継ぐproposalである。ADR-027の承認までは本ADRをacceptedの正本として維持し、承認時にだけ本ADRをsupersededへ変更する。
 
 ## Context
 

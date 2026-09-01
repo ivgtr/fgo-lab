@@ -13,7 +13,9 @@ Design audit baseline is `c5511221c0fc2ec1baabaa4838b3c7c396b20f43` with a clean
 After the separately approved implementation, a selected ranking calculation must reopen, restore, copy, share, and back up as the same calculation without adding an initial-NP editor. The invariant is one portable request per damage result:
 
 ```text
-resolved CalculationScenario
+master data version + engine version
++ origin (calculator | ranking | manual)
++ resolved CalculationScenario
 + initial NP gauge
 + typed contribution intent
 = PortableCalculationRequest
@@ -25,55 +27,67 @@ The product requirements own portable identity and migration (`CALC-PORTABLE-001
 
 Confirmed mechanism: execution already depends on scenario, contribution projection, and preparation options, but workspace fingerprint, draft, history, and share identify only scenario. TSK-06 parity tests supplied projection and initial NP directly, proving executor parity but not production handoff or portable restore parity. TSK-07 then cached complete policy results and accumulated details in both worker and React.
 
-Implementation mismatch: distinct calculations can share an identity, derived projection disappears on recovery paths, and evidence cache cardinality grows with profiles or opened rows. Missed detection: prior matrices audited candidate execution and cache keys, not production entrypoint transport, cache values, lifetime, owner, or restore paths. The recurrence scope is every scenario-external input that changes damage, precision, outcome, fingerprint, recovery, or UI command.
+Implementation mismatch: distinct calculations can share an identity, request/result versions can disagree, derived projection disappears on recovery paths, ranking origin cannot be presented without inference, and evidence cache cardinality grows with profiles or opened rows. Missed detection: prior matrices audited candidate execution and cache keys, not the complete versioned tuple, production entrypoint transport, cache values, lifetime, owner, or restore paths. The recurrence scope is every scenario-external input that changes damage, precision, outcome, fingerprint, recovery, or UI command.
 
 Minimum guardrail: when a calculation entrypoint gains a semantic argument, reopen immediate handoff, draft, history, share, backup, fingerprint, migration, and cache value matrices. Separate execution, handoff, persisted restore, and portable share parity.
 
 ## Canonical design
 
-- Resolved requests carry `initialNpGauge` and `standard | excludeVoluntarySkillModifiers`; manual requests carry only `manual` intent.
+- Every request embeds `masterDataVersion` and `engineVersion`. Resolved requests carry typed origin, `initialNpGauge`, and `standard | excludeVoluntarySkillModifiers`; manual requests carry only `manual` intent.
 - Request and persistence never contain projection, `Set`, raw／compiled operation ID, compiled operations, or derived execution state.
-- Normal calculator explicitly creates `10000 + standard`. Ranking creates the adopted gauge and typed contribution intent.
+- Normal calculator explicitly creates `calculator + 10000 + standard`. The ranking application pure constructor creates `ranking + adopted gauge + typed contribution intent`.
 - Inherited intent remains visible and non-editable through scenario edits until the explicit “通常の計算条件へ戻す” command creates `10000 + standard`. No hidden reset or hidden retention after reset.
-- Capacity overflow, schema/reference/version/master mismatch, and mode contradiction are `invalid`; a coherent request whose known semantics current engine cannot execute is `unsupported`.
+- Capacity overflow, schema/reference/request-result version mismatch, execution-version mismatch, and mode/origin contradiction are `invalid`; a coherent request whose available engine cannot execute known semantics is `unsupported`.
 - Manual scenario accepts only manual intent. No resolved resource policy is inferred.
-- Fingerprint includes the full request plus master and engine versions.
-- Exact schema 32 profile／backup migration preserves safe profile data and discards old draft／history. Old-schema share and arbitrary old／future schema fail closed. A current share without its master may show only the stored historical result, never a recalculated current result. Failed migration never clears the user store.
+- Fingerprint and execution receive the full versioned request; they do not accept parallel version arguments. Result master／engine versions must equal the request.
+- Current-schema persistence parses bounded opaque engine/master version strings; version availability is semantic validation, not a current-engine schema literal or a dual-runtime promise.
+- Restore and history copy preserve the pinned identity. Missing matching runtime produces `historicalOnly: versionUnavailable`; only explicit current-version recalculation creates a new request and never overwrites the old record.
+- Exact schema 32 profile／backup migration preserves safe profile data and discards old draft／history. Old-schema share and arbitrary old／future schema fail closed. A current share with matching request/result versions but unavailable runtime may show only the stored historical result. Failed migration never clears the user store.
+- `UI-CALC-001` owns the result-adjacent origin/version notice, reset, explicit version upgrade, invalid recovery, focus, and 320px behavior.
 
 Product decision alternatives remaining: 0. Approval remains required before runtime implementation.
 
 ## Producer, reader, writer, and recovery inventory
 
-| Path | Producer | Semantic reader | Writer / recovery | Design classification |
+| Path | Producer | Semantic reader | Writer / recovery | Runtime classification |
 | --- | --- | --- | --- | --- |
-| normal calculator | application request constructor | application compiler/executor | workspace | Verified |
-| ranking handoff | selected candidate scenario, gauge, policy | same compiler/executor | calculator command | Verified |
-| projection | typed contribution intent + current master | battle execution | derived in memory only | Verified |
-| fingerprint | full request + master/engine versions | workspace/cache identity | no scenario-only fallback | Verified |
-| draft | workspace request | repository/application restore | current request only | Verified |
-| history finalize/copy | calculated request/result | workspace/repository | copy restores request | Verified |
-| share URL/JSON | current request/result | strict current-schema parser | old-schema share rejected | Verified |
-| backup export/import | current profiles | current parser or exact-v32 migrator | current format only | Verified |
-| startup migration | exact schema 32 stored profile | isolated migrator | safe profile data retained; snapshots dropped | Verified |
-| manual mode | manual request constructor | manual executor | manual intent only | Verified |
-| worker summary | ranking application summary | worker/useRanking | latest success, maximum 1 | Verified |
-| detail evidence | selected entry request | application materializer | worker cache 0; React maximum 1 | Verified |
+| normal/manual constructor | application | compiler/executor | workspace | Blocking: TSK-06.1 |
+| selected ranking candidate constructor | ranking application | portable request schema | returns request without Web state | Blocking: TSK-06.1 |
+| Web immediate ranking handoff | ranking detail command | calculator workspace | presentation/command wiring | Deferred: TSK-07 |
+| projection | typed contribution intent + matching master | battle execution | derived in memory only | Blocking: TSK-06.1 |
+| fingerprint | full versioned request | workspace/cache identity | no parallel version args | Blocking: TSK-06.1 |
+| draft restore | workspace request/result | application/repository | pinned or historical-only | Blocking: TSK-06.1 |
+| history finalize/copy | matching request/result | workspace/repository | copy preserves pinned identity | Blocking: TSK-06.1 |
+| share URL/JSON | matching request/result | strict parser | historical-only or explicit upgrade | Blocking: TSK-06.1 |
+| backup export/import | current profiles | current parser or exact-v32 migrator | current format only | Blocking: TSK-06.1 |
+| startup migration | exact schema 32 stored profile | isolated migrator | safe profile retained; snapshots dropped | Blocking: TSK-06.1 |
+| calculator recovery UI | portable state | calculator presentation | reset/version-upgrade commands | Blocking: TSK-06.1 |
+| ranking origin notice | handed-off ranking request | calculator presentation | reset command | Deferred: TSK-07 |
+| worker summary/detail | ranking application | worker/useRanking | summary max 1; detail worker 0/React 1 | Deferred: TSK-07 |
 
-Runtime closure for portable paths is `Blocking: CALC-PORTABLE-001 implementation not started`; ranking handoff/cache paths remain `Blocking: TSK-07`. No runtime reader, writer, or migration was changed in this design phase.
+No runtime reader, writer, migration, or Web component was changed in this design phase.
 
 ## Portable request counterexample matrix
 
-Every `Required` cell must use the same request identity; direct test-only reinjection does not close it.
+`B06.1` means `Blocking: TSK-06.1 implementation`; `D07` means `Deferred: TSK-07`; `N/A` includes the reason. Direct test-only reinjection does not close a production path.
 
-| State | Immediate handoff | Draft restore | History finalize/copy | Share URL/JSON | Backup export/import | Fingerprint | Migration/rejection |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| normal 100% + standard | Required | Required | Required | Required | Required | unique baseline | current schema accepted |
-| 200% start, OC changes | Required | Required | Required | Required | Required | distinct from 100% | capacity overflow invalid |
-| self-buff exclusion | Required | Required | Required | Required | Required | distinct from standard | compile failure classified without fallback |
-| conditional satisfied | Required | Required | Required | Required | Required | scenario world distinct | missing reference invalid |
-| invalid / old schema | fail closed | fail closed | fail closed | old-schema share rejected | exact v32 only | N/A | safe profile preserved; arbitrary old/future rejected |
+| State / counterexample | Pure constructor / execution | Immediate ranking→calculator | Draft restore | History finalize/copy | Share URL/JSON | Backup/fingerprint/migration |
+| --- | --- | --- | --- | --- | --- | --- |
+| normal current 100% + standard | B06.1 | N/A: not ranking | B06.1 | B06.1 | B06.1 | B06.1 |
+| ranking 200% start, OC changes | B06.1 | D07 | B06.1 | B06.1 | B06.1 | B06.1 |
+| ranking self-buff exclusion | B06.1 | D07 | B06.1 | B06.1 | B06.1 | B06.1 |
+| ranking conditional satisfied | B06.1 | D07 | B06.1 | B06.1 | B06.1 | B06.1 |
+| same payload, different master | B06.1: distinct result/identity | D07 | B06.1 | B06.1 | B06.1 | B06.1: distinct fingerprint |
+| same payload, different engine | B06.1: distinct result/identity | D07 | B06.1 | B06.1 | B06.1 | B06.1: distinct fingerprint |
+| request/result version mismatch | B06.1: invalid | N/A: rejected before handoff | B06.1: reject | B06.1: reject | B06.1: reject historical value | B06.1: fail closed |
+| app update restores pinned draft | B06.1: exact runtime or historical-only | N/A: recovery path | B06.1 | B06.1 | N/A: draft path | B06.1 |
+| old-version history copied | B06.1: preserve identity | N/A: history path | B06.1 | B06.1 | N/A: history path | B06.1 |
+| share runtime unavailable | B06.1: historical-only | N/A: share path | N/A: share path | N/A: share path | B06.1: explicit current-version recalc | B06.1 |
+| current-version recalc fails validation | B06.1: invalid/unsupported, old value retained | N/A: recovery path | B06.1 | B06.1 | B06.1 | B06.1 |
+| schema 32 profile/backup | N/A: calculation snapshots discarded | N/A: migration path | B06.1 | B06.1 | N/A: old share rejected | B06.1: safe profile retained |
+| arbitrary old/future schema | B06.1: reject | N/A: rejected before handoff | B06.1 | B06.1 | B06.1 | B06.1: fail closed |
 
-All implementation cells are `Blocking: TSK-06.1 runtime implementation and verification`; the matrix itself and expected outcome classes are `Verified` as design.
+Expected outcome classes and ownership are `Verified` as design. Runtime cells remain Blocking or Deferred exactly as shown.
 
 ## Cache and stale-detail matrix
 
@@ -86,13 +100,14 @@ All implementation cells are `Blocking: TSK-06.1 runtime implementation and veri
 | context change | clear | none | clear both | old context rejected |
 | response reordering | current identity only | cache 0 | request ID and fingerprint must both match | stale detail never displayed |
 
-All rows are `Blocking: RK-CACHE-001 implementation in TSK-07`. TSK-08 retains ownership of prepared damage matrix and NP1–5 cross-level optimization.
+All rows are `Deferred: TSK-07` from TSK-06.1. They become `Blocking: RK-CACHE-001 implementation` only when TSK-07 starts. TSK-08 retains ownership of prepared damage matrix and NP1–5 cross-level optimization.
 
 ## Closure
 
-Closure: Blocking 2
+Closure: Blocking 1, Deferred 2
 
-- portable calculation identity: design has one recommendation and no unresolved product alternatives; approval and runtime implementation remain open.
-- evidence cache ownership: contract is fixed; TSK-07 runtime implementation and verification remain open.
+- Blocking: TSK-06.1-owned versioned identity, persistence, migration, version recovery, and approval are not implemented/approved.
+- Deferred: TSK-07 owns Web immediate ranking handoff and ranking-origin presentation.
+- Deferred: TSK-07 owns evidence-free summary/detail cache and stale response wiring.
 
-TSK-06.1 remains `in_progress` at the approval gate. TSK-07 and TSK-08 remain blocked. This note must be updated with implementation evidence rather than replaced by another family note.
+Product decision alternatives remaining: 0. Product, ranking, and UI requirements remain approval required; no ADR proposal is registered before approval. TSK-06.1 remains `in_progress` at the approval gate. TSK-07 and TSK-08 remain blocked. This note must be updated with implementation evidence rather than replaced by another family note.
