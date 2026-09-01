@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.24"
+document_version: "1.5.25"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
@@ -54,13 +54,14 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06 | Ranking policyとcandidate planner | done | TSK-05 | ranking condition／candidate planning |
 | TSK-06.1 | Portable calculation request and identity | done | TSK-06 | product portable data／ranking handoff |
 | TSK-06.2 | E2E responsibility and execution closure | done | TSK-06.1 | test strategy Web component／E2E ownership |
-| TSK-07 | Web／worker一括切替 | ready | TSK-06.2 | ranking UI／handoff／cache |
+| TSK-06.3 | Test observability and artifact closure | ready | TSK-06.2 | test strategy T4 execution observability |
+| TSK-07 | Web／worker一括切替 | blocked | TSK-06.3 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -638,7 +639,7 @@ Handoff:
 - Review reopening: failed version upgradeのtransactionality、projection compilerの二重owner、実装済みWeb handoff／ranking noticeのscope分類不足を同一familyのBlocking 3として記録した。以前の計画がschema cutoverのdirect Web writerをTSK-07へ分離したscope inventory不足であり、承認済みcontractは変更しない。
 - Review fix: applicationのtransactional upgrade commandは成功時だけ新request／resultをcommitし、invalid／unsupportedでは旧pairとtyped attemptを保持する。self／area policyを受ける共有compilerへranking／portable／presentation auditを収束し、portableはprepare once後にprojectionを適用する。production Web E2Eでself-buff除外のranking result parity、notice、通常条件reset、upgrade成功focus、unsupported失敗後の旧値保持／focus／retry／未上書きを検証した。
 - Review verification: final `pnpm quality`成功（unit 66 files／370 tests、production 24 files／111 tests、E2E 66 passed／34 skipped）。production audit payload／digest／inventory／counterは不変。pre-fix 18.837秒に対するpost-fix 3 runは18.219／19.178／19.689秒（-3.3%〜+4.5%）。
-- Current closure: TSK-06.1 `done`、Blocking 0、Deferred 1。TSK-06.2もBlocking 0で`done`となり、TSK-07は`ready`へ戻った。evidence-free cache／stale detailは引き続きTSK-07が所有し、TSK-08はTSK-07待ち。
+- Current closure: TSK-06.1 `done`、Blocking 0、Deferred 1。TSK-06.2もBlocking 0で`done`。後続test strategy reviewでTSK-06.3を挿入したため、現在はTSK-06.3が`ready`、evidence-free cache／stale detailを所有するTSK-07はTSK-06.3待ち、TSK-08はTSK-07待ち。
 
 ### TSK-06.2: E2E responsibility and execution closure
 
@@ -714,11 +715,69 @@ Handoff:
   VRT 9/9、a11y 4/4、新規mobile baseline 7枚を目視した。
 - Verification: final `pnpm quality`成功（runner 22／22、unit 70 files／377 tests、production 24／112、
   E2E 25／25・skip 0・2.6分）。ClosureはBlocking 0、Deferred 1。TSK-07はevidence-free cache／stale detailだけを所有して
-  `ready`へ戻り、TSK-08はTSK-07待ちを維持する。
+  いたが、後続test strategy reviewでexecution observabilityをTSK-06.3へ分離した。TSK-06.2の責任移管は再開せず、
+  TSK-06.3を`ready`、TSK-07をその完了待ちとする。
+
+### TSK-06.3: Test observability and artifact closure
+
+Depends on: TSK-06.2
+
+Planning baseline: `7717022bd9062b0156240f1f6a1b025e1a707037`、clean worktree。
+TSK-06.2のE2E責任移管はBlocking 0のまま再開しない。後続reviewで、Vitest warningが集計されても成功扱いに
+なること、unexpected consoleのtest単位許可契約がないこと、Playwright結果がVitestのrun manifestから分離して
+いること、CIが`.test-results/`欠落を許容することを、test strategy T4の未完了execution observabilityとして確認した。
+
+- [ ] 一回のcanonical quality invocationへ一つのparent run identityを与え、unit／production／Playwrightの
+      child manifestと完全artifactを参照できるようにする。
+- [ ] Playwrightのproject別pass／failure／skip／retry、HTML、trace、screenshotを構造化resultから登録し、
+      HTMLやconsole表示の文字列parseを正本にしない。
+- [ ] warning、deprecation、unhandled error、unexpected test／browser consoleを構造化して収集し、baseline 0からの
+      増加を`contract_failure`へ収束させる。許可出力はtest単位の完全一致、理由、期限を必須にする。
+- [ ] manifest記載artifactの存在と完全性をrunner側で検証し、reporter failure、artifact欠落、CI upload failureを
+      child test成功で覆い隠さない。
+- [ ] unit／production／Playwrightについて、success、assertion failure、timeout／signal、reporter failure、
+      warning／console、skip／todo、artifact欠落をstate-by-path negative fixtureで固定する。
+- [ ] compact consoleは成功時の名前／進捗を省略したまま、件数、warning、outcome、完全artifact pathを隠さない。
+- [ ] coverage threshold、Vitest／Playwright coverage merge、`userEvent`全面移行、production audit model変更を
+      本Taskへ含めない。
+
+Done gate:
+
+- parent manifestだけから各child command、version、commit／dirty state、duration、outcome、file／test／skip／todo／
+  warning数と全artifactへ到達でき、manifest記載fileの欠落が0件である。
+- warningまたはunexpected consoleが1件でもある未許可fixture、Playwright skip増加、reporter／artifact欠落、
+  upload failureがそれぞれ非0終了し、正常系はbaseline 0を維持する。
+- 許可consoleはtest単位の完全一致、理由、期限を持ち、global regex、path、test title、message prefixだけの
+  広いallowlistを持たない。
+- CIはtest実行開始後の完全artifactを成功／失敗とも保存し、保存失敗をinfra failureとして報告する。
+- local、CI、Pagesは引き続き`pnpm quality`だけをcanonical phase gateとして呼び、unit／production／E2Eの
+  意味集合と終了コードを変えない。
+- TSK-06.2の61 observation、残存25 E2E、VRT／a11y、production inventory、calculator／ranking parity、
+  damage digest、runtime counterに意図しない差分がない。
+- runner／artifact統合の変更前後を同一環境3回で測定し、test strategyのoverhead／構造変更ratchetを満たす。
+- Flow closure: test outcome classificationとartifact write／CI recovery pathが対象。canonical parent／child manifestを
+  唯一のownerとし、success、test failure、timeout／signal、reporter failure、warning／console、skip／todo、
+  artifact／upload failureの全pathを`Verified`、`N/A`、`Deferred`、`Blocking`へ分類してBlocking 0とする。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `TS-OUT-001` | Apply | warning／console／bounded summary negative fixture、`pnpm test:runner` | `docs/evidence/<tsk-06-3-report>.md` |
+| `TS-ART-001` | Apply | parent／child manifest、Playwright artifact、CI upload failure check | `docs/evidence/<tsk-06-3-report>.md` |
+| `TS-RUN-001` | Apply | exit／timeout／signal／reporter／artifact failure fixture | `docs/evidence/<tsk-06-3-report>.md` |
+| `TS-QUAL-001` | Apply | canonical entrypoint contract、`pnpm quality` | `docs/evidence/<tsk-06-3-report>.md` |
+| `TS-PERF-001` | Apply | runner overheadを変更前後各3回 | `docs/evidence/<tsk-06-3-report>.md` |
+| `TS-PERF-002` | Apply | canonical gateを変更前後各3回 | `docs/evidence/<tsk-06-3-report>.md` |
+| `TS-REPORT-001` | Apply | parent manifest counter／artifact report | `docs/evidence/<tsk-06-3-report>.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | canonical flow note／Handoff |
+
+Handoff: 未記録
 
 ### TSK-07: Web／worker一括切替
 
-Depends on: TSK-06.2
+Depends on: TSK-06.3
 
 - [x] ランキング条件を5項目へ切り替える。
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
@@ -770,7 +829,7 @@ Handoff:
 - Verification: focused 8 files／14 tests、unit 62 files／350 tests、production 24 files／111 tests、
   runner 17 tests、final `pnpm quality`成功。production source scanで旧reader／fallback／runtime path 0件。
 - Historical completion: five-field cutover commit and verification remain valid for their original scope。
-- Structural review reopening: portable identityとWeb handoff／noticeはTSK-06.1でBlocking 0へ閉じた。TSK-07の未完了scopeは`RK-CACHE-001`のevidence-free cache value／lifetime／cardinalityとstale detail rejectionだけである。TSK-06.2はBlocking 0で完了したため、TSK-07は`ready`へ戻した。
+- Structural review reopening: portable identityとWeb handoff／noticeはTSK-06.1でBlocking 0へ閉じた。TSK-07の未完了scopeは`RK-CACHE-001`のevidence-free cache value／lifetime／cardinalityとstale detail rejectionだけである。TSK-06.2はBlocking 0で完了し、execution observabilityを閉じるTSK-06.3の完了後にTSK-07を再開する。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 
@@ -779,7 +838,8 @@ Depends on: TSK-07
 - [ ] data-pipelineとcalculation-applicationの最終共有audit modelを完成させる。
 - [ ] 全AttackProfile × NP1〜5 × 四policyのinventoryとdigestを固定する。
 - [ ] parity、unsupported、invalid、partial commit、inert control、stale mutationをratchet化する。
-- [ ] typed reason別のbounded summaryと完全artifactを統合する。
+- [ ] TSK-06.3の共通manifest／artifact ownerを再実装せず、domain typed reason、canonical identity、
+      first canonical diffをbounded summaryと完全artifactへ登録する。
 - [ ] 旧loader、scan、candidate list、重複fixtureを削除する。
 
 Done gate:

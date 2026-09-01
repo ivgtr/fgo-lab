@@ -6,7 +6,7 @@ updated_at: "2026-09-01"
 
 # TSK-07 ranking Web and worker canonical cutover
 
-> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains historical verification. Portable calculation identity is closed by TSK-06.1; TSK-06.2 closed E2E ownership with Blocking 0. Evidence cache ownership remains TSK-07 scope and is now ready to resume.
+> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains historical verification. Portable calculation identity is closed by TSK-06.1; TSK-06.2 closed E2E ownership with Blocking 0. Evidence cache ownership remains TSK-07 scope, but TSK-07 now waits for the execution-observability closure in TSK-06.3.
 
 ## Outcome and ownership
 
@@ -142,4 +142,4 @@ Closure: Blocking 0, Deferred 2
 - Verified: TSK-06.2 closed E2E case ownership, project assignment, setup/ranking repetition, and the current performance baseline.
 - Deferred: TSK-07 separates summary/detail evidence and enforces maximum cardinality.
 
-TSK-07 is ready after TSK-06.2 reached Blocking 0; TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after TSK-07 closes.
+TSK-06.3 is ready after TSK-06.2 reached Blocking 0; TSK-07 waits for TSK-06.3, and TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after TSK-07 closes.

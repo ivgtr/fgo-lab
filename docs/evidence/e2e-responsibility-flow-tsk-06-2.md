@@ -274,4 +274,5 @@ Closure: Blocking 0, Deferred 1
 - N/A: production flow closure。canonical state、damage execution、outcome、writer／recovery implementationは変更なし。
 - Deferred: evidence-free cache value／lifetime／cardinalityとstale detail rejectionはTSK-07。
 
-TSK-06.2は完了し、TSK-07を`ready`へ戻す。TSK-08は引き続きTSK-07完了待ちである。
+TSK-06.2は完了した。後続test strategy reviewでexecution observabilityをTSK-06.3へ分離したため、
+現在はTSK-06.3が`ready`、TSK-07はTSK-06.3完了待ち、TSK-08はTSK-07完了待ちである。
