@@ -1,10 +1,14 @@
 ---
 title: "ランキングのcanonical scenarioと一覧presentation"
-status: accepted
+status: superseded
 date: "2026-08-27"
+superseded_by: "ADR-027"
 ---
 
 # ADR 016: ランキングのcanonical scenarioと一覧presentation
+
+> [ADR-027](027-portable-calculation-request-and-ranking-presentation.md)が本ADRを全体として置き換えた。
+> 本文はhistorical recordとしてのみ保持する。
 
 ## Context
 

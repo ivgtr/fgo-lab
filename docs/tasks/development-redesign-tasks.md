@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.19"
+document_version: "1.5.20"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
@@ -596,7 +596,7 @@ Depends on: TSK-06
 - [x] calculator編集時のintent遷移、manual mode、invalid／unsupported分類を一意に決める。
 - [x] schema 32のprofile／backup migration、旧schema share／任意の旧版／future版の拒否方針を一意に決める。
 - [x] UI design spec v1.4.1とportable calculation identity familyのcanonical flow noteへproposalを記録する。
-- [ ] product requirements v0.3.8／ranking v0.8.0／UI spec v1.4.1のapprovalを記録し、同じapproval commitでADR-027をacceptedとして新規登録、ADR-016をsupersededへ変更する。
+- [x] product requirements v0.3.8／ranking v0.8.0／UI spec v1.4.1のapprovalを記録し、同じapproval commitでADR-027をacceptedとして新規登録、ADR-016をsupersededへ変更する。
 - [ ] approved contractに従ってportable request、application compiler、workspace、schema、migrationを実装する。
 - [ ] draft／history／share／backup／fingerprint／migration／version transition matrixを検証する。
 
@@ -628,8 +628,9 @@ Handoff:
 - Version transition: restore／history copy preserves the pinned identity; unavailable versions are historical-only. Only explicit current-version recalculation creates a new identity, and request／result version mismatch is rejected.
 - Migration: exact schema 32 preserves builds／targets／CE／support and discards draft／history; exact v32 backup uses the isolated migrator; old-schema share and other old／future schema fail closed.
 - Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0。TSK-06.1 pathはBlocking、TSK-07 pathはDeferredとして分離する。
-- Approval gate: product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1 are approval required. ADR-027は未登録で、approval commitに初めてacceptedとして追加する。Runtime implementation is prohibited until approval is recorded.
-- Runtime: unchanged in this design phase. Next work after approval is TSK-06.1 implementation; TSK-07 and TSK-08 remain blocked.
+- Approval gate: approved 2026-09-01 after design review at `245d1ee`。product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1をapprovedとし、ADR-027をacceptedで登録、ADR-016をsupersededへ変更した。承認commitはsemanticsを変更していない。
+- Runtime boundary: `historicalOnly`はapplication／workspaceのrecovery stateに限定しengineの数値resultへ混ぜない。`origin`をbattle executionの分岐条件にしない。
+- Runtime: unchanged in this approval phase. Next work is TSK-06.1 implementation; TSK-06.1 remains `in_progress` and TSK-07／TSK-08 remain blocked.
 
 ### TSK-07: Web／worker一括切替
 

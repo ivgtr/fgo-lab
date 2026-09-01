@@ -42,10 +42,11 @@ Minimum guardrail: when a calculation entrypoint gains a semantic argument, reop
 - Fingerprint and execution receive the full versioned request; they do not accept parallel version arguments. Result master／engine versions must equal the request.
 - Current-schema persistence parses bounded opaque engine/master version strings; version availability is semantic validation, not a current-engine schema literal or a dual-runtime promise.
 - Restore and history copy preserve the pinned identity. Missing matching runtime produces `historicalOnly: versionUnavailable`; only explicit current-version recalculation creates a new request and never overwrites the old record.
+- `historicalOnly` is an application/workspace recovery state only and never an engine numeric result or battle outcome. `origin` is application/workspace/presentation metadata and never a battle-execution branch condition.
 - Exact schema 32 profile／backup migration preserves safe profile data and discards old draft／history. Old-schema share and arbitrary old／future schema fail closed. A current share with matching request/result versions but unavailable runtime may show only the stored historical result. Failed migration never clears the user store.
 - `UI-CALC-001` owns the result-adjacent origin/version notice, reset, explicit version upgrade, invalid recovery, focus, and 320px behavior.
 
-Product decision alternatives remaining: 0. Approval remains required before runtime implementation.
+Product decision alternatives remaining: 0. Product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1 and ADR-027 were approved／accepted on 2026-09-01. Runtime implementation remains open.
 
 ## Producer, reader, writer, and recovery inventory
 
@@ -106,8 +107,8 @@ All rows are `Deferred: TSK-07` from TSK-06.1. They become `Blocking: RK-CACHE-0
 
 Closure: Blocking 1, Deferred 2
 
-- Blocking: TSK-06.1-owned versioned identity, persistence, migration, version recovery, and approval are not implemented/approved.
+- Blocking: TSK-06.1-owned versioned identity, persistence, migration, and version recovery are not implemented or verified.
 - Deferred: TSK-07 owns Web immediate ranking handoff and ranking-origin presentation.
 - Deferred: TSK-07 owns evidence-free summary/detail cache and stale response wiring.
 
-Product decision alternatives remaining: 0. Product, ranking, and UI requirements remain approval required; no ADR proposal is registered before approval. TSK-06.1 remains `in_progress` at the approval gate. TSK-07 and TSK-08 remain blocked. This note must be updated with implementation evidence rather than replaced by another family note.
+Product decision alternatives remaining: 0. Product, ranking, and UI requirements are approved, ADR-027 is accepted, and ADR-016 is superseded. TSK-06.1 remains `in_progress` with `Closure: Blocking 1, Deferred 2`; TSK-07 and TSK-08 remain blocked. This note must be updated with implementation evidence rather than replaced by another family note.

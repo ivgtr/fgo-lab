@@ -2,8 +2,8 @@
 title: "FGO Lab UI設計仕様"
 document_version: "1.4.1"
 status: "Active"
-approval: "required"
-previous_approved_version: "1.4.0"
+approval: "approved"
+approved_at: "2026-09-01"
 updated_at: "2026-09-01"
 ---
 
@@ -11,7 +11,7 @@ updated_at: "2026-09-01"
 
 更新日: 2026-09-01
 対象: 初回セットアップ、ホーム、所持・育成管理、概念礼装、支援条件、ダメージ計算、火力ランキング、育成計画、結果共有
-本仕様は、対象欄に記載した画面と操作の実装基準である。v1.4.0までの判断は承認済みだが、v1.4.1の§9.1と対応受入条件はapproval requiredであり、承認前に実装しない。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
+本仕様は、対象欄に記載した画面と操作の承認済み実装基準である。v1.4.1の§9.1と対応受入条件は2026-09-01に設計承認された。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
 
 ## 1. 文書の目的
 
@@ -214,7 +214,7 @@ UI上で一つの「特攻バフ」へ合算しない。
 
 表の数値は右揃え、等幅数字、桁区切りを使用する。色だけで現在行を示さない。
 
-### 9.1 版付き計算条件と回復操作（approval required）
+### 9.1 版付き計算条件と回復操作（approved 2026-09-01）
 
 `CALC-PORTABLE-001`のrequest状態は、入力editorの末尾かつ宝具レベル別結果表の直前に一つの
 `CalculationContextNotice`として表示する。結果から離れたglobal banner、toast、modalだけに状態を置かない。
@@ -646,4 +646,4 @@ R1は個人・非営利用途としてAtlas Academy由来のサーヴァント�
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
 | 1.4.0 | ダメージ計算、ranking、管理、育成計画、homeの承認済みUI基準 | approved 2026-08-24 | current product baseline | none |
-| 1.4.1 | portable calculation identityのversion／intent表示と明示的なreset／upgrade／invalid recoveryを追加（`UI-CALC-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07 | docs phaseはnone。implementationでcalculator context notice、focus、responsive artifactが変わる |
+| 1.4.1 | portable calculation identityのversion／intent表示と明示的なreset／upgrade／invalid recoveryを追加（`UI-CALC-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07 | docs phaseはnone。implementationでcalculator context notice、focus、responsive artifactが変わる |

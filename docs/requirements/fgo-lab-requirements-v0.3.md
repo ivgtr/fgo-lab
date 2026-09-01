@@ -2,12 +2,12 @@
 title: "FGO Lab プロダクト要件定義書"
 document_version: "0.3.8"
 status: "Active"
-approval: "required"
-previous_approved_version: "0.3.7"
+approval: "approved"
+approved_at: "2026-09-01"
 created_at: "2026-08-24"
 updated_at: "2026-09-01"
 supersedes: "FGO Lab requirements v0.2.2 (docs/archive/README.md recovery index)"
-ui_baseline: "docs/requirements/ui-design-spec.md v1.4.1 approval required"
+ui_baseline: "docs/requirements/ui-design-spec.md v1.4.1 approved"
 ---
 
 # FGO Lab プロダクト要件定義書
@@ -338,7 +338,7 @@ PCは文字付き左ナビ、スマートフォンは下部ナビを基本とす
 
 アペンド、スキル、装備枠等を固定長とせず、マスターデータに従う。
 
-### 7.4 Portable calculation identity（approval required）
+### 7.4 Portable calculation identity（approved 2026-09-01）
 
 `PortableCalculationRequest`は、damage、precision、operation outcome、復元後に許可するcommandを一意に決め、
 workspace、fingerprint、draft、history、share、backupを横断できる唯一の版付きportable calculation identityである。
@@ -447,7 +447,7 @@ current schemaのrequestに対応するversionがない場合は上記`historica
 「共有時の履歴値」と明示して表示できるが現行計算結果として扱わない。migration／parse失敗時はuser storeをclearせず、
 元recordを維持して復旧可能なtyped failureを返す。
 
-本節はTSK-06.1の設計proposalであり、approvalが`approved`へ変わるまでruntime実装の根拠にしてはならない。
+本節は2026-09-01に設計承認済みである。runtime実装と検証はTSK-06.1の未完了項目として別に閉じる。
 
 ## 8. 計算エンジン要件
 
@@ -731,4 +731,4 @@ R2は一括したリリースではなく、利用実績と正確性基盤を確
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
-| 0.3.8 | version context／originを内包するportable calculation identity、明示version遷移、schema 32 migration proposalを追加（`CALC-PORTABLE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |
+| 0.3.8 | version context／originを内包するportable calculation identity、明示version遷移、schema 32 migrationを追加（`CALC-PORTABLE-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでschema／engine version、fingerprint、draft／history／share／backup schemaが破壊的に変わる。damage digestは不変を期待するが実装時に検証する |

@@ -2,11 +2,12 @@
 title: "ランキング自己バフ・条件効果統合仕様"
 document_version: "0.8.0"
 status: "Active"
-approval: "required"
-previous_approved_version: "0.7.0"
+approval: "approved"
+approved_at: "2026-09-01"
 updated_at: "2026-09-01"
 created_at: "2026-08-30"
 related_adrs:
+  - "docs/adr/027-portable-calculation-request-and-ranking-presentation.md"
   - "docs/adr/018-ranking-comparison-policy.md"
   - "docs/adr/019-ranking-contribution-and-execution-plan.md"
   - "docs/adr/020-ranking-condition-provenance-and-field-policy.md"
@@ -427,7 +428,7 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 - keyboard、accessible name、expanded state、focus orderを維持する。
 - calculator UIへ開始NP入力やランキング専用condition editorを追加しない。
 
-### 11.4 Calculator handoff（approval required）
+### 11.4 Calculator handoff（approved 2026-09-01）
 
 採用ranking calculationは`CALC-PORTABLE-001`の`PortableCalculationRequest`としてcalculatorへ渡す。
 
@@ -451,7 +452,7 @@ handoff parityはexecution parityと分ける。TSK-06.1はselected candidateか
 URL／JSON、backup export／import、fingerprint、version upgradeは`CALC-PORTABLE-001`で検証する。master／engine
 incompatibility、request／result version不一致、capacity超過、旧schema shareはfail-closedにする。
 
-### 11.5 Worker／detail cache（approval required）
+### 11.5 Worker／detail cache（approved 2026-09-01）
 
 cacheはkeyだけでなくvalue、lifetime、owner、maximum cardinalityを次で固定する。
 
@@ -635,4 +636,4 @@ damage差分、性能見積もりを提示してから再開する。
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
 | 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | approved 2026-08-30: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: 承認状態の変更のみでinventory／digest baselineは変更しない |
-| 0.8.0 | versioned portable ranking handoffとbounded evidence-free cache proposalを追加（`RK-HANDOFF-001`、`RK-CACHE-001`） | required: TSK-06.1 design review | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでhandoff、cache inventory、schema／fingerprint artifactが変わる。TSK-08 cross-level cacheとproduction digestは未変更 |
+| 0.8.0 | versioned portable ranking handoffとbounded evidence-free cacheを追加（`RK-HANDOFF-001`、`RK-CACHE-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでhandoff、cache inventory、schema／fingerprint artifactが変わる。TSK-08 cross-level cacheとproduction digestは未変更 |
