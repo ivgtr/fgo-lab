@@ -215,7 +215,7 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
     await expect(
       page.getByText('互換性のない旧マスターデータを削除し、現行版へ更新しました。'),
     ).toBeVisible();
-    // E2E-A024-BROWSER E2E-A025-ONLINE-RECOVERY
+    // E2E-A024-BROWSER E2E-A025-ONLINE E2E-A025-ONLINE-RECOVERY
     await expect
       .poll(() =>
         page.evaluate(
@@ -265,7 +265,7 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
     );
     await page.route('**/master/**', (route) => route.abort());
     await page.reload();
-    // E2E-A025-OFFLINE-DISCARD
+    // E2E-A025-OFFLINE E2E-A025-OFFLINE-DISCARD
     await expect(page.getByRole('button', { name: 'セットアップを開始' })).toBeVisible({
       timeout: 15_000,
     });
@@ -443,7 +443,7 @@ test('[E2E-049] history backup download and restore @desktop @journey', async ({
   await expect(preview).toContainText('プロフィール 1件');
   await expect(preview.getByRole('button', { name: '全置換を実行' })).toBeDisabled();
   const preImportDownload = page.waitForEvent('download');
-  // E2E-A049-PREIMPORT-BACKUP
+  // E2E-A049-PREIMPORT E2E-A049-PREIMPORT-BACKUP
   await preview.getByRole('button', { name: '復元前バックアップを保存' }).click();
   await preImportDownload;
   // E2E-A049-REPLACE E2E-A049-RESTORE

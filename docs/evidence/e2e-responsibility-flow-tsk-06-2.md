@@ -114,9 +114,21 @@ Confirmed factは上記sourceとreview指摘である。再監査後は50 legacy
   自体を一つのcanonical ownerにしなかった。exact test titleをsemantic closureと見なした点も不十分だった。
 - **Recurrence scope:** E2E-008〜050の全61 old observations。E2E-030〜043やcompound caseだけに限定しない。
 - **Minimum guardrail:** `assertions.json`だけをcanonical migration manifestとし、semantic JSON digest
-  `4b49fafa27f2a45cbf51ffa79dfdb03db23fd969257b99192934e8adc4612679`と61件をrunnerでratchetする。
+  `740171263247e95b95571cf5fbadf375e1174c782ca8dd24e674fe9169ee8039`と61件をrunnerでratchetする。
   全replacement test blockのexpectation付近にassertion ID markerを置く。case relationは`caseId`から導出し、
   observation削除と既存の誤testへの付替えをnegative fixtureでそれぞれ拒否する。
+
+### Structural review reopening: alternate test declarations
+
+- **Mechanism:** source sliceの次test境界を正規表現で推測すると、複数行`it.each([ ... ])`を認識せず、直前の
+  通常`it()` blockへ後続parameterized testのmarkerを混入させる。
+- **Implementation mismatch:** `E2E-A041-ACCESSIBLE-CHAINED`を直前のsingle-proc titleへ付け替えても、
+  chained markerまで取り込んだblock sliceが受理した。
+- **Missed detection / recurrence:** 前回のnegative fixtureは通常`it()`同士だけで、既に要求していた全61
+  replacementのalternate declaration pathを検証していなかった。scope拡張ではなく実装漏れである。
+- **Minimum guardrail:** TypeScript ASTから通常`it/test`、modifier、単一行／複数行`it.each/test.each`の
+  call expressionをtest nodeとして抽出し、manifest titleをexact matchする。markerはそのAST node内部だけで、
+  前後が`[A-Z0-9-]`ではない完全ID境界を要求する。multiline `it.each`越境の誤付替えnegative fixtureを固定する。
 
 ### Setup storage-state spike
 
@@ -144,8 +156,8 @@ IndexedDB込み`storageState({ indexedDB: true })`は成功したが、生成JSO
 | desktop／mobile ownership | 全fileを両projectへ展開後skip | config／metadataで単一project owner | Verified |
 | a11y | mobile caseも両projectへ展開 | startup、desktop、representative mobileを一度ずつ | Verified |
 
-各行はcase catalog、canonical migration manifest、実行結果へ展開済みで、全61 digest／markerと
-E2E-A031 application outcomeを含めBlockingは0件である。
+各行はcase catalog、canonical migration manifest、実行結果へ展開済みで、AST node ownershipと完全ID境界を
+含めBlockingは0件である。
 
 ## State-by-path counterexample matrix
 
@@ -200,9 +212,9 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
   shared `rankingConditionsFingerprint()`から`RankingWorkerResponse`を構築する。fake Workerは6つのVRT
   calculationだけに使い、loadingは`Ranking.integration.test.tsx`がtyped Worker responseで検証する。
 - Assertion closure: 61 assertionsはold observation、outcome class、exact replacement file／test titleを持つ
-  唯一のcanonical migration manifestである。全manifest digestと件数をratchetし、全replacement test block内の
-  expectation付近に同じassertion ID markerを必須とする。case relationはmanifestの`caseId`から導出する。
-  observation削除と既存の誤testへの付替えをnegative runner fixtureで拒否する。
+  唯一のcanonical migration manifestである。全manifest digestと件数をratchetし、全replacementのTypeScript
+  AST test node内に完全境界のassertion ID markerを必須とする。case relationはmanifestの`caseId`から導出する。
+  observation削除、通常`it`誤付替え、multiline `it.each`越境の誤付替えをnegative runner fixtureで拒否する。
 
 | Case | Required outcomes | Exact owners |
 | --- | --- | --- |
@@ -219,7 +231,7 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
   fallbackを目視し、overflow、fixed navigation、selected state、fallbackを確認した。旧project suffix 8 PNGは
   削除した。`@vrt`はsetup込み9/9成功し、density上限は緩和していない。
 - a11y: startup desktop、major desktop screens、mobile home／calculatorがsetup込み4/4成功した。
-- Component／application: E2E-A031 focused application file 27/27、unit 70 files／377 tests、runner 21/21が成功した。
+- Component／application: E2E-A031 focused application file 27/27、unit 70 files／377 tests、runner 22/22が成功した。
 - Production: 24 files／112 tests。master `20260831.10`、application 4,735 records、servants 422、
   AttackProfile／ranking 433、calculator 422、invalid／unsupported／inputRequired 0。digest
   `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`、runtime counter
@@ -247,10 +259,10 @@ workers 4ではcalculator／ranking density、offline、master recoveryが同じ
 workers 2はworkers 1より中央値37.6%短く全run成功したため、`playwright.config.ts`のcanonical
 `workers`を2へ固定した。`package.json`は`playwright test`だけを呼び、測定時だけCLI overrideを使う。
 
-Final `pnpm quality`はformat、lint、typecheck、runner 21、docs、unit 70／377、production 24／112、
-master validation、build、E2E 25／25（2.7分、skip 0）まで成功した。unit artifactは
-`.test-results/2026-09-01T09-26-27-916Z-327-180a07`、production artifactは
-`.test-results/2026-09-01T09-26-36-096Z-914-b74eba`である。repository-wideなadaptive測定契約は
+Final `pnpm quality`はformat、lint、typecheck、runner 22、docs、unit 70／377、production 24／112、
+master validation、build、E2E 25／25（2.6分、skip 0）まで成功した。unit artifactは
+`.test-results/2026-09-01T09-55-11-222Z-327-ecf43a`、production artifactは
+`.test-results/2026-09-01T09-55-21-308Z-914-cc2c95`である。repository-wideなadaptive測定契約は
 TSK-06.2から分離し、test strategy v1.2.0とTSK-07〜09の既存3-run matrixへ戻した。
 
 ## Closure

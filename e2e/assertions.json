@@ -42,7 +42,7 @@
     "oldAssertion": "real ranking summary retains the desktop visual baseline",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-050] real ranking module worker and detail"
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   },
   {
     "id": "E2E-A018-320-OVERFLOW",
@@ -51,7 +51,7 @@
     "oldAssertion": "calculator has no horizontal overflow at 320px",
     "disposition": "retained",
     "replacementFile": "e2e/calculator-baseline.spec.ts",
-    "replacementTest": "[E2E-007] calculator density and overflow"
+    "replacementTest": "[E2E-007] calculator density and overflow @desktop @vrt"
   },
   {
     "id": "E2E-A019-SUPPORT",
@@ -60,7 +60,7 @@
     "oldAssertion": "selected support template and inclusion survive reload",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-048] profile repository round-trip"
+    "replacementTest": "[E2E-048] profile repository round-trip @desktop @journey"
   },
   {
     "id": "E2E-A024-PUBLISHED",
@@ -78,7 +78,7 @@
     "oldAssertion": "published master replacement reconnects browser storage to the current version",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-025] incompatible master recovery preserves user data"
+    "replacementTest": "[E2E-025] incompatible master recovery preserves user data @desktop @journey"
   },
   {
     "id": "E2E-A025-ONLINE",
@@ -87,7 +87,7 @@
     "oldAssertion": "invalid cached master is replaced while user profile remains",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-025] incompatible master recovery preserves user data"
+    "replacementTest": "[E2E-025] incompatible master recovery preserves user data @desktop @journey"
   },
   {
     "id": "E2E-A025-OFFLINE",
@@ -96,7 +96,7 @@
     "oldAssertion": "invalid cached master is discarded when refresh fails and user profile remains",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-025] incompatible master recovery preserves user data"
+    "replacementTest": "[E2E-025] incompatible master recovery preserves user data @desktop @journey"
   },
   {
     "id": "E2E-A026-PROFILE",
@@ -420,7 +420,7 @@
     "oldAssertion": "OR-condition control remains operable without responsive overflow",
     "disposition": "retained",
     "replacementFile": "e2e/calculator-baseline.spec.ts",
-    "replacementTest": "[E2E-007] calculator density and overflow"
+    "replacementTest": "[E2E-007] calculator density and overflow @desktop @vrt"
   },
   {
     "id": "E2E-A044-LILITH",
@@ -438,7 +438,7 @@
     "oldAssertion": "servant build survives browser reload",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-048] profile repository round-trip"
+    "replacementTest": "[E2E-048] profile repository round-trip @desktop @journey"
   },
   {
     "id": "E2E-A048-CE",
@@ -447,7 +447,7 @@
     "oldAssertion": "craft essence copy survives browser reload",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-048] profile repository round-trip"
+    "replacementTest": "[E2E-048] profile repository round-trip @desktop @journey"
   },
   {
     "id": "E2E-A048-SUPPORT",
@@ -456,7 +456,7 @@
     "oldAssertion": "support source, skill level, and effect inclusion survive reload",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-048] profile repository round-trip"
+    "replacementTest": "[E2E-048] profile repository round-trip @desktop @journey"
   },
   {
     "id": "E2E-A049-HISTORY",
@@ -474,7 +474,7 @@
     "oldAssertion": "browser downloads a parseable full backup",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-049] history backup download and restore"
+    "replacementTest": "[E2E-049] history backup download and restore @desktop @journey"
   },
   {
     "id": "E2E-A049-PREVIEW",
@@ -483,7 +483,7 @@
     "oldAssertion": "validated restore displays preview before replacement",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-049] history backup download and restore"
+    "replacementTest": "[E2E-049] history backup download and restore @desktop @journey"
   },
   {
     "id": "E2E-A049-PREIMPORT",
@@ -492,7 +492,7 @@
     "oldAssertion": "pre-import backup download enables destructive replacement",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-049] history backup download and restore"
+    "replacementTest": "[E2E-049] history backup download and restore @desktop @journey"
   },
   {
     "id": "E2E-A049-REPLACE",
@@ -501,7 +501,7 @@
     "oldAssertion": "full replacement commits and reports success",
     "disposition": "retained",
     "replacementFile": "e2e/smoke.spec.ts",
-    "replacementTest": "[E2E-049] history backup download and restore"
+    "replacementTest": "[E2E-049] history backup download and restore @desktop @journey"
   },
   {
     "id": "E2E-A050-SUMMARY",
@@ -510,7 +510,7 @@
     "oldAssertion": "real module worker returns 433 summaries",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-050] real ranking module worker and detail"
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   },
   {
     "id": "E2E-A050-DETAIL",
@@ -519,7 +519,7 @@
     "oldAssertion": "real module worker returns selected detail",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-050] real ranking module worker and detail"
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   },
   {
     "id": "E2E-A050-HANDOFF",
@@ -528,7 +528,7 @@
     "oldAssertion": "detail opens the calculator with the same average",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-050] real ranking module worker and detail"
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   },
   {
     "id": "E2E-A050-NOTICE",
@@ -537,7 +537,7 @@
     "oldAssertion": "calculator displays inherited ranking notice",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-050] real ranking module worker and detail"
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   },
   {
     "id": "E2E-A050-RESET",
@@ -546,6 +546,6 @@
     "oldAssertion": "normal-condition reset removes inherited notice and recalculates",
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
-    "replacementTest": "[E2E-050] real ranking module worker and detail"
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   }
 ]

@@ -3,11 +3,12 @@ import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
+import ts from 'typescript';
 
 const root = resolve(import.meta.dirname, '..');
 const catalog = JSON.parse(readFileSync(resolve(root, 'e2e/cases.json'), 'utf8'));
 const assertions = JSON.parse(readFileSync(resolve(root, 'e2e/assertions.json'), 'utf8'));
-const migrationManifestDigest = '4b49fafa27f2a45cbf51ffa79dfdb03db23fd969257b99192934e8adc4612679';
+const migrationManifestDigest = '740171263247e95b95571cf5fbadf375e1174c782ca8dd24e674fe9169ee8039';
 const specSource = readdirSync(resolve(root, 'e2e'))
   .filter((name) => name.endsWith('.spec.ts') || name.endsWith('.setup.ts'))
   .map((name) => readFileSync(resolve(root, 'e2e', name), 'utf8'))
@@ -47,16 +48,57 @@ function digestManifest(manifest) {
   return createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
 }
 
-function replacementTestBlock(source, title, assertionId) {
-  const titleIndex = source.indexOf(title);
-  assert.notEqual(titleIndex, -1, `${assertionId}:${title}`);
-  const followingTest = source
-    .slice(titleIndex + title.length)
-    .search(/\n\s*(?:it|test)(?:\.each\([^\n]*\))?\s*\(/);
-  return source.slice(
-    titleIndex,
-    followingTest === -1 ? undefined : titleIndex + title.length + followingTest,
+function isTestDeclaration(node) {
+  if (!ts.isCallExpression(node) || node.arguments.length < 2) return false;
+  const callee = node.expression;
+  if (ts.isIdentifier(callee)) return callee.text === 'it' || callee.text === 'test';
+  if (
+    ts.isPropertyAccessExpression(callee) &&
+    ts.isIdentifier(callee.expression) &&
+    (callee.expression.text === 'it' || callee.expression.text === 'test')
+  )
+    return ['only', 'skip', 'todo', 'fails', 'concurrent'].includes(callee.name.text);
+  return (
+    ts.isCallExpression(callee) &&
+    ts.isPropertyAccessExpression(callee.expression) &&
+    callee.expression.name.text === 'each' &&
+    ts.isIdentifier(callee.expression.expression) &&
+    (callee.expression.expression.text === 'it' || callee.expression.expression.text === 'test')
   );
+}
+
+const parsedReplacementFiles = new Map();
+
+function replacementTestNode(path, source, title, assertionId) {
+  let parsed = parsedReplacementFiles.get(path);
+  if (!parsed) {
+    const sourceFile = ts.createSourceFile(
+      path,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+    );
+    const declarations = [];
+    const visit = (node) => {
+      if (isTestDeclaration(node)) {
+        const titleNode = node.arguments[0];
+        if (ts.isStringLiteralLike(titleNode)) declarations.push({ node, title: titleNode.text });
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+    parsed = { declarations, sourceFile };
+    parsedReplacementFiles.set(path, parsed);
+  }
+  const matches = parsed.declarations.filter((declaration) => declaration.title === title);
+  assert.equal(matches.length, 1, `${assertionId}:test node:${title}`);
+  return { node: matches[0].node, sourceFile: parsed.sourceFile };
+}
+
+function containsExactAssertionMarker(source, assertionId) {
+  const escaped = assertionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|[^A-Z0-9-])${escaped}(?:$|[^A-Z0-9-])`).test(source);
 }
 
 function assertMigrationManifest(manifest, expectedDigest = migrationManifestDigest) {
@@ -75,8 +117,19 @@ function assertMigrationManifest(manifest, expectedDigest = migrationManifestDig
     assert.equal('marker' in item, false, `${item.id}:parallel marker metadata`);
     const replacement = readFileSync(resolve(root, item.replacementFile), 'utf8');
     assert.ok(['retained', 'transferred'].includes(item.disposition), item.id);
-    const testBlock = replacementTestBlock(replacement, item.replacementTest, item.id);
-    assert.ok(testBlock.includes(item.id), `${item.id}:marker`);
+    const replacementNode = replacementTestNode(
+      item.replacementFile,
+      replacement,
+      item.replacementTest,
+      item.id,
+    );
+    assert.ok(
+      containsExactAssertionMarker(
+        replacementNode.node.getText(replacementNode.sourceFile),
+        item.id,
+      ),
+      `${item.id}:exact marker`,
+    );
   }
 
   for (const item of catalog.filter(({ status }) => status !== 'retained'))
@@ -102,6 +155,18 @@ test('migration manifest rejects an assertion reassigned to the wrong existing t
   );
   assert.throws(
     () => assertMigrationManifest(reassigned, digestManifest(reassigned)),
-    /E2E-A031-FAIL-CLOSED:marker/,
+    /E2E-A031-FAIL-CLOSED:exact marker/,
+  );
+});
+
+test('migration manifest rejects reassignment across a multiline it.each boundary', () => {
+  const reassigned = assertions.map((item) =>
+    item.id === 'E2E-A041-ACCESSIBLE-CHAINED'
+      ? { ...item, replacementTest: 'distinguishes a single proc success and failure' }
+      : item,
+  );
+  assert.throws(
+    () => assertMigrationManifest(reassigned, digestManifest(reassigned)),
+    /E2E-A041-ACCESSIBLE-CHAINED:exact marker/,
   );
 });

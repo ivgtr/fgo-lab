@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.23"
+document_version: "1.5.24"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
@@ -653,6 +653,11 @@ Canonical observation reopening baseline: `8abcc369081ad77610a3cbcee8e182475ab37
 されていたためBlocking 1へ戻した。全61 observationを単一manifest、digest、replacement expectation marker、
 削除／誤付替えnegative fixtureへ収束し、case relationはmanifestから導出する。
 
+AST ownership reopening baseline: `29563fe6f1d1688c3bc435ade5788f8c6ffe623b`、clean worktree。
+source block正規表現がmultiline `it.each`を越境し、chained markerを直前のsingle-proc testへ誤帰属したため
+Blocking 1へ戻した。全61 replacementをTypeScript AST test nodeのexact titleと完全ID境界で所有し、同じ
+multiline付替えをnegative fixtureへ固定する。
+
 - [x] TSK-06.1完了HEADを固定し、同一環境・1 worker・retryなしのfull E2Eを3回測定して中央値を記録する。
 - [x] 48個の明示的な`test()`定義と、viewport loop展開後50 cases／projectをstable case IDで台帳化する。
 - [x] 全caseへsemantic owner、E2E固有failure、project owner、移行先、代替test、実測cost、closure statusを記録する。
@@ -693,8 +698,9 @@ Handoff:
 
 - Canonical note: `docs/evidence/e2e-responsibility-flow-tsk-06-2.md`。開始HEADは`6d7608c`、
   worktreeの既存documentation変更を保持した。50 legacy cases＋setup、61 key assertionsを台帳化し、
-  単一migration manifestのdigest／件数、全replacement expectation markerをrunner contractで固定した。
-  case relationはmanifestから導出し、削除／誤付替えnegative fixtureを持つ。
+  単一migration manifestのdigest／件数、全replacement AST test node内の完全ID markerをrunner contractで
+  固定した。case relationはmanifestから導出し、削除、通常`it`誤付替え、multiline `it.each`越境の誤付替えを
+  negative fixtureで拒否する。
 - Ownership: semantic E2Eはcomponent／application／executionへ先に移管した。残存25 generated testsはsetup 1、
   desktop 15、mobile 9、skip 0。本物の433-row rankingは1件だけで、canonical factoryから作るfake Workerは
   VRT専用、loadingはcomponent integration ownerである。
@@ -706,9 +712,8 @@ Handoff:
 - Parity／visual: production 24 files／112 tests、calculator 422、ranking／AttackProfile 433、digest
   `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`とruntime counterは不変。
   VRT 9/9、a11y 4/4、新規mobile baseline 7枚を目視した。
-- Verification: final `pnpm quality`成功（runner 21／21、unit 70 files／377 tests、production 24／112、
-  E2E 25／25・
-  skip 0）。ClosureはBlocking 0、Deferred 1。TSK-07はevidence-free cache／stale detailだけを所有して
+- Verification: final `pnpm quality`成功（runner 22／22、unit 70 files／377 tests、production 24／112、
+  E2E 25／25・skip 0・2.6分）。ClosureはBlocking 0、Deferred 1。TSK-07はevidence-free cache／stale detailだけを所有して
   `ready`へ戻り、TSK-08はTSK-07待ちを維持する。
 
 ### TSK-07: Web／worker一括切替
