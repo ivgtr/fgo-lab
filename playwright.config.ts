@@ -7,7 +7,7 @@ export default defineConfig({
   testDir: './e2e',
   forbidOnly: Boolean(process.env['CI']),
   retries: process.env['CI'] ? 2 : 0,
-  workers: process.env['CI'] ? 1 : undefined,
+  workers: 2,
   reporter: process.env['CI'] ? [['html'], ['github']] : [['html']],
   webServer: {
     command: `pnpm --filter @fgo-lab/web exec vite --port ${String(port)} --host 127.0.0.1`,

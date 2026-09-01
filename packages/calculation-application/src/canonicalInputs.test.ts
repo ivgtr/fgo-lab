@@ -284,6 +284,42 @@ describe('canonical special input application boundary', () => {
     }
   });
 
+  it('evaluates Cú Chulainn own HP-linear attack effect from the shared HP input', () => {
+    const servant = master.servants.find((candidate) => candidate.id === '300100')!;
+    const skill = servant.skills.find((candidate) => candidate.id === '759550')!;
+    const base = createDefaultResolvedScenario(master, undefined, servant);
+    const skillCommand = base.preNoblePhantasmPlan.find(
+      (command) => command.kind === 'useSkillSlot' && command.slot === skill.slot,
+    );
+    if (!skillCommand || skillCommand.kind !== 'useSkillSlot')
+      throw new TypeError('cu_chulainn_hp_skill_action_missing');
+    const scenario = {
+      ...base,
+      attackerHpPermille: 500,
+      preNoblePhantasmPlan: [skillCommand, { kind: 'executeAttackNoblePhantasm' as const }],
+    };
+    const calculation = calculateScenario(scenario, master, {
+      schemaVersion: SCHEMA_VERSION,
+      engineVersion: ENGINE_VERSION,
+      appVersion: '0.1.0',
+      gameRegion: 'JP',
+      masterDataLocale: 'ja-JP',
+      masterDataVersion: master.version,
+    });
+    const effect = calculation.effects.find(
+      (candidate) => candidate.source.skillId === skill.id && candidate.label === '攻撃力アップ',
+    )!;
+
+    expect(effect).toMatchObject({
+      requiredQuantity: 'attackerHpPermille',
+      requiredQuantityOwner: 'attacker',
+      outcome: 'applied',
+      value: 0.35,
+    });
+    expect(calculation.input.attackBuff).toBe(0.35);
+    expect(calculation.result.status).toBe('calculated');
+  });
+
   it('does not project input consumed only by a non-damage operation', () => {
     const { calculation } = calculate('3300200');
     expect(calculation.inputDefinitions.some((input) => input.kind === 'friendshipLevel')).toBe(

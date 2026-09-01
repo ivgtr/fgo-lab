@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EffectControlViewModel } from '@fgo-lab/calculation-application';
 import { AppliedEffects } from './AppliedEffects';
@@ -7,11 +7,11 @@ import { AppliedEffects } from './AppliedEffects';
 afterEach(cleanup);
 
 describe('applied effect interaction rendering', () => {
-  it('puts the selected state on the styled list item', () => {
+  it('dispatches a single-choice command and puts the selected state on the styled list item', () => {
     const control: EffectControlViewModel = {
       key: 'effect',
       operationIds: ['operation'],
-      interaction: 'toggle',
+      interaction: 'singleChoice',
       active: true,
       valueDisplay: 'single',
       presentationState: 'applied',
@@ -57,6 +57,7 @@ describe('applied effect interaction rendering', () => {
         explanation: { code: 'applied', condition: null },
       },
     };
+    const onToggle = vi.fn();
     const { getByRole } = render(
       <AppliedEffects
         title="自身の適用内容"
@@ -64,21 +65,23 @@ describe('applied effect interaction rendering', () => {
         inputs={[]}
         servants={[]}
         craftEssence={undefined}
-        onToggle={vi.fn()}
+        onToggle={onToggle}
         onInputChange={vi.fn()}
       />,
     );
 
     expect(
-      getByRole('button', { name: /攻撃力アップ/ })
+      getByRole('radio', { name: /攻撃力アップ/ })
         .closest('li')
         ?.getAttribute('data-active'),
     ).toBe('true');
-    const chip = getByRole('button', { name: /攻撃力アップ、\+20%.*確定/ });
+    const chip = getByRole('radio', { name: /攻撃力アップ、\+20%.*確定/ });
     expect(chip.getAttribute('aria-label')).not.toContain('条件成立');
     expect(chip.textContent).toContain('+20%・スキル');
     expect(chip.textContent).not.toContain('計算中');
     expect(chip.textContent).not.toContain('スキル使用中');
     expect(chip.textContent).not.toContain('確定');
+    fireEvent.click(chip);
+    expect(onToggle).toHaveBeenCalledWith(control, false);
   });
 });

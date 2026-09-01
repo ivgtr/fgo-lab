@@ -20,7 +20,7 @@
     "test:runner": "node --test scripts/test-runner.test.mjs scripts/e2e-case-contract.test.mjs",
     "test:docs": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
     "test:watch": "vitest",
-    "test:e2e": "playwright test --workers=2",
+    "test:e2e": "playwright test",
     "test:a11y": "playwright test --grep @a11y",
     "validate:master": "pnpm --filter @fgo-lab/data-pipeline validate",
     "validate:evidence": "node scripts/test-runner.mjs compact --suite=production packages/calculation-application/src/evidenceInventory.test.ts packages/calculation-application/src/evidence.test.ts",

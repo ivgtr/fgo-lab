@@ -132,13 +132,40 @@
     "replacementTest": "dispatches an explicit preset without changing sibling inputs"
   },
   {
+    "id": "E2E-A030-DIRECT-CONTROLS",
+    "caseId": "E2E-030",
+    "outcome": "presentation",
+    "oldAssertion": "direct final-value controls are present and reset ATK and affinity defaults",
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/features/calculator/Calculator.direct-inputs.test.tsx",
+    "replacementTest": "renders direct final-input controls and dispatches canonical reset values"
+  },
+  {
+    "id": "E2E-A030-MODE-SEPARATION",
+    "caseId": "E2E-030",
+    "outcome": "semantic",
+    "oldAssertion": "manual direct values do not inherit resolved passive, skill, or craft-essence effects",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/scenario.test.ts",
+    "replacementTest": "keeps resolved effects out of manual final-input calculations"
+  },
+  {
+    "id": "E2E-A030-TRAIT-DECISION",
+    "caseId": "E2E-030",
+    "outcome": "semantic",
+    "oldAssertion": "a selected trait decision changes only the canonical conditional modifier",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/scenario.test.ts",
+    "replacementTest": "applies a conditional NP from the same explicit effect decision contract"
+  },
+  {
     "id": "E2E-A030-SELECTION",
     "caseId": "E2E-030",
     "outcome": "presentation",
     "oldAssertion": "resolved effects expose selected state",
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/calculator/AppliedEffects.integration.test.tsx",
-    "replacementTest": "puts the selected state on the styled list item"
+    "replacementTest": "dispatches a single-choice command and puts the selected state on the styled list item"
   },
   {
     "id": "E2E-A031-REQUIRED",
@@ -148,6 +175,33 @@
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/calculator/EffectInlineInput.test.tsx",
     "replacementTest": "does not clamp an invalid final total and exposes the typed error at the control"
+  },
+  {
+    "id": "E2E-A031-FAIL-CLOSED",
+    "caseId": "E2E-031",
+    "outcome": "repairable",
+    "oldAssertion": "application returns inputRequired until the missing quantity is repaired",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/canonicalInputs.test.ts",
+    "replacementTest": "resolves defaults and invalid explicit values before execution"
+  },
+  {
+    "id": "E2E-A032-DANTE-INVENTORY",
+    "caseId": "E2E-032",
+    "outcome": "semantic",
+    "oldAssertion": "Dante production effects remain in the canonical effect inventory",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/productionMasterInventory.test.ts",
+    "replacementTest": "keeps known candidate values and bounds fail-closed servants"
+  },
+  {
+    "id": "E2E-A032-SUMMER-WU-INVENTORY",
+    "caseId": "E2E-032",
+    "outcome": "semantic",
+    "oldAssertion": "Summer Wu hidden trait grant and dependent effects remain in the canonical inventory",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/productionMasterInventory.test.ts",
+    "replacementTest": "keeps known candidate values and bounds fail-closed servants"
   },
   {
     "id": "E2E-A032-ORDER",
@@ -165,7 +219,7 @@
     "oldAssertion": "HP-linear input drives the canonical effect",
     "disposition": "transferred",
     "replacementFile": "packages/calculation-application/src/canonicalInputs.test.ts",
-    "replacementTest": "evaluates one Tonelico skill decision as an ordered cumulative HP threshold series"
+    "replacementTest": "evaluates Cú Chulainn own HP-linear attack effect from the shared HP input"
   },
   {
     "id": "E2E-A034-TONELICO",
@@ -195,6 +249,24 @@
     "replacementTest": "changes the complete form-qualified variant rather than mutating only its card"
   },
   {
+    "id": "E2E-A036-COMMAND",
+    "caseId": "E2E-036",
+    "outcome": "presentation",
+    "oldAssertion": "exclusive variant selection dispatches a single-choice command and exposes selected state",
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/features/calculator/AppliedEffects.integration.test.tsx",
+    "replacementTest": "dispatches a single-choice command and puts the selected state on the styled list item"
+  },
+  {
+    "id": "E2E-A036-TRANSACTION",
+    "caseId": "E2E-036",
+    "outcome": "semantic",
+    "oldAssertion": "variant selection commits form, variant, and state as one transaction",
+    "disposition": "transferred",
+    "replacementFile": "packages/battle-execution/src/variantSelection.test.ts",
+    "replacementTest": "commits form, variant, and state trait as one prepared transaction"
+  },
+  {
     "id": "E2E-A037-SAME-CARD",
     "caseId": "E2E-037",
     "outcome": "semantic",
@@ -202,6 +274,15 @@
     "disposition": "transferred",
     "replacementFile": "packages/calculation-application/src/attackProfile.test.ts",
     "replacementTest": "keeps form-qualified variants with one raw NP ID separate by canonical semantics"
+  },
+  {
+    "id": "E2E-A037-SEMANTIC-RESULT",
+    "caseId": "E2E-037",
+    "outcome": "semantic",
+    "oldAssertion": "same-card sibling selection changes the complete semantic result and can restore it",
+    "disposition": "transferred",
+    "replacementFile": "packages/battle-execution/src/variantSelection.test.ts",
+    "replacementTest": "changes the complete form-qualified variant rather than mutating only its card"
   },
   {
     "id": "E2E-A038-EXCLUSIVE",
@@ -213,6 +294,15 @@
     "replacementTest": "keeps inclusion independent while replacing an exclusive condition decision"
   },
   {
+    "id": "E2E-A038-TRANSACTION",
+    "caseId": "E2E-038",
+    "outcome": "invalid",
+    "oldAssertion": "contradictory exclusive decisions fail closed without a partial semantic result",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/scenario.test.ts",
+    "replacementTest": "applies one exclusive conditional modifier and fails closed when both are selected"
+  },
+  {
     "id": "E2E-A039-ACTOR-COUNT",
     "caseId": "E2E-039",
     "outcome": "repairable",
@@ -220,6 +310,15 @@
     "disposition": "transferred",
     "replacementFile": "packages/calculation-application/src/canonicalActorCount.test.ts",
     "replacementTest": "fails closed when an explicit final count is below the canonical minimum"
+  },
+  {
+    "id": "E2E-A039-TYPED-INPUT",
+    "caseId": "E2E-039",
+    "outcome": "presentation",
+    "oldAssertion": "actor-count input exposes its canonical minimum and typed invalid state",
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/features/calculator/EffectInlineInput.test.tsx",
+    "replacementTest": "does not clamp an invalid final total and exposes the typed error at the control"
   },
   {
     "id": "E2E-A040-ENEMY-COUNT",
@@ -231,13 +330,76 @@
     "replacementTest": "treats the Habetrot input as the final enemy total and supports one to three enemies"
   },
   {
-    "id": "E2E-A041-PROC",
+    "id": "E2E-A040-COMMAND",
+    "caseId": "E2E-040",
+    "outcome": "presentation",
+    "oldAssertion": "enemy-count choices dispatch values one through three with accessible pressed state",
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/features/calculator/EffectInlineInput.test.tsx",
+    "replacementTest": "renders a small population domain as one keyboard-operable segmented control"
+  },
+  {
+    "id": "E2E-A040-SEMANTIC-RESULT",
+    "caseId": "E2E-040",
+    "outcome": "semantic",
+    "oldAssertion": "Habetrot star input and effect decision produce one canonical semantic result",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/canonicalInputs.test.ts",
+    "replacementTest": "routes Habetrot stars through one decision and ten internal thresholds"
+  },
+  {
+    "id": "E2E-A041-SIMPLE",
     "caseId": "E2E-041",
     "outcome": "stochastic",
     "oldAssertion": "proc result and chained success count remain explicit",
     "disposition": "transferred",
     "replacementFile": "packages/calculation-application/src/procEffectsGolden.test.ts",
     "replacementTest": "uses the effect toggle as the success result for simple probabilistic skills"
+  },
+  {
+    "id": "E2E-A041-CHAINED",
+    "caseId": "E2E-041",
+    "outcome": "stochastic",
+    "oldAssertion": "Caesar chained rolls use one explicit success-count input",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/procEffectsGolden.test.ts",
+    "replacementTest": "evaluates Caesar chained rolls from one explicit success-count input"
+  },
+  {
+    "id": "E2E-A041-INDEPENDENT",
+    "caseId": "E2E-041",
+    "outcome": "stochastic",
+    "oldAssertion": "Sugiya independent rolls remain separately decidable",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/procEffectsGolden.test.ts",
+    "replacementTest": "evaluates Sugiya independent rolls without coupling their results"
+  },
+  {
+    "id": "E2E-A041-OC",
+    "caseId": "E2E-041",
+    "outcome": "stochastic",
+    "oldAssertion": "Duryodhana proc rate follows overcharge while success remains explicit",
+    "disposition": "transferred",
+    "replacementFile": "packages/calculation-application/src/procEffectsGolden.test.ts",
+    "replacementTest": "derives Duryodhana roll rates from OC while leaving the result explicit"
+  },
+  {
+    "id": "E2E-A041-ACCESSIBLE-SINGLE",
+    "caseId": "E2E-041",
+    "outcome": "presentation",
+    "oldAssertion": "simple stochastic success and failure have distinct accessible presentation",
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/features/calculator/AppliedEffects.accessibility.test.tsx",
+    "replacementTest": "distinguishes a single proc success and failure"
+  },
+  {
+    "id": "E2E-A041-ACCESSIBLE-CHAINED",
+    "caseId": "E2E-041",
+    "outcome": "presentation",
+    "oldAssertion": "chained success count has distinct accessible presentation",
+    "disposition": "transferred",
+    "replacementFile": "apps/web/src/features/calculator/AppliedEffects.accessibility.test.tsx",
+    "replacementTest": "describes chained success count %i without a condition reason"
   },
   {
     "id": "E2E-A042-HIDDEN",
@@ -256,6 +418,16 @@
     "disposition": "transferred",
     "replacementFile": "packages/battle-execution/src/condition.property.test.ts",
     "replacementTest": "preserves unknown quantity truth through all/any/not expressions"
+  },
+  {
+    "id": "E2E-A043-RESPONSIVE",
+    "caseId": "E2E-043",
+    "outcome": "presentation",
+    "oldAssertion": "OR-condition control remains operable without responsive overflow",
+    "disposition": "retained",
+    "replacementFile": "e2e/calculator-baseline.spec.ts",
+    "replacementTest": "[E2E-007] calculator density and overflow",
+    "marker": "E2E-A043-RESPONSIVE"
   },
   {
     "id": "E2E-A044-LILITH",

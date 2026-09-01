@@ -2268,6 +2268,18 @@ describe('scenario calculation facade', () => {
     ).toThrow();
   });
 
+  it('keeps resolved effects out of manual final-input calculations', () => {
+    const scenario = createDefaultResolvedScenario(master, undefined);
+    const resolved = calculateScenario(scenario, master, versions);
+    const manual = calculateScenario({ mode: 'manual', manual: resolved.input }, master, versions);
+
+    expect(resolved.effects.length).toBeGreaterThan(0);
+    expect(manual.effects).toEqual([]);
+    expect(manual.effectControls).toEqual([]);
+    expect(manual.effectInputs).toEqual([]);
+    expect(manual.input).toEqual(resolved.input);
+  });
+
   it('fails closed when a resolved scenario references a missing craft essence', () => {
     const scenario: ResolvedScenario = {
       ...createDefaultResolvedScenario(master, undefined),

@@ -84,8 +84,24 @@ setup後に433件の計算完了を待ち、density caseは3 viewportで同じ�
   VRTだけに限定しpackage接続証拠へ数えない。
 
 Confirmed factは上記sourceとreview指摘である。再監査後は50 legacy cases＋setup 1件を`cases.json`、
-42 key assertionsを`assertions.json`へ分離し、削除・mergeした全caseにexact replacement file／test titleを
+61 key assertionsを`assertions.json`へ分離し、削除・mergeした全caseにexact replacement file／test titleを
 要求するcontractへ収束した。
+
+### Structural review reopening: assertion-set completeness
+
+- **Mechanism:** assertion rowを追加してもcase側に期待集合がなく、別意味のreplacementやcase内outcomeの脱落を
+  「test title文字列が存在する」検査で受理できた。
+- **Implementation mismatch:** E2E-A033はCú Chulainn固有のHP-linear効果をTonelicoへ対応付け、E2E-A041は
+  simple procだけでCaesar chained count、Sugiya independent rolls、Duryodhana OC linkageを代表していた。
+- **Missed detection / earlier review gap:** 最初のreopeningでもcompound recovery／persistence／handoffだけを
+  hard-coded guardrailへ追加し、calculator semantic cases E2E-030〜043を同じoutcome分解へ展開しなかった。
+- **Recurrence scope:** E2E-030 direct controls／reset／mode separation／trait decision／selection、E2E-031
+  component error／application fail-closed、E2E-032 Dante／Summer Wu inventory、E2E-033 own HP-linear、
+  E2E-036〜040 command／transaction／typed input／semantic result、E2E-041 simple／chained／independent／OC／
+  accessible presentation、E2E-043 OR semantics／responsive presentation。
+- **Minimum guardrail:** 全caseに必須`assertionIds`を置き、そのflatten集合とassertion record集合、recordの
+  `caseId` owner、重複なしを双方向完全一致で検査する。上記複合familyの61 assertion IDはrunner contractにも
+  固定し、transferred test titleはquoted literal、retained browser outcomeはsource markerを要求する。
 
 ### Setup storage-state spike
 
@@ -113,7 +129,8 @@ IndexedDB込み`storageState({ indexedDB: true })`は成功したが、生成JSO
 | desktop／mobile ownership | 全fileを両projectへ展開後skip | config／metadataで単一project owner | Verified |
 | a11y | mobile caseも両projectへ展開 | startup、desktop、representative mobileを一度ずつ | Verified |
 
-各行はcase／assertion台帳と実行結果へ展開済みで、Blockingは0件である。
+各行はcase／assertion台帳と実行結果へ展開済みで、assertion familyの双方向完全一致を含め
+Blockingは0件である。
 
 ## State-by-path counterexample matrix
 
@@ -130,7 +147,7 @@ IndexedDB込み`storageState({ indexedDB: true })`は成功したが、生成JSO
 | desktop／390／320 layout | canonical presentation fixture | overflow／density／snapshot | Verified |
 | keyboard／accessible name | component accessibility | representative desktop／mobile axe | Verified |
 
-## Execution plan
+## Executed plan (historical v1.2.0 measurement contract)
 
 1. TSK-06.1 completion HEADから1 worker、retryなしのfull E2Eを同一環境で3回測定する。
 2. 明示的定義、loop-generated case、project expansion、runtime skipを分離したcase inventoryを作る。
@@ -167,16 +184,27 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
 - Fixture contract: Node側でsmall masterをruntime parseし、`createStaticAttackProfiles()`、canonical NP variant、
   shared `rankingConditionsFingerprint()`から`RankingWorkerResponse`を構築する。fake Workerは6つのVRT
   calculationだけに使い、loadingは`Ranking.integration.test.tsx`がtyped Worker responseで検証する。
-- Assertion closure: 42 assertionsはold assertion、outcome class、exact replacement file／test titleを持つ。
-  retained assertionはsource markerも必須で、transferred／merged caseのassertion欠落を`test:runner`が拒否する。
+- Assertion closure: 61 assertionsはold assertion、outcome class、exact replacement file／test titleを持つ。
+  case側の必須`assertionIds` flatten集合とrecord集合は双方向完全一致し、retained assertionはsource marker、
+  transferred assertionはquoted test titleを必須とする。E2E-030〜043の再発範囲は次で閉じた。
+
+| Case | Required outcomes | Exact owners |
+| --- | --- | --- |
+| E2E-030 | direct controls／reset、direct-resolved分離、trait decision、selection／command | `Calculator.direct-inputs`、`scenario`、`AppliedEffects.integration` |
+| E2E-031 | component error、application fail-closed | `EffectInlineInput`、`canonicalInputs` |
+| E2E-032 | Dante、Summer Wu、ordered production execution | `productionMasterInventory`、`productionExecutionParity` |
+| E2E-033 | Cú Chulainn own HP-linear | `canonicalInputs`のproduction fixture |
+| E2E-036〜040 | variant command／transaction／identity、exclusive fail-closed、typed count／semantic result | `AppliedEffects`、`variantSelection`、`attackProfile`、`effectDecision`、`scenario`、`canonicalActorCount`、`canonicalInputs` |
+| E2E-041 | simple、Caesar chained、Sugiya independent、Duryodhana OC、single／chained a11y | `procEffectsGolden`、`AppliedEffects.accessibility` |
+| E2E-043 | `any`／unknown composition、responsive presentation | `condition.property`、E2E-007 marker |
 - Quick controls: absolute presetとincrement actionをtyped unionへ分離し、actionへ`aria-pressed`を付与しない。
   Fou 3000でdisabledな`+1,000`がpressedになる状態をcomponent testで拒否する。
 - VRT: desktop 3＋mobile 7の10 PNG。新規mobile 320／390 calculator、selected effect、ranking page／row／
   fallbackを目視し、overflow、fixed navigation、selected state、fallbackを確認した。旧project suffix 8 PNGは
   削除した。`@vrt`はsetup込み9/9成功し、density上限は緩和していない。
 - a11y: startup desktop、major desktop screens、mobile home／calculatorがsetup込み4/4成功した。
-- Component／application: focused 3 files／5 tests、unit 69 files／375 tests、runner 19/19が成功した。
-- Production: 24 files／111 tests。master `20260831.10`、application 4,735 records、servants 422、
+- Component／application: focused replacement tests、unit 70 files／377 tests、runner 19/19が成功した。
+- Production: 24 files／112 tests。master `20260831.10`、application 4,735 records、servants 422、
   AttackProfile／ranking 433、calculator 422、invalid／unsupported／inputRequired 0。digest
   `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`、runtime counter
   read／parse／compile 1／1／1、candidate 6,376／3,957、damage request 6,913／1,599は不変である。
@@ -188,7 +216,7 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
 | Before, workers 1 | 682.239s | 687.976s | 671.540s | 682.239s | 66 pass／34 skip × 3 |
 | After, workers 1 | 238.626s | 233.832s | 236.442s | 236.442s | 25 pass／0 skip × 3 |
 
-中央値は445.797秒、65.3%短縮し、30% Done gateを満たした。measurement JSONは
+中央値の差は445.797秒で、65.3%短縮し、30% Done gateを満たした。measurement JSONは
 `.test-results/tsk-06-2/{baseline,post}-run-{1,2,3}/results.json`にある。
 
 ### Worker reassessment
@@ -200,12 +228,18 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
 | 4 | 156.741s | 154.594s | 154.702s | N/A | 3/3で21 pass／4 timeout、棄却 |
 
 workers 4ではcalculator／ranking density、offline、master recoveryが同じ4 failureとして再現した。
-workers 2はworkers 1より中央値37.6%短く全run成功したため、canonical `test:e2e`を2へ固定した。
+workers 2はworkers 1より中央値37.6%短く全run成功したため、`playwright.config.ts`のcanonical
+`workers`を2へ固定した。`package.json`は`playwright test`だけを呼び、測定時だけCLI overrideを使う。
 
-Final `pnpm quality`はformat、lint、typecheck、runner 19、docs、unit 69／375、production 24／111、
+これらの12 full runsはtest strategy v1.2.1以前のhistorical evidenceとして保持する。v1.2.1では同一identityの
+baseline artifactを再利用し、before／afterは2-runの判定一致・境界margin・10%分散で3回目を決める。
+worker候補はfailure／timeout 1件で即棄却し、採用候補は2成功＋final qualityを3件目の安定性証拠とする。
+本Taskの既取得3-runは新契約を上回るため再測定せず、final qualityも測定目的で重複実行しない。
+
+Final `pnpm quality`はformat、lint、typecheck、runner 19、docs、unit 70／377、production 24／112、
 master validation、build、E2E 25／25（2.8分、skip 0）まで成功した。unit artifactは
-`.test-results/2026-09-01T08-19-43-666Z-327-128032`、production artifactは
-`.test-results/2026-09-01T08-19-50-678Z-906-4d1c70`である。
+`.test-results/2026-09-01T08-51-21-901Z-327-f4b91f`、production artifactは
+`.test-results/2026-09-01T08-51-29-527Z-914-4691e5`である。
 
 ## Closure
 
