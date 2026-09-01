@@ -52,7 +52,7 @@ updated_at: "2026-09-01"
 | [transactional-preparation-flow-tsk-05](transactional-preparation-flow-tsk-05.md) | Complete | canonical: ordered condition／choice／NP resource／state／form／variant action transaction、typed outcome、full recovery | TSK-05〜08 | `69f8207e` baseline／second review resolution |
 | [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Complete | canonical: ranking policy／finite condition witness／candidate completeness／maximum oracle／parity／performance | TSK-06〜08 | TSK-06 review resolution |
 | [ranking-web-worker-cutover-tsk-07](ranking-web-worker-cutover-tsk-07.md) | Active | canonical: five-item cutover retained; Web handoff／evidence cache remain TSK-07 closure items after TSK-06.1 | TSK-07〜09 | TSK-07 structural review |
-| [portable-calculation-identity-flow-tsk-06-1](portable-calculation-identity-flow-tsk-06-1.md) | Active | canonical: approved versioned request／result design、explicit upgrade、persistence／migration、TSK-06.1 Blocking／TSK-07 Deferred flow | TSK-06.1〜08 | TSK-06.1 design approval |
+| [portable-calculation-identity-flow-tsk-06-1](portable-calculation-identity-flow-tsk-06-1.md) | Complete | canonical: schema 33 portable request／result implementation、explicit upgrade、persistence／migration、TSK-06.1 Blocking 0／TSK-07 Deferred flow | TSK-06.1〜08 | TSK-06.1 implementation closure |
 
 TSK-00.3の分類根拠と移動前hashは[ignored documentation disposition](ignored-documentation-disposition.md)に記録する。
 

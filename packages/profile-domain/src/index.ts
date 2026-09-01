@@ -19,6 +19,7 @@ export interface IdGenerator {
 }
 export type ProfileLoadResult =
   | { state: 'empty' }
+  | { state: 'invalid'; reason: 'profile_parse_failed' }
   | {
       state: 'ready';
       collection: ProfileCollection;

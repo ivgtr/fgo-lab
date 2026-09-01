@@ -18,24 +18,30 @@ import {
   type Clock,
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
-import { finalizeHistory, scenarioFingerprint } from '@fgo-lab/workspace-domain';
+import { finalizeHistory, portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 import type {
+  CalculationResult,
   CalculationScenario,
   CalculationHistoryEntry,
-  CalculationShareSnapshot,
   CraftEssenceCopy,
+  PortableCalculationRequest,
   ServantBuild,
   ServantTarget,
   SupportEffectRef,
   SupportTemplate,
 } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import type { EffectProjection, RankingPolicyDetail } from '@fgo-lab/calculation-application';
+import type { EffectProjection } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
-  calculateScenario,
-  calculateScenarioWithContributionProjection,
-  createDefaultCalculatorScenario,
+  createDefaultCalculatorPortableRequest,
+  createRankingPortableRequest,
+  currentCalculationVersionContext,
+  executePortableCalculation,
+  recoverPortableCalculation,
+  replacePortableCalculationScenario,
+  resetPortableCalculationRequest,
+  upgradePortableCalculationRequestVersion,
   resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
@@ -43,6 +49,7 @@ import { t } from '../ui/i18n';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { DataPage } from '../features/data/DataPage';
 import { Calculator, RejectedCalculator } from '../features/calculator/Calculator';
+import { CalculationContextNotice } from '../features/calculator/CalculationContextNotice';
 import { CraftEssences } from '../features/profile/CraftEssences';
 import { Growth } from '../features/growth/Growth';
 import { Home } from '../features/home/Home';
@@ -68,9 +75,9 @@ const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
 
 interface CalculationWorkspace {
-  scenario: CalculationScenario | undefined;
-  shared: CalculationShareSnapshot | undefined;
-  contributionProjection?: RankingPolicyDetail['contributionProjection'];
+  request: PortableCalculationRequest | undefined;
+  storedResult: CalculationResult | undefined;
+  source: 'share' | 'draft' | 'history' | undefined;
 }
 
 function supportDecisionKeys(effects: readonly EffectProjection[]) {
@@ -151,10 +158,12 @@ export function App() {
     undo: undoLastChange,
   } = useProfileCollection(repository);
   const [calculation, setCalculation] = useState<CalculationWorkspace>({
-    scenario: undefined,
-    shared: undefined,
+    request: undefined,
+    storedResult: undefined,
+    source: undefined,
   });
   const [online, setOnline] = useState(navigator.onLine);
+  const [recoveryFocus, setRecoveryFocus] = useState<'result' | 'error' | null>(null);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
   useEffect(() => {
     async function bootstrap() {
@@ -169,7 +178,7 @@ export function App() {
       setCalculation(result.calculation);
       setStartupWarning(result.warning);
       if (result.offline) setOnline(false);
-      if (result.calculation.shared) setPage('calculate');
+      if (result.calculation.source === 'share') setPage('calculate');
       setLoading(false);
     }
     void bootstrap();
@@ -183,6 +192,16 @@ export function App() {
       removeEventListener('offline', update);
     };
   }, []);
+  useEffect(() => {
+    if (!recoveryFocus) return;
+    const selector =
+      recoveryFocus === 'result'
+        ? '[data-calculation-result-heading]'
+        : '[data-calculation-error-summary]';
+    const target = document.querySelector<HTMLElement>(selector);
+    target?.focus();
+    queueMicrotask(() => setRecoveryFocus(null));
+  }, [recoveryFocus, calculation]);
   if (loading) return <StartupScreen mode="checking" />;
   if (!master || !profiles)
     return (
@@ -194,7 +213,7 @@ export function App() {
           setCalculation(result.calculation);
           setStartupWarning(result.warning);
           if (result.offline) setOnline(false);
-          if (result.calculation.shared) setPage('calculate');
+          if (result.calculation.source === 'share') setPage('calculate');
         }}
       />
     );
@@ -202,9 +221,10 @@ export function App() {
   const profile = activeProfile(profiles);
   const defaultServant = currentMaster.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
-  const currentScenario =
-    calculation.scenario ??
-    createDefaultCalculatorScenario(currentMaster, defaultBuild, defaultServant);
+  const currentRequest =
+    calculation.request ??
+    createDefaultCalculatorPortableRequest(currentMaster, defaultBuild, defaultServant);
+  const currentScenario = currentRequest.scenario;
   const versions = {
     schemaVersion: SCHEMA_VERSION,
     masterDataVersion: currentMaster.version,
@@ -213,15 +233,14 @@ export function App() {
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
   };
-  const resolvedCalculation = calculation.contributionProjection
-    ? calculateScenarioWithContributionProjection(
-        currentScenario,
-        currentMaster,
-        versions,
-        calculation.contributionProjection,
-      )
-    : calculateScenario(currentScenario, currentMaster, versions);
-  const input = resolvedCalculation.status === 'executable' ? resolvedCalculation.input : null;
+  const portableOutcome = calculation.storedResult
+    ? recoverPortableCalculation(currentRequest, calculation.storedResult, currentMaster)
+    : executePortableCalculation(currentRequest, currentMaster);
+  const resolvedCalculation =
+    portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported'
+      ? portableOutcome.execution
+      : null;
+  const input = resolvedCalculation?.status === 'executable' ? resolvedCalculation.input : null;
   const selectedAttackerId =
     input?.attackerId ??
     (currentScenario.mode === 'resolved' ? currentScenario.attacker.servantId : defaultServant.id);
@@ -234,7 +253,10 @@ export function App() {
       template.templateId ===
       (currentScenario.mode === 'resolved' ? currentScenario.support?.sourceTemplateId : undefined),
   );
-  const result = resolvedCalculation.result;
+  const result =
+    portableOutcome.status === 'historicalOnly'
+      ? portableOutcome.result
+      : resolvedCalculation?.result;
   async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) => patchServantBuild(current, servantId, patch, now));
@@ -327,29 +349,19 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function saveScenarioDraft(
-    scenario: CalculationScenario,
+  async function savePortableDraft(
+    request: PortableCalculationRequest,
     sessionId = calculationSessionId,
-    contributionProjection?: RankingPolicyDetail['contributionProjection'],
   ) {
-    setCalculation(
-      contributionProjection
-        ? { scenario, shared: undefined, contributionProjection }
-        : { scenario, shared: undefined },
-    );
-    const nextCalculation = contributionProjection
-      ? calculateScenarioWithContributionProjection(
-          scenario,
-          currentMaster,
-          versions,
-          contributionProjection,
-        )
-      : calculateScenario(scenario, currentMaster, versions);
-    const fingerprint = await scenarioFingerprint(
-      scenario,
-      currentMaster.version,
-      ENGINE_VERSION,
-      async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+    const outcome = executePortableCalculation(request, currentMaster);
+    const nextResult =
+      outcome.status === 'executed' || outcome.status === 'unsupported'
+        ? outcome.execution.result
+        : undefined;
+    setCalculation({ request, storedResult: nextResult, source: 'draft' });
+    if (!nextResult) return outcome;
+    const fingerprint = await portableCalculationFingerprint(request, async (data: Uint8Array) =>
+      crypto.subtle.digest('SHA-256', new Uint8Array(data)),
     );
     const now = new Date().toISOString();
     await updateActiveProfile((current) => ({
@@ -357,32 +369,48 @@ export function App() {
       draft: {
         profileId: current.profileId,
         calculationSessionId: sessionId,
-        scenario,
-        result: nextCalculation.result,
-        scenarioFingerprint: fingerprint,
+        request,
+        result: nextResult,
+        requestFingerprint: fingerprint,
+        updatedAt: now,
+      },
+      updatedAt: now,
+    }));
+    return outcome;
+  }
+  async function saveScenarioDraft(scenario: CalculationScenario) {
+    await savePortableDraft(replacePortableCalculationScenario(currentRequest, scenario));
+  }
+  async function copyHistoryToDraft(entry: CalculationHistoryEntry) {
+    const sessionId = crypto.randomUUID();
+    setCalculationSessionId(sessionId);
+    setCalculation({ request: entry.request, storedResult: entry.result, source: 'history' });
+    const now = new Date().toISOString();
+    await updateActiveProfile((current) => ({
+      ...current,
+      draft: {
+        profileId: current.profileId,
+        calculationSessionId: sessionId,
+        request: entry.request,
+        result: entry.result,
+        requestFingerprint: entry.requestFingerprint,
         updatedAt: now,
       },
       updatedAt: now,
     }));
   }
-  async function copyHistoryToDraft(entry: CalculationHistoryEntry) {
-    const sessionId = crypto.randomUUID();
-    setCalculationSessionId(sessionId);
-    await saveScenarioDraft(entry.scenario, sessionId);
-  }
   async function finalizeCurrentCalculation() {
-    const fingerprint = await scenarioFingerprint(
-      currentScenario,
-      currentMaster.version,
-      ENGINE_VERSION,
-      async (data) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
+    if (!result) return;
+    const fingerprint = await portableCalculationFingerprint(
+      currentRequest,
+      async (data: Uint8Array) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
     );
     const now = new Date().toISOString();
     const historyId = crypto.randomUUID();
     await updateActiveProfile((current) =>
       finalizeHistory(current, {
         sessionId: calculationSessionId,
-        scenario: currentScenario,
+        request: currentRequest,
         result,
         fingerprint,
         now,
@@ -446,7 +474,7 @@ export function App() {
         {page === 'home' && (
           <Home
             result={
-              result.status === 'calculated'
+              result?.status === 'calculated'
                 ? (result.rows[
                     (input?.npLevel ??
                       (currentScenario.mode === 'resolved'
@@ -463,100 +491,144 @@ export function App() {
           />
         )}{' '}
         {page === 'calculate' &&
-          resolvedCalculation.status === 'rejected' &&
+          resolvedCalculation?.status === 'rejected' &&
           currentScenario.mode === 'resolved' && (
             <RejectedCalculator
-              result={result}
+              result={resolvedCalculation.result}
               scenario={currentScenario}
               effectInputs={resolvedCalculation.effectInputs}
               onScenarioChange={saveScenarioDraft}
             />
           )}
-        {page === 'calculate' && resolvedCalculation.status === 'executable' && (
-          <Calculator
-            master={currentMaster}
-            resolvedInput={resolvedCalculation.input}
-            scenarioInput={resolvedCalculation.scenarioInput}
-            resolvedEffects={resolvedCalculation.effects}
-            effectControls={resolvedCalculation.effectControls}
-            effectWarnings={resolvedCalculation.effectWarnings}
-            effectInputs={resolvedCalculation.effectInputs}
-            activationRequirements={resolvedCalculation.activationRequirements}
-            result={result}
-            scenario={currentScenario}
-            servants={currentMaster.servants}
-            builds={profile.servantBuilds}
-            craftEssenceCopies={profile.craftEssences}
-            craftEssences={currentMaster.craftEssences}
-            supportTemplates={profile.supportTemplates}
-            history={profile.history}
-            selectedSupport={calculationSupportTemplate}
-            onScenarioChange={saveScenarioDraft}
-            onSupportSelect={async (template) => {
-              if (currentScenario.mode !== 'resolved') return;
-              const currentSupportDecisionKeys = supportDecisionKeys(resolvedCalculation.effects);
-              const retainedDecisions = currentScenario.effectDecisions.filter(
-                (decision) => !currentSupportDecisionKeys.has(decision.decisionKey),
+        {page === 'calculate' && portableOutcome.status === 'historicalOnly' && (
+          <CalculationContextNotice
+            state="historicalOnly"
+            request={currentRequest}
+            result={portableOutcome.result}
+            onUpgrade={async () => {
+              const outcome = await savePortableDraft(
+                upgradePortableCalculationRequestVersion(
+                  currentRequest,
+                  currentCalculationVersionContext(currentMaster),
+                ),
               );
-              const retainedWorldFacts = currentScenario.worldFactAssertions.filter(
-                (assertion) => !currentSupportDecisionKeys.has(assertion.decisionKey),
-              );
-              if (!template) {
-                await saveScenarioDraft({
+              setRecoveryFocus(outcome.status === 'executed' ? 'result' : 'error');
+            }}
+          />
+        )}
+        {page === 'calculate' && portableOutcome.status === 'invalid' && (
+          <CalculationContextNotice
+            state="invalid"
+            request={currentRequest}
+            reason={portableOutcome.reason}
+            onReset={async () => {
+              await savePortableDraft(resetPortableCalculationRequest(currentRequest));
+            }}
+          />
+        )}
+        {page === 'calculate' &&
+          portableOutcome.status === 'unsupported' &&
+          resolvedCalculation?.status === 'rejected' && (
+            <CalculationContextNotice
+              state="unsupported"
+              request={currentRequest}
+              onReset={async () => {
+                await savePortableDraft(resetPortableCalculationRequest(currentRequest));
+              }}
+            />
+          )}
+        {page === 'calculate' &&
+          (portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported') &&
+          resolvedCalculation?.status === 'executable' &&
+          result && (
+            <Calculator
+              master={currentMaster}
+              resolvedInput={resolvedCalculation.input}
+              scenarioInput={resolvedCalculation.scenarioInput}
+              resolvedEffects={resolvedCalculation.effects}
+              effectControls={resolvedCalculation.effectControls}
+              effectWarnings={resolvedCalculation.effectWarnings}
+              effectInputs={resolvedCalculation.effectInputs}
+              activationRequirements={resolvedCalculation.activationRequirements}
+              result={result}
+              request={currentRequest}
+              scenario={currentScenario}
+              servants={currentMaster.servants}
+              builds={profile.servantBuilds}
+              craftEssenceCopies={profile.craftEssences}
+              craftEssences={currentMaster.craftEssences}
+              supportTemplates={profile.supportTemplates}
+              history={profile.history}
+              selectedSupport={calculationSupportTemplate}
+              onScenarioChange={saveScenarioDraft}
+              onSupportSelect={async (template) => {
+                if (currentScenario.mode !== 'resolved') return;
+                const currentSupportDecisionKeys = supportDecisionKeys(resolvedCalculation.effects);
+                const retainedDecisions = currentScenario.effectDecisions.filter(
+                  (decision) => !currentSupportDecisionKeys.has(decision.decisionKey),
+                );
+                const retainedWorldFacts = currentScenario.worldFactAssertions.filter(
+                  (assertion) => !currentSupportDecisionKeys.has(assertion.decisionKey),
+                );
+                if (!template) {
+                  await saveScenarioDraft({
+                    ...currentScenario,
+                    support: null,
+                    effectDecisions: retainedDecisions,
+                    worldFactAssertions: retainedWorldFacts,
+                  });
+                  return;
+                }
+                const lastUsedAt = new Date().toISOString();
+                await updateSupportTemplate(template.templateId, { lastUsedAt });
+                const candidate = {
                   ...currentScenario,
-                  support: null,
+                  support: {
+                    sourceTemplateId: template.templateId,
+                    composition: structuredClone(template.composition),
+                  },
                   effectDecisions: retainedDecisions,
                   worldFactAssertions: retainedWorldFacts,
+                };
+                const candidateEffects = resolveScenario(candidate, currentMaster).effects;
+                await saveScenarioDraft(
+                  applyEffectProjectionDecisions(
+                    candidate,
+                    excludedSupportEffects(template, candidateEffects),
+                    false,
+                  ),
+                );
+              }}
+              onSupportSave={async (mode) => {
+                if (currentScenario.mode !== 'resolved' || !currentScenario.support) return;
+                if (mode === 'source' && currentScenario.support.sourceTemplateId) {
+                  await updateSupportTemplate(currentScenario.support.sourceTemplateId, {
+                    composition: structuredClone(currentScenario.support.composition),
+                  });
+                  return;
+                }
+                const templateId = crypto.randomUUID();
+                const now = new Date().toISOString();
+                await updateActiveProfile((current) =>
+                  patchSupportTemplate(
+                    appendSupportTemplate(current, currentMaster.version, templateId, now),
+                    templateId,
+                    { composition: structuredClone(currentScenario.support!.composition) },
+                    now,
+                  ),
+                );
+                await saveScenarioDraft({
+                  ...currentScenario,
+                  support: { ...currentScenario.support, sourceTemplateId: templateId },
                 });
-                return;
-              }
-              const lastUsedAt = new Date().toISOString();
-              await updateSupportTemplate(template.templateId, { lastUsedAt });
-              const candidate = {
-                ...currentScenario,
-                support: {
-                  sourceTemplateId: template.templateId,
-                  composition: structuredClone(template.composition),
-                },
-                effectDecisions: retainedDecisions,
-                worldFactAssertions: retainedWorldFacts,
-              };
-              const candidateEffects = resolveScenario(candidate, currentMaster).effects;
-              await saveScenarioDraft(
-                applyEffectProjectionDecisions(
-                  candidate,
-                  excludedSupportEffects(template, candidateEffects),
-                  false,
-                ),
-              );
-            }}
-            onSupportSave={async (mode) => {
-              if (currentScenario.mode !== 'resolved' || !currentScenario.support) return;
-              if (mode === 'source' && currentScenario.support.sourceTemplateId) {
-                await updateSupportTemplate(currentScenario.support.sourceTemplateId, {
-                  composition: structuredClone(currentScenario.support.composition),
-                });
-                return;
-              }
-              const templateId = crypto.randomUUID();
-              const now = new Date().toISOString();
-              await updateActiveProfile((current) =>
-                patchSupportTemplate(
-                  appendSupportTemplate(current, currentMaster.version, templateId, now),
-                  templateId,
-                  { composition: structuredClone(currentScenario.support!.composition) },
-                  now,
-                ),
-              );
-              await saveScenarioDraft({
-                ...currentScenario,
-                support: { ...currentScenario.support, sourceTemplateId: templateId },
-              });
-            }}
-            onFinalize={finalizeCurrentCalculation}
-            onHistorySelect={copyHistoryToDraft}
-          />
-        )}{' '}
+              }}
+              onFinalize={finalizeCurrentCalculation}
+              onHistorySelect={copyHistoryToDraft}
+              onResetPortableRequest={async () => {
+                await savePortableDraft(resetPortableCalculationRequest(currentRequest));
+              }}
+            />
+          )}{' '}
         {page === 'servants' && (
           <Servants
             servants={currentMaster.servants}
@@ -601,7 +673,13 @@ export function App() {
             onOpenCalculator={(detail) => {
               const sessionId = crypto.randomUUID();
               setCalculationSessionId(sessionId);
-              void saveScenarioDraft(detail.scenario, sessionId, detail.contributionProjection);
+              void savePortableDraft(
+                createRankingPortableRequest(
+                  detail,
+                  currentCalculationVersionContext(currentMaster),
+                ),
+                sessionId,
+              );
               const url = new URL(location.href);
               url.searchParams.set('page', 'calculate');
               history.replaceState(history.state, '', url);

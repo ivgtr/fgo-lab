@@ -11,6 +11,7 @@ export * from './finiteSemanticProduct';
 export * from './rankingCanonicalInputs';
 export * from './scenario';
 export * from './scenarioCommands';
+export * from './portableCalculation';
 export * from './rankingContracts';
 export * from './rankingContribution';
 export * from './rankingComparisonPolicy';

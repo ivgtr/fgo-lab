@@ -17,6 +17,7 @@ import {
   applyEffectConditionDecision,
   applyEffectProjectionDecision,
   calculateScenario as calculateScenarioOutcome,
+  createCalculatorPortableRequest,
   createDefaultResolvedScenario,
   requireExecutableCalculation,
 } from '@fgo-lab/calculation-application';
@@ -49,6 +50,14 @@ const versions = {
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
 } as const;
+const requestFor = (
+  scenario: CalculationScenario,
+  context: Pick<typeof versions, 'masterDataVersion' | 'engineVersion'> = versions,
+) =>
+  createCalculatorPortableRequest(scenario, {
+    masterDataVersion: context.masterDataVersion,
+    engineVersion: context.engineVersion,
+  });
 
 describe('portable input limits', () => {
   it('rejects oversized backups before schema use', () =>
@@ -64,13 +73,13 @@ describe('portable input limits', () => {
 
   it('round-trips only a reproducible current-master calculation', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
-    const snapshot: CalculationShareSnapshot = {
+    const snapshot = {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-25T00:00:00.000Z',
-      scenario,
+      request: requestFor(scenario),
       result: calculateScenario(scenario, master, versions).result,
-    };
+    } as unknown as CalculationShareSnapshot;
     const restored = readShareFragment(`#${createShareFragment(snapshot)}`);
 
     expect(restored && validateCalculationShareSnapshot(restored, master)).toEqual(snapshot);
@@ -84,18 +93,22 @@ describe('portable input limits', () => {
       masterDataVersion: productionMaster.version,
     };
     const calculation = calculateScenario(scenario, productionMaster, productionVersions);
-    const snapshot: CalculationShareSnapshot = {
+    const snapshot = {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-26T00:00:00.000Z',
-      scenario,
+      request: requestFor(scenario, productionVersions),
       result: calculation.result,
-    };
+    } as unknown as CalculationShareSnapshot;
 
     expect(scenario.canonicalInputValues).toEqual({});
     const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
     expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
-    const recalculated = calculateScenario(restored.scenario, productionMaster, productionVersions);
+    const recalculated = calculateScenario(
+      restored.request.scenario,
+      productionMaster,
+      productionVersions,
+    );
     expect(recalculated.input.npDamageBuff).toBe(0.2);
     expect(
       recalculated.inputDefinitions
@@ -126,19 +139,19 @@ describe('portable input limits', () => {
         kind: 'fgo-lab-calculation-share',
         schemaVersion: SCHEMA_VERSION,
         sharedAt: '2026-08-27T00:00:00.000Z',
-        scenario,
+        request: requestFor(scenario, { ...versions, masterDataVersion: productionMaster.version }),
         result: calculation.result,
       };
 
       const restored = readShareFragment(`#${createShareFragment(snapshot)}`)!;
       expect(validateCalculationShareSnapshot(restored, productionMaster)).toEqual(snapshot);
-      expect(restored.scenario.mode).toBe('resolved');
-      if (restored.scenario.mode !== 'resolved') throw new Error('resolved share required');
-      expect(restored.scenario.canonicalInputValues[input.key]).toEqual({
+      expect(restored.request.scenario.mode).toBe('resolved');
+      if (restored.request.scenario.mode !== 'resolved') throw new Error('resolved share required');
+      expect(restored.request.scenario.canonicalInputValues[input.key]).toEqual({
         kind: 'integer',
         value,
       });
-      const recalculated = calculateScenario(restored.scenario, productionMaster, {
+      const recalculated = calculateScenario(restored.request.scenario, productionMaster, {
         ...versions,
         masterDataVersion: productionMaster.version,
       });
@@ -155,7 +168,7 @@ describe('portable input limits', () => {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-25T00:00:00.000Z',
-      scenario,
+      request: requestFor(scenario),
       result: {
         ...result,
         rows: [
@@ -166,7 +179,7 @@ describe('portable input limits', () => {
     } as const;
 
     expect(() => validateCalculationShareSnapshot(snapshot, master)).toThrow(
-      'share_result_mismatch',
+      'share_storedResultMismatch',
     );
   });
 
@@ -177,7 +190,7 @@ describe('portable input limits', () => {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-25T00:00:00.000Z',
-      scenario,
+      request: requestFor(scenario),
       result: {
         ...result,
         versions: { ...result.versions, masterDataVersion: 'different-master' },
@@ -185,27 +198,30 @@ describe('portable input limits', () => {
     } as const;
 
     expect(() => validateCalculationShareSnapshot(snapshot, master)).toThrow(
-      'share_master_version_mismatch',
+      'share_requestResultVersionMismatch',
     );
   });
 
   it('rejects an out-of-domain quantity fact while decoding a crafted share', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
-    const snapshot: CalculationShareSnapshot = {
+    const snapshot = {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-26T00:00:00.000Z',
-      scenario: {
-        ...scenario,
-        worldFactAssertions: [
-          {
-            decisionKey: 'crafted:hp',
-            fact: { kind: 'quantity', quantity: 'attackerHpPermille', value: -100 },
-          },
-        ],
+      request: {
+        ...requestFor(scenario),
+        scenario: {
+          ...scenario,
+          worldFactAssertions: [
+            {
+              decisionKey: 'crafted:hp',
+              fact: { kind: 'quantity', quantity: 'attackerHpPermille', value: -100 },
+            },
+          ],
+        },
       },
       result: calculateScenario(scenario, master, versions).result,
-    };
+    } as unknown as CalculationShareSnapshot;
 
     expect(() => readShareFragment(`#${createShareFragment(snapshot)}`)).toThrow();
   });
@@ -394,7 +410,7 @@ describe('portable input limits', () => {
       kind: 'fgo-lab-calculation-share',
       schemaVersion: SCHEMA_VERSION,
       sharedAt: '2026-08-25T00:00:00.000Z',
-      scenario: conflictingScenario,
+      request: requestFor(conflictingScenario, craftedVersions),
       result: compatibleResult,
     } as const;
 
@@ -404,7 +420,7 @@ describe('portable input limits', () => {
     );
     expect(recalculated.input.powerMod).toBe(0);
     expect(() => validateCalculationShareSnapshot(snapshot, craftedMaster)).toThrow(
-      'share_result_mismatch',
+      'share_storedResultMismatch',
     );
 
     const invalidContextScenario = {
@@ -420,17 +436,17 @@ describe('portable input limits', () => {
     );
     const invalidSnapshot = {
       ...snapshot,
-      scenario: invalidContextScenario,
+      request: requestFor(invalidContextScenario, craftedVersions),
       result: compatibleResult,
     };
     const decoded = readShareFragment(`#${createShareFragment(invalidSnapshot)}`)!;
-    if (decoded.scenario.mode !== 'resolved') throw new Error('resolved share required');
-    expect(decoded.scenario.canonicalInputValues).toEqual({
+    if (decoded.request.scenario.mode !== 'resolved') throw new Error('resolved share required');
+    expect(decoded.request.scenario.canonicalInputValues).toEqual({
       'field:enemyCount': { kind: 'integer', value: 0 },
     });
     expect(invalidContext.result).toMatchObject({ status: 'inputRequired', rows: [] });
     expect(() => validateCalculationShareSnapshot(decoded, craftedMaster)).toThrow(
-      'share_result_mismatch',
+      'share_storedResultMismatch',
     );
   });
 });

@@ -3,13 +3,14 @@ import type { EffectInputViewModel } from '@fgo-lab/calculation-application';
 import type {
   DamageResolutionInput,
   CalculationResult as CalculationResultValue,
-  CalculationScenario,
   CalculationShareSnapshot,
+  PortableCalculationRequest,
 } from '@fgo-lab/schema';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
 import { createShareFragment, resultCardPng } from '../../adapters/share';
 import { numberFormatter } from '../../ui/i18n';
 import { MasterImage } from '../../ui/MasterImage';
+import { CalculationContextNotice } from './CalculationContextNotice';
 import './calculation-result.css';
 
 function effectInputValue(input: EffectInputViewModel): string | null {
@@ -20,7 +21,7 @@ function effectInputValue(input: EffectInputViewModel): string | null {
 export function CalculationResult({
   input,
   result,
-  scenario,
+  request,
   attackerName,
   attackerImage,
   targetSummary,
@@ -29,10 +30,11 @@ export function CalculationResult({
   enabledAttackerSkillCount,
   effectInputs,
   onFinalize,
+  onResetPortableRequest,
 }: {
   input: DamageResolutionInput;
   result: CalculationResultValue;
-  scenario: CalculationScenario;
+  request: PortableCalculationRequest;
   attackerName: string;
   attackerImage: string | null;
   targetSummary: string;
@@ -41,6 +43,7 @@ export function CalculationResult({
   enabledAttackerSkillCount: number;
   effectInputs: readonly EffectInputViewModel[];
   onFinalize: () => Promise<void>;
+  onResetPortableRequest: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
   const resultCardRef = useRef<HTMLElement>(null);
@@ -48,7 +51,7 @@ export function CalculationResult({
     kind: 'fgo-lab-calculation-share',
     schemaVersion: SCHEMA_VERSION,
     sharedAt: new Date().toISOString(),
-    scenario,
+    request,
     result,
   } satisfies CalculationShareSnapshot;
   const specialInputSummary = effectInputs.flatMap((item) => {
@@ -99,6 +102,11 @@ export function CalculationResult({
   }
   return (
     <div className="result-column">
+      <CalculationContextNotice
+        state="current"
+        request={request}
+        onReset={onResetPortableRequest}
+      />
       <article
         ref={resultCardRef}
         className="result-card"
@@ -109,7 +117,9 @@ export function CalculationResult({
           <div className="result-card-title">
             <div>
               <p className="eyebrow">RESULT</p>
-              <h2>宝具ダメージ</h2>
+              <h2 tabIndex={-1} data-calculation-result-heading>
+                宝具ダメージ
+              </h2>
             </div>
             <span>平均・最低・最大</span>
           </div>

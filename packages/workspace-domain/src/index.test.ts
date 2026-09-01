@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { CalculationResult, CalculationScenario, LocalProfile } from '@fgo-lab/schema';
+import type {
+  CalculationResult,
+  CalculationScenario,
+  LocalProfile,
+  PortableCalculationRequest,
+} from '@fgo-lab/schema';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { canonicalize, filterRanking, finalizeHistory } from './index';
+import {
+  canonicalize,
+  filterRanking,
+  finalizeHistory,
+  portableCalculationFingerprint,
+} from './index';
 
 const scenario = {
   mode: 'manual',
@@ -52,6 +62,12 @@ const versions = {
   gameRegion: 'JP',
   masterDataLocale: 'ja-JP',
 } as const;
+
+const request = {
+  versionContext: { masterDataVersion: versions.masterDataVersion, engineVersion: ENGINE_VERSION },
+  scenario,
+  executionIntent: { kind: 'manual' },
+} satisfies PortableCalculationRequest;
 
 const calculatedResult = {
   status: 'calculated',
@@ -111,10 +127,72 @@ describe('workspace derivations', () => {
       ),
     ).toHaveLength(1));
 
+  it('fingerprints the complete portable request identity', async () => {
+    const digest = (data: Uint8Array) => {
+      const output = new Uint8Array(32);
+      for (const [index, value] of data.entries()) {
+        const position = index % output.length;
+        output[position] = (output[position] ?? 0) ^ value;
+      }
+      return Promise.resolve(output.buffer);
+    };
+    const baseline = await portableCalculationFingerprint(request, digest);
+    const differentMaster = await portableCalculationFingerprint(
+      { ...request, versionContext: { ...request.versionContext, masterDataVersion: 'next' } },
+      digest,
+    );
+    const resolvedRequest = {
+      versionContext: request.versionContext,
+      scenario: {
+        mode: 'resolved' as const,
+        attacker: {
+          servantId: '1',
+          initialActorFormId: { actorId: '1', limitCount: 0 },
+          source: 'master' as const,
+          level: 90,
+          npLevel: 1,
+          fouAtk: 1000,
+        },
+        overcharge: 1,
+        targetContext: {
+          class: { kind: 'relative' as const, relation: 'neutral' as const },
+          attribute: { kind: 'relative' as const, relation: 'neutral' as const },
+          families: [],
+        },
+        attackerHpPermille: null,
+        battleState: { battlePointPhase: null },
+        canonicalInputValues: {},
+        craftEssence: null,
+        preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' as const }],
+        mysticCode: null,
+        support: null,
+        effectDecisions: [],
+        activationFacts: [],
+        worldFactAssertions: [],
+        explicitOverrides: {},
+      },
+      executionIntent: {
+        kind: 'resolved' as const,
+        origin: 'ranking' as const,
+        initialNpGauge: 20_000,
+        contribution: 'excludeVoluntarySkillModifiers' as const,
+      },
+    } satisfies PortableCalculationRequest;
+    const ranking = await portableCalculationFingerprint(resolvedRequest, digest);
+    const differentGauge = await portableCalculationFingerprint(
+      {
+        ...resolvedRequest,
+        executionIntent: { ...resolvedRequest.executionIntent, initialNpGauge: 10_000 },
+      },
+      digest,
+    );
+    expect(new Set([baseline, differentMaster, ranking, differentGauge])).toHaveLength(4);
+  });
+
   it('updates one history entry when the same session is finalized repeatedly', () => {
     const first = finalizeHistory(profile(), {
       sessionId: '00000000-0000-4000-8000-000000000010',
-      scenario,
+      request,
       result: calculatedResult,
       fingerprint: 'a'.repeat(64),
       now: '2026-08-25T01:00:00.000Z',
@@ -122,7 +200,7 @@ describe('workspace derivations', () => {
     });
     const second = finalizeHistory(first, {
       sessionId: '00000000-0000-4000-8000-000000000010',
-      scenario,
+      request,
       result: calculatedResult,
       fingerprint: 'b'.repeat(64),
       now: '2026-08-25T02:00:00.000Z',
@@ -132,7 +210,7 @@ describe('workspace derivations', () => {
     expect(second.history).toHaveLength(1);
     expect(second.history[0]).toMatchObject({
       historyId: '00000000-0000-4000-8000-000000000020',
-      scenarioFingerprint: 'b'.repeat(64),
+      requestFingerprint: 'b'.repeat(64),
       lastUsedAt: '2026-08-25T02:00:00.000Z',
     });
   });
@@ -140,7 +218,7 @@ describe('workspace derivations', () => {
   it('transfers a duplicate fingerprint to the latest session', () => {
     const first = finalizeHistory(profile(), {
       sessionId: '00000000-0000-4000-8000-000000000010',
-      scenario,
+      request,
       result: calculatedResult,
       fingerprint: 'a'.repeat(64),
       now: '2026-08-25T01:00:00.000Z',
@@ -148,7 +226,7 @@ describe('workspace derivations', () => {
     });
     const second = finalizeHistory(first, {
       sessionId: '00000000-0000-4000-8000-000000000011',
-      scenario,
+      request,
       result: calculatedResult,
       fingerprint: 'a'.repeat(64),
       now: '2026-08-25T02:00:00.000Z',
@@ -169,7 +247,7 @@ describe('workspace derivations', () => {
     expect(
       finalizeHistory(profile(), {
         sessionId: '00000000-0000-4000-8000-000000000010',
-        scenario,
+        request,
         result: unsupported,
         fingerprint: 'a'.repeat(64),
         now: '2026-08-25T01:00:00.000Z',

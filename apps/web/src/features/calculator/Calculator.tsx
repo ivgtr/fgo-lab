@@ -49,6 +49,7 @@ import type {
   CalculationResult as CalculationResultValue,
   CalculationScenario,
   CraftEssenceCopy,
+  PortableCalculationRequest,
   ServantBuild,
   SupportTemplate,
 } from '@fgo-lab/schema';
@@ -79,6 +80,7 @@ export function Calculator({
   effectInputs,
   activationRequirements,
   result,
+  request,
   scenario,
   servants,
   builds,
@@ -92,6 +94,7 @@ export function Calculator({
   onSupportSave,
   onFinalize,
   onHistorySelect,
+  onResetPortableRequest,
 }: {
   master: MasterDataSnapshot;
   resolvedInput: DamageResolutionInput;
@@ -102,6 +105,7 @@ export function Calculator({
   effectInputs: readonly EffectInputViewModel[];
   activationRequirements: readonly ActivationRequirementOwner[];
   result: CalculationResultValue;
+  request: PortableCalculationRequest;
   scenario: CalculationScenario;
   servants: ServantMaster[];
   builds: Record<string, ServantBuild>;
@@ -115,6 +119,7 @@ export function Calculator({
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: () => Promise<void>;
   onHistorySelect: (entry: CalculationHistoryEntry) => Promise<void>;
+  onResetPortableRequest: () => Promise<void>;
 }) {
   const input = resolvedInput;
   const resolvedScenario = scenario.mode === 'resolved' ? scenario : null;
@@ -1206,7 +1211,8 @@ export function Calculator({
       <CalculationResult
         input={resolvedInput}
         result={result}
-        scenario={scenario}
+        request={request}
+        onResetPortableRequest={onResetPortableRequest}
         attackerName={attacker?.name ?? input.attackerId}
         attackerImage={attacker?.imageKey ?? null}
         targetSummary={targetSummary}
@@ -1264,14 +1270,14 @@ export function Calculator({
               <ul className="calculation-history-list">
                 {[...history].reverse().map((entry) => {
                   const attackerId =
-                    entry.scenario.mode === 'manual'
-                      ? entry.scenario.manual.attackerId
-                      : entry.scenario.attacker.servantId;
+                    entry.request.scenario.mode === 'manual'
+                      ? entry.request.scenario.manual.attackerId
+                      : entry.request.scenario.attacker.servantId;
                   const servant = servants.find((candidate) => candidate.id === attackerId);
                   const npLevel =
-                    entry.scenario.mode === 'manual'
-                      ? entry.scenario.manual.npLevel
-                      : entry.scenario.attacker.npLevel;
+                    entry.request.scenario.mode === 'manual'
+                      ? entry.request.scenario.manual.npLevel
+                      : entry.request.scenario.attacker.npLevel;
                   const average =
                     entry.result.status === 'calculated'
                       ? entry.result.rows[npLevel - 1]?.average

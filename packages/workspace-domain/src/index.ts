@@ -1,4 +1,4 @@
-import type { CalculationResult, CalculationScenario, LocalProfile } from '@fgo-lab/schema';
+import type { CalculationResult, LocalProfile, PortableCalculationRequest } from '@fgo-lab/schema';
 
 export function canonicalize(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -8,21 +8,17 @@ export function canonicalize(value: unknown): string {
     .map(([key, item]) => `${JSON.stringify(key)}:${canonicalize(item)}`)
     .join(',')}}`;
 }
-export async function scenarioFingerprint(
-  scenario: CalculationScenario,
-  masterDataVersion: string,
-  engineVersion: string,
+export async function portableCalculationFingerprint(
+  request: PortableCalculationRequest,
   digest: (data: Uint8Array) => Promise<ArrayBuffer>,
 ): Promise<string> {
-  const bytes = new TextEncoder().encode(
-    canonicalize({ scenario, masterDataVersion, engineVersion }),
-  );
+  const bytes = new TextEncoder().encode(canonicalize(request));
   const hash = new Uint8Array(await digest(bytes));
   return [...hash].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 export interface FinalizeHistoryCommand {
   sessionId: string;
-  scenario: CalculationScenario;
+  request: PortableCalculationRequest;
   result: CalculationResult;
   fingerprint: string;
   now: string;
@@ -40,9 +36,9 @@ export function finalizeHistory(
     const existing = profile.history[sessionIndex]!;
     const updated = {
       ...existing,
-      scenario: command.scenario,
+      request: command.request,
       result: command.result,
-      scenarioFingerprint: command.fingerprint,
+      requestFingerprint: command.fingerprint,
       updatedAt: command.now,
       lastUsedAt: command.now,
     };
@@ -57,7 +53,7 @@ export function finalizeHistory(
     };
   }
   const previous = profile.history.at(-1);
-  if (previous?.scenarioFingerprint === command.fingerprint) {
+  if (previous?.requestFingerprint === command.fingerprint) {
     const history = [
       ...profile.history.slice(0, -1),
       {
@@ -72,9 +68,9 @@ export function finalizeHistory(
   const entry = {
     profileId: profile.profileId,
     calculationSessionId: command.sessionId,
-    scenario: command.scenario,
+    request: command.request,
     result: command.result,
-    scenarioFingerprint: command.fingerprint,
+    requestFingerprint: command.fingerprint,
     updatedAt: command.now,
     historyId: command.historyId,
     finalizedAt: command.now,

@@ -110,6 +110,7 @@ export interface RankingPolicyDetail {
   warnings: CalculationExecution['effectWarnings'];
   appliedPreparationActions: CalculationExecution['appliedPreparationActions'];
   contributionProjection: DamageContributionProjection;
+  contributionIntent: 'standard' | 'excludeVoluntarySkillModifiers';
   areaContribution: {
     withoutAreaScenario: ResolvedScenario;
     withoutAreaInput: DamageResolutionInput;

@@ -102,6 +102,8 @@ export function calculateRankingCandidateSet(
         warnings: execution.effectWarnings,
         appliedPreparationActions: execution.appliedPreparationActions,
         contributionProjection: plan.contributionProjections[selectedIndex]!,
+        contributionIntent:
+          conditions.selfBuffs === 'excluded' ? 'excludeVoluntarySkillModifiers' : 'standard',
         areaContribution,
         executionMetrics: {
           worldCandidateCount: plan.worldCandidateCount,

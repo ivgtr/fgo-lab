@@ -1,6 +1,6 @@
 ---
 title: "TSK-06.1 portable calculation identity flow closure"
-status: "Active"
+status: "Complete"
 updated_at: "2026-09-01"
 ---
 
@@ -8,7 +8,7 @@ updated_at: "2026-09-01"
 
 ## Baseline, outcome, and invariant
 
-Design audit baseline is `c5511221c0fc2ec1baabaa4838b3c7c396b20f43` with a clean worktree. This phase changes documentation only; runtime remains at schema 32 and retains the mismatches below.
+Implementation baseline is the approved clean HEAD `9cf3cee56b6fe16bf54ff9cc63ddc43e181974cf`. Runtime now uses schema 33 and the portable request contract below. Schema 32 remains only as the isolated profile／backup migration input.
 
 After the separately approved implementation, a selected ranking calculation must reopen, restore, copy, share, and back up as the same calculation without adding an initial-NP editor. The invariant is one portable request per damage result:
 
@@ -46,49 +46,49 @@ Minimum guardrail: when a calculation entrypoint gains a semantic argument, reop
 - Exact schema 32 profile／backup migration preserves safe profile data and discards old draft／history. Old-schema share and arbitrary old／future schema fail closed. A current share with matching request/result versions but unavailable runtime may show only the stored historical result. Failed migration never clears the user store.
 - `UI-CALC-001` owns the result-adjacent origin/version notice, reset, explicit version upgrade, invalid recovery, focus, and 320px behavior.
 
-Product decision alternatives remaining: 0. Product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1 and ADR-027 were approved／accepted on 2026-09-01. Runtime implementation remains open.
+Product decision alternatives remaining: 0. Product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1 and ADR-027 were approved／accepted on 2026-09-01. Runtime implementation is closed by the evidence below.
 
 ## Producer, reader, writer, and recovery inventory
 
 | Path | Producer | Semantic reader | Writer / recovery | Runtime classification |
 | --- | --- | --- | --- | --- |
-| normal/manual constructor | application | compiler/executor | workspace | Blocking: TSK-06.1 |
-| selected ranking candidate constructor | ranking application | portable request schema | returns request without Web state | Blocking: TSK-06.1 |
+| normal/manual constructor | application | compiler/executor | workspace | Verified |
+| selected ranking candidate constructor | ranking application | portable request schema | returns request without Web state | Verified |
 | Web immediate ranking handoff | ranking detail command | calculator workspace | presentation/command wiring | Deferred: TSK-07 |
-| projection | typed contribution intent + matching master | battle execution | derived in memory only | Blocking: TSK-06.1 |
-| fingerprint | full versioned request | workspace/cache identity | no parallel version args | Blocking: TSK-06.1 |
-| draft restore | workspace request/result | application/repository | pinned or historical-only | Blocking: TSK-06.1 |
-| history finalize/copy | matching request/result | workspace/repository | copy preserves pinned identity | Blocking: TSK-06.1 |
-| share URL/JSON | matching request/result | strict parser | historical-only or explicit upgrade | Blocking: TSK-06.1 |
-| backup export/import | current profiles | current parser or exact-v32 migrator | current format only | Blocking: TSK-06.1 |
-| startup migration | exact schema 32 stored profile | isolated migrator | safe profile retained; snapshots dropped | Blocking: TSK-06.1 |
-| calculator recovery UI | portable state | calculator presentation | reset/version-upgrade commands | Blocking: TSK-06.1 |
+| projection | typed contribution intent + matching master | battle execution | derived in memory only | Verified |
+| fingerprint | full versioned request | workspace/cache identity | no parallel version args | Verified |
+| draft restore | workspace request/result | application/repository | pinned or historical-only | Verified |
+| history finalize/copy | matching request/result | workspace/repository | copy preserves pinned identity | Verified |
+| share URL/JSON | matching request/result | strict parser | historical-only or explicit upgrade | Verified |
+| backup export/import | current profiles | current parser or exact-v32 migrator | current format only | Verified |
+| startup migration | exact schema 32 stored profile | isolated migrator | safe profile retained; snapshots dropped | Verified |
+| calculator recovery UI | portable state | calculator presentation | reset/version-upgrade commands | Verified |
 | ranking origin notice | handed-off ranking request | calculator presentation | reset command | Deferred: TSK-07 |
 | worker summary/detail | ranking application | worker/useRanking | summary max 1; detail worker 0/React 1 | Deferred: TSK-07 |
 
-No runtime reader, writer, migration, or Web component was changed in this design phase.
+Implementation evidence: schema current readers accept only schema 33 request envelopes; the two schema 32 literals occur only in the isolated profile／backup migrator. `calculation-application` owns normal/manual/ranking constructors, typed contribution compilation, execution, reset, upgrade, and historical recovery. Workspace hashes and stores the complete request. Repository migration persists the fully parsed current collection only after successful conversion and returns `profile_parse_failed` without clearing the user store on failure.
 
 ## Portable request counterexample matrix
 
-`B06.1` means `Blocking: TSK-06.1 implementation`; `D07` means `Deferred: TSK-07`; `N/A` includes the reason. Direct test-only reinjection does not close a production path.
+`V` means `Verified`; `D07` means `Deferred: TSK-07`; `N/A` includes the reason. Direct test-only reinjection does not close a production path.
 
 | State / counterexample | Pure constructor / execution | Immediate ranking→calculator | Draft restore | History finalize/copy | Share URL/JSON | Backup/fingerprint/migration |
 | --- | --- | --- | --- | --- | --- | --- |
-| normal current 100% + standard | B06.1 | N/A: not ranking | B06.1 | B06.1 | B06.1 | B06.1 |
-| ranking 200% start, OC changes | B06.1 | D07 | B06.1 | B06.1 | B06.1 | B06.1 |
-| ranking self-buff exclusion | B06.1 | D07 | B06.1 | B06.1 | B06.1 | B06.1 |
-| ranking conditional satisfied | B06.1 | D07 | B06.1 | B06.1 | B06.1 | B06.1 |
-| same payload, different master | B06.1: distinct result/identity | D07 | B06.1 | B06.1 | B06.1 | B06.1: distinct fingerprint |
-| same payload, different engine | B06.1: distinct result/identity | D07 | B06.1 | B06.1 | B06.1 | B06.1: distinct fingerprint |
-| request/result version mismatch | B06.1: invalid | N/A: rejected before handoff | B06.1: reject | B06.1: reject | B06.1: reject historical value | B06.1: fail closed |
-| app update restores pinned draft | B06.1: exact runtime or historical-only | N/A: recovery path | B06.1 | B06.1 | N/A: draft path | B06.1 |
-| old-version history copied | B06.1: preserve identity | N/A: history path | B06.1 | B06.1 | N/A: history path | B06.1 |
-| share runtime unavailable | B06.1: historical-only | N/A: share path | N/A: share path | N/A: share path | B06.1: explicit current-version recalc | B06.1 |
-| current-version recalc fails validation | B06.1: invalid/unsupported, old value retained | N/A: recovery path | B06.1 | B06.1 | B06.1 | B06.1 |
-| schema 32 profile/backup | N/A: calculation snapshots discarded | N/A: migration path | B06.1 | B06.1 | N/A: old share rejected | B06.1: safe profile retained |
-| arbitrary old/future schema | B06.1: reject | N/A: rejected before handoff | B06.1 | B06.1 | B06.1 | B06.1: fail closed |
+| normal current 100% + standard | V | N/A: not ranking | V | V | V | V |
+| ranking 200% start, OC changes | V | D07 | V | V | V | V |
+| ranking self-buff exclusion | V | D07 | V | V | V | V |
+| ranking conditional satisfied | V | D07 | V | V | V | V |
+| same payload, different master | V: distinct result/identity | D07 | V | V | V | V: distinct fingerprint |
+| same payload, different engine | V: distinct result/identity | D07 | V | V | V | V: distinct fingerprint |
+| request/result version mismatch | V: invalid | N/A: rejected before handoff | V: reject | V: reject | V: reject historical value | V: fail closed |
+| app update restores pinned draft | V: exact runtime or historical-only | N/A: recovery path | V | V | N/A: draft path | V |
+| old-version history copied | V: preserve identity | N/A: history path | V | V | N/A: history path | V |
+| share runtime unavailable | V: historical-only | N/A: share path | N/A: share path | N/A: share path | V: explicit current-version recalc | V |
+| current-version recalc fails validation | V: invalid/unsupported, old value retained | N/A: recovery path | V | V | V | V |
+| schema 32 profile/backup | N/A: calculation snapshots discarded | N/A: migration path | V | V | N/A: old share rejected | V: safe profile retained |
+| arbitrary old/future schema | V: reject | N/A: rejected before handoff | V | V | V | V: fail closed |
 
-Expected outcome classes and ownership are `Verified` as design. Runtime cells remain Blocking or Deferred exactly as shown.
+TSK-06.1 runtime cells are `Verified`; the immediate Web handoff column remains `Deferred: TSK-07` and is not used as evidence for this closure.
 
 ## Cache and stale-detail matrix
 
@@ -105,10 +105,11 @@ All rows are `Deferred: TSK-07` from TSK-06.1. They become `Blocking: RK-CACHE-0
 
 ## Closure
 
-Closure: Blocking 1, Deferred 2
+Closure: Blocking 0, Deferred 2
 
-- Blocking: TSK-06.1-owned versioned identity, persistence, migration, and version recovery are not implemented or verified.
 - Deferred: TSK-07 owns Web immediate ranking handoff and ranking-origin presentation.
 - Deferred: TSK-07 owns evidence-free summary/detail cache and stale response wiring.
 
-Product decision alternatives remaining: 0. Product, ranking, and UI requirements are approved, ADR-027 is accepted, and ADR-016 is superseded. TSK-06.1 remains `in_progress` with `Closure: Blocking 1, Deferred 2`; TSK-07 and TSK-08 remain blocked. This note must be updated with implementation evidence rather than replaced by another family note.
+Verification before the final phase gate: focused portable/schema/workspace/repository/share/recovery suites passed; unit 65 files／362 tests and production 24 files／111 tests passed. Approved-HEAD and current production records differ only in all 855 calculation trace labels from `damage_resolution_schema_v32` to `damage_resolution_schema_v33`; rows, inputs, applied operations, inventory, and counters are identical. The canonical digest is `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`. Same-condition production compile was 9.450s at approved HEAD and 9.250s current (-2.1%); candidate 6,376、deduplicated 3,957、damage requests 6,913、distinct 1,599 are unchanged.
+
+Product decision alternatives remaining: 0. Product, ranking, and UI requirements are approved, ADR-027 is accepted, and ADR-016 is superseded. TSK-06.1 is `done` with `Closure: Blocking 0, Deferred 2`; TSK-07 is ready and TSK-08 remains blocked on TSK-07.

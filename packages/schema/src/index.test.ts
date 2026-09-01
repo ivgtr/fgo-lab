@@ -5,6 +5,7 @@ import {
   calculationScenarioSchema,
   damageResolutionInputSchema,
   ENGINE_VERSION,
+  parseUserDataBackup,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
   supportTemplateSchema,
@@ -248,7 +249,7 @@ describe('portable schema boundaries', () => {
     expect(calculationResultSchema.safeParse(unsupported).success).toBe(false);
   });
 
-  it('rejects calculation results from old schema and engine versions', () => {
+  it('rejects old schema envelopes while parsing engine versions as bounded opaque identity', () => {
     const currentResult = {
       status: 'unsupported',
       rows: [],
@@ -290,7 +291,7 @@ describe('portable schema boundaries', () => {
         ...currentResult,
         versions: { ...currentResult.versions, engineVersion: '3.0.0' },
       }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
   it('rejects profile data in a share snapshot', () => {
     const result = calculationShareSnapshotSchema.safeParse({
@@ -382,6 +383,66 @@ describe('portable schema boundaries', () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it('migrates exact schema 32 profiles and backups while discarding only calculation snapshots', () => {
+    const profileId = crypto.randomUUID();
+    const profile = {
+      profileId,
+      name: '保存済み',
+      createdAt: '2026-08-24T00:00:00.000Z',
+      updatedAt: '2026-08-25T00:00:00.000Z',
+      servantBuilds: {
+        '405900': {
+          servantId: '405900',
+          level: 90,
+          ascension: 4,
+          npLevel: 2,
+          fouAtk: 1000,
+          skills: { '1': 10 },
+          appends: {},
+          updatedAt: '2026-08-25T00:00:00.000Z',
+        },
+      },
+      servantTargets: {},
+      craftEssences: [],
+      supportTemplates: [],
+      draft: { unsafeLegacyScenario: true },
+      history: [{ unsafeLegacyScenario: true }],
+    };
+    const migrated = parseStoredProfileCollection({
+      schemaVersion: 32,
+      activeProfileId: profileId,
+      profiles: [profile],
+    });
+    expect(migrated).toMatchObject({
+      upgraded: true,
+      collection: {
+        schemaVersion: SCHEMA_VERSION,
+        activeProfileId: profileId,
+        profiles: [
+          {
+            profileId,
+            name: '保存済み',
+            servantBuilds: { '405900': { npLevel: 2 } },
+            draft: null,
+            history: [],
+          },
+        ],
+      },
+    });
+    expect(
+      parseUserDataBackup({
+        kind: 'fgo-lab-user-backup',
+        schemaVersion: 32,
+        exportedAt: '2026-09-01T00:00:00.000Z',
+        appVersion: '0.1.0',
+        profiles: { schemaVersion: 32, activeProfileId: profileId, profiles: [profile] },
+      }),
+    ).toMatchObject({
+      schemaVersion: SCHEMA_VERSION,
+      profiles: { profiles: [{ profileId, draft: null, history: [] }] },
+    });
   });
 
   it('does not reinterpret unknown future profile schemas', () => {

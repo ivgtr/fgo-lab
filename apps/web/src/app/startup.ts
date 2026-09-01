@@ -6,7 +6,12 @@ import {
   type IdGenerator,
   type ProfileRepository,
 } from '@fgo-lab/profile-domain';
-import type { CalculationShareSnapshot, ProfileCollection } from '@fgo-lab/schema';
+import type {
+  CalculationResult,
+  CalculationShareSnapshot,
+  PortableCalculationRequest,
+  ProfileCollection,
+} from '@fgo-lab/schema';
 import {
   fetchMasterCandidate,
   loadActiveMaster,
@@ -24,8 +29,9 @@ interface StartupOptions {
 
 interface StartupBase {
   calculation: {
-    scenario: CalculationShareSnapshot['scenario'] | undefined;
-    shared: CalculationShareSnapshot | undefined;
+    request: PortableCalculationRequest | undefined;
+    storedResult: CalculationResult | undefined;
+    source: 'share' | 'draft' | undefined;
   };
   warning: string;
   offline: boolean;
@@ -65,6 +71,7 @@ export async function bootstrapApplication(
     const activeLoad = await loadActiveMaster();
     let active = activeLoad.state === 'ready' ? activeLoad.active : undefined;
     const profilesLoad = await profilesRepository.load();
+    if (profilesLoad.state === 'invalid') throw new Error(profilesLoad.reason);
     const profiles = profilesLoad.state === 'ready' ? profilesLoad.collection : undefined;
     if (profilesLoad.state === 'ready' && profilesLoad.discardedCalculationSnapshots)
       warning =
@@ -104,8 +111,9 @@ export async function bootstrapApplication(
       master: active.snapshot,
       profiles,
       calculation: {
-        scenario: shared?.scenario ?? profile.draft?.scenario,
-        shared: shared ?? undefined,
+        request: shared?.request ?? profile.draft?.request,
+        storedResult: shared?.result ?? profile.draft?.result,
+        source: shared ? 'share' : profile.draft ? 'draft' : undefined,
       },
       warning,
       offline,
@@ -126,6 +134,7 @@ export async function setupApplication(
 ): Promise<ReadyStartupResult> {
   const { active, fromOfflineCache } = await activateCurrentMaster(options);
   const profilesLoad = await profilesRepository.load();
+  if (profilesLoad.state === 'invalid') throw new Error(profilesLoad.reason);
   const profiles =
     profilesLoad.state === 'ready'
       ? profilesLoad.collection
@@ -148,8 +157,9 @@ export async function setupApplication(
     master: active.snapshot,
     profiles,
     calculation: {
-      scenario: shared?.scenario ?? profile.draft?.scenario,
-      shared: shared ?? undefined,
+      request: shared?.request ?? profile.draft?.request,
+      storedResult: shared?.result ?? profile.draft?.result,
+      source: shared ? 'share' : profile.draft ? 'draft' : undefined,
     },
     warning,
     offline: fromOfflineCache,
@@ -169,7 +179,7 @@ function emptyResult(warning: string, offline: boolean): StartupResult {
     state: 'setup-required',
     master: undefined,
     profiles: undefined,
-    calculation: { scenario: undefined, shared: undefined },
+    calculation: { request: undefined, storedResult: undefined, source: undefined },
     warning,
     offline,
   };

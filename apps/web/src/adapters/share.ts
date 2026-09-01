@@ -1,8 +1,7 @@
 import type { CalculationShareSnapshot, UserDataBackup } from '@fgo-lab/schema';
 import { parseCalculationShareSnapshot, parseUserDataBackup } from '@fgo-lab/schema';
-import { calculateScenario } from '@fgo-lab/calculation-application';
+import { recoverPortableCalculation } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import { canonicalize } from '@fgo-lab/workspace-domain';
 export const MAX_SHARE_FRAGMENT_LENGTH = 16_384;
 export const RESULT_CARD_EXPORT_WIDTH = 560;
 function encode(value: unknown): string {
@@ -34,15 +33,8 @@ export function validateCalculationShareSnapshot(
   snapshot: CalculationShareSnapshot,
   master: MasterDataSnapshot,
 ): CalculationShareSnapshot {
-  if (snapshot.result.versions.masterDataVersion !== master.version)
-    throw new TypeError('share_master_version_mismatch');
-  const recalculated = calculateScenario(
-    snapshot.scenario,
-    master,
-    snapshot.result.versions,
-  ).result;
-  if (canonicalize(recalculated) !== canonicalize(snapshot.result))
-    throw new TypeError('share_result_mismatch');
+  const recovery = recoverPortableCalculation(snapshot.request, snapshot.result, master);
+  if (recovery.status === 'invalid') throw new TypeError(`share_${recovery.reason}`);
   return snapshot;
 }
 export function exportBackup(backup: UserDataBackup): string {

@@ -58,6 +58,19 @@
   color: var(--muted);
 }
 
+.calculation-context-notice {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+  margin-block: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.calculation-context-notice button {
+  width: fit-content;
+  max-width: 100%;
+}
+
 .compact-heading {
   align-items: center;
   margin-top: 1.25rem;

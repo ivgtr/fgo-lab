@@ -52,8 +52,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-04 | Ranking canonical IR cutover | done | TSK-03 | ranking layer ownership／移行方針 |
 | TSK-05 | Transactional preparation execution | done | TSK-04 | ranking execution／NP resource |
 | TSK-06 | Ranking policyとcandidate planner | done | TSK-05 | ranking condition／candidate planning |
-| TSK-06.1 | Portable calculation request and identity | in_progress | TSK-06 | product portable data／ranking handoff |
-| TSK-07 | Web／worker一括切替 | blocked | TSK-06.1 | ranking UI／handoff／cache |
+| TSK-06.1 | Portable calculation request and identity | done | TSK-06 | product portable data／ranking handoff |
+| TSK-07 | Web／worker一括切替 | ready | TSK-06.1 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
@@ -597,8 +597,8 @@ Depends on: TSK-06
 - [x] schema 32のprofile／backup migration、旧schema share／任意の旧版／future版の拒否方針を一意に決める。
 - [x] UI design spec v1.4.1とportable calculation identity familyのcanonical flow noteへproposalを記録する。
 - [x] product requirements v0.3.8／ranking v0.8.0／UI spec v1.4.1のapprovalを記録し、同じapproval commitでADR-027をacceptedとして新規登録、ADR-016をsupersededへ変更する。
-- [ ] approved contractに従ってportable request、application compiler、workspace、schema、migrationを実装する。
-- [ ] draft／history／share／backup／fingerprint／migration／version transition matrixを検証する。
+- [x] approved contractに従ってportable request、application compiler、workspace、schema、migrationを実装する。
+- [x] draft／history／share／backup／fingerprint／migration／version transition matrixを検証する。
 
 Done gate:
 
@@ -627,10 +627,14 @@ Handoff:
 - Design decision: request embeds master／engine version context. Resolved intent is origin + initial NP + two-variant contribution; manual is manual only. Fingerprint and execution accept the request identity without parallel version arguments.
 - Version transition: restore／history copy preserves the pinned identity; unavailable versions are historical-only. Only explicit current-version recalculation creates a new identity, and request／result version mismatch is rejected.
 - Migration: exact schema 32 preserves builds／targets／CE／support and discards draft／history; exact v32 backup uses the isolated migrator; old-schema share and other old／future schema fail closed.
-- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0。TSK-06.1 pathはBlocking、TSK-07 pathはDeferredとして分離する。
+- Canonical flow note: `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`。product decision alternatives 0。TSK-06.1 pathはBlocking 0、実Web handoff／cacheはTSK-07へDeferredとして分離した。
 - Approval gate: approved 2026-09-01 after design review at `245d1ee`。product requirements v0.3.8、ranking v0.8.0、UI spec v1.4.1をapprovedとし、ADR-027をacceptedで登録、ADR-016をsupersededへ変更した。承認commitはsemanticsを変更していない。
 - Runtime boundary: `historicalOnly`はapplication／workspaceのrecovery stateに限定しengineの数値resultへ混ぜない。`origin`をbattle executionの分岐条件にしない。
-- Runtime: unchanged in this approval phase. Next work is TSK-06.1 implementation; TSK-06.1 remains `in_progress` and TSK-07／TSK-08 remain blocked.
+- Runtime implementation: schema 33の`PortableCalculationRequest`へapplication entrypoint、workspace、fingerprint、draft／history／share／backupを収束。projection／operation ID／compiled stateは永続化せずapplicationがtyped intentから再compileする。scenario-only fingerprintとparallel persistence fieldは削除した。
+- Migration result: exact schema 32 profile／backupだけをisolated migratorで受け、profile identity／timestamps／build／target／CE／support／active profileを維持しdraft／historyを破棄する。失敗時は`profile_parse_failed`を返しuser storeをclearしない。旧share、その他の旧版、future版は拒否する。
+- Parity: 4 ranking policyすべてのselected candidateをpure constructorから再実行してresult完全一致。draft／history copy／shareはpinned identityを維持し、利用不能版は`historicalOnly`、明示upgradeだけが新requestを作る。
+- Verification: focused portable/schema/workspace/repository/share/recovery成功、unit 65 files／362 tests、production 24 files／111 tests。production inventory／counter不変、schema traceだけv32→v33、digest `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`。同条件compile 9.450s→9.250s（-2.1%）。final `pnpm quality`成功。
+- Closure: TSK-06.1 `done`、Blocking 0。TSK-07 `ready`（実Web immediate handoff、ranking-origin presentation、worker／React cache）、TSK-08 `blocked`（TSK-07待ち）。
 
 ### TSK-07: Web／worker一括切替
 

@@ -38,14 +38,13 @@ export class IndexedDbProfileRepository implements ProfileRepository {
         return null;
       }
     })();
-    if (!stored) {
-      await db.clear('user');
-      return { state: 'empty' as const };
-    }
+    if (!stored) return { state: 'invalid' as const, reason: 'profile_parse_failed' as const };
+    if (stored.upgraded)
+      await db.put('user', profileCollectionSchema.parse(stored.collection), 'profiles');
     return {
       state: 'ready' as const,
       collection: stored.collection,
-      discardedCalculationSnapshots: false,
+      discardedCalculationSnapshots: stored.upgraded,
     };
   }
   async replace(collection: ProfileCollection) {

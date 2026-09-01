@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { SCHEMA_VERSION } from '../packages/schema/src/index';
 import { completeSetup } from './setup';
 
 async function selectAttacker(page: Page, name: string) {
@@ -573,17 +572,13 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
   );
 
   await page.reload();
-  const resetSetup = page.getByRole('button', { name: 'セットアップを開始' });
-  const resetHome = page.getByRole('heading', { name: 'ホーム' });
-  await expect(resetSetup.or(resetHome)).toBeVisible({ timeout: 15_000 });
-  if (await resetSetup.isVisible()) await resetSetup.click();
-  await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible();
-  const recovered = await page.evaluate(
+  await expect(page.getByRole('button', { name: 'セットアップを開始' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByRole('alert')).toContainText('profile_parse_failed');
+  const retained = await page.evaluate(
     () =>
-      new Promise<{
-        schemaVersion: number;
-        servantBuildCount: number;
-      }>((resolve, reject) => {
+      new Promise<{ schemaVersion: number; servantBuildCount: number }>((resolve, reject) => {
         const request = indexedDB.open('fgo-lab', 1);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
@@ -608,7 +603,7 @@ test('rejects v1 profiles instead of reinterpreting old calculation data', async
         };
       }),
   );
-  expect(recovered).toEqual({ schemaVersion: SCHEMA_VERSION, servantBuildCount: 0 });
+  expect(retained).toEqual({ schemaVersion: 1, servantBuildCount: 1 });
   await expect.poll(() => pageErrors.map((error) => error.message)).toEqual([]);
 });
 
