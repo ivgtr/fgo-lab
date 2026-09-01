@@ -1,7 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import runtimeContract from './scripts/e2e-runtime-contract.json' with { type: 'json' };
 
-const port = Number(process.env['PLAYWRIGHT_PORT'] ?? 4173);
-const baseURL = `http://127.0.0.1:${String(port)}`;
+const baseURL = runtimeContract.baseURL;
+const port = new URL(baseURL).port;
+const appRequire = createRequire(resolve(import.meta.dirname, 'apps/web/package.json'));
+const vitePackage = JSON.parse(readFileSync(appRequire.resolve('vite/package.json'), 'utf8')) as {
+  version?: string;
+  bin?: { vite?: string };
+};
+if (
+  vitePackage.version !== runtimeContract.server.version ||
+  vitePackage.bin?.vite !== 'bin/vite.js'
+)
+  throw new Error(
+    `E2E Vite binary contract mismatch: expected ${runtimeContract.server.version}, received ${String(vitePackage.version)}`,
+  );
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,9 +31,9 @@ export default defineConfig({
   ],
   outputDir: process.env['PLAYWRIGHT_OUTPUT_DIR'] ?? 'test-results',
   webServer: {
-    command: `pnpm --filter @fgo-lab/web exec vite --port ${String(port)} --host 127.0.0.1`,
+    command: `pnpm --filter @fgo-lab/web exec vite --mode e2e --port ${String(port)} --host 127.0.0.1`,
     url: baseURL,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
   use: {
     baseURL,

@@ -13,9 +13,10 @@ async function expectNoSeriousViolations(page: Page) {
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 }
 
-test('[E2E-001] startup screen @desktop @a11y', async ({ browser }) => {
-  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-  const page = await context.newPage();
+test('[E2E-001] startup screen @desktop @a11y', async ({ newObservedPage }) => {
+  const { context, page } = await newObservedPage({
+    storageState: { cookies: [], origins: [] },
+  });
   try {
     await page.goto('/');
     await expect(page.locator('.startup-screen')).toBeVisible();

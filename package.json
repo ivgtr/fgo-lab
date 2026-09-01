@@ -17,7 +17,7 @@
     "test:production": "node scripts/test-runner.mjs compact --suite=production",
     "test:agent": "node scripts/test-runner.mjs compact",
     "test:diagnostic": "node scripts/test-runner.mjs diagnostic",
-    "test:runner": "node --test scripts/test-runner.test.mjs scripts/e2e-case-contract.test.mjs",
+    "test:runner": "node --test scripts/test-runner.test.mjs scripts/e2e-case-contract.test.mjs scripts/browser-observer.test.mjs scripts/playwright-reporter.test.mjs",
     "test:docs": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
     "test:watch": "vitest",
     "test:e2e": "node scripts/playwright-runner.mjs",

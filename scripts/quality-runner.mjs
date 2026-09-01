@@ -7,6 +7,7 @@ import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   classifyQualityOutcome,
+  reconcileChildStep,
   verifyChildManifest,
   writeManifestAtomically,
 } from './quality-runner-lib.mjs';
@@ -79,10 +80,17 @@ for (const [id, scripts, childName] of steps) {
   manifest.steps.push(result);
   if (childName) {
     const child = verifyChildManifest(runDirectory, childName);
+    child.reconciliationErrors = reconcileChildStep(result, child);
     manifest.children[childName] = child;
     manifest.counts.warnings += child.counts?.warnings ?? 0;
     manifest.counts.unexpectedConsole += child.counts?.unexpectedObservations ?? 0;
-    if (child.verificationErrors.length > 0 && result.code === 0) result.code = 1;
+    if (
+      (child.verificationErrors.length > 0 ||
+        child.reconciliationErrors.length > 0 ||
+        child.outcome !== 'success') &&
+      result.code === 0
+    )
+      result.code = 1;
   }
   writeManifest();
   if (result.code !== 0 || result.signal || forwardedSignal) break;

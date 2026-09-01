@@ -1,42 +1,1232 @@
 [
   {
     "runner": "playwright",
-    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
-    "kind": "browser.console.error",
-    "message": "Failed to load resource: net::ERR_FAILED",
-    "reason": "The VRT intentionally verifies image fallback when external Atlas images are unavailable.",
+    "testId": "a11y.spec.ts > [E2E-001] startup screen @desktop @a11y",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
     "expiresAt": "2026-12-01T00:00:00.000Z"
   },
   {
     "runner": "playwright",
-    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
-    "kind": "browser.console.error",
-    "message": "Failed to load resource: net::ERR_FAILED",
-    "reason": "The VRT intentionally verifies layout while external Atlas images are unavailable.",
+    "testId": "a11y.spec.ts > [E2E-002] major desktop screens @desktop @a11y",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "a11y.spec.ts > [E2E-003] mobile home and calculator @mobile @a11y",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1001000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1001000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
     "expiresAt": "2026-12-01T00:00:00.000Z"
   },
   {
     "runner": "playwright",
     "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
-    "kind": "browser.console.error",
-    "message": "Failed to load resource: net::ERR_FAILED",
-    "reason": "The mobile VRT intentionally verifies image fallback when external Atlas images are unavailable.",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1001000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1001000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
     "expiresAt": "2026-12-01T00:00:00.000Z"
   },
   {
     "runner": "playwright",
     "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
-    "kind": "browser.console.error",
-    "message": "Failed to load resource: net::ERR_FAILED",
-    "reason": "The selected-state VRT intentionally verifies image fallback when external Atlas images are unavailable.",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1001000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1001000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1001000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1001000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "ranking-baseline.spec.ts > [E2E-011] ranking icon fallback @mobile @vrt",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "ranking-baseline.spec.ts > [E2E-014] ranking 390px UI baseline @mobile @vrt",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "ranking-baseline.spec.ts > [E2E-015] ranking 320px UI baseline @mobile @vrt",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "ranking-baseline.spec.ts > [E2E-016] ranking density and overflow @desktop @vrt",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "ranking-baseline.spec.ts > [E2E-050] real ranking module worker and detail @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "setup.setup.ts > [E2E-SETUP-001] verify canonical browser setup @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-017] setup to calculator package journey @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-020] mobile servant editor navigation @mobile @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-021] mobile support editor navigation @mobile @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
     "expiresAt": "2026-12-01T00:00:00.000Z"
   },
   {
     "runner": "playwright",
     "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
-    "kind": "browser.console.error",
-    "message": "Failed to load resource: net::ERR_FAILED",
-    "reason": "This journey intentionally exercises picker fallback and download with unavailable external Atlas images.",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1001000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1001000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1002000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1002000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1003000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1003000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1005000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1005000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1006000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1006000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1007000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1007000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1008000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1008000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1009000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1009000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1010000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1010000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1012000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1012000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1013000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1013000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1014000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1014000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1017000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1017000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1018000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1018000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1019000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1019000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1020000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1020000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1022000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1022000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1026000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1026000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1027000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1027000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1028000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1028000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1029000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1029000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1030000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1030000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1031000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1031000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1032000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1032000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1033000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1033000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_1034000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_1034000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_2026000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_2026000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_3019000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_3019000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_3020000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_3020000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_4022000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_4022000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_4027000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_4027000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/Faces/f_9009000.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/Faces/f_9009000.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00300.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00306.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
+    "kind": "browser.resource_failure",
+    "message": "image https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png: net::ERR_FAILED",
+    "detail": {
+      "url": "https://static.atlasacademy.io/JP/SkillIcons/skill_00601.png",
+      "resourceType": "image",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "This test declares and aborts this exact Atlas image request to verify fallback behavior.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-023] offline reopen through service worker @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
+    "kind": "browser.resource_failure",
+    "message": "fetch http://127.0.0.1:4174/master/manifest.json: net::ERR_FAILED",
+    "detail": {
+      "url": "http://127.0.0.1:4174/master/manifest.json",
+      "resourceType": "fetch",
+      "failureText": "net::ERR_FAILED",
+      "pageId": "page-1"
+    },
+    "expectedCount": 2,
+    "reason": "The incompatible-master recovery declares this exact superseded manifest request.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-027] calculator draft autosave restore @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-027] calculator draft autosave restore @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/?page=calculate",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-045] calculation share clipboard and downloads @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-046] successful version recovery commits and focuses @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-046] successful version recovery commits and focuses @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/?page=calculate",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-047] unsupported version recovery retains and focuses @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-047] unsupported version recovery retains and focuses @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/?page=calculate",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-048] profile repository round-trip @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-048] profile repository round-trip @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/?page=ce",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-048] profile repository round-trip @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/?page=support",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
+    "testId": "smoke.spec.ts > [E2E-049] history backup download and restore @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=cbe0dd87",
+      "pageId": "page-1"
+    },
+    "expectedCount": 1,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
     "expiresAt": "2026-12-01T00:00:00.000Z"
   }
 ]

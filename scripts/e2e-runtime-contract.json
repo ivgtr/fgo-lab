@@ -1,0 +1,10 @@
+{
+  "baseURL": "http://127.0.0.1:4174",
+  "server": {
+    "kind": "vite-dev",
+    "version": "8.2.2",
+    "clientPath": "/@vite/client",
+    "webSocketPath": "/",
+    "hmrUpdates": false
+  }
+}

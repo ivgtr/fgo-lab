@@ -1,7 +1,8 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import {
   classifyObservations,
   readJson,
@@ -57,6 +58,16 @@ function packageVersions(root) {
     vitest: packageJson.devDependencies?.vitest ?? null,
     playwright: packageJson.devDependencies?.['@playwright/test'] ?? null,
   };
+}
+
+function viteBinaryVersion(root) {
+  try {
+    const appRequire = createRequire(resolve(root, 'apps/web/package.json'));
+    const vitePackage = readJson(appRequire.resolve('vite/package.json'));
+    return vitePackage.bin?.vite === 'bin/vite.js' ? vitePackage.version : null;
+  } catch {
+    return null;
+  }
 }
 
 function parseReport(reportPath) {
@@ -198,13 +209,13 @@ function outcomeFor({
   if (timedOut) return 'timeout';
   if (signal) return 'signal';
   if (!report) return code === 0 ? 'reporter_failure' : 'test_failure';
+  if (artifactErrors.length > 0) return 'artifact_failure';
   if (
     code !== 0 ||
     (resultKind === 'vitest' && report.success === false) ||
     (resultKind === 'playwright' && report.status !== 'passed')
   )
     return 'test_failure';
-  if (artifactErrors.length > 0) return 'artifact_failure';
   if (runtimeCounterErrors.length > 0) return 'contract_failure';
   if (observationErrors.length > 0) return 'contract_failure';
   if (
@@ -308,6 +319,47 @@ function artifactFiles(runDirectory, directories) {
   return files.sort((left, right) => left.path.localeCompare(right.path));
 }
 
+function playwrightAttachmentArtifacts(report, runDirectory) {
+  const artifacts = [];
+  const errors = [];
+  for (const test of report?.tests ?? []) {
+    for (const [index, attachment] of (test.attachments ?? []).entries()) {
+      if (attachment.inline) continue;
+      const identity = `${test.id ?? test.title ?? '<test>'}:attachments[${index}]`;
+      if (typeof attachment.path !== 'string' || attachment.path.length === 0) {
+        errors.push(`${identity}:missing_path`);
+        continue;
+      }
+      const resolvedPath = resolve(runDirectory, attachment.path);
+      const localPath = relative(runDirectory, resolvedPath).split(sep).join('/');
+      if (localPath === '..' || localPath.startsWith('../')) {
+        errors.push(`${identity}:outside_run_directory`);
+        continue;
+      }
+      if (!localPath.startsWith('playwright-artifacts/')) {
+        errors.push(`${identity}:unexpected_location:${localPath}`);
+        continue;
+      }
+      if (!Number.isSafeInteger(attachment.bytes) || attachment.bytes < 0) {
+        errors.push(`${identity}:invalid_bytes`);
+        continue;
+      }
+      if (typeof attachment.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(attachment.sha256)) {
+        errors.push(`${identity}:invalid_sha256`);
+        continue;
+      }
+      artifacts.push({
+        path: localPath,
+        format: 'binary',
+        allowEmpty: attachment.bytes === 0,
+        expectedBytes: attachment.bytes,
+        expectedSha256: attachment.sha256,
+      });
+    }
+  }
+  return { artifacts, errors };
+}
+
 function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirectory }) {
   const counts = manifest.counts;
   const status = manifest.outcome === 'success' ? 'PASS' : 'FAIL';
@@ -360,6 +412,12 @@ function formatSummary({ manifest, report, tail, tailWasTrimmed, root, runDirect
         .slice(0, MAX_FAILURES)
         .map(({ testId, kind, message }) => `${testId}: ${kind}: ${message}`),
     );
+  } else if (
+    manifest.outcome === 'contract_failure' &&
+    manifest.observations.infrastructureErrors.length > 0
+  ) {
+    lines.push('Test-server infrastructure contract failures:');
+    lines.push(...manifest.observations.infrastructureErrors.slice(0, MAX_FAILURES));
   } else if (manifest.outcome === 'artifact_failure') {
     lines.push('Artifact contract failures:');
     lines.push(...manifest.artifactVerification.errors);
@@ -561,13 +619,40 @@ export async function runCapturedTest(options) {
   } catch (cause) {
     allowanceErrors.push(cause instanceof Error ? cause.message : String(cause));
   }
+  const activeObservationScopes = new Set(
+    resultKind === 'playwright'
+      ? (report?.tests ?? [])
+          .map(({ observationTestId }) => observationTestId)
+          .filter(Boolean)
+          .map((testId) => ['playwright', testId].join('\u0000'))
+      : [],
+  );
+  let browserContract = null;
+  const browserContractErrors = [];
+  if (resultKind === 'playwright') {
+    try {
+      browserContract = {
+        runtime: readJson(resolve(root, 'scripts/e2e-runtime-contract.json')),
+        declaration: readJson(resolve(root, 'e2e/expected-browser-events.json')),
+        installedViteVersion: readJson(resolve(root, 'node_modules/vite/package.json')).version,
+        binaryViteVersion: viteBinaryVersion(root),
+      };
+    } catch (cause) {
+      browserContractErrors.push(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
   const observationClassification = classifyObservations(
     [...structuredObservations, ...processWarnings],
     allowances,
+    new Date(),
+    activeObservationScopes,
+    browserContract,
   );
   observationClassification.allowanceErrors.push(...allowanceErrors);
+  observationClassification.infrastructureErrors.push(...browserContractErrors);
   const observationErrors = [
     ...observationClassification.allowanceErrors,
+    ...observationClassification.infrastructureErrors,
     ...observationClassification.unexpected.map(
       ({ testId, kind, message }) => `${testId}:${kind}:${message}`,
     ),
@@ -577,6 +662,10 @@ export async function runCapturedTest(options) {
     runtimeCounters,
     requiredRuntimeCounters,
   );
+  const attachmentContract =
+    resultKind === 'playwright'
+      ? playwrightAttachmentArtifacts(report, runDirectory)
+      : { artifacts: [], errors: [] };
   const artifactSpecs = [
     ...(existsSync(reportPath) ? [{ path: reportName, format: 'json', allowEmpty: false }] : []),
     ...(observationName ? [{ path: observationName, format: 'json', allowEmpty: false }] : []),
@@ -590,11 +679,13 @@ export async function runCapturedTest(options) {
     })),
     ...additionalArtifacts,
     ...artifactFiles(runDirectory, additionalArtifactDirectories),
+    ...attachmentContract.artifacts,
   ];
   const uniqueArtifactSpecs = [
     ...new Map(artifactSpecs.map((artifact) => [artifact.path, artifact])).values(),
   ];
   const artifactVerification = verifyArtifactFiles(runDirectory, uniqueArtifactSpecs);
+  const artifactErrors = [...attachmentContract.errors, ...artifactVerification.errors];
   const outcome = outcomeFor({
     code: processResult.code,
     signal: processResult.signal,
@@ -604,7 +695,7 @@ export async function runCapturedTest(options) {
     reportError: reportError ?? observationReportError,
     runtimeCounterErrors,
     observationErrors,
-    artifactErrors: artifactVerification.errors,
+    artifactErrors,
     resultKind,
   });
   const durationMs = Date.now() - startedAt.getTime();
@@ -617,6 +708,8 @@ export async function runCapturedTest(options) {
       ).length,
     unexpectedObservations: observationClassification.unexpected.length,
     allowedObservations: observationClassification.allowed.length,
+    correlatedObservations: observationClassification.correlated?.length ?? 0,
+    infrastructureObservations: observationClassification.infrastructure?.length ?? 0,
   };
   const exit = processResult.runnerError
     ? { kind: 'runner_failure', code: null, signal: null }
@@ -644,7 +737,10 @@ export async function runCapturedTest(options) {
     observations: {
       unexpected: observationClassification.unexpected,
       allowed: observationClassification.allowed,
+      correlated: observationClassification.correlated ?? [],
+      infrastructure: observationClassification.infrastructure ?? [],
       allowanceErrors: observationClassification.allowanceErrors,
+      infrastructureErrors: observationClassification.infrastructureErrors,
     },
     output: {
       truncated: false,
@@ -655,7 +751,7 @@ export async function runCapturedTest(options) {
       required: requiredRuntimeCounters ?? {},
       errors: runtimeCounterErrors,
     },
-    artifactVerification: { errors: artifactVerification.errors },
+    artifactVerification: { errors: artifactErrors },
     artifacts: artifactVerification.verified,
   };
   const formattedSummary = formatSummary({

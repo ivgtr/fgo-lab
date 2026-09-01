@@ -8,10 +8,11 @@ import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-run
 import { PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
 import {
   classifyQualityOutcome,
+  reconcileChildStep,
   verifyChildManifest,
   writeManifestAtomically,
 } from './quality-runner-lib.mjs';
-import { sha256File, validateAllowances } from './test-observation-lib.mjs';
+import { classifyObservations, sha256File, validateAllowances } from './test-observation-lib.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -173,7 +174,12 @@ test('a console allowance requires one exact identity, message, reason, and futu
   writeFileSync(
     allowancePath,
     JSON.stringify([
-      { ...observation, reason: 'fixture contract', expiresAt: '2099-01-01T00:00:00.000Z' },
+      {
+        ...observation,
+        expectedCount: 1,
+        reason: 'fixture contract',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      },
     ]),
   );
   const result = await runFixture(
@@ -192,6 +198,7 @@ test('a console allowance requires one exact identity, message, reason, and futu
     validateAllowances([
       {
         ...observation,
+        expectedCount: 1,
         reason: 'fixture contract',
         expiresAt: '2020-01-01T00:00:00.000Z',
         prefix: 'exact',
@@ -199,6 +206,150 @@ test('a console allowance requires one exact identity, message, reason, and futu
     ]),
     ['allowances[0]:broad_message_match', 'allowances[0]:expired'],
   );
+});
+
+test('a resource failure owns its matching structured browser console notification', () => {
+  const resource = {
+    runner: 'playwright',
+    testId: 'fixture > resource',
+    kind: 'browser.resource_failure',
+    message: 'image https://fixture.invalid/image.png: net::ERR_FAILED',
+    detail: {
+      url: 'https://fixture.invalid/image.png',
+      resourceType: 'image',
+      failureText: 'net::ERR_FAILED',
+      pageId: 'page-1',
+    },
+  };
+  const consoleNotification = {
+    runner: 'playwright',
+    testId: resource.testId,
+    kind: 'browser.console',
+    message: 'Failed to load resource: net::ERR_FAILED',
+    detail: {
+      type: 'error',
+      url: 'http://127.0.0.1:4173/',
+      locationUrl: resource.detail.url,
+      pageId: 'page-1',
+    },
+  };
+  const allowance = {
+    ...resource,
+    expectedCount: 1,
+    reason: 'typed fixture resource failure',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+  };
+  const classified = classifyObservations([resource, consoleNotification], [allowance]);
+  assert.deepEqual(classified.unexpected, []);
+  assert.deepEqual(classified.allowed, [resource]);
+  assert.deepEqual(classified.correlated, [consoleNotification]);
+  const reversed = classifyObservations([consoleNotification, resource], [allowance]);
+  assert.deepEqual(reversed.unexpected, []);
+  assert.deepEqual(reversed.allowed, [resource]);
+  assert.deepEqual(reversed.correlated, [consoleNotification]);
+
+  const unmatched = classifyObservations([consoleNotification], []);
+  assert.deepEqual(unmatched.unexpected, [consoleNotification]);
+  assert.deepEqual(unmatched.correlated, []);
+});
+
+test('an allowance is exact about observation multiplicity', async () => {
+  const artifactRoot = mkdtempSync(resolve(tmpdir(), 'fgo-lab-allowance-count-'));
+  const allowancePath = resolve(artifactRoot, 'allowances.json');
+  const observation = {
+    runner: 'vitest',
+    testId: 'fixture > repeated console',
+    kind: 'console.log',
+    message: 'one expected event',
+  };
+  writeFileSync(
+    allowancePath,
+    JSON.stringify([
+      {
+        ...observation,
+        expectedCount: 1,
+        reason: 'fixture contract',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      },
+    ]),
+  );
+  const result = await runFixture(
+    'repeated-console',
+    fixtureScript({
+      reportValue: report(true),
+      observationValue: { schemaVersion: 1, observations: [observation, observation] },
+    }),
+    2_000,
+    { allowancePath },
+  );
+  assert.equal(result.manifest.outcome, 'contract_failure');
+  assert.deepEqual(result.manifest.observations.allowanceErrors, [
+    'allowances[0]:count_mismatch:expected_1:received_2',
+  ]);
+});
+
+test('a browser console allowance includes its source location in the complete identity', () => {
+  const observation = {
+    runner: 'playwright',
+    testId: 'fixture.spec.ts > source identity',
+    kind: 'browser.console',
+    message: '[vite] connected.',
+    detail: {
+      type: 'debug',
+      url: 'http://127.0.0.1:4174/',
+      locationUrl: 'http://127.0.0.1:4174/src/application.ts',
+      pageId: 'page-1',
+    },
+  };
+  const allowance = {
+    ...observation,
+    detail: { ...observation.detail, locationUrl: 'http://127.0.0.1:4174/@vite/client' },
+    expectedCount: 1,
+    reason: 'fixture source identity',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+  };
+  const classified = classifyObservations([observation], [allowance]);
+  assert.deepEqual(classified.unexpected, [observation]);
+});
+
+test('a generic resource console message can never be allowlisted', () => {
+  assert.deepEqual(
+    validateAllowances([
+      {
+        runner: 'playwright',
+        testId: 'fixture.spec.ts > resource fallback',
+        kind: 'browser.console.error',
+        message: 'Failed to load resource: net::ERR_FAILED',
+        expectedCount: 1,
+        reason: 'too broad',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+      },
+    ]),
+    ['allowances[0]:generic_resource_console'],
+  );
+  assert.doesNotMatch(
+    readFileSync(resolve(root, 'scripts/test-observation-allowances.json'), 'utf8'),
+    /Failed to load resource: net::ERR_FAILED/,
+  );
+  const canonicalAllowances = JSON.parse(
+    readFileSync(resolve(root, 'scripts/test-observation-allowances.json'), 'utf8'),
+  );
+  assert.deepEqual(validateAllowances(canonicalAllowances), []);
+  assert.equal(
+    canonicalAllowances.some(({ detail }) => detail?.locationUrl?.includes('/@vite/client')),
+    false,
+  );
+  for (const allowance of canonicalAllowances.filter(
+    ({ kind }) => kind === 'browser.resource_failure',
+  )) {
+    assert.match(
+      allowance.detail.url,
+      /^(?:https:\/\/static\.atlasacademy\.io\/|http:\/\/127\.0\.0\.1:4174\/master\/manifest\.json$)/,
+    );
+    assert.ok(['image', 'fetch'].includes(allowance.detail.resourceType));
+    assert.equal(allowance.detail.failureText, 'net::ERR_FAILED');
+    assert.ok(allowance.expectedCount > 0);
+  }
 });
 
 test('skip and todo are contract failures even when Vitest reports success', async () => {
@@ -280,6 +431,62 @@ test('the quality parent preserves child outcomes and gives artifact failure pre
       },
     }),
     'artifact_failure',
+  );
+});
+
+test('the quality parent fails closed on every process and child manifest contradiction', () => {
+  const successChild = {
+    outcome: 'success',
+    exit: { kind: 'code', code: 0, signal: null },
+    verificationErrors: [],
+  };
+  const failedChild = {
+    outcome: 'test_failure',
+    exit: { kind: 'code', code: 7, signal: null },
+    verificationErrors: [],
+  };
+  const nonzero = { id: 'unit', code: 7, signal: null };
+  const signaled = { id: 'unit', code: null, signal: 'SIGTERM' };
+  const zero = { id: 'unit', code: 0, signal: null };
+
+  assert.deepEqual(reconcileChildStep(nonzero, successChild), [
+    'process_nonzero_with_manifest_success',
+  ]);
+  assert.deepEqual(reconcileChildStep(signaled, successChild), [
+    'process_signal_with_manifest_success:SIGTERM',
+  ]);
+  assert.deepEqual(reconcileChildStep(zero, failedChild), [
+    'process_success_with_manifest_failure:test_failure',
+  ]);
+  assert.equal(
+    classifyQualityOutcome({
+      signal: null,
+      failedStep: nonzero,
+      children: {
+        unit: { ...successChild, reconciliationErrors: reconcileChildStep(nonzero, successChild) },
+      },
+    }),
+    'process_manifest_mismatch',
+  );
+  assert.equal(
+    classifyQualityOutcome({
+      signal: null,
+      failedStep: signaled,
+      children: {
+        unit: { ...successChild, reconciliationErrors: reconcileChildStep(signaled, successChild) },
+      },
+    }),
+    'signal',
+  );
+  assert.equal(
+    classifyQualityOutcome({
+      signal: null,
+      failedStep: zero,
+      children: {
+        unit: { ...failedChild, reconciliationErrors: reconcileChildStep(zero, failedChild) },
+      },
+    }),
+    'process_manifest_mismatch',
   );
 });
 
@@ -396,6 +603,82 @@ test('Playwright warning, browser console, skip, retry, and artifact loss fail t
   assert.equal(observed.manifest.outcome, 'contract_failure');
   assert.equal(skipped.manifest.outcome, 'contract_failure');
   assert.equal(artifact.manifest.outcome, 'artifact_failure');
+});
+
+test('Playwright report-declared attachments require a contained file with matching bytes and SHA', async () => {
+  const attachment = {
+    name: 'trace',
+    contentType: 'application/zip',
+    path: 'playwright-artifacts/result/trace.zip',
+    inline: false,
+    bytes: 3,
+    sha256: 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+  };
+  const declared = (value) =>
+    playwrightReport({
+      tests: [
+        {
+          id: 'fixture',
+          title: 'fixture',
+          titlePath: ['fixture.spec.ts', 'fixture'],
+          project: 'chromium',
+          expectedStatus: 'passed',
+          outcome: 'expected',
+          status: 'passed',
+          retry: 0,
+          durationMs: 1,
+          errors: [],
+          attachments: [value],
+        },
+      ],
+    });
+  const missing = await runPlaywrightFixture(
+    'playwright-declared-attachment-missing',
+    fixtureScript({ reportValue: declared(attachment) }),
+  );
+  const outside = await runPlaywrightFixture(
+    'playwright-declared-attachment-outside',
+    fixtureScript({ reportValue: declared({ ...attachment, path: '../trace.zip' }) }),
+  );
+  const changed = await runPlaywrightFixture(
+    'playwright-declared-attachment-changed',
+    `
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const target = path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'playwright-artifacts/result/trace.zip');
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, 'changed');
+      fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(declared(attachment)))});
+    `,
+  );
+  const failedWithMissing = await runPlaywrightFixture(
+    'playwright-failed-declared-attachment-missing',
+    fixtureScript({
+      reportValue: declared(attachment),
+      exitCode: 7,
+    }),
+  );
+  assert.equal(missing.manifest.outcome, 'artifact_failure');
+  assert.match(missing.manifest.artifactVerification.errors.join('\n'), /trace\.zip:missing/);
+  assert.equal(outside.manifest.outcome, 'artifact_failure');
+  assert.match(outside.manifest.artifactVerification.errors.join('\n'), /outside_run_directory/);
+  assert.equal(changed.manifest.outcome, 'artifact_failure');
+  assert.match(changed.manifest.artifactVerification.errors.join('\n'), /bytes|sha256/);
+  assert.equal(failedWithMissing.manifest.outcome, 'artifact_failure');
+});
+
+test('every E2E page is created through the canonical browser observer API', () => {
+  for (const entry of readdirSync(resolve(root, 'e2e'))) {
+    if (!entry.endsWith('.ts') || entry === 'observedTest.ts') continue;
+    const source = readFileSync(resolve(root, 'e2e', entry), 'utf8');
+    assert.doesNotMatch(source, /\bbrowser\.newContext\s*\(/, entry);
+    assert.doesNotMatch(source, /\bcontext\.newPage\s*\(/, entry);
+  }
+  const observer = readFileSync(resolve(root, 'e2e/observedTest.ts'), 'utf8');
+  for (const method of ['log', 'info', 'debug', 'warn', 'error', 'assert'])
+    assert.match(observer, new RegExp(`['"]${method}['"]`));
+  assert.match(observer, /context\.on\(['"]page['"]/);
+  assert.match(observer, /requestfailed/);
 });
 
 test('production audit artifacts satisfy every required runtime counter', async () => {

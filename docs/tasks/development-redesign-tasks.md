@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.26"
+document_version: "1.5.28"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-01"
+updated_at: "2026-09-02"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -803,7 +803,17 @@ Handoff:
   legacy TSK-00 aggregate
   auditorは変更外の`quantityConditions` assumptionで停止し、同script／master／product sourceにbaseline差分が
   ないため本Taskの証拠には用いず、canonical production child artifactでinventory／digestを確認した。
-- Commit: 本completion commit。Flow closureはBlocking 0、Deferred 1（TSK-08 typed domain reason）。
+- Review resolution: browser raw eventをresource、test-server infrastructure、applicationへ一意に分類した。
+  `locationUrl`を完全identityへ戻し、Vite lifecycleとE2E-023 WebSocket failureをtyped event／exact countで検証する。
+  external expected snapshot取込もcanonical repository snapshotへ限定した。最終parent
+  `.test-results/2026-09-01T15-55-17-653Z-15-2f687a/manifest.json`は42 artifactを検証し、Playwright raw
+  336 eventをallowance 126／resource correlation 88／infrastructure 122へ完全分割した。
+- Review verification: runner 49／49、unit 70 files／377 tests、production 24／112、Playwright 25／25。
+  post-commit runner 3-run中央値2.43秒は実Chromium fixture追加による説明済み+1.14秒。quality中央値284.47秒は
+  開始時比+16.92%だが、同じfinal observer logicの直前中央値263.74秒、最終run 272.48秒であり、lint／unit／productionも
+  同時に遅い環境driftである。test／worker／retry、production inventory、calculator／ranking parity、両digest、
+  runtime countersは不変。
+- Completion commit: 本commit。Flow closureはBlocking 0、Deferred 1（TSK-08 typed domain reason）。
   Next command: `git status --short && git rev-parse HEAD`でTSK-07を再開する。
 
 ### TSK-07: Web／worker一括切替

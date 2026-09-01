@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from './observedTest';
+import { expect, test, type NewObservedPage, type Page } from './observedTest';
 import { completeSetup, openTestHome } from './setup';
 
 async function openCalculator(page: Page) {
@@ -10,9 +10,8 @@ async function openCalculator(page: Page) {
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 }
 
-async function freshPage(browser: Browser) {
-  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-  return { context, page: await context.newPage() };
+async function freshPage(newObservedPage: NewObservedPage) {
+  return await newObservedPage({ storageState: { cookies: [], origins: [] } });
 }
 
 async function pinStoredDraftToHistorical(page: Page, unsupported: boolean) {
@@ -159,8 +158,10 @@ test('[E2E-022] mobile picker focus and image download @mobile @journey', async 
   expect(Buffer.concat(chunks).readUInt32BE(16)).toBe(1120);
 });
 
-test('[E2E-023] offline reopen through service worker @desktop @journey', async ({ browser }) => {
-  const { context, page } = await freshPage(browser);
+test('[E2E-023] offline reopen through service worker @desktop @journey', async ({
+  newObservedPage,
+}) => {
+  const { context, page } = await freshPage(newObservedPage);
   try {
     await page.goto('/');
     await completeSetup(page);
@@ -181,9 +182,9 @@ test('[E2E-023] offline reopen through service worker @desktop @journey', async 
 });
 
 test('[E2E-025] incompatible master recovery preserves user data @desktop @journey', async ({
-  browser,
+  newObservedPage,
 }) => {
-  const { context, page } = await freshPage(browser);
+  const { context, page } = await freshPage(newObservedPage);
   try {
     await page.goto('/');
     await completeSetup(page);
