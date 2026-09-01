@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.22"
+document_version: "1.5.23"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-01"
@@ -646,7 +646,12 @@ Depends on: TSK-06.1
 
 Review reopening baseline: `99966f7a8c6300904c590aff5d8e02ab8466a918`、clean worktree。
 assertion-level台帳の意味的一致を同一family全体で再監査し、E2E-030〜043の必須outcome集合を
-case側の`assertionIds`とassertion台帳の双方向完全一致で閉じた。
+一度case側の`assertionIds`とassertion台帳の双方向一致へ展開した。
+
+Canonical observation reopening baseline: `8abcc369081ad77610a3cbcee8e182475ab3770a`、clean worktree。
+二つの可変ID listと46/61件だけのguardrailではsemantic closureにならず、E2E-A031もhelper testへ誤付替え
+されていたためBlocking 1へ戻した。全61 observationを単一manifest、digest、replacement expectation marker、
+削除／誤付替えnegative fixtureへ収束し、case relationはmanifestから導出する。
 
 - [x] TSK-06.1完了HEADを固定し、同一環境・1 worker・retryなしのfull E2Eを3回測定して中央値を記録する。
 - [x] 48個の明示的な`test()`定義と、viewport loop展開後50 cases／projectをstable case IDで台帳化する。
@@ -676,7 +681,7 @@ Contract closure matrix:
 | --- | --- | --- | --- |
 | `TS-QUAL-001` | Apply | E2E case metadata contract、`pnpm test:e2e`、`pnpm quality` | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
 | `TS-ART-001` | Apply | Playwright HTML／trace／screenshot／measurement manifest check | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
-| `TS-PERF-002` | Apply | historical full E2E／worker各3-run（v1.2.1 adaptive契約を上回る証拠） | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
+| `TS-PERF-002` | Apply | full E2E変更前後各3回、1／2／4 workers各3回 | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
 | `TS-REPORT-001` | Apply | case／project／skip／duration／setup／ranking counter report | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
 | `RK-UI-001` | Apply | focused component integration、代表ranking worker E2E、VRT | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
 | `RK-AUDIT-001` | Apply | `pnpm test:production` calculator／ranking parity and inventory check | `docs/evidence/e2e-responsibility-flow-tsk-06-2.md` |
@@ -688,17 +693,21 @@ Handoff:
 
 - Canonical note: `docs/evidence/e2e-responsibility-flow-tsk-06-2.md`。開始HEADは`6d7608c`、
   worktreeの既存documentation変更を保持した。50 legacy cases＋setup、61 key assertionsを台帳化し、
-  case側の必須ID集合との双方向完全一致、transferred test title、retained markerをrunner contractで固定した。
+  単一migration manifestのdigest／件数、全replacement expectation markerをrunner contractで固定した。
+  case relationはmanifestから導出し、削除／誤付替えnegative fixtureを持つ。
 - Ownership: semantic E2Eはcomponent／application／executionへ先に移管した。残存25 generated testsはsetup 1、
   desktop 15、mobile 9、skip 0。本物の433-row rankingは1件だけで、canonical factoryから作るfake Workerは
   VRT専用、loadingはcomponent integration ownerである。
 - Performance: before中央値682.239秒、after workers 1中央値236.442秒（-65.3%）。workers 2は
   147.025／147.457／172.376秒で3/3成功、workers 4は3/3で同じ4 timeoutを再現したため、canonical
   config正本のworkers 2を採用した。268,097,500-byte prepared stateは不採用・削除済み。
+- Scope correction: repository-wideなadaptive measurement変更はTSK-06.2から分離し、test strategyを
+  v1.2.0、TSK-07〜09を従来の3-run契約へ戻した。本Taskの取得済み12 full runsだけをevidenceとして保持する。
 - Parity／visual: production 24 files／112 tests、calculator 422、ranking／AttackProfile 433、digest
   `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`とruntime counterは不変。
   VRT 9/9、a11y 4/4、新規mobile baseline 7枚を目視した。
-- Verification: final `pnpm quality`成功（unit 70 files／377 tests、production 24／112、E2E 25／25・
+- Verification: final `pnpm quality`成功（runner 21／21、unit 70 files／377 tests、production 24／112、
+  E2E 25／25・
   skip 0）。ClosureはBlocking 0、Deferred 1。TSK-07はevidence-free cache／stale detailだけを所有して
   `ready`へ戻り、TSK-08はTSK-07待ちを維持する。
 
@@ -730,7 +739,7 @@ Contract closure matrix:
 | `RK-CACHE-001` | Apply | worker／React cache cardinality、stale detail tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `UI-CALC-001` | N/A: Verified in TSK-06.1 | - | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `TS-PERF-002` | Apply | build変更前後adaptive 2-run＋条件付き3回目／final quality E2E再利用 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `TS-PERF-002` | Apply | build変更前後各3回／変更後E2E 1回 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `TS-ART-001` | Apply | Playwright manifest／artifact check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 
@@ -784,7 +793,7 @@ Contract closure matrix:
 | `TS-ART-001` | Apply | manifest／complete artifact check | `docs/evidence/<tsk-08-report>.md` |
 | `RK-AUDIT-001` | Apply | full policy matrix／parity／fail-closed check | `docs/evidence/<tsk-08-report>.md` |
 | `RK-PERF-001` | Apply | production rankingを変更前後各3回 | `docs/evidence/<tsk-08-report>.md` |
-| `TS-PERF-002` | Apply | production gate変更前後adaptive 2-run＋条件付き3回目 | `docs/evidence/<tsk-08-report>.md` |
+| `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-08-report>.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: 未記録
@@ -823,7 +832,7 @@ Handoff: 未記録
 
 Depends on: TSK-09.1
 
-- [ ] 変更前後を同一identityでadaptive 2-run＋条件付き3回目により測定し、中央値を記録する。
+- [ ] 変更前後を同一環境で3回測定し、中央値を記録する。
 - [ ] wall-clock、import、parse、candidate、damage request、stdout bytesを比較する。
 - [ ] phaseごとのmodel call、poll回数、最大tool outputを参考指標として記録する。
 - [ ] contributor向け文書をcanonical commandへ更新する。
@@ -843,7 +852,7 @@ Contract closure matrix:
 | `TS-FINAL-001` | Apply | `pnpm quality`、final performance comparison | `docs/evidence/<tsk-09-report>.md` |
 | `RK-FINAL-001` | Apply | full production／UI acceptance matrix | `docs/evidence/<tsk-09-report>.md` |
 | `DX-FINAL-001` | Apply | canonical handoff restart check | `docs/evidence/<tsk-09-report>.md` |
-| `TS-PERF-002` | Apply | canonical gate変更前後adaptive 2-run＋条件付き3回目 | `docs/evidence/<tsk-09-report>.md` |
+| `TS-PERF-002` | Apply | canonical gateを変更前後各3回 | `docs/evidence/<tsk-09-report>.md` |
 | `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/<tsk-09-report>.md` |
 | `DOC-LINT-001` | Apply | `pnpm test:docs` | `docs/evidence/<tsk-09-report>.md` |
 

@@ -207,6 +207,7 @@ describe('workspace derivations', () => {
       historyId: '00000000-0000-4000-8000-000000000021',
     });
 
+    // E2E-A049-HISTORY
     expect(second.history).toHaveLength(1);
     expect(second.history[0]).toMatchObject({
       historyId: '00000000-0000-4000-8000-000000000020',

@@ -123,6 +123,7 @@ describe('activation fact materialization', () => {
         },
       ],
     };
+    // E2E-A042-HIDDEN
     expect(
       applyActivationFactSelection(scenario, [fact], true, [hiddenOwner]).activationFacts,
     ).toEqual([fact]);

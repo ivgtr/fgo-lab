@@ -84,8 +84,8 @@ setup後に433件の計算完了を待ち、density caseは3 viewportで同じ�
   VRTだけに限定しpackage接続証拠へ数えない。
 
 Confirmed factは上記sourceとreview指摘である。再監査後は50 legacy cases＋setup 1件を`cases.json`、
-61 key assertionsを`assertions.json`へ分離し、削除・mergeした全caseにexact replacement file／test titleを
-要求するcontractへ収束した。
+61 old observationsのcanonical migration manifestを`assertions.json`へ分離した。caseとの関係はmanifestの
+`caseId`から導出し、case catalogに並行するassertion ID listを持たせない。
 
 ### Structural review reopening: assertion-set completeness
 
@@ -99,9 +99,24 @@ Confirmed factは上記sourceとreview指摘である。再監査後は50 legacy
   component error／application fail-closed、E2E-032 Dante／Summer Wu inventory、E2E-033 own HP-linear、
   E2E-036〜040 command／transaction／typed input／semantic result、E2E-041 simple／chained／independent／OC／
   accessible presentation、E2E-043 OR semantics／responsive presentation。
-- **Minimum guardrail:** 全caseに必須`assertionIds`を置き、そのflatten集合とassertion record集合、recordの
-  `caseId` owner、重複なしを双方向完全一致で検査する。上記複合familyの61 assertion IDはrunner contractにも
-  固定し、transferred test titleはquoted literal、retained browser outcomeはsource markerを要求する。
+- **Minimum guardrail attempted:** 全caseに必須`assertionIds`を置き、そのflatten集合とassertion record集合、
+  recordの`caseId` owner、重複なしを双方向完全一致で検査した。しかし同時編集可能な二つのID listは旧observation
+  集合を所有せず、replacement title内のexpectationも検査しないため、次のreopeningで廃止した。
+
+### Structural review reopening: canonical observation ownership
+
+- **Mechanism:** case catalogとassertion catalogを同時に短縮でき、部分的な46-ID guardrailも残り15件の削除を
+  拒否しない。test titleの存在だけでは、対応するexpectationが旧observationを検証する保証にならない。
+- **Implementation mismatch:** `E2E-A024-PUBLISHED`を両catalogから削除してもcase非空条件を満たした。
+  `E2E-A031-FAIL-CLOSED`はhelperの`missingDefinitions` testへ付けられ、applicationの`inputRequired`、空rows、
+  repair後の`calculated`復帰を検証していなかった。
+- **Missed detection / earlier review gap:** 「期待集合がない」問題を別の手編集ID listで閉じ、semantic observation
+  自体を一つのcanonical ownerにしなかった。exact test titleをsemantic closureと見なした点も不十分だった。
+- **Recurrence scope:** E2E-008〜050の全61 old observations。E2E-030〜043やcompound caseだけに限定しない。
+- **Minimum guardrail:** `assertions.json`だけをcanonical migration manifestとし、semantic JSON digest
+  `4b49fafa27f2a45cbf51ffa79dfdb03db23fd969257b99192934e8adc4612679`と61件をrunnerでratchetする。
+  全replacement test blockのexpectation付近にassertion ID markerを置く。case relationは`caseId`から導出し、
+  observation削除と既存の誤testへの付替えをnegative fixtureでそれぞれ拒否する。
 
 ### Setup storage-state spike
 
@@ -129,8 +144,8 @@ IndexedDB込み`storageState({ indexedDB: true })`は成功したが、生成JSO
 | desktop／mobile ownership | 全fileを両projectへ展開後skip | config／metadataで単一project owner | Verified |
 | a11y | mobile caseも両projectへ展開 | startup、desktop、representative mobileを一度ずつ | Verified |
 
-各行はcase／assertion台帳と実行結果へ展開済みで、assertion familyの双方向完全一致を含め
-Blockingは0件である。
+各行はcase catalog、canonical migration manifest、実行結果へ展開済みで、全61 digest／markerと
+E2E-A031 application outcomeを含めBlockingは0件である。
 
 ## State-by-path counterexample matrix
 
@@ -147,7 +162,7 @@ Blockingは0件である。
 | desktop／390／320 layout | canonical presentation fixture | overflow／density／snapshot | Verified |
 | keyboard／accessible name | component accessibility | representative desktop／mobile axe | Verified |
 
-## Executed plan (historical v1.2.0 measurement contract)
+## Execution plan
 
 1. TSK-06.1 completion HEADから1 worker、retryなしのfull E2Eを同一環境で3回測定する。
 2. 明示的定義、loop-generated case、project expansion、runtime skipを分離したcase inventoryを作る。
@@ -184,14 +199,15 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
 - Fixture contract: Node側でsmall masterをruntime parseし、`createStaticAttackProfiles()`、canonical NP variant、
   shared `rankingConditionsFingerprint()`から`RankingWorkerResponse`を構築する。fake Workerは6つのVRT
   calculationだけに使い、loadingは`Ranking.integration.test.tsx`がtyped Worker responseで検証する。
-- Assertion closure: 61 assertionsはold assertion、outcome class、exact replacement file／test titleを持つ。
-  case側の必須`assertionIds` flatten集合とrecord集合は双方向完全一致し、retained assertionはsource marker、
-  transferred assertionはquoted test titleを必須とする。E2E-030〜043の再発範囲は次で閉じた。
+- Assertion closure: 61 assertionsはold observation、outcome class、exact replacement file／test titleを持つ
+  唯一のcanonical migration manifestである。全manifest digestと件数をratchetし、全replacement test block内の
+  expectation付近に同じassertion ID markerを必須とする。case relationはmanifestの`caseId`から導出する。
+  observation削除と既存の誤testへの付替えをnegative runner fixtureで拒否する。
 
 | Case | Required outcomes | Exact owners |
 | --- | --- | --- |
 | E2E-030 | direct controls／reset、direct-resolved分離、trait decision、selection／command | `Calculator.direct-inputs`、`scenario`、`AppliedEffects.integration` |
-| E2E-031 | component error、application fail-closed | `EffectInlineInput`、`canonicalInputs` |
+| E2E-031 | component error、missing→inputRequired／空rows→repair→calculated | `EffectInlineInput`、`scenario` |
 | E2E-032 | Dante、Summer Wu、ordered production execution | `productionMasterInventory`、`productionExecutionParity` |
 | E2E-033 | Cú Chulainn own HP-linear | `canonicalInputs`のproduction fixture |
 | E2E-036〜040 | variant command／transaction／identity、exclusive fail-closed、typed count／semantic result | `AppliedEffects`、`variantSelection`、`attackProfile`、`effectDecision`、`scenario`、`canonicalActorCount`、`canonicalInputs` |
@@ -203,7 +219,7 @@ file／case／project duration、passed／failed／skipped、setup完了回数�
   fallbackを目視し、overflow、fixed navigation、selected state、fallbackを確認した。旧project suffix 8 PNGは
   削除した。`@vrt`はsetup込み9/9成功し、density上限は緩和していない。
 - a11y: startup desktop、major desktop screens、mobile home／calculatorがsetup込み4/4成功した。
-- Component／application: focused replacement tests、unit 70 files／377 tests、runner 19/19が成功した。
+- Component／application: E2E-A031 focused application file 27/27、unit 70 files／377 tests、runner 21/21が成功した。
 - Production: 24 files／112 tests。master `20260831.10`、application 4,735 records、servants 422、
   AttackProfile／ranking 433、calculator 422、invalid／unsupported／inputRequired 0。digest
   `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`、runtime counter
@@ -231,15 +247,11 @@ workers 4ではcalculator／ranking density、offline、master recoveryが同じ
 workers 2はworkers 1より中央値37.6%短く全run成功したため、`playwright.config.ts`のcanonical
 `workers`を2へ固定した。`package.json`は`playwright test`だけを呼び、測定時だけCLI overrideを使う。
 
-これらの12 full runsはtest strategy v1.2.1以前のhistorical evidenceとして保持する。v1.2.1では同一identityの
-baseline artifactを再利用し、before／afterは2-runの判定一致・境界margin・10%分散で3回目を決める。
-worker候補はfailure／timeout 1件で即棄却し、採用候補は2成功＋final qualityを3件目の安定性証拠とする。
-本Taskの既取得3-runは新契約を上回るため再測定せず、final qualityも測定目的で重複実行しない。
-
-Final `pnpm quality`はformat、lint、typecheck、runner 19、docs、unit 70／377、production 24／112、
-master validation、build、E2E 25／25（2.8分、skip 0）まで成功した。unit artifactは
-`.test-results/2026-09-01T08-51-21-901Z-327-f4b91f`、production artifactは
-`.test-results/2026-09-01T08-51-29-527Z-914-4691e5`である。
+Final `pnpm quality`はformat、lint、typecheck、runner 21、docs、unit 70／377、production 24／112、
+master validation、build、E2E 25／25（2.7分、skip 0）まで成功した。unit artifactは
+`.test-results/2026-09-01T09-26-27-916Z-327-180a07`、production artifactは
+`.test-results/2026-09-01T09-26-36-096Z-914-b74eba`である。repository-wideなadaptive測定契約は
+TSK-06.2から分離し、test strategy v1.2.0とTSK-07〜09の既存3-run matrixへ戻した。
 
 ## Closure
 

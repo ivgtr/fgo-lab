@@ -215,7 +215,7 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
     await expect(
       page.getByText('互換性のない旧マスターデータを削除し、現行版へ更新しました。'),
     ).toBeVisible();
-    // E2E-A025-ONLINE-RECOVERY
+    // E2E-A024-BROWSER E2E-A025-ONLINE-RECOVERY
     await expect
       .poll(() =>
         page.evaluate(
@@ -406,7 +406,7 @@ test('[E2E-048] profile repository round-trip @desktop @journey', async ({ page 
     .click();
   await page.reload();
   await page.getByRole('button', { name: '支援条件', exact: true }).click();
-  // E2E-A048-SUPPORT
+  // E2E-A019-SUPPORT E2E-A048-SUPPORT
   await expect(page.getByRole('list', { name: '保存済み支援条件' })).toContainText('周回支援');
   await expect(page.getByLabel('理想郷の騎士 EXのスキルレベル')).toHaveValue('8');
   await expect(
@@ -446,7 +446,7 @@ test('[E2E-049] history backup download and restore @desktop @journey', async ({
   // E2E-A049-PREIMPORT-BACKUP
   await preview.getByRole('button', { name: '復元前バックアップを保存' }).click();
   await preImportDownload;
-  // E2E-A049-RESTORE
+  // E2E-A049-REPLACE E2E-A049-RESTORE
   await preview.getByRole('button', { name: '全置換を実行' }).click();
   await expect(page.getByText('検証済みデータへ全置換しました')).toBeVisible();
 });

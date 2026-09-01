@@ -114,6 +114,7 @@ describe('noble phantasm variant selection', () => {
       selection,
       [base, changed],
     );
+    // E2E-A036-VARIANT E2E-A037-SEMANTIC-RESULT
     expect(result.issue).toBeNull();
     expect(result.state).toMatchObject({
       actorFormId: changedForm,
@@ -179,6 +180,7 @@ describe('noble phantasm variant selection', () => {
       new Set(operations.map(({ operationId }) => operationId)),
       activations,
     );
+    // E2E-A036-TRANSACTION
     expect(result.issue).toBeNull();
     expect(result.state).toMatchObject({ actorFormId: changedForm, card: 'arts' });
     expect(result.state.traits.attackerState.get('variant:changed')).toBe(true);

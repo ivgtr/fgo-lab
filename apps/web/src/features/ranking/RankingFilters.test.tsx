@@ -26,6 +26,7 @@ describe('ranking filter commands', () => {
     );
 
     fireEvent.change(view.getByLabelText('名前検索'), { target: { value: 'fixture' } });
+    // E2E-A009-FILTER
     expect(onChange).toHaveBeenCalledWith({ ...defaultFilters, search: 'fixture' });
     fireEvent.change(view.getByLabelText('並び順'), { target: { value: 'minimum' } });
     expect(onMetricChange).toHaveBeenCalledWith('minimum');

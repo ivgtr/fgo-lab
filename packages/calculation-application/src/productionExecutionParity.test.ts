@@ -36,6 +36,7 @@ describe('production execution parity ratchet', () => {
         return [];
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
       const calculation = calculateScenario(scenario, master, versions);
+      // E2E-A032-ORDER
       expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe('calculated');
       expect(calculation.appliedPreparationActions).toHaveLength(
         scenario.preNoblePhantasmPlan.length,

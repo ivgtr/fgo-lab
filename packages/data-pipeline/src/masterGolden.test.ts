@@ -19,6 +19,7 @@ describe('published master normalization golden', () => {
     const manifest = masterManifestSchema.parse(JSON.parse(manifestContent));
     const master = masterSnapshotSchema.parse(JSON.parse(masterContent));
     const artifact = manifest.files.find((file) => file.key === 'master' && file.required);
+    // E2E-A024-PUBLISHED
     expect(artifact).toMatchObject(golden.artifact);
     expect(manifest.schemaVersion).toBe(golden.masterSchemaVersion);
     expect(master.version).toBe(golden.masterDataVersion);

@@ -36,6 +36,7 @@ describe('effect inline canonical input', () => {
 
     const group = view.getByRole('group', { name: '敵の合計数' });
     const options = Array.from(group.querySelectorAll('button'));
+    // E2E-A040-COMMAND
     expect(options.map((option) => option.textContent)).toEqual(['1', '2', '3']);
     expect(options[0]?.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(options[2]!);
@@ -60,6 +61,7 @@ describe('effect inline canonical input', () => {
     );
 
     const field = view.getByRole('spinbutton', { name: '〔王〕一致数' });
+    // E2E-A031-REQUIRED E2E-A039-TYPED-INPUT
     expect(field.getAttribute('aria-invalid')).toBe('true');
     expect((field as HTMLInputElement).value).toBe('0');
     expect(view.getByText('入力範囲を確認してください。')).toBeTruthy();

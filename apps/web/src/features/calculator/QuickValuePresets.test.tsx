@@ -22,6 +22,7 @@ describe('calculator quick value commands', () => {
     );
 
     fireEvent.click(view.getByRole('button', { name: '120' }));
+    // E2E-A029-LEVEL
     expect(onChange).toHaveBeenCalledWith(120);
     expect((view.getByRole('button', { name: 'リセット' }) as HTMLButtonElement).disabled).toBe(
       true,
@@ -42,6 +43,7 @@ describe('calculator quick value commands', () => {
 
     fireEvent.click(view.getByRole('button', { name: '+1,000' }));
     fireEvent.click(view.getByRole('button', { name: 'リセット' }));
+    // E2E-A028-FOU
     expect(onChange.mock.calls).toEqual([[3_000], [0]]);
   });
 

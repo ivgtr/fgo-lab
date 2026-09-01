@@ -27,6 +27,7 @@ describe('ranking worker canonical runtime', () => {
     const calculate = vi.fn(calculateRankingPolicy);
     const detail = vi.fn(calculateRankingPolicyDetail);
     const runtime = createRankingWorkerRuntime({ calculate, detail });
+    // E2E-A013-DETAIL
     expect(
       runtime.handle({ kind: 'initialize', requestId: 'init', master, profile, versions }),
     ).toEqual({ kind: 'ready', requestId: 'init' });

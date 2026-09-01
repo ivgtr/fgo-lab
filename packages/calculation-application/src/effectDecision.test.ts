@@ -185,6 +185,7 @@ describe('effect decision application command', () => {
       [baseProjection, earth],
     );
 
+    // E2E-A038-EXCLUSIVE
     expect(earthSelected.effectDecisions).toEqual([
       {
         decisionKey: 'effect:sky',

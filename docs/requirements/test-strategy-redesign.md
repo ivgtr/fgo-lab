@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.2.1"
+document_version: "1.2.0"
 status: "Active"
 approved_at: "2026-08-30"
-updated_at: "2026-09-01"
+updated_at: "2026-08-30"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -397,23 +397,14 @@ wall-clock短縮が必要になった場合だけ導入する。shardはsemantic
 
 - 成功時出力が10行を超えた場合はratchet failureとする。
 - ラッパー導入によるwall-clock overheadは、同じ実行集合の中央値比較で2%または1秒の大きい方を超えない。
-- 構造変更前後は同一commit、test identity、環境の既存artifactを再利用し、まず各2回測定する。
-  対応する2比較が同じ判定で、各差分がratchet境界から`max(2 percentage points, 1秒)`以上離れ、
-  phase内のrun間差が10%未満なら2回で終了できる。判定不一致、境界margin内、またはrun間差10%以上の
-  場合だけ3回目を実行し、中央値を記録する。
-- worker候補は1回でもfailure、timeout、session closeがあれば即時棄却する。採用候補は同一条件2回の
-  成功を要求し、phase-final `pnpm quality`に含まれる同じE2E identityの成功を3件目の安定性証拠として
-  利用する。測定だけを目的にfinal qualityを再実行しない。
+- 構造変更前後は同一環境で最低3回測定し、中央値を記録する。
 - 10%以上または5秒以上の未説明なwall-clock増加を完了条件違反とする。
 - candidate数、damage request数、production parse回数の増加を、単なるマシン差として無視しない。
 - 意味論変更ではdamage correctnessとparityを性能より優先するが、性能退行を未記録のまま完了扱いにしない。
 
 計測基盤の導入順序は次のとおりとする。
 
-- T0〜T2は成功／失敗出力、wall-clock、suite／file時間を測定し、構造変更前後を同一環境で
-  `TS-PERF-002`のadaptive 2-run＋条件付き3回目により比較する。production masterのsource参照file／
-  occurrence、既存production assertionが固定するscenario、candidate、damage request、distinct input、
-  parity件数を記録する。
+- T0〜T2は成功／失敗出力、wall-clock、suite／file時間を測定し、構造変更前後を同一環境で最低3回比較する。production masterのsource参照file／occurrence、既存production assertionが固定するscenario、candidate、damage request、distinct input、parity件数を記録する。
 - runtimeのmaster read／parse、compile、candidate生成、damage request counterは共有production audit modelが所有可能になるT3で導入し、T3以降のblocking指標とする。T0〜T2では静的source参照数をruntime回数とみなさず、未計測を0件または非増加と表現しない。
 - T3のcounter baselineはT2の同じproduction master、test identity、静的source参照、canonical count ratchetと照合する。counter導入を理由にproduction全件監査をsample化しない。
 
@@ -581,7 +572,7 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 | `TS-QUAL-001` | 7、12、T2 | unit／productionを排他的に分類し、runner contractを含む`quality`をlocal／CI／Pagesの唯一の入口にする。 |
 | `TS-AUDIT-001` | 11、T3 | package境界ごとに共有production audit modelとruntime read／parse／compile／candidate／damage request counterを所有する。 |
 | `TS-PERF-001` | 13、T1 | runnerだけの変更は同一集合の中央値で2%または1秒の大きい方をoverhead上限とする。 |
-| `TS-PERF-002` | 13、T2〜T5 | 構造変更は同一identityの既存baselineを再利用し、2-runの判定一致・境界margin・10%分散で3回目の要否を決める。worker failureは即棄却し、採用候補は2成功＋final qualityを安定性証拠とする。10%以上または5秒以上の未説明増加を拒否する。 |
+| `TS-PERF-002` | 13、T2〜T5 | 構造変更は同一環境3回の中央値で比較し、10%以上または5秒以上の未説明増加を拒否する。 |
 | `TS-REPORT-001` | 13、18 | phaseで利用可能な指標を記録し、未導入counterは未計測と明示して後続導入Taskへ追跡する。 |
 | `TS-FINAL-001` | 16 | 16章の10項目をproject closureで全て満たす。 |
 
@@ -589,6 +580,5 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
-| 1.2.1 | `TS-PERF-002`をadaptive 2-run＋条件付き3回目、worker即時棄却、final quality再利用へ改訂 | approved 2026-09-01 | TSK-06.2〜09 | none: 完了済み3-runはhistorical evidenceとして有効 |
 | 1.2.0 | phase／project closure、性能閾値、未計測counterをstable Contract IDへ収束 | retained: semantic／test集合は不変 | TSK-02.1〜09 | none: TSK-02計測値と397-test identityは不変 |
 | 1.1.2 | `quality`へrunner contractを追加し、T0〜T2のruntime counterを未計測として明確化 | approved 2026-08-30 | TSK-02〜03 | TSK-02 evidenceで再測定 |

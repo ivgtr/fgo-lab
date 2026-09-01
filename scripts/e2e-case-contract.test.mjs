@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
@@ -6,6 +7,7 @@ import test from 'node:test';
 const root = resolve(import.meta.dirname, '..');
 const catalog = JSON.parse(readFileSync(resolve(root, 'e2e/cases.json'), 'utf8'));
 const assertions = JSON.parse(readFileSync(resolve(root, 'e2e/assertions.json'), 'utf8'));
+const migrationManifestDigest = '4b49fafa27f2a45cbf51ffa79dfdb03db23fd969257b99192934e8adc4612679';
 const specSource = readdirSync(resolve(root, 'e2e'))
   .filter((name) => name.endsWith('.spec.ts') || name.endsWith('.setup.ts'))
   .map((name) => readFileSync(resolve(root, 'e2e', name), 'utf8'))
@@ -19,14 +21,6 @@ test('E2E catalog closes every legacy case and every retained case has executabl
     assert.ok(['retained', 'transferred', 'merged'].includes(item.status), item.id);
     for (const field of ['title', 'owner', 'failure', 'project', 'replacement'])
       assert.ok(typeof item[field] === 'string' && item[field].length > 0, `${item.id}:${field}`);
-    assert.ok(Array.isArray(item.assertionIds), `${item.id}:assertionIds`);
-    assert.equal(
-      new Set(item.assertionIds).size,
-      item.assertionIds.length,
-      `${item.id}:assertionIds`,
-    );
-    for (const assertionId of item.assertionIds)
-      assert.match(assertionId, /^E2E-A\d{3}(?:-[A-Z0-9]+)+$/, `${item.id}:${assertionId}`);
     assert.ok(Number.isFinite(item.costMs) && item.costMs >= 0, `${item.id}:costMs`);
   }
 
@@ -49,91 +43,65 @@ test('E2E catalog closes every legacy case and every retained case has executabl
   }
 });
 
-test('case assertion IDs and assertion records are a bidirectional complete match', () => {
+function digestManifest(manifest) {
+  return createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
+}
+
+function replacementTestBlock(source, title, assertionId) {
+  const titleIndex = source.indexOf(title);
+  assert.notEqual(titleIndex, -1, `${assertionId}:${title}`);
+  const followingTest = source
+    .slice(titleIndex + title.length)
+    .search(/\n\s*(?:it|test)(?:\.each\([^\n]*\))?\s*\(/);
+  return source.slice(
+    titleIndex,
+    followingTest === -1 ? undefined : titleIndex + title.length + followingTest,
+  );
+}
+
+function assertMigrationManifest(manifest, expectedDigest = migrationManifestDigest) {
+  assert.equal(digestManifest(manifest), expectedDigest, 'migration manifest digest');
+  assert.equal(manifest.length, 61, 'migration manifest observation count');
   const caseIds = new Set(catalog.map(({ id }) => id));
-  assert.equal(new Set(assertions.map(({ id }) => id)).size, assertions.length);
-  const catalogAssertionIds = catalog.flatMap(({ assertionIds }) => assertionIds);
-  assert.equal(new Set(catalogAssertionIds).size, catalogAssertionIds.length);
-  assert.deepEqual([...catalogAssertionIds].sort(), assertions.map(({ id }) => id).sort());
-  for (const item of assertions) {
+  assert.equal(new Set(manifest.map(({ id }) => id)).size, manifest.length);
+  const assertionsByCase = Map.groupBy(manifest, ({ caseId }) => caseId);
+  for (const item of manifest) {
+    assert.match(item.id, /^E2E-A\d{3}(?:-[A-Z0-9]+)+$/);
     assert.ok(caseIds.has(item.caseId), item.id);
-    const owner = catalog.find(({ id }) => id === item.caseId);
-    assert.ok(owner.assertionIds.includes(item.id), `${item.id}:${item.caseId}`);
     assert.ok(typeof item.oldAssertion === 'string' && item.oldAssertion.length > 0, item.id);
     assert.ok(typeof item.outcome === 'string' && item.outcome.length > 0, item.id);
-    assert.ok(typeof item.replacementFile === 'string', item.id);
-    assert.ok(typeof item.replacementTest === 'string', item.id);
+    assert.ok(typeof item.replacementFile === 'string' && item.replacementFile.length > 0, item.id);
+    assert.ok(typeof item.replacementTest === 'string' && item.replacementTest.length > 0, item.id);
+    assert.equal('marker' in item, false, `${item.id}:parallel marker metadata`);
     const replacement = readFileSync(resolve(root, item.replacementFile), 'utf8');
-    if (item.disposition === 'retained') {
-      assert.ok(replacement.includes(item.replacementTest), `${item.id}:${item.replacementTest}`);
-      assert.ok(typeof item.marker === 'string' && item.marker.length > 0, item.id);
-      assert.ok(specSource.includes(item.marker), `${item.id}:${item.marker}`);
-      continue;
-    }
-    assert.equal(item.disposition, 'transferred', item.id);
-    assert.ok(
-      replacement.includes(`'${item.replacementTest}'`) ||
-        replacement.includes(`"${item.replacementTest}"`),
-      `${item.id}:${item.replacementTest}`,
-    );
+    assert.ok(['retained', 'transferred'].includes(item.disposition), item.id);
+    const testBlock = replacementTestBlock(replacement, item.replacementTest, item.id);
+    assert.ok(testBlock.includes(item.id), `${item.id}:marker`);
   }
 
   for (const item of catalog.filter(({ status }) => status !== 'retained'))
-    assert.ok(item.assertionIds.length > 0, `${item.id}:assertion closure`);
+    assert.ok(assertionsByCase.has(item.id), `${item.id}:assertion closure`);
+}
 
-  const compoundGuardrail = [
-    'E2E-A025-ONLINE',
-    'E2E-A025-OFFLINE',
-    'E2E-A026-PROFILE',
-    'E2E-A030-DIRECT-CONTROLS',
-    'E2E-A030-MODE-SEPARATION',
-    'E2E-A030-TRAIT-DECISION',
-    'E2E-A030-SELECTION',
-    'E2E-A031-REQUIRED',
-    'E2E-A031-FAIL-CLOSED',
-    'E2E-A032-DANTE-INVENTORY',
-    'E2E-A032-SUMMER-WU-INVENTORY',
-    'E2E-A032-ORDER',
-    'E2E-A033-HP',
-    'E2E-A036-VARIANT',
-    'E2E-A036-COMMAND',
-    'E2E-A036-TRANSACTION',
-    'E2E-A037-SAME-CARD',
-    'E2E-A037-SEMANTIC-RESULT',
-    'E2E-A038-EXCLUSIVE',
-    'E2E-A038-TRANSACTION',
-    'E2E-A039-ACTOR-COUNT',
-    'E2E-A039-TYPED-INPUT',
-    'E2E-A040-ENEMY-COUNT',
-    'E2E-A040-COMMAND',
-    'E2E-A040-SEMANTIC-RESULT',
-    'E2E-A041-SIMPLE',
-    'E2E-A041-CHAINED',
-    'E2E-A041-INDEPENDENT',
-    'E2E-A041-OC',
-    'E2E-A041-ACCESSIBLE-SINGLE',
-    'E2E-A041-ACCESSIBLE-CHAINED',
-    'E2E-A043-OR',
-    'E2E-A043-RESPONSIVE',
-    'E2E-A048-SERVANT',
-    'E2E-A048-CE',
-    'E2E-A048-SUPPORT',
-    'E2E-A049-HISTORY',
-    'E2E-A049-DOWNLOAD',
-    'E2E-A049-PREVIEW',
-    'E2E-A049-PREIMPORT',
-    'E2E-A049-REPLACE',
-    'E2E-A050-SUMMARY',
-    'E2E-A050-DETAIL',
-    'E2E-A050-HANDOFF',
-    'E2E-A050-NOTICE',
-    'E2E-A050-RESET',
-  ];
-  assert.deepEqual(
-    assertions
-      .filter(({ id }) => compoundGuardrail.includes(id))
-      .map(({ id }) => id)
-      .sort(),
-    compoundGuardrail.sort(),
+test('canonical migration manifest ratchets every observation and replacement marker', () => {
+  assertMigrationManifest(assertions);
+});
+
+test('migration manifest rejects a deleted observation even when no case list is edited', () => {
+  assert.throws(() => assertMigrationManifest(assertions.slice(1)), /migration manifest digest/);
+});
+
+test('migration manifest rejects an assertion reassigned to the wrong existing test', () => {
+  const reassigned = assertions.map((item) =>
+    item.id === 'E2E-A031-FAIL-CLOSED'
+      ? {
+          ...item,
+          replacementTest: 'keeps resolved effects out of manual final-input calculations',
+        }
+      : item,
+  );
+  assert.throws(
+    () => assertMigrationManifest(reassigned, digestManifest(reassigned)),
+    /E2E-A031-FAIL-CLOSED:marker/,
   );
 });

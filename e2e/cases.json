@@ -2,7 +2,6 @@
   {
     "id": "E2E-SETUP-001",
     "title": "canonical initial browser setup",
-    "assertionIds": [],
     "owner": "web/IndexedDB",
     "failure": "initial setup cannot persist canonical browser state",
     "project": "setup",
@@ -13,7 +12,6 @@
   {
     "id": "E2E-001",
     "title": "startup a11y",
-    "assertionIds": [],
     "owner": "web/a11y",
     "failure": "fresh startup DOM violates serious WCAG rules",
     "project": "desktop",
@@ -24,7 +22,6 @@
   {
     "id": "E2E-002",
     "title": "major desktop screens a11y",
-    "assertionIds": [],
     "owner": "web/a11y",
     "failure": "desktop navigation screens violate serious WCAG rules",
     "project": "desktop",
@@ -35,7 +32,6 @@
   {
     "id": "E2E-003",
     "title": "mobile calculator a11y",
-    "assertionIds": [],
     "owner": "web/a11y",
     "failure": "mobile dialogs or calculator violate serious WCAG rules",
     "project": "mobile",
@@ -46,7 +42,6 @@
   {
     "id": "E2E-004",
     "title": "calculator desktop VRT",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "desktop calculator pixels regress",
     "project": "desktop",
@@ -57,7 +52,6 @@
   {
     "id": "E2E-005",
     "title": "calculator 320px VRT",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "320px calculator pixels or overflow regress",
     "project": "mobile",
@@ -68,7 +62,6 @@
   {
     "id": "E2E-006",
     "title": "selected effect 390px VRT",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "selected effect browser styling regresses at 390px",
     "project": "mobile",
@@ -79,7 +72,6 @@
   {
     "id": "E2E-007",
     "title": "calculator density",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "browser layout exceeds density or overflow limits",
     "project": "desktop",
@@ -90,7 +82,6 @@
   {
     "id": "E2E-008",
     "title": "ranking loading surface",
-    "assertionIds": ["E2E-A008-LOADING"],
     "owner": "web/component",
     "failure": "none beyond hook/component presentation",
     "project": "desktop",
@@ -101,7 +92,6 @@
   {
     "id": "E2E-009",
     "title": "ranking target filters",
-    "assertionIds": ["E2E-A009-FILTER"],
     "owner": "web/component",
     "failure": "none beyond component command and presentation",
     "project": "desktop",
@@ -112,7 +102,6 @@
   {
     "id": "E2E-010",
     "title": "ranking five policies",
-    "assertionIds": ["E2E-A010-POLICY"],
     "owner": "web/component",
     "failure": "none beyond component command and accessibility",
     "project": "desktop",
@@ -123,7 +112,6 @@
   {
     "id": "E2E-011",
     "title": "ranking icon fallback VRT",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "browser image failure fallback pixels regress",
     "project": "mobile",
@@ -134,7 +122,6 @@
   {
     "id": "E2E-012",
     "title": "ranking desktop VRT",
-    "assertionIds": ["E2E-A012-DESKTOP-VRT"],
     "owner": "web/package connection",
     "failure": "real module Worker result does not render in desktop browser",
     "project": "desktop",
@@ -145,7 +132,6 @@
   {
     "id": "E2E-013",
     "title": "ranking area contribution",
-    "assertionIds": ["E2E-A013-DETAIL"],
     "owner": "calculation-application",
     "failure": "none beyond detail semantics and presentation",
     "project": "desktop",
@@ -156,7 +142,6 @@
   {
     "id": "E2E-014",
     "title": "ranking 390px VRT",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "390px ranking pixels regress",
     "project": "mobile",
@@ -167,7 +152,6 @@
   {
     "id": "E2E-015",
     "title": "ranking 320px VRT",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "320px ranking and row pixels regress",
     "project": "mobile",
@@ -178,7 +162,6 @@
   {
     "id": "E2E-016",
     "title": "ranking density",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "browser ranking layout exceeds density or overflow limits",
     "project": "desktop",
@@ -189,7 +172,6 @@
   {
     "id": "E2E-017",
     "title": "calculator package journey",
-    "assertionIds": [],
     "owner": "web/package connection",
     "failure": "setup to calculator package connection fails in a browser",
     "project": "desktop",
@@ -200,7 +182,6 @@
   {
     "id": "E2E-018",
     "title": "calculator 320px overflow",
-    "assertionIds": ["E2E-A018-320-OVERFLOW"],
     "owner": "web/layout",
     "failure": "duplicated by the canonical 320px VRT and density gate",
     "project": "mobile",
@@ -211,7 +192,6 @@
   {
     "id": "E2E-019",
     "title": "support persistence",
-    "assertionIds": ["E2E-A019-SUPPORT"],
     "owner": "web/IndexedDB",
     "failure": "covered by the shared repository boundary",
     "project": "desktop",
@@ -222,7 +202,6 @@
   {
     "id": "E2E-020",
     "title": "mobile servant editor",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "mobile list-to-detail browser navigation or overflow regresses",
     "project": "mobile",
@@ -233,7 +212,6 @@
   {
     "id": "E2E-021",
     "title": "mobile support editor",
-    "assertionIds": [],
     "owner": "web/layout",
     "failure": "mobile saved-list navigation or overflow regresses",
     "project": "mobile",
@@ -244,7 +222,6 @@
   {
     "id": "E2E-022",
     "title": "mobile picker and download",
-    "assertionIds": [],
     "owner": "web/browser API",
     "failure": "mobile dialogs, focus restoration, image download, or overflow fail",
     "project": "mobile",
@@ -255,7 +232,6 @@
   {
     "id": "E2E-023",
     "title": "offline reopen",
-    "assertionIds": [],
     "owner": "web/service worker",
     "failure": "service worker cannot reopen IndexedDB state offline",
     "project": "desktop",
@@ -266,7 +242,6 @@
   {
     "id": "E2E-024",
     "title": "published master update",
-    "assertionIds": ["E2E-A024-PUBLISHED", "E2E-A024-BROWSER"],
     "owner": "web/IndexedDB",
     "failure": "covered by the incompatible-master recovery family",
     "project": "desktop",
@@ -277,7 +252,6 @@
   {
     "id": "E2E-025",
     "title": "incompatible master recovery",
-    "assertionIds": ["E2E-A025-ONLINE", "E2E-A025-OFFLINE"],
     "owner": "web/IndexedDB",
     "failure": "browser recovery deletes user data or retains invalid master state",
     "project": "desktop",
@@ -288,7 +262,6 @@
   {
     "id": "E2E-026",
     "title": "v1 profile rejection",
-    "assertionIds": ["E2E-A026-PROFILE"],
     "owner": "web/IndexedDB",
     "failure": "none beyond repository fail-closed parsing",
     "project": "desktop",
@@ -299,7 +272,6 @@
   {
     "id": "E2E-027",
     "title": "draft autosave restore",
-    "assertionIds": [],
     "owner": "web/IndexedDB",
     "failure": "browser draft autosave does not survive reload",
     "project": "desktop",
@@ -310,7 +282,6 @@
   {
     "id": "E2E-028",
     "title": "Fou quick controls",
-    "assertionIds": ["E2E-A028-FOU"],
     "owner": "web/component",
     "failure": "none beyond command dispatch and application state",
     "project": "desktop",
@@ -321,7 +292,6 @@
   {
     "id": "E2E-029",
     "title": "level quick controls",
-    "assertionIds": ["E2E-A029-LEVEL"],
     "owner": "web/component",
     "failure": "none beyond command dispatch and application state",
     "project": "desktop",
@@ -332,12 +302,6 @@
   {
     "id": "E2E-030",
     "title": "direct inputs and trait effects",
-    "assertionIds": [
-      "E2E-A030-DIRECT-CONTROLS",
-      "E2E-A030-MODE-SEPARATION",
-      "E2E-A030-TRAIT-DECISION",
-      "E2E-A030-SELECTION"
-    ],
     "owner": "calculation-application",
     "failure": "none beyond canonical inputs and effect presentation",
     "project": "desktop",
@@ -348,7 +312,6 @@
   {
     "id": "E2E-031",
     "title": "required quantitative input",
-    "assertionIds": ["E2E-A031-REQUIRED", "E2E-A031-FAIL-CLOSED"],
     "owner": "calculation-application",
     "failure": "none beyond typed inputRequired presentation",
     "project": "desktop",
@@ -359,7 +322,6 @@
   {
     "id": "E2E-032",
     "title": "ordered production effects",
-    "assertionIds": ["E2E-A032-DANTE-INVENTORY", "E2E-A032-SUMMER-WU-INVENTORY", "E2E-A032-ORDER"],
     "owner": "battle-execution",
     "failure": "none beyond ordered effect semantics",
     "project": "desktop",
@@ -370,7 +332,6 @@
   {
     "id": "E2E-033",
     "title": "HP-linear effect",
-    "assertionIds": ["E2E-A033-HP"],
     "owner": "calculation-application",
     "failure": "none beyond HP input and layout already covered",
     "project": "desktop",
@@ -381,7 +342,6 @@
   {
     "id": "E2E-034",
     "title": "Tonelico HP thresholds",
-    "assertionIds": ["E2E-A034-TONELICO"],
     "owner": "calculation-application",
     "failure": "none beyond cumulative HP semantics",
     "project": "desktop",
@@ -392,7 +352,6 @@
   {
     "id": "E2E-035",
     "title": "CE HP threshold",
-    "assertionIds": ["E2E-A035-CE-HP"],
     "owner": "calculation-application",
     "failure": "none beyond HP boundary semantics",
     "project": "desktop",
@@ -403,7 +362,6 @@
   {
     "id": "E2E-036",
     "title": "exclusive NP card variant",
-    "assertionIds": ["E2E-A036-VARIANT", "E2E-A036-COMMAND", "E2E-A036-TRANSACTION"],
     "owner": "battle-execution",
     "failure": "none beyond transactional variant semantics",
     "project": "desktop",
@@ -414,7 +372,6 @@
   {
     "id": "E2E-037",
     "title": "same-card NP variant",
-    "assertionIds": ["E2E-A037-SAME-CARD", "E2E-A037-SEMANTIC-RESULT"],
     "owner": "battle-execution",
     "failure": "none beyond canonical variant identity",
     "project": "desktop",
@@ -425,7 +382,6 @@
   {
     "id": "E2E-038",
     "title": "exclusive realm decisions",
-    "assertionIds": ["E2E-A038-EXCLUSIVE", "E2E-A038-TRANSACTION"],
     "owner": "battle-execution",
     "failure": "none beyond exclusive condition transaction",
     "project": "desktop",
@@ -436,7 +392,6 @@
   {
     "id": "E2E-039",
     "title": "canonical actor minima",
-    "assertionIds": ["E2E-A039-ACTOR-COUNT", "E2E-A039-TYPED-INPUT"],
     "owner": "calculation-application",
     "failure": "none beyond count derivation and typed error",
     "project": "desktop",
@@ -447,7 +402,6 @@
   {
     "id": "E2E-040",
     "title": "Habetrot enemy count",
-    "assertionIds": ["E2E-A040-ENEMY-COUNT", "E2E-A040-COMMAND", "E2E-A040-SEMANTIC-RESULT"],
     "owner": "calculation-application",
     "failure": "none beyond count semantics",
     "project": "desktop",
@@ -458,14 +412,6 @@
   {
     "id": "E2E-041",
     "title": "probabilistic effects",
-    "assertionIds": [
-      "E2E-A041-SIMPLE",
-      "E2E-A041-CHAINED",
-      "E2E-A041-INDEPENDENT",
-      "E2E-A041-OC",
-      "E2E-A041-ACCESSIBLE-SINGLE",
-      "E2E-A041-ACCESSIBLE-CHAINED"
-    ],
     "owner": "calculation-application",
     "failure": "none beyond proc outcome semantics",
     "project": "desktop",
@@ -476,7 +422,6 @@
   {
     "id": "E2E-042",
     "title": "hidden sunlight",
-    "assertionIds": ["E2E-A042-HIDDEN"],
     "owner": "battle-execution",
     "failure": "none beyond linked hidden operation semantics",
     "project": "desktop",
@@ -487,7 +432,6 @@
   {
     "id": "E2E-043",
     "title": "OR condition",
-    "assertionIds": ["E2E-A043-OR", "E2E-A043-RESPONSIVE"],
     "owner": "battle-execution",
     "failure": "none beyond condition composition and layout already covered",
     "project": "desktop",
@@ -498,7 +442,6 @@
   {
     "id": "E2E-044",
     "title": "Water Lilith differential",
-    "assertionIds": ["E2E-A044-LILITH"],
     "owner": "calculation-application",
     "failure": "none beyond production damage golden",
     "project": "desktop",
@@ -509,7 +452,6 @@
   {
     "id": "E2E-045",
     "title": "calculation share round-trip",
-    "assertionIds": [],
     "owner": "web/browser API",
     "failure": "browser clipboard URL navigation does not restore the portable request",
     "project": "desktop",
@@ -520,7 +462,6 @@
   {
     "id": "E2E-046",
     "title": "successful version recovery",
-    "assertionIds": [],
     "owner": "web/IndexedDB",
     "failure": "browser recovery does not commit and focus the current result",
     "project": "desktop",
@@ -531,7 +472,6 @@
   {
     "id": "E2E-047",
     "title": "unsupported version recovery",
-    "assertionIds": [],
     "owner": "web/IndexedDB",
     "failure": "browser retry overwrites historical state or loses focus",
     "project": "desktop",
@@ -542,7 +482,6 @@
   {
     "id": "E2E-048",
     "title": "profile repository round-trip",
-    "assertionIds": ["E2E-A048-SERVANT", "E2E-A048-CE", "E2E-A048-SUPPORT"],
     "owner": "web/IndexedDB",
     "failure": "servant or CE records do not survive browser reload",
     "project": "desktop",
@@ -553,13 +492,6 @@
   {
     "id": "E2E-049",
     "title": "history backup round-trip",
-    "assertionIds": [
-      "E2E-A049-HISTORY",
-      "E2E-A049-DOWNLOAD",
-      "E2E-A049-PREVIEW",
-      "E2E-A049-PREIMPORT",
-      "E2E-A049-REPLACE"
-    ],
     "owner": "web/browser API",
     "failure": "download/upload backup does not preserve deduplicated history",
     "project": "desktop",
@@ -570,13 +502,6 @@
   {
     "id": "E2E-050",
     "title": "real ranking worker",
-    "assertionIds": [
-      "E2E-A050-SUMMARY",
-      "E2E-A050-DETAIL",
-      "E2E-A050-HANDOFF",
-      "E2E-A050-NOTICE",
-      "E2E-A050-RESET"
-    ],
     "owner": "web/package connection",
     "failure": "real module Worker cannot return 433 rows and one detail to the browser",
     "project": "desktop",

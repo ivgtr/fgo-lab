@@ -632,6 +632,7 @@ describe('production master inventory ratchet', () => {
       }
     }
 
+    // E2E-A032-DANTE-INVENTORY E2E-A032-SUMMER-WU-INVENTORY
     expect(master.servants).toHaveLength(469);
     expect(calculations).toHaveLength(422);
     expect(normalizationErrors).toEqual([]);

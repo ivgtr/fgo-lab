@@ -133,6 +133,7 @@ describe('ActorFormProfile canonical equivalence', () => {
       conflictingDuplicate,
     );
 
+    // E2E-A037-SAME-CARD
     expect(originalAttack.cardType).toBe('buster');
     expect(duplicateAttack.cardType).toBe('quick');
     expect(attackProfileKey(originalAttack)).not.toBe(attackProfileKey(duplicateAttack));

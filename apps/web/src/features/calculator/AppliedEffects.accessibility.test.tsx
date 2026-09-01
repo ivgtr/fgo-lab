@@ -140,6 +140,7 @@ describe('effect accessible state semantics', () => {
     const success = renderControl(
       control('applied', { proc, procRatePermille: 600, outcome: 'applied' }),
     );
+    // E2E-A041-ACCESSIBLE-SINGLE
     expect(success.getAttribute('aria-label')).toMatch(/成功時・60%/);
     cleanup();
 
@@ -183,6 +184,7 @@ describe('effect accessible state semantics', () => {
       ),
       [procInput(value)],
     );
+    // E2E-A041-ACCESSIBLE-CHAINED
     expect(chip.getAttribute('aria-label')).toMatch(name);
     expect(chip.getAttribute('aria-label')).not.toMatch(/条件不成立/);
   });

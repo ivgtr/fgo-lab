@@ -101,6 +101,7 @@ describe('calculator direct-input component boundary', () => {
       'イベント特攻（%）',
       '固定ダメージ軽減',
     ])
+      // E2E-A030-DIRECT-CONTROLS
       expect(screen.getByLabelText(new RegExp(`^${label.replace(/[()]/g, '\\$&')}`))).toBeTruthy();
     expect(screen.getAllByLabelText(/^クラス相性/)).toHaveLength(2);
     expect(screen.getAllByLabelText(/^属性相性/)).toHaveLength(2);

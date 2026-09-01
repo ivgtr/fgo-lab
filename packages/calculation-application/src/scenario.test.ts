@@ -671,6 +671,7 @@ describe('scenario calculation facade', () => {
     });
     const condition = inactive.effects.find((effect) => effect.modifier === 'npSpecial');
 
+    // E2E-A030-TRAIT-DECISION
     expect(condition).toMatchObject({
       outcome: 'notApplied',
       explanation: { code: 'unresolved' },
@@ -788,6 +789,7 @@ describe('scenario calculation facade', () => {
       ...versions,
       masterDataVersion: exclusiveMaster.version,
     });
+    // E2E-A038-TRANSACTION
     expect(skyOnly.result.status).toBe('calculated');
     expect(skyOnly.input).toMatchObject({
       powerMod: 0.5,
@@ -1480,7 +1482,7 @@ describe('scenario calculation facade', () => {
     expect(calculateProc(true).input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
   });
 
-  it('propagates preparation inputRequired and fully re-prepares after repair', () => {
+  it('returns empty inputRequired rows and calculates after repair', () => {
     const baseServant = fixture.servants[0]!;
     const resourceEffect = {
       ...modifierEffect('input-resource', 'nonDamageContext', 0),
@@ -1559,8 +1561,10 @@ describe('scenario calculation facade', () => {
       masterDataVersion: preparationMaster.version,
     });
 
+    // E2E-A031-FAIL-CLOSED
     expect(initial.result).toMatchObject({
       status: 'inputRequired',
+      rows: [],
       requiredInputs: [{ key: 'preparation:value', effectOccurrenceIds: ['input-resource:0'] }],
     });
     expect(initial.effectInputs).toEqual(
@@ -2273,6 +2277,7 @@ describe('scenario calculation facade', () => {
     const resolved = calculateScenario(scenario, master, versions);
     const manual = calculateScenario({ mode: 'manual', manual: resolved.input }, master, versions);
 
+    // E2E-A030-MODE-SEPARATION
     expect(resolved.effects.length).toBeGreaterThan(0);
     expect(manual.effects).toEqual([]);
     expect(manual.effectControls).toEqual([]);
