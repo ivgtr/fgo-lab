@@ -1,12 +1,19 @@
 ---
 title: "TSK-07 ranking Web and worker canonical cutover"
 status: "Active"
-updated_at: "2026-09-01"
+updated_at: "2026-09-02"
 ---
 
 # TSK-07 ranking Web and worker canonical cutover
 
-> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains historical verification. Portable calculation identity is closed by TSK-06.1; TSK-06.2 closed E2E ownership with Blocking 0. Evidence cache ownership remains TSK-07 scope, but TSK-07 now waits for the execution-observability closure in TSK-06.3.
+> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains
+> historical verification. TSK-06.4／06.41 reopened portable identity for a two-axis contribution intent,
+> TSK-06.4 owns source-program／action-admission design, TSK-06.41 owns its implementation, and TSK-06.5 owns
+> final maximum／production closure. TSK-06.4 design is done; runtime remains ordered through TSK-06.41 and
+> TSK-06.5 before this Web task.
+> TSK-06.41 owns the breaking two-axis schema cutover, every direct Web request writer, and minimal handoff
+> parity. TSK-07 waits for TSK-06.5, then closes notice／reset interaction, five-outcome presentation,
+> evidence-cache scope, responsive layout, and accessibility.
 
 ## Outcome and ownership
 
@@ -16,8 +23,9 @@ evidence use one `RankingPolicyConditions` contract with exactly five fields:
 destructive. The old independent `specialAttack` and `field` inputs have no reader, writer, adapter,
 fallback, compatibility flag, or runtime calculation path.
 
-The application ranking policy owns scenario selection and typed
-`calculated | unavailableUnderPolicy | invalid` outcomes. Battle execution remains the only owner of
+The application ranking policy currently exposes
+`calculated | unavailableUnderPolicy | invalid`; TSK-06.41 will add distinct `inputRequired` and
+`unsupported` outcomes before this Web flow resumes. Battle execution remains the only owner of
 ordered preparation and damage semantics. The worker runtime currently owns request fingerprinting and caches
 complete canonical calculations, which violates the proposed evidence-free cache contract. Web code renders the canonical presentation model and dispatches
 condition/detail commands; list filters and display metrics remain local presentation state and do
@@ -39,7 +47,7 @@ production digest remain deferred to TSK-08.
 | cache identity/value | five-field fingerprint | calculation/detail caches | current complete result and accumulated evidence | Deferred: TSK-07; summary must be evidence-free, worker detail 0, React detail maximum 1 |
 | URL | `serializeRankingState` | `parseRankingState` | canonical `rConditional`; obsolete params removed | Verified |
 | detail evidence | selected `RankingPolicyDetail` | pure presentation builder | profile, start gauge, facts, ordered actions | Verified |
-| portable calculator handoff | versioned application request emitted from selected ranking candidate | calculator/workspace | TSK-06.1 owns identity/persistence and immediate Web wiring | Verified: `RK-HANDOFF-001` closed by TSK-06.1 |
+| portable calculator handoff | versioned two-axis request emitted from selected ranking candidate | calculator/workspace | TSK-06.41 owns identity／compiler／direct writer／minimal parity; TSK-07 owns notice and interaction | Deferred: implementation TSK-06.41, UI closure TSK-07 |
 | old policy/fallback | removed files and exports | no production reader | no compatibility recovery | Verified |
 | full four-policy production digest | application production audit | TSK-08 | shared final audit model | Deferred: TSK-08 |
 
@@ -75,14 +83,17 @@ five Web commands
 | two identical five-field requests | Verified: one policy calculation through worker cache |
 | newer condition response arrives before an older response | Verified: older request ID/fingerprint cannot replace rows or exclusions |
 | detail response belongs to an obsolete condition fingerprint | Verified: rejected before display/cache application |
-| unavailable/invalid profile | Verified: typed exclusion; no numeric row or baseline fallback |
+| unavailable／invalid profile in historical three-class model | Verified: typed exclusion; no numeric row or baseline fallback |
+| `inputRequired`／`unsupported`／`invalid`／`unavailableUnderPolicy` after five-class cutover | Deferred: TSK-07; distinct label／recovery command and zero numeric rows |
 | nonbaseline start NP, false world fact, ordered preparation | Verified: detail evidence fixture |
 | old `rSpecial` / `rField` URL | Verified: ignored and removed, never converted |
 | old special-attack/field request fields or fallback | Verified: production source scan 0 and legacy runtime files deleted |
-| damage semantics changes | N/A: battle execution is unchanged |
+| TSK-06.41 contribution semantics change reaches Web summaries／handoff | Deferred: TSK-07 after TSK-06.5 |
 | full production digest across four policies | Deferred: TSK-08 |
 | compatibility adapter or dual runtime | N/A: prohibited by destructive cutover |
-| nonbaseline request through draft/history/share/backup/fingerprint | Verified: TSK-06.1 portable request implementation |
+| nonbaseline two-axis request through draft/history/share/backup/fingerprint | Deferred: TSK-06.41 portable identity implementation |
+| selected ranking two-axis intent → calculator replay | Deferred: TSK-06.41 direct writer／minimal parity |
+| notice／true normal reset interaction | Deferred: TSK-07 after TSK-06.5; target／field／input／stochastic／action facts must not survive reset |
 | repeated detail open/close/condition/context changes | Deferred: TSK-07 evidence-free bounded cache implementation |
 
 ## Inventory and parity
@@ -137,9 +148,12 @@ not runtime readers.
 
 The recorded test and performance results are historical evidence for the five-field cutover. They do not prove portable restore parity or bounded cache values because those cases were absent from the gate design.
 
-Closure: Blocking 0, Deferred 2
+Historical closure: Blocking 0, Deferred 2. Current reopening leaves the direct two-axis writer／minimal
+handoff in TSK-06.41 and three TSK-07 paths: notice／five-outcome presentation, atomic reset interaction, and
+bounded cache／stale response rejection.
 
 - Verified: TSK-06.2 closed E2E case ownership, project assignment, setup/ranking repetition, and the current performance baseline.
 - Deferred: TSK-07 separates summary/detail evidence and enforces maximum cardinality.
 
-TSK-06.3 is ready after TSK-06.2 reached Blocking 0; TSK-07 waits for TSK-06.3, and TSK-08 may not start. Cross-level optimization and the full production digest remain deferred to TSK-08 after TSK-07 closes.
+Current dependency: TSK-07 waits for TSK-06.5, and TSK-08 may not start. Cross-level optimization and
+the full production digest remain deferred to TSK-08 after TSK-07 closes.

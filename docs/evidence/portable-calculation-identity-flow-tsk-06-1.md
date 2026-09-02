@@ -1,10 +1,160 @@
 ---
 title: "TSK-06.1 portable calculation identity flow closure"
-status: "Complete"
-updated_at: "2026-09-01"
+status: "Active"
+updated_at: "2026-09-02"
 ---
 
 # TSK-06.1 portable calculation identity flow closure
+
+> TSK-06.4 reopened the portable identity／persistence／recovery family owned by this note. The schema 33
+> one-axis implementation and its recovery evidence below remain historical. The independent design audit
+> rejected a nominal `normalCalculator | baselineOnly | satisfiedCandidates` condition axis, the shared
+> contribution-graph interface, and the later consequence／mutation synchronization proposal. Current identity is
+> a discriminated calculator／ranking／manual intent; ranking alone stores both UI policy axes. The application
+> compiler consumes canonical source programs and
+> returns the same execution result used by ranking and portable replay. Runtime cutover is
+> `Deferred: TSK-06.41`, followed by TSK-07 Web handoff revalidation. This family has no separate design
+> Blocking; ranking flow Blocking 0 and ADR-028 now permit the shared runtime task to become ready.
+
+## TSK-06.4 discriminated portable identity design
+
+### Confirmed mechanism
+
+Resolved ranking requests currently persist only `standard | excludeVoluntarySkillModifiers`.
+Portable execution maps that value to the self-skill projection and always includes area; it has no
+input for `baselineOnly | satisfiedCandidates`. Scenario world facts are insufficient identity because
+the same retained ordered mutations and world can be projected as either baseline-only or satisfied.
+Ranking and calculator replay can therefore agree while reproducing the same incomplete semantics.
+
+### Canonical identity delta
+
+The portable contract must be revised before implementation so normal calculator semantics cannot be combined
+with ranking-only policy values:
+
+```ts
+type PortableExecutionIntent =
+  | { kind: 'manual' }
+  | { kind: 'calculator'; initialNpGauge: 10000 }
+  | {
+      kind: 'ranking';
+      initialNpGauge: number;
+      policy: {
+        selfBuffs: 'included' | 'excluded';
+        conditionalEffects: 'baseline' | 'satisfied';
+      };
+    };
+```
+
+Calculator intent evaluates every satisfied contribution in its explicit scenario without applying ranking
+suppression. Ranking constructors copy both adopted ranking axes without inferring either from scenario facts.
+The explicit true-normal-reset command reconstructs the baseline scenario and atomically replaces scenario、
+initial NP、intent、result、and fingerprint as specified below. Manual remains a separate request variant.
+Admission plans、contribution decisions、and compiled IDs remain derived and are never persisted.
+
+### Schema 33 intent-specific disposition
+
+Schema 33 already distinguishes manual, calculator, and ranking intent. Only ranking lacks the condition-
+contribution axis: current calculator execution does not compile ranking projection and runs its scenario
+directly, while manual is a separate union. Migration therefore dispatches on the validated intent rather
+than invalidating the entire schema generation:
+
+| Schema 33 intent | Approved target outcome |
+| --- | --- |
+| `manual` | deterministically migrate to current manual identity; no resolved policy axes are added |
+| `calculator + standard` | deterministically upgrade to current calculator intent; this exactly names the legacy calculator execution meaning |
+| `ranking` | keep a matching request／result as `historicalOnly`; prohibit execution and automatic recalculation because baseline／satisfied is not recoverable |
+| invalid／mixed intent | reject transport or transactionally discard only the calculation snapshot; preserve unrelated profile／workspace data |
+
+The storage outcome follows that intent classification: draft／history／backup migrate valid manual and an
+approved deterministic calculator mapping; ranking keeps only a matching stored result as historical-only;
+share accepts only a self-contained request/result matching the applicable outcome; invalid or ambiguous
+snapshots are rejected or discarded without clearing profile data. Explicit reset from historical ranking
+creates a separate current normal calculator request and never infers or overwrites its old policy.
+
+Storage and recovery use the following explicit matrix rather than one generic compatibility reader:
+
+| Storage／transport | Valid manual | Valid calculator | Ranking request＋matching result | Ranking request only／mismatched pair | Invalid／mixed |
+| --- | --- | --- | --- | --- | --- |
+| current draft | migrate current manual | migrate to calculator intent | retain immutable historical pair; no replay | discard calculation snapshot only | discard calculation snapshot only |
+| history | migrate current manual | migrate to calculator intent | retain immutable historical pair; explicit reset creates a new entry | reject entry | reject entry |
+| share | accept self-contained current manual | accept deterministic calculator mapping | historical display only when pair and pinned identity match | reject transport | reject transport |
+| backup | migrate without changing unrelated profile data | migrate to calculator intent | retain matching historical pair | discard calculation snapshot only | reject backup transaction without clearing current store |
+
+Runtime availability is evaluated after structural migration. An unavailable pinned runtime may display only a
+matching historical result. It cannot infer the missing condition axis or silently create a current calculation.
+
+No broader invalidation is part of the approved migration. A future change must revise the requirement rather
+than being presented as a technical necessity.
+
+### True normal reset disposition
+
+Current `resetPortableCalculationRequest` preserves the complete resolved scenario. That behavior cannot be
+reused for a ranking-origin request because calculator intent would immediately reactivate target／
+field facts, canonical inputs, stochastic outcomes, or selected actions retained from ranking. The proposed
+product outcome is a true normal reset owned by an application constructor, not a partial field edit:
+
+```text
+createCanonicalCalculatorBaselineScenario(selected AttackProfile, current build, current versions)
+  + calculator intent
+  + initial NP 10000
+```
+
+| Ranking-origin state | Normal reset disposition |
+| --- | --- |
+| servant／form／NP variant／level／NP level／owned build needed to identify the selected AttackProfile | preserve as explicit calculator subject input |
+| target traits／target state／rarity／attribute and other ranking-selected world facts | discard and rebuild canonical calculator baseline defaults |
+| field facts, including self-generated or candidate-selected field | discard and rebuild baseline field |
+| conditional canonical inputs／quantity／HP／Battle Point values selected for ranking maximum | discard; normal calculator exposes only its ordinary explicit inputs |
+| stochastic outcome or proc branch selected by ranking | discard and restore canonical normal calculator stochastic state |
+| ranking ordered actions／player-choice branch／preparation witness | discard; rebuild the normal calculator scenario through the application constructor |
+| initial NP and execution intent | reset atomically to `calculator + 10000` |
+| ranking origin／notice／candidate evidence | remove from current request; retain only in immutable historical result if applicable |
+| result／fingerprint／cache identity | invalidate and recompute from the new baseline request; never reuse ranking result |
+
+Any field that cannot be mapped unambiguously to explicit calculator subject identity is discarded rather
+than guessed. Scenario preservation is not an alternative for the command “通常の計算条件へ戻す”.
+
+If the pinned servant／form／NP variant no longer maps uniquely to a current AttackProfile, or the current baseline
+constructor returns `inputRequired`、`invalid`、or `unsupported`, reset is a failed transactional attempt. The
+historical request／result remains unchanged with a typed recovery outcome and retry command; no partial current
+request、result、or fingerprint is committed.
+
+### Flow and recovery matrix
+
+| Path | Required closure | Status |
+| --- | --- | --- |
+| discriminated identity design | resolved calculator and ranking intent carry valid exclusive identities; ranking stores both axes; manual remains separate | Verified: ranking requirement v0.9.5／ADR-028 |
+| shared application interface | portable and ranking call the same source-program admission／execution application facade without persisting compiled policy state | Verified design; implementation Deferred TSK-06.41 |
+| schema 33 migration | intent-specific manual／calculator／ranking／invalid disposition is approved per draft／history／share／backup and fixture-backed | Verified design: requirement v0.9.5／ADR-028; fixture Deferred TSK-06.41 |
+| normal reset product design | field-by-field true baseline reconstruction; no hidden ranking facts survive | Verified: requirement v0.9.5／ADR-028 |
+| schema／request parser and constructors | implement the approved manual／calculator／ranking union and write both ranking axes directly | Deferred: TSK-06.41 |
+| fingerprint／result validation | different condition policies cannot cross request／result identity | Deferred: TSK-06.41 |
+| portable compiler | compile both axes through the cross-family interface without reclassifying contribution semantics | Deferred: TSK-06.41 |
+| draft／history／share／backup | implement approved intent-specific round-trip／historical-only／reject outcomes transactionally | Deferred: TSK-06.41 |
+| version upgrade | deterministic calculator mapping or explicit new normal intent preserves historical ranking records | Deferred: TSK-06.41 |
+| normal reset | application baseline constructor atomically replaces scenario, initial NP, origin, both axes, result, and fingerprint | Deferred: TSK-06.41 |
+| direct Web request writer／minimal immediate handoff | current discriminated request is written by the production command and replays the selected ranking result | Deferred: TSK-06.41 as part of the breaking schema cutover |
+| notice／reset interaction | both axes and origin are displayed; the user-triggered reset dispatches the approved baseline constructor | Deferred: TSK-07 |
+| worker／React cache and stale response | cache identity includes the new fingerprint and bounded cardinality remains enforced | Deferred: TSK-07 |
+
+### Reopening closure
+
+- This note owns portable identity／migration／recovery. Its design Blocking count is 0; ranking flow A1〜A4 and
+  ADR replacement are also closed. Runtime implementation remains Deferred TSK-06.41.
+- Schema／constructor／fingerprint／compiler／persistence／upgrade／reset implementation and verification are
+  `Deferred: TSK-06.41`; they are not design Blocking and are not marked Verified from historical evidence.
+- Required reset counterexample: a ranking request carries target／field facts, canonical quantity input,
+  selected stochastic outcome, and ordered choice actions. After true reset none remains in the new scenario,
+  and replay cannot reproduce the ranking result without explicit calculator edits.
+- Required historical reset counterexample: the pinned servant／form／NP variant is absent or ambiguous in the
+  current master. Reset fails transactionally, retains the historical pair, and never substitutes a sibling
+  AttackProfile.
+- Deferred with owner: every direct schema reader／writer and minimal production handoff parity are TSK-06.41.
+  Notice、reset interaction、cache、stale response、responsive／a11y are TSK-07 after TSK-06.5.
+- Historical schema 33 parity is not current evidence after the discriminated-intent schema cutover.
+- Schema 33 ranking matching results may remain historical-only. Manual and calculator have the
+  intent-specific proposed migration above; only ranking reset／upgrade must create a separate normal-
+  calculator request without claiming parity with the old ranking result.
 
 ## Baseline, outcome, and invariant
 
@@ -113,12 +263,15 @@ The three reopened mechanisms are closed together. TSK-07 retains only evidence-
 
 All rows are `Deferred: TSK-07` from TSK-06.1. They become `Blocking: RK-CACHE-001 implementation` only when TSK-07 starts. TSK-08 retains ownership of prepared damage matrix and NP1–5 cross-level optimization.
 
-## Closure
+## Historical TSK-06.1 closure
 
-Closure: Blocking 0, Deferred 1
+Historical closure: Blocking 0, Deferred 1. The TSK-06.4／06.41 discriminated-intent matrix at the top of this note supersedes
+this value for current work.
 
 - Deferred: TSK-07 owns evidence-free summary/detail cache and stale response wiring.
 
 Verification: focused portable/projection/recovery suites passed, including self included/excluded × area included/excluded, successful/invalid/unsupported upgrade, failed-attempt focus/retry, and production ranking handoff parity/reset. Final `pnpm quality` passed with unit 66 files／370 tests、production 24 files／111 tests、E2E 66 passed／34 skipped. The production audit payload, digest `cc14841f8852c50ca432176f61fad141ce8abde955082a5d9191ccc1c945cf86`, inventory, and counters are unchanged; only measured timings differ. Against the pre-fix 18.837s production compile, three post-fix review runs were 18.219s、19.178s、19.689s (-3.3% to +4.5%); candidate 6,376、deduplicated 3,957、damage requests 6,913、distinct 1,599 remain unchanged.
 
-Product decision alternatives remaining: 0. Product, ranking, and UI requirements are approved, ADR-027 is accepted, and ADR-016 is superseded. TSK-06.1 is `done` with `Closure: Blocking 0, Deferred 1`. TSK-06.2 subsequently closed E2E ownership with Blocking 0. A later test-strategy review inserted TSK-06.3 for execution observability; TSK-06.3 is `ready`, TSK-07 remains the owner of deferred cache work and is blocked on TSK-06.3, and TSK-08 remains blocked on TSK-07.
+Historical product decision alternatives remaining at TSK-06.1 closure: 0. Product, ranking, and UI
+requirements were approved, ADR-027 was accepted, and ADR-016 was superseded. TSK-06.4／06.41 now requires
+a new approved discriminated-intent revision; TSK-07 waits for TSK-06.5 and TSK-08 waits for TSK-07.

@@ -1,12 +1,16 @@
 ---
 title: "Portable calculation requestとranking presentation"
-status: accepted
+status: superseded
 date: "2026-09-01"
 approved_at: "2026-09-01"
 supersedes: "ADR-016"
+superseded_by: "ADR-028"
 ---
 
 # ADR 027: Portable calculation requestとranking presentation
+
+> [ADR-028](028-canonical-source-program-and-finite-ranking-domain.md)が本ADRを全体として置き換えた。
+> 本文はhistorical recordとしてのみ保持する。
 
 ## Context
 

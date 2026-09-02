@@ -1,7 +1,14 @@
+---
+title: "効果の寄与範囲とranking実行計画をcanonical化する"
+status: superseded
+date: "2026-08-28"
+superseded_by: "ADR-028"
+---
+
 # ADR-019: 効果の寄与範囲とranking実行計画をcanonical化する
 
-- Status: accepted
-- Date: 2026-08-28
+> [ADR-028](028-canonical-source-program-and-finite-ranking-domain.md)が本ADRを全体として置き換えた。
+> 本文はhistorical recordとしてのみ保持する。
 
 ## Context
 

@@ -1,12 +1,13 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.8.0"
+document_version: "0.9.5"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-01"
-updated_at: "2026-09-01"
+approved_at: "2026-09-02"
+updated_at: "2026-09-02"
 created_at: "2026-08-30"
 related_adrs:
+  - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
   - "docs/adr/027-portable-calculation-request-and-ranking-presentation.md"
   - "docs/adr/018-ranking-comparison-policy.md"
   - "docs/adr/019-ranking-contribution-and-execution-plan.md"
@@ -74,13 +75,18 @@ AttackProfile inventoryは比較policyから独立して生成する。各policy
 type RankingProfileResult =
   | { status: 'calculated'; detail: RankingDetail }
   | { status: 'unavailableUnderPolicy'; reason: PolicyUnavailabilityReason }
-  | { status: 'invalid'; issues: readonly ExecutionIssue[] };
+  | { status: 'inputRequired'; inputs: readonly RequiredInput[] }
+  | { status: 'invalid'; issues: readonly ExecutionIssue[] }
+  | { status: 'unsupported'; issues: readonly ExecutionIssue[] };
 ```
 
 - `unavailableUnderPolicy`: 正しいprofileだが、選択条件では攻撃宝具まで到達できない。
-- `invalid`: master、scenario、未知semantics、探索上限等の異常である。
+- `inputRequired`: supported semanticsを実行するためのcanonical inputが不足している。値を推測せず、calculatorへ
+  同じAttackProfileと不足inputを渡す回復commandを提示する。
+- `invalid`: malformed IR、矛盾した利用者state、planner invariant違反等のsemantic invalidityである。
+- `unsupported`: canonical semanticsは存在するが、現在のengineでは完全に評価できない。
 
-`unavailableUnderPolicy`を0 damage、通常値、別profileへfallbackしない。数値ランキングは`calculated`だけを並べる。
+非数値outcomeを0 damage、通常値、別profileへfallbackしない。数値ランキングは`calculated`だけを並べる。
 
 ## 4. 利用者向け条件
 
@@ -125,14 +131,20 @@ type RankingProfileResult =
 
 ### 5.1 自己バフ
 
-自己バフは、攻撃役の任意skillに由来するdamage contributionを含めるかを制御する。
+自己バフは、攻撃役の任意skillを候補化するsource policyと、そのskillに由来するdamage contributionを含めるかを
+制御する。action admissionとcontribution inclusionは同じ判定ではない。
 
-`あり`では、合法な準備actionから得られる次の寄与を含める。
+`あり・通常のみ`で候補化するのは、確定的に実行でき、canonicalなデメリットを持たず、少なくとも一つの無条件な
+実効寄与を持つskill actionである。AttackProfileへ到達するために必要なform／NP variantの構造actionは、damage寄与が
+なくても別の`structuralRequired`として保持する。
 
 - 攻撃力、card性能、宝具威力、特攻付与等の自己強化
 - 本人がrecipient条件を満たす味方全体効果
 - 攻撃対象へ付与する防御力低下等のdebuff
 - 利用者が確定的に選べるskill branchのdamage modifier
+
+条件付き寄与だけを持つactionは`通常のみ`の候補へ入れない。無条件寄与と条件付き寄与を同じskillが持つ場合はactionを
+候補化し、無条件寄与だけを含める。条件付きsiblingがあることを理由に無条件寄与を失わない。
 
 `なし`では、任意skill由来のdamage modifierだけを反実仮想として除外する。次は維持する。
 
@@ -142,8 +154,8 @@ type RankingProfileResult =
 - NP固有の強制的な宝具前effect
 - ordered action、state mutation、activation evidence
 
-`なし`はskillを使用しなかった戦闘stateへ巻き戻す機能ではない。AttackProfileへ到達する構造的actionを保持したまま、
-任意skill由来のdamage寄与だけを除外する。
+`なし`はskillを使用しなかった戦闘stateへ巻き戻す機能ではない。AttackProfileへ到達する構造actionを保持したまま、
+任意skill由来のdamage寄与を除外する。policy上no-opとなる任意actionは候補へ残さない。
 
 ### 5.2 条件効果
 
@@ -164,6 +176,10 @@ ordered action、form transition、evidence自体は削除しない。stochastic
 
 `成立込み`では、同時成立可能なcanonical候補を有限生成し、合法な最大結果を使用する。conditionを無条件にtrueへ
 書き換えたり、effectを個別にONへしたりしない。
+
+自己バフ`あり・成立込み`は、`あり・通常のみ`のsafe deterministic actionに加え、NP消費等のrequirement／costを
+canonicalに表現できる`conditionalTradeoff` actionを候補化する。costは無視せずordered transactionで適用し、
+attack NPへ到達できないplanは採用しない。未解釈のデメリットを理論値の名目で有利に推測しない。
 
 分類はmodifier名ではなくcanonical requirementで行う。`powerMod`／`npSpecial`というkindだけで条件効果へ入れず、
 通常modifierという理由で条件付き寄与を通常扱いしない。
@@ -189,14 +205,26 @@ raw `ActSet`等の格納形式だけからselection semanticsを推測しない�
 | 自己バフ | 条件効果 | 比較内容 |
 | --- | --- | --- |
 | なし | 通常のみ | 構造、宝具本体、passive、intrinsic効果を中心とする基礎性能 |
-| あり | 通常のみ | 無条件・確定的な自己火力効果を含む標準性能 |
+| あり | 通常のみ | デメリットがなく、無条件・確定的に有効なself skillを含む標準性能 |
 | なし | 成立込み | 任意skill modifierを除いた条件付き宝具性能 |
-| あり | 成立込み | 一つの合法scenarioで到達できる最大条件成立火力 |
+| あり | 成立込み | safe skillと表現可能なconditional tradeoffを含む、一つの合法scenarioの理論最大火力 |
 
-source軸とcondition軸は直交する。NP固有効果やpassiveでも条件付き寄与なら条件効果policyに従い、任意skillでも
-無条件かつ確定的な寄与なら自己バフpolicyだけに従う。
+二軸は利用者選択とportable ranking identityでは独立に保持するが、domainの二つの独立projectionではない。
+action admissionは二軸の組み合わせ、選択branch、AttackProfile、ordered pathから一度だけcompileする。NP固有効果や
+passiveでも条件付き寄与なら条件効果policyに従い、任意skillでも無条件かつ確定的な寄与なら自己バフpolicyに従う。
 
-### 5.5 代表ケース
+### 5.5 自己バフなしのcondition-enabler action
+
+`selfBuffs = excluded × conditionalEffects = satisfied`で、任意skillがdamage modifierを直接持たず、
+target state／field等を生成してattack-NP固有のconditional contributionを成立させる場合でも、
+`structuralRequired`以外の任意skill actionはadmitしない。contribution originがattack NPであることを理由に、
+自己バフsource policyで除外したoptional actionを復活させない。これにより「自己バフなし」はoptionalな
+任意skill不使用に収束し、condition軸がdamage contributionのoriginを使ってaction admissionを上書きしない。
+
+structuralRequired actionは上記と別である。攻撃AttackProfileへ到達するため必須なactionのmutationはself軸で
+rollbackせず、そのmutation後にattack-NP寄与が成立するかは選択したcondition policyと同じexecutorで評価する。
+
+### 5.6 代表ケース
 
 | ケース | 自己バフ | 条件効果 | 期待結果 |
 | --- | --- | --- | --- |
@@ -208,6 +236,10 @@ source軸とcondition軸は直交する。NP固有効果やpassiveでも条件�
 | ダンテの確定的な天／地選択 | あり | 通常のみ | player choiceとして合法な最大branchを評価 |
 | ブレエリのランダム効果 | あり | 通常のみ | stochastic damage寄与を除外 |
 | ブレエリのランダム効果 | あり | 成立込み | 成功結果とNP resourceを同時に満たすplanだけ適用 |
+| NP消費を伴う条件付きskill | あり | 通常のみ | actionを候補化しない |
+| NP消費を伴う条件付きskill | あり | 成立込み | 消費後もattack NPへ到達できる合法planだけ候補化 |
+| 条件付き寄与だけを持つsafe skill | あり | 通常のみ | policy上no-opとして候補化しない |
+| 無条件＋条件付きsiblingを持つsafe skill | あり | 通常のみ | actionを候補化し、無条件寄与だけを適用 |
 
 ## 6. Condition model
 
@@ -250,6 +282,98 @@ actionの実行可能性を決める。
 
 execution preconditionは両condition modeで常に強制する。ranking policyで上書きしない。
 
+### 6.4 Action admission
+
+pipelineはraw効果をselected branchごとのcanonical source programへ正規化する。actionとpassive等の
+automatic sourceを同じaction transactionへ偽装せず、外側のdiscriminated unionで分ける。actionだけがcommand、
+precondition、transaction boundaryを持ち、両variantは同じordered step operationを消費する。pipelineはranking用の
+safe／tradeoff判定を発行せず、applicationがclosed operation unionとcandidate pathからadmissionをcompileする。
+
+```ts
+type CanonicalSourceProgram =
+  | {
+      kind: 'action';
+      sourceId: CanonicalSourceId;
+      actionOptionId: CanonicalActionOptionId;
+      command: CanonicalPreparationCommand;
+      preconditions: readonly CanonicalRequirement[];
+      steps: readonly CanonicalExecutionStep[];
+    }
+  | {
+      kind: 'automatic';
+      sourceId: CanonicalSourceId;
+      source: CanonicalAutomaticSourceKind;
+      steps: readonly CanonicalExecutionStep[];
+    };
+
+type CandidateLocalActionRole = 'structuralRequired' | 'optional';
+type CandidateLocalActionAdmission =
+  | { kind: 'admitted'; role: CandidateLocalActionRole }
+  | { kind: 'policyNoOp'; proof: 'noEffectiveContributionUnderPolicy' }
+  | { kind: 'unreachable'; reason: ReachabilityReason }
+  | { kind: 'unsupported'; reason: UnsupportedReason };
+```
+
+`structuralRequired`はaction固有のstatic classificationではない。同じform transitionが、あるAttackProfileには必須、
+別AttackProfileには任意となり得るため、AttackProfile、initial state、完全なordered pathからcandidate-local
+roleとして導出する。prefixだけから後続到達性を推測しない。
+
+自己バフ`あり・通常のみ`は、selected action optionの全consequenceが確定的かつ無デメリットで、選択AttackProfileへ
+無条件の実効damage contributionを少なくとも一つ持つ場合だけ任意actionをadmitする。自己バフ`あり・成立込み`は、
+HP、NP、state等の表現済みtradeoffを含むaction optionを拡張候補としてadmitできる。costはtransaction全体へ適用し、
+resource残量、AttackProfile到達役割、後続actionの成否はcandidate-localに評価する。
+
+ordered step operationはpipeline-owned closed unionで、少なくともresource、HP、state、form、fieldの
+mutation、damage contribution、根拠付き`boundedPhaseIrrelevant`、`unsupported`を区別する。admission用の
+`consequences`要約とexecution用の`mutations`列を並存させず、applicationもexecutorも同じordered operation列を読む。
+raw function名をapplicationへ渡さない。意味を失った`nonDamage`や未分類副作用を無デメリットまたは
+`boundedPhaseIrrelevant`へ推測せず、`unsupported`としてfail-closedにする。
+
+policy projection後に実効寄与も構造遷移も持たない任意actionは、plannerだけが
+`noEffectiveContributionUnderPolicy`のtyped proofを発行して除外できる。aggregatorはaction relevanceを推測しない。
+
+### 6.5 Closed operation inventory
+
+`CanonicalStepOperation`は次のclosed unionとする。pipelineはraw functionをこのunionへ全件変換し、raw名をartifactの
+実行分岐へ残さない。
+
+```ts
+type CanonicalStepOperation =
+  | CanonicalResourceMutation
+  | CanonicalStateMutation
+  | CanonicalActorMutation
+  | CanonicalDamageContribution
+  | {
+      kind: 'boundedPhaseIrrelevant';
+      proof:
+        | 'accountOrDropOnly'
+        | 'cooldownWithoutReuse'
+        | 'commandCardOutsideTerminalNp'
+        | 'enemyChargeOutsideDamage'
+        | 'postTerminalDamageOnly'
+        | 'presentationOnly'
+        | 'noBattleStateChange';
+    }
+  | {
+      kind: 'unsupported';
+      reason:
+        | 'dependentResourceAmount'
+        | 'partyCompositionMutation'
+        | 'unresolvedOperation'
+        | 'unresolvedTarget';
+    };
+```
+
+`CanonicalResourceMutation`が扱うresourceは現在のbounded phaseに必要な`npGauge | hp | criticalStars |
+battlePoint`だけである。`CanonicalStateMutation`はrecipient trait／buff、field、duration／countを、
+`CanonicalActorMutation`はform／NP variantを扱う。依存target数等からamountを一意に正規化できないoperationは
+`unsupported`であり、もっともらしい固定値へ変換しない。`boundedPhaseIrrelevant`はraw family名ではなく、終端attack
+NP一回、skill再使用なし、通常攻撃なしというphase境界から機械検証できるproofを必須とする。
+
+current productionの`nonDamage` 9,124 operationsは9,123 raw effect occurrencesから生じる（一つのeffectが二operationを
+発行）。raw effect occurrenceのclosureはresource 1,164、state／field 5,213、typed unsupported 21、
+bounded-phase-irrelevant 2,725であり、未分類0件とする。この値は実装時に一回compileした共有inventoryでratchetする。
+
 ## 7. 実行と寄与
 
 ### 7.1 単一の準備phase
@@ -263,34 +387,69 @@ legal initial actor form
   -> 1回のattack NP（終端）
 ```
 
-`N`はmasterのcanonical skill slot数から導出し、サーヴァント別定数にしない。support、礼装、魔術礼装、通常攻撃、
+`N`はactive servant skillだけのcanonical slot domainから導出し、サーヴァント別定数にしない。active skill、
+passive、mystic codeでslot schemaを共用しない。support、礼装、魔術礼装、通常攻撃、
 NP回収、turn進行、cooldown回復はこのplanへ含めない。
+
+source別artifact schemaは次の境界を持つ。上限はcurrent productionを包含しつつbounded preparationを有限にするproduct
+schemaであり、範囲外の将来データは黙って切り捨てずartifact生成をfail-closedにする。
+
+| Source | Slot | Effects/source | Player-choice groups | Candidates/group |
+| --- | --- | ---: | ---: | ---: |
+| active servant skill | `1 | 2 | 3` | 24以下 | 1以下 | 5以下 |
+| passive | field自体を持たない | 16以下 | 0 | 0 |
+| attack／transform NP | field自体を持たない | 20以下 | 1以下 | 3以下 |
+| craft essence | field自体を持たない | 16以下 | 0 | 0 |
+| mystic-code skill | `1 | 2 | 3` | 4以下 | 1以下 | 5以下 |
+
+player choiceとstochastic outcomeは別unionであり、上表のchoice上限をproc outcomeへ流用しない。複数の独立
+player-choice groupを一actionへ含むartifactはpipelineで拒否する。action optionはchoiceなし、または唯一のgroupから
+一candidateを選んだselected branch全体であり、sibling operationを個別選択しない。
 
 一つのtransactional reducerが、requirement、choice、proc、resource、effect、state mutation、form transition、
 NP variant selectionを順に検証する。actionの一部だけをcommitしない。
 
 ### 7.2 Executionとcontributionの分離
 
-effect評価は次の二層を保持する。
+executorはaction transaction、そのordered step、mutation／damage contributionをnested resultとして返す。
 
 ```ts
-interface RankingEffectEvaluation {
-  execution: {
-    outcome: ExecutionOutcome;
-    explanation: ExecutionExplanation;
-    witnesses: readonly ConditionWitness[];
-  };
-  contribution: {
-    sourcePolicy: 'included' | 'excludedBySelfBuffPolicy';
-    conditionPolicy: 'included' | 'excludedByConditionPolicy';
-  };
+interface CanonicalExecutionStep {
+  stepId: CanonicalStepId;
+  activation: CanonicalStepActivation;
+  operations: readonly CanonicalStepOperation[];
+}
+
+interface CanonicalDamageContribution {
+  contributionId: CanonicalContributionId;
+  presentationGroupId: CanonicalEffectId | null;
+  source: 'voluntarySkill' | 'passive' | 'attackNp';
+  evaluation: CanonicalContributionEvaluation;
 }
 ```
 
-damageへ寄与するのは、executionが`applied`で、両policyが`included`の場合だけである。
+`CanonicalStepOperation`はmutation、damage contribution、bounded-phase-irrelevant、unsupportedの一つである。
+contributionが参照するapplicability requirement、value expression、input readは`evaluation`が所有する。
+`intrinsic | unconditional | conditional`の同期enumを別fieldに持たず、applicationはこのcanonical evaluatorの
+typed read ownershipからcondition policyを一度だけcompileする。NP baseとconditional special、HP基礎値と
+HP依存deltaのようにpolicyが分離する単位はpipelineが別contributionとして発行する。
+
+policy decisionは各contributionに対してself、condition、areaViewを独立に記録し、単一の`excludedBy...`へ潰さない。
+ただしaction admissionは二軸を組み合わせて先に一度だけcompileする。damageへ寄与するのは、source programと
+stepが正常に評価され、contributionが成立し、三decisionがすべてincludedの場合だけである。condition falseやproc
+failureによるstepの正常な非適用はaction failureではない。それ以外のapplied siblingは同じaction transactionで
+commitできるが、invalid／unsupported／resource failureでactionの一部だけをcommitしない。同じcontributionがselfと
+conditionの両方から除外されても、detailとauditは両理由を保持する。
 
 ranking policyは`unresolved`、`procFailed`、`conditionNotMet`、`targetMismatch`等のexecution reasonを
-「計算外」へ再分類しない。表示集約はoperation順や最初のeffectではなく、executionとpolicyの二軸から安定決定する。
+「計算外」へ再分類しない。表示集約はoperation順や最初のeffectではなく、executionと独立したpolicy decisionsから
+安定決定する。
+
+required inputはordered readerの構造から扱う。action preconditionはtransaction前、effect requirementはそのstep、
+contribution valueはincluded contributionへ到達した時だけ読む。short-circuit、選択済みbranch、mutation後stateを反映した
+actual readだけから`inputRequired`を発行する。execution前にmutation後truthを推測してexact live setを作らず、除外済み
+contributionだけが読むinputを要求せず、execution preconditionまたは保持mutationへ到達するinputをpolicyで消さない。
+同じcanonical input keyを複数readerが共有できるが、別のdependency node／edge／read-point graphは正本にしない。
 
 ### 7.3 Contribution scope
 
@@ -360,7 +519,8 @@ resource stateはpreparation stateとsemantic fingerprintへ含める。現時�
 
 ```text
 AttackProfile
-  -> legal preparation plans
+  -> policy別ActionAdmissionPlan
+  -> selected branch全体を持つlegal action options / preparation plans
   -> damage-reachable condition requirements
   -> typed target / field / quantity / stochastic / resource candidates
   -> global constraint validation
@@ -369,8 +529,30 @@ AttackProfile
   -> policy result
 ```
 
-effectの任意部分集合を探索しない。effect inclusionを候補生成の入力にせず、canonical worldとaction planを先に作り、
-そのworldで成立するeffectをexecutorが一括評価する。
+effectの任意部分集合を探索しない。action admission、canonical world、排他的branchを含むordered planを先に作り、
+そのworldで成立するeffectをexecutorが一括評価する。成立込みでも、異なるtarget／field／choice候補の局所最大を後から
+合算しない。一つの合法scenarioに共存する寄与だけで最終damageを比較する。
+
+一skill内に複数の独立player-choice groupを許す場合は、action optionが各groupのcandidateを一つずつ持つ完全な
+Cartesian selectionを表す。productが一groupだけに限定する場合は、pipelineがschema境界でそれ以外を拒否する。
+production 0件やplannerの固定capをこの制約の根拠にしない。
+
+finite completenessはactive slot数、action option／choice数、ordered program数、target／field／quantity／input／
+stochastic各domainのproduct上界から導出する。pipeline/application compilerは各`AttackProfile × ranking policy × NP
+level`について、admission後の全ordered programごとにlive dimension cardinalityを掛け、その和を記録した
+`FiniteRankingDomainCertificate`を`PreparedRankingContext` constructionの一部として生成する。certificateは次を満たす。
+
+- active slotは各1回までだが順序を区別し、choice candidateはbranch全体として数える。
+- target、field、quantity、canonical input、stochastic outcomeはdamage-reachableなlive requirementだけをdimensionにする。
+- actionが生成するstate／fieldはworld witnessとして捏造せず、ordered mutationでだけ到達する。
+- class、attribute、family、trait、state、field、choiceのcompatible／exclusive literalを一つのconstraint setで検証する。
+- `unknownTruth`はcandidateのtrue／falseへ展開せず、明示input不足なら`inputRequired`、解釈不能なら`unsupported`とする。
+- profile／policy／NP levelごとの完全上界は4,096以下とする。超過contextはtyped `unsupported`であり、一部candidateの数値を返さない。
+- runtime materialization件数はcertificateの上界と一致しなければ`invalid`とする。4,096はtruncate用capではない。
+
+現productionの最大は2,880／4,096であり、上限緩和を必要としない。current runtimeの独立した512 preparation-state
+capはcertificateと二重のcorrectness boundaryになるためcutoverで削除し、context constructorとruntime assertionへ
+置き換える。小さなschema-legal fixtureでは全tupleを直接列挙するoracleとplanner結果を一致させる。
 
 ### 10.2 Baseline包含
 
@@ -395,6 +577,32 @@ effectの任意部分集合を探索しない。effect inclusionを候補生成�
 NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均／最大へ切り替えても、採用scenarioは平均damage最大候補から
 変更せず、その候補の最低／平均／最大を並べ替えに使用する。
 
+排他的player choiceはbranch内のmodifier値ではなく、cost、後続state、攻撃宝具への到達可能性を含むscenarioの最終
+平均damageで比較する。同率時だけ上記tie-breakを使う。
+
+### 10.4 Candidate dispositionとoutcome集約
+
+materializeしてexecutionへ渡したcandidateの結果と、canonical domain constructionで候補にしなかったstateのproofを
+同じunionへ入れない。
+
+```ts
+type CandidateDisposition =
+  | { kind: 'omitted'; proof: CandidateDispositionProof }
+  | { kind: 'deduplicated'; retainedStateId: CanonicalStateId };
+
+type CandidateExecutionOutcome =
+  | { status: 'calculated'; result: CalculatedResult }
+  | { status: 'inputRequired'; inputs: readonly RequiredInput[] }
+  | { status: 'unreachable'; reason: ReachabilityReason }
+  | { status: 'invalid'; issues: readonly ExecutionIssue[] }
+  | { status: 'unsupported'; issues: readonly ExecutionIssue[] };
+```
+
+`unknownTruth`のうち、supported semanticsが明示的なcanonical user inputだけを欠く場合だけ`inputRequired`へ写す。
+plannerが有限生成するtarget／field／state／quantity／stochastic witnessは利用者の未入力として扱わない。候補母集団は
+ActionAdmissionPlanとcanonical domainがadmitしたstateに限定し、生成対象外の任意tupleをprofile blockerへ数えない。
+profile aggregatorはtyped dispositionを消費するが、新たな到達可能性、上界、requirement truthを推測しない。
+
 ## 11. UI／表示
 
 ### 11.1 一覧
@@ -404,6 +612,15 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 - 特攻badge等は実際にdamageへ寄与したeffectだけから導出する。
 - policy除外、条件不成立、確率失敗、未対応を同じ「計算外」へ潰さない。
 - detail開閉や表示filter変更で主damageを再計算しない。
+
+非数値outcomeは数値rowと分け、回復可能性を偽らない。
+
+| Outcome | 表示／command |
+| --- | --- |
+| `unavailableUnderPolicy` | 選択policyではattack NPへ到達できない理由を表示する。別profileや0 damageへ置換しない |
+| `inputRequired` | 不足inputを表示し、同じAttackProfileのnormal calculatorを開くcommandを提供する。ranking数値は生成しない |
+| `invalid` | invalid reasonを表示し、原因に対応するreset／reloadだけを提示する |
+| `unsupported` | engine未対応semanticsを表示する。入力変更で直る状態として扱わない |
 
 ### 11.2 Detail evidence
 
@@ -436,7 +653,8 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
   `executionIntent.origin: ranking`を生成する。
 - 採用scenarioをrequestのscenarioとする。
 - `candidateEvidence.startNpGauge`をresolved execution intentの`initialNpGauge`とする。
-- 自己バフ`あり`は`standard`、`なし`は`excludeVoluntarySkillModifiers`へ写す。
+- resolved portable intentは`calculator`と`ranking`のdiscriminated unionにする。ranking variantだけが自己バフ軸と
+  条件効果軸を独立に保持する。通常calculatorはranking policyを流用せず、明示scenarioで成立した寄与を通常評価する。
 - 条件効果`成立込み`のworld facts、canonical inputs、ordered commandsは採用scenarioが保持する。
 - `DamageContributionProjection`、operation IDの集合、ranking row、modifier合計をhandoff payloadへ保存しない。
 - calculatorはapplicationのportable request entrypointでprojectionを再compileし、ranking detailのresult、effect、
@@ -447,8 +665,9 @@ NP Lvごとに候補を選び直す。利用者が一覧表示を最低／平均
 ranking intentをhidden stateへ保持しない。開始NP editor、contribution policy editor、汎用resource editorは
 追加しない。
 
-handoff parityはexecution parityと分ける。TSK-06.1はselected candidateから版付きrequestを生成するpure constructorを
-検証し、TSK-07は実Webのimmediate handoffとcalculator再実行を検証する。draft restore、history finalize／copy、share
+handoff parityはexecution parityと分ける。portable二軸schemaへ破壊的に切り替えるTaskは、pure constructorだけでなく
+実Webのdirect request writerと最小immediate handoff parityも同じcutoverで閉じる。TSK-07はnotice、recovery interaction、
+cache、responsive／a11yを検証する。draft restore、history finalize／copy、share
 URL／JSON、backup export／import、fingerprint、version upgradeは`CALC-PORTABLE-001`で検証する。master／engine
 incompatibility、request／result version不一致、capacity超過、旧schema shareはfail-closedにする。
 
@@ -476,6 +695,9 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 - raw Atlas condition、target、proc、choice、resource、transformを解釈する唯一の層
 - player choiceとstochastic outcomeをtyped IRへ分離
 - target、recipient、resource単位、固定増減／全消費を根拠付きで正規化
+- action／automatic sourceを分け、selected action optionごとにpreconditionとordered step operationをlosslessに
+  正規化する。resource／HP／state／form／field mutation、damage contribution、bounded-phase-irrelevant、
+  unsupportedは一つのclosed operation unionに収束させ、ranking admission verdictは発行しない
 - 未知値、曖昧性、重複identityをartifact生成時に拒否
 
 ### master-data／schema
@@ -495,9 +717,10 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 - RankingComparisonPolicyのcompile
 - AttackProfile inventoryとpolicy可用性
-- finite preparation plan、condition candidate、contribution projection
+- canonical source program／step operationとcandidate-local pathからのActionAdmissionPlan
+- finite preparation plan、condition candidate、各damage contributionのself／condition／area decision
 - stable candidate selectionとprepared damage matrix cache
-- portable requestのtyped contribution intentからexecution projectionをcompileする唯一の層
+- portable requestのdiscriminated execution intentからadmission／contribution policyをcompileする唯一の層
 
 ### Web／worker
 
@@ -508,15 +731,20 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 ## 13. 移行方針
 
-1. 本仕様をsuperseding ADRとして確定する。
+1. [ADR-028](../adr/028-canonical-source-program-and-finite-ranking-domain.md)をsource-program、finite domain、portable
+   identityのaccepted decisionとし、ADR-019／027はhistorical recordとして`superseded`にする。
 2. `RankingConditions.specialAttack`と`field`を削除する。
 3. `conditionalEffects: 'baseline' | 'satisfied'`を追加する。
-4. URL、worker protocol、cache key、test matrixを一度に置換する。
-5. player choice／stochastic outcomeとNP resourceをpipelineでcanonical化する。
-6. condition plannerを既存target／field／state resolverの上位へ置く。
-7. rankingによるeffect decision、condition fact、resource stateの再構築を削除する。
-8. 旧URL reader、compatibility flag、旧fixture、旧policy fallbackを削除する。
-9. artifact、master schema、scenario schema、engine versionを実際の契約変更に合わせて一度だけ更新する。
+4. player choice／stochastic outcome、action precondition、NP resource、ordered step内のmutation／damage contributionを
+   pipelineでcanonical化し、admission用consequence要約とexecution用mutationの二重modelを作らない。
+5. active servant skill、passive、mystic codeのschemaを別型にし、active slotとaction option／choice／world
+   domainをbounded preparation productと一致させ、範囲外をpipelineでfail-closedにする。
+6. ActionAdmissionPlan、condition planner、per-contribution decision、nested execution resultへ一括移行する。
+7. portable schema、fingerprint、全direct reader／writer、persistence、resetをdiscriminated intentへ一括移行する。
+8. URL、worker protocol、cache key、test matrixを新contractへ置換する。
+9. rankingによるeffect decision、condition fact、resource stateの再構築を削除する。
+10. 旧URL reader、旧portable reader、operation-ID projection、compatibility flag、旧fixture、旧policy fallbackを削除する。
+11. artifact、master schema、scenario schema、engine versionを実際の契約変更に合わせて一度だけ更新する。
 
 新しいpackageは原則追加しない。既存のlayer責務内でfocused moduleへ分割し、orchestrator、worker、React componentへ
 条件分岐を集積しない。
@@ -528,6 +756,7 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 | 監査対象 | 確認内容 | Gate |
 | --- | --- | --- |
 | selection | player choice／stochastic／複合conditionの全occurrence | 未分類・raw形状推測0件 |
+| source program／step operation | action／automatic、resource、HP、state、form、field、damage contribution、bounded-phase-irrelevant、unsupported＋candidate-local structural role | 意味を失った`nonDamage`、二重consequence／mutation owner、未分類operation、profile role 0件 |
 | condition family | target、field、state、HP、quantity、proc、resource | damage-reachable requirementの欠落0件 |
 | contribution scope | personal、partyWide、partyOther、enemyApplied、external | recipientとの矛盾0件 |
 | target candidate | class、attribute、trait、state、family | 矛盾candidate 0件 |
@@ -537,6 +766,8 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 | profile可用性 | baselineのみ、satisfiedのみ、両方、どちらも不可 | 暗黙のrow欠落0件 |
 | candidate規模 | profile別generated／deduplicated／executed数 | 有限性とcapを構造で説明 |
 | damage差分 | 全entry、NP1〜5、四policy組合せ | input、witness、planで全件説明 |
+| canonical identity | source、action option、execution step、contribution、presentation group | collision、配列順依存、重複owner 0件 |
+| bounded action／world domain | active servant slot、action option／choice、ordered program、target／field／quantity／input／stochastic | active／passive／mystic schema分離、schemaとplannerの範囲差0件、固定capに依存しないcomplete上界、範囲外artifactはfail-closed |
 
 既知のpolicy変更で説明できる差分と、未知semantics／回帰を分ける。前者は本仕様の結果として記録し、後者を
 個別補正せず設計gateへ戻す。
@@ -545,7 +776,11 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 ### 15.1 Domain tests
 
-- deterministic player choiceが通常候補へ残る
+- selected action optionの全consequenceが確定的・無デメリットで、無条件な実効寄与を持つskill actionだけが通常候補へ残る
+- conditional-only actionは通常候補へ残らず、mixed siblingの無条件寄与は失われない
+- NP消費等のconditional tradeoffは成立込みだけで候補化され、resource消費後もattack NPへ到達する
+- policy上no-op actionをtyped proofなしに落とさない
+- 排他的player choiceは一branchだけを実行し、最終damageで最大branchを選ぶ
 - stochastic failure／minimumとsatisfied maximum
 - self／condition policyの四組合せ
 - intrinsic factをsatisfiedで捏造しない
@@ -560,7 +795,9 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 ### 15.2 Production ratchet
 
 - 全AttackProfile × NP1〜5 × 自己バフ二値 × 条件効果二値
-- policy別calculated／unavailable／invalid inventory
+- policy別calculated／unavailable／inputRequired／invalid／unsupported inventory
+- source／step operation別resource／HP／state／form／field／damage contribution／bounded-phase-irrelevant／unsupportedと
+  candidate-local admission inventory
 - calculator／ranking canonical parity
 - implementation unsupported、partial commit、inert control、stale mutation
 - 適用effect、policy除外、表示理由、condition witnessの整合
@@ -571,12 +808,14 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 ### 15.3 Performance
 
 - effect subsetの`2^N`探索を行わない。
-- damage-reachable condition signatureだけを候補化する。
+- admitted action optionとdamage-reachable condition signatureだけを候補化する。
 - semantic stateとworld candidateをcanonical keyでdeduplicateする。
 - prepared damage inputとNP1〜5 matrixだけをcacheし、evidenceをcacheしない。
 - baselineと同一環境でproduction ranking、全Vitest、entry生成、policy matrixを比較する。
 - 主要suiteまたはhot pathが理由なく10%を超えて悪化したら設計未完了とする。
 - candidate cap緩和、timeout延長、production assertion削減だけでgateを通さない。
+- bounded action／world domainはschemaとplannerで一致させ、範囲外actionを黙って無視しない。
+  candidate capは安全ガードにはできるが、schema-legal maximumのcompleteness証明の代替にしない。
 
 ## 16. 実装停止条件
 
@@ -587,6 +826,10 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 - condition plannerがAttackProfileを変更または混成する
 - 一つのcandidateで矛盾するTargetContext／field／quantityを成立させる
 - contribution policyがexecution preconditionを上書きする
+- NP消費等の表現可能なconditional tradeoffをadverseとして一律除外する
+- conditional-only actionを通常候補へ残す
+- self／condition／areaの除外理由を一つの排他的statusへ潰す
+- 同じdependency expressionをmutation前後で同じtruthとして使う
 - 正常actionの一部operationだけがcommitされる
 - rankingとcalculatorで別evaluatorが必要になる
 - 新旧policyまたはscenario形式をruntimeで併存させる必要が生じる
@@ -605,6 +848,10 @@ damage差分、性能見積もりを提示してから再開する。
 - RankingEntryがAttackProfile単位で、variant／form／scope混成が0件
 - player choiceとstochastic outcomeがtyped semanticsで分離されている
 - execution、source contribution、condition contribution、resource legalityが型で分離されている
+- 通常のみの任意skillはsafe deterministicかつ無条件の実効寄与を持ち、conditional-only actionの選出が0件
+- 成立込みはNP消費等の表現可能なconditional tradeoffを合法planとして評価し、未解釈デメリットを推測しない
+- 排他的branchを同時適用せず、compatibleな特攻、条件効果、fieldを一つのscenarioで最大化する
+- self／condition／areaのpolicy decisionが独立に保持される
 - 全数値が一つのscenario、ordered plan、TargetContextを持つ
 - baseline候補をsatisfied候補集合が包含する
 - NP不足、OC不一致、排他矛盾を迂回して数値を返さない
@@ -621,9 +868,9 @@ damage差分、性能見積もりを提示してから再開する。
 
 | Contract ID | Governing sections | Contract |
 | --- | --- | --- |
-| `RK-IR-001` | 3〜8、12 | AttackProfile、condition、choice、resource、provenanceをdata pipelineがcanonical typed IRへ収束させる。 |
+| `RK-IR-001` | 3〜8、12 | AttackProfile、condition、choice、resource、action cost、contribution identityをdata pipelineがcanonical typed IRへ収束させる。 |
 | `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
-| `RK-POLICY-001` | 10、11 | ranking policyは候補とcontributionだけを制御し、execution semanticsを再実装しない。 |
+| `RK-POLICY-001` | 5〜7、10、11 | ranking policyはaction admissionとindependent contribution decisionsを制御し、execution semanticsを再実装しない。 |
 | `RK-UI-001` | 11、12 | Web／workerはcanonical stateと5入力を扱い、旧policy／URL／protocolを併存させない。 |
 | `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
 | `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
@@ -637,3 +884,9 @@ damage差分、性能見積もりを提示してから再開する。
 | --- | --- | --- | --- | --- |
 | 0.7.0 | 既存のranking要件群へstable Contract IDを付与 | approved 2026-08-30: semanticsは0.6.1から不変 | TSK-02.1、TSK-04〜09 | none: 承認状態の変更のみでinventory／digest baselineは変更しない |
 | 0.8.0 | versioned portable ranking handoffとbounded evidence-free cacheを追加（`RK-HANDOFF-001`、`RK-CACHE-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07〜09 | docs phaseはnone。implementationでhandoff、cache inventory、schema／fingerprint artifactが変わる。TSK-08 cross-level cacheとproduction digestは未変更 |
+| 0.9.0 | safe unconditional self-skill、conditional theoretical extension、independent contribution axes、five-outcome profile、breaking portable cutoverを確定 | approved 2026-09-02: product direction confirmed in planning review | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07〜09 | implementationでaction／contribution inventory、四policy damage、portable schema／fingerprint、Web handoffが変わる。旧runtimeとの互換pathは追加しない |
+| 0.9.1 | 自己バフありを無条件・無デメリットactionへ限定し、成立込みをcompatibleな特攻／条件／field／表現可能costの合法な理論最大値へ固定。structural role、二段階input read、candidate disposition、atomic semantic cutover境界を明確化 | approved 2026-09-02: final product direction confirmed | TSK-06.4、TSK-06.41、TSK-06.5 | 0.9.0の目標を変更せず実装循環を除去。B1〜B4とportableを同一runtime cutoverで切り替え、TSK-06.5は最終証明だけを所有する |
+| 0.9.2 | TSK-06.4独立設計監査。product outcomeを維持し、global dependency graphとstatic skill verdictを棄却。action option transaction → effect step → damage contribution、candidate-local admission、discriminated portable intentへ縮小 | approved product outcome retained; internal design Blocking A1／A2 recorded 2026-09-02 | TSK-06.4、TSK-06.41、TSK-06.5 | runtime変更なし。action consequence lossless inventoryとbounded skill-slot schema closureまではTSK-06.4をdoneにしない |
+| 0.9.3 | 0.9.2のnested action proposalにあったconsequence／mutation二重owner、passive階層欠落、conditionality同期field、fixed candidate capを再監査。source-program union＋ordered step operationの一本化とfinite domain blockerを記録し、`selfBuffs=excluded × satisfied`のcondition-enabler actionを未解決product decisionとして明示 | retained: fixed product outcomeは不変、未決定cellを推測で閉じない | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07 | runtime変更なし。Blocking A1〜A4とADR-019／027 replacementの完了までdesign closureにしない |
+| 0.9.4 | `selfBuffs=excluded × satisfied`のoptional condition-enabler skillをadmitしないと確定。structuralRequired actionのみ保持し、そのmutation後のattack-NP寄与はcondition policyで評価する | approved 2026-09-02: user confirmed the audit recommendation | TSK-06.4、TSK-06.41、TSK-06.5 | runtime変更なし。A4をVerifiedへ閉じ、A1〜A3＋ADR replacementは継続 |
+| 0.9.5 | A1〜A3 closure。全`nonDamage` raw familyをclosed step-operation unionへ分類し、source別slot／effect／choice schemaと`FiniteRankingDomainCertificate`を確定。4,096をtruncate capではなくprepared-context support上限とし、current 512 state capを廃止対象へ変更。ADR-028で019／027を置換 | approved 2026-09-02: user requested remaining audit closure; fixed product outcomeは不変 | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07 | runtime変更なし。current production最大2,880のためcandidate cap／timeout緩和なし。IR、schema、certificate、portableはTSK-06.41でatomic cutover |
