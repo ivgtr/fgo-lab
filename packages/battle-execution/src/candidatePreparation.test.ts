@@ -301,12 +301,10 @@ describe('candidate activation preparation boundary', () => {
       { values: {}, missingDefinitions: [], invalidInputKeys: [] },
       null,
       {
-        includedOperationIds: new Set(['operation:attack']),
-        excludedOperationIds: new Set(),
-        excludedStateTraitContributions: {
-          attackerState: new Set(),
-          targetState: new Set(),
-        },
+        kind: 'ranking',
+        selfBuffs: 'excluded',
+        conditionalEffects: 'baseline',
+        areaView: 'included',
       },
     );
     expect(result.operations).toHaveLength(1);

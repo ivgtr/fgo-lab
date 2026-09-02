@@ -21,8 +21,6 @@ import {
   type AttackProfile,
 } from './attackProfile';
 
-export const MAX_STATIC_PREPARATION_STATES = 512;
-
 export type RankingPreparationSourceUse =
   | {
       kind: 'skill';
@@ -82,8 +80,8 @@ function skillCommands(
 ): readonly Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] {
   const commands: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] = [];
   for (const skill of getSkillsForActorForm(servant, state.currentFormId)) {
-    const slot = skill.slot as 1 | 2 | 3;
-    if (![1, 2, 3].includes(slot) || state.usedSkillSlots.has(slot)) continue;
+    const slot = skill.slot;
+    if (state.usedSkillSlots.has(slot)) continue;
     const choices = [
       ...new Map(
         skill.effects.flatMap((effect) =>
@@ -210,8 +208,6 @@ export function compileStaticRankingPreparationPrograms(
     const commandsKey = programKey(state.commands);
     if (visited.has(key)) continue;
     visited.add(key);
-    if (visited.size > MAX_STATIC_PREPARATION_STATES)
-      throw new RangeError(`ranking_static_preparation_state_limit:${servant.id}`);
     const variant = state.selectedVariant
       ? findNoblePhantasmVariant(servant, state.selectedVariant)
       : undefined;

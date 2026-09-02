@@ -74,7 +74,15 @@ function loadProductionMaster() {
 
 const expectedUnsupportedFamilies = {} as const;
 
-const expectedUnresolvedDamageSemantics = { parameters: {}, scripts: {} } as const;
+const expectedUnresolvedDamageSemantics = {
+  parameters: {
+    DependFunc: 6,
+    DependFuncId: 6,
+    DependFuncVals: 6,
+    GainNpTargetPassiveIndividuality: 5,
+  },
+  scripts: {},
+} as const;
 
 function reasonFamily(reason: string): string {
   return reason.split(':', 1)[0] ?? reason;
@@ -647,7 +655,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_585, automaticVisible: 0, hidden: 1_214 });
+    }).toEqual({ user: 1_584, automaticVisible: 0, hidden: 5_634 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -659,15 +667,19 @@ describe('production master inventory ratchet', () => {
     }).toEqual({ servants: 16, effects: 20 });
     expect([...conditionKinds].sort()).toEqual([
       'all',
+      'always',
       'any',
       'card',
       'choice',
       'inputQuantity',
       'noblePhantasmVariant',
+      'not',
       'operationTrigger',
       'quantity',
+      'sourceQuantity',
       'targetPredicate',
       'trait',
+      'unsupported',
     ]);
     expect(unsupportedFamilies).toEqual(expectedUnsupportedFamilies);
     expect(missingCandidateValues).toEqual([]);
@@ -753,6 +765,7 @@ describe('production master inventory ratchet', () => {
     };
     const failures: string[] = [];
     const intrinsicRecipientConflicts: string[] = [];
+    const typedUnsupported: string[] = [];
     let projectionCount = 0;
     for (const source of master.servants) {
       for (const skill of source.skills) {
@@ -830,6 +843,10 @@ describe('production master inventory ratchet', () => {
             );
             continue;
           }
+          if (selected.result.status === 'unsupported' && outcome === 'unsupported') {
+            typedUnsupported.push(`${source.id}:${skill.id}:${projection.projectionKey}`);
+            continue;
+          }
           if (selected.result.status !== 'calculated' || outcome === 'unsupported')
             failures.push(
               `${source.id}:${skill.id}:${projection.projectionKey}:${selected.result.status}:${String(outcome)}:${selected.effectWarnings.join('|')}`,
@@ -837,10 +854,14 @@ describe('production master inventory ratchet', () => {
         }
       }
     }
-    expect(projectionCount).toBe(379);
+    expect(projectionCount).toBe(381);
     expect(intrinsicRecipientConflicts).toEqual([
       '200200:2167650:support:audit:200200:2167650:2167650:9963:0',
       '2501300:2276451:support:audit:2501300:2276451:2276451:21180:0',
+    ]);
+    expect(typedUnsupported).toEqual([
+      '204300:885550:support:audit:204300:885550:885550:7415:0',
+      '1101600:2255550:support:audit:1101600:2255550:2255550:21113:0',
     ]);
     expect(failures).toEqual([]);
   }, 120_000);

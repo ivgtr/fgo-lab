@@ -739,6 +739,12 @@ describe('immutable publish pipeline', () => {
                     },
                   ],
                 },
+              ],
+            },
+            {
+              id: 10,
+              name: 'test skill 2',
+              functions: [
                 {
                   funcId: 7,
                   funcType: 'addStateShort',
@@ -878,7 +884,7 @@ describe('immutable publish pipeline', () => {
       value: 999,
     });
     expect(snapshot.mysticCodes[0]?.skills[0]?.effects[3]).toMatchObject({
-      execution: [{ kind: 'nonDamage' }],
+      execution: [{ kind: 'stateMutation' }],
       atlasEvidence: {
         parameterSemantics: {
           condition: ['FuncCheckTargetIndividualityTargetType'],
@@ -888,11 +894,11 @@ describe('immutable publish pipeline', () => {
         },
       },
     });
-    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[4]).toMatchObject({
+    expect(snapshot.mysticCodes[0]?.skills[1]?.effects[0]).toMatchObject({
       triggerScope: 'commandCardAttack',
       atlasEvidence: { parameterSemantics: { lifecycle: ['Value2'], unresolved: [] } },
     });
-    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[5]).toMatchObject({
+    expect(snapshot.mysticCodes[0]?.skills[1]?.effects[1]).toMatchObject({
       operationTrigger: { kind: 'functionPosition', position: 2 },
       atlasEvidence: {
         parameterSemantics: {
@@ -902,7 +908,7 @@ describe('immutable publish pipeline', () => {
         },
       },
     });
-    expect(snapshot.mysticCodes[0]?.skills[0]?.effects[6]).toMatchObject({
+    expect(snapshot.mysticCodes[0]?.skills[1]?.effects[2]).toMatchObject({
       triggerScope: 'commandCard',
       atlasEvidence: {
         parameterSemantics: {

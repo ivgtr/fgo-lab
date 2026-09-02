@@ -313,7 +313,7 @@ describe('production probabilistic NP-before damage effects', () => {
   it('updates Sitonai proc metadata by skill level without changing the decision identity', () => {
     const slot = master.servants
       .find(({ id }) => id === '1000800')!
-      .skills.find(({ id }) => id === '532551')!.slot as 1 | 2 | 3;
+      .skills.find(({ id }) => id === '532551')!.slot;
     const records = [1, 9, 10].map((skillLevel) => {
       const defaultScenario = scenarioFor('1000800');
       const skillCommand = defaultScenario.preNoblePhantasmPlan.find(

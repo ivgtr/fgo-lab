@@ -7,7 +7,7 @@ import type {
   OrderedScenarioExecution,
   PreparedOrderedScenario,
   ResolvedCanonicalInputSet,
-  DamageContributionProjection,
+  ContributionApplicationPolicy,
 } from './executionTypes';
 import { assembleAmbiguousTargetResult, assembleEquivalentTargetResult } from './scenarioResult';
 
@@ -15,7 +15,10 @@ export type {
   OrderedScenarioExecution,
   PreparedOrderedScenario,
   ResolvedCanonicalInputSet,
-  DamageContributionProjection,
+  ContributionApplicationPolicy,
+  ContributionPolicyDecision,
+  EffectiveContribution,
+  EffectiveContributionSet,
 } from './executionTypes';
 export { compileExecutionPlan as prepareOrderedScenario } from './executionPlan';
 export { executeOrderedScenarioCandidates } from './candidateExecution';
@@ -23,15 +26,11 @@ export { executeOrderedScenarioCandidates } from './candidateExecution';
 export function executeOrderedScenario(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
-  contributionProjection?: DamageContributionProjection,
+  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): OrderedScenarioExecution {
-  const executions = executeOrderedScenarioCandidates(
-    prepared,
-    resolvedInputs,
-    contributionProjection,
-  );
+  const executions = executeOrderedScenarioCandidates(prepared, resolvedInputs, contributionPolicy);
   if (executions.length === 0)
-    return executeOrderedScenarioCandidate(prepared, resolvedInputs, null, contributionProjection);
+    return executeOrderedScenarioCandidate(prepared, resolvedInputs, null, contributionPolicy);
   const comparison = compareCandidateResults(executions);
   return comparison.kind === 'equivalent'
     ? assembleEquivalentTargetResult(prepared, comparison.execution)

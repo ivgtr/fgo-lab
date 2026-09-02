@@ -54,9 +54,14 @@ export function assembleInvalidActivationResult({
     state,
     operations: [],
     projections,
+    retainedProjections: prepared.retainedProjections,
     precision: 'unsupported',
     issues,
     requiredInputs: [],
     inputDefinitions: [...prepared.inputDefinitions],
+    effectiveContributions: {
+      contributions: [],
+      effectivePresentationGroupIds: new Set(),
+    },
   };
 }

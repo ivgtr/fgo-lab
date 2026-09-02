@@ -28,10 +28,9 @@ const calculatorRequest = createCalculatorPortableRequest(
 const rankingRequest = portableCalculationRequestSchema.parse({
   ...calculatorRequest,
   executionIntent: {
-    kind: 'resolved' as const,
-    origin: 'ranking' as const,
+    kind: 'ranking' as const,
     initialNpGauge: 20_000,
-    contribution: 'excludeVoluntarySkillModifiers' as const,
+    policy: { selfBuffs: 'excluded' as const, conditionalEffects: 'satisfied' as const },
   },
 });
 const historicalResult: CalculationResult = {
@@ -70,7 +69,8 @@ describe('calculation context recovery presentation', () => {
     render(<CalculationContextNotice state="current" request={rankingRequest} onReset={onReset} />);
     expect(screen.getByText('ランキングから引き継いだ計算条件')).toBeTruthy();
     expect(screen.getByText(/開始NP 200%/)).toBeTruthy();
-    expect(screen.getByText(/任意スキル補正を除外/)).toBeTruthy();
+    expect(screen.getByText(/自己強化: 除外/)).toBeTruthy();
+    expect(screen.getByText(/条件効果: 成立込み/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '通常の計算条件へ戻す' }));
     expect(onReset).toHaveBeenCalledOnce();
   });

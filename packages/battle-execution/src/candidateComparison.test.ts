@@ -7,6 +7,7 @@ function execution(
   outcome: 'applied' | 'notApplied' = 'applied',
 ): OrderedScenarioExecution {
   return {
+    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
     input: {
       attackerId: 'attacker',
       attackerLevel: 90,
@@ -48,6 +49,7 @@ function execution(
         decision: { state: 'none' },
       } as OrderedScenarioExecution['projections'][number],
     ],
+    retainedProjections: [],
     precision: 'exact',
     issues: [],
     requiredInputs: [],

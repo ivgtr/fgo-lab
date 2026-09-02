@@ -5,8 +5,9 @@ import {
   resolveAttackerFormExecution,
   type ActivationRequirementOwner,
   type AppliedPreparationAction,
-  type DamageContributionProjection,
+  type ContributionApplicationPolicy,
   type EffectProjection,
+  type EffectiveContributionSet,
   type OrderedScenarioExecution,
   type PreparedOrderedScenario,
   type PreparationFailureCode,
@@ -59,6 +60,7 @@ interface ResolvedCalculationInputCommon {
   warnings: string[];
   trace: { step: string; detail: string }[];
   effects: EffectProjection[];
+  effectiveContributions: EffectiveContributionSet;
   requiredInputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
   inputDefinitions: CanonicalInputDefinition[];
   activationRequirements: ActivationRequirementOwner[];
@@ -85,6 +87,7 @@ interface CalculationExecutionCommon {
   terminalActorFormId: ActorFormId | null;
   scenario: CalculationScenario;
   effects: EffectProjection[];
+  effectiveContributions: EffectiveContributionSet;
   effectWarnings: string[];
   result: CalculationResult;
   inputDefinitions: CanonicalInputDefinition[];
@@ -412,6 +415,7 @@ function resolvePreparedOrderedScenario(
   execution: OrderedScenarioExecution,
   terminalActorFormId: ActorFormId,
 ): Extract<ResolvedCalculationInput, { status: 'executable' }> {
+  const projections = [...execution.projections, ...execution.retainedProjections];
   const damageState = execution.operations.find(
     ({ operation, outcome }) => operation.kind === 'executeNpDamage' && outcome === 'applied',
   )?.state;
@@ -479,7 +483,7 @@ function resolvePreparedOrderedScenario(
       prepared.preparationRequiredInputs.length > 0 ? 'inputRequired' : execution.precision,
     evidenceKeys: [
       'master:normalized-v7',
-      ...execution.projections.flatMap((projection) =>
+      ...projections.flatMap((projection) =>
         projection.outcome === 'applied' &&
         projection.modifier &&
         projection.modifier !== 'npSpecial'
@@ -488,7 +492,8 @@ function resolvePreparedOrderedScenario(
       ),
     ],
     warnings,
-    effects: [...execution.projections],
+    effects: projections,
+    effectiveContributions: execution.effectiveContributions,
     requiredInputs: [
       ...new Map(
         [...prepared.preparationRequiredInputs, ...execution.requiredInputs].map((definition) => [
@@ -530,6 +535,7 @@ function manualResolvedInput(
     warnings: [],
     trace: [{ step: 'input-mode', detail: 'manual_final_values' }],
     effects: [],
+    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
     requiredInputs: [],
     inputDefinitions: [],
     activationRequirements: [],
@@ -559,6 +565,7 @@ function rejectedPreparationResolvedInput(
       },
     ],
     effects: [],
+    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
     requiredInputs: [...outcome.requiredInputs],
     inputDefinitions: [...outcome.requiredInputs],
     activationRequirements: [],
@@ -696,6 +703,7 @@ function evaluateResolvedCalculation(
     terminalActorFormId: resolved.terminalActorFormId,
     scenario,
     effects: resolved.effects,
+    effectiveContributions: resolved.effectiveContributions,
     effectWarnings: resolved.warnings,
     result,
     inputDefinitions: resolved.inputDefinitions,
@@ -721,7 +729,7 @@ function evaluateResolvedCalculation(
 
 interface PreparedCalculationScenarioCommon {
   scenario: CalculationScenario;
-  contributionProjection: DamageContributionProjection | null;
+  contributionPolicy: ContributionApplicationPolicy;
   preparation: CalculationPreparationOptions;
 }
 
@@ -784,13 +792,18 @@ export function prepareCalculationScenario(
   master: MasterDataSnapshot,
   preparation: CalculationPreparationOptions = {},
 ): PreparedCalculationScenario {
-  return prepareCalculationScenarioWithContributionProjection(scenario, master, null, preparation);
+  return prepareCalculationScenarioWithPolicy(
+    scenario,
+    master,
+    { kind: 'calculator' },
+    preparation,
+  );
 }
 
-export function prepareCalculationScenarioWithContributionProjection(
+export function prepareCalculationScenarioWithPolicy(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
-  contributionProjection: DamageContributionProjection | null,
+  contributionPolicy: ContributionApplicationPolicy,
   preparation: CalculationPreparationOptions = {},
 ): PreparedCalculationScenario {
   if (scenario.mode === 'manual')
@@ -801,7 +814,7 @@ export function prepareCalculationScenarioWithContributionProjection(
       resolved: manualResolvedInput(scenario),
       orderedScenario: null,
       canonicalInputs: null,
-      contributionProjection,
+      contributionPolicy,
       preparation,
     };
   const base = resolveScenarioPreparationOutcome(scenario, master, preparation);
@@ -812,7 +825,7 @@ export function prepareCalculationScenarioWithContributionProjection(
       resolved: rejectedPreparationResolvedInput(base),
       orderedScenario: null,
       canonicalInputs: null,
-      contributionProjection,
+      contributionPolicy,
       preparation,
     };
   }
@@ -835,12 +848,12 @@ export function prepareCalculationScenarioWithContributionProjection(
       scenario,
       orderedScenario,
       canonicalInputs,
-      executeOrderedScenario(orderedScenario, canonicalInputs, contributionProjection ?? undefined),
+      executeOrderedScenario(orderedScenario, canonicalInputs, contributionPolicy),
       base.formExecution.state.currentFormId,
     ),
     orderedScenario,
     canonicalInputs,
-    contributionProjection,
+    contributionPolicy,
     preparation,
   };
 }
@@ -853,10 +866,10 @@ export function rematerializePreparedCalculationInputs(
   if (prepared.scenario.mode === 'manual' || scenario.mode === 'manual')
     throw new TypeError('prepared_resolved_scenario_required');
   if (prepared.status === 'rejected')
-    return prepareCalculationScenarioWithContributionProjection(
+    return prepareCalculationScenarioWithPolicy(
       scenario,
       master,
-      prepared.contributionProjection,
+      prepared.contributionPolicy,
       prepared.preparation,
     );
   if (!prepared.orderedScenario) throw new TypeError('prepared_ordered_scenario_required');
@@ -874,11 +887,7 @@ export function rematerializePreparedCalculationInputs(
       previousMissing.has(key) !== nextMissing.has(key),
   );
   if (preparationInputChanged)
-    return prepareCalculationScenarioWithContributionProjection(
-      scenario,
-      master,
-      prepared.contributionProjection,
-    );
+    return prepareCalculationScenarioWithPolicy(scenario, master, prepared.contributionPolicy);
   const orderedScenario: PreparedOrderedScenario = {
     ...prepared.orderedScenario,
     scenario,
@@ -921,51 +930,17 @@ export function rematerializePreparedCalculationInputs(
       scenario,
       orderedScenario,
       canonicalInputs,
-      executeOrderedScenario(
-        orderedScenario,
-        canonicalInputs,
-        prepared.contributionProjection ?? undefined,
-      ),
+      executeOrderedScenario(orderedScenario, canonicalInputs, prepared.contributionPolicy),
       prepared.resolved.terminalActorFormId!,
     ),
-    contributionProjection: prepared.contributionProjection,
+    contributionPolicy: prepared.contributionPolicy,
     preparation: prepared.preparation,
   };
 }
 
-function sameContributionProjection(
-  left: DamageContributionProjection | null,
-  right: DamageContributionProjection,
-): boolean {
-  if (
-    !left ||
-    left.includedOperationIds.size !== right.includedOperationIds.size ||
-    left.excludedOperationIds.size !== right.excludedOperationIds.size ||
-    left.excludedStateTraitContributions.attackerState.size !==
-      right.excludedStateTraitContributions.attackerState.size ||
-    left.excludedStateTraitContributions.targetState.size !==
-      right.excludedStateTraitContributions.targetState.size
-  )
-    return false;
-  return (
-    [...left.includedOperationIds].every((operationId) =>
-      right.includedOperationIds.has(operationId),
-    ) &&
-    [...left.excludedOperationIds].every((operationId) =>
-      right.excludedOperationIds.has(operationId),
-    ) &&
-    [...left.excludedStateTraitContributions.attackerState].every((trait) =>
-      right.excludedStateTraitContributions.attackerState.has(trait),
-    ) &&
-    [...left.excludedStateTraitContributions.targetState].every((trait) =>
-      right.excludedStateTraitContributions.targetState.has(trait),
-    )
-  );
-}
-
-export function projectPreparedCalculationContribution(
+export function reapplyPreparedCalculationPolicy(
   prepared: PreparedCalculationScenario,
-  projection: DamageContributionProjection,
+  policy: ContributionApplicationPolicy,
 ): PreparedCalculationScenario {
   if (
     prepared.status === 'rejected' ||
@@ -974,17 +949,17 @@ export function projectPreparedCalculationContribution(
     !prepared.canonicalInputs
   )
     return prepared;
-  if (sameContributionProjection(prepared.contributionProjection, projection)) return prepared;
+  if (JSON.stringify(prepared.contributionPolicy) === JSON.stringify(policy)) return prepared;
   return {
     ...prepared,
     resolved: resolvePreparedOrderedScenario(
       prepared.scenario,
       prepared.orderedScenario,
       prepared.canonicalInputs,
-      executeOrderedScenario(prepared.orderedScenario, prepared.canonicalInputs, projection),
+      executeOrderedScenario(prepared.orderedScenario, prepared.canonicalInputs, policy),
       prepared.resolved.terminalActorFormId!,
     ),
-    contributionProjection: projection,
+    contributionPolicy: policy,
   };
 }
 
@@ -1022,17 +997,17 @@ export function calculateScenario(
   );
 }
 
-export function calculateScenarioWithContributionProjection(
+export function calculateScenarioWithPolicy(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
   versions: VersionContext,
-  contributionProjection: DamageContributionProjection,
+  contributionPolicy: ContributionApplicationPolicy,
   preparation: CalculationPreparationOptions = {},
 ): CalculationExecution {
   return evaluatePreparedCalculationScenario(
-    projectPreparedCalculationContribution(
+    reapplyPreparedCalculationPolicy(
       prepareCalculationScenario(scenario, master, preparation),
-      contributionProjection,
+      contributionPolicy,
     ),
     versions,
   );

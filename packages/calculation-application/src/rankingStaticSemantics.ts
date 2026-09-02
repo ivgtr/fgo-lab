@@ -158,7 +158,9 @@ export function compileStaticRankingSemantics(
   for (const source of sources) {
     const compiled = compileEffectCached(source, operations.length, servant.actorFormGraph.forms);
     operations.push(...compiled.operations);
-    unsupported.push(...compiled.unsupported);
+    unsupported.push(
+      ...compiled.projections.filter(({ executionSupport }) => executionSupport === 'unsupported'),
+    );
   }
   const attackVariant = findNoblePhantasmVariant(
     servant,
@@ -184,7 +186,12 @@ export function compileStaticRankingSemantics(
     sources,
     operations: plannedOperations,
     unsupported,
-    conditions: [...plannedOperations.map(({ condition }) => condition), ...damageConditions],
+    conditions: [
+      ...plannedOperations.flatMap((operation) =>
+        operation.kind === 'preserveSemanticEffect' ? [] : [operation.condition],
+      ),
+      ...damageConditions,
+    ],
     inputDefinitions: [...definitions.values()].sort((left, right) =>
       left.key.localeCompare(right.key),
     ),

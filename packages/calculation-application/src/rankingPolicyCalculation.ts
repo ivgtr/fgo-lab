@@ -3,10 +3,7 @@ import type { VersionContext } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from './attackProfile';
 import type { calculateDamageResolution } from './damageResolution';
 import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
-import {
-  calculateRankingCandidateSet,
-  type RankingCandidateCalculation,
-} from './rankingPolicyCandidates';
+import { calculateRankingCandidateSet } from './rankingPolicyCandidates';
 import type {
   RankingPolicyCalculation,
   RankingPolicyConditions,
@@ -19,46 +16,7 @@ import {
   createRankingRow,
   includedRankingServants,
 } from './rankingRows';
-
-function unresolvedProfileResult(
-  candidateSet: RankingCandidateCalculation,
-  attackProfile: AttackProfile,
-): Exclude<RankingProfileResult, { status: 'calculated' }> {
-  const profileKey = attackProfileKey(attackProfile);
-  const space = candidateSet.plan.candidateSpaces.find(
-    (candidate) => attackProfileKey(candidate.attackProfile) === profileKey,
-  );
-  if (space?.status === 'invalid')
-    return {
-      status: 'invalid',
-      attackProfile,
-      issues: [],
-      reason: space.issue.kind,
-      candidateSpaceIssue: space.issue,
-    };
-  if (!space || space.programs.length === 0)
-    return { status: 'unavailableUnderPolicy', attackProfile, reason: 'attackProfileNotReachable' };
-  const matchingIndexes = candidateSet.plan.attackProfiles.flatMap((candidate, index) =>
-    attackProfileKey(candidate) === profileKey ? [index] : [],
-  );
-  const matchingExecutions = matchingIndexes.map((index) => candidateSet.executions[index]!);
-  const inputRequired = matchingExecutions.find(({ result }) => result.status === 'inputRequired');
-  if (inputRequired?.result.status === 'inputRequired')
-    return {
-      status: 'invalid',
-      attackProfile,
-      issues: inputRequired.result.issues,
-      reason: `inputRequired:${inputRequired.result.requiredInputs.map(({ key }) => key).join(',')}`,
-    };
-  const insufficientGauge = matchingIndexes.some(
-    (index) =>
-      candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ===
-      'insufficientNpGauge',
-  );
-  if (insufficientGauge)
-    return { status: 'unavailableUnderPolicy', attackProfile, reason: 'insufficientNpGauge' };
-  return { status: 'unavailableUnderPolicy', attackProfile, reason: 'noSatisfiableCandidate' };
-}
+import { unresolvedProfileResult } from './rankingProfileOutcome';
 
 export function calculateRankingPolicyDetail(
   servant: ServantMaster,

@@ -152,6 +152,7 @@ export function createOperationProjection(
     'attackerHpPermille',
   );
   const hidden =
+    operation.kind === 'preserveSemanticEffect' ||
     operation.kind === 'addTrait' ||
     operation.kind === 'removeTrait' ||
     operation.kind === 'suppressInitialTrait' ||

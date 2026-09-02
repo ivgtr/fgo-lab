@@ -10,7 +10,7 @@ import {
 } from './rankingContracts';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import { calculateRankingPolicyMatrix } from './rankingPolicyMatrix';
-import { calculateScenarioWithContributionProjection } from './scenario';
+import { calculateScenarioWithPolicy } from './scenario';
 import { selectRankingCandidateIndexes } from './rankingCandidateSelection';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { attackProfileKey } from './attackProfile';
@@ -107,11 +107,11 @@ describe('ranking comparison policy', () => {
           expect(detail.candidateEvidence.policyKey).toBe(
             rankingPolicyKey(selfBuffs, conditionalEffects),
           );
-          const recalculated = calculateScenarioWithContributionProjection(
+          const recalculated = calculateScenarioWithPolicy(
             detail.scenario,
             master,
             versions,
-            detail.contributionProjection,
+            detail.contributionPolicy,
             { initialNpGauge: detail.candidateEvidence.startNpGauge },
           );
           expect(recalculated.result).toEqual(detail.result);

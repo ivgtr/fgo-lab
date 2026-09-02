@@ -95,7 +95,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
+  await expect(page.getByRole('status')).toContainText('432件表示 / 432件を計算・順位外 1件', {
     timeout: 30_000,
   });
   const first = page

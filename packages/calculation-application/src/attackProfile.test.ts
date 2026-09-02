@@ -253,7 +253,7 @@ describe('ActorFormProfile canonical equivalence', () => {
     const { servant, original, duplicate, duplicateFormId } = duplicatedFormFixture();
     const skillVariant = {
       id: 'profile-test-skill',
-      slot: 1,
+      slot: 1 as const,
       priority: 0,
       name: 'profile test skill',
       detail: '',

@@ -22,7 +22,7 @@ import { finalizeHistory, portableCalculationFingerprint } from '@fgo-lab/worksp
 import type {
   CalculationResult,
   CalculationScenario,
-  CalculationHistoryEntry,
+  CurrentCalculationHistoryEntry,
   CraftEssenceCopy,
   PortableCalculationRequest,
   ServantBuild,
@@ -395,7 +395,7 @@ export function App() {
   async function saveScenarioDraft(scenario: CalculationScenario) {
     await savePortableDraft(replacePortableCalculationScenario(currentRequest, scenario));
   }
-  async function copyHistoryToDraft(entry: CalculationHistoryEntry) {
+  async function copyHistoryToDraft(entry: CurrentCalculationHistoryEntry) {
     const sessionId = crypto.randomUUID();
     setCalculationSessionId(sessionId);
     setCalculation({ request: entry.request, storedResult: entry.result, source: 'history' });
@@ -543,7 +543,14 @@ export function App() {
             request={currentRequest}
             reason={portableOutcome.reason}
             onReset={async () => {
-              await savePortableDraft(resetPortableCalculationRequest(currentRequest));
+              await savePortableDraft(
+                resetPortableCalculationRequest(
+                  currentRequest,
+                  currentMaster,
+                  selectedBuild,
+                  selectedAttacker,
+                ),
+              );
             }}
           />
         )}
@@ -554,7 +561,14 @@ export function App() {
               state="unsupported"
               request={currentRequest}
               onReset={async () => {
-                await savePortableDraft(resetPortableCalculationRequest(currentRequest));
+                await savePortableDraft(
+                  resetPortableCalculationRequest(
+                    currentRequest,
+                    currentMaster,
+                    selectedBuild,
+                    selectedAttacker,
+                  ),
+                );
               }}
             />
           )}
@@ -646,7 +660,14 @@ export function App() {
               onFinalize={finalizeCurrentCalculation}
               onHistorySelect={copyHistoryToDraft}
               onResetPortableRequest={async () => {
-                await savePortableDraft(resetPortableCalculationRequest(currentRequest));
+                await savePortableDraft(
+                  resetPortableCalculationRequest(
+                    currentRequest,
+                    currentMaster,
+                    selectedBuild,
+                    selectedAttacker,
+                  ),
+                );
               }}
             />
           )}{' '}

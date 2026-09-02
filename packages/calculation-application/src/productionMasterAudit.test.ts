@@ -107,14 +107,14 @@ describe('production preparation semantics audit', () => {
 
     expect(inventory).toEqual({
       servants: 422,
-      generated: 6_376,
-      deduplicated: 3_957,
-      terminal: 3_446,
-      exactDuplicates: 2_419,
-      rejectedActions: 70,
+      generated: 6_360,
+      deduplicated: 3_949,
+      terminal: 3_438,
+      exactDuplicates: 2_411,
+      rejectedActions: 78,
       rejectedActionCounts: {
         insufficientNpGauge: 6,
-        unsupportedResourceMutation: 64,
+        unsupportedResourceMutation: 72,
       },
       maximumPreparationActions: 4,
       maximumSemanticStates: 56,
@@ -129,7 +129,7 @@ describe('production preparation semantics audit', () => {
       maximumInitialForms: 7,
       maximumTransitionEdges: 2,
     });
-    expect(terminalKeys).toHaveLength(3_446);
+    expect(terminalKeys).toHaveLength(3_438);
   }, 30_000);
 
   it('keeps applied choice and transition evidence local to its source action', async () => {

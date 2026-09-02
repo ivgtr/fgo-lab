@@ -44,7 +44,7 @@ export class IndexedDbProfileRepository implements ProfileRepository {
     return {
       state: 'ready' as const,
       collection: stored.collection,
-      discardedCalculationSnapshots: stored.upgraded,
+      discardedCalculationSnapshots: stored.discardedCalculationSnapshots,
     };
   }
   async replace(collection: ProfileCollection) {

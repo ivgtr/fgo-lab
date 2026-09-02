@@ -2,16 +2,21 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import manifest from '../../test-fixtures/master/manifest.json';
 import {
+  activeServantSkillSchema,
+  craftEssenceMasterSchema,
   deriveCraftEssenceAtk,
   masterEffectSchema,
   masterManifestSchema,
   masterSnapshotSchema,
+  mysticCodeSkillSchema,
   naturalServantLevel,
+  noblePhantasmVariantSchema,
+  passiveSkillSchema,
   validateMasterSnapshot,
 } from './index';
 
 const parsedFixture = masterSnapshotSchema.parse(fixture);
-const nonDamageEffect = {
+const inertEffect = {
   id: 'test-effect',
   occurrenceId: 'test-effect:0',
   label: 'test',
@@ -27,8 +32,7 @@ const nonDamageEffect = {
   stateIdentity: null,
   inputDefinitions: [],
   requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
-  resourceTransition: null,
-  execution: [{ kind: 'nonDamage' as const }],
+  execution: [{ kind: 'boundedPhaseIrrelevant' as const, proof: 'noBattleStateChange' as const }],
   atlasEvidence: {
     functionType: 'test',
     target: 'self',
@@ -75,14 +79,8 @@ describe('master validation', () => {
     ).toBe(false);
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
-        resourceTransition: {
-          kind: 'fixed',
-          recipient: 'sourceActor',
-          direction: 'gain',
-          amounts: [[1_000], [], [], [], []],
-          overflow: 'clampToCapacity',
-        },
+        ...inertEffect,
+        execution: [{ kind: 'resourceMutation', resource: 'npGauge', direction: 'gain' }],
       }).success,
     ).toBe(false);
   });
@@ -98,7 +96,7 @@ describe('master validation', () => {
     };
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
+        ...inertEffect,
         execution: [
           {
             ...valued,
@@ -113,10 +111,10 @@ describe('master validation', () => {
     ).toBe(false);
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
+        ...inertEffect,
         execution: [
           {
-            kind: 'unresolved',
+            kind: 'unsupported',
             route: {
               target: 'unresolved',
               contributionScope: 'personal',
@@ -130,7 +128,7 @@ describe('master validation', () => {
     ).toBe(true);
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
+        ...inertEffect,
         quantityConditions: [],
       }).success,
     ).toBe(false);
@@ -166,20 +164,106 @@ describe('master validation', () => {
 
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
+        ...inertEffect,
         execution: [{ ...operationWithoutCanonicalRoute, ...legacyRouteFields }],
       }).success,
     ).toBe(false);
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
+        ...inertEffect,
         execution: [canonicalOperation],
       }).success,
     ).toBe(true);
     expect(
       masterEffectSchema.safeParse({
-        ...nonDamageEffect,
+        ...inertEffect,
         execution: [{ ...canonicalOperation, ...legacyRouteFields }],
+      }).success,
+    ).toBe(false);
+  });
+  it('fails closed at each source-specific finite schema boundary', () => {
+    const sourceFields = {
+      id: 'source',
+      priority: 0,
+      name: 'source',
+      detail: '',
+      imageKey: null,
+      resourceRequirement: null,
+    };
+    const choiceEffect = (group: string, candidate: string, index: number) => ({
+      ...inertEffect,
+      id: `choice-${group}-${candidate}`,
+      occurrenceId: `choice-${group}-${candidate}:${index}`,
+      selection: {
+        kind: 'playerChoice' as const,
+        group: { kind: 'exclusive' as const, key: group, candidate },
+      },
+    });
+    expect(
+      activeServantSkillSchema.safeParse({ ...sourceFields, slot: 4, effects: [] }).success,
+    ).toBe(false);
+    expect(
+      activeServantSkillSchema.safeParse({
+        ...sourceFields,
+        slot: 1,
+        effects: [choiceEffect('a', '1', 0), choiceEffect('b', '1', 1)],
+      }).success,
+    ).toBe(false);
+    expect(
+      activeServantSkillSchema.safeParse({
+        ...sourceFields,
+        slot: 1,
+        effects: Array.from({ length: 6 }, (_, index) => choiceEffect('a', String(index), index)),
+      }).success,
+    ).toBe(false);
+    expect(
+      activeServantSkillSchema.safeParse({
+        ...sourceFields,
+        slot: 1,
+        effects: Array.from({ length: 25 }, (_, index) => ({
+          ...inertEffect,
+          occurrenceId: `active:${index}`,
+        })),
+      }).success,
+    ).toBe(false);
+    expect(passiveSkillSchema.safeParse({ ...sourceFields, slot: 1, effects: [] }).success).toBe(
+      false,
+    );
+    expect(
+      passiveSkillSchema.safeParse({
+        ...sourceFields,
+        effects: [choiceEffect('a', '1', 0)],
+      }).success,
+    ).toBe(false);
+    expect(
+      mysticCodeSkillSchema.safeParse({
+        ...sourceFields,
+        slot: 1,
+        effects: Array.from({ length: 5 }, (_, index) => ({
+          ...inertEffect,
+          occurrenceId: `mystic:${index}`,
+        })),
+      }).success,
+    ).toBe(false);
+    expect(
+      craftEssenceMasterSchema.safeParse({
+        id: 'ce',
+        name: 'ce',
+        maxLevelByLimitBreak: [1, 1, 1, 1, 1],
+        atkMin: 0,
+        atkMax: 0,
+        imageKey: null,
+        effects: [choiceEffect('a', '1', 0)],
+      }).success,
+    ).toBe(false);
+    const attack = parsedFixture.servants[0]!.noblePhantasmVariantGroups[0]!.variants[0]!;
+    expect(
+      noblePhantasmVariantSchema.safeParse({
+        ...attack,
+        effects: Array.from({ length: 4 }, (_, index) => ({
+          ...choiceEffect('a', String(index), index),
+          timing: 'beforeDamage' as const,
+        })),
       }).success,
     ).toBe(false);
   });
@@ -368,8 +452,10 @@ describe('master validation', () => {
       detail: '',
       imageKey: null,
       resourceRequirement: null,
-      effects: [nonDamageEffect],
+      effects: [inertEffect],
     };
+    const { slot, ...passive } = skill;
+    expect(slot).toBe(1);
     const invalidSnapshots = [
       {
         ...fixture,
@@ -377,7 +463,7 @@ describe('master validation', () => {
       },
       {
         ...fixture,
-        servants: [{ ...fixture.servants[0], passives: [skill] }],
+        servants: [{ ...fixture.servants[0], passives: [passive] }],
       },
       {
         ...fixture,
@@ -389,7 +475,7 @@ describe('master validation', () => {
                 ...group,
                 variants: group.variants.map((variant) => ({
                   ...variant,
-                  effects: [{ ...nonDamageEffect, timing: 'beforeDamage' as const }],
+                  effects: [{ ...inertEffect, timing: 'beforeDamage' as const }],
                 })),
               }),
             ),
@@ -423,7 +509,7 @@ describe('master validation', () => {
           imageKey: null,
           effects: [
             {
-              ...nonDamageEffect,
+              ...inertEffect,
               availability: 'allLimitBreakStates',
               execution: [
                 {
@@ -465,7 +551,7 @@ describe('master validation', () => {
       resourceRequirement: null,
       effects: [
         {
-          ...nonDamageEffect,
+          ...inertEffect,
           availability: 'allLimitBreakStates' as const,
           gameActivation: 'skillUse' as const,
           proc: {

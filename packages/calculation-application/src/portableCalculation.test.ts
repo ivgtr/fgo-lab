@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
-import { APP_VERSION, ENGINE_VERSION, portableCalculationRequestSchema } from '@fgo-lab/schema';
+import {
+  APP_VERSION,
+  ENGINE_VERSION,
+  SCHEMA_VERSION,
+  portableCalculationRequestSchema,
+} from '@fgo-lab/schema';
 import {
   attemptPortableCalculationVersionUpgrade,
   createCalculatorPortableRequest,
@@ -24,7 +29,7 @@ const profile: RankingProfileInput = {
   supportTemplates: [],
 };
 const versions = {
-  schemaVersion: 33 as const,
+  schemaVersion: SCHEMA_VERSION,
   masterDataVersion: master.version,
   engineVersion: ENGINE_VERSION,
   appVersion: APP_VERSION,
@@ -37,10 +42,8 @@ describe('portable calculation application owner', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
     const request = createCalculatorPortableRequest(scenario, versionContext);
     expect(request.executionIntent).toEqual({
-      kind: 'resolved',
-      origin: 'calculator',
+      kind: 'calculator',
       initialNpGauge: 10_000,
-      contribution: 'standard',
     });
     expect(executePortableCalculation(request, master).status).toBe('executed');
   });
@@ -62,9 +65,9 @@ describe('portable calculation application owner', () => {
           if (outcome.status !== 'executed') continue;
           expect(outcome.execution.result).toEqual(candidate.detail.result);
           expect(request.executionIntent).toMatchObject({
-            origin: 'ranking',
+            kind: 'ranking',
             initialNpGauge: candidate.detail.candidateEvidence.startNpGauge,
-            contribution: selfBuffs === 'excluded' ? 'excludeVoluntarySkillModifiers' : 'standard',
+            policy: { selfBuffs, conditionalEffects },
           });
         }
       }
@@ -77,10 +80,9 @@ describe('portable calculation application owner', () => {
     const rankingRequest = portableCalculationRequestSchema.parse({
       ...request,
       executionIntent: {
-        kind: 'resolved' as const,
-        origin: 'ranking' as const,
+        kind: 'ranking' as const,
         initialNpGauge: 20_000,
-        contribution: 'standard' as const,
+        policy: { selfBuffs: 'included' as const, conditionalEffects: 'baseline' as const },
       },
     });
     expect(executePortableCalculation(rankingRequest, master)).toMatchObject({
@@ -123,13 +125,36 @@ describe('portable calculation application owner', () => {
     });
     const upgraded = upgradePortableCalculationRequestVersion(historicalRequest, versionContext);
     expect(upgraded.executionIntent).toEqual(request.executionIntent);
-    const reset = resetPortableCalculationRequest(request);
+    const contaminated = portableCalculationRequestSchema.parse({
+      ...request,
+      scenario: {
+        ...request.scenario,
+        attackerHpPermille: 123,
+        worldFactAssertions: [
+          {
+            decisionKey: 'ranking:hp',
+            fact: { kind: 'quantity', quantity: 'attackerHpPermille', value: 123 },
+          },
+        ],
+      },
+    });
+    const reset = resetPortableCalculationRequest(
+      contaminated,
+      master,
+      undefined,
+      master.servants[0]!,
+    );
     expect(reset.versionContext).toEqual(request.versionContext);
     expect(reset.executionIntent).toEqual({
-      kind: 'resolved',
-      origin: 'calculator',
+      kind: 'calculator',
       initialNpGauge: 10_000,
-      contribution: 'standard',
+    });
+    expect(reset.scenario).toMatchObject({
+      attackerHpPermille: 1_000,
+      canonicalInputValues: {},
+      activationFacts: [],
+      worldFactAssertions: [],
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
     });
   });
 
@@ -196,10 +221,9 @@ describe('portable calculation application owner', () => {
       ...currentRequest,
       versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
       executionIntent: {
-        kind: 'resolved',
-        origin: 'ranking',
+        kind: 'ranking',
         initialNpGauge: 20_000,
-        contribution: 'standard',
+        policy: { selfBuffs: 'included', conditionalEffects: 'baseline' },
       },
     });
     const current = executePortableCalculation(currentRequest, master);

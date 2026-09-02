@@ -21,7 +21,6 @@ import {
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { CalculationScenario } from '@fgo-lab/schema';
 
-const MAX_SEMANTIC_STATES_PER_SERVANT = 512;
 const productionPlanCache = new WeakMap<
   ServantMaster,
   Map<string, PlannedPreNoblePhantasmCandidates>
@@ -60,7 +59,6 @@ function canonicalEffectKey(effect: PreNoblePhantasmState['activeEffects'][numbe
     selection: effect.effect.selection,
     requirement: effect.effect.requirement,
     proc: effect.effect.proc,
-    resourceTransition: effect.effect.resourceTransition,
     stochasticOutcome: effect.stochasticOutcome,
   });
 }
@@ -169,8 +167,6 @@ export function planPreNoblePhantasmCandidates(
       if (planKey(existing).localeCompare(planKey(item.commands)) <= 0) continue;
     }
     visited.set(stateKey, item.commands);
-    if (visited.size > MAX_SEMANTIC_STATES_PER_SERVANT)
-      throw new RangeError(`pre_noble_phantasm_state_limit:${servant.id}`);
     maximumPreparationActionCount = Math.max(maximumPreparationActionCount, item.commands.length);
     const attack = reducePreNoblePhantasmAction(
       servant,

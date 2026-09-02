@@ -18,7 +18,6 @@ import type {
 } from './atlasContract';
 import { canonicalTargetPredicate } from './targetTaxonomy';
 import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
-import { normalizeNpGaugeTransition } from './npResourceNormalization';
 import {
   normalizeDamageReachableStateMutations,
   stateMutationTraitName,
@@ -579,7 +578,7 @@ function normalizeBuffHpConditions(
 }
 
 function modifierSeriesIdentity(effect: MasterEffect): string | null {
-  const operations = effect.execution.filter((operation) => operation.kind !== 'nonDamage');
+  const operations = effect.execution;
   if (operations.length !== 1) return null;
   const operation = operations[0]!;
   if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') return null;
@@ -1911,7 +1910,6 @@ export function normalizeFunctions(
           recipient: targetPolicy,
           expression: requirement,
         },
-        resourceTransition: normalizeNpGaugeTransition(fn, parameterSets),
         execution,
         atlasEvidence: {
           functionType: fn.funcType ?? 'unknown',

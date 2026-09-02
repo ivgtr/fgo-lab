@@ -5,7 +5,7 @@ import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import {
   calculateRankingPolicy,
   calculateRankingPolicyDetail,
-  calculateScenarioWithContributionProjection,
+  calculateScenarioWithPolicy,
   DEFAULT_RANKING_POLICY_CONDITIONS,
 } from '@fgo-lab/calculation-application';
 import { createRankingWorkerRuntime } from './rankingWorkerRuntime';
@@ -70,11 +70,11 @@ describe('ranking worker canonical runtime', () => {
     expect(detailResponse.kind).toBe('detail');
     if (detailResponse.kind !== 'detail') throw new TypeError('expected ranking detail');
     expect(detailResponse.detail.candidateEvidence.policyKey).toBe('included:baseline');
-    const recalculated = calculateScenarioWithContributionProjection(
+    const recalculated = calculateScenarioWithPolicy(
       detailResponse.detail.scenario,
       master,
       versions,
-      detailResponse.detail.contributionProjection,
+      detailResponse.detail.contributionPolicy,
       { initialNpGauge: detailResponse.detail.candidateEvidence.startNpGauge },
     );
     expect(recalculated.result).toEqual(detailResponse.detail.result);

@@ -439,7 +439,7 @@ function baseOperation(
 
 export interface CompiledOperations {
   operations: BattleOperation[];
-  unsupported: EffectProjection[];
+  projections: EffectProjection[];
 }
 
 const compiledEffectCache = new WeakMap<MasterEffect, Map<string, CompiledOperations>>();
@@ -488,7 +488,7 @@ export function compileEffectCached(
       ...operation,
       order: operation.order + startOrder,
     })),
-    unsupported: compiled.unsupported,
+    projections: compiled.projections,
   };
 }
 
@@ -498,16 +498,29 @@ export function compileEffect(
   actorForms: ServantMaster['actorFormGraph']['forms'] = [],
 ): CompiledOperations {
   const operations: BattleOperation[] = [];
-  const unsupported: EffectProjection[] = [];
-  if (source.effect.triggerScope !== null) return { operations, unsupported };
+  const projections: EffectProjection[] = [];
+  if (source.effect.triggerScope !== null) return { operations, projections };
   const condition = sourceCondition(source);
   const key = decisionKey(source);
   let order = startOrder;
   const applicable: EffectExecutionOperation[] = [];
+  const retained = source.effect.execution.filter(
+    (semantic) =>
+      semantic.kind === 'resourceMutation' ||
+      semantic.kind === 'stateMutation' ||
+      semantic.kind === 'boundedPhaseIrrelevant',
+  );
+  const retainedNeedsExecution =
+    source.effect.proc.kind !== 'guaranteed' || condition.kind !== 'always';
 
   for (const semantic of source.effect.execution) {
-    if (semantic.kind === 'nonDamage') continue;
-    if (semantic.kind === 'unresolved') {
+    if (
+      semantic.kind === 'resourceMutation' ||
+      semantic.kind === 'stateMutation' ||
+      semantic.kind === 'boundedPhaseIrrelevant'
+    )
+      continue;
+    if (semantic.kind === 'unsupported') {
       const recipient = operationRecipient(semantic, source.origin);
       if (semantic.damageRelevant && recipient) applicable.push(semantic);
       continue;
@@ -532,7 +545,7 @@ export function compileEffect(
           : eligibility.onMismatch) === 'unsupported'
     )
       applicable.push({
-        kind: 'unresolved',
+        kind: 'unsupported',
         route: semantic.route,
         reason: 'operationSemantics',
         damageRelevant: true,
@@ -540,10 +553,10 @@ export function compileEffect(
   }
 
   const projectable = applicable.filter((semantic) => semantic.kind !== 'contextMutation');
-  const primary = projectable.find((semantic) => semantic.kind !== 'unresolved');
+  const primary = projectable.find((semantic) => semantic.kind !== 'unsupported');
   const unresolved = applicable.some(
     (semantic) =>
-      semantic.kind === 'unresolved' ||
+      semantic.kind === 'unsupported' ||
       ('semanticSupport' in semantic && semantic.semanticSupport === 'unresolved'),
   );
   const valued =
@@ -560,7 +573,7 @@ export function compileEffect(
           : null;
 
   if (containsUnsupportedCondition(condition) && primary) {
-    unsupported.push(
+    projections.push(
       makeProjection(
         source,
         key,
@@ -572,10 +585,10 @@ export function compileEffect(
         condition,
       ),
     );
-    return { operations, unsupported };
+    return { operations, projections };
   }
   if (unresolved) {
-    unsupported.push(
+    projections.push(
       makeProjection(
         source,
         key,
@@ -587,7 +600,7 @@ export function compileEffect(
         condition,
       ),
     );
-    return { operations, unsupported };
+    return { operations, projections };
   }
   const missingValue = applicable.find(
     (semantic) =>
@@ -595,7 +608,7 @@ export function compileEffect(
       selectedValue(source, semantic) === undefined,
   );
   if (missingValue?.kind === 'damageModifier' || missingValue?.kind === 'modifierRateChange') {
-    unsupported.push(
+    projections.push(
       makeProjection(
         source,
         key,
@@ -607,14 +620,14 @@ export function compileEffect(
         condition,
       ),
     );
-    return { operations, unsupported };
+    return { operations, projections };
   }
-  if (applicable.length === 0) {
+  if (applicable.length === 0 && retained.length === 0) {
     if (canNormalizeDamageEffect(source.effect, source.origin))
-      unsupported.push(
+      projections.push(
         makeProjection(source, key, 'unsupported', 'unresolved', null, null, null, condition),
       );
-    return { operations, unsupported };
+    return { operations, projections };
   }
 
   const suffixCounts = new Map<string, number>();
@@ -623,6 +636,39 @@ export function compileEffect(
     suffixCounts.set(suffix, count + 1);
     return count === 0 ? suffix : `${suffix}:${String(count)}`;
   };
+  for (const semantic of retained) {
+    const suffix = uniqueSuffix(`evidence:${semantic.kind}`);
+    if (retainedNeedsExecution)
+      operations.push({
+        ...baseOperation(source, 'personal', order++, suffix),
+        kind: 'preserveSemanticEffect',
+        semanticKind: semantic.kind,
+      });
+    else {
+      const operationId = `${operationKey(source)}:${suffix}`;
+      projections.push({
+        ...makeProjection(
+          source,
+          key,
+          'notRelevant',
+          'stateMutationOnly',
+          null,
+          null,
+          null,
+          condition,
+        ),
+        projectionKey: operationId,
+        operationId,
+        executionSupport: 'supported',
+        outcome: 'notRelevant',
+        visibility: 'hidden',
+        controllability: 'automatic',
+        decision: { state: 'none' },
+        conditionDecision: 'none',
+        explanation: { code: 'stateMutationOnly', condition: null },
+      });
+    }
+  }
   for (const semantic of applicable) {
     const recipient = operationRecipient(semantic, source.origin);
     if (semantic.kind === 'contextMutation') {
@@ -744,7 +790,7 @@ export function compileEffect(
       });
     }
   }
-  return { operations, unsupported };
+  return { operations, projections };
 }
 
 function makeProjection(

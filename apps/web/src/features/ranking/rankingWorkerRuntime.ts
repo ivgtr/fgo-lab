@@ -86,8 +86,13 @@ export function createRankingWorkerRuntime(
         context.versions,
         request.attackProfile,
       );
-      if (result.status !== 'calculated')
-        throw new TypeError(`ranking_detail_${result.status}:${result.reason}`);
+      if (result.status !== 'calculated') {
+        const reason =
+          result.status === 'inputRequired'
+            ? result.inputs.map(({ key }) => key).join(',')
+            : result.reason;
+        throw new TypeError(`ranking_detail_${result.status}:${reason}`);
+      }
       const details =
         detailCache.get(request.fingerprint) ?? new Map<string, RankingPolicyDetail>();
       details.set(request.entryId, result.detail);

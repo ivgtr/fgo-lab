@@ -172,10 +172,12 @@ describe('workspace derivations', () => {
         explicitOverrides: {},
       },
       executionIntent: {
-        kind: 'resolved' as const,
-        origin: 'ranking' as const,
+        kind: 'ranking' as const,
         initialNpGauge: 20_000,
-        contribution: 'excludeVoluntarySkillModifiers' as const,
+        policy: {
+          selfBuffs: 'excluded' as const,
+          conditionalEffects: 'satisfied' as const,
+        },
       },
     } satisfies PortableCalculationRequest;
     const ranking = await portableCalculationFingerprint(resolvedRequest, digest);

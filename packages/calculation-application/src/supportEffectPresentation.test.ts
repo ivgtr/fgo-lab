@@ -18,7 +18,6 @@ const effectContract = {
   operationReference: null,
   stateIdentity: null,
   inputDefinitions: [],
-  resourceTransition: null,
   atlasEvidence: {
     functionType: 'addStateShort',
     target: 'ptOne',
@@ -95,7 +94,7 @@ describe('support effect application view model', () => {
                   availability: 'allLimitBreakStates',
                   label: 'クリティカル威力アップ',
                   requirement: { recipient: 'partyMember', expression: { kind: 'always' } },
-                  execution: [{ kind: 'nonDamage' }],
+                  execution: [{ kind: 'boundedPhaseIrrelevant', proof: 'noBattleStateChange' }],
                 },
               ],
             },

@@ -204,7 +204,9 @@ describe('production canonical execution semantics', () => {
     ).toEqual([990, 750, 500, 250]);
     expect(
       hpEvidence.reduce<Record<string, number>>((counts, effect) => {
-        const operation = effect.execution.find((candidate) => candidate.kind !== 'nonDamage');
+        const operation = effect.execution.find((candidate) =>
+          ['damageModifier', 'modifierRateChange'].includes(candidate.kind),
+        );
         const family =
           operation?.kind === 'damageModifier' &&
           operation.valueExpressions
@@ -216,7 +218,7 @@ describe('production canonical execution semantics', () => {
               ? 'quantityThresholdModifier'
               : operation?.kind === 'damageModifier'
                 ? 'standaloneConditionalModifier'
-                : 'nonDamage';
+                : 'otherOperation';
         counts[family] = (counts[family] ?? 0) + 1;
         return counts;
       }, {}),
@@ -224,7 +226,7 @@ describe('production canonical execution semantics', () => {
       hpRangeLinear: 1,
       quantityThresholdModifier: 4,
       standaloneConditionalModifier: 1,
-      nonDamage: 3,
+      otherOperation: 3,
     });
   });
 
@@ -242,15 +244,90 @@ describe('production canonical execution semantics', () => {
     expect(effects).toHaveLength(13_875);
     expect(operations).toHaveLength(14_623);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
+      boundedPhaseIrrelevant: 2_726,
       contextMutation: 1_488,
       damageModifier: 3_885,
       ignoreDamageCut: 1,
       ignoreDefense: 39,
       modifierRateChange: 1,
-      nonDamage: 9_124,
+      resourceMutation: 1_165,
       selectNoblePhantasmVariant: 22,
+      stateMutation: 5_212,
       transformActorForm: 10,
-      unresolved: 53,
+      unsupported: 74,
+    });
+    const occurrenceFamilies = {
+      resource: new Set([
+        'gainNp',
+        'lossNp',
+        'gainStar',
+        'lossStar',
+        'gainHp',
+        'gainHpPer',
+        'lossHpSafe',
+        'lossHp',
+        'lossHpPerSafe',
+        'subBattlePoint',
+      ]),
+      state: new Set([
+        'addStateShort',
+        'addState',
+        'subState',
+        'moveState',
+        'extendBuffturn',
+        'shortenBuffcount',
+        'addStateShortToField',
+        'addStateToField',
+      ]),
+      unsupported: new Set([
+        'gainNpBuffIndividualSum',
+        'gainHpFromTargets',
+        'gainNpFromTargets',
+        'gainNpIndividualSum',
+        'gainNpTargetSum',
+        'gainMultiplyNp',
+        'replaceMember',
+        'moveToLastSubmember',
+      ]),
+    };
+    const referencedStateWrappers = effects.filter(
+      (effect) =>
+        effect.operationReference !== null &&
+        occurrenceFamilies.state.has(effect.atlasEvidence.functionType) &&
+        effect.execution.every(
+          (operation) =>
+            operation.kind === 'resourceMutation' || operation.kind === 'boundedPhaseIrrelevant',
+        ),
+    );
+    expect(referencedStateWrappers).toHaveLength(1);
+    const wrapperOperations = new Set(
+      referencedStateWrappers.flatMap(({ execution }) => execution),
+    );
+    const closedOccurrences = {
+      resource: operations.filter(
+        (operation) => operation.kind === 'resourceMutation' && !wrapperOperations.has(operation),
+      ).length,
+      state:
+        operations.filter((operation) => operation.kind === 'stateMutation').length +
+        referencedStateWrappers.length,
+      unsupported: operations.filter(
+        (operation) =>
+          operation.kind === 'unsupported' &&
+          occurrenceFamilies.unsupported.has(
+            effects.find(({ execution }) => execution.includes(operation))?.atlasEvidence
+              .functionType ?? '',
+          ),
+      ).length,
+      boundedPhaseIrrelevant: operations.filter(
+        (operation) =>
+          operation.kind === 'boundedPhaseIrrelevant' && !wrapperOperations.has(operation),
+      ).length,
+    };
+    expect(closedOccurrences).toEqual({
+      resource: 1_164,
+      state: 5_213,
+      unsupported: 21,
+      boundedPhaseIrrelevant: 2_725,
     });
 
     const variantOperations = master.servants.flatMap((servant) =>
@@ -330,7 +407,7 @@ describe('production canonical execution semantics', () => {
     );
     const scoped = allEffects(master)
       .flatMap((effect) => effect.execution)
-      .filter((operation) => 'route' in operation && operation.kind !== 'unresolved');
+      .filter((operation) => 'route' in operation && operation.kind !== 'unsupported');
     const terminal = scoped.filter((operation) =>
       ['damageModifier', 'modifierRateChange', 'ignoreDefense', 'ignoreDamageCut'].includes(
         operation.kind,
@@ -360,26 +437,31 @@ describe('production canonical execution semantics', () => {
     const master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
-    const transitions = allEffects(master).flatMap(({ resourceTransition }) =>
-      resourceTransition ? [resourceTransition] : [],
+    const transitions = allEffects(master).flatMap(({ execution }) =>
+      execution.flatMap((operation) =>
+        operation.kind === 'resourceMutation' && operation.resource === 'npGauge'
+          ? [operation]
+          : [],
+      ),
     );
     const counts = transitions.reduce<Record<string, number>>((result, transition) => {
-      const key =
-        transition.kind === 'fixed'
-          ? `fixed:${transition.direction}`
-          : `unsupported:${transition.family}`;
+      const key = `fixed:${transition.direction}`;
       result[key] = (result[key] ?? 0) + 1;
       return result;
     }, {});
     expect(counts).toEqual({
-      'fixed:gain': 650,
+      'fixed:gain': 651,
       'fixed:loss': 79,
-      'unsupported:currentGaugeMultiplier': 1,
-      'unsupported:matchingTargetCount': 6,
-      'unsupported:matchingBuffCount': 4,
-      'unsupported:dependentTargetResult': 3,
     });
-    expect(transitions).toHaveLength(743);
+    expect(transitions).toHaveLength(730);
+    expect(
+      allEffects(master)
+        .flatMap(({ execution }) => execution)
+        .filter(
+          (operation) =>
+            operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount',
+        ),
+    ).toHaveLength(17);
     expect(
       master.servants
         .flatMap(({ skills }) => skills)
@@ -423,7 +505,7 @@ describe('production canonical execution semantics', () => {
     const valueEffects = allEffects(master).filter((effect) =>
       effect.atlasEvidence.parameterSemantics.value.includes('Value'),
     );
-    const purposeCounts = { modifier: 0, modifierRate: 0, contextTraitId: 0, nonDamage: 0 };
+    const purposeCounts = { modifier: 0, modifierRate: 0, contextTraitId: 0, otherOperation: 0 };
     for (const effect of valueEffects) {
       if (
         effect.atlasEvidence.buffTypes.some(
@@ -435,14 +517,14 @@ describe('production canonical execution semantics', () => {
         purposeCounts.modifierRate += 1;
       else if (effect.execution.some((operation) => operation.kind === 'damageModifier'))
         purposeCounts.modifier += 1;
-      else purposeCounts.nonDamage += 1;
+      else purposeCounts.otherOperation += 1;
     }
     expect(valueEffects).toHaveLength(10_865);
     expect(purposeCounts).toEqual({
       modifier: 3_885,
       modifierRate: 1,
       contextTraitId: 80,
-      nonDamage: 6_899,
+      otherOperation: 6_899,
     });
     expect(
       valueEffects
@@ -462,7 +544,7 @@ describe('production canonical execution semantics', () => {
       valueEffects.filter((effect) =>
         effect.execution.some(
           (operation) =>
-            operation.kind === 'unresolved' &&
+            operation.kind === 'unsupported' &&
             operation.reason === 'contextReference' &&
             !operation.damageRelevant,
         ),
@@ -501,7 +583,7 @@ describe('production canonical execution semantics', () => {
           levelSource: 'secondaryValueParameter',
           defaultLevel: 1,
         },
-        operations: ['nonDamage', 'nonDamage'],
+        operations: ['boundedPhaseIrrelevant', 'resourceMutation'],
       },
       {
         effectId: '2096',
@@ -638,13 +720,13 @@ describe('production canonical execution semantics', () => {
         })),
     ).toEqual([
       { id: '265', kind: 'damageModifier', modifier: 'flatDamage' },
-      { id: '274', kind: 'nonDamage', modifier: null },
+      { id: '274', kind: 'stateMutation', modifier: null },
       { id: '118', kind: 'damageModifier', modifier: 'cardBuff' },
       { id: '100', kind: 'damageModifier', modifier: 'cardBuff' },
       { id: '247', kind: 'damageModifier', modifier: 'npDamageBuff' },
       { id: '109', kind: 'damageModifier', modifier: 'cardBuff' },
-      { id: '364', kind: 'nonDamage', modifier: null },
-      { id: '199', kind: 'nonDamage', modifier: null },
+      { id: '364', kind: 'stateMutation', modifier: null },
+      { id: '199', kind: 'stateMutation', modifier: null },
     ]);
   });
 

@@ -66,6 +66,7 @@ describe('ordered battle execution contracts', () => {
 
   it('models every R1 operation as a discriminated union without servant identity', () => {
     expectTypeOf<BattleOperation['kind']>().toEqualTypeOf<
+      | 'preserveSemanticEffect'
       | 'addTrait'
       | 'removeTrait'
       | 'suppressInitialTrait'

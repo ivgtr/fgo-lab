@@ -157,11 +157,12 @@ export function compileCalculationApplicationProductionAudit(
     versions,
   );
   for (const exclusion of ranking.exclusions)
-    failures.push({
-      kind: 'rankingFailure',
-      identity: `ranking:${exclusion.entryId}`,
-      reason: `${exclusion.status}:${exclusion.reason}`,
-    });
+    if (exclusion.status !== 'unavailableUnderPolicy')
+      failures.push({
+        kind: 'rankingFailure',
+        identity: `ranking:${exclusion.entryId}`,
+        reason: `${exclusion.status}:${exclusion.reason}`,
+      });
   const rankingEntryIds = ranking.rows.map(({ entryId }) => entryId);
   if (new Set(rankingEntryIds).size !== rankingEntryIds.length)
     throw new TypeError('production_audit_duplicate_attack_profile_identity');
@@ -188,11 +189,18 @@ export function compileCalculationApplicationProductionAudit(
   );
   const rankingRecords: CanonicalAuditRecord[] = Object.entries(ranking.profileResults).map(
     ([profileKey, result]) => {
-      if (result.status !== 'calculated')
+      if (result.status !== 'calculated') {
+        const reason =
+          result.status === 'unavailableUnderPolicy' ||
+          result.status === 'invalid' ||
+          result.status === 'unsupported'
+            ? result.reason
+            : result.inputs.map(({ key }) => key).join(',');
         return {
           identity: `ranking:${profileKey}`,
-          value: jsonValue({ status: result.status, reason: result.reason }),
+          value: jsonValue({ status: result.status, reason }),
         };
+      }
       const { detail } = result;
       return {
         identity: `ranking:${detail.entryId}`,

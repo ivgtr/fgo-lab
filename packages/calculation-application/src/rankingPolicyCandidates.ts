@@ -17,6 +17,7 @@ import type { calculateDamageResolution } from './damageResolution';
 import { rankingPolicyKey } from './rankingComparisonPolicy';
 import type { CalculationExecution } from './scenario';
 import type { RankingExecutionPlan } from './rankingPolicyScenario';
+import { reapplyPreparedCalculationPolicy } from './scenario';
 
 export interface RankingCandidateCalculation {
   plan: RankingExecutionPlan;
@@ -38,7 +39,7 @@ export function calculateRankingCandidateSet(
     plan.preparedRankingScenarios,
     master,
     versions,
-    plan.contributionProjections,
+    plan.contributionPolicies,
     damageCache,
   );
   const selected = selectRankingExecutionIndexes(
@@ -48,7 +49,16 @@ export function calculateRankingCandidateSet(
     plan,
   );
   const details = new Map(
-    [...selected].map(([profileKey, selectedIndex]) => {
+    [...selected].flatMap(([profileKey, selectedIndex]) => {
+      const blocking = candidates.some((candidate, index) => {
+        if (attackProfileKey(plan.attackProfiles[index]!) !== profileKey) return false;
+        const rejection = plan.preparedRankingScenarios[index]?.resolved.preparationRejection;
+        if (rejection?.code === 'insufficientNpGauge') return false;
+        return (
+          candidate.result.status === 'inputRequired' || candidate.result.status === 'unsupported'
+        );
+      });
+      if (blocking) return [];
       const execution = candidates[selectedIndex]!;
       const variant = execution.noblePhantasmVariant;
       const attackProfile = plan.attackProfiles[selectedIndex]!;
@@ -58,22 +68,28 @@ export function calculateRankingCandidateSet(
           noblePhantasmVariantKey(attackProfile.noblePhantasmVariant)
       )
         throw new TypeError(`ranking_attack_profile_mismatch:${servant.id}:${profileKey}`);
-      const withoutAreaPrepared = plan.preparedWithoutAreaScenarios[selectedIndex];
-      const withoutAreaProjection = plan.withoutAreaContributionProjections[selectedIndex];
+      const withoutAreaPolicy = plan.withoutAreaContributionPolicies[selectedIndex];
+      const withoutAreaPrepared =
+        includeAreaSupport && withoutAreaPolicy
+          ? reapplyPreparedCalculationPolicy(
+              plan.preparedRankingScenarios[selectedIndex]!,
+              withoutAreaPolicy,
+            )
+          : null;
       const withoutAreaExecution =
-        includeAreaSupport && withoutAreaPrepared && withoutAreaProjection
+        withoutAreaPrepared && withoutAreaPolicy
           ? executeRankingScenarios(
               [withoutAreaPrepared],
               master,
               versions,
-              [withoutAreaProjection],
+              [withoutAreaPolicy],
               damageCache,
             )[0]!
           : null;
       if (execution.status !== 'executable' || execution.result.status !== 'calculated')
         throw new TypeError(`ranking_candidate_rejected:${servant.id}:${profileKey}`);
       const areaContribution =
-        withoutAreaExecution?.status === 'executable' && withoutAreaProjection
+        withoutAreaExecution?.status === 'executable' && withoutAreaPolicy
           ? {
               withoutAreaScenario: withoutAreaExecution.scenario as Extract<
                 CalculationScenario,
@@ -82,7 +98,8 @@ export function calculateRankingCandidateSet(
               withoutAreaInput: withoutAreaExecution.input,
               withoutAreaResult: withoutAreaExecution.result,
               withoutAreaEffects: withoutAreaExecution.effects,
-              contributionProjection: withoutAreaProjection,
+              contributionPolicy: withoutAreaPolicy,
+              effectiveContributions: withoutAreaExecution.effectiveContributions,
               warnings: withoutAreaExecution.effectWarnings,
             }
           : null;
@@ -101,9 +118,12 @@ export function calculateRankingCandidateSet(
         effectInputs: execution.effectInputs,
         warnings: execution.effectWarnings,
         appliedPreparationActions: execution.appliedPreparationActions,
-        contributionProjection: plan.contributionProjections[selectedIndex]!,
-        contributionIntent:
-          conditions.selfBuffs === 'excluded' ? 'excludeVoluntarySkillModifiers' : 'standard',
+        contributionPolicy: plan.contributionPolicies[selectedIndex]!,
+        effectiveContributions: execution.effectiveContributions,
+        rankingPolicy: {
+          selfBuffs: conditions.selfBuffs,
+          conditionalEffects: conditions.conditionalEffects,
+        },
         areaContribution,
         executionMetrics: {
           worldCandidateCount: plan.worldCandidateCount,
@@ -122,7 +142,7 @@ export function calculateRankingCandidateSet(
           quantityCandidateKey: plan.candidateEvidence[selectedIndex]!.quantityCandidateKey,
         },
       };
-      return [attackProfileKey(attackProfile), detail] as const;
+      return [[attackProfileKey(attackProfile), detail] as const];
     }),
   );
   return { plan, executions: candidates, details };

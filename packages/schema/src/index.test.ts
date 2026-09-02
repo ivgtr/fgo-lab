@@ -445,6 +445,214 @@ describe('portable schema boundaries', () => {
     });
   });
 
+  it('migrates schema 33 by intent without inferring a missing ranking policy', () => {
+    const profileId = crypto.randomUUID();
+    const now = '2026-09-01T00:00:00.000Z';
+    const resolved = calculationScenarioSchema.parse({
+      mode: 'resolved',
+      attacker: {
+        servantId: '1',
+        initialActorFormId: { actorId: '1', limitCount: 0 },
+        source: 'master',
+        level: 90,
+        npLevel: 1,
+        fouAtk: 1000,
+      },
+      overcharge: 1,
+      targetContext: {
+        class: { kind: 'concrete', classId: 'lancer' },
+        attribute: { kind: 'concrete', attribute: 'earth' },
+        families: [],
+      },
+      attackerHpPermille: 1000,
+      battleState: { battlePointPhase: null },
+      canonicalInputValues: {},
+      craftEssence: null,
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+      mysticCode: null,
+      support: null,
+      effectDecisions: [],
+      activationFacts: [],
+      worldFactAssertions: [],
+      explicitOverrides: {},
+    });
+    const manual = calculationScenarioSchema.parse({
+      mode: 'manual',
+      manual: {
+        attackerId: '1',
+        attackerLevel: 90,
+        attackerAtk: 10_000,
+        fouAtk: 1_000,
+        craftEssenceId: null,
+        craftEssenceAtk: 0,
+        npLevel: 1,
+        overcharge: 1,
+        npMultipliers: [3, 4, 4.5, 4.75, 5],
+        damageFunction: { status: 'resolved', kind: 'standard', ignoreDefense: false },
+        cardType: 'buster',
+        classAttackRate: 1,
+        classAffinity: 1,
+        attributeAffinity: 1,
+        attackBuff: 0,
+        defenseBuff: 0,
+        cardBuff: 0,
+        cardResistance: 0,
+        npDamageBuff: 0,
+        npResistance: 0,
+        powerMod: 0,
+        eventDamageBuff: 0,
+        npSpecialMultipliers: [1, 1, 1, 1, 1],
+        specialDamageBuff: 0,
+        specialResistance: 0,
+        flatDamage: 0,
+        damageCut: 0,
+        ignoreDamageCut: false,
+        fieldTraits: [],
+        attackerStateTraits: [],
+        attackerHpPermille: null,
+        targetRarity: null,
+        targetStateTraits: [],
+        battlePointPhase: null,
+        target: { classId: 'lancer', attribute: 'earth', traits: [] },
+      },
+    });
+    const versionContext = { masterDataVersion: 'fixture', engineVersion: '29.0.0' };
+    const result = {
+      status: 'unsupported',
+      rows: [],
+      effects: [],
+      assumptions: [],
+      issues: [],
+      trace: [],
+      evidence: [
+        {
+          key: 'legacy',
+          subject: 'fixture',
+          status: 'provisional',
+          sources: ['fixture'],
+          goldenCaseIds: ['fixture'],
+          differentialCaseIds: [],
+          reviewedAt: '2026-09-01',
+          engineVersion: '29.0.0',
+        },
+      ],
+      missingEvidence: ['legacy'],
+      versions: {
+        schemaVersion: 33,
+        masterDataVersion: 'fixture',
+        engineVersion: '29.0.0',
+        appVersion: '0.1.0',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+      },
+    };
+    const snapshot = (request: object, suffix: string) => ({
+      profileId,
+      calculationSessionId: `00000000-0000-4000-8000-0000000000${suffix}`,
+      request,
+      result,
+      requestFingerprint: suffix.repeat(64).slice(0, 64),
+      updatedAt: now,
+    });
+    const calculatorRequest = {
+      versionContext,
+      scenario: resolved,
+      executionIntent: {
+        kind: 'resolved',
+        origin: 'calculator',
+        initialNpGauge: 10_000,
+        contribution: 'standard',
+      },
+    };
+    const manualRequest = { versionContext, scenario: manual, executionIntent: { kind: 'manual' } };
+    const rankingRequest = {
+      versionContext,
+      scenario: resolved,
+      executionIntent: {
+        kind: 'resolved',
+        origin: 'ranking',
+        initialNpGauge: 20_000,
+        contribution: 'excludeVoluntarySkillModifiers',
+      },
+    };
+    const history = (request: object, suffix: string) => ({
+      ...snapshot(request, suffix),
+      historyId: `10000000-0000-4000-8000-0000000000${suffix}`,
+      finalizedAt: now,
+      lastUsedAt: now,
+    });
+    const collection = {
+      schemaVersion: 33,
+      activeProfileId: profileId,
+      profiles: [
+        {
+          profileId,
+          name: 'schema 33',
+          createdAt: now,
+          updatedAt: now,
+          servantBuilds: {},
+          servantTargets: {},
+          craftEssences: [],
+          supportTemplates: [],
+          draft: snapshot(rankingRequest, '01'),
+          history: [
+            history(manualRequest, '02'),
+            history(calculatorRequest, '03'),
+            history(rankingRequest, '04'),
+          ],
+        },
+      ],
+    };
+    const migrated = parseStoredProfileCollection(collection);
+    expect(migrated).toMatchObject({
+      upgraded: true,
+      discardedCalculationSnapshots: true,
+      collection: {
+        schemaVersion: SCHEMA_VERSION,
+        profiles: [
+          {
+            draft: null,
+            history: [
+              { request: { executionIntent: { kind: 'manual' } } },
+              { request: { executionIntent: { kind: 'calculator', initialNpGauge: 10_000 } } },
+              {
+                disposition: 'historicalOnly',
+                sourceSchemaVersion: 33,
+                legacyRankingIntent: {
+                  initialNpGauge: 20_000,
+                  contribution: 'excludeVoluntarySkillModifiers',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(
+      parseUserDataBackup({
+        kind: 'fgo-lab-user-backup',
+        schemaVersion: 33,
+        exportedAt: now,
+        appVersion: '0.1.0',
+        profiles: collection,
+      }),
+    ).toMatchObject({ schemaVersion: SCHEMA_VERSION, profiles: migrated.collection });
+    expect(() =>
+      parseStoredProfileCollection({
+        ...collection,
+        profiles: [
+          {
+            ...collection.profiles[0],
+            draft: {
+              ...snapshot(rankingRequest, '05'),
+              request: { ...rankingRequest, executionIntent: { kind: 'ranking' } },
+            },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
   it('does not reinterpret unknown future profile schemas', () => {
     expect(() =>
       parseStoredProfileCollection({ schemaVersion: SCHEMA_VERSION + 1, profiles: [] }),

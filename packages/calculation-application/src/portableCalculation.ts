@@ -12,16 +12,14 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import type { RankingPolicyDetail } from './rankingContracts';
-import { compileDamageContributionProjection } from './contributionProjection';
+import { compileRankingContributionPolicy } from './contributionPolicy';
 import {
   createDefaultCalculatorScenario,
   evaluatePreparedCalculationScenario,
   prepareCalculationScenario,
-  projectPreparedCalculationContribution,
+  reapplyPreparedCalculationPolicy,
   type CalculationExecution,
 } from './scenario';
-
-type ResolvedRequest = Extract<PortableCalculationRequest, { scenario: { mode: 'resolved' } }>;
 
 export type PortableCalculationOutcome =
   | { status: 'executed'; request: PortableCalculationRequest; execution: CalculationExecution }
@@ -88,10 +86,8 @@ export function createCalculatorPortableRequest(
           versionContext,
           scenario,
           executionIntent: {
-            kind: 'resolved',
-            origin: 'calculator',
+            kind: 'calculator',
             initialNpGauge: 10_000,
-            contribution: 'standard',
           },
         },
   );
@@ -109,17 +105,16 @@ export function createDefaultCalculatorPortableRequest(
 }
 
 export function createRankingPortableRequest(
-  detail: Pick<RankingPolicyDetail, 'scenario' | 'candidateEvidence' | 'contributionIntent'>,
+  detail: Pick<RankingPolicyDetail, 'scenario' | 'candidateEvidence' | 'rankingPolicy'>,
   versionContext: CalculationVersionContext,
 ): PortableCalculationRequest {
   return portableCalculationRequestSchema.parse({
     versionContext,
     scenario: detail.scenario,
     executionIntent: {
-      kind: 'resolved',
-      origin: 'ranking',
+      kind: 'ranking',
       initialNpGauge: detail.candidateEvidence.startNpGauge,
-      contribution: detail.contributionIntent,
+      policy: detail.rankingPolicy,
     },
   });
 }
@@ -135,9 +130,14 @@ export function replacePortableCalculationScenario(
 
 export function resetPortableCalculationRequest(
   request: PortableCalculationRequest,
+  master: MasterDataSnapshot,
+  build: ServantBuild | undefined,
+  servant: ServantMaster,
 ): PortableCalculationRequest {
-  if (request.scenario.mode !== 'resolved') return request;
-  return createCalculatorPortableRequest(request.scenario, request.versionContext);
+  return createCalculatorPortableRequest(
+    createDefaultCalculatorScenario(master, build, servant),
+    request.versionContext,
+  );
 }
 
 export function upgradePortableCalculationRequestVersion(
@@ -186,7 +186,7 @@ export function executePortableCalculation(
     request.versionContext.engineVersion !== ENGINE_VERSION
   )
     return { status: 'invalid', request, reason: 'runtimeVersionMismatch' };
-  if (request.executionIntent.kind === 'resolved' && request.scenario.mode === 'resolved') {
+  if (request.executionIntent.kind !== 'manual' && request.scenario.mode === 'resolved') {
     const capacity =
       master.npResourceSemantics.capacityByNpLevel[request.scenario.attacker.npLevel - 1];
     if (capacity === undefined || request.executionIntent.initialNpGauge > capacity)
@@ -195,29 +195,18 @@ export function executePortableCalculation(
   try {
     const versions = resultVersions(request);
     const preparation =
-      request.executionIntent.kind === 'resolved'
+      request.executionIntent.kind !== 'manual'
         ? { initialNpGauge: request.executionIntent.initialNpGauge }
         : undefined;
     const prepared = prepareCalculationScenario(request.scenario, master, preparation);
     let executable = prepared;
-    if (
-      request.executionIntent.kind === 'resolved' &&
-      request.executionIntent.origin === 'ranking' &&
-      request.scenario.mode === 'resolved'
-    ) {
-      const resolvedRequest = request as ResolvedRequest;
+    if (request.executionIntent.kind === 'ranking' && request.scenario.mode === 'resolved') {
       if (prepared.status === 'executable' && !prepared.orderedScenario)
         throw new TypeError('ranking_contribution_operations_unavailable');
       if (prepared.status === 'executable')
-        executable = projectPreparedCalculationContribution(
+        executable = reapplyPreparedCalculationPolicy(
           prepared,
-          compileDamageContributionProjection(prepared.orderedScenario!.operations, {
-            selfSkill:
-              resolvedRequest.executionIntent.contribution === 'excludeVoluntarySkillModifiers'
-                ? 'excluded'
-                : 'included',
-            area: 'included',
-          }),
+          compileRankingContributionPolicy(request.executionIntent.policy, 'included'),
         );
     }
     const execution = evaluatePreparedCalculationScenario(executable, versions);

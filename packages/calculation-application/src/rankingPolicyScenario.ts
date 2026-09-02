@@ -1,4 +1,4 @@
-import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
+import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { ActorFormId } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
@@ -12,11 +12,7 @@ import {
 import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 import { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
 import type { ResolvedScenario } from './rankingPolicy';
-import {
-  prepareCalculationScenarioWithContributionProjection,
-  projectPreparedCalculationContribution,
-  type PreparedCalculationScenario,
-} from './scenario';
+import { prepareCalculationScenarioWithPolicy, type PreparedCalculationScenario } from './scenario';
 
 export { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
 
@@ -26,10 +22,9 @@ export interface RankingExecutionPlan {
   preparedRankingScenarios: readonly PreparedCalculationScenario[];
   attackProfiles: readonly AttackProfile[];
   expectedTerminalFormIds: readonly ActorFormId[];
-  contributionProjections: readonly DamageContributionProjection[];
+  contributionPolicies: readonly ContributionApplicationPolicy[];
   withoutAreaScenarios: readonly (ResolvedScenario | null)[];
-  preparedWithoutAreaScenarios: readonly (PreparedCalculationScenario | null)[];
-  withoutAreaContributionProjections: readonly (DamageContributionProjection | null)[];
+  withoutAreaContributionPolicies: readonly (ContributionApplicationPolicy | null)[];
   candidateSpaces: readonly RankingCandidateSpace[];
   worldCandidateCount: number;
   candidateUpperBound: number;
@@ -38,15 +33,6 @@ export interface RankingExecutionPlan {
   startNpGauges: readonly number[];
   baselineInputDeviations: readonly number[];
   candidateEvidence: readonly RankingCandidateEvidence[];
-}
-
-function projectionHasChanges(projection: DamageContributionProjection): boolean {
-  return (
-    projection.includedOperationIds.size > 0 ||
-    projection.excludedOperationIds.size > 0 ||
-    projection.excludedStateTraitContributions.attackerState.size > 0 ||
-    projection.excludedStateTraitContributions.targetState.size > 0
-  );
 }
 
 export function compileRankingExecutionPlan(
@@ -71,21 +57,10 @@ export function compileRankingExecutionPlan(
       : [],
   );
   const preparedRankingScenarios = candidates.map((candidate) =>
-    prepareCalculationScenarioWithContributionProjection(
-      candidate.scenario,
-      master,
-      candidate.contributionProjection,
-      { initialNpGauge: candidate.evidence.startNpGauge },
-    ),
+    prepareCalculationScenarioWithPolicy(candidate.scenario, master, candidate.contributionPolicy, {
+      initialNpGauge: candidate.evidence.startNpGauge,
+    }),
   );
-  const preparedWithoutAreaScenarios = candidates.map((candidate, index) => {
-    const projection = candidate.withoutAreaContributionProjection;
-    if (!projection) return null;
-    const prepared = preparedRankingScenarios[index]!;
-    return projectionHasChanges(projection)
-      ? projectPreparedCalculationContribution(prepared, projection)
-      : prepared;
-  });
   const baselineGauge = master.npResourceSemantics.noblePhantasmUse.requirement;
   return {
     baseScenario: candidates[0]?.scenario ?? null,
@@ -93,13 +68,12 @@ export function compileRankingExecutionPlan(
     preparedRankingScenarios,
     attackProfiles: candidates.map(({ attackProfile }) => attackProfile),
     expectedTerminalFormIds: candidates.map(({ expectedTerminalFormId }) => expectedTerminalFormId),
-    contributionProjections: candidates.map(({ contributionProjection }) => contributionProjection),
+    contributionPolicies: candidates.map(({ contributionPolicy }) => contributionPolicy),
     withoutAreaScenarios: candidates.map((candidate) =>
-      candidate.withoutAreaContributionProjection ? candidate.scenario : null,
+      candidate.withoutAreaContributionPolicy ? candidate.scenario : null,
     ),
-    preparedWithoutAreaScenarios,
-    withoutAreaContributionProjections: candidates.map(
-      ({ withoutAreaContributionProjection }) => withoutAreaContributionProjection,
+    withoutAreaContributionPolicies: candidates.map(
+      ({ withoutAreaContributionPolicy }) => withoutAreaContributionPolicy,
     ),
     candidateSpaces,
     worldCandidateCount: candidates.length,
@@ -136,7 +110,7 @@ export function createRankingScenarioFromPolicy(
     plan.preparedRankingScenarios,
     master,
     versions,
-    plan.contributionProjections,
+    plan.contributionPolicies,
   );
   const selected = selectRankingExecutionIndexes(
     executions,

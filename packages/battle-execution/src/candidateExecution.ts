@@ -7,13 +7,9 @@ import type {
   ExecutableBattleState,
   OperationResult,
 } from './contracts';
-import { activationRequirementsSatisfied, evaluateCondition } from './condition';
+import { evaluateCondition } from './condition';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
-import {
-  createOperationProjection,
-  resolveModifierValue,
-  resolveOperationProjectionEvaluation,
-} from './projection';
+import { createOperationProjection, resolveOperationProjectionEvaluation } from './projection';
 import {
   applyActorFormTransition,
   applyTraitAddition,
@@ -25,7 +21,7 @@ import type {
   OrderedScenarioExecution,
   PreparedOrderedScenario,
   ResolvedCanonicalInputSet,
-  DamageContributionProjection,
+  ContributionApplicationPolicy,
 } from './executionTypes';
 import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
@@ -36,6 +32,13 @@ import {
   needsMutationValidation,
 } from './variantSelection';
 import { applyNoblePhantasmDamage } from './npDamageExecution';
+import {
+  includedByPolicy,
+  modifierValue,
+  operationEnabled,
+  userConditionMet,
+} from './candidateOperationContext';
+
 function effectTransactionKey(operation: BattleOperation): string {
   const { source } = operation;
   return [
@@ -100,16 +103,11 @@ function operationTransactionKey(operation: BattleOperation): string {
 export function executeOrderedScenarioCandidates(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
-  contributionProjection?: DamageContributionProjection,
+  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): readonly OrderedScenarioExecution[] {
   return prepared.targetResolution.kind === 'candidates'
     ? prepared.targetResolution.candidates.map((candidate) =>
-        executeOrderedScenarioCandidate(
-          prepared,
-          resolvedInputs,
-          candidate,
-          contributionProjection,
-        ),
+        executeOrderedScenarioCandidate(prepared, resolvedInputs, candidate, contributionPolicy),
       )
     : [];
 }
@@ -118,7 +116,7 @@ export function executeOrderedScenarioCandidate(
   prepared: PreparedOrderedScenario,
   resolvedInputs: ResolvedCanonicalInputSet,
   targetCandidate: TargetCandidate | null,
-  contributionProjection?: DamageContributionProjection,
+  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): OrderedScenarioExecution {
   const { baseInput, damage, operations, attackerClass } = prepared;
   const candidate = prepareCandidateExecution(prepared, resolvedInputs, targetCandidate);
@@ -127,7 +125,6 @@ export function executeOrderedScenarioCandidate(
   const {
     candidateInput,
     decisions,
-    activations,
     activeDecisionSourceInstances,
     activeConditionConstraints,
     activeMutationConstraints,
@@ -145,20 +142,17 @@ export function executeOrderedScenarioCandidate(
     const groupIssues: ExecutionIssue[] = [];
     for (const operation of operationGroup) {
       const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
-      const activation = activations.get(operation.operationId)!;
-      const contributionIncluded =
-        contributionProjection?.includedOperationIds.has(operation.operationId) ?? false;
-      const enabled =
-        activation.stochasticOutcome.status === 'success' &&
-        (activation.enabled || (operation.sourceEnabled && contributionIncluded));
+      const activation = candidate.activations.get(operation.operationId)!;
+      const contributionIncluded = includedByPolicy(operation, contributionPolicy);
+      const enabled = operationEnabled(
+        activation,
+        operation,
+        contributionPolicy,
+        contributionIncluded,
+      );
       const condition = evaluateConditionAgainstKnownFacts(operation, state);
-      const resolvedModifierValue =
-        operation.kind === 'addModifier' ? resolveModifierValue(operation, state) : null;
-      const decisionConditionSatisfied =
-        condition === null &&
-        choice?.conditionSatisfaction === 'assumeSatisfied' &&
-        operation.decisionPlan.condition === 'userMayAssume' &&
-        activationRequirementsSatisfied(operation.condition, state);
+      const resolvedModifierValue = modifierValue(operation, state);
+      const decisionConditionSatisfied = userConditionMet(operation, condition, choice, state);
       const localConditionSatisfied =
         decisionConditionSatisfied || activation.assumesLocalCondition;
       let outcome: OperationResult['outcome'] = 'applied';
@@ -229,15 +223,15 @@ export function executeOrderedScenarioCandidate(
       } else if (!condition && !localConditionSatisfied) {
         outcome = 'notApplied';
         code = 'conditionNotMet';
+      } else if (operation.kind === 'preserveSemanticEffect') {
+        outcome = 'notRelevant';
+        code = 'stateMutationOnly';
       }
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
-        const contributes =
-          contributionIncluded ||
-          !contributionProjection?.excludedOperationIds.has(operation.operationId);
+        const contributes = contributionIncluded;
         if (preappliedOperationIds.has(operation.operationId)) {
-          // Canonical form/variant context is derived before any damage-reachable operation.
-          // The operation remains applied evidence but is not committed twice.
+          // Preparation already committed this canonical form/variant mutation.
         } else if (operation.kind === 'addTrait') {
           const changed = applyTraitAddition(candidateState, operation.scope, operation.trait);
           candidateState.traits = changed.traits;
@@ -319,7 +313,7 @@ export function executeOrderedScenarioCandidate(
               operation,
               state,
               decisions,
-              contributionProjection,
+              contributionPolicy,
             );
         }
         const mutationValidation = needsMutationValidation(operation)
@@ -381,5 +375,13 @@ export function executeOrderedScenarioCandidate(
     input = initialGroupInput;
     markOperationGroupUnsupported(results, initialGroupResultIndex, state, groupIssues);
   }
-  return assembleCandidateResult({ prepared, resolvedInputs, candidate, state, input, results });
+  return assembleCandidateResult({
+    prepared,
+    resolvedInputs,
+    candidate,
+    state,
+    input,
+    results,
+    contributionPolicy,
+  });
 }

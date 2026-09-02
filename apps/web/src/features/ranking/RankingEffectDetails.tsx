@@ -1,5 +1,5 @@
 import {
-  resolveRankingEffectContribution,
+  rankingEffectContributes,
   type RankingPolicyDetail,
 } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -32,6 +32,10 @@ function AreaContributionSummary({ detail }: { detail: RankingPolicyDetail }) {
   );
 }
 
+function decisionLabel(decision: { kind: 'included' } | { kind: 'excluded'; reason: string }) {
+  return decision.kind === 'included' ? '適用' : `除外 (${decision.reason})`;
+}
+
 export function RankingEffectDetails({
   detail,
   master,
@@ -48,7 +52,9 @@ export function RankingEffectDetails({
     servants: master.servants,
     craftEssence,
     contributionState: (effect) =>
-      resolveRankingEffectContribution(effect, detail.contributionProjection),
+      rankingEffectContributes(effect, detail.effectiveContributions)
+        ? 'included'
+        : 'excludedByRankingPolicy',
   });
   const evidence = presentRankingDetailEvidence(detail, master);
   return (
@@ -117,6 +123,20 @@ export function RankingEffectDetails({
                 />
               )),
             )}
+          </ul>
+        </section>
+        <section className="ranking-contribution-decisions" aria-label="寄与ごとのpolicy判定">
+          <h4>寄与ごとの判定</h4>
+          <ul>
+            {detail.effectiveContributions.contributions.map((contribution) => (
+              <li key={contribution.contributionId}>
+                <code>{contribution.contributionId}</code>
+                <span>自己: {decisionLabel(contribution.selfDecision)}</span>
+                <span>条件: {decisionLabel(contribution.conditionDecision)}</span>
+                <span>エリア: {decisionLabel(contribution.areaViewDecision)}</span>
+                <strong>{contribution.effective ? 'damageへ適用' : 'damage対象外'}</strong>
+              </li>
+            ))}
           </ul>
         </section>
         {evidence.conditions.length > 0 ? (

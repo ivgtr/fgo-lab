@@ -44,8 +44,7 @@ export function availablePreparationSkillCommands(
 ): readonly Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] {
   const commands: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>[] = [];
   for (const skill of getSkillsForActorForm(servant, state.currentFormId)) {
-    if (![1, 2, 3].includes(skill.slot) || state.usedSkillSlots.has(skill.slot as 1 | 2 | 3))
-      continue;
+    if (state.usedSkillSlots.has(skill.slot)) continue;
     const choices = [
       ...new Map(
         skill.effects.flatMap((effect) =>
@@ -60,7 +59,7 @@ export function availablePreparationSkillCommands(
         ),
       ).values(),
     ];
-    const slot = skill.slot as 1 | 2 | 3;
+    const slot = skill.slot;
     if (choices.length === 0) {
       commands.push({ kind: 'useSkillSlot', slot, skillLevel: 10, choice: null });
       continue;

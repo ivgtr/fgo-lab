@@ -46,6 +46,7 @@ import type {
   AttackerSkillUse,
   DamageResolutionInput,
   CalculationHistoryEntry,
+  CurrentCalculationHistoryEntry,
   CalculationResult as CalculationResultValue,
   CalculationScenario,
   CraftEssenceCopy,
@@ -119,7 +120,7 @@ export function Calculator({
   onSupportSelect: (template: SupportTemplate | undefined) => Promise<void>;
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: () => Promise<void>;
-  onHistorySelect: (entry: CalculationHistoryEntry) => Promise<void>;
+  onHistorySelect: (entry: CurrentCalculationHistoryEntry) => Promise<void>;
   onResetPortableRequest: () => Promise<void>;
 }) {
   const input = resolvedInput;
@@ -1257,15 +1258,16 @@ export function Calculator({
             {history.length ? (
               <ul className="calculation-history-list">
                 {[...history].reverse().map((entry) => {
+                  const scenario = 'request' in entry ? entry.request.scenario : entry.scenario;
                   const attackerId =
-                    entry.request.scenario.mode === 'manual'
-                      ? entry.request.scenario.manual.attackerId
-                      : entry.request.scenario.attacker.servantId;
+                    scenario.mode === 'manual'
+                      ? scenario.manual.attackerId
+                      : scenario.attacker.servantId;
                   const servant = servants.find((candidate) => candidate.id === attackerId);
                   const npLevel =
-                    entry.request.scenario.mode === 'manual'
-                      ? entry.request.scenario.manual.npLevel
-                      : entry.request.scenario.attacker.npLevel;
+                    scenario.mode === 'manual'
+                      ? scenario.manual.npLevel
+                      : scenario.attacker.npLevel;
                   const average =
                     entry.result.status === 'calculated'
                       ? entry.result.rows[npLevel - 1]?.average
@@ -1274,8 +1276,9 @@ export function Calculator({
                     <li key={entry.historyId}>
                       <button
                         type="button"
+                        disabled={!('request' in entry)}
                         onClick={() => {
-                          void onHistorySelect(entry);
+                          if ('request' in entry) void onHistorySelect(entry);
                           setHistoryDialogOpen(false);
                         }}
                       >
@@ -1283,6 +1286,7 @@ export function Calculator({
                           <strong>{servant?.name ?? attackerId}</strong>
                           <small>
                             NP{npLevel}・{new Date(entry.lastUsedAt).toLocaleString('ja-JP')}
+                            {'request' in entry ? '' : '・旧版履歴（再実行不可）'}
                           </small>
                         </span>
                         <span>

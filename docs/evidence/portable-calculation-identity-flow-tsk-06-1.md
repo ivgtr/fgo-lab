@@ -6,6 +6,31 @@ updated_at: "2026-09-02"
 
 # TSK-06.1 portable calculation identity flow closure
 
+## TSK-06.41 runtime cutover — authoritative current delta
+
+Schema 34／engine 30 implements the approved two-axis intent as a discriminated union: `manual`, `calculator`,
+or `ranking { selfBuffs, conditionalEffects }`. Scenario facts never reconstruct a missing policy, and compiled
+operations or operation IDs are never persisted. Fingerprint, request/result validation, preparation, and replay
+all consume the same intent.
+
+| Direct path | Current classification |
+| --- | --- |
+| current constructors／Web writers | Verified: write the discriminated intent and both ranking axes directly |
+| fingerprint／request-result matching | Verified: policy changes identity and cannot reuse another result |
+| calculator／ranking portable replay | Verified: same application compiler／executor as live calculation |
+| exact schema-33 draft migration | Verified: manual and calculator become current; matching ranking becomes immutable historical-only; invalid／mixed snapshots are discarded |
+| history／share／backup | Verified: historical ranking is non-executable; request-only or mismatched transport fails closed; profile data is retained |
+| unavailable pinned runtime | Verified: a matching stored result may display historical-only and never becomes a current numeric result |
+| normal reset | Verified: one baseline constructor removes ranking facts, inputs, stochastic outcomes, actions, choices, evidence, result, and fingerprint |
+| failed reset／upgrade | Verified: transactional failure retains the historical pair without partial writes |
+| selected ranking → calculator handoff | Verified: request and selected canonical result replay with matching identity |
+| notice interaction／cache lifetime／stale response | Deferred: TSK-07 |
+
+Fixtures cover current round trips, exact migration, ranking historical-only, request/result mismatch, mixed
+intent, backup transaction failure, unavailable versions, contaminated ranking reset, and missing／ambiguous
+reset identity. TSK-06.41 runtime paths have **Blocking 0**. There is no compatibility flag, current old-intent
+reader／writer, inferred policy, or parallel runtime; schema 33 exists only inside the exact migration function.
+
 > TSK-06.4 reopened the portable identity／persistence／recovery family owned by this note. The schema 33
 > one-axis implementation and its recovery evidence below remain historical. The independent design audit
 > rejected a nominal `normalCalculator | baselineOnly | satisfiedCandidates` condition axis, the shared

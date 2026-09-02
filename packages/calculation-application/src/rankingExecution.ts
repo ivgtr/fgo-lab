@@ -1,4 +1,4 @@
-import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
+import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import {
   actorFormKey,
   noblePhantasmVariantKey,
@@ -12,7 +12,7 @@ import { PreparedDamageMatrixCache } from './preparedDamageInputCache';
 import {
   evaluatePreparedCalculationScenario,
   prepareCalculationScenario,
-  projectPreparedCalculationContribution,
+  reapplyPreparedCalculationPolicy,
   type CalculationExecution,
   type PreparedCalculationScenario,
 } from './scenario';
@@ -61,23 +61,17 @@ export function executeRankingScenarios(
   scenarios: readonly (ResolvedScenario | PreparedCalculationScenario)[],
   master: MasterDataSnapshot,
   versions: VersionContext,
-  contributionProjections?: readonly DamageContributionProjection[],
+  contributionPolicies?: readonly ContributionApplicationPolicy[],
   damageCache = new PreparedDamageMatrixCache<ReturnType<typeof calculateDamageResolution>>(),
 ): CalculationExecution[] {
   const prepared = scenarios.map((scenario) =>
     'resolved' in scenario ? scenario : prepareCalculationScenario(scenario, master),
   );
-  if (contributionProjections && contributionProjections.length !== prepared.length)
-    throw new TypeError('ranking_contribution_projection_alignment_mismatch');
+  if (contributionPolicies && contributionPolicies.length !== prepared.length)
+    throw new TypeError('ranking_contribution_policy_alignment_mismatch');
   const projected = prepared.map((candidate, index) => {
-    const projection = contributionProjections?.[index];
-    return projection &&
-      (projection.includedOperationIds.size > 0 ||
-        projection.excludedOperationIds.size > 0 ||
-        projection.excludedStateTraitContributions.attackerState.size > 0 ||
-        projection.excludedStateTraitContributions.targetState.size > 0)
-      ? projectPreparedCalculationContribution(candidate, projection)
-      : candidate;
+    const policy = contributionPolicies?.[index];
+    return policy ? reapplyPreparedCalculationPolicy(candidate, policy) : candidate;
   });
   return projected.map((candidate) => {
     if (candidate.status === 'rejected')

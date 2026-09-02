@@ -7,7 +7,6 @@ import type {
   RankingProfileResult,
   RankingRowSummary,
 } from './rankingContracts';
-import { isSpecialAttack, rankingEffectContributes } from './rankingContribution';
 
 export function includedRankingServants(
   master: MasterDataSnapshot,
@@ -31,12 +30,10 @@ export function createRankingRow(
 ): RankingRowSummary {
   const selected = detail.result.rows[detail.scenario.attacker.npLevel - 1];
   if (!selected) throw new RangeError(`ranking_np_row_missing:${servant.id}`);
-  const applied = detail.effects.filter(
-    (effect) =>
-      effect.visibility === 'visible' &&
-      rankingEffectContributes(effect, detail.contributionProjection),
+  const applied = detail.effectiveContributions.contributions.filter(
+    (contribution) => contribution.effective && contribution.presentationCounted,
   );
-  const supportEffects = applied.filter((effect) => effect.source.origin === 'support');
+  const supportEffects = applied.filter((contribution) => contribution.source.origin === 'support');
   return {
     entryId: detail.entryId,
     servantId: servant.id,
@@ -53,11 +50,13 @@ export function createRankingRow(
     average: selected.average,
     maximum: selected.maximum,
     precision: detail.result.precision,
-    appliedEffectCount: new Set(applied.map((effect) => effect.projectionKey)).size,
-    supportEffectCount: new Set(supportEffects.map((effect) => effect.projectionKey)).size,
+    appliedEffectCount: new Set(applied.map((effect) => effect.presentationGroupId)).size,
+    supportEffectCount: new Set(supportEffects.map((effect) => effect.presentationGroupId)).size,
     supportSourceCount: new Set(supportEffects.map((effect) => effect.source.sourceInstanceId))
       .size,
-    specialDamageApplied: applied.some((effect) => isSpecialAttack(effect)),
+    specialDamageApplied: applied.some(
+      (effect) => effect.modifier === 'powerMod' || effect.modifier === 'npSpecial',
+    ),
     level: detail.scenario.attacker.level,
     npLevel: detail.scenario.attacker.npLevel,
     owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
@@ -74,7 +73,15 @@ export function createRankingPolicyExclusion(
     servantId: servant.id,
     name: servant.name,
     status: result.status,
-    reason: result.reason,
-    issues: result.status === 'invalid' ? result.issues : [],
+    reason:
+      result.status === 'inputRequired'
+        ? `inputRequired:${result.inputs.map(({ key }) => key).join(',')}`
+        : result.reason,
+    issues:
+      result.status === 'invalid' ||
+      result.status === 'unsupported' ||
+      result.status === 'inputRequired'
+        ? result.issues
+        : [],
   };
 }

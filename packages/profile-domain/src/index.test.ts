@@ -154,7 +154,7 @@ describe('profile domain', () => {
       skills: [
         {
           id: 'skill-1',
-          slot: 1,
+          slot: 1 as const,
           priority: 0,
           name: '支援スキル',
           detail: '',

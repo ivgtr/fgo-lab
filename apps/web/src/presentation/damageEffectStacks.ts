@@ -1,13 +1,11 @@
-import type {
-  EffectProjection,
-  ModifierKind,
-  RankingContributionPolicyState,
-} from '@fgo-lab/calculation-application';
+import type { EffectProjection, ModifierKind } from '@fgo-lab/calculation-application';
 import type { CraftEssenceMaster, ServantMaster } from '@fgo-lab/master-data';
 import { effectSourceImage } from './effectSourcePresentation';
 
 export type DamageEffectStackKind =
   ModifierKind | 'npSpecial' | 'npVariantSelection' | 'unresolved';
+
+type RankingContributionPolicyState = 'included' | 'excludedByRankingPolicy';
 
 export interface DamageEffectSource {
   key: string;

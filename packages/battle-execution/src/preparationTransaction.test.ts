@@ -57,8 +57,20 @@ const atlasEvidence = {
 
 function effect(
   occurrenceId: string,
-  resourceTransition: MasterEffect['resourceTransition'],
-  execution: MasterEffect['execution'] = [{ kind: 'nonDamage' }],
+  transitionFixture:
+    | {
+        kind: 'fixed';
+        recipient: 'sourceActor';
+        direction: 'gain' | 'loss';
+        amounts: [number[], number[], number[], number[], number[]];
+        overflow: 'clampToCapacity';
+        underflow: 'clampToZero';
+      }
+    | { kind: 'unsupported'; recipient: 'sourceActor'; family: string }
+    | null,
+  execution: MasterEffect['execution'] = [
+    { kind: 'boundedPhaseIrrelevant', proof: 'noBattleStateChange' },
+  ],
   requirement: MasterEffect['requirement']['expression'] = { kind: 'always' },
   activation: Partial<
     Pick<MasterEffect, 'proc' | 'selection' | 'interaction' | 'inputDefinitions'>
@@ -80,8 +92,31 @@ function effect(
     stateIdentity: null,
     inputDefinitions: [],
     requirement: { recipient: 'sourceSelf', expression: requirement },
-    resourceTransition,
-    execution,
+    execution: [
+      ...(transitionFixture === null
+        ? []
+        : transitionFixture.kind === 'fixed'
+          ? [
+              {
+                kind: 'resourceMutation' as const,
+                resource: 'npGauge' as const,
+                direction: transitionFixture.direction,
+                unit: 'fixed' as const,
+                recipient: 'sourceSelf' as const,
+                amount: { kind: 'fixed' as const, values: transitionFixture.amounts },
+                subjectId: null,
+              },
+            ]
+          : [
+              {
+                kind: 'unsupported' as const,
+                route,
+                reason: 'dependentResourceAmount' as const,
+                damageRelevant: true,
+              },
+            ]),
+      ...execution,
+    ],
     atlasEvidence,
     ...activation,
   };
@@ -666,13 +701,19 @@ describe('transactional preparation execution', () => {
         },
       },
     );
-    const ordinary = effect('ordinary-stochastic', null, [{ kind: 'nonDamage' }], undefined, {
-      proc: { kind: 'singleRoll', ratePermille: [[500], [], [], [], []] },
-      selection: {
-        kind: 'stochasticOutcome',
-        group: { kind: 'binary', key: 'ordinary-proc', defaultOutcome: 'failure' },
+    const ordinary = effect(
+      'ordinary-stochastic',
+      null,
+      [{ kind: 'boundedPhaseIrrelevant', proof: 'noBattleStateChange' }],
+      undefined,
+      {
+        proc: { kind: 'singleRoll', ratePermille: [[500], [], [], [], []] },
+        selection: {
+          kind: 'stochasticOutcome',
+          group: { kind: 'binary', key: 'ordinary-proc', defaultOutcome: 'failure' },
+        },
       },
-    });
+    );
     const servant = servantWithSkill([preparation, ordinary]);
     const created = createPreNoblePhantasmState(servant, baseForm, context);
     if (created.status !== 'applied') throw new Error(created.code);

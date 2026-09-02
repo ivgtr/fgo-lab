@@ -17,6 +17,7 @@ import type {
   TargetClassContext,
   TargetPredicate,
 } from '@fgo-lab/schema';
+import type { EffectiveContributionSet } from './executionTypes';
 
 export type ActorScope = 'attacker' | 'target';
 export type EffectContributionScope =
@@ -150,6 +151,10 @@ export type OperationModifierValueExpression =
     });
 
 export type BattleOperation =
+  | (OperationBase & {
+      kind: 'preserveSemanticEffect';
+      semanticKind: 'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant';
+    })
   | (OperationBase & {
       kind: 'addTrait';
       scope: TraitScope;
@@ -464,8 +469,10 @@ export interface BattleExecutionResult {
   state: BattleExecutionState;
   operations: readonly OperationResult[];
   projections: readonly EffectProjection[];
+  retainedProjections: readonly EffectProjection[];
   precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
   issues: readonly ExecutionIssue[];
   requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
   inputDefinitions: readonly CanonicalInputDefinition[];
+  effectiveContributions: EffectiveContributionSet;
 }

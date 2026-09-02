@@ -41,17 +41,27 @@ export function operationRecipient(
 ): Recipient | null {
   if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
     return 'attacker';
-  if (operation.kind === 'nonDamage') return null;
-  if (operation.kind === 'unresolved') return resolveTargetPolicy(origin, operation.route.target);
+  if (
+    operation.kind === 'resourceMutation' ||
+    operation.kind === 'stateMutation' ||
+    operation.kind === 'boundedPhaseIrrelevant'
+  )
+    return null;
+  if (operation.kind === 'unsupported') return resolveTargetPolicy(origin, operation.route.target);
   return resolveTargetPolicy(origin, operation.route.target);
 }
 
 export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): boolean {
   if (effect.triggerScope !== null) return false;
   return effect.execution.some((operation) => {
-    if (operation.kind === 'nonDamage') return false;
+    if (
+      operation.kind === 'resourceMutation' ||
+      operation.kind === 'stateMutation' ||
+      operation.kind === 'boundedPhaseIrrelevant'
+    )
+      return false;
     const recipient = operationRecipient(operation, origin);
-    if (operation.kind === 'unresolved') return operation.damageRelevant && recipient !== null;
+    if (operation.kind === 'unsupported') return operation.damageRelevant && recipient !== null;
     if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
       return operation.damageRelevant;
     if (operation.kind === 'contextMutation' && !operation.damageRelevant) return false;

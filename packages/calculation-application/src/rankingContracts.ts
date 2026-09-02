@@ -9,7 +9,10 @@ import type {
 import type { CalculationExecution } from './scenario';
 import type { NoblePhantasmVariantRef } from '@fgo-lab/master-data';
 import type { AttackProfile } from './attackProfile';
-import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
+import type {
+  ContributionApplicationPolicy,
+  EffectiveContributionSet,
+} from '@fgo-lab/battle-execution';
 import type { CandidateSpaceIssue } from './rankingCandidateSpace';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -18,15 +21,6 @@ export type RankingComparisonMode = 'standard' | 'owned';
 export type RankingNpLevel = 1 | 2 | 3 | 4 | 5;
 export type RankingClassAffinity = 'neutral' | 'favorable';
 export type RankingSelfBuffs = 'included' | 'excluded';
-export type RankingDamageContributionProjection =
-  'standardWithSelfSkills' | 'counterfactualWithoutVoluntarySkillModifiers';
-
-export const rankingDamageContributionProjection = (
-  selfBuffs: RankingSelfBuffs,
-): RankingDamageContributionProjection =>
-  selfBuffs === 'included'
-    ? 'standardWithSelfSkills'
-    : 'counterfactualWithoutVoluntarySkillModifiers';
 export type RankingConditionalEffects = 'baseline' | 'satisfied';
 
 export interface RankingPolicyConditions {
@@ -109,14 +103,16 @@ export interface RankingPolicyDetail {
   effectInputs: CalculationExecution['effectInputs'];
   warnings: CalculationExecution['effectWarnings'];
   appliedPreparationActions: CalculationExecution['appliedPreparationActions'];
-  contributionProjection: DamageContributionProjection;
-  contributionIntent: 'standard' | 'excludeVoluntarySkillModifiers';
+  contributionPolicy: ContributionApplicationPolicy;
+  effectiveContributions: EffectiveContributionSet;
+  rankingPolicy: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>;
   areaContribution: {
     withoutAreaScenario: ResolvedScenario;
     withoutAreaInput: DamageResolutionInput;
     withoutAreaResult: CalculationResult;
     withoutAreaEffects: CalculationExecution['effects'];
-    contributionProjection: DamageContributionProjection;
+    contributionPolicy: ContributionApplicationPolicy;
+    effectiveContributions: EffectiveContributionSet;
     warnings: CalculationExecution['effectWarnings'];
   } | null;
   executionMetrics: {
@@ -148,11 +144,24 @@ export type RankingProfileResult =
       reason: PolicyUnavailabilityReason;
     }
   | {
+      status: 'inputRequired';
+      attackProfile: AttackProfile;
+      inputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
+      issues: CalculationResult['issues'];
+    }
+  | {
       status: 'invalid';
       attackProfile: AttackProfile | null;
       issues: CalculationResult['issues'];
       reason: string;
       candidateSpaceIssue?: CandidateSpaceIssue;
+      detail?: string;
+    }
+  | {
+      status: 'unsupported';
+      attackProfile: AttackProfile | null;
+      issues: CalculationResult['issues'];
+      reason: string;
       detail?: string;
     };
 
@@ -160,7 +169,7 @@ export interface RankingPolicyExclusion {
   entryId: string;
   servantId: string;
   name: string;
-  status: 'unavailableUnderPolicy' | 'invalid';
+  status: 'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported';
   reason: string;
   issues: CalculationResult['issues'];
 }

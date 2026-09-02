@@ -1,6 +1,7 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation, EffectDecision, ExecutableBattleState } from './contracts';
-import type { DamageContributionProjection } from './executionTypes';
+import type { ContributionApplicationPolicy } from './executionTypes';
+import { contributionIsIncluded } from './effectiveContributions';
 import { evaluateCondition } from './condition';
 import { applyNpDamageOperation } from './npDamageOperation';
 import { combinedTraitCounts } from './state';
@@ -10,7 +11,7 @@ export function applyNoblePhantasmDamage(
   operation: Extract<BattleOperation, { kind: 'executeNpDamage' }>,
   state: ExecutableBattleState,
   decisions: ReadonlyMap<string, EffectDecision>,
-  contributionProjection?: DamageContributionProjection,
+  contributionPolicy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): DamageResolutionInput {
   const specialCondition = evaluateCondition(operation.specialAttackCondition, state);
   const specialDecision = operation.specialAttackDecisionKey
@@ -21,20 +22,12 @@ export function applyNoblePhantasmDamage(
       ? specialCondition === true
       : specialDecision.operationEnabled &&
         (specialCondition === true || specialDecision.conditionSatisfaction === 'assumeSatisfied');
-  const includedStateCounts = (
-    counts: Readonly<Record<string, number>>,
-    excluded: ReadonlySet<string> | undefined,
-  ): Readonly<Record<string, number>> =>
-    excluded && excluded.size > 0
-      ? Object.fromEntries(Object.entries(counts).filter(([trait]) => !excluded.has(trait)))
-      : counts;
-  const attackerStateTraitCounts = includedStateCounts(
-    state.traitCounts.attackerState,
-    contributionProjection?.excludedStateTraitContributions.attackerState,
-  );
-  const targetStateTraitCounts = includedStateCounts(
-    state.traitCounts.targetState,
-    contributionProjection?.excludedStateTraitContributions.targetState,
+  const attackerStateTraitCounts = state.traitCounts.attackerState;
+  const targetStateTraitCounts = state.traitCounts.targetState;
+  const specialIncluded = contributionIsIncluded(
+    operation,
+    operation.specialAttackCondition,
+    contributionPolicy,
   );
   return applyNpDamageOperation(input, operation.damage, {
     overcharge: operation.overcharge,
@@ -52,6 +45,7 @@ export function applyNoblePhantasmDamage(
     attackerHpPermille: state.quantities.attackerHpPermille,
     targetRarity: state.quantities.targetRarity,
     battlePointPhase: state.quantities.battlePointPhase,
-    effectLocalConditionSatisfied,
+    effectLocalConditionSatisfied: specialIncluded && effectLocalConditionSatisfied,
+    includeSpecialContribution: specialIncluded,
   });
 }

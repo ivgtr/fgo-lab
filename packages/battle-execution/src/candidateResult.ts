@@ -10,6 +10,9 @@ import type {
 } from './executionTypes';
 import { projectAtDamageEvaluation } from './projection';
 import { foldDamageInput } from './state';
+import { createEffectiveContributionSet } from './effectiveContributions';
+import { contributionIsIncluded } from './effectiveContributions';
+import type { ContributionApplicationPolicy } from './executionTypes';
 
 function executionIssues(
   prepared: PreparedOrderedScenario,
@@ -45,6 +48,7 @@ export function assembleCandidateResult({
   state,
   input,
   results,
+  contributionPolicy,
 }: {
   prepared: PreparedOrderedScenario;
   resolvedInputs: ResolvedCanonicalInputSet;
@@ -52,6 +56,7 @@ export function assembleCandidateResult({
   state: ExecutableBattleState;
   input: DamageResolutionInput;
   results: readonly OperationResult[];
+  contributionPolicy: ContributionApplicationPolicy;
 }): OrderedScenarioExecution {
   const { operations, inputDefinitions } = prepared;
   const issues = executionIssues(prepared, resolvedInputs, candidate, state);
@@ -64,6 +69,8 @@ export function assembleCandidateResult({
       projection.visibility === 'visible' &&
       operations.some((operation) => {
         if (operation.operationId !== projection.operationId) return false;
+        if (!contributionIsIncluded(operation, operation.condition, contributionPolicy))
+          return false;
         const activation = candidate.activations.get(operation.operationId);
         return (
           activation?.enabled === true ||
@@ -91,6 +98,7 @@ export function assembleCandidateResult({
     state,
     operations: [...results],
     projections,
+    retainedProjections: prepared.retainedProjections,
     precision,
     issues,
     requiredInputs: relevantMissingDefinitions.map((definition) => ({
@@ -105,5 +113,6 @@ export function assembleCandidateResult({
         .filter((value, index, all) => all.indexOf(value) === index),
     })),
     inputDefinitions: [...inputDefinitions],
+    effectiveContributions: createEffectiveContributionSet(results, contributionPolicy),
   };
 }

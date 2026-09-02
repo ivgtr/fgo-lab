@@ -6,6 +6,54 @@ updated_at: "2026-09-02"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
+## TSK-06.41 runtime cutover — authoritative current delta
+
+This section supersedes the TSK-06.4 implementation deferrals below. Implementation started from clean HEAD
+`b07ca1ddb4fae01d67e38321e7a7c496b9592a64`. Damage, profile selection, row count, badge, detail, and portable
+replay now consume one canonical ordered application result and its effective contribution set. Action
+admission remains separate from contribution inclusion; an admitted action commits its branch, cost, and
+mutations atomically even when policy excludes one damage contribution.
+
+| Direct producer／reader／writer／recovery | Classification |
+| --- | --- |
+| Atlas vocabulary → source-specific canonical schemas | Verified: pipeline-only interpretation; active／passive／NP／CE／mystic bounds reject schema-legal overflow fixtures |
+| canonical effects → ordered operations／retained evidence | Verified: one battle-execution compiler; resource／state／bounded／unsupported outcomes are typed |
+| ordered action → branch, cost, mutation, contribution | Verified: one transactional executor; failure rolls back the action, policy exclusion does not roll mutations back |
+| AttackProfile and complete path → candidate-local admission | Verified: structural role uses terminal profile and the full ordered path |
+| finite domain → materialization → final-damage comparison | Verified: certificate precedes allocation, count matches materialization, independent oracle passes; maximum 2,880／4,096 |
+| calculator／ranking／without-area／portable replay | Verified: same application preparation and executor; without-area is reapplied only to the selected result |
+| effective contributions → damage／selection／row／badge／detail | Verified: self, condition, and area decisions remain independent; presentation groups exclude NP base |
+| invalid／unsupported／inputRequired／unavailable recovery | Verified: five profile outcomes remain distinct; only typed insufficient-NP unavailability is non-blocking |
+| UI writer and ranking → calculator handoff | Verified: current discriminated intent is written directly; detail renders canonical decisions |
+| final four-policy × NP1–5 maximum／digest | Deferred: TSK-06.5; no new runtime semantics may be added there |
+
+Runtime Blocking count: **0**. Cache lifetime／stale-response UI is `Deferred: TSK-07`; a general battle
+simulator is `N/A: outside the bounded preparation product`.
+
+Schema-legal fixtures cover slot 4, source effect／choice overflow, multiple choice groups, nested conditions,
+exclusive branches with cost, mutation-retained／contribution-excluded actions, missing inputs, stochastic
+failure, unsupported operations, unreachable profiles, and invalid／mixed portable snapshots. Calculator,
+ranking, without-area, migration, reset, and replay use the same canonical application boundary.
+
+The current master has 13,875 effects and 14,623 typed operations. TSK-06.4 counted 9,123 affected effect
+occurrences and 9,124 legacy operations because one referenced wrapper expanded twice; the cutover preserves
+that explained delta while removing the legacy variant. Preparation inventory is 6,360 generated, 3,949
+deduplicated, and 3,438 terminal plans. Default ranking emits 576 certified candidates, makes 575 damage
+requests, and has 556 distinct inputs. There are 433 static AttackProfiles and 432 numeric rows: `2501400` NP1
+is typed `unavailableUnderPolicy: insufficientNpGauge`, not a numeric fallback or sibling substitution.
+
+Production digests are application `8f52a96e2e49e5917e61dc49253a102127a6a3fda21029d1c0f17933bf985b57`
+and pipeline `916403ecd681dc6b2c4655bd3c052bd8527db3eeac0d54dd1b1a2d18641c02e8`. The pre-cutover
+production run was 38.47 s real. Post-cutover canonical-runner measurements were 38.01／40.24／38.74 s,
+median 38.74 s: +0.27 s／+0.70%, within the 10% ratchet. Each run executed 24 files／113 tests; the first
+completed its tests before reporting the then-stale runtime-counter contract, and the latter two passed the
+updated contract. Final quality passed unit 380, production 113, and Playwright 25 with no skip, retry, warning,
+or unexpected console; artifact `.test-results/2026-09-02T06-07-59-655Z-44-fc4f13`.
+
+Removal audit finds zero production legacy operation variants, operation-ID contribution projections,
+independent 512-state caps, current old portable-intent writers, compatibility flags, adapters, or parallel
+compilers. The schema-33 parser remains only as the exact approved migration boundary.
+
 ## TSK-06.4 independent design audit — authoritative current delta
 
 This section supersedes both the pre-audit contribution-graph proposal below and the first planning-diff nested

@@ -310,7 +310,6 @@ describe('portable input limits', () => {
                       ],
                     },
                   },
-                  resourceTransition: null,
                   execution: [
                     {
                       kind: 'damageModifier',

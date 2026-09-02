@@ -1,44 +1,30 @@
-import type { DamageContributionProjection, EffectProjection } from '@fgo-lab/battle-execution';
-import { stateTraitsRequiredByCondition } from './conditionProvenance';
-import { isAreaDamageContribution, isAttackerDamageContribution } from './contributionProjection';
+import type { EffectProjection, EffectiveContributionSet } from '@fgo-lab/battle-execution';
+import { isAreaDamageContribution, isAttackerDamageContribution } from './contributionPolicy';
 
-export type RankingContributionPolicyState = 'included' | 'excludedByRankingPolicy';
-
-export function resolveRankingEffectContribution(
+export function contributionsForEffect(
   effect: EffectProjection,
-  projection: DamageContributionProjection,
-): RankingContributionPolicyState {
-  if (projection.excludedOperationIds.has(effect.operationId)) return 'excludedByRankingPolicy';
-  for (const scope of ['attackerState', 'targetState'] as const) {
-    const excludedTraits = projection.excludedStateTraitContributions[scope];
-    if (
-      stateTraitsRequiredByCondition(effect.explanation.condition, scope).some((trait) =>
-        excludedTraits.has(trait),
-      )
-    )
-      return 'excludedByRankingPolicy';
-  }
-  return 'included';
+  effective: EffectiveContributionSet,
+) {
+  return effective.contributions.filter(
+    (contribution) => contribution.operationId === effect.operationId,
+  );
 }
 
 export function rankingEffectContributes(
   effect: EffectProjection,
-  projection: DamageContributionProjection,
+  effective: EffectiveContributionSet,
 ): boolean {
-  return (
-    effect.outcome === 'applied' &&
-    resolveRankingEffectContribution(effect, projection) === 'included'
-  );
+  return contributionsForEffect(effect, effective).some((contribution) => contribution.effective);
 }
 
-export function contributesToAttackerDamage(projection: EffectProjection): boolean {
-  return isAttackerDamageContribution(projection);
+export function contributesToAttackerDamage(effect: EffectProjection): boolean {
+  return isAttackerDamageContribution(effect);
 }
 
-export function contributesAreaSupport(projection: EffectProjection): boolean {
-  return isAttackerDamageContribution(projection) && isAreaDamageContribution(projection);
+export function contributesAreaSupport(effect: EffectProjection): boolean {
+  return isAttackerDamageContribution(effect) && isAreaDamageContribution(effect);
 }
 
-export function isSpecialAttack(projection: EffectProjection): boolean {
-  return projection.modifier === 'powerMod' || projection.modifier === 'npSpecial';
+export function isSpecialAttack(effect: EffectProjection): boolean {
+  return effect.modifier === 'powerMod' || effect.modifier === 'npSpecial';
 }

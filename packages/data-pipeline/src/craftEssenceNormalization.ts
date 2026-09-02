@@ -27,6 +27,11 @@ function expressionShape(expression: ModifierValueExpression | null) {
 }
 
 function operationSemanticIdentity(operation: EffectExecutionOperation): string {
+  if (operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed')
+    return JSON.stringify({
+      ...operation,
+      amount: { kind: 'fixed' },
+    });
   if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
     return JSON.stringify(operation);
   const semantics =
@@ -80,7 +85,15 @@ function withExplicitLimitBreakValues(effect: MasterEffect): MasterEffect {
             limitBreakValueExpressions:
               operation.limitBreakValueExpressions ?? operation.valueExpressions,
           }
-        : operation,
+        : operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed'
+          ? {
+              ...operation,
+              amount: {
+                ...operation.amount,
+                limitBreakValues: operation.amount.limitBreakValues ?? operation.amount.values,
+              },
+            }
+          : operation,
     ),
   };
 }
@@ -97,6 +110,24 @@ function mergeSharedEffect(
   return {
     ...normal,
     execution: normal.execution.map((operation, index) => {
+      if (operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed') {
+        const limitBreakOperation = limitBreak.execution[index];
+        if (
+          limitBreakOperation?.kind !== 'resourceMutation' ||
+          limitBreakOperation.amount.kind !== 'fixed' ||
+          operationSemanticIdentity(operation) !== operationSemanticIdentity(limitBreakOperation)
+        )
+          throw new Error(
+            `craft_essence_limit_break_operation_mismatch:${String(equipId)}:${normal.occurrenceId}:${String(index)}`,
+          );
+        return {
+          ...operation,
+          amount: {
+            ...operation.amount,
+            limitBreakValues: limitBreakOperation.amount.values,
+          },
+        };
+      }
       if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
         return operation;
       const limitBreakOperation = limitBreak.execution[index] as ValuedOperation | undefined;

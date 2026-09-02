@@ -11,6 +11,9 @@ import type {
   BattleOperation,
   EffectProjection,
   ExecutionIssue,
+  ModifierKind,
+  OperationOutcome,
+  OperationSource,
 } from './contracts';
 import type { TargetResolution } from './targetContext';
 import type { AppliedPreparationAction } from './preNoblePhantasm';
@@ -31,6 +34,7 @@ export interface PreparedOrderedScenario {
   damage: NpDamageSpec | undefined;
   operations: readonly BattleOperation[];
   compileProjections: readonly EffectProjection[];
+  retainedProjections: readonly EffectProjection[];
   sourceIssues: readonly ExecutionIssue[];
   targetResolution: TargetResolution;
   targetDomain: CanonicalTargetDomain;
@@ -50,11 +54,42 @@ export interface ResolvedCanonicalInputSet {
   invalidInputKeys: readonly string[];
 }
 
-export interface DamageContributionProjection {
-  includedOperationIds: ReadonlySet<string>;
-  excludedOperationIds: ReadonlySet<string>;
-  excludedStateTraitContributions: {
-    attackerState: ReadonlySet<string>;
-    targetState: ReadonlySet<string>;
-  };
+export type ContributionApplicationPolicy =
+  | { kind: 'calculator' }
+  | {
+      kind: 'ranking';
+      selfBuffs: 'included' | 'excluded';
+      conditionalEffects: 'baseline' | 'satisfied';
+      areaView: 'included' | 'excluded';
+    };
+
+export type ContributionPolicyDecision =
+  | { kind: 'included' }
+  | { kind: 'excluded'; reason: 'selfBuffPolicy' | 'conditionalEffectPolicy' | 'areaView' };
+
+export interface EffectiveContribution {
+  contributionId: string;
+  presentationGroupId: string;
+  operationId: string;
+  component: 'modifier' | 'modifierRate' | 'ignore' | 'npBase' | 'npSpecial';
+  modifier: ModifierKind | 'npSpecial' | null;
+  resolvedValue: number | null;
+  outputAddress:
+    | 'damage.modifier'
+    | 'damage.modifierRate'
+    | 'damage.ignore'
+    | 'damage.npBase'
+    | 'damage.npSpecial';
+  source: OperationSource;
+  executionOutcome: OperationOutcome;
+  selfDecision: ContributionPolicyDecision;
+  conditionDecision: ContributionPolicyDecision;
+  areaViewDecision: ContributionPolicyDecision;
+  effective: boolean;
+  presentationCounted: boolean;
+}
+
+export interface EffectiveContributionSet {
+  contributions: readonly EffectiveContribution[];
+  effectivePresentationGroupIds: ReadonlySet<string>;
 }

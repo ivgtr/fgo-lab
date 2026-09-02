@@ -28,10 +28,7 @@ type CalculationContextNoticeProps =
 
 export function CalculationContextNotice(props: CalculationContextNoticeProps) {
   const { request } = props;
-  const ranking =
-    request.executionIntent.kind === 'resolved' && request.executionIntent.origin === 'ranking'
-      ? request.executionIntent
-      : null;
+  const ranking = request.executionIntent.kind === 'ranking' ? request.executionIntent : null;
   if (props.state === 'historicalOnly')
     return (
       <section className="notice calculation-context-notice" aria-labelledby="historical-title">
@@ -92,8 +89,9 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
         <>
           <strong>ランキングから引き継いだ計算条件</strong>
           <span>
-            開始NP {ranking.initialNpGauge / 100}% ／ 寄与条件{' '}
-            {ranking.contribution === 'standard' ? '標準' : '任意スキル補正を除外'}
+            開始NP {ranking.initialNpGauge / 100}% ／ 自己強化:{' '}
+            {ranking.policy.selfBuffs === 'included' ? '込み' : '除外'} ／ 条件効果:{' '}
+            {ranking.policy.conditionalEffects === 'satisfied' ? '成立込み' : '通常のみ'}
           </span>
           <button type="button" onClick={() => void props.onReset()}>
             通常の計算条件へ戻す

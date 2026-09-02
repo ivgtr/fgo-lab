@@ -29,6 +29,7 @@ export function compileExecutionPlan(
   const collected = collectOperationSources(baseInput, scenario, master, resolvedFormExecution);
   const compiledOperations: BattleOperation[] = [];
   const compileProjections: EffectProjection[] = [];
+  const retainedProjections: EffectProjection[] = [];
   for (const source of collected.sources) {
     const compiled = compileEffectCached(
       source,
@@ -36,7 +37,13 @@ export function compileExecutionPlan(
       attacker?.actorFormGraph.forms,
     );
     compiledOperations.push(...compiled.operations);
-    compileProjections.push(...compiled.unsupported);
+    for (const projection of compiled.projections)
+      if (
+        projection.executionSupport === 'supported' &&
+        projection.explanation.code === 'stateMutationOnly'
+      )
+        retainedProjections.push(projection);
+      else compileProjections.push(projection);
   }
   const baseVariant = attacker
     ? getBaseNoblePhantasmVariantForForm(attacker, scenario.attacker.initialActorFormId)
@@ -169,6 +176,7 @@ export function compileExecutionPlan(
     damage,
     operations,
     compileProjections,
+    retainedProjections,
     sourceIssues: [...collected.issues, ...staleAttackerFactIssues],
     targetResolution,
     targetDomain: master.targetSemantics.execution,

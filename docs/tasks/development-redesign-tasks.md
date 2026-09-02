@@ -56,8 +56,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.2 | E2E responsibility and execution closure | done | TSK-06.1 | test strategy Web component／E2E ownership |
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
-| TSK-06.41 | Ranking contribution and portable atomic cutover | ready | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.41 | final candidate／maximum／legacy-removal proof |
+| TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
+| TSK-06.5 | Ranking theoretical maximum and production closure | ready | TSK-06.41 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
@@ -1007,38 +1007,38 @@ Entry condition: TSK-06.4 A1〜A3とADR replacement gateを含むBlocking 0。�
 cutover境界であり、
 rejected graph型を復活させない。
 
-- [ ] `CanonicalSourceProgram(action | automatic) → CanonicalExecutionStep → CanonicalStepOperation`へ
+- [x] `CanonicalSourceProgram(action | automatic) → CanonicalExecutionStep → CanonicalStepOperation`へ
       destructive cutoverし、action transaction、passive／intrinsic／CE／support／mysticのautomatic source、
       state／field／resource mutation、normal modifier、
       rate、ignore、NP base／specialを一つのordered resultへ収束する。consequence要約やeligibility同期fieldを作らない。
-- [ ] `nonDamage` 9,124 operations／9,123 effect occurrencesをresource、state／field、typed unsupported、
+- [x] `nonDamage` 9,124 operations／9,123 effect occurrencesをresource、state／field、typed unsupported、
       bounded-phase-irrelevantへ再compileし、未分類0件を共有production inventoryでratchetする。raw function名をruntime
       unionまたはadmission branchへ残さない。
-- [ ] active／passive／NP／CE／mysticをrequirement 7.1のsource別schemaへ破壊的に切り替え、slot 4、複数
+- [x] active／passive／NP／CE／mysticをrequirement 7.1のsource別schemaへ破壊的に切り替え、slot 4、複数
       player-choice group、source別effect／candidate上限超過のschema-legal fixtureをproducerでfail-closedにする。
-- [ ] `AttackProfile × four policies × NP1〜5`の`FiniteRankingDomainCertificate`をprepared-context constructionで生成し、
+- [x] `AttackProfile × four policies × NP1〜5`の`FiniteRankingDomainCertificate`をprepared-context constructionで生成し、
       complete upper bound ≤4,096とmaterialized count一致を検証する。独立した512 preparation-state capとpartial
       `candidateLimitExceeded` resultを削除し、small exhaustive oracleを追加する。
-- [ ] candidate-local action admissionをfinite domain構築前に実装する。自己バフありは無条件・確定的・無デメリットで
+- [x] candidate-local action admissionをfinite domain構築前に実装する。自己バフありは無条件・確定的・無デメリットで
       実効寄与を持つ任意action optionだけをbaselineへadmitし、成立込みはcompatibleな特攻／条件効果／field／
       表現可能なcostを一つの合法scenarioへ重ねる。
-- [ ] 排他的player choiceはbranchを合算せず、cost、後続state、attack NP到達可能性を反映した最終平均damageが
+- [x] 排他的player choiceはbranchを合算せず、cost、後続state、attack NP到達可能性を反映した最終平均damageが
       最大の合法branchを一つ選ぶ。conditional-only actionはbaselineへ残さず、mixed siblingの無条件寄与は保持する。
-- [ ] ranking、portable replay、production auditが同じapplication compilerを呼び、ordered executionはそのtyped
+- [x] ranking、portable replay、production auditが同じapplication compilerを呼び、ordered executionはそのtyped
       projectionを消費する。damage、selection、row count、badgeを一つのeffective contribution集合から導出する。
-- [ ] ordered action precondition／step activation／included contribution evaluationのlazy read、canonical source／step／
+- [x] ordered action precondition／step activation／included contribution evaluationのlazy read、canonical source／step／
       contribution／presentation identity、self／condition／areaView decisionを実装し、dependency graph、単一除外理由、
       operation-ID fallbackを残さない。
-- [ ] portable schema／fingerprint／persistence／migration／recoveryを二軸intentへ破壊的に切り替え、旧current
+- [x] portable schema／fingerprint／persistence／migration／recoveryを二軸intentへ破壊的に切り替え、旧current
       schema readerやscenario/world factsからのcondition policy推測を残さない。
-- [ ] schemaを読む全direct reader／writerとreset production commandを同時に切り替え、selected rankingからcalculatorへの
+- [x] schemaを読む全direct reader／writerとreset production commandを同時に切り替え、selected rankingからcalculatorへの
       最小Web handoff parityを閉じる。notice、recovery interaction、cache、responsive／a11yだけをTSK-07へDeferredする。
-- [ ] operation-ID projection、旧portable reader、旧policy fallback、compatibility flag、並行compilerを同じcutoverで
+- [x] operation-ID projection、旧portable reader、旧policy fallback、compatibility flag、並行compilerを同じcutoverで
       削除し、新旧runtimeを併存させない。旧behaviorへ戻すIR adapterを必要とする別runtime準備Taskを作らず、
       production entrypointは常に一つとする。
-- [ ] focused schema-legal action／effect／contribution／liveness matrix、production occurrence／digest、presentation state、
+- [x] focused schema-legal action／effect／contribution／liveness matrix、production occurrence／digest、presentation state、
       per-contribution completeness、portable／calculator execution parity、performanceを閉じる。
-- [ ] focused candidate soundnessとsmall exhaustive oracleをcutover gateとして閉じる。全production四policy × NP1〜5の
+- [x] focused candidate soundnessとsmall exhaustive oracleをcutover gateとして閉じる。全production四policy × NP1〜5の
       最終inventory／digest／performance固定はTSK-06.5へDeferredし、本Taskの値をfinal baselineと呼ばない。
 
 Done gate:
@@ -1130,6 +1130,29 @@ Handoff:
 - action admissionのproduct／designはTSK-06.4、実装はfinite domain構築前にTSK-06.41が所有する。
   TSK-06.5はcandidate soundness／finite maximum／四policy production inventoryの最終証明だけを所有する。
 - TSK-06.5、TSK-07、TSK-08、TSK-09.1、TSK-09はこのTaskのBlocking 0まで待機する。
+
+Completion:
+
+- Start: clean `b07ca1ddb4fae01d67e38321e7a7c496b9592a64`. Canonical flow notes are
+  `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` and
+  `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md`; every TSK-06.41 runtime path is Verified,
+  `N/A`, or explicitly Deferred and Blocking is 0.
+- Runtime cutover: source-specific schema 43, portable schema 34, engine 30.0.0, one ordered application
+  compiler／executor, per-contribution self／condition／area decisions, candidate-local action admission, typed
+  five-class profile outcomes, exact schema-33 migration, transactional reset, and direct Web handoff. Legacy
+  operation-ID projection, independent 512-state cap, current old intent, compatibility path, and parallel
+  runtime are absent.
+- Production: master 13,875 effects／14,623 operations; preparation 6,360 generated／3,949 deduplicated／3,438
+  terminal; ranking 576 candidates／575 damage requests／556 distinct inputs; 433 AttackProfiles／432 rows plus
+  one typed insufficient-NP exclusion. Application digest
+  `8f52a96e2e49e5917e61dc49253a102127a6a3fda21029d1c0f17933bf985b57`; pipeline digest
+  `916403ecd681dc6b2c4655bd3c052bd8527db3eeac0d54dd1b1a2d18641c02e8`.
+- Performance: canonical production runner 38.01／40.24／38.74 s, median 38.74 s against start 38.47 s
+  (+0.70%). The 2,880／4,096 maximum, candidate cap, project timeout, and worker configuration are unchanged.
+- Verification: focused candidate／executor 47／47, portable／schema／UI fixtures, unit 73 files／380 tests,
+  production 24 files／113 tests, and focused Playwright 3 projects／10 tests passed. Final `pnpm quality`
+  passed with unit 380, production 113, Playwright 25, skip／todo／retry／warning／unexpected-console 0;
+  artifact `.test-results/2026-09-02T06-07-59-655Z-44-fc4f13`. TSK-06.41 is `done`; TSK-06.5 is `ready`.
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

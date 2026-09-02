@@ -271,7 +271,7 @@ export function normalizeAtlasSnapshot(input: {
       source: 'skill' | 'passive',
     ) => ({
       id: String(skill.id),
-      slot: skill.num ?? 0,
+      ...(source === 'skill' ? { slot: skill.num } : {}),
       priority: skill.priority ?? 0,
       name: skill.name ?? '不明なスキル',
       detail: skill.detail ?? '',

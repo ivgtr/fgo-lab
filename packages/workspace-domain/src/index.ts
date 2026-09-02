@@ -30,10 +30,11 @@ export function finalizeHistory(
 ): LocalProfile {
   if (command.result.status !== 'calculated') return profile;
   const sessionIndex = profile.history.findIndex(
-    (entry) => entry.calculationSessionId === command.sessionId,
+    (entry) => 'request' in entry && entry.calculationSessionId === command.sessionId,
   );
   if (sessionIndex >= 0) {
     const existing = profile.history[sessionIndex]!;
+    if (!('request' in existing)) throw new TypeError('historical_calculation_is_immutable');
     const updated = {
       ...existing,
       request: command.request,
@@ -53,7 +54,7 @@ export function finalizeHistory(
     };
   }
   const previous = profile.history.at(-1);
-  if (previous?.requestFingerprint === command.fingerprint) {
+  if (previous && 'request' in previous && previous.requestFingerprint === command.fingerprint) {
     const history = [
       ...profile.history.slice(0, -1),
       {

@@ -39,7 +39,6 @@ function effect(execution: EffectExecutionOperation[]): MasterEffect {
       recipient: 'sourceSelf',
       expression: { kind: 'always' },
     },
-    resourceTransition: null,
     execution,
     atlasEvidence: {
       functionType: 'test',
@@ -244,7 +243,7 @@ describe('canonical operation compilation', () => {
       ]),
       7,
     );
-    expect(compiled.unsupported).toEqual([]);
+    expect(compiled.projections).toEqual([]);
     expect(compiled.operations).toMatchObject([
       { order: 7, kind: 'addModifier', modifier: 'attackBuff', valuePermille: 100 },
       { order: 8, kind: 'addTrait', scope: 'field', trait: 'fieldSunlight' },
@@ -258,13 +257,13 @@ describe('canonical operation compilation', () => {
       0,
     );
     expect(compiled.operations).toEqual([]);
-    expect(compiled.unsupported).toHaveLength(1);
+    expect(compiled.projections).toHaveLength(1);
   });
 
   it('does not fall back to normal values when an MLB value series is missing', () => {
     const compiled = compileEffect(source([modifier('attackBuff', 100)], true), 0);
     expect(compiled.operations).toEqual([]);
-    expect(compiled.unsupported).toHaveLength(1);
+    expect(compiled.projections).toHaveLength(1);
   });
 
   it('does not partially compile when any operation semantics is unresolved', () => {
@@ -272,7 +271,7 @@ describe('canonical operation compilation', () => {
       source([
         modifier('attackBuff', 100),
         {
-          kind: 'unresolved',
+          kind: 'unsupported',
           route: {
             target: 'sourceSelf',
             contributionScope: 'personal',
@@ -285,7 +284,7 @@ describe('canonical operation compilation', () => {
       0,
     );
     expect(compiled.operations).toEqual([]);
-    expect(compiled.unsupported).toHaveLength(1);
+    expect(compiled.projections).toHaveLength(1);
   });
 
   it('keeps an absent route non-applicable when the canonical policy says to ignore it', () => {
@@ -301,7 +300,7 @@ describe('canonical operation compilation', () => {
       },
     };
     const compiled = compileEffect(supportSource([operation]), 0);
-    expect(compiled).toEqual({ operations: [], unsupported: [] });
+    expect(compiled).toEqual({ operations: [], projections: [] });
   });
 
   it('fails closed when a requirement needs an unresolved recipient', () => {
@@ -325,7 +324,7 @@ describe('canonical operation compilation', () => {
     };
     const compiled = compileEffect(unresolved, 0);
     expect(compiled.operations).toEqual([]);
-    expect(compiled.unsupported).toMatchObject([
+    expect(compiled.projections).toMatchObject([
       {
         executionSupport: 'unsupported',
         explanation: {
@@ -358,7 +357,7 @@ describe('canonical operation compilation', () => {
 
     const compiled = compileEffect(attacker, 0);
 
-    expect(compiled.unsupported).toEqual([]);
+    expect(compiled.projections).toEqual([]);
     expect(compiled.operations).toMatchObject([
       {
         condition: {
@@ -410,7 +409,7 @@ describe('canonical operation compilation', () => {
       ],
     };
     const compiled = compileEffect(supportSource([hpModifier]), 0);
-    expect(compiled.unsupported).toEqual([]);
+    expect(compiled.projections).toEqual([]);
     expect(compiled.operations).toMatchObject([
       {
         kind: 'addModifier',

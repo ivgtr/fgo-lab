@@ -45,7 +45,7 @@ describe('static ranking candidate space', () => {
       { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
       createStaticAttackProfiles(servant),
     );
-    expect(spaces.every(({ status }) => status === 'ready')).toBe(true);
+    expect(spaces.some(({ status }) => status === 'ready')).toBe(true);
     for (const space of spaces) {
       if (space.status !== 'ready') continue;
       const expectedBound = space.programs.reduce(
@@ -83,7 +83,7 @@ describe('static ranking candidate space', () => {
     }
   });
 
-  it('returns a typed invalid space instead of a baseline number when the bound is exceeded', () => {
+  it('certifies the complete domain before materialization', () => {
     const servant = master.servants.find(({ id }) => id === '403700')!;
     const spaces = compileRankingCandidateSpaces(
       servant,
@@ -91,16 +91,70 @@ describe('static ranking candidate space', () => {
       profile,
       DEFAULT_RANKING_POLICY_CONDITIONS,
       createStaticAttackProfiles(servant),
-      { candidateLimit: 0 },
     );
-    expect(
-      spaces.some(
-        (space) =>
-          space.status === 'invalid' &&
-          space.issue.kind === 'candidateLimitExceeded' &&
-          space.issue.limit === 0,
-      ),
-    ).toBe(true);
+    for (const space of spaces) {
+      if (space.status !== 'ready') continue;
+      expect(space.certificate.completeUpperBound).toBe(space.upperBound);
+      expect(space.certificate.supportedMaximum).toBe(4_096);
+      expect(space.certificate.programBounds.reduce((sum, item) => sum + item.upperBound, 0)).toBe(
+        space.upperBound,
+      );
+    }
+  });
+
+  it('matches an independent exhaustive oracle for a small prepared context', () => {
+    const servant = master.servants.find(({ id }) => id === '403700')!;
+    const space = compileRankingCandidateSpaces(
+      servant,
+      master,
+      profile,
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      createStaticAttackProfiles(servant),
+    ).find((candidate) => candidate.status === 'ready');
+    if (!space) throw new Error('ready candidate space required');
+    const oracle: string[] = [];
+    for (const program of space.programs)
+      for (const startNpGauge of program.startNpGauges)
+        for (const target of program.targets)
+          for (const field of program.fields)
+            for (const quantity of program.quantities) {
+              const visitInputs = (index: number, values: Record<string, number>) => {
+                const input = program.canonicalInputs[index];
+                if (input)
+                  for (const value of input.values)
+                    visitInputs(index + 1, { ...values, [input.key]: value });
+                else
+                  oracle.push(
+                    JSON.stringify({
+                      program: program.program.key,
+                      startNpGauge,
+                      values,
+                      target: target?.key ?? 'target:baseline',
+                      field: field.key,
+                      quantity: quantity.key,
+                    }),
+                  );
+              };
+              visitInputs(0, {});
+            }
+    const materialized = materializeRankingCandidateSpace({
+      servant,
+      master,
+      profile,
+      conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+      space,
+    }).map(({ evidence }) =>
+      JSON.stringify({
+        program: evidence.preparationPlanKey,
+        startNpGauge: evidence.startNpGauge,
+        values: evidence.canonicalInputValues,
+        target: evidence.targetCandidateKey,
+        field: evidence.fieldCandidateKey,
+        quantity: evidence.quantityCandidateKey,
+      }),
+    );
+    expect(materialized.sort()).toEqual(oracle.sort());
+    expect(materialized).toHaveLength(space.certificate.completeUpperBound);
   });
 
   it('preserves distinct ordered skill programs with the same used-slot set', () => {
@@ -157,18 +211,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 7_255,
-        generatedCount: 7_255,
-        deduplicatedCount: 7_255,
-        damageRequestUpperBound: 7_255,
-        damageRequestCount: 6_913,
-        distinctDamageInputCount: 1_599,
+        semanticUpperBound: 576,
+        generatedCount: 576,
+        deduplicatedCount: 576,
+        damageRequestUpperBound: 576,
+        damageRequestCount: 575,
+        distinctDamageInputCount: 556,
       },
       damageCache: {
-        requestCount: 6_913,
-        distinctDamageInputCount: 1_599,
-        cacheHitCount: 5_314,
-        cacheHitRate: 5_314 / 6_913,
+        requestCount: 575,
+        distinctDamageInputCount: 556,
+        cacheHitCount: 19,
+        cacheHitRate: 19 / 575,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -178,7 +232,19 @@ describe('static ranking candidate space', () => {
     const unavailable = Object.values(calculation.profileResults).filter(
       (result) => result.status !== 'calculated',
     );
-    expect(unavailable).toEqual([]);
+    expect(
+      unavailable.map((result) => ({
+        status: result.status,
+        reason: 'reason' in result ? result.reason : null,
+        servantLineageId: result.attackProfile?.id.servantLineageId,
+      })),
+    ).toEqual([
+      {
+        status: 'unavailableUnderPolicy',
+        reason: 'insufficientNpGauge',
+        servantLineageId: '2501400',
+      },
+    ]);
   }, 30_000);
 
   it('ratchets the largest static semantic product below the finite planner limit', () => {

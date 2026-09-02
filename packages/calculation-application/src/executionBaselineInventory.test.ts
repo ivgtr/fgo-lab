@@ -34,7 +34,7 @@ function atlasValuePurpose(effect: MasterEffect) {
   if (effect.execution.some((operation) => operation.kind === 'modifierRateChange'))
     return 'modifierRate';
   if (effect.execution.some((operation) => operation.kind === 'damageModifier')) return 'modifier';
-  return 'nonDamage';
+  return 'otherOperation';
 }
 
 describe('E0 production master execution inventory', () => {
@@ -122,7 +122,7 @@ describe('E0 production master execution inventory', () => {
           }, {}),
         ).sort(),
       ),
-    ).toEqual({ contextTraitId: 80, modifier: 3_885, modifierRate: 1, nonDamage: 6_899 });
+    ).toEqual({ contextTraitId: 80, modifier: 3_885, modifierRate: 1, otherOperation: 6_899 });
   });
 
   it('locks mandatory real-master scenarios without production branching', async () => {

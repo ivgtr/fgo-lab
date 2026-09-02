@@ -1,4 +1,4 @@
-import type { DamageContributionProjection } from '@fgo-lab/battle-execution';
+import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import type { ActorFormId, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import { applyCanonicalInputCommand } from './canonicalInputs';
@@ -9,7 +9,11 @@ import {
 } from './finiteSemanticProduct';
 import { createCanonicalInputValueDomains } from './rankingCanonicalInputs';
 import { compileRankingComparisonPolicy } from './rankingComparisonPolicy';
-import { compileDamageContributionProjection } from './contributionProjection';
+import {
+  compileRankingContributionPolicy,
+  isAreaDamageContribution,
+  isAttackerDamageContribution,
+} from './contributionPolicy';
 import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
 import {
   createRankingFieldCandidatesForConditions,
@@ -26,6 +30,7 @@ import {
   compileStaticRankingPreparationPrograms,
   type StaticRankingPreparationProgram,
 } from './rankingStaticPreparation';
+import { compileCandidateLocalActionAdmission } from './rankingActionAdmission';
 import {
   compileStaticRankingSemantics,
   type StaticRankingSemantics,
@@ -42,7 +47,18 @@ export type CandidateSpaceIssue =
   | { kind: 'staticPreparationInvalid'; detail: string }
   | { kind: 'semanticDomainInvalid'; detail: string }
   | { kind: 'unsupportedCanonicalSemantics'; projectionKeys: readonly string[] }
-  | { kind: 'candidateLimitExceeded'; upperBound: number; limit: number };
+  | { kind: 'unsupportedActionAdmission'; attackProfileKey: string }
+  | { kind: 'unsupportedFiniteDomain'; upperBound: number; supportedMaximum: 4_096 };
+
+export interface FiniteRankingDomainCertificate {
+  supportedMaximum: 4_096;
+  programBounds: readonly {
+    programKey: string;
+    dimensions: readonly { key: string; cardinality: number }[];
+    upperBound: number;
+  }[];
+  completeUpperBound: number;
+}
 
 export interface RankingCandidateEvidence {
   policyKey: string;
@@ -61,8 +77,8 @@ export interface RankingCandidate {
   attackProfile: AttackProfile;
   expectedTerminalFormId: ActorFormId;
   scenario: ResolvedScenario;
-  contributionProjection: DamageContributionProjection;
-  withoutAreaContributionProjection: DamageContributionProjection | null;
+  contributionPolicy: ContributionApplicationPolicy;
+  withoutAreaContributionPolicy: ContributionApplicationPolicy | null;
   evidence: RankingCandidateEvidence;
 }
 
@@ -84,11 +100,20 @@ export type RankingCandidateSpace =
       issue: CandidateSpaceIssue;
     }
   | {
+      status: 'unsupported';
+      attackProfile: AttackProfile;
+      issue: Extract<
+        CandidateSpaceIssue,
+        { kind: 'unsupportedFiniteDomain' | 'unsupportedActionAdmission' }
+      >;
+    }
+  | {
       status: 'ready';
       attackProfile: AttackProfile;
       policyKey: string;
       programs: readonly ProgramCandidateDomain[];
       upperBound: number;
+      certificate: FiniteRankingDomainCertificate;
     };
 
 function dimensionIndexes(
@@ -172,12 +197,16 @@ export function compileRankingCandidateSpaces(
   profile: RankingProfileInput,
   conditions: RankingPolicyConditions,
   attackProfiles: readonly AttackProfile[],
-  options: { candidateLimit?: number } = {},
 ): readonly RankingCandidateSpace[] {
-  const candidateLimit = options.candidateLimit ?? MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE;
   let programs: readonly StaticRankingPreparationProgram[];
+  let unsupportedAttackProfileKeys: ReadonlySet<string> = new Set();
   try {
-    programs = compileStaticRankingPreparationPrograms(servant);
+    const admission = compileCandidateLocalActionAdmission(
+      compileStaticRankingPreparationPrograms(servant),
+      conditions,
+    );
+    programs = admission.programs;
+    unsupportedAttackProfileKeys = admission.unsupportedAttackProfileKeys;
   } catch (error) {
     return attackProfiles.map((attackProfile) => ({
       status: 'invalid',
@@ -190,6 +219,13 @@ export function compileRankingCandidateSpaces(
   }
   const policyKey = compileRankingComparisonPolicy(conditions, master).key;
   return attackProfiles.map((attackProfile): RankingCandidateSpace => {
+    const profileKey = attackProfileKey(attackProfile);
+    if (unsupportedAttackProfileKeys.has(profileKey))
+      return {
+        status: 'unsupported',
+        attackProfile,
+        issue: { kind: 'unsupportedActionAdmission', attackProfileKey: profileKey },
+      };
     try {
       const domains = programs
         .filter(
@@ -197,24 +233,44 @@ export function compileRankingCandidateSpaces(
         )
         .map((program) => compileProgramDomain({ servant, master, profile, conditions, program }));
       const readyPrograms: ProgramCandidateDomain[] = [];
+      const programBounds: FiniteRankingDomainCertificate['programBounds'][number][] = [];
       let upperBound = 0;
       for (const domain of domains) {
-        const remaining = candidateLimit - upperBound;
+        const remaining = MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE - upperBound;
         const bound = finiteSemanticProductBound(programDimensions(domain), remaining);
         if (bound.status === 'limitExceeded')
           return {
-            status: 'invalid',
+            status: 'unsupported',
             attackProfile,
             issue: {
-              kind: 'candidateLimitExceeded',
+              kind: 'unsupportedFiniteDomain',
               upperBound: upperBound + bound.upperBound,
-              limit: candidateLimit,
+              supportedMaximum: MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
             },
           };
         upperBound += bound.upperBound;
         readyPrograms.push({ ...domain, upperBound: bound.upperBound });
+        programBounds.push({
+          programKey: domain.program.key,
+          dimensions: programDimensions(domain).map(({ key, values }) => ({
+            key,
+            cardinality: values.length,
+          })),
+          upperBound: bound.upperBound,
+        });
       }
-      return { status: 'ready', attackProfile, policyKey, programs: readyPrograms, upperBound };
+      return {
+        status: 'ready',
+        attackProfile,
+        policyKey,
+        programs: readyPrograms,
+        upperBound,
+        certificate: {
+          supportedMaximum: MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
+          programBounds,
+          completeUpperBound: upperBound,
+        },
+      };
     } catch (error) {
       return {
         status: 'invalid',
@@ -293,26 +349,18 @@ function materializeProgramCandidates(input: {
       fieldCandidateKey: field.key,
       quantityCandidateKey: quantity.key,
     };
-    const contributionProjection = compileDamageContributionProjection(
-      domain.semantics.operations,
-      { selfSkill: conditions.selfBuffs, area: 'included' },
-    );
-    const withoutAreaContributionProjection = compileDamageContributionProjection(
-      domain.semantics.operations,
-      { selfSkill: conditions.selfBuffs, area: 'excluded' },
-    );
-    const hasAreaContribution = [...withoutAreaContributionProjection.excludedOperationIds].some(
-      (operationId) => !contributionProjection.excludedOperationIds.has(operationId),
+    const contributionPolicy = compileRankingContributionPolicy(conditions, 'included');
+    const withoutAreaContributionPolicy = compileRankingContributionPolicy(conditions, 'excluded');
+    const hasAreaContribution = domain.semantics.operations.some(
+      (operation) => isAttackerDamageContribution(operation) && isAreaDamageContribution(operation),
     );
     return {
       key: JSON.stringify(evidence),
       attackProfile: domain.program.attackProfile,
       expectedTerminalFormId: domain.program.expectedTerminalFormId,
       scenario,
-      contributionProjection,
-      withoutAreaContributionProjection: hasAreaContribution
-        ? withoutAreaContributionProjection
-        : null,
+      contributionPolicy,
+      withoutAreaContributionPolicy: hasAreaContribution ? withoutAreaContributionPolicy : null,
       evidence,
     };
   });
@@ -325,7 +373,7 @@ export function materializeRankingCandidateSpace(input: {
   conditions: RankingPolicyConditions;
   space: Extract<RankingCandidateSpace, { status: 'ready' }>;
 }): readonly RankingCandidate[] {
-  return input.space.programs.flatMap((domain) =>
+  const candidates = input.space.programs.flatMap((domain) =>
     materializeProgramCandidates({
       ...input,
       domain,
@@ -333,4 +381,9 @@ export function materializeRankingCandidateSpace(input: {
       attackProfile: input.space.attackProfile,
     }),
   );
+  if (candidates.length !== input.space.certificate.completeUpperBound)
+    throw new TypeError(
+      `ranking_candidate_space_materialization_mismatch:${candidates.length}:${input.space.certificate.completeUpperBound}`,
+    );
+  return candidates;
 }

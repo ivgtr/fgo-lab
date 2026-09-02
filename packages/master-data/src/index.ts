@@ -25,7 +25,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(42),
+  schemaVersion: z.literal(43),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -422,12 +422,69 @@ const effectExecutionOperationSchema = z.union([
       damageRelevant: z.boolean(),
     })
     .strict(),
-  z.object({ kind: z.literal('nonDamage') }).strict(),
   z
     .object({
-      kind: z.literal('unresolved'),
+      kind: z.literal('resourceMutation'),
+      resource: z.enum(['npGauge', 'hp', 'criticalStars', 'battlePoint']),
+      direction: z.enum(['gain', 'loss']),
+      unit: z.enum(['fixed', 'percent']),
+      recipient: canonicalTargetPolicySchema,
+      amount: z.discriminatedUnion('kind', [
+        z
+          .object({
+            kind: z.literal('fixed'),
+            values: canonicalValueSetsSchema,
+            limitBreakValues: canonicalValueSetsSchema.optional(),
+          })
+          .strict(),
+        z
+          .object({
+            kind: z.literal('dependent'),
+            reason: z.enum([
+              'currentGaugeMultiplier',
+              'matchingTargetCount',
+              'matchingBuffCount',
+              'dependentTargetResult',
+            ]),
+          })
+          .strict(),
+      ]),
+      subjectId: z.string().min(1).nullable(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('stateMutation'),
+      mutation: z.enum(['add', 'remove', 'move', 'extendDuration', 'shortenCount']),
+      recipient: canonicalTargetPolicySchema,
+      polarity: z.enum(['beneficial', 'detrimental', 'neutral', 'unknown']),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('boundedPhaseIrrelevant'),
+      proof: z.enum([
+        'accountOrDropOnly',
+        'cooldownWithoutReuse',
+        'commandCardOutsideTerminalNp',
+        'enemyChargeOutsideDamage',
+        'postTerminalDamageOnly',
+        'presentationOnly',
+        'noBattleStateChange',
+      ]),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('unsupported'),
       route: canonicalEffectRouteSchema,
-      reason: z.enum(['contextReference', 'operationSemantics', 'unresolvedTarget']),
+      reason: z.enum([
+        'contextReference',
+        'operationSemantics',
+        'unresolvedTarget',
+        'dependentResourceAmount',
+        'partyCompositionMutation',
+      ]),
       damageRelevant: z.boolean(),
     })
     .strict(),
@@ -483,38 +540,14 @@ const canonicalOutcomeGroupSchema = z.discriminatedUnion('kind', [
 ]);
 export type CanonicalOutcomeGroup = z.infer<typeof canonicalOutcomeGroupSchema>;
 
-const canonicalNpGaugeRecipientSchema = z.enum([
-  'sourceActor',
-  'selectedAlly',
-  'allAllies',
-  'otherAllies',
-  'sourceAndFirstOtherAlly',
-  'selectedEnemy',
-  'allEnemies',
-]);
-export type CanonicalNpGaugeRecipient = z.infer<typeof canonicalNpGaugeRecipientSchema>;
-
-const canonicalNpGaugeTransitionSchema = z.discriminatedUnion('kind', [
-  z.object({
-    kind: z.literal('fixed'),
-    recipient: canonicalNpGaugeRecipientSchema,
-    direction: z.enum(['gain', 'loss']),
-    amounts: canonicalValueSetsSchema,
-    overflow: z.literal('clampToCapacity'),
-    underflow: z.literal('clampToZero'),
-  }),
-  z.object({
-    kind: z.literal('unsupported'),
-    recipient: canonicalNpGaugeRecipientSchema,
-    family: z.enum([
-      'currentGaugeMultiplier',
-      'matchingTargetCount',
-      'matchingBuffCount',
-      'dependentTargetResult',
-    ]),
-  }),
-]);
-export type CanonicalNpGaugeTransition = z.infer<typeof canonicalNpGaugeTransitionSchema>;
+export type CanonicalNpGaugeRecipient =
+  | 'sourceActor'
+  | 'selectedAlly'
+  | 'allAllies'
+  | 'otherAllies'
+  | 'sourceAndFirstOtherAlly'
+  | 'selectedEnemy'
+  | 'allEnemies';
 
 const canonicalNpGaugeRequirementSchema = z.object({
   kind: z.literal('atLeast'),
@@ -609,31 +642,94 @@ export const masterEffectSchema = z
       recipient: canonicalTargetPolicySchema,
       expression: canonicalEffectRequirementSchema,
     }),
-    resourceTransition: canonicalNpGaugeTransitionSchema.nullable(),
     execution: z.array(effectExecutionOperationSchema).min(1),
     atlasEvidence: atlasEffectEvidenceSchema,
   })
   .strict();
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
 
-const masterSkillSchema = z.object({
+const sourceProgramFields = {
   id: z.string(),
-  slot: z.number().int().min(0).max(20).default(0),
   priority: z.number().int().default(0),
   name: z.string(),
   detail: z.string(),
   imageKey: z.string().nullable(),
   resourceRequirement: canonicalNpGaugeRequirementSchema.nullable(),
-  effects: z.array(masterEffectSchema),
-});
-export type MasterSkill = z.infer<typeof masterSkillSchema>;
+} as const;
+
+function sourceChoiceInventory(effects: readonly MasterEffect[]) {
+  const groups = new Map<string, Set<string>>();
+  for (const effect of effects) {
+    if (effect.selection?.kind !== 'playerChoice') continue;
+    const candidates = groups.get(effect.selection.group.key) ?? new Set<string>();
+    candidates.add(effect.selection.group.candidate);
+    groups.set(effect.selection.group.key, candidates);
+  }
+  return groups;
+}
+
+function validateSourceChoiceInventory(
+  source: { effects: readonly MasterEffect[] },
+  context: z.RefinementCtx,
+  input: {
+    maximumEffects: number;
+    maximumChoiceGroups: number;
+    maximumChoiceCandidates: number;
+  },
+) {
+  if (source.effects.length > input.maximumEffects)
+    context.addIssue({ code: 'custom', message: 'source_effect_limit_exceeded' });
+  const groups = sourceChoiceInventory(source.effects);
+  if (groups.size > input.maximumChoiceGroups)
+    context.addIssue({ code: 'custom', message: 'source_choice_group_limit_exceeded' });
+  for (const candidates of groups.values())
+    if (candidates.size > input.maximumChoiceCandidates)
+      context.addIssue({ code: 'custom', message: 'source_choice_candidate_limit_exceeded' });
+}
+
+const sourceSlotSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
+export const activeServantSkillSchema = z
+  .object({ ...sourceProgramFields, slot: sourceSlotSchema, effects: z.array(masterEffectSchema) })
+  .strict()
+  .superRefine((source, context) =>
+    validateSourceChoiceInventory(source, context, {
+      maximumEffects: 24,
+      maximumChoiceGroups: 1,
+      maximumChoiceCandidates: 5,
+    }),
+  );
+export type MasterSkill = z.infer<typeof activeServantSkillSchema>;
+
+export const passiveSkillSchema = z
+  .object({ ...sourceProgramFields, effects: z.array(masterEffectSchema) })
+  .strict()
+  .superRefine((source, context) =>
+    validateSourceChoiceInventory(source, context, {
+      maximumEffects: 16,
+      maximumChoiceGroups: 0,
+      maximumChoiceCandidates: 0,
+    }),
+  );
+export type PassiveSkill = z.infer<typeof passiveSkillSchema>;
+
+export const mysticCodeSkillSchema = z
+  .object({ ...sourceProgramFields, slot: sourceSlotSchema, effects: z.array(masterEffectSchema) })
+  .strict()
+  .superRefine((source, context) =>
+    validateSourceChoiceInventory(source, context, {
+      maximumEffects: 4,
+      maximumChoiceGroups: 1,
+      maximumChoiceCandidates: 5,
+    }),
+  );
+export type MysticCodeSkill = z.infer<typeof mysticCodeSkillSchema>;
 
 export const mysticCodeMasterSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
   maxLevel: z.number().int().min(1).max(10),
   imageKey: z.string().nullable(),
-  skills: z.array(masterSkillSchema).min(1).max(3),
+  skills: z.array(mysticCodeSkillSchema).min(1).max(3),
 });
 export type MysticCodeMaster = z.infer<typeof mysticCodeMasterSchema>;
 
@@ -774,19 +870,29 @@ const noblePhantasmVariantBaseSchema = z.object({
   ref: noblePhantasmVariantRefSchema,
   name: z.string(),
   priority: z.number().int(),
-  effects: z.array(masterEffectSchema.extend({ timing: z.enum(['beforeDamage', 'afterDamage']) })),
+  effects: z
+    .array(masterEffectSchema.extend({ timing: z.enum(['beforeDamage', 'afterDamage']) }))
+    .max(20),
 });
-export const noblePhantasmVariantSchema = z.discriminatedUnion('kind', [
-  noblePhantasmVariantBaseSchema.extend({
-    kind: z.literal('attack'),
-    card: z.enum(['buster', 'arts', 'quick']),
-    targetScope: z.enum(['single', 'all']),
-    damage: z.array(npDamageSpecSchema).min(1),
-  }),
-  noblePhantasmVariantBaseSchema.extend({
-    kind: z.literal('nonAttack'),
-  }),
-]);
+export const noblePhantasmVariantSchema = z
+  .discriminatedUnion('kind', [
+    noblePhantasmVariantBaseSchema.extend({
+      kind: z.literal('attack'),
+      card: z.enum(['buster', 'arts', 'quick']),
+      targetScope: z.enum(['single', 'all']),
+      damage: z.array(npDamageSpecSchema).min(1),
+    }),
+    noblePhantasmVariantBaseSchema.extend({
+      kind: z.literal('nonAttack'),
+    }),
+  ])
+  .superRefine((source, context) =>
+    validateSourceChoiceInventory(source, context, {
+      maximumEffects: 20,
+      maximumChoiceGroups: 1,
+      maximumChoiceCandidates: 3,
+    }),
+  );
 export type NoblePhantasmVariant = z.infer<typeof noblePhantasmVariantSchema>;
 export type AttackNoblePhantasmVariant = Extract<NoblePhantasmVariant, { kind: 'attack' }>;
 export type NoblePhantasmVariantCanonicalId = NoblePhantasmVariant['canonicalId'];
@@ -881,8 +987,8 @@ export const servantMasterSchema = z.object({
   traits: z.array(z.string()),
   predicates: z.array(targetPredicateSchema).default([]),
   imageKey: z.string().nullable(),
-  skills: z.array(masterSkillSchema).default([]),
-  passives: z.array(masterSkillSchema).default([]),
+  skills: z.array(activeServantSkillSchema).default([]),
+  passives: z.array(passiveSkillSchema).default([]),
   growth: z.array(
     z.object({
       from: z.string(),
@@ -1192,15 +1298,23 @@ export function deriveNpSpecialMultipliers(
     number,
   ];
 }
-export const craftEssenceMasterSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  maxLevelByLimitBreak: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
-  atkMin: z.number().int().nonnegative(),
-  atkMax: z.number().int().nonnegative(),
-  imageKey: z.string().nullable(),
-  effects: z.array(masterEffectSchema).default([]),
-});
+export const craftEssenceMasterSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    maxLevelByLimitBreak: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
+    atkMin: z.number().int().nonnegative(),
+    atkMax: z.number().int().nonnegative(),
+    imageKey: z.string().nullable(),
+    effects: z.array(masterEffectSchema).max(16).default([]),
+  })
+  .superRefine((source, context) =>
+    validateSourceChoiceInventory(source, context, {
+      maximumEffects: 16,
+      maximumChoiceGroups: 0,
+      maximumChoiceCandidates: 0,
+    }),
+  );
 export type CraftEssenceMaster = z.infer<typeof craftEssenceMasterSchema>;
 export const materialMasterSchema = z.object({
   id: z.string(),

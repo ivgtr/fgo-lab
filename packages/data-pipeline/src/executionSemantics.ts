@@ -22,7 +22,7 @@ type ExpressionSets = [
   (ModifierValueExpression | null)[],
 ];
 
-const nonDamageBuffs = new Set([
+const nonModifierBuffs = new Set([
   'changeCommandCardType',
   'downTolerance',
   'upCriticaldamage',
@@ -53,6 +53,90 @@ const defensiveBuffs = new Set([
   'upDefence',
   'upDefenceNpdamage',
   'upDefencecommandall',
+]);
+
+const typedResourceFamilies = new Map<
+  string,
+  {
+    resource: 'npGauge' | 'hp' | 'criticalStars' | 'battlePoint';
+    direction: 'gain' | 'loss';
+    unit: 'fixed' | 'percent';
+  }
+>([
+  ['gainNp', { resource: 'npGauge', direction: 'gain', unit: 'fixed' }],
+  ['lossNp', { resource: 'npGauge', direction: 'loss', unit: 'fixed' }],
+  ['gainStar', { resource: 'criticalStars', direction: 'gain', unit: 'fixed' }],
+  ['lossStar', { resource: 'criticalStars', direction: 'loss', unit: 'fixed' }],
+  ['gainHp', { resource: 'hp', direction: 'gain', unit: 'fixed' }],
+  ['gainHpPer', { resource: 'hp', direction: 'gain', unit: 'percent' }],
+  ['lossHpSafe', { resource: 'hp', direction: 'loss', unit: 'fixed' }],
+  ['lossHp', { resource: 'hp', direction: 'loss', unit: 'fixed' }],
+  ['lossHpPerSafe', { resource: 'hp', direction: 'loss', unit: 'percent' }],
+  ['subBattlePoint', { resource: 'battlePoint', direction: 'loss', unit: 'fixed' }],
+]);
+
+const typedStateFamilies = new Map<
+  string,
+  'add' | 'remove' | 'move' | 'extendDuration' | 'shortenCount'
+>([
+  ['addStateShort', 'add'],
+  ['addState', 'add'],
+  ['addStateShortToField', 'add'],
+  ['addStateToField', 'add'],
+  ['subState', 'remove'],
+  ['moveState', 'move'],
+  ['extendBuffturn', 'extendDuration'],
+  ['shortenBuffcount', 'shortenCount'],
+]);
+
+const unsupportedOperationFamilies = new Map<
+  string,
+  Extract<EffectExecutionOperation, { kind: 'unsupported' }>['reason']
+>([
+  ['gainHpFromTargets', 'dependentResourceAmount'],
+  ['replaceMember', 'partyCompositionMutation'],
+  ['moveToLastSubmember', 'partyCompositionMutation'],
+]);
+
+const dependentNpResourceFamilies = new Map<
+  string,
+  'currentGaugeMultiplier' | 'matchingTargetCount' | 'matchingBuffCount' | 'dependentTargetResult'
+>([
+  ['gainNpBuffIndividualSum', 'matchingBuffCount'],
+  ['gainNpFromTargets', 'dependentTargetResult'],
+  ['gainNpIndividualSum', 'matchingTargetCount'],
+  ['gainNpTargetSum', 'matchingTargetCount'],
+  ['gainMultiplyNp', 'currentGaugeMultiplier'],
+]);
+
+const boundedProofByFamily = new Map<
+  string,
+  Extract<EffectExecutionOperation, { kind: 'boundedPhaseIrrelevant' }>['proof']
+>([
+  ['friendPointUpDuplicate', 'accountOrDropOnly'],
+  ['userEquipExpUp', 'accountOrDropOnly'],
+  ['eventDropUp', 'accountOrDropOnly'],
+  ['expUp', 'accountOrDropOnly'],
+  ['servantFriendshipUp', 'accountOrDropOnly'],
+  ['eventDropRateUp', 'accountOrDropOnly'],
+  ['qpDropUp', 'accountOrDropOnly'],
+  ['enemyEncountCopyRateUp', 'accountOrDropOnly'],
+  ['qpUp', 'accountOrDropOnly'],
+  ['classDropUp', 'accountOrDropOnly'],
+  ['enemyEncountRateUp', 'accountOrDropOnly'],
+  ['eventPointUp', 'accountOrDropOnly'],
+  ['friendPointUp', 'accountOrDropOnly'],
+  ['shortenSkill', 'cooldownWithoutReuse'],
+  ['extendUserEquipSkill', 'cooldownWithoutReuse'],
+  ['cardReset', 'commandCardOutsideTerminalNp'],
+  ['fixCommandcard', 'commandCardOutsideTerminalNp'],
+  ['hastenNpturn', 'enemyChargeOutsideDamage'],
+  ['delayNpturn', 'enemyChargeOutsideDamage'],
+  ['absorbNpturn', 'enemyChargeOutsideDamage'],
+  ['instantDeath', 'postTerminalDamageOnly'],
+  ['forceInstantDeath', 'postTerminalDamageOnly'],
+  ['displayBuffstring', 'presentationOnly'],
+  ['none', 'noBattleStateChange'],
 ]);
 
 type DamageRoute = Pick<
@@ -99,7 +183,7 @@ export function normalizeContributionScope(
 }
 
 function routeDamageModifier(buffTypes: readonly string[], cardTypes: readonly string[]) {
-  if (buffTypes.some((type) => nonDamageBuffs.has(type))) return null;
+  if (buffTypes.some((type) => nonModifierBuffs.has(type))) return null;
   const expectedRecipient = buffTypes.some((type) =>
     [
       'downDefence',
@@ -262,7 +346,7 @@ export function normalizeExecutionSemantics(input: {
   )
     return [
       {
-        kind: 'unresolved',
+        kind: 'unsupported',
         route: unresolvedRoute(),
         reason: 'unresolvedTarget',
         damageRelevant: potentiallyDamageRelevant,
@@ -288,7 +372,7 @@ export function normalizeExecutionSemantics(input: {
     if (quantities.length !== 1 || subjectIds.length !== 1)
       return [
         {
-          kind: 'unresolved',
+          kind: 'unsupported',
           route:
             contributionScope === null ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
           reason: 'operationSemantics',
@@ -398,7 +482,7 @@ export function normalizeExecutionSemantics(input: {
       });
     else if (potentiallyDamageRelevant && operations.length === 0)
       operations.push({
-        kind: 'unresolved',
+        kind: 'unsupported',
         route: policy === 'unresolved' ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
         reason: policy === 'unresolved' ? 'unresolvedTarget' : 'operationSemantics',
         damageRelevant: true,
@@ -411,12 +495,59 @@ export function normalizeExecutionSemantics(input: {
     input.parameterSets.some((set) => set.some((parameter) => typeof parameter.Value === 'number'))
   )
     operations.push({
-      kind: 'unresolved',
+      kind: 'unsupported',
       route: policy === 'unresolved' ? unresolvedRoute() : canonicalRoute(null, 'ignore'),
       reason: 'contextReference',
       damageRelevant: false,
     });
 
-  if (operations.length === 0) operations.push({ kind: 'nonDamage' });
+  if (operations.length === 0) {
+    const family = input.fn.funcType ?? 'unknown';
+    const resource = typedResourceFamilies.get(family);
+    const stateMutation = typedStateFamilies.get(family);
+    const unsupported = unsupportedOperationFamilies.get(family);
+    const dependentNp = dependentNpResourceFamilies.get(family);
+    const boundedProof = boundedProofByFamily.get(family);
+    if (resource) {
+      const subjectIds = [
+        ...new Set(
+          input.parameterSets.flatMap((set) =>
+            set.flatMap((parameter) =>
+              typeof parameter.BattlePointId === 'number' ? [String(parameter.BattlePointId)] : [],
+            ),
+          ),
+        ),
+      ];
+      operations.push({
+        kind: 'resourceMutation',
+        ...resource,
+        recipient: policy,
+        amount: { kind: 'fixed', values: modifierValues(input.parameterSets) },
+        subjectId: subjectIds.length === 1 ? subjectIds[0]! : null,
+      });
+    } else if (dependentNp)
+      operations.push({
+        kind: 'unsupported',
+        route: policy === 'unresolved' ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
+        reason: 'dependentResourceAmount',
+        damageRelevant: true,
+      });
+    else if (stateMutation)
+      operations.push({
+        kind: 'stateMutation',
+        mutation: stateMutation,
+        recipient: policy,
+        polarity: 'unknown',
+      });
+    else if (unsupported)
+      operations.push({
+        kind: 'unsupported',
+        route: policy === 'unresolved' ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
+        reason: unsupported,
+        damageRelevant: true,
+      });
+    else if (boundedProof) operations.push({ kind: 'boundedPhaseIrrelevant', proof: boundedProof });
+    else throw new TypeError(`unclassified_canonical_operation:${family}`);
+  }
   return coalesceDamageRelevantContextMutations(operations);
 }

@@ -28,6 +28,11 @@ export type {
   WorldFactAssertion,
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
+export {
+  contributionIsIncluded,
+  createEffectiveContributionSet,
+  effectiveContributionsForOperation,
+} from './effectiveContributions';
 export { runtimeInputKey } from './runtimeInputIdentity';
 export { effectChangesPreparation } from './preparationTransaction';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
@@ -66,7 +71,10 @@ export {
   type OrderedScenarioExecution,
   type PreparedOrderedScenario,
   type ResolvedCanonicalInputSet,
-  type DamageContributionProjection,
+  type ContributionApplicationPolicy,
+  type ContributionPolicyDecision,
+  type EffectiveContribution,
+  type EffectiveContributionSet,
 } from './engine';
 export {
   MAX_TARGET_CANDIDATES,

@@ -7,7 +7,7 @@ import {
   conditionIsActivationLocal,
 } from '@fgo-lab/battle-execution';
 import { conditionFactRequirements } from './conditionProvenance';
-import { isAttackerDamageContribution } from './contributionProjection';
+import { isAttackerDamageContribution } from './contributionPolicy';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileStaticRankingSemantics } from './rankingStaticSemantics';

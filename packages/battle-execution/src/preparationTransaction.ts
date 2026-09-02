@@ -1,7 +1,7 @@
 import type {
   CanonicalEffectRequirement,
   CanonicalInputDefinition,
-  CanonicalNpGaugeRecipient,
+  CanonicalTargetPolicy,
   MasterEffect,
   MasterSkill,
   ServantMaster,
@@ -46,8 +46,8 @@ function runtimeDefinition(
   };
 }
 
-function transitionTargetsAttacker(recipient: CanonicalNpGaugeRecipient): boolean {
-  return recipient === 'sourceActor' || recipient === 'selectedAlly' || recipient === 'allAllies';
+function transitionTargetsAttacker(recipient: CanonicalTargetPolicy): boolean {
+  return resolveTargetPolicy('attacker', recipient) === 'attacker';
 }
 
 type PreparationRequirementOutcome =
@@ -204,9 +204,15 @@ function effectChangesStructure(effect: MasterEffect): boolean {
 
 export function effectChangesPreparation(effect: MasterEffect): boolean {
   return (
-    (effect.resourceTransition !== null &&
-      transitionTargetsAttacker(effect.resourceTransition.recipient)) ||
-    effectChangesStructure(effect)
+    effect.execution.some(
+      (operation) =>
+        (operation.kind === 'resourceMutation' &&
+          operation.resource === 'npGauge' &&
+          transitionTargetsAttacker(operation.recipient)) ||
+        (operation.kind === 'unsupported' &&
+          operation.reason === 'dependentResourceAmount' &&
+          resolveTargetPolicy('attacker', operation.route.target) === 'attacker'),
+    ) || effectChangesStructure(effect)
   );
 }
 
@@ -215,10 +221,23 @@ function selectedTransitionAmount(
   valueSetIndex: number,
   valueIndex: number,
 ): NpResourceMutation | null {
-  const transition = effect.resourceTransition;
-  if (!transition || !transitionTargetsAttacker(transition.recipient)) return null;
-  if (transition.kind === 'unsupported') return { kind: 'unsupported', family: transition.family };
-  const amount = transition.amounts[valueSetIndex]?.[valueIndex];
+  const unsupported = effect.execution.find(
+    (operation): operation is Extract<MasterEffect['execution'][number], { kind: 'unsupported' }> =>
+      operation.kind === 'unsupported' &&
+      operation.reason === 'dependentResourceAmount' &&
+      resolveTargetPolicy('attacker', operation.route.target) === 'attacker',
+  );
+  if (unsupported) return { kind: 'unsupported', family: unsupported.reason };
+  const transition = effect.execution.find(
+    (operation) =>
+      operation.kind === 'resourceMutation' &&
+      operation.resource === 'npGauge' &&
+      transitionTargetsAttacker(operation.recipient),
+  );
+  if (!transition || transition.kind !== 'resourceMutation') return null;
+  if (transition.amount.kind === 'dependent')
+    return { kind: 'unsupported', family: transition.amount.reason };
+  const amount = transition.amount.values[valueSetIndex]?.[valueIndex];
   if (amount === null || amount === undefined)
     return { kind: 'unsupported', family: 'missingCanonicalAmount' };
   return { kind: transition.direction, amount };

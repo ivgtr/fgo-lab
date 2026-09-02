@@ -65,7 +65,6 @@ function parseTestMaster(input: unknown) {
         effect['gameActivation'] ??= gameActivation;
         effect['proc'] ??= { kind: 'guaranteed' };
         effect['selection'] ??= null;
-        effect['resourceTransition'] ??= null;
       }
   };
   for (const servant of candidate.servants) {
@@ -252,7 +251,6 @@ function modifierEffect(
             ? requirements[0]!
             : { kind: 'all' as const, requirements },
     },
-    resourceTransition: null,
     execution:
       buffType === 'pierceDefence' || buffType === 'pierceSubdamage'
         ? [
@@ -280,7 +278,7 @@ function modifierEffect(
                 semanticSupport: 'supported' as const,
               },
             ]
-          : [{ kind: 'nonDamage' as const }],
+          : [{ kind: 'boundedPhaseIrrelevant' as const, proof: 'noBattleStateChange' as const }],
     atlasEvidence: {
       functionType: 'addStateShort',
       target,
@@ -293,6 +291,38 @@ function modifierEffect(
     },
   };
 }
+
+function npResourceMutation(direction: 'gain' | 'loss', amount: number) {
+  return {
+    kind: 'resourceMutation' as const,
+    resource: 'npGauge' as const,
+    direction,
+    unit: 'fixed' as const,
+    recipient: 'sourceSelf' as const,
+    amount: {
+      kind: 'fixed' as const,
+      values: [Array<number>(10).fill(amount), [], [], [], []] as [
+        number[],
+        number[],
+        number[],
+        number[],
+        number[],
+      ],
+    },
+    subjectId: null,
+  };
+}
+
+const unsupportedNpResourceMutation = {
+  kind: 'unsupported' as const,
+  route: {
+    target: 'sourceSelf' as const,
+    contributionScope: 'personal' as const,
+    eligibility: { kind: 'anyRecipient' as const, onMissing: 'ignore' as const },
+  },
+  reason: 'dependentResourceAmount' as const,
+  damageRelevant: true,
+};
 
 function traitConditions(opponent: string, field: string): TestEffectConditions {
   return {
@@ -419,7 +449,6 @@ describe('scenario calculation facade', () => {
           passives: [
             {
               id: 'class-passive',
-              slot: 0,
               priority: 1,
               name: 'class passive',
               detail: '',
@@ -439,9 +468,12 @@ describe('scenario calculation facade', () => {
     expect(
       calculation.effects.find((effect) => effect.label === 'field mutation')?.visibility,
     ).toBe('hidden');
-    expect(calculation.effects.some((effect) => effect.label === 'class relation override')).toBe(
-      false,
-    );
+    expect(
+      calculation.effects.find((effect) => effect.label === 'class relation override'),
+    ).toMatchObject({
+      outcome: 'notRelevant',
+      explanation: { code: 'stateMutationOnly' },
+    });
     expect(calculation.result.status).toBe('calculated');
     expect(calculation.input.attackBuff).toBe(0.3);
     expect(calculation.input.fieldTraits).toContain('fieldSunlight');
@@ -974,7 +1006,7 @@ describe('scenario calculation facade', () => {
   it('validates context mutations transactionally against selected conditions', () => {
     const baseServant = fixture.servants[0]!;
     const heavenContext = {
-      ...modifierEffect('heaven-context', 'nonDamageContext', 0),
+      ...modifierEffect('heaven-context', 'stateContext', 0),
       execution: [
         {
           kind: 'contextMutation' as const,
@@ -994,7 +1026,6 @@ describe('scenario calculation facade', () => {
           passives: [
             {
               id: 'realm-passive',
-              slot: 0,
               priority: 0,
               name: 'realm passive',
               detail: '',
@@ -1167,7 +1198,6 @@ describe('scenario calculation facade', () => {
           passives: [
             {
               id: 'conditional-passive',
-              slot: 0,
               priority: 1,
               name: 'conditional passive',
               detail: '',
@@ -1485,7 +1515,7 @@ describe('scenario calculation facade', () => {
   it('returns empty inputRequired rows and calculates after repair', () => {
     const baseServant = fixture.servants[0]!;
     const resourceEffect = {
-      ...modifierEffect('input-resource', 'nonDamageContext', 0),
+      ...modifierEffect('input-resource', 'stateContext', 0),
       inputDefinitions: [
         {
           key: 'preparation:value',
@@ -1509,20 +1539,7 @@ describe('scenario calculation facade', () => {
           value: 1,
         },
       },
-      resourceTransition: {
-        kind: 'fixed' as const,
-        recipient: 'sourceActor' as const,
-        direction: 'gain' as const,
-        amounts: [Array<number>(10).fill(2_000), [], [], [], []] as [
-          number[],
-          number[],
-          number[],
-          number[],
-          number[],
-        ],
-        overflow: 'clampToCapacity' as const,
-        underflow: 'clampToZero' as const,
-      },
+      execution: [npResourceMutation('gain', 2_000)],
     };
     const preparationMaster = parseTestMaster({
       ...fixture,
@@ -1738,7 +1755,7 @@ describe('scenario calculation facade', () => {
     const originalAttack = baseServant.noblePhantasmVariantGroups[0]!.variants[0]!;
     if (originalAttack.kind !== 'attack') throw new TypeError('fixture_attack_required');
     const transitionEffect = {
-      ...modifierEffect('input-transition', 'nonDamageContext', 0),
+      ...modifierEffect('input-transition', 'stateContext', 0),
       inputDefinitions: [
         {
           key: 'preparation:transition',
@@ -2003,15 +2020,15 @@ describe('scenario calculation facade', () => {
         transitionedProfile,
       ),
     ).toMatchObject({
-      status: 'unavailableUnderPolicy',
-      reason: 'noSatisfiableCandidate',
+      status: 'unsupported',
+      reason: 'candidateExecutionUnsupported',
     });
   });
 
   it('keeps ordinary stochastic ownership in the executor for a mixed preparation skill', () => {
     const baseServant = fixture.servants[0]!;
     const preparationEffect = {
-      ...modifierEffect('mixed-preparation', 'nonDamageContext', 0),
+      ...modifierEffect('mixed-preparation', 'stateContext', 0),
       proc: {
         kind: 'singleRoll' as const,
         ratePermille: [Array<number>(10).fill(800), [], [], [], []],
@@ -2024,14 +2041,7 @@ describe('scenario calculation facade', () => {
           defaultOutcome: 'success' as const,
         },
       },
-      resourceTransition: {
-        kind: 'fixed' as const,
-        recipient: 'sourceActor' as const,
-        direction: 'gain' as const,
-        amounts: [Array<number>(10).fill(2_000), [], [], [], []],
-        overflow: 'clampToCapacity' as const,
-        underflow: 'clampToZero' as const,
-      },
+      execution: [npResourceMutation('gain', 2_000)],
     };
     const ordinaryEffect = {
       ...modifierEffect('mixed-ordinary', 'upAtk', 500),
@@ -2071,14 +2081,7 @@ describe('scenario calculation facade', () => {
           value: 500,
         },
       },
-      resourceTransition: {
-        kind: 'fixed' as const,
-        recipient: 'sourceActor' as const,
-        direction: 'gain' as const,
-        amounts: [Array<number>(10).fill(3_000), [], [], [], []],
-        overflow: 'clampToCapacity' as const,
-        underflow: 'clampToZero' as const,
-      },
+      execution: [npResourceMutation('gain', 3_000)],
     };
     const mixedMaster = parseTestMaster({
       ...fixture,
@@ -2148,34 +2151,23 @@ describe('scenario calculation facade', () => {
       'insufficient',
       'insufficientNpGauge',
       {
-        ...modifierEffect('loss-before-attack', 'nonDamageContext', 0),
-        resourceTransition: {
-          kind: 'fixed' as const,
-          recipient: 'sourceActor' as const,
-          direction: 'loss' as const,
-          amounts: [Array<number>(10).fill(2_000), [], [], [], []],
-          overflow: 'clampToCapacity' as const,
-          underflow: 'clampToZero' as const,
-        },
+        ...modifierEffect('loss-before-attack', 'stateContext', 0),
+        execution: [npResourceMutation('loss', 2_000)],
       },
     ],
     [
       'unsupported',
       'unsupportedResourceMutation',
       {
-        ...modifierEffect('unsupported-resource', 'nonDamageContext', 0),
-        resourceTransition: {
-          kind: 'unsupported' as const,
-          recipient: 'sourceActor' as const,
-          family: 'dependentTargetResult',
-        },
+        ...modifierEffect('unsupported-resource', 'stateContext', 0),
+        execution: [unsupportedNpResourceMutation],
       },
     ],
     [
       'ambiguous',
       'ambiguousPreparationCondition',
       {
-        ...modifierEffect('ambiguous-state', 'nonDamageContext', 0),
+        ...modifierEffect('ambiguous-state', 'stateContext', 0),
         requirement: {
           recipient: 'sourceSelf' as const,
           expression: {
@@ -2202,7 +2194,7 @@ describe('scenario calculation facade', () => {
       'invalid',
       'resourceRequirementExceedsCapacity',
       {
-        ...modifierEffect('invalid-requirement', 'nonDamageContext', 0),
+        ...modifierEffect('invalid-requirement', 'stateContext', 0),
       },
     ],
   ] as const)(
@@ -2319,7 +2311,6 @@ describe('scenario calculation facade', () => {
       passives: [
         {
           id: 'passive-skill',
-          slot: 0,
           priority: 0,
           name: 'passive',
           detail: '',

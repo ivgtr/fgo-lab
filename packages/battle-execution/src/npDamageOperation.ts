@@ -14,6 +14,7 @@ export interface NpDamageOperationContext {
   targetRarity: number | null;
   battlePointPhase: number | null;
   effectLocalConditionSatisfied?: boolean;
+  includeSpecialContribution?: boolean;
 }
 
 export type NpDamageOperationResult =
@@ -89,6 +90,8 @@ export function evaluateNpDamageOperation(
     npSpecialMultipliers,
     ignoreDefense: damage.kind === 'defensePiercing',
   });
+
+  if (context.includeSpecialContribution === false) return resolved(baseMultipliers, one());
 
   if (damage.kind === 'standard' || damage.kind === 'defensePiercing') return resolved();
   if (damage.kind === 'hpRatioLow') {
