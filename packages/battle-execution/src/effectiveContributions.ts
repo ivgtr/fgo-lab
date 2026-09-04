@@ -11,6 +11,7 @@ import type {
   EffectiveContributionSet,
 } from './executionTypes';
 import { classifyContributionCondition } from './conditionSemantics';
+import { contributionId } from './contributionIdentity';
 
 const included = (): ContributionPolicyDecision => ({ kind: 'included' });
 const excluded = (
@@ -102,7 +103,7 @@ function contribution(
   );
   const groupId = presentationGroupId(operation);
   return {
-    contributionId: `${operation.operationId}:${component}`,
+    contributionId: contributionId(operation.operationId, component),
     presentationGroupId: groupId,
     operationId: operation.operationId,
     component,

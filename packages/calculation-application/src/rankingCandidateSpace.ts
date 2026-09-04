@@ -164,7 +164,7 @@ function compileProgramDomain(input: {
     ? createRankingWorldCandidatesForConditions(servant, master, base, semantics.conditions)
     : [];
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
-  const baselineField: RankingFieldCandidate = { key: 'field:none', traits: [], facts: [] };
+  const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
   return {
     program,
     semantics,

@@ -9,6 +9,7 @@ function projection(patch: Partial<EffectProjection> = {}): EffectProjection {
   return {
     projectionKey: 'attack',
     operationId: 'attack',
+    contributionId: 'attack:modifier',
     label: '攻撃力アップ',
     sourceName: 'source',
     skillName: 'skill',

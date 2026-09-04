@@ -6,6 +6,7 @@ function projection(overrides: Partial<EffectProjection> = {}): EffectProjection
   return {
     projectionKey: 'effect',
     operationId: 'operation',
+    contributionId: 'operation:modifier',
     label: 'effect',
     sourceName: 'source',
     skillName: 'skill',

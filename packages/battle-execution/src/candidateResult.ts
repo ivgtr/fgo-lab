@@ -8,7 +8,7 @@ import type {
   PreparedOrderedScenario,
   ResolvedCanonicalInputSet,
 } from './executionTypes';
-import { projectAtDamageEvaluation } from './projection';
+import { projectAtDamageEvaluation, projectWorldAssumptionAtDamageEvaluation } from './projection';
 import { foldDamageInput } from './state';
 import { createEffectiveContributionSet } from './effectiveContributions';
 import { contributionIsIncluded } from './effectiveContributions';
@@ -61,7 +61,9 @@ export function assembleCandidateResult({
   const { operations, inputDefinitions } = prepared;
   const issues = executionIssues(prepared, resolvedInputs, candidate, state);
   const projections = attachActivationSources(prepared, [
-    ...candidate.resolvedCompileProjections,
+    ...candidate.resolvedCompileProjections.map((projection) =>
+      projectWorldAssumptionAtDamageEvaluation(projection, state),
+    ),
     ...results.map((result) => projectAtDamageEvaluation(result, state)),
   ]);
   const relevantInputOperationIds = new Set(

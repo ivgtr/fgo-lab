@@ -383,6 +383,7 @@ describe('condition expression properties', () => {
     const projection = {
       projectionKey: 'projection',
       operationId: 'operation',
+      contributionId: 'operation:npSpecial',
       label: 'compound condition',
       sourceName: 'source',
       skillName: 'skill',

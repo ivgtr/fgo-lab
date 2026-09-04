@@ -396,9 +396,14 @@ export interface ProjectionExplanation {
   condition: ConditionExpression | null;
 }
 
+export type ContributionComponent = 'modifier' | 'modifierRate' | 'ignore' | 'npBase' | 'npSpecial';
+
+export type ContributionId = `${string}:${ContributionComponent}`;
+
 export interface EffectProjection {
   projectionKey: string;
   operationId: string;
+  contributionId: ContributionId | null;
   label: string;
   sourceName: string;
   skillName: string;

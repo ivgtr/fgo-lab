@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   conditionAllowsEffectLocalDecision,
   conditionIsActivationLocal,
+  type ConditionExpression,
 } from '@fgo-lab/battle-execution';
 import { conditionFactRequirements } from './conditionProvenance';
 import { isAttackerDamageContribution } from './contributionPolicy';
@@ -13,6 +14,23 @@ import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparat
 import { compileStaticRankingSemantics } from './rankingStaticSemantics';
 
 const root = resolve(import.meta.dirname, '../../..');
+
+function hasNegativeFieldRequirement(
+  condition: ConditionExpression,
+  negated: boolean = false,
+): boolean {
+  if (condition.kind === 'trait' && condition.scope === 'field')
+    return condition.present === negated;
+  if (condition.kind === 'traitCount' && condition.scope === 'field')
+    return negated || condition.comparison !== 'atLeast';
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return condition.expressions.some((expression) =>
+      hasNegativeFieldRequirement(expression, negated),
+    );
+  if (condition.kind === 'not') return hasNegativeFieldRequirement(condition.expression, !negated);
+  return false;
+}
+
 describe('production ranking condition provenance', () => {
   it('ratchets selectable conditions by canonical provenance and activation ownership', async () => {
     const master = masterSnapshotSchema.parse(
@@ -53,6 +71,7 @@ describe('production ranking condition provenance', () => {
                 ? [condition.trait]
                 : [],
             ),
+            negativeField: hasNegativeFieldRequirement(operation.condition),
           },
         ];
       });
@@ -83,6 +102,7 @@ describe('production ranking condition provenance', () => {
     });
     expect(field).toHaveLength(36);
     expect(fieldOccurrences).toHaveLength(36);
+    expect(inventory.filter(({ negativeField }) => negativeField)).toHaveLength(0);
     expect(new Set(field.map(({ servantId }) => servantId)).size).toBe(26);
     expect(fieldOccurrences).toMatchInlineSnapshot(`
       [

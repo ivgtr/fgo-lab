@@ -18,6 +18,7 @@ describe('applied effect interaction rendering', () => {
       projection: {
         projectionKey: 'effect',
         operationId: 'operation',
+        contributionId: 'operation:modifier',
         label: '攻撃力アップ',
         sourceName: 'source',
         skillName: 'skill',

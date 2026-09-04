@@ -842,6 +842,7 @@ function makeProjection(
   return {
     projectionKey: key,
     operationId: operationKey(source),
+    contributionId: null,
     label: source.effect.label,
     sourceName: source.sourceName,
     skillName: source.skillName,

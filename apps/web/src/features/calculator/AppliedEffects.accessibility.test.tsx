@@ -15,6 +15,7 @@ function projection(overrides: Partial<EffectProjection> = {}): EffectProjection
   return {
     projectionKey: 'effect',
     operationId: 'operation',
+    contributionId: 'operation:modifier',
     label: '攻撃力アップ',
     sourceName: '攻撃役',
     skillName: 'スキル',

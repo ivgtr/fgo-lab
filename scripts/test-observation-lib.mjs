@@ -70,8 +70,26 @@ function observationKey(value) {
     value.testId,
     value.kind,
     value.message,
-    stableJson(value.detail ?? null),
+    stableJson(canonicalObservationDetail(value.detail ?? null)),
   ].join('\u0000');
+}
+
+function canonicalObservationDetail(detail) {
+  if (!detail || typeof detail !== 'object' || typeof detail.locationUrl !== 'string')
+    return detail;
+  try {
+    const location = new URL(detail.locationUrl);
+    if (
+      location.pathname.startsWith('/node_modules/.vite/deps/') &&
+      location.searchParams.has('v')
+    ) {
+      location.searchParams.delete('v');
+      return { ...detail, locationUrl: location.href };
+    }
+  } catch {
+    return detail;
+  }
+  return detail;
 }
 
 function stableJson(value) {

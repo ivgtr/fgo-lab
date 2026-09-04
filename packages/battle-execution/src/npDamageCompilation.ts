@@ -151,6 +151,7 @@ export function compileNoblePhantasmDamageOperation(
   );
   const specialAttackDecisionKey =
     damageCondition.kind === 'always' ? null : `np:${variantKey}:${damage.functionId}:condition`;
+  const operationId = `np:${variantKey}:${damage.functionId}:damage`;
   const source: OperationSource = {
     origin: 'np',
     sourceInstanceId: `np:${variantKey}`,
@@ -161,6 +162,7 @@ export function compileNoblePhantasmDamageOperation(
   };
   const projections = traitCountProjections(
     variantKey,
+    operationId,
     damage,
     baseInput.overcharge,
     baseInput.npLevel,
@@ -197,7 +199,7 @@ export function compileNoblePhantasmDamageOperation(
   return {
     projections,
     operation: {
-      operationId: `np:${variantKey}:${damage.functionId}:damage`,
+      operationId,
       order: operationOrder,
       phase: 'npDamage',
       source,

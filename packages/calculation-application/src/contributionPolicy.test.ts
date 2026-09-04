@@ -1,7 +1,11 @@
 import type { BattleOperation } from '@fgo-lab/battle-execution';
 import { contributionIsIncluded } from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
-import { compileRankingContributionPolicy } from './contributionPolicy';
+import {
+  compileRankingContributionPolicy,
+  isAreaDamageContribution,
+  isAttackerDamageContribution,
+} from './contributionPolicy';
 
 function operation(
   origin: BattleOperation['source']['origin'],
@@ -66,5 +70,10 @@ describe('canonical contribution application policy', () => {
     expect(contributionIsIncluded(operation('np', 'personal'), { kind: 'always' }, policy)).toBe(
       true,
     );
+    expect(isAttackerDamageContribution(operation('passive', 'personal'))).toBe(true);
+    expect(isAttackerDamageContribution(operation('passive', 'partyWide'))).toBe(true);
+    expect(isAreaDamageContribution(operation('passive', 'partyWide'))).toBe(true);
+    expect(isAttackerDamageContribution(operation('passive', 'partyOther'))).toBe(false);
+    expect(isAreaDamageContribution(operation('passive', 'partyOther'))).toBe(false);
   });
 });

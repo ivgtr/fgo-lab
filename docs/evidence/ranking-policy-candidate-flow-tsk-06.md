@@ -1175,3 +1175,29 @@ preparation option preserves the approved old ranking entrypoint only until TSK-
   production digest.
 - Historical Blocking: 0 at the original TSK-06 review boundary. The TSK-06.4／06.41 reopening status at
   the top of this note supersedes this value for current work.
+
+## TSK-06.41 accepted-review implementation delta (2026-09-05)
+
+The PIR-001/PIR-002 implementation reopens only two producers and their direct consumers. Battle execution now
+emits one typed `contributionId` on every contribution projection (`null` for non-contributions), evaluates
+world-assumption projections against the final canonical battle state, and remains the owner of effective
+contribution decisions. Ranking presentation joins by that exact identity and also requires the individual
+projection's final applied outcome, so an effective NP base cannot satisfy an excluded NP special and a matching
+trait-count projection cannot activate a nonmatching sibling even while both share the one aggregate NP-special
+damage contribution. The application field materializer now distinguishes the inactive
+`facts=[]` sentinel from an active fully assigned all-false witness and carries the latter as explicit false field
+facts into the same ordered executor.
+
+Changed flow inventory: projection compiler -> final-state projection evaluation -> effective contribution set ->
+row/badge/detail; and finite field assignment -> scenario assertions -> condition evaluator -> modifier/NP input ->
+final damage/maximum eligibility. Calculator, ranking, selected-scenario without-area replay, and ranking-origin
+portable replay continue to use the existing application preparation and ordered execution paths; no alternate
+compiler, persisted derived identity, servant branch, or fallback was added.
+
+Counterexample closure: mixed NP base/special baseline and satisfied decisions, self-generated target-state
+special, trait-count matching/nonmatching projections, field `present:false`, `not`, `traitCount atMost/equal`,
+nested absence, inactive field sentinel, and selected-scenario personal/partyWide/partyOther separation are
+focused fixtures. Production direct negative-field occurrence remains an explicit zero ratchet. Final four-policy
+production maximum remains `Deferred: TSK-06.5`; cache/notice interaction remains `Deferred: TSK-07`; the changed
+paths have no remaining `Blocking` classification pending the implementation verification recorded in the review
+run.

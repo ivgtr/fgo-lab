@@ -313,6 +313,46 @@ test('a browser console allowance includes its source location in the complete i
   assert.deepEqual(classified.unexpected, [observation]);
 });
 
+test('a Vite optimized dependency source ignores only its transient version hash', () => {
+  const observation = {
+    runner: 'playwright',
+    testId: 'fixture.spec.ts > optimized dependency identity',
+    kind: 'browser.console',
+    message: 'dependency diagnostic',
+    detail: {
+      type: 'info',
+      url: 'http://127.0.0.1:4174/',
+      locationUrl: 'http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=current',
+      pageId: 'page-1',
+    },
+  };
+  const allowance = {
+    ...observation,
+    detail: {
+      ...observation.detail,
+      locationUrl: 'http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=recorded',
+    },
+    expectedCount: 1,
+    reason: 'fixture optimized dependency identity',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+  };
+
+  const matching = classifyObservations([observation], [allowance]);
+  assert.deepEqual(matching.allowed, [observation]);
+  assert.deepEqual(matching.unexpected, []);
+
+  const otherSource = {
+    ...observation,
+    detail: {
+      ...observation.detail,
+      locationUrl: 'http://127.0.0.1:4174/node_modules/.vite/deps/react.js?v=current',
+    },
+  };
+  const nonmatching = classifyObservations([otherSource], [allowance]);
+  assert.deepEqual(nonmatching.allowed, []);
+  assert.deepEqual(nonmatching.unexpected, [otherSource]);
+});
+
 test('a generic resource console message can never be allowlisted', () => {
   assert.deepEqual(
     validateAllowances([

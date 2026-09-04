@@ -21,6 +21,7 @@ import {
   traitConstraintActorScope,
 } from './conditionSemantics';
 import { conditionRequiresQuantity, evaluateCondition } from './condition';
+import { contributionId } from './contributionIdentity';
 
 export function resolveOperationProjectionEvaluation(
   operation: BattleOperation,
@@ -205,6 +206,19 @@ export function createOperationProjection(
       ? operation.operationId
       : (operation.decisionKey ?? operation.operationId),
     operationId: operation.operationId,
+    contributionId:
+      operation.kind === 'addModifier'
+        ? contributionId(operation.operationId, 'modifier')
+        : operation.kind === 'changeModifierRate'
+          ? contributionId(operation.operationId, 'modifierRate')
+          : operation.kind === 'ignoreDefense' || operation.kind === 'ignoreDamageCut'
+            ? contributionId(operation.operationId, 'ignore')
+            : operation.kind === 'executeNpDamage'
+              ? contributionId(
+                  operation.operationId,
+                  projectionCondition.kind === 'always' ? 'npBase' : 'npSpecial',
+                )
+              : null,
     label: operation.presentation.label,
     sourceName: operation.presentation.sourceName,
     skillName: operation.presentation.skillName,
@@ -374,6 +388,32 @@ export function projectAtDamageEvaluation(
   };
 }
 
+export function projectWorldAssumptionAtDamageEvaluation(
+  projection: EffectProjection,
+  finalState: ExecutableBattleState,
+): EffectProjection {
+  if (
+    projection.contributionControl !== 'worldAssumption' ||
+    projection.explanation.condition === null
+  )
+    return projection;
+  const condition = evaluateCondition(projection.explanation.condition, finalState);
+  if (condition === null) return projection;
+  const applied = condition;
+  return {
+    ...projection,
+    outcome: applied ? 'applied' : 'notApplied',
+    decision:
+      projection.decision.state === 'none'
+        ? projection.decision
+        : { ...projection.decision, state: applied ? 'enabled' : 'disabled' },
+    explanation: {
+      ...projection.explanation,
+      code: applied ? 'applied' : 'conditionNotMet',
+    },
+  };
+}
+
 function collectNoblePhantasmVariantConditions(
   condition: ConditionExpression,
 ): Extract<ConditionExpression, { kind: 'noblePhantasmVariant' }>['variant'][] {
@@ -391,6 +431,7 @@ function traitScopeForActor(actorScope: 'attacker' | 'target', stateOnly: boolea
 
 export function traitCountProjections(
   noblePhantasmVariantKey: string,
+  operationId: string,
   damage: NpDamageSpec,
   overcharge: number,
   selectedNpLevel: number,
@@ -432,7 +473,8 @@ export function traitCountProjections(
           };
     return {
       projectionKey,
-      operationId: `np:${noblePhantasmVariantKey}:${damage.functionId}:damage`,
+      operationId,
+      contributionId: contributionId(operationId, 'npSpecial'),
       label: '特攻宝具',
       sourceName,
       skillName,

@@ -6,7 +6,7 @@ export function contributionsForEffect(
   effective: EffectiveContributionSet,
 ) {
   return effective.contributions.filter(
-    (contribution) => contribution.operationId === effect.operationId,
+    (contribution) => contribution.contributionId === effect.contributionId,
   );
 }
 
@@ -14,7 +14,10 @@ export function rankingEffectContributes(
   effect: EffectProjection,
   effective: EffectiveContributionSet,
 ): boolean {
-  return contributionsForEffect(effect, effective).some((contribution) => contribution.effective);
+  return (
+    effect.outcome === 'applied' &&
+    contributionsForEffect(effect, effective).some((contribution) => contribution.effective)
+  );
 }
 
 export function contributesToAttackerDamage(effect: EffectProjection): boolean {

@@ -34,6 +34,7 @@ describe('effect decision application command', () => {
     const projection: EffectProjection = {
       projectionKey: 'support:1:20:200:0',
       operationId: 'support:1:20:200:0:modifier',
+      contributionId: 'support:1:20:200:0:modifier:modifier',
       label: '攻撃力アップ',
       sourceName: 'support',
       skillName: 'skill',
@@ -108,6 +109,7 @@ describe('effect decision application command', () => {
     const baseProjection: EffectProjection = {
       projectionKey: 'effect:sky',
       operationId: 'operation:sky',
+      contributionId: 'operation:sky:modifier',
       label: '対天',
       sourceName: 'source',
       skillName: 'skill',
@@ -281,6 +283,7 @@ describe('effect decision application command', () => {
     const projection: EffectProjection = {
       projectionKey: 'support:chain:chain:chain:0:interaction:proc',
       operationId: 'support:chain:chain:chain:0:modifier',
+      contributionId: 'support:chain:chain:chain:0:modifier:modifier',
       label: '攻撃力アップ',
       sourceName: 'support',
       skillName: 'chain skill',

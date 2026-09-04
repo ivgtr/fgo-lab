@@ -10,13 +10,13 @@ export const MAX_RANKING_FIELD_CANDIDATES = 4_096;
 
 export interface RankingFieldCandidate {
   key: string;
-  traits: readonly string[];
   facts: readonly { trait: string; present: boolean }[];
 }
 
-function hasExclusiveConflict(traits: readonly string[]): boolean {
+function hasExclusiveConflict(facts: RankingFieldCandidate['facts']): boolean {
   const groups = new Set<string>();
-  for (const trait of traits) {
+  for (const { trait, present } of facts) {
+    if (!present) continue;
     const group = canonicalExclusiveGroup('field', trait);
     if (group === null) continue;
     if (groups.has(group)) return true;
@@ -29,8 +29,8 @@ export function createRankingFieldFactCandidates(
   relevantTraits: readonly string[],
   active: boolean,
 ): readonly RankingFieldCandidate[] {
-  if (!active) return [{ key: 'field:none', traits: [], facts: [] }];
-  if (relevantTraits.length === 0) return [{ key: 'field:none', traits: [], facts: [] }];
+  if (!active) return [{ key: 'field:none', facts: [] }];
+  if (relevantTraits.length === 0) return [{ key: 'field:none', facts: [] }];
   const product = finiteSemanticProduct(
     relevantTraits.map((trait) => ({ key: trait, values: [false, true] })),
     MAX_RANKING_FIELD_CANDIDATES + 1,
@@ -38,11 +38,10 @@ export function createRankingFieldFactCandidates(
   );
   return product.candidates
     .map((candidate) => ({
-      traits: relevantTraits.filter((trait) => candidate[trait]),
       facts: relevantTraits.map((trait) => ({ trait, present: candidate[trait] ?? false })),
     }))
-    .filter(({ traits }) => !hasExclusiveConflict(traits))
-    .map(({ traits, facts }) => ({ key: `field:${JSON.stringify(facts)}`, traits, facts }));
+    .filter(({ facts }) => !hasExclusiveConflict(facts))
+    .map(({ facts }) => ({ key: `field:${JSON.stringify(facts)}`, facts }));
 }
 
 export function createRankingFieldCandidates(
@@ -76,7 +75,7 @@ export function materializeRankingField(
   assertAbsentFacts: boolean = false,
 ): ResolvedScenario {
   if (
-    candidate.traits.length === 0 &&
+    candidate.facts.length === 0 &&
     !scenario.worldFactAssertions.some(({ decisionKey }) =>
       decisionKey.startsWith('ranking:field:'),
     )
@@ -90,7 +89,7 @@ export function materializeRankingField(
       ),
       ...(assertAbsentFacts
         ? candidate.facts
-        : candidate.traits.map((trait) => ({ trait, present: true }))
+        : candidate.facts.filter(({ present }) => present)
       ).map(({ trait, present }) => ({
         decisionKey: `ranking:field:${trait}`,
         fact: { kind: 'trait' as const, scope: 'field' as const, trait, present },

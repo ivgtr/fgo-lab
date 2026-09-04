@@ -30,6 +30,8 @@ import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
 import { executeRankingScenarios } from './rankingExecution';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
+import { rankingEffectContributes } from './rankingContribution';
+import { createRankingRow } from './rankingRows';
 
 const master = masterSnapshotSchema.parse(fixture);
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -765,6 +767,87 @@ describe('scenario calculation facade', () => {
       excluded.effects.find((effect) => effect.projectionKey === condition!.projectionKey),
     ).toMatchObject({ outcome: 'notApplied', explanation: { code: 'disabled' } });
     expect(excluded.result.status).toBe('calculated');
+  });
+
+  it('replays the selected scenario without area by removing only party-wide final damage', () => {
+    const baseServant = fixture.servants[0]!;
+    const scopedMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'scoped-buffs',
+              slot: 1,
+              priority: 1,
+              name: 'scoped buffs',
+              detail: '',
+              imageKey: null,
+              effects: [
+                modifierEffect('personal-buff', 'upAtk', 100, [], 'self'),
+                modifierEffect('party-wide-buff', 'upAtk', 200, [], 'ptAll'),
+                modifierEffect('party-other-buff', 'upAtk', 400, [], 'ptOther'),
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const outcome = calculateRankingPolicyDetail(
+      scopedMaster.servants[0]!,
+      scopedMaster,
+      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      { ...versions, masterDataVersion: scopedMaster.version },
+    );
+    if (outcome.status !== 'calculated') throw new Error('calculated area detail required');
+    const { detail } = outcome;
+    const withoutArea = detail.areaContribution;
+    if (!withoutArea) throw new Error('area counterfactual required');
+    if (withoutArea.withoutAreaResult.status !== 'calculated')
+      throw new Error('calculated without-area damage required');
+
+    expect(detail.input.attackBuff).toBe(0.3);
+    expect(withoutArea.withoutAreaInput.attackBuff).toBe(0.1);
+    expect(detail.result.rows[0].average).toBeGreaterThan(
+      withoutArea.withoutAreaResult.rows[0].average,
+    );
+    const includedByScope = new Map(
+      detail.effectiveContributions.contributions.map((contribution) => [
+        contribution.source.effectId,
+        contribution,
+      ]),
+    );
+    const excludedByScope = new Map(
+      withoutArea.effectiveContributions.contributions.map((contribution) => [
+        contribution.source.effectId,
+        contribution,
+      ]),
+    );
+    expect(includedByScope.get('personal-buff')).toMatchObject({
+      effective: true,
+      areaViewDecision: { kind: 'included' },
+    });
+    expect(excludedByScope.get('personal-buff')).toMatchObject({
+      effective: true,
+      areaViewDecision: { kind: 'included' },
+    });
+    expect(includedByScope.get('party-wide-buff')).toMatchObject({
+      effective: true,
+      areaViewDecision: { kind: 'included' },
+    });
+    expect(excludedByScope.get('party-wide-buff')).toMatchObject({
+      effective: false,
+      areaViewDecision: { kind: 'excluded', reason: 'areaView' },
+    });
+    expect(
+      scopedMaster.servants[0]!.skills[0]!.effects.find(
+        (effect) => effect.id === 'party-other-buff',
+      )!.execution.find((operation) => 'route' in operation),
+    ).toMatchObject({ route: { contributionScope: 'partyOther' } });
+    expect(includedByScope.has('party-other-buff')).toBe(false);
+    expect(excludedByScope.has('party-other-buff')).toBe(false);
   });
 
   it('applies one exclusive conditional modifier and fails closed when both are selected', () => {
@@ -1592,6 +1675,7 @@ describe('scenario calculation facade', () => {
   it('preserves repeated state-trait stacks through ordered NP execution', () => {
     const baseServant = fixture.servants[0]!;
     const burn = { kind: 'trait' as const, name: 'buffBurn' };
+    const poison = { kind: 'trait' as const, name: 'buffPoison' };
     const stackEffect = (id: string) => ({
       ...modifierEffect(id, 'addIndividuality', 0, [], 'enemyAll'),
       execution: [
@@ -1625,7 +1709,7 @@ describe('scenario calculation facade', () => {
                     ...parameter,
                     targetId: 1,
                     targetIds: [99],
-                    targetTraits: [burn],
+                    targetTraits: [burn, poison],
                     secondaryValuePermille: 1_000,
                     correctionPermille: 200,
                     maximumTargetCount: 3,
@@ -1646,6 +1730,27 @@ describe('scenario calculation facade', () => {
 
     expect(calculation.input.targetStateTraits).toEqual(['buffBurn', 'buffBurn']);
     expect(calculation.input.npSpecialMultipliers).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
+    const traitProjections = calculation.effects.filter(
+      (effect) =>
+        effect.modifier === 'npSpecial' && effect.contributionControl === 'worldAssumption',
+    );
+    expect(traitProjections).toHaveLength(2);
+    const burnProjection = traitProjections.find((effect) =>
+      effect.projectionKey.includes('trait:buffBurn'),
+    )!;
+    const poisonProjection = traitProjections.find((effect) =>
+      effect.projectionKey.includes('trait:buffPoison'),
+    )!;
+    expect(burnProjection.outcome).toBe('applied');
+    expect(burnProjection.contributionId).toMatch(/:npSpecial$/);
+    expect(poisonProjection.outcome).toBe('notApplied');
+    expect(poisonProjection.contributionId).toMatch(/:npSpecial$/);
+    expect(calculation.effectiveContributions.contributions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: 'npBase', effective: true }),
+        expect.objectContaining({ component: 'npSpecial', effective: true }),
+      ]),
+    );
   });
 
   it('applies NP-before target state and explicit removal without leaking NP-after state', () => {
@@ -1721,6 +1826,106 @@ describe('scenario calculation facade', () => {
         ]),
       ),
     ).toEqual([1, 1, 1, 1, 1]);
+  });
+
+  it('keeps a self-generated target-state NP special separate from NP base by ranking policy', () => {
+    const baseServant = fixture.servants[0]!;
+    const burn = { kind: 'trait' as const, name: 'buffBurn' };
+    const mutation = {
+      ...modifierEffect('self-generated-burn', 'addState', 0, [], 'enemyAll'),
+      execution: [
+        {
+          kind: 'contextMutation' as const,
+          mutation: 'addTrait' as const,
+          scope: 'recipientState' as const,
+          route: mutationRoute('enemy'),
+          trait: burn.name,
+          damageRelevant: true,
+        },
+      ],
+      timing: 'beforeDamage' as const,
+    };
+    const specialMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((np) => ({
+              ...np,
+              effects: [mutation],
+              damage: np.damage.map((damage) => ({
+                ...damage,
+                kind: 'stateTrait',
+                rawFunctionType: 'damageNpStateIndividualFix',
+                stateTraitNames: [burn.name],
+                parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
+                  row.map((parameter) => ({
+                    ...parameter,
+                    targetId: 1,
+                    targetTrait: burn,
+                    correctionPermille: 1_500,
+                  })),
+                ),
+              })),
+            })),
+          })),
+        },
+      ],
+    });
+    const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
+    const calculate = (conditionalEffects: 'baseline' | 'satisfied') =>
+      calculateRankingPolicyDetail(
+        specialMaster.servants[0]!,
+        specialMaster,
+        profile,
+        { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects },
+        { ...versions, masterDataVersion: specialMaster.version },
+      );
+    const baseline = calculate('baseline');
+    const satisfied = calculate('satisfied');
+    if (baseline.status !== 'calculated' || satisfied.status !== 'calculated')
+      throw new Error('calculated ranking details required');
+    const baselineSpecial = baseline.detail.effects.find(
+      (effect) => effect.modifier === 'npSpecial',
+    )!;
+    const satisfiedSpecial = satisfied.detail.effects.find(
+      (effect) => effect.modifier === 'npSpecial',
+    )!;
+    const contribution = (detail: typeof baseline.detail, component: 'npBase' | 'npSpecial') =>
+      detail.effectiveContributions.contributions.find((item) => item.component === component)!;
+
+    expect(baselineSpecial.outcome).toBe('applied');
+    expect(baselineSpecial.contributionId).toMatch(/:npSpecial$/);
+    expect(baseline.detail.input.targetStateTraits).toContain(burn.name);
+    expect(baseline.detail.input.npSpecialMultipliers).toEqual([1, 1, 1, 1, 1]);
+    expect(contribution(baseline.detail, 'npBase')).toMatchObject({ effective: true });
+    expect(contribution(baseline.detail, 'npSpecial')).toMatchObject({
+      effective: false,
+      conditionDecision: { kind: 'excluded', reason: 'conditionalEffectPolicy' },
+    });
+    expect(rankingEffectContributes(baselineSpecial, baseline.detail.effectiveContributions)).toBe(
+      false,
+    );
+    expect(
+      createRankingRow(specialMaster.servants[0]!, baseline.detail, profile).specialDamageApplied,
+    ).toBe(false);
+
+    expect(satisfied.detail.input.npSpecialMultipliers).toEqual([1.5, 1.5, 1.5, 1.5, 1.5]);
+    expect(contribution(satisfied.detail, 'npSpecial')).toMatchObject({
+      effective: true,
+      conditionDecision: { kind: 'included' },
+    });
+    expect(
+      rankingEffectContributes(satisfiedSpecial, satisfied.detail.effectiveContributions),
+    ).toBe(true);
+    expect(
+      createRankingRow(specialMaster.servants[0]!, satisfied.detail, profile).specialDamageApplied,
+    ).toBe(true);
+    expect(satisfied.detail.result.rows[0].average).toBeGreaterThan(
+      baseline.detail.result.rows[0].average,
+    );
   });
 
   it('commits a target-state mutation only when its proc succeeds', () => {

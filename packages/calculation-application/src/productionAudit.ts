@@ -1,4 +1,5 @@
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
+import type { EffectProjection } from '@fgo-lab/battle-execution';
 import {
   canonicalAuditDigest,
   type CanonicalAuditRecord,
@@ -61,6 +62,13 @@ export interface CalculationApplicationProductionAudit {
 
 const jsonValue = (value: unknown): CanonicalAuditValue =>
   JSON.parse(JSON.stringify(value)) as CanonicalAuditValue;
+
+export function appliedOperationIds(effects: readonly EffectProjection[]): string[] {
+  const applied = effects.flatMap(({ outcome, operationId }) =>
+    outcome === 'applied' ? [operationId] : [],
+  );
+  return applied.filter((operationId, index) => applied.lastIndexOf(operationId) === index);
+}
 
 function auditOutcome(result: CalculationResult): ExecutedProductionAuditOutcome {
   switch (result.status) {
@@ -129,9 +137,7 @@ export function compileCalculationApplicationProductionAudit(
       calculatorRecords.push({
         identity: `calculator:${servant.id}`,
         value: {
-          appliedEffects: execution.effects
-            .filter(({ outcome: effectOutcome }) => effectOutcome === 'applied')
-            .map(({ operationId }) => operationId),
+          appliedEffects: appliedOperationIds(execution.effects),
           availableActions: jsonValue(planned.candidates.map(({ commands }) => commands)),
           executionIssues: jsonValue([...execution.effectWarnings, ...execution.result.issues]),
           executionTrace: jsonValue(execution.result.trace),
@@ -209,9 +215,7 @@ export function compileCalculationApplicationProductionAudit(
       return {
         identity: `ranking:${detail.entryId}`,
         value: {
-          appliedEffects: detail.effects
-            .filter(({ outcome }) => outcome === 'applied')
-            .map(({ operationId }) => operationId),
+          appliedEffects: appliedOperationIds(detail.effects),
           candidateEvidence: jsonValue(detail.candidateEvidence),
           executionIssues: jsonValue([...detail.warnings, ...detail.result.issues]),
           executionTrace: jsonValue(detail.result.trace),

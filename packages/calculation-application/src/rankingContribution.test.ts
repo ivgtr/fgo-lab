@@ -1,18 +1,34 @@
-import type { EffectProjection, EffectiveContributionSet } from '@fgo-lab/battle-execution';
+import type {
+  ContributionComponent,
+  EffectProjection,
+  EffectiveContributionSet,
+} from '@fgo-lab/battle-execution';
 import { describe, expect, it } from 'vitest';
 import { rankingEffectContributes } from './rankingContribution';
 
-const effect = { operationId: 'operation' } as EffectProjection;
-const contribution = (effective: boolean): EffectiveContributionSet => ({
+const effect = (
+  component: ContributionComponent,
+  outcome: EffectProjection['outcome'] = 'applied',
+) =>
+  ({
+    operationId: 'operation',
+    contributionId: `operation:${component}`,
+    outcome,
+  }) as unknown as EffectProjection;
+const contribution = (
+  component: 'modifier' | 'npBase' | 'npSpecial',
+  effective: boolean,
+): EffectiveContributionSet => ({
   contributions: [
     {
-      contributionId: 'operation:modifier',
+      contributionId: `operation:${component}`,
       presentationGroupId: 'effect',
       operationId: 'operation',
-      component: 'modifier',
-      modifier: 'powerMod',
+      component,
+      modifier:
+        component === 'npSpecial' ? 'npSpecial' : component === 'npBase' ? null : 'powerMod',
       resolvedValue: 500,
-      outputAddress: 'damage.modifier',
+      outputAddress: `damage.${component}`,
       source: {
         origin: 'attacker',
         sourceInstanceId: 'attacker',
@@ -36,7 +52,26 @@ const contribution = (effective: boolean): EffectiveContributionSet => ({
 
 describe('effective ranking contribution state', () => {
   it('reads the canonical application result instead of re-evaluating policy', () => {
-    expect(rankingEffectContributes(effect, contribution(true))).toBe(true);
-    expect(rankingEffectContributes(effect, contribution(false))).toBe(false);
+    expect(rankingEffectContributes(effect('modifier'), contribution('modifier', true))).toBe(true);
+    expect(rankingEffectContributes(effect('modifier'), contribution('modifier', false))).toBe(
+      false,
+    );
+  });
+
+  it('does not let an effective NP base satisfy an excluded NP-special projection', () => {
+    expect(rankingEffectContributes(effect('npSpecial'), contribution('npBase', true))).toBe(false);
+    expect(rankingEffectContributes(effect('npSpecial'), contribution('npSpecial', false))).toBe(
+      false,
+    );
+    expect(rankingEffectContributes(effect('npSpecial'), contribution('npSpecial', true))).toBe(
+      true,
+    );
+  });
+
+  it('keeps matching and nonmatching trait-count projections separate over one contribution', () => {
+    const aggregate = contribution('npSpecial', true);
+
+    expect(rankingEffectContributes(effect('npSpecial', 'applied'), aggregate)).toBe(true);
+    expect(rankingEffectContributes(effect('npSpecial', 'notApplied'), aggregate)).toBe(false);
   });
 });

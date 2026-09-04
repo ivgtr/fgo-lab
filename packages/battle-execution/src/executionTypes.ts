@@ -10,6 +10,8 @@ import type {
   BattleExecutionResult,
   BattleOperation,
   EffectProjection,
+  ContributionComponent,
+  ContributionId,
   ExecutionIssue,
   ModifierKind,
   OperationOutcome,
@@ -68,10 +70,10 @@ export type ContributionPolicyDecision =
   | { kind: 'excluded'; reason: 'selfBuffPolicy' | 'conditionalEffectPolicy' | 'areaView' };
 
 export interface EffectiveContribution {
-  contributionId: string;
+  contributionId: ContributionId;
   presentationGroupId: string;
   operationId: string;
-  component: 'modifier' | 'modifierRate' | 'ignore' | 'npBase' | 'npSpecial';
+  component: ContributionComponent;
   modifier: ModifierKind | 'npSpecial' | null;
   resolvedValue: number | null;
   outputAddress:

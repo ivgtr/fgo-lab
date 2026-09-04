@@ -6,6 +6,7 @@ function projection(visibility: EffectProjection['visibility']): EffectProjectio
   return {
     projectionKey: visibility,
     operationId: visibility,
+    contributionId: `${visibility}:modifier`,
     label: '火力効果',
     sourceName: 'source',
     skillName: 'skill',

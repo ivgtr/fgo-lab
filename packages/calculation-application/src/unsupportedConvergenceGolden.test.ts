@@ -22,6 +22,7 @@ import {
   materializePreNoblePhantasmPlan,
   planPreNoblePhantasmCandidates,
 } from './preNoblePhantasmPlanner';
+import { appliedOperationIds } from './productionAudit';
 
 function selectProjectionAlone(
   scenario: Parameters<typeof applyEffectInclusionDecision>[0],
@@ -107,9 +108,7 @@ describe('unsupported convergence production golden', () => {
         name: servant.name,
         inputDigest: createHash('sha256').update(JSON.stringify(calculation.input)).digest('hex'),
         np1To5Average: calculation.result.rows.map((row) => row.average),
-        appliedOperations: calculation.effects
-          .filter((effect) => effect.outcome === 'applied')
-          .map((effect) => effect.operationId),
+        appliedOperations: appliedOperationIds(calculation.effects),
       };
     });
     expect(records).toHaveLength(12);

@@ -10,6 +10,8 @@ export type {
   CardType,
   ConditionConstraintConflict,
   ConditionExpression,
+  ContributionComponent,
+  ContributionId,
   ConstraintValidationIssue,
   EffectDecision,
   EffectProjection,
