@@ -3,7 +3,9 @@ import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SCHEMA_VERSION } from '@fgo-lab/schema';
-import { IndexedDbProfileRepository } from './repository';
+import fixture from '../../../../packages/test-fixtures/master/fixture.json';
+import manifest from '../../../../packages/test-fixtures/master/manifest.json';
+import { IndexedDbProfileRepository, loadActiveMaster, stageAndActivate } from './repository';
 
 const profileId = '00000000-0000-4000-8000-000000000001';
 
@@ -73,5 +75,68 @@ describe('profile repository migration boundary', () => {
     const check = await userStore();
     expect(await check.get('user', 'profiles')).toEqual(invalid);
     check.close();
+  });
+});
+
+describe('validated master activation receipt', () => {
+  beforeEach(async () => {
+    const db = await userStore();
+    await db.clear('master');
+    await db.clear('staging');
+    db.close();
+  });
+
+  it('loads a transactionally validated snapshot through its small activation receipt', async () => {
+    await stageAndActivate(manifest, fixture, new Date('2026-09-05T00:00:00.000Z'));
+
+    expect(await loadActiveMaster()).toMatchObject({
+      state: 'ready',
+      active: {
+        snapshot: { version: fixture.version },
+      },
+    });
+    const db = await userStore();
+    const stored = (await db.get('master', 'active')) as {
+      snapshotBytes: unknown;
+      validation: Record<string, unknown>;
+    };
+    expect(stored.snapshotBytes).toBeInstanceOf(ArrayBuffer);
+    expect(stored.validation).toMatchObject({
+      version: 1,
+      contract: 'master-snapshot-v43.1',
+      masterSchemaVersion: manifest.schemaVersion,
+      masterDataVersion: fixture.version,
+      artifactSha256: manifest.files[0]!.sha256,
+    });
+    expect(stored.validation['snapshotSha256']).toMatch(/^[a-f0-9]{64}$/);
+    db.close();
+  });
+
+  it('discards a pre-receipt snapshot instead of trusting unproven nested data', async () => {
+    const db = await userStore();
+    await db.put(
+      'master',
+      { manifest, snapshot: fixture, activatedAt: '2026-09-05T00:00:00.000Z' },
+      'active',
+    );
+    db.close();
+
+    expect(await loadActiveMaster()).toEqual({ state: 'discarded', reason: 'invalid_schema' });
+    const check = await userStore();
+    expect(await check.get('master', 'active')).toBeUndefined();
+    check.close();
+  });
+
+  it('discards a nested mutation because the stored bytes no longer match the receipt', async () => {
+    await stageAndActivate(manifest, fixture, new Date('2026-09-05T00:00:00.000Z'));
+    const db = await userStore();
+    const stored = (await db.get('master', 'active')) as { snapshotBytes: ArrayBuffer };
+    const snapshot = JSON.parse(new TextDecoder().decode(stored.snapshotBytes)) as typeof fixture;
+    snapshot.servants[0]!.rarity = 99;
+    stored.snapshotBytes = new TextEncoder().encode(JSON.stringify(snapshot)).buffer;
+    await db.put('master', stored, 'active');
+    db.close();
+
+    expect(await loadActiveMaster()).toEqual({ state: 'discarded', reason: 'invalid_schema' });
   });
 });

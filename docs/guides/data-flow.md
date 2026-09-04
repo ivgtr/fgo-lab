@@ -26,7 +26,8 @@ Atlas static export
        -> manifestだけで版を確認し、初回／版更新時だけcandidateを取得
        -> byte length・SHA-256／schema／参照整合性検証
        -> IndexedDB staging
-       -> active pointerのtransaction切替
+       -> validation receiptとactive snapshotのtransaction切替
+       -> 再訪時は保存byte列のSHA-256とreceipt・schema version・master versionを確認してparse
        -> 互換性確認済みの直前正常版fallback
 ```
 

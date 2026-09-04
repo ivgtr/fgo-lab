@@ -58,7 +58,7 @@ async function activateCurrentMaster(options: StartupOptions) {
   if (!options.development && candidate.manifest.artifactKind === 'diagnostic')
     throw new Error('diagnostic_fixture_cannot_be_activated');
   return {
-    active: await stageAndActivate(candidate.manifest, candidate.snapshot, options.now),
+    active: await stageAndActivate(candidate.manifest, candidate.snapshotBytes, options.now),
     fromOfflineCache: candidate.fromOfflineCache,
   };
 }
@@ -100,7 +100,7 @@ export async function bootstrapApplication(
           offline ||= snapshotCandidate.fromOfflineCache;
           active = await stageAndActivate(
             manifestCandidate.manifest,
-            snapshotCandidate.snapshot,
+            snapshotCandidate.snapshotBytes,
             options.now,
           );
         }

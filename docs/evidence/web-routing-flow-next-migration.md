@@ -67,9 +67,16 @@ The runtime master artifact remains 30,107,913 bytes uncompressed and 2,260,578 
 not imported by a Server or Client Component and is therefore absent from the JavaScript bundle. The
 browser downloads it as a separate artifact only during initial setup or after the manifest announces
 a new version, verifies its byte length, SHA-256, schema, references, and version, then atomically
-activates it in IndexedDB. Normal revisits download only the 548-byte manifest and reuse the validated
-IndexedDB snapshot. Service Worker cache excludes the master payload to avoid storing a second 30 MB
-copy; it retains the manifest and visited application shell for offline startup.
+activates it with a versioned validation receipt in IndexedDB. Normal revisits download only the
+548-byte manifest, hash the stored source bytes against the receipt, parse those proven bytes, and
+check schema version, master version, and artifact identity. They do not repeat the full schema and
+reference scans. A production-file Node baseline measured those removed repeat scans at 1.05 seconds
+and 0.94 seconds respectively, while the resulting hash-and-parse load measured 0.28 seconds with
+fake IndexedDB in the same environment. These figures are directional; browser hardware remains the
+user-visible performance authority. A missing or contradictory receipt, or any nested byte mutation,
+fails closed and triggers a fresh download and full validation. Service Worker cache excludes the
+master payload to avoid storing a second 30 MB copy; it retains the manifest and visited application
+shell for offline startup.
 
 ## Master delivery delta
 
@@ -82,6 +89,7 @@ copy; it retains the manifest and visited application shell for offline startup.
 | no valid active master and payload is unavailable or invalid | attempted initial download | do not create a plausible active snapshot | Verified: fail-closed startup and production validation contracts |
 | offline revisit with active master | cached manifest when available | use IndexedDB active snapshot | Verified: E2E-023 offline reload |
 | Service Worker runtime cache | shell assets and manifest only | never duplicate the master payload outside IndexedDB | Verified: E2E-023 cache inventory assertion |
+| missing, stale, contradictory, or byte-mismatched activation receipt | manifest after local discard | never trust an unproven or mutated stored snapshot; reacquire and fully validate | Verified: focused pre-receipt and nested-mutation fixtures |
 
 ## Test-server ownership delta
 

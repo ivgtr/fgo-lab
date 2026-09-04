@@ -230,8 +230,12 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
               db.close();
             };
             masterRequest.onsuccess = () => {
-              const active = masterRequest.result as { snapshot: { version: string } };
-              active.snapshot.version = 'incompatible-master-version';
+              const active = masterRequest.result as { snapshotBytes: ArrayBuffer };
+              const snapshot = JSON.parse(new TextDecoder().decode(active.snapshotBytes)) as {
+                version: string;
+              };
+              snapshot.version = 'incompatible-master-version';
+              active.snapshotBytes = new TextEncoder().encode(JSON.stringify(snapshot)).buffer;
               transaction.objectStore('master').put(active, 'active');
             };
           };
@@ -282,9 +286,13 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
             };
             activeRequest.onsuccess = () => {
               const active = activeRequest.result as {
-                snapshot: { servants: Array<{ rarity: number }> };
+                snapshotBytes: ArrayBuffer;
               };
-              active.snapshot.servants[0]!.rarity = 99;
+              const snapshot = JSON.parse(new TextDecoder().decode(active.snapshotBytes)) as {
+                servants: Array<{ rarity: number }>;
+              };
+              snapshot.servants[0]!.rarity = 99;
+              active.snapshotBytes = new TextEncoder().encode(JSON.stringify(snapshot)).buffer;
               store.put(active, 'active');
             };
           };
