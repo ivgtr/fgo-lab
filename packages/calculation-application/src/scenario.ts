@@ -272,8 +272,6 @@ export type ScenarioPreparationOutcome =
 
 export interface CalculationPreparationOptions {
   initialNpGauge?: number;
-  /** Deferred TSK-07 compatibility for the pre-policy ranking entrypoint. */
-  preserveScenarioOvercharge?: boolean;
 }
 
 function damageResolutionInputForNoblePhantasm(
@@ -395,9 +393,7 @@ export function resolveScenarioPreparationOutcome(
     input: damageResolutionInputForNoblePhantasm(
       {
         ...scenario,
-        overcharge: (preparation.preserveScenarioOvercharge
-          ? scenario.overcharge
-          : Math.max(formExecution.state.baseOvercharge ?? 1, scenario.overcharge)) as
+        overcharge: Math.max(formExecution.state.baseOvercharge ?? 1, scenario.overcharge) as
           1 | 2 | 3 | 4 | 5,
       },
       servant,

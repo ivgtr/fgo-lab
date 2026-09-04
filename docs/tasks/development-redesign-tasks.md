@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.39"
+document_version: "1.5.40"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-02"
+updated_at: "2026-09-04"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -1153,6 +1153,10 @@ Completion:
   production 24 files／113 tests, and focused Playwright 3 projects／10 tests passed. Final `pnpm quality`
   passed with unit 380, production 113, Playwright 25, skip／todo／retry／warning／unexpected-console 0;
   artifact `.test-results/2026-09-02T06-07-59-655Z-44-fc4f13`. TSK-06.41 is `done`; TSK-06.5 is `ready`.
+- Completion verification correction: the unused-by-production but schema-legal
+  `preserveScenarioOvercharge` compatibility option and its runtime branch were deleted. NP2／200% start now has
+  a focused application fixture proving executor-derived base OC2, and the legacy symbol scan is 0件. Production
+  inventory／digests are unchanged. TSK-06.41 remains `done`; TSK-06.5 remains `ready`.
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

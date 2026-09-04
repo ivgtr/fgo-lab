@@ -339,6 +339,24 @@ function traitConditions(opponent: string, field: string): TestEffectConditions 
 }
 
 describe('scenario calculation facade', () => {
+  it('always derives base overcharge from the ordered NP resource transaction', () => {
+    const baseline = createDefaultResolvedScenario(master, undefined);
+    const scenario: ResolvedScenario = {
+      ...baseline,
+      attacker: { ...baseline.attacker, npLevel: 2 },
+      overcharge: 1,
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+    };
+    const outcome = resolveScenarioPreparationOutcome(scenario, master, {
+      initialNpGauge: 20_000,
+    });
+
+    expect(outcome.status).toBe('executable');
+    if (outcome.status !== 'executable') throw new Error(outcome.rejection.code);
+    expect(outcome.input.overcharge).toBe(2);
+    expect(outcome.formExecution.state.baseOvercharge).toBe(2);
+  });
+
   it('keeps repeated Function IDs as independent decisions and operations', () => {
     const first = modifierEffect('shared-function', 'upAtk', 100);
     const second = {

@@ -1,7 +1,7 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-02"
+updated_at: "2026-09-04"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
@@ -53,6 +53,21 @@ or unexpected console; artifact `.test-results/2026-09-02T06-07-59-655Z-44-fc4f1
 Removal audit finds zero production legacy operation variants, operation-ID contribution projections,
 independent 512-state caps, current old portable-intent writers, compatibility flags, adapters, or parallel
 compilers. The schema-33 parser remains only as the exact approved migration boundary.
+
+### Completion verification correction — legacy overcharge bypass
+
+Confirmed mechanism: the first completion retained `CalculationPreparationOptions.preserveScenarioOvercharge`
+and a runtime branch that could bypass the ordered NP resource transaction's derived base overcharge. No current
+producer passed the option, so production inventory and damage digests were unchanged, but the public
+schema-legal preparation path still represented the pre-policy compatibility model.
+
+Implementation mismatch: the runtime and removal audit had converged all current callers without deleting the
+obsolete override itself. Missed detection: the original legacy scan covered old operation／portable names but
+not preparation-option fields, and parity fixtures exercised only the canonical default branch. Recurrence scope
+is bounded to scenario preparation options that can override terminal resource or OC state. The minimum guardrail
+is deletion of the option and branch, a focused NP2 fixture proving that 200% initial gauge produces executor-
+derived base OC2, and a source scan for the removed symbol. After the correction this path is `Verified` and the
+TSK-06.41 runtime Blocking count remains 0.
 
 ## TSK-06.4 independent design audit — authoritative current delta
 
