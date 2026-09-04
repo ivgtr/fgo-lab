@@ -8,7 +8,27 @@ updated_at: "2026-09-04"
 
 ## TSK-06.41 runtime cutover — authoritative current delta
 
-### Implementation review closure delta — IRL-005
+### Product correction reopening — IRL-005 exact retained-request subject
+
+The reset contract is keyed by the retained portable request, not the mutable calculator UI scenario. Current
+Web code resolves the reset subject from `currentScenario.attacker.servantId`; after scenario editing or a
+selection change, that identity can differ from `currentRequest.scenario.attacker.servantId`. The previous
+missing-subject fixture kept those identities aligned and therefore did not exercise the recurrence path.
+
+| Recovery state | Subject resolver | Application attempt | Durable／memory／reload | Current status |
+| --- | --- | --- | --- | --- |
+| retained request and current UI scenario have the same attacker | resolve the exact retained-request subject | build and execute current calculator baseline | publish only after durable success | Verified regression boundary |
+| retained request attacker differs from mutable UI scenario | ignore UI selection and resolve the retained request subject exactly once | reset the retained request, never another servant | success atomically replaces the pair | Blocking IRL-005: current resolver reads `currentScenario` |
+| retained request subject is missing／ambiguous | no fallback subject | do not invoke the application attempt | old request／result／fingerprint and memory survive reload | Blocking fixture required on the production command path |
+| exact application attempt or persistence fails | exact retained-request subject only | return typed failure | no durable or memory publication | Verified existing transaction boundary |
+
+Portable flow classification: retained request producer is `Verified`; Web subject resolver is
+`Blocking: IRL-005`; application reset constructor／executor and execute-before-publish writers are `Verified`;
+history／share／backup are `N/A: reset does not rewrite those records`; ranking semantics are owned by the
+ranking flow note. Portable Blocking count is **1**. This section supersedes the earlier IRL-005 closure and
+Blocking-0 statements below.
+
+### Previous implementation review closure delta — IRL-005 (superseded closure status)
 
 The previous reset closure verified scenario-field removal but missed two recovery writers: the reset
 constructor copied the retained request's unavailable version identity, and the Web draft path published an
@@ -46,7 +66,7 @@ all consume the same intent.
 
 Fixtures cover current round trips, exact migration, ranking historical-only, request/result mismatch, mixed
 intent, backup transaction failure, unavailable versions, contaminated ranking reset, and missing／ambiguous
-reset identity. TSK-06.41 runtime paths have **Blocking 0**. There is no compatibility flag, current old-intent
+reset identity. This section's former Blocking 0 is superseded by the current delta above. There is no compatibility flag, current old-intent
 reader／writer, inferred policy, or parallel runtime; schema 33 exists only inside the exact migration function.
 
 > TSK-06.4 reopened the portable identity／persistence／recovery family owned by this note. The schema 33

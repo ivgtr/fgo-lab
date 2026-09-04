@@ -8,7 +8,55 @@ updated_at: "2026-09-04"
 
 ## TSK-06.41 runtime cutover — authoritative current delta
 
-### Re-review correction delta — IRL-001／003
+### Product correction delta — IRL-003／005／006
+
+The approved user-visible outcome is that every optional action with an effective contribution under the
+selected policy competes when at least one legal initial-state candidate can execute the complete action and
+the later attack NP. A represented disadvantage is applied, not used as an admission veto. Only the concrete
+candidate that cannot pay an NP／HP cost or otherwise reach the attack NP is dropped. The previous design used
+“disadvantage-free” as a proxy for executable and therefore changed ranking membership before the ordered
+executor could prove reachability.
+
+Confirmed facts are: `rankingActionAdmission.ts::unsafeBaselineEffect` turns negative modifiers, fixed
+resource loss, detrimental state, and trait removal into `policyNoOp`; HP／BP mutation closure scans the whole
+program rather than the ordered suffix; and Web reset resolves from mutable `currentScenario` instead of the
+retained request subject. The missed detection was an admission matrix that proved preservation only after an
+action had already been admitted, a resource matrix completed for critical stars but not the sibling HP／BP
+families, and a reset fixture whose current UI scenario matched the retained request. The recurrence scope is
+every optional action option × four policies × legal initial resource state × complete ordered path, every
+HP／NP／star／BP mutation × later-reader ordering, and every reset request identity × mutable UI selection.
+
+| Canonical state / counterexample | Policy admission | Ordered execution / recovery | Expected outcome | Current status |
+| --- | --- | --- | --- | --- |
+| unconditional deterministic contribution plus no disadvantage | policy-relevant optional action | execute all operations and attack NP | calculated candidate | Verified regression boundary |
+| unconditional deterministic contribution plus represented HP cost／negative modifier／detrimental state | do not inspect polarity or cost presence | commit every sibling; require attack NP reachability | candidate competes by final average damage | Blocking IRL-006: static adverse veto still returns `policyNoOp` |
+| fixed NP cost at baseline start NP100% | policy-relevant action remains enumerable | cost leaves attack NP unreachable | only that concrete candidate is `unreachable` | Blocking IRL-006: action is removed before candidate execution |
+| same fixed NP cost with a legal higher start gauge in satisfied mode | same action option | cost and attack NP both execute | reachable candidate remains and may win | Verified execution boundary; add cross-policy focused oracle in IRL-006 |
+| conditional-only contribution in baseline | no effective contribution under selected policy | N/A: optional action is not executed | `policyNoOp`, independent of disadvantage | Verified regression boundary |
+| unconditional＋conditional siblings plus represented cost in baseline | admit from the unconditional effective sibling | commit cost／mutation; exclude only conditional damage contribution | reachable candidate keeps unconditional contribution | Blocking IRL-006 focused fixture |
+| unknown／dependent cost | never infer feasibility | no partial transaction | `unsupported`, not `policyNoOp` or calculated | Verified fail-closed boundary |
+| HP／BP mutation whose reader exists only before the mutation | admission is unchanged | suffix has no reader | `noDamageReader`; do not block a legal action | Blocking IRL-003: whole-program reader scan retains a false blocker |
+| HP／BP mutation followed by a reader | admission is unchanged | ordered canonical state must change before the reader | mutated value is consumed or transaction is typed unsupported | Blocking IRL-003: sibling families lack ordered transition closure |
+| retained portable request subject differs from mutable UI scenario | N/A: ranking policy is already stored | reset resolves the retained request subject exactly before any write | exact reset or no-op with old durable／memory pair intact | Blocking IRL-005: resolver currently keys from `currentScenario` |
+| stochastic success／failure | existing condition policy owns contribution and outcome candidate | execute one legal outcome | baseline minimum／failure; satisfied legal maximum | N/A: unchanged by adverse-action correction |
+| self buffs excluded optional action | source policy excludes the optional action | no execution | `policyNoOp`; `structuralRequired` remains separate | N/A: unchanged by adverse-action correction |
+
+Flow classification: canonical effect／operation production and contribution classification are `Verified`;
+adverse-independent optional admission and per-candidate reachability are `Blocking: IRL-006`; ordered HP／BP
+suffix semantics are `Blocking: IRL-003`; exact-subject portable reset is `Blocking: IRL-005`; calculator／
+ranking use of the shared executor is `Verified`; UI ranking presentation is `N/A: it consumes typed results`;
+final production maxima and ranking-member deltas are `Deferred: TSK-06.5`. Current Blocking count is **3**.
+This delta supersedes every earlier “baseline rejects disadvantage”, “runtime Blocking 0”, and TSK-06.41
+`done` statement below; those sections remain as historical review evidence.
+
+Verification separates evidence roles: schema-legal focused fixtures close each disposition boundary and
+ordered rollback; one shared production inventory measures every represented adverse family and ratchets
+zero-occurrence siblings; calculator replay proves the selected candidate on the shared execution path; the
+small exhaustive oracle proves maximum completeness; and the final before／after ranking-member report lists
+each added／removed `Servant × AttackProfile` with start resource, selected action, damage, and canonical reason.
+An unexplained member delta, candidate-bound increase, or hot-path regression over 10% remains Blocking.
+
+### Previous re-review correction delta — IRL-001／003 (superseded closure status)
 
 The 2026-09-04 re-review reopened two adjacent states in the already declared condition and resource
 families. The earlier closure tested card／NP variant binding but did not enumerate terminal-form traits or
@@ -35,9 +83,10 @@ Flow delta classification: condition producers／admission／effective-contribut
 compiler／suffix reader scan／transaction executor／profile recovery are `Verified`. Calculator and ranking both
 reach the same application compiler and ordered executor (`Verified` architecture boundary). UI presentation
 is `N/A: it consumes the typed application outcome and does not classify these semantics`. TSK-06.5 final
-four-policy maxima remain `Deferred: TSK-06.5`. Runtime Blocking count is **0**.
+four-policy maxima remain `Deferred: TSK-06.5`. This section's former Blocking count 0 is superseded by the
+current delta above.
 
-### Implementation review closure delta — IRL-001〜004
+### Previous implementation review closure delta — IRL-001〜004 (historical)
 
 The implementation review expanded the recurrence scope of the previous condition and operation audits. The
 first closure proved current caller parity, condition truth, and pipeline classification, but did not require
@@ -431,6 +480,10 @@ No runtime path is Verified by this design audit; every implementation path rema
 > remain `Deferred: TSK-06.41`／`TSK-06.5` until every design Blocking reaches 0.
 
 ### Former TSK-06.4 design reopening delta
+
+> Historical design record: every disadvantage-free admission assertion in this section is superseded by the
+> IRL-006 product correction at the top of this note. The retained architectural ownership and contribution
+> projection decisions still apply.
 
 ### User-visible outcome and invariant
 

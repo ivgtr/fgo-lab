@@ -1,10 +1,10 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.9.5"
+document_version: "0.9.6"
 status: "Active"
 approval: "approved"
 approved_at: "2026-09-02"
-updated_at: "2026-09-02"
+updated_at: "2026-09-04"
 created_at: "2026-08-30"
 related_adrs:
   - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
@@ -134,9 +134,11 @@ type RankingProfileResult =
 自己バフは、攻撃役の任意skillを候補化するsource policyと、そのskillに由来するdamage contributionを含めるかを
 制御する。action admissionとcontribution inclusionは同じ判定ではない。
 
-`あり・通常のみ`で候補化するのは、確定的に実行でき、canonicalなデメリットを持たず、少なくとも一つの無条件な
-実効寄与を持つskill actionである。AttackProfileへ到達するために必要なform／NP variantの構造actionは、damage寄与が
-なくても別の`structuralRequired`として保持する。
+`あり・通常のみ`で候補化するのは、少なくとも一つの無条件かつ確定的な実効寄与を持つskill actionである。
+canonicalに表現されたデメリット、negative modifier、HP／NP消費、detrimental stateの存在自体をadmission除外条件に
+しない。選択policyの合法な初期state候補ごとにaction全operationと後続の攻撃宝具をordered transactionとして実行し、
+最後まで到達できたcandidateだけをdamage比較へ残す。AttackProfileへ到達するために必要なform／NP variantの構造actionは、
+damage寄与がなくても別の`structuralRequired`として保持する。
 
 - 攻撃力、card性能、宝具威力、特攻付与等の自己強化
 - 本人がrecipient条件を満たす味方全体効果
@@ -177,9 +179,10 @@ ordered action、form transition、evidence自体は削除しない。stochastic
 `成立込み`では、同時成立可能なcanonical候補を有限生成し、合法な最大結果を使用する。conditionを無条件にtrueへ
 書き換えたり、effectを個別にONへしたりしない。
 
-自己バフ`あり・成立込み`は、`あり・通常のみ`のsafe deterministic actionに加え、NP消費等のrequirement／costを
-canonicalに表現できる`conditionalTradeoff` actionを候補化する。costは無視せずordered transactionで適用し、
-attack NPへ到達できないplanは採用しない。未解釈のデメリットを理論値の名目で有利に推測しない。
+自己バフ`あり・成立込み`は、通常候補を包含した上で、追加condition witnessにより実効寄与を持つactionも候補化する。
+両modeとも表現済みcostは無視せずordered transactionで適用し、具体的な初期stateからattack NPへ到達できないcandidateは
+`unreachable`として採用しない。一つでも合法に完遂できるcandidateがあるactionを、デメリットの分類だけで全体除外しない。
+未解釈のデメリットは成立可能と推測せず`unsupported`としてfail-closedにする。
 
 分類はmodifier名ではなくcanonical requirementで行う。`powerMod`／`npSpecial`というkindだけで条件効果へ入れず、
 通常modifierという理由で条件付き寄与を通常扱いしない。
@@ -205,9 +208,9 @@ raw `ActSet`等の格納形式だけからselection semanticsを推測しない�
 | 自己バフ | 条件効果 | 比較内容 |
 | --- | --- | --- |
 | なし | 通常のみ | 構造、宝具本体、passive、intrinsic効果を中心とする基礎性能 |
-| あり | 通常のみ | デメリットがなく、無条件・確定的に有効なself skillを含む標準性能 |
+| あり | 通常のみ | 無条件・確定的に有効で、表現済みデメリットを含め最後まで実行可能なself skillを含む標準性能 |
 | なし | 成立込み | 任意skill modifierを除いた条件付き宝具性能 |
-| あり | 成立込み | safe skillと表現可能なconditional tradeoffを含む、一つの合法scenarioの理論最大火力 |
+| あり | 成立込み | 通常候補と追加条件付き寄与を持つactionを、全cost込みの一つの合法scenarioで比較した理論最大火力 |
 
 二軸は利用者選択とportable ranking identityでは独立に保持するが、domainの二つの独立projectionではない。
 action admissionは二軸の組み合わせ、選択branch、AttackProfile、ordered pathから一度だけcompileする。NP固有効果や
@@ -236,8 +239,9 @@ rollbackせず、そのmutation後にattack-NP寄与が成立するかは選択�
 | ダンテの確定的な天／地選択 | あり | 通常のみ | player choiceとして合法な最大branchを評価 |
 | ブレエリのランダム効果 | あり | 通常のみ | stochastic damage寄与を除外 |
 | ブレエリのランダム効果 | あり | 成立込み | 成功結果とNP resourceを同時に満たすplanだけ適用 |
-| NP消費を伴う条件付きskill | あり | 通常のみ | actionを候補化しない |
-| NP消費を伴う条件付きskill | あり | 成立込み | 消費後もattack NPへ到達できる合法planだけ候補化 |
+| 無条件寄与とNP消費を伴うskill | あり | 通常のみ | 開始NP100%から消費後にattack NPへ到達不能なら、そのcandidateだけを除外 |
+| 無条件寄与とHP消費を伴うskill | あり | 通常のみ | HP消費をcommitし、後続attack NPまで合法に完遂できるcandidateを候補化 |
+| 条件付き寄与とNP消費を伴うskill | あり | 成立込み | capacity内の開始NP候補から、消費後もattack NPへ到達できるcandidateを候補化 |
 | 条件付き寄与だけを持つsafe skill | あり | 通常のみ | policy上no-opとして候補化しない |
 | 無条件＋条件付きsiblingを持つsafe skill | あり | 通常のみ | actionを候補化し、無条件寄与だけを適用 |
 
@@ -318,10 +322,12 @@ type CandidateLocalActionAdmission =
 別AttackProfileには任意となり得るため、AttackProfile、initial state、完全なordered pathからcandidate-local
 roleとして導出する。prefixだけから後続到達性を推測しない。
 
-自己バフ`あり・通常のみ`は、selected action optionの全consequenceが確定的かつ無デメリットで、選択AttackProfileへ
-無条件の実効damage contributionを少なくとも一つ持つ場合だけ任意actionをadmitする。自己バフ`あり・成立込み`は、
-HP、NP、state等の表現済みtradeoffを含むaction optionを拡張候補としてadmitできる。costはtransaction全体へ適用し、
-resource残量、AttackProfile到達役割、後続actionの成否はcandidate-localに評価する。
+自己バフ`あり・通常のみ`は、選択AttackProfileへ無条件かつ確定的な実効damage contributionを少なくとも一つ持つ
+任意actionをpolicy上relevantとしてadmitする。自己バフ`あり・成立込み`は、追加condition witnessで実効寄与を持つ
+actionもadmitする。どちらもbeneficial／detrimental、modifierの正負、HP／NP costの有無をadmission verdictに使わない。
+表現済みconsequenceはtransaction全体へ適用し、resource残量、action precondition、AttackProfile到達役割、後続action、
+攻撃宝具の成否を初期stateごとのordered executorで評価する。完遂不能な具体candidateだけを`unreachable`とし、別の合法な
+初期state候補で完遂できるaction optionまで全体除外しない。
 
 ordered step operationはpipeline-owned closed unionで、少なくともresource、HP、state、form、fieldの
 mutation、damage contribution、根拠付き`boundedPhaseIrrelevant`、`unsupported`を区別する。admission用の
@@ -330,7 +336,9 @@ raw function名をapplicationへ渡さない。意味を失った`nonDamage`や�
 `boundedPhaseIrrelevant`へ推測せず、`unsupported`としてfail-closedにする。
 
 policy projection後に実効寄与も構造遷移も持たない任意actionは、plannerだけが
-`noEffectiveContributionUnderPolicy`のtyped proofを発行して除外できる。aggregatorはaction relevanceを推測しない。
+`noEffectiveContributionUnderPolicy`のtyped proofを発行して除外できる。実効寄与を持つactionの具体candidateが
+precondition、HP／NP cost、後続action、攻撃宝具のいずれかで完遂不能な場合はexecutorの結果から`unreachable`にする。
+未表現operationは`unsupported`であり、aggregatorはaction relevanceや成立可能性を推測しない。
 
 ### 6.5 Closed operation inventory
 
@@ -776,9 +784,10 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 ### 15.1 Domain tests
 
-- selected action optionの全consequenceが確定的・無デメリットで、無条件な実効寄与を持つskill actionだけが通常候補へ残る
+- 無条件かつ確定的な実効寄与を持つskill actionは、表現済みデメリットの有無で落とされず、全operationと攻撃宝具を完遂できる通常candidateだけが残る
 - conditional-only actionは通常候補へ残らず、mixed siblingの無条件寄与は失われない
-- NP消費等のconditional tradeoffは成立込みだけで候補化され、resource消費後もattack NPへ到達する
+- NP／HP消費、negative modifier、detrimental stateを持つactionもpolicy上の実効寄与があり完遂可能なら候補化され、cost後もattack NPへ到達する
+- 同じaction optionの到達可能／不能な初期state候補を分け、不能candidateだけが`unreachable`になる
 - policy上no-op actionをtyped proofなしに落とさない
 - 排他的player choiceは一branchだけを実行し、最終damageで最大branchを選ぶ
 - stochastic failure／minimumとsatisfied maximum
@@ -826,7 +835,7 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 - condition plannerがAttackProfileを変更または混成する
 - 一つのcandidateで矛盾するTargetContext／field／quantityを成立させる
 - contribution policyがexecution preconditionを上書きする
-- NP消費等の表現可能なconditional tradeoffをadverseとして一律除外する
+- NP／HP消費、negative modifier、detrimental state等の表現可能なconsequenceをadverseとして一律除外する
 - conditional-only actionを通常候補へ残す
 - self／condition／areaの除外理由を一つの排他的statusへ潰す
 - 同じdependency expressionをmutation前後で同じtruthとして使う
@@ -848,8 +857,8 @@ damage差分、性能見積もりを提示してから再開する。
 - RankingEntryがAttackProfile単位で、variant／form／scope混成が0件
 - player choiceとstochastic outcomeがtyped semanticsで分離されている
 - execution、source contribution、condition contribution、resource legalityが型で分離されている
-- 通常のみの任意skillはsafe deterministicかつ無条件の実効寄与を持ち、conditional-only actionの選出が0件
-- 成立込みはNP消費等の表現可能なconditional tradeoffを合法planとして評価し、未解釈デメリットを推測しない
+- 通常のみの任意skillは無条件かつ確定的な実効寄与を持ち、表現済みデメリットを含む全operationと攻撃宝具を完遂でき、conditional-only actionの選出が0件
+- 成立込みは追加condition witnessを持つactionを同じ到達可能性規則で評価し、未解釈デメリットを成立可能と推測しない
 - 排他的branchを同時適用せず、compatibleな特攻、条件効果、fieldを一つのscenarioで最大化する
 - self／condition／areaのpolicy decisionが独立に保持される
 - 全数値が一つのscenario、ordered plan、TargetContextを持つ
@@ -890,3 +899,4 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.9.3 | 0.9.2のnested action proposalにあったconsequence／mutation二重owner、passive階層欠落、conditionality同期field、fixed candidate capを再監査。source-program union＋ordered step operationの一本化とfinite domain blockerを記録し、`selfBuffs=excluded × satisfied`のcondition-enabler actionを未解決product decisionとして明示 | retained: fixed product outcomeは不変、未決定cellを推測で閉じない | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07 | runtime変更なし。Blocking A1〜A4とADR-019／027 replacementの完了までdesign closureにしない |
 | 0.9.4 | `selfBuffs=excluded × satisfied`のoptional condition-enabler skillをadmitしないと確定。structuralRequired actionのみ保持し、そのmutation後のattack-NP寄与はcondition policyで評価する | approved 2026-09-02: user confirmed the audit recommendation | TSK-06.4、TSK-06.41、TSK-06.5 | runtime変更なし。A4をVerifiedへ閉じ、A1〜A3＋ADR replacementは継続 |
 | 0.9.5 | A1〜A3 closure。全`nonDamage` raw familyをclosed step-operation unionへ分類し、source別slot／effect／choice schemaと`FiniteRankingDomainCertificate`を確定。4,096をtruncate capではなくprepared-context support上限とし、current 512 state capを廃止対象へ変更。ADR-028で019／027を置換 | approved 2026-09-02: user requested remaining audit closure; fixed product outcomeは不変 | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07 | runtime変更なし。current production最大2,880のためcandidate cap／timeout緩和なし。IR、schema、certificate、portableはTSK-06.41でatomic cutover |
+| 0.9.6 | action admissionを「無デメリット」から「policy上の実効寄与」に修正し、表現済みデメリットを含む全transactionの成立可否を具体candidateのordered executionへ委譲。`policyNoOp`／`unreachable`／`unsupported`を分離 | approved 2026-09-04: user confirmed that only non-executable NP／HP-consumption candidates are dropped and every executable adverse action remains eligible | TSK-06.41、TSK-06.5 | ranking候補と順位は意図的に変わり得る。`unsafeBaselineEffect`相当の静的adverse除外を削除し、全cost込みのcandidate soundnessとproduction差分を再固定する |

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.41"
+document_version: "1.5.42"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-04"
@@ -56,8 +56,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.2 | E2E responsibility and execution closure | done | TSK-06.1 | test strategy Web component／E2E ownership |
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
-| TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.5 | Ranking theoretical maximum and production closure | ready | TSK-06.41 | final candidate／maximum／legacy-removal proof |
+| TSK-06.41 | Ranking contribution and portable atomic cutover | ready | TSK-06.4 | contribution／action admission／outcome／portable runtime |
+| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.41 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
@@ -1003,6 +1003,9 @@ Handoff: rejected matrix is superseded by the current audit handoff above; A1〜
 
 Depends on: TSK-06.4
 
+Current status: `ready`. The checked checklist below records the v0.9.5 cutover; requirement v0.9.6 reopens
+only the explicit IRL-003／005／006 delta after that historical checklist.
+
 Entry condition: TSK-06.4 A1〜A3とADR replacement gateを含むBlocking 0。以下はcurrent audit recommendationに基づく
 cutover境界であり、
 rejected graph型を復活させない。
@@ -1041,6 +1044,30 @@ rejected graph型を復活させない。
 - [x] focused candidate soundnessとsmall exhaustive oracleをcutover gateとして閉じる。全production四policy × NP1〜5の
       最終inventory／digest／performance固定はTSK-06.5へDeferredし、本Taskの値をfinal baselineと呼ばない。
 
+Reopened implementation delta (2026-09-04, requirement v0.9.6):
+
+- [ ] `unsafeBaselineEffect`相当のstatic adverse vetoを削除し、自己バフありでは選択policy上の実効寄与だけでoptional
+      actionをadmitする。negative modifier、HP／NP loss、detrimental state、trait removalを個別の除外branchへ移さず、
+      全consequenceをordered executorへ渡す（IRL-006）。
+- [ ] action option × policy × 合法initial stateごとに全operation、後続action、攻撃宝具をtransactionalに実行し、完遂不能な
+      具体candidateだけを`unreachable`にする。少なくとも一つのcandidateが完遂可能ならactionを候補集合へ残し、最終平均
+      damageで比較する。`policyNoOp`は実効寄与なし、`unsupported`は未表現semanticsだけに限定する（IRL-006）。
+- [ ] resource closureをcritical starsだけでなくHP／BPにもordered suffix基準で閉じる。mutation前だけにreaderがある場合は
+      `noDamageReader`、mutation後にreaderがある場合はcanonical stateを更新して読むかtransaction全体をtyped unsupportedに
+      し、production-negative familyは明示0件ratchetを持つ（IRL-003）。
+- [ ] portable resetはmutableな`currentScenario`ではなくretained requestのexact attacker identityからsubject／buildを解決し、
+      requestとUI selectionがずれるproduction fixtureで、成功時のatomic replaceと失敗時のdurable／memory／reload不変を
+      検証する（IRL-005）。
+- [ ] focused state-by-path matrixを追加する: costなし、HP cost後も到達、NP costで100%候補だけ不能、capacity内の高い開始NPで
+      到達、negative modifier、detrimental state、conditional-only、unconditional＋conditional sibling、unknown cost、
+      player-choice branch。候補／damage／rank差分をcanonical inputと規則で記録する。
+- [ ] shared production inventoryで、fixed／dependent HP・NP cost、negative modifier、detrimental state、trait removalを
+      action option × policy × initial state × ordered pathへ分類し、`admitted`／`policyNoOp`／`unreachable`／`unsupported`の
+      件数とdigestを固定する。production 0件familyは0件ratchet＋schema-legal fixtureで閉じる。
+- [ ] 変更前後の`Servant × AttackProfile` ranking entry、採用action、開始resource、damage、順位をdiffし、新規／消失memberを
+      「新たに完遂可能なadverse action」「具体candidateのresource不足」「policy寄与なし」「unsupported」のcanonical reasonで
+      全件説明する。説明不能なmember差分をBlockingとし、candidate上界とhot pathの10%超の未説明増加を許容しない。
+
 Done gate:
 
 - `通常のみ`でもconditionを成立させたoperation、state mutation、field mutation、ordered action、
@@ -1048,8 +1075,9 @@ Done gate:
 - `成立込み`は各入力candidateで一つの合法scenarioに共存する寄与だけを使い、排他的choiceを同時適用せず、
   execution preconditionを迂回しない。特攻、条件効果、field、表現可能costを同時評価し、eligible candidate集合の
   production最終最大値はTSK-06.5で閉じる。
-- 自己バフあり・通常のみでadmitされる任意skillは無条件・確定的・無デメリットかつ実効寄与ありだけであり、
-  conditional-only action、未解釈cost、policy no-op actionが0件である。
+- 自己バフあり・通常のみでadmitされる任意skillは無条件・確定的な実効寄与を持ち、表現済みデメリットを理由に落とされない。
+  全transactionと攻撃宝具を完遂できない具体candidateだけが`unreachable`であり、conditional-only action、未解釈costの
+  数値fallback、根拠のないpolicy no-op actionが0件である。
 - `powerMod`／`npSpecial`のkind、servant ID、名称、labelによる一律除外または個別補正がない。
 - 本Taskが受け取るcandidate集合で通常のみのconditional contribution混入0件、成立込みの合法な
   per-contribution欠落0件である。全AttackProfileの最終maximum／順位はTSK-06.5で再固定する。
@@ -1183,16 +1211,23 @@ Completion:
   TSK-06.5 is `ready`. Final `pnpm quality` passed 402 unit／114 production／25 Playwright tests with
   skip／todo／retry／warning／unexpected-console 0; parent artifact
   `.test-results/2026-09-04T13-13-54-906Z-15-6f35e3`.
+- Product correction reopening (2026-09-04): requirement v0.9.6 supersedes the disadvantage-free baseline
+  admission rule. Current code still drops represented adverse actions before candidate execution (IRL-006),
+  HP／BP resource closure does not use the required ordered suffix／state transition (IRL-003), and Web reset
+  resolves from mutable scenario state rather than the retained request subject (IRL-005). Current status is
+  `Blocking 3`; TSK-06.41 is `ready`, and TSK-06.5 is `blocked` until these runtime paths and focused
+  counterexamples close. Canonical matrix: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`.
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 
 Depends on: TSK-06.41
 
-- [ ] TSK-06.41でcutover済みのcanonical contribution／action admission／outcome／portable runtimeを変更せず、
+- [ ] requirement v0.9.6で再cutoverしたcanonical contribution／action admission／outcome／portable runtimeを変更せず、
       production全skillのstatic semanticsと、action × initial resource × ordered path × AttackProfileの
       candidate-local eligibility inventoryを最終固定する。
-- [ ] 自己バフあり・通常のみが無条件・確定的・無デメリットで実効寄与を持つ任意skillだけをadmitし、成立込みが
-      compatibleな特攻／条件効果／field／表現可能なNP等のcostを一つの合法scenarioで最大化することを全数監査する。
+- [ ] 自己バフありでは選択policy上の実効寄与を持つ任意skillをadmitし、表現済みデメリットを全operation込みで実行する。
+      通常のみ／成立込みの各合法initial stateで完遂不能なcandidateだけを落とし、compatibleな特攻／条件効果／field／costを
+      一つの合法scenarioで最大化することを全数監査する。
 - [ ] 排他的player choiceが一branchだけを選び、cost、後続state、attack NP到達可能性込みの最終平均damage最大branchと
       small exhaustive oracleで一致することをproduction inventoryへ固定する。
 - [ ] conditional-only skill、unconditional＋conditional sibling、NP消費／増加、beneficial／detrimental state、trait grant、
@@ -1212,7 +1247,7 @@ Done gate:
 - self-buff action eligibilityとconditional contribution projectionが直交し、同じ意味を二つのownerが再判定しない。
 - production全skillのstatic semanticsを分類し、candidate-local inventoryはaction × policy × initial resource ×
   ordered path × AttackProfileでadmitted／policyNoOp／unreachable／unsupportedを集約して差分を説明できる。
-- 通常のみのconditional-only action、成立込みの合法なNP消費tradeoff欠落、排他的branch同時適用がすべて0件である。
+- 通常のみのconditional-only action、両condition modeの成立可能なadverse action欠落、排他的branch同時適用がすべて0件である。
 - compatibleな特攻／条件効果／fieldの欠落と、共存不能な局所最大の合算がともに0件である。
 - calculator／ranking parityとTSK-06.41のoperation／state preservation invariantを維持する。
 - TSK-06.41 cutover後のcandidate soundness、finite maximum oracle、四policy production inventoryが最終値として閉じる。
@@ -1227,7 +1262,7 @@ Contract closure matrix:
 | `RK-AUDIT-001` | Apply | `pnpm test:production` final four-policy × NP1〜5 maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-HANDOFF-001` | Apply | final selected scenarioのportable replay／minimal Web handoff regression | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.9.1 |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.9.6 |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: 未記録

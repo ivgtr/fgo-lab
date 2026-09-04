@@ -3,6 +3,7 @@ title: "Canonical source programと有限ranking domain"
 status: accepted
 date: "2026-09-02"
 approved_at: "2026-09-02"
+amended_at: "2026-09-04"
 supersedes:
   - "ADR-019"
   - "ADR-027"
@@ -97,6 +98,13 @@ rejectionを期待する。operation／mutation／damage contributionはbranch�
 structural roleは`AttackProfile × initial state × complete ordered path`から導出する。static skill propertyではない。
 applicationはselected action optionのordered operationを読み、二軸の組合せからaction admissionを一度だけcompileする。
 executorは同じoperationを順に適用し、contribution evaluatorへ到達した時だけrequired inputを読む。
+
+2026-09-04 amendment: optional actionのadmissionは、選択policyで実効寄与を持つかだけを判定し、canonical operationの
+beneficial／detrimental分類、modifierの正負、HP／NP costの有無を除外条件にしない。admitされたaction optionは、各合法な
+初期state candidateから全operationと後続の攻撃宝具までtransactionalに実行する。完遂不能な具体candidateだけを
+`unreachable`とし、一つでも完遂可能なcandidateがあるaction optionをstaticなadverse分類で全体除外しない。未表現または
+曖昧なconsequenceは成立可能と推測せず`unsupported`とする。condition policyはdamage contributionの包含とwitness domainを
+変えるが、この実行可能性規則は変えない。
 
 `selfBuffs=excluded × conditionalEffects=satisfied`はoptionalなcondition-enabler skillをadmitしない。
 `structuralRequired` actionだけは保持し、そのmutation後にattack-NP contributionが成立するかをcondition policyで評価する。
