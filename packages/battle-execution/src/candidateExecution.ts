@@ -27,7 +27,10 @@ import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
 import { markOperationGroupUnsupported } from './candidateRollback';
-import { operationHasNoRuntimeDamageImpact, unresolvedResourceIssue } from './resourceSemantics';
+import {
+  applyOrderedCriticalStarsMutation,
+  operationHasNoRuntimeDamageImpact,
+} from './resourceSemantics';
 import {
   applyRuntimeNoblePhantasmVariantSelection,
   needsMutationValidation,
@@ -233,9 +236,8 @@ export function executeOrderedScenarioCandidate(
         if (preappliedOperationIds.has(operation.operationId)) {
           // Preparation already committed this canonical form/variant mutation.
         } else if (operation.kind === 'resourceMutation') {
-          outcome = 'unsupported';
-          code = 'unresolved';
-          issue = unresolvedResourceIssue(operation);
+          issue = applyOrderedCriticalStarsMutation(operation, candidateState);
+          if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'addTrait') {
           const changed = applyTraitAddition(candidateState, operation.scope, operation.trait);
           candidateState.traits = changed.traits;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { analyzeActivationFactSet, type ActivationFact } from '@fgo-lab/schema';
 import type { ConditionExpression } from './contracts';
 import { classifyContributionCondition, targetConditionWitnessSpace } from './conditionSemantics';
 
@@ -47,6 +48,50 @@ describe('target condition witness space', () => {
         expressions: [{ kind: 'always' }, { kind: 'unsupported', reason: 'unresolvedRecipient' }],
       }),
     ).toBe('unsupported');
+  });
+
+  it('classifies nested card, variant, terminal trait, choice, and trigger facts together', () => {
+    const source = {
+      origin: 'attacker' as const,
+      sourceInstanceId: 'attacker:fixture',
+      skillId: 'skill',
+    };
+    const facts: ActivationFact[] = [
+      { kind: 'choice', source, family: 'mode', candidate: 'selected' },
+      { kind: 'operationTrigger', source, position: 7 },
+    ];
+    const activation = analyzeActivationFactSet(facts);
+    if (activation.status !== 'valid') throw new Error(activation.status);
+    const variant = {
+      actorFormId: { actorId: 'fixture', limitCount: 0 },
+      noblePhantasmId: 'np',
+    };
+    expect(
+      classifyContributionCondition(
+        {
+          kind: 'all',
+          expressions: [
+            { kind: 'card', card: 'buster' },
+            { kind: 'noblePhantasmVariant', variant },
+            { kind: 'trait', scope: 'attacker', trait: 'alignmentEvil', present: true },
+            { kind: 'choice', source, family: 'mode', candidate: 'selected' },
+            {
+              kind: 'any',
+              expressions: [
+                { kind: 'operationTrigger', source, position: 7 },
+                { kind: 'card', card: 'arts' },
+              ],
+            },
+          ],
+        },
+        {
+          card: 'buster',
+          noblePhantasmVariant: variant,
+          attackerTraits: new Map([['alignmentEvil', true]]),
+          activationFacts: activation.factSet,
+        },
+      ),
+    ).toBe('intrinsicSatisfied');
   });
 
   it('expands combined target reads across initial and state facts through nested expressions', () => {

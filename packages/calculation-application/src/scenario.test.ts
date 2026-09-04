@@ -1206,6 +1206,194 @@ describe('scenario calculation facade', () => {
     ).toBe(false);
   });
 
+  it.each(['gain', 'loss'] as const)(
+    'applies an ordered critical-star %s before a star reader',
+    (direction) => {
+      const baseServant = fixture.servants[0]!;
+      const modifier = modifierEffect('star-resource-transaction', 'upAtk', 500);
+      const starMutation = {
+        ...modifier,
+        occurrenceId: 'star-resource-mutation:0',
+        id: 'star-resource-mutation',
+        label: 'star resource mutation',
+        inputDefinitions: [],
+        requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
+        execution: [
+          {
+            kind: 'resourceMutation' as const,
+            resource: 'criticalStars' as const,
+            direction,
+            unit: 'fixed' as const,
+            recipient: 'sourceSelf' as const,
+            amount: {
+              kind: 'fixed' as const,
+              values: [Array<number>(10).fill(5), [], [], [], []] as [
+                number[],
+                number[],
+                number[],
+                number[],
+                number[],
+              ],
+            },
+            subjectId: null,
+          },
+        ],
+      };
+      const starReader = {
+        ...modifier,
+        inputDefinitions: [
+          {
+            key: 'battle:criticalStars',
+            kind: 'criticalStars' as const,
+            owner: 'field' as const,
+            label: 'クリティカルスター',
+            description: '星依存効果の現在値',
+            minimum: 0,
+            maximum: 99,
+            step: 1,
+            defaultValue: 8,
+            defaultReason: 'fixture',
+          },
+        ],
+        requirement: {
+          recipient: 'sourceSelf' as const,
+          expression: {
+            kind: 'inputQuantity' as const,
+            inputKey: 'battle:criticalStars',
+            comparison: 'atLeast' as const,
+            value: 10,
+          },
+        },
+      };
+      const resourceMaster = parseTestMaster({
+        ...fixture,
+        servants: [
+          {
+            ...baseServant,
+            skills: [
+              {
+                id: 'star-resource-transaction-skill',
+                slot: 1,
+                priority: 1,
+                name: 'star resource transaction',
+                detail: '',
+                imageKey: null,
+                resourceRequirement: null,
+                effects: [starMutation, starReader],
+              },
+            ],
+          },
+        ],
+      });
+      const scenario: ResolvedScenario = {
+        ...createDefaultResolvedScenario(resourceMaster, undefined),
+        preNoblePhantasmPlan: [
+          { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+          { kind: 'executeAttackNoblePhantasm' },
+        ],
+      };
+
+      const execution = calculateScenario(scenario, resourceMaster, {
+        ...versions,
+        masterDataVersion: resourceMaster.version,
+      });
+
+      expect(execution.result.status).toBe('calculated');
+      expect(execution.input.attackBuff).toBe(direction === 'gain' ? 0.5 : 0);
+    },
+  );
+
+  it('rolls back a sibling modifier when a star transition amount is unrepresentable', () => {
+    const baseServant = fixture.servants[0]!;
+    const modifier = modifierEffect('star-rollback', 'upAtk', 500);
+    const unsupportedStar = {
+      ...modifier,
+      inputDefinitions: [
+        {
+          key: 'battle:criticalStars',
+          kind: 'criticalStars' as const,
+          owner: 'field' as const,
+          label: 'クリティカルスター',
+          description: '星依存効果の現在値',
+          minimum: 0,
+          maximum: 99,
+          step: 1,
+          defaultValue: 20,
+          defaultReason: 'fixture',
+        },
+      ],
+      requirement: {
+        recipient: 'sourceSelf' as const,
+        expression: {
+          kind: 'inputQuantity' as const,
+          inputKey: 'battle:criticalStars',
+          comparison: 'atLeast' as const,
+          value: 10,
+        },
+      },
+      execution: [
+        {
+          kind: 'resourceMutation' as const,
+          resource: 'criticalStars' as const,
+          direction: 'gain' as const,
+          unit: 'fixed' as const,
+          recipient: 'sourceSelf' as const,
+          amount: {
+            kind: 'fixed' as const,
+            values: [Array<null>(10).fill(null), [], [], [], []] as [
+              null[],
+              null[],
+              null[],
+              null[],
+              null[],
+            ],
+          },
+          subjectId: null,
+        },
+        ...modifier.execution,
+      ],
+    };
+    const resourceMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          skills: [
+            {
+              id: 'star-rollback-skill',
+              slot: 1,
+              priority: 1,
+              name: 'star rollback',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [unsupportedStar],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario: ResolvedScenario = {
+      ...createDefaultResolvedScenario(resourceMaster, undefined),
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+    };
+    const execution = calculateScenario(scenario, resourceMaster, {
+      ...versions,
+      masterDataVersion: resourceMaster.version,
+    });
+
+    expect(execution.result.status).toBe('unsupported');
+    expect(execution.input.attackBuff).toBe(0);
+    expect(
+      execution.effectiveContributions.contributions.find(
+        ({ source }) => source.effectOccurrenceId === 'star-rollback:0',
+      )?.effective,
+    ).toBe(false);
+  });
+
   it('rolls back every operation in an effect when a later runtime value is unresolved', () => {
     const baseServant = fixture.servants[0]!;
     const staticModifier = modifierEffect('compound', 'upAtk', 100).execution[0]!;

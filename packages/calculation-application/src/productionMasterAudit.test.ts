@@ -45,6 +45,26 @@ describe('production preparation semantics audit', () => {
       expect.arrayContaining([expect.objectContaining({ sourceId: manaBurst.id })]),
     );
 
+    const douman = master.servants.find(({ id }) => id === '1001000')!;
+    const doumanSkill = douman.skills.find(({ id }) => id === '818552')!;
+    const doumanResult = calculateRankingPolicyDetail(
+      douman,
+      master,
+      profile,
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      versions,
+    );
+    expect(doumanResult.status).toBe('calculated');
+    if (doumanResult.status !== 'calculated') throw new Error(doumanResult.status);
+    expect(doumanResult.detail.appliedPreparationActions).toEqual(
+      expect.arrayContaining([expect.objectContaining({ sourceId: doumanSkill.id })]),
+    );
+    expect(
+      doumanResult.detail.effectiveContributions.contributions.filter(
+        ({ source, effective }) => source.skillId === doumanSkill.id && effective,
+      ),
+    ).toHaveLength(2);
+
     const hijikata = master.servants.find(({ id }) => id === '702500')!;
     const hijikataResult = calculateRankingPolicyDetail(
       hijikata,

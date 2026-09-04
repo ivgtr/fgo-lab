@@ -8,6 +8,35 @@ updated_at: "2026-09-04"
 
 ## TSK-06.41 runtime cutover — authoritative current delta
 
+### Re-review correction delta — IRL-001／003
+
+The 2026-09-04 re-review reopened two adjacent states in the already declared condition and resource
+families. The earlier closure tested card／NP variant binding but did not enumerate terminal-form traits or
+program-proved choice／operation-trigger facts; it also treated every critical-star mutation as if a terminal
+input represented an ordered transition. These were flow-inventory gaps, not servant-specific exceptions.
+
+The user-visible outcome is that baseline admission and contribution execution classify the same fully bound
+intrinsic condition, and that an ordered resource mutation is erased only when the suffix of its transaction
+has no damage reader. The governing invariants are one classifier for admission and contribution inclusion,
+and execute-or-typed-unsupported atomicity for every resource transition. The recurrence scope is every
+boolean composition of card／variant／terminal attacker trait／selected choice／operation trigger and every
+resource-mutation × later-reader ordering. Production-negative resource families require an explicit zero
+ratchet rather than inference from current master defaults.
+
+| Canonical state / counterexample | Producer | Admission／execution consumer | Failure／recovery | Final status |
+| --- | --- | --- | --- | --- |
+| terminal form has required intrinsic trait | `AttackProfile.id.terminalActorFormProfileId.semantics.intrinsicTraits` | shared bound-condition classifier used by baseline admission and effective contribution policy | no external witness; mismatched／absent trait is not invented | Verified: Douman skill `818552` and both Chaotic／Evil contributions are effective |
+| selected action branch proves choice and operation trigger inside nested card／variant／trait boolean | static preparation program and selected source effects | the same classifier consumes program facts; ordered executor consumes the corresponding activation facts | ambiguous or unproved fact remains runtime/conditional and is not baseline-admitted | Verified: schema-legal nested five-fact fixture |
+| critical-star gain／loss followed by star-dependent condition or value | canonical resource operation and later operation suffix | resource closure emits `orderedCriticalStars`; executor mutates canonical star state before the reader | missing amount/state is typed unsupported and rolls back every sibling | Verified: gain／loss result fixtures plus missing-amount sibling rollback |
+| critical-star mutation with no later reader | canonical resource operation | suffix-scoped resource closure | `noDamageReader`; retained evidence cannot change damage | Verified: production has zero critical-star unsupported outcomes |
+| HP／BP reader and existing blocker aggregation paths | existing canonical compiler／executor／profile aggregator | unchanged owners | existing IRL-002／004 fixtures and production inventory remain authoritative | Verified regression boundary |
+
+Flow delta classification: condition producers／admission／effective-contribution readers and resource
+compiler／suffix reader scan／transaction executor／profile recovery are `Verified`. Calculator and ranking both
+reach the same application compiler and ordered executor (`Verified` architecture boundary). UI presentation
+is `N/A: it consumes the typed application outcome and does not classify these semantics`. TSK-06.5 final
+four-policy maxima remain `Deferred: TSK-06.5`. Runtime Blocking count is **0**.
+
 ### Implementation review closure delta — IRL-001〜004
 
 The implementation review expanded the recurrence scope of the previous condition and operation audits. The
@@ -65,14 +94,14 @@ ranking, without-area, migration, reset, and replay use the same canonical appli
 The current master has 13,875 effects and 14,623 typed operations. TSK-06.4 counted 9,123 affected effect
 occurrences and 9,124 legacy operations because one referenced wrapper expanded twice; the cutover preserves
 that explained delta while removing the legacy variant. Preparation inventory is 6,360 generated, 3,949
-deduplicated, and 3,438 terminal plans. Default ranking certifies and materializes 668 candidates, makes 667
-damage requests, and has 630 distinct inputs. There are 433 static
+deduplicated, and 3,438 terminal plans. Default ranking certifies and materializes 669 candidates, makes 668
+damage requests, and has 631 distinct inputs. There are 433 static
 AttackProfiles and 432 numeric rows: `2501400` NP1
 is typed `unavailableUnderPolicy: insufficientNpGauge`, not a numeric fallback or sibling substitution.
 
 IRL-003 remeasurement classifies 419 calculator scenarios as calculated and three as typed unsupported. The
 three are exactly the production profiles where an unrepresentable HP／Battle Point mutation feeds a damage
-dependency. Star mutations are explicitly represented by the existing terminal `criticalStars` input;
+dependency. Read-sensitive fixed star mutations now update the ordered canonical `criticalStars` state;
 unread resource mutations retain a bounded-phase-irrelevant proof. Relative to TSK-06.4, master／preparation／
 AttackProfile counts and the 4,096 cap are unchanged; the largest certified product rises from 2,880 to 3,840
 because the previously hidden NP value dependencies are now enumerated. Default candidates rise from 576 to
@@ -81,7 +110,14 @@ growth. Request and digest changes come from intrinsic
 admission, NP dependency witnesses, resource fail-closed outcomes, and blocker diagnostics, not a new domain
 dimension.
 
-Production digests are application `c2cb93dd4589230d385cc4adb582a789deeec68569487982f13e935c429d2f87`
+The re-review correction admits exactly one additional default candidate for Douman: 669 certified／generated／
+deduplicated, 668 damage requests, and 631 distinct inputs. The 4,096 limit, 433 AttackProfiles, 432 numeric
+rows, and three typed unsupported calculator profiles are unchanged. Ordered production-star transitions and
+Douman's two intrinsic contributions explain application digest
+`d9b41f224697dcd4addae97681492721b4a60d534192d11163bbaf4c48811695`; calculator execution parity is
+`b67bc7d955dc487e610a6bb3d52ab0f816588641f1fe18cde268a6b4fcd1384b`.
+
+Production digests are application `d9b41f224697dcd4addae97681492721b4a60d534192d11163bbaf4c48811695`
 and pipeline `916403ecd681dc6b2c4655bd3c052bd8527db3eeac0d54dd1b1a2d18641c02e8`. The pre-cutover
 production run was 38.47 s real. Post-cutover canonical-runner measurements were 38.01／40.24／38.74 s,
 median 38.74 s: +0.27 s／+0.70%, within the 10% ratchet. Each run executed 24 files／113 tests; the first
@@ -92,9 +128,9 @@ or unexpected console; artifact `.test-results/2026-09-02T06-07-59-655Z-44-fc4f1
 The IRL-001–005 review closure started from clean tracked HEAD `2977dffd`. Affected production runs
 were 37.41／36.50／38.98 s, median 37.41 s versus the preceding canonical median 38.74 s
 (-1.33 s／-3.43%); the finite-domain additions therefore introduce no unexplained regression.
-Final `pnpm quality` passed 75 unit files／395 tests, 25 production files／114 tests, and 25
-Playwright tests with zero retry, warning, or unexpected console. The retained artifact is
-`.test-results/2026-09-04T11-35-28-969Z-15-8f8bc7`.
+Final re-review `pnpm quality` passed 402 unit tests, 114 production tests, and 25 Playwright tests
+with zero skip／todo, retry, warning, or unexpected console. The retained parent artifact is
+`.test-results/2026-09-04T13-13-54-906Z-15-6f35e3`.
 
 Removal audit finds zero production legacy operation variants, operation-ID contribution projections,
 independent 512-state caps, current old portable-intent writers, compatibility flags, adapters, or parallel

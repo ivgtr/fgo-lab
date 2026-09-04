@@ -1,4 +1,9 @@
-import type { BattleOperation, ConditionExpression, ExecutionIssue } from './contracts';
+import type {
+  BattleOperation,
+  ConditionExpression,
+  ExecutableBattleState,
+  ExecutionIssue,
+} from './contracts';
 
 type Resource = Extract<BattleOperation, { kind: 'resourceMutation' }>['resource'];
 
@@ -36,24 +41,46 @@ function operationReadsResource(operation: BattleOperation, resource: Resource):
 export function closeResourceMutationSemantics(
   operations: readonly BattleOperation[],
 ): readonly BattleOperation[] {
-  const readResources = new Set<Resource>();
-  for (const resource of ['hp', 'criticalStars', 'battlePoint'] as const)
-    if (operations.some((operation) => operationReadsResource(operation, resource)))
-      readResources.add(resource);
-  return operations.map((operation): BattleOperation => {
+  return operations.map((operation, index): BattleOperation => {
     if (operation.kind !== 'resourceMutation') return operation;
-    if (operation.resource === 'criticalStars')
-      return { ...operation, resolution: 'representedByTerminalInput' };
-    if (readResources.has(operation.resource)) return operation;
-    return { ...operation, resolution: 'noDamageReader' };
+    if (operation.resource === 'criticalStars') {
+      const suffixHasReader = operations
+        .slice(index + 1)
+        .some((candidate) => operationReadsResource(candidate, operation.resource));
+      if (!suffixHasReader) return { ...operation, resolution: 'noDamageReader' };
+      return operation.unit === 'fixed' && operation.amount !== null
+        ? { ...operation, resolution: 'orderedCriticalStars' }
+        : operation;
+    }
+    return operations.some((candidate) => operationReadsResource(candidate, operation.resource))
+      ? operation
+      : { ...operation, resolution: 'noDamageReader' };
   });
 }
 
 export function operationHasNoRuntimeDamageImpact(operation: BattleOperation): boolean {
   return (
     operation.kind === 'preserveSemanticEffect' ||
-    (operation.kind === 'resourceMutation' && operation.resolution !== 'resourceStateUnavailable')
+    (operation.kind === 'resourceMutation' && operation.resolution === 'noDamageReader')
   );
+}
+
+export function applyOrderedCriticalStarsMutation(
+  operation: Extract<BattleOperation, { kind: 'resourceMutation' }>,
+  state: ExecutableBattleState,
+): ExecutionIssue | null {
+  if (operation.resolution !== 'orderedCriticalStars' || operation.amount === null)
+    return unresolvedResourceIssue(operation);
+  const current = state.resolvedInputValues['battle:criticalStars'];
+  if (current === undefined) return unresolvedResourceIssue(operation);
+  state.resolvedInputValues = {
+    ...state.resolvedInputValues,
+    'battle:criticalStars': Math.min(
+      99,
+      Math.max(0, current + operation.amount * (operation.direction === 'gain' ? 1 : -1)),
+    ),
+  };
+  return null;
 }
 
 export function unresolvedResourceIssue(

@@ -49,7 +49,10 @@
     },
     {
       "testId": "ranking-baseline.spec.ts > [E2E-050] real ranking module worker and detail @desktop @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        { "path": "/", "count": 1 },
+        { "path": "/?page=calculate", "count": 3 }
+      ]
     },
     {
       "testId": "setup.setup.ts > [E2E-SETUP-001] verify canonical browser setup @journey",

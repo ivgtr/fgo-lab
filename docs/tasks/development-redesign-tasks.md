@@ -1164,9 +1164,25 @@ Completion:
   portable reset constructs and executes the current-version baseline before durable／memory publication.
   Focused schema-legal fixtures and production ratchets cover all five findings. Application inventory is 419
   calculated／3 typed unsupported calculator scenarios and 432 ranking rows; application digest is
-  `c2cb93dd4589230d385cc4adb582a789deeec68569487982f13e935c429d2f87`. Final four-policy maximum remains
+  `d9b41f224697dcd4addae97681492721b4a60d534192d11163bbaf4c48811695`. Final four-policy maximum remains
   Deferred to TSK-06.5 and cache／notice interaction remains Deferred to TSK-07. TSK-06.41 remains `done`;
   TSK-06.5 remains `ready`.
+- Re-review correction (2026-09-04): the broader recurrence matrix reopened IRL-001／003／005. Terminal-form
+  intrinsic traits and program-proved choice／trigger facts are not yet bound by baseline admission;
+  critical-star mutations with downstream readers are incorrectly erased as terminal input; and the Web
+  reset resolver substitutes a default servant for a missing exact subject. Canonical flow deltas and
+  counterexamples are recorded in both evidence notes before implementation. Current status is
+  `Blocking 3`; TSK-06.41 is reopened and TSK-06.5 must wait.
+- Re-review correction completion: IRL-001／003／005 are closed with Blocking 0. The shared classifier binds
+  card／variant／terminal traits／program-proved choice and trigger facts; fixed critical-star gain／loss mutates
+  ordered canonical state and unrepresentable transitions roll back their transaction; Web reset requires one
+  exact request subject before the application attempt. Douman adds one explained default candidate
+  (669 total; 668 requests; 631 distinct inputs), while the 4,096 bound, 433 profiles／432 rows, and 419
+  calculated／3 unsupported calculator inventory remain unchanged. Missing-subject reset preserves memory,
+  durable request／result／fingerprint, and reload state; exact-subject reset succeeds. TSK-06.41 is `done` and
+  TSK-06.5 is `ready`. Final `pnpm quality` passed 402 unit／114 production／25 Playwright tests with
+  skip／todo／retry／warning／unexpected-console 0; parent artifact
+  `.test-results/2026-09-04T13-13-54-906Z-15-6f35e3`.
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

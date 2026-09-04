@@ -5,12 +5,16 @@ import type {
   TraitScope,
 } from './contracts';
 import type { TargetPredicate } from '@fgo-lab/schema';
+import type { AnalyzedActivationFactSet } from '@fgo-lab/schema';
 import type { CanonicalTraitProvenance } from '@fgo-lab/master-data';
 import { noblePhantasmVariantKey, type NoblePhantasmVariantRef } from '@fgo-lab/master-data';
+import { evaluateActivationRequirement } from './activationCondition';
 
 export interface IntrinsicAttackConditionFacts {
   card: 'buster' | 'arts' | 'quick';
   noblePhantasmVariant: NoblePhantasmVariantRef;
+  attackerTraits?: ReadonlyMap<string, boolean>;
+  activationFacts?: AnalyzedActivationFactSet;
 }
 
 export type ContributionConditionClass =
@@ -44,10 +48,22 @@ export function classifyContributionCondition(
             noblePhantasmVariantKey(attack.noblePhantasmVariant)
           ? 'intrinsicSatisfied'
           : 'intrinsicUnsatisfied';
-    if (expression.kind === 'choice' || expression.kind === 'operationTrigger')
-      return 'intrinsicRuntime';
-    if (expression.kind === 'trait')
-      return expression.scope === 'attacker' ? 'intrinsicRuntime' : 'conditional';
+    if (expression.kind === 'choice' || expression.kind === 'operationTrigger') {
+      if (!attack?.activationFacts) return 'intrinsicRuntime';
+      const evaluated = evaluateActivationRequirement(expression, attack.activationFacts);
+      return evaluated === null
+        ? 'intrinsicRuntime'
+        : evaluated
+          ? 'intrinsicSatisfied'
+          : 'intrinsicUnsatisfied';
+    }
+    if (expression.kind === 'trait') {
+      if (expression.scope !== 'attacker') return 'conditional';
+      if (traitConditionEvaluationSource(expression) !== 'worldFacts') return 'intrinsicRuntime';
+      const present = attack?.attackerTraits?.get(expression.trait);
+      if (present === undefined) return 'intrinsicRuntime';
+      return present === expression.present ? 'intrinsicSatisfied' : 'intrinsicUnsatisfied';
+    }
     if (expression.kind === 'all' || expression.kind === 'any') {
       const members = expression.expressions.map(classify);
       if (expression.kind === 'all') {

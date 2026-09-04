@@ -2,6 +2,61 @@ import { expect, test, type Page } from './observedTest';
 import { resolve } from 'node:path';
 import { installRankingFixtureWorker, openTestHome } from './setup';
 
+async function storedDraftJson(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      new Promise<string | null>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const transaction = request.result.transaction('user', 'readonly');
+          const stored = transaction.objectStore('user').get('profiles');
+          stored.onerror = () => reject(stored.error);
+          stored.onsuccess = () => {
+            const collection = stored.result as {
+              activeProfileId: string;
+              profiles: Array<{ profileId: string; draft: unknown }>;
+            };
+            const draft = collection.profiles.find(
+              ({ profileId }) => profileId === collection.activeProfileId,
+            )?.draft;
+            resolve(draft ? JSON.stringify(draft) : null);
+          };
+        };
+      }),
+  );
+}
+
+async function replaceStoredDraft(page: Page, draftJson: string): Promise<void> {
+  await page.evaluate(
+    ({ replacement }) =>
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open('fgo-lab', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const transaction = request.result.transaction('user', 'readwrite');
+          const store = transaction.objectStore('user');
+          const stored = store.get('profiles');
+          stored.onerror = () => reject(stored.error);
+          stored.onsuccess = () => {
+            const collection = stored.result as {
+              activeProfileId: string;
+              profiles: Array<{ profileId: string; draft: unknown }>;
+            };
+            const profile = collection.profiles.find(
+              ({ profileId }) => profileId === collection.activeProfileId,
+            )!;
+            profile.draft = JSON.parse(replacement);
+            store.put(collection, 'profiles');
+          };
+          transaction.onerror = () => reject(transaction.error);
+          transaction.oncomplete = () => resolve();
+        };
+      }),
+    { replacement: draftJson },
+  );
+}
+
 async function openFixtureRanking(
   page: Page,
   width: number,
@@ -84,7 +139,7 @@ test('[E2E-016] ranking density and overflow @desktop @vrt', async ({ page }) =>
 });
 
 test('[E2E-050] real ranking module worker and detail @desktop @journey', async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.route('https://static.atlasacademy.io/**', (route) =>
     route.fulfill({
@@ -128,8 +183,43 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     )?.replaceAll(',', ''),
   );
   expect(calculatorAverage).toBe(rankingAverage);
+  await expect.poll(() => storedDraftJson(page)).not.toBeNull();
+  const originalDraft = await storedDraftJson(page);
+  if (!originalDraft) throw new Error('ranking handoff draft missing');
+  const missingSubjectDraft = JSON.stringify({
+    ...JSON.parse(originalDraft),
+    request: {
+      ...JSON.parse(originalDraft).request,
+      scenario: {
+        ...JSON.parse(originalDraft).request.scenario,
+        attacker: {
+          ...JSON.parse(originalDraft).request.scenario.attacker,
+          servantId: 'missing-reset-subject',
+        },
+      },
+    },
+  });
+  await replaceStoredDraft(page, missingSubjectDraft);
+  await page.goto('/?page=calculate');
+  const rejectedNotice = page.getByRole('alert');
+  await expect(rejectedNotice).toContainText('計算条件を復元できません', { timeout: 30_000 });
+  await rejectedNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
+  await expect(rejectedNotice).toContainText('計算条件を復元できません');
+  await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
+  await page.reload();
+  await expect(page.getByRole('alert')).toContainText('計算条件を復元できません', {
+    timeout: 30_000,
+  });
+  await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
+
+  await replaceStoredDraft(page, originalDraft);
+  await page.reload();
+  const restoredNotice = page.getByLabel('計算条件の版情報');
+  await expect(restoredNotice).toContainText('ランキングから引き継いだ計算条件', {
+    timeout: 30_000,
+  });
   // E2E-A050-RESET
-  await notice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
+  await restoredNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
   await expect(page.getByText('ランキングから引き継いだ計算条件')).toHaveCount(0);
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });

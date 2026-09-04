@@ -421,6 +421,21 @@
   },
   {
     "runner": "playwright",
+    "testId": "ranking-baseline.spec.ts > [E2E-050] real ranking module worker and detail @desktop @journey",
+    "kind": "browser.console",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "detail": {
+      "type": "info",
+      "url": "http://127.0.0.1:4174/?page=calculate",
+      "locationUrl": "http://127.0.0.1:4174/node_modules/.vite/deps/react-dom_client.js?v=00e6ab84",
+      "pageId": "page-1"
+    },
+    "expectedCount": 3,
+    "reason": "The isolated E2E development server emits this exact React diagnostic.",
+    "expiresAt": "2026-12-01T00:00:00.000Z"
+  },
+  {
+    "runner": "playwright",
     "testId": "setup.setup.ts > [E2E-SETUP-001] verify canonical browser setup @journey",
     "kind": "browser.console",
     "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",

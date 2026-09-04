@@ -41,15 +41,47 @@ describe('resource semantic closure', () => {
     });
   });
 
-  it('routes star changes to the terminal canonical star input owner', () => {
-    const stars = { ...resourceOperation, resource: 'criticalStars' } as BattleOperation;
-    expect(closeResourceMutationSemantics([stars])).toEqual([
-      expect.objectContaining({
+  it.each(['gain', 'loss'] as const)(
+    'routes a star %s through ordered state when a later damage condition reads stars',
+    (direction) => {
+      const stars = {
+        ...resourceOperation,
+        resource: 'criticalStars',
+        direction,
+      } as BattleOperation;
+      const reader = {
+        kind: 'addModifier',
+        condition: {
+          kind: 'inputQuantity',
+          inputKey: 'battle:criticalStars',
+          comparison: 'atLeast',
+          value: 10,
+        },
+        valueExpression: null,
+      } as unknown as BattleOperation;
+      expect(closeResourceMutationSemantics([stars, reader])[0]).toMatchObject({
         kind: 'resourceMutation',
         resource: 'criticalStars',
-        resolution: 'representedByTerminalInput',
-        amount: 1_000,
-      }),
-    ]);
+        resolution: 'orderedCriticalStars',
+        direction,
+      });
+    },
+  );
+
+  it('uses an ordered suffix proof instead of treating an earlier reader as downstream', () => {
+    const stars = { ...resourceOperation, resource: 'criticalStars' } as BattleOperation;
+    const reader = {
+      kind: 'addModifier',
+      condition: {
+        kind: 'inputQuantity',
+        inputKey: 'battle:criticalStars',
+        comparison: 'atLeast',
+        value: 10,
+      },
+      valueExpression: null,
+    } as unknown as BattleOperation;
+    expect(closeResourceMutationSemantics([reader, stars])[1]).toMatchObject({
+      resolution: 'noDamageReader',
+    });
   });
 });

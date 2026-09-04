@@ -397,12 +397,18 @@ export function App() {
   async function resetPortableDraft() {
     const retainedResult = calculation.storedResult ?? result;
     if (!retainedResult) return;
+    if (currentScenario.mode !== 'resolved') return;
+    const resetSubjects = currentMaster.servants.filter(
+      (candidate) => candidate.id === currentScenario.attacker.servantId,
+    );
+    if (resetSubjects.length !== 1) return;
+    const resetSubject = resetSubjects[0]!;
     const attempt = attemptPortableCalculationReset(
       currentRequest,
       retainedResult,
       currentMaster,
-      selectedBuild,
-      selectedAttacker,
+      profile.servantBuilds[resetSubject.id],
+      resetSubject,
     );
     if (attempt.status !== 'committed') return;
     await commitPortableDraft(attempt.request, attempt.result);

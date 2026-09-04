@@ -211,18 +211,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 668,
-        generatedCount: 668,
-        deduplicatedCount: 668,
-        damageRequestUpperBound: 668,
-        damageRequestCount: 667,
-        distinctDamageInputCount: 630,
+        semanticUpperBound: 669,
+        generatedCount: 669,
+        deduplicatedCount: 669,
+        damageRequestUpperBound: 669,
+        damageRequestCount: 668,
+        distinctDamageInputCount: 631,
       },
       damageCache: {
-        requestCount: 667,
-        distinctDamageInputCount: 630,
+        requestCount: 668,
+        distinctDamageInputCount: 631,
         cacheHitCount: 37,
-        cacheHitRate: 37 / 667,
+        cacheHitRate: 37 / 668,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>

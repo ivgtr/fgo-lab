@@ -269,6 +269,27 @@ Implementation evidence: schema current readers accept only schema 33 request en
 
 ## Portable request counterexample matrix
 
+### Re-review correction delta — IRL-005 exact reset subject
+
+The earlier reset closure began at the application attempt and therefore missed the production Web resolver
+immediately before it. That resolver substituted the first master servant when the request's exact attacker
+was absent. The mechanism is subject-identity resolution, the implementation mismatch is a consumer-side
+default fallback, and the missed detection was a matrix that injected a missing subject directly into the pure
+application API without tracing the Web command producer. The recurrence scope is every normal-reset entry
+point from request identity through durable commit, memory publication, and reload.
+
+| State / counterexample | Web producer／resolver | Application attempt | Durable／memory writer | Reload | Final status |
+| --- | --- | --- | --- | --- | --- |
+| exact unique request attacker exists | resolve that servant and matching build | current-version baseline executes | durable pair commits before memory publication | restores new normal request/result/fingerprint | Verified: production E2E normal reset |
+| request attacker is missing from current master | no fallback subject | attempt is not invoked | request/result/fingerprint and session memory remain byte-for-byte unchanged | restores retained draft | Verified: production E2E missing-subject reset and reload |
+| request attacker is ambiguous | fail closed before application attempt | N/A: no exact subject | no durable or memory write | restores retained draft | Verified by master schema uniqueness; schema-invalid ambiguity is rejected before Web state |
+| application reset is invalid／unsupported or persistence fails | exact subject only | existing typed rejection／execute-before-commit | existing transaction retains both stores | restores retained draft | Verified regression boundary |
+
+Direct producer／consumer／writer／recovery classification: request scenario attacker (`Verified producer`),
+Web exact resolver (`Verified`), application baseline constructor and executor (`Verified`), durable
+profile replacement then memory publication (`Verified`), and startup draft reload (`Verified`). Share／history／
+backup recovery is `N/A: normal reset does not rewrite those records`. Portable Blocking count is **0**.
+
 `V` means `Verified`; `N/A` includes the reason. Direct test-only reinjection does not close a production path.
 
 | State / counterexample | Pure constructor / execution | Immediate ranking→calculator | Draft restore | History finalize/copy | Share URL/JSON | Backup/fingerprint/migration |
@@ -295,8 +316,9 @@ The three reopened mechanisms are closed together. TSK-07 retains only evidence-
 
 IRL-005 closure verification used the current runtime version for every reset attempt and exercised
 success, invalid, unsupported, persistence failure, and retry as one execute-before-commit recovery
-family. Final `pnpm quality` passed 395 unit, 114 production, and 25 Playwright tests; artifact
-`.test-results/2026-09-04T11-35-28-969Z-15-8f8bc7`.
+family. Final re-review `pnpm quality` passed 402 unit, 114 production, and 25 Playwright tests with
+zero skip／todo, retry, warning, or unexpected console; parent artifact
+`.test-results/2026-09-04T13-13-54-906Z-15-6f35e3`.
 
 ## Cache and stale-detail matrix
 

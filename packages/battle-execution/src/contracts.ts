@@ -154,7 +154,7 @@ export type BattleOperation =
   | (OperationBase & {
       kind: 'resourceMutation';
       resource: 'hp' | 'criticalStars' | 'battlePoint';
-      resolution: 'resourceStateUnavailable' | 'representedByTerminalInput' | 'noDamageReader';
+      resolution: 'resourceStateUnavailable' | 'orderedCriticalStars' | 'noDamageReader';
       direction: 'gain' | 'loss';
       unit: 'fixed' | 'percent';
       amount: number | null;

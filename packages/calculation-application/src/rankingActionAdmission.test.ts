@@ -84,13 +84,30 @@ function program(
     slot: 1,
     effects,
   });
+  const selectedChoice = effects.find(
+    (
+      candidate,
+    ): candidate is MasterEffect & {
+      selection: Extract<MasterEffect['selection'], { kind: 'playerChoice' }>;
+    } => candidate.selection?.kind === 'playerChoice',
+  )?.selection;
   return {
     key,
     attackProfile,
     initialFormId: formId,
     expectedTerminalFormId: formId,
     commands: [
-      { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+      {
+        kind: 'useSkillSlot',
+        slot: 1,
+        skillLevel: 10,
+        choice: selectedChoice
+          ? {
+              groupKey: selectedChoice.group.key,
+              candidateKey: selectedChoice.group.candidate,
+            }
+          : null,
+      },
       { kind: 'executeAttackNoblePhantasm' },
     ],
     sourceUses: [{ kind: 'skill', actorFormId: formId, skill, effects, skillLevel: 10 }],
@@ -150,6 +167,44 @@ describe('candidate-local action admission', () => {
         baseline,
       ).programs.map(({ key }) => key),
     ).toEqual(['without-action']);
+  });
+
+  it('admits a nested terminal-trait, selected-choice, and operation-trigger action', () => {
+    const trait =
+      attackProfile.id.terminalActorFormProfileId.semantics.intrinsicTraits[0] ?? 'servant';
+    const nested = {
+      ...effect('nested:0', positive.execution, {
+        kind: 'all',
+        requirements: [
+          { kind: 'card', card: attackProfile.cardType, present: true },
+          {
+            kind: 'trait',
+            scope: 'recipient',
+            trait,
+            present: true,
+            provenance: {
+              stateSources: 'activeOnly',
+              ignoredStateTraits: 'exclude',
+              unremovableStateTraits: 'include',
+            },
+          },
+          { kind: 'choice', family: 'mode', candidate: 'selected' },
+          { kind: 'operationTrigger', position: 7 },
+        ],
+      }),
+      selection: {
+        kind: 'playerChoice' as const,
+        group: { key: 'mode', candidate: 'selected' },
+      },
+      operationTrigger: { kind: 'functionPosition' as const, position: 7 },
+    };
+
+    expect(
+      compileCandidateLocalActionAdmission(
+        [withoutAction, program([nested])],
+        baseline,
+      ).programs.map(({ key }) => key),
+    ).toEqual(['without-action', 'with-action']);
   });
 
   it('admits only a proved positive, deterministic, cost-free optional baseline action', () => {

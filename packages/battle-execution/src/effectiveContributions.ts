@@ -45,6 +45,8 @@ function decisions(
             ? {
                 card: state.card,
                 noblePhantasmVariant: state.noblePhantasmVariant.ref,
+                attackerTraits: state.traits.attacker,
+                activationFacts: state.activationContext,
               }
             : undefined,
         ),

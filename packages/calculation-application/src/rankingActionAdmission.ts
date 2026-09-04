@@ -1,5 +1,11 @@
 import type { MasterEffect } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import {
+  activationFactKey,
+  analyzeActivationFactSet,
+  type ActivationFact,
+  type ActivationSourceRef,
+} from '@fgo-lab/schema';
 import { classifyContributionCondition, compileEffectCondition } from '@fgo-lab/battle-execution';
 import { attackProfileKey } from './attackProfile';
 import type { RankingPolicyConditions } from './rankingContracts';
@@ -52,20 +58,68 @@ function requirementIsUnconditionalForAttack(
   effect: MasterEffect,
   source: RankingPreparationSourceUse,
   program: StaticRankingPreparationProgram,
+  attackFacts: Parameters<typeof classifyContributionCondition>[1],
 ): boolean {
+  const origin = source.kind === 'skill' ? 'attacker' : 'np';
+  const sourceInstanceId = `ranking-admission:${source.kind}`;
+  const skillId =
+    source.kind === 'skill' ? source.skill.id : `np:${source.noblePhantasmVariant.noblePhantasmId}`;
   const condition = compileEffectCondition(
     effect,
-    source.kind === 'skill' ? 'attacker' : 'np',
+    origin,
     program.attackProfile.id.servantLineageId,
-    `ranking-admission:${source.kind}`,
-    source.kind === 'skill' ? source.skill.id : `np:${source.noblePhantasmVariant.noblePhantasmId}`,
+    sourceInstanceId,
+    skillId,
   );
-  return (
-    classifyContributionCondition(condition, {
-      card: program.attackProfile.cardType,
-      noblePhantasmVariant: program.attackProfile.noblePhantasmVariant,
-    }) === 'intrinsicSatisfied'
+  return classifyContributionCondition(condition, attackFacts) === 'intrinsicSatisfied';
+}
+
+function intrinsicFactsForSource(
+  source: RankingPreparationSourceUse,
+  program: StaticRankingPreparationProgram,
+): Parameters<typeof classifyContributionCondition>[1] | undefined {
+  const origin = source.kind === 'skill' ? 'attacker' : 'np';
+  const sourceInstanceId = `ranking-admission:${source.kind}`;
+  const skillId =
+    source.kind === 'skill' ? source.skill.id : `np:${source.noblePhantasmVariant.noblePhantasmId}`;
+  const activationSource: ActivationSourceRef = { origin, sourceInstanceId, skillId };
+  const facts = source.effects.flatMap<ActivationFact>((candidate) => [
+    ...(candidate.selection?.kind === 'playerChoice'
+      ? [
+          {
+            kind: 'choice' as const,
+            source: activationSource,
+            family: candidate.selection.group.key,
+            candidate: candidate.selection.group.candidate,
+          },
+        ]
+      : []),
+    ...(candidate.operationTrigger
+      ? [
+          {
+            kind: 'operationTrigger' as const,
+            source: activationSource,
+            position: candidate.operationTrigger.position,
+          },
+        ]
+      : []),
+  ]);
+  const activation = analyzeActivationFactSet(
+    [...new Map(facts.map((fact) => [activationFactKey(fact), fact])).values()].sort(
+      (left, right) => activationFactKey(left).localeCompare(activationFactKey(right)),
+    ),
   );
+  if (activation.status !== 'valid') return undefined;
+  return {
+    card: program.attackProfile.cardType,
+    noblePhantasmVariant: program.attackProfile.noblePhantasmVariant,
+    attackerTraits: new Map(
+      program.attackProfile.id.terminalActorFormProfileId.semantics.intrinsicTraits.map(
+        (trait) => [trait, true] as const,
+      ),
+    ),
+    activationFacts: activation.factSet,
+  };
 }
 
 function effectHasPositiveDamageContribution(effect: MasterEffect): boolean {
@@ -124,9 +178,11 @@ function optionalAdmission(
   if (conditions.selfBuffs === 'excluded')
     return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
   if (conditions.conditionalEffects === 'baseline') {
+    const attackFacts = intrinsicFactsForSource(source, program);
+    if (!attackFacts) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
     const contributes = source.effects.some(
       (effect) =>
-        requirementIsUnconditionalForAttack(effect, source, program) &&
+        requirementIsUnconditionalForAttack(effect, source, program, attackFacts) &&
         effectHasPositiveDamageContribution(effect),
     );
     if (!contributes) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
