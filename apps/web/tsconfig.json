@@ -1,21 +1,23 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist-types",
-    "rootDir": "src",
-    "jsx": "react-jsx",
-    "declaration": true,
-    "declarationMap": true,
-    "types": ["vite/client"]
+    "allowJs": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "incremental": true,
+    "jsx": "preserve",
+    "noEmit": true,
+    "plugins": [{ "name": "next" }],
+    "sourceMap": false,
+    "types": ["node"]
   },
-  "include": ["src", "src/**/*.json"],
-  "references": [
-    { "path": "../../packages/schema" },
-    { "path": "../../packages/master-data" },
-    { "path": "../../packages/calc-core" },
-    { "path": "../../packages/calculation-application" },
-    { "path": "../../packages/battle-execution" },
-    { "path": "../../packages/profile-domain" },
-    { "path": "../../packages/workspace-domain" }
-  ]
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.json",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }

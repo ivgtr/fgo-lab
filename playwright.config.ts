@@ -7,16 +7,12 @@ import runtimeContract from './scripts/e2e-runtime-contract.json' with { type: '
 const baseURL = runtimeContract.baseURL;
 const port = new URL(baseURL).port;
 const appRequire = createRequire(resolve(import.meta.dirname, 'apps/web/package.json'));
-const vitePackage = JSON.parse(readFileSync(appRequire.resolve('vite/package.json'), 'utf8')) as {
-  version?: string;
-  bin?: { vite?: string };
+const nextPackage = JSON.parse(readFileSync(appRequire.resolve('next/package.json'), 'utf8')) as {
+  version: string;
 };
-if (
-  vitePackage.version !== runtimeContract.server.version ||
-  vitePackage.bin?.vite !== 'bin/vite.js'
-)
+if (nextPackage.version !== runtimeContract.server.version)
   throw new Error(
-    `E2E Vite binary contract mismatch: expected ${runtimeContract.server.version}, received ${String(vitePackage.version)}`,
+    `E2E Next.js runtime contract mismatch: expected ${runtimeContract.server.version}, received ${nextPackage.version}`,
   );
 
 export default defineConfig({
@@ -31,9 +27,11 @@ export default defineConfig({
   ],
   outputDir: process.env['PLAYWRIGHT_OUTPUT_DIR'] ?? 'test-results',
   webServer: {
-    command: `pnpm --filter @fgo-lab/web exec vite --mode e2e --port ${String(port)} --host 127.0.0.1`,
+    command: `pnpm --filter @fgo-lab/web build && pnpm --filter @fgo-lab/web exec next start --hostname 127.0.0.1 --port ${String(port)}`,
     url: baseURL,
     reuseExistingServer: false,
+    timeout: 120_000,
+    env: { NEXT_PUBLIC_E2E: 'true' },
   },
   use: {
     baseURL,

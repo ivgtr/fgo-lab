@@ -898,8 +898,8 @@ test('failure summary never exceeds physical line or UTF-8 byte limits', async (
   assert.equal(result.manifest.output.truncated, true);
 });
 
-test('CI and Pages retain the complete parent run and make missing/upload failure blocking', () => {
-  for (const path of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {
+test('CI retains the complete parent run and makes missing/upload failure blocking', () => {
+  for (const path of ['.github/workflows/ci.yml']) {
     const workflow = readFileSync(resolve(root, path), 'utf8');
     const uploadStart = workflow.indexOf('- name: Upload quality results');
     assert.ok(uploadStart >= 0, path);
@@ -961,7 +961,7 @@ test('differently capped Vitest projects use distinct execution groups', () => {
   assert.match(productionProject, /sequence: \{ groupOrder: 1 \}/);
 });
 
-test('local, CI, and Pages use the same canonical quality command', () => {
+test('local, CI, and Vercel use the same canonical quality command', () => {
   const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   assert.equal(packageJson.scripts.quality, 'node scripts/quality-runner.mjs');
   assert.equal(packageJson.scripts.check, 'node scripts/quality-runner.mjs --profile=quick');
@@ -987,7 +987,7 @@ test('local, CI, and Pages use the same canonical quality command', () => {
     assert.match(qualityRunner, new RegExp(`\\['${id}', \\['${script}'\\]`));
   const playwrightConfig = readFileSync(resolve(root, 'playwright.config.ts'), 'utf8');
   assert.match(playwrightConfig, /workers: 2,/);
-  for (const path of ['.github/workflows/ci.yml', '.github/workflows/pages.yml']) {
+  for (const path of ['.github/workflows/ci.yml']) {
     const workflow = readFileSync(resolve(root, path), 'utf8');
     assert.equal(workflow.match(/run: pnpm quality/g)?.length, 1, path);
     assert.doesNotMatch(workflow, /run: pnpm (?:test|validate:evidence|validate:master|build)\b/);

@@ -8,8 +8,8 @@ import {
   MAX_SHARE_FRAGMENT_LENGTH,
   readShareFragment,
   RESULT_CARD_EXPORT_WIDTH,
-  validateCalculationShareSnapshot,
 } from './share';
+import { validateCalculationShareSnapshot } from './shareValidation';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {

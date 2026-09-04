@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint apps/web/src packages/*/src --max-warnings=0",
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "tsc -b --pretty false && pnpm --filter @fgo-lab/web typecheck",
     "test": "node scripts/test-runner.mjs compact",
     "test:unit": "node scripts/test-runner.mjs compact --suite=unit",
     "test:production": "node scripts/test-runner.mjs compact --suite=production",
@@ -53,7 +53,6 @@
     "prettier": "3.9.6",
     "typescript": "5.9.3",
     "typescript-eslint": "8.69.0",
-    "vite": "8.2.2",
     "vitest": "4.1.11"
   }
 }

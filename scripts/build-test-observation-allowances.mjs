@@ -14,10 +14,8 @@ if (!inputArgument || !outputArgument) {
 const root = resolve(import.meta.dirname, '..');
 const runtimeContract = readJson(resolve(root, 'scripts/e2e-runtime-contract.json'));
 const declaration = readJson(resolve(root, 'e2e/expected-browser-events.json'));
-const installedViteVersion = readJson(resolve(root, 'node_modules/vite/package.json')).version;
 const appRequire = createRequire(resolve(root, 'apps/web/package.json'));
-const vitePackage = readJson(appRequire.resolve('vite/package.json'));
-const binaryViteVersion = vitePackage.bin?.vite === 'bin/vite.js' ? vitePackage.version : null;
+const installedServerVersion = readJson(appRequire.resolve('next/package.json')).version;
 const expectations = materializeExpectations(declaration, runtimeContract.baseURL);
 const events = readFileSync(resolve(inputArgument), 'utf8')
   .split(/\r?\n/)
@@ -27,8 +25,7 @@ const activeScopes = new Set(expectations.map(({ runner, testId }) => `${runner}
 const classified = classifyObservations(events, expectations, new Date(), activeScopes, {
   runtime: runtimeContract,
   declaration,
-  installedViteVersion,
-  binaryViteVersion,
+  installedServerVersion,
 });
 if (
   classified.allowanceErrors.length > 0 ||
@@ -45,26 +42,7 @@ if (
 writeFileSync(resolve(outputArgument), `${JSON.stringify(expectations, null, 2)}\n`);
 
 function materializeExpectations(value, baseURL) {
-  const reactMessage =
-    '%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold';
   const result = [];
-  for (const { testId, pages } of value.pageLoads)
-    for (const page of pages)
-      result.push({
-        runner: 'playwright',
-        testId,
-        kind: 'browser.console',
-        message: reactMessage,
-        detail: {
-          type: 'info',
-          url: new URL(page.path, baseURL).href,
-          locationUrl: new URL(value.reactLocationPath, baseURL).href,
-          pageId: page.pageId ?? 'page-1',
-        },
-        expectedCount: page.count,
-        reason: 'The isolated E2E development server emits this exact React diagnostic.',
-        expiresAt: value.expiresAt,
-      });
   for (const { testId, resources } of value.atlasImageFailures)
     for (const resource of resources) {
       const url = new URL(resource.path, 'https://static.atlasacademy.io').href;

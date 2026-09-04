@@ -8,6 +8,7 @@ governing_decisions:
   - "docs/adr/002-local-storage.md"
   - "docs/adr/003-master-delivery.md"
   - "docs/adr/011-canonical-effect-execution-semantics.md"
+  - "docs/adr/029-next-vercel-routing.md"
 ---
 
 # FGO Lab canonical data flow
@@ -20,7 +21,7 @@ governing_decisions:
 Atlas static export
   -> data-pipeline (raw Atlas vocabularyの唯一の解釈境界)
   -> versioned normalized master + manifest + inventory
-  -> GitHub Pages static artifact
+  -> Vercel static master artifact
   -> web startup adapter
        -> candidate取得・SHA-256／schema／参照整合性検証
        -> IndexedDB staging

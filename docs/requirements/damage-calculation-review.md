@@ -205,15 +205,15 @@ CalculationScenario
 
 ## 6. 配信方針
 
-R1はSSRを必要としない。IndexedDB、Web Worker、Canvas画像保存、URLフラグメント共有、静的マスターデータ取得はすべてブラウザ内で成立するため、**GitHub Pagesを第一配信先**とする。
+R1はNext.js App Routerを採用し、**Vercelを第一配信先**とする。route、metadata、初期HTMLはServer Componentで所有し、IndexedDB、Web Worker、Canvas画像保存、URLフラグメント共有、静的マスターデータ取得はClient Component境界に残す。
 
-- SPAはGitHub Pagesのサブパスを前提にasset base pathを設定する。
-- 直接URL復元はhash routingまたは404 fallbackを採用する。
+- 主要画面は固定pathを持ち、App Routerで直接URLを解決する。
+- request-time dataを必要としないrouteは事前生成し、必要になったrouteだけSSRへ切り替える。
 - マスターデータと画像は版付き静的ファイルとして配信し、manifestを最後に切り替える。
 - 画像manifestを構造化データから分離し、画像配信停止後も名称・数値・fallbackで主要機能を使えるようにする。
 - 指摘時に画像だけを停止できる設定と手順を用意する。
 
-Vercelへ切り替えるのは、SSRが必要になった時ではなく、具体的にサーバー実行が必要になった時に再判断する。例は秘密情報を使うAPI、サーバー側ジョブ、認証、サーバー保存、静的配信では解決できない同一オリジンproxyである。R1の現要件には該当しない。
+サーバー側のユーザーデータ処理、認証、保存、秘密情報を使うAPIは本変更の範囲外とし、別の要件・security reviewなしに追加しない。
 
 ## 7. 実装前に確定する小項目
 

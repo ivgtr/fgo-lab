@@ -388,7 +388,6 @@ const loadReferences = collectedTests.testFiles.flatMap((path) => {
 
 const contractFilePaths = [
   '.github/workflows/ci.yml',
-  '.github/workflows/pages.yml',
   'package.json',
   'playwright.config.ts',
   'scripts/test-runner-lib.mjs',

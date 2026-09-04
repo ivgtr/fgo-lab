@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 4173",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --port 4173"
+    "dev": "next dev --hostname 127.0.0.1 --port 4173",
+    "build": "next build --webpack",
+    "start": "next start --hostname 127.0.0.1 --port 4173",
+    "preview": "next start --hostname 127.0.0.1 --port 4173",
+    "typecheck": "next typegen && tsc --noEmit --pretty false"
   },
   "dependencies": {
     "@fgo-lab/schema": "workspace:*",
@@ -16,13 +18,12 @@
     "@fgo-lab/profile-domain": "workspace:*",
     "@fgo-lab/workspace-domain": "workspace:*",
     "idb": "8.0.3",
+    "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.5.4"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "6.1.1",
-    "vite": "8.2.2",
     "typescript": "5.9.3"
   }
 }

@@ -1,4 +1,5 @@
 import { MasterImage } from '../../ui/MasterImage';
+import './modifier-chip.css';
 
 export interface ModifierChipSource {
   key: string;

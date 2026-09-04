@@ -1,5 +1,9 @@
+'use client';
+
 import './shell.css';
-import { useEffect, useState } from 'react';
+import type { Route } from 'next';
+import { usePathname, useRouter } from 'next/navigation';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   activeProfile,
@@ -18,11 +22,8 @@ import {
   type Clock,
   type IdGenerator,
 } from '@fgo-lab/profile-domain';
-import { finalizeHistory, portableCalculationFingerprint } from '@fgo-lab/workspace-domain';
 import type {
   CalculationResult,
-  CalculationScenario,
-  CurrentCalculationHistoryEntry,
   CraftEssenceCopy,
   PortableCalculationRequest,
   ServantBuild,
@@ -30,39 +31,52 @@ import type {
   SupportEffectRef,
   SupportTemplate,
 } from '@fgo-lab/schema';
-import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import type {
-  EffectProjection,
-  PortableVersionUpgradeResult,
-} from '@fgo-lab/calculation-application';
-import {
-  applyEffectProjectionDecisions,
-  attemptPortableCalculationReset,
-  attemptPortableCalculationVersionUpgrade,
-  createDefaultCalculatorPortableRequest,
-  createRankingPortableRequest,
-  currentCalculationVersionContext,
-  executePortableCalculation,
-  recoverPortableCalculation,
-  replacePortableCalculationScenario,
-  resolveScenario,
-} from '@fgo-lab/calculation-application';
+import type { PortableVersionUpgradeResult } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
 import { t } from '../ui/i18n';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
-import { DataPage } from '../features/data/DataPage';
-import { Calculator, RejectedCalculator } from '../features/calculator/Calculator';
-import { CalculationContextNotice } from '../features/calculator/CalculationContextNotice';
-import { CraftEssences } from '../features/profile/CraftEssences';
-import { Growth } from '../features/growth/Growth';
-import { Home } from '../features/home/Home';
-import { Ranking } from '../features/ranking/Ranking';
-import { Servants } from '../features/profile/Servants';
-import { SupportTemplates } from '../features/profile/SupportTemplates';
 import { StartupScreen } from './StartupScreen';
 import { useProfileCollection } from './useProfileCollection';
 
-type Page = 'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
+export type Page =
+  'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
+const pagePaths = {
+  home: '/',
+  calculate: '/calculator',
+  ranking: '/ranking',
+  servants: '/servants',
+  ce: '/craft-essences',
+  support: '/supports',
+  growth: '/growth',
+  data: '/data',
+} as const satisfies Record<Page, string>;
+const pagesByPath = new Map<string, Page>(
+  Object.entries(pagePaths).map(([page, path]) => [path, page as Page]),
+);
+const DataPage = lazy(async () => ({
+  default: (await import('../features/data/DataPage')).DataPage,
+}));
+const CalculationRoutes = lazy(async () => ({
+  default: (await import('./CalculationRoutes')).CalculationRoutes,
+}));
+const CraftEssences = lazy(async () => ({
+  default: (await import('../features/profile/CraftEssences')).CraftEssences,
+}));
+const Growth = lazy(async () => ({
+  default: (await import('../features/growth/Growth')).Growth,
+}));
+const Servants = lazy(async () => ({
+  default: (await import('../features/profile/Servants')).Servants,
+}));
+const SupportTemplates = lazy(async () => ({
+  default: (await import('../features/profile/SupportTemplates')).SupportTemplates,
+}));
+
+function pageFromPathname(pathname: string): Page | null {
+  const normalized = pathname === '/' ? pathname : pathname.replace(/\/+$/, '');
+  return pagesByPath.get(normalized) ?? null;
+}
+
 const nav: readonly [Page, ReturnType<typeof t>][] = [
   ['home', t('nav.home')],
   ['calculate', t('nav.calculate')],
@@ -77,33 +91,11 @@ const repository = new IndexedDbProfileRepository();
 const clock: Clock = { now: () => new Date() };
 const ids: IdGenerator = { next: () => crypto.randomUUID() };
 
-interface CalculationWorkspace {
+export interface CalculationWorkspace {
   request: PortableCalculationRequest | undefined;
   storedResult: CalculationResult | undefined;
   source: 'share' | 'draft' | 'history' | undefined;
   upgradeAttempt?: Extract<PortableVersionUpgradeResult, { status: 'rejected' }>;
-}
-
-function supportDecisionKeys(effects: readonly EffectProjection[]) {
-  return new Set(
-    effects
-      .filter((effect) => effect.source.origin === 'support')
-      .map((effect) => effect.projectionKey),
-  );
-}
-
-function excludedSupportEffects(template: SupportTemplate, effects: readonly EffectProjection[]) {
-  return effects.filter(
-    (effect) =>
-      effect.source.origin === 'support' &&
-      template.composition.effectInclusions.some(
-        (override) =>
-          override.sourceInstanceId === effect.source.sourceInstanceId &&
-          override.skillId === effect.source.skillId &&
-          override.effectId === effect.source.effectId &&
-          override.effectOccurrenceId === effect.source.effectOccurrenceId,
-      ),
-  );
 }
 
 function Setup({
@@ -121,8 +113,8 @@ function Setup({
     try {
       onComplete(
         await setupApplication(repository, clock, ids, {
-          baseUrl: import.meta.env.BASE_URL,
-          development: import.meta.env.DEV,
+          baseUrl: '/',
+          development: process.env.NODE_ENV !== 'production',
           fragment: location.hash,
           now: new Date(),
         }),
@@ -146,13 +138,12 @@ function Setup({
 }
 
 export function App() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const page = pageFromPathname(pathname);
   const [master, setMaster] = useState<MasterDataSnapshot>();
   const [loading, setLoading] = useState(true);
   const [startupWarning, setStartupWarning] = useState('');
-  const [page, setPage] = useState<Page>(() => {
-    const requested = new URLSearchParams(location.search).get('page');
-    return nav.some(([candidate]) => candidate === requested) ? (requested as Page) : 'home';
-  });
   const {
     profiles,
     undoSnapshot,
@@ -166,14 +157,17 @@ export function App() {
     storedResult: undefined,
     source: undefined,
   });
-  const [online, setOnline] = useState(navigator.onLine);
+  const [online, setOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  );
   const [recoveryFocus, setRecoveryFocus] = useState<'result' | 'error' | null>(null);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
+  const calculationFinalizer = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => {
     async function bootstrap() {
       const result = await bootstrapApplication(repository, {
-        baseUrl: import.meta.env.BASE_URL,
-        development: import.meta.env.DEV,
+        baseUrl: '/',
+        development: process.env.NODE_ENV !== 'production',
         fragment: location.hash,
         now: new Date(),
       });
@@ -182,11 +176,23 @@ export function App() {
       setCalculation(result.calculation);
       setStartupWarning(result.warning);
       if (result.offline) setOnline(false);
-      if (result.calculation.source === 'share') setPage('calculate');
+      if (
+        result.calculation.source === 'share' &&
+        pageFromPathname(location.pathname) !== 'calculate'
+      )
+        router.replace(`${pagePaths.calculate}${location.hash}` as Route);
       setLoading(false);
     }
     void bootstrap();
-  }, [initializeProfiles]);
+  }, [initializeProfiles, router]);
+  useEffect(() => {
+    if (
+      'serviceWorker' in navigator &&
+      process.env.NODE_ENV === 'production' &&
+      process.env.NEXT_PUBLIC_E2E !== 'true'
+    )
+      void navigator.serviceWorker.register('/sw.js');
+  }, []);
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
     addEventListener('online', update);
@@ -197,15 +203,12 @@ export function App() {
     };
   }, []);
   useEffect(() => {
-    if (!recoveryFocus) return;
-    const selector =
-      recoveryFocus === 'result'
-        ? '[data-calculation-result-heading]'
-        : '[data-calculation-error-summary]';
-    const target = document.querySelector<HTMLElement>(selector);
-    target?.focus();
-    queueMicrotask(() => setRecoveryFocus(null));
-  }, [recoveryFocus, calculation]);
+    if (page !== 'calculate') return;
+    const finalizeOnHistoryNavigation = () => void calculationFinalizer.current?.();
+    addEventListener('popstate', finalizeOnHistoryNavigation);
+    return () => removeEventListener('popstate', finalizeOnHistoryNavigation);
+  }, [page]);
+  if (page === null) return null;
   if (loading) return <StartupScreen mode="checking" />;
   if (!master || !profiles)
     return (
@@ -217,50 +220,13 @@ export function App() {
           setCalculation(result.calculation);
           setStartupWarning(result.warning);
           if (result.offline) setOnline(false);
-          if (result.calculation.source === 'share') setPage('calculate');
+          if (result.calculation.source === 'share' && page !== 'calculate')
+            router.replace(`${pagePaths.calculate}${location.hash}` as Route);
         }}
       />
     );
   const currentMaster = master;
   const profile = activeProfile(profiles);
-  const defaultServant = currentMaster.servants[0]!;
-  const defaultBuild = profile.servantBuilds[defaultServant.id];
-  const currentRequest =
-    calculation.request ??
-    createDefaultCalculatorPortableRequest(currentMaster, defaultBuild, defaultServant);
-  const currentScenario = currentRequest.scenario;
-  const versions = {
-    schemaVersion: SCHEMA_VERSION,
-    masterDataVersion: currentMaster.version,
-    engineVersion: ENGINE_VERSION,
-    appVersion: APP_VERSION,
-    gameRegion: 'JP' as const,
-    masterDataLocale: 'ja-JP' as const,
-  };
-  const portableOutcome = calculation.storedResult
-    ? recoverPortableCalculation(currentRequest, calculation.storedResult, currentMaster)
-    : executePortableCalculation(currentRequest, currentMaster);
-  const resolvedCalculation =
-    portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported'
-      ? portableOutcome.execution
-      : null;
-  const input = resolvedCalculation?.status === 'executable' ? resolvedCalculation.input : null;
-  const selectedAttackerId =
-    input?.attackerId ??
-    (currentScenario.mode === 'resolved' ? currentScenario.attacker.servantId : defaultServant.id);
-  const selectedAttacker =
-    currentMaster.servants.find((candidate) => candidate.id === selectedAttackerId) ??
-    defaultServant;
-  const selectedBuild = profile.servantBuilds[selectedAttacker.id];
-  const calculationSupportTemplate = profile.supportTemplates.find(
-    (template) =>
-      template.templateId ===
-      (currentScenario.mode === 'resolved' ? currentScenario.support?.sourceTemplateId : undefined),
-  );
-  const result =
-    portableOutcome.status === 'historicalOnly'
-      ? portableOutcome.result
-      : resolvedCalculation?.result;
   async function updateBuild(servantId: string, patch: Partial<ServantBuild>) {
     const now = new Date().toISOString();
     await updateActiveProfile((current) => patchServantBuild(current, servantId, patch, now));
@@ -353,105 +319,11 @@ export function App() {
       deleteSupportSource(current, templateId, sourceInstanceId, now),
     );
   }
-  async function commitPortableDraft(
-    request: PortableCalculationRequest,
-    nextResult: CalculationResult,
-    sessionId = calculationSessionId,
-  ) {
-    const fingerprint = await portableCalculationFingerprint(request, async (data: Uint8Array) =>
-      crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-    );
-    const now = new Date().toISOString();
-    await updateActiveProfile((current) => ({
-      ...current,
-      draft: {
-        profileId: current.profileId,
-        calculationSessionId: sessionId,
-        request,
-        result: nextResult,
-        requestFingerprint: fingerprint,
-        updatedAt: now,
-      },
-      updatedAt: now,
-    }));
-    setCalculation({ request, storedResult: nextResult, source: 'draft' });
-  }
-  async function savePortableDraft(
-    request: PortableCalculationRequest,
-    sessionId = calculationSessionId,
-  ) {
-    const outcome = executePortableCalculation(request, currentMaster);
-    const nextResult =
-      outcome.status === 'executed' || outcome.status === 'unsupported'
-        ? outcome.execution.result
-        : undefined;
-    if (!nextResult) {
-      return outcome;
-    }
-    await commitPortableDraft(request, nextResult, sessionId);
-    return outcome;
-  }
-  async function saveScenarioDraft(scenario: CalculationScenario) {
-    await savePortableDraft(replacePortableCalculationScenario(currentRequest, scenario));
-  }
-  async function resetPortableDraft() {
-    const retainedResult = calculation.storedResult ?? result;
-    if (!retainedResult) return;
-    const attempt = attemptPortableCalculationReset(
-      currentRequest,
-      retainedResult,
-      currentMaster,
-      profile.servantBuilds,
-    );
-    if (attempt.status !== 'committed') return;
-    await commitPortableDraft(attempt.request, attempt.result);
-  }
-  async function copyHistoryToDraft(entry: CurrentCalculationHistoryEntry) {
-    const sessionId = crypto.randomUUID();
-    setCalculationSessionId(sessionId);
-    setCalculation({ request: entry.request, storedResult: entry.result, source: 'history' });
-    const now = new Date().toISOString();
-    await updateActiveProfile((current) => ({
-      ...current,
-      draft: {
-        profileId: current.profileId,
-        calculationSessionId: sessionId,
-        request: entry.request,
-        result: entry.result,
-        requestFingerprint: entry.requestFingerprint,
-        updatedAt: now,
-      },
-      updatedAt: now,
-    }));
-  }
-  async function finalizeCurrentCalculation() {
-    if (!result) return;
-    const fingerprint = await portableCalculationFingerprint(
-      currentRequest,
-      async (data: Uint8Array) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-    );
-    const now = new Date().toISOString();
-    const historyId = crypto.randomUUID();
-    await updateActiveProfile((current) =>
-      finalizeHistory(current, {
-        sessionId: calculationSessionId,
-        request: currentRequest,
-        result,
-        fingerprint,
-        now,
-        historyId,
-      }),
-    );
-  }
   async function navigate(nextPage: Page) {
-    if (page === 'calculate' && nextPage !== 'calculate') await finalizeCurrentCalculation();
+    if (page === 'calculate' && nextPage !== 'calculate') await calculationFinalizer.current?.();
     if (page !== 'calculate' && nextPage === 'calculate')
       setCalculationSessionId(crypto.randomUUID());
-    const url = new URL(location.href);
-    if (nextPage === 'home') url.searchParams.delete('page');
-    else url.searchParams.set('page', nextPage);
-    history.replaceState(history.state, '', url);
-    setPage(nextPage);
+    router.push(pagePaths[nextPage]);
   }
   return (
     <div className="shell">
@@ -496,237 +368,68 @@ export function App() {
         <header>
           <h1>{nav.find(([id]) => id === page)?.[1]}</h1>
         </header>
-        {page === 'home' && (
-          <Home
-            result={
-              result?.status === 'calculated'
-                ? (result.rows[
-                    (input?.npLevel ??
-                      (currentScenario.mode === 'resolved'
-                        ? currentScenario.attacker.npLevel
-                        : 1)) - 1
-                  ]?.average ?? 0)
-                : 0
-            }
-            attackerName={selectedAttacker.name}
-            attackerImage={selectedAttacker.imageKey}
-            owned={selectedBuild?.npLevel ? 1 : 0}
-            hasHistory={profile.history.length > 0}
-            onNavigate={(next) => void navigate(next)}
-          />
-        )}{' '}
-        {page === 'calculate' &&
-          resolvedCalculation?.status === 'rejected' &&
-          currentScenario.mode === 'resolved' && (
-            <RejectedCalculator
-              result={resolvedCalculation.result}
-              scenario={currentScenario}
-              effectInputs={resolvedCalculation.effectInputs}
-              onScenarioChange={saveScenarioDraft}
-            />
-          )}
-        {page === 'calculate' && portableOutcome.status === 'historicalOnly' && (
-          <CalculationContextNotice
-            state="historicalOnly"
-            request={currentRequest}
-            result={portableOutcome.result}
-            {...(calculation.upgradeAttempt ? { upgradeAttempt: calculation.upgradeAttempt } : {})}
-            onUpgrade={async () => {
-              const attempt = attemptPortableCalculationVersionUpgrade(
-                currentRequest,
-                portableOutcome.result,
-                currentCalculationVersionContext(currentMaster),
-                currentMaster,
-              );
-              if (attempt.status === 'committed') {
-                await commitPortableDraft(attempt.request, attempt.result);
-                setRecoveryFocus('result');
-                return;
-              }
-              setCalculation((current) => ({ ...current, upgradeAttempt: attempt }));
-              setRecoveryFocus('error');
-            }}
-          />
-        )}
-        {page === 'calculate' && portableOutcome.status === 'invalid' && (
-          <CalculationContextNotice
-            state="invalid"
-            request={currentRequest}
-            reason={portableOutcome.reason}
-            onReset={async () => {
-              await resetPortableDraft();
-            }}
-          />
-        )}
-        {page === 'calculate' &&
-          portableOutcome.status === 'unsupported' &&
-          resolvedCalculation?.status === 'rejected' && (
-            <CalculationContextNotice
-              state="unsupported"
-              request={currentRequest}
-              onReset={async () => {
-                await resetPortableDraft();
-              }}
-            />
-          )}
-        {page === 'calculate' &&
-          (portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported') &&
-          resolvedCalculation?.status === 'executable' &&
-          result && (
-            <Calculator
+        <Suspense fallback={<p aria-live="polite">画面を読み込んでいます…</p>}>
+          {(page === 'home' || page === 'calculate' || page === 'ranking') && (
+            <CalculationRoutes
+              page={page}
               master={currentMaster}
-              resolvedInput={resolvedCalculation.input}
-              scenarioInput={resolvedCalculation.scenarioInput}
-              resolvedEffects={resolvedCalculation.effects}
-              effectControls={resolvedCalculation.effectControls}
-              effectWarnings={resolvedCalculation.effectWarnings}
-              effectInputs={resolvedCalculation.effectInputs}
-              activationRequirements={resolvedCalculation.activationRequirements}
-              result={result}
-              request={currentRequest}
-              scenario={currentScenario}
-              servants={currentMaster.servants}
-              builds={profile.servantBuilds}
-              craftEssenceCopies={profile.craftEssences}
-              craftEssences={currentMaster.craftEssences}
-              supportTemplates={profile.supportTemplates}
-              history={profile.history}
-              selectedSupport={calculationSupportTemplate}
-              onScenarioChange={saveScenarioDraft}
-              onSupportSelect={async (template) => {
-                if (currentScenario.mode !== 'resolved') return;
-                const currentSupportDecisionKeys = supportDecisionKeys(resolvedCalculation.effects);
-                const retainedDecisions = currentScenario.effectDecisions.filter(
-                  (decision) => !currentSupportDecisionKeys.has(decision.decisionKey),
-                );
-                const retainedWorldFacts = currentScenario.worldFactAssertions.filter(
-                  (assertion) => !currentSupportDecisionKeys.has(assertion.decisionKey),
-                );
-                if (!template) {
-                  await saveScenarioDraft({
-                    ...currentScenario,
-                    support: null,
-                    effectDecisions: retainedDecisions,
-                    worldFactAssertions: retainedWorldFacts,
-                  });
-                  return;
-                }
-                const lastUsedAt = new Date().toISOString();
-                await updateSupportTemplate(template.templateId, { lastUsedAt });
-                const candidate = {
-                  ...currentScenario,
-                  support: {
-                    sourceTemplateId: template.templateId,
-                    composition: structuredClone(template.composition),
-                  },
-                  effectDecisions: retainedDecisions,
-                  worldFactAssertions: retainedWorldFacts,
-                };
-                const candidateEffects = resolveScenario(candidate, currentMaster).effects;
-                await saveScenarioDraft(
-                  applyEffectProjectionDecisions(
-                    candidate,
-                    excludedSupportEffects(template, candidateEffects),
-                    false,
-                  ),
-                );
+              profile={profile}
+              calculation={calculation}
+              setCalculation={setCalculation}
+              calculationSessionId={calculationSessionId}
+              setCalculationSessionId={setCalculationSessionId}
+              updateActiveProfile={updateActiveProfile}
+              updateSupportTemplate={updateSupportTemplate}
+              navigate={navigate}
+              replaceRoute={(nextPage) => router.push(pagePaths[nextPage])}
+              registerFinalizer={(finalizer) => {
+                calculationFinalizer.current = finalizer;
               }}
-              onSupportSave={async (mode) => {
-                if (currentScenario.mode !== 'resolved' || !currentScenario.support) return;
-                if (mode === 'source' && currentScenario.support.sourceTemplateId) {
-                  await updateSupportTemplate(currentScenario.support.sourceTemplateId, {
-                    composition: structuredClone(currentScenario.support.composition),
-                  });
-                  return;
-                }
-                const templateId = crypto.randomUUID();
-                const now = new Date().toISOString();
-                await updateActiveProfile((current) =>
-                  patchSupportTemplate(
-                    appendSupportTemplate(current, currentMaster.version, templateId, now),
-                    templateId,
-                    { composition: structuredClone(currentScenario.support!.composition) },
-                    now,
-                  ),
-                );
-                await saveScenarioDraft({
-                  ...currentScenario,
-                  support: { ...currentScenario.support, sourceTemplateId: templateId },
-                });
-              }}
-              onFinalize={finalizeCurrentCalculation}
-              onHistorySelect={copyHistoryToDraft}
-              onResetPortableRequest={async () => {
-                await resetPortableDraft();
-              }}
+              recoveryFocus={recoveryFocus}
+              setRecoveryFocus={setRecoveryFocus}
             />
           )}{' '}
-        {page === 'servants' && (
-          <Servants
-            servants={currentMaster.servants}
-            builds={profile.servantBuilds}
-            targets={profile.servantTargets}
-            onChange={updateBuild}
-            onTargetChange={updateTarget}
-          />
-        )}{' '}
-        {page === 'ce' && (
-          <CraftEssences
-            copies={profile.craftEssences}
-            masters={currentMaster.craftEssences}
-            onAdd={addCraftEssence}
-            onRemove={removeCraftEssence}
-            onUpdate={updateCraftEssence}
-          />
-        )}{' '}
-        {page === 'support' && (
-          <SupportTemplates
-            templates={profile.supportTemplates}
-            servants={currentMaster.servants}
-            builds={profile.servantBuilds}
-            onAdd={addSupportTemplate}
-            onAddSource={addSupportSource}
-            onUpdateTemplate={updateSupportTemplate}
-            onRemoveTemplate={removeSupportTemplate}
-            onRemoveSource={removeSupportSource}
-            onUpdateSkill={updateSupportSkill}
-            onToggleEffect={updateSupportEffect}
-          />
-        )}{' '}
-        {page === 'ranking' && (
-          <Ranking
-            master={currentMaster}
-            profile={{
-              servantBuilds: profile.servantBuilds,
-              craftEssences: profile.craftEssences,
-              supportTemplates: profile.supportTemplates,
-            }}
-            versions={versions}
-            onOpenCalculator={(detail) => {
-              const sessionId = crypto.randomUUID();
-              setCalculationSessionId(sessionId);
-              void savePortableDraft(
-                createRankingPortableRequest(
-                  detail,
-                  currentCalculationVersionContext(currentMaster),
-                ),
-                sessionId,
-              );
-              const url = new URL(location.href);
-              url.searchParams.set('page', 'calculate');
-              history.replaceState(history.state, '', url);
-              setPage('calculate');
-            }}
-          />
-        )}{' '}
-        {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
-        {page === 'data' && (
-          <DataPage
-            profiles={profiles}
-            masterVersion={currentMaster.version}
-            onImport={replaceProfiles}
-          />
-        )}{' '}
+          {page === 'servants' && (
+            <Servants
+              servants={currentMaster.servants}
+              builds={profile.servantBuilds}
+              targets={profile.servantTargets}
+              onChange={updateBuild}
+              onTargetChange={updateTarget}
+            />
+          )}{' '}
+          {page === 'ce' && (
+            <CraftEssences
+              copies={profile.craftEssences}
+              masters={currentMaster.craftEssences}
+              onAdd={addCraftEssence}
+              onRemove={removeCraftEssence}
+              onUpdate={updateCraftEssence}
+            />
+          )}{' '}
+          {page === 'support' && (
+            <SupportTemplates
+              templates={profile.supportTemplates}
+              servants={currentMaster.servants}
+              builds={profile.servantBuilds}
+              onAdd={addSupportTemplate}
+              onAddSource={addSupportSource}
+              onUpdateTemplate={updateSupportTemplate}
+              onRemoveTemplate={removeSupportTemplate}
+              onRemoveSource={removeSupportSource}
+              onUpdateSkill={updateSupportSkill}
+              onToggleEffect={updateSupportEffect}
+            />
+          )}{' '}
+          {page === 'growth' && <Growth master={currentMaster} profile={profile} />}{' '}
+          {page === 'data' && (
+            <DataPage
+              profiles={profiles}
+              masterVersion={currentMaster.version}
+              onImport={replaceProfiles}
+            />
+          )}{' '}
+        </Suspense>
       </main>
       <BottomNav page={page} setPage={(next) => void navigate(next)} />
     </div>

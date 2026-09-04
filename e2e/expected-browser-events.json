@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
   "expiresAt": "2026-12-01T00:00:00.000Z",
-  "reactLocationPath": "/node_modules/.vite/deps/react-dom_client.js",
   "pageLoads": [
     {
       "testId": "a11y.spec.ts > [E2E-001] startup screen @desktop @a11y",
@@ -51,7 +50,7 @@
       "testId": "ranking-baseline.spec.ts > [E2E-050] real ranking module worker and detail @desktop @journey",
       "pages": [
         { "path": "/", "count": 1 },
-        { "path": "/?page=calculate", "count": 3 }
+        { "path": "/calculator", "count": 3 }
       ]
     },
     {
@@ -86,7 +85,7 @@
       "testId": "smoke.spec.ts > [E2E-027] calculator draft autosave restore @desktop @journey",
       "pages": [
         { "path": "/", "count": 1 },
-        { "path": "/?page=calculate", "count": 1 }
+        { "path": "/calculator", "count": 1 }
       ]
     },
     {
@@ -97,22 +96,22 @@
       "testId": "smoke.spec.ts > [E2E-046] successful version recovery commits and focuses @desktop @journey",
       "pages": [
         { "path": "/", "count": 1 },
-        { "path": "/?page=calculate", "count": 1 }
+        { "path": "/calculator", "count": 1 }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-047] unsupported version recovery retains and focuses @desktop @journey",
       "pages": [
         { "path": "/", "count": 1 },
-        { "path": "/?page=calculate", "count": 1 }
+        { "path": "/calculator", "count": 1 }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-048] profile repository round-trip @desktop @journey",
       "pages": [
         { "path": "/", "count": 1 },
-        { "path": "/?page=ce", "count": 1 },
-        { "path": "/?page=support", "count": 1 }
+        { "path": "/craft-essences", "count": 1 },
+        { "path": "/supports", "count": 1 }
       ]
     },
     {
@@ -198,36 +197,14 @@
       ]
     }
   ],
-  "serverFailures": [
-    {
-      "testId": "smoke.spec.ts > [E2E-023] offline reopen through service worker @desktop @journey",
-      "path": "/",
-      "pageId": "page-1",
-      "connecting": 3,
-      "connected": 2,
-      "webSocketOpen": 4,
-      "webSocketClose": 2,
-      "webSocketFailures": [
-        {
-          "message": "Error in connection establishment: net::ERR_INTERNET_DISCONNECTED",
-          "count": 2
-        }
-      ],
-      "consoleFailures": [
-        {
-          "kind": "vite_connection_failure",
-          "count": 1
-        }
-      ]
-    }
-  ],
+  "serverFailures": [],
   "localResourceFailures": [
     {
       "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
       "path": "/master/manifest.json",
       "resourceType": "fetch",
       "failureText": "net::ERR_FAILED",
-      "count": 2
+      "count": 1
     }
   ]
 }

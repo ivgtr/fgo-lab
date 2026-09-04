@@ -38,7 +38,7 @@ export const servantClassLabels = new Map(
   ),
 );
 
-const filterIconBase = `${import.meta.env.BASE_URL}filter-icons`;
+const filterIconBase = '/filter-icons';
 
 export function servantClassIconUrl(option: ServantClassOption): string {
   return `${filterIconBase}/class/${option.icon}.png`;

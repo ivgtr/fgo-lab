@@ -1,10 +1,8 @@
 {
   "baseURL": "http://127.0.0.1:4174",
   "server": {
-    "kind": "vite-dev",
-    "version": "8.2.2",
-    "clientPath": "/@vite/client",
-    "webSocketPath": "/",
+    "kind": "next-production",
+    "version": "16.3.4",
     "hmrUpdates": false,
     "forwardConsole": false
   }

@@ -200,16 +200,19 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     },
   });
   await replaceStoredDraft(page, missingSubjectDraft);
-  await page.goto('/?page=calculate');
-  const rejectedNotice = page.getByRole('alert');
+  await page.goto('/calculator');
+  const rejectedNotice = page.locator('[data-calculation-error-summary]');
   await expect(rejectedNotice).toContainText('計算条件を復元できません', { timeout: 30_000 });
   await rejectedNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
   await expect(rejectedNotice).toContainText('計算条件を復元できません');
   await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('計算条件を復元できません', {
-    timeout: 30_000,
-  });
+  await expect(page.locator('[data-calculation-error-summary]')).toContainText(
+    '計算条件を復元できません',
+    {
+      timeout: 30_000,
+    },
+  );
   await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
 
   await replaceStoredDraft(page, originalDraft);

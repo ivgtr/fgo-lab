@@ -21,6 +21,9 @@ test('[E2E-001] startup screen @desktop @a11y', async ({ newObservedPage }) => {
     await page.goto('/');
     await expect(page.locator('.startup-screen')).toBeVisible();
     await expectNoSeriousViolations(page);
+    const notFound = await page.request.get('/route-that-does-not-exist');
+    expect(notFound.status()).toBe(404);
+    expect(await notFound.text()).toContain('ページが見つかりません');
   } finally {
     await context.close();
   }

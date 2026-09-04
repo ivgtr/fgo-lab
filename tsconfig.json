@@ -8,7 +8,6 @@
     { "path": "packages/battle-execution" },
     { "path": "packages/calculation-application" },
     { "path": "packages/profile-domain" },
-    { "path": "packages/workspace-domain" },
-    { "path": "apps/web" }
+    { "path": "packages/workspace-domain" }
   ]
 }

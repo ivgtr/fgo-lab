@@ -1,3 +1,21 @@
+.section-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.2rem;
+}
+
+.section-heading .eyebrow,
+.section-heading h2 {
+  margin-block: 0;
+}
+
+.section-heading small {
+  color: var(--muted);
+}
+
 [role='tablist'] {
   display: flex;
   border-bottom: 1px solid var(--line);

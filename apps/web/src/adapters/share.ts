@@ -1,7 +1,5 @@
 import type { CalculationShareSnapshot, UserDataBackup } from '@fgo-lab/schema';
 import { parseCalculationShareSnapshot, parseUserDataBackup } from '@fgo-lab/schema';
-import { recoverPortableCalculation } from '@fgo-lab/calculation-application';
-import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 export const MAX_SHARE_FRAGMENT_LENGTH = 16_384;
 export const RESULT_CARD_EXPORT_WIDTH = 560;
 function encode(value: unknown): string {
@@ -28,14 +26,6 @@ export function readShareFragment(fragment: string): CalculationShareSnapshot | 
   if (fragment.length > MAX_SHARE_FRAGMENT_LENGTH + 1) throw new RangeError('share_too_large');
   const value = new URLSearchParams(fragment.replace(/^#/, '')).get('share');
   return value ? parseCalculationShareSnapshot(decode(value)) : null;
-}
-export function validateCalculationShareSnapshot(
-  snapshot: CalculationShareSnapshot,
-  master: MasterDataSnapshot,
-): CalculationShareSnapshot {
-  const recovery = recoverPortableCalculation(snapshot.request, snapshot.result, master);
-  if (recovery.status === 'invalid') throw new TypeError(`share_${recovery.reason}`);
-  return snapshot;
 }
 export function exportBackup(backup: UserDataBackup): string {
   return JSON.stringify(backup, null, 2);

@@ -4,13 +4,13 @@ ADRは採用時点のarchitecture判断を記録する。statusは`accepted`ま�
 
 | ADR | Status | 判断 |
 | --- | --- | --- |
-| [001](001-workspace.md) | accepted | pnpm workspace、Vite、React、静的配信 |
+| [001](001-workspace.md) | superseded | pnpm workspace、React、Vite静的Web。ADR-029がWeb構成を置換 |
 | [002](002-local-storage.md) | accepted | IndexedDB repositoryとtransactional migration |
 | [003](003-master-delivery.md) | accepted | SHA-256 manifest、staging、atomic active切替 |
 | [004](004-calculation-accuracy.md) | accepted | float32境界とfail-closed計算契約 |
 | [005](005-data-images.md) | accepted | Atlas由来データ・画像と画像単独停止 |
 | [006](006-portable-data.md) | accepted | backupと匿名share snapshotの分離 |
-| [007](007-static-routing.md) | accepted | GitHub Pages base pathとhash routing |
+| [007](007-static-routing.md) | superseded | GitHub Pages base pathとhash routing。ADR-029が置換 |
 | [008](008-refactoring-contract.md) | accepted | 現行要件へ収束させるリファクタリング契約 |
 | [009](009-condition-decision-fact-semantics.md) | accepted | condition、decision、factの意味論分離 |
 | [010](010-effect-occurrence-and-operation-semantics.md) | accepted | effect occurrenceとoperationの原子性 |
@@ -32,3 +32,4 @@ ADRは採用時点のarchitecture判断を記録する。statusは`accepted`ま�
 | [026](026-canonical-selection-semantics.md) | accepted | player choiceとstochastic outcomeのcanonical分離 |
 | [027](027-portable-calculation-request-and-ranking-presentation.md) | superseded | 版付きportable calculation identity、ranking presentation、evidence-free cache。ADR-028が置換 |
 | [028](028-canonical-source-program-and-finite-ranking-domain.md) | accepted | source program、finite ranking domain、portable execution identity |
+| [029](029-next-vercel-routing.md) | accepted | Next.js App Router、browser state境界、Vercel配信 |

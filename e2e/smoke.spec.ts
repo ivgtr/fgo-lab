@@ -7,6 +7,7 @@ async function openCalculator(page: Page) {
     .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
     .first()
     .click();
+  await expect(page).toHaveURL(/\/calculator$/);
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 }
 
@@ -94,6 +95,8 @@ async function storedDraftVersionContext(page: Page) {
 
 test('[E2E-017] setup to calculator package journey @desktop @journey', async ({ page }) => {
   await openCalculator(page);
+  await page.reload();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   const result = page.getByLabel('共有対象の計算結果');
   await expect(result).toContainText('アルトリア・ペンドラゴン');
   await expect(page.getByRole('heading', { name: '宝具ダメージ', exact: true })).toHaveCount(1);
@@ -103,11 +106,17 @@ test('[E2E-017] setup to calculator package journey @desktop @journey', async ({
     'aria-pressed',
     'true',
   );
+  await page.getByRole('button', { name: 'ホーム', exact: true }).first().click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/calculator$/);
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });
 
 test('[E2E-020] mobile servant editor navigation @mobile @journey', async ({ page }) => {
   await openTestHome(page);
   await page.getByRole('button', { name: '所持', exact: true }).click();
+  await expect(page).toHaveURL(/\/servants$/);
   const list = page.getByRole('list', { name: 'サーヴァント一覧' });
   await expect(list).toBeVisible();
   await list.getByRole('listitem').first().click();
@@ -270,7 +279,7 @@ test('[E2E-025] incompatible master recovery preserves user data @desktop @journ
     await expect(page.getByRole('button', { name: 'セットアップを開始' })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByRole('alert')).toContainText(
+    await expect(page.locator('.startup-screen__notice')).toContainText(
       '互換性のない旧マスターデータを削除しました。再セットアップが必要です',
     );
     const discarded = await page.evaluate(
@@ -362,7 +371,7 @@ test('[E2E-047] unsupported version recovery retains and focuses @desktop @journ
   await page.reload();
   const retry = page.getByRole('button', { name: '現在のバージョンで再計算' });
   await retry.click();
-  const error = page.getByRole('alert');
+  const error = page.locator('[data-calculation-error-summary]');
   await expect(error).toContainText('元の履歴値を保持しています');
   await expect(error).toBeFocused();
   expect(await storedDraftVersionContext(page)).toEqual({

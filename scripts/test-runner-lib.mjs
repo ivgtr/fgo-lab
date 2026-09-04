@@ -60,16 +60,6 @@ function packageVersions(root) {
   };
 }
 
-function viteBinaryVersion(root) {
-  try {
-    const appRequire = createRequire(resolve(root, 'apps/web/package.json'));
-    const vitePackage = readJson(appRequire.resolve('vite/package.json'));
-    return vitePackage.bin?.vite === 'bin/vite.js' ? vitePackage.version : null;
-  } catch {
-    return null;
-  }
-}
-
 function parseReport(reportPath) {
   try {
     return { report: JSON.parse(readFileSync(reportPath, 'utf8')), error: null };
@@ -631,11 +621,12 @@ export async function runCapturedTest(options) {
   const browserContractErrors = [];
   if (resultKind === 'playwright') {
     try {
+      const appRequire = createRequire(resolve(root, 'apps/web/package.json'));
+      const nextVersion = readJson(appRequire.resolve('next/package.json')).version;
       browserContract = {
         runtime: readJson(resolve(root, 'scripts/e2e-runtime-contract.json')),
         declaration: readJson(resolve(root, 'e2e/expected-browser-events.json')),
-        installedViteVersion: readJson(resolve(root, 'node_modules/vite/package.json')).version,
-        binaryViteVersion: viteBinaryVersion(root),
+        installedServerVersion: nextVersion,
       };
     } catch (cause) {
       browserContractErrors.push(cause instanceof Error ? cause.message : String(cause));
