@@ -1,10 +1,10 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.9.6"
+document_version: "0.10.0"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-02"
-updated_at: "2026-09-04"
+approved_at: "2026-09-05"
+updated_at: "2026-09-05"
 created_at: "2026-08-30"
 related_adrs:
   - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
@@ -90,15 +90,21 @@ type RankingProfileResult =
 
 ## 4. 利用者向け条件
 
-ランキング上部の計算条件は次の5項目に限定する。
+ランキング上部の計算条件は次の6項目に限定する。
 
-1. 比較対象: `標準比較 | 所持戦力`
-2. 宝具Lv: `NP1 | NP2 | NP3 | NP4 | NP5`
-3. クラス相性: `等倍 | 相性有利`
-4. 自己バフ: `なし | あり`
-5. 条件効果: `通常のみ | 成立込み`
+1. 対象: `全サーヴァント | 保有サーヴァント`
+2. レベル: `自然上限 | Lv.90統一 | 保有レベル`
+3. 宝具Lv: `NP1 | NP2 | NP3 | NP4 | NP5 | 保有宝具レベル`
+4. クラス相性: `等倍 | 相性有利`
+5. 自己バフ: `なし | あり`
+6. 条件効果: `通常のみ | 成立込み`
 
-最低／平均／最大の表示metric、class／rarity／card／scope／所持状態等の一覧filterは表示stateであり、上記5項目の
+対象、レベル基準、宝具レベル基準は直交するcanonical stateとする。`保有サーヴァント`は比較母集団だけを
+絞り込み、レベル、宝具レベル、Fou、skill Lvを暗黙に一括変更しない。`保有レベル`と
+`保有宝具レベル`は対象が`保有サーヴァント`の場合だけ選択できる。対象が`全サーヴァント`の状態でこれらを
+保持するURL、worker request、portable requestは不正であり、自然上限やNP1へfallbackしない。
+
+最低／平均／最大の表示metric、class／rarity／card／scope／所持状態等の一覧filterは表示stateであり、上記6項目の
 計算条件へ含めない。表示stateの変更だけではscenarioを再計算しない。
 
 旧`特攻なし | 成立`と`フィールドなし | 成立`は`条件効果`へ破壊的に統合する。旧入力を非表示state、URL fallback、
@@ -106,7 +112,8 @@ type RankingProfileResult =
 
 ### 4.1 既定値
 
-- 比較対象: 標準比較
+- 対象: 全サーヴァント
+- レベル: 自然上限
 - 宝具Lv: NP1
 - クラス相性: 等倍
 - 自己バフ: あり
@@ -114,18 +121,24 @@ type RankingProfileResult =
 
 ### 4.2 共通の固定条件
 
-二軸へ統合しても、全entryの比較母集団を揃える条件は変更しない。
+二軸へ統合しても、全entryの比較条件は次へ統一する。
 
-- 標準比較: 自然上限Lv、Fou ATK+1,000、skill Lv10
-- 所持戦力: 保存済みLv、宝具Lv、Fou、skill Lv。欠落値を標準値で補完しない
+- `自然上限`: 各サーヴァントのcanonicalな自然上限Lvを使用する
+- `Lv.90統一`: 全entryをLv.90のcanonical ATKへ揃える
+- `保有レベル`: 保存済みの当該サーヴァントLvだけを使用し、欠落値を自然上限やLv.90で補完しない
+- `NP1`〜`NP5`: 全entryへ指定値を使用する
+- `保有宝具レベル`: 保存済みの当該サーヴァント宝具Lvを使用する。NP0は数値ランキングへ含めず、欠落値をNP1で補完しない
+- Fou ATK+1,000、skill Lv10。保有サーヴァントでも保存済みFou／skill Lvへ暗黙に切り替えない
 - OC1、属性等倍、HP100%、スター0、初期turn、Battle Point 0
 - 礼装、魔術礼装、支援なし
 - 外部field、外部target state、追加target traitなし
-- 人数、stack等の定量入力はcanonical baseline値
+- `通常のみ`の人数、stack等の定量入力はcanonical baseline値。`成立込み`の宣言済みmaximumは5.2に従う
 - 準備actionから攻撃宝具までは同一turn
 - turn経過、effect期限切れ、skill再使用なし
 
 固定条件は一つの`RankingComparisonPolicy`が所有し、Web、worker、testへ複製しない。
+将来、保存済みFou／skill Lv等を含む完全な保有育成状態を比較する場合は、レベル／宝具レベル基準へ混ぜず、
+別のtyped build basisとして要件を追加する。
 
 ## 5. 二軸の意味
 
@@ -178,6 +191,13 @@ ordered action、form transition、evidence自体は削除しない。stochastic
 
 `成立込み`では、同時成立可能なcanonical候補を有限生成し、合法な最大結果を使用する。conditionを無条件にtrueへ
 書き換えたり、effectを個別にONへしたりしない。
+
+stack可能なdamage増幅条件についてdata pipelineがcanonical最大回数を宣言している場合、`成立込み`はその最大回数を
+quantity witnessとして使用する。application／Webがservant ID、名称、effect labelから上限を補正してはならない。
+これはskill再使用やturn経過を一般シミュレーションする契約ではなく、準備phase開始時の明示的なstack count assumptionで
+あり、detail evidenceへ回数と由来を表示する。最大回数が欠落、矛盾、support上限外の場合はbaseline countへfallbackせず
+`invalid`または`unsupported`とする。排他条件や他のquantityとの整合は同じglobal constraint validationを通し、
+共存不能な最大値を合算しない。
 
 自己バフ`あり・成立込み`は、通常候補を包含した上で、追加condition witnessにより実効寄与を持つactionも候補化する。
 両modeとも表現済みcostは無視せずordered transactionで適用し、具体的な初期stateからattack NPへ到達できないcandidateは
@@ -552,6 +572,8 @@ level`について、admission後の全ordered programごとにlive dimension ca
 
 - active slotは各1回までだが順序を区別し、choice candidateはbranch全体として数える。
 - target、field、quantity、canonical input、stochastic outcomeはdamage-reachableなlive requirementだけをdimensionにする。
+- canonicalなstack可能damage増幅条件はbaseline countと宣言済みmaximum countを区別し、成立込みではmaximum countを
+  候補へ含める。一般のquantity conditionを一律に最大値へ書き換えない。
 - actionが生成するstate／fieldはworld witnessとして捏造せず、ordered mutationでだけ到達する。
 - class、attribute、family、trait、state、field、choiceのcompatible／exclusive literalを一つのconstraint setで検証する。
 - `unknownTruth`はcandidateのtrue／falseへ展開せず、明示input不足なら`inputRequired`、解釈不能なら`unsupported`とする。
@@ -616,6 +638,9 @@ profile aggregatorはtyped dispositionを消費するが、新たな到達可能
 ### 11.1 一覧
 
 - 閉じた行へ個別condition、開始NP、field、target入力を追加しない。
+- 対象、レベル基準、宝具レベル基準を独立controlとして表示し、保有限定値は対象が保有サーヴァントのときだけ有効にする。
+- `参考サイト基準`、`現在戦力`のように反映範囲を過大に示す名称は使わず、`自然上限`、`Lv.90統一`、
+  `保有レベル`、`保有宝具レベル`と表示する。
 - 現在の二軸は見出しに`自己バフあり・条件効果成立`のように表示する。
 - 特攻badge等は実際にdamageへ寄与したeffectだけから導出する。
 - policy除外、条件不成立、確率失敗、未対応を同じ「計算外」へ潰さない。
@@ -645,6 +670,10 @@ profile aggregatorはtyped dispositionを消費するが、新たな到達可能
 
 条件がなければ領域を省略する。AttackProfile、initial／terminal form、NP variant、ordered action、effect適用理由を
 同じcanonical evidenceから表示する。
+
+寄与判定はraw `contributionId`や内部enumを利用者へ表示しない。canonical presentation groupごとにまとめ、各寄与の
+自己バフ、条件効果、エリア表示、最終適用結果を独立した人間向けlabelで示す。複数の内部contributionへ分割された
+一つのlogical effectを重複計数せず、policy除外済み寄与も理由付きでdetailへ保持する。
 
 ### 11.3 UI品質
 
@@ -685,7 +714,7 @@ cacheはkeyだけでなくvalue、lifetime、owner、maximum cardinalityを次�
 
 | Cache/state | Owner | Key | Value | Lifetime / maximum |
 | --- | --- | --- | --- | --- |
-| ranking summary | worker | context identity + canonical 5-field fingerprint | rows + typed exclusionsだけ | worker context内の直近成功1件。context変更で破棄 |
+| ranking summary | worker | context identity + canonical 6-field fingerprint | rows + typed exclusionsだけ | worker context内の直近成功1件。context変更で破棄 |
 | detail evidence | worker | N/A | cacheしない。requestごとに選択entryだけmaterializeして返す | 0件 |
 | active detail | React | request ID + fingerprint + entry ID | 現在開いている1件のdetailまたはtyped error | close、condition変更、context変更で破棄。最大1件 |
 | in-flight detail | React | request ID + fingerprint + entry ID | request identityだけ | 置換／close／condition変更／context変更で無効化。最大1件 |
@@ -732,7 +761,7 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 ### Web／worker
 
-- Webは5項目をdispatchし、presentation modelを描画するだけ
+- Webは6項目をdispatchし、presentation modelを描画するだけ
 - workerはrequest ordering、stale response破棄、cacheを所有
 - summary cacheはevidence-freeな直近1件、detail evidenceはworker 0件／React最大1件
 - raw condition、effect label、servant IDから意味論を再構築しない
@@ -750,9 +779,12 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 6. ActionAdmissionPlan、condition planner、per-contribution decision、nested execution resultへ一括移行する。
 7. portable schema、fingerprint、全direct reader／writer、persistence、resetをdiscriminated intentへ一括移行する。
 8. URL、worker protocol、cache key、test matrixを新contractへ置換する。
-9. rankingによるeffect decision、condition fact、resource stateの再構築を削除する。
-10. 旧URL reader、旧portable reader、operation-ID projection、compatibility flag、旧fixture、旧policy fallbackを削除する。
-11. artifact、master schema、scenario schema、engine versionを実際の契約変更に合わせて一度だけ更新する。
+9. 旧`comparisonMode`を母集団、レベル基準、宝具レベル基準へ破壊的に分離し、6入力のURL、worker、fingerprint、
+   portable identityへ一括移行する。
+10. stack可能damage増幅条件のbaseline／maximum countをpipeline IRへ追加し、application witnessとexecutor評価へ接続する。
+11. rankingによるeffect decision、condition fact、resource stateの再構築を削除する。
+12. 旧URL reader、旧portable reader、operation-ID projection、compatibility flag、旧fixture、旧policy fallbackを削除する。
+13. artifact、master schema、scenario schema、engine versionを実際の契約変更に合わせて一度だけ更新する。
 
 新しいpackageは原則追加しない。既存のlayer責務内でfocused moduleへ分割し、orchestrator、worker、React componentへ
 条件分岐を集積しない。
@@ -766,6 +798,8 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 | selection | player choice／stochastic／複合conditionの全occurrence | 未分類・raw形状推測0件 |
 | source program／step operation | action／automatic、resource、HP、state、form、field、damage contribution、bounded-phase-irrelevant、unsupported＋candidate-local structural role | 意味を失った`nonDamage`、二重consequence／mutation owner、未分類operation、profile role 0件 |
 | condition family | target、field、state、HP、quantity、proc、resource | damage-reachable requirementの欠落0件 |
+| stack quantity | stack可能damage増幅条件のbaseline、maximum、source、support範囲 | 上限欠落／矛盾／servant別runtime補正0件 |
+| comparison basis | natural-limit／Lv.90 ATK、owned level／NP、NP0／欠落 | 母集団との不正組合せ、暗黙fallback、保存済みFou／skill混入0件 |
 | contribution scope | personal、partyWide、partyOther、enemyApplied、external | recipientとの矛盾0件 |
 | target candidate | class、attribute、trait、state、family | 矛盾candidate 0件 |
 | NP capacity | NP Lv、form、variantごとの導出元 | ID・名称分岐なしで一意に解決 |
@@ -791,6 +825,9 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 - policy上no-op actionをtyped proofなしに落とさない
 - 排他的player choiceは一branchだけを実行し、最終damageで最大branchを選ぶ
 - stochastic failure／minimumとsatisfied maximum
+- stack可能damage増幅条件のbaseline count／canonical maximum countと、最大回数欠落時のfail-closed
+- 全／保有母集団 × 自然上限／Lv.90統一／保有レベル × 指定／保有宝具Lvの合法組合せと不正組合せ
+- 低レベル保有サーヴァント、自然上限がLv.90のサーヴァント、NP0、保有値欠落
 - self／condition policyの四組合せ
 - intrinsic factをsatisfiedで捏造しない
 - TargetContext内のclass／attribute／trait整合
@@ -803,7 +840,8 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 ### 15.2 Production ratchet
 
-- 全AttackProfile × NP1〜5 × 自己バフ二値 × 条件効果二値
+- 全AttackProfile × 自然上限／Lv.90統一 × NP1〜5 × 自己バフ二値 × 条件効果二値
+- stableな保有fixtureによる保有母集団 × 三レベル基準 × 指定／保有宝具Lvの合法組合せ
 - policy別calculated／unavailable／inputRequired／invalid／unsupported inventory
 - source／step operation別resource／HP／state／form／field／damage contribution／bounded-phase-irrelevant／unsupportedと
   candidate-local admission inventory
@@ -851,7 +889,9 @@ damage差分、性能見積もりを提示してから再開する。
 
 ## 17. 完了条件
 
-- ranking UIが5項目、火力条件が自己バフ／条件効果の二軸へ収束している
+- ranking UIが6項目、火力条件が自己バフ／条件効果の二軸へ収束している
+- 対象、レベル基準、宝具レベル基準が独立し、保有母集団でも自然上限／Lv.90統一と指定NPを選択できる
+- 保有レベル／保有宝具レベルの欠落、NP0、不正な全サーヴァントとの組合せを標準値へfallbackしない
 - 開始NP、field、特攻、対象条件の追加editorが存在しない
 - 旧特攻／field入力、URL、fallbackが0件
 - RankingEntryがAttackProfile単位で、variant／form／scope混成が0件
@@ -866,6 +906,8 @@ damage差分、性能見積もりを提示してから再開する。
 - NP不足、OC不一致、排他矛盾を迂回して数値を返さない
 - 通常のみでconditional contributionの混入が0件
 - 成立込みで成立可能なconditional contributionの欠落が0件
+- 成立込みでcanonical最大回数を持つstack可能damage増幅条件が最大回数で計算される
+- contribution detailがraw identityを露出せず、logical effect単位の表示と寄与ごとの独立判定を両立する
 - intrinsic不一致の捏造、partyOther混入、policyによる理由改変が0件
 - implementation unsupported、partial commit、stale mutationが0件
 - calculator／ranking parity差分が0件
@@ -880,7 +922,7 @@ damage差分、性能見積もりを提示してから再開する。
 | `RK-IR-001` | 3〜8、12 | AttackProfile、condition、choice、resource、action cost、contribution identityをdata pipelineがcanonical typed IRへ収束させる。 |
 | `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
 | `RK-POLICY-001` | 5〜7、10、11 | ranking policyはaction admissionとindependent contribution decisionsを制御し、execution semanticsを再実装しない。 |
-| `RK-UI-001` | 11、12 | Web／workerはcanonical stateと5入力を扱い、旧policy／URL／protocolを併存させない。 |
+| `RK-UI-001` | 4、11、12 | Web／workerはcanonical stateと6入力を扱い、母集団／レベル／宝具Lvを分離し、旧policy／URL／protocolを併存させない。 |
 | `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
 | `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
 | `RK-AUDIT-001` | 14、15 | 全AttackProfile、四policy、NP1〜5、parity、invalid／unsupportedを共有production inventoryで監査する。 |
@@ -900,3 +942,4 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.9.4 | `selfBuffs=excluded × satisfied`のoptional condition-enabler skillをadmitしないと確定。structuralRequired actionのみ保持し、そのmutation後のattack-NP寄与はcondition policyで評価する | approved 2026-09-02: user confirmed the audit recommendation | TSK-06.4、TSK-06.41、TSK-06.5 | runtime変更なし。A4をVerifiedへ閉じ、A1〜A3＋ADR replacementは継続 |
 | 0.9.5 | A1〜A3 closure。全`nonDamage` raw familyをclosed step-operation unionへ分類し、source別slot／effect／choice schemaと`FiniteRankingDomainCertificate`を確定。4,096をtruncate capではなくprepared-context support上限とし、current 512 state capを廃止対象へ変更。ADR-028で019／027を置換 | approved 2026-09-02: user requested remaining audit closure; fixed product outcomeは不変 | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07 | runtime変更なし。current production最大2,880のためcandidate cap／timeout緩和なし。IR、schema、certificate、portableはTSK-06.41でatomic cutover |
 | 0.9.6 | action admissionを「無デメリット」から「policy上の実効寄与」に修正し、表現済みデメリットを含む全transactionの成立可否を具体candidateのordered executionへ委譲。`policyNoOp`／`unreachable`／`unsupported`を分離 | approved 2026-09-04: user confirmed that only non-executable NP／HP-consumption candidates are dropped and every executable adverse action remains eligible | TSK-06.41、TSK-06.5 | ranking候補と順位は意図的に変わり得る。`unsafeBaselineEffect`相当の静的adverse除外を削除し、全cost込みのcandidate soundnessとproduction差分を再固定する |
+| 0.10.0 | 比較対象を母集団へ限定し、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを直交化。成立込みのcanonical最大stack countと寄与判定detailの人間向け表示を追加 | approved 2026-09-05: user confirmed naming, retained natural／uniform choices for owned servants, owned level and NP level reflection, maximum stack examples, and contribution UI cleanup | TSK-06.42〜06.5、TSK-07 | ranking scenario、URL／worker fingerprint、production matrix、detail UIが変わる。保存済みFou／skill Lvは反映せず、servant固有runtime branchは追加しない |

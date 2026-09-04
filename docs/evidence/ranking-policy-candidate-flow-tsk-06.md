@@ -1,12 +1,87 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-04"
+updated_at: "2026-09-05"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-## TSK-06.41 runtime cutover — authoritative current delta
+## Requirement v0.10.0 insertion — authoritative current planning delta
+
+### User-visible outcome and governing invariants
+
+Ranking lets the user select the population, level basis, and NP-level basis independently. The labels are
+`全サーヴァント | 保有サーヴァント`, `自然上限 | Lv.90統一 | 保有レベル`, and
+`NP1〜NP5 | 保有宝具レベル`; `参考サイト基準`, `標準比較`, and `所持戦力` are not current product terms.
+Owned population only filters entries. It does not silently replace the selected level／NP basis or the common
+Fou ATK+1,000／skill Lv10 assumptions. This supports an owned but untrained servant under natural-limit or
+Lv.90 comparison, and separately supports its stored level and stored NP level.
+
+The canonical state is a product of three typed axes rather than one comparison mode:
+
+```ts
+type RankingPopulation = 'all' | 'owned';
+type RankingLevelBasis = 'naturalLimit' | 'uniformLevel90' | 'ownedLevel';
+type RankingNpLevelBasis =
+  | { kind: 'specified'; level: 1 | 2 | 3 | 4 | 5 }
+  | { kind: 'owned' };
+```
+
+`ownedLevel` and owned NP are legal only with owned population. Missing owned values, NP0, or an illegal
+all-population combination never fall back to natural limit／Lv.90／NP1. Stored Fou and skill levels remain out
+of scope; a future complete owned-build comparison requires a separate typed build basis.
+
+For stackable damage-amplifying conditions, satisfied mode uses a pipeline-declared canonical maximum count.
+The planner may materialize that count as an explicit initial quantity assumption but does not simulate general
+turn passage or repeated skill use. The executor evaluates the same typed quantity, constraints, and contribution;
+Web only displays its count and provenance. Missing／contradictory／unsupported maxima fail closed. No runtime
+branch may inspect a servant ID, name, label, or raw trait key. Production representatives are Taira no Kagekiyo's
+four `復讐の怨念` stacks and Wandjina's ten `精霊の怒り` stacks; those names belong only to fixtures／evidence.
+
+Contribution detail groups by canonical logical effect and displays independent self／condition／area decisions
+plus the final applied outcome. Raw `contributionId`, operation IDs, and internal enums are not user-facing text.
+Row count, badge, detail, and damage continue to derive from the same effective contribution set.
+
+The referenced ranking page is a differential oracle only: its natural-limit/Fou+1000/skill-10 baseline and
+maximum-stack examples inform representative comparisons, but it is not a runtime semantic source and its name
+does not appear in UI policy labels:
+<https://kamigame.jp/fgo/%E5%88%9D%E5%BF%83%E8%80%85%E6%94%BB%E7%95%A5/%E5%AE%9D%E5%85%B7%E5%A8%81%E5%8A%9B%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0.html>.
+
+### Changed flow inventory
+
+| Path | Owner／expected transition | Planning status |
+| --- | --- | --- |
+| natural-limit／Lv.90 ATK production | master／data pipeline emits canonical level-addressable stats; no UI interpolation | Deferred: TSK-06.42 |
+| owned population／level／NP read | application validates the three-axis product and constructs one scenario per entry | Deferred: TSK-06.42 |
+| six-input URL／worker／fingerprint | Web dispatches canonical commands; application identity rejects illegal／stale state | Deferred: TSK-06.42 |
+| selected row → calculator replay | existing portable application path carries the resolved level／NP scenario | Deferred: TSK-06.42 |
+| stack maximum production | data pipeline emits typed quantity source, baseline, and supported maximum | Deferred: TSK-06.43 |
+| stack witness／constraint／execution | application materializes a finite assumption; battle execution evaluates it transactionally | Deferred: TSK-06.43 |
+| logical-effect／contribution presentation | application returns canonical presentation state; Web maps exhaustive typed reasons to labels | Deferred: TSK-06.44 |
+| final production maximum | one inventory covers natural／Lv.90 × NP1〜5 × four policies plus stable owned fixtures | Deferred: TSK-06.5 |
+| cache lifetime／notice／recovery interaction | consumes the six-input identity without reimplementing it | Deferred: TSK-07 |
+
+Design decisions are approved and the implementation sequence is TSK-06.42 → TSK-06.43 → TSK-06.44 →
+TSK-06.5. Planning Blocking is 0; runtime paths remain explicitly Deferred until their owning task verifies them.
+
+### State-by-path counterexamples
+
+| State | Scenario construction | Execution／selection | Presentation／recovery | Status |
+| --- | --- | --- | --- | --- |
+| all＋natural limit＋specified NP | canonical natural level per entry | same NP level for every entry | six-input identity | Deferred: TSK-06.42 |
+| all＋Lv.90＋specified NP | canonical Lv.90 ATK per entry | same NP level for every entry | distinct from natural-limit cache key | Deferred: TSK-06.42 |
+| owned＋natural limit＋owned NP | filter owned; ignore stored level | use stored NP only | communicates reflected fields exactly | Deferred: TSK-06.42 |
+| owned＋Lv.90＋specified NP | filter owned; ignore stored level／NP | normalized specified scenario | no implicit owned-build switch | Deferred: TSK-06.42 |
+| owned＋owned level＋owned NP | require both stored values | use only those two owned dimensions; Fou／skills remain common | label does not claim complete current strength | Deferred: TSK-06.42 |
+| all＋owned level or owned NP | illegal product | no numeric candidate | reject／normalize by explicit user command only | Deferred: TSK-06.42 |
+| owned NP0／missing level／missing NP | incomplete or non-ranking build | no NP1／natural fallback | typed exclusion or invalid state | Deferred: TSK-06.42 |
+| satisfied stack maximum | explicit declared maximum assumption | validate constraints, then evaluate canonical contribution | display count and assumption source | Deferred: TSK-06.43 |
+| baseline stack condition | canonical baseline count | do not borrow satisfied maximum | no false applied decision | Deferred: TSK-06.43 |
+| missing／contradictory stack maximum | no guessed witness | invalid／unsupported; no numeric fallback | distinguish semantic failure | Deferred: TSK-06.43 |
+| one logical effect split across contributions | preserve group plus exact contribution identities | independent decisions and final outcomes | count once; show each decision without raw IDs | Deferred: TSK-06.44 |
+| policy-excluded contribution with retained mutation | execute retained canonical action／state | exclude only the contribution | keep reason and evidence in detail | Deferred: TSK-06.44 |
+
+## TSK-06.41 runtime cutover — previous authoritative delta
 
 ### Product correction closure — IRL-003／005／006
 

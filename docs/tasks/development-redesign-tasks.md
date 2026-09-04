@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.42"
+document_version: "1.6.0"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-04"
+updated_at: "2026-09-05"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -57,14 +57,17 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.5 | Ranking theoretical maximum and production closure | ready | TSK-06.41 | final candidate／maximum／legacy-removal proof |
+| TSK-06.42 | Ranking population, level, and NP-level basis cutover | ready | TSK-06.41 | comparison scenario／owned data／URL・worker identity |
+| TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
+| TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.43 | logical effect presentation／per-contribution decisions |
+| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -1232,13 +1235,126 @@ Completion:
   by 2.88× damage requests from the required semantic population. Final four-policy production maximum remains
   Deferred to TSK-06.5. Final `pnpm quality` passed with 406 unit／116 production／25 Playwright tests and
   skip／todo／retry／warning／unexpected-console 0; artifact
-  `.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. TSK-06.41 is `done`; TSK-06.5 is `ready`.
+  `.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. At this historical boundary TSK-06.41 was `done` and
+  TSK-06.5 was `ready`; requirement v0.10.0 now inserts TSK-06.42〜06.44 and makes TSK-06.42 the current `ready` task.
 
-### TSK-06.5: Ranking theoretical maximum and production closure
+### TSK-06.42: Ranking population, level, and NP-level basis cutover
 
 Depends on: TSK-06.41
 
-- [ ] requirement v0.9.6で再cutoverしたcanonical contribution／action admission／outcome／portable runtimeを変更せず、
+- [ ] 旧`comparisonMode: standard | owned`を削除し、母集団`all | owned`、レベル基準
+      `naturalLimit | uniformLevel90 | ownedLevel`、宝具レベル基準`specified(NP1〜5) | owned`を
+      application所有の直交するcanonical stateへ破壊的に切り替える。
+- [ ] `owned`母集団はentryを絞り込むだけとし、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを
+      独立に選択可能にする。Fou ATK+1,000、skill Lv10、OC1等の共通条件は保存済みbuildへ暗黙に切り替えない。
+- [ ] `ownedLevel`／owned NPはowned母集団だけで有効とし、保有値欠落、NP0、all母集団との不正組合せを
+      naturalLimit、Lv.90、NP1へfallbackしない。NP0は数値ランキングから除外し、typed outcome／reasonを保持する。
+- [ ] UI名称を`全サーヴァント | 保有サーヴァント`、`自然上限 | Lv.90統一 | 保有レベル`、
+      `NP1〜NP5 | 保有宝具レベル`へ統一し、`参考サイト基準`、`標準比較`、`所持戦力`をcurrent contractへ残さない。
+- [ ] scenario constructor、URL、worker request／response、fingerprint、summary／detail identity、portable handoffの
+      direct reader／writerを同じ6入力へ切り替え、stale responseと旧schemaをfail-closedにする。
+- [ ] 低rarityの自然上限／Lv.90／低い保有Lv、自然上限がLv.90のprofile、指定NP／保有NP、NP0／欠落、
+      row／detail／calculator replay parityをstate-by-path fixtureへ固定する。
+
+Done gate:
+
+- 母集団、レベル基準、宝具レベル基準のsemantic ownerがapplicationに一つだけあり、Web／workerがbuild条件を推測しない。
+- owned母集団でも自然上限／Lv.90統一と指定NPが選択でき、保有レベル／保有NPだけを個別に反映できる。
+- 保存済みFou／skill Lvを反映しないことが型、表示、fixtureで一致し、現在戦力という過大な表示をしない。
+- URL／worker／cache／portable fingerprintが6入力を含み、旧`comparisonMode` reader／writer／fallbackが0件である。
+- missing／NP0／illegal combinationが数値fallbackにならず、selected rowとcalculatorが同じscenarioを再実行する。
+- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.42 deltaがBlocking 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-POLICY-001` | Apply | focused comparison scenario constructor／invalid-state tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-UI-001` | Apply | component／URL／worker six-input contract tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-HANDOFF-001` | Apply | selected row／portable calculator replay parity | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
+| `RK-CACHE-001` | Apply | fingerprint／stale summary and detail tests; final lifetime closure remains TSK-07 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `RK-AUDIT-001` | Apply | focused owned fixture＋production natural／Lv.90 inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff: 未記録
+
+### TSK-06.43: Canonical maximum stack quantity
+
+Depends on: TSK-06.42
+
+- [ ] stack可能なdamage増幅条件の回数、baseline、canonical maximum、quantity sourceをdata pipeline所有のtyped IRで
+      表現する。servant ID、名称、effect label、raw trait keyによるapplication／Web分岐を禁止する。
+- [ ] `条件効果: 通常のみ`はcanonical baseline countを使用し、`成立込み`は宣言済みmaximum countを有限quantity
+      witnessへ含める。一般の`traitCount`／quantity conditionを一律`atLeast: 1`または最大値へ丸めない。
+- [ ] maximum stackをskill再使用／turn経過の一般simulationとして扱わず、準備phase開始時のtyped stack-count
+      assumptionとしてscenario evidenceへ保持する。上限欠落、矛盾、support範囲外はtyped invalid／unsupportedにする。
+- [ ] maximum countもtarget／field／choice／他quantityと同じglobal constraint validationを通し、共存不能な
+      局所最大の合算、exclusive branch同時適用、executor外のdamage補正を禁止する。
+- [ ] production代表として平景清「復讐の怨念」4 stack、ワンジナ「精霊の怒り」10 stackをfixture／inventoryで確認する。
+      代表名はtest evidenceに限定し、runtime semanticsはcanonical maximum countから導出する。
+- [ ] count 0／1／maximum、`atLeast | atMost | equal`、上限欠落、複数stack family、baseline包含、
+      calculator／ranking／portable replay parityをcounterexample matrixへ固定する。
+
+Done gate:
+
+- satisfied stack countのproducerはdata pipeline、scenario選択はapplication、評価はbattle executionに一意化される。
+- 平景清4 stack／ワンジナ10 stackが個別補正なしでcanonical IRから計算され、detailに回数とassumption由来が表示される。
+- 通常のみのbaseline count、成立込みのmaximum count、一般quantity conditionが混同されない。
+- unsupported／invalid maximumがbaseline数値へfallbackせず、一つの合法scenarioに共存する寄与だけを計算する。
+- candidate productとhot-path差分をquantity cardinalityで説明し、4,096上限の緩和やtruncateを行わない。
+- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.43 deltaがBlocking 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-IR-001` | Apply | pipeline stack-quantity IR inventory／schema-legal fixtures | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-EXEC-001` | Apply | count boundary／constraint／fail-closed executor tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-POLICY-001` | Apply | baseline versus satisfied maximum tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | production stack occurrence／maximum digest and representative damage | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-PERF-001` | Apply | candidate／damage-request delta and hot path ×3 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff: 未記録
+
+### TSK-06.44: Contribution decision UI cleanup
+
+Depends on: TSK-06.43
+
+- [ ] rowはdistinct `presentationGroupId`によるlogical effect countを維持し、detailは同じgroup配下で各contributionの
+      self／condition／areaView decisionとfinal applied outcomeを独立表示する。
+- [ ] raw `contributionId`、内部enum、operation IDを利用者向け文言として表示せず、canonical presentation metadataと
+      exhaustiveなtyped reason-to-label mappingから短い日本語label／説明を生成する。
+- [ ] policy除外、条件不成立、確率失敗、実行不能、invalid、unsupportedを一つの「計算外」へ潰さず、
+      action／state／condition evidenceをfilterせず保持する。
+- [ ] stack count assumptionを成立条件へ回数付きで表示し、同一logical effectの内部contribution分割を重複計数しない。
+- [ ] detail開閉、寄与表示切替、一覧filterでdamageを再計算せず、desktop／390px／320pxの密度、overflow、keyboard、
+      accessible name、expanded state、focus orderを維持する。
+
+Done gate:
+
+- row count、badge、detail decision、damageが同じeffective contribution集合から導出される。
+- raw identity／内部enum露出0件で、各policy axisとfinal outcomeを失わない。
+- logical effectとinternal contributionの階層が明確で、NP base sentinelをeffect件数へ含めない。
+- component／E2Eでcollapsed／expanded、除外／適用混在、stack count、responsive／a11yを固定する。
+- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.44 deltaがBlocking 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-UI-001` | Apply | focused row／detail／badge component tests and Playwright | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-POLICY-001` | Apply | contribution decision／final outcome presentation parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-CACHE-001` | N/A: detail interactionは既存request-on-demand contractを消費し、cache lifetime変更はTSK-07 | - | TSK-07 |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff: 未記録
+
+### TSK-06.5: Ranking theoretical maximum and production closure
+
+Depends on: TSK-06.44
+
+- [ ] requirement v0.10.0までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
       production全skillのstatic semanticsと、action × initial resource × ordered path × AttackProfileの
       candidate-local eligibility inventoryを最終固定する。
 - [ ] 自己バフありでは選択policy上の実効寄与を持つ任意skillをadmitし、表現済みデメリットを全operation込みで実行する。
@@ -1249,8 +1365,9 @@ Depends on: TSK-06.41
 - [ ] conditional-only skill、unconditional＋conditional sibling、NP消費／増加、beneficial／detrimental state、trait grant、
       form transition、branchごとにcostが異なるplayer choice、action後にattack NPへ到達不能となるpathのfocused fixtureを
       production occurrence／0件ratchetへ接続する。
-- [ ] candidate soundness、small exhaustive finite maximum oracle、四policy × NP1〜5、production contamination／
-      omission、portable／calculator parity、candidate数／performanceを最終baselineとして再固定する。
+- [ ] candidate soundness、small exhaustive finite maximum oracle、自然上限／Lv.90統一 × 四policy × NP1〜5、
+      stable owned fixture、production contamination／omission、portable／calculator parity、candidate数／performanceを
+      最終baselineとして再固定する。
 - [ ] 旧operation-ID projection、旧portable reader、compatibility flag、parallel compiler、旧policy fallbackがproduction／
       test fixture／schemaから0件であることを確認し、発見時はadapterを追加せずTSK-06.41のcanonical ownerへ戻して削除する。
 
@@ -1267,6 +1384,7 @@ Done gate:
 - compatibleな特攻／条件効果／fieldの欠落と、共存不能な局所最大の合算がともに0件である。
 - calculator／ranking parityとTSK-06.41のoperation／state preservation invariantを維持する。
 - TSK-06.41 cutover後のcandidate soundness、finite maximum oracle、四policy production inventoryが最終値として閉じる。
+- TSK-06.42の母集団／レベル／宝具Lv、TSK-06.43のmaximum stack、TSK-06.44のpresentationを含む最終matrixが閉じる。
 
 Contract closure matrix:
 
@@ -1275,10 +1393,10 @@ Contract closure matrix:
 | `RK-IR-001` | Apply | canonical source-program／step-operation／candidate-local role production inventory; nested IR is consumed unchanged | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-EXEC-001` | Apply | production transaction／resource reachability ratchet＋focused regression | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-POLICY-001` | Apply | four-policy contamination／omission and theoretical-maximum oracle | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-AUDIT-001` | Apply | `pnpm test:production` final four-policy × NP1〜5 maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | `pnpm test:production` final level basis × four-policy × NP1〜5 maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-HANDOFF-001` | Apply | final selected scenarioのportable replay／minimal Web handoff regression | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.9.6 |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.0 |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: 未記録
@@ -1287,10 +1405,12 @@ Handoff: 未記録
 
 Depends on: TSK-06.5
 
-- [x] ランキング条件を5項目へ切り替える。
+- [x] requirement v0.9.6時点のランキング条件を5項目へ切り替える（historical cutover）。
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
 - [x] 旧special attack／field入力、reader、fallbackを削除する。
 - [x] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
+- [ ] requirement v0.10.0の6入力はTSK-06.42で破壊的に切り替え、その完了状態を前提にnotice、cache lifetime、
+      stale response rejection、responsive／a11yを再検証する。旧5-field fingerprintを互換pathとして残さない。
 - [ ] TSK-06.41でVerifiedとなったselected ranking → calculator immediate handoffを前提に、二軸noticeと
       result／effect parityのUI表示を再検証する。
 - [ ] calculatorの「通常の計算条件へ戻す」が開始NP、自己バフpolicy、条件効果policyを同時に通常値へ戻し、
@@ -1333,7 +1453,7 @@ Contract closure matrix:
 Handoff:
 
 - Start baseline: `b325ef55a2b8ed094eee1f69464615e058d3018b`、clean worktree
-- Canonical flow note: `docs/evidence/ranking-web-worker-cutover-tsk-07.md`。TSK-06から
+- Canonical flow note: `docs/evidence/ranking-web-worker-cutover-tsk-07.md`。Requirement v0.9.6時点でTSK-06から
   DeferredされたUI／worker／URL／detail evidenceを一つの5項目contractへ切り替え、
   producer、reader、writer、request ordering、stale rejection、cache、recoveryをBlocking 0で閉じた。
 - Ownership: application ranking policyがscenario selectionとtyped exclusion、worker runtimeが
@@ -1356,6 +1476,9 @@ Handoff:
 - TSK-06.4／06.41 planning delta: TSK-06.1の一軸portable evidenceはhistorical verificationとして保持する。
   二軸schemaのdirect Web writerとminimal handoff parityはTSK-06.41、notice／reset interaction／cache／UI品質は
   TSK-07が所有し、schema cutover後のproduction writerを未検証のまま後段へ渡さない。
+- Requirement v0.10.0 planning delta: 母集団／レベル／宝具Lvの6-input cutoverはTSK-06.42、maximum stack
+  semanticsはTSK-06.43、contribution decision表示はTSK-06.44が所有する。TSK-07はこれらを再実装せず、
+  notice／recovery interaction／bounded cache／responsive／a11yの最終closureだけを所有する。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 
