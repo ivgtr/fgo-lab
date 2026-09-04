@@ -104,7 +104,12 @@ export type RankingCandidateSpace =
       attackProfile: AttackProfile;
       issue: Extract<
         CandidateSpaceIssue,
-        { kind: 'unsupportedFiniteDomain' | 'unsupportedActionAdmission' }
+        {
+          kind:
+            | 'unsupportedFiniteDomain'
+            | 'unsupportedActionAdmission'
+            | 'unsupportedCanonicalSemantics';
+        }
       >;
     }
   | {
@@ -272,19 +277,22 @@ export function compileRankingCandidateSpaces(
         },
       };
     } catch (error) {
+      if (error instanceof UnsupportedStaticSemantics)
+        return {
+          status: 'unsupported',
+          attackProfile,
+          issue: {
+            kind: 'unsupportedCanonicalSemantics',
+            projectionKeys: error.projectionKeys,
+          },
+        };
       return {
         status: 'invalid',
         attackProfile,
-        issue:
-          error instanceof UnsupportedStaticSemantics
-            ? {
-                kind: 'unsupportedCanonicalSemantics',
-                projectionKeys: error.projectionKeys,
-              }
-            : {
-                kind: 'semanticDomainInvalid',
-                detail: error instanceof Error ? error.message : String(error),
-              },
+        issue: {
+          kind: 'semanticDomainInvalid',
+          detail: error instanceof Error ? error.message : String(error),
+        },
       };
     }
   });

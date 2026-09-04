@@ -211,18 +211,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 576,
-        generatedCount: 576,
-        deduplicatedCount: 576,
-        damageRequestUpperBound: 576,
-        damageRequestCount: 575,
-        distinctDamageInputCount: 556,
+        semanticUpperBound: 668,
+        generatedCount: 668,
+        deduplicatedCount: 668,
+        damageRequestUpperBound: 668,
+        damageRequestCount: 667,
+        distinctDamageInputCount: 630,
       },
       damageCache: {
-        requestCount: 575,
-        distinctDamageInputCount: 556,
-        cacheHitCount: 19,
-        cacheHitRate: 19 / 575,
+        requestCount: 667,
+        distinctDamageInputCount: 630,
+        cacheHitCount: 37,
+        cacheHitRate: 37 / 667,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -270,7 +270,7 @@ describe('static ranking candidate space', () => {
         servantId,
         upperBound: space.upperBound,
       }));
-    expect(largest).toEqual([{ servantId: '3300200', upperBound: 2_880 }]);
+    expect(largest).toEqual([{ servantId: '3300200', upperBound: 3_840 }]);
     expect(largest[0]!.upperBound).toBeLessThanOrEqual(4_096);
   });
 });

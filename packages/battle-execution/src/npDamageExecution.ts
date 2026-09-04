@@ -26,8 +26,9 @@ export function applyNoblePhantasmDamage(
   const targetStateTraitCounts = state.traitCounts.targetState;
   const specialIncluded = contributionIsIncluded(
     operation,
-    operation.specialAttackCondition,
+    operation.specialAttackDependency,
     contributionPolicy,
+    state,
   );
   return applyNpDamageOperation(input, operation.damage, {
     overcharge: operation.overcharge,

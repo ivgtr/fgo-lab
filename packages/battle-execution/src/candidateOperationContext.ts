@@ -21,8 +21,9 @@ export function operationEnabled(
 export function includedByPolicy(
   operation: BattleOperation,
   policy: ContributionApplicationPolicy,
+  state: ExecutableBattleState,
 ): boolean {
-  return contributionIsIncluded(operation, operation.condition, policy);
+  return contributionIsIncluded(operation, operation.condition, policy, state);
 }
 
 export function modifierValue(

@@ -8,6 +8,33 @@ updated_at: "2026-09-04"
 
 ## TSK-06.41 runtime cutover — authoritative current delta
 
+### Implementation review closure delta — IRL-001〜004
+
+The implementation review expanded the recurrence scope of the previous condition and operation audits. The
+first closure proved current caller parity, condition truth, and pipeline classification, but did not require
+the same AttackProfile-bound classifier for action admission, did not expose NP-internal value reads as
+contribution dependencies, did not trace every retained resource operation through the ordered reducer, and
+did not retain the complete blocker population after presentation precedence. Those were earlier review gaps,
+not four independent servant exceptions.
+
+Confirmed mechanisms are: syntactic `always` admission drops card／NP-variant intrinsic contributions;
+`hpRatioLow`、`battlePointPhase`、and `traitCount` compile as an unconditional NP special contribution; fixed
+non-NP resource operations compile as supported retained evidence without a state transition; and profile
+aggregation selects the first input-required execution before unsupported while discarding the remaining
+classes. The recurrence scope is every nested intrinsic／conditional condition, every NP value family, every
+resource kind and transaction rollback path, and every admitted candidate outcome order. Minimum guardrails
+are one canonical static condition classification, exhaustive typed NP value dependencies, execute-or-
+unsupported resource operations, and stable class diagnostics independent of candidate order.
+
+| Family state | Admission／normal loop | NP value／alternate mutation | Aggregation／recovery | Planning status |
+| --- | --- | --- | --- | --- |
+| intrinsic card／NP variant, including nested `all`／`any`／`not` | selected AttackProfile decides intrinsic truth; safe effective action is admitted | contribution uses the same classification | no external witness is invented | Verified: shared classifier fixtures＋Artoria Lily production regression |
+| HP／BP／trait-count value dependency | baseline excludes only the dependent delta | satisfied mode enumerates canonical quantity／trait witnesses; NP base remains intrinsic | calculator still evaluates explicit scenario facts | Verified: exhaustive dependency fixtures＋production occurrence ratchet |
+| HP／star／BP resource mutation | an admitted transaction either applies every representable transition or fails closed | unrepresentable state／unit becomes typed unsupported and rolls back siblings | no plausible numeric candidate survives | Verified: read-sensitive closure、transaction rollback、Hijikata production regression |
+| calculated＋unavailable＋inputRequired＋invalid＋unsupported | execution preserves the candidate-local class | alternate candidate order cannot change classification | `invalid > unsupported > inputRequired > unavailable`; every class keeps count, digest, and bounded representatives | Verified: reordered mixed classes、calculated dominance boundary、production artifact |
+
+TSK-06.5 final four-policy maximum remains Deferred and TSK-07 cache／responsive scope is N/A for this delta.
+
 This section supersedes the TSK-06.4 implementation deferrals below. Implementation started from clean HEAD
 `b07ca1ddb4fae01d67e38321e7a7c496b9592a64`. Damage, profile selection, row count, badge, detail, and portable
 replay now consume one canonical ordered application result and its effective contribution set. Action
@@ -38,17 +65,36 @@ ranking, without-area, migration, reset, and replay use the same canonical appli
 The current master has 13,875 effects and 14,623 typed operations. TSK-06.4 counted 9,123 affected effect
 occurrences and 9,124 legacy operations because one referenced wrapper expanded twice; the cutover preserves
 that explained delta while removing the legacy variant. Preparation inventory is 6,360 generated, 3,949
-deduplicated, and 3,438 terminal plans. Default ranking emits 576 certified candidates, makes 575 damage
-requests, and has 556 distinct inputs. There are 433 static AttackProfiles and 432 numeric rows: `2501400` NP1
+deduplicated, and 3,438 terminal plans. Default ranking certifies and materializes 668 candidates, makes 667
+damage requests, and has 630 distinct inputs. There are 433 static
+AttackProfiles and 432 numeric rows: `2501400` NP1
 is typed `unavailableUnderPolicy: insufficientNpGauge`, not a numeric fallback or sibling substitution.
 
-Production digests are application `8f52a96e2e49e5917e61dc49253a102127a6a3fda21029d1c0f17933bf985b57`
+IRL-003 remeasurement classifies 419 calculator scenarios as calculated and three as typed unsupported. The
+three are exactly the production profiles where an unrepresentable HP／Battle Point mutation feeds a damage
+dependency. Star mutations are explicitly represented by the existing terminal `criticalStars` input;
+unread resource mutations retain a bounded-phase-irrelevant proof. Relative to TSK-06.4, master／preparation／
+AttackProfile counts and the 4,096 cap are unchanged; the largest certified product rises from 2,880 to 3,840
+because the previously hidden NP value dependencies are now enumerated. Default candidates rise from 576 to
+668 (+16.0%) with a finite 668 certificate; this is the required missing-domain population, not unbounded
+growth. Request and digest changes come from intrinsic
+admission, NP dependency witnesses, resource fail-closed outcomes, and blocker diagnostics, not a new domain
+dimension.
+
+Production digests are application `c2cb93dd4589230d385cc4adb582a789deeec68569487982f13e935c429d2f87`
 and pipeline `916403ecd681dc6b2c4655bd3c052bd8527db3eeac0d54dd1b1a2d18641c02e8`. The pre-cutover
 production run was 38.47 s real. Post-cutover canonical-runner measurements were 38.01／40.24／38.74 s,
 median 38.74 s: +0.27 s／+0.70%, within the 10% ratchet. Each run executed 24 files／113 tests; the first
 completed its tests before reporting the then-stale runtime-counter contract, and the latter two passed the
 updated contract. Final quality passed unit 380, production 113, and Playwright 25 with no skip, retry, warning,
 or unexpected console; artifact `.test-results/2026-09-02T06-07-59-655Z-44-fc4f13`.
+
+The IRL-001–005 review closure started from clean tracked HEAD `2977dffd`. Affected production runs
+were 37.41／36.50／38.98 s, median 37.41 s versus the preceding canonical median 38.74 s
+(-1.33 s／-3.43%); the finite-domain additions therefore introduce no unexplained regression.
+Final `pnpm quality` passed 75 unit files／395 tests, 25 production files／114 tests, and 25
+Playwright tests with zero retry, warning, or unexpected console. The retained artifact is
+`.test-results/2026-09-04T11-35-28-969Z-15-8f8bc7`.
 
 Removal audit finds zero production legacy operation variants, operation-ID contribution projections,
 independent 512-state caps, current old portable-intent writers, compatibility flags, adapters, or parallel

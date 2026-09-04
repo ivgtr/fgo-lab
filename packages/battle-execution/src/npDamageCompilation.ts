@@ -18,8 +18,9 @@ import { traitCountProjections } from './projection';
 export function noblePhantasmDamageCondition(
   damage: NpDamageSpec,
   overcharge: number,
+  npLevel = 1,
 ): ConditionExpression {
-  const item = damage.parametersByOvercharge[overcharge - 1]?.[0];
+  const item = damage.parametersByOvercharge[overcharge - 1]?.[npLevel - 1];
   if (!item) return { kind: 'always' };
   if ((damage.kind === 'trait' || damage.kind === 'stateTrait') && item.targetTrait)
     return item.targetTrait.kind === 'targetPredicate'
@@ -67,6 +68,51 @@ export function noblePhantasmDamageCondition(
   return { kind: 'always' };
 }
 
+export function noblePhantasmDamageDependency(
+  damage: NpDamageSpec,
+  overcharge: number,
+  npLevel = 1,
+): ConditionExpression {
+  const item = damage.parametersByOvercharge[overcharge - 1]?.[npLevel - 1];
+  if (!item) return { kind: 'always' };
+  if (damage.kind === 'hpRatioLow')
+    return {
+      kind: 'quantity',
+      quantity: 'attackerHpPermille',
+      comparison: 'lessThan',
+      value: 1_000,
+    };
+  if (damage.kind === 'battlePointPhase')
+    return {
+      kind: 'quantity',
+      quantity: 'battlePointPhase',
+      comparison: 'atLeast',
+      value: 0,
+    };
+  if (damage.kind === 'traitCount') {
+    const scope = item.targetId === 1 ? 'target' : 'attacker';
+    return {
+      kind: 'any',
+      expressions: (item.targetTraits ?? []).map((trait): ConditionExpression =>
+        trait.kind === 'targetPredicate'
+          ? { kind: 'targetPredicate', scope, predicate: trait.predicate, present: true }
+          : {
+              kind: 'traitCount',
+              scope: damage.stateTraitNames.includes(trait.name)
+                ? scope === 'target'
+                  ? 'targetState'
+                  : 'attackerState'
+                : scope,
+              traits: [trait.name],
+              comparison: 'atLeast',
+              count: 1,
+            },
+      ),
+    };
+  }
+  return noblePhantasmDamageCondition(damage, overcharge, npLevel);
+}
+
 function targetPredicateSelected(
   scenario: ResolvedScenario,
   target: Extract<ConditionExpression, { kind: 'targetPredicate' }>['predicate'],
@@ -93,7 +139,16 @@ export function compileNoblePhantasmDamageOperation(
   operationOrder: number,
 ): { operation: BattleOperation; projections: readonly EffectProjection[] } {
   const variantKey = noblePhantasmVariantKey(np.ref);
-  const damageCondition = noblePhantasmDamageCondition(damage, baseInput.overcharge);
+  const damageCondition = noblePhantasmDamageCondition(
+    damage,
+    baseInput.overcharge,
+    baseInput.npLevel,
+  );
+  const damageDependency = noblePhantasmDamageDependency(
+    damage,
+    baseInput.overcharge,
+    baseInput.npLevel,
+  );
   const specialAttackDecisionKey =
     damageCondition.kind === 'always' ? null : `np:${variantKey}:${damage.functionId}:condition`;
   const source: OperationSource = {
@@ -172,6 +227,7 @@ export function compileNoblePhantasmDamageOperation(
         (item) => item.valuePermille / 10,
       ) as [number, number, number, number, number],
       specialAttackCondition: damageCondition,
+      specialAttackDependency: damageDependency,
       specialAttackDecisionKey,
     },
   };

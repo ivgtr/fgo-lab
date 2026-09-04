@@ -88,6 +88,7 @@ export {
 export {
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
+  classifyContributionCondition,
   traitConditionConstraintScope,
   traitConditionEvaluationSource,
   traitConditionReadScopes,
@@ -100,6 +101,8 @@ export {
   type TraitConditionEvaluationSource,
   type TraitConditionLeaf,
   type TargetConditionWitnessSpace,
+  type ContributionConditionClass,
+  type IntrinsicAttackConditionFacts,
 } from './conditionSemantics';
 export {
   applyNpDamageOperation,
@@ -115,10 +118,11 @@ export {
 } from './sourceCollection';
 export {
   compileEffectCached,
+  compileEffectCondition,
   runtimeInputDefinitionsForSource,
   type CompiledOperations,
 } from './operationCompiler';
-export { noblePhantasmDamageCondition } from './npDamageCompilation';
+export { noblePhantasmDamageCondition, noblePhantasmDamageDependency } from './npDamageCompilation';
 export { planOperationActivations } from './activation';
 export {
   availablePreparationSkillCommands,

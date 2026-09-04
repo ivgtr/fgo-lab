@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import { evaluateNpDamageOperation, type NpDamageOperationContext } from './npDamageOperation';
+import { noblePhantasmDamageDependency } from './npDamageCompilation';
+import { classifyContributionCondition } from './conditionSemantics';
 
 const parameters = (extra: Record<string, unknown> = {}) =>
   Array.from({ length: 5 }, (_, index) => ({
@@ -192,6 +194,34 @@ describe('NP damage operation', () => {
     expect(evaluateNpDamageOperation(battle, { ...context, battlePointPhase: 40 })).toMatchObject({
       npSpecialMultipliers: [2, 2, 2, 2, 2],
     });
+    expect(noblePhantasmDamageDependency(hp, 1, 1)).toEqual({
+      kind: 'quantity',
+      quantity: 'attackerHpPermille',
+      comparison: 'lessThan',
+      value: 1_000,
+    });
+    expect(noblePhantasmDamageDependency(battle, 1, 1)).toEqual({
+      kind: 'quantity',
+      quantity: 'battlePointPhase',
+      comparison: 'atLeast',
+      value: 0,
+    });
+    expect(noblePhantasmDamageDependency(targetSum, 1, 1)).toMatchObject({
+      kind: 'any',
+      expressions: [
+        {
+          kind: 'traitCount',
+          scope: 'target',
+          traits: ['roman'],
+          comparison: 'atLeast',
+          count: 1,
+        },
+      ],
+    });
+    for (const damage of [hp, battle, sum, targetSum])
+      expect(classifyContributionCondition(noblePhantasmDamageDependency(damage, 1, 1))).toBe(
+        'conditional',
+      );
   });
 
   it('uses the inactive rarity-special baseline and fails closed for required inputs', () => {

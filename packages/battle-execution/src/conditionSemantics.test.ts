@@ -1,8 +1,54 @@
 import { describe, expect, it } from 'vitest';
 import type { ConditionExpression } from './contracts';
-import { targetConditionWitnessSpace } from './conditionSemantics';
+import { classifyContributionCondition, targetConditionWitnessSpace } from './conditionSemantics';
 
 describe('target condition witness space', () => {
+  it('simplifies nested intrinsic attack facts before classifying external dependencies', () => {
+    const attack = {
+      card: 'buster' as const,
+      noblePhantasmVariant: {
+        actorFormId: { actorId: '100300', limitCount: 0 },
+        noblePhantasmId: '100301',
+      },
+    };
+    expect(
+      classifyContributionCondition(
+        {
+          kind: 'any',
+          expressions: [
+            { kind: 'card', card: 'buster' },
+            { kind: 'trait', scope: 'target', trait: 'dragon', present: true },
+          ],
+        },
+        attack,
+      ),
+    ).toBe('intrinsicSatisfied');
+    expect(
+      classifyContributionCondition(
+        {
+          kind: 'all',
+          expressions: [
+            { kind: 'card', card: 'buster' },
+            {
+              kind: 'not',
+              expression: { kind: 'noblePhantasmVariant', variant: attack.noblePhantasmVariant },
+            },
+          ],
+        },
+        attack,
+      ),
+    ).toBe('intrinsicUnsatisfied');
+  });
+
+  it('does not let boolean simplification hide unsupported semantics', () => {
+    expect(
+      classifyContributionCondition({
+        kind: 'any',
+        expressions: [{ kind: 'always' }, { kind: 'unsupported', reason: 'unresolvedRecipient' }],
+      }),
+    ).toBe('unsupported');
+  });
+
   it('expands combined target reads across initial and state facts through nested expressions', () => {
     const condition: ConditionExpression = {
       kind: 'not',

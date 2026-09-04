@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.5.40"
+document_version: "1.5.41"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-04"
@@ -1157,6 +1157,16 @@ Completion:
   `preserveScenarioOvercharge` compatibility option and its runtime branch were deleted. NP2／200% start now has
   a focused application fixture proving executor-derived base OC2, and the legacy symbol scan is 0件. Production
   inventory／digests are unchanged. TSK-06.41 remains `done`; TSK-06.5 remains `ready`.
+- Implementation review closure: IRL-001〜005 are closed in the canonical owners. AttackProfile-bound
+  condition classification is shared by admission and contribution inclusion; HP／BP／trait-count NP value
+  dependencies enter policy and witness construction; damage-relevant HP／star／BP mutations execute or become
+  typed unsupported under one action transaction; profile blockers retain deterministic class diagnostics;
+  portable reset constructs and executes the current-version baseline before durable／memory publication.
+  Focused schema-legal fixtures and production ratchets cover all five findings. Application inventory is 419
+  calculated／3 typed unsupported calculator scenarios and 432 ranking rows; application digest is
+  `c2cb93dd4589230d385cc4adb582a789deeec68569487982f13e935c429d2f87`. Final four-policy maximum remains
+  Deferred to TSK-06.5 and cache／notice interaction remains Deferred to TSK-07. TSK-06.41 remains `done`;
+  TSK-06.5 remains `ready`.
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

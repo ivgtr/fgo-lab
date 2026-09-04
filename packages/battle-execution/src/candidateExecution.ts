@@ -27,6 +27,7 @@ import { prepareCandidateExecution } from './candidatePreparation';
 import { assembleCandidateResult } from './candidateResult';
 import { assembleInvalidActivationResult } from './candidateFailure';
 import { markOperationGroupUnsupported } from './candidateRollback';
+import { operationHasNoRuntimeDamageImpact, unresolvedResourceIssue } from './resourceSemantics';
 import {
   applyRuntimeNoblePhantasmVariantSelection,
   needsMutationValidation,
@@ -143,7 +144,7 @@ export function executeOrderedScenarioCandidate(
     for (const operation of operationGroup) {
       const choice = operation.decisionKey ? decisions.get(operation.decisionKey) : undefined;
       const activation = candidate.activations.get(operation.operationId)!;
-      const contributionIncluded = includedByPolicy(operation, contributionPolicy);
+      const contributionIncluded = includedByPolicy(operation, contributionPolicy, state);
       const enabled = operationEnabled(
         activation,
         operation,
@@ -223,15 +224,18 @@ export function executeOrderedScenarioCandidate(
       } else if (!condition && !localConditionSatisfied) {
         outcome = 'notApplied';
         code = 'conditionNotMet';
-      } else if (operation.kind === 'preserveSemanticEffect') {
-        outcome = 'notRelevant';
-        code = 'stateMutationOnly';
+      } else if (operationHasNoRuntimeDamageImpact(operation)) {
+        [outcome, code] = ['notRelevant', 'stateMutationOnly'];
       }
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
         const contributes = contributionIncluded;
         if (preappliedOperationIds.has(operation.operationId)) {
           // Preparation already committed this canonical form/variant mutation.
+        } else if (operation.kind === 'resourceMutation') {
+          outcome = 'unsupported';
+          code = 'unresolved';
+          issue = unresolvedResourceIssue(operation);
         } else if (operation.kind === 'addTrait') {
           const changed = applyTraitAddition(candidateState, operation.scope, operation.trait);
           candidateState.traits = changed.traits;

@@ -69,7 +69,7 @@ export function assembleCandidateResult({
       projection.visibility === 'visible' &&
       operations.some((operation) => {
         if (operation.operationId !== projection.operationId) return false;
-        if (!contributionIsIncluded(operation, operation.condition, contributionPolicy))
+        if (!contributionIsIncluded(operation, operation.condition, contributionPolicy, state))
           return false;
         const activation = candidate.activations.get(operation.operationId);
         return (

@@ -10,23 +10,7 @@ import type {
   EffectiveContribution,
   EffectiveContributionSet,
 } from './executionTypes';
-
-function conditionalRequirement(condition: ConditionExpression): boolean {
-  if (
-    condition.kind === 'always' ||
-    condition.kind === 'card' ||
-    condition.kind === 'noblePhantasmVariant' ||
-    condition.kind === 'choice' ||
-    condition.kind === 'operationTrigger'
-  )
-    return false;
-  if (condition.kind === 'trait') return condition.scope !== 'attacker';
-  if (condition.kind === 'targetPredicate' || condition.kind === 'traitCount') return true;
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return condition.expressions.some(conditionalRequirement);
-  if (condition.kind === 'not') return conditionalRequirement(condition.expression);
-  return true;
-}
+import { classifyContributionCondition } from './conditionSemantics';
 
 const included = (): ContributionPolicyDecision => ({ kind: 'included' });
 const excluded = (
@@ -37,6 +21,7 @@ function decisions(
   operation: BattleOperation,
   condition: ConditionExpression,
   policy: ContributionApplicationPolicy,
+  state?: OperationResult['state'],
 ) {
   if (policy.kind === 'calculator')
     return {
@@ -52,7 +37,18 @@ function decisions(
         ? excluded('selfBuffPolicy')
         : included(),
     conditionDecision:
-      policy.conditionalEffects === 'baseline' && conditionalRequirement(condition)
+      policy.conditionalEffects === 'baseline' &&
+      ['conditional', 'unsupported'].includes(
+        classifyContributionCondition(
+          condition,
+          state
+            ? {
+                card: state.card,
+                noblePhantasmVariant: state.noblePhantasmVariant.ref,
+              }
+            : undefined,
+        ),
+      )
         ? excluded('conditionalEffectPolicy')
         : included(),
     areaViewDecision:
@@ -66,6 +62,7 @@ export function contributionIsIncluded(
   operation: BattleOperation,
   condition: ConditionExpression,
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
+  state?: OperationResult['state'],
 ): boolean {
   if (
     operation.kind !== 'addModifier' &&
@@ -75,7 +72,7 @@ export function contributionIsIncluded(
     operation.kind !== 'executeNpDamage'
   )
     return true;
-  return Object.values(decisions(operation, condition, policy)).every(
+  return Object.values(decisions(operation, condition, policy, state)).every(
     (decision) => decision.kind === 'included',
   );
 }
@@ -95,8 +92,9 @@ function contribution(
   condition: ConditionExpression,
   outcome: OperationOutcome,
   policy: ContributionApplicationPolicy,
+  state: OperationResult['state'],
 ): EffectiveContribution {
-  const policyDecisions = decisions(operation, condition, policy);
+  const policyDecisions = decisions(operation, condition, policy, state);
   const policyIncluded = Object.values(policyDecisions).every(
     (decision) => decision.kind === 'included',
   );
@@ -118,10 +116,10 @@ function contribution(
 }
 
 export function effectiveContributionsForOperation(
-  result: Pick<OperationResult, 'operation' | 'outcome' | 'projection'>,
+  result: Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state'>,
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContribution[] {
-  const { operation, outcome, projection } = result;
+  const { operation, outcome, projection, state } = result;
   if (operation.kind === 'addModifier')
     return [
       contribution(
@@ -132,6 +130,7 @@ export function effectiveContributionsForOperation(
         operation.condition,
         outcome,
         policy,
+        state,
       ),
     ];
   if (operation.kind === 'changeModifierRate')
@@ -144,16 +143,26 @@ export function effectiveContributionsForOperation(
         operation.condition,
         outcome,
         policy,
+        state,
       ),
     ];
   if (operation.kind === 'ignoreDefense' || operation.kind === 'ignoreDamageCut')
     return [
-      contribution(operation, 'ignore', operation.kind, 1, operation.condition, outcome, policy),
+      contribution(
+        operation,
+        'ignore',
+        operation.kind,
+        1,
+        operation.condition,
+        outcome,
+        policy,
+        state,
+      ),
     ];
   if (operation.kind !== 'executeNpDamage') return [];
   return [
-    contribution(operation, 'npBase', null, null, operation.condition, outcome, policy),
-    ...(operation.specialAttackCondition.kind === 'always'
+    contribution(operation, 'npBase', null, null, operation.condition, outcome, policy, state),
+    ...(operation.specialAttackDependency.kind === 'always'
       ? []
       : [
           contribution(
@@ -161,16 +170,17 @@ export function effectiveContributionsForOperation(
             'npSpecial',
             'npSpecial',
             projection.valuePermille,
-            operation.specialAttackCondition,
+            operation.specialAttackDependency,
             projection.outcome,
             policy,
+            state,
           ),
         ]),
   ];
 }
 
 export function createEffectiveContributionSet(
-  operations: readonly Pick<OperationResult, 'operation' | 'outcome' | 'projection'>[],
+  operations: readonly Pick<OperationResult, 'operation' | 'outcome' | 'projection' | 'state'>[],
   policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): EffectiveContributionSet {
   const contributions = operations.flatMap((result) =>

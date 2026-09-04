@@ -6,6 +6,71 @@ import type {
 } from './contracts';
 import type { TargetPredicate } from '@fgo-lab/schema';
 import type { CanonicalTraitProvenance } from '@fgo-lab/master-data';
+import { noblePhantasmVariantKey, type NoblePhantasmVariantRef } from '@fgo-lab/master-data';
+
+export interface IntrinsicAttackConditionFacts {
+  card: 'buster' | 'arts' | 'quick';
+  noblePhantasmVariant: NoblePhantasmVariantRef;
+}
+
+export type ContributionConditionClass =
+  | 'intrinsicSatisfied'
+  | 'intrinsicUnsatisfied'
+  | 'intrinsicRuntime'
+  | 'conditional'
+  | 'unsupported';
+
+/**
+ * Classifies contribution dependency after binding the selected attack identity. Boolean
+ * composition lives here so admission and execution policy cannot simplify it differently.
+ */
+export function classifyContributionCondition(
+  condition: ConditionExpression,
+  attack?: IntrinsicAttackConditionFacts,
+): ContributionConditionClass {
+  const classify = (expression: ConditionExpression): ContributionConditionClass => {
+    if (expression.kind === 'always') return 'intrinsicSatisfied';
+    if (expression.kind === 'unsupported') return 'unsupported';
+    if (expression.kind === 'card')
+      return attack === undefined
+        ? 'intrinsicRuntime'
+        : expression.card === attack.card
+          ? 'intrinsicSatisfied'
+          : 'intrinsicUnsatisfied';
+    if (expression.kind === 'noblePhantasmVariant')
+      return attack === undefined
+        ? 'intrinsicRuntime'
+        : noblePhantasmVariantKey(expression.variant) ===
+            noblePhantasmVariantKey(attack.noblePhantasmVariant)
+          ? 'intrinsicSatisfied'
+          : 'intrinsicUnsatisfied';
+    if (expression.kind === 'choice' || expression.kind === 'operationTrigger')
+      return 'intrinsicRuntime';
+    if (expression.kind === 'trait')
+      return expression.scope === 'attacker' ? 'intrinsicRuntime' : 'conditional';
+    if (expression.kind === 'all' || expression.kind === 'any') {
+      const members = expression.expressions.map(classify);
+      if (expression.kind === 'all') {
+        if (members.includes('unsupported')) return 'unsupported';
+        if (members.includes('intrinsicUnsatisfied')) return 'intrinsicUnsatisfied';
+        if (members.includes('conditional')) return 'conditional';
+        return members.includes('intrinsicRuntime') ? 'intrinsicRuntime' : 'intrinsicSatisfied';
+      }
+      if (members.includes('unsupported')) return 'unsupported';
+      if (members.includes('intrinsicSatisfied')) return 'intrinsicSatisfied';
+      if (members.includes('conditional')) return 'conditional';
+      return members.includes('intrinsicRuntime') ? 'intrinsicRuntime' : 'intrinsicUnsatisfied';
+    }
+    if (expression.kind === 'not') {
+      const member = classify(expression.expression);
+      if (member === 'intrinsicSatisfied') return 'intrinsicUnsatisfied';
+      if (member === 'intrinsicUnsatisfied') return 'intrinsicSatisfied';
+      return member;
+    }
+    return 'conditional';
+  };
+  return classify(condition);
+}
 
 const DEFAULT_TRAIT_PROVENANCE: CanonicalTraitProvenance = {
   stateSources: 'activeOnly',

@@ -9,6 +9,9 @@ import {
 import { describe, expect, it } from 'vitest';
 import { createActorFormProfiles } from './attackProfile';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
+import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 
 const root = resolve(import.meta.dirname, '../../..');
 const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
@@ -16,6 +19,45 @@ const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.j
 );
 
 describe('production preparation semantics audit', () => {
+  it('admits intrinsic card buffs and fails closed for unrepresented HP costs', async () => {
+    const master = await productionMaster;
+    const versions = {
+      schemaVersion: SCHEMA_VERSION,
+      masterDataVersion: master.version,
+      engineVersion: ENGINE_VERSION,
+      appVersion: APP_VERSION,
+      gameRegion: 'JP' as const,
+      masterDataLocale: 'ja-JP' as const,
+    };
+    const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
+    const lily = master.servants.find(({ id }) => id === '100300')!;
+    const manaBurst = lily.skills.find(({ name }) => name === '魔力放出 A')!;
+    const lilyResult = calculateRankingPolicyDetail(
+      lily,
+      master,
+      profile,
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      versions,
+    );
+    expect(lilyResult.status).toBe('calculated');
+    if (lilyResult.status !== 'calculated') throw new Error(lilyResult.status);
+    expect(lilyResult.detail.appliedPreparationActions).toEqual(
+      expect.arrayContaining([expect.objectContaining({ sourceId: manaBurst.id })]),
+    );
+
+    const hijikata = master.servants.find(({ id }) => id === '702500')!;
+    const hijikataResult = calculateRankingPolicyDetail(
+      hijikata,
+      master,
+      profile,
+      { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
+      versions,
+    );
+    expect(hijikataResult.status).toBe('unsupported');
+    if (hijikataResult.status !== 'unsupported') throw new Error(hijikataResult.status);
+    expect(hijikataResult.reason).toMatch(/unsupported/i);
+  }, 120_000);
+
   it('ratchets the finite preparation-state inventory and every legal terminal', async () => {
     const master = await productionMaster;
     const inventory = {

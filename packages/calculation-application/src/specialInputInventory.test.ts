@@ -48,8 +48,11 @@ describe('production special input inventory', () => {
 
     expect(calculations).toHaveLength(422);
     expect(
-      calculations.every(({ calculation }) => calculation.result.status === 'calculated'),
-    ).toBe(true);
+      calculations.reduce<Record<string, number>>((result, { calculation }) => {
+        result[calculation.result.status] = (result[calculation.result.status] ?? 0) + 1;
+        return result;
+      }, {}),
+    ).toEqual({ calculated: 419, unsupported: 3 });
     expect(inputs).toHaveLength(13);
     expect(counts).toEqual({
       availableSkillCount: 1,

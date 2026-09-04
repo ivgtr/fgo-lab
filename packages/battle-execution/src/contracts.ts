@@ -152,6 +152,15 @@ export type OperationModifierValueExpression =
 
 export type BattleOperation =
   | (OperationBase & {
+      kind: 'resourceMutation';
+      resource: 'hp' | 'criticalStars' | 'battlePoint';
+      resolution: 'resourceStateUnavailable' | 'representedByTerminalInput' | 'noDamageReader';
+      direction: 'gain' | 'loss';
+      unit: 'fixed' | 'percent';
+      amount: number | null;
+      subjectId: string | null;
+    })
+  | (OperationBase & {
       kind: 'preserveSemanticEffect';
       semanticKind: 'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant';
     })
@@ -207,6 +216,7 @@ export type BattleOperation =
       selectedNpLevel: number;
       npMultipliers: readonly [number, number, number, number, number];
       specialAttackCondition: ConditionExpression;
+      specialAttackDependency: ConditionExpression;
       specialAttackDecisionKey: string | null;
     });
 

@@ -35,10 +35,6 @@ export function calculateRankingPolicyDetail(
       versions,
       true,
     );
-    const detail = attackProfile
-      ? candidateSet.details.get(attackProfileKey(attackProfile))
-      : candidateSet.details.values().next().value;
-    if (detail) return { status: 'calculated', detail };
     const requested = attackProfile ?? createStaticAttackProfiles(servant)[0];
     if (!requested)
       return {
@@ -93,15 +89,11 @@ export function calculateRankingPolicy(
         );
       for (const attackProfile of inventory) {
         const profileKey = attackProfileKey(attackProfile);
-        const detail = candidateSet.details.get(profileKey);
-        if (!detail) {
-          const result = unresolvedProfileResult(candidateSet, attackProfile);
-          profileResults[profileKey] = result;
-          exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));
-          continue;
-        }
-        profileResults[profileKey] = { status: 'calculated', detail };
-        rows.push(createRankingRow(servant, detail, profile));
+        const result = unresolvedProfileResult(candidateSet, attackProfile);
+        profileResults[profileKey] = result;
+        if (result.status === 'calculated')
+          rows.push(createRankingRow(servant, result.detail, profile));
+        else exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));
       }
     } catch (error) {
       for (const attackProfile of inventory) {

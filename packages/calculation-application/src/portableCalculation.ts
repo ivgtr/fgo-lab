@@ -69,6 +69,16 @@ export type PortableVersionUpgradeResult =
       failure: PortableCalculationFailure;
     };
 
+export type PortableCalculationResetResult =
+  | Extract<PortableVersionUpgradeResult, { status: 'committed' }>
+  | {
+      status: 'rejected';
+      retainedRequest: PortableCalculationRequest;
+      retainedResult: CalculationResult;
+      attemptedRequest: PortableCalculationRequest | null;
+      failure: PortableCalculationFailure;
+    };
+
 export function currentCalculationVersionContext(
   master: MasterDataSnapshot,
 ): CalculationVersionContext {
@@ -136,8 +146,61 @@ export function resetPortableCalculationRequest(
 ): PortableCalculationRequest {
   return createCalculatorPortableRequest(
     createDefaultCalculatorScenario(master, build, servant),
-    request.versionContext,
+    currentCalculationVersionContext(master),
   );
+}
+
+export function attemptPortableCalculationReset(
+  retainedRequest: PortableCalculationRequest,
+  retainedResult: CalculationResult,
+  master: MasterDataSnapshot,
+  build: ServantBuild | undefined,
+  servant: ServantMaster,
+): PortableCalculationResetResult {
+  let attemptedRequest: PortableCalculationRequest;
+  try {
+    attemptedRequest = resetPortableCalculationRequest(retainedRequest, master, build, servant);
+  } catch (cause) {
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest: null,
+      failure: {
+        status: 'invalid',
+        request: retainedRequest,
+        reason: 'scenarioInvalid',
+        detail: cause instanceof Error ? cause.message : String(cause),
+      },
+    };
+  }
+  if (!resultMatchesRequestVersions(retainedRequest, retainedResult))
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest,
+      failure: {
+        status: 'invalid',
+        request: attemptedRequest,
+        reason: 'requestResultVersionMismatch',
+      },
+    };
+  const outcome = executePortableCalculation(attemptedRequest, master);
+  if (outcome.status !== 'executed')
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest,
+      failure: outcome,
+    };
+  return {
+    status: 'committed',
+    request: attemptedRequest,
+    result: outcome.execution.result,
+    execution: outcome.execution,
+  };
 }
 
 export function upgradePortableCalculationRequestVersion(

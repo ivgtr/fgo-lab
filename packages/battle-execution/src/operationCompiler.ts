@@ -135,7 +135,7 @@ export function runtimeInputDefinitionsForSource(source: SourceEffect) {
     : normalized;
 }
 
-function effectCondition(
+export function compileEffectCondition(
   effect: MasterEffect,
   origin: Origin,
   sourceId: string,
@@ -342,6 +342,11 @@ function operationKey(source: SourceEffect): string {
 }
 
 function transactionGroupId(source: SourceEffect): string | null {
+  if (
+    source.effect.gameActivation === 'skillUse' ||
+    source.effect.gameActivation === 'npBeforeDamage'
+  )
+    return `${source.skillId}:action`;
   if (source.effect.selection?.kind === 'playerChoice')
     return `${source.skillId}:player-choice:${source.effect.selection.group.key}:${source.effect.selection.group.candidate}`;
   if (source.effect.stateIdentity !== null)
@@ -363,7 +368,7 @@ function sourceIdentity(source: SourceEffect): OperationSource {
 }
 
 function sourceCondition(source: SourceEffect): ConditionExpression {
-  const effect = effectCondition(
+  const effect = compileEffectCondition(
     source.effect,
     source.origin,
     source.sourceId,
@@ -504,9 +509,21 @@ export function compileEffect(
   const key = decisionKey(source);
   let order = startOrder;
   const applicable: EffectExecutionOperation[] = [];
+  const unsupportedResources = source.effect.execution.filter(
+    (
+      semantic,
+    ): semantic is Extract<EffectExecutionOperation, { kind: 'resourceMutation' }> & {
+      resource: 'hp' | 'criticalStars' | 'battlePoint';
+    } => semantic.kind === 'resourceMutation' && semantic.resource !== 'npGauge',
+  );
   const retained = source.effect.execution.filter(
-    (semantic) =>
-      semantic.kind === 'resourceMutation' ||
+    (
+      semantic,
+    ): semantic is Extract<
+      EffectExecutionOperation,
+      { kind: 'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant' }
+    > =>
+      (semantic.kind === 'resourceMutation' && semantic.resource === 'npGauge') ||
       semantic.kind === 'stateMutation' ||
       semantic.kind === 'boundedPhaseIrrelevant',
   );
@@ -622,7 +639,7 @@ export function compileEffect(
     );
     return { operations, projections };
   }
-  if (applicable.length === 0 && retained.length === 0) {
+  if (applicable.length === 0 && retained.length === 0 && unsupportedResources.length === 0) {
     if (canNormalizeDamageEffect(source.effect, source.origin))
       projections.push(
         makeProjection(source, key, 'unsupported', 'unresolved', null, null, null, condition),
@@ -636,6 +653,23 @@ export function compileEffect(
     suffixCounts.set(suffix, count + 1);
     return count === 0 ? suffix : `${suffix}:${String(count)}`;
   };
+  for (const semantic of unsupportedResources) {
+    const suffix = uniqueSuffix(`unsupported-resource:${semantic.resource}`);
+    const operationBase = baseOperation(source, 'personal', order++, suffix);
+    operations.push({
+      ...operationBase,
+      kind: 'resourceMutation',
+      resource: semantic.resource,
+      resolution: 'resourceStateUnavailable',
+      direction: semantic.direction,
+      unit: semantic.unit,
+      amount:
+        semantic.amount.kind === 'fixed'
+          ? (semantic.amount.values[source.valueSetIndex]?.[source.valueIndex] ?? null)
+          : null,
+      subjectId: semantic.subjectId,
+    });
+  }
   for (const semantic of retained) {
     const suffix = uniqueSuffix(`evidence:${semantic.kind}`);
     if (retainedNeedsExecution)

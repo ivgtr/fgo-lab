@@ -28,6 +28,7 @@ describe('production execution parity ratchet', () => {
       masterDataLocale: 'ja-JP' as const,
       masterDataVersion: master.version,
     };
+    const typedUnsupported = new Set(['300100', '702500', '705300']);
     const records = master.servants.flatMap((servant) => {
       if (
         planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1).candidates
@@ -37,7 +38,9 @@ describe('production execution parity ratchet', () => {
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
       const calculation = calculateScenario(scenario, master, versions);
       // E2E-A032-ORDER
-      expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe('calculated');
+      expect(calculation.result.status, `${servant.id}:${servant.name}`).toBe(
+        typedUnsupported.has(servant.id) ? 'unsupported' : 'calculated',
+      );
       expect(calculation.appliedPreparationActions).toHaveLength(
         scenario.preNoblePhantasmPlan.length,
       );
@@ -54,7 +57,12 @@ describe('production execution parity ratchet', () => {
     });
 
     expect(records).toHaveLength(422);
+    expect(
+      records
+        .filter(({ attackerId }) => typedUnsupported.has(attackerId))
+        .map(({ attackerId }) => attackerId),
+    ).toEqual(['300100', '702500', '705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('ecb4ca18a9742441d49b6962ea09089a3339da55c40544a316ca1985af6d8412');
+    expect(digest).toBe('627d1cc4c92fb326c136bb6ff22dc9a79f830dcfbf763c98d01eee6f9a1665ad');
   }, 60_000);
 });

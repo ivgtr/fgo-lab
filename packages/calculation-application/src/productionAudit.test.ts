@@ -26,18 +26,18 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '8f52a96e2e49e5917e61dc49253a102127a6a3fda21029d1c0f17933bf985b57',
+          digest: 'c2cb93dd4589230d385cc4adb582a789deeec68569487982f13e935c429d2f87',
           inventory: {
             attackProfiles: 433,
             attackServants: 422,
-            calculated: 422,
+            calculated: 419,
             calculatorScenarios: 422,
             inputRequired: 0,
             invalid: 0,
             preparationPlans: 3_438,
             rankingPolicy: 'current-default',
             rankingRows: 432,
-            unsupported: 0,
+            unsupported: 3,
           },
         },
       },
@@ -56,7 +56,11 @@ describe('shared calculation-application production audit', () => {
           2,
         )}\n`,
       );
-    expect(audit.failures).toEqual([]);
+    expect(audit.failures.map(({ kind, identity }) => ({ kind, identity }))).toEqual([
+      { kind: 'unsupported', identity: 'calculator:300100' },
+      { kind: 'unsupported', identity: 'calculator:702500' },
+      { kind: 'unsupported', identity: 'calculator:705300' },
+    ]);
     expect(actual, formatCanonicalAuditMismatch(expected, actual)).toEqual(expected);
   }, 120_000);
 });

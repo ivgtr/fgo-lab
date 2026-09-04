@@ -136,18 +136,34 @@ export interface RankingPolicyDetail {
 export type PolicyUnavailabilityReason =
   'attackProfileNotReachable' | 'insufficientNpGauge' | 'noSatisfiableCandidate';
 
+export type RankingBlockerClass =
+  'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported';
+
+export interface RankingBlockerDiagnostics {
+  classes: Record<
+    RankingBlockerClass,
+    {
+      count: number;
+      digest: string;
+      representatives: readonly { candidateKey: string; reason: string }[];
+    }
+  >;
+}
+
 export type RankingProfileResult =
   | { status: 'calculated'; detail: RankingPolicyDetail }
   | {
       status: 'unavailableUnderPolicy';
       attackProfile: AttackProfile;
       reason: PolicyUnavailabilityReason;
+      diagnostics: RankingBlockerDiagnostics;
     }
   | {
       status: 'inputRequired';
       attackProfile: AttackProfile;
       inputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
       issues: CalculationResult['issues'];
+      diagnostics: RankingBlockerDiagnostics;
     }
   | {
       status: 'invalid';
@@ -156,6 +172,7 @@ export type RankingProfileResult =
       reason: string;
       candidateSpaceIssue?: CandidateSpaceIssue;
       detail?: string;
+      diagnostics?: RankingBlockerDiagnostics;
     }
   | {
       status: 'unsupported';
@@ -163,6 +180,7 @@ export type RankingProfileResult =
       issues: CalculationResult['issues'];
       reason: string;
       detail?: string;
+      diagnostics?: RankingBlockerDiagnostics;
     };
 
 export interface RankingPolicyExclusion {

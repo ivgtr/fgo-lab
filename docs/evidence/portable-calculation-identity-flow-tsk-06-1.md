@@ -1,12 +1,30 @@
 ---
 title: "TSK-06.1 portable calculation identity flow closure"
 status: "Active"
-updated_at: "2026-09-02"
+updated_at: "2026-09-04"
 ---
 
 # TSK-06.1 portable calculation identity flow closure
 
 ## TSK-06.41 runtime cutover — authoritative current delta
+
+### Implementation review closure delta — IRL-005
+
+The previous reset closure verified scenario-field removal but missed two recovery writers: the reset
+constructor copied the retained request's unavailable version identity, and the Web draft path published an
+invalid attempted request to memory before durable commit. The mechanism therefore spans constructor,
+execution attempt, fingerprint, persistence commit, in-memory publication, rollback, and reload; it is not a
+local reset-button defect. The minimum guardrail is a current-runtime baseline request plus execute-before-
+commit ordering in which request、result、fingerprint are published only after durable success.
+
+| Recovery state | Constructor／execution | Durable writer | In-memory／reload | Planning status |
+| --- | --- | --- | --- | --- |
+| stale ranking version, valid current subject | construct current version calculator baseline and execute it | commit current request／result／fingerprint together | immediate state and reload observe the same pair | Verified: historical-version reset fixture |
+| missing／ambiguous subject or invalid／unsupported baseline | return typed failed attempt | retain the complete old draft | retain the same old in-memory pair; reload is unchanged | Verified: execute-before-publish rollback fixture |
+| current calculator reset | rebuild the same canonical baseline | atomic replacement | no ranking facts or stale identity survive | Verified: all reset surfaces use the shared application attempt |
+
+Version upgrade remains a separate command. TSK-07 notice styling／cache lifetime is N/A for this recovery
+correction.
 
 Schema 34／engine 30 implements the approved two-axis intent as a discriminated union: `manual`, `calculator`,
 or `ranking { selfBuffs, conditionalEffects }`. Scenario facts never reconstruct a missing policy, and compiled
@@ -274,6 +292,11 @@ Implementation evidence: schema current readers accept only schema 33 request en
 | arbitrary old/future schema | V: reject | N/A: rejected before handoff | V | V | V | V: fail closed |
 
 The three reopened mechanisms are closed together. TSK-07 retains only evidence-free cache and stale-detail ownership.
+
+IRL-005 closure verification used the current runtime version for every reset attempt and exercised
+success, invalid, unsupported, persistence failure, and retry as one execute-before-commit recovery
+family. Final `pnpm quality` passed 395 unit, 114 production, and 25 Playwright tests; artifact
+`.test-results/2026-09-04T11-35-28-969Z-15-8f8bc7`.
 
 ## Cache and stale-detail matrix
 

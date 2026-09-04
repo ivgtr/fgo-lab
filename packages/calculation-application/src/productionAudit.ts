@@ -198,7 +198,11 @@ export function compileCalculationApplicationProductionAudit(
             : result.inputs.map(({ key }) => key).join(',');
         return {
           identity: `ranking:${profileKey}`,
-          value: jsonValue({ status: result.status, reason }),
+          value: jsonValue({
+            status: result.status,
+            reason,
+            diagnostics: result.diagnostics ?? null,
+          }),
         };
       }
       const { detail } = result;

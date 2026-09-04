@@ -37,6 +37,7 @@ import type {
 } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
+  attemptPortableCalculationReset,
   attemptPortableCalculationVersionUpgrade,
   createDefaultCalculatorPortableRequest,
   createRankingPortableRequest,
@@ -44,7 +45,6 @@ import {
   executePortableCalculation,
   recoverPortableCalculation,
   replacePortableCalculationScenario,
-  resetPortableCalculationRequest,
   resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { IndexedDbProfileRepository } from '../adapters/repository';
@@ -358,7 +358,6 @@ export function App() {
     nextResult: CalculationResult,
     sessionId = calculationSessionId,
   ) {
-    setCalculation({ request, storedResult: nextResult, source: 'draft' });
     const fingerprint = await portableCalculationFingerprint(request, async (data: Uint8Array) =>
       crypto.subtle.digest('SHA-256', new Uint8Array(data)),
     );
@@ -375,6 +374,7 @@ export function App() {
       },
       updatedAt: now,
     }));
+    setCalculation({ request, storedResult: nextResult, source: 'draft' });
   }
   async function savePortableDraft(
     request: PortableCalculationRequest,
@@ -386,7 +386,6 @@ export function App() {
         ? outcome.execution.result
         : undefined;
     if (!nextResult) {
-      setCalculation({ request, storedResult: undefined, source: 'draft' });
       return outcome;
     }
     await commitPortableDraft(request, nextResult, sessionId);
@@ -394,6 +393,19 @@ export function App() {
   }
   async function saveScenarioDraft(scenario: CalculationScenario) {
     await savePortableDraft(replacePortableCalculationScenario(currentRequest, scenario));
+  }
+  async function resetPortableDraft() {
+    const retainedResult = calculation.storedResult ?? result;
+    if (!retainedResult) return;
+    const attempt = attemptPortableCalculationReset(
+      currentRequest,
+      retainedResult,
+      currentMaster,
+      selectedBuild,
+      selectedAttacker,
+    );
+    if (attempt.status !== 'committed') return;
+    await commitPortableDraft(attempt.request, attempt.result);
   }
   async function copyHistoryToDraft(entry: CurrentCalculationHistoryEntry) {
     const sessionId = crypto.randomUUID();
@@ -543,14 +555,7 @@ export function App() {
             request={currentRequest}
             reason={portableOutcome.reason}
             onReset={async () => {
-              await savePortableDraft(
-                resetPortableCalculationRequest(
-                  currentRequest,
-                  currentMaster,
-                  selectedBuild,
-                  selectedAttacker,
-                ),
-              );
+              await resetPortableDraft();
             }}
           />
         )}
@@ -561,14 +566,7 @@ export function App() {
               state="unsupported"
               request={currentRequest}
               onReset={async () => {
-                await savePortableDraft(
-                  resetPortableCalculationRequest(
-                    currentRequest,
-                    currentMaster,
-                    selectedBuild,
-                    selectedAttacker,
-                  ),
-                );
+                await resetPortableDraft();
               }}
             />
           )}
@@ -660,14 +658,7 @@ export function App() {
               onFinalize={finalizeCurrentCalculation}
               onHistorySelect={copyHistoryToDraft}
               onResetPortableRequest={async () => {
-                await savePortableDraft(
-                  resetPortableCalculationRequest(
-                    currentRequest,
-                    currentMaster,
-                    selectedBuild,
-                    selectedAttacker,
-                  ),
-                );
+                await resetPortableDraft();
               }}
             />
           )}{' '}

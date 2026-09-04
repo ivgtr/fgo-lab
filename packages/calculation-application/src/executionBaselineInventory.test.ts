@@ -9,6 +9,7 @@ import {
   type MasterEffect,
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
+import { noblePhantasmDamageDependency } from '@fgo-lab/battle-execution';
 
 const root = resolve(import.meta.dirname, '../../..');
 
@@ -68,6 +69,28 @@ describe('E0 production master execution inventory', () => {
     const contextProducers = effects.filter((effect) =>
       effect.execution.some((operation) => operation.kind === 'contextMutation'),
     );
+    const resourceMutations = effects.flatMap((effect) =>
+      effect.execution.filter(({ kind }) => kind === 'resourceMutation'),
+    );
+    const resourceCounts = Object.fromEntries(
+      Object.entries(
+        resourceMutations.reduce<Record<string, number>>((counts, operation) => {
+          if (operation.kind === 'resourceMutation')
+            counts[operation.resource] = (counts[operation.resource] ?? 0) + 1;
+          return counts;
+        }, {}),
+      ).sort(),
+    );
+    const npValueDependencies = master.servants.flatMap((servant) =>
+      getAttackNoblePhantasmVariants(servant).flatMap((np) =>
+        np.damage.flatMap((damage) => {
+          const dependency = noblePhantasmDamageDependency(damage, 1, 1);
+          return ['hpRatioLow', 'battlePointPhase', 'traitCount'].includes(damage.kind)
+            ? [{ damageKind: damage.kind, dependencyKind: dependency.kind }]
+            : [];
+        }),
+      ),
+    );
     const contextConsumers = effects.filter((effect) =>
       canonicalRequirementLeaves(effect.requirement.expression).some(
         (requirement) => requirement.kind === 'trait' || requirement.kind === 'targetPredicate',
@@ -92,6 +115,23 @@ describe('E0 production master execution inventory', () => {
     expect(conditionOperators).toEqual(['all', 'any']);
     expect(contextProducers.length).toBeGreaterThan(0);
     expect(contextConsumers.length).toBeGreaterThan(0);
+    expect(resourceCounts).toEqual({
+      battlePoint: 1,
+      criticalStars: 255,
+      hp: 179,
+      npGauge: 730,
+    });
+    expect(
+      npValueDependencies.reduce<Record<string, number>>((counts, item) => {
+        const key = `${item.damageKind}:${item.dependencyKind}`;
+        counts[key] = (counts[key] ?? 0) + 1;
+        return counts;
+      }, {}),
+    ).toEqual({
+      'battlePointPhase:quantity': 2,
+      'hpRatioLow:quantity': 6,
+      'traitCount:any': 22,
+    });
     expect(sorted(effects.map((effect) => effect.atlasEvidence.functionType))).toMatchSnapshot(
       'effect-types',
     );

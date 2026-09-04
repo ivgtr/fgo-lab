@@ -9,6 +9,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   attemptPortableCalculationVersionUpgrade,
+  attemptPortableCalculationReset,
   createCalculatorPortableRequest,
   createRankingPortableRequest,
   currentCalculationVersionContext,
@@ -138,13 +139,17 @@ describe('portable calculation application owner', () => {
         ],
       },
     });
+    const historicalContaminated = portableCalculationRequestSchema.parse({
+      ...contaminated,
+      versionContext: historicalRequest.versionContext,
+    });
     const reset = resetPortableCalculationRequest(
-      contaminated,
+      historicalContaminated,
       master,
       undefined,
       master.servants[0]!,
     );
-    expect(reset.versionContext).toEqual(request.versionContext);
+    expect(reset.versionContext).toEqual(currentCalculationVersionContext(master));
     expect(reset.executionIntent).toEqual({
       kind: 'calculator',
       initialNpGauge: 10_000,
@@ -155,6 +160,32 @@ describe('portable calculation application owner', () => {
       activationFacts: [],
       worldFactAssertions: [],
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+    });
+  });
+
+  it('rejects reset before publishing when the current subject cannot execute', () => {
+    const retainedRequest = createCalculatorPortableRequest(
+      createDefaultResolvedScenario(master, undefined),
+      versionContext,
+    );
+    const retained = executePortableCalculation(retainedRequest, master);
+    if (retained.status !== 'executed') throw new Error('retained result required');
+    const missingServant = { ...master.servants[0]!, id: 'missing-current-servant' };
+
+    const attempt = attemptPortableCalculationReset(
+      retainedRequest,
+      retained.execution.result,
+      master,
+      undefined,
+      missingServant,
+    );
+
+    expect(attempt).toMatchObject({
+      status: 'rejected',
+      retainedRequest,
+      retainedResult: retained.execution.result,
+      attemptedRequest: null,
+      failure: { status: 'invalid', reason: 'scenarioInvalid' },
     });
   });
 

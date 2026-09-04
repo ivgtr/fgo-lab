@@ -353,7 +353,7 @@ describe('canonical special input application boundary', () => {
       invalid: true,
       explicit: true,
     });
-    expect(invalid.input.npDamageBuff).toBe(0.1);
+    expect(invalid.input.npDamageBuff).toBe(0);
   });
 
   it('resolves defaults and invalid explicit values before execution', () => {

@@ -153,6 +153,8 @@ export function createOperationProjection(
   );
   const hidden =
     operation.kind === 'preserveSemanticEffect' ||
+    (operation.kind === 'resourceMutation' &&
+      operation.resolution !== 'resourceStateUnavailable') ||
     operation.kind === 'addTrait' ||
     operation.kind === 'removeTrait' ||
     operation.kind === 'suppressInitialTrait' ||

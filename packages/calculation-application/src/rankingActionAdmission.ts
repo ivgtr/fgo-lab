@@ -1,5 +1,6 @@
 import type { MasterEffect } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
+import { classifyContributionCondition, compileEffectCondition } from '@fgo-lab/battle-execution';
 import { attackProfileKey } from './attackProfile';
 import type { RankingPolicyConditions } from './rankingContracts';
 import type {
@@ -47,8 +48,24 @@ function actionIsStructural(
   });
 }
 
-function requirementIsUnconditional(effect: MasterEffect): boolean {
-  return effect.requirement.expression.kind === 'always';
+function requirementIsUnconditionalForAttack(
+  effect: MasterEffect,
+  source: RankingPreparationSourceUse,
+  program: StaticRankingPreparationProgram,
+): boolean {
+  const condition = compileEffectCondition(
+    effect,
+    source.kind === 'skill' ? 'attacker' : 'np',
+    program.attackProfile.id.servantLineageId,
+    `ranking-admission:${source.kind}`,
+    source.kind === 'skill' ? source.skill.id : `np:${source.noblePhantasmVariant.noblePhantasmId}`,
+  );
+  return (
+    classifyContributionCondition(condition, {
+      card: program.attackProfile.cardType,
+      noblePhantasmVariant: program.attackProfile.noblePhantasmVariant,
+    }) === 'intrinsicSatisfied'
+  );
 }
 
 function effectHasPositiveDamageContribution(effect: MasterEffect): boolean {
@@ -102,12 +119,15 @@ function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission 
 function optionalAdmission(
   source: RankingPreparationSourceUse,
   conditions: RankingPolicyConditions,
+  program: StaticRankingPreparationProgram,
 ): CandidateLocalActionAdmission {
   if (conditions.selfBuffs === 'excluded')
     return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
   if (conditions.conditionalEffects === 'baseline') {
     const contributes = source.effects.some(
-      (effect) => requirementIsUnconditional(effect) && effectHasPositiveDamageContribution(effect),
+      (effect) =>
+        requirementIsUnconditionalForAttack(effect, source, program) &&
+        effectHasPositiveDamageContribution(effect),
     );
     if (!contributes) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
     const safe = source.effects.every((effect) => !unsafeBaselineEffect(effect));
@@ -144,7 +164,7 @@ export function compileCandidateLocalActionAdmission(
     const admissions = program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
       actionIsStructural(program, index, programs)
         ? { kind: 'admitted', role: 'structuralRequired' }
-        : optionalAdmission(source, conditions),
+        : optionalAdmission(source, conditions, program),
     );
     if (admissions.some(({ kind }) => kind === 'unsupported'))
       unsupportedAttackProfileKeys.add(attackProfileKey(program.attackProfile));

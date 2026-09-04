@@ -488,7 +488,7 @@ describe('ranking target witness completeness', () => {
     expect({
       conditions: inventory.length,
       servants: new Set(inventory.map(({ servant: candidateServant }) => candidateServant.id)).size,
-    }).toEqual({ conditions: 13_026, servants: 205 });
+    }).toEqual({ conditions: 14_066, servants: 214 });
     const canonicalDefaultProvenance = inventory.filter(({ condition }) =>
       conditionLeaves(condition).some(
         (leaf) =>

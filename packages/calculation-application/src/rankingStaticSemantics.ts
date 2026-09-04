@@ -1,6 +1,6 @@
 import {
   compileEffectCached,
-  noblePhantasmDamageCondition,
+  noblePhantasmDamageDependency,
   planOperationActivations,
   runtimeInputDefinitionsForSource,
   type BattleOperation,
@@ -170,7 +170,7 @@ export function compileStaticRankingSemantics(
     attackVariant?.kind === 'attack'
       ? attackVariant.damage.flatMap((damage) =>
           Array.from({ length: damage.parametersByOvercharge.length }, (_, index) =>
-            noblePhantasmDamageCondition(damage, index + 1),
+            noblePhantasmDamageDependency(damage, index + 1, conditions.npLevel),
           ),
         )
       : [];

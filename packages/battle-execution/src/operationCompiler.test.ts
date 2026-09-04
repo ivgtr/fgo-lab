@@ -125,6 +125,42 @@ function modifier(
 }
 
 describe('canonical operation compilation', () => {
+  it.each(['hp', 'criticalStars', 'battlePoint'] as const)(
+    'compiles unrepresentable %s mutations as typed unsupported operations',
+    (resource) => {
+      const compiled = compileEffect(
+        source([
+          modifier('attackBuff', 100),
+          {
+            kind: 'resourceMutation',
+            resource,
+            direction: 'loss',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            amount: { kind: 'fixed', values: values(100) },
+            subjectId: null,
+          },
+        ]),
+        0,
+      );
+
+      expect(compiled.operations).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'resourceMutation',
+            resource,
+            resolution: 'resourceStateUnavailable',
+            direction: 'loss',
+            unit: 'fixed',
+            amount: 100,
+            subjectId: null,
+          }),
+        ]),
+      );
+      expect(compiled.projections).toEqual([]);
+    },
+  );
+
   it('passes the preparation stochastic result into ordinary execution', () => {
     const preparedSource = source([modifier('attackBuff', 100)]);
     preparedSource.preparationStochasticOutcome = 'failure';

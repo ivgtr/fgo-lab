@@ -1113,6 +1113,99 @@ describe('scenario calculation facade', () => {
     expect(conflict.input.powerMod).toBe(0);
   });
 
+  it('rolls back sibling damage contributions when a resource mutation is unsupported', () => {
+    const baseServant = fixture.servants[0]!;
+    const modifier = modifierEffect('resource-transaction', 'upDamage', 500);
+    const resourceMaster = parseTestMaster({
+      ...fixture,
+      servants: [
+        {
+          ...baseServant,
+          noblePhantasmVariantGroups: baseServant.noblePhantasmVariantGroups.map((group) => ({
+            ...group,
+            variants: group.variants.map((variant) =>
+              variant.kind === 'attack'
+                ? {
+                    ...variant,
+                    damage: variant.damage.map((damage) => ({
+                      ...damage,
+                      kind: 'hpRatioLow' as const,
+                      rawFunctionType: 'damageNpHpratioLow',
+                      parametersByOvercharge: damage.parametersByOvercharge.map((levels) =>
+                        levels.map((parameter) => ({ ...parameter, targetId: 6_000 })),
+                      ),
+                    })),
+                  }
+                : variant,
+            ),
+          })),
+          skills: [
+            {
+              id: 'resource-transaction-skill',
+              slot: 1,
+              priority: 1,
+              name: 'resource transaction',
+              detail: '',
+              imageKey: null,
+              resourceRequirement: null,
+              effects: [
+                {
+                  ...modifier,
+                  execution: [
+                    ...modifier.execution,
+                    {
+                      kind: 'resourceMutation' as const,
+                      resource: 'hp' as const,
+                      direction: 'loss' as const,
+                      unit: 'fixed' as const,
+                      recipient: 'sourceSelf' as const,
+                      amount: {
+                        kind: 'fixed' as const,
+                        values: [Array<number>(10).fill(100), [], [], [], []] as [
+                          number[],
+                          number[],
+                          number[],
+                          number[],
+                          number[],
+                        ],
+                      },
+                      subjectId: null,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const scenario: ResolvedScenario = {
+      ...createDefaultResolvedScenario(resourceMaster, undefined),
+      preNoblePhantasmPlan: [
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 10, choice: null },
+        { kind: 'executeAttackNoblePhantasm' },
+      ],
+    };
+
+    const execution = calculateScenario(scenario, resourceMaster, {
+      ...versions,
+      masterDataVersion: resourceMaster.version,
+    });
+
+    expect(execution.result.status).toBe('unsupported');
+    if (execution.result.status !== 'unsupported') throw new Error(execution.result.status);
+    expect(execution.result.rows).toEqual([]);
+    expect(
+      execution.result.missingEvidence.some((item) => item.includes('resourceStateUnavailable:hp')),
+    ).toBe(true);
+    expect(execution.input.powerMod).toBe(0);
+    expect(
+      execution.effectiveContributions.contributions.find(
+        ({ source }) => source.effectOccurrenceId === 'resource-transaction:0',
+      )?.effective,
+    ).toBe(false);
+  });
+
   it('rolls back every operation in an effect when a later runtime value is unresolved', () => {
     const baseServant = fixture.servants[0]!;
     const staticModifier = modifierEffect('compound', 'upAtk', 100).execution[0]!;

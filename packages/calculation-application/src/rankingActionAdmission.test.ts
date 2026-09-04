@@ -126,6 +126,32 @@ const positive = effect('positive:0', [
 ]);
 
 describe('candidate-local action admission', () => {
+  it('admits a safe card-qualified action when the selected AttackProfile proves it intrinsic', () => {
+    const buster = effect('buster:0', positive.execution, {
+      kind: 'card',
+      card: attackProfile.cardType,
+      present: true,
+    });
+    const otherCard = effect('other-card:0', positive.execution, {
+      kind: 'card',
+      card: attackProfile.cardType === 'buster' ? 'arts' : 'buster',
+      present: true,
+    });
+
+    expect(
+      compileCandidateLocalActionAdmission(
+        [withoutAction, program([buster])],
+        baseline,
+      ).programs.map(({ key }) => key),
+    ).toEqual(['without-action', 'with-action']);
+    expect(
+      compileCandidateLocalActionAdmission(
+        [withoutAction, program([otherCard])],
+        baseline,
+      ).programs.map(({ key }) => key),
+    ).toEqual(['without-action']);
+  });
+
   it('admits only a proved positive, deterministic, cost-free optional baseline action', () => {
     const admitted = compileCandidateLocalActionAdmission(
       [withoutAction, program([positive])],

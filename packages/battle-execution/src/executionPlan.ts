@@ -19,6 +19,7 @@ import { resolveTargetCandidates } from './targetContext';
 import { compileNoblePhantasmDamageOperation } from './npDamageCompilation';
 import { effectChangesPreparation } from './preparationTransaction';
 import type { ResolvedAttackerFormExecution } from './sourceCollection';
+import { closeResourceMutationSemantics } from './resourceSemantics';
 export function compileExecutionPlan(
   baseInput: DamageResolutionInput,
   scenario: ResolvedScenario,
@@ -82,7 +83,9 @@ export function compileExecutionPlan(
     damageEvaluation: 7,
     npDamage: 8,
   };
-  const operations = [...planOperationActivations(compiledOperations)]
+  const operations = [
+    ...planOperationActivations(closeResourceMutationSemantics(compiledOperations)),
+  ]
     .sort(
       (left, right) => phaseOrder[left.phase] - phaseOrder[right.phase] || left.order - right.order,
     )
