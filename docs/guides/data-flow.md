@@ -23,7 +23,8 @@ Atlas static export
   -> versioned normalized master + manifest + inventory
   -> Vercel static master artifact
   -> web startup adapter
-       -> candidate取得・SHA-256／schema／参照整合性検証
+       -> manifestだけで版を確認し、初回／版更新時だけcandidateを取得
+       -> byte length・SHA-256／schema／参照整合性検証
        -> IndexedDB staging
        -> active pointerのtransaction切替
        -> 互換性確認済みの直前正常版fallback

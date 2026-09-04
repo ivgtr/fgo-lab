@@ -64,8 +64,24 @@ therefore establishes selective loading without claiming that the framework boot
 smaller.
 
 The runtime master artifact remains 30,107,913 bytes uncompressed and 2,260,578 bytes with gzip. It is
-the dominant payload and is deferred because its canonical schema and validation flow are a separate
-semantic family.
+not imported by a Server or Client Component and is therefore absent from the JavaScript bundle. The
+browser downloads it as a separate artifact only during initial setup or after the manifest announces
+a new version, verifies its byte length, SHA-256, schema, references, and version, then atomically
+activates it in IndexedDB. Normal revisits download only the 548-byte manifest and reuse the validated
+IndexedDB snapshot. Service Worker cache excludes the master payload to avoid storing a second 30 MB
+copy; it retains the manifest and visited application shell for offline startup.
+
+## Master delivery delta
+
+| Canonical state / path | Network read | Local transition | Status |
+| --- | --- | --- | --- |
+| no active master | manifest, then required payload | validate and atomically activate in IndexedDB | Verified: setup journey and production inventory |
+| active version equals manifest | manifest only | retain active snapshot | Verified: E2E-023 asserts zero payload requests on revisit |
+| manifest announces a new version | manifest, then required payload | validate, stage, and atomically replace active snapshot | Verified: incompatible-version recovery journey |
+| update request or validation fails with valid active master | attempted update only | retain previously validated active snapshot and warn | Verified: startup fallback contract |
+| no valid active master and payload is unavailable or invalid | attempted initial download | do not create a plausible active snapshot | Verified: fail-closed startup and production validation contracts |
+| offline revisit with active master | cached manifest when available | use IndexedDB active snapshot | Verified: E2E-023 offline reload |
+| Service Worker runtime cache | shell assets and manifest only | never duplicate the master payload outside IndexedDB | Verified: E2E-023 cache inventory assertion |
 
 ## Test-server ownership delta
 

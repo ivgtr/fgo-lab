@@ -72,9 +72,29 @@ async function sha256(value: string): Promise<string> {
 export async function fetchMasterCandidate(
   baseUrl: string,
 ): Promise<{ manifest: MasterManifest; snapshot: MasterDataSnapshot; fromOfflineCache: boolean }> {
+  const manifestCandidate = await fetchMasterManifest(baseUrl);
+  const snapshotCandidate = await fetchMasterSnapshot(baseUrl, manifestCandidate.manifest);
+  return {
+    manifest: manifestCandidate.manifest,
+    snapshot: snapshotCandidate.snapshot,
+    fromOfflineCache: manifestCandidate.fromOfflineCache || snapshotCandidate.fromOfflineCache,
+  };
+}
+export async function fetchMasterManifest(
+  baseUrl: string,
+): Promise<{ manifest: MasterManifest; fromOfflineCache: boolean }> {
   const manifestResponse = await fetch(`${baseUrl}master/manifest.json`, { cache: 'no-store' });
   if (!manifestResponse.ok) throw new Error('master_manifest_download_failed');
   const manifest = masterManifestSchema.parse(await manifestResponse.json());
+  return {
+    manifest,
+    fromOfflineCache: manifestResponse.headers.get('X-Fgo-Lab-Cache') === 'offline',
+  };
+}
+export async function fetchMasterSnapshot(
+  baseUrl: string,
+  manifest: MasterManifest,
+): Promise<{ snapshot: MasterDataSnapshot; fromOfflineCache: boolean }> {
   const masterFile = manifest.files.find((file) => file.key === 'master' && file.required);
   if (!masterFile) throw new Error('required_master_file_missing');
   const dataResponse = await fetch(`${baseUrl}master/${masterFile.file}`, { cache: 'no-store' });
@@ -84,11 +104,8 @@ export async function fetchMasterCandidate(
     throw new Error('master_bytes_mismatch');
   if ((await sha256(content)) !== masterFile.sha256) throw new Error('master_checksum_mismatch');
   return {
-    manifest,
     snapshot: masterSnapshotSchema.parse(JSON.parse(content)),
-    fromOfflineCache:
-      manifestResponse.headers.get('X-Fgo-Lab-Cache') === 'offline' ||
-      dataResponse.headers.get('X-Fgo-Lab-Cache') === 'offline',
+    fromOfflineCache: dataResponse.headers.get('X-Fgo-Lab-Cache') === 'offline',
   };
 }
 async function discardMasterCache(db: IDBPDatabase<LabDb>): Promise<void> {

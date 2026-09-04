@@ -14,6 +14,8 @@ import type {
 } from '@fgo-lab/schema';
 import {
   fetchMasterCandidate,
+  fetchMasterManifest,
+  fetchMasterSnapshot,
   loadActiveMaster,
   stageAndActivate,
   type ActiveMaster,
@@ -87,11 +89,21 @@ export async function bootstrapApplication(
       }
     } else if (active) {
       try {
-        const candidate = await fetchMasterCandidate(options.baseUrl);
-        offline = candidate.fromOfflineCache;
-        assertActivatable(candidate.manifest.artifactKind, options.development);
-        if (candidate.manifest.masterDataVersion !== active.manifest.masterDataVersion)
-          active = await stageAndActivate(candidate.manifest, candidate.snapshot, options.now);
+        const manifestCandidate = await fetchMasterManifest(options.baseUrl);
+        offline = manifestCandidate.fromOfflineCache;
+        assertActivatable(manifestCandidate.manifest.artifactKind, options.development);
+        if (manifestCandidate.manifest.masterDataVersion !== active.manifest.masterDataVersion) {
+          const snapshotCandidate = await fetchMasterSnapshot(
+            options.baseUrl,
+            manifestCandidate.manifest,
+          );
+          offline ||= snapshotCandidate.fromOfflineCache;
+          active = await stageAndActivate(
+            manifestCandidate.manifest,
+            snapshotCandidate.snapshot,
+            options.now,
+          );
+        }
       } catch (cause) {
         warning = `更新に失敗したため互換性確認済みの ${active.manifest.masterDataVersion} を使用中: ${errorMessage(cause)}`;
       }

@@ -178,8 +178,25 @@ test('[E2E-023] offline reopen through service worker @desktop @journey', async 
       await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
     });
+    let masterPayloadRequests = 0;
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname.endsWith('/master/master.json'))
+        masterPayloadRequests += 1;
+    });
     await page.reload();
     await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });
+    expect(masterPayloadRequests).toBe(0);
+    const cachedUrls = await page.evaluate(async () => {
+      const requests = await Promise.all(
+        (await caches.keys()).map((cacheName) =>
+          caches.open(cacheName).then((cache) => cache.keys()),
+        ),
+      );
+      return requests.flat().map(({ url }) => url);
+    });
+    expect(cachedUrls.some((url) => new URL(url).pathname.endsWith('/master/master.json'))).toBe(
+      false,
+    );
     await context.setOffline(true);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'ホーム' })).toBeVisible({ timeout: 15_000 });

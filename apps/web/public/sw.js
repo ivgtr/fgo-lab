@@ -1,4 +1,4 @@
-const CACHE = 'fgo-lab-shell-v3';
+const CACHE = 'fgo-lab-shell-v4';
 self.addEventListener('install', (event) =>
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./']))),
 );
@@ -17,8 +17,14 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        void caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        const requestUrl = new URL(event.request.url);
+        const isMasterPayload =
+          requestUrl.pathname.includes('/master/') &&
+          !requestUrl.pathname.endsWith('/master/manifest.json');
+        if (!isMasterPayload) {
+          const copy = response.clone();
+          void caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        }
         return response;
       })
       .catch(async () => {
