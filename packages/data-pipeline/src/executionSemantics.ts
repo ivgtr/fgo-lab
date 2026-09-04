@@ -144,10 +144,7 @@ type DamageRoute = Pick<
   'modifier' | 'sign' | 'card'
 > & { expectedRecipient: 'attacker' | 'target' };
 
-export function normalizeTargetPolicy(
-  target: string,
-  targetTeam: string | undefined = undefined,
-): CanonicalTargetPolicy {
+export function normalizeTargetPolicy(target: string, targetTeam?: string): CanonicalTargetPolicy {
   if (targetTeam === 'enemy' && (target === 'self' || target.startsWith('pt'))) return 'enemy';
   if (target.startsWith('enemy')) return 'enemy';
   if (target === 'self') return 'sourceSelf';
@@ -158,7 +155,7 @@ export function normalizeTargetPolicy(
 
 export function normalizeContributionScope(
   target: string,
-  targetTeam: string | undefined = undefined,
+  targetTeam?: string,
 ): CanonicalEffectContributionScope | null {
   if (targetTeam === 'enemy' || target.startsWith('enemy')) return 'enemyApplied';
   if (

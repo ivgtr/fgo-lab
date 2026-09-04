@@ -393,8 +393,7 @@ export function resolveScenarioPreparationOutcome(
     input: damageResolutionInputForNoblePhantasm(
       {
         ...scenario,
-        overcharge: Math.max(formExecution.state.baseOvercharge ?? 1, scenario.overcharge) as
-          1 | 2 | 3 | 4 | 5,
+        overcharge: Math.max(formExecution.state.baseOvercharge ?? 1, scenario.overcharge),
       },
       servant,
       selected,

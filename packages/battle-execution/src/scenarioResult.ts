@@ -22,7 +22,7 @@ function redactRelativeTargetWitnesses<T extends BattleExecutionState>(
         }),
       ),
     },
-  } as T;
+  };
 }
 
 export function assembleAmbiguousTargetResult(

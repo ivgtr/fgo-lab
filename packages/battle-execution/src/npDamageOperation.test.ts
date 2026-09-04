@@ -171,7 +171,7 @@ describe('NP damage operation', () => {
         correctionPermille: 200,
         maximumTargetCount: 3,
       }),
-    } as NpDamageSpec;
+    };
     expect(
       evaluateNpDamageOperation(targetSum, {
         ...context,

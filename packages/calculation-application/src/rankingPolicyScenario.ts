@@ -42,7 +42,6 @@ export function compileRankingExecutionPlan(
   conditions: RankingPolicyConditions,
   _versions: VersionContext,
 ): RankingExecutionPlan {
-  void _versions;
   const inventory = createStaticAttackProfiles(servant);
   const candidateSpaces = compileRankingCandidateSpaces(
     servant,
