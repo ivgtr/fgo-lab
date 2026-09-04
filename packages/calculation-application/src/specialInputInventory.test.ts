@@ -65,8 +65,8 @@ describe('production special input inventory', () => {
         : [],
     );
     expect(statusCounts, JSON.stringify(criticalStarUnsupported)).toEqual({
-      calculated: 419,
-      unsupported: 3,
+      calculated: 420,
+      unsupported: 2,
     });
     expect(criticalStarUnsupported).toEqual([]);
     expect(inputs).toHaveLength(13);

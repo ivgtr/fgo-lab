@@ -73,7 +73,6 @@ function loadProductionMaster() {
 }
 
 const expectedUnsupportedFamilies = {
-  '300100': ['unsupportedOperation'],
   '702500': ['unsupportedOperation'],
   '705300': ['unsupportedOperation'],
 } as const;
@@ -659,7 +658,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_588, automaticVisible: 0, hidden: 5_630 });
+    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_631 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -690,9 +689,6 @@ describe('production master inventory ratchet', () => {
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
     expect(selectedUnsupportedProjections).toEqual([
-      '300100:passive:passive:300100:62450:265:0',
-      '300100:attacker:attacker:300100:759550:5630:0',
-      '300100:attacker:attacker:300100:12350:439:0',
       '702500:attacker:attacker:702500:343450:125:0',
       '702500:attacker:attacker:702500:789451:439:0',
       '702500:attacker:attacker:702500:344655:21449:0',
@@ -715,7 +711,7 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({ '300100': 3, '702500': 4, '705300': 6 });
+    ).toEqual({ '702500': 4, '705300': 6 });
     expect(declaredExclusivePairCount).toBe(4);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',

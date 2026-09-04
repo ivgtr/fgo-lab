@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -10,7 +11,9 @@ import {
 } from './rankingCandidateSpace';
 import { DEFAULT_RANKING_POLICY_CONDITIONS, type RankingProfileInput } from './rankingContracts';
 import { calculateRankingPolicy, calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { compileRankingExecutionPlan, executeRankingScenarios } from './rankingPolicyScenario';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
+import { compileCandidateLocalActionAdmissionDispositions } from './rankingActionAdmission';
 
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
@@ -199,6 +202,74 @@ describe('static ranking candidate space', () => {
     expect(actual).toEqual([90_290.91, 108_832.9, 118_739.145, 133_764.555]);
   }, 30_000);
 
+  it('drops only the concrete start-gauge candidate that cannot pay a represented NP cost', () => {
+    const source = master.servants.find(({ id }) => id === '100100')!;
+    const costEffect = master.servants
+      .find(({ id }) => id === '2501400')!
+      .skills.find(({ id }) => id === '2357350')!
+      .effects.find(({ id }) => id === '21693')!;
+    const costlySkill = source.skills[0]!;
+    const servant = {
+      ...source,
+      skills: source.skills.map((skill) =>
+        skill.id === costlySkill.id ? { ...skill, effects: [...skill.effects, costEffect] } : skill,
+      ),
+    };
+    const fixtureMaster = {
+      ...master,
+      servants: master.servants.map((candidate) =>
+        candidate.id === servant.id ? servant : candidate,
+      ),
+    };
+    const compile = (npLevel: 1 | 2, conditionalEffects: 'baseline' | 'satisfied') =>
+      compileRankingExecutionPlan(
+        servant,
+        fixtureMaster,
+        profile,
+        { ...DEFAULT_RANKING_POLICY_CONDITIONS, npLevel, conditionalEffects },
+        versions(),
+      );
+    const baseline = compile(1, 'baseline');
+    const baselineExecutions = executeRankingScenarios(
+      baseline.preparedRankingScenarios,
+      fixtureMaster,
+      versions(),
+      baseline.contributionPolicies,
+    );
+    const costlyBaseline = baseline.preparationPlanKeys.flatMap((key, index) =>
+      key.includes('"slot":1') ? [{ index, key }] : [],
+    );
+    expect(costlyBaseline).not.toHaveLength(0);
+    expect(
+      costlyBaseline.every(
+        ({ index }) =>
+          baseline.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ===
+            'insufficientNpGauge' && baselineExecutions[index]?.status === 'rejected',
+      ),
+    ).toBe(true);
+    expect(baselineExecutions.some(({ result }) => result.status === 'calculated')).toBe(true);
+
+    const satisfied = compile(2, 'satisfied');
+    const costlySatisfied = satisfied.preparationPlanKeys.flatMap((key, index) =>
+      key.includes('"slot":1')
+        ? [
+            {
+              startNpGauge: satisfied.startNpGauges[index],
+              rejection:
+                satisfied.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ??
+                null,
+            },
+          ]
+        : [],
+    );
+    expect(costlySatisfied).toEqual(
+      expect.arrayContaining([
+        { startNpGauge: 10_000, rejection: 'insufficientNpGauge' },
+        { startNpGauge: 20_000, rejection: null },
+      ]),
+    );
+  }, 30_000);
+
   it('classifies every static production AttackProfile without substituting a sibling', () => {
     const calculation = calculateRankingPolicy(
       master,
@@ -211,18 +282,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 669,
-        generatedCount: 669,
-        deduplicatedCount: 669,
-        damageRequestUpperBound: 669,
-        damageRequestCount: 668,
-        distinctDamageInputCount: 631,
+        semanticUpperBound: 1_936,
+        generatedCount: 1_936,
+        deduplicatedCount: 1_936,
+        damageRequestUpperBound: 1_936,
+        damageRequestCount: 1_924,
+        distinctDamageInputCount: 1_298,
       },
       damageCache: {
-        requestCount: 668,
-        distinctDamageInputCount: 631,
-        cacheHitCount: 37,
-        cacheHitRate: 37 / 668,
+        requestCount: 1_924,
+        distinctDamageInputCount: 1_298,
+        cacheHitCount: 626,
+        cacheHitRate: 626 / 1_924,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -232,19 +303,191 @@ describe('static ranking candidate space', () => {
     const unavailable = Object.values(calculation.profileResults).filter(
       (result) => result.status !== 'calculated',
     );
+    expect(unavailable.map((result) => result.attackProfile?.id.servantLineageId).sort()).toEqual(
+      [
+        '103100',
+        '105900',
+        '106100',
+        '106200',
+        '106400',
+        '203300',
+        '204300',
+        '204900',
+        '204900',
+        '304000',
+        '305400',
+        '305700',
+        '305900',
+        '306000',
+        '306200',
+        '306200',
+        '403600',
+        '405700',
+        '500200',
+        '502600',
+        '506000',
+        '601500',
+        '603200',
+        '604600',
+        '605000',
+        '605100',
+        '704400',
+        '704900',
+        '705300',
+        '1000400',
+        '1000500',
+        '1000900',
+        '1001800',
+        '1101600',
+        '1101800',
+        '1102300',
+        '2301200',
+        '2500400',
+        '2501400',
+        '2501600',
+      ].sort(),
+    );
     expect(
-      unavailable.map((result) => ({
-        status: result.status,
-        reason: 'reason' in result ? result.reason : null,
-        servantLineageId: result.attackProfile?.id.servantLineageId,
-      })),
-    ).toEqual([
+      unavailable.every(
+        (result) =>
+          result.status === 'unsupported' && result.reason === 'unsupportedActionAdmission',
+      ),
+    ).toBe(true);
+  }, 30_000);
+
+  it('ratchets adverse action admission and concrete execution dispositions', () => {
+    const actionRecords: unknown[] = [];
+    const adverseOccurrences = new Set<string>();
+    const admissions: Record<string, number> = {};
+    const preparationRejections: Record<string, number> = {};
+    const policies = [
       {
-        status: 'unavailableUnderPolicy',
-        reason: 'insufficientNpGauge',
-        servantLineageId: '2501400',
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'included',
+        conditionalEffects: 'baseline',
       },
-    ]);
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'included',
+        conditionalEffects: 'satisfied',
+      },
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'excluded',
+        conditionalEffects: 'baseline',
+      },
+      {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        selfBuffs: 'excluded',
+        conditionalEffects: 'satisfied',
+      },
+    ] as const;
+    for (const servant of master.servants) {
+      for (const skill of servant.skills)
+        for (const effect of skill.effects)
+          for (const operation of effect.execution) {
+            const family =
+              operation.kind === 'resourceMutation' && operation.direction === 'loss'
+                ? `${operation.resource}:${operation.amount.kind}`
+                : operation.kind === 'damageModifier' && operation.sign === -1
+                  ? 'negativeModifier'
+                  : operation.kind === 'stateMutation' && operation.polarity === 'detrimental'
+                    ? 'detrimentalState'
+                    : operation.kind === 'contextMutation' &&
+                        (operation.mutation === 'removeTrait' ||
+                          operation.mutation === 'suppressInitialTrait')
+                      ? 'traitRemoval'
+                      : null;
+            if (family)
+              adverseOccurrences.add(`${family}|${servant.id}:${skill.id}:${effect.occurrenceId}`);
+          }
+      const programs = compileStaticRankingPreparationPrograms(servant);
+      for (const policy of policies) {
+        const policyKey = `${policy.selfBuffs}:${policy.conditionalEffects}`;
+        const dispositions = compileCandidateLocalActionAdmissionDispositions(programs, policy);
+        for (const disposition of dispositions) {
+          actionRecords.push({ servantId: servant.id, policyKey, ...disposition });
+          for (const admission of disposition.actionAdmissions) {
+            const dispositionKey =
+              admission.kind === 'admitted'
+                ? `${admission.kind}:${admission.role}`
+                : admission.kind === 'unsupported'
+                  ? `${admission.kind}:${admission.reason}`
+                  : admission.kind;
+            const key = `${policyKey}:${dispositionKey}`;
+            admissions[key] = (admissions[key] ?? 0) + 1;
+          }
+        }
+        if (policyKey === 'included:baseline') {
+          const plan = compileRankingExecutionPlan(servant, master, profile, policy, versions());
+          for (const prepared of plan.preparedRankingScenarios) {
+            const code = prepared.resolved.preparationRejection?.code;
+            if (code) {
+              const key = `${policyKey}:unreachable:${code}`;
+              preparationRejections[key] = (preparationRejections[key] ?? 0) + 1;
+            }
+          }
+        }
+      }
+    }
+    const adverseFamilies = [...adverseOccurrences].reduce<Record<string, number>>(
+      (counts, occurrence) => {
+        const family = occurrence.slice(0, occurrence.indexOf('|'));
+        counts[family] = (counts[family] ?? 0) + 1;
+        return counts;
+      },
+      {
+        'hp:fixed': 0,
+        'hp:dependent': 0,
+        'npGauge:fixed': 0,
+        'npGauge:dependent': 0,
+        'criticalStars:fixed': 0,
+        'criticalStars:dependent': 0,
+        'battlePoint:fixed': 0,
+        'battlePoint:dependent': 0,
+        negativeModifier: 0,
+        detrimentalState: 0,
+        traitRemoval: 0,
+      },
+    );
+    expect({
+      adverseFamilies,
+      admissions,
+      preparationRejections,
+      actionDigest: createHash('sha256').update(JSON.stringify(actionRecords)).digest('hex'),
+    }).toEqual({
+      adverseFamilies: {
+        'battlePoint:dependent': 0,
+        'battlePoint:fixed': 1,
+        'criticalStars:dependent': 0,
+        'criticalStars:fixed': 5,
+        detrimentalState: 0,
+        'hp:dependent': 0,
+        'hp:fixed': 23,
+        negativeModifier: 27,
+        'npGauge:dependent': 0,
+        'npGauge:fixed': 38,
+        traitRemoval: 3,
+      },
+      admissions: {
+        'excluded:baseline:admitted:structuralRequired': 148,
+        'excluded:baseline:policyNoOp': 15024,
+        'excluded:satisfied:admitted:structuralRequired': 148,
+        'excluded:satisfied:policyNoOp': 15024,
+        'included:baseline:admitted:optional': 8029,
+        'included:baseline:admitted:structuralRequired': 148,
+        'included:baseline:policyNoOp': 6460,
+        'included:baseline:unsupported:unresolvedOperation': 535,
+        'included:satisfied:admitted:optional': 14467,
+        'included:satisfied:admitted:structuralRequired': 148,
+        'included:satisfied:policyNoOp': 22,
+        'included:satisfied:unsupported:unresolvedOperation': 535,
+      },
+      preparationRejections: {
+        'included:baseline:unreachable:insufficientNpGauge': 12,
+      },
+      actionDigest: 'bb43fa1ff4df8e68ce460829cba253459ebc2e1a7e053a7ce782529018d6e101',
+    });
   }, 30_000);
 
   it('ratchets the largest static semantic product below the finite planner limit', () => {

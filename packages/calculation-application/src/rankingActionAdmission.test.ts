@@ -5,7 +5,7 @@ import {
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
-import { createStaticAttackProfiles } from './attackProfile';
+import { attackProfileKey, createStaticAttackProfiles } from './attackProfile';
 import { compileCandidateLocalActionAdmission } from './rankingActionAdmission';
 import type { RankingPolicyConditions } from './rankingContracts';
 import type { StaticRankingPreparationProgram } from './rankingStaticPreparation';
@@ -207,7 +207,7 @@ describe('candidate-local action admission', () => {
     ).toEqual(['without-action', 'with-action']);
   });
 
-  it('admits only a proved positive, deterministic, cost-free optional baseline action', () => {
+  it('admits a deterministic baseline contribution without classifying represented adversity', () => {
     const admitted = compileCandidateLocalActionAdmission(
       [withoutAction, program([positive])],
       baseline,
@@ -234,7 +234,53 @@ describe('candidate-local action admission', () => {
         [withoutAction, program([costly])],
         baseline,
       ).programs.map(({ key }) => key),
-    ).toEqual(['without-action']);
+    ).toEqual(['without-action', 'with-action']);
+
+    const adverse = effect('adverse:0', [
+      {
+        kind: 'damageModifier',
+        modifier: 'attackBuff',
+        sign: -1,
+        card: null,
+        route,
+        semanticSupport: 'supported',
+        values: [[100], [], [], [], []],
+        valueExpressions: [[null], [], [], [], []],
+      },
+      {
+        kind: 'stateMutation',
+        mutation: 'add',
+        recipient: 'sourceSelf',
+        polarity: 'detrimental',
+      },
+    ]);
+    expect(
+      compileCandidateLocalActionAdmission(
+        [withoutAction, program([adverse])],
+        baseline,
+      ).programs.map(({ key }) => key),
+    ).toEqual(['without-action', 'with-action']);
+  });
+
+  it('keeps unsupported cost distinct from a policy no-op', () => {
+    const unknownCost = effect('unknown-cost:0', [
+      ...positive.execution,
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'loss',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        amount: { kind: 'dependent', reason: 'currentGaugeMultiplier' },
+        subjectId: null,
+      },
+    ]);
+    const result = compileCandidateLocalActionAdmission(
+      [withoutAction, program([unknownCost])],
+      baseline,
+    );
+    expect(result.programs.map(({ key }) => key)).toEqual(['without-action']);
+    expect(result.unsupportedAttackProfileKeys).toEqual(new Set([attackProfileKey(attackProfile)]));
   });
 
   it('omits optional condition enablers under self-excluded/satisfied policy', () => {

@@ -56,8 +56,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.2 | E2E responsibility and execution closure | done | TSK-06.1 | test strategy Web component／E2E ownership |
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
-| TSK-06.41 | Ranking contribution and portable atomic cutover | ready | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.41 | final candidate／maximum／legacy-removal proof |
+| TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
+| TSK-06.5 | Ranking theoretical maximum and production closure | ready | TSK-06.41 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
@@ -1003,8 +1003,8 @@ Handoff: rejected matrix is superseded by the current audit handoff above; A1〜
 
 Depends on: TSK-06.4
 
-Current status: `ready`. The checked checklist below records the v0.9.5 cutover; requirement v0.9.6 reopens
-only the explicit IRL-003／005／006 delta after that historical checklist.
+Current status: `done`. The checked checklist below records the v0.9.5 cutover; requirement v0.9.6's explicit
+IRL-003／005／006 delta is closed by the product-correction completion below.
 
 Entry condition: TSK-06.4 A1〜A3とADR replacement gateを含むBlocking 0。以下はcurrent audit recommendationに基づく
 cutover境界であり、
@@ -1046,25 +1046,25 @@ rejected graph型を復活させない。
 
 Reopened implementation delta (2026-09-04, requirement v0.9.6):
 
-- [ ] `unsafeBaselineEffect`相当のstatic adverse vetoを削除し、自己バフありでは選択policy上の実効寄与だけでoptional
+- [x] `unsafeBaselineEffect`相当のstatic adverse vetoを削除し、自己バフありでは選択policy上の実効寄与だけでoptional
       actionをadmitする。negative modifier、HP／NP loss、detrimental state、trait removalを個別の除外branchへ移さず、
       全consequenceをordered executorへ渡す（IRL-006）。
-- [ ] action option × policy × 合法initial stateごとに全operation、後続action、攻撃宝具をtransactionalに実行し、完遂不能な
+- [x] action option × policy × 合法initial stateごとに全operation、後続action、攻撃宝具をtransactionalに実行し、完遂不能な
       具体candidateだけを`unreachable`にする。少なくとも一つのcandidateが完遂可能ならactionを候補集合へ残し、最終平均
       damageで比較する。`policyNoOp`は実効寄与なし、`unsupported`は未表現semanticsだけに限定する（IRL-006）。
-- [ ] resource closureをcritical starsだけでなくHP／BPにもordered suffix基準で閉じる。mutation前だけにreaderがある場合は
+- [x] resource closureをcritical starsだけでなくHP／BPにもordered suffix基準で閉じる。mutation前だけにreaderがある場合は
       `noDamageReader`、mutation後にreaderがある場合はcanonical stateを更新して読むかtransaction全体をtyped unsupportedに
       し、production-negative familyは明示0件ratchetを持つ（IRL-003）。
-- [ ] portable resetはmutableな`currentScenario`ではなくretained requestのexact attacker identityからsubject／buildを解決し、
+- [x] portable resetはmutableな`currentScenario`ではなくretained requestのexact attacker identityからsubject／buildを解決し、
       requestとUI selectionがずれるproduction fixtureで、成功時のatomic replaceと失敗時のdurable／memory／reload不変を
       検証する（IRL-005）。
-- [ ] focused state-by-path matrixを追加する: costなし、HP cost後も到達、NP costで100%候補だけ不能、capacity内の高い開始NPで
+- [x] focused state-by-path matrixを追加する: costなし、HP cost後も到達、NP costで100%候補だけ不能、capacity内の高い開始NPで
       到達、negative modifier、detrimental state、conditional-only、unconditional＋conditional sibling、unknown cost、
       player-choice branch。候補／damage／rank差分をcanonical inputと規則で記録する。
-- [ ] shared production inventoryで、fixed／dependent HP・NP cost、negative modifier、detrimental state、trait removalを
+- [x] shared production inventoryで、fixed／dependent HP・NP cost、negative modifier、detrimental state、trait removalを
       action option × policy × initial state × ordered pathへ分類し、`admitted`／`policyNoOp`／`unreachable`／`unsupported`の
       件数とdigestを固定する。production 0件familyは0件ratchet＋schema-legal fixtureで閉じる。
-- [ ] 変更前後の`Servant × AttackProfile` ranking entry、採用action、開始resource、damage、順位をdiffし、新規／消失memberを
+- [x] 変更前後の`Servant × AttackProfile` ranking entry、採用action、開始resource、damage、順位をdiffし、新規／消失memberを
       「新たに完遂可能なadverse action」「具体candidateのresource不足」「policy寄与なし」「unsupported」のcanonical reasonで
       全件説明する。説明不能なmember差分をBlockingとし、candidate上界とhot pathの10%超の未説明増加を許容しない。
 
@@ -1217,6 +1217,22 @@ Completion:
   resolves from mutable scenario state rather than the retained request subject (IRL-005). Current status is
   `Blocking 3`; TSK-06.41 is `ready`, and TSK-06.5 is `blocked` until these runtime paths and focused
   counterexamples close. Canonical matrix: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`.
+- Product correction completion (2026-09-04): IRL-003／005／006 are closed with Blocking 0. Optional action
+  admission no longer rejects represented adversity; four-policy production admission is ratcheted by digest
+  `bb43fa1ff4df8e68ce460829cba253459ebc2e1a7e053a7ce782529018d6e101`, while concrete baseline execution
+  records 12 typed `insufficientNpGauge` candidates. HP／BP resource relevance uses the ordered suffix, so
+  calculator `300100` becomes calculated while downstream-reader `702500`／`705300` remain typed unsupported.
+  Portable reset resolves only the retained request subject inside the application boundary. Current-default
+  ranking evaluates 1,936 candidates／1,924 damage requests／1,298 distinct inputs and emits 393 rows plus 40
+  typed unsupported profiles. The full 433-profile join in
+  `docs/evidence/ranking-adverse-action-diff-tsk-06-41.json` records 348 direct result changes plus 85
+  rank-only changes with actions, resources, NP1〜5 damage, ranks, and reasons. Audit digest is
+  `e0677f9362ef8f9a50e312693a1c8cc5fcc11e22be31b4d7c39f268ad41bbc78`; the unchanged 4,096 bound contains
+  the 3,840 largest satisfied product. The affected audit median is 7.167 s versus 4.697 s (+52.6%), explained
+  by 2.88× damage requests from the required semantic population. Final four-policy production maximum remains
+  Deferred to TSK-06.5. Final `pnpm quality` passed with 406 unit／116 production／25 Playwright tests and
+  skip／todo／retry／warning／unexpected-console 0; artifact
+  `.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. TSK-06.41 is `done`; TSK-06.5 is `ready`.
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

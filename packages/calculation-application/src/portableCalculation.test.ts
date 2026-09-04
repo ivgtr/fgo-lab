@@ -163,29 +163,82 @@ describe('portable calculation application owner', () => {
     });
   });
 
-  it('rejects reset before publishing when the current subject cannot execute', () => {
+  it('resolves reset from the retained request subject and ignores any other selected build', () => {
     const retainedRequest = createCalculatorPortableRequest(
       createDefaultResolvedScenario(master, undefined),
       versionContext,
     );
     const retained = executePortableCalculation(retainedRequest, master);
     if (retained.status !== 'executed') throw new Error('retained result required');
-    const missingServant = { ...master.servants[0]!, id: 'missing-current-servant' };
-
+    if (retainedRequest.scenario.mode !== 'resolved') throw new Error('resolved request required');
+    const retainedId = retainedRequest.scenario.attacker.servantId;
+    const unrelatedId = 'mutable-ui-selection';
     const attempt = attemptPortableCalculationReset(
       retainedRequest,
       retained.execution.result,
       master,
-      undefined,
-      missingServant,
+      {
+        [retainedId]: {
+          servantId: retainedId,
+          level: 1,
+          ascension: 0,
+          npLevel: 1,
+          fouAtk: 0,
+          skills: {},
+          appends: {},
+          updatedAt: '2026-09-04T00:00:00.000Z',
+        },
+        [unrelatedId]: {
+          servantId: unrelatedId,
+          level: 120,
+          ascension: 4,
+          npLevel: 5,
+          fouAtk: 3_000,
+          skills: {},
+          appends: {},
+          updatedAt: '2026-09-04T00:00:00.000Z',
+        },
+      },
+    );
+
+    expect(attempt.status).toBe('committed');
+    if (attempt.status !== 'committed' || attempt.request.scenario.mode !== 'resolved') return;
+    expect(attempt.request.scenario.attacker).toMatchObject({ servantId: retainedId, level: 1 });
+  });
+
+  it('rejects a missing retained request subject before constructing a reset', () => {
+    const retainedRequest = createCalculatorPortableRequest(
+      createDefaultResolvedScenario(master, undefined),
+      versionContext,
+    );
+    const retained = executePortableCalculation(retainedRequest, master);
+    if (retained.status !== 'executed' || retainedRequest.scenario.mode !== 'resolved')
+      throw new Error('retained result required');
+    const missingRequest = portableCalculationRequestSchema.parse({
+      ...retainedRequest,
+      scenario: {
+        ...retainedRequest.scenario,
+        attacker: { ...retainedRequest.scenario.attacker, servantId: 'missing-retained-servant' },
+      },
+    });
+
+    const attempt = attemptPortableCalculationReset(
+      missingRequest,
+      retained.execution.result,
+      master,
+      {},
     );
 
     expect(attempt).toMatchObject({
       status: 'rejected',
-      retainedRequest,
+      retainedRequest: missingRequest,
       retainedResult: retained.execution.result,
       attemptedRequest: null,
-      failure: { status: 'invalid', reason: 'scenarioInvalid' },
+      failure: {
+        status: 'invalid',
+        reason: 'scenarioInvalid',
+        detail: 'retained_request_subject_unavailable',
+      },
     });
   });
 

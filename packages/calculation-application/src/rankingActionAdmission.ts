@@ -23,6 +23,26 @@ export interface AdmittedStaticRankingPreparationProgram extends StaticRankingPr
   actionAdmissions: readonly CandidateLocalActionAdmission[];
 }
 
+export interface StaticRankingProgramDisposition {
+  programKey: string;
+  attackProfileKey: string;
+  actionAdmissions: readonly CandidateLocalActionAdmission[];
+}
+
+function classifyPrograms(
+  programs: readonly StaticRankingPreparationProgram[],
+  conditions: RankingPolicyConditions,
+) {
+  return programs.map((program) => ({
+    program,
+    admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
+      actionIsStructural(program, index, programs)
+        ? { kind: 'admitted', role: 'structuralRequired' }
+        : optionalAdmission(source, conditions, program),
+    ),
+  }));
+}
+
 function commandKey(command: PreNoblePhantasmCommand): string {
   return JSON.stringify(command);
 }
@@ -122,40 +142,12 @@ function intrinsicFactsForSource(
   };
 }
 
-function effectHasPositiveDamageContribution(effect: MasterEffect): boolean {
-  return effect.execution.some((operation) => {
-    if (operation.kind === 'damageModifier') return operation.sign === 1;
-    return (
-      operation.kind === 'modifierRateChange' ||
-      operation.kind === 'ignoreDefense' ||
-      operation.kind === 'ignoreDamageCut'
-    );
-  });
-}
-
 function effectHasDamageContribution(effect: MasterEffect): boolean {
   return effect.execution.some((operation) =>
     ['damageModifier', 'modifierRateChange', 'ignoreDefense', 'ignoreDamageCut'].includes(
       operation.kind,
     ),
   );
-}
-
-function unsafeBaselineEffect(effect: MasterEffect): boolean {
-  if (effect.proc.kind !== 'guaranteed') return true;
-  return effect.execution.some((operation) => {
-    if (operation.kind === 'unsupported') return true;
-    if (operation.kind === 'damageModifier') return operation.sign === -1;
-    if (operation.kind === 'resourceMutation')
-      return operation.direction === 'loss' || operation.amount.kind === 'dependent';
-    if (operation.kind === 'stateMutation')
-      return operation.polarity === 'detrimental' || operation.polarity === 'unknown';
-    if (operation.kind === 'contextMutation')
-      return operation.mutation === 'removeTrait' || operation.mutation === 'suppressInitialTrait';
-    return (
-      operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant'
-    );
-  });
 }
 
 function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission | null {
@@ -177,22 +169,21 @@ function optionalAdmission(
 ): CandidateLocalActionAdmission {
   if (conditions.selfBuffs === 'excluded')
     return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
+  const unsupported = source.effects.map(unsupportedEffect).find((item) => item !== null);
+  if (unsupported !== undefined) return unsupported;
   if (conditions.conditionalEffects === 'baseline') {
     const attackFacts = intrinsicFactsForSource(source, program);
     if (!attackFacts) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
     const contributes = source.effects.some(
       (effect) =>
+        effect.proc.kind === 'guaranteed' &&
         requirementIsUnconditionalForAttack(effect, source, program, attackFacts) &&
-        effectHasPositiveDamageContribution(effect),
+        effectHasDamageContribution(effect),
     );
-    if (!contributes) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
-    const safe = source.effects.every((effect) => !unsafeBaselineEffect(effect));
-    return safe
+    return contributes
       ? { kind: 'admitted', role: 'optional' }
       : { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
   }
-  const unsupported = source.effects.map(unsupportedEffect).find((item) => item !== null);
-  if (unsupported !== undefined) return unsupported;
   const contributesOrMutates = source.effects.some(
     (effect) =>
       effectHasDamageContribution(effect) ||
@@ -216,17 +207,28 @@ export function compileCandidateLocalActionAdmission(
   unsupportedAttackProfileKeys: ReadonlySet<string>;
 } {
   const unsupportedAttackProfileKeys = new Set<string>();
-  const admitted = programs.flatMap((program) => {
-    const admissions = program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
-      actionIsStructural(program, index, programs)
-        ? { kind: 'admitted', role: 'structuralRequired' }
-        : optionalAdmission(source, conditions, program),
-    );
+  const classified = classifyPrograms(programs, conditions);
+  for (const { program, admissions } of classified) {
     if (admissions.some(({ kind }) => kind === 'unsupported'))
       unsupportedAttackProfileKeys.add(attackProfileKey(program.attackProfile));
-    return admissions.every(({ kind }) => kind === 'admitted')
-      ? [{ ...program, actionAdmissions: admissions }]
-      : [];
-  });
-  return { programs: admitted, unsupportedAttackProfileKeys };
+  }
+  return {
+    programs: classified.flatMap(({ program, admissions }) =>
+      admissions.every(({ kind }) => kind === 'admitted')
+        ? [{ ...program, actionAdmissions: admissions }]
+        : [],
+    ),
+    unsupportedAttackProfileKeys,
+  };
+}
+
+export function compileCandidateLocalActionAdmissionDispositions(
+  programs: readonly StaticRankingPreparationProgram[],
+  conditions: RankingPolicyConditions,
+): readonly StaticRankingProgramDisposition[] {
+  return classifyPrograms(programs, conditions).map(({ program, admissions }) => ({
+    programKey: program.key,
+    attackProfileKey: attackProfileKey(program.attackProfile),
+    actionAdmissions: admissions,
+  }));
 }

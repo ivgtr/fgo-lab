@@ -8,25 +8,25 @@ updated_at: "2026-09-04"
 
 ## TSK-06.41 runtime cutover — authoritative current delta
 
-### Product correction reopening — IRL-005 exact retained-request subject
+### Product correction closure — IRL-005 exact retained-request subject
 
-The reset contract is keyed by the retained portable request, not the mutable calculator UI scenario. Current
-Web code resolves the reset subject from `currentScenario.attacker.servantId`; after scenario editing or a
-selection change, that identity can differ from `currentRequest.scenario.attacker.servantId`. The previous
-missing-subject fixture kept those identities aligned and therefore did not exercise the recurrence path.
+The reset contract is keyed by the retained portable request, not the mutable calculator UI scenario. Subject
+resolution now occurs inside `attemptPortableCalculationReset`: it accepts the retained request／result, master,
+and build map, resolves exactly one servant from the retained resolved scenario, selects only that servant's
+build, and rejects before constructing an attempted request when the subject is missing or ambiguous. Web no
+longer supplies a mutable scenario subject.
 
 | Recovery state | Subject resolver | Application attempt | Durable／memory／reload | Current status |
 | --- | --- | --- | --- | --- |
 | retained request and current UI scenario have the same attacker | resolve the exact retained-request subject | build and execute current calculator baseline | publish only after durable success | Verified regression boundary |
-| retained request attacker differs from mutable UI scenario | ignore UI selection and resolve the retained request subject exactly once | reset the retained request, never another servant | success atomically replaces the pair | Blocking IRL-005: current resolver reads `currentScenario` |
-| retained request subject is missing／ambiguous | no fallback subject | do not invoke the application attempt | old request／result／fingerprint and memory survive reload | Blocking fixture required on the production command path |
+| retained request attacker differs from mutable UI scenario | ignore UI selection and resolve the retained request subject exactly once | reset the retained request, never another servant | success atomically replaces the pair | Verified: unrelated selected build cannot affect the reset |
+| retained request subject is missing／ambiguous | no fallback subject | do not construct or execute an attempted request | old request／result／fingerprint and memory survive reload | Verified: `attemptedRequest: null`, typed `retained_request_subject_unavailable` |
 | exact application attempt or persistence fails | exact retained-request subject only | return typed failure | no durable or memory publication | Verified existing transaction boundary |
 
-Portable flow classification: retained request producer is `Verified`; Web subject resolver is
-`Blocking: IRL-005`; application reset constructor／executor and execute-before-publish writers are `Verified`;
-history／share／backup are `N/A: reset does not rewrite those records`; ranking semantics are owned by the
-ranking flow note. Portable Blocking count is **1**. This section supersedes the earlier IRL-005 closure and
-Blocking-0 statements below.
+Portable flow classification: retained request producer is `Verified`; exact application subject resolver is
+`Verified`; Web dispatch and execute-before-publish writers are `Verified`; history／share／backup are
+`N/A: reset does not rewrite those records`; ranking semantics are owned by the ranking flow note. Portable
+Blocking count is **0**. This section supersedes the earlier IRL-005 reopening below.
 
 ### Previous implementation review closure delta — IRL-005 (superseded closure status)
 

@@ -84,4 +84,32 @@ describe('resource semantic closure', () => {
       resolution: 'noDamageReader',
     });
   });
+
+  it.each([
+    ['hp', { kind: 'quantity', quantity: 'attackerHpPermille' }],
+    ['battlePoint', { kind: 'quantity', quantity: 'battlePointPhase' }],
+  ] as const)(
+    'uses the ordered suffix for %s instead of retaining an earlier-reader blocker',
+    (resource, dependency) => {
+      const mutation = { ...resourceOperation, resource } as BattleOperation;
+      const reader = {
+        kind: 'executeNpDamage',
+        condition: { kind: 'always' },
+        specialAttackDependency: {
+          ...dependency,
+          comparison: 'lessThan',
+          value: 1_000,
+        },
+      } as unknown as BattleOperation;
+
+      expect(closeResourceMutationSemantics([reader, mutation])[1]).toMatchObject({
+        resource,
+        resolution: 'noDamageReader',
+      });
+      expect(closeResourceMutationSemantics([mutation, reader])[0]).toMatchObject({
+        resource,
+        resolution: 'resourceStateUnavailable',
+      });
+    },
+  );
 });

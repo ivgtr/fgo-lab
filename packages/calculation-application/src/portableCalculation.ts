@@ -154,12 +154,37 @@ export function attemptPortableCalculationReset(
   retainedRequest: PortableCalculationRequest,
   retainedResult: CalculationResult,
   master: MasterDataSnapshot,
-  build: ServantBuild | undefined,
-  servant: ServantMaster,
+  servantBuilds: Readonly<Record<string, ServantBuild>>,
 ): PortableCalculationResetResult {
+  const retainedScenario = retainedRequest.scenario;
+  const retainedAttackerId =
+    retainedScenario.mode === 'resolved' ? retainedScenario.attacker.servantId : null;
+  const subjects =
+    retainedAttackerId === null
+      ? []
+      : master.servants.filter((candidate) => candidate.id === retainedAttackerId);
+  const servant = subjects.length === 1 ? subjects[0] : undefined;
+  if (!servant)
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest: null,
+      failure: {
+        status: 'invalid',
+        request: retainedRequest,
+        reason: 'scenarioInvalid',
+        detail: 'retained_request_subject_unavailable',
+      },
+    };
   let attemptedRequest: PortableCalculationRequest;
   try {
-    attemptedRequest = resetPortableCalculationRequest(retainedRequest, master, build, servant);
+    attemptedRequest = resetPortableCalculationRequest(
+      retainedRequest,
+      master,
+      servantBuilds[servant.id],
+      servant,
+    );
   } catch (cause) {
     return {
       status: 'rejected',

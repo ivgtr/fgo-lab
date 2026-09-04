@@ -1,5 +1,6 @@
 import {
   compileEffectCached,
+  effectChangesPreparation,
   noblePhantasmDamageDependency,
   planOperationActivations,
   runtimeInputDefinitionsForSource,
@@ -174,14 +175,20 @@ export function compileStaticRankingSemantics(
           ),
         )
       : [];
+  const plannedOperations = planOperationActivations(operations);
   const definitions = new Map<string, CanonicalInputDefinition>();
-  for (const definition of sources.flatMap(runtimeInputDefinitionsForSource)) {
+  const liveDefinitions = [
+    ...plannedOperations.flatMap((operation) => operation.inputDefinitions),
+    ...sources
+      .filter(({ effect }) => effectChangesPreparation(effect))
+      .flatMap(runtimeInputDefinitionsForSource),
+  ];
+  for (const definition of liveDefinitions) {
     const existing = definitions.get(definition.key);
     if (existing && JSON.stringify(existing) !== JSON.stringify(definition))
       throw new TypeError(`ranking_canonical_input_definition_conflict:${definition.key}`);
     definitions.set(definition.key, definition);
   }
-  const plannedOperations = planOperationActivations(operations);
   return {
     sources,
     operations: plannedOperations,

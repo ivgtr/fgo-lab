@@ -43,18 +43,16 @@ export function closeResourceMutationSemantics(
 ): readonly BattleOperation[] {
   return operations.map((operation, index): BattleOperation => {
     if (operation.kind !== 'resourceMutation') return operation;
+    const suffixHasReader = operations
+      .slice(index + 1)
+      .some((candidate) => operationReadsResource(candidate, operation.resource));
+    if (!suffixHasReader) return { ...operation, resolution: 'noDamageReader' };
     if (operation.resource === 'criticalStars') {
-      const suffixHasReader = operations
-        .slice(index + 1)
-        .some((candidate) => operationReadsResource(candidate, operation.resource));
-      if (!suffixHasReader) return { ...operation, resolution: 'noDamageReader' };
       return operation.unit === 'fixed' && operation.amount !== null
         ? { ...operation, resolution: 'orderedCriticalStars' }
         : operation;
     }
-    return operations.some((candidate) => operationReadsResource(candidate, operation.resource))
-      ? operation
-      : { ...operation, resolution: 'noDamageReader' };
+    return operation;
   });
 }
 

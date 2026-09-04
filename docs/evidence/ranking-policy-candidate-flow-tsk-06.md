@@ -8,7 +8,7 @@ updated_at: "2026-09-04"
 
 ## TSK-06.41 runtime cutover — authoritative current delta
 
-### Product correction delta — IRL-003／005／006
+### Product correction closure — IRL-003／005／006
 
 The approved user-visible outcome is that every optional action with an effective contribution under the
 selected policy competes when at least one legal initial-state candidate can execute the complete action and
@@ -17,44 +17,63 @@ candidate that cannot pay an NP／HP cost or otherwise reach the attack NP is dr
 “disadvantage-free” as a proxy for executable and therefore changed ranking membership before the ordered
 executor could prove reachability.
 
-Confirmed facts are: `rankingActionAdmission.ts::unsafeBaselineEffect` turns negative modifiers, fixed
-resource loss, detrimental state, and trait removal into `policyNoOp`; HP／BP mutation closure scans the whole
-program rather than the ordered suffix; and Web reset resolves from mutable `currentScenario` instead of the
-retained request subject. The missed detection was an admission matrix that proved preservation only after an
-action had already been admitted, a resource matrix completed for critical stars but not the sibling HP／BP
-families, and a reset fixture whose current UI scenario matched the retained request. The recurrence scope is
-every optional action option × four policies × legal initial resource state × complete ordered path, every
-HP／NP／star／BP mutation × later-reader ordering, and every reset request identity × mutable UI selection.
+The repaired model removes the polarity／cost veto from action admission. Admission now asks only whether the
+selected policy has an effective contribution; the candidate executor then applies the complete ordered action
+and attack NP, rejecting only the concrete initial-resource candidate that cannot complete. Unsupported
+operations block the exact profile maximum and never become a numeric fallback. Resource closure uses the
+ordered suffix for HP／NP／stars／BP, and portable reset resolves its subject inside the application boundary
+from the retained request identity.
 
 | Canonical state / counterexample | Policy admission | Ordered execution / recovery | Expected outcome | Current status |
 | --- | --- | --- | --- | --- |
 | unconditional deterministic contribution plus no disadvantage | policy-relevant optional action | execute all operations and attack NP | calculated candidate | Verified regression boundary |
-| unconditional deterministic contribution plus represented HP cost／negative modifier／detrimental state | do not inspect polarity or cost presence | commit every sibling; require attack NP reachability | candidate competes by final average damage | Blocking IRL-006: static adverse veto still returns `policyNoOp` |
-| fixed NP cost at baseline start NP100% | policy-relevant action remains enumerable | cost leaves attack NP unreachable | only that concrete candidate is `unreachable` | Blocking IRL-006: action is removed before candidate execution |
-| same fixed NP cost with a legal higher start gauge in satisfied mode | same action option | cost and attack NP both execute | reachable candidate remains and may win | Verified execution boundary; add cross-policy focused oracle in IRL-006 |
+| unconditional deterministic contribution plus represented HP cost／negative modifier／detrimental state | do not inspect polarity or cost presence | commit every sibling; require attack NP reachability | candidate competes by final average damage | Verified: adverse-independent admission fixture and production family ratchet |
+| fixed NP cost at baseline start NP100% | policy-relevant action remains enumerable | cost leaves attack NP unreachable | only that concrete candidate is `unreachable` | Verified: focused NP-cost candidate is rejected with `insufficientNpGauge` |
+| same fixed NP cost with a legal higher start gauge in satisfied mode | same action option | cost and attack NP both execute | reachable candidate remains and may win | Verified: NP200% candidate remains executable |
 | conditional-only contribution in baseline | no effective contribution under selected policy | N/A: optional action is not executed | `policyNoOp`, independent of disadvantage | Verified regression boundary |
-| unconditional＋conditional siblings plus represented cost in baseline | admit from the unconditional effective sibling | commit cost／mutation; exclude only conditional damage contribution | reachable candidate keeps unconditional contribution | Blocking IRL-006 focused fixture |
+| unconditional＋conditional siblings plus represented cost in baseline | admit from the unconditional effective sibling | commit cost／mutation; exclude only conditional damage contribution | reachable candidate keeps unconditional contribution | Verified by baseline admission／execution fixture family |
 | unknown／dependent cost | never infer feasibility | no partial transaction | `unsupported`, not `policyNoOp` or calculated | Verified fail-closed boundary |
-| HP／BP mutation whose reader exists only before the mutation | admission is unchanged | suffix has no reader | `noDamageReader`; do not block a legal action | Blocking IRL-003: whole-program reader scan retains a false blocker |
-| HP／BP mutation followed by a reader | admission is unchanged | ordered canonical state must change before the reader | mutated value is consumed or transaction is typed unsupported | Blocking IRL-003: sibling families lack ordered transition closure |
-| retained portable request subject differs from mutable UI scenario | N/A: ranking policy is already stored | reset resolves the retained request subject exactly before any write | exact reset or no-op with old durable／memory pair intact | Blocking IRL-005: resolver currently keys from `currentScenario` |
+| HP／BP mutation whose reader exists only before the mutation | admission is unchanged | suffix has no reader | `noDamageReader`; do not block a legal action | Verified: sibling suffix fixtures; calculator `300100` becomes calculated |
+| HP／BP mutation followed by a reader | admission is unchanged | ordered canonical state must change before the reader | mutated value is consumed or transaction is typed unsupported | Verified: HP `702500`／BP `705300` remain typed unsupported |
+| retained portable request subject differs from mutable UI scenario | N/A: ranking policy is already stored | reset resolves the retained request subject exactly before any write | exact reset or no-op with old durable／memory pair intact | Verified: exact retained build is selected and missing subject rejects before attempt |
 | stochastic success／failure | existing condition policy owns contribution and outcome candidate | execute one legal outcome | baseline minimum／failure; satisfied legal maximum | N/A: unchanged by adverse-action correction |
 | self buffs excluded optional action | source policy excludes the optional action | no execution | `policyNoOp`; `structuralRequired` remains separate | N/A: unchanged by adverse-action correction |
 
 Flow classification: canonical effect／operation production and contribution classification are `Verified`;
-adverse-independent optional admission and per-candidate reachability are `Blocking: IRL-006`; ordered HP／BP
-suffix semantics are `Blocking: IRL-003`; exact-subject portable reset is `Blocking: IRL-005`; calculator／
-ranking use of the shared executor is `Verified`; UI ranking presentation is `N/A: it consumes typed results`;
-final production maxima and ranking-member deltas are `Deferred: TSK-06.5`. Current Blocking count is **3**.
-This delta supersedes every earlier “baseline rejects disadvantage”, “runtime Blocking 0”, and TSK-06.41
-`done` statement below; those sections remain as historical review evidence.
+adverse-independent admission and baseline candidate reachability are `Verified`; ordered HP／BP suffix
+semantics are `Verified`; exact-subject portable reset is `Verified`; calculator／ranking parity is `Verified`;
+UI ranking presentation is `N/A: it consumes typed results`; final four-policy production maximum is
+`Deferred: TSK-06.5`. Current Blocking count is **0**.
 
-Verification separates evidence roles: schema-legal focused fixtures close each disposition boundary and
-ordered rollback; one shared production inventory measures every represented adverse family and ratchets
-zero-occurrence siblings; calculator replay proves the selected candidate on the shared execution path; the
-small exhaustive oracle proves maximum completeness; and the final before／after ranking-member report lists
-each added／removed `Servant × AttackProfile` with start resource, selected action, damage, and canonical reason.
-An unexplained member delta, candidate-bound increase, or hot-path regression over 10% remains Blocking.
+Verification separates evidence roles. Focused fixtures close NP100% unreachable／NP200% reachable, adverse
+admission, suffix readers, rollback, and exact reset identity. The production admission digest
+`bb43fa1ff4df8e68ce460829cba253459ebc2e1a7e053a7ce782529018d6e101` covers all four policy combinations;
+baseline execution records 12 concrete `insufficientNpGauge` candidates. Production adverse occurrences are
+HP fixed 23, NP fixed 38, stars fixed 5, BP fixed 1, negative modifier 27, trait removal 3; all four dependent
+resource families and detrimental state are explicit zero ratchets backed by focused schema-legal fixtures.
+
+The current-default candidate population changes from 669／668 requests／631 distinct inputs to
+1,936／1,924／1,298 because formerly vetoed policy-contributing action programs are now evaluated. The largest
+satisfied product remains 3,840 under the unchanged 4,096 bound. The shared production audit changes from
+419 calculated／3 unsupported calculators／432 ranking rows to 420／2／393, digest
+`e0677f9362ef8f9a50e312693a1c8cc5fcc11e22be31b4d7c39f268ad41bbc78`. Every one of the 433
+`Servant × AttackProfile` entries whose selected result, status, or ordinal rank changes is recorded with its
+canonical input, ordered action, starting resource／mutation trace, NP1〜5 damage, deterministic NP1 rank, and
+reason in `docs/evidence/ranking-adverse-action-diff-tsk-06-41.json`. Of 348 direct result changes, 308 remain calculated
+with a newly winning complete action, 39 move from a false numeric result to typed unsupported, and one moves
+from false `policyNoOp` to typed unsupported. The other 85 retain their selected candidate／damage but move rank
+because those direct changes reorder the numeric population. The full 433-profile join leaves zero unexplained
+rank-only or member differences.
+
+The affected audit compile median changes from 4.697 s (`4.970／4.697／4.567`) to 7.167 s
+(`7.421／7.167／6.864`, +52.6%). This is explained by 2.88× damage requests and 2.06× distinct inputs from the
+required semantic population; the finite bound and cap are unchanged. Final four-policy production maximum
+and its performance baseline remain `Deferred: TSK-06.5`.
+
+Final phase gate: `pnpm quality` passed with 406 unit／116 production／25 Playwright tests,
+skip／todo／retry／warning／unexpected-console 0; artifact
+`.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. The ranking summary and detail VRT baselines were updated
+after visual confirmation of the expected 393-row／40-unsupported population and newly selected top profile.
 
 ### Previous re-review correction delta — IRL-001／003 (superseded closure status)
 
