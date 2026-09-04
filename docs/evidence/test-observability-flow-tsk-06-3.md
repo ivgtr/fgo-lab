@@ -292,3 +292,39 @@ Final classificationはparent manifest `Verified`、browser page／popup／resou
 infrastructure ownership `Verified`、attachment `Verified`、build／preview移行
 `N/A: build/preview migration changes the E2E execution family`、legacy aggregate audit `Deferred: TSK-08`、
 Blocking 0である。
+
+## Quick feedback and local retention follow-up
+
+2026-09-04の実測では成功24回のcanonical quality中央値が264.9秒で、Playwright 172.3秒、production
+39.0秒、lint 31.4秒だった。full gateの重複testは確認されず、日常feedbackとphase completionが同じ入口に
+集約されていること、および`.test-results`が764 directory／9.3GBまで無期限に増えることを今回のdeltaとした。
+
+quality runnerの一つのordered step定義からfull／quick profileを選ぶ。`pnpm quality`は従来の10 steps、3 child、
+production inventory／parity／runtime counter、Playwrightを変更しない。`pnpm check`はformat、lint、typecheck、
+runner、docs、unit、buildだけを同じparent manifest／artifact verifierで実行し、phase completionには使用しない。
+未知profileはrun directory作成前に非0で拒否する。
+
+local cleanup ownerは`scripts/test-results-cleanup-lib.mjs`とし、`.test-results`直下のcanonical timestamp directory
+だけを列挙する。最新10完了runと`outcome: running`は保持し、canonical形式でない手動計測／evidence directory、
+symbolic link、root外pathを対象にしない。cleanupはquality成功時の暗黙副作用にせず、利用者が
+`pnpm results:clean [--keep=N]`を明示実行した場合だけ適用する。CIの14日retentionと完全artifact uploadは不変である。
+
+| State | Full quality | Quick check | Cleanup | Status |
+| --- | --- | --- | --- | --- |
+| success | 10 steps／3 childの完全gate | 7 steps／unit child | N/A | Verified: shared profile contract fixture |
+| child／artifact failure | canonical typed non-success | 同じreconciliation／verification | N/A | Verified: shared parent owner |
+| unknown profile | N/A | run作成前にexit 2 | N/A | Verified: negative fixture |
+| newest completed run | N/A | N/A | retained | Verified: focused filesystem fixture |
+| running run | N/A | N/A | protected | Verified: focused filesystem fixture |
+| old canonical completed run | N/A | N/A | removed only by explicit command | Verified: focused filesystem fixture |
+| named evidence directory／unsafe path | N/A | N/A | untouched／rejected | Verified: focused filesystem fixture |
+| production／damage／E2E semantics | unchanged | completionを主張しない | unchanged | N/A: no domain reader／writer |
+
+Follow-up classificationはVerified 7、N/A 1、Deferred 0、Blocking 0である。
+
+Verificationはrunner 52／52、`pnpm check` 51.57秒、final `pnpm quality` 277.99秒で成功した。quick parent
+`.test-results/2026-09-04T11-53-34-428Z-48-aab5d9`は7 steps／unit child、full parent
+`.test-results/2026-09-04T11-54-35-226Z-15-e3c4e2`は従来どおり10 steps／unit・production・Playwright
+3 childを持つ。fullはunit 395、production 114、Playwright 25、warning／unexpected console／skip／retry／
+artifact error 0で、production／damage test集合の縮小はない。cleanupの削除経路は一時directory fixtureだけで実行し、
+既存の`.test-results`には適用していない。

@@ -8,6 +8,7 @@ import { PRODUCTION_RUNTIME_COUNTER_CONTRACT, runCapturedTest } from './test-run
 import { PRODUCTION_TEST_INCLUDES } from './test-suites.mjs';
 import {
   classifyQualityOutcome,
+  qualityRunConfiguration,
   reconcileChildStep,
   verifyChildManifest,
   writeManifestAtomically,
@@ -432,6 +433,33 @@ test('the quality parent preserves child outcomes and gives artifact failure pre
     }),
     'artifact_failure',
   );
+});
+
+test('quick checks are a strict subset while full quality keeps the canonical gate', () => {
+  const full = qualityRunConfiguration([]);
+  const quick = qualityRunConfiguration(['--profile=quick']);
+  assert.deepEqual(
+    full.steps.map(([id]) => id),
+    [
+      'format',
+      'lint',
+      'typecheck',
+      'runner',
+      'docs',
+      'unit',
+      'production',
+      'master',
+      'build',
+      'playwright',
+    ],
+  );
+  assert.deepEqual(
+    quick.steps.map(([id]) => id),
+    ['format', 'lint', 'typecheck', 'runner', 'docs', 'unit', 'build'],
+  );
+  assert.equal(full.command, 'pnpm quality');
+  assert.equal(quick.command, 'pnpm check');
+  assert.throws(() => qualityRunConfiguration(['--profile=unknown']), /usage/);
 });
 
 test('the quality parent fails closed on every process and child manifest contradiction', () => {
@@ -896,12 +924,14 @@ test('differently capped Vitest projects use distinct execution groups', () => {
 test('local, CI, and Pages use the same canonical quality command', () => {
   const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   assert.equal(packageJson.scripts.quality, 'node scripts/quality-runner.mjs');
+  assert.equal(packageJson.scripts.check, 'node scripts/quality-runner.mjs --profile=quick');
+  assert.equal(packageJson.scripts['results:clean'], 'node scripts/clean-test-results.mjs');
   assert.equal(
     packageJson.scripts['validate:master'],
     'pnpm --filter @fgo-lab/data-pipeline validate',
   );
   assert.equal(packageJson.scripts['test:e2e'], 'node scripts/playwright-runner.mjs');
-  const qualityRunner = readFileSync(resolve(root, 'scripts/quality-runner.mjs'), 'utf8');
+  const qualityRunner = readFileSync(resolve(root, 'scripts/quality-runner-lib.mjs'), 'utf8');
   for (const [id, script] of [
     ['format', 'format:check'],
     ['lint', 'lint'],

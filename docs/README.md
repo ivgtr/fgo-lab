@@ -34,7 +34,7 @@ updated_at: "2026-09-02"
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
 | [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.1 | condition、state mutation、ordered damage execution、UI不変条件 |
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.9.5／approved | fixed product outcome、source-program design、finite certificate、portable handoff、candidate、parity; design Blocking 0 |
-| [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.2.0 | test suite、runner、quality gate、diagnostics |
+| [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
 | [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.5.41 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |

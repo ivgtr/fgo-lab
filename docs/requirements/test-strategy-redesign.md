@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト戦略 再設計計画・仕様書"
-document_version: "1.2.0"
+document_version: "1.3.0"
 status: "Active"
 approved_at: "2026-08-30"
-updated_at: "2026-08-30"
+updated_at: "2026-09-04"
 created_at: "2026-08-30"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
 calculation_contract: "docs/adr/004-calculation-accuracy.md"
@@ -201,9 +201,11 @@ result formatter
 | `pnpm test:runner` | Node runner／Suite／workflow contracts | canonical test基盤の自己検証 |
 | `pnpm test:e2e` | Playwright | Chromium／mobile接続確認 |
 | `pnpm test:a11y` | Playwright `@a11y` | accessibility確認 |
+| `pnpm check` | static、runner／docs、unit、build | 高頻度のローカル統合確認。完了判定には使わない |
 | `pnpm quality` | 下記canonical gate | CIとローカルの共通入口 |
+| `pnpm results:clean` | `.test-results`のcanonical run | 最新10完了runを残す明示的なローカル整理 |
 
-`test:unit`は開発中の高速feedbackであり、完了判定には使用しない。damage semantics、master、scenario、execution、rankingに触れた変更は、必ず`test:production`を含む`quality`を実行する。
+`test:unit`と`check`は開発中の高速feedbackであり、完了判定には使用しない。damage semantics、master、scenario、execution、rankingに触れた変更は、必ず`test:production`を含む`quality`を実行する。`check`と`quality`は同じquality runnerとstep定義を使い、quick profileはfull profileのstrict subsetとする。
 
 `quality`の実行集合は重複させない。
 
@@ -212,6 +214,7 @@ format:check
 lint
 typecheck
 test:runner
+test:docs
 test:unit
 test:production
 validate:master
@@ -295,6 +298,7 @@ timeout、signal、worker crash、out-of-memory、reporter crashでは、最後�
 要件:
 
 - `.test-results/`はgit管理対象外とする。
+- ローカル整理は明示的な`pnpm results:clean`だけが行い、canonical timestamp形式のdirect childだけを対象とする。最新10完了run、実行中run、手動命名した計測／evidence directoryは削除しない。保持数は正の整数で上書きできる。
 - CIは失敗時に完全artifactを必ず保存する。
 - Playwright HTML report、trace、screenshotは現在の設定を維持する。
 - artifact保存失敗をテスト成功で覆い隠さない。CIではinfra failureとして非0終了する。
@@ -580,5 +584,6 @@ T0〜T2でruntime counterが存在しない項目は`not measured (counter intro
 
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
+| 1.3.0 | quick feedback profileとbounded local artifact retentionを追加し、full quality集合を維持 | approved 2026-09-04 | test execution observability follow-up | none: production／E2E／damage gateは不変 |
 | 1.2.0 | phase／project closure、性能閾値、未計測counterをstable Contract IDへ収束 | retained: semantic／test集合は不変 | TSK-02.1〜09 | none: TSK-02計測値と397-test identityは不変 |
 | 1.1.2 | `quality`へrunner contractを追加し、T0〜T2のruntime counterを未計測として明確化 | approved 2026-08-30 | TSK-02〜03 | TSK-02 evidenceで再測定 |

@@ -2,6 +2,34 @@ import { existsSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { readJson, sha256File } from './test-observation-lib.mjs';
 
+const QUALITY_STEPS = [
+  ['format', ['format:check']],
+  ['lint', ['lint']],
+  ['typecheck', ['typecheck']],
+  ['runner', ['test:runner']],
+  ['docs', ['test:docs']],
+  ['unit', ['test:unit'], 'unit'],
+  ['production', ['test:production'], 'production'],
+  ['master', ['validate:master']],
+  ['build', ['build']],
+  ['playwright', ['test:e2e'], 'playwright'],
+];
+
+const QUICK_STEP_IDS = new Set(['format', 'lint', 'typecheck', 'runner', 'docs', 'unit', 'build']);
+
+export function qualityRunConfiguration(arguments_) {
+  if (arguments_.length === 0)
+    return { profile: 'full', command: 'pnpm quality', label: 'quality', steps: QUALITY_STEPS };
+  if (arguments_.length === 1 && arguments_[0] === '--profile=quick')
+    return {
+      profile: 'quick',
+      command: 'pnpm check',
+      label: 'check',
+      steps: QUALITY_STEPS.filter(([id]) => QUICK_STEP_IDS.has(id)),
+    };
+  throw new Error('usage: pnpm quality | pnpm check');
+}
+
 export function verifyChildManifest(runDirectory, name) {
   const childManifestPath = resolve(runDirectory, name, 'manifest.json');
   const verificationErrors = [];

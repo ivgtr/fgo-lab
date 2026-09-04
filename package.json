@@ -17,14 +17,16 @@
     "test:production": "node scripts/test-runner.mjs compact --suite=production",
     "test:agent": "node scripts/test-runner.mjs compact",
     "test:diagnostic": "node scripts/test-runner.mjs diagnostic",
-    "test:runner": "node --test scripts/test-runner.test.mjs scripts/e2e-case-contract.test.mjs scripts/browser-observer.test.mjs scripts/playwright-reporter.test.mjs",
+    "test:runner": "node --test scripts/test-runner.test.mjs scripts/test-results-cleanup.test.mjs scripts/e2e-case-contract.test.mjs scripts/browser-observer.test.mjs scripts/playwright-reporter.test.mjs",
     "test:docs": "node --test scripts/docs-integrity.test.mjs && node scripts/docs-integrity.mjs",
     "test:watch": "vitest",
     "test:e2e": "node scripts/playwright-runner.mjs",
     "test:a11y": "node scripts/playwright-runner.mjs --grep @a11y",
     "validate:master": "pnpm --filter @fgo-lab/data-pipeline validate",
     "validate:evidence": "node scripts/test-runner.mjs compact --suite=production packages/calculation-application/src/evidenceInventory.test.ts packages/calculation-application/src/evidence.test.ts",
+    "check": "node scripts/quality-runner.mjs --profile=quick",
     "quality": "node scripts/quality-runner.mjs",
+    "results:clean": "node scripts/clean-test-results.mjs",
     "benchmark:calc": "vitest bench --run packages/calc-core/src/calc.bench.ts"
   },
   "dependencies": {

@@ -7,6 +7,7 @@ import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   classifyQualityOutcome,
+  qualityRunConfiguration,
   reconcileChildStep,
   verifyChildManifest,
   writeManifestAtomically,
@@ -14,24 +15,20 @@ import {
 import { sha256File } from './test-observation-lib.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+let configuration;
+try {
+  configuration = qualityRunConfiguration(process.argv.slice(2));
+} catch (cause) {
+  console.error(cause instanceof Error ? cause.message : String(cause));
+  process.exit(2);
+}
 const startedAt = new Date();
 const runId = `${startedAt.toISOString().replaceAll(':', '-').replaceAll('.', '-')}-${process.pid}-${randomBytes(3).toString('hex')}`;
 const runDirectory = resolve(root, '.test-results', runId);
 mkdirSync(runDirectory, { recursive: true });
 const manifestPath = resolve(runDirectory, 'manifest.json');
 
-const steps = [
-  ['format', ['format:check']],
-  ['lint', ['lint']],
-  ['typecheck', ['typecheck']],
-  ['runner', ['test:runner']],
-  ['docs', ['test:docs']],
-  ['unit', ['test:unit'], 'unit'],
-  ['production', ['test:production'], 'production'],
-  ['master', ['validate:master']],
-  ['build', ['build']],
-  ['playwright', ['test:e2e'], 'playwright'],
-];
+const steps = configuration.steps;
 
 const repository = {
   commit: git(['rev-parse', 'HEAD']),
@@ -41,7 +38,8 @@ const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8
 const manifest = {
   manifestVersion: 1,
   runId,
-  command: 'pnpm quality',
+  command: configuration.command,
+  profile: configuration.profile,
   startedAt: startedAt.toISOString(),
   durationMs: 0,
   outcome: 'running',
@@ -116,14 +114,22 @@ writeManifest();
 
 if (manifest.outcome === 'success') {
   const unit = manifest.children.unit.counts.tests;
-  const production = manifest.children.production.counts.tests;
-  const playwright = manifest.children.playwright.counts.tests;
+  const production = manifest.children.production?.counts.tests;
+  const playwright = manifest.children.playwright?.counts.tests;
   process.stdout.write(
     [
-      'PASS quality',
+      `PASS ${configuration.label}`,
       `Unit: ${unit.passed} passed, ${unit.skipped + unit.todo} skipped/todo`,
-      `Production: ${production.passed} passed, ${production.skipped + production.todo} skipped/todo`,
-      `Playwright: ${playwright.passed} passed, ${playwright.skipped} skipped, ${playwright.retries} retries`,
+      ...(production
+        ? [
+            `Production: ${production.passed} passed, ${production.skipped + production.todo} skipped/todo`,
+          ]
+        : []),
+      ...(playwright
+        ? [
+            `Playwright: ${playwright.passed} passed, ${playwright.skipped} skipped, ${playwright.retries} retries`,
+          ]
+        : []),
       `Duration: ${(manifest.durationMs / 1000).toFixed(2)}s`,
       `Warnings: ${manifest.counts.warnings}`,
       `Unexpected console: ${manifest.counts.unexpectedConsole}`,
@@ -141,7 +147,7 @@ if (manifest.outcome === 'success') {
   process.stdout.write(
     boundFailure(
       [
-        'FAIL quality',
+        `FAIL ${configuration.label}`,
         `Status: ${manifest.outcome}`,
         ...(failed ? [`Step: ${failed.id} (code ${failed.code ?? '?'})`] : []),
         ...tail,
