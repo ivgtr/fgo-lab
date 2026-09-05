@@ -705,41 +705,52 @@ export const storedCalculationHistoryEntrySchema = z.union([
 ]);
 export type CalculationHistoryEntry = z.infer<typeof storedCalculationHistoryEntrySchema>;
 
-type ServantIdentityRecord = Readonly<Record<string, { servantId: string }>>;
-function requireMatchingServantRecordIdentities(
-  profile: {
-    servantBuilds: ServantIdentityRecord;
-    servantTargets: ServantIdentityRecord;
-  },
-  context: z.core.$RefinementCtx,
+function servantIdentityRecordSchema<Value extends z.ZodType<{ servantId: string }>>(
+  valueSchema: Value,
 ) {
-  for (const mapName of ['servantBuilds', 'servantTargets'] as const)
-    for (const [recordKey, record] of Object.entries(profile[mapName]))
-      if (recordKey !== record.servantId)
+  const recordSchema = z.record(z.string(), valueSchema);
+  return z.unknown().transform((input, context) => {
+    const parsed = recordSchema.safeParse(input);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) context.addIssue({ ...issue });
+      return z.NEVER;
+    }
+    // Record parsing can discard own keys. Check the original population before publishing it.
+    for (const recordKey of Object.keys(input as object)) {
+      if (!Object.hasOwn(parsed.data, recordKey))
         context.addIssue({
           code: 'custom',
-          path: [mapName, recordKey, 'servantId'],
+          path: [recordKey],
+          message: 'servant_record_key_not_preserved',
+        });
+      else if (recordKey !== parsed.data[recordKey]!.servantId)
+        context.addIssue({
+          code: 'custom',
+          path: [recordKey, 'servantId'],
           message: 'servant_record_identity_mismatch',
         });
+    }
+    return parsed.data;
+  });
 }
 
+const servantBuildRecordSchema = servantIdentityRecordSchema(servantBuildSchema);
+const servantTargetRecordSchema = servantIdentityRecordSchema(servantTargetSchema);
 const localProfileShape = {
   profileId: z.uuid(),
   name: z.string().trim().min(1).max(80),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
-  servantBuilds: z.record(z.string(), servantBuildSchema),
-  servantTargets: z.record(z.string(), servantTargetSchema),
+  servantBuilds: servantBuildRecordSchema,
+  servantTargets: servantTargetRecordSchema,
   craftEssences: z.array(craftEssenceCopySchema).max(10000),
   supportTemplates: z.array(supportTemplateSchema).max(1000),
 };
-export const localProfileSchema = z
-  .object({
-    ...localProfileShape,
-    draft: calculationDraftSchema.nullable(),
-    history: z.array(storedCalculationHistoryEntrySchema).max(20),
-  })
-  .superRefine(requireMatchingServantRecordIdentities);
+export const localProfileSchema = z.object({
+  ...localProfileShape,
+  draft: calculationDraftSchema.nullable(),
+  history: z.array(storedCalculationHistoryEntrySchema).max(20),
+});
 export type LocalProfile = z.infer<typeof localProfileSchema>;
 
 export const profileCollectionSchema = z.object({
@@ -781,8 +792,8 @@ const localProfileV33Schema = z
     name: z.string().trim().min(1).max(80),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
-    servantBuilds: z.record(z.string(), servantBuildSchema),
-    servantTargets: z.record(z.string(), servantTargetSchema),
+    servantBuilds: servantBuildRecordSchema,
+    servantTargets: servantTargetRecordSchema,
     craftEssences: z.array(craftEssenceCopySchema).max(10000),
     supportTemplates: z.array(supportTemplateSchema).max(1000),
     draft: calculationSnapshotV33Schema.nullable(),
@@ -803,8 +814,8 @@ const localProfileV32Schema = z
     name: z.string().trim().min(1).max(80),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
-    servantBuilds: z.record(z.string(), servantBuildSchema),
-    servantTargets: z.record(z.string(), servantTargetSchema),
+    servantBuilds: servantBuildRecordSchema,
+    servantTargets: servantTargetRecordSchema,
     craftEssences: z.array(craftEssenceCopySchema).max(10000),
     supportTemplates: z.array(supportTemplateSchema).max(1000),
     draft: z.unknown(),

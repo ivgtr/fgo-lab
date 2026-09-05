@@ -33,15 +33,19 @@ const legacyProfile = {
   history: [{ legacy: true }],
 };
 
-function mismatchedProfileCollection(schemaVersion: 34 | typeof SCHEMA_VERSION) {
+function mismatchedProfileCollection(
+  schemaVersion: 32 | 33 | 34 | typeof SCHEMA_VERSION,
+  mapName: 'servantBuilds' | 'servantTargets' = 'servantBuilds',
+  recordKey = 'servant-a',
+) {
   return {
     schemaVersion,
     activeProfileId: profileId,
     profiles: [
       {
         ...legacyProfile,
-        servantBuilds: {
-          'servant-a': {
+        [mapName]: {
+          [recordKey]: {
             servantId: 'servant-b',
             level: 1,
             ascension: 0,
@@ -49,6 +53,7 @@ function mismatchedProfileCollection(schemaVersion: 34 | typeof SCHEMA_VERSION) 
             fouAtk: 0,
             skills: {},
             appends: {},
+            planned: true,
             updatedAt: '2026-08-25T00:00:00.000Z',
           },
         },
@@ -103,21 +108,24 @@ describe('profile repository migration boundary', () => {
     check.close();
   });
 
-  it.each([SCHEMA_VERSION, 34] as const)(
+  it.each([SCHEMA_VERSION, 34, 33, 32] as const)(
     'rejects a schema %s servant identity mismatch without upgrading or replacing stored bytes',
     async (schemaVersion) => {
-      const invalid = mismatchedProfileCollection(schemaVersion);
-      const db = await userStore();
-      await db.put('user', invalid, 'profiles');
-      db.close();
+      for (const mapName of ['servantBuilds', 'servantTargets'] as const)
+        for (const recordKey of ['servant-a', '__proto__']) {
+          const invalid = mismatchedProfileCollection(schemaVersion, mapName, recordKey);
+          const db = await userStore();
+          await db.put('user', invalid, 'profiles');
+          db.close();
 
-      expect(await new IndexedDbProfileRepository().load()).toEqual({
-        state: 'invalid',
-        reason: 'profile_parse_failed',
-      });
-      const check = await userStore();
-      expect(await check.get('user', 'profiles')).toEqual(invalid);
-      check.close();
+          expect(await new IndexedDbProfileRepository().load()).toEqual({
+            state: 'invalid',
+            reason: 'profile_parse_failed',
+          });
+          const check = await userStore();
+          expect(await check.get('user', 'profiles')).toEqual(invalid);
+          check.close();
+        }
     },
   );
 
@@ -128,12 +136,18 @@ describe('profile repository migration boundary', () => {
       profiles: [{ ...legacyProfile, draft: null, history: [] }],
     } as ProfileCollection;
     await repository.replace(current);
-    const invalid = mismatchedProfileCollection(SCHEMA_VERSION) as unknown as ProfileCollection;
-
-    await expect(repository.replace(invalid)).rejects.toThrow(/servant_record_identity_mismatch/);
-    const check = await userStore();
-    expect(await check.get('user', 'profiles')).toEqual(current);
-    check.close();
+    for (const mapName of ['servantBuilds', 'servantTargets'] as const)
+      for (const recordKey of ['servant-a', '__proto__']) {
+        const invalid = mismatchedProfileCollection(
+          SCHEMA_VERSION,
+          mapName,
+          recordKey,
+        ) as unknown as ProfileCollection;
+        await expect(repository.replace(invalid)).rejects.toThrow(/servant_record_/);
+        const check = await userStore();
+        expect(await check.get('user', 'profiles')).toEqual(current);
+        check.close();
+      }
   });
 });
 

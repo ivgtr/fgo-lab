@@ -6,6 +6,41 @@ updated_at: "2026-09-05"
 
 # Profile servant-record identity fail-closed flow
 
+## PIR-002 implementation delta
+
+The post-implementation review found a missing population boundary: Zod record parsing drops an own JSON
+`__proto__` key before the profile-level identity refinement sees it. Both matching and mismatched entries can
+therefore disappear from a successfully parsed profile. The same normalization exists in every legacy input
+schema, and v34 migration now persists that deletion. Ordinary-key fixtures did not cover raw-to-parsed key loss;
+the earlier claim that the final profile refinement alone closes all ingress was incomplete.
+
+The schema-owned servant-map parser must conserve original own keys before publishing a validated map. A key
+discarded by record parsing is explicitly invalid; retained keys must match their embedded identity. Current and
+v32/v33/v34 build and target schemas must share this owner. Consumers and normal writers remain unchanged, and
+schema v35 remains the same identity contract with its enforcement corrected.
+
+| New state × path | Required outcome | Implementation status |
+| --- | --- | --- |
+| own `__proto__`, matching or mismatched identity, both maps × current/v32/v33/v34 stored/backup | reject without silently deleting the entry | Verified: shared record parser and raw-key fixture |
+| ordinary / `constructor` / `toString` own key, matching or mismatch, same paths | preserve matching record; reject mismatch | Verified: raw-key matrix |
+| invalid original map × repository load/replace | retain original stored collection; publish no ready/replacement state | Verified: no-write fixture across both maps and all supported versions |
+| published map × calculator/ranking/reset/profile/support/growth/undo | consume the same validated collection | Verified: existing reader/writer inventory below; no consumer parser added |
+
+The shared `servantIdentityRecordSchema` parses the value schema, checks original own keys against parsed own
+keys, then checks each retained embedded identity. Lost keys fail with `servant_record_key_not_preserved`;
+identity mismatches retain `servant_record_identity_mismatch`. All current and legacy map schemas use this owner,
+so normalization cannot remove the counterexample before final collection validation. Invalid map/value types
+retain schema error paths. The obsolete profile-level refinement is removed.
+
+This delta closes the implementation paths of one runtime mechanism from the completion handoff below.
+Independent review remains pending; the historical completion evidence is retained.
+
+Implementation evidence: schema/repository focused 31 tests, related reader/writer focused 33 tests, unit 441
+tests, and production 117 tests passed with warnings 0. Production inventory, candidate counters, and damage
+semantics remain unchanged. A same-process, three-round benchmark of one profile containing 422 builds and 422
+targets measured median parse time 2.067ms before and 2.105ms after this correction. Phase-gate and independent
+review results belong to the separate PIR-002 review record.
+
 ## Planning delta
 
 ### Outcome, invariant, owner, and structural finding

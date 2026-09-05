@@ -5,6 +5,7 @@ import {
   calculationScenarioSchema,
   damageResolutionInputSchema,
   ENGINE_VERSION,
+  localProfileSchema,
   parseUserDataBackup,
   parseStoredProfileCollection,
   SCHEMA_VERSION,
@@ -555,6 +556,65 @@ describe('portable schema boundaries', () => {
             }),
           `${mapName}:backup:v${String(schemaVersion)}`,
         ).toThrow(/servant_record_identity_mismatch/);
+      }
+    },
+  );
+
+  it.each(['servantBuilds', 'servantTargets'] as const)(
+    'conserves raw %s keys or rejects before current and legacy stored/backup parsing',
+    (mapName) => {
+      for (const schemaVersion of [SCHEMA_VERSION, 34, 33, 32] as const)
+        for (const recordKey of ['servant-a', '__proto__', 'constructor', 'toString'])
+          for (const matching of [true, false]) {
+            const source = servantIdentityCollection(schemaVersion);
+            const profile = source.profiles[0]!;
+            // JSON creates an own __proto__ property, not an object-literal prototype setter.
+            const records = JSON.parse(
+              JSON.stringify({
+                [recordKey]: {
+                  ...profile[mapName]['servant-a'],
+                  servantId: matching ? recordKey : 'servant-b',
+                },
+              }),
+            ) as Record<string, unknown>;
+            const collection = {
+              ...source,
+              profiles: [{ ...profile, [mapName]: records }],
+            };
+            const inputs = [
+              () => parseStoredProfileCollection(collection).collection,
+              () =>
+                parseUserDataBackup({
+                  kind: 'fgo-lab-user-backup',
+                  schemaVersion,
+                  exportedAt: servantIdentityTimestamp,
+                  appVersion: '0.1.0',
+                  profiles: collection,
+                }).profiles,
+            ];
+            for (const parse of inputs) {
+              const label = `${mapName}:v${String(schemaVersion)}:${recordKey}:${String(matching)}`;
+              if (recordKey === '__proto__')
+                expect(parse, label).toThrow(/servant_record_key_not_preserved/);
+              else if (!matching) expect(parse, label).toThrow(/servant_record_identity_mismatch/);
+              else expect(parse().profiles[0]![mapName], label).toEqual(records);
+              expect(Object.keys(records), label).toEqual([recordKey]);
+            }
+          }
+    },
+  );
+
+  it.each(['servantBuilds', 'servantTargets'] as const)(
+    'retains schema errors for malformed %s maps and values',
+    (mapName) => {
+      for (const records of [null, [], 1, { 'servant-a': null }, { 'servant-a': {} }]) {
+        const parsed = localProfileSchema.safeParse({
+          ...servantIdentityProfile(),
+          [mapName]: records,
+        });
+        expect(parsed.success).toBe(false);
+        if (!parsed.success)
+          expect(parsed.error.issues.some((issue) => issue.path[0] === mapName)).toBe(true);
       }
     },
   );
