@@ -2,10 +2,6 @@ import { z } from 'zod';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
   rankingSelectionSchema,
-  resolvedRankingBasisSchema,
-  calculationScenarioSchema,
-  calculationResultSchema,
-  damageResolutionInputSchema,
   portableCalculationRequestSchema,
   servantBuildRecordSchema,
   versionContextSchema,
@@ -17,6 +13,12 @@ import type {
   RankingPolicyExclusion,
   RankingRowSummary,
 } from '@fgo-lab/calculation-application';
+
+import {
+  rankingRowResponseSchema,
+  rankingExclusionResponseSchema,
+  rankingDetailResponseSchema,
+} from './rankingResponsePayloadSchema';
 
 const envelope = { requestId: z.string().min(1), contextId: z.string().min(1) };
 export const rankingWorkerRequestSchema = z.discriminatedUnion('kind', [
@@ -83,54 +85,15 @@ export function rankingConditionsFingerprint(conditions: RankingPolicyConditions
 }
 
 // Validate the transport envelope before consulting request identity or publishing any response.
-const responseEnvelope = z.discriminatedUnion('kind', [
+const responseEnvelope: z.ZodType<RankingWorkerResponse> = z.union([
   z.object({ ...envelope, kind: z.literal('ready') }).strict(),
   z
     .object({
       ...envelope,
       kind: z.literal('result'),
       fingerprint: z.string(),
-      rows: z.array(
-        z
-          .object({
-            entryId: z.string(),
-            servantId: z.string(),
-            name: z.string(),
-            imageKey: z.string().nullable(),
-            classId: z.string(),
-            rarity: z.number().int(),
-            npCard: z.enum(['buster', 'arts', 'quick']),
-            npTarget: z.enum(['single', 'all']),
-            level: z.number().int(),
-            npLevel: z.number().int().min(1).max(5),
-            owned: z.boolean(),
-            precision: z.enum(['exact', 'approximate']),
-            appliedEffectCount: z.number(),
-            supportEffectCount: z.number(),
-            supportSourceCount: z.number(),
-            specialDamageApplied: z.boolean(),
-            noblePhantasmName: z.string(),
-            attackProfile: z
-              .object({ id: z.object({ servantLineageId: z.string() }).loose() })
-              .loose(),
-            average: z.number(),
-            minimum: z.number(),
-            maximum: z.number(),
-          })
-          .loose(),
-      ),
-      exclusions: z.array(
-        z
-          .object({
-            entryId: z.string(),
-            reason: z.string(),
-            servantId: z.string(),
-            name: z.string(),
-            issues: z.array(z.unknown()),
-            status: z.enum(['invalid', 'unsupported', 'inputRequired', 'unavailableUnderPolicy']),
-          })
-          .loose(),
-      ),
+      rows: z.array(rankingRowResponseSchema),
+      exclusions: z.array(rankingExclusionResponseSchema),
     })
     .strict(),
   z
@@ -139,64 +102,32 @@ const responseEnvelope = z.discriminatedUnion('kind', [
       kind: z.literal('detail'),
       fingerprint: z.string(),
       entryId: z.string(),
-      detail: z
-        .object({
-          entryId: z.string(),
-          servantId: z.string(),
-          scenario: calculationScenarioSchema,
-          result: calculationResultSchema,
-          input: damageResolutionInputSchema,
-          basis: resolvedRankingBasisSchema,
-          rankingPolicy: rankingSelectionSchema,
-          candidateEvidence: z.object({
-            startNpGauge: z.number(),
-            policyKey: z.string(),
-            candidateKey: z.string(),
-            preparationPlanKey: z.string(),
-            baselineInputDeviation: z.number(),
-            attackProfileKey: z.string(),
-            canonicalInputValues: z.record(z.string(), z.number()),
-            targetCandidateKey: z.string(),
-            fieldCandidateKey: z.string(),
-            quantityCandidateKey: z.string(),
-          }),
-          effects: z.array(
-            z
-              .object({
-                projectionKey: z.string(),
-                label: z.string(),
-                visibility: z.string(),
-                proc: z.object({ kind: z.string() }).loose(),
-              })
-              .loose(),
-          ),
-          effectInputs: z.array(z.object({ relatedProjectionKeys: z.array(z.string()) }).loose()),
-          warnings: z.array(z.unknown()),
-          appliedPreparationActions: z.array(z.unknown()),
-          effectiveContributions: z.object({ contributions: z.array(z.unknown()) }).loose(),
-          areaContribution: z
-            .object({
-              withoutAreaScenario: calculationScenarioSchema,
-              withoutAreaInput: damageResolutionInputSchema,
-              withoutAreaResult: calculationResultSchema,
-              withoutAreaEffects: z.array(z.unknown()),
-              effectiveContributions: z.object({ contributions: z.array(z.unknown()) }).loose(),
-              warnings: z.array(z.unknown()),
-              contributionPolicy: z.object({}).loose(),
-            })
-            .loose()
-            .nullable(),
-        })
-        .loose(),
+      detail: rankingDetailResponseSchema,
     })
     .strict(),
   z
     .object({
       ...envelope,
       kind: z.literal('error'),
-      stage: z.enum(['initialization', 'summary', 'detail']),
+      stage: z.enum(['initialization', 'summary']),
       fingerprint: z.string().nullable(),
-      entryId: z.string().optional(),
+      reason: z.string(),
+      status: z.enum([
+        'invalid',
+        'failed',
+        'unsupported',
+        'inputRequired',
+        'unavailableUnderPolicy',
+      ]),
+    })
+    .strict(),
+  z
+    .object({
+      ...envelope,
+      kind: z.literal('error'),
+      stage: z.literal('detail'),
+      fingerprint: z.string(),
+      entryId: z.string().min(1),
       reason: z.string(),
       status: z.enum([
         'invalid',
@@ -214,12 +145,7 @@ export function parseRankingWorkerResponse(value: unknown): RankingWorkerRespons
   const response = parsed.data;
   if (response.kind === 'detail') {
     const detail = response.detail;
-    if (
-      response.entryId !== detail.entryId ||
-      detail.result.status !== 'calculated' ||
-      detail.scenario.mode !== 'resolved'
-    )
-      return null;
+    if (response.entryId !== detail.entryId) return null;
     if (
       !portableCalculationRequestSchema.safeParse({
         scenario: detail.scenario,
@@ -237,11 +163,5 @@ export function parseRankingWorkerResponse(value: unknown): RankingWorkerRespons
     )
       return null;
   }
-  if (
-    response.kind === 'error' &&
-    response.stage === 'detail' &&
-    (!response.entryId || response.fingerprint === null)
-  )
-    return null;
-  return response as RankingWorkerResponse;
+  return response;
 }

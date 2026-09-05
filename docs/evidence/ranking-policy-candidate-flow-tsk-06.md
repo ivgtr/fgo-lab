@@ -67,6 +67,59 @@ runtime paths remain Deferred until their owning task verifies them.
 
 ## TSK-06.42 Step 1 — authoritative comparison-basis planning delta
 
+### PIR-001 implementation delta — worker response payload closure
+
+The post-implementation review of `8c55613` found that the response parser validated only parts of
+`RankingPolicyDetail`, then asserted the complete DTO type. Missing `attackProfile` and malformed nested
+preparation actions reached presentation and threw. The previous response-path inventory checked normal
+roundtrips, request rejection and stale identities, but missed malformed response payloads. This is a
+transport contract gap; no production damage regression was established.
+
+The response family includes summary attack metadata/exclusions and detail attack metadata, effects and
+sources/explanations, input views, preparation commands/resources, contribution decisions/sets, warnings,
+and nullable area detail. Runtime calculators/caches produce these DTOs; the protocol validates them before
+`useRanking` publishes them to `RankingList`, `RankingEffectDetails`, `rankingDetailPresentation`, shared
+stack/source presentation, or `rankingHandoff`. Existing canonical schemas remain vocabulary owners;
+transport schemas must be assignable to complete application DTOs without an unchecked cast.
+
+| Changed response state × path | Disposition |
+| --- | --- |
+| Normal populated/empty summary, detail with null/non-null area, ready/error | Verified: `rankingWorkerProtocol.test.ts` roundtrip, render and portable replay |
+| Missing metadata, malformed nested action/resource/effect/input/contribution/warning and area equivalents | Verified: grouped corruption matrix in `rankingWorkerProtocol.test.ts`; complete DTO schema type checks |
+| Matching identity malformed detail → hook → presentation; subsequent valid reply | Verified: `useRanking.test.tsx`; malformed replies do not publish or consume pending request |
+| Stale identity and portable handoff parity | Verified: existing runtime/hook tests plus schema roundtrip → render → portable replay |
+| Damage semantics, candidate generation, cache lifetime | N/A: response validation only; existing later-task scope unchanged |
+
+Implementation evidence: `rankingEffectResponseSchema` and `rankingResponsePayloadSchema` validate the
+complete application DTO shape using existing canonical schemas where available; protocol output is
+assignable to `RankingWorkerResponse` without a cast. Optional absent fields remain absent. Error-stage
+variants require their own payloads. Schema-legal nonempty input/condition/decision and area fixtures guard
+against validation that accepts only today's default winner. No damage rule, portable identity, candidate
+policy, expected number, snapshot or production digest was changed.
+
+Focused verification: baseline runtime/hook 2 files / 6 tests, 2.58s
+(`.test-results/2026-09-05T15-23-53-535Z-16-8021e7`); expanded response/runtime/hook 3 files / 11 tests,
+2.65s (`.test-results/2026-09-05T15-31-50-806Z-45-9c6a3e`), warnings 0. The added work is five small-fixture
+regressions, not extra production master calculations. Existing runtime canonical roundtrip test measured
+74ms before and 91ms after with the new suite; these single samples are not a controlled parser benchmark.
+Final gate: `pnpm quality` PASS, 237.77s, unit 458 / production 117 / Playwright 25;
+skips, retries, warnings and unexpected console are all 0. Artifact:
+`.test-results/2026-09-05T15-33-36-207Z-15-1325c7`. Production digest, inventory and counters match the
+reviewed `8c55613` baseline (candidate 6,360 / deduplicated 3,949 / requests 1,924 / distinct 1,298).
+Unit suite grew from 453 to 458 tests (7.75s → 8.40s); quality elapsed 235.29s → 237.77s. These suite
+measurements include the added regression coverage and are not an isolated parser benchmark.
+Implementation is ready for independent re-review; this evidence does not change reviewer adjudication.
+
+Re-review completed, 2026-09-06: reviewer and independent reviewer confirmed PIR-001 **Resolved**, with
+no new material finding; verdict **Approved**, runtime Blocking 0. The complete response family, normal
+render/replay, malformed-response rejection and subsequent valid publication were rechecked. Fresh
+`pnpm quality` PASS, 241.59s, unit 458 / production 117 / Playwright 25; skips, retries, warnings and
+unexpected console 0. Artifact: `.test-results/2026-09-05T15-45-37-350Z-15-81df04`. Production digest,
+inventory and candidate counters remain equal to the clean `8c55613` review baseline. Isolated parser
+benchmark and manual browser verification were not run; automated browser coverage passed. The external
+review record is `/tmp/fgo-lab-review-8c55613-x7hnuwgj/review.md`; this paragraph preserves the resolution
+and evidence if that temporary record is cleaned up. Damage semantics and subsequent task scope are unchanged.
+
 ### Step 2 implementation delta (start `b4e0356`, planning `ab48586`)
 
 The implementation now separates population, level basis and NP basis. Schema owns the strict wire selection

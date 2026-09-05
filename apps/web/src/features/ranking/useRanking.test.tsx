@@ -11,6 +11,8 @@ import {
   type RankingWorkerResponse,
 } from './rankingWorkerProtocol';
 import { useRanking } from './useRanking';
+import { rankingResponseFixture } from './rankingResponseFixture';
+import { presentRankingDetailEvidence } from './rankingDetailPresentation';
 
 class FakeWorker {
   static instance: FakeWorker | undefined;
@@ -25,7 +27,7 @@ class FakeWorker {
     this.requests.push(request);
   }
 
-  emit(response: RankingWorkerResponse) {
+  emit(response: unknown) {
     this.onmessage?.({ data: response } as MessageEvent<RankingWorkerResponse>);
   }
 
@@ -237,4 +239,60 @@ it('does not start a worker for invalid URL conditions', () => {
     }),
   );
   expect(Worker).not.toHaveBeenCalled();
+});
+
+it('never publishes malformed current detail and accepts a subsequent valid reply for presentation', async () => {
+  vi.stubGlobal('Worker', FakeWorker);
+  const fixture = rankingResponseFixture();
+  const { result } = renderHook(() =>
+    useRanking({
+      master: fixture.master,
+      profile: fixture.profile,
+      versions: fixture.versions,
+      conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+    }),
+  );
+  const worker = FakeWorker.instance!;
+  const initialize = worker.requests[0]!;
+  act(() =>
+    worker.emit({
+      ...fixture.ready,
+      requestId: initialize.requestId,
+      contextId: initialize.contextId,
+    }),
+  );
+  await waitFor(() => expect(worker.requests).toHaveLength(2));
+  const calculate = worker.requests[1]!;
+  act(() =>
+    worker.emit({
+      ...fixture.summary,
+      requestId: calculate.requestId,
+      contextId: calculate.contextId,
+    }),
+  );
+  const row = result.current.rows[0]!;
+  act(() => result.current.requestDetail(row));
+  const request = worker.requests[2]!;
+  const response = {
+    ...fixture.detail,
+    requestId: request.requestId,
+    contextId: request.contextId,
+  };
+  for (const detail of [
+    { ...response.detail, attackProfile: undefined },
+    { ...response.detail, appliedPreparationActions: [{}] },
+    {
+      ...response.detail,
+      effectiveContributions: { ...response.detail.effectiveContributions, contributions: [{}] },
+    },
+  ]) {
+    act(() => worker.emit({ ...response, detail }));
+    expect(result.current.details).toEqual({});
+  }
+  // Invalid transport data must not consume the pending request or poison later valid publication.
+  act(() => worker.emit(response));
+  expect(result.current.details[row.entryId]).toEqual(response.detail);
+  expect(() =>
+    presentRankingDetailEvidence(result.current.details[row.entryId]!, fixture.master),
+  ).not.toThrow();
 });

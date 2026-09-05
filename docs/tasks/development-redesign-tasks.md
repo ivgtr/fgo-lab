@@ -1538,6 +1538,23 @@ Handoff: Step 2 completed, 2026-09-06
 - 次の実行単位は`ready`のTSK-06.43。本Taskの実装commitとclean worktreeを開始基点として記録し、
   Task・関連requirements・canonical flow noteを再読する。後続実装は別の明示依頼から開始する。
 
+Handoff: post-implementation review completed, 2026-09-06
+
+- PIR-001（worker response payload検証不足）は修正後の主reviewer／独立reviewer双方が`Resolved`と確認し、
+  判定は`Approved`。TSK-06.42は`done`、runtime Blocking 0。詳細と再発範囲の正本はcanonical flow noteの
+  「PIR-001 implementation delta」。damage rule、snapshot、production digestの変更はない。
+- 再レビューの`pnpm quality` PASS、241.59s、unit 458／production 117／Playwright 25、skip／retry／warning／
+  unexpected console 0。artifact: `.test-results/2026-09-05T15-45-37-350Z-15-81df04`。
+- 次は`ready`のTSK-06.43。この承認済み修正のcommitとworktree状態を開始境界として記録し、Task、関連requirements、
+  canonical flow noteを再読する。着手前にstack quantity familyのproducer／consumer／recovery経路を監査し、
+  同じflow noteへ計画とstate-by-path反例を追加する。
+- 実行順序はtyped IRのbaseline／maximum／quantity source定義 → applicationの有限witness選択 →
+  shared executionとglobal constraint検証 → detail／portable／calculator parity。
+  count 0／1／maximum、比較演算、上限欠落・矛盾、複数familyの共存を扱い、production代表の平景清4／ワンジナ10を
+  inventoryで確認する。servant固有runtime分岐、一般turn simulation、candidate上限緩和は行わない。
+- 検証は小さい反例fixture、共有production inventory、変更前後各3回のhot-path／candidate計測、最終`pnpm quality`。
+  TSK-06.43の実装は未着手。後続順序は06.43 → 06.45 → 06.44 → 06.5 → 07のまま。
+
 ### TSK-06.43: Canonical maximum stack quantity
 
 Depends on: TSK-06.42
