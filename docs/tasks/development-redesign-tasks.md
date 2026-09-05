@@ -1450,18 +1450,23 @@ Depends on: TSK-06.46, TSK-06.47
       owned axesは一つのstable profile fixtureから合法product、NP0／no-build membership proof、invalid productを監査する。
       full maximumはTSK-06.5へDeferredする。
 
-Implementation and verification order:
+Implementation and verification order (Step 1 revalidated at `255464b`):
 
-1. `rankingContracts`とfocused application moduleでraw six-field input、validated selection、atomic command、
-   per-entry `ResolvedRankingBasis`を確定し、TSK-06.47のvalidated build／ownership contractだけを入力にする。
-2. `rankingPolicy`／`rankingRows`でpopulationとlevel／NP provenanceを一度解決し、`rankingStaticSemantics`、
-   `rankingComparisonPolicy`、candidate construction／selectionからglobal basis readを削除する。
-3. detail、portable ranking intent、schema migration／draft／history／backup／share recoveryを同じidentityへ切り替える。
-4. URL control／serializer、worker runtime validation、context／selection fingerprint、summary／detail cacheとstale guardを切り替え、
-   最後に旧type、URL key、reader、fallbackを検索で0件にする。
-5. `pnpm test:diagnostic -- rankingPolicy`、`pnpm test:diagnostic -- rankingState`、
-   `pnpm test:diagnostic -- rankingWorkerRuntime`、`pnpm test:diagnostic -- portableCalculation`の順でfocused failureを診断し、
-   `pnpm test:unit`、`pnpm test:production`へ拡張する。phase completionは`pnpm quality`だけで閉じる。
+詳細設計・state-by-path matrixの正本はcanonical flow noteの
+「Revalidated Step 1 handoff at `255464b`」。下記はその実行単位であり、新しい計画文書は作らない。
+
+| Unit | Depends on | Ownership / deliverable | Bounded verification before proceeding |
+| --- | --- | --- | --- |
+| 42-A | Step 2 entry | 変更前のshared production auditを3回計測後、schemaの共有selection shape、applicationのvalidated selection／command／resolverを定義。既存record schemaをworkerから再利用可能にし、`isOwned`とATK ownerは変更しない | 合法product、非法product、atomic population transition、NP0／missing、selected値だけのコピー。共通06.46／47 fixtureを再利用 |
+| 42-B | 42-A | `rankingPolicy`／`rankingRows`／`rankingCandidateSpace`の全scenario構築、static semantics／capacity／candidate selection／summary／direct detail／NP matrixをresolved basisへ統一。row/detailへselectionとprovenanceを保持 | `pnpm test:diagnostic -- rankingPolicy`、`-- rankingRows`、`-- rankingProfileOutcome`を各々実行。owned NPとglobal指定値が違う反例、baseline/materialized path、NP1〜5完全実行 |
+| 42-C | 42-B | detail → portable constructor／execute／replace／recover／upgradeのcoherence、schema v36／engine 31.0.0、v34/v35 ranking historical migration。repository／backup／share／draft／history writerを同じ契約へ切替 | `pnpm test:diagnostic -- portableCalculation`、`-- packages/schema/src/index.test.ts`、`-- repository`、`-- share`、`-- rankingHandoff`を各々実行。pinned replay、旧/current/mixed、failed attemptのno-write |
+| 42-D | 42-B, 42-C | URL六keyのstrict read/write、application command dispatch、六controlとsummary、worker request/response validation、context/selection/request identity、summary/detail cache guard。detailはcanonical entryから解決 | `pnpm test:diagnostic -- rankingState`、`-- rankingWorkerRuntime`、`-- useRanking`、`-- RankingConditions`を各々実行。invalid URLのfilter/popstate/reset、stale response、cache hit/miss identity、礼装/support変更時no-reinitialize |
+| 42-E | 42-C, 42-D | 同じstable owned fixtureでrow/detail/request/calculator parityと合法basis productを統合検証。shared production inventoryと性能を変更前に対応付ける | `pnpm test:diagnostic -- Ranking.integration`、`-- productionAudit`、続けて`pnpm test:unit`と`pnpm test:production`。候補数、damage入力、差分理由、3回medianを記録 |
+| 42-F | 42-E | 旧runtime type/key/fallback/readerの削除監査、flow statusとcontract evidenceを更新、完了handoff | `pnpm quality`だけを最終phase gateにし、その後に別Vitest／validate:evidenceを追加しない。Blocking 0を確認してdone |
+
+各unitで必要な関連fixtureを更新するが、unit完了をTask完了としない。全masterはshared audit一つへ集約し、
+caseごとの再compileや未証明のcross-NP cacheを導入しない。42-Dはcache identityだけを変更し、lifetime/cardinalityはTSK-07。
+旧keyの削除監査はproduction reader/writerを対象とし、旧入力をrejectするguard、migration、反例fixtureの文字列を0件要求しない。
 
 Done gate:
 
@@ -1490,7 +1495,24 @@ Contract closure matrix:
 | `RK-AUDIT-001` | Apply | stable owned product fixture＋shared production natural／Lv.90 inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: 未記録
+Handoff (Step 1 only, 2026-09-05):
+
+- 調査基点: `main` / `255464b2dc6219df7be0032bd46d45d279bbb30c`、開始worktree clean。
+  AGENTS、systematic review guide、関連requirements、ranking／portable／06.46／06.47 flow noteをコードへ照合した。
+- 06.46のexact ATK invalidと06.47のraw-key保存／record identityは実装済み。旧計画の未完了記述は
+  canonical flow noteの最新deltaで上書きし、worker ingressと新basisの接続検証だけを本Taskへ残す。
+- 今回の追加はdetail entry対応／遅延response、strict URLのpartialとdefault writer整合、v35基点の移行、
+  portable provenance整合の反例。根拠と前回inventoryの不足は同じflow noteへ一度だけ記録した。
+- Step 2 entry: 次の明示的な実装依頼を受け、このhandoffと`255464b`の祖先関係、TSK-06.42 `ready`、
+  TSK-06.46／06.47 `done`、planning Blocking 0を確認する。許容開始差分は未commitの場合の
+  `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`と本Task正本の今回Step 1変更だけ。
+  source／test／configuration／fixture／snapshot差分は許容しない。後発ユーザー変更は保持し、開始境界を再記録する。
+  planning差分を必要に応じてcommitした後、Taskだけを`in_progress`にする開始commitを作ってから実装する。
+- 完了条件: 上記Done gate、42-A〜Fの証拠、共有production inventory、calculator parity、fail-closed、性能、
+  controls／summary整合、`pnpm quality`、runtime Blocking 0。全攻撃NP numeric closure／最大stack／寄与表示／
+  full maximum／cache lifetime／responsive polishは既存後続Taskへ残す。
+- 今回は文書2件のみを更新し、Taskは`ready`を維持。実装・テスト・設定・snapshot変更なし、テスト／品質gate／
+  benchmarkは未実行。仕様上の未確定事項はなく、実装検証はすべてStep 2へDeferred。
 
 ### TSK-06.43: Canonical maximum stack quantity
 

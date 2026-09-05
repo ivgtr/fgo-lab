@@ -67,7 +67,124 @@ runtime paths remain Deferred until their owning task verifies them.
 
 ## TSK-06.42 Step 1 — authoritative comparison-basis planning delta
 
-### Outcome, invariant, semantic owner, and current mechanism
+### Revalidated Step 1 handoff at `255464b` (2026-09-05)
+
+This delta supersedes the stale prerequisite and baseline statements below; the existing design and matrix
+remain the starting plan. Baseline is `main` at `255464b2dc6219df7be0032bd46d45d279bbb30c`, with a clean worktree.
+This pass reads code and existing evidence only: no implementation, test, configuration, snapshot, benchmark,
+or production regeneration was performed. Requirements remain ranking v0.10.1 sections 4, 11, 12, 15, 17 and
+UI v1.5.0 section 12; no product decision changes are needed.
+
+#### Confirmed code delta and prerequisite reuse
+
+- TSK-06.46 is complete: `scenario.ts:prepareCalculationScenario` checks the exact selected-level stat before
+  preparation, accepts a present zero, and rejects missing ATK even with an override. Reuse its application
+  invalid outcome and its scenario／portable／handoff fixtures; do not add an ATK lookup to the basis resolver.
+- TSK-06.47 is complete in the Task source. `schema/src/index.ts:servantIdentityRecordSchema` now conserves raw
+  own keys and validates embedded identity in current and v32/v33/v34 records, including PIR-002 at this HEAD.
+  The record schema is currently private: expose/reuse that existing schema at the worker trust boundary rather
+  than parse a synthetic LocalProfile or implement a new record refinement. `profile-domain:isOwned` remains
+  the ownership owner; both membership and `rankingRows:createRankingRow` still duplicate its predicate.
+  The identity note's independent-review-pending statement is retained as historical evidence, not promoted
+  to a new approval claim by this planning pass.
+- `rankingContracts`, `rankingPolicy`, `rankingRows`, `rankingStaticSemantics`, `rankingComparisonPolicy`,
+  `rankingPolicyScenario`, `rankingPolicyCandidates`, and `rankingPolicyMatrix` still have the old mode/global-NP
+  contract. `rankingCandidateSpace` constructs scenarios on both baseline and materialization paths. Both paths,
+  summary and direct detail calls must receive the same resolved basis. Matrix NP1–5 means five complete calls
+  with specified NP bases; owned-NP tests are separate and must not silently repeat the owned NP five times.
+- `rankingState`, `RankingConditions`, `rankingWorkerProtocol`, `rankingWorkerRuntime`, and `useRanking` retain
+  the old parser, direct patch commands, and five-field identity. `initialize` already clears all three worker
+  maps, but installs an unchecked context first. Preserve this atomic clearing behavior after validation.
+- Portable schema is now **35**, engine **30.0.0**. `createRankingPortableRequest` copies only two policy axes;
+  `executePortableCalculation` validates schema/version/capacity but has no comparison-basis coherence check.
+  `replacePortableCalculationScenario`, version upgrade, recover, and direct execution must share the new
+  validation; recovery must retain the previous request/result on a failed attempt. `rankingHandoff` already
+  executes before durable/workspace/session/route publication (TSK-06.46 PIR-001); preserve that transaction.
+
+#### Review gap: detail identity and transport composition
+
+1. Mechanism — confirmed by `rankingWorkerRuntime:handle`: detail looks up the cache by fingerprint/entryId,
+   separately finds servantId, and passes the supplied AttackProfile without proving those three identify the
+   same current summary entry. A cached detail returns before that relation is checked. `useRanking:onmessage`
+   trusts the typed response and guards principally by selection fingerprint.
+2. Implementation mismatch — inference: independent request fields can identify different rows, so six-field
+   hashing alone does not establish row → detail → handoff identity. This is a transport identity issue, not a
+   new damage semantic family; no production misdelivery was reproduced in this documentation-only pass.
+3. Missed detection — confirmed: the earlier matrix listed malformed payload and stale context, but omitted
+   structurally valid contradictory entryId/servantId/AttackProfile and delayed same-selection context responses.
+4. Recurrence scope/minimum guardrail — validate context/selection/request identity on ready/result/detail/error;
+   resolve detail from the canonical summary entry before cache access. Prefer sending entryId plus context and
+   selection identities and obtaining servant/profile from that entry, deleting redundant client authorities.
+   Check cache hit and miss, missing/nonmember entry, old context with identical selection, and mixed old/new input.
+
+#### Concrete boundary decisions
+
+Application owns legal selection validation, commands, and per-servant resolution. Schema owns the serializable
+selection/provenance shape so portable and worker callers can reuse it without reversing package dependencies;
+application adds master-dependent checks. A validated selection is distinct from raw input. Request-level invalid
+has no enumerated rows or partial cache result. A valid empty owned collection is success with zero rows. Existing
+profile outcomes (`inputRequired`, `unavailableUnderPolicy`, `invalid`, `unsupported`) and candidate stochastic or
+policy omission classifications remain distinct; malformed transport is not a fabricated profile exclusion.
+
+URL calculation keys will be `rPopulation`, `rLevelBasis`, `rNpBasis`, `rAffinity`, `rSelf`, `rConditional`.
+The NP token is `1`–`5` or `owned`, decoded into the typed NP basis without permissive numeric coercion. Either
+all six calculation keys are absent (defaults) or each occurs exactly once; the serializer emits all six for a
+valid selection. Partial, duplicate, empty, unknown, old `rMode`/`rNp`, and mixed old/new inputs are invalid.
+Display filter/metric keys remain independent. Changing a filter while invalid must not serialize defaults and
+repair the calculation state implicitly; only explicit reset publishes a legal selection. Back/forward parsing
+uses the same boundary. This closes the prior plan's partial-input rule versus default-omitting writer gap.
+
+Portable provenance copies servant identity and selected numeric level/NP once. Verify basis ↔ provenance ↔
+scenario consistency, natural-limit/Lv.90/specified-NP claims, master source and fixed comparison inputs before
+execution. Owned provenance proves the pinned selection-time value, not current ownership after profile edits.
+No saved build is read during replay. Do not reject legal planner-selected preparation/world facts by comparing
+an executed scenario with an unprepared default scenario.
+
+Cut over schema 35 → 36 and engine 30.0.0 → 31.0.0 once in Step 2. Preserve explicit v32/v33 dispositions and
+raw-key-safe identity parsing. Add exact v35 and adapt v34 migration: valid calculator/manual snapshots keep
+identity and old runtime versions (ordinary explicit upgrade remains required); two-axis ranking drafts are
+discarded and matching ranking history becomes non-executable historical data. Extend the existing historical
+variant, currently restricted to v33, to retain exact v34/v35 policy evidence without inventing comparison axes.
+Already-historical v33 records remain historical. Current malformed or mixed requests fail closed; migration
+never repairs profile maps. Apply the same disposition through stored load and backup import; old shares reject.
+
+#### Additional state-by-path matrix (implementation deferred)
+
+| State × path | Required result / minimum verification | Status |
+| --- | --- | --- |
+| selected owned NP differs from specified default × baseline/materialized candidate, summary/direct detail, matrix | one resolved NP drives coefficients, capacity, winner and selected damage row; each specified matrix column executes fully | Deferred: TSK-06.42 |
+| NP0/missing build × membership and row ownership | both consume `isOwned`; no synthetic exclusions or record changes | Deferred: TSK-06.42 |
+| missing exact ATK / present zero / override × new owned/uniform basis | reuse TSK-06.46 outcome and fixtures; add only basis integration parity | Deferred: TSK-06.42 |
+| raw lost key or identity mismatch × worker initialize | reuse TSK-06.47 record parser and fixture family; no partial context publication or old-context calculation after failed replacement | Deferred: TSK-06.42 |
+| old-only / canonical-only / mixed / duplicate / partial axes × URL, worker, portable | strict boundary; numeric calculation only for complete legal canonical input (or empty URL defaults) | Deferred: TSK-06.42 |
+| invalid URL × filter edit / popstate / reset | no dispatch or implicit repair; explicit reset recovers with synchronized controls/summary | Deferred: TSK-06.42 |
+| mismatched entry / nonmember entry × cached and uncached detail | reject before cache read or execution; no handoff | Deferred: TSK-06.42 |
+| delayed ready/result/detail/error × new context with identical selection | ignored; no old rows/details or readiness exposed; include request identity | Deferred: TSK-06.42 |
+| natural Lv.90 versus uniform Lv.90; owned value numerically equal to specified × fingerprint/replay | equal damage may have distinct selection/provenance identity | Deferred: TSK-06.42 |
+| tampered provenance/fixed basis × constructor, execute, replace, recover, upgrade | typed invalid, no replacement draft/history/session/route write; retain prior pair | Deferred: TSK-06.42 |
+| v32/v33/v34/v35 × calculator/manual/ranking/historical × load/backup/share | exact migration dispositions above; missing axes never become executable | Deferred: TSK-06.42 |
+
+#### Execution boundary and evidence handoff
+
+Planning Blocking is **0**; implementation rows remain Deferred, not Verified. Execute units 42-A through 42-F
+in the Task source in dependency order. Before source edits in Step 2, measure the existing shared
+`productionAudit.test.ts` compile/hot-path with three comparable bounded runs and record median, inventory,
+candidate/damage counters and artifacts here; repeat after implementation under the same conditions. Previous
+TSK-06.47 evidence (not remeasured here) is 469 servants / 422 attack servants / 433 profiles, default ranking
+393 rows, candidate 6,360 / deduplicated 3,949 / damage requests 1,924 / distinct 1,298. Reuse the existing shared
+natural/Lv.90 availability inventory; owned inputs use one stable fixture, not full-master reload per combination.
+Record intentional changes by selection, resolved inputs, governing rule, outcome and rank; do not only update a
+digest. Full four-policy maximum closure and all-current-NP numeric closure remain TSK-06.5 and TSK-06.45.
+
+Step 2 requires a new explicit implementation request, this handoff, TSK-06.42 `ready`, prerequisites `done`,
+and baseline ancestry through `255464b`. Allowed initial worktree: only the two reviewed Step 1 documentation
+files (this note and the Task source), if not committed; no source/test/configuration/fixture/snapshot changes.
+Do not revert later user edits; record any changed boundary and keep unrelated work isolated. Commit the planning
+boundary if needed, then create a Task-only `in_progress` start commit before implementation. Do not run this
+start transition during Step 1. Completion requires the Task done gate, unit/production evidence, final
+`pnpm quality`, and zero runtime Blocking within this Task, with explicit later-task dispositions retained.
+
+### Original planning mechanism (historical; current delta above)
 
 The user-visible outcome remains the approved six controls: population, level basis, NP-level basis, class
 affinity, self buffs, and conditional effects. Population changes membership only. Level and NP-level bases are
@@ -139,7 +256,7 @@ scoped to one master／version／servant-build context and one validated six-fie
 clears summary, detail, and selection maps atomically, while stale guards compare both current context and
 selection identities.
 
-### Current production inventory
+### Original production inventory (historical)
 
 At audited HEAD `907f251`, the published master contains 469 servants, 422 servants with an attack NP, and 433
 AttackProfiles. All 422 attack servants have both the rarity-derived natural-limit ATK and Lv.90 ATK. Of them, 421
@@ -188,7 +305,7 @@ responsive／a11y closure; it must not add a second basis parser or portable ada
 | owned＋Lv.90＋specified NP | NP1〜5 ownership membership; ignore every stored combat value except owned fact | master source, Fou1000, skill10; preserve legal axes on profile mutation | calculated | Deferred: TSK-06.42 |
 | owned＋low owned level＋specified NP | use only stored level | exact `atkByLevel`; same row/detail/calculator damage | calculated | Deferred: TSK-06.42 |
 | owned＋owned level＋owned NP | copy two owned dimensions independently | no complete-owned-build label or saved Fou／skill import | calculated for NP1〜5 | Deferred: TSK-06.42 |
-| saved build with NP0＋specified NP under owned population | unowned; record remains stored but is not enumerated | specified NP changes level basis only, not membership | absent by typed ownership proof | Deferred: TSK-06.42 |
+| saved build with NP0＋specified NP under owned population | unowned; record remains stored but is not enumerated | specified NP changes NP level only, not membership | absent by typed ownership proof | Deferred: TSK-06.42 |
 | saved build with NP0＋owned NP under owned population | unowned; no per-entry resolution is attempted | no NP1 substitution and no fabricated exclusion | absent by typed ownership proof | Deferred: TSK-06.42 |
 | no build under owned population | unowned and not enumerated | no per-entry outcome fabricated | absent by typed ownership proof | Deferred: TSK-06.42 |
 | empty owned population | enumerate zero servants and profiles | valid selection and cache identity; no generic failure | calculated collection with zero rows | Deferred: TSK-06.42 |
