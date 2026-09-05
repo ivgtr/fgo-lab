@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SCHEMA_VERSION } from '@fgo-lab/schema';
+import { SCHEMA_VERSION, type ProfileCollection } from '@fgo-lab/schema';
 import fixture from '../../../../packages/test-fixtures/master/fixture.json';
 import manifest from '../../../../packages/test-fixtures/master/manifest.json';
 import { IndexedDbProfileRepository, loadActiveMaster, stageAndActivate } from './repository';
@@ -32,6 +32,32 @@ const legacyProfile = {
   draft: { legacy: true },
   history: [{ legacy: true }],
 };
+
+function mismatchedProfileCollection(schemaVersion: 34 | typeof SCHEMA_VERSION) {
+  return {
+    schemaVersion,
+    activeProfileId: profileId,
+    profiles: [
+      {
+        ...legacyProfile,
+        servantBuilds: {
+          'servant-a': {
+            servantId: 'servant-b',
+            level: 1,
+            ascension: 0,
+            npLevel: 0,
+            fouAtk: 0,
+            skills: {},
+            appends: {},
+            updatedAt: '2026-08-25T00:00:00.000Z',
+          },
+        },
+        draft: null,
+        history: [],
+      },
+    ],
+  };
+}
 
 describe('profile repository migration boundary', () => {
   beforeEach(async () => {
@@ -74,6 +100,39 @@ describe('profile repository migration boundary', () => {
     });
     const check = await userStore();
     expect(await check.get('user', 'profiles')).toEqual(invalid);
+    check.close();
+  });
+
+  it.each([SCHEMA_VERSION, 34] as const)(
+    'rejects a schema %s servant identity mismatch without upgrading or replacing stored bytes',
+    async (schemaVersion) => {
+      const invalid = mismatchedProfileCollection(schemaVersion);
+      const db = await userStore();
+      await db.put('user', invalid, 'profiles');
+      db.close();
+
+      expect(await new IndexedDbProfileRepository().load()).toEqual({
+        state: 'invalid',
+        reason: 'profile_parse_failed',
+      });
+      const check = await userStore();
+      expect(await check.get('user', 'profiles')).toEqual(invalid);
+      check.close();
+    },
+  );
+
+  it('rejects an invalid replacement before changing the current stored collection', async () => {
+    const repository = new IndexedDbProfileRepository();
+    const current = {
+      ...mismatchedProfileCollection(SCHEMA_VERSION),
+      profiles: [{ ...legacyProfile, draft: null, history: [] }],
+    } as ProfileCollection;
+    await repository.replace(current);
+    const invalid = mismatchedProfileCollection(SCHEMA_VERSION) as unknown as ProfileCollection;
+
+    await expect(repository.replace(invalid)).rejects.toThrow(/servant_record_identity_mismatch/);
+    const check = await userStore();
+    expect(await check.get('user', 'profiles')).toEqual(current);
     check.close();
   });
 });

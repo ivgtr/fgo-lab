@@ -62,6 +62,49 @@ const requestFor = (
 describe('portable input limits', () => {
   it('rejects oversized backups before schema use', () =>
     expect(() => importBackup('x'.repeat(101), 100)).toThrow('backup_too_large'));
+  it('rejects a servant identity mismatch at the backup import boundary', () => {
+    const profileId = '00000000-0000-4000-8000-000000000047';
+    const timestamp = '2026-09-05T00:00:00.000Z';
+    expect(() =>
+      importBackup(
+        JSON.stringify({
+          kind: 'fgo-lab-user-backup',
+          schemaVersion: SCHEMA_VERSION,
+          exportedAt: timestamp,
+          appVersion: APP_VERSION,
+          profiles: {
+            schemaVersion: SCHEMA_VERSION,
+            activeProfileId: profileId,
+            profiles: [
+              {
+                profileId,
+                name: 'identity mismatch',
+                createdAt: timestamp,
+                updatedAt: timestamp,
+                servantBuilds: {
+                  'servant-a': {
+                    servantId: 'servant-b',
+                    level: 1,
+                    ascension: 0,
+                    npLevel: 0,
+                    fouAtk: 0,
+                    skills: {},
+                    appends: {},
+                    updatedAt: timestamp,
+                  },
+                },
+                servantTargets: {},
+                craftEssences: [],
+                supportTemplates: [],
+                draft: null,
+                history: [],
+              },
+            ],
+          },
+        }),
+      ),
+    ).toThrow(/servant_record_identity_mismatch/);
+  });
   it('keeps a bounded URL limit large enough for traced proc scenarios', () =>
     expect(MAX_SHARE_FRAGMENT_LENGTH).toBe(16_384));
   it('keeps result image layout width independent from the viewport', () =>

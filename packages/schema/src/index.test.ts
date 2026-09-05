@@ -12,6 +12,53 @@ import {
   QUANTITY_FACT_DOMAINS,
 } from './index';
 
+const servantIdentityProfileId = '00000000-0000-4000-8000-000000000047';
+const servantIdentityTimestamp = '2026-09-05T00:00:00.000Z';
+function servantIdentityProfile() {
+  return {
+    profileId: servantIdentityProfileId,
+    name: 'identity fixture',
+    createdAt: servantIdentityTimestamp,
+    updatedAt: servantIdentityTimestamp,
+    servantBuilds: {
+      'servant-a': {
+        servantId: 'servant-a',
+        level: 1,
+        ascension: 0,
+        npLevel: 0,
+        fouAtk: 0,
+        skills: {},
+        appends: {},
+        updatedAt: servantIdentityTimestamp,
+      },
+    },
+    servantTargets: {
+      'servant-a': {
+        servantId: 'servant-a',
+        level: 1,
+        ascension: 0,
+        fouAtk: 0,
+        skills: {},
+        appends: {},
+        planned: true,
+        updatedAt: servantIdentityTimestamp,
+      },
+    },
+    craftEssences: [],
+    supportTemplates: [],
+    draft: null,
+    history: [],
+  };
+}
+
+function servantIdentityCollection(schemaVersion: 32 | 33 | 34 | typeof SCHEMA_VERSION) {
+  return {
+    schemaVersion,
+    activeProfileId: servantIdentityProfileId,
+    profiles: [servantIdentityProfile()],
+  };
+}
+
 describe('portable schema boundaries', () => {
   it('keeps resolved scenarios free of master-derived numeric inputs', () => {
     const scenario = calculationScenarioSchema.parse({
@@ -349,6 +396,168 @@ describe('portable schema boundaries', () => {
 
     expect(template.composition.effectInclusions).toHaveLength(1);
   });
+
+  it('retains coherent NP0 build and target identities in the current profile schema', () => {
+    for (const npLevel of [0, 1, 2, 3, 4, 5]) {
+      const collection = servantIdentityCollection(SCHEMA_VERSION);
+      collection.profiles[0]!.servantBuilds['servant-a'].npLevel = npLevel;
+      expect(
+        parseStoredProfileCollection(collection).collection.profiles[0]?.servantBuilds,
+      ).toEqual(collection.profiles[0]!.servantBuilds);
+    }
+    expect(parseStoredProfileCollection(servantIdentityCollection(SCHEMA_VERSION))).toMatchObject({
+      upgraded: false,
+      collection: {
+        profiles: [
+          {
+            servantBuilds: { 'servant-a': { servantId: 'servant-a', npLevel: 0 } },
+            servantTargets: { 'servant-a': { servantId: 'servant-a' } },
+          },
+        ],
+      },
+    });
+  });
+
+  it('migrates coherent schema 34 profiles, snapshots, and backups without discarding data', () => {
+    const baseCollection = servantIdentityCollection(34);
+    const scenario = calculationScenarioSchema.parse({
+      mode: 'resolved',
+      attacker: {
+        servantId: 'servant-a',
+        initialActorFormId: { actorId: 'servant-a', limitCount: 0 },
+        source: 'master',
+        level: 1,
+        npLevel: 1,
+        fouAtk: 0,
+      },
+      overcharge: 1,
+      targetContext: {
+        class: { kind: 'concrete', classId: 'lancer' },
+        attribute: { kind: 'concrete', attribute: 'earth' },
+        families: [],
+      },
+      attackerHpPermille: 1000,
+      battleState: { battlePointPhase: null },
+      canonicalInputValues: {},
+      craftEssence: null,
+      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+      mysticCode: null,
+      support: null,
+      effectDecisions: [],
+      activationFacts: [],
+      worldFactAssertions: [],
+      explicitOverrides: {},
+    });
+    const snapshot = {
+      profileId: servantIdentityProfileId,
+      calculationSessionId: '00000000-0000-4000-8000-000000000048',
+      request: {
+        versionContext: { masterDataVersion: 'fixture', engineVersion: ENGINE_VERSION },
+        scenario,
+        executionIntent: { kind: 'calculator', initialNpGauge: 10_000 },
+      },
+      result: {
+        status: 'unsupported',
+        rows: [],
+        effects: [],
+        assumptions: [],
+        issues: [],
+        trace: [],
+        evidence: [
+          {
+            key: 'schema-34',
+            subject: 'fixture',
+            status: 'provisional',
+            sources: ['fixture'],
+            goldenCaseIds: [],
+            differentialCaseIds: [],
+            reviewedAt: '2026-09-05',
+            engineVersion: ENGINE_VERSION,
+          },
+        ],
+        missingEvidence: ['schema-34'],
+        versions: {
+          schemaVersion: 34,
+          masterDataVersion: 'fixture',
+          engineVersion: ENGINE_VERSION,
+          appVersion: '0.1.0',
+          gameRegion: 'JP',
+          masterDataLocale: 'ja-JP',
+        },
+      },
+      requestFingerprint: 'a'.repeat(64),
+      updatedAt: servantIdentityTimestamp,
+    };
+    const collection = {
+      ...baseCollection,
+      profiles: [
+        {
+          ...baseCollection.profiles[0]!,
+          draft: snapshot,
+          history: [
+            {
+              ...snapshot,
+              historyId: '00000000-0000-4000-8000-000000000049',
+              finalizedAt: servantIdentityTimestamp,
+              lastUsedAt: servantIdentityTimestamp,
+            },
+          ],
+        },
+      ],
+    };
+    const migrated = parseStoredProfileCollection(collection);
+    expect(migrated).toMatchObject({
+      upgraded: true,
+      discardedCalculationSnapshots: false,
+      collection: {
+        schemaVersion: SCHEMA_VERSION,
+        profiles: [
+          {
+            servantBuilds: { 'servant-a': { npLevel: 0 } },
+            draft: { result: { versions: { schemaVersion: SCHEMA_VERSION } } },
+            history: [{ result: { versions: { schemaVersion: SCHEMA_VERSION } } }],
+          },
+        ],
+      },
+    });
+    expect(
+      parseUserDataBackup({
+        kind: 'fgo-lab-user-backup',
+        schemaVersion: 34,
+        exportedAt: servantIdentityTimestamp,
+        appVersion: '0.1.0',
+        profiles: collection,
+      }),
+    ).toMatchObject({
+      schemaVersion: SCHEMA_VERSION,
+      profiles: migrated.collection,
+    });
+  });
+
+  it.each(['servantBuilds', 'servantTargets'] as const)(
+    'rejects a %s record identity mismatch in current and v32/v33/v34 profile or backup input',
+    (mapName) => {
+      for (const schemaVersion of [SCHEMA_VERSION, 34, 33, 32] as const) {
+        const collection = servantIdentityCollection(schemaVersion);
+        collection.profiles[0]![mapName]['servant-a'].servantId = 'servant-b';
+        expect(
+          () => parseStoredProfileCollection(collection),
+          `${mapName}:stored:v${String(schemaVersion)}`,
+        ).toThrow(/servant_record_identity_mismatch/);
+        expect(
+          () =>
+            parseUserDataBackup({
+              kind: 'fgo-lab-user-backup',
+              schemaVersion,
+              exportedAt: servantIdentityTimestamp,
+              appVersion: '0.1.0',
+              profiles: collection,
+            }),
+          `${mapName}:backup:v${String(schemaVersion)}`,
+        ).toThrow(/servant_record_identity_mismatch/);
+      }
+    },
+  );
 
   it('rejects legacy profiles instead of maintaining a compatibility migration', () => {
     const profileId = crypto.randomUUID();

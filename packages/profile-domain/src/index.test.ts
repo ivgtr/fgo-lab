@@ -32,6 +32,18 @@ describe('profile domain', () => {
         servantId: 'x',
         level: 1,
         ascension: 0,
+        npLevel: 0,
+        fouAtk: 0,
+        skills: {},
+        appends: {},
+        updatedAt: '2026-08-24T00:00:00Z',
+      }),
+    ).toBe(false);
+    expect(
+      isOwned({
+        servantId: 'x',
+        level: 1,
+        ascension: 0,
         npLevel: 1,
         fouAtk: 0,
         skills: {},
@@ -124,8 +136,37 @@ describe('profile domain', () => {
       clock.now().toISOString(),
     );
     expect(source.servantBuilds['fixture-saber']).toBeUndefined();
-    expect(withTarget.servantBuilds['fixture-saber']).toMatchObject({ level: 90, npLevel: 1 });
-    expect(withTarget.servantTargets['fixture-saber']).toMatchObject({ level: 100, ascension: 0 });
+    expect(withTarget.servantBuilds['fixture-saber']).toMatchObject({
+      servantId: 'fixture-saber',
+      level: 90,
+      npLevel: 1,
+    });
+    expect(withTarget.servantTargets['fixture-saber']).toMatchObject({
+      servantId: 'fixture-saber',
+      level: 100,
+      ascension: 0,
+    });
+    const patchedBuild = updateServantBuild(
+      withTarget,
+      'fixture-saber',
+      { npLevel: 0 },
+      clock.now().toISOString(),
+    );
+    const patchedTarget = updateServantTarget(
+      patchedBuild,
+      'fixture-saber',
+      { planned: false },
+      clock.now().toISOString(),
+    );
+    expect(patchedTarget.servantBuilds['fixture-saber']).toMatchObject({
+      servantId: 'fixture-saber',
+      npLevel: 0,
+    });
+    expect(patchedTarget.servantTargets['fixture-saber']).toMatchObject({
+      servantId: 'fixture-saber',
+      planned: false,
+    });
+    expect(isOwned(patchedTarget.servantBuilds['fixture-saber'])).toBe(false);
   });
   it('clamps a craft essence copy to the selected limit break maximum', () => {
     const source = activeProfile(createProfileCollection('マスター', clock, ids));

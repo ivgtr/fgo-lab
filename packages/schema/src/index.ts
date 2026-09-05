@@ -23,7 +23,7 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 34 as const;
+export const SCHEMA_VERSION = 35 as const;
 export const ENGINE_VERSION = '30.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
@@ -705,7 +705,25 @@ export const storedCalculationHistoryEntrySchema = z.union([
 ]);
 export type CalculationHistoryEntry = z.infer<typeof storedCalculationHistoryEntrySchema>;
 
-export const localProfileSchema = z.object({
+type ServantIdentityRecord = Readonly<Record<string, { servantId: string }>>;
+function requireMatchingServantRecordIdentities(
+  profile: {
+    servantBuilds: ServantIdentityRecord;
+    servantTargets: ServantIdentityRecord;
+  },
+  context: z.core.$RefinementCtx,
+) {
+  for (const mapName of ['servantBuilds', 'servantTargets'] as const)
+    for (const [recordKey, record] of Object.entries(profile[mapName]))
+      if (recordKey !== record.servantId)
+        context.addIssue({
+          code: 'custom',
+          path: [mapName, recordKey, 'servantId'],
+          message: 'servant_record_identity_mismatch',
+        });
+}
+
+const localProfileShape = {
   profileId: z.uuid(),
   name: z.string().trim().min(1).max(80),
   createdAt: z.iso.datetime(),
@@ -714,9 +732,14 @@ export const localProfileSchema = z.object({
   servantTargets: z.record(z.string(), servantTargetSchema),
   craftEssences: z.array(craftEssenceCopySchema).max(10000),
   supportTemplates: z.array(supportTemplateSchema).max(1000),
-  draft: calculationDraftSchema.nullable(),
-  history: z.array(storedCalculationHistoryEntrySchema).max(20),
-});
+};
+export const localProfileSchema = z
+  .object({
+    ...localProfileShape,
+    draft: calculationDraftSchema.nullable(),
+    history: z.array(storedCalculationHistoryEntrySchema).max(20),
+  })
+  .superRefine(requireMatchingServantRecordIdentities);
 export type LocalProfile = z.infer<typeof localProfileSchema>;
 
 export const profileCollectionSchema = z.object({
@@ -725,6 +748,17 @@ export const profileCollectionSchema = z.object({
   profiles: z.array(localProfileSchema).min(1).max(20),
 });
 export type ProfileCollection = z.infer<typeof profileCollectionSchema>;
+
+const localProfileV34Schema = z.object({
+  ...localProfileShape,
+  draft: z.unknown().nullable(),
+  history: z.array(z.unknown()).max(20),
+});
+const profileCollectionV34Schema = z.object({
+  schemaVersion: z.literal(34),
+  activeProfileId: z.uuid(),
+  profiles: z.array(localProfileV34Schema).min(1).max(20),
+});
 
 const calculationSnapshotV33Schema = z
   .object({
@@ -801,6 +835,32 @@ export function parseStoredProfileCollection(value: unknown): {
       upgraded: false,
       discardedCalculationSnapshots: false,
     };
+  if (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    (value as Record<string, unknown>)['schemaVersion'] === SCHEMA_VERSION
+  )
+    return {
+      collection: profileCollectionSchema.parse(value),
+      upgraded: false,
+      discardedCalculationSnapshots: false,
+    };
+  const version34 = profileCollectionV34Schema.safeParse(value);
+  if (version34.success)
+    return {
+      collection: profileCollectionSchema.parse({
+        schemaVersion: SCHEMA_VERSION,
+        activeProfileId: version34.data.activeProfileId,
+        profiles: version34.data.profiles.map((profile) => ({
+          ...profile,
+          draft: migrateCalculationSnapshotV34(profile.draft),
+          history: profile.history.map(migrateCalculationHistoryEntryV34),
+        })),
+      }),
+      upgraded: true,
+      discardedCalculationSnapshots: false,
+    };
   const version33 = profileCollectionV33Schema.safeParse(value);
   if (version33.success) {
     let discardedCalculationSnapshots = false;
@@ -838,6 +898,41 @@ export function parseStoredProfileCollection(value: unknown): {
     upgraded: true,
     discardedCalculationSnapshots: true,
   };
+}
+
+function migrateCalculationResultV34(result: unknown): CalculationResult {
+  if (!result || typeof result !== 'object' || Array.isArray(result))
+    throw new TypeError('invalid_schema_34_calculation_result');
+  const versions = (result as { versions?: unknown }).versions;
+  if (!versions || typeof versions !== 'object' || Array.isArray(versions))
+    throw new TypeError('invalid_schema_34_calculation_result');
+  const versionRecord = versions as Record<string, unknown>;
+  if (versionRecord['schemaVersion'] !== 34)
+    throw new TypeError('invalid_schema_34_calculation_result');
+  return calculationResultSchema.parse({
+    ...result,
+    versions: { ...versionRecord, schemaVersion: SCHEMA_VERSION },
+  });
+}
+
+function migrateCalculationSnapshotV34(snapshot: unknown) {
+  if (snapshot === null) return null;
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot))
+    throw new TypeError('invalid_schema_34_calculation_snapshot');
+  return calculationDraftSchema.parse({
+    ...snapshot,
+    result: migrateCalculationResultV34((snapshot as Record<string, unknown>)['result']),
+  });
+}
+
+function migrateCalculationHistoryEntryV34(entry: unknown): CalculationHistoryEntry {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry))
+    throw new TypeError('invalid_schema_34_calculation_history');
+  const record = entry as Record<string, unknown>;
+  const migrated = { ...record, result: migrateCalculationResultV34(record['result']) };
+  return record['disposition'] === 'historicalOnly'
+    ? historicalCalculationHistoryEntrySchema.parse(migrated)
+    : calculationHistoryEntrySchema.parse(migrated);
 }
 
 function migrateCalculationResultV33(
@@ -945,6 +1040,13 @@ const userDataBackupV33Schema = z
     profiles: profileCollectionV33Schema,
   })
   .strict();
+const userDataBackupV34Schema = z.object({
+  kind: z.literal('fgo-lab-user-backup'),
+  schemaVersion: z.literal(34),
+  exportedAt: z.iso.datetime(),
+  appVersion: z.string(),
+  profiles: profileCollectionV34Schema,
+});
 
 export const calculationShareSnapshotSchema = z
   .object({
@@ -960,6 +1062,22 @@ export type CalculationShareSnapshot = z.infer<typeof calculationShareSnapshotSc
 export function parseUserDataBackup(value: unknown): UserDataBackup {
   const current = userDataBackupSchema.safeParse(value);
   if (current.success) return current.data;
+  if (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    (value as Record<string, unknown>)['schemaVersion'] === SCHEMA_VERSION
+  )
+    return userDataBackupSchema.parse(value);
+  const version34 = userDataBackupV34Schema.safeParse(value);
+  if (version34.success)
+    return userDataBackupSchema.parse({
+      kind: version34.data.kind,
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: version34.data.exportedAt,
+      appVersion: version34.data.appVersion,
+      profiles: parseStoredProfileCollection(version34.data.profiles).collection,
+    });
   const version33 = userDataBackupV33Schema.safeParse(value);
   if (version33.success)
     return userDataBackupSchema.parse({
