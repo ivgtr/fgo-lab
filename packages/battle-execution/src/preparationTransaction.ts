@@ -6,7 +6,11 @@ import type {
   MasterSkill,
   ServantMaster,
 } from '@fgo-lab/master-data';
-import { findActorForm, findNoblePhantasmVariant } from '@fgo-lab/master-data';
+import {
+  canonicalRequirementLeaves,
+  findActorForm,
+  findNoblePhantasmVariant,
+} from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
   PreNoblePhantasmState,
@@ -171,12 +175,16 @@ function preparationRequirementSatisfied(
     const rawDefinition = effect.inputDefinitions.find(({ key }) => key === requirement.inputKey);
     if (!rawDefinition) return null;
     const definition = runtimeDefinition(inputSource, effect, rawDefinition);
+    // The support check rejects these before evaluating preparation requirements. This
+    // reducer does not represent every ordered writer that the damage executor supports.
+    if (definition.kind === 'effectStackCount') return null;
     const resolved = resolvedPreparationInput(definition, context);
-    if (resolved.status === 'inputRequired')
+    if (resolved.status === 'inputRequired') {
       return {
         status: 'inputRequired',
         definition: { ...definition, defaultValue: null, defaultReason: null },
       };
+    }
     const { value } = resolved;
     if (requirement.comparison === 'lessThan') return value < requirement.value;
     if (requirement.comparison === 'atMost') return value <= requirement.value;
@@ -213,6 +221,24 @@ export function effectChangesPreparation(effect: MasterEffect): boolean {
           operation.reason === 'dependentResourceAmount' &&
           resolveTargetPolicy('attacker', operation.route.target) === 'attacker'),
     ) || effectChangesStructure(effect)
+  );
+}
+
+/** Exact initial stack assumptions are not a proof of their value at a preparation read. */
+export function hasUnsupportedPreparationStackRequirement(effect: MasterEffect): boolean {
+  if (!effect.inputDefinitions.some((definition) => definition.kind === 'effectStackCount'))
+    return false;
+  if (!effectChangesPreparation(effect)) return false;
+  const stackKeys = new Set(
+    effect.inputDefinitions
+      .filter((definition) => definition.kind === 'effectStackCount')
+      .map(({ key }) => key),
+  );
+  return (
+    stackKeys.size > 0 &&
+    canonicalRequirementLeaves(effect.requirement.expression).some(
+      (requirement) => requirement.kind === 'inputQuantity' && stackKeys.has(requirement.inputKey),
+    )
   );
 }
 
@@ -317,8 +343,15 @@ export function planPreparationResourceTransaction(args: {
         {
           values,
           missingDefinitions: inputDefinitions
-            .filter((definition) => values[definition.key] === undefined)
-            .map((definition) => ({ ...definition, defaultValue: null, defaultReason: null })),
+            .filter(
+              (definition) =>
+                definition.kind !== 'effectStackCount' && values[definition.key] === undefined,
+            )
+            .map((definition) =>
+              definition.kind === 'effectStackCount'
+                ? definition
+                : { ...definition, defaultValue: null, defaultReason: null },
+            ),
           invalidInputKeys: [],
         },
       );
@@ -349,6 +382,13 @@ export function planPreparationResourceTransaction(args: {
       return {
         status: 'rejected',
         code: 'invalidPreparationActivation',
+        requiredInput: null,
+        requiredInputEffectOccurrenceId: null,
+      };
+    if (hasUnsupportedPreparationStackRequirement(effect))
+      return {
+        status: 'rejected',
+        code: 'unsupportedPreparationStackQuantity',
         requiredInput: null,
         requiredInputEffectOccurrenceId: null,
       };

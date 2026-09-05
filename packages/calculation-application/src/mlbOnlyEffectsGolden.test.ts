@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   calculateScenario as calculateScenarioOutcome,
   createDefaultResolvedScenario,
@@ -42,10 +42,14 @@ function inputDigest(input: unknown) {
 }
 
 describe('MLB-only production damage golden', () => {
-  it('locks LB0 and LB4 damage input plus NP1-5 for all five damage effects', async () => {
-    const master = masterSnapshotSchema.parse(
+  let master: ReturnType<typeof masterSnapshotSchema.parse>;
+  beforeAll(async () => {
+    master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
+  }, 5_000);
+
+  it('locks LB0 and LB4 damage input plus NP1-5 for all five damage effects', async () => {
     const golden = JSON.parse(
       await readFile(
         resolve(root, 'packages/test-fixtures/golden/mlb-only-effects-v1.json'),
@@ -93,9 +97,6 @@ describe('MLB-only production damage golden', () => {
   });
 
   it('does not apply MLB-only effects at limit-break states 0 through 3', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
     const golden = JSON.parse(
       await readFile(
         resolve(root, 'packages/test-fixtures/golden/mlb-only-effects-v1.json'),

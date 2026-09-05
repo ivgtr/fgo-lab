@@ -6,7 +6,11 @@ import {
   type ActivationFact,
   type ActivationSourceRef,
 } from '@fgo-lab/schema';
-import { classifyContributionCondition, compileEffectCondition } from '@fgo-lab/battle-execution';
+import {
+  classifyContributionCondition,
+  compileEffectCondition,
+  hasUnsupportedPreparationStackRequirement,
+} from '@fgo-lab/battle-execution';
 import { attackProfileKey } from './attackProfile';
 import type { RankingPolicyConditions } from './rankingContracts';
 import type {
@@ -151,6 +155,8 @@ function effectHasDamageContribution(effect: MasterEffect): boolean {
 }
 
 function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission | null {
+  if (hasUnsupportedPreparationStackRequirement(effect))
+    return { kind: 'unsupported', reason: 'unresolvedOperation' };
   if (effect.execution.some((operation) => operation.kind === 'unsupported'))
     return { kind: 'unsupported', reason: 'unresolvedOperation' };
   if (

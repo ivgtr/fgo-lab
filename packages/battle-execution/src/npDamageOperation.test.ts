@@ -143,11 +143,30 @@ describe('NP damage operation', () => {
       missingEvidence: 'missing_attacker_hp_ratio',
     });
 
-    const trait = { id: 2, name: 'roman' };
+    const trait = { kind: 'trait', name: 'roman' };
+    const quantity = (scope: 'attackerState' | 'targetState') => ({
+      kind: 'stacks' as const,
+      inputs: [
+        {
+          kind: 'effectStackCount' as const,
+          key: `stack:${scope}:roman`,
+          owner: scope === 'attackerState' ? ('attacker' as const) : ('target' as const),
+          label: 'roman',
+          description: 'initial count',
+          minimum: 0 as const,
+          maximum: 3,
+          step: 1 as const,
+          defaultValue: 0,
+          defaultReason: 'baseline',
+          quantitySource: { scope, trait: 'roman' },
+        },
+      ],
+    });
     const sum = {
       ...base,
       kind: 'traitCount',
       rawFunctionType: 'damageNpIndividualSum',
+      quantity: quantity('attackerState'),
       parametersByOvercharge: matrix({
         targetId: 0,
         targetIds: [2],
@@ -163,6 +182,7 @@ describe('NP damage operation', () => {
 
     const targetSum = {
       ...sum,
+      quantity: quantity('targetState'),
       parametersByOvercharge: matrix({
         targetId: 1,
         targetIds: [2],
@@ -210,11 +230,10 @@ describe('NP damage operation', () => {
       kind: 'any',
       expressions: [
         {
-          kind: 'traitCount',
-          scope: 'target',
-          traits: ['roman'],
+          kind: 'inputQuantity',
+          inputKey: 'stack:targetState:roman',
           comparison: 'atLeast',
-          count: 1,
+          value: 1,
         },
       ],
     });

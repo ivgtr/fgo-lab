@@ -89,6 +89,7 @@ function resolveMatchingActorMinimum(
 
 export function runtimeInputDefinitionsForSource(source: SourceEffect) {
   const normalized = source.effect.inputDefinitions.map((definition) => {
+    if (definition.kind === 'effectStackCount') return definition;
     const derived =
       definition.kind === 'matchingActorCount'
         ? resolveMatchingActorMinimum(source, definition)
@@ -312,6 +313,7 @@ function selectedValueExpression(
   if (!sets) return null;
   const expression = sets[source.valueSetIndex]?.[source.valueIndex] ?? null;
   if (!expression) return null;
+  if (expression.kind === 'stackLinear') return expression;
   if (expression.kind === 'inputLinear')
     return {
       ...expression,
@@ -571,11 +573,17 @@ export function compileEffect(
 
   const projectable = applicable.filter((semantic) => semantic.kind !== 'contextMutation');
   const primary = projectable.find((semantic) => semantic.kind !== 'unsupported');
-  const unresolved = applicable.some(
-    (semantic) =>
-      semantic.kind === 'unsupported' ||
-      ('semanticSupport' in semantic && semantic.semanticSupport === 'unresolved'),
-  );
+  const unresolved =
+    (source.effect.inputDefinitions.some(
+      (input) =>
+        input.kind === 'effectStackCount' && input.quantitySource.scope === 'attackerState',
+    ) &&
+      !['attacker', 'np', 'passive', 'craftEssence'].includes(source.origin)) ||
+    applicable.some(
+      (semantic) =>
+        semantic.kind === 'unsupported' ||
+        ('semanticSupport' in semantic && semantic.semanticSupport === 'unresolved'),
+    );
   const valued =
     primary?.kind === 'damageModifier' || primary?.kind === 'modifierRateChange' ? primary : null;
   const value = (valued ? selectedValue(source, valued) : null) ?? null;

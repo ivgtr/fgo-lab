@@ -25,8 +25,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 36 as const;
-export const ENGINE_VERSION = '31.0.0' as const;
+export const SCHEMA_VERSION = 37 as const;
+export const ENGINE_VERSION = '32.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -247,84 +247,109 @@ const activationFactsSchema = z
     }
   });
 
-export const damageResolutionInputSchema = z.object({
-  attackerId: z.string().min(1).max(80),
-  attackerLevel: z.number().int().min(1).max(120),
-  attackerAtk: z.number().int().nonnegative().max(100000),
-  fouAtk: z.number().int().nonnegative().max(3000),
-  craftEssenceId: z.string().max(80).nullable(),
-  craftEssenceAtk: z.number().int().nonnegative().max(10000),
-  npLevel: z.number().int().min(1).max(5),
-  overcharge: z.number().int().min(1).max(5),
-  npMultipliers: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
-  damageFunction: z.discriminatedUnion('status', [
-    z.object({
-      status: z.literal('resolved'),
-      kind: z.enum([
-        'standard',
-        'defensePiercing',
-        'trait',
-        'traitCount',
-        'stateTrait',
-        'hpRatioLow',
-        'battlePointPhase',
-        'targetRarity',
-        'traitExpression',
-      ]),
-      ignoreDefense: z.boolean(),
+export const damageResolutionInputSchema = z
+  .object({
+    attackerId: z.string().min(1).max(80),
+    attackerLevel: z.number().int().min(1).max(120),
+    attackerAtk: z.number().int().nonnegative().max(100000),
+    fouAtk: z.number().int().nonnegative().max(3000),
+    craftEssenceId: z.string().max(80).nullable(),
+    craftEssenceAtk: z.number().int().nonnegative().max(10000),
+    npLevel: z.number().int().min(1).max(5),
+    overcharge: z.number().int().min(1).max(5),
+    npMultipliers: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
+    damageFunction: z.discriminatedUnion('status', [
+      z.object({
+        status: z.literal('resolved'),
+        kind: z.enum([
+          'standard',
+          'defensePiercing',
+          'trait',
+          'traitCount',
+          'stateTrait',
+          'hpRatioLow',
+          'battlePointPhase',
+          'targetRarity',
+          'traitExpression',
+        ]),
+        ignoreDefense: z.boolean(),
+      }),
+      z.object({
+        status: z.literal('unsupported'),
+        kind: z.enum([
+          'standard',
+          'defensePiercing',
+          'trait',
+          'traitCount',
+          'stateTrait',
+          'hpRatioLow',
+          'battlePointPhase',
+          'targetRarity',
+          'traitExpression',
+        ]),
+        missingEvidence: z.string().min(1),
+      }),
+    ]),
+    cardType: z.enum(['buster', 'arts', 'quick']),
+    classAttackRate: z.number().min(0).max(5),
+    classAffinity: z.number().min(0).max(5),
+    attributeAffinity: z.number().min(0).max(5),
+    attackBuff: z.number().min(-1).max(5),
+    defenseBuff: z.number().min(-5).max(5).default(0),
+    cardBuff: z.number().min(-1).max(5),
+    cardResistance: z.number().min(-5).max(5).default(0),
+    npDamageBuff: z.number().min(-1).max(5),
+    npResistance: z.number().min(-5).max(5).default(0),
+    powerMod: z.number().min(-1).max(10),
+    eventDamageBuff: z.number().min(-1).max(10).default(0),
+    npSpecialMultipliers: z.tuple([
+      z.number().min(0).max(20),
+      z.number().min(0).max(20),
+      z.number().min(0).max(20),
+      z.number().min(0).max(20),
+      z.number().min(0).max(20),
+    ]),
+    specialDamageBuff: z.number().min(-1).max(20).default(0),
+    specialResistance: z.number().min(-5).max(5),
+    flatDamage: z.number().int().min(-100000).max(100000),
+    damageCut: z.number().int().min(0).max(100000).default(0),
+    ignoreDamageCut: z.boolean().default(false),
+    fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
+    attackerStateTraits: z.array(z.string().min(1).max(80)).max(100),
+    stackStateCounts: z
+      .object({
+        attackerState: z.record(z.string().min(1).max(80), z.number().int().nonnegative()),
+        targetState: z.record(z.string().min(1).max(80), z.number().int().nonnegative()),
+        field: z.record(z.string().min(1).max(80), z.number().int().nonnegative()),
+      })
+      .strict()
+      .optional(),
+    attackerHpPermille: quantityFactValueSchema('attackerHpPermille').nullable(),
+    targetRarity: quantityFactValueSchema('targetRarity').nullable(),
+    targetStateTraits: z.array(z.string().min(1).max(80)).max(100),
+    battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
+    target: z.object({
+      classId: canonicalTargetClassIdSchema.nullable(),
+      attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
+      traits: z.array(z.string().min(1).max(80)).max(100),
     }),
-    z.object({
-      status: z.literal('unsupported'),
-      kind: z.enum([
-        'standard',
-        'defensePiercing',
-        'trait',
-        'traitCount',
-        'stateTrait',
-        'hpRatioLow',
-        'battlePointPhase',
-        'targetRarity',
-        'traitExpression',
-      ]),
-      missingEvidence: z.string().min(1),
-    }),
-  ]),
-  cardType: z.enum(['buster', 'arts', 'quick']),
-  classAttackRate: z.number().min(0).max(5),
-  classAffinity: z.number().min(0).max(5),
-  attributeAffinity: z.number().min(0).max(5),
-  attackBuff: z.number().min(-1).max(5),
-  defenseBuff: z.number().min(-5).max(5).default(0),
-  cardBuff: z.number().min(-1).max(5),
-  cardResistance: z.number().min(-5).max(5).default(0),
-  npDamageBuff: z.number().min(-1).max(5),
-  npResistance: z.number().min(-5).max(5).default(0),
-  powerMod: z.number().min(-1).max(10),
-  eventDamageBuff: z.number().min(-1).max(10).default(0),
-  npSpecialMultipliers: z.tuple([
-    z.number().min(0).max(20),
-    z.number().min(0).max(20),
-    z.number().min(0).max(20),
-    z.number().min(0).max(20),
-    z.number().min(0).max(20),
-  ]),
-  specialDamageBuff: z.number().min(-1).max(20).default(0),
-  specialResistance: z.number().min(-5).max(5),
-  flatDamage: z.number().int().min(-100000).max(100000),
-  damageCut: z.number().int().min(0).max(100000).default(0),
-  ignoreDamageCut: z.boolean().default(false),
-  fieldTraits: z.array(z.string().min(1).max(80)).max(100).default([]),
-  attackerStateTraits: z.array(z.string().min(1).max(80)).max(100),
-  attackerHpPermille: quantityFactValueSchema('attackerHpPermille').nullable(),
-  targetRarity: quantityFactValueSchema('targetRarity').nullable(),
-  targetStateTraits: z.array(z.string().min(1).max(80)).max(100),
-  battlePointPhase: quantityFactValueSchema('battlePointPhase').nullable(),
-  target: z.object({
-    classId: canonicalTargetClassIdSchema.nullable(),
-    attribute: z.enum(['man', 'earth', 'sky', 'star', 'beast', 'unknown']),
-    traits: z.array(z.string().min(1).max(80)).max(100),
-  }),
-});
+  })
+  .superRefine((input, context) => {
+    if (!input.stackStateCounts) return;
+    for (const [scope, traits] of [
+      ['attackerState', input.attackerStateTraits],
+      ['targetState', input.targetStateTraits],
+      ['field', input.fieldTraits],
+    ] as const) {
+      for (const [trait, count] of Object.entries(input.stackStateCounts[scope]))
+        if (traits.filter((value) => value === trait).length !== Number(count > 0))
+          context.addIssue({
+            code: 'custom',
+            message: 'contradictory_stack_state_presence',
+            path: ['stackStateCounts', scope, trait],
+          });
+    }
+  });
 export type DamageResolutionInput = z.infer<typeof damageResolutionInputSchema>;
 
 export const damageKernelInputSchema = z
@@ -415,7 +440,13 @@ const scenarioBaseSchema = z
     }),
     canonicalInputValues: z.record(
       z.string().min(1).max(300),
-      z.object({ kind: z.literal('integer'), value: z.number().int() }).strict(),
+      z
+        .object({
+          kind: z.literal('integer'),
+          value: z.number().int(),
+          origin: z.enum(['baseline', 'maximum', 'witness', 'explicit']).optional(),
+        })
+        .strict(),
     ),
   })
   .strict();
@@ -744,7 +775,7 @@ const historicalCalculationHistoryEntryV33Schema = z.object({
 });
 export const historicalCalculationHistoryEntrySchema = z.union([
   historicalCalculationHistoryEntryV33Schema,
-  ...([34, 35] as const).map((version) =>
+  ...([34, 35, 36] as const).map((version) =>
     historicalCalculationHistoryEntryV33Schema.extend({
       sourceSchemaVersion: z.literal(version),
       legacyResultSchemaVersion: z.literal(version),
@@ -819,7 +850,7 @@ const localProfileV34Schema = z.object({
   history: z.array(z.unknown()).max(20),
 });
 const profileCollectionV34Schema = z.object({
-  schemaVersion: z.union([z.literal(34), z.literal(35)]),
+  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36)]),
   activeProfileId: z.uuid(),
   profiles: z.array(localProfileV34Schema).min(1).max(20),
 });
@@ -974,7 +1005,10 @@ export function parseStoredProfileCollection(value: unknown): {
   };
 }
 
-function migrateCalculationResultV34(result: unknown, sourceVersion: 34 | 35): CalculationResult {
+function migrateCalculationResultV34(
+  result: unknown,
+  sourceVersion: 34 | 35 | 36,
+): CalculationResult {
   const envelope = z
     .object({ versions: z.object({ schemaVersion: z.literal(sourceVersion) }).loose() })
     .loose()
@@ -984,7 +1018,7 @@ function migrateCalculationResultV34(result: unknown, sourceVersion: 34 | 35): C
     versions: { ...envelope.versions, schemaVersion: SCHEMA_VERSION },
   });
 }
-function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35) {
+function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36) {
   const envelope = z
     .object({ request: portableCalculationRequestV35Schema, result: z.unknown() })
     .loose()
@@ -996,7 +1030,7 @@ function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35) 
     .parse({ ...envelope, result });
   return { ...envelope, ...parsed };
 }
-function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35) {
+function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36) {
   if (snapshot === null) return null;
   const parsed = parseCalculationSnapshotV34(snapshot, sourceVersion);
   return parsed.request.executionIntent.kind === 'ranking'
@@ -1005,7 +1039,7 @@ function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35
 }
 function migrateCalculationHistoryEntryV34(
   entry: unknown,
-  sourceVersion: 34 | 35,
+  sourceVersion: 34 | 35 | 36,
 ): CalculationHistoryEntry {
   const envelope = z
     .object({ disposition: z.string().optional(), result: z.unknown() })
@@ -1136,7 +1170,7 @@ const userDataBackupV33Schema = z
   .strict();
 const userDataBackupV34Schema = z.object({
   kind: z.literal('fgo-lab-user-backup'),
-  schemaVersion: z.union([z.literal(34), z.literal(35)]),
+  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36)]),
   exportedAt: z.iso.datetime(),
   appVersion: z.string(),
   profiles: profileCollectionV34Schema,

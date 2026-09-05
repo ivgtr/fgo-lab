@@ -1,3 +1,10 @@
+import {
+  stackInputSchema,
+  npQuantitySchema,
+  stackInputDefaultsAgree,
+  type StackInputDefinition,
+} from './stackQuantity';
+export * from './stackQuantity';
 import { z } from 'zod';
 import {
   canonicalTargetAttributeSchema,
@@ -25,7 +32,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(43),
+  schemaVersion: z.literal(44),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -211,6 +218,14 @@ const modifierValueExpressionSchema = z.discriminatedUnion('kind', [
     maximumUnits: z.number().int().nonnegative(),
     maximumValuePermille: z.number().int().nullable(),
   }),
+  z.object({
+    kind: z.literal('stackLinear'),
+    sources: z.array(stackInputSchema).min(1),
+    basePermille: z.number().int(),
+    perUnitPermille: z.number().int(),
+    maximumUnits: z.number().int().nonnegative(),
+    maximumValuePermille: z.number().int().nullable(),
+  }),
 ]);
 const modifierValueExpressionSetsSchema = z.tuple([
   z.array(modifierValueExpressionSchema.nullable()).max(10),
@@ -292,7 +307,6 @@ const fixedCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
   kind: z.enum([
     'currentTurn',
     'criticalStars',
-    'effectStackCount',
     'fieldActorCount',
     'availableSkillCount',
     'friendshipLevel',
@@ -332,6 +346,7 @@ const matchingActorCountCanonicalInputDefinitionSchema = canonicalInputBaseSchem
 
 export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
   fixedCanonicalInputDefinitionSchema,
+  stackInputSchema,
   matchingActorCountCanonicalInputDefinitionSchema,
 ]);
 export type CanonicalInputDefinition = z.infer<typeof canonicalInputDefinitionSchema>;
@@ -645,7 +660,41 @@ export const masterEffectSchema = z
     execution: z.array(effectExecutionOperationSchema).min(1),
     atlasEvidence: atlasEffectEvidenceSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((effect, context) => {
+    for (const operation of effect.execution) {
+      if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') continue;
+      for (const expression of [
+        ...operation.valueExpressions.flat(),
+        ...(operation.limitBreakValueExpressions?.flat() ?? []),
+      ]) {
+        if (
+          expression?.kind === 'inputLinear' &&
+          effect.inputDefinitions.some(
+            (input) => input.kind === 'effectStackCount' && input.key === expression.inputKey,
+          )
+        )
+          context.addIssue({ code: 'custom', message: 'unbound_stack_quantity_expression' });
+        if (expression?.kind !== 'stackLinear') continue;
+        const keys = expression.sources.map((source) => source.key);
+        if (
+          new Set(keys).size !== keys.length ||
+          expression.sources.some(
+            (source) =>
+              !effect.inputDefinitions.some(
+                (input) =>
+                  input.kind === 'effectStackCount' &&
+                  input.key === source.key &&
+                  JSON.stringify(input.quantitySource) === JSON.stringify(source.quantitySource) &&
+                  input.maximum === source.maximum &&
+                  input.defaultValue === source.defaultValue,
+              ),
+          )
+        )
+          context.addIssue({ code: 'custom', message: 'contradictory_effect_stack_quantity' });
+      }
+    }
+  });
 export type MasterEffect = z.infer<typeof masterEffectSchema>;
 
 const sourceProgramFields = {
@@ -799,6 +848,7 @@ export const npDamageSpecSchema = z
     npDamageBaseSchema.extend({
       kind: z.literal('traitCount'),
       rawFunctionType: z.literal('damageNpIndividualSum'),
+      quantity: npQuantitySchema,
     }),
     npDamageBaseSchema.extend({
       kind: z.literal('stateTrait'),
@@ -823,6 +873,35 @@ export const npDamageSpecSchema = z
     }),
   ])
   .superRefine((spec, context) => {
+    if (
+      spec.kind === 'traitCount' &&
+      spec.quantity.kind === 'finiteTraits' &&
+      spec.parametersByOvercharge.flat().some((cell) => cell.maximumTargetCount !== 0)
+    )
+      context.addIssue({ code: 'custom', message: 'contradictory_finite_trait_quantity' });
+    if (spec.kind === 'traitCount' && spec.quantity.kind === 'stacks') {
+      const inputs = spec.quantity.inputs;
+      const keys = inputs.map((input) => input.key);
+      for (const row of spec.parametersByOvercharge)
+        for (const cell of row) {
+          const traits =
+            cell.targetTraits?.flatMap((trait) => (trait.kind === 'trait' ? [trait.name] : [])) ??
+            [];
+          if (
+            new Set(keys).size !== keys.length ||
+            traits.length !== inputs.length ||
+            inputs.some(
+              (input) =>
+                input.maximum !== cell.maximumTargetCount ||
+                input.quantitySource.scope !==
+                  (cell.targetId === 0 ? 'attackerState' : 'targetState') ||
+                !traits.includes(input.quantitySource.trait),
+            ) ||
+            ![0, 1].includes(cell.targetId ?? -1)
+          )
+            context.addIssue({ code: 'custom', message: 'contradictory_np_stack_quantity' });
+        }
+    }
     const requiredFieldsByKind = {
       standard: [],
       defensePiercing: [],
@@ -844,7 +923,14 @@ export const npDamageSpecSchema = z
     for (const [overchargeIndex, row] of spec.parametersByOvercharge.entries())
       for (const [npLevelIndex, parameter] of row.entries())
         for (const field of requiredFieldsByKind[spec.kind])
-          if (parameter[field] === undefined)
+          if (
+            parameter[field] === undefined &&
+            !(
+              spec.kind === 'traitCount' &&
+              spec.quantity.kind === 'unsupported' &&
+              field === 'maximumTargetCount'
+            )
+          )
             context.addIssue({
               code: 'custom',
               message: `missing ${field} for ${spec.kind}`,
@@ -871,7 +957,7 @@ const noblePhantasmVariantBaseSchema = z.object({
   name: z.string(),
   priority: z.number().int(),
   effects: z
-    .array(masterEffectSchema.extend({ timing: z.enum(['beforeDamage', 'afterDamage']) }))
+    .array(masterEffectSchema.safeExtend({ timing: z.enum(['beforeDamage', 'afterDamage']) }))
     .max(20),
 });
 export const noblePhantasmVariantSchema = z
@@ -1385,12 +1471,30 @@ export type TargetFamilyEvidence = z.infer<
   typeof masterSnapshotBaseSchema
 >['targetSemantics']['evidence']['families'][number];
 export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapshot, context) => {
+  const stackSources = new Map<string, StackInputDefinition>();
+  const validateStackInputs = (
+    inputs: readonly CanonicalInputDefinition[],
+    path: (string | number)[],
+  ) => {
+    inputs.forEach((input, index) => {
+      if (input.kind !== 'effectStackCount') return;
+      const previous = stackSources.get(input.key);
+      if (previous && !stackInputDefaultsAgree(previous, input))
+        context.addIssue({
+          code: 'custom',
+          message: `conflicting_stack_source_baseline:${input.key}`,
+          path: [...path, index],
+        });
+      else stackSources.set(input.key, input);
+    });
+  };
   const validateSelectionSemantics = (
     effects: readonly MasterEffect[],
     path: (string | number)[],
   ) => {
     effects.forEach((effect, effectIndex) => {
       const effectPath = [...path, effectIndex];
+      validateStackInputs(effect.inputDefinitions, [...effectPath, 'inputDefinitions']);
       if (effect.proc.kind === 'guaranteed') {
         if (effect.selection?.kind === 'stochasticOutcome')
           context.addIssue({
@@ -1553,6 +1657,16 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
           });
         else variantCanonicalIdBySemantics.set(semanticsKey, canonicalId);
         if (variant.kind === 'attack') {
+          variant.damage.forEach((damage, damageIndex) => {
+            if (damage.kind === 'traitCount' && damage.quantity.kind === 'stacks')
+              validateStackInputs(damage.quantity.inputs, [
+                ...variantPath,
+                'damage',
+                damageIndex,
+                'quantity',
+                'inputs',
+              ]);
+          });
           if (variant.damage.some((damage) => damage.target !== variant.targetScope))
             context.addIssue({
               code: 'custom',

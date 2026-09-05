@@ -1780,6 +1780,22 @@ describe('scenario calculation facade', () => {
                 ...damage,
                 kind: 'traitCount',
                 rawFunctionType: 'damageNpIndividualSum',
+                quantity: {
+                  kind: 'stacks',
+                  inputs: [burn, poison].map(({ name }) => ({
+                    kind: 'effectStackCount',
+                    key: `stack:targetState:${encodeURIComponent(name)}`,
+                    owner: 'target',
+                    label: name,
+                    description: 'initial count',
+                    minimum: 0,
+                    maximum: 3,
+                    step: 1,
+                    defaultValue: 0,
+                    defaultReason: 'baseline',
+                    quantitySource: { scope: 'targetState', trait: name },
+                  })),
+                },
                 parametersByOvercharge: damage.parametersByOvercharge.map((row) =>
                   row.map((parameter) => ({
                     ...parameter,
@@ -1804,7 +1820,8 @@ describe('scenario calculation facade', () => {
       { ...versions, masterDataVersion: stackedMaster.version },
     );
 
-    expect(calculation.input.targetStateTraits).toEqual(['buffBurn', 'buffBurn']);
+    expect(calculation.input.targetStateTraits).toEqual(['buffBurn']);
+    expect(calculation.input.stackStateCounts?.targetState['buffBurn']).toBe(2);
     expect(calculation.input.npSpecialMultipliers).toEqual([1.4, 1.4, 1.4, 1.4, 1.4]);
     const traitProjections = calculation.effects.filter(
       (effect) =>
@@ -2321,7 +2338,7 @@ describe('scenario calculation facade', () => {
       reason: 'semanticDomainInvalid',
       candidateSpaceIssue: {
         kind: 'semanticDomainInvalid',
-        detail: 'ranking_canonical_input_definition_conflict:preparation:value',
+        detail: 'canonical_input_definition_conflict:preparation:value',
       },
     });
   });

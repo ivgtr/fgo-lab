@@ -1,5 +1,5 @@
 import { rankingBasisFixture } from './rankingBasisFixture';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -36,6 +36,47 @@ describe('static ranking candidate space', () => {
     appVersion: APP_VERSION,
     gameRegion: 'JP' as const,
     masterDataLocale: 'ja-JP' as const,
+  });
+
+  it.each([
+    ['1101000', 4],
+    ['2501300', 10],
+  ] as const)('uses the declared production maximum for %s', async (id, maximum) => {
+    const servant = master.servants.find((item) => item.id === id)!;
+    const result = calculateRankingPolicyDetail(
+      servant,
+      master,
+      profile,
+      { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
+      versions(),
+    );
+    expect(result.status, JSON.stringify(result)).toBe('calculated');
+    if (result.status !== 'calculated') throw new Error(JSON.stringify(result));
+    const stackInputs = result.detail.effectInputs.filter(
+      (input) => input.kind === 'effectStackCount',
+    );
+    expect(stackInputs.map((input) => input.value)).toContain(maximum);
+    expect(result.detail.input.npSpecialMultipliers).toEqual([2, 2, 2, 2, 2]);
+    if (process.env.FGO_TEST_ARTIFACT_DIR)
+      await writeFile(
+        resolve(process.env.FGO_TEST_ARTIFACT_DIR, `stack-maximum-${id}.json`),
+        JSON.stringify(
+          {
+            governingRule: {
+              baseline: 0,
+              maximum,
+              correctionPermille: id === '1101000' ? 250 : 100,
+            },
+            scenario: result.detail.scenario,
+            contributionPolicy: result.detail.contributionPolicy,
+            candidateEvidence: result.detail.candidateEvidence,
+            input: result.detail.input,
+            result: result.detail.result,
+          },
+          null,
+          2,
+        ),
+      );
   });
 
   it('retains a baseline world and checks the complete semantic product before materializing', () => {
@@ -489,21 +530,21 @@ describe('static ranking candidate space', () => {
       preparationRejections: {
         'included:baseline:unreachable:insufficientNpGauge': 12,
       },
-      actionDigest: 'bb43fa1ff4df8e68ce460829cba253459ebc2e1a7e053a7ce782529018d6e101',
+      actionDigest: '9cd19cea2493a36ea04cbb519628aeb4c010584224fea1d5c56943ddeb5d9e5d',
     });
   }, 30_000);
 
-  it('ratchets the largest static semantic product below the finite planner limit', () => {
-    const largest = master.servants
-      .flatMap((servant) =>
-        compileRankingCandidateSpaces(
-          servant,
-          master,
-          rankingBasisFixture(servant),
-          { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
-          createStaticAttackProfiles(servant),
-        ).map((space) => ({ servantId: servant.id, space })),
-      )
+  it('ratchets the largest static semantic product below the finite planner limit', async () => {
+    const inventory = master.servants.flatMap((servant) =>
+      compileRankingCandidateSpaces(
+        servant,
+        master,
+        rankingBasisFixture(servant),
+        { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
+        createStaticAttackProfiles(servant),
+      ).map((space) => ({ servantId: servant.id, space })),
+    );
+    const largest = inventory
       .filter(
         (
           entry,
@@ -518,5 +559,30 @@ describe('static ranking candidate space', () => {
       }));
     expect(largest).toEqual([{ servantId: '3300200', upperBound: 3_840 }]);
     expect(largest[0]!.upperBound).toBeLessThanOrEqual(4_096);
+    if (process.env.FGO_TEST_ARTIFACT_DIR)
+      await writeFile(
+        resolve(process.env.FGO_TEST_ARTIFACT_DIR, 'stack-candidate-domains.json'),
+        JSON.stringify(
+          inventory.map(({ servantId, space }) => ({
+            servantId,
+            status: space.status,
+            ...(space.status === 'ready'
+              ? {
+                  upperBound: space.upperBound,
+                  programs: space.programs.map((program) => ({
+                    key: program.program.key,
+                    stackDomains: program.canonicalInputs.filter(({ key }) =>
+                      program.semantics.inputDefinitions.some(
+                        (input) => input.key === key && input.kind === 'effectStackCount',
+                      ),
+                    ),
+                  })),
+                }
+              : { rejection: space }),
+          })),
+          null,
+          2,
+        ),
+      );
   });
 });

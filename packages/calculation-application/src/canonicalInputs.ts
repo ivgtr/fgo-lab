@@ -42,11 +42,24 @@ export function resolveCanonicalInputValues(
     const explicit = explicitValues[definition.key];
     const value = explicit?.value ?? definition.defaultValue;
     if (
+      explicit?.origin &&
+      (definition.kind !== 'effectStackCount' ||
+        (explicit.origin === 'maximum' && value !== definition.maximum) ||
+        (explicit.origin === 'baseline' && value !== definition.defaultValue))
+    ) {
+      invalidInputKeys.push(definition.key);
+      continue;
+    }
+    if (
       value === null ||
       value < definition.minimum ||
       value > definition.maximum ||
       (value - definition.minimum) % definition.step !== 0
     ) {
+      if (definition.kind === 'effectStackCount') {
+        invalidInputKeys.push(definition.key);
+        continue;
+      }
       missingDefinitions.push(
         value === null ? definition : { ...definition, defaultValue: null, defaultReason: null },
       );

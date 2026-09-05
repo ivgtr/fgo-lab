@@ -1,3 +1,7 @@
+import { stackInputSchema } from '@fgo-lab/master-data';
+import { seedStackQuantities, mergeInputDefinitions } from './stackQuantities';
+import { cloneBattleState, applyTraitAddition } from './state';
+import { fixedConstraintFactsFromState } from './constraints';
 import { describe, expect, it } from 'vitest';
 import {
   evaluateConditionExpression,
@@ -37,6 +41,7 @@ function state(
       field: new Map(),
     },
     actorPredicates: { attacker: new Map(), target: new Map() },
+    stackQuantitySources: {},
     traitCounts: {
       attacker: {},
       attackerState: {},
@@ -454,5 +459,83 @@ describe('condition expression properties', () => {
         input,
       ),
     ).toBeNull();
+  });
+});
+
+describe('stack quantity state and constraint closure', () => {
+  const definition = (trait: string, maximum = 4) =>
+    stackInputSchema.parse({
+      kind: 'effectStackCount',
+      key: `stack:attackerState:${trait}`,
+      owner: 'attacker',
+      label: trait,
+      description: 'initial count',
+      minimum: 0,
+      maximum,
+      step: 1,
+      defaultValue: 0,
+      defaultReason: 'baseline',
+      quantitySource: { scope: 'attackerState', trait },
+    });
+  it.each([0, 1, 4])(
+    'shares exact quantity %i between comparisons and global validation',
+    (count) => {
+      const inputs = [definition('alpha'), definition('beta')];
+      const initial = state();
+      initial.resolvedInputValues = { [inputs[0]!.key]: count, [inputs[1]!.key]: 1 };
+      seedStackQuantities(initial, inputs);
+      for (const comparison of ['atLeast', 'atMost', 'equal'] as const) {
+        for (let boundary = 0; boundary <= 4; boundary++) {
+          const leaf: ConditionExpression = {
+            kind: 'inputQuantity',
+            inputKey: inputs[0]!.key,
+            comparison,
+            value: boundary,
+          };
+          const expression: ConditionExpression = {
+            kind: 'all',
+            expressions: [
+              leaf,
+              {
+                kind: 'not',
+                expression: {
+                  kind: 'inputQuantity',
+                  inputKey: inputs[1]!.key,
+                  comparison: 'equal',
+                  value: 0,
+                },
+              },
+            ],
+          };
+          const expected =
+            comparison === 'atLeast'
+              ? count >= boundary
+              : comparison === 'atMost'
+                ? count <= boundary
+                : count === boundary;
+          expect(evaluateConditionExpression(expression, initial)).toBe(expected);
+          expect(
+            validateConstraintSet({
+              fixedFacts: fixedConstraintFactsFromState(initial),
+              expressions: [{ sourceKey: 'fixture', expression }],
+            }).status,
+          ).toBe(expected ? 'satisfied' : 'conflict');
+        }
+      }
+      const changed = applyTraitAddition(cloneBattleState(initial), 'attackerState', 'alpha');
+      expect(changed.traitCounts.attackerState['alpha']).toBe(count + 1);
+      expect(initial.traitCounts.attackerState['alpha'] ?? 0).toBe(count);
+    },
+  );
+  it('shares a source across different reader caps and rejects conflicting baselines', () => {
+    expect(mergeInputDefinitions([definition('alpha', 4), definition('alpha', 10)])).toHaveLength(
+      1,
+    );
+    expect(
+      mergeInputDefinitions([definition('alpha', 4), definition('alpha', 10)])[0]?.maximum,
+    ).toBe(10);
+    expect(() =>
+      mergeInputDefinitions([definition('alpha'), { ...definition('alpha'), defaultValue: 1 }]),
+    ).toThrow('definition_conflict');
   });
 });

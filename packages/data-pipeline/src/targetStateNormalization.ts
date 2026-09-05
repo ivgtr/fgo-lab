@@ -11,6 +11,7 @@ import { functionReachesDamageModifier, normalizeTargetPolicy } from './executio
 const STATE_GRANT_FUNCTIONS = new Set(['addState', 'addStateShort']);
 
 export interface DamageReachableStateCatalog {
+  readonly stackLabels?: ReadonlyMap<string, string>;
   readonly stateOnlyTraits: ReadonlySet<string>;
 }
 
@@ -128,7 +129,20 @@ export function collectDamageReachableStateCatalog(
     ...functions.flatMap((fn) => noblePhantasmDamageTraits(fn, traitNameById)),
   ]);
   const permanentTraits = permanentTraitIdentities(input.servants, traitNameById);
+  const labels = new Map<string, Set<string>>();
+  for (const fn of functions)
+    for (const buff of fn.buffs ?? [])
+      for (const trait of buff.vals ?? []) {
+        const name = stateMutationTraitName(trait, traitNameById);
+        if (!name || !buff.name) continue;
+        const values = labels.get(name) ?? new Set<string>();
+        values.add(buff.name);
+        labels.set(name, values);
+      }
   return {
+    stackLabels: new Map(
+      [...labels].flatMap(([key, values]) => (values.size === 1 ? [[key, [...values][0]!]] : [])),
+    ),
     stateOnlyTraits: new Set(
       [...stateIdentities].filter((trait) => consumers.has(trait) && !permanentTraits.has(trait)),
     ),

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema, type CanonicalNpResourceSemantics } from '@fgo-lab/master-data';
-import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
+import {
+  preNoblePhantasmSemanticStateKey,
+  planPreNoblePhantasmCandidates,
+} from './preNoblePhantasmPlanner';
 
 describe('pre-NP planner cache identity', () => {
   it('does not reuse a plan across canonical resource semantics', () => {
@@ -36,4 +39,25 @@ describe('pre-NP planner cache identity', () => {
     expect(np1.candidates[0]?.terminalState.npResource.npLevel).toBe(1);
     expect(np2.candidates[0]?.terminalState.npResource.npLevel).toBe(2);
   });
+});
+
+// Counts are state, even when their boolean presence and action history agree.
+it('keeps initial stack counts in preparation and semantic plan identity', async () => {
+  const { master, servant, source } = await import('./stackQuantityFixture');
+  const one = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1, 10_000, {
+    [source.key]: 1,
+  });
+  const maximum = planPreNoblePhantasmCandidates(
+    servant,
+    master.npResourceSemantics,
+    1,
+    1,
+    10_000,
+    { [source.key]: 4 },
+  );
+  const a = one.candidates[0]!.terminalState;
+  const b = maximum.candidates[0]!.terminalState;
+  expect(a.stateTraits).toEqual(b.stateTraits);
+  expect(b.stackCounts.attackerState[source.quantitySource.trait]).toBe(4);
+  expect(preNoblePhantasmSemanticStateKey(a)).not.toBe(preNoblePhantasmSemanticStateKey(b));
 });

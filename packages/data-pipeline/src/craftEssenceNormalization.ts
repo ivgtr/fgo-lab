@@ -12,6 +12,11 @@ type ValuedOperation = Extract<
 
 function expressionShape(expression: ModifierValueExpression | null) {
   if (expression === null) return null;
+  if (expression.kind === 'stackLinear')
+    return {
+      kind: expression.kind,
+      sources: expression.sources.map(({ quantitySource }) => quantitySource),
+    };
   return expression.kind === 'inverseHpLinear'
     ? { kind: expression.kind }
     : expression.kind === 'hpRangeLinear'

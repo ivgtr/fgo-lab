@@ -41,7 +41,12 @@ export function presentRankingDetailEvidence(
     conditions.push({
       key: `input:${input.key}`,
       label: input.label,
-      value: input.value === null ? '未入力' : String(input.value),
+      value:
+        input.value === null
+          ? '未入力'
+          : input.kind === 'effectStackCount'
+            ? `${input.value}回・準備開始時の仮定（${detail.scenario.canonicalInputValues[input.key]?.origin === 'maximum' ? '最大回数' : detail.scenario.canonicalInputValues[input.key]?.origin === 'baseline' ? '通常値' : '指定回数'}）`
+            : String(input.value),
     });
   for (const assertion of detail.scenario.worldFactAssertions)
     conditions.push({

@@ -89,6 +89,16 @@ export function noblePhantasmDamageDependency(
       comparison: 'atLeast',
       value: 0,
     };
+  if (damage.kind === 'traitCount' && damage.quantity.kind === 'stacks')
+    return {
+      kind: 'any',
+      expressions: damage.quantity.inputs.map((input) => ({
+        kind: 'inputQuantity',
+        inputKey: input.key,
+        comparison: 'atLeast',
+        value: 1,
+      })),
+    };
   if (damage.kind === 'traitCount') {
     const scope = item.targetId === 1 ? 'target' : 'attacker';
     return {
@@ -220,7 +230,10 @@ export function compileNoblePhantasmDamageOperation(
         sourceName: attacker.name,
         skillName: np.name,
       },
-      inputDefinitions: [],
+      inputDefinitions:
+        damage.kind === 'traitCount' && damage.quantity.kind === 'stacks'
+          ? damage.quantity.inputs
+          : [],
       kind: 'executeNpDamage',
       damage,
       overcharge: baseInput.overcharge,

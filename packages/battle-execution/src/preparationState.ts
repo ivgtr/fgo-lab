@@ -58,6 +58,7 @@ export function resolvePreparationStructuralOutcome(
       currentFormId: ActorFormId;
       selectedVariant: NoblePhantasmVariantRef | null;
       stateTraits: PreNoblePhantasmState['stateTraits'];
+      stackCounts: PreNoblePhantasmState['stackCounts'];
     }
   | PreparationFailureCode {
   const operations = operationsOf(effects);
@@ -74,16 +75,24 @@ export function resolvePreparationStructuralOutcome(
     if (!actorFormEquals(variant.ref.actorFormId, currentFormId)) return 'variantFormMismatch';
   }
   const attackerState = new Set(state.stateTraits.attackerState);
+  const counts = { ...state.stackCounts.attackerState };
   for (const operation of operations) {
     if (!isRecipientTraitMutation(operation)) continue;
     if (resolveTargetPolicy('attacker', operation.route.target) !== 'attacker') continue;
-    if (operation.mutation === 'addTrait') attackerState.add(operation.trait);
-    if (operation.mutation === 'removeTrait') attackerState.delete(operation.trait);
+    if (operation.mutation === 'addTrait') {
+      attackerState.add(operation.trait);
+      counts[operation.trait] = (counts[operation.trait] ?? 0) + 1;
+    }
+    if (operation.mutation === 'removeTrait') {
+      attackerState.delete(operation.trait);
+      counts[operation.trait] = 0;
+    }
   }
   return {
     currentFormId,
     selectedVariant,
     stateTraits: { ...state.stateTraits, attackerState },
+    stackCounts: { ...state.stackCounts, attackerState: counts },
   };
 }
 
@@ -161,6 +170,7 @@ export function createPreparationState(
     usedSkillSlots: new Set(),
     transformNoblePhantasmUsed: false,
     activeEffects: [],
+    stackCounts: { attackerState: {}, targetState: {}, field: {} },
     stateTraits: { attackerState: new Set(), targetState: new Set() },
     npResource: createNpResourceState(
       context.resourceSemantics,
@@ -171,6 +181,14 @@ export function createPreparationState(
     appliedActions: [],
     terminated: false,
   };
+  for (const definition of context.stackInputs ?? []) {
+    const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
+    if (!Number.isInteger(count) || count < 0 || count > definition.maximum)
+      return rejectPreparation(placeholder, 'invalidPreparationActivation');
+    const { scope, trait } = definition.quantitySource;
+    placeholder.stackCounts[scope] = { ...placeholder.stackCounts[scope], [trait]: count };
+    if (scope !== 'field' && count > 0) (placeholder.stateTraits[scope] as Set<string>).add(trait);
+  }
   if (
     !form ||
     !servant.actorFormGraph.initialFormIds.some((candidate) =>

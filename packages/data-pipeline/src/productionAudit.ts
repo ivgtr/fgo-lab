@@ -132,6 +132,9 @@ export function compileDataPipelineProductionAudit(
       buffTypes: sortedUnique(effect.atlasEvidence.buffTypes),
       conditionKeys: sortedUnique(effect.atlasEvidence.buffConditionKeys),
       functionType: effect.atlasEvidence.functionType,
+      stackInputs: jsonValue(
+        effect.inputDefinitions.filter((input) => input.kind === 'effectStackCount'),
+      ),
       inputKinds: effect.inputDefinitions.map(({ kind }) => kind).sort(),
       operationKinds: effect.execution.map(({ kind }) => kind),
       operations: jsonValue(effect.execution),
@@ -152,6 +155,7 @@ export function compileDataPipelineProductionAudit(
             value: {
               card: variant.card,
               kind: damage.kind,
+              quantity: damage.kind === 'traitCount' ? jsonValue(damage.quantity) : null,
               rawFunctionType: damage.rawFunctionType,
               targetScope: variant.targetScope,
             },

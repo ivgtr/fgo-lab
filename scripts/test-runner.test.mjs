@@ -957,7 +957,7 @@ test('differently capped Vitest projects use distinct execution groups', () => {
   const productionProject = config.slice(config.indexOf("name: 'production'"));
 
   assert.match(unitProject, /sequence: \{ groupOrder: 0 \}/);
-  assert.match(productionProject, /maxWorkers: '75%'/);
+  assert.match(productionProject, /maxWorkers: '50%'/);
   assert.match(productionProject, /sequence: \{ groupOrder: 1 \}/);
 });
 

@@ -1,3 +1,4 @@
+import { UnsupportedStackQuantity } from './rankingStackDomain';
 import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import type { ActorFormId, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
@@ -167,6 +168,7 @@ function compileProgramDomain(input: {
       semantics.inputDefinitions,
       semantics.conditions,
       conditions.conditionalEffects,
+      semantics.stackWitnesses,
     ),
     targets: [
       null,
@@ -271,13 +273,14 @@ export function compileRankingCandidateSpaces(
         },
       };
     } catch (error) {
-      if (error instanceof UnsupportedStaticSemantics)
+      if (error instanceof UnsupportedStaticSemantics || error instanceof UnsupportedStackQuantity)
         return {
           status: 'unsupported',
           attackProfile,
           issue: {
             kind: 'unsupportedCanonicalSemantics',
-            projectionKeys: error.projectionKeys,
+            projectionKeys:
+              error instanceof UnsupportedStackQuantity ? [error.message] : error.projectionKeys,
           },
         };
       return {
@@ -329,6 +332,20 @@ function materializeProgramCandidates(input: {
         key,
         value,
       });
+    for (const definition of domain.semantics.inputDefinitions) {
+      if (definition.kind !== 'effectStackCount') continue;
+      const value = canonicalInputValues[definition.key]!;
+      scenario.canonicalInputValues[definition.key] = {
+        kind: 'integer',
+        value,
+        origin:
+          conditions.conditionalEffects === 'baseline' || value === definition.defaultValue
+            ? 'baseline'
+            : value === definition.maximum
+              ? 'maximum'
+              : 'witness',
+      };
+    }
     if (target) scenario = materializeRankingWorld(scenario, target);
     scenario = materializeRankingField(
       scenario,
@@ -344,7 +361,14 @@ function materializeProgramCandidates(input: {
       canonicalInputValues,
       canonicalInputBaselineDeviation: domain.canonicalInputs.reduce(
         (sum, { key, values }) =>
-          sum + Math.abs(canonicalInputValues[key]! - (values[0] ?? canonicalInputValues[key]!)),
+          sum +
+          Math.abs(
+            canonicalInputValues[key]! -
+              (domain.semantics.inputDefinitions.find((definition) => definition.key === key)
+                ?.defaultValue ??
+                values[0] ??
+                canonicalInputValues[key]!),
+          ),
         0,
       ),
       targetCandidateKey: target?.key ?? 'target:baseline',

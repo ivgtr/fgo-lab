@@ -52,7 +52,7 @@ function servantIdentityProfile() {
   };
 }
 
-function servantIdentityCollection(schemaVersion: 32 | 33 | 34 | 35 | typeof SCHEMA_VERSION) {
+function servantIdentityCollection(schemaVersion: 32 | 33 | 34 | 35 | 36 | typeof SCHEMA_VERSION) {
   return {
     schemaVersion,
     activeProfileId: servantIdentityProfileId,
@@ -419,7 +419,7 @@ describe('portable schema boundaries', () => {
     });
   });
 
-  it.each([34, 35] as const)(
+  it.each([34, 35, 36] as const)(
     'migrates coherent schema %s and historicalizes only ranking snapshots',
     (sourceVersion) => {
       const baseCollection = servantIdentityCollection(sourceVersion);
@@ -584,7 +584,7 @@ describe('portable schema boundaries', () => {
   it.each(['servantBuilds', 'servantTargets'] as const)(
     'rejects a %s record identity mismatch in current and v32/v33/v34 profile or backup input',
     (mapName) => {
-      for (const schemaVersion of [SCHEMA_VERSION, 35, 34, 33, 32] as const) {
+      for (const schemaVersion of [SCHEMA_VERSION, 36, 35, 34, 33, 32] as const) {
         const collection = servantIdentityCollection(schemaVersion);
         collection.profiles[0]![mapName]['servant-a'].servantId = 'servant-b';
         expect(
@@ -609,7 +609,7 @@ describe('portable schema boundaries', () => {
   it.each(['servantBuilds', 'servantTargets'] as const)(
     'conserves raw %s keys or rejects before current and legacy stored/backup parsing',
     (mapName) => {
-      for (const schemaVersion of [SCHEMA_VERSION, 35, 34, 33, 32] as const)
+      for (const schemaVersion of [SCHEMA_VERSION, 36, 35, 34, 33, 32] as const)
         for (const recordKey of ['servant-a', '__proto__', 'constructor', 'toString'])
           for (const matching of [true, false]) {
             const source = servantIdentityCollection(schemaVersion);

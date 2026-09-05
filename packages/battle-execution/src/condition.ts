@@ -1,3 +1,4 @@
+import { liveInputQuantity } from './stackQuantities';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
 import { traitConditionEvaluationSource, traitConditionReadScopes } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
@@ -120,7 +121,7 @@ export function evaluateCondition(
       return actual > condition.value;
     }
     case 'inputQuantity': {
-      const actual = state.resolvedInputValues[condition.inputKey];
+      const actual = liveInputQuantity(state, condition.inputKey);
       if (actual === undefined) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;
       if (condition.comparison === 'atMost') return actual <= condition.value;

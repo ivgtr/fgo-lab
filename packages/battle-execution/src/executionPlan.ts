@@ -1,3 +1,4 @@
+import { mergeInputDefinitions } from './stackQuantities';
 import {
   getBaseNoblePhantasmGroup,
   getBaseNoblePhantasmVariantForForm,
@@ -162,13 +163,11 @@ export function compileExecutionPlan(
   const preparationInputDefinitions = collected.sources
     .filter(({ effect }) => effectChangesPreparation(effect))
     .flatMap(runtimeInputDefinitionsForSource);
-  const inputDefinitions = new Map(
-    [
-      ...operations.flatMap((operation) => operation.inputDefinitions),
-      ...preparationInputDefinitions,
-      ...(collected.formExecution?.requiredInputs ?? []),
-    ].map((definition) => [definition.key, definition] as const),
-  );
+  const inputDefinitions = mergeInputDefinitions([
+    ...operations.flatMap((operation) => operation.inputDefinitions),
+    ...preparationInputDefinitions,
+    ...(collected.formExecution?.requiredInputs ?? []),
+  ]);
   return {
     baseInput,
     scenario: executionScenario,
@@ -185,7 +184,7 @@ export function compileExecutionPlan(
     targetDomain: master.targetSemantics.execution,
     attackerClass,
     attackerAttribute,
-    inputDefinitions: [...inputDefinitions.values()],
+    inputDefinitions,
     preparationRequiredInputs: collected.formExecution?.requiredInputs ?? [],
     preparationInputKeys: new Set([
       ...preparationInputDefinitions.map(({ key }) => key),

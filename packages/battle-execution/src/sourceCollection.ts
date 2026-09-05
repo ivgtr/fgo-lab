@@ -1,3 +1,4 @@
+import { servantStackInputs } from './stackQuantities';
 import {
   getBaseNoblePhantasmGroup,
   getDefaultInitialActorForm,
@@ -74,6 +75,7 @@ export function resolveAttackerFormExecution(
   initialGauge: number = resourceSemantics.noblePhantasmUse.requirement,
 ): ResolvedAttackerFormExecution {
   const context: PreparationExecutionContext = {
+    stackInputs: servantStackInputs(attacker),
     resourceSemantics,
     npLevel: scenario.attacker.npLevel as PreparationExecutionContext['npLevel'],
     initialGauge,

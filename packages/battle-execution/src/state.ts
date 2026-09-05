@@ -1,5 +1,5 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import type { NoblePhantasmVariant } from '@fgo-lab/master-data';
+import { stackInputKey, type NoblePhantasmVariant } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
   BattleStateBase,
@@ -26,6 +26,7 @@ export function cloneBattleState(state: ExecutableBattleState): ExecutableBattle
       attacker: new Map(state.actorPredicates.attacker),
       target: new Map(state.actorPredicates.target),
     },
+    stackQuantitySources: { ...state.stackQuantitySources },
     traitCounts: {
       attacker: { ...state.traitCounts.attacker },
       attackerState: { ...state.traitCounts.attackerState },
@@ -123,12 +124,26 @@ function createBattleStateBase<
         ]),
       ),
     },
+    stackQuantitySources: Object.fromEntries(
+      (['attackerState', 'targetState', 'field'] as const).flatMap((scope) =>
+        Object.keys(input.stackStateCounts?.[scope] ?? {}).map((trait) => {
+          const source = { scope, trait };
+          return [stackInputKey(source), source];
+        }),
+      ),
+    ),
     traitCounts: {
       attacker: traitCounts(attacker),
-      attackerState: traitCounts(input.attackerStateTraits),
+      attackerState: {
+        ...traitCounts(input.attackerStateTraits),
+        ...input.stackStateCounts?.attackerState,
+      },
       target: traitCounts(input.target.traits),
-      targetState: traitCounts(input.targetStateTraits),
-      field: traitCounts(input.fieldTraits),
+      targetState: {
+        ...traitCounts(input.targetStateTraits),
+        ...input.stackStateCounts?.targetState,
+      },
+      field: { ...traitCounts(input.fieldTraits), ...input.stackStateCounts?.field },
     },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     quantities: {
@@ -243,9 +258,15 @@ export function withoutTraitCount(
   return Object.fromEntries(Object.entries(counts).filter(([trait]) => trait !== removedTrait));
 }
 
-function expandedTraits(counts: Readonly<Record<string, number>>): string[] {
+function expandedTraits(
+  counts: Readonly<Record<string, number>>,
+  stackTraits: ReadonlySet<string> = new Set(),
+): string[] {
   return Object.entries(counts).flatMap(([trait, count]) =>
-    Array.from({ length: Math.max(0, count) }, () => trait),
+    Array.from(
+      { length: stackTraits.has(trait) ? Number(count > 0) : Math.max(0, count) },
+      () => trait,
+    ),
   );
 }
 
@@ -253,6 +274,14 @@ export function foldDamageInput(
   input: DamageResolutionInput,
   state: ExecutableBattleState,
 ): DamageResolutionInput {
+  const stackStateCounts: NonNullable<DamageResolutionInput['stackStateCounts']> = {
+    attackerState: {},
+    targetState: {},
+    field: {},
+  };
+  for (const { scope, trait } of Object.values(state.stackQuantitySources))
+    stackStateCounts[scope][trait] = state.traitCounts[scope][trait] ?? 0;
+  const hasStacks = Object.keys(state.stackQuantitySources).length > 0;
   const sums: Partial<Record<ModifierKind, number>> = {};
   for (const modifier of state.modifiers) {
     if (modifier.card !== null && modifier.card !== state.card) continue;
@@ -265,8 +294,15 @@ export function foldDamageInput(
     ...input,
     cardType: state.card,
     fieldTraits: [...state.traits.field].flatMap(([trait, present]) => (present ? [trait] : [])),
-    attackerStateTraits: expandedTraits(state.traitCounts.attackerState),
-    targetStateTraits: expandedTraits(state.traitCounts.targetState),
+    ...(hasStacks ? { stackStateCounts } : {}),
+    attackerStateTraits: expandedTraits(
+      state.traitCounts.attackerState,
+      new Set(Object.keys(stackStateCounts.attackerState)),
+    ),
+    targetStateTraits: expandedTraits(
+      state.traitCounts.targetState,
+      new Set(Object.keys(stackStateCounts.targetState)),
+    ),
     target: {
       ...input.target,
       traits: expandedTraits(state.traitCounts.target),

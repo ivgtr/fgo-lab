@@ -1,5 +1,6 @@
 import type {
   ActorFormId,
+  StackInputDefinition,
   ActorFormTransition,
   CanonicalNpResourceSemantics,
   CanonicalInputDefinition,
@@ -14,6 +15,7 @@ export interface PreparationExecutionContext {
   npLevel: NpResourceState['npLevel'];
   initialGauge: number;
   overcharge: 1 | 2 | 3 | 4 | 5;
+  stackInputs?: readonly StackInputDefinition[];
   canonicalInputValues?: Readonly<Record<string, number>>;
   attackerHpPermille?: number;
   battlePointPhase?: number | null;
@@ -54,6 +56,7 @@ export interface PreNoblePhantasmState {
   usedSkillSlots: ReadonlySet<1 | 2 | 3>;
   transformNoblePhantasmUsed: boolean;
   activeEffects: readonly AppliedPreparationEffect[];
+  stackCounts: Record<'attackerState' | 'targetState' | 'field', Readonly<Record<string, number>>>;
   stateTraits: {
     attackerState: ReadonlySet<string>;
     targetState: ReadonlySet<string>;
@@ -84,6 +87,7 @@ export type PreparationFailureCode =
   | 'insufficientNpGauge'
   | 'invalidResourceMutation'
   | 'unsupportedResourceMutation'
+  | 'unsupportedPreparationStackQuantity'
   | 'invalidPreparationActivation'
   | 'ambiguousPreparationCondition'
   | 'preparationInputRequired';

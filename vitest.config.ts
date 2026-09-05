@@ -23,8 +23,9 @@ export default defineConfig({
           name: 'production',
           include: PRODUCTION_TEST_INCLUDES,
           // Published-master suites are CPU-bound and each parse a large artifact. Capping the
-          // worker share prevents file-level contention from violating the unchanged 5s test ratchet.
-          maxWorkers: '75%',
+          // worker share bounds concurrent first parses as well as suite-local shared setup, keeping
+          // the unchanged 5s test ratchet stable after canonical quantity validation.
+          maxWorkers: '50%',
           // Keep the differently capped project out of the unit project's concurrent worker group.
           sequence: { groupOrder: 1 },
         },

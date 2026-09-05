@@ -1,3 +1,4 @@
+import type { StackSource } from '@fgo-lab/master-data';
 import type {
   CanonicalInputDefinition,
   CanonicalOutcomeGroup,
@@ -145,7 +146,7 @@ export type ModifierKind =
   | 'ignoreDamageCut';
 
 export type OperationModifierValueExpression =
-  | Extract<ModifierValueExpression, { kind: 'inputLinear' }>
+  | Extract<ModifierValueExpression, { kind: 'inputLinear' | 'stackLinear' }>
   | (Extract<ModifierValueExpression, { kind: 'inverseHpLinear' | 'hpRangeLinear' }> & {
       quantitySource: { kind: 'attackerHpPermille' } | { kind: 'canonicalInput'; inputKey: string };
     });
@@ -238,6 +239,7 @@ export interface BattleStateBase {
     ActorScope,
     ReadonlyMap<string, { predicate: TargetPredicate; present: boolean }>
   >;
+  stackQuantitySources: Record<string, StackSource>;
   traitCounts: Record<TraitScope, Readonly<Record<string, number>>>;
   initialTraitSuppressions: Record<ActorScope, ReadonlySet<string>>;
   quantities: {

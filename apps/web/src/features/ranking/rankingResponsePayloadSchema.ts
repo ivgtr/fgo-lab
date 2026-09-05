@@ -136,7 +136,7 @@ const effectiveContributionsSchema = z.object({
 const inputDefinition = canonicalInputDefinitionSchema.options[0];
 const effectInputSchema = z.object({
   ...inputDefinition.shape,
-  kind: z.union([inputDefinition.shape.kind, canonicalInputDefinitionSchema.options[1].shape.kind]),
+  kind: z.union(canonicalInputDefinitionSchema.options.map((option) => option.shape.kind)),
   control: z.enum(['segmented', 'stepper', 'percentage']),
   value: z.number().nullable(),
   explicit: z.boolean(),
@@ -176,44 +176,59 @@ const effects = z.array(rankingEffectResponseSchema);
 const warnings = z.array(z.string());
 
 // The annotation makes missing or weakly validated DTO fields a compile error.
-export const rankingDetailResponseSchema: z.ZodType<RankingPolicyDetail> = z.object({
-  ...attackMetadata,
-  scenario: resolvedScenario,
-  input: damageResolutionInputSchema,
-  result: calculationResultSchema.options[0],
-  effects,
-  effectInputs: z.array(effectInputSchema),
-  warnings,
-  appliedPreparationActions: z.array(preparationActionSchema),
-  contributionPolicy: contributionPolicySchema,
-  effectiveContributions: effectiveContributionsSchema,
-  rankingPolicy: rankingSelectionSchema,
-  basis: resolvedRankingBasisSchema,
-  areaContribution: z
-    .object({
-      withoutAreaScenario: resolvedScenario,
-      withoutAreaInput: damageResolutionInputSchema,
-      withoutAreaResult: calculationResultSchema,
-      withoutAreaEffects: effects,
-      contributionPolicy: contributionPolicySchema,
-      effectiveContributions: effectiveContributionsSchema,
-      warnings,
-    })
-    .nullable(),
-  executionMetrics: z.object({
-    worldCandidateCount: z.number(),
-    scenarioCalculationCount: z.number(),
-  }),
-  candidateEvidence: z.object({
-    startNpGauge: z.number(),
-    policyKey: z.string(),
-    candidateKey: z.string(),
-    preparationPlanKey: z.string(),
-    baselineInputDeviation: z.number(),
-    attackProfileKey: z.string(),
-    canonicalInputValues: z.record(z.string(), z.number()),
-    targetCandidateKey: z.string(),
-    fieldCandidateKey: z.string(),
-    quantityCandidateKey: z.string(),
-  }),
-});
+export const rankingDetailResponseSchema: z.ZodType<RankingPolicyDetail> = z
+  .object({
+    ...attackMetadata,
+    scenario: resolvedScenario,
+    input: damageResolutionInputSchema,
+    result: calculationResultSchema.options[0],
+    effects,
+    effectInputs: z.array(effectInputSchema),
+    warnings,
+    appliedPreparationActions: z.array(preparationActionSchema),
+    contributionPolicy: contributionPolicySchema,
+    effectiveContributions: effectiveContributionsSchema,
+    rankingPolicy: rankingSelectionSchema,
+    basis: resolvedRankingBasisSchema,
+    areaContribution: z
+      .object({
+        withoutAreaScenario: resolvedScenario,
+        withoutAreaInput: damageResolutionInputSchema,
+        withoutAreaResult: calculationResultSchema,
+        withoutAreaEffects: effects,
+        contributionPolicy: contributionPolicySchema,
+        effectiveContributions: effectiveContributionsSchema,
+        warnings,
+      })
+      .nullable(),
+    executionMetrics: z.object({
+      worldCandidateCount: z.number(),
+      scenarioCalculationCount: z.number(),
+    }),
+    candidateEvidence: z.object({
+      startNpGauge: z.number(),
+      policyKey: z.string(),
+      candidateKey: z.string(),
+      preparationPlanKey: z.string(),
+      baselineInputDeviation: z.number(),
+      attackProfileKey: z.string(),
+      canonicalInputValues: z.record(z.string(), z.number()),
+      targetCandidateKey: z.string(),
+      fieldCandidateKey: z.string(),
+      quantityCandidateKey: z.string(),
+    }),
+  })
+  .superRefine((detail, context) => {
+    for (const input of detail.effectInputs) {
+      if (input.kind !== 'effectStackCount') continue;
+      const stored = detail.scenario.canonicalInputValues[input.key];
+      if (
+        !stored ||
+        input.value !== stored.value ||
+        detail.candidateEvidence.canonicalInputValues[input.key] !== stored.value ||
+        (stored.origin === 'maximum' && stored.value !== input.maximum) ||
+        (stored.origin === 'baseline' && stored.value !== input.defaultValue)
+      )
+        context.addIssue({ code: 'custom', message: 'inconsistent_stack_quantity_evidence' });
+    }
+  });

@@ -8,6 +8,7 @@ import {
 } from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
+  hasUnsupportedPreparationStackRequirement,
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
   type ConditionExpression,
@@ -84,7 +85,7 @@ const expectedUnresolvedDamageSemantics = {
     DependFuncVals: 6,
     GainNpTargetPassiveIndividuality: 5,
   },
-  scripts: {},
+  scripts: { missing_or_unsupported_stack_maximum: 1 },
 } as const;
 
 function reasonFamily(reason: string): string {
@@ -214,6 +215,10 @@ describe('production master inventory ratchet', () => {
         ),
       ),
     ];
+    // PIR-001: future preparation stack readers must enter the explicit support review.
+    expect(
+      effects.filter(({ effect }) => hasUnsupportedPreparationStackRequirement(effect)),
+    ).toEqual([]);
     const mutations = effects.flatMap((item) =>
       item.effect.execution.flatMap((operation) =>
         operation.kind === 'contextMutation' &&
@@ -699,6 +704,7 @@ describe('production master inventory ratchet', () => {
       '705300:attacker:attacker:705300:2657650:248:1',
       '705300:np:np:["705300",0,"705301"]:np:["705300",0,"705301"]:523:0',
       '705300:np:["705300",0,"705301"]:17:damage',
+      '1000900:attacker:attacker:1000900:2082450:8808:0',
     ]);
     expect(targetContextRequiredProjections).toEqual([]);
     expect(
@@ -711,7 +717,7 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({ '702500': 4, '705300': 6 });
+    ).toEqual({ '702500': 4, '705300': 6, '1000900': 1 });
     expect(declaredExclusivePairCount).toBe(4);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
@@ -868,7 +874,7 @@ describe('production master inventory ratchet', () => {
         }
       }
     }
-    expect(projectionCount).toBe(381);
+    expect(projectionCount).toBe(382);
     expect(intrinsicRecipientConflicts).toEqual([
       '200200:2167650:support:audit:200200:2167650:2167650:9963:0',
       '2501300:2276451:support:audit:2501300:2276451:2276451:21180:0',
@@ -876,6 +882,7 @@ describe('production master inventory ratchet', () => {
     expect(typedUnsupported).toEqual([
       '204300:885550:support:audit:204300:885550:885550:7415:0',
       '1101600:2255550:support:audit:1101600:2255550:2255550:21113:0',
+      '2801300:2688650:support:audit:2801300:2688650:2688650:23559:0',
     ]);
     expect(failures).toEqual([]);
   }, 120_000);

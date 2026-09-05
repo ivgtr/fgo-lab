@@ -1,3 +1,4 @@
+import { seedStackQuantities } from './stackQuantities';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
   ActivationContext,
@@ -104,6 +105,7 @@ function prepareExecutableCandidate(
     })),
     activationContext,
   );
+  seedStackQuantities(initialState, prepared.inputDefinitions);
   const selections = resolveCandidateSelections(
     prepared,
     decisions,

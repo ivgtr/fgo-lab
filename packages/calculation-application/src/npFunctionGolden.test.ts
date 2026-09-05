@@ -90,6 +90,33 @@ function damageSpec(testCase: GoldenCase): NpDamageSpec {
   }));
   return {
     kind: testCase.kind,
+    ...(testCase.kind === 'traitCount'
+      ? {
+          quantity: row[0]?.maximumTargetCount
+            ? {
+                kind: 'stacks',
+                inputs: [...new Set(row[0].targetTraits?.map(({ name }) => name) ?? [])].map(
+                  (name) => ({
+                    kind: 'effectStackCount',
+                    key: `stack:${row[0]?.targetId === 0 ? 'attackerState' : 'targetState'}:${encodeURIComponent(name)}`,
+                    owner: row[0]?.targetId === 0 ? 'attacker' : 'target',
+                    label: name,
+                    description: 'initial count',
+                    minimum: 0,
+                    maximum: row[0]?.maximumTargetCount,
+                    step: 1,
+                    defaultValue: 0,
+                    defaultReason: 'baseline',
+                    quantitySource: {
+                      scope: row[0]?.targetId === 0 ? 'attackerState' : 'targetState',
+                      trait: name,
+                    },
+                  }),
+                ),
+              }
+            : { kind: 'finiteTraits' },
+        }
+      : {}),
     rawFunctionType: testCase.rawFunctionType,
     ...(testCase.maximumBattlePointPhase === undefined
       ? {}

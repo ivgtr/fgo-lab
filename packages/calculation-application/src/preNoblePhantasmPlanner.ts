@@ -3,6 +3,7 @@ import {
   availableTransformNoblePhantasmCommand,
   createPreNoblePhantasmState,
   reducePreNoblePhantasmAction,
+  servantStackInputs,
   type PreNoblePhantasmState,
   type PreparationExecutionContext,
   type PreparationFailureCode,
@@ -77,6 +78,20 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
       attackerState: [...state.stateTraits.attackerState].sort(),
       targetState: [...state.stateTraits.targetState].sort(),
     },
+    ...(Object.values(state.stackCounts).some((counts) =>
+      Object.values(counts).some((count) => count > 1),
+    ) || Object.values(state.stackCounts.field).some((count) => count > 0)
+      ? {
+          stackCounts: Object.fromEntries(
+            Object.entries(state.stackCounts).map(([scope, counts]) => [
+              scope,
+              Object.entries(counts)
+                .filter(([, count]) => count > 0)
+                .sort(([left], [right]) => left.localeCompare(right)),
+            ]),
+          ),
+        }
+      : {}),
     npResource: state.npResource,
     baseOvercharge: state.baseOvercharge,
     choices: state.appliedActions
@@ -140,6 +155,7 @@ export function planPreNoblePhantasmCandidates(
     initialGauge,
     overcharge,
     canonicalInputValues,
+    stackInputs: servantStackInputs(servant),
   };
   const pending: Array<{
     state: PreNoblePhantasmState;

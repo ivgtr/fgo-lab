@@ -1,3 +1,8 @@
+import {
+  master as stackMaster,
+  servant as stackServant,
+  source as stackSource,
+} from '../../../../../packages/calculation-application/src/stackQuantityFixture';
 import { parseRankingWorkerResponse } from './rankingWorkerProtocol';
 import { describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
@@ -24,6 +29,44 @@ const versions = {
 };
 
 describe('ranking worker canonical runtime', () => {
+  it('preserves maximum stack evidence across the worker parser and rejects tampered count provenance', () => {
+    const result = calculateRankingPolicyDetail(
+      stackServant,
+      stackMaster,
+      profile,
+      { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
+      versions,
+    );
+    if (result.status !== 'calculated') throw new Error('stack fixture');
+    const envelope = {
+      kind: 'detail',
+      contextId: 'stack',
+      requestId: 'stack-detail',
+      fingerprint: 'stack',
+      entryId: result.detail.entryId,
+      detail: result.detail,
+    };
+    expect(parseRankingWorkerResponse(envelope)).toEqual(envelope);
+    const presentation = presentRankingDetailEvidence(result.detail, stackMaster);
+    expect(
+      presentation.conditions.some(({ value }) => value === '4回・準備開始時の仮定（最大回数）'),
+    ).toBe(true);
+    expect(
+      parseRankingWorkerResponse({
+        ...envelope,
+        detail: {
+          ...result.detail,
+          scenario: {
+            ...result.detail.scenario,
+            canonicalInputValues: {
+              [stackSource.key]: { kind: 'integer', value: 1, origin: 'maximum' },
+            },
+          },
+        },
+      }),
+    ).toBeNull();
+  });
+
   it('shares one six-condition cache identity and returns calculator-parity detail evidence', () => {
     const calculate = vi.fn(calculateRankingPolicy);
     const detail = vi.fn(calculateRankingPolicyDetail);

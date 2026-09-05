@@ -90,6 +90,7 @@ export function reducePreparationTransformNoblePhantasmAction(
         resource.activation,
       ),
       stateTraits: structural.stateTraits,
+      stackCounts: structural.stackCounts,
       npResource: resource.resource.state,
       baseOvercharge: resource.resource.baseOvercharge,
       appliedActions: [

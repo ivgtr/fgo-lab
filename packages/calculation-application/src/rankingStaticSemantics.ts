@@ -1,6 +1,9 @@
+import { stackDomainWitnesses, UnsupportedStackQuantity } from './rankingStackDomain';
+import { mergeInputDefinitions, stackOwnedWitnessCondition } from '@fgo-lab/battle-execution';
 import {
   compileEffectCached,
   effectChangesPreparation,
+  hasUnsupportedPreparationStackRequirement,
   noblePhantasmDamageDependency,
   planOperationActivations,
   runtimeInputDefinitionsForSource,
@@ -30,6 +33,7 @@ export interface StaticRankingSemantics {
   unsupported: readonly EffectProjection[];
   conditions: readonly ConditionExpression[];
   inputDefinitions: readonly CanonicalInputDefinition[];
+  stackWitnesses: ReadonlyMap<string, readonly number[]>;
 }
 
 function sourceEffects(input: {
@@ -157,6 +161,8 @@ export function compileStaticRankingSemantics(
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
   for (const source of sources) {
+    if (hasUnsupportedPreparationStackRequirement(source.effect))
+      throw new UnsupportedStackQuantity('unsupportedPreparationStackQuantity');
     const compiled = compileEffectCached(source, operations.length, servant.actorFormGraph.forms);
     operations.push(...compiled.operations);
     unsupported.push(
@@ -176,19 +182,23 @@ export function compileStaticRankingSemantics(
         )
       : [];
   const plannedOperations = planOperationActivations(operations);
-  const definitions = new Map<string, CanonicalInputDefinition>();
   const liveDefinitions = [
+    ...(attackVariant?.kind === 'attack'
+      ? attackVariant.damage.flatMap((damage) => {
+          if (damage.kind !== 'traitCount') return [];
+          if (damage.quantity.kind === 'unsupported')
+            throw new UnsupportedStackQuantity(
+              `unsupported_stack_quantity:${damage.quantity.reason}`,
+            );
+          return damage.quantity.kind === 'stacks' ? damage.quantity.inputs : [];
+        })
+      : []),
     ...plannedOperations.flatMap((operation) => operation.inputDefinitions),
     ...sources
       .filter(({ effect }) => effectChangesPreparation(effect))
       .flatMap(runtimeInputDefinitionsForSource),
   ];
-  for (const definition of liveDefinitions) {
-    const existing = definitions.get(definition.key);
-    if (existing && JSON.stringify(existing) !== JSON.stringify(definition))
-      throw new TypeError(`ranking_canonical_input_definition_conflict:${definition.key}`);
-    definitions.set(definition.key, definition);
-  }
+  const definitions = mergeInputDefinitions(liveDefinitions);
   return {
     sources,
     operations: plannedOperations,
@@ -198,9 +208,11 @@ export function compileStaticRankingSemantics(
         operation.kind === 'preserveSemanticEffect' ? [] : [operation.condition],
       ),
       ...damageConditions,
-    ],
-    inputDefinitions: [...definitions.values()].sort((left, right) =>
-      left.key.localeCompare(right.key),
+    ].map((condition) => stackOwnedWitnessCondition(condition, definitions)),
+    stackWitnesses: stackDomainWitnesses(
+      attackVariant?.kind === 'attack' ? attackVariant.damage : [],
+      plannedOperations,
     ),
+    inputDefinitions: definitions.sort((left, right) => left.key.localeCompare(right.key)),
   };
 }

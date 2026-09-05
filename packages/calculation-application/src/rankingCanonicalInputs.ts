@@ -34,6 +34,7 @@ export function createCanonicalInputValueDomains(
   definitions: readonly CanonicalInputDefinition[],
   conditions: readonly (ConditionExpression | null)[],
   mode: 'baseline' | 'satisfied',
+  stackWitnesses: ReadonlyMap<string, readonly number[]> = new Map(),
 ): readonly { key: string; values: readonly number[] }[] {
   const boundaries = new Map<string, number[]>();
   for (const { key, value } of conditions.flatMap(conditionInputBoundaries)) {
@@ -47,9 +48,13 @@ export function createCanonicalInputValueDomains(
       key: definition.key,
       values:
         mode === 'baseline'
-          ? [definition.minimum]
-          : boundaries.has(definition.key)
-            ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
-            : [definition.maximum],
+          ? [definition.defaultValue ?? definition.minimum]
+          : definition.kind === 'effectStackCount'
+            ? stackWitnesses.has(definition.key)
+              ? stackWitnesses.get(definition.key)!
+              : Array.from({ length: definition.maximum + 1 }, (_, count) => count)
+            : boundaries.has(definition.key)
+              ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
+              : [definition.maximum],
     }));
 }

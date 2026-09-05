@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { getBaseAttackNoblePhantasmVariant, masterSnapshotSchema } from '@fgo-lab/master-data';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import { ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   applyEffectConditionDecision,
   applyEffectProjectionDecision as applyEffectInclusionDecision,
@@ -84,10 +84,14 @@ const formerlyUnsupportedSelections = [
 ] as const;
 
 describe('unsupported convergence production golden', () => {
-  it('goldens every formerly unsupported default damage input and NP1-5 result', async () => {
-    const master = masterSnapshotSchema.parse(
+  let master: ReturnType<typeof masterSnapshotSchema.parse>;
+  beforeAll(async () => {
+    master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
+  }, 5_000);
+
+  it('goldens every formerly unsupported default damage input and NP1-5 result', () => {
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,
       engineVersion: ENGINE_VERSION,
@@ -121,7 +125,7 @@ describe('unsupported convergence production golden', () => {
             "np:np:["106600",0,"106601"]:np:["106600",0,"106601"]:23291:0:addTrait-target:buffBurn",
             "np:["106600",0,"106601"]:5337:damage",
           ],
-          "inputDigest": "e39255a9b5f4d4648bbdc1cfe7aef0a9a0550f502949c53c9e5e0527ce3c3961",
+          "inputDigest": "89ce208759578265817997dad21629c6640120464edb472b164bc42943e59dcb",
           "name": "ジャック・ド・モレー",
           "np1To5Average": [
             31998.575,
@@ -313,10 +317,7 @@ describe('unsupported convergence production golden', () => {
     `);
   });
 
-  it('calculates all 419 base attacking NPs and the 25 formerly unsupported selections exactly', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
+  it('calculates 419 base attacking NPs and 24 selections, rejecting one unbounded stack selection', () => {
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,
       engineVersion: ENGINE_VERSION,
@@ -396,6 +397,20 @@ describe('unsupported convergence production golden', () => {
         master,
         versions,
       );
+      if (
+        servant.skills
+          .flatMap((skill) => skill.effects)
+          .some(
+            (effect) =>
+              effect.occurrenceId === targetOccurrenceId &&
+              effect.atlasEvidence.unresolvedSemanticKeys.includes(
+                'missing_or_unsupported_stack_maximum',
+              ),
+          )
+      ) {
+        expect(selected.result.status).toBe('unsupported');
+        return { servantId, occurrenceId, input: selected.input, rows: [], appliedOperations: [] };
+      }
       expect(selected.result.status, `${servantId}:${occurrenceId}`).toBe('calculated');
       expect(
         selected.effects.find((effect) => effect.projectionKey === projection!.projectionKey)
@@ -542,13 +557,7 @@ describe('unsupported convergence production golden', () => {
           "servantId": "1100700",
         },
         {
-          "np1To5Average": [
-            60245.67,
-            80244.405,
-            90243.765,
-            95243.445,
-            100243.12,
-          ],
+          "np1To5Average": [],
           "occurrenceId": "8808:0",
           "servantId": "1000900",
         },
@@ -709,14 +718,11 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      'eb833fed8d31ffb16c33a4b2c5314b6d8dba209d3979da3faf6449d2419aac3d',
+      '12569b5a5ecb86827eb8ab04946b1ac576d16c19aa0ae9b3de68d8f15475ae3e',
     );
   }, 30_000);
 
-  it('evaluates Ashoka single-enemy field count exactly and rejects invalid context', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
+  it('evaluates Ashoka single-enemy field count exactly and rejects invalid context', () => {
     const servant = master.servants.find((candidate) => candidate.id === '305800')!;
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,

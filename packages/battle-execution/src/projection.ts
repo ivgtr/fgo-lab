@@ -90,8 +90,16 @@ export function resolveModifierValue(
 ): number | null {
   const expression = operation.valueExpression;
   if (!expression) return operation.valuePermille;
-  if (expression.kind === 'inputLinear') {
-    const units = state.resolvedInputValues[expression.inputKey];
+  if (expression.kind === 'inputLinear' || expression.kind === 'stackLinear') {
+    const units =
+      expression.kind === 'stackLinear'
+        ? expression.sources.reduce(
+            (sum, source) =>
+              sum +
+              (state.traitCounts[source.quantitySource.scope][source.quantitySource.trait] ?? 0),
+            0,
+          )
+        : state.resolvedInputValues[expression.inputKey];
     if (units === undefined) return null;
     const value =
       expression.basePermille +
@@ -238,6 +246,7 @@ export function createOperationProjection(
       (operation.kind === 'addModifier' &&
         operation.valueExpression &&
         operation.valueExpression.kind !== 'inputLinear' &&
+        operation.valueExpression.kind !== 'stackLinear' &&
         operation.valueExpression.quantitySource.kind === 'attackerHpPermille')
         ? 'attackerHpPermille'
         : null,
@@ -246,6 +255,7 @@ export function createOperationProjection(
       (operation.kind === 'addModifier' &&
         operation.valueExpression &&
         operation.valueExpression.kind !== 'inputLinear' &&
+        operation.valueExpression.kind !== 'stackLinear' &&
         operation.valueExpression.quantitySource.kind === 'attackerHpPermille')
         ? 'attacker'
         : null,
@@ -486,7 +496,7 @@ export function traitCountProjections(
       value: valuePermille / 1_000,
       requiredQuantity: null,
       requiredQuantityOwner: null,
-      requiredInputs: [],
+      requiredInputs: damage.quantity.kind === 'stacks' ? damage.quantity.inputs : [],
       modifier: 'npSpecial',
       source,
       contributionScope: 'personal',

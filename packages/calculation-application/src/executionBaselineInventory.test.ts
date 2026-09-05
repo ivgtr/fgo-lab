@@ -8,7 +8,7 @@ import {
   masterSnapshotSchema,
   type MasterEffect,
 } from '@fgo-lab/master-data';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { noblePhantasmDamageDependency } from '@fgo-lab/battle-execution';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -39,10 +39,14 @@ function atlasValuePurpose(effect: MasterEffect) {
 }
 
 describe('E0 production master execution inventory', () => {
-  it('locks every normalized function family and context dependency', async () => {
-    const master = masterSnapshotSchema.parse(
+  let master: ReturnType<typeof masterSnapshotSchema.parse>;
+  beforeAll(async () => {
+    master = masterSnapshotSchema.parse(
       JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
     );
+  }, 5_000);
+
+  it('locks every normalized function family and context dependency', () => {
     const effects = allEffects(master);
     const sorted = (values: Iterable<string>) => [...new Set(values)].sort();
     const damageKinds = Object.fromEntries(
@@ -165,10 +169,7 @@ describe('E0 production master execution inventory', () => {
     ).toEqual({ contextTraitId: 80, modifier: 3_885, modifierRate: 1, otherOperation: 6_899 });
   });
 
-  it('locks mandatory real-master scenarios without production branching', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
+  it('locks mandatory real-master scenarios without production branching', () => {
     const required = [
       ['2300500', 'アーキタイプ：アース'],
       ['2801000', 'ダンテ・アリギエーリ'],

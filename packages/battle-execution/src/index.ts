@@ -36,7 +36,10 @@ export {
   effectiveContributionsForOperation,
 } from './effectiveContributions';
 export { runtimeInputKey } from './runtimeInputIdentity';
-export { effectChangesPreparation } from './preparationTransaction';
+export {
+  effectChangesPreparation,
+  hasUnsupportedPreparationStackRequirement,
+} from './preparationTransaction';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {
@@ -140,3 +143,9 @@ export {
   type PreparationTransitionResult,
   type SkillSlotRef,
 } from './preNoblePhantasm';
+
+export {
+  mergeInputDefinitions,
+  stackOwnedWitnessCondition,
+  servantStackInputs,
+} from './stackQuantities';

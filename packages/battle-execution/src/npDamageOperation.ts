@@ -91,6 +91,8 @@ export function evaluateNpDamageOperation(
     ignoreDefense: damage.kind === 'defensePiercing',
   });
 
+  if (damage.kind === 'traitCount' && damage.quantity.kind === 'unsupported')
+    return { status: 'unsupported', missingEvidence: damage.quantity.reason };
   if (context.includeSpecialContribution === false) return resolved(baseMultipliers, one());
 
   if (damage.kind === 'standard' || damage.kind === 'defensePiercing') return resolved();

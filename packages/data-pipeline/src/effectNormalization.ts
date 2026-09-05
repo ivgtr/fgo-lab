@@ -1,3 +1,4 @@
+import { normalizeNpStackQuantity, normalizeEffectStackInputs } from './stackQuantityNormalization';
 import type {
   ActorCountPredicate,
   CanonicalEffectRequirement,
@@ -164,6 +165,14 @@ export function normalizeNpDamageFunction(
     target: fn.funcTargetType === 'enemyAll' ? 'all' : 'single',
     parametersByOvercharge: parametersByOvercharge as NpDamageSpec['parametersByOvercharge'],
     stateTraitNames,
+    ...(kind === 'traitCount'
+      ? {
+          quantity: normalizeNpStackQuantity(
+            parametersByOvercharge as NpDamageSpec['parametersByOvercharge'],
+            stateCatalog.stackLabels,
+          ),
+        }
+      : {}),
     ...(maximumBattlePointPhase === undefined ? {} : { maximumBattlePointPhase }),
     rawPath,
   } as NpDamageSpec;
@@ -743,6 +752,7 @@ const HP_VALUE_PARAMETER_KEYS = new Set([
 function normalizeModifierValueExpressions(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   canonicalInputKey: string,
+  maximumInputUnits?: number,
 ) {
   const presentKeys = [
     ...new Set(
@@ -775,17 +785,22 @@ function normalizeModifierValueExpressions(
           maximumValuePermille: typeof maximumValue === 'number' ? maximumValue : null,
         };
       }
-      if (typeof basePermille === 'number' && typeof paramAddValue === 'number')
+      if (typeof basePermille === 'number' && typeof paramAddValue === 'number') {
+        if (parameter.ParamAddMaxCount === undefined && maximumInputUnits === undefined)
+          return null;
         return {
           kind: 'inputLinear' as const,
           inputKey: canonicalInputKey,
           basePermille,
           perUnitPermille: paramAddValue,
           maximumUnits:
-            typeof parameter.ParamAddMaxCount === 'number' ? parameter.ParamAddMaxCount : 6,
+            typeof parameter.ParamAddMaxCount === 'number'
+              ? parameter.ParamAddMaxCount
+              : maximumInputUnits!,
           maximumValuePermille:
             typeof parameter.ParamAddMaxValue === 'number' ? parameter.ParamAddMaxValue : null,
         };
+      }
       if (typeof basePermille === 'number' && Array.isArray(typeEach))
         return {
           kind: 'inputLinear' as const,
@@ -851,6 +866,7 @@ function normalizeCanonicalInputSemantics(
   parameterSets: readonly (readonly AtlasFunctionValue[])[],
   inputKey: string,
   traitNameById: ReadonlyMap<number, string>,
+  stackLabels?: ReadonlyMap<string, string>,
 ): {
   inputs: CanonicalInputDefinition[];
   conditions: {
@@ -859,12 +875,13 @@ function normalizeCanonicalInputSemantics(
     value: number;
   }[];
   recognizedKeys: string[];
+  unsupported?: string;
 } {
   const parameters = parameterSets.flatMap((set) => set);
   const first = parameters[0] ?? {};
   const has = (key: string) => parameters.some((parameter) => parameter[key] !== undefined);
   const input = (
-    kind: Exclude<CanonicalInputDefinition['kind'], 'matchingActorCount'>,
+    kind: Exclude<CanonicalInputDefinition['kind'], 'matchingActorCount' | 'effectStackCount'>,
     owner: CanonicalInputDefinition['owner'],
     label: string,
     description: string,
@@ -1083,18 +1100,7 @@ function normalizeCanonicalInputSemantics(
       };
     }
     return {
-      inputs: [
-        input(
-          'effectStackCount',
-          'attacker',
-          '対象状態の付与数',
-          '指定された状態・buffの有効な付与数',
-          0,
-          typeof first.ParamAddMaxCount === 'number' ? first.ParamAddMaxCount : 6,
-          0,
-          '外部からの状態付与なし',
-        ),
-      ],
+      ...normalizeEffectStackInputs(parameters, traitNameById, stackLabels),
       conditions: [],
       recognizedKeys: [
         'ParamAddValue',
@@ -1530,8 +1536,29 @@ export function normalizeFunctions(
       parameterSets,
       canonicalInputKey,
       traitNameById,
+      stateCatalog.stackLabels,
     );
-    const modifierValues = normalizeModifierValueExpressions(parameterSets, canonicalInputKey);
+    const modifierValues = normalizeModifierValueExpressions(
+      parameterSets,
+      canonicalInputKey,
+      canonicalInput.inputs[0]?.maximum,
+    );
+    const stackInputs = canonicalInput.inputs.filter((input) => input.kind === 'effectStackCount');
+    if (stackInputs.length)
+      modifierValues.sets = modifierValues.sets.map((row) =>
+        row.map((expression) =>
+          expression?.kind === 'inputLinear'
+            ? {
+                kind: 'stackLinear' as const,
+                sources: stackInputs,
+                basePermille: expression.basePermille,
+                perUnitPermille: expression.perUnitPermille,
+                maximumUnits: expression.maximumUnits,
+                maximumValuePermille: expression.maximumValuePermille,
+              }
+            : expression,
+        ),
+      ) as typeof modifierValues.sets;
     const choice = normalizeEffectChoice(parameterSets);
     const operationTrigger = normalizeOperationTrigger(parameterSets);
     const triggerScope = normalizeTriggerScope(fn.buffs, source);
@@ -1755,10 +1782,17 @@ export function normalizeFunctions(
         ),
       ];
     }
-    const unresolvedSemanticKeys = unresolvedFunctionScriptKeys(fn.script).filter(
-      (key) => key !== 'script:funcIndividuality',
-    );
-    if (parameterSemantics.unresolved.length > 0 || unresolvedSemanticKeys.length > 0)
+    const unresolvedSemanticKeys = [
+      ...(canonicalInput.unsupported ? [canonicalInput.unsupported] : []),
+      ...unresolvedFunctionScriptKeys(fn.script).filter(
+        (key) => key !== 'script:funcIndividuality',
+      ),
+    ];
+    if (
+      canonicalInput.unsupported ||
+      parameterSemantics.unresolved.length > 0 ||
+      unresolvedSemanticKeys.length > 0
+    )
       execution = execution.map((operation) =>
         operation.kind === 'damageModifier' ||
         operation.kind === 'modifierRateChange' ||

@@ -60,8 +60,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.46 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
 | TSK-06.47 | Profile servant-record identity fail-closed | done | TSK-06.41 | profile map identity／persistence／shared consumers |
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
-| TSK-06.43 | Canonical maximum stack quantity | ready | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
-| TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
+| TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
+| TSK-06.45 | All attack-NP execution closure | ready | TSK-06.43 | trigger relevance／dependent resource／production coverage |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
@@ -1559,17 +1559,26 @@ Handoff: post-implementation review completed, 2026-09-06
 
 Depends on: TSK-06.42
 
-- [ ] stack可能なdamage増幅条件の回数、baseline、canonical maximum、quantity sourceをdata pipeline所有のtyped IRで
+Review completed（2026-09-06）: **Approved**。独立再レビューとroot確認でPIR-001–003はすべてResolved、
+新material findingなし、flow Blocking 0。最終レビューgateは`pnpm quality` PASS（234.94s）、
+artifact `.test-results/2026-09-05T19-31-18-851Z-15-53be95`。unit495／production119／Playwright25、
+skip／todo／retry／warning／unexpected console 0。TSK-06.43をdone、TSK-06.45をreadyへ更新した。
+canonical flow noteの「review approval and next-task handoff」が承認・次作業の永続要約を所有する。
+以下のStep 2／実装検証は履歴として保持する。
+
+Step 2 completed: user explicitly approved implementation after Step 1. HEAD remains `26eae69`; only the two approved planning documents were modified at the boundary.
+
+- [x] stack可能なdamage増幅条件の回数、baseline、canonical maximum、quantity sourceをdata pipeline所有のtyped IRで
       表現する。servant ID、名称、effect label、raw trait keyによるapplication／Web分岐を禁止する。
-- [ ] `条件効果: 通常のみ`はcanonical baseline countを使用し、`成立込み`は宣言済みmaximum countを有限quantity
+- [x] `条件効果: 通常のみ`はcanonical baseline countを使用し、`成立込み`は宣言済みmaximum countを有限quantity
       witnessへ含める。一般の`traitCount`／quantity conditionを一律`atLeast: 1`または最大値へ丸めない。
-- [ ] maximum stackをskill再使用／turn経過の一般simulationとして扱わず、準備phase開始時のtyped stack-count
+- [x] maximum stackをskill再使用／turn経過の一般simulationとして扱わず、準備phase開始時のtyped stack-count
       assumptionとしてscenario evidenceへ保持する。上限欠落、矛盾、support範囲外はtyped invalid／unsupportedにする。
-- [ ] maximum countもtarget／field／choice／他quantityと同じglobal constraint validationを通し、共存不能な
+- [x] maximum countもtarget／field／choice／他quantityと同じglobal constraint validationを通し、共存不能な
       局所最大の合算、exclusive branch同時適用、executor外のdamage補正を禁止する。
-- [ ] production代表として平景清「復讐の怨念」4 stack、ワンジナ「精霊の怒り」10 stackをfixture／inventoryで確認する。
+- [x] production代表として平景清「復讐の怨念」4 stack、ワンジナ「精霊の怒り」10 stackをfixture／inventoryで確認する。
       代表名はtest evidenceに限定し、runtime semanticsはcanonical maximum countから導出する。
-- [ ] count 0／1／maximum、`atLeast | atMost | equal`、上限欠落、複数stack family、baseline包含、
+- [x] count 0／1／maximum、`atLeast | atMost | equal`、上限欠落、複数stack family、baseline包含、
       calculator／ranking／portable replay parityをcounterexample matrixへ固定する。
 
 Done gate:
@@ -1592,7 +1601,58 @@ Contract closure matrix:
 | `RK-PERF-001` | Apply | candidate／damage-request delta and hot path ×3 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: 未記録
+Handoff: Step 2 completed（2026-09-06）。`pnpm quality` PASS、269.27s。
+
+- 最終artifact: `.test-results/2026-09-05T17-54-49-795Z-15-ce11fd`。
+  unit 481／production 119／Playwright 25件成功、skip／todo／retry／warning／unexpected console 0。
+  artifact整合性エラー0、flow Blocking 0。A0–A5完了。
+
+- Step 1確認後の明示的な実装依頼を受け、HEAD `26eae69`と、承認済みの2文書のみ変更済みという開始境界を再確認した。
+  既存変更を保持し、製品コード・focused tests・generated master・version境界を一括更新した。
+- 実装・production inventory・意図した入力／数値差分・反例・性能の正本は
+  `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`の「TSK-06.43 — Step 2 implementation and verification」。
+  NP stackとmodifier stackを同じ物理sourceへ結び、回数を準備開始前に一度だけseedする。
+- master manifest schema 44／scenario schema 37／engine 32.0.0。最大回数・由来を表示し、calculator／ranking／
+  without-area／portable replayへ保持する。旧schema 36ランキング履歴はhistorical-onlyとして復元する。
+- 平景清4回／ワンジナ10回はcanonical IRから倍率2を算出。通常時の422 calculator outcomeは変更なし。
+  最大値の欠落による推測6は削除し、対象の選択はunsupportedへ変更した。
+- 全列挙と小さい独立oracleで縮約の十分条件を固定。通常条件のcandidate／damage-request countersは維持、
+  compile中央値6,349.82ms → 5,940.15ms。4,096上限・timeout・complexity ratchetは緩和していない。
+- 仕様判断の未解決事項はない。成立込みの有限上界超過はtyped unsupportedを保持し、部分的な最大値を返さない。
+  これは既存のsupport境界であり、全攻撃宝具のnumeric closureと最終全policy最大値は引き続き06.45／06.5が所有する。
+
+依存順の実装単位（A0–A5完了、詳細証跡はcanonical flow note参照）:
+
+| Unit | Depends on | 所有範囲／実施内容 | 単位の完了条件 |
+| --- | --- | --- | --- |
+| A0 境界・基準計測 | 明示的なStep 2依頼 | HEAD／worktree／AGENTS／正本delta再確認。既存変更を保持し、変更前のaffected production suiteとhot pathを同一環境で計測 | 06.43 Step 1文書差分以外の開始差分を説明。master hash、3回のcompile timingとcounters、candidate上界を記録 |
+| A1 canonical quantity IR | A0 | master-data／schema／data-pipeline。有限特性集合とstack instanceを型で分離し、source／baseline／maximum／support evidenceを供給。NPとeffectStackCountの二重model・推測fallbackを解消 | 全production source分類、全OC/NP cell、missing／conflict／aggregate source focused fixture、共有inventoryが閉じる。旧仕様の数値を温存するためのfallbackなし |
+| A2 finite application witness | A1 | static semantics／canonical input domain／candidate certificate。live sourceを集め、共有sourceをdedupし、baselineを包含する有限回数候補を既存productへ統合 | 0／1／max、比較演算とnested条件、複数familyの独立oracle一致。4,096以下のcomplete certificate、超過時fail-closed、上限緩和なし |
+| A3 shared execution closure | A1, A2 | scenario preparation、global constraints、count readers／writers、preapply／rollback、NP damageとprojection、policy再適用 | assumptionを準備前に一度seed。add/remove/suppress/form変更を一度だけ適用。calculator／ranking／without-areaで同一count・damage input・outcome、invalid／unsupported fallbackなし |
+| A4 evidence・commands・portable cutover | A3 | application commands、最小count/origin表示、worker response schema、portable request、draft/history/share/backupとversion/cache境界 | countと出典が表示・保存・復元される。canonical-only／old-only／mixed payload fixture、同条件計算機・replay parity、拒否時の旧request/result保持。寄与UI全体の整理は06.44 |
+| A5 production・性能・完了監査 | A1–A4 | shared production auditとfocused fixtureを確定。意図したdamage差分をcanonical inputsとruleで記録。flow noteの現Task Deferredを閉じる | production欠落0、代表4/10回、一般quantity非回帰、candidate／hot-path説明、Blocking 0、`pnpm quality`成功 |
+
+検証・性能計測計画:
+
+- A0で`pnpm test:diagnostic -- packages/calculation-application/src/productionAudit.test.ts`を3回実行し、
+  各`.test-results/`の`production-audit-calculation-application.json`からread／parse／compile時間、load／compile回数、
+  candidate／damage-request／cache countersを採取する。A5で同条件3回、中央値を比較する。production suite時間も前後記録する。
+  現在のartifactにないstack cardinality別counterはA1–A2の共有auditへ追加し、未計測を0としない。
+- 各unitは`pnpm test:diagnostic -- <affected-test-file>`で意味論を診断し、`pnpm test:unit`または
+  `pnpm test:production`へ拡張する。対象はpipeline normalization、NP damage／condition／constraint／preparation、
+  candidate space／world witness／canonical inputs、scenario／portable、Web worker／handoff／detail tests。
+  full masterはcaseごとに再読込せず、一つのproduction inventory/digestを共有する。
+- A2では小さい独立exhaustive oracleとcertificate境界を先に固定。A5でprofile別の追加quantity cardinalityと
+  complete product、実materialization数、damage requestsを比較する。既存2,880／4,096は過去の観測値であり、
+  今回の最大値の代用にしない。説明できない10%超退行、candidate爆発、cap／timeout／complexity ratchet緩和は受入不可。
+- 最終phase gateは`pnpm quality`だけ。後ろへ`validate:evidence`や追加Vitestを重ねない。UIのcount／originと同条件引継ぎを
+  component／必要なE2Eで確認し、全体寄与表示、全攻撃NP numeric、最終four-policy maximumを本Task完了と混同しない。
+- Step 1ではこれらのtest／benchmark／qualityを実行せず、文書整合性だけを確認する。runtime pass・性能非退行の主張はしない。
+
+Step 1 verification: `pnpm test:docs`（6 tests＋repository integrity）と`git diff --check`が成功。変更は上記2文書のみ。
+
+Handoff (Step 1 only): 計画文書更新まで。未解決の仕様質問なし。実装・最終damage／性能測定・runtime flow closureは未実施。
+本Taskを完了し、次の実行単位06.45をreadyへ更新した。後続実装は未着手で、別の依頼を受けて開始する。
 
 ### TSK-06.44: Contribution decision UI cleanup
 
@@ -1670,7 +1730,17 @@ Contract closure matrix:
 | `RK-PERF-001` | Apply | affected production suite／ranking hot path before-after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.1 |
 
-Handoff: 未記録
+Handoff: （2026-09-06）TSK-06.43承認によりready。実装は未着手。
+
+- 開始時はTSK-06.43完了commit、HEAD／worktree、requirements、既存canonical flow noteの06.45計画を照合する。
+  trigger relevance、dependent resource、HP／battle-pointのproducer／reader／writer／recoveryを先に監査する。
+- 393／433 rankingと420／422 calculatorは計画時のdefault baseline。現在masterで再集計して開始値を固定する。
+  06.43の成立込みcandidate inventory（385 ready／48 unsupported）は異なるpolicyの測定であり、混同しない。
+- 小さいstate-by-path反例と共有production inventory、変更前後のsuite／hot-path計測を準備し、
+  typed relevance → dependent resource expression → ordered execution／rollback → application／portable parityの順に閉じる。
+- 目標はdefault ranking433／433、calculator422／422と指定policy／level／NP matrixの数値closure。
+  推測fallback、servant固有分岐、candidate上限／timeout緩和、一般battle simulatorは導入しない。
+- 後続順序は06.45 → 06.44 → 06.5 → 07。詳細flow inventoryは既存正本へdeltaを追記する。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

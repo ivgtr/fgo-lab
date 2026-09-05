@@ -1,3 +1,4 @@
+import { liveInputQuantity } from './stackQuantities';
 import type {
   ActorScope,
   ExecutableBattleState,
@@ -36,6 +37,7 @@ export const MAX_CONSTRAINT_LITERALS = 128;
 type FixedFact =
   | WorldFactAssertion['fact']
   | ActivationFact
+  | { kind: 'inputQuantity'; inputKey: string; value: number }
   | { kind: 'card'; card: CardType }
   | {
       kind: 'targetPredicate';
@@ -634,6 +636,16 @@ function deduplicate(alternatives: Alternatives): Alternatives {
 }
 
 function fixedLiterals(item: FixedConstraintFact): Literal[] {
+  if (item.fact.kind === 'inputQuantity')
+    return [
+      {
+        kind: 'inputQuantityRange',
+        inputKey: item.fact.inputKey,
+        min: item.fact.value,
+        max: item.fact.value,
+        sourceKey: item.sourceKey,
+      },
+    ];
   if (item.fact.kind === 'trait') {
     return [
       {
@@ -858,6 +870,14 @@ export function fixedConstraintFactsFromState(
     ...traits,
     ...actorPredicates,
     ...quantities,
+    ...Object.keys(state.stackQuantitySources).map((key) => ({
+      sourceKey: `${sourcePrefix}:input:${key}`,
+      fact: {
+        kind: 'inputQuantity' as const,
+        inputKey: key,
+        value: liveInputQuantity(state, key)!,
+      },
+    })),
     ...state.activationContext.facts.map((fact, index) => ({
       sourceKey: `${sourcePrefix}:activation:${String(index)}`,
       fact,

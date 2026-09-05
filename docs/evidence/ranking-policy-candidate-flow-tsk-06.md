@@ -6,6 +6,429 @@ updated_at: "2026-09-06"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
+## TSK-06.43 — review approval and next-task handoff (2026-09-06)
+
+Independent re-review and root adjudication: **Approved**, PIR-001–003 all **Resolved**,
+no new material finding, Blocking **0**. Reviewed HEAD was `26eae69` plus the complete
+79-file implementation; all hashes matched the implementation response at review completion.
+
+- PIR-001: preparation rejects stack-dependent resource/structural requirements before transaction
+  commit through one shared typed support classifier; calculator/ranking/portable and all three
+  state scopes, nested conditions, retry and transform-NP paths are covered.
+- PIR-002: aggregate reduction observes executor-owned NP dependencies across all OC/NP cells,
+  additional readers/writers and exclusive sources. Focused exhaustive oracles preserve maxima;
+  unproved domains remain complete or explicitly unsupported.
+- PIR-003: master admission rejects conflicting physical-source baselines across NP/effect/variant/CE
+  definitions while permitting distinct reader caps. HEAD schema43 caches are rejected by schema44
+  admission; no intermediate unpublished schema44 deployment is assumed.
+
+Fresh reviewer verification: focused17 and production119 pass; final `pnpm quality` passes in
+234.94s at `.test-results/2026-09-05T19-31-18-851Z-15-53be95`, unit495/production119/Playwright25,
+zero skip/todo/retry/warning/unexpected console and artifact integrity errors. The complete 433-profile
+candidate inventory, both representative maximum artifacts, audit digest and work counters equal
+the initial review boundary. Stored controlled compile medians were independently checked:
+5412.219ms → 5556.779ms (+2.67%), with unchanged counters. No fresh six-run performance benchmark
+or separate manual browser session was run during re-review. Full append-only review history is
+in the temporary external record `/tmp/fgo-lab-tsk-06.43-review-odmwuw5j/review.md`; this section
+retains its completion evidence independently of that temporary file.
+
+TSK-06.43 is done; TSK-06.45 is ready and unstarted. The next task reuses the existing 06.45
+trigger/resource flow matrix below, verifies its default baseline against the committed master,
+and closes relevance-aware admission, typed dependent amounts, HP/battle-point state and ordered
+execution/recovery. Its default 433/433 ranking and 422/422 calculator goals must not be confused
+with the satisfied-policy 385-ready/48-unsupported inventory measured for 06.43. Stack preparation
+support and combined target-world/count conflicts remain explicit unsupported until their scoped
+owners provide a proof; no numeric fallback or partial maximum is accepted. Later owners remain
+06.44 contribution presentation, 06.5 final maximum and 07 Web/worker cutover.
+
+The implementation/verification sections below are historical; their pending-review statements
+are superseded by this approval.
+
+## TSK-06.43 — accepted review findings implementation (2026-09-06)
+
+PIR-001–003 were Accepted in the initial post-implementation review at HEAD `26eae69`.
+The user authorized their implementation with「引き継いでください」. The reviewed 68 tracked
+and eight untracked files still match the review snapshot; all existing changes are preserved.
+The earlier Step 2 completion below is historical until this follow-up is verified and re-reviewed.
+
+The inventory missed three direct boundaries: preparation target/field writers before stack-dependent
+resource conditions, NP-body readers in aggregate domain reduction, and conflicting physical-source
+defaults at master admission. These are schema-legal counterexamples, not observed production damage
+regressions. Existing tests covered final attacker mutation, static aggregate readers with a standard NP,
+and helper-level conflict rejection; they did not cross those boundaries.
+
+| Delta / semantic owner | Required behavior and minimum counterexamples | Status |
+| --- | --- | --- |
+| PIR-001: battle-execution preparation support | All scopes and nested stack-dependent preparation requirements reject explicitly until preparation models all ordered writers. Never fund an attack using stale counts. | Verified: `stackPreparationSupport.test.ts` covers add/remove, 0/1/max, comparisons/composition, retry, transform-NP pre-consumption, calculator/ranking/portable; shared production inventory ratchets these requirements at zero. |
+| PIR-002: executor dependency → application finite proof | Inspect NP-body dependencies across OC/NP cells as well as effect operations; preserve complete domains for shared readers, unknown live dependencies and exclusive sources. | Verified: `rankingStackDomain.test.ts` numeric stateTrait/traitExpression aggregate oracles, trait support boundary and nested/exclusive guards; complete production candidate inventory unchanged. |
+| PIR-003: master admission | Reject conflicting defaults for one physical stack source before calculator initialization, while permitting different reader caps. | Verified: `stackMasterAdmission.test.ts` legal controls and conflicting NP/effect/variant/CE definitions; `stackInputDefaultsAgree` shared by master admission and execution merge. |
+
+The PIR-001 support boundary is deliberately bounded: generic ordered battle simulation is outside
+this task. Stack-dependent preparation activation becomes typed unsupported; ordinary stack modifiers
+and NP damage remain supported. Source identity/default validation belongs to master-data, not Web.
+No schema shape, candidate cap, snapshot tolerance or servant-specific runtime rule is added.
+Verification: isolated production audit before/after ×3, focused semantic regressions, unit/production,
+and `pnpm quality` as the final phase gate. Independent review retains finding resolution authority.
+
+Implementation verification before the final gate: focused 17 tests pass
+(`2026-09-05T19-09-04-373Z-44-25459c`), unit 495 pass
+(`2026-09-05T19-09-43-491Z-15-c663f6`), final standalone production 119 pass in 34.68s
+(`2026-09-05T19-17-08-150Z-15-4fad02`; same-boundary before 37.21s).
+The complete `stack-candidate-domains.json` equals the pre-fix review artifact: 385 ready and
+48 unsupported profiles, largest admitted bound 3,840, cap 4,096. Both representative maximum
+artifacts (1101000/2501300), including scenario, policy, full input and NP1–5 output, are identical.
+No production damage/input digest, generated master, screenshot or threshold was updated.
+
+The expanded trait NP fixture exposes an existing support boundary: combined target-world witnesses
+can conflict with independently assigned state counts. It remains explicit unsupported, with no
+reduced numeric maximum. This follow-up does not implement that additional world-generation behavior.
+The final phase gate and before/after timing records are appended to the external review record;
+finding resolution and Task completion remain pending independent re-review.
+
+## TSK-06.43 — Step 2 implementation and verification (2026-09-06)
+
+Explicit implementation approval followed Step 1. HEAD remains `26eae69`; the two approved planning
+notes were the only modified files at the Step 2 boundary. A0 baseline artifacts were captured before
+product edits. The semantic cutover is **master manifest schema 44 / scenario schema 37 / engine 32.0.0**.
+The published artifact is `20260906.01`, SHA-256
+`6e96b3f11fdbdef82997be12c84076d4236651d23f4ee7662a4b66a6a272c8f8` (30,127,202 bytes).
+Measured development artifact `20260906-tsk0643-3` differs only in its top-level version string;
+substituting that string into the final bytes reproduces its SHA-256
+`3ecb6b6b37bf5804ac1d6b56af3dfaea877d17ef3a2d193a762253ca825155c3` exactly.
+Raw input and requirements are unchanged. Final `pnpm quality`: **PASS**, 269.27s, artifact
+`.test-results/2026-09-05T17-54-49-795Z-15-ce11fd`. Unit 481 / production 119 / Playwright 25 pass;
+skip/todo/retry/warning/unexpected-console counts are zero. Parent/child artifact verification has
+zero errors. Production within the final gate took 46.95s. A0–A5 are complete; Blocking **0**.
+
+### Implemented ownership and inventory delta
+
+`master-data/stackQuantity.ts` defines physical stack identity `(scope, trait)`, baseline and the
+reader's declared saturation bound. `stackQuantityNormalization.ts` is the only raw interpreter.
+The 22 NP occurrences remain classified as 17 bounded stacks and five zero-cap finite trait sets.
+The four old modifier occurrences become three supported aggregate readers (four atomic inputs) and
+one typed unsupported missing-maximum reader. A legacy unbound input, positive-cap finite-trait tag,
+duplicate source or contradictory source/cell/baseline is rejected. Different reader saturation caps
+can share a physical source; the canonical input domain covers the largest live cap.
+
+`stackLinear` reads the capped sum of constituent live counts. It is not a second independent
+quantity and does not multiply aggregate capacity by the number of constituents. A self-source
+stack on a support actor is explicitly unsupported when that actor's state is not represented;
+it must not accidentally read the attacker's count. This adds one typed unsupported support
+projection to the existing inventory. No runtime servant/name/raw-key branch was added.
+
+Application resolves and validates `canonicalInputValues`, records baseline/maximum/witness origin,
+and passes the initial count into both preparation and shared execution. The executor seeds once,
+then owns add/remove/form/clone/rollback and current count reads. Ordinary actor counts, stochastic
+successes and finite distinct-trait predicates retain their separate semantics. Web presents the
+count and initial-assumption origin and rejects conflicting scenario/effect-input/candidate evidence.
+Portable calculator replay preserves the scenario and contribution policy. Schema 36 ranking history
+is historical-only on migration; current, old and mixed version boundaries are exercised by schema tests.
+
+### Additional recurrence findings and minimum guardrails
+
+The implementation inventory closed three boundaries missed by the initial central-path model:
+
+- A boolean preparation key cannot distinguish counts 1 and 4. Preparation context and semantic
+  state identity now preserve quantities; `preNoblePhantasmPlanner.test.ts` checks distinct counts
+  with equal boolean presence. Existing transactional rejection and transform paths retain the
+  cloned count state; `condition.property.test.ts` checks clone/add independence.
+- A repeated-trait output array is bounded at 100 while a legal stack can exceed 100.
+  `stackStateCounts` carries exact current quantities; the corresponding trait array carries
+  presence once. The strict damage-input schema rejects disagreement. A 101-count fixture closes
+  the output/worker boundary without increasing array or candidate limits. At the default production
+  baseline, 18 complete inputs gain this metadata and three state arrays change representation;
+  **all 422 calculator outcomes and damage rows remain unchanged**. Only the missing-cap reader's
+  applied-effect evidence changes. The input-digest updates record this representational change.
+- Full integer enumeration gives Wanjina an over-limit domain; independent enumeration of a
+  two-source aggregate gives Habetrot 70,350 candidates. The initial plan required proof before
+  reduction but had not separated aggregate observational equivalence from independent inputs.
+  `rankingStackDomain.ts` owns two conservative proofs: an isolated nondecreasing NP multiplier
+  uses endpoints; an isolated positive NP-buff capped sum uses one constituent for the maximum
+  total and keeps the others zero. Additional readers/writers, count-dependent activation, form
+  changes, signed coefficients or NP-buff rate changes disable the latter proof. The exhaustive
+  two-source positive/negative oracle and an interior maximum at count 1 guard this boundary.
+  Other sources retain full integer domains. Habetrot still has programs outside the proof and
+  its complete upper bound is **7,950**, so that context remains typed unsupported; no candidate
+  is truncated or silently omitted.
+
+These are confirmed representation/inventory gaps, not servant-specific damage corrections.
+`rankingStackDomain.test.ts` also verifies the same count scenario and complete input/result through
+without-area policy reapplication. `stackQuantity.test.ts` covers explicit 0/1/max, non-minimum baseline,
+add/remove after maximum (including live count above the reader cap), contradictory absence, invalid
+bounds, exact calculator/ranking/portable replay and sparse count validation. Production-negative
+field and multiple-source states are covered by the small aggregate fixture.
+
+### Production evidence and intentional result changes
+
+The shared master/pipeline digest includes NP quantity classification and all modifier stack inputs.
+`productionMasterInventory.test.ts`, `specialInputInventory.test.ts` and the canonical audit ratchets
+cover the whole production family without loading the master once per example. The former fabricated
+six-stack selection (`1000900:8808:0`) now returns unsupported and no rows; its raw source declares no
+maximum. The earlier selected NP1 average 60,245.67 is deliberately not retained. The other 24
+formerly unsupported selections and all 419 default attacking-NP golden cases remain numeric.
+All-attack-NP numeric closure still belongs to TSK-06.45, not this stack task.
+
+Representative complete evidence is written by the shared production candidate-space suite to
+`stack-maximum-1101000.json` and `stack-maximum-2501300.json`. The recorded run is
+`.test-results/2026-09-05T17-09-56-287Z-15-39d738`. Each artifact includes scenario/build, target,
+preparation commands, policy, candidate evidence, full damage input and NP1–5 output.
+Both examples use natural Lv.90, Fou ATK+1,000, NP1 selection, OC1, skill Lv10,
+no CE/support/mystic code, self included / conditional satisfied / area included.
+
+| Example / canonical initial input | Preparation / target | Governing multiplier | Observed NP1 min / average / max |
+| --- | --- | --- | --- |
+| 平景清 `stack:attackerState:traitId%3A2759 = 4`, origin maximum | skill 1 → skill 3 → attack NP; saber/earth | Value2 1000 + Correction 250 × min(4,4), divided by 1000 = 2 | 303,774 / 337,357.925 / 370,942 |
+| ワンジナ `stack:attackerState:traitId%3A2880 = 10`, origin maximum | skill 1 → skill 2 → attack NP; saber/sky | Value2 1000 + Correction 100 × min(10,10), divided by 1000 = 2 | 139,309 / 154,710.065 / 170,111 |
+
+These final values are evidence for those complete scenarios, not a scalar patch or a comparison
+against a differently built baseline. The small independent oracle compares every initial count
+under the *same selected scenario, gauge and policy*; portable replay compares the complete input/result.
+
+### Finite inventory and performance
+
+The shared `stack-candidate-domains.json` artifact in that run records each profile's program,
+quantity cardinalities and complete upper bound before allocation. For the measured satisfied
+NP1/natural-level context, 433 profiles classify as 385 ready, 40 unsupported action
+admissions, and eight unsupported finite domains. Ready profiles with live stacks: 12.
+Representative complete bounds are 260 (four-stack NP) and 960 (ten-stack NP); the largest admitted
+bound is still 3,840. Rejected bounds are 4,128 (three profiles), 4,132, 4,654, 4,874, 6,146 and 7,950.
+This is an explicit completeness/support boundary under ranking §12: no partial maximum is returned.
+The limit remains **4,096**. The artifact measures this context; it is not a claim of the later final
+four-policy/all-NP-level maximum closure in TSK-06.5.
+
+Same-command isolated measurements used
+`pnpm test:diagnostic -- packages/calculation-application/src/productionAudit.test.ts`:
+
+| Measurement | Before artifact runs | After artifact runs |
+| --- | --- | --- |
+| 1 | `2026-09-05T16-09-24-303Z-15-07205b` | `2026-09-05T17-19-10-496Z-16-2bdc16` |
+| 2 | `2026-09-05T16-09-54-398Z-15-d5a296` | `2026-09-05T17-19-21-833Z-101-bc89d6` |
+| 3 | `2026-09-05T16-11-34-025Z-15-e91447` | `2026-09-05T17-19-32-728Z-186-b17456` |
+| median read / parse / compile ms | 111.62 / 1,714.77 / 6,349.82 | 77.40 / 1,506.89 / 5,940.15 |
+
+Each run reads/parses/compiles once. Counters are unchanged: generated 6,360, deduplicated 3,949,
+damage requests 1,924, distinct inputs 1,298. Compile median is about 6.5% lower; there is no measured
+hot-path regression or relaxed ratchet. Production suite baseline was 24 files / 117 tests / 43.46s
+(`2026-09-05T16-12-24-070Z-15-d93227`); the final standalone production run passed 24 files /
+119 tests in 47.76s (`2026-09-05T17-41-11-029Z-15-211111`, about +9.9%). This includes the two
+representative production cases and the reduced worker share described below; it is distinct from
+the one-worker application compile measurement. All assertions pass with the original time limits.
+The added full family/domain evidence reuses the existing suite master load. No timeout or complexity
+limit was increased. One intermediate production run overlapped a full TypeScript rebuild and reported
+test timeouts; final production and audit measurements run without that competing rebuild.
+
+A5 diagnostic attribution: the first full quality attempt after lint passed hit the unchanged 5s
+production timeout in E0 inventory, MLB-only golden and unsupported-convergence default golden.
+Baseline `26eae69` / production artifact `2026-09-05T16-12-24-070Z-15-d93227` passed those tests in
+4,652 / 4,881 / 4,852ms. The current code also passed them in 4,633 / 4,620 / 4,746ms in
+`2026-09-05T17-22-36-094Z-16-499ac6`, but quality run `2026-09-05T17-29-31-557Z-15-f81c9c`
+reported 5,162 / 5,061 / 5,160ms timeouts. Effective production command, lockfile and worker settings
+are unchanged. Classification: **environmentDependent** (observed timing nondeterminism); this does
+not prove causal independence from the change or an unchanged baseline reproduction.
+The recurrence inventory also found seven full master parses across the seven cases of those three
+suites. Their setup now shares one read/parse per suite (three total), preserving all assertions and
+an explicit 5s setup bound. This removes repeated work instead of increasing timeout or worker limits.
+
+The shared-setup follow-up (`2026-09-05T17-37-47-635Z-15-2fa374`) still exceeded the 5s parse
+setup bound and also timed out the production target-state inventory. The earlier recurrence fix
+removed intra-suite duplicate parses but missed **inter-file concurrent first parses**. The existing
+production worker-share owner in `vitest.config.ts` therefore changes from 75% to 50% (9 to 6 workers
+on this host's reported 12 CPUs). Unit workers, all 5s bounds, assertions and candidate cap stay unchanged.
+This is an execution-resource bound, not a larger semantic support limit. Final suite timing below
+includes this worker-share change; isolated one-file audit medians use one worker in either configuration.
+
+Visual closure: quality run `2026-09-05T17-44-00-153Z-15-ece732` passed unit, production (40.79s),
+master validation and build. Its four screenshot failures were inspected: desktop changes were only
+DB/engine version text; mobile gained one wrapped line because of the long development artifact name.
+The release version now follows the existing short `YYYYMMDD.nn` format (`20260906.01`), preserving
+mobile layout. Five version-bearing calculator/ranking screenshots (including the detail screenshot behind the
+first failed ranking assertion) are refreshed after inspection. PNG comparison against `26eae69`
+confirms identical dimensions: 320×2930, 390×2726, 1440×1515 and two 1440×1000 images; changed pixels
+are limited to the DB/engine text rows (314, 314, 340, 120 and 120 pixels). No CSS/layout change,
+screenshot tolerance or masked region is added. The focused update run
+`2026-09-05T17-51-43-266Z-16-a2be14` passed all ten test bodies, but correctly remains a wrapper
+contract failure because snapshot-generation console messages are not allowlisted; it is not the
+completion gate. The final ordinary quality run must have zero unexpected observations.
+
+Current unit verification: 83 files / 481 tests pass
+(`2026-09-05T17-21-13-037Z-15-41ba24`). The current flow tables below replace the approved planning
+statuses with scoped evidence. Implementation Blocking: **0**; the final quality gate above completes A0–A5.
+
+## TSK-06.43 — Step 1 stack quantity investigation and implementation plan (2026-09-06)
+
+### Boundary and specification
+
+This boundary and inventory were captured during **Step 1**; Step 2 results above are current. Start HEAD is
+`26eae69dbfea06d776c9515b3e0e4430297a2250`; the initial worktree was clean. Repository `AGENTS.md`,
+`systematic-review-guidelines.md`, and the structural-finding template in
+`prompt-engineering-guidelines.md` were read. Only this note and the Task source were changed during Step 1.
+Requirements remain unchanged: ranking requirements §5.2, finite completeness, stack inventory and
+acceptance criteria, plus TSK-06.43, govern this work. All-current-attack-NP numeric closure remains
+TSK-06.45; final four-policy maximum closure remains TSK-06.5.
+
+User-visible outcome: 通常のみ uses the canonical baseline; 成立込み includes the declared maximum
+stack quantity in a legal scenario, displays the count and assumption origin, and opens/replays that
+same scenario in calculator. A number must never stand in for missing or contradictory semantics.
+
+Ownership and invariants:
+
+- Pipeline interprets raw count vocabulary and produces typed quantity identity, source/read scope,
+  baseline, maximum and support evidence. Neither names nor raw keys decide application/Web behavior.
+- Application owns finite scenario selection and commands. Battle execution owns quantity reads,
+  constraint evaluation and ordered mutations. Web presents canonical evidence.
+- Distinct matching traits (`traitCount` condition today), repeated state instances, actor counts,
+  available actions, and stochastic successes are separate quantities. They do not share an inferred maximum.
+- Initial assumption, actually applied preparation effects and final count are distinct. Seed once
+  before preparation, execute changes once, and preserve rollback and replay. Do not reassert the
+  initial maximum after a removal or form transition.
+- Every selected family, target/field fact, input, choice and action must coexist in one world.
+  A maximum on a damage reader is a saturation cap, not automatically a capacity of every state writer.
+  Unknown support cannot be hidden by excluding its candidate or returning the baseline number.
+
+### Read-only production inventory at the start boundary
+
+Inventory was obtained by recursive JSON traversal of the published master and matching raw function
+parameters, without normalizing/recalculating the master or changing artifacts. Occurrence means stored
+canonical damage/input occurrence, not unique servant and not a candidate count.
+
+- Published master SHA-256: `80c025e62e5916ec89cdc00d8d76cec187bc2703780468eb83e7824781e4a026`.
+- Local `data/raw/nice_servant.json` SHA-256:
+  `1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f`.
+- All 22 `traitCount` damage occurrences have stable target/source/cap across the 5 OC × 5 NP cells.
+  Caps are 0 × 5, 4 × 1, 10 × 15, 12 × 1; absent cap is 0 occurrences. This is source evidence,
+  not proof that every occurrence is currently admitted/executable.
+
+| Damage reader population | Occurrences | Evidence examples (names only identify fixtures) |
+| --- | --- | --- |
+| positive cap, attacker combined trait/state | 7 | シャルルマーニュ12、スーパーバニヤン10 × 2 variants、平景清4、クロエ10、ワンジナ10、蒼崎青子10 |
+| positive cap, attacker state only | 1 | テュフォン・エフェメロス10 |
+| positive cap, target state only | 6 | ジャック・ド・モレー、バーヴァン・シー、ビショーネ、ロクスタ、巌窟王 モンテ・クリスト、殺生院キアラ、各10 |
+| positive cap, target combined trait/state | 3 | ウルズ10 × 2 variants、ロムルス＝クィリヌス10 |
+| zero cap, target combined / state only | 4 / 1 | 宮本武蔵、黒姫、Ｕ－オルガマリー × 2 / ウィリアム・テル |
+
+Zero-cap entries must be classified separately from missing maximum: their finite matching-trait or
+predicate population is not a declaration of repeatable maximum stacks. Mixed base/state reads and
+exclusive class/attribute predicates remain subject to existing semantics; do not convert these five
+entries into zero damage or unsupported merely because `ParamAddMaxCount` is zero.
+
+Four `effectStackCount` inputs exist across the whole master (none outside servant skill effects):
+
+| Source occurrence | Published baseline / maximum | Raw evidence / required treatment |
+| --- | --- | --- |
+| ビショーネ `23547:0` | 0 / 10 | `ParamAddOpIndividuality`, explicit cap 10; preserve actual opponent-state source despite input owner `attacker` |
+| キングプロテア `8808:0` | 0 / 6 | `ParamAddSelfIndividuality`, **no** `ParamAddMaxCount`; 6 is normalization fallback, not declared maximum |
+| カーマ `7592:0` | 0 / 10 | opponent individuality, explicit cap 10; provenance is not interchangeable with all state sources |
+| ハベトロット `23559:0` | 0 / 5 | two self individuality keys, explicit cap 5; aggregate source, not two independent maxima |
+
+The missing-cap case must lose the invented fallback. An unsupported maximum is an allowed intermediate
+outcome under §5.2, not permission to omit current production from the later TSK-06.45 numeric gate.
+Do not infer a count from buff `maxRate`, turn duration, or skill reuse. A separately evidenced canonical
+source bound may be used only when the pipeline can prove its meaning; otherwise emit typed unsupported.
+
+Adjacent input inventory: `procSuccessCount` 5, `criticalStars` 22, `fieldActorCount` 1,
+`matchingActorCount` 4, `currentTurn` 8, `availableSkillCount` 1, `friendshipLevel` 1.
+These stay under their existing owners; the stack change must not rewrite their domains. Generic
+`traitCount` predicates still count satisfied trait entries (`condition.ts`), while NP damage counts
+instances (`npDamageOperation.ts`). This difference is intentional until a new typed stack reader is used.
+
+Representative raw governing rule, independent of other buffs: both example NPs have `Value2=1000`;
+平景清 has `Correction=250, ParamAddMaxCount=4`, ワンジナ has `Correction=100, ParamAddMaxCount=10`.
+The NP stack multiplier is 1 at count 0 and `(1000 + correction × min(count, cap))/1000` at positive
+count: 1.25/2 at 1/4 and 1.1/2 at 1/10. These are multiplier expectations, **not observed final damage**.
+Step 2 must record build, NP/OC, preparation program, target, policy, full damage inputs and final values.
+
+### Structural finding and earlier inventory gap
+
+1. **Mechanism — confirmed:** `effectNormalization.ts:normalizeNpDamageSpec` preserves optional
+   `maximumTargetCount`; `npDamageCompilation.ts:noblePhantasmDamageDependency` emits only
+   `atLeast:1`. `rankingWorld.ts` and `rankingFieldWorld.ts` enumerate boolean presence, and
+   `rankingQuantityWorld.ts` has no stack dimension. `schema/src/index.ts:worldFactAssertions`
+   accepts trait booleans or the fixed quantity union. `state.ts:applyWorldFacts` only raises a
+   present trait to at least one; `npDamageOperation.ts` can consume greater instance counts.
+   `effectNormalization.ts` also defaults missing stack cap and linear maximumUnits to 6;
+   `rankingCanonicalInputs.ts` chooses minimum for baseline and usually only maximum for satisfied.
+2. **Mismatch — inference from these readers:** the source cap was treated as an executor-side clamp
+   and the condition witness as truth, leaving no canonical quantity connecting the two. An input's
+   UI owner is not enough to identify its physical count source or link another reader of that source.
+3. **Missed detection — confirmed scope gap:** earlier condition closure covered polarity/composition
+   and boolean trait witnesses (`rankingWorldWitness.test.ts`, `rankingFieldWorld.test.ts`), while
+   executor count fixtures (`npDamageOperation.test.ts`) supplied counts directly. That does not test
+   pipeline cap → planner count → preparation → replay. This delta expands the earlier condition
+   inventory explicitly; it is not another servant-specific correction.
+4. **Recurrence/minimum guardrail — inference:** every repeated quantity, shared-source reader,
+   preparation writer, transport parser and recovery path can lose count or provenance. Guard with one
+   production digest and small source × state × path fixtures, including production-zero schema states.
+
+### Canonical design and changed flow inventory
+
+Extend existing master-data/schema contracts; no new package. Use a discriminated quantity definition
+that separates finite matching traits from stack instances and unsupported definitions. A stack
+reference includes canonical identity, actor/state read scope, constituent identities and aggregation,
+source provenance, baseline count, declared maximum and its evidence. Do not keep an independent
+unbound `effectStackCount` input as a second source of truth. Multiple readers of the same physical
+quantity share one assignment; different reader saturation caps are not automatically contradictions.
+Missing declaration and internally conflicting declarations produce distinct diagnostics.
+
+A serializable scenario assumption references that definition and records count plus origin
+(baseline / satisfied maximum or other finite witness / explicit calculator input). The executor
+resolves it against the selected master/profile; a client-supplied maximum never overrides the master.
+Ordinary baseline is the declared initial value (0 for the observed external stack inputs), not always
+`minimum`; preparation can then add/remove actual states. Preserve the ordinary candidate in satisfied
+mode, including a non-minimum baseline fixture. Calculator can use typed count commands and replay the
+selected ranking policy without reselecting maximum.
+
+For the new bounded stack dimension initially enumerate legal integers from baseline/domain boundaries
+through the declared maximum, including 0 where legal; deduplicate shared sources before the product.
+This avoids an unproved monotonicity assumption under `atMost`, `equal`, negative modifiers or ordered
+writers. Any later boundary-only reduction requires a small exhaustive equivalence proof. Certify the
+complete product including action/choice/target/field/other input dimensions **before allocation**.
+Keep 4,096 unchanged; fail closed beyond supported bounds, never truncate or ignore a blocking branch.
+Finite source semantics that cannot be represented within the existing bounded preparation model are
+unsupported, not an invitation to simulate prior turns. Validate support for the live read set before
+publishing a baseline or maximum; inclusion-disabled contributions retain their ordinary outcome class.
+
+The following current statuses close the approved Step 1 flow inventory using the Step 2 evidence above.
+Units A0–A5 remain in the Task source; final quality is tracked separately.
+
+| Direct path / current code anchors | Required transition or guard | Status |
+| --- | --- | --- |
+| raw → `effectNormalization.ts`, `master-data/src/index.ts`, generated master | distinguish cap/source/baseline; remove fabricated 6; validate every OC/NP/value cell and aggregate source | Verified: Step 2 scoped fixtures / production evidence |
+| `rankingStaticSemantics.ts`, `runtimeInputIdentity.ts`, `rankingCanonicalInputs.ts` | collect damage/preparation-live count readers, preserve source identity across occurrences; default ≠ minimum | Verified: Step 2 scoped fixtures / production evidence |
+| `rankingCandidateSpace.ts`, world/field/quantity planners, `finiteSemanticProduct.ts` | shared stack domain, baseline inclusion, complete certificate, no second independent count axis | Verified: Step 2 scoped fixtures / production evidence |
+| schema scenario → `scenario.ts`, `preNoblePhantasm.ts`, `preparationState.ts`, `preparationTransaction.ts` | seed before first preparation read; current Set-based state must not erase quantities; preserve count through command transitions | Verified: Step 2 scoped fixtures / production evidence |
+| `candidatePreparation.ts`, `candidateSelection.ts`, `constraints.ts`, `condition.ts` | new count predicate shares ownership with global validation; boolean/general traitCount semantics remain distinct | Verified: Step 2 scoped fixtures / production evidence |
+| `state.ts`, `candidateExecution.ts`, `candidateRollback.ts`, variant preapply | add/remove/suppress, form replacement, clone/rollback/retry and preapplied operation skip preserve counts exactly once | Verified: Step 2 scoped fixtures / production evidence |
+| `projection.ts`, `npDamageCompilation.ts`, `npDamageExecution.ts`, `npDamageOperation.ts`, `foldDamageInput` | count reads and source evidence agree with final damage; avoid duplicate base/state count and expanded-array limits | Verified: Step 2 scoped fixtures / production evidence |
+| `rankingPolicyCandidates.ts`, `rankingCandidateSelection.ts`, `rankingExecution.ts`, prepared damage cache | nonnumeric blocker is not hidden by baseline; selected without-area policy reuses identical count scenario; cache keys distinguish damage-changing counts | Verified: Step 2 scoped fixtures / production evidence |
+| `effectControls.ts`, `scenarioCommands.ts`, calculator controls, `rankingDetailPresentation.ts` | typed count edits; remove stale references on servant/variant/source change; count/origin display, no label-based rules | Verified: Step 2 scoped fixtures / production evidence |
+| `rankingContracts.ts`, Web `rankingResponsePayloadSchema.ts` / `rankingEffectResponseSchema.ts`, worker protocol | preserve complete scenario/evidence, reject conflicting count/evidence or unknown source; count-sensitive request/result identity | Verified: Step 2 scoped fixtures / production evidence |
+| `portableCalculation.ts`, `rankingHandoff.ts`, draft/history/share/backup adapters and schema migrations | full request survives handoff, same-version replay and stored-result comparison; rejected edits/upgrades retain prior request/result | Verified: Step 2 scoped fixtures / production evidence |
+| version/cache recovery → application/UI | bump schema/engine for semantic cutover; old ambiguous ranking requests historical-only/discard/reject per existing boundary, never invent maximum; migrate unaffected data only when identity is provable | Verified: Step 2 scoped fixtures / production evidence |
+| complete production inventory/damage/performance proof | one shared load/compile per audit; capture changed inputs and outcomes, including newly unsupported missing-cap case | Verified: Step 2 scoped fixtures / production evidence |
+| general resource numeric closure / logical contribution UI redesign / final maximum | existing later owners; stack data and minimal count/origin display must already work in 06.43 | Deferred: TSK-06.45 / TSK-06.44 / TSK-06.5 |
+| general prior-turn simulation and skill reuse | outside approved finite preparation semantics | N/A: explicitly outside requirement |
+
+### State-by-path counterexamples and expected outcomes
+
+| State / counterexample | Generation / execution expectation | Display / recovery expectation | Status |
+| --- | --- | --- | --- |
+| count 0, 1, maximum; baseline 0 and schema-legal baseline > minimum | exact count and cap multiplier; satisfied contains baseline; no automatic maximum for general quantities | calculator/ranking same complete input; origin and count retained | Verified: Step 2 scoped fixtures / production evidence |
+| `atLeast`, `atMost`, `equal`, nested `all/any/not`; decreasing or saturated contribution | independent exhaustive finite oracle; correct negative witnesses and no local-max sum | selected world reproducible without rerunning selection | Verified: Step 2 scoped fixtures / production evidence |
+| absent max, negative/noninteger count, baseline > max, contradictory source metadata | missing support → unsupported; malformed/contradictory state → invalid; never guessed 0/6/maximum | diagnostic survives worker/replay; no numeric maximum | Verified: Step 2 scoped fixtures / production evidence |
+| raw zero-cap finite trait set vs missing cap on repeatable source | keep existing finite matching semantics; no invented repetitions | no false unsupported for the five finite-set occurrences | Verified: Step 2 scoped fixtures / production evidence |
+| two independent families; two readers of same source with different caps; aggregate two source traits | one assignment per physical source, combined constraints, no double credit; source totals and cap reads consistent | stable canonical identities, one assumption per source | Verified: Step 2 scoped fixtures / production evidence |
+| source count positive + absent source trait; exclusive target/field/choice; base + state overlap | detect impossible assignment; distinguish legal alternative from invalid admitted input; honor source provenance | unsupported validation stays unsupported, not “条件不成立” | Verified: Step 2 scoped fixtures / production evidence |
+| seed max then add/remove/suppress, transform, failed action, rollback/retry, preapply | seed once; mutate live state in order; no stale count, lost count or double application | initial assumption distinct from applied count/effects | Verified: Step 2 scoped fixtures / production evidence |
+| missing calculator input vs planner-owned witness; policy exclusion vs stochastic failure | inputRequired is repairable, exclusion/failure is ordinary non-application; semantic invalid/unsupported remains separate | controls offer only appropriate repair; unknown maximum is not a user-input prompt | Verified: Step 2 scoped fixtures / production evidence |
+| selected maximum with and without area; direct calculator, ranking-origin calculator and portable request | same scenario and contribution policy yield same input/result; no independent maximum reselection | handoff, saved result comparison and replay parity | Verified: Step 2 scoped fixtures / production evidence |
+| canonical-only, old-only, mixed contradictory payload; unknown identity, stale master/version, tampered evidence | strict parser/semantic validation; preserve unaffected data only where unambiguous | failed mutation/upgrade retains prior state; historical-only stays non-executable | Verified: Step 2 scoped fixtures / production evidence |
+| production-zero: multiple family/cap disagreement, field stacks, OC/NP-varying domain, non-minimum baseline | focused fixture or explicit unsupported with no numeric fallback; zero-occurrence ratchet detects new production | never generalize from 22 current NP defaults | Verified: Step 2 scoped fixtures / production evidence |
+| complete candidate product at/beyond 4,096; irrelevant quantity source | certify exact bound; reject beyond support before materialization; omit only proven dead readers | no partial best number or cache alias | Verified: Step 2 scoped fixtures / production evidence |
+
+Step 1 recorded planning Blocking **0** and no unresolved product-specification question. The user
+then explicitly approved Step 2. All scoped runtime paths now have verification evidence above;
+final phase completion is verified by the passing `pnpm quality` above. Later tasks retain only their already assigned scope.
+
 ## Requirement v0.10.1 all attack-NP coverage — authoritative current planning delta
 
 ### User-visible outcome, invariant, and earlier review gap

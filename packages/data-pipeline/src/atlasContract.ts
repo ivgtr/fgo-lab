@@ -4,6 +4,7 @@ export type AtlasMaterialStep = Record<
 >;
 export type AtlasTraitRef = { id?: number; name?: string; negative?: boolean };
 export type AtlasBuff = {
+  name?: string;
   type?: string;
   vals?: AtlasTraitRef[];
   tvals?: AtlasTraitRef[];
