@@ -57,7 +57,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.46 | Resolved attacker level-stat fail-closed | ready | TSK-06.41 | resolved scenario／master ATK join／recovery |
+| TSK-06.46 | Resolved attacker level-stat fail-closed | in_progress | TSK-06.41 | resolved scenario／master ATK join／recovery |
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | blocked | TSK-06.46 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
@@ -1321,6 +1321,8 @@ Handoff:
   `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md`、および
   `docs/tasks/development-redesign-tasks.md`のTSK-06.47／06.42 planning hunksだけ。これらをrevert、
   stage、commitしない。
+- Step 2 start: `e86e3ec013e139d88fbdbabebed4029fe0d94d68`、`main`でentry conditionを再確認し、
+  TSK-06.46だけを`in_progress`へ変更した。production／test codeの開始前差分は0。
 - Next command after the Step 2 start commit: `pnpm test:diagnostic -- scenario`。
 
 ### TSK-06.42: Ranking population, level, and NP-level basis cutover
