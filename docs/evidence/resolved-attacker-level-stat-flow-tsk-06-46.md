@@ -1,6 +1,6 @@
 ---
 title: "Resolved attacker level-stat fail-closed flow"
-status: "Active"
+status: "Complete"
 updated_at: "2026-09-05"
 ---
 
@@ -228,5 +228,46 @@ unexpected-console, and the artifact path.
 - New ADR or package: N/A: the existing calculation-application boundary owns the join.
 - Separate semantic-family finding: N/A: no newly discovered out-of-family contract violation requires a Task.
 - Planning Blocking: **0**.
-- Runtime closure: not claimed; TSK-06.46 remains `ready` until Step 2 starts and every implemented path is
-  reclassified from planned evidence to executed verification.
+- Runtime closure: superseded by the Step 2 closure below.
+
+## Step 2 implementation closure
+
+- Implementation commit: `e16e5b0` (`fix: fail closed on missing attacker level stats`). The application-only
+  `CalculationApplicationResult.invalid`／`PreparedCalculationScenario.invalid` owner is in `scenario.ts`.
+  The persisted `CalculationResult`, schema version, and engine version are unchanged because an invalid attempt
+  is never a draft, history, share, or backup value.
+- Exact join: the resolved servant and selected level are checked once, before form／ordered preparation and
+  `DamageResolutionInput` construction. A present canonical `0` executes; `explicitOverrides.attackerAtk` is
+  applied only after presence succeeds. Missing and missing-plus-override return
+  `attackerLevelStatUnavailable` with servant／level detail and zero applied preparation actions.
+- Canonical consumers: direct calculator returns the application invalid; ranking maps every affected profile to
+  the same invalid before `PreparedDamageMatrixCache`; portable execute／recover／reset／upgrade map it to the
+  same portable reason and retain the prior request／result on transactional attempts. Calculator draft/history
+  remain success-only writers, ranking handoff publishes no draft, and Home uses `number | null` with explicit
+  unavailable presentation instead of numeric `0`.
+- Production inventory: master `20260902.02` records 422／422 natural pairs, 422／422 Lv.90 pairs, and 422／422
+  unique calculator／ranking referenced pairs; every missing count and canonical missing list is 0. Application
+  digest is `57cb6fd87d3ddf019a56aea3674b42a6f444e44e294e2243275a5e8becb364a9`; the digest delta is the new
+  availability inventory only. Candidate 6,360／deduplicated 3,949／damage request 1,924／distinct 1,298 are
+  unchanged.
+- Performance: three application compile runs were 5,445／5,209／5,205 ms (median 5,209 ms), versus Step 1
+  median 5,358 ms (-2.8%). Artifacts:
+  `.test-results/2026-09-05T06-03-42-732Z-15-cd929c`,
+  `.test-results/2026-09-05T06-03-53-317Z-15-060298`, and
+  `.test-results/2026-09-05T06-04-03-994Z-15-234345`.
+- Focused verification: scenario 37／37 (`a9f7fc` artifact suffix), ranking aggregation 4／4 (`6a8d72`),
+  portable 11／11 (`bfa5bd`), Home 1／1 (`c77bec`), and ranking handoff 1／1 (`43fe14`). The documented
+  combined Home／handoff filter was split because the runner treats it as one literal filter; both bounded tests
+  passed independently. Unit passed 78 files／426 tests (`addabe`), production passed 24 files／116 tests
+  (`1ef83e`).
+- Final `pnpm quality`: unit 426、production 116、Playwright 25 passed; skip／todo／retry／warning／
+  unexpected-console 0。Duration 276.44 s、artifact
+  `.test-results/2026-09-05T06-10-14-911Z-15-1eec02`。
+- Legacy／alternate lookup: resolved application runtime has one exact `atkByLevel[String(level)]` reader and no
+  `?? 0`, interpolation, ranking precheck, servant ID／name／label branch, or override repair. The remaining Web
+  `atkByLevel` fallbacks belong only to the explicit manual-input editor family and remain `N/A` for this flow.
+- Deferred paths remain TSK-06.47 profile record identity, TSK-06.42 owned／uniform basis and worker／URL/cache
+  identity, and TSK-07 presentation polish. No new separate semantic-family problem was found.
+- Flow classification: implemented producer／consumer／writer／recovery rows and schema-legal counterexamples are
+  `Verified`; unchanged manual／battle-execution paths are `N/A` as recorded; future ranking／profile／UI paths are
+  `Deferred` to the Tasks above. Runtime Blocking: **0**.

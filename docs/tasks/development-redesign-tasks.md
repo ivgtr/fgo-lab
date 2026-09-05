@@ -57,7 +57,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.46 | Resolved attacker level-stat fail-closed | in_progress | TSK-06.41 | resolved scenario／master ATK join／recovery |
+| TSK-06.46 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | blocked | TSK-06.46 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
@@ -1245,19 +1245,19 @@ Completion:
 
 Depends on: TSK-06.41
 
-- [ ] `calculation-application`のshared resolved-scenario preparationで
+- [x] `calculation-application`のshared resolved-scenario preparationで
       `servant.atkByLevel[String(selectedLevel)]`のpresenceを一度だけ解決し、欠落をdiscriminated
       `invalid: attackerLevelStatUnavailable`へ切り替える。presentな0は有効値とし、resolved
       `explicitOverrides.attackerAtk`はjoin成功後だけ適用する。manualの明示ATKは変更しない。
-- [ ] direct calculator、prepared ranking candidate／profile aggregation、portable
+- [x] direct calculator、prepared ranking candidate／profile aggregation、portable
       execute／recover／reset／version upgradeが同じapplication invalidを消費する。invalidはordered execution、
       damage cache、row／detail／handoff、draft／history writeへ到達させず、unsupportedやgeneric throwへ畳み込まない。
-- [ ] Web calculatorのinvalid recoveryを維持し、ranking handoff失敗時にdraftをpublishせず、
+- [x] Web calculatorのinvalid recoveryを維持し、ranking handoff失敗時にdraftをpublishせず、
       `HomeRoute`のnon-calculated → numeric `0`をnullable／explicit unavailable presentationへ切り替える。
       ranking precheck、level interpolation、servant ID／名称分岐は追加しない。
-- [ ] positive／present-zero／missing／missing＋resolved override、calculator／ranking parity、portable
+- [x] positive／present-zero／missing／missing＋resolved override、calculator／ranking parity、portable
       execute／recover／reset／upgrade retained-state、ranking handoff no-write、home no-zeroをsmall fixtureへ固定する。
-- [ ] shared production auditの一回のmaster load／parse／compileで、422 attack servantsの自然上限／Lv.90と
+- [x] shared production auditの一回のmaster load／parse／compileで、422 attack servantsの自然上限／Lv.90と
       calculator／rankingが実際に参照するunique servant-level pairを監査し、missing 0をratchetする。
       candidate／damage-request counterと3-run performance medianをStep 1 baselineから維持する。
 
@@ -1323,7 +1323,21 @@ Handoff:
   stage、commitしない。
 - Step 2 start: `e86e3ec013e139d88fbdbabebed4029fe0d94d68`、`main`でentry conditionを再確認し、
   TSK-06.46だけを`in_progress`へ変更した。production／test codeの開始前差分は0。
-- Next command after the Step 2 start commit: `pnpm test:diagnostic -- scenario`。
+- Implementation: `e16e5b0`。application-only typed invalidによりschema／engine versionを変更せず、exact
+  level-stat join、ranking cache前invalid aggregation、portable retained-state、handoff no-write、Home nullable
+  presentationを一つのcanonical pathへ収束した。別semantic familyの新規problemは0。
+- Inventory／performance: natural 422／422、Lv.90 422／422、実参照unique pair 422／422、missing 0。
+  candidate 6,360／deduplicated 3,949／damage request 1,924／distinct 1,298は不変。application digest
+  `57cb6fd87d3ddf019a56aea3674b42a6f444e44e294e2243275a5e8becb364a9`。3-run compile median
+  5,209 msはStep 1比-2.8%。詳細artifactはcanonical flow noteに記録した。
+- Verification: focused scenario 37、ranking outcome 4、portable 11、Home 1、handoff 1、unit 78 files／426、
+  production 24 files／116がpass。combined Home／handoff filterはrunnerのliteral filter仕様により個別実行した。
+  Final `pnpm quality`はunit 426、production 116、Playwright 25、skip／todo／retry／warning／
+  unexpected-console 0でpass。artifact `.test-results/2026-09-05T06-10-14-911Z-15-1eec02`。
+- Completion classification: canonical flow noteはimplemented path `Verified`、manual／downstream numeric family
+  `N/A`、TSK-06.47／06.42／07 scope `Deferred`、Blocking 0。TSK-06.42はTSK-06.47待ちのため`blocked`を維持する。
+- Next entry condition: TSK-06.47のStep 1 planning handoffを確定し、そのentry conditionとallowed worktreeを
+  満たす独立sessionで開始する。
 
 ### TSK-06.42: Ranking population, level, and NP-level basis cutover
 
