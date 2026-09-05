@@ -271,3 +271,24 @@ unexpected-console, and the artifact path.
 - Flow classification: implemented producer／consumer／writer／recovery rows and schema-legal counterexamples are
   `Verified`; unchanged manual／battle-execution paths are `N/A` as recorded; future ranking／profile／UI paths are
   `Deferred` to the Tasks above. Runtime Blocking: **0**.
+
+## PIR-001 ranking handoff transaction closure
+
+- Review delta: the initial Step 2 inventory covered durable draft and workspace writers but missed the
+  pre-validation session writer as part of the same handoff transaction. Unconditional navigation could then
+  render retained/default Calculator state unrelated to the failed ranking intent. This is the recorded
+  recurrence-scope gap for PIR-001; it does not introduce a second semantic owner or a separate Task.
+- Transaction boundary: `executePortableCalculation` still exclusively classifies the portable request. The Web
+  handoff performs no game-rule lookup or fallback. A result-less invalid returns before issuing a session or
+  calling any session／durable draft／workspace／route writer. An executable or unsupported result first commits
+  its matching request/result to the durable draft and workspace, then publishes the same session identity and
+  finally navigates. A rejected durable write publishes neither workspace, session, nor route.
+- Counterexamples: missing exact level stat is `Verified` by a schema-legal fixture asserting typed invalid and
+  zero UUID/session/workspace/durable/route calls; successful handoff is `Verified` by one fixture asserting the
+  same request/result/session across durable draft and workspace plus commit order; durable rejection is
+  `Verified` by a no-partial-publication fixture. Unrelated Calculator presentation is `N/A: failed handoff does
+  not transition to the Calculator route`. TSK-06.47 identity and TSK-06.42 selection／worker paths remain
+  `Deferred`; Blocking: **0**.
+- Pre-final verification: focused ranking handoff 3／3, portable calculation 11／11, shared production audit 6／6,
+  full unit 78 files／428 tests, and full production 24 files／116 tests passed with warning／skip／todo 0. The
+  final `pnpm quality` artifact is recorded in the append-only PIR-001 implementation response.

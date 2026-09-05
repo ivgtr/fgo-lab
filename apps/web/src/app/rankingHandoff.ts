@@ -9,7 +9,7 @@ import {
 import type { CalculationWorkspace, Page } from './App';
 import { commitPortableDraft, type UpdateActiveProfile } from './portableDraft';
 
-export function handoffRankingCalculation({
+export async function handoffRankingCalculation({
   detail,
   master,
   setCalculation,
@@ -24,21 +24,22 @@ export function handoffRankingCalculation({
   updateActiveProfile: UpdateActiveProfile;
   replaceRoute: (page: Page) => void;
 }) {
-  const sessionId = crypto.randomUUID();
-  setCalculationSessionId(sessionId);
   const request = createRankingPortableRequest(detail, currentCalculationVersionContext(master));
   const outcome = executePortableCalculation(request, master);
   const result =
     outcome.status === 'executed' || outcome.status === 'unsupported'
       ? outcome.execution.result
       : undefined;
-  if (result)
-    void commitPortableDraft({
-      request,
-      result,
-      sessionId,
-      updateActiveProfile,
-      setCalculation,
-    });
+  if (!result) return outcome;
+  const sessionId = crypto.randomUUID();
+  await commitPortableDraft({
+    request,
+    result,
+    sessionId,
+    updateActiveProfile,
+    setCalculation,
+  });
+  setCalculationSessionId(sessionId);
   replaceRoute('calculate');
+  return outcome;
 }
