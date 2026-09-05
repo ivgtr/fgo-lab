@@ -33,10 +33,10 @@ updated_at: "2026-09-05"
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.5.0／approved | 画面構造、ranking comparison controls、versioned calculator recovery、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
 | [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.1 | condition、state mutation、ordered damage execution、UI不変条件 |
-| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.10.0／approved | comparison axes、maximum stack、contribution UI、source-program、portable handoff、candidate、parity |
+| [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.10.1／approved | comparison axes、all attack-NP coverage、maximum stack、contribution UI、source-program、portable handoff、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.6.0 | 唯一の実装順序、依存、status、handoff |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.0 | 唯一の実装順序、依存、status、handoff |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.4.28 | damage／production／documentation evidence |

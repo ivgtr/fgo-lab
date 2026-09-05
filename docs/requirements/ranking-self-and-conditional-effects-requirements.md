@@ -1,6 +1,6 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.10.0"
+document_version: "0.10.1"
 status: "Active"
 approval: "approved"
 approved_at: "2026-09-05"
@@ -47,6 +47,8 @@ UIを単純にし、domain modelは正確に保つことが本仕様の目的で
 6. servant ID、名称、effect label、raw Atlas keyによるruntime分岐を追加しない。
 7. 旧policyとの後方互換のために新旧経路を併存させない。
 8. 完全な戦闘シミュレーターへ拡張せず、宝具直前の有限な準備phaseだけを扱う。
+9. published masterに存在するplayableな攻撃宝具は全AttackProfileを計算対象とする。`unsupported`は将来の未知semanticsを
+   fail-closedにする型であり、現行production inventoryの順位外を完了状態として許容するための分類ではない。
 
 ## 3. 比較単位
 
@@ -87,6 +89,16 @@ type RankingProfileResult =
 - `unsupported`: canonical semanticsは存在するが、現在のengineでは完全に評価できない。
 
 非数値outcomeを0 damage、通常値、別profileへfallbackしない。数値ランキングは`calculated`だけを並べる。
+
+現行published masterについては、全playable AttackProfileが各合法なproduction policyで`calculated`へ到達することを
+release gateとする。`unsupported`型はschema-legalな将来fixtureとmaster更新時の安全停止のために残すが、現行masterの
+`unsupported`、`invalid`、`inputRequired`を「理由付き順位外」として受け入れない。policyそのものが攻撃宝具への到達を
+禁止する場合だけ`unavailableUnderPolicy`を許容し、その到達不能性はtyped proofを持たなければならない。
+
+この契約を満たすためのresource／quantity stateは、宝具直前の有限な準備phaseに必要なreaderだけをcanonical IRへ追加する。
+trigger scope、damage relevance、effect timingを実行前に正しく判定し、damageに到達しないoperationをprofile全体の
+unsupported理由へ昇格させない。HP、NP、battle point等の値がdamageまたは到達可能性を変える場合は、選択した比較basisから
+導出できるtyped initial stateとordered mutationで評価し、もっともらしい定数やservant固有分岐で補完しない。
 
 ## 4. 利用者向け条件
 
@@ -843,6 +855,8 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 - 全AttackProfile × 自然上限／Lv.90統一 × NP1〜5 × 自己バフ二値 × 条件効果二値
 - stableな保有fixtureによる保有母集団 × 三レベル基準 × 指定／保有宝具Lvの合法組合せ
 - policy別calculated／unavailable／inputRequired／invalid／unsupported inventory
+- 現行published masterの全playable AttackProfileについて、合法なproduction policyでunsupported／invalid／inputRequired 0件
+- trigger scope × damage relevance × timing × resource readerの交差inventoryと、順位外理由から実行結果までのfirst-diff
 - source／step operation別resource／HP／state／form／field／damage contribution／bounded-phase-irrelevant／unsupportedと
   candidate-local admission inventory
 - calculator／ranking canonical parity
@@ -909,7 +923,10 @@ damage差分、性能見積もりを提示してから再開する。
 - 成立込みでcanonical最大回数を持つstack可能damage増幅条件が最大回数で計算される
 - contribution detailがraw identityを露出せず、logical effect単位の表示と寄与ごとの独立判定を両立する
 - intrinsic不一致の捏造、partyOther混入、policyによる理由改変が0件
-- implementation unsupported、partial commit、stale mutationが0件
+- 現行published masterの全playable AttackProfileが数値ランキングへ含まれ、implementation unsupported、invalid、
+  inputRequiredによる順位外が0件
+- schema-legalな将来unknownは`unsupported`としてfail-closedになり、数値fallbackしない
+- partial commit、stale mutationが0件
 - calculator／ranking parity差分が0件
 - 全damage差分がsemantic ruleとevidenceで説明されている
 - desktop、390px、320pxの密度、overflow、keyboard、a11y gateを満たす
@@ -925,7 +942,7 @@ damage差分、性能見積もりを提示してから再開する。
 | `RK-UI-001` | 4、11、12 | Web／workerはcanonical stateと6入力を扱い、母集団／レベル／宝具Lvを分離し、旧policy／URL／protocolを併存させない。 |
 | `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
 | `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
-| `RK-AUDIT-001` | 14、15 | 全AttackProfile、四policy、NP1〜5、parity、invalid／unsupportedを共有production inventoryで監査する。 |
+| `RK-AUDIT-001` | 3.2、14、15、17 | 全playable AttackProfile、四policy、NP1〜5、parityを共有production inventoryで監査し、現行masterのunsupported／invalid／inputRequiredによる順位外を0件にする。 |
 | `RK-PERF-001` | 15.3 | 2^N探索を避け、candidate／damage requestを説明し、主要suiteの10%超の未説明退行を拒否する。 |
 | `RK-FINAL-001` | 17 | 17章のUI、IR、execution、parity、damage evidenceをproject closureで全て満たす。 |
 
@@ -943,3 +960,4 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.9.5 | A1〜A3 closure。全`nonDamage` raw familyをclosed step-operation unionへ分類し、source別slot／effect／choice schemaと`FiniteRankingDomainCertificate`を確定。4,096をtruncate capではなくprepared-context support上限とし、current 512 state capを廃止対象へ変更。ADR-028で019／027を置換 | approved 2026-09-02: user requested remaining audit closure; fixed product outcomeは不変 | TSK-06.4、TSK-06.41、TSK-06.5、TSK-07 | runtime変更なし。current production最大2,880のためcandidate cap／timeout緩和なし。IR、schema、certificate、portableはTSK-06.41でatomic cutover |
 | 0.9.6 | action admissionを「無デメリット」から「policy上の実効寄与」に修正し、表現済みデメリットを含む全transactionの成立可否を具体candidateのordered executionへ委譲。`policyNoOp`／`unreachable`／`unsupported`を分離 | approved 2026-09-04: user confirmed that only non-executable NP／HP-consumption candidates are dropped and every executable adverse action remains eligible | TSK-06.41、TSK-06.5 | ranking候補と順位は意図的に変わり得る。`unsafeBaselineEffect`相当の静的adverse除外を削除し、全cost込みのcandidate soundnessとproduction差分を再固定する |
 | 0.10.0 | 比較対象を母集団へ限定し、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを直交化。成立込みのcanonical最大stack countと寄与判定detailの人間向け表示を追加 | approved 2026-09-05: user confirmed naming, retained natural／uniform choices for owned servants, owned level and NP level reflection, maximum stack examples, and contribution UI cleanup | TSK-06.42〜06.5、TSK-07 | ranking scenario、URL／worker fingerprint、production matrix、detail UIが変わる。保存済みFou／skill Lvは反映せず、servant固有runtime branchは追加しない |
+| 0.10.1 | 現行published masterの全playable攻撃宝具を数値計算対象とし、typed `unsupported`を理由にしたproduction順位外を完了状態として許容しない。有限な準備phaseのtrigger／timing／resource readerをcanonical executionへ収束させる | approved 2026-09-05: user required all attack NPs to be included in the implementation plan | TSK-06.45、TSK-06.5、TSK-08 | planning baselineは433 AttackProfiles中393 calculated／40 unsupported、calculator defaultは422中420 calculated／2 unsupported。実装後は現行masterのunsupported／invalid／inputRequired順位外0件。将来unknownのfail-closed型は維持する |

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.6.0"
+document_version: "1.7.0"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-05"
@@ -59,7 +59,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | ready | TSK-06.41 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
-| TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.43 | logical effect presentation／per-contribution decisions |
+| TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
+| TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -67,7 +68,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.42 -> TSK-06.43 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -1319,7 +1320,7 @@ Handoff: 未記録
 
 ### TSK-06.44: Contribution decision UI cleanup
 
-Depends on: TSK-06.43
+Depends on: TSK-06.45
 
 - [ ] rowはdistinct `presentationGroupId`によるlogical effect countを維持し、detailは同じgroup配下で各contributionの
       self／condition／areaView decisionとfinal applied outcomeを独立表示する。
@@ -1350,11 +1351,56 @@ Contract closure matrix:
 
 Handoff: 未記録
 
+### TSK-06.45: All attack-NP execution closure
+
+Depends on: TSK-06.43
+
+- [ ] current baselineをAttackProfile 433件中393 calculated／40 `unsupportedActionAdmission`、default calculator
+      422 scenarios中420 calculated／2 unsupportedとして固定し、40件がすべて攻撃宝具であることと、非攻撃宝具47騎を
+      混在させていないことをshared production inventoryで再確認する。
+- [ ] action admissionを`triggerScope × damageRelevant × timing × recipient/resource reader`で監査し、command-card attack限定や
+      damage非関連のoperationをattack-NP profile全体のunsupportedへ昇格させない。現在の40 profilesのうち、この誤分類に
+      属する25 profilesをservant ID／名称分岐なしでcanonical relevance判定へ収束させる。
+- [ ] 残る15 profilesのdependent amount family（target NP合計、target別NP、個別NP合計、target別HP、個別NP buff合計、
+      NP倍率）をclosed typed expression／resource readへ分類し、ordered executionとrollbackで評価する。完全なturn進行、AI、
+      敵行動を導入せず、宝具直前の有限phaseに必要なstateだけを追加する。
+- [ ] default calculatorで残るHP-dependent 1 scenarioとbattle-point-dependent 1 scenarioについて、選択levelに対応するHP basis、
+      current／maximum HP、battle pointのcurrent value／phase thresholdをdata pipelineがcanonical stateとして供給し、
+      application commandが必要inputを構築し、executorが唯一のreaderになるようforward／recovery flowを閉じる。
+- [ ] 全playable attack-NP variantがdamage functionへjoinし、calculatorとrankingが同じapplication compiler／ordered executorを
+      通ることを確認する。欠落値、矛盾値、将来の未知operationはtyped `unsupported`でfail-closedにし、現行productionの
+      数値fallbackや理由付き順位外として残さない。
+
+Done gate:
+
+- current published masterの全playable AttackProfileがdefault rankingで`calculated`となり、433 rows／0 exclusionsである。
+- default calculatorは422／422 `calculated`で、unsupported／invalid／inputRequired 0件である。
+- 自然上限／Lv.90統一 × 四policy × NP1〜5とstable owned fixturesで、現行masterのunsupported／invalid／inputRequired 0件。
+  `unavailableUnderPolicy`はtyped reachability proofがある場合だけ許容し、production occurrenceを全数説明する。
+- trigger relevanceとdependent resourceのschema-legal focused fixturesが、誤分類、mutation順序、rollback、欠落inputの
+  fail-closedを反証する。
+- servant ID、名称、label、raw Atlas keyによるruntime branch 0件。calculator／ranking damage・outcome・evidence parity差分0件。
+- production suite／ranking hot pathの変更前後を測定し、未説明の10%超退行、candidate explosion、cap／timeout緩和が0件。
+- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.45 deltaがBlocking 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-IR-001` | Apply | playable attack variant／trigger relevance／dependent resource production inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-EXEC-001` | Apply | ordered HP／NP／battle-point mutation、rollback、reachability focused tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-POLICY-001` | Apply | relevance-aware action admission and four-policy parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | `pnpm test:production` 433／433 ranking、422／422 calculator、production nonnumeric outcome 0 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-PERF-001` | Apply | affected production suite／ranking hot path before-after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.1 |
+
+Handoff: 未記録
+
 ### TSK-06.5: Ranking theoretical maximum and production closure
 
 Depends on: TSK-06.44
 
-- [ ] requirement v0.10.0までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
+- [ ] requirement v0.10.1までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
       production全skillのstatic semanticsと、action × initial resource × ordered path × AttackProfileの
       candidate-local eligibility inventoryを最終固定する。
 - [ ] 自己バフありでは選択policy上の実効寄与を持つ任意skillをadmitし、表現済みデメリットを全operation込みで実行する。
@@ -1385,6 +1431,7 @@ Done gate:
 - calculator／ranking parityとTSK-06.41のoperation／state preservation invariantを維持する。
 - TSK-06.41 cutover後のcandidate soundness、finite maximum oracle、四policy production inventoryが最終値として閉じる。
 - TSK-06.42の母集団／レベル／宝具Lv、TSK-06.43のmaximum stack、TSK-06.44のpresentationを含む最終matrixが閉じる。
+- TSK-06.45で現行masterの全playable攻撃宝具が計算可能となり、unsupported／invalid／inputRequired順位外0件を維持する。
 
 Contract closure matrix:
 
@@ -1396,7 +1443,7 @@ Contract closure matrix:
 | `RK-AUDIT-001` | Apply | `pnpm test:production` final level basis × four-policy × NP1〜5 maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-HANDOFF-001` | Apply | final selected scenarioのportable replay／minimal Web handoff regression | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.0 |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.1 |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: 未記録

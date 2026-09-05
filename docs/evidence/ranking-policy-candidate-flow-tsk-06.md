@@ -6,6 +6,65 @@ updated_at: "2026-09-05"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
+## Requirement v0.10.1 all attack-NP coverage — authoritative current planning delta
+
+### User-visible outcome, invariant, and earlier review gap
+
+Every playable attack-NP profile in the published master must receive a numeric result. A typed `unsupported`
+outcome remains necessary to fail closed on future unknown semantics, but it is not an acceptable final bucket for
+current production data. Calculator and ranking must reach that result through the same application compiler and
+ordered executor; ranking policy may select scenarios but may not implement a second damage or resource model.
+
+The current verified baseline is 433 AttackProfiles: 393 ranking rows plus 40
+`unsupportedActionAdmission` exclusions. All 40 are attack profiles (38 servants), not the 47 servants whose
+inventory contains only non-attack NPs. The default calculator baseline is 420 calculated plus 2 unsupported out
+of 422 scenarios. The data pipeline already emits damage semantics for every playable attack-NP variant; its six
+raw exclusions are two alternate identities already represented by canonical profiles and four non-playable
+servant types. Therefore this is an execution/admission closure, not missing servant data or permission to omit an
+attack NP.
+
+The TSK-06.41 review gap was accepting one coarse `unsupportedActionAdmission` reason without expanding the
+recurrence matrix across `triggerScope × damageRelevant × timing × resource reader`. That missed two mechanisms:
+
+- 25 profiles are blocked by operations that the attack-NP execution path does not read: 17 command-card-only
+  trigger profiles and 8 profile occurrences whose relevant operation is non-damage-only.
+- The remaining 15 profiles use six dependent-amount families: target NP sum, NP from targets, individual NP sum,
+  HP from targets, individual NP-buff sum, and multiplied NP. They require typed quantity/resource reads, not a
+  servant-specific exception.
+
+The two default-calculator failures expose the same ownership boundary: one HP-dependent ordered path needs an
+explicit maximum/current HP basis, and one battle-point-dependent path needs the current amount plus phase
+thresholds. Pipeline emits canonical state, application constructs commands and required input, execution is the
+only reader, and Web only presents or supplies typed state. The model remains bounded to the finite preparation
+phase before the attack NP; general turn passage, enemy AI, and battle simulation are out of scope.
+
+### Changed flow inventory
+
+| Path | Owner／expected transition | Planning status |
+| --- | --- | --- |
+| playable raw attack NP → AttackProfile／damage function | pipeline canonical join; alternate and non-playable exclusions remain typed | Verified: current inventory has no missing playable attack damage function |
+| operation → attack-NP relevance | canonical trigger scope, timing, recipient, and damage relevance decide whether the executor can read it | Deferred: TSK-06.45 |
+| dependent amount → resource read | pipeline emits a closed typed expression; executor resolves it against candidate-local state | Deferred: TSK-06.45 |
+| HP／NP／battle-point initial state → ordered mutation | application constructs typed state from comparison basis or explicit calculator input; executor applies and rolls back transactionally | Deferred: TSK-06.45 |
+| result → ranking row／calculator recovery | calculated profiles become rows; missing future semantics stay nonnumeric with no fallback | Deferred: TSK-06.45 |
+| URL／worker／detail presentation | consumes canonical state and outcome without inferring game rules | N/A: no new Web semantic owner; typed fields flow through existing TSK-06.42／07 boundaries |
+| full policy maximum／digest | proves current production nonnumeric outcomes remain zero after maximum selection | Deferred: TSK-06.5 |
+
+Implementation order is TSK-06.42 → TSK-06.43 → TSK-06.45 → TSK-06.44 → TSK-06.5. Planning Blocking is 0;
+runtime paths remain Deferred until their owning task verifies them.
+
+### State-by-path counterexamples
+
+| State | Admission／construction | Execution／selection | Expected outcome | Status |
+| --- | --- | --- | --- | --- |
+| command-card-only trigger beside attack NP | retain typed operation but do not mark attack-NP path unsupported | executor does not read the trigger in NP scope | profile remains calculated | Deferred: TSK-06.45 |
+| non-damage operation with no damage/resource reader | preserve it in source program and evidence | no fabricated damage effect or profile-wide veto | profile remains calculated | Deferred: TSK-06.45 |
+| dependent amount with complete target/resource state | bind typed source exactly once | ordered executor resolves amount then mutates | calculated with reproducible evidence | Deferred: TSK-06.45 |
+| dependent amount with missing or contradictory state | do not guess zero／maximum | transactional failure; no partial commit | typed future unsupported／invalid, no numeric fallback | Deferred: TSK-06.45 |
+| fixed HP mutation before HP-sensitive damage | construct selected-level maximum/current HP state | apply fixed mutation before damage read | calculator／ranking parity | Deferred: TSK-06.45 |
+| battle-point mutation crossing a phase boundary | carry current amount and canonical thresholds | recompute phase from post-mutation amount | calculator／ranking parity | Deferred: TSK-06.45 |
+| future unknown operation | inventory records first unsupported reader | no partial scenario or plausible number | fail closed without weakening current zero ratchet | Deferred: TSK-06.45 |
+
 ## Requirement v0.10.0 insertion — authoritative current planning delta
 
 ### User-visible outcome and governing invariants
@@ -58,11 +117,13 @@ does not appear in UI policy labels:
 | stack maximum production | data pipeline emits typed quantity source, baseline, and supported maximum | Deferred: TSK-06.43 |
 | stack witness／constraint／execution | application materializes a finite assumption; battle execution evaluates it transactionally | Deferred: TSK-06.43 |
 | logical-effect／contribution presentation | application returns canonical presentation state; Web maps exhaustive typed reasons to labels | Deferred: TSK-06.44 |
+| all attack-NP execution coverage | relevance and dependent resources produce current-production nonnumeric outcomes 0 | Deferred: TSK-06.45 |
 | final production maximum | one inventory covers natural／Lv.90 × NP1〜5 × four policies plus stable owned fixtures | Deferred: TSK-06.5 |
 | cache lifetime／notice／recovery interaction | consumes the six-input identity without reimplementing it | Deferred: TSK-07 |
 
-Design decisions are approved and the implementation sequence is TSK-06.42 → TSK-06.43 → TSK-06.44 →
-TSK-06.5. Planning Blocking is 0; runtime paths remain explicitly Deferred until their owning task verifies them.
+Design decisions are approved and the implementation sequence is TSK-06.42 → TSK-06.43 → TSK-06.45 →
+TSK-06.44 → TSK-06.5. Planning Blocking is 0; runtime paths remain explicitly Deferred until their owning task
+verifies them.
 
 ### State-by-path counterexamples
 
