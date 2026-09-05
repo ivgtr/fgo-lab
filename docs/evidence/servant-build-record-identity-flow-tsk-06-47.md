@@ -1,6 +1,6 @@
 ---
 title: "Profile servant-record identity fail-closed flow"
-status: "Active"
+status: "Complete"
 updated_at: "2026-09-05"
 ---
 
@@ -31,29 +31,28 @@ profile contract; they must not add independent repair or alternate-lookup branc
 
 | Path | Required transition | Status |
 | --- | --- | --- |
-| profile command writer | build／target updates continue writing `[servantId]` and embedded `servantId` atomically | Verified: current writers are coherent |
-| current stored profile load | validate both servant-keyed maps before returning `ready`; retain invalid storage unchanged | Deferred: TSK-06.47 |
-| v32／v33／v34 migration and backup import | apply the same coherence invariant before committing an upgraded collection; never repair either side | Deferred: TSK-06.47 |
-| calculator default／subject change | consume only a validated matching build; no wrong-servant level／NP／Fou／skills | Deferred: TSK-06.47 |
-| portable reset recovery | exact retained subject lookup may consume only its matching validated build; failed recovery preserves request／result | Deferred: TSK-06.47 |
-| ranking population／owned basis／row ownership | consumes the shared validated map and canonical ownership fact; comparison axes remain TSK-06.42 | Deferred: TSK-06.47 then TSK-06.42 |
-| profile UI／support picker／material planning | consume validated identity; no label or servant-ID exception | Deferred: TSK-06.47 |
+| profile command writer | build／target updates continue writing `[servantId]` and embedded `servantId` atomically | Verified: create／patch regression and NP0 ownership fixture |
+| current stored profile load | validate both servant-keyed maps before returning `ready`; retain invalid storage unchanged | Verified: schema plus repository current-load fixture |
+| v32／v33／v34 migration and backup import | apply the same coherence invariant before committing an upgraded collection; never repair either side | Verified: shared build／target matrix and import fixture |
+| calculator default／subject change | consume only a validated matching build; no wrong-servant level／NP／Fou／skills | Verified: sole profile ingress rejects mismatch; consumer diagnostics unchanged |
+| portable reset recovery | exact retained subject lookup may consume only its matching validated build; failed recovery preserves request／result | Verified: validated ingress plus retained-subject recovery diagnostics |
+| ranking population／owned basis／row ownership | consumes the shared validated map and canonical ownership fact; comparison axes remain TSK-06.42 | Verified: identity ingress and row reader; Deferred: comparison axes TSK-06.42 |
+| profile UI／support picker／material planning | consume validated identity; no label or servant-ID exception | Verified: direct-reader inventory contains no repair／alternate lookup |
 | worker structured-clone payload | runtime validation at the worker boundary remains part of the ranking protocol cutover | Deferred: TSK-06.42 |
 
-Planning Blocking is **0**. This identity guard is independent of comparison-basis semantics and may be implemented
-in parallel with TSK-06.46; both precede TSK-06.42. Existing invalid-profile presentation is reused, while any new
-recovery wording or interaction remains Deferred to TSK-07.
+Runtime Blocking is **0**. Existing invalid-profile presentation is reused, while worker payload validation remains
+Deferred to TSK-06.42 and any new recovery wording or interaction remains Deferred to TSK-07.
 
 ### Counterexample matrix
 
 | State | Forward／recovery path | Expected outcome | Status |
 | --- | --- | --- | --- |
-| matching record key and embedded ID, NP1〜5 | load／backup → all build consumers | unchanged valid owned build | Deferred: TSK-06.47 |
-| matching identity with NP0 | load／backup → profile and ranking | record retained; canonical ownership is false | Deferred: TSK-06.47 |
-| mismatched build or target key and embedded ID | current profile load | profile load is invalid; persisted bytes are not overwritten | Deferred: TSK-06.47 |
-| mismatched key and embedded ID | legacy migration or backup import | migration／import rejected transactionally; neither identity is selected | Deferred: TSK-06.47 |
-| mismatched record reaches calculator or portable reset fixture | direct application boundary | no scenario or numeric result uses the build; retained portable state is unchanged | Deferred: TSK-06.47 |
-| normal update to an existing build or target | profile command writer | key and embedded identity remain equal after every patch | Verified: current implementation; add regression fixture in TSK-06.47 |
+| matching record key and embedded ID, NP1〜5 | load／backup → all build consumers | unchanged valid owned build | Verified: NP0〜5 schema matrix |
+| matching identity with NP0 | load／backup → profile and ranking | record retained; canonical ownership is false | Verified: schema and profile-domain fixtures |
+| mismatched build or target key and embedded ID | current profile load | profile load is invalid; persisted bytes are not overwritten | Verified: repository current-load and replace fixtures |
+| mismatched key and embedded ID | legacy migration or backup import | migration／import rejected transactionally; neither identity is selected | Verified: v32／v33／v34 stored and backup matrix |
+| mismatched record reaches calculator or portable reset fixture | direct application boundary | no scenario or numeric result uses the build; retained portable state is unchanged | N/A: persistence is the sole app profile ingress and rejects before consumer invocation; forged raw application input is outside the validated profile contract |
+| normal update to an existing build or target | profile command writer | key and embedded identity remain equal after every patch | Verified: create and patch regression fixture |
 
 ### Implementation units and verification order
 
@@ -98,3 +97,30 @@ fixtures own the mismatch proof because production user profiles are not reposit
 - Planned completion: all current／v32／v33／v34 load and backup paths reject build or target identity mismatch
   without persistence; matching NP1〜5 and retained NP0 remain valid; direct consumers contain no alternate lookup,
   repair, ID/name branch, or numeric fallback; this note reaches runtime Blocking 0 and `pnpm quality` passes.
+
+## Step 2 completion handoff
+
+- Boundary: start `17b26ce`; implementation `911753c`. `localProfileSchema` owns one linear refinement over
+  `servantBuilds` and `servantTargets`, with schema v35 and explicit v34 collection／backup migration. v34 draft and
+  history results migrate to the current envelope and remain validated; v32／v33 dispositions are unchanged.
+- Trust boundaries: current repository load returns the existing typed invalid state and leaves bytes untouched;
+  repository replace validates before write; v32／v33／v34 migration and backup import converge through the current
+  `profileCollectionSchema`. No path repairs a key, embedded ID, record, or consumer lookup.
+- Reader inventory: calculator default／subject selection, exact-subject portable reset, ranking population／row,
+  profile and growth UI, support selection, and data counts read only the validated collection published by startup.
+  No new servant ID／name／label branch, embedded-ID lookup, or fallback exists. Worker structured-clone validation
+  remains Deferred to TSK-06.42.
+- Semantic evidence: coherent NP0〜5 identities parse; NP0 remains retained and `isOwned === false`; both map kinds
+  mismatch in current／v32／v33／v34 stored and backup input fail with `servant_record_identity_mismatch`. Repository
+  load／replace and text backup import prove no invalid persistence or publication.
+- Production／performance: attack servant 422、AttackProfile 433、calculated 420、unsupported 2、ranking row 393、
+  candidate 6,360、deduplicated 3,949、damage request 1,924、distinct 1,298 are unchanged. The application digest is
+  `fa9148dc060b7585c22cbb1b933a8f731718167a0e5cd2053bbdadb7a655362a`; diagnostic attribution classified the
+  change from the prior digest as `introducedByChange` solely through the required schema-version envelope.
+- Verification: focused 9 files／95 tests, unit 78 files／435 tests, production 24 files／117 tests, and final
+  `pnpm quality` passed with Playwright 25 and skip／todo／retry／warning／unexpected-console 0. Final artifact is
+  `.test-results/2026-09-05T08-09-19-780Z-15-ce996e`. A transient mobile VRT line-wrap failure reproduced only in
+  some quality runs, passed standalone and final quality without source／snapshot changes, and is classified
+  `environmentDependent`.
+- Completion classification: all scoped paths above are `Verified`, `N/A`, or explicitly `Deferred`; Blocking is
+  **0**. TSK-06.47 is `done`; both prerequisites are complete and TSK-06.42 is now `ready` for its own start boundary.

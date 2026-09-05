@@ -58,8 +58,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
 | TSK-06.46 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
-| TSK-06.47 | Profile servant-record identity fail-closed | in_progress | TSK-06.41 | profile map identity／persistence／shared consumers |
-| TSK-06.42 | Ranking population, level, and NP-level basis cutover | blocked | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
+| TSK-06.47 | Profile servant-record identity fail-closed | done | TSK-06.41 | profile map identity／persistence／shared consumers |
+| TSK-06.42 | Ranking population, level, and NP-level basis cutover | ready | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
@@ -1348,14 +1348,14 @@ Handoff:
 
 Depends on: TSK-06.41
 
-- [ ] `localProfileSchema`の`servantBuilds`／`servantTargets` record keyと各embedded `servantId`を一つのprofile
+- [x] `localProfileSchema`の`servantBuilds`／`servantTargets` record keyと各embedded `servantId`を一つのprofile
       identity invariantとして検証し、不一致をcurrent load、v32／v33／v34 migration、backup importでtransactionalにrejectする。
       key修正、embedded ID修正、alternate lookup、record削除によるrepairは行わない。
-- [ ] `profile-domain.updateServantBuild`／`updateServantTarget`を通常writerとして維持し、全patch後もkeyとembedded IDが
+- [x] `profile-domain.updateServantBuild`／`updateServantTarget`を通常writerとして維持し、全patch後もkeyとembedded IDが
       一致することを固定する。契約変更に対するschema versionを一度だけ更新する。
-- [ ] calculator default／subject change、portable reset、ranking、profile UI、support pickerがvalidated profileだけを消費し、
+- [x] calculator default／subject change、portable reset、ranking、profile UI、support pickerがvalidated profileだけを消費し、
       選択したmaster servantへ別identityのlevel／NP／Fou／skillsを適用できないことを確認する。
-- [ ] 一致するNP1〜5、NP0 retained build、不一致build／targetのcurrent load／migration／backup／calculator recoveryをsmall
+- [x] 一致するNP1〜5、NP0 retained build、不一致build／targetのcurrent load／migration／backup／calculator recoveryをsmall
       fixtureで固定する。NP0はrecordを保持した未所持であり、このTaskでownership semanticsを変更しない。
 
 Done gate:
@@ -1394,6 +1394,20 @@ Handoff:
 - Planned verification: schema／migration、profile-domain writer、repository load、calculator／portable recovery、
   ranking readerのfocused diagnosticからunit、productionへ拡張し、phase completionは`pnpm quality`だけで閉じる。
   詳細なstate-by-pathと完了分類はcanonical flow noteを参照する。
+- Step 2 start: `e78fd1414f1ae2ca333e9d12087ba6f83dc056a9`、clean `main`で依存条件とplanning Blocking 0を
+  再確認し、`17b26ce`でTSK-06.47だけを`in_progress`にした。
+- Implementation: `911753c`。schema v35の一つのprofile identity refinementへcurrent load／replaceと
+  v32／v33／v34 migration／backup importを収束した。v34 draft／historyは破棄せずcurrent result envelopeへ移行し、
+  mismatchはkey／embedded IDの選択・修復・削除なしで同じinvalidとなる。通常writer、NP0 retained／unowned、
+  calculator／portable／ranking／Web readerには第二validatorやalternate lookupを追加していない。
+- Verification: focused 9 files／95 tests、unit 78 files／435 tests、production 24 files／117 testsがpass。
+  production inventoryは422 attack servants／433 profiles／420 calculated／2 unsupported／393 ranking rows、candidate
+  6,360／deduplicated 3,949／damage request 1,924／distinct 1,298で不変。schema version由来のaudit digestだけを
+  `fa9148dc060b7585c22cbb1b933a8f731718167a0e5cd2053bbdadb7a655362a`へ更新した。最終`pnpm quality`は
+  unit 435、production 117、Playwright 25、skip／todo／retry／warning／unexpected-console 0でpass。artifact
+  `.test-results/2026-09-05T08-09-19-780Z-15-ce996e`。
+- Completion: canonical flow noteは全runtime pathを`Verified`、`N/A`、またはTSK-06.42へ明示的に`Deferred`し、
+  Blocking 0。TSK-06.47は`done`、両prerequisiteが完了したTSK-06.42を`ready`へ進める。
 
 ### TSK-06.42: Ranking population, level, and NP-level basis cutover
 
