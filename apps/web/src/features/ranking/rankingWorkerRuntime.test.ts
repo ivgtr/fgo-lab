@@ -9,7 +9,7 @@ import {
   DEFAULT_RANKING_POLICY_CONDITIONS,
 } from '@fgo-lab/calculation-application';
 import { createRankingWorkerRuntime } from './rankingWorkerRuntime';
-import { presentRankingDetailEvidence } from './rankingPresentation';
+import { presentRankingDetailEvidence } from './rankingDetailPresentation';
 
 const master = masterSnapshotSchema.parse(fixture);
 const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };

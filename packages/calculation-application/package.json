@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ranking-contracts": "./src/rankingContracts.ts",
+    "./ranking-contribution": "./src/rankingContribution.ts"
+  },
   "dependencies": {
     "@fgo-lab/calc-core": "workspace:*",
     "@fgo-lab/battle-execution": "workspace:*",

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   DEFAULT_RANKING_POLICY_CONDITIONS,
   type RankingPolicyConditions,
-} from '@fgo-lab/calculation-application';
+} from '@fgo-lab/calculation-application/ranking-contracts';
 
 export type RankingDamageMetric = 'average' | 'minimum' | 'maximum';
 export type RankingOwnershipFilter = 'all' | 'owned' | 'unowned';

@@ -1,7 +1,5 @@
-import {
-  rankingEffectContributes,
-  type RankingPolicyDetail,
-} from '@fgo-lab/calculation-application';
+import { rankingEffectContributes } from '@fgo-lab/calculation-application/ranking-contribution';
+import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   collectDamageEffectStacks,
@@ -10,7 +8,7 @@ import {
 } from '../../presentation/damageEffectStacks';
 import { numberFormatter } from '../../ui/i18n';
 import { ModifierChip } from '../calculator/ModifierChip';
-import { presentRankingDetailEvidence } from './rankingPresentation';
+import { presentRankingDetailEvidence } from './rankingDetailPresentation';
 
 function AreaContributionSummary({ detail }: { detail: RankingPolicyDetail }) {
   const area = detail.areaContribution;

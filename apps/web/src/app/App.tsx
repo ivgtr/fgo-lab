@@ -56,8 +56,14 @@ const pagesByPath = new Map<string, Page>(
 const DataPage = lazy(async () => ({
   default: (await import('../features/data/DataPage')).DataPage,
 }));
-const CalculationRoutes = lazy(async () => ({
-  default: (await import('./CalculationRoutes')).CalculationRoutes,
+const CalculatorRoute = lazy(async () => ({
+  default: (await import('./CalculatorRoute')).CalculatorRoute,
+}));
+const HomeRoute = lazy(async () => ({
+  default: (await import('./HomeRoute')).HomeRoute,
+}));
+const RankingRoute = lazy(async () => ({
+  default: (await import('./RankingRoute')).RankingRoute,
 }));
 const CraftEssences = lazy(async () => ({
   default: (await import('../features/profile/CraftEssences')).CraftEssences,
@@ -369,9 +375,16 @@ export function App() {
           <h1>{nav.find(([id]) => id === page)?.[1]}</h1>
         </header>
         <Suspense fallback={<p aria-live="polite">画面を読み込んでいます…</p>}>
-          {(page === 'home' || page === 'calculate' || page === 'ranking') && (
-            <CalculationRoutes
-              page={page}
+          {page === 'home' && (
+            <HomeRoute
+              master={currentMaster}
+              profile={profile}
+              calculation={calculation}
+              navigate={navigate}
+            />
+          )}{' '}
+          {page === 'calculate' && (
+            <CalculatorRoute
               master={currentMaster}
               profile={profile}
               calculation={calculation}
@@ -380,13 +393,21 @@ export function App() {
               setCalculationSessionId={setCalculationSessionId}
               updateActiveProfile={updateActiveProfile}
               updateSupportTemplate={updateSupportTemplate}
-              navigate={navigate}
-              replaceRoute={(nextPage) => router.push(pagePaths[nextPage])}
               registerFinalizer={(finalizer) => {
                 calculationFinalizer.current = finalizer;
               }}
               recoveryFocus={recoveryFocus}
               setRecoveryFocus={setRecoveryFocus}
+            />
+          )}{' '}
+          {page === 'ranking' && (
+            <RankingRoute
+              master={currentMaster}
+              profile={profile}
+              setCalculation={setCalculation}
+              setCalculationSessionId={setCalculationSessionId}
+              updateActiveProfile={updateActiveProfile}
+              replaceRoute={(nextPage) => router.push(pagePaths[nextPage])}
             />
           )}{' '}
           {page === 'servants' && (

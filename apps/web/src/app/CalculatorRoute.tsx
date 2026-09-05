@@ -1,6 +1,5 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useEffect, useLayoutEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -17,14 +16,12 @@ import type {
   PortableCalculationRequest,
   SupportTemplate,
 } from '@fgo-lab/schema';
-import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import type { EffectProjection } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
   attemptPortableCalculationReset,
   attemptPortableCalculationVersionUpgrade,
   createDefaultCalculatorPortableRequest,
-  createRankingPortableRequest,
   currentCalculationVersionContext,
   executePortableCalculation,
   recoverPortableCalculation,
@@ -32,24 +29,14 @@ import {
   resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { CalculationContextNotice } from '../features/calculator/CalculationContextNotice';
-import type { CalculationWorkspace, Page } from './App';
+import { Calculator, RejectedCalculator } from '../features/calculator/Calculator';
+import type { CalculationWorkspace } from './App';
+import {
+  commitPortableDraft as commitPortableDraftRecord,
+  type UpdateActiveProfile,
+} from './portableDraft';
 
-const Calculator = dynamic(() =>
-  import('../features/calculator/Calculator').then((module) => module.Calculator),
-);
-const RejectedCalculator = dynamic(() =>
-  import('../features/calculator/Calculator').then((module) => module.RejectedCalculator),
-);
-const Home = dynamic(() => import('../features/home/Home').then((module) => module.Home));
-const Ranking = dynamic(() =>
-  import('../features/ranking/Ranking').then((module) => module.Ranking),
-);
-
-type CalculationPage = Extract<Page, 'home' | 'calculate' | 'ranking'>;
-type UpdateActiveProfile = (update: (profile: LocalProfile) => LocalProfile) => Promise<void>;
-
-interface CalculationRoutesProps {
-  page: CalculationPage;
+interface CalculatorRouteProps {
   master: MasterDataSnapshot;
   profile: LocalProfile;
   calculation: CalculationWorkspace;
@@ -61,8 +48,6 @@ interface CalculationRoutesProps {
     templateId: string,
     patch: Partial<Pick<SupportTemplate, 'name' | 'lastUsedAt' | 'composition'>>,
   ) => Promise<void>;
-  navigate: (page: Page) => Promise<void>;
-  replaceRoute: (page: Page) => void;
   registerFinalizer: (finalizer: (() => Promise<void>) | null) => void;
   recoveryFocus: 'result' | 'error' | null;
   setRecoveryFocus: Dispatch<SetStateAction<'result' | 'error' | null>>;
@@ -90,8 +75,7 @@ function excludedSupportEffects(template: SupportTemplate, effects: readonly Eff
   );
 }
 
-export function CalculationRoutes({
-  page,
+export function CalculatorRoute({
   master,
   profile,
   calculation,
@@ -100,26 +84,16 @@ export function CalculationRoutes({
   setCalculationSessionId,
   updateActiveProfile,
   updateSupportTemplate,
-  navigate,
-  replaceRoute,
   registerFinalizer,
   recoveryFocus,
   setRecoveryFocus,
-}: CalculationRoutesProps) {
+}: CalculatorRouteProps) {
   const defaultServant = master.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
   const currentRequest =
     calculation.request ??
     createDefaultCalculatorPortableRequest(master, defaultBuild, defaultServant);
   const currentScenario = currentRequest.scenario;
-  const versions = {
-    schemaVersion: SCHEMA_VERSION,
-    masterDataVersion: master.version,
-    engineVersion: ENGINE_VERSION,
-    appVersion: APP_VERSION,
-    gameRegion: 'JP' as const,
-    masterDataLocale: 'ja-JP' as const,
-  };
   const portableOutcome = calculation.storedResult
     ? recoverPortableCalculation(currentRequest, calculation.storedResult, master)
     : executePortableCalculation(currentRequest, master);
@@ -127,13 +101,6 @@ export function CalculationRoutes({
     portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported'
       ? portableOutcome.execution
       : null;
-  const input = resolvedCalculation?.status === 'executable' ? resolvedCalculation.input : null;
-  const selectedAttackerId =
-    input?.attackerId ??
-    (currentScenario.mode === 'resolved' ? currentScenario.attacker.servantId : defaultServant.id);
-  const selectedAttacker =
-    master.servants.find((candidate) => candidate.id === selectedAttackerId) ?? defaultServant;
-  const selectedBuild = profile.servantBuilds[selectedAttacker.id];
   const calculationSupportTemplate = profile.supportTemplates.find(
     (template) =>
       template.templateId ===
@@ -149,23 +116,13 @@ export function CalculationRoutes({
     nextResult: CalculationResult,
     sessionId = calculationSessionId,
   ) {
-    const fingerprint = await portableCalculationFingerprint(request, async (data: Uint8Array) =>
-      crypto.subtle.digest('SHA-256', new Uint8Array(data)),
-    );
-    const now = new Date().toISOString();
-    await updateActiveProfile((current) => ({
-      ...current,
-      draft: {
-        profileId: current.profileId,
-        calculationSessionId: sessionId,
-        request,
-        result: nextResult,
-        requestFingerprint: fingerprint,
-        updatedAt: now,
-      },
-      updatedAt: now,
-    }));
-    setCalculation({ request, storedResult: nextResult, source: 'draft' });
+    await commitPortableDraftRecord({
+      request,
+      result: nextResult,
+      sessionId,
+      updateActiveProfile,
+      setCalculation,
+    });
   }
 
   async function savePortableDraft(
@@ -238,7 +195,7 @@ export function CalculationRoutes({
   }
 
   useEffect(() => {
-    registerFinalizer(page === 'calculate' ? finalizeCurrentCalculation : null);
+    registerFinalizer(finalizeCurrentCalculation);
     return () => registerFinalizer(null);
   });
 
@@ -251,47 +208,6 @@ export function CalculationRoutes({
     document.querySelector<HTMLElement>(selector)?.focus();
     setRecoveryFocus(null);
   }, [recoveryFocus, setRecoveryFocus]);
-
-  if (page === 'home')
-    return (
-      <Home
-        result={
-          result?.status === 'calculated'
-            ? (result.rows[
-                (input?.npLevel ??
-                  (currentScenario.mode === 'resolved' ? currentScenario.attacker.npLevel : 1)) - 1
-              ]?.average ?? 0)
-            : 0
-        }
-        attackerName={selectedAttacker.name}
-        attackerImage={selectedAttacker.imageKey}
-        owned={selectedBuild?.npLevel ? 1 : 0}
-        hasHistory={profile.history.length > 0}
-        onNavigate={(next) => void navigate(next)}
-      />
-    );
-
-  if (page === 'ranking')
-    return (
-      <Ranking
-        master={master}
-        profile={{
-          servantBuilds: profile.servantBuilds,
-          craftEssences: profile.craftEssences,
-          supportTemplates: profile.supportTemplates,
-        }}
-        versions={versions}
-        onOpenCalculator={(detail) => {
-          const sessionId = crypto.randomUUID();
-          setCalculationSessionId(sessionId);
-          void savePortableDraft(
-            createRankingPortableRequest(detail, currentCalculationVersionContext(master)),
-            sessionId,
-          );
-          replaceRoute('calculate');
-        }}
-      />
-    );
 
   return (
     <>

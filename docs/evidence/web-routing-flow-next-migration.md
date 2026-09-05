@@ -44,6 +44,8 @@ route's UI chunk, without changing damage, ranking, persistence, recovery, or of
 | setup / IndexedDB recovery | startup adapter | persistent application shell | same ready/setup/invalid/offline classes | Verified: E2E-025, E2E-046, E2E-047 |
 | service-worker reload | visited Next response and required assets | browser cache | visited shell and required assets reopen offline; old Vite cache is removed | Verified: E2E-023 |
 | ranking Worker | route-specific ranking chunk | Worker protocol | same results and calculator handoff | Verified: E2E-050 plus production parity suite |
+| ranking initial presentation | ranking route boundary | summary controls and rows | detail presentation and calculator handoff code are not fetched before their interactions | Verified: production loadable manifest |
+| ranking detail expansion | selected calculated row | lazy detail presentation chunk | same canonical evidence and calculator command | Verified: focused ranking detail tests plus E2E-050 |
 | unknown path | App Router | Next not-found response | HTTP 404 with no plausible page fallback | Verified: E2E-001 |
 | calculation semantics | calculation application / execution | calculator and ranking | no producer, consumer, or rule changes | N/A: routing does not modify semantic state |
 
@@ -62,6 +64,16 @@ at 10.52 kB gzip, servants at 5.26 kB gzip, growth at 1.49 kB gzip, and data at 
 calculation/application chunks load only for calculation-family and support paths. This migration
 therefore establishes selective loading without claiming that the framework bootstrap itself is
 smaller.
+
+The subsequent route-boundary split removes the shared calculation orchestrator from home, calculator,
+and ranking delivery. Measured from the production loadable manifest, the complete initial lazy
+payloads changed as follows (JavaScript gzip, excluding the already-declared shell): home 49.90 kB to
+45.57 kB, calculator 70.42 kB to 68.19 kB, and ranking 59.20 kB to 6.15 kB. Ranking detail
+presentation is now a separate 5.59 kB interaction chunk, while the 44.95 kB canonical portable
+handoff/application chunk loads only when the user opens the selected result in the calculator. The
+ranking Worker remains independently bundled and continues to own summary/detail calculation. Direct
+package subpath exports expose the small ranking presentation contract without pulling the full
+calculation application barrel into the initial ranking UI.
 
 The runtime master artifact remains 30,107,913 bytes uncompressed and 2,260,578 bytes with gzip. It is
 not imported by a Server or Client Component and is therefore absent from the JavaScript bundle. The
@@ -101,7 +113,9 @@ console, page errors, resource failures, and exact allowances remain fail closed
 
 ## Verification
 
-- Unit: 75 files, 416 tests passed.
+- Unit: 76 files, 421 tests passed.
 - Production master: 24 files, 116 tests passed, including calculator/ranking parity and fail-closed
   inventory checks.
 - Next production E2E: 3 files, 25 tests passed, including all matrix paths above.
+- Route-boundary completion gate: `pnpm quality` passed with 421 unit, 116 production, and
+  25 Playwright tests; warnings and unexpected console events were both zero.

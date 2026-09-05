@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import { MasterImage } from '../../ui/MasterImage';
@@ -5,7 +6,10 @@ import { ServantFilterIcon } from '../../ui/ServantFilterIcon';
 import { numberFormatter } from '../../ui/i18n';
 import { npCardIconUrl, npCardLabel, servantClassLabels } from '../../ui/servantFilterOptions';
 import type { RankingPresentedRow } from './rankingPresentation';
-import { RankingEffectDetails } from './RankingEffectDetails';
+
+const RankingEffectDetails = lazy(async () => ({
+  default: (await import('./RankingEffectDetails')).RankingEffectDetails,
+}));
 
 export function RankingList({
   rows,
@@ -87,11 +91,13 @@ export function RankingList({
             {expanded ? (
               <section id={detailId} aria-label={`${row.name}の計算詳細`}>
                 {detail ? (
-                  <RankingEffectDetails
-                    detail={detail}
-                    master={master}
-                    onOpenCalculator={onOpenCalculator}
-                  />
+                  <Suspense fallback={<p className="notice">詳細表示を準備中…</p>}>
+                    <RankingEffectDetails
+                      detail={detail}
+                      master={master}
+                      onOpenCalculator={onOpenCalculator}
+                    />
+                  </Suspense>
                 ) : detailError ? (
                   <p role="alert" className="notice">
                     詳細を読み込めませんでした: {detailError}{' '}
