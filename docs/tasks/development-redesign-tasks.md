@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.0"
+document_version: "1.7.1"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-05"
@@ -57,7 +57,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.42 | Ranking population, level, and NP-level basis cutover | ready | TSK-06.41 | comparison scenario／owned data／URL・worker identity |
+| TSK-06.46 | Resolved attacker level-stat fail-closed | ready | TSK-06.41 | resolved scenario／master ATK join／recovery |
+| TSK-06.42 | Ranking population, level, and NP-level basis cutover | blocked | TSK-06.46 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
@@ -68,7 +69,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.42 -> TSK-06.43 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.46 -> TSK-06.42 -> TSK-06.43 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -1237,11 +1238,94 @@ Completion:
   Deferred to TSK-06.5. Final `pnpm quality` passed with 406 unit／116 production／25 Playwright tests and
   skip／todo／retry／warning／unexpected-console 0; artifact
   `.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. At this historical boundary TSK-06.41 was `done` and
-  TSK-06.5 was `ready`; requirement v0.10.0 now inserts TSK-06.42〜06.44 and makes TSK-06.42 the current `ready` task.
+  TSK-06.5 was `ready`; requirement v0.10.0 inserted TSK-06.42〜06.44. TSK-06.42 Step 1 subsequently found
+  the shared resolved-level ATK fallback and inserted TSK-06.46 as its `ready` prerequisite.
+
+### TSK-06.46: Resolved attacker level-stat fail-closed
+
+Depends on: TSK-06.41
+
+- [ ] `calculation-application`のshared resolved-scenario preparationで
+      `servant.atkByLevel[String(selectedLevel)]`のpresenceを一度だけ解決し、欠落をdiscriminated
+      `invalid: attackerLevelStatUnavailable`へ切り替える。presentな0は有効値とし、resolved
+      `explicitOverrides.attackerAtk`はjoin成功後だけ適用する。manualの明示ATKは変更しない。
+- [ ] direct calculator、prepared ranking candidate／profile aggregation、portable
+      execute／recover／reset／version upgradeが同じapplication invalidを消費する。invalidはordered execution、
+      damage cache、row／detail／handoff、draft／history writeへ到達させず、unsupportedやgeneric throwへ畳み込まない。
+- [ ] Web calculatorのinvalid recoveryを維持し、ranking handoff失敗時にdraftをpublishせず、
+      `HomeRoute`のnon-calculated → numeric `0`をnullable／explicit unavailable presentationへ切り替える。
+      ranking precheck、level interpolation、servant ID／名称分岐は追加しない。
+- [ ] positive／present-zero／missing／missing＋resolved override、calculator／ranking parity、portable
+      execute／recover／reset／upgrade retained-state、ranking handoff no-write、home no-zeroをsmall fixtureへ固定する。
+- [ ] shared production auditの一回のmaster load／parse／compileで、422 attack servantsの自然上限／Lv.90と
+      calculator／rankingが実際に参照するunique servant-level pairを監査し、missing 0をratchetする。
+      candidate／damage-request counterと3-run performance medianをStep 1 baselineから維持する。
+
+Done gate:
+
+- resolved servant／level pairにcanonical ATKがない全経路が同じtyped invalidとなり、numeric input／row／
+  home headline、0 ATK fallback、近傍level補間、override repairを返さない。presentなcanonical 0とmanual明示ATKは維持する。
+- calculator、ranking、portable replayが同じscenario preparationを使用し、invalid candidateをdamage cacheへ入れず、
+  failed execute／recover／reset／upgrade／handoffがretained memory／durable request／resultを変更しない。
+- production availabilityとschema-legal positive／zero／absenceをshared inventory／small fixtureで分担し、
+  individual servant correction、resolved alternate lookup、outcome collapseが0件である。
+- shared auditのcandidate 6,360／deduplicated 3,949／damage request 1,924／distinct 1,298に未説明差分がなく、
+  application compile medianが5,358 msから10%または5秒以上悪化しない。
+- flow closure: `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md`がBlocking 0。
+
+Implementation and verification order:
+
+1. application-owned exact level-stat joinとtyped invalidを`scenario.ts`のdamage input構築前へ置き、
+   public result shapeを変える場合だけschema／engine versionとexhaustive readerを一度で切り替える。
+2. ranking aggregation／cache、portable execute／recover／reset／upgrade、production auditを同じoutcomeへ収束させる。
+3. calculator draft／history、direct ranking handoff、Home summaryのwrite／numeric fallbackを閉じる。
+4. `pnpm test:diagnostic -- scenario`、`rankingProfileOutcome`、`portableCalculation`、
+   `"HomeRoute|rankingHandoff"`、`productionAudit`の順で診断し、unit、productionへ拡張する。
+5. production auditを同一環境で3回測定し、legacy scanとflow noteを更新後、`pnpm quality`だけでphaseを閉じる。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `CALC-PORTABLE-001` | Apply | portable execute／recover／reset／upgrade／no-write focused tests | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `RK-EXEC-001` | Apply | exact-key positive／zero／absence／override and pre-execution invalid tests | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `RK-POLICY-001` | Apply | shared preparation／ranking invalid aggregation／calculator parity tests | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `RK-HANDOFF-001` | Apply | direct handoff no-write plus portable retained-state tests | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `RK-AUDIT-001` | Apply | shared production natural／Lv.90／referenced-level availability inventory | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `RK-PERF-001` | Apply | `pnpm test:diagnostic -- productionAudit`を同一環境で3回 | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `UI-CALC-001` | Apply | calculator invalid recovery／Home no-zero focused tests | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `TS-PERF-002` | Apply | shared auditのbefore／after 3-run medianとexact counter比較 | `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md` |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | canonical flow note／Handoff |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff:
+
+- Step 1 baseline: `907f2514f0f1c06d30d9d39419ba843a35ca043e`、`main`。TSK-06.41はDone gate、
+  Contract matrix、Handoff、final qualityが完了しており、TSK-06.46の依存条件を満たす。
+- Step 1 scope: production／test code変更0。正本は
+  `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md`。user-visible outcome、owner、
+  full producer／reader／writer／recovery inventory、state-by-path counterexample、実装単位、検証順を確定し、
+  planning Blocking 0。product requirement改訂と追加ADRは不要。
+- Confirmed delta: shared expressionの`?? 0`に加え、resolved overrideが欠落pairをmaskする順序と、
+  `HomeRoute`が非数値outcomeをnumeric 0へ変換するreaderを同じrecurrence scopeへ追加した。
+  別semantic familyの新規problemは確認していない。
+- Production／performance baseline: master `20260902.02`は469 servants／422 attack servants、
+  natural／Lv.90 missing 0、Lv.120まで421、MashだけLv.90まで。shared audit 3回のapplication compileは
+  5,358／5,491／5,081 ms（median 5,358 ms）、bounded command median 9.99 s。candidate 6,360、
+  deduplicated 3,949、damage request 1,924、distinct 1,298。
+- Step 2 entry condition: このplanning commitを含むHEAD、TSK-06.46 `ready`、planning Blocking 0、
+  TSK-06.41 `done`を再確認し、開始commitでTSK-06.46だけを`in_progress`へ変更する。production／test codeの
+  新規差分があれば開始しない。
+- Allowed worktree: 本Step開始時から存在する
+  `docs/README.md`、`docs/evidence/README.md`、`docs/evidence/ranking-policy-candidate-flow-tsk-06.md`、
+  `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md`、および
+  `docs/tasks/development-redesign-tasks.md`のTSK-06.47／06.42 planning hunksだけ。これらをrevert、
+  stage、commitしない。
+- Next command after the Step 2 start commit: `pnpm test:diagnostic -- scenario`。
 
 ### TSK-06.42: Ranking population, level, and NP-level basis cutover
 
-Depends on: TSK-06.41
+Depends on: TSK-06.46
 
 - [ ] 旧`comparisonMode: standard | owned`を削除し、母集団`all | owned`、レベル基準
       `naturalLimit | uniformLevel90 | ownedLevel`、宝具レベル基準`specified(NP1〜5) | owned`を
