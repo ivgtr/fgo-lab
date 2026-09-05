@@ -1,3 +1,4 @@
+import { rankingBasisFixture } from './rankingBasisFixture';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -26,8 +27,6 @@ const master = masterSnapshotSchema.parse(fixture);
 const versionContext = currentCalculationVersionContext(master);
 const profile: RankingProfileInput = {
   servantBuilds: {},
-  craftEssences: [],
-  supportTemplates: [],
 };
 const versions = {
   schemaVersion: SCHEMA_VERSION,
@@ -101,7 +100,8 @@ describe('portable calculation application owner', () => {
       executionIntent: {
         kind: 'ranking' as const,
         initialNpGauge: 20_000,
-        policy: { selfBuffs: 'included' as const, conditionalEffects: 'baseline' as const },
+        policy: DEFAULT_RANKING_POLICY_CONDITIONS,
+        basis: rankingBasisFixture(master.servants[0]!),
       },
     });
     expect(executePortableCalculation(rankingRequest, master)).toMatchObject({
@@ -393,7 +393,8 @@ describe('portable calculation application owner', () => {
       executionIntent: {
         kind: 'ranking',
         initialNpGauge: 20_000,
-        policy: { selfBuffs: 'included', conditionalEffects: 'baseline' },
+        policy: DEFAULT_RANKING_POLICY_CONDITIONS,
+        basis: rankingBasisFixture(master.servants[0]!),
       },
     });
     const current = executePortableCalculation(currentRequest, master);

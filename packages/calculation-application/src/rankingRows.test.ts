@@ -59,8 +59,6 @@ describe('ranking row canonical contribution derivation', () => {
     } as unknown as RankingPolicyDetail;
     const row = createRankingRow(servant, detail, {
       servantBuilds: {},
-      craftEssences: [],
-      supportTemplates: [],
     });
     expect(row.appliedEffectCount).toBe(1);
     expect(row.specialDamageApplied).toBe(true);

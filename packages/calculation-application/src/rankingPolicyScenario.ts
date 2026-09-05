@@ -1,7 +1,8 @@
+import { compileRankingSelection, resolveRankingBasis } from './rankingBasis';
 import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { ActorFormId } from '@fgo-lab/master-data';
-import type { VersionContext } from '@fgo-lab/schema';
+import type { ResolvedRankingBasis, VersionContext } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from './attackProfile';
 import {
   compileRankingCandidateSpaces,
@@ -17,6 +18,7 @@ import { prepareCalculationScenarioWithPolicy, type PreparedCalculationScenario 
 export { executeRankingScenarios, selectRankingExecutionIndexes } from './rankingExecution';
 
 export interface RankingExecutionPlan {
+  basis: ResolvedRankingBasis;
   baseScenario: ResolvedScenario | null;
   rankingScenarios: readonly ResolvedScenario[];
   preparedRankingScenarios: readonly PreparedCalculationScenario[];
@@ -42,17 +44,20 @@ export function compileRankingExecutionPlan(
   conditions: RankingPolicyConditions,
   _versions: VersionContext,
 ): RankingExecutionPlan {
+  const selection = compileRankingSelection(conditions);
+  if (selection.status === 'invalid') throw new TypeError(selection.reason);
+  const basis = resolveRankingBasis(servant, profile, selection.selection);
   const inventory = createStaticAttackProfiles(servant);
   const candidateSpaces = compileRankingCandidateSpaces(
     servant,
     master,
-    profile,
+    basis,
     conditions,
     inventory,
   );
   const candidates = candidateSpaces.flatMap((space) =>
     space.status === 'ready'
-      ? materializeRankingCandidateSpace({ servant, master, profile, conditions, space })
+      ? materializeRankingCandidateSpace({ servant, master, basis, conditions, space })
       : [],
   );
   const preparedRankingScenarios = candidates.map((candidate) =>
@@ -62,6 +67,7 @@ export function compileRankingExecutionPlan(
   );
   const baselineGauge = master.npResourceSemantics.noblePhantasmUse.requirement;
   return {
+    basis,
     baseScenario: candidates[0]?.scenario ?? null,
     rankingScenarios: candidates.map(({ scenario }) => scenario),
     preparedRankingScenarios,
@@ -114,7 +120,7 @@ export function createRankingScenarioFromPolicy(
   const selected = selectRankingExecutionIndexes(
     executions,
     plan.attackProfiles,
-    conditions.npLevel,
+    plan.basis.npLevel,
     plan,
   );
   const requestedKey = requestedAttackProfile ? attackProfileKey(requestedAttackProfile) : null;

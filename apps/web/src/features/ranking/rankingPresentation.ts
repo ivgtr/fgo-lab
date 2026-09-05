@@ -59,13 +59,20 @@ export function countActiveRankingFilters(filters: RankingFiltersState): number 
 export function countChangedRankingConditions(conditions: RankingPolicyConditions): number {
   const defaults = DEFAULT_RANKING_POLICY_CONDITIONS;
   return (Object.keys(defaults) as (keyof RankingPolicyConditions)[]).filter(
-    (key) => conditions[key] !== defaults[key],
+    (key) => JSON.stringify(conditions[key]) !== JSON.stringify(defaults[key]),
   ).length;
 }
 
 export function rankingPolicyLabel(conditions: RankingPolicyConditions): string {
   return [
-    conditions.comparisonMode === 'standard' ? '標準比較' : '所持戦力',
+    conditions.population === 'all' ? '全サーヴァント' : '保有サーヴァント',
+    { naturalLimit: '自然上限', uniformLevel90: 'Lv.90統一', ownedLevel: '保有レベル' }[
+      conditions.levelBasis
+    ],
+    conditions.npLevelBasis.kind === 'owned'
+      ? '保有宝具レベル'
+      : `NP${conditions.npLevelBasis.npLevel}`,
+    conditions.classAffinity === 'favorable' ? '相性有利' : '等倍',
     conditions.selfBuffs === 'included' ? '自己バフあり' : '自己バフなし',
     conditions.conditionalEffects === 'satisfied' ? '条件効果成立込み' : '条件効果通常のみ',
   ].join('・');

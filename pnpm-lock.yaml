@@ -145,6 +145,9 @@ importers:
       '@fgo-lab/master-data':
         specifier: workspace:*
         version: link:../master-data
+      '@fgo-lab/profile-domain':
+        specifier: workspace:*
+        version: link:../profile-domain
       '@fgo-lab/schema':
         specifier: workspace:*
         version: link:../schema

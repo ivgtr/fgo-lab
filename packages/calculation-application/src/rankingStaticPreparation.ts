@@ -1,3 +1,4 @@
+import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
 import {
   actorFormEquals,
   actorFormKey,
@@ -97,13 +98,18 @@ function skillCommands(
       ).values(),
     ];
     if (choices.length === 0)
-      commands.push({ kind: 'useSkillSlot', slot, skillLevel: 10, choice: null });
+      commands.push({
+        kind: 'useSkillSlot',
+        slot,
+        skillLevel: STANDARD_RANKING_SCENARIO_POLICY.skillLevel,
+        choice: null,
+      });
     else
       commands.push(
         ...choices.map((choice) => ({
           kind: 'useSkillSlot' as const,
           slot,
-          skillLevel: 10,
+          skillLevel: STANDARD_RANKING_SCENARIO_POLICY.skillLevel,
           choice: { groupKey: choice.key, candidateKey: choice.candidate },
         })),
       );

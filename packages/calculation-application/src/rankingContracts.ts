@@ -1,10 +1,10 @@
 import type {
+  RankingSelection,
+  ResolvedRankingBasis,
   CalculationResult,
   CalculationScenario,
-  CraftEssenceCopy,
   DamageResolutionInput,
   ServantBuild,
-  SupportTemplate,
 } from '@fgo-lab/schema';
 import type { CalculationExecution } from './scenario';
 import type { NoblePhantasmVariantRef } from '@fgo-lab/master-data';
@@ -17,23 +17,17 @@ import type { CandidateSpaceIssue } from './rankingCandidateSpace';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
-export type RankingComparisonMode = 'standard' | 'owned';
 export type RankingNpLevel = 1 | 2 | 3 | 4 | 5;
 export type RankingClassAffinity = 'neutral' | 'favorable';
 export type RankingSelfBuffs = 'included' | 'excluded';
 export type RankingConditionalEffects = 'baseline' | 'satisfied';
-
-export interface RankingPolicyConditions {
-  comparisonMode: RankingComparisonMode;
-  npLevel: RankingNpLevel;
-  classAffinity: RankingClassAffinity;
-  selfBuffs: RankingSelfBuffs;
-  conditionalEffects: RankingConditionalEffects;
-}
+export type RankingPolicyConditions = RankingSelection;
+export type { ResolvedRankingBasis } from '@fgo-lab/schema';
 
 export const DEFAULT_RANKING_POLICY_CONDITIONS: RankingPolicyConditions = {
-  comparisonMode: 'standard',
-  npLevel: 1,
+  population: 'all',
+  levelBasis: 'naturalLimit',
+  npLevelBasis: { kind: 'specified', npLevel: 1 },
   classAffinity: 'neutral',
   selfBuffs: 'included',
   conditionalEffects: 'baseline',
@@ -59,8 +53,6 @@ export const STANDARD_RANKING_SCENARIO_POLICY = {
 
 export interface RankingProfileInput {
   servantBuilds: Readonly<Record<string, ServantBuild>>;
-  craftEssences: readonly CraftEssenceCopy[];
-  supportTemplates: readonly SupportTemplate[];
 }
 
 export interface RankingRowSummary {
@@ -105,7 +97,8 @@ export interface RankingPolicyDetail {
   appliedPreparationActions: CalculationExecution['appliedPreparationActions'];
   contributionPolicy: ContributionApplicationPolicy;
   effectiveContributions: EffectiveContributionSet;
-  rankingPolicy: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>;
+  rankingPolicy: RankingPolicyConditions;
+  basis: ResolvedRankingBasis;
   areaContribution: {
     withoutAreaScenario: ResolvedScenario;
     withoutAreaInput: DamageResolutionInput;
@@ -192,7 +185,12 @@ export interface RankingPolicyExclusion {
   issues: CalculationResult['issues'];
 }
 
-export interface RankingPolicyCalculation {
+export type RankingPolicyCalculation = RankingCalculationData &
+  (
+    | { status: 'calculated' }
+    | { status: 'invalid'; reason: 'rankingSelectionInvalid'; detail: string }
+  );
+interface RankingCalculationData {
   rows: RankingRowSummary[];
   profileResults: Record<string, RankingProfileResult>;
   exclusions: RankingPolicyExclusion[];

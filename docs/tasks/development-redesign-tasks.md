@@ -3,7 +3,7 @@ title: "FGO Lab テスト・ランキング再設計 Tasks"
 document_version: "1.7.2"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-05"
+updated_at: "2026-09-06"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -59,8 +59,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
 | TSK-06.46 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
 | TSK-06.47 | Profile servant-record identity fail-closed | done | TSK-06.41 | profile map identity／persistence／shared consumers |
-| TSK-06.42 | Ranking population, level, and NP-level basis cutover | in_progress | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
-| TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
+| TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
+| TSK-06.43 | Canonical maximum stack quantity | ready | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
@@ -1413,40 +1413,40 @@ Handoff:
 
 Depends on: TSK-06.46, TSK-06.47
 
-- [ ] 旧`comparisonMode: standard | owned`を削除し、母集団`all | owned`、レベル基準
+- [x] 旧`comparisonMode: standard | owned`を削除し、母集団`all | owned`、レベル基準
       `naturalLimit | uniformLevel90 | ownedLevel`、宝具レベル基準`specified(NP1〜5) | owned`を
       application所有の直交するcanonical selectionへ破壊的に切り替える。application command reducerだけを通常writerとし、
       six-field selection全体をvalid／request-level invalidへcompileする。
-- [ ] `owned`母集団はprofile-domainのcanonical ownership fact（NP1〜5）だけでentryを絞り、自然上限／Lv.90統一／
+- [x] `owned`母集団はprofile-domainのcanonical ownership fact（NP1〜5）だけでentryを絞り、自然上限／Lv.90統一／
       保有レベルと指定NP／保有宝具Lvをentryごとに独立解決する。NP0／record欠落はunownedで、保存record自体は変更しない。
       key／embedded identityの整合はTSK-06.47を消費し、ranking内へ第二のvalidatorを追加しない。
-- [ ] downstreamのstatic semantics、NP capacity、candidate construction／selectionへresolved numeric NP levelを一度だけ渡し、
+- [x] downstreamのstatic semantics、NP capacity、candidate construction／selectionへresolved numeric NP levelを一度だけ渡し、
       basisやsaved buildを再読させない。levelもexact `atkByLevel`だけを使用し、TSK-06.46のfail-closed ownerへ収束させる。
-- [ ] `ownedLevel`／owned NPはowned母集団だけで有効とする。NP0／missing buildはどのNP basisでもowned母集団へ列挙せず、
+- [x] `ownedLevel`／owned NPはowned母集団だけで有効とする。NP0／missing buildはどのNP basisでもowned母集団へ列挙せず、
       fabricated exclusionを作らない。allとの不正組合せ、malformed worker payload、ATK欠落を標準値へfallbackしない。
-- [ ] ranking scenarioの`attacker.source`をpopulationから導出せず`master`に固定し、Fou ATK+1,000、skill Lv10、OC1等の
+- [x] ranking scenarioの`attacker.source`をpopulationから導出せず`master`に固定し、Fou ATK+1,000、skill Lv10、OC1等の
       共通条件を維持する。ownedからコピーするのは選択したlevel／NP levelだけとし、detailに各provenanceを保持する。
-- [ ] UI名称を`全サーヴァント | 保有サーヴァント`、`自然上限 | Lv.90統一 | 保有レベル`、
+- [x] UI名称を`全サーヴァント | 保有サーヴァント`、`自然上限 | Lv.90統一 | 保有レベル`、
       `NP1〜NP5 | 保有宝具レベル`へ統一し、`参考サイト基準`、`標準比較`、`所持戦力`をcurrent contractへ残さない。
-- [ ] `setPopulation(all)`を明示atomic commandとし、保持中の`ownedLevel`だけを`naturalLimit`、owned NPだけをspecified NP1へ
+- [x] `setPopulation(all)`を明示atomic commandとし、保持中の`ownedLevel`だけを`naturalLimit`、owned NPだけをspecified NP1へ
       置換する。URL／worker／portableから同じillegal productを受けた場合はnormalizeせずrequest-level invalidにする。
-- [ ] URLを新keyへ一括切替し、全新key欠落だけをdefaultとする。unknown calculation value、旧`rMode`、partial／illegal productは
+- [x] URLを新keyへ一括切替し、全新key欠落だけをdefaultとする。unknown calculation value、旧`rMode`、partial／illegal productは
       typed invalidとしてworkerを起動せず、Webは明示reset commandだけを提示する。旧reader／serializerを残さない。
-- [ ] worker request／responseへruntime validationとtyped invalid responseを追加し、summary／detail stale guardとcache keyを
+- [x] worker request／responseへruntime validationとtyped invalid responseを追加し、summary／detail stale guardとcache keyを
       master／version／validated servant-build context＋canonical six-field selectionのidentityへ切り替える。context交換時は
       conditions／summary／detail cacheをatomicにclearする。cache value／lifetime／cardinalityは変更せずTSK-07へDeferredする。
-- [ ] `RankingProfileInput`を実際に読むvalidated servant-build mapへ限定する。共通条件でnone固定の保存礼装／support templateを
+- [x] `RankingProfileInput`を実際に読むvalidated servant-build mapへ限定する。共通条件でnone固定の保存礼装／support templateを
       worker context、fingerprint、recalculation triggerへ含めず、保存値をranking semanticsへ混入させない。
-- [ ] `RankingPolicyDetail`、portable ranking intent、portable fingerprintへsix-field selectionとresolved level／NP provenanceを
+- [x] `RankingPolicyDetail`、portable ranking intent、portable fingerprintへsix-field selectionとresolved level／NP provenanceを
       含める。portable replayはpinned scenarioを実行し、mutable profileからowned値を再解決しない。
-- [ ] schema／engine versionを一度だけ更新し、identity不変な旧calculator／manual snapshotだけを移行する。旧ranking draftは破棄、
+- [x] schema／engine versionを一度だけ更新し、identity不変な旧calculator／manual snapshotだけを移行する。旧ranking draftは破棄、
       historyはhistorical-only、旧shareはrejectとし、不足するaxesを推測してexecutable requestへ変換しない。
-- [ ] direct Web writer `rankingHandoff`を含むrow → detail → portable request → calculator immediate replayを各basis familyで固定する。
+- [x] direct Web writer `rankingHandoff`を含むrow → detail → portable request → calculator immediate replayを各basis familyで固定する。
       notice／normal reset interaction、cache lifetime、responsive／a11yはTSK-07へDeferredする。
-- [ ] low-rarity自然上限、自然上限Lv.90、Lv.90統一、低いowned level、specified／owned NP、NP0、no-build、empty owned population、
+- [x] low-rarity自然上限、自然上限Lv.90、Lv.90統一、低いowned level、specified／owned NP、NP0、no-build、empty owned population、
       profile mutation後のpinned replay、invalid URL／worker／portableをstate-by-path fixtureへ固定する。record identity反例は
       TSK-06.47のfixtureを参照し、重複させない。
-- [ ] production 469 servants／422 attack servants／433 AttackProfilesについて自然上限／Lv.90 ATK可用性をshared inventoryで確認し、
+- [x] production 469 servants／422 attack servants／433 AttackProfilesについて自然上限／Lv.90 ATK可用性をshared inventoryで確認し、
       owned axesは一つのstable profile fixtureから合法product、NP0／no-build membership proof、invalid productを監査する。
       full maximumはTSK-06.5へDeferredする。
 
@@ -1459,7 +1459,7 @@ Implementation and verification order (Step 1 revalidated at `255464b`):
 | --- | --- | --- | --- |
 | 42-A | Step 2 entry | 変更前のshared production auditを3回計測後、schemaの共有selection shape、applicationのvalidated selection／command／resolverを定義。既存record schemaをworkerから再利用可能にし、`isOwned`とATK ownerは変更しない | 合法product、非法product、atomic population transition、NP0／missing、selected値だけのコピー。共通06.46／47 fixtureを再利用 |
 | 42-B | 42-A | `rankingPolicy`／`rankingRows`／`rankingCandidateSpace`の全scenario構築、static semantics／capacity／candidate selection／summary／direct detail／NP matrixをresolved basisへ統一。row/detailへselectionとprovenanceを保持 | `pnpm test:diagnostic -- rankingPolicy`、`-- rankingRows`、`-- rankingProfileOutcome`を各々実行。owned NPとglobal指定値が違う反例、baseline/materialized path、NP1〜5完全実行 |
-| 42-C | 42-B | detail → portable constructor／execute／replace／recover／upgradeのcoherence、schema v36／engine 31.0.0、v34/v35 ranking historical migration。repository／backup／share／draft／history writerを同じ契約へ切替 | `pnpm test:diagnostic -- portableCalculation`、`-- packages/schema/src/index.test.ts`、`-- repository`、`-- share`、`-- rankingHandoff`を各々実行。pinned replay、旧/current/mixed、failed attemptのno-write |
+| 42-C | 42-B | detail → portable constructor／execute／replace／recover／upgradeとCalculatorRouteのscenario-change attempt、schema v36／engine 31.0.0、v34/v35 ranking historical migration。repository／backup／share／draft／history writerを同じ契約へ切替 | `pnpm test:diagnostic -- portableCalculation`、`-- packages/schema/src/index.test.ts`、`-- repository`、`-- share`、`-- rankingHandoff`を各々実行。pinned replay、旧/current/mixed、failed attemptのno-write |
 | 42-D | 42-B, 42-C | URL六keyのstrict read/write、application command dispatch、六controlとsummary、worker request/response validation、context/selection/request identity、summary/detail cache guard。detailはcanonical entryから解決 | `pnpm test:diagnostic -- rankingState`、`-- rankingWorkerRuntime`、`-- useRanking`、`-- RankingConditions`を各々実行。invalid URLのfilter/popstate/reset、stale response、cache hit/miss identity、礼装/support変更時no-reinitialize |
 | 42-E | 42-C, 42-D | 同じstable owned fixtureでrow/detail/request/calculator parityと合法basis productを統合検証。shared production inventoryと性能を変更前に対応付ける | `pnpm test:diagnostic -- Ranking.integration`、`-- productionAudit`、続けて`pnpm test:unit`と`pnpm test:production`。候補数、damage入力、差分理由、3回medianを記録 |
 | 42-F | 42-E | 旧runtime type/key/fallback/readerの削除監査、flow statusとcontract evidenceを更新、完了handoff | `pnpm quality`だけを最終phase gateにし、その後に別Vitest／validate:evidenceを追加しない。Blocking 0を確認してdone |
@@ -1495,7 +1495,7 @@ Contract closure matrix:
 | `RK-AUDIT-001` | Apply | stable owned product fixture＋shared production natural／Lv.90 inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff (Step 1 only, 2026-09-05):
+Handoff: Step 1 only, 2026-09-05
 
 - 調査基点: `main` / `255464b2dc6219df7be0032bd46d45d279bbb30c`、開始worktree clean。
   AGENTS、systematic review guide、関連requirements、ranking／portable／06.46／06.47 flow noteをコードへ照合した。
@@ -1513,6 +1513,30 @@ Handoff (Step 1 only, 2026-09-05):
   full maximum／cache lifetime／responsive polishは既存後続Taskへ残す。
 - 今回は文書2件のみを更新し、Taskは`ready`を維持。実装・テスト・設定・snapshot変更なし、テスト／品質gate／
   benchmarkは未実行。仕様上の未確定事項はなく、実装検証はすべてStep 2へDeferred。
+
+Handoff: Step 2 completed, 2026-09-06
+
+- 開始境界: `255464b` → Step 1文書commit `ab48586` → 開始status commit `b4e0356`。
+  Step 1後の明示的な継続依頼を受けて実装を開始し、開始時のsource／test／configuration／snapshot差分は0。
+  無関係なユーザー変更の削除・退避は行っていない。
+- 42-A〜F完了。semantic owner、changed flow、反例と診断帰属の正本はcanonical flow noteの
+  「Step 2 implementation delta」。schema v36／engine 31.0.0へ切替済み。
+  母集団・level・NP basisを独立解決し、固定条件とprovenanceをrow／detail／portable／calculatorで共有する。
+- 最終integration reviewで見つかった`CalculatorRoute.saveScenarioDraft`のconstructor例外経路を
+  同じflow noteへ追加し、application-owned scenario-change attemptでinvalid時のno-writeを検証した。
+  URL／worker／portableの不正状態を推測値へ補完するreaderはなく、旧keyはreject／明示resetだけに残る。
+- `pnpm quality` PASS、283.32s。unit 453、production 117、Playwright 25成功、skip／retry／warning／
+  unexpected consoleすべて0。artifact: `.test-results/2026-09-05T15-00-56-136Z-16-805668`。
+  format／lint／typecheck／runner／docs／master validation／buildも通過。最終gate後にVitestや
+  `validate:evidence`を追加せず、完了記録の文書整合とstaged diffだけを確認する。
+- Production inventoryと数値damageは不変。audit traceのschema版表示815箇所とgoldenのengine envelopeだけを更新。
+  candidate 6,360／deduplicated 3,949／requests 1,924／distinct 1,298は不変、compile medianは
+  5,479 → 5,224 ms（同一command各3回、-4.6%）。owned axesはsmall stable fixtureで別途検証した。
+- runtime Blocking 0、仕様上の未解決事項なし。旧ranking draftは破棄、historyはhistorical-only、旧shareはreject。
+  全攻撃NP numeric closure、maximum stack、寄与表示、full maximum、cache lifecycle／notice／responsive polishは
+  既存TSK-06.45／06.43／06.44／06.5／07へDeferredのまま。
+- 次の実行単位は`ready`のTSK-06.43。本Taskの実装commitとclean worktreeを開始基点として記録し、
+  Task・関連requirements・canonical flow noteを再読する。後続実装は別の明示依頼から開始する。
 
 ### TSK-06.43: Canonical maximum stack quantity
 

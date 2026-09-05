@@ -14,7 +14,7 @@ import {
   isAreaDamageContribution,
   isAttackerDamageContribution,
 } from './contributionPolicy';
-import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
+import type { RankingPolicyConditions, ResolvedRankingBasis } from './rankingContracts';
 import {
   createRankingFieldCandidatesForConditions,
   materializeRankingField,
@@ -141,25 +141,19 @@ function programDimensions(domain: Omit<ProgramCandidateDomain, 'upperBound'>) {
 function compileProgramDomain(input: {
   servant: ServantMaster;
   master: MasterDataSnapshot;
-  profile: RankingProfileInput;
-  conditions: RankingPolicyConditions;
+  basis: ResolvedRankingBasis;
+  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>;
   program: StaticRankingPreparationProgram;
 }): Omit<ProgramCandidateDomain, 'upperBound'> {
-  const { servant, master, profile, conditions, program } = input;
-  const policy = compileRankingComparisonPolicy(conditions, master);
-  const semantics = compileStaticRankingSemantics(servant, program, conditions);
+  const { servant, master, basis, conditions, program } = input;
+  const policy = compileRankingComparisonPolicy(conditions, master, basis.npLevel);
+  const semantics = compileStaticRankingSemantics(servant, program, basis.npLevel);
   if (semantics.unsupported.length > 0)
     throw new UnsupportedStaticSemantics(
       semantics.unsupported.map(({ projectionKey }) => projectionKey),
     );
   const active = conditions.conditionalEffects === 'satisfied';
-  const base = createRankingBaseScenario(
-    servant,
-    master,
-    profile,
-    conditions,
-    program.initialFormId,
-  );
+  const base = createRankingBaseScenario(servant, master, basis, conditions, program.initialFormId);
   const generatedTargets = active
     ? createRankingWorldCandidatesForConditions(servant, master, base, semantics.conditions)
     : [];
@@ -199,8 +193,8 @@ class UnsupportedStaticSemantics extends Error {
 export function compileRankingCandidateSpaces(
   servant: ServantMaster,
   master: MasterDataSnapshot,
-  profile: RankingProfileInput,
-  conditions: RankingPolicyConditions,
+  basis: ResolvedRankingBasis,
+  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>,
   attackProfiles: readonly AttackProfile[],
 ): readonly RankingCandidateSpace[] {
   let programs: readonly StaticRankingPreparationProgram[];
@@ -222,7 +216,7 @@ export function compileRankingCandidateSpaces(
       },
     }));
   }
-  const policyKey = compileRankingComparisonPolicy(conditions, master).key;
+  const policyKey = compileRankingComparisonPolicy(conditions, master, basis.npLevel).key;
   return attackProfiles.map((attackProfile): RankingCandidateSpace => {
     const profileKey = attackProfileKey(attackProfile);
     if (unsupportedAttackProfileKeys.has(profileKey))
@@ -236,7 +230,7 @@ export function compileRankingCandidateSpaces(
         .filter(
           (program) => attackProfileKey(program.attackProfile) === attackProfileKey(attackProfile),
         )
-        .map((program) => compileProgramDomain({ servant, master, profile, conditions, program }));
+        .map((program) => compileProgramDomain({ servant, master, basis, conditions, program }));
       const readyPrograms: ProgramCandidateDomain[] = [];
       const programBounds: FiniteRankingDomainCertificate['programBounds'][number][] = [];
       let upperBound = 0;
@@ -301,13 +295,13 @@ export function compileRankingCandidateSpaces(
 function materializeProgramCandidates(input: {
   servant: ServantMaster;
   master: MasterDataSnapshot;
-  profile: RankingProfileInput;
-  conditions: RankingPolicyConditions;
+  basis: ResolvedRankingBasis;
+  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>;
   policyKey: string;
   attackProfile: AttackProfile;
   domain: ProgramCandidateDomain;
 }): RankingCandidate[] {
-  const { servant, master, profile, conditions, policyKey, attackProfile, domain } = input;
+  const { servant, master, basis, conditions, policyKey, attackProfile, domain } = input;
   const product = finiteSemanticProduct(
     programDimensions(domain),
     domain.upperBound,
@@ -324,7 +318,7 @@ function materializeProgramCandidates(input: {
     let scenario = createRankingBaseScenario(
       servant,
       master,
-      profile,
+      basis,
       conditions,
       domain.program.initialFormId,
     );
@@ -377,8 +371,8 @@ function materializeProgramCandidates(input: {
 export function materializeRankingCandidateSpace(input: {
   servant: ServantMaster;
   master: MasterDataSnapshot;
-  profile: RankingProfileInput;
-  conditions: RankingPolicyConditions;
+  basis: ResolvedRankingBasis;
+  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>;
   space: Extract<RankingCandidateSpace, { status: 'ready' }>;
 }): readonly RankingCandidate[] {
   const candidates = input.space.programs.flatMap((domain) =>

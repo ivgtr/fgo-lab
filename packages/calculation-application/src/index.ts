@@ -30,3 +30,4 @@ export type {
   ResolvedAttackerSkillUse,
 } from '@fgo-lab/battle-execution';
 export { resolveAttackerFormExecution } from '@fgo-lab/battle-execution';
+export * from './rankingBasis';

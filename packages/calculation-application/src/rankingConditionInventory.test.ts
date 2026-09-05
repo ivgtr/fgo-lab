@@ -9,7 +9,6 @@ import {
 } from '@fgo-lab/battle-execution';
 import { conditionFactRequirements } from './conditionProvenance';
 import { isAttackerDamageContribution } from './contributionPolicy';
-import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileStaticRankingSemantics } from './rankingStaticSemantics';
 
@@ -39,11 +38,9 @@ describe('production ranking condition provenance', () => {
     const inventory = master.servants.flatMap((servant) => {
       const operations = new Map(
         compileStaticRankingPreparationPrograms(servant).flatMap((program) =>
-          compileStaticRankingSemantics(
-            servant,
-            program,
-            DEFAULT_RANKING_POLICY_CONDITIONS,
-          ).operations.map((operation) => [operation.operationId, operation] as const),
+          compileStaticRankingSemantics(servant, program, 1).operations.map(
+            (operation) => [operation.operationId, operation] as const,
+          ),
         ),
       );
       return [...operations.values()].flatMap((operation) => {

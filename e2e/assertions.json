@@ -24,7 +24,7 @@
     "oldAssertion": "five accessible ranking policy controls dispatch canonical state",
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/ranking/RankingConditions.test.tsx",
-    "replacementTest": "exposes exactly five accessible canonical controls and dispatches the full policy"
+    "replacementTest": "exposes exactly six accessible canonical controls and dispatches the full policy"
   },
   {
     "id": "E2E-A013-DETAIL",
@@ -33,7 +33,7 @@
     "oldAssertion": "area contribution detail uses calculator-parity evidence",
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/ranking/rankingWorkerRuntime.test.ts",
-    "replacementTest": "shares one five-condition cache identity and returns calculator-parity detail evidence"
+    "replacementTest": "shares one six-condition cache identity and returns calculator-parity detail evidence"
   },
   {
     "id": "E2E-A012-DESKTOP-VRT",

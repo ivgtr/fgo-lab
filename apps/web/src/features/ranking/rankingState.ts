@@ -1,3 +1,4 @@
+import { compileRankingSelection } from '@fgo-lab/calculation-application';
 import { useCallback, useEffect, useState } from 'react';
 import {
   DEFAULT_RANKING_POLICY_CONDITIONS,
@@ -17,7 +18,8 @@ export interface RankingFiltersState {
 }
 
 export interface RankingUrlState {
-  conditions: RankingPolicyConditions;
+  conditions: RankingPolicyConditions | null;
+  invalidCalculationQuery?: string | undefined;
   metric: RankingDamageMetric;
   filters: RankingFiltersState;
 }
@@ -53,29 +55,31 @@ function nullableRarity(params: URLSearchParams): number | null {
 
 export function parseRankingUrlState(search: string): RankingUrlState {
   const params = new URLSearchParams(search);
-  const defaults = DEFAULT_RANKING_POLICY_CONDITIONS;
-  const npLevel = Number(params.get('rNp'));
+  const keys = ['rPopulation', 'rLevelBasis', 'rNpBasis', 'rAffinity', 'rSelf', 'rConditional'];
+  const legacy = params.has('rMode') || params.has('rNp');
+  const absent = keys.every((key) => !params.has(key));
+  const complete = keys.every((key) => params.getAll(key).length === 1);
+  const npToken = params.get('rNpBasis');
+  const parsed = compileRankingSelection({
+    population: params.get('rPopulation'),
+    levelBasis: params.get('rLevelBasis'),
+    npLevelBasis:
+      npToken === 'owned'
+        ? { kind: 'owned' }
+        : { kind: 'specified', npLevel: /^[1-5]$/.test(npToken ?? '') ? Number(npToken) : null },
+    classAffinity: params.get('rAffinity'),
+    selfBuffs: params.get('rSelf'),
+    conditionalEffects: params.get('rConditional'),
+  });
+  const conditions =
+    !legacy && absent
+      ? DEFAULT_RANKING_POLICY_CONDITIONS
+      : !legacy && complete && parsed.status === 'valid'
+        ? parsed.selection
+        : null;
   return {
-    conditions: {
-      comparisonMode: enumValue(params, 'rMode', ['standard', 'owned'], defaults.comparisonMode),
-      npLevel:
-        Number.isInteger(npLevel) && npLevel >= 1 && npLevel <= 5
-          ? (npLevel as RankingPolicyConditions['npLevel'])
-          : defaults.npLevel,
-      classAffinity: enumValue(
-        params,
-        'rAffinity',
-        ['neutral', 'favorable'],
-        defaults.classAffinity,
-      ),
-      selfBuffs: enumValue(params, 'rSelf', ['included', 'excluded'], defaults.selfBuffs),
-      conditionalEffects: enumValue(
-        params,
-        'rConditional',
-        ['baseline', 'satisfied'],
-        defaults.conditionalEffects,
-      ),
-    },
+    conditions,
+    ...(conditions === null ? { invalidCalculationQuery: search } : {}),
     metric: enumValue(params, 'rMetric', ['average', 'minimum', 'maximum'], 'average'),
     filters: {
       search: params.get('rSearch') ?? '',
@@ -102,16 +106,33 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
   for (const key of [...params.keys()]) if (key.startsWith('r')) params.delete(key);
   params.set('page', 'ranking');
   const conditions = state.conditions;
-  setIf(params, 'rMode', conditions.comparisonMode, conditions.comparisonMode !== 'standard');
-  setIf(params, 'rNp', conditions.npLevel, conditions.npLevel !== 1);
-  setIf(params, 'rAffinity', conditions.classAffinity, conditions.classAffinity !== 'neutral');
-  setIf(params, 'rSelf', conditions.selfBuffs, conditions.selfBuffs !== 'included');
-  setIf(
-    params,
-    'rConditional',
-    conditions.conditionalEffects,
-    conditions.conditionalEffects !== 'baseline',
-  );
+  if (conditions) {
+    params.set('rPopulation', conditions.population);
+    params.set('rLevelBasis', conditions.levelBasis);
+    params.set(
+      'rNpBasis',
+      conditions.npLevelBasis.kind === 'owned' ? 'owned' : String(conditions.npLevelBasis.npLevel),
+    );
+    params.set('rAffinity', conditions.classAffinity);
+    params.set('rSelf', conditions.selfBuffs);
+    params.set('rConditional', conditions.conditionalEffects);
+  } else {
+    const invalid = new URLSearchParams(state.invalidCalculationQuery);
+    for (const [key, value] of invalid)
+      if (
+        [
+          'rPopulation',
+          'rLevelBasis',
+          'rNpBasis',
+          'rAffinity',
+          'rSelf',
+          'rConditional',
+          'rMode',
+          'rNp',
+        ].includes(key)
+      )
+        params.append(key, value);
+  }
   setIf(params, 'rMetric', state.metric, state.metric !== 'average');
   setIf(params, 'rSearch', state.filters.search, state.filters.search.length > 0);
   setIf(params, 'rClass', state.filters.classId, state.filters.classId !== null);

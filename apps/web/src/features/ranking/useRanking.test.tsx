@@ -41,7 +41,7 @@ describe('ranking worker response ordering', () => {
   it('does not expose an older summary after a newer condition request wins', async () => {
     vi.stubGlobal('Worker', FakeWorker);
     const master = masterSnapshotSchema.parse(fixture);
-    const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
+    const profile = { servantBuilds: {} };
     const versions = {
       schemaVersion: SCHEMA_VERSION,
       masterDataVersion: master.version,
@@ -57,7 +57,13 @@ describe('ranking worker response ordering', () => {
     const worker = FakeWorker.instance!;
     const initialize = worker.requests[0]!;
     if (initialize.kind !== 'initialize') throw new TypeError('expected initialize request');
-    act(() => worker.emit({ kind: 'ready', requestId: initialize.requestId }));
+    act(() =>
+      worker.emit({
+        kind: 'ready',
+        requestId: initialize.requestId,
+        contextId: initialize.contextId,
+      }),
+    );
     await waitFor(() =>
       expect(worker.requests.filter(({ kind }) => kind === 'calculate')).toHaveLength(1),
     );
@@ -79,18 +85,20 @@ describe('ranking worker response ordering', () => {
       worker.emit({
         kind: 'result',
         requestId: newer.requestId,
+        contextId: newer.contextId,
         fingerprint: newerFingerprint,
         rows: [],
         exclusions: [],
       }),
     );
-    expect(result.current.fingerprint).toBe(newerFingerprint);
+    expect(result.current.fingerprint).toBe(`${newer.contextId}:${newerFingerprint}`);
     expect(result.current.loading).toBe(false);
 
     act(() =>
       worker.emit({
         kind: 'result',
         requestId: older.requestId,
+        contextId: older.contextId,
         fingerprint: rankingConditionsFingerprint(older.conditions),
         rows: [],
         exclusions: [
@@ -105,7 +113,128 @@ describe('ranking worker response ordering', () => {
         ],
       }),
     );
-    expect(result.current.fingerprint).toBe(newerFingerprint);
+    expect(result.current.fingerprint).toBe(`${newer.contextId}:${newerFingerprint}`);
     expect(result.current.exclusions).toEqual([]);
   });
+});
+
+it('ignores old-context ready/result/detail/error and excludes unrelated saved data from worker identity', async () => {
+  vi.stubGlobal('Worker', FakeWorker);
+  const master = masterSnapshotSchema.parse(fixture);
+  const versions = {
+    schemaVersion: SCHEMA_VERSION,
+    masterDataVersion: master.version,
+    engineVersion: ENGINE_VERSION,
+    appVersion: APP_VERSION,
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const profile = {
+    servantBuilds: {},
+    craftEssences: [] as unknown[],
+    supportTemplates: [] as unknown[],
+  };
+  const { result, rerender } = renderHook(
+    ({ profile }) =>
+      useRanking({ master, profile, conditions: DEFAULT_RANKING_POLICY_CONDITIONS, versions }),
+    { initialProps: { profile } },
+  );
+  const old = FakeWorker.instance!;
+  const first = old.requests[0]!;
+  act(() => old.emit({ kind: 'ready', requestId: first.requestId, contextId: first.contextId }));
+  await waitFor(() => expect(old.requests).toHaveLength(2));
+  const summary = old.requests[1]!;
+  const fingerprint = rankingConditionsFingerprint(DEFAULT_RANKING_POLICY_CONDITIONS);
+  act(() =>
+    old.emit({
+      kind: 'result',
+      requestId: summary.requestId,
+      contextId: summary.contextId,
+      fingerprint,
+      rows: [],
+      exclusions: [],
+    }),
+  );
+  expect(result.current.loading).toBe(false);
+  rerender({ profile: { ...profile, craftEssences: [{}], supportTemplates: [{}] } });
+  expect(FakeWorker.instance).toBe(old);
+  expect(old.requests).toHaveLength(2);
+  const servantId = master.servants[0]!.id;
+  rerender({
+    profile: {
+      ...profile,
+      servantBuilds: {
+        [servantId]: {
+          servantId,
+          level: 90,
+          npLevel: 1,
+          ascension: 4,
+          fouAtk: 1000,
+          skills: {},
+          appends: {},
+          updatedAt: '2026-09-05T00:00:00.000Z',
+        },
+      },
+    },
+  });
+  const next = FakeWorker.instance!;
+  expect(next).not.toBe(old);
+  expect(result.current.loading).toBe(true);
+  act(() => {
+    old.emit({ kind: 'ready', requestId: first.requestId, contextId: first.contextId });
+    old.emit({
+      kind: 'result',
+      requestId: summary.requestId,
+      contextId: summary.contextId,
+      fingerprint,
+      rows: [],
+      exclusions: [],
+    });
+    old.emit({
+      kind: 'error',
+      status: 'invalid',
+      stage: 'summary',
+      requestId: summary.requestId,
+      contextId: summary.contextId,
+      fingerprint,
+      reason: 'stale',
+    });
+    old.emit({
+      kind: 'error',
+      status: 'invalid',
+      stage: 'detail',
+      entryId: 'stale',
+      requestId: 'stale',
+      contextId: summary.contextId,
+      fingerprint,
+      reason: 'stale',
+    });
+  });
+  expect(result.current.loading).toBe(true);
+  expect(result.current.error).toBe('');
+  expect(result.current.details).toEqual({});
+  expect(result.current.detailErrors).toEqual({});
+  expect(next.requests).toHaveLength(1);
+});
+
+it('does not start a worker for invalid URL conditions', () => {
+  const Worker = vi.fn();
+  vi.stubGlobal('Worker', Worker);
+  const master = masterSnapshotSchema.parse(fixture);
+  renderHook(() =>
+    useRanking({
+      master,
+      profile: { servantBuilds: {} },
+      conditions: null,
+      versions: {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: master.version,
+        engineVersion: ENGINE_VERSION,
+        appVersion: APP_VERSION,
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+      },
+    }),
+  );
+  expect(Worker).not.toHaveBeenCalled();
 });

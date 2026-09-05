@@ -16,7 +16,7 @@ const sessionId = '00000000-0000-4000-8000-000000000046';
 function calculatedRankingDetail() {
   const ranking = calculateRankingPolicy(
     master,
-    { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+    { servantBuilds: {} },
     DEFAULT_RANKING_POLICY_CONDITIONS,
     {
       schemaVersion: SCHEMA_VERSION,

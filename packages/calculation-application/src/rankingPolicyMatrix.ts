@@ -26,10 +26,15 @@ export type RankingPolicyCalculationMatrix = readonly [
 export function calculateRankingPolicyMatrix(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
-  conditions: Omit<RankingPolicyConditions, 'npLevel'>,
+  conditions: Omit<RankingPolicyConditions, 'npLevelBasis'>,
   versions: VersionContext,
 ): RankingPolicyCalculationMatrix {
   return NP_LEVELS.map((npLevel) =>
-    calculateRankingPolicy(master, profile, { ...conditions, npLevel }, versions),
+    calculateRankingPolicy(
+      master,
+      profile,
+      { ...conditions, npLevelBasis: { kind: 'specified', npLevel } },
+      versions,
+    ),
   ) as unknown as RankingPolicyCalculationMatrix;
 }

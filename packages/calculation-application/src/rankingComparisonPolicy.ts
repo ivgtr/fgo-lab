@@ -32,15 +32,16 @@ export function rankingPolicyKey(
 }
 
 export function compileRankingComparisonPolicy(
-  conditions: RankingPolicyConditions,
+  conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
   master: MasterDataSnapshot,
+  npLevel: number,
 ): RankingComparisonPolicy {
   const baseline = master.npResourceSemantics.noblePhantasmUse.requirement;
-  const capacity = master.npResourceSemantics.capacityByNpLevel[conditions.npLevel - 1]!;
+  const capacity = master.npResourceSemantics.capacityByNpLevel[npLevel - 1]!;
   const satisfiedStartGauges = [
     ...new Set(
       master.npResourceSemantics.capacityByNpLevel
-        .slice(0, conditions.npLevel)
+        .slice(0, npLevel)
         .filter((candidate) => candidate >= baseline && candidate <= capacity),
     ),
   ].sort((left, right) => left - right);

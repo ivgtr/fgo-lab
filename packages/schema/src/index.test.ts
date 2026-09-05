@@ -52,7 +52,7 @@ function servantIdentityProfile() {
   };
 }
 
-function servantIdentityCollection(schemaVersion: 32 | 33 | 34 | typeof SCHEMA_VERSION) {
+function servantIdentityCollection(schemaVersion: 32 | 33 | 34 | 35 | typeof SCHEMA_VERSION) {
   return {
     schemaVersion,
     activeProfileId: servantIdentityProfileId,
@@ -419,126 +419,172 @@ describe('portable schema boundaries', () => {
     });
   });
 
-  it('migrates coherent schema 34 profiles, snapshots, and backups without discarding data', () => {
-    const baseCollection = servantIdentityCollection(34);
-    const scenario = calculationScenarioSchema.parse({
-      mode: 'resolved',
-      attacker: {
-        servantId: 'servant-a',
-        initialActorFormId: { actorId: 'servant-a', limitCount: 0 },
-        source: 'master',
-        level: 1,
-        npLevel: 1,
-        fouAtk: 0,
-      },
-      overcharge: 1,
-      targetContext: {
-        class: { kind: 'concrete', classId: 'lancer' },
-        attribute: { kind: 'concrete', attribute: 'earth' },
-        families: [],
-      },
-      attackerHpPermille: 1000,
-      battleState: { battlePointPhase: null },
-      canonicalInputValues: {},
-      craftEssence: null,
-      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
-      mysticCode: null,
-      support: null,
-      effectDecisions: [],
-      activationFacts: [],
-      worldFactAssertions: [],
-      explicitOverrides: {},
-    });
-    const snapshot = {
-      profileId: servantIdentityProfileId,
-      calculationSessionId: '00000000-0000-4000-8000-000000000048',
-      request: {
-        versionContext: { masterDataVersion: 'fixture', engineVersion: ENGINE_VERSION },
-        scenario,
-        executionIntent: { kind: 'calculator', initialNpGauge: 10_000 },
-      },
-      result: {
-        status: 'unsupported',
-        rows: [],
-        effects: [],
-        assumptions: [],
-        issues: [],
-        trace: [],
-        evidence: [
-          {
-            key: 'schema-34',
-            subject: 'fixture',
-            status: 'provisional',
-            sources: ['fixture'],
-            goldenCaseIds: [],
-            differentialCaseIds: [],
-            reviewedAt: '2026-09-05',
+  it.each([34, 35] as const)(
+    'migrates coherent schema %s and historicalizes only ranking snapshots',
+    (sourceVersion) => {
+      const baseCollection = servantIdentityCollection(sourceVersion);
+      const scenario = calculationScenarioSchema.parse({
+        mode: 'resolved',
+        attacker: {
+          servantId: 'servant-a',
+          initialActorFormId: { actorId: 'servant-a', limitCount: 0 },
+          source: 'master',
+          level: 1,
+          npLevel: 1,
+          fouAtk: 0,
+        },
+        overcharge: 1,
+        targetContext: {
+          class: { kind: 'concrete', classId: 'lancer' },
+          attribute: { kind: 'concrete', attribute: 'earth' },
+          families: [],
+        },
+        attackerHpPermille: 1000,
+        battleState: { battlePointPhase: null },
+        canonicalInputValues: {},
+        craftEssence: null,
+        preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
+        mysticCode: null,
+        support: null,
+        effectDecisions: [],
+        activationFacts: [],
+        worldFactAssertions: [],
+        explicitOverrides: {},
+      });
+      const snapshot = {
+        profileId: servantIdentityProfileId,
+        calculationSessionId: '00000000-0000-4000-8000-000000000048',
+        request: {
+          versionContext: { masterDataVersion: 'fixture', engineVersion: ENGINE_VERSION },
+          scenario,
+          executionIntent: { kind: 'calculator', initialNpGauge: 10_000 },
+        },
+        result: {
+          status: 'unsupported',
+          rows: [],
+          effects: [],
+          assumptions: [],
+          issues: [],
+          trace: [],
+          evidence: [
+            {
+              key: 'schema-34',
+              subject: 'fixture',
+              status: 'provisional',
+              sources: ['fixture'],
+              goldenCaseIds: [],
+              differentialCaseIds: [],
+              reviewedAt: '2026-09-05',
+              engineVersion: ENGINE_VERSION,
+            },
+          ],
+          missingEvidence: ['schema-34'],
+          versions: {
+            schemaVersion: sourceVersion,
+            masterDataVersion: 'fixture',
             engineVersion: ENGINE_VERSION,
+            appVersion: '0.1.0',
+            gameRegion: 'JP',
+            masterDataLocale: 'ja-JP',
+          },
+        },
+        requestFingerprint: 'a'.repeat(64),
+        updatedAt: servantIdentityTimestamp,
+      };
+      const collection = {
+        ...baseCollection,
+        profiles: [
+          {
+            ...baseCollection.profiles[0]!,
+            draft: snapshot,
+            history: [
+              {
+                ...snapshot,
+                historyId: '00000000-0000-4000-8000-000000000049',
+                finalizedAt: servantIdentityTimestamp,
+                lastUsedAt: servantIdentityTimestamp,
+              },
+            ],
           },
         ],
-        missingEvidence: ['schema-34'],
-        versions: {
-          schemaVersion: 34,
-          masterDataVersion: 'fixture',
-          engineVersion: ENGINE_VERSION,
-          appVersion: '0.1.0',
-          gameRegion: 'JP',
-          masterDataLocale: 'ja-JP',
-        },
-      },
-      requestFingerprint: 'a'.repeat(64),
-      updatedAt: servantIdentityTimestamp,
-    };
-    const collection = {
-      ...baseCollection,
-      profiles: [
-        {
-          ...baseCollection.profiles[0]!,
-          draft: snapshot,
-          history: [
+      };
+      const migrated = parseStoredProfileCollection(collection);
+      expect(migrated).toMatchObject({
+        upgraded: true,
+        discardedCalculationSnapshots: false,
+        collection: {
+          schemaVersion: SCHEMA_VERSION,
+          profiles: [
             {
-              ...snapshot,
-              historyId: '00000000-0000-4000-8000-000000000049',
-              finalizedAt: servantIdentityTimestamp,
-              lastUsedAt: servantIdentityTimestamp,
+              servantBuilds: { 'servant-a': { npLevel: 0 } },
+              draft: { result: { versions: { schemaVersion: SCHEMA_VERSION } } },
+              history: [{ result: { versions: { schemaVersion: SCHEMA_VERSION } } }],
             },
           ],
         },
-      ],
-    };
-    const migrated = parseStoredProfileCollection(collection);
-    expect(migrated).toMatchObject({
-      upgraded: true,
-      discardedCalculationSnapshots: false,
-      collection: {
+      });
+      expect(
+        parseUserDataBackup({
+          kind: 'fgo-lab-user-backup',
+          schemaVersion: sourceVersion,
+          exportedAt: servantIdentityTimestamp,
+          appVersion: '0.1.0',
+          profiles: collection,
+        }),
+      ).toMatchObject({
         schemaVersion: SCHEMA_VERSION,
+        profiles: migrated.collection,
+      });
+      const rankingSnapshot = {
+        ...snapshot,
+        request: {
+          ...snapshot.request,
+          executionIntent: {
+            kind: 'ranking',
+            initialNpGauge: 10000,
+            policy: { selfBuffs: 'included', conditionalEffects: 'baseline' },
+          },
+        },
+      };
+      const rankingCollection = {
+        ...collection,
         profiles: [
           {
-            servantBuilds: { 'servant-a': { npLevel: 0 } },
-            draft: { result: { versions: { schemaVersion: SCHEMA_VERSION } } },
-            history: [{ result: { versions: { schemaVersion: SCHEMA_VERSION } } }],
+            ...collection.profiles[0]!,
+            draft: rankingSnapshot,
+            history: [{ ...collection.profiles[0]!.history[0]!, ...rankingSnapshot }],
           },
         ],
-      },
-    });
-    expect(
-      parseUserDataBackup({
-        kind: 'fgo-lab-user-backup',
-        schemaVersion: 34,
-        exportedAt: servantIdentityTimestamp,
-        appVersion: '0.1.0',
-        profiles: collection,
-      }),
-    ).toMatchObject({
-      schemaVersion: SCHEMA_VERSION,
-      profiles: migrated.collection,
-    });
-  });
+      };
+      const historical = parseStoredProfileCollection(rankingCollection);
+      expect(historical.discardedCalculationSnapshots).toBe(true);
+      expect(historical.collection.profiles[0]!.draft).toBeNull();
+      expect(historical.collection.profiles[0]!.history[0]).toMatchObject({
+        disposition: 'historicalOnly',
+        sourceSchemaVersion: sourceVersion,
+        scenario,
+        legacyRankingIntent: rankingSnapshot.request.executionIntent,
+      });
+      expect(historical.collection.profiles[0]!.history[0]).not.toHaveProperty('request');
+      expect(
+        parseUserDataBackup({
+          kind: 'fgo-lab-user-backup',
+          schemaVersion: sourceVersion,
+          exportedAt: servantIdentityTimestamp,
+          appVersion: '0.1.0',
+          profiles: rankingCollection,
+        }).profiles,
+      ).toEqual(historical.collection);
+      const mixed = structuredClone(rankingCollection);
+      Object.assign(mixed.profiles[0]!.draft.request.executionIntent.policy, { population: 'all' });
+      expect(() => parseStoredProfileCollection(mixed)).toThrow();
+    },
+  );
 
   it.each(['servantBuilds', 'servantTargets'] as const)(
     'rejects a %s record identity mismatch in current and v32/v33/v34 profile or backup input',
     (mapName) => {
-      for (const schemaVersion of [SCHEMA_VERSION, 34, 33, 32] as const) {
+      for (const schemaVersion of [SCHEMA_VERSION, 35, 34, 33, 32] as const) {
         const collection = servantIdentityCollection(schemaVersion);
         collection.profiles[0]![mapName]['servant-a'].servantId = 'servant-b';
         expect(
@@ -563,7 +609,7 @@ describe('portable schema boundaries', () => {
   it.each(['servantBuilds', 'servantTargets'] as const)(
     'conserves raw %s keys or rejects before current and legacy stored/backup parsing',
     (mapName) => {
-      for (const schemaVersion of [SCHEMA_VERSION, 34, 33, 32] as const)
+      for (const schemaVersion of [SCHEMA_VERSION, 35, 34, 33, 32] as const)
         for (const recordKey of ['servant-a', '__proto__', 'constructor', 'toString'])
           for (const matching of [true, false]) {
             const source = servantIdentityCollection(schemaVersion);

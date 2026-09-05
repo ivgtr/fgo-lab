@@ -18,8 +18,6 @@ import { attackProfileKey } from './attackProfile';
 const master = masterSnapshotSchema.parse(fixture);
 const profile: RankingProfileInput = {
   servantBuilds: {},
-  craftEssences: [],
-  supportTemplates: [],
 };
 const versions = {
   schemaVersion: SCHEMA_VERSION,
@@ -37,11 +35,11 @@ describe('ranking comparison policy', () => {
         compileRankingComparisonPolicy(
           {
             ...DEFAULT_RANKING_POLICY_CONDITIONS,
-            npLevel: 5,
             selfBuffs,
             conditionalEffects,
           },
           master,
+          5,
         ),
       ),
     );
@@ -164,15 +162,21 @@ describe('ranking comparison policy', () => {
   });
 
   it('uses five complete policy executions as the canonical NP matrix oracle', () => {
-    const conditions: Omit<RankingPolicyConditions, 'npLevel'> = {
-      comparisonMode: DEFAULT_RANKING_POLICY_CONDITIONS.comparisonMode,
+    const conditions: Omit<RankingPolicyConditions, 'npLevelBasis'> = {
+      population: DEFAULT_RANKING_POLICY_CONDITIONS.population,
+      levelBasis: DEFAULT_RANKING_POLICY_CONDITIONS.levelBasis,
       classAffinity: DEFAULT_RANKING_POLICY_CONDITIONS.classAffinity,
       selfBuffs: DEFAULT_RANKING_POLICY_CONDITIONS.selfBuffs,
       conditionalEffects: DEFAULT_RANKING_POLICY_CONDITIONS.conditionalEffects,
     };
     const matrix = calculateRankingPolicyMatrix(master, profile, conditions, versions);
     const direct = ([1, 2, 3, 4, 5] as const).map((npLevel) =>
-      calculateRankingPolicy(master, profile, { ...conditions, npLevel }, versions),
+      calculateRankingPolicy(
+        master,
+        profile,
+        { ...conditions, npLevelBasis: { kind: 'specified', npLevel } },
+        versions,
+      ),
     );
     expect(matrix).toEqual(direct);
     for (const [index, calculation] of matrix.entries())

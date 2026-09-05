@@ -733,7 +733,7 @@ describe('scenario calculation facade', () => {
 
     const ranking = calculateRankingPolicy(
       missingMaster,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       DEFAULT_RANKING_POLICY_CONDITIONS,
       versions,
     );
@@ -873,7 +873,7 @@ describe('scenario calculation facade', () => {
     const outcome = calculateRankingPolicyDetail(
       scopedMaster.servants[0]!,
       scopedMaster,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       DEFAULT_RANKING_POLICY_CONDITIONS,
       { ...versions, masterDataVersion: scopedMaster.version },
     );
@@ -1950,7 +1950,7 @@ describe('scenario calculation facade', () => {
         },
       ],
     });
-    const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
+    const profile = { servantBuilds: {} };
     const calculate = (conditionalEffects: 'baseline' | 'satisfied') =>
       calculateRankingPolicyDetail(
         specialMaster.servants[0]!,
@@ -2229,10 +2229,10 @@ describe('scenario calculation facade', () => {
     const rankingPlan = compileRankingExecutionPlan(
       rankingMaster.servants[0]!,
       rankingMaster,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       {
         ...DEFAULT_RANKING_POLICY_CONDITIONS,
-        npLevel: 2,
+        npLevelBasis: { kind: 'specified', npLevel: 2 },
         conditionalEffects: 'satisfied',
       },
       { ...versions, masterDataVersion: rankingMaster.version },
@@ -2258,10 +2258,10 @@ describe('scenario calculation facade', () => {
     const policyPlan = compileRankingExecutionPlan(
       preparationMaster.servants[0]!,
       preparationMaster,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       {
         ...DEFAULT_RANKING_POLICY_CONDITIONS,
-        npLevel: 2,
+        npLevelBasis: { kind: 'specified', npLevel: 2 },
         conditionalEffects: 'satisfied',
       },
       { ...versions, masterDataVersion: preparationMaster.version },
@@ -2312,7 +2312,7 @@ describe('scenario calculation facade', () => {
       calculateRankingPolicyDetail(
         conflictingMaster.servants[0]!,
         conflictingMaster,
-        { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+        { servantBuilds: {} },
         { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
         { ...versions, masterDataVersion: conflictingMaster.version },
       ),
@@ -2570,7 +2570,7 @@ describe('scenario calculation facade', () => {
     const policyPlan = compileRankingExecutionPlan(
       structuralMaster.servants[0]!,
       structuralMaster,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       {
         ...DEFAULT_RANKING_POLICY_CONDITIONS,
         conditionalEffects: 'satisfied',
@@ -2594,7 +2594,7 @@ describe('scenario calculation facade', () => {
       calculateRankingPolicyDetail(
         structuralMaster.servants[0]!,
         structuralMaster,
-        { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+        { servantBuilds: {} },
         DEFAULT_RANKING_POLICY_CONDITIONS,
         { ...versions, masterDataVersion: structuralMaster.version },
         transitionedProfile,

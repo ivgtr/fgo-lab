@@ -1,3 +1,7 @@
+import {
+  applyRankingSelectionCommand,
+  type RankingSelectionCommand,
+} from '@fgo-lab/calculation-application';
 import type { RankingPolicyConditions } from '@fgo-lab/calculation-application';
 
 export function RankingConditions({
@@ -7,31 +11,63 @@ export function RankingConditions({
   conditions: RankingPolicyConditions;
   onChange: (conditions: RankingPolicyConditions) => void;
 }) {
-  const patch = (value: Partial<RankingPolicyConditions>) => onChange({ ...conditions, ...value });
+  const dispatch = (command: RankingSelectionCommand) => {
+    const result = applyRankingSelectionCommand(conditions, command);
+    if (result.status === 'valid') onChange(result.selection);
+  };
   return (
     <section className="ranking-condition-section" aria-label="ランキングの計算条件">
       <div className="ranking-condition-primary">
         <label>
-          比較
+          対象
           <select
-            value={conditions.comparisonMode}
+            value={conditions.population}
             onChange={(event) =>
-              patch({
-                comparisonMode: event.target.value as RankingPolicyConditions['comparisonMode'],
+              dispatch({
+                kind: 'setPopulation',
+                value: event.target.value as RankingPolicyConditions['population'],
               })
             }
           >
-            <option value="standard">標準比較</option>
-            <option value="owned">所持戦力</option>
+            <option value="all">全サーヴァント</option>
+            <option value="owned">保有サーヴァント</option>
+          </select>
+        </label>
+        <label>
+          レベル
+          <select
+            value={conditions.levelBasis}
+            onChange={(event) =>
+              dispatch({
+                kind: 'setLevelBasis',
+                value: event.target.value as RankingPolicyConditions['levelBasis'],
+              })
+            }
+          >
+            <option value="naturalLimit">自然上限</option>
+            <option value="uniformLevel90">Lv.90統一</option>
+            <option value="ownedLevel" disabled={conditions.population !== 'owned'}>
+              保有レベル
+            </option>
           </select>
         </label>
         <label>
           宝具Lv
           <select
-            value={conditions.npLevel}
-            disabled={conditions.comparisonMode === 'owned'}
+            value={
+              conditions.npLevelBasis.kind === 'owned' ? 'owned' : conditions.npLevelBasis.npLevel
+            }
             onChange={(event) =>
-              patch({ npLevel: Number(event.target.value) as RankingPolicyConditions['npLevel'] })
+              dispatch({
+                kind: 'setNpLevelBasis',
+                value:
+                  event.target.value === 'owned'
+                    ? { kind: 'owned' }
+                    : {
+                        kind: 'specified',
+                        npLevel: Number(event.target.value) as 1 | 2 | 3 | 4 | 5,
+                      },
+              })
             }
           >
             {[1, 2, 3, 4, 5].map((value) => (
@@ -39,6 +75,9 @@ export function RankingConditions({
                 NP{value}
               </option>
             ))}
+            <option value="owned" disabled={conditions.population !== 'owned'}>
+              保有宝具レベル
+            </option>
           </select>
         </label>
         <label>
@@ -46,8 +85,9 @@ export function RankingConditions({
           <select
             value={conditions.classAffinity}
             onChange={(event) =>
-              patch({
-                classAffinity: event.target.value as RankingPolicyConditions['classAffinity'],
+              dispatch({
+                kind: 'setClassAffinity',
+                value: event.target.value as RankingPolicyConditions['classAffinity'],
               })
             }
           >
@@ -60,7 +100,10 @@ export function RankingConditions({
           <select
             value={conditions.selfBuffs}
             onChange={(event) =>
-              patch({ selfBuffs: event.target.value as RankingPolicyConditions['selfBuffs'] })
+              dispatch({
+                kind: 'setSelfBuffs',
+                value: event.target.value as RankingPolicyConditions['selfBuffs'],
+              })
             }
           >
             <option value="included">あり</option>
@@ -72,9 +115,9 @@ export function RankingConditions({
           <select
             value={conditions.conditionalEffects}
             onChange={(event) =>
-              patch({
-                conditionalEffects: event.target
-                  .value as RankingPolicyConditions['conditionalEffects'],
+              dispatch({
+                kind: 'setConditionalEffects',
+                value: event.target.value as RankingPolicyConditions['conditionalEffects'],
               })
             }
           >
@@ -88,7 +131,14 @@ export function RankingConditions({
         <dl className="ranking-calculation-basis">
           <div>
             <dt>育成</dt>
-            <dd>自然上限・Fou1000</dd>
+            <dd>
+              {conditions.levelBasis === 'naturalLimit'
+                ? '自然上限'
+                : conditions.levelBasis === 'uniformLevel90'
+                  ? 'Lv.90統一'
+                  : '保有レベル'}
+              ・Fou1000
+            </dd>
           </div>
           <div>
             <dt>宝具・スキル</dt>

@@ -8,7 +8,7 @@ import ts from 'typescript';
 const root = resolve(import.meta.dirname, '..');
 const catalog = JSON.parse(readFileSync(resolve(root, 'e2e/cases.json'), 'utf8'));
 const assertions = JSON.parse(readFileSync(resolve(root, 'e2e/assertions.json'), 'utf8'));
-const migrationManifestDigest = '740171263247e95b95571cf5fbadf375e1174c782ca8dd24e674fe9169ee8039';
+const migrationManifestDigest = '58cbd6b91ec68f5142d48f0b80c3f94abad62f1cb8f5a64feab5f5160c3d7b01';
 const specSource = readdirSync(resolve(root, 'e2e'))
   .filter((name) => name.endsWith('.spec.ts') || name.endsWith('.setup.ts'))
   .map((name) => readFileSync(resolve(root, 'e2e', name), 'utf8'))

@@ -25,7 +25,7 @@ import {
   currentCalculationVersionContext,
   executePortableCalculation,
   recoverPortableCalculation,
-  replacePortableCalculationScenario,
+  attemptPortableCalculationScenarioChange,
   resolveScenario,
 } from '@fgo-lab/calculation-application';
 import { CalculationContextNotice } from '../features/calculator/CalculationContextNotice';
@@ -125,22 +125,16 @@ export function CalculatorRoute({
     });
   }
 
-  async function savePortableDraft(
-    request: PortableCalculationRequest,
-    sessionId = calculationSessionId,
-  ) {
-    const outcome = executePortableCalculation(request, master);
-    const nextResult =
-      outcome.status === 'executed' || outcome.status === 'unsupported'
-        ? outcome.execution.result
-        : undefined;
-    if (!nextResult) return outcome;
-    await commitPortableDraft(request, nextResult, sessionId);
-    return outcome;
-  }
-
   async function saveScenarioDraft(scenario: CalculationScenario) {
-    await savePortableDraft(replacePortableCalculationScenario(currentRequest, scenario));
+    const retainedResult = calculation.storedResult ?? result;
+    const attempt = attemptPortableCalculationScenarioChange(
+      currentRequest,
+      retainedResult,
+      scenario,
+      master,
+    );
+    if (attempt.status !== 'committed') return;
+    await commitPortableDraft(attempt.request, attempt.result);
   }
 
   async function resetPortableDraft() {

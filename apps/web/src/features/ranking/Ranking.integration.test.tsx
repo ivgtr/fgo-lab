@@ -46,7 +46,7 @@ describe('ranking loading presentation', () => {
     const view = render(
       <Ranking
         master={master}
-        profile={{ servantBuilds: {}, craftEssences: [], supportTemplates: [] }}
+        profile={{ servantBuilds: {} }}
         versions={{
           schemaVersion: SCHEMA_VERSION,
           masterDataVersion: master.version,
@@ -66,7 +66,13 @@ describe('ranking loading presentation', () => {
     const worker = FakeWorker.instance!;
     const initialize = worker.requests[0]!;
     if (initialize.kind !== 'initialize') throw new TypeError('expected initialize request');
-    act(() => worker.emit({ kind: 'ready', requestId: initialize.requestId }));
+    act(() =>
+      worker.emit({
+        kind: 'ready',
+        requestId: initialize.requestId,
+        contextId: initialize.contextId,
+      }),
+    );
     await waitFor(() =>
       expect(worker.requests.filter(({ kind }) => kind === 'calculate')).toHaveLength(1),
     );
@@ -76,6 +82,7 @@ describe('ranking loading presentation', () => {
       worker.emit({
         kind: 'result',
         requestId: calculate.requestId,
+        contextId: calculate.contextId,
         fingerprint: rankingConditionsFingerprint(DEFAULT_RANKING_POLICY_CONDITIONS),
         rows: [],
         exclusions: [],

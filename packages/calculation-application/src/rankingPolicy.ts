@@ -1,38 +1,24 @@
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import {
-  naturalServantLevel,
   getDefaultInitialActorForm,
   type ActorFormId,
   type MasterDataSnapshot,
   type ServantMaster,
 } from '@fgo-lab/master-data';
-import type { CalculationScenario, ServantBuild } from '@fgo-lab/schema';
+import type { CalculationScenario } from '@fgo-lab/schema';
 import { applyCanonicalInputCommand } from './canonicalInputs';
-import type { RankingPolicyConditions, RankingProfileInput } from './rankingContracts';
+import type { RankingPolicyConditions, ResolvedRankingBasis } from './rankingContracts';
 import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
 import { applyTargetContextCommand, createDefaultTargetContext } from './targetContext';
 
 export type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
-function ownedBuild(
-  servant: ServantMaster,
-  profile: RankingProfileInput,
-  conditions: Pick<RankingPolicyConditions, 'comparisonMode'>,
-): ServantBuild | undefined {
-  const build = profile.servantBuilds[servant.id];
-  if (conditions.comparisonMode === 'owned' && (!build || build.npLevel === 0))
-    throw new TypeError(`ranking_owned_build_missing:${servant.id}`);
-  return build;
-}
-
 export function createRankingBaseScenario(
   servant: ServantMaster,
   master: MasterDataSnapshot,
-  profile: RankingProfileInput,
-  conditions: Pick<RankingPolicyConditions, 'comparisonMode' | 'npLevel' | 'classAffinity'>,
+  basis: ResolvedRankingBasis,
+  conditions: Pick<RankingPolicyConditions, 'classAffinity'>,
   initialActorFormId: ActorFormId = getDefaultInitialActorForm(servant)!.id,
 ): ResolvedScenario {
-  const build = ownedBuild(servant, profile, conditions);
-  const owned = conditions.comparisonMode === 'owned';
   let targetContext = createDefaultTargetContext(servant.classId);
   targetContext = applyTargetContextCommand(targetContext, {
     kind: 'setClassRelation',
@@ -50,10 +36,10 @@ export function createRankingBaseScenario(
     attacker: {
       servantId: servant.id,
       initialActorFormId,
-      source: owned ? 'owned' : 'master',
-      level: owned ? build!.level : naturalServantLevel(servant.rarity),
-      npLevel: owned ? build!.npLevel : conditions.npLevel,
-      fouAtk: owned ? build!.fouAtk : STANDARD_RANKING_SCENARIO_POLICY.fouAtk,
+      source: 'master',
+      level: basis.level,
+      npLevel: basis.npLevel,
+      fouAtk: STANDARD_RANKING_SCENARIO_POLICY.fouAtk,
     },
     overcharge: STANDARD_RANKING_SCENARIO_POLICY.overcharge,
     targetContext,

@@ -1,7 +1,7 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-05"
+updated_at: "2026-09-06"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
@@ -66,6 +66,87 @@ runtime paths remain Deferred until their owning task verifies them.
 | future unknown operation | inventory records first unsupported reader | no partial scenario or plausible number | fail closed without weakening current zero ratchet | Deferred: TSK-06.45 |
 
 ## TSK-06.42 Step 1 — authoritative comparison-basis planning delta
+
+### Step 2 implementation delta (start `b4e0356`, planning `ab48586`)
+
+The implementation now separates population, level basis and NP basis. Schema owns the strict wire selection
+and pinned provenance shape; `rankingBasis.ts` owns validation/commands/resolution; `isOwned` owns membership;
+`scenario.ts` retains the sole exact-ATK join. `rankingCandidateSpace` receives the resolved basis, and static
+semantics, NP capacity and candidate selection consume its numeric NP level. `rankingStaticPreparation` reads
+the shared fixed skill-level constant. No saved Fou/skills enter ranking scenarios and no servant ID exception
+was introduced. NP matrices explicitly compile five specified bases, rather than reusing owned NP.
+
+| Implemented path / counterexample | Evidence and disposition |
+| --- | --- |
+| six-input command, legal/illegal products, selected values only | Verified: `rankingBasis.test.ts`, `RankingConditions.test.tsx`; explicit owned → all changes only illegal axes |
+| baseline/materialization, summary/direct detail, NP1–5 | Verified: ranking policy/candidate-space/rows fixtures and new owned-NP parity; one resolved NP reaches all consumers |
+| NP0/no-build/empty population, missing ATK/present zero | Verified: stable owned fixture; 06.46 scenario fixtures reused; empty success remains distinct from request invalid |
+| raw record key/embedded identity and worker initialize | Verified: exposed existing `servantBuildRecordSchema`; shared 06.47 current/v32/v33/v34 matrix extended to v35, worker lost-key fixture; failed context replacement clears the old context |
+| URL parse/write, partial/duplicate/old/mixed input, filter edit/reset | Verified: `rankingState.test.ts`; no invalid-state worker initialization; invalid UI does not claim a zero-row calculation |
+| worker summary/detail/cache/response identity | Verified: `rankingWorkerRuntime.test.ts` and `useRanking.test.tsx`; detail resolves only a canonical summary entry, cache hit/miss reject contradictory input, old-context replies cannot publish, unrelated CE/support edits do not recreate worker |
+| portable constructor/schema/execute/recover/upgrade | Verified: strict basis ↔ scenario checks and master-dependent natural limit/fixed input check; replay reads no mutable build; 06.46 failed-attempt/handoff tests preserved |
+| v34/v35 load/backup migration, old share, v33 historical retention | Verified: schema/repository/share fixtures; exact calculator/manual requests keep identity and runtime version; two-policy ranking draft discarded/history historical-only; no executable compatibility adapter |
+| row/detail/request/calculator and profile mutation | Verified: stable owned product fixture, existing policy parity, real-worker E2E handoff and failed subject reset |
+| current production inventory and default damage | Verified: shared audit records and counters agree with baseline except schema trace text; exact natural/Lv.90 availability reused |
+| full policy maximum/all-current-NP numeric/stack/contribution presentation | Deferred: TSK-06.5 / TSK-06.45 / TSK-06.43 / TSK-06.44 |
+| cache lifetime/cardinality, notice design and broader responsive/a11y polish | Deferred: TSK-07; this cutover only adjusts the expanded mobile summary and preserves existing layout limits |
+
+Portable fixed-input validation deliberately permits canonical concrete target facts selected by the existing
+planner; those facts must not be compared with an unprepared relative-class default. Source, Fou, skill level,
+OC, equipment/support, explicit overrides, initial HP/BP and unmaterialized relative affinity remain checked.
+Current numeric results for unknown future execution semantics are not fabricated; existing candidate/profile
+outcome owners and their distinctions remain unchanged.
+
+Verification and diagnostic attribution:
+
+- Step 1 documents were committed as `ab48586`; `b4e0356` changes only this Task to `in_progress`. Worktree was
+  otherwise clean. No unrelated user edits were present or removed.
+- Unit: 79 files / 452 tests, warnings 0 (`2026-09-05T14-06-06-490Z-15-0114ae`). Production: 24 files / 117 tests,
+  warnings 0 (`2026-09-05T14-08-13-979Z-16-20dbc0`). Final quality evidence is recorded below after the gate.
+- Audit baseline is `255464b` source (documentation-only start commits do not change it), same effective
+  `pnpm test:diagnostic -- packages/calculation-application/src/productionAudit.test.ts` command. Compile times:
+  5,479 / 5,879 / 5,250 ms (median 5,479) before; 5,387 / 5,224 / 5,048 ms (median 5,224, -4.6%) after. Baseline
+  artifacts: `2026-09-05T13-38-49-004Z-15-81aced`, `13-39-15-193Z-15-2ac8b0`, `13-39-34-980Z-15-58c624`;
+  after: `2026-09-05T14-02-43-120Z-17-458093`, `14-03-52-765Z-16-0dd6c6`, `14-05-00-526Z-15-4f16ca` (all
+  `.test-results/`, omitted date prefixes are the same date). The overlapping lint run at `13-57-52` is excluded.
+- `introducedByChange`: the shared audit digest mismatch is absent on the three baseline runs and present in
+  the first post-change production run (`2026-09-05T13-54-01-290Z-16-ee1757`). Full record comparison proves the
+  only 815 leaf changes are `executionTrace[].detail: damage_resolution_schema_v35 → v36`. Inventory, failures,
+  candidate 6,360 / deduplicated 3,949 / requests 1,924 / distinct 1,298 and all numeric damage are unchanged.
+  New application digest: `482e10bb1fc7be056d6fa122bf57c3ff594fcf48dd4e794f0f6b20aec364eff9`.
+- Golden engine envelopes were advanced to 31.0.0 without changing inputs or expected damage. Their initial
+  version assertions are explained by the explicit engine bump; baseline rerun of those individual tests was
+  not performed (`unverified` diagnostic provenance beyond the recorded prior 06.47 quality evidence).
+- `environmentDependent`: the production run overlapping the Next build reports six execution failures
+  (`2026-09-05T14-06-07…`); the same suite succeeds sequentially with no semantic/test-limit changes at
+  `14-08-13-979Z-16-20dbc0`. This is not used as a performance comparison or a reason to relax limits.
+- The snapshot-update command's six browser tests pass, but the runner rejects screenshot-regeneration console
+  output as an unexpected observation. No allowance is added; the final non-update quality run must pass.
+  The 320px row fixture now scrolls the row to the center so the fixed navigation does not obscure its capture.
+
+Final integration review gap (same pinned-scenario family): the Step 1 inventory named portable replacement
+but did not include `CalculatorRoute.saveScenarioDraft`, which called the throwing constructor before its
+transactional save. A changed level with retained provenance therefore fails before write but rejects the UI
+promise rather than returning an application outcome. This is confirmed from that call and the constructor's
+strict schema parse; no production damage corruption was observed. The minimum added guardrail is an
+application-owned scenario-change attempt consumed by that Web writer, with constructor-invalid and
+execution-invalid counterexamples retaining the previous pair and no commit. This corrects the missed UI
+command-to-recovery edge; it does not authorize editing pinned bases or change normal-reset policy.
+Verified: `attemptPortableCalculationScenarioChange` now owns this attempt, `CalculatorRoute` commits only
+its committed outcome, and `rankingBasis.test.ts` proves constructor/execution invalid attempts preserve the
+retained pair. Resultless repair remains available; ordinary unsupported edits retain their prior behavior.
+
+Final quality gate: **PASS**, `pnpm quality`, 283.32s, artifact
+`.test-results/2026-09-05T15-00-56-136Z-16-805668`. Unit 79 files / 453 tests; production 24 files / 117 tests;
+Playwright 25 tests, retries 0; warnings 0, unexpected console 0. Format, lint, typecheck, runner/docs contracts,
+master validation and build also pass. TSK-06.42 runtime Blocking is 0; subsequent task dispositions above remain.
+
+The preceding quality run (`2026-09-05T14-25-03-673Z-16-a7a791`) failed three calculator screenshot assertions.
+Expected/actual/diff inspection confines every stable difference to engine labels `30.0.0 → 31.0.0`; damage
+numbers and layout agree. Those three version-bearing baselines were updated from the inspected captures.
+Baseline browser rerun was not performed (`unverified` provenance); the final non-update gate above passes
+with no tolerance or observation allowance changes. Ranking captures cover the expanded controls/summary,
+detail, 320px row and 390px icon fallback; this is not broader TSK-07 responsive closure.
 
 ### Revalidated Step 1 handoff at `255464b` (2026-09-05)
 

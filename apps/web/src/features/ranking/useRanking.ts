@@ -10,6 +10,7 @@ import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import {
   rankingConditionsFingerprint,
+  parseRankingWorkerResponse,
   type RankingWorkerRequest,
   type RankingWorkerResponse,
 } from './rankingWorkerProtocol';
@@ -19,6 +20,7 @@ interface RankingState {
   exclusions: RankingPolicyExclusion[];
   fingerprint: string;
   error: string;
+  errorIdentity: string;
 }
 
 export function useRanking({
@@ -29,14 +31,17 @@ export function useRanking({
 }: {
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
-  conditions: RankingPolicyConditions;
+  conditions: RankingPolicyConditions | null;
   versions: VersionContext;
 }) {
   const conditionsFingerprint = useMemo(
-    () => rankingConditionsFingerprint(conditions),
+    () => (conditions ? rankingConditionsFingerprint(conditions) : ''),
     [conditions],
   );
-  const profileFingerprint = useMemo(() => JSON.stringify(profile), [profile]);
+  const profileFingerprint = useMemo(
+    () => JSON.stringify({ servantBuilds: profile.servantBuilds }),
+    [profile],
+  );
   const versionsFingerprint = useMemo(() => JSON.stringify(versions), [versions]);
   const stableProfile = useMemo(
     () => JSON.parse(profileFingerprint) as RankingProfileInput,
@@ -57,6 +62,7 @@ export function useRanking({
     exclusions: [],
     fingerprint: '',
     error: '',
+    errorIdentity: '',
   });
   const [details, setDetails] = useState<{
     fingerprint: string;
@@ -64,12 +70,16 @@ export function useRanking({
   }>({ fingerprint: '', values: {} });
   const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
 
+  const enabled = !!conditions;
   useEffect(() => {
+    if (!enabled) return;
     const worker = new Worker(new URL('./ranking.worker.ts', import.meta.url), { type: 'module' });
     workerRef.current = worker;
     const initializeRequestId = crypto.randomUUID();
     worker.onmessage = (event: MessageEvent<RankingWorkerResponse>) => {
-      const response = event.data;
+      if (workerRef.current !== worker) return;
+      const response = parseRankingWorkerResponse(event.data);
+      if (!response || response.contextId !== contextFingerprint) return;
       if (response.kind === 'ready' && response.requestId === initializeRequestId) {
         setInitializedFingerprint(contextFingerprint);
         return;
@@ -80,10 +90,11 @@ export function useRanking({
         setState({
           rows: response.rows,
           exclusions: response.exclusions,
-          fingerprint: response.fingerprint,
+          fingerprint: `${contextFingerprint}:${response.fingerprint}`,
           error: '',
+          errorIdentity: '',
         });
-        setDetails({ fingerprint: response.fingerprint, values: {} });
+        setDetails({ fingerprint: `${contextFingerprint}:${response.fingerprint}`, values: {} });
         setDetailErrors({});
         return;
       }
@@ -92,7 +103,7 @@ export function useRanking({
         if (detailRequestsRef.current.get(response.entryId) !== response.requestId) return;
         detailRequestsRef.current.delete(response.entryId);
         setDetails((current) =>
-          current.fingerprint === response.fingerprint
+          current.fingerprint === `${contextFingerprint}:${response.fingerprint}`
             ? {
                 ...current,
                 values: { ...current.values, [response.entryId]: response.detail },
@@ -106,7 +117,11 @@ export function useRanking({
         response.stage === 'initialization' &&
         response.requestId === initializeRequestId
       ) {
-        setState((current) => ({ ...current, error: response.reason }));
+        setState((current) => ({
+          ...current,
+          error: response.reason,
+          errorIdentity: `${contextFingerprint}:${response.fingerprint ?? ''}`,
+        }));
         return;
       }
       if (response.kind === 'error' && response.stage === 'detail') {
@@ -119,13 +134,18 @@ export function useRanking({
       if (
         response.kind === 'error' &&
         response.requestId === activeRequestRef.current &&
-        response.fingerprint === activeFingerprintRef.current
+        (response.fingerprint === null || response.fingerprint === activeFingerprintRef.current)
       )
-        setState((current) => ({ ...current, error: response.reason }));
+        setState((current) => ({
+          ...current,
+          error: response.reason,
+          errorIdentity: `${contextFingerprint}:${response.fingerprint ?? ''}`,
+        }));
     };
     const request: RankingWorkerRequest = {
       kind: 'initialize',
       requestId: initializeRequestId,
+      contextId: contextFingerprint,
       master,
       profile: stableProfile,
       versions: stableVersions,
@@ -135,11 +155,11 @@ export function useRanking({
       worker.terminate();
       if (workerRef.current === worker) workerRef.current = undefined;
     };
-  }, [contextFingerprint, master, stableProfile, stableVersions]);
+  }, [contextFingerprint, master, stableProfile, stableVersions, enabled]);
 
   useEffect(() => {
     const worker = workerRef.current;
-    if (!worker || initializedFingerprint !== contextFingerprint) return;
+    if (!conditions || !worker || initializedFingerprint !== contextFingerprint) return;
     const requestId = crypto.randomUUID();
     activeRequestRef.current = requestId;
     activeFingerprintRef.current = conditionsFingerprint;
@@ -148,6 +168,7 @@ export function useRanking({
       kind: 'calculate',
       requestId,
       conditions,
+      contextId: contextFingerprint,
     };
     worker.postMessage(request);
   }, [conditions, conditionsFingerprint, contextFingerprint, initializedFingerprint]);
@@ -158,8 +179,9 @@ export function useRanking({
       if (
         !worker ||
         initializedFingerprint !== contextFingerprint ||
-        state.fingerprint !== conditionsFingerprint ||
-        (details.fingerprint === conditionsFingerprint && details.values[row.entryId])
+        state.fingerprint !== `${contextFingerprint}:${conditionsFingerprint}` ||
+        (details.fingerprint === `${contextFingerprint}:${conditionsFingerprint}` &&
+          details.values[row.entryId])
       )
         return;
       const requestId = crypto.randomUUID();
@@ -172,20 +194,36 @@ export function useRanking({
         requestId,
         fingerprint: conditionsFingerprint,
         entryId: row.entryId,
-        servantId: row.servantId,
-        attackProfile: row.attackProfile,
+        contextId: contextFingerprint,
       };
       worker.postMessage(request);
     },
     [conditionsFingerprint, contextFingerprint, details, initializedFingerprint, state.fingerprint],
   );
 
+  const current =
+    !!conditions && state.fingerprint === `${contextFingerprint}:${conditionsFingerprint}`;
+  const error =
+    conditions &&
+    (state.errorIdentity === `${contextFingerprint}:${conditionsFingerprint}` ||
+      state.errorIdentity === `${contextFingerprint}:`)
+      ? state.error
+      : '';
   return {
     ...state,
-    details: details.fingerprint === conditionsFingerprint ? details.values : {},
-    detailErrors,
+    error,
+    rows: current ? state.rows : [],
+    exclusions: current ? state.exclusions : [],
+    details:
+      current && details.fingerprint === `${contextFingerprint}:${conditionsFingerprint}`
+        ? details.values
+        : {},
+    detailErrors: current ? detailErrors : {},
     requestDetail,
     loading:
-      initializedFingerprint !== contextFingerprint || state.fingerprint !== conditionsFingerprint,
+      !!conditions &&
+      !error &&
+      (initializedFingerprint !== contextFingerprint ||
+        state.fingerprint !== `${contextFingerprint}:${conditionsFingerprint}`),
   };
 }

@@ -100,6 +100,11 @@ for (const viewport of [
     await openFixtureRanking(page, viewport.width, viewport.height);
     await expect(page).toHaveScreenshot(`ranking-${viewport.name}.png`);
     if (viewport.width === 320) {
+      await page
+        .getByRole('list', { name: '宝具火力ランキング' })
+        .getByRole('listitem')
+        .first()
+        .evaluate((row) => row.scrollIntoView({ block: 'center' }));
       const first = page
         .getByRole('list', { name: '宝具火力ランキング' })
         .getByRole('listitem')
@@ -190,6 +195,13 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     ...JSON.parse(originalDraft),
     request: {
       ...JSON.parse(originalDraft).request,
+      executionIntent: {
+        ...JSON.parse(originalDraft).request.executionIntent,
+        basis: {
+          ...JSON.parse(originalDraft).request.executionIntent.basis,
+          servantId: 'missing-reset-subject',
+        },
+      },
       scenario: {
         ...JSON.parse(originalDraft).request.scenario,
         attacker: {

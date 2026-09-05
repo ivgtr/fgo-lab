@@ -119,11 +119,11 @@ describe('ranking presentation', () => {
   });
 
   it('counts calculation condition changes separately from display filters', () => {
-    expect(countChangedRankingConditions(DEFAULT_RANKING_URL_STATE.conditions)).toBe(0);
+    expect(countChangedRankingConditions(DEFAULT_RANKING_URL_STATE.conditions!)).toBe(0);
     expect(
       countChangedRankingConditions({
-        ...DEFAULT_RANKING_URL_STATE.conditions,
-        npLevel: 5,
+        ...DEFAULT_RANKING_URL_STATE.conditions!,
+        npLevelBasis: { kind: 'specified', npLevel: 5 },
         conditionalEffects: 'satisfied',
       }),
     ).toBe(2);

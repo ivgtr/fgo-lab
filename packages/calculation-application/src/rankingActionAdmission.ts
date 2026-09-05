@@ -31,7 +31,7 @@ export interface StaticRankingProgramDisposition {
 
 function classifyPrograms(
   programs: readonly StaticRankingPreparationProgram[],
-  conditions: RankingPolicyConditions,
+  conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
 ) {
   return programs.map((program) => ({
     program,
@@ -164,7 +164,7 @@ function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission 
 
 function optionalAdmission(
   source: RankingPreparationSourceUse,
-  conditions: RankingPolicyConditions,
+  conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
   program: StaticRankingPreparationProgram,
 ): CandidateLocalActionAdmission {
   if (conditions.selfBuffs === 'excluded')
@@ -201,7 +201,7 @@ function optionalAdmission(
 
 export function compileCandidateLocalActionAdmission(
   programs: readonly StaticRankingPreparationProgram[],
-  conditions: RankingPolicyConditions,
+  conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
 ): {
   programs: readonly AdmittedStaticRankingPreparationProgram[];
   unsupportedAttackProfileKeys: ReadonlySet<string>;
@@ -224,7 +224,7 @@ export function compileCandidateLocalActionAdmission(
 
 export function compileCandidateLocalActionAdmissionDispositions(
   programs: readonly StaticRankingPreparationProgram[],
-  conditions: RankingPolicyConditions,
+  conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
 ): readonly StaticRankingProgramDisposition[] {
   return classifyPrograms(programs, conditions).map(({ program, admissions }) => ({
     programKey: program.key,

@@ -1,3 +1,4 @@
+import { rankingBasisFixture } from './rankingBasisFixture';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -18,8 +19,6 @@ import { compileCandidateLocalActionAdmissionDispositions } from './rankingActio
 const root = resolve(import.meta.dirname, '../../..');
 const profile: RankingProfileInput = {
   servantBuilds: {},
-  craftEssences: [],
-  supportTemplates: [],
 };
 
 describe('static ranking candidate space', () => {
@@ -44,7 +43,7 @@ describe('static ranking candidate space', () => {
     const spaces = compileRankingCandidateSpaces(
       servant,
       master,
-      profile,
+      rankingBasisFixture(servant),
       { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
       createStaticAttackProfiles(servant),
     );
@@ -67,7 +66,7 @@ describe('static ranking candidate space', () => {
       const candidates = materializeRankingCandidateSpace({
         servant,
         master,
-        profile,
+        basis: rankingBasisFixture(servant),
         conditions: {
           ...DEFAULT_RANKING_POLICY_CONDITIONS,
           conditionalEffects: 'satisfied',
@@ -91,7 +90,7 @@ describe('static ranking candidate space', () => {
     const spaces = compileRankingCandidateSpaces(
       servant,
       master,
-      profile,
+      rankingBasisFixture(servant),
       DEFAULT_RANKING_POLICY_CONDITIONS,
       createStaticAttackProfiles(servant),
     );
@@ -110,7 +109,7 @@ describe('static ranking candidate space', () => {
     const space = compileRankingCandidateSpaces(
       servant,
       master,
-      profile,
+      rankingBasisFixture(servant),
       DEFAULT_RANKING_POLICY_CONDITIONS,
       createStaticAttackProfiles(servant),
     ).find((candidate) => candidate.status === 'ready');
@@ -143,7 +142,7 @@ describe('static ranking candidate space', () => {
     const materialized = materializeRankingCandidateSpace({
       servant,
       master,
-      profile,
+      basis: rankingBasisFixture(servant),
       conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
       space,
     }).map(({ evidence }) =>
@@ -183,7 +182,7 @@ describe('static ranking candidate space', () => {
         profile,
         {
           ...DEFAULT_RANKING_POLICY_CONDITIONS,
-          npLevel,
+          npLevelBasis: { kind: 'specified', npLevel },
           conditionalEffects: 'satisfied',
         },
         versions(),
@@ -226,7 +225,11 @@ describe('static ranking candidate space', () => {
         servant,
         fixtureMaster,
         profile,
-        { ...DEFAULT_RANKING_POLICY_CONDITIONS, npLevel, conditionalEffects },
+        {
+          ...DEFAULT_RANKING_POLICY_CONDITIONS,
+          npLevelBasis: { kind: 'specified', npLevel },
+          conditionalEffects,
+        },
         versions(),
       );
     const baseline = compile(1, 'baseline');
@@ -496,7 +499,7 @@ describe('static ranking candidate space', () => {
         compileRankingCandidateSpaces(
           servant,
           master,
-          profile,
+          rankingBasisFixture(servant),
           { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
           createStaticAttackProfiles(servant),
         ).map((space) => ({ servantId: servant.id, space })),

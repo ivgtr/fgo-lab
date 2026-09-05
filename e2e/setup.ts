@@ -23,6 +23,7 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
         postMessage(request: {
           kind: string;
           requestId: string;
+          contextId: string;
           conditions?: Record<string, unknown>;
           fingerprint?: string;
           entryId?: string;
@@ -30,7 +31,7 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
           if (request.kind === 'initialize') {
             queueMicrotask(() =>
               this.onmessage?.({
-                data: { kind: 'ready', requestId: request.requestId },
+                data: { kind: 'ready', requestId: request.requestId, contextId: request.contextId },
               } as MessageEvent),
             );
             return;
@@ -39,7 +40,11 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
             setTimeout(
               () =>
                 this.onmessage?.({
-                  data: { ...fixtureResponse, requestId: request.requestId },
+                  data: {
+                    ...fixtureResponse,
+                    requestId: request.requestId,
+                    contextId: request.contextId,
+                  },
                 } as MessageEvent),
               0,
             );
@@ -50,6 +55,8 @@ export async function installRankingFixtureWorker(page: Page): Promise<void> {
               this.onmessage?.({
                 data: {
                   kind: 'error',
+                  status: 'invalid',
+                  contextId: request.contextId,
                   stage: 'detail',
                   requestId: request.requestId,
                   fingerprint: request.fingerprint,

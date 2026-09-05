@@ -175,7 +175,7 @@ export function compileCalculationApplicationProductionAudit(
 
   const ranking = calculateRankingPolicy(
     master,
-    { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+    { servantBuilds: {} },
     DEFAULT_RANKING_POLICY_CONDITIONS,
     versions,
   );

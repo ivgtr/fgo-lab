@@ -12,6 +12,7 @@
     "@fgo-lab/calc-core": "workspace:*",
     "@fgo-lab/battle-execution": "workspace:*",
     "@fgo-lab/master-data": "workspace:*",
-    "@fgo-lab/schema": "workspace:*"
+    "@fgo-lab/schema": "workspace:*",
+    "@fgo-lab/profile-domain": "workspace:*"
   }
 }

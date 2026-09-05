@@ -9,9 +9,10 @@ describe('ranking architecture', () => {
   it('exposes only the compact comparison policies', () => {
     expect(Object.keys(DEFAULT_RANKING_POLICY_CONDITIONS).sort()).toEqual([
       'classAffinity',
-      'comparisonMode',
       'conditionalEffects',
-      'npLevel',
+      'levelBasis',
+      'npLevelBasis',
+      'population',
       'selfBuffs',
     ]);
   });

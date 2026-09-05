@@ -4,6 +4,7 @@
   "include": ["src"],
   "references": [
     { "path": "../schema" },
+    { "path": "../profile-domain" },
     { "path": "../master-data" },
     { "path": "../calc-core" },
     { "path": "../battle-execution" }

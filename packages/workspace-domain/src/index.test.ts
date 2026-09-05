@@ -173,8 +173,19 @@ describe('workspace derivations', () => {
       },
       executionIntent: {
         kind: 'ranking' as const,
+        basis: {
+          servantId: '1',
+          level: 90,
+          npLevel: 1 as const,
+          levelSource: 'uniformLevel90' as const,
+          npSource: 'specified' as const,
+        },
         initialNpGauge: 20_000,
         policy: {
+          population: 'all' as const,
+          levelBasis: 'uniformLevel90' as const,
+          npLevelBasis: { kind: 'specified' as const, npLevel: 1 as const },
+          classAffinity: 'neutral' as const,
           selfBuffs: 'excluded' as const,
           conditionalEffects: 'satisfied' as const,
         },

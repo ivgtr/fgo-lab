@@ -1,3 +1,4 @@
+import { parseRankingWorkerResponse } from './rankingWorkerProtocol';
 import { describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -12,7 +13,7 @@ import { createRankingWorkerRuntime } from './rankingWorkerRuntime';
 import { presentRankingDetailEvidence } from './rankingDetailPresentation';
 
 const master = masterSnapshotSchema.parse(fixture);
-const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
+const profile = { servantBuilds: {} };
 const versions = {
   schemaVersion: SCHEMA_VERSION,
   masterDataVersion: master.version,
@@ -23,27 +24,37 @@ const versions = {
 };
 
 describe('ranking worker canonical runtime', () => {
-  it('shares one five-condition cache identity and returns calculator-parity detail evidence', () => {
+  it('shares one six-condition cache identity and returns calculator-parity detail evidence', () => {
     const calculate = vi.fn(calculateRankingPolicy);
     const detail = vi.fn(calculateRankingPolicyDetail);
     const runtime = createRankingWorkerRuntime({ calculate, detail });
     // E2E-A013-DETAIL
     expect(
-      runtime.handle({ kind: 'initialize', requestId: 'init', master, profile, versions }),
-    ).toEqual({ kind: 'ready', requestId: 'init' });
+      runtime.handle({
+        kind: 'initialize',
+        requestId: 'init',
+        contextId: 'context',
+        master,
+        profile,
+        versions,
+      }),
+    ).toEqual({ kind: 'ready', requestId: 'init', contextId: 'context' });
 
     const first = runtime.handle({
       kind: 'calculate',
+      contextId: 'context',
       requestId: 'summary-1',
       conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
     });
     const second = runtime.handle({
       kind: 'calculate',
+      contextId: 'context',
       requestId: 'summary-2',
       conditions: { ...DEFAULT_RANKING_POLICY_CONDITIONS },
     });
     expect(calculate).toHaveBeenCalledTimes(1);
     expect(first.kind).toBe('result');
+    expect(parseRankingWorkerResponse(first)).toEqual(first);
     expect(second.kind).toBe('result');
     if (first.kind !== 'result') throw new TypeError('expected ranking result');
     expect(first.exclusions).toEqual([]);
@@ -52,22 +63,21 @@ describe('ranking worker canonical runtime', () => {
     const row = first.rows[0]!;
     const detailResponse = runtime.handle({
       kind: 'detail',
+      contextId: 'context',
       requestId: 'detail-1',
       fingerprint: first.fingerprint,
       entryId: row.entryId,
-      servantId: row.servantId,
-      attackProfile: row.attackProfile,
     });
     runtime.handle({
       kind: 'detail',
+      contextId: 'context',
       requestId: 'detail-2',
       fingerprint: first.fingerprint,
       entryId: row.entryId,
-      servantId: row.servantId,
-      attackProfile: row.attackProfile,
     });
     expect(detail).toHaveBeenCalledTimes(1);
     expect(detailResponse.kind).toBe('detail');
+    expect(parseRankingWorkerResponse(detailResponse)).toEqual(detailResponse);
     if (detailResponse.kind !== 'detail') throw new TypeError('expected ranking detail');
     expect(detailResponse.detail.candidateEvidence.policyKey).toBe('included:baseline');
     const recalculated = calculateScenarioWithPolicy(
@@ -111,5 +121,105 @@ describe('ranking worker canonical runtime', () => {
       ]),
     );
     expect(presentation.actions.at(-1)?.label).toContain('攻撃宝具');
+  });
+});
+
+describe('ranking worker trust and identity boundaries', () => {
+  it('rejects contradictory detail identity before either cached or uncached lookup', () => {
+    const calculate = vi.fn(calculateRankingPolicy);
+    const detail = vi.fn(calculateRankingPolicyDetail);
+    const runtime = createRankingWorkerRuntime({ calculate, detail });
+    runtime.handle({
+      kind: 'initialize',
+      requestId: 'i',
+      contextId: 'a',
+      master,
+      profile,
+      versions,
+    });
+    const summary = runtime.handle({
+      kind: 'calculate',
+      requestId: 's',
+      contextId: 'a',
+      conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+    });
+    if (summary.kind !== 'result') throw new Error('summary required');
+    const entryId = summary.rows[0]!.entryId;
+    const request = {
+      kind: 'detail',
+      requestId: 'd',
+      contextId: 'a',
+      fingerprint: summary.fingerprint,
+      entryId,
+    };
+    for (const cached of [false, true]) {
+      if (cached) expect(runtime.handle(request).kind).toBe('detail');
+      const calls = detail.mock.calls.length;
+      expect(runtime.handle({ ...request, servantId: 'contradictory' })).toMatchObject({
+        kind: 'error',
+        status: 'invalid',
+      });
+      expect(runtime.handle({ ...request, entryId: 'not-a-member' })).toMatchObject({
+        kind: 'error',
+        status: 'invalid',
+      });
+      expect(detail).toHaveBeenCalledTimes(calls);
+    }
+    expect(calculate).toHaveBeenCalledTimes(1);
+    runtime.handle({
+      kind: 'initialize',
+      requestId: 'i2',
+      contextId: 'b',
+      master,
+      profile,
+      versions,
+    });
+    expect(runtime.handle(request)).toMatchObject({ kind: 'error', status: 'invalid' });
+    expect(runtime.handle({ ...request, contextId: 'b' })).toMatchObject({
+      kind: 'error',
+      status: 'invalid',
+    });
+  });
+
+  it('reuses record validation and never calculates under a failed replacement context', () => {
+    const calculate = vi.fn(calculateRankingPolicy);
+    const runtime = createRankingWorkerRuntime({ calculate, detail: calculateRankingPolicyDetail });
+    const initialize = {
+      kind: 'initialize',
+      requestId: 'i',
+      contextId: 'a',
+      master,
+      profile,
+      versions,
+    };
+    runtime.handle(initialize);
+    const malformed = {
+      servantBuilds: JSON.parse(
+        '{"__proto__":{"servantId":"__proto__","level":1,"ascension":0,"npLevel":1,"fouAtk":0,"skills":{},"appends":{},"updatedAt":"2026-09-05T00:00:00.000Z"}}',
+      ) as unknown,
+    };
+    expect(runtime.handle({ ...initialize, profile: malformed })).toMatchObject({
+      kind: 'error',
+      status: 'invalid',
+    });
+    expect(
+      runtime.handle({
+        kind: 'calculate',
+        requestId: 's',
+        contextId: 'a',
+        conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+      }),
+    ).toMatchObject({ kind: 'error', status: 'invalid' });
+    expect(calculate).not.toHaveBeenCalled();
+    expect(runtime.handle(initialize).kind).toBe('ready');
+    expect(
+      runtime.handle({
+        kind: 'calculate',
+        requestId: 's',
+        contextId: 'a',
+        conditions: { ...DEFAULT_RANKING_POLICY_CONDITIONS, levelBasis: 'ownedLevel' },
+      }),
+    ).toMatchObject({ kind: 'error', status: 'invalid', stage: 'summary' });
+    expect(calculate).not.toHaveBeenCalled();
   });
 });

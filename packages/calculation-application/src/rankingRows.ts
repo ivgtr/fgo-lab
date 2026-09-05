@@ -1,3 +1,4 @@
+import { isOwned } from '@fgo-lab/profile-domain';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type {
   RankingPolicyConditions,
@@ -11,15 +12,15 @@ import type {
 export function includedRankingServants(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
-  conditions: Pick<RankingPolicyConditions, 'comparisonMode'>,
+  conditions: Pick<RankingPolicyConditions, 'population'>,
 ): ServantMaster[] {
   return master.servants.filter((servant) => {
     const hasAttackProfile = servant.noblePhantasmVariantGroups.some(({ variants }) =>
       variants.some(({ kind }) => kind === 'attack'),
     );
     if (!hasAttackProfile) return false;
-    if (conditions.comparisonMode === 'standard') return true;
-    return (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0;
+    if (conditions.population === 'all') return true;
+    return isOwned(profile.servantBuilds[servant.id]);
   });
 }
 
@@ -59,7 +60,7 @@ export function createRankingRow(
     ),
     level: detail.scenario.attacker.level,
     npLevel: detail.scenario.attacker.npLevel,
-    owned: (profile.servantBuilds[servant.id]?.npLevel ?? 0) > 0,
+    owned: isOwned(profile.servantBuilds[servant.id]),
   };
 }
 

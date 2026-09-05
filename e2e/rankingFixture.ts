@@ -48,6 +48,7 @@ const rows = Array.from({ length: 12 }, (_, index) => {
 export const rankingFixtureResult = {
   kind: 'result',
   requestId: 'fixture-request',
+  contextId: 'fixture-context',
   fingerprint: rankingConditionsFingerprint(DEFAULT_RANKING_POLICY_CONDITIONS),
   rows,
   exclusions: [],

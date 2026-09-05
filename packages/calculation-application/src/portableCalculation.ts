@@ -1,3 +1,4 @@
+import { validatePinnedRankingBasis } from './rankingPortableBasis';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import {
   APP_VERSION,
@@ -76,12 +77,14 @@ export type PortableVersionUpgradeResult =
       failure: PortableCalculationFailure;
     };
 
-export type PortableCalculationResetResult =
+export type PortableCalculationAttemptResult<
+  Retained extends CalculationResult | undefined = CalculationResult,
+> =
   | Extract<PortableVersionUpgradeResult, { status: 'committed' }>
   | {
       status: 'rejected';
       retainedRequest: PortableCalculationRequest;
-      retainedResult: CalculationResult;
+      retainedResult: Retained;
       attemptedRequest: PortableCalculationRequest | null;
       failure: PortableCalculationFailure;
     };
@@ -122,7 +125,7 @@ export function createDefaultCalculatorPortableRequest(
 }
 
 export function createRankingPortableRequest(
-  detail: Pick<RankingPolicyDetail, 'scenario' | 'candidateEvidence' | 'rankingPolicy'>,
+  detail: Pick<RankingPolicyDetail, 'scenario' | 'candidateEvidence' | 'rankingPolicy' | 'basis'>,
   versionContext: CalculationVersionContext,
 ): PortableCalculationRequest {
   return portableCalculationRequestSchema.parse({
@@ -132,6 +135,7 @@ export function createRankingPortableRequest(
       kind: 'ranking',
       initialNpGauge: detail.candidateEvidence.startNpGauge,
       policy: detail.rankingPolicy,
+      basis: detail.basis,
     },
   });
 }
@@ -143,6 +147,46 @@ export function replacePortableCalculationScenario(
   if (request.scenario.mode !== scenario.mode)
     return createCalculatorPortableRequest(scenario, request.versionContext);
   return portableCalculationRequestSchema.parse({ ...request, scenario });
+}
+
+export function attemptPortableCalculationScenarioChange(
+  retainedRequest: PortableCalculationRequest,
+  retainedResult: CalculationResult | undefined,
+  scenario: CalculationScenario,
+  master: MasterDataSnapshot,
+): PortableCalculationAttemptResult<CalculationResult | undefined> {
+  let attemptedRequest: PortableCalculationRequest;
+  try {
+    attemptedRequest = replacePortableCalculationScenario(retainedRequest, scenario);
+  } catch (cause) {
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest: null,
+      failure: {
+        status: 'invalid',
+        request: retainedRequest,
+        reason: 'scenarioInvalid',
+        detail: cause instanceof Error ? cause.message : String(cause),
+      },
+    };
+  }
+  const outcome = executePortableCalculation(attemptedRequest, master);
+  if (outcome.status === 'invalid')
+    return {
+      status: 'rejected',
+      retainedRequest,
+      retainedResult,
+      attemptedRequest,
+      failure: outcome,
+    };
+  return {
+    status: 'committed',
+    request: attemptedRequest,
+    result: outcome.execution.result,
+    execution: outcome.execution,
+  };
 }
 
 export function resetPortableCalculationRequest(
@@ -162,7 +206,7 @@ export function attemptPortableCalculationReset(
   retainedResult: CalculationResult,
   master: MasterDataSnapshot,
   servantBuilds: Readonly<Record<string, ServantBuild>>,
-): PortableCalculationResetResult {
+): PortableCalculationAttemptResult {
   const retainedScenario = retainedRequest.scenario;
   const retainedAttackerId =
     retainedScenario.mode === 'resolved' ? retainedScenario.attacker.servantId : null;
@@ -287,6 +331,13 @@ export function executePortableCalculation(
     if (capacity === undefined || request.executionIntent.initialNpGauge > capacity)
       return { status: 'invalid', request, reason: 'initialNpGaugeExceedsCapacity' };
   }
+  if (!validatePinnedRankingBasis(request, master))
+    return {
+      status: 'invalid',
+      request,
+      reason: 'scenarioInvalid',
+      detail: 'ranking_basis_invalid',
+    };
   try {
     const versions = resultVersions(request);
     const preparation =

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  DEFAULT_RANKING_POLICY_CONDITIONS,
   attemptPortableCalculationVersionUpgrade,
   createCalculatorPortableRequest,
   createDefaultResolvedScenario,
@@ -30,7 +31,18 @@ const rankingRequest = portableCalculationRequestSchema.parse({
   executionIntent: {
     kind: 'ranking' as const,
     initialNpGauge: 20_000,
-    policy: { selfBuffs: 'excluded' as const, conditionalEffects: 'satisfied' as const },
+    policy: {
+      ...DEFAULT_RANKING_POLICY_CONDITIONS,
+      selfBuffs: 'excluded' as const,
+      conditionalEffects: 'satisfied' as const,
+    },
+    basis: {
+      servantId: master.servants[0]!.id,
+      level: 90,
+      npLevel: 1,
+      levelSource: 'naturalLimit',
+      npSource: 'specified',
+    },
   },
 });
 const historicalResult: CalculationResult = {

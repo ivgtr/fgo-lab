@@ -45,7 +45,7 @@ export function calculateRankingCandidateSet(
   const selected = selectRankingExecutionIndexes(
     candidates,
     plan.attackProfiles,
-    conditions.npLevel,
+    plan.basis.npLevel,
     plan,
   );
   const details = new Map(
@@ -118,10 +118,8 @@ export function calculateRankingCandidateSet(
         appliedPreparationActions: execution.appliedPreparationActions,
         contributionPolicy: plan.contributionPolicies[selectedIndex]!,
         effectiveContributions: execution.effectiveContributions,
-        rankingPolicy: {
-          selfBuffs: conditions.selfBuffs,
-          conditionalEffects: conditions.conditionalEffects,
-        },
+        rankingPolicy: conditions,
+        basis: plan.basis,
         areaContribution,
         executionMetrics: {
           worldCandidateCount: plan.worldCandidateCount,

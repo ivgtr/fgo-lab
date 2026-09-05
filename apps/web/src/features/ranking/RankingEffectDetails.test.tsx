@@ -22,7 +22,7 @@ describe('ranking contribution detail', () => {
     const result = calculateRankingPolicyDetail(
       master.servants[0]!,
       master,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       DEFAULT_RANKING_POLICY_CONDITIONS,
       {
         schemaVersion: SCHEMA_VERSION,
@@ -49,7 +49,7 @@ describe('ranking contribution detail', () => {
     const result = calculateRankingPolicyDetail(
       master.servants[0]!,
       master,
-      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      { servantBuilds: {} },
       DEFAULT_RANKING_POLICY_CONDITIONS,
       {
         schemaVersion: SCHEMA_VERSION,

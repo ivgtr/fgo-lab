@@ -7,12 +7,14 @@ import {
   type RankingProfileInput,
 } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
-import type { VersionContext } from '@fgo-lab/schema';
+import { ENGINE_VERSION, type VersionContext } from '@fgo-lab/schema';
 import {
   rankingConditionsFingerprint,
-  type RankingWorkerRequest,
+  rankingWorkerRequestSchema,
   type RankingWorkerResponse,
 } from './rankingWorkerProtocol';
+
+class RankingWorkerInvalid extends Error {}
 
 interface RankingWorkerCalculators {
   calculate: typeof calculateRankingPolicy;
@@ -20,6 +22,7 @@ interface RankingWorkerCalculators {
 }
 
 interface RankingWorkerContext {
+  contextId: string;
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
   versions: VersionContext;
@@ -36,16 +39,61 @@ export function createRankingWorkerRuntime(
   const calculationCache = new Map<string, RankingPolicyCalculation>();
   const detailCache = new Map<string, Map<string, RankingPolicyDetail>>();
 
-  const handle = (request: RankingWorkerRequest): RankingWorkerResponse => {
+  const clear = () => {
+    context = undefined;
+    conditionsByFingerprint.clear();
+    calculationCache.clear();
+    detailCache.clear();
+  };
+  const handle = (value: unknown): RankingWorkerResponse => {
+    const parsed = rankingWorkerRequestSchema.safeParse(value);
+    if (!parsed.success) {
+      const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+      if (raw.kind === 'initialize') clear();
+      const identity = {
+        requestId: typeof raw.requestId === 'string' ? raw.requestId : 'invalid',
+        contextId: typeof raw.contextId === 'string' ? raw.contextId : 'invalid',
+      };
+      const fingerprint = typeof raw.fingerprint === 'string' ? raw.fingerprint : null;
+      if (raw.kind === 'detail' && typeof raw.entryId === 'string' && fingerprint !== null)
+        return {
+          kind: 'error',
+          status: 'invalid',
+          stage: 'detail',
+          ...identity,
+          fingerprint,
+          entryId: raw.entryId,
+          reason: 'rankingWorkerRequestInvalid',
+        };
+      return {
+        kind: 'error',
+        status: 'invalid',
+        stage: raw.kind === 'calculate' ? 'summary' : 'initialization',
+        ...identity,
+        fingerprint: null,
+        reason: 'rankingWorkerRequestInvalid',
+      };
+    }
+    const request = parsed.data;
+    const identity = { requestId: request.requestId, contextId: request.contextId };
     try {
       if (request.kind === 'initialize') {
-        context = { master: request.master, profile: request.profile, versions: request.versions };
-        conditionsByFingerprint.clear();
-        calculationCache.clear();
-        detailCache.clear();
-        return { kind: 'ready', requestId: request.requestId };
+        clear();
+        if (
+          request.versions.masterDataVersion !== request.master.version ||
+          request.versions.engineVersion !== ENGINE_VERSION
+        )
+          throw new RankingWorkerInvalid('rankingContextVersionMismatch');
+        context = {
+          contextId: request.contextId,
+          master: request.master,
+          profile: request.profile,
+          versions: request.versions,
+        };
+        return { kind: 'ready', ...identity };
       }
-      if (!context) throw new TypeError('ranking_worker_not_initialized');
+      if (!context || context.contextId !== request.contextId)
+        throw new RankingWorkerInvalid('rankingContextUnavailable');
       if (request.kind === 'calculate') {
         const fingerprint = rankingConditionsFingerprint(request.conditions);
         const calculation =
@@ -56,24 +104,37 @@ export function createRankingWorkerRuntime(
             request.conditions,
             context.versions,
           );
+        if (calculation.status === 'invalid')
+          return {
+            kind: 'error',
+            stage: 'summary',
+            status: 'invalid',
+            ...identity,
+            fingerprint,
+            reason: calculation.reason,
+          };
         conditionsByFingerprint.set(fingerprint, request.conditions);
         calculationCache.set(fingerprint, calculation);
         return {
           kind: 'result',
-          requestId: request.requestId,
+          ...identity,
           fingerprint,
           rows: calculation.rows,
           exclusions: calculation.exclusions,
         };
       }
       const conditions = conditionsByFingerprint.get(request.fingerprint);
-      const servant = context.master.servants.find(({ id }) => id === request.servantId);
-      if (!conditions || !servant) throw new TypeError('ranking_detail_context_missing');
+      const row = calculationCache
+        .get(request.fingerprint)
+        ?.rows.find(({ entryId }) => entryId === request.entryId);
+      const servant = context.master.servants.find(({ id }) => id === row?.servantId);
+      if (!conditions || !servant || !row)
+        throw new RankingWorkerInvalid('ranking_detail_context_missing');
       const cached = detailCache.get(request.fingerprint)?.get(request.entryId);
       if (cached)
         return {
           kind: 'detail',
-          requestId: request.requestId,
+          ...identity,
           fingerprint: request.fingerprint,
           entryId: request.entryId,
           detail: cached,
@@ -84,14 +145,22 @@ export function createRankingWorkerRuntime(
         context.profile,
         conditions,
         context.versions,
-        request.attackProfile,
+        row.attackProfile,
       );
       if (result.status !== 'calculated') {
         const reason =
           result.status === 'inputRequired'
             ? result.inputs.map(({ key }) => key).join(',')
             : result.reason;
-        throw new TypeError(`ranking_detail_${result.status}:${reason}`);
+        return {
+          kind: 'error',
+          status: result.status,
+          stage: 'detail',
+          ...identity,
+          fingerprint: request.fingerprint,
+          entryId: request.entryId,
+          reason,
+        };
       }
       const details =
         detailCache.get(request.fingerprint) ?? new Map<string, RankingPolicyDetail>();
@@ -99,7 +168,7 @@ export function createRankingWorkerRuntime(
       detailCache.set(request.fingerprint, details);
       return {
         kind: 'detail',
-        requestId: request.requestId,
+        ...identity,
         fingerprint: request.fingerprint,
         entryId: request.entryId,
         detail: result.detail,
@@ -109,16 +178,18 @@ export function createRankingWorkerRuntime(
       if (request.kind === 'detail')
         return {
           kind: 'error',
+          status: cause instanceof RankingWorkerInvalid ? 'invalid' : 'failed',
           stage: 'detail',
-          requestId: request.requestId,
+          ...identity,
           fingerprint: request.fingerprint,
           entryId: request.entryId,
           reason,
         };
       return {
         kind: 'error',
+        status: cause instanceof RankingWorkerInvalid ? 'invalid' : 'failed',
         stage: request.kind === 'initialize' ? 'initialization' : 'summary',
-        requestId: request.requestId,
+        ...identity,
         fingerprint:
           request.kind === 'calculate' ? rankingConditionsFingerprint(request.conditions) : null,
         reason,

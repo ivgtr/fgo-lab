@@ -29,7 +29,7 @@ describe('production preparation semantics audit', () => {
       gameRegion: 'JP' as const,
       masterDataLocale: 'ja-JP' as const,
     };
-    const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
+    const profile = { servantBuilds: {} };
     const lily = master.servants.find(({ id }) => id === '100300')!;
     const manaBurst = lily.skills.find(({ name }) => name === '魔力放出 A')!;
     const lilyResult = calculateRankingPolicyDetail(

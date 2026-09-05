@@ -28,8 +28,6 @@ export function RankingRoute({
       master={master}
       profile={{
         servantBuilds: profile.servantBuilds,
-        craftEssences: profile.craftEssences,
-        supportTemplates: profile.supportTemplates,
       }}
       versions={{
         schemaVersion: SCHEMA_VERSION,

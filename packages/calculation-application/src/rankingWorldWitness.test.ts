@@ -1,3 +1,4 @@
+import { rankingBasisFixture } from './rankingBasisFixture';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -24,7 +25,6 @@ import {
 } from './rankingWorld';
 
 const root = resolve(import.meta.dirname, '../../..');
-const profile = { servantBuilds: {}, craftEssences: [], supportTemplates: [] };
 
 function stateFor(
   servant: ServantMaster,
@@ -140,7 +140,12 @@ describe('ranking target witness completeness', () => {
     return createRankingWorldCandidatesForConditions(
       servant,
       master,
-      createRankingBaseScenario(servant, master, profile, DEFAULT_RANKING_POLICY_CONDITIONS),
+      createRankingBaseScenario(
+        servant,
+        master,
+        rankingBasisFixture(servant),
+        DEFAULT_RANKING_POLICY_CONDITIONS,
+      ),
       conditions,
     );
   }
@@ -433,11 +438,11 @@ describe('ranking target witness completeness', () => {
   it('audits every production world-fact-only target condition for a canonical true witness', () => {
     const productionConditions = master.servants.flatMap((candidateServant) =>
       compileStaticRankingPreparationPrograms(candidateServant).flatMap((program) =>
-        compileStaticRankingSemantics(
-          candidateServant,
+        compileStaticRankingSemantics(candidateServant, program, 1).conditions.map((condition) => ({
+          servant: candidateServant,
           program,
-          DEFAULT_RANKING_POLICY_CONDITIONS,
-        ).conditions.map((condition) => ({ servant: candidateServant, program, condition })),
+          condition,
+        })),
       ),
     );
     const mixedOwnership = productionConditions.filter(({ condition }) => {
@@ -470,7 +475,7 @@ describe('ranking target witness completeness', () => {
         createRankingBaseScenario(
           candidateServant,
           master,
-          profile,
+          rankingBasisFixture(candidateServant),
           DEFAULT_RANKING_POLICY_CONDITIONS,
           program.initialFormId,
         ),

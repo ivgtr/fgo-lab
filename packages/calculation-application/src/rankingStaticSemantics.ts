@@ -18,7 +18,7 @@ import {
   type MasterEffect,
   type ServantMaster,
 } from '@fgo-lab/master-data';
-import type { RankingPolicyConditions } from './rankingContracts';
+
 import type {
   RankingPreparationSourceUse,
   StaticRankingPreparationProgram,
@@ -71,7 +71,7 @@ function sourceEffects(input: {
 function sourcesForProgram(
   servant: ServantMaster,
   program: StaticRankingPreparationProgram,
-  conditions: RankingPolicyConditions,
+  npLevel: number,
 ): readonly SourceEffect[] {
   const terminalPassives = getPassivesForActorForm(servant, program.expectedTerminalFormId).flatMap(
     (passive) =>
@@ -118,7 +118,7 @@ function sourcesForProgram(
       skillId: `np:${key}`,
       skillName: variant.name,
       effects: sourceUse.effects,
-      valueIndex: conditions.npLevel - 1,
+      valueIndex: npLevel - 1,
       valueSetIndex: 0,
       noblePhantasmVariant: variant.ref,
       preparationStochasticOutcome: null,
@@ -140,7 +140,7 @@ function sourcesForProgram(
     skillId: `np:${key}`,
     skillName: attackVariant.name,
     effects: attackVariant.effects.filter(({ timing }) => timing === 'beforeDamage'),
-    valueIndex: conditions.npLevel - 1,
+    valueIndex: npLevel - 1,
     valueSetIndex: 0,
     noblePhantasmVariant: attackVariant.ref,
     preparationStochasticOutcome: null,
@@ -151,9 +151,9 @@ function sourcesForProgram(
 export function compileStaticRankingSemantics(
   servant: ServantMaster,
   program: StaticRankingPreparationProgram,
-  conditions: RankingPolicyConditions,
+  npLevel: number,
 ): StaticRankingSemantics {
-  const sources = sourcesForProgram(servant, program, conditions);
+  const sources = sourcesForProgram(servant, program, npLevel);
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
   for (const source of sources) {
@@ -171,7 +171,7 @@ export function compileStaticRankingSemantics(
     attackVariant?.kind === 'attack'
       ? attackVariant.damage.flatMap((damage) =>
           Array.from({ length: damage.parametersByOvercharge.length }, (_, index) =>
-            noblePhantasmDamageDependency(damage, index + 1, conditions.npLevel),
+            noblePhantasmDamageDependency(damage, index + 1, npLevel),
           ),
         )
       : [];

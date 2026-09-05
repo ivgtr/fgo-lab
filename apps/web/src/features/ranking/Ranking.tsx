@@ -1,3 +1,5 @@
+import { applyRankingSelectionCommand } from '@fgo-lab/calculation-application';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application/ranking-contracts';
 import { useMemo, useState } from 'react';
 import type { RankingPolicyDetail, RankingProfileInput } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -9,6 +11,12 @@ import { filterAndRankRows, rankingPolicyLabel } from './rankingPresentation';
 import { useRankingUrlState } from './rankingState';
 import { useRanking } from './useRanking';
 import './ranking.css';
+
+function resetConditions() {
+  const result = applyRankingSelectionCommand(DEFAULT_RANKING_POLICY_CONDITIONS, { kind: 'reset' });
+  if (result.status === 'invalid') throw new TypeError(result.reason);
+  return result.selection;
+}
 
 export function Ranking({
   master,
@@ -40,15 +48,35 @@ export function Ranking({
           <p className="eyebrow">RANKING</p>
           <h2>宝具火力ランキング</h2>
         </div>
-        <span>{rankingPolicyLabel(urlState.conditions)}</span>
+        <span>
+          {urlState.conditions ? rankingPolicyLabel(urlState.conditions) : '計算条件が無効です'}
+        </span>
       </div>
-      <RankingConditions
-        conditions={urlState.conditions}
-        onChange={(conditions) => {
-          setOpenEntryId(null);
-          setUrlState((current) => ({ ...current, conditions }));
-        }}
-      />
+      {urlState.conditions ? (
+        <RankingConditions
+          conditions={urlState.conditions}
+          onChange={(conditions) => {
+            setOpenEntryId(null);
+            setUrlState((current) => ({ ...current, conditions }));
+          }}
+        />
+      ) : (
+        <div role="alert">
+          計算条件が無効です。
+          <button
+            type="button"
+            onClick={() =>
+              setUrlState((current) => ({
+                ...current,
+                conditions: resetConditions(),
+                invalidCalculationQuery: undefined,
+              }))
+            }
+          >
+            計算条件をリセット
+          </button>
+        </div>
+      )}
       <RankingFilters
         filters={urlState.filters}
         metric={urlState.metric}
@@ -57,9 +85,11 @@ export function Ranking({
         onMetricChange={(metric) => setUrlState((current) => ({ ...current, metric }))}
       />
       <p role="status" className="ranking-status" aria-live="polite">
-        {ranking.loading
-          ? `ランキングを更新中… 現在${String(rows.length)}件表示`
-          : `${String(rows.length)}件表示 / ${String(ranking.rows.length)}件を計算${ranking.exclusions.length > 0 ? `・順位外 ${String(ranking.exclusions.length)}件` : ''}`}
+        {urlState.conditions === null
+          ? '計算条件を確認してください'
+          : ranking.loading
+            ? `ランキングを更新中… 現在${String(rows.length)}件表示`
+            : `${String(rows.length)}件表示 / ${String(ranking.rows.length)}件を計算${ranking.exclusions.length > 0 ? `・順位外 ${String(ranking.exclusions.length)}件` : ''}`}
       </p>
       {ranking.error ? (
         <p role="alert" className="empty">

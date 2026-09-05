@@ -123,9 +123,10 @@ const withoutAction: StaticRankingPreparationProgram = {
   sourceUses: [],
 };
 const baseline: RankingPolicyConditions = {
-  npLevel: 1,
   classAffinity: 'neutral',
-  comparisonMode: 'standard',
+  population: 'all',
+  levelBasis: 'naturalLimit',
+  npLevelBasis: { kind: 'specified', npLevel: 1 },
   selfBuffs: 'included',
   conditionalEffects: 'baseline',
 };

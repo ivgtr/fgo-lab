@@ -1,3 +1,4 @@
+import { compileRankingSelection } from './rankingBasis';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import { attackProfileKey, createStaticAttackProfiles, type AttackProfile } from './attackProfile';
@@ -26,6 +27,19 @@ export function calculateRankingPolicyDetail(
   versions: VersionContext,
   attackProfile?: AttackProfile,
 ): RankingProfileResult {
+  const selection = compileRankingSelection(conditions);
+  if (selection.status === 'invalid') return { ...selection, attackProfile: null, issues: [] };
+  if (
+    !includedRankingServants(master, profile, selection.selection).some(
+      ({ id }) => id === servant.id,
+    )
+  )
+    return {
+      status: 'invalid',
+      attackProfile: null,
+      issues: [],
+      reason: 'rankingServantOutsidePopulation',
+    };
   try {
     const candidateSet = calculateRankingCandidateSet(
       servant,
@@ -68,7 +82,12 @@ export function calculateRankingPolicy(
   let generatedCount = 0;
   let semanticUpperBound = 0;
   const deduplicatedKeys = new Set<string>();
-  for (const servant of includedRankingServants(master, profile, conditions)) {
+  const selection = compileRankingSelection(conditions);
+  const population =
+    selection.status === 'valid'
+      ? includedRankingServants(master, profile, selection.selection)
+      : [];
+  for (const servant of population) {
     const inventory = createStaticAttackProfiles(servant);
     try {
       const candidateSet = calculateRankingCandidateSet(
@@ -111,6 +130,7 @@ export function calculateRankingPolicy(
     }
   }
   return {
+    ...(selection.status === 'invalid' ? selection : { status: 'calculated' as const }),
     rows,
     profileResults,
     exclusions,

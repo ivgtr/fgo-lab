@@ -10,9 +10,9 @@ describe('ranking URL state', () => {
     const state = {
       ...DEFAULT_RANKING_URL_STATE,
       conditions: {
-        ...DEFAULT_RANKING_URL_STATE.conditions,
-        comparisonMode: 'owned' as const,
-        npLevel: 5 as const,
+        ...DEFAULT_RANKING_URL_STATE.conditions!,
+        population: 'owned' as const,
+        npLevelBasis: { kind: 'specified' as const, npLevel: 5 as const },
         classAffinity: 'favorable' as const,
         selfBuffs: 'excluded' as const,
         conditionalEffects: 'satisfied' as const,
@@ -27,19 +27,46 @@ describe('ranking URL state', () => {
     expect(parseRankingUrlState(serializeRankingUrlState(state))).toEqual(state);
   });
 
-  it('rejects out-of-domain values without preserving invalid input', () => {
+  it('rejects out-of-domain values without guessing executable defaults', () => {
     const state = parseRankingUrlState(
       '?rNp=9&rMode=unknown&rAffinity=invalid&rSelf=invalid&rConditional=invalid&rSpecial=active&rField=active',
     );
-    expect(state.conditions).toMatchObject({
-      comparisonMode: 'standard',
-      npLevel: 1,
-      classAffinity: 'neutral',
-      selfBuffs: 'included',
-      conditionalEffects: 'baseline',
-    });
+    expect(state.conditions).toBeNull();
     expect(serializeRankingUrlState(state, '?rSpecial=active&rField=active')).not.toMatch(
       /rSpecial|rField/,
     );
+  });
+});
+
+describe('strict comparison URL boundary', () => {
+  it('rejects partial, duplicate, mixed and noncanonical NP tokens, preserving invalid state on filter edits', () => {
+    const canonical = serializeRankingUrlState(DEFAULT_RANKING_URL_STATE);
+    expect(parseRankingUrlState('')).toEqual(DEFAULT_RANKING_URL_STATE);
+    for (const query of [
+      '?rPopulation=all',
+      `${canonical}&rPopulation=all`,
+      `${canonical}&rMode=standard`,
+      `${canonical}&rNp=1`,
+      canonical.replace('rNpBasis=1', 'rNpBasis=1.0'),
+      canonical.replace('rNpBasis=1', 'rNpBasis='),
+      canonical.replace('rLevelBasis=naturalLimit', 'rLevelBasis=ownedLevel'),
+    ]) {
+      const state = parseRankingUrlState(query);
+      expect(state.conditions, query).toBeNull();
+      const changed = {
+        ...state,
+        metric: 'maximum' as const,
+        filters: { ...state.filters, search: 'test' },
+      };
+      expect(parseRankingUrlState(serializeRankingUrlState(changed)).conditions).toBeNull();
+      expect(
+        parseRankingUrlState(
+          serializeRankingUrlState({
+            ...changed,
+            conditions: DEFAULT_RANKING_URL_STATE.conditions,
+          }),
+        ).conditions,
+      ).toEqual(DEFAULT_RANKING_URL_STATE.conditions);
+    }
   });
 });
