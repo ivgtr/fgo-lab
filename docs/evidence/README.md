@@ -1,13 +1,13 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.29"
+document_version: "1.4.30"
 status: "Active"
 updated_at: "2026-09-05"
 ---
 
 # Evidence report index
 
-このindexはtracked report 45件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
+このindexはtracked report 46件の役割、後継、関連commitを記録する。TSK-00.3で旧ignored report 15件を内容監査し、damage差分、canonical input、production inventory、digestを失わないため全件をtracked evidenceへ昇格した。reportの統合・削除可否はTSK-09.1で再監査する。`canonical`は現行契約の数値・inventory・digestを直接支える証跡、`supporting`は途中段階または局所判断の追跡資料、`superseded`は後継reportがある資料を表す。
 
 | Report | Status | Evidence role | Successor | Related commit |
 | --- | --- | --- | --- | --- |
@@ -51,7 +51,8 @@ updated_at: "2026-09-05"
 | [legacy-runtime-removal-tsk-04](legacy-runtime-removal-tsk-04.md) | Complete | canonical: old schema reader／raw fallback／dual runtime branch removal | TSK-04〜08 | TSK-04 Phase 3 |
 | [transactional-preparation-flow-tsk-05](transactional-preparation-flow-tsk-05.md) | Complete | canonical: ordered condition／choice／NP resource／state／form／variant action transaction、typed outcome、full recovery | TSK-05〜08 | `69f8207e` baseline／second review resolution |
 | [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Active | canonical: source program／finite certificate／application policy／outcome; TSK-06.41 product correction Blocking 0、final four-policy maximum deferred | TSK-06〜08 | TSK-06.41 completion |
-| [resolved-attacker-level-stat-flow-tsk-06-46](resolved-attacker-level-stat-flow-tsk-06-46.md) | Active | canonical: resolved servant／level ATK join、numeric-zero fallback removal、calculator／ranking／portable recovery | TSK-06.46〜08 | TSK-06.46 Step 1 planning |
+| [resolved-attacker-level-stat-flow-tsk-06-46](resolved-attacker-level-stat-flow-tsk-06-46.md) | Active | canonical: resolved servant／level ATK join、numeric-zero fallback removal、calculator／ranking／portable recovery | TSK-06.46〜08 | TSK-06.42 Step 1 planning |
+| [servant-build-record-identity-flow-tsk-06-47](servant-build-record-identity-flow-tsk-06-47.md) | Active | canonical: build／target map key and embedded servant identity coherence、profile persistence／recovery fail-closed | TSK-06.47〜08 | TSK-06.42 Step 1 planning |
 | [ranking-adverse-action-diff-tsk-06-41](ranking-adverse-action-diff-tsk-06-41.json) | Complete | machine-readable: full 433-profile join with 348 direct result changes＋85 rank-only changes; inputs／actions／resources／NP1〜5 damage／ranks／reasons | TSK-06.41〜06.5 | `bb1df1b` before／after audit |
 | [ranking-web-worker-cutover-tsk-07](ranking-web-worker-cutover-tsk-07.md) | Active | canonical: five-item cutover retained; true reset、five-outcome Web表示、handoff／cache await TSK-06.5 | TSK-07〜09 | TSK-06.4／06.41 planning reopening |
 | [portable-calculation-identity-flow-tsk-06-1](portable-calculation-identity-flow-tsk-06-1.md) | Active | canonical: discriminated portable identity／persistence／recovery／exact-subject reset; TSK-06.41 Blocking 0 | TSK-06.1〜08 | TSK-06.41 completion |

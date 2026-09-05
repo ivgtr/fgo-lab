@@ -50,7 +50,7 @@ phase before the attack NP; general turn passage, enemy AI, and battle simulatio
 | URL／worker／detail presentation | consumes canonical state and outcome without inferring game rules | N/A: no new Web semantic owner; typed fields flow through existing TSK-06.42／07 boundaries |
 | full policy maximum／digest | proves current production nonnumeric outcomes remain zero after maximum selection | Deferred: TSK-06.5 |
 
-Implementation order is TSK-06.42 → TSK-06.43 → TSK-06.45 → TSK-06.44 → TSK-06.5. Planning Blocking is 0;
+Implementation order is TSK-06.46 and TSK-06.47 → TSK-06.42 → TSK-06.43 → TSK-06.45 → TSK-06.44 → TSK-06.5. Planning Blocking is 0;
 runtime paths remain Deferred until their owning task verifies them.
 
 ### State-by-path counterexamples
@@ -65,82 +65,142 @@ runtime paths remain Deferred until their owning task verifies them.
 | battle-point mutation crossing a phase boundary | carry current amount and canonical thresholds | recompute phase from post-mutation amount | calculator／ranking parity | Deferred: TSK-06.45 |
 | future unknown operation | inventory records first unsupported reader | no partial scenario or plausible number | fail closed without weakening current zero ratchet | Deferred: TSK-06.45 |
 
-## Requirement v0.10.0 insertion — authoritative current planning delta
+## TSK-06.42 Step 1 — authoritative comparison-basis planning delta
 
-### User-visible outcome and governing invariants
+### Outcome, invariant, semantic owner, and current mechanism
 
-Ranking lets the user select the population, level basis, and NP-level basis independently. The labels are
-`全サーヴァント | 保有サーヴァント`, `自然上限 | Lv.90統一 | 保有レベル`, and
-`NP1〜NP5 | 保有宝具レベル`; `参考サイト基準`, `標準比較`, and `所持戦力` are not current product terms.
-Owned population only filters entries. It does not silently replace the selected level／NP basis or the common
-Fou ATK+1,000／skill Lv10 assumptions. This supports an owned but untrained servant under natural-limit or
-Lv.90 comparison, and separately supports its stored level and stored NP level.
+The user-visible outcome remains the approved six controls: population, level basis, NP-level basis, class
+affinity, self buffs, and conditional effects. Population changes membership only. Level and NP-level bases are
+resolved independently for each included AttackProfile, while Fou ATK+1,000, skill level 10, OC1, and the other
+shared assumptions remain fixed. The calculation application owns validation, explicit state transitions, and
+per-entry resolution; Web serializes and presents that state, and ranking continues through the shared scenario
+preparation and damage executor.
 
-The canonical state is a product of three typed axes rather than one comparison mode:
+The current runtime violates that invariant in one mechanism. `RankingPolicyConditions.comparisonMode` is read by
+`includedRankingServants`, `ownedBuild`, and `createRankingBaseScenario`; it simultaneously filters the population,
+selects level and NP level, sets `attacker.source`, and imports stored Fou. `npLevel` is then read independently by
+static semantics, NP-capacity policy, candidate selection, and the NP1〜5 matrix. Web patches this product directly,
+parses unknown URL values to defaults, disables specified NP in owned mode, and fingerprints only the old five
+fields. The worker trusts the structural TypeScript type, keeps maps keyed by that fingerprint, and returns generic
+errors. Portable ranking intent retains only self／condition policy, so the resolved scenario carries the selected
+numbers but not the six-field comparison identity.
 
-```ts
-type RankingPopulation = 'all' | 'owned';
-type RankingLevelBasis = 'naturalLimit' | 'uniformLevel90' | 'ownedLevel';
-type RankingNpLevelBasis =
-  | { kind: 'specified'; level: 1 | 2 | 3 | 4 | 5 }
-  | { kind: 'owned' };
-```
+Confirmed fallback paths are `ranking_owned_build_missing` being caught as generic per-profile `invalid`, invalid
+URL values becoming standard／NP1, and missing `atkByLevel[level]` becoming numeric ATK 0 in shared scenario
+preparation. NP0 is currently excluded from the ranking population, which agrees with the approved profile-wide
+ownership rule; the defect is that ranking repeats the `npLevel > 0` rule instead of consuming its canonical owner.
+The ATK item is not owned by comparison-basis selection and is split into TSK-06.46 and its own flow note. The audit
+also found that a map key／embedded `ServantBuild.servantId` contradiction is accepted by the current profile schema
+and can apply one servant's saved values to another across calculator, ranking, and profile readers. That separate
+identity family is split into TSK-06.47. The earlier TSK-06.42 plan gap was listing endpoints without inventorying
+the application command boundary, per-entry NP consumers, mixed `attacker.source` semantics, request-level invalid
+outcome, persistence migration, irrelevant profile inputs in worker identity, or the two shared fallback families.
 
-`ownedLevel` and owned NP are legal only with owned population. Missing owned values, NP0, or an illegal
-all-population combination never fall back to natural limit／Lv.90／NP1. Stored Fou and skill levels remain out
-of scope; a future complete owned-build comparison requires a separate typed build basis.
+### Canonical cutover design
 
-For stackable damage-amplifying conditions, satisfied mode uses a pipeline-declared canonical maximum count.
-The planner may materialize that count as an explicit initial quantity assumption but does not simulate general
-turn passage or repeated skill use. The executor evaluates the same typed quantity, constraints, and contribution;
-Web only displays its count and provenance. Missing／contradictory／unsupported maxima fail closed. No runtime
-branch may inspect a servant ID, name, label, or raw trait key. Production representatives are Taira no Kagekiyo's
-four `復讐の怨念` stacks and Wandjina's ten `精霊の怒り` stacks; those names belong only to fixtures／evidence.
+The application contract replaces `comparisonMode` and scalar `npLevel` with the already approved three-axis
+product. A single application compiler accepts the six-field selection and returns either a validated comparison
+selection or a typed request-level `invalid` result. It then resolves one `ResolvedRankingBasis` per included
+servant: membership, numeric level, numeric NP level, and exact provenance for both numeric dimensions. Downstream
+static semantics, NP capacity, candidate construction, and candidate selection receive only the resolved numeric
+NP level; they do not read stored builds or reinterpret an NP-level basis.
 
-Contribution detail groups by canonical logical effect and displays independent self／condition／area decisions
-plus the final applied outcome. Raw `contributionId`, operation IDs, and internal enums are not user-facing text.
-Row count, badge, detail, and damage continue to derive from the same effective contribution set.
+Owned membership consumes the profile-domain ownership fact: NP1〜5 is owned and NP0／missing build is unowned.
+The saved record remains intact when NP is returned to 0, but an owned-population ranking does not enumerate it;
+specified NP must not turn an unowned record into a member. For an enumerated owned servant, level and NP level are
+both present in the validated build; unavailable exact level ATK is `invalid`, never a numeric fallback. A malformed
+worker payload is rejected at its runtime boundary. Map-key／`servantId` coherence is guaranteed by TSK-06.47 rather
+than reimplemented in the ranking resolver. `all + ownedLevel` and `all + owned NP` are request-level invalid states.
 
-The referenced ranking page is a differential oracle only: its natural-limit/Fou+1000/skill-10 baseline and
-maximum-stack examples inform representative comparisons, but it is not a runtime semantic source and its name
-does not appear in UI policy labels:
-<https://kamigame.jp/fgo/%E5%88%9D%E5%BF%83%E8%80%85%E6%94%BB%E7%95%A5/%E5%AE%9D%E5%85%B7%E5%A8%81%E5%8A%9B%E3%83%A9%E3%83%B3%E3%82%AD%E3%83%B3%E3%82%B0.html>.
+Application commands are the only normal-state writers. `setPopulation(all)` is an explicit atomic transition: it
+changes an illegal `ownedLevel` to `naturalLimit` and illegal owned NP to specified NP1, while preserving already
+legal axes. Direct URL, worker, or portable inputs containing the illegal product are rejected and do not receive
+that normalization. Unknown calculation-axis values and removed `rMode` are invalid; absence of all new keys means
+the documented defaults. Web does not dispatch a worker calculation until the URL state is valid and exposes one
+explicit reset-to-default command for an invalid URL.
 
-### Changed flow inventory
+Ranking scenarios keep `attacker.source: master` even when level or NP level is copied from owned data. That field
+continues to control calculator saved-build behavior, so population must not set it to `owned` and thereby import
+stored Fou or skill levels. The ranking detail and portable ranking intent retain the complete validated six-field
+selection plus the resolved level／NP provenance; portable replay executes the pinned scenario, validates the legal
+axis product and its natural-limit／Lv.90／specified-NP claims, and never re-resolves mutable saved builds. Owned
+values are copied at selection time and remain pinned after the profile changes.
 
-| Path | Owner／expected transition | Planning status |
+The schema cutover increments the current schema once. Prior-schema calculator／manual snapshots may migrate when
+their identity is unchanged. A prior-schema ranking draft is discarded and a prior-schema ranking history
+entry may remain only as isolated historical data; neither can be upgraded to an executable six-field ranking
+request because the missing axes cannot be inferred. Old share payloads and stale worker protocols fail closed.
+This is historical retention, not a compatibility runtime.
+
+`RankingProfileInput` is narrowed to the validated servant-build map used by membership, owned bases, and row
+ownership. Saved craft essences and support templates are fixed to none by the comparison policy and are not
+ranking inputs; they must not recreate the worker or change a calculation／cache identity. Worker caches remain
+scoped to one master／version／servant-build context and one validated six-field selection. A context replacement
+clears summary, detail, and selection maps atomically, while stale guards compare both current context and
+selection identities.
+
+### Current production inventory
+
+At audited HEAD `907f251`, the published master contains 469 servants, 422 servants with an attack NP, and 433
+AttackProfiles. All 422 attack servants have both the rarity-derived natural-limit ATK and Lv.90 ATK. Of them, 421
+have ATK through Lv.120; Mash has canonical stats through Lv.90. No production profile data exists for the owned
+axes, so their completeness is proved with one shared stable profile fixture rather than by treating a production
+zero as evidence. HEAD differs from the requested `c18f449` starting point only by the route-interaction bundle
+split; the basis owner and fallback mechanism are unchanged, and no worktree changes were present during this
+audit outside planning documents.
+
+### Flow inventory and implementation ownership
+
+| Path | Confirmed current reader／writer and required transition | Status |
 | --- | --- | --- |
-| natural-limit／Lv.90 ATK production | master／data pipeline emits canonical level-addressable stats; no UI interpolation | Deferred: TSK-06.42 |
-| owned population／level／NP read | application validates the three-axis product and constructs one scenario per entry | Deferred: TSK-06.42 |
-| six-input URL／worker／fingerprint | Web dispatches canonical commands; application identity rejects illegal／stale state | Deferred: TSK-06.42 |
-| selected row → calculator replay | existing portable application path carries the resolved level／NP scenario | Deferred: TSK-06.42 |
-| stack maximum production | data pipeline emits typed quantity source, baseline, and supported maximum | Deferred: TSK-06.43 |
-| stack witness／constraint／execution | application materializes a finite assumption; battle execution evaluates it transactionally | Deferred: TSK-06.43 |
-| logical-effect／contribution presentation | application returns canonical presentation state; Web maps exhaustive typed reasons to labels | Deferred: TSK-06.44 |
-| all attack-NP execution coverage | relevance and dependent resources produce current-production nonnumeric outcomes 0 | Deferred: TSK-06.45 |
-| final production maximum | one inventory covers natural／Lv.90 × NP1〜5 × four policies plus stable owned fixtures | Deferred: TSK-06.5 |
-| cache lifetime／notice／recovery interaction | consumes the six-input identity without reimplementing it | Deferred: TSK-07 |
+| master ATK production | pipeline emits level-addressable `atkGrowth`; master-data owns natural level; no Web interpolation | Verified: production natural／Lv.90 availability; schema-legal absence is Deferred: TSK-06.46 |
+| six-field type／defaults／command | `rankingContracts` currently owns five fields; add raw-input validation, validated selection, explicit command reducer, and request-level invalid outcome | Deferred: TSK-06.42 |
+| profile identity | profile schema permits record-key／embedded-ID contradiction; all build consumers need one fail-closed trust boundary | Deferred: TSK-06.47 |
+| population | `includedRankingServants` repeats `npLevel > 0`; consume the canonical profile ownership classifier and keep NP0／missing records outside owned population | Deferred: TSK-06.42 |
+| per-entry level／NP resolution | `rankingPolicy` currently couples mode, level, NP, Fou, and source; replace with the single application resolver | Deferred: TSK-06.42 |
+| candidate compilation／selection | `rankingStaticSemantics`, `rankingComparisonPolicy`, `rankingPolicyScenario`, and `rankingPolicyCandidates` read global `conditions.npLevel`; consume resolved per-entry NP exactly once | Deferred: TSK-06.42 |
+| row／detail identity | rows already expose numeric level／NP; detail only retains self／condition policy; add resolved basis and full six-field identity without duplicating damage semantics | Deferred: TSK-06.42 |
+| URL writer／reader | `rankingState` owns `rMode`／`rNp` and fallback parsing; replace keys atomically and represent invalid calculation state without worker dispatch | Deferred: TSK-06.42 |
+| worker protocol／stale identity | protocol accepts unchecked conditions; fingerprint has five fields; response error is generic | Deferred: TSK-06.42 |
+| worker context | `RankingProfileInput` and its JSON fingerprint include unused craft essence／support data; narrow to validated servant builds and include context plus selection in stale identity | Deferred: TSK-06.42 |
+| summary／detail cache key | worker maps are scoped only by lifecycle plus the old selection fingerprint; React stale guards compare only that selection | Deferred: TSK-06.42 |
+| cache value／lifetime／cardinality | current worker caches unbounded calculations and details; this is the existing cache-lifecycle family | Deferred: TSK-07 |
+| portable constructor／schema／fingerprint | detail writer and ranking intent retain only two policy axes; add six-field selection plus resolved provenance and bump schema once | Deferred: TSK-06.42 |
+| draft／history／share／backup recovery | all persist and hash the full portable request; migrate identity-preserving non-ranking data, historicalize or discard old ranking snapshots, never infer missing axes | Deferred: TSK-06.42 |
+| portable execute／recover／version upgrade | execute the pinned resolved scenario after identity validation; failure retains the prior request／result and never re-reads an owned build | Deferred: TSK-06.42 |
+| immediate ranking → calculator replay | `rankingHandoff` already uses the application constructor and executor; prove row/detail/request/result parity for every basis family | Deferred: TSK-06.42 |
+| calculator notice／normal reset interaction | consumes the new portable identity but does not own its semantics | Deferred: TSK-07 |
+| filter／sort／metric | display-only state neither writes nor transforms comparison bases | N/A: no scenario or identity change |
+| stack maximum／logical-effect presentation／all attack-NP closure | separate semantic owners remain unchanged by this cutover | Deferred: TSK-06.43／TSK-06.44／TSK-06.45 |
+| final natural／Lv.90 × NP1〜5 × four-policy maximum and performance | consumes the closed basis resolver and stable owned fixture | Deferred: TSK-06.5 |
 
-Design decisions are approved and the implementation sequence is TSK-06.42 → TSK-06.43 → TSK-06.45 →
-TSK-06.44 → TSK-06.5. Planning Blocking is 0; runtime paths remain explicitly Deferred until their owning task
-verifies them.
+Planning Blocking is **0**. Implementation order is TSK-06.46 and TSK-06.47 → TSK-06.42 → TSK-06.43 → TSK-06.45 →
+TSK-06.44 → TSK-06.5. TSK-07 retains only cache lifecycle, notice／reset interaction, outcome presentation, and
+responsive／a11y closure; it must not add a second basis parser or portable adapter.
 
 ### State-by-path counterexamples
 
-| State | Scenario construction | Execution／selection | Presentation／recovery | Status |
+| State | Population／resolution | Execution／identity／recovery | Expected outcome | Status |
 | --- | --- | --- | --- | --- |
-| all＋natural limit＋specified NP | canonical natural level per entry | same NP level for every entry | six-input identity | Deferred: TSK-06.42 |
-| all＋Lv.90＋specified NP | canonical Lv.90 ATK per entry | same NP level for every entry | distinct from natural-limit cache key | Deferred: TSK-06.42 |
-| owned＋natural limit＋owned NP | filter owned; ignore stored level | use stored NP only | communicates reflected fields exactly | Deferred: TSK-06.42 |
-| owned＋Lv.90＋specified NP | filter owned; ignore stored level／NP | normalized specified scenario | no implicit owned-build switch | Deferred: TSK-06.42 |
-| owned＋owned level＋owned NP | require both stored values | use only those two owned dimensions; Fou／skills remain common | label does not claim complete current strength | Deferred: TSK-06.42 |
-| all＋owned level or owned NP | illegal product | no numeric candidate | reject／normalize by explicit user command only | Deferred: TSK-06.42 |
-| owned NP0／missing level／missing NP | incomplete or non-ranking build | no NP1／natural fallback | typed exclusion or invalid state | Deferred: TSK-06.42 |
-| satisfied stack maximum | explicit declared maximum assumption | validate constraints, then evaluate canonical contribution | display count and assumption source | Deferred: TSK-06.43 |
-| baseline stack condition | canonical baseline count | do not borrow satisfied maximum | no false applied decision | Deferred: TSK-06.43 |
-| missing／contradictory stack maximum | no guessed witness | invalid／unsupported; no numeric fallback | distinguish semantic failure | Deferred: TSK-06.43 |
-| one logical effect split across contributions | preserve group plus exact contribution identities | independent decisions and final outcomes | count once; show each decision without raw IDs | Deferred: TSK-06.44 |
-| policy-excluded contribution with retained mutation | execute retained canonical action／state | exclude only the contribution | keep reason and evidence in detail | Deferred: TSK-06.44 |
+| all＋natural limit＋specified NP1〜5 | all 433 profiles; canonical natural level | resolved NP is the only downstream NP input; distinct six-field identity | calculated where later execution tasks permit | Deferred: TSK-06.42 |
+| all＋Lv.90＋specified NP | all 433 profiles at Lv.90 | no interpolation; distinct from natural-limit cache／portable identity | calculated where later execution tasks permit | Deferred: TSK-06.42 |
+| owned＋natural limit＋owned NP | NP1〜5 ownership membership; ignore stored level／Fou／skills | copy stored NP once; pin it in detail and portable scenario | calculated | Deferred: TSK-06.42 |
+| owned＋Lv.90＋specified NP | NP1〜5 ownership membership; ignore every stored combat value except owned fact | master source, Fou1000, skill10; preserve legal axes on profile mutation | calculated | Deferred: TSK-06.42 |
+| owned＋low owned level＋specified NP | use only stored level | exact `atkByLevel`; same row/detail/calculator damage | calculated | Deferred: TSK-06.42 |
+| owned＋owned level＋owned NP | copy two owned dimensions independently | no complete-owned-build label or saved Fou／skill import | calculated for NP1〜5 | Deferred: TSK-06.42 |
+| saved build with NP0＋specified NP under owned population | unowned; record remains stored but is not enumerated | specified NP changes level basis only, not membership | absent by typed ownership proof | Deferred: TSK-06.42 |
+| saved build with NP0＋owned NP under owned population | unowned; no per-entry resolution is attempted | no NP1 substitution and no fabricated exclusion | absent by typed ownership proof | Deferred: TSK-06.42 |
+| no build under owned population | unowned and not enumerated | no per-entry outcome fabricated | absent by typed ownership proof | Deferred: TSK-06.42 |
+| empty owned population | enumerate zero servants and profiles | valid selection and cache identity; no generic failure | calculated collection with zero rows | Deferred: TSK-06.42 |
+| all＋owned level or owned NP from URL／worker／portable | reject product before enumeration／execution | no cache write, handoff, or numeric scenario | request-level `invalid` | Deferred: TSK-06.42 |
+| explicit UI change owned → all while owned bases selected | application command changes only illegal axes to documented defaults | serialized result is legal; no hidden fallback reader | valid all＋natural＋specified NP1 | Deferred: TSK-06.42 |
+| unknown axis or removed `rMode` URL | parser retains typed invalid state | worker not called; explicit reset is offered | request-level `invalid` | Deferred: TSK-06.42 |
+| record key and `ServantBuild.servantId` disagree | reject the profile at its shared schema／persistence trust boundary | calculator, ranking, and reset cannot apply it to either identity | retained data is not guessed or rewritten | Deferred: TSK-06.47 |
+| worker build or condition payload is structurally malformed | runtime parse before cache lookup or calculation | no partial context installation or generic exception fallback | request-level typed `invalid` | Deferred: TSK-06.42 |
+| selected owned level lacks canonical ATK | basis resolver does not guess/interpolate | shared scenario preparation also rejects missing stat | `invalid: attackerLevelStatUnavailable` | Deferred: TSK-06.46 then TSK-06.42 parity |
+| owned profile changes after detail／handoff | existing detail retains copied values and provenance | portable replay uses pinned scenario; new ranking request gets new context identity | old replay stable; new result recalculated | Deferred: TSK-06.42 |
+| prior-schema ranking snapshot／share | axes cannot be reconstructed | draft discard／history historical-only; share rejected | no executable compatibility fallback | Deferred: TSK-06.42 |
+| display filter／metric only | unchanged six-field state | no worker calculation or portable rewrite | presentation-only change | Verified: current boundary; reverify in TSK-06.42 |
 
 ## TSK-06.41 runtime cutover — previous authoritative delta
 

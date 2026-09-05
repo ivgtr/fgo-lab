@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.1"
+document_version: "1.7.2"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-05"
@@ -58,7 +58,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
 | TSK-06.46 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
-| TSK-06.42 | Ranking population, level, and NP-level basis cutover | blocked | TSK-06.46 | comparison scenario／owned data／URL・worker identity |
+| TSK-06.47 | Profile servant-record identity fail-closed | ready | TSK-06.41 | profile map identity／persistence／shared consumers |
+| TSK-06.42 | Ranking population, level, and NP-level basis cutover | blocked | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | blocked | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.45 | All attack-NP execution closure | blocked | TSK-06.43 | trigger relevance／dependent resource／production coverage |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
@@ -69,7 +70,10 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
 ```text
-TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41 -> TSK-06.46 -> TSK-06.42 -> TSK-06.43 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
+TSK-06.41 -> TSK-06.46
+TSK-06.41 -> TSK-06.47
+TSK-06.46 + TSK-06.47 -> TSK-06.42 -> TSK-06.43 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -1239,7 +1243,8 @@ Completion:
   skip／todo／retry／warning／unexpected-console 0; artifact
   `.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. At this historical boundary TSK-06.41 was `done` and
   TSK-06.5 was `ready`; requirement v0.10.0 inserted TSK-06.42〜06.44. TSK-06.42 Step 1 subsequently found
-  the shared resolved-level ATK fallback and inserted TSK-06.46 as its `ready` prerequisite.
+  the shared resolved-level ATK fallback and servant-build record identity gap, and inserted TSK-06.46／06.47 as
+  independent `ready` prerequisites.
 
 ### TSK-06.46: Resolved attacker level-stat fail-closed
 
@@ -1339,42 +1344,136 @@ Handoff:
 - Next entry condition: TSK-06.47のStep 1 planning handoffを確定し、そのentry conditionとallowed worktreeを
   満たす独立sessionで開始する。
 
+### TSK-06.47: Profile servant-record identity fail-closed
+
+Depends on: TSK-06.41
+
+- [ ] `localProfileSchema`の`servantBuilds`／`servantTargets` record keyと各embedded `servantId`を一つのprofile
+      identity invariantとして検証し、不一致をcurrent load、v32／v33／v34 migration、backup importでtransactionalにrejectする。
+      key修正、embedded ID修正、alternate lookup、record削除によるrepairは行わない。
+- [ ] `profile-domain.updateServantBuild`／`updateServantTarget`を通常writerとして維持し、全patch後もkeyとembedded IDが
+      一致することを固定する。契約変更に対するschema versionを一度だけ更新する。
+- [ ] calculator default／subject change、portable reset、ranking、profile UI、support pickerがvalidated profileだけを消費し、
+      選択したmaster servantへ別identityのlevel／NP／Fou／skillsを適用できないことを確認する。
+- [ ] 一致するNP1〜5、NP0 retained build、不一致build／targetのcurrent load／migration／backup／calculator recoveryをsmall
+      fixtureで固定する。NP0はrecordを保持した未所持であり、このTaskでownership semanticsを変更しない。
+
+Done gate:
+
+- schema-legalだったbuild／target keyとembedded-IDの不一致が全profile trust boundaryで同じinvalidとなり、保存データを自動変更しない。
+- normal writer、load／migration／backup、calculator／portable recovery、ranking／profile readersに独立したrepair／fallbackが0件である。
+- NP0 record保持と`isOwned === false`が一致し、TSK-06.42が同じcanonical ownership factを再利用できる。
+- flow closure: `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md`がBlocking 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-POLICY-001` | Apply | profile identity／ranking input focused tests | `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md` |
+| `RK-HANDOFF-001` | Apply | calculator default／portable reset retained-state tests | `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md` |
+| `RK-AUDIT-001` | Apply | writer／reader search plus schema-legal mismatch fixture | `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff:
+
+- Step 1 baseline: `07b260147c8c27e1047043d081478ebdbc0fbcff`、`main`。TSK-06.41／06.46は`done`、
+  PIR-001はreviewer承認後にcommit済み、TSK-06.42は本Task待ちのため`blocked`を維持する。
+- Step 1 scope: production／test code変更0。正本
+  `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md`へoutcome、profile schema／persistence owner、
+  producer／consumer／writer／migration inventory、counterexample、実装単位、検証順を確定し、planning Blocking 0。
+  product requirement改訂と追加ADRは不要。
+- Confirmed delta: current v34とlegacy v32／v33のbuild／target mapはrecord valueだけを検証し、keyとembedded
+  `servantId`の矛盾を許す。通常profile-domain writerは一致を維持し、current load／migration output／backup
+  importはcurrent schemaへ収束するため、v35への一度のbumpとv34 migration inputで一つのfail-closed invariantを
+  適用する。consumer側のrepair／alternate lookupは追加しない。
+- Step 2 entry condition: このplanning commitを含むHEAD、TSK-06.47 `ready`、planning Blocking 0、
+  TSK-06.41／06.46 `done`、TSK-06.42 `blocked`を確認し、開始commitでTSK-06.47だけを`in_progress`へ変更する。
+  production／test codeの開始前差分があれば開始しない。
+- Allowed worktree: なし。別Taskのsource、test、fixture、snapshot、baseline、configuration差分を同じ実装境界へ
+  入れない。以後のuser changeがあれば保持して新しい境界を明記する。
+- Planned verification: schema／migration、profile-domain writer、repository load、calculator／portable recovery、
+  ranking readerのfocused diagnosticからunit、productionへ拡張し、phase completionは`pnpm quality`だけで閉じる。
+  詳細なstate-by-pathと完了分類はcanonical flow noteを参照する。
+
 ### TSK-06.42: Ranking population, level, and NP-level basis cutover
 
-Depends on: TSK-06.46
+Depends on: TSK-06.46, TSK-06.47
 
 - [ ] 旧`comparisonMode: standard | owned`を削除し、母集団`all | owned`、レベル基準
       `naturalLimit | uniformLevel90 | ownedLevel`、宝具レベル基準`specified(NP1〜5) | owned`を
-      application所有の直交するcanonical stateへ破壊的に切り替える。
-- [ ] `owned`母集団はentryを絞り込むだけとし、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを
-      独立に選択可能にする。Fou ATK+1,000、skill Lv10、OC1等の共通条件は保存済みbuildへ暗黙に切り替えない。
-- [ ] `ownedLevel`／owned NPはowned母集団だけで有効とし、保有値欠落、NP0、all母集団との不正組合せを
-      naturalLimit、Lv.90、NP1へfallbackしない。NP0は数値ランキングから除外し、typed outcome／reasonを保持する。
+      application所有の直交するcanonical selectionへ破壊的に切り替える。application command reducerだけを通常writerとし、
+      six-field selection全体をvalid／request-level invalidへcompileする。
+- [ ] `owned`母集団はprofile-domainのcanonical ownership fact（NP1〜5）だけでentryを絞り、自然上限／Lv.90統一／
+      保有レベルと指定NP／保有宝具Lvをentryごとに独立解決する。NP0／record欠落はunownedで、保存record自体は変更しない。
+      key／embedded identityの整合はTSK-06.47を消費し、ranking内へ第二のvalidatorを追加しない。
+- [ ] downstreamのstatic semantics、NP capacity、candidate construction／selectionへresolved numeric NP levelを一度だけ渡し、
+      basisやsaved buildを再読させない。levelもexact `atkByLevel`だけを使用し、TSK-06.46のfail-closed ownerへ収束させる。
+- [ ] `ownedLevel`／owned NPはowned母集団だけで有効とする。NP0／missing buildはどのNP basisでもowned母集団へ列挙せず、
+      fabricated exclusionを作らない。allとの不正組合せ、malformed worker payload、ATK欠落を標準値へfallbackしない。
+- [ ] ranking scenarioの`attacker.source`をpopulationから導出せず`master`に固定し、Fou ATK+1,000、skill Lv10、OC1等の
+      共通条件を維持する。ownedからコピーするのは選択したlevel／NP levelだけとし、detailに各provenanceを保持する。
 - [ ] UI名称を`全サーヴァント | 保有サーヴァント`、`自然上限 | Lv.90統一 | 保有レベル`、
       `NP1〜NP5 | 保有宝具レベル`へ統一し、`参考サイト基準`、`標準比較`、`所持戦力`をcurrent contractへ残さない。
-- [ ] scenario constructor、URL、worker request／response、fingerprint、summary／detail identity、portable handoffの
-      direct reader／writerを同じ6入力へ切り替え、stale responseと旧schemaをfail-closedにする。
-- [ ] 低rarityの自然上限／Lv.90／低い保有Lv、自然上限がLv.90のprofile、指定NP／保有NP、NP0／欠落、
-      row／detail／calculator replay parityをstate-by-path fixtureへ固定する。
+- [ ] `setPopulation(all)`を明示atomic commandとし、保持中の`ownedLevel`だけを`naturalLimit`、owned NPだけをspecified NP1へ
+      置換する。URL／worker／portableから同じillegal productを受けた場合はnormalizeせずrequest-level invalidにする。
+- [ ] URLを新keyへ一括切替し、全新key欠落だけをdefaultとする。unknown calculation value、旧`rMode`、partial／illegal productは
+      typed invalidとしてworkerを起動せず、Webは明示reset commandだけを提示する。旧reader／serializerを残さない。
+- [ ] worker request／responseへruntime validationとtyped invalid responseを追加し、summary／detail stale guardとcache keyを
+      master／version／validated servant-build context＋canonical six-field selectionのidentityへ切り替える。context交換時は
+      conditions／summary／detail cacheをatomicにclearする。cache value／lifetime／cardinalityは変更せずTSK-07へDeferredする。
+- [ ] `RankingProfileInput`を実際に読むvalidated servant-build mapへ限定する。共通条件でnone固定の保存礼装／support templateを
+      worker context、fingerprint、recalculation triggerへ含めず、保存値をranking semanticsへ混入させない。
+- [ ] `RankingPolicyDetail`、portable ranking intent、portable fingerprintへsix-field selectionとresolved level／NP provenanceを
+      含める。portable replayはpinned scenarioを実行し、mutable profileからowned値を再解決しない。
+- [ ] schema／engine versionを一度だけ更新し、identity不変な旧calculator／manual snapshotだけを移行する。旧ranking draftは破棄、
+      historyはhistorical-only、旧shareはrejectとし、不足するaxesを推測してexecutable requestへ変換しない。
+- [ ] direct Web writer `rankingHandoff`を含むrow → detail → portable request → calculator immediate replayを各basis familyで固定する。
+      notice／normal reset interaction、cache lifetime、responsive／a11yはTSK-07へDeferredする。
+- [ ] low-rarity自然上限、自然上限Lv.90、Lv.90統一、低いowned level、specified／owned NP、NP0、no-build、empty owned population、
+      profile mutation後のpinned replay、invalid URL／worker／portableをstate-by-path fixtureへ固定する。record identity反例は
+      TSK-06.47のfixtureを参照し、重複させない。
+- [ ] production 469 servants／422 attack servants／433 AttackProfilesについて自然上限／Lv.90 ATK可用性をshared inventoryで確認し、
+      owned axesは一つのstable profile fixtureから合法product、NP0／no-build membership proof、invalid productを監査する。
+      full maximumはTSK-06.5へDeferredする。
+
+Implementation and verification order:
+
+1. `rankingContracts`とfocused application moduleでraw six-field input、validated selection、atomic command、
+   per-entry `ResolvedRankingBasis`を確定し、TSK-06.47のvalidated build／ownership contractだけを入力にする。
+2. `rankingPolicy`／`rankingRows`でpopulationとlevel／NP provenanceを一度解決し、`rankingStaticSemantics`、
+   `rankingComparisonPolicy`、candidate construction／selectionからglobal basis readを削除する。
+3. detail、portable ranking intent、schema migration／draft／history／backup／share recoveryを同じidentityへ切り替える。
+4. URL control／serializer、worker runtime validation、context／selection fingerprint、summary／detail cacheとstale guardを切り替え、
+   最後に旧type、URL key、reader、fallbackを検索で0件にする。
+5. `pnpm test:diagnostic -- rankingPolicy`、`pnpm test:diagnostic -- rankingState`、
+   `pnpm test:diagnostic -- rankingWorkerRuntime`、`pnpm test:diagnostic -- portableCalculation`の順でfocused failureを診断し、
+   `pnpm test:unit`、`pnpm test:production`へ拡張する。phase completionは`pnpm quality`だけで閉じる。
 
 Done gate:
 
 - 母集団、レベル基準、宝具レベル基準のsemantic ownerがapplicationに一つだけあり、Web／workerがbuild条件を推測しない。
 - owned母集団でも自然上限／Lv.90統一と指定NPが選択でき、保有レベル／保有NPだけを個別に反映できる。
-- 保存済みFou／skill Lvを反映しないことが型、表示、fixtureで一致し、現在戦力という過大な表示をしない。
-- URL／worker／cache／portable fingerprintが6入力を含み、旧`comparisonMode` reader／writer／fallbackが0件である。
-- missing／NP0／illegal combinationが数値fallbackにならず、selected rowとcalculatorが同じscenarioを再実行する。
+- profile-domainとrankingのowned判定がNP1〜5へ一本化され、NP0／missing buildはrecordを変更せず全owned basisで母集団外となる。
+- 保存済みFou／skill Lvを反映しないことがscenario source、型、表示、fixtureで一致し、現在戦力という過大な表示をしない。
+- URL／worker／cache key／portable fingerprintが6入力を含み、cache／stale guardがcontext変更とselection変更を区別する。
+  旧`comparisonMode`／scalar global `npLevel`の
+  reader／writer／fallback、generic invalid error、旧URL keyが0件である。
+- saved craft essence／support templateの変更だけではranking workerを再初期化せず、固定none条件とruntime identityが一致する。
+- illegal product／malformed worker input／ATK欠落が数値fallbackにならず、invalid URLはworkerを起動せず、explicit commandだけが合法stateへ遷移する。
+- selected row、detail、portable request、calculatorが同じresolved level／NP scenarioを再実行し、profile変更後もpinned replayが変わらない。
+- schema bump、profile／history migration、share rejectionが不足axisを推測せず、旧ranking runtimeとの互換pathが0件である。
+- TSK-07へDeferredするcache lifecycle／notice／reset／responsive scopeが明記され、TSK-06.42に第二のownerを残さない。
 - flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.42 deltaがBlocking 0。
 
 Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-POLICY-001` | Apply | focused comparison scenario constructor／invalid-state tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-UI-001` | Apply | component／URL／worker six-input contract tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-HANDOFF-001` | Apply | selected row／portable calculator replay parity | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
-| `RK-CACHE-001` | Apply | fingerprint／stale summary and detail tests; final lifetime closure remains TSK-07 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `RK-AUDIT-001` | Apply | focused owned fixture＋production natural／Lv.90 inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-POLICY-001` | Apply | command／resolver／per-entry NP consumer／invalid-state tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-UI-001` | Apply | controls／invalid URL／worker runtime six-input contract tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-HANDOFF-001` | Apply | selected row／portable immediate replay／pinned profile-mutation parity | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
+| `RK-CACHE-001` | Apply | six-field fingerprint／stale summary-detail identity; value／lifetime closure remains TSK-07 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `RK-AUDIT-001` | Apply | stable owned product fixture＋shared production natural／Lv.90 inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: 未記録
