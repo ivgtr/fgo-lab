@@ -21,14 +21,21 @@ import {
   type CalculationExecution,
 } from './scenario';
 
+type PortableCalculationExecution = Exclude<CalculationExecution, { status: 'invalid' }>;
+
 export type PortableCalculationOutcome =
-  | { status: 'executed'; request: PortableCalculationRequest; execution: CalculationExecution }
+  | {
+      status: 'executed';
+      request: PortableCalculationRequest;
+      execution: PortableCalculationExecution;
+    }
   | {
       status: 'invalid';
       request: PortableCalculationRequest;
       reason:
         | 'runtimeVersionMismatch'
         | 'initialNpGaugeExceedsCapacity'
+        | 'attackerLevelStatUnavailable'
         | 'scenarioInvalid'
         | 'requestResultVersionMismatch'
         | 'storedResultMismatch';
@@ -37,7 +44,7 @@ export type PortableCalculationOutcome =
   | {
       status: 'unsupported';
       request: PortableCalculationRequest;
-      execution: CalculationExecution;
+      execution: PortableCalculationExecution;
     };
 
 export type PortableCalculationRecovery =
@@ -298,6 +305,13 @@ export function executePortableCalculation(
         );
     }
     const execution = evaluatePreparedCalculationScenario(executable, versions);
+    if (execution.status === 'invalid')
+      return {
+        status: 'invalid',
+        request,
+        reason: execution.result.issue.kind,
+        detail: `${execution.result.issue.servantId}:${String(execution.result.issue.level)}`,
+      };
     if (!resultMatchesRequestVersions(request, execution.result))
       return { status: 'invalid', request, reason: 'requestResultVersionMismatch' };
     return execution.result.status === 'unsupported'

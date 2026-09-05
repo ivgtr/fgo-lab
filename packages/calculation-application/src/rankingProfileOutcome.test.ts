@@ -26,8 +26,21 @@ const resultBase = {
   versions,
 };
 
-function mixedCandidateSet(order: readonly ('input' | 'unsupported' | 'unavailable')[]) {
+function mixedCandidateSet(
+  order: readonly ('invalid' | 'input' | 'unsupported' | 'unavailable')[],
+) {
   const byKind = {
+    invalid: {
+      result: {
+        status: 'invalid' as const,
+        issue: {
+          kind: 'attackerLevelStatUnavailable' as const,
+          servantId: master.servants[0]!.id,
+          level: 90,
+        },
+        issues: [{ code: 'attackerLevelStatUnavailable', detail: `${master.servants[0]!.id}:90` }],
+      },
+    },
     input: {
       result: {
         ...resultBase,
@@ -130,6 +143,20 @@ describe('ranking profile blocker aggregation', () => {
 
     expect(unresolvedProfileResult(candidateSet, attackProfile)).toMatchObject({
       status: 'invalid',
+      diagnostics: { classes: { invalid: { count: 1 } } },
+    });
+  });
+
+  it('classifies a shared level-stat invalid above numeric candidate selection', () => {
+    const result = unresolvedProfileResult(
+      mixedCandidateSet(['unavailable', 'invalid']),
+      attackProfile,
+    );
+
+    expect(result).toMatchObject({
+      status: 'invalid',
+      reason: 'attackerLevelStatUnavailable',
+      issues: [{ code: 'attackerLevelStatUnavailable' }],
       diagnostics: { classes: { invalid: { count: 1 } } },
     });
   });

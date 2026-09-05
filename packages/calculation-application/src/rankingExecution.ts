@@ -74,7 +74,7 @@ export function executeRankingScenarios(
     return policy ? reapplyPreparedCalculationPolicy(candidate, policy) : candidate;
   });
   return projected.map((candidate) => {
-    if (candidate.status === 'rejected')
+    if (candidate.status !== 'executable')
       return evaluatePreparedCalculationScenario(candidate, versions);
     const variant = candidate.resolved.noblePhantasmVariant;
     if (!variant) return evaluatePreparedCalculationScenario(candidate, versions);

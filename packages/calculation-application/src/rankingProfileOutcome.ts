@@ -125,6 +125,11 @@ export function unresolvedProfileResult(
       'insufficientNpGauge';
     if (insufficientGauge) {
       records.unavailableUnderPolicy.push({ candidateKey, reason: 'insufficientNpGauge' });
+    } else if (execution.result.status === 'invalid') {
+      records.invalid.push({
+        candidateKey,
+        reason: `${execution.result.issue.kind}:${execution.result.issue.servantId}:${String(execution.result.issue.level)}`,
+      });
     } else if (execution.result.status === 'inputRequired') {
       records.inputRequired.push({
         candidateKey,
@@ -145,8 +150,10 @@ export function unresolvedProfileResult(
     return {
       status: 'invalid',
       attackProfile,
-      issues: [],
-      reason: 'candidateExecutionInvalid',
+      issues:
+        matchingExecutions.find(({ execution }) => execution.result.status === 'invalid')?.execution
+          .result.issues ?? [],
+      reason: 'attackerLevelStatUnavailable',
       diagnostics,
     };
   if (records.unsupported.length > 0) {

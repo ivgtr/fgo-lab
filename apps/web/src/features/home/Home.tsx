@@ -12,7 +12,7 @@ export function Home({
   hasHistory,
   onNavigate,
 }: {
-  result: number;
+  result: number | null;
   attackerName: string;
   attackerImage: string | null;
   owned: number;
@@ -26,7 +26,9 @@ export function Home({
         <h2>{hasHistory ? '前回の計算を開く' : '宝具ダメージを比べる'}</h2>
         {hasHistory ? (
           <>
-            <p className="hero-number">{numberFormatter.format(result)}</p>
+            <p className="hero-number">
+              {result === null ? '計算結果を利用できません' : numberFormatter.format(result)}
+            </p>
             <div className="entity-summary compact">
               <MasterImage src={attackerImage} alt="" fallback={attackerName} />
               <p>

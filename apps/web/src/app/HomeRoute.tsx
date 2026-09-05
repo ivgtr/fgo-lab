@@ -10,6 +10,13 @@ import {
 import { Home } from '../features/home/Home';
 import type { CalculationWorkspace, Page } from './App';
 
+export function homeDamageHeadline(
+  result: CalculationWorkspace['storedResult'] | undefined,
+  npLevel: number,
+): number | null {
+  return result?.status === 'calculated' ? (result.rows[npLevel - 1]?.average ?? null) : null;
+}
+
 export function HomeRoute({
   master,
   profile,
@@ -46,14 +53,11 @@ export function HomeRoute({
 
   return (
     <Home
-      result={
-        result?.status === 'calculated'
-          ? (result.rows[
-              (input?.npLevel ??
-                (currentScenario.mode === 'resolved' ? currentScenario.attacker.npLevel : 1)) - 1
-            ]?.average ?? 0)
-          : 0
-      }
+      result={homeDamageHeadline(
+        result,
+        input?.npLevel ??
+          (currentScenario.mode === 'resolved' ? currentScenario.attacker.npLevel : 1),
+      )}
       attackerName={selectedAttacker.name}
       attackerImage={selectedAttacker.imageKey}
       owned={selectedBuild?.npLevel ? 1 : 0}

@@ -55,7 +55,7 @@ import {
 interface ResolvedCalculationInputCommon {
   noblePhantasmVariant: NoblePhantasmVariant | null;
   terminalActorFormId: ActorFormId | null;
-  precision: 'exact' | 'approximate' | 'inputRequired' | 'unsupported';
+  precision: 'exact' | 'approximate' | 'inputRequired' | 'invalid' | 'unsupported';
   evidenceKeys: string[];
   warnings: string[];
   trace: { step: string; detail: string }[];
@@ -80,7 +80,26 @@ export type ResolvedCalculationInput =
         code: PreparationFailureCode;
         operationId: string;
       };
+    })
+  | (ResolvedCalculationInputCommon & {
+      status: 'invalid';
+      issue: AttackerLevelStatUnavailableIssue;
+      preparationRejection: null;
     });
+
+export interface AttackerLevelStatUnavailableIssue {
+  kind: 'attackerLevelStatUnavailable';
+  servantId: string;
+  level: number;
+}
+
+export type CalculationApplicationResult =
+  | CalculationResult
+  | {
+      status: 'invalid';
+      issue: AttackerLevelStatUnavailableIssue;
+      issues: { code: string; detail: string }[];
+    };
 
 interface CalculationExecutionCommon {
   noblePhantasmVariant: NoblePhantasmVariant | null;
@@ -89,7 +108,6 @@ interface CalculationExecutionCommon {
   effects: EffectProjection[];
   effectiveContributions: EffectiveContributionSet;
   effectWarnings: string[];
-  result: CalculationResult;
   inputDefinitions: CanonicalInputDefinition[];
   effectInputs: EffectInputViewModel[];
   effectControls: EffectControlViewModel[];
@@ -100,17 +118,23 @@ interface CalculationExecutionCommon {
 export type CalculationExecution =
   | (CalculationExecutionCommon & {
       status: 'executable';
+      result: CalculationResult;
       scenarioInput: DamageResolutionInput;
       input: DamageResolutionInput;
     })
   | (CalculationExecutionCommon & {
       status: 'rejected';
+      result: CalculationResult;
+    })
+  | (CalculationExecutionCommon & {
+      status: 'invalid';
+      result: Extract<CalculationApplicationResult, { status: 'invalid' }>;
     });
 
 export function requireExecutableCalculation(
   execution: CalculationExecution,
 ): Extract<CalculationExecution, { status: 'executable' }> {
-  if (execution.status === 'rejected')
+  if (execution.status !== 'executable')
     throw new TypeError(
       `calculation_execution_rejected:${execution.result.issues.map(({ code }) => code).join(',')}`,
     );
@@ -268,6 +292,10 @@ export type ScenarioPreparationOutcome =
       rejection: NonNullable<ResolvedCalculationInput['preparationRejection']>;
       requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
       appliedPreparationActions: readonly AppliedPreparationAction[];
+    }
+  | {
+      status: 'invalid';
+      issue: AttackerLevelStatUnavailableIssue;
     };
 
 export interface CalculationPreparationOptions {
@@ -279,6 +307,7 @@ function damageResolutionInputForNoblePhantasm(
   servant: ServantMaster,
   noblePhantasm: Extract<NoblePhantasmVariant, { kind: 'attack' }>,
   master: MasterDataSnapshot,
+  attackerAtk: number,
 ): DamageResolutionInput {
   const damage = noblePhantasm.damage[0];
   if (!damage) throw new TypeError(`attack_np_damage_missing:${servant.id}`);
@@ -290,10 +319,7 @@ function damageResolutionInputForNoblePhantasm(
   return {
     attackerId: servant.id,
     attackerLevel: scenario.attacker.level,
-    attackerAtk:
-      scenario.explicitOverrides.attackerAtk ??
-      servant.atkByLevel[String(scenario.attacker.level)] ??
-      0,
+    attackerAtk,
     fouAtk: scenario.explicitOverrides.fouAtk ?? scenario.attacker.fouAtk,
     craftEssenceId: scenario.craftEssence?.craftEssenceId ?? null,
     craftEssenceAtk:
@@ -357,6 +383,17 @@ export function resolveScenarioPreparationOutcome(
 ): ScenarioPreparationOutcome {
   const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
   if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
+  const canonicalAttackerAtk = servant.atkByLevel[String(scenario.attacker.level)];
+  if (canonicalAttackerAtk === undefined)
+    return {
+      status: 'invalid',
+      issue: {
+        kind: 'attackerLevelStatUnavailable',
+        servantId: servant.id,
+        level: scenario.attacker.level,
+      },
+    };
+  const attackerAtk = scenario.explicitOverrides.attackerAtk ?? canonicalAttackerAtk;
   const formExecution = resolveAttackerFormExecution(
     scenario,
     servant,
@@ -398,6 +435,7 @@ export function resolveScenarioPreparationOutcome(
       servant,
       selected,
       master,
+      attackerAtk,
     ),
     formExecution,
   };
@@ -570,6 +608,34 @@ function rejectedPreparationResolvedInput(
   };
 }
 
+function invalidResolvedInput(
+  outcome: Extract<ScenarioPreparationOutcome, { status: 'invalid' }>,
+): Extract<ResolvedCalculationInput, { status: 'invalid' }> {
+  return {
+    status: 'invalid',
+    issue: outcome.issue,
+    noblePhantasmVariant: null,
+    terminalActorFormId: null,
+    precision: 'invalid',
+    evidenceKeys: ['master:normalized-v7'],
+    warnings: [],
+    trace: [
+      {
+        step: 'scenario-invalid',
+        detail: `${outcome.issue.kind}:${outcome.issue.servantId}:${String(outcome.issue.level)}`,
+      },
+    ],
+    effects: [],
+    effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
+    requiredInputs: [],
+    inputDefinitions: [],
+    activationRequirements: [],
+    appliedPreparationActions: [],
+    targetStateTraitsAtDamage: [],
+    preparationRejection: null,
+  };
+}
+
 export function resolveScenario(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
@@ -577,6 +643,7 @@ export function resolveScenario(
 ): ResolvedCalculationInput {
   if (scenario.mode === 'manual') return manualResolvedInput(scenario);
   const base = resolveScenarioPreparationOutcome(scenario, master, preparation);
+  if (base.status === 'invalid') return invalidResolvedInput(base);
   if (base.status === 'rejected') return rejectedPreparationResolvedInput(base);
   const baseInput = base.input;
   const prepared = prepareOrderedScenario(baseInput, scenario, master, base.formExecution);
@@ -597,7 +664,18 @@ function resolvedCalculationResult(
   resolved: ResolvedCalculationInput,
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
-): CalculationResult {
+): CalculationApplicationResult {
+  if (resolved.status === 'invalid')
+    return {
+      status: 'invalid',
+      issue: resolved.issue,
+      issues: [
+        {
+          code: resolved.issue.kind,
+          detail: `${resolved.issue.servantId}:${String(resolved.issue.level)}`,
+        },
+      ],
+    };
   if (resolved.status === 'rejected') {
     const evidence = evaluateCalculationEvidence(resolved.evidenceKeys);
     const issue = {
@@ -700,7 +778,6 @@ function evaluateResolvedCalculation(
     effects: resolved.effects,
     effectiveContributions: resolved.effectiveContributions,
     effectWarnings: resolved.warnings,
-    result,
     inputDefinitions: resolved.inputDefinitions,
     effectInputs,
     effectControls: createEffectControlViewModels(
@@ -712,11 +789,14 @@ function evaluateResolvedCalculation(
     activationRequirements: resolved.activationRequirements,
     appliedPreparationActions: resolved.appliedPreparationActions,
   };
-  if (resolved.status === 'rejected') return { status: 'rejected', ...common };
+  if (result.status === 'invalid') return { status: 'invalid', ...common, result };
+  if (resolved.status === 'invalid') throw new TypeError('invalid_result_status_mismatch');
+  if (resolved.status === 'rejected') return { status: 'rejected', ...common, result };
   if (!scenarioInput) throw new TypeError('damage_resolution_input_required');
   return {
     status: 'executable',
     ...common,
+    result,
     scenarioInput,
     input: resolved.input,
   };
@@ -739,6 +819,12 @@ export type PreparedCalculationScenario =
   | (PreparedCalculationScenarioCommon & {
       status: 'rejected';
       resolved: Extract<ResolvedCalculationInput, { status: 'rejected' }>;
+      orderedScenario: null;
+      canonicalInputs: null;
+    })
+  | (PreparedCalculationScenarioCommon & {
+      status: 'invalid';
+      resolved: Extract<ResolvedCalculationInput, { status: 'invalid' }>;
       orderedScenario: null;
       canonicalInputs: null;
     });
@@ -813,6 +899,17 @@ export function prepareCalculationScenarioWithPolicy(
       preparation,
     };
   const base = resolveScenarioPreparationOutcome(scenario, master, preparation);
+  if (base.status === 'invalid') {
+    return {
+      status: 'invalid',
+      scenario,
+      resolved: invalidResolvedInput(base),
+      orderedScenario: null,
+      canonicalInputs: null,
+      contributionPolicy,
+      preparation,
+    };
+  }
   if (base.status === 'rejected') {
     return {
       status: 'rejected',
@@ -860,7 +957,7 @@ export function rematerializePreparedCalculationInputs(
 ): PreparedCalculationScenario {
   if (prepared.scenario.mode === 'manual' || scenario.mode === 'manual')
     throw new TypeError('prepared_resolved_scenario_required');
-  if (prepared.status === 'rejected')
+  if (prepared.status !== 'executable')
     return prepareCalculationScenarioWithPolicy(
       scenario,
       master,
@@ -938,7 +1035,7 @@ export function reapplyPreparedCalculationPolicy(
   policy: ContributionApplicationPolicy,
 ): PreparedCalculationScenario {
   if (
-    prepared.status === 'rejected' ||
+    prepared.status !== 'executable' ||
     prepared.scenario.mode === 'manual' ||
     !prepared.orderedScenario ||
     !prepared.canonicalInputs
@@ -976,7 +1073,7 @@ export function evaluatePreparedCalculationResult(
   prepared: PreparedCalculationScenario,
   versions: VersionContext,
   cachedCalculation?: ReturnType<typeof calculateDamageResolution>,
-): CalculationResult {
+): CalculationApplicationResult {
   return resolvedCalculationResult(prepared.resolved, versions, cachedCalculation);
 }
 

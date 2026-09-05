@@ -28,6 +28,7 @@ import {
 } from './scenario';
 import { compileRankingExecutionPlan } from './rankingPolicyScenario';
 import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import { executeRankingScenarios } from './rankingExecution';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { rankingEffectContributes } from './rankingContribution';
@@ -354,7 +355,8 @@ describe('scenario calculation facade', () => {
     });
 
     expect(outcome.status).toBe('executable');
-    if (outcome.status !== 'executable') throw new Error(outcome.rejection.code);
+    if (outcome.status !== 'executable')
+      throw new Error(outcome.status === 'rejected' ? outcome.rejection.code : outcome.issue.kind);
     expect(outcome.input.overcharge).toBe(2);
     expect(outcome.formExecution.state.baseOvercharge).toBe(2);
   });
@@ -674,6 +676,80 @@ describe('scenario calculation facade', () => {
     expect(calculation.input.attackerId).toBe('fixture-saber');
     expect(calculation.result.status).toBe('calculated');
     expect(calculation.result.rows).toHaveLength(5);
+  });
+
+  it('resolves an exact attacker level stat once and fails closed on absence', () => {
+    const scenario = createDefaultResolvedScenario(master, undefined);
+    const servant = master.servants.find(({ id }) => id === scenario.attacker.servantId)!;
+    const levelKey = String(scenario.attacker.level);
+    const masterWithAtk = (attackerAtk: number | undefined) => {
+      const atkByLevel: Record<string, number> = {};
+      for (const [key, value] of Object.entries(servant.atkByLevel))
+        if (key !== levelKey) atkByLevel[key] = value;
+      if (attackerAtk !== undefined) atkByLevel[levelKey] = attackerAtk;
+      return masterSnapshotSchema.parse({
+        ...master,
+        servants: master.servants.map((candidate) =>
+          candidate.id === servant.id
+            ? {
+                ...candidate,
+                atkByLevel,
+              }
+            : candidate,
+        ),
+      });
+    };
+
+    const positive = calculateScenarioOutcome(scenario, masterWithAtk(7_654), versions);
+    expect(positive.status).toBe('executable');
+    if (positive.status !== 'executable') throw new Error('positive level stat must execute');
+    expect(positive.input.attackerAtk).toBe(7_654);
+
+    const zero = calculateScenarioOutcome(scenario, masterWithAtk(0), versions);
+    expect(zero.status).toBe('executable');
+    if (zero.status !== 'executable') throw new Error('present zero level stat must execute');
+    expect(zero.input.attackerAtk).toBe(0);
+
+    const missingMaster = masterWithAtk(undefined);
+    for (const candidate of [
+      scenario,
+      { ...scenario, explicitOverrides: { ...scenario.explicitOverrides, attackerAtk: 99_999 } },
+    ]) {
+      const invalid = calculateScenarioOutcome(candidate, missingMaster, versions);
+      expect(invalid).toMatchObject({
+        status: 'invalid',
+        result: {
+          status: 'invalid',
+          issue: {
+            kind: 'attackerLevelStatUnavailable',
+            servantId: servant.id,
+            level: scenario.attacker.level,
+          },
+        },
+        effects: [],
+        appliedPreparationActions: [],
+      });
+    }
+
+    const ranking = calculateRankingPolicy(
+      missingMaster,
+      { servantBuilds: {}, craftEssences: [], supportTemplates: [] },
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      versions,
+    );
+    const servantResults = Object.values(ranking.profileResults).filter((result) =>
+      result.status === 'calculated'
+        ? result.detail.servantId === servant.id
+        : result.attackProfile?.id.servantLineageId === servant.id,
+    );
+    expect(servantResults.length).toBeGreaterThan(0);
+    expect(servantResults.every((result) => result.status === 'invalid')).toBe(true);
+    expect(
+      servantResults.every(
+        (result) => result.status !== 'invalid' || result.reason === 'attackerLevelStatUnavailable',
+      ),
+    ).toBe(true);
+    expect(ranking.damageCache.requestCount).toBe(0);
   });
 
   it('uses the natural level cap for an unsaved servant build', () => {

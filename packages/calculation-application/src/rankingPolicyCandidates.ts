@@ -54,9 +54,7 @@ export function calculateRankingCandidateSet(
         if (attackProfileKey(plan.attackProfiles[index]!) !== profileKey) return false;
         const rejection = plan.preparedRankingScenarios[index]?.resolved.preparationRejection;
         if (rejection?.code === 'insufficientNpGauge') return false;
-        return (
-          candidate.result.status === 'inputRequired' || candidate.result.status === 'unsupported'
-        );
+        return candidate.result.status !== 'calculated';
       });
       if (blocking) return [];
       const execution = candidates[selectedIndex]!;

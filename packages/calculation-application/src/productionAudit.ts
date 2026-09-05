@@ -1,20 +1,15 @@
-import type { MasterDataSnapshot } from '@fgo-lab/master-data';
+import { naturalServantLevel, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import {
   canonicalAuditDigest,
   type CanonicalAuditRecord,
   type CanonicalAuditValue,
 } from '@fgo-lab/master-data/production-audit';
-import {
-  APP_VERSION,
-  ENGINE_VERSION,
-  SCHEMA_VERSION,
-  type CalculationResult,
-  type VersionContext,
-} from '@fgo-lab/schema';
+import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION, type VersionContext } from '@fgo-lab/schema';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { createDefaultResolvedScenario, calculateScenario } from './scenario';
+import type { CalculationApplicationResult } from './scenario';
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 import { attackProfileKey } from './attackProfile';
 
@@ -23,8 +18,6 @@ export type ProductionAuditOutcome =
   | { status: 'inputRequired'; issues: CanonicalAuditValue }
   | { status: 'unsupported'; issues: CanonicalAuditValue }
   | { status: 'invalid'; reason: string };
-
-type ExecutedProductionAuditOutcome = Exclude<ProductionAuditOutcome, { status: 'invalid' }>;
 
 export interface CalculationApplicationAuditCounters {
   candidateCount: number;
@@ -51,6 +44,15 @@ export interface CalculationApplicationProductionAudit {
     inputRequired: number;
     unsupported: number;
     invalid: number;
+    levelStatAvailability: {
+      naturalPairs: number;
+      naturalMissing: number;
+      level90Pairs: number;
+      level90Missing: number;
+      referencedPairs: number;
+      referencedMissing: number;
+      missing: readonly string[];
+    };
   };
   failures: readonly {
     kind: 'inputRequired' | 'unsupported' | 'invalid' | 'rankingFailure';
@@ -70,7 +72,7 @@ export function appliedOperationIds(effects: readonly EffectProjection[]): strin
   return applied.filter((operationId, index) => applied.lastIndexOf(operationId) === index);
 }
 
-function auditOutcome(result: CalculationResult): ExecutedProductionAuditOutcome {
+function auditOutcome(result: CalculationApplicationResult): ProductionAuditOutcome {
   switch (result.status) {
     case 'calculated':
       return { status: 'calculated', rows: jsonValue(result.rows) };
@@ -78,6 +80,11 @@ function auditOutcome(result: CalculationResult): ExecutedProductionAuditOutcome
       return { status: 'inputRequired', issues: jsonValue(result.requiredInputs) };
     case 'unsupported':
       return { status: 'unsupported', issues: jsonValue(result.issues) };
+    case 'invalid':
+      return {
+        status: 'invalid',
+        reason: `${result.issue.kind}:${result.issue.servantId}:${String(result.issue.level)}`,
+      };
   }
 }
 
@@ -102,6 +109,10 @@ export function compileCalculationApplicationProductionAudit(
   let inputRequired = 0;
   let unsupported = 0;
   let invalid = 0;
+  const naturalLevelPairs = new Set<string>();
+  const level90Pairs = new Set<string>();
+  const referencedLevelPairs = new Set<string>();
+  const levelPairKey = (servantId: string, level: number) => `${servantId}:${String(level)}`;
 
   for (const servant of master.servants) {
     const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
@@ -109,6 +120,8 @@ export function compileCalculationApplicationProductionAudit(
     deduplicatedCandidateCount += planned.inventory.deduplicatedStateCount;
     if (planned.candidates.length === 0) continue;
     attackServants += 1;
+    naturalLevelPairs.add(levelPairKey(servant.id, naturalServantLevel(servant.rarity)));
+    level90Pairs.add(levelPairKey(servant.id, 90));
     for (const candidate of planned.candidates)
       candidateRecords.push({
         identity: `preparation:${servant.id}:${candidate.semanticStateKey}`,
@@ -122,16 +135,18 @@ export function compileCalculationApplicationProductionAudit(
       });
     try {
       const scenario = createDefaultResolvedScenario(master, undefined, servant);
+      referencedLevelPairs.add(levelPairKey(servant.id, scenario.attacker.level));
       const execution = calculateScenario(scenario, master, versions);
       const outcome = auditOutcome(execution.result);
       if (outcome.status === 'calculated') calculated += 1;
       else {
         if (outcome.status === 'inputRequired') inputRequired += 1;
-        else unsupported += 1;
+        else if (outcome.status === 'unsupported') unsupported += 1;
+        else invalid += 1;
         failures.push({
           kind: outcome.status,
           identity: `calculator:${servant.id}`,
-          reason: JSON.stringify(outcome.issues),
+          reason: outcome.status === 'invalid' ? outcome.reason : JSON.stringify(outcome.issues),
         });
       }
       calculatorRecords.push({
@@ -140,7 +155,9 @@ export function compileCalculationApplicationProductionAudit(
           appliedEffects: appliedOperationIds(execution.effects),
           availableActions: jsonValue(planned.candidates.map(({ commands }) => commands)),
           executionIssues: jsonValue([...execution.effectWarnings, ...execution.result.issues]),
-          executionTrace: jsonValue(execution.result.trace),
+          executionTrace: jsonValue(
+            execution.result.status === 'invalid' ? [] : execution.result.trace,
+          ),
           outcome: jsonValue(outcome),
           usedInput: execution.status === 'executable' ? jsonValue(execution.input) : null,
         },
@@ -170,6 +187,11 @@ export function compileCalculationApplicationProductionAudit(
         reason: `${exclusion.status}:${exclusion.reason}`,
       });
   const rankingEntryIds = ranking.rows.map(({ entryId }) => entryId);
+  for (const result of Object.values(ranking.profileResults))
+    if (result.status === 'calculated')
+      referencedLevelPairs.add(
+        levelPairKey(result.detail.servantId, result.detail.scenario.attacker.level),
+      );
   if (new Set(rankingEntryIds).size !== rankingEntryIds.length)
     throw new TypeError('production_audit_duplicate_attack_profile_identity');
   const attackProfileRecords: CanonicalAuditRecord[] = Object.entries(ranking.profileResults).map(
@@ -227,6 +249,16 @@ export function compileCalculationApplicationProductionAudit(
       };
     },
   );
+  const servantById = new Map(master.servants.map((servant) => [servant.id, servant]));
+  const missingPairs = (pairs: ReadonlySet<string>) =>
+    [...pairs].filter((pair) => {
+      const separator = pair.lastIndexOf(':');
+      const servant = servantById.get(pair.slice(0, separator));
+      return servant?.atkByLevel[pair.slice(separator + 1)] === undefined;
+    });
+  const naturalMissing = missingPairs(naturalLevelPairs);
+  const level90Missing = missingPairs(level90Pairs);
+  const referencedMissing = missingPairs(referencedLevelPairs);
   const inventory = {
     attackServants,
     attackProfiles: attackProfileRecords.length,
@@ -238,6 +270,15 @@ export function compileCalculationApplicationProductionAudit(
     inputRequired,
     unsupported,
     invalid,
+    levelStatAvailability: {
+      naturalPairs: naturalLevelPairs.size,
+      naturalMissing: naturalMissing.length,
+      level90Pairs: level90Pairs.size,
+      level90Missing: level90Missing.length,
+      referencedPairs: referencedLevelPairs.size,
+      referencedMissing: referencedMissing.length,
+      missing: [...new Set([...naturalMissing, ...level90Missing, ...referencedMissing])].sort(),
+    },
   };
   const records: CanonicalAuditRecord[] = [
     { identity: 'inventory', value: inventory },

@@ -38,6 +38,24 @@ const versions = {
   masterDataLocale: 'ja-JP' as const,
 };
 
+function withoutScenarioLevelStat(request: ReturnType<typeof createCalculatorPortableRequest>) {
+  if (request.scenario.mode !== 'resolved') throw new Error('resolved request required');
+  const { servantId, level } = request.scenario.attacker;
+  return masterSnapshotSchema.parse({
+    ...master,
+    servants: master.servants.map((servant) =>
+      servant.id === servantId
+        ? {
+            ...servant,
+            atkByLevel: Object.fromEntries(
+              Object.entries(servant.atkByLevel).filter(([key]) => key !== String(level)),
+            ),
+          }
+        : servant,
+    ),
+  });
+}
+
 describe('portable calculation application owner', () => {
   it('constructs explicit calculator intent and preserves it across scenario edits', () => {
     const scenario = createDefaultResolvedScenario(master, undefined);
@@ -99,6 +117,74 @@ describe('portable calculation application owner', () => {
         master,
       ),
     ).toMatchObject({ status: 'invalid', reason: 'runtimeVersionMismatch' });
+  });
+
+  it('retains portable state when the exact attacker level stat is unavailable', () => {
+    const request = createCalculatorPortableRequest(
+      createDefaultResolvedScenario(master, undefined),
+      versionContext,
+    );
+    const baseline = executePortableCalculation(request, master);
+    if (baseline.status !== 'executed' || request.scenario.mode !== 'resolved')
+      throw new Error('baseline execution required');
+    const missingMaster = withoutScenarioLevelStat(request);
+    const retainedResult = baseline.execution.result;
+
+    expect(executePortableCalculation(request, missingMaster)).toMatchObject({
+      status: 'invalid',
+      reason: 'attackerLevelStatUnavailable',
+      request,
+    });
+    expect(recoverPortableCalculation(request, retainedResult, missingMaster)).toMatchObject({
+      status: 'invalid',
+      reason: 'attackerLevelStatUnavailable',
+      request,
+    });
+
+    const reset = attemptPortableCalculationReset(request, retainedResult, missingMaster, {
+      [request.scenario.attacker.servantId]: {
+        servantId: request.scenario.attacker.servantId,
+        level: request.scenario.attacker.level,
+        ascension: 4,
+        npLevel: 1,
+        fouAtk: 1_000,
+        skills: {},
+        appends: {},
+        updatedAt: '2026-09-05T00:00:00.000Z',
+      },
+    });
+    expect(reset).toMatchObject({
+      status: 'rejected',
+      retainedRequest: request,
+      retainedResult,
+      failure: { status: 'invalid', reason: 'attackerLevelStatUnavailable' },
+    });
+
+    const historicalRequest = upgradePortableCalculationRequestVersion(request, {
+      masterDataVersion: 'old-master',
+      engineVersion: 'old-engine',
+    });
+    const historicalResult = {
+      ...retainedResult,
+      versions: {
+        ...retainedResult.versions,
+        masterDataVersion: 'old-master',
+        engineVersion: 'old-engine',
+      },
+    };
+    expect(
+      attemptPortableCalculationVersionUpgrade(
+        historicalRequest,
+        historicalResult,
+        versionContext,
+        missingMaster,
+      ),
+    ).toMatchObject({
+      status: 'rejected',
+      retainedRequest: historicalRequest,
+      retainedResult: historicalResult,
+      failure: { status: 'invalid', reason: 'attackerLevelStatUnavailable' },
+    });
   });
 
   it('separates historical recovery, version upgrade, and ranking reset', () => {
