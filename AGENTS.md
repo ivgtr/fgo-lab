@@ -32,13 +32,17 @@
 - Calculator and ranking must share the same application and execution path. Ranking policy may select scenarios, but must not implement its own damage semantics.
 - Web/UI code presents canonical state and dispatches commands; it must not infer game rules from IDs, names, or labels.
 
-## Keep execution single-agent by default
+## Keep execution single-agent and sessions bounded
 
 - One parent agent owns normal diagnosis, planning, implementation, test changes, test execution, integration, review handoff, and final verification. Do not delegate these activities to subagents.
-- A subagent is permitted only for a bounded, independent, read-only investigation whose result the parent can use without another delegated action. It must not edit files, stage or commit, create artifacts, run builds or tests, change external state, or approve/review its own implementation.
+- A subagent is permitted only for a bounded, independent, read-only investigation whose result the parent can use without another delegated action. Its request must state the question, required paths, expected evidence note, and a credible time budget. If the parent cannot give that budget, it must reduce or perform the investigation itself.
+- A subagent must not edit files, stage or commit, create artifacts, run builds or tests, change external state, or approve/review its own implementation.
 - Before spawning an allowed subagent, the parent must state the independent question and why a single-agent investigation is insufficient. Give it only the paths, comparison boundary, and facts needed for that question; do not fork full conversation history.
 - Use at most one subagent at a time. The parent remains responsible for integrating evidence, making decisions, and performing every write and verification step.
 - An allowed subagent returns a concise evidence note: conclusion, uncertainty, and only the file/symbol references needed to support it. Do not transfer raw command output, full logs, or a restatement of repository instructions.
+- Finish all independent parent work before waiting. Treat `wait_agent` as a rendezvous, never as polling: wait once for twice the delegated time budget within the tool limits, because completion notifications end the wait early.
+- A `wait_agent` timeout is an over-budget outcome, not a reason to poll again. Stop or rescope the investigation, or complete it in the parent; never retry with a shorter timeout.
+- At 60 minutes, record one canonical checkpoint: current outcome, changed semantic family, verified evidence, and next action. At 90 minutes, do not start another subagent or semantic family; finish the current atomic action and hand off to a fresh session using that checkpoint.
 
 ## Control complexity and test cost
 
