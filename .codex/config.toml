@@ -1,0 +1,6 @@
+[agents]
+# This repository normally uses one parent agent. An exception permits only one
+# bounded read-only investigation, and the project default keeps that work cheap.
+max_concurrent_threads_per_session = 1
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "low"

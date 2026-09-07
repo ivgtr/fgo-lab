@@ -32,6 +32,14 @@
 - Calculator and ranking must share the same application and execution path. Ranking policy may select scenarios, but must not implement its own damage semantics.
 - Web/UI code presents canonical state and dispatches commands; it must not infer game rules from IDs, names, or labels.
 
+## Keep execution single-agent by default
+
+- One parent agent owns normal diagnosis, planning, implementation, test changes, test execution, integration, review handoff, and final verification. Do not delegate these activities to subagents.
+- A subagent is permitted only for a bounded, independent, read-only investigation whose result the parent can use without another delegated action. It must not edit files, stage or commit, create artifacts, run builds or tests, change external state, or approve/review its own implementation.
+- Before spawning an allowed subagent, the parent must state the independent question and why a single-agent investigation is insufficient. Give it only the paths, comparison boundary, and facts needed for that question; do not fork full conversation history.
+- Use at most one subagent at a time. The parent remains responsible for integrating evidence, making decisions, and performing every write and verification step.
+- An allowed subagent returns a concise evidence note: conclusion, uncertainty, and only the file/symbol references needed to support it. Do not transfer raw command output, full logs, or a restatement of repository instructions.
+
 ## Control complexity and test cost
 
 - Extend an existing responsibility or extract a focused module; do not move detail back into orchestrators or create packages without a clear ownership boundary.
