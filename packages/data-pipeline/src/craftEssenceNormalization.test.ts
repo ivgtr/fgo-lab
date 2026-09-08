@@ -115,3 +115,119 @@ describe('craft essence limit-break normalization', () => {
     ).toThrow('craft_essence_limit_break_occurrence_ambiguous:1');
   });
 });
+
+describe('current gauge ratio canonical cells', () => {
+  const ratio = (value: number, funcType = 'gainMultiplyNp') =>
+    normalizeFunctions(
+      [
+        {
+          funcId: 90,
+          funcType,
+          funcTargetType: 'self',
+          svals: [{ Value: value, Rate: 1000 }],
+        },
+      ],
+      new Map(),
+    );
+  it('normalizes and joins normal/LB coefficients without comparing their numeric values', () => {
+    const result = normalizeCraftEssenceLimitBreakEffects({
+      equipId: 1,
+      normalEffects: ratio(500),
+      limitBreakEffects: ratio(1000),
+    });
+    expect(result[0]?.execution).toEqual([
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: {
+          kind: 'currentGaugeRatio',
+          values: [[500], [], [], [], []],
+          limitBreakValues: [[1000], [], [], [], []],
+        },
+      },
+    ]);
+    expect(
+      normalizeCraftEssenceLimitBreakEffects({
+        equipId: 1,
+        normalEffects: ratio(500),
+        limitBreakEffects: null,
+      })[0]?.execution,
+    ).toMatchObject([{ amount: { limitBreakValues: [[500], [], [], [], []] } }]);
+  });
+  it('rejects fixed/proportional semantic mismatch across limit break', () => {
+    expect(() =>
+      normalizeCraftEssenceLimitBreakEffects({
+        equipId: 1,
+        normalEffects: ratio(500),
+        limitBreakEffects: ratio(1000, 'gainNp'),
+      }),
+    ).toThrow(/semantics_mismatch/);
+  });
+});
+
+it.each(['gainNp', 'lossNp', 'gainMultiplyNp'])(
+  'retains an unknown %s target as unsupported canonical execution',
+  (funcType) => {
+    const effects = normalizeFunctions(
+      [
+        {
+          funcId: 91,
+          funcType,
+          funcTargetType: 'unknown-target',
+          svals: [{ Value: 1000, Rate: 1000 }],
+        },
+      ],
+      new Map(),
+    );
+    expect(effects[0]?.execution).toMatchObject([
+      { kind: 'unsupported', reason: 'unresolvedTarget', damageRelevant: true },
+    ]);
+  },
+);
+
+it.each(['lossHp', 'lossHpSafe', 'lossHpPerSafe'])(
+  'keeps %s loss floor when joining normal/LB values and rejects a different floor',
+  (funcType) => {
+    const hp = (value: number, family = funcType) =>
+      normalizeFunctions(
+        [
+          {
+            funcId: 501,
+            funcType: family,
+            funcTargetType: 'self',
+            svals: [{ Rate: 1000, Value: value }],
+          },
+        ],
+        new Map(),
+      );
+    for (const limitBreakEffects of [hp(200), null]) {
+      const merged = normalizeCraftEssenceLimitBreakEffects({
+        equipId: 1,
+        normalEffects: hp(100),
+        limitBreakEffects,
+      });
+      expect(merged[0]?.execution).toMatchObject([
+        {
+          resource: 'hp',
+          direction: 'loss',
+          lossFloor: funcType === 'lossHp' ? 'zero' : 'oneIfAlive',
+          amount: {
+            values: [[100], [], [], [], []],
+            limitBreakValues: [[limitBreakEffects ? 200 : 100], [], [], [], []],
+          },
+        },
+      ]);
+    }
+    expect(() =>
+      normalizeCraftEssenceLimitBreakEffects({
+        equipId: 1,
+        normalEffects: hp(100),
+        limitBreakEffects: hp(200, funcType === 'lossHp' ? 'lossHpSafe' : 'lossHp'),
+      }),
+    ).toThrow(/semantics_mismatch/);
+  },
+);

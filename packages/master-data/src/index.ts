@@ -1,3 +1,4 @@
+export { readHpAtLevel } from './hpGrowth';
 import {
   stackInputSchema,
   npQuantitySchema,
@@ -32,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(45),
+  schemaVersion: z.literal(48),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -450,7 +451,32 @@ export const ocExecutionOperationSchema: z.ZodType<OcExecutionOperation> =
 export type OcLifetimeLimit = z.infer<typeof ocLifetimeLimitSchema>;
 export type OcStateTrait = z.infer<typeof ocStateTraitSchema>;
 
+const hpMutationShape = {
+  kind: z.literal('resourceMutation'),
+  resource: z.literal('hp'),
+  direction: z.enum(['gain', 'loss']),
+  unit: z.enum(['fixed', 'percent']),
+  recipient: canonicalTargetPolicySchema,
+  amount: z
+    .object({
+      kind: z.literal('fixed'),
+      values: canonicalValueSetsSchema,
+      limitBreakValues: canonicalValueSetsSchema.optional(),
+    })
+    .strict(),
+  subjectId: z.null(),
+};
+
 const effectExecutionOperationSchema = z.union([
+  z.object({ ...hpMutationShape, direction: z.literal('gain') }).strict(),
+  z
+    .object({
+      ...hpMutationShape,
+      direction: z.literal('loss'),
+      // Preserve a living recipient; this never revives a recipient already at zero HP.
+      lossFloor: z.enum(['zero', 'oneIfAlive']),
+    })
+    .strict(),
   ocExecutionOperationSchema,
   z
     .object({
@@ -531,14 +557,14 @@ const effectExecutionOperationSchema = z.union([
   z
     .object({
       kind: z.literal('resourceMutation'),
-      resource: z.enum(['npGauge', 'hp', 'criticalStars', 'battlePoint']),
+      resource: z.enum(['npGauge', 'criticalStars', 'battlePoint']),
       direction: z.enum(['gain', 'loss']),
       unit: z.enum(['fixed', 'percent']),
       recipient: canonicalTargetPolicySchema,
       amount: z.discriminatedUnion('kind', [
         z
           .object({
-            kind: z.literal('fixed'),
+            kind: z.enum(['fixed', 'currentGaugeRatio']),
             values: canonicalValueSetsSchema,
             limitBreakValues: canonicalValueSetsSchema.optional(),
           })
@@ -546,18 +572,27 @@ const effectExecutionOperationSchema = z.union([
         z
           .object({
             kind: z.literal('dependent'),
-            reason: z.enum([
-              'currentGaugeMultiplier',
-              'matchingTargetCount',
-              'matchingBuffCount',
-              'dependentTargetResult',
-            ]),
+            reason: z.enum(['matchingTargetCount', 'matchingBuffCount', 'dependentTargetResult']),
           })
           .strict(),
       ]),
       subjectId: z.string().min(1).nullable(),
     })
-    .strict(),
+    .strict()
+    .refine(
+      (operation) =>
+        operation.amount.kind !== 'currentGaugeRatio' ||
+        (operation.resource === 'npGauge' && operation.direction === 'gain'),
+      { message: 'current_gauge_ratio_requires_np_gain' },
+    )
+    .refine(
+      (operation) =>
+        operation.resource !== 'npGauge' ||
+        (operation.recipient !== 'unresolved' &&
+          operation.unit === 'fixed' &&
+          operation.subjectId === null),
+      { message: 'np_mutation_requires_resolved_recipient_and_basis_points' },
+    ),
   z
     .object({
       kind: z.literal('stateMutation'),
@@ -1159,6 +1194,7 @@ export const servantMasterSchema = z.object({
   attribute: z.enum(['human', 'earth', 'sky', 'star', 'beast', 'unknown']).default('unknown'),
   rarity: z.number().int().min(0).max(5),
   atkByLevel: z.record(z.string(), z.number().int().nonnegative()),
+  hpByLevel: z.record(z.string(), z.number().int().positive()),
   actorFormGraph: actorFormGraphSchema,
   baseNoblePhantasmGroupId: z.string().min(1).nullable(),
   noblePhantasmVariantGroups: z.array(noblePhantasmVariantGroupSchema),
@@ -1481,6 +1517,7 @@ export const craftEssenceMasterSchema = z
     id: z.string(),
     name: z.string(),
     maxLevelByLimitBreak: z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
+    hpByLevel: z.record(z.string(), z.number().int().nonnegative()),
     atkMin: z.number().int().nonnegative(),
     atkMax: z.number().int().nonnegative(),
     imageKey: z.string().nullable(),

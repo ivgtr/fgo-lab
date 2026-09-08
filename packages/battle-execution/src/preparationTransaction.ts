@@ -1,7 +1,5 @@
-import {
-  applyPreparationSourceResources,
-  type PreparationSourceResourceResult,
-} from './preparationResourcePlan';
+import { effectExecutesInNpProgram } from './npProgramScope';
+import type { PreparationSourceResourceResult } from './preparationResourcePlan';
 import type {
   CanonicalInputDefinition,
   CanonicalTargetPolicy,
@@ -37,6 +35,7 @@ function transitionTargetsAttacker(
 }
 
 function effectChangesStructure(effect: MasterEffect, origin: Origin = 'attacker'): boolean {
+  if (!effectExecutesInNpProgram(effect)) return false;
   return effect.execution.some((operation) => {
     if (operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant')
       return true;
@@ -50,6 +49,7 @@ function effectChangesStructure(effect: MasterEffect, origin: Origin = 'attacker
 }
 
 function effectChangesIdentity(effect: MasterEffect): boolean {
+  if (!effectExecutesInNpProgram(effect)) return false;
   return effect.execution.some(
     (operation) =>
       operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant',
@@ -60,6 +60,7 @@ export function effectRequiresPreparationDecision(
   effect: MasterEffect,
   origin: Origin = 'attacker',
 ): boolean {
+  if (!effectExecutesInNpProgram(effect)) return false;
   return (
     effect.execution.some(
       (operation) =>
@@ -214,7 +215,7 @@ export function planPreparationResourceTransaction(args: {
   );
   const oc = executePreparationOc({
     servant: args.servant,
-    state: args.state,
+    state: { ...args.state, npResource: resourceStart.state },
     context: args.context,
     actionId,
     terminalNp: args.command.kind === 'executeAttackNoblePhantasm',
@@ -228,8 +229,9 @@ export function planPreparationResourceTransaction(args: {
   if (oc.result.status !== 'committed')
     return {
       status: 'rejected',
-      code:
-        oc.result.status === 'inputRequired'
+      code: oc.resourceFailure
+        ? resourceFailureCode(oc.resourceFailure)
+        : oc.result.status === 'inputRequired'
           ? 'preparationInputRequired'
           : oc.result.status === 'invalid'
             ? oc.result.reason === 'invalidPreparationActivation'
@@ -240,7 +242,6 @@ export function planPreparationResourceTransaction(args: {
       requiredInputEffectOccurrenceId: oc.requiredInput ? oc.occurrenceId : null,
     };
   const ocUse = oc.result.state.receipts.find((receipt) => receipt.actionId === actionId) ?? null;
-  const valueSetIndex = ocUse ? ocUse.effectiveOc - 1 : args.valueSetIndex;
   const activation = oc.activation;
   for (const effect of args.effects) {
     if (!effectChangesPreparation(effect)) continue;
@@ -265,29 +266,15 @@ export function planPreparationResourceTransaction(args: {
     const outcome = activation.get(effect);
     return outcome?.procOutcome !== 'failure' && outcome?.conditionOutcome === true;
   });
-  const resource = applyPreparationSourceResources(
-    args.context.resourceSemantics,
-    resourceStart.state,
-    sources,
+  return {
+    status: 'ready',
+    resource: { ...resourceStart, state: oc.structuralState.npResource },
+    preparationEffects,
     activation,
-    valueSetIndex,
-  );
-  return resource.status === 'rejected'
-    ? {
-        status: 'rejected',
-        code: resourceFailureCode(resource),
-        requiredInput: null,
-        requiredInputEffectOccurrenceId: null,
-      }
-    : {
-        status: 'ready',
-        resource: { ...resource, baseOvercharge: resourceStart.baseOvercharge },
-        preparationEffects,
-        activation,
-        ocState: oc.result.state,
-        ocInputDefinitions: oc.inputDefinitions,
-        uncertainContextWrites: oc.structuralState.uncertainContextWrites,
-        ocUse,
-        ocOutcomes: oc.result.outcomes,
-      };
+    ocState: oc.result.state,
+    ocInputDefinitions: oc.inputDefinitions,
+    uncertainContextWrites: oc.structuralState.uncertainContextWrites,
+    ocUse,
+    ocOutcomes: oc.result.outcomes,
+  };
 }

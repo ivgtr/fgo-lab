@@ -1316,6 +1316,7 @@ describe('scenario calculation facade', () => {
                       kind: 'resourceMutation' as const,
                       resource: 'hp' as const,
                       direction: 'loss' as const,
+                      lossFloor: 'oneIfAlive' as const,
                       unit: 'fixed' as const,
                       recipient: 'sourceSelf' as const,
                       amount: {
@@ -2870,12 +2871,14 @@ describe('scenario calculation facade', () => {
       ...createDefaultResolvedScenario(master, undefined),
       craftEssence: { craftEssenceId: 'missing', level: 1, limitBreak: 0 },
     };
-    const calculation = calculateScenario(scenario, master, versions);
+    const calculation = calculateScenarioOutcome(scenario, master, versions);
 
-    expect(calculation.result.status).toBe('unsupported');
-    expect(calculation.effectWarnings).toContain(
-      'unsupportedOperation:craftEssence:missing:source_missing',
-    );
+    expect(calculation).toMatchObject({
+      status: 'invalid',
+      result: {
+        issue: { kind: 'initialHpUnavailable', source: 'craftEssence', reason: 'invalidEquipment' },
+      },
+    });
   });
 
   it('marks user-supplied manual final modifiers as provisional evidence', () => {

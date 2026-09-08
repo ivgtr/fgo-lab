@@ -1,3 +1,5 @@
+import type { ResourceMutationIdentity } from './contracts';
+import { effectExecutesInNpProgram } from './npProgramScope';
 import { actorFormEquals, canonicalRequirementLeaves } from '@fgo-lab/master-data';
 import type {
   ActorCountPredicate,
@@ -518,6 +520,17 @@ export function compileEffectCached(
   };
 }
 
+function resourceMutationIdentity(
+  semantic: Extract<EffectExecutionOperation, { kind: 'resourceMutation' }> & {
+    resource: 'hp' | 'criticalStars' | 'battlePoint';
+  },
+): ResourceMutationIdentity {
+  if (semantic.resource !== 'hp')
+    return { resource: semantic.resource, direction: semantic.direction };
+  if (semantic.direction === 'gain') return { resource: 'hp', direction: 'gain' };
+  return { resource: 'hp', direction: 'loss', lossFloor: semantic.lossFloor };
+}
+
 export function compileEffect(
   source: SourceEffect,
   startOrder: number,
@@ -525,7 +538,7 @@ export function compileEffect(
 ): CompiledOperations {
   const operations: BattleOperation[] = [];
   const projections: EffectProjection[] = [];
-  if (source.effect.triggerScope !== null) return { operations, projections };
+  if (!effectExecutesInNpProgram(source.effect)) return { operations, projections };
   const condition = sourceCondition(source);
   const key = decisionKey(source);
   let order = startOrder;
@@ -723,13 +736,14 @@ export function compileEffect(
     operations.push({
       ...operationBase,
       kind: 'resourceMutation',
-      resource: semantic.resource,
+      ...resourceMutationIdentity(semantic),
       resolution: 'resourceStateUnavailable',
-      direction: semantic.direction,
       unit: semantic.unit,
       amount:
         semantic.amount.kind === 'fixed'
-          ? (semantic.amount.values[source.valueSetIndex]?.[source.valueIndex] ?? null)
+          ? ((source.limitBreak ? semantic.amount.limitBreakValues : semantic.amount.values)?.[
+              source.valueSetIndex
+            ]?.[source.valueIndex] ?? null)
           : null,
       subjectId: semantic.subjectId,
     });

@@ -123,7 +123,7 @@ describe('E0 production master execution inventory', () => {
       battlePoint: 1,
       criticalStars: 255,
       hp: 179,
-      npGauge: 730,
+      npGauge: 729,
     });
     expect(
       npValueDependencies.reduce<Record<string, number>>((counts, item) => {

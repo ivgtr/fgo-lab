@@ -359,6 +359,9 @@ export function normalizeAtlasSnapshot(input: {
           ? servant.attribute
           : 'unknown',
         rarity: servant.rarity,
+        hpByLevel: Object.fromEntries(
+          (servant.hpGrowth ?? []).map((hp, index) => [String(index + 1), hp]),
+        ),
         atkByLevel: Object.fromEntries(
           (servant.atkGrowth ?? []).map((atk, index) => [String(index + 1), atk]),
         ),
@@ -449,6 +452,9 @@ export function normalizeAtlasSnapshot(input: {
         maxLevelByLimitBreak: [0, 1, 2, 3, 4].map((index) =>
           Math.round(initial + increment * index),
         ) as [number, number, number, number, number],
+        hpByLevel: Object.fromEntries(
+          (equip.hpGrowth ?? []).map((hp, index) => [String(index + 1), hp]),
+        ),
         atkMin: equip.atkBase ?? 0,
         atkMax: equip.atkMax ?? 0,
         imageKey: equip.extraAssets?.equipFace?.equip?.[String(equip.id)] ?? null,

@@ -142,6 +142,77 @@ const field = {
   provenance,
 } as const;
 describe('OC source program and common condition owner', () => {
+  it.each(['commandCard', 'commandCardAttack'] as const)(
+    'does not compile or depend on %s OC and NP writes in a bounded NP program',
+    (triggerScope) => {
+      const inactive = source();
+      inactive.effect = masterEffectSchema.parse({
+        ...inactive.effect,
+        triggerScope,
+        execution: [
+          boost,
+          {
+            kind: 'resourceMutation',
+            resource: 'npGauge',
+            direction: 'gain',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
+          },
+        ],
+      });
+      for (const origin of [
+        'attacker',
+        'passive',
+        'craftEssence',
+        'support',
+        'mysticCode',
+        'np',
+      ] as const) {
+        const bound = { ...inactive, origin };
+        expect(compileEffectCached(bound, 0).operations).toEqual([]);
+        expect(compileOcSourceProgram(bound).operations).toEqual([]);
+      }
+      expect(effectReadsOc(inactive.effect)).toBe(false);
+      expect(
+        ocRelevantSourceIndexes([{ kind: 'skill', effects: [inactive.effect] }], true, {
+          semantics: DEFAULT_NP_RESOURCE_SEMANTICS,
+          npLevel: 2,
+          initialGauge: 0,
+          automaticEffects: [],
+        }).size,
+      ).toBe(0);
+      const active = { ...inactive.effect, triggerScope: null };
+      expect(effectReadsOc(active)).toBe(true);
+      expect(
+        ocRelevantSourceIndexes([{ kind: 'skill', effects: [active] }], true, {
+          semantics: DEFAULT_NP_RESOURCE_SEMANTICS,
+          npLevel: 2,
+          initialGauge: 0,
+          automaticEffects: [],
+        }).size,
+      ).toBe(1);
+    },
+  );
+  it('rejects unknown trigger vocabulary at the canonical boundary', () => {
+    expect(
+      masterEffectSchema.safeParse({ ...source().effect, triggerScope: 'unknownTrigger' }).success,
+    ).toBe(false);
+    expect(() =>
+      compileEffectCached(
+        {
+          ...source(),
+          effect: {
+            ...source().effect,
+            triggerScope: 'unknownTrigger' as MasterEffect['triggerScope'],
+          },
+        },
+        0,
+      ),
+    ).toThrow('unknown_np_program_trigger_scope');
+  });
+
   it.each(['between', 'after', 'disabled'] as const)(
     'retains the canonical HP writer at %s through the live rate query',
     (position) => {
@@ -186,6 +257,7 @@ describe('OC source program and common condition owner', () => {
             kind: 'resourceMutation',
             resource: 'hp',
             direction: 'loss',
+            lossFloor: 'oneIfAlive' as const,
             unit: 'fixed',
             recipient: 'sourceSelf',
             subjectId: null,
@@ -512,6 +584,7 @@ describe('fixed-start OC resource dependencies', () => {
           kind: 'resourceMutation',
           resource: 'hp',
           direction: 'loss',
+          lossFloor: 'oneIfAlive' as const,
           unit: 'fixed',
           recipient: 'sourceSelf',
           subjectId: null,
@@ -716,3 +789,67 @@ describe('unresolved rate grant read points', () => {
     } else expect(result.status).toBe('committed');
   });
 });
+
+it.each(['hp', 'criticalStars', 'battlePoint'] as const)(
+  'preserves %s normal/LB/NP resource cells at ordinary compilation',
+  (resource) => {
+    const input = source();
+    for (const lossFloor of ['zero', 'oneIfAlive'] as const) {
+      input.effect = masterEffectSchema.parse({
+        ...input.effect,
+        execution: [
+          {
+            kind: 'resourceMutation',
+            resource,
+            direction: 'loss',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            ...(resource === 'hp' ? { lossFloor } : {}),
+            amount: {
+              kind: 'fixed',
+              values: [[11, 12], [21, 22], [], [], []],
+              limitBreakValues: [[31, 32], [41, 42], [], [], []],
+            },
+          },
+        ],
+      });
+      for (const limitBreak of [false, true]) {
+        const compiled = compileEffectCached(
+          { ...input, limitBreak, valueSetIndex: 1, valueIndex: 1 },
+          0,
+          [],
+        );
+        expect(compiled.operations).toHaveLength(1);
+        expect(compiled.operations[0]).toMatchObject({
+          kind: 'resourceMutation',
+          resource,
+          direction: 'loss',
+          amount: limitBreak ? 42 : 22,
+          resolution: 'resourceStateUnavailable',
+          ...(resource === 'hp' ? { lossFloor } : {}),
+        });
+        if (resource === 'hp')
+          expect(compileOcSourceProgram({ ...input, limitBreak }).operations).toEqual(
+            input.effect.execution,
+          );
+        const missingLb = masterEffectSchema.parse({
+          ...input.effect,
+          execution: input.effect.execution.map((operation) =>
+            operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent'
+              ? { ...operation, amount: { kind: 'fixed', values: operation.amount.values } }
+              : operation,
+          ),
+        });
+        expect(
+          compileEffectCached({ ...input, effect: missingLb, limitBreak: true }, 0, [])
+            .operations[0],
+        ).toMatchObject({
+          kind: 'resourceMutation',
+          amount: null,
+          resolution: 'resourceStateUnavailable',
+        });
+      }
+    }
+  },
+);

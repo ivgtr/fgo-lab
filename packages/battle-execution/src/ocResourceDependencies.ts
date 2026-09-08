@@ -1,6 +1,11 @@
+import { npProgramEffects } from './npProgramScope';
 import type { CanonicalNpResourceSemantics, MasterEffect } from '@fgo-lab/master-data';
-import { applyNpResourceTransaction, type NpResourceState } from './npResource';
-import { resolveTargetPolicy } from './effectRouting';
+import {
+  applyNpResourceTransaction,
+  npMutationFromCanonicalAmount,
+  type NpResourceState,
+} from './npResource';
+import { resolveResourceTargetPolicy } from './effectRouting';
 
 export interface OcDependencySource {
   kind: 'skill' | 'noblePhantasm';
@@ -36,7 +41,7 @@ export function ocGaugeDependencies(
         upper = capacity;
       }
     }
-    for (const effect of source.effects)
+    for (const effect of npProgramEffects(source.effects))
       for (const operation of effect.execution) {
         if (operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount') {
           changed.add(index);
@@ -44,14 +49,13 @@ export function ocGaugeDependencies(
           upper = capacity;
           continue;
         }
-        if (
-          operation.kind !== 'resourceMutation' ||
-          operation.resource !== 'npGauge' ||
-          resolveTargetPolicy(source.kind === 'skill' ? 'attacker' : 'np', operation.recipient) !==
-            'attacker'
-        )
-          continue;
-        if (operation.amount.kind === 'dependent') {
+        if (operation.kind !== 'resourceMutation' || operation.resource !== 'npGauge') continue;
+        const recipient = resolveResourceTargetPolicy(
+          source.kind === 'skill' ? 'attacker' : 'np',
+          operation.recipient,
+        );
+        if (recipient !== 'attacker' && recipient !== 'unresolved') continue;
+        if (recipient === 'unresolved' || operation.amount.kind === 'dependent') {
           changed.add(index);
           lower = 0;
           upper = capacity;
@@ -82,7 +86,7 @@ export function ocGaugeDependencies(
             const result = applyNpResourceTransaction(
               context.semantics,
               { npLevel: context.npLevel, capacity, gauge },
-              { requirement: null, mutations: [{ kind: operation.direction, amount }] },
+              { requirement: null, mutations: [npMutationFromCanonicalAmount(operation, amount)] },
             );
             if (result.status === 'rejected') {
               outcomes.push(0, capacity);

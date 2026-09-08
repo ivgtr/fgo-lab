@@ -458,7 +458,7 @@ describe('portable calculation application owner', () => {
     });
   });
 
-  it('retains the historical pair when current semantics are unsupported', () => {
+  it('retains the historical pair when current equipment cannot resolve initial HP', () => {
     const currentRequest = createCalculatorPortableRequest(
       {
         ...createDefaultResolvedScenario(master, undefined),
@@ -497,7 +497,7 @@ describe('portable calculation application owner', () => {
       retainedRequest,
       retainedResult,
       attemptedRequest: { versionContext },
-      failure: { status: 'unsupported' },
+      failure: { status: 'invalid', reason: 'initialHpUnavailable' },
     });
   });
 });

@@ -1,3 +1,4 @@
+import { npProgramEffects } from './npProgramScope';
 import { getSkillsForActorForm, type MasterEffect, type ServantMaster } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { PreNoblePhantasmState, PreparationFailureCode } from './preparationContracts';
@@ -6,6 +7,7 @@ export function selectPreparationEffects(
   effects: readonly MasterEffect[],
   command: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>,
 ): readonly MasterEffect[] | PreparationFailureCode {
+  effects = npProgramEffects(effects);
   const choices = [
     ...new Map(
       effects.flatMap((effect) =>
@@ -47,7 +49,7 @@ export function availablePreparationSkillCommands(
     if (state.usedSkillSlots.has(skill.slot)) continue;
     const choices = [
       ...new Map(
-        skill.effects.flatMap((effect) =>
+        npProgramEffects(skill.effects).flatMap((effect) =>
           effect.selection?.kind === 'playerChoice'
             ? [
                 [

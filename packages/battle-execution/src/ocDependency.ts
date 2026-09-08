@@ -1,3 +1,4 @@
+import { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 import {
   ocGaugeDependencies,
   type OcDependencySource,
@@ -14,6 +15,7 @@ function rowsDiffer(rows: readonly unknown[]): boolean {
   return rows.length > 1 && rows.some((row) => JSON.stringify(row) !== JSON.stringify(rows[0]));
 }
 export function effectReadsOc(effect: MasterEffect): boolean {
+  if (!effectExecutesInNpProgram(effect)) return false;
   const relevant = effect.execution.some(
     (operation) =>
       operation.kind !== 'stateMutation' &&
@@ -29,7 +31,7 @@ export function effectReadsOc(effect: MasterEffect): boolean {
     if ('applicationRates' in operation && rowsDiffer(operation.applicationRates)) return true;
     return (
       operation.kind === 'resourceMutation' &&
-      operation.amount.kind === 'fixed' &&
+      operation.amount.kind !== 'dependent' &&
       rowsDiffer(operation.amount.values)
     );
   });
@@ -40,6 +42,7 @@ export function noblePhantasmReadsOc(variant: NoblePhantasmVariant): boolean {
   if (cached !== undefined) return cached;
   const reads =
     variant.effects.some((effect, index) => {
+      if (!effectExecutesInNpProgram(effect)) return false;
       if (variant.kind !== 'attack') return effectReadsOc(effect);
       if (effect.timing !== 'beforeDamage') return false;
       return effectReadsOc({
@@ -82,8 +85,8 @@ export function ocRelevantSourceIndexes(
   const possibleHpRate = (end: number) =>
     resources?.automaticEffects === undefined ||
     [
-      ...resources.automaticEffects,
-      ...sources.slice(0, end + 1).flatMap((source) => source.effects),
+      ...npProgramEffects(resources.automaticEffects),
+      ...sources.slice(0, end + 1).flatMap((source) => npProgramEffects(source.effects)),
     ].some((effect) =>
       effect.execution.some(
         (operation) =>
@@ -98,7 +101,7 @@ export function ocRelevantSourceIndexes(
     );
   for (let index = sources.length - 1; index >= 0; index--) {
     const source = sources[index]!;
-    for (const effect of [...source.effects].reverse()) {
+    for (const effect of [...npProgramEffects(source.effects)].reverse()) {
       for (const operation of [...effect.execution].reverse()) {
         if (operation.kind === 'grantOcBoost' && oc) {
           relevant.add(index);
@@ -117,8 +120,8 @@ export function ocRelevantSourceIndexes(
           (oc || rate) &&
           (resources?.automaticEffects === undefined ||
             [
-              ...resources.automaticEffects,
-              ...sources.slice(0, index + 1).flatMap((source) => source.effects),
+              ...npProgramEffects(resources.automaticEffects),
+              ...sources.slice(0, index + 1).flatMap((source) => npProgramEffects(source.effects)),
             ].some((effect) =>
               effect.execution.some(
                 (candidate) =>

@@ -117,6 +117,13 @@
 }
 
 @media (max-width: 760px) {
+  .np-result-table {
+    font-size: 0.82rem;
+  }
+  .np-result-table th,
+  .np-result-table td {
+    padding: 0.65rem 0.25rem;
+  }
   .result-column {
     position: static;
   }

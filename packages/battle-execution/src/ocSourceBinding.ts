@@ -65,12 +65,7 @@ export function bindOcSourceOperation(
           (operation.recipient === 'sourceSelf' ? sourceActor(program) : null));
     const receipt = state.receipts.find(({ actionId }) => actionId === context.npActionId);
     const row = source.origin === 'np' ? receipt?.effectiveOc : source.valueSetIndex + 1;
-    const cells =
-      operation.amount.kind === 'fixed'
-        ? source.limitBreak
-          ? operation.amount.limitBreakValues
-          : operation.amount.values
-        : undefined;
+    const cells = source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values;
     if (row !== undefined && cells?.[row - 1]?.[source.valueIndex] === 0)
       return { kind: 'skip', outcome: 'notApplicable' };
     // A possible write is kept until a live rate query. It is not an eager HP reader.

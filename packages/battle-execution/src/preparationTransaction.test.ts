@@ -10,6 +10,7 @@ import {
   reducePreNoblePhantasmAction,
   type PreparationExecutionContext,
 } from './preNoblePhantasm';
+import { formCanReachAttackWithoutPreparationNp } from './preparationState';
 import { planPreparationResourceTransaction } from './preparationTransaction';
 
 const semantics: CanonicalNpResourceSemantics = {
@@ -157,6 +158,7 @@ function servantWithSkill(effects: readonly MasterEffect[]): ServantMaster {
     classId: 'saber',
     attribute: 'earth',
     rarity: 5,
+    hpByLevel: {},
     atkByLevel: {},
     actorFormGraph: {
       actorId: 'actor',
@@ -216,6 +218,98 @@ function servantWithSkill(effects: readonly MasterEffect[]): ServantMaster {
 }
 
 describe('transactional preparation execution', () => {
+  it.each(['commandCard', 'commandCardAttack'] as const)(
+    'does not apply %s resource or structural writes, including automatic sources',
+    async (triggerScope) => {
+      const { preparationEffectSource } = await import('./preparationOc');
+      const { executePreparationPhase } = await import('./preparationPhases');
+      const inactive: MasterEffect = {
+        ...effect('transition-effect', null, [
+          {
+            kind: 'resourceMutation',
+            resource: 'npGauge',
+            direction: 'loss',
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
+          },
+          {
+            kind: 'resourceMutation',
+            resource: 'hp',
+            direction: 'loss',
+            lossFloor: 'oneIfAlive' as const,
+            unit: 'fixed',
+            recipient: 'sourceSelf',
+            subjectId: null,
+            amount: { kind: 'fixed', values: [[1000], [], [], [], []] },
+          },
+          { kind: 'transformActorForm', route, targetFormId: changedForm },
+          { kind: 'selectNoblePhantasmVariant', route, variant: changedAttack.ref },
+        ]),
+        triggerScope,
+      };
+      const servant = servantWithSkill([inactive]);
+      const transitionOnly: ServantMaster = {
+        ...servant,
+        actorFormGraph: {
+          ...servant.actorFormGraph,
+          forms: servant.actorFormGraph.forms.map((form) =>
+            form.id.limitCount === 0 ? { ...form, baseNoblePhantasmVariant: null } : form,
+          ),
+        },
+      };
+      expect(formCanReachAttackWithoutPreparationNp(transitionOnly, baseForm)).toBe(false);
+      expect(
+        formCanReachAttackWithoutPreparationNp(
+          {
+            ...transitionOnly,
+            skills: transitionOnly.skills.map((skill) => ({
+              ...skill,
+              effects: [{ ...inactive, triggerScope: null }],
+            })),
+          },
+          baseForm,
+        ),
+      ).toBe(true);
+      const created = createPreNoblePhantasmState(servant, baseForm, context);
+      if (created.status !== 'applied') throw new Error(created.code);
+      const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null } as const;
+      const result = reducePreNoblePhantasmAction(servant, created.state, command, context);
+      expect(result.status).toBe('applied');
+      if (result.status !== 'applied') return;
+      expect(result.state.npResource).toEqual(created.state.npResource);
+      expect(result.state.ocState.hpWrites.size).toBe(0);
+      expect(result.state.currentFormId).toEqual(baseForm);
+      expect(result.state.activeEffects).toEqual([]);
+      for (const origin of ['passive', 'craftEssence', 'support', 'mysticCode', 'np'] as const) {
+        const source = preparationEffectSource({
+          servant,
+          state: created.state,
+          effect: inactive,
+          origin,
+          sourceInstanceId: origin,
+          skillId: 'source',
+          skillName: 'source',
+          valueSetIndex: 0,
+          valueIndex: 0,
+        });
+        const phase = executePreparationPhase(servant, created.state, context, origin, [source]);
+        expect(phase.status).toBe('applied');
+        expect(phase.state.npResource).toEqual(created.state.npResource);
+        expect(phase.state.ocState.hpWrites.size).toBe(0);
+        expect(phase.state.currentFormId).toEqual(baseForm);
+      }
+      const attack = reducePreNoblePhantasmAction(
+        servant,
+        result.state,
+        { kind: 'executeAttackNoblePhantasm' },
+        context,
+      );
+      expect(attack.status).toBe('applied');
+    },
+  );
+
   it('does not commit a structural mutation when its canonical condition is false', () => {
     const conditional = effect(
       'transition-effect',
@@ -1069,6 +1163,86 @@ describe('OC on the preparation command path', () => {
     });
     expect(failedProc.status === 'applied' && failedProc.state.ocState.boosts.length).toBe(0);
   });
+  it.each([
+    [true, 'fixed'],
+    [false, 'fixed'],
+    [true, 'currentGaugeRatio'],
+    [false, 'currentGaugeRatio'],
+  ] as const)(
+    'commits a mixed NP/OC occurrence only on success, NP first: %s, amount: %s',
+    (npFirst, amountKind) => {
+      const mixed = ocEffect('mixed-resource-proc');
+      const grant = mixed.execution[0];
+      if (grant?.kind !== 'grantOcBoost') throw new Error('boost fixture required');
+      grant.cells[0][0]!.applicationRatePermille = 500;
+      const charge = effect('charge-operation', {
+        kind: 'fixed',
+        recipient: 'sourceActor',
+        direction: 'gain',
+        amounts: [[3000], [], [], [], []],
+        overflow: 'clampToCapacity',
+        underflow: 'clampToZero',
+      }).execution[0]!;
+      if (charge.kind !== 'resourceMutation') throw new Error('charge fixture required');
+      if (amountKind === 'currentGaugeRatio')
+        charge.amount = { kind: 'currentGaugeRatio', values: [[300], [], [], [], []] };
+      mixed.execution = npFirst ? [charge, grant] : [grant, charge];
+      const servant = servantWithSkill([mixed]);
+      const initial = createPreNoblePhantasmState(servant, baseForm, context);
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null } as const;
+      const missing = reducePreNoblePhantasmAction(servant, initial.state, command, context);
+      expect(missing.status).toBe('rejected');
+      expect(missing.state).toBe(initial.state);
+      if (missing.status !== 'rejected' || !missing.requiredInput)
+        throw new Error('input required');
+      for (const witness of [0, 1]) {
+        const result = reducePreNoblePhantasmAction(servant, initial.state, command, {
+          ...context,
+          canonicalInputValues: { [missing.requiredInput.key]: witness },
+        });
+        expect(result.status).toBe('applied');
+        expect(result.state.npResource.gauge).toBe(witness === 1 ? 13000 : 10000);
+        expect(result.state.ocState.boosts).toHaveLength(witness);
+        expect(initial.state.npResource.gauge).toBe(10000);
+      }
+    },
+  );
+  it.each([true, false])(
+    'reports the first rejected step in source order, NP first: %s',
+    (npFirst) => {
+      const invalidNp = effect('invalid-np', {
+        kind: 'fixed',
+        recipient: 'sourceActor',
+        direction: 'gain',
+        amounts: [[-1], [], [], [], []],
+        overflow: 'clampToCapacity',
+        underflow: 'clampToZero',
+      });
+      const probabilistic = ocEffect('probabilistic-after-charge');
+      const grant = probabilistic.execution[0];
+      if (grant?.kind !== 'grantOcBoost') throw new Error('boost fixture required');
+      grant.cells[0][0]!.applicationRatePermille = 500;
+      const servant = servantWithSkill(
+        npFirst ? [invalidNp, probabilistic] : [probabilistic, invalidNp],
+      );
+      const initial = createPreNoblePhantasmState(servant, baseForm, context);
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      const result = reducePreNoblePhantasmAction(
+        servant,
+        initial.state,
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+        context,
+      );
+      expect(result).toMatchObject({
+        status: 'rejected',
+        code: npFirst ? 'invalidResourceMutation' : 'preparationInputRequired',
+      });
+      expect(result.state).toBe(initial.state);
+      expect(initial.state.npResource.gauge).toBe(10000);
+      expect(initial.state.ocState.boosts).toEqual([]);
+    },
+  );
   it.each(['absent', 'between', 'after', 'removed', 'otherSource'] as const)(
     'reads HP-dependent rate at use through commands: %s',
     (position) => {
@@ -1104,6 +1278,7 @@ describe('OC on the preparation command path', () => {
           kind: 'resourceMutation',
           resource: 'hp',
           direction: 'loss',
+          lossFloor: 'oneIfAlive' as const,
           unit: 'fixed',
           recipient: position === 'otherSource' ? 'enemy' : 'sourceSelf',
           subjectId: null,
@@ -1184,6 +1359,65 @@ describe('OC on the preparation command path', () => {
       ),
     ).toMatchObject({ status: 'rejected', state: np.state });
   });
+  it.each([false, true])(
+    'selects ordered NP amount cells from the frozen receipt after an NP-body OC grant (proportional: %s)',
+    (proportional) => {
+      const servant = servantWithSkill([]);
+      const initial = createPreNoblePhantasmState(servant, baseForm, {
+        ...context,
+        initialGauge: 20000,
+        overcharge: 2,
+      });
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      const refund = effect('oc-dependent-refund', {
+        kind: 'fixed',
+        recipient: 'sourceActor',
+        direction: 'gain',
+        amounts: [[1000], [2000], [3000], [4000], [5000]],
+        overflow: 'clampToCapacity',
+        underflow: 'clampToZero',
+      });
+      const result = planPreparationResourceTransaction({
+        servant,
+        state: initial.state,
+        context,
+        command: { kind: 'useTransformNoblePhantasm' },
+        skill: null,
+        effects: [
+          ocEffect('np-body-boost'),
+          refund,
+          ...(proportional
+            ? [
+                effect('np-body-ratio', null, [
+                  {
+                    kind: 'resourceMutation',
+                    resource: 'npGauge',
+                    direction: 'gain',
+                    unit: 'fixed',
+                    recipient: 'sourceSelf',
+                    subjectId: null,
+                    amount: {
+                      kind: 'currentGaugeRatio',
+                      values: [[500], [1000], [1500], [2000], [2500]],
+                    },
+                  },
+                ]),
+              ]
+            : []),
+        ],
+        valueSetIndex: 0,
+        valueIndex: 0,
+        consumeNoblePhantasm: true,
+        inputSource: { origin: 'np', sourceInstanceId: 'attacker', skillId: 'base-attack' },
+      });
+      expect(result).toMatchObject({
+        status: 'ready',
+        resource: { state: { gauge: proportional ? 4000 : 2000 } },
+        ocUse: { baseOc: 2, effectiveOc: 2 },
+      });
+      expect(initial.state.npResource.gauge).toBe(20000);
+    },
+  );
   it('rolls back OC state for an unsupported non-resource sibling in the same command', () => {
     const servant = servantWithSkill([
       ocEffect('oc'),
@@ -1395,3 +1629,307 @@ it('keeps an unread uncertain trait write without rejecting the preparation comm
   expect(result.state.stateTraits).not.toContain('prepared-trait');
   expect(created.state.uncertainContextWrites).toHaveLength(0);
 });
+
+describe('current gauge ratio in the common preparation transaction', () => {
+  const mutation = (
+    kind: 'fixed' | 'currentGaugeRatio',
+    value: number,
+  ): MasterEffect['execution'][number] => ({
+    kind: 'resourceMutation',
+    resource: 'npGauge',
+    direction: 'gain',
+    unit: 'fixed',
+    recipient: 'sourceSelf',
+    subjectId: null,
+    amount: { kind, values: [[value], [], [], [], []] },
+  });
+  it.each([false, true])('respects charge/proportional order (charge first: %s)', (chargeFirst) => {
+    const steps = [mutation('fixed', 5000), mutation('currentGaugeRatio', 1000)];
+    const servant = servantWithSkill([
+      effect('proportional', null, chargeFirst ? steps : steps.reverse()),
+    ]);
+    const settings = { ...context, initialGauge: 5000 };
+    const initial = createPreNoblePhantasmState(servant, baseForm, settings);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      settings,
+    );
+    expect(result).toMatchObject({
+      status: 'applied',
+      state: { npResource: { gauge: chargeFirst ? 20000 : 15000 } },
+    });
+    expect(initial.state.npResource.gauge).toBe(5000);
+  });
+  it('rolls back preceding writes when a coefficient cell is missing, then permits repair and retry', () => {
+    const proportional = mutation('currentGaugeRatio', 1000);
+    if (proportional.kind !== 'resourceMutation' || proportional.amount.kind === 'dependent')
+      throw new Error('fixture');
+    proportional.amount.values[0] = [];
+    const servant = servantWithSkill([
+      effect('proportional', null, [mutation('fixed', 5000), proportional]),
+    ]);
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null } as const;
+    expect(reducePreNoblePhantasmAction(servant, initial.state, command, context)).toMatchObject({
+      status: 'rejected',
+      state: initial.state,
+    });
+    proportional.amount.values[0] = [1000];
+    expect(reducePreNoblePhantasmAction(servant, initial.state, command, context)).toMatchObject({
+      status: 'applied',
+      state: { npResource: { gauge: 20000 } },
+    });
+  });
+});
+
+it('selects proportional normal/LB and OC cells, routes recipients, and classifies uncertain writes', async () => {
+  const { preparationEffectSource } = await import('./preparationOc');
+  const { applyPreparationNpOperation } = await import('./preparationResourcePlan');
+  const { effectReadsOc } = await import('./ocDependency');
+  const { masterEffectSchema } = await import('@fgo-lab/master-data');
+  const operation = {
+    kind: 'resourceMutation',
+    resource: 'npGauge',
+    direction: 'gain',
+    unit: 'fixed',
+    recipient: 'sourceSelf',
+    subjectId: null,
+    amount: {
+      kind: 'currentGaugeRatio',
+      values: [[100], [200], [300], [400], [500]],
+      limitBreakValues: [[500], [600], [700], [800], [1000]],
+    },
+  } satisfies Extract<MasterEffect['execution'][number], { kind: 'resourceMutation' }>;
+  const canonical = masterEffectSchema.parse(
+    effect('ratio-cells', null, [structuredClone(operation)]),
+  );
+  expect(effectReadsOc(canonical)).toBe(true);
+  expect(
+    masterEffectSchema.safeParse({ ...canonical, execution: [{ ...operation, resource: 'hp' }] })
+      .success,
+  ).toBe(false);
+  const servant = servantWithSkill([]);
+  const initial = createPreNoblePhantasmState(servant, baseForm, context);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const source = preparationEffectSource({
+    servant,
+    state: initial.state,
+    effect: canonical,
+    origin: 'craftEssence',
+    sourceInstanceId: 'ce',
+    skillId: 'ce',
+    skillName: 'CE',
+    valueSetIndex: 0,
+    valueIndex: 0,
+  });
+  const run = (
+    limitBreak: boolean,
+    valueSetIndex: number,
+    activation: { conditionOutcome: boolean | null; procOutcome: 'success' | 'failure' } = {
+      conditionOutcome: true,
+      procOutcome: 'success',
+    },
+  ) =>
+    applyPreparationNpOperation({
+      semantics,
+      initial: initial.state.npResource,
+      source: { ...source, limitBreak },
+      operation: canonical.execution[0]!,
+      valueSetIndex,
+      activation,
+    });
+  expect(run(false, 1)).toMatchObject({ status: 'applied', state: { gauge: 12000 } });
+  expect(run(true, 4)).toMatchObject({ status: 'applied', state: { gauge: 20000 } });
+  expect(run(false, 0, { conditionOutcome: null, procOutcome: 'success' })).toMatchObject({
+    status: 'rejected',
+    code: 'ambiguousCondition',
+  });
+  expect(run(false, 0, { conditionOutcome: true, procOutcome: 'failure' })).toMatchObject({
+    status: 'applied',
+    state: initial.state.npResource,
+  });
+  expect(run(false, 0, { conditionOutcome: false, procOutcome: 'success' })).toMatchObject({
+    status: 'applied',
+    state: initial.state.npResource,
+  });
+  const saturated = { ...initial.state.npResource, gauge: 20000 };
+  expect(
+    applyPreparationNpOperation({
+      semantics,
+      initial: saturated,
+      source,
+      operation: canonical.execution[0]!,
+      valueSetIndex: 0,
+      activation: { conditionOutcome: null, procOutcome: 'success' },
+    }),
+  ).toMatchObject({ status: 'applied', state: saturated });
+  expect(
+    applyPreparationNpOperation({
+      semantics,
+      initial: initial.state.npResource,
+      source,
+      operation: {
+        ...canonical.execution[0]!,
+        recipient: 'enemy',
+      } as MasterEffect['execution'][number],
+      valueSetIndex: 0,
+      activation: { conditionOutcome: true, procOutcome: 'success' },
+    }),
+  ).toMatchObject({ status: 'applied', state: initial.state.npResource });
+});
+
+it('uses the same proportional reducer for bounded OC dependencies across consumption and saturation', async () => {
+  const { ocGaugeDependencies } = await import('./ocResourceDependencies');
+  const proportional = effect('ratio', null, [
+    {
+      kind: 'resourceMutation',
+      resource: 'npGauge',
+      direction: 'gain',
+      unit: 'fixed',
+      recipient: 'sourceSelf',
+      subjectId: null,
+      amount: { kind: 'currentGaugeRatio', values: [[1000], [], [], [], []] },
+    },
+  ]);
+  const settings = { semantics, npLevel: 2 as const, initialGauge: 10000 };
+  expect(
+    ocGaugeDependencies([{ kind: 'skill', effects: [proportional], skillLevel: 1 }], settings)
+      .changed,
+  ).toEqual(new Set([0]));
+  expect(
+    ocGaugeDependencies([{ kind: 'skill', effects: [proportional], skillLevel: 1 }], {
+      ...settings,
+      npLevel: 1,
+    }).changed,
+  ).toEqual(new Set());
+  // Empty OC cells cannot prove that a post-consumption write is a no-op.
+  expect(
+    ocGaugeDependencies([{ kind: 'noblePhantasm', effects: [proportional] }], {
+      ...settings,
+      npLevel: 1,
+    }).changed,
+  ).toEqual(new Set([0]));
+  const complete = structuredClone(proportional);
+  for (const operation of complete.execution)
+    if (operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent')
+      operation.amount.values = [[1000], [1000], [1000], [1000], [1000]];
+  expect(
+    ocGaugeDependencies([{ kind: 'noblePhantasm', effects: [complete] }], {
+      ...settings,
+      npLevel: 1,
+    }).changed,
+  ).toEqual(new Set());
+  const lost = effect('loss', {
+    kind: 'fixed',
+    recipient: 'sourceActor',
+    direction: 'loss',
+    amounts: [[5000], [], [], [], []],
+    overflow: 'clampToCapacity',
+    underflow: 'clampToZero',
+  });
+  expect(
+    ocGaugeDependencies(
+      [
+        { kind: 'skill', effects: [lost] },
+        { kind: 'skill', effects: [proportional] },
+      ],
+      { ...settings, npLevel: 1 },
+    ).changed,
+  ).toEqual(new Set([0, 1]));
+});
+
+it.each(['fixed', 'currentGaugeRatio'] as const)(
+  'rejects an unresolved NP recipient for %s rather than proving a no-op',
+  async (kind) => {
+    const { masterEffectSchema } = await import('@fgo-lab/master-data');
+    const { applyPreparationNpOperation } = await import('./preparationResourcePlan');
+    const { preparationEffectSource } = await import('./preparationOc');
+    const { ocGaugeDependencies } = await import('./ocResourceDependencies');
+    const unknown = effect('unknown-recipient', null, [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'unresolved',
+        subjectId: null,
+        amount: { kind, values: [[1000], [], [], [], []] },
+      },
+    ]);
+    expect(masterEffectSchema.safeParse(unknown).success).toBe(false);
+    const servant = servantWithSkill([]);
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const source = preparationEffectSource({
+      servant,
+      state: initial.state,
+      effect: unknown,
+      origin: 'attacker',
+      sourceInstanceId: 'attacker',
+      skillId: 'unknown',
+      skillName: 'Unknown',
+      valueSetIndex: 0,
+      valueIndex: 0,
+    });
+    expect(
+      applyPreparationNpOperation({
+        semantics,
+        initial: initial.state.npResource,
+        source,
+        operation: unknown.execution[0]!,
+        valueSetIndex: 0,
+        activation: { conditionOutcome: true, procOutcome: 'success' },
+      }),
+    ).toMatchObject({
+      status: 'rejected',
+      code: 'unsupportedMutation',
+      state: initial.state.npResource,
+    });
+    expect(
+      ocGaugeDependencies([{ kind: 'skill', effects: [unknown] }], {
+        semantics,
+        npLevel: 1,
+        initialGauge: 10000,
+      }).changed,
+    ).toEqual(new Set([0]));
+  },
+);
+
+it.each(['fixed', 'currentGaugeRatio'] as const)(
+  'rejects contradictory NP units and domains for %s',
+  async (kind) => {
+    const { masterEffectSchema } = await import('@fgo-lab/master-data');
+    const { npMutationFromCanonicalAmount, applyNpResourceTransaction } =
+      await import('./npResource');
+    for (const invalid of [
+      { unit: 'percent' as const, subjectId: null },
+      { unit: 'fixed' as const, subjectId: 'unrelated-domain' },
+    ]) {
+      const operation = {
+        kind: 'resourceMutation' as const,
+        resource: 'npGauge' as const,
+        direction: 'gain' as const,
+        recipient: 'sourceSelf' as const,
+        ...invalid,
+        amount: {
+          kind,
+          values: [[1000], [], [], [], []] as [number[], number[], number[], number[], number[]],
+        },
+      };
+      expect(
+        masterEffectSchema.safeParse(effect('invalid-np-domain', null, [operation])).success,
+      ).toBe(false);
+      const state = { npLevel: 1 as const, capacity: 10000, gauge: 10000 };
+      expect(
+        applyNpResourceTransaction(semantics, state, {
+          requirement: null,
+          mutations: [npMutationFromCanonicalAmount(operation, 1000)],
+        }),
+      ).toMatchObject({ status: 'rejected', code: 'unsupportedMutation', state });
+    }
+  },
+);

@@ -1,3 +1,4 @@
+export { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 export type {
   ActorScope,
   ActivationContext,

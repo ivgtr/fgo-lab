@@ -1,4 +1,4 @@
-import type { CanonicalNpResourceSemantics } from '@fgo-lab/master-data';
+import type { CanonicalNpResourceSemantics, EffectExecutionOperation } from '@fgo-lab/master-data';
 
 export const DEFAULT_NP_RESOURCE_SEMANTICS: CanonicalNpResourceSemantics = {
   unit: 'basisPoints',
@@ -19,8 +19,32 @@ export interface NpResourceState {
 export type NpResourceMutation =
   | { kind: 'gain'; amount: number }
   | { kind: 'loss'; amount: number }
+  | { kind: 'gainCurrentGaugeRatio'; permille: number }
   | { kind: 'consumeAll' }
   | { kind: 'unsupported'; family: string };
+
+/** Canonical amount selection is shared by execution and bounded dependency probes. */
+export function npMutationFromCanonicalAmount(
+  operation: Extract<EffectExecutionOperation, { kind: 'resourceMutation' }>,
+  amount: number | null | undefined,
+): NpResourceMutation {
+  if (
+    operation.resource !== 'npGauge' ||
+    operation.unit !== 'fixed' ||
+    operation.subjectId !== null
+  )
+    return { kind: 'unsupported', family: 'invalidNpResource' };
+  if (operation.amount.kind === 'dependent')
+    return { kind: 'unsupported', family: operation.amount.reason };
+  if (amount === null || amount === undefined)
+    return { kind: 'unsupported', family: 'missingCanonicalAmount' };
+  if (operation.amount.kind === 'currentGaugeRatio') {
+    if (operation.direction !== 'gain')
+      return { kind: 'unsupported', family: 'invalidCurrentGaugeRatio' };
+    return { kind: 'gainCurrentGaugeRatio', permille: amount };
+  }
+  return { kind: operation.direction, amount };
+}
 
 export interface NpResourceTransaction {
   requirement: { kind: 'atLeast'; amount: number } | null;
@@ -102,6 +126,17 @@ export function applyNpResourceTransaction(
       if (gauge < semantics.noblePhantasmUse.requirement) return reject('insufficientGauge');
       baseOvercharge = deriveBaseOvercharge(semantics, gauge);
       gauge = 0;
+      continue;
+    }
+    if (mutation.kind === 'gainCurrentGaugeRatio') {
+      const product = gauge * mutation.permille;
+      if (
+        !Number.isSafeInteger(mutation.permille) ||
+        mutation.permille < 0 ||
+        !Number.isSafeInteger(product)
+      )
+        return reject('invalidMutation');
+      gauge = Math.min(state.capacity, gauge + Math.floor(product / 1000));
       continue;
     }
     if (!Number.isInteger(mutation.amount) || mutation.amount < 0) return reject('invalidMutation');

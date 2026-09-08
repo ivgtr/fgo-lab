@@ -1,3 +1,4 @@
+import { npProgramEffects } from './npProgramScope';
 import {
   findNoblePhantasmVariant,
   noblePhantasmVariantKey,
@@ -46,7 +47,7 @@ export function assemblePreparationActivationFacts(
   effects: readonly MasterEffect[],
 ): readonly ActivationFact[] {
   const source = preparationActivationSource(servant, sourceKind, sourceId, actorFormId);
-  const facts = effects.flatMap<ActivationFact>((effect) => [
+  const facts = npProgramEffects(effects).flatMap<ActivationFact>((effect) => [
     ...(effect.selection?.kind === 'playerChoice'
       ? [
           {

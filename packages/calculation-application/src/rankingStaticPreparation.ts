@@ -1,4 +1,4 @@
-import { noblePhantasmReadsOc } from '@fgo-lab/battle-execution';
+import { noblePhantasmReadsOc, npProgramEffects } from '@fgo-lab/battle-execution';
 import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
 import {
   actorFormEquals,
@@ -87,7 +87,7 @@ function skillCommands(
     if (state.usedSkillSlots.has(slot)) continue;
     const choices = [
       ...new Map(
-        skill.effects.flatMap((effect) =>
+        npProgramEffects(skill.effects).flatMap((effect) =>
           effect.selection?.kind === 'playerChoice'
             ? [
                 [
@@ -123,7 +123,7 @@ function selectedEffects(
   skill: MasterSkill,
   command: Extract<PreNoblePhantasmCommand, { kind: 'useSkillSlot' }>,
 ): readonly MasterEffect[] {
-  return skill.effects.filter(
+  return npProgramEffects(skill.effects).filter(
     ({ selection }) =>
       selection?.kind !== 'playerChoice' ||
       (selection.group.key === command.choice?.groupKey &&
@@ -151,6 +151,7 @@ function structuralBranches(
   sourceId: string,
   selected: readonly MasterEffect[],
 ): readonly Pick<StaticState, 'currentFormId' | 'selectedVariant'>[] {
+  selected = npProgramEffects(selected);
   const occurrences = new Set(selected.map(({ occurrenceId }) => occurrenceId));
   const transitions = servant.actorFormGraph.transitions.filter(
     (transition) =>
@@ -294,7 +295,7 @@ export function compileStaticRankingPreparationPrograms(
               kind: 'noblePhantasm',
               actorFormId: state.currentFormId,
               noblePhantasmVariant: variant.ref,
-              effects: variant.effects,
+              effects: npProgramEffects(variant.effects),
             },
           ],
         });

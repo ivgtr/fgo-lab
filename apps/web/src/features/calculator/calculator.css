@@ -323,13 +323,4 @@
   .worksheet > section {
     padding: 0.85rem;
   }
-
-  .worksheet table {
-    font-size: 0.82rem;
-  }
-
-  .worksheet th,
-  .worksheet td {
-    padding: 0.65rem 0.25rem;
-  }
 }

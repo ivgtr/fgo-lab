@@ -8,6 +8,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   ocRelevantSourceIndexes,
+  npProgramEffects,
   type OcResourceDependencyContext,
   classifyContributionCondition,
   compileEffectCondition,
@@ -51,7 +52,12 @@ function classifyPrograms(
       admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
         actionIsStructural(program, index, programs)
           ? { kind: 'admitted', role: 'structuralRequired' }
-          : optionalAdmission(source, conditions, program, ocRelevant.has(index)),
+          : optionalAdmission(
+              { ...source, effects: npProgramEffects(source.effects) },
+              conditions,
+              program,
+              ocRelevant.has(index),
+            ),
       ),
     };
   });

@@ -1,5 +1,9 @@
 import { ocProductionInventory } from './ocProductionAudit';
 import {
+  hpGrowthProductionInventory,
+  resourceProductionInventory,
+} from './resourceProductionAudit';
+import {
   canonicalNoblePhantasmVariantSemanticsKey,
   getNoblePhantasmVariants,
   noblePhantasmVariantKey,
@@ -28,6 +32,8 @@ export interface DataPipelineProductionAudit {
     mysticCodes: number;
     effects: number;
     oc: ReturnType<typeof ocProductionInventory>;
+    resources: ReturnType<typeof resourceProductionInventory>;
+    hpGrowth: ReturnType<typeof hpGrowthProductionInventory>;
     operations: number;
     damageFunctions: number;
     noblePhantasmVariantIdentities: number;
@@ -209,11 +215,13 @@ export function compileDataPipelineProductionAudit(
   )
     throw new TypeError('production_audit_stochastic_outcome_classification_mismatch');
   const inventory = {
+    hpGrowth: hpGrowthProductionInventory(master),
     servants: master.servants.length,
     craftEssences: master.craftEssences.length,
     mysticCodes: master.mysticCodes.length,
     effects: occurrences.length,
     oc: ocProductionInventory(occurrences.map(({ effect }) => effect)),
+    resources: resourceProductionInventory(occurrences.map(({ effect }) => effect)),
     operations: occurrences.reduce((count, { effect }) => count + effect.execution.length, 0),
     damageFunctions: damageRecords.length,
     noblePhantasmVariantIdentities: variantRecords.length,

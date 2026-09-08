@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行要件"
-document_version: "1.2.1"
+document_version: "1.2.3"
 status: "Active"
 created_at: "2026-08-25"
-updated_at: "2026-08-30"
+updated_at: "2026-09-08"
 source_requirements: "docs/requirements/fgo-lab-requirements-v0.3.md v0.3.7"
 ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -53,6 +53,29 @@ refactoring_contract: "docs/adr/008-refactoring-contract.md"
 - 特攻宝具専用の別パネル
 - 効果実行順を利用者に選ばせる操作
 - 内部条件式をそのまま編集する操作
+
+### 3.1a 初期最大HPの固定条件
+
+2026-09-08の製品判断として、通常計算機の攻撃役の初期最大HPは
+**選択Lvのcanonical master HP＋HPフォウ1,000＋装備礼装のHP補正**とする。
+HPフォウ1,000は明示的な固定条件であり、既存ATKフォウ設定や保存値から推論しない。
+ATKフォウの編集によって変化させず、HPフォウの編集UIは今回追加しない。
+
+礼装HPはcanonicalなHP成長データと装備礼装ID・Lv・限界突破条件から一意に解決する。
+ATKからの推定、未取得HPの0扱い、非合法Lvのclampによる補完を禁止する。
+礼装なしの場合だけ装備HP補正は0とし、canonicalデータが明示するHP0と欠損を区別する。
+現在の装備情報で一意に解決できない場合は、必要な追加情報と変更範囲を整理して報告し、推測で数値化しない。
+
+ランキングは[ランキング固定条件](ranking-self-and-conditional-effects-requirements.md#42-共通の固定条件)
+により、選択Lvのmaster HP＋HPフォウ1,000、礼装なしとする。
+両経路は同じ初期HP resolverと共通executorを使い、applicationが装備有無を決定する。
+戦闘中の最大HP増減・現在HP・HP比率の更新は、この初期条件と別の意味論として順序付きで実行する。
+装備／Lv変更、reset、保存復元でも初期条件から再解決し、適用済みの戦闘補正を初期最大HPへ混入させない。
+
+実行中のcanonical current HPが0の場合は攻撃不可とし、その拒否でNP gauge・OC使用回数を消費せず、
+NP-use receiptを生成・更新しない。これは攻撃到達不能であり、damage0の成功結果、入力不正、未対応と混同しない。
+実HPが1以上なら、表示割合の丸めで0%となってもこの理由で攻撃を拒否しない。
+初期入力0%を分析値として許容するかは、この実行中HP0の条件とは別の未規定事項としてTSK-06.45で扱う。
 
 ### 3.2 `自身の適用内容`の表示契約
 

@@ -60,6 +60,7 @@ describe('profile domain', () => {
         classId: 'saber',
         attribute: 'earth' as const,
         rarity: 5,
+        hpByLevel: {},
         atkByLevel: { '1': 1 },
         actorFormGraph: {
           actorId: 'x',

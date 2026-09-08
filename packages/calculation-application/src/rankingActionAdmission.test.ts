@@ -145,6 +145,38 @@ const positive = effect('positive:0', [
 ]);
 
 describe('candidate-local action admission', () => {
+  it.each(['commandCard', 'commandCardAttack'] as const)(
+    'uses the same %s non-execution proof for unknown siblings and positive contributions',
+    (triggerScope) => {
+      const inactive = {
+        ...effect('inactive', [
+          { kind: 'unsupported', route, reason: 'operationSemantics', damageRelevant: true },
+        ]),
+        triggerScope,
+      };
+      for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+        const result = compileCandidateLocalActionAdmission(
+          [withoutAction, program([positive, inactive])],
+          { ...baseline, conditionalEffects },
+        );
+        expect(result.programs.map(({ key }) => key)).toEqual(['without-action', 'with-action']);
+        expect(result.unsupportedAttackProfileKeys.size).toBe(0);
+        const noContribution = compileCandidateLocalActionAdmission(
+          [withoutAction, program([{ ...positive, triggerScope }, inactive])],
+          { ...baseline, conditionalEffects },
+        );
+        expect(noContribution.programs.map(({ key }) => key)).toEqual(['without-action']);
+        expect(noContribution.unsupportedAttackProfileKeys.size).toBe(0);
+        expect(
+          compileCandidateLocalActionAdmission(
+            [withoutAction, program([positive, { ...inactive, triggerScope: null }])],
+            { ...baseline, conditionalEffects },
+          ).unsupportedAttackProfileKeys.size,
+        ).toBe(1);
+      }
+    },
+  );
+
   it('admits a safe card-qualified action when the selected AttackProfile proves it intrinsic', () => {
     const buster = effect('buster:0', positive.execution, {
       kind: 'card',
@@ -273,7 +305,7 @@ describe('candidate-local action admission', () => {
         direction: 'loss',
         unit: 'fixed',
         recipient: 'sourceSelf',
-        amount: { kind: 'dependent', reason: 'currentGaugeMultiplier' },
+        amount: { kind: 'dependent', reason: 'matchingTargetCount' },
         subjectId: null,
       },
     ]);

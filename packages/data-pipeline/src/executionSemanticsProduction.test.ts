@@ -255,15 +255,16 @@ describe('production canonical execution semantics', () => {
       ocRemovalResistance: 60,
       ocStateNonIntersection: 131,
       removeOcState: 75,
-      resourceMutation: 1165,
+      resourceMutation: 1164,
       selectNoblePhantasmVariant: 22,
       stateMutation: 4830,
       transformActorForm: 10,
-      unsupported: 74,
+      unsupported: 75,
     });
     const occurrenceFamilies = {
       resource: new Set([
         'gainNp',
+        'gainMultiplyNp',
         'lossNp',
         'gainStar',
         'lossStar',
@@ -290,7 +291,6 @@ describe('production canonical execution semantics', () => {
         'gainNpFromTargets',
         'gainNpIndividualSum',
         'gainNpTargetSum',
-        'gainMultiplyNp',
         'replaceMember',
         'moveToLastSubmember',
       ]),
@@ -312,6 +312,14 @@ describe('production canonical execution semantics', () => {
       resource: operations.filter(
         (operation) => operation.kind === 'resourceMutation' && !wrapperOperations.has(operation),
       ).length,
+      unresolvedResourceTargets: effects.filter(
+        (effect) =>
+          occurrenceFamilies.resource.has(effect.atlasEvidence.functionType) &&
+          effect.execution.some(
+            (operation) =>
+              operation.kind === 'unsupported' && operation.reason === 'unresolvedTarget',
+          ),
+      ).length,
       state:
         operations.filter((operation) => operation.kind === 'stateMutation').length +
         referencedStateWrappers.length,
@@ -329,9 +337,10 @@ describe('production canonical execution semantics', () => {
       ).length,
     };
     expect(closedOccurrences).toEqual({
-      resource: 1_164,
+      resource: 1_163,
+      unresolvedResourceTargets: 2,
       state: 4_831,
-      unsupported: 21,
+      unsupported: 20,
       boundedPhaseIrrelevant: 2_725,
     });
 
@@ -450,15 +459,22 @@ describe('production canonical execution semantics', () => {
       ),
     );
     const counts = transitions.reduce<Record<string, number>>((result, transition) => {
-      const key = `fixed:${transition.direction}`;
+      const key = `${transition.amount.kind}:${transition.direction}`;
       result[key] = (result[key] ?? 0) + 1;
       return result;
     }, {});
     expect(counts).toEqual({
-      'fixed:gain': 651,
+      'fixed:gain': 649,
       'fixed:loss': 79,
+      'currentGaugeRatio:gain': 1,
     });
-    expect(transitions).toHaveLength(730);
+    expect(transitions).toHaveLength(729);
+    const proportional = transitions.filter(({ amount }) => amount.kind === 'currentGaugeRatio');
+    expect(proportional).toHaveLength(1);
+    expect(proportional[0]?.amount).toEqual({
+      kind: 'currentGaugeRatio',
+      values: [[500, 550, 600, 650, 700, 750, 800, 850, 900, 1000], [], [], [], []],
+    });
     expect(
       allEffects(master)
         .flatMap(({ execution }) => execution)
@@ -466,7 +482,7 @@ describe('production canonical execution semantics', () => {
           (operation) =>
             operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount',
         ),
-    ).toHaveLength(17);
+    ).toHaveLength(16);
     expect(
       master.servants
         .flatMap(({ skills }) => skills)

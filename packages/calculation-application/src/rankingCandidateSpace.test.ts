@@ -239,6 +239,79 @@ describe('static ranking candidate space', () => {
     expect(actual).toEqual([90_290.91, 108_832.9, 118_739.145, 128_987.255]);
   }, 30_000);
 
+  it('replays current-NP proportional gain through calculator and portable ranking paths for all inclusion policies', async () => {
+    const { calculateScenarioWithPolicy } = await import('./scenario');
+    const {
+      createRankingPortableRequest,
+      currentCalculationVersionContext,
+      executePortableCalculation,
+    } = await import('./portableCalculation');
+    const servant = master.servants.find(({ id }) => id === '704900')!;
+    for (const npLevel of [1, 2] as const)
+      for (const selfBuffs of ['included', 'excluded'] as const)
+        for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+          const outcome = calculateRankingPolicyDetail(
+            servant,
+            master,
+            profile,
+            {
+              ...DEFAULT_RANKING_POLICY_CONDITIONS,
+              npLevelBasis: { kind: 'specified', npLevel },
+              selfBuffs,
+              conditionalEffects,
+            },
+            versions(),
+          );
+          expect(outcome.status, `${npLevel}:${selfBuffs}:${conditionalEffects}`).toBe(
+            'calculated',
+          );
+          if (outcome.status !== 'calculated') continue;
+          const detail = outcome.detail;
+          if (selfBuffs === 'included' && conditionalEffects === 'satisfied') {
+            const explicit = calculateScenarioWithPolicy(
+              {
+                ...detail.scenario,
+                preNoblePhantasmPlan: [
+                  { kind: 'useSkillSlot', slot: 2, skillLevel: 10, choice: null },
+                  { kind: 'executeAttackNoblePhantasm' },
+                ],
+              },
+              master,
+              versions(),
+              detail.contributionPolicy,
+            );
+            expect(explicit.status).toBe('executable');
+            if (explicit.status === 'executable')
+              expect(explicit.appliedPreparationActions[0]).toMatchObject({
+                resourceBefore: { gauge: 10000 },
+                resourceAfter: { gauge: npLevel === 1 ? 10000 : 20000 },
+              });
+          }
+          const calculator = calculateScenarioWithPolicy(
+            detail.scenario,
+            master,
+            versions(),
+            detail.contributionPolicy,
+          );
+          const portable = executePortableCalculation(
+            createRankingPortableRequest(detail, currentCalculationVersionContext(master)),
+            master,
+          );
+          expect(calculator.status).toBe('executable');
+          expect(portable.status).toBe('executed');
+          for (const result of [
+            calculator,
+            portable.status === 'executed' ? portable.execution : null,
+          ]) {
+            expect(result?.status).toBe('executable');
+            if (result?.status !== 'executable') continue;
+            expect(result.input).toEqual(detail.input);
+            expect(result.result).toEqual(detail.result);
+            expect(result.appliedPreparationActions).toEqual(detail.appliedPreparationActions);
+          }
+        }
+  });
+
   it('rejects a represented NP cost at the selected start and succeeds only after an explicit initial OC change', () => {
     const source = master.servants.find(({ id }) => id === '100100')!;
     const costEffect = master.servants
@@ -333,18 +406,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 2_153,
-        generatedCount: 2_153,
-        deduplicatedCount: 2_153,
-        damageRequestUpperBound: 2_153,
-        damageRequestCount: 2_096,
-        distinctDamageInputCount: 1_329,
+        semanticUpperBound: 2_247,
+        generatedCount: 2_247,
+        deduplicatedCount: 2_247,
+        damageRequestUpperBound: 2_247,
+        damageRequestCount: 2_190,
+        distinctDamageInputCount: 1_385,
       },
       damageCache: {
-        requestCount: 2_096,
-        distinctDamageInputCount: 1_329,
-        cacheHitCount: 767,
-        cacheHitRate: 767 / 2_096,
+        requestCount: 2_190,
+        distinctDamageInputCount: 1_385,
+        cacheHitCount: 805,
+        cacheHitRate: 805 / 2_190,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -356,43 +429,25 @@ describe('static ranking candidate space', () => {
     );
     expect(unavailable.map((result) => result.attackProfile?.id.servantLineageId).sort()).toEqual(
       [
-        '103100',
         '105900',
-        '106100',
         '106200',
         '106400',
-        '203300',
         '204300',
         '204900',
         '204900',
         '304000',
-        '305400',
-        '305700',
-        '305900',
         '306000',
         '306200',
         '306200',
         '403600',
         '405700',
-        '500200',
         '502600',
-        '506000',
-        '601500',
-        '603200',
-        '604600',
-        '605000',
         '605100',
-        '704400',
-        '704900',
         '705300',
-        '1000400',
-        '1000500',
         '1000900',
         '1001800',
         '1101600',
-        '1101800',
         '1102300',
-        '2301200',
         '2500400',
         '2501400',
         '2501600',
@@ -532,19 +587,19 @@ describe('static ranking candidate space', () => {
         'excluded:baseline:policyNoOp': 15024,
         'excluded:satisfied:admitted:structuralRequired': 148,
         'excluded:satisfied:policyNoOp': 15024,
-        'included:baseline:admitted:optional': 8434,
+        'included:baseline:admitted:optional': 8577,
         'included:baseline:admitted:structuralRequired': 148,
-        'included:baseline:policyNoOp': 6055,
-        'included:baseline:unsupported:unresolvedOperation': 535,
-        'included:satisfied:admitted:optional': 14467,
+        'included:baseline:policyNoOp': 6148,
+        'included:baseline:unsupported:unresolvedOperation': 299,
+        'included:satisfied:admitted:optional': 14703,
         'included:satisfied:admitted:structuralRequired': 148,
         'included:satisfied:policyNoOp': 22,
-        'included:satisfied:unsupported:unresolvedOperation': 535,
+        'included:satisfied:unsupported:unresolvedOperation': 299,
       },
       preparationRejections: {
         'included:baseline:unreachable:insufficientNpGauge': 57,
       },
-      actionDigest: 'a2dbebd10f4273e14798e0ad528d9c8760434d102ba44b89c039c68c4a46552c',
+      actionDigest: '9468eade86669edc4a8208f735f49e4d5dcfda35e2da85e8b67b594052804a66',
     });
   }, 30_000);
 

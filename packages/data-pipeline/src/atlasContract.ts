@@ -87,6 +87,7 @@ export type AtlasServant = {
   attribute?: string;
   rarity?: number;
   atkGrowth?: number[];
+  hpGrowth?: number[];
   traits?: { id?: number; name?: string }[];
   battlePoints?: { id?: number; phases?: { phase?: number }[] }[];
   skills?: {
@@ -132,6 +133,7 @@ export type AtlasEquip = {
   collectionNo?: number;
   name?: string;
   lvMax?: number;
+  hpGrowth?: number[];
   atkBase?: number;
   atkMax?: number;
   skills?: {

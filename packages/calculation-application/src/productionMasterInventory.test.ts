@@ -663,7 +663,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_574 });
+    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_580 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',

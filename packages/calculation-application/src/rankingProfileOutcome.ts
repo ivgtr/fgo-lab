@@ -151,16 +151,18 @@ export function unresolvedProfileResult(
     }
   }
   const diagnostics = diagnosticsFor(records);
-  if (records.invalid.length > 0)
+  if (records.invalid.length > 0) {
+    const invalid = matchingExecutions.find(
+      ({ execution }) => execution.result.status === 'invalid',
+    )?.execution.result;
     return {
       status: 'invalid',
       attackProfile,
-      issues:
-        matchingExecutions.find(({ execution }) => execution.result.status === 'invalid')?.execution
-          .result.issues ?? [],
-      reason: 'attackerLevelStatUnavailable',
+      issues: invalid?.issues ?? [],
+      reason: invalid?.issues[0]?.code ?? 'invalidCalculation',
       diagnostics,
     };
+  }
   if (records.unsupported.length > 0) {
     const unsupported = matchingExecutions.find(
       ({ index, execution }) =>

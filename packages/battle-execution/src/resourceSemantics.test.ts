@@ -7,6 +7,7 @@ const resourceOperation = {
   resource: 'hp',
   resolution: 'resourceStateUnavailable',
   direction: 'loss',
+  lossFloor: 'oneIfAlive',
   unit: 'fixed',
   amount: 1_000,
   subjectId: null,

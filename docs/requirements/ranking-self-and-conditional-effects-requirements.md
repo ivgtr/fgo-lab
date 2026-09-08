@@ -1,10 +1,10 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.10.2"
+document_version: "0.10.3"
 status: "Active"
 approval: "approved"
 approved_at: "2026-09-06"
-updated_at: "2026-09-06"
+updated_at: "2026-09-08"
 created_at: "2026-08-30"
 related_adrs:
   - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
@@ -143,12 +143,17 @@ unsupported理由へ昇格させない。HP、NP、battle point等の値がdamag
 - `NP1`〜`NP5`: 全entryへ指定値を使用する
 - `保有宝具レベル`: 保存済みの当該サーヴァント宝具Lvを使用する。NP0は数値ランキングへ含めず、欠落値をNP1で補完しない
 - Fou ATK+1,000、skill Lv10。保有サーヴァントでも保存済みFou／skill Lvへ暗黙に切り替えない
+- 初期最大HPは選択Lvのcanonical master HP＋固定HPフォウ1,000。礼装HPは含めない。HPフォウは2026-09-08に明示追加した製品条件であり、ATKフォウ設定から推論しない。編集UIは追加しない
 - 属性等倍、HP100%、スター0、初期turn、Battle Point 0
 - 礼装、魔術礼装、支援なし
 - 外部field、外部target state、追加target traitなし
 - `通常のみ`の人数、stack等の定量入力はcanonical baseline値。`成立込み`の宣言済みmaximumは5.2に従う
 - 準備actionから攻撃宝具までは同一turn
 - turn経過、effect期限切れ、skill再使用なし
+
+初期最大HPと戦闘中の最大HP増減は別の意味論として扱い、後者は共通executorの順序付き状態更新で処理する。
+master HPの欠損を0やATK由来の推定値で補完しない。通常計算機の礼装HPを含む条件は
+[効果実行要件の初期最大HP契約](damage-effect-execution-requirements.md#31a-初期最大hpの固定条件)に従う。
 
 固定条件は一つの`RankingComparisonPolicy`が所有し、Web、worker、testへ複製しない。
 将来、保存済みFou／skill Lv等を含む完全な保有育成状態を比較する場合は、レベル／宝具レベル基準へ混ぜず、
@@ -977,3 +982,4 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.10.0 | 比較対象を母集団へ限定し、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを直交化。成立込みのcanonical最大stack countと寄与判定detailの人間向け表示を追加 | approved 2026-09-05: user confirmed naming, retained natural／uniform choices for owned servants, owned level and NP level reflection, maximum stack examples, and contribution UI cleanup | TSK-06.42〜06.5、TSK-07 | ranking scenario、URL／worker fingerprint、production matrix、detail UIが変わる。保存済みFou／skill Lvは反映せず、servant固有runtime branchは追加しない |
 | 0.10.1 | 現行published masterの全playable攻撃宝具を数値計算対象とし、typed `unsupported`を理由にしたproduction順位外を完了状態として許容しない。有限な準備phaseのtrigger／timing／resource readerをcanonical executionへ収束させる | approved 2026-09-05: user required all attack NPs to be included in the implementation plan | TSK-06.45、TSK-06.5、TSK-08 | planning baselineは433 AttackProfiles中393 calculated／40 unsupported、calculator defaultは422中420 calculated／2 unsupported。実装後は現行masterのunsupported／invalid／inputRequired順位外0件。将来unknownのfail-closed型は維持する |
 | 0.10.2 | 初期OC1／2／3を第7条件として固定し、成立込みの開始NP自動最大化を廃止。自前OC加算と発動時OCを分離（RK-IR／EXEC／POLICY／UI／HANDOFF／CACHE／AUDIT／PERF） | approved 2026-09-06: user confirmed initial OC only without external support and requested insertion into the existing plan | TSK-06.48、TSK-06.45、TSK-06.5、TSK-07〜09 | docs phaseはruntime不変。実装時はNP5順位・OC加算damage、schema／URL／worker／portable identity、production digestを意図的に更新する |
+| 0.10.3 | 初期最大HPを選択Lvのmaster HP＋固定HPフォウ1000へ明示。通常計算機は装備礼装HPも加算し、canonical成長表から解決する。HPフォウ編集UIなし | approved 2026-09-08: user specified separate ranking／calculator HP conditions | TSK-06.45 | 今回は要件反映のみ。実装時にHP依存damage、canonical master／schema／復元identityを更新する。欠損HPの0補完とATK由来推定は禁止 |

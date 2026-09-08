@@ -1,9 +1,11 @@
+import { npProgramEffects } from './npProgramScope';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import {
   actorFormEquals,
   actorFormKey,
   findActorForm,
   findNoblePhantasmVariant,
+  getSkillsForActorForm,
   type ActorFormId,
   type ActorFormTransition,
   type MasterEffect,
@@ -35,7 +37,7 @@ type TraitMutationOperation = Extract<
 >;
 
 const operationsOf = (effects: readonly MasterEffect[]) =>
-  effects.flatMap(({ execution }) => execution);
+  npProgramEffects(effects).flatMap(({ execution }) => execution);
 
 const isFormTransform = (operation: CanonicalOperation): operation is FormTransformOperation =>
   operation.kind === 'transformActorForm';
@@ -142,7 +144,7 @@ export function appendPreparationEffects(
 ): readonly AppliedPreparationEffect[] {
   return [
     ...state.activeEffects,
-    ...effects.map((effect) => ({
+    ...npProgramEffects(effects).map((effect) => ({
       sourceKind,
       sourceId,
       actorFormId,
@@ -160,7 +162,7 @@ export function findPreparationTransition(
   sourceId: string,
   effects: readonly MasterEffect[],
 ): ActorFormTransition | null | PreparationFailureCode {
-  const occurrences = new Set(effects.map(({ occurrenceId }) => occurrenceId));
+  const occurrences = new Set(npProgramEffects(effects).map(({ occurrenceId }) => occurrenceId));
   const transitions = servant.actorFormGraph.transitions.filter(
     (transition) =>
       actorFormEquals(transition.from, state.currentFormId) &&
@@ -186,8 +188,20 @@ export function formCanReachAttackWithoutPreparationNp(
     const ref = findActorForm(servant, current)?.baseNoblePhantasmVariant;
     const variant = ref ? findNoblePhantasmVariant(servant, ref) : undefined;
     if (variant?.kind === 'attack') return true;
+    const skillOccurrences = new Map(
+      getSkillsForActorForm(servant, current).map((skill) => [
+        skill.id,
+        new Set(npProgramEffects(skill.effects).map((effect) => effect.occurrenceId)),
+      ]),
+    );
     for (const transition of servant.actorFormGraph.transitions)
-      if (transition.activation.sourceKind === 'skill' && actorFormEquals(transition.from, current))
+      if (
+        transition.activation.sourceKind === 'skill' &&
+        actorFormEquals(transition.from, current) &&
+        transition.activation.effectOccurrenceIds.some((id) =>
+          skillOccurrences.get(transition.activation.sourceId)?.has(id),
+        )
+      )
         pending.push(transition.to);
   }
   return false;

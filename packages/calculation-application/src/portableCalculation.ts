@@ -37,6 +37,7 @@ export type PortableCalculationOutcome =
         | 'runtimeVersionMismatch'
         | 'initialNpGaugeExceedsCapacity'
         | 'attackerLevelStatUnavailable'
+        | 'initialHpUnavailable'
         | 'scenarioInvalid'
         | 'requestResultVersionMismatch'
         | 'storedResultMismatch';

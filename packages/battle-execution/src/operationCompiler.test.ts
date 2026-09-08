@@ -133,7 +133,7 @@ describe('canonical operation compilation', () => {
           modifier('attackBuff', 100),
           {
             kind: 'resourceMutation',
-            resource,
+            ...(resource === 'hp' ? { resource, lossFloor: 'oneIfAlive' as const } : { resource }),
             direction: 'loss',
             unit: 'fixed',
             recipient: 'sourceSelf',

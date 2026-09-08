@@ -2,17 +2,21 @@
   "manifestVersion": 1,
   "masterDataVersion": "fixture-1",
   "createdAt": "2026-08-24T00:00:00.000Z",
-  "source": { "name": "Atlas Academy", "region": "JP", "retrievedAt": "2026-08-24T00:00:00.000Z" },
+  "source": {
+    "name": "Atlas Academy",
+    "region": "JP",
+    "retrievedAt": "2026-08-24T00:00:00.000Z"
+  },
   "minimalAppVersion": "0.1.0",
-  "schemaVersion": 45,
+  "schemaVersion": 48,
   "artifactKind": "diagnostic",
   "imagesEnabled": false,
   "files": [
     {
       "key": "master",
       "file": "fixture.json",
-      "bytes": 8761,
-      "sha256": "6439c69c95bbf080f858766af0b22985d012a313201e9f32c1ba7d520524daa1",
+      "bytes": 13043,
+      "sha256": "7ccb5d6f7a52136728e3c17ad0fb085c8518fa82f632a53f605c8285a9910e26",
       "required": true
     }
   ]

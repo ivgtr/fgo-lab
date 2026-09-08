@@ -76,3 +76,51 @@ describe('canonical NP resource execution', () => {
     ).toEqual({ status: 'rejected', code: 'unsupportedMutation', state: original });
   });
 });
+
+describe('current NP proportional gain', () => {
+  it.each([
+    [5000, 1000, 10000],
+    [10000, 500, 15000],
+    [10001, 550, 15501],
+    [0, 1000, 0],
+    [20000, 1000, 20000],
+    [15000, 1000, 20000],
+  ])('reads %i immediately and adds %i permille before clamping', (gauge, permille, expected) => {
+    expect(
+      applyNpResourceTransaction(semantics, createNpResourceState(semantics, 2, gauge), {
+        requirement: null,
+        mutations: [{ kind: 'gainCurrentGaugeRatio', permille }],
+      }),
+    ).toMatchObject({ status: 'applied', state: { gauge: expected } });
+  });
+  it('reads each preceding write, including saturation and all-consume', () => {
+    const state = createNpResourceState(semantics, 2, 15000);
+    expect(
+      applyNpResourceTransaction(semantics, state, {
+        requirement: null,
+        mutations: [
+          { kind: 'gainCurrentGaugeRatio', permille: 1000 },
+          { kind: 'loss', amount: 12000 },
+          { kind: 'gainCurrentGaugeRatio', permille: 500 },
+          { kind: 'consumeAll' },
+          { kind: 'gainCurrentGaugeRatio', permille: 1000 },
+        ],
+      }),
+    ).toMatchObject({ status: 'applied', state: { gauge: 0 }, baseOvercharge: 1 });
+  });
+  it.each([-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER])(
+    'rejects invalid coefficient %s atomically',
+    (permille) => {
+      const state = createNpResourceState(semantics, 2, 5000);
+      expect(
+        applyNpResourceTransaction(semantics, state, {
+          requirement: null,
+          mutations: [
+            { kind: 'gain', amount: 1000 },
+            { kind: 'gainCurrentGaugeRatio', permille },
+          ],
+        }),
+      ).toEqual({ status: 'rejected', code: 'invalidMutation', state });
+    },
+  );
+});

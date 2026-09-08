@@ -26,7 +26,7 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'b937e5767b124dfa49aa662822456b883af81ac6ae0db1dd8c5ffa1e6ba21ad2',
+          digest: 'c2689cd254f3ca245c196c5fc4d4c0ebf1d9a5192c35633407ff4fc0755f871e',
           inventory: {
             attackProfiles: 433,
             attackServants: 422,
@@ -43,9 +43,9 @@ describe('shared calculation-application production audit', () => {
               referencedMissing: 0,
               missing: [],
             },
-            preparationPlans: 3_445,
+            preparationPlans: 3_453,
             rankingPolicy: 'current-default',
-            rankingRows: 393,
+            rankingRows: 411,
             unsupported: 2,
           },
         },
@@ -70,7 +70,7 @@ describe('shared calculation-application production audit', () => {
         counts[kind] = (counts[kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ unsupported: 2, rankingFailure: 40 });
+    ).toEqual({ unsupported: 2, rankingFailure: 22 });
     expect(
       audit.failures.filter(({ kind }) => kind === 'unsupported').map(({ identity }) => identity),
     ).toEqual(['calculator:702500', 'calculator:705300']);

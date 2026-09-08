@@ -1,3 +1,4 @@
+import { resolveInitialMaximumHp, type InitialHpUnavailableIssue } from './initialHp';
 import {
   collectActivationRequirementOwners,
   executeOrderedScenario,
@@ -83,7 +84,7 @@ export type ResolvedCalculationInput =
     })
   | (ResolvedCalculationInputCommon & {
       status: 'invalid';
-      issue: AttackerLevelStatUnavailableIssue;
+      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue;
       preparationRejection: null;
     });
 
@@ -97,7 +98,7 @@ export type CalculationApplicationResult =
   | CalculationResult
   | {
       status: 'invalid';
-      issue: AttackerLevelStatUnavailableIssue;
+      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue;
       issues: { code: string; detail: string }[];
     };
 
@@ -286,6 +287,7 @@ export type ScenarioPreparationOutcome =
       status: 'executable';
       input: DamageResolutionInput;
       formExecution: ResolvedAttackerFormExecution;
+      initialMaximumHp: number;
     }
   | {
       status: 'rejected';
@@ -295,7 +297,7 @@ export type ScenarioPreparationOutcome =
     }
   | {
       status: 'invalid';
-      issue: AttackerLevelStatUnavailableIssue;
+      issue: AttackerLevelStatUnavailableIssue | InitialHpUnavailableIssue;
     };
 
 export interface CalculationPreparationOptions {
@@ -395,6 +397,8 @@ export function resolveScenarioPreparationOutcome(
         level: scenario.attacker.level,
       },
     };
+  const initialHp = resolveInitialMaximumHp(scenario, master);
+  if (initialHp.status === 'invalid') return initialHp;
   const attackerAtk = scenario.explicitOverrides.attackerAtk ?? canonicalAttackerAtk;
   const formExecution = resolveAttackerFormExecution(
     scenario,
@@ -430,6 +434,7 @@ export function resolveScenarioPreparationOutcome(
     };
   return {
     status: 'executable',
+    initialMaximumHp: initialHp.maximum,
     input: damageResolutionInputForNoblePhantasm(
       scenario,
       servant,

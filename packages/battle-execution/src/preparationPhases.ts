@@ -1,4 +1,3 @@
-import { applyPreparationSourceResources } from './preparationResourcePlan';
 import { resourceFailureCode } from './preparationTransaction';
 import { actorFormKey, getPassivesForActorForm, type ServantMaster } from '@fgo-lab/master-data';
 import { executePreparationOc, preparationEffectSource } from './preparationOc';
@@ -31,27 +30,20 @@ export function executePreparationPhase(
   if (execution.result.status !== 'committed')
     return rejectPreparation(
       state,
-      execution.result.status === 'inputRequired'
-        ? 'preparationInputRequired'
-        : execution.result.status === 'invalid'
-          ? 'invalidOcExecution'
-          : 'unsupportedOcExecution',
+      execution.resourceFailure
+        ? resourceFailureCode(execution.resourceFailure)
+        : execution.result.status === 'inputRequired'
+          ? 'preparationInputRequired'
+          : execution.result.status === 'invalid'
+            ? 'invalidOcExecution'
+            : 'unsupportedOcExecution',
       execution.requiredInput,
       execution.requiredInput ? execution.occurrenceId : null,
     );
-  const resource = applyPreparationSourceResources(
-    context.resourceSemantics,
-    state.npResource,
-    sources,
-    execution.activation,
-  );
-  if (resource.status === 'rejected')
-    return rejectPreparation(state, resourceFailureCode(resource));
   return {
     status: 'applied',
     state: {
       ...execution.structuralState,
-      npResource: resource.state,
       ocState: execution.result.state,
       ocInputDefinitions: execution.inputDefinitions,
     },

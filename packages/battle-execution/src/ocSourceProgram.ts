@@ -1,3 +1,4 @@
+import { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 import type { MasterEffect, OcExecutionOperation } from '@fgo-lab/master-data';
 import type { ConditionExpression } from './contracts';
 import { evaluateCondition, type ConditionEvaluationState } from './condition';
@@ -16,6 +17,7 @@ export interface OcSourceProgram {
 }
 
 export function hasOcExecution(effect: MasterEffect): boolean {
+  if (!effectExecutesInNpProgram(effect)) return false;
   return effect.execution.some(
     (operation) =>
       operation.kind === 'ocRemovalResistance' ||
@@ -27,6 +29,7 @@ export function hasOcExecution(effect: MasterEffect): boolean {
 }
 /** A resistance barrier has no evaluated amount/condition until its unsupported intersection. */
 export function hasOcConditionReader(effect: MasterEffect): boolean {
+  if (!effectExecutesInNpProgram(effect)) return false;
   return effect.execution.some(
     (operation) =>
       operation.kind === 'grantOcBoost' ||
@@ -60,7 +63,7 @@ export function compileOcSourceProgram(source: SourceEffect): OcSourceProgram {
       source.skillId,
       sourceCondition,
     ),
-    operations: source.effect.execution.filter(
+    operations: (effectExecutesInNpProgram(source.effect) ? source.effect.execution : []).filter(
       (operation): operation is OcSourceOperation =>
         (operation.kind === 'unsupported' &&
           operation.damageRelevant &&
@@ -91,7 +94,7 @@ export function terminalOcPreparationEffects(
   let laterOc = false;
   const hasOc = effects.some(hasOcExecution);
   const retained = new Set<MasterEffect>();
-  for (const effect of [...effects].reverse()) {
+  for (const effect of [...npProgramEffects(effects)].reverse()) {
     const oc = hasOcExecution(effect);
     const invalidBeforeDamage =
       hasOc &&

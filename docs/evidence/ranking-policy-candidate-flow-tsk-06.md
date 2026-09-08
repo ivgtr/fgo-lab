@@ -6,6 +6,9 @@ updated_at: "2026-09-08"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
+最新のTSK-06.45引き継ぎは[HP減少下限IR delta](#step-2継続hp減少下限のir境界2026-09-08)。
+同Taskは実装継続中。以下の06.48／過去のcheckpointは履歴として保持する。
+
 ## TSK-06.48 — initial OC and own OC boost closure (2026-09-08)
 
 Current sequence: **06.43 done → 06.48 done → 06.45 ready → 06.44 → 06.5 → 07**.
@@ -1201,64 +1204,1151 @@ Step 1 recorded planning Blocking **0** and no unresolved product-specification 
 then explicitly approved Step 2. All scoped runtime paths now have verification evidence above;
 final phase completion is verified by the passing `pnpm quality` above. Later tasks retain only their already assigned scope.
 
-## Requirement v0.10.1 all attack-NP coverage — authoritative current planning delta
+## TSK-06.45 Step 1 — all attack-NP execution closure（2026-09-08）
 
-### User-visible outcome, invariant, and earlier review gap
+本節が06.45のcanonical flow note。要件確認 → 現状調査 → 設計 → 検証の順で記録する。
+実行順と進捗の正本はTask表の06.45内U0〜U5。Step 1は文書のみで、runtime closureではない。
 
-Every playable attack-NP profile in the published master must receive a numeric result. A typed `unsupported`
-outcome remains necessary to fail closed on future unknown semantics, but it is not an acceptable final bucket for
-current production data. Calculator and ranking must reach that result through the same application compiler and
-ordered executor; ranking policy may select scenarios but may not implement a second damage or resource model.
+### 要件と守る意味論
 
-The current verified baseline is 433 AttackProfiles: 393 ranking rows plus 40
-`unsupportedActionAdmission` exclusions. All 40 are attack profiles (38 servants), not the 47 servants whose
-inventory contains only non-attack NPs. The default calculator baseline is 420 calculated plus 2 unsupported out
-of 422 scenarios. The data pipeline already emits damage semantics for every playable attack-NP variant; its six
-raw exclusions are two alternate identities already represented by canonical profiles and four non-playable
-servant types. Therefore this is an execution/admission closure, not missing servant data or permission to omit an
-attack NP.
+利用者から見た到達点は、現行published masterの全playable攻撃宝具をcalculator／rankingの
+同じapplication constructorとordered executorで計算できること。ranking要件v0.10.3
+§3.2、4.2、5、6.4〜7、9、10.4、14〜17を適用する。基礎要件の旧ranking入力記述ではなく、
+承認済みの7入力・初期OC契約を用いる。damage-effect-execution要件§3の入力・結果UIも維持する。
 
-The TSK-06.41 review gap was accepting one coarse `unsupportedActionAdmission` reason without expanding the
-recurrence matrix across `triggerScope × damageRelevant × timing × resource reader`. That missed two mechanisms:
+- AttackProfileをform／variant／scope間で混成せず、全variantのdamage joinを母集団にする。
+- 初期OCとNP-use時点のOCを区別し、capacity／消費／OC receiptは06.48の契約を保持する。
+- skill各slot最大1回、transform NP最大1回、終端attack NP1回の有限phaseに限定する。
+- policyは合法candidateと寄与を選ぶ。resource cost、条件truth、状態変化、確率結果を上書きしない。
+- raw語彙の解釈はpipeline、初期inputとcommandはapplication、状態read／mutation／rollbackはexecutionが所有する。
+- dependencyを読まないことの証明と、未対応だから実行を省くことを区別する。直接damageだけでなく、
+  後続condition・resource amount・NP到達性・OC付与率・form／variantを変えるreaderを含める。
+- 初期state、使用したinput、適用済みmutationを別に保持し、repair／reset／replayは初期stateから再実行する。
 
-- 25 profiles are blocked by operations that the attack-NP execution path does not read: 17 command-card-only
-  trigger profiles and 8 profile occurrences whose relevant operation is non-damage-only.
-- The remaining 15 profiles use six dependent-amount families: target NP sum, NP from targets, individual NP sum,
-  HP from targets, individual NP-buff sum, and multiplied NP. They require typed quantity/resource reads, not a
-  servant-specific exception.
+outcomeは合成前に次へ固定する。`calculated`、包含off、stochastic failure、条件false、
+証明済みphase非関連、`policyNoOp`、具体candidateの`unreachable`、修復可能な`inputRequired`、
+矛盾した`invalid`、未解釈の`unsupported`。profile集約でこれらを0 damageや別profileに置換しない。
+rankingの生成責任に属するwitness不足を利用者の未入力にしない。合法candidateがあっても、
+admit対象の未解釈candidateを無視して最大値確定とはしない。逆に、証明付き生成対象外candidateをprofile blockerにしない。
 
-The two default-calculator failures expose the same ownership boundary: one HP-dependent ordered path needs an
-explicit maximum/current HP basis, and one battle-point-dependent path needs the current amount plus phase
-thresholds. Pipeline emits canonical state, application constructs commands and required input, execution is the
-only reader, and Web only presents or supplies typed state. The model remains bounded to the finite preparation
-phase before the attack NP; general turn passage, enemy AI, and battle simulation are out of scope.
+### 現状調査と再現baseline
 
-### Changed flow inventory
+基点／調査HEAD: `e354764a6ad32aedf215c7fc7b785c73331d6f35`。開始時worktree clean。
+master `20260906.03`、schema45／portable38／engine33、master SHA-256
+`65add07d7b3c81927fd147e632ceea0c22ed0f7cb7f95079db4c6fc750ed6098`。
+06.48の機械証拠は本note冒頭の`oc-execution-diff-tsk-06-48.json`を再利用し、別の正本を作らない。
 
-| Path | Owner／expected transition | Planning status |
+| 母集団／測定 | e354764での確認 | 証拠 |
 | --- | --- | --- |
-| playable raw attack NP → AttackProfile／damage function | pipeline canonical join; alternate and non-playable exclusions remain typed | Verified: current inventory has no missing playable attack damage function |
-| operation → attack-NP relevance | canonical trigger scope, timing, recipient, and damage relevance decide whether the executor can read it | Deferred: TSK-06.45 |
-| dependent amount → resource read | pipeline emits a closed typed expression; executor resolves it against candidate-local state | Deferred: TSK-06.45 |
-| HP／NP／battle-point initial state → ordered mutation | application constructs typed state from comparison basis or explicit calculator input; executor applies and rolls back transactionally | Deferred: TSK-06.45 |
-| result → ranking row／calculator recovery | calculated profiles become rows; missing future semantics stay nonnumeric with no fallback | Deferred: TSK-06.45 |
-| URL／worker／detail presentation | consumes canonical state and outcome without inferring game rules | N/A: no new Web semantic owner; typed fields flow through existing TSK-06.42／07 boundaries |
-| full policy maximum／digest | proves current production nonnumeric outcomes remain zero after maximum selection | Deferred: TSK-06.5 |
+| default calculator | 422 scenarios、420 calculated、2 unsupported、invalid／inputRequired 0 | `productionExecutionParity.test.ts`とshared `productionAudit.test.ts` |
+| default ranking（自然上限・自バフ込み・通常・NP1・初期OC1） | 433 profiles、393 calculated、40 unsupportedActionAdmission、他の非数値0 | shared production audit、既存`audit-oc-matrix.ts`のdefault実行 |
+| 母集団の差 | 469 servants中422が準備経由で攻撃可、47は非攻撃。422はdefault scenario数、433はform-qualified profile数 | shared production audit／`attackProfile.ts`。default422件だけでは全variant closureを証明しない |
+| raw damage join | 既存pipeline／master inventoryの全攻撃family・除外分類をproduction suiteで再確認 | `executionBaselineInventory.test.ts`、`productionMasterInventory.test.ts`、pipeline inventory。非playableとcanonicalへ統合済みidentityは欠落扱いしない |
+| 全80条件 | 34,640 outcomes＝32,640 calculated／1,960 unsupported／40 unavailable、invalid／inputRequired 0 | 同じHEAD・masterの06.48保存証拠を継承。今回はdefault以外の80条件を再実行したとは扱わない |
 
-Implementation order is TSK-06.46 and TSK-06.47 → TSK-06.42 → TSK-06.43 → TSK-06.45 → TSK-06.44 → TSK-06.5. Planning Blocking is 0;
-runtime paths remain Deferred until their owning task verifies them.
+再実行: `pnpm test:diagnostic -- packages/calculation-application/src/productionExecutionParity.test.ts packages/calculation-application/src/executionBaselineInventory.test.ts`
+は2 files／3 tests成功、6.53秒、artifact `.test-results/2026-09-08T04-20-27-414Z-15-71d73d`。
+`pnpm test:production`は24 files／119 tests成功、39.98秒、warning0、artifact
+`.test-results/2026-09-08T04-22-06-022Z-15-aec017`。shared audit digestは
+`b937e5767b124dfa49aa662822456b883af81ac6ae0db1dd8c5ffa1e6ba21ad2`。
 
-### State-by-path counterexamples
+既存matrix scriptを`FGO_AUDIT_OC=1 FGO_AUDIT_LEVEL=naturalLimit FGO_AUDIT_SELF=included
+FGO_AUDIT_CONDITIONAL=baseline FGO_AUDIT_NP=1`で絞り、data-pipelineの`tsx`から実行。
+一時出力は`/tmp/tsk-06-45-step1-matrix`。393件のcalculator／portable parity差0、
+ranking本体4,807.99ms、damage requests2,096／distinct1,329、digest
+`2f6ddc095c632bf18585d8fb86a38a9b5174dce40d93db32e1b54c206ab34307`。
+これは単発参考値で、Step 2の前後比較は同一環境・非並行で再測定する。
+直接tsx実行はNode DEP0205警告を出した（test runner内warningは0）。runtime不具合の証拠とはしない。
 
-| State | Admission／construction | Execution／selection | Expected outcome | Status |
-| --- | --- | --- | --- | --- |
-| command-card-only trigger beside attack NP | retain typed operation but do not mark attack-NP path unsupported | executor does not read the trigger in NP scope | profile remains calculated | Deferred: TSK-06.45 |
-| non-damage operation with no damage/resource reader | preserve it in source program and evidence | no fabricated damage effect or profile-wide veto | profile remains calculated | Deferred: TSK-06.45 |
-| dependent amount with complete target/resource state | bind typed source exactly once | ordered executor resolves amount then mutates | calculated with reproducible evidence | Deferred: TSK-06.45 |
-| dependent amount with missing or contradictory state | do not guess zero／maximum | transactional failure; no partial commit | typed future unsupported／invalid, no numeric fallback | Deferred: TSK-06.45 |
-| fixed HP mutation before HP-sensitive damage | construct selected-level maximum/current HP state | apply fixed mutation before damage read | calculator／ranking parity | Deferred: TSK-06.45 |
-| battle-point mutation crossing a phase boundary | carry current amount and canonical thresholds | recompute phase from post-mutation amount | calculator／ranking parity | Deferred: TSK-06.45 |
-| future unknown operation | inventory records first unsupported reader | no partial scenario or plausible number | fail closed without weakening current zero ratchet | Deferred: TSK-06.45 |
+#### Production familyを全体から分類した結果
+
+全masterのeffect（skills／passives／全NP variants／CE／mystic）を再帰走査し、
+`execution.kind=unsupported`をfunction family・reason・trigger・damageRelevantで分類した。
+これは格納occurrence数であり、raw unique function数やprofile数ではない。
+
+| family | 格納occurrence | 残存モデル |
+| --- | ---: | --- |
+| commandCardAttack × operationSemantics | 23 | trigger発火とNP実行の関連性 |
+| contextReference × damageRelevant:false | 29 | 読まれるstateか、証明済み非関連か |
+| gainNpTargetSum／gainNpFromTargets／gainNpIndividualSum／gainHpFromTargets | 各3 | count／dependent target transaction |
+| gainNpBuffIndividualSum／gainMultiplyNp | 4／1 | buff count／current gauge倍率 |
+| operationSemantics（triggerなし） | 1 | 他variantを含むinventoryに保持し、選択programとのjoinで影響を判定 |
+| replaceMember／moveToLastSubmember | 3／1 | party mutation。無条件に非関連へ落とさずbounded path上のreaderを監査 |
+
+40個の非数値profileを`compileStaticRankingPreparationPrograms`の全sourceUsesへjoinして再分類:
+triggerのみ17、非火力参照のみ8、依存量のみ10、依存量＋非火力参照4、依存量＋trigger1。
+したがって旧25／15の主分類は再現するが、15件中5件は原因を併有する。
+servantの全skillsを無差別joinすると、未選択variantを含めてtrigger件数等を過大計上する。
+以後のinventoryはprofile → legal program → selected source → ordered operation → first readerを保持する。
+
+既存資源operation全数はNP730／HP179／star255／Battle Point1。HP依存NP damage6、
+Battle Point phase依存NP damage2、traitCount22も既存production ratchetと一致。
+失敗2例だけでなく、既にcalculatedなprofile、支援・自動source、将来schema-legal stateもread scopeの監査対象。
+
+### 構造finding（共通原因ごとに一度記録）
+
+**F1: relevanceとadmissionの所有権不一致。** 確認済みの発生機構は
+`rankingActionAdmission.ts:unsupportedEffect/optionalAdmission`がtrigger／damageRelevantに先行して
+unsupportedを返し、`compileCandidateLocalActionAdmission`がprofile keyへ広げ、
+`rankingCandidateSpace.ts`が候補spaceを止めること。一方`operationCompiler.ts:compileEffect`は
+non-null triggerを全省略し、unsupportedのdamageRelevant／recipientで絞る。
+実装時のズレ（推論）は、source-local対応判定をcandidateの実行可能性と同一視したこと。
+検出漏れは06.41のcoarse理由を受入れ、旧06.45計画でも25／15以外のautomatic source・
+OCへの間接read・複数原因の交差をmatrixへ落としていなかったこと。
+最小guardrailは同じeffectをskill／passive／transform NP／attack NP／外部phaseで通し、
+triggerなし／command card／未知trigger、readerあり／なし、optional／structuralの結果を比較する。
+
+**F2: resource値とtransaction結果がIRで失われる。** `executionSemantics.ts`は六つの依存量familyを
+同じ`unsupported:dependentResourceAmount`へ落とし、`preparationResourcePlan.ts:selectedSourceNpMutations`も
+同じreasonのattacker宛operationをNP unsupportedへ写す。rawでは`gainHpFromTargets`の
+`DependFunc=lossHpSafe`と`gainNpFromTargets`の`DependFunc=lossNp`は別resourceであり、
+依存先の実適用結果が必要。`gainNpTargetSum/IndividualSum`にはValue／Value2／selector、
+`gainNpBuffIndividualSum`にはbuff selector、`gainMultiplyNp`には倍率Valueがある。
+分類名だけでは値の単位・上限・対象・read時点を表現できない。
+推論: canonicalへ正規化する段階で読取情報を削ったため、calculator／ranking間の対応差が生じる。
+検出漏れはtyped unsupported件数を固定するtestがfamilyの数値化を証明していないこと。
+再発範囲はcondition／amount／OC／NP到達性の間接依存、targetごとのclampとその合計、
+複数消費者、失敗／partial rollback。依存関係は有限program内の参照に限定し、任意グラフを導入しない。
+
+**F3: HP／Battle Pointの初期値・更新・派生値が分裂。** 確認済み:
+`resourceSemantics.ts`はHP／BPの後続readerを見つけても`resourceStateUnavailable`を残す。
+`AtlasServant`／published servantにはHP growthがなく、rawには120 levelのhpGrowthがある。
+`lossHpSafe`と`lossHp`は同じHP lossへ正規化され、下限の意味も保持しない。
+`addBattlePoint`はpoint量を`addQuantity:battlePointPhase`へ変換するが、`subBattlePoint`は
+`BattlePointValue`でなくValue seriesを読み、production1 occurrenceのamountが全null。
+`candidateExecution.ts:quantityOperationIsNotRelevant`はphase依存NP以外のaddQuantityを落とす。
+BP rate／condition readerは`effectNormalization.ts`にもあり、phase依存damage2件と同じ母集団ではない。
+`ocState.ts:rateValue`はHP write後を`ocRateHpStateUnavailable`として止める。
+推論: ratio／phaseだけをcanonical値にしたためabsolute mutationを正しく合成できず、
+OC用HP write markerとdamage側のresource stateが二重modelになっている。
+検出漏れは旧計画がHP1例／BP1例を挙げたものの、加算・減算・rate・condition・OC・フォーム変更の
+全writer／readerを列挙していなかったこと。最小guardrailは後述C3〜C6。
+
+**資料上の未確定点（U0で閉じる）:** rawの705300にはBP減算2とrate rangeがあるが、
+そのゲージ定義／閾値は`nice_servant.json`のbattlePointsにない。同ファイルで確認できた
+battlePoints定義は3300200のphase0〜10（value -1,0,10,…,90）で、別subjectへ流用できない。
+「calculatorのBP失敗＝phase依存NP用の既存閾値で解決」とは断定しない。
+六familyの実適用量・safe HP下限／丸め・count上限、初期HPの補正内訳もraw全cellと一次根拠の照合が必要。
+敵HPや他メンバーNPを無断で入力項目／仮想固定値に追加しない。bounded phaseで読まれる場合だけ、
+既存canonical input／有限witnessから導出可能かをU0で確定する。製品上の新入力・編成前提が不可避なら相談する。
+
+### 採用設計と判断理由
+
+1. **一つのbounded operation read contract。** 既存battle-execution内のfocused moduleが
+   phase／trigger／recipient／ordered suffixを受け、`required`（readと理由）、
+   `irrelevant`（typed proof）、`unsupported`を返す。readにはdamage、condition、amount、
+   OC、resource requirement、form／variantを含む。既存`resourceSemantics`、`ocDependency`、
+   `ocTerminalDependencies`、admissionの部分判定はこのcontractを消費する。
+   pipelineだけがraw triggerをtyped scopeへ正規化し、unknownを「非関連」にしない。
+   global dependency graphやservant別whitelistは採用しない。proofはprogramとread時点に束縛する。
+2. **closed amount／resource union。** fixed、current-resource倍率、selector付きtarget count、
+   buff count、対象別の依存量集約を区別する（read時点とgain／依存処理順はU0で確定）。NP basis points、HP絶対量、
+   BP point量を混用しない。raw key、DependFuncIdはpipelineでcanonical参照へ解決し、
+   missing／ambiguous参照をrejectし、nested dependencyと先行operationへの参照を混同しない。
+   target側の消費と自身gainは同じtransaction内で一度実行し、確定したread時点と実行順をreceiptに残す。
+   ratio／phase／rateはcurrent stateから導出し独立writerを削除する。
+3. **必要な状態だけを保持。** HPは選択actor/form・levelから解決したmaxとcurrent、
+   NPは既存capacityとcurrent、BPはsubject-qualified currentと確認済みdomain／threshold、
+   countは既存canonical数量とprovenanceを使う。HP成長は06.46のlevel解決責務を拡張し、
+   ATKからの推定や最も近いlevelへfallbackしない。current HPのinput精度と補正basisはU0で固定する。
+   BPのpoint／phase／rateを一つの無名numberへ潰さない。未解釈stateは実行可能型と分離する。
+4. **ordered transactionを共通ownerへ収束。** `preparationTransaction`と`preparationPhases`の
+   既存source順を用い、resource・condition・OC・contextを同じ時点のstateで評価する。
+   全resourceだけを先に処理する独立passは依存readerの前後を跨がせない。
+   NP-use receiptを消費前に固定する06.48契約は維持し、攻撃宝具中の後続chargeで遡及変更しない。
+   `operationCompiler`／preapply／ordinary executionへのhandoffは適用済みreceiptを受け、二重mutationを防ぐ。
+   skill失敗は全commandをrollbackし、automatic sourceは既存phase境界を保持する。
+5. **applicationから回復まで一括cutover。** 初期inputと採用worldをscenarioへ保存し、
+   ranking量候補は同じresource reducerで得られる有限境界から生成する。HP減少などで非単調な場合に
+   各数量の単純maximumだけを選ばない。独立小型oracleで候補完全性を確認する。
+   portable／cache identityに結果を変えるbasisを含め、repair・level／NP／OC／policy変更・resetは
+   同じconstructorへ戻す。新旧ratio／phase stateを併存させず、schema／master／engineを必要に応じ一括更新する。
+
+### 直接producer／reader／writer／recovery inventory
+
+以下は06.48までのVerifiedを今回のruntime証明に流用しない。`Deferred: TSK-06.45/U*`は
+Task内未実装であり、06.45完了時は全てVerifiedまたは理由付きN/Aへ更新する。
+
+| Path | 現在の直接node／変更契約 | Status |
+| --- | --- | --- |
+| raw → canonical artifact | `executionSemantics.ts`、`effectNormalization.ts`、`snapshotNormalization.ts`、`atlasContract.ts`、`master-data/src/index.ts`。trigger、six families、HP growth、BP values/domainをlosslessにする | Deferred: TSK-06.45/U0,U1 |
+| initial basis → preparation | `scenario.ts`、`rankingPolicy.ts`、`rankingQuantityWorld.ts`、`sourceCollection.ts`、`preparationContracts.ts`。level／form／NP／OC／quantityから一度seed | Deferred: TSK-06.45/U2,U3 |
+| optional／structural admission → space | `rankingStaticPreparation.ts`、`rankingActionAdmission.ts`、`rankingCandidateSpace.ts`。program-bound relevance、typed omissionを消費 | Deferred: TSK-06.45/U1,U3 |
+| skill／transform NP／attack NP | `preparationTransaction.ts`、`preparationResourcePlan.ts`、`npResource.ts`。condition・dependent amount・消費・OC receiptを順序評価しatomic commit | Deferred: TSK-06.45/U2 |
+| passive／form activation／CE／support／mystic | `preparationPhases.ts`、`preparationOc.ts`、`ocSourceProgram.ts`、`ocSourceBinding.ts`。同じresource read、source HPとrecipient HPを分離 | Deferred: TSK-06.45/U2 |
+| preparation → damage／preapply | `operationCompiler.ts`、`resourceSemantics.ts`、`candidatePreparation.ts`、`candidateExecution.ts`、`npDamageOperation.ts`。receipt移送、ratio／phase派生、二重実行防止 | Deferred: TSK-06.45/U2 |
+| OC間接read | `ocDependency.ts`、`ocResourceDependencies.ts`、`ocTerminalDependencies.ts`、`ocState.ts`。HP write markerをsupported state readへ収束、飽和proof／NP-use時点を保持 | Deferred: TSK-06.45/U1,U2 |
+| repair／policy reapply → rebuild | `scenario.ts:rematerializePreparedCalculationInputs/reapplyPreparedCalculationPolicy`、`executionPlan.ts`のinput定義。新resource inputを準備依存へ含める | Deferred: TSK-06.45/U3 |
+| portable／draft／history／reset／upgrade | `portableCalculation.ts`、`schema/src/index.ts`、Web `portableDraft.ts`。初期値を保存、mutationを復元しない、失敗時prior requestを維持 | Deferred: TSK-06.45/U4 |
+| ranking result／worker／cache／detail → calculator | `rankingProfileOutcome.ts`、`rankingPortableBasis.ts`、`preparedDamageInputCache.ts`、`rankingWorkerProtocol.ts`。outcomeとbasis検証、stale拒否、同一採用scenario再現 | Deferred: TSK-06.45/U3,U4 |
+| Web input／表示 | `Calculator.tsx`、`EffectInlineInput.tsx`、`CalculationContextNotice.tsx`の既存表示契約。typed input修復と自動再計算、7 ranking入力を維持 | Deferred: TSK-06.45/U4 |
+| production／性能 | shared `productionAudit.ts`、`productionMasterInventory.test.ts`、既存matrix script。raw → first reader → outcome／input差分を共有inventoryで検証 | Deferred: TSK-06.45/U0,U5 |
+| turn／AI／一般battle simulation | 有限phaseの外 | N/A: 現要件外 |
+| contribution UI再設計／最終最大値証明 | 同familyで変わるinput／outcome parityは06.45で検証し、後続Taskの独自完了条件だけを残す | Deferred: TSK-06.44／TSK-06.5 |
+
+旧planningの「URL／workerはN/A」は撤回する。Webがsemantic ownerでないことは、
+canonical stateのreader／writer／recovery検証を省く理由にはならない。
+NP基本capacityの正本は`np-resource-semantics-flow-tsk-04.md`、transaction境界は
+`transactional-preparation-flow-tsk-05.md`を参照し、今回の変更差分だけを本節で所有する。
+
+### State-by-path反例と検証方法
+
+全Cartesian productのtest増殖は避け、次の境界を小型fixtureで交差させる。
+production occurrence0もfixtureまたは根拠付きN/Aで閉じる。各行の現在statusは
+**Deferred: TSK-06.45**（U1〜U5の完了時に証拠を追記）。
+
+| ID | State／反例 | 交差するpath・期待結果 |
+| --- | --- | --- |
+| C1 | triggerなし／command-card-only／unknown、before／after terminal、readerなし／間接readerあり | skill、automatic、transform、terminal。証明済み非関連だけを省略、unknown reachableはunsupported |
+| C2 | optional no-opとstructural、無条件寄与＋unknown sibling、未選択branchのunknown | admission→space→集約。合法な生成対象を保持し、未知最大値をcalculatedへ隠さない |
+| C3 | HP0／1／max、選択level違い、fixed／percent gain/loss、safe／非safe、heal後loss | preparation→condition／NP damage／OC rate。同じcurrentを読む。丸め・下限はU0で確定した独立期待値と比較 |
+| C4 | BP point閾値直前／一致／直後、加算後減算、subject違い、phase／rate reader、定義欠損 | amount→derived phase/rate→condition／damage。phaseへのpoint直接加算、null→0を拒否 |
+| C5 | count0／1／cap、重複target／buff、対象不一致、同じsourceの複数consumer | selectorとprovenanceを維持、countとamount上限を別評価、mutation後のcountを再読取 |
+| C6 | target lossがclampされる／一部対象失敗／後続gain失敗、参照循環／未解決／別resource | gainのread snapshotとchildの適用結果を別receiptへ保持。実適用量sumを未確認の仕様として採用しない。command拒否時は全体rollback、stochastic failureとは区別 |
+| C7 | HP→condition→NP gain→OC→攻撃、先行reader後のmutation、transform前後／NP1〜5 | 一つのordered state。OCを遡及変更せず、capacity不足candidateのみunreachable |
+| C8 | 同じ値でもinitial／applied由来違い、preapply→ordinary、rollback→retry | 二重mutation／残留effect／stale amount0、失敗時元のstate・requestを保持 |
+| C9 | input欠損／修復、inclusion off／proc failure／条件false、all／any／notのunknown混在 | direct calculator、ranking、reapply、detail。外部outcome classとrepair commandを維持 |
+| C10 | policy四組合せ、baseline包含、非単調HP／数量、複数family同時成立 | 独立有限oracleと採用candidate比較。矛盾world／各軸maximumの合算／cap truncateを拒否 |
+| C11 | level／form／NP／OC変更、reset、ranking handoff、save/reload、old-only／canonical-only／mixed | constructor→portable→worker/cache→UI。版不一致と矛盾をreject、採用input／damage／receipt parity |
+| C12 | 現行全profile＋schema-legal将来unknown／production-zero reader | 433／422だけでなく全variantをshared inventoryで監査。既に数値のprofileのdamage差もcanonical ruleで説明 |
+
+### 完了条件とStep 2への境界
+
+Task表U0〜U5の検証が完了し、default ranking433／433・calculator422／422、指定80条件と
+stable owned fixtureでunsupported／invalid／inputRequired0、calculator／ranking parity差0。
+`unavailableUnderPolicy`は選択policyのtyped reachability proofだけを許可し、既存40 outcomesも再検証する。
+全damage差にcanonical input・ordered receipt・ruleを付け、input不足を黙って補完しない。
+未説明10%超性能退行、candidate上限／timeout緩和、UI editor追加、raw／ID runtime分岐0。
+最終`pnpm quality`成功と全scoped pathのBlocking／Task内Deferred0で06.45を閉じる。
+
+Step 1時点ではU0の技術資料確定が未完了で、数値実装の前提をVerifiedにしていない。
+**Blocking: HP／dependent targetの量契約と705300のBP domain根拠が未確定（U0が解消を所有）。**
+これはStep 1時点の技術調査gate。Step 2で判明した製品判断と、依存部分だけを保留する境界は下記U0進行記録を正本とする。
+Step 2は利用者の次の依頼後、HEAD／master／dirty diffを再確認してU0から開始可能。
+根拠が揃わず新UI・編成・敵stateの製品前提が必要と判明した場合のみ、その具体的差分を相談する。
+
+### Step 2／U0進行記録（2026-09-08）
+
+利用者の「OK進めましょう」によりStep 2を開始。HEADは引き続き`e354764`、開始時dirtyは
+Step 1で編集したTaskと本noteのみ。以下は調査・監査実装であり、U1〜U5の数値実装は未着手。
+
+**追加確認とStep 1の修正:**
+
+- [Atlas Nice Battle Point API](https://api.atlasacademy.io/nice/JP/battle-point/705300)と
+  [raw API](https://api.atlasacademy.io/raw/JP/battle-point/705300)で欠けていた定義を取得した。
+  nice response SHA-256 `ccb32b745561be1d1704c6b28878fa9b67ce2caa4413523c9b0ea744f692a84e`、
+  raw response SHA-256 `91deb828f040cd744716ed5c7e72999266f42d21db960da3b7756d993da77b70`。
+  `battlePointCheckAsPercentage`、phase境界-1／0／500／750／1000、defaultMax4、
+  superGiant時max8、maxLimit12、recipient trait10042を確認。固定point閾値ではなく、
+  subject・recipient・current・動的capacity・割合・phaseを区別する必要がある。
+  これらを既存raw／published masterへまだ追加していない。U1では参照BP定義の取得元を
+  pipeline入力に加え、任意IDのhardcode／別ゲージ閾値の流用をしない。
+- `gainNpTargetSum/IndividualSum`の`Value2`は計数対象scopeであり、count capではない。
+  ローカルrawのdescription／対象系列と、[独立実装の対象選択](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_np.dart)
+  を照合した。3は全体、4は自身以外の全体、2は敵。型はtargetScopeとcountingUnitを別に持ち、
+  count上限は既存population domain／stack定義から導出する。旧計画の「Value2／上限」を
+  一つの量契約として読む解釈は棄却する。上流実装は補助証拠であり唯一のdamage oracleにしない。
+- 六dependent family内にも依存先resourceの違いがある。published evidence全cellは
+  `gainNpFromTargets→delayNpturn:enemyAll`20、`→lossNp:ptOther`10、
+  `gainHpFromTargets→lossHpSafe`30（enemy／enemyOneNoTargetNoAction／enemyAll各10）。
+  enemy chargeをNP basis pointsへ読み替えない。さらにrawには同skillの
+  `absorbNpturn`（反対team向け）もあるため、recipient/teamと後続readのproofを保持する。
+- 原案の「依存先を先に実行しreceiptをsum」をゲーム仕様として確定してはいけない。
+  rawはnested DependFuncを保持するが、[比較先のgain実装](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_hp_from_targets.dart)
+  は事前HPからgainを算出してから依存Functionを実行する。NPも同様の順序を持つ。
+  同じ結果となる保証があるstateと、抵抗／clamp／gain modifierが介在するstateを分離し、
+  U0でread snapshotとcommit順序の根拠を確定してからU2を実装する。
+
+**実装した監査:** `data-pipeline/src/resourceProductionAudit.ts`を既存shared
+`productionAudit.ts`から一度呼ぶ。既存の全source occurrenceと全normal／LB evidence cellを使い、
+resource mutation、unsupported×trigger×damageRelevant、dependent target family、count scope、
+HP loss variant、BP書込・capacity変更・phase／割合条件と欠損amountを一つのinventoryへ収束させた。
+全masterの再load／再compile、別damage evaluator、runtime raw readerは追加していない。
+Flow closure（U0監査コードのみ）: N/A: 観測項目の追加でありcanonical state／実行outcome／write pathを変更しない。
+依存先ID不一致・欠損・非object値はauditをfail-closedにするfocused fixtureを追加。
+
+新inventoryはNP730／HP179／star255／BP1、HP loss cellsはsafe245／通常275／percent-safe10、
+BP書込cellsは51（3300200加算21、705300加算20／減算10）、canonical BP amount欠損10を固定。
+依存NP／HPの計60cellを合算して一種類に潰さない。pipeline audit digestは
+`c2e174e0988584dbdcafbd954c4da5f8ba97036cda8cd7b5467c30dfda02453a`へ変更。
+変更理由はinventory field追加だけで、inventory以外の全audit recordsが旧HEADと一致することを確認した。
+master SHA-256とapplicationのdamage／baselineは不変。
+
+**初回監査の検証（capacity／条件追加前）:** focused2 files／6 tests成功（`.test-results/2026-09-08T04-40-43-066Z-45-f4fb7c`）、
+production24 files／119 tests成功、35.73秒（`.test-results/2026-09-08T04-41-03-998Z-16-cf682a`）。
+master read／parse／compileは1／1／1を維持。旧HEAD auditと変更後auditを同じparse済みmasterで
+warm-up後5回ずつ順序交替で測定し、compile中央値460.52ms→464.71ms（+0.91%）。
+これはauditの追加コスト測定であり、未着手のruntime実装の性能合格とはしない。
+
+追加後はfocused2 files／7 tests成功（`.test-results/2026-09-08T05-03-00-580Z-15-8b9395`）、
+production24 files／119 tests成功、39.70秒、警告0（`.test-results/2026-09-08T05-03-57-504Z-15-018dd5`）。
+inventory以外のrecords一致も再確認。同じ5回交互測定で中央値471.02ms→505.10ms（+7.24%）。
+この一時測定scriptではNodeの`module.register`非推奨警告を観測したが、focused suiteの警告は0。
+最終`pnpm quality`成功（`.test-results/2026-09-08T05-04-42-574Z-15-8ea5dc`）：
+unit643／production119／Playwright26、267.17秒、警告・unexpected console・retry0。
+前回監査gateの241.10秒より全体時間は増加しており、単発の全体時間からruntime性能合格は主張しない。
+U0のaudit compile測定と、U5が所有するproduction／ranking hot-path性能gateを区別する。
+
+**独立調査の追加delta（F3／C5〜C7）:**
+
+- Verified（inventory）: BP capacity writerは`addMaxBattlePoint`の25 cells、全てNPの
+  `afterDamage`。phase条件260／割合条件130 cellsも監査へ追加した。前回調査はpoint加減算と
+  domain定義に偏り、raw buff側のcapacity writerを拾えていなかった。実装との差は、currentだけでなく
+  capacity変更でも割合／phaseの読取値が変わる点。最低guardrailはcurrent・capacity・phase・rateを
+  区別したshared inventoryと、capacity変更→read／rollbackの小型fixture（Deferred: TSK-06.45 U2）。
+  現行のafterDamage writerは同一terminal damage後なので、これだけで現行damage不具合とは断定しない。
+- Deferred: TSK-06.45 U1〜U3。BP domain IDとactor identityを分け、recipientのlive resourceを読む。
+  根拠は`candidateExecution.ts:quantityOperationIsNotRelevant`のattacker／NP種別限定、
+  `effectNormalization.ts`のphase条件とsourceQuantity条件への分割、
+  `activationCondition.ts`の`sourceQuantityRanges`読取。writer→後続conditionで古いfactを
+  使わない契約へ収束させる。例えばcurrent2／capacity4で加算2後にrate<=999は偽となる。
+  この反例はschema fixtureで固定し、現行skillでの再現判定にはplayerChoiceを適用したprogramを使う。
+- Verified（比較証拠の限界）: retained dependent cellsはouter／innerのRate1000かつ自己gain、
+  donorとrecipientは別actor。ただしRate1000だけではcharge減少抵抗の不存在を証明しない。
+  比較実装は事前量からgainした後にchildを実行するため、child失敗時の実適用量のoracleにはできない。
+  Blocking: dependent transferのread／commit契約の技術根拠（U0が所有）。無抵抗・別actor・介在効果なしの
+  同値なケースと、抵抗／同一actor／clamp／回復補正で順序差が出るケースを分離する。
+  前者だけの一致を全familyの証明とせず、資料で確定できないschema状態はfail-closedを設計する。
+
+**初期最大HPの製品判断と次のaction（2026-09-08、利用者承認済み）:**
+
+ランキングは選択Lvのmaster HP＋HPフォウ1000、礼装なし。通常計算機は選択Lvのmaster HP＋
+HPフォウ1000＋装備礼装HP。HPフォウは今回追加した固定条件で、ATKフォウ設定から推論しない。
+編集UIは追加しない。製品条件の正本はランキング要件v0.10.3 §4.2と効果実行要件v1.2.2 §3.1a。
+以前の「master HPのみ」案は不採用。初期HPの製品判断に対するBlockingは解消した。
+戦闘中の`addMaxhp/subMaxhp`は別の意味論として扱い、初期basisへ混入させない。
+
+**Verified（データ／装備情報の調査、実装完了ではない）:**
+
+- `schema/src/index.ts`の装備schemaは礼装ID・Lv・限界突破数を保持し、portable側にも同じ情報がある。
+  `calculation-application/src/scenario.ts:damageResolutionInputForNoblePhantasm`は現在その情報でATKを解決する。
+  HP計算にATKやATK overrideを流用せず、同じ装備identityからHPを独立解決する。
+- `data/raw/nice_equip.json`をpublished masterの全2700礼装へID joinした。
+  全件に`hpBase/hpMax/hpGrowth`が存在し、成長表は計213176 cells。
+  全cellが非負整数、配列長はraw lvMaxと一致し、canonical最大装備Lvが配列範囲内であることを確認した。
+  **現在の装備入力に追加情報は不要**。ただしpublished canonicalからはまだHPを解決できない。
+- `data-pipeline/src/atlasContract.ts:AtlasEquip`、`snapshotNormalization.ts`、
+  `master-data/src/index.ts:craftEssenceMasterSchema`がHPを落としている。
+  rawのLv別HPをcanonical growthとして保存し、Lv−1の実データを使う。ATKの線形補間をHPへ転用しない。
+  servant rawにもHP成長表があるが、playable全form／選択Lvの完全性はU1共有inventoryで固定する。
+
+**Deferred: TSK-06.45 U1〜U4（変更範囲／guardrail）:**
+
+pipeline raw型・normalizer→master schemaと全HP成長表→application初期HP resolver→executor→
+保存／portable／workerのidentity・再構築へ接続する。新しいHP編集UIや保存済みHPフォウ設定は追加しない。
+礼装なしの0、canonicalに明示されたHP0、HP欠損、装備ID不一致、不正Lv、stale masterを区別し、
+欠損を0として継続しない。CE Lv／限界突破／装備解除、servant Lv、ATKフォウだけの変更、
+reset／復元をC5・C9・C11へ追加する。ランキング＋1000と通常計算機＋1000＋CE HPのparityは
+礼装なしで一致、装備ありは同一canonical装備条件同士で比較する。戦闘最大HP増減後の二重加算も反証する。
+canonical schema／master再生成が必要だが、今回の更新は要件・Task・flowのみで数値実装はまだ行わない。
+
+**独立調査の継続（BP／dependent）:**
+
+- `preparationFacts.ts:preparationConditionState`は過去appliedActionsのsourceQuantityを除外する一方、
+  contextと現在actionのfactsは保持する。したがって単純な「全ての古いfactが残る」という診断は不正確。
+  BPのlive stateと現在actionの事前factが競合しない読取契約を、operation内のmutation→conditionまで
+  追跡する（Deferred: TSK-06.45 U0〜U2）。上限変更／割合readの反例は前節を維持する。
+- 比較実装`gain_np_from_targets.dart`はenemy receiverの場合にgainを1へ変換し、コメントにもValue2解釈の
+  推測を含む。player NPとenemy chargeを同じ量型に潰さず、receiver team×donor resourceを区別する。
+  比較実装だけで未確認branchを採用しない。依存先減少抵抗とread／commit順の技術Blockingは残る。
+
+U0全体、U1〜U5、TSK-06.45全体は未完了。HP製品判断待ちを理由にBP・依存量調査を止めない。
+
+
+### U1／HPデータと初期値resolverの実装checkpoint（2026-09-08）
+
+利用者の実装依頼後、既存dirty変更を保持してHP familyから着手。
+**現時点の到達点はcanonical HPデータと初期値の解決／検証であり、ordered HP更新とdamageへの適用は未完了。**
+
+- Verified: raw servant／CE `hpGrowth` → `snapshotNormalization.ts` → `hpByLevel`。
+  shared resource auditがservantのcanonical ATK対応Lv全てと、CEの全合法装備LvでHP存在を検証する。
+  servant469件／56250 cells、CE2700件／213176 cells（明示HP0は70536）。欠損は0補完せず監査を失敗させる。
+  Lv別実値を保持し、ATK補間式・servant ID分岐を追加しない。
+- Verified: master schema46、master `20260908.01`、32771960 bytes、
+  SHA-256 `895a9c1f042ed64e6dd2dc272909fd56cf5107f8dcb16d5f24744178b0e1bb5f`。
+  e354764のsnapshotからHP成長表とversion以外が一致することを構造比較した。
+  manifest／fixture／normalization golden v66／evidence registryを同時更新。
+  pipeline audit digestは`2546a42746b2e36508b2b4d844e03a5512838191dbb43f2ef2d0a8599c851e35`。
+- Verified: `calculation-application/src/initialHp.ts:resolveInitialMaximumHp`が固定HPフォウ1000を加算し、
+  装備ID・Lv・限界突破の合法性とcanonical HPを検証する。`resolveScenarioPreparationOutcome`が
+  calculator／ranking共通で呼び、prepared outcomeへ`initialMaximumHp`を保持する。
+  ATKフォウ・ATK overrideを参照しない。新HP編集UIなし。
+- Verified: 欠損HP／不正装備は`initialHpUnavailable`のinvalid。
+  portable再実行とversion upgrade失敗時の旧request/result保持で確認した。
+  ranking profile集約の固定`attackerLevelStatUnavailable`を除去し、元のinvalid理由を保持する。
+  不存在CEの旧unsupported期待は、装備条件不正のinvalidへ意図的に変更。
+- Deferred: TSK-06.45 U2〜U4。`initialMaximumHp`はまだpreparation／damageの実HP stateへ接続していない。
+  現行のHP比率、OCのHP書込による無効化、通常executorのHP resource未対応を置換し、
+  mutation→後続read、maxHP増減、rollback、preapply／ordinaryの二重適用を閉じる。
+  BP・dependent量の未確定契約とF1 admission closureも引き続き本Task内で所有する。
+
+検証: HP growth／shared audit focused4 files20 tests成功
+（`.test-results/2026-09-08T07-43-48-986Z-45-32aa7f`）。
+application／portable／profile outcome focused4 files55 tests成功
+（`.test-results/2026-09-08T07-46-41-972Z-45-ac6f4f`）。
+production24 files119 tests成功、32.36秒、warning0
+（`.test-results/2026-09-08T07-47-59-152Z-16-30b08c`）。
+同じparse済みmasterのaudit compileをwarm-up後5回交互測定し、e354764のaudit中央値
+450.27ms→483.04ms（+7.28%）。artifactはHP growth分で30361798→32771960 bytes（+7.94%）。
+これはHPデータ／inventory追加の測定であり、未接続のordered HP／BP／dependent runtimeの性能合格ではない。
+現行damage baselineは393/433・420/422のまま。初期HPの解決成功を全攻撃宝具の数値closureと扱わない。
+
+最初のquality（`.test-results/2026-09-08T07-50-30-945Z-15-cc5d72`）はPlaywrightの画面比較4件で失敗。
+基点e354764のquality成功（04:29の記録）・同一lockfile／UIコード／Playwright設定と比較し、
+`introducedByChange`と分類した。calculator desktop／320px／390px、ranking desktopのdiff画像を確認し、
+最終安定画像の58／41／43／34 pixelsの差分はmaster版表示に限定された。
+画面期待値を通常のPlaywright撮影で更新した。先行assertion失敗で未到達だったranking detailも
+版表示だけの変更を画像比較し、計5枚を更新した。
+更新run（`.test-results/2026-09-08T07-56-05-078Z-15-7cf073`）は5 tests自体は成功したが、
+Playwrightの再生成console.logをobserverが検出してcontract_failureとなった。許可ルールは追加せず、
+更新なしのqualityを再実行する。
+最終`pnpm quality`は成功（`.test-results/2026-09-08T07-57-14-352Z-16-f773ca`）：
+unit660／production119／Playwright26、253.69秒、warning・unexpected console・retry0。
+このgateは今回のHPデータ／初期resolverの検証であり、U1全体やTSK-06.45の完了ではない。
+#### 次セッションへの引き継ぎ（U1部分実装済み、Task全体未完了）
+
+再開基点はHEAD `e354764a6ad32aedf215c7fc7b785c73331d6f35`＋現在のworktree差分。
+今回までの文書・監査・HP実装・master・fixture・画面期待値5枚は未コミット／未ステージ。
+reset／clean／一括checkoutで消さず、開始時にGitと本checkpointを照合する。
+現行masterは上記20260908.01／master schema46、portable schema38／engine33.0.0。
+初期HPの製品条件は承認済みで、再確認待ちはない。追加UI・編成入力等の製品範囲変更が必要な場合だけ相談する。
+
+**最初の実行単位:** HPのsafe／通常loss・maxHP補正のcanonical契約を確定し、
+`scenario.ts:resolveScenarioPreparationOutcome`の`initialMaximumHp`を共通HP state／receiptへ接続する。
+初期最大HPを計算しただけでは、既存HP比率を置換したことにならない。
+
+| 再開時に追う直接経路 | 必要な変更／検証 |
+| --- | --- |
+| `executionSemantics.ts` → master operation → `operationCompiler.ts` | safe loss／通常loss、固定／割合、回復、maxHP増減と除去の量・上下限を保持する。raw語彙はpipeline内に限定 |
+| `preparationContracts.ts`／`sourceCollection.ts` → `preparationTransaction.ts`／`preparationPhases.ts` | 初期HPからordered stateを生成し、適用済み入力・resource receiptと利用可能な入力を分離。各sourceのrecipientを保つ |
+| `ocSourceBinding.ts` → `ocState.ts`／`preparationOc.ts`／`preparationFacts.ts` | 現行`hpWrite`／`hpWriteOthers`／`hasOcHpWrite`による読取無効化を、共通stateの最新HP読取へ収束させる。条件false・確率失敗・unknownを同一扱いしない |
+| `resourceSemantics.ts` → `candidateExecution.ts` → 最終damage入力 | 現行HPの`resourceStateUnavailable`とratio別管理を置換し、準備で適用済みの変化を二重適用しない。全command rollbackとretryを検証 |
+| application constructor → portable／reset／Lv・装備変更 → UI | 初期basisから再構築し、戦闘中のmaxHP補正を初期値へ混ぜない。旧state／worker／cacheの回復と版更新はU4で閉じる |
+
+最小反例はC5〜C8・C11のdeltaとして、HP1にsafe／通常loss、回復clamp、
+固定／割合と端数、maxHP変更→HP比率／OC／damage読取、条件false／確率失敗、
+skill→transform→terminal、passive／CE／support、途中失敗→rollback→再実行を用意する。
+初期resolverの欠損拒否テストだけでこれらをVerifiedにしない。
+
+**同じTask内の残作業:** BPのdomain IDとactor identity、current／capacity／rate／phaseを分離し、
+変化後の条件をlive stateから読む。dependent量はreceiver／donorのresource単位、
+read snapshot／commit順序、減少抵抗・clampを確定する。比較実装は補助資料でありoracleではない。
+未確定の技術契約はU0、typed IRはU1、共通実行はU2が所有する。
+F1のtrigger／admission共有化も未実装。これらが揃ってからU3〜U5を閉じる。
+資料のURL・取得hash・比較commitは本noteのU0進行記録を参照し、`/tmp`のcloneやscriptを必須の正本にしない。
+
+検証はaffected focused → unit／production → 最終quality。既存成功runの反復だけを先行せず、
+次のsemantic変更に対応する反例から進める。全masterはshared inventoryを再利用する。
+最終目標はdefault433/433・422/422と指定80条件、全variant、parity、fail-closed、性能・UI契約のclosure。
+今回のquality成功はHP初期値までの証拠であり、U0／U1全体・U2〜U5・TSK-06.45の完了ではない。
+
+
+### 残作業のStep 1再設計（2026-09-08、e354764＋未コミット差分）
+
+本deltaはNP metadata境界実装前の設計履歴。現行引き継ぎは後段の「NP metadata境界後の残作業Step 1」を参照する。
+今回は調査・設計・Task更新のみ。新たな実装許可はなく、Step 2は次の利用者依頼から始める。
+AGENTS、systematic-review／prompt-engineering guidelines、現行ranking v0.10.3、
+damage-effect-execution v1.2.2、TaskとGit差分を照合した。初期HPの製品条件は変更しない。
+HEADはe354764、masterは20260908.01／schema46。既存未コミットのHP実装・監査・
+要件・master・fixture・画像を保持。393/433・420/422とquality成功は前回証拠の継承であり、
+今回再測定した数値ではない。全Taskの完了、数値closure、性能合格へ読み替えない。
+
+#### 現状調査の追加証拠と以前の検出漏れ
+
+**F3 delta（最大値と量modifierの所有権）:** 現行master全13,875 effectを一度再帰走査した。
+HP function occurrenceはgainHp142、gainHpPer2、lossHpSafe23、lossHp11、lossHpPerSafe1、
+gainHpFromTargets3。buff occurrenceはaddMaxhp34（afterDamage8／timingなし26）、
+subMaxhp4、upGainHp56、downGainHp8、upGivegainHp5、upFuncHpReduce38、subFuncHpReduce1、
+hpReduceToRegain2、reduceHp150、regainHp88、reactiveDamageGainHp1。
+これは格納effect数であり、選択programの到達件数・発火件数ではない。
+`resourceProductionInventory`は現在HP function lossとBP capacityを観測するが、このHP buff集合を
+量へのread/writeとして分類していない。`executionSemantics.ts:typedStateFamilies`は最大HP増減も
+generic state addへ落とす。従ってHP179 mutationだけの監査では同じ量契約の全producerを捉えない。
+前回のgapは最大HP増減を反例名には挙げながら、回復量／減少量modifier・変換・解除をinventoryに
+展開しなかった点。全件が現在のdamage不具合という主張ではない。
+最低guardrailはこのbuff集合をraw全cell→source／trigger→first readerでjoinし、
+即時量modifier／最大値instance／turn-end／被攻撃時／証明不能に分類すること。
+turn-end回復や被攻撃時効果を即時healへ変換しない。後続の有限phaseで読まれるinstanceだけを実行し、
+非関連proofのないgeneric state addを成功扱いしない。
+
+**F2／F3 delta（時点の分裂）:** `scenario.ts:resolveScenarioPreparationOutcome`は初期最大HPを
+解決するが、`resolveAttackerFormExecution`へ渡さず、戻り値へ付けている。
+`sourceCollection.ts`／`preparationContracts.ts`の入口はratioのみ。
+`planPreparationResourceTransaction`と`executePreparationPhase`はOC/context処理を終えた後で
+`applyPreparationSourceResources`のNP-only passを実行する。
+`preparationFacts.ts`は初期contextのHP・BPを読み直し、`ocState.ts:rateValue`は
+HP write markerで読取を拒否する。`candidateExecution.ts`はresourceをstar-only reducerへ渡す。
+共通HP reducerを一個追加するだけではこの順序は閉じない。以前の「共通helper」中心の計画で
+不足した検出は、action内のresource→conditionとcondition→resourceの両方向である。
+
+**F1 delta（proofの粒度）:** `resourceSemantics.ts:operationReadsResource`はcondition、
+specialAttackDependency、modifier式の一部だけを読み、OC・dependent amount・NP到達性を含まない。
+`operationCompiler.ts:compileEffect`はtriggerScope非nullを一律省略する一方、
+`rankingActionAdmission.ts:unsupportedEffect`はrelevance前にunsupportedを拾い、
+`compileCandidateLocalActionAdmission`はprofile keyへ集約する。structural actionはその検査を迂回する。
+`rankingQuantityWorld.ts`はconditionの境界±1と端点を初期ratio／phaseへ直接書くため、
+mutationの逆像やamount-only readerの候補完全性を証明できない。
+これらはe354764から残る機構で、今回のHPデータ追加が導入した不具合とは扱わない。
+
+**BPの再確認:** Atlas Nice APIの[705300定義](https://api.atlasacademy.io/nice/JP/battle-point/705300)
+を再取得し、上記U0のSHA-256と一致した。割合方式とdefaultMax4／条件付き8／maxLimit12を確認。
+[3300200定義](https://api.atlasacademy.io/nice/JP/battle-point/3300200)のSHA-256は
+`dc3e11f7c94a2a43bdb4194eac00c3fe7a2a699ece5b12ce6c41209966bf6489`。
+こちらはpoint閾値-1,0,10,…,90でscriptは空。phase最後の境界90をcapacity90と推測しない。
+外部APIの更新を現在のmasterへ混ぜず、Step 2で取得入力とmanifestを固定する。
+[fgo-docs](https://atlasacademy.github.io/fgo-docs/)も確認したが、確認した本文からは
+HP量の全丸め・最大HP解除・dependent gainとchild失敗の順序を確定できなかった。
+上記比較実装を正解oracleへ昇格させず、未確定の技術gateを下表へ限定する。
+
+#### 採用する設計と不採用案
+
+| 契約 | 採用判断・理由 | 残る技術gate |
+| --- | --- | --- |
+| 初期HPと実HP | applicationが装備identityとLvから既存resolverを呼び、準備開始前にtyped initial basisを渡す。runtimeはactor-qualified current、effective maximum、最大値instanceを保持し、ratioはread時に導出。初期最大HPを戦闘補正の保存先にしない | 入力permille→整数HP→表示ratioの丸めとHP0の実行境界をU0-Hで固定。0→1の暗黙clampを禁止 |
+| HP量と最大値 | fixed／割合量、safe／通常loss、回復量modifierのowner、最大値付与／解除をclosed unionへ保持。付与・解除のcurrent補正を同じreducerへ置く。初期HPの再解決による最大値解除は不採用 | 割合の分母、丸め位置、safe下限、最大値解除時のcurrent、回復／減少量補正の合成順をU0-Hで確定 |
+| HPの外部actor | source HPとrecipient HPをtyped actor identityで区別。既存source ratio入力は初期intentとして扱い、attacker最大HPを流用しない | ratioだけで一意なreadは継続可。絶対mutationにsource最大HPが必要で既存basisから決まらない場合はunsupported。新入力追加は相談対象 |
+| BP | domain identityとactor identityを別型にし、point＋capacity rule／instanceからphase・rateを導出。phase/rateを更新可能stateやsourceQuantity成立factとして二重保持しない。existing phase UIはapplication commandが合法point witnessへ解決する | phase区間の境界、point上限、動的capacityの再評価時点、同じphase内の複数pointが後続readで分岐する場合のwitness規則をU0-Bで固定。最小pointへの無根拠な一意化は禁止 |
+| 依存量 | currentGauge倍率、target count、individual count、buff count、dependent transferを量型で区別。selector／actor重複の計数単位、NP basis points／enemy charge／HPを別型にする。nested childを同じcommandに含める | six raw familiesの各量式・read時点はU0-D。gain snapshot、試行量、child実適用量を別receiptへ保持し、後二者を無条件にgainへsumしない |
+| 共通実行 | 既存bounded phaseのsource列を維持し、各stepのcondition→proc→read→writeを一つのtransaction draftへ適用。OCはNP本体より前にreceipt固定、終端で参加instanceだけ消費。OC/context完了後の独立NP passを削除 | U2-HでHP／NP／OC順序を接続し、U2-B/Dが同じ入口を拡張。新packageや汎用battle simulatorは作らない |
+| relevance／admission | executionがtyped read/write/trigger factsとprogram-bound non-interference proofを所有し、applicationがpolicy admissionを決める。automatic sourceはactionに偽装しない。条件unknownをfalseにせず、exact no-op proofだけを認める | U1-Rで共通contract、U3で全candidateとprofile集約へ接続。source非関連とeffect包含offを同一proofにしない |
+| 再実行とidentity | 初期intentだけをportableへ保存。receiptは導出evidence。repair／policy変更／装備・Lv変更／reset／upgradeは同じconstructorから再実行。初期／使用input／適用stateを別型にする | U4でschema・engine・必要なmaster版を一括更新。異なるreceipt／basisを同じdamage cacheへ混入させない |
+
+BP既存UIのphase選択をpoint editorへ変える計画ではない。既存入力で一意な結果を得られないことが
+U0-Bで確認された場合のみ、具体的な反例と最小の製品差分を相談する。
+HP0もschemaでは合法（`quantityFacts.ts`の0〜1000）。これを死亡simulationの導入理由にせず、
+分析用の初期ratio0とordered lossで攻撃が実行不能となる状態を混同しない契約をU0-Hのgateとする。
+
+数値readは現在state、付与済みmodifierの値が利用時依存ならその利用時stateを参照する。
+HP→OC率→OC付与→NP cellの間接辺、BP capacity→割合condition、buff解除→count量を含める。
+proofはprogram／policy／selected variant／read時点へ束縛し、policy再適用で使い回さない。
+HPやBPの最小・最大だけで単調性を仮定する案と、unknown candidateを落として残りの最大値を返す案は不採用。
+有限候補は初期domainの端点・condition／piecewise式の境界・ordered reducerを逆向きに辿った境界から
+生成する。逆像を証明できない有限小domainは全探索、上限超過はtyped failureとし4096を緩和しない。
+
+**outcome合成:** inclusion off、proc failure、条件false、proof付き非関連は正常な非適用。
+実際に不可能な具体candidateはunreachable、修復可能な既存input不足はinputRequired、矛盾はinvalid、
+未解釈はunsupported。stochastic child failureはゲーム上の結果としてparentの量契約に従い、
+必ずcommand拒否／rollbackになるとは仮定しない。invalid／required／unsupportedでcommandを拒否した場合は
+HP／NP／BP／OC／context／formとreceipt全体を元へ戻す。profile最大値の確定には全admit対象の
+解決または除外proofを要求する。ranking生成責任のwitness欠落を利用者の未入力へ変換しない。
+
+#### 既存flow inventory／反例のdelta（実装証拠とは分離）
+
+| 追加・再確認path | 反例と検証方法 | Status |
+| --- | --- | --- |
+| HP raw buff→量modifier／最大値instance→除去→reader | C3/C7: max10000/current5000への最大値付与・解除、heal modifier→heal→loss、turn-end／被攻撃trigger。値はU0-H根拠から独立期待値化し、generic addを許容しない | Deferred: TSK-06.45/U0-H,U1-H,U2-H |
+| 初期basis→sourceCollection→preparation→damage | C3/C11: Lv/CE違い、max10001とratio333、明示0／null、ATKフォウだけ変更、transform前後。初期最大値の引数未接続をfixtureで検出 | Deferred: TSK-06.45/U2-H,U4 |
+| 共通draft→condition／OC／NP resource→receipt | C7: HP loss→HP条件付きNP gain→NP使用、rate付与→HP更新→OC付与。source配列逆順では結果差、同一ordered programのcalculator/rankingでは一致 | Deferred: TSK-06.45/U2-H,U3 |
+| source HP／party-other→同actorのOC率read | C3/C9: attackerとsupportで異なるHP、未知最大値への絶対loss、ratioだけのread、除外recipient、unknown条件＋有限rate消費。attacker流用0 | Deferred: TSK-06.45/U2-H |
+| BP point／capacity／trait→phase・rate→condition | C4: current2/capacity4で+2後rate<=999はfalse、同じcurrentでcapacity8ならtrue。phase境界前／一致／後、別actor同domain、選択branch、capacity buff解除 | Deferred: TSK-06.45/U0-B,U2-B |
+| snapshot→nested child→gain／rollback | C6: donor量不足／抵抗あり／receiver満杯／receiver=donor／child失敗／後続invalid。snapshot量と実減少量が異なる最小fixtureで順序を判別。schema外simulationは増やさない | Blocking: U0-Dのread/commit根拠。TSK-06.45/U2-Dに限って数値接続を止める |
+| target／individual／buff selector→量 | C5: 同一actorの複数trait一致、同一buff identityの複数instance、解除後count、targetなし、NP倍率はNP消費前／後。raw全cellの違いを一量式へ潰さない | Deferred: TSK-06.45/U0-D,U1-D,U2-D |
+| proof→optional/structural→candidate→profile | C1/C2/C9: command-card-only／unknown trigger、automatic／support、非選択variant、unknown sibling、all(true,unknown)／any(true,unknown)／not(unknown)。executionとadmissionの判定一致 | Deferred: TSK-06.45/U1-R,U3 |
+| initial quantity候補→ordered execution→最大値 | C10: loss／heal clampの後にHP threshold、BPの同phase異point、amount-only reader、OC率閾値。小domain独立全探索と四policyの結果／採用witness／baseline包含を比較 | Deferred: TSK-06.45/U3 |
+| preparation receipt→clone／ordinary→再構築 | C8/C11: 同一command二重適用0、sibling invalid後の完全rollback→retry、without-areaとfresh run一致、保存復元／stale worker／version拒否時の旧request保持 | Deferred: TSK-06.45/U2-H,U4 |
+| HP／BP／dependent生産母集団→first reader→outcome | C12: 既存shared auditを拡張し全source・全normal/LB/NP cellとlegal programをjoin。未選択variantと併存原因は別列。production0の各readerは小fixture | Deferred: TSK-06.45/U0-R,U5 |
+| ターン進行／被攻撃／死亡復活の一般simulation | 現行bounded phaseで発火しないことのproofをU1-Rが持つ。発火しない効果のinstanceを即時回復として使わない | N/A: 現要件外の進行エンジン |
+
+- Blocking: U0-HのHP整数化・量補正・最大値解除契約。U1-H/U2-Hの対応する数値実装に限定する。
+- Blocking: U0-BのBP point上限・phase witness・capacity再評価契約。U1-B/U2-Bの対応する数値実装に限定する。
+
+これらの数値実装の前提はVerifiedではない。
+調査で存在と経路を確認したこと、設計を採用したこと、runtime反例を検証したことを分ける。
+新たな製品判断待ちは現在なし。技術gateは親agentが既存一次資料／raw全cellと反例で解消し、
+十分な根拠が得られないbranchはunsupportedとする。ただし現行productionのadmit対象に残るなら
+それで全宝具closureとはせず、当該単位をBlockingのまま報告する。
+
+#### 今回の停止点とStep 2開始条件
+
+実行順と各単位の出口はTaskの改訂U0〜U5を参照する。Step 2は次の利用者依頼とGit／本deltaの
+照合後、U0-Rのbefore測定・共有join、U0-Hの量契約から開始する。U0-B/Dの根拠不足は
+それに依存しないU1-R／HP調査を止めない。HPデータ／resolverを作り直す単位は設けない。
+今回変更するのは既存Taskと本noteのみ。文書整合を確認し、phase-completion gateはpnpm quality。
+qualityの成功は文書更新を含む現在treeの検証に限定し、未実装matrixをVerifiedへ変更しない。
+
+今回の検証: `pnpm test:docs`成功、`git diff --check`成功。
+最終`pnpm quality`成功（`.test-results/2026-09-08T08-38-00-688Z-16-26e934`）：
+unit660／production119／Playwright26、288.37秒、warning・unexpected console・retry0。
+開始時の全dirty／untrackedファイルのSHA-256と比較し、今回更新したのはTaskと本noteだけ、
+新しいworktreeファイル0を確認。製品コード・既存master／fixture／画面期待値は保持した。
+このrunはStep 1の文書更新gateで、runtime性能のbefore/after測定や全攻撃宝具closureではない。
+TSK-06.45は未完了、06.44は引き続きblocked。
+
+### Step 2再開・共通transactionの先行単位（2026-09-08）
+
+利用者の実装依頼を受領。e354764＋既存dirty差分を照合し、変更前production119件成功
+（31.81秒、`.test-results/2026-09-08T08-44-43-211Z-15-05c207`）。
+U0-RのHP buff全cell監査を追加。HP0%の分析値／攻撃不能の製品判断は確認中で、その入力の
+実HP接続だけを保留する。HP量やBPの技術gateを成功扱いしない。
+
+U2-HのうちNP／OC順序統合を先行する。この単位は新しいHP数値規則に依存しない。
+既存source列のcanonical operation順にNP更新を同じtransaction draftへ入れ、後置NP passを
+削除する。NP-use前のgauge／OC receipt、source条件・proc、拒否codeを維持し、phaseとcommandで
+同じ入口を使用する。HP／BPはまだ新しい数値stateへ接続したとは扱わない。
+
+反例delta（C7/C8、Deferred: TSK-06.45/U2-H）: NP gain→OC付与失敗、OC付与→NP amount不正、
+source内の複数NP mutation／別sourceでのclamp、NP消費後のOC別cell charge、automatic／external
+phaseの後続失敗。invalid／unsupported／inputRequired時はNP・OC・context・receipt全体rollback。
+この単位の完了は二段階NP passの参照0と既存focused／production parityで判断し、
+U1-R全体やHP実行closureをVerifiedへ変更しない。
+
+#### 先行単位の調査・検証delta
+
+HP buff監査は`resourceProductionInventory`の既存全source／normal・LB cell走査へ追加した。
+最大HP、HP回復量、HP減少量、継続回復／減少、変換を別keyとして保持する。未知のHP buff語彙も
+監査へ現れるため、runtime allowlistに存在しない語彙を監査段階で消さない。
+HP buffは11種、cell key／target／trigger／timing別58群。pipeline digestは
+`7a5926f0f5f31ccd064de6c8afa96550cd344560c040de04fc20f12257f359bc`。
+inventory以外の15,218 recordsは変更前と一致。これはraw母集団の補強であり、
+legal program→first readerの全join完了ではない（Deferred: TSK-06.45/U0-R）。
+
+C7/C8検出漏れの修正: Step 1はsource間の失敗順／全command rollbackを列挙したが、
+一つのMasterEffectにNP mutationと確率OC operationが共存するschema-legal stateを分けていなかった。
+後置passを除く際、NP先行書込の後で同効果のOCが確率失敗すると、効果の最終activationはfailureでも
+NP draftだけが残り得る。`executePreparationOc`のsource開始時NP snapshotをそのsourceの終了時に
+確定し、確率失敗時はsource分を戻す。command拒否では公開するstructuralStateも開始stateを返す。
+これによりnormal stochastic failureとinvalid／unsupported／inputRequiredを混ぜない。
+最小guardrailは同効果内NP先／OC先×成功／失敗／入力修復、別sourceの失敗順、
+NP-use receipt固定後のOC grant→OC別cell refund。`preparationTransaction.test.ts`で保持する。
+全resourceのsource単位確定を閉じたとはせず、HP／BP／dependentには同じ反例をU2で適用する。
+
+NP-only後置pass `applyPreparationSourceResources`／`selectedSourceNpMutations` は削除し参照0。
+NP requirement／all消費を先に行い、発動時OCは消費前gaugeのreceiptへ固定する。
+その後はcanonical source／operation順でNPとOCを実行し、各NP stepでclampする。
+順序依存の失敗codeと実行記録が変わるためengineVersionを33.0.0→34.0.0へ更新した。
+master schema46／portable38の構造変更は今回なし。既存5 goldenのengine identityのみ更新し、
+期待damage数値は変更しない。旧OC証拠artifactは当時のengine identityで保持する。
+
+変更前後の既定ranking433 recordsは、143 actionのocOutcomesへのNP step追加を除き一致する。
+393 calculated／40 exclusion、request2096／distinct1329、calculator replay393件の差分0。
+交互3回測定のbeforeは4064.78／4053.78／4060.44ms、afterは4509.11／4086.42／4209.36ms。
+中央値4060.44→4209.36ms（+3.67%）。同一masterを保持し、4 execution moduleだけ変更前後に切り替え、
+各runを別process・非並行で実行後に実装bytesを復元した。artifactは
+`/tmp/tsk0645-step2-paired/{before,after}{1,2,3}/manifest.json`。
+HP buff監査は共有parse済みmaster、warm-up後交互5回でcompile中央値504.62→488.69ms。
+測定scriptは`/tmp/tsk0645-step2-measure-audit.ts`。未説明の10%超hot-path退行はこの単位では観測しない。
+
+U0-Bの追加根拠: [公式のスキル説明・不具合案内](https://news.fate-go.jp/2026/08/2026summer_pu1/)
+（2026-08-12公開、8月28日追記）でスキルのpoint加算と、宝具効果前のcapacity増加が不具合であることを
+確認した。rawのafterDamage capacity cellと整合し、同宝具damageのrate／phaseへcapacity増加を
+遡及しない設計の根拠になる。同案内はcontinue時にcapacity buff解除と初期値resetが正しいとも記載する。
+continue simulation自体はN/A: 現行bounded phase外。正規state再構築が旧capacityを持ち越しては
+ならない反例としてU4へ保持する。将来の修正状態を推測せず、この時点の説明を証拠とする。
+
+BP absentとpoint0の同一視も禁止する。比較実装`battle_point_calc.dart`ではstate absentのphase0と、
+state生成後point0のphase1が区別される。rawのphase0境界-1／phase1境界0と整合するが、これは
+独立したゲーム動作検証ではない。初期phase入力→actorのdomain存在→point witnessの対応はU0-Bで
+確定するまでBlocking。3300200のscriptにcapacityがないことを最終phase閾値90で補完しない。
+
+| 今回閉じるstate × path | 判定 |
+| --- | --- |
+| NP mutation→後続OC／OC→後続NPの失敗順と全command rollback | Verified: `preparationTransaction.test.ts`のinvalid／unsupported／入力修復反例 |
+| 同一effectのNP／OC順序×確率成功・失敗・未入力 | Verified: mixed occurrence fixture。失敗は通常非適用、未入力はcommand拒否 |
+| NP消費前gauge→OC receipt→NP-body grant後の返還cell | Verified: frozen receipt fixture。追加OCで同じ宝具のcellを再選択しない |
+| automatic／CE／external phase→terminal NP失敗→再実行 | Verified: 既存phase・charge rollback fixtureを同じ共通入口で再検証 |
+| HP buff全source／normal・LB cell→pipeline digest | Verified: `resourceProductionAudit.test.ts`／共有production audit |
+| HP／BP／dependentの実量と回復経路、全programのread closure | Deferred: TSK-06.45/U0〜U4。上記NP単位の証拠を流用して完了させない |
+
+#### 画面差分とperformanceの追加確認
+
+最初のquality（`.test-results/2026-09-08T09-28-15-853Z-16-5ec43f`）はunit666／production119が
+成功、Playwright23成功／3失敗。失敗画像を確認し、desktop／320px／390pxともengineVersion表示の
+33→34だけが差分であることを確認した。既存のmaster・damage数値・layoutを保持したactual画像で
+3枚の期待画像を更新する。原因分類はintroducedByChange（意図したversion表示変更）。
+
+同runのproduction40.66秒は開始時31.81秒より長く、単一before/afterだけでは性能合格としない。
+`diagnostic-attribution`に従い、e354764 archiveへ開始時dirty bytesと同一raw入力を加えた
+`/tmp/tsk0645-step2-isolated-baseline`を作成し、workspace package importがarchive内へ解決することを
+確認した。比較では利用者worktreeを切り替えず、同じ`pnpm test:production`を非並行で実行する。
+初回archive試行はraw入力が未配置で118/119のため比較対象外。raw入力を配置後の成功runだけを使用する。
+
+raw配置後の交互3回は、before37375／37675／39075ms、after38277／37601／38144ms、
+全run119件成功。中央値37675→38144ms（+1.24%）。runner／lockfile／raw入力は同一で、
+比較ログは`/tmp/tsk0645-production-pairs/{before,after}{1,2,3}.log`にartifact参照を保持する。
+初回の単発所要時間差の帰属はenvironmentDependent: 同一baseline自体でも31.81秒から37〜39秒へ
+変動しており、変更による10%超退行は交互測定では再現しなかった。より広い性能無関係は主張しない。
+この結果と既定rankingの+3.67%を先行単位の性能証拠とし、U5全条件の性能完了とは扱わない。
+
+#### 検証範囲と残作業
+
+focused `preparationTransaction.test.ts`44件成功
+（`.test-results/2026-09-08T09-21-59-065Z-15-a61cf3`）。
+先行unit663／production119成功後、同効果内の反例とfrozen refund cellを追加したため、
+最終treeのphase gateは改めて`pnpm quality`で確認する。
+80条件matrixの一括試行は、通常10条件と成立込み2条件のrecordsを取得した時点で中断した。
+成立込みは1条件約96秒で、現行未対応familyを残すこの先行単位ではU5の完了証拠を作れないため、
+全80条件成功とは扱わない。部分artifactは`/tmp/tsk0645-step2-after/full-matrix/`。
+この中断はtimeout／candidate capの緩和ではない。時間の増減判定には条件が揃った交互測定のみを使う。
+
+次のaction: U0-Rのlegal program→first reader join、U0-Hの整数化／量補正／最大HP解除の根拠、
+U0-Bのdomain存在／point witness、U0-Dの依存snapshot／child commitを閉じる。
+HP0%の回答はその境界にだけ適用する。今回のNP／OC統合をHP実行接続やU2全体完了としない。
+
+#### 60分checkpoint（2026-09-08 09:45 UTC）
+
+現在outcome: NP／OC順序統合とHP buff監査は実装済み。HP・BP・dependentの実量接続とadmission closure、
+TSK-06.45全体は未完了。変更familyはpreparation resource／OC transactionとその監査・engine identity。
+確定証拠は上記focused、unit666／production119、既定ranking parity、交互production中央値+1.24%、
+ranking中央値+3.67%。画面3件の差分はengineVersion表示だけと確認して期待画像を更新した。
+現在の`pnpm quality`はその最終treeを検証中。HP0%の製品判断は回答待ちで、その境界以外のtechnical
+gateを回答待ちと混同しない。次のactionはquality結果の記録とU0-R/H/B/Dの未確定契約の解消。
+master／HP resolver／既存変更は保持、stage・commitなし。
+
+#### 先行実装の最終検証（2026-09-08）
+
+`pnpm quality`成功、253.21秒、unit666／production119／Playwright26、warning・unexpected console・retry0。
+artifact: `.test-results/2026-09-08T09-42-39-137Z-16-59bf20`。
+7条件、通常計算機のdesktop／390px／320px、NP1〜5、保存復元・worker・ranking handoffを既存suiteで
+再検証した。今回の画面期待値変更はengineVersion表示に必要な3枚だけで、ranking画像は開始時のまま。
+開始時のdirty／untracked bytesと照合し、今回の変更対象以外を保持、既存test行の削除0、
+master・HP data/resolver・要件の既存変更を保持した。stage・commitなし。
+この検証が閉じるのは上記先行単位のみ。初期HP0%は回答未受領、HP量の数値規則・BP witness・
+依存read／child commitの技術gateは未解消。U0全体／U1-R／HP・BP・dependent接続／admission／U4〜U5、
+TSK-06.45全体を完了としない。
+
+#### 実行中HP0の境界確認（2026-09-08）
+
+利用者の「実行中HP0%は攻撃負荷が正しいでしょう」は、文脈上「攻撃不可」の確認として受領。
+実行中のcanonical current HPが0の場合は攻撃不能とし、NPを実行してdamage0を返したり、
+unsupportedや入力不正へ分類したりしない。HP1以上が表示割合の丸めで0%になる場合は、この
+攻撃不能条件に含めない。判定根拠は表示ratioではなく実HP量とする。
+U2-H/U3の反例に、実HP0でのNP拒否、HP1で表示0%でもこの理由では拒否しないこと、
+拒否でNP gauge／OC使用回数／receiptを消費しないことを追加する（Deferred: TSK-06.45/U2-H,U3）。
+初期入力0%を理論火力の分析値として許容するかまでは今回の発言から確定しない。
+初期最大HPのresolverと実行中の最大HP補正、HP0とHP欠損の区別は引き続き維持する。
+今回は確認内容の記録のみで、runtime実装済みとは扱わない。
+
+#### U0-D/U2-D current-NP proportional gain delta（2026-09-08）
+
+利用者可視の目的は、現在NPに比例する増加を固定chargeと分離し、calculator／rankingの
+共通ordered transactionで次のNP到達性・OCへ反映すること。raw `gainMultiplyNp`は現行masterで
+1 occurrence／通常10 skill cells（係数500〜1000 permille）。pipelineだけがraw名を解釈する。
+canonical量式は`currentGaugeRatio`、増加量は直前のcurrent gauge × 係数 / 1000の整数部、
+その増加後にcapacity clampする。現在値そのものの置換でも、初期値からの再計算でもない。
+独立した基本期待値はNP50%＋係数1000→NP100%、NP100%＋係数500→NP150%。
+比較実装Chaldea `gain_np.dart`（9fa75655c07ecd76168b1ccf5b8232e8d64664cf）もcurrent値に対する
+増分の整数化を行うが、単独oracleにはしない。端数はcanonical basisPointsの各writeで切り捨てる。
+
+新たな調査範囲は量式producer、normal/LB結合、NP step選択、shared reducer、OC依存区間、
+OC cell読取、admission、保存／worker経由の再実行。固定量しかないと仮定したconsumerを
+一括更新する。matching count／transferの契約はこの単位から独立して未完了のまま保持する。
+
+| path／反例 | 状態 |
+| --- | --- |
+| raw全cell→canonical係数、normal/LB値差と意味不一致、NP OC cell差 | Verified: pipeline全10 cells、CE normal/LB結合・不一致拒否、NP frozen OC receiptのfocused fixture |
+| current gaugeの増加／減少／all-consume後read、逐次clamp、端数、0、capacity | Verified: npResource.test.tsの独立期待値、逐次clamp／all-consume／非整数・負数・unsafe値 |
+| invalid係数／欠損cell／別resourceとの矛盾は数値補完せず拒否 | Verified: schemaのNP gain限定とruntime guard、欠損cell rollback／修復再実行 |
+| NP対象／unit／domainの未解決・矛盾、既知の別actorとの区別 | Verified: pipeline・schema・direct reducer・OC依存区間の固定／比例fixture。非攻撃NP2件の攻撃実行はN/A: 現行attack terminalへ到達しない |
+| source失敗／未知condition、transaction拒否→rollback／retry | Verified: preparationTransaction.test.tsの固定／比例×NP先／OC先×proc成否・未知condition |
+| OC依存区間とadmission、calculator／ranking共通結果、復元とidentity | Verified: NP1/2×4 policyのcalculator／portable／ranking input・result・receipt parity、実master明示command |
+| HP／BP／他dependent・全80条件 | Deferred: TSK-06.45/U0-H,U0-B,U2-H,U2-B,U2-D,U3,U5 |
+
+current量を読む責務は`npResource.ts`の`gainCurrentGaugeRatio`に集約し、実行とOC依存区間は
+`npMutationFromCanonicalAmount`を共用する。UIは量式を解釈せず、既存scenario commandで再実行。
+比例量追加段階でmaster schema47／master `20260908.02`／engine35.0.0へ更新した（最終masterは後述の .03）。portable schema38は変更不要：
+新しい保存入力を増やしておらず、engine／master identity変更で旧計算結果を無効化する。
+この中間master .02の差分はversionと `/servants/360/skills/1/effects/0/execution/0` のみ、HPデータは開始時と一致。
+
+開始時dirty treeの隔離コピーと比較したshared application auditは、inventory以外では
+`preparation:704900`の8追加、`calculator:704900`のavailableActions、ranking同profileだけが変化。
+既存calculator input／resultは不変。rankingは393→394/433、未対応40→39。NP1・initialOC1・
+included/baselineでは容量10000のため比例増加自体はno-opだが、旧unsupportedが同profileを
+遮断しなくなり、既存card buffを含む合法候補を比較できる。NP2の明示skill実行では
+10000＋floor(10000×1000/1000)=20000、NP1では10000へclampする。
+全preparation generated6364→6382、deduplicated3958→3966、terminal3445→3453、
+ranking候補2153→2155、damage request2096→2098、distinct input1329→1331。
+新しい合法経路に対応する実数ratchetを更新し、最大semantic states56／planner cap4096を維持する。
+新しいapplication digest `7f6ce6388fb4396fcb6384c1d4779c12439d6f33f3f67bfb4961d2f4680dadbd`、
+pipeline digest `270d5dca7844870d6b7d3e61cb28f2df14df60fc5d5b1fbf125d4ed9f35673f4`。
+
+性能：同processでbefore／afterを交互に3回、各tree独立のcanonical parse／module解決、
+ranking default中央値3248.46→3300.19ms（+1.59%、非並行、候補増分は上記）。
+`/tmp/tsk0645-multiplier-performance.json`。production suiteは開始時36.18秒／119件に対し
+変更後35.96秒／120件成功（後者のrunnerは旧counter ratchetとの差で失敗、契約値を上記へ更新済み）。
+全phase gateは`pnpm quality`結果を下に追記する。TSK-06.45全体の完了ではない。
+
+
+#### 比例量レビューでのNP metadata境界の補強
+
+機構：`resolveTargetPolicy`のnullは既知の別actorと未解決targetの両方を含む。
+`selectedNpMutation`／`ocGaugeDependencies`がattacker以外を一律skipすると、対象不明のNP更新を
+効果なしと同一視する。既存inventoryは現行sourceSelfと既知enemyの非交差を確認したが、
+未解決target×固定／比例量を反例へ含めていなかった。この検出漏れをここで補強する。
+範囲はNP量式全体のtarget解決であり、サーヴァント個別の差ではない。
+最小guardrail：pipelineは未知targetを`unsupported:unresolvedTarget`へ正規化し、canonical
+実行可能NP mutationは対象解決済みだけを許す。直接executorへ不正なtyped値が渡された場合も
+対象不明をskipせず拒否し、依存区間で不変を証明しない。既知enemy／別actorの非交差は維持する。
+同じcanonical object監査で、HP用のpercent unit／BP用subjectIdも固定NP量へ誤適用できる型であることを
+確認した。再発範囲をtargetだけに狭めず、NP mutation全amountのmetadataを対象解決済み・basisPoints・
+別domainなしへ限定する。schema拒否とdirect reducer拒否を固定／比例の両方で検証する。
+「現行masterで該当0」という初期記載は、全masterで検証する前の誤った見立てだった。
+full-master parseで非攻撃宝具2件（504600／605200）のNP gainが`ptSelfAnotherFirst`を未解決のまま
+resource mutationとして保持していたことを確認した。攻撃profileに範囲を寄せたinventoryの見落としとして
+訂正する。対象を全partyへ推測拡張せず、pipelineで`unsupported:unresolvedTarget`へ正規化する。
+masterはimmutable identityを守り`20260908.02`→`20260908.03`へ更新、正規化NP mutation731→729と
+unresolvedResourceTargets2を別々にratchetする。2件とも現行の攻撃到達経路に参加しない非攻撃宝具で、
+攻撃profile件数と数値は変えない。unit／別domainの不正metadataはproduction0、focused fixtureで検証。
+対象不明のfocused red2件を `.test-results/2026-09-08T10-31-03-386Z-16-1bc5b3` で確認し、
+共通routing helper／pipeline descriptor／schema制約で補強した。applicationはpipelineの
+`unsupported:unresolvedTarget`を既存admissionで扱い、未解決NP mutationの数値化へ進まない。
+補強後のpipeline digestは`5130b36b488bb797a76d85945b46c2d338b150938faa33dad0cd8684e9b94892`。
+前述の`270d5d...`は比例量追加直後の中間master .02に対する証拠として区別する。
+
+#### current-NP単位の最終検証・継続checkpoint（2026-09-08）
+
+最終treeはmaster `20260908.03`／schema47／engine35.0.0。raw全入力から再正規化したbytesは
+公開masterと完全一致した。開始時masterとの差分はversion、比例量1 operation、未解決target2
+operationと対応する非攻撃NP canonicalId2件のみ。HPデータの変更0。
+NP metadata補強前のqualityは `.test-results/2026-09-08T10-26-53-814Z-16-954346` で成功したが、
+その後に補強したため最終gateとはしない。focused68件、補強後production120件が成功。
+画像5枚の差分は版番号・ranking件数の表示領域のみ。画像更新時のrunner logはunexpected
+observation扱いであり、更新実行をquality成功へ読み替えない。最終qualityは更新optionなしで実行する。
+
+単発production43.63秒はmaster差分走査を並行した非比較条件だったため、退行判定に使用しない。
+開始時dirtyの隔離copyと最終treeで交互・非並行に3 pairを再測定：before35359／36452／36146ms、
+after35436／36004／37194ms、中央値36146→36004ms（-0.39%）、全before119件／after120件成功。
+`/tmp/tsk0645-multiplier-production-pairs/summary.json`。43.63秒の増加はcontrolled条件で再現せず
+環境依存と分類し、変更に起因する退行とはしない。最大semantic states56／cap4096と
+master read・parse・compile各1を維持する。性能合格をHP／BP未実装部分の証拠へ拡張しない。
+
+最終`pnpm quality`成功：281.23秒、unit695／production120／Playwright26、warning・unexpected console・retry0。
+artifact: `.test-results/2026-09-08T10-50-55-645Z-16-fc17cd`。最終code／master／要件／画面でのgateであり、
+この記録追記以外の変更を加えていない。今回のcurrent-NP量式・NP metadata境界の実行単位を閉じる。
+Task／flow／要件を更新し、HP0攻撃不可はdamage-effect requirements v1.2.3へ反映した。
+開始時のHP resolver・HP成長実装、NP/OC先行transaction等の既存変更を保持。stage／commitなし。
+
+継続する目的は全攻撃NPのcommon path closure。現在ranking394/433／calculator420/422で、Task全体は未完了。
+次のactionはU0-Hの実量query／回復量／maxHP解除契約とU1-Rのrequired readerを確定し、既存initial resolverを
+HP stateへ接続すること。runtime current HP0の攻撃不可は確定しているが未実装、初期0%の分析扱いは未規定。
+未規定判断に依存しないHP正値・更新順・BP／他依存量の技術調査は確認待ちにしない。
+U0全体、U1-R、HP／BP接続、他dependent、admission、U4〜U5／全80条件を完了扱いしない。
+
+
+#### HP実量接続に向けたread精度の追加確認（U0-H、未実装）
+
+現行`preparationFacts`、`ocState.rateValue`、`hpValueExpression`、`npDamageOperation`は入力の
+HP permilleを読むが、runtime HPは未接続なので、現状の「全readerへ一つの丸め済み比率を渡す」
+形を実HP接続後の正解と仮定しない。実HP0の攻撃不能、表示0%、HP閾値、HP依存の倍率は別query。
+確定した設計制約は、canonical current／maximumの整数値を保持し、表示の丸めをNP倍率へ戻さないこと。
+例えばcurrent1／maximum11000、ゼロHP時bonus10000の線形式では、最後に整数化したbonusは9999、
+先にpermilleを0へ丸めると10000になる。この反例をC3/C7へ追加する。これは式の反例であり、
+ゲーム内の端数実測を新たに取得したという主張ではない。
+
+比較実装Chaldeaの同commitでは、`damage.dart`のHP依存NPは`hp / maxHp`を直接読む一方、
+`models/buff.dart`のHP_HIGHER／LOWERは比率を1000倍した整数部を比較する。
+`gain_hp.dart`は割合回復を最大HP基準で求め、付与側・受取側の回復係数を乗算して最後に整数化、
+割合lossはその量を先に整数化する。`svt_entity.dart`はmaxhp系とbaseHp系の解除時に異なる
+current HP更新を行う。これらは比較証拠であり、11種類のHP buffへ一括適用するoracleではない。
+raw全cell／canonical selector／実量queryへjoinし、量modifier・maxHP解除・外部actorの不足状態を
+確定するまでU0-H/U2-Hを完了としない。HP実量・HP0攻撃拒否の製品コードは今回も未接続。
+
+### NP metadata境界後の残作業Step 1（2026-09-08）
+
+この節が06.45残作業の最新設計・引き継ぎ。過去のF1〜F3、direct flow、C1〜C12は維持し、
+変更・追加分だけを記す。実行単位と依存順は[既存TaskのU0〜U5](../tasks/development-redesign-tasks.md#tsk-0645-all-attack-np-execution-closure)
+だけが所有する。このStep 1時点の許可は調査・設計・文書更新までだった。後段のStep 2再開で新たな実装依頼を受領した。
+
+#### 1. 要件確認と基点
+
+AGENTS、systematic-review／prompt-engineering guidelines、product v0.3.8、damage review v1.0.1、
+effect execution v1.2.3、ranking v0.10.3、Task表、直前のHP query引き継ぎとGitを照合した。
+利用者成果は**現行master全攻撃宝具を共通application／executorで正しく計算可能にすること**。
+HP関連宝具や現在の未対応39件だけの局所修正ではない。
+
+- 初期最大HPはランキング＝選択Lvのmaster HP＋固定HPフォウ1000、通常計算機＝さらにcanonical CE HP。
+  `initialHp.ts:resolveInitialMaximumHp`は既存実装を使う。HP編集UI追加・ATK推定・欠損0補完はしない。
+- 実行中の実HP0は攻撃到達不能。表示の丸めで0%となる正値を拒否しない。拒否ではNP gauge・OC使用回数・
+  NP-use receiptを消費／更新しない。初期入力0%の分析許容だけが未規定で、今回は質問済み・未回答。
+- 初期basisと戦闘最大HP補正を分ける。既存bounded source順、NP-use前のOC固定、transactionの原子性、
+  contribution inclusionとproc結果／condition／source使用の分離を維持する。一般の死亡復活・ターン進行は追加しない。
+- HEAD `e354764a6ad32aedf215c7fc7b785c73331d6f35`＋開始時dirty/untrackedを保持。
+  manifestはmaster `20260908.03`／schema47、32771763 bytes、SHA-256
+  `5723c904fc298da5fd559b68fc1356103fe8003a879b51efb85f3b459b914f93`、portable38／engine35.0.0。
+  既存artifact `.test-results/2026-09-08T10-50-55-645Z-16-fc17cd/production/production-audit-calculation-application.json`
+  と現行`productionAudit.test.ts`はranking394/433、calculator420/422、preparation plans3453で一致する。
+  これは既存証拠の照合。今回のbefore性能測定・全80条件再計算とは呼ばない。
+
+#### 2. 現状調査 — 同じ機構の再発範囲
+
+**Verified（読取調査、数値実行の検証ではない）:** published masterを一度parseし、全13,875格納effectの
+function／buff／source内timing／trigger／normal・LB parameter cell／canonical operationを再帰照合した。
+HP functionはgain142、percent gain2、safe loss23、通常loss11、percent-safe loss1、dependent HP3。
+11種類のHP buffの各occurrence件数は前回F3 inventoryと一致する。HP buff／量function／BP・依存量の
+対象集合をfunction＋buff types＋target＋timing＋triggerでまとめると77群。これは格納群数であり、
+selected programの発火・damage到達件数ではない。shared auditへのlegal program／first-reader joinは未完了。
+
+| 現在確認したfamily | 格納母集団／現行IR | 今回の設計への帰結 |
+| --- | --- | --- |
+| 現在NP比例増加 | 1 occurrence、`resourceMutation/currentGaugeRatio`実装済み | 六family一括未対応という旧記述を残作業へ使わない。既存normal/LB/NP cell、metadata拒否、NP/OC順序を回帰境界にする |
+| target／individual／buff計数量 | 各3／3／4 occurrence、全て`unsupported:dependentResourceAmount` | 人数／一致数／buff instanceを異なるcount queryとして扱う。既存population／stackのownerを拡張し、HP全体完了への依存を外す |
+| NP／HP transfer | 各3 occurrence、各30 cells、全て同上unsupported | 残りは合計5 family・16 occurrence。snapshotからのgainとchild適用量を同一視しない |
+| 最大HP・量modifier | addMaxhp34／subMaxhp4、upGainHp56／downGainHp8／upGivegainHp5、upFuncHpReduce38／subFuncHpReduce1、hpReduceToRegain2 | `stateMutation`では量・selector・解除結果を実行できない。ParamAdd/ParamMax、OnField、BP rate条件も保持して分類する。turn-end／被攻撃の3 buff familyは即時量へ変換しない |
+| BP writer | add5 occurrence／41 cellsはphaseへの`contextMutation`、sub1／10 cellsはamount欠損のresource。capacity1／25 cellsはafterDamageのgeneric state | pointとphaseの型を分離。capacity writerの存在だけで同一terminal damage不具合とは断定しない。後続transform経路とproduction0のpre-damage fixtureを分ける |
+
+**F1／F3の追加cause analysis（今回広げた範囲をここで一度だけ記録）:**
+
+1. 発生機構・確認済み: `resourceSemantics.ts:operationReadsResource`はHP ratio条件と一部値式を検出するが、
+   実HP0の攻撃到達性を読まない。`preparationContracts.ts`にHP state／HP0拒否codeはなく、
+   `preparationTransaction.ts`はNP requirement／消費から開始する。`scenario.ts`はprepared rejectionを
+   inputRequired以外unsupportedへ写し、`rankingProfileOutcome.ts`はNP不足／容量超過だけを到達不能に写す。
+2. 実装とのズレ・推論: HPの数値依存がない標準NPでも、HP loss後に実HP0なら攻撃可能とは限らない。
+   HP ratio readerがないというproofだけではlossを消せない。共通query ownerに攻撃前提を含める必要がある。
+3. 見逃した範囲・確認済み: 過去C3/C7にHP0という値はあったが、全NPのimplicit readerとして
+   raw→program inventoryとrejection→calculator／profile集約までを一つの行にしていなかった。
+   直前追加の「HP0拒否・非消費」反例を、今回その直接consumerと母集団へ展開する。新変更由来の不具合とは主張しない。
+4. 再発範囲・推論／最小guardrail: standard／HP依存／BP依存NP、skill／transform／terminal beforeDamage、
+   automaticとwithout-area再実行を交差する。readerなし標準NP＋lethal lossがnumericへ抜けないこと、
+   HP1で表示0%は抜けること、拒否でNP-use以前のstateへ戻ることを小型fixtureで固定する。
+
+**残るF1〜F3の確認delta:**
+
+- `scenario.ts:resolveScenarioPreparationOutcome`は初期最大HPを戻り値に付けるだけで準備入口へ渡していない。
+  `preparationFacts.ts`はcontextのratio／phase、`npDamageOperation.ts`と`hpValueExpression.ts`はpermille、
+  `ocState.ts:rateValue`はHP write markerを読む。これらを同じ丸め済みratioへ寄せるだけでは精度を失う。
+- 旧NP-only後置passは既にない。`preparationTransaction.ts`／`preparationPhases.ts`はともに
+  `executePreparationOc`を呼び、そのordered draft内でNPとcontextを更新している。この接続を拡張する。
+  `candidateExecution.ts`のresource実行はstar専用、`preappliedOperationIds`が二重適用を防ぐ直接境界。
+- `operationCompiler.ts:compileEffect`のtriggerScope非null一括省略、`ocTerminalDependencies.ts`のresource別reader、
+  `ocDependency.ts`の逆向き依存、`rankingActionAdmission.ts`のunsupported先行判定／structural迂回は別判定のまま。
+  U1-Rで同じselected bounded programの証拠へ収束させる。NP metadata修正の完了をこの証明へ流用しない。
+- `rankingQuantityWorld.ts`は条件leafの端点と境界±1のみ、`rankingCandidateSpace.ts`もconditionsを渡している。
+  amount-only read／更新後境界はこの入口だけでは表せない。`scenario.ts`のrematerialize／reapplyは既に
+  共通constructorへ戻るので、新しいrepair経路を作らずそのseed／query入力を更新する。
+
+**一次資料の範囲:** [705300 BP定義](https://api.atlasacademy.io/nice/JP/battle-point/705300)と
+[3300200 BP定義](https://api.atlasacademy.io/nice/JP/battle-point/3300200)をHTTP再取得し、前回記録の
+SHA-256 `ccb32b…a84e`／`dc3e11…6489`と一致を確認した。web openは取得不可だったためHTTPで確認した。
+BP割合方式／容量ruleのデータはあるが、phase inputのwitness一意性や全domainのpoint上限までを証明しない。
+[fgo-docs](https://atlasacademy.github.io/fgo-docs/)のbuff action集約・上限の説明は参照できるが、
+今回確認した本文にHP全11 buffの更新・解除・transfer順の完全な規則はなく、技術gateを解消したとは扱わない。
+比較実装に関する既存記録も補助証拠のまま。現在の外部応答を製品masterへ混ぜる変更はしていない。
+
+#### 3. 採用設計 — queryとstateの境界
+
+F1〜F3の既存採用表を維持し、次を具体化する。新package・永続的な全体依存graph・servant別分岐は作らない。
+
+| 境界 | 今回確定する内部設計／理由 | 数値実装前のgate |
+| --- | --- | --- |
+| 初期intent→HP seed | applicationだけがLv／装備と既存resolverを解決。整数HP seedは`floor(initialMaximum × inputPermille / 1000)`を採用案とする。割合は初期入力intentとして残し、runtime writerにしない。正入力を1へ無条件clampしない | U0-Hで現行入力精度と全対応Lvの境界を照合して固定する。初期0%の製品判断だけは別gate。これはUI量子化規則の設計で、ゲーム実測の主張ではない |
+| HP stateとquery | actor-qualified `absolute(current, initialMaximum, active maximum instances)`と`ratioOnly`／不足を区別。absoluteから生存・threshold・value expression・表示をqueryする。ratioOnlyは絶対量の捏造に使わない | U0-Hで式ごとの丸め・float32境界を確定。HP1/11000の線形式bonus9999と、先にratio0化した10000を区別。表示queryをNP/OC値式へ戻さない |
+| resource IR／instance | HP用fixed／maximum-ratio／loss floor／modifier selectorとBP用domain／pointをresource別unionへ分離。最大値・回復補正・減少補正・変換のinstanceはowner、source、lifetime、selectorを保持 | U1-H/B/Dで全cellへjoin。NP basisPoints限定のmetadata拒否を維持し、HP/BP固有metadataまで禁止する共通validatorにはしない |
+| ordered draft | 既存NP／OC source transactionにHP・BP・count queryを足す。condition→proc→量read→writeを同じdraftで行い、利用時に決まるOC率は利用時HPを読む。ordinaryへ適用receiptを渡す | U2で各sourceのbefore/afterと全state rollbackを検証。入口HP0でNPを拒否し、beforeDamage更新からdamage到達時のHP0も成功へ抜けない。NP/OCの仮更新を外へcommitしない |
+| bounded dependency | executionが`required read / proven irrelevant / unresolved`をactor、位置、phase、selected variantへ束縛して返す。terminal攻撃可否は暗黙のHP read。途中の量式・condition・OC率の辺も同じ分類 | U1-R。condition unknownとfalse、無関係のproofとinclusion offを区別。先行readだけなら後のwriteはそのreadを変えないが、後続攻撃前提は別に調べる |
+| BP初期intent | `absent`と`present(point, domain, capacity instances)`を区別。phase/rateはqueryのみ。旧phase UIから候補point集合を解決し、後続結果が同値と証明できる場合だけ一代表へ縮約 | U0-B。容量8のpoint4/5は同phaseでも+1後にphaseが分かれる反例を用意（割合閾値を前提にした設計反例）。phaseだけで数値が一意でないcalculator入力は勝手に最小pointへ決めない |
+| count／transfer | 計数は既存canonical population／stackを読む。transferはread snapshot、gain算定量、child試行／適用結果を別に記録。child proc失敗は正常結果たり得るがinvalidはcommand拒否 | U0-D。target人数とindividual一致、buff identityとinstance、enemy chargeとNP量を潰さない。未確認順序で「child実減少量sum」を採用しない |
+| admission→profile | applicationが共通proofとpolicyを合成。effective contributionを持つoptional actionも全siblingを実行し、structural／automaticにも同じ意味検証を使う。未知最大候補を捨てて最大値を確定しない | U3-A。明確なno-op／到達不能だけを除外、未選択branchをprofile blockerへ昇格させない。HP0はtyped unreachable、欠損／矛盾／未対応とは別結果 |
+| candidate／recovery | 初期domainに対するordered境界の逆像とpiecewise量式の端点を使い、小domain全探索で候補を検証。選択witnessをinitial intentとしてportableへ渡し、repair/resetで再構築 | U3-Q/U4。ratio/phase別writerを残さず、old-only／canonical-only／mixedをschemaで拒否・受理し分ける。4096緩和・未知candidate切捨てなし |
+
+outcomeの外部classは既存設計を維持する：calculated、正常非適用（off／proc failure／false／非関連proof）、
+到達不能、修復可能なinputRequired、invalid、unsupported。HP0拒否をcalculatorではunsupported、rankingでは
+unavailableへ後付け変換する二重意味論は作らない。単なるwitness生成漏れを利用者の未入力にしない。
+
+#### 4. 検証可能な実行単位への接続 — flow／反例delta
+
+以下の`Verified`は既存実装の読取確認に限定する。新しいruntimeのcounterexampleはすべてTask内Deferred。
+全Cartesian productは作らず、C1〜C12の代表交差を小型fixtureで検証し、全masterはshared inventoryを一度使う。
+
+| canonical state→直接経路 | 追加／更新する反例と期待結果 | Status |
+| --- | --- | --- |
+| Lv／CE→initialHp→scenario | resolverの固定1000・欠損拒否を再利用する。HP data／resolver自体を作り直さない | Verified: 既存initialHp・hpGrowth test／production artifactを照合 |
+| seed→preparationFacts／OC rate／npDamageOperation | C3/C7: 同じHP1/11000で生存、表示、閾値、連続量式を別query。maxHP付与・解除後も同じactorを読む | Deferred: TSK-06.45/U0-H,U2-H.1〜3 |
+| HP write→standard NP guard→application／profile | C1/C7/C9: HP readerのない標準NPにもlethal loss、safe loss、HP正値表示0%。NP-use前とbeforeDamage後の拒否でgauge／OC使用回数／receipt非消費 | Deferred: TSK-06.45/U2-H.3,U3-A |
+| 最大値／回復／減少instance→付与・解除・form | C3/C8: modifier→lossとloss→modifier、source giverとrecipient、HP0／上限／端数、OnField解除、sibling invalid→全rollback→retry。初期basis再seedで回復させない | Deferred: TSK-06.45/U0-H,U1-H,U2-H.2 |
+| source／party-other→HP query | C9: ratio-onlyで読める式、最大HP不明で絶対loss後の式、別actor同じ表示割合、除外recipient、unknown condition。必要量をattackerで代用しない | Deferred: TSK-06.45/U2-H.1〜3 |
+| point／capacity／trait→phase／rate→condition／OC | C4/C7: absent対point0、同phase異point、capacity変更・解除、別actor同domain。現在actionのsourceQuantityがlive値を上書きしない | Deferred: TSK-06.45/U0-B,U1-B,U2-B |
+| selector→count／transfer→NP・HP→後続read | C5/C6: 同actor複数一致、buff解除、donor不足／抵抗／clamp、nested child proc failure対invalid。countとtransferの期待値を共有しない | Deferred: TSK-06.45/U0-D,U1-D,U2-D.count,U2-D.transfer |
+| compiler／OC／resource→admission→candidate | C1/C2/C9/C10: trigger unknown／command-only、選択と未選択variant、automatic／optional／structural、all(true,unknown)／any(true,unknown)／not(unknown)、量式のみのreader | Deferred: TSK-06.45/U1-R,U3-A,U3-Q |
+| receipt→ordinary／without-area／repair／portable／worker | C8/C11: 同一command再適用0、policy off→on、装備・Lv・form・NP・OC変更、reset／保存復元／upgrade拒否・stale workerで旧request保持。同じ初期intentのfresh runとinput・outcome・receipt一致 | Deferred: TSK-06.45/U2-H.3,U4 |
+| 全effect／全cell→selected program→first reader→数値 | C12: 未対応39件だけでなく全433 profile・422計算機母集団、全variant・80条件・owned。併存原因とbefore/after damage差をruleで説明 | Deferred: TSK-06.45/U0-R,U5 |
+| 一般ターン進行・被攻撃・死亡復活／新HPフォウeditor | bounded phase外を実行しないproofをU1-Rで確認。HP0の攻撃拒否だけからsimulationを増やさない | N/A: 現製品要件外 |
+
+**未解決事項と依存範囲:**
+
+- Blocking: 初期0%の分析許容の製品判断。初期0%のseed／結果表示の最終接続だけを保留する。
+- Blocking: HP量modifierの合成・整数化／最大値instance解除、BP phase witness／容量再評価、
+  transfer read／child commit順の一次根拠。対応するU0-H/B/Dが閉じるまでその数値branchを実装完了にしない。
+  U1-R、HP正値の契約整理、独立したcount分類は進行可能。技術gateの解消を利用者確認へ転嫁しない。
+- BP phaseだけでは一意な結果を持てない、またはtransferが既存入力から決まらないことを現行admit対象で
+  確認した場合は、入力・期待結果の具体例を添えて最小の製品差分だけ相談する。現段階では新UI追加を採用しない。
+- 上記Blockingはruntime closureの前提であり、調査・設計の文書作業を止める条件ではない。
+  unsupportedを暫定保持しても現行全攻撃宝具closureのDoneにはならない。
+
+**Step 2開始条件／停止点:** 次の利用者の実装依頼後にGit・manifest・本節を再照合し、TaskのU0-Rから
+beforeと共有join、U1-RとU0-Hの独立した契約確定へ進む。数値branchは自身のgateが閉じた順に実装する。
+旧NP後置pass削除／HP成長表再実装／全HP完了を待ってからcount着手という旧順序は採用しない。
+今回のStep 1が終わってもTaskはin_progress、06.44はblocked。全U0〜U5、全scopeのBlocking／Task内Deferred0、
+全production数値化・parity・fail-closed・性能・UI不変条件と最終qualityがTask完了条件である。
+
+検証記録は以下へ追記する。今回の編集対象は既存Taskと本noteのみ。製品code／master／fixture／画像、
+既存untrackedは保持し、stage／commitしない。文書gateのqualityを実装closureや性能beforeへ読み替えない。
+
+今回の検証: `pnpm test:docs`、`git diff --check`成功。
+最終`pnpm quality`成功：292.18秒、unit695／production120／Playwright26、skip／todo／retry／warning／
+unexpected console 0。artifact: `.test-results/2026-09-08T11-19-05-105Z-15-d1b847`。
+今回のproduction gateでも現行baselineを検証した。既存auditの39 rankingFailureは全て表面理由が
+`unsupported:unsupportedActionAdmission`であり、HP／BP／依存量の併存原因まで解消した証拠ではない。
+この検証記録以外にgate後の変更はない。開始時の管理対象全ファイルのSHA-256と比較し、今回変更したのは
+Taskと本noteだけ、新規worktreeファイル0を確認した。Step 1の調査・設計・Task更新をここで止める。
+初期0%の回答は未受領。TSK-06.45全体は未完了で、次の実装はStep 2依頼後に開始する。
+
+#### Step 2再開：U1-Rのbounded trigger契約（実装中）
+
+利用者の実装依頼を受領。既存dirtyを保持し、before production120件成功（43.78秒、
+`.test-results/2026-09-08T11-54-56-596Z-15-f39bb7`）。39除外profilesを選択skill variantへjoinし、
+17 profilesはunsupportedがcommandCardAttack scopeだけ、他にはcontextReference／dependent量が
+併存することを確認。これはskill選択へのjoinであり、U0-R全first-reader joinの完了ではない。
+
+F1調査の修正：現行triggerScope schemaはnull／commandCard／commandCardAttackのclosed unionである。
+「unknown triggerのschema-legal fixture」という旧反例指定は不正確だった。未知語彙はschemaで拒否し、
+型を迂回した境界もfail-closed、今後variant追加時はexhaustive checkで要分類とする。
+通常攻撃専用scopeのOC／NP／context mutationはschema-legalなので、production0でも実行阻止を検証する。
+
+ownerはexecutionの`npProgramScope.ts`。compiler／projectionだけでなくpreparation選択・activation fact・
+automatic transaction、OC逆向き依存／gauge区間、static program選択／admissionが同じscope proofを読む。
+C1/C2/C7/C9へscope×source（skill/passive/CE/support/mystic/NP）×operation（modifier/NP/HP/OC/context/unsupported）を追加。
+不使用action、除外effect、proc失敗はこのscope proofとは別に扱う。明示NP sourceのnull scopeは実行を維持する。
+U1-RのHP到達性・amount／actor-qualified reader全体は引き続きDeferred: TSK-06.45/U1-R。
+
+再確認でform到達性のgraph walkにも非発火transitionを数える経路を検出した。
+`formCanReachAttackWithoutPreparationNp`は現在formの選択skillに含まれる発火可能occurrenceへ
+辺を束縛する。以前の検出不足はcompiler／mutationの抑止だけを見て到達性queryを含めなかった点。
+production影響の追加は確認していない。schema-legalな「現在formに攻撃NPなし＋command-only変身辺」で
+false、同じeffectをnull scopeにした場合trueをguardrailにした。
+
+| trigger state × 直接経路／回復 | Disposition |
+| --- | --- |
+| null／commandCard／commandCardAttack → compiler／damage projection | Verified: `ocSourceProgram.test.ts`のordinary／OC compile一致 |
+| scope × skill／passive／CE／support／mystic／NP → NP／HP marker／form | Verified: `preparationTransaction.test.ts`。非発火ではresource・form・active effects不変、terminal攻撃成功 |
+| scope → OC感度／逆向きslice／NP gauge依存 | Verified: `ocSourceProgram.test.ts`。scopeだけを変えたpositive／negative対 |
+| scope → form graph到達性 | Verified: 同transaction fixture。発火しない辺をreachabilityへ使わない |
+| unsupported sibling／trigger-only positive → optional admission | Verified: `rankingActionAdmission.test.ts`。非発火のみ無関係、null unsupportedは拒否を維持 |
+| calculator／ranking四policy／portable再実行 | Verified: `ocExecutionParity.test.ts`。NP loss／OC boostの非発火、numeric・effective OC・receipt一致 |
+| production0のresource／OC trigger | Verified: schema-legal focused fixture。shared auditにtrigger×operation×resourceを追加、未知scopeはschemaとunchecked runtime両方で拒否 |
+| HP実量・actor-qualified amount読取／未知context関連性 | Deferred: TSK-06.45/U1-R,U0-H,U0-D,U3-A。scope proofで置き換えない |
+| 一般command-card戦闘進行 | N/A: 現bounded NP program外 |
+
+**production delta:** ranking394→411/433、unsupported39→22。calculator420/422、既存numeric
+ranking recordsはbefore auditと同一。新規17件以外の数値差は0。preparation plans3453は不変。
+全80条件closureはまだ未検証。候補2155→2247、damage request2098→2190、distinct1331→1385。
+cache hit805/2190。これは合法候補追加の結果であり、cap・timeout・complexity上限の緩和はない。
+shared application digestは`82a4ab44b033e2ec4fc0a1d79d34d48a2364ef6e3d6a228841c95a8cd8d80a87`、
+pipeline digestは`6181fd3b3c82dff2b5c394d1544034246b92e80eec873766f579894a9c8f14fa`。
+production trigger内訳はcommandCardAttack unsupported23、commandCard stateMutation15／damageModifier2。
+
+**性能:** 同じmasterを各rootで一度parseし、before/after各1回warm-up後、交互順・非並行で3回ずつ
+ranking defaultを測定。before3299.80／3395.89／3540.13ms、after3576.28／3409.73／4009.67ms。
+中央値3395.89→3576.28ms（+5.31%）、合法候補数+4.27%。未説明10%超増加なし。
+production suiteの単回比較は43.78→39.56秒（後者は120test成功・counter旧期待値でcontract_failure）。
+単回suite時間を安定した性能改善とは主張しない。
+
+**identity:** 計算対象とscope実行意味が変わるためengine35→36.0.0。portable schema38／master
+20260908.03／schema47は変更しない。golden5件のengine metadataと画面のengine／件数表示を同期する。
+既存portable再構築・worker identity／stale拒否をqualityで検証する。
+
+**U0-Dの追加調査:** raw `nice_servant.json`のcount全10 occurrenceをcanonicalと照合。
+`traitVals`はNP recipientの`funcTargetType`とは別の計数selectorだが、現在のunsupported IRには
+保持されない。`Value2`はcanonical evidenceでlifecycle分類になっており、scopeを型付けしたことには
+ならない。例としてgainNpTargetSumの複数traitは同actorを人数として一度数える必要がある一方、
+gainNpIndividualSumは付与された特性instanceも対象になる。buff countのptAll recipientを各recipient自身の
+stackだけへ結び付ける根拠もない。既存人数／stack入力への一括置換は採用しない。
+必要な次の契約は計数scope・selector・恒常特性と付与instanceの区別・重複計数・発動者とrecipientの分離。
+rawのdetailは期待意味の根拠として確認できるが、全cellのread snapshotと丸めを証明したとは扱わない。
+contextReference29 occurrenceには実際の特性付与が含まれるため、`damageRelevant:false`だけで
+admissionから無視する変更は行わない。後続count readerと同じprogramへjoinする。
+
+**この先行単位の検証結果:** `pnpm quality`成功
+（`.test-results/2026-09-08T12-24-36-695Z-15-89ff39`、270.29秒）。unit705／production120／
+Playwright26、skip・retry・warning・unexpected console0。最終production39.41秒。
+focusedのform到達性58件は`.test-results/2026-09-08T12-19-45-723Z-15-c545b1`。
+画面5枚を目視確認し、engine36・411/22件表示、desktop／390px／320pxの既存入力とNP1〜5表を維持した。
+再生成時のconsole検出は期待値更新runに限定され、監視allowlistは緩めていない。
+開始時ファイルの欠落0、今回対象外の内容hash不変、master hash不変、stage／commitなし。
+この結果はbounded trigger先行単位の完了証拠。U0-R全join・U1-R全体・HP／BP／依存量・
+admission全体・U4〜U5とTSK-06.45の完了ではない。
+
+
+
+
+
+
+#### Step 2継続：HP減少下限のIR境界（2026-09-08）
+
+利用者の継続実装依頼を受領。基点はengine36／master20260908.03・schema47、ranking411/433・
+calculator420/422。既存dirtyを保持する。初期seed／queryを接続する前に、現在のHP IRがsafe／通常lossを
+同一形状へ落としている情報欠落を閉じる。数値stateから失われたraw種別を推定する設計は採用しない。
+これは既存F3の確認済みgapへのU1-H先行単位であり、新しい原因として重複登録しない。
+
+HP lossは`lossFloor: zero | oneIfAlive`を必須にし、gain／NP等ではこの属性を拒否する。
+`oneIfAlive`は生存中のHPを1未満にしない意味であり、既に0のHPを1へ戻す復活ではない。
+pipelineがsafe固定・safe割合・通常固定の全normal/LB/NP cellへ保持し、旧shapeや矛盾したshapeは
+master schemaで拒否する。既存executorのHP write invalidation／unsupportedを数値成功へ変更しない。
+未確定の最大HP・量modifier・transfer契約をこの下限分類だけで解消したとは扱わない。
+
+追加の検出漏れ: `operationCompiler.ts`のresource量選択は`amount.values`だけを読み、pipelineが保持する
+`limitBreakValues`を捨てていた。NP preparationでは別の選択があるため、HPだけを同じhelperへ
+渡す確認ではordinary consumerの欠落を検出できない。共通原因は量表の選択責務の分裂で、再発範囲は
+ordinaryのHP／star／BP fixed resource。sourceのlimitBreak・valueSetIndex・valueIndexを同じ選択へ渡し、
+型・上下限・actor scopeは変えず、schema-legal fixtureで三resourceのnormal/LB差を固定する。
+
+反例はgainとloss×zero/oneIfAlive×fixed/percent×normal/LB/NP、旧shape・他resourceへの混入・
+current-gauge比例量のHP誤適用。共有production auditで全179 HP mutation中のloss35 occurrenceと
+全cellをraw→canonicalで照合する。runtime raw分岐、ID分岐、0補完を追加しない。
+
+採用実装は`master-data/index.ts`のresource別union、pipeline `hpResourceFamilies`、CEの
+`withResourceLimitBreakValues`、ordinary `ResourceMutationIdentity`／`resourceMutationIdentity`。
+HP lossの下限はschema parse、CE merge、OC source program、ordinary compileを通して保持する。
+`BattlePointId`を持つHP raw cellは他resourceのsubjectを暗黙に捨てず正規化で拒否する。
+HPへNP比例量を流用しない。amount欠損のnullは引き続き数値0へ補完しない。
+LB指定時の表欠損もnormal値へfallbackせず、null／unavailableを維持する。
+
+| 下限／cell state × 直接経路 | Disposition |
+| --- | --- |
+| gain／通常loss／safe固定loss／safe割合loss → canonical各NP・Lv cell | Verified: `executionSemantics.test.ts`の5family matrix。旧loss shape、未知floor、gain／NPへのfloor混入、HPへのNP比例量／別subjectを拒否 |
+| CE normal／LB → amountとfloorの結合 | Verified: `craftEssenceNormalization.test.ts`。同一floorの別値／LBなしの明示同値、異なるfloorの結合拒否 |
+| HP／star／BP × normal/LB × NP・Lv index → ordinary compile | Verified: `ocSourceProgram.test.ts`。22／42の選択差、HP下限保持、resolutionはresourceStateUnavailableを維持 |
+| canonical HP → OC program／preparation invalidation・rollback | Verified: 既存OC／preparation fixturesに下限を明示。OC programは原operationを保持し、未実装の量更新を成功へ変更しない |
+| 全source／全cell → shared production audit | Verified: HP loss35 occurrence、safe固定245／通常275／safe割合10 cells。gain固定1930／割合50 cells。raw→canonical値一致、normal／LB欠損・値差をfocused fixtureで拒否 |
+| 旧master／旧engine → validation／再構築／UI | Verified: 最終qualityのstartup／stale拒否・再構築・Playwright26。schema48、engine37、portable38、master20260908.05。画面5枚のidentity更新とmobile結果表のCSS所有権を確認 |
+| 実HP seed／query／HP0拒否／gain・loss reducer／最大値・量modifier・transfer | Deferred: TSK-06.45/U0-H,U2-H.1,U2-H.2,U2-H.3。下限分類は実HP更新・HP0攻撃判定の実装ではない |
+
+**before／after:** 開始時production120成功36.63秒
+（`.test-results/2026-09-08T12-36-04-404Z-15-8b0ea7`）。途中production117成功・3失敗は
+HP canonical identityと監査項目追加によるdigest差のみ。候補数／admission件数は不変。
+同じrawと開始時packagesからbefore masterを再正規化し、開始時SHA-256
+`5723c904fc298da5fd559b68fc1356103fe8003a879b51efb85f3b459b914f93`との完全一致を確認した。
+新masterとの差分はversion、HP loss35件の下限、対応するNP canonical ID12件のみ。
+calculator422件はそのまま一致、ranking433件はこのID対応だけを適用するとrecord全体が一致した。
+preparation identityは新しいfloorを含むため更新される。古いidentityを互換のために温存しない。
+新規に数値化したprofileは0、default411/433・420/422、preparation plans3453を維持。
+application digest `c2689cd254f3ca245c196c5fc4d4c0ebf1d9a5192c35633407ff4fc0755f871e`、
+pipeline digest `9145478963fd3f6bfa7839bec1a1930a9b9ddd90dd04fd4da091655b29e23a1c`。
+
+同一環境・各1 warm-up・交互順3組・非並行ranking測定はbefore3301.79／3714.68／3380.84ms、
+after3328.09／3393.28／3227.24ms、中央値3380.84→3328.09ms（-1.56%）。有意な高速化とは主張せず、
+未説明10%超退行はない。途中production36.54秒、unit717件10.73秒
+（`.test-results/2026-09-08T12-50-24-112Z-15-f11e10`）。
+
+
+最終quality途中の390px VRTで2830px／2821pxの高さ差を検出した。
+`calculator.css`の`.worksheet th/td`と`calculation-result.css`の`.np-result-table th/td`が
+同じspecificityで別々のpaddingを指定し、結果表のモバイル密度がstylesheet順に依存していた。
+0.05rem×上下×6行の差は観測した約9pxと整合する。以前の画像更新だけではCSSの責務競合を検出できず、
+再発範囲はcalculator結果表の全mobile幅。worksheet内のtableは結果表だけであることを確認し、
+mobileのtable font-size／cell paddingを結果表の専用CSSへ移して同じファイルのmedia queryで確定する。
+画像閾値、retry、console監視は緩めない。これはHP数値化とは別の、今回のqualityで発見した表示安定性修正。
+修正後VRT9成功、390pxだけ密度差の期待画像を更新した。更新runのconsole検出は成功判定に使わず、
+期待値更新optionなしの最終`pnpm quality`で閉じた。
+
+最終検証: `.test-results/2026-09-08T13-11-05-798Z-15-f196ee`、238.63秒。
+unit717／production120／Playwright26成功、skip／todo／retry／warning／unexpected console 0。
+新master SHA-256 `3a9c481dc25ab151f3be8106352210e4807ca0eaa1f2fb4c19225fa645a9ff6b`。
+開始時ファイルの欠落0、今回対象外の内容hash不変。stage／commitなし。
+この先行単位のscoped Blockingは0。TSK-06.45全体は未完了で、実HP・最大HP更新、BP、
+依存量、admissionの残作業と初期0%の未規定判断を維持する。
+次はU0-Hのquery／最大値・量modifier契約とU2-H.1の実HP seed／query接続。
+継続実装の再承認は不要。初期0%の回答待ちはその境界だけに限定する。
+
+
 
 ## TSK-06.42 Step 1 — authoritative comparison-basis planning delta
 

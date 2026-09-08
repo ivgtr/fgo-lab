@@ -3,6 +3,7 @@ import type {
   CanonicalInputDefinition,
   CanonicalOutcomeGroup,
   EffectProc,
+  EffectExecutionOperation,
   ModifierValueExpression,
   NoblePhantasmVariant,
   NoblePhantasmVariantRef,
@@ -151,16 +152,23 @@ export type OperationModifierValueExpression =
       quantitySource: { kind: 'attackerHpPermille' } | { kind: 'canonicalInput'; inputKey: string };
     });
 
+export type ResourceMutationIdentity =
+  | { resource: 'hp'; direction: 'gain' }
+  | Pick<
+      Extract<EffectExecutionOperation, { resource: 'hp'; direction: 'loss' }>,
+      'resource' | 'direction' | 'lossFloor'
+    >
+  | { resource: 'criticalStars' | 'battlePoint'; direction: 'gain' | 'loss' };
+
 export type BattleOperation =
-  | (OperationBase & {
-      kind: 'resourceMutation';
-      resource: 'hp' | 'criticalStars' | 'battlePoint';
-      resolution: 'resourceStateUnavailable' | 'orderedCriticalStars' | 'noDamageReader';
-      direction: 'gain' | 'loss';
-      unit: 'fixed' | 'percent';
-      amount: number | null;
-      subjectId: string | null;
-    })
+  | (OperationBase &
+      ResourceMutationIdentity & {
+        kind: 'resourceMutation';
+        resolution: 'resourceStateUnavailable' | 'orderedCriticalStars' | 'noDamageReader';
+        unit: 'fixed' | 'percent';
+        amount: number | null;
+        subjectId: string | null;
+      })
   | (OperationBase & {
       kind: 'preserveSemanticEffect';
       semanticKind: 'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant';

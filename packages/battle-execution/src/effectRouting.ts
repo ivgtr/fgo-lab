@@ -1,3 +1,4 @@
+import { effectExecutesInNpProgram } from './npProgramScope';
 import type {
   CanonicalEffectContributionScope,
   CanonicalEffectRoute,
@@ -35,6 +36,14 @@ export function resolveTargetPolicy(
   return null;
 }
 
+/** Unknown resource targets cannot share the proven non-intersection result for another actor. */
+export function resolveResourceTargetPolicy(
+  origin: Origin,
+  policy: CanonicalTargetPolicy,
+): Recipient | 'unresolved' | null {
+  return policy === 'unresolved' ? 'unresolved' : resolveTargetPolicy(origin, policy);
+}
+
 export function operationRecipient(
   operation: EffectExecutionOperation,
   origin: Origin,
@@ -52,7 +61,7 @@ export function operationRecipient(
 }
 
 export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): boolean {
-  if (effect.triggerScope !== null) return false;
+  if (!effectExecutesInNpProgram(effect)) return false;
   return effect.execution.some((operation) => {
     if (
       operation.kind === 'ocRemovalResistance' ||

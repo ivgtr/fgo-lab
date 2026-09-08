@@ -1,3 +1,4 @@
+import { effectExecutesInNpProgram } from './npProgramScope';
 import type { MasterEffect } from '@fgo-lab/master-data';
 import type { ConditionEvaluationState } from './condition';
 import type { ConditionExpression } from './contracts';
@@ -31,6 +32,7 @@ export function uncertainPreparationWrites(
   origin: Origin,
   sourceInstanceId?: string,
 ): Writes {
+  if (!effectExecutesInNpProgram(effect)) return [];
   return effect.execution.flatMap((operation) => {
     if (operation.kind !== 'contextMutation' || !('scope' in operation)) return [];
     const recipient = resolveTargetPolicy(origin, operation.route.target);

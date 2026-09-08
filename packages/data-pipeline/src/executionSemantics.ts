@@ -59,21 +59,45 @@ const defensiveBuffs = new Set([
 const typedResourceFamilies = new Map<
   string,
   {
-    resource: 'npGauge' | 'hp' | 'criticalStars' | 'battlePoint';
+    resource: 'npGauge' | 'criticalStars' | 'battlePoint';
     direction: 'gain' | 'loss';
     unit: 'fixed' | 'percent';
+    amountKind: 'fixed' | 'currentGaugeRatio';
   }
 >([
-  ['gainNp', { resource: 'npGauge', direction: 'gain', unit: 'fixed' }],
-  ['lossNp', { resource: 'npGauge', direction: 'loss', unit: 'fixed' }],
-  ['gainStar', { resource: 'criticalStars', direction: 'gain', unit: 'fixed' }],
-  ['lossStar', { resource: 'criticalStars', direction: 'loss', unit: 'fixed' }],
-  ['gainHp', { resource: 'hp', direction: 'gain', unit: 'fixed' }],
-  ['gainHpPer', { resource: 'hp', direction: 'gain', unit: 'percent' }],
-  ['lossHpSafe', { resource: 'hp', direction: 'loss', unit: 'fixed' }],
-  ['lossHp', { resource: 'hp', direction: 'loss', unit: 'fixed' }],
-  ['lossHpPerSafe', { resource: 'hp', direction: 'loss', unit: 'percent' }],
-  ['subBattlePoint', { resource: 'battlePoint', direction: 'loss', unit: 'fixed' }],
+  [
+    'gainMultiplyNp',
+    { resource: 'npGauge', direction: 'gain', unit: 'fixed', amountKind: 'currentGaugeRatio' },
+  ],
+  ['gainNp', { resource: 'npGauge', direction: 'gain', unit: 'fixed', amountKind: 'fixed' }],
+  ['lossNp', { resource: 'npGauge', direction: 'loss', unit: 'fixed', amountKind: 'fixed' }],
+  [
+    'gainStar',
+    { resource: 'criticalStars', direction: 'gain', unit: 'fixed', amountKind: 'fixed' },
+  ],
+  [
+    'lossStar',
+    { resource: 'criticalStars', direction: 'loss', unit: 'fixed', amountKind: 'fixed' },
+  ],
+  [
+    'subBattlePoint',
+    { resource: 'battlePoint', direction: 'loss', unit: 'fixed', amountKind: 'fixed' },
+  ],
+]);
+
+const hpResourceFamilies = new Map<
+  string,
+  | { direction: 'gain'; unit: 'fixed' | 'percent' }
+  | Pick<
+      Extract<EffectExecutionOperation, { resource: 'hp'; direction: 'loss' }>,
+      'direction' | 'unit' | 'lossFloor'
+    >
+>([
+  ['gainHp', { direction: 'gain', unit: 'fixed' }],
+  ['gainHpPer', { direction: 'gain', unit: 'percent' }],
+  ['lossHp', { direction: 'loss', unit: 'fixed', lossFloor: 'zero' }],
+  ['lossHpSafe', { direction: 'loss', unit: 'fixed', lossFloor: 'oneIfAlive' }],
+  ['lossHpPerSafe', { direction: 'loss', unit: 'percent', lossFloor: 'oneIfAlive' }],
 ]);
 
 const typedStateFamilies = new Map<
@@ -101,13 +125,12 @@ const unsupportedOperationFamilies = new Map<
 
 const dependentNpResourceFamilies = new Map<
   string,
-  'currentGaugeMultiplier' | 'matchingTargetCount' | 'matchingBuffCount' | 'dependentTargetResult'
+  'matchingTargetCount' | 'matchingBuffCount' | 'dependentTargetResult'
 >([
   ['gainNpBuffIndividualSum', 'matchingBuffCount'],
   ['gainNpFromTargets', 'dependentTargetResult'],
   ['gainNpIndividualSum', 'matchingTargetCount'],
   ['gainNpTargetSum', 'matchingTargetCount'],
-  ['gainMultiplyNp', 'currentGaugeMultiplier'],
 ]);
 
 const boundedProofByFamily = new Map<
@@ -514,11 +537,31 @@ export function normalizeExecutionSemantics(input: {
   if (operations.length === 0) {
     const family = input.fn.funcType ?? 'unknown';
     const resource = typedResourceFamilies.get(family);
+    const hp = hpResourceFamilies.get(family);
     const stateMutation = typedStateFamilies.get(family);
     const unsupported = unsupportedOperationFamilies.get(family);
     const dependentNp = dependentNpResourceFamilies.get(family);
     const boundedProof = boundedProofByFamily.get(family);
-    if (resource) {
+    if (hp) {
+      if (input.parameterSets.some((row) => row.some((cell) => cell.BattlePointId !== undefined)))
+        throw new TypeError('hp_mutation_has_foreign_resource_subject');
+      operations.push({
+        kind: 'resourceMutation',
+        resource: 'hp',
+        ...hp,
+        recipient: policy,
+        amount: { kind: 'fixed', values: modifierValues(input.parameterSets) },
+        subjectId: null,
+      });
+    } else if (resource?.resource === 'npGauge' && policy === 'unresolved')
+      operations.push({
+        kind: 'unsupported',
+        route: unresolvedRoute(),
+        reason: 'unresolvedTarget',
+        damageRelevant: true,
+      });
+    else if (resource) {
+      const { amountKind, ...mutation } = resource;
       const subjectIds = [
         ...new Set(
           input.parameterSets.flatMap((set) =>
@@ -530,9 +573,9 @@ export function normalizeExecutionSemantics(input: {
       ];
       operations.push({
         kind: 'resourceMutation',
-        ...resource,
+        ...mutation,
         recipient: policy,
-        amount: { kind: 'fixed', values: modifierValues(input.parameterSets) },
+        amount: { kind: amountKind, values: modifierValues(input.parameterSets) },
         subjectId: subjectIds.length === 1 ? subjectIds[0]! : null,
       });
     } else if (dependentNp)

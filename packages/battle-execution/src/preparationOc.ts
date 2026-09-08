@@ -1,3 +1,4 @@
+import { effectExecutesInNpProgram } from './npProgramScope';
 import { requiredOcConditionInput } from './ocConditionInputs';
 import {
   closePreparationConditionReads,
@@ -21,6 +22,11 @@ import type { SourceEffect } from './sourceCollection';
 import { resolvePreparationStructuralOutcome } from './preparationState';
 import type { ConditionEvaluationState } from './condition';
 import { resolvePreparationSourceFacts } from './preparationSourceFacts';
+import {
+  applyPreparationNpOperation,
+  isPreparationNpOperation,
+  type PreparationSourceResourceResult,
+} from './preparationResourcePlan';
 import {
   effectRequiresPreparationDecision,
   type PreparationEffectActivation,
@@ -87,6 +93,9 @@ export function executePreparationOc(args: {
     args.state.ocInputDefinitions.map((definition) => [definition.key, definition]),
   );
   let requiredInput: CanonicalInputDefinition | null = null;
+  const resourceOutcome: {
+    failure: Extract<PreparationSourceResourceResult, { status: 'rejected' }> | null;
+  } = { failure: null };
   let occurrenceId: string | null = null;
   const sourceFacts = new Map<MasterEffect, ConditionEvaluationState>();
   const missingSourceConditions = new Map<MasterEffect, CanonicalInputDefinition>();
@@ -107,7 +116,8 @@ export function executePreparationOc(args: {
       .filter(([key]) => key.startsWith('oc:proc:'))
       .map(([key, value]) => [key.slice('oc:proc:'.length), value]),
   );
-  const hasOcTransaction = args.sources.some((source) =>
+  const sources = args.sources.filter(({ effect }) => effectExecutesInNpProgram(effect));
+  const hasOcTransaction = sources.some((source) =>
     source.effect.execution.some(
       (operation) =>
         operation.kind === 'grantOcBoost' ||
@@ -115,7 +125,7 @@ export function executePreparationOc(args: {
         operation.kind === 'removeOcState',
     ),
   );
-  for (const source of args.sources) {
+  for (const source of sources) {
     let program = compileOcSourceProgram(source);
     if (!hasOcTransaction)
       program = {
@@ -126,7 +136,9 @@ export function executePreparationOc(args: {
         ),
       };
     let sourceApplies = true;
+    let sourceNp = current.npResource;
     steps.push((ocState) => {
+      sourceNp = current.npResource;
       if (!source.sourceEnabled) {
         sourceApplies = false;
         activation.set(source.effect, { procOutcome: 'success', conditionOutcome: false });
@@ -200,7 +212,46 @@ export function executePreparationOc(args: {
       return { kind: 'skip', outcome: 'notApplicable' };
     });
     const firstStep = steps.length;
-    for (const [index] of program.operations.entries()) {
+    let ocIndex = 0;
+    for (const operation of source.effect.execution) {
+      if (isPreparationNpOperation(operation)) {
+        steps.push((ocState, outcomes) => {
+          if (
+            outcomes.some(
+              (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
+            )
+          )
+            return { kind: 'skip', outcome: 'notApplicable' };
+          const receipt = args.npUse
+            ? ocState.receipts.find(({ actionId }) => actionId === args.actionId)
+            : null;
+          const resource = applyPreparationNpOperation({
+            semantics: args.context.resourceSemantics,
+            initial: current.npResource,
+            source,
+            operation,
+            activation: activation.get(source.effect),
+            valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+          });
+          if (resource.status === 'rejected') {
+            resourceOutcome.failure = resource;
+            return {
+              kind: 'reject',
+              status:
+                resource.code === 'invalidState' || resource.code === 'invalidMutation'
+                  ? 'invalid'
+                  : 'unsupported',
+              reason: 'preparationResource',
+            };
+          }
+          if (resource.state.gauge !== current.npResource.gauge)
+            current = { ...current, npResource: resource.state };
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
+      if (program.operations[ocIndex] !== operation) continue;
+      const index = ocIndex++;
       effectSteps.set(steps.length, source.effect);
       steps.push((ocState) => {
         if (!sourceApplies) return { kind: 'skip', outcome: 'conditionFalse' };
@@ -248,16 +299,18 @@ export function executePreparationOc(args: {
       steps.push({ kind: 'recordSource', sourceKey: ocSourceOperationKey(program, 0) });
     // Earlier canonical trait writes are visible to later OC/rate conditions in this command.
     steps.push((_, outcomes) => {
-      const contextOperations = source.effect.execution.filter(
-        (operation) => operation.kind === 'contextMutation',
-      );
-      if (contextOperations.length === 0) return { kind: 'skip', outcome: 'notApplicable' };
       if (
         outcomes.some(
           (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
         )
-      )
+      ) {
+        current = { ...current, npResource: sourceNp };
         return { kind: 'skip', outcome: 'notApplicable' };
+      }
+      const contextOperations = source.effect.execution.filter(
+        (operation) => operation.kind === 'contextMutation',
+      );
+      if (contextOperations.length === 0) return { kind: 'skip', outcome: 'notApplicable' };
       if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
       if (activation.get(source.effect)?.conditionOutcome !== true) {
         current = {
@@ -359,7 +412,7 @@ export function executePreparationOc(args: {
   }
   if (result.status === 'committed') {
     const sourceOutcomes = new Map(result.state.sourceOutcomes);
-    for (const source of args.sources) {
+    for (const source of sources) {
       const outcome = activation.get(source.effect)?.procOutcome;
       if (!outcome) continue;
       const key = ocSourceOperationKey(compileOcSourceProgram(source), 0);
@@ -369,6 +422,7 @@ export function executePreparationOc(args: {
   }
   return {
     result,
+    resourceFailure: resourceOutcome.failure,
     requiredInput:
       (result.status === 'inputRequired' &&
         (result.reason.startsWith('ocCondition:') ||
@@ -380,7 +434,7 @@ export function executePreparationOc(args: {
         ? requiredInput
         : null,
     occurrenceId,
-    structuralState: current,
+    structuralState: result.status === 'committed' ? current : args.state,
     inputDefinitions: [...inputDefinitions.values()],
     activation,
   };

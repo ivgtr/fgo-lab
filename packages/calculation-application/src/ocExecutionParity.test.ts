@@ -1,3 +1,4 @@
+import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import { describe, expect, it } from 'vitest';
 import {
   masterSnapshotSchema,
@@ -18,6 +19,7 @@ import { compileRankingContributionPolicy } from './contributionPolicy';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import {
   createCalculatorPortableRequest,
+  createRankingPortableRequest,
   currentCalculationVersionContext,
   executePortableCalculation,
 } from './portableCalculation';
@@ -106,6 +108,50 @@ function versions(master: ReturnType<typeof ocMaster>) {
 }
 
 describe('canonical OC application and portable parity', () => {
+  it.each(['commandCard', 'commandCardAttack'] as const)(
+    'replays %s non-execution through all ranking policies, calculator and portable recovery',
+    (triggerScope) => {
+      const master = ocMaster();
+      master.servants[0]!.skills[0]!.effects[0]!.triggerScope = triggerScope;
+      for (const selfBuffs of ['included', 'excluded'] as const) {
+        for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+          const ranking = calculateRankingPolicy(
+            master,
+            { servantBuilds: {} },
+            { ...DEFAULT_RANKING_POLICY_CONDITIONS, selfBuffs, conditionalEffects },
+            versions(master),
+          );
+          expect(ranking.exclusions).toEqual([]);
+          const result = Object.values(ranking.profileResults)[0]!;
+          expect(result.status).toBe('calculated');
+          if (result.status !== 'calculated') throw new Error(result.status);
+          const request = createRankingPortableRequest(
+            result.detail,
+            currentCalculationVersionContext(master),
+          );
+          const replay = executePortableCalculation(request, master);
+          const calculator = calculateScenario(result.detail.scenario, master, versions(master));
+          expect(replay.status).toBe('executed');
+          if (replay.status !== 'executed') throw new Error(replay.status);
+          expect(replay.execution.result).toEqual(result.detail.result);
+          expect(calculator.result.status).toBe('calculated');
+          if (calculator.result.status !== 'calculated') throw new Error(calculator.result.status);
+          expect(calculator.result.rows).toEqual(result.detail.result.rows);
+          expect(replay.execution.appliedPreparationActions.at(-1)?.ocUse).toMatchObject({
+            effectiveOc: 1,
+            boostUses: [],
+          });
+        }
+      }
+      const explicitSkill = calculateScenario(scenarioFor(master), master, versions(master));
+      expect(explicitSkill.result.status).toBe('calculated');
+      expect(explicitSkill.appliedPreparationActions.at(-1)?.ocUse).toMatchObject({
+        effectiveOc: 1,
+        boostUses: [],
+      });
+    },
+  );
+
   it('keeps the human-readable OC source name in the NP-use evidence', () => {
     const master = ocMaster();
     const execution = calculateScenario(scenarioFor(master), master, versions(master));

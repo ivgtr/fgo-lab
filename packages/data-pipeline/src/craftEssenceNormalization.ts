@@ -1,6 +1,7 @@
 import {
   masterEffectSchema,
   type EffectExecutionOperation,
+  type CanonicalValueSets,
   type MasterEffect,
   type ModifierValueExpression,
 } from '@fgo-lab/master-data';
@@ -9,6 +10,20 @@ type ValuedOperation = Extract<
   EffectExecutionOperation,
   { kind: 'damageModifier' | 'modifierRateChange' }
 >;
+
+function withResourceLimitBreakValues(
+  operation: Extract<EffectExecutionOperation, { kind: 'resourceMutation' }>,
+  limitBreakValues: CanonicalValueSets,
+): EffectExecutionOperation {
+  if (operation.amount.kind === 'dependent')
+    throw new TypeError('dependent_resource_has_no_values');
+  if (operation.resource === 'hp')
+    return {
+      ...operation,
+      amount: { kind: 'fixed', values: operation.amount.values, limitBreakValues },
+    };
+  return { ...operation, amount: { ...operation.amount, limitBreakValues } };
+}
 
 function expressionShape(expression: ModifierValueExpression | null) {
   if (expression === null) return null;
@@ -51,10 +66,10 @@ function operationSemanticIdentity(operation: EffectExecutionOperation): string 
           : undefined,
     });
   }
-  if (operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed')
+  if (operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent')
     return JSON.stringify({
       ...operation,
-      amount: { kind: 'fixed' },
+      amount: { kind: operation.amount.kind },
     });
   if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
     return JSON.stringify(operation);
@@ -115,15 +130,11 @@ function withExplicitLimitBreakValues(effect: MasterEffect): MasterEffect {
                   limitBreakValueExpressions:
                     operation.limitBreakValueExpressions ?? operation.valueExpressions,
                 }
-              : operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed'
-                ? {
-                    ...operation,
-                    amount: {
-                      ...operation.amount,
-                      limitBreakValues:
-                        operation.amount.limitBreakValues ?? operation.amount.values,
-                    },
-                  }
+              : operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent'
+                ? withResourceLimitBreakValues(
+                    operation,
+                    operation.amount.limitBreakValues ?? operation.amount.values,
+                  )
                 : operation,
     ),
   };
@@ -155,23 +166,17 @@ function mergeSharedEffect(
           return { ...operation, limitBreakCells: lb.cells };
         throw new Error('oc_limit_break_operation_mismatch');
       }
-      if (operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed') {
+      if (operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent') {
         const limitBreakOperation = limitBreak.execution[index];
         if (
           limitBreakOperation?.kind !== 'resourceMutation' ||
-          limitBreakOperation.amount.kind !== 'fixed' ||
+          limitBreakOperation.amount.kind === 'dependent' ||
           operationSemanticIdentity(operation) !== operationSemanticIdentity(limitBreakOperation)
         )
           throw new Error(
             `craft_essence_limit_break_operation_mismatch:${String(equipId)}:${normal.occurrenceId}:${String(index)}`,
           );
-        return {
-          ...operation,
-          amount: {
-            ...operation.amount,
-            limitBreakValues: limitBreakOperation.amount.values,
-          },
-        };
+        return withResourceLimitBreakValues(operation, limitBreakOperation.amount.values);
       }
       if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
         return operation;
