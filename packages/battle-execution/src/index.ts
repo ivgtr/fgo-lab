@@ -1,3 +1,4 @@
+export { conditionReadsResource } from './resourceSemantics';
 export { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 export type {
   ActorScope,
@@ -30,7 +31,7 @@ export type {
   TraitScope,
   WorldFactAssertion,
 } from './contracts';
-export { canNormalizeDamageEffect } from './effectRouting';
+export { canNormalizeDamageEffect, resolveResourceTargetPolicy } from './effectRouting';
 export { isConsistentNpOcUseReceipt } from './ocState';
 export {
   contributionIsIncluded,

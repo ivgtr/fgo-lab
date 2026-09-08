@@ -1,3 +1,5 @@
+import { observeResourceProgram, type ResourceProgramObservation } from './resourceProgramAudit';
+import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { naturalServantLevel, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { EffectProjection } from '@fgo-lab/battle-execution';
 import {
@@ -32,6 +34,7 @@ export interface CalculationApplicationProductionAudit {
   schemaVersion: number;
   engineVersion: string;
   records: readonly CanonicalAuditRecord[];
+  resourcePrograms: readonly CanonicalAuditRecord[];
   digest: string;
   inventory: {
     attackServants: number;
@@ -40,6 +43,12 @@ export interface CalculationApplicationProductionAudit {
     calculatorScenarios: number;
     rankingRows: number;
     rankingPolicy: 'current-default';
+    resourcePrograms: {
+      programs: number;
+      mutations: number;
+      opaqueOperations: number;
+      digest: string;
+    };
     calculated: number;
     inputRequired: number;
     unsupported: number;
@@ -100,6 +109,13 @@ export function compileCalculationApplicationProductionAudit(
     masterDataVersion: master.version,
   };
   const candidateRecords: CanonicalAuditRecord[] = [];
+  const resourceObservations: {
+    identity: string;
+    profileKey: string;
+    observation: ResourceProgramObservation;
+  }[] = [];
+  let resourceMutationCount = 0;
+  let opaqueOperationCount = 0;
   const calculatorRecords: CanonicalAuditRecord[] = [];
   const failures: CalculationApplicationProductionAudit['failures'][number][] = [];
   let generatedCandidateCount = 0;
@@ -120,6 +136,16 @@ export function compileCalculationApplicationProductionAudit(
     deduplicatedCandidateCount += planned.inventory.deduplicatedStateCount;
     if (planned.candidates.length === 0) continue;
     attackServants += 1;
+    for (const program of compileStaticRankingPreparationPrograms(servant)) {
+      const observed = observeResourceProgram(servant, program);
+      resourceMutationCount += observed.mutations.length;
+      opaqueOperationCount += observed.opaqueOperations.length;
+      resourceObservations.push({
+        profileKey: attackProfileKey(program.attackProfile),
+        identity: `resource-program:${attackProfileKey(program.attackProfile)}:${program.key}`,
+        observation: observed,
+      });
+    }
     naturalLevelPairs.add(levelPairKey(servant.id, naturalServantLevel(servant.rarity)));
     level90Pairs.add(levelPairKey(servant.id, 90));
     for (const candidate of planned.candidates)
@@ -178,6 +204,21 @@ export function compileCalculationApplicationProductionAudit(
     { servantBuilds: {} },
     DEFAULT_RANKING_POLICY_CONDITIONS,
     versions,
+  );
+  const resourcePrograms: CanonicalAuditRecord[] = resourceObservations.map(
+    ({ identity, profileKey, observation }) => {
+      const profile = ranking.profileResults[profileKey];
+      if (!profile) throw new TypeError('resource_program_profile_outcome_missing');
+      return {
+        identity,
+        value: jsonValue({
+          ...observation,
+          profileKey,
+          defaultProfileOutcome: profile.status,
+          // This profile outcome is not the execution outcome of every structural program.
+        }),
+      };
+    },
   );
   for (const exclusion of ranking.exclusions)
     if (exclusion.status !== 'unavailableUnderPolicy')
@@ -266,6 +307,12 @@ export function compileCalculationApplicationProductionAudit(
     calculatorScenarios: calculatorRecords.length,
     rankingRows: ranking.rows.length,
     rankingPolicy: 'current-default' as const,
+    resourcePrograms: {
+      programs: resourcePrograms.length,
+      mutations: resourceMutationCount,
+      opaqueOperations: opaqueOperationCount,
+      digest: canonicalAuditDigest(resourcePrograms),
+    },
     calculated,
     inputRequired,
     unsupported,
@@ -293,6 +340,7 @@ export function compileCalculationApplicationProductionAudit(
     schemaVersion: SCHEMA_VERSION,
     engineVersion: ENGINE_VERSION,
     records,
+    resourcePrograms,
     digest: canonicalAuditDigest(records),
     inventory,
     failures,
