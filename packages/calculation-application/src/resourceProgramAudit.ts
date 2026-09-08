@@ -1,21 +1,27 @@
 import {
+  ATTACKER_RESOURCE_ACTOR,
   compileOcSourceProgram,
-  conditionReadsResource,
+  conditionQuantityReads,
   effectExecutesInNpProgram,
   effectChangesPreparation,
+  expressionQuantityReads,
   noblePhantasmDamageDependency,
-  resolveResourceTargetPolicy,
+  resourceQueriesMayIntersect,
+  currentResourceQuery,
+  mutationResourceAccess,
+  resourceSourceActor,
+  type QuantityRead,
+  type ResourceKind,
+  type ResourceQuery,
   type SourceEffect,
-  type ConditionExpression,
 } from '@fgo-lab/battle-execution';
-import type { MasterEffect, ModifierValueExpression, ServantMaster } from '@fgo-lab/master-data';
+import type { MasterEffect, ServantMaster } from '@fgo-lab/master-data';
 import {
   rankingProgramSourceGroups,
   type RankingProgramSourceGroup,
 } from './rankingProgramSources';
 import type { StaticRankingPreparationProgram } from './rankingStaticPreparation';
 
-type Resource = 'hp' | 'npGauge' | 'battlePoint' | 'criticalStars';
 interface Position {
   group: number;
   effect: string | null;
@@ -25,27 +31,21 @@ interface Position {
 }
 interface Access {
   position: Position;
-  reads: readonly Resource[];
-  writes: readonly Resource[];
+  reads: readonly ResourceQuery[];
+  writes: readonly ResourceQuery[];
   opaqueReason: string | null;
   recipient: string | null;
-  actor: 'attacker' | 'target' | 'other' | 'unresolved';
   cells: number;
-  /** Required HP guards are separately observed, not claimed to exist in today's executor. */
+  /** Required guards are declared separately until installed in the executor. */
   hpGuard: boolean;
-  ocAccess?: 'grantHpRate' | 'useRate';
+  rate?: { kind: 'grant'; values: readonly ResourceQuery[] } | { kind: 'use' };
 }
 
-function expressionResource(
-  expression: ModifierValueExpression | { kind: 'fixed'; value: number } | null,
-): Resource | null {
-  if (expression?.kind === 'inverseHpLinear' || expression?.kind === 'hpRangeLinear') return 'hp';
-  if (expression?.kind === 'inputLinear' && expression.inputKey === 'battle:criticalStars')
-    return 'criticalStars';
-  return null;
+const queries = (reads: readonly QuantityRead[]): ResourceQuery[] =>
+  reads.flatMap((read) => (read.kind === 'resource' ? [read.query] : []));
+function uniqueQueries(reads: readonly ResourceQuery[]): ResourceQuery[] {
+  return [...new Map(reads.map((query) => [JSON.stringify(query), query])).values()];
 }
-
-const resources = ['hp', 'npGauge', 'battlePoint', 'criticalStars'] as const;
 function opaqueReason(operation: MasterEffect['execution'][number]): string | null {
   switch (operation.kind) {
     case 'unsupported':
@@ -76,19 +76,6 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
   }
 }
 
-/** Existing resource readers do not resolve source-qualified BP rates or foreign actors. */
-function opaqueConditionReason(condition: ConditionExpression): string | null {
-  if (condition.kind === 'all' || condition.kind === 'any')
-    return (
-      condition.expressions.map(opaqueConditionReason).find((reason) => reason !== null) ?? null
-    );
-  if (condition.kind === 'not') return opaqueConditionReason(condition.expression);
-  if (condition.kind === 'sourceQuantity') return 'unresolvedSourceQuantityRead';
-  if (condition.kind === 'quantity' && condition.subjectId !== undefined)
-    return 'unresolvedResourceActor';
-  return condition.kind === 'unsupported' ? condition.reason : null;
-}
-
 function effectAccesses(source: SourceEffect, group: number): Access[] {
   if (!effectExecutesInNpProgram(source.effect)) return [];
   const sourceKey = JSON.stringify([
@@ -97,122 +84,104 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
     source.skillId,
     source.constantFormKey ?? null,
   ]);
-  const ocProgram = compileOcSourceProgram(source);
-  const condition = ocProgram.condition;
+  const program = compileOcSourceProgram(source);
+  const valueContext = {
+    actor: resourceSourceActor(source),
+    sourceActor: resourceSourceActor(source),
+    inputDefinitions: source.effect.inputDefinitions,
+  };
+  const conditionContext = {
+    ...valueContext,
+    actor: program.conditionActor === 'source' ? valueContext.actor : ATTACKER_RESOURCE_ACTOR,
+  };
+  const conditionReads = conditionQuantityReads(program.condition, conditionContext);
   const preparationReadsCondition =
-    effectChangesPreparation(source.effect, source.origin) || ocProgram.operations.length > 0;
-  // These are observed current readers. Missing canonical amount/actor semantics remain opaque.
-  const explicitReads = resources.filter(
-    (resource) => resource !== 'npGauge' && conditionReadsResource(condition, resource),
-  );
+    effectChangesPreparation(source.effect, source.origin) || program.operations.length > 0;
+  const position = (operation: number | null, phase: Position['phase']): Position => ({
+    group,
+    effect: source.effect.occurrenceId,
+    source: sourceKey,
+    operation,
+    phase,
+  });
+  const empty = {
+    writes: [],
+    reads: [],
+    cells: 0,
+    hpGuard: false,
+    recipient: null,
+    opaqueReason: null,
+  };
   const result: Access[] = [
     {
-      position: {
-        group,
-        effect: source.effect.occurrenceId,
-        source: sourceKey,
-        operation: null,
-        phase: preparationReadsCondition ? 'effect' : 'ordinaryDependency',
-      },
-      reads: explicitReads,
-      writes: [],
-      opaqueReason: opaqueConditionReason(condition),
-      recipient: null,
-      actor: 'attacker',
-      cells: 0,
-      hpGuard: false,
+      ...empty,
+      position: position(null, preparationReadsCondition ? 'effect' : 'ordinaryDependency'),
+      reads: uniqueQueries(queries(conditionReads)),
+      // BP actor/domain is known, but today's activation facts do not implement its live query.
+      opaqueReason:
+        conditionReads.find((read) => read.kind === 'unresolved')?.reason ??
+        (queries(conditionReads).some((read) => read.resource === 'battlePoint')
+          ? 'unresolvedLiveBattlePointRead'
+          : null),
     },
   ];
   for (const [index, operation] of source.effect.execution.entries()) {
-    const writes: Resource[] =
-      operation.kind === 'resourceMutation'
-        ? [operation.resource]
-        : operation.kind === 'contextMutation' && operation.mutation === 'addQuantity'
-          ? ['battlePoint']
-          : [];
-    const reads: Resource[] =
-      operation.kind === 'resourceMutation' && operation.amount.kind === 'currentGaugeRatio'
-        ? ['npGauge']
+    const mutation =
+      operation.kind === 'resourceMutation' ? mutationResourceAccess(operation, source) : null;
+    const writes: ResourceQuery[] = mutation
+      ? [mutation.write]
+      : operation.kind === 'contextMutation' && operation.mutation === 'addQuantity'
+        ? [currentResourceQuery('battlePoint', ATTACKER_RESOURCE_ACTOR, operation.subjectId)]
         : [];
+    const reads = mutation ? queries(mutation.amountReads) : [];
     if ('valueExpressions' in operation) {
-      const deferredReads = new Set<Resource>();
-      for (const expression of [
-        ...operation.valueExpressions.flat(),
-        ...(operation.limitBreakValueExpressions?.flat() ?? []),
-      ]) {
-        const resource = expressionResource(expression);
-        if (resource !== null) deferredReads.add(resource);
-      }
-      if (deferredReads.size > 0)
+      const values = uniqueQueries(
+        queries(
+          [
+            ...operation.valueExpressions.flat(),
+            ...(operation.limitBreakValueExpressions?.flat() ?? []),
+          ].flatMap((expression) => expressionQuantityReads(expression, valueContext)),
+        ),
+      );
+      if (values.length)
+        result.push({ ...empty, position: position(index, 'ordinaryDependency'), reads: values });
+    }
+    if (operation.kind === 'grantOcApplicationRate') {
+      const values = uniqueQueries(
+        queries(
+          [...operation.cells.flat(), ...(operation.limitBreakCells?.flat() ?? [])].flatMap(
+            ({ amount }) => expressionQuantityReads(amount, valueContext),
+          ),
+        ),
+      );
+      if (values.length)
         result.push({
-          position: {
-            group,
-            effect: source.effect.occurrenceId,
-            source: sourceKey,
-            operation: index,
-            phase: 'ordinaryDependency',
-          },
-          reads: [...deferredReads],
-          writes: [],
-          opaqueReason: null,
-          recipient: null,
-          actor: 'attacker',
-          cells: 0,
-          hpGuard: false,
+          ...empty,
+          position: position(index, 'effect'),
+          recipient: operation.route.target,
+          rate: { kind: 'grant', values },
         });
     }
     const reason = opaqueReason(operation);
-    const opaque = reason !== null;
-    // OC rate values are read when a later boost uses them, not when the instance is granted.
     if (
-      operation.kind === 'grantOcApplicationRate' &&
-      [...operation.cells.flat(), ...(operation.limitBreakCells?.flat() ?? [])].some(
-        ({ amount }) => expressionResource(amount) === 'hp',
-      )
-    ) {
-      result.push({
-        position: {
-          group,
-          effect: source.effect.occurrenceId,
-          source: sourceKey,
-          operation: index,
-          phase: 'effect',
-        },
-        reads: [],
-        writes: [],
-        opaqueReason: null,
-        cells: 0,
-        hpGuard: false,
-        recipient: operation.route.target,
-        actor: 'attacker',
-        ocAccess: 'grantHpRate',
-      });
-    }
-    if (writes.length === 0 && reads.length === 0 && !opaque && operation.kind !== 'grantOcBoost')
+      writes.length === 0 &&
+      reads.length === 0 &&
+      reason === null &&
+      operation.kind !== 'grantOcBoost'
+    )
       continue;
-    const cells =
-      operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent'
-        ? operation.amount.values.flat().length +
-          (operation.amount.limitBreakValues?.flat().length ?? 0)
-        : 0;
     result.push({
-      position: {
-        group,
-        effect: source.effect.occurrenceId,
-        source: sourceKey,
-        operation: index,
-        phase: 'effect',
-      },
-      reads,
-      ...(operation.kind === 'grantOcBoost' ? { ocAccess: 'useRate' as const } : {}),
+      ...empty,
+      position: position(index, 'effect'),
       writes,
+      reads,
       opaqueReason: reason,
-      cells,
-      hpGuard: false,
-      actor:
-        operation.kind === 'resourceMutation'
-          ? (resolveResourceTargetPolicy(source.origin, operation.recipient) ?? 'other')
-          : 'unresolved',
+      ...(operation.kind === 'grantOcBoost' ? { rate: { kind: 'use' as const } } : {}),
+      cells:
+        operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent'
+          ? operation.amount.values.flat().length +
+            (operation.amount.limitBreakValues?.flat().length ?? 0)
+          : 0,
       recipient:
         'recipient' in operation
           ? operation.recipient
@@ -224,11 +193,12 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
   return result;
 }
 
+type ObservedReader = Position & { query: ResourceQuery };
 export interface ResourceProgramObservation {
   kind: 'declaredResourceProgram';
   programKey: string;
   valueCellScope: 'allCanonicalCells';
-  readCoverage: 'partialCurrentContracts';
+  readCoverage: 'declaredQueriesPartialExecution';
   sourceGroups: readonly (Pick<
     RankingProgramSourceGroup,
     'kind' | 'commandIndex' | 'formId' | 'damageActive'
@@ -237,131 +207,132 @@ export interface ResourceProgramObservation {
   })[];
   mutations: readonly {
     writer: Position;
-    resource: Resource;
+    resource: ResourceKind;
     recipient: string | null;
-    actor: 'attacker' | 'target' | 'other' | 'unresolved';
+    actor: ResourceQuery['actor'];
+    domain: string | null;
     cells: number;
-    firstPotentialReader: Position | null;
-    firstRequiredHpGuard: Position | null;
-    deferredReader: Position | null;
+    firstPotentialReader: ObservedReader | null;
+    firstRequiredHpGuard: ObservedReader | null;
+    deferredReader: ObservedReader | null;
     firstOpaqueOperation: Position | null;
   }[];
   opaqueOperations: readonly { position: Position; reason: string }[];
 }
 
-/** Joins selected source order to current readers and missing terminal HP guards without raw inference. */
+function observedReader(
+  accesses: readonly Access[],
+  writer: ResourceQuery,
+  predicate: (access: Access, query: ResourceQuery) => boolean,
+): ObservedReader | null {
+  for (const access of accesses) {
+    const query = access.reads.find(
+      (read) => predicate(access, read) && resourceQueriesMayIntersect(writer, read),
+    );
+    if (query) return { ...access.position, query };
+  }
+  return null;
+}
+
+/** This is a dependency observation, not an admission verdict or an execution outcome. */
 export function observeResourceProgram(
   servant: ServantMaster,
   program: StaticRankingPreparationProgram,
 ): ResourceProgramObservation {
-  const accesses: Access[] = [];
   const groups = rankingProgramSourceGroups(servant, program, 1);
+  const accesses: Access[] = [];
+  const hpGuard: ResourceQuery = {
+    resource: 'hp',
+    measure: 'alive',
+    actor: ATTACKER_RESOURCE_ACTOR,
+  };
   for (const [groupIndex, group] of groups.entries()) {
+    const empty = { opaqueReason: null, cells: 0, recipient: null };
+    const position = (phase: Position['phase']): Position => ({
+      group: groupIndex,
+      effect: null,
+      source: null,
+      operation: null,
+      phase,
+    });
     if (group.noblePhantasm)
       accesses.push({
-        position: {
-          group: groupIndex,
-          effect: null,
-          source: null,
-          operation: null,
-          phase: 'npUse',
-        },
-        reads: ['npGauge'],
-        writes: ['npGauge'],
-        opaqueReason: null,
-        recipient: 'sourceSelf',
-        actor: 'attacker',
-        cells: 0,
+        ...empty,
+        position: position('npUse'),
+        reads: [currentResourceQuery('npGauge', ATTACKER_RESOURCE_ACTOR, null), hpGuard],
+        writes: [currentResourceQuery('npGauge', ATTACKER_RESOURCE_ACTOR, null)],
         hpGuard: true,
       });
     for (const source of group.sources) accesses.push(...effectAccesses(source, groupIndex));
     if (group.kind === 'terminal' && group.noblePhantasm?.kind === 'attack') {
-      const damage = group.noblePhantasm.damage;
-      const reads = resources.filter(
-        (resource) =>
-          resource !== 'npGauge' &&
-          damage.some((item) =>
-            item.parametersByOvercharge.some((row, oc) =>
-              row.some((_, level) =>
-                conditionReadsResource(
-                  noblePhantasmDamageDependency(item, oc + 1, level + 1),
-                  resource,
-                ),
-              ),
+      const reads = group.noblePhantasm.damage.flatMap((damage) =>
+        damage.parametersByOvercharge.flatMap((row, oc) =>
+          row.flatMap((_, level) =>
+            queries(
+              conditionQuantityReads(noblePhantasmDamageDependency(damage, oc + 1, level + 1)),
             ),
           ),
+        ),
       );
       accesses.push({
-        position: {
-          group: groupIndex,
-          effect: null,
-          source: null,
-          operation: null,
-          phase: 'damage',
-        },
-        reads,
+        ...empty,
+        position: position('damage'),
+        reads: uniqueQueries([...reads, hpGuard]),
         writes: [],
-        opaqueReason: null,
-        recipient: null,
-        actor: 'attacker',
-        cells: 0,
         hpGuard: true,
       });
     }
   }
-  // Conservative possible rate liveness: removals/conditions stay visible as opaque operations.
-  // This never proves application or numerical relevance, nor claims a removed instance is live.
-  let possibleHpRate = false;
+  // Conservative possible rate liveness. Removal and activation stay opaque: never a grant proof.
+  let possibleRateValues: ResourceQuery[] = [];
   for (const access of accesses) {
-    if (access.ocAccess === 'useRate' && possibleHpRate) access.reads = [...access.reads, 'hp'];
-    possibleHpRate ||= access.ocAccess === 'grantHpRate';
+    if (access.rate?.kind === 'use')
+      access.reads = uniqueQueries([...access.reads, ...possibleRateValues]);
+    if (access.rate?.kind === 'grant')
+      possibleRateValues = uniqueQueries([...possibleRateValues, ...access.rate.values]);
   }
   const mutations: ResourceProgramObservation['mutations'][number][] = [];
   for (const [index, access] of accesses.entries()) {
-    for (const resource of access.writes) {
-      const suffix = accesses.slice(index + 1);
-      const actorCanIntersect =
-        resource === 'criticalStars' ||
-        access.actor === 'attacker' ||
-        access.actor === 'unresolved';
-      const firstPotentialReader = actorCanIntersect
-        ? (suffix.find(
-            ({ reads, position }) =>
-              position.phase !== 'ordinaryDependency' && reads.includes(resource),
-          )?.position ?? null)
-        : null;
-      // A declared ordinary reader is not ordered against preparation writes until U1-R/U2 closes
-      // the replay/receipt boundary. Include earlier declarations too; do not invent a first clock.
-      const deferredReader = actorCanIntersect
-        ? (accesses.find(
-            ({ reads, position }) =>
-              position.phase === 'ordinaryDependency' && reads.includes(resource),
-          )?.position ?? null)
-        : null;
-      const firstRequiredHpGuard =
-        resource === 'hp' && actorCanIntersect
-          ? (suffix.find(({ hpGuard }) => hpGuard)?.position ?? null)
-          : null;
-      const firstOpaqueOperation =
-        suffix.find(({ opaqueReason }) => opaqueReason !== null)?.position ?? null;
+    const suffix = accesses.slice(index + 1);
+    for (const writer of access.writes)
       mutations.push({
         writer: access.position,
-        resource,
+        resource: writer.resource,
         recipient: access.recipient,
-        actor: access.actor,
+        actor: writer.actor,
+        domain: writer.resource === 'battlePoint' ? writer.domain : null,
         cells: access.cells,
-        firstPotentialReader,
-        firstRequiredHpGuard,
-        deferredReader,
-        firstOpaqueOperation,
+        firstPotentialReader: observedReader(
+          suffix,
+          writer,
+          (read, query) =>
+            read.position.phase !== 'ordinaryDependency' &&
+            !(query.resource === 'hp' && query.measure === 'alive'),
+        ),
+        firstRequiredHpGuard:
+          writer.resource === 'hp'
+            ? observedReader(
+                suffix,
+                writer,
+                (read, query) =>
+                  read.hpGuard && query.resource === 'hp' && query.measure === 'alive',
+              )
+            : null,
+        // Ordinary declarations do not establish their order against preparation writes yet.
+        deferredReader: observedReader(
+          accesses,
+          writer,
+          (read) => read.position.phase === 'ordinaryDependency',
+        ),
+        firstOpaqueOperation:
+          suffix.find(({ opaqueReason }) => opaqueReason !== null)?.position ?? null,
       });
-    }
   }
   return {
     kind: 'declaredResourceProgram',
     programKey: program.key,
     valueCellScope: 'allCanonicalCells',
-    readCoverage: 'partialCurrentContracts',
+    readCoverage: 'declaredQueriesPartialExecution',
     sourceGroups: groups.map(({ kind, commandIndex, formId, damageActive, noblePhantasm }) => ({
       kind,
       commandIndex,

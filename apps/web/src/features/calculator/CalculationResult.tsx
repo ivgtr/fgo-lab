@@ -157,7 +157,9 @@ export function CalculationResult({
           <p className="empty" role="alert">
             {result.status === 'inputRequired'
               ? '正確な計算に必要な戦闘情報を入力してください。'
-              : '現在の条件は正確に計算できないため、ダメージ値を表示していません。'}
+              : result.status === 'unavailable'
+                ? '現在の準備状態では宝具を使用できません。NPゲージと準備操作を確認してください。'
+                : '現在の条件は正確に計算できないため、ダメージ値を表示していません。'}
           </p>
         ) : (
           <table className="np-result-table">

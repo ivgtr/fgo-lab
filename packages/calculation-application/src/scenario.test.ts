@@ -1,3 +1,4 @@
+import { createCalculatorPortableRequest, executePortableCalculation } from './portableCalculation';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import effectSourcesGolden from '../../test-fixtures/golden/ordered-effect-execution-v1.json';
@@ -5,6 +6,8 @@ import { executeOrderedScenario, prepareOrderedScenario } from '@fgo-lab/battle-
 import { masterSnapshotSchema, type CanonicalEffectRequirement } from '@fgo-lab/master-data';
 import type { TargetPredicate } from '@fgo-lab/schema';
 import {
+  calculationResultSchema,
+  calculationShareSnapshotSchema,
   calculationScenarioSchema,
   ENGINE_VERSION,
   SCHEMA_VERSION,
@@ -2826,9 +2829,33 @@ describe('scenario calculation facade', () => {
       });
 
       expect(execution.result).toMatchObject({
-        status: 'unsupported',
+        status: ['insufficientNpGauge', 'resourceRequirementExceedsCapacity'].includes(code)
+          ? 'unavailable'
+          : 'unsupported',
+        rows: [],
         issues: [{ code: `preparation:${code}` }],
       });
+      const request = createCalculatorPortableRequest(scenario, {
+        masterDataVersion: rejectedMaster.version,
+        engineVersion: ENGINE_VERSION,
+      });
+      const portable = executePortableCalculation(request, rejectedMaster);
+      expect(portable.status).toBe(
+        execution.result.status === 'unavailable' ? 'executed' : 'unsupported',
+      );
+      if (portable.status !== 'executed' && portable.status !== 'unsupported')
+        throw new Error('unexpected portable failure');
+      expect(portable.execution.result).toEqual(execution.result);
+      expect(calculationResultSchema.safeParse(execution.result).success).toBe(true);
+      expect(
+        calculationShareSnapshotSchema.safeParse({
+          kind: 'fgo-lab-calculation-share',
+          schemaVersion: SCHEMA_VERSION,
+          sharedAt: '2026-09-09T00:00:00.000Z',
+          request,
+          result: execution.result,
+        }).success,
+      ).toBe(true);
       expect(execution.appliedPreparationActions).toHaveLength(
         code === 'insufficientNpGauge' ? 1 : 0,
       );

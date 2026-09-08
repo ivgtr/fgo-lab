@@ -53,7 +53,7 @@ function servantIdentityProfile() {
 }
 
 function servantIdentityCollection(
-  schemaVersion: 32 | 33 | 34 | 35 | 36 | 37 | typeof SCHEMA_VERSION,
+  schemaVersion: 32 | 33 | 34 | 35 | 36 | 37 | 38 | typeof SCHEMA_VERSION,
 ) {
   return {
     schemaVersion,
@@ -329,6 +329,20 @@ describe('portable schema boundaries', () => {
         masterDataLocale: 'ja-JP',
       },
     };
+    const unavailable = { ...currentResult, status: 'unavailable', reason: 'insufficientNpGauge' };
+    expect(calculationResultSchema.safeParse(unavailable).success).toBe(true);
+    expect(calculationResultSchema.safeParse({ ...unavailable, reason: 'unknown' }).success).toBe(
+      false,
+    );
+    expect(calculationResultSchema.safeParse({ ...unavailable, reason: undefined }).success).toBe(
+      false,
+    );
+    expect(
+      calculationResultSchema.safeParse({
+        ...unavailable,
+        rows: [{ npLevel: 1, minimum: 1, average: 1, maximum: 1 }],
+      }).success,
+    ).toBe(false);
     expect(calculationResultSchema.safeParse(currentResult).success).toBe(true);
     expect(
       calculationResultSchema.safeParse({
@@ -421,7 +435,7 @@ describe('portable schema boundaries', () => {
     });
   });
 
-  it.each([34, 35, 36, 37] as const)(
+  it.each([34, 35, 36, 37, 38] as const)(
     'migrates coherent schema %s and historicalizes resolved snapshots without reinterpreting final OC',
     (sourceVersion) => {
       const baseCollection = servantIdentityCollection(sourceVersion);
@@ -457,7 +471,7 @@ describe('portable schema boundaries', () => {
       const legacyFields = Object.fromEntries(
         Object.entries(currentScenario).filter(([key]) => key !== 'initialOvercharge'),
       );
-      const scenario = { ...legacyFields, overcharge: 1 };
+      const scenario = sourceVersion === 38 ? currentScenario : { ...legacyFields, overcharge: 1 };
       const snapshot = {
         profileId: servantIdentityProfileId,
         calculationSessionId: '00000000-0000-4000-8000-000000000048',
@@ -544,6 +558,7 @@ describe('portable schema boundaries', () => {
         schemaVersion: SCHEMA_VERSION,
         profiles: migrated.collection,
       });
+      if (sourceVersion === 38) return;
       const rankingSnapshot = {
         ...snapshot,
         request: {

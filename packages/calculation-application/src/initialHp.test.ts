@@ -62,6 +62,58 @@ describe('approved initial maximum HP basis', () => {
       ),
     ).toMatchObject({ status: 'invalid', issue: { reason: 'invalidEquipment' } });
   });
+  it.each(['servant', 'craftEssence'] as const)(
+    'rejects unsafe %s HP sums before preparation or portable execution',
+    (source) => {
+      const extreme = masterSnapshotSchema.parse({
+        ...master,
+        servants: master.servants.map((servant) => ({
+          ...servant,
+          hpByLevel: {
+            ...servant.hpByLevel,
+            [scenario.attacker.level]:
+              source === 'servant' ? Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER - 1000,
+          },
+        })),
+        craftEssences: [{ ...equip, hpByLevel: { '1': 0, '2': 1 } }],
+      });
+      const selected = source === 'servant' ? scenario : equipped;
+      expect(resolveInitialMaximumHp(selected, extreme)).toMatchObject({
+        status: 'invalid',
+        issue: { source, reason: 'unsafeMaximum' },
+      });
+      expect(resolveScenarioPreparationOutcome(selected, extreme)).toMatchObject({
+        status: 'invalid',
+        issue: { source, reason: 'unsafeMaximum' },
+      });
+      expect(
+        executePortableCalculation(
+          createCalculatorPortableRequest(selected, currentCalculationVersionContext(extreme)),
+          extreme,
+        ),
+      ).toMatchObject({
+        status: 'invalid',
+        reason: 'initialHpUnavailable',
+      });
+    },
+  );
+  it('preserves the exact safe integer boundary without clamping', () => {
+    const boundary = masterSnapshotSchema.parse({
+      ...master,
+      servants: master.servants.map((servant) => ({
+        ...servant,
+        hpByLevel: {
+          ...servant.hpByLevel,
+          [scenario.attacker.level]: Number.MAX_SAFE_INTEGER - 1001,
+        },
+      })),
+      craftEssences: [{ ...equip, hpByLevel: { '1': 0, '2': 1 } }],
+    });
+    expect(resolveInitialMaximumHp(equipped, boundary)).toEqual({
+      status: 'resolved',
+      maximum: Number.MAX_SAFE_INTEGER,
+    });
+  });
   it('fails closed on missing servant HP even when ATK exists', () => {
     const missing = {
       ...master,

@@ -7,7 +7,7 @@ export interface InitialHpUnavailableIssue {
   servantId: string;
   level: number;
   source: 'servant' | 'craftEssence';
-  reason: 'missingHp' | 'invalidEquipment';
+  reason: 'missingHp' | 'invalidEquipment' | 'unsafeMaximum';
 }
 export type InitialMaximumHpResolution =
   { status: 'resolved'; maximum: number } | { status: 'invalid'; issue: InitialHpUnavailableIssue };
@@ -36,8 +36,11 @@ export function resolveInitialMaximumHp(
   const servant = master.servants.find(({ id }) => id === scenario.attacker.servantId);
   const hp = servant ? readHpAtLevel(servant.hpByLevel, scenario.attacker.level) : null;
   if (hp === null || hp === 0) return invalid('servant', 'missingHp', scenario.attacker.level);
+  const baseMaximum = hp + FIXED_HP_FOU;
+  if (!Number.isSafeInteger(baseMaximum))
+    return invalid('servant', 'unsafeMaximum', scenario.attacker.level);
   const equipped = scenario.craftEssence;
-  if (!equipped) return { status: 'resolved', maximum: hp + FIXED_HP_FOU };
+  if (!equipped) return { status: 'resolved', maximum: baseMaximum };
   const equip = master.craftEssences.find(({ id }) => id === equipped.craftEssenceId);
   const maximumLevel = equip?.maxLevelByLimitBreak[equipped.limitBreak];
   if (
@@ -51,5 +54,8 @@ export function resolveInitialMaximumHp(
     return invalid('craftEssence', 'invalidEquipment', equipped.level);
   const equipHp = readHpAtLevel(equip.hpByLevel, equipped.level);
   if (equipHp === null) return invalid('craftEssence', 'missingHp', equipped.level);
-  return { status: 'resolved', maximum: hp + FIXED_HP_FOU + equipHp };
+  const maximum = baseMaximum + equipHp;
+  return Number.isSafeInteger(maximum)
+    ? { status: 'resolved', maximum }
+    : invalid('craftEssence', 'unsafeMaximum', equipped.level);
 }

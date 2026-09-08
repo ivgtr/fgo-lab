@@ -69,14 +69,14 @@ function mixedCandidateSet(
     unavailable: {
       result: {
         ...resultBase,
-        status: 'unsupported' as const,
-        missingEvidence: ['preparation:insufficientNpGauge'],
+        status: 'unavailable' as const,
+        reason: 'insufficientNpGauge' as const,
       },
     },
   };
   return {
     details: new Map(),
-    executions: order.map((kind) => byKind[kind]),
+    executions: order.map((kind) => structuredClone(byKind[kind])),
     plan: {
       candidateSpaces: [
         {
@@ -169,5 +169,41 @@ describe('ranking profile blocker aggregation', () => {
     const available = mixedCandidateSet(['unavailable']);
     available.details = new Map([[attackProfileKey(attackProfile), {} as never]]);
     expect(unresolvedProfileResult(available, attackProfile).status).toBe('calculated');
+  });
+});
+
+it('preserves a common unavailable result without reading a preparation diagnostic', () => {
+  const candidates = mixedCandidateSet(['unavailable']);
+  candidates.plan = { ...candidates.plan, preparedRankingScenarios: [] };
+  expect(unresolvedProfileResult(candidates, attackProfile)).toMatchObject({
+    status: 'unavailableUnderPolicy',
+    reason: 'insufficientNpGauge',
+  });
+});
+
+it('does not reinterpret an unsupported result from a coincident preparation diagnostic', () => {
+  const candidates = mixedCandidateSet(['unavailable']);
+  candidates.executions[0]!.result = {
+    ...resultBase,
+    rows: [],
+    status: 'unsupported',
+    missingEvidence: ['unknown-resource'],
+  };
+  expect(unresolvedProfileResult(candidates, attackProfile)).toMatchObject({
+    status: 'unsupported',
+  });
+});
+
+it('preserves mixed unavailability reasons rather than asserting NP shortage', () => {
+  const candidates = mixedCandidateSet(['unavailable', 'unavailable']);
+  candidates.executions[1]!.result = {
+    ...resultBase,
+    rows: [],
+    status: 'unavailable',
+    reason: 'npCapacityExceeded',
+  };
+  expect(unresolvedProfileResult(candidates, attackProfile)).toMatchObject({
+    status: 'unavailableUnderPolicy',
+    reason: 'noSatisfiableCandidate',
   });
 });

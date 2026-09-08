@@ -97,13 +97,13 @@ describe('selected program resource observation', () => {
     expect(observed.mutations.filter(({ resource }) => resource === 'hp')).toMatchObject([
       {
         writer: { effect: 'self' },
-        actor: 'attacker',
+        actor: { kind: 'attacker' },
         firstPotentialReader: null,
         firstRequiredHpGuard: { phase: 'npUse' },
       },
       {
         writer: { effect: 'other' },
-        actor: 'other',
+        actor: { kind: 'allies', excluded: { kind: 'attacker' } },
         firstPotentialReader: null,
         firstRequiredHpGuard: null,
       },
@@ -168,11 +168,11 @@ describe('selected program resource observation', () => {
         },
       }),
     ]);
-    expect(observed.readCoverage).toBe('partialCurrentContracts');
+    expect(observed.readCoverage).toBe('declaredQueriesPartialExecution');
     expect(
       observed.opaqueOperations.find(({ position }) => position.effect === 'foreign-rate'),
     ).toMatchObject({
-      reason: 'unresolvedSourceQuantityRead',
+      reason: 'unresolvedLiveBattlePointRead',
     });
   });
   it('finds a reader confined to a nondefault limit-break cell', () => {

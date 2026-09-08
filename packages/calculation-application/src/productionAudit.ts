@@ -19,6 +19,7 @@ export type ProductionAuditOutcome =
   | { status: 'calculated'; rows: CanonicalAuditValue }
   | { status: 'inputRequired'; issues: CanonicalAuditValue }
   | { status: 'unsupported'; issues: CanonicalAuditValue }
+  | { status: 'unavailable'; reason: string }
   | { status: 'invalid'; reason: string };
 
 export interface CalculationApplicationAuditCounters {
@@ -52,6 +53,7 @@ export interface CalculationApplicationProductionAudit {
     calculated: number;
     inputRequired: number;
     unsupported: number;
+    unavailable: number;
     invalid: number;
     levelStatAvailability: {
       naturalPairs: number;
@@ -64,7 +66,7 @@ export interface CalculationApplicationProductionAudit {
     };
   };
   failures: readonly {
-    kind: 'inputRequired' | 'unsupported' | 'invalid' | 'rankingFailure';
+    kind: 'inputRequired' | 'unsupported' | 'invalid' | 'unavailable' | 'rankingFailure';
     identity: string;
     reason: string;
   }[];
@@ -89,6 +91,8 @@ function auditOutcome(result: CalculationApplicationResult): ProductionAuditOutc
       return { status: 'inputRequired', issues: jsonValue(result.requiredInputs) };
     case 'unsupported':
       return { status: 'unsupported', issues: jsonValue(result.issues) };
+    case 'unavailable':
+      return { status: 'unavailable', reason: result.reason };
     case 'invalid':
       return {
         status: 'invalid',
@@ -125,6 +129,7 @@ export function compileCalculationApplicationProductionAudit(
   let inputRequired = 0;
   let unsupported = 0;
   let invalid = 0;
+  let unavailable = 0;
   const naturalLevelPairs = new Set<string>();
   const level90Pairs = new Set<string>();
   const referencedLevelPairs = new Set<string>();
@@ -168,11 +173,12 @@ export function compileCalculationApplicationProductionAudit(
       else {
         if (outcome.status === 'inputRequired') inputRequired += 1;
         else if (outcome.status === 'unsupported') unsupported += 1;
+        else if (outcome.status === 'unavailable') unavailable += 1;
         else invalid += 1;
         failures.push({
           kind: outcome.status,
           identity: `calculator:${servant.id}`,
-          reason: outcome.status === 'invalid' ? outcome.reason : JSON.stringify(outcome.issues),
+          reason: 'reason' in outcome ? outcome.reason : JSON.stringify(outcome.issues),
         });
       }
       calculatorRecords.push({
@@ -316,6 +322,7 @@ export function compileCalculationApplicationProductionAudit(
     calculated,
     inputRequired,
     unsupported,
+    unavailable,
     invalid,
     levelStatAvailability: {
       naturalPairs: naturalLevelPairs.size,

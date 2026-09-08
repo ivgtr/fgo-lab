@@ -1,3 +1,9 @@
+import {
+  conditionQuantityReads,
+  expressionQuantityReads,
+  readsResource,
+  ATTACKER_RESOURCE_ACTOR,
+} from './resourceQueries';
 import { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 import {
   ocGaugeDependencies,
@@ -80,7 +86,16 @@ export function ocRelevantSourceIndexes(
   let hp = false;
   const readsHpCondition = (effect: MasterEffect) =>
     canonicalRequirementLeaves(effect.requirement.expression).some(
-      (leaf) => leaf.kind === 'quantity' && leaf.quantity === 'attackerHpPermille',
+      (leaf) =>
+        (leaf.kind === 'quantity' || leaf.kind === 'inputQuantity') &&
+        readsResource(
+          conditionQuantityReads(leaf, {
+            actor: ATTACKER_RESOURCE_ACTOR,
+            sourceActor: ATTACKER_RESOURCE_ACTOR,
+            inputDefinitions: effect.inputDefinitions,
+          }),
+          'hp',
+        ),
     );
   const possibleHpRate = (end: number) =>
     resources?.automaticEffects === undefined ||
@@ -92,9 +107,15 @@ export function ocRelevantSourceIndexes(
         (operation) =>
           operation.kind === 'grantOcApplicationRate' &&
           [...operation.cells, ...(operation.limitBreakCells ?? [])].some((row) =>
-            row.some(
-              (cell) =>
-                cell.amount.kind === 'inverseHpLinear' || cell.amount.kind === 'hpRangeLinear',
+            row.some((cell) =>
+              readsResource(
+                expressionQuantityReads(cell.amount, {
+                  actor: ATTACKER_RESOURCE_ACTOR,
+                  sourceActor: ATTACKER_RESOURCE_ACTOR,
+                  inputDefinitions: effect.inputDefinitions,
+                }),
+                'hp',
+              ),
             ),
           ),
       ),

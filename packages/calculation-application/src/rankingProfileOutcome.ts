@@ -1,3 +1,4 @@
+import type { PolicyUnavailabilityReason } from './rankingContracts';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import type { RankingCandidateCalculation } from './rankingPolicyCandidates';
 import type { RankingProfileResult } from './rankingContracts';
@@ -48,7 +49,14 @@ function diagnosticsFor(
   };
 }
 
-function emptyRecords(): Record<RankingBlockerClass, BlockerRecord[]> {
+type BlockerRecords = Record<
+  Exclude<RankingBlockerClass, 'unavailableUnderPolicy'>,
+  BlockerRecord[]
+> & {
+  unavailableUnderPolicy: { candidateKey: string; reason: PolicyUnavailabilityReason }[];
+};
+
+function emptyRecords(): BlockerRecords {
   return {
     unavailableUnderPolicy: [],
     inputRequired: [],
@@ -120,16 +128,8 @@ export function unresolvedProfileResult(
   }));
   for (const { index, execution } of matchingExecutions) {
     const candidateKey = candidateSet.plan.candidateKeys[index] ?? `candidate:${String(index)}`;
-    const rejection =
-      candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code;
-    if (rejection === 'insufficientNpGauge' || rejection === 'resourceRequirementExceedsCapacity') {
-      records.unavailableUnderPolicy.push({
-        candidateKey,
-        reason:
-          rejection === 'resourceRequirementExceedsCapacity'
-            ? 'npCapacityExceeded'
-            : 'insufficientNpGauge',
-      });
+    if (execution.result.status === 'unavailable') {
+      records.unavailableUnderPolicy.push({ candidateKey, reason: execution.result.reason });
     } else if (execution.result.status === 'invalid') {
       records.invalid.push({
         candidateKey,
@@ -165,12 +165,7 @@ export function unresolvedProfileResult(
   }
   if (records.unsupported.length > 0) {
     const unsupported = matchingExecutions.find(
-      ({ index, execution }) =>
-        execution.result.status === 'unsupported' &&
-        !['insufficientNpGauge', 'resourceRequirementExceedsCapacity'].includes(
-          candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ??
-            '',
-        ),
+      ({ execution }) => execution.result.status === 'unsupported',
     )?.execution;
     return {
       status: 'unsupported',
@@ -201,10 +196,10 @@ export function unresolvedProfileResult(
       status: 'unavailableUnderPolicy',
       attackProfile,
       reason: records.unavailableUnderPolicy.every(
-        (record) => record.reason === 'npCapacityExceeded',
+        (record) => record.reason === records.unavailableUnderPolicy[0]!.reason,
       )
-        ? 'npCapacityExceeded'
-        : 'insufficientNpGauge',
+        ? records.unavailableUnderPolicy[0]!.reason
+        : 'noSatisfiableCandidate',
       diagnostics,
     };
   records.unavailableUnderPolicy.push({

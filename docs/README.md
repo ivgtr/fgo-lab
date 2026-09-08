@@ -32,7 +32,7 @@ updated_at: "2026-09-08"
 | [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.8／approved | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.5.1／approved | 画面構造、ranking comparison controls、versioned calculator recovery、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
-| [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.3 | condition、state mutation、ordered damage execution、UI不変条件 |
+| [damage effect execution requirements](requirements/damage-effect-execution-requirements.md) | requirement／Active v1.2.4 | condition、state mutation、ordered damage execution、UI不変条件 |
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.10.3／approved | comparison axes、all attack-NP coverage、maximum stack、contribution UI、source-program、portable handoff、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.1.0 | bounded output、artifact、handoff、command efficiency |

@@ -712,6 +712,13 @@ function resolvedCalculationResult(
       versions,
       evidence: evidence.evidence,
     };
+    const rejection = resolved.preparationRejection.code;
+    if (rejection === 'insufficientNpGauge' || rejection === 'resourceRequirementExceedsCapacity')
+      return {
+        ...common,
+        status: 'unavailable',
+        reason: rejection === 'insufficientNpGauge' ? 'insufficientNpGauge' : 'npCapacityExceeded',
+      };
     return resolved.preparationRejection.code === 'preparationInputRequired'
       ? {
           ...common,

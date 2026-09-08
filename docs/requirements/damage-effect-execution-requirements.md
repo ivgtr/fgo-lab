@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab ダメージ効果実行エンジン移行要件"
-document_version: "1.2.3"
+document_version: "1.2.4"
 status: "Active"
 created_at: "2026-08-25"
-updated_at: "2026-09-08"
+updated_at: "2026-09-09"
 source_requirements: "docs/requirements/fgo-lab-requirements-v0.3.md v0.3.7"
 ui_baseline: "docs/requirements/ui-design-spec.md v1.4.0"
 refactoring_contract: "docs/adr/008-refactoring-contract.md"
@@ -75,7 +75,7 @@ ATKからの推定、未取得HPの0扱い、非合法Lvのclampによる補完�
 実行中のcanonical current HPが0の場合は攻撃不可とし、その拒否でNP gauge・OC使用回数を消費せず、
 NP-use receiptを生成・更新しない。これは攻撃到達不能であり、damage0の成功結果、入力不正、未対応と混同しない。
 実HPが1以上なら、表示割合の丸めで0%となってもこの理由で攻撃を拒否しない。
-初期入力0%を分析値として許容するかは、この実行中HP0の条件とは別の未規定事項としてTSK-06.45で扱う。
+初期入力0%も死亡として攻撃不可とする（2026-09-09製品判断）。分析値として攻撃を許容する例外は設けない。
 
 ### 3.2 `自身の適用内容`の表示契約
 

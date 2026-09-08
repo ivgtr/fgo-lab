@@ -29,8 +29,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 38 as const;
-export const ENGINE_VERSION = '37.0.0' as const;
+export const SCHEMA_VERSION = 39 as const;
+export const ENGINE_VERSION = '38.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -725,6 +725,16 @@ const unsupportedResultSchema = resultBaseSchema.extend({
   rows: z.tuple([]),
   missingEvidence: z.array(z.string()),
 });
+export const calculationUnavailabilityReasonSchema = z.enum([
+  'insufficientNpGauge',
+  'npCapacityExceeded',
+]);
+export type CalculationUnavailabilityReason = z.infer<typeof calculationUnavailabilityReasonSchema>;
+const unavailableResultSchema = resultBaseSchema.extend({
+  status: z.literal('unavailable'),
+  rows: z.tuple([]),
+  reason: calculationUnavailabilityReasonSchema,
+});
 const inputRequiredResultSchema = resultBaseSchema.extend({
   status: z.literal('inputRequired'),
   rows: z.tuple([]),
@@ -741,8 +751,14 @@ const inputRequiredResultSchema = resultBaseSchema.extend({
     }),
   ),
 });
+const calculationResultBeforeV39Schema = z.discriminatedUnion('status', [
+  calculatedResultSchema,
+  inputRequiredResultSchema,
+  unsupportedResultSchema,
+]);
 export const calculationResultSchema = z.discriminatedUnion('status', [
   calculatedResultSchema,
+  unavailableResultSchema,
   inputRequiredResultSchema,
   unsupportedResultSchema,
 ]);
@@ -793,7 +809,7 @@ const historicalCalculationHistoryEntryV33Schema = z.object({
     initialNpGauge: z.number().int().nonnegative().max(100_000),
     contribution: z.enum(['standard', 'excludeVoluntarySkillModifiers']),
   }),
-  result: calculationResultSchema,
+  result: calculationResultBeforeV39Schema,
   legacyResultSchemaVersion: z.literal(33),
   requestFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   updatedAt: z.iso.datetime(),
@@ -814,6 +830,12 @@ export const historicalCalculationHistoryEntrySchema = z.union([
       ]),
     }),
   ),
+  historicalCalculationHistoryEntryV33Schema.extend({
+    sourceSchemaVersion: z.literal(38),
+    legacyResultSchemaVersion: z.literal(38),
+    scenario: resolvedScenarioSchema,
+    legacyRankingIntent: z.union([rankingExecutionIntentSchema, calculatorExecutionIntentSchema]),
+  }),
 ]);
 export const storedCalculationHistoryEntrySchema = z.union([
   calculationHistoryEntrySchema,
@@ -882,7 +904,13 @@ const localProfileV34Schema = z.object({
   history: z.array(z.unknown()).max(20),
 });
 const profileCollectionV34Schema = z.object({
-  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36), z.literal(37)]),
+  schemaVersion: z.union([
+    z.literal(34),
+    z.literal(35),
+    z.literal(36),
+    z.literal(37),
+    z.literal(38),
+  ]),
   activeProfileId: z.uuid(),
   profiles: z.array(localProfileV34Schema).min(1).max(20),
 });
@@ -1039,37 +1067,41 @@ export function parseStoredProfileCollection(value: unknown): {
 
 function migrateCalculationResultV34(
   result: unknown,
-  sourceVersion: 34 | 35 | 36 | 37,
+  sourceVersion: 34 | 35 | 36 | 37 | 38,
 ): CalculationResult {
   const envelope = z
     .object({ versions: z.object({ schemaVersion: z.literal(sourceVersion) }).loose() })
     .loose()
     .parse(result);
-  return calculationResultSchema.parse({
+  return calculationResultBeforeV39Schema.parse({
     ...envelope,
     versions: { ...envelope.versions, schemaVersion: SCHEMA_VERSION },
   });
 }
-function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36 | 37) {
+function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36 | 37 | 38) {
+  const requestSchema =
+    sourceVersion === 38
+      ? portableCalculationRequestSchema
+      : legacyPortableCalculationRequestSchema;
   const envelope = z
-    .object({ request: legacyPortableCalculationRequestSchema, result: z.unknown() })
+    .object({ request: requestSchema, result: z.unknown() })
     .loose()
     .parse(snapshot);
   const result = migrateCalculationResultV34(envelope.result, sourceVersion);
   const parsed = z
-    .object({ ...calculationSnapshotShape, request: legacyPortableCalculationRequestSchema })
+    .object({ ...calculationSnapshotShape, request: requestSchema })
     .superRefine(requireMatchingCalculationVersions)
     .parse({ ...envelope, result });
   return { ...envelope, ...parsed };
 }
-function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36 | 37) {
+function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36 | 37 | 38) {
   if (snapshot === null) return null;
   const parsed = parseCalculationSnapshotV34(snapshot, sourceVersion);
   return parsed.request.scenario.mode === 'resolved' ? null : calculationDraftSchema.parse(parsed);
 }
 function migrateCalculationHistoryEntryV34(
   entry: unknown,
-  sourceVersion: 34 | 35 | 36 | 37,
+  sourceVersion: 34 | 35 | 36 | 37 | 38,
 ): CalculationHistoryEntry {
   const envelope = z
     .object({ disposition: z.string().optional(), result: z.unknown() })
@@ -1106,7 +1138,7 @@ function migrateCalculationResultV33(
     record['engineVersion'] !== request.versionContext.engineVersion
   )
     return null;
-  const migrated = calculationResultSchema.safeParse({
+  const migrated = calculationResultBeforeV39Schema.safeParse({
     ...result,
     versions: { ...record, schemaVersion: SCHEMA_VERSION },
   });
@@ -1193,7 +1225,13 @@ const userDataBackupV33Schema = z
   .strict();
 const userDataBackupV34Schema = z.object({
   kind: z.literal('fgo-lab-user-backup'),
-  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36), z.literal(37)]),
+  schemaVersion: z.union([
+    z.literal(34),
+    z.literal(35),
+    z.literal(36),
+    z.literal(37),
+    z.literal(38),
+  ]),
   exportedAt: z.iso.datetime(),
   appVersion: z.string(),
   profiles: profileCollectionV34Schema,

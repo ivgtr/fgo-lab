@@ -7,6 +7,8 @@ import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
   portableCalculationRequestSchema,
+  parseStoredProfileCollection,
+  parseUserDataBackup,
 } from '@fgo-lab/schema';
 import {
   attemptPortableCalculationVersionUpgrade,
@@ -500,4 +502,88 @@ describe('portable calculation application owner', () => {
       failure: { status: 'invalid', reason: 'initialHpUnavailable' },
     });
   });
+});
+
+it('retains schema 38 ranking history with its exact initial OC basis and old engine identity', () => {
+  const ranking = calculateRankingPolicy(
+    master,
+    profile,
+    DEFAULT_RANKING_POLICY_CONDITIONS,
+    versions,
+  );
+  const selected = Object.values(ranking.profileResults).find(
+    (candidate) => candidate.status === 'calculated',
+  );
+  if (selected?.status !== 'calculated') throw new Error('fixture ranking unavailable');
+  const request = createRankingPortableRequest(selected.detail, {
+    ...versionContext,
+    engineVersion: '37.0.0',
+  });
+  const profileId = '00000000-0000-4000-8000-000000000046';
+  const timestamp = '2026-09-09T00:00:00.000Z';
+  const snapshot = {
+    profileId,
+    calculationSessionId: '00000000-0000-4000-8000-000000000047',
+    request,
+    result: {
+      ...selected.detail.result,
+      versions: { ...versions, schemaVersion: 38, engineVersion: '37.0.0' },
+    },
+    requestFingerprint: 'a'.repeat(64),
+    updatedAt: timestamp,
+  };
+  const collection = {
+    schemaVersion: 38,
+    activeProfileId: profileId,
+    profiles: [
+      {
+        profileId,
+        name: 'fixture',
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        servantBuilds: {},
+        servantTargets: {},
+        craftEssences: [],
+        supportTemplates: [],
+        draft: snapshot,
+        history: [
+          {
+            ...snapshot,
+            historyId: '00000000-0000-4000-8000-000000000048',
+            finalizedAt: timestamp,
+            lastUsedAt: timestamp,
+          },
+        ],
+      },
+    ],
+  };
+  const contradictory = structuredClone(collection);
+  Object.assign(contradictory.profiles[0]!.draft.result, {
+    status: 'unavailable',
+    rows: [],
+    reason: 'insufficientNpGauge',
+  });
+  expect(() => parseStoredProfileCollection(contradictory)).toThrow();
+  const migrated = parseStoredProfileCollection(collection);
+  expect(migrated.collection.profiles[0]).toMatchObject({
+    draft: null,
+    history: [
+      {
+        disposition: 'historicalOnly',
+        sourceSchemaVersion: 38,
+        legacyRankingIntent: request.executionIntent,
+        scenario: request.scenario,
+        result: { versions: { schemaVersion: SCHEMA_VERSION, engineVersion: '37.0.0' } },
+      },
+    ],
+  });
+  expect(
+    parseUserDataBackup({
+      kind: 'fgo-lab-user-backup',
+      schemaVersion: 38,
+      exportedAt: timestamp,
+      appVersion: APP_VERSION,
+      profiles: collection,
+    }).profiles,
+  ).toEqual(migrated.collection);
 });

@@ -1,3 +1,15 @@
+export {
+  conditionQuantityReads,
+  expressionQuantityReads,
+  readsResource,
+  resourceSourceActor,
+  resourceRecipientActor,
+  currentResourceQuery,
+  mutationResourceAccess,
+  resourceQueriesMayIntersect,
+  ATTACKER_RESOURCE_ACTOR,
+} from './resourceQueries';
+export type { ResourceActor, ResourceKind, ResourceQuery, QuantityRead } from './resourceQueries';
 export { conditionReadsResource } from './resourceSemantics';
 export { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 export type {

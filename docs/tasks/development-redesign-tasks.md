@@ -62,7 +62,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.48 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
-| TSK-06.45 | All attack-NP execution closure | in_progress | TSK-06.48 | Step 2: selected program timeline and resource-reader audit; HP/BP/dependent execution pending |
+| TSK-06.45 | All attack-NP execution closure | in_progress | TSK-06.48 | Step 2: shared resource query contracts; HP/BP/dependent execution pending |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
@@ -1795,18 +1795,16 @@ artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Bloc
 
 Depends on: TSK-06.48
 
-今回: **残作業のStep 2（2026-09-08、利用者の実装依頼受領）**。
-開始時dirtyはStep 1のTask／flow noteのみで保持。HPデータ／初期resolver、NP／OC transaction、current-NP比例増加、bounded trigger、
-HP減少下限IRとordinary LB cell選択は実装済みとして保持する。実HP・最大HP更新と全read契約は未完了。
-直前検証のdefaultはranking411/433、calculator420/422。残22 profilesだけを母集団にしない。
-Taskは`in_progress`、06.44は`blocked`。U0-Rのsource timeline／部分監査を実装・検証済み。U0-R全体は未完了。
-最新差分は[Step 2実装記録](../evidence/ranking-policy-candidate-flow-tsk-06.md#ef45bef後のstep-2実装記録2026-09-08)。
+今回: **残作業のStep 2開始（2026-09-09、計画承認済み）**。開始HEADは77be416。
+Step 1開始時Gitはclean、Step 2開始時は承認済みTask/flowの変更を保持。親ef45befとの差分、要件、productionの直接実行・回復経路を確認した。
+Taskは`in_progress`、06.44は`blocked`。今回の利用者承認により計画の実行を開始する。
+最新の調査・設計・反例・分類は[canonical flow note](../evidence/ranking-policy-candidate-flow-tsk-06.md#77be416後のstep-22026-09-09)。
+直前の411/433 ranking・420/422 calculatorは履歴baselineであり、全実行closureではない。
+既存HP resolver／IR、NP・OC transaction、bounded trigger、77be416のsource timeline／partial auditを保持する。
+HP実状態・最大HP・BP・残る依存量・admissionの完了を06.5へ延期しない。
 
-要件確認→現状調査→採用設計・反例の最新差分は既存
-[canonical flow noteのef45bef Step 1](../evidence/ranking-policy-candidate-flow-tsk-06.md#ef45bef後の残作業step-12026-09-08)。
-F1〜F3／C1〜C12を継承し、実行順序と単位は以下の表だけで管理する。
-今回の実装依頼は受領済み。過去の検証成功は履歴であり、残作業の完了へ流用しない。06.48のOC契約を維持し、
-HP／BP／依存量／admissionの未対応を06.5へ送らない。
+- [x] 今回Step 1: 要件確認→現状調査→採用設計と理由→既存単位の入力/責務/完了条件照合→Task/flow更新。
+- [x] 今回Step 2開始: 計画承認、HEAD/Git/master照合済み。Step 1の2文書の未コミット変更を保持し、U0-R beforeとU1-Rへ着手。
 
 - [x] 初回Step 1: 基点`e354764`のclean treeで調査した（以下2項も初回証拠）。
 - [x] Step 1: shared production suiteとdefault matrixでranking393/433、calculator420/422を再確認する。
@@ -1825,20 +1823,25 @@ HP／BP／依存量／admissionの未対応を06.5へ送らない。
 
 - [x] 今回Step 1: ef45befの要件・全格納effect・直接実行／回復経路を再確認。未接続stateとread責務を特定し、count selectorの旧分割を修正。設計・反例・branch gate・Step 2開始条件を既存正本へ更新。
 
+- [x] 製品判断（2026-09-09）: 初期0%も死亡・攻撃不可。正値HPの表示0%は攻撃可。実行接続はU2-H。
+- [x] U3-A先行単位: 共通unavailable結果をcalculator/ranking/portableへ接続し、NP不足／容量不足の独自再分類を削除。schema39/engine38、UIとv38回復までquality成功。HP guardに先立つ依存単位で、admission全体の完了ではない。
+- [x] U1-R/U0-R先行単位: actor/domain/source input ownerを分離したread descriptor、ordinary/OC consumer、partial observerを実装しquality成功。actor/clock proof全体と全cell実行は未完了。
+- [x] U0-H先行単位: 初期最大HPの合計safe integer検査を実装。focused20→unit753→quality成功。初期割合の整数化は設計のみ、live HPと死亡guardは未実装。
+
 #### Step 2の実行単位（Task内、順序・依存関係の正本）
 
 既存U0〜U5のidentityを維持する。U2-H／U2-D／U3は下記の子単位へ分け、親単位を個別に
-完了扱いしない。依存欄は技術依存。Step 2実装依頼は受領済み。未規定の製品判断に依存するbranchだけを保留する。
+完了扱いしない。依存欄は技術依存。今回の計画は承認済み。未規定の製品判断に依存するbranchだけを保留する。
 最初のatomic単位はU0-Rの共有join／beforeとU1-Rのread契約。U0-H/B/Dの資料確定は独立して進め、
 確定したIR→state/query→ordered適用→application/回復の順に閉じる。大きなHP単位の完了待ちをBP/countへ課さない。
 
-| 単位 | 依存 | 実装内容／責務 | 完了を判定する証拠 |
+| 単位 | 依存・入力となる確定契約 | 実装内容／責務 | 完了を判定する証拠 |
 | --- | --- | --- | --- |
-| U0-R: 母集団joinとbefore | Step 2依頼・Git照合 | 既存shared auditで全source／normal・LB・NP cellをselected legal program→ordered first reader→outcomeへjoin。terminal HP0 guardもreaderとする。全masterの別loaderは作らない | F1〜F3/C12。基点ef45befの411/433・420/422と残22件の併存原因を固定。未選択variant・既にcalculated・production0を分ける。production suiteとranking hot pathの同環境・非並行before測定 |
+| U0-R: 母集団joinとbefore | Step 2依頼・Git照合 | 既存shared auditで全source／normal・LB・NP cellをselected legal program→ordered first reader→outcomeへjoin。terminal HP0 guardもreaderとする。全masterの別loaderは作らない | F1〜F3/C12。基点77be416（親ef45bef）の411/433・420/422と残22件の併存原因を固定。未選択variant・既にcalculated・production0を分ける。production suiteとranking hot pathの同環境・非並行before測定 |
 | U1-R: read/write・trigger契約 | U0-Rの関連分類 | execution内のfocused moduleにactor／resource query／phase／position／variant付きreadとwrite、非干渉proofを集約。OC、通常resource、compiler、admissionが同じ分類を消費 | C1/C2/C7/C9。直接damage・condition・amount・OC率・NP/HP到達性・form／解除、nested booleanを網羅。既存trigger proofを再利用し未知scopeはschema拒否。source全体のunknownで誤除外せず、部分的なno-reader判定を残さない |
-| U0-H: HP数値契約 | U0-RのHP cell分類 | 初期permille整数化、HP query別の精度、safe／通常loss、固定／割合、modifier／変換、maxHP付与・解除・form切替をcanonical入力と一次根拠へ結ぶ | C3/C7。丸め位置・selector・下限・最大値解除後currentを式で記録。既存比較実装はoracleにしない。初期0%以外の技術調査を確認待ちにしない |
+| U0-H: HP数値契約 | U0-RのHP cell分類 | 初期permille整数化、HP query別の精度、safe／通常loss、固定／割合、modifier／変換、maxHP付与・解除・form切替をcanonical入力と一次根拠へ結ぶ | C3/C7。丸め位置・selector・下限・最大値解除後currentを式で記録。既存比較実装はoracleにしない。初期0%は死亡と確定。技術調査を確認待ちにしない |
 | U1-H: HP IR | U0-Hで確定したbranch、U1-R | resource別closed amount、loss下限、最大値／量modifier instance、actor/recipientとselectorをpipelineで正規化。NP用unit・subject拒否を他resourceへ無条件流用しない | 全HP cellの意味保存、safeと通常の区別、ParamAdd/ParamMax・OnField・条件付きinstance・解除のfocused fixtures。曖昧・部分metadataはartifact fail-closed |
-| U2-H.1: initial seedとquery | U0-Hのquery契約、U1-R | 既存initialHp resolverを準備入口へ接続。actor別absolute HP／ratio-only／不足を区別し、current／maximumから生存、閾値、値式、表示を別queryで導出 | C3/C9。HP1/11000の精度差、0とmissing、外部source ratioのみのread／絶対量read、礼装なしparity。seed再利用による戦闘補正二重加算0 |
+| U2-H.1: initial seedとquery | U0-Hのquery契約、U1-R | 既存initialHp resolverを準備入口へ接続。world quantity assertionとの初期intent重複も処理し、actor別absolute HP／ratio-only／不足を区別してcurrent／maximumから生存、閾値、値式、表示を別queryで導出 | C3/C9。HP1/11000の精度差、0とmissing、外部source ratioのみのread／絶対量read、礼装なしparity。seed再利用による戦闘補正二重加算0 |
 | U2-H.2: HP transition | U1-H、U2-H.1 | fixed／percent gain/loss、量modifier／変換、最大値instance付与・除去を既存共通transaction draftへ組み込む。全command拒否時にNP・HP・OC・contextとreceiptをrollback | C3/C6/C7/C8。loss下限・heal clamp・端数・最大値解除、source/recipient違い、条件false／proc failure／unknown、途中拒否→retry。新ターン・被攻撃simulatorは作らない |
 | U2-H.3: ordered pathと攻撃可否 | U2-H.2、U1-R | skill／transform／terminal／automaticのstateをordinary実行へreceiptで渡す。HP write markerをlive queryへ置換。HP0のtyped到達不能をapplication結果まで接続 | C1/C7/C8/C9。HP→条件→NP→OC、付与時／利用時read、terminal HP0・HP正値表示0%、拒否時NP/OC/receipt非消費、preapply二重適用0。NP-only後置passの再削除は不要（実装済み） |
 | U0-B: BP契約 | U0-RのBP分類。HP実装には非依存 | API定義を固定する取込設計、actor/domain、point/capacity/phase/rate、absentとpoint0、phase入力の同値classを確定 | C4。取得hash照合、capacity trait／instance解除、同phase異pointで後続結果が変わる反例。3300200の最終閾値をcapacityと推定しない。製品選択が必要なbranchのみ相談 |
@@ -1901,18 +1904,14 @@ Contract closure matrix:
 | `RK-PERF-001` | Apply | affected production suite／ranking hot path before-after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.3 |
 
-Handoff: （2026-09-09、ef45bef後のStep 2進行中）
-基点HEAD `ef45bef`。開始時dirtyのStep 1 Task／flow変更を保持し、source inventoryと共有監査を実装した。
-master `20260908.05`／schema48、portable38／engine37.0.0は不変。
-U0-Rの部分観測は実装済み。U0-R全join、U1-Rの実行read契約、HP／BP／依存量／admissionは未完了。
-現在値はranking411/433、calculator420/422で、今回の対応宝具数増加はない。
-最終quality成功（unit728／production120／Playwright26、278.54秒）は、この先行監査単位の検証証拠。
-検証・性能・母集団・flow statusは[最新Step 2 delta](../evidence/ranking-policy-candidate-flow-tsk-06.md#ef45bef後のstep-2実装記録2026-09-08)を参照する。
-次はpartial observerに残したactor／clockを共通query契約へ閉じ、HP seed／transition／receiptへ接続する。
-U0-H/B/Dの技術根拠調査は継続可能。初期入力0%の分析用途だけ利用者判断待ちで、独立branchを止めない。
-HP modifier整数化／最大値解除、BP domain/witness、transfer順序は技術gateとして対応branchへ限定する。
-全Taskの完了にはU0〜U5の実装、全production数値closure、parity、fail-closed、性能、UIと最終qualityが必要。
-stage／commitなし。TSK-06.45はin_progress、06.44はblockedを維持する。
+Handoff: 進行記録（2026-09-09、77be416後のStep 2）
+最新の調査・設計・反例・検証は[上記flow delta](../evidence/ranking-policy-candidate-flow-tsk-06.md#77be416後のstep-22026-09-09)。
+resource query descriptor/partial observer、NP到達不能の共通unavailable結果、初期HP合計の整数域検査を実装。
+最終`pnpm quality`成功（316.12秒、unit753/production120/Playwright26、skip/retry/warning 0）。
+証拠と次actionはflow内の単一60分checkpointへ集約。全Taskの完了ではない。
+actor/clock全consumer、calculator追加source、全cell execution、HP/BP/count/transferとadmission全体は未完了。
+初期0%も死亡・攻撃不可と確定。HP整数化/最大値解除、BP domain、transfer順序は技術gateとして継続する。
+Taskはin_progress、stage/commitなし。Step 1停止指示はStep 2承認で解除済み。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

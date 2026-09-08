@@ -14,6 +14,7 @@ import {
   ENGINE_VERSION,
   SCHEMA_VERSION,
   type CalculationScenario,
+  type CalculationResult,
 } from '@fgo-lab/schema';
 import { Calculator } from './Calculator';
 
@@ -37,7 +38,11 @@ const resolved = requireExecutableCalculation(
   calculateScenario(resolvedScenario, master, versions),
 );
 
-function renderCalculator(scenario: CalculationScenario, onScenarioChange = vi.fn()) {
+function renderCalculator(
+  scenario: CalculationScenario,
+  onScenarioChange = vi.fn(),
+  resultOverride?: CalculationResult,
+) {
   const calculation = requireExecutableCalculation(calculateScenario(scenario, master, versions));
   render(
     <Calculator
@@ -50,7 +55,7 @@ function renderCalculator(scenario: CalculationScenario, onScenarioChange = vi.f
       effectWarnings={calculation.effectWarnings}
       effectInputs={calculation.effectInputs}
       activationRequirements={calculation.activationRequirements}
-      result={calculation.result}
+      result={resultOverride ?? calculation.result}
       request={createCalculatorPortableRequest(scenario, requestVersions)}
       scenario={scenario}
       servants={master.servants}
@@ -123,4 +128,19 @@ describe('calculator direct-input component boundary', () => {
       },
     });
   });
+});
+
+it('shows an unreachable NP as nonnumeric and explains the repairable preparation state', () => {
+  renderCalculator(resolvedScenario, vi.fn(), {
+    ...resolved.result,
+    status: 'unavailable',
+    rows: [],
+    reason: 'insufficientNpGauge',
+  });
+  expect(
+    screen.getByText(
+      '現在の準備状態では宝具を使用できません。NPゲージと準備操作を確認してください。',
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByRole('table', { name: '宝具レベル別のダメージ' })).toBeNull();
 });

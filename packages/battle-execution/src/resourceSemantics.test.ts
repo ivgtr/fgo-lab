@@ -11,6 +11,8 @@ const resourceOperation = {
   unit: 'fixed',
   amount: 1_000,
   subjectId: null,
+  source: { origin: 'attacker', sourceInstanceId: 'fixture', skillId: 'fixture' },
+  inputDefinitions: [],
   condition: { kind: 'always' },
 } as unknown as BattleOperation;
 
@@ -27,6 +29,8 @@ describe('resource semantic closure', () => {
   it('keeps an unrepresentable transition unsupported when later damage reads it', () => {
     const reader = {
       kind: 'executeNpDamage',
+      source: { origin: 'attacker', sourceInstanceId: 'fixture', skillId: 'fixture' },
+      inputDefinitions: [],
       condition: { kind: 'always' },
       specialAttackDependency: {
         kind: 'quantity',
@@ -52,6 +56,8 @@ describe('resource semantic closure', () => {
       } as BattleOperation;
       const reader = {
         kind: 'addModifier',
+        source: { origin: 'attacker', sourceInstanceId: 'fixture', skillId: 'fixture' },
+        inputDefinitions: [],
         condition: {
           kind: 'inputQuantity',
           inputKey: 'battle:criticalStars',
@@ -73,6 +79,8 @@ describe('resource semantic closure', () => {
     const stars = { ...resourceOperation, resource: 'criticalStars' } as BattleOperation;
     const reader = {
       kind: 'addModifier',
+      source: { origin: 'attacker', sourceInstanceId: 'fixture', skillId: 'fixture' },
+      inputDefinitions: [],
       condition: {
         kind: 'inputQuantity',
         inputKey: 'battle:criticalStars',
@@ -95,6 +103,8 @@ describe('resource semantic closure', () => {
       const mutation = { ...resourceOperation, resource } as BattleOperation;
       const reader = {
         kind: 'executeNpDamage',
+        source: { origin: 'attacker', sourceInstanceId: 'fixture', skillId: 'fixture' },
+        inputDefinitions: [],
         condition: { kind: 'always' },
         specialAttackDependency: {
           ...dependency,

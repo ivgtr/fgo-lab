@@ -2,6 +2,7 @@ import type {
   RankingSelection,
   ResolvedRankingBasis,
   CalculationResult,
+  CalculationUnavailabilityReason,
   CalculationScenario,
   DamageResolutionInput,
   ServantBuild,
@@ -128,10 +129,7 @@ export interface RankingPolicyDetail {
 }
 
 export type PolicyUnavailabilityReason =
-  | 'attackProfileNotReachable'
-  | 'insufficientNpGauge'
-  | 'npCapacityExceeded'
-  | 'noSatisfiableCandidate';
+  'attackProfileNotReachable' | CalculationUnavailabilityReason | 'noSatisfiableCandidate';
 
 export type RankingBlockerClass =
   'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported';

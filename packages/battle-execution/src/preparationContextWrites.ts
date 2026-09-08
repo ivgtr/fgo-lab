@@ -71,7 +71,7 @@ export function closePreparationConditionReads(
       expression: closePreparationConditionReads(condition.expression, writes, facts, hpUnknown),
     };
   if (condition.kind === 'quantity' && condition.quantity === 'attackerHpPermille' && hpUnknown)
-    return { kind: 'unsupported', reason: 'unresolvedPreparationWrite' };
+    return { kind: 'unsupported', reason: 'unresolvedPreparationWrite', readDependency: condition };
   const read =
     condition.kind === 'trait' || condition.kind === 'traitCount'
       ? writes.some(
@@ -86,5 +86,7 @@ export function closePreparationConditionReads(
           const source = facts.stackQuantitySources[condition.inputKey];
           return source?.scope === write.scope && source.trait === write.trait;
         });
-  return read ? { kind: 'unsupported', reason: 'unresolvedPreparationWrite' } : condition;
+  return read
+    ? { kind: 'unsupported', reason: 'unresolvedPreparationWrite', readDependency: condition }
+    : condition;
 }

@@ -575,79 +575,109 @@ describe('OC sensitivity of the execution family', () => {
 });
 
 describe('fixed-start OC resource dependencies', () => {
-  it.each(['absent', 'fixed', 'hpAmount', 'hpCondition'] as const)(
-    'retains HP writers only for the %s OC dependency',
-    (path) => {
-      const writer = source().effect;
-      writer.execution = [
-        {
-          kind: 'resourceMutation',
-          resource: 'hp',
-          direction: 'loss',
-          lossFloor: 'oneIfAlive' as const,
-          unit: 'fixed',
-          recipient: 'sourceSelf',
-          subjectId: null,
-          amount: { kind: 'fixed', values: [[100], [], [], [], []] },
-        },
-      ];
-      const grant = source().effect;
-      const rate = source().effect;
-      rate.execution = [
-        {
-          route,
-          lifetime: boost.lifetime,
-          stacking: boost.stacking,
-          stateTraits: boost.stateTraits,
-          kind: 'grantOcApplicationRate',
-          role: 'casterGrant',
-          sign: 1,
-          selector: 'positive',
-          cells: [
-            [
-              {
-                applicationRatePermille: 1000,
-                turns: { kind: 'unlimited' },
-                uses: { kind: 'unlimited' },
-                amount:
-                  path === 'hpAmount'
-                    ? { kind: 'inverseHpLinear', basePermille: 0, bonusAtZeroHpPermille: 500 }
-                    : { kind: 'fixed', value: 500 },
-              },
-            ],
-            [],
-            [],
-            [],
-            [],
+  it.each([
+    'absent',
+    'fixed',
+    'hpAmount',
+    'hpCondition',
+    'inputHpCondition',
+    'otherInputCondition',
+  ] as const)('retains HP writers only for the %s OC dependency', (path) => {
+    const writer = source().effect;
+    writer.execution = [
+      {
+        kind: 'resourceMutation',
+        resource: 'hp',
+        direction: 'loss',
+        lossFloor: 'oneIfAlive' as const,
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[100], [], [], [], []] },
+      },
+    ];
+    const grant = source().effect;
+    const rate = source().effect;
+    rate.execution = [
+      {
+        route,
+        lifetime: boost.lifetime,
+        stacking: boost.stacking,
+        stateTraits: boost.stateTraits,
+        kind: 'grantOcApplicationRate',
+        role: 'casterGrant',
+        sign: 1,
+        selector: 'positive',
+        cells: [
+          [
+            {
+              applicationRatePermille: 1000,
+              turns: { kind: 'unlimited' },
+              uses: { kind: 'unlimited' },
+              amount:
+                path === 'hpAmount'
+                  ? { kind: 'inverseHpLinear', basePermille: 0, bonusAtZeroHpPermille: 500 }
+                  : { kind: 'fixed', value: 500 },
+            },
           ],
+          [],
+          [],
+          [],
+          [],
+        ],
+      },
+    ];
+    if (path === 'hpCondition')
+      grant.requirement = {
+        recipient: 'sourceSelf',
+        expression: {
+          kind: 'quantity',
+          quantity: 'attackerHpPermille',
+          comparison: 'atLeast',
+          value: 500,
+        },
+      };
+    if (path === 'inputHpCondition' || path === 'otherInputCondition') {
+      grant.inputDefinitions = [
+        {
+          key: 'fixture:hp',
+          kind: path === 'inputHpCondition' ? 'sourceHpPermille' : 'currentTurn',
+          owner: path === 'inputHpCondition' ? 'source' : 'field',
+          label: 'quantity',
+          description: 'quantity',
+          minimum: path === 'inputHpCondition' ? 0 : 1,
+          maximum: path === 'inputHpCondition' ? 1000 : 99,
+          step: 1,
+          defaultValue: path === 'inputHpCondition' ? 1000 : 1,
+          defaultReason: 'fixture',
         },
       ];
-      if (path === 'hpCondition')
-        grant.requirement = {
-          recipient: 'sourceSelf',
-          expression: {
-            kind: 'quantity',
-            quantity: 'attackerHpPermille',
-            comparison: 'atLeast',
-            value: 500,
-          },
-        };
-      const sources = [
-        { kind: 'skill' as const, effects: [writer] },
-        { kind: 'skill' as const, effects: [grant] },
-      ];
-      const context = {
-        semantics: DEFAULT_NP_RESOURCE_SEMANTICS,
-        initialGauge: 10000,
-        npLevel: 1 as const,
-        automaticEffects: path === 'absent' ? [] : [rate],
+      grant.requirement = {
+        recipient: 'sourceSelf',
+        expression: {
+          kind: 'inputQuantity',
+          inputKey: 'fixture:hp',
+          comparison: 'atLeast',
+          value: path === 'inputHpCondition' ? 500 : 1,
+        },
       };
-      expect(ocRelevantSourceIndexes(sources, true, context).has(0)).toBe(
-        path === 'hpAmount' || path === 'hpCondition',
-      );
-      expect(ocRelevantSourceIndexes(sources, true, context).has(1)).toBe(true);
-    },
-  );
+      masterEffectSchema.parse(grant);
+    }
+    const sources = [
+      { kind: 'skill' as const, effects: [writer] },
+      { kind: 'skill' as const, effects: [grant] },
+    ];
+    const context = {
+      semantics: DEFAULT_NP_RESOURCE_SEMANTICS,
+      initialGauge: 10000,
+      npLevel: 1 as const,
+      automaticEffects: path === 'absent' ? [] : [rate],
+    };
+    expect(ocRelevantSourceIndexes(sources, true, context).has(0)).toBe(
+      path === 'hpAmount' || path === 'hpCondition' || path === 'inputHpCondition',
+    );
+    expect(ocRelevantSourceIndexes(sources, true, context).has(1)).toBe(true);
+  });
   it('prunes a saturated charge and an OC-insensitive charge but retains reachability after a preparation NP', () => {
     const charge = source().effect;
     charge.execution = [
