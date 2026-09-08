@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.2"
+document_version: "1.7.6"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-06"
+updated_at: "2026-09-08"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -61,7 +61,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.47 | Profile servant-record identity fail-closed | done | TSK-06.41 | profile map identity／persistence／shared consumers |
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
-| TSK-06.45 | All attack-NP execution closure | ready | TSK-06.43 | trigger relevance／dependent resource／production coverage |
+| TSK-06.48 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
+| TSK-06.45 | All attack-NP execution closure | ready | TSK-06.48 | trigger relevance／dependent resource／production coverage |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
@@ -73,7 +74,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
 TSK-06.41 -> TSK-06.46
 TSK-06.41 -> TSK-06.47
-TSK-06.46 + TSK-06.47 -> TSK-06.42 -> TSK-06.43 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-06.46 + TSK-06.47 -> TSK-06.42 -> TSK-06.43 -> TSK-06.48 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -1687,13 +1688,116 @@ Contract closure matrix:
 
 Handoff: 未記録
 
-### TSK-06.45: All attack-NP execution closure
+### TSK-06.48: Initial OC selection and canonical OC boost closure
+
+最新判定（2026-09-08）: 独立再レビューApproved、PIR-001／002 Resolved、Blocking 0。
+最終qualityはunit637／production119／Playwright26成功。承認根拠は既存flow noteの
+「独立再レビュー承認・commit handoff」。以下のChanges required／再レビュー待ちは経緯として保持する。
+06.48はdone、後続06.45はready。
+
+
+
+2026-09-08再レビュー: Changes required。採用PIR-001／002の修正・最終qualityを完了し、ready-for-re-review。
+unit637／production119／Playwright26成功。以前の完了記録は初回実装の証拠であり、
+現在の判定はこの追記とflow noteのPIR deltaを正本とする。独立再レビュー前に承認扱いにしない。
 
 Depends on: TSK-06.43
 
-- [ ] current baselineをAttackProfile 433件中393 calculated／40 `unsupportedActionAdmission`、default calculator
-      422 scenarios中420 calculated／2 unsupportedとして固定し、40件がすべて攻撃宝具であることと、非攻撃宝具47騎を
-      混在させていないことをshared production inventoryで再確認する。
+2026-09-08の完了依頼で過去の保留を解除し、要件と実装を再評価した。
+初期OC intent、lossless OC IR、共通executorのinstance／NP-use receiptを維持し、
+準備のread-point、portable quantity witness、NP変更command、根拠の表示名を同じ所有境界で閉じる。
+基点は`c555e4ff9a208f8da01e56130fbd49e63848e192`。既存の未commit変更を保持し、stage／commitは行っていない。
+実装・focused／unit／productionと全80条件32,640件のparityは検証済み。
+最新性能測定と最終`pnpm quality`も成功し、受入条件を満たしてdone。
+現在地と判断・証拠の正本はflow note「実装引継ぎの再評価（2026-09-08）」とする。
+以下の単位表は実装責務の索引であり、過去の停止記録は現行の承認待ちを意味しない。
+
+Implementation units（本Task内の依存順。独立した並行計画を作らない）:
+
+| Unit | Depends on | 変更責務 | 検証方法・単位完了条件 |
+| --- | --- | --- | --- |
+| A0 再現可能baseline計測 | 更新Step 1確認 | flow noteの確定仕様・母集団・source program設計をentry contractとして照合し、実装直前のaffected production suite／ranking hot pathを計測する。raw167件／公開97件、writer199件のfamily分類92/2/73/32、付与率modifier29件を既存共有auditへ固定する。仕様を選ぶ調査はStep 1で完了しており、本単位へ延期しない。 | policy/NP/開始gauge/profile、candidate/request/distinct input数、時間、damage入力とHEAD/master digest/commandをartifact化。旧開始NP探索は旧baselineとして区別。入力digestや分類が計画時から変わった場合だけ差分を再調査する。 |
+| A1 Lossless OC IR | A0 | master-dataのeffect unionとdata-pipelineの正規化へ専用OC grant／lifecycle／recipient／condition／stackingとOC付与率modifier（29 effects）のclamp前rate・caster/recipient selectorを導入。rate量はfixed／既存HP expressionをlosslessに保持する（OC-RATE-HP-001）。汎用stateMutation経路から切替。master/fixture/versionの必要な更新を含む。 | focused normalization/schema tests、全raw value cellsとCE通常/LBの対応、公開全source共有inventory。missing/conflicting/unknown semanticsをrejectまたは明示unsupportedにし、runtimeのraw reader0件。Count -1/1/3/4、Value1/2、Rate1000/5000の補正差、production-zero sourceも反例化。 |
+| A2a Execution context and source program | A1 | battle-execution内でworld/input facts＋policyを準備前へ渡し、OC全cellsを保持するsource programをcompileする。付与率modifier自身の付与/解除も同じbounded sliceへ含め、既存condition/activation ownerを準備でも使い、OCのunknown-as-no-mutation経路を除去。CE constantを初期lifetime、外部skillを既存terminal NP前phaseへ配置。 | field/recipient/mixed conditionの準備・通常経路truth一致。unknownはtyped recovery。terminal passiveの初期formへの遡及0、constant二重付与0。static source cacheとruntime stateを分離。 |
+| A2b NP-use transaction and receipts | A2a | command interpreterがgauge/boost/rate instances/formのwriteを唯一所有。OC付与時のcaster/recipient実効率とproc witnessを評価。HP依存rateは利用時に読み、結果に影響する未表現HP変更はunsupported、修正可能なHP不足はinputRequiredとする。rate付与→HP変更→OC付与、解除、別source、rollback/retryを接続前の小fixtureで固定する。NP本体処理前にOCを確定し、各NPの全cellsをreceiptで選び、action終端で参加instanceだけを消費。OC/rate非交差32件/敵92件をproofで除外し、OC直接2件/rate prerequisite73件のselectorをboundedに扱う。 | flow noteの数値反例表どおり、cap飽和でも全参加count消費、NP-before付与は当該NPへ不適用、途中再付与は未消費。CE immutable、skill removable、unknown live resistanceはunsupported。成功率0/1000/中間のoutcomeを区別。sibling invalid/required-inputでcommand全体rollback。 |
+| A2c Application/projection convergence | A2b | sourceCollectionと通常operation loopへcommit receiptを渡し、OC/gaugeを書き直さない。scenarioのMath.maxと準備NPのterminal OC再利用を削除。policy再適用/without-areaは共通prepare入口から元request＋新policyを再評価し、古い使用stateを再利用しない。 | calculator/rankingの同じsource program・condition owner・command interpreter・damage projectionへの合流。fresh executionとのinput/outcome/receipt一致。preapply/clone/retryで再付与・先消費・stale OC0。 |
+| A3 Fixed initial intent and finite planner | A2c | schema ranking selectionとapplication basis/command/comparison policy/candidate space/admission/static semantics/stack reduction/cache。初期OCを一つの開始gaugeへ変換し探索軸を削除。NP変更とpopulation→allのNP1復帰をatomicに処理。OC-only／NP charge-onlyの間接寄与とHP→rate query→OC outcomeを共有dependencyで判定し、rate付与位置だけをreader位置としない。 | 指定NP×OCの不正request拒否、保有混在capacity不足unavailable、四policyで開始gauge固定。小domain全探索oracleでOC-dependent condition/quantity/ordered planと最適候補一致。既存static7,255 programs／profile最大60を超える行動は追加せず、candidate bound4096を緩和しない。insensitive no-opを増やさない。完成input同一性なしにNP列cacheを共有しない。 |
+| A4 Portable / persistence / UI atomic cutover | A3 | schema versionとengine/master identity、portable intent/basis、draft/history/backup/share migration、URL、worker protocol/cache/stale判定、Web controls/summary/detail/calculator replay/resetを同じcutoverへ揃える。通常resolvedは初期OC1〜3、manualは最終OC1〜5を維持する計画に従う。 | initial OC/開始NP/発動時OCと根拠のreplay parity。old-only/canonical-only/mixed contradictoryを全境界で検証。旧requestは曖昧補完せず履歴表示と再生成を区別。NP/population変更command、reset、stale worker、異OC fingerprintを確認。desktop/390px/320px/keyboardのUI invariantsを満たす。 |
+| A5 Production closure and handoff | A4 | 共有production inventory/parityとdamage変更証跡、性能差を確定し本flow noteのDeferredを閉じる。06.45へ新baselineと既存残存mechanismを渡す。 | 自然上限/Lv90×四policy×NP1〜5×合法OCおよび保有混在fixtures。calculator/ranking/portable input・outcome・OC receipt一致、NP5再最適化とNP1採用scenarioのNP5列を区別。A0比のcandidate/suite/hot-path差を説明し、最終pnpm quality成功、Blocking/Task内Deferred0。 |
+
+A0→A1→A2a→A2b→A2c→A3→A4→A5の順で実装する（flow noteのA2はA2a〜c全体を指す）。A1〜A4の中間stateを製品完了とは扱わず、
+version cutoverの不整合を残したまま公開しない。各単位は下記Done gateを弱めない。
+Focused verificationは`pnpm test:diagnostic -- <affected-filter>`、複数suiteのbounded実行は
+`pnpm test:agent`または`pnpm test:unit`／`pnpm test:production`を使用する。
+小fixtureを先行させ、全masterのload/normalize/compileは共有inventoryへ集約する。
+A0の性能baselineは同一environment・同一policy/NP/OC・同じ測定方法でA5と比較し、
+旧探索の削除による件数減とOC加算の新寄与による増加を分ける。
+
+- [x] requirements v0.10.2 §4／9を実装する。flow inventoryと反例の正本は
+      `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`の06.48 deltaとし、開始時に直接reader／writerを全検索して更新する。
+- [x] pipelineでOC加算family全体を再集計し、段階、recipient、条件、duration／countをlosslessなcanonical IRへ正規化する。
+      skillだけでなくNP／passive／既存calculatorの礼装経路を監査する。ランキングに外部支援入力は追加しない。
+- [x] executorでgauge由来base OC、OC加算、実効OC、NP使用時の消費を分離する。準備／変身NP／攻撃NP、
+      clone／rollback／retryを同じtransactionへ閉じ、欠落semanticsの無効果扱いを削除する。
+- [x] applicationに初期OC intentとcapacity validationを追加し、成立込みの開始NP候補探索を削除する。
+      own OC boostの間接damage寄与をaction admissionとfinite dependency proofへ含め、四policyで評価する。
+- [x] Web条件・計算基準・detail、URL、worker、cache／fingerprint、portable request／calculator replay／resetを
+      同じversion cutoverで更新する。旧requestを初期OC1へ読み替えず明示拒否し、再生成commandを提示する。
+- [x] focused fixtures → shared production inventory／parity → affected suites／hot path before-afterの順に検証する。
+      NP5で再最適化した結果と、NP1採用scenarioのNP5列を区別し、数値差をcanonical inputとruleで記録する。
+
+Done gate:
+
+- 初期OC1／2／3とresolved NP capacity、四policy、保有混在、発動時OC表示がrequirements §9.1を満たす。
+- flow noteの全06.48行がVerifiedまたは理由付きN/AとなりBlocking／Task内延期0件。OC加算production familyの
+  未分類・無効果fallback 0件、calculator／ranking／portableのdamage・outcome・OC evidence parity差分0件。
+- 初期OCを探索次元として増やさず、OC状態依存のcandidate reductionをfocused oracleで反証する。
+  production件数、damage差分、candidate数、suite／hot-path時間の変化を説明し、未説明の10%超退行や上限緩和がない。
+- `pnpm test:diagnostic -- <affected-filter>` → `pnpm test:unit`／`pnpm test:production` → `pnpm quality`。
+  UIはdesktop／390px／320px、keyboard、変更command、stale worker rejectionを確認する。
+- 06.45の既存trigger／dependent resource問題を本Taskの完了と混同せず、最新baselineと残存理由を引き継ぐ。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-IR-001` | Apply | OC family shared production inventory／canonical admission fixtures | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-EXEC-001` | Apply | OC timing／count／rollback focused tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-POLICY-001` | Apply | fixed initial OC／capacity／four-policy oracle | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-UI-001` | Apply | selection／basis／detail／responsive UI tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `UI-CALC-001` | Apply | calculator OC notice／replay／reset UI tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-HANDOFF-001` | Apply | portable replay／version rejection／reset tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-CACHE-001` | Apply | URL／worker／cache identity and stale rejection tests | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | `pnpm test:production`＋`audit-oc-matrix.ts` legal initial OC matrix and parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-PERF-001` | Apply | affected production suite／ranking hot path before-after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | requirements v0.10.2／registry／Handoff |
+
+Handoff: （2026-09-08）単独実装とA5検証を完了。A1〜A4の実経路とversion cutoverを接続し、
+共有production全119 testsと全80条件32,640件のparity差分0を確認済み。
+最終`pnpm quality`はunit621／production119／Playwright26、warning・unexpected console・retry 0で成功。
+artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Blocking／Deferred 0。
+性能とcanonical input差分は既存flow noteと同noteから参照する機械証拠へ確定した。06.45はready。
+過去の保留・途中監査はflow noteに履歴として保持する。次のStep 1調査記録も履歴である。
+
+- 前回のStep 1完了報告は、writer到達性とOC lifecycleをA0へ送った点で早計だった。利用者指摘を受け同じflow noteを再調査し、設計判断を確定した。
+- manualの最終OC1〜5維持は確認済み。resolvedは初期OC1〜3＋導出発動時OCへ統一する計画。新しい外部OC intent／最大化設定は追加しない。
+- writer199件は全raw value variantで分類一致（OC instance直接分類は敵92/非交差105/解除2、rate prerequisiteを含むfamily分類は敵92/直接2/rate73/非交差32）。NP本体処理前のOC確定とaction終端の消費、policy変更時の共通prepare再実行を選択し、A2a〜cに責務を分けた。
+- OC付与率modifier29件も調査済み。通常Rate1000とmystic Rate5000が成功率低下後に異なる例を固定し、generic guaranteedの情報落ちをA1/A2で除去する。
+- 計画時にstatic programs7,255／最大60、baseline admission2,034／satisfied6,722、直接modifierなしのOC skill13件を確認。性能の実測比較だけをA0/A5へ残し、候補設計の選択は延期していない。
+- raw167件と公開97件を分離し、変身NPの使用時cell、constant CEの消費、policy再適用、population command、保存migrationを追加反例へ展開した。
+- Step 1の`pnpm test:docs`（6 tests＋integrity）と`git diff --check`は成功。pnpm qualityはA5のphase完了gateであり、Step 1をruntime完了としない。
+
+- 基点は06.43完了commit `c555e4f`。既存レビュー承認を改変せず、追加調査の検出漏れと再発範囲をflow noteへ記録した。
+- 実装順は上記A0〜A5。具体reader／writer、確定事項と未解決事項は既存flow noteだけで管理する。
+- 後続は06.45 → 06.44 → 06.5 → 07。06.45開始値は本Task完了後に再集計する。
+
+### TSK-06.45: All attack-NP execution closure
+
+Depends on: TSK-06.48
+
+- [ ] 06.48完了時のdefault ranking／calculatorをshared production inventoryで再集計しbaselineを固定する。
+      計画時の433件中393 calculated／40 unsupported、calculator 422件中420 calculated／2 unsupportedとの差を
+      OC変更と残存mechanismに分け、非攻撃宝具47騎を混在させていないことを確認する。
 - [ ] action admissionを`triggerScope × damageRelevant × timing × recipient/resource reader`で監査し、command-card attack限定や
       damage非関連のoperationをattack-NP profile全体のunsupportedへ昇格させない。現在の40 profilesのうち、この誤分類に
       属する25 profilesをservant ID／名称分岐なしでcanonical relevance判定へ収束させる。
@@ -1711,7 +1815,7 @@ Done gate:
 
 - current published masterの全playable AttackProfileがdefault rankingで`calculated`となり、433 rows／0 exclusionsである。
 - default calculatorは422／422 `calculated`で、unsupported／invalid／inputRequired 0件である。
-- 自然上限／Lv.90統一 × 四policy × NP1〜5とstable owned fixturesで、現行masterのunsupported／invalid／inputRequired 0件。
+- 自然上限／Lv.90統一 × 四policy × NP1〜5 × capacity内の初期OCとstable owned fixturesで、現行masterのunsupported／invalid／inputRequired 0件。
   `unavailableUnderPolicy`はtyped reachability proofがある場合だけ許容し、production occurrenceを全数説明する。
 - trigger relevanceとdependent resourceのschema-legal focused fixturesが、誤分類、mutation順序、rollback、欠落inputの
   fail-closedを反証する。
@@ -1728,11 +1832,13 @@ Contract closure matrix:
 | `RK-POLICY-001` | Apply | relevance-aware action admission and four-policy parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-AUDIT-001` | Apply | `pnpm test:production` 433／433 ranking、422／422 calculator、production nonnumeric outcome 0 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-PERF-001` | Apply | affected production suite／ranking hot path before-after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.1 |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.2 |
 
-Handoff: （2026-09-06）TSK-06.43承認によりready。実装は未着手。
+Handoff: （2026-09-08）TSK-06.48の独立再レビューApprovedによりready。実装は未着手。
+新baselineはflow note「Production差分と06.45へのbaseline（2026-09-08）」と機械証拠を正本とする。
+default件数はranking393/433、calculator420/422で不変。全80条件の非数値理由も保存済み。
 
-- 開始時はTSK-06.43完了commit、HEAD／worktree、requirements、既存canonical flow noteの06.45計画を照合する。
+- 開始時はTSK-06.48完了時点のHEAD／worktree、requirements、既存canonical flow noteの06.45計画を照合する。
   trigger relevance、dependent resource、HP／battle-pointのproducer／reader／writer／recoveryを先に監査する。
 - 393／433 rankingと420／422 calculatorは計画時のdefault baseline。現在masterで再集計して開始値を固定する。
   06.43の成立込みcandidate inventory（385 ready／48 unsupported）は異なるpolicyの測定であり、混同しない。
@@ -1746,7 +1852,7 @@ Handoff: （2026-09-06）TSK-06.43承認によりready。実装は未着手。
 
 Depends on: TSK-06.44
 
-- [ ] requirement v0.10.1までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
+- [ ] requirement v0.10.2までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
       production全skillのstatic semanticsと、action × initial resource × ordered path × AttackProfileの
       candidate-local eligibility inventoryを最終固定する。
 - [ ] 自己バフありでは選択policy上の実効寄与を持つ任意skillをadmitし、表現済みデメリットを全operation込みで実行する。
@@ -1757,7 +1863,7 @@ Depends on: TSK-06.44
 - [ ] conditional-only skill、unconditional＋conditional sibling、NP消費／増加、beneficial／detrimental state、trait grant、
       form transition、branchごとにcostが異なるplayer choice、action後にattack NPへ到達不能となるpathのfocused fixtureを
       production occurrence／0件ratchetへ接続する。
-- [ ] candidate soundness、small exhaustive finite maximum oracle、自然上限／Lv.90統一 × 四policy × NP1〜5、
+- [ ] candidate soundness、small exhaustive finite maximum oracle、自然上限／Lv.90統一 × 四policy × NP1〜5 × 合法初期OC、
       stable owned fixture、production contamination／omission、portable／calculator parity、candidate数／performanceを
       最終baselineとして再固定する。
 - [ ] 旧operation-ID projection、旧portable reader、compatibility flag、parallel compiler、旧policy fallbackがproduction／
@@ -1786,10 +1892,10 @@ Contract closure matrix:
 | `RK-IR-001` | Apply | canonical source-program／step-operation／candidate-local role production inventory; nested IR is consumed unchanged | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-EXEC-001` | Apply | production transaction／resource reachability ratchet＋focused regression | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-POLICY-001` | Apply | four-policy contamination／omission and theoretical-maximum oracle | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-AUDIT-001` | Apply | `pnpm test:production` final level basis × four-policy × NP1〜5 maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | `pnpm test:production` final level basis × four-policy × NP1〜5 × legal initial OC maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-HANDOFF-001` | Apply | final selected scenarioのportable replay／minimal Web handoff regression | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
 | `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.1 |
+| `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.2 |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: 未記録
@@ -1802,7 +1908,7 @@ Depends on: TSK-06.5
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
 - [x] 旧special attack／field入力、reader、fallbackを削除する。
 - [x] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
-- [ ] requirement v0.10.0の6入力はTSK-06.42で破壊的に切り替え、その完了状態を前提にnotice、cache lifetime、
+- [ ] TSK-06.42の比較条件とTSK-06.48の初期OC追加によるv0.10.2の7入力を前提にnotice、cache lifetime、
       stale response rejection、responsive／a11yを再検証する。旧5-field fingerprintを互換pathとして残さない。
 - [ ] TSK-06.41でVerifiedとなったselected ranking → calculator immediate handoffを前提に、二軸noticeと
       result／effect parityのUI表示を再検証する。

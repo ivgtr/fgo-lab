@@ -347,7 +347,7 @@ describe('scenario calculation facade', () => {
     const scenario: ResolvedScenario = {
       ...baseline,
       attacker: { ...baseline.attacker, npLevel: 2 },
-      overcharge: 1,
+      initialOvercharge: 1,
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
     };
     const outcome = resolveScenarioPreparationOutcome(scenario, master, {
@@ -2775,16 +2775,7 @@ describe('scenario calculation facade', () => {
             value: 1,
           },
         },
-        execution: [
-          {
-            kind: 'contextMutation' as const,
-            mutation: 'addTrait' as const,
-            scope: 'recipientState' as const,
-            route: mutationRoute('sourceSelf'),
-            trait: 'ambiguous-state',
-            damageRelevant: true,
-          },
-        ],
+        execution: [npResourceMutation('loss', 1_000)],
       },
     ],
     [

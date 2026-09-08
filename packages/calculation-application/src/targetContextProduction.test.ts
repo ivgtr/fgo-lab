@@ -23,11 +23,10 @@ import { getAttackReachableInitialActorForms } from './actorFormGraph';
 
 const root = resolve(import.meta.dirname, '../../..');
 
-async function loadMaster() {
-  return masterSnapshotSchema.parse(
-    JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-  );
-}
+const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
+  (bytes) => masterSnapshotSchema.parse(JSON.parse(bytes)),
+);
+const loadMaster = () => productionMaster;
 
 describe('production canonical target context', () => {
   it('derives every default relation from the canonical class relation', async () => {

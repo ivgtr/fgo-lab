@@ -2,6 +2,10 @@ import { stackDomainWitnesses, UnsupportedStackQuantity } from './rankingStackDo
 import { mergeInputDefinitions, stackOwnedWitnessCondition } from '@fgo-lab/battle-execution';
 import {
   compileEffectCached,
+  effectReadsOc,
+  compileOcSourceProgram,
+  hasOcExecution,
+  hasOcConditionReader,
   effectChangesPreparation,
   hasUnsupportedPreparationStackRequirement,
   noblePhantasmDamageDependency,
@@ -13,6 +17,7 @@ import {
   type SourceEffect,
 } from '@fgo-lab/battle-execution';
 import {
+  actorFormKey,
   findActorForm,
   findNoblePhantasmVariant,
   getPassivesForActorForm,
@@ -53,6 +58,7 @@ function sourceEffects(input: {
   const form = findActorForm(input.servant, input.actorFormId);
   return input.effects.map((effect) => ({
     phase: input.phase,
+    compilationPurpose: 'dependency',
     origin: input.origin,
     sourceInstanceId: input.sourceInstanceId,
     sourceId: input.servant.id,
@@ -77,22 +83,38 @@ function sourcesForProgram(
   program: StaticRankingPreparationProgram,
   npLevel: number,
 ): readonly SourceEffect[] {
-  const terminalPassives = getPassivesForActorForm(servant, program.expectedTerminalFormId).flatMap(
-    (passive) =>
+  const forms = [
+    ...new Map(
+      [
+        program.initialFormId,
+        ...program.sourceUses.map((source) => source.actorFormId),
+        program.expectedTerminalFormId,
+      ].map((form) => [actorFormKey(form), form]),
+    ).values(),
+  ];
+  const automaticSources = forms.flatMap((form) =>
+    getPassivesForActorForm(servant, form).flatMap((passive) =>
       sourceEffects({
         servant,
-        actorFormId: program.expectedTerminalFormId,
+        actorFormId: form,
         phase: 'passive',
         origin: 'passive',
         sourceInstanceId: `passive:${servant.id}`,
         skillId: passive.id,
         skillName: passive.name,
-        effects: passive.effects,
+        // Earlier form damage passives expire, but their preparation dependencies remain live.
+        effects:
+          actorFormKey(form) === actorFormKey(program.expectedTerminalFormId)
+            ? passive.effects
+            : passive.effects.filter(
+                (effect) => hasOcExecution(effect) || effectChangesPreparation(effect),
+              ),
         valueIndex: 0,
         valueSetIndex: 0,
         noblePhantasmVariant: null,
         preparationStochasticOutcome: null,
-      }),
+      }).map((source) => ({ ...source, constantFormKey: actorFormKey(form) })),
+    ),
   );
   const preparationSources = program.sourceUses.flatMap((sourceUse) => {
     if (sourceUse.kind === 'skill')
@@ -133,7 +155,7 @@ function sourcesForProgram(
     program.attackProfile.noblePhantasmVariant,
   );
   if (!attackVariant || attackVariant.kind !== 'attack')
-    return [...terminalPassives, ...preparationSources];
+    return [...automaticSources, ...preparationSources];
   const key = noblePhantasmVariantKey(attackVariant.ref);
   const attackSources = sourceEffects({
     servant,
@@ -149,7 +171,7 @@ function sourcesForProgram(
     noblePhantasmVariant: attackVariant.ref,
     preparationStochasticOutcome: null,
   });
-  return [...terminalPassives, ...preparationSources, ...attackSources];
+  return [...automaticSources, ...preparationSources, ...attackSources];
 }
 
 export function compileStaticRankingSemantics(
@@ -160,14 +182,41 @@ export function compileStaticRankingSemantics(
   const sources = sourcesForProgram(servant, program, npLevel);
   const operations: BattleOperation[] = [];
   const unsupported: EffectProjection[] = [];
+  let uncertainOcCell = false;
   for (const source of sources) {
     if (hasUnsupportedPreparationStackRequirement(source.effect))
       throw new UnsupportedStackQuantity('unsupportedPreparationStackQuantity');
-    const compiled = compileEffectCached(source, operations.length, servant.actorFormGraph.forms);
-    operations.push(...compiled.operations);
-    unsupported.push(
-      ...compiled.projections.filter(({ executionSupport }) => executionSupport === 'unsupported'),
+    const rows =
+      source.origin === 'np' && effectReadsOc(source.effect)
+        ? [0, 1, 2, 3, 4]
+        : [source.valueSetIndex];
+    const variants = rows.map((valueSetIndex) =>
+      compileEffectCached(
+        { ...source, valueSetIndex },
+        operations.length,
+        servant.actorFormGraph.forms,
+      ),
     );
+    operations.push(
+      ...(variants.length === 1
+        ? variants[0]!.operations
+        : new Map(
+            variants
+              .flatMap((compiled) => compiled.operations)
+              .map((operation) => [JSON.stringify(operation), operation]),
+          ).values()),
+    );
+    unsupported.push(
+      ...variants[0]!.projections.filter(
+        ({ executionSupport }) => executionSupport === 'unsupported',
+      ),
+    );
+    // A missing alternate cell is rejected if selected at runtime; it cannot justify reduction.
+    uncertainOcCell ||= variants
+      .slice(1)
+      .some((compiled) =>
+        compiled.projections.some(({ executionSupport }) => executionSupport === 'unsupported'),
+      );
   }
   const attackVariant = findNoblePhantasmVariant(
     servant,
@@ -195,7 +244,7 @@ export function compileStaticRankingSemantics(
       : []),
     ...plannedOperations.flatMap((operation) => operation.inputDefinitions),
     ...sources
-      .filter(({ effect }) => effectChangesPreparation(effect))
+      .filter(({ effect }) => effectChangesPreparation(effect) || hasOcConditionReader(effect))
       .flatMap(runtimeInputDefinitionsForSource),
   ];
   const definitions = mergeInputDefinitions(liveDefinitions);
@@ -208,11 +257,29 @@ export function compileStaticRankingSemantics(
         operation.kind === 'preserveSemanticEffect' ? [] : [operation.condition],
       ),
       ...damageConditions,
+      ...sources
+        .filter(({ effect }) => hasOcConditionReader(effect))
+        .map((source) => compileOcSourceProgram(source).condition),
     ].map((condition) => stackOwnedWitnessCondition(condition, definitions)),
-    stackWitnesses: stackDomainWitnesses(
-      attackVariant?.kind === 'attack' ? attackVariant.damage : [],
-      plannedOperations,
-    ),
+    stackWitnesses: uncertainOcCell
+      ? new Map()
+      : new Map(
+          [
+            ...stackDomainWitnesses(
+              attackVariant?.kind === 'attack' ? attackVariant.damage : [],
+              plannedOperations,
+            ),
+          ].filter(
+            ([key]) =>
+              !sources.some(
+                (source) =>
+                  hasOcConditionReader(source.effect) &&
+                  runtimeInputDefinitionsForSource(source).some(
+                    (definition) => definition.key === key,
+                  ),
+              ),
+          ),
+        ),
     inputDefinitions: definitions.sort((left, right) => left.key.localeCompare(right.key)),
   };
 }

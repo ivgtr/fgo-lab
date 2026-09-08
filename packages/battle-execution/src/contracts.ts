@@ -33,7 +33,7 @@ export interface OperationDecisionPlan {
 
 export type ConditionExpression =
   | { kind: 'always' }
-  | { kind: 'unsupported'; reason: 'unresolvedRecipient' }
+  | { kind: 'unsupported'; reason: 'unresolvedRecipient' | 'unresolvedPreparationWrite' }
   | {
       kind: 'trait';
       scope: TraitScope;

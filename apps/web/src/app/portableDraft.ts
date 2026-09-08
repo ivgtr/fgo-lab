@@ -13,10 +13,12 @@ export async function commitPortableDraft({
   sessionId,
   updateActiveProfile,
   setCalculation,
+  source = 'draft',
 }: {
   request: PortableCalculationRequest;
   result: CalculationResult;
   sessionId: string;
+  source?: 'draft' | 'history';
   updateActiveProfile: UpdateActiveProfile;
   setCalculation: Dispatch<SetStateAction<CalculationWorkspace>>;
 }) {
@@ -36,5 +38,17 @@ export async function commitPortableDraft({
     },
     updatedAt: now,
   }));
-  setCalculation({ request, storedResult: result, source: 'draft' });
+  setCalculation({ request, storedResult: result, source });
+}
+
+/** Start a separate calculation only after its durable draft has been committed. */
+export async function startPortableDraft({
+  setCalculationSessionId,
+  ...draft
+}: Omit<Parameters<typeof commitPortableDraft>[0], 'sessionId'> & {
+  setCalculationSessionId: Dispatch<SetStateAction<string>>;
+}) {
+  const sessionId = crypto.randomUUID();
+  await commitPortableDraft({ ...draft, sessionId });
+  setCalculationSessionId(sessionId);
 }

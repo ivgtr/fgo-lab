@@ -2,7 +2,7 @@
   "caseId": "all-effect-sources-ordered-execution",
   "description": "passive、自身スキル、概念礼装、支援、魔術礼装、宝具前効果、継続条件、宝具ダメージを順序付き状態へ一度だけ適用する",
   "reviewedAt": "2026-08-25",
-  "engineVersion": "32.0.0",
+  "engineVersion": "33.0.0",
   "expectedModifiers": {
     "attackBuff": 0.8,
     "cardBuff": 0.5,

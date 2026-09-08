@@ -224,7 +224,7 @@ describe('preparation stack support boundary', () => {
     const invalid = attemptPortableCalculationScenarioChange(
       original,
       previous.execution.result,
-      { ...scenario, overcharge: 9 },
+      { ...scenario, initialOvercharge: 9 as 1 },
       data,
     );
     expect(invalid.status).toBe('rejected');

@@ -120,11 +120,16 @@ export function unresolvedProfileResult(
   }));
   for (const { index, execution } of matchingExecutions) {
     const candidateKey = candidateSet.plan.candidateKeys[index] ?? `candidate:${String(index)}`;
-    const insufficientGauge =
-      candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ===
-      'insufficientNpGauge';
-    if (insufficientGauge) {
-      records.unavailableUnderPolicy.push({ candidateKey, reason: 'insufficientNpGauge' });
+    const rejection =
+      candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code;
+    if (rejection === 'insufficientNpGauge' || rejection === 'resourceRequirementExceedsCapacity') {
+      records.unavailableUnderPolicy.push({
+        candidateKey,
+        reason:
+          rejection === 'resourceRequirementExceedsCapacity'
+            ? 'npCapacityExceeded'
+            : 'insufficientNpGauge',
+      });
     } else if (execution.result.status === 'invalid') {
       records.invalid.push({
         candidateKey,
@@ -160,8 +165,10 @@ export function unresolvedProfileResult(
     const unsupported = matchingExecutions.find(
       ({ index, execution }) =>
         execution.result.status === 'unsupported' &&
-        candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code !==
-          'insufficientNpGauge',
+        !['insufficientNpGauge', 'resourceRequirementExceedsCapacity'].includes(
+          candidateSet.plan.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ??
+            '',
+        ),
     )?.execution;
     return {
       status: 'unsupported',
@@ -191,7 +198,11 @@ export function unresolvedProfileResult(
     return {
       status: 'unavailableUnderPolicy',
       attackProfile,
-      reason: 'insufficientNpGauge',
+      reason: records.unavailableUnderPolicy.every(
+        (record) => record.reason === 'npCapacityExceeded',
+      )
+        ? 'npCapacityExceeded'
+        : 'insufficientNpGauge',
       diagnostics,
     };
   records.unavailableUnderPolicy.push({

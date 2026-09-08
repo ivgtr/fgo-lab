@@ -24,7 +24,7 @@
     "oldAssertion": "five accessible ranking policy controls dispatch canonical state",
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/ranking/RankingConditions.test.tsx",
-    "replacementTest": "exposes exactly six accessible canonical controls and dispatches the full policy"
+    "replacementTest": "exposes exactly seven accessible canonical controls and dispatches the full policy"
   },
   {
     "id": "E2E-A013-DETAIL",
@@ -33,7 +33,7 @@
     "oldAssertion": "area contribution detail uses calculator-parity evidence",
     "disposition": "transferred",
     "replacementFile": "apps/web/src/features/ranking/rankingWorkerRuntime.test.ts",
-    "replacementTest": "shares one six-condition cache identity and returns calculator-parity detail evidence"
+    "replacementTest": "shares one seven-condition cache identity and returns calculator-parity detail evidence"
   },
   {
     "id": "E2E-A012-DESKTOP-VRT",
@@ -547,5 +547,32 @@
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
     "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
+  },
+  {
+    "id": "E2E-A051-COMMAND",
+    "caseId": "E2E-051",
+    "outcome": "browserConnection",
+    "oldAssertion": "keyboard initial OC command respects NP capacity",
+    "disposition": "retained",
+    "replacementFile": "e2e/initial-oc.spec.ts",
+    "replacementTest": "[E2E-051] initial OC commands, keyboard, responsive detail and reset @desktop @journey"
+  },
+  {
+    "id": "E2E-A051-VIEWPORT",
+    "caseId": "E2E-051",
+    "outcome": "browserConnection",
+    "oldAssertion": "desktop, 390px and 320px detail presents initial and effective OC without overflow",
+    "disposition": "retained",
+    "replacementFile": "e2e/initial-oc.spec.ts",
+    "replacementTest": "[E2E-051] initial OC commands, keyboard, responsive detail and reset @desktop @journey"
+  },
+  {
+    "id": "E2E-A051-RESET",
+    "caseId": "E2E-051",
+    "outcome": "browserConnection",
+    "oldAssertion": "population and invalid URL reset restore canonical NP1 and initial OC1",
+    "disposition": "retained",
+    "replacementFile": "e2e/initial-oc.spec.ts",
+    "replacementTest": "[E2E-051] initial OC commands, keyboard, responsive detail and reset @desktop @journey"
   }
 ]

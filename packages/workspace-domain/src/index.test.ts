@@ -153,7 +153,7 @@ describe('workspace derivations', () => {
           npLevel: 1,
           fouAtk: 1000,
         },
-        overcharge: 1,
+        initialOvercharge: 1 as const,
         targetContext: {
           class: { kind: 'relative' as const, relation: 'neutral' as const },
           attribute: { kind: 'relative' as const, relation: 'neutral' as const },
@@ -174,6 +174,7 @@ describe('workspace derivations', () => {
       executionIntent: {
         kind: 'ranking' as const,
         basis: {
+          initialOvercharge: 1 as const,
           servantId: '1',
           level: 90,
           npLevel: 1 as const,
@@ -182,6 +183,7 @@ describe('workspace derivations', () => {
         },
         initialNpGauge: 20_000,
         policy: {
+          initialOvercharge: 1 as const,
           population: 'all' as const,
           levelBasis: 'uniformLevel90' as const,
           npLevelBasis: { kind: 'specified' as const, npLevel: 1 as const },

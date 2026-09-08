@@ -124,7 +124,9 @@ export function Ranking({
               <li key={exclusion.entryId}>
                 <strong>{exclusion.name}</strong> —{' '}
                 {exclusion.status === 'unavailableUnderPolicy' ? '条件下で実行不可' : '無効'}:{' '}
-                {exclusion.reason}
+                {exclusion.reason === 'npCapacityExceeded'
+                  ? '開始NPまたは必要NPが、この宝具LvのNP上限を超えています'
+                  : exclusion.reason}
               </li>
             ))}
           </ul>

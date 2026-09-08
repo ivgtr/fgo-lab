@@ -12,17 +12,18 @@ import type {
 } from './executionTypes';
 import { classifyContributionCondition } from './conditionSemantics';
 import { contributionId } from './contributionIdentity';
+import type { ConditionEvaluationState } from './condition';
 
 const included = (): ContributionPolicyDecision => ({ kind: 'included' });
 const excluded = (
   reason: Extract<ContributionPolicyDecision, { kind: 'excluded' }>['reason'],
 ): ContributionPolicyDecision => ({ kind: 'excluded', reason });
 
-function decisions(
-  operation: BattleOperation,
+export function contributionPolicyDecisions(
+  operation: Pick<BattleOperation, 'source' | 'gameActivation' | 'contributionScope'>,
   condition: ConditionExpression,
   policy: ContributionApplicationPolicy,
-  state?: OperationResult['state'],
+  state?: ConditionEvaluationState,
 ) {
   if (policy.kind === 'calculator')
     return {
@@ -75,7 +76,7 @@ export function contributionIsIncluded(
     operation.kind !== 'executeNpDamage'
   )
     return true;
-  return Object.values(decisions(operation, condition, policy, state)).every(
+  return Object.values(contributionPolicyDecisions(operation, condition, policy, state)).every(
     (decision) => decision.kind === 'included',
   );
 }
@@ -97,7 +98,7 @@ function contribution(
   policy: ContributionApplicationPolicy,
   state: OperationResult['state'],
 ): EffectiveContribution {
-  const policyDecisions = decisions(operation, condition, policy, state);
+  const policyDecisions = contributionPolicyDecisions(operation, condition, policy, state);
   const policyIncluded = Object.values(policyDecisions).every(
     (decision) => decision.kind === 'included',
   );

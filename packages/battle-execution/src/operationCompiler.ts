@@ -1,4 +1,4 @@
-import { actorFormEquals } from '@fgo-lab/master-data';
+import { actorFormEquals, canonicalRequirementLeaves } from '@fgo-lab/master-data';
 import type {
   ActorCountPredicate,
   CanonicalEffectRequirement,
@@ -39,7 +39,7 @@ type ValuedOperation = Extract<
   { kind: 'damageModifier' | 'modifierRateChange' }
 >;
 
-function sourceHpInputKey(source: SourceEffect): string {
+export function sourceHpInputKey(source: SourceEffect): string {
   return `source:${source.origin}:${source.sourceInstanceId}:hpPermille`;
 }
 
@@ -111,12 +111,23 @@ export function runtimeInputDefinitionsForSource(source: SourceEffect) {
   });
   const requiresSourceHp =
     !['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin) &&
-    source.effect.execution.some((operation) => {
-      if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
-        return false;
-      const expression = selectedValueExpression(source, operation);
-      return expression?.kind === 'inverseHpLinear' || expression?.kind === 'hpRangeLinear';
-    });
+    (canonicalRequirementLeaves(source.effect.requirement.expression).some(
+      (requirement) =>
+        requirement.kind === 'quantity' && requirement.quantity === 'attackerHpPermille',
+    ) ||
+      source.effect.execution.some((operation) => {
+        if (operation.kind === 'grantOcApplicationRate')
+          return [...operation.cells, ...(operation.limitBreakCells ?? [])].some((row) =>
+            row.some(
+              (cell) =>
+                cell.amount.kind === 'inverseHpLinear' || cell.amount.kind === 'hpRangeLinear',
+            ),
+          );
+        if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
+          return false;
+        const expression = selectedValueExpression(source, operation);
+        return expression?.kind === 'inverseHpLinear' || expression?.kind === 'hpRangeLinear';
+      }));
   return requiresSourceHp
     ? [
         ...normalized,
@@ -142,13 +153,17 @@ export function compileEffectCondition(
   sourceId: string,
   sourceInstanceId: string,
   skillId: string,
+  sourceActorIsCurrent = false,
 ): ConditionExpression {
   const activationSource = {
     origin,
     sourceInstanceId,
     skillId: skillId || null,
   } as const;
-  const recipient = resolveTargetPolicy(origin, effect.requirement.recipient);
+  const recipient = resolveTargetPolicy(
+    sourceActorIsCurrent ? 'attacker' : origin,
+    effect.requirement.recipient,
+  );
   const actorScope = (
     scope: Extract<CanonicalEffectRequirement, { kind: 'trait' }>['scope'],
   ): TraitScope | null => {
@@ -175,7 +190,7 @@ export function compileEffectCondition(
         (scope === 'attacker' || scope === 'attackerState') &&
         ['cardNP', 'faceCard', 'cardExtra'].includes(requirement.trait)
       ) {
-        const actual = requirement.trait === 'cardNP';
+        const actual = !sourceActorIsCurrent && requirement.trait === 'cardNP';
         return actual === requirement.present
           ? { kind: 'always' }
           : { kind: 'not', expression: { kind: 'always' } };
@@ -213,13 +228,14 @@ export function compileEffectCondition(
         ? { kind: 'card', card: requirement.card }
         : { kind: 'not', expression: { kind: 'card', card: requirement.card } };
     if (requirement.kind === 'attackType') {
-      const actual = requirement.attack === 'noblePhantasm';
+      const actual = !sourceActorIsCurrent && requirement.attack === 'noblePhantasm';
       return actual === requirement.present
         ? { kind: 'always' }
         : { kind: 'not', expression: { kind: 'always' } };
     }
     if (requirement.kind === 'quantity') {
-      const currentAttackerSource = ['attacker', 'passive', 'np', 'craftEssence'].includes(origin);
+      const currentAttackerSource =
+        sourceActorIsCurrent || ['attacker', 'passive', 'np', 'craftEssence'].includes(origin);
       const subjectId =
         currentAttackerSource &&
         (requirement.subjectId === undefined || requirement.subjectId === sourceId)
@@ -356,7 +372,7 @@ function transactionGroupId(source: SourceEffect): string | null {
   return null;
 }
 
-function sourceIdentity(source: SourceEffect): OperationSource {
+export function sourceIdentity(source: SourceEffect): OperationSource {
   const groupId = transactionGroupId(source);
   return {
     origin: source.origin,
@@ -459,6 +475,9 @@ function compilationCacheKey(
   return JSON.stringify({
     phase: source.phase,
     origin: source.origin,
+    ocExecutionCommitted: source.ocExecutionCommitted,
+    compilationPurpose: source.compilationPurpose,
+    preparationStochasticOutcome: source.preparationStochasticOutcome,
     sourceInstanceId: source.sourceInstanceId,
     sourceId: source.sourceId,
     sourceName: source.sourceName,
@@ -533,6 +552,43 @@ export function compileEffect(
     source.effect.proc.kind !== 'guaranteed' || condition.kind !== 'always';
 
   for (const semantic of source.effect.execution) {
+    if (semantic.kind === 'ocStateNonIntersection') continue;
+    if (
+      semantic.kind === 'ocRemovalResistance' ||
+      semantic.kind === 'grantOcBoost' ||
+      semantic.kind === 'grantOcApplicationRate' ||
+      semantic.kind === 'removeOcState'
+    ) {
+      if (source.compilationPurpose === 'dependency') continue;
+      if (!source.ocExecutionCommitted)
+        applicable.push({
+          kind: 'unsupported',
+          route: semantic.route,
+          reason: 'operationSemantics',
+          damageRelevant: true,
+        });
+      else
+        projections.push({
+          ...makeProjection(
+            source,
+            key,
+            'notRelevant',
+            'stateMutationOnly',
+            null,
+            null,
+            null,
+            condition,
+          ),
+          executionSupport: 'supported',
+          outcome: 'notRelevant',
+          visibility: 'hidden',
+          controllability: 'automatic',
+          decision: { state: 'none' },
+          conditionDecision: 'none',
+          explanation: { code: 'stateMutationOnly', condition: null },
+        });
+      continue;
+    }
     if (
       semantic.kind === 'resourceMutation' ||
       semantic.kind === 'stateMutation' ||

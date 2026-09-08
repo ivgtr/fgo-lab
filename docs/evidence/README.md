@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.30"
+document_version: "1.4.31"
 status: "Active"
-updated_at: "2026-09-05"
+updated_at: "2026-09-08"
 ---
 
 # Evidence report index
@@ -50,7 +50,7 @@ updated_at: "2026-09-05"
 | [np-resource-semantics-flow-tsk-04](np-resource-semantics-flow-tsk-04.md) | Complete | canonical: NP capacity／requirement／gain-loss／all-consume／base OC | TSK-04〜08 | TSK-04 Phase 2 |
 | [legacy-runtime-removal-tsk-04](legacy-runtime-removal-tsk-04.md) | Complete | canonical: old schema reader／raw fallback／dual runtime branch removal | TSK-04〜08 | TSK-04 Phase 3 |
 | [transactional-preparation-flow-tsk-05](transactional-preparation-flow-tsk-05.md) | Complete | canonical: ordered condition／choice／NP resource／state／form／variant action transaction、typed outcome、full recovery | TSK-05〜08 | `69f8207e` baseline／second review resolution |
-| [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Active | canonical: source program／finite certificate／application policy／outcome; TSK-06.41 product correction Blocking 0、final four-policy maximum deferred | TSK-06〜08 | TSK-06.41 completion |
+| [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Active | canonical: source program／finite certificate／application policy／outcome／TSK-06.48 initial OC。current closure・性能・06.45 baselineを同noteに保持（[canonical input／80条件差分](oc-execution-diff-tsk-06-48.json)） | TSK-06〜08 | TSK-06.48 worktree |
 | [resolved-attacker-level-stat-flow-tsk-06-46](resolved-attacker-level-stat-flow-tsk-06-46.md) | Active | canonical: resolved servant／level ATK join、numeric-zero fallback removal、calculator／ranking／portable recovery | TSK-06.46〜08 | TSK-06.42 Step 1 planning |
 | [servant-build-record-identity-flow-tsk-06-47](servant-build-record-identity-flow-tsk-06-47.md) | Complete | canonical: build／target map key and embedded servant identity coherence、profile persistence／recovery fail-closed | TSK-06.47〜08 | `911753c`／TSK-06.47 completion |
 | [ranking-adverse-action-diff-tsk-06-41](ranking-adverse-action-diff-tsk-06-41.json) | Complete | machine-readable: full 433-profile join with 348 direct result changes＋85 rank-only changes; inputs／actions／resources／NP1〜5 damage／ranks／reasons | TSK-06.41〜06.5 | `bb1df1b` before／after audit |

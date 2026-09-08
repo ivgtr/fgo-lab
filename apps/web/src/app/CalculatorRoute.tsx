@@ -12,6 +12,7 @@ import type {
   CalculationResult,
   CalculationScenario,
   CurrentCalculationHistoryEntry,
+  CalculationHistoryEntry,
   LocalProfile,
   PortableCalculationRequest,
   SupportTemplate,
@@ -20,6 +21,7 @@ import type { EffectProjection } from '@fgo-lab/calculation-application';
 import {
   applyEffectProjectionDecisions,
   attemptPortableCalculationReset,
+  regenerateHistoricalCalculatorRequest,
   attemptPortableCalculationVersionUpgrade,
   createDefaultCalculatorPortableRequest,
   currentCalculationVersionContext,
@@ -33,6 +35,7 @@ import { Calculator, RejectedCalculator } from '../features/calculator/Calculato
 import type { CalculationWorkspace } from './App';
 import {
   commitPortableDraft as commitPortableDraftRecord,
+  startPortableDraft,
   type UpdateActiveProfile,
 } from './portableDraft';
 
@@ -150,23 +153,33 @@ export function CalculatorRoute({
     await commitPortableDraft(attempt.request, attempt.result);
   }
 
+  async function regenerateHistory(
+    entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
+  ) {
+    const request = regenerateHistoricalCalculatorRequest(entry, master, profile.servantBuilds);
+    if (!request) return;
+    const outcome = executePortableCalculation(request, master);
+    if (outcome.status !== 'executed' && outcome.status !== 'unsupported') return;
+    await startHistoryDraft(request, outcome.execution.result, 'draft');
+  }
+
+  async function startHistoryDraft(
+    request: PortableCalculationRequest,
+    result: CalculationResult,
+    source: 'draft' | 'history',
+  ) {
+    await startPortableDraft({
+      request,
+      result,
+      source,
+      setCalculation,
+      setCalculationSessionId,
+      updateActiveProfile,
+    });
+  }
+
   async function copyHistoryToDraft(entry: CurrentCalculationHistoryEntry) {
-    const sessionId = crypto.randomUUID();
-    setCalculationSessionId(sessionId);
-    setCalculation({ request: entry.request, storedResult: entry.result, source: 'history' });
-    const now = new Date().toISOString();
-    await updateActiveProfile((current) => ({
-      ...current,
-      draft: {
-        profileId: current.profileId,
-        calculationSessionId: sessionId,
-        request: entry.request,
-        result: entry.result,
-        requestFingerprint: entry.requestFingerprint,
-        updatedAt: now,
-      },
-      updatedAt: now,
-    }));
+    await startHistoryDraft(entry.request, entry.result, 'history');
   }
 
   async function finalizeCurrentCalculation() {
@@ -259,6 +272,7 @@ export function CalculatorRoute({
             resolvedInput={resolvedCalculation.input}
             scenarioInput={resolvedCalculation.scenarioInput}
             resolvedEffects={resolvedCalculation.effects}
+            appliedPreparationActions={resolvedCalculation.appliedPreparationActions}
             effectControls={resolvedCalculation.effectControls}
             effectWarnings={resolvedCalculation.effectWarnings}
             effectInputs={resolvedCalculation.effectInputs}
@@ -337,6 +351,7 @@ export function CalculatorRoute({
             }}
             onFinalize={finalizeCurrentCalculation}
             onHistorySelect={copyHistoryToDraft}
+            onRegenerateHistory={regenerateHistory}
             onResetPortableRequest={resetPortableDraft}
           />
         )}

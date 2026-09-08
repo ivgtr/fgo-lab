@@ -45,6 +45,7 @@ function renderCalculator(scenario: CalculationScenario, onScenarioChange = vi.f
       resolvedInput={calculation.input}
       scenarioInput={calculation.input}
       resolvedEffects={calculation.effects}
+      appliedPreparationActions={calculation.appliedPreparationActions}
       effectControls={calculation.effectControls}
       effectWarnings={calculation.effectWarnings}
       effectInputs={calculation.effectInputs}
@@ -64,6 +65,7 @@ function renderCalculator(scenario: CalculationScenario, onScenarioChange = vi.f
       onSupportSave={vi.fn()}
       onFinalize={vi.fn()}
       onHistorySelect={vi.fn()}
+      onRegenerateHistory={vi.fn()}
       onResetPortableRequest={vi.fn()}
     />,
   );

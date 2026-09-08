@@ -1,6 +1,11 @@
 import { liveInputQuantity } from './stackQuantities';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
-import { traitConditionEvaluationSource, traitConditionReadScopes } from './conditionSemantics';
+import {
+  canonicalExclusiveGroup,
+  canonicalExclusiveTraits,
+  traitConditionEvaluationSource,
+  traitConditionReadScopes,
+} from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
@@ -47,9 +52,22 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
   );
 }
 
+export type ConditionEvaluationState = Pick<
+  ExecutableBattleState,
+  | 'traits'
+  | 'initialTraitSuppressions'
+  | 'actorPredicates'
+  | 'traitCounts'
+  | 'stackQuantitySources'
+  | 'resolvedInputValues'
+  | 'quantities'
+  | 'noblePhantasmVariant'
+  | 'activationContext'
+> & { card: ExecutableBattleState['card'] | null };
+
 export function evaluateCondition(
   condition: ConditionExpression,
-  state: ExecutableBattleState,
+  state: ConditionEvaluationState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
     const readScopes = traitConditionReadScopes(scope);
@@ -64,6 +82,16 @@ export function evaluateCondition(
       return value === undefined ? [] : [value];
     });
     if (values.includes(true)) return true;
+    const group = canonicalExclusiveGroup(scope, trait);
+    if (
+      group &&
+      canonicalExclusiveTraits(scope, group).some(
+        (sibling) =>
+          sibling !== trait &&
+          readScopes.some((candidate) => state.traits[candidate].get(sibling) === true),
+      )
+    )
+      return false;
     if (values.length === readScopes.length && values.every((value) => !value)) return false;
     return undefined;
   };
@@ -97,7 +125,7 @@ export function evaluateCondition(
           : count === condition.count;
     }
     case 'card':
-      return state.card === condition.card;
+      return state.card === null ? null : state.card === condition.card;
     case 'noblePhantasmVariant':
       return (
         noblePhantasmVariantKey(state.noblePhantasmVariant.ref) ===

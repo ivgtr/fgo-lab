@@ -166,6 +166,7 @@ export function compileExecutionPlan(
   const inputDefinitions = mergeInputDefinitions([
     ...operations.flatMap((operation) => operation.inputDefinitions),
     ...preparationInputDefinitions,
+    ...(collected.formExecution?.state.ocInputDefinitions ?? []),
     ...(collected.formExecution?.requiredInputs ?? []),
   ]);
   return {
@@ -188,6 +189,7 @@ export function compileExecutionPlan(
     preparationRequiredInputs: collected.formExecution?.requiredInputs ?? [],
     preparationInputKeys: new Set([
       ...preparationInputDefinitions.map(({ key }) => key),
+      ...(collected.formExecution?.state.ocInputDefinitions.map(({ key }) => key) ?? []),
       ...(collected.formExecution?.requiredInputs.map(({ key }) => key) ?? []),
     ]),
     appliedPreparationActions: collected.formExecution?.actions ?? [],

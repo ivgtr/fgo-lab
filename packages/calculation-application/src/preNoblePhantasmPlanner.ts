@@ -94,6 +94,21 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
       : {}),
     npResource: state.npResource,
     baseOvercharge: state.baseOvercharge,
+    oc: {
+      boosts: state.ocState.boosts,
+      rates: state.ocState.rates,
+      uncertainRates: state.ocState.uncertainRates,
+      activeFormKey: state.ocState.activeFormKey,
+      hpWrites: [...state.ocState.hpWrites].sort(),
+      hpWriteExclusions: [...new Set(state.ocState.hpWriteExclusions)].sort(),
+      sourceOutcomes: [...state.ocState.sourceOutcomes].sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
+      removalResistance: state.ocState.removalResistance,
+      uncertainContextWrites: state.uncertainContextWrites,
+      constantSources: [...state.ocState.constantSources].sort(),
+      receipts: state.ocState.receipts,
+    },
     choices: state.appliedActions
       .flatMap(({ command }) =>
         command.kind === 'useSkillSlot' && command.choice

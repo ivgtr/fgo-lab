@@ -1,5 +1,5 @@
 import type { DamageResolutionInput } from '@fgo-lab/schema';
-import { stackInputKey, type NoblePhantasmVariant } from '@fgo-lab/master-data';
+import type { NoblePhantasmVariant } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
   BattleStateBase,
@@ -9,7 +9,7 @@ import type {
   TargetPredicateAssertion,
   WorldFactAssertion,
 } from './contracts';
-import { targetPredicateKey } from './targetPredicate';
+import { createConditionState, traitFacts, traitCounts } from './conditionState';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 
 export function cloneBattleState(state: ExecutableBattleState): ExecutableBattleState {
@@ -98,61 +98,17 @@ function createBattleStateBase<
   attackerPredicateAssertions: readonly TargetPredicateAssertion[],
   activationContext: TActivationContext,
 ): BattleStateBase & { activationContext: TActivationContext } {
-  const attacker = [...attackerTraits, 'cardNP'];
   return {
-    actorFormId: noblePhantasmVariant.ref.actorFormId,
-    noblePhantasmVariant,
-    card: input.cardType,
-    traits: {
-      attacker: traitFacts(attacker),
-      attackerState: traitFacts(input.attackerStateTraits),
-      target: traitFacts(input.target.traits),
-      targetState: traitFacts(input.targetStateTraits),
-      field: traitFacts(input.fieldTraits),
-    },
-    actorPredicates: {
-      attacker: new Map(
-        attackerPredicateAssertions.map((assertion) => [
-          targetPredicateKey(assertion.predicate),
-          { predicate: assertion.predicate, present: assertion.present },
-        ]),
-      ),
-      target: new Map(
-        targetPredicateAssertions.map((assertion) => [
-          targetPredicateKey(assertion.predicate),
-          { predicate: assertion.predicate, present: assertion.present },
-        ]),
-      ),
-    },
-    stackQuantitySources: Object.fromEntries(
-      (['attackerState', 'targetState', 'field'] as const).flatMap((scope) =>
-        Object.keys(input.stackStateCounts?.[scope] ?? {}).map((trait) => {
-          const source = { scope, trait };
-          return [stackInputKey(source), source];
-        }),
-      ),
+    ...createConditionState(
+      input,
+      noblePhantasmVariant,
+      attackerTraits,
+      resolvedInputValues,
+      targetPredicateAssertions,
+      attackerPredicateAssertions,
+      activationContext,
     ),
-    traitCounts: {
-      attacker: traitCounts(attacker),
-      attackerState: {
-        ...traitCounts(input.attackerStateTraits),
-        ...input.stackStateCounts?.attackerState,
-      },
-      target: traitCounts(input.target.traits),
-      targetState: {
-        ...traitCounts(input.targetStateTraits),
-        ...input.stackStateCounts?.targetState,
-      },
-      field: { ...traitCounts(input.fieldTraits), ...input.stackStateCounts?.field },
-    },
-    initialTraitSuppressions: { attacker: new Set(), target: new Set() },
-    quantities: {
-      attackerHpPermille: input.attackerHpPermille,
-      targetRarity: input.targetRarity,
-      battlePointPhase: input.battlePointPhase,
-    },
-    activationContext,
-    resolvedInputValues: { ...resolvedInputValues },
+    actorFormId: noblePhantasmVariant.ref.actorFormId,
     modifiers: [],
     modifierRates: {},
     ignoreDefense: input.damageFunction.status === 'resolved' && input.damageFunction.ignoreDefense,
@@ -160,10 +116,6 @@ function createBattleStateBase<
     evidence: [],
     unresolved: [],
   };
-}
-
-function traitFacts(traits: Iterable<string>): ReadonlyMap<string, boolean> {
-  return new Map([...traits].map((trait) => [trait, true] as const));
 }
 
 export function applyWorldFacts(
@@ -233,12 +185,6 @@ export function applyTraitAddition(
       : (candidate.traitCounts[scope][trait] ?? 0) + 1,
   };
   return candidate;
-}
-
-function traitCounts(traits: Iterable<string>): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const trait of traits) result[trait] = (result[trait] ?? 0) + 1;
-  return result;
 }
 
 export function combinedTraitCounts(

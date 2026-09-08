@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
   canonicalRequirementLeaves,
@@ -663,7 +663,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_631 });
+    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_574 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -785,8 +785,17 @@ describe('production master inventory ratchet', () => {
     };
     const failures: string[] = [];
     const intrinsicRecipientConflicts: string[] = [];
+    const supportDispositions: {
+      servantId: string;
+      skillId: string;
+      key: string;
+      status: string;
+      outcome: EffectProjection['outcome'] | undefined;
+      explanation: EffectProjection['explanation'] | undefined;
+    }[] = [];
     const typedUnsupported: string[] = [];
     let projectionCount = 0;
+    const preparationRejected: string[] = [];
     for (const source of master.servants) {
       for (const skill of source.skills) {
         const scenario: ResolvedScenario = {
@@ -806,7 +815,13 @@ describe('production master inventory ratchet', () => {
             },
           },
         };
-        const baseline = calculateScenario(scenario, master, versions);
+        const baseline = calculateScenarioOutcome(scenario, master, versions);
+        if (baseline.status === 'rejected') {
+          preparationRejected.push(
+            `${source.id}:${skill.id}:${baseline.result.issues.map((issue) => issue.code).join(',')}`,
+          );
+          continue;
+        }
         const projections = baseline.effects.filter(
           (effect) => effect.source.origin === 'support' && effect.controllability === 'user',
         );
@@ -850,6 +865,16 @@ describe('production master inventory ratchet', () => {
           const outcome = selected.effects.find(
             (effect) => effect.projectionKey === projection.projectionKey,
           )?.outcome;
+          supportDispositions.push({
+            servantId: source.id,
+            skillId: skill.id,
+            key: projection.projectionKey,
+            status: selected.result.status,
+            outcome,
+            explanation: selected.effects.find(
+              (effect) => effect.projectionKey === projection.projectionKey,
+            )?.explanation,
+          });
           const isIntrinsicRecipientConflict =
             selected.result.status === 'unsupported' &&
             selected.result.missingEvidence.length > 0 &&
@@ -874,14 +899,30 @@ describe('production master inventory ratchet', () => {
         }
       }
     }
-    expect(projectionCount).toBe(382);
-    expect(intrinsicRecipientConflicts).toEqual([
-      '200200:2167650:support:audit:200200:2167650:2167650:9963:0',
-      '2501300:2276451:support:audit:2501300:2276451:2276451:21180:0',
+    if (process.env['FGO_TEST_ARTIFACT_DIR'])
+      await writeFile(
+        resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'oc-support-dispositions.json'),
+        JSON.stringify(supportDispositions),
+      );
+    expect(preparationRejected).toEqual([
+      '102800:165551:preparation:insufficientNpGauge',
+      '1101600:2255550:preparation:unsupportedResourceMutation',
     ]);
+    expect(projectionCount).toBe(380);
+    expect(intrinsicRecipientConflicts).toEqual([]);
+    // Exclusive intrinsic attributes are proven false by the shared condition owner.
+    for (const key of [
+      'support:audit:200200:2167650:2167650:9963:0',
+      'support:audit:2501300:2276451:2276451:21180:0',
+    ]) {
+      expect(supportDispositions.find((entry) => entry.key === key)).toMatchObject({
+        status: 'calculated',
+        outcome: 'notApplied',
+        explanation: { code: 'conditionNotMet' },
+      });
+    }
     expect(typedUnsupported).toEqual([
       '204300:885550:support:audit:204300:885550:885550:7415:0',
-      '1101600:2255550:support:audit:1101600:2255550:2255550:21113:0',
       '2801300:2688650:support:audit:2801300:2688650:2688650:23559:0',
     ]);
     expect(failures).toEqual([]);

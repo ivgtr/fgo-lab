@@ -95,7 +95,6 @@ describe('static ranking candidate space', () => {
         (sum, program) =>
           sum +
           [
-            program.startNpGauges.length,
             ...program.canonicalInputs.map(({ values }) => values.length),
             program.targets.length,
             program.fields.length,
@@ -157,7 +156,7 @@ describe('static ranking candidate space', () => {
     if (!space) throw new Error('ready candidate space required');
     const oracle: string[] = [];
     for (const program of space.programs)
-      for (const startNpGauge of program.startNpGauges)
+      for (const startNpGauge of [program.initialNpGauge])
         for (const target of program.targets)
           for (const field of program.fields)
             for (const quantity of program.quantities) {
@@ -230,19 +229,17 @@ describe('static ranking candidate space', () => {
       );
       expect(outcome.status, `NP${npLevel}`).toBe('calculated');
       if (outcome.status !== 'calculated') continue;
-      expect(outcome.detail.scenario.overcharge).toBe(1);
-      expect(outcome.detail.appliedPreparationActions.at(-1)?.resourceBefore.gauge).toBe(
-        npLevel === 5 ? 30_000 : 20_000,
-      );
-      expect(outcome.detail.input.overcharge).toBe(npLevel === 5 ? 3 : 2);
+      expect(outcome.detail.scenario.initialOvercharge).toBe(1);
+      expect(outcome.detail.appliedPreparationActions.at(-1)?.resourceBefore.gauge).toBe(20_000);
+      expect(outcome.detail.input.overcharge).toBe(2);
       startNpGauges.push(outcome.detail.candidateEvidence.startNpGauge);
       actual.push(outcome.detail.result.rows[npLevel - 1]!.average);
     }
-    expect(startNpGauges).toEqual([10_000, 10_000, 10_000, 20_000]);
-    expect(actual).toEqual([90_290.91, 108_832.9, 118_739.145, 133_764.555]);
+    expect(startNpGauges).toEqual([10_000, 10_000, 10_000, 10_000]);
+    expect(actual).toEqual([90_290.91, 108_832.9, 118_739.145, 128_987.255]);
   }, 30_000);
 
-  it('drops only the concrete start-gauge candidate that cannot pay a represented NP cost', () => {
+  it('rejects a represented NP cost at the selected start and succeeds only after an explicit initial OC change', () => {
     const source = master.servants.find(({ id }) => id === '100100')!;
     const costEffect = master.servants
       .find(({ id }) => id === '2501400')!
@@ -261,7 +258,11 @@ describe('static ranking candidate space', () => {
         candidate.id === servant.id ? servant : candidate,
       ),
     };
-    const compile = (npLevel: 1 | 2, conditionalEffects: 'baseline' | 'satisfied') =>
+    const compile = (
+      npLevel: 1 | 2,
+      conditionalEffects: 'baseline' | 'satisfied',
+      initialOvercharge: 1 | 2 = 1,
+    ) =>
       compileRankingExecutionPlan(
         servant,
         fixtureMaster,
@@ -270,6 +271,7 @@ describe('static ranking candidate space', () => {
           ...DEFAULT_RANKING_POLICY_CONDITIONS,
           npLevelBasis: { kind: 'specified', npLevel },
           conditionalEffects,
+          initialOvercharge,
         },
         versions(),
       );
@@ -293,25 +295,30 @@ describe('static ranking candidate space', () => {
     ).toBe(true);
     expect(baselineExecutions.some(({ result }) => result.status === 'calculated')).toBe(true);
 
-    const satisfied = compile(2, 'satisfied');
-    const costlySatisfied = satisfied.preparationPlanKeys.flatMap((key, index) =>
-      key.includes('"slot":1')
-        ? [
-            {
-              startNpGauge: satisfied.startNpGauges[index],
-              rejection:
-                satisfied.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ??
-                null,
-            },
-          ]
-        : [],
-    );
-    expect(costlySatisfied).toEqual(
-      expect.arrayContaining([
-        { startNpGauge: 10_000, rejection: 'insufficientNpGauge' },
-        { startNpGauge: 20_000, rejection: null },
-      ]),
-    );
+    for (const initialOvercharge of [1, 2] as const) {
+      const satisfied = compile(2, 'satisfied', initialOvercharge);
+      const costly = satisfied.preparationPlanKeys.flatMap((key, index) =>
+        key.includes('"slot":1')
+          ? [
+              {
+                startNpGauge: satisfied.startNpGauges[index],
+                rejection:
+                  satisfied.preparedRankingScenarios[index]?.resolved.preparationRejection?.code ??
+                  null,
+              },
+            ]
+          : [],
+      );
+      expect(costly.length).toBeGreaterThan(0);
+      expect(new Set(costly.map((candidate) => JSON.stringify(candidate)))).toEqual(
+        new Set([
+          JSON.stringify({
+            startNpGauge: initialOvercharge * 10000,
+            rejection: initialOvercharge === 1 ? 'insufficientNpGauge' : null,
+          }),
+        ]),
+      );
+    }
   }, 30_000);
 
   it('classifies every static production AttackProfile without substituting a sibling', () => {
@@ -326,18 +333,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 1_936,
-        generatedCount: 1_936,
-        deduplicatedCount: 1_936,
-        damageRequestUpperBound: 1_936,
-        damageRequestCount: 1_924,
-        distinctDamageInputCount: 1_298,
+        semanticUpperBound: 2_153,
+        generatedCount: 2_153,
+        deduplicatedCount: 2_153,
+        damageRequestUpperBound: 2_153,
+        damageRequestCount: 2_096,
+        distinctDamageInputCount: 1_329,
       },
       damageCache: {
-        requestCount: 1_924,
-        distinctDamageInputCount: 1_298,
-        cacheHitCount: 626,
-        cacheHitRate: 626 / 1_924,
+        requestCount: 2_096,
+        distinctDamageInputCount: 1_329,
+        cacheHitCount: 767,
+        cacheHitRate: 767 / 2_096,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -448,7 +455,14 @@ describe('static ranking candidate space', () => {
       const programs = compileStaticRankingPreparationPrograms(servant);
       for (const policy of policies) {
         const policyKey = `${policy.selfBuffs}:${policy.conditionalEffects}`;
-        const dispositions = compileCandidateLocalActionAdmissionDispositions(programs, policy);
+        const dispositions = compileCandidateLocalActionAdmissionDispositions(programs, policy, {
+          semantics: master.npResourceSemantics,
+          npLevel: 1,
+          automaticEffects: servant.passives.flatMap((passive) => passive.effects),
+          initialGauge:
+            policy.initialOvercharge *
+            master.npResourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
+        });
         for (const disposition of dispositions) {
           actionRecords.push({ servantId: servant.id, policyKey, ...disposition });
           for (const admission of disposition.actionAdmissions) {
@@ -518,9 +532,9 @@ describe('static ranking candidate space', () => {
         'excluded:baseline:policyNoOp': 15024,
         'excluded:satisfied:admitted:structuralRequired': 148,
         'excluded:satisfied:policyNoOp': 15024,
-        'included:baseline:admitted:optional': 8029,
+        'included:baseline:admitted:optional': 8434,
         'included:baseline:admitted:structuralRequired': 148,
-        'included:baseline:policyNoOp': 6460,
+        'included:baseline:policyNoOp': 6055,
         'included:baseline:unsupported:unresolvedOperation': 535,
         'included:satisfied:admitted:optional': 14467,
         'included:satisfied:admitted:structuralRequired': 148,
@@ -528,9 +542,9 @@ describe('static ranking candidate space', () => {
         'included:satisfied:unsupported:unresolvedOperation': 535,
       },
       preparationRejections: {
-        'included:baseline:unreachable:insufficientNpGauge': 12,
+        'included:baseline:unreachable:insufficientNpGauge': 57,
       },
-      actionDigest: '9cd19cea2493a36ea04cbb519628aeb4c010584224fea1d5c56943ddeb5d9e5d',
+      actionDigest: 'a2dbebd10f4273e14798e0ad528d9c8760434d102ba44b89c039c68c4a46552c',
     });
   }, 30_000);
 

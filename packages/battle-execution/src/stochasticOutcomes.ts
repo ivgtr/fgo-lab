@@ -82,6 +82,8 @@ export function resolvedStochasticOutcomeForOperation(
   operation: BattleOperation,
   outcomes: ReadonlyMap<string, ResolvedStochasticOutcome>,
 ): ResolvedStochasticOutcome {
+  if (operation.preResolvedStochasticOutcome)
+    return { status: operation.preResolvedStochasticOutcome };
   if (operation.proc.kind === 'guaranteed' && !operation.stochasticOutcome)
     return guaranteedSuccess;
   const resolved = outcomes.get(operation.operationId);

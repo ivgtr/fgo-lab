@@ -10,6 +10,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   attemptPortableCalculationVersionUpgrade,
+  replacePortableCalculationScenario,
   attemptPortableCalculationReset,
   createCalculatorPortableRequest,
   createRankingPortableRequest,
@@ -66,6 +67,37 @@ describe('portable calculation application owner', () => {
     expect(executePortableCalculation(request, master).status).toBe('executed');
   });
 
+  it('changes initial OC and calculator start NP together, rejecting contradictory payloads', () => {
+    const initial = createDefaultResolvedScenario(master, undefined);
+    const request = createCalculatorPortableRequest(initial, versionContext);
+    const changed = replacePortableCalculationScenario(request, {
+      ...initial,
+      attacker: { ...initial.attacker, npLevel: 2 },
+      initialOvercharge: 2,
+    });
+    expect(changed.executionIntent).toEqual({ kind: 'calculator', initialNpGauge: 20000 });
+    const executed = executePortableCalculation(changed, master);
+    expect(executed.status).toBe('executed');
+    if (executed.status !== 'executed') return;
+    expect(executed.execution.appliedPreparationActions.at(-1)?.ocUse).toMatchObject({
+      gaugeBefore: 20000,
+      baseOc: 2,
+      effectiveOc: 2,
+    });
+    expect(
+      portableCalculationRequestSchema.safeParse({
+        ...changed,
+        executionIntent: { kind: 'calculator', initialNpGauge: 10000 },
+      }).success,
+    ).toBe(false);
+    expect(
+      portableCalculationRequestSchema.safeParse({
+        ...changed,
+        scenario: { ...changed.scenario, overcharge: 2 },
+      }).success,
+    ).toBe(false);
+  });
+
   it('reconstructs every selected ranking candidate from typed portable intent', () => {
     for (const selfBuffs of ['included', 'excluded'] as const)
       for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
@@ -97,11 +129,12 @@ describe('portable calculation application owner', () => {
     if (request.scenario.mode !== 'resolved') throw new Error('resolved request expected');
     const rankingRequest = portableCalculationRequestSchema.parse({
       ...request,
+      scenario: { ...request.scenario, initialOvercharge: 2 },
       executionIntent: {
         kind: 'ranking' as const,
         initialNpGauge: 20_000,
-        policy: DEFAULT_RANKING_POLICY_CONDITIONS,
-        basis: rankingBasisFixture(master.servants[0]!),
+        policy: { ...DEFAULT_RANKING_POLICY_CONDITIONS, initialOvercharge: 2 },
+        basis: { ...rankingBasisFixture(master.servants[0]!), initialOvercharge: 2 },
       },
     });
     expect(executePortableCalculation(rankingRequest, master)).toMatchObject({
@@ -390,11 +423,12 @@ describe('portable calculation application owner', () => {
     const retainedRequest = portableCalculationRequestSchema.parse({
       ...currentRequest,
       versionContext: { masterDataVersion: 'old-master', engineVersion: 'old-engine' },
+      scenario: { ...currentRequest.scenario, initialOvercharge: 2 },
       executionIntent: {
         kind: 'ranking',
         initialNpGauge: 20_000,
-        policy: DEFAULT_RANKING_POLICY_CONDITIONS,
-        basis: rankingBasisFixture(master.servants[0]!),
+        policy: { ...DEFAULT_RANKING_POLICY_CONDITIONS, initialOvercharge: 2 },
+        basis: { ...rankingBasisFixture(master.servants[0]!), initialOvercharge: 2 },
       },
     });
     const current = executePortableCalculation(currentRequest, master);

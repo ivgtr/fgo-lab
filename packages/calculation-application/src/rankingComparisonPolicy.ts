@@ -11,7 +11,7 @@ export interface RankingComparisonPolicy {
   selfContribution: 'includeVoluntarySkillModifiers' | 'excludeVoluntarySkillModifiers';
   conditionalContribution: 'baselineOnly' | 'satisfiedCandidates';
   stochasticInput: 'minimum' | 'maximum';
-  startNpGaugeCandidates: readonly number[];
+  initialNpGauge: number;
 }
 
 export type RankingComparisonPolicyCommand =
@@ -32,19 +32,12 @@ export function rankingPolicyKey(
 }
 
 export function compileRankingComparisonPolicy(
-  conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
+  conditions: Pick<
+    RankingPolicyConditions,
+    'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
+  >,
   master: MasterDataSnapshot,
-  npLevel: number,
 ): RankingComparisonPolicy {
-  const baseline = master.npResourceSemantics.noblePhantasmUse.requirement;
-  const capacity = master.npResourceSemantics.capacityByNpLevel[npLevel - 1]!;
-  const satisfiedStartGauges = [
-    ...new Set(
-      master.npResourceSemantics.capacityByNpLevel
-        .slice(0, npLevel)
-        .filter((candidate) => candidate >= baseline && candidate <= capacity),
-    ),
-  ].sort((left, right) => left - right);
   return {
     key: rankingPolicyKey(conditions.selfBuffs, conditions.conditionalEffects),
     commands: [
@@ -64,7 +57,8 @@ export function compileRankingComparisonPolicy(
     conditionalContribution:
       conditions.conditionalEffects === 'satisfied' ? 'satisfiedCandidates' : 'baselineOnly',
     stochasticInput: conditions.conditionalEffects === 'satisfied' ? 'maximum' : 'minimum',
-    startNpGaugeCandidates:
-      conditions.conditionalEffects === 'satisfied' ? satisfiedStartGauges : [baseline],
+    initialNpGauge:
+      conditions.initialOvercharge *
+      master.npResourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
   };
 }

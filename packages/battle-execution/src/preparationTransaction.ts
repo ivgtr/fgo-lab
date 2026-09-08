@@ -1,31 +1,27 @@
+import {
+  applyPreparationSourceResources,
+  type PreparationSourceResourceResult,
+} from './preparationResourcePlan';
 import type {
-  CanonicalEffectRequirement,
   CanonicalInputDefinition,
   CanonicalTargetPolicy,
   MasterEffect,
   MasterSkill,
   ServantMaster,
 } from '@fgo-lab/master-data';
-import {
-  canonicalRequirementLeaves,
-  findActorForm,
-  findNoblePhantasmVariant,
-} from '@fgo-lab/master-data';
+import { canonicalRequirementLeaves, findNoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
   PreNoblePhantasmState,
   PreparationExecutionContext,
   PreparationFailureCode,
 } from './preparationContracts';
-import {
-  applyNpResourceTransaction,
-  type NpResourceMutation,
-  type NpResourceTransactionResult,
-} from './npResource';
+import { applyNpResourceTransaction, type NpResourceTransactionResult } from './npResource';
 import { resolveTargetPolicy } from './effectRouting';
 import type { Origin } from './effectRouting';
-import { runtimeInputKey } from './runtimeInputIdentity';
-import { resolveStochasticActivationOutcome } from './stochasticOutcomes';
+import { executePreparationOc, preparationEffectSource } from './preparationOc';
+import { assemblePreparationActivationFacts } from './preparationEvidence';
+import type { OcState, NpOcUseReceipt, OcActionOutcome } from './ocState';
 
 interface PreparationInputSource {
   origin: Origin;
@@ -33,171 +29,14 @@ interface PreparationInputSource {
   skillId: string;
 }
 
-function runtimeDefinition(
-  source: PreparationInputSource,
-  effect: MasterEffect,
-  definition: CanonicalInputDefinition,
-): CanonicalInputDefinition {
-  return {
-    ...definition,
-    key: runtimeInputKey(
-      source.origin,
-      source.sourceInstanceId,
-      source.skillId,
-      effect.occurrenceId,
-      definition.key,
-    ),
-  };
+function transitionTargetsAttacker(
+  recipient: CanonicalTargetPolicy,
+  origin: Origin = 'attacker',
+): boolean {
+  return resolveTargetPolicy(origin, recipient) === 'attacker';
 }
 
-function transitionTargetsAttacker(recipient: CanonicalTargetPolicy): boolean {
-  return resolveTargetPolicy('attacker', recipient) === 'attacker';
-}
-
-type PreparationRequirementOutcome =
-  boolean | null | { status: 'inputRequired'; definition: CanonicalInputDefinition };
-
-function resolvedPreparationInput(
-  definition: CanonicalInputDefinition,
-  context: PreparationExecutionContext,
-): { status: 'resolved'; value: number } | { status: 'inputRequired' } {
-  const value = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
-  return value === null ||
-    !Number.isInteger(value) ||
-    value < definition.minimum ||
-    value > definition.maximum ||
-    (value - definition.minimum) % definition.step !== 0
-    ? { status: 'inputRequired' }
-    : { status: 'resolved', value };
-}
-
-function preparationRequirementSatisfied(
-  requirement: CanonicalEffectRequirement,
-  command: PreNoblePhantasmCommand,
-  effect: MasterEffect,
-  servant: ServantMaster,
-  state: PreNoblePhantasmState,
-  context: PreparationExecutionContext,
-  inputSource: PreparationInputSource,
-): PreparationRequirementOutcome {
-  if (requirement.kind === 'always') return true;
-  if (requirement.kind === 'choice')
-    return command.kind === 'useSkillSlot' && command.choice !== null
-      ? requirement.family === command.choice.groupKey &&
-          requirement.candidate === command.choice.candidateKey
-      : false;
-  if (requirement.kind === 'all') {
-    const results = requirement.requirements.map((member) =>
-      preparationRequirementSatisfied(
-        member,
-        command,
-        effect,
-        servant,
-        state,
-        context,
-        inputSource,
-      ),
-    );
-    if (results.includes(false)) return false;
-    const inputRequired = results.find(
-      (result): result is Extract<PreparationRequirementOutcome, { status: 'inputRequired' }> =>
-        typeof result === 'object' && result !== null,
-    );
-    if (inputRequired) return inputRequired;
-    return results.every((result) => result === true) ? true : null;
-  }
-  if (requirement.kind === 'any') {
-    const results = requirement.requirements.map((member) =>
-      preparationRequirementSatisfied(
-        member,
-        command,
-        effect,
-        servant,
-        state,
-        context,
-        inputSource,
-      ),
-    );
-    if (results.includes(true)) return true;
-    const inputRequired = results.find(
-      (result): result is Extract<PreparationRequirementOutcome, { status: 'inputRequired' }> =>
-        typeof result === 'object' && result !== null,
-    );
-    if (inputRequired) return inputRequired;
-    return results.every((result) => result === false) ? false : null;
-  }
-  if (requirement.kind === 'not') {
-    const result = preparationRequirementSatisfied(
-      requirement.requirement,
-      command,
-      effect,
-      servant,
-      state,
-      context,
-      inputSource,
-    );
-    return result === null || typeof result === 'object' ? result : !result;
-  }
-  if (requirement.kind === 'operationTrigger')
-    return effect.operationTrigger?.position === requirement.position;
-  if (requirement.kind === 'card') {
-    const variant = state.selectedNoblePhantasmVariant
-      ? findNoblePhantasmVariant(servant, state.selectedNoblePhantasmVariant)
-      : undefined;
-    return variant?.kind === 'attack'
-      ? (variant.card === requirement.card) === requirement.present
-      : null;
-  }
-  if (requirement.kind === 'attackType')
-    return (requirement.attack === 'noblePhantasm') === requirement.present;
-  if (requirement.kind === 'trait') {
-    if (requirement.scope === 'field' || requirement.scope.startsWith('opponent')) return null;
-    const formTraits = new Set(findActorForm(servant, state.currentFormId)?.traits ?? []);
-    const stateTraits = state.stateTraits.attackerState;
-    const present =
-      requirement.scope === 'recipientState'
-        ? stateTraits.has(requirement.trait)
-        : formTraits.has(requirement.trait) || stateTraits.has(requirement.trait);
-    return present === requirement.present;
-  }
-  if (requirement.kind === 'quantity') {
-    if (requirement.subjectId !== undefined) return null;
-    const value =
-      requirement.quantity === 'attackerHpPermille'
-        ? context.attackerHpPermille
-        : context.battlePointPhase;
-    if (value === undefined || value === null) return null;
-    return requirement.comparison === 'atLeast'
-      ? value >= requirement.value
-      : value <= requirement.value;
-  }
-  if (requirement.kind === 'inputQuantity') {
-    const rawDefinition = effect.inputDefinitions.find(({ key }) => key === requirement.inputKey);
-    if (!rawDefinition) return null;
-    const definition = runtimeDefinition(inputSource, effect, rawDefinition);
-    // The support check rejects these before evaluating preparation requirements. This
-    // reducer does not represent every ordered writer that the damage executor supports.
-    if (definition.kind === 'effectStackCount') return null;
-    const resolved = resolvedPreparationInput(definition, context);
-    if (resolved.status === 'inputRequired') {
-      return {
-        status: 'inputRequired',
-        definition: { ...definition, defaultValue: null, defaultReason: null },
-      };
-    }
-    const { value } = resolved;
-    if (requirement.comparison === 'lessThan') return value < requirement.value;
-    if (requirement.comparison === 'atMost') return value <= requirement.value;
-    if (requirement.comparison === 'equal') return value === requirement.value;
-    if (requirement.comparison === 'atLeast') return value >= requirement.value;
-    return value > requirement.value;
-  }
-  // Source quantities and target predicates need a resolved scenario fact. TSK-06 owns
-  // materializing those finite candidates; preparation must not assume them satisfied.
-  return null;
-}
-
-function effectChangesStructure(effect: MasterEffect): boolean {
+function effectChangesStructure(effect: MasterEffect, origin: Origin = 'attacker'): boolean {
   return effect.execution.some((operation) => {
     if (operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant')
       return true;
@@ -205,22 +44,41 @@ function effectChangesStructure(effect: MasterEffect): boolean {
       operation.kind === 'contextMutation' &&
       'scope' in operation &&
       operation.scope === 'recipientState' &&
-      resolveTargetPolicy('attacker', operation.route.target) === 'attacker'
+      resolveTargetPolicy(origin, operation.route.target) === 'attacker'
     );
   });
 }
 
-export function effectChangesPreparation(effect: MasterEffect): boolean {
+function effectChangesIdentity(effect: MasterEffect): boolean {
+  return effect.execution.some(
+    (operation) =>
+      operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant',
+  );
+}
+
+export function effectRequiresPreparationDecision(
+  effect: MasterEffect,
+  origin: Origin = 'attacker',
+): boolean {
   return (
     effect.execution.some(
       (operation) =>
         (operation.kind === 'resourceMutation' &&
           operation.resource === 'npGauge' &&
-          transitionTargetsAttacker(operation.recipient)) ||
+          transitionTargetsAttacker(operation.recipient, origin)) ||
         (operation.kind === 'unsupported' &&
           operation.reason === 'dependentResourceAmount' &&
-          resolveTargetPolicy('attacker', operation.route.target) === 'attacker'),
-    ) || effectChangesStructure(effect)
+          resolveTargetPolicy(origin, operation.route.target) === 'attacker'),
+    ) || effectChangesIdentity(effect)
+  );
+}
+
+export function effectChangesPreparation(
+  effect: MasterEffect,
+  origin: Origin = 'attacker',
+): boolean {
+  return (
+    effectRequiresPreparationDecision(effect, origin) || effectChangesStructure(effect, origin)
   );
 }
 
@@ -242,37 +100,12 @@ export function hasUnsupportedPreparationStackRequirement(effect: MasterEffect):
   );
 }
 
-function selectedTransitionAmount(
-  effect: MasterEffect,
-  valueSetIndex: number,
-  valueIndex: number,
-): NpResourceMutation | null {
-  const unsupported = effect.execution.find(
-    (operation): operation is Extract<MasterEffect['execution'][number], { kind: 'unsupported' }> =>
-      operation.kind === 'unsupported' &&
-      operation.reason === 'dependentResourceAmount' &&
-      resolveTargetPolicy('attacker', operation.route.target) === 'attacker',
-  );
-  if (unsupported) return { kind: 'unsupported', family: unsupported.reason };
-  const transition = effect.execution.find(
-    (operation) =>
-      operation.kind === 'resourceMutation' &&
-      operation.resource === 'npGauge' &&
-      transitionTargetsAttacker(operation.recipient),
-  );
-  if (!transition || transition.kind !== 'resourceMutation') return null;
-  if (transition.amount.kind === 'dependent')
-    return { kind: 'unsupported', family: transition.amount.reason };
-  const amount = transition.amount.values[valueSetIndex]?.[valueIndex];
-  if (amount === null || amount === undefined)
-    return { kind: 'unsupported', family: 'missingCanonicalAmount' };
-  return { kind: transition.direction, amount };
-}
-
-function resourceFailureCode(
-  result: Extract<NpResourceTransactionResult, { status: 'rejected' }>,
+export function resourceFailureCode(
+  result: Extract<PreparationSourceResourceResult, { status: 'rejected' }>,
 ): PreparationFailureCode {
   switch (result.code) {
+    case 'ambiguousCondition':
+      return 'ambiguousPreparationCondition';
     case 'invalidState':
       return 'invalidResourceState';
     case 'requirementExceedsCapacity':
@@ -292,6 +125,11 @@ export type PreparationResourcePlanResult =
       resource: NpResourceTransactionResult & { status: 'applied' };
       preparationEffects: readonly MasterEffect[];
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
+      ocState: OcState;
+      ocInputDefinitions: readonly CanonicalInputDefinition[];
+      uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
+      ocUse: NpOcUseReceipt | null;
+      ocOutcomes: readonly OcActionOutcome[];
     }
   | {
       status: 'rejected';
@@ -317,120 +155,6 @@ export function planPreparationResourceTransaction(args: {
   consumeNoblePhantasm: boolean;
   inputSource: PreparationInputSource;
 }): PreparationResourcePlanResult {
-  const activation = new Map<MasterEffect, PreparationEffectActivation>();
-  for (const effect of args.effects) {
-    if (!effectChangesPreparation(effect)) continue;
-    const stochastic = (() => {
-      if (effect.proc.kind === 'guaranteed' && effect.selection?.kind !== 'stochasticOutcome')
-        return { status: 'success' } as const;
-      const inputDefinitions = effect.inputDefinitions.map((definition) =>
-        runtimeDefinition(args.inputSource, effect, definition),
-      );
-      const values = Object.fromEntries(
-        inputDefinitions.flatMap((definition) => {
-          const resolved = resolvedPreparationInput(definition, args.context);
-          return resolved.status === 'resolved' ? [[definition.key, resolved.value]] : [];
-        }),
-      );
-      return resolveStochasticActivationOutcome(
-        {
-          operationId: `preparation:${effect.occurrenceId}`,
-          proc: effect.proc,
-          stochasticOutcome:
-            effect.selection?.kind === 'stochasticOutcome' ? effect.selection.group : null,
-          inputDefinitions,
-        },
-        {
-          values,
-          missingDefinitions: inputDefinitions
-            .filter(
-              (definition) =>
-                definition.kind !== 'effectStackCount' && values[definition.key] === undefined,
-            )
-            .map((definition) =>
-              definition.kind === 'effectStackCount'
-                ? definition
-                : { ...definition, defaultValue: null, defaultReason: null },
-            ),
-          invalidInputKeys: [],
-        },
-      );
-    })();
-    if (stochastic.status === 'failure') {
-      activation.set(effect, { procOutcome: 'failure', conditionOutcome: null });
-      continue;
-    }
-    if (stochastic.status === 'inputRequired') {
-      const definition = effect.inputDefinitions
-        .map((candidate) => runtimeDefinition(args.inputSource, effect, candidate))
-        .find(({ key }) => key === stochastic.inputKey);
-      return definition
-        ? {
-            status: 'rejected',
-            code: 'preparationInputRequired',
-            requiredInput: definition,
-            requiredInputEffectOccurrenceId: effect.occurrenceId,
-          }
-        : {
-            status: 'rejected',
-            code: 'invalidPreparationActivation',
-            requiredInput: null,
-            requiredInputEffectOccurrenceId: null,
-          };
-    }
-    if (stochastic.status === 'invalid')
-      return {
-        status: 'rejected',
-        code: 'invalidPreparationActivation',
-        requiredInput: null,
-        requiredInputEffectOccurrenceId: null,
-      };
-    if (hasUnsupportedPreparationStackRequirement(effect))
-      return {
-        status: 'rejected',
-        code: 'unsupportedPreparationStackQuantity',
-        requiredInput: null,
-        requiredInputEffectOccurrenceId: null,
-      };
-    const outcome = preparationRequirementSatisfied(
-      effect.requirement.expression,
-      args.command,
-      effect,
-      args.servant,
-      args.state,
-      args.context,
-      args.inputSource,
-    );
-    const inputRequired = outcome !== null && typeof outcome === 'object';
-    if (inputRequired)
-      return {
-        status: 'rejected',
-        code: 'preparationInputRequired',
-        requiredInput: outcome.definition,
-        requiredInputEffectOccurrenceId: effect.occurrenceId,
-      };
-    if (outcome === null) {
-      // A condition-dependent resource gain is not an execution precondition. Until TSK-06
-      // materializes its scenario fact, retain the effect for the ordinary executor but do not
-      // speculate that its preparation mutation happened. Structural ambiguity cannot be delayed.
-      if (effectChangesStructure(effect))
-        return {
-          status: 'rejected',
-          code: 'ambiguousPreparationCondition',
-          requiredInput: null,
-          requiredInputEffectOccurrenceId: null,
-        };
-      activation.set(effect, { procOutcome: 'success', conditionOutcome: null });
-    } else
-      activation.set(effect, {
-        procOutcome: 'success',
-        conditionOutcome: outcome,
-      });
-  }
-  const preparationEffects = args.effects.filter((effect) => {
-    const outcome = activation.get(effect);
-    return outcome?.procOutcome !== 'failure' && outcome?.conditionOutcome === true;
-  });
   const requirement = args.skill?.resourceRequirement
     ? {
         kind: 'atLeast' as const,
@@ -442,20 +166,111 @@ export function planPreparationResourceTransaction(args: {
           amount: args.context.resourceSemantics.noblePhantasmUse.requirement,
         }
       : null;
-  const mutations: NpResourceMutation[] = [
-    ...(args.consumeNoblePhantasm ? [{ kind: 'consumeAll' as const }] : []),
-    ...preparationEffects.flatMap((effect) => {
-      const mutation = selectedTransitionAmount(effect, args.valueSetIndex, args.valueIndex);
-      return mutation ? [mutation] : [];
-    }),
-  ];
-  const resource = applyNpResourceTransaction(
+  const resourceStart = applyNpResourceTransaction(
     args.context.resourceSemantics,
     args.state.npResource,
     {
       requirement,
-      mutations,
+      mutations: args.consumeNoblePhantasm ? [{ kind: 'consumeAll' }] : [],
     },
+  );
+  if (resourceStart.status === 'rejected')
+    return {
+      status: 'rejected',
+      code: resourceFailureCode(resourceStart),
+      requiredInput: null,
+      requiredInputEffectOccurrenceId: null,
+    };
+  const actionId = `preparation:${args.state.appliedActions.length}:${args.command.kind}`;
+  const sourceId = args.skill?.id ?? args.state.selectedNoblePhantasmVariant?.noblePhantasmId;
+  const actionFacts = sourceId
+    ? assemblePreparationActivationFacts(
+        args.servant,
+        args.skill ? 'skill' : 'noblePhantasm',
+        sourceId,
+        args.state.currentFormId,
+        args.effects,
+      ).filter((fact) => fact.kind !== 'sourceQuantity')
+    : [];
+  if (args.command.kind === 'useSkillSlot' && args.command.choice)
+    actionFacts.push({
+      kind: 'choice',
+      source: {
+        origin: args.inputSource.origin,
+        sourceInstanceId: args.inputSource.sourceInstanceId,
+        skillId: args.inputSource.skillId,
+      },
+      family: args.command.choice.groupKey,
+      candidate: args.command.choice.candidateKey,
+    });
+  const namedSource =
+    args.skill ??
+    (args.state.selectedNoblePhantasmVariant
+      ? findNoblePhantasmVariant(args.servant, args.state.selectedNoblePhantasmVariant)
+      : undefined);
+  if (!namedSource) throw new TypeError('preparation_source_missing');
+  const sources = args.effects.map((effect) =>
+    preparationEffectSource({ ...args, effect, ...args.inputSource, skillName: namedSource.name }),
+  );
+  const oc = executePreparationOc({
+    servant: args.servant,
+    state: args.state,
+    context: args.context,
+    actionId,
+    terminalNp: args.command.kind === 'executeAttackNoblePhantasm',
+    sources,
+    activationFacts: actionFacts,
+    npUse:
+      resourceStart.baseOvercharge === null
+        ? null
+        : { gaugeBefore: args.state.npResource.gauge, baseOc: resourceStart.baseOvercharge },
+  });
+  if (oc.result.status !== 'committed')
+    return {
+      status: 'rejected',
+      code:
+        oc.result.status === 'inputRequired'
+          ? 'preparationInputRequired'
+          : oc.result.status === 'invalid'
+            ? oc.result.reason === 'invalidPreparationActivation'
+              ? 'invalidPreparationActivation'
+              : 'invalidOcExecution'
+            : 'unsupportedOcExecution',
+      requiredInput: oc.requiredInput,
+      requiredInputEffectOccurrenceId: oc.requiredInput ? oc.occurrenceId : null,
+    };
+  const ocUse = oc.result.state.receipts.find((receipt) => receipt.actionId === actionId) ?? null;
+  const valueSetIndex = ocUse ? ocUse.effectiveOc - 1 : args.valueSetIndex;
+  const activation = oc.activation;
+  for (const effect of args.effects) {
+    if (!effectChangesPreparation(effect)) continue;
+    if (hasUnsupportedPreparationStackRequirement(effect))
+      return {
+        status: 'rejected',
+        code: 'unsupportedPreparationStackQuantity',
+        requiredInput: null,
+        requiredInputEffectOccurrenceId: null,
+      };
+    const applied = activation.get(effect);
+    if (applied?.procOutcome === 'failure') continue;
+    if (applied?.conditionOutcome === null && effectChangesIdentity(effect))
+      return {
+        status: 'rejected',
+        code: 'ambiguousPreparationCondition',
+        requiredInput: null,
+        requiredInputEffectOccurrenceId: null,
+      };
+  }
+  const preparationEffects = args.effects.filter((effect) => {
+    const outcome = activation.get(effect);
+    return outcome?.procOutcome !== 'failure' && outcome?.conditionOutcome === true;
+  });
+  const resource = applyPreparationSourceResources(
+    args.context.resourceSemantics,
+    resourceStart.state,
+    sources,
+    activation,
+    valueSetIndex,
   );
   return resource.status === 'rejected'
     ? {
@@ -464,5 +279,15 @@ export function planPreparationResourceTransaction(args: {
         requiredInput: null,
         requiredInputEffectOccurrenceId: null,
       }
-    : { status: 'ready', resource, preparationEffects, activation };
+    : {
+        status: 'ready',
+        resource: { ...resource, baseOvercharge: resourceStart.baseOvercharge },
+        preparationEffects,
+        activation,
+        ocState: oc.result.state,
+        ocInputDefinitions: oc.inputDefinitions,
+        uncertainContextWrites: oc.structuralState.uncertainContextWrites,
+        ocUse,
+        ocOutcomes: oc.result.outcomes,
+      };
 }

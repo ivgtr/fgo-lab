@@ -9,6 +9,10 @@ import type {
 } from '@fgo-lab/master-data';
 import type { ActivationFact, PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { NpResourceState } from './npResource';
+import type { OcState, NpOcUseReceipt, OcActionOutcome } from './ocState';
+import type { ContributionApplicationPolicy } from './executionTypes';
+import type { WorldFactAssertion, TargetPredicateAssertion } from './contracts';
+import type { SourceEffect } from './sourceCollection';
 
 export interface PreparationExecutionContext {
   resourceSemantics: CanonicalNpResourceSemantics;
@@ -19,6 +23,12 @@ export interface PreparationExecutionContext {
   canonicalInputValues?: Readonly<Record<string, number>>;
   attackerHpPermille?: number;
   battlePointPhase?: number | null;
+  worldFacts?: readonly WorldFactAssertion[];
+  targetPredicates?: readonly TargetPredicateAssertion[];
+  activationFacts?: readonly ActivationFact[];
+  policy?: ContributionApplicationPolicy;
+  initialSources?: readonly SourceEffect[];
+  terminalSources?: readonly SourceEffect[];
 }
 
 export interface SkillSlotRef {
@@ -47,6 +57,8 @@ export interface AppliedPreparationAction {
   resourceBefore: NpResourceState;
   resourceAfter: NpResourceState;
   baseOvercharge: number | null;
+  ocUse: NpOcUseReceipt | null;
+  ocOutcomes: readonly OcActionOutcome[];
 }
 
 export interface PreNoblePhantasmState {
@@ -61,7 +73,15 @@ export interface PreNoblePhantasmState {
     attackerState: ReadonlySet<string>;
     targetState: ReadonlySet<string>;
   };
+  initialTraitSuppressions: { attacker: ReadonlySet<string>; target: ReadonlySet<string> };
   npResource: NpResourceState;
+  ocState: OcState;
+  ocInputDefinitions: readonly CanonicalInputDefinition[];
+  uncertainContextWrites: readonly {
+    scope: 'attackerState' | 'targetState' | 'field';
+    trait: string;
+    actor?: string;
+  }[];
   baseOvercharge: number | null;
   appliedActions: readonly AppliedPreparationAction[];
   terminated: boolean;
@@ -87,6 +107,8 @@ export type PreparationFailureCode =
   | 'insufficientNpGauge'
   | 'invalidResourceMutation'
   | 'unsupportedResourceMutation'
+  | 'unsupportedOcExecution'
+  | 'invalidOcExecution'
   | 'unsupportedPreparationStackQuantity'
   | 'invalidPreparationActivation'
   | 'ambiguousPreparationCondition'

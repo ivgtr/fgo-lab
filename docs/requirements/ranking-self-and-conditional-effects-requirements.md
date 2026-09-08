@@ -1,10 +1,10 @@
 ---
 title: "ランキング自己バフ・条件効果統合仕様"
-document_version: "0.10.1"
+document_version: "0.10.2"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-05"
-updated_at: "2026-09-05"
+approved_at: "2026-09-06"
+updated_at: "2026-09-06"
 created_at: "2026-08-30"
 related_adrs:
   - "docs/adr/028-canonical-source-program-and-finite-ranking-domain.md"
@@ -102,7 +102,7 @@ unsupported理由へ昇格させない。HP、NP、battle point等の値がdamag
 
 ## 4. 利用者向け条件
 
-ランキング上部の計算条件は次の6項目に限定する。
+ランキング上部の計算条件は次の7項目に限定する。
 
 1. 対象: `全サーヴァント | 保有サーヴァント`
 2. レベル: `自然上限 | Lv.90統一 | 保有レベル`
@@ -110,13 +110,14 @@ unsupported理由へ昇格させない。HP、NP、battle point等の値がdamag
 4. クラス相性: `等倍 | 相性有利`
 5. 自己バフ: `なし | あり`
 6. 条件効果: `通常のみ | 成立込み`
+7. 初期OC: `1 | 2 | 3`
 
 対象、レベル基準、宝具レベル基準は直交するcanonical stateとする。`保有サーヴァント`は比較母集団だけを
 絞り込み、レベル、宝具レベル、Fou、skill Lvを暗黙に一括変更しない。`保有レベル`と
 `保有宝具レベル`は対象が`保有サーヴァント`の場合だけ選択できる。対象が`全サーヴァント`の状態でこれらを
 保持するURL、worker request、portable requestは不正であり、自然上限やNP1へfallbackしない。
 
-最低／平均／最大の表示metric、class／rarity／card／scope／所持状態等の一覧filterは表示stateであり、上記6項目の
+最低／平均／最大の表示metric、class／rarity／card／scope／所持状態等の一覧filterは表示stateであり、上記7項目の
 計算条件へ含めない。表示stateの変更だけではscenarioを再計算しない。
 
 旧`特攻なし | 成立`と`フィールドなし | 成立`は`条件効果`へ破壊的に統合する。旧入力を非表示state、URL fallback、
@@ -130,6 +131,7 @@ unsupported理由へ昇格させない。HP、NP、battle point等の値がdamag
 - クラス相性: 等倍
 - 自己バフ: あり
 - 条件効果: 通常のみ
+- 初期OC: 1
 
 ### 4.2 共通の固定条件
 
@@ -141,7 +143,7 @@ unsupported理由へ昇格させない。HP、NP、battle point等の値がdamag
 - `NP1`〜`NP5`: 全entryへ指定値を使用する
 - `保有宝具レベル`: 保存済みの当該サーヴァント宝具Lvを使用する。NP0は数値ランキングへ含めず、欠落値をNP1で補完しない
 - Fou ATK+1,000、skill Lv10。保有サーヴァントでも保存済みFou／skill Lvへ暗黙に切り替えない
-- OC1、属性等倍、HP100%、スター0、初期turn、Battle Point 0
+- 属性等倍、HP100%、スター0、初期turn、Battle Point 0
 - 礼装、魔術礼装、支援なし
 - 外部field、外部target state、追加target traitなし
 - `通常のみ`の人数、stack等の定量入力はcanonical baseline値。`成立込み`の宣言済みmaximumは5.2に従う
@@ -271,9 +273,9 @@ rollbackせず、そのmutation後にattack-NP寄与が成立するかは選択�
 | ダンテの確定的な天／地選択 | あり | 通常のみ | player choiceとして合法な最大branchを評価 |
 | ブレエリのランダム効果 | あり | 通常のみ | stochastic damage寄与を除外 |
 | ブレエリのランダム効果 | あり | 成立込み | 成功結果とNP resourceを同時に満たすplanだけ適用 |
-| 無条件寄与とNP消費を伴うskill | あり | 通常のみ | 開始NP100%から消費後にattack NPへ到達不能なら、そのcandidateだけを除外 |
+| 無条件寄与とNP消費を伴うskill | あり | 通常のみ | 選択した開始NPから消費後にattack NPへ到達不能なら、そのcandidateだけを除外 |
 | 無条件寄与とHP消費を伴うskill | あり | 通常のみ | HP消費をcommitし、後続attack NPまで合法に完遂できるcandidateを候補化 |
-| 条件付き寄与とNP消費を伴うskill | あり | 成立込み | capacity内の開始NP候補から、消費後もattack NPへ到達できるcandidateを候補化 |
+| 条件付き寄与とNP消費を伴うskill | あり | 成立込み | 選択した開始NPから、消費後もattack NPへ到達できるcandidateを候補化 |
 | 条件付き寄与だけを持つsafe skill | あり | 通常のみ | policy上no-opとして候補化しない |
 | 無条件＋条件付きsiblingを持つsafe skill | あり | 通常のみ | actionを候補化し、無条件寄与だけを適用 |
 
@@ -519,14 +521,24 @@ class、attribute、target identity、trait、state、family predicateを一つ�
 
 ### 9.1 製品仕様
 
-開始NPを第6のランキング条件または常設UIとして追加しない。
+ランキングは初期OCを明示的に選択する。初期OCは準備開始時のNP gaugeであり、発動時OCの固定値ではない。
 
-- normal calculatorが新規生成するrequest: canonicalな開始NP100%固定。rankingからportable requestとして引き継いだ非baseline開始NPは11.4の明示resetまで維持
-- ranking通常のみ: 開始NP100%、外部NP供給なし
-- ranking成立込み: 選択NP Lvのcapacity内で、必要な開始NP候補を内部生成可能
-- 自身のNP増減はordered actionとして評価
-- attack NPまで到達できないplanは`unavailableUnderPolicy`
-- 採用開始NPはdetail evidenceへ表示できるが編集UIを持たない
+- 初期OC 1／2／3を開始NP 100%／200%／300%へ一意に変換する。既定値は1。
+- NP1は初期OC1、NP2〜4は1〜2、NP5は1〜3を選択可能とする。capacityはcanonical NP resourceから導出する。
+- 通常のみ／成立込みのどちらも選択した開始NPを固定し、候補探索で増減・最大化しない。
+- 外部支援、宝具チェイン、初期OC4／5、「最大化」、自前OCアップの個別toggleは追加しない。
+- 自前のNP増減とOC段階アップは既存の自己バフ／条件効果policyに従ってordered executionで評価する。
+  発動時OCは準備後のgauge由来base OCと適用可能なOC加算から導出し、上限5とする。
+- 指定宝具Lvと初期OCが矛盾する入力は拒否する。UIの宝具Lv変更で初期OCの修正が必要なら、変更commandが
+  初期OC1への変更を明示して一括適用し、変更後の選択値を表示する。parser／workerで黙ってclampしない。
+- 保有宝具Lvが混在する場合は初期OCを共通条件として保持し、capacity不足のentryを理由付き
+  `unavailableUnderPolicy`とする。個別に初期OCを下げて比較条件を変えない。
+- 有効な開始stateからattack NPまで到達できないplanは`unavailableUnderPolicy`とする。
+- detailとcalculator引継ぎは選択初期OC、開始NP、発動時OCと自前効果の根拠を保持・表示する。
+  任意%の開始NP editorは追加しない。
+- resolved calculatorも初期OC1／2／3を選択し、同じcapacity規則と共通executorで発動時OCを導出・表示する。
+  新規requestの既定値は初期OC1（開始NP100%）。manual計算は最終OC1〜5の直接指定を維持する。
+  ranking由来の開始NPは11.4の明示resetまで維持する。
 
 NP Lvに応じて開始時NP上限が変わることは公式仕様にも明記されているため、capacityは選択NP Lvとcanonical masterから
 導出する（[FGO公式](https://news.fate-go.jp/2025/cil_final_chapter_cp/)）。
@@ -546,9 +558,11 @@ requirementを検証
 raw `NP_HIGHER`、`lossNp`、`gainNp`をruntimeが直接解釈しない。pipelineが単位、target、固定増減、全消費、上限処理を
 全production inventoryと根拠からtyped IRへ正規化する。曖昧な値はartifact生成時に拒否する。
 
-NP command自体のgauge消費とOC導出はskillの`lossNp`とは別のsemantic familyとして保持する。ランキングのOC1固定は、
-開始NP gaugeから導出されるbase OCを1に固定する意味である。canonicalなOC段階アップeffectは通常のordered executionで
-別に評価する。開始NPによるbase OC上昇を暗黙に無視したり、固定100%減算を仮定したりしない。
+NP command自体のgauge消費とOC導出はskillのNP増減から分離する。発動直前かつ全消費前のgaugeからbase OCを導出し、
+canonicalなOC段階アップeffectの対象、条件、加算段階、回数、有効期間をordered executorで評価する。
+初期OC1でも自前NP増加によりbase OCが上がり得る。OC段階アップはgaugeやNP capacityを増やさない。
+非攻撃・変身宝具を含め、実際のNP使用時に適用・回数消費し、失敗transactionや再計算で二重適用・消費しない。
+欠落・矛盾したOC semanticsを無効果やOC1へfallbackしない。
 
 resource stateはpreparation stateとsemantic fingerprintへ含める。現時点ではNP gaugeだけを閉じたresource unionとして扱い、
 将来用途を想定した汎用resource frameworkを先に作らない。
@@ -676,7 +690,8 @@ profile aggregatorはtyped dispositionを消費するが、新たな到達可能
 ・対象: 〔混沌〕
 ・フィールド: 水辺
 ・対象状態: 混乱
-・開始NP: 150%
+・初期OC: 2（開始NP 200%）
+・発動時OC: 4（自前効果によるOC+2）
 ・確率結果: 攻撃力アップ成功
 ```
 
@@ -773,7 +788,7 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 
 ### Web／worker
 
-- Webは6項目をdispatchし、presentation modelを描画するだけ
+- Webは7項目をdispatchし、presentation modelを描画するだけ
 - workerはrequest ordering、stale response破棄、cacheを所有
 - summary cacheはevidence-freeな直近1件、detail evidenceはworker 0件／React最大1件
 - raw condition、effect label、servant IDから意味論を再構築しない
@@ -791,7 +806,7 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 6. ActionAdmissionPlan、condition planner、per-contribution decision、nested execution resultへ一括移行する。
 7. portable schema、fingerprint、全direct reader／writer、persistence、resetをdiscriminated intentへ一括移行する。
 8. URL、worker protocol、cache key、test matrixを新contractへ置換する。
-9. 旧`comparisonMode`を母集団、レベル基準、宝具レベル基準へ破壊的に分離し、6入力のURL、worker、fingerprint、
+9. 旧`comparisonMode`を母集団、レベル基準、宝具レベル基準へ破壊的に分離し、7入力のURL、worker、fingerprint、
    portable identityへ一括移行する。
 10. stack可能damage増幅条件のbaseline／maximum countをpipeline IRへ追加し、application witnessとexecutor評価へ接続する。
 11. rankingによるeffect decision、condition fact、resource stateの再構築を削除する。
@@ -816,7 +831,7 @@ NP1〜5 cross-level cacheは本契約へ先取りしない。
 | target candidate | class、attribute、trait、state、family | 矛盾candidate 0件 |
 | NP capacity | NP Lv、form、variantごとの導出元 | ID・名称分岐なしで一意に解決 |
 | NP skill mutation | gain／loss、固定／全消費、target、単位 | unknown・二重適用0件 |
-| NP use／OC | non-attack／attack NPの消費とOC導出 | OC1固定との矛盾0件 |
+| NP use／OC | non-attack／attack NPの消費とOC導出 | 選択初期OC・発動時OC・自前加算との矛盾0件 |
 | profile可用性 | baselineのみ、satisfiedのみ、両方、どちらも不可 | 暗黙のrow欠落0件 |
 | candidate規模 | profile別generated／deduplicated／executed数 | 有限性とcapを構造で説明 |
 | damage差分 | 全entry、NP1〜5、四policy組合せ | input、witness、planで全件説明 |
@@ -903,10 +918,10 @@ damage差分、性能見積もりを提示してから再開する。
 
 ## 17. 完了条件
 
-- ranking UIが6項目、火力条件が自己バフ／条件効果の二軸へ収束している
+- ranking UIが7項目、火力条件が自己バフ／条件効果の二軸へ収束している
 - 対象、レベル基準、宝具レベル基準が独立し、保有母集団でも自然上限／Lv.90統一と指定NPを選択できる
 - 保有レベル／保有宝具レベルの欠落、NP0、不正な全サーヴァントとの組合せを標準値へfallbackしない
-- 開始NP、field、特攻、対象条件の追加editorが存在しない
+- 初期OCの選択以外に、任意%の開始NP、field、特攻、対象条件の追加editorが存在しない
 - 旧特攻／field入力、URL、fallbackが0件
 - RankingEntryがAttackProfile単位で、variant／form／scope混成が0件
 - player choiceとstochastic outcomeがtyped semanticsで分離されている
@@ -939,7 +954,7 @@ damage差分、性能見積もりを提示してから再開する。
 | `RK-IR-001` | 3〜8、12 | AttackProfile、condition、choice、resource、action cost、contribution identityをdata pipelineがcanonical typed IRへ収束させる。 |
 | `RK-EXEC-001` | 9、12 | preparationをordered／transactionalに実行し、invalid stateとpartial commitをfail-closedにする。 |
 | `RK-POLICY-001` | 5〜7、10、11 | ranking policyはaction admissionとindependent contribution decisionsを制御し、execution semanticsを再実装しない。 |
-| `RK-UI-001` | 4、11、12 | Web／workerはcanonical stateと6入力を扱い、母集団／レベル／宝具Lvを分離し、旧policy／URL／protocolを併存させない。 |
+| `RK-UI-001` | 4、11、12 | Web／workerはcanonical stateと7入力を扱い、母集団／レベル／宝具Lvを分離し、旧policy／URL／protocolを併存させない。 |
 | `RK-HANDOFF-001` | 11.4、12 | 採用ranking calculationを版付きportable requestとしてcalculatorへ渡し、application constructorとWeb immediate handoffの責務を分けて同一結果を再現する。 |
 | `RK-CACHE-001` | 11.5、12、15.3 | summary cacheをevidence-freeにし、workerのdetail evidence 0件、Reactのactive detail最大1件とstale rejectionを維持する。 |
 | `RK-AUDIT-001` | 3.2、14、15、17 | 全playable AttackProfile、四policy、NP1〜5、parityを共有production inventoryで監査し、現行masterのunsupported／invalid／inputRequiredによる順位外を0件にする。 |
@@ -961,3 +976,4 @@ damage差分、性能見積もりを提示してから再開する。
 | 0.9.6 | action admissionを「無デメリット」から「policy上の実効寄与」に修正し、表現済みデメリットを含む全transactionの成立可否を具体candidateのordered executionへ委譲。`policyNoOp`／`unreachable`／`unsupported`を分離 | approved 2026-09-04: user confirmed that only non-executable NP／HP-consumption candidates are dropped and every executable adverse action remains eligible | TSK-06.41、TSK-06.5 | ranking候補と順位は意図的に変わり得る。`unsafeBaselineEffect`相当の静的adverse除外を削除し、全cost込みのcandidate soundnessとproduction差分を再固定する |
 | 0.10.0 | 比較対象を母集団へ限定し、自然上限／Lv.90統一／保有レベルと指定NP／保有宝具Lvを直交化。成立込みのcanonical最大stack countと寄与判定detailの人間向け表示を追加 | approved 2026-09-05: user confirmed naming, retained natural／uniform choices for owned servants, owned level and NP level reflection, maximum stack examples, and contribution UI cleanup | TSK-06.42〜06.5、TSK-07 | ranking scenario、URL／worker fingerprint、production matrix、detail UIが変わる。保存済みFou／skill Lvは反映せず、servant固有runtime branchは追加しない |
 | 0.10.1 | 現行published masterの全playable攻撃宝具を数値計算対象とし、typed `unsupported`を理由にしたproduction順位外を完了状態として許容しない。有限な準備phaseのtrigger／timing／resource readerをcanonical executionへ収束させる | approved 2026-09-05: user required all attack NPs to be included in the implementation plan | TSK-06.45、TSK-06.5、TSK-08 | planning baselineは433 AttackProfiles中393 calculated／40 unsupported、calculator defaultは422中420 calculated／2 unsupported。実装後は現行masterのunsupported／invalid／inputRequired順位外0件。将来unknownのfail-closed型は維持する |
+| 0.10.2 | 初期OC1／2／3を第7条件として固定し、成立込みの開始NP自動最大化を廃止。自前OC加算と発動時OCを分離（RK-IR／EXEC／POLICY／UI／HANDOFF／CACHE／AUDIT／PERF） | approved 2026-09-06: user confirmed initial OC only without external support and requested insertion into the existing plan | TSK-06.48、TSK-06.45、TSK-06.5、TSK-07〜09 | docs phaseはruntime不変。実装時はNP5順位・OC加算damage、schema／URL／worker／portable identity、production digestを意図的に更新する |

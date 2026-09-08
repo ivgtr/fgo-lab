@@ -1,3 +1,4 @@
+import { evaluateHpValueExpression } from './hpValueExpression';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type {
   BattleOperation,
@@ -115,24 +116,7 @@ export function resolveModifierValue(
       ? state.quantities.attackerHpPermille
       : (state.resolvedInputValues[expression.quantitySource.inputKey] ?? null);
   if (hp === null) return null;
-  if (expression.kind === 'inverseHpLinear')
-    return (
-      expression.basePermille +
-      Math.trunc((expression.bonusAtZeroHpPermille * (1_000 - hp)) / 1_000)
-    );
-  const clampedHp = Math.min(
-    expression.maximumHpPermille,
-    Math.max(expression.minimumHpPermille, hp),
-  );
-  return (
-    expression.basePermille +
-    expression.valueAtMinimumHpPermille +
-    Math.trunc(
-      ((expression.valueAtMaximumHpPermille - expression.valueAtMinimumHpPermille) *
-        (clampedHp - expression.minimumHpPermille)) /
-        (expression.maximumHpPermille - expression.minimumHpPermille),
-    )
-  );
+  return evaluateHpValueExpression(expression, hp);
 }
 
 export function createOperationProjection(

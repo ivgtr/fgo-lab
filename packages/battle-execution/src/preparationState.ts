@@ -1,3 +1,4 @@
+import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import {
   actorFormEquals,
   actorFormKey,
@@ -17,8 +18,9 @@ import type {
   PreparationTransitionResult,
 } from './preparationContracts';
 import { rejectPreparation } from './preparationContracts';
-import { resolveTargetPolicy } from './effectRouting';
-import { createNpResourceState } from './npResource';
+import { resolveTargetPolicy, type Origin } from './effectRouting';
+
+import { createOcState } from './ocState';
 import type { PreparationEffectActivation } from './preparationTransaction';
 
 type CanonicalOperation = MasterEffect['execution'][number];
@@ -45,20 +47,20 @@ const isVariantSelection = (
 const isRecipientTraitMutation = (
   operation: CanonicalOperation,
 ): operation is TraitMutationOperation =>
-  operation.kind === 'contextMutation' &&
-  'scope' in operation &&
-  operation.scope === 'recipientState';
+  operation.kind === 'contextMutation' && 'scope' in operation;
 
 export function resolvePreparationStructuralOutcome(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
   effects: readonly MasterEffect[],
+  origin: Origin = 'attacker',
 ):
   | {
       currentFormId: ActorFormId;
       selectedVariant: NoblePhantasmVariantRef | null;
       stateTraits: PreNoblePhantasmState['stateTraits'];
       stackCounts: PreNoblePhantasmState['stackCounts'];
+      initialTraitSuppressions: PreNoblePhantasmState['initialTraitSuppressions'];
     }
   | PreparationFailureCode {
   const operations = operationsOf(effects);
@@ -76,23 +78,57 @@ export function resolvePreparationStructuralOutcome(
   }
   const attackerState = new Set(state.stateTraits.attackerState);
   const counts = { ...state.stackCounts.attackerState };
+  const targetState = new Set(state.stateTraits.targetState);
+  const targetCounts = { ...state.stackCounts.targetState };
+  const fieldCounts = { ...state.stackCounts.field };
+  const suppressions = {
+    attacker: new Set(state.initialTraitSuppressions.attacker),
+    target: new Set(state.initialTraitSuppressions.target),
+  };
   for (const operation of operations) {
     if (!isRecipientTraitMutation(operation)) continue;
-    if (resolveTargetPolicy('attacker', operation.route.target) !== 'attacker') continue;
+    if (operation.scope === 'field') {
+      if (operation.mutation === 'addTrait') {
+        const group = canonicalExclusiveGroup('field', operation.trait);
+        if (group)
+          for (const other of canonicalExclusiveTraits('field', group))
+            if (other !== operation.trait) fieldCounts[other] = 0;
+        fieldCounts[operation.trait] = group
+          ? Math.max(1, fieldCounts[operation.trait] ?? 0)
+          : (fieldCounts[operation.trait] ?? 0) + 1;
+      } else fieldCounts[operation.trait] = 0;
+      continue;
+    }
+    const recipient = resolveTargetPolicy(origin, operation.route.target);
+    if (!recipient) continue;
+    const traits = recipient === 'attacker' ? attackerState : targetState;
+    const quantities = recipient === 'attacker' ? counts : targetCounts;
+    if (operation.mutation === 'suppressInitialTrait') suppressions[recipient].add(operation.trait);
     if (operation.mutation === 'addTrait') {
-      attackerState.add(operation.trait);
-      counts[operation.trait] = (counts[operation.trait] ?? 0) + 1;
+      const scope = recipient === 'attacker' ? 'attackerState' : 'targetState';
+      const group = canonicalExclusiveGroup(scope, operation.trait);
+      if (group)
+        for (const other of canonicalExclusiveTraits(scope, group)) {
+          if (other === operation.trait) continue;
+          traits.delete(other);
+          quantities[other] = 0;
+        }
+      traits.add(operation.trait);
+      quantities[operation.trait] = group
+        ? Math.max(1, quantities[operation.trait] ?? 0)
+        : (quantities[operation.trait] ?? 0) + 1;
     }
     if (operation.mutation === 'removeTrait') {
-      attackerState.delete(operation.trait);
-      counts[operation.trait] = 0;
+      traits.delete(operation.trait);
+      quantities[operation.trait] = 0;
     }
   }
   return {
     currentFormId,
     selectedVariant,
-    stateTraits: { ...state.stateTraits, attackerState },
-    stackCounts: { ...state.stackCounts, attackerState: counts },
+    stateTraits: { attackerState, targetState },
+    stackCounts: { attackerState: counts, targetState: targetCounts, field: fieldCounts },
+    initialTraitSuppressions: suppressions,
   };
 }
 
@@ -172,15 +208,23 @@ export function createPreparationState(
     activeEffects: [],
     stackCounts: { attackerState: {}, targetState: {}, field: {} },
     stateTraits: { attackerState: new Set(), targetState: new Set() },
-    npResource: createNpResourceState(
-      context.resourceSemantics,
-      context.npLevel,
-      context.initialGauge,
-    ),
+    initialTraitSuppressions: { attacker: new Set(), target: new Set() },
+    npResource: {
+      npLevel: context.npLevel,
+      capacity: context.resourceSemantics.capacityByNpLevel[context.npLevel - 1]!,
+      gauge: context.initialGauge,
+    },
     baseOvercharge: null,
+    ocState: createOcState(),
+    ocInputDefinitions: [],
+    uncertainContextWrites: [],
     appliedActions: [],
     terminated: false,
   };
+  if (context.initialGauge > placeholder.npResource.capacity)
+    return rejectPreparation(placeholder, 'resourceRequirementExceedsCapacity');
+  if (!Number.isInteger(context.initialGauge) || context.initialGauge < 0)
+    return rejectPreparation(placeholder, 'invalidResourceState');
   for (const definition of context.stackInputs ?? []) {
     const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
     if (!Number.isInteger(count) || count < 0 || count > definition.maximum)

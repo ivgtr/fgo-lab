@@ -55,6 +55,11 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
   if (effect.triggerScope !== null) return false;
   return effect.execution.some((operation) => {
     if (
+      operation.kind === 'ocRemovalResistance' ||
+      operation.kind === 'grantOcBoost' ||
+      operation.kind === 'grantOcApplicationRate' ||
+      operation.kind === 'removeOcState' ||
+      operation.kind === 'ocStateNonIntersection' ||
       operation.kind === 'resourceMutation' ||
       operation.kind === 'stateMutation' ||
       operation.kind === 'boundedPhaseIrrelevant'

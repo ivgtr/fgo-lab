@@ -1,3 +1,4 @@
+import { activatePreparationForm, executePreparationPhase } from './preparationPhases';
 import {
   getPassivesForActorForm,
   type ActorFormId,
@@ -31,7 +32,18 @@ export function createPreNoblePhantasmState(
   initialFormId: ActorFormId,
   context: PreparationExecutionContext,
 ): PreparationTransitionResult {
-  return createPreparationState(servant, initialFormId, context);
+  const created = createPreparationState(servant, initialFormId, context);
+  if (created.status === 'rejected') return created;
+  const form = activatePreparationForm(servant, created.state, context);
+  if (form.status === 'rejected') return { ...form, state: created.state };
+  const initial = executePreparationPhase(
+    servant,
+    form.state,
+    context,
+    'initial',
+    context.initialSources ?? [],
+  );
+  return initial.status === 'rejected' ? { ...initial, state: created.state } : initial;
 }
 
 export function reducePreNoblePhantasmAction(
@@ -41,14 +53,44 @@ export function reducePreNoblePhantasmAction(
   context: PreparationExecutionContext,
 ): PreparationTransitionResult {
   if (state.terminated) return rejectPreparation(state, 'actionAfterAttack');
-  switch (command.kind) {
-    case 'useSkillSlot':
-      return reducePreparationSkillAction(servant, state, command, context);
-    case 'useTransformNoblePhantasm':
-      return reducePreparationTransformNoblePhantasmAction(servant, state, command, context);
-    case 'executeAttackNoblePhantasm':
-      return prepareAttackNoblePhantasm(servant, state, command, context);
-  }
+  const reduce = (): PreparationTransitionResult => {
+    switch (command.kind) {
+      case 'useSkillSlot':
+        return reducePreparationSkillAction(servant, state, command, context);
+      case 'useTransformNoblePhantasm':
+        return reducePreparationTransformNoblePhantasmAction(servant, state, command, context);
+      case 'executeAttackNoblePhantasm': {
+        let current = state;
+        const groups = new Map<
+          string,
+          NonNullable<PreparationExecutionContext['terminalSources']>[number][]
+        >();
+        for (const source of context.terminalSources ?? []) {
+          const key = JSON.stringify([source.origin, source.sourceInstanceId, source.skillId]);
+          const group = groups.get(key) ?? [];
+          group.push(source);
+          groups.set(key, group);
+        }
+        for (const [key, sources] of groups) {
+          const phase = executePreparationPhase(
+            servant,
+            current,
+            context,
+            `external:${key}`,
+            sources,
+          );
+          if (phase.status === 'rejected') return { ...phase, state };
+          current = phase.state;
+        }
+        const result = prepareAttackNoblePhantasm(servant, current, command, context);
+        return result.status === 'rejected' ? { ...result, state } : result;
+      }
+    }
+  };
+  const result = reduce();
+  if (result.status === 'rejected' || result.state.terminated) return result;
+  const form = activatePreparationForm(servant, result.state, context);
+  return form.status === 'rejected' ? { ...form, state } : form;
 }
 
 export function availableTransformNoblePhantasmCommand(
@@ -57,7 +99,7 @@ export function availableTransformNoblePhantasmCommand(
   context: PreparationExecutionContext,
 ): Extract<PreNoblePhantasmCommand, { kind: 'useTransformNoblePhantasm' }> | null {
   if (state.transformNoblePhantasmUsed) return null;
-  const result = reducePreparationTransformNoblePhantasmAction(
+  const result = reducePreNoblePhantasmAction(
     servant,
     state,
     { kind: 'useTransformNoblePhantasm' },

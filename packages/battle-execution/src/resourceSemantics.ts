@@ -7,7 +7,10 @@ import type {
 
 type Resource = Extract<BattleOperation, { kind: 'resourceMutation' }>['resource'];
 
-function conditionReadsResource(condition: ConditionExpression, resource: Resource): boolean {
+export function conditionReadsResource(
+  condition: ConditionExpression,
+  resource: Resource,
+): boolean {
   if (condition.kind === 'all' || condition.kind === 'any')
     return condition.expressions.some((expression) => conditionReadsResource(expression, resource));
   if (condition.kind === 'not') return conditionReadsResource(condition.expression, resource);
@@ -18,7 +21,7 @@ function conditionReadsResource(condition: ConditionExpression, resource: Resour
   return condition.kind === 'inputQuantity' && condition.inputKey.endsWith('battle:criticalStars');
 }
 
-function operationReadsResource(operation: BattleOperation, resource: Resource): boolean {
+export function operationReadsResource(operation: BattleOperation, resource: Resource): boolean {
   if (conditionReadsResource(operation.condition, resource)) return true;
   if (operation.kind === 'executeNpDamage')
     return conditionReadsResource(operation.specialAttackDependency, resource);

@@ -52,7 +52,9 @@ function servantIdentityProfile() {
   };
 }
 
-function servantIdentityCollection(schemaVersion: 32 | 33 | 34 | 35 | 36 | typeof SCHEMA_VERSION) {
+function servantIdentityCollection(
+  schemaVersion: 32 | 33 | 34 | 35 | 36 | 37 | typeof SCHEMA_VERSION,
+) {
   return {
     schemaVersion,
     activeProfileId: servantIdentityProfileId,
@@ -72,7 +74,7 @@ describe('portable schema boundaries', () => {
         npLevel: 1,
         fouAtk: 1000,
       },
-      overcharge: 1,
+      initialOvercharge: 1,
       targetContext: {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
@@ -186,7 +188,7 @@ describe('portable schema boundaries', () => {
         npLevel: 1,
         fouAtk: 1000,
       },
-      overcharge: 1,
+      initialOvercharge: 1,
       targetContext: {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
@@ -230,7 +232,7 @@ describe('portable schema boundaries', () => {
         npLevel: 1,
         fouAtk: 1000,
       },
-      overcharge: 1,
+      initialOvercharge: 1,
       targetContext: {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
@@ -419,11 +421,11 @@ describe('portable schema boundaries', () => {
     });
   });
 
-  it.each([34, 35, 36] as const)(
-    'migrates coherent schema %s and historicalizes only ranking snapshots',
+  it.each([34, 35, 36, 37] as const)(
+    'migrates coherent schema %s and historicalizes resolved snapshots without reinterpreting final OC',
     (sourceVersion) => {
       const baseCollection = servantIdentityCollection(sourceVersion);
-      const scenario = calculationScenarioSchema.parse({
+      const currentScenario = calculationScenarioSchema.parse({
         mode: 'resolved',
         attacker: {
           servantId: 'servant-a',
@@ -433,7 +435,7 @@ describe('portable schema boundaries', () => {
           npLevel: 1,
           fouAtk: 0,
         },
-        overcharge: 1,
+        initialOvercharge: 1,
         targetContext: {
           class: { kind: 'concrete', classId: 'lancer' },
           attribute: { kind: 'concrete', attribute: 'earth' },
@@ -451,6 +453,11 @@ describe('portable schema boundaries', () => {
         worldFactAssertions: [],
         explicitOverrides: {},
       });
+      if (currentScenario.mode !== 'resolved') throw new Error('resolved fixture required');
+      const legacyFields = Object.fromEntries(
+        Object.entries(currentScenario).filter(([key]) => key !== 'initialOvercharge'),
+      );
+      const scenario = { ...legacyFields, overcharge: 1 };
       const snapshot = {
         profileId: servantIdentityProfileId,
         calculationSessionId: '00000000-0000-4000-8000-000000000048',
@@ -511,14 +518,16 @@ describe('portable schema boundaries', () => {
       const migrated = parseStoredProfileCollection(collection);
       expect(migrated).toMatchObject({
         upgraded: true,
-        discardedCalculationSnapshots: false,
+        discardedCalculationSnapshots: true,
         collection: {
           schemaVersion: SCHEMA_VERSION,
           profiles: [
             {
               servantBuilds: { 'servant-a': { npLevel: 0 } },
-              draft: { result: { versions: { schemaVersion: SCHEMA_VERSION } } },
-              history: [{ result: { versions: { schemaVersion: SCHEMA_VERSION } } }],
+              draft: null,
+              history: [
+                { disposition: 'historicalOnly', sourceSchemaVersion: sourceVersion, scenario },
+              ],
             },
           ],
         },
@@ -763,7 +772,7 @@ describe('portable schema boundaries', () => {
   it('migrates schema 33 by intent without inferring a missing ranking policy', () => {
     const profileId = crypto.randomUUID();
     const now = '2026-09-01T00:00:00.000Z';
-    const resolved = calculationScenarioSchema.parse({
+    const currentResolved = calculationScenarioSchema.parse({
       mode: 'resolved',
       attacker: {
         servantId: '1',
@@ -773,7 +782,7 @@ describe('portable schema boundaries', () => {
         npLevel: 1,
         fouAtk: 1000,
       },
-      overcharge: 1,
+      initialOvercharge: 1,
       targetContext: {
         class: { kind: 'concrete', classId: 'lancer' },
         attribute: { kind: 'concrete', attribute: 'earth' },
@@ -791,6 +800,11 @@ describe('portable schema boundaries', () => {
       worldFactAssertions: [],
       explicitOverrides: {},
     });
+    if (currentResolved.mode !== 'resolved') throw new Error('resolved fixture required');
+    const legacyFields = Object.fromEntries(
+      Object.entries(currentResolved).filter(([key]) => key !== 'initialOvercharge'),
+    );
+    const resolved = { ...legacyFields, overcharge: 1 };
     const manual = calculationScenarioSchema.parse({
       mode: 'manual',
       manual: {
@@ -929,7 +943,7 @@ describe('portable schema boundaries', () => {
             draft: null,
             history: [
               { request: { executionIntent: { kind: 'manual' } } },
-              { request: { executionIntent: { kind: 'calculator', initialNpGauge: 10_000 } } },
+              { disposition: 'historicalOnly', sourceSchemaVersion: 33, scenario: resolved },
               {
                 disposition: 'historicalOnly',
                 sourceSchemaVersion: 33,

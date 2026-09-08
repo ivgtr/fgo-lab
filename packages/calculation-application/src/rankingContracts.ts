@@ -26,6 +26,7 @@ export type { ResolvedRankingBasis } from '@fgo-lab/schema';
 
 export const DEFAULT_RANKING_POLICY_CONDITIONS: RankingPolicyConditions = {
   population: 'all',
+  initialOvercharge: 1,
   levelBasis: 'naturalLimit',
   npLevelBasis: { kind: 'specified', npLevel: 1 },
   classAffinity: 'neutral',
@@ -36,7 +37,7 @@ export const DEFAULT_RANKING_POLICY_CONDITIONS: RankingPolicyConditions = {
 export const STANDARD_RANKING_SCENARIO_POLICY = {
   level: 'naturalLimit',
   fouAtk: 1_000,
-  overcharge: 1,
+  initialOvercharge: 1,
   skillLevel: 10,
   attributeRelation: 'neutral',
   craftEssence: null,
@@ -127,7 +128,10 @@ export interface RankingPolicyDetail {
 }
 
 export type PolicyUnavailabilityReason =
-  'attackProfileNotReachable' | 'insufficientNpGauge' | 'noSatisfiableCandidate';
+  | 'attackProfileNotReachable'
+  | 'insufficientNpGauge'
+  | 'npCapacityExceeded'
+  | 'noSatisfiableCandidate';
 
 export type RankingBlockerClass =
   'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported';

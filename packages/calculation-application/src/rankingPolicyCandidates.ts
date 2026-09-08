@@ -53,7 +53,11 @@ export function calculateRankingCandidateSet(
       const blocking = candidates.some((candidate, index) => {
         if (attackProfileKey(plan.attackProfiles[index]!) !== profileKey) return false;
         const rejection = plan.preparedRankingScenarios[index]?.resolved.preparationRejection;
-        if (rejection?.code === 'insufficientNpGauge') return false;
+        if (
+          rejection?.code === 'insufficientNpGauge' ||
+          rejection?.code === 'resourceRequirementExceedsCapacity'
+        )
+          return false;
         return candidate.result.status !== 'calculated';
       });
       if (blocking) return [];

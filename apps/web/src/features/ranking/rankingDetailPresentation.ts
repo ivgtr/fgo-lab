@@ -2,6 +2,7 @@ import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import { findActorForm, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { servantClassLabels } from '../../ui/servantFilterOptions';
 import { traitLabel } from '../calculator/traitPresentation';
+import { ocBoostUseSummary, ocUseSummary } from '../../ui/ocPresentation';
 
 export interface RankingEvidenceItem {
   key: string;
@@ -30,13 +31,15 @@ export function presentRankingDetailEvidence(
     },
     { key: 'attack-np', label: '攻撃宝具', value: detail.noblePhantasmName },
   ];
-  const conditions: RankingEvidenceItem[] = [];
-  if (detail.candidateEvidence.startNpGauge !== 10_000)
-    conditions.push({
-      key: 'start-np',
-      label: '開始NP',
-      value: `${String(detail.candidateEvidence.startNpGauge / 100)}%`,
-    });
+  const conditions: RankingEvidenceItem[] = [
+    { key: 'initial-oc', label: '初期OC', value: String(detail.scenario.initialOvercharge) },
+    { key: 'effective-oc', label: '発動時OC', value: String(detail.input.overcharge) },
+  ];
+  conditions.push({
+    key: 'start-np',
+    label: '開始NP',
+    value: `${String(detail.candidateEvidence.startNpGauge / 100)}%`,
+  });
   for (const input of detail.effectInputs)
     conditions.push({
       key: `input:${input.key}`,
@@ -107,7 +110,14 @@ export function presentRankingDetailEvidence(
         : action.command.kind === 'useTransformNoblePhantasm'
           ? '変身宝具'
           : `攻撃宝具「${detail.noblePhantasmName}」`,
-    value: `NP ${String(action.resourceBefore.gauge / 100)}% → ${String(action.resourceAfter.gauge / 100)}%`,
+    value: `NP ${String(action.resourceBefore.gauge / 100)}% → ${String(action.resourceAfter.gauge / 100)}%${action.ocUse ? ` ／ ${ocUseSummary(action.ocUse)}` : ''}`,
   }));
+  for (const [index, action] of detail.appliedPreparationActions.entries())
+    for (const use of action.ocUse?.boostUses ?? [])
+      actions.push({
+        key: `oc:${index}:${use.instanceId}`,
+        label: 'OC加算の使用',
+        value: ocBoostUseSummary(use),
+      });
   return { profile, conditions, actions };
 }

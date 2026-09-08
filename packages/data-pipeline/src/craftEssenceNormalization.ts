@@ -32,6 +32,25 @@ function expressionShape(expression: ModifierValueExpression | null) {
 }
 
 function operationSemanticIdentity(operation: EffectExecutionOperation): string {
+  if (
+    operation.kind === 'grantOcBoost' ||
+    operation.kind === 'grantOcApplicationRate' ||
+    operation.kind === 'ocRemovalResistance'
+  ) {
+    return JSON.stringify({
+      ...operation,
+      cells: undefined,
+      limitBreakCells: undefined,
+      amountShapes:
+        operation.kind === 'grantOcApplicationRate' || operation.kind === 'ocRemovalResistance'
+          ? operation.cells.map((row) =>
+              row.map(({ amount }) =>
+                amount.kind === 'fixed' ? { kind: 'fixed' } : expressionShape(amount),
+              ),
+            )
+          : undefined,
+    });
+  }
   if (operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed')
     return JSON.stringify({
       ...operation,
@@ -83,22 +102,29 @@ function withExplicitLimitBreakValues(effect: MasterEffect): MasterEffect {
   return {
     ...effect,
     execution: effect.execution.map((operation) =>
-      operation.kind === 'damageModifier' || operation.kind === 'modifierRateChange'
-        ? {
-            ...operation,
-            limitBreakValues: operation.limitBreakValues ?? operation.values,
-            limitBreakValueExpressions:
-              operation.limitBreakValueExpressions ?? operation.valueExpressions,
-          }
-        : operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed'
-          ? {
-              ...operation,
-              amount: {
-                ...operation.amount,
-                limitBreakValues: operation.amount.limitBreakValues ?? operation.amount.values,
-              },
-            }
-          : operation,
+      operation.kind === 'ocRemovalResistance'
+        ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
+        : operation.kind === 'grantOcBoost'
+          ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
+          : operation.kind === 'grantOcApplicationRate'
+            ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
+            : operation.kind === 'damageModifier' || operation.kind === 'modifierRateChange'
+              ? {
+                  ...operation,
+                  limitBreakValues: operation.limitBreakValues ?? operation.values,
+                  limitBreakValueExpressions:
+                    operation.limitBreakValueExpressions ?? operation.valueExpressions,
+                }
+              : operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed'
+                ? {
+                    ...operation,
+                    amount: {
+                      ...operation.amount,
+                      limitBreakValues:
+                        operation.amount.limitBreakValues ?? operation.amount.values,
+                    },
+                  }
+                : operation,
     ),
   };
 }
@@ -115,6 +141,20 @@ function mergeSharedEffect(
   return {
     ...normal,
     execution: normal.execution.map((operation, index) => {
+      if (
+        operation.kind === 'grantOcBoost' ||
+        operation.kind === 'grantOcApplicationRate' ||
+        operation.kind === 'ocRemovalResistance'
+      ) {
+        const lb = limitBreak.execution[index];
+        if (operation.kind === 'ocRemovalResistance' && lb?.kind === 'ocRemovalResistance')
+          return { ...operation, limitBreakCells: lb.cells };
+        if (operation.kind === 'grantOcBoost' && lb?.kind === 'grantOcBoost')
+          return { ...operation, limitBreakCells: lb.cells };
+        if (operation.kind === 'grantOcApplicationRate' && lb?.kind === 'grantOcApplicationRate')
+          return { ...operation, limitBreakCells: lb.cells };
+        throw new Error('oc_limit_break_operation_mismatch');
+      }
       if (operation.kind === 'resourceMutation' && operation.amount.kind === 'fixed') {
         const limitBreakOperation = limitBreak.execution[index];
         if (

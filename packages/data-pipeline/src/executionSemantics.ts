@@ -1,3 +1,4 @@
+import { normalizeOcSemantics } from './ocSemantics';
 import type {
   CanonicalEffectContributionScope,
   CanonicalEffectRoute,
@@ -290,6 +291,8 @@ function isPotentiallyDamageRelevant(target: string, buffTypes: readonly string[
 
 export function normalizeExecutionSemantics(input: {
   fn: AtlasFunction;
+  source?: 'skill' | 'passive' | 'np' | 'reference' | 'craftEssence' | 'mysticCode';
+  traitNameById?: ReadonlyMap<number, string>;
   parameterSets: readonly (readonly AtlasFunctionValue[])[];
   valueExpressions: ExpressionSets;
   cardTypes: readonly ('buster' | 'arts' | 'quick')[];
@@ -443,6 +446,16 @@ export function normalizeExecutionSemantics(input: {
       trait,
       damageRelevant: true,
     });
+
+  const oc = normalizeOcSemantics({
+    fn: input.fn,
+    parameterSets: input.parameterSets,
+    expressions: input.valueExpressions,
+    source: input.source ?? 'skill',
+    traitNameById: input.traitNameById ?? new Map(),
+    route: contributionScope === null ? unresolvedRoute() : canonicalRoute(null, 'unsupported'),
+  });
+  if (oc) return [...operations, ...oc];
 
   const common = () => ({
     route: canonicalRoute('attacker', targetMismatch),

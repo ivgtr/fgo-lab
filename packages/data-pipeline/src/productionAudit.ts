@@ -1,3 +1,4 @@
+import { ocProductionInventory } from './ocProductionAudit';
 import {
   canonicalNoblePhantasmVariantSemanticsKey,
   getNoblePhantasmVariants,
@@ -26,6 +27,7 @@ export interface DataPipelineProductionAudit {
     craftEssences: number;
     mysticCodes: number;
     effects: number;
+    oc: ReturnType<typeof ocProductionInventory>;
     operations: number;
     damageFunctions: number;
     noblePhantasmVariantIdentities: number;
@@ -211,6 +213,7 @@ export function compileDataPipelineProductionAudit(
     craftEssences: master.craftEssences.length,
     mysticCodes: master.mysticCodes.length,
     effects: occurrences.length,
+    oc: ocProductionInventory(occurrences.map(({ effect }) => effect)),
     operations: occurrences.reduce((count, { effect }) => count + effect.execution.length, 0),
     damageFunctions: damageRecords.length,
     noblePhantasmVariantIdentities: variantRecords.length,

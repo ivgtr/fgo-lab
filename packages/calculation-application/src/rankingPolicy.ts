@@ -41,7 +41,7 @@ export function createRankingBaseScenario(
       npLevel: basis.npLevel,
       fouAtk: STANDARD_RANKING_SCENARIO_POLICY.fouAtk,
     },
-    overcharge: STANDARD_RANKING_SCENARIO_POLICY.overcharge,
+    initialOvercharge: basis.initialOvercharge,
     targetContext,
     attackerHpPermille: STANDARD_RANKING_SCENARIO_POLICY.attackerHpPermille,
     battleState: { battlePointPhase: STANDARD_RANKING_SCENARIO_POLICY.battlePointPhase },

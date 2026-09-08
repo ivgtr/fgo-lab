@@ -41,6 +41,17 @@ function corrupted(value: unknown, path: readonly string[], replacement: unknown
 }
 
 describe('ranking response consumer contract', () => {
+  it('rejects detached OC receipt, initial intent, and terminal damage evidence', () => {
+    const last = fixture.detail.detail.appliedPreparationActions.length - 1;
+    for (const [path, value] of [
+      [['detail', 'appliedPreparationActions', String(last), 'ocUse', 'gaugeBefore'], 20000],
+      [['detail', 'appliedPreparationActions', String(last), 'resourceBefore', 'gauge'], 20000],
+      [['detail', 'appliedPreparationActions', String(last), 'baseOvercharge'], 2],
+      [['detail', 'input', 'overcharge'], 5],
+      [['detail', 'candidateEvidence', 'startNpGauge'], 20000],
+    ] as const)
+      expect(parseRankingWorkerResponse(corrupted(fixture.detail, path, value))).toBeNull();
+  });
   it('preserves complete normal transport data, presentation, and portable replay', () => {
     for (const response of [
       fixture.ready,

@@ -40,84 +40,93 @@ afterEach(() => {
 });
 
 describe('ranking worker response ordering', () => {
-  it('does not expose an older summary after a newer condition request wins', async () => {
-    vi.stubGlobal('Worker', FakeWorker);
-    const master = masterSnapshotSchema.parse(fixture);
-    const profile = { servantBuilds: {} };
-    const versions = {
-      schemaVersion: SCHEMA_VERSION,
-      masterDataVersion: master.version,
-      engineVersion: ENGINE_VERSION,
-      appVersion: APP_VERSION,
-      gameRegion: 'JP' as const,
-      masterDataLocale: 'ja-JP' as const,
-    };
-    const { result, rerender } = renderHook(
-      ({ conditions }) => useRanking({ master, profile, conditions, versions }),
-      { initialProps: { conditions: DEFAULT_RANKING_POLICY_CONDITIONS } },
-    );
-    const worker = FakeWorker.instance!;
-    const initialize = worker.requests[0]!;
-    if (initialize.kind !== 'initialize') throw new TypeError('expected initialize request');
-    act(() =>
-      worker.emit({
-        kind: 'ready',
-        requestId: initialize.requestId,
-        contextId: initialize.contextId,
-      }),
-    );
-    await waitFor(() =>
-      expect(worker.requests.filter(({ kind }) => kind === 'calculate')).toHaveLength(1),
-    );
-    const older = worker.requests.find(({ kind }) => kind === 'calculate')!;
-    if (older.kind !== 'calculate') throw new TypeError('expected calculate request');
+  it.each(['conditionalEffects', 'initialOvercharge'] as const)(
+    'does not expose an older summary after a newer %s request wins',
+    async (axis) => {
+      const baseline = {
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        npLevelBasis: { kind: 'specified' as const, npLevel: 2 as const },
+      };
+      vi.stubGlobal('Worker', FakeWorker);
+      const master = masterSnapshotSchema.parse(fixture);
+      const profile = { servantBuilds: {} };
+      const versions = {
+        schemaVersion: SCHEMA_VERSION,
+        masterDataVersion: master.version,
+        engineVersion: ENGINE_VERSION,
+        appVersion: APP_VERSION,
+        gameRegion: 'JP' as const,
+        masterDataLocale: 'ja-JP' as const,
+      };
+      const { result, rerender } = renderHook(
+        ({ conditions }) => useRanking({ master, profile, conditions, versions }),
+        { initialProps: { conditions: baseline } },
+      );
+      const worker = FakeWorker.instance!;
+      const initialize = worker.requests[0]!;
+      if (initialize.kind !== 'initialize') throw new TypeError('expected initialize request');
+      act(() =>
+        worker.emit({
+          kind: 'ready',
+          requestId: initialize.requestId,
+          contextId: initialize.contextId,
+        }),
+      );
+      await waitFor(() =>
+        expect(worker.requests.filter(({ kind }) => kind === 'calculate')).toHaveLength(1),
+      );
+      const older = worker.requests.find(({ kind }) => kind === 'calculate')!;
+      if (older.kind !== 'calculate') throw new TypeError('expected calculate request');
 
-    const newerConditions = {
-      ...DEFAULT_RANKING_POLICY_CONDITIONS,
-      conditionalEffects: 'satisfied' as const,
-    };
-    rerender({ conditions: newerConditions });
-    await waitFor(() =>
-      expect(worker.requests.filter(({ kind }) => kind === 'calculate')).toHaveLength(2),
-    );
-    const newer = worker.requests.filter(({ kind }) => kind === 'calculate')[1]!;
-    if (newer.kind !== 'calculate') throw new TypeError('expected calculate request');
-    const newerFingerprint = rankingConditionsFingerprint(newerConditions);
-    act(() =>
-      worker.emit({
-        kind: 'result',
-        requestId: newer.requestId,
-        contextId: newer.contextId,
-        fingerprint: newerFingerprint,
-        rows: [],
-        exclusions: [],
-      }),
-    );
-    expect(result.current.fingerprint).toBe(`${newer.contextId}:${newerFingerprint}`);
-    expect(result.current.loading).toBe(false);
+      const newerConditions = {
+        ...baseline,
+        ...(axis === 'initialOvercharge'
+          ? { initialOvercharge: 2 as const }
+          : { conditionalEffects: 'satisfied' as const }),
+      };
+      rerender({ conditions: newerConditions });
+      await waitFor(() =>
+        expect(worker.requests.filter(({ kind }) => kind === 'calculate')).toHaveLength(2),
+      );
+      const newer = worker.requests.filter(({ kind }) => kind === 'calculate')[1]!;
+      if (newer.kind !== 'calculate') throw new TypeError('expected calculate request');
+      const newerFingerprint = rankingConditionsFingerprint(newerConditions);
+      act(() =>
+        worker.emit({
+          kind: 'result',
+          requestId: newer.requestId,
+          contextId: newer.contextId,
+          fingerprint: newerFingerprint,
+          rows: [],
+          exclusions: [],
+        }),
+      );
+      expect(result.current.fingerprint).toBe(`${newer.contextId}:${newerFingerprint}`);
+      expect(result.current.loading).toBe(false);
 
-    act(() =>
-      worker.emit({
-        kind: 'result',
-        requestId: older.requestId,
-        contextId: older.contextId,
-        fingerprint: rankingConditionsFingerprint(older.conditions),
-        rows: [],
-        exclusions: [
-          {
-            entryId: 'stale',
-            servantId: 'stale',
-            name: 'stale',
-            status: 'invalid',
-            reason: 'stale',
-            issues: [],
-          },
-        ],
-      }),
-    );
-    expect(result.current.fingerprint).toBe(`${newer.contextId}:${newerFingerprint}`);
-    expect(result.current.exclusions).toEqual([]);
-  });
+      act(() =>
+        worker.emit({
+          kind: 'result',
+          requestId: older.requestId,
+          contextId: older.contextId,
+          fingerprint: rankingConditionsFingerprint(older.conditions),
+          rows: [],
+          exclusions: [
+            {
+              entryId: 'stale',
+              servantId: 'stale',
+              name: 'stale',
+              status: 'invalid',
+              reason: 'stale',
+              issues: [],
+            },
+          ],
+        }),
+      );
+      expect(result.current.fingerprint).toBe(`${newer.contextId}:${newerFingerprint}`);
+      expect(result.current.exclusions).toEqual([]);
+    },
+  );
 });
 
 it('ignores old-context ready/result/detail/error and excludes unrelated saved data from worker identity', async () => {

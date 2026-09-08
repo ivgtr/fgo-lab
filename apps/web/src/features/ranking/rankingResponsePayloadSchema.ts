@@ -1,10 +1,12 @@
 import { z } from 'zod';
+import { isConsistentNpOcUseReceipt } from '@fgo-lab/calculation-application';
 import {
   actorFormGraphSchema,
   actorFormIdSchema,
   canonicalInputDefinitionSchema,
   masterEffectSchema,
   noblePhantasmVariantRefSchema,
+  ocLifetimeLimitSchema,
 } from '@fgo-lab/master-data';
 import {
   activationFactSchema,
@@ -170,6 +172,50 @@ const preparationActionSchema = z.object({
   resourceBefore: resourceSchema,
   resourceAfter: resourceSchema,
   baseOvercharge: z.number().nullable(),
+  ocUse: z
+    .object({
+      actionId: z.string().min(1),
+      gaugeBefore: z.number().int().min(10000),
+      baseOc: z.number().int().min(1).max(3),
+      boostTotal: z.number().int().nonnegative(),
+      effectiveOc: z.number().int().min(1).max(5),
+      participatingInstances: z.array(z.number().int().positive()),
+      excludedInstances: z.array(z.number().int().positive()),
+      boostUses: z.array(
+        z
+          .object({
+            instanceId: z.number().int().positive(),
+            source: operationSourceSchema,
+            sourceName: z.string(),
+            skillName: z.string(),
+            label: z.string(),
+            stages: z.number().int().min(1).max(5),
+            included: z.boolean(),
+            usesBefore: ocLifetimeLimitSchema,
+          })
+          .strict(),
+      ),
+    })
+    .strict()
+    .refine(isConsistentNpOcUseReceipt)
+    .nullable(),
+  ocOutcomes: z.array(
+    z
+      .object({
+        step: z.number().int().nonnegative(),
+        outcome: z.enum([
+          'applied',
+          'conditionFalse',
+          'stochasticFailure',
+          'policyExcluded',
+          'pendingDependency',
+          'alreadyApplied',
+          'notApplicable',
+        ]),
+        effectiveRate: z.number().int().min(0).max(1000).optional(),
+      })
+      .strict(),
+  ),
 });
 const resolvedScenario = calculationScenarioSchema.options[0];
 const effects = z.array(rankingEffectResponseSchema);
@@ -219,6 +265,24 @@ export const rankingDetailResponseSchema: z.ZodType<RankingPolicyDetail> = z
     }),
   })
   .superRefine((detail, context) => {
+    const actions = detail.appliedPreparationActions;
+    const receipts = actions.flatMap((action) => (action.ocUse ? [action.ocUse] : []));
+    const terminal = actions.at(-1);
+    if (
+      new Set(receipts.map((receipt) => receipt.actionId)).size !== receipts.length ||
+      actions.some(
+        (action) =>
+          (action.sourceKind === 'skill') !== (action.ocUse === null) ||
+          (action.ocUse !== null &&
+            (action.ocUse.gaugeBefore !== action.resourceBefore.gauge ||
+              action.ocUse.baseOc !== action.baseOvercharge)),
+      ) ||
+      terminal?.sourceKind !== 'attackNoblePhantasm' ||
+      terminal.ocUse?.effectiveOc !== detail.input.overcharge ||
+      detail.scenario.initialOvercharge !== detail.rankingPolicy.initialOvercharge ||
+      detail.candidateEvidence.startNpGauge !== detail.scenario.initialOvercharge * 10000
+    )
+      context.addIssue({ code: 'custom', message: 'inconsistent_oc_execution_evidence' });
     for (const input of detail.effectInputs) {
       if (input.kind !== 'effectStackCount') continue;
       const stored = detail.scenario.canonicalInputValues[input.key];

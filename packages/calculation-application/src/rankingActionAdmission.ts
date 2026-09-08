@@ -7,6 +7,8 @@ import {
   type ActivationSourceRef,
 } from '@fgo-lab/schema';
 import {
+  ocRelevantSourceIndexes,
+  type OcResourceDependencyContext,
   classifyContributionCondition,
   compileEffectCondition,
   hasUnsupportedPreparationStackRequirement,
@@ -36,15 +38,23 @@ export interface StaticRankingProgramDisposition {
 function classifyPrograms(
   programs: readonly StaticRankingPreparationProgram[],
   conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
+  resources?: OcResourceDependencyContext,
 ) {
-  return programs.map((program) => ({
-    program,
-    admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
-      actionIsStructural(program, index, programs)
-        ? { kind: 'admitted', role: 'structuralRequired' }
-        : optionalAdmission(source, conditions, program),
-    ),
-  }));
+  return programs.map((program) => {
+    const ocRelevant = ocRelevantSourceIndexes(
+      program.sourceUses,
+      program.terminalReadsOc ?? false,
+      resources,
+    );
+    return {
+      program,
+      admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
+        actionIsStructural(program, index, programs)
+          ? { kind: 'admitted', role: 'structuralRequired' }
+          : optionalAdmission(source, conditions, program, ocRelevant.has(index)),
+      ),
+    };
+  });
 }
 
 function commandKey(command: PreNoblePhantasmCommand): string {
@@ -172,11 +182,13 @@ function optionalAdmission(
   source: RankingPreparationSourceUse,
   conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
   program: StaticRankingPreparationProgram,
+  ocRelevant: boolean,
 ): CandidateLocalActionAdmission {
   if (conditions.selfBuffs === 'excluded')
     return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
   const unsupported = source.effects.map(unsupportedEffect).find((item) => item !== null);
   if (unsupported !== undefined) return unsupported;
+  if (ocRelevant) return { kind: 'admitted', role: 'optional' };
   if (conditions.conditionalEffects === 'baseline') {
     const attackFacts = intrinsicFactsForSource(source, program);
     if (!attackFacts) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
@@ -208,12 +220,13 @@ function optionalAdmission(
 export function compileCandidateLocalActionAdmission(
   programs: readonly StaticRankingPreparationProgram[],
   conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
+  resources?: OcResourceDependencyContext,
 ): {
   programs: readonly AdmittedStaticRankingPreparationProgram[];
   unsupportedAttackProfileKeys: ReadonlySet<string>;
 } {
   const unsupportedAttackProfileKeys = new Set<string>();
-  const classified = classifyPrograms(programs, conditions);
+  const classified = classifyPrograms(programs, conditions, resources);
   for (const { program, admissions } of classified) {
     if (admissions.some(({ kind }) => kind === 'unsupported'))
       unsupportedAttackProfileKeys.add(attackProfileKey(program.attackProfile));
@@ -231,8 +244,9 @@ export function compileCandidateLocalActionAdmission(
 export function compileCandidateLocalActionAdmissionDispositions(
   programs: readonly StaticRankingPreparationProgram[],
   conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
+  resources?: OcResourceDependencyContext,
 ): readonly StaticRankingProgramDisposition[] {
-  return classifyPrograms(programs, conditions).map(({ program, admissions }) => ({
+  return classifyPrograms(programs, conditions, resources).map(({ program, admissions }) => ({
     programKey: program.key,
     attackProfileKey: attackProfileKey(program.attackProfile),
     actionAdmissions: admissions,

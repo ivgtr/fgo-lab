@@ -1,7 +1,7 @@
 import {
-  resolveAttackerFormExecution,
   type EffectProjection,
   type OperationSource,
+  type AppliedPreparationAction,
 } from '@fgo-lab/battle-execution';
 import type { AttackerSkillUse, CalculationScenario, SupportSource } from '@fgo-lab/schema';
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
@@ -32,17 +32,10 @@ export interface PreparationChoiceOption {
 }
 
 export function preparationChoiceOptions(
-  scenario: ResolvedScenario,
+  actions: readonly AppliedPreparationAction[],
   servant: ServantMaster,
-  resourceSemantics: CanonicalNpResourceSemantics,
 ): readonly PreparationChoiceOption[] {
-  const execution = resolveAttackerFormExecution(scenario, servant, resourceSemantics);
-  if (
-    execution.issues.length > 0 ||
-    (execution.rejection && execution.rejection.code !== 'preparationInputRequired')
-  )
-    throw new TypeError('preparation_choice_scenario_invalid');
-  return execution.actions.flatMap((action) => {
+  return actions.flatMap((action) => {
     if (action.command.kind !== 'useSkillSlot' || action.command.choice === null) return [];
     const command = action.command;
     const skill = getSkillsForActorForm(servant, action.actorFormId).find(
@@ -86,8 +79,6 @@ export function preparationChoiceOptions(
 
 export function setPreparationSkillChoice(
   scenario: ResolvedScenario,
-  servant: ServantMaster,
-  resourceSemantics: CanonicalNpResourceSemantics,
   option: PreparationChoiceOption,
   projections: readonly EffectProjection[],
 ): ResolvedScenario {
@@ -117,12 +108,6 @@ export function setPreparationSkillChoice(
     ),
     canonicalInputValues: {},
   };
-  const execution = resolveAttackerFormExecution(changed, servant, resourceSemantics);
-  if (
-    execution.issues.length > 0 ||
-    (execution.rejection && execution.rejection.code !== 'preparationInputRequired')
-  )
-    throw new TypeError('preparation_choice_command_invalid');
   return changed;
 }
 

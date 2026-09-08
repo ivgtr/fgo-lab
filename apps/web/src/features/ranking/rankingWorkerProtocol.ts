@@ -78,6 +78,7 @@ export function rankingConditionsFingerprint(conditions: RankingPolicyConditions
     conditions.npLevelBasis.kind === 'owned'
       ? ['owned']
       : ['specified', conditions.npLevelBasis.npLevel],
+    conditions.initialOvercharge,
     conditions.classAffinity,
     conditions.selfBuffs,
     conditions.conditionalEffects,

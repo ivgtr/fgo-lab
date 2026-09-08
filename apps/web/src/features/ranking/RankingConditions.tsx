@@ -1,5 +1,6 @@
 import {
   applyRankingSelectionCommand,
+  rankingInitialOcOptions,
   type RankingSelectionCommand,
 } from '@fgo-lab/calculation-application';
 import type { RankingPolicyConditions } from '@fgo-lab/calculation-application';
@@ -78,6 +79,24 @@ export function RankingConditions({
             <option value="owned" disabled={conditions.population !== 'owned'}>
               保有宝具レベル
             </option>
+          </select>
+        </label>
+        <label>
+          初期OC
+          <select
+            value={conditions.initialOvercharge}
+            onChange={(event) =>
+              dispatch({
+                kind: 'setInitialOvercharge',
+                value: Number(event.target.value) as 1 | 2 | 3,
+              })
+            }
+          >
+            {rankingInitialOcOptions(conditions).map((value) => (
+              <option key={value} value={value}>
+                OC{value}（{value * 100}%）
+              </option>
+            ))}
           </select>
         </label>
         <label>

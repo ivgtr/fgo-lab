@@ -242,17 +242,22 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(14_623);
+    expect(operations).toHaveLength(14_633);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
-      boundedPhaseIrrelevant: 2_726,
-      contextMutation: 1_488,
-      damageModifier: 3_885,
+      boundedPhaseIrrelevant: 2726,
+      contextMutation: 1488,
+      damageModifier: 3885,
+      grantOcApplicationRate: 29,
+      grantOcBoost: 97,
       ignoreDamageCut: 1,
       ignoreDefense: 39,
       modifierRateChange: 1,
-      resourceMutation: 1_165,
+      ocRemovalResistance: 60,
+      ocStateNonIntersection: 131,
+      removeOcState: 75,
+      resourceMutation: 1165,
       selectNoblePhantasmVariant: 22,
-      stateMutation: 5_212,
+      stateMutation: 4830,
       transformActorForm: 10,
       unsupported: 74,
     });
@@ -325,7 +330,7 @@ describe('production canonical execution semantics', () => {
     };
     expect(closedOccurrences).toEqual({
       resource: 1_164,
-      state: 5_213,
+      state: 4_831,
       unsupported: 21,
       boundedPhaseIrrelevant: 2_725,
     });
@@ -420,10 +425,10 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      personal: 2_663,
-      partyWide: 928,
-      partyOther: 51,
-      enemyApplied: 1_798,
+      personal: 2_872,
+      partyWide: 1_008,
+      partyOther: 52,
+      enemyApplied: 1_900,
     });
     expect(counts(terminal)).toEqual({
       personal: 2_593,
@@ -625,7 +630,7 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts).toEqual({
-      'activeOnly:exclude:include': 2_635,
+      'activeOnly:exclude:include': 2_606,
       'activeAndPassive:exclude:include': 7,
       'activeOnly:include:include': 6,
       'activeOnly:exclude:exclude': 1,

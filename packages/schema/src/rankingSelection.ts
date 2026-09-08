@@ -11,7 +11,9 @@ export const rankingNpBasisSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('specified'), npLevel: rankingNpLevelSchema }).strict(),
   z.object({ kind: z.literal('owned') }).strict(),
 ]);
+export const initialOverchargeSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const selectionShape = {
+  initialOvercharge: initialOverchargeSchema,
   population: z.enum(['all', 'owned']),
   levelBasis: z.enum(['naturalLimit', 'uniformLevel90', 'ownedLevel']),
   npLevelBasis: rankingNpBasisSchema,
@@ -34,6 +36,7 @@ export const resolvedRankingBasisSchema = z
     servantId: z.string().min(1),
     level: z.number().int().min(1).max(120),
     npLevel: rankingNpLevelSchema,
+    initialOvercharge: initialOverchargeSchema,
     levelSource: selectionShape.levelBasis,
     npSource: z.enum(['specified', 'owned']),
   })

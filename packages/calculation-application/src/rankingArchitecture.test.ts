@@ -10,6 +10,7 @@ describe('ranking architecture', () => {
     expect(Object.keys(DEFAULT_RANKING_POLICY_CONDITIONS).sort()).toEqual([
       'classAffinity',
       'conditionalEffects',
+      'initialOvercharge',
       'levelBasis',
       'npLevelBasis',
       'population',

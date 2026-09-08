@@ -86,7 +86,7 @@ export interface RankingCandidate {
 interface ProgramCandidateDomain {
   program: StaticRankingPreparationProgram;
   semantics: StaticRankingSemantics;
-  startNpGauges: readonly number[];
+  initialNpGauge: number;
   canonicalInputs: readonly { key: string; values: readonly number[] }[];
   targets: readonly (RankingWorldCandidate | null)[];
   fields: readonly RankingFieldCandidate[];
@@ -131,7 +131,6 @@ function dimensionIndexes(
 
 function programDimensions(domain: Omit<ProgramCandidateDomain, 'upperBound'>) {
   return [
-    dimensionIndexes('startNpGauge', domain.startNpGauges),
     ...domain.canonicalInputs.map(({ key, values }) => dimensionIndexes(`input:${key}`, values)),
     dimensionIndexes('target', domain.targets),
     dimensionIndexes('field', domain.fields),
@@ -143,11 +142,14 @@ function compileProgramDomain(input: {
   servant: ServantMaster;
   master: MasterDataSnapshot;
   basis: ResolvedRankingBasis;
-  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>;
+  conditions: Pick<
+    RankingPolicyConditions,
+    'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
+  >;
   program: StaticRankingPreparationProgram;
 }): Omit<ProgramCandidateDomain, 'upperBound'> {
   const { servant, master, basis, conditions, program } = input;
-  const policy = compileRankingComparisonPolicy(conditions, master, basis.npLevel);
+  const policy = compileRankingComparisonPolicy(conditions, master);
   const semantics = compileStaticRankingSemantics(servant, program, basis.npLevel);
   if (semantics.unsupported.length > 0)
     throw new UnsupportedStaticSemantics(
@@ -163,7 +165,7 @@ function compileProgramDomain(input: {
   return {
     program,
     semantics,
-    startNpGauges: policy.startNpGaugeCandidates,
+    initialNpGauge: policy.initialNpGauge,
     canonicalInputs: createCanonicalInputValueDomains(
       semantics.inputDefinitions,
       semantics.conditions,
@@ -196,7 +198,10 @@ export function compileRankingCandidateSpaces(
   servant: ServantMaster,
   master: MasterDataSnapshot,
   basis: ResolvedRankingBasis,
-  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>,
+  conditions: Pick<
+    RankingPolicyConditions,
+    'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
+  >,
   attackProfiles: readonly AttackProfile[],
 ): readonly RankingCandidateSpace[] {
   let programs: readonly StaticRankingPreparationProgram[];
@@ -205,6 +210,14 @@ export function compileRankingCandidateSpaces(
     const admission = compileCandidateLocalActionAdmission(
       compileStaticRankingPreparationPrograms(servant),
       conditions,
+      {
+        semantics: master.npResourceSemantics,
+        npLevel: basis.npLevel,
+        initialGauge:
+          conditions.initialOvercharge *
+          master.npResourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
+        automaticEffects: servant.passives.flatMap((passive) => passive.effects),
+      },
     );
     programs = admission.programs;
     unsupportedAttackProfileKeys = admission.unsupportedAttackProfileKeys;
@@ -218,7 +231,7 @@ export function compileRankingCandidateSpaces(
       },
     }));
   }
-  const policyKey = compileRankingComparisonPolicy(conditions, master, basis.npLevel).key;
+  const policyKey = compileRankingComparisonPolicy(conditions, master).key;
   return attackProfiles.map((attackProfile): RankingCandidateSpace => {
     const profileKey = attackProfileKey(attackProfile);
     if (unsupportedAttackProfileKeys.has(profileKey))
@@ -299,7 +312,10 @@ function materializeProgramCandidates(input: {
   servant: ServantMaster;
   master: MasterDataSnapshot;
   basis: ResolvedRankingBasis;
-  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>;
+  conditions: Pick<
+    RankingPolicyConditions,
+    'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
+  >;
   policyKey: string;
   attackProfile: AttackProfile;
   domain: ProgramCandidateDomain;
@@ -311,7 +327,7 @@ function materializeProgramCandidates(input: {
     'ranking_candidate_space_materialization_mismatch',
   );
   return product.candidates.map((indexes) => {
-    const startNpGauge = domain.startNpGauges[indexes.startNpGauge ?? 0]!;
+    const startNpGauge = domain.initialNpGauge;
     const canonicalInputValues = Object.fromEntries(
       domain.canonicalInputs.map(({ key, values }) => [key, values[indexes[`input:${key}`] ?? 0]!]),
     );
@@ -396,7 +412,10 @@ export function materializeRankingCandidateSpace(input: {
   servant: ServantMaster;
   master: MasterDataSnapshot;
   basis: ResolvedRankingBasis;
-  conditions: Pick<RankingPolicyConditions, 'classAffinity' | 'selfBuffs' | 'conditionalEffects'>;
+  conditions: Pick<
+    RankingPolicyConditions,
+    'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
+  >;
   space: Extract<RankingCandidateSpace, { status: 'ready' }>;
 }): readonly RankingCandidate[] {
   const candidates = input.space.programs.flatMap((domain) =>

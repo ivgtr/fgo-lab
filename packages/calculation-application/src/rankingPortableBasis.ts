@@ -10,7 +10,7 @@ export function validatePinnedRankingBasis(
   if (request.executionIntent.kind !== 'ranking' || request.scenario.mode !== 'resolved')
     return true;
   const { basis, policy } = request.executionIntent;
-  const { attacker, craftEssence, mysticCode, support, overcharge, explicitOverrides } =
+  const { attacker, craftEssence, mysticCode, support, initialOvercharge, explicitOverrides } =
     request.scenario;
   const servants = master.servants.filter(({ id }) => id === basis.servantId);
   if (servants.length !== 1) return false;
@@ -19,13 +19,14 @@ export function validatePinnedRankingBasis(
       basis.level === naturalServantLevel(servants[0]!.rarity)) &&
     attacker.source === 'master' &&
     attacker.fouAtk === fixed.fouAtk &&
-    overcharge === fixed.overcharge &&
+    initialOvercharge === request.executionIntent.basis.initialOvercharge &&
     craftEssence === fixed.craftEssence &&
     mysticCode === fixed.mysticCode &&
     support === fixed.support &&
     Object.keys(explicitOverrides).length === 0 &&
-    request.scenario.attackerHpPermille === fixed.attackerHpPermille &&
-    request.scenario.battleState.battlePointPhase === fixed.battlePointPhase &&
+    (policy.conditionalEffects === 'satisfied' ||
+      (request.scenario.attackerHpPermille === fixed.attackerHpPermille &&
+        request.scenario.battleState.battlePointPhase === fixed.battlePointPhase)) &&
     (request.scenario.targetContext.attribute.kind === 'concrete' ||
       request.scenario.targetContext.attribute.relation === fixed.attributeRelation) &&
     (request.scenario.targetContext.class.kind === 'concrete' ||

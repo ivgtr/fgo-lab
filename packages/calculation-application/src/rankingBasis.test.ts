@@ -54,6 +54,62 @@ const versions = {
 };
 
 describe('ranking independent basis', () => {
+  it('keeps owned NP1/2/5 capacity failures separate under all four policies', () => {
+    const servants = [1, 2, 5].map(
+      (npLevel) =>
+        JSON.parse(
+          JSON.stringify(servant).replaceAll(servant.id, `owned-${npLevel}`),
+        ) as typeof servant,
+    );
+    const mixedMaster = masterSnapshotSchema.parse({ ...master, servants });
+    const mixed = {
+      servantBuilds: servantBuildRecordSchema.parse(
+        Object.fromEntries(
+          servants.map((entry, index) => [
+            entry.id,
+            {
+              ...profile.servantBuilds[servant.id]!,
+              servantId: entry.id,
+              npLevel: [1, 2, 5][index],
+            },
+          ]),
+        ),
+      ),
+    };
+    for (const selfBuffs of ['included', 'excluded'] as const)
+      for (const conditionalEffects of ['baseline', 'satisfied'] as const)
+        for (const initialOvercharge of [1, 2, 3] as const) {
+          const selection: RankingSelection = {
+            ...defaults,
+            population: 'owned',
+            npLevelBasis: { kind: 'owned' },
+            initialOvercharge,
+            selfBuffs,
+            conditionalEffects,
+          };
+          const calculation = calculateRankingPolicy(mixedMaster, mixed, selection, versions);
+          expect(calculation.rows).toHaveLength(4 - initialOvercharge);
+          expect(calculation.exclusions).toHaveLength(initialOvercharge - 1);
+          for (const exclusion of calculation.exclusions)
+            expect(exclusion).toMatchObject({
+              status: 'unavailableUnderPolicy',
+              reason: 'npCapacityExceeded',
+            });
+          for (const result of Object.values(calculation.profileResults))
+            if (result.status === 'calculated') {
+              expect(result.detail.candidateEvidence.startNpGauge).toBe(initialOvercharge * 10000);
+              expect(result.detail.appliedPreparationActions.at(-1)?.ocUse?.gaugeBefore).toBe(
+                initialOvercharge * 10000,
+              );
+            }
+          expect(
+            applyRankingSelectionCommand(selection, { kind: 'setPopulation', value: 'all' }),
+          ).toMatchObject({
+            status: 'valid',
+            selection: { initialOvercharge: 1, npLevelBasis: { kind: 'specified', npLevel: 1 } },
+          });
+        }
+  });
   it('changes only illegal axes on an explicit population command', () => {
     const owned: RankingSelection = {
       ...defaults,

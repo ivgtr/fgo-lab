@@ -30,6 +30,7 @@ export type {
   WorldFactAssertion,
 } from './contracts';
 export { canNormalizeDamageEffect } from './effectRouting';
+export { isConsistentNpOcUseReceipt } from './ocState';
 export {
   contributionIsIncluded,
   createEffectiveContributionSet,
@@ -149,3 +150,10 @@ export {
   stackOwnedWitnessCondition,
   servantStackInputs,
 } from './stackQuantities';
+
+export { effectReadsOc, noblePhantasmReadsOc, ocRelevantSourceIndexes } from './ocDependency';
+export { compileOcSourceProgram, hasOcExecution, hasOcConditionReader } from './ocSourceProgram';
+
+export { OC_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
+
+export type { OcResourceDependencyContext } from './ocResourceDependencies';

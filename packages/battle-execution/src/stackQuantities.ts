@@ -52,7 +52,13 @@ export function seedStackQuantities(
   }
 }
 
-export function liveInputQuantity(state: ExecutableBattleState, key: string): number | undefined {
+export function liveInputQuantity(
+  state: Pick<
+    ExecutableBattleState,
+    'stackQuantitySources' | 'traitCounts' | 'resolvedInputValues'
+  >,
+  key: string,
+): number | undefined {
   const source = state.stackQuantitySources[key];
   return source
     ? (state.traitCounts[source.scope][source.trait] ?? 0)

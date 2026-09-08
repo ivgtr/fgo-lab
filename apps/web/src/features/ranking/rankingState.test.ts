@@ -11,6 +11,7 @@ describe('ranking URL state', () => {
       ...DEFAULT_RANKING_URL_STATE,
       conditions: {
         ...DEFAULT_RANKING_URL_STATE.conditions!,
+        initialOvercharge: 3 as const,
         population: 'owned' as const,
         npLevelBasis: { kind: 'specified' as const, npLevel: 5 as const },
         classAffinity: 'favorable' as const,
@@ -47,6 +48,10 @@ describe('strict comparison URL boundary', () => {
       `${canonical}&rPopulation=all`,
       `${canonical}&rMode=standard`,
       `${canonical}&rNp=1`,
+      canonical.replace('rOc=1', 'rOc=2'),
+      canonical.replace('rOc=1', 'rOc=1.0'),
+      canonical.replace(/&?rOc=1/, ''),
+      `${canonical}&rOc=1`,
       canonical.replace('rNpBasis=1', 'rNpBasis=1.0'),
       canonical.replace('rNpBasis=1', 'rNpBasis='),
       canonical.replace('rLevelBasis=naturalLimit', 'rLevelBasis=ownedLevel'),

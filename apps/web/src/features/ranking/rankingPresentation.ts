@@ -75,5 +75,6 @@ export function rankingPolicyLabel(conditions: RankingPolicyConditions): string 
     conditions.classAffinity === 'favorable' ? '相性有利' : '等倍',
     conditions.selfBuffs === 'included' ? '自己バフあり' : '自己バフなし',
     conditions.conditionalEffects === 'satisfied' ? '条件効果成立込み' : '条件効果通常のみ',
+    `初期OC${conditions.initialOvercharge}（開始NP ${conditions.initialOvercharge * 100}%）`,
   ].join('・');
 }

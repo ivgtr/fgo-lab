@@ -6,6 +6,7 @@ import {
   SCHEMA_VERSION,
   portableCalculationRequestSchema,
   type CalculationResult,
+  type CalculationHistoryEntry,
   type CalculationScenario,
   type CalculationVersionContext,
   type PortableCalculationRequest,
@@ -17,8 +18,7 @@ import { compileRankingContributionPolicy } from './contributionPolicy';
 import {
   createDefaultCalculatorScenario,
   evaluatePreparedCalculationScenario,
-  prepareCalculationScenario,
-  reapplyPreparedCalculationPolicy,
+  prepareCalculationScenarioWithPolicy,
   type CalculationExecution,
 } from './scenario';
 
@@ -107,7 +107,7 @@ export function createCalculatorPortableRequest(
           scenario,
           executionIntent: {
             kind: 'calculator',
-            initialNpGauge: 10_000,
+            initialNpGauge: scenario.initialOvercharge * 10000,
           },
         },
   );
@@ -144,7 +144,7 @@ export function replacePortableCalculationScenario(
   request: PortableCalculationRequest,
   scenario: CalculationScenario,
 ): PortableCalculationRequest {
-  if (request.scenario.mode !== scenario.mode)
+  if (request.scenario.mode !== scenario.mode || request.executionIntent.kind === 'calculator')
     return createCalculatorPortableRequest(scenario, request.versionContext);
   return portableCalculationRequestSchema.parse({ ...request, scenario });
 }
@@ -344,17 +344,14 @@ export function executePortableCalculation(
       request.executionIntent.kind !== 'manual'
         ? { initialNpGauge: request.executionIntent.initialNpGauge }
         : undefined;
-    const prepared = prepareCalculationScenario(request.scenario, master, preparation);
-    let executable = prepared;
-    if (request.executionIntent.kind === 'ranking' && request.scenario.mode === 'resolved') {
-      if (prepared.status === 'executable' && !prepared.orderedScenario)
-        throw new TypeError('ranking_contribution_operations_unavailable');
-      if (prepared.status === 'executable')
-        executable = reapplyPreparedCalculationPolicy(
-          prepared,
-          compileRankingContributionPolicy(request.executionIntent.policy, 'included'),
-        );
-    }
+    const executable = prepareCalculationScenarioWithPolicy(
+      request.scenario,
+      master,
+      request.executionIntent.kind === 'ranking'
+        ? compileRankingContributionPolicy(request.executionIntent.policy, 'included')
+        : { kind: 'calculator' },
+      preparation,
+    );
     const execution = evaluatePreparedCalculationScenario(executable, versions);
     if (execution.status === 'invalid')
       return {
@@ -458,4 +455,18 @@ export function recoverPortableCalculation(
   )
     return { status: 'invalid', request, reason: 'storedResultMismatch' };
   return outcome;
+}
+
+/** Regeneration preserves historical evidence and creates a new calculator request for its subject. */
+export function regenerateHistoricalCalculatorRequest(
+  entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
+  master: MasterDataSnapshot,
+  builds: Readonly<Record<string, ServantBuild>>,
+): PortableCalculationRequest | null {
+  const subject = master.servants.find(
+    (servant) => servant.id === entry.scenario.attacker.servantId,
+  );
+  return subject
+    ? createDefaultCalculatorPortableRequest(master, builds[subject.id], subject)
+    : null;
 }

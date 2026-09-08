@@ -1,4 +1,8 @@
-import { rankingSelectionSchema, resolvedRankingBasisSchema } from './rankingSelection';
+import {
+  initialOverchargeSchema,
+  rankingSelectionSchema,
+  resolvedRankingBasisSchema,
+} from './rankingSelection';
 export * from './rankingSelection';
 import { z } from 'zod';
 import { analyzeActivationFactSet } from './activationFactSet';
@@ -25,8 +29,8 @@ export {
   type QuantityFactName,
 } from './quantityFacts';
 
-export const SCHEMA_VERSION = 37 as const;
-export const ENGINE_VERSION = '32.0.0' as const;
+export const SCHEMA_VERSION = 38 as const;
+export const ENGINE_VERSION = '33.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -432,7 +436,7 @@ const scenarioBaseSchema = z
         fouAtk: z.number().int().min(0).max(3000),
       })
       .strict(),
-    overcharge: z.number().int().min(1).max(5),
+    initialOvercharge: initialOverchargeSchema,
     targetContext: targetContextSchema,
     attackerHpPermille: quantityFactValueSchema('attackerHpPermille').nullable(),
     battleState: z.object({
@@ -451,7 +455,7 @@ const scenarioBaseSchema = z
   })
   .strict();
 
-const resolvedScenarioSchema = scenarioBaseSchema
+export const resolvedScenarioSchema = scenarioBaseSchema
   .extend({
     mode: z.literal('resolved'),
     craftEssence: z
@@ -505,6 +509,11 @@ const resolvedScenarioSchema = scenarioBaseSchema
   })
   .strict();
 
+const legacyResolvedScenarioSchema = resolvedScenarioSchema
+  .omit({ initialOvercharge: true })
+  .extend({ overcharge: z.number().int().min(1).max(5) })
+  .strict();
+
 const manualScenarioSchema = z
   .object({
     mode: z.literal('manual'),
@@ -529,7 +538,7 @@ export type CalculationVersionContext = z.infer<typeof calculationVersionContext
 const calculatorExecutionIntentSchema = z
   .object({
     kind: z.literal('calculator'),
-    initialNpGauge: z.literal(10_000),
+    initialNpGauge: z.union([z.literal(10000), z.literal(20000), z.literal(30000)]),
   })
   .strict();
 const rankingExecutionIntentV35Schema = z
@@ -552,11 +561,17 @@ const rankingExecutionIntentSchema = z
     basis: resolvedRankingBasisSchema,
   })
   .strict();
+const legacyRankingExecutionIntentV37Schema = rankingExecutionIntentSchema
+  .extend({
+    policy: z.object(rankingSelectionSchema.shape).omit({ initialOvercharge: true }).strict(),
+    basis: resolvedRankingBasisSchema.omit({ initialOvercharge: true }),
+  })
+  .strict();
 const portableCalculationRequestV35Schema = z.union([
   z
     .object({
       versionContext: calculationVersionContextSchema,
-      scenario: resolvedScenarioSchema,
+      scenario: legacyResolvedScenarioSchema,
       executionIntent: z.union([calculatorExecutionIntentSchema, rankingExecutionIntentV35Schema]),
     })
     .strict(),
@@ -565,6 +580,16 @@ const portableCalculationRequestV35Schema = z.union([
       versionContext: calculationVersionContextSchema,
       scenario: manualScenarioSchema,
       executionIntent: z.object({ kind: z.literal('manual') }).strict(),
+    })
+    .strict(),
+]);
+const legacyPortableCalculationRequestSchema = z.union([
+  portableCalculationRequestV35Schema,
+  z
+    .object({
+      versionContext: calculationVersionContextSchema,
+      scenario: legacyResolvedScenarioSchema,
+      executionIntent: legacyRankingExecutionIntentV37Schema,
     })
     .strict(),
 ]);
@@ -577,9 +602,12 @@ const resolvedPortableCalculationRequestSchema = z
   .strict()
   .refine(
     ({ scenario, executionIntent: intent }) => {
+      if (intent.initialNpGauge !== scenario.initialOvercharge * 10000) return false;
       if (intent.kind !== 'ranking') return true;
       const { basis, policy } = intent;
       return (
+        basis.initialOvercharge === scenario.initialOvercharge &&
+        policy.initialOvercharge === scenario.initialOvercharge &&
         basis.servantId === scenario.attacker.servantId &&
         basis.level === scenario.attacker.level &&
         basis.npLevel === scenario.attacker.npLevel &&
@@ -609,13 +637,13 @@ const portableCalculationRequestV33Schema = z.union([
   z
     .object({
       versionContext: calculationVersionContextSchema,
-      scenario: resolvedScenarioSchema,
+      scenario: legacyResolvedScenarioSchema,
       executionIntent: z.union([
         z
           .object({
             kind: z.literal('resolved'),
             origin: z.literal('calculator'),
-            initialNpGauge: z.literal(10_000),
+            initialNpGauge: z.union([z.literal(10000), z.literal(20000), z.literal(30000)]),
             contribution: z.literal('standard'),
           })
           .strict(),
@@ -760,7 +788,7 @@ const historicalCalculationHistoryEntryV33Schema = z.object({
   sourceSchemaVersion: z.literal(33),
   profileId: z.uuid(),
   calculationSessionId: z.uuid(),
-  scenario: resolvedScenarioSchema,
+  scenario: legacyResolvedScenarioSchema,
   legacyRankingIntent: z.object({
     initialNpGauge: z.number().int().nonnegative().max(100_000),
     contribution: z.enum(['standard', 'excludeVoluntarySkillModifiers']),
@@ -775,11 +803,15 @@ const historicalCalculationHistoryEntryV33Schema = z.object({
 });
 export const historicalCalculationHistoryEntrySchema = z.union([
   historicalCalculationHistoryEntryV33Schema,
-  ...([34, 35, 36] as const).map((version) =>
+  ...([34, 35, 36, 37] as const).map((version) =>
     historicalCalculationHistoryEntryV33Schema.extend({
       sourceSchemaVersion: z.literal(version),
       legacyResultSchemaVersion: z.literal(version),
-      legacyRankingIntent: rankingExecutionIntentV35Schema,
+      legacyRankingIntent: z.union([
+        rankingExecutionIntentV35Schema,
+        legacyRankingExecutionIntentV37Schema,
+        calculatorExecutionIntentSchema,
+      ]),
     }),
   ),
 ]);
@@ -850,7 +882,7 @@ const localProfileV34Schema = z.object({
   history: z.array(z.unknown()).max(20),
 });
 const profileCollectionV34Schema = z.object({
-  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36)]),
+  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36), z.literal(37)]),
   activeProfileId: z.uuid(),
   profiles: z.array(localProfileV34Schema).min(1).max(20),
 });
@@ -1007,7 +1039,7 @@ export function parseStoredProfileCollection(value: unknown): {
 
 function migrateCalculationResultV34(
   result: unknown,
-  sourceVersion: 34 | 35 | 36,
+  sourceVersion: 34 | 35 | 36 | 37,
 ): CalculationResult {
   const envelope = z
     .object({ versions: z.object({ schemaVersion: z.literal(sourceVersion) }).loose() })
@@ -1018,28 +1050,26 @@ function migrateCalculationResultV34(
     versions: { ...envelope.versions, schemaVersion: SCHEMA_VERSION },
   });
 }
-function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36) {
+function parseCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36 | 37) {
   const envelope = z
-    .object({ request: portableCalculationRequestV35Schema, result: z.unknown() })
+    .object({ request: legacyPortableCalculationRequestSchema, result: z.unknown() })
     .loose()
     .parse(snapshot);
   const result = migrateCalculationResultV34(envelope.result, sourceVersion);
   const parsed = z
-    .object({ ...calculationSnapshotShape, request: portableCalculationRequestV35Schema })
+    .object({ ...calculationSnapshotShape, request: legacyPortableCalculationRequestSchema })
     .superRefine(requireMatchingCalculationVersions)
     .parse({ ...envelope, result });
   return { ...envelope, ...parsed };
 }
-function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36) {
+function migrateCalculationSnapshotV34(snapshot: unknown, sourceVersion: 34 | 35 | 36 | 37) {
   if (snapshot === null) return null;
   const parsed = parseCalculationSnapshotV34(snapshot, sourceVersion);
-  return parsed.request.executionIntent.kind === 'ranking'
-    ? null
-    : calculationDraftSchema.parse(parsed);
+  return parsed.request.scenario.mode === 'resolved' ? null : calculationDraftSchema.parse(parsed);
 }
 function migrateCalculationHistoryEntryV34(
   entry: unknown,
-  sourceVersion: 34 | 35 | 36,
+  sourceVersion: 34 | 35 | 36 | 37,
 ): CalculationHistoryEntry {
   const envelope = z
     .object({ disposition: z.string().optional(), result: z.unknown() })
@@ -1051,8 +1081,7 @@ function migrateCalculationHistoryEntryV34(
       result: migrateCalculationResultV34(envelope.result, sourceVersion),
     });
   const parsed = parseCalculationSnapshotV34(entry, sourceVersion);
-  if (parsed.request.executionIntent.kind !== 'ranking')
-    return calculationHistoryEntrySchema.parse(parsed);
+  if (parsed.request.scenario.mode === 'manual') return calculationHistoryEntrySchema.parse(parsed);
   return historicalCalculationHistoryEntrySchema.parse({
     ...parsed,
     disposition: 'historicalOnly',
@@ -1093,13 +1122,7 @@ function migratePortableCalculationRequestV33(
       scenario: request.scenario,
       executionIntent: { kind: 'manual' },
     });
-  if (request.executionIntent.kind === 'manual' || request.executionIntent.origin === 'ranking')
-    return null;
-  return portableCalculationRequestSchema.parse({
-    versionContext: request.versionContext,
-    scenario: request.scenario,
-    executionIntent: { kind: 'calculator', initialNpGauge: 10_000 },
-  });
+  return null;
 }
 
 function migrateCalculationSnapshotV33(
@@ -1121,7 +1144,7 @@ function migrateCalculationHistoryEntryV33(
   if (request) return calculationHistoryEntrySchema.parse({ ...entry, request, result });
   if (entry.request.scenario.mode !== 'resolved') return null;
   const intent = entry.request.executionIntent;
-  if (intent.kind === 'manual' || intent.origin !== 'ranking') return null;
+  if (intent.kind === 'manual') return null;
   return historicalCalculationHistoryEntrySchema.parse({
     disposition: 'historicalOnly',
     sourceSchemaVersion: 33,
@@ -1170,7 +1193,7 @@ const userDataBackupV33Schema = z
   .strict();
 const userDataBackupV34Schema = z.object({
   kind: z.literal('fgo-lab-user-backup'),
-  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36)]),
+  schemaVersion: z.union([z.literal(34), z.literal(35), z.literal(36), z.literal(37)]),
   exportedAt: z.iso.datetime(),
   appVersion: z.string(),
   profiles: profileCollectionV34Schema,

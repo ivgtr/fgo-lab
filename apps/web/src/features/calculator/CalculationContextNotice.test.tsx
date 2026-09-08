@@ -22,24 +22,33 @@ import { CalculationContextNotice } from './CalculationContextNotice';
 afterEach(cleanup);
 
 const master = masterSnapshotSchema.parse(fixture);
+const resolvedScenario = createDefaultResolvedScenario(master, undefined);
 const calculatorRequest = createCalculatorPortableRequest(
-  createDefaultResolvedScenario(master, undefined),
+  resolvedScenario,
   currentCalculationVersionContext(master),
 );
 const rankingRequest = portableCalculationRequestSchema.parse({
   ...calculatorRequest,
+  scenario: {
+    ...resolvedScenario,
+    initialOvercharge: 2,
+    attacker: { ...resolvedScenario.attacker, npLevel: 2 },
+  },
   executionIntent: {
     kind: 'ranking' as const,
     initialNpGauge: 20_000,
     policy: {
       ...DEFAULT_RANKING_POLICY_CONDITIONS,
+      initialOvercharge: 2,
+      npLevelBasis: { kind: 'specified', npLevel: 2 },
       selfBuffs: 'excluded' as const,
       conditionalEffects: 'satisfied' as const,
     },
     basis: {
       servantId: master.servants[0]!.id,
-      level: 90,
-      npLevel: 1,
+      level: resolvedScenario.attacker.level,
+      npLevel: 2,
+      initialOvercharge: 2,
       levelSource: 'naturalLimit',
       npSource: 'specified',
     },

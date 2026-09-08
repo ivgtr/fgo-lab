@@ -834,3 +834,564 @@ describe('transactional preparation execution', () => {
     expect(second.npResource).toEqual({ npLevel: 2, capacity: 20_000, gauge: 0 });
   });
 });
+
+describe('OC on the preparation command path', () => {
+  function ocEffect(id: string, lifetime: 'constant' | 'active' = 'active'): MasterEffect {
+    return effect(id, null, [
+      {
+        kind: 'grantOcBoost',
+        route,
+        lifetime,
+        stacking: 'additive',
+        stateTraits: ['positive'],
+        cells: [1, 2, 3, 4, 5].map(() =>
+          Array.from({ length: 5 }, () => ({
+            stages: 2,
+            applicationRatePermille: 1000,
+            turns: { kind: 'unlimited' },
+            uses: { kind: 'finite', remaining: 1 },
+          })),
+        ) as Extract<MasterEffect['execution'][number], { kind: 'grantOcBoost' }>['cells'],
+      },
+    ]);
+  }
+  it.each(['unused', 'read', 'shortCircuit', 'reset'] as const)(
+    'tracks an uncertain target write until its OC reader: %s',
+    (path) => {
+      const writer = effect(
+        'uncertain-write',
+        null,
+        [
+          {
+            kind: 'contextMutation',
+            mutation: 'addTrait',
+            scope: 'recipientState',
+            route: { ...route, target: 'enemy' },
+            trait: 'uncertain',
+            damageRelevant: true,
+          },
+        ],
+        {
+          kind: 'sourceQuantity',
+          quantity: 'battlePointRate',
+          subjectId: 'actor',
+          comparison: 'atLeast',
+          value: 1,
+        },
+      );
+      const reader = ocEffect('reader');
+      const dependency = {
+        kind: 'trait',
+        scope: 'opponentState',
+        trait: 'uncertain',
+        present: false,
+        provenance: {
+          stateSources: 'activeOnly',
+          ignoredStateTraits: 'exclude',
+          unremovableStateTraits: 'include',
+        },
+      } as const;
+      reader.requirement = {
+        recipient: 'sourceSelf',
+        expression:
+          path === 'shortCircuit'
+            ? { kind: 'any', requirements: [{ kind: 'always' }, dependency] }
+            : dependency,
+      };
+      const reset = effect('certain-removal', null, [
+        {
+          kind: 'contextMutation',
+          mutation: 'removeTrait',
+          scope: 'recipientState',
+          route: { ...route, target: 'enemy' },
+          trait: 'uncertain',
+          damageRelevant: true,
+        },
+      ]);
+      const servant = servantWithSkill(
+        path === 'unused'
+          ? [writer]
+          : path === 'reset'
+            ? [writer, reset, reader]
+            : [writer, reader],
+      );
+      const facts = {
+        ...context,
+        worldFacts: [
+          {
+            decisionKey: 'initial',
+            fact: {
+              kind: 'trait' as const,
+              scope: 'targetState' as const,
+              trait: 'uncertain',
+              present: false,
+            },
+          },
+        ],
+      };
+      const initial = createPreNoblePhantasmState(servant, baseForm, facts);
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      const result = reducePreNoblePhantasmAction(
+        servant,
+        initial.state,
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+        facts,
+      );
+      expect(result.status).toBe(path === 'read' ? 'rejected' : 'applied');
+      if (path === 'read')
+        expect(result).toMatchObject({ code: 'unsupportedOcExecution', state: initial.state });
+      if (result.status === 'applied' && (path === 'shortCircuit' || path === 'reset'))
+        expect(result.state.ocState.boosts).toHaveLength(1);
+      if (result.status === 'applied' && path === 'reset')
+        expect(result.state.uncertainContextWrites).toEqual([]);
+    },
+  );
+  it.each(['absent', 'live', 'terminal', 'false'] as const)(
+    'defers a possible removal resistance until a live removal reader: %s',
+    (path) => {
+      const resistance = effect(
+        'resistance',
+        null,
+        [
+          {
+            kind: 'ocRemovalResistance',
+            route,
+            cells: [
+              [
+                {
+                  amount: { kind: 'fixed', value: 1000 },
+                  applicationRatePermille: 1000,
+                  turns: { kind: 'unlimited' },
+                  uses: { kind: 'unlimited' },
+                },
+              ],
+              [],
+              [],
+              [],
+              [],
+            ],
+          },
+        ],
+        path === 'false'
+          ? { kind: 'not', requirement: { kind: 'always' } }
+          : {
+              kind: 'trait',
+              scope: 'field',
+              trait: 'unknown',
+              present: true,
+              provenance: {
+                stateSources: 'activeOnly',
+                ignoredStateTraits: 'exclude',
+                unremovableStateTraits: 'include',
+              },
+            },
+      );
+      const removal = effect('remove', null, [
+        {
+          kind: 'removeOcState',
+          route,
+          selector: ['positive'],
+          applicationRates: [
+            [1000, 1000],
+            [1000, 1000],
+            [1000, 1000],
+            [1000, 1000],
+            [1000, 1000],
+          ],
+        },
+      ]);
+      const servant = servantWithSkill([
+        resistance,
+        ocEffect('boost'),
+        ...(path === 'live' || path === 'false' ? [removal] : []),
+      ]);
+      if (path === 'terminal')
+        servant.noblePhantasmVariantGroups = servant.noblePhantasmVariantGroups.map((group) => ({
+          ...group,
+          variants: group.variants.map((variant) => ({
+            ...variant,
+            effects: [{ ...removal, timing: 'beforeDamage' as const }],
+          })),
+        }));
+      const initial = createPreNoblePhantasmState(servant, baseForm, context);
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      const used = reducePreNoblePhantasmAction(
+        servant,
+        initial.state,
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+        context,
+      );
+      expect(used.status).toBe(path === 'live' ? 'rejected' : 'applied');
+      if (path === 'live') expect(used.state).toBe(initial.state);
+      if (used.status !== 'applied') return;
+      const terminal = reducePreNoblePhantasmAction(
+        servant,
+        used.state,
+        { kind: 'executeAttackNoblePhantasm' },
+        context,
+      );
+      expect(terminal.status).toBe('applied');
+      if (terminal.status === 'applied')
+        expect(terminal.state.appliedActions.at(-1)?.ocUse?.effectiveOc).toBe(
+          path === 'false' ? 1 : 3,
+        );
+    },
+  );
+  it('retains a repaired OC proc input and rolls back the unresolved attempt', () => {
+    const probabilistic = ocEffect('probabilistic');
+    const grant = probabilistic.execution[0];
+    if (grant?.kind !== 'grantOcBoost') throw new Error('boost fixture required');
+    grant.cells[0][0]!.applicationRatePermille = 500;
+    const servant = servantWithSkill([probabilistic]);
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null } as const;
+    const missing = reducePreNoblePhantasmAction(servant, initial.state, command, context);
+    expect(missing).toMatchObject({
+      status: 'rejected',
+      code: 'preparationInputRequired',
+      state: initial.state,
+    });
+    if (missing.status !== 'rejected' || !missing.requiredInput) throw new Error('input required');
+    const repairedContext = {
+      ...context,
+      canonicalInputValues: { [missing.requiredInput.key]: 1 },
+    };
+    const repaired = reducePreNoblePhantasmAction(servant, initial.state, command, repairedContext);
+    expect(repaired.status).toBe('applied');
+    if (repaired.status !== 'applied') return;
+    expect(repaired.state.ocInputDefinitions).toEqual([missing.requiredInput]);
+    expect(repaired.state.ocState.boosts).toHaveLength(1);
+    expect(initial.state.ocState.boosts).toHaveLength(0);
+    const failedProc = reducePreNoblePhantasmAction(servant, initial.state, command, {
+      ...context,
+      canonicalInputValues: { [missing.requiredInput.key]: 0 },
+    });
+    expect(failedProc.status === 'applied' && failedProc.state.ocState.boosts.length).toBe(0);
+  });
+  it.each(['absent', 'between', 'after', 'removed', 'otherSource'] as const)(
+    'reads HP-dependent rate at use through commands: %s',
+    (position) => {
+      const rate = ocEffect('rate');
+      const original = rate.execution[0];
+      if (original?.kind !== 'grantOcBoost') throw new Error('boost fixture required');
+      const rateBase = {
+        route: original.route,
+        lifetime: original.lifetime,
+        stacking: original.stacking,
+        stateTraits: original.stateTraits,
+      };
+      rate.execution = [
+        {
+          ...rateBase,
+          kind: 'grantOcApplicationRate',
+          role: 'casterGrant',
+          sign: 1,
+          selector: 'positive',
+          cells: original.cells.map((row) =>
+            row.map(({ stages: _stages, ...cell }) => ({
+              ...cell,
+              amount: { kind: 'inverseHpLinear', basePermille: 0, bonusAtZeroHpPermille: 400 },
+            })),
+          ) as Extract<
+            MasterEffect['execution'][number],
+            { kind: 'grantOcApplicationRate' }
+          >['cells'],
+        },
+      ];
+      const hp = effect('hp', null, [
+        {
+          kind: 'resourceMutation',
+          resource: 'hp',
+          direction: 'loss',
+          unit: 'fixed',
+          recipient: position === 'otherSource' ? 'enemy' : 'sourceSelf',
+          subjectId: null,
+          amount: { kind: 'fixed', values: [[100], [], [], [], []] },
+        },
+      ]);
+      const removal = effect('remove', null, [
+        {
+          kind: 'removeOcState',
+          route,
+          selector: ['positive'],
+          applicationRates: [[1000], [], [], [], []],
+        },
+      ]);
+      const effects =
+        position === 'absent'
+          ? [rate, ocEffect('boost')]
+          : position === 'after'
+            ? [rate, ocEffect('boost'), hp]
+            : position === 'removed'
+              ? [rate, hp, removal, ocEffect('boost')]
+              : [rate, hp, ocEffect('boost')];
+      const servant = servantWithSkill(effects);
+      const hpContext = { ...context, attackerHpPermille: 500 };
+      const initial = createPreNoblePhantasmState(servant, baseForm, hpContext);
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      const result = reducePreNoblePhantasmAction(
+        servant,
+        initial.state,
+        { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+        hpContext,
+      );
+      expect(result.status).toBe(position === 'between' ? 'rejected' : 'applied');
+      if (result.status === 'rejected')
+        expect(result).toMatchObject({ code: 'unsupportedOcExecution', state: initial.state });
+      else expect(result.state.ocState.boosts).toHaveLength(1);
+    },
+  );
+  it('freezes NP OC, consumes the skill grant once, and leaves the NP-body grant unused', () => {
+    const servant = servantWithSkill([ocEffect('skill-oc')]);
+    servant.noblePhantasmVariantGroups[0]!.variants[0] = {
+      ...baseAttack,
+      effects: [{ ...ocEffect('np-oc'), timing: 'beforeDamage', gameActivation: 'npBeforeDamage' }],
+    };
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const skill = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    if (skill.status !== 'applied') throw new Error(skill.code);
+    const np = reducePreNoblePhantasmAction(
+      servant,
+      skill.state,
+      { kind: 'executeAttackNoblePhantasm' },
+      context,
+    );
+    expect(np.status).toBe('applied');
+    if (np.status !== 'applied') return;
+    expect(np.state.appliedActions.at(-1)?.ocUse).toMatchObject({
+      baseOc: 1,
+      effectiveOc: 3,
+      boostTotal: 2,
+    });
+    expect(np.state.ocState.boosts.map((instance) => instance.uses)).toEqual([
+      { kind: 'finite', remaining: 0 },
+      { kind: 'finite', remaining: 1 },
+    ]);
+    expect(np.state.npResource.gauge).toBe(0);
+    expect(
+      reducePreNoblePhantasmAction(
+        servant,
+        np.state,
+        { kind: 'executeAttackNoblePhantasm' },
+        context,
+      ),
+    ).toMatchObject({ status: 'rejected', state: np.state });
+  });
+  it('rolls back OC state for an unsupported non-resource sibling in the same command', () => {
+    const servant = servantWithSkill([
+      ocEffect('oc'),
+      effect('invalid-sibling', null, [
+        { kind: 'unsupported', route, reason: 'operationSemantics', damageRelevant: true },
+      ]),
+    ]);
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    expect(result).toMatchObject({ status: 'rejected', code: 'unsupportedOcExecution' });
+    expect(result.state).toBe(initial.state);
+    expect(result.state.ocState.boosts).toEqual([]);
+    expect(result.state.appliedActions).toEqual([]);
+  });
+  it('rolls back an OC grant with a later unsupported gauge mutation and permits retry', () => {
+    const servant = servantWithSkill([
+      ocEffect('oc'),
+      effect('bad', { kind: 'unsupported', recipient: 'sourceActor', family: 'unknown' }),
+    ]);
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const command = {
+      kind: 'useSkillSlot' as const,
+      slot: 1 as const,
+      skillLevel: 1,
+      choice: null,
+    };
+    const rejected = reducePreNoblePhantasmAction(servant, initial.state, command, context);
+    expect(rejected).toMatchObject({ status: 'rejected', state: initial.state });
+    expect(initial.state.ocState.boosts).toHaveLength(0);
+    const repaired = servantWithSkill([ocEffect('oc')]);
+    const retried = reducePreNoblePhantasmAction(repaired, initial.state, command, context);
+    expect(retried.status === 'applied' && retried.state.ocState.boosts.length).toBe(1);
+  });
+  it('applies CE at initialization and support only before terminal NP, with atomic failure', async () => {
+    const { preparationEffectSource } = await import('./preparationOc');
+    const servant = servantWithSkill([]);
+    const placeholder = createPreNoblePhantasmState(servant, baseForm, context);
+    if (placeholder.status !== 'applied') throw new Error(placeholder.code);
+    const ce = preparationEffectSource({
+      servant,
+      state: placeholder.state,
+      effect: ocEffect('ce', 'constant'),
+      origin: 'craftEssence',
+      sourceInstanceId: 'ce',
+      skillId: 'ce',
+      skillName: 'Craft essence',
+      valueSetIndex: 0,
+      valueIndex: 0,
+    });
+    const support = {
+      ...preparationEffectSource({
+        servant,
+        state: placeholder.state,
+        effect: ocEffect('support'),
+        origin: 'support',
+        sourceInstanceId: 'support',
+        skillId: 'support',
+        skillName: 'Support skill',
+        valueSetIndex: 0,
+        valueIndex: 0,
+      }),
+    };
+    support.effect = {
+      ...support.effect,
+      execution: support.effect.execution.map((operation) =>
+        operation.kind === 'grantOcBoost'
+          ? { ...operation, route: { ...route, target: 'partyMember' } }
+          : operation,
+      ),
+    };
+    const phases = { ...context, initialSources: [ce], terminalSources: [support] };
+    const initial = createPreNoblePhantasmState(servant, baseForm, phases);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    expect(initial.state.ocState.boosts).toHaveLength(1);
+    const failedState = { ...initial.state, npResource: { ...initial.state.npResource, gauge: 0 } };
+    expect(
+      reducePreNoblePhantasmAction(
+        servant,
+        failedState,
+        { kind: 'executeAttackNoblePhantasm' },
+        phases,
+      ),
+    ).toMatchObject({ status: 'rejected', state: failedState });
+    expect(failedState.ocState.boosts).toHaveLength(1);
+    const np = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'executeAttackNoblePhantasm' },
+      phases,
+    );
+    expect(np.status === 'applied' && np.state.appliedActions.at(-1)?.ocUse?.effectiveOc).toBe(5);
+  });
+  it('applies an external NP charge before freezing OC and rolls it back with the NP action', async () => {
+    const { preparationEffectSource } = await import('./preparationOc');
+    const servant = servantWithSkill([]);
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    const charge = effect('external-charge', null, [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'partyOther',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
+      },
+    ]);
+    const source = preparationEffectSource({
+      servant,
+      state: initial.state,
+      effect: charge,
+      origin: 'support',
+      sourceInstanceId: 'support',
+      skillId: 'support-skill',
+      skillName: 'Support skill',
+      valueSetIndex: 0,
+      valueIndex: 0,
+    });
+    const result = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'executeAttackNoblePhantasm' },
+      { ...context, terminalSources: [source] },
+    );
+    expect(result.status).toBe('applied');
+    if (result.status !== 'applied') return;
+    expect(result.state.appliedActions.at(-1)?.ocUse).toMatchObject({
+      gaugeBefore: 20000,
+      baseOc: 2,
+      effectiveOc: 2,
+    });
+    expect(result.state.npResource.gauge).toBe(0);
+    const invalid = { ...initial.state, selectedNoblePhantasmVariant: null };
+    const rejected = reducePreNoblePhantasmAction(
+      servant,
+      invalid,
+      { kind: 'executeAttackNoblePhantasm' },
+      { ...context, terminalSources: [source] },
+    );
+    expect(rejected).toMatchObject({ status: 'rejected', state: invalid });
+    expect(invalid.npResource.gauge).toBe(10000);
+  });
+  it('does not apply the terminal form passive retroactively', () => {
+    const servant = servantWithSkill([
+      effect('transition-effect', null, [
+        { kind: 'transformActorForm', route, targetFormId: changedForm },
+        { kind: 'selectNoblePhantasmVariant', route, variant: changedAttack.ref },
+      ]),
+    ]);
+    servant.passives = [
+      { ...servant.skills[0]!, id: 'passive', effects: [ocEffect('form-oc', 'constant')] },
+    ];
+    servant.actorFormGraph.forms[1]!.passiveIds = ['passive'];
+    const initial = createPreNoblePhantasmState(servant, baseForm, context);
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    expect(initial.state.ocState.boosts).toHaveLength(0);
+    const changed = reducePreNoblePhantasmAction(
+      servant,
+      initial.state,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    expect(changed.status === 'applied' && changed.state.ocState.boosts.length).toBe(1);
+  });
+});
+
+it('keeps an unread uncertain trait write without rejecting the preparation command', () => {
+  const writer = effect(
+    'uncertain-trait',
+    null,
+    [
+      {
+        kind: 'contextMutation',
+        mutation: 'addTrait',
+        scope: 'recipientState',
+        route,
+        trait: 'prepared-trait',
+        damageRelevant: true,
+      },
+    ],
+    {
+      kind: 'sourceQuantity',
+      quantity: 'battlePointRate',
+      subjectId: 'actor',
+      comparison: 'atLeast',
+      value: 1,
+    },
+  );
+  const servant = servantWithSkill([writer]);
+  const created = createPreNoblePhantasmState(servant, baseForm, context);
+  if (created.status !== 'applied') throw new Error(created.code);
+  const result = reducePreNoblePhantasmAction(
+    servant,
+    created.state,
+    { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+    context,
+  );
+  expect(result.status).toBe('applied');
+  if (result.status !== 'applied') throw new Error(result.code);
+  expect(result.state.uncertainContextWrites).toHaveLength(1);
+  expect(result.state.stateTraits).not.toContain('prepared-trait');
+  expect(created.state.uncertainContextWrites).toHaveLength(0);
+});

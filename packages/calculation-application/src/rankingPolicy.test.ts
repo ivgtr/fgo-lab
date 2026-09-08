@@ -39,7 +39,6 @@ describe('ranking comparison policy', () => {
             conditionalEffects,
           },
           master,
-          5,
         ),
       ),
     );
@@ -67,11 +66,8 @@ describe('ranking comparison policy', () => {
         { kind: 'setConditionalContribution', mode: 'satisfied' },
       ],
     ]);
-    expect(policies.map(({ startNpGaugeCandidates }) => startNpGaugeCandidates)).toEqual([
-      [10_000],
-      [10_000, 20_000, 30_000],
-      [10_000],
-      [10_000, 20_000, 30_000],
+    expect(policies.map(({ initialNpGauge }) => initialNpGauge)).toEqual([
+      10000, 10000, 10000, 10000,
     ]);
   });
 
@@ -163,6 +159,7 @@ describe('ranking comparison policy', () => {
 
   it('uses five complete policy executions as the canonical NP matrix oracle', () => {
     const conditions: Omit<RankingPolicyConditions, 'npLevelBasis'> = {
+      initialOvercharge: 1,
       population: DEFAULT_RANKING_POLICY_CONDITIONS.population,
       levelBasis: DEFAULT_RANKING_POLICY_CONDITIONS.levelBasis,
       classAffinity: DEFAULT_RANKING_POLICY_CONDITIONS.classAffinity,

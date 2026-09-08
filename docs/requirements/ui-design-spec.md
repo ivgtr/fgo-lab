@@ -1,15 +1,15 @@
 ---
 title: "FGO Lab UI設計仕様"
-document_version: "1.5.0"
+document_version: "1.5.1"
 status: "Active"
 approval: "approved"
-approved_at: "2026-09-05"
-updated_at: "2026-09-05"
+approved_at: "2026-09-06"
+updated_at: "2026-09-06"
 ---
 
 # FGO Lab UI設計仕様
 
-更新日: 2026-09-05
+更新日: 2026-09-06
 対象: 初回セットアップ、ホーム、所持・育成管理、概念礼装、支援条件、ダメージ計算、火力ランキング、育成計画、結果共有
 本仕様は、対象欄に記載した画面と操作の承認済み実装基準である。v1.5.0の§12と対応受入条件は2026-09-05に設計承認された。比較デモとoptions文書はローカルな検討履歴であり、実装要件として使用しない。
 
@@ -201,6 +201,10 @@ UI上で一つの「特攻バフ」へ合算しない。
 
 ## 9. 宝具レベル別結果
 
+resolved calculatorは初期OC1／2／3を選択し、開始NPと共通executorが導出した発動時OCを区別して表示する。
+新規計算の初期OCは1。capacityはcanonical NP resourceに従い、不正な直接入力をclampしない。
+manual計算は最終OC1〜5の直接指定を維持する。resolved requestに最終OCの別名入力を残さない。
+
 結果はNP1〜5を縦に並べる。同じ行に次の列を置く。
 
 1. 宝具Lv
@@ -305,6 +309,8 @@ noticeのheading、status、説明、buttonをDOM順に置き、buttonのaccessi
 - 対象: `全サーヴァント | 保有サーヴァント`。保有への切替は母集団だけを絞る。
 - レベル: `自然上限 | Lv.90統一 | 保有レベル`。
 - 宝具Lv: `NP1 | NP2 | NP3 | NP4 | NP5 | 保有宝具レベル`。
+- 初期OC: `1 | 2 | 3`、既定値1。capacity制約、宝具Lv変更command、保有混在時の扱いはranking requirements v0.10.2 §9.1に従う。
+  計算基準には選択初期OC、detailとcalculator引継ぎには開始NPと発動時OCを表示する。成立込みでも初期OCを自動変更しない。
 
 `保有レベル`と`保有宝具レベル`は保有サーヴァントでだけ有効にする。保有母集団でも自然上限／Lv.90統一と
 指定NPを選択でき、保存済みFou／skill Lvへは暗黙に切り替えない。対象切替時は行、controlの有効状態、件数、
@@ -653,3 +659,4 @@ R1は個人・非営利用途としてAtlas Academy由来のサーヴァント�
 | 1.4.0 | ダメージ計算、ranking、管理、育成計画、homeの承認済みUI基準 | approved 2026-08-24 | current product baseline | none |
 | 1.4.1 | portable calculation identityのversion／intent表示と明示的なreset／upgrade／invalid recoveryを追加（`UI-CALC-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07 | docs phaseはnone。implementationでcalculator context notice、focus、responsive artifactが変わる |
 | 1.5.0 | rankingの母集団、自然上限／Lv.90統一／保有レベル、指定NP／保有宝具Lvを独立controlへ変更し、寄与判定detailの表示境界を追加 | approved 2026-09-05: user confirmed the comparison labels and owned level／NP behavior | TSK-06.42、TSK-06.44、TSK-07 | ranking controls、summary、responsive／a11y fixtureが変わる。保存済みFou／skill Lvは反映しない |
+| 1.5.1 | 初期OC選択と発動時OCの表示を追加（RK-UI-001、UI-CALC-001） | approved 2026-09-06: user confirmed initial OC only and requested planning | TSK-06.48、TSK-07 | docs phaseはruntime不変。実装時はranking controls／summary／detail／calculator noticeとresponsive fixtureが変わる |

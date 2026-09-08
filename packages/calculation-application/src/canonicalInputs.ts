@@ -1,3 +1,5 @@
+import { OC_WORLD_TRAIT_INPUT_PREFIX } from '@fgo-lab/battle-execution';
+import { resolvedScenarioSchema } from '@fgo-lab/schema';
 import type { EffectProjection, ResolvedCanonicalInputSet } from '@fgo-lab/battle-execution';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type { CalculationResult, CalculationScenario } from '@fgo-lab/schema';
@@ -134,6 +136,31 @@ export function applyCanonicalInputCommand(
   const values = Object.fromEntries(
     Object.entries(scenario.canonicalInputValues).filter(([key]) => key !== command.key),
   );
+  if (command.key.startsWith(OC_WORLD_TRAIT_INPUT_PREFIX)) {
+    const fact: unknown = JSON.parse(command.key.slice(OC_WORLD_TRAIT_INPUT_PREFIX.length));
+    const assertion = resolvedScenarioSchema.shape.worldFactAssertions.element.parse({
+      decisionKey: command.key,
+      fact,
+    });
+    if (
+      assertion.fact.kind !== 'trait' ||
+      !assertion.fact.present ||
+      (command.value !== null && command.value !== 0 && command.value !== 1)
+    )
+      throw new TypeError('invalidOcWorldFactCommand');
+    return {
+      ...scenario,
+      canonicalInputValues: values,
+      worldFactAssertions: [
+        ...scenario.worldFactAssertions.filter((fact) => fact.decisionKey !== command.key),
+        ...(command.value === null
+          ? []
+          : [{ ...assertion, fact: { ...assertion.fact, present: command.value === 1 } }]),
+      ],
+    };
+  }
+  if (command.key === 'oc:hp:attacker')
+    return { ...scenario, attackerHpPermille: command.value, canonicalInputValues: values };
   return {
     ...scenario,
     canonicalInputValues:

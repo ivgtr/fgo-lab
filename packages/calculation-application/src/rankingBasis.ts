@@ -1,3 +1,5 @@
+import { initialOcAfterNpLevelChange, initialOcOptions } from './initialOc';
+import { DEFAULT_NP_RESOURCE_SEMANTICS } from '@fgo-lab/battle-execution';
 import {
   rankingSelectionSchema,
   rankingNpLevelSchema,
@@ -14,12 +16,25 @@ export type RankingSelectionResult =
   | { status: 'invalid'; reason: 'rankingSelectionInvalid'; detail: string };
 export function compileRankingSelection(value: unknown): RankingSelectionResult {
   const parsed = rankingSelectionSchema.safeParse(value);
+  if (
+    parsed.success &&
+    parsed.data.npLevelBasis.kind === 'specified' &&
+    parsed.data.initialOvercharge *
+      DEFAULT_NP_RESOURCE_SEMANTICS.noblePhantasmUse.baseOvercharge.gaugePerStage >
+      DEFAULT_NP_RESOURCE_SEMANTICS.capacityByNpLevel[parsed.data.npLevelBasis.npLevel - 1]!
+  )
+    return {
+      status: 'invalid',
+      reason: 'rankingSelectionInvalid',
+      detail: 'initialOcExceedsNpCapacity',
+    };
   return parsed.success
     ? { status: 'valid', selection: parsed.data as ValidatedRankingSelection }
     : { status: 'invalid', reason: 'rankingSelectionInvalid', detail: parsed.error.message };
 }
 export type RankingSelectionCommand =
   | { kind: 'reset' }
+  | { kind: 'setInitialOvercharge'; value: RankingSelection['initialOvercharge'] }
   | { kind: 'setPopulation'; value: RankingSelection['population'] }
   | { kind: 'setLevelBasis'; value: RankingSelection['levelBasis'] }
   | { kind: 'setNpLevelBasis'; value: RankingSelection['npLevelBasis'] }
@@ -33,10 +48,16 @@ export function applyRankingSelectionCommand(
   switch (command.kind) {
     case 'reset':
       return compileRankingSelection(DEFAULT_RANKING_POLICY_CONDITIONS);
+    case 'setInitialOvercharge':
+      return compileRankingSelection({ ...selection, initialOvercharge: command.value });
     case 'setPopulation':
       return compileRankingSelection({
         ...selection,
         population: command.value,
+        initialOvercharge:
+          command.value === 'all' && selection.npLevelBasis.kind === 'owned'
+            ? 1
+            : selection.initialOvercharge,
         levelBasis:
           command.value === 'all' && selection.levelBasis === 'ownedLevel'
             ? 'naturalLimit'
@@ -49,7 +70,18 @@ export function applyRankingSelectionCommand(
     case 'setLevelBasis':
       return compileRankingSelection({ ...selection, levelBasis: command.value });
     case 'setNpLevelBasis':
-      return compileRankingSelection({ ...selection, npLevelBasis: command.value });
+      return compileRankingSelection({
+        ...selection,
+        npLevelBasis: command.value,
+        initialOvercharge:
+          command.value.kind === 'specified'
+            ? initialOcAfterNpLevelChange(
+                selection.initialOvercharge,
+                DEFAULT_NP_RESOURCE_SEMANTICS,
+                command.value.npLevel,
+              )
+            : selection.initialOvercharge,
+      });
     case 'setClassAffinity':
       return compileRankingSelection({ ...selection, classAffinity: command.value });
     case 'setSelfBuffs':
@@ -79,7 +111,15 @@ export function resolveRankingBasis(
     servantId: servant.id,
     level,
     npLevel,
+    initialOvercharge: selection.initialOvercharge,
     levelSource: selection.levelBasis,
     npSource: selection.npLevelBasis.kind,
   };
+}
+
+export function rankingInitialOcOptions(selection: RankingSelection): readonly (1 | 2 | 3)[] {
+  return initialOcOptions(
+    DEFAULT_NP_RESOURCE_SEMANTICS,
+    selection.npLevelBasis.kind === 'specified' ? selection.npLevelBasis.npLevel : null,
+  );
 }

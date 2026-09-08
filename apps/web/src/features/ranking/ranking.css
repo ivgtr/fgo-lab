@@ -364,6 +364,11 @@
   background: var(--paper);
 }
 
+.ranking-contribution-decisions {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .ranking-detail-summary {
   grid-column: 1;
   grid-row: 1;
@@ -373,6 +378,7 @@
 
 .ranking-area-contribution,
 .ranking-effect-stacks,
+.ranking-contribution-decisions,
 .ranking-context-evidence,
 .ranking-execution-evidence,
 .ranking-issues,
@@ -607,7 +613,7 @@
   }
 
   .ranking-row-detail {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 0.7rem;
   }
 

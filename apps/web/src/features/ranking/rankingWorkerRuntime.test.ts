@@ -67,7 +67,7 @@ describe('ranking worker canonical runtime', () => {
     ).toBeNull();
   });
 
-  it('shares one six-condition cache identity and returns calculator-parity detail evidence', () => {
+  it('shares one seven-condition cache identity and returns calculator-parity detail evidence', () => {
     const calculate = vi.fn(calculateRankingPolicy);
     const detail = vi.fn(calculateRankingPolicyDetail);
     const runtime = createRankingWorkerRuntime({ calculate, detail });

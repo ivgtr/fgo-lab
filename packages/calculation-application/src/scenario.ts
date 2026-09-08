@@ -167,7 +167,7 @@ export function createDefaultResolvedScenario(
       npLevel,
       fouAtk: build?.fouAtk ?? 1000,
     },
-    overcharge: 1,
+    initialOvercharge: 1,
     targetContext: createDefaultTargetContext(servant.classId),
     attackerHpPermille: 1_000,
     battleState: { battlePointPhase: 0 },
@@ -308,6 +308,7 @@ function damageResolutionInputForNoblePhantasm(
   noblePhantasm: Extract<NoblePhantasmVariant, { kind: 'attack' }>,
   master: MasterDataSnapshot,
   attackerAtk: number,
+  effectiveOvercharge: number,
 ): DamageResolutionInput {
   const damage = noblePhantasm.damage[0];
   if (!damage) throw new TypeError(`attack_np_damage_missing:${servant.id}`);
@@ -332,8 +333,8 @@ function damageResolutionInputForNoblePhantasm(
           )
         : 0),
     npLevel: scenario.attacker.npLevel,
-    overcharge: scenario.overcharge,
-    npMultipliers: deriveNpMultipliers(damage, scenario.overcharge),
+    overcharge: effectiveOvercharge,
+    npMultipliers: deriveNpMultipliers(damage, effectiveOvercharge),
     damageFunction: { status: 'resolved', kind: damage.kind, ignoreDefense: false },
     cardType: noblePhantasm.card,
     classAttackRate: scenario.explicitOverrides.classAttackRate ?? classAttackRate(servant.classId),
@@ -380,6 +381,7 @@ export function resolveScenarioPreparationOutcome(
   scenario: ResolvedCalculationScenario,
   master: MasterDataSnapshot,
   preparation: CalculationPreparationOptions = {},
+  policy: ContributionApplicationPolicy = { kind: 'calculator' },
 ): ScenarioPreparationOutcome {
   const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
   if (!servant) throw new TypeError(`scenario_attacker_missing:${scenario.attacker.servantId}`);
@@ -399,6 +401,7 @@ export function resolveScenarioPreparationOutcome(
     servant,
     master.npResourceSemantics,
     preparation.initialNpGauge,
+    { master, policy },
   );
   const selected = formExecution.state.selectedNoblePhantasmVariant
     ? findNoblePhantasmVariant(servant, formExecution.state.selectedNoblePhantasmVariant)
@@ -428,14 +431,12 @@ export function resolveScenarioPreparationOutcome(
   return {
     status: 'executable',
     input: damageResolutionInputForNoblePhantasm(
-      {
-        ...scenario,
-        overcharge: Math.max(formExecution.state.baseOvercharge ?? 1, scenario.overcharge),
-      },
+      scenario,
       servant,
       selected,
       master,
       attackerAtk,
+      formExecution.state.ocState.receipts.at(-1)!.effectiveOc,
     ),
     formExecution,
   };
@@ -660,6 +661,21 @@ export function resolveScenario(
   );
 }
 
+function requiredInputsForResult(inputs: ResolvedCalculationInputCommon['requiredInputs']) {
+  return inputs.map(
+    ({ key, owner, label, description, minimum, maximum, step, effectOccurrenceIds }) => ({
+      key,
+      owner,
+      label,
+      description,
+      minimum,
+      maximum,
+      step,
+      effectOccurrenceIds,
+    }),
+  );
+}
+
 function resolvedCalculationResult(
   resolved: ResolvedCalculationInput,
   versions: VersionContext,
@@ -695,7 +711,7 @@ function resolvedCalculationResult(
       ? {
           ...common,
           status: 'inputRequired',
-          requiredInputs: resolved.requiredInputs,
+          requiredInputs: requiredInputsForResult(resolved.requiredInputs),
         }
       : {
           ...common,
@@ -718,7 +734,7 @@ function resolvedCalculationResult(
     ? {
         status: 'inputRequired',
         rows: [],
-        requiredInputs: resolved.requiredInputs,
+        requiredInputs: requiredInputsForResult(resolved.requiredInputs),
         effects,
         assumptions: calculation.assumptions,
         issues: [...calculation.issues, ...resolutionIssues],
@@ -803,6 +819,7 @@ function evaluateResolvedCalculation(
 }
 
 interface PreparedCalculationScenarioCommon {
+  master: MasterDataSnapshot;
   scenario: CalculationScenario;
   contributionPolicy: ContributionApplicationPolicy;
   preparation: CalculationPreparationOptions;
@@ -890,6 +907,7 @@ export function prepareCalculationScenarioWithPolicy(
   if (scenario.mode === 'manual')
     return {
       status: 'executable',
+      master,
       scenario,
       scenarioInput: scenario.manual,
       resolved: manualResolvedInput(scenario),
@@ -898,10 +916,11 @@ export function prepareCalculationScenarioWithPolicy(
       contributionPolicy,
       preparation,
     };
-  const base = resolveScenarioPreparationOutcome(scenario, master, preparation);
+  const base = resolveScenarioPreparationOutcome(scenario, master, preparation, contributionPolicy);
   if (base.status === 'invalid') {
     return {
       status: 'invalid',
+      master,
       scenario,
       resolved: invalidResolvedInput(base),
       orderedScenario: null,
@@ -913,6 +932,7 @@ export function prepareCalculationScenarioWithPolicy(
   if (base.status === 'rejected') {
     return {
       status: 'rejected',
+      master,
       scenario,
       resolved: rejectedPreparationResolvedInput(base),
       orderedScenario: null,
@@ -934,6 +954,7 @@ export function prepareCalculationScenarioWithPolicy(
   );
   return {
     status: 'executable',
+    master,
     scenario,
     scenarioInput,
     resolved: resolvePreparedOrderedScenario(
@@ -957,102 +978,25 @@ export function rematerializePreparedCalculationInputs(
 ): PreparedCalculationScenario {
   if (prepared.scenario.mode === 'manual' || scenario.mode === 'manual')
     throw new TypeError('prepared_resolved_scenario_required');
-  if (prepared.status !== 'executable')
-    return prepareCalculationScenarioWithPolicy(
-      scenario,
-      master,
-      prepared.contributionPolicy,
-      prepared.preparation,
-    );
-  if (!prepared.orderedScenario) throw new TypeError('prepared_ordered_scenario_required');
-  const canonicalInputs = resolveCanonicalInputValues(
-    prepared.orderedScenario.inputDefinitions,
-    scenario.canonicalInputValues,
-  );
-  const previousMissing = new Set(
-    prepared.canonicalInputs?.missingDefinitions.map(({ key }) => key) ?? [],
-  );
-  const nextMissing = new Set(canonicalInputs.missingDefinitions.map(({ key }) => key));
-  const preparationInputChanged = [...prepared.orderedScenario.preparationInputKeys].some(
-    (key) =>
-      prepared.canonicalInputs?.values[key] !== canonicalInputs.values[key] ||
-      previousMissing.has(key) !== nextMissing.has(key),
-  );
-  if (preparationInputChanged)
-    return prepareCalculationScenarioWithPolicy(scenario, master, prepared.contributionPolicy);
-  const orderedScenario: PreparedOrderedScenario = {
-    ...prepared.orderedScenario,
+  return prepareCalculationScenarioWithPolicy(
     scenario,
-  };
-  const inputsUnchanged =
-    prepared.canonicalInputs !== null &&
-    Object.keys(canonicalInputs.values).length ===
-      Object.keys(prepared.canonicalInputs.values).length &&
-    Object.entries(canonicalInputs.values).every(
-      ([key, value]) => prepared.canonicalInputs?.values[key] === value,
-    );
-  if (inputsUnchanged)
-    return {
-      ...prepared,
-      scenario,
-      orderedScenario,
-      canonicalInputs,
-      resolved: {
-        ...prepared.resolved,
-        trace: prepared.resolved.trace.map((item) => {
-          if (item.step !== 'canonical-input') return item;
-          const separator = item.detail.lastIndexOf(':');
-          const prefix = separator < 0 ? item.detail : item.detail.slice(0, separator);
-          const keySeparator = prefix.lastIndexOf(':');
-          const key = keySeparator < 0 ? prefix : prefix.slice(0, keySeparator);
-          return {
-            ...item,
-            detail: `${prefix}:${scenario.canonicalInputValues[key] ? 'explicit' : 'default'}`,
-          };
-        }),
-      },
-    };
-  return {
-    status: 'executable',
-    scenario,
-    scenarioInput: prepared.scenarioInput,
-    orderedScenario,
-    canonicalInputs,
-    resolved: resolvePreparedOrderedScenario(
-      scenario,
-      orderedScenario,
-      canonicalInputs,
-      executeOrderedScenario(orderedScenario, canonicalInputs, prepared.contributionPolicy),
-      prepared.resolved.terminalActorFormId!,
-    ),
-    contributionPolicy: prepared.contributionPolicy,
-    preparation: prepared.preparation,
-  };
+    master,
+    prepared.contributionPolicy,
+    prepared.preparation,
+  );
 }
 
 export function reapplyPreparedCalculationPolicy(
   prepared: PreparedCalculationScenario,
   policy: ContributionApplicationPolicy,
 ): PreparedCalculationScenario {
-  if (
-    prepared.status !== 'executable' ||
-    prepared.scenario.mode === 'manual' ||
-    !prepared.orderedScenario ||
-    !prepared.canonicalInputs
-  )
-    return prepared;
   if (JSON.stringify(prepared.contributionPolicy) === JSON.stringify(policy)) return prepared;
-  return {
-    ...prepared,
-    resolved: resolvePreparedOrderedScenario(
-      prepared.scenario,
-      prepared.orderedScenario,
-      prepared.canonicalInputs,
-      executeOrderedScenario(prepared.orderedScenario, prepared.canonicalInputs, policy),
-      prepared.resolved.terminalActorFormId!,
-    ),
-    contributionPolicy: policy,
-  };
+  return prepareCalculationScenarioWithPolicy(
+    prepared.scenario,
+    prepared.master,
+    policy,
+    prepared.preparation,
+  );
 }
 
 export function evaluatePreparedCalculationScenario(
@@ -1097,10 +1041,7 @@ export function calculateScenarioWithPolicy(
   preparation: CalculationPreparationOptions = {},
 ): CalculationExecution {
   return evaluatePreparedCalculationScenario(
-    reapplyPreparedCalculationPolicy(
-      prepareCalculationScenario(scenario, master, preparation),
-      contributionPolicy,
-    ),
+    prepareCalculationScenarioWithPolicy(scenario, master, contributionPolicy, preparation),
     versions,
   );
 }

@@ -1,3 +1,4 @@
+import type { OcExecutionOperation } from '@fgo-lab/master-data';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -39,8 +40,62 @@ function withProcResults(
   value: (minimum: number, maximum: number) => number,
   overcharge = 1,
 ) {
-  let scenario = { ...scenarioFor(servantId), overcharge };
-  let initial = calculateScenario(scenario, master, versions);
+  let scenario = scenarioFor(servantId);
+  let selectedMaster = master;
+  if (overcharge > 1) {
+    const template = master.craftEssences.find((ce) => ce.effects.length > 0)!;
+    const effect = {
+      ...template.effects[0]!,
+      id: 'oc-fixture',
+      occurrenceId: 'oc-fixture',
+      gameActivation: 'constant' as const,
+      proc: { kind: 'guaranteed' as const },
+      selection: null,
+      triggerScope: null,
+      inputDefinitions: [],
+      requirement: { recipient: 'sourceSelf' as const, expression: { kind: 'always' as const } },
+      execution: [
+        {
+          kind: 'grantOcBoost' as const,
+          route: {
+            target: 'sourceSelf' as const,
+            contributionScope: 'personal' as const,
+            eligibility: { kind: 'anyRecipient' as const, onMissing: 'unsupported' as const },
+          },
+          lifetime: 'constant' as const,
+          stacking: 'additive' as const,
+          stateTraits: ['positive' as const],
+          cells: [
+            [
+              {
+                stages: overcharge - 1,
+                applicationRatePermille: 1000,
+                turns: { kind: 'unlimited' as const },
+                uses: { kind: 'unlimited' as const },
+              },
+            ],
+            [],
+            [],
+            [],
+            [],
+          ] as Extract<OcExecutionOperation, { kind: 'grantOcBoost' }>['cells'],
+        },
+      ],
+    };
+    selectedMaster = {
+      ...master,
+      craftEssences: [
+        ...master.craftEssences,
+        { ...template, id: 'oc-fixture', effects: [effect] },
+      ],
+    };
+    scenario = {
+      ...scenario,
+      craftEssence: { craftEssenceId: 'oc-fixture', level: 1, limitBreak: 0 },
+      explicitOverrides: { ...scenario.explicitOverrides, craftEssenceAtk: 0 },
+    };
+  }
+  let initial = calculateScenario(scenario, selectedMaster, versions);
   expect(initial.result.status).toBe('calculated');
   let procControls = initial.effectControls.filter(
     ({ projection }) =>
@@ -64,7 +119,7 @@ function withProcResults(
     ...scenario,
     preNoblePhantasmPlan: [...commands, { kind: 'executeAttackNoblePhantasm' }],
   };
-  initial = calculateScenario(scenario, master, versions);
+  initial = calculateScenario(scenario, selectedMaster, versions);
   procControls = initial.effectControls.filter(
     ({ projection }) =>
       projection.proc.kind === 'singleRoll' || projection.proc.kind === 'independentRolls',
@@ -102,7 +157,7 @@ function withProcResults(
       key: input.key,
       value: value(input.minimum, input.maximum),
     });
-  return calculateScenario(scenario, master, versions);
+  return calculateScenario(scenario, selectedMaster, versions);
 }
 
 function np1Average(calculation: ReturnType<typeof calculateScenario>) {
@@ -170,9 +225,22 @@ describe('production probabilistic NP-before damage effects', () => {
     expect(invalid.result.requiredInputs).toHaveLength(1);
     expect(invalid.result.requiredInputs[0]).toMatchObject({
       key: input.key,
-      defaultValue: null,
-      defaultReason: null,
+      minimum: input.minimum,
+      maximum: input.maximum,
     });
+    expect(invalid.effectInputs.find((definition) => definition.key === input.key)).toMatchObject({
+      invalid: true,
+    });
+    const repaired = calculateScenario(
+      applyCanonicalInputCommand(scenario, {
+        kind: 'setCanonicalIntegerInput',
+        key: input.key,
+        value: input.maximum,
+      }),
+      master,
+      versions,
+    );
+    expect(repaired.result.status).toBe('calculated');
   });
 
   it('uses Caesar success count as the sole chip-active state', () => {

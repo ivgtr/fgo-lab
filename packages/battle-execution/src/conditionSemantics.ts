@@ -11,7 +11,7 @@ import { noblePhantasmVariantKey, type NoblePhantasmVariantRef } from '@fgo-lab/
 import { evaluateActivationRequirement } from './activationCondition';
 
 export interface IntrinsicAttackConditionFacts {
-  card: 'buster' | 'arts' | 'quick';
+  card: 'buster' | 'arts' | 'quick' | null;
   noblePhantasmVariant: NoblePhantasmVariantRef;
   attackerTraits?: ReadonlyMap<string, boolean>;
   activationFacts?: AnalyzedActivationFactSet;

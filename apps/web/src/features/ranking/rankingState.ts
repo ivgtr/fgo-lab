@@ -55,12 +55,21 @@ function nullableRarity(params: URLSearchParams): number | null {
 
 export function parseRankingUrlState(search: string): RankingUrlState {
   const params = new URLSearchParams(search);
-  const keys = ['rPopulation', 'rLevelBasis', 'rNpBasis', 'rAffinity', 'rSelf', 'rConditional'];
+  const keys = [
+    'rPopulation',
+    'rLevelBasis',
+    'rNpBasis',
+    'rOc',
+    'rAffinity',
+    'rSelf',
+    'rConditional',
+  ];
   const legacy = params.has('rMode') || params.has('rNp');
   const absent = keys.every((key) => !params.has(key));
   const complete = keys.every((key) => params.getAll(key).length === 1);
   const npToken = params.get('rNpBasis');
   const parsed = compileRankingSelection({
+    initialOvercharge: /^[1-3]$/.test(params.get('rOc') ?? '') ? Number(params.get('rOc')) : null,
     population: params.get('rPopulation'),
     levelBasis: params.get('rLevelBasis'),
     npLevelBasis:
@@ -113,6 +122,7 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
       'rNpBasis',
       conditions.npLevelBasis.kind === 'owned' ? 'owned' : String(conditions.npLevelBasis.npLevel),
     );
+    params.set('rOc', String(conditions.initialOvercharge));
     params.set('rAffinity', conditions.classAffinity);
     params.set('rSelf', conditions.selfBuffs);
     params.set('rConditional', conditions.conditionalEffects);
@@ -124,6 +134,7 @@ export function serializeRankingUrlState(state: RankingUrlState, currentSearch =
           'rPopulation',
           'rLevelBasis',
           'rNpBasis',
+          'rOc',
           'rAffinity',
           'rSelf',
           'rConditional',

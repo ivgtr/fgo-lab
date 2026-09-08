@@ -32,7 +32,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(44),
+  schemaVersion: z.literal(45),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -312,6 +312,7 @@ const fixedCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
     'friendshipLevel',
     'sourceHpPermille',
     'procSuccessCount',
+    'worldTraitPresence',
   ]),
   defaultValue: z.number().int().nullable(),
 });
@@ -360,7 +361,97 @@ const valuedExecutionFields = {
   limitBreakValueExpressions: modifierValueExpressionSetsSchema.optional(),
   semanticSupport: z.enum(['supported', 'unresolved']),
 };
+export const ocLifetimeLimitSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('unlimited') }).strict(),
+  z.object({ kind: z.literal('finite'), remaining: z.number().int().nonnegative() }).strict(),
+]);
+export const ocStateTraitSchema = z.enum(['positive', 'negative', 'grantSuccessUp']);
+const ocApplicationCellSchema = z
+  .object({
+    applicationRatePermille: z.number().int().nonnegative(),
+    turns: ocLifetimeLimitSchema,
+    uses: ocLifetimeLimitSchema,
+  })
+  .strict();
+const ocBoostCellSchema = ocApplicationCellSchema
+  .extend({ stages: z.number().int().min(1).max(5) })
+  .strict();
+const ocRateCellSchema = ocApplicationCellSchema
+  .extend({
+    amount: z.union([
+      z.object({ kind: z.literal('fixed'), value: z.number().int() }).strict(),
+      modifierValueExpressionSchema,
+    ]),
+  })
+  .strict();
+const ocCells = <T extends z.ZodType>(cell: T) =>
+  z
+    .tuple([
+      z.array(cell).max(10),
+      z.array(cell).max(10),
+      z.array(cell).max(10),
+      z.array(cell).max(10),
+      z.array(cell).max(10),
+    ])
+    .refine((sets) => sets[0].length > 0, 'oc_cells_missing');
+const ocGrantFields = {
+  route: canonicalEffectRouteSchema,
+  lifetime: z.enum(['constant', 'active']),
+  stacking: z.literal('additive'),
+  stateTraits: z.array(ocStateTraitSchema).min(1),
+};
+const ocExecutionOperationBaseSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('ocRemovalResistance'),
+      route: canonicalEffectRouteSchema,
+      cells: ocCells(ocRateCellSchema),
+      limitBreakCells: ocCells(ocRateCellSchema).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('grantOcBoost'),
+      ...ocGrantFields,
+      cells: ocCells(ocBoostCellSchema),
+      limitBreakCells: ocCells(ocBoostCellSchema).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('grantOcApplicationRate'),
+      ...ocGrantFields,
+      role: z.enum(['casterGrant', 'recipientResistance']),
+      sign: z.union([z.literal(1), z.literal(-1)]),
+      selector: z.literal('positive'),
+      cells: ocCells(ocRateCellSchema),
+      limitBreakCells: ocCells(ocRateCellSchema).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('removeOcState'),
+      route: canonicalEffectRouteSchema,
+      selector: z.array(ocStateTraitSchema).min(1),
+      applicationRates: canonicalValueSetsSchema,
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('ocStateNonIntersection'),
+      route: canonicalEffectRouteSchema,
+      proof: z.enum(['enemyRecipient', 'stateSelector']),
+    })
+    .strict(),
+]);
+export type OcExecutionOperation = z.infer<typeof ocExecutionOperationBaseSchema>;
+export const ocExecutionOperationSchema: z.ZodType<OcExecutionOperation> =
+  ocExecutionOperationBaseSchema;
+export type OcLifetimeLimit = z.infer<typeof ocLifetimeLimitSchema>;
+export type OcStateTrait = z.infer<typeof ocStateTraitSchema>;
+
 const effectExecutionOperationSchema = z.union([
+  ocExecutionOperationSchema,
   z
     .object({
       kind: z.literal('damageModifier'),
@@ -496,6 +587,7 @@ const effectExecutionOperationSchema = z.union([
       reason: z.enum([
         'contextReference',
         'operationSemantics',
+        'ocExecutionSemantics',
         'unresolvedTarget',
         'dependentResourceAmount',
         'partyCompositionMutation',

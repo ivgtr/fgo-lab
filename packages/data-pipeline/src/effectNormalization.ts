@@ -1,3 +1,4 @@
+import { isOcRateFunction, ocConditionParameterKeys } from './ocSemantics';
 import { normalizeNpStackQuantity, normalizeEffectStackInputs } from './stackQuantityNormalization';
 import type {
   ActorCountPredicate,
@@ -1388,6 +1389,7 @@ function classifyParameterSemantics(
   hasNormalizedConditionRouting: boolean,
   contextRecognizedKeys: readonly string[],
   referenceRecognizedKeys: readonly string[],
+  additionalConditionKeys: readonly string[] = [],
 ) {
   const keys = [
     ...new Set(parameterSets.flatMap((set) => set.flatMap((parameter) => Object.keys(parameter)))),
@@ -1400,6 +1402,7 @@ function classifyParameterSemantics(
   );
   if (sourceQuantityConditions.length > 0) conditionKeys.add('TriggeredTargetBattlePointRateRange');
   if (hasNormalizedConditionRouting) conditionKeys.add('FuncCheckTargetIndividualityTargetType');
+  for (const key of additionalConditionKeys) conditionKeys.add(key);
   const choiceKeys = new Set(
     choice?.family === 'actSet'
       ? ['ActSet', ...(keys.includes('ActSetWeight') ? ['ActSetWeight'] : [])]
@@ -1690,9 +1693,12 @@ export function normalizeFunctions(
       hasNormalizedConditionRouting,
       [...canonicalInput.recognizedKeys, ...canonicalOperationKeys],
       referenceRecognizedKeys,
+      ocConditionParameterKeys(fn, parameterSets),
     );
     let execution = normalizeExecutionSemantics({
       fn,
+      source,
+      traitNameById,
       parameterSets,
       valueExpressions: modifierValues.sets,
       cardTypes,
@@ -1794,13 +1800,24 @@ export function normalizeFunctions(
       unresolvedSemanticKeys.length > 0
     )
       execution = execution.map((operation) =>
-        operation.kind === 'damageModifier' ||
-        operation.kind === 'modifierRateChange' ||
-        operation.kind === 'ignoreDefense' ||
-        operation.kind === 'ignoreDamageCut'
-          ? { ...operation, semanticSupport: 'unresolved' as const }
-          : operation,
+        operation.kind === 'ocRemovalResistance' ||
+        operation.kind === 'grantOcBoost' ||
+        operation.kind === 'grantOcApplicationRate' ||
+        operation.kind === 'removeOcState'
+          ? {
+              kind: 'unsupported' as const,
+              route: operation.route,
+              reason: 'ocExecutionSemantics' as const,
+              damageRelevant: true,
+            }
+          : operation.kind === 'damageModifier' ||
+              operation.kind === 'modifierRateChange' ||
+              operation.kind === 'ignoreDefense' ||
+              operation.kind === 'ignoreDamageCut'
+            ? { ...operation, semanticSupport: 'unresolved' as const }
+            : operation,
       );
+    const rateSelector = isOcRateFunction(fn);
     const conditions = {
       recipient:
         (fn.overWriteTvalsList ?? []).length > 0
@@ -1830,7 +1847,12 @@ export function normalizeFunctions(
             ? ('all' as const)
             : buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
         traits: uniqueTraits([
-          ...signedTraits(fn.buffs?.[0]?.ckSelfIndv, traitNameById, false, stateCatalog),
+          ...signedTraits(
+            rateSelector ? [] : fn.buffs?.[0]?.ckSelfIndv,
+            traitNameById,
+            false,
+            stateCatalog,
+          ),
           ...scriptTraits.flatMap((entry) =>
             entry.buffType === 'upCommandall' &&
             fn.funcTargetType === 'self' &&
@@ -1842,7 +1864,12 @@ export function normalizeFunctions(
       },
       opponent: {
         operator: buffConditionOperator(fn.buffs?.[0]?.script?.checkIndvType),
-        traits: signedTraits(fn.buffs?.[0]?.ckOpIndv, traitNameById, true, stateCatalog),
+        traits: signedTraits(
+          rateSelector ? [] : fn.buffs?.[0]?.ckOpIndv,
+          traitNameById,
+          true,
+          stateCatalog,
+        ),
       },
       field: {
         operator: 'any' as const,

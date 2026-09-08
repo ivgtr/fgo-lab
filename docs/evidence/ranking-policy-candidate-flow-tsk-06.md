@@ -1,10 +1,782 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-06"
+updated_at: "2026-09-08"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
+
+## TSK-06.48 — initial OC and own OC boost closure (2026-09-08)
+
+Current sequence: **06.43 done → 06.48 done → 06.45 ready → 06.44 → 06.5 → 07**.
+Requirements v0.10.2 §4／9 own the approved product contract. This section owns the additional
+flow inventory and counterexamples; it supersedes the next-task statement in the historical
+06.43 approval below. Current implementation and verification are recorded in the 2026-09-08 section; earlier checkpoints below remain historical evidence.
+
+### 独立再レビュー承認・commit handoff（2026-09-08）
+
+独立再レビューの判定は **Approved**。PIR-001／002はreviewerがResolvedと判定し、
+scoped Blocking 0、追加の採用指摘なし。以下の実装中記録は履歴として保持する。
+レビュー正本: `/tmp/fgo-lab-review-tsk-06-48-20260908/review.md` のCurrent verdict。
+レビュー対象はHEAD `5faf7ec`＋TSK-06.48全152ファイルのworktreeで、commit準備時に全SHA256一致を確認。
+最終qualityは `.test-results/2026-09-08T04-05-59-492Z-15-5a229b` で成功
+（unit637／production119／Playwright26、247.59秒、skip／todo／retry／warning／unexpected console 0）。
+全80条件matrixと独立性能の再測定はせず、変更のない既存証拠を照合した。
+06.48をdone、06.45をreadyへ戻す。解除耐性の明示unsupportedと06.45の既存残存範囲は変更しない。
+
+### PIR-001／002 implementation delta（2026-09-08）
+
+レビュー判定はChanges required。以下は実装者の現在地であり、指摘のresolution／approvalは独立再レビューが所有する。
+PIR-001: `rankingBasis.applyRankingSelectionCommand`が容量でclampし、`initialOc.changeResolvedNpLevel`の
+OC1補正と分岐していた。前回はcalculatorのNP×OC表のみを修正し、両commandとowned→specifiedを
+同じ反例で比較していなかった。補正のownerをinitialOcへ統一し、UI→URL／workerまでを対象にする。
+PIR-002: `CalculatorRoute.regenerateHistory`がrequestだけを更新し、`portableDraft`→
+`finalizeHistory`のsession集約writerへ旧sessionを渡していた。前回のmigration／replay検証は
+再生成→draft→共有／離脱確定のwriteを含んでいなかった。通常履歴copyと再生成の新session開始を
+portableDraftで共有する。reset／scenario編集は同じsessionを維持する別commandである。
+
+| Changed path / counterexample | Current status |
+| --- | --- |
+| calculator／ranking指定NP変更・owned→specified：NP5/OC3→NP2/3/4はOC1、合法OCは保持 | Verified: initialOc command parity fixture |
+| UI再表示→URL／worker、population→all／reset、直接不正requestと保有混在 | Verified: UI／URL／worker fixtures、既存rankingBasis／schema tests |
+| current／historicalOnly履歴選択×未確定／共有確定済みsession×共有／離脱finalizer | Verified: CalculatorRoute.history integration matrix |
+| 再生成不可／保存失敗→既存draft・workspace・session保持、旧履歴不変 | Verified: missing subject／missing level route、portableDraft保存失敗fixture |
+| 全80条件matrix／独立compile性能再測定 | N/A: command補正とsession identityのみ。既存証拠を保持しquality内production digest／parityで確認 |
+
+実装者検証: 修正前にPIR-001のOC2とPIR-002のsession再利用を追加fixtureで再現した。
+修正後focused25／unit637成功。`initialOcAfterNpLevelChange`が補正を共有し、
+`startPortableDraft`が保存成功後だけworkspace／sessionを公開する。通常履歴のsource=historyと
+同一fingerprintの連続履歴集約は既存どおり。Appの通常navigation／rankingHandoffは既に新sessionを
+発行する別producerで、今回の修正は不要（既存handoff／startup testsをqualityで確認）。
+最終`pnpm quality`成功: `.test-results/2026-09-08T03-58-37-257Z-15-d266cd`。
+unit637／production119／Playwright26、warning・unexpected console・retry 0。
+unit再確認は `.test-results/2026-09-08T03-56-54-889Z-15-997719`（637 tests）。
+履歴test harnessはrender途中でなくcommit後のstateを観測し、登録finalizerの更新を待つ。
+既存production digest／raw／master／80条件と性能証拠は変更なし。
+実装者statusは`ready-for-re-review`。resolution／approvalは独立`$post-implementation-review`が所有し、
+Taskはin_progress、06.45はblockedに維持する。
+
+### 実装引継ぎの再評価（2026-09-08）
+
+今回の完了依頼で過去の保留を解除。専用OC IR、executorのinstance／NP-use receipt、初期OC intentは
+利用者の比較・再現目的に一致するため維持する。新しいHP実行モデルや探索軸は追加しない。
+準備の不確定writeは実際のreaderとの交差で判定し、通常projectionはcommit済み成否を再解釈しない。
+全経路parity、production差分・性能と最終qualityを確認し、06.48を完了した。
+
+追加確認: portableの固定basis validatorが成立込みHP witnessまでHP100%へ限定していた。
+過去の監査は一例の基点再現に留まり、同じquantity producerが書くBattle Pointを含む
+通常／成立込み×calculator／portableの契約を閉じていなかった。通常policyでは固定値を検証し、
+成立込みではschema検証済みのquantityを共通executorへ渡す。選択candidateの最大性をportableで
+再探索する要件はなく、保存したcanonical入力とpolicyの再実行が責務である。
+NP5・初期OC3→NP2変更でresolved calculatorがOC2へclampする差も確認した。
+§9.1の明示command補正はOC1なので、利用可能な値の維持／容量不足時OC1をapplicationで統一する。
+反例と全80条件production matrixで確認した。
+
+実経路の追加検証: OC sourceのskillNameに内部IDを渡していたため、sourceを解決する既存commandから
+表示名を必須で渡す。receiptとWeb共通presentationの責務を変えず、生成時の根拠を修正した。
+性能監査ではcommand内の同一stateに対するcondition factsを共有し、pure damage sourceの不要な
+preparation input解決、単一OC cellの不要なoperation重複排除を削除した。
+状態変更時はfactsを再構築し、policy変更・入力修正では元requestから再prepareする契約を維持する。
+各変更前後でproduction digest／小domain oracleを照合した。表示名修正だけはreceiptを含む
+semantic keyを変えるためdigestが変わり、damage input／outcome差はない。
+
+### Canonical checkpoint（2026-09-08 02:55 UTC、開始から約60分）
+
+- 現在の結果: 初期OC intent／自前OC shared executionとUI cutoverを接続済み。全qualityは一度成功。
+  80条件監査は53条件・21,363 selected resultsまで完了し、calculator／portable再現差分0。
+- 変更family: OC grant／rate／lifecycle／NP-use receiptと直接のapplication・保存・UI経路。
+  残存trigger／dependent resourceは06.45に維持し、新しいsemantic familyへ着手しない。
+- 検証済み証拠: 下記IR／EXEC／APP／IDENTITY/UI、production119、unit621、Playwright26。
+  default calculator420/422、ranking393/433、raw4 digest不変。性能増加はshared preparationと
+  OC-dependent candidate増加をCPU profileで分解済み。最新3回計測をmatrix後に確定する。
+- 次のaction: 実行中の `.test-results/tsk-06-48-a5/completed-matrix` を80条件まで完了し、
+  canonical input差分・性能を既存正本に反映、最終qualityで完了判定する。
+  実行HEADは`5faf7ecdbffcbe0c90d98e8a39f1e5b7ef4ef28d`、挙動比較baselineは`c555e4f`。
+  間の2 commitsはagent運用文書。ユーザーの未commit差分を保持し、stage／commitなし。
+
+### 検証証拠とclosure（2026-09-08）
+
+状態別matrixの`Verified`は以下の証拠群を参照する。productionに存在しない組合せは
+schema-legal fixtureで閉じ、全profileの数値化とは区別する。
+
+- **IR**: `packages/data-pipeline/src/ocSemantics.test.ts`、`productionAudit.test.ts`、
+  `packages/calculation-application/src/productionMasterInventory.test.ts`。raw OC167 occurrences／632 cells、
+  公開boost97・rate grant29・remove75・nonintersection131・resistance60を共有inventoryで確認。
+  rate grant868 cells／resistance514 cellsのうちCE LB継承3 cellsをrawとの対応に含める。
+  lifecycle199＋既存context writer7、HP依存rate1 effect／25 cellsを全体分類に保持する。
+- **EXEC**: `packages/battle-execution/src/ocState.test.ts`、`ocSourceProgram.test.ts`、
+  `preparationTransaction.test.ts`。NP-useでのcell固定、capでも全参加count消費、constant lifetime、
+  HP→rate query、条件・recipient・selector、同一command rollbackと次のcommandへの汚染防止を検証。
+- **APP**: `packages/calculation-application/src/ocExecutionParity.test.ts`、`ocCandidateOracle.test.ts`、
+  `initialOc.test.ts`、`rankingBasis.test.ts`。policy再適用・input修正・portable replayを同じ入口へ戻し、
+  不正capacity拒否、明示commandのOC1補正、混在保有、OC-dependent quantityの有限oracleを検証。
+  HP／Battle Point witnessは成立込みで再現し、通常basisへ偽装したrequestは拒否する。
+- **IDENTITY/UI**: schema／portable／migration／workerの既存suiteとPlaywright E2E-051。
+  resolved初期OC1〜3とmanual最終OC1〜5、初期／発動時OC表示、desktop／390px／320px、keyboard、
+  NP／population command、reset、old-only／canonical-only／mixed payload、stale worker拒否を検証。
+- **PRODUCTION**: `packages/calculation-application/scripts/audit-oc-matrix.ts`を一回のmaster parseで実行。
+  自然上限／Lv90×四policy×NP1〜5×合法初期OCの80条件で、選択された全calculated結果について
+  calculator／portableのcomplete input・damage result・applied actions（NP-use receiptを含む）を比較する。
+  profile全体のunsupportedにはportable candidateが存在しないため、outcome理由を全数記録し、
+  recovery／invalid／inputRequiredの経路は上記EXEC／APPの反例で検証する。
+  80/80条件、32,640 selected results、input／result／receipt parity差分0で完了。
+
+最初の全`pnpm quality`は `.test-results/2026-09-08T02-20-57-156Z-15-e38f5e` で成功。
+unit621／production119／Playwright26、warning・unexpected console・retry 0。
+最終matrix・性能証拠と不要引数の整理を含む最新差分も、
+`.test-results/2026-09-08T03-10-01-607Z-15-c1fff1` の最終`pnpm quality`で成功（234.64秒）。
+unit621／production119／Playwright26、skip・todo・retry・warning・unexpected console 0、
+artifact integrity errors 0。06.48の全scoped pathはVerifiedまたは理由付きN/A、Blocking／Task内Deferred 0。
+残存production unsupportedの数値化は06.45の既存受入条件であり、本Taskの延期へ読み替えない。
+
+### Production差分と06.45へのbaseline（2026-09-08）
+
+[機械可読の差分証拠](oc-execution-diff-tsk-06-48.json)にraw／master digest、canonical before/after
+inputとrule、NP5独立選択差分、全80条件summaryと非数値outcomeの全profile・理由を保持する。
+全34,640 profile outcomesはcalculated32,640／unsupported1,960／unavailableUnderPolicy40、
+invalid／inputRequired 0。後者40件は自バフ除外時のtransform後NP不足であり、到達性の結果を維持する。
+
+master `20260906.03`、master schema45／portable schema38／engine33。
+master SHA-256は`65add07d7b3c81927fd147e632ceea0c22ed0f7cb7f95079db4c6fc750ed6098`。
+raw4件はA0と同一。default（自然上限・自バフ込み・通常・NP1・初期OC1）は
+calculator420/422 calculated、ranking393/433 calculatedで件数不変。
+canonical NP identityのcutoverを対応付けた433 profilesで、calculatorの完成input差28件
+（OC関連27、negative target state1）、rankingの完成input差17件を確認した。
+入力差にはeffective OCのみ変わりdamageが変わらない場合も含む。
+2301100のexclusive-state根拠によるattack buff差と、OC／NP buff差を別ruleで保持する。
+
+自然上限・自バフ込み・初期OC1で、独立最適化NP5とNP1採用scenarioのNP5列は
+通常7件／成立込み6件で異なる。これは同じNP5値であっても採用program／effective OC／完成inputが
+異なるためであり、列cacheで代用しない。旧NP5 baselineは開始gaugeの暗黙探索を含むので、
+新しい初期OC1／2／3と比較するときは条件変更と意味論変更を分ける。
+
+06.45は未着手。通常NP1の40 unsupportedは`unsupportedActionAdmission`、calculatorの2件は
+既存HP／Battle Point境界。成立込みNP1では40 admission＋8 finite-domain上限＋4 executionで
+52 unsupported（381 calculated）。finite-domainの未知最大を4096で打切って数値化しない。
+NP5・初期OC1では追加actionが到達可能になるため、通常は3 ambiguous condition＋1 HP＋1
+attack-NP unavailable、成立込みは5 ambiguous conditionが追加される。
+これらの5 profilesは401300／500400／702500／2300600／2800600で、IDは証拠索引だけに使用する。
+NP5・初期OC3ではこの追加5件は消える。OCの未解釈fallbackではなく、既存execution制約が
+実行可能なactionに現れた結果であり、全attack closureを受入条件とする06.45へ現在値を渡す。
+同Taskの着手時は、このpolicy／NP／初期OC付きbaselineとproducer／reader／recoveryを照合する。
+
+### 性能の確定（2026-09-08）
+
+同じdefault shared audit commandを、`c555e4f` archiveと現行worktreeで各3回、他のsuite／matrixと
+重ねず測定した。archive内のworkspace importを維持し、dependency installは行わない。
+
+| 測定対象 | before | after | 判断 |
+| --- | --- | --- | --- |
+| shared compile中央値 | 5,545.516 ms | 6,924.666 ms | +24.87%。OC全cellsのdependency解析、準備condition／instance／receiptの新実行と候補増を含む |
+| 同3回のcompile | 5,383.706／5,545.516／5,593.532 ms | 6,565.907／6,924.666／7,404.706 ms | 全回同一default digest・counters、測定対象を変更しない |
+| affected production suite | A0 37.94 s | 初回full quality 39.731 s／最終31.163 s | 同suiteのgate時間を併記。hot-pathは上の独立3回計測で判定 |
+| default candidate／damage request／distinct input | 1,936／1,924／1,298 | 2,153／2,096／1,329 | OCの間接寄与による追加候補。requests +8.94%、distinct +2.39% |
+| preparation generated／deduplicated | 6,360／3,949 | 6,364／3,958 | ordered準備の母集団増は限定的 |
+
+CPU sample比較はshared compile 4,745.773→6,382.127 msの測定で、追加costが
+preparation facts／OC receiptとOC全cell dependency解析に現れることを確認した。
+これは最終3回計測とは別の診断であり、sample時間をwall timeへ厳密加算しない。
+同一command内facts共有、pure damage sourceの不要準備入力解決削除、単一OC cellの重複排除省略により
+正しい実行を保ったまま追加costを縮小した。初期gauge探索軸を復活させるcache／shortcutは導入しない。
+
+candidate上限4096、実行可能な最大space3840、static programs7,255／profile最大60、
+preparation actions最大4／states最大56は不変。8 finite-domain unsupportedを隠すための上限緩和もない。
+測定可能なhot-path増は残るが、上記の追加実行とwork countersに対応しており、一般battle simulatorや
+別の最適化Taskへ範囲を広げない。raw／master／caseを変えて性能改善と見せる比較は行っていない。
+全80条件の時間は機械証拠へ保持し、旧40条件の暗黙gauge探索の合計時間とは直接比較しない。
+
+### Step 2 A0 baseline and execution stop (2026-09-06)
+
+更新Step 1は利用者承認済み。開始HEADは`c555e4ff9a208f8da01e56130fbd49e63848e192`、
+raw4件と公開masterのSHA-256は下記Step 1基点と全件一致。worktreeは計画文書6件だけが変更済みで、
+その変更を保持した。承認済みのresolved初期OC1〜3／manual最終OC1〜5をrequirements §9.1とUI spec §9へ明記した。
+本節の追加Blockingは、下記に履歴として保持するStep 1の「未決定0」という判定を更新する。
+
+A0で計測済み:
+
+- `pnpm test:diagnostic -- packages/calculation-application/src/productionAudit.test.ts`を3回実行。
+  test時間7.528／7.524／7.623秒（中央値7.528秒）、shared compile時間5.520／5.641／5.619秒（中央値5.619秒）。
+  runner全体時間10.00／10.07／10.02秒。これはcalculator＋default rankingの共有auditであり、
+  ranking単独時間や全四policy／全NP条件の計測とは呼ばない。
+- 3回ともaudit digest `8b487c1c5d5fae1a4be95652f846cb89226322cece373006db72a5f0b1091816`。
+  generated preparation states6,360／deduplicated3,949、damage requests1,924／distinct inputs1,298。
+  calculator422件中420 calculated／2 unsupported、ranking433 profiles中393 calculated／40 unsupported。
+  master read／parse／compile各1回。既存default policy・NP1・開始100%の変更前baselineである。
+- artifacts: `.test-results/2026-09-05T20-59-22-969Z-15-873d29`、
+  `.test-results/2026-09-05T21-00-03-768Z-15-0b67c3`、
+  `.test-results/2026-09-05T21-00-50-634Z-15-211251`。
+  各`production-audit-calculation-application.json`にcanonical damage inputs／outcomes／countersを保持。
+- `pnpm test:production`: 24 files／119 tests成功、37.94秒、warnings0。
+  artifact `.test-results/2026-09-05T21-01-35-778Z-15-38e0ab`。
+- 再現可能なraw／published inventory command:
+  `node packages/data-pipeline/scripts/audit-oc-planning-baseline.mjs`。
+  artifact `.test-results/tsk-06-48-a0/oc-inventory.json`はHEAD／worktree／入力digest／各source path／
+  raw selector metadata／通常・LB cellsを保持する。raw OC167件／632 cells、公開OC97件、
+  lifecycle writer199件、positive application rate modifier29件は計画と一致。
+
+**OC-RATE-HP-001 — rate prerequisiteのHP依存reader（停止時点の記録／計画補足で解消）**
+
+以下のBlocking表記は停止時点の履歴。利用者確認後のcontinuation contractが現在の分類を上書きする。
+製品仕様の再承認事項ではなく、既存HP依存判定をrate利用時へ接続する実装項目として継続する。
+
+1. 発生機構［確認済み］: 29 rate effectsのうち公開1 effect／25 cellsが`Value=0, RatioHPLow=400`を持つ。
+   occurrenceは`servants[10].noblePhantasmVariantGroups[1].variants[0].effects[0]`、
+   actor101300／NP101302／effect946:0、`timing=beforeDamage`。
+   同じfuncId946の別skill occurrenceは公開cellsが固定200であり、funcIdだけのraw joinではこの差を判定できない。
+   上記auditは公開occurrenceのcellsからHP依存1件を数え、rawの同ID別variantを混入しない。
+2. 実装とのズレ［確認済み・推論を分離］:
+   `data-pipeline/src/effectNormalization.ts:normalizeModifierValueExpressions`はこの形を既存の
+   `inverseHpLinear`へ変換できる。しかし`executionSemantics.ts:normalizeExecutionSemantics`の
+   rate effectは`stateMutation`へ落ちるため、公開executionに量expressionは残っていない［確認済み］。
+   `battle-execution/src/resourceSemantics.ts:operationReadsResource`はcondition、NP special dependency、
+   addModifier expressionだけを読む。`closeResourceMutationSemantics`は後続readerがなければ
+   HP writerを`noDamageReader`へ変える。準備側`preparationContracts.ts`はHPをcontext値として持つが
+   mutable resource stateはNPだけである［確認済み］。
+   rateを準備側へ移して固定adjustmentへ焼くと、HP→rate→OCの読取時点とsuffix proofが欠落する［推論］。
+3. 検出漏れ［確認済み］: 更新Step 1は29件のselector／clamp前Rate／付与・解除を閉じたが、
+   rateの**量expression**別inventoryとHP writer→rate query→OC grantの反例がなかった。
+   A0への延期事項として元から残していたものではなく、今回のoccurrence別artifact化で確認した追加境界である。
+4. 再発範囲／最小guardrail［推論］: rate prerequisiteのfixed／inverseHpLinear／hpRangeLinearと、
+   own／external source、grant時／query時、HP writerの前後、rollback／retry。
+   pipelineは既存typed expressionをlosslessに保持し、source programのresource-read proofはrate queryも対象にする必要がある。
+   full HP simulatorを追加する根拠にはしない。liveで未表現のHP writerをtyped unsupportedへ閉じる境界と、
+   HPが不変の場合のrate evaluationを確定してからA1／A2a〜c／A3へ一括反映する。
+
+読取時点の根拠は既存`battle-execution/src/projection.ts:resolveModifierValue`の現在HPによるexpression評価と、
+Step 1で参照した公開実装の
+[BuffData.getParam](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/buff.dart#L283)
+（query時のowner HP読取）。ゲーム内の独立実測とは区別する。
+
+追加反例: canonical rate expression `{kind:inverseHpLinear, basePermille:0, bonusAtZeroHpPermille:400}`、
+OC base application rate1000、recipient resistance200。HP500permilleならadjustment200で実効率1000、
+HP1000permilleならadjustment0で実効率800となる。rate grant後／OC grant前にHP gainがあるprogramで、
+grant時の200を固定すると確定成功に化ける。HP writerを実行できない現行bounded resourceモデルでは、
+この経路を成功扱いにせずunsupportedへ接続する必要がある。HP writerなし、readerより後のwriter、
+rate解除後、外部source HP不明、command拒否後retryも同じ反例familyへ含める。
+
+| Changed path | Status |
+| --- | --- |
+| pipeline rate amount expression → preparation rate query → HP resource suffix proof → OC outcome／rollback | Blocking: OC-RATE-HP-001。固定値に潰さないread contractとunsupported境界を計画へ反映する必要がある |
+| 公開HP依存rateの当該NP OCへの影響 | N/A: このeffectはNP-use OC確定後のNP-before。現在のOCを遡及して変えない。production damage差分は未観測 |
+
+停止時点でA0全条件matrix／writer分類の共有gate化は未完了、A1〜A5は未着手。
+製品コード・master・schema versionは変更していない。上記audit scriptと正本文書のみを変更した。
+`pnpm quality`はphase未完了のため未実行。Done gateやruntime closureの成立は主張しない。
+停止時の文書検証は`pnpm test:docs`（6 tests＋integrity）と`git diff --check`が成功。
+06.45の既存trigger／dependent resource問題は未変更で、開始値の更新は06.48完了後に行う。
+
+### OC-RATE-HP-001 continuation contract（利用者確認後）
+
+上の停止記録は履歴として保持する。既存モデル内の依存判定不足として継続し、製品仕様の再承認を要求しない。
+rate量expressionは付与時に固定せず、OC付与に使う時点で評価する。不変HPを証明できれば計算し、
+結果に影響する未表現HP writerは既存resourceSemanticsと同じunsupported、修正可能なHP不足はinputRequired。
+rate付与operationだけをHP readerにしてはならず、active rate instanceの利用位置まで依存を追う。
+新しいHP実行モデルは追加しない。
+
+| State × path | Expected outcome | Status |
+| --- | --- | --- |
+| rate付与 → HP変更 → OC付与 | 利用時までにHP不変を証明できずunsupported、command rollback | Verified: EXEC / APP |
+| HP変更なし／最後のrate利用後のHP変更 | 利用時の不変HPでrate評価。後続readerなしwriterは既存規則 | Verified: EXEC / APP |
+| rate解除 → HP変更 → OC付与 | 除去済みrateのHP依存を復活させない | Verified: EXEC / APP |
+| 別sourceのHP／不足input | source identityを分離し、修正可能な不足はinputRequired | Verified: EXEC / APP |
+| rollback／retry | HP依存汚染・instance・receiptを同時復元 | Verified: EXEC / APP |
+| candidate admission／reduction | HP→rate利用→OC outcomeを共有依存へ接続 | Verified: APP |
+
+Current classification: OC-RATE-HP-001の計画補足はVerified、runtimeは上表のDeferred。Blocking 0。
+再停止は既存outcome／所有境界で閉じられず、新しいHP実行モデルまたは製品判断が必要と具体的に判明した場合だけ。
+
+### 利用者指示による整理時点（2026-09-06、追加実装を保留）
+
+利用者の「整理が終わったら実装まで行かずに一度情報をまとめよう」に従い、追加の製品／testコード変更を停止。
+全条件監査も中断し、途中manifestを保持した。これは新しい仕様問題による実装停止でもphase完了でもない。
+HEADはc555e4ff、local master .03のSHA-256は65add07d7b3c81927fd147e632ceea0c22ed0f7cb7f95079db4c6fc750ed6098。
+未commit変更は保持し、stage／commitなし。
+
+- 確認済み: read-point反例100 tests、6 source phaseの付与成否→damage reader／portable replay 11 tests、
+  NP1採用scenarioのNP5列とNP5再最適化を区別するoracleを含む2 tests、responsive／keyboard／command／reset E2E 11 tests。
+  詳細artifactは下のcheckpointおよび `.test-results/2026-09-06T10-04-37-982Z-16-dfd85e`。
+- 全条件監査: `.test-results/tsk-06-48-a5/readpoint-matrix/manifest.json`の12／80条件まで採取。
+  この範囲のcalculator比較は一致。成立込み2条件のportableで各5 profiles、計10件の`ranking_basis_invalid`を記録。
+  5 profiles全体の基点再現は未確認で、202500の1反例だけが下記の`baselineReproducedUnchanged`。
+  中断した監査は成功扱いにしない。
+- 最新unit全体は615成功／1失敗（2026-09-06T10-02-13-431Z-16-c6b9af）。失敗は、未読trait writeを即時拒否する旧fixtureの期待。
+  意味を保つunknown NP lossのfixtureへ修正し、scenario focusedは成功したが、全unitの再実行は未実施。
+  最新lintはtestコードの型付きfixture／matcherに4 errors（warnings 0）、未修正。
+- Production focusedはinventory／candidate digest等の期待差分が残る。OC加算のinput差分27件と、敵negative state追加1件を
+  `.test-results/tsk-06-48-a5/calculator-canonical-input-delta.json`へ保存。204300のQuick buff脱落は解消済み。
+  数値・outcome差分の最終承認証拠とratchet整合は未完了。
+- 未検証: 全経路parity、残りのstate-by-path、最終production inventory、候補／suite／hot pathのbefore-after、最新変更の全体検証。
+  `pnpm quality`は未実行。Task Done gate／Task内Deferredは閉じない。
+
+### Portable HP basis診断の帰属（A5監査中、未解決）
+
+`included:satisfied / naturalLimit / NP1 / 202500`のHP0候補はrankingとcalculatorが計算可能だが、portableが
+`scenarioInvalid: ranking_basis_invalid`となる。指定基点c555e4ffの隔離archiveで同じcommandを実行し、
+同じHP0・同じ拒否を再現した。分類は`baselineReproducedUnchanged`。現行master .03/schema38/engine33と
+基点master .01/schema37/engine32の差はOC切替に伴うもので、HP固定validatorの拒否条件は同じ。
+証拠: `.test-results/tsk-06-48-a5/portable-basis-attribution.json`。
+この比較は全profileの不変性を証明しない。06.48の変更によるdamage差分へ混ぜず、既存HP witnessの
+portable basis契約の独立した引継ぎ候補として残す。A5の全経路parity gateは未成立のまま保持する。
+
+### Step 2 implementation checkpoint（A0／A1とA2接続用fixture）
+
+以下は中間検証であり、Step 2の完了記録ではない。現在はlocal公開master .03（schema45）、payload schema38、engine33、
+calculator／ranking／portable／UIの切替を実装済み。HEADは基点c555e4ffのまま、既存の未commit計画変更を保持する。
+以下のdraft段階の診断・停止履歴は保持し、解決済み原因と最新の未検証項目を区別する。
+最新証拠: read-point反例100 tests成功（2026-09-06T09-53-42-457Z-16-2fba76）、
+skill／terminal NP／passive／CE／support／mysticCodeの付与成否からdamage readerまでのparity 11 tests成功
+（2026-09-06T09-58-16-649Z-16-9b50cd）、desktop／390px／320px／keyboard／command／resetのE2E 11 tests成功
+（2026-09-06T09-54-17-966Z-15-9965b6、warnings/observations 0）。544 testsは接続前基盤の証拠として保持する。
+全production／性能after、全条件portable parity、最終qualityは未完了。
+
+- A2実経路診断（未完了）: draft masterでnaturalLimit／included／baseline／NP1を実行し、241 calculatedを観測。
+  `.test-results/tsk-06-48-a2/draft-runtime`は接続漏れの診断artifactでありafter完了値ではない。
+  OCを共通executorへ委譲した後も`canNormalizeDamageEffect`が通常modifierとして再度unsupportedを作る経路と、
+  preparationで合成するactivation factsの重複・非正規順を確認した。前のfixtureはraw成功率・resource条件に集中し、
+  OC-only effectのdependency consumerと複数commandでのactivation fact合成を未検証だった。
+  normal/dependency compilation双方で委譲済みOCを二重処理せず、入力fact自体のvalidationを維持した上で
+  command由来factを正規化して合成する。所有境界・outcomeの変更は不要。反例と再測定は未完了。
+- A2 read-point closureの補足: terminal damage専用のcontext writeを準備条件として一律拒否すると、
+  OCと非交差の敵への条件付き状態付与でもranking全体がunsupportedになった。terminal NPのOC readerに至る
+  prefixだけを準備へ渡す。command間の不確定context writeは成功／不成立に丸めず、当該trait／quantityを
+  後続のOC・resource・form条件が読む場合だけ既存unsupportedへ閉じる。Boolean compositionでは無関係な
+  branchを全体のunsupportedへ昇格させない。既存の条件stateとtransactionが所有し、新しい製品outcomeは追加しない。
+  この補足の実経路反例とproduction再照合は未検証。
+- 保存切替のfocused証拠: schema／portable 2 files・35 tests成功
+  （`.test-results/2026-09-06T07-17-24-635Z-15-f1cf13`）。schema33〜37の旧resolvedは最終OCを読み替えず
+  history-onlyに保持し、旧draftを破棄する。544 unit成功は引き続き接続前基盤の証拠であり実経路完了ではない。
+- 接続診断のread-point補足（2026-09-06）: removal-resistanceは未表現stateの「存在し得る」印であり、
+  条件不明の付与時点で入力要求にしてはいけない。liveなOC/rate instanceと解除が交差する時点でのみ
+  既存unsupported境界を適用する。`draft-runtime-dependencies`で、解除readerのない条件付きmarkerが
+  target buff有無を要求する過剰停止を確認した。既存fixtureは確定markerとlive removalの交差だけを検証し、
+  条件不明marker→readerなしを欠いていた。unknown/false marker × removalあり/なし × terminal receipt後を
+  同じbounded ownerの反例へ追加する。新しいHP/state実行モデルやoutcomeは導入しない。
+- Terminal NP本体のresource/context処理は、後続OC操作の前提になるprefixだけを準備へ渡す。
+  当該NPのOCは既に確定し、最後のOC reader後のHP回復／NP再充填はOCを変更しない。
+  通常damage側のbeforeDamage resource reader判定は既存ownerに残す。`304700`のafterDamage未解決HP対象と
+  `901200`のafterDamage選択付き再充填をOC準備へ無条件に加えていた過剰停止を、このread-point境界で除去する。
+- Rate条件のread-point補足: `2800100`の初期passive `7362:0`は付与先条件が不明で、後続OC付与がない
+  default計算まで`preparationInputRequired`として候補生成をthrowしていた。数値readerのないrate付与の不明性を
+  eagerな実行拒否へ昇格させた接続不足であり、HP依存量と同じく既存outcome／executor内で閉じる。
+  付与時点の未解決conditionとlifetime／selectorを不確定writeとして保持し、実際に該当rateを読むgrantで
+  inputRequired／unsupportedへ戻す。後続時点のfactsで過去の付与成否を確定せず、入力修正後は元requestを再prepareする。
+  未読／OC付与／rate付与／確定解除／別recipient／form expiry／rollbackを追加反例とし、未検証のまま完了扱いにしない。
+
+- 解除条件のread-point補足: production `106400`のterminal NPにあるnegative解除は、対象instanceがない場合にも条件入力を要求し、default候補を0件にしていた。付与率の未読反例だけでは解除対象なしを検出できなかった。共通OC state ownerでrecipient／selector／lifetimeの交差を判定し、空集合の解除はnotApplicable、live対象ありの不明条件は従来のinputRequired／unsupportedへ閉じる。未読rateを含む解除・constant・expired・別recipientの反例を追加し、候補欠落0を再照合する。所有境界と製品outcomeは変更しない。
+
+- 排他stateの準備reader補足: `2301100`の2 profileで、canonical `npCardForm`の一方が初期passive／choiceで確定しても、他方を読むOC条件がintrinsic trait未指定によりunknownとなった（default ranking391件、旧393件）。既存normal condition readerにも同じ合成規則があるため、OC固有のfalse補完はせず共通condition ownerで既存exclusive groupの否定証拠を利用する。前のreader反例は正のstate付与と明示falseだけで、排他stateによる否定を欠いていた。排他兄弟あり／なし・無関係trait・rollbackを確認し、未確認の矛盾stateを成立扱いにしない。
+
+- 支援sourceのOC reader補足: production support auditの`2301100:2536550`は支援自身へのOC付与条件を要求していたが、現在のbounded phaseに支援役のNP-useはない。OC boostのrecipientが攻撃役以外でも、有限rateの消費を通じた後続影響は残り得るため、単純な対象除外はしない。live有限rate参加がない場合だけnotApplicableを証明し、参加ありは通常の付与・入力・rollback規則を維持する。既存反例は別source rate量だけで、別source boostの未読と間接消費を欠いていた。
+
+- OC移行時の併存context write補足: 全392 effectsのIR差分照合で、rate grant3 effects（occurrence `1128:0`、enemy recipient）の既存`addTrait buffNegativeEffect`が失われ、target-state inventoryが1411→1408になっていた。原因は`effectNormalization.ts`の敵state正規化からOC rate family全体を除外したこと。writer199件の既存context7件は保存したが、grant family29件と既存damage readerの交差を同じ監査へ含めていなかった。正規化はOC operationとdamage-reachable context operationを併存させる。OC rate ownerと既存context ownerを置換せず、成功時の一度適用／失敗時のrollbackを混在fixtureで確認する。3件の減少は意図的差分ではなく修正対象であり、同inventoryのratchetを下げない。
+
+- 上記の混在反例で、common stochastic resolver自体はpreResolved成否を読む一方、consumer helperのguaranteed fast pathがreceiptのfailureを上書きする経路を確認した。OC raw rateを専用operationへ移した後は通常procがguaranteedでも実効付与率は0になり得る。fast pathよりcommitted outcomeを優先し、terminal NPのselectedEffectsにも共通executorの成否を保存して通常projectionへ渡す。前のcompiler fixtureはpreResolved値の保持だけを検証し、最終activation consumerを通していなかった。skill／terminal NP × rate0/1000 × damage-state readerで実経路を固定する。
+- read-point伝播の追加監査（未検証）: 80条件の途中で、外側preparationTransactionがunknownなtrait-only writeを即時拒否し、HP binderがpartyOtherの書込先を即時unsupportedにする経路を確認。共通ledger内の後続reader判定だけを検証し、入口binderと外側transactionの早期拒否を監査しなかった点が前回の検出漏れ。productionの204300では後続HP readerのないpartyOther HP lossを含むskill全体が候補から落ち、既存Quick buffを失うため意図的damage差分には分類しない。最小guardrailは、HP書込範囲をsource除外／不明範囲までcanonicalに保持し、実際のsource HP readerでのみ交差判定すること、trait-only uncertaintyはledgerへ残し、form／variant／gaugeの即時決定と分離すること。反例はpartyOther×attacker/source reader、不明recipient×未読/読取、unknown trait write×未読/後続読取、rollback/retry。既存HP実行モデルやoutcomeを増やさずA2/A3の接続補完として扱う。80条件監査はsatisfiedで202500の実経路parity不一致を検出して停止したため、途中出力を完了証拠にしない。
+
+
+- A0拡張matrix: 自然上限／Lv90 × 四policy × NP1〜5の40条件を採取。
+  `.test-results/tsk-06-48-a0/valid-matrix-manifest.json`が有効artifact一覧の正本。
+  `packages/calculation-application/scripts/audit-oc-matrix.ts`は全profileのcanonical input／outcome／actions／metricsを保存する。
+  最初のrunの誤った`uniform90`は0 profilesだったため廃棄し、schema validationを追加した`uniformLevel90`の再採取分だけを採用。
+  この拡張matrixの時間は他の診断と重なっており、isolated hot-path ratchetには上の3回baselineを使う。
+  開始gauge探索を含む旧モデルの測定であり、変更後の固定開始NPの測定と混同しない。
+- A1の診断用snapshot生成:
+  `pnpm --filter @fgo-lab/data-pipeline exec tsx scripts/audit-oc-normalized-master.ts /tmp/tsk-06-48-master.json`。
+  raw5 inputsを一度ずつ読み、全raw OC167 occurrences／632 cellsの段階・Rate・Turn・Countを照合してからsnapshotを生成する。
+  未公開sourceを含むraw numeric/lifecycleのgateであり、source lifetime／recipientのgateは次のpublished照合と区別する。
+- 公開occurrenceの照合:
+  `node packages/data-pipeline/scripts/audit-oc-normalization.mjs /tmp/tsk-06-48-master.json .test-results/tsk-06-48-a0/oc-inventory.json .test-results/tsk-06-48-a0/normalized-oc-cells.json`。
+  OC97／rate29、通常・LB計866 cells、generic writer199件の92/2/73/32分類が一致。
+  追加されたcanonical operationはgrant97／rate29／remove75／nonintersection131。
+  診断snapshot SHA-256は`794cf98300041d9db96e41a8897cee367bc97274f4a4a61c595c8240555ee238`。
+- Writer inventoryの差分［確認済み］: 199は旧`stateMutation`だけの母集団だった。
+  既に`contextMutation`を持つsubStateが別に7 effectsあり、A1ではその全context operationを保持してOC非交差proofを追加した。
+  全206 lifecycle occurrences＝generic199＋既存context7。`contextWriters`を共有inventoryへ追加し、既存operationの完全一致をassertする。
+  旧inventoryはgeneric kindで絞っていたため、raw function familyに属する既存typed pathを捕捉していなかった。
+  所有境界と期待outcomeは変更せず、raw functionとcanonical operationの双方を照合するguardrailを追加した。
+- Pipelineの追加反例: 未知stack rule／未知parameter／未解釈HP量を固定値へ落とさずunsupported。
+  未命名selectorはfamily3種のidentityが全て得られた場合だけ非交差を証明し、不完全なidentityや同じidentityの不明名はunsupported。
+  `NoCheckIndividualityIfNotUnit=1`はrecipient checkが空のsubStateだけ、空のcheckを省略しても結果が変わらない境界で認識する。
+  非空checkや未知値は未解釈として残す。いずれもpipeline内の判定でありruntimeのraw key／ID分岐にはしない。
+- 接続前fixture: OC cap、action終端消費、constant再付与防止、同一action再commit拒否、NP receipt後のcell選択、
+  condition／policy共通owner、rate付与→HP変更→OC利用、最後の利用後の変更、解除、別source、rollback／retryを確認。
+  HP500＋rate200−resistance200では1000、HP1000では800となる値を使い、clampで読取時点の差が隠れないことを検証する。
+  HP formulaは既存projectionと共通化。source program cacheには全cellsとstatic conditionだけを置き、runtime stateを入れない。
+- Focused verification: `ocSemantics`／`executionSemantics`／pipeline `index`／`ocSourceProgram`／`ocState`／
+  `resourceSemantics`／`variantSelection`の7 files／81 tests成功、warnings0。
+  artifact `.test-results/2026-09-06T02-07-10-137Z-15-b9fe6f`。
+- 続くunit検証は88 files／544 tests成功、8.17秒、warnings0。
+  artifact `.test-results/2026-09-06T02-12-16-583Z-15-39bd63`。
+  途中のarchitecture検証ではstochastic ownerの115行上限へ抵触したため、実効率判定を`applicationRate.ts`へ分離し、
+  ratchetを変更せず再検証した。policy除外rate instanceはHP量を数値へ使わず、物理的な参加回数を消費する反例も追加した。
+  `tsc -b`、変更sourceのESLint、`pnpm test:docs`（6 tests＋integrity）が成功。
+  最後のnormalization fixture整形後も20 focused tests成功（`.test-results/2026-09-06T02-13-06-661Z-15-93782e`）。
+
+544 testsは接続前基盤の証拠であり、以下の実経路の完了証拠ではない。
+
+現在の接続作業: 準備stateにOC instance／receiptを保持し、CE初期phase、form lifetime、支援phaseを共通sourceから構成中。
+準備条件の独自評価は共通condition評価へ移し、入力範囲検証とproc outcomeを別に保持する。
+接続中に入力検証迂回と要求由来source quantityの循環的な成立判定を検出したため、focused反例で修正確認中。
+追加承認や新Taskは不要。実経路のparity・性能・UIが未検証である点は維持する。
+
+未完了: 初期passive／CE lifetimeとexternal phaseの実経路配置、gauge／formとのcommand transaction統合、
+application recoveryとpolicy再prepare、candidate dependency、portable／UI cutover、production parity／性能after。
+上のHP state-by-path表は、これらの実経路へ接続するまでDeferredのままとする。`pnpm quality`は未実行、Done gateは未成立。
+
+### Outcome, invariants and review gap
+
+利用者が初期OC1／2／3を選び、通常のみ／成立込みで同じ開始NPを比較する。準備中の自前NP増減とOC加算は
+共通executorが適用し、発動時OCをdetailへ返す。初期OCと発動時OCは別の値であり、OC加算はNP gaugeを増やさない。
+外部支援・チェイン・最大化・自前OC個別toggleはランキングに追加しない。
+
+Confirmed investigation at `c555e4f`:
+
+- NP5・自然上限・等倍・自己バフあり・成立込みの433 profilesは370 calculated／63 unsupported。
+  計算済み370件の発動時OCは1:181件、2:1件、3:188件。これは06.45のdefault baselineとは別条件である。
+- 全370件の採用scenario／開始NP／policyを共通calculatorでreplayしたinputとNP1〜5列は一致し、
+  NP5順位値もNP5列と一致した。列選択のずれではなく、成立込みの開始NP探索が比較前提を変えていた。
+  `RankingConditions.tsx`の「OC1」表示とrequirements旧§4.2／9.1／9.2はこの探索と整合していなかった。
+- published master内の`upChagetd` evidenceの調査inventoryは97 occurrences（skill38／36 servants、NP4、CE54、mystic code1）。
+  canonical変換後は汎用stateMutationとなり、`packages/battle-execution/src/operationCompiler.ts`の
+  preserveSemanticEffect／stateMutationOnly経路では加算段階を実効OCへ反映できていない。
+- Typhon skill2の自己対象OC+2を明示実行しても、開始100%でOC1、300%でOC3のままだった。
+  期待するOC3／5との差は表示だけでは解消しない。初期100%でも自前NP増加で発動時OCが上がる例もあり、
+  初期OC1を最終OC1として固定する修正は誤りとなる。
+
+Mechanism / mismatch: applicationが初期resourceを最大化候補へ含める一方でUIは固定OC1を表示し、
+pipelineからexecutorへOC加算の量・識別が保たれない。共有replay一致だけでは同じ誤りを検出できない。
+Missed detection: 06.43レビューはstack quantityとPIR-001〜003を閉じたが、NP1採用scenarioのNP5列と
+NP5で再最適化した順位の区別、OC加算familyのlossless mappingと表示契約まで監査しなかった。
+Recurrence scope: 全OC producer、action admission、準備／NP使用、finite dependency、portable／UI。
+この追加調査だけでは06.43由来のregressionとは断定しない。既存レビューの承認履歴は保持する。
+
+調査の一時artifactは `/tmp/fgo-np5-audit.json`、`/tmp/fgo-np5-replay.json`、
+`/tmp/fgo-np5-oc-family.json`。実装開始時にHEAD／master digest／commandを伴う再現可能な共有inventoryへ置換し、
+一時fileの存在を完了条件にしない。外部順位への一致はoracleにせず、初期OC、field、target相性、stack、
+乱数固定値と平均値の差を分離する。OC以外の比較差を本Taskで一括補正しない。
+
+### Step 1 implementation audit (2026-09-06)
+
+基点は `c555e4ff9a208f8da01e56130fbd49e63848e192`。開始時点でTasks、ranking requirements、UI spec、
+本note、NP resource note、docs READMEに利用者の未commit変更があり、その計画を仮説として照合した。
+本Stepはread-only調査と正本文書更新のみ。上記370件replayは先行調査の記録であり、今回再実行した結果ではない。
+
+#### Production population — confirmed
+
+ローカルのraw JSON全階層を走査し、functionの`buffs[].type = upChagetd`をpathごとに数えた。
+published masterは`atlasEvidence.buffTypes`を持つeffectをpathごとに数え、同じfunction IDでも別sourceを潰していない。
+これはread-onlyのJSON inventoryであり、normalizeやdamage実行の成功証明ではない。
+
+| Population | OC occurrences | Interpretation |
+| --- | ---: | --- |
+| `data/raw/nice_servant.json` | 44 | skill40、NP4。passive0 |
+| `data/raw/nice_equip.json` | 122 | 強化／limit-break別raw sourceを含む |
+| `data/raw/nice_mystic_code.json` | 1 | skill1 |
+| `data/raw/referenced_skills.json` | 0 | 参照skill経由はproduction-negative |
+| `apps/web/public/master/master.json` | 97 | skill38／36 servants、NP4、CE54、mystic1。raw167件とは母集団が異なる |
+
+SHA-256（ファイルbytes）:
+
+- servant raw: `1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f`
+- equip raw: `bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5`
+- mystic raw: `ce6560440673fad4f36f8e08a97b20b4b5d9e2e0e1c5f262943bbf47d8b857cf`
+- referenced skills raw: `afdc02f3251dd901c133745203889a0c1c4d23409da17d24634140b5e75107f6`
+- published master: `6e96b3f11fdbdef82997be12c84076d4236651d23f4ee7662a4b66a6a272c8f8`
+
+公開97件すべてのexecutionは`stateMutation(add, polarity:unknown)`。recipientはpartyMember40／sourceSelf57。
+全件proc guaranteed、triggerScope null。requirementはalways95／any2（recipient trait条件）。
+NP4件は全て`timing:afterDamage`であり、`gameActivation:npBeforeDamage`と異なるtiming fieldを持つ。
+OC加算の対象をskill38件だけへ縮めず、CEの通常／限界突破values、condition付きparty recipientも保持する。
+raw全件ではValue1／2、Turn1／3／-1、Count1／3／4／-1が現れる。公開の通常parameterSetsではCount3、同じCE effectのlimitBreakParameterSetsではCount4を確認した。
+この二つを別source occurrenceへ水増しせず、A1で同一effectの通常/LB cellsとして固定する。rawの-1を回数0や欠落に丸めない。
+passive、NP-before、stochastic OC、参照skillは現在の公開OC付与母集団では0件であり、fixture＋0件ratchetを使う。
+
+汎用lifecycle writerの公開inventoryは199 operations（remove193、move3、extendDuration2、shortenCount1）。
+これはOCへ適用可能な件数ではない。recipientとselectorによる絞り込み前の直接writer母集団である。
+`stateMutation`はselectorも持たず、現状masterだけでは全writerのOC非干渉を証明できない。
+例えばshortenCountはraw TargetList、moveはDependFunc、removeはraw functionのtrait selectorをpipelineで解釈する必要がある。
+Step 1再調査で全199件をrawへ対応させた。分類結果と実装境界は下記「Planning closure correction」に記録する。
+汎用lifecycle全体の機能実装を199件すべてに要求する計画ではない。
+
+#### Direct paths — confirmed code evidence and implementation ownership
+
+以下のpathはpackageの`src/`相対。表のVerifiedは現行経路の調査済みを意味し、下のruntime closureを置換しない。
+
+| Path | Current implementation / consequence | Investigation; implementation unit |
+| --- | --- | --- |
+| Raw → canonical | data-pipeline `executionSemantics.ts`のtypedStateFamilies fallbackはbuff identity／量／lifecycleを持たない。`effectNormalization.ts`はValue/Turn/CountをatlasEvidenceへ残すがmaster-data `index.ts`のstateMutation unionへは出さない。runtimeでrawを読み戻さず専用OC operationへ置換する。 | Verified; A0/A1 |
+| Canonical → operation/projection | battle-execution `effectRouting.ts`はstateMutationのrecipientをnullにし、`operationCompiler.ts`はpreserveSemanticEffectまたはstateMutationOnlyへ落とす。`executionPlan.ts`は後者をretainedProjectionsへ移す。加算・正常な不適用・未対応を新typed operationで区別する。 | Verified; A1/A2 |
+| Initial state → preparation | application `scenario.ts:resolveScenarioPreparationOutcome` → battle-execution `sourceCollection.ts:resolveAttackerFormExecution` → `preparationState.ts`／`preparationSkillReducer.ts`／`preparationTransformNpReducer.ts`／`preparationAttackNp.ts`。現在はNP resourceとbaseOverchargeのみ。OC grant stateとNP使用receiptを同じtransaction ownerへ追加する。 | Verified; A2 |
+| NP-use → effect cells → damage | attack reducerはeffects空でresource全消費、transform reducerはcontext.overchargeでcellsを選ぶ。`sourceCollection.ts`はtransform effectsをterminal input.overchargeで再選択する。`scenario.ts`はMath.max(baseOvercharge ?? 1, scenario.overcharge)、`npDamageCompilation.ts`はその値で本体・条件・倍率をcompileする。各NP自身の使用時OCを固定し、攻撃NPのOCを変身NPへ遡及しない。 | Verified; A2 |
+| Automatic/external sources | `sourceCollection.ts`はpassive、CE、support、mystic、NP-beforeを収集し、`executionPlan.ts`はphase順に並べる。現在CEは準備NPより後のphase。OCのconstant付与は最初のNP使用前に有効化する必要があり、既存phaseをそのままOC消費順に転用できない。外部skillの既存入力範囲と順序を明示し、新しい支援editorは作らない。 | Verified; A0/A2 |
+| Conditions / recovery | `preparationTransaction.ts:effectChangesPreparation`はOCを読まない。preparationRequirementSatisfiedはfield/opponentをunknownにし、非構造のunknown effectを準備mutationへ含めない。OCをこの経路へ単に追加すると条件付き加算を黙って失う。materialized factsと共通condition ownerへ接続し、未解決はinputRequired/invalid/unsupportedへ戻す。 | Verified; A2 |
+| Transaction / alternate writes | `preparationTransaction.ts`のresource plan、skill/transform/attack reducerのstate commit、`preparationState.ts:appendPreparationEffects`、`state.ts:cloneBattleState`、`candidateExecution.ts`のgroup clone/rollback、`candidateRollback.ts`、`variantSelection.ts`のpreappliedOperationIdsが直接対象。付与済みeffectと未消費instanceと使用receiptを区別し、projection replayで再付与しない。 | Verified; A2 |
+| Policy reapplication | application `scenario.ts:reapplyPreparedCalculationPolicy`は既存orderedScenarioを再実行しpreparationを再解決しない。policy依存OCをbaseInputへ焼き込む設計ではstale OCになる。policyをexecution contextへ先に渡す。policy変更時は共通prepare入口から再評価し、使用済みreceiptを再利用しない。 | Verified; A2/A3 |
+| Selection / commands / capacity | schema `rankingSelection.ts`は6条件、application `rankingBasis.ts`はNP basis変更とpopulation→allのowned→NP1修正を所有。両commandで必要ならinitial OC1変更もatomicにする。schema validationとmaster capacity検証を分け、保有混在はentry単位のcapacity不足を返す。 | Verified; A3/A4 |
+| Candidate admission / finite proof | `rankingComparisonPolicy.ts`が成立込みのcapacity列からstartNpGaugeCandidatesを生成、`rankingCandidateSpace.ts`が探索次元化。`rankingActionAdmission.ts`のbaselineは4種の直接modifierだけを実効寄与扱いするため、OC-only/charge-onlyの間接寄与を逃す。`rankingStaticSemantics.ts`はpreserveSemanticEffect条件を除外する。NP gauge→base OCとboost→effective OCの両依存を共通semantic dependencyから読む。 | Verified; A3 |
+| Reduction / numeric cache | `rankingStackDomain.ts`はNPの全OC/NP cellsを読むがgeneric preserved operationを依存から除外する。`rankingExecution.ts`／`preparedDamageInputCache.ts`は完成inputをkey化しnpLevelだけ正規化する。OC変化前のrequestや選択済みNP1 scenarioをNP5再最適化と同値扱いしない。 | Verified; A3/A5 |
+| Portable / persistence / reset | schema `index.ts`のranking intentはinitialNpGaugeとpolicy/basisを別保持、calculator intentは10000固定。application `portableCalculation.ts`、`rankingPortableBasis.ts`、Web `app/rankingHandoff.ts`／`portableDraft.ts`とworkspace-domainがdraft/historyへ渡す。profile/backup migrationは古いrequestからcalculator10000を作る経路もある。旧OC modelを再実行可能な新requestへ暗黙変換しない。historicalOnly表示と再生成を区別する。 | Verified; A4 |
+| URL / worker / UI | Web `rankingState.ts`のcomplete6キー判定、`rankingWorkerProtocol.ts`のrequest/detail payload、`rankingWorkerRuntime.ts`のfingerprint別cache、`useRanking.ts`のstale判定、application `rankingContracts.ts`等の比較identity、Web `RankingConditions.tsx`のOC1固定、`rankingDetailPresentation.ts`の開始NP、calculator `Calculator.tsx`のscenario.overcharge writerを一括切替する。 | Verified; A4 |
+| Shared numeric execution | `rankingPolicyScenario.ts`が開始NPをpreparation optionへ渡し、`rankingExecution.ts`と`portableCalculation.ts`がapplication scenarioのprepare/evaluateへ合流する。calculator/ranking独自のOC計算は追加しない。 | Verified; A2–A5 |
+
+#### Design decisions, unresolved contracts and review-gap delta
+
+確定した設計方針:
+
+- 初期OCはranking intent。開始NPへの変換とcapacityのownerはapplication＋既存canonical NP resource。
+  gauge／boost instances／NP-use receipt（消費前gauge、base OC、適用boost、effective OC、消費根拠）を区別する。
+  effective OCのownerはbattle-executionで、application/Webは値を足したりMath.maxしたりしない。
+- 専用OC operationは段階のvalue cells、canonical recipient/requirement、duration/count、stacking根拠を持つ。
+  -1などraw表記はpipelineで解釈し、無制限と有限をtyped unionにする。曖昧なセルを1へ補完しない。
+- 準備の付与・実際のNP使用・消費・再付与を一つのordered stateへ閉じる。NP-before/afterを見かけの
+  gameActivationだけで解釈しない。NP自身のOC依存効果は当該use receiptを読む。
+- generic state removal/move/extend/shortenがactive OCへ到達する経路もfamily内に含む。未解釈writerを成功no-opにせず、
+  canonical selectorでOCへ到達しない証明かbounded executionを必要とする。全buff simulatorへの拡張はしない。
+- 加算stateとpolicy上の有効寄与は区別する。structuralRequired actionの実行事実を消さず、四policyで使用OCを再導出する。
+  optional OC/NP charge actionは後続のOC-sensitive reader／NP到達性へ寄与する場合を検証し、無関係actionを無制限に増やさない。
+
+#### Planning closure correction — user review after Step 1 report
+
+前回報告の「Step 1完了」は訂正する。OC lifecycle、writer到達性、policy再適用の設計選択を未確定のまま
+実装単位A0へ送ったため、実装範囲を確定する調査が終わっていなかった。利用者の指摘を受けて同じStep 1を再開し、
+下記を製品コード変更なしで確認した。A0は実装直前の再現可能baseline計測に限定し、仕様選択の延期先にはしない。
+manualの最終OC1〜5維持は利用者確認済み。resolvedは提案どおり初期OC1〜3と発動時OC表示へ統一する計画で、
+最終入力のoverchargeはmanual/damage inputだけに残し、resolved requestの別名として残さない。
+
+**1. Writer母集団の閉鎖［確認済み］**
+
+rawのfunctionをfuncIdでjoinし、全候補のtarget、traitVals、TargetList、DependFuncを比較した。
+9 occurrencesはraw value variantを複数持つが、下記OC到達性分類は全variantで一致する。unmapped0、分類矛盾0。
+IDはaudit joinだけに使い、runtime分岐はcanonical recipientとtyped state selectorで行う。
+
+| Disjoint partition | Count | OC stateへの到達性・実装責務 |
+| --- | ---: | --- |
+| targetが敵 | 92 | remove91＋extend1。今回のattacker OCを変更しない。partyOtherは支援originでattackerへ届き得るため、この区分には含めていない。 |
+| selectorがOCと非交差 | 105 | remove100、move3、shorten1、extend1。removeは弱体/攻防/個別state等のselectorでbuffPositiveEffect単独のOCと非交差。moveはDependFuncのcurseまたはNP-charge-block selector。shortenはTargetList[2886]。extendは味方の毎turn系selector。 |
+| 自身の強化解除 | 2 | `21513`（600300 skill）、`22699`（603500 NP-before）。removableなOC instanceに到達可能。使った後のreceiptは変更しない。 |
+
+extend1はTarget=-1／TargetList[3060,3080,3081]でOCのbuff trait3004と非交差。
+全167 raw OC付与のbuff定義は同じ形で、buffGroup0、maxRate5、valsはbuffPositiveEffectだけ、
+script/ckSelfIndv/ckOpIndvは空。functionのfuncGroup/scriptも空。rawパラメータ632 cellsは全て
+Rate/Turn/Count/Valueを持ち、追加はpresentationとrecipient checkの2キーだけだった。
+これにより現行OCを「全beneficial state一般」として実装する必要はなく、OC familyへのselector適用だけを閉じられる。
+
+解除2件のscope判定:
+
+- skillの強化解除はNP使用前。現行rankingでは当該actorの自前OC付与がなく、新たなOC数値差は発生しない。
+  calculatorの現在のphase順では支援/mystic skillはこの準備skillより後、CEはpassive sourceで解除対象外。
+  schema-legalな「OC skill→解除→NP」はremovable instanceを消してbase OCへ戻るfocused fixtureで閉じる。
+- NP-beforeの強化解除はNP-use receipt確定後。当該NPのOCは変わらない。将来のNPがあれば残存instanceに影響するが、
+  このproduction actorのterminal attack後に次のNP readerはない。NP-afterの付与も同じく現在damageへ先取りしない。
+- removal resistanceは当該NP-before解除の成功率を変えるが、確定済みOCと現在damageのOC入力を変えない。
+  将来fixtureで「removal resistance→解除→未実行NP」がliveになる場合は、未表現resistanceを無視せず
+  `unsupported`へ閉じる。全buff解除確率の新シミュレーターは作らない。removalのRateと既存procで確定できるfixtureは
+  applied／stochastic failureに分け、相手対象・selector不一致・immutable sourceは正常な非適用とする。
+
+**付与成功率を含む再発範囲［同じ調査で追加確認］**
+
+199件の92/105/2分類は**OC instanceそのもの**への到達性。これだけでfamily全体の閉鎖とはしない。
+付与率の直接transformerまで辿ると、公開masterにpositive buff対象のrate modifierが29 effectsある
+（servant22、CE7）。内訳はgrant success up12、recipient success up12、recipient resistance up4、grant success down1。
+rawのbuff定義からcaster側とrecipient側のselectorを分離する。これらも現状は量・対象役割を保持しないgeneric state等であり、
+actor trait条件として再解釈してはならない。
+
+- `21623`（703500 skill）は自身へのpositive buff resistance+1000、付与Rate5000。
+  自前OCはないが、calculatorでこのskill後に支援OC（通常Rate1000）を付けると、補助なしでは成功率0になる。
+  mystic OCのraw Rate5000なら低下後も確定となる。既存の`proc:guaranteed`だけを保持するとこの差を失う。
+- `7362`はcaster側のgrant success down200だが、対象はraw intrinsic selectorで限定される。
+  現行OC付与casterとのintersectionは0。名前やservant IDの例外ではなくcanonical caster identity predicateで非交差を証明する。
+- recipient resistance upの残り3件は敵対象でattacker OCには届かない。positive avoidStateのattacker対象は0。
+  空tvalsを持つraw avoidStateもckOpIndv[2852]で限定され、OC buff traitとは非交差。
+- OC段階値に作用するbuffRate selectorは現行0（既存1件はNP damage buff限定）。将来のunknown value transformerはunsupported。
+
+29 rate effectsのstate traitsはpositive、negative、buff-grant-success-upの3種。これまで非交差105件としたwriterのうち
+73件はこの**rate prerequisite**へは届き得る。したがってfamily全体の保守的なwriter区分は
+**敵92／OC直接2／rate prerequisite73／両者と非交差32 = 199**とする。
+73件を無効果として除外しない。canonical selectorでOCとrate stateの両collectionを同じcommand内で除去できる設計にする。
+producer/consumerはこのbounded sliceに限定し、任意の全buff state simulatorへ拡張しない。
+
+採用設計:
+
+- pipelineはOC付与と29 rate effectsについてrawの**clamp前application rate**、caster/recipient role、
+  effect-family selector、signed additive adjustment、lifecycle、grant sourceをcanonical化する。
+  intrinsic recipient条件と「どのbuff種の成功率を変えるか」のselectorを別fieldにする。
+- command interpreterがsource/recipientの現在rate stateを読み、OC付与時の実効率を
+  `clamp(baseApplicationRate + casterGrantAdjustment - recipientResistance, 0, 1000)`で導出する。
+  constant passive付与はcanonicalなpassive application ruleで扱い、確率補正を遡及しない。
+- rate modifierの付与自体も同じ入口を通す。補助rate stateが成立したと勝手に仮定しない。
+  0は確率不成立、1000は確定、中間は既存canonical proc witnessの0/1入力へ接続し、入力がなければinputRequired。
+  static source programはraw guaranteedだけから「必要proc入力なし」と早期決定しない。
+- queryで使った有限rate stateの回数はcommand/action終端で一度だけ消費する。失敗したOC grantは正常な不成立であり、
+  使用した補助stateまでtransaction rollbackしない。semantic invalid/inputRequiredによるcommand拒否とは区別する。
+- removalはOC instanceとrate prerequisiteを同じtyped selectorで処理し、immutable/passiveを維持する。
+  未対応live removal resistanceは明示unsupported（現在のOC数値を変えるproduction交差は0）。
+- このrate familyを他の全damage buffの成功率修正へ広げる作業は本Taskで行わない。ただしOCへ至るrate調整の付与・解除は
+  すべて同じbounded sliceに含む。非OC familyの既存問題を今回の数値補正へ混ぜない。
+
+公開canonicalのbuffPositiveEffect参照106 effectsは汎用stateMutation86／enemyへのcontextMutation20で、
+当該traitを読むdamageModifier/NP本体は0。OCを新しいactor trait書込として公開し、この誤ったselector解釈を活性化しない。
+A1でOC/rate selectorをcanonical operationへ移し、scalar actor conditionへ戻さない。
+
+**2. NP使用・stacking・lifecycle規則［根拠付き設計判断］**
+
+ローカルrawに加え、以下の公開資料/公開実装をread-onlyで照合した。ゲーム実行の独立実測とは区別する。
+
+- [Atlas fgo-docs / buff group and limits](https://github.com/atlasacademy/fgo-docs/blob/4d905267350e8078f46889ab19f6fc54f564a3ed/README.md#unstackable-buffs): group0は加算を共存可能、非zero groupは非重複。
+- [Chaldea activateNP / getBuffValue](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/svt_entity.dart#L1732): OCをNP functionsより先に確定し、全該当buffを使用記録してから合算・capする。
+- [Chaldea withAction](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/battle.dart#L237) / [BuffData useOnce](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/buff.dart#L589): action終端で使用済みinstanceの有限countだけを減らす。
+- [Chaldea addState](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/add_state.dart#L27) / [subState](https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/sub_state.dart#L26): passive sourceとactive buffを分離。raw CE122 sourcesは全てpassive型であり、同じOC buffでもskill付与と解除可能性が違う。
+
+ここから採用するbounded executor規則:
+
+1. 開始時にCE constantを一度だけ付与。form passiveはそのformのsource lifetimeで有効化し、terminal passiveを
+   初期formへ遡及しない。OC/rateのgrant source identityと付与instance identityを区別し、再compileで回数を補充しない。
+2. 既存calculatorのordered own commandsを実行。support/mysticの既存選択skillは現在の順序どおり
+   own preparationの後、terminal attack NP-useの前に実行する。CE constantだけを実際の初期lifetimeへ移す。
+   外部skillを変身NP前へ移す新しい順序editorは追加しない。
+3. NPのexecution preconditionを検証後、全消費前gaugeからbase OCを導出する。
+   その時点で有効なOC instanceを列挙し、policy上の寄与を分離してeffective OC=min(5, base OC+対象加算)を固定する。
+   加算総和・clamp後段階・参加instance・policy除外instanceをreceiptへ記録する。
+4. NP-before、NP本体、NP-afterのvalue/proc/condition cellsは**当該receipt**を読む。
+   NP-beforeの新規OC付与は当該NPのOCを上げず、解除も確定済みOCを下げない。循環再計算は行わない。
+5. NP action終端で、使用開始時に参加したinstanceの有限countを1だけ消費する。cap5で数値寄与が飽和していても
+   参加した全instanceが消費対象。途中の新規付与は未使用なので消費しない。無制限countは減らさない。
+   途中解除されたinstanceを復活させない。count0はinactive、Turn0は期限切れ、-1はunlimitedとして区別する。
+6. command全体の失敗ではgauge、form、OC/rate grant、receipt、残countをrollbackする。receiptを確定結果としてUIへ出すのはcommit後。
+   同一turnのためdurationを保存するがturn tickは行わない。
+
+productionのgroup0をtyped `additive`へ正規化する。未検証のnonzero group、unknown stack rule、動的OC段階expression、
+不足cellはsupported additiveへ丸めずinvalid/unsupported。これらを実装時の新しい設計判断にせず反例の期待outcomeとして固定する。
+
+**3. 実行ownerとpolicy再適用［単一案へ確定］**
+
+二段構成をそのまま二重実行に使わない。battle-executionの準備transactionを有限command interpreterとして拡張し、
+NP gauge/OC/OC付与率/formのwriteとNP-use receiptを唯一所有させる。外側のapplicationは次の順序を共通入口として組み立てる。
+
+`validated request + policy + resolved world/input facts → canonical source program → command interpreter → committed receipts → damage/effect projection → result`
+
+- source programのstatic段階は全OC cellsを保持し、OCで変わる値/確率をOC1に早期固定しない。
+  command interpreterは既存compileEffectCondition/condition/activation/stochastic ownerを呼ぶ。
+  field/target/input factsは準備**前**に解決して渡し、rate状態はcommand順に更新する。preparationRequirementSatisfied独自のunknown-as-no-mutation経路を
+  OC readerには使わない。unsupportedなlive inputはrequired-input/invalid/unsupportedとして戻す。
+- 実行済みeffectはinstanceとreceiptで引き継ぎ、sourceCollection/通常operation loopはそのwriteを再適用しない。
+  damage projectionは対応するNP receiptでcellを選ぶ。preapplyはform/variantの既存適用記録にOCのcommit記録を結び付ける。
+  全変数をapplication orchestratorへ戻さず、battle-execution内のfocused moduleへ分ける。
+- grant事実とcontribution inclusionを分離する。structural-required actionのresource/form mutationは維持する。
+  使用時のphysical参加instanceとpolicy上加算へ含めるinstanceを別集合にし、除外された寄与を後続で復活させない。
+  自己バフなしのoptional skillは現行source policyどおりadmitしない。baselineではconditional OC寄与を数値へ含めない。
+- `reapplyPreparedCalculationPolicy`は共通prepare入口へ元request＋新policyを渡して再評価する経路に一本化する。
+  cached baseInputへboostを焼き込んでprojectionだけ替える案は採用しない。immutable source programのcompile cacheは再利用可、
+  使用済みstate/receipt cacheは再利用不可。without-areaも同じ規則を通す。
+
+**4. 候補生成の責務とbound［計画時に確認済み］**
+
+現行master一回parse、既存compileStaticRankingPreparationPrograms/compileCandidateLocalActionAdmissionを直接呼んだread-only audit:
+422 attack servants／433 profiles、static programs7,255、1 profile最大60。
+included baselineのadmitted programs2,034、included satisfied6,722。
+attack servant範囲のOC skill source29件中13件は直接damageModifier/modifierRateChange/ignoreDefense/ignoreDamageCutを持たない。
+これは「13件すべてが新しい最適解になる」という測定ではない。source単位の現行baseline admission漏れ候補である。
+
+新規action/skill再使用/初期gauge探索は追加しない。既存static program全集合から、以下のcanonical依存を逆向きに辿る。
+
+- NP body/effectの全OC cells（値、condition、proc）→ NP-use effective OC → boost grant/remove、gauge→base OC。
+- OC grant→effective application rate→caster/recipient rate stateの付与/解除/条件。
+- NP使用precondition／後続skill cost→gauge gain/loss。単なるcharge-onlyも、この到達性またはOC-sensitive readerを持つときだけ実効寄与候補。
+- transitive condition/input/state writerと排他branchはprogramの順序で保持。unknown dependencyで削減を証明しない。
+
+通常単一form・選択なしの3skillならpartial permutationは1+3+6+6=16。実測の最大60は既存form/branchを含む。
+このstatic boundを増やさず、world/quantity domainは既存4,096 certificateへ合成する。OC-sensitive dependencyがある
+quantityはmonotone/aggregate reductionを解除して完全な小domainを使う。全探索oracleはplan順序も比較する。
+初期OCは一つの意図値でありdimension cardinalityを増やさない。source program/全cellsのdependency解析はcandidateごとに繰り返さず
+master/program単位に共有する。policyごとのruntime時間はA0/A5で測るが、処理構造の選択をその測定へ先送りしない。
+
+**5. 固定した反例期待値（実行testはStep 2）**
+
+| Canonical input / path | Expected rule/outcome |
+| --- | --- |
+| initial100%, NP2、own gain100%、boostなし | gauge200%→base/effective OC2。initialOC1自体は不変 |
+| initial300%、+2/count1を2 instances | base3、合算4、effective5。NP終端で両instance count0 |
+| initial100%、+2/count1→transform NP→after grant+1/count1→gain100%→attack | transform OC3、元boost消費。attack OC2、新boostだけ消費。変身NPのcellsをattack OC2で読み直さない |
+| initial100%、NP-before grant+2/count1 | 当該NP OC1、new instance未消費。次のNPがあれば加算可能 |
+| initial100%、+2/count2→NP-before remove positive | 当該NP OC3。removableなら残instance除去、CE/passiveなら除去されず使用分count1。receiptは不変 |
+| recipient resistance1000の後にOC付与、caster補助0 | base application rate1000なら不成立、5000なら確定。両者をguaranteedへ潰さない |
+| recipient resistance1000、caster grant bonus200、OC baseRate1000 | 実効200。proc witnessなしはinputRequired、失敗ならinstanceなし、成功なら付与。policy baseline/satisfiedは同じ既存proc入力規則を使う |
+| rate stateを解除→OC grant | 解除後stateで成功率を導出。解除不能なら保持。補助stateの付与が失敗した場合も未適用として読む |
+| count1使用NPでsibling invalid、またはrequired input不足 | actionをcommitしない。gauge/instance/count/receiptを元に戻す |
+| unchanged requestでpolicy再適用／without-area | fresh request executionとinput/outcome/receiptが一致。以前のOCを再利用しない |
+| nonzero group／live unknown removal resistance／OC-sensitive unknown writer | additive/成功/OC1へfallbackせずunsupported。malformed/missing canonical cellはinvalid |
+
+Planning closure: 上の調査・設計判断はVerified、未決定のowner/順序/production分類は0。
+実装と実行testの証明は下のruntime matrixにDeferredとして残す。現在の数値結果を修正・検証したとの主張ではない。
+
+追加のcause analysis（先行調査の共通原因へ追加するdelta）:
+
+- 発生機構［確認済み］: OCをresource準備前後で数値だけ受け渡し、sourceCollectionが準備NPのOCをterminal OCで読む。
+  operationCompilerの汎用state保持は量も回数も実行せず、policy再適用はその既存base inputを再利用する。
+- 実装とのズレ［推論］: gauge由来base OC修正を全OC closureと捉えると、effect付与からNP使用receiptまでのowner不在が残る。
+  根拠は上記scenario/preparation/sourceCollectionの異なるOC reader。
+- 検出漏れ［確認済み］: 既存06.48計画は具体reader/writerが未記入で、変身NPのcell再選択、constant CEの初回消費、
+  policy再適用、population変更によるNP1復帰、保存migrationの交差が明示されていなかった。
+- 再発範囲［推論］: 同じpathを通る全OC付与とOC-sensitive効果。最小guardrailは下記追加matrixとStep 1の母集団対応表。
+  特定servantの期待damageだけを修正単位にしない。既存06.43承認の取消やregression帰属は主張しない。
+
+### Canonical flow inventory delta
+
+NP gaugeの既存ownerは `docs/evidence/np-resource-semantics-flow-tsk-04.md` に維持し、
+本節は選択初期OC／OC加算state／発動時OCという追加familyだけを所有する。
+上のStep 1 inventoryで具体producer／consumerを固定した。以後は差分のみ更新する。外部sourceの監査は既存calculatorの共有経路を閉じるためである。
+
+| Path / owner | Required delta | Status |
+| --- | --- | --- |
+| Pipeline → master/schema admission | 全skill／NP／passive／CE／mystic sourceのOC段階、recipient、condition、duration/count、stacking semanticsを根拠付きtyped IRへ保持。曖昧値・欠落値・未知対象を無効果扱いしない。 | Verified: IR |
+| Application comparison → scenario | 選択初期OCを開始100／200／300%へ変換。指定NP capacity validationと保有混在のcapacity不足を区別。宝具Lv変更と初期OC修正をatomic commandで適用。 | Verified: APP |
+| Application admission → finite candidates | 両condition modeで開始NP候補を1つに固定。own OC boostの間接寄与を判定し、適用条件／実効OC／NP倍率依存をdomain proofとdedup keyに含める。 | Verified: APP |
+| Executor preparation → NP → damage | gauge由来base OCとactive OC boostを別stateとして保持。自己へ適用可能なrecipientをcanonical解決し、NP本体処理前のOC確定・上限・action終端の回数消費・変身NP・NP前後effectを順序通り評価。 | Verified: EXEC / APP |
+| Transaction recovery → application | clone、rollback、failed command、retryでgauge／OC boost／countを同時復元。失敗後に加算残留、回数先消費、二重適用を起こさない。 | Verified: EXEC / APP |
+| Request → URL／worker／cache／portable | versionと初期OC identityを同時切替。旧payloadの曖昧な開始NPをOC1で補完せず拒否し再生成commandへ戻す。異なるOCのcache混用・stale resultを拒否。 | Verified: IDENTITY/UI |
+| Result → UI／calculator replay／reset | 初期OCと発動時OCを区別して表示し、採用開始NP／ordered plan／policyを同じexecutorで再現。normal resetは開始100%と通常policyへatomicに戻す。 | Verified: APP / IDENTITY/UI |
+| Production audit → downstream baseline | 共有master一回でfamily inventory、NP5再最適化、合法OC matrix、parity／damage input差、candidate数とhot-pathを測定。06.45へpolicy付きbaselineを渡す。 | Verified: PRODUCTION / 性能の確定 |
+| New external support／full turn simulator | ランキングの製品範囲外。既存calculator経路の正規化監査を理由に機能追加しない。 | N/A: no product requirement |
+
+### State-by-path counterexamples and outcome classes
+
+`calculated`、policy上のcapacity不足／到達不能 `unavailableUnderPolicy`、修正可能な必須input不足
+`inputRequired`、矛盾input／IR `invalid`、意味未対応 `unsupported`を分離する。確率不成立やpolicyによる
+不採用は成功した加算と区別したeffect evidenceで保持し、それだけでprofile全体をunsupportedにしない。
+
+| State × path | Minimum guardrail | Status |
+| --- | --- | --- |
+| NP1／NP2〜4／NP5 × initial OC1〜3 | 境界内は同じ初期gauge、指定NPで境界外のrequestは拒否。保有混在は容量不足だけtyped unavailable。UI変更は修正値も表示。 | Verified: APP / IDENTITY/UI |
+| baseline／satisfied × included／excluded | 全四policyで初期gauge不変。optional own boostのadmission／不採用とstructural-required actionを区別し、最大化名目で外部加算を混入しない。 | Verified: APP |
+| own gauge gain／loss × boost0／+1／+2／cap超過 | 初期100%→自前charge→base OC2、初期300%＋2→OC5、NP不足、複数加算と上限を小fixtureで固定。 | Verified: EXEC / APP |
+| skill／automatic／NP-before／NP-after × self／party-including-self／other-only | 対象・タイミング・確率・条件・期間／回数・重複制約を保持。自身へ不適用と未解釈を分離し、当該NP後の効果を先取りしない。 | Verified: EXEC / APP |
+| transform NP → attack NP × count1／複数回 | 実際のNP使用だけで正しい回数消費。先行NPで使い切った加算を攻撃NPへ残さず、再付与も正しい順序で反映。 | Verified: EXEC / APP |
+| failed transaction／rollback／clone／retry | gaugeとboost duration/countが同時復元。数値・outcome・evidenceを共通calculator／rankingで比較。 | Verified: EXEC / APP |
+| missing／conflicting／unknown canonical semantics | 無効果・OC1・成功へfallbackせず明示停止。production-negativeもschema-legal focused fixtureで検証。 | Verified: IR / EXEC |
+| OC-sensitive NP cells × quantity reduction／ordered plan | 小さい有限全探索oracleと採用候補一致。NP level列を再利用する場合はcomplete input同一性を証明。 | Verified: APP |
+| URL／worker／cache／portable × OC change／old version／normal reset | identity衝突0、stale拒否、同一入力replay、旧request拒否後の再生成、reset後の非baseline state残留0。 | Verified: IDENTITY/UI |
+
+Additional Step 1 counterexamples（既存matrixへのdelta、実装単位はTasks正本）:
+
+| State × path | Minimum guardrail | Status |
+| --- | --- | --- |
+| transform OC1 → attack OC3 × OC-dependent value/proc | 各useのreceiptで異なるcellを評価。先行NPでCount1消費後、当該NP-after再付与だけを次の攻撃NPへ残す。 | Verified: EXEC / APP |
+| constant CE count1／3／LB4 × transform→attack | constantをNP使用前に一度だけ付与し、変身NP消費を記録。effect projectionで再付与しない。raw LB4のmappingを検証する。 | Verified: IR / EXEC |
+| conditional boost × field/recipientState／all/any/not／unknown × preparation/retry | materialized factsで通常loopと準備が同じtruthを読む。unknownをno-opや成功へ落とさずrequired-input recoveryへ接続。 | Verified: EXEC / APP |
+| boost + sibling invalid × group rollback／preapply | gauge・instance・残回数・receiptをatomicに戻す。form/variant preapplyから加算を二重実行しない。 | Verified: EXEC / APP |
+| remove/move/extend/shorten × active OC／unrelated state | canonical selectorで関連性を証明。OC対象writerを汎用stateMutation成功として捨てない。未対応は明示停止。 | Verified: IR / EXEC |
+| policy reapply／without-area projection × conditional OC | prepared scenarioの再利用で以前のeffective OCが残らず、fresh executionとinput/outcome/receipt一致。 | Verified: APP |
+| charge-only／OC-only × sensitive/insensitive NP／structural-required | baseline admissionも間接寄与を発見。unknown dependencyにendpoint reductionを使わず、小domain全探索oracleで採用plan一致。 | Verified: APP |
+| owned NP5+initial3 → population all→NP1 | population commandもinitial1への修正を明示しatomic適用。直接不正requestは拒否、保有混在の低capacity行はunavailable。 | Verified: APP / IDENTITY/UI |
+| old-only／canonical-only／mixed contradictory × parser/migration/backup/draft/history/share | parserのunknown-key除去で旧overchargeが失われたまま成功しない。historicalOnlyと再実行を分離し、再生成commandへ戻す。 | Verified: IDENTITY/UI |
+| selected NP1 result matrix vs separately optimized NP5 × cache | 共通完成inputの一致だけでdamage matrixを再利用。NP5最適planとOCが異なる列をNP1採用scenarioの列から代用しない。 | Verified: APP / PRODUCTION（NP5独立選択差分） |
+| turn progression／skill reuse／new ranking support | 同一turn有限準備の外。durationの保持をturn simulatorや支援UI追加へ拡大しない。 | N/A: outside approved product scope |
+
+The current dispositions above supersede the planning-only status. Runtime counterexamples are
+Verified by the evidence groups in the 2026-09-08 closure section. The 80-condition production matrix also passes with zero selected-result parity failures.
+The performance comparison and final quality gate pass. All TSK-06.48 scoped paths are Verified
+or justified N/A, with Blocking and task-local Deferred both zero.
+
 
 ## TSK-06.43 — review approval and next-task handoff (2026-09-06)
 

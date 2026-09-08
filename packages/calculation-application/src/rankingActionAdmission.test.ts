@@ -125,6 +125,7 @@ const withoutAction: StaticRankingPreparationProgram = {
 const baseline: RankingPolicyConditions = {
   classAffinity: 'neutral',
   population: 'all',
+  initialOvercharge: 1,
   levelBasis: 'naturalLimit',
   npLevelBasis: { kind: 'specified', npLevel: 1 },
   selfBuffs: 'included',

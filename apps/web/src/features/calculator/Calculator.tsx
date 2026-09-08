@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import type { AppliedPreparationAction } from '@fgo-lab/calculation-application';
+import { ocBoostUseSummary, ocUseSummary } from '../../ui/ocPresentation';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
@@ -32,6 +34,9 @@ import {
   removeCalculationSupportSource as removeSupportSourceFromScenario,
   resetTargetClassContextForAttacker,
   setInitialActorForm,
+  initialOcOptions,
+  changeResolvedNpLevel,
+  changeResolvedInitialOc,
   setAttackerSkillLevel,
   setCalculationSupportSkillLevel,
   setCalculationSupportSkillEnabled,
@@ -39,7 +44,6 @@ import {
   getAttackReachableInitialActorForms,
   defaultCalculatorPreNoblePhantasmCandidate,
   preparationChoiceOptions,
-  resolveAttackerFormExecution,
   setPreparationSkillChoice,
 } from '@fgo-lab/calculation-application';
 import type {
@@ -77,6 +81,7 @@ export function Calculator({
   resolvedInput,
   scenarioInput,
   resolvedEffects,
+  appliedPreparationActions,
   effectControls,
   effectWarnings,
   effectInputs,
@@ -96,12 +101,14 @@ export function Calculator({
   onSupportSave,
   onFinalize,
   onHistorySelect,
+  onRegenerateHistory,
   onResetPortableRequest,
 }: {
   master: MasterDataSnapshot;
   resolvedInput: DamageResolutionInput;
   scenarioInput: DamageResolutionInput;
   resolvedEffects: readonly EffectProjection[];
+  appliedPreparationActions: readonly AppliedPreparationAction[];
   effectControls: readonly EffectControlViewModel[];
   effectWarnings: readonly string[];
   effectInputs: readonly EffectInputViewModel[];
@@ -121,6 +128,9 @@ export function Calculator({
   onSupportSave: (mode: 'new' | 'source') => Promise<void>;
   onFinalize: () => Promise<void>;
   onHistorySelect: (entry: CurrentCalculationHistoryEntry) => Promise<void>;
+  onRegenerateHistory: (
+    entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
+  ) => Promise<void>;
   onResetPortableRequest: () => Promise<void>;
 }) {
   const input = resolvedInput;
@@ -162,14 +172,23 @@ export function Calculator({
         input.npLevel as 1 | 2 | 3 | 4 | 5,
       )
     : [];
-  const resolvedAttackerSkillUses =
-    attacker && resolvedScenario
-      ? resolveAttackerFormExecution(resolvedScenario, attacker, master.npResourceSemantics)
-          .skillUses
-      : [];
+  const resolvedAttackerSkillUses = appliedPreparationActions.flatMap((action) =>
+    action.command.kind === 'useSkillSlot'
+      ? [
+          {
+            slot: action.command.slot,
+            skillLevel: action.command.skillLevel,
+            skillId: action.sourceId,
+            actorFormId: action.actorFormId,
+            selectedEffects: action.selectedEffects,
+            transitionId: action.transition?.id ?? null,
+          },
+        ]
+      : [],
+  );
   const preparationChoices =
     attacker && resolvedScenario
-      ? preparationChoiceOptions(resolvedScenario, attacker, master.npResourceSemantics)
+      ? preparationChoiceOptions(appliedPreparationActions, attacker)
       : [];
   const selectedCraftEssence = craftEssences.find(
     (candidate) => candidate.id === input.craftEssenceId,
@@ -322,7 +341,7 @@ export function Calculator({
             npLevel: input.npLevel,
             fouAtk: input.fouAtk,
           },
-          overcharge: input.overcharge,
+          initialOvercharge: 1,
           targetContext: applyTargetContextCommand(createDefaultTargetContext(attacker.classId), {
             kind: 'setAttributeRelation',
             relation: attributeRelationFromMultiplier(input.attributeAffinity),
@@ -512,13 +531,7 @@ export function Calculator({
     if (!resolvedScenario || !attacker) return;
     void onScenarioChange(
       excludeDefaultAttackerSkillContributions(
-        setPreparationSkillChoice(
-          resolvedScenario,
-          attacker,
-          master.npResourceSemantics,
-          option,
-          resolvedEffects,
-        ),
+        setPreparationSkillChoice(resolvedScenario, option, resolvedEffects),
         master,
       ),
     );
@@ -696,10 +709,9 @@ export function Calculator({
                 const npLevel = Number(event.target.value);
                 if (scenario.mode === 'manual') changeManualInput({ npLevel });
                 else
-                  void onScenarioChange({
-                    ...scenario,
-                    attacker: { ...scenario.attacker, npLevel },
-                  });
+                  void onScenarioChange(
+                    changeResolvedNpLevel(scenario, master.npResourceSemantics, npLevel),
+                  );
               }}
             >
               {[1, 2, 3, 4, 5].map((value) => (
@@ -710,22 +722,50 @@ export function Calculator({
             </select>
           </label>
           <label>
-            OC
+            {scenario.mode === 'manual' ? '最終OC' : '初期OC'}
             <select
-              value={input.overcharge}
+              value={scenario.mode === 'manual' ? input.overcharge : scenario.initialOvercharge}
               onChange={(event) => {
                 const overcharge = Number(event.target.value);
                 if (scenario.mode === 'manual') changeManualInput({ overcharge });
-                else void onScenarioChange({ ...scenario, overcharge });
+                else
+                  void onScenarioChange(
+                    changeResolvedInitialOc(scenario, master.npResourceSemantics, overcharge),
+                  );
               }}
             >
-              {[1, 2, 3, 4, 5].map((value) => (
+              {(scenario.mode === 'manual'
+                ? [1, 2, 3, 4, 5]
+                : initialOcOptions(master.npResourceSemantics, scenario.attacker.npLevel)
+              ).map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>
               ))}
             </select>
           </label>
+          {scenario.mode === 'resolved' && (
+            <div className="form-grid-wide">
+              {appliedPreparationActions
+                .flatMap((action) => (action.ocUse ? [action.ocUse] : []))
+                .map((receipt, index, receipts) => (
+                  <div key={receipt.actionId}>
+                    <p>
+                      {index === 0 ? `開始NP ${scenario.initialOvercharge * 100}% ／ ` : ''}
+                      {receipts.length > 1 ? `宝具${index + 1}：` : ''}
+                      {ocUseSummary(receipt)}
+                    </p>
+                    {receipt.boostUses.length > 0 && (
+                      <ul>
+                        {receipt.boostUses.map((use) => (
+                          <li key={use.instanceId}>{ocBoostUseSummary(use)}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
           <div className="picker-field form-grid-wide">
             <span>概念礼装</span>
             {selectedCraftEssence && craftEssenceSelection ? (
@@ -1276,9 +1316,10 @@ export function Calculator({
                     <li key={entry.historyId}>
                       <button
                         type="button"
-                        disabled={!('request' in entry)}
+                        disabled={!('request' in entry) && !servant}
                         onClick={() => {
                           if ('request' in entry) void onHistorySelect(entry);
+                          else void onRegenerateHistory(entry);
                           setHistoryDialogOpen(false);
                         }}
                       >
@@ -1286,7 +1327,7 @@ export function Calculator({
                           <strong>{servant?.name ?? attackerId}</strong>
                           <small>
                             NP{npLevel}・{new Date(entry.lastUsedAt).toLocaleString('ja-JP')}
-                            {'request' in entry ? '' : '・旧版履歴（再実行不可）'}
+                            {'request' in entry ? '' : '・旧版履歴（現在の仕様で新規作成）'}
                           </small>
                         </span>
                         <span>

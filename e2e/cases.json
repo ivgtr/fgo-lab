@@ -508,5 +508,15 @@
     "replacement": "one real Worker journey; all other ranking cases use fixture Worker",
     "costMs": 85465,
     "status": "retained"
+  },
+  {
+    "id": "E2E-051",
+    "title": "initial OC command closure",
+    "owner": "web/package connection",
+    "failure": "initial OC, NP capacity, responsive detail or reset diverges from the canonical request",
+    "project": "desktop",
+    "replacement": "bounded command journey with real worker; semantic matrix in shared execution tests",
+    "costMs": 0,
+    "status": "retained"
   }
 ]
