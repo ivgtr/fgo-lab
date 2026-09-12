@@ -10,6 +10,7 @@ import {
   currentResourceQuery,
   mutationResourceAccess,
   resourceSourceActor,
+  resourceRecipientActor,
   type QuantityRead,
   type ResourceKind,
   type ResourceQuery,
@@ -29,7 +30,13 @@ interface Position {
   operation: number | null;
   phase: 'effect' | 'npUse' | 'damage' | 'ordinaryDependency';
 }
+type InstanceRead = Extract<QuantityRead, { kind: 'buffInstances' }>;
 interface Access {
+  instanceReads?: readonly InstanceRead[];
+  instanceWrite?: {
+    actor: InstanceRead['actor'];
+    operation: Extract<MasterEffect['execution'][number], { kind: 'buffInstanceMutation' }>;
+  };
   position: Position;
   reads: readonly ResourceQuery[];
   writes: readonly ResourceQuery[];
@@ -50,6 +57,10 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
   switch (operation.kind) {
     case 'unsupported':
       return operation.reason;
+    case 'buffInstanceMutation':
+      return operation.mutation === 'move' || operation.mutation === 'unsupported'
+        ? 'unsupportedBuffInstanceMutation'
+        : null;
     case 'stateMutation':
     case 'transformActorForm':
     case 'selectNoblePhantasmVariant':
@@ -134,6 +145,9 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
         ? [currentResourceQuery('battlePoint', ATTACKER_RESOURCE_ACTOR, operation.subjectId)]
         : [];
     const reads = mutation ? queries(mutation.amountReads) : [];
+    const instanceReads =
+      mutation?.amountReads.filter((read): read is InstanceRead => read.kind === 'buffInstances') ??
+      [];
     if ('valueExpressions' in operation) {
       const values = uniqueQueries(
         queries(
@@ -167,12 +181,23 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
       writes.length === 0 &&
       reads.length === 0 &&
       reason === null &&
-      operation.kind !== 'grantOcBoost'
+      operation.kind !== 'grantOcBoost' &&
+      operation.kind !== 'buffInstanceMutation' &&
+      instanceReads.length === 0
     )
       continue;
     result.push({
       ...empty,
       position: position(index, 'effect'),
+      ...(instanceReads.length ? { instanceReads } : {}),
+      ...(operation.kind === 'buffInstanceMutation'
+        ? {
+            instanceWrite: {
+              actor: resourceRecipientActor(source, operation.recipient),
+              operation,
+            },
+          }
+        : {}),
       writes,
       reads,
       opaqueReason: reason,
@@ -195,6 +220,7 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
 
 type ObservedReader = Position & { query: ResourceQuery };
 export interface ResourceProgramObservation {
+  instanceAccesses?: readonly Pick<Access, 'position' | 'instanceReads' | 'instanceWrite'>[];
   kind: 'declaredResourceProgram';
   programKey: string;
   valueCellScope: 'allCanonicalCells';
@@ -328,7 +354,15 @@ export function observeResourceProgram(
           suffix.find(({ opaqueReason }) => opaqueReason !== null)?.position ?? null,
       });
   }
+  const instanceAccesses = accesses
+    .filter((access) => access.instanceReads || access.instanceWrite)
+    .map(({ position, instanceReads, instanceWrite }) => ({
+      position,
+      ...(instanceReads ? { instanceReads } : {}),
+      ...(instanceWrite ? { instanceWrite } : {}),
+    }));
   return {
+    ...(instanceAccesses.length ? { instanceAccesses } : {}),
     kind: 'declaredResourceProgram',
     programKey: program.key,
     valueCellScope: 'allCanonicalCells',

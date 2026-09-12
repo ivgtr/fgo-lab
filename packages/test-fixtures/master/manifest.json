@@ -8,7 +8,7 @@
     "retrievedAt": "2026-08-24T00:00:00.000Z"
   },
   "minimalAppVersion": "0.1.0",
-  "schemaVersion": 48,
+  "schemaVersion": 49,
   "artifactKind": "diagnostic",
   "imagesEnabled": false,
   "files": [

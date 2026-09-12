@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(48),
+  schemaVersion: z.literal(49),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -293,7 +293,7 @@ const canonicalValueSetsSchema = z.tuple([
 ]);
 export type CanonicalValueSets = z.infer<typeof canonicalValueSetsSchema>;
 
-const canonicalInputBaseSchema = z.object({
+export const canonicalInputBaseSchema = z.object({
   key: z.string().min(1),
   owner: z.enum(['attacker', 'target', 'field', 'party', 'source']),
   label: z.string().min(1),
@@ -347,6 +347,15 @@ const matchingActorCountCanonicalInputDefinitionSchema = canonicalInputBaseSchem
 });
 
 export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
+  canonicalInputBaseSchema
+    .extend({
+      kind: z.literal('buffInstanceCount'),
+      owner: z.enum(['attacker', 'source']),
+      trait: z.string().min(1),
+      instanceTraits: z.array(z.string().min(1)).min(1),
+      defaultValue: z.number().int().nullable(),
+    })
+    .strict(),
   fixedCanonicalInputDefinitionSchema,
   stackInputSchema,
   matchingActorCountCanonicalInputDefinitionSchema,
@@ -468,6 +477,15 @@ const hpMutationShape = {
 };
 
 const effectExecutionOperationSchema = z.union([
+  z
+    .object({
+      kind: z.literal('buffInstanceMutation'),
+      mutation: z.enum(['grant', 'remove', 'move', 'unsupported']),
+      recipient: canonicalTargetPolicySchema,
+      traits: z.array(z.string().min(1)).min(1),
+      lifetime: z.enum(['active', 'constant']),
+    })
+    .strict(),
   z.object({ ...hpMutationShape, direction: z.literal('gain') }).strict(),
   z
     .object({
@@ -564,6 +582,15 @@ const effectExecutionOperationSchema = z.union([
       amount: z.discriminatedUnion('kind', [
         z
           .object({
+            kind: z.literal('buffCount'),
+            trait: z.string().min(1),
+            inputKey: z.string().min(1),
+            values: canonicalValueSetsSchema,
+            limitBreakValues: canonicalValueSetsSchema.optional(),
+          })
+          .strict(),
+        z
+          .object({
             kind: z.enum(['fixed', 'currentGaugeRatio']),
             values: canonicalValueSetsSchema,
             limitBreakValues: canonicalValueSetsSchema.optional(),
@@ -584,6 +611,12 @@ const effectExecutionOperationSchema = z.union([
         operation.amount.kind !== 'currentGaugeRatio' ||
         (operation.resource === 'npGauge' && operation.direction === 'gain'),
       { message: 'current_gauge_ratio_requires_np_gain' },
+    )
+    .refine(
+      (operation) =>
+        operation.amount.kind !== 'buffCount' ||
+        (operation.resource === 'npGauge' && operation.direction === 'gain'),
+      { message: 'buff_count_requires_np_gain' },
     )
     .refine(
       (operation) =>
@@ -789,7 +822,35 @@ export const masterEffectSchema = z
   })
   .strict()
   .superRefine((effect, context) => {
+    const buffCountKeys = new Set(
+      effect.inputDefinitions
+        .filter((input) => input.kind === 'buffInstanceCount')
+        .map((input) => input.key),
+    );
+    if (
+      canonicalRequirementLeaves(effect.requirement.expression).some(
+        (leaf) => leaf.kind === 'inputQuantity' && buffCountKeys.has(leaf.inputKey),
+      )
+    )
+      context.addIssue({ code: 'custom', message: 'unbound_buff_count_condition' });
     for (const operation of effect.execution) {
+      if (operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount') {
+        const amount = operation.amount;
+        const definitions = effect.inputDefinitions.filter(
+          (input) => input.key === amount.inputKey,
+        );
+        if (
+          definitions.length !== 1 ||
+          !definitions.some(
+            (input) =>
+              input.kind === 'buffInstanceCount' &&
+              input.trait === amount.trait &&
+              input.owner === 'attacker' &&
+              input.instanceTraits.includes(input.trait),
+          )
+        )
+          context.addIssue({ code: 'custom', message: 'unbound_buff_count_input' });
+      }
       if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange') continue;
       for (const expression of [
         ...operation.valueExpressions.flat(),
@@ -802,6 +863,8 @@ export const masterEffectSchema = z
           )
         )
           context.addIssue({ code: 'custom', message: 'unbound_stack_quantity_expression' });
+        if (expression?.kind === 'inputLinear' && buffCountKeys.has(expression.inputKey))
+          context.addIssue({ code: 'custom', message: 'unbound_buff_count_value' });
         if (expression?.kind !== 'stackLinear') continue;
         const keys = expression.sources.map((source) => source.key);
         if (

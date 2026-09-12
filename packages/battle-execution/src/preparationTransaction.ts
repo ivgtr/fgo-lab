@@ -7,7 +7,7 @@ import type {
   MasterSkill,
   ServantMaster,
 } from '@fgo-lab/master-data';
-import { canonicalRequirementLeaves, findNoblePhantasmVariant } from '@fgo-lab/master-data';
+import { findNoblePhantasmVariant } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type {
   PreNoblePhantasmState,
@@ -39,6 +39,7 @@ function effectChangesStructure(effect: MasterEffect, origin: Origin = 'attacker
   return effect.execution.some((operation) => {
     if (operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant')
       return true;
+    if (operation.kind === 'buffInstanceMutation') return true;
     return (
       operation.kind === 'contextMutation' &&
       'scope' in operation &&
@@ -83,24 +84,6 @@ export function effectChangesPreparation(
   );
 }
 
-/** Exact initial stack assumptions are not a proof of their value at a preparation read. */
-export function hasUnsupportedPreparationStackRequirement(effect: MasterEffect): boolean {
-  if (!effect.inputDefinitions.some((definition) => definition.kind === 'effectStackCount'))
-    return false;
-  if (!effectChangesPreparation(effect)) return false;
-  const stackKeys = new Set(
-    effect.inputDefinitions
-      .filter((definition) => definition.kind === 'effectStackCount')
-      .map(({ key }) => key),
-  );
-  return (
-    stackKeys.size > 0 &&
-    canonicalRequirementLeaves(effect.requirement.expression).some(
-      (requirement) => requirement.kind === 'inputQuantity' && stackKeys.has(requirement.inputKey),
-    )
-  );
-}
-
 export function resourceFailureCode(
   result: Extract<PreparationSourceResourceResult, { status: 'rejected' }>,
 ): PreparationFailureCode {
@@ -127,6 +110,7 @@ export type PreparationResourcePlanResult =
       preparationEffects: readonly MasterEffect[];
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
       ocState: OcState;
+      buffInstances: PreNoblePhantasmState['buffInstances'];
       ocInputDefinitions: readonly CanonicalInputDefinition[];
       uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
       ocUse: NpOcUseReceipt | null;
@@ -245,13 +229,6 @@ export function planPreparationResourceTransaction(args: {
   const activation = oc.activation;
   for (const effect of args.effects) {
     if (!effectChangesPreparation(effect)) continue;
-    if (hasUnsupportedPreparationStackRequirement(effect))
-      return {
-        status: 'rejected',
-        code: 'unsupportedPreparationStackQuantity',
-        requiredInput: null,
-        requiredInputEffectOccurrenceId: null,
-      };
     const applied = activation.get(effect);
     if (applied?.procOutcome === 'failure') continue;
     if (applied?.conditionOutcome === null && effectChangesIdentity(effect))
@@ -272,6 +249,7 @@ export function planPreparationResourceTransaction(args: {
     preparationEffects,
     activation,
     ocState: oc.result.state,
+    buffInstances: oc.structuralState.buffInstances,
     ocInputDefinitions: oc.inputDefinitions,
     uncertainContextWrites: oc.structuralState.uncertainContextWrites,
     ocUse,

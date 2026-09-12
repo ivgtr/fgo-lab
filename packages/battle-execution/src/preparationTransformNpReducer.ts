@@ -93,6 +93,7 @@ export function reducePreparationTransformNoblePhantasmAction(
       stackCounts: structural.stackCounts,
       initialTraitSuppressions: structural.initialTraitSuppressions,
       npResource: resource.resource.state,
+      buffInstances: resource.buffInstances,
       ocState: resource.ocState,
       ocInputDefinitions: resource.ocInputDefinitions,
       uncertainContextWrites: resource.uncertainContextWrites,

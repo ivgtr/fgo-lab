@@ -51,10 +51,7 @@ export {
   effectiveContributionsForOperation,
 } from './effectiveContributions';
 export { runtimeInputKey } from './runtimeInputIdentity';
-export {
-  effectChangesPreparation,
-  hasUnsupportedPreparationStackRequirement,
-} from './preparationTransaction';
+export { effectChangesPreparation } from './preparationTransaction';
 export type { ResolvedStochasticOutcome } from './stochasticOutcomes';
 export { evaluateCondition as evaluateConditionExpression } from './condition';
 export {

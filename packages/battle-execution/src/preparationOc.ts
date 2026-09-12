@@ -1,4 +1,6 @@
 import { effectExecutesInNpProgram } from './npProgramScope';
+import { applyBuffInstanceMutation } from './buffInstances';
+import { servantBuffCountInputs } from './stackQuantities';
 import { requiredOcConditionInput } from './ocConditionInputs';
 import {
   closePreparationConditionReads,
@@ -74,6 +76,22 @@ export function executePreparationOc(args: {
   activateFormKey?: string;
   terminalNp?: boolean;
 }) {
+  const buffInputs = [
+    ...servantBuffCountInputs(args.servant),
+    ...[
+      ...(args.context.initialSources ?? []),
+      ...(args.context.terminalSources ?? []),
+      ...args.sources,
+    ]
+      .flatMap((source) => source.effect.inputDefinitions)
+      .filter((input) => input.kind === 'buffInstanceCount'),
+  ];
+  const readsBuffMutation = (
+    operation: Extract<MasterEffect['execution'][number], { kind: 'buffInstanceMutation' }>,
+  ) =>
+    buffInputs.some((input) =>
+      input.instanceTraits.some((trait) => operation.traits.includes(trait)),
+    );
   let current = args.state;
   let factsState: PreNoblePhantasmState | null = null;
   let sharedFacts: ConditionEvaluationState | null = null;
@@ -136,9 +154,9 @@ export function executePreparationOc(args: {
         ),
       };
     let sourceApplies = true;
-    let sourceNp = current.npResource;
+    let sourceState = current;
     steps.push((ocState) => {
-      sourceNp = current.npResource;
+      sourceState = current;
       if (!source.sourceEnabled) {
         sourceApplies = false;
         activation.set(source.effect, { procOutcome: 'success', conditionOutcome: false });
@@ -148,6 +166,9 @@ export function executePreparationOc(args: {
       if (!facts) return { kind: 'reject', status: 'invalid', reason: 'invalidPreparationFacts' };
       const requiresExecution =
         effectRequiresPreparationDecision(source.effect, source.origin) ||
+        source.effect.execution.some(
+          (operation) => operation.kind === 'buffInstanceMutation' && readsBuffMutation(operation),
+        ) ||
         program.operations.length > 0;
       const effectWrites = uncertainPreparationWrites(
         source.effect,
@@ -213,7 +234,36 @@ export function executePreparationOc(args: {
     });
     const firstStep = steps.length;
     let ocIndex = 0;
-    for (const operation of source.effect.execution) {
+    for (const [operationIndex, operation] of source.effect.execution.entries()) {
+      if (operation.kind === 'buffInstanceMutation') {
+        if (!readsBuffMutation(operation)) continue;
+        steps.push(() => {
+          if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
+          if (activation.get(source.effect)?.conditionOutcome !== true)
+            return { kind: 'reject', status: 'unsupported', reason: 'unknownBuffInstanceMutation' };
+          const instances = applyBuffInstanceMutation(
+            current.buffInstances,
+            operation,
+            source,
+            JSON.stringify([
+              args.actionId,
+              source.sourceInstanceId,
+              source.skillId,
+              source.effect.occurrenceId,
+              operationIndex,
+            ]),
+          );
+          if (instances === null)
+            return {
+              kind: 'reject',
+              status: 'unsupported',
+              reason: 'unboundBuffInstanceRecipient',
+            };
+          current = { ...current, buffInstances: instances };
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
       if (isPreparationNpOperation(operation)) {
         steps.push((ocState, outcomes) => {
           if (
@@ -232,6 +282,7 @@ export function executePreparationOc(args: {
             operation,
             activation: activation.get(source.effect),
             valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            buffInstances: current.buffInstances,
           });
           if (resource.status === 'rejected') {
             resourceOutcome.failure = resource;
@@ -304,7 +355,7 @@ export function executePreparationOc(args: {
           (outcome) => outcome.step >= firstStep && outcome.outcome === 'stochasticFailure',
         )
       ) {
-        current = { ...current, npResource: sourceNp };
+        current = sourceState;
         return { kind: 'skip', outcome: 'notApplicable' };
       }
       const contextOperations = source.effect.execution.filter(

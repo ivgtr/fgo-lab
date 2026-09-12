@@ -6,6 +6,8 @@ import type {
 import { stackInputDefaultsAgree } from '@fgo-lab/master-data';
 import type { ExecutableBattleState, ConditionExpression } from './contracts';
 import { traitConditionEvaluationSource } from './conditionSemantics';
+import type { SourceEffect } from './sourceCollection';
+import { resolveResourceTargetPolicy } from './effectRouting';
 
 export function mergeInputDefinitions(
   definitions: readonly CanonicalInputDefinition[],
@@ -14,6 +16,18 @@ export function mergeInputDefinitions(
   for (const definition of definitions) {
     const previous = result.get(definition.key);
     if (previous && JSON.stringify(previous) !== JSON.stringify(definition)) {
+      if (
+        previous.kind === 'buffInstanceCount' &&
+        definition.kind === 'buffInstanceCount' &&
+        JSON.stringify({ ...previous, maximum: 0 }) ===
+          JSON.stringify({ ...definition, maximum: 0 })
+      ) {
+        result.set(definition.key, {
+          ...previous,
+          maximum: Math.max(previous.maximum, definition.maximum),
+        });
+        continue;
+      }
       if (
         previous.kind !== 'effectStackCount' ||
         definition.kind !== 'effectStackCount' ||
@@ -119,5 +133,37 @@ export function servantStackInputs(servant: ServantMaster): StackInputDefinition
     ].filter((definition) => definition.kind === 'effectStackCount'),
   ).filter(
     (definition): definition is StackInputDefinition => definition.kind === 'effectStackCount',
+  );
+}
+
+export function servantBuffCountInputs(
+  servant: ServantMaster,
+  additionalSources: readonly SourceEffect[] = [],
+) {
+  const inputs = [
+    ...servant.skills.flatMap((skill) => skill.effects),
+    ...servant.passives.flatMap((skill) => skill.effects),
+    ...servant.noblePhantasmVariantGroups.flatMap((group) =>
+      group.variants.flatMap((variant) => variant.effects),
+    ),
+    ...additionalSources
+      .filter((source) =>
+        source.effect.execution.some(
+          (operation) =>
+            operation.kind === 'resourceMutation' &&
+            operation.amount.kind === 'buffCount' &&
+            resolveResourceTargetPolicy(source.origin, operation.recipient) === 'attacker',
+        ),
+      )
+      .map((source) => source.effect),
+  ]
+    .flatMap((effect) => effect.inputDefinitions)
+    .filter(
+      (input): input is Extract<CanonicalInputDefinition, { kind: 'buffInstanceCount' }> =>
+        input.kind === 'buffInstanceCount',
+    );
+  return mergeInputDefinitions(inputs).filter(
+    (input): input is Extract<CanonicalInputDefinition, { kind: 'buffInstanceCount' }> =>
+      input.kind === 'buffInstanceCount',
   );
 }

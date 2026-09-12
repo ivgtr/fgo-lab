@@ -8,7 +8,6 @@ import {
 } from '@fgo-lab/master-data';
 import {
   canNormalizeDamageEffect,
-  hasUnsupportedPreparationStackRequirement,
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
   type ConditionExpression,
@@ -215,10 +214,6 @@ describe('production master inventory ratchet', () => {
         ),
       ),
     ];
-    // PIR-001: future preparation stack readers must enter the explicit support review.
-    expect(
-      effects.filter(({ effect }) => hasUnsupportedPreparationStackRequirement(effect)),
-    ).toEqual([]);
     const mutations = effects.flatMap((item) =>
       item.effect.execution.flatMap((operation) =>
         operation.kind === 'contextMutation' &&
@@ -663,7 +658,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_580 });
+    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_650 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',

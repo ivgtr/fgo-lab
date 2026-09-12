@@ -1,0 +1,675 @@
+{
+  "createdAt": "2026-09-12",
+  "status": "observationRequired",
+  "classification": "raw source legality and arithmetic predictions; not an in-game measurement",
+  "inputs": [
+    {
+      "path": "data/raw/nice_servant.json",
+      "sha256": "1abf690ac22bcdd427788e0ff545320af491ee9f90fbc08a56af9603a217118f"
+    },
+    {
+      "path": "data/raw/nice_equip.json",
+      "sha256": "bb339ac726f8201243410ec82b85a14496e6a8dace54b226071b556604fc27e5"
+    },
+    {
+      "path": "apps/web/public/master/master.json",
+      "sha256": "3a9c481dc25ab151f3be8106352210e4807ca0eaa1f2fb4c19225fa645a9ff6b",
+      "revision": "07ddfe1aa8e427c513542b52c6a0fa3add8f784b"
+    }
+  ],
+  "gates": [
+    {
+      "id": "maximumHp",
+      "status": "observationRequired",
+      "source": {
+        "ownerId": 202900,
+        "name": "浅上藤乃",
+        "skillId": 456550,
+        "skillName": "痛覚残留 A",
+        "skillCondLimitCount": 3,
+        "function": {
+          "funcId": 21560,
+          "funcType": "addState",
+          "funcTargetType": "self",
+          "funcTargetTeam": "playerAndEnemy",
+          "funcPopupText": "最大HPマイナス",
+          "funcPopupIcon": "https://static.atlasacademy.io/JP/BuffIcons/bufficon_522.png",
+          "functvals": [],
+          "overWriteTvalsList": [],
+          "funcquestTvals": [],
+          "script": {
+            "funcIndividuality": [
+              {
+                "id": 3098,
+                "name": "demeritFunction"
+              }
+            ]
+          },
+          "funcGroup": [],
+          "buffs": [
+            {
+              "id": 202,
+              "name": "最大HPマイナス",
+              "originalName": "最大HPマイナス",
+              "detail": "最大HPを減らす",
+              "icon": "https://static.atlasacademy.io/JP/BuffIcons/bufficon_522.png",
+              "type": "subMaxhp",
+              "buffGroup": 0,
+              "script": {},
+              "originalScript": {},
+              "vals": [
+                {
+                  "id": 3005,
+                  "name": "buffNegativeEffect"
+                },
+                {
+                  "id": 3044,
+                  "name": "buffMaxHpDown"
+                }
+              ],
+              "tvals": [],
+              "ckSelfIndv": [],
+              "ckOpIndv": [],
+              "maxRate": 50000
+            }
+          ],
+          "svals": [
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            },
+            {
+              "Rate": 5000,
+              "Turn": 3,
+              "Count": -1,
+              "Value": 2000
+            }
+          ]
+        }
+      },
+      "protocol": "Use the selected self maximum-HP reduction at its 2000 cell after losing at least 2000 HP. Record current and maximum HP immediately before and after, then remove the debuff without another HP operation and record both again.",
+      "predictions": {
+        "input": {
+          "current": 5000,
+          "maximum": 10000,
+          "delta": -2000
+        },
+        "clampOnly": {
+          "current": 5000,
+          "maximum": 8000
+        },
+        "subtractCurrent": {
+          "current": 3000,
+          "maximum": 8000
+        }
+      },
+      "remaining": "Published description supports clamp-only but no discriminating before/after measurement was recovered. Removal must also be observed."
+    },
+    {
+      "id": "healingPrecision",
+      "status": "observationRequired",
+      "sources": [
+        {
+          "ownerId": 101800,
+          "name": "アルテラ",
+          "skillId": 26250,
+          "skillName": "天性の肉体 D",
+          "skillCondLimitCount": 1,
+          "function": {
+            "funcId": 440,
+            "funcType": "gainHp",
+            "funcTargetType": "self",
+            "funcTargetTeam": "playerAndEnemy",
+            "funcPopupText": "",
+            "functvals": [],
+            "overWriteTvalsList": [],
+            "funcquestTvals": [],
+            "script": {
+              "funcIndividuality": [
+                {
+                  "id": 2984,
+                  "name": "unknown"
+                }
+              ]
+            },
+            "funcGroup": [],
+            "buffs": [],
+            "svals": [
+              {
+                "Rate": 1000,
+                "Value": 1000
+              },
+              {
+                "Rate": 1000,
+                "Value": 1150
+              },
+              {
+                "Rate": 1000,
+                "Value": 1300
+              },
+              {
+                "Rate": 1000,
+                "Value": 1450
+              },
+              {
+                "Rate": 1000,
+                "Value": 1600
+              },
+              {
+                "Rate": 1000,
+                "Value": 1750
+              },
+              {
+                "Rate": 1000,
+                "Value": 1900
+              },
+              {
+                "Rate": 1000,
+                "Value": 2050
+              },
+              {
+                "Rate": 1000,
+                "Value": 2200
+              },
+              {
+                "Rate": 1000,
+                "Value": 2500
+              }
+            ]
+          }
+        },
+        {
+          "ownerId": 9401350,
+          "name": "カルデアの顕学",
+          "skillId": 990314,
+          "skillName": "カルデアの顕学",
+          "skillCondLimitCount": 4,
+          "function": {
+            "funcId": 492,
+            "funcType": "addState",
+            "funcTargetType": "self",
+            "funcTargetTeam": "playerAndEnemy",
+            "funcPopupText": "HP回復量アップ",
+            "funcPopupIcon": "https://static.atlasacademy.io/JP/BuffIcons/bufficon_328.png",
+            "functvals": [],
+            "overWriteTvalsList": [],
+            "funcquestTvals": [],
+            "script": {},
+            "funcGroup": [],
+            "buffs": [
+              {
+                "id": 188,
+                "name": "HP回復量アップ",
+                "originalName": "HP回復量アップ",
+                "detail": "HPの回復効果量をアップ",
+                "icon": "https://static.atlasacademy.io/JP/BuffIcons/bufficon_328.png",
+                "type": "upGainHp",
+                "buffGroup": 0,
+                "script": {
+                  "ProgressSelfTurn": 1
+                },
+                "originalScript": {
+                  "ProgressSelfTurn": 1
+                },
+                "vals": [
+                  {
+                    "id": 3004,
+                    "name": "buffPositiveEffect"
+                  },
+                  {
+                    "id": 3082,
+                    "name": "unknown"
+                  }
+                ],
+                "tvals": [],
+                "ckSelfIndv": [],
+                "ckOpIndv": [],
+                "maxRate": 50000
+              }
+            ],
+            "svals": [
+              {
+                "Rate": 1000,
+                "Turn": -1,
+                "Count": -1,
+                "Value": 300
+              }
+            ]
+          }
+        }
+      ],
+      "protocol": "Altera skill 440 at level 10 heals 3000. Equip the extracted Scholars of Chaldea variant with +30% received healing. Remove all other give/receive modifiers and ensure missing HP exceeds 3900. Record numeric HP before and after the skill, not just the healing popup.",
+      "predictions": {
+        "float32EachStep": 3899,
+        "double": 3900
+      },
+      "remaining": "A legal skill/equip combination is now identified; actual HP delta and separate giver/receiver operation order remain unobserved."
+    },
+    {
+      "id": "hpReaders",
+      "status": "observationRequired",
+      "source": {
+        "servantId": "702500",
+        "level": 90,
+        "masterHp": 12028,
+        "fixedFouHp": 1000,
+        "equipment": null,
+        "maximumHp": 13028,
+        "np": [
+          {
+            "id": "[\"702500\",0,\"702501\"]",
+            "baseVariant": {
+              "actorFormId": {
+                "actorId": "702500",
+                "limitCount": 0
+              },
+              "noblePhantasmId": "702501"
+            },
+            "variants": [
+              {
+                "canonicalId": "675f10ab03a829af31aad2531596debb937d4965610be18686e566f97923f811",
+                "ref": {
+                  "actorFormId": {
+                    "actorId": "702500",
+                    "limitCount": 0
+                  },
+                  "noblePhantasmId": "702501"
+                },
+                "name": "不滅の誠",
+                "priority": 101,
+                "effects": [],
+                "kind": "attack",
+                "card": "buster",
+                "targetScope": "single",
+                "damage": [
+                  {
+                    "functionId": "22",
+                    "target": "single",
+                    "parametersByOvercharge": [
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 6000,
+                          "targetId": 6000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 6000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9000,
+                          "targetId": 6000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9500,
+                          "targetId": 6000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 6000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 6000,
+                          "targetId": 7000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 7000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9000,
+                          "targetId": 7000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9500,
+                          "targetId": 7000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 7000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 6000,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9000,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9500,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 8000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 6000,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9000,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9500,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 9000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 6000,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9000,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 9500,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 10000
+                        }
+                      ]
+                    ],
+                    "stateTraitNames": [],
+                    "rawPath": "actorForms[702500:0].noblePhantasms[702501].functions[0]",
+                    "kind": "hpRatioLow",
+                    "rawFunctionType": "damageNpHpratioLow"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "[\"702500\",0,\"702502\"]",
+            "baseVariant": {
+              "actorFormId": {
+                "actorId": "702500",
+                "limitCount": 0
+              },
+              "noblePhantasmId": "702502"
+            },
+            "variants": [
+              {
+                "canonicalId": "59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d",
+                "ref": {
+                  "actorFormId": {
+                    "actorId": "702500",
+                    "limitCount": 0
+                  },
+                  "noblePhantasmId": "702502"
+                },
+                "name": "不滅の誠",
+                "priority": 102,
+                "effects": [],
+                "kind": "attack",
+                "card": "buster",
+                "targetScope": "single",
+                "damage": [
+                  {
+                    "functionId": "22",
+                    "target": "single",
+                    "parametersByOvercharge": [
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11000,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11500,
+                          "targetId": 8000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 12000,
+                          "targetId": 8000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11000,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11500,
+                          "targetId": 9000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 12000,
+                          "targetId": 9000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11000,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11500,
+                          "targetId": 10000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 12000,
+                          "targetId": 10000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 11000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 11000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11000,
+                          "targetId": 11000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11500,
+                          "targetId": 11000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 12000,
+                          "targetId": 11000
+                        }
+                      ],
+                      [
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 8000,
+                          "targetId": 12000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 10000,
+                          "targetId": 12000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11000,
+                          "targetId": 12000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 11500,
+                          "targetId": 12000
+                        },
+                        {
+                          "ratePermille": 1000,
+                          "valuePermille": 12000,
+                          "targetId": 12000
+                        }
+                      ]
+                    ],
+                    "stateTraitNames": [],
+                    "rawPath": "actorForms[702500:0].noblePhantasms[702502].functions[0]",
+                    "kind": "hpRatioLow",
+                    "rawFunctionType": "damageNpHpratioLow"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "protocol": "Use current HP 1 with the recorded legal maximum for the NP continuous-ratio branch. Separately test the same buff grant before and after healing and threshold H-1/H/H+1; retain owner and read clock. Damage observations must control or enumerate random rolls, not infer a one-unit coefficient from one random damage roll.",
+      "remaining": "The earlier 1/11000 probe is schematic. A master-derived 1/13028 input is now provided, but no observation distinguishing integer-permille and continuous-ratio readers was recovered."
+    }
+  ],
+  "sourcesChecked": [
+    {
+      "url": "https://gamefaqs.gamespot.com/boards/180151-fate-grand-order/76323843",
+      "role": "original analyst description; no discriminating measurement procedure"
+    },
+    {
+      "url": "https://github.com/atlasacademy/fgo-docs",
+      "role": "damage/buff formula documentation; no healing-specific rounding oracle recovered"
+    }
+  ]
+}

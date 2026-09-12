@@ -69,7 +69,14 @@ function operationSemanticIdentity(operation: EffectExecutionOperation): string 
   if (operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent')
     return JSON.stringify({
       ...operation,
-      amount: { kind: operation.amount.kind },
+      amount:
+        operation.amount.kind === 'buffCount'
+          ? {
+              kind: operation.amount.kind,
+              trait: operation.amount.trait,
+              inputKey: operation.amount.inputKey,
+            }
+          : { kind: operation.amount.kind },
     });
   if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
     return JSON.stringify(operation);

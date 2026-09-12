@@ -110,6 +110,7 @@ export function terminalOcPreparationEffects(
         effect.execution.some(
           (operation) =>
             operation.kind === 'resourceMutation' ||
+            operation.kind === 'buffInstanceMutation' ||
             operation.kind === 'contextMutation' ||
             (operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount'),
         ))

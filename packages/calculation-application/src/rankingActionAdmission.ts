@@ -12,7 +12,6 @@ import {
   type OcResourceDependencyContext,
   classifyContributionCondition,
   compileEffectCondition,
-  hasUnsupportedPreparationStackRequirement,
 } from '@fgo-lab/battle-execution';
 import { attackProfileKey } from './attackProfile';
 import type { RankingPolicyConditions } from './rankingContracts';
@@ -171,8 +170,6 @@ function effectHasDamageContribution(effect: MasterEffect): boolean {
 }
 
 function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission | null {
-  if (hasUnsupportedPreparationStackRequirement(effect))
-    return { kind: 'unsupported', reason: 'unresolvedOperation' };
   if (effect.execution.some((operation) => operation.kind === 'unsupported'))
     return { kind: 'unsupported', reason: 'unresolvedOperation' };
   if (
@@ -214,6 +211,7 @@ function optionalAdmission(
       effect.execution.some(
         (operation) =>
           operation.kind === 'contextMutation' ||
+          operation.kind === 'buffInstanceMutation' ||
           operation.kind === 'stateMutation' ||
           operation.kind === 'resourceMutation',
       ),

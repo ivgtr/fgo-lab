@@ -26,13 +26,24 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '4f9ce3ac112099ad2bd706fb90add87bdac32d585c5deacdc10f911bd5a0eaa8',
+          digest: 'e52da590e30e0eb762b739c2fe5f7462483adcfcb7947522c548b4c7f507e9d5',
           inventory: {
-            attackProfiles: 433,
             attackServants: 422,
-            calculated: 420,
+            attackProfiles: 433,
+            preparationPlans: 3453,
             calculatorScenarios: 422,
+            rankingRows: 413,
+            rankingPolicy: 'current-default',
+            resourcePrograms: {
+              programs: 7255,
+              mutations: 15795,
+              opaqueOperations: 54037,
+              digest: '830e4f83cdd16e0cacdae8d16d2d9ed3955b064ac4403e7e1702335bc83b1a80',
+            },
+            calculated: 420,
             inputRequired: 0,
+            unsupported: 2,
+            unavailable: 0,
             invalid: 0,
             levelStatAvailability: {
               naturalPairs: 422,
@@ -43,17 +54,6 @@ describe('shared calculation-application production audit', () => {
               referencedMissing: 0,
               missing: [],
             },
-            preparationPlans: 3_453,
-            rankingPolicy: 'current-default',
-            rankingRows: 411,
-            resourcePrograms: {
-              programs: 7_255,
-              mutations: 15_795,
-              opaqueOperations: 54_048,
-              digest: 'e482b45f57737f916c00ef961d7e86e67479998484bf8b52e23ea4988a6ec4fb',
-            },
-            unsupported: 2,
-            unavailable: 0,
           },
         },
       },
@@ -77,7 +77,7 @@ describe('shared calculation-application production audit', () => {
         counts[kind] = (counts[kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ unsupported: 2, rankingFailure: 22 });
+    ).toEqual({ unsupported: 2, rankingFailure: 20 });
     expect(
       audit.failures.filter(({ kind }) => kind === 'unsupported').map(({ identity }) => identity),
     ).toEqual(['calculator:702500', 'calculator:705300']);

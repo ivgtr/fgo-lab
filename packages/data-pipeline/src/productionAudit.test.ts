@@ -26,7 +26,7 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '9145478963fd3f6bfa7839bec1a1930a9b9ddd90dd04fd4da091655b29e23a1c',
+          digest: '736778a8337a5f515e240897430b320fe4e9ed432ec8faa8ec88e073f8eb0b26',
           inventory: {
             hpGrowth: {
               servantCells: 56250,
@@ -60,36 +60,29 @@ describe('shared data-pipeline production audit', () => {
               },
             },
             resources: {
-              hpMutationContracts: {
-                '["gainHp","gain","fixed",null]': 1930,
-                '["gainHpPer","gain","percent",null]': 50,
-                '["lossHpSafe","loss","fixed","oneIfAlive"]': 245,
-                '["lossHp","loss","fixed","zero"]': 275,
-                '["lossHpPerSafe","loss","percent","oneIfAlive"]': 10,
+              mutations: {
+                npGauge: 731,
+                hp: 179,
+                criticalStars: 255,
+                battlePoint: 1,
               },
               triggerOperations: {
                 '["commandCardAttack","unsupported",null]': 23,
                 '["commandCard","stateMutation",null]': 15,
                 '["commandCard","damageModifier",null]': 2,
               },
-              mutations: {
-                npGauge: 729,
-                hp: 179,
-                criticalStars: 255,
-                battlePoint: 1,
-              },
               unsupported: {
-                '["gainNp","unresolvedTarget",null,true]': 2,
                 '["addStateShort","operationSemantics","commandCardAttack",true]': 23,
                 '["replaceMember","partyCompositionMutation",null,true]': 3,
-                '["gainNpBuffIndividualSum","dependentResourceAmount",null,true]': 4,
+                '["gainNpBuffIndividualSum","dependentResourceAmount",null,true]': 2,
                 '["gainNpTargetSum","dependentResourceAmount",null,true]': 3,
-                '["addState","contextReference",null,false]': 29,
+                '["addState","contextReference",null,false]': 25,
                 '["gainNpFromTargets","dependentResourceAmount",null,true]': 3,
                 '["gainHpFromTargets","dependentResourceAmount",null,true]': 3,
                 '["gainNpIndividualSum","dependentResourceAmount",null,true]': 3,
                 '["addState","operationSemantics",null,true]': 1,
                 '["moveToLastSubmember","partyCompositionMutation",null,true]': 1,
+                '["gainNp","unresolvedTarget",null,true]': 2,
               },
               dependentCells: {
                 '["gainNpFromTargets","delayNpturn","enemyAll",["Rate","Value","Value2"]]': 20,
@@ -103,6 +96,18 @@ describe('shared data-pipeline production audit', () => {
                 '["gainNpTargetSum",3]': 10,
                 '["gainNpIndividualSum",2]': 20,
                 '["gainNpIndividualSum",3]': 10,
+              },
+              hpLossCells: {
+                lossHpSafe: 245,
+                lossHp: 275,
+                lossHpPerSafe: 10,
+              },
+              hpMutationContracts: {
+                '["gainHp","gain","fixed",null]': 1930,
+                '["lossHpSafe","loss","fixed","oneIfAlive"]': 245,
+                '["lossHp","loss","fixed","zero"]': 275,
+                '["lossHpPerSafe","loss","percent","oneIfAlive"]': 10,
+                '["gainHpPer","gain","percent",null]': 50,
               },
               hpBuffEffects: {
                 regainHp: 88,
@@ -177,11 +182,6 @@ describe('shared data-pipeline production audit', () => {
                 '["reduceHp","addStateShort","self",null,"beforeDamage",["AddIndividualty","AddIndividualtyList","AddLinkageTargetIndividualty","Count","Rate","Turn","Value"]]': 25,
                 '["addMaxhp","addState","ptAll",null,null,["ActSet","Count","Rate","TriggeredTargetBattlePointRateRange","Turn","Value"]]': 10,
               },
-              hpLossCells: {
-                lossHpSafe: 245,
-                lossHp: 275,
-                lossHpPerSafe: 10,
-              },
               battlePointWrites: {
                 '["addBattlePoint",3300200,10]': 1,
                 '["addBattlePoint",3300200,5]': 20,
@@ -202,7 +202,7 @@ describe('shared data-pipeline production audit', () => {
               },
               battlePointMissingAmounts: 10,
             },
-            operations: 14633,
+            operations: 14775,
             damageFunctions: 630,
             noblePhantasmVariantIdentities: 706,
             rawFunctionTypes: 54,

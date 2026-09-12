@@ -169,14 +169,14 @@ describe('production preparation semantics audit', () => {
 
     expect(inventory).toEqual({
       servants: 422,
-      generated: 6_382,
-      deduplicated: 3_966,
+      generated: 6_403,
+      deduplicated: 3_986,
       terminal: 3_453,
-      exactDuplicates: 2_416,
-      rejectedActions: 71,
+      exactDuplicates: 2_417,
+      rejectedActions: 63,
       rejectedActionCounts: {
         insufficientNpGauge: 6,
-        unsupportedResourceMutation: 65,
+        unsupportedResourceMutation: 57,
       },
       maximumPreparationActions: 4,
       maximumSemanticStates: 56,

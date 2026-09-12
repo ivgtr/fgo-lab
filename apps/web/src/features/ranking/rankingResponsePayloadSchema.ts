@@ -4,6 +4,7 @@ import {
   actorFormGraphSchema,
   actorFormIdSchema,
   canonicalInputDefinitionSchema,
+  canonicalInputBaseSchema,
   masterEffectSchema,
   noblePhantasmVariantRefSchema,
   ocLifetimeLimitSchema,
@@ -135,9 +136,9 @@ const effectiveContributionsSchema = z.object({
   ),
   effectivePresentationGroupIds: z.set(z.string()),
 });
-const inputDefinition = canonicalInputDefinitionSchema.options[0];
 const effectInputSchema = z.object({
-  ...inputDefinition.shape,
+  ...canonicalInputBaseSchema.shape,
+  defaultValue: z.number().int().nullable(),
   kind: z.union(canonicalInputDefinitionSchema.options.map((option) => option.shape.kind)),
   control: z.enum(['segmented', 'stepper', 'percentage']),
   value: z.number().nullable(),

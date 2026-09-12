@@ -28,6 +28,7 @@ export type ResourceQuery =
   | { resource: 'criticalStars'; measure: 'current'; actor: { kind: 'party' } };
 export type QuantityRead =
   | { kind: 'resource'; query: ResourceQuery }
+  | { kind: 'buffInstances'; actor: ResourceActor; trait: string; lifetime: 'active' }
   | { kind: 'input'; inputKey: string }
   | { kind: 'unresolved'; reason: string; resources: readonly ResourceKind[] };
 export interface ResourceReadContext {
@@ -93,6 +94,13 @@ export function mutationResourceAccess(
 ): { write: ResourceQuery; amountReads: readonly QuantityRead[] } {
   const actor = resourceRecipientActor(source, operation.recipient);
   const write = currentResourceQuery(operation.resource, actor, operation.subjectId);
+  if (operation.amount.kind === 'buffCount')
+    return {
+      write,
+      amountReads: [
+        { kind: 'buffInstances', actor, trait: operation.amount.trait, lifetime: 'active' },
+      ],
+    };
   if (operation.amount.kind === 'dependent')
     return {
       write,

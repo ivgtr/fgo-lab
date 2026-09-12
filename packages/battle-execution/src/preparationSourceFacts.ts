@@ -11,6 +11,17 @@ function commandCondition(
   condition: ConditionExpression,
   program: OcSourceProgram,
 ): ConditionExpression {
+  if (condition.kind === 'inputQuantity') {
+    const definition = runtimeInputDefinitionsForSource(program.source).find(
+      (input) => input.key === condition.inputKey,
+    );
+    if (
+      definition?.kind === 'effectStackCount' &&
+      program.conditionActor === 'source' &&
+      definition.quantitySource.scope === 'attackerState'
+    )
+      return { kind: 'unsupported', reason: 'unresolvedRecipient', readDependency: condition };
+  }
   if (
     condition.kind === 'operationTrigger' &&
     condition.source.sourceInstanceId === program.source.sourceInstanceId

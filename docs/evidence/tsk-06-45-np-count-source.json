@@ -1,0 +1,35 @@
+{
+  "retrievedAt": "2026-09-12",
+  "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_np.dart",
+  "sha256": "58759eb3697dd8787140d2a1f74597104d907c9d4721c3f2bb2a1c25a835202a",
+  "classification": "comparison implementation; not an in-game numerical oracle",
+  "interpretation": {
+    "gainNpBuffIndividualSum": "For each resolved recipient, count matching active buff instances. Passive inclusion requires an explicit flag. Each matching instance contributes once, independently of actor intrinsic traits.",
+    "gainNpIndividualSum": "Counts buff instances plus matching intrinsic individualities across the selected actor scope. Not implemented by the buff-count branch.",
+    "gainNpTargetSum": "Counts matching actors across the selected scope. Not implemented by the buff-count branch.",
+    "scope": "Value2 is an actor-scope selector for IndividualSum/TargetSum, not an amount cap.",
+    "buffTraits": "BuffData.getTraits combines buff.vals with cell-added individualities. IgnoreIndividuality removes an instance from this reader; irremovable instances are still counted. The implemented branch rejects these extra lifetime/identity policies and counts only ordinary active, removable instances."
+  },
+  "dependencies": [
+    {
+      "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/svt_entity.dart",
+      "sha256": "d7c1961a37d655d87279cc999b1cc29be74214174a7f1d431e9d5e65c899873e",
+      "lines": [
+        1171,
+        1240
+      ]
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/buff.dart",
+      "sha256": "8aa43d185287a6861c23ebd60fb3f696b18ab9e96d228155e5659ae2ed87fbc5",
+      "lines": [
+        197
+      ]
+    }
+  ],
+  "lines": [
+    108,
+    121,
+    149
+  ]
+}

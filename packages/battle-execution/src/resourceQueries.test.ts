@@ -8,6 +8,7 @@ import {
   resourceQueriesMayIntersect,
   resourceRecipientActor,
   resourceSourceActor,
+  mutationResourceAccess,
   type ResourceActor,
   type ResourceQuery,
 } from './resourceQueries';
@@ -54,6 +55,41 @@ const operationBase: Omit<
 };
 
 describe('canonical physical resource reads', () => {
+  it('describes a live buff instance read at the recipient, independently of its initial input', () => {
+    expect(
+      mutationResourceAccess(
+        {
+          kind: 'resourceMutation',
+          resource: 'npGauge',
+          direction: 'gain',
+          unit: 'fixed',
+          recipient: 'sourceSelf',
+          subjectId: null,
+          amount: {
+            kind: 'buffCount',
+            trait: 'counted',
+            inputKey: 'initial',
+            values: [[5000], [], [], [], []],
+          },
+        },
+        support,
+      ),
+    ).toEqual({
+      write: {
+        resource: 'npGauge',
+        measure: 'current',
+        actor: { kind: 'source', origin: 'support', sourceInstanceId: 'support:a' },
+      },
+      amountReads: [
+        {
+          kind: 'buffInstances',
+          actor: { kind: 'source', origin: 'support', sourceInstanceId: 'support:a' },
+          trait: 'counted',
+          lifetime: 'active',
+        },
+      ],
+    });
+  });
   it('keeps the BP domain independent of source actor and skill identity through nested boolean composition', () => {
     const condition: ConditionExpression = {
       kind: 'not',

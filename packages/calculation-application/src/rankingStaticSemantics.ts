@@ -7,7 +7,6 @@ import {
   compileOcSourceProgram,
   hasOcConditionReader,
   effectChangesPreparation,
-  hasUnsupportedPreparationStackRequirement,
   noblePhantasmDamageDependency,
   planOperationActivations,
   runtimeInputDefinitionsForSource,
@@ -43,8 +42,6 @@ export function compileStaticRankingSemantics(
   const unsupported: EffectProjection[] = [];
   let uncertainOcCell = false;
   for (const source of sources) {
-    if (hasUnsupportedPreparationStackRequirement(source.effect))
-      throw new UnsupportedStackQuantity('unsupportedPreparationStackQuantity');
     const rows =
       source.origin === 'np' && effectReadsOc(source.effect)
         ? [0, 1, 2, 3, 4]
@@ -117,7 +114,7 @@ export function compileStaticRankingSemantics(
       ),
       ...damageConditions,
       ...sources
-        .filter(({ effect }) => hasOcConditionReader(effect))
+        .filter(({ effect }) => effectChangesPreparation(effect) || hasOcConditionReader(effect))
         .map((source) => compileOcSourceProgram(source).condition),
     ].map((condition) => stackOwnedWitnessCondition(condition, definitions)),
     stackWitnesses: uncertainOcCell
@@ -132,7 +129,8 @@ export function compileStaticRankingSemantics(
             ([key]) =>
               !sources.some(
                 (source) =>
-                  hasOcConditionReader(source.effect) &&
+                  (effectChangesPreparation(source.effect) ||
+                    hasOcConditionReader(source.effect)) &&
                   runtimeInputDefinitionsForSource(source).some(
                     (definition) => definition.key === key,
                   ),

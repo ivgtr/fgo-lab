@@ -1,0 +1,47 @@
+{
+  "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+  "head": "07ddfe1aa8e427c513542b52c6a0fa3add8f784b",
+  "diffHash": "8c3649873be4bc10711d2fecba2902fbd57a3bc9d545ab0e74a2a72556ab71f4",
+  "node": "v26.3.1",
+  "platform": "linux",
+  "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+  "scriptHash": "eb184a17e9a6dea06e3e10c4067f59ca8886257cac032eff2c21e5c67d34ac8d",
+  "masterHash": "3a9c481dc25ab151f3be8106352210e4807ca0eaa1f2fb4c19225fa645a9ff6b",
+  "versions": {
+    "masterDataVersion": "20260908.05",
+    "engineVersion": "38.0.0"
+  },
+  "conditions": {
+    "population": "all",
+    "initialOvercharge": 1,
+    "levelBasis": "naturalLimit",
+    "npLevelBasis": {
+      "kind": "specified",
+      "npLevel": 1
+    },
+    "classAffinity": "neutral",
+    "selfBuffs": "included",
+    "conditionalEffects": "baseline"
+  },
+  "samples": [
+    {
+      "milliseconds": 3453.636854000001,
+      "rows": 411,
+      "exclusions": 22,
+      "digest": "d1518753515101166ca89d9e6f76cde3067cb2bf8f80ebff6dee3dfbee410071"
+    },
+    {
+      "milliseconds": 3571.9347319999997,
+      "rows": 411,
+      "exclusions": 22,
+      "digest": "d1518753515101166ca89d9e6f76cde3067cb2bf8f80ebff6dee3dfbee410071"
+    },
+    {
+      "milliseconds": 3743.897006000001,
+      "rows": 411,
+      "exclusions": 22,
+      "digest": "d1518753515101166ca89d9e6f76cde3067cb2bf8f80ebff6dee3dfbee410071"
+    }
+  ],
+  "medianMs": 3571.9347319999997
+}

@@ -84,6 +84,7 @@ export function ocRelevantSourceIndexes(
   let rate = false;
   let condition = false;
   let hp = false;
+  const buffReads = new Set<string>();
   const readsHpCondition = (effect: MasterEffect) =>
     canonicalRequirementLeaves(effect.requirement.expression).some(
       (leaf) =>
@@ -161,9 +162,27 @@ export function ocRelevantSourceIndexes(
             (oc || gauge?.reachability) &&
             (gauge === null || gauge.changed.has(index))) ||
             (operation.resource === 'hp' && hp))
+        ) {
+          relevant.add(index);
+          condition = true;
+          hp ||= readsHpCondition(effect);
+        }
+        if (operation.kind === 'contextMutation' && condition) relevant.add(index);
+        if (
+          operation.kind === 'resourceMutation' &&
+          operation.amount.kind === 'buffCount' &&
+          relevant.has(index)
+        ) {
+          buffReads.add(operation.amount.trait);
+          for (const input of effect.inputDefinitions)
+            if (input.kind === 'buffInstanceCount' && input.key === operation.amount.inputKey)
+              for (const trait of input.instanceTraits) buffReads.add(trait);
+        }
+        if (
+          operation.kind === 'buffInstanceMutation' &&
+          operation.traits.some((trait) => buffReads.has(trait))
         )
           relevant.add(index);
-        if (operation.kind === 'contextMutation' && condition) relevant.add(index);
       }
     }
     if (source.kind === 'noblePhantasm' && source.effects.some(effectReadsOc)) oc = true;

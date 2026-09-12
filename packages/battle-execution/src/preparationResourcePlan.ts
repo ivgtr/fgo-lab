@@ -10,6 +10,7 @@ import {
 import { resolveTargetPolicy, resolveResourceTargetPolicy } from './effectRouting';
 import type { SourceEffect } from './sourceCollection';
 import type { PreparationEffectActivation } from './preparationTransaction';
+import { countBuffInstances, type CountedBuffInstance } from './buffInstances';
 
 type Operation = MasterEffect['execution'][number];
 
@@ -24,6 +25,7 @@ function selectedNpMutation(
   source: SourceEffect,
   operation: Operation,
   valueSetIndex: number,
+  instances: readonly CountedBuffInstance[],
 ): NpResourceMutation | null {
   if (
     operation.kind === 'unsupported' &&
@@ -38,9 +40,29 @@ function selectedNpMutation(
   if (recipient !== 'attacker') return null;
   if (operation.amount.kind === 'dependent')
     return { kind: 'unsupported', family: operation.amount.reason };
+  const countAmount = operation.amount;
+  if (
+    countAmount.kind === 'buffCount' &&
+    !source.effect.inputDefinitions.some(
+      (input) =>
+        input.kind === 'buffInstanceCount' &&
+        input.key === countAmount.inputKey &&
+        input.trait === countAmount.trait &&
+        input.instanceTraits.includes(input.trait),
+    )
+  )
+    return { kind: 'unsupported', family: 'unboundBuffCountInput' };
   const values = source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values;
   const amount = values?.[valueSetIndex]?.[source.valueIndex];
-  return npMutationFromCanonicalAmount(operation, amount);
+  const selected =
+    operation.amount.kind === 'buffCount' && amount !== null && amount !== undefined
+      ? amount * countBuffInstances(instances, operation.amount.trait)
+      : amount;
+  if (selected !== null && selected !== undefined && !Number.isSafeInteger(selected))
+    return { kind: 'gain', amount: Number.NaN };
+  if (operation.amount.kind === 'buffCount' && selected !== null && selected !== undefined)
+    return { kind: 'gain', amount: selected };
+  return npMutationFromCanonicalAmount(operation, selected);
 }
 
 export type PreparationSourceResourceResult =
@@ -55,13 +77,14 @@ export function applyPreparationNpOperation(args: {
   operation: Operation;
   activation: PreparationEffectActivation | undefined;
   valueSetIndex: number;
+  buffInstances: readonly CountedBuffInstance[];
 }): PreparationSourceResourceResult {
   const { initial, source, operation, activation, valueSetIndex } = args;
   const unchanged = { status: 'applied' as const, state: initial, baseOvercharge: null };
   if (!effectExecutesInNpProgram(source.effect)) return unchanged;
   if (activation?.procOutcome === 'failure' || activation?.conditionOutcome === false)
     return unchanged;
-  const mutation = selectedNpMutation(source, operation, valueSetIndex);
+  const mutation = selectedNpMutation(source, operation, valueSetIndex, args.buffInstances);
   if (!mutation) return unchanged;
   const probe = applyNpResourceTransaction(args.semantics, initial, {
     requirement: null,

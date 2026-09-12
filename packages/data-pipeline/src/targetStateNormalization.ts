@@ -11,6 +11,9 @@ import { functionReachesDamageModifier, normalizeTargetPolicy } from './executio
 const STATE_GRANT_FUNCTIONS = new Set(['addState', 'addStateShort']);
 
 export interface DamageReachableStateCatalog {
+  readonly countedBuffTraits?: ReadonlySet<string>;
+  readonly countedBuffDefinitions?: ReadonlyMap<string, readonly string[]>;
+  readonly actorTraitReferences?: ReadonlySet<number>;
   readonly stackLabels?: ReadonlyMap<string, string>;
   readonly stateOnlyTraits: ReadonlySet<string>;
 }
@@ -129,6 +132,35 @@ export function collectDamageReachableStateCatalog(
     ...functions.flatMap((fn) => noblePhantasmDamageTraits(fn, traitNameById)),
   ]);
   const permanentTraits = permanentTraitIdentities(input.servants, traitNameById);
+  const countedBuffTraits = new Set(
+    functions
+      .filter((fn) => fn.funcType === 'gainNpBuffIndividualSum')
+      .flatMap((fn) =>
+        (fn.traitVals ?? []).flatMap((trait) => {
+          const name = stateMutationTraitName(trait, traitNameById);
+          return name ? [name] : [];
+        }),
+      ),
+  );
+  const countedBuffDefinitions = new Map<string, readonly string[]>();
+  for (const trait of countedBuffTraits) {
+    const signatures = new Map(
+      functions.flatMap((fn) =>
+        (fn.buffs ?? []).flatMap((buff) => {
+          const traits = [
+            ...new Set(
+              (buff.vals ?? []).flatMap((item) => {
+                const name = stateMutationTraitName(item, traitNameById);
+                return name ? [name] : [];
+              }),
+            ),
+          ].sort();
+          return traits.includes(trait) ? [[JSON.stringify(traits), traits] as const] : [];
+        }),
+      ),
+    );
+    if (signatures.size === 1) countedBuffDefinitions.set(trait, [...signatures.values()][0]!);
+  }
   const labels = new Map<string, Set<string>>();
   for (const fn of functions)
     for (const buff of fn.buffs ?? [])
@@ -140,6 +172,20 @@ export function collectDamageReachableStateCatalog(
         labels.set(name, values);
       }
   return {
+    countedBuffTraits,
+    countedBuffDefinitions,
+    actorTraitReferences: new Set(
+      [
+        ...input.servants.flatMap((servant) => servant.traits ?? []),
+        ...functions.flatMap((fn) => [
+          ...(fn.functvals ?? []),
+          ...(fn.buffs ?? []).flatMap((buff) => [
+            ...(buff.ckSelfIndv ?? []),
+            ...(buff.ckOpIndv ?? []),
+          ]),
+        ]),
+      ].flatMap((trait) => (typeof trait.id === 'number' && trait.id > 0 ? [trait.id] : [])),
+    ),
     stackLabels: new Map(
       [...labels].flatMap(([key, values]) => (values.size === 1 ? [[key, [...values][0]!]] : [])),
     ),

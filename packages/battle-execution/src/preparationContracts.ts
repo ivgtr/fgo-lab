@@ -13,6 +13,7 @@ import type { OcState, NpOcUseReceipt, OcActionOutcome } from './ocState';
 import type { ContributionApplicationPolicy } from './executionTypes';
 import type { WorldFactAssertion, TargetPredicateAssertion } from './contracts';
 import type { SourceEffect } from './sourceCollection';
+import type { CountedBuffInstance } from './buffInstances';
 
 export interface PreparationExecutionContext {
   resourceSemantics: CanonicalNpResourceSemantics;
@@ -62,6 +63,7 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState {
+  buffInstances: readonly CountedBuffInstance[];
   initialFormId: ActorFormId;
   currentFormId: ActorFormId;
   selectedNoblePhantasmVariant: NoblePhantasmVariantRef | null;
@@ -109,7 +111,6 @@ export type PreparationFailureCode =
   | 'unsupportedResourceMutation'
   | 'unsupportedOcExecution'
   | 'invalidOcExecution'
-  | 'unsupportedPreparationStackQuantity'
   | 'invalidPreparationActivation'
   | 'ambiguousPreparationCondition'
   | 'preparationInputRequired';

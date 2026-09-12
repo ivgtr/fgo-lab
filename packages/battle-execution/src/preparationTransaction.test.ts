@@ -1686,6 +1686,84 @@ describe('current gauge ratio in the common preparation transaction', () => {
   });
 });
 
+it('selects live buff count coefficients from normal/LB and OC cells without a missing-cell fallback', async () => {
+  const { preparationEffectSource } = await import('./preparationOc');
+  const { applyPreparationNpOperation } = await import('./preparationResourcePlan');
+  const { masterEffectSchema } = await import('@fgo-lab/master-data');
+  const canonical = masterEffectSchema.parse({
+    ...effect('buff-count-cells', null, [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: {
+          kind: 'buffCount',
+          inputKey: 'count',
+          trait: 'counted',
+          values: [[1000], [2000], [], [], []],
+          limitBreakValues: [[3000], [4000], [], [], []],
+        },
+      },
+    ]),
+    inputDefinitions: [
+      {
+        kind: 'buffInstanceCount',
+        key: 'count',
+        owner: 'attacker',
+        trait: 'counted',
+        instanceTraits: ['counted'],
+        label: '状態数',
+        description: '初期状態数',
+        minimum: 0,
+        maximum: 30,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: '外部付与なし',
+      },
+    ],
+  });
+  const servant = servantWithSkill([]);
+  const initial = createPreNoblePhantasmState(servant, baseForm, context);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const source = preparationEffectSource({
+    servant,
+    state: initial.state,
+    effect: canonical,
+    origin: 'craftEssence',
+    sourceInstanceId: 'ce',
+    skillId: 'ce',
+    skillName: 'CE',
+    valueSetIndex: 0,
+    valueIndex: 0,
+  });
+  const run = (limitBreak: boolean, valueSetIndex: number, count: number, bound = true) =>
+    applyPreparationNpOperation({
+      semantics,
+      initial: initial.state.npResource,
+      source: {
+        ...source,
+        limitBreak,
+        effect: bound ? canonical : { ...canonical, inputDefinitions: [] },
+      },
+      operation: canonical.execution[0]!,
+      valueSetIndex,
+      activation: { conditionOutcome: true, procOutcome: 'success' },
+      buffInstances: [
+        { identity: 'live', actor: 'attacker', traits: ['counted'], lifetime: 'active', count },
+      ],
+    });
+  expect(run(false, 0, 2)).toMatchObject({ status: 'applied', state: { gauge: 12_000 } });
+  expect(run(false, 1, 2)).toMatchObject({ status: 'applied', state: { gauge: 14_000 } });
+  expect(run(true, 0, 2)).toMatchObject({ status: 'applied', state: { gauge: 16_000 } });
+  expect(run(true, 1, 2)).toMatchObject({ status: 'applied', state: { gauge: 18_000 } });
+  expect(run(true, 1, 0)).toMatchObject({ status: 'applied', state: { gauge: 10_000 } });
+  expect(run(true, 2, 2).status).toBe('rejected');
+  expect(run(true, 1, 2, false).status).toBe('rejected');
+});
+
 it('selects proportional normal/LB and OC cells, routes recipients, and classifies uncertain writes', async () => {
   const { preparationEffectSource } = await import('./preparationOc');
   const { applyPreparationNpOperation } = await import('./preparationResourcePlan');
@@ -1735,6 +1813,7 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
     },
   ) =>
     applyPreparationNpOperation({
+      buffInstances: [],
       semantics,
       initial: initial.state.npResource,
       source: { ...source, limitBreak },
@@ -1759,6 +1838,7 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
   const saturated = { ...initial.state.npResource, gauge: 20000 };
   expect(
     applyPreparationNpOperation({
+      buffInstances: [],
       semantics,
       initial: saturated,
       source,
@@ -1769,6 +1849,7 @@ it('selects proportional normal/LB and OC cells, routes recipients, and classifi
   ).toMatchObject({ status: 'applied', state: saturated });
   expect(
     applyPreparationNpOperation({
+      buffInstances: [],
       semantics,
       initial: initial.state.npResource,
       source,
@@ -1877,6 +1958,7 @@ it.each(['fixed', 'currentGaugeRatio'] as const)(
     });
     expect(
       applyPreparationNpOperation({
+        buffInstances: [],
         semantics,
         initial: initial.state.npResource,
         source,

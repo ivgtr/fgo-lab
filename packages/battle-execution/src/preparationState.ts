@@ -23,6 +23,8 @@ import { rejectPreparation } from './preparationContracts';
 import { resolveTargetPolicy, type Origin } from './effectRouting';
 
 import { createOcState } from './ocState';
+import { seedBuffInstances } from './buffInstances';
+import { servantBuffCountInputs } from './stackQuantities';
 import type { PreparationEffectActivation } from './preparationTransaction';
 
 type CanonicalOperation = MasterEffect['execution'][number];
@@ -221,6 +223,7 @@ export function createPreparationState(
     transformNoblePhantasmUsed: false,
     activeEffects: [],
     stackCounts: { attackerState: {}, targetState: {}, field: {} },
+    buffInstances: [],
     stateTraits: { attackerState: new Set(), targetState: new Set() },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },
     npResource: {
@@ -246,6 +249,17 @@ export function createPreparationState(
     const { scope, trait } = definition.quantitySource;
     placeholder.stackCounts[scope] = { ...placeholder.stackCounts[scope], [trait]: count };
     if (scope !== 'field' && count > 0) (placeholder.stateTraits[scope] as Set<string>).add(trait);
+  }
+  try {
+    placeholder.buffInstances = seedBuffInstances(
+      servantBuffCountInputs(servant, [
+        ...(context.initialSources ?? []),
+        ...(context.terminalSources ?? []),
+      ]),
+      context.canonicalInputValues ?? {},
+    );
+  } catch {
+    return rejectPreparation(placeholder, 'invalidPreparationActivation');
   }
   if (
     !form ||

@@ -555,9 +555,13 @@ export function compileEffect(
       semantic,
     ): semantic is Extract<
       EffectExecutionOperation,
-      { kind: 'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant' }
+      {
+        kind:
+          'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant' | 'buffInstanceMutation';
+      }
     > =>
       (semantic.kind === 'resourceMutation' && semantic.resource === 'npGauge') ||
+      semantic.kind === 'buffInstanceMutation' ||
       semantic.kind === 'stateMutation' ||
       semantic.kind === 'boundedPhaseIrrelevant',
   );
@@ -604,6 +608,7 @@ export function compileEffect(
     }
     if (
       semantic.kind === 'resourceMutation' ||
+      semantic.kind === 'buffInstanceMutation' ||
       semantic.kind === 'stateMutation' ||
       semantic.kind === 'boundedPhaseIrrelevant'
     )

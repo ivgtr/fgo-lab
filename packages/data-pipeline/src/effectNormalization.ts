@@ -20,6 +20,7 @@ import type {
 } from './atlasContract';
 import { canonicalTargetPredicate } from './targetTaxonomy';
 import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
+import { normalizeNpBuffCount, normalizeCountedBuffMutation } from './npCountNormalization';
 import {
   normalizeDamageReachableStateMutations,
   stateMutationTraitName,
@@ -882,7 +883,10 @@ function normalizeCanonicalInputSemantics(
   const first = parameters[0] ?? {};
   const has = (key: string) => parameters.some((parameter) => parameter[key] !== undefined);
   const input = (
-    kind: Exclude<CanonicalInputDefinition['kind'], 'matchingActorCount' | 'effectStackCount'>,
+    kind: Exclude<
+      CanonicalInputDefinition['kind'],
+      'matchingActorCount' | 'effectStackCount' | 'buffInstanceCount'
+    >,
     owner: CanonicalInputDefinition['owner'],
     label: string,
     description: string,
@@ -1628,7 +1632,11 @@ export function normalizeFunctions(
                 : [],
             )
             .flatMap((id) => {
-              const name = traitNameById.get(id);
+              const name =
+                traitNameById.get(id) ??
+                (stateCatalog.actorTraitReferences?.has(id)
+                  ? stateMutationTraitName({ id }, traitNameById)
+                  : null);
               return name ? [name] : [];
             })
             .filter((name, index, all) => all.indexOf(name) === index)
@@ -1639,7 +1647,11 @@ export function normalizeFunctions(
             .flatMap((parameters) => parameters ?? [])
             .flatMap((parameter) => (typeof parameter.Value === 'number' ? [parameter.Value] : []))
             .flatMap((id) => {
-              const name = traitNameById.get(id);
+              const name =
+                traitNameById.get(id) ??
+                (stateCatalog.actorTraitReferences?.has(id)
+                  ? stateMutationTraitName({ id }, traitNameById)
+                  : null);
               return name ? [name] : [];
             })
             .filter((name, index, all) => all.indexOf(name) === index)
@@ -1695,6 +1707,19 @@ export function normalizeFunctions(
       referenceRecognizedKeys,
       ocConditionParameterKeys(fn, parameterSets),
     );
+    const npBuffCount = normalizeNpBuffCount(
+      fn,
+      parameterSets,
+      traitNameById,
+      stateCatalog.countedBuffDefinitions ?? new Map(),
+    );
+    const countedBuffMutations = normalizeCountedBuffMutation(
+      fn,
+      traitNameById,
+      stateCatalog.countedBuffTraits ?? new Set(),
+      stateCatalog.countedBuffDefinitions ?? new Map(),
+      source === 'passive' || source === 'craftEssence',
+    );
     let execution = normalizeExecutionSemantics({
       fn,
       source,
@@ -1702,7 +1727,11 @@ export function normalizeFunctions(
       parameterSets,
       valueExpressions: modifierValues.sets,
       cardTypes,
-      canonicalOperations,
+      canonicalOperations: [
+        ...canonicalOperations,
+        ...countedBuffMutations,
+        ...(npBuffCount ? [npBuffCount.operation] : []),
+      ],
       contextChanges,
       quantityApplicationTiming,
     });
@@ -1966,7 +1995,7 @@ export function normalizeFunctions(
         operationTrigger,
         operationReference,
         stateIdentity,
-        inputDefinitions: canonicalInput.inputs,
+        inputDefinitions: [...canonicalInput.inputs, ...(npBuffCount ? [npBuffCount.input] : [])],
         requirement: {
           recipient: targetPolicy,
           expression: requirement,

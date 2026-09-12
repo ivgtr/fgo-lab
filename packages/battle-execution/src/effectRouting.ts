@@ -51,6 +51,7 @@ export function operationRecipient(
   if (operation.kind === 'contextMutation' && operation.mutation === 'addQuantity')
     return 'attacker';
   if (
+    operation.kind === 'buffInstanceMutation' ||
     operation.kind === 'resourceMutation' ||
     operation.kind === 'stateMutation' ||
     operation.kind === 'boundedPhaseIrrelevant'
@@ -69,6 +70,7 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
       operation.kind === 'grantOcApplicationRate' ||
       operation.kind === 'removeOcState' ||
       operation.kind === 'ocStateNonIntersection' ||
+      operation.kind === 'buffInstanceMutation' ||
       operation.kind === 'resourceMutation' ||
       operation.kind === 'stateMutation' ||
       operation.kind === 'boundedPhaseIrrelevant'

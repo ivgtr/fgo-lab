@@ -55,7 +55,11 @@ export function ocGaugeDependencies(
           operation.recipient,
         );
         if (recipient !== 'attacker' && recipient !== 'unresolved') continue;
-        if (recipient === 'unresolved' || operation.amount.kind === 'dependent') {
+        if (
+          recipient === 'unresolved' ||
+          operation.amount.kind === 'dependent' ||
+          operation.amount.kind === 'buffCount'
+        ) {
           changed.add(index);
           lower = 0;
           upper = capacity;
