@@ -86,6 +86,7 @@ function relatedDamageEffects(
   return effects.filter(
     (effect) =>
       (effect.modifier !== null ||
+        definition.kind === 'transferDonor' ||
         definition.kind === 'populationCount' ||
         definition.kind === 'populationSize' ||
         definition.kind === 'populationActorValue') &&

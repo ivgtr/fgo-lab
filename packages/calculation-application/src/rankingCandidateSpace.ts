@@ -1,4 +1,5 @@
 import {
+  npTransferInputSaturation,
   populationInputIssue,
   populationInputEquivalenceKey,
   populationCountSaturation,
@@ -182,6 +183,7 @@ function compileProgramDomain(input: {
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
   const hasPopulation = semantics.inputDefinitions.some(
     (input) =>
+      input.kind === 'transferDonor' ||
       input.kind === 'populationCount' ||
       input.kind === 'populationSize' ||
       input.kind === 'populationActorValue',
@@ -200,22 +202,29 @@ function compileProgramDomain(input: {
       },
       findNoblePhantasmVariant(servant, program.attackProfile.noblePhantasmVariant) ?? undefined,
     );
+  const transferSaturation = npTransferInputSaturation(semantics.sources);
   const inputDomains = createCanonicalInputValueDomains(
     semantics.inputDefinitions,
     semantics.conditions,
     conditions.conditionalEffects,
     semantics.stackWitnesses,
-    hasPopulation
-      ? populationCountSaturation(
-          semantics.sources,
-          master.npResourceSemantics.capacityByNpLevel[basis.npLevel - 1]!,
-        )
-      : new Map(),
+    new Map([
+      ...(populationIndependent
+        ? [...transferSaturation].map(([key]) => [key, 0] as const)
+        : transferSaturation),
+      ...(hasPopulation
+        ? populationCountSaturation(
+            semantics.sources,
+            master.npResourceSemantics.capacityByNpLevel[basis.npLevel - 1]!,
+          )
+        : new Map()),
+    ]),
   );
   const canonicalInputs = populationIndependent
     ? inputDomains.map((domain) => {
         const definition = semantics.inputDefinitions.find((input) => input.key === domain.key);
-        return definition?.kind === 'populationCount' ||
+        return definition?.kind === 'transferDonor' ||
+          definition?.kind === 'populationCount' ||
           definition?.kind === 'populationSize' ||
           definition?.kind === 'populationActorValue'
           ? { ...domain, values: [definition.defaultValue ?? definition.minimum] }
@@ -226,6 +235,7 @@ function compileProgramDomain(input: {
     semantics.inputDefinitions
       .filter(
         (input) =>
+          input.kind === 'transferDonor' ||
           input.kind === 'populationCount' ||
           input.kind === 'populationSize' ||
           input.kind === 'populationActorValue',
@@ -239,7 +249,12 @@ function compileProgramDomain(input: {
   ).candidates.filter((values) => !populationInputIssue(semantics.inputDefinitions, values));
   const representatives = new Map<string, Readonly<Record<string, number>>>();
   for (const values of legalPopulationInputs) {
-    const key = populationInputEquivalenceKey(semantics.sources, values);
+    const key = JSON.stringify([
+      populationInputEquivalenceKey(semantics.sources, values),
+      semantics.inputDefinitions
+        .filter((input) => input.kind === 'transferDonor')
+        .map((input) => values[input.key]),
+    ]);
     const prior = representatives.get(key);
     const deviation = (tuple: Readonly<Record<string, number>>) =>
       Object.entries(tuple).reduce(

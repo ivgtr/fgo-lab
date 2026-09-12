@@ -176,3 +176,5 @@ export {
 } from './populationCounts';
 
 export { populationInputsHaveEquivalentTerminalDamage } from './populationGaugeEquivalence';
+
+export { npTransferInputSaturation } from './npTransfer';

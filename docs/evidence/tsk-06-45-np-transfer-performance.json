@@ -1,0 +1,141 @@
+{
+  "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+  "head": "b1759b7437908412e40c5ab8eccc624c9640b978",
+  "diffHash": "5bb78b27d821ed948549d293bd3c1dedde145d157e9547939c70086454c6490b",
+  "node": "v26.3.1",
+  "platform": "linux",
+  "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+  "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+  "masterHash": "f2cdfc393126ac10b8600371c531fac6089228db0547178f3a10116fb68c37b9",
+  "versions": {
+    "masterDataVersion": "20260913.16",
+    "engineVersion": "43.0.0"
+  },
+  "conditions": {
+    "population": "all",
+    "initialOvercharge": 1,
+    "levelBasis": "naturalLimit",
+    "npLevelBasis": {
+      "kind": "specified",
+      "npLevel": 1
+    },
+    "classAffinity": "neutral",
+    "selfBuffs": "included",
+    "conditionalEffects": "baseline"
+  },
+  "samples": [
+    {
+      "milliseconds": 3599.6228440000004,
+      "rows": 425,
+      "exclusions": 8,
+      "digest": "e18cb7c0d1d98fd7f0b99d4c8b9a96cd3793492fcea4ff1ad3f1d31c507b2818"
+    },
+    {
+      "milliseconds": 3542.9265099999993,
+      "rows": 425,
+      "exclusions": 8,
+      "digest": "e18cb7c0d1d98fd7f0b99d4c8b9a96cd3793492fcea4ff1ad3f1d31c507b2818"
+    },
+    {
+      "milliseconds": 3458.151395000001,
+      "rows": 425,
+      "exclusions": 8,
+      "digest": "e18cb7c0d1d98fd7f0b99d4c8b9a96cd3793492fcea4ff1ad3f1d31c507b2818"
+    }
+  ],
+  "medianMs": 3542.9265099999993,
+  "baseline": {
+    "head": "0cf5a367d4d0cb786140ce257f0af36d8a4db2a0",
+    "node": "v26.3.1",
+    "platform": "linux",
+    "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+    "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+    "masterHash": "6416419b2a183d7f64cbf8be56a146828f3d618dac5c8e3375c4c50688f48c3a",
+    "versions": {
+      "masterDataVersion": "20260913.12",
+      "engineVersion": "42.0.0"
+    },
+    "conditions": {
+      "population": "all",
+      "initialOvercharge": 1,
+      "levelBasis": "naturalLimit",
+      "npLevelBasis": {
+        "kind": "specified",
+        "npLevel": 1
+      },
+      "classAffinity": "neutral",
+      "selfBuffs": "included",
+      "conditionalEffects": "baseline"
+    },
+    "samples": [
+      {
+        "milliseconds": 3726.072013,
+        "rows": 422,
+        "exclusions": 11,
+        "digest": "2d6eb2b0e7d042d08dd5e530d8e10bf50abc539963a87e3f678f79cb0a2187b2"
+      },
+      {
+        "milliseconds": 3715.939364,
+        "rows": 422,
+        "exclusions": 11,
+        "digest": "2d6eb2b0e7d042d08dd5e530d8e10bf50abc539963a87e3f678f79cb0a2187b2"
+      },
+      {
+        "milliseconds": 3630.7879649999995,
+        "rows": 422,
+        "exclusions": 11,
+        "digest": "2d6eb2b0e7d042d08dd5e530d8e10bf50abc539963a87e3f678f79cb0a2187b2"
+      }
+    ],
+    "medianMs": 3715.939364,
+    "evidence": "docs/evidence/tsk-06-45-population-count-performance.json",
+    "sha256": "03f91fa47a7d65076fa6ed552e6d84f09a0eb1bd57b88e5b2d33df11096f8108"
+  },
+  "comparison": {
+    "warmupRuns": 1,
+    "serialMeasuredRuns": 3,
+    "changePercent": -4.655965478773638,
+    "conditionsMatch": true,
+    "scriptAndEnvironmentMatch": true,
+    "note": "Serial standalone runs, three newly calculated default ranking profiles. No cap, timeout, or performance ratchet relaxed. Timing variation and execution-cost contributions are not isolated; implementationSnapshot includes new files beyond git diffHash."
+  },
+  "production": {
+    "beforeManifest": ".test-results/2026-09-12T19-46-29-367Z-46-6620ae/manifest.json",
+    "afterManifest": ".test-results/2026-09-12T20-50-16-144Z-15-170467/manifest.json",
+    "beforeStepMs": 52140,
+    "afterStepMs": 49139,
+    "affectedFileElapsedMs": [
+      {
+        "file": "productionExecutionParity.test.ts",
+        "before": 47913.46044921875,
+        "after": 45132.2548828125
+      },
+      {
+        "file": "productionMasterInventory.test.ts",
+        "before": 38342.9560546875,
+        "after": 35386.777099609375
+      },
+      {
+        "file": "executionSemanticsProduction.test.ts",
+        "before": 31318.1005859375,
+        "after": 28401.5712890625
+      },
+      {
+        "file": "rankingCandidateSpace.test.ts",
+        "before": 28839.33349609375,
+        "after": 25932.776123046875
+      }
+    ],
+    "transferAcceptanceTests": [
+      {
+        "name": "accepts NP and charge transfer profiles through all seven conditions and portable replay",
+        "durationMs": 2008.4060610000015
+      },
+      {
+        "name": "replays nonzero transfer inputs and repairs invalid portable donor quantities for each production source",
+        "durationMs": 77.25477200000023
+      }
+    ],
+    "interpretation": "Added 21-condition acceptance and three-profile nonzero portable repair; file elapsed includes shared setup and parallel suite effects. Standalone ranking is measured separately."
+  }
+}

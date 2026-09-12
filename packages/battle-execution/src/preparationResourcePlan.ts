@@ -42,6 +42,8 @@ function selectedNpMutation(
   if (recipient === 'unresolved')
     return { kind: 'unsupported', family: 'unresolvedResourceRecipient' };
   if (recipient !== 'attacker') return null;
+  if (operation.amount.kind === 'npTransfer')
+    return { kind: 'unsupported', family: 'unboundNpTransfer' };
   if (operation.amount.kind === 'dependent')
     return { kind: 'unsupported', family: operation.amount.reason };
   const countAmount = operation.amount;

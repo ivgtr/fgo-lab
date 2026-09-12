@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算・順位外 11件', {
+  await expect(page.getByRole('status')).toContainText('425件表示 / 425件を計算・順位外 8件', {
     timeout: 30_000,
   });
   const first = page
@@ -355,4 +355,41 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await removable.getByRole('button', { name: '自動値へ戻す' }).click();
   await enemies.getByRole('button', { name: '自動値へ戻す' }).click();
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  // Transfer input repair and persisted portable replay use the calculator command path.
+  for (const name of ['謎のアルターエゴ・Λ', 'キングプロテア・オルタ', '楊貴妃']) {
+    await page.getByRole('button', { name: '攻撃役を変更' }).click();
+    const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+    await picker.getByRole('tab', { name: '全DB' }).click();
+    await picker.getByLabel('名前で検索').fill(name);
+    await picker
+      .getByRole('button', { name: new RegExp(`${name}.*Lv`) })
+      .first()
+      .click();
+    const label =
+      name === '謎のアルターエゴ・Λ' ? '吸収元の味方1のNP（0.01%）' : '吸収元の敵1のチャージ';
+    const donor = page.getByRole('spinbutton', { name: label, exact: true });
+    await expect(donor).toHaveValue('0');
+    await donor.fill('-1');
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+    const value = name === '謎のアルターエゴ・Λ' ? '2000' : '1';
+    await donor.fill(value);
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+    const key = name === '謎のアルターエゴ・Λ' ? 'transfer:playerNp:0' : 'transfer:enemyCharge:0';
+    await expect
+      .poll(
+        async () =>
+          JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario
+            ?.canonicalInputValues?.[key],
+      )
+      .toEqual({ kind: 'integer', value: Number(value) });
+    await page.reload();
+    await expect(donor).toHaveValue(value);
+    await donor
+      .locator('..')
+      .locator('..')
+      .screenshot({ path: test.info().outputPath(`np-transfer-${name}.png`) });
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+    await donor.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
+    await expect(donor).toHaveValue('0');
+  }
 });

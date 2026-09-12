@@ -1,3 +1,4 @@
+import { UnsupportedStackQuantity } from './rankingStackDomain';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 
@@ -37,6 +38,16 @@ export function createCanonicalInputValueDomains(
   stackWitnesses: ReadonlyMap<string, readonly number[]> = new Map(),
   populationSaturation: ReadonlyMap<string, number> = new Map(),
 ): readonly { key: string; values: readonly number[] }[] {
+  if (
+    mode === 'satisfied' &&
+    definitions.some(
+      (definition) =>
+        definition.kind === 'transferDonor' &&
+        (populationSaturation.get(definition.key) ?? definition.maximum) - definition.minimum + 1 >
+          4096,
+    )
+  )
+    throw new UnsupportedStackQuantity('transfer_input_domain_exceeds_candidate_limit');
   const boundaries = new Map<string, number[]>();
   for (const { key, value } of conditions.flatMap(conditionInputBoundaries)) {
     const values = boundaries.get(key) ?? [];
@@ -50,7 +61,8 @@ export function createCanonicalInputValueDomains(
       values:
         mode === 'baseline'
           ? [definition.defaultValue ?? definition.minimum]
-          : definition.kind === 'populationCount' ||
+          : definition.kind === 'transferDonor' ||
+              definition.kind === 'populationCount' ||
               definition.kind === 'populationSize' ||
               definition.kind === 'populationActorValue'
             ? Array.from(

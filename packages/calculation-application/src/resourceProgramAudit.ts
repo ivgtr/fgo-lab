@@ -80,7 +80,7 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
     case 'resourceMutation':
       return operation.amount.kind === 'dependent'
         ? 'dependentResourceAmount'
-        : operation.amount.kind === 'populationCount'
+        : ['populationCount', 'npTransfer'].includes(operation.amount.kind)
           ? 'populationStateDependency'
           : null;
     case 'damageModifier':

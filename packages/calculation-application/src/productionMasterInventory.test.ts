@@ -79,9 +79,9 @@ const expectedUnsupportedFamilies = {
 
 const expectedUnresolvedDamageSemantics = {
   parameters: {
-    DependFunc: 6,
-    DependFuncId: 6,
-    DependFuncVals: 6,
+    DependFunc: 3,
+    DependFuncId: 3,
+    DependFuncVals: 3,
   },
   scripts: {},
 } as const;
@@ -659,8 +659,8 @@ describe('production master inventory ratchet', () => {
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
     }).toEqual({
       automaticVisible: 0,
-      hidden: 5725,
-      user: 1589,
+      hidden: 5740,
+      user: 1592,
     });
     expect(
       allProjections.filter(
@@ -901,7 +901,10 @@ describe('production master inventory ratchet', () => {
         resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'oc-support-dispositions.json'),
         JSON.stringify(supportDispositions),
       );
-    expect(preparationRejected).toEqual(['102800:165551:preparation:insufficientNpGauge']);
+    expect(preparationRejected).toEqual([
+      '102800:165551:preparation:insufficientNpGauge',
+      '304000:671650:preparation:unsupportedOcExecution',
+    ]);
     expect(projectionCount).toBe(380);
     expect(intrinsicRecipientConflicts).toEqual([]);
     // Exclusive intrinsic attributes are proven false by the shared condition owner.

@@ -1,3 +1,4 @@
+import type { NpTransferReceipt } from './npTransfer';
 import type {
   ActorFormId,
   StackInputDefinition,
@@ -65,6 +66,9 @@ export interface AppliedPreparationAction {
 
 export interface PreNoblePhantasmState {
   populationEvents: readonly PopulationEvent[];
+  npTransfers?: readonly NpTransferReceipt[];
+  uncertainEnemyCharge?: boolean;
+  uncertainPlayerNp?: boolean;
   buffInstances: readonly CountedBuffInstance[];
   initialFormId: ActorFormId;
   currentFormId: ActorFormId;

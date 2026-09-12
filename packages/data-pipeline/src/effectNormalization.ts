@@ -1,3 +1,5 @@
+import { isUnreferencedDefensiveMarker } from './defensiveMarkerNormalization';
+import { normalizeNpTransfer } from './npTransferNormalization';
 import { normalizePopulationFunctions } from './populationFunctionNormalization';
 import { isOcRateFunction, ocConditionParameterKeys } from './ocSemantics';
 import { normalizeNpStackQuantity, normalizeEffectStackInputs } from './stackQuantityNormalization';
@@ -896,6 +898,7 @@ function normalizeCanonicalInputSemantics(
       | 'populationSize'
       | 'populationCount'
       | 'populationActorValue'
+      | 'transferDonor'
     >,
     owner: CanonicalInputDefinition['owner'],
     label: string,
@@ -1180,7 +1183,8 @@ function procRateSeries(
   const terminal = execution.some(
     (operation) =>
       operation.kind === 'populationMutation' ||
-      (operation.kind === 'resourceMutation' && operation.amount.kind === 'populationCount') ||
+      (operation.kind === 'resourceMutation' &&
+        ['populationCount', 'npTransfer'].includes(operation.amount.kind)) ||
       [
         'damageModifier',
         'modifierRateChange',
@@ -1731,6 +1735,11 @@ export function normalizeFunctions(
       referenceRecognizedKeys,
       ocConditionParameterKeys(fn, parameterSets),
     );
+    const npTransfer = normalizeNpTransfer(
+      fn,
+      parameterSets,
+      stateCatalog.npTransferChargeResistance ?? true,
+    );
     const populationFunction = populationFunctions.get(fn);
     const npPopulation = normalizeNpPopulationCount(fn, parameterSets, traitNameById, stateCatalog);
     const populationMutations = normalizePopulationMutation(
@@ -1763,6 +1772,7 @@ export function normalizeFunctions(
       cardTypes,
       canonicalOperations: [
         ...canonicalOperations,
+        ...(npTransfer ? [npTransfer.operation] : []),
         ...(npPopulation ? [npPopulation.operation] : []),
         ...populationMutations,
         ...countedBuffMutations,
@@ -1772,6 +1782,8 @@ export function normalizeFunctions(
       quantityApplicationTiming,
     });
     if (populationFunction) execution = [populationFunction.operation];
+    if (isUnreferencedDefensiveMarker(fn, parameterSets, traitNameById, stateCatalog))
+      execution = [{ kind: 'boundedPhaseIrrelevant', proof: 'unreferencedDefensiveMarker' }];
     const referenceCandidates = parameterSets
       .flatMap((set) => set)
       .flatMap((parameter) => {
@@ -2046,6 +2058,7 @@ export function normalizeFunctions(
         inputDefinitions: [
           ...canonicalInput.inputs,
           ...(populationFunction?.inputs ?? []),
+          ...(npTransfer?.inputs ?? []),
           ...(npBuffCount ? [npBuffCount.input] : []),
           ...(npPopulation?.inputs ?? []),
         ],

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.7"
+document_version: "1.7.8"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-13"
@@ -1795,16 +1795,17 @@ artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Bloc
 
 Depends on: TSK-06.48
 
-現在のフォローアップ（`0cf5a36`基点）: **count7profileの実装・49条件のcalculator/ranking/portable parity・最終quality・性能比較まで完了、scoped Blocking0。TSK全体は未完了。** 開始clean。既存成功qualityをbeforeとして再利用した。
+現在のフォローアップ（`b1759b7`基点）: **NP/charge transfer3profileの実装・21条件のcalculator/ranking/portable parity・最終quality・性能比較まで完了、scoped Blocking0。TSK全体は未完了。** 開始clean。前回count7profileの成功qualityと証跡をbeforeとして再利用した。
 
 | 成果／未達 | 現在地 | 判定 |
 | --- | --- | --- |
-| calculator／ranking | 420/422、422/433 | 502600の対象別function結果→marker→countを追加。基点の既存calculated数値差0件 |
+| calculator／ranking | 420/422、425/433 | NP/charge transfer3profileを追加。既存ranking数値差0件、calculator3件のsource適用を改善 |
 | U3-Qの対象5profile | NP2成立込みの候補上限を解消。306200×2各2860、502600は43、1001800は912、2501600は2064 | cap4096とスキル順序を保持。合法tuple／全read同値性とOC非依存proofを使用 |
 | count7profileの受入 | 通常NP1/2/5・NP2四policyの49条件はcalculated、calculator/ranking/portable一致 | 小型oracle・rollback・修復・支援source・実画面、quality unit790/production122/E2E26成功 |
-| 全Taskの残り | marker/admission、NP/charge/HP transfer、HP/BP、全条件/owned、全体回復/UI | 今回のcount単位とは区別しin_progressを維持 |
+| NP/charge transfer3profileの受入 | 21条件calculated、calculator/ranking/portable一致、rollback/修復・実画面・quality成功 | scoped Blocking0 |
+| 全Taskの残り | marker/admission、HP transfer、HP/BP、全条件/owned、全体回復/UI | 完了したcount/NP/charge単位とは区別しin_progressを維持 |
 
-完了済み単位は`dc87dc1`の攻撃NP buff count2profileと今回のtarget/individual count7profile。今回のcount継続で既存証拠を無効化しない。Taskは`in_progress`、06.44は`blocked`を維持する。
+完了済み単位は`dc87dc1`の攻撃NP buff count2profileとtarget/individual count7profileとNP/charge transfer3profile。今回のtransfer継続でも既存count証拠を維持する。Taskは`in_progress`、06.44は`blocked`を維持する。
 
 実装責務、証跡と全Taskの未達gateは[canonical checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)。
 
@@ -1812,7 +1813,7 @@ Depends on: TSK-06.48
 
 1. **U2-D.countのtarget／individual count7profileは完了**。U3-Qの候補重複と502600の対象別解除結果を共通経路で接続した。49条件・全件inventory・UI・最終qualityと基点比較の記録を同じcheckpointへ収束した。ID分岐、cap緩和、無条件のmarker付与は行わない。
 2. **終了判定は対象profileの実経路**。初期入力、選択sourceとvariant、併存する拒否理由、後続実行まで確認し、before/afterの対応数・damage・未達理由を記録する。非攻撃NPの追加対応やfixture成功だけではこの単位を閉じない。新しい後続failureが出たら同対象の原因を閉じ、説明なく別familyへ移らない。各単位に必要な小型fixture・production・回復・性能を確認する。
-3. **このcount単位の未達を閉じた後、NP・charge transfer、残るmarker/admissionとHP/BPを依存順に収束**させる。共通のinstance/actor stateに関わる直接writerは対応単位へ含め、件数順にIDごとの修正へ分割しない。全program候補積はU3-Q、全profile/条件/ownedと共通回復/UIはU4/U5で閉じる。
+3. **count・NP/charge transfer単位の完了後、残るmarker/admission・HP transfer・HP/BPを依存順に収束**させる。共通のinstance/actor stateに関わる直接writerは対応単位へ含め、件数順にIDごとの修正へ分割しない。全program候補積はU3-Q、全profile/条件/ownedと共通回復/UIはU4/U5で閉じる。
 4. **未確定resource処理はChaldeaの該当実装を参考仕様として採用する（2026-09-13利用者承認）**。固定commitの処理本体・呼出元・関連testを読み、既存canonical IR/application/executionへ対応させる。HP数値3件の具体的規則は既存証跡のreferenceContractへ固定した。実測不足だけで実装を停止せず、既存の根拠を一から再発見しない。明示された製品要件、入力検証、対象/時点、rollback/parityは維持する。参照元にない処理や明確な矛盾は該当branchの差だけを示して技術判断し、全Taskの再承認待ちへ戻さない。
 5. **再開と検証を重複させない**。現在のqualityと永続before/final証拠を使い、同条件の成功済み検証を開始時に繰り返さない。消失した旧/tmp一式の復元は次の目的にしない。新しい数値・実行差分に必要な証拠だけ取得し、session境界では閉じた実経路・残件・次の操作を同じcheckpointへ更新する。
 
@@ -1830,6 +1831,8 @@ Depends on: TSK-06.48
 - [x] 前回Step 1: 最新要件と全13,875格納effectを再確認し、HP0 reachabilityを全NPのreaderへ追加。量query・transaction・admissionの責務、技術gate、state-by-path反例、回復経路と実行単位を更新した。
 
 - [x] U2-D.count攻撃buff count単位（2026-09-13）: 1000900/3392・1101600/21113、併存20955と後続8808を接続。既存stack入力とinstance state、recipient/live read、NP/OC、結果分類、rollback/retry、portable・UI回復を閉じた。ranking413→415/433、calculator420/422。最終quality成功、scoped Blocking0。target/individual count・transferを含むU2-D全体は未完了。
+
+- [x] U2-D.transfer player NP／enemy charge3profile（2026-09-13、`b1759b7`基点）: 304000・1102300・2500400と1102300の直接併存markerを共通実行へ接続。21条件parity、非zero入力、oracle、rollback/修復、portable/UI、全件inventory・性能・最終qualityを完了。ranking425/433、calculator420/422、scoped Blocking0。HP transferとTSK全体は別未完。
 
 - [x] U2-D.count target/individual count7profile＋該当U3-Q/U4（2026-09-13、`0cf5a36`からの本count完了commit）: 通常NP1/2/5・NP2四policyの49条件を40 calculated／9 unsupportedから全calculatedへ改善。候補上限5profileと502600の対象別結果→marker→countを接続し、parity・最大候補の同値性・rollback/修復・実画面・性能比較・最終qualityを完了。ranking421→422/433、calculator420/422、scoped Blocking0。TSK全体の残りは下記U2/U3/U4/U5で維持する。
 
@@ -1944,6 +1947,17 @@ Handoff: count7profile単位の実装・検証完了（2026-09-13）
 - 正本は[checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)と既存population-count3証跡、固定Chaldea source契約。次回の開始操作は残ranking11／calculator2件を既存U2-D.transfer・marker/admission・HP/BPの直接reader/writerへ対応させること。今回の成功quality・同条件before・49記録を再利用し、別familyは今回の完了範囲へ混ぜない。
 - Git: 検証時は`0cf5a36`＋dirty。2026-09-13の利用者依頼に従い、このHandoffを含むcommitへ今回の実装・test・VRT・証跡を収録する。利用者変更の上書きなし。
 - 次の実装候補はU2-D.transferのplayer NP／enemy charge。対象304000・1102300・2500400の選択sourceを現行inventoryへ再joinし、1102300の併存markerも直接経路として扱う。donor snapshot、receiver加算、donor減算、後続NP/OCを共通transactionへ接続し、四policy・rollback/修復・portable parity・候補数/性能で受け入れる。HP transfer（204300・403600）、その他marker/HP/BPと全Task closureは別単位で残す。
+
+Handoff: NP／charge transfer単位の実装・検証完了（2026-09-13）
+
+- 基点`b1759b7`、開始clean。304000・1102300・2500400のtransferと直接併存marker、初期入力／ranking／共通transaction／portable／UIを接続。donor snapshot・算定gain・receiver実増分・donor実減少を分離し、未解決writer／aliasはfail closed。
+- 通常NP1/2/5・NP2四policyの21条件は全calculated、calculator/ranking/portable一致。小型oracle、clamp・不足・複数donor、rollback／入力修復と3profile実画面を検証。対象内の残拒否・未達gateなし、scoped Blocking0。
+- 最終`pnpm quality`成功: unit802／production124／E2E26、warning・unexpected console・retry0。run `.test-results/2026-09-12T20-50-16-144Z-15-170467`。master20260913.16/schema53、engine43.0.0、portable schema40。
+- ranking422→425/433、calculator420/422。既存ranking数値差0件、calculator3件は新たに適用された攻撃50%／Buster20%／防御ダウン20%で説明。候補6476→6500、damage要求2332→2351。hot path中央値3,715.939→3,542.927ms（-4.66%）、production52,140→49,139ms。cap/timeout/性能ratchet緩和なし。
+- 正本は[checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)とnp-transferのsource／validation／delta／performance。残ranking8／calculator2、HP transfer204300・403600、その他marker／HP／BP、全条件・owned／全体回復/UIは別未完。次は既存U2/U3の残reader/writerへ対応させ、成功済み同条件証拠を再利用する。TSK全体in_progress、06.44 blockedを維持。
+- 次の作業候補はU2-D.transferのHP transfer（204300・403600）。選択source・nested child・併存拒否理由を現行inventoryへ対応させ、必要なU2-H.2のHP実state／最大HP／生存・下限を直接経路に限って接続する。採用済みChaldea固定commitの該当処理・呼出元・testを使い、donor snapshotからのgain、receiver実回復、donor実減少を区別する。
+- 次単位の受入は対象profileの通常NP1/2/5・NP2四policy、calculator/ranking/portable一致、合法候補の最大damage、上限・不足・複数donor・rollback/修復、必要なUI実画面。damage・候補数・影響production／性能を今回証跡と比較する。他のmarker／HP／BP、全条件・owned／全体回復/UIとTask全体の完了へ広げない。既存計画は現行要件で再判断する。
+- Git: 検証時は`b1759b7`＋今回差分。2026-09-13の利用者依頼に従い、このHandoffを含むcommitへ実装・test・VRT・証跡を収録する。利用者変更の上書きなし。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

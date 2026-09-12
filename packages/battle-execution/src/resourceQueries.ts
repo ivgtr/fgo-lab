@@ -96,6 +96,14 @@ export function mutationResourceAccess(
 ): { write: ResourceQuery; amountReads: readonly QuantityRead[] } {
   const actor = resourceRecipientActor(source, operation.recipient);
   const write = currentResourceQuery(operation.resource, actor, operation.subjectId);
+  if (operation.amount.kind === 'npTransfer')
+    return {
+      write,
+      amountReads: operation.amount.inputKeys.map((inputKey) => ({
+        kind: 'input' as const,
+        inputKey,
+      })),
+    };
   if (operation.amount.kind === 'populationCount')
     return {
       write,

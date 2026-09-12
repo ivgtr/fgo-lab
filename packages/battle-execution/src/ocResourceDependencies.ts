@@ -58,6 +58,7 @@ export function ocGaugeDependencies(
         if (
           recipient === 'unresolved' ||
           operation.amount.kind === 'dependent' ||
+          operation.amount.kind === 'npTransfer' ||
           operation.amount.kind === 'buffCount' ||
           operation.amount.kind === 'populationCount'
         ) {

@@ -1,3 +1,4 @@
+import { applyNpTransfer } from './npTransfer';
 import {
   applyPopulationFunctionToState,
   removePopulationFunctionState,
@@ -242,6 +243,35 @@ export function executePreparationOc(args: {
     const firstStep = steps.length;
     let ocIndex = 0;
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
+      // Other players are donor actors. A projected attacker-only write cannot
+      // establish their post-write quantity, even when it is a no-op for the attacker.
+      if (
+        operation.kind === 'resourceMutation' &&
+        operation.resource === 'npGauge' &&
+        operation.amount.kind !== 'npTransfer' &&
+        operation.recipient !== 'enemy' &&
+        !(
+          ['sourceSelf', 'sourceActor', 'attackerNpCard'].includes(operation.recipient) &&
+          ['attacker', 'np', 'passive', 'craftEssence'].includes(source.origin)
+        )
+      ) {
+        steps.push(() => {
+          if (source.sourceEnabled && activation.get(source.effect)?.procOutcome !== 'failure')
+            current = { ...current, uncertainPlayerNp: true };
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+      }
+      if (
+        operation.kind === 'boundedPhaseIrrelevant' &&
+        operation.proof === 'enemyChargeOutsideDamage'
+      ) {
+        steps.push(() => {
+          if (source.sourceEnabled && activation.get(source.effect)?.procOutcome !== 'failure')
+            current = { ...current, uncertainEnemyCharge: true };
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
       if (operation.kind === 'populationFunction') {
         steps.push(() => {
           if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
@@ -413,6 +443,50 @@ export function executePreparationOc(args: {
                 reason: 'preparationPopulationInput',
               };
             }
+          }
+          if (
+            operation.kind === 'resourceMutation' &&
+            operation.resource === 'npGauge' &&
+            operation.amount.kind === 'npTransfer'
+          ) {
+            if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
+            if (activation.get(source.effect)?.conditionOutcome !== true)
+              return { kind: 'reject', status: 'unsupported', reason: 'unknownTransferCondition' };
+            if (
+              (operation.amount.donor === 'enemyCharge' && current.uncertainEnemyCharge) ||
+              (operation.amount.donor === 'playerNp' && current.uncertainPlayerNp)
+            )
+              return {
+                kind: 'reject',
+                status: 'unsupported',
+                reason: 'unresolvedTransferDonorWrite',
+              };
+            const transfer = applyNpTransfer({
+              amount: operation.amount,
+              source,
+              values: args.context.canonicalInputValues ?? {},
+              prior: current.npTransfers ?? [],
+              state: current.npResource,
+              semantics: args.context.resourceSemantics,
+              actionId: args.actionId,
+              valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            });
+            if (transfer.status === 'inputRequired') {
+              requiredInput = transfer.input;
+              return {
+                kind: 'reject',
+                status: 'inputRequired',
+                reason: 'preparationTransferInput',
+              };
+            }
+            if (transfer.status !== 'applied')
+              return { kind: 'reject', status: transfer.status, reason: 'npTransfer' };
+            current = {
+              ...current,
+              npResource: transfer.state,
+              npTransfers: [...(current.npTransfers ?? []), transfer.receipt],
+            };
+            return { kind: 'skip', outcome: 'notApplicable' };
           }
           const resource = applyPreparationNpOperation({
             semantics: args.context.resourceSemantics,

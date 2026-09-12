@@ -53,6 +53,7 @@ export function populationInputsHaveEquivalentTerminalDamage(
       source.effect.inputDefinitions
         .filter(
           (input) =>
+            input.kind === 'transferDonor' ||
             input.kind === 'populationSize' ||
             input.kind === 'populationCount' ||
             input.kind === 'populationActorValue',
@@ -107,6 +108,7 @@ export function populationInputsHaveEquivalentTerminalDamage(
         operation.kind === 'selectNoblePhantasmVariant'
       )
         return false;
+      if (operation.kind === 'unsupported' && operation.damageRelevant) return false;
       if (operation.kind !== 'resourceMutation' || operation.resource !== 'npGauge') continue;
       if (source.origin !== 'attacker' || !source.sourceEnabled || !source.enabledByDefault)
         return false;
@@ -125,6 +127,10 @@ export function populationInputsHaveEquivalentTerminalDamage(
       if (coefficient === undefined || coefficient === null || coefficient < 0) return false;
       let min = coefficient;
       let max = coefficient;
+      if (operation.amount.kind === 'npTransfer') {
+        min = 0;
+        max = coefficient * operation.amount.inputKeys.length;
+      }
       if (operation.amount.kind === 'populationCount') {
         const selector = operation.amount.selector;
         const maximum =
@@ -149,10 +155,9 @@ export function populationInputsHaveEquivalentTerminalDamage(
         [lower, min],
         [upper, max],
       ] as const) {
-        const mutation =
-          operation.amount.kind === 'populationCount'
-            ? { kind: 'gain' as const, amount }
-            : npMutationFromCanonicalAmount(operation, amount);
+        const mutation = ['populationCount', 'npTransfer'].includes(operation.amount.kind)
+          ? { kind: 'gain' as const, amount }
+          : npMutationFromCanonicalAmount(operation, amount);
         const result = applyNpResourceTransaction(
           context.semantics,
           { npLevel: context.npLevel, capacity, gauge },

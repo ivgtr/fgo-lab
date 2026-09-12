@@ -442,6 +442,47 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 
 ### canonical checkpoint（2026-09-13、フォローアップ）
 
+**`b1759b7`基点のU2-D.transfer（304000・1102300・2500400）は実装・検証完了、scoped Blocking0。TSK全体は未完了。** 開始clean。今回の範囲はplayer NP／enemy chargeと1102300の直接併存marker。以下のcount7profile証跡を有効なbeforeとして再利用した。
+
+直接経路は`npTransferNormalization`→typed `npTransfer`／`transferDonor`入力→application scenario・ranking候補→共通preparation transaction→`applyNpTransfer`→後続NP/OC・damage→portable／既存UI。player NPは0.01%単位で`min(snapshot,cost)`を加算し、enemy chargeは整数チャージで`snapshot>=cost`のdonorだけValue2を加算する。両者ともdonor実減少は`min(snapshot,cost)`。receiptでsnapshot、算定gain、receiver実増分、donor実減少・残量を分け、receiver上限で失ったgainをdonorへ返さない。後続transferはdonor resource＋actor位置で同じ残量を読み、sourceの入力key変更でも初期値へ戻さない。
+
+採用済み固定Chaldea commit `9fa75655c07ecd76168b1ccf5b8232e8d64664cf`の処理・呼出元・関連testと全6occurrence/60cellを[source](tsk-06-45-np-transfer-source.json)へ固定した。child Rate1000に加え、対象非alias、空condition/script/関連metadata、専用charge抵抗producer0件を必要条件とする。未知child・専用抵抗・aliasはfail closed。supportのplayer transferはattackerがdonorとなるaliasで拒否し、enemy transferはreceiver gain0を証明できる既存sourceだけ受け入れる。
+
+選択sourceは304000 skill671650/function3957、1102300 skill2678550/function5043、2500400 skill711550/function5043。1102300の併存function23491は、固定参照のtrait readerがValueを読むことと現行attack reader inventoryから、Value0・防御metadata・attack/population/count readerなしの限定proofへ正規化した。damageNpIndividualSumのscalar Targetはtraitでなく読取scopeであり、TargetListと区別する。任意markerの数値化はしない。敵actor自身のcharge操作450箇所はtyped非交差proofへ分離した。未解決enemy charge writer、またはattackerへ投影されたparty NP writerの後ではdonor初期値を再利用せず拒否する。
+
+初期donor入力は味方2枠（0..30000）／敵3枠（0以上の整数）、不在は0。rankingは同じdonorへの全attempted costまでの飽和同値性と、NP到達性・OC/terminal damage不変proofを使う。直接入力reader、損失、未知writer、観測可能なOC差ではbaseline縮約しない。合法な代表tupleと全skill順序を保持し、cap4096は不変。
+
+| profile | 通常NP1／NP2／NP5平均 | NP2候補数（自己あり通常／成立、なし通常／成立） | 残るprofile拒否 |
+| --- | --- | --- | --- |
+| 304000 | 20,261.525／26,948.855／33,636.195 | 9／96／1／6 | なし |
+| 1102300 | 46,127.735／61,503.805／76,879.880 | 5／850／1／10 | なし |
+| 2500400 | 43,236.950／57,591.100／71,945.245 | 5／48／1／3 | なし |
+
+通常NP1/2/5・NP2四policyの21条件は全calculatedで、採用scenario・canonical input・rows・候補根拠を[validation](tsk-06-45-np-transfer-validation.json)へ記録した。calculator／ranking／portableの結果は一致。通常の代表はdonor0であり、移送によるOC増加とスキルadmission改善を混同しない。非zero donorと初期OC2の3profileもportable再実行・不正値からの修復後に一致する。
+
+通常calculatorの数値差は3件。304000は同じskillの攻撃50%が有効となりNP1平均26,948.855→40,323.545。1102300はBuster buff1%→21%で77,006.960→92,255.965。2500400は防御ダウン20%がcanonical攻撃項に反映され71,945.240→86,299.405、targetStateにbuffNegativeEffectを追加した。calculator既定相性2とranking等倍は別条件。既存rankingの数値差0件、855 audit identityの追加・欠落0件。差分の完全記録は[delta](tsk-06-45-np-transfer-delta.json)。NP2成立込みでは1102300が岸辺・中立条件によるNP威力80%／powerMod50%で141,459.415、2500400がburn特攻1.5で86,299.405。既存の条件規則と採用scenarioによる値であり、以前拒否された条件との数値差は主張しない。
+
+- forward／completeness: player不足、enemy不足かつ実減少あり・gain0、receiver clamp、複数donor、連続移送、source間の入力key変更を小型fixtureで確認。cost2/3の全入力配置で観測tupleと非単調scoreの最大を保持し、OC閾値と直接input readerが縮約を止める反例を確認。
+- recovery: 不正donor量はinputRequired、未知child／binding／専用抵抗／aliasはunsupported／invalidの境界で閉じる。既知のparent失敗はno-op。後続operation失敗ではdonor／receiver／NP／OC／receiptをrollbackし、入力修復後に同じcommandを再実行できる。party NP／enemy chargeの未解決writerを初期値で上書きしない。
+- alternate path／UI: calculator/ranking/portableが同じtransactionを使用。E2E-050で3profileの初期量入力→負値拒否→修復→計算→保存→再読込→自動0を確認した。代表input欄とranking/calculator画面を目視確認。VRT5枚はmaster/engine表記と425/8件を更新し、snapshot再生成runを成功gateに数えない。
+
+| 基点比較 | before | after | 解釈 |
+| --- | ---: | ---: | --- |
+| 通常ranking／calculator | 422/433／420/422 | 425/433／420/422 | 対象3profileを追加。calculatorは既存3件のsource適用を修正 |
+| 候補生成／dedup | 6,476／4,023 | 6,500／4,035 | 追加3profileの候補を実行 |
+| damage要求／distinct | 2,332／1,431 | 2,351／1,445 | 実測へcounter契約を更新 |
+| program／mutation／opaque | 7,255／15,894／54,108 | 7,255／15,927／54,097 | transferと直接markerをtyped operationへ |
+| ranking hot path中央値 | 3,715.939ms | 3,542.927ms | -4.66%。同script/hash・Node/CPU・条件、warmup1＋serial3回 |
+| production step | 52,140ms | 49,139ms | 21条件と非zero portable修復testを追加。file時間はshared setup／並列実行を含む |
+
+[performance](tsk-06-45-np-transfer-performance.json)に3samples、同条件照合、影響suiteの前後を保存した。処理追加と計時変動の寄与を分離した値ではない。cap4096、timeout、性能ratchetの緩和なし。
+
+最終`pnpm quality`成功: unit802／production124／E2E26、warning・unexpected console・retry0、281.360秒。manifest `.test-results/2026-09-12T20-50-16-144Z-15-170467/manifest.json`、SHA256 `1ed2ea19bc9098648cae4addc56219ce15509d46b3a9233fd6688cdffbbd2b02`。master20260913.16/schema53、engine43.0.0、portable schema40。現行pipeline再生成とpublished masterのhash一致も確認。実装file hash、source join、追加修復test、UI artifactsはvalidationに保持した。
+
+今回の対象3profileに残る拒否理由・未達gateはなし。残ranking8profile（105900、204300、204900×2、403600、405700、705300、2501400）はunsupportedActionAdmission、calculatorは702500・705300がunsupported。HP transfer204300／403600、その他marker／HP／BP、全条件・owned／全体回復/UIとTSK-06.45全体は未完了、06.44はblockedを維持する。次は残profileを既存U2/U3の直接reader/writerへ対応させる。今回の成功before/afterを再検証しない。検証時のGitは`b1759b7`＋今回差分。2026-09-13の利用者依頼で本記録を含むcommitへ収録する。次単位候補のHP transfer（204300・403600）と直接必要なU2-H.2、受入条件はTaskの最新Handoffへ記録した。quality後は文書・証跡だけを更新し、docs整合性・JSON/hash・差分を確認した。
+
+以下は`b1759b7`に収録済みのcount7profile完了証跡。
+
 **`0cf5a36`基点のcount7profile単位は実装・検証完了、scoped Blocking0。TSK全体は未完了。** 開始時clean。基点のquality（unit780/production122/E2E26）と49条件をbeforeとして再利用した。現在の49条件は40 calculated／9 unsupportedから49 calculatedへ改善した。
 
 U3-Qでは空quantityの二重生成を除去し、populationの初期入力を合法性検査後に、全count readerと付与/解除scopeが観測する値で同値化する。スキル順序は削除しない。代表は実在する合法tupleからbaselineとの差が最小のものを選ぶ。上限4096は完全な残存productへ適用する。NPを使う前の到達性・損失・未知writer・input直接readerがある場合は削減せず、共通executionのNP区間とterminal NPのOC依存性でdamage不変が証明できる場合だけ初期populationをbaselineへ縮約する。

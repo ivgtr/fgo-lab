@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(52),
+  schemaVersion: z.literal(53),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -385,6 +385,14 @@ export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
   populationCountInputSchema,
   canonicalInputBaseSchema
     .extend({
+      kind: z.literal('transferDonor'),
+      resource: z.enum(['playerNp', 'enemyCharge']),
+      actorIndex: z.number().int().min(0).max(2),
+      defaultValue: z.number().int().nullable(),
+    })
+    .strict(),
+  canonicalInputBaseSchema
+    .extend({
       kind: z.literal('populationActorValue'),
       actorIndex: z.number().int().min(0).max(2),
       quantity: z.enum(['removableBuffs', 'traitPresence']),
@@ -623,6 +631,23 @@ const effectExecutionOperationSchema = z.union([
       amount: z.discriminatedUnion('kind', [
         z
           .object({
+            kind: z.literal('npTransfer'),
+            donor: z.enum(['playerNp', 'enemyCharge']),
+            inputKeys: z.array(z.string().min(1)).min(2).max(3),
+            costs: canonicalValueSetsSchema,
+            values: canonicalValueSetsSchema,
+            limitBreakValues: canonicalValueSetsSchema.optional(),
+            child: z.literal('unconditionalUnresistedDisjoint'),
+          })
+          .strict()
+          .refine(
+            (value) =>
+              value.inputKeys.length === (value.donor === 'playerNp' ? 2 : 3) &&
+              new Set(value.inputKeys).size === value.inputKeys.length,
+            'invalid_transfer_donors',
+          ),
+        z
+          .object({
             kind: z.literal('populationCount'),
             selector: populationCountSelectorSchema,
             inputKey: z.string().min(1),
@@ -664,7 +689,7 @@ const effectExecutionOperationSchema = z.union([
     )
     .refine(
       (operation) =>
-        !['buffCount', 'populationCount'].includes(operation.amount.kind) ||
+        !['buffCount', 'populationCount', 'npTransfer'].includes(operation.amount.kind) ||
         (operation.resource === 'npGauge' && operation.direction === 'gain'),
       { message: 'buff_count_requires_np_gain' },
     )
@@ -732,9 +757,11 @@ const effectExecutionOperationSchema = z.union([
         'cooldownWithoutReuse',
         'commandCardOutsideTerminalNp',
         'enemyChargeOutsideDamage',
+        'enemySourceChargeExcluded',
         'postTerminalDamageOnly',
         'presentationOnly',
         'noBattleStateChange',
+        'unreferencedDefensiveMarker',
       ]),
     })
     .strict(),
@@ -913,6 +940,30 @@ export const masterEffectSchema = z
   .strict()
   .superRefine((effect, context) => {
     for (const operation of effect.execution) {
+      if (operation.kind === 'resourceMutation' && operation.amount.kind === 'npTransfer') {
+        const amount = operation.amount;
+        if (
+          operation.recipient !== 'sourceSelf' ||
+          amount.inputKeys.some(
+            (key, actorIndex) =>
+              !effect.inputDefinitions.some(
+                (input) =>
+                  input.kind === 'transferDonor' &&
+                  input.resource === amount.donor &&
+                  input.actorIndex === actorIndex &&
+                  input.key === key &&
+                  input.minimum === 0 &&
+                  input.step === 1 &&
+                  input.defaultValue === 0,
+              ),
+          )
+        )
+          context.addIssue({
+            code: 'custom',
+            message: 'unbound_transfer_donor_input',
+            path: ['execution'],
+          });
+      }
       if (operation.kind === 'populationFunction') {
         const action = operation.action;
         const keys =

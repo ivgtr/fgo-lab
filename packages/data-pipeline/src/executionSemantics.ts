@@ -608,7 +608,16 @@ export function normalizeExecutionSemantics(input: {
         reason: unsupported,
         damageRelevant: true,
       });
-    else if (boundedProof) operations.push({ kind: 'boundedPhaseIrrelevant', proof: boundedProof });
+    else if (boundedProof)
+      operations.push({
+        kind: 'boundedPhaseIrrelevant',
+        proof:
+          boundedProof === 'enemyChargeOutsideDamage' &&
+          input.fn.funcTargetType === 'self' &&
+          input.fn.funcTargetTeam === 'enemy'
+            ? 'enemySourceChargeExcluded'
+            : boundedProof,
+      });
     else throw new TypeError(`unclassified_canonical_operation:${family}`);
   }
   return coalesceDamageRelevantContextMutations(operations);

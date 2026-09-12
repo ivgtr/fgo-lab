@@ -34,6 +34,8 @@ export function npMutationFromCanonicalAmount(
     operation.subjectId !== null
   )
     return { kind: 'unsupported', family: 'invalidNpResource' };
+  if (operation.amount.kind === 'npTransfer')
+    return { kind: 'unsupported', family: 'transferRequiresDonorSnapshot' };
   if (operation.amount.kind === 'dependent')
     return { kind: 'unsupported', family: operation.amount.reason };
   if (operation.amount.kind === 'buffCount' || operation.amount.kind === 'populationCount')

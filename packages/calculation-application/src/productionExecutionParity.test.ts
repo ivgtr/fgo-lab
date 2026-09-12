@@ -81,7 +81,7 @@ describe('production execution parity ratchet', () => {
         .map(({ attackerId }) => attackerId),
     ).toEqual(['702500', '705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('b3c004b2f7d2ddaa180a55859491f4c7a42419f9489ba421247a79ab8a2770c5');
+    expect(digest).toBe('2a55c890f3453f14df034b281ebd475c2e3b5c6b7e531ae6502784f8543945b9');
   }, 60_000);
 });
 
@@ -443,3 +443,163 @@ it('accepts all seven population-count profiles through calculator, four ranking
       JSON.stringify(records, null, 2) + '\n',
     );
 }, 60000);
+
+it('accepts NP and charge transfer profiles through all seven conditions and portable replay', async () => {
+  const master = await loadMaster();
+  const versions = {
+    ...currentCalculationVersionContext(master),
+    schemaVersion: SCHEMA_VERSION,
+    appVersion: '0.1.0',
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const records = [];
+  const conditions = [
+    ...([1, 2, 5] as const).map((npLevel) => ({
+      ...DEFAULT_RANKING_POLICY_CONDITIONS,
+      npLevelBasis: { kind: 'specified' as const, npLevel },
+    })),
+    ...(['included', 'excluded'] as const).flatMap((selfBuffs) =>
+      (['baseline', 'satisfied'] as const).map((conditionalEffects) => ({
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        npLevelBasis: { kind: 'specified' as const, npLevel: 2 as const },
+        selfBuffs,
+        conditionalEffects,
+      })),
+    ),
+  ];
+  for (const id of ['304000', '1102300', '2500400']) {
+    const actor = master.servants.find((actor) => actor.id === id)!;
+    for (const profile of createStaticAttackProfiles(actor))
+      for (const condition of conditions) {
+        const ranking = calculateRankingPolicyDetail(
+          actor,
+          master,
+          { servantBuilds: {} },
+          condition,
+          versions,
+          profile,
+        );
+        records.push({
+          id,
+          profile,
+          condition,
+          status: ranking.status,
+          ...('reason' in ranking ? { reason: ranking.reason } : {}),
+          ...(ranking.status === 'calculated'
+            ? {
+                input: ranking.detail.input,
+                rows: ranking.detail.result.rows,
+                scenario: ranking.detail.scenario,
+                candidateCount: ranking.detail.executionMetrics.worldCandidateCount,
+                evidence: ranking.detail.candidateEvidence,
+              }
+            : {}),
+        });
+        if (ranking.status === 'calculated') {
+          const replay = calculateScenario(ranking.detail.scenario, master, versions);
+          expect(replay.result.rows).toEqual(ranking.detail.result.rows);
+          const portable = executePortableCalculation(
+            createCalculatorPortableRequest(
+              ranking.detail.scenario,
+              currentCalculationVersionContext(master),
+            ),
+            master,
+          );
+          expect(portable.status).toBe('executed');
+          if (portable.status === 'executed')
+            expect(portable.execution.result).toEqual(replay.result);
+        }
+      }
+  }
+  if (process.env['FGO_TEST_ARTIFACT_DIR'])
+    await writeFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'np-transfer-acceptance.json'),
+      JSON.stringify(records, null, 2) + '\n',
+    );
+  expect(records.filter((record) => record.status !== 'calculated')).toEqual([]);
+}, 60000);
+
+it('replays nonzero transfer inputs and repairs invalid portable donor quantities for each production source', async () => {
+  const master = await loadMaster();
+  const versions = {
+    ...currentCalculationVersionContext(master),
+    schemaVersion: SCHEMA_VERSION,
+    appVersion: '0.1.0',
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const records = [];
+  for (const id of ['304000', '1102300', '2500400']) {
+    const actor = master.servants.find((actor) => actor.id === id)!;
+    const ranking = calculateRankingPolicyDetail(
+      actor,
+      master,
+      { servantBuilds: {} },
+      { ...DEFAULT_RANKING_POLICY_CONDITIONS, npLevelBasis: { kind: 'specified', npLevel: 5 } },
+      versions,
+      createStaticAttackProfiles(actor)[0],
+    );
+    if (ranking.status !== 'calculated') throw new Error('transfer admission');
+    const scenario = structuredClone(ranking.detail.scenario);
+    scenario.initialOvercharge = 2;
+    const inputs = actor.skills
+      .flatMap((skill) => skill.effects.flatMap((effect) => effect.inputDefinitions))
+      .filter((input) => input.kind === 'transferDonor');
+    for (const input of inputs)
+      scenario.canonicalInputValues[input.key] = {
+        kind: 'integer',
+        value: input.resource === 'playerNp' ? 3000 : 1,
+      };
+    const calculation = calculateScenario(scenario, master, versions);
+    expect(calculation.result.status).toBe('calculated');
+    const request = createCalculatorPortableRequest(
+      scenario,
+      currentCalculationVersionContext(master),
+    );
+    const replay = executePortableCalculation(request, master);
+    expect(replay.status).toBe('executed');
+    if (replay.status !== 'executed') throw new Error('portable transfer');
+    expect(replay.execution.result).toEqual(calculation.result);
+    const broken = structuredClone(scenario);
+    broken.canonicalInputValues[inputs[0]!.key] = { kind: 'integer', value: -1 };
+    const attempt = attemptPortableCalculationScenarioChange(
+      request,
+      calculation.result,
+      broken,
+      master,
+    );
+    expect(attempt.status).toBe('committed');
+    if (attempt.status !== 'committed') throw new Error('repair scenario');
+    const failed = executePortableCalculation(attempt.request, master);
+    expect(failed.status).toBe('executed');
+    if (failed.status !== 'executed') throw new Error('repair input');
+    expect(failed.execution.result.status).toBe('inputRequired');
+    expect(failed.execution.effectInputs.some((input) => input.key === inputs[0]!.key)).toBe(true);
+    const repaired = attemptPortableCalculationScenarioChange(
+      attempt.request,
+      attempt.result,
+      scenario,
+      master,
+    );
+    expect(repaired.status).toBe('committed');
+    if (repaired.status === 'committed') {
+      const again = executePortableCalculation(repaired.request, master);
+      expect(again.status).toBe('executed');
+      if (again.status === 'executed') expect(again.execution.result).toEqual(calculation.result);
+    }
+    records.push({
+      id,
+      scenario,
+      input: calculation.input,
+      rows: calculation.result.rows,
+      actions: calculation.appliedPreparationActions,
+      repaired: repaired.status,
+    });
+  }
+  if (process.env['FGO_TEST_ARTIFACT_DIR'])
+    await writeFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'np-transfer-positive-recovery.json'),
+      JSON.stringify(records, null, 2) + '\n',
+    );
+});

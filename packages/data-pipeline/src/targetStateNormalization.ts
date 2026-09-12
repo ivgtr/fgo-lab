@@ -11,6 +11,8 @@ import { functionReachesDamageModifier, normalizeTargetPolicy } from './executio
 const STATE_GRANT_FUNCTIONS = new Set(['addState', 'addStateShort']);
 
 export interface DamageReachableStateCatalog {
+  readonly npTransferChargeResistance?: boolean;
+  readonly attackReadTraits?: ReadonlySet<string>;
   readonly populationTraitGrantSelectors?: ReadonlyMap<string, readonly string[]>;
   readonly populationReadTraits?: ReadonlySet<string>;
   readonly populationBuffTraits?: ReadonlySet<string>;
@@ -104,12 +106,13 @@ function conditionTraits(fn: AtlasFunction, traitNameById: ReadonlyMap<number, s
 function noblePhantasmDamageTraits(
   fn: AtlasFunction,
   traitNameById: ReadonlyMap<number, string>,
+  scalarTargetIsTrait = true,
 ): string[] {
   if (!fn.funcType?.startsWith('damageNp')) return [];
   return [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5]
     .flatMap((parameters) => parameters ?? [])
     .flatMap((parameter) => [
-      ...(typeof parameter.Target === 'number' ? [parameter.Target] : []),
+      ...(scalarTargetIsTrait && typeof parameter.Target === 'number' ? [parameter.Target] : []),
       ...(parameter.TargetList ?? []),
       ...(parameter.AndCheckIndividualityList ?? []),
     ])
@@ -249,6 +252,32 @@ export function collectDamageReachableStateCatalog(
         labels.set(name, values);
       }
   return {
+    npTransferChargeResistance: functions.some((fn) =>
+      (fn.buffs ?? []).some((buff) => /resistanceDelayNpturn/i.test(buff.type ?? '')),
+    ),
+    attackReadTraits: new Set([
+      ...functions.flatMap((fn) =>
+        [
+          ...(fn.functvals ?? []),
+          ...(fn.buffs ?? []).flatMap((buff) => [
+            ...(buff.ckSelfIndv ?? []),
+            ...(buff.ckOpIndv ?? []),
+          ]),
+        ].flatMap((trait) => {
+          const name = stateMutationTraitName(trait, traitNameById);
+          return name ? [name] : [];
+        }),
+      ),
+      ...functions
+        .filter((fn) =>
+          ['damageNpIndividual', 'damageNpIndividualSum', 'damageNpStateIndividualFix'].includes(
+            fn.funcType ?? '',
+          ),
+        )
+        .flatMap((fn) =>
+          noblePhantasmDamageTraits(fn, traitNameById, fn.funcType !== 'damageNpIndividualSum'),
+        ),
+    ]),
     populationReadTraits,
     populationTraitGrantSelectors,
     populationBuffTraits,

@@ -244,7 +244,7 @@ describe('production canonical execution semantics', () => {
     expect(effects).toHaveLength(13_875);
     expect(operations).toHaveLength(14826);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
-      boundedPhaseIrrelevant: 2726,
+      boundedPhaseIrrelevant: 2727,
       buffInstanceMutation: 198,
       contextMutation: 1489,
       damageModifier: 3885,
@@ -258,11 +258,11 @@ describe('production canonical execution semantics', () => {
       populationMutation: 4,
       populationFunction: 5,
       removeOcState: 75,
-      resourceMutation: 1174,
+      resourceMutation: 1177,
       selectNoblePhantasmVariant: 22,
       stateMutation: 4828,
       transformActorForm: 10,
-      unsupported: 54,
+      unsupported: 50,
     });
     const occurrenceFamilies = {
       resource: new Set([
@@ -340,11 +340,11 @@ describe('production canonical execution semantics', () => {
       ).length,
     };
     expect(closedOccurrences).toEqual({
-      resource: 1_173,
+      resource: 1_176,
       unresolvedResourceTargets: 2,
       state: 4_829,
-      unsupported: 10,
-      boundedPhaseIrrelevant: 2_725,
+      unsupported: 7,
+      boundedPhaseIrrelevant: 2_726,
     });
 
     const variantOperations = master.servants.flatMap((servant) =>
@@ -472,8 +472,9 @@ describe('production canonical execution semantics', () => {
       'fixed:gain': 649,
       'fixed:loss': 79,
       'populationCount:gain': 6,
+      'npTransfer:gain': 3,
     });
-    expect(transitions).toHaveLength(739);
+    expect(transitions).toHaveLength(742);
     // PIR-001: bound count readers now execute; each retains its input identity and raw coefficient cells.
     const counted = allEffects(master).filter((effect) =>
       effect.execution.some(
@@ -513,7 +514,7 @@ describe('production canonical execution semantics', () => {
           (operation) =>
             operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount',
         ),
-    ).toHaveLength(6);
+    ).toHaveLength(3);
     expect(
       master.servants
         .flatMap(({ skills }) => skills)
@@ -601,7 +602,7 @@ describe('production canonical execution semantics', () => {
             !operation.damageRelevant,
         ),
       ),
-    ).toHaveLength(24);
+    ).toHaveLength(23);
   });
 
   it('ratchets build-time referenced skills and their ordered canonical operations', async () => {

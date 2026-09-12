@@ -70,11 +70,14 @@ export function effectRequiresPreparationDecision(
   return (
     effect.execution.some(
       (operation) =>
+        (operation.kind === 'boundedPhaseIrrelevant' &&
+          operation.proof === 'enemyChargeOutsideDamage') ||
         operation.kind === 'populationMutation' ||
         operation.kind === 'populationFunction' ||
         (operation.kind === 'resourceMutation' &&
           operation.resource === 'npGauge' &&
-          transitionTargetsAttacker(operation.recipient, origin)) ||
+          (operation.amount.kind === 'npTransfer' ||
+            transitionTargetsAttacker(operation.recipient, origin))) ||
         (operation.kind === 'unsupported' &&
           operation.reason === 'dependentResourceAmount' &&
           resolveTargetPolicy(origin, operation.route.target) === 'attacker'),
@@ -118,6 +121,9 @@ export type PreparationResourcePlanResult =
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
       ocState: OcState;
       populationEvents: PreNoblePhantasmState['populationEvents'];
+      npTransfers: NonNullable<PreNoblePhantasmState['npTransfers']>;
+      uncertainEnemyCharge: boolean;
+      uncertainPlayerNp: boolean;
       buffInstances: PreNoblePhantasmState['buffInstances'];
       contextState: Pick<
         PreNoblePhantasmState,
@@ -266,6 +272,9 @@ export function planPreparationResourceTransaction(args: {
     activation,
     ocState: oc.result.state,
     populationEvents: oc.structuralState.populationEvents,
+    npTransfers: oc.structuralState.npTransfers ?? [],
+    uncertainEnemyCharge: oc.structuralState.uncertainEnemyCharge ?? false,
+    uncertainPlayerNp: oc.structuralState.uncertainPlayerNp ?? false,
     buffInstances: oc.structuralState.buffInstances,
     contextState: {
       stackCounts: oc.structuralState.stackCounts,
