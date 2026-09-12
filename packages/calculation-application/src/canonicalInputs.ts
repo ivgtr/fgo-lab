@@ -100,7 +100,9 @@ export function createEffectInputViewModels(input: {
   const invalidKeys = new Set(input.requiredInputs.map((definition) => definition.key));
   return input.definitions.flatMap((definition) => {
     const related = relatedDamageEffects(definition, input.effects);
-    if (related.length === 0 && !invalidKeys.has(definition.key)) return [];
+    const instanceInput =
+      definition.kind === 'effectStackCount' && definition.instanceTraits !== undefined;
+    if (related.length === 0 && !invalidKeys.has(definition.key) && !instanceInput) return [];
     const explicit = input.explicitValues[definition.key];
     return [
       {

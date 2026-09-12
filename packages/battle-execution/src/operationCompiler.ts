@@ -648,11 +648,28 @@ export function compileEffect(
   const projectable = applicable.filter((semantic) => semantic.kind !== 'contextMutation');
   const primary = projectable.find((semantic) => semantic.kind !== 'unsupported');
   const unresolved =
-    (source.effect.inputDefinitions.some(
-      (input) =>
-        input.kind === 'effectStackCount' && input.quantitySource.scope === 'attackerState',
-    ) &&
-      !['attacker', 'np', 'passive', 'craftEssence'].includes(source.origin)) ||
+    (!['attacker', 'np', 'passive', 'craftEssence'].includes(source.origin) &&
+      source.effect.inputDefinitions.some(
+        (input) =>
+          input.kind === 'effectStackCount' &&
+          input.quantitySource.scope === 'attackerState' &&
+          (canonicalRequirementLeaves(source.effect.requirement.expression).some(
+            (leaf) => leaf.kind === 'inputQuantity' && leaf.inputKey === input.key,
+          ) ||
+            applicable.some(
+              (semantic) =>
+                'valueExpressions' in semantic &&
+                [
+                  ...semantic.valueExpressions.flat(),
+                  ...(semantic.limitBreakValueExpressions?.flat() ?? []),
+                ].some(
+                  (expression) =>
+                    (expression?.kind === 'stackLinear' &&
+                      expression.sources.some((item) => item.key === input.key)) ||
+                    (expression?.kind === 'inputLinear' && expression.inputKey === input.key),
+                ),
+            )),
+      )) ||
     applicable.some(
       (semantic) =>
         semantic.kind === 'unsupported' ||

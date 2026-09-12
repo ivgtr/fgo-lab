@@ -4,6 +4,7 @@ import {
   masterEffectSchema,
   type MasterEffect,
   type StackSource,
+  type StackInputDefinition,
 } from '@fgo-lab/master-data';
 import {
   createPreNoblePhantasmState,
@@ -31,7 +32,7 @@ import {
 } from './portableCalculation';
 
 function fixture(scope: StackSource['scope'], mutation: 'addTrait' | 'removeTrait') {
-  const input = {
+  const input: StackInputDefinition = {
     ...source,
     key: `stack:${scope}:fixture-stack`,
     owner: scope === 'field' ? 'field' : scope === 'targetState' ? 'target' : 'attacker',
@@ -129,16 +130,16 @@ describe('live preparation stack reads', () => {
     const grant = actor.skills[0]!.effects[0]!;
     const gain = actor.skills[1]!.effects[0]!;
     const definition = {
-      kind: 'buffInstanceCount' as const,
-      key: 'buff-count:fixture',
+      kind: 'effectStackCount' as const,
+      key: 'stack:attackerState:counted',
       owner: 'attacker' as const,
-      trait: 'counted',
+      quantitySource: { scope: 'attackerState' as const, trait: 'counted' },
       instanceTraits: ['counted', 'positive'],
       label: '状態数',
       description: '初期付与数',
-      minimum: 0,
+      minimum: 0 as const,
       maximum: 6,
-      step: 1,
+      step: 1 as const,
       defaultValue: 0,
       defaultReason: '外部付与なし',
     };
@@ -202,7 +203,7 @@ describe('live preparation stack reads', () => {
           },
         },
       }).success,
-    ).toBe(false);
+    ).toBe(true);
     // A generic identity selector can remove a counted instance even when its reader uses a different trait.
     const removal = {
       ...grant,
@@ -249,6 +250,9 @@ describe('live preparation stack reads', () => {
       );
       if (result.status !== 'applied') throw new Error(result.code);
       expect(result.state.buffInstances.reduce((sum, instance) => sum + instance.count, 0)).toBe(
+        initialCount + 2,
+      );
+      expect(result.state.stackCounts.attackerState[definition.quantitySource.trait]).toBe(
         initialCount + 2,
       );
       expect(result.state.npResource.gauge).toBe(20_000);
@@ -450,6 +454,50 @@ describe('live preparation stack reads', () => {
           }
         }
   });
+  it('reads the recipient instance count for party support and excludes support sourceSelf', () => {
+    const { data, scenario, input } = fixture('attackerState', 'addTrait');
+    const actor = data.servants[0]!;
+    const gain = actor.skills[1]!.effects[0]!;
+    gain.inputDefinitions = [{ ...input, instanceTraits: ['fixture-stack'] }];
+    gain.requirement.expression = { kind: 'always' };
+    const mutation = gain.execution[0]!;
+    if (mutation.kind !== 'resourceMutation' || mutation.resource !== 'npGauge')
+      throw new Error('gain');
+    mutation.amount = {
+      kind: 'buffCount',
+      trait: 'fixture-stack',
+      inputKey: input.key,
+      values: [Array.from({ length: 10 }, () => 5000), [], [], [], []],
+    };
+    scenario.attacker.npLevel = 2;
+    scenario.preNoblePhantasmPlan = [{ kind: 'executeAttackNoblePhantasm' }];
+    scenario.canonicalInputValues[input.key] = { kind: 'integer', value: 2 };
+    scenario.support = {
+      sourceTemplateId: null,
+      composition: {
+        effectInclusions: [],
+        sources: [
+          {
+            sourceInstanceId: 'support-count',
+            servantId: actor.id,
+            skills: [{ skillId: actor.skills[1]!.id, skillLevel: 10, enabled: true }],
+          },
+        ],
+      },
+    };
+    for (const [recipient, overcharge] of [
+      ['sourceSelf', 1],
+      ['partyMember', 2],
+    ] as const) {
+      mutation.recipient = recipient;
+      const result = calculateScenario(scenario, structuredClone(data), versions);
+      expect(result.result.status).toBe('calculated');
+      if (result.status !== 'executable') throw new Error('executable support');
+      expect(result.input.overcharge).toBe(overcharge);
+      expect(result.effects.some((effect) => effect.outcome === 'unsupported')).toBe(false);
+    }
+  });
+
   it('uses a prior function write for nested count conditions and an OC grant in one command', () => {
     const { data, input } = fixture('attackerState', 'addTrait');
     const actor = data.servants[0]!;

@@ -406,18 +406,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        semanticUpperBound: 2_268,
-        generatedCount: 2_268,
-        deduplicatedCount: 2_268,
-        damageRequestUpperBound: 2_268,
-        damageRequestCount: 2_211,
-        distinctDamageInputCount: 1_397,
+        semanticUpperBound: 2_289,
+        generatedCount: 2_289,
+        deduplicatedCount: 2_289,
+        damageRequestUpperBound: 2_289,
+        damageRequestCount: 2_232,
+        distinctDamageInputCount: 1_404,
       },
       damageCache: {
-        requestCount: 2_211,
-        distinctDamageInputCount: 1_397,
-        cacheHitCount: 814,
-        cacheHitRate: 814 / 2_211,
+        requestCount: 2_232,
+        distinctDamageInputCount: 1_404,
+        cacheHitCount: 828,
+        cacheHitRate: 828 / 2_232,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -442,9 +442,7 @@ describe('static ranking candidate space', () => {
         '405700',
         '502600',
         '705300',
-        '1000900',
         '1001800',
-        '1101600',
         '1102300',
         '2500400',
         '2501400',
@@ -585,19 +583,19 @@ describe('static ranking candidate space', () => {
         'excluded:baseline:policyNoOp': 15024,
         'excluded:satisfied:admitted:structuralRequired': 148,
         'excluded:satisfied:policyNoOp': 15024,
-        'included:baseline:admitted:optional': 8604,
+        'included:baseline:admitted:optional': 8626,
         'included:baseline:admitted:structuralRequired': 148,
         'included:baseline:policyNoOp': 6165,
-        'included:baseline:unsupported:unresolvedOperation': 255,
-        'included:satisfied:admitted:optional': 14747,
+        'included:baseline:unsupported:unresolvedOperation': 233,
+        'included:satisfied:admitted:optional': 14769,
         'included:satisfied:admitted:structuralRequired': 148,
         'included:satisfied:policyNoOp': 22,
-        'included:satisfied:unsupported:unresolvedOperation': 255,
+        'included:satisfied:unsupported:unresolvedOperation': 233,
       },
       preparationRejections: {
         'included:baseline:unreachable:insufficientNpGauge': 57,
       },
-      actionDigest: 'cf97b8ac97ee111c5fda64f2de53e15da9cb1249a70ce6e4b583c24e52f56939',
+      actionDigest: '916e59edf3dd51c0e403848d39c23f58261dd345b3eafb2b5d4862fb77dabeec',
     });
   }, 30_000);
 

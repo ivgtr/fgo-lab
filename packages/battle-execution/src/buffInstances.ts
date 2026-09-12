@@ -9,7 +9,12 @@ export interface CountedBuffInstance {
   lifetime: 'active' | 'constant';
   count: number;
 }
-export type BuffCountInput = Extract<CanonicalInputDefinition, { kind: 'buffInstanceCount' }>;
+export type BuffCountInput = Extract<CanonicalInputDefinition, { kind: 'effectStackCount' }> & {
+  instanceTraits: string[];
+};
+export function isBuffCountInput(input: CanonicalInputDefinition): input is BuffCountInput {
+  return input.kind === 'effectStackCount' && input.instanceTraits !== undefined;
+}
 
 export function seedBuffInstances(
   inputs: readonly BuffCountInput[],
@@ -19,16 +24,15 @@ export function seedBuffInstances(
   for (const input of inputs) {
     const count = values[input.key] ?? input.defaultValue;
     if (
-      input.owner !== 'attacker' ||
-      count === null ||
+      (input.owner !== 'attacker' && input.owner !== 'target') ||
       !Number.isSafeInteger(count) ||
       count < input.minimum ||
       count > input.maximum ||
-      !input.instanceTraits.includes(input.trait)
+      !input.instanceTraits.includes(input.quantitySource.trait)
     )
       throw new TypeError('invalid_initial_buff_count');
     const traits = [...new Set(input.instanceTraits)].sort();
-    const signature = JSON.stringify(traits);
+    const signature = JSON.stringify([input.owner, traits]);
     const previous = instances.get(signature);
     if (previous && previous.count !== count)
       throw new TypeError('conflicting_initial_buff_counts');
@@ -36,14 +40,15 @@ export function seedBuffInstances(
       inputs.some(
         (other) =>
           other.key !== input.key &&
-          other.instanceTraits.includes(input.trait) &&
-          JSON.stringify([...new Set(other.instanceTraits)].sort()) !== signature,
+          other.owner === input.owner &&
+          other.instanceTraits.includes(input.quantitySource.trait) &&
+          JSON.stringify([other.owner, [...new Set(other.instanceTraits)].sort()]) !== signature,
       )
     )
       throw new TypeError('ambiguous_initial_buff_counts');
     instances.set(signature, {
       identity: `initial:${signature}`,
-      actor: 'attacker',
+      actor: input.owner,
       traits,
       lifetime: 'active',
       count,
@@ -55,7 +60,7 @@ export function seedBuffInstances(
 export function applyBuffInstanceMutation(
   instances: readonly CountedBuffInstance[],
   operation: Extract<EffectExecutionOperation, { kind: 'buffInstanceMutation' }>,
-  source: SourceEffect,
+  source: Pick<SourceEffect, 'origin'>,
   identity: string,
 ): readonly CountedBuffInstance[] | null {
   if (operation.mutation === 'move' || operation.mutation === 'unsupported') return null;
@@ -69,6 +74,12 @@ export function applyBuffInstanceMutation(
         instance.lifetime === 'constant' ||
         !instance.traits.some((trait) => operation.traits.includes(trait)),
     );
+  if (
+    operation.grantLimit &&
+    countBuffInstances(instances, operation.grantLimit.trait, recipient, 'all') >=
+      operation.grantLimit.maximum
+  )
+    return instances;
   return [
     ...instances,
     {
@@ -84,14 +95,49 @@ export function applyBuffInstanceMutation(
 export function countBuffInstances(
   instances: readonly CountedBuffInstance[],
   trait: string,
+  actor: 'attacker' | 'target' = 'attacker',
+  lifetime: 'active' | 'all' = 'active',
 ): number {
   return instances.reduce(
     (count, instance) =>
-      instance.actor === 'attacker' &&
-      instance.lifetime === 'active' &&
+      instance.actor === actor &&
+      (lifetime === 'all' || instance.lifetime === 'active') &&
       instance.traits.includes(trait)
         ? count + instance.count
         : count,
     0,
   );
+}
+
+/** Stack readers and NP count readers observe one instance store, including after removal. */
+export function projectBuffInstanceCounts<
+  T extends {
+    buffInstances: readonly CountedBuffInstance[];
+    stackCounts: {
+      attackerState: Readonly<Record<string, number>>;
+      targetState: Readonly<Record<string, number>>;
+      field: Readonly<Record<string, number>>;
+    };
+    stateTraits: { attackerState: ReadonlySet<string>; targetState: ReadonlySet<string> };
+  },
+>(state: T, inputs: readonly BuffCountInput[]): T {
+  if (!inputs.length) return state;
+  const stackCounts = { ...state.stackCounts };
+  const stateTraits = { ...state.stateTraits };
+  for (const input of inputs) {
+    const { scope, trait } = input.quantitySource;
+    if (scope === 'field') throw new TypeError('invalid_buff_count_scope');
+    const count = countBuffInstances(
+      state.buffInstances,
+      trait,
+      scope === 'attackerState' ? 'attacker' : 'target',
+      'all',
+    );
+    stackCounts[scope] = { ...stackCounts[scope], [trait]: count };
+    const traits = new Set(stateTraits[scope]);
+    if (count) traits.add(trait);
+    else traits.delete(trait);
+    stateTraits[scope] = traits;
+  }
+  return { ...state, stackCounts, stateTraits };
 }

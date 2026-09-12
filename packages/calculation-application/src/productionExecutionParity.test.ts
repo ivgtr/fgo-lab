@@ -1,5 +1,19 @@
+import {
+  createPreNoblePhantasmState,
+  reducePreNoblePhantasmAction,
+  servantStackInputs,
+} from '@fgo-lab/battle-execution';
+import { calculateRankingPolicyDetail } from './rankingPolicyCalculation';
+import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
+import {
+  currentCalculationVersionContext,
+  createCalculatorPortableRequest,
+  executePortableCalculation,
+  attemptPortableCalculationScenarioChange,
+  resetPortableCalculationRequest,
+} from './portableCalculation';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -14,12 +28,15 @@ const calculateScenario = (...args: Parameters<typeof calculateScenarioOutcome>)
 import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 
 const root = resolve(import.meta.dirname, '../../..');
+let loaded: Promise<ReturnType<typeof masterSnapshotSchema.parse>> | undefined;
+const loadMaster = () =>
+  (loaded ??= readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8').then(
+    (content) => masterSnapshotSchema.parse(JSON.parse(content)),
+  ));
 
 describe('production execution parity ratchet', () => {
   it('executes every reachable default calculator scenario through preparation actions', async () => {
-    const master = masterSnapshotSchema.parse(
-      JSON.parse(await readFile(resolve(root, 'apps/web/public/master/master.json'), 'utf8')),
-    );
+    const master = await loadMaster();
     const versions = {
       schemaVersion: SCHEMA_VERSION,
       engineVersion: ENGINE_VERSION,
@@ -63,6 +80,185 @@ describe('production execution parity ratchet', () => {
         .map(({ attackerId }) => attackerId),
     ).toEqual(['702500', '705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('bdc64981fed6bf339bf7cc2c5fa101cfd9b5080e8443e5c00938a928b4c4ff1d');
+    expect(digest).toBe('4e70d20d6273070f12d4e1ffe0c8f06e0d5767c3d08a8a52eba885e99f9623c5');
   }, 60_000);
 });
+
+// Acceptance identities select evidence only; execution is entirely canonical.
+it('connects attack buff counts through selected variants, NP/OC, portable recovery and four ranking policies', async () => {
+  const master = await loadMaster();
+  const versions = {
+    ...currentCalculationVersionContext(master),
+    schemaVersion: SCHEMA_VERSION,
+    appVersion: '0.1.0',
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const records = [];
+  for (const id of ['1000900', '1101600']) {
+    const actor = master.servants.find((actor) => actor.id === id)!;
+    const inputs = servantStackInputs(actor).filter((input) => input.instanceTraits !== undefined);
+    expect(inputs).toHaveLength(1);
+    const input = inputs[0]!;
+    const countSkill = actor.skills.find((skill) =>
+      skill.effects.some((effect) =>
+        effect.execution.some(
+          (operation) =>
+            operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount',
+        ),
+      ),
+    )!;
+    for (const count of [0, 1, 10]) {
+      const context = {
+        resourceSemantics: master.npResourceSemantics,
+        npLevel: 2 as const,
+        overcharge: 1 as const,
+        initialGauge: 10_000,
+        stackInputs: servantStackInputs(actor),
+        canonicalInputValues: { [input.key]: count },
+      };
+      const initial = createPreNoblePhantasmState(
+        actor,
+        actor.actorFormGraph.defaultInitialFormId,
+        context,
+      );
+      if (initial.status !== 'applied') throw new Error(initial.code);
+      expect(initial.state.stackCounts.attackerState[input.quantitySource.trait]).toBe(count);
+      const result = reducePreNoblePhantasmAction(
+        actor,
+        initial.state,
+        { kind: 'useSkillSlot', slot: countSkill.slot, skillLevel: 10, choice: null },
+        context,
+      );
+      if (result.status !== 'applied') throw new Error(result.code);
+      const coefficient = countSkill.effects
+        .flatMap((effect) => effect.execution)
+        .find(
+          (operation) =>
+            operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount',
+        )!;
+      if (coefficient.kind !== 'resourceMutation' || coefficient.amount.kind !== 'buffCount')
+        throw new Error('coefficient');
+      expect(result.state.npResource.gauge).toBe(
+        Math.min(20_000, 10_000 + count * coefficient.amount.values[0][9]!),
+      );
+      expect(result.state.stackCounts.attackerState[input.quantitySource.trait]).toBe(0);
+      expect(result.state.buffInstances).toHaveLength(0);
+      expect(initial.state.stackCounts.attackerState[input.quantitySource.trait]).toBe(count);
+    }
+    for (const npLevel of [1, 2, 5] as const)
+      for (const selfBuffs of ['included', 'excluded'] as const)
+        for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+          const ranking = calculateRankingPolicyDetail(
+            actor,
+            master,
+            { servantBuilds: {} },
+            {
+              ...DEFAULT_RANKING_POLICY_CONDITIONS,
+              npLevelBasis: { kind: 'specified', npLevel },
+              selfBuffs,
+              conditionalEffects,
+            },
+            versions,
+          );
+          expect(ranking.status, JSON.stringify('reason' in ranking ? ranking.reason : null)).toBe(
+            'calculated',
+          );
+          if (ranking.status !== 'calculated') throw new Error('ranking');
+          const replay = calculateScenario(ranking.detail.scenario, master, versions);
+          expect(replay.result.rows).toEqual(ranking.detail.result.rows);
+          if (selfBuffs === 'included')
+            expect(replay.effectInputs.some((item) => item.key === input.key)).toBe(true);
+          const request = createCalculatorPortableRequest(
+            ranking.detail.scenario,
+            currentCalculationVersionContext(master),
+          );
+          const portable = executePortableCalculation(request, master);
+          if (portable.status !== 'executed') throw new Error('portable');
+          expect(portable.execution.result).toEqual(replay.result);
+          records.push({
+            id,
+            npLevel,
+            selfBuffs,
+            conditionalEffects,
+            input: replay.input,
+            rows: replay.result.rows,
+            plan: ranking.detail.scenario.preNoblePhantasmPlan,
+            inputs: ranking.detail.scenario.canonicalInputValues,
+          });
+          if (npLevel !== 2 || selfBuffs !== 'included' || conditionalEffects !== 'satisfied')
+            continue;
+          // Independent finite oracle: every integer initial count and every ordered skill subset.
+          const permutations = (slots: readonly number[]): number[][] => [
+            [],
+            ...slots.flatMap((slot) =>
+              permutations(slots.filter((other) => other !== slot)).map((tail) => [slot, ...tail]),
+            ),
+          ];
+          const averages: number[] = [];
+          for (let count = 0; count <= input.maximum; count++)
+            for (const slots of permutations([1, 2, 3])) {
+              const scenario = structuredClone(ranking.detail.scenario);
+              scenario.canonicalInputValues[input.key] = { kind: 'integer', value: count };
+              scenario.preNoblePhantasmPlan = [
+                ...slots.map((slot) => ({
+                  kind: 'useSkillSlot' as const,
+                  slot: slot as 1 | 2 | 3,
+                  skillLevel: 10,
+                  choice: null,
+                })),
+                { kind: 'executeAttackNoblePhantasm' },
+              ];
+              const execution = calculateScenarioOutcome(scenario, master, versions);
+              if (execution.result.status === 'calculated')
+                averages.push(execution.result.rows[1].average);
+            }
+          expect(ranking.detail.result.rows[1].average).toBe(Math.max(...averages));
+          const invalid = structuredClone(ranking.detail.scenario);
+          invalid.canonicalInputValues[input.key] = { kind: 'integer', value: input.maximum + 1 };
+          const failed = attemptPortableCalculationScenarioChange(
+            request,
+            replay.result,
+            invalid,
+            master,
+          );
+          expect(
+            failed,
+            JSON.stringify({
+              id,
+              result: failed.status === 'committed' ? failed.result : failed.failure,
+            }),
+          ).toMatchObject({ status: 'committed', result: { status: 'inputRequired' } });
+          if (failed.status !== 'committed') throw new Error('repairable count');
+          const retry = attemptPortableCalculationScenarioChange(
+            failed.request,
+            failed.result,
+            ranking.detail.scenario,
+            master,
+          );
+          expect(retry.status).toBe('committed');
+          if (retry.status !== 'committed') throw new Error('retry');
+          expect(retry.result).toEqual(replay.result);
+          const malformed = structuredClone(ranking.detail.scenario);
+          malformed.canonicalInputValues[input.key] = { kind: 'integer', value: 0.5 };
+          const invalidAttempt = attemptPortableCalculationScenarioChange(
+            request,
+            replay.result,
+            malformed,
+            master,
+          );
+          expect(invalidAttempt.status).toBe('rejected');
+          if (invalidAttempt.status !== 'rejected') throw new Error('malformed count');
+          expect(invalidAttempt.retainedRequest).toBe(request);
+          expect(invalidAttempt.retainedResult).toBe(replay.result);
+          const reset = resetPortableCalculationRequest(request, master, undefined, actor);
+          const resetResult = executePortableCalculation(reset, master);
+          expect(resetResult.status).toBe('executed');
+        }
+  }
+  if (process.env['FGO_TEST_ARTIFACT_DIR'])
+    await writeFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'attack-buff-count-acceptance.json'),
+      `${JSON.stringify(records, null, 2)}\n`,
+    );
+}, 60_000);

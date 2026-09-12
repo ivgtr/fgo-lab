@@ -1,3 +1,5 @@
+import { collectDamageReachableStateCatalog } from './targetStateNormalization';
+import { normalizeEffectStackInputs } from './stackQuantityNormalization';
 import { describe, expect, it } from 'vitest';
 import type { AtlasFunction } from './atlasContract';
 import { normalizeNpBuffCount, normalizeCountedBuffMutation } from './npCountNormalization';
@@ -82,7 +84,7 @@ describe('NP buff instance count normalization', () => {
         amount: { kind: 'buffCount', trait: 'counted', values: [[5000], [], [], [], []] },
       },
       input: {
-        kind: 'buffInstanceCount',
+        kind: 'effectStackCount',
         instanceTraits: ['counted', 'positive'],
         defaultValue: 0,
         maximum: 6,
@@ -185,4 +187,113 @@ describe('NP buff instance count normalization', () => {
       )[0],
     ).toMatchObject({ mutation: 'remove' });
   });
+});
+
+it('binds callback buff identity and an explicit physical cap to existing stack readers', () => {
+  const callback: AtlasFunction = {
+    funcId: 5,
+    funcType: 'addState',
+    funcTargetType: 'self',
+    buffs: [{ type: 'addMaxhp', vals: [{ id: 17 }, { id: 18 }] }],
+    svals: [
+      {
+        Rate: 1000,
+        Value: 2000,
+        Count: -1,
+        Turn: -1,
+        SameBuffLimitNum: 3,
+        SameBuffLimitTargetIndividuality: 17,
+      },
+    ],
+  };
+  const catalog = collectDamageReachableStateCatalog(
+    {
+      servants: [{ skills: [{ functions: [count] }] }],
+      equips: [],
+      mysticCodes: [],
+      referencedSkills: [{ id: 55, functions: [callback] }],
+    },
+    names,
+  );
+  const normalized = normalizeNpBuffCount(
+    count,
+    rows,
+    names,
+    catalog.countedBuffDefinitions!,
+    catalog.countedBuffMaximums,
+  );
+  expect(normalized?.input).toMatchObject({
+    kind: 'effectStackCount',
+    key: 'stack:attackerState:counted',
+    maximum: 3,
+    quantitySource: { scope: 'attackerState', trait: 'counted' },
+    instanceTraits: ['counted', 'positive'],
+  });
+  expect(normalizeCountedBuffMutation(callback, names, selectors, definitions, false)).toEqual([
+    {
+      kind: 'buffInstanceMutation',
+      mutation: 'grant',
+      traits: ['counted', 'positive'],
+      lifetime: 'active',
+      recipient: 'sourceSelf',
+      grantLimit: { trait: 'counted', maximum: 3 },
+    },
+  ]);
+  expect(
+    normalizeEffectStackInputs(
+      [{ Value: 0, ParamAddValue: 50, ParamAddSelfIndividuality: [17] }],
+      names,
+      undefined,
+      catalog.countedBuffMaximums,
+    ),
+  ).toMatchObject({ inputs: [{ key: 'stack:attackerState:counted', maximum: 3 }] });
+  expect(
+    normalizeNpBuffCount(
+      { ...count, svals: [{ Value: 5000, Value2: 9 }] },
+      [[{ Value: 5000, Value2: 9 }], [], [], [], []],
+      names,
+      definitions,
+    ),
+  ).toBeNull();
+  for (const extra of [
+    { ...callback, svals: [{ Count: -1, Turn: -1, Value: 0 }] },
+    { ...callback, svals: [{ ...callback.svals![0]!, SameBuffLimitNum: 4 }] },
+  ]) {
+    const ambiguous = collectDamageReachableStateCatalog(
+      {
+        servants: [{ skills: [{ functions: [count] }] }],
+        equips: [],
+        mysticCodes: [],
+        referencedSkills: [{ id: 55, functions: [callback, extra] }],
+      },
+      names,
+    );
+    expect(ambiguous.countedBuffMaximums?.has('counted')).toBe(false);
+    expect(
+      normalizeEffectStackInputs(
+        [{ Value: 0, ParamAddValue: 50, ParamAddSelfIndividuality: [17] }],
+        names,
+        undefined,
+        ambiguous.countedBuffMaximums,
+      ),
+    ).toMatchObject({ unsupported: 'missing_or_unsupported_stack_maximum' });
+  }
+  expect(
+    normalizeEffectStackInputs(
+      [
+        {
+          Value: 0,
+          ParamAddValue: 50,
+          ParamAddSelfIndividuality: [17],
+          ParamAddOpIndividuality: [17],
+        },
+      ],
+      names,
+      undefined,
+      catalog.countedBuffMaximums,
+    ),
+  ).toMatchObject({ unsupported: 'missing_or_unsupported_stack_maximum' });
+  expect(
+    normalizeNpBuffCount(count, [[{ Value: 1 }], [], [], [], []], names, definitions),
+  ).toBeNull();
 });

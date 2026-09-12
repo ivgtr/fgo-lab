@@ -11,6 +11,7 @@ import { functionReachesDamageModifier, normalizeTargetPolicy } from './executio
 const STATE_GRANT_FUNCTIONS = new Set(['addState', 'addStateShort']);
 
 export interface DamageReachableStateCatalog {
+  readonly countedBuffMaximums?: ReadonlyMap<string, number>;
   readonly countedBuffTraits?: ReadonlySet<string>;
   readonly countedBuffDefinitions?: ReadonlyMap<string, readonly string[]>;
   readonly actorTraitReferences?: ReadonlySet<number>;
@@ -142,6 +143,35 @@ export function collectDamageReachableStateCatalog(
         }),
       ),
   );
+  const countedBuffMaximums = new Map<string, number>();
+  for (const trait of countedBuffTraits) {
+    const grants = functions.filter(
+      (fn) =>
+        STATE_GRANT_FUNCTIONS.has(fn.funcType ?? '') &&
+        fn.buffs?.some((buff) =>
+          buff.vals?.some((value) => stateMutationTraitName(value, traitNameById) === trait),
+        ),
+    );
+    const bounds = grants.flatMap((fn) => {
+      const cells = [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].flatMap(
+        (row) => row ?? [],
+      );
+      if (!cells.length) return [undefined];
+      return cells.map((cell) =>
+        typeof cell.SameBuffLimitTargetIndividuality === 'number' &&
+        stateMutationTraitName({ id: cell.SameBuffLimitTargetIndividuality }, traitNameById) ===
+          trait &&
+        typeof cell.SameBuffLimitNum === 'number' &&
+        Number.isSafeInteger(cell.SameBuffLimitNum) &&
+        cell.SameBuffLimitNum > 0
+          ? cell.SameBuffLimitNum
+          : undefined,
+      );
+    });
+    const maximum = bounds[0];
+    if (maximum !== undefined && bounds.every((bound) => bound === maximum))
+      countedBuffMaximums.set(trait, maximum);
+  }
   const countedBuffDefinitions = new Map<string, readonly string[]>();
   for (const trait of countedBuffTraits) {
     const signatures = new Map(
@@ -174,6 +204,7 @@ export function collectDamageReachableStateCatalog(
   return {
     countedBuffTraits,
     countedBuffDefinitions,
+    countedBuffMaximums,
     actorTraitReferences: new Set(
       [
         ...input.servants.flatMap((servant) => servant.traits ?? []),

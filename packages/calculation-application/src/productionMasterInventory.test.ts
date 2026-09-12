@@ -84,7 +84,7 @@ const expectedUnresolvedDamageSemantics = {
     DependFuncVals: 6,
     GainNpTargetPassiveIndividuality: 5,
   },
-  scripts: { missing_or_unsupported_stack_maximum: 1 },
+  scripts: {},
 } as const;
 
 function reasonFamily(reason: string): string {
@@ -658,7 +658,7 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_587, automaticVisible: 0, hidden: 5_650 });
+    }).toEqual({ user: 1_588, automaticVisible: 0, hidden: 5_686 });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',
@@ -699,7 +699,6 @@ describe('production master inventory ratchet', () => {
       '705300:attacker:attacker:705300:2657650:248:1',
       '705300:np:np:["705300",0,"705301"]:np:["705300",0,"705301"]:523:0',
       '705300:np:["705300",0,"705301"]:17:damage',
-      '1000900:attacker:attacker:1000900:2082450:8808:0',
     ]);
     expect(targetContextRequiredProjections).toEqual([]);
     expect(
@@ -712,7 +711,7 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({ '702500': 4, '705300': 6, '1000900': 1 });
+    ).toEqual({ '702500': 4, '705300': 6 });
     expect(declaredExclusivePairCount).toBe(4);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
@@ -899,10 +898,7 @@ describe('production master inventory ratchet', () => {
         resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'oc-support-dispositions.json'),
         JSON.stringify(supportDispositions),
       );
-    expect(preparationRejected).toEqual([
-      '102800:165551:preparation:insufficientNpGauge',
-      '1101600:2255550:preparation:unsupportedResourceMutation',
-    ]);
+    expect(preparationRejected).toEqual(['102800:165551:preparation:insufficientNpGauge']);
     expect(projectionCount).toBe(380);
     expect(intrinsicRecipientConflicts).toEqual([]);
     // Exclusive intrinsic attributes are proven false by the shared condition owner.
@@ -916,10 +912,7 @@ describe('production master inventory ratchet', () => {
         explanation: { code: 'conditionNotMet' },
       });
     }
-    expect(typedUnsupported).toEqual([
-      '204300:885550:support:audit:204300:885550:885550:7415:0',
-      '2801300:2688650:support:audit:2801300:2688650:2688650:23559:0',
-    ]);
+    expect(typedUnsupported).toEqual(['204300:885550:support:audit:204300:885550:885550:7415:0']);
     expect(failures).toEqual([]);
   }, 120_000);
 

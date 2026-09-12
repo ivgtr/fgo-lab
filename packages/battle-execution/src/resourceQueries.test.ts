@@ -362,3 +362,43 @@ describe('canonical physical resource reads', () => {
     });
   });
 });
+
+it('describes stack conditions and modifier amounts as live instance reads with their own actor and lifetime', () => {
+  const input = {
+    kind: 'effectStackCount' as const,
+    key: 'stack:targetState:counted',
+    owner: 'target' as const,
+    label: 'count',
+    description: 'count',
+    minimum: 0 as const,
+    maximum: 10,
+    step: 1 as const,
+    defaultValue: 0,
+    defaultReason: 'none',
+    quantitySource: { scope: 'targetState' as const, trait: 'counted' },
+    instanceTraits: ['counted'],
+  };
+  const expected = [
+    { kind: 'buffInstances', actor: { kind: 'target' }, trait: 'counted', lifetime: 'all' },
+  ];
+  expect(
+    conditionQuantityReads(
+      { kind: 'inputQuantity', inputKey: input.key, comparison: 'atLeast', value: 1 },
+      {
+        actor: { kind: 'attacker' },
+        sourceActor: { kind: 'source', origin: 'support', sourceInstanceId: 'giver' },
+        inputDefinitions: [input],
+      },
+    ),
+  ).toEqual(expected);
+  expect(
+    expressionQuantityReads({
+      kind: 'stackLinear',
+      sources: [input],
+      basePermille: 0,
+      perUnitPermille: 50,
+      maximumUnits: 10,
+      maximumValuePermille: null,
+    }),
+  ).toEqual(expected);
+});

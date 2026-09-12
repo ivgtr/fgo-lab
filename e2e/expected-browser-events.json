@@ -4,196 +4,482 @@
   "pageLoads": [
     {
       "testId": "a11y.spec.ts > [E2E-001] startup screen @desktop @a11y",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "a11y.spec.ts > [E2E-002] major desktop screens @desktop @a11y",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "a11y.spec.ts > [E2E-003] mobile home and calculator @mobile @a11y",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
-      "pages": [{ "path": "/", "count": 3 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 3
+        }
+      ]
     },
     {
       "testId": "ranking-baseline.spec.ts > [E2E-011] ranking icon fallback @mobile @vrt",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "ranking-baseline.spec.ts > [E2E-014] ranking 390px UI baseline @mobile @vrt",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "ranking-baseline.spec.ts > [E2E-015] ranking 320px UI baseline @mobile @vrt",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "ranking-baseline.spec.ts > [E2E-016] ranking density and overflow @desktop @vrt",
-      "pages": [{ "path": "/", "count": 3 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 3
+        }
+      ]
     },
     {
       "testId": "ranking-baseline.spec.ts > [E2E-050] real ranking module worker and detail @desktop @journey",
       "pages": [
-        { "path": "/", "count": 1 },
-        { "path": "/calculator", "count": 3 }
+        {
+          "path": "/",
+          "count": 1
+        },
+        {
+          "path": "/calculator",
+          "count": 5
+        }
       ]
     },
     {
       "testId": "setup.setup.ts > [E2E-SETUP-001] verify canonical browser setup @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-017] setup to calculator package journey @desktop @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-020] mobile servant editor navigation @mobile @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-021] mobile support editor navigation @mobile @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-023] offline reopen through service worker @desktop @journey",
-      "pages": [{ "path": "/", "count": 3 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 3
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-025] incompatible master recovery preserves user data @desktop @journey",
-      "pages": [{ "path": "/", "count": 3 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 3
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-027] calculator draft autosave restore @desktop @journey",
       "pages": [
-        { "path": "/", "count": 1 },
-        { "path": "/calculator", "count": 1 }
+        {
+          "path": "/",
+          "count": 1
+        },
+        {
+          "path": "/calculator",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-045] calculation share clipboard and downloads @desktop @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-046] successful version recovery commits and focuses @desktop @journey",
       "pages": [
-        { "path": "/", "count": 1 },
-        { "path": "/calculator", "count": 1 }
+        {
+          "path": "/",
+          "count": 1
+        },
+        {
+          "path": "/calculator",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-047] unsupported version recovery retains and focuses @desktop @journey",
       "pages": [
-        { "path": "/", "count": 1 },
-        { "path": "/calculator", "count": 1 }
+        {
+          "path": "/",
+          "count": 1
+        },
+        {
+          "path": "/calculator",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-048] profile repository round-trip @desktop @journey",
       "pages": [
-        { "path": "/", "count": 1 },
-        { "path": "/craft-essences", "count": 1 },
-        { "path": "/supports", "count": 1 }
+        {
+          "path": "/",
+          "count": 1
+        },
+        {
+          "path": "/craft-essences",
+          "count": 1
+        },
+        {
+          "path": "/supports",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-049] history backup download and restore @desktop @journey",
-      "pages": [{ "path": "/", "count": 1 }]
+      "pages": [
+        {
+          "path": "/",
+          "count": 1
+        }
+      ]
     }
   ],
   "atlasImageFailures": [
     {
       "testId": "calculator-baseline.spec.ts > [E2E-004] calculator desktop UI baseline @desktop @vrt",
       "resources": [
-        { "path": "/JP/Faces/f_1001000.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00300.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00306.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00601.png", "count": 1 }
+        {
+          "path": "/JP/Faces/f_1001000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00300.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00306.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00601.png",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-005] calculator 320px UI baseline @mobile @vrt",
       "resources": [
-        { "path": "/JP/Faces/f_1001000.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00300.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00306.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00601.png", "count": 1 }
+        {
+          "path": "/JP/Faces/f_1001000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00300.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00306.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00601.png",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-006] selected effect state at 390px @mobile @vrt",
       "resources": [
-        { "path": "/JP/Faces/f_1001000.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00300.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00306.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00601.png", "count": 1 }
+        {
+          "path": "/JP/Faces/f_1001000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00300.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00306.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00601.png",
+          "count": 1
+        }
       ]
     },
     {
       "testId": "calculator-baseline.spec.ts > [E2E-007] calculator density and overflow @desktop @vrt",
       "resources": [
-        { "path": "/JP/Faces/f_1001000.png", "count": 3 },
-        { "path": "/JP/SkillIcons/skill_00300.png", "count": 3 },
-        { "path": "/JP/SkillIcons/skill_00306.png", "count": 3 },
-        { "path": "/JP/SkillIcons/skill_00601.png", "count": 3 }
+        {
+          "path": "/JP/Faces/f_1001000.png",
+          "count": 3
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00300.png",
+          "count": 3
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00306.png",
+          "count": 3
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00601.png",
+          "count": 3
+        }
       ]
     },
     {
       "testId": "smoke.spec.ts > [E2E-022] mobile picker focus and image download @mobile @journey",
       "resources": [
-        { "path": "/JP/Faces/f_1001000.png", "count": 3 },
-        { "path": "/JP/Faces/f_1002000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1003000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1005000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1006000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1007000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1008000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1009000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1010000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1012000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1013000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1014000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1017000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1018000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1019000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1020000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1022000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1026000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1027000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1028000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1029000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1030000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1031000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1032000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1033000.png", "count": 2 },
-        { "path": "/JP/Faces/f_1034000.png", "count": 2 },
-        { "path": "/JP/Faces/f_2026000.png", "count": 1 },
-        { "path": "/JP/Faces/f_3019000.png", "count": 1 },
-        { "path": "/JP/Faces/f_3020000.png", "count": 1 },
-        { "path": "/JP/Faces/f_4022000.png", "count": 1 },
-        { "path": "/JP/Faces/f_4027000.png", "count": 1 },
-        { "path": "/JP/Faces/f_9009000.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00300.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00306.png", "count": 1 },
-        { "path": "/JP/SkillIcons/skill_00601.png", "count": 1 }
+        {
+          "path": "/JP/Faces/f_1001000.png",
+          "count": 3
+        },
+        {
+          "path": "/JP/Faces/f_1002000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1003000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1005000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1006000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1007000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1008000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1009000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1010000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1012000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1013000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1014000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1017000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1018000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1019000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1020000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1022000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1026000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1027000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1028000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1029000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1030000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1031000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1032000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1033000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_1034000.png",
+          "count": 2
+        },
+        {
+          "path": "/JP/Faces/f_2026000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/Faces/f_3019000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/Faces/f_3020000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/Faces/f_4022000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/Faces/f_4027000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/Faces/f_9009000.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00300.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00306.png",
+          "count": 1
+        },
+        {
+          "path": "/JP/SkillIcons/skill_00601.png",
+          "count": 1
+        }
       ]
     }
   ],

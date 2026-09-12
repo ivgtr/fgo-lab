@@ -77,9 +77,17 @@ export function normalizeEffectStackInputs(
   parameters: readonly Readonly<Record<string, unknown>>[],
   names: ReadonlyMap<number, string>,
   labels: ReadonlyMap<string, string> = new Map(),
+  maximums: ReadonlyMap<string, number> = new Map(),
 ): { inputs: StackInputDefinition[]; unsupported?: string } {
   const first = parameters[0] ?? {};
-  const maximum = first['ParamAddMaxCount'];
+  const ids = ['ParamAddSelfIndividuality', 'ParamAddOpIndividuality'].flatMap((key) => {
+    const value = first[key];
+    return Array.isArray(value) ? (value as unknown[]) : [];
+  });
+  const bounds = ids.map((id) =>
+    typeof id === 'number' ? maximums.get(names.get(id) ?? `traitId:${id}`) : undefined,
+  );
+  const maximum = first['ParamAddMaxCount'] ?? (bounds.length === 1 ? bounds[0] : undefined);
   if (typeof maximum !== 'number' || !Number.isInteger(maximum) || maximum <= 0 || maximum > 4095)
     return { inputs: [], unsupported: 'missing_or_unsupported_stack_maximum' };
   const keys = ['ParamAddSelfIndividuality', 'ParamAddOpIndividuality', 'ParamAddMaxCount'];

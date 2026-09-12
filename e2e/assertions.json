@@ -574,5 +574,14 @@
     "disposition": "retained",
     "replacementFile": "e2e/initial-oc.spec.ts",
     "replacementTest": "[E2E-051] initial OC commands, keyboard, responsive detail and reset @desktop @journey"
+  },
+  {
+    "id": "E2E-A050-COUNT-RECOVERY",
+    "caseId": "E2E-050",
+    "outcome": "browserConnection",
+    "oldAssertion": "production attack buff count input, invalid range repair, persisted replay and reset share the calculator command path",
+    "disposition": "retained",
+    "replacementFile": "e2e/ranking-baseline.spec.ts",
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   }
 ]

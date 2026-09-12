@@ -31,6 +31,8 @@ interface Position {
   phase: 'effect' | 'npUse' | 'damage' | 'ordinaryDependency';
 }
 type InstanceRead = Extract<QuantityRead, { kind: 'buffInstances' }>;
+const instanceQueries = (reads: readonly QuantityRead[]): InstanceRead[] =>
+  reads.filter((read): read is InstanceRead => read.kind === 'buffInstances');
 interface Access {
   instanceReads?: readonly InstanceRead[];
   instanceWrite?: {
@@ -128,6 +130,9 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
       ...empty,
       position: position(null, preparationReadsCondition ? 'effect' : 'ordinaryDependency'),
       reads: uniqueQueries(queries(conditionReads)),
+      ...(instanceQueries(conditionReads).length
+        ? { instanceReads: instanceQueries(conditionReads) }
+        : {}),
       // BP actor/domain is known, but today's activation facts do not implement its live query.
       opaqueReason:
         conditionReads.find((read) => read.kind === 'unresolved')?.reason ??
@@ -148,17 +153,27 @@ function effectAccesses(source: SourceEffect, group: number): Access[] {
     const instanceReads =
       mutation?.amountReads.filter((read): read is InstanceRead => read.kind === 'buffInstances') ??
       [];
+    if (operation.kind === 'buffInstanceMutation' && operation.grantLimit)
+      instanceReads.push({
+        kind: 'buffInstances',
+        actor: resourceRecipientActor(source, operation.recipient),
+        trait: operation.grantLimit.trait,
+        lifetime: 'all',
+      });
     if ('valueExpressions' in operation) {
-      const values = uniqueQueries(
-        queries(
-          [
-            ...operation.valueExpressions.flat(),
-            ...(operation.limitBreakValueExpressions?.flat() ?? []),
-          ].flatMap((expression) => expressionQuantityReads(expression, valueContext)),
-        ),
-      );
-      if (values.length)
-        result.push({ ...empty, position: position(index, 'ordinaryDependency'), reads: values });
+      const quantityReads = [
+        ...operation.valueExpressions.flat(),
+        ...(operation.limitBreakValueExpressions?.flat() ?? []),
+      ].flatMap((expression) => expressionQuantityReads(expression, valueContext));
+      const values = uniqueQueries(queries(quantityReads));
+      const instances = instanceQueries(quantityReads);
+      if (values.length || instances.length)
+        result.push({
+          ...empty,
+          position: position(index, 'ordinaryDependency'),
+          reads: values,
+          ...(instances.length ? { instanceReads: instances } : {}),
+        });
     }
     if (operation.kind === 'grantOcApplicationRate') {
       const values = uniqueQueries(

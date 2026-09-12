@@ -317,7 +317,7 @@ describe('unsupported convergence production golden', () => {
     `);
   });
 
-  it('calculates 419 base attacking NPs and 24 selections, rejecting one unbounded stack selection', () => {
+  it('calculates 419 base attacking NPs and all 25 selections with bounded growth inputs', () => {
     const versions: VersionContext = {
       schemaVersion: SCHEMA_VERSION,
       engineVersion: ENGINE_VERSION,
@@ -557,7 +557,13 @@ describe('unsupported convergence production golden', () => {
           "servantId": "1100700",
         },
         {
-          "np1To5Average": [],
+          "np1To5Average": [
+            86694.38,
+            115509.33,
+            129916.82,
+            137120.555,
+            144324.285,
+          ],
           "occurrenceId": "8808:0",
           "servantId": "1000900",
         },
@@ -718,7 +724,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '12569b5a5ecb86827eb8ab04946b1ac576d16c19aa0ae9b3de68d8f15475ae3e',
+      '112076266237524b463fac93dc9705a716d6af9554b23e02b39244c52afe3d8c',
     );
   }, 30_000);
 

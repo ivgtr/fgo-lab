@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { readFile, writeFile } from 'node:fs/promises';
 
-const [baselineCommit, beforePath, afterPath, output] = process.argv.slice(2);
+const [baselineCommit, beforePath, afterPath, output, acceptancePath] = process.argv.slice(2);
 if (!output)
   throw new Error(
-    'usage: node scripts/compare-resource-audits.mjs <baseline commit> <before audit> <after audit> <output>',
+    'usage: node scripts/compare-resource-audits.mjs <baseline commit> <before audit> <after audit> <output> [acceptance artifact]',
   );
 const hash = (text) => createHash('sha256').update(text).digest('hex');
 const beforeMasterText = execFileSync(
@@ -63,7 +63,9 @@ function numericChanges(category, previous, current) {
     .filter(({ identity }) => identity.startsWith(`${category}:`))
     .flatMap(({ identity, value }) => {
       const old = oldRecords.get(identity);
-      return old && JSON.stringify(old.outcome) !== JSON.stringify(value.outcome)
+      return old?.outcome?.status === 'calculated' &&
+        value.outcome?.status === 'calculated' &&
+        JSON.stringify(old.outcome) !== JSON.stringify(value.outcome)
         ? [
             {
               identity,
@@ -81,7 +83,22 @@ const exclusions = (audit) =>
       servant: JSON.parse(identity.slice('ranking:'.length))[0],
       reason,
     }));
+const newlyAdmitted = new Set(
+  exclusions(before)
+    .filter(({ servant }) => !exclusions(after).some((item) => item.servant === servant))
+    .map(({ servant }) => servant),
+);
+const acceptanceText = acceptancePath ? await readFile(acceptancePath, 'utf8') : null;
 const evidence = {
+  ...(acceptanceText
+    ? {
+        acceptance: {
+          path: acceptancePath,
+          sha256: hash(acceptanceText),
+          records: JSON.parse(acceptanceText),
+        },
+      }
+    : {}),
   command: ['node', 'scripts/compare-resource-audits.mjs', ...process.argv.slice(2)],
   baselineCommit,
   before: {
@@ -98,16 +115,26 @@ const evidence = {
   },
   normalization,
   calculatorNumericChanges: numericChanges('calculator', before, after),
+  rankingNumericChanges: numericChanges('ranking', before, after),
+  rankingNewlyCalculated: after.records
+    .filter(
+      ({ identity, value }) =>
+        identity.startsWith('ranking:') &&
+        newlyAdmitted.has(JSON.parse(identity.slice('ranking:'.length))[0]) &&
+        value.outcome?.status === 'calculated',
+    )
+    .map(({ identity, value }) => ({
+      identity,
+      outcome: value.outcome,
+      input: value.usedInput,
+      policy: value.policy,
+    })),
   rankingExclusions: { before: exclusions(before), after: exclusions(after) },
   interpretation: {
-    numericChange:
-      '605100: skill function 22990 grants actor trait 10006; NP function 23002 reads that trait and adds attackBuff 300 permille. Other default calculator outcomes are unchanged.',
-    countScope:
-      'Only a single positive buff selector with one known full instance signature is bound. Counts exclude actor intrinsic traits and constant buffs. Special lifetime, partial removal and movement remain typed barriers.',
-    candidateBound:
-      'For the supported positive NP count gain, ceil(maximum NP capacity / minimum positive value cell) represents all larger initial counts after saturation. All integers through this bound are enumerated; grant and remove-all preserve this equivalence. This is not a cap on the live buff instance state.',
-    limitation:
-      'This artifact compares canonical data and observed application results; it does not supply the missing in-game HP numerical observations or certify the whole TSK-06.45 Done gate.',
+    comparison:
+      'Matched calculator/ranking identities compare canonical outcomes and used inputs. Newly admitted ranking identities are represented by the exclusion delta; selected policy/variant details remain in the application audit.',
+    scope:
+      'Normalization changes describe canonical execution only. The companion flow note provides governing rules, acceptance fixtures, recovery paths and remaining scope; this artifact does not certify whole-task closure.',
   },
 };
 await writeFile(output, `${JSON.stringify(evidence, null, 2)}\n`);

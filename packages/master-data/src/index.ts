@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(49),
+  schemaVersion: z.literal(50),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -347,15 +347,6 @@ const matchingActorCountCanonicalInputDefinitionSchema = canonicalInputBaseSchem
 });
 
 export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
-  canonicalInputBaseSchema
-    .extend({
-      kind: z.literal('buffInstanceCount'),
-      owner: z.enum(['attacker', 'source']),
-      trait: z.string().min(1),
-      instanceTraits: z.array(z.string().min(1)).min(1),
-      defaultValue: z.number().int().nullable(),
-    })
-    .strict(),
   fixedCanonicalInputDefinitionSchema,
   stackInputSchema,
   matchingActorCountCanonicalInputDefinitionSchema,
@@ -484,8 +475,16 @@ const effectExecutionOperationSchema = z.union([
       recipient: canonicalTargetPolicySchema,
       traits: z.array(z.string().min(1)).min(1),
       lifetime: z.enum(['active', 'constant']),
+      grantLimit: z
+        .object({ trait: z.string().min(1), maximum: z.number().int().positive() })
+        .strict()
+        .optional(),
     })
-    .strict(),
+    .strict()
+    .refine(
+      (operation) => !operation.grantLimit || operation.mutation === 'grant',
+      'invalid_buff_grant_limit',
+    ),
   z.object({ ...hpMutationShape, direction: z.literal('gain') }).strict(),
   z
     .object({
@@ -822,17 +821,6 @@ export const masterEffectSchema = z
   })
   .strict()
   .superRefine((effect, context) => {
-    const buffCountKeys = new Set(
-      effect.inputDefinitions
-        .filter((input) => input.kind === 'buffInstanceCount')
-        .map((input) => input.key),
-    );
-    if (
-      canonicalRequirementLeaves(effect.requirement.expression).some(
-        (leaf) => leaf.kind === 'inputQuantity' && buffCountKeys.has(leaf.inputKey),
-      )
-    )
-      context.addIssue({ code: 'custom', message: 'unbound_buff_count_condition' });
     for (const operation of effect.execution) {
       if (operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount') {
         const amount = operation.amount;
@@ -843,10 +831,11 @@ export const masterEffectSchema = z
           definitions.length !== 1 ||
           !definitions.some(
             (input) =>
-              input.kind === 'buffInstanceCount' &&
-              input.trait === amount.trait &&
+              input.kind === 'effectStackCount' &&
+              input.instanceTraits !== undefined &&
+              input.quantitySource.trait === amount.trait &&
               input.owner === 'attacker' &&
-              input.instanceTraits.includes(input.trait),
+              input.instanceTraits.includes(input.quantitySource.trait),
           )
         )
           context.addIssue({ code: 'custom', message: 'unbound_buff_count_input' });
@@ -863,8 +852,6 @@ export const masterEffectSchema = z
           )
         )
           context.addIssue({ code: 'custom', message: 'unbound_stack_quantity_expression' });
-        if (expression?.kind === 'inputLinear' && buffCountKeys.has(expression.inputKey))
-          context.addIssue({ code: 'custom', message: 'unbound_buff_count_value' });
         if (expression?.kind !== 'stackLinear') continue;
         const keys = expression.sources.map((source) => source.key);
         if (
@@ -1602,7 +1589,7 @@ export const materialMasterSchema = z.object({
   imageKey: z.string().nullable(),
 });
 export type MaterialMaster = z.infer<typeof materialMasterSchema>;
-const masterSnapshotBaseSchema = z.object({
+const masterSnapshotHeaderSchema = z.object({
   version: z.string(),
   npResourceSemantics: canonicalNpResourceSemanticsSchema,
   normalization: z.object({
@@ -1651,17 +1638,22 @@ const masterSnapshotBaseSchema = z.object({
       ),
     }),
   }),
+});
+export type MasterDataSnapshot = z.infer<typeof masterSnapshotHeaderSchema> & {
+  servants: ServantMaster[];
+  craftEssences: CraftEssenceMaster[];
+  mysticCodes: MysticCodeMaster[];
+  materials: MaterialMaster[];
+};
+const masterSnapshotBaseSchema: z.ZodType<MasterDataSnapshot> = masterSnapshotHeaderSchema.extend({
   servants: z.array(servantMasterSchema),
   craftEssences: z.array(craftEssenceMasterSchema),
   mysticCodes: z.array(mysticCodeMasterSchema),
   materials: z.array(materialMasterSchema),
 });
-export type CanonicalTargetDomain = z.infer<
-  typeof masterSnapshotBaseSchema
->['targetSemantics']['execution'];
-export type TargetFamilyEvidence = z.infer<
-  typeof masterSnapshotBaseSchema
->['targetSemantics']['evidence']['families'][number];
+export type CanonicalTargetDomain = MasterDataSnapshot['targetSemantics']['execution'];
+export type TargetFamilyEvidence =
+  MasterDataSnapshot['targetSemantics']['evidence']['families'][number];
 export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapshot, context) => {
   const stackSources = new Map<string, StackInputDefinition>();
   const validateStackInputs = (
@@ -2014,7 +2006,6 @@ export const masterSnapshotSchema = masterSnapshotBaseSchema.superRefine((snapsh
     );
   });
 });
-export type MasterDataSnapshot = z.infer<typeof masterSnapshotSchema>;
 
 export interface MasterValidationReport {
   valid: boolean;

@@ -111,6 +111,10 @@ export type PreparationResourcePlanResult =
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
       ocState: OcState;
       buffInstances: PreNoblePhantasmState['buffInstances'];
+      contextState: Pick<
+        PreNoblePhantasmState,
+        'stackCounts' | 'stateTraits' | 'initialTraitSuppressions'
+      >;
       ocInputDefinitions: readonly CanonicalInputDefinition[];
       uncertainContextWrites: PreNoblePhantasmState['uncertainContextWrites'];
       ocUse: NpOcUseReceipt | null;
@@ -250,6 +254,11 @@ export function planPreparationResourceTransaction(args: {
     activation,
     ocState: oc.result.state,
     buffInstances: oc.structuralState.buffInstances,
+    contextState: {
+      stackCounts: oc.structuralState.stackCounts,
+      stateTraits: oc.structuralState.stateTraits,
+      initialTraitSuppressions: oc.structuralState.initialTraitSuppressions,
+    },
     ocInputDefinitions: oc.inputDefinitions,
     uncertainContextWrites: oc.structuralState.uncertainContextWrites,
     ocUse,

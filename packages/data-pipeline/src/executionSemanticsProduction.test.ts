@@ -242,10 +242,10 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(14_775);
+    expect(operations).toHaveLength(14825);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       boundedPhaseIrrelevant: 2726,
-      buffInstanceMutation: 150,
+      buffInstanceMutation: 200,
       contextMutation: 1492,
       damageModifier: 3885,
       grantOcApplicationRate: 29,
@@ -256,11 +256,11 @@ describe('production canonical execution semantics', () => {
       ocRemovalResistance: 60,
       ocStateNonIntersection: 131,
       removeOcState: 75,
-      resourceMutation: 1166,
+      resourceMutation: 1168,
       selectNoblePhantasmVariant: 22,
-      stateMutation: 4822,
+      stateMutation: 4828,
       transformActorForm: 10,
-      unsupported: 69,
+      unsupported: 61,
     });
     const occurrenceFamilies = {
       resource: new Set([
@@ -338,10 +338,10 @@ describe('production canonical execution semantics', () => {
       ).length,
     };
     expect(closedOccurrences).toEqual({
-      resource: 1_165,
+      resource: 1_167,
       unresolvedResourceTargets: 2,
-      state: 4_823,
-      unsupported: 18,
+      state: 4_829,
+      unsupported: 16,
       boundedPhaseIrrelevant: 2_725,
     });
 
@@ -465,12 +465,12 @@ describe('production canonical execution semantics', () => {
       return result;
     }, {});
     expect(counts).toEqual({
-      'buffCount:gain': 2,
+      'buffCount:gain': 4,
       'fixed:gain': 649,
       'fixed:loss': 79,
       'currentGaugeRatio:gain': 1,
     });
-    expect(transitions).toHaveLength(731);
+    expect(transitions).toHaveLength(733);
     // PIR-001: bound count readers now execute; each retains its input identity and raw coefficient cells.
     const counted = allEffects(master).filter((effect) =>
       effect.execution.some(
@@ -478,20 +478,20 @@ describe('production canonical execution semantics', () => {
           operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount',
       ),
     );
-    expect(counted).toHaveLength(2);
+    expect(counted).toHaveLength(4);
     for (const effect of counted)
       for (const operation of effect.execution) {
         if (operation.kind !== 'resourceMutation' || operation.amount.kind !== 'buffCount')
           continue;
         expect(operation.amount.values).toEqual(evidenceValues(effect));
         const input = effect.inputDefinitions[0];
-        if (input?.kind !== 'buffInstanceCount') throw new Error('missing buff count input');
+        if (input?.kind !== 'effectStackCount') throw new Error('missing buff count input');
         expect(input.instanceTraits).toContain(operation.amount.trait);
         expect(effect.inputDefinitions).toEqual([
           expect.objectContaining({
-            kind: 'buffInstanceCount',
+            kind: 'effectStackCount',
             key: operation.amount.inputKey,
-            trait: operation.amount.trait,
+            quantitySource: { scope: 'attackerState', trait: operation.amount.trait },
             owner: 'attacker',
             defaultValue: 0,
           }),
@@ -510,7 +510,7 @@ describe('production canonical execution semantics', () => {
           (operation) =>
             operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount',
         ),
-    ).toHaveLength(14);
+    ).toHaveLength(12);
     expect(
       master.servants
         .flatMap(({ skills }) => skills)
@@ -625,6 +625,26 @@ describe('production canonical execution semantics', () => {
         operations: ['contextMutation', 'contextMutation'],
       },
       {
+        effectId: '20955',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970373',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['stateMutation'],
+      },
+      {
+        effectId: '20955',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970725',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['stateMutation'],
+      },
+      {
         effectId: '23560',
         reference: {
           kind: 'resolvedSkill',
@@ -633,6 +653,46 @@ describe('production canonical execution semantics', () => {
           defaultLevel: 1,
         },
         operations: ['boundedPhaseIrrelevant', 'resourceMutation'],
+      },
+      {
+        effectId: '9618',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '968984',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['stateMutation'],
+      },
+      {
+        effectId: '21383',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970478',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['stateMutation'],
+      },
+      {
+        effectId: '20955',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970407',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['stateMutation'],
+      },
+      {
+        effectId: '20955',
+        reference: {
+          kind: 'resolvedSkill',
+          skillId: '970460',
+          levelSource: 'secondaryValueParameter',
+          defaultLevel: 1,
+        },
+        operations: ['stateMutation'],
       },
       {
         effectId: '2096',

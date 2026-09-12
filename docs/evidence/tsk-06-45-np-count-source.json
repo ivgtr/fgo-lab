@@ -2,7 +2,7 @@
   "retrievedAt": "2026-09-12",
   "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_np.dart",
   "sha256": "58759eb3697dd8787140d2a1f74597104d907c9d4721c3f2bb2a1c25a835202a",
-  "classification": "comparison implementation; not an in-game numerical oracle",
+  "classification": "Adopted reference contract (2026-09-13 user instruction); not an in-game numerical oracle",
   "interpretation": {
     "gainNpBuffIndividualSum": "For each resolved recipient, count matching active buff instances. Passive inclusion requires an explicit flag. Each matching instance contributes once, independently of actor intrinsic traits.",
     "gainNpIndividualSum": "Counts buff instances plus matching intrinsic individualities across the selected actor scope. Not implemented by the buff-count branch.",
@@ -31,5 +31,48 @@
     108,
     121,
     149
+  ],
+  "adoptedContract": {
+    "commit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
+    "recipient": "gainNpPerBuffIndividual reads each resolved recipient independently, counts active matching instances once, excludes IgnoreIndividuality, then adds Value * count; zero count performs no resource change.",
+    "identity": "BuffData.getTraits uses buff.vals, not the addIndividuality Value. Callback signatures are catalogued without executing turn-end or after-attack callbacks during preparation.",
+    "bound": "AddState.checkSameBuffLimitNum counts all valid matching instances, including constant buffs, and rejects the new grant at the cap. A physical input bound is adopted only when all catalogued producers and cells agree on an explicit cap; growth is 10. Missing or conflicting caps cannot bound uncapped stack readers.",
+    "stackRead": "BuffData.getValue reads matching buff traits including constant buffs. NP count reads active buffs only. Both use one initial input and instance store; grant/removal updates subsequent reads. Actor intrinsic traits are not seeded as buff instances.",
+    "referenceCallback": "An attackBeforeFunction whose referenced functions only grant upCriticaldamage is retained as a resolved reference with no terminal NP damage contribution.",
+    "boundedScope": "Only ordinary active/constant instances and explicit matching grant caps. Unbound, mixed, finite-use, ignored, unremovable, or moving instances remain fail closed where they can affect this count."
+  },
+  "adoptionSources": [
+    {
+      "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/function_executor.dart",
+      "sha256": "2c402c5613be6a6293c02944555a0f6dcc199f247de03a17e0a1e271709937d3"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/test/app/battle/functions/function_executor_test.dart",
+      "sha256": "db8a1c4f673bdae3c164a421a8161f26d837846b94d44f7b341334877f636ce8"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/add_state.dart",
+      "sha256": "fc17a411f22b4b6911834645d8a0595866ff686cdaed056729835d581d63b64f"
+    }
+  ],
+  "callbackData": [
+    {
+      "skillId": "991687",
+      "url": "https://api.atlasacademy.io/nice/JP/skill/991687",
+      "retrievedAt": "2026-09-13",
+      "trackedFile": "data/raw/referenced_skills.json"
+    },
+    {
+      "skillId": "964555",
+      "url": "https://api.atlasacademy.io/nice/JP/skill/964555",
+      "retrievedAt": "2026-09-13",
+      "trackedFile": "data/raw/referenced_skills.json"
+    },
+    {
+      "skillId": "970408",
+      "url": "https://api.atlasacademy.io/nice/JP/skill/970408",
+      "retrievedAt": "2026-09-13",
+      "trackedFile": "data/raw/referenced_skills.json"
+    }
   ]
 }

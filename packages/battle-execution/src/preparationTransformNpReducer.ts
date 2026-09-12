@@ -16,7 +16,7 @@ import {
   appendPreparationEffects,
   findPreparationTransition,
   formCanReachAttackWithoutPreparationNp,
-  resolvePreparationStructuralOutcome,
+  resolvePreparationIdentityOutcome,
 } from './preparationState';
 import { planPreparationResourceTransaction } from './preparationTransaction';
 
@@ -64,11 +64,7 @@ export function reducePreparationTransformNoblePhantasmAction(
   );
   if (typeof transition === 'string') return rejectPreparation(state, transition);
   if (!transition) return rejectPreparation(state, 'transformNoblePhantasmUnavailable');
-  const structural = resolvePreparationStructuralOutcome(
-    servant,
-    state,
-    resource.preparationEffects,
-  );
+  const structural = resolvePreparationIdentityOutcome(servant, state, resource.preparationEffects);
   if (typeof structural === 'string') return rejectPreparation(state, structural);
   if (!actorFormEquals(transition.to, structural.currentFormId))
     return rejectPreparation(state, 'transitionAtomicity');
@@ -89,9 +85,7 @@ export function reducePreparationTransformNoblePhantasmAction(
         variant.effects,
         resource.activation,
       ),
-      stateTraits: structural.stateTraits,
-      stackCounts: structural.stackCounts,
-      initialTraitSuppressions: structural.initialTraitSuppressions,
+      ...resource.contextState,
       npResource: resource.resource.state,
       buffInstances: resource.buffInstances,
       ocState: resource.ocState,

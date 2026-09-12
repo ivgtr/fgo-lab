@@ -1701,7 +1701,7 @@ it('selects live buff count coefficients from normal/LB and OC cells without a m
         subjectId: null,
         amount: {
           kind: 'buffCount',
-          inputKey: 'count',
+          inputKey: 'stack:attackerState:counted',
           trait: 'counted',
           values: [[1000], [2000], [], [], []],
           limitBreakValues: [[3000], [4000], [], [], []],
@@ -1710,10 +1710,10 @@ it('selects live buff count coefficients from normal/LB and OC cells without a m
     ]),
     inputDefinitions: [
       {
-        kind: 'buffInstanceCount',
-        key: 'count',
+        kind: 'effectStackCount',
+        key: 'stack:attackerState:counted',
         owner: 'attacker',
-        trait: 'counted',
+        quantitySource: { scope: 'attackerState', trait: 'counted' },
         instanceTraits: ['counted'],
         label: '状態数',
         description: '初期状態数',

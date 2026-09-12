@@ -1,3 +1,4 @@
+import { isBuffCountInput, projectBuffInstanceCounts } from './buffInstances';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { applyBuffInstanceMutation } from './buffInstances';
 import { servantBuffCountInputs } from './stackQuantities';
@@ -84,7 +85,7 @@ export function executePreparationOc(args: {
       ...args.sources,
     ]
       .flatMap((source) => source.effect.inputDefinitions)
-      .filter((input) => input.kind === 'buffInstanceCount'),
+      .filter(isBuffCountInput),
   ];
   const readsBuffMutation = (
     operation: Extract<MasterEffect['execution'][number], { kind: 'buffInstanceMutation' }>,
@@ -259,7 +260,7 @@ export function executePreparationOc(args: {
               status: 'unsupported',
               reason: 'unboundBuffInstanceRecipient',
             };
-          current = { ...current, buffInstances: instances };
+          current = projectBuffInstanceCounts({ ...current, buffInstances: instances }, buffInputs);
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -409,6 +410,7 @@ export function executePreparationOc(args: {
         stackCounts: structural.stackCounts,
         initialTraitSuppressions: structural.initialTraitSuppressions,
       };
+      current = projectBuffInstanceCounts(current, buffInputs);
       return { kind: 'skip', outcome: 'notApplicable' };
     });
   }

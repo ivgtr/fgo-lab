@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('413件表示 / 413件を計算・順位外 20件', {
+  await expect(page.getByRole('status')).toContainText('415件表示 / 415件を計算・順位外 18件', {
     timeout: 30_000,
   });
   const first = page
@@ -237,4 +237,44 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await restoredNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
   await expect(page.getByText('ランキングから引き継いだ計算条件')).toHaveCount(0);
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  // E2E-A050-COUNT-RECOVERY
+  for (const [name, label, maximum] of [
+    ['キングプロテア', '増殖の付与数', 10],
+    ['水着クロエ', '原稿完成の付与数', 30],
+  ] as const) {
+    await page.getByRole('button', { name: '攻撃役を変更' }).click();
+    const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+    await picker.getByRole('tab', { name: '全DB' }).click();
+    await picker.getByLabel('名前で検索').fill(name === '水着クロエ' ? 'クロエ' : name);
+    await picker
+      .getByRole('button', {
+        name: name === '水着クロエ' ? /クロエ.*アヴェンジャー/ : /キングプロテア.*Lv/,
+      })
+      .first()
+      .click();
+    const count = page.getByRole('spinbutton', { name: label, exact: true });
+    await expect(count).toHaveValue('0');
+    await count.fill(String(maximum + 1));
+    await expect(count).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByText('入力範囲を確認してください。')).toBeVisible();
+    await count.fill('1');
+    await expect(count).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+    await expect
+      .poll(
+        async () =>
+          JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.canonicalInputValues,
+      )
+      .toEqual(
+        expect.objectContaining({
+          [name === '水着クロエ'
+            ? 'stack:attackerState:manuscriptComplete'
+            : 'stack:attackerState:kingproteaProliferation']: { kind: 'integer', value: 1 },
+        }),
+      );
+    await page.reload();
+    await expect(count).toHaveValue('1');
+    await count.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
+    await expect(count).toHaveValue('0');
+  }
 });

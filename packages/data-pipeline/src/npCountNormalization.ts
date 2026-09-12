@@ -1,3 +1,4 @@
+import { normalizeStackInput } from './stackQuantityNormalization';
 import type {
   CanonicalInputDefinition,
   CanonicalValueSets,
@@ -14,8 +15,20 @@ export function normalizeNpBuffCount(
   cells: readonly (readonly AtlasFunctionValue[])[],
   names: ReadonlyMap<number, string>,
   definitions: ReadonlyMap<string, readonly string[]>,
+  maximums: ReadonlyMap<string, number> = new Map(),
+  labels: ReadonlyMap<string, string> = new Map(),
 ): { operation: EffectExecutionOperation; input: CanonicalInputDefinition } | null {
   if (fn.funcType !== 'gainNpBuffIndividualSum') return null;
+  if (
+    cells
+      .flat()
+      .some((cell) =>
+        Object.keys(cell).some(
+          (key) => !['Rate', 'Value', 'HideMiss', 'HideNoEffect'].includes(key),
+        ),
+      )
+  )
+    return null;
   const traits = (fn.traitVals ?? []).map((trait) => stateMutationTraitName(trait, names));
   if (traits.length !== 1 || !traits[0] || fn.traitVals?.some((trait) => trait.negative))
     return null;
@@ -32,7 +45,17 @@ export function normalizeNpBuffCount(
   const trait = traits[0];
   const instanceTraits = definitions.get(trait);
   if (!instanceTraits) return null;
-  const inputKey = `buff-count:attacker:${encodeURIComponent(trait)}`;
+  const saturation = Math.ceil(
+    Math.max(...canonicalNpResourceSemantics.capacityByNpLevel) /
+      Math.min(...values.flat().filter((value): value is number => value !== null)),
+  );
+  const maximum = Math.min(maximums.get(trait) ?? saturation, saturation);
+  if (!Number.isSafeInteger(maximum) || maximum <= 0 || maximum > 4095) return null;
+  const input = {
+    ...normalizeStackInput({ scope: 'attackerState', trait }, maximum, labels.get(trait)),
+    instanceTraits: [...instanceTraits],
+  };
+  const inputKey = input.key;
   return {
     operation: {
       kind: 'resourceMutation',
@@ -43,23 +66,7 @@ export function normalizeNpBuffCount(
       subjectId: null,
       amount: { kind: 'buffCount', trait, inputKey, values },
     },
-    input: {
-      kind: 'buffInstanceCount',
-      key: inputKey,
-      owner: 'attacker',
-      trait,
-      instanceTraits: [...instanceTraits],
-      label: '対象状態の初期付与数',
-      description: '準備開始時に攻撃役が持つ対象状態の個数',
-      minimum: 0,
-      maximum: Math.ceil(
-        Math.max(...canonicalNpResourceSemantics.capacityByNpLevel) /
-          Math.min(...values.flat().filter((value): value is number => value !== null)),
-      ),
-      step: 1,
-      defaultValue: 0,
-      defaultReason: '外部からの状態付与なし',
-    },
+    input,
   };
 }
 
@@ -131,7 +138,9 @@ export function normalizeCountedBuffMutation(
     'HideMiss',
     'HideNoEffect',
     'ShowState',
-    ...(remove ? ['ForceSubState'] : ['Turn', 'Count', 'ForceAddState']),
+    ...(remove
+      ? ['ForceSubState']
+      : ['Turn', 'Count', 'ForceAddState', 'SameBuffLimitNum', 'SameBuffLimitTargetIndividuality']),
   ]);
   if (cells.some((cell) => Object.keys(cell).some((key) => !allowed.has(key))))
     return unsupported();
@@ -152,10 +161,37 @@ export function normalizeCountedBuffMutation(
   )
     return unsupported();
   if (!remove && (fn.buffs?.length ?? 0) !== 1) return unsupported();
+  let grantLimit: { trait: string; maximum: number } | undefined;
+  if (
+    !remove &&
+    cells.some(
+      (cell) =>
+        cell.SameBuffLimitNum !== undefined || cell.SameBuffLimitTargetIndividuality !== undefined,
+    )
+  ) {
+    const first = cells[0]!;
+    if (
+      typeof first.SameBuffLimitNum !== 'number' ||
+      !Number.isSafeInteger(first.SameBuffLimitNum) ||
+      first.SameBuffLimitNum <= 0 ||
+      typeof first.SameBuffLimitTargetIndividuality !== 'number' ||
+      cells.some(
+        (cell) =>
+          cell.SameBuffLimitNum !== first.SameBuffLimitNum ||
+          cell.SameBuffLimitTargetIndividuality !== first.SameBuffLimitTargetIndividuality,
+      )
+    )
+      return unsupported();
+    const trait = stateMutationTraitName({ id: first.SameBuffLimitTargetIndividuality }, names);
+    if (!trait || !traits.includes(trait)) return unsupported();
+    grantLimit = { trait, maximum: first.SameBuffLimitNum };
+  }
+
   return [
     {
       kind: 'buffInstanceMutation',
       mutation: remove ? 'remove' : 'grant',
+      ...(grantLimit ? { grantLimit } : {}),
       traits: [...new Set(traits)],
       lifetime: constant ? 'constant' : 'active',
       recipient: normalizeTargetPolicy(fn.funcTargetType ?? '', fn.funcTargetTeam),

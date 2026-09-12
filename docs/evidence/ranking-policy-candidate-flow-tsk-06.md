@@ -6,7 +6,7 @@ updated_at: "2026-09-13"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dでtrait/instance count→NP/OCの限定接続をコミット済み。HP数値3件はChaldea参照契約を採用済み。実行・回復の未接続を追跡する。下記2026-09-09のdeltaは既存の調査根拠を保持する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dの限定接続と83b4db2の採用方針を基点に、攻撃NP buff count2profileの入力・共通実行・回復を接続・検証済み。HP数値3件はChaldea参照契約を採用済み。下記2026-09-09のdeltaは既存の調査根拠を保持する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -469,16 +469,61 @@ referenceContractへ記録し、statusを`observationRequired`から`referenceSp
 明示要件との矛盾だけを限定した技術課題として残す。未対応入力を参照元のdefaultで補完しない。
 
 
-**現在地**。実装commitは`ab5d77d`。その後のTask/flow/HP参照証跡更新と中間性能証跡のGit-only整理は、利用者の依頼により本記録を含むフォローアップcommitへ収録する。以下の旧dirty/untracked表記は当時の検証状態であり、再開時のGit状態を表さない。
-前段では保存済み証拠と直接の型・producerを照合し、Task/flowを更新した。その後の利用者判断で上記参考実装を採用し、HPの処理本体と数値契約を照合した。runtime実装は開始していない。
-実装の停止は前sessionの90分境界による引継ぎで、Task完了でも全実装の技術的停止でもない。
+**今回完了した実装単位（2026-09-13）**。開始時HEAD `83b4db2`、clean treeを確認。
+攻撃NPの1000900/3392と1101600/21113、および後者の2253450/20955を同じ単位で接続した。
+今回の実装・証跡は、本記録を含む実装commitへ収録する。master `20260913.05` / master schema50 / portable schema40 / engine40.0.0。
+productionの最終対応数はranking415/433（+2）、calculator420/422（不変）。
+最終quality・性能・差分証跡を確認し、今回単位のscoped Blockingは0。TSK-06.45全体はin_progressを維持する。
 
-今回の再整理による差分は、HP実測待ちをChaldea参照契約へ置き換えたこと、実装commitと文書commitの区別、
-最終比較に使わない中間性能証跡のGit-only化。runtimeの対応数や検証結果はab5d77dから不変。
-次の実装対象はTaskで指定した攻撃NP buff count2profile。HPは実測待ちによる延期対象ではなく、
-採用した規則を共通stateへ接続・検証する残作業である。以後は規則の再発見を進捗とせず、
-対象productionの入力→共通実行→結果→回復が閉じた証拠と、残る拒否理由を単位ごとに更新する。
+| 経路／責務 | 実装と反証 | 証拠 |
+| --- | --- | --- |
+| raw callback→canonical identity | 参照skill991687/964555/970408のbuff.valsを使い、addIndividualityのValueをbuff identityにしない。成長系の物理上限10は全grantの明示SameBuffLimitが一致するときだけ採用。未指定・矛盾するwriterから上限を推測しない | `npCountNormalization.test.ts`、[固定参照契約](tsk-06-45-np-count-source.json) |
+| 入力→同一instance state | 旧buffInstanceCountを廃止し、既存effectStackCount/keyへinstanceTraitsを束縛。attacker/targetを別identityでseed。別名の矛盾入力・曖昧signatureは拒否 | `buffInstances.test.ts`、`stackPreparationSupport.test.ts` |
+| recipient／live read | NP増加はrecipientのactive instanceのみ、stack量式と付与上限は常時buffも含めて読む。actor固有traitや別recipientを加算しない。付与・remove-allの直後にstack/state表示を投影 | `buffInstances.test.ts`、`resourceQueries.test.ts` |
+| ordered execution→commit | NP/OC transactionがstack/state/instanceを一括返却し、skill/transform/attack reducerは確定stateをcommitする。古いstructural stackで上書きする経路を解消 | `preparationTransaction.test.ts`、`stackPreparationSupport.test.ts` |
+| selected source／後続実行 | sourceSelfの支援stackを攻撃役へ転用せず、対象からの除外とunsupportedを区別。20955はcommandCardAttack限定のcritical callbackとして正規化しNPではscope外。1000900の後続skill2082450/8808は同じgrowth cap10で有限入力を構成 | `executionSemanticsProduction.test.ts`、`productionExecutionParity.test.ts` |
+| 結果→修正／rollback／portable | 範囲外初期countはinputRequired、修正可能な定義を返す。失敗commandのNP/OC/instance/receiptをrollbackしretry。保存再読込・resetを同じcommandで再実行 | 小型fixture、production parity、E2E-050 |
+| ranking完全性 | bound instance countは全整数を列挙し、stack単調性の近道を使わない。対象2profileのNP1/2/5×4policyをcalculator/portableへreplay。NP2 conditionalで全count×全skill順列の独立oracleと照合 | `productionExecutionParity.test.ts`、`stackPreparationSupport.test.ts` |
 
+**before/after証跡**。[差分と24件の受入記録](tsk-06-45-attack-buff-count-delta.json)は
+`ab5d77d`の保存済み全件auditから比較し、normalization execution差62件と選択program/input/NP1〜5 damageを保持する。
+master20260913.05は初期stackとamount readerの両方へinstance identityを保持する。
+増殖の初期入力上限10は明示された物理cap。原稿完成の上限30は最大NP容量30000÷最小係数1000の飽和同値境界で、物理capではない。
+対象の後続stack量式の上限とremove-allを含め、30を超える初期数が追加の結果を作らない範囲を全整数候補にする。
+複数のstack源に上限未指定の量式はこの推定へ広げず、unsupportedを維持する。
+
+| 観測 | before | after | 理由 |
+| --- | ---: | ---: | --- |
+| ranking計算可能 | 413/433 | 415/433 | 対象2profileのsource・variant・後続実行を解消 |
+| calculator計算可能 | 420/422 | 420/422 | 既存のHP/BP拒否は不変 |
+| default calculator 1101600 NP1平均 | 69,362.240 | 83,234.795 | skill2255550のcount処理を実行可能にしたことで、同skill/function254のNP威力20%が適用。初期count0のNP加算は0のまま |
+| 新ranking default NP1平均 | 順位外 | 1000900:26,497.825 / 1101600:41,617.150 | Lv自然上限・等倍・自己buffあり・通常条件・初期OC1。calculator標準との相性条件の違いを混同しない |
+| 全preparation生成／dedup | 6,403 / 3,986 | 6,419 / 3,994 | 対象2profileの合法順序を追加。候補cap・timeout緩和なし |
+| damage要求／distinct | 2,211 / 1,397 | 2,232 / 1,404 | 新profileの候補を共通damage cacheへ追加 |
+| resource program／mutation／opaque | 7,255 / 15,795 / 54,037 | 7,255 / 15,817 / 54,059 | 静的program母集団は不変。countのmutationとstack readerのinstance依存を監査。opaque総数は未対応profile数とは別 |
+| production suite wall time | 41.261s（120 tests） | 41.362s（121 tests、+0.24%） | 対象2profileの24ケース・独立oracle・portable回復のproduction testを追加。master read/parse/compileは各1回を維持 |
+| ranking hot path median | 3,519.66ms | 3,416.76ms（−2.92%） | 同じ固定script、warm-up1＋serial3、同CPU/Node・条件で比較 |
+
+性能beforeは前単位の保持済み[final](tsk-06-45-resource-final.json)、今回afterは
+[attack buff count final](tsk-06-45-attack-buff-count-final.json)。中間計測を復元・baseline化しない。
+既存calculatedの数値差は上記calculator1件のみ。新ranking2件と、NP2×4policyのうち
+conditional includedの全整数×全skill順列oracleを差分artifactのacceptanceへ保持する。
+同条件のNP2平均は1000900がcount10→消費後live0・OC2で86,274.555、1101600がcount10→live0・OC2で116,024.425。
+
+**最終検証と引継ぎ**。
+
+- `pnpm quality`成功: `.test-results/2026-09-12T16-51-55-415Z-16-b067b5/manifest.json`。unit766 / production121 / Playwright26、skip/todo/retry/flaky/warning/unexpected console 0。format・lint・typecheck・runner・docs・master・buildを含む全gate成功。duration259.410s。
+- quality manifest SHA256: `efd46caea0f41b9a16e356773ae2d11b40033c478d78b58007733c0785a1e6ef`。
+- application audit digest: `63f93e477f2479aa2031c7d22ca2ce4eb0e865d370c0338ddd737c934067ecaf`。同runの`production/production-audit-calculation-application.json`と`attack-buff-count-acceptance.json`を差分artifactへ参照・保持。
+- published master SHA256: `19636a8949e610eb7bf4c0ec67661a8b5ca0f8a15c22e1e1819fb6f2e92faf4c`。差分artifact SHA256: `4df74ef379f97c86bf7bf9f6f439451ac577732128c61f0f51204a021c61ea59`。性能final SHA256: `c2dbedcf1fc3efe9837a011426b48230b9cc41872e0a4c2224927a107593770e`。
+- `git diff --binary HEAD -- apps packages data/raw e2e scripts`のSHA256: `48bae411f5aebbdac6e26aee8b7f2bc3487661e73f7ec6aecb4878efff9091f5`。検証時点はHEAD `83b4db2`＋未コミット差分。利用者のコミット依頼により、新規evidence JSON2件とTask/flowを含め、本記録を含む実装commitへ収録する。開始時cleanで、既存利用者変更の上書きなし。検証後の変更はコミット状態を明確にする文書更新のみ。
+- VRT5枚はmaster/engine表記と415/18件表示を更新し、desktop/list/detail・mobileを確認。snapshot再生成runのconsole記録は成功gateに使わず、最終qualityの通常比較でunexpected console 0を確認した。
+- 検証過程で、後段commitが古いstack値を戻す問題、修正可能な入力のunsupported分類、拒否画面の入力UI、支援recipientへの旧stack制約を修正。支援sourceSelfの23559もcanonical routeのonMissing:ignoreに従って対象外とし、未対応へ誤分類しない。raw format、型、追加E2E観測、全件digest/counterの期待値も修正して最終gateへ反映した。候補capやtimeoutの緩和はない。
+- 今回単位の未達gateはなし。次は既存U2-D.countのtarget/individual count、transferへ進む。開始操作はこの残18分類と[固定参照契約](tsk-06-45-np-count-source.json)の該当関数を既存U表へ対応させること。今回の全件監査・成功gateを開始時に繰り返さない。HP/BP、marker/admission、全条件/ownedと全体の回復/UI・Task gateは未完了。
+
+以下の開始時の2profileと直接接続先は83b4db2時点の証拠として保持する。
+現在の残18profileはmarker6 / target count3 / individual count4 / player NP transfer3 / HP transfer2。
+calculatorのHP/BP各1件、全条件/owned、残る量式・admission・全Task gateは未完了。
 
 **前回から閉じた範囲**。ranking411→413/433、calculator420/422不変。
 改善2profileはactor trait付与からNP条件への接続。count共通state/transaction/回復は限定接続済みだが、
@@ -493,9 +538,8 @@ HP3件は前sessionでobservationRequiredだったが、今回の採用方針に
 - 最終qualityの`production/production-audit-calculation-application.json`はSHA256 `1e954fbe9bceef1207bd66e93cad9738ca5f7b3241d73ca55c8d7bc0d53c913c`。tracked [count execution delta](tsk-06-45-count-execution-delta.json)のafterと一致し、残ranking20profileとcalculator2件を確認。
 - calculatorの残りは702500のHP `resourceStateUnavailable`と705300のBP `resourceStateUnavailable`。ranking20件の保存outcomeはすべて`unsupportedActionAdmission`であり、これだけから下流の実行成功を予測しない。
 
-**残20profileの現在の分類**。保存済み失敗identity内の選択skill/passive variantを現masterのcanonical effectへjoinした。
-下表は主な量式・markerによる重複なしの進行管理分類で、6＋3＋4＋2＋3＋2＝20。
-新しいexecutor実行やraw全件再監査ではなく、sourceに含まれる未対応operationの照合である。
+**残18profileの現在の分類**。前回の失敗identityと選択sourceのjoinを継承し、今回の全件実行でbuff count2件の解消と他18件の拒否維持を確認した。
+下表は主な量式・markerによる重複なしの進行管理分類で、6＋3＋4＋3＋2＝18。
 選択source中のoperationがすべてそのまま最終的なadmission拒否原因だとは断定しない。
 
 | 主分類 | profile数 | 証拠上のactor（同actorの別profileを含む） | 併存事項／担当単位 |
@@ -503,16 +547,14 @@ HP3件は前sessionでobservationRequiredだったが、今回の採用方針に
 | marker/contextReference | 6 | 105900、204900×2、405700、705300、2501400 | U1-R/U3-A。705300はBP実stateも不足、2501400はaddStateShortのoperationSemanticsも併存 |
 | target count | 3 | 106200、306000、1001800 | U2-D.count。gainNpTargetSumの対象人数とrecipientを分離 |
 | individual count | 4 | 306200×2、502600、2501600 | U2-D.count。gainNpIndividualSum、502600はcontextReferenceも併存 |
-| buff count | 2 | 1000900、1101600 | 次のU2-D.count対象。1101600はoperationSemanticsも併存 |
 | player NP transfer | 3 | 304000、1102300、2500400 | U2-D.transfer。1102300はcontextReferenceも併存 |
 | HP transfer | 2 | 204300、403600 | U2-D.transfer＋HP実state/生存の接続。数値契約はChaldea準拠を採用済み |
 
-この20profileはdefaultの入口拒否であり、現在calculatedのHP/BP未接続や全条件の不足を含む残作業総数ではない。
-終了までの作業量を「あと20行」や単純な対応率で見積もらない。既存U1〜U5の完了条件は維持する。
+この18profileはdefaultの入口拒否であり、現在calculatedのHP/BP未接続や全条件の不足を含む残作業総数ではない。
+終了までの作業量を「あと18行」や単純な対応率で見積もらない。既存U1〜U5の完了条件は維持する。
 
-**次に閉じる実経路と理由**。
-U2-Dの攻撃NP buff countを選ぶ。新しい非攻撃NPのcount例を追加するより、追加済み共通処理を
-残る攻撃profileの入力→実行→結果→回復へ接続することを優先する。対象と直接接続先は次のとおり。
+**今回閉じた実経路の開始証拠（83b4db2）**。
+以下は着手時の不足と直接接続先である。現在の実装・受入結果は上のmatrixと差分artifactを参照する。
 
 - 1000900/skill575350/function3392はcanonicalで`gainNpBuffIndividualSum`→`dependentResourceAmount`のまま。
 - 1101600/skill2255550/function21113も同量式で未対応、routeはpartyMember。加えてskill2253450/function20955は`addStateShort`→`operationSemantics`のまま。この併存を最初から検証範囲へ入れる。
@@ -522,7 +564,7 @@ U2-Dの攻撃NP buff countを選ぶ。新しい非攻撃NPのcount例を追加�
 IDは監査上の対象指定であり、runtime分岐やそのprofileだけの数値補完を許可しない。
 上記は接続責務と未達の特定であって、具体的なschema変更案の承認や全対象の正しさの証明ではない。
 順序と単位終了条件は[TSK-06.45](../tasks/development-redesign-tasks.md#tsk-0645-all-attack-np-execution-closure)へ集約。
-次単位で2件改善することはまだ保証できない。併存理由と下流実行まで確認し、未達を隠さず判定する。
+今回、併存理由と後続実行を含む2件の改善を確認した。これを他familyや全Taskの完了へ一般化しない。
 
 **進行管理上の修正**。
 前回の指示はHP非依存のcount familyを選んだが、攻撃NP実データの終了対象が十分に固定されておらず、

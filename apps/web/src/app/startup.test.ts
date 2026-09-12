@@ -15,7 +15,7 @@ const manifest: MasterManifest = {
   source: { name: 'Atlas Academy', region: 'JP', retrievedAt: now.toISOString() },
   artifactKind: 'diagnostic',
   minimalAppVersion: '0.1.0',
-  schemaVersion: 49,
+  schemaVersion: 50,
   files: [
     {
       key: 'master',

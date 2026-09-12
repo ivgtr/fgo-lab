@@ -54,6 +54,7 @@ export function prepareAttackNoblePhantasm(
       terminated: true,
       npResource: resource.resource.state,
       buffInstances: resource.buffInstances,
+      ...resource.contextState,
       ocState: resource.ocState,
       ocInputDefinitions: resource.ocInputDefinitions,
       uncertainContextWrites: resource.uncertainContextWrites,

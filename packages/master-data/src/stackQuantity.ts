@@ -24,10 +24,13 @@ export const stackInputSchema = z
     defaultValue: z.number().int().nonnegative(),
     defaultReason: z.string().min(1),
     quantitySource: stackSourceSchema,
+    instanceTraits: z.array(z.string().min(1)).min(1).optional(),
   })
   .strict()
   .superRefine((value, context) => {
     if (
+      (value.instanceTraits !== undefined &&
+        (value.owner === 'field' || !value.instanceTraits.includes(value.quantitySource.trait))) ||
       value.key !== stackInputKey(value.quantitySource) ||
       value.defaultValue > value.maximum ||
       value.owner !==
@@ -50,7 +53,11 @@ export function stackInputDefaultsAgree(
     left.key === right.key &&
     left.quantitySource.scope === right.quantitySource.scope &&
     left.quantitySource.trait === right.quantitySource.trait &&
-    left.defaultValue === right.defaultValue
+    left.defaultValue === right.defaultValue &&
+    (!left.instanceTraits ||
+      !right.instanceTraits ||
+      JSON.stringify([...left.instanceTraits].sort()) ===
+        JSON.stringify([...right.instanceTraits].sort()))
   );
 }
 

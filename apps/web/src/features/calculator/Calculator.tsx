@@ -1,3 +1,4 @@
+import { EffectInlineInput } from './EffectInlineInput';
 import { useEffect, useRef, useState } from 'react';
 import type { AppliedPreparationAction } from '@fgo-lab/calculation-application';
 import { ocBoostUseSummary, ocUseSummary } from '../../ui/ocPresentation';
@@ -1398,22 +1399,7 @@ export function RejectedCalculator({
         </div>
         <p>準備状態を修正すると再計算します。この状態から直接入力へは切り替えられません。</p>
         {effectInputs.map((input) => (
-          <label key={input.key}>
-            {input.label}
-            <input
-              type="number"
-              min={input.minimum}
-              max={input.maximum}
-              step={input.step}
-              value={input.value ?? ''}
-              onChange={(event) =>
-                changeCanonicalInput(
-                  input.key,
-                  event.target.value === '' ? null : Number(event.target.value),
-                )
-              }
-            />
-          </label>
+          <EffectInlineInput key={input.key} input={input} onChange={changeCanonicalInput} />
         ))}
         <ul>
           {result.issues.map((issue) => (

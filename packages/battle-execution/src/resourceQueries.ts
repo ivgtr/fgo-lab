@@ -28,7 +28,7 @@ export type ResourceQuery =
   | { resource: 'criticalStars'; measure: 'current'; actor: { kind: 'party' } };
 export type QuantityRead =
   | { kind: 'resource'; query: ResourceQuery }
-  | { kind: 'buffInstances'; actor: ResourceActor; trait: string; lifetime: 'active' }
+  | { kind: 'buffInstances'; actor: ResourceActor; trait: string; lifetime: 'active' | 'all' }
   | { kind: 'input'; inputKey: string }
   | { kind: 'unresolved'; reason: string; resources: readonly ResourceKind[] };
 export interface ResourceReadContext {
@@ -132,6 +132,18 @@ function inputRead(inputKey: string, context: ResourceReadContext): QuantityRead
       query: { resource: 'criticalStars', measure: 'current', actor: { kind: 'party' } },
     };
   const definition = context.inputDefinitions?.find((input) => input.key === inputKey);
+  if (definition?.kind === 'effectStackCount' && definition.instanceTraits)
+    return {
+      kind: 'buffInstances',
+      actor:
+        definition.quantitySource.scope === 'attackerState'
+          ? { kind: 'attacker' }
+          : definition.quantitySource.scope === 'targetState'
+            ? { kind: 'target' }
+            : { kind: 'unresolved' },
+      trait: definition.quantitySource.trait,
+      lifetime: 'all',
+    };
   if (definition?.kind === 'sourceHpPermille')
     return {
       kind: 'resource',
@@ -247,8 +259,13 @@ export function expressionQuantityReads(
   if (expression === null) return [];
   switch (expression.kind) {
     case 'fixed':
-    case 'stackLinear':
       return [];
+    case 'stackLinear':
+      return expression.sources
+        .filter((source) => source.instanceTraits !== undefined)
+        .map((source) =>
+          inputRead(source.key, { ...context, inputDefinitions: expression.sources }),
+        );
     case 'inputLinear':
       return [inputRead(expression.inputKey, context)];
     case 'inverseHpLinear':

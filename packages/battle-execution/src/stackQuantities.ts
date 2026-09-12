@@ -1,3 +1,4 @@
+import { isBuffCountInput } from './buffInstances';
 import type {
   CanonicalInputDefinition,
   StackInputDefinition,
@@ -17,18 +18,6 @@ export function mergeInputDefinitions(
     const previous = result.get(definition.key);
     if (previous && JSON.stringify(previous) !== JSON.stringify(definition)) {
       if (
-        previous.kind === 'buffInstanceCount' &&
-        definition.kind === 'buffInstanceCount' &&
-        JSON.stringify({ ...previous, maximum: 0 }) ===
-          JSON.stringify({ ...definition, maximum: 0 })
-      ) {
-        result.set(definition.key, {
-          ...previous,
-          maximum: Math.max(previous.maximum, definition.maximum),
-        });
-        continue;
-      }
-      if (
         previous.kind !== 'effectStackCount' ||
         definition.kind !== 'effectStackCount' ||
         !stackInputDefaultsAgree(previous, definition)
@@ -37,6 +26,7 @@ export function mergeInputDefinitions(
       result.set(definition.key, {
         ...previous,
         maximum: Math.max(previous.maximum, definition.maximum),
+        ...(definition.instanceTraits ? { instanceTraits: definition.instanceTraits } : {}),
       });
     } else result.set(definition.key, definition);
   }
@@ -158,12 +148,6 @@ export function servantBuffCountInputs(
       .map((source) => source.effect),
   ]
     .flatMap((effect) => effect.inputDefinitions)
-    .filter(
-      (input): input is Extract<CanonicalInputDefinition, { kind: 'buffInstanceCount' }> =>
-        input.kind === 'buffInstanceCount',
-    );
-  return mergeInputDefinitions(inputs).filter(
-    (input): input is Extract<CanonicalInputDefinition, { kind: 'buffInstanceCount' }> =>
-      input.kind === 'buffInstanceCount',
-  );
+    .filter(isBuffCountInput);
+  return mergeInputDefinitions(inputs).filter(isBuffCountInput);
 }

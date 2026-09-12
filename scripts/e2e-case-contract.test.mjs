@@ -8,7 +8,7 @@ import ts from 'typescript';
 const root = resolve(import.meta.dirname, '..');
 const catalog = JSON.parse(readFileSync(resolve(root, 'e2e/cases.json'), 'utf8'));
 const assertions = JSON.parse(readFileSync(resolve(root, 'e2e/assertions.json'), 'utf8'));
-const migrationManifestDigest = 'b9a02c87e3d18f1f8bf754647ee6ad2cdb9f9bb312d1c02bec8c7155dd43049b';
+const migrationManifestDigest = '21eb68d2ecbd21a44db4da00ffb56a4093db0b1a74e59962aeaacf8d599e1120';
 const specSource = readdirSync(resolve(root, 'e2e'))
   .filter((name) => name.endsWith('.spec.ts') || name.endsWith('.setup.ts'))
   .map((name) => readFileSync(resolve(root, 'e2e', name), 'utf8'))
@@ -103,7 +103,7 @@ function containsExactAssertionMarker(source, assertionId) {
 
 function assertMigrationManifest(manifest, expectedDigest = migrationManifestDigest) {
   assert.equal(digestManifest(manifest), expectedDigest, 'migration manifest digest');
-  assert.equal(manifest.length, 64, 'migration manifest observation count');
+  assert.equal(manifest.length, 65, 'migration manifest observation count');
   const caseIds = new Set(catalog.map(({ id }) => id));
   assert.equal(new Set(manifest.map(({ id }) => id)).size, manifest.length);
   const assertionsByCase = Map.groupBy(manifest, ({ caseId }) => caseId);

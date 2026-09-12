@@ -1,3 +1,4 @@
+import { isBuffCountInput } from './buffInstances';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import type { CanonicalNpResourceSemantics, MasterEffect } from '@fgo-lab/master-data';
 import {
@@ -45,10 +46,10 @@ function selectedNpMutation(
     countAmount.kind === 'buffCount' &&
     !source.effect.inputDefinitions.some(
       (input) =>
-        input.kind === 'buffInstanceCount' &&
+        isBuffCountInput(input) &&
         input.key === countAmount.inputKey &&
-        input.trait === countAmount.trait &&
-        input.instanceTraits.includes(input.trait),
+        input.quantitySource.trait === countAmount.trait &&
+        input.instanceTraits.includes(input.quantitySource.trait),
     )
   )
     return { kind: 'unsupported', family: 'unboundBuffCountInput' };
@@ -56,7 +57,7 @@ function selectedNpMutation(
   const amount = values?.[valueSetIndex]?.[source.valueIndex];
   const selected =
     operation.amount.kind === 'buffCount' && amount !== null && amount !== undefined
-      ? amount * countBuffInstances(instances, operation.amount.trait)
+      ? amount * countBuffInstances(instances, operation.amount.trait, recipient)
       : amount;
   if (selected !== null && selected !== undefined && !Number.isSafeInteger(selected))
     return { kind: 'gain', amount: Number.NaN };

@@ -69,18 +69,18 @@ describe('production special input inventory', () => {
       unsupported: 2,
     });
     expect(criticalStarUnsupported).toEqual([]);
-    expect(inputs).toHaveLength(28);
+    expect(inputs).toHaveLength(29);
     expect(counts).toEqual({
       availableSkillCount: 1,
       criticalStars: 1,
       currentTurn: 2,
-      effectStackCount: 19,
+      effectStackCount: 20,
       fieldActorCount: 1,
       matchingActorCount: 3,
       procSuccessCount: 1,
     });
     expect(inputs.filter((input) => input.control === 'segmented')).toHaveLength(3);
-    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(25);
+    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(26);
     expect(inputs.filter((input) => input.section === 'support')).toHaveLength(0);
     expect(duplicateControls).toEqual([]);
     expect(inputs.some((input) => input.kind === 'friendshipLevel')).toBe(false);

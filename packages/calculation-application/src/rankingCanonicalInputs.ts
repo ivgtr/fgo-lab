@@ -49,17 +49,12 @@ export function createCanonicalInputValueDomains(
       values:
         mode === 'baseline'
           ? [definition.defaultValue ?? definition.minimum]
-          : definition.kind === 'buffInstanceCount'
-            ? Array.from(
-                { length: definition.maximum - definition.minimum + 1 },
-                (_, count) => count + definition.minimum,
-              )
-            : definition.kind === 'effectStackCount'
-              ? stackWitnesses.has(definition.key)
-                ? stackWitnesses.get(definition.key)!
-                : Array.from({ length: definition.maximum + 1 }, (_, count) => count)
-              : boundaries.has(definition.key)
-                ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
-                : [definition.maximum],
+          : definition.kind === 'effectStackCount'
+            ? definition.instanceTraits === undefined && stackWitnesses.has(definition.key)
+              ? stackWitnesses.get(definition.key)!
+              : Array.from({ length: definition.maximum + 1 }, (_, count) => count)
+            : boundaries.has(definition.key)
+              ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
+              : [definition.maximum],
     }));
 }

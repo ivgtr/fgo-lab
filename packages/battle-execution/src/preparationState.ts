@@ -23,8 +23,8 @@ import { rejectPreparation } from './preparationContracts';
 import { resolveTargetPolicy, type Origin } from './effectRouting';
 
 import { createOcState } from './ocState';
-import { seedBuffInstances } from './buffInstances';
-import { servantBuffCountInputs } from './stackQuantities';
+import { seedBuffInstances, projectBuffInstanceCounts, isBuffCountInput } from './buffInstances';
+import { servantBuffCountInputs, mergeInputDefinitions } from './stackQuantities';
 import type { PreparationEffectActivation } from './preparationTransaction';
 
 type CanonicalOperation = MasterEffect['execution'][number];
@@ -53,19 +53,12 @@ const isRecipientTraitMutation = (
 ): operation is TraitMutationOperation =>
   operation.kind === 'contextMutation' && 'scope' in operation;
 
-export function resolvePreparationStructuralOutcome(
+export function resolvePreparationIdentityOutcome(
   servant: ServantMaster,
   state: PreNoblePhantasmState,
   effects: readonly MasterEffect[],
-  origin: Origin = 'attacker',
 ):
-  | {
-      currentFormId: ActorFormId;
-      selectedVariant: NoblePhantasmVariantRef | null;
-      stateTraits: PreNoblePhantasmState['stateTraits'];
-      stackCounts: PreNoblePhantasmState['stackCounts'];
-      initialTraitSuppressions: PreNoblePhantasmState['initialTraitSuppressions'];
-    }
+  | { currentFormId: ActorFormId; selectedVariant: NoblePhantasmVariantRef | null }
   | PreparationFailureCode {
   const operations = operationsOf(effects);
   const transforms = operations.filter(isFormTransform);
@@ -80,6 +73,27 @@ export function resolvePreparationStructuralOutcome(
     if (!variant) return 'variantUnavailable';
     if (!actorFormEquals(variant.ref.actorFormId, currentFormId)) return 'variantFormMismatch';
   }
+  return { currentFormId, selectedVariant };
+}
+
+export function resolvePreparationStructuralOutcome(
+  servant: ServantMaster,
+  state: PreNoblePhantasmState,
+  effects: readonly MasterEffect[],
+  origin: Origin = 'attacker',
+):
+  | {
+      currentFormId: ActorFormId;
+      selectedVariant: NoblePhantasmVariantRef | null;
+      stateTraits: PreNoblePhantasmState['stateTraits'];
+      stackCounts: PreNoblePhantasmState['stackCounts'];
+      initialTraitSuppressions: PreNoblePhantasmState['initialTraitSuppressions'];
+    }
+  | PreparationFailureCode {
+  const identity = resolvePreparationIdentityOutcome(servant, state, effects);
+  if (typeof identity === 'string') return identity;
+  const { currentFormId, selectedVariant } = identity;
+  const operations = operationsOf(effects);
   const attackerState = new Set(state.stateTraits.attackerState);
   const counts = { ...state.stackCounts.attackerState };
   const targetState = new Set(state.stateTraits.targetState);
@@ -242,22 +256,41 @@ export function createPreparationState(
     return rejectPreparation(placeholder, 'resourceRequirementExceedsCapacity');
   if (!Number.isInteger(context.initialGauge) || context.initialGauge < 0)
     return rejectPreparation(placeholder, 'invalidResourceState');
-  for (const definition of context.stackInputs ?? []) {
-    const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
-    if (!Number.isInteger(count) || count < 0 || count > definition.maximum)
-      return rejectPreparation(placeholder, 'invalidPreparationActivation');
-    const { scope, trait } = definition.quantitySource;
-    placeholder.stackCounts[scope] = { ...placeholder.stackCounts[scope], [trait]: count };
-    if (scope !== 'field' && count > 0) (placeholder.stateTraits[scope] as Set<string>).add(trait);
-  }
   try {
-    placeholder.buffInstances = seedBuffInstances(
-      servantBuffCountInputs(servant, [
+    const inputs = mergeInputDefinitions([
+      ...(context.stackInputs ?? []),
+      ...servantBuffCountInputs(servant, [
         ...(context.initialSources ?? []),
         ...(context.terminalSources ?? []),
       ]),
-      context.canonicalInputValues ?? {},
-    );
+    ]);
+    const invalid = inputs.find((definition) => {
+      const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
+      return (
+        count === null ||
+        !Number.isSafeInteger(count) ||
+        count < definition.minimum ||
+        count > definition.maximum
+      );
+    });
+    if (invalid)
+      return rejectPreparation(
+        placeholder,
+        'preparationInputRequired',
+        invalid,
+        'preparation:initialCount',
+      );
+    for (const definition of inputs) {
+      if (definition.kind !== 'effectStackCount') continue;
+      const count = context.canonicalInputValues?.[definition.key] ?? definition.defaultValue;
+      const { scope, trait } = definition.quantitySource;
+      placeholder.stackCounts[scope] = { ...placeholder.stackCounts[scope], [trait]: count };
+      if (scope !== 'field' && count > 0)
+        (placeholder.stateTraits[scope] as Set<string>).add(trait);
+    }
+    const buffInputs = inputs.filter(isBuffCountInput);
+    placeholder.buffInstances = seedBuffInstances(buffInputs, context.canonicalInputValues ?? {});
+    Object.assign(placeholder, projectBuffInstanceCounts(placeholder, buffInputs));
   } catch {
     return rejectPreparation(placeholder, 'invalidPreparationActivation');
   }

@@ -26,19 +26,19 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'e52da590e30e0eb762b739c2fe5f7462483adcfcb7947522c548b4c7f507e9d5',
+          digest: '63f93e477f2479aa2031c7d22ca2ce4eb0e865d370c0338ddd737c934067ecaf',
           inventory: {
             attackServants: 422,
             attackProfiles: 433,
-            preparationPlans: 3453,
+            preparationPlans: 3461,
             calculatorScenarios: 422,
-            rankingRows: 413,
+            rankingRows: 415,
             rankingPolicy: 'current-default',
             resourcePrograms: {
               programs: 7255,
-              mutations: 15795,
-              opaqueOperations: 54037,
-              digest: '830e4f83cdd16e0cacdae8d16d2d9ed3955b064ac4403e7e1702335bc83b1a80',
+              mutations: 15817,
+              opaqueOperations: 54059,
+              digest: 'ca26aec216f9b8bbee55cc0f9ab5a60f36e302093f57b57b82592798a84208f2',
             },
             calculated: 420,
             inputRequired: 0,
@@ -77,7 +77,7 @@ describe('shared calculation-application production audit', () => {
         counts[kind] = (counts[kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ unsupported: 2, rankingFailure: 20 });
+    ).toEqual({ unsupported: 2, rankingFailure: 18 });
     expect(
       audit.failures.filter(({ kind }) => kind === 'unsupported').map(({ identity }) => identity),
     ).toEqual(['calculator:702500', 'calculator:705300']);

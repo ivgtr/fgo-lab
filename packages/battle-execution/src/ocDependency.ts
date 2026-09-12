@@ -1,3 +1,4 @@
+import { isBuffCountInput } from './buffInstances';
 import {
   conditionQuantityReads,
   expressionQuantityReads,
@@ -175,7 +176,7 @@ export function ocRelevantSourceIndexes(
         ) {
           buffReads.add(operation.amount.trait);
           for (const input of effect.inputDefinitions)
-            if (input.kind === 'buffInstanceCount' && input.key === operation.amount.inputKey)
+            if (isBuffCountInput(input) && input.key === operation.amount.inputKey)
               for (const trait of input.instanceTraits) buffReads.add(trait);
         }
         if (

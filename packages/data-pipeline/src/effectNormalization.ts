@@ -869,6 +869,7 @@ function normalizeCanonicalInputSemantics(
   inputKey: string,
   traitNameById: ReadonlyMap<number, string>,
   stackLabels?: ReadonlyMap<string, string>,
+  stackMaximums?: ReadonlyMap<string, number>,
 ): {
   inputs: CanonicalInputDefinition[];
   conditions: {
@@ -883,10 +884,7 @@ function normalizeCanonicalInputSemantics(
   const first = parameters[0] ?? {};
   const has = (key: string) => parameters.some((parameter) => parameter[key] !== undefined);
   const input = (
-    kind: Exclude<
-      CanonicalInputDefinition['kind'],
-      'matchingActorCount' | 'effectStackCount' | 'buffInstanceCount'
-    >,
+    kind: Exclude<CanonicalInputDefinition['kind'], 'matchingActorCount' | 'effectStackCount'>,
     owner: CanonicalInputDefinition['owner'],
     label: string,
     description: string,
@@ -1105,7 +1103,7 @@ function normalizeCanonicalInputSemantics(
       };
     }
     return {
-      ...normalizeEffectStackInputs(parameters, traitNameById, stackLabels),
+      ...normalizeEffectStackInputs(parameters, traitNameById, stackLabels, stackMaximums),
       conditions: [],
       recognizedKeys: [
         'ParamAddValue',
@@ -1544,7 +1542,13 @@ export function normalizeFunctions(
       canonicalInputKey,
       traitNameById,
       stateCatalog.stackLabels,
+      stateCatalog.countedBuffMaximums,
     );
+    canonicalInput.inputs = canonicalInput.inputs.map((input) => {
+      if (input.kind !== 'effectStackCount' || input.quantitySource.scope === 'field') return input;
+      const traits = stateCatalog.countedBuffDefinitions?.get(input.quantitySource.trait);
+      return traits ? { ...input, instanceTraits: [...traits] } : input;
+    });
     const modifierValues = normalizeModifierValueExpressions(
       parameterSets,
       canonicalInputKey,
@@ -1712,6 +1716,8 @@ export function normalizeFunctions(
       parameterSets,
       traitNameById,
       stateCatalog.countedBuffDefinitions ?? new Map(),
+      stateCatalog.countedBuffMaximums,
+      stateCatalog.stackLabels,
     );
     const countedBuffMutations = normalizeCountedBuffMutation(
       fn,
@@ -1762,7 +1768,18 @@ export function normalizeFunctions(
     const uniqueReferenceIds = [...new Set(referenceCandidates.map((reference) => reference.id))];
     if (uniqueReferenceIds.length > 1 && triggerScope === null)
       throw new TypeError(`ambiguous_referenced_skill:${String(fn.funcId)}`);
-    const referenceId = triggerScope === null ? uniqueReferenceIds[0] : undefined;
+    const callback = referencedSkills.get(uniqueReferenceIds[0]!);
+    const criticalOnlyCallback =
+      uniqueReferenceIds.length === 1 &&
+      callback?.functions?.length &&
+      callback.functions.every(
+        (child) =>
+          ['addState', 'addStateShort'].includes(child.funcType ?? '') &&
+          child.buffs?.length &&
+          child.buffs.every((buff) => buff.type === 'upCriticaldamage'),
+      );
+    const referenceId =
+      triggerScope === null || criticalOnlyCallback ? uniqueReferenceIds[0] : undefined;
     const operationReference =
       referenceId === undefined
         ? null
