@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab 開発実行効率要件・統合実装計画"
-document_version: "1.1.0"
+document_version: "1.2.0"
 status: "Active"
 approved_at: "2026-08-30"
-updated_at: "2026-08-30"
+updated_at: "2026-09-12"
 implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 created_at: "2026-08-30"
 related_documents:
@@ -141,14 +141,21 @@ phase requirement
 
 ### 5.4 Thread／compaction契約
 
-同じthreadを使う単位は一つの実装phaseまたは一つのreview finding familyとする。次の場合はhandoffを記録し、`/compact`またはnew threadへ移る。
+依頼された成果と現在の未達条件を維持する。compactionや長い調査が必要なら正本へcheckpointを残す。
+新しい依存経路や再指摘の発見だけで実装依頼を終了しない。通常の技術判断は同じsessionで解消して進める。
 
-- phaseの受入条件を満たした。
-- model inputが初回baselineの約3倍、または概ね48,000〜64,000 tokensを超えた。
-- production log、画像、広範なsource調査を追加で必要とする。
-- product requirement、semantic family、変更対象が前turnから変わった。
+FGO Labのsession上限は60分でcheckpoint、90分で新しいsemantic family・子調査を開始せず、現在のatomic actionを終えて引き継ぐ。
+checkpointは成果、変更family、検証証拠、未達条件、次の操作を既存正本へ一度記録する。
+引継ぎはcommitまたは差分、worktree状態、未完了gate、artifact manifest、次のcommandを残す。完了済み調査は再実行しない。
 
-handoffはchat transcriptではなく、commit、worktree status、変更したcanonical contract、未完了gate、artifact manifest、次の開始commandを記録する。完了済み調査を次threadで再実行しない。
+### 5.5 単独実行と例外的な調査
+
+通常の診断・計画・実装・テスト・統合・レビュー判定は親が担当する。
+子は同時に1つまで、独立した限定的な読み取り専用調査に限る。起動は必須でない。
+起動前に独立した質問と単独では不足する理由、対象path、比較境界、返す根拠、時間予算を示し、全会話は渡さない。
+子は編集・artifact作成・test/build・外部変更・承認・再委譲をしない。結論、不確実性、必要なfile/symbolだけを返す。
+親の独立作業を終えてから合流し、同じ待機を短周期で繰り返さない。通知を利用し、予算超過時は調査を中止・縮小するか親で完了する。
+モデル・read-only設定の正本は`.codex/config.toml`と`.codex/agents/fgo-readonly-researcher.toml`とする。
 
 ## 6. 設定推奨値
 
@@ -166,7 +173,7 @@ global skills／plugins／permissionsはFGO作業に必要なものだけを有�
 
 ## 7. Phase gateとthread handoff
 
-各phaseは次を満たすまで次へ進めない。
+製品実装phaseは次のうち変更に適用する条件を満たして閉じる。文書・指示のみの変更はREADMEの文書検証範囲を使い、意味論matrixやproduction計測を追加しない。
 
 1. user-visible outcomeとsemantic familyを記録した。
 2. focused testsが通過した。
@@ -225,7 +232,7 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 
 ## 9. 停止条件
 
-次を検出した場合は局所対応を追加せず、phaseを停止して設計とinventoryへ戻る。
+次を検出した場合は局所対応を重ねず、原因と設計・inventoryを見直す。技術的に解消できる問題は同じ依頼の中で修正・検証する。
 
 - compact化のためにtestやproduction assertionを省略する必要がある。
 - ranking実装のためにcalculatorと別executorが必要になる。
@@ -237,7 +244,7 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 - tool failureに対して同じpatch、command、pollを反射的に再送する。
 - bounded summaryでは原因が分からず、毎回full log全体をmodel contextへ戻す必要がある。
 
-停止後は、影響するsemantic family、production件数、責務重複、damage差分、実行コスト、単一の収束案を提示してから再開する。
+影響するsemantic familyと必要な証拠を既存正本へ更新して再開する。製品要件や実質的な依頼範囲の変更が必要な場合だけ利用者へ確認し、依存しない作業は続ける。
 
 ## 10. 完了条件
 
@@ -265,3 +272,4 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 | Version | Reason／Contract | Approval | Impacted Tasks | Baseline impact |
 | --- | --- | --- | --- | --- |
 | 1.1.0 | phase closureとproject closureをstable Contract IDで参照可能にした | retained: 実行効率とproduct qualityの意味は不変 | TSK-02.1〜09 | none: 観測baselineとratchet値は不変 |
+| 1.2.0 | 指示見直し依頼に基づき、技術的な再判断から実装を継続する境界、文書変更の比例検証、単独実行とsession上限の正本を整理。実行コード・既存Contract IDは不変 | approved 2026-09-12 | 全Taskの作業運用。個別受入条件とclosure matrixは不変 | none: damage／digest／artifact schemaは不変 |

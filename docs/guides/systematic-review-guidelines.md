@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab 体系的レビューガイド"
-document_version: "1.0.0"
+document_version: "1.1.0"
 status: "Guideline"
 created_at: "2026-09-01"
-updated_at: "2026-09-01"
+updated_at: "2026-09-12"
 related_documents:
   - "AGENTS.md"
   - "docs/guides/prompt-engineering-guidelines.md"
@@ -21,16 +21,16 @@ familyを一度に監査し、必要な設計修正と反例集合を最初の�
 ある。product semanticsや個別Taskの進捗は所有せず、レビューの調査単位、抽象度、停止条件、
 証拠の組み立て方を定める。
 
-次のレビューでは、差分を読む前に本書を参照する。
+次の構造的・意味論的な実装やレビューで、該当節を参照する。通常の文言修正に本書全体の読込は不要。
 
 - damage、condition、state transition、ranking candidateの意味を変える変更
 - canonical stateまたはoutcome classificationを変える変更
 - calculator、ranking、execution、UIの複数経路に影響する変更
-- 同じTaskで構造的findingまたは再レビューが発生した変更
+- 同じ機構の構造的findingが発生した変更
 - productionに存在しないschema-legal stateの扱いが完了条件に含まれる変更
 
 命名、文言、局所的な表示、機械的な置換など、意味論と複数経路を変えないレビューでは、
-`Systematic review: N/A: <理由>`としてよい。
+本手順を省略する。正式な完了記録が必要な場合だけ`Systematic review: N/A: <理由>`と記す。
 
 ## 2. 今回の実装ターンから得た反省
 
@@ -95,7 +95,7 @@ TSK-06の有限ranking candidate plannerでは、最初の実装後に次の指�
 
 ### 3.1 症状から設計へ四段階で引き上げる
 
-レビューでは、最低でも次の四段階を明示的に通る。
+構造的findingでは次の四点が分かる根拠をまとめる。四つの別報告は不要。
 
 1. **Symptom** — どの入力で何が誤るか。利用者から観測できるactual／expectedを示す。
 2. **Mechanism** — どの型、分岐、順序、read scope、fallbackが症状を成立させるか。
@@ -117,7 +117,7 @@ Architectureまで到達してから修正範囲を確定する。
 - 同じTaskで二回目の構造的findingが出る
 
 inventoryは無制限に広げない。現在のsemantic owner、直接producer／consumer、結果を変換する経路、
-同じschema unionを読む箇所に限定する。別のproduct requirementや別ownerへ移る場合は新Taskへ分ける。
+同じschema unionを読む箇所に限定する。依頼された結果に必要な別ownerも対象に含める。独立した改善は既存Taskへ記録し、元の作業を続ける。
 
 ### 3.3 semantic closure matrix
 
@@ -352,7 +352,7 @@ ratchetし、focused fixtureで意味を固定する。性能悪化、candidate 
 
 ### 5.3 再レビュー時
 
-前回findingだけを再実行せず、前回提示したrecurrence scopeの全行を確認する。新しい隣接反例を見つけた
+前回のrecurrence scopeと差分を照合し、同じ条件で有効な証拠は再利用する。変更・新しい疑問がある行だけ再検証する。新しい隣接反例を見つけた
 場合は、実装漏れか前回レビュー漏れかをbaseline差分と前回契約から判定する。レビュー漏れなら、その
 事実を明示してから追加要求する。
 
@@ -367,6 +367,8 @@ findingを重要度順に先に示す。findingがない場合も、少なくと
 - flow closureとBlockingの判定
 
 ## 6. レビューチェックリスト
+
+対象の意味を変える軸だけを選ぶ。本文の証拠を別のチェック報告へ複製しない。
 
 - [ ] 症状だけでなくmechanism、contract、architectureまで確認したか。
 - [ ] 最初の構造的findingで同じsemantic familyをinventoryしたか。
@@ -386,10 +388,86 @@ findingを重要度順に先に示す。findingがない場合も、少なくと
 
 - repository-wide invariant: `AGENTS.md`
 - 体系的なレビュー観点とFGO Labの反例軸: 本書
-- prompt、session分割、flow closure記録形式: `docs/guides/prompt-engineering-guidelines.md`
+- flow closure記録と構造的finding分析: 本書の§8・§9
+- 依頼例: `docs/guides/prompt-engineering-guidelines.md`
+- 実行時間・委譲・handoff: `docs/requirements/development-execution-efficiency-requirements.md`
 - 現行のlayer依存方向: `docs/guides/data-flow.md`
 - product／damage／ranking semantics: 各requirementsとADR
 - Task固有のproducer、consumer、counterexample、inventory: 一つのcanonical flow note
 
 本書のmatrixやチェックリストをTaskごとのflow noteへ全文複製しない。flow noteには適用した軸、今回の
 delta、証拠、未解決statusだけを記録する。
+
+## 8. Execution familyのflow closure
+
+
+この手順はcanonical state、outcome classification、または複数のexecution／write pathを変更する作業に適用する。意味論を変えない小さな依頼には適用しない。正式な完了記録が必要な場合だけ`Flow closure: N/A: <理由>`と記す。これはレビュー差し戻しをなくす保証ではなく、未監査範囲を完了済みとして提出しにくくするための反証手順である。
+
+探索対象は、現在のsemantic familyが所有、生成、変換するstateの直接reader／writerと、damage、precision、operation outcome、required input、UI commandを変える経路に限定する。間接依存はこれらの結果を変換する場合だけ含め、列挙したpreapply、projection、cache等が該当しない場合は`N/A: <根拠>`で閉じる。
+
+familyごとにtrackedなflow closure noteを一つだけ正本として置き、Tasksのclosure matrixまたはHandoffからpath、status、未解決項目だけを参照する。promptとhandoffは正本pathと今回のdeltaだけを記録し、flowやmatrixを複製しない。初回inventory後は、baseline commitから変更または新規発見されたproducer、consumer、writer、recovery、反証cellだけを再監査する。
+
+適用時は次の順序でflow closure noteを作る。
+
+1. 利用者から観測可能なoutcomeをexhaustiveに列挙する。少なくともsuccess、正常な非適用、修正可能な入力、semantic invalid、unsupportedを同値扱いしない。
+2. raw producerからcanonical IR、application command、resolver、activation、state mutation、result assembly、UI／rankingまでのforward flowを記録する。
+3. input validation、required-input収集、error classification、retry commandのように下流から利用者へ戻るrecovery flowを別に記録する。
+4. stateを書き換える場所を検索し、通常loop以外のpreapply、preparation transaction、projection override、commit／rollback、fallback、cache／aggregationを該当有無つきで列挙する。
+5. outcome stateとexecution pathの積から反証matrixを作り、特殊経路とproductionに存在しないschema-legal stateが少なくとも一度交差するfixtureを選ぶ。
+6. 各対象を`Verified`、`N/A: <理由>`、`Deferred: <TSK-ID>`、`Blocking: <理由>`のいずれかに分類する。`Blocking`が0件ならself-checkを終了でき、production occurrence 0もschema-legal fixtureがあれば`Verified`にできる。
+
+例:
+
+```text
+canonical input / command
+  -> resolver
+  -> typed state
+  -> activation
+       |- preparation / preapply
+       |- normal operation loop
+       |- contribution projection
+       `- result classification
+            `- required-input / error recovery -> application / UI
+```
+
+計画に残す最小matrixは次の形とする。全セルに個別fixtureを作るのではなく、空欄を無意識に残さないことが目的である。
+
+| Outcome state | Normal loop | Alternate mutation path | Projection／aggregation | Recovery classification |
+| --- | --- | --- | --- | --- |
+| success | expected transition | expected transition | allowed contribution | exact |
+| normal non-application | no transition | no transition | cannot revive | exact |
+| repairable input | no transition | no transition | cannot revive | input required |
+| semantic invalid | no transition | no transition | cannot revive | unsupported／invalid |
+
+review findingで新しい経路が見つかった場合は、期待値を一件追加する前にflow closure noteへconsumer、write site、recovery、反証cellを追加する。同じ中心ロジックのtestが通ることやproduction occurrenceが0件であることだけを再提出根拠にしない。
+
+技術的な不確定事項は調査と反例で解消し、実装依頼なら同じsessionで修正・検証まで進む。
+ownershipに複数案があることやBlockingの発見だけでは、利用者の承認待ちにしない。
+正本から期待outcomeを決められない製品判断、要件拡張、利用者が明示した計画レビューだけ確認する。
+現在の完了条件に必要な経路をDeferredへ移して完了としない。
+
+## 9. 構造的findingのcause analysis
+
+
+構造的findingでは、修正案に加えて次の4分類を一度だけ記録する。確認済み事実と推論を
+分け、推論には根拠となるcodeまたはtestを示す。根拠のない実装者の意図や心理を原因と
+断定しない。同じ原因を持つ複数findingでは分析を複製せず、共通原因としてまとめる。
+
+```text
+1. 発生機構 — 確認済み
+   問題を成立させる型、schema、分岐、execution pathを、code／reproductionとともに示す。
+
+2. 実装時のズレ — 推論
+   計画、ownership、invariantと実装の差を示し、推論の根拠となるcode／testを添える。
+
+3. 検出を逃れた理由 — 確認済み
+   fixture、state × path matrix、inventory、review scopeのうち欠けた組合せを示す。
+
+4. 再発範囲 — 推論
+   同じ発生機構が成立し得る隣接経路と、追加する最小のguardrailを示す。
+```
+
+breaking schema cutoverでは、少なくとも境界ごとに`old-only`、`canonical-only`、
+`mixed contradictory`を交差fixtureとして検討する。source scanはruntime readerの残存を
+検出できても、parserによるunknown-key除去を検出できないため、schema fixtureの代替には
+ならない。

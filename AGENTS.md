@@ -1,60 +1,26 @@
-# Repository implementation principles
+# FGO Lab implementation principles
 
-## Start from the system, not the symptom
+## 成果と作業範囲
 
-- Damage correctness is the highest priority. Before editing, state the user-visible outcome, domain invariants, and the semantic family that owns the behavior.
-- Audit the whole production family before adding a local fix. Repeated exceptions or newly discovered per-servant differences are signals to pause and improve the model.
-- Keep the solution bounded by the current product requirements. Do not turn the calculator into a general battle simulator without an explicit requirement.
+- 依頼された結果まで調査・修正・検証を進める。「調査だけ」「計画まで」「レビューのみ」は守る。通常の技術判断で再承認を求めず、未規定の製品判断や実質的な範囲拡張だけ確認する。
+- damage correctnessを最優先にする。意味論を変えるときは利用者の結果、不変条件、意味を決める責務を確認する。同じ原因の例外が続くなら直接の生成・利用経路をまとめて調べる。
+- 現行要件を基準に設計を再判断する。計算機を要件外のbattle simulatorへ広げない。無関係な利用者変更を保持し、stage／commitは依頼範囲だけを対象に差分を確認する。
 
-## Plan the whole execution family
+## 計算の不変条件と責務
 
-- For structural or semantic reviews, follow `docs/guides/systematic-review-guidelines.md` before finalizing findings. If a later review expands the recurrence scope of the same mechanism, identify the earlier review gap before requesting another implementation patch.
-- Apply flow closure when a task changes canonical state, outcome classification, or multiple execution/write paths. Otherwise close it with one `N/A: reason` line.
-- For an applicable change, trace each canonical state through the forward execution flow and any recovery flow back to application or UI. Scope the inventory to direct readers/writers and paths that can change damage, precision, operation outcome, required input, or UI commands; include indirect dependencies only when they transform one of those results.
-- Define externally meaningful outcome classes before composing them. Do not collapse stochastic failure, disabled inclusion, repairable user input, semantic invalidity, and unsupported execution merely because they all avoid a numeric result.
-- Plan counterexamples as a state-by-path matrix. Cover alternate execution paths and schema-legal states absent from production, rather than proving only the central path or current production defaults.
-- Keep one canonical flow note per semantic family. After its initial inventory, update only changed or newly discovered producers, consumers, writers, and counterexamples; plans and handoffs reference the note and current delta instead of copying it.
-- Classify each scoped path as `Verified`, `N/A: reason`, `Deferred: TSK-ID`, or `Blocking: reason`. Completion requires zero `Blocking` items. A production-negative case can become `Verified` through a schema-legal focused fixture.
-- Treat a structural review finding as evidence that the flow inventory or ownership model may be incomplete. Update the plan and its counterexamples before adding another patch. Review iteration is acceptable; minimizing or hiding the unresolved scope before resubmission is not.
-- For a structural review finding, record the mechanism, implementation mismatch, missed detection, and recurrence scope/minimum guardrail once. Separate confirmed facts from inference and cite the supporting code or test; keep the detailed template in `docs/guides/prompt-engineering-guidelines.md`.
+- servant ID・名前・label・raw keyによるruntime分岐を追加しない。typed identity、状態・遷移、網羅的なunionへ意味を集約し、互換性だけを目的とする旧経路やfallbackを残さない。
+- 不足・曖昧・矛盾・部分適用の意味論はfail closedにする。無効状態をもっともらしい数値へ置き換えない。確率的失敗、対象からの除外、修正可能な入力、invalid、unsupportedを区別する。
+- data pipelineだけがAtlas/raw語彙を解釈してcanonical IRを生成する。applicationがscenario commandと利用者の意図を所有し、executionがcanonical stateへ順序付きのtransactional operationを適用する。
+- calculatorとrankingは同じapplication／execution経路を使う。ranking policyはscenarioを選び、独自のdamage semanticsを持たない。UIはcanonical stateを表示してcommandを送り、IDやlabelからゲーム規則を推測しない。
+- 既存責務を拡張するか焦点の定まったmoduleへ抽出する。詳細をorchestratorへ戻さず、責務のないpackageを増やさない。利用可能なaction、使用したinput、適用済みeffectを区別する。
+- 挙動には小さいsemantic fixture、全データには共有inventory／digestを使う。caseごとのmaster再読込・再計算を避ける。計算構造変更では影響するproduction suite・hot pathの前後を測り、candidate増加・時間増加・ratchet緩和を説明する。
 
-## Converge on one canonical model
+## 必要な資料と検証
 
-- Do not add servant IDs, names, labels, or raw external keys as runtime branches.
-- Prefer typed identities, states, transitions, and exhaustive unions over growing `if`/`switch` chains, nested ternaries, or parallel candidate lists.
-- Do not preserve old behavior merely for compatibility. Breaking schema changes and deletion of obsolete paths are acceptable when they produce one simpler source of truth.
-- Fail closed on missing, ambiguous, contradictory, or partially applicable semantics. Never replace invalid state with a plausible numeric fallback.
+- 文書入口は[docs/README.md](docs/README.md)。要件・ADR・Task・evidenceは今回の判断に必要なものだけ読む。進捗は既存Task、系統の実行経路は既存flow noteへ差分を更新する。
+- canonical state、outcome分類、複数の実行／書込経路を変える作業と構造的レビューには[体系レビューガイド](docs/guides/systematic-review-guidelines.md)を使う。forward／recovery、alternate path、productionにないschema-legal stateまで反証し、対象内のBlockingを残して完了としない。小さな文言修正に全体監査や記録を要求しない。
+- 通常作業は親が担当する。子は独立した読み取り専用調査1つまでとし、起動する場合は下記の実行効率要件を読む。
+- 検証commandと完了ゲートは[README](README.md)、長時間command・単独実行・session上限は[実行効率要件](docs/requirements/development-execution-efficiency-requirements.md)を参照する。成功済みの同条件の証拠を再利用する。
+- damage変更はcanonical inputとgoverning ruleで説明する。テスト成功だけでなく、変更に応じてproduction inventory、calculator／ranking parity、fail-closed、性能、要求されたUIの実経路を確認する。
 
-## Preserve architectural boundaries
-
-- The data pipeline alone interprets Atlas/raw vocabulary and emits canonical IR.
-- Application code owns scenario commands and user intent; execution code consumes canonical state and applies ordered, transactional operations.
-- Calculator and ranking must share the same application and execution path. Ranking policy may select scenarios, but must not implement its own damage semantics.
-- Web/UI code presents canonical state and dispatches commands; it must not infer game rules from IDs, names, or labels.
-
-## Keep execution single-agent and sessions bounded
-
-- One parent agent owns normal diagnosis, planning, implementation, test changes, test execution, integration, review handoff, and final verification. Do not delegate these activities to subagents.
-- A subagent is permitted only for a bounded, independent, read-only investigation whose result the parent can use without another delegated action. Its request must state the question, required paths, expected evidence note, and a credible time budget. If the parent cannot give that budget, it must reduce or perform the investigation itself.
-- A subagent must not edit files, stage or commit, create artifacts, run builds or tests, change external state, or approve/review its own implementation.
-- Before spawning an allowed subagent, the parent must state the independent question and why a single-agent investigation is insufficient. Give it only the paths, comparison boundary, and facts needed for that question; do not fork full conversation history.
-- Use at most one subagent at a time. The parent remains responsible for integrating evidence, making decisions, and performing every write and verification step.
-- An allowed subagent returns a concise evidence note: conclusion, uncertainty, and only the file/symbol references needed to support it. Do not transfer raw command output, full logs, or a restatement of repository instructions.
-- Finish all independent parent work before waiting. Treat `wait_agent` as a rendezvous, never as polling: wait once for twice the delegated time budget within the tool limits, because completion notifications end the wait early.
-- A `wait_agent` timeout is an over-budget outcome, not a reason to poll again. Stop or rescope the investigation, or complete it in the parent; never retry with a shorter timeout.
-- At 60 minutes, record one canonical checkpoint: current outcome, changed semantic family, verified evidence, and next action. At 90 minutes, do not start another subagent or semantic family; finish the current atomic action and hand off to a fresh session using that checkpoint.
-
-## Control complexity and test cost
-
-- Extend an existing responsibility or extract a focused module; do not move detail back into orchestrators or create packages without a clear ownership boundary.
-- Keep invalid and executable states distinct in the type system. Separate available actions, used inputs, and already-applied effects when time or state transitions matter.
-- Use small semantic fixtures for behavior and one shared production inventory/digest for full-data coverage. Do not reload, recompile, or recalculate the full master per case.
-- Measure affected production suites and hot paths before and after structural work. Treat unexplained test/runtime growth, candidate explosion, or relaxed complexity ratchets as design failures.
-
-## Work and verification discipline
-
-- Preserve unrelated user changes. Stage and commit only the requested files, and verify the staged diff explicitly.
-- Record intentional damage changes with canonical inputs and the governing semantic rule, not only snapshots of final numbers.
-- Do not claim completion from passing tests alone: confirm production inventory, calculator/ranking parity, fail-closed behavior, performance, and the requested UI invariants in proportion to the change.
-- Use `pnpm test:agent` for bounded output and `pnpm test:diagnostic -- <filter>` for verbose diagnosis. Long-running commands should wait at least 30 seconds between empty polls; inspect the referenced `.test-results/` artifact instead of replaying full logs.
-- Expand verification from `pnpm test:diagnostic -- <filter>` to `pnpm test:unit` or `pnpm test:production` as appropriate, then use `pnpm quality` as the only phase-completion gate. Do not append `validate:evidence` or another Vitest run to `quality`; its contracts are already in the production suite.
+CLAUDE.mdはこのファイルへのリンクとし、リポジトリ規約を二重管理しない。
