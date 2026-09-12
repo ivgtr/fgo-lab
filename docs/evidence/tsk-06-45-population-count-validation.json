@@ -1,0 +1,5828 @@
+{
+  "baseCommit": "dc87dc1221e55bf2753d76a089a16bd84346e1c9",
+  "workingTree": "verified before commit; implementation and evidence included in the commit containing this record; no other user changes at start",
+  "scope": "TSK-06.45 follow-up: target/individual count seven-profile slice remains incomplete; six baseline profiles connected and verified",
+  "quality": {
+    "manifest": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/manifest.json",
+    "sha256": "fe00bd727563f1f59147707bfe8b9fc36a54798010fb1fe725946e2b624e5da5",
+    "outcome": "success",
+    "suites": {
+      "unit": {
+        "counts": {
+          "files": {
+            "total": 104,
+            "passed": 104,
+            "failed": 0,
+            "skipped": 0
+          },
+          "tests": {
+            "total": 780,
+            "passed": 780,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "warnings": 0,
+          "unexpectedObservations": 0,
+          "allowedObservations": 0,
+          "correlatedObservations": 0,
+          "infrastructureObservations": 0
+        },
+        "durationMs": 9130,
+        "manifest": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/unit/manifest.json",
+        "sha256": "14c5d6208757f23e3a5a67552c93bafd08184fb3dd71c6d3332a4f7c1f0255d6"
+      },
+      "production": {
+        "counts": {
+          "files": {
+            "total": 24,
+            "passed": 24,
+            "failed": 0,
+            "skipped": 0
+          },
+          "tests": {
+            "total": 122,
+            "passed": 122,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0
+          },
+          "warnings": 0,
+          "unexpectedObservations": 0,
+          "allowedObservations": 0,
+          "correlatedObservations": 0,
+          "infrastructureObservations": 0
+        },
+        "durationMs": 38663,
+        "manifest": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/manifest.json",
+        "sha256": "638600729cd3f2d6987464b7d1fe2bf19b4e8953de18a71323e46e1bed0a97b7"
+      },
+      "playwright": {
+        "counts": {
+          "files": {
+            "total": 3,
+            "passed": 3,
+            "failed": 0,
+            "skipped": 0
+          },
+          "tests": {
+            "total": 26,
+            "passed": 26,
+            "failed": 0,
+            "skipped": 0,
+            "todo": 0,
+            "retries": 0,
+            "flaky": 0
+          },
+          "warnings": 0,
+          "unexpectedObservations": 0,
+          "allowedObservations": 87,
+          "correlatedObservations": 87,
+          "infrastructureObservations": 0
+        },
+        "durationMs": 121344,
+        "manifest": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/playwright/manifest.json",
+        "sha256": "8a93be240ad7f422272a8e5c5a20a914eaa14614df8ff6e2e20bc0f9aa1d0ad2"
+      }
+    }
+  },
+  "versions": {
+    "masterDataVersion": "20260913.10",
+    "masterSchemaVersion": 51,
+    "engineVersion": "41.0.0",
+    "portableSchemaVersion": 40
+  },
+  "masterSha256": "53a6d3d24c9e8bc4efdbe3eb2fc3dff8e825958f11f83ca50b0214b748983364",
+  "implementationSnapshot": {
+    "definition": "sorted current contents of changed tracked and untracked app/package/data/e2e/script files; docs excluded",
+    "files": [
+      {
+        "path": "apps/web/public/master/manifest.json",
+        "sha256": "71f15fc58c597c9917df3045028427cee99311c18df6e6cfb22641c6354e709d"
+      },
+      {
+        "path": "apps/web/public/master/master.json",
+        "sha256": "53a6d3d24c9e8bc4efdbe3eb2fc3dff8e825958f11f83ca50b0214b748983364"
+      },
+      {
+        "path": "apps/web/src/app/startup.test.ts",
+        "sha256": "104817f44af21742ea6c7990b6e32b639ae17604937f10736e0bbecdb541a22a"
+      },
+      {
+        "path": "apps/web/src/features/calculator/EffectInlineInput.tsx",
+        "sha256": "d4834f8eb91037d3a9ea0f1fd02259cd6a4895a0aeaa11cbccbbf5c72b0c5550"
+      },
+      {
+        "path": "apps/web/src/features/ranking/rankingResponsePayloadSchema.ts",
+        "sha256": "a692451c6efb0e16e2f042f4de431d25a5a585ea803194656c6d20a5fa7b4ac7"
+      },
+      {
+        "path": "e2e/assertions.json",
+        "sha256": "e7fe494ee15b0870dead832e3ee1894668a510b1e7cda684b8bde39ff625eccd"
+      },
+      {
+        "path": "e2e/calculator-baseline.spec.ts-snapshots/calculator-320px-mobile-chromium-linux.png",
+        "sha256": "14a0f8d11f31356c1941f9293eab55c8beaf690bf8cab7abafdbd0fb4f3a2a91"
+      },
+      {
+        "path": "e2e/calculator-baseline.spec.ts-snapshots/calculator-390px-mobile-chromium-linux.png",
+        "sha256": "75a488ae70da78de0e698ae47db068c7dde3f5118dfb0ff1c1c253fb73002aa4"
+      },
+      {
+        "path": "e2e/calculator-baseline.spec.ts-snapshots/calculator-desktop-chromium-linux.png",
+        "sha256": "f66cdc42e69dd1a3585f7839ca6297fe8abd69d86761656d3ab9432365c3ecdf"
+      },
+      {
+        "path": "e2e/expected-browser-events.json",
+        "sha256": "87cc642cbac3ef59a1235ae703095980cf1195765960327a7aee6be003bf3103"
+      },
+      {
+        "path": "e2e/ranking-baseline.spec.ts",
+        "sha256": "1f6295c01f95b944ad1c0bed8f0f6d92b1374732d6ff83b57418e18503fd3a61"
+      },
+      {
+        "path": "e2e/ranking-baseline.spec.ts-snapshots/ranking-desktop-chromium-linux.png",
+        "sha256": "8da45e0fbbb5585015903ddfe49ab47ced608deabc2c95f37e6bca207f102c55"
+      },
+      {
+        "path": "e2e/ranking-baseline.spec.ts-snapshots/ranking-detail-desktop-chromium-linux.png",
+        "sha256": "93a5cb43481b28c23be10051cba678b9b5eaecd4aa775e1cdb3ec436b77b0298"
+      },
+      {
+        "path": "packages/battle-execution/src/contracts.ts",
+        "sha256": "68ec6c0fd097c45df20a75d91daafa6a89d6e0270ad5846aa6697c97e12e882b"
+      },
+      {
+        "path": "packages/battle-execution/src/effectRouting.ts",
+        "sha256": "91f7dc62b73a340c5fc8666cad26c612463467abbe14e1d16dfb06e53d0c8aaa"
+      },
+      {
+        "path": "packages/battle-execution/src/index.ts",
+        "sha256": "6563d183880048da545ddf331d6186e0a244114f210dfc2114909314e851def7"
+      },
+      {
+        "path": "packages/battle-execution/src/npResource.ts",
+        "sha256": "75bd6e485f5048fbb161f21e62dda8078b5b5bd6eec21c5926b67594e8e84037"
+      },
+      {
+        "path": "packages/battle-execution/src/ocDependency.ts",
+        "sha256": "3c50dd00a3607b526f57845997d570f2e33f0fab5ae647f9a22fe65005107b22"
+      },
+      {
+        "path": "packages/battle-execution/src/ocResourceDependencies.ts",
+        "sha256": "1b9426bacce18fed3fef6051f77e16432447857b927c708b7bfefb843c81e991"
+      },
+      {
+        "path": "packages/battle-execution/src/ocSourceProgram.test.ts",
+        "sha256": "7ce8e929e26e1d829ff67e4f61b67675508b153819a8e183b7b44136b57b3eb0"
+      },
+      {
+        "path": "packages/battle-execution/src/operationCompiler.ts",
+        "sha256": "21e0e78f05129758b001841b32ffe5e72f1833b123f88e1a85f5bb4350101943"
+      },
+      {
+        "path": "packages/battle-execution/src/populationCounts.test.ts",
+        "sha256": "a35e7c285ef680cd995591db51fd5d5027b148c251e8fd7dea5594c0f61d3991"
+      },
+      {
+        "path": "packages/battle-execution/src/populationCounts.ts",
+        "sha256": "a3f95e27a5c688f33b2b7f8e797a6ac56096f7cb80268806f76227d65883cb3b"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationAttackNp.ts",
+        "sha256": "acf734858e11969033efa2a195fbfa24f44735e663f2737ada081f5c369e7131"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationContracts.ts",
+        "sha256": "61ac78fd864ed1b794048aea085bd8dc03df1a427c6bb16b214fd020b34c0f6e"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationOc.ts",
+        "sha256": "17a3a4c255230cb10e6916158e72df7ab2ebd645c32cbcbe3bb5de8f4ea1178c"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationPhases.ts",
+        "sha256": "a2f25015291c56164bbb60a820a82a3e3a52222e1a72a144a86a5c6d68ccf9de"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationResourcePlan.ts",
+        "sha256": "0527dff04d137bb7888092b7e791bc35638f412e02a23a0ac54cb67710039bba"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationSkillReducer.ts",
+        "sha256": "e895456cf27f5397e6a6df62e16a2da01f2a5d042657dda105fe66fe1e63f68c"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationState.ts",
+        "sha256": "bd0ce1aab370edc0442d0a5dab7da34077c2d633910ff6349cfe496b4530515a"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationTransaction.ts",
+        "sha256": "6416ab09a13c043ecb41199bcb787b4c00b27d026bb935006284a22f07eed64c"
+      },
+      {
+        "path": "packages/battle-execution/src/preparationTransformNpReducer.ts",
+        "sha256": "bb8555e3b55b1dd09f901ce04650f741fac79d283624ed93ca051349721fd326"
+      },
+      {
+        "path": "packages/battle-execution/src/resourceQueries.ts",
+        "sha256": "2cb18255bfab8ddc9a46a89cf804764f71d92e55a9541823da2922bacea9852f"
+      },
+      {
+        "path": "packages/battle-execution/src/sourceCollection.ts",
+        "sha256": "18bad14776d1c70041f2ede424e015143f25bb84de4e97d3827d0749561a614c"
+      },
+      {
+        "path": "packages/calculation-application/src/canonicalInputs.ts",
+        "sha256": "3ff3b963dfb782805854d9544d9928ba508273a6dad83c5a04929113057d92a9"
+      },
+      {
+        "path": "packages/calculation-application/src/evidence.ts",
+        "sha256": "e8d66dc7da3d7b7b1fbf77ebeda23b105849705604451d2701837ab492e7e6ca"
+      },
+      {
+        "path": "packages/calculation-application/src/executionBaselineInventory.test.ts",
+        "sha256": "368359304a8452e0e53f03f43205b4b123257a50e18ad2c5497a1b4ee840c9db"
+      },
+      {
+        "path": "packages/calculation-application/src/productionAudit.test.ts",
+        "sha256": "6a87e4d9d1706672bf16cfa76db29adb9faf5ffb9f77e150cbf72f8d9eaf73de"
+      },
+      {
+        "path": "packages/calculation-application/src/productionExecutionParity.test.ts",
+        "sha256": "1346ed4d2f9baa1c8ae6d87a9eed7d61a324a88284a14403b17d1288c1592dff"
+      },
+      {
+        "path": "packages/calculation-application/src/productionMasterAudit.test.ts",
+        "sha256": "c171cc57d8cb8800aba44819dc890267b2e6586332ea50705a80f2dc2ba7a943"
+      },
+      {
+        "path": "packages/calculation-application/src/productionMasterInventory.test.ts",
+        "sha256": "5326aec3864fe6ef2ae26440595f24b3c4bc3b9ef39b450175bb8bf580e2512f"
+      },
+      {
+        "path": "packages/calculation-application/src/rankingCandidateSpace.test.ts",
+        "sha256": "6f0837e40c70762df647d114ae6229d6ebf9e7bae87420c2922dbe689420ac69"
+      },
+      {
+        "path": "packages/calculation-application/src/rankingCandidateSpace.ts",
+        "sha256": "59fb25581f8d3608c167bf03d6e92fa3c40c6ad9aa6dadddbaaa5cbc56c472b6"
+      },
+      {
+        "path": "packages/calculation-application/src/rankingCanonicalInputs.ts",
+        "sha256": "07c8dfb6aa8a20ce9e3763573140025f77c24c21cb8e8e78f73768d0e3a7871f"
+      },
+      {
+        "path": "packages/calculation-application/src/rankingWorldWitness.test.ts",
+        "sha256": "696f3fbf01610fc74d7804d4290c6ca2890e1f326dbe4810857a005eca16bcd3"
+      },
+      {
+        "path": "packages/calculation-application/src/resourceProgramAudit.ts",
+        "sha256": "4cce91e1bb63c7281bfeeea2d2223681e3c8e0269e3bd50a1791a6534a501b62"
+      },
+      {
+        "path": "packages/calculation-application/src/scenario.ts",
+        "sha256": "e06d630f809002ffb57453f488df1fb276210930caf5f3627dd5e01514683e65"
+      },
+      {
+        "path": "packages/calculation-application/src/specialInputInventory.test.ts",
+        "sha256": "f02f4d46d52aec3460a1227fcf0599c9ec4f6cc8e261f8ea034dd41159b32c4c"
+      },
+      {
+        "path": "packages/calculation-application/src/stackPreparationSupport.test.ts",
+        "sha256": "afa5e86afc43a5173a99b8b57c8b99015b4755a745fa37336ef1bab4fdc87b6f"
+      },
+      {
+        "path": "packages/data-pipeline/src/artifact.ts",
+        "sha256": "26a01f0b0ff983120f1f9e596a27ae34921c60d97c18843c3cf6905f13fedcb7"
+      },
+      {
+        "path": "packages/data-pipeline/src/effectNormalization.ts",
+        "sha256": "d4690fb594ee4831fba95df6e75b3769b49bb0740a3f50b1378cba23fb5d411f"
+      },
+      {
+        "path": "packages/data-pipeline/src/executionSemantics.ts",
+        "sha256": "132c1e2a5c1dbd3ed1c59580d07ba09f767b1d577e3772cff928ca131d122be2"
+      },
+      {
+        "path": "packages/data-pipeline/src/executionSemanticsProduction.test.ts",
+        "sha256": "66caf0a368841b4a7c9ede53e6a758d26284eb115839baf51117182d88e3a1b9"
+      },
+      {
+        "path": "packages/data-pipeline/src/npPopulationNormalization.test.ts",
+        "sha256": "b72eb05e1246a421203151fa822b9d75a4fc24bacc1b120afa8dd8dcf262e643"
+      },
+      {
+        "path": "packages/data-pipeline/src/npPopulationNormalization.ts",
+        "sha256": "446a3d307b2ce8318f2a1bed6775e4bb64454bc1046afd3f52ba2e7869866ca5"
+      },
+      {
+        "path": "packages/data-pipeline/src/productionAudit.test.ts",
+        "sha256": "dddaed139cd04e62665efa26a6c1bd711719f4505c7a556d061e6233f128ef0c"
+      },
+      {
+        "path": "packages/data-pipeline/src/targetStateNormalization.ts",
+        "sha256": "95d10a889c165e89aca0c075a2488cbfe189d373660fc91c43e0a3f45c302961"
+      },
+      {
+        "path": "packages/master-data/src/index.ts",
+        "sha256": "838952b70664b8dac587e93a992997a32caf72a88e6b52acf4b1afab774ddaaa"
+      },
+      {
+        "path": "packages/schema/src/index.ts",
+        "sha256": "adb53804f3f57d26ffccde758a4dd83e4373ad4aad64df4dd91168f07819b2d3"
+      },
+      {
+        "path": "packages/test-fixtures/golden/external-differentials-v1.json",
+        "sha256": "d667336c1047963c10b1f188bc4d81450c9cd434a92b78fe9fd5dd5c8cb202bb"
+      },
+      {
+        "path": "packages/test-fixtures/golden/master-normalization-v1.json",
+        "sha256": "be8e850bf326ecb6014ac1b32e4cfd50001e8442c41a14ab0400e412d6144d12"
+      },
+      {
+        "path": "packages/test-fixtures/golden/mlb-only-effects-v1.json",
+        "sha256": "89c1b889b22f9dfb2f6eae3e8cf2095df39ab6cfb2fd0c439a893485279ba538"
+      },
+      {
+        "path": "packages/test-fixtures/golden/np-damage-v1.json",
+        "sha256": "2a41e3a18ebd87160cfba94a76837ae6b46afb5567e27a401ec7d480e56c2d23"
+      },
+      {
+        "path": "packages/test-fixtures/golden/np-functions-v1.json",
+        "sha256": "bbf507f2970287a93e03a1e166b644271e20a099e7479e2c81ba4b1aa38222f5"
+      },
+      {
+        "path": "packages/test-fixtures/golden/ordered-effect-execution-v1.json",
+        "sha256": "be13a09e542d52de5253a5c1594dbc3cc6cb90efbaf375e158354016593b29f7"
+      },
+      {
+        "path": "packages/test-fixtures/master/manifest.json",
+        "sha256": "5aff9eeb82b1284c56926e3c4a4efec02699c8746bd1dc98c2ae9dde78ac0bc2"
+      },
+      {
+        "path": "scripts/e2e-case-contract.test.mjs",
+        "sha256": "083cd38d81d44ee7d30bb8a5f808faaaf6c2865eb91d2b8f6539a100e5e9972b"
+      },
+      {
+        "path": "scripts/test-runner-lib.mjs",
+        "sha256": "99104c1eace0e32cdc266acc93b77960bbeb3ca6c7df0f86be188f434f5283c3"
+      }
+    ],
+    "digest": "14de0fcbd76fdc87457be1d6e9150fb4ecfdc4dcffce107b2becead4929eacdc"
+  },
+  "performance": {
+    "artifact": "docs/evidence/tsk-06-45-population-count-performance.json",
+    "sha256": "9231986b11d01046fc8d6686fc0b786c3c2bd77b953c0b18dce52d913a2602fd",
+    "beforeMedianMs": 3416.7629899999993,
+    "afterMedianMs": 3429.1588730000003,
+    "changePercent": 0.36279610368881166,
+    "note": "Same serial warmup plus three-sample command. Timing variation does not establish attribution. Performance diffHash covers tracked files; implementationSnapshot also covers untracked files."
+  },
+  "audit": {
+    "artifact": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/production-audit-calculation-application.json",
+    "sha256": "bfe0dcf7929f3635a67e06a6221e86399bde18b1600db2cc39bb39271a390965",
+    "digest": "61333dbfdcb568517949562b4a918b7bc14ef4047619f207af2e08463782a202",
+    "inventory": {
+      "attackServants": 422,
+      "attackProfiles": 433,
+      "preparationPlans": 3485,
+      "calculatorScenarios": 422,
+      "rankingRows": 421,
+      "rankingPolicy": "current-default",
+      "resourcePrograms": {
+        "programs": 7255,
+        "mutations": 15894,
+        "opaqueOperations": 54108,
+        "digest": "ab35680bea6f4c008b7c6d1366302b84a66744febb55d346ef0310378f304411"
+      },
+      "calculated": 420,
+      "inputRequired": 0,
+      "unsupported": 2,
+      "unavailable": 0,
+      "invalid": 0,
+      "levelStatAvailability": {
+        "naturalPairs": 422,
+        "naturalMissing": 0,
+        "level90Pairs": 422,
+        "level90Missing": 0,
+        "referencedPairs": 422,
+        "referencedMissing": 0,
+        "missing": []
+      }
+    },
+    "runtimeCounters": {
+      "masterReadCount": 1,
+      "masterParseCount": 1,
+      "compileCount": 1,
+      "candidateCount": 6467,
+      "deduplicatedCandidateCount": 4018,
+      "damageRequestCount": 2321,
+      "distinctDamageRequestCount": 1430
+    },
+    "remainingRanking": [
+      {
+        "servantId": "105900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "204300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "204900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "204900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "304000",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "403600",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "405700",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "502600",
+        "reason": "unsupported:candidateExecutionUnsupported"
+      },
+      {
+        "servantId": "705300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "1102300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "2500400",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servantId": "2501400",
+        "reason": "unsupported:unsupportedActionAdmission"
+      }
+    ]
+  },
+  "acceptance": {
+    "definition": "Seven profiles: baseline NP1/2/5 (21) plus NP2 four policies (28); accepted results replayed through calculator and portable. Unsupported outcomes are recorded, not counted as closure.",
+    "artifact": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/population-count-acceptance.json",
+    "sha256": "8c9e9c32a1d8274e2a1423a191c4cdfa1670f43f97fcb468327b5f8732ce5111",
+    "records": [
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 1,
+        "status": "calculated",
+        "input": {
+          "attackerId": "106200",
+          "attackerLevel": 80,
+          "attackerAtk": 9735,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 1,
+          "overcharge": 1,
+          "npMultipliers": [
+            900,
+            1200,
+            1350,
+            1425,
+            1500
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "traitCount",
+            "ignoreDefense": true
+          },
+          "cardType": "arts",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.3,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 33798,
+            "average": 37534.975,
+            "maximum": 41272
+          },
+          {
+            "npLevel": 2,
+            "minimum": 45065,
+            "average": 50046.8,
+            "maximum": 55029
+          },
+          {
+            "npLevel": 3,
+            "minimum": 50698,
+            "average": 56302.705,
+            "maximum": 61908
+          },
+          {
+            "npLevel": 4,
+            "minimum": 53514,
+            "average": 59430.675,
+            "maximum": 65347
+          },
+          {
+            "npLevel": 5,
+            "minimum": 56331,
+            "average": 62558.62,
+            "maximum": 68786
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "status": "calculated",
+        "input": {
+          "attackerId": "106200",
+          "attackerLevel": 80,
+          "attackerAtk": 9735,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 2,
+          "overcharge": 1,
+          "npMultipliers": [
+            900,
+            1200,
+            1350,
+            1425,
+            1500
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "traitCount",
+            "ignoreDefense": true
+          },
+          "cardType": "arts",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.3,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 33798,
+            "average": 37534.975,
+            "maximum": 41272
+          },
+          {
+            "npLevel": 2,
+            "minimum": 45065,
+            "average": 50046.8,
+            "maximum": 55029
+          },
+          {
+            "npLevel": 3,
+            "minimum": 50698,
+            "average": 56302.705,
+            "maximum": 61908
+          },
+          {
+            "npLevel": 4,
+            "minimum": 53514,
+            "average": 59430.675,
+            "maximum": 65347
+          },
+          {
+            "npLevel": 5,
+            "minimum": 56331,
+            "average": 62558.62,
+            "maximum": 68786
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 5,
+        "status": "calculated",
+        "input": {
+          "attackerId": "106200",
+          "attackerLevel": 80,
+          "attackerAtk": 9735,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 5,
+          "overcharge": 1,
+          "npMultipliers": [
+            900,
+            1200,
+            1350,
+            1425,
+            1500
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "traitCount",
+            "ignoreDefense": true
+          },
+          "cardType": "arts",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.3,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 33798,
+            "average": 37534.975,
+            "maximum": 41272
+          },
+          {
+            "npLevel": 2,
+            "minimum": 45065,
+            "average": 50046.8,
+            "maximum": 55029
+          },
+          {
+            "npLevel": 3,
+            "minimum": 50698,
+            "average": 56302.705,
+            "maximum": 61908
+          },
+          {
+            "npLevel": 4,
+            "minimum": 53514,
+            "average": 59430.675,
+            "maximum": 65347
+          },
+          {
+            "npLevel": 5,
+            "minimum": 56331,
+            "average": 62558.62,
+            "maximum": 68786
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "106200",
+        "profile": {
+          "id": {
+            "servantLineageId": "106200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "106200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2460450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2459550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2461450"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "34450",
+                  "88350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "classSaber",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "riding",
+                  "saberClassServant",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "106200",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "106201"
+          },
+          "noblePhantasmVariantCanonicalId": "c740c04db7d5aef6270d4a5284d7c6618ef31faf3cdf844d23aa707cfc312852",
+          "targetScope": "single",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 1,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306000",
+          "attackerLevel": 80,
+          "attackerAtk": 9944,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 1,
+          "overcharge": 1,
+          "npMultipliers": [
+            450,
+            600,
+            675,
+            712.5,
+            750
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          },
+          "cardType": "arts",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0,
+          "defenseBuff": 0,
+          "cardBuff": 0.36,
+          "cardResistance": 0,
+          "npDamageBuff": 0.2,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 17469,
+            "average": 19399.81,
+            "maximum": 21331
+          },
+          {
+            "npLevel": 2,
+            "minimum": 23292,
+            "average": 25866.58,
+            "maximum": 28442
+          },
+          {
+            "npLevel": 3,
+            "minimum": 26203,
+            "average": 29099.965,
+            "maximum": 31997
+          },
+          {
+            "npLevel": 4,
+            "minimum": 27659,
+            "average": 30716.66,
+            "maximum": 33775
+          },
+          {
+            "npLevel": 5,
+            "minimum": 29115,
+            "average": 32333.35,
+            "maximum": 35552
+          }
+        ],
+        "inputs": {
+          "population:allies:additional": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:count:%7B%22scope%22%3A%22otherActors%22%2C%22counting%22%3A%22actors%22%2C%22basis%22%3A%22actorTraits%22%2C%22traits%22%3A%5B%22illya%22%5D%2C%22includePassive%22%3Atrue%7D": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:enemies:additional": {
+            "kind": "integer",
+            "value": 0
+          }
+        },
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306000",
+          "attackerLevel": 80,
+          "attackerAtk": 9944,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 2,
+          "overcharge": 1,
+          "npMultipliers": [
+            450,
+            600,
+            675,
+            712.5,
+            750
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          },
+          "cardType": "arts",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0,
+          "defenseBuff": 0,
+          "cardBuff": 0.36,
+          "cardResistance": 0,
+          "npDamageBuff": 0.2,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 17469,
+            "average": 19399.81,
+            "maximum": 21331
+          },
+          {
+            "npLevel": 2,
+            "minimum": 23292,
+            "average": 25866.58,
+            "maximum": 28442
+          },
+          {
+            "npLevel": 3,
+            "minimum": 26203,
+            "average": 29099.965,
+            "maximum": 31997
+          },
+          {
+            "npLevel": 4,
+            "minimum": 27659,
+            "average": 30716.66,
+            "maximum": 33775
+          },
+          {
+            "npLevel": 5,
+            "minimum": 29115,
+            "average": 32333.35,
+            "maximum": 35552
+          }
+        ],
+        "inputs": {
+          "population:allies:additional": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:count:%7B%22scope%22%3A%22otherActors%22%2C%22counting%22%3A%22actors%22%2C%22basis%22%3A%22actorTraits%22%2C%22traits%22%3A%5B%22illya%22%5D%2C%22includePassive%22%3Atrue%7D": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:enemies:additional": {
+            "kind": "integer",
+            "value": 0
+          }
+        },
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 5,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306000",
+          "attackerLevel": 80,
+          "attackerAtk": 9944,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 5,
+          "overcharge": 1,
+          "npMultipliers": [
+            450,
+            600,
+            675,
+            712.5,
+            750
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          },
+          "cardType": "arts",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0,
+          "defenseBuff": 0,
+          "cardBuff": 0.36,
+          "cardResistance": 0,
+          "npDamageBuff": 0.2,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 17469,
+            "average": 19399.81,
+            "maximum": 21331
+          },
+          {
+            "npLevel": 2,
+            "minimum": 23292,
+            "average": 25866.58,
+            "maximum": 28442
+          },
+          {
+            "npLevel": 3,
+            "minimum": 26203,
+            "average": 29099.965,
+            "maximum": 31997
+          },
+          {
+            "npLevel": 4,
+            "minimum": 27659,
+            "average": 30716.66,
+            "maximum": 33775
+          },
+          {
+            "npLevel": 5,
+            "minimum": 29115,
+            "average": 32333.35,
+            "maximum": 35552
+          }
+        ],
+        "inputs": {
+          "population:allies:additional": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:count:%7B%22scope%22%3A%22otherActors%22%2C%22counting%22%3A%22actors%22%2C%22basis%22%3A%22actorTraits%22%2C%22traits%22%3A%5B%22illya%22%5D%2C%22includePassive%22%3Atrue%7D": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:enemies:additional": {
+            "kind": "integer",
+            "value": 0
+          }
+        },
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {
+          "population:allies:additional": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:count:%7B%22scope%22%3A%22otherActors%22%2C%22counting%22%3A%22actors%22%2C%22basis%22%3A%22actorTraits%22%2C%22traits%22%3A%5B%22illya%22%5D%2C%22includePassive%22%3Atrue%7D": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:enemies:additional": {
+            "kind": "integer",
+            "value": 0
+          }
+        }
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {
+          "population:allies:additional": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:count:%7B%22scope%22%3A%22otherActors%22%2C%22counting%22%3A%22actors%22%2C%22basis%22%3A%22actorTraits%22%2C%22traits%22%3A%5B%22illya%22%5D%2C%22includePassive%22%3Atrue%7D": {
+            "kind": "integer",
+            "value": 0
+          },
+          "population:enemies:additional": {
+            "kind": "integer",
+            "value": 0
+          }
+        }
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306000",
+        "profile": {
+          "id": {
+            "servantLineageId": "306000",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306000",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2538450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2539551"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2540650"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2537551",
+                  "288550",
+                  "34450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "childServant",
+                  "classLancer",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "livingHuman",
+                  "servant",
+                  "standardClassServant",
+                  "summerModeServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306000",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "306001"
+          },
+          "noblePhantasmVariantCanonicalId": "10cf79eb32aa3bfad1cfe13cc89556e86d934b39943a8f805d2322d9652d673b",
+          "targetScope": "all",
+          "cardType": "arts",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 1,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306200",
+          "attackerLevel": 90,
+          "attackerAtk": 12154,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 1,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.2,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 48168,
+            "average": 53493.625,
+            "maximum": 58819
+          },
+          {
+            "npLevel": 2,
+            "minimum": 64225,
+            "average": 71325.01,
+            "maximum": 78425
+          },
+          {
+            "npLevel": 3,
+            "minimum": 72253,
+            "average": 80240.69,
+            "maximum": 88229
+          },
+          {
+            "npLevel": 4,
+            "minimum": 76267,
+            "average": 84698.54,
+            "maximum": 93130
+          },
+          {
+            "npLevel": 5,
+            "minimum": 80281,
+            "average": 89156.39,
+            "maximum": 98032
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 2,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306200",
+          "attackerLevel": 90,
+          "attackerAtk": 12154,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 2,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.2,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 48168,
+            "average": 53493.625,
+            "maximum": 58819
+          },
+          {
+            "npLevel": 2,
+            "minimum": 64225,
+            "average": 71325.01,
+            "maximum": 78425
+          },
+          {
+            "npLevel": 3,
+            "minimum": 72253,
+            "average": 80240.69,
+            "maximum": 88229
+          },
+          {
+            "npLevel": 4,
+            "minimum": 76267,
+            "average": 84698.54,
+            "maximum": 93130
+          },
+          {
+            "npLevel": 5,
+            "minimum": 80281,
+            "average": 89156.39,
+            "maximum": 98032
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 5,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306200",
+          "attackerLevel": 90,
+          "attackerAtk": 12154,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 5,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.2,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 48168,
+            "average": 53493.625,
+            "maximum": 58819
+          },
+          {
+            "npLevel": 2,
+            "minimum": 64225,
+            "average": 71325.01,
+            "maximum": 78425
+          },
+          {
+            "npLevel": 3,
+            "minimum": 72253,
+            "average": 80240.69,
+            "maximum": 88229
+          },
+          {
+            "npLevel": 4,
+            "minimum": 76267,
+            "average": 84698.54,
+            "maximum": 93130
+          },
+          {
+            "npLevel": 5,
+            "minimum": 80281,
+            "average": 89156.39,
+            "maximum": 98032
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "unsupported",
+        "reason": "unsupportedFiniteDomain"
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 3
+            },
+            "noblePhantasmId": "306204"
+          },
+          "noblePhantasmVariantCanonicalId": "2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第3再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 1,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306200",
+          "attackerLevel": 90,
+          "attackerAtk": 12154,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 1,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.1,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 44154,
+            "average": 49035.785,
+            "maximum": 53917
+          },
+          {
+            "npLevel": 2,
+            "minimum": 58872,
+            "average": 65381.215,
+            "maximum": 71890
+          },
+          {
+            "npLevel": 3,
+            "minimum": 66232,
+            "average": 73553.93,
+            "maximum": 80876
+          },
+          {
+            "npLevel": 4,
+            "minimum": 69911,
+            "average": 77640.29,
+            "maximum": 85369
+          },
+          {
+            "npLevel": 5,
+            "minimum": 73591,
+            "average": 81726.65,
+            "maximum": 89863
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 2,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306200",
+          "attackerLevel": 90,
+          "attackerAtk": 12154,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 2,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.1,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 44154,
+            "average": 49035.785,
+            "maximum": 53917
+          },
+          {
+            "npLevel": 2,
+            "minimum": 58872,
+            "average": 65381.215,
+            "maximum": 71890
+          },
+          {
+            "npLevel": 3,
+            "minimum": 66232,
+            "average": 73553.93,
+            "maximum": 80876
+          },
+          {
+            "npLevel": 4,
+            "minimum": 69911,
+            "average": 77640.29,
+            "maximum": 85369
+          },
+          {
+            "npLevel": 5,
+            "minimum": 73591,
+            "average": 81726.65,
+            "maximum": 89863
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 5,
+        "status": "calculated",
+        "input": {
+          "attackerId": "306200",
+          "attackerLevel": 90,
+          "attackerAtk": 12154,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 5,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1.05,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.3,
+          "cardResistance": 0,
+          "npDamageBuff": 0.1,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 44154,
+            "average": 49035.785,
+            "maximum": 53917
+          },
+          {
+            "npLevel": 2,
+            "minimum": 58872,
+            "average": 65381.215,
+            "maximum": 71890
+          },
+          {
+            "npLevel": 3,
+            "minimum": 66232,
+            "average": 73553.93,
+            "maximum": 80876
+          },
+          {
+            "npLevel": 4,
+            "minimum": 69911,
+            "average": 77640.29,
+            "maximum": 85369
+          },
+          {
+            "npLevel": 5,
+            "minimum": 73591,
+            "average": 81726.65,
+            "maximum": 89863
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "unsupported",
+        "reason": "unsupportedFiniteDomain"
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "306200",
+        "profile": {
+          "id": {
+            "servantLineageId": "306200",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "306200",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2570650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2571650"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2572550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "20650",
+                  "34550"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "classLancer",
+                  "dragon",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "306200",
+              "limitCount": 1
+            },
+            "noblePhantasmId": "306201"
+          },
+          "noblePhantasmVariantCanonicalId": "7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": "第1・第2再臨"
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 1,
+        "status": "unsupported",
+        "reason": "candidateExecutionUnsupported"
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "status": "unsupported",
+        "reason": "candidateExecutionUnsupported"
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 5,
+        "status": "unsupported",
+        "reason": "candidateExecutionUnsupported"
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "unsupported",
+        "reason": "candidateExecutionUnsupported"
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "unsupported",
+        "reason": "unsupportedFiniteDomain"
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "502600",
+        "profile": {
+          "id": {
+            "servantLineageId": "502600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "502600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2218650"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "106550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "944550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "80550",
+                  "83450"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "attributeHuman",
+                  "canBeInBattle",
+                  "classCaster",
+                  "dragon",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "levitating",
+                  "servant",
+                  "standardClassServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "502600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "502602"
+          },
+          "noblePhantasmVariantCanonicalId": "b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115",
+          "targetScope": "all",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 1,
+        "status": "calculated",
+        "input": {
+          "attackerId": "1001800",
+          "attackerLevel": 90,
+          "attackerAtk": 11220,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 1,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          },
+          "cardType": "quick",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.5,
+          "defenseBuff": 0,
+          "cardBuff": 0.5,
+          "cardResistance": 0,
+          "npDamageBuff": 0,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [
+            "buffNegativeEffect",
+            "buffNegativeEffect"
+          ],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 27319,
+            "average": 30338.81,
+            "maximum": 33359
+          },
+          {
+            "npLevel": 2,
+            "minimum": 36425,
+            "average": 40451.91,
+            "maximum": 44479
+          },
+          {
+            "npLevel": 3,
+            "minimum": 40978,
+            "average": 45508.455,
+            "maximum": 50039
+          },
+          {
+            "npLevel": 4,
+            "minimum": 43255,
+            "average": 48036.735,
+            "maximum": 52819
+          },
+          {
+            "npLevel": 5,
+            "minimum": 45531,
+            "average": 50565,
+            "maximum": 55599
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 3,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "status": "calculated",
+        "input": {
+          "attackerId": "1001800",
+          "attackerLevel": 90,
+          "attackerAtk": 11220,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 2,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          },
+          "cardType": "quick",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.5,
+          "defenseBuff": 0,
+          "cardBuff": 0.5,
+          "cardResistance": 0,
+          "npDamageBuff": 0,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [
+            "buffNegativeEffect",
+            "buffNegativeEffect"
+          ],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 27319,
+            "average": 30338.81,
+            "maximum": 33359
+          },
+          {
+            "npLevel": 2,
+            "minimum": 36425,
+            "average": 40451.91,
+            "maximum": 44479
+          },
+          {
+            "npLevel": 3,
+            "minimum": 40978,
+            "average": 45508.455,
+            "maximum": 50039
+          },
+          {
+            "npLevel": 4,
+            "minimum": 43255,
+            "average": 48036.735,
+            "maximum": 52819
+          },
+          {
+            "npLevel": 5,
+            "minimum": 45531,
+            "average": 50565,
+            "maximum": 55599
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 3,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 5,
+        "status": "calculated",
+        "input": {
+          "attackerId": "1001800",
+          "attackerLevel": 90,
+          "attackerAtk": 11220,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 5,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          },
+          "cardType": "quick",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.5,
+          "defenseBuff": 0,
+          "cardBuff": 0.5,
+          "cardResistance": 0,
+          "npDamageBuff": 0,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [
+            "buffNegativeEffect",
+            "buffNegativeEffect"
+          ],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 27319,
+            "average": 30338.81,
+            "maximum": 33359
+          },
+          {
+            "npLevel": 2,
+            "minimum": 36425,
+            "average": 40451.91,
+            "maximum": 44479
+          },
+          {
+            "npLevel": 3,
+            "minimum": 40978,
+            "average": 45508.455,
+            "maximum": 50039
+          },
+          {
+            "npLevel": 4,
+            "minimum": 43255,
+            "average": 48036.735,
+            "maximum": 52819
+          },
+          {
+            "npLevel": 5,
+            "minimum": 45531,
+            "average": 50565,
+            "maximum": 55599
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 3,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "unsupported",
+        "reason": "unsupportedFiniteDomain"
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "1001800",
+        "profile": {
+          "id": {
+            "servantLineageId": "1001800",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "1001800",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2421550"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2422550"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2423550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "2420550",
+                  "34550",
+                  "348150",
+                  "83650"
+                ],
+                "intrinsicTraits": [
+                  "alignmentGood",
+                  "alignmentLawful",
+                  "attributeEarth",
+                  "canBeInBattle",
+                  "childServant",
+                  "classAlterEgo",
+                  "fae",
+                  "fiveStarServant",
+                  "genderFemale",
+                  "hasCostume",
+                  "humanoid",
+                  "mechanical",
+                  "sakuraSeries",
+                  "servant",
+                  "skyOrEarthExceptPseudoAndDemiServant",
+                  "skyOrEarthServant",
+                  "weakToEnumaElish"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "1001800",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "1001801"
+          },
+          "noblePhantasmVariantCanonicalId": "378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200",
+          "targetScope": "all",
+          "cardType": "quick",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 1,
+        "status": "calculated",
+        "input": {
+          "attackerId": "2501600",
+          "attackerLevel": 80,
+          "attackerAtk": 9603,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 1,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "traitExpression",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.36,
+          "cardResistance": 0,
+          "npDamageBuff": 0.1,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 35461,
+            "average": 39381.22,
+            "maximum": 43302
+          },
+          {
+            "npLevel": 2,
+            "minimum": 47281,
+            "average": 52508.47,
+            "maximum": 57736
+          },
+          {
+            "npLevel": 3,
+            "minimum": 53191,
+            "average": 59072.1,
+            "maximum": 64953
+          },
+          {
+            "npLevel": 4,
+            "minimum": 56147,
+            "average": 62353.91,
+            "maximum": 68561
+          },
+          {
+            "npLevel": 5,
+            "minimum": 59102,
+            "average": 65635.705,
+            "maximum": 72170
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "status": "calculated",
+        "input": {
+          "attackerId": "2501600",
+          "attackerLevel": 80,
+          "attackerAtk": 9603,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 2,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "traitExpression",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.36,
+          "cardResistance": 0,
+          "npDamageBuff": 0.1,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 35461,
+            "average": 39381.22,
+            "maximum": 43302
+          },
+          {
+            "npLevel": 2,
+            "minimum": 47281,
+            "average": 52508.47,
+            "maximum": 57736
+          },
+          {
+            "npLevel": 3,
+            "minimum": 53191,
+            "average": 59072.1,
+            "maximum": 64953
+          },
+          {
+            "npLevel": 4,
+            "minimum": 56147,
+            "average": 62353.91,
+            "maximum": 68561
+          },
+          {
+            "npLevel": 5,
+            "minimum": 59102,
+            "average": 65635.705,
+            "maximum": 72170
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 5,
+        "status": "calculated",
+        "input": {
+          "attackerId": "2501600",
+          "attackerLevel": 80,
+          "attackerAtk": 9603,
+          "fouAtk": 1000,
+          "craftEssenceId": null,
+          "craftEssenceAtk": 0,
+          "npLevel": 5,
+          "overcharge": 1,
+          "npMultipliers": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ],
+          "damageFunction": {
+            "status": "resolved",
+            "kind": "traitExpression",
+            "ignoreDefense": false
+          },
+          "cardType": "buster",
+          "classAttackRate": 1,
+          "classAffinity": 1,
+          "attributeAffinity": 1,
+          "attackBuff": 0.2,
+          "defenseBuff": 0,
+          "cardBuff": 0.36,
+          "cardResistance": 0,
+          "npDamageBuff": 0.1,
+          "npResistance": 0,
+          "powerMod": 0,
+          "eventDamageBuff": 0,
+          "npSpecialMultipliers": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "specialDamageBuff": 0,
+          "specialResistance": 0,
+          "flatDamage": 0,
+          "damageCut": 0,
+          "ignoreDamageCut": false,
+          "fieldTraits": [],
+          "attackerStateTraits": [],
+          "attackerHpPermille": 1000,
+          "targetRarity": null,
+          "targetStateTraits": [],
+          "battlePointPhase": 0,
+          "target": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 35461,
+            "average": 39381.22,
+            "maximum": 43302
+          },
+          {
+            "npLevel": 2,
+            "minimum": 47281,
+            "average": 52508.47,
+            "maximum": 57736
+          },
+          {
+            "npLevel": 3,
+            "minimum": 53191,
+            "average": 59072.1,
+            "maximum": 64953
+          },
+          {
+            "npLevel": 4,
+            "minimum": 56147,
+            "average": 62353.91,
+            "maximum": 68561
+          },
+          {
+            "npLevel": 5,
+            "minimum": 59102,
+            "average": 65635.705,
+            "maximum": 72170
+          }
+        ],
+        "inputs": {},
+        "plan": [
+          {
+            "kind": "useSkillSlot",
+            "slot": 1,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "useSkillSlot",
+            "slot": 2,
+            "skillLevel": 10,
+            "choice": null
+          },
+          {
+            "kind": "executeAttackNoblePhantasm"
+          }
+        ]
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "status": "unsupported",
+        "reason": "unsupportedFiniteDomain"
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "baseline",
+        "status": "calculated",
+        "inputs": {}
+      },
+      {
+        "id": "2501600",
+        "profile": {
+          "id": {
+            "servantLineageId": "2501600",
+            "terminalActorFormProfileId": {
+              "servantLineageId": "2501600",
+              "semantics": {
+                "skillSlots": [
+                  {
+                    "slot": 1,
+                    "skillVariantId": "2408450"
+                  },
+                  {
+                    "slot": 2,
+                    "skillVariantId": "2164450"
+                  },
+                  {
+                    "slot": 3,
+                    "skillVariantId": "2410550"
+                  }
+                ],
+                "passiveVariantIds": [
+                  "331551",
+                  "34450",
+                  "434250",
+                  "54350"
+                ],
+                "intrinsicTraits": [
+                  "alignmentChaotic",
+                  "alignmentEvil",
+                  "arthur",
+                  "attributeStar",
+                  "canBeInBattle",
+                  "canFlyInSpace",
+                  "classForeigner",
+                  "dragon",
+                  "existenceOutsideTheDomain",
+                  "fourStarServant",
+                  "genderFemale",
+                  "hominidaeServant",
+                  "humanoid",
+                  "king",
+                  "knightsOfTheRound",
+                  "saberface",
+                  "servant",
+                  "summerModeServant"
+                ],
+                "baseNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+                "reachableAttackNoblePhantasmVariantCanonicalIds": [
+                  "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+                ]
+              }
+            },
+            "attackNoblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c"
+          },
+          "noblePhantasmVariant": {
+            "actorFormId": {
+              "actorId": "2501600",
+              "limitCount": 0
+            },
+            "noblePhantasmId": "2501601"
+          },
+          "noblePhantasmVariantCanonicalId": "7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c",
+          "targetScope": "single",
+          "cardType": "buster",
+          "terminalFormLabel": null
+        },
+        "npLevel": 2,
+        "selfBuffs": "excluded",
+        "conditionalEffects": "satisfied",
+        "status": "calculated",
+        "inputs": {}
+      }
+    ]
+  },
+  "unmet": [
+    "502600: per-target prior function outcome to conditional marker to count",
+    "NP2 satisfied/included: candidate cap for 306200 x2, 502600, 1001800, 2501600; cap4096 unchanged",
+    "Remaining TSK-06.45 marker/admission, transfer, HP/BP, full policy/owned/recovery/UI closure"
+  ],
+  "next": "Reduce duplicate generation in U3-Q using the recorded policy/NP evidence, preserve fail-closed outcomes and cap4096, then close the remaining 502600 count path; keep the existing Task and checkpoint authoritative."
+}

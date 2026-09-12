@@ -82,7 +82,6 @@ const expectedUnresolvedDamageSemantics = {
     DependFunc: 6,
     DependFuncId: 6,
     DependFuncVals: 6,
-    GainNpTargetPassiveIndividuality: 5,
   },
   scripts: {},
 } as const;
@@ -658,7 +657,11 @@ describe('production master inventory ratchet', () => {
         (effect) => effect.controllability === 'automatic' && effect.visibility === 'visible',
       ).length,
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
-    }).toEqual({ user: 1_588, automaticVisible: 0, hidden: 5_686 });
+    }).toEqual({
+      automaticVisible: 0,
+      hidden: 5714,
+      user: 1589,
+    });
     expect(
       allProjections.filter(
         (effect) => effect.visibility === 'hidden' && effect.controllability === 'user',

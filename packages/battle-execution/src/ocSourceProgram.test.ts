@@ -1,3 +1,4 @@
+import { populationGaugeHasOneTerminalOc } from './ocResourceDependencies';
 import { DEFAULT_NP_RESOURCE_SEMANTICS } from './npResource';
 import { effectReadsOc, ocRelevantSourceIndexes } from './ocDependency';
 import { describe, expect, it } from 'vitest';
@@ -883,3 +884,91 @@ it.each(['hp', 'criticalStars', 'battlePoint'] as const)(
     }
   },
 );
+
+describe('population candidate OC equivalence', () => {
+  const context = {
+    semantics: DEFAULT_NP_RESOURCE_SEMANTICS,
+    npLevel: 2 as const,
+    initialGauge: 10000,
+  };
+  function countSource(coefficient: number): SourceEffect {
+    const current = source();
+    current.effect.execution = [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: {
+          kind: 'populationCount',
+          selector: {
+            scope: 'enemies',
+            counting: 'actors',
+            basis: 'actorTraits',
+            traits: ['counted'],
+            includePassive: true,
+          },
+          inputKey: 'count',
+          values: [[coefficient], [], [], [], []],
+        },
+      },
+    ];
+    return current;
+  }
+  it('collapses only a proven terminal OC interval, including capacity saturation', () => {
+    expect(populationGaugeHasOneTerminalOc([countSource(1000)], context)).toBe(true);
+    expect(populationGaugeHasOneTerminalOc([countSource(5000)], context)).toBe(false);
+    expect(populationGaugeHasOneTerminalOc([countSource(5000)], { ...context, npLevel: 1 })).toBe(
+      true,
+    );
+    const fixed = source();
+    fixed.effect.execution = [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
+      },
+    ];
+    expect(populationGaugeHasOneTerminalOc([countSource(5000), fixed], context)).toBe(true);
+    fixed.effect.proc = { kind: 'singleRoll', ratePermille: [[500], [], [], [], []] };
+    expect(populationGaugeHasOneTerminalOc([countSource(5000), fixed], context)).toBe(false);
+  });
+  it('refuses disabled, other-source, loss, and unknown population writers', () => {
+    const count = countSource(1000);
+    expect(populationGaugeHasOneTerminalOc([{ ...count, sourceEnabled: false }], context)).toBe(
+      false,
+    );
+    expect(populationGaugeHasOneTerminalOc([{ ...count, origin: 'support' }], context)).toBe(false);
+    const loss = source();
+    loss.effect.execution = [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'loss',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
+      },
+    ];
+    expect(populationGaugeHasOneTerminalOc([count, loss], context)).toBe(false);
+    const writer = source();
+    writer.effect.execution = [
+      {
+        kind: 'populationMutation',
+        mutation: 'unsupported',
+        scope: 'enemies',
+        basis: 'actorTraits',
+        traits: ['counted'],
+        includePassive: false,
+      },
+    ];
+    expect(populationGaugeHasOneTerminalOc([writer, count], context)).toBe(false);
+  });
+});

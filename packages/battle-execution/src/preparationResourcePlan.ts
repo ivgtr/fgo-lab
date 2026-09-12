@@ -12,6 +12,8 @@ import { resolveTargetPolicy, resolveResourceTargetPolicy } from './effectRoutin
 import type { SourceEffect } from './sourceCollection';
 import type { PreparationEffectActivation } from './preparationTransaction';
 import { countBuffInstances, type CountedBuffInstance } from './buffInstances';
+import { readPopulationCount, type PopulationEvent } from './populationCounts';
+import type { ConditionEvaluationState } from './condition';
 
 type Operation = MasterEffect['execution'][number];
 
@@ -27,6 +29,7 @@ function selectedNpMutation(
   operation: Operation,
   valueSetIndex: number,
   instances: readonly CountedBuffInstance[],
+  population?: { facts: ConditionEvaluationState; events: readonly PopulationEvent[] },
 ): NpResourceMutation | null {
   if (
     operation.kind === 'unsupported' &&
@@ -55,6 +58,21 @@ function selectedNpMutation(
     return { kind: 'unsupported', family: 'unboundBuffCountInput' };
   const values = source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values;
   const amount = values?.[valueSetIndex]?.[source.valueIndex];
+  if (operation.amount.kind === 'populationCount') {
+    if (!population) return { kind: 'unsupported', family: 'missingPopulationState' };
+    const count = readPopulationCount({
+      ...population,
+      selector: operation.amount.selector,
+      inputKey: operation.amount.inputKey,
+      values: population.facts.resolvedInputValues,
+    });
+    return count === null
+      ? { kind: 'unsupported', family: 'unresolvedPopulationCount' }
+      : {
+          kind: 'gain',
+          amount: amount === null || amount === undefined ? Number.NaN : amount * count,
+        };
+  }
   const selected =
     operation.amount.kind === 'buffCount' && amount !== null && amount !== undefined
       ? amount * countBuffInstances(instances, operation.amount.trait, recipient)
@@ -79,13 +97,20 @@ export function applyPreparationNpOperation(args: {
   activation: PreparationEffectActivation | undefined;
   valueSetIndex: number;
   buffInstances: readonly CountedBuffInstance[];
+  population?: { facts: ConditionEvaluationState; events: readonly PopulationEvent[] } | undefined;
 }): PreparationSourceResourceResult {
   const { initial, source, operation, activation, valueSetIndex } = args;
   const unchanged = { status: 'applied' as const, state: initial, baseOvercharge: null };
   if (!effectExecutesInNpProgram(source.effect)) return unchanged;
   if (activation?.procOutcome === 'failure' || activation?.conditionOutcome === false)
     return unchanged;
-  const mutation = selectedNpMutation(source, operation, valueSetIndex, args.buffInstances);
+  const mutation = selectedNpMutation(
+    source,
+    operation,
+    valueSetIndex,
+    args.buffInstances,
+    args.population,
+  );
   if (!mutation) return unchanged;
   const probe = applyNpResourceTransaction(args.semantics, initial, {
     requirement: null,

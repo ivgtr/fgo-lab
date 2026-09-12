@@ -6,7 +6,7 @@ updated_at: "2026-09-13"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dの限定接続と83b4db2の採用方針を基点に、攻撃NP buff count2profileの入力・共通実行・回復を接続・検証済み。HP数値3件はChaldea参照契約を採用済み。下記2026-09-09のdeltaは既存の調査根拠を保持する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dの限定接続と83b4db2の採用方針を基点に、攻撃NP buff count2profileは検証済み。dc87dc1からtarget/individual countを継続し、通常ranking421/433。7profile単位は未完了。HP数値3件はChaldea参照契約を採用済み。下記2026-09-09のdeltaは既存の調査根拠を保持する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -441,6 +441,30 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 単発3標本の揺れを含むため原因不明の増加を許容済みとはしない。量query収集のallocationと再測定を後続で確認する。
 
 ### canonical checkpoint（2026-09-13、フォローアップ）
+
+**`dc87dc1`からの継続差分は検証済み。7profile単位とTSK全体は未完了**。開始時clean。保存済みquality manifest、published master、攻撃buff count差分/性能artifactと、`git diff --binary 83b4db2 dc87dc1 -- apps packages data/raw e2e scripts`のSHA256は下記の記録に一致した。再計画・before全件再実行は行っていない。
+U2-D.countの残るtarget count3／individual count4を受入対象に、recipientと計数scope、人数と一致数、初期入力とlive readをtyped IRへ分離。共通NP/OC transactionへpopulation更新を保持し、失敗時rollback・入力修復を接続している。通常条件6profileのNP1/2/5、calculator/ranking/portable parityは成功。7profile単位の終了gateは未達。
+
+| 継続で判明した未達 | 現状／次の操作 |
+| --- | --- |
+| 502600のmarker | `add_state.dart`の負Rateは直前の対象別function成功に依存する。20887もhappyHalloween条件付き。集計値を全対象への無条件付与へ読み替えずunsupportedを維持。対象別解除結果からmarkerへの経路を接続する必要がある |
+| 条件成立側の全program候補 | 初期populationの矛盾組合せを生成前に除外し、NP容量飽和とterminal OC不変を共通executionの証明で削減中。cap4096は不変。残る上限超過はU3-Qの未達であり、通常条件の対応数だけで隠さない |
+| 全件・回復・性能 | 小型68件とproductionの49条件記録を検証。UIでinputRequired後に人数欄が消える問題を検出し、transactionの回復metadataをskill/NP/初期・定数phaseへ共通に伝播。最終quality成功（unit780/production122/E2E26、warning・unexpected console・retry0）。実画面で人数修正→結果→保存→再読込→resetを確認 |
+
+今回の直接経路レビューはdata pipeline→canonical input/operation→application command→preparation transaction→result/portable/UI。producerはraw Value2/trait/buff語彙をcanonical selectorへ変換し、applicationとUIはraw IDから規則を推定しない。
+
+- forward: 対象人数とindividualityの多重度、recipient除外、全cohort付与後のlive read、NP容量/OCを小型fixtureで確認。productionは7profile×NP1/2/5の通常条件21件と、NP2×4policyの28件（計49記録）を採取し、成功したranking条件をcalculator/portableへ再実行。
+- recovery: 不整合入力は`inputRequired`、小数shapeはinvalid、未束縛/条件付きwriterはunsupportedを区別。途中失敗はpopulation/NP/OCをrollback。失敗sourceの入力定義を回復metadataへ保持し、skill/attack NP/transform NP/初期・定数phaseから同じapplication処理へ渡す。
+- 反例: 未知metadata、scope変動、負selector、actor/buff混在、有限使用回数、部分cohort overlap、buff identity経由の特性解除、disabled/別source/NP lossを含むOC候補削減を拒否。対象別条件が不明なcohort writerは、局所条件がfalseでも全対象不成立へ読み替えない。初期特性の抑制と後からのstate付与も分けて確認。
+- 未達Blocking: 502600の対象別function成功に依存するmarkerと、成立込み5profileの全program候補上限。これらを残した7profile単位/Task全体は未完了。次の操作はU3-Qの候補生成の重複を解消し、同じpolicy/NP条件で再検証すること。cap緩和とunsupported候補の数値化は行わない。
+
+差分は[population count delta](tsk-06-45-population-count-delta.json)、同一commandの3回計測は[performance](tsk-06-45-population-count-performance.json)、固定参照は[NP count source](tsk-06-45-np-count-source.json)へ保持する。master20260913.10/schema51、engine41.0.0、portable schema40（保存shape不変）。855件を同じNP refへ対応付け、未照合0。既存数値差は306000のNP威力0→20%のみ、ranking6profileはunsupported→calculated、502600は拒否理由の分類変更。候補6419→6467、dedup3994→4018、damage request2232→2321、distinct1404→1430。ranking中央値3416.76→3429.16ms（+0.36%）。候補増加を伴う測定差として記録し、時間差のすべてを特定処理へ帰属させない。
+
+最終quality: `.test-results/2026-09-12T18-48-08-385Z-16-f49268/manifest.json`（SHA256 `fe00bd727563f1f59147707bfe8b9fc36a54798010fb1fe725946e2b624e5da5`）、277.33s。unit780/production122/E2E26、warning/console/retry0。production suiteはbefore41.362→38.663s。[validation artifact](tsk-06-45-population-count-validation.json)に49条件、最新audit/manifestのhash、変更したtracked/untracked実装ファイルのcontent digest `14de0fcbd76fdc87457be1d6e9150fb4ecfdc4dcffce107b2becead4929eacdc`を保持。性能scriptのdiffHashはtracked差分のみなので、新規実装ファイルはこのcontent digestで補完する。quality後の変更はTask/本checkpointとJSON証跡のみで、文書検証だけを実行する。利用者のコミット依頼により、今回の実装・証跡・Task/本checkpointを本記録を含む実装commitへ収録する。
+
+次回はこの最終qualityをbeforeとして再利用し、U3-QのNP2成立込み5profile→502600の対象別marker経路の順に同じcount単位を継続する。通常6profileの成功、7profile単位の終了、TSK全体のDone gateを別々に判定する。
+
+以下は`dc87dc1`までの完了済み証跡と採用契約。
 
 **参考実装の採用（2026-09-13利用者承認、現在の判断）**。
 Chaldeaの該当実装を参考仕様としてTSK-06.45の未確定resource処理を閉じる。

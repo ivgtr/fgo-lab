@@ -5,6 +5,7 @@ import {
   actorFormIdSchema,
   canonicalInputDefinitionSchema,
   canonicalInputBaseSchema,
+  populationCountSelectorSchema,
   masterEffectSchema,
   noblePhantasmVariantRefSchema,
   ocLifetimeLimitSchema,
@@ -147,6 +148,7 @@ const effectInputSchema = z.object({
   section: z.enum(['own', 'support']),
   relatedProjectionKeys: z.array(z.string()),
   relatedEffectLabels: z.array(z.string()),
+  populationSelector: populationCountSelectorSchema.optional(),
 });
 const resourceSchema = z.object({
   npLevel: rankingNpLevelSchema,

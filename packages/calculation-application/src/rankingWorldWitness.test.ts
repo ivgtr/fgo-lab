@@ -494,7 +494,10 @@ describe('ranking target witness completeness', () => {
     expect({
       conditions: inventory.length,
       servants: new Set(inventory.map(({ servant: candidateServant }) => candidateServant.id)).size,
-    }).toEqual({ conditions: 13_415, servants: 206 });
+    }).toEqual({
+      conditions: 13426,
+      servants: 206,
+    });
     const canonicalDefaultProvenance = inventory.filter(({ condition }) =>
       conditionLeaves(condition).some(
         (leaf) =>
@@ -508,7 +511,10 @@ describe('ranking target witness completeness', () => {
       negativeTraits: canonicalDefaultProvenance.filter(({ condition }) =>
         conditionLeaves(condition).some((leaf) => leaf.kind === 'trait' && !leaf.present),
       ).length,
-    }).toEqual({ conditions: 1_732, negativeTraits: 49 });
+    }).toEqual({
+      conditions: 1743,
+      negativeTraits: 49,
+    });
     const productionNegative = inventory.filter(({ condition }) =>
       JSON.stringify(condition).includes('superGiant'),
     );

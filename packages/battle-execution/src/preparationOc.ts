@@ -1,4 +1,6 @@
 import { isBuffCountInput, projectBuffInstanceCounts } from './buffInstances';
+import { populationInputIssue } from './populationCounts';
+import { resolveResourceTargetPolicy } from './effectRouting';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { applyBuffInstanceMutation } from './buffInstances';
 import { servantBuffCountInputs } from './stackQuantities';
@@ -236,6 +238,56 @@ export function executePreparationOc(args: {
     const firstStep = steps.length;
     let ocIndex = 0;
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
+      if (operation.kind === 'populationMutation') {
+        steps.push(() => {
+          const outcome = activation.get(source.effect);
+          // A local false predicate cannot prove that an opaque cohort writer missed every actor.
+          const unresolvedCohort =
+            operation.mutation === 'unsupported' &&
+            operation.scope !== 'recipient' &&
+            operation.scope !== 'target' &&
+            source.sourceEnabled &&
+            outcome?.procOutcome !== 'failure';
+          if (!sourceApplies && !unresolvedCohort)
+            return { kind: 'skip', outcome: 'notApplicable' };
+          const event =
+            outcome?.conditionOutcome === true
+              ? operation
+              : { ...operation, mutation: 'unsupported' as const };
+          current = {
+            ...current,
+            populationEvents: [
+              ...current.populationEvents,
+              {
+                operation: event,
+                source: { origin: source.origin, sourceInstanceId: source.sourceInstanceId },
+              },
+            ],
+          };
+          // fieldOther has an explicit population scope; the current NP target is one member.
+          if (
+            operation.scope === 'otherActors' &&
+            operation.basis === 'actorTraits' &&
+            operation.mutation === 'grant' &&
+            outcome?.conditionOutcome === true &&
+            ['attacker', 'np', 'passive', 'craftEssence'].includes(source.origin)
+          ) {
+            const counts = { ...current.stackCounts.targetState };
+            const traits = new Set(current.stateTraits.targetState);
+            for (const trait of operation.traits) {
+              counts[trait] = (counts[trait] ?? 0) + 1;
+              traits.add(trait);
+            }
+            current = {
+              ...current,
+              stackCounts: { ...current.stackCounts, targetState: counts },
+              stateTraits: { ...current.stateTraits, targetState: traits },
+            };
+          }
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
       if (operation.kind === 'buffInstanceMutation') {
         if (!readsBuffMutation(operation)) continue;
         steps.push(() => {
@@ -276,6 +328,36 @@ export function executePreparationOc(args: {
           const receipt = args.npUse
             ? ocState.receipts.find(({ actionId }) => actionId === args.actionId)
             : null;
+          if (
+            sourceApplies &&
+            operation.kind === 'resourceMutation' &&
+            resolveResourceTargetPolicy(source.origin, operation.recipient) === 'attacker' &&
+            operation.amount.kind === 'populationCount'
+          ) {
+            const facts = currentFacts();
+            if (!facts)
+              return { kind: 'reject', status: 'invalid', reason: 'invalidPopulationFacts' };
+            if (
+              current.uncertainContextWrites.some(
+                (write) =>
+                  operation.amount.kind === 'populationCount' &&
+                  operation.amount.selector.traits.includes(write.trait),
+              )
+            )
+              return { kind: 'reject', status: 'unsupported', reason: 'unresolvedPopulationWrite' };
+            const issue = populationInputIssue(
+              source.effect.inputDefinitions,
+              facts.resolvedInputValues,
+            );
+            if (issue) {
+              requiredInput = issue;
+              return {
+                kind: 'reject',
+                status: 'inputRequired',
+                reason: 'preparationPopulationInput',
+              };
+            }
+          }
           const resource = applyPreparationNpOperation({
             semantics: args.context.resourceSemantics,
             initial: current.npResource,
@@ -284,6 +366,9 @@ export function executePreparationOc(args: {
             activation: activation.get(source.effect),
             valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
             buffInstances: current.buffInstances,
+            population: currentFacts()
+              ? { facts: currentFacts()!, events: current.populationEvents }
+              : undefined,
           });
           if (resource.status === 'rejected') {
             resourceOutcome.failure = resource;
@@ -487,6 +572,19 @@ export function executePreparationOc(args: {
         ? requiredInput
         : null,
     occurrenceId,
+    recoveryInputDefinitions:
+      result.status === 'inputRequired' && requiredInput
+        ? [
+            ...new Map(
+              sources
+                .filter((source) =>
+                  source.effect.inputDefinitions.some((input) => input.key === requiredInput?.key),
+                )
+                .flatMap((source) => source.effect.inputDefinitions)
+                .map((input) => [input.key, input]),
+            ).values(),
+          ]
+        : [],
     structuralState: result.status === 'committed' ? current : args.state,
     inputDefinitions: [...inputDefinitions.values()],
     activation,

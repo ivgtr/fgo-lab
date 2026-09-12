@@ -293,6 +293,7 @@ export type ScenarioPreparationOutcome =
       status: 'rejected';
       rejection: NonNullable<ResolvedCalculationInput['preparationRejection']>;
       requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
+      recoveryInputDefinitions?: readonly CanonicalInputDefinition[];
       appliedPreparationActions: readonly AppliedPreparationAction[];
     }
   | {
@@ -419,6 +420,9 @@ export function resolveScenarioPreparationOutcome(
       status: 'rejected',
       rejection,
       requiredInputs: [...formExecution.requiredInputs],
+      ...(formExecution.recoveryInputDefinitions
+        ? { recoveryInputDefinitions: formExecution.recoveryInputDefinitions }
+        : {}),
       appliedPreparationActions: formExecution.actions,
     };
   }
@@ -606,7 +610,14 @@ function rejectedPreparationResolvedInput(
     effects: [],
     effectiveContributions: { contributions: [], effectivePresentationGroupIds: new Set() },
     requiredInputs: [...outcome.requiredInputs],
-    inputDefinitions: [...outcome.requiredInputs],
+    inputDefinitions: [
+      ...new Map(
+        [...(outcome.recoveryInputDefinitions ?? []), ...outcome.requiredInputs].map((input) => [
+          input.key,
+          input,
+        ]),
+      ).values(),
+    ],
     activationRequirements: [],
     appliedPreparationActions: outcome.appliedPreparationActions,
     targetStateTraitsAtDamage: [],
@@ -794,6 +805,7 @@ function evaluateResolvedCalculation(
     scenario.mode === 'resolved'
       ? createEffectInputViewModels({
           definitions: resolved.inputDefinitions,
+          recovering: resolved.status === 'rejected',
           effects: resolved.effects,
           requiredInputs: resolved.requiredInputs,
           explicitValues: scenario.canonicalInputValues,
@@ -876,6 +888,7 @@ export function projectPreparedCalculationScenario(
     scenario.mode === 'resolved'
       ? createEffectInputViewModels({
           definitions: resolved.inputDefinitions,
+          recovering: resolved.status === 'rejected',
           effects: resolved.effects,
           requiredInputs: resolved.requiredInputs,
           explicitValues: scenario.canonicalInputValues,

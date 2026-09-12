@@ -1,0 +1,1288 @@
+{
+  "before": ".test-results/2026-09-12T16-51-55-415Z-16-b067b5/production/production-audit-calculation-application.json",
+  "after": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/production-audit-calculation-application.json",
+  "join": "ranking profile canonical NP identities mapped to sorted physical NP refs from the matching master; calculator servant identity",
+  "matched": 855,
+  "unmatchedBefore": 0,
+  "unmatchedAfter": 0,
+  "changes": [
+    {
+      "kind": "calculator",
+      "id": "306000",
+      "before": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 29115,
+            "average": 32333.35,
+            "maximum": 35552
+          },
+          {
+            "npLevel": 2,
+            "minimum": 38820,
+            "average": 43111.305,
+            "maximum": 47403
+          },
+          {
+            "npLevel": 3,
+            "minimum": 43672,
+            "average": 48500.275,
+            "maximum": 53329
+          },
+          {
+            "npLevel": 4,
+            "minimum": 46098,
+            "average": 51194.76,
+            "maximum": 56291
+          },
+          {
+            "npLevel": 5,
+            "minimum": 48525,
+            "average": 53889.245,
+            "maximum": 59254
+          }
+        ]
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 34938,
+            "average": 38800.12,
+            "maximum": 42663
+          },
+          {
+            "npLevel": 2,
+            "minimum": 46584,
+            "average": 51733.68,
+            "maximum": 56884
+          },
+          {
+            "npLevel": 3,
+            "minimum": 52407,
+            "average": 58200.435,
+            "maximum": 63994
+          },
+          {
+            "npLevel": 4,
+            "minimum": 55318,
+            "average": 61433.815,
+            "maximum": 67550
+          },
+          {
+            "npLevel": 5,
+            "minimum": 58230,
+            "average": 64667.2,
+            "maximum": 71105
+          }
+        ]
+      },
+      "inputChanges": {
+        "npDamageBuff": {
+          "before": 0,
+          "after": 0.2
+        }
+      }
+    },
+    {
+      "kind": "ranking",
+      "id": "106200",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 33798,
+            "average": 37534.975,
+            "maximum": 41272
+          },
+          {
+            "npLevel": 2,
+            "minimum": 45065,
+            "average": 50046.8,
+            "maximum": 55029
+          },
+          {
+            "npLevel": 3,
+            "minimum": 50698,
+            "average": 56302.705,
+            "maximum": 61908
+          },
+          {
+            "npLevel": 4,
+            "minimum": 53514,
+            "average": 59430.675,
+            "maximum": 65347
+          },
+          {
+            "npLevel": 5,
+            "minimum": 56331,
+            "average": 62558.62,
+            "maximum": 68786
+          }
+        ]
+      },
+      "inputChanges": {
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 9735
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0.3
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 80
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "attackerId": {
+          "before": null,
+          "after": "106200"
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "cardType": {
+          "before": null,
+          "after": "arts"
+        },
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            900,
+            1200,
+            1350,
+            1425,
+            1500
+          ]
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "traitCount",
+            "ignoreDefense": true
+          }
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.3
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      }
+    },
+    {
+      "kind": "ranking",
+      "id": "306000",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 17469,
+            "average": 19399.81,
+            "maximum": 21331
+          },
+          {
+            "npLevel": 2,
+            "minimum": 23292,
+            "average": 25866.58,
+            "maximum": 28442
+          },
+          {
+            "npLevel": 3,
+            "minimum": 26203,
+            "average": 29099.965,
+            "maximum": 31997
+          },
+          {
+            "npLevel": 4,
+            "minimum": 27659,
+            "average": 30716.66,
+            "maximum": 33775
+          },
+          {
+            "npLevel": 5,
+            "minimum": 29115,
+            "average": 32333.35,
+            "maximum": 35552
+          }
+        ]
+      },
+      "inputChanges": {
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 9944
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1.05
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0.2
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 80
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "attackerId": {
+          "before": null,
+          "after": "306000"
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "cardType": {
+          "before": null,
+          "after": "arts"
+        },
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            450,
+            600,
+            675,
+            712.5,
+            750
+          ]
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          }
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.36
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      }
+    },
+    {
+      "kind": "ranking",
+      "id": "306200",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 48168,
+            "average": 53493.625,
+            "maximum": 58819
+          },
+          {
+            "npLevel": 2,
+            "minimum": 64225,
+            "average": 71325.01,
+            "maximum": 78425
+          },
+          {
+            "npLevel": 3,
+            "minimum": 72253,
+            "average": 80240.69,
+            "maximum": 88229
+          },
+          {
+            "npLevel": 4,
+            "minimum": 76267,
+            "average": 84698.54,
+            "maximum": 93130
+          },
+          {
+            "npLevel": 5,
+            "minimum": 80281,
+            "average": 89156.39,
+            "maximum": 98032
+          }
+        ]
+      },
+      "inputChanges": {
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0.2
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 12154
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1.05
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0.2
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 90
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "attackerId": {
+          "before": null,
+          "after": "306200"
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "cardType": {
+          "before": null,
+          "after": "buster"
+        },
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ]
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          }
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.3
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      }
+    },
+    {
+      "kind": "ranking",
+      "id": "306200",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 44154,
+            "average": 49035.785,
+            "maximum": 53917
+          },
+          {
+            "npLevel": 2,
+            "minimum": 58872,
+            "average": 65381.215,
+            "maximum": 71890
+          },
+          {
+            "npLevel": 3,
+            "minimum": 66232,
+            "average": 73553.93,
+            "maximum": 80876
+          },
+          {
+            "npLevel": 4,
+            "minimum": 69911,
+            "average": 77640.29,
+            "maximum": 85369
+          },
+          {
+            "npLevel": 5,
+            "minimum": 73591,
+            "average": 81726.65,
+            "maximum": 89863
+          }
+        ]
+      },
+      "inputChanges": {
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0.2
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 12154
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1.05
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0.1
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 90
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "attackerId": {
+          "before": null,
+          "after": "306200"
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "cardType": {
+          "before": null,
+          "after": "buster"
+        },
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ]
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "trait",
+            "ignoreDefense": false
+          }
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.3
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      }
+    },
+    {
+      "kind": "ranking",
+      "id": "502600",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "unsupported",
+        "reason": "candidateExecutionUnsupported"
+      },
+      "inputChanges": {}
+    },
+    {
+      "kind": "ranking",
+      "id": "1001800",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 27319,
+            "average": 30338.81,
+            "maximum": 33359
+          },
+          {
+            "npLevel": 2,
+            "minimum": 36425,
+            "average": 40451.91,
+            "maximum": 44479
+          },
+          {
+            "npLevel": 3,
+            "minimum": 40978,
+            "average": 45508.455,
+            "maximum": 50039
+          },
+          {
+            "npLevel": 4,
+            "minimum": 43255,
+            "average": 48036.735,
+            "maximum": 52819
+          },
+          {
+            "npLevel": 5,
+            "minimum": 45531,
+            "average": 50565,
+            "maximum": 55599
+          }
+        ]
+      },
+      "inputChanges": {
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0.5
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 11220
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 90
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": [
+            "buffNegativeEffect",
+            "buffNegativeEffect"
+          ]
+        },
+        "attackerId": {
+          "before": null,
+          "after": "1001800"
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "cardType": {
+          "before": null,
+          "after": "quick"
+        },
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ]
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          }
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.5
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      }
+    },
+    {
+      "kind": "ranking",
+      "id": "2501600",
+      "before": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "after": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 35461,
+            "average": 39381.22,
+            "maximum": 43302
+          },
+          {
+            "npLevel": 2,
+            "minimum": 47281,
+            "average": 52508.47,
+            "maximum": 57736
+          },
+          {
+            "npLevel": 3,
+            "minimum": 53191,
+            "average": 59072.1,
+            "maximum": 64953
+          },
+          {
+            "npLevel": 4,
+            "minimum": 56147,
+            "average": 62353.91,
+            "maximum": 68561
+          },
+          {
+            "npLevel": 5,
+            "minimum": 59102,
+            "average": 65635.705,
+            "maximum": 72170
+          }
+        ]
+      },
+      "inputChanges": {
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0.2
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 9603
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0.1
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 80
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "attackerId": {
+          "before": null,
+          "after": "2501600"
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "cardType": {
+          "before": null,
+          "after": "buster"
+        },
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ]
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "traitExpression",
+            "ignoreDefense": false
+          }
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.36
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      }
+    }
+  ]
+}

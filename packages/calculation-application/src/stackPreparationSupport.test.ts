@@ -864,3 +864,209 @@ describe('live preparation stack reads', () => {
     }
   });
 });
+
+describe('population count through shared preparation transaction', () => {
+  function populationFixture() {
+    const data = structuredClone(fixture('targetState', 'addTrait').data);
+    const actor = data.servants[0]!;
+    const selector = {
+      scope: 'allActors' as const,
+      counting: 'actors' as const,
+      basis: 'actorTraits' as const,
+      traits: ['fixture-stack'],
+      includePassive: true,
+    };
+    const inputKey = 'population:fixture';
+    const definitions = [
+      ...(['allies', 'enemies'] as const).map((side) => ({
+        kind: 'populationSize' as const,
+        side,
+        key: `population:${side}:additional`,
+        owner: 'field' as const,
+        label: side,
+        description: side,
+        minimum: 0,
+        maximum: 2,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'none',
+      })),
+      {
+        kind: 'populationCount' as const,
+        selector,
+        key: inputKey,
+        owner: 'field' as const,
+        label: 'matches',
+        description: 'initial external matches',
+        minimum: 0,
+        maximum: 4,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'none',
+      },
+    ];
+    actor.skills[0]!.effects[0]!.execution = [
+      {
+        kind: 'populationMutation',
+        mutation: 'grant',
+        basis: 'actorTraits',
+        scope: 'otherActors',
+        traits: ['fixture-stack'],
+        includePassive: false,
+      },
+    ];
+    actor.skills[1]!.effects[0]!.requirement = {
+      recipient: 'sourceSelf',
+      expression: { kind: 'always' },
+    };
+    actor.skills[1]!.effects[0]!.inputDefinitions = definitions;
+    actor.skills[1]!.effects[0]!.execution = [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        recipient: 'sourceSelf',
+        unit: 'fixed',
+        subjectId: null,
+        amount: { kind: 'populationCount', selector, inputKey, values: [[5000], [], [], [], []] },
+      },
+    ];
+    masterSnapshotSchema.parse(data);
+    const context = {
+      resourceSemantics: data.npResourceSemantics,
+      npLevel: 5 as const,
+      overcharge: 1 as const,
+      initialGauge: 10000,
+      canonicalInputValues: {
+        'population:allies:additional': 1,
+        'population:enemies:additional': 1,
+        [inputKey]: 0,
+      },
+    };
+    const initial = createPreNoblePhantasmState(
+      actor,
+      actor.actorFormGraph.defaultInitialFormId,
+      context,
+    );
+    if (initial.status !== 'applied') throw new Error(initial.code);
+    return { data, actor, context, initial: initial.state, inputKey };
+  }
+  it('commits a field-wide grant, reads live matching actors, and consumes the resulting NP/OC', () => {
+    const { actor, context, initial } = populationFixture();
+    const grant = reducePreNoblePhantasmAction(
+      actor,
+      initial,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    if (grant.status !== 'applied') throw new Error(grant.code);
+    expect(grant.state.populationEvents).toHaveLength(1);
+    expect(grant.state.stackCounts.targetState['fixture-stack']).toBe(1);
+    const gain = reducePreNoblePhantasmAction(
+      actor,
+      grant.state,
+      { kind: 'useSkillSlot', slot: 2, skillLevel: 1, choice: null },
+      context,
+    );
+    if (gain.status !== 'applied') throw new Error(gain.code);
+    expect(gain.state.npResource.gauge).toBe(25000);
+    const attack = reducePreNoblePhantasmAction(
+      actor,
+      gain.state,
+      { kind: 'executeAttackNoblePhantasm' },
+      context,
+    );
+    if (attack.status !== 'applied') throw new Error(attack.code);
+    expect(attack.state.baseOvercharge).toBe(2);
+    expect(attack.state.npResource.gauge).toBe(0);
+    expect(initial.populationEvents).toHaveLength(0);
+  });
+  it('returns a repairable inconsistent population and preserves the prior command on retry', () => {
+    const { actor, context, initial, inputKey } = populationFixture();
+    const command = {
+      kind: 'useSkillSlot' as const,
+      slot: 2 as const,
+      skillLevel: 1,
+      choice: null,
+    };
+    const bad = {
+      ...context,
+      canonicalInputValues: { ...context.canonicalInputValues, [inputKey]: 3 },
+    };
+    const failed = reducePreNoblePhantasmAction(actor, initial, command, bad);
+    expect(failed).toMatchObject({
+      status: 'rejected',
+      code: 'preparationInputRequired',
+      requiredInput: { key: inputKey },
+    });
+    if (failed.status !== 'rejected') throw new Error('rejection');
+    expect(failed.state).toBe(initial);
+    const retry = reducePreNoblePhantasmAction(actor, failed.state, command, context);
+    expect(retry.status).toBe('applied');
+  });
+  it('retains an opaque cohort writer when a local condition is false', () => {
+    const { actor, context, initial } = populationFixture();
+    const writer = actor.skills[0]!.effects[0]!;
+    writer.inputDefinitions = actor.skills[1]!.effects[0]!.inputDefinitions;
+    writer.requirement.expression = {
+      kind: 'inputQuantity',
+      inputKey: 'population:allies:additional',
+      comparison: 'equal',
+      value: 2,
+    };
+    writer.execution = [
+      {
+        kind: 'populationMutation',
+        mutation: 'unsupported',
+        scope: 'otherActors',
+        basis: 'actorTraits',
+        traits: ['fixture-stack'],
+        includePassive: false,
+      },
+    ];
+    const grant = reducePreNoblePhantasmAction(
+      actor,
+      initial,
+      { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
+      context,
+    );
+    if (grant.status !== 'applied') throw new Error(grant.code);
+    expect(grant.state.populationEvents).toHaveLength(1);
+    const gain = reducePreNoblePhantasmAction(
+      actor,
+      grant.state,
+      { kind: 'useSkillSlot', slot: 2, skillLevel: 1, choice: null },
+      context,
+    );
+    expect(gain).toMatchObject({ status: 'rejected', code: 'unsupportedResourceMutation' });
+    if (gain.status !== 'rejected') throw new Error('opaque count');
+    expect(gain.state).toBe(grant.state);
+  });
+  it('rolls back a later resource failure including the count receipt and retries the same skill', () => {
+    const { actor, context, initial } = populationFixture();
+    const effect = actor.skills[1]!.effects[0]!;
+    effect.execution.push({
+      kind: 'resourceMutation',
+      resource: 'npGauge',
+      direction: 'gain',
+      recipient: 'sourceSelf',
+      unit: 'fixed',
+      subjectId: null,
+      amount: { kind: 'dependent', reason: 'dependentTargetResult' },
+    });
+    const command = {
+      kind: 'useSkillSlot' as const,
+      slot: 2 as const,
+      skillLevel: 1,
+      choice: null,
+    };
+    const failed = reducePreNoblePhantasmAction(actor, initial, command, context);
+    expect(failed).toMatchObject({ status: 'rejected', code: 'unsupportedResourceMutation' });
+    if (failed.status !== 'rejected') throw new Error('rejection');
+    expect(failed.state).toBe(initial);
+    effect.execution.pop();
+    expect(reducePreNoblePhantasmAction(actor, failed.state, command, context).status).toBe(
+      'applied',
+    );
+  });
+});

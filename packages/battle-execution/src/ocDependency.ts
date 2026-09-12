@@ -170,6 +170,18 @@ export function ocRelevantSourceIndexes(
         }
         if (operation.kind === 'contextMutation' && condition) relevant.add(index);
         if (
+          operation.kind === 'populationMutation' &&
+          sources.some((source) =>
+            source.effects.some((effect) =>
+              effect.execution.some(
+                (reader) =>
+                  reader.kind === 'resourceMutation' && reader.amount.kind === 'populationCount',
+              ),
+            ),
+          )
+        )
+          relevant.add(index);
+        if (
           operation.kind === 'resourceMutation' &&
           operation.amount.kind === 'buffCount' &&
           relevant.has(index)

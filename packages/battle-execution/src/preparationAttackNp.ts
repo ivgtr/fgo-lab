@@ -46,6 +46,7 @@ export function prepareAttackNoblePhantasm(
       resource.code,
       resource.requiredInput,
       resource.requiredInputEffectOccurrenceId,
+      resource.recoveryInputDefinitions,
     );
   return {
     status: 'applied',
@@ -53,6 +54,7 @@ export function prepareAttackNoblePhantasm(
       ...state,
       terminated: true,
       npResource: resource.resource.state,
+      populationEvents: resource.populationEvents,
       buffInstances: resource.buffInstances,
       ...resource.contextState,
       ocState: resource.ocState,

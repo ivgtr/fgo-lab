@@ -1,3 +1,4 @@
+import { traitLabel } from './traitPresentation';
 import type { EffectInputViewModel } from '@fgo-lab/calculation-application';
 
 function displayedValue(input: EffectInputViewModel, value: number): number {
@@ -84,6 +85,9 @@ export function EffectInlineInput({
             ＋
           </button>
         </div>
+      )}
+      {input.populationSelector && (
+        <small>対象特性: {input.populationSelector.traits.map(traitLabel).join('・')}</small>
       )}
       <small>{input.invalid ? '入力範囲を確認してください。' : input.description}</small>
       {input.explicit && input.defaultValue !== null ? (

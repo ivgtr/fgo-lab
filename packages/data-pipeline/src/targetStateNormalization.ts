@@ -11,6 +11,10 @@ import { functionReachesDamageModifier, normalizeTargetPolicy } from './executio
 const STATE_GRANT_FUNCTIONS = new Set(['addState', 'addStateShort']);
 
 export interface DamageReachableStateCatalog {
+  readonly populationTraitGrantSelectors?: ReadonlyMap<string, readonly string[]>;
+  readonly populationReadTraits?: ReadonlySet<string>;
+  readonly populationBuffTraits?: ReadonlySet<string>;
+  readonly populationIntrinsicTraits?: ReadonlySet<string>;
   readonly countedBuffMaximums?: ReadonlyMap<string, number>;
   readonly countedBuffTraits?: ReadonlySet<string>;
   readonly countedBuffDefinitions?: ReadonlyMap<string, readonly string[]>;
@@ -133,6 +137,49 @@ export function collectDamageReachableStateCatalog(
     ...functions.flatMap((fn) => noblePhantasmDamageTraits(fn, traitNameById)),
   ]);
   const permanentTraits = permanentTraitIdentities(input.servants, traitNameById);
+  const populationReadTraits = new Set(
+    functions
+      .filter((fn) => ['gainNpTargetSum', 'gainNpIndividualSum'].includes(fn.funcType ?? ''))
+      .flatMap((fn) =>
+        (fn.traitVals ?? []).flatMap((trait) => {
+          const name = stateMutationTraitName(trait, traitNameById);
+          return name ? [name] : [];
+        }),
+      ),
+  );
+  const populationTraitGrantSelectors = new Map<string, string[]>();
+  for (const fn of functions) {
+    const buffs = (fn.buffs ?? []).filter((buff) => buff.type === 'addIndividuality');
+    if (!buffs.length) continue;
+    const selectors = buffs.flatMap((buff) =>
+      (buff.vals ?? []).flatMap((value) => {
+        const name = stateMutationTraitName(value, traitNameById);
+        return name ? [name] : [];
+      }),
+    );
+    for (const cell of [fn.svals, fn.svals2, fn.svals3, fn.svals4, fn.svals5].flatMap(
+      (row) => row ?? [],
+    )) {
+      const trait =
+        typeof cell.Value === 'number'
+          ? stateMutationTraitName({ id: cell.Value }, traitNameById)
+          : null;
+      if (trait && populationReadTraits.has(trait))
+        populationTraitGrantSelectors.set(trait, [
+          ...new Set([...(populationTraitGrantSelectors.get(trait) ?? []), ...selectors]),
+        ]);
+    }
+  }
+  const populationBuffTraits = new Set(
+    functions.flatMap((fn) =>
+      (fn.buffs ?? []).flatMap((buff) =>
+        (buff.vals ?? []).flatMap((trait) => {
+          const name = stateMutationTraitName(trait, traitNameById);
+          return name && populationReadTraits.has(name) ? [name] : [];
+        }),
+      ),
+    ),
+  );
   const countedBuffTraits = new Set(
     functions
       .filter((fn) => fn.funcType === 'gainNpBuffIndividualSum')
@@ -202,6 +249,10 @@ export function collectDamageReachableStateCatalog(
         labels.set(name, values);
       }
   return {
+    populationReadTraits,
+    populationTraitGrantSelectors,
+    populationBuffTraits,
+    populationIntrinsicTraits: permanentTraits,
     countedBuffTraits,
     countedBuffDefinitions,
     countedBuffMaximums,
@@ -210,6 +261,9 @@ export function collectDamageReachableStateCatalog(
         ...input.servants.flatMap((servant) => servant.traits ?? []),
         ...functions.flatMap((fn) => [
           ...(fn.functvals ?? []),
+          ...(['gainNpTargetSum', 'gainNpIndividualSum'].includes(fn.funcType ?? '')
+            ? (fn.traitVals ?? [])
+            : []),
           ...(fn.buffs ?? []).flatMap((buff) => [
             ...(buff.ckSelfIndv ?? []),
             ...(buff.ckOpIndv ?? []),

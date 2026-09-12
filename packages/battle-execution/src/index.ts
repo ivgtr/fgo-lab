@@ -168,3 +168,7 @@ export { compileOcSourceProgram, hasOcExecution, hasOcConditionReader } from './
 export { OC_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
 
 export type { OcResourceDependencyContext } from './ocResourceDependencies';
+
+export { populationInputIssue, populationCountSaturation } from './populationCounts';
+
+export { populationGaugeHasOneTerminalOc } from './ocResourceDependencies';

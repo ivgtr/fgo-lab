@@ -337,6 +337,15 @@ export function normalizeExecutionSemantics(input: {
   const potentiallyDamageRelevant = isPotentiallyDamageRelevant(target, buffTypes);
   const targetMismatch = potentiallyDamageRelevant ? ('unsupported' as const) : ('ignore' as const);
   const operations: EffectExecutionOperation[] = [...input.canonicalOperations];
+  if (
+    target === 'fieldOther' &&
+    operations.length > 0 &&
+    operations.every(
+      (operation) =>
+        operation.kind === 'populationMutation' && operation.mutation !== 'unsupported',
+    )
+  )
+    return operations;
 
   const canonicalRoute = (
     recipient: 'attacker' | 'target' | null,

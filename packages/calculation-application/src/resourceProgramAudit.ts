@@ -59,6 +59,10 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
   switch (operation.kind) {
     case 'unsupported':
       return operation.reason;
+    case 'populationMutation':
+      return operation.mutation === 'unsupported'
+        ? 'unsupportedPopulationMutation'
+        : 'populationStateDependency';
     case 'buffInstanceMutation':
       return operation.mutation === 'move' || operation.mutation === 'unsupported'
         ? 'unsupportedBuffInstanceMutation'
@@ -72,7 +76,11 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
     case 'contextMutation':
       return operation.mutation === 'addQuantity' ? null : 'contextResourceDependency';
     case 'resourceMutation':
-      return operation.amount.kind === 'dependent' ? 'dependentResourceAmount' : null;
+      return operation.amount.kind === 'dependent'
+        ? 'dependentResourceAmount'
+        : operation.amount.kind === 'populationCount'
+          ? 'populationStateDependency'
+          : null;
     case 'damageModifier':
     case 'modifierRateChange':
     case 'ignoreDefense':

@@ -35,6 +35,7 @@ export function createCanonicalInputValueDomains(
   conditions: readonly (ConditionExpression | null)[],
   mode: 'baseline' | 'satisfied',
   stackWitnesses: ReadonlyMap<string, readonly number[]> = new Map(),
+  populationSaturation: ReadonlyMap<string, number> = new Map(),
 ): readonly { key: string; values: readonly number[] }[] {
   const boundaries = new Map<string, number[]>();
   for (const { key, value } of conditions.flatMap(conditionInputBoundaries)) {
@@ -49,12 +50,25 @@ export function createCanonicalInputValueDomains(
       values:
         mode === 'baseline'
           ? [definition.defaultValue ?? definition.minimum]
-          : definition.kind === 'effectStackCount'
-            ? definition.instanceTraits === undefined && stackWitnesses.has(definition.key)
-              ? stackWitnesses.get(definition.key)!
-              : Array.from({ length: definition.maximum + 1 }, (_, count) => count)
-            : boundaries.has(definition.key)
-              ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
-              : [definition.maximum],
+          : definition.kind === 'populationCount' || definition.kind === 'populationSize'
+            ? Array.from(
+                {
+                  length:
+                    Math.min(
+                      definition.maximum,
+                      populationSaturation.get(definition.key) ?? definition.maximum,
+                    ) -
+                    definition.minimum +
+                    1,
+                },
+                (_, index) => definition.minimum + index,
+              )
+            : definition.kind === 'effectStackCount'
+              ? definition.instanceTraits === undefined && stackWitnesses.has(definition.key)
+                ? stackWitnesses.get(definition.key)!
+                : Array.from({ length: definition.maximum + 1 }, (_, count) => count)
+              : boundaries.has(definition.key)
+                ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
+                : [definition.maximum],
     }));
 }

@@ -1,3 +1,8 @@
+import {
+  populationInputIssue,
+  populationCountSaturation,
+  populationGaugeHasOneTerminalOc,
+} from '@fgo-lab/battle-execution';
 import { UnsupportedStackQuantity } from './rankingStackDomain';
 import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import type { ActorFormId, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
@@ -88,6 +93,8 @@ interface ProgramCandidateDomain {
   semantics: StaticRankingSemantics;
   initialNpGauge: number;
   canonicalInputs: readonly { key: string; values: readonly number[] }[];
+  populationInputKeys: ReadonlySet<string>;
+  populationInputs: readonly Readonly<Record<string, number>>[];
   targets: readonly (RankingWorldCandidate | null)[];
   fields: readonly RankingFieldCandidate[];
   quantities: readonly RankingQuantityCandidate[];
@@ -131,7 +138,12 @@ function dimensionIndexes(
 
 function programDimensions(domain: Omit<ProgramCandidateDomain, 'upperBound'>) {
   return [
-    ...domain.canonicalInputs.map(({ key, values }) => dimensionIndexes(`input:${key}`, values)),
+    ...domain.canonicalInputs
+      .filter(({ key }) => !domain.populationInputKeys.has(key))
+      .map(({ key, values }) => dimensionIndexes(`input:${key}`, values)),
+    ...(domain.populationInputKeys.size
+      ? [dimensionIndexes('population', domain.populationInputs)]
+      : []),
     dimensionIndexes('target', domain.targets),
     dimensionIndexes('field', domain.fields),
     dimensionIndexes('quantity', domain.quantities),
@@ -162,16 +174,56 @@ function compileProgramDomain(input: {
     : [];
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
+  const hasPopulation = semantics.inputDefinitions.some(
+    (input) => input.kind === 'populationCount' || input.kind === 'populationSize',
+  );
+  const populationIndependent =
+    hasPopulation &&
+    program.sourceUses.every(
+      (use) => use.kind === 'skill' && use.skill.resourceRequirement === null,
+    ) &&
+    populationGaugeHasOneTerminalOc(semantics.sources, {
+      semantics: master.npResourceSemantics,
+      npLevel: basis.npLevel,
+      initialGauge: policy.initialNpGauge,
+    });
+  const inputDomains = createCanonicalInputValueDomains(
+    semantics.inputDefinitions,
+    semantics.conditions,
+    conditions.conditionalEffects,
+    semantics.stackWitnesses,
+    hasPopulation
+      ? populationCountSaturation(
+          semantics.sources,
+          master.npResourceSemantics.capacityByNpLevel[basis.npLevel - 1]!,
+        )
+      : new Map(),
+  );
+  const canonicalInputs = populationIndependent
+    ? inputDomains.map((domain) => {
+        const definition = semantics.inputDefinitions.find((input) => input.key === domain.key);
+        return definition?.kind === 'populationCount' || definition?.kind === 'populationSize'
+          ? { ...domain, values: [definition.defaultValue ?? definition.minimum] }
+          : domain;
+      })
+    : inputDomains;
+  const populationInputKeys = new Set(
+    semantics.inputDefinitions
+      .filter((input) => input.kind === 'populationCount' || input.kind === 'populationSize')
+      .map((input) => input.key),
+  );
+  const populationInputs = finiteSemanticProduct(
+    canonicalInputs.filter((input) => populationInputKeys.has(input.key)),
+    MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
+    'population_input_product_limit',
+  ).candidates.filter((values) => !populationInputIssue(semantics.inputDefinitions, values));
   return {
     program,
     semantics,
     initialNpGauge: policy.initialNpGauge,
-    canonicalInputs: createCanonicalInputValueDomains(
-      semantics.inputDefinitions,
-      semantics.conditions,
-      conditions.conditionalEffects,
-      semantics.stackWitnesses,
-    ),
+    canonicalInputs,
+    populationInputKeys,
+    populationInputs,
     targets: [
       null,
       ...new Map(generatedTargets.map((candidate) => [candidate.key, candidate])).values(),
@@ -329,7 +381,12 @@ function materializeProgramCandidates(input: {
   return product.candidates.map((indexes) => {
     const startNpGauge = domain.initialNpGauge;
     const canonicalInputValues = Object.fromEntries(
-      domain.canonicalInputs.map(({ key, values }) => [key, values[indexes[`input:${key}`] ?? 0]!]),
+      domain.canonicalInputs.map(({ key, values }) => [
+        key,
+        domain.populationInputKeys.has(key)
+          ? domain.populationInputs[indexes.population ?? 0]![key]!
+          : values[indexes[`input:${key}`] ?? 0]!,
+      ]),
     );
     const target = domain.targets[indexes.target ?? 0] ?? null;
     const field = domain.fields[indexes.field ?? 0]!;

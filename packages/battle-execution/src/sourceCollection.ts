@@ -70,6 +70,7 @@ export interface ResolvedAttackerFormExecution {
   }[];
   issues: readonly ExecutionIssue[];
   requiredInputs: readonly (CanonicalInputDefinition & { effectOccurrenceIds: string[] })[];
+  recoveryInputDefinitions?: readonly CanonicalInputDefinition[];
   rejection: { code: PreparationFailureCode; operationId: string } | null;
 }
 
@@ -133,6 +134,9 @@ export function resolveAttackerFormExecution(
               },
             ]
           : [],
+      ...(created.recoveryInputDefinitions?.length
+        ? { recoveryInputDefinitions: created.recoveryInputDefinitions }
+        : {}),
       rejection: { code: created.code, operationId: 'preparation:create' },
       issues: [{ kind: 'unsupportedOperation', operationId: 'preparation', detail: created.code }],
     };
@@ -145,11 +149,13 @@ export function resolveAttackerFormExecution(
   const issues: ExecutionIssue[] = [];
   const requiredInputs: Array<CanonicalInputDefinition & { effectOccurrenceIds: string[] }> = [];
   let rejection: ResolvedAttackerFormExecution['rejection'] = null;
+  let recoveryInputDefinitions: readonly CanonicalInputDefinition[] = [];
   for (const command of scenario.preNoblePhantasmPlan) {
     const actorFormId = state.currentFormId;
     const variantBeforeAction = state.selectedNoblePhantasmVariant;
     const result = reducePreNoblePhantasmAction(attacker, state, command, context);
     if (result.status === 'rejected') {
+      recoveryInputDefinitions = result.recoveryInputDefinitions ?? [];
       if (
         result.code === 'preparationInputRequired' &&
         result.requiredInput &&
@@ -194,6 +200,7 @@ export function resolveAttackerFormExecution(
     preparationNoblePhantasms,
     issues,
     requiredInputs,
+    ...(recoveryInputDefinitions.length ? { recoveryInputDefinitions } : {}),
     rejection,
   };
 }

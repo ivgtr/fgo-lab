@@ -1,5 +1,6 @@
 import type {
   CanonicalInputDefinition,
+  PopulationCountSelector,
   ModifierValueExpression,
   CanonicalTargetPolicy,
   EffectExecutionOperation,
@@ -28,6 +29,7 @@ export type ResourceQuery =
   | { resource: 'criticalStars'; measure: 'current'; actor: { kind: 'party' } };
 export type QuantityRead =
   | { kind: 'resource'; query: ResourceQuery }
+  | { kind: 'population'; selector: PopulationCountSelector; recipient: ResourceActor }
   | { kind: 'buffInstances'; actor: ResourceActor; trait: string; lifetime: 'active' | 'all' }
   | { kind: 'input'; inputKey: string }
   | { kind: 'unresolved'; reason: string; resources: readonly ResourceKind[] };
@@ -94,6 +96,14 @@ export function mutationResourceAccess(
 ): { write: ResourceQuery; amountReads: readonly QuantityRead[] } {
   const actor = resourceRecipientActor(source, operation.recipient);
   const write = currentResourceQuery(operation.resource, actor, operation.subjectId);
+  if (operation.amount.kind === 'populationCount')
+    return {
+      write,
+      amountReads: [
+        { kind: 'input', inputKey: operation.amount.inputKey },
+        { kind: 'population', selector: operation.amount.selector, recipient: actor },
+      ],
+    };
   if (operation.amount.kind === 'buffCount')
     return {
       write,

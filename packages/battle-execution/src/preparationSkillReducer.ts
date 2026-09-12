@@ -51,6 +51,7 @@ export function reducePreparationSkillAction(
       resource.code,
       resource.requiredInput,
       resource.requiredInputEffectOccurrenceId,
+      resource.recoveryInputDefinitions,
     );
   const transition = findPreparationTransition(
     servant,
@@ -81,6 +82,7 @@ export function reducePreparationSkillAction(
       ),
       ...resource.contextState,
       npResource: resource.resource.state,
+      populationEvents: resource.populationEvents,
       buffInstances: resource.buffInstances,
       ocState: resource.ocState,
       ocInputDefinitions: resource.ocInputDefinitions,

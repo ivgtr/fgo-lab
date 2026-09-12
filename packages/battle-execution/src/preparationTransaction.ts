@@ -39,7 +39,8 @@ function effectChangesStructure(effect: MasterEffect, origin: Origin = 'attacker
   return effect.execution.some((operation) => {
     if (operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant')
       return true;
-    if (operation.kind === 'buffInstanceMutation') return true;
+    if (operation.kind === 'buffInstanceMutation' || operation.kind === 'populationMutation')
+      return true;
     return (
       operation.kind === 'contextMutation' &&
       'scope' in operation &&
@@ -65,6 +66,7 @@ export function effectRequiresPreparationDecision(
   return (
     effect.execution.some(
       (operation) =>
+        operation.kind === 'populationMutation' ||
         (operation.kind === 'resourceMutation' &&
           operation.resource === 'npGauge' &&
           transitionTargetsAttacker(operation.recipient, origin)) ||
@@ -110,6 +112,7 @@ export type PreparationResourcePlanResult =
       preparationEffects: readonly MasterEffect[];
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
       ocState: OcState;
+      populationEvents: PreNoblePhantasmState['populationEvents'];
       buffInstances: PreNoblePhantasmState['buffInstances'];
       contextState: Pick<
         PreNoblePhantasmState,
@@ -125,6 +128,7 @@ export type PreparationResourcePlanResult =
       code: PreparationFailureCode;
       requiredInput: CanonicalInputDefinition | null;
       requiredInputEffectOccurrenceId: string | null;
+      recoveryInputDefinitions?: readonly CanonicalInputDefinition[];
     };
 
 export interface PreparationEffectActivation {
@@ -228,6 +232,9 @@ export function planPreparationResourceTransaction(args: {
             : 'unsupportedOcExecution',
       requiredInput: oc.requiredInput,
       requiredInputEffectOccurrenceId: oc.requiredInput ? oc.occurrenceId : null,
+      ...(oc.recoveryInputDefinitions.length
+        ? { recoveryInputDefinitions: oc.recoveryInputDefinitions }
+        : {}),
     };
   const ocUse = oc.result.state.receipts.find((receipt) => receipt.actionId === actionId) ?? null;
   const activation = oc.activation;
@@ -253,6 +260,7 @@ export function planPreparationResourceTransaction(args: {
     preparationEffects,
     activation,
     ocState: oc.result.state,
+    populationEvents: oc.structuralState.populationEvents,
     buffInstances: oc.structuralState.buffInstances,
     contextState: {
       stackCounts: oc.structuralState.stackCounts,

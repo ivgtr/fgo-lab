@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(50),
+  schemaVersion: z.literal(51),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -346,10 +346,43 @@ const matchingActorCountCanonicalInputDefinitionSchema = canonicalInputBaseSchem
   }),
 });
 
+export const populationCountSelectorSchema = z
+  .object({
+    scope: z.enum(['recipient', 'allies', 'enemies', 'allActors', 'otherActors']),
+    counting: z.enum(['actors', 'individualities']),
+    basis: z.enum(['actorTraits', 'buffInstances', 'inBattle']),
+    traits: z
+      .array(z.string().min(1))
+      .min(1)
+      .refine((traits) => new Set(traits).size === traits.length, 'duplicate_population_traits'),
+    includePassive: z.boolean(),
+  })
+  .strict();
+export type PopulationCountSelector = z.infer<typeof populationCountSelectorSchema>;
+
+const populationSizeInputSchema = canonicalInputBaseSchema
+  .extend({
+    kind: z.literal('populationSize'),
+    owner: z.literal('field'),
+    side: z.enum(['allies', 'enemies']),
+    defaultValue: z.number().int().nullable(),
+  })
+  .strict();
+const populationCountInputSchema = canonicalInputBaseSchema
+  .extend({
+    kind: z.literal('populationCount'),
+    owner: z.literal('field'),
+    selector: populationCountSelectorSchema,
+    defaultValue: z.number().int().nullable(),
+  })
+  .strict();
+
 export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
   fixedCanonicalInputDefinitionSchema,
   stackInputSchema,
   matchingActorCountCanonicalInputDefinitionSchema,
+  populationSizeInputSchema,
+  populationCountInputSchema,
 ]);
 export type CanonicalInputDefinition = z.infer<typeof canonicalInputDefinitionSchema>;
 export type ActorCountPredicate = z.infer<typeof actorCountPredicateSchema>;
@@ -581,6 +614,15 @@ const effectExecutionOperationSchema = z.union([
       amount: z.discriminatedUnion('kind', [
         z
           .object({
+            kind: z.literal('populationCount'),
+            selector: populationCountSelectorSchema,
+            inputKey: z.string().min(1),
+            values: canonicalValueSetsSchema,
+            limitBreakValues: canonicalValueSetsSchema.optional(),
+          })
+          .strict(),
+        z
+          .object({
             kind: z.literal('buffCount'),
             trait: z.string().min(1),
             inputKey: z.string().min(1),
@@ -613,7 +655,7 @@ const effectExecutionOperationSchema = z.union([
     )
     .refine(
       (operation) =>
-        operation.amount.kind !== 'buffCount' ||
+        !['buffCount', 'populationCount'].includes(operation.amount.kind) ||
         (operation.resource === 'npGauge' && operation.direction === 'gain'),
       { message: 'buff_count_requires_np_gain' },
     )
@@ -625,6 +667,16 @@ const effectExecutionOperationSchema = z.union([
           operation.subjectId === null),
       { message: 'np_mutation_requires_resolved_recipient_and_basis_points' },
     ),
+  z
+    .object({
+      kind: z.literal('populationMutation'),
+      mutation: z.enum(['grant', 'remove', 'unsupported']),
+      basis: z.enum(['actorTraits', 'buffInstances']),
+      scope: z.enum(['recipient', 'target', 'allies', 'enemies', 'allActors', 'otherActors']),
+      traits: z.array(z.string().min(1)).min(1),
+      includePassive: z.boolean(),
+    })
+    .strict(),
   z
     .object({
       kind: z.literal('stateMutation'),
@@ -822,6 +874,47 @@ export const masterEffectSchema = z
   .strict()
   .superRefine((effect, context) => {
     for (const operation of effect.execution) {
+      if (operation.kind === 'resourceMutation' && operation.amount.kind === 'populationCount') {
+        const amount = operation.amount;
+        const selector = amount.selector;
+        const definitions = effect.inputDefinitions.filter(
+          (input) => input.key === amount.inputKey,
+        );
+        const sides =
+          selector.scope === 'recipient'
+            ? []
+            : selector.scope === 'allies'
+              ? ['allies']
+              : selector.scope === 'enemies'
+                ? ['enemies']
+                : ['allies', 'enemies'];
+        if (
+          (selector.basis !== 'inBattle' &&
+            sides.length > 0 &&
+            (definitions.length !== 1 ||
+              !definitions.some(
+                (input) =>
+                  input.kind === 'populationCount' &&
+                  JSON.stringify(input.selector) === JSON.stringify(selector) &&
+                  input.minimum === 0 &&
+                  input.step === 1 &&
+                  input.defaultValue === 0,
+              ))) ||
+          sides.some(
+            (side) =>
+              !effect.inputDefinitions.some(
+                (input) =>
+                  input.kind === 'populationSize' &&
+                  input.side === side &&
+                  input.key === `population:${side}:additional` &&
+                  input.minimum === 0 &&
+                  input.maximum === 2 &&
+                  input.defaultValue === 0,
+              ),
+          )
+        )
+          context.addIssue({ code: 'custom', message: 'unbound_population_count_input' });
+      }
       if (operation.kind === 'resourceMutation' && operation.amount.kind === 'buffCount') {
         const amount = operation.amount;
         const definitions = effect.inputDefinitions.filter(

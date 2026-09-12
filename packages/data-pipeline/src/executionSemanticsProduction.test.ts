@@ -242,11 +242,11 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(14825);
+    expect(operations).toHaveLength(14828);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       boundedPhaseIrrelevant: 2726,
       buffInstanceMutation: 200,
-      contextMutation: 1492,
+      contextMutation: 1491,
       damageModifier: 3885,
       grantOcApplicationRate: 29,
       grantOcBoost: 97,
@@ -255,12 +255,13 @@ describe('production canonical execution semantics', () => {
       modifierRateChange: 1,
       ocRemovalResistance: 60,
       ocStateNonIntersection: 131,
+      populationMutation: 5,
       removeOcState: 75,
-      resourceMutation: 1168,
+      resourceMutation: 1174,
       selectNoblePhantasmVariant: 22,
       stateMutation: 4828,
       transformActorForm: 10,
-      unsupported: 61,
+      unsupported: 54,
     });
     const occurrenceFamilies = {
       resource: new Set([
@@ -338,10 +339,10 @@ describe('production canonical execution semantics', () => {
       ).length,
     };
     expect(closedOccurrences).toEqual({
-      resource: 1_167,
+      resource: 1_173,
       unresolvedResourceTargets: 2,
       state: 4_829,
-      unsupported: 16,
+      unsupported: 10,
       boundedPhaseIrrelevant: 2_725,
     });
 
@@ -435,10 +436,10 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      personal: 2_874,
-      partyWide: 1_010,
-      partyOther: 52,
-      enemyApplied: 1_900,
+      enemyApplied: 1900,
+      partyOther: 51,
+      partyWide: 1010,
+      personal: 2874,
     });
     expect(counts(terminal)).toEqual({
       personal: 2_593,
@@ -466,11 +467,12 @@ describe('production canonical execution semantics', () => {
     }, {});
     expect(counts).toEqual({
       'buffCount:gain': 4,
+      'currentGaugeRatio:gain': 1,
       'fixed:gain': 649,
       'fixed:loss': 79,
-      'currentGaugeRatio:gain': 1,
+      'populationCount:gain': 6,
     });
-    expect(transitions).toHaveLength(733);
+    expect(transitions).toHaveLength(739);
     // PIR-001: bound count readers now execute; each retains its input identity and raw coefficient cells.
     const counted = allEffects(master).filter((effect) =>
       effect.execution.some(
@@ -510,7 +512,7 @@ describe('production canonical execution semantics', () => {
           (operation) =>
             operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount',
         ),
-    ).toHaveLength(12);
+    ).toHaveLength(6);
     expect(
       master.servants
         .flatMap(({ skills }) => skills)
@@ -598,7 +600,7 @@ describe('production canonical execution semantics', () => {
             !operation.damageRelevant,
         ),
       ),
-    ).toHaveLength(25);
+    ).toHaveLength(24);
   });
 
   it('ratchets build-time referenced skills and their ordered canonical operations', async () => {

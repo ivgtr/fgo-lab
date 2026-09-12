@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('415件表示 / 415件を計算・順位外 18件', {
+  await expect(page.getByRole('status')).toContainText('421件表示 / 421件を計算・順位外 12件', {
     timeout: 30_000,
   });
   const first = page
@@ -277,4 +277,52 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     await count.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
     await expect(count).toHaveValue('0');
   }
+  // E2E-A050-POPULATION-RECOVERY
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const populationPicker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await populationPicker.getByRole('tab', { name: '全DB' }).click();
+  await populationPicker.getByLabel('名前で検索').fill('黒姫');
+  await populationPicker
+    .getByRole('button', { name: /黒姫.*Lv/ })
+    .first()
+    .click();
+  const allies = page.getByRole('group', { name: '追加の味方人数', exact: true });
+  const initialMatches = page.getByRole('spinbutton', {
+    name: '追加対象の初期該当人数',
+    exact: true,
+  });
+  await expect(allies.getByRole('button', { name: '0', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await initialMatches.fill('1');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+  await allies.getByRole('button', { name: '1', exact: true }).click();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.canonicalInputValues?.[
+          'population:allies:additional'
+        ],
+    )
+    .toEqual({ kind: 'integer', value: 1 });
+  await page.reload();
+  await expect(allies.getByRole('button', { name: '1', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(initialMatches).toHaveValue('1');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await initialMatches
+    .locator('..')
+    .locator('..')
+    .getByRole('button', { name: '自動値へ戻す' })
+    .click();
+  await allies.getByRole('button', { name: '自動値へ戻す' }).click();
+  await expect(initialMatches).toHaveValue('0');
+  await expect(allies.getByRole('button', { name: '0', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });

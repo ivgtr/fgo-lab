@@ -22,6 +22,10 @@ import { canonicalTargetPredicate } from './targetTaxonomy';
 import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
 import { normalizeNpBuffCount, normalizeCountedBuffMutation } from './npCountNormalization';
 import {
+  normalizeNpPopulationCount,
+  normalizePopulationMutation,
+} from './npPopulationNormalization';
+import {
   normalizeDamageReachableStateMutations,
   stateMutationTraitName,
   type DamageReachableStateCatalog,
@@ -884,7 +888,10 @@ function normalizeCanonicalInputSemantics(
   const first = parameters[0] ?? {};
   const has = (key: string) => parameters.some((parameter) => parameter[key] !== undefined);
   const input = (
-    kind: Exclude<CanonicalInputDefinition['kind'], 'matchingActorCount' | 'effectStackCount'>,
+    kind: Exclude<
+      CanonicalInputDefinition['kind'],
+      'matchingActorCount' | 'effectStackCount' | 'populationSize' | 'populationCount'
+    >,
     owner: CanonicalInputDefinition['owner'],
     label: string,
     description: string,
@@ -1165,15 +1172,18 @@ function procRateSeries(
   execution: readonly MasterEffect['execution'][number][],
   source: NormalizeEffectSource,
 ): MasterEffect['proc'] {
-  const terminal = execution.some((operation) =>
-    [
-      'damageModifier',
-      'modifierRateChange',
-      'ignoreDefense',
-      'ignoreDamageCut',
-      'selectNoblePhantasmVariant',
-      'transformActorForm',
-    ].includes(operation.kind),
+  const terminal = execution.some(
+    (operation) =>
+      operation.kind === 'populationMutation' ||
+      (operation.kind === 'resourceMutation' && operation.amount.kind === 'populationCount') ||
+      [
+        'damageModifier',
+        'modifierRateChange',
+        'ignoreDefense',
+        'ignoreDamageCut',
+        'selectNoblePhantasmVariant',
+        'transformActorForm',
+      ].includes(operation.kind),
   );
   if (!terminal) return { kind: 'guaranteed' };
   const values = parameterSets.map((set, index) =>
@@ -1711,6 +1721,13 @@ export function normalizeFunctions(
       referenceRecognizedKeys,
       ocConditionParameterKeys(fn, parameterSets),
     );
+    const npPopulation = normalizeNpPopulationCount(fn, parameterSets, traitNameById, stateCatalog);
+    const populationMutations = normalizePopulationMutation(
+      fn,
+      traitNameById,
+      stateCatalog,
+      source === 'passive' || source === 'craftEssence',
+    );
     const npBuffCount = normalizeNpBuffCount(
       fn,
       parameterSets,
@@ -1735,6 +1752,8 @@ export function normalizeFunctions(
       cardTypes,
       canonicalOperations: [
         ...canonicalOperations,
+        ...(npPopulation ? [npPopulation.operation] : []),
+        ...populationMutations,
         ...countedBuffMutations,
         ...(npBuffCount ? [npBuffCount.operation] : []),
       ],
@@ -2012,9 +2031,20 @@ export function normalizeFunctions(
         operationTrigger,
         operationReference,
         stateIdentity,
-        inputDefinitions: [...canonicalInput.inputs, ...(npBuffCount ? [npBuffCount.input] : [])],
+        inputDefinitions: [
+          ...canonicalInput.inputs,
+          ...(npBuffCount ? [npBuffCount.input] : []),
+          ...(npPopulation?.inputs ?? []),
+        ],
         requirement: {
-          recipient: targetPolicy,
+          recipient:
+            targetPolicy === 'unresolved' &&
+            execution.every(
+              (operation) =>
+                operation.kind === 'populationMutation' && operation.mutation !== 'unsupported',
+            )
+              ? 'sourceSelf'
+              : targetPolicy,
           expression: requirement,
         },
         execution,

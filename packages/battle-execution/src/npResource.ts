@@ -36,7 +36,7 @@ export function npMutationFromCanonicalAmount(
     return { kind: 'unsupported', family: 'invalidNpResource' };
   if (operation.amount.kind === 'dependent')
     return { kind: 'unsupported', family: operation.amount.reason };
-  if (operation.amount.kind === 'buffCount')
+  if (operation.amount.kind === 'buffCount' || operation.amount.kind === 'populationCount')
     return { kind: 'unsupported', family: 'buffCountRequiresLiveInstances' };
   if (amount === null || amount === undefined)
     return { kind: 'unsupported', family: 'missingCanonicalAmount' };

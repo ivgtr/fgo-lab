@@ -54,6 +54,7 @@ export function reducePreparationTransformNoblePhantasmAction(
       resource.code,
       resource.requiredInput,
       resource.requiredInputEffectOccurrenceId,
+      resource.recoveryInputDefinitions,
     );
   const transition = findPreparationTransition(
     servant,
@@ -87,6 +88,7 @@ export function reducePreparationTransformNoblePhantasmAction(
       ),
       ...resource.contextState,
       npResource: resource.resource.state,
+      populationEvents: resource.populationEvents,
       buffInstances: resource.buffInstances,
       ocState: resource.ocState,
       ocInputDefinitions: resource.ocInputDefinitions,

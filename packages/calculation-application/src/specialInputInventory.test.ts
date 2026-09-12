@@ -69,7 +69,7 @@ describe('production special input inventory', () => {
       unsupported: 2,
     });
     expect(criticalStarUnsupported).toEqual([]);
-    expect(inputs).toHaveLength(29);
+    expect(inputs).toHaveLength(42);
     expect(counts).toEqual({
       availableSkillCount: 1,
       criticalStars: 1,
@@ -77,10 +77,12 @@ describe('production special input inventory', () => {
       effectStackCount: 20,
       fieldActorCount: 1,
       matchingActorCount: 3,
+      populationCount: 4,
+      populationSize: 9,
       procSuccessCount: 1,
     });
-    expect(inputs.filter((input) => input.control === 'segmented')).toHaveLength(3);
-    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(26);
+    expect(inputs.filter((input) => input.control === 'segmented')).toHaveLength(12);
+    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(30);
     expect(inputs.filter((input) => input.section === 'support')).toHaveLength(0);
     expect(duplicateControls).toEqual([]);
     expect(inputs.some((input) => input.kind === 'friendshipLevel')).toBe(false);
@@ -99,7 +101,7 @@ describe('production special input inventory', () => {
           scenario,
         );
         const evaluate = (value: number) =>
-          calculateScenario(
+          calculateScenarioOutcome(
             applyCanonicalInputCommand(enabled, {
               kind: 'setCanonicalIntegerInput',
               key: input.key,
@@ -110,8 +112,14 @@ describe('production special input inventory', () => {
           );
         const minimum = evaluate(input.minimum);
         const maximum = evaluate(input.maximum);
-        return JSON.stringify({ input: minimum.input, result: minimum.result }) ===
-          JSON.stringify({ input: maximum.input, result: maximum.result })
+        return JSON.stringify({
+          input: 'input' in minimum ? minimum.input : null,
+          result: minimum.result,
+        }) ===
+          JSON.stringify({
+            input: 'input' in maximum ? maximum.input : null,
+            result: maximum.result,
+          })
           ? [`${servant.id}:${input.key}`]
           : [];
       }),

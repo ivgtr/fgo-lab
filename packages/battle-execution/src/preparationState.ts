@@ -237,6 +237,7 @@ export function createPreparationState(
     transformNoblePhantasmUsed: false,
     activeEffects: [],
     stackCounts: { attackerState: {}, targetState: {}, field: {} },
+    populationEvents: [],
     buffInstances: [],
     stateTraits: { attackerState: new Set(), targetState: new Set() },
     initialTraitSuppressions: { attacker: new Set(), target: new Set() },

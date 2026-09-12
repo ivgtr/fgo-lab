@@ -168,30 +168,30 @@ describe('production preparation semantics audit', () => {
     }
 
     expect(inventory).toEqual({
-      servants: 422,
-      generated: 6_419,
-      deduplicated: 3_994,
-      terminal: 3_461,
-      exactDuplicates: 2_425,
-      rejectedActions: 55,
-      rejectedActionCounts: {
-        insufficientNpGauge: 6,
-        unsupportedResourceMutation: 49,
-      },
-      maximumPreparationActions: 4,
-      maximumSemanticStates: 56,
       actorFormNodes: 484,
       actorFormProfiles: 484,
       attackVariants: 626,
-      nonAttackVariants: 101,
-      transformNoblePhantasmServants: 1,
-      nonAttackWithoutAttack: 47,
+      deduplicated: 4018,
+      exactDuplicates: 2449,
+      generated: 6467,
       maximumActorFormNodes: 7,
       maximumActorFormProfiles: 7,
       maximumInitialForms: 7,
+      maximumPreparationActions: 4,
+      maximumSemanticStates: 56,
       maximumTransitionEdges: 2,
+      nonAttackVariants: 101,
+      nonAttackWithoutAttack: 47,
+      rejectedActionCounts: {
+        insufficientNpGauge: 6,
+        unsupportedResourceMutation: 25,
+      },
+      rejectedActions: 31,
+      servants: 422,
+      terminal: 3485,
+      transformNoblePhantasmServants: 1,
     });
-    expect(terminalKeys).toHaveLength(3_461);
+    expect(terminalKeys).toHaveLength(3485);
   }, 30_000);
 
   it('keeps applied choice and transition evidence local to its source action', async () => {

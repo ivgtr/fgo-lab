@@ -1,3 +1,4 @@
+import { createStaticAttackProfiles } from './attackProfile';
 import {
   createPreNoblePhantasmState,
   reducePreNoblePhantasmAction,
@@ -80,7 +81,7 @@ describe('production execution parity ratchet', () => {
         .map(({ attackerId }) => attackerId),
     ).toEqual(['702500', '705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('4e70d20d6273070f12d4e1ffe0c8f06e0d5767c3d08a8a52eba885e99f9623c5');
+    expect(digest).toBe('39e0613d4c369105a9b36ca60ab3d166967a773a40ffbb1d7150a3db68d6fcfd');
   }, 60_000);
 });
 
@@ -262,3 +263,180 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
       `${JSON.stringify(records, null, 2)}\n`,
     );
 }, 60_000);
+
+it('replays population-count profiles through calculator and portable recovery while recording unresolved policies', async () => {
+  const master = await loadMaster();
+  const versions = {
+    ...currentCalculationVersionContext(master),
+    schemaVersion: SCHEMA_VERSION,
+    appVersion: '0.1.0',
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const records = [];
+  for (const id of ['106200', '306000', '306200', '502600', '1001800', '2501600']) {
+    const actor = master.servants.find((actor) => actor.id === id)!;
+    for (const profile of createStaticAttackProfiles(actor)) {
+      for (const npLevel of [1, 2, 5] as const) {
+        const ranking = calculateRankingPolicyDetail(
+          actor,
+          master,
+          { servantBuilds: {} },
+          { ...DEFAULT_RANKING_POLICY_CONDITIONS, npLevelBasis: { kind: 'specified', npLevel } },
+          versions,
+          profile,
+        );
+        if (id === '502600') {
+          expect(ranking).toMatchObject({
+            status: 'unsupported',
+            reason: 'candidateExecutionUnsupported',
+          });
+          records.push({
+            id,
+            profile,
+            npLevel,
+            status: ranking.status,
+            reason: 'reason' in ranking ? ranking.reason : null,
+          });
+          continue;
+        }
+        expect(
+          ranking.status,
+          JSON.stringify({ id, npLevel, reason: 'reason' in ranking ? ranking.reason : null }),
+        ).toBe('calculated');
+        if (ranking.status !== 'calculated') throw new Error('population baseline');
+        const replay = calculateScenario(ranking.detail.scenario, master, versions);
+        expect(replay.result.rows).toEqual(ranking.detail.result.rows);
+        const request = createCalculatorPortableRequest(
+          ranking.detail.scenario,
+          currentCalculationVersionContext(master),
+        );
+        const portable = executePortableCalculation(request, master);
+        expect(portable.status).toBe('executed');
+        if (portable.status !== 'executed') throw new Error('population portable');
+        expect(portable.execution.result).toEqual(replay.result);
+        records.push({
+          id,
+          profile,
+          npLevel,
+          status: ranking.status,
+          input: replay.input,
+          rows: replay.result.rows,
+          inputs: ranking.detail.scenario.canonicalInputValues,
+          plan: ranking.detail.scenario.preNoblePhantasmPlan,
+        });
+        if (id === '106200' && npLevel === 2) {
+          const countSkill = actor.skills.find((skill) =>
+            skill.effects.some((effect) =>
+              effect.inputDefinitions.some((input) => input.kind === 'populationCount'),
+            ),
+          )!;
+          const count = countSkill.effects
+            .flatMap((effect) => effect.inputDefinitions)
+            .find((input) => input.kind === 'populationCount')!;
+          const inconsistent = structuredClone(ranking.detail.scenario);
+          if (
+            !inconsistent.preNoblePhantasmPlan.some(
+              (command) => command.kind === 'useSkillSlot' && command.slot === countSkill.slot,
+            )
+          )
+            inconsistent.preNoblePhantasmPlan.unshift({
+              kind: 'useSkillSlot',
+              slot: countSkill.slot,
+              skillLevel: 10,
+              choice: null,
+            });
+          inconsistent.canonicalInputValues['population:allies:additional'] = {
+            kind: 'integer',
+            value: 0,
+          };
+          inconsistent.canonicalInputValues['population:enemies:additional'] = {
+            kind: 'integer',
+            value: 0,
+          };
+          inconsistent.canonicalInputValues[count.key] = { kind: 'integer', value: 1 };
+          const failed = attemptPortableCalculationScenarioChange(
+            request,
+            replay.result,
+            inconsistent,
+            master,
+          );
+          expect(failed).toMatchObject({
+            status: 'committed',
+            result: { status: 'inputRequired' },
+          });
+          if (failed.status !== 'committed') throw new Error('population input');
+          const failedReplay = executePortableCalculation(failed.request, master);
+          if (failedReplay.status !== 'executed') throw new Error('population recovery inputs');
+          expect(
+            failedReplay.execution.effectInputs.filter((input) => input.kind === 'populationSize'),
+          ).toHaveLength(2);
+          const repaired = structuredClone(inconsistent);
+          repaired.canonicalInputValues['population:allies:additional'] = {
+            kind: 'integer',
+            value: 1,
+          };
+          const retry = attemptPortableCalculationScenarioChange(
+            failed.request,
+            failed.result,
+            repaired,
+            master,
+          );
+          expect(retry).toMatchObject({ status: 'committed', result: { status: 'calculated' } });
+          expect(
+            executePortableCalculation(
+              resetPortableCalculationRequest(request, master, undefined, actor),
+              master,
+            ).status,
+          ).toBe('executed');
+        }
+      }
+      for (const selfBuffs of ['included', 'excluded'] as const)
+        for (const conditionalEffects of ['baseline', 'satisfied'] as const) {
+          const ranking = calculateRankingPolicyDetail(
+            actor,
+            master,
+            { servantBuilds: {} },
+            {
+              ...DEFAULT_RANKING_POLICY_CONDITIONS,
+              npLevelBasis: { kind: 'specified', npLevel: 2 },
+              selfBuffs,
+              conditionalEffects,
+            },
+            versions,
+            profile,
+          );
+          records.push({
+            id,
+            profile,
+            npLevel: 2,
+            selfBuffs,
+            conditionalEffects,
+            status: ranking.status,
+            ...('reason' in ranking ? { reason: ranking.reason } : {}),
+            ...(ranking.status === 'calculated'
+              ? { inputs: ranking.detail.scenario.canonicalInputValues }
+              : {}),
+          });
+          if (
+            selfBuffs === 'excluded' ||
+            (id !== '502600' &&
+              (conditionalEffects === 'baseline' || id === '106200' || id === '306000'))
+          ) {
+            expect(ranking.status, JSON.stringify({ id, selfBuffs, conditionalEffects })).toBe(
+              'calculated',
+            );
+            if (ranking.status === 'calculated')
+              expect(
+                calculateScenario(ranking.detail.scenario, master, versions).result.rows,
+              ).toEqual(ranking.detail.result.rows);
+          } else expect(ranking.status).toBe('unsupported');
+        }
+    }
+  }
+  if (process.env['FGO_TEST_ARTIFACT_DIR'])
+    await writeFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'population-count-acceptance.json'),
+      JSON.stringify(records, null, 2) + '\n',
+    );
+}, 60000);

@@ -14,6 +14,7 @@ import type { ContributionApplicationPolicy } from './executionTypes';
 import type { WorldFactAssertion, TargetPredicateAssertion } from './contracts';
 import type { SourceEffect } from './sourceCollection';
 import type { CountedBuffInstance } from './buffInstances';
+import type { PopulationEvent } from './populationCounts';
 
 export interface PreparationExecutionContext {
   resourceSemantics: CanonicalNpResourceSemantics;
@@ -63,6 +64,7 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState {
+  populationEvents: readonly PopulationEvent[];
   buffInstances: readonly CountedBuffInstance[];
   initialFormId: ActorFormId;
   currentFormId: ActorFormId;
@@ -122,6 +124,7 @@ export type PreparationTransitionResult =
       code: PreparationFailureCode;
       requiredInput: CanonicalInputDefinition | null;
       requiredInputEffectOccurrenceId: string | null;
+      recoveryInputDefinitions?: readonly CanonicalInputDefinition[];
       state: PreNoblePhantasmState;
     };
 
@@ -130,10 +133,12 @@ export const rejectPreparation = (
   code: PreparationFailureCode,
   requiredInput: CanonicalInputDefinition | null = null,
   requiredInputEffectOccurrenceId: string | null = null,
+  recoveryInputDefinitions: readonly CanonicalInputDefinition[] = [],
 ): PreparationTransitionResult => ({
   status: 'rejected',
   code,
   requiredInput,
   requiredInputEffectOccurrenceId,
+  ...(recoveryInputDefinitions.length ? { recoveryInputDefinitions } : {}),
   state,
 });

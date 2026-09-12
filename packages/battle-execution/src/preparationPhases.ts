@@ -39,6 +39,7 @@ export function executePreparationPhase(
             : 'unsupportedOcExecution',
       execution.requiredInput,
       execution.requiredInput ? execution.occurrenceId : null,
+      execution.recoveryInputDefinitions,
     );
   return {
     status: 'applied',

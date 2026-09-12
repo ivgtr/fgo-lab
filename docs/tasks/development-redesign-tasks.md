@@ -62,7 +62,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.48 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
-| TSK-06.45 | All attack-NP execution closure | in_progress | TSK-06.48 | attack buff count slice complete; 415/433; remaining execution closure pending |
+| TSK-06.45 | All attack-NP execution closure | in_progress | TSK-06.48 | population count follow-up; 421/433; seven-profile slice and execution closure pending |
 | TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
@@ -1795,26 +1795,28 @@ artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Bloc
 
 Depends on: TSK-06.48
 
-今回: **攻撃NP buff count2profileの入力→共通実行→結果→回復の実装単位を完了。TSK-06.45全体は未完了。**
-実装基点`ab5d77d`、採用方針`83b4db2`。開始時clean。今回の実装・検証証跡は、本記録を含む実装commitへ収録する。
-Taskは`in_progress`、06.44は`blocked`を維持する。
+現在のフォローアップ（`dc87dc1`基点）: **target／individual countを共通実行へ接続。通常条件のrankingは415→421/433。7profile単位とTSK全体は未完了。**
+`dc87dc1`のclean tree、quality manifest・master・実装差分・差分/性能artifactのSHA256を既存checkpointと照合し、一致を確認した。成功済みqualityはbeforeとして継承する。今回の差分は本記録を含む実装commitへ収録する。
 
 | 成果／未達 | 現在地 | 判定 |
 | --- | --- | --- |
-| calculator | 420/422、unsupported2（HP state1、BP state1） | 対応数不変。対象2profileの選択sourceと入力・回復を検証 |
-| ranking | 413→415/433、残り18 profile | 攻撃NP buff count2件を解消。quality成功 |
-| 共通count実行 | stack入力とbuff instanceを同一stateへ束縛、recipient別read、付与/解除→NP/OC→commit、rollback/retry・portableを接続 | 小型fixture、production、UI回復、最終qualityで検証済み |
-| 品質・性能 | quality成功（unit766/production121/E2E26）、ranking median3519.66→3416.76ms | suite41.261→41.362s。固定before/finalと今回manifestをcheckpointへ記録 |
-| HP数値3件 | Chaldea参照契約採用済み | 実測待ちへ戻さず共通実行への接続・production/parityを後続単位で実装 |
-| 残る実装と全体gate | target/individual count・transfer、marker/admission、HP/BP、全条件/owned、回復/UI | U1〜U5内で継続。422/422・433/433だけでもDoneにはしない |
+| calculator | 420/422。306000のみNP威力buffが0→20%、NP1平均32,333.35→38,800.12 | countを含むスキル全体が実行可能になった結果。既存数値差をcanonical inputで説明 |
+| ranking | 通常条件415→421/433、残り12profile | 106200・306000・306200×2・1001800・2501600の6profileを追加。7profile受入単位は継続 |
+| 共通count実行 | recipientと計数scope、人数と一致数、初期入力とlive stateを分離。付与/解除→NP/OC→commit、rollback/retryを接続 | NP1/2/5のcalculator/ranking/portable parity、49件のpolicy証跡。修復に必要な入力欄を失敗時にも保持 |
+| 502600 | 対象別の解除結果→条件付きmarker付与が未対応 | 数値fallbackなし。`candidateExecutionUnsupported`を維持 |
+| 条件成立側 | 106200・306000は計算可能。306200×2・502600・1001800・2501600は全program候補上限が残る | cap4096は維持。入力の合法組合せとNP容量/OC不変による削減だけ適用 |
+| 品質・性能 | quality成功（unit780/production122/E2E26、warning0）。ranking中央値3416.76→3429.16ms、production 38.663s | 検証は成功。502600/成立込み候補上限が残るため7profile単位は未完了 |
+| 残る全体gate | marker/admission、NP/charge/HP transfer、HP/BP、全条件/owned、回復/UI | 既存U1〜U5で継続。422/422・433/433だけでもDoneにはしない |
+
+完了済み単位は`dc87dc1`の攻撃NP buff count2profile。今回の追加対応でこの既存証拠を無効化しない。Taskは`in_progress`、06.44は`blocked`を維持する。
 
 実装責務、証跡と全Taskの未達gateは[canonical checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)。
 
 進行判断（既存U番号と完了条件を維持）:
 
-1. **今回の実装単位はU2-Dの攻撃NP buff count**。1000900/3392と1101600/21113をproductionの受入対象とする。IDは証跡の対象指定だけでruntime分岐へ使わない。既存stack入力とinstance stateの同一束縛、recipientごとのread、付与/解除→NP/OC→共通結果→retry/portableを閉じる。1101600には20955の`operationSemantics`も併存するため、count関数だけ通して対象profileの完成としない。既存共通処理を拡張するかの詳細は証拠から再判断する。
+1. **継続対象はU2-D.countのtarget／individual count7profile**。6profileの通常経路と502600の未対応を区別する。次はU3-Qの全program候補上限を、重複した結果・無効入力の生成経路から削減し、対象の成立込みpolicyを閉じる。同じ対象の502600は対象別function outcome→marker→countの共通経路が必要であり、全対象への無条件付与で代用しない。IDは証跡の対象指定のみ。
 2. **終了判定は対象profileの実経路**。初期入力、選択sourceとvariant、併存する拒否理由、後続実行まで確認し、before/afterの対応数・damage・未達理由を記録する。非攻撃NPの追加対応やfixture成功だけではこの単位を閉じない。新しい後続failureが出たら同対象の原因を閉じ、説明なく別familyへ移らない。各単位に必要な小型fixture・production・回復・性能を確認する。
-3. **その後はtarget/individual count、NP・charge transfer、marker/admissionとBPを依存順に収束**させる。共通のinstance/actor stateに関わる直接writerは対応単位へ含め、件数順にIDごとの修正へ分割しない。全program候補積はU3-Q、全profile/条件/ownedと共通回復/UIはU4/U5で閉じる。
+3. **このcount単位の未達を閉じた後、NP・charge transfer、残るmarker/admissionとHP/BPを依存順に収束**させる。共通のinstance/actor stateに関わる直接writerは対応単位へ含め、件数順にIDごとの修正へ分割しない。全program候補積はU3-Q、全profile/条件/ownedと共通回復/UIはU4/U5で閉じる。
 4. **未確定resource処理はChaldeaの該当実装を参考仕様として採用する（2026-09-13利用者承認）**。固定commitの処理本体・呼出元・関連testを読み、既存canonical IR/application/executionへ対応させる。HP数値3件の具体的規則は既存証跡のreferenceContractへ固定した。実測不足だけで実装を停止せず、既存の根拠を一から再発見しない。明示された製品要件、入力検証、対象/時点、rollback/parityは維持する。参照元にない処理や明確な矛盾は該当branchの差だけを示して技術判断し、全Taskの再承認待ちへ戻さない。
 5. **再開と検証を重複させない**。現在のqualityと永続before/final証拠を使い、同条件の成功済み検証を開始時に繰り返さない。消失した旧/tmp一式の復元は次の目的にしない。新しい数値・実行差分に必要な証拠だけ取得し、session境界では閉じた実経路・残件・次の操作を同じcheckpointへ更新する。
 
@@ -1935,12 +1937,13 @@ Contract closure matrix:
 | `RK-PERF-001` | Apply | affected production suite／ranking hot path before-after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.3 |
 
-Handoff: 攻撃NP buff count実装・検証（2026-09-13）
+Handoff: population countフォローアップ（2026-09-13）
 
-- 検証時点はHEAD `83b4db2`＋今回差分。利用者のコミット依頼により、本記録を含む実装commitへ収録。開始時の既存変更なし。master20260913.05 / master schema50 / portable schema40 / engine40.0.0。
-- 対象1000900/1101600は共通経路で計算可能。20955のcritical callbackと8808のgrowth readerを含めた。ranking415/433・calculator420/422、最終qualityと性能比較は成功。
-- 完了証跡・manifest・差分hashは[checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)へ記録。今回単位の未達なし。次の操作は残18分類とChaldea固定参照から既存U2-D.countのtarget/individual countを接続すること。今回の成功済み監査は再実行しない。
-- 未達: HP/BP、target/individual count・transfer、admission、全条件・owned候補完全性、全体の回復/UI、最終Task gate。今回単位をTSK-06.45全体の完了にしない。
+- 基点HEAD `dc87dc1`＋本記録を含む実装commitの差分。開始clean。master20260913.10 / master schema51 / portable schema40 / engine41.0.0。前単位のqualityはbeforeとして継承。
+- 通常ranking415→421/433、calculator420/422。対象6profileの共通実行、NP1/2/5 parity、入力矛盾からのportable/UI修復を検証。最終quality成功（unit780/production122/E2E26、warning・unexpected console・retry0）。
+- 未達は502600の対象別function outcome→marker→countと、NP2成立込み5profileの全program候補上限。7profile単位とTSK-06.45全体は未完了。marker/transfer/HP/BP/全条件・ownedと全体gateも残る。
+- 次の操作: [checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)の最新manifest・49条件artifactと候補上限の拒否理由を読み、U3-Qの重複生成を削減する。cap4096を緩和せず、同じpolicy/NPでcalculator parityと性能を測る。その後、同じcount単位の502600を閉じる。
+- 直前の攻撃buff count2profileの完了証拠はcheckpointの`dc87dc1`履歴を保持し、今回の部分対応を全体完了へ読み替えない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

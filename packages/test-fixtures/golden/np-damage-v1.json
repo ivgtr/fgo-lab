@@ -29,7 +29,7 @@
     { "npLevel": 5, "minimum": 10350, "average": 11493.96, "maximum": 12638 }
   ],
   "masterDataVersion": "independent-constant-fixture-1",
-  "engineVersion": "40.0.0",
+  "engineVersion": "41.0.0",
   "sources": [
     "https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/damage.md",
     "https://github.com/atlasacademy/fgo-docs/blob/master/deeper/battle/32-bit-float.md"

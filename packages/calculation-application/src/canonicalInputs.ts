@@ -1,7 +1,7 @@
 import { OC_WORLD_TRAIT_INPUT_PREFIX } from '@fgo-lab/battle-execution';
 import { resolvedScenarioSchema } from '@fgo-lab/schema';
 import type { EffectProjection, ResolvedCanonicalInputSet } from '@fgo-lab/battle-execution';
-import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
+import type { CanonicalInputDefinition, PopulationCountSelector } from '@fgo-lab/master-data';
 import type { CalculationResult, CalculationScenario } from '@fgo-lab/schema';
 
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
@@ -12,6 +12,7 @@ export interface EffectInputViewModel {
   owner: CanonicalInputDefinition['owner'];
   label: string;
   description: string;
+  populationSelector?: PopulationCountSelector | undefined;
   control: 'segmented' | 'stepper' | 'percentage';
   minimum: number;
   maximum: number;
@@ -84,7 +85,9 @@ function relatedDamageEffects(
 ) {
   return effects.filter(
     (effect) =>
-      effect.modifier !== null &&
+      (effect.modifier !== null ||
+        definition.kind === 'populationCount' ||
+        definition.kind === 'populationSize') &&
       effect.executionSupport === 'supported' &&
       effect.explanation.code !== 'cardMismatch' &&
       effect.requiredInputs.some((input) => input.key === definition.key),
@@ -93,6 +96,7 @@ function relatedDamageEffects(
 
 export function createEffectInputViewModels(input: {
   definitions: readonly CanonicalInputDefinition[];
+  recovering?: boolean;
   effects: readonly EffectProjection[];
   requiredInputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
   explicitValues: ResolvedScenario['canonicalInputValues'];
@@ -102,7 +106,13 @@ export function createEffectInputViewModels(input: {
     const related = relatedDamageEffects(definition, input.effects);
     const instanceInput =
       definition.kind === 'effectStackCount' && definition.instanceTraits !== undefined;
-    if (related.length === 0 && !invalidKeys.has(definition.key) && !instanceInput) return [];
+    if (
+      related.length === 0 &&
+      !invalidKeys.has(definition.key) &&
+      !instanceInput &&
+      !input.recovering
+    )
+      return [];
     const explicit = input.explicitValues[definition.key];
     return [
       {
@@ -111,6 +121,9 @@ export function createEffectInputViewModels(input: {
         owner: definition.owner,
         label: definition.label,
         description: definition.description,
+        ...(definition.kind === 'populationCount'
+          ? { populationSelector: definition.selector }
+          : {}),
         control: inputControl(definition),
         minimum: definition.minimum,
         maximum: definition.maximum,

@@ -74,5 +74,43 @@
       "retrievedAt": "2026-09-13",
       "trackedFile": "data/raw/referenced_skills.json"
     }
-  ]
+  ],
+  "populationCountFollowup": {
+    "baseCommit": "dc87dc1221e55bf2753d76a089a16bd84346e1c9",
+    "referenceCommit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
+    "scopeByValue2": {
+      "0": "recipient",
+      "1": "allies",
+      "2": "enemies",
+      "3": "allActors",
+      "4": "otherActors"
+    },
+    "countUnits": {
+      "gainNpTargetSum": "One per matching actor (OR over selected traits), including intrinsic and added individualities.",
+      "gainNpIndividualSum": "Matching intrinsic/added individualities plus eligible buff instances, including multiplicity."
+    },
+    "identity": "Actor individuality (including addIndividuality Value) and buff identity (buff.vals) are separate canonical selector bases. Mixed identity/unknown overlap remains unsupported. canBeInBattle is normalized only in the pipeline to a population-presence selector.",
+    "input": "Initial additional ally/enemy population is 0..2 each, excluding the attacker/current NP target. Actor-trait counts concern only these additional actors; buff counts concern the entire selected scope. Known actors are read from current canonical traits. Impossible initial counts are repairable inputRequired.",
+    "execution": "Selected sources append ordered population events inside the existing NP/OC transaction. Full cohort grants can be counted exactly. Unknown partial actor overlap, conditional/finite/opaque writers and relevant unbound removals fail closed; rejected transactions preserve prior state.",
+    "ranking": "Legal joint count/population tuples; capacity saturation of positive gain readers and a shared-execution terminal OC interval may prove input equivalence. Per-profile cap4096 is unchanged. Baseline6 profiles pass; the remaining count profile and satisfied-policy candidate limits are not closed.",
+    "unresolved502600": "Negative Rate in add_state.dart requires the immediately preceding per-target function result. Counter20887 additionally requires happyHalloween. Current aggregate inputs cannot justify unconditional all-target marker grants, so execution remains unsupported.",
+    "sources": [
+      {
+        "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_np_target_sum.dart",
+        "sha256": "c7b383c84652aff308cab4bbddfe21a8bf01fe16fc6a84bcdb2dadd591b84fb4"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/function_executor.dart",
+        "sha256": "2c402c5613be6a6293c02944555a0f6dcc199f247de03a17e0a1e271709937d3"
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/add_state.dart",
+        "sha256": "fc17a411f22b4b6911834645d8a0595866ff686cdaed056729835d581d63b64f",
+        "lines": [
+          175,
+          180
+        ]
+      }
+    ]
+  }
 }

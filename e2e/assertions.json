@@ -583,5 +583,14 @@
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
     "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
+  },
+  {
+    "id": "E2E-A050-POPULATION-RECOVERY",
+    "caseId": "E2E-050",
+    "outcome": "browserConnection",
+    "oldAssertion": "population initial count contradiction, correction, persisted replay and reset share the calculator command path",
+    "disposition": "retained",
+    "replacementFile": "e2e/ranking-baseline.spec.ts",
+    "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
   }
 ]

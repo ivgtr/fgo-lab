@@ -176,7 +176,11 @@ export type BattleOperation =
   | (OperationBase & {
       kind: 'preserveSemanticEffect';
       semanticKind:
-        'resourceMutation' | 'stateMutation' | 'boundedPhaseIrrelevant' | 'buffInstanceMutation';
+        | 'resourceMutation'
+        | 'stateMutation'
+        | 'boundedPhaseIrrelevant'
+        | 'buffInstanceMutation'
+        | 'populationMutation';
     })
   | (OperationBase & {
       kind: 'addTrait';

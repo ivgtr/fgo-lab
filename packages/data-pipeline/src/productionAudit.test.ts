@@ -26,7 +26,7 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'f8873ea109dd823b5b5f97947ea1e47cd2405a4b50d263e66afb4c0aab091184',
+          digest: '2d285c4e1cc6f497337c716523741440c7b91c0d2df9a7ae537d658039f5c583',
           inventory: {
             hpGrowth: {
               servantCells: 56250,
@@ -61,7 +61,7 @@ describe('shared data-pipeline production audit', () => {
             },
             resources: {
               mutations: {
-                npGauge: 733,
+                npGauge: 739,
                 hp: 179,
                 criticalStars: 255,
                 battlePoint: 1,
@@ -75,11 +75,9 @@ describe('shared data-pipeline production audit', () => {
               unsupported: {
                 '["addStateShort","operationSemantics","commandCardAttack",true]': 17,
                 '["replaceMember","partyCompositionMutation",null,true]': 3,
-                '["gainNpTargetSum","dependentResourceAmount",null,true]': 3,
-                '["addState","contextReference",null,false]': 25,
+                '["addState","contextReference",null,false]': 24,
                 '["gainNpFromTargets","dependentResourceAmount",null,true]': 3,
                 '["gainHpFromTargets","dependentResourceAmount",null,true]': 3,
-                '["gainNpIndividualSum","dependentResourceAmount",null,true]': 3,
                 '["addState","operationSemantics",null,true]': 1,
                 '["moveToLastSubmember","partyCompositionMutation",null,true]': 1,
                 '["gainNp","unresolvedTarget",null,true]': 2,
@@ -202,7 +200,7 @@ describe('shared data-pipeline production audit', () => {
               },
               battlePointMissingAmounts: 10,
             },
-            operations: 14825,
+            operations: 14828,
             damageFunctions: 630,
             noblePhantasmVariantIdentities: 706,
             rawFunctionTypes: 54,
