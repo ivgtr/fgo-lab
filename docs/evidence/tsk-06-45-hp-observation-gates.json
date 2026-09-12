@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-09-12",
-  "status": "observationRequired",
-  "classification": "raw source legality and arithmetic predictions; not an in-game measurement",
+  "status": "referenceSpecified",
+  "classification": "User-approved Chaldea reference contracts; raw evidence and historical arithmetic predictions retained; FGO Lab execution not yet implemented or verified; no in-game measurement claimed",
   "inputs": [
     {
       "path": "data/raw/nice_servant.json",
@@ -20,7 +20,7 @@
   "gates": [
     {
       "id": "maximumHp",
-      "status": "observationRequired",
+      "status": "referenceSpecified",
       "source": {
         "ownerId": 202900,
         "name": "浅上藤乃",
@@ -153,11 +153,56 @@
           "maximum": 8000
         }
       },
-      "remaining": "Published description supports clamp-only but no discriminating before/after measurement was recovered. Removal must also be observed."
+      "remaining": "Connect the adopted reference contract through FGO Lab canonical IR, shared execution, outcomes and recovery; verify relevant production cells and parity.",
+      "historicalObservationRequirement": "Published description supports clamp-only but no discriminating before/after measurement was recovered. Removal must also be observed.",
+      "referenceContract": {
+        "commit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
+        "rules": [
+          "Maximum HP is max(base HP + fixed buff sum + trunc(0.001 * (rate buff sum * base HP)), 1), using the reference buff-action aggregation.",
+          "For a living recipient, adding a maxhp/baseHp increase also gains current HP; adding a decrease loses the corresponding current HP amount with nonlethal lower bound 1. Percent changes use base HP, with integer conversion at the reference expression.",
+          "Removing ordinary maxhp modifiers preserves current HP subject to the recomputed maximum; removing positive baseHp modifiers separately subtracts their contribution before clamping. Keep maxhp and baseHp categories distinct.",
+          "Adopt 5000/10000 -> 3000/8000 for a 2000 ordinary maximum-HP reduction; removing that reduction gives 3000/10000. This is reference behavior, not an in-game measurement."
+        ],
+        "sources": [
+          {
+            "path": "lib/app/battle/models/svt_entity.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/svt_entity.dart",
+            "sha256": "d7c1961a37d655d87279cc999b1cc29be74214174a7f1d431e9d5e65c899873e",
+            "lines": [
+              88,
+              561,
+              585,
+              605,
+              1305,
+              1319,
+              1324,
+              1847
+            ]
+          },
+          {
+            "path": "lib/app/battle/functions/add_state.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/add_state.dart",
+            "sha256": "fc17a411f22b4b6911834645d8a0595866ff686cdaed056729835d581d63b64f",
+            "lines": [
+              144,
+              148
+            ]
+          },
+          {
+            "path": "test/app/battle/models/buff_test.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/test/app/battle/models/buff_test.dart",
+            "sha256": "7f56a2e285b37fe8e0ef170cc6033377067de1e293e4f057b4b304bf515b272b",
+            "lines": [
+              283
+            ]
+          }
+        ],
+        "knownDisagreement": "The earlier published clamp-only description conflicts with the reference addition path. The 2026-09-13 user-approved reference policy selects the Chaldea behavior; the discrepancy is retained rather than described as experimentally resolved."
+      }
     },
     {
       "id": "healingPrecision",
-      "status": "observationRequired",
+      "status": "referenceSpecified",
       "sources": [
         {
           "ownerId": 101800,
@@ -293,11 +338,50 @@
         "float32EachStep": 3899,
         "double": 3900
       },
-      "remaining": "A legal skill/equip combination is now identified; actual HP delta and separate giver/receiver operation order remain unobserved."
+      "remaining": "Connect the adopted reference contract through FGO Lab canonical IR, shared execution, outcomes and recovery; verify relevant production cells and parity.",
+      "historicalObservationRequirement": "A legal skill/equip combination is now identified; actual HP delta and separate giver/receiver operation order remain unobserved.",
+      "referenceContract": {
+        "commit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
+        "rules": [
+          "Use IEEE-754 double arithmetic for the referenced HP gain expression; toModifier(v) is 0.001 * v, not the Float32 damage helper.",
+          "Compute fixed base Value or percent base maximumHP * (0.001 * Value), then (base * (0.001 * receiveEffect)) * (0.001 * giveEffect), then truncate toward zero once.",
+          "Receive modifier belongs to the recipient and give modifier to the activator. Preserve the reference no-healing and living-recipient checks and clamp the committed gain to maximum HP.",
+          "For the recorded base 3000 / receive 1300 / give 1000 case, adopt 3900 before missing-HP clamp. Do not substitute the ratio-first Float32 hypothesis."
+        ],
+        "sources": [
+          {
+            "path": "lib/app/battle/functions/gain_hp.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_hp.dart",
+            "sha256": "848fa8db2caab241f7daa91edc2f458f4bb701a5f5b67a87e3abae6a4d0e935c",
+            "lines": [
+              12,
+              31,
+              35
+            ]
+          },
+          {
+            "path": "lib/app/battle/utils/battle_utils.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/utils/battle_utils.dart",
+            "sha256": "8642d332d7e3834881a28b09f3c762538133711480d70bddd4d968b2937bfad8",
+            "lines": [
+              15
+            ]
+          },
+          {
+            "path": "lib/app/battle/models/svt_entity.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/svt_entity.dart",
+            "sha256": "d7c1961a37d655d87279cc999b1cc29be74214174a7f1d431e9d5e65c899873e",
+            "lines": [
+              1305,
+              1319
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "hpReaders",
-      "status": "observationRequired",
+      "status": "referenceSpecified",
       "source": {
         "servantId": "702500",
         "level": 90,
@@ -659,7 +743,40 @@
         ]
       },
       "protocol": "Use current HP 1 with the recorded legal maximum for the NP continuous-ratio branch. Separately test the same buff grant before and after healing and threshold H-1/H/H+1; retain owner and read clock. Damage observations must control or enumerate random rolls, not infer a one-unit coefficient from one random damage roll.",
-      "remaining": "The earlier 1/11000 probe is schematic. A master-derived 1/13028 input is now provided, but no observation distinguishing integer-permille and continuous-ratio readers was recovered."
+      "remaining": "Connect the adopted reference contract through FGO Lab canonical IR, shared execution, outcomes and recovery; verify relevant production cells and parity.",
+      "historicalObservationRequirement": "The earlier 1/11000 probe is schematic. A master-derived 1/13028 input is now provided, but no observation distinguishing integer-permille and continuous-ratio readers was recovered.",
+      "referenceContract": {
+        "commit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
+        "rules": [
+          "Buff HP conditions read the owner at use time: q = trunc((currentHP / maximumHP) * 1000), using double division/multiplication; HP_HIGHER and HP_LOWER compare q inclusively.",
+          "HP-dependent buff values use that integer q, the declared min/max ratio range, clamping and truncation of the interpolated addition at BuffData.getValue. Keep the lower-bound contribution and upper-range behavior of the reference.",
+          "HP-dependent NP coefficients use the current attacker HP / maximum HP ratio directly, without an intermediate integer permille: truncate((1-ratio)*Target) for low-HP and truncate(ratio*Target) for high-HP contributions.",
+          "Display rounding, buff thresholds, NP coefficient rounding and HP0 reachability remain distinct. Do not import delegate HP overrides or let displayed 0% make a living actor dead."
+        ],
+        "sources": [
+          {
+            "path": "lib/app/battle/models/buff.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/models/buff.dart",
+            "sha256": "8aa43d185287a6861c23ebd60fb3f696b18ab9e96d228155e5659ae2ed87fbc5",
+            "lines": [
+              283,
+              290,
+              793,
+              798
+            ]
+          },
+          {
+            "path": "lib/app/battle/functions/damage.dart",
+            "url": "https://github.com/chaldea-center/chaldea/blob/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/damage.dart",
+            "sha256": "42258536cdee7b344f493d7202672a31b996d478444d4176935903db13ceeda4",
+            "lines": [
+              83,
+              88,
+              92
+            ]
+          }
+        ]
+      }
     }
   ],
   "sourcesChecked": [
@@ -671,5 +788,12 @@
       "url": "https://github.com/atlasacademy/fgo-docs",
       "role": "damage/buff formula documentation; no healing-specific rounding oracle recovered"
     }
-  ]
+  ],
+  "updatedAt": "2026-09-13",
+  "referencePolicy": {
+    "approvedAt": "2026-09-13",
+    "repository": "https://github.com/chaldea-center/chaldea",
+    "commit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
+    "decision": "Use the matching Chaldea implementation, callers and tests as the reference for TSK-06.45 resource behavior. In-game measurement is additional validation, not a prerequisite for implementation. Preserve explicit FGO Lab product requirements and typed failures for missing or contradictory inputs."
+  }
 }

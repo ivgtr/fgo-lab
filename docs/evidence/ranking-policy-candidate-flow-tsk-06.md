@@ -1,12 +1,12 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-12"
+updated_at: "2026-09-13"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-12フォローアップ)。TSK-06.45はin_progress。07ddfe1からHP非依存のtrait/instance count→NP/OCを実装中。残るHP数値3件と実行・回復の未接続を分けて追跡する。下記2026-09-09のdeltaは既存の調査根拠を保持する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dでtrait/instance count→NP/OCの限定接続をコミット済み。HP数値3件はChaldea参照契約を採用済み。実行・回復の未接続を追跡する。下記2026-09-09のdeltaは既存の調査根拠を保持する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -440,11 +440,99 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 後ranking3回4241.55/4344.18/4384.07ms（中央値4344.18ms、before比+7.35%）。全回結果digest一致。
 単発3標本の揺れを含むため原因不明の増加を許容済みとはしない。量query収集のallocationと再測定を後続で確認する。
 
-### canonical checkpoint（2026-09-12、フォローアップ）
+### canonical checkpoint（2026-09-13、フォローアップ）
 
-2026-09-13コミット整理: 利用者の依頼により、このcheckpointに対応する実装・test・master・証跡と、
-開始時から保持した本Task/flowの関連変更を一つのcommitへ収録する。以下のdirty/untracked・未コミット表記は
-最終検証時点の記録。TSK-06.45は引き続きin_progressであり、未達gateと次の操作は下記を引き継ぐ。
+**参考実装の採用（2026-09-13利用者承認、現在の判断）**。
+Chaldeaの該当実装を参考仕様としてTSK-06.45の未確定resource処理を閉じる。
+固定commitは`9fa75655c07ecd76168b1ccf5b8232e8d64664cf`（今回確認したmainと一致）。
+実装本体・呼出元・関連testを既存IR/executionへ対応させ、同じ規則を一から導き直さない。
+これは比較対象として眺めるだけの扱いを変更する採用判断であり、ゲーム実測済みとする主張ではない。
+HP/BP/count/transferの既存判別例は参照契約の回帰fixtureへ使い、実測は追加検証として扱う。
+FGO Labの製品範囲・canonical ownership・入力fail-closed・共通transaction・parityは維持する。
+参照元のbattle UI/delegateや任意の戦闘simulationを移植せず、該当する規則を接続する。
+
+HP3件の該当source・SHA256・関数位置・採用式を[既存HP証跡](tsk-06-45-hp-observation-gates.json)の
+referenceContractへ記録し、statusを`observationRequired`から`referenceSpecified`へ変更した。
+従来のraw/判別入力/予測は保持し、観測不足の記録をhistoricalObservationRequirementへ分離。
+
+| HP契約 | 今回固定した規則 | 残る作業 |
+| --- | --- | --- |
+| 最大HP | `postAddStateProcessing`は増減量を現在HPにも適用し、生存中の非致死減少は下限1。通常maxhp解除はcurrentを回復せず再計算maxへclamp。baseHp解除の別減算は混同しない | 最大値instance・form・失敗時rollbackを既存stateへ接続 |
+| 回復 | `gainHP`はdoubleで基礎量→受回復補正→与回復補正→末尾で整数化。3000/1300/1000はclamp前3900。回復禁止/死亡/最大HP制約も同経路へ接続 | all cell・modifier・recipientと回復outcomeの検証 |
+| HP比率 | buff条件/値式はownerのHP比率を整数permille化。NPのHP依存係数は整数permilleを経由せずHP/maxから計算し係数を整数化。表示丸めとは分離 | 各owner/clockのqueryと既存damage式へ接続 |
+
+最大HP減少5000/10000→3000/8000はChaldea準拠として採用する。旧clamp-onlyの分析記述との相違は
+解消済み実測と偽らず証跡に残すが、この採用判断後に同じ実測待ちを開始gateへ戻さない。
+同様に、下記や過去deltaの「比較実装を採用しない」「数値の実測必須」「HP3件観測待ち」は
+現在の停止条件として失効する。U0-H全family/HP実行の完了やTaskのBlocking0を意味しない。
+他のcount/actor lifecycleやBP/transferも該当するChaldea処理から具体化し、参照元にない部分と
+明示要件との矛盾だけを限定した技術課題として残す。未対応入力を参照元のdefaultで補完しない。
+
+
+**現在地**。実装commitは`ab5d77d`。その後のTask/flow/HP参照証跡更新と中間性能証跡のGit-only整理は、利用者の依頼により本記録を含むフォローアップcommitへ収録する。以下の旧dirty/untracked表記は当時の検証状態であり、再開時のGit状態を表さない。
+前段では保存済み証拠と直接の型・producerを照合し、Task/flowを更新した。その後の利用者判断で上記参考実装を採用し、HPの処理本体と数値契約を照合した。runtime実装は開始していない。
+実装の停止は前sessionの90分境界による引継ぎで、Task完了でも全実装の技術的停止でもない。
+
+今回の再整理による差分は、HP実測待ちをChaldea参照契約へ置き換えたこと、実装commitと文書commitの区別、
+最終比較に使わない中間性能証跡のGit-only化。runtimeの対応数や検証結果はab5d77dから不変。
+次の実装対象はTaskで指定した攻撃NP buff count2profile。HPは実測待ちによる延期対象ではなく、
+採用した規則を共通stateへ接続・検証する残作業である。以後は規則の再発見を進捗とせず、
+対象productionの入力→共通実行→結果→回復が閉じた証拠と、残る拒否理由を単位ごとに更新する。
+
+
+**前回から閉じた範囲**。ranking411→413/433、calculator420/422不変。
+改善2profileはactor trait付与からNP条件への接続。count共通state/transaction/回復は限定接続済みだが、
+新規正規化2種は非攻撃NPに属し、残る攻撃NPのbuff count2profileは未対応である。
+HP3件は前sessionでobservationRequiredだったが、今回の採用方針に基づき上記referenceSpecifiedへ更新済み。
+性能/差分/HP判別入力はtracked artifactへ移り、消失した旧/tmp一式を次sessionで復元する必要はない。
+
+**今回照合した証拠**。
+
+- 最終quality manifestは下記実装deltaのSHA256と一致し、success、unit762/production120/Playwright26を確認。manifestは07ddfe1＋dirtyの実装時記録である。
+- 当時trackedだった`apps packages scripts e2e`の差分を`git diff --binary --diff-filter=M 07ddfe1 ab5d77d -- apps packages scripts e2e`で照合し、下記`1547f4b...`と一致。新runtime2fileとpublished masterも記録済みhashに一致。今回qualityを再実行したという意味ではない。
+- 最終qualityの`production/production-audit-calculation-application.json`はSHA256 `1e954fbe9bceef1207bd66e93cad9738ca5f7b3241d73ca55c8d7bc0d53c913c`。tracked [count execution delta](tsk-06-45-count-execution-delta.json)のafterと一致し、残ranking20profileとcalculator2件を確認。
+- calculatorの残りは702500のHP `resourceStateUnavailable`と705300のBP `resourceStateUnavailable`。ranking20件の保存outcomeはすべて`unsupportedActionAdmission`であり、これだけから下流の実行成功を予測しない。
+
+**残20profileの現在の分類**。保存済み失敗identity内の選択skill/passive variantを現masterのcanonical effectへjoinした。
+下表は主な量式・markerによる重複なしの進行管理分類で、6＋3＋4＋2＋3＋2＝20。
+新しいexecutor実行やraw全件再監査ではなく、sourceに含まれる未対応operationの照合である。
+選択source中のoperationがすべてそのまま最終的なadmission拒否原因だとは断定しない。
+
+| 主分類 | profile数 | 証拠上のactor（同actorの別profileを含む） | 併存事項／担当単位 |
+| --- | ---: | --- | --- |
+| marker/contextReference | 6 | 105900、204900×2、405700、705300、2501400 | U1-R/U3-A。705300はBP実stateも不足、2501400はaddStateShortのoperationSemanticsも併存 |
+| target count | 3 | 106200、306000、1001800 | U2-D.count。gainNpTargetSumの対象人数とrecipientを分離 |
+| individual count | 4 | 306200×2、502600、2501600 | U2-D.count。gainNpIndividualSum、502600はcontextReferenceも併存 |
+| buff count | 2 | 1000900、1101600 | 次のU2-D.count対象。1101600はoperationSemanticsも併存 |
+| player NP transfer | 3 | 304000、1102300、2500400 | U2-D.transfer。1102300はcontextReferenceも併存 |
+| HP transfer | 2 | 204300、403600 | U2-D.transfer＋HP実state/生存の接続。数値契約はChaldea準拠を採用済み |
+
+この20profileはdefaultの入口拒否であり、現在calculatedのHP/BP未接続や全条件の不足を含む残作業総数ではない。
+終了までの作業量を「あと20行」や単純な対応率で見積もらない。既存U1〜U5の完了条件は維持する。
+
+**次に閉じる実経路と理由**。
+U2-Dの攻撃NP buff countを選ぶ。新しい非攻撃NPのcount例を追加するより、追加済み共通処理を
+残る攻撃profileの入力→実行→結果→回復へ接続することを優先する。対象と直接接続先は次のとおり。
+
+- 1000900/skill575350/function3392はcanonicalで`gainNpBuffIndividualSum`→`dependentResourceAmount`のまま。
+- 1101600/skill2255550/function21113も同量式で未対応、routeはpartyMember。加えてskill2253450/function20955は`addStateShort`→`operationSemantics`のまま。この併存を最初から検証範囲へ入れる。
+- `targetStateNormalization`のcountedBuffDefinitionsはbuff.vals由来のsignatureが一意な場合だけ発行。`npCountNormalization.normalizeNpBuffCount`はそのdefinitionを必須とし、単一正selector等へ限定。callback由来signatureを含む不足根拠は前回deltaの次actionを継承し、今回取得済みとしない。
+- `buffInstances.seedBuffInstances`と`countBuffInstances`は初期attacker入力・attacker readの契約。recipient別readと既存stack入力の同一state束縛は、単にnormalizerの拒否を外す前に閉じる責務である。
+
+IDは監査上の対象指定であり、runtime分岐やそのprofileだけの数値補完を許可しない。
+上記は接続責務と未達の特定であって、具体的なschema変更案の承認や全対象の正しさの証明ではない。
+順序と単位終了条件は[TSK-06.45](../tasks/development-redesign-tasks.md#tsk-0645-all-attack-np-execution-closure)へ集約。
+次単位で2件改善することはまだ保証できない。併存理由と下流実行まで確認し、未達を隠さず判定する。
+
+**進行管理上の修正**。
+前回の指示はHP非依存のcount familyを選んだが、攻撃NP実データの終了対象が十分に固定されておらず、
+限定共通処理の検証を終えても当該count残件は減らなかった。これはTask完了の虚偽申告ではないが、
+次はproductionの受入対象と同じ原因の直接writer/readerを開始時に結ぶ必要がある。
+Taskに残っていた「HPを30分調査」「未コミット」と、count/BPの二択を現在の指示から除いた。
+HP実測の取得を実装開始条件とする整理は、上記の参考実装採用で置き換えた。観測結果の回答を待たず、採用契約の実装・検証へ進める。Task全体の完了には既存U1〜U5の接続・全production・回復・性能gateが必要。
+
+今回の文書検証: `pnpm test:docs`6件・docs integrityと`git diff --check`成功。変更した参照先と表の書式を確認（docsは既存Prettier除外）。runtime/master/test変更なし。文書・証跡のみを利用者依頼のフォローアップcommitへ収録。今回quality・production・性能の再実行はない。
+以下は検証時点の実装記録。dirty/untracked・未コミット表記はab5d77dへの収録前を指す。
 
 **2026-09-12実装delta（最終checkpoint、TSK-06.45は未完了）**。開始`07ddfe1`、
 Task/flowの既存dirtyを保持。60分checkpoint後も同じcount familyを検証し、90分境界では
@@ -498,22 +586,16 @@ Task/flowの既存dirtyを保持。60分checkpoint後も同じcount familyを検
   新test2本・再照合/計測script2本・JSON証跡もuntrackedのまま保持。Git差分と併せて扱う。
 - 最終性能は[before](tsk-06-45-resource-before.json)と[final](tsk-06-45-resource-final.json)。
   同じwarmup1＋serial3回のdefault rankingでmedian3571.93→3519.66ms（約1.5%減）。
-  中間3610.18msは`tsk-06-45-resource-after.json`に保持。script hash差はformatterによるもの。
+  中間3610.18ms（旧master20260912.04）は最終比較に使わないため、2026-09-13のフォローアップでGit-onlyへ整理。
+  復元は`git show ab5d77d:docs/evidence/tsk-06-45-resource-after.json`、SHA256 `ef8ebd8931b85ffeff8a80a7c1448f644d0d8d1f4fc062b749d8108aca8552d6`。before/finalと計測scriptは保持。script hash差はformatterによるもの。
   generated6382→6403、deduplicated3966→3986、damage request2190→2211、distinct1385→1397。
   terminal plans3453・calculator母集団422は同数。exact counterは説明済み増分へ更新し、
   planner上限4096、timeout、最大積3840のratchetを緩和していない。tsxのDEP0205は外部計測runnerの出力。
 
-**未達条件と次の操作**。
-
-HP3件は下記観測待ち。BPはpoint/capacityが未接続で、phase直接加算を置換する必要がある。
-未対応count・transfer、program-bound admission、全対象条件・ownedの候補完全性/回復・UIが残る。
-calculator422/422・ranking433/433には未達で、Taskをdoneへ変更せず、他Taskへ移さない。
-次sessionはGit差分とこのquality manifestを確認して成功済み全監査を再実行せず、
-U2-Dの1000900/1101600に必要なbuff signature/既存stack inputとの同一state束縛、または
-U1-B/U2-Bのdomain別point/capacity→read→結果/retryの一単位を選ぶ。
-前者は必要なcallback由来の型証拠だけ限定復元し、別inputへ同じ物理countを二重seedしない。
-後者は採用済みのtrait→capacity→point clampを実装し、段階から最小pointを無根拠に選ばない。
-HPの観測依頼は出したが本checkpoint時点では未取得。新しいHP検索や算術probeの反復を進捗としない。
+**実装終了時の未達条件（履歴）**。
+HP/BP、未対応count・transfer、program-bound admission、全対象条件・ownedの候補完全性/回復・UIが残った。
+当時は攻撃NP buff countまたはBPを次候補としていた。現在の優先順位は本checkpoint冒頭とTaskへ更新済み。
+HP観測依頼は実装終了時点では未取得で、以下の判別入力とstatusを保持する。
 
 HP限定調査は開始から30分以内に3件とも`observationRequired`と判定した。
 `tsk-06-45-hp-observation-gates.json`はraw hash・該当cell・不足観測を保持する。
