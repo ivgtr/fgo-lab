@@ -406,18 +406,18 @@ describe('static ranking candidate space', () => {
       damageCache: calculation.damageCache,
     }).toEqual({
       candidateInventory: {
-        damageRequestCount: 2321,
+        damageRequestCount: 2332,
         damageRequestUpperBound: 2389,
         deduplicatedCount: 2389,
-        distinctDamageInputCount: 1430,
+        distinctDamageInputCount: 1431,
         generatedCount: 2389,
         semanticUpperBound: 2389,
       },
       damageCache: {
-        cacheHitCount: 891,
-        cacheHitRate: 0.38388625592417064,
-        distinctDamageInputCount: 1430,
-        requestCount: 2321,
+        cacheHitCount: 901,
+        cacheHitRate: 0.38636363636363635,
+        distinctDamageInputCount: 1431,
+        requestCount: 2332,
       },
     });
     const inventoryKeys = master.servants.flatMap((servant) =>
@@ -438,16 +438,12 @@ describe('static ranking candidate space', () => {
       '304000',
       '403600',
       '405700',
-      '502600',
       '705300',
     ]);
     expect(
       unavailable.every(
         (result) =>
-          result.status === 'unsupported' &&
-          (result.reason === 'unsupportedActionAdmission' ||
-            (result.attackProfile?.id.servantLineageId === '502600' &&
-              result.reason === 'candidateExecutionUnsupported')),
+          result.status === 'unsupported' && result.reason === 'unsupportedActionAdmission',
       ),
     ).toBe(true);
   }, 30_000);
@@ -590,7 +586,6 @@ describe('static ranking candidate space', () => {
       },
       preparationRejections: {
         'included:baseline:unreachable:insufficientNpGauge': 57,
-        'included:baseline:unreachable:unsupportedResourceMutation': 11,
       },
     });
   }, 30_000);

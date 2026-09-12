@@ -1,3 +1,4 @@
+import { normalizePopulationFunctions } from './populationFunctionNormalization';
 import { isOcRateFunction, ocConditionParameterKeys } from './ocSemantics';
 import { normalizeNpStackQuantity, normalizeEffectStackInputs } from './stackQuantityNormalization';
 import type {
@@ -890,7 +891,11 @@ function normalizeCanonicalInputSemantics(
   const input = (
     kind: Exclude<
       CanonicalInputDefinition['kind'],
-      'matchingActorCount' | 'effectStackCount' | 'populationSize' | 'populationCount'
+      | 'matchingActorCount'
+      | 'effectStackCount'
+      | 'populationSize'
+      | 'populationCount'
+      | 'populationActorValue'
     >,
     owner: CanonicalInputDefinition['owner'],
     label: string,
@@ -1510,6 +1515,11 @@ export function normalizeFunctions(
     )
       criticalStarSeriesCounts.set(fn.funcId, (criticalStarSeriesCounts.get(fn.funcId) ?? 0) + 1);
   }
+  const populationFunctions = normalizePopulationFunctions(
+    source === 'skill' ? (functions ?? []) : [],
+    traitNameById,
+    stateCatalog,
+  );
   const occurrencesByFunctionId = new Map<number, number>();
   const normalized = (functions ?? []).flatMap((fn) => {
     if (typeof fn.funcId !== 'number') return [];
@@ -1721,6 +1731,7 @@ export function normalizeFunctions(
       referenceRecognizedKeys,
       ocConditionParameterKeys(fn, parameterSets),
     );
+    const populationFunction = populationFunctions.get(fn);
     const npPopulation = normalizeNpPopulationCount(fn, parameterSets, traitNameById, stateCatalog);
     const populationMutations = normalizePopulationMutation(
       fn,
@@ -1760,6 +1771,7 @@ export function normalizeFunctions(
       contextChanges,
       quantityApplicationTiming,
     });
+    if (populationFunction) execution = [populationFunction.operation];
     const referenceCandidates = parameterSets
       .flatMap((set) => set)
       .flatMap((parameter) => {
@@ -2033,6 +2045,7 @@ export function normalizeFunctions(
         stateIdentity,
         inputDefinitions: [
           ...canonicalInput.inputs,
+          ...(populationFunction?.inputs ?? []),
           ...(npBuffCount ? [npBuffCount.input] : []),
           ...(npPopulation?.inputs ?? []),
         ],
@@ -2045,7 +2058,7 @@ export function normalizeFunctions(
             )
               ? 'sourceSelf'
               : targetPolicy,
-          expression: requirement,
+          expression: populationFunction ? { kind: 'always' as const } : requirement,
         },
         execution,
         atlasEvidence: {

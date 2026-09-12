@@ -180,7 +180,8 @@ export type BattleOperation =
         | 'stateMutation'
         | 'boundedPhaseIrrelevant'
         | 'buffInstanceMutation'
-        | 'populationMutation';
+        | 'populationMutation'
+        | 'populationFunction';
     })
   | (OperationBase & {
       kind: 'addTrait';

@@ -50,7 +50,9 @@ export function createCanonicalInputValueDomains(
       values:
         mode === 'baseline'
           ? [definition.defaultValue ?? definition.minimum]
-          : definition.kind === 'populationCount' || definition.kind === 'populationSize'
+          : definition.kind === 'populationCount' ||
+              definition.kind === 'populationSize' ||
+              definition.kind === 'populationActorValue'
             ? Array.from(
                 {
                   length:

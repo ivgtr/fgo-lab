@@ -1,4 +1,11 @@
-import { populationGaugeHasOneTerminalOc } from './ocResourceDependencies';
+import fixture from '../../test-fixtures/master/fixture.json';
+import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  populationInputEquivalenceKey,
+  readPopulationCount,
+  type PopulationEvent,
+} from './populationCounts';
+import { populationInputsHaveEquivalentTerminalDamage } from './populationGaugeEquivalence';
 import { DEFAULT_NP_RESOURCE_SEMANTICS } from './npResource';
 import { effectReadsOc, ocRelevantSourceIndexes } from './ocDependency';
 import { describe, expect, it } from 'vitest';
@@ -918,11 +925,11 @@ describe('population candidate OC equivalence', () => {
     return current;
   }
   it('collapses only a proven terminal OC interval, including capacity saturation', () => {
-    expect(populationGaugeHasOneTerminalOc([countSource(1000)], context)).toBe(true);
-    expect(populationGaugeHasOneTerminalOc([countSource(5000)], context)).toBe(false);
-    expect(populationGaugeHasOneTerminalOc([countSource(5000)], { ...context, npLevel: 1 })).toBe(
-      true,
-    );
+    expect(populationInputsHaveEquivalentTerminalDamage([countSource(1000)], context)).toBe(true);
+    expect(populationInputsHaveEquivalentTerminalDamage([countSource(5000)], context)).toBe(false);
+    expect(
+      populationInputsHaveEquivalentTerminalDamage([countSource(5000)], { ...context, npLevel: 1 }),
+    ).toBe(true);
     const fixed = source();
     fixed.effect.execution = [
       {
@@ -935,16 +942,22 @@ describe('population candidate OC equivalence', () => {
         amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
       },
     ];
-    expect(populationGaugeHasOneTerminalOc([countSource(5000), fixed], context)).toBe(true);
+    expect(populationInputsHaveEquivalentTerminalDamage([countSource(5000), fixed], context)).toBe(
+      true,
+    );
     fixed.effect.proc = { kind: 'singleRoll', ratePermille: [[500], [], [], [], []] };
-    expect(populationGaugeHasOneTerminalOc([countSource(5000), fixed], context)).toBe(false);
+    expect(populationInputsHaveEquivalentTerminalDamage([countSource(5000), fixed], context)).toBe(
+      false,
+    );
   });
   it('refuses disabled, other-source, loss, and unknown population writers', () => {
     const count = countSource(1000);
-    expect(populationGaugeHasOneTerminalOc([{ ...count, sourceEnabled: false }], context)).toBe(
-      false,
-    );
-    expect(populationGaugeHasOneTerminalOc([{ ...count, origin: 'support' }], context)).toBe(false);
+    expect(
+      populationInputsHaveEquivalentTerminalDamage([{ ...count, sourceEnabled: false }], context),
+    ).toBe(false);
+    expect(
+      populationInputsHaveEquivalentTerminalDamage([{ ...count, origin: 'support' }], context),
+    ).toBe(false);
     const loss = source();
     loss.effect.execution = [
       {
@@ -957,7 +970,7 @@ describe('population candidate OC equivalence', () => {
         amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
       },
     ];
-    expect(populationGaugeHasOneTerminalOc([count, loss], context)).toBe(false);
+    expect(populationInputsHaveEquivalentTerminalDamage([count, loss], context)).toBe(false);
     const writer = source();
     writer.effect.execution = [
       {
@@ -969,6 +982,113 @@ describe('population candidate OC equivalence', () => {
         includePassive: false,
       },
     ];
-    expect(populationGaugeHasOneTerminalOc([writer, count], context)).toBe(false);
+    expect(populationInputsHaveEquivalentTerminalDamage([writer, count], context)).toBe(false);
+  });
+  it('proves terminal damage equivalence only for an OC-insensitive attack and no target-state observer', () => {
+    const terminal = structuredClone(
+      masterSnapshotSchema.parse(fixture).servants[0]!.noblePhantasmVariantGroups[0]!.variants[0]!,
+    );
+    if (terminal.kind !== 'attack') throw new Error('attack fixture');
+    terminal.effects = [];
+    for (const damage of terminal.damage)
+      damage.parametersByOvercharge.fill(damage.parametersByOvercharge[0]);
+    const count = countSource(5000);
+    const writer = source();
+    writer.effect.execution = [
+      {
+        kind: 'populationFunction',
+        scope: 'enemies',
+        position: 0,
+        action: { kind: 'grant', traits: ['observed'], previousSuccess: false, condition: null },
+      },
+    ];
+    expect(populationInputsHaveEquivalentTerminalDamage([writer, count], context, terminal)).toBe(
+      true,
+    );
+    expect(populationInputsHaveEquivalentTerminalDamage([writer, count], context)).toBe(false);
+    const observer = source({
+      kind: 'trait',
+      scope: 'opponentState',
+      trait: 'observed',
+      present: false,
+      provenance: {
+        stateSources: 'activeOnly',
+        ignoredStateTraits: 'exclude',
+        unremovableStateTraits: 'include',
+      },
+    });
+    expect(
+      populationInputsHaveEquivalentTerminalDamage([writer, count, observer], context, terminal),
+    ).toBe(false);
+    count.effect.execution = [
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'loss',
+        recipient: 'sourceSelf',
+        unit: 'fixed',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[10000], [], [], [], []] },
+      },
+    ];
+    expect(populationInputsHaveEquivalentTerminalDamage([writer, count], context, terminal)).toBe(
+      false,
+    );
+  });
+  it('retains every read and the independent finite maximum when deduplicating population distributions', () => {
+    const count = countSource(1000),
+      operation = count.effect.execution[0]!;
+    if (operation.kind !== 'resourceMutation' || operation.amount.kind !== 'populationCount')
+      throw new Error('count');
+    operation.amount.selector = {
+      ...operation.amount.selector,
+      scope: 'allActors',
+      counting: 'individualities',
+    };
+    const writer = source();
+    const grant = {
+      kind: 'populationMutation' as const,
+      mutation: 'grant' as const,
+      scope: 'allies' as const,
+      basis: 'actorTraits' as const,
+      traits: ['counted'],
+      includePassive: false,
+    };
+    writer.effect.execution = [grant];
+    const event: PopulationEvent = { operation: grant, source: writer };
+    const representatives = new Map<string, number[]>();
+    const all: number[][] = [];
+    for (let allies = 0; allies < 3; allies++)
+      for (let enemies = 0; enemies < 3; enemies++)
+        for (let initial = 0; initial < 5; initial++) {
+          if (allies + enemies === 0 && initial > 0) continue;
+          const values = {
+            'population:allies:additional': allies,
+            'population:enemies:additional': enemies,
+            count: initial,
+          };
+          const key = populationInputEquivalenceKey([writer, count], values);
+          const reads = [[], [event]].map((events) =>
+            readPopulationCount({
+              selector:
+                operation.amount.kind === 'populationCount'
+                  ? operation.amount.selector
+                  : (() => {
+                      throw new Error('selector');
+                    })(),
+              inputKey: 'count',
+              values,
+              facts: facts(),
+              events,
+            })!,
+          );
+          if (representatives.has(key)) expect(reads).toEqual(representatives.get(key));
+          else representatives.set(key, reads);
+          all.push(reads);
+        }
+    const score = (reads: number[]) => 1000 - Math.abs(reads[1]! - 3) * 100;
+    expect(Math.max(...all.map(score))).toBe(Math.max(...[...representatives.values()].map(score)));
+    expect(representatives.size).toBeLessThan(all.length);
+    expect(representatives.values().next().value).toEqual([0, 0]);
   });
 });

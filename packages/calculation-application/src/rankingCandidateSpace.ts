@@ -1,11 +1,17 @@
 import {
   populationInputIssue,
+  populationInputEquivalenceKey,
   populationCountSaturation,
-  populationGaugeHasOneTerminalOc,
+  populationInputsHaveEquivalentTerminalDamage,
 } from '@fgo-lab/battle-execution';
 import { UnsupportedStackQuantity } from './rankingStackDomain';
 import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
-import type { ActorFormId, MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
+import {
+  findNoblePhantasmVariant,
+  type ActorFormId,
+  type MasterDataSnapshot,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import { applyCanonicalInputCommand } from './canonicalInputs';
 import {
@@ -175,18 +181,25 @@ function compileProgramDomain(input: {
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
   const hasPopulation = semantics.inputDefinitions.some(
-    (input) => input.kind === 'populationCount' || input.kind === 'populationSize',
+    (input) =>
+      input.kind === 'populationCount' ||
+      input.kind === 'populationSize' ||
+      input.kind === 'populationActorValue',
   );
   const populationIndependent =
     hasPopulation &&
     program.sourceUses.every(
       (use) => use.kind === 'skill' && use.skill.resourceRequirement === null,
     ) &&
-    populationGaugeHasOneTerminalOc(semantics.sources, {
-      semantics: master.npResourceSemantics,
-      npLevel: basis.npLevel,
-      initialGauge: policy.initialNpGauge,
-    });
+    populationInputsHaveEquivalentTerminalDamage(
+      semantics.sources,
+      {
+        semantics: master.npResourceSemantics,
+        npLevel: basis.npLevel,
+        initialGauge: policy.initialNpGauge,
+      },
+      findNoblePhantasmVariant(servant, program.attackProfile.noblePhantasmVariant) ?? undefined,
+    );
   const inputDomains = createCanonicalInputValueDomains(
     semantics.inputDefinitions,
     semantics.conditions,
@@ -202,21 +215,45 @@ function compileProgramDomain(input: {
   const canonicalInputs = populationIndependent
     ? inputDomains.map((domain) => {
         const definition = semantics.inputDefinitions.find((input) => input.key === domain.key);
-        return definition?.kind === 'populationCount' || definition?.kind === 'populationSize'
+        return definition?.kind === 'populationCount' ||
+          definition?.kind === 'populationSize' ||
+          definition?.kind === 'populationActorValue'
           ? { ...domain, values: [definition.defaultValue ?? definition.minimum] }
           : domain;
       })
     : inputDomains;
   const populationInputKeys = new Set(
     semantics.inputDefinitions
-      .filter((input) => input.kind === 'populationCount' || input.kind === 'populationSize')
+      .filter(
+        (input) =>
+          input.kind === 'populationCount' ||
+          input.kind === 'populationSize' ||
+          input.kind === 'populationActorValue',
+      )
       .map((input) => input.key),
   );
-  const populationInputs = finiteSemanticProduct(
+  const legalPopulationInputs = finiteSemanticProduct(
     canonicalInputs.filter((input) => populationInputKeys.has(input.key)),
     MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
     'population_input_product_limit',
   ).candidates.filter((values) => !populationInputIssue(semantics.inputDefinitions, values));
+  const representatives = new Map<string, Readonly<Record<string, number>>>();
+  for (const values of legalPopulationInputs) {
+    const key = populationInputEquivalenceKey(semantics.sources, values);
+    const prior = representatives.get(key);
+    const deviation = (tuple: Readonly<Record<string, number>>) =>
+      Object.entries(tuple).reduce(
+        (sum, [key, value]) =>
+          sum +
+          Math.abs(
+            value -
+              (semantics.inputDefinitions.find((input) => input.key === key)?.defaultValue ?? 0),
+          ),
+        0,
+      );
+    if (!prior || deviation(values) < deviation(prior)) representatives.set(key, values);
+  }
+  const populationInputs = [...representatives.values()];
   return {
     program,
     semantics,

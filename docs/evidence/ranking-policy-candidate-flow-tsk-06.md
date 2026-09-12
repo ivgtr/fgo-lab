@@ -6,7 +6,7 @@ updated_at: "2026-09-13"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dの限定接続と83b4db2の採用方針を基点に、攻撃NP buff count2profileは検証済み。dc87dc1からtarget/individual countを継続し、通常ranking421/433。7profile単位は未完了。HP数値3件はChaldea参照契約を採用済み。下記2026-09-09のdeltaは既存の調査根拠を保持する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dの限定接続と83b4db2の採用方針を基点に、攻撃NP buff count2profileは検証済み。target/individual count7profileも49条件・最終quality・性能比較まで完了し、通常ranking422/433。HP数値3件はChaldea参照契約を採用済み。下記2026-09-09のdeltaは既存の調査根拠を保持する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -442,27 +442,58 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 
 ### canonical checkpoint（2026-09-13、フォローアップ）
 
-**`dc87dc1`からの継続差分は検証済み。7profile単位とTSK全体は未完了**。開始時clean。保存済みquality manifest、published master、攻撃buff count差分/性能artifactと、`git diff --binary 83b4db2 dc87dc1 -- apps packages data/raw e2e scripts`のSHA256は下記の記録に一致した。再計画・before全件再実行は行っていない。
-U2-D.countの残るtarget count3／individual count4を受入対象に、recipientと計数scope、人数と一致数、初期入力とlive readをtyped IRへ分離。共通NP/OC transactionへpopulation更新を保持し、失敗時rollback・入力修復を接続している。通常条件6profileのNP1/2/5、calculator/ranking/portable parityは成功。7profile単位の終了gateは未達。
+**`0cf5a36`基点のcount7profile単位は実装・検証完了、scoped Blocking0。TSK全体は未完了。** 開始時clean。基点のquality（unit780/production122/E2E26）と49条件をbeforeとして再利用した。現在の49条件は40 calculated／9 unsupportedから49 calculatedへ改善した。
 
-| 継続で判明した未達 | 現状／次の操作 |
-| --- | --- |
-| 502600のmarker | `add_state.dart`の負Rateは直前の対象別function成功に依存する。20887もhappyHalloween条件付き。集計値を全対象への無条件付与へ読み替えずunsupportedを維持。対象別解除結果からmarkerへの経路を接続する必要がある |
-| 条件成立側の全program候補 | 初期populationの矛盾組合せを生成前に除外し、NP容量飽和とterminal OC不変を共通executionの証明で削減中。cap4096は不変。残る上限超過はU3-Qの未達であり、通常条件の対応数だけで隠さない |
-| 全件・回復・性能 | 小型68件とproductionの49条件記録を検証。UIでinputRequired後に人数欄が消える問題を検出し、transactionの回復metadataをskill/NP/初期・定数phaseへ共通に伝播。最終quality成功（unit780/production122/E2E26、warning・unexpected console・retry0）。実画面で人数修正→結果→保存→再読込→resetを確認 |
+U3-Qでは空quantityの二重生成を除去し、populationの初期入力を合法性検査後に、全count readerと付与/解除scopeが観測する値で同値化する。スキル順序は削除しない。代表は実在する合法tupleからbaselineとの差が最小のものを選ぶ。上限4096は完全な残存productへ適用する。NPを使う前の到達性・損失・未知writer・input直接readerがある場合は削減せず、共通executionのNP区間とterminal NPのOC依存性でdamage不変が証明できる場合だけ初期populationをbaselineへ縮約する。
 
-今回の直接経路レビューはdata pipeline→canonical input/operation→application command→preparation transaction→result/portable/UI。producerはraw Value2/trait/buff語彙をcanonical selectorへ変換し、applicationとUIはraw IDから規則を推定しない。
+| NP2・自己buffあり・成立込み | beforeの完全product | after候補上限 | 判定 |
+| --- | ---: | ---: | --- |
+| 306200の2profile（各々） | 18,640 | 2,860 | cap内、両NP variantを保持 |
+| 502600 | 8,378 | 43 | 対象別function入力を共通実行へ接続。terminal damageはOC非依存 |
+| 1001800 | 34,428 | 912 | terminal damageのOC非依存を共通ownerで証明 |
+| 2501600 | 4,128 | 2,064 | 空quantityの重複を除去 |
 
-- forward: 対象人数とindividualityの多重度、recipient除外、全cohort付与後のlive read、NP容量/OCを小型fixtureで確認。productionは7profile×NP1/2/5の通常条件21件と、NP2×4policyの28件（計49記録）を採取し、成功したranking条件をcalculator/portableへ再実行。
-- recovery: 不整合入力は`inputRequired`、小数shapeはinvalid、未束縛/条件付きwriterはunsupportedを区別。途中失敗はpopulation/NP/OCをrollback。失敗sourceの入力定義を回復metadataへ保持し、skill/attack NP/transform NP/初期・定数phaseから同じapplication処理へ渡す。
-- 反例: 未知metadata、scope変動、負selector、actor/buff混在、有限使用回数、部分cohort overlap、buff identity経由の特性解除、disabled/別source/NP lossを含むOC候補削減を拒否。対象別条件が不明なcohort writerは、局所条件がfalseでも全対象不成立へ読み替えない。初期特性の抑制と後からのstate付与も分けて確認。
-- 未達Blocking: 502600の対象別function成功に依存するmarkerと、成立込み5profileの全program候補上限。これらを残した7profile単位/Task全体は未完了。次の操作はU3-Qの候補生成の重複を解消し、同じpolicy/NP条件で再検証すること。cap緩和とunsupported候補の数値化は行わない。
+beforeは基点のprogram別dimensionから求めた全productであり、上限到達時の部分和と区別する。NP2四policyと通常NP1/2/5の49記録はすべてcalculated、calculator/ranking/portableで一致。今回のsliceに残る拒否理由はなし。上記IDは証跡の対象指定だけに使う。
 
-差分は[population count delta](tsk-06-45-population-count-delta.json)、同一commandの3回計測は[performance](tsk-06-45-population-count-performance.json)、固定参照は[NP count source](tsk-06-45-np-count-source.json)へ保持する。master20260913.10/schema51、engine41.0.0、portable schema40（保存shape不変）。855件を同じNP refへ対応付け、未照合0。既存数値差は306000のNP威力0→20%のみ、ranking6profileはunsupported→calculated、502600は拒否理由の分類変更。候補6419→6467、dedup3994→4018、damage request2232→2321、distinct1404→1430。ranking中央値3416.76→3429.16ms（+0.36%）。候補増加を伴う測定差として記録し、時間差のすべてを特定処理へ帰属させない。
+502600の直接経路は、pipelineの`populationFunctionNormalization`→typed `populationFunction`（position、removeOne／grant、直前同対象成功／条件trait）→既存preparation transaction→`populationFunctions`の敵別state／receipt→`readPopulationCount`→NP/OC→portable/UI。採用済みChaldea固定commitの`sub_state.dart`は実際に1件以上解除した対象だけ成功とし、`add_state.dart`の負Rateは直前の同対象成功を参照する。2回目の解除が不発でも1回目に付与済みのmarkerは残り、条件付きcounterは該当敵ごとに1個付与される。
 
-最終quality: `.test-results/2026-09-12T18-48-08-385Z-16-f49268/manifest.json`（SHA256 `fe00bd727563f1f59147707bfe8b9fc36a54798010fb1fe725946e2b624e5da5`）、277.33s。unit780/production122/E2E26、warning/console/retry0。production suiteはbefore41.362→38.663s。[validation artifact](tsk-06-45-population-count-validation.json)に49条件、最新audit/manifestのhash、変更したtracked/untracked実装ファイルのcontent digest `14de0fcbd76fdc87457be1d6e9150fb4ecfdc4dcffce107b2becead4929eacdc`を保持。性能scriptのdiffHashはtracked差分のみなので、新規実装ファイルはこのcontent digestで補完する。quality後の変更はTask/本checkpointとJSON証跡のみで、文書検証だけを実行する。利用者のコミット依頼により、今回の実装・証跡・Task/本checkpointを本記録を含む実装commitへ収録する。
+初期入力は敵0/1/2それぞれの解除対象になる通常buff数と条件markerの有無。人数は既存の追加敵0..2へ結ぶ。解除数は当該sourceのone-removal回数で飽和する段階入力であり、強化全体の無制限な実個数を推測しない。解除不能・耐性で失敗する分はこの成功可能な対象数に含めない。任意の敵buff一覧・抵抗計算・battle simulatorは追加していない。除去したbuffの残存特性を読む別経路は既存uncertain writeで拒否し、他の未知writerを初期入力で上書きしない。
 
-次回はこの最終qualityをbeforeとして再利用し、U3-QのNP2成立込み5profile→502600の対象別marker経路の順に同じcount単位を継続する。通常6profileの成功、7profile単位の終了、TSK全体のDone gateを別々に判定する。
+- forward: 各敵のbuff数0/1/2を同一function列で処理し、対象別成否→marker→count→NP/OCを確認。初期markerの8組合せ×buff数27組合せを独立oracleと照合。remove-allは付与instanceとcanonical trait countも更新し、他の既存付与分は残す。
+- recovery: 不在の敵に非zero入力はinputRequired。source途中の未知量・不整合ではpopulation／NP／OC／receiptをrollback。同じcommandを人数修復後に再実行可能。入力定義不足・mixed shapeはmaster schemaで拒否。未知metadata・finite-use・damage modifierの誤取込・循環marker参照はslice全体をfail closedにする。
+- alternate path: calculator/ranking/portable、支援source、初期phaseと選択skillが同じtransactionを通る。支援sourceを一律拒否する初期実装の回帰は解消。原子的commit前の別数値fallbackなし。
+- completeness: 小型fixtureで全合法人数配置・付与前後のreadが同値keyごとに一致し、独立した非単調scoreの最大値を保持。OC非依存proofはtarget traitのpositive/negative reader、別source、損失、未知writerを削減根拠にしない。productionは全profile inventoryと49条件のparityで役割を分ける。
+- UI: 既存E2E-050で敵2の入力→不在による拒否→人数修復→計算→保存→再読込→自動値へ復帰を確認。VRT5枚はDB/engine表記と422/11件表示の変更を確認し更新。snapshot再生成runはconsole観測があるため成功gateに数えない。
+
+原因と検出差分: 空のquantity候補がkeyの違いで2件になり、populationは読取結果が同じ人数配置まで直積化されていた。従来の通常NP1条件は容量でpopulationが縮約され、この組合せを検出できなかった。また対象単位の解除成否を持たず、負Rateの後続付与・条件付きcohort writerを接続できなかった。今回、初期入力／対象別receipt／集約countの責務を分離し、同じfamilyの通常・支援・rollback・未知writer・schema不正へfixtureを追加した。
+
+全件の現在値はranking422/433、calculator420/422。基点と一致するcalculator/rankingの855件のaudit identityに追加・欠落はなく、既存calculatedの数値差は0件。通常rankingの新規502600はNP1/2/5平均17,308.290／21,635.495／25,962.700。canonical inputはATK8,616＋Fou1,000、Buster buff45%、classAttackRate0.9、相性1、OC1、defensePiercing。初期解除数・marker0の代表ではcount由来のNP加算も0だが、共通skill経路の拒否を解消したことで計算可能になる。非zero入力のcountは共通transactionで処理し、OC非依存のterminal damageと区別する。
+
+新たに成立込みで計算可能になったNP2のcanonical inputと規則:
+
+| profile | NP2平均 | 最大候補の主要input／適用規則 |
+| --- | ---: | --- |
+| 306200／NP306204 | 115,903.455 | 初期individuality count3・追加味方1→OC2、NP威力30%、dragon宝具特攻1.5 |
+| 306200／NP306201 | 102,529.915 | 同じcount/人数→OC2、NP威力15%、dragon宝具特攻1.5 |
+| 502600 | 21,635.495 | 上記defensePiercing、Buster45%。OCによるterminal damage変化なし |
+| 1001800 | 165,854.365 | canonical classAffinity2、攻撃50%、Quick50%、powerMod105%、sakuraSeries対象。選択scenarioの既存規則であり新しいclass規則ではない |
+| 2501600 | 162,299.965 | 攻撃20%、Buster36%、NP威力10%、powerMod60%、lawfulGood/servant宝具特攻2 |
+
+旧policy記録には数値列がないため、以前拒否された条件の最大値との数値差は主張しない。合法候補の保持は同値性proofと全列挙の小型反例で確認し、全49条件の現在のcanonical input・rows・plan・policy選択根拠を[validation](tsk-06-45-population-count-validation.json)へ保存した。通常全件damage差、9件のoutcome改善、基点の完全product dimensionは[delta](tsk-06-45-population-count-delta.json)に保持する。
+
+| 基点比較 | before | after | 解釈 |
+| --- | ---: | ---: | --- |
+| default候補生成／dedup | 6,467／4,018 | 6,476／4,023 | 新規502600のdefault候補を実行。成立込み5profileの上限解消とは別条件 |
+| damage要求／distinct | 2,321／1,430 | 2,332／1,431 | 対応1profileの増加。runtime counter期待値を実測へ更新 |
+| program／mutation／opaque | 7,255／15,894／54,108 | 7,255／15,894／54,108 | 総数不変。対象別操作の表現変更に合わせdigestを更新 |
+| ranking hot path中央値 | 3,429.159ms | 3,715.939ms | +8.36%。同script/hash・Node/CPU・条件、warmup1回＋serial3回。新規処理と計時変動の寄与は分離していない |
+| production step | 38,663ms | 52,140ms | +34.86%。7profile受入testは4,305.6→32,108.5ms。旧拒否候補の全探索と四policyのcalculator/portable replayを追加 |
+
+[performance](tsk-06-45-population-count-performance.json)には基点計測、3samples、影響suiteの前後も保持した。suite内並列実行とshared setupを含むfile時間を単独処理の時間と解釈しない。cap4096、timeout、性能ratchetの緩和はない。
+
+最終`pnpm quality`はunit790／production122／E2E26、warning・unexpected console・retry0、273.759秒で成功。manifestは`.test-results/2026-09-12T19-46-29-367Z-46-6620ae/manifest.json`、SHA256 `77d06a907a9040c14a3b9e5a52247c74d01f0aba1fcc3eb398714fa6f2f7e3c6`。application audit digestは`ba4d2186e3e1be6233625d157acfd6b05a5d67f9f6ee446b2a6c0ec66c1f521d`。master20260913.12/schema52、engine42.0.0、portable schema40（保存shape不変）。quality後は文書・証跡だけを更新し、docs整合性・差分・JSON/hash照合を通した（docsは既存format除外対象）。
+
+このcount単位の未達gateはなし。検証時のGitは`0cf5a36`＋dirty。2026-09-13の利用者依頼で、この記録を含むcommitへ実装/test/VRT/証跡を収録する。次回は残ranking11／calculator2件を既存U2-D.transfer・marker/admission・HP/BPのreader/writerへ対応させ、必要な参照契約から始める。同じbefore/qualityを再実行しない。全条件/owned・全体回復/UIを含むTSK-06.45全体はin_progress、06.44はblockedを維持する。
 
 以下は`dc87dc1`までの完了済み証跡と採用契約。
 

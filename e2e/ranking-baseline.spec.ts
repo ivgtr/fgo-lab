@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('421件表示 / 421件を計算・順位外 12件', {
+  await expect(page.getByRole('status')).toContainText('422件表示 / 422件を計算・順位外 11件', {
     timeout: 30_000,
   });
   const first = page
@@ -325,4 +325,34 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     'aria-pressed',
     'true',
   );
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const targetPicker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await targetPicker.getByRole('tab', { name: '全DB' }).click();
+  await targetPicker.getByLabel('名前で検索').fill('エリザベート');
+  await targetPicker
+    .getByRole('button', { name: /エリザベート.*ハロウィン/ })
+    .first()
+    .click();
+  const removable = page.getByRole('group', { name: '敵2の解除可能な強化数', exact: true });
+  await removable.getByRole('button', { name: '1', exact: true }).click();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+  const enemies = page.getByRole('group', { name: '追加の敵人数', exact: true });
+  await enemies.getByRole('button', { name: '1', exact: true }).click();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.canonicalInputValues?.[
+          'population:enemy:1:removableBuffs:buffPositiveEffect'
+        ],
+    )
+    .toEqual({ kind: 'integer', value: 1 });
+  await page.reload();
+  await expect(removable.getByRole('button', { name: '1', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await removable.getByRole('button', { name: '自動値へ戻す' }).click();
+  await enemies.getByRole('button', { name: '自動値へ戻す' }).click();
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
 });

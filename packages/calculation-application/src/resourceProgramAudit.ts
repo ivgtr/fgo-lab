@@ -59,6 +59,8 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
   switch (operation.kind) {
     case 'unsupported':
       return operation.reason;
+    case 'populationFunction':
+      return 'populationStateDependency';
     case 'populationMutation':
       return operation.mutation === 'unsupported'
         ? 'unsupportedPopulationMutation'

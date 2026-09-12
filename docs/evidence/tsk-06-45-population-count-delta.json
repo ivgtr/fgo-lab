@@ -1,1288 +1,3740 @@
 {
-  "before": ".test-results/2026-09-12T16-51-55-415Z-16-b067b5/production/production-audit-calculation-application.json",
-  "after": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/production-audit-calculation-application.json",
-  "join": "ranking profile canonical NP identities mapped to sorted physical NP refs from the matching master; calculator servant identity",
-  "matched": 855,
-  "unmatchedBefore": 0,
-  "unmatchedAfter": 0,
-  "changes": [
-    {
-      "kind": "calculator",
-      "id": "306000",
-      "before": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 29115,
-            "average": 32333.35,
-            "maximum": 35552
-          },
-          {
-            "npLevel": 2,
-            "minimum": 38820,
-            "average": 43111.305,
-            "maximum": 47403
-          },
-          {
-            "npLevel": 3,
-            "minimum": 43672,
-            "average": 48500.275,
-            "maximum": 53329
-          },
-          {
-            "npLevel": 4,
-            "minimum": 46098,
-            "average": 51194.76,
-            "maximum": 56291
-          },
-          {
-            "npLevel": 5,
-            "minimum": 48525,
-            "average": 53889.245,
-            "maximum": 59254
-          }
-        ]
+  "command": [
+    "node",
+    "scripts/compare-resource-audits.mjs",
+    "0cf5a36",
+    ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/production-audit-calculation-application.json",
+    ".test-results/2026-09-12T19-46-29-367Z-46-6620ae/production/production-audit-calculation-application.json",
+    "/tmp/count-final-delta.json"
+  ],
+  "baselineCommit": "0cf5a36",
+  "before": {
+    "path": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/production/production-audit-calculation-application.json",
+    "sha256": "bfe0dcf7929f3635a67e06a6221e86399bde18b1600db2cc39bb39271a390965",
+    "masterHash": "53a6d3d24c9e8bc4efdbe3eb2fc3dff8e825958f11f83ca50b0214b748983364",
+    "inventory": {
+      "attackServants": 422,
+      "attackProfiles": 433,
+      "preparationPlans": 3485,
+      "calculatorScenarios": 422,
+      "rankingRows": 421,
+      "rankingPolicy": "current-default",
+      "resourcePrograms": {
+        "programs": 7255,
+        "mutations": 15894,
+        "opaqueOperations": 54108,
+        "digest": "ab35680bea6f4c008b7c6d1366302b84a66744febb55d346ef0310378f304411"
       },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 34938,
-            "average": 38800.12,
-            "maximum": 42663
-          },
-          {
-            "npLevel": 2,
-            "minimum": 46584,
-            "average": 51733.68,
-            "maximum": 56884
-          },
-          {
-            "npLevel": 3,
-            "minimum": 52407,
-            "average": 58200.435,
-            "maximum": 63994
-          },
-          {
-            "npLevel": 4,
-            "minimum": 55318,
-            "average": 61433.815,
-            "maximum": 67550
-          },
-          {
-            "npLevel": 5,
-            "minimum": 58230,
-            "average": 64667.2,
-            "maximum": 71105
-          }
-        ]
-      },
-      "inputChanges": {
-        "npDamageBuff": {
-          "before": 0,
-          "after": 0.2
-        }
-      }
-    },
-    {
-      "kind": "ranking",
-      "id": "106200",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 33798,
-            "average": 37534.975,
-            "maximum": 41272
-          },
-          {
-            "npLevel": 2,
-            "minimum": 45065,
-            "average": 50046.8,
-            "maximum": 55029
-          },
-          {
-            "npLevel": 3,
-            "minimum": 50698,
-            "average": 56302.705,
-            "maximum": 61908
-          },
-          {
-            "npLevel": 4,
-            "minimum": 53514,
-            "average": 59430.675,
-            "maximum": 65347
-          },
-          {
-            "npLevel": 5,
-            "minimum": 56331,
-            "average": 62558.62,
-            "maximum": 68786
-          }
-        ]
-      },
-      "inputChanges": {
-        "eventDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "fieldTraits": {
-          "before": null,
-          "after": []
-        },
-        "ignoreDamageCut": {
-          "before": null,
-          "after": false
-        },
-        "attackBuff": {
-          "before": null,
-          "after": 0
-        },
-        "classAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "attackerAtk": {
-          "before": null,
-          "after": 9735
-        },
-        "fouAtk": {
-          "before": null,
-          "after": 1000
-        },
-        "cardResistance": {
-          "before": null,
-          "after": 0
-        },
-        "npResistance": {
-          "before": null,
-          "after": 0
-        },
-        "classAttackRate": {
-          "before": null,
-          "after": 1
-        },
-        "craftEssenceAtk": {
-          "before": null,
-          "after": 0
-        },
-        "battlePointPhase": {
-          "before": null,
-          "after": 0
-        },
-        "target": {
-          "before": null,
-          "after": {
-            "classId": null,
-            "attribute": "unknown",
-            "traits": []
-          }
-        },
-        "defenseBuff": {
-          "before": null,
-          "after": 0
-        },
-        "npDamageBuff": {
-          "before": null,
-          "after": 0.3
-        },
-        "attackerLevel": {
-          "before": null,
-          "after": 80
-        },
-        "overcharge": {
-          "before": null,
-          "after": 1
-        },
-        "npSpecialMultipliers": {
-          "before": null,
-          "after": [
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        },
-        "targetStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "attackerId": {
-          "before": null,
-          "after": "106200"
-        },
-        "attackerHpPermille": {
-          "before": null,
-          "after": 1000
-        },
-        "attackerStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "cardType": {
-          "before": null,
-          "after": "arts"
-        },
-        "npMultipliers": {
-          "before": null,
-          "after": [
-            900,
-            1200,
-            1350,
-            1425,
-            1500
-          ]
-        },
-        "damageFunction": {
-          "before": null,
-          "after": {
-            "status": "resolved",
-            "kind": "traitCount",
-            "ignoreDefense": true
-          }
-        },
-        "cardBuff": {
-          "before": null,
-          "after": 0.3
-        },
-        "damageCut": {
-          "before": null,
-          "after": 0
-        },
-        "flatDamage": {
-          "before": null,
-          "after": 0
-        },
-        "powerMod": {
-          "before": null,
-          "after": 0
-        },
-        "npLevel": {
-          "before": null,
-          "after": 1
-        },
-        "specialResistance": {
-          "before": null,
-          "after": 0
-        },
-        "attributeAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "specialDamageBuff": {
-          "before": null,
-          "after": 0
-        }
-      }
-    },
-    {
-      "kind": "ranking",
-      "id": "306000",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 17469,
-            "average": 19399.81,
-            "maximum": 21331
-          },
-          {
-            "npLevel": 2,
-            "minimum": 23292,
-            "average": 25866.58,
-            "maximum": 28442
-          },
-          {
-            "npLevel": 3,
-            "minimum": 26203,
-            "average": 29099.965,
-            "maximum": 31997
-          },
-          {
-            "npLevel": 4,
-            "minimum": 27659,
-            "average": 30716.66,
-            "maximum": 33775
-          },
-          {
-            "npLevel": 5,
-            "minimum": 29115,
-            "average": 32333.35,
-            "maximum": 35552
-          }
-        ]
-      },
-      "inputChanges": {
-        "eventDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "fieldTraits": {
-          "before": null,
-          "after": []
-        },
-        "ignoreDamageCut": {
-          "before": null,
-          "after": false
-        },
-        "attackBuff": {
-          "before": null,
-          "after": 0
-        },
-        "classAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "attackerAtk": {
-          "before": null,
-          "after": 9944
-        },
-        "fouAtk": {
-          "before": null,
-          "after": 1000
-        },
-        "cardResistance": {
-          "before": null,
-          "after": 0
-        },
-        "npResistance": {
-          "before": null,
-          "after": 0
-        },
-        "classAttackRate": {
-          "before": null,
-          "after": 1.05
-        },
-        "craftEssenceAtk": {
-          "before": null,
-          "after": 0
-        },
-        "battlePointPhase": {
-          "before": null,
-          "after": 0
-        },
-        "target": {
-          "before": null,
-          "after": {
-            "classId": null,
-            "attribute": "unknown",
-            "traits": []
-          }
-        },
-        "defenseBuff": {
-          "before": null,
-          "after": 0
-        },
-        "npDamageBuff": {
-          "before": null,
-          "after": 0.2
-        },
-        "attackerLevel": {
-          "before": null,
-          "after": 80
-        },
-        "overcharge": {
-          "before": null,
-          "after": 1
-        },
-        "npSpecialMultipliers": {
-          "before": null,
-          "after": [
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        },
-        "targetStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "attackerId": {
-          "before": null,
-          "after": "306000"
-        },
-        "attackerHpPermille": {
-          "before": null,
-          "after": 1000
-        },
-        "attackerStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "cardType": {
-          "before": null,
-          "after": "arts"
-        },
-        "npMultipliers": {
-          "before": null,
-          "after": [
-            450,
-            600,
-            675,
-            712.5,
-            750
-          ]
-        },
-        "damageFunction": {
-          "before": null,
-          "after": {
-            "status": "resolved",
-            "kind": "standard",
-            "ignoreDefense": false
-          }
-        },
-        "cardBuff": {
-          "before": null,
-          "after": 0.36
-        },
-        "damageCut": {
-          "before": null,
-          "after": 0
-        },
-        "flatDamage": {
-          "before": null,
-          "after": 0
-        },
-        "powerMod": {
-          "before": null,
-          "after": 0
-        },
-        "npLevel": {
-          "before": null,
-          "after": 1
-        },
-        "specialResistance": {
-          "before": null,
-          "after": 0
-        },
-        "attributeAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "specialDamageBuff": {
-          "before": null,
-          "after": 0
-        }
-      }
-    },
-    {
-      "kind": "ranking",
-      "id": "306200",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 48168,
-            "average": 53493.625,
-            "maximum": 58819
-          },
-          {
-            "npLevel": 2,
-            "minimum": 64225,
-            "average": 71325.01,
-            "maximum": 78425
-          },
-          {
-            "npLevel": 3,
-            "minimum": 72253,
-            "average": 80240.69,
-            "maximum": 88229
-          },
-          {
-            "npLevel": 4,
-            "minimum": 76267,
-            "average": 84698.54,
-            "maximum": 93130
-          },
-          {
-            "npLevel": 5,
-            "minimum": 80281,
-            "average": 89156.39,
-            "maximum": 98032
-          }
-        ]
-      },
-      "inputChanges": {
-        "eventDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "fieldTraits": {
-          "before": null,
-          "after": []
-        },
-        "ignoreDamageCut": {
-          "before": null,
-          "after": false
-        },
-        "attackBuff": {
-          "before": null,
-          "after": 0.2
-        },
-        "classAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "attackerAtk": {
-          "before": null,
-          "after": 12154
-        },
-        "fouAtk": {
-          "before": null,
-          "after": 1000
-        },
-        "cardResistance": {
-          "before": null,
-          "after": 0
-        },
-        "npResistance": {
-          "before": null,
-          "after": 0
-        },
-        "classAttackRate": {
-          "before": null,
-          "after": 1.05
-        },
-        "craftEssenceAtk": {
-          "before": null,
-          "after": 0
-        },
-        "battlePointPhase": {
-          "before": null,
-          "after": 0
-        },
-        "target": {
-          "before": null,
-          "after": {
-            "classId": null,
-            "attribute": "unknown",
-            "traits": []
-          }
-        },
-        "defenseBuff": {
-          "before": null,
-          "after": 0
-        },
-        "npDamageBuff": {
-          "before": null,
-          "after": 0.2
-        },
-        "attackerLevel": {
-          "before": null,
-          "after": 90
-        },
-        "overcharge": {
-          "before": null,
-          "after": 1
-        },
-        "npSpecialMultipliers": {
-          "before": null,
-          "after": [
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        },
-        "targetStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "attackerId": {
-          "before": null,
-          "after": "306200"
-        },
-        "attackerHpPermille": {
-          "before": null,
-          "after": 1000
-        },
-        "attackerStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "cardType": {
-          "before": null,
-          "after": "buster"
-        },
-        "npMultipliers": {
-          "before": null,
-          "after": [
-            600,
-            800,
-            900,
-            950,
-            1000
-          ]
-        },
-        "damageFunction": {
-          "before": null,
-          "after": {
-            "status": "resolved",
-            "kind": "trait",
-            "ignoreDefense": false
-          }
-        },
-        "cardBuff": {
-          "before": null,
-          "after": 0.3
-        },
-        "damageCut": {
-          "before": null,
-          "after": 0
-        },
-        "flatDamage": {
-          "before": null,
-          "after": 0
-        },
-        "powerMod": {
-          "before": null,
-          "after": 0
-        },
-        "npLevel": {
-          "before": null,
-          "after": 1
-        },
-        "specialResistance": {
-          "before": null,
-          "after": 0
-        },
-        "attributeAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "specialDamageBuff": {
-          "before": null,
-          "after": 0
-        }
-      }
-    },
-    {
-      "kind": "ranking",
-      "id": "306200",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 44154,
-            "average": 49035.785,
-            "maximum": 53917
-          },
-          {
-            "npLevel": 2,
-            "minimum": 58872,
-            "average": 65381.215,
-            "maximum": 71890
-          },
-          {
-            "npLevel": 3,
-            "minimum": 66232,
-            "average": 73553.93,
-            "maximum": 80876
-          },
-          {
-            "npLevel": 4,
-            "minimum": 69911,
-            "average": 77640.29,
-            "maximum": 85369
-          },
-          {
-            "npLevel": 5,
-            "minimum": 73591,
-            "average": 81726.65,
-            "maximum": 89863
-          }
-        ]
-      },
-      "inputChanges": {
-        "eventDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "fieldTraits": {
-          "before": null,
-          "after": []
-        },
-        "ignoreDamageCut": {
-          "before": null,
-          "after": false
-        },
-        "attackBuff": {
-          "before": null,
-          "after": 0.2
-        },
-        "classAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "attackerAtk": {
-          "before": null,
-          "after": 12154
-        },
-        "fouAtk": {
-          "before": null,
-          "after": 1000
-        },
-        "cardResistance": {
-          "before": null,
-          "after": 0
-        },
-        "npResistance": {
-          "before": null,
-          "after": 0
-        },
-        "classAttackRate": {
-          "before": null,
-          "after": 1.05
-        },
-        "craftEssenceAtk": {
-          "before": null,
-          "after": 0
-        },
-        "battlePointPhase": {
-          "before": null,
-          "after": 0
-        },
-        "target": {
-          "before": null,
-          "after": {
-            "classId": null,
-            "attribute": "unknown",
-            "traits": []
-          }
-        },
-        "defenseBuff": {
-          "before": null,
-          "after": 0
-        },
-        "npDamageBuff": {
-          "before": null,
-          "after": 0.1
-        },
-        "attackerLevel": {
-          "before": null,
-          "after": 90
-        },
-        "overcharge": {
-          "before": null,
-          "after": 1
-        },
-        "npSpecialMultipliers": {
-          "before": null,
-          "after": [
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        },
-        "targetStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "attackerId": {
-          "before": null,
-          "after": "306200"
-        },
-        "attackerHpPermille": {
-          "before": null,
-          "after": 1000
-        },
-        "attackerStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "cardType": {
-          "before": null,
-          "after": "buster"
-        },
-        "npMultipliers": {
-          "before": null,
-          "after": [
-            600,
-            800,
-            900,
-            950,
-            1000
-          ]
-        },
-        "damageFunction": {
-          "before": null,
-          "after": {
-            "status": "resolved",
-            "kind": "trait",
-            "ignoreDefense": false
-          }
-        },
-        "cardBuff": {
-          "before": null,
-          "after": 0.3
-        },
-        "damageCut": {
-          "before": null,
-          "after": 0
-        },
-        "flatDamage": {
-          "before": null,
-          "after": 0
-        },
-        "powerMod": {
-          "before": null,
-          "after": 0
-        },
-        "npLevel": {
-          "before": null,
-          "after": 1
-        },
-        "specialResistance": {
-          "before": null,
-          "after": 0
-        },
-        "attributeAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "specialDamageBuff": {
-          "before": null,
-          "after": 0
-        }
-      }
-    },
-    {
-      "kind": "ranking",
-      "id": "502600",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "unsupported",
-        "reason": "candidateExecutionUnsupported"
-      },
-      "inputChanges": {}
-    },
-    {
-      "kind": "ranking",
-      "id": "1001800",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 27319,
-            "average": 30338.81,
-            "maximum": 33359
-          },
-          {
-            "npLevel": 2,
-            "minimum": 36425,
-            "average": 40451.91,
-            "maximum": 44479
-          },
-          {
-            "npLevel": 3,
-            "minimum": 40978,
-            "average": 45508.455,
-            "maximum": 50039
-          },
-          {
-            "npLevel": 4,
-            "minimum": 43255,
-            "average": 48036.735,
-            "maximum": 52819
-          },
-          {
-            "npLevel": 5,
-            "minimum": 45531,
-            "average": 50565,
-            "maximum": 55599
-          }
-        ]
-      },
-      "inputChanges": {
-        "eventDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "fieldTraits": {
-          "before": null,
-          "after": []
-        },
-        "ignoreDamageCut": {
-          "before": null,
-          "after": false
-        },
-        "attackBuff": {
-          "before": null,
-          "after": 0.5
-        },
-        "classAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "attackerAtk": {
-          "before": null,
-          "after": 11220
-        },
-        "fouAtk": {
-          "before": null,
-          "after": 1000
-        },
-        "cardResistance": {
-          "before": null,
-          "after": 0
-        },
-        "npResistance": {
-          "before": null,
-          "after": 0
-        },
-        "classAttackRate": {
-          "before": null,
-          "after": 1
-        },
-        "craftEssenceAtk": {
-          "before": null,
-          "after": 0
-        },
-        "battlePointPhase": {
-          "before": null,
-          "after": 0
-        },
-        "target": {
-          "before": null,
-          "after": {
-            "classId": null,
-            "attribute": "unknown",
-            "traits": []
-          }
-        },
-        "defenseBuff": {
-          "before": null,
-          "after": 0
-        },
-        "npDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "attackerLevel": {
-          "before": null,
-          "after": 90
-        },
-        "overcharge": {
-          "before": null,
-          "after": 1
-        },
-        "npSpecialMultipliers": {
-          "before": null,
-          "after": [
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        },
-        "targetStateTraits": {
-          "before": null,
-          "after": [
-            "buffNegativeEffect",
-            "buffNegativeEffect"
-          ]
-        },
-        "attackerId": {
-          "before": null,
-          "after": "1001800"
-        },
-        "attackerHpPermille": {
-          "before": null,
-          "after": 1000
-        },
-        "attackerStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "cardType": {
-          "before": null,
-          "after": "quick"
-        },
-        "npMultipliers": {
-          "before": null,
-          "after": [
-            600,
-            800,
-            900,
-            950,
-            1000
-          ]
-        },
-        "damageFunction": {
-          "before": null,
-          "after": {
-            "status": "resolved",
-            "kind": "standard",
-            "ignoreDefense": false
-          }
-        },
-        "cardBuff": {
-          "before": null,
-          "after": 0.5
-        },
-        "damageCut": {
-          "before": null,
-          "after": 0
-        },
-        "flatDamage": {
-          "before": null,
-          "after": 0
-        },
-        "powerMod": {
-          "before": null,
-          "after": 0
-        },
-        "npLevel": {
-          "before": null,
-          "after": 1
-        },
-        "specialResistance": {
-          "before": null,
-          "after": 0
-        },
-        "attributeAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "specialDamageBuff": {
-          "before": null,
-          "after": 0
-        }
-      }
-    },
-    {
-      "kind": "ranking",
-      "id": "2501600",
-      "before": {
-        "status": "unsupported",
-        "reason": "unsupportedActionAdmission"
-      },
-      "after": {
-        "status": "calculated",
-        "rows": [
-          {
-            "npLevel": 1,
-            "minimum": 35461,
-            "average": 39381.22,
-            "maximum": 43302
-          },
-          {
-            "npLevel": 2,
-            "minimum": 47281,
-            "average": 52508.47,
-            "maximum": 57736
-          },
-          {
-            "npLevel": 3,
-            "minimum": 53191,
-            "average": 59072.1,
-            "maximum": 64953
-          },
-          {
-            "npLevel": 4,
-            "minimum": 56147,
-            "average": 62353.91,
-            "maximum": 68561
-          },
-          {
-            "npLevel": 5,
-            "minimum": 59102,
-            "average": 65635.705,
-            "maximum": 72170
-          }
-        ]
-      },
-      "inputChanges": {
-        "eventDamageBuff": {
-          "before": null,
-          "after": 0
-        },
-        "fieldTraits": {
-          "before": null,
-          "after": []
-        },
-        "ignoreDamageCut": {
-          "before": null,
-          "after": false
-        },
-        "attackBuff": {
-          "before": null,
-          "after": 0.2
-        },
-        "classAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "attackerAtk": {
-          "before": null,
-          "after": 9603
-        },
-        "fouAtk": {
-          "before": null,
-          "after": 1000
-        },
-        "cardResistance": {
-          "before": null,
-          "after": 0
-        },
-        "npResistance": {
-          "before": null,
-          "after": 0
-        },
-        "classAttackRate": {
-          "before": null,
-          "after": 1
-        },
-        "craftEssenceAtk": {
-          "before": null,
-          "after": 0
-        },
-        "battlePointPhase": {
-          "before": null,
-          "after": 0
-        },
-        "target": {
-          "before": null,
-          "after": {
-            "classId": null,
-            "attribute": "unknown",
-            "traits": []
-          }
-        },
-        "defenseBuff": {
-          "before": null,
-          "after": 0
-        },
-        "npDamageBuff": {
-          "before": null,
-          "after": 0.1
-        },
-        "attackerLevel": {
-          "before": null,
-          "after": 80
-        },
-        "overcharge": {
-          "before": null,
-          "after": 1
-        },
-        "npSpecialMultipliers": {
-          "before": null,
-          "after": [
-            1,
-            1,
-            1,
-            1,
-            1
-          ]
-        },
-        "targetStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "attackerId": {
-          "before": null,
-          "after": "2501600"
-        },
-        "attackerHpPermille": {
-          "before": null,
-          "after": 1000
-        },
-        "attackerStateTraits": {
-          "before": null,
-          "after": []
-        },
-        "cardType": {
-          "before": null,
-          "after": "buster"
-        },
-        "npMultipliers": {
-          "before": null,
-          "after": [
-            600,
-            800,
-            900,
-            950,
-            1000
-          ]
-        },
-        "damageFunction": {
-          "before": null,
-          "after": {
-            "status": "resolved",
-            "kind": "traitExpression",
-            "ignoreDefense": false
-          }
-        },
-        "cardBuff": {
-          "before": null,
-          "after": 0.36
-        },
-        "damageCut": {
-          "before": null,
-          "after": 0
-        },
-        "flatDamage": {
-          "before": null,
-          "after": 0
-        },
-        "powerMod": {
-          "before": null,
-          "after": 0
-        },
-        "npLevel": {
-          "before": null,
-          "after": 1
-        },
-        "specialResistance": {
-          "before": null,
-          "after": 0
-        },
-        "attributeAffinity": {
-          "before": null,
-          "after": 1
-        },
-        "specialDamageBuff": {
-          "before": null,
-          "after": 0
-        }
+      "calculated": 420,
+      "inputRequired": 0,
+      "unsupported": 2,
+      "unavailable": 0,
+      "invalid": 0,
+      "levelStatAvailability": {
+        "naturalPairs": 422,
+        "naturalMissing": 0,
+        "level90Pairs": 422,
+        "level90Missing": 0,
+        "referencedPairs": 422,
+        "referencedMissing": 0,
+        "missing": []
       }
     }
-  ]
+  },
+  "after": {
+    "path": ".test-results/2026-09-12T19-46-29-367Z-46-6620ae/production/production-audit-calculation-application.json",
+    "sha256": "7b87af9062d33fe564942ef8bf2085a1ca3cf7f9a30e3c7e83695de39f4ef794",
+    "masterHash": "6416419b2a183d7f64cbf8be56a146828f3d618dac5c8e3375c4c50688f48c3a",
+    "inventory": {
+      "attackServants": 422,
+      "attackProfiles": 433,
+      "preparationPlans": 3490,
+      "calculatorScenarios": 422,
+      "rankingRows": 422,
+      "rankingPolicy": "current-default",
+      "resourcePrograms": {
+        "programs": 7255,
+        "mutations": 15894,
+        "opaqueOperations": 54108,
+        "digest": "576daa298d8952096402012fd3c74a29c150d0ee144550751a05c7d711a312fa"
+      },
+      "calculated": 420,
+      "inputRequired": 0,
+      "unsupported": 2,
+      "unavailable": 0,
+      "invalid": 0,
+      "levelStatAvailability": {
+        "naturalPairs": 422,
+        "naturalMissing": 0,
+        "level90Pairs": 422,
+        "level90Missing": 0,
+        "referencedPairs": 422,
+        "referencedMissing": 0,
+        "missing": []
+      }
+    }
+  },
+  "normalization": [
+    {
+      "source": [
+        "502600",
+        "skills",
+        "2218650",
+        "20891:0"
+      ],
+      "functionType": "subState",
+      "before": [
+        {
+          "kind": "buffInstanceMutation",
+          "mutation": "unsupported",
+          "recipient": "enemy",
+          "traits": [
+            "buffPositiveEffect"
+          ],
+          "lifetime": "active"
+        },
+        {
+          "kind": "ocStateNonIntersection",
+          "route": {
+            "target": "enemy",
+            "contributionScope": "enemyApplied",
+            "eligibility": {
+              "kind": "anyRecipient",
+              "onMissing": "unsupported"
+            }
+          },
+          "proof": "enemyRecipient"
+        }
+      ],
+      "after": [
+        {
+          "kind": "populationFunction",
+          "scope": "enemies",
+          "position": 3,
+          "action": {
+            "kind": "removeOne",
+            "trait": "buffPositiveEffect",
+            "inputKeys": [
+              "population:enemy:0:removableBuffs:buffPositiveEffect",
+              "population:enemy:1:removableBuffs:buffPositiveEffect",
+              "population:enemy:2:removableBuffs:buffPositiveEffect"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": [
+        "502600",
+        "skills",
+        "2218650",
+        "20885:0"
+      ],
+      "functionType": "addState",
+      "before": [
+        {
+          "kind": "contextMutation",
+          "mutation": "addTrait",
+          "scope": "recipientState",
+          "route": {
+            "target": "enemy",
+            "contributionScope": "enemyApplied",
+            "eligibility": {
+              "kind": "anyRecipient",
+              "onMissing": "unsupported"
+            }
+          },
+          "trait": "buffNegativeEffect",
+          "damageRelevant": true
+        }
+      ],
+      "after": [
+        {
+          "kind": "populationFunction",
+          "scope": "enemies",
+          "position": 4,
+          "action": {
+            "kind": "grant",
+            "traits": [
+              "buffNegativeEffect",
+              "buffDecreaseDamage",
+              "buffCritRateDown",
+              "happyHalloween"
+            ],
+            "previousSuccess": true,
+            "condition": null
+          }
+        }
+      ]
+    },
+    {
+      "source": [
+        "502600",
+        "skills",
+        "2218650",
+        "20890:0"
+      ],
+      "functionType": "subState",
+      "before": [
+        {
+          "kind": "buffInstanceMutation",
+          "mutation": "unsupported",
+          "recipient": "enemy",
+          "traits": [
+            "buffPositiveEffect"
+          ],
+          "lifetime": "active"
+        },
+        {
+          "kind": "ocStateNonIntersection",
+          "route": {
+            "target": "enemy",
+            "contributionScope": "enemyApplied",
+            "eligibility": {
+              "kind": "anyRecipient",
+              "onMissing": "unsupported"
+            }
+          },
+          "proof": "enemyRecipient"
+        }
+      ],
+      "after": [
+        {
+          "kind": "populationFunction",
+          "scope": "enemies",
+          "position": 5,
+          "action": {
+            "kind": "removeOne",
+            "trait": "buffPositiveEffect",
+            "inputKeys": [
+              "population:enemy:0:removableBuffs:buffPositiveEffect",
+              "population:enemy:1:removableBuffs:buffPositiveEffect",
+              "population:enemy:2:removableBuffs:buffPositiveEffect"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": [
+        "502600",
+        "skills",
+        "2218650",
+        "20886:0"
+      ],
+      "functionType": "addState",
+      "before": [
+        {
+          "kind": "contextMutation",
+          "mutation": "addTrait",
+          "scope": "recipientState",
+          "route": {
+            "target": "enemy",
+            "contributionScope": "enemyApplied",
+            "eligibility": {
+              "kind": "anyRecipient",
+              "onMissing": "unsupported"
+            }
+          },
+          "trait": "buffNegativeEffect",
+          "damageRelevant": true
+        }
+      ],
+      "after": [
+        {
+          "kind": "populationFunction",
+          "scope": "enemies",
+          "position": 6,
+          "action": {
+            "kind": "grant",
+            "traits": [
+              "buffNegativeEffect",
+              "happyHalloween"
+            ],
+            "previousSuccess": true,
+            "condition": null
+          }
+        }
+      ]
+    },
+    {
+      "source": [
+        "502600",
+        "skills",
+        "2218650",
+        "20887:0"
+      ],
+      "functionType": "addState",
+      "before": [
+        {
+          "kind": "populationMutation",
+          "mutation": "unsupported",
+          "basis": "buffInstances",
+          "scope": "enemies",
+          "traits": [
+            "happyHalloweenCounter"
+          ],
+          "includePassive": false
+        }
+      ],
+      "after": [
+        {
+          "kind": "populationFunction",
+          "scope": "enemies",
+          "position": 7,
+          "action": {
+            "kind": "grant",
+            "traits": [
+              "happyHalloweenCounter"
+            ],
+            "previousSuccess": false,
+            "condition": {
+              "trait": "happyHalloween",
+              "inputKeys": [
+                "population:enemy:0:traitPresence:happyHalloween",
+                "population:enemy:1:traitPresence:happyHalloween",
+                "population:enemy:2:traitPresence:happyHalloween"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "calculatorNumericChanges": [],
+  "rankingNumericChanges": [],
+  "rankingNewlyCalculated": [
+    {
+      "identity": "ranking:[\"502600\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"2218650\"},{\"slot\":2,\"skillVariantId\":\"106550\"},{\"slot\":3,\"skillVariantId\":\"944550\"}],\"passiveVariantIds\":[\"80550\",\"83450\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeHuman\",\"canBeInBattle\",\"classCaster\",\"dragon\",\"fourStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"levitating\",\"servant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115\"]},\"b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115\"]",
+      "outcome": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 15585,
+            "average": 17308.29,
+            "maximum": 19031
+          },
+          {
+            "npLevel": 2,
+            "minimum": 19482,
+            "average": 21635.495,
+            "maximum": 23789
+          },
+          {
+            "npLevel": 3,
+            "minimum": 21430,
+            "average": 23799.1,
+            "maximum": 26168
+          },
+          {
+            "npLevel": 4,
+            "minimum": 22404,
+            "average": 24880.895,
+            "maximum": 27358
+          },
+          {
+            "npLevel": 5,
+            "minimum": 23378,
+            "average": 25962.7,
+            "maximum": 28547
+          }
+        ]
+      },
+      "input": {
+        "attackerId": "502600",
+        "attackerLevel": 80,
+        "attackerAtk": 8616,
+        "fouAtk": 1000,
+        "craftEssenceId": null,
+        "craftEssenceAtk": 0,
+        "npLevel": 1,
+        "overcharge": 1,
+        "npMultipliers": [
+          400,
+          500,
+          550,
+          575,
+          600
+        ],
+        "damageFunction": {
+          "status": "resolved",
+          "kind": "defensePiercing",
+          "ignoreDefense": true
+        },
+        "cardType": "buster",
+        "classAttackRate": 0.9,
+        "classAffinity": 1,
+        "attributeAffinity": 1,
+        "attackBuff": 0,
+        "defenseBuff": 0,
+        "cardBuff": 0.45,
+        "cardResistance": 0,
+        "npDamageBuff": 0,
+        "npResistance": 0,
+        "powerMod": 0,
+        "eventDamageBuff": 0,
+        "npSpecialMultipliers": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "specialDamageBuff": 0,
+        "specialResistance": 0,
+        "flatDamage": 0,
+        "damageCut": 0,
+        "ignoreDamageCut": false,
+        "fieldTraits": [],
+        "attackerStateTraits": [],
+        "attackerHpPermille": 1000,
+        "targetRarity": null,
+        "targetStateTraits": [
+          "buffNegativeEffect",
+          "buffBurn"
+        ],
+        "battlePointPhase": 0,
+        "target": {
+          "classId": null,
+          "attribute": "unknown",
+          "traits": []
+        }
+      },
+      "policy": "current-default"
+    }
+  ],
+  "rankingExclusions": {
+    "before": [
+      {
+        "servant": "105900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "204300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "204900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "204900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "304000",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "403600",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "405700",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "502600",
+        "reason": "unsupported:candidateExecutionUnsupported"
+      },
+      {
+        "servant": "705300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "1102300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "2500400",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "2501400",
+        "reason": "unsupported:unsupportedActionAdmission"
+      }
+    ],
+    "after": [
+      {
+        "servant": "105900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "204300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "204900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "204900",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "304000",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "403600",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "405700",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "705300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "1102300",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "2500400",
+        "reason": "unsupported:unsupportedActionAdmission"
+      },
+      {
+        "servant": "2501400",
+        "reason": "unsupported:unsupportedActionAdmission"
+      }
+    ]
+  },
+  "interpretation": {
+    "comparison": "Matched calculator/ranking identities compare canonical outcomes and used inputs. Newly admitted ranking identities are represented by the exclusion delta; selected policy/variant details remain in the application audit.",
+    "scope": "Normalization changes describe canonical execution only. The companion flow note provides governing rules, acceptance fixtures, recovery paths and remaining scope; this artifact does not certify whole-task closure."
+  },
+  "join": {
+    "key": "calculator/ranking canonical audit identity",
+    "matched": 855,
+    "unmatchedBefore": [],
+    "unmatchedAfter": [],
+    "preparationRecordCount": {
+      "before": 3485,
+      "after": 3490
+    }
+  },
+  "acceptanceComparison": {
+    "key": "servant + typed profile identity + NP level + optional four-policy pair",
+    "matched": 49,
+    "beforeCounts": {
+      "calculated": 40,
+      "unsupported": 9
+    },
+    "afterCounts": {
+      "calculated": 49
+    },
+    "outcomeChanges": [
+      {
+        "id": "306200",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "306200",
+            "limitCount": 3
+          },
+          "noblePhantasmId": "306204"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "before": {
+          "status": "unsupported",
+          "reason": "unsupportedFiniteDomain"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 104365,
+            "average": 115903.455,
+            "maximum": 127442
+          }
+        }
+      },
+      {
+        "id": "306200",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "306200",
+            "limitCount": 1
+          },
+          "noblePhantasmId": "306201"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "before": {
+          "status": "unsupported",
+          "reason": "unsupportedFiniteDomain"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 92323,
+            "average": 102529.915,
+            "maximum": 112737
+          }
+        }
+      },
+      {
+        "id": "502600",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "502600",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "502602"
+        },
+        "npLevel": 1,
+        "selfBuffs": null,
+        "conditionalEffects": null,
+        "before": {
+          "status": "unsupported",
+          "reason": "candidateExecutionUnsupported"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 1,
+            "minimum": 15585,
+            "average": 17308.29,
+            "maximum": 19031
+          }
+        }
+      },
+      {
+        "id": "502600",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "502600",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "502602"
+        },
+        "npLevel": 2,
+        "selfBuffs": null,
+        "conditionalEffects": null,
+        "before": {
+          "status": "unsupported",
+          "reason": "candidateExecutionUnsupported"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 19482,
+            "average": 21635.495,
+            "maximum": 23789
+          }
+        }
+      },
+      {
+        "id": "502600",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "502600",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "502602"
+        },
+        "npLevel": 5,
+        "selfBuffs": null,
+        "conditionalEffects": null,
+        "before": {
+          "status": "unsupported",
+          "reason": "candidateExecutionUnsupported"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 5,
+            "minimum": 23378,
+            "average": 25962.7,
+            "maximum": 28547
+          }
+        }
+      },
+      {
+        "id": "502600",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "502600",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "502602"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline",
+        "before": {
+          "status": "unsupported",
+          "reason": "candidateExecutionUnsupported"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 19482,
+            "average": 21635.495,
+            "maximum": 23789
+          }
+        }
+      },
+      {
+        "id": "502600",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "502600",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "502602"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "before": {
+          "status": "unsupported",
+          "reason": "unsupportedFiniteDomain"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 19482,
+            "average": 21635.495,
+            "maximum": 23789
+          }
+        }
+      },
+      {
+        "id": "1001800",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "1001800",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "1001801"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "before": {
+          "status": "unsupported",
+          "reason": "unsupportedFiniteDomain"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 149344,
+            "average": 165854.365,
+            "maximum": 182365
+          }
+        }
+      },
+      {
+        "id": "2501600",
+        "noblePhantasm": {
+          "actorFormId": {
+            "actorId": "2501600",
+            "limitCount": 0
+          },
+          "noblePhantasmId": "2501601"
+        },
+        "npLevel": 2,
+        "selfBuffs": "included",
+        "conditionalEffects": "satisfied",
+        "before": {
+          "status": "unsupported",
+          "reason": "unsupportedFiniteDomain"
+        },
+        "after": {
+          "status": "calculated",
+          "selectedDamage": {
+            "npLevel": 2,
+            "minimum": 146143,
+            "average": 162299.965,
+            "maximum": 178457
+          }
+        }
+      }
+    ],
+    "comparableBaselineNumericChanges": [],
+    "note": "Prior 28 policy records retained outcomes and inputs but not numerical rows; only the 18 previously calculated baseline NP records support a historical numeric comparison. All current 49 records include canonical inputs and rows and are replayed through calculator/portable."
+  },
+  "candidateGeneration": {
+    "policy": {
+      "npLevel": 2,
+      "selfBuffs": "included",
+      "conditionalEffects": "satisfied"
+    },
+    "capPerProfile": 4096,
+    "beforeMethod": "Base implementation program dimensions recorded before candidate generation changes; sum of each complete Cartesian product, not the partial sum reported on early cap rejection.",
+    "beforeDimensions": [
+      {
+        "profile": "[\"306200\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"2570650\"},{\"slot\":2,\"skillVariantId\":\"2571650\"},{\"slot\":3,\"skillVariantId\":\"2572550\"}],\"passiveVariantIds\":[\"20650\",\"34550\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeStar\",\"canBeInBattle\",\"canFlyInSpace\",\"classLancer\",\"dragon\",\"fiveStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"levitating\",\"servant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86\"]},\"2a70961f864f1e831eae45a920f7c232dcf85e67da4e277427f1763989582c86\"]",
+        "domains": [
+          {
+            "plan": [
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          }
+        ],
+        "completeProduct": 18640
+      },
+      {
+        "profile": "[\"306200\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"2570650\"},{\"slot\":2,\"skillVariantId\":\"2571650\"},{\"slot\":3,\"skillVariantId\":\"2572550\"}],\"passiveVariantIds\":[\"20650\",\"34550\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeStar\",\"canBeInBattle\",\"classLancer\",\"dragon\",\"fiveStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"servant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d\"]},\"7afa5636bfc6103ee59b9ee22c3b54160e31c7e60ebd8a77190df4c5c0b6211d\"]",
+        "domains": [
+          {
+            "plan": [
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                169
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          }
+        ],
+        "completeProduct": 18640
+      },
+      {
+        "profile": "[\"502600\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"2218650\"},{\"slot\":2,\"skillVariantId\":\"106550\"},{\"slot\":3,\"skillVariantId\":\"944550\"}],\"passiveVariantIds\":[\"80550\",\"83450\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeHuman\",\"canBeInBattle\",\"classCaster\",\"dragon\",\"fourStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"levitating\",\"servant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115\"]},\"b060ccce7f35fa405d351a275a078fffd89e5c7c9004e5a13506485d65fb1115\"]",
+        "domains": [
+          {
+            "plan": [
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                2
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                2
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                5
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                3
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                3
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                3
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                48
+              ],
+              [
+                "target",
+                9
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          }
+        ],
+        "completeProduct": 8378
+      },
+      {
+        "profile": "[\"1001800\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"2421550\"},{\"slot\":2,\"skillVariantId\":\"2422550\"},{\"slot\":3,\"skillVariantId\":\"2423550\"}],\"passiveVariantIds\":[\"2420550\",\"34550\",\"348150\",\"83650\"],\"intrinsicTraits\":[\"alignmentGood\",\"alignmentLawful\",\"attributeEarth\",\"canBeInBattle\",\"childServant\",\"classAlterEgo\",\"fae\",\"fiveStarServant\",\"genderFemale\",\"hasCostume\",\"humanoid\",\"mechanical\",\"sakuraSeries\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200\"]},\"378b0f2e6ca2dad52bc62a9e4febf4e34a3a7bb6430bd9de620cf8f6eba86200\"]",
+        "domains": [
+          {
+            "plan": [
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                27
+              ],
+              [
+                "target",
+                57
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          }
+        ],
+        "completeProduct": 34428
+      },
+      {
+        "profile": "[\"2501600\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"2408450\"},{\"slot\":2,\"skillVariantId\":\"2164450\"},{\"slot\":3,\"skillVariantId\":\"2410550\"}],\"passiveVariantIds\":[\"331551\",\"34450\",\"434250\",\"54350\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"arthur\",\"attributeStar\",\"canBeInBattle\",\"canFlyInSpace\",\"classForeigner\",\"dragon\",\"existenceOutsideTheDomain\",\"fourStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"king\",\"knightsOfTheRound\",\"saberface\",\"servant\",\"summerModeServant\"],\"baseNoblePhantasmVariantCanonicalId\":\"7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c\"]},\"7652601e6038b7931a6e4d6fb48d090053f8863b6c2b8c82ec0b62cccb7da80c\"]",
+        "domains": [
+          {
+            "plan": [
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          },
+          {
+            "plan": [
+              {
+                "kind": "useSkillSlot",
+                "slot": 3,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 2,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "useSkillSlot",
+                "slot": 1,
+                "skillLevel": 10,
+                "choice": null
+              },
+              {
+                "kind": "executeAttackNoblePhantasm"
+              }
+            ],
+            "dimensions": [
+              [
+                "population",
+                1
+              ],
+              [
+                "target",
+                129
+              ],
+              [
+                "field",
+                1
+              ],
+              [
+                "quantity",
+                2
+              ]
+            ]
+          }
+        ],
+        "completeProduct": 4128
+      }
+    ],
+    "after": [
+      {
+        "servantId": "306200",
+        "noblePhantasmId": "306204",
+        "candidates": 2860
+      },
+      {
+        "servantId": "306200",
+        "noblePhantasmId": "306201",
+        "candidates": 2860
+      },
+      {
+        "servantId": "502600",
+        "noblePhantasmId": "502602",
+        "candidates": 43
+      },
+      {
+        "servantId": "1001800",
+        "noblePhantasmId": "1001801",
+        "candidates": 912
+      },
+      {
+        "servantId": "2501600",
+        "noblePhantasmId": "2501601",
+        "candidates": 2064
+      }
+    ],
+    "afterMethod": "Accepted complete finite-domain product. Acceptance candidateCount is servant-wide, hence 306200 reports 5720 for its two 2860-profile products.",
+    "proof": "Remove identical empty quantity worlds. Keep legal population representatives only when every count read and matching writer scope agrees; direct input readers and unknown overlaps retain exact tuples. Baseline collapse requires common NP transaction interval plus one terminal OC or an OC-independent standard/defensePiercing NP, with no population-to-damage trait observers, relevant unknown writes, losses or preceding NP reachability dependencies. Preserve every skill order.",
+    "verification": [
+      "packages/battle-execution/src/ocSourceProgram.test.ts: exhaustive legal population states and read prefixes, nonmonotonic score maximum, OC/trait-observer/loss counterexamples",
+      "packages/calculation-application/src/productionExecutionParity.test.ts: complete 49-record calculator/ranking/portable replay"
+    ]
+  },
+  "damageInterpretation": {
+    "existingDefault": "All matched previously calculated calculator and default-ranking numerical rows are unchanged.",
+    "newDefault502600": "Enabling the selected skill execution admits the NP. Canonical NP input is defensePiercing Buster, cardBuff 0.45, classAttackRate 0.9, classAffinity/attributeAffinity 1, attackerAtk 8616 + Fou 1000, initial OC1. Initial removable-buff and marker inputs are zero; count-derived gauge is zero for this representative. NP2 mean is 21635.495; NP1/5 are 17308.29/25962.7. Nonzero target inputs execute per-target receipts and count; terminal damage itself is OC independent.",
+    "newSatisfied306200": "Each profile selects initial allActors individuality count3, additional ally1, terminal OC2, dragon NP multiplier1.5. NP damage buff is 0.30 for NP306204 and 0.15 for NP306201; NP2 means 115903.455 / 102529.915. Exact source order, inputs and rows are retained in validation.",
+    "newSatisfied1001800": "Canonical scenario selects classAffinity2, attackBuff0.5, Quick cardBuff0.5, powerMod1.05 and sakuraSeries target; NP2 mean165854.365. These are the existing governing rules for the selected canonical scenario, not a new ID-based affinity rule.",
+    "newSatisfied2501600": "Canonical attackBuff0.2, Buster cardBuff0.36, npDamageBuff0.1, powerMod0.6, lawfulGood/servant NP multiplier2; NP2 mean162299.965.",
+    "boundary": "The previously rejected five satisfied profiles have no old damage maximum to compare numerically. Candidate completeness rests on the equivalence proof and exhaustive semantic fixture; replay parity alone is not an independent maximum oracle."
+  }
 }

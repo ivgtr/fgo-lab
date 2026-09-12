@@ -257,10 +257,10 @@ describe('production master inventory ratchet', () => {
       afterDamage: additions.filter(({ timing }) => timing === 'afterDamage').length,
       removals: removals.length,
     }).toEqual({
-      operations: 1_411,
-      effectOccurrences: 814,
+      operations: 1_409,
+      effectOccurrences: 812,
       owners: 322,
-      guaranteed: 1_402,
+      guaranteed: 1_400,
       probabilistic: 9,
       beforeDamage: 90,
       afterDamage: 816,
@@ -659,7 +659,7 @@ describe('production master inventory ratchet', () => {
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
     }).toEqual({
       automaticVisible: 0,
-      hidden: 5714,
+      hidden: 5725,
       user: 1589,
     });
     expect(

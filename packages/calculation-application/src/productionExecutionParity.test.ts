@@ -81,7 +81,7 @@ describe('production execution parity ratchet', () => {
         .map(({ attackerId }) => attackerId),
     ).toEqual(['702500', '705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('39e0613d4c369105a9b36ca60ab3d166967a773a40ffbb1d7150a3db68d6fcfd');
+    expect(digest).toBe('b3c004b2f7d2ddaa180a55859491f4c7a42419f9489ba421247a79ab8a2770c5');
   }, 60_000);
 });
 
@@ -264,7 +264,7 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
     );
 }, 60_000);
 
-it('replays population-count profiles through calculator and portable recovery while recording unresolved policies', async () => {
+it('accepts all seven population-count profiles through calculator, four ranking policies and portable recovery', async () => {
   const master = await loadMaster();
   const versions = {
     ...currentCalculationVersionContext(master),
@@ -286,20 +286,6 @@ it('replays population-count profiles through calculator and portable recovery w
           versions,
           profile,
         );
-        if (id === '502600') {
-          expect(ranking).toMatchObject({
-            status: 'unsupported',
-            reason: 'candidateExecutionUnsupported',
-          });
-          records.push({
-            id,
-            profile,
-            npLevel,
-            status: ranking.status,
-            reason: 'reason' in ranking ? ranking.reason : null,
-          });
-          continue;
-        }
         expect(
           ranking.status,
           JSON.stringify({ id, npLevel, reason: 'reason' in ranking ? ranking.reason : null }),
@@ -415,22 +401,39 @@ it('replays population-count profiles through calculator and portable recovery w
             status: ranking.status,
             ...('reason' in ranking ? { reason: ranking.reason } : {}),
             ...(ranking.status === 'calculated'
-              ? { inputs: ranking.detail.scenario.canonicalInputValues }
+              ? {
+                  inputs: ranking.detail.scenario.canonicalInputValues,
+                  input: ranking.detail.input,
+                  rows: ranking.detail.result.rows,
+                  plan: ranking.detail.scenario.preNoblePhantasmPlan,
+                  candidateCount: ranking.detail.executionMetrics.worldCandidateCount,
+                  evidence: ranking.detail.candidateEvidence,
+                }
               : {}),
           });
-          if (
-            selfBuffs === 'excluded' ||
-            (id !== '502600' &&
-              (conditionalEffects === 'baseline' || id === '106200' || id === '306000'))
-          ) {
-            expect(ranking.status, JSON.stringify({ id, selfBuffs, conditionalEffects })).toBe(
-              'calculated',
+          expect(
+            ranking.status,
+            JSON.stringify({
+              id,
+              selfBuffs,
+              conditionalEffects,
+              ...('reason' in ranking ? { reason: ranking.reason } : {}),
+            }),
+          ).toBe('calculated');
+          if (ranking.status === 'calculated') {
+            const replay = calculateScenario(ranking.detail.scenario, master, versions);
+            expect(replay.result.rows).toEqual(ranking.detail.result.rows);
+            const portable = executePortableCalculation(
+              createCalculatorPortableRequest(
+                ranking.detail.scenario,
+                currentCalculationVersionContext(master),
+              ),
+              master,
             );
-            if (ranking.status === 'calculated')
-              expect(
-                calculateScenario(ranking.detail.scenario, master, versions).result.rows,
-              ).toEqual(ranking.detail.result.rows);
-          } else expect(ranking.status).toBe('unsupported');
+            expect(portable.status).toBe('executed');
+            if (portable.status === 'executed')
+              expect(portable.execution.result).toEqual(replay.result);
+          }
         }
     }
   }

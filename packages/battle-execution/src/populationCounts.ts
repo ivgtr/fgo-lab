@@ -1,3 +1,4 @@
+import type { PopulationTargetState } from './populationFunctions';
 import type {
   CanonicalInputDefinition,
   EffectExecutionOperation,
@@ -62,6 +63,8 @@ export function populationCountSaturation(
 export type PopulationMutation = Extract<EffectExecutionOperation, { kind: 'populationMutation' }>;
 export interface PopulationEvent {
   operation: PopulationMutation;
+  affectedCount?: number;
+  targetState?: PopulationTargetState;
   source: Pick<SourceEffect, 'origin' | 'sourceInstanceId'>;
 }
 const sides = (
@@ -77,19 +80,80 @@ const sides = (
 const size = (side: 'allies' | 'enemies', values: Readonly<Record<string, number>>) =>
   values[`population:${side}:additional`] ?? 0;
 
+/** Equal keys preserve every population read, including any subset/order of cohort writes.
+ * Legality is checked first; a representative retains its actual initial input, never a sum
+ * masquerading as a per-side population. Unknown writers retain the entire tuple.
+ */
+export function populationInputEquivalenceKey(
+  sources: readonly SourceEffect[],
+  values: Readonly<Record<string, number>>,
+): string {
+  if (
+    sources.some((source) => source.effect.execution.some((op) => op.kind === 'populationFunction'))
+  )
+    return JSON.stringify(values);
+  const observed: unknown[] = [];
+  const operations = sources.flatMap((source) => source.effect.execution);
+  for (const source of sources) {
+    for (const leaf of canonicalRequirementLeaves(source.effect.requirement.expression))
+      if (leaf.kind === 'inputQuantity' && leaf.inputKey in values)
+        observed.push([leaf.inputKey, values[leaf.inputKey]]);
+    for (const operation of source.effect.execution) {
+      if (operation.kind === 'damageModifier' || operation.kind === 'modifierRateChange')
+        for (const expression of [
+          ...operation.valueExpressions.flat(),
+          ...(operation.limitBreakValueExpressions?.flat() ?? []),
+        ])
+          if (expression?.kind === 'inputLinear' && expression.inputKey in values)
+            observed.push([expression.inputKey, values[expression.inputKey]]);
+      if (operation.kind !== 'resourceMutation' || operation.amount.kind !== 'populationCount')
+        continue;
+      const { selector, inputKey } = operation.amount;
+      const querySides = sides(selector.scope);
+      const total = querySides.reduce((sum, side) => sum + size(side, values), 0);
+      observed.push(selector.basis === 'inBattle' ? total : (values[inputKey] ?? 0));
+      for (const writer of operations) {
+        if (
+          writer.kind !== 'populationMutation' ||
+          !writer.traits.some((trait) => selector.traits.includes(trait))
+        )
+          continue;
+        if (writer.mutation === 'unsupported') return JSON.stringify(values);
+        if (writer.basis !== selector.basis) continue;
+        const overlap = querySides.filter((side) => sides(writer.scope).includes(side));
+        observed.push(overlap.reduce((sum, side) => sum + size(side, values), 0));
+        // Actor union and buff full-scope removal also observe the query cohort size.
+        if (selector.counting === 'actors' || writer.mutation === 'remove') observed.push(total);
+      }
+    }
+  }
+  return JSON.stringify(observed);
+}
+
 /** Shared legality check for initial count intents, before policy candidates or execution. */
 export function populationInputIssue(
   definitions: readonly CanonicalInputDefinition[],
   values: Readonly<Record<string, number>>,
 ): CanonicalInputDefinition | null {
   for (const definition of definitions) {
-    if (definition.kind !== 'populationSize' && definition.kind !== 'populationCount') continue;
+    if (
+      definition.kind !== 'populationSize' &&
+      definition.kind !== 'populationCount' &&
+      definition.kind !== 'populationActorValue'
+    )
+      continue;
     const value = values[definition.key] ?? definition.defaultValue;
     if (
       value === null ||
       !Number.isSafeInteger(value) ||
       value < definition.minimum ||
       value > definition.maximum
+    )
+      return definition;
+    if (
+      definition.kind === 'populationActorValue' &&
+      definition.actorIndex > size('enemies', values) &&
+      value > 0
     )
       return definition;
     if (definition.kind === 'populationCount') {
@@ -152,7 +216,7 @@ export function readPopulationCount(args: {
       (!selector.includePassive && operation.includePassive && selector.basis === 'buffInstances')
     )
       continue;
-    if (resourceSourceActor(event.source).kind !== 'attacker') return null;
+    if (resourceSourceActor(event.source).kind !== 'attacker' && !event.targetState) return null;
     const overlap = querySides.filter((side) => sides(operation.scope).includes(side));
     const count = overlap.reduce((sum, side) => sum + size(side, values), 0);
     const localAttacker =
@@ -162,9 +226,10 @@ export function readPopulationCount(args: {
       !['allies', 'recipient'].includes(selector.scope) &&
       !['allies', 'recipient'].includes(operation.scope);
     const affected =
-      selector.basis === 'buffInstances'
+      (event.affectedCount === undefined ? undefined : localTarget ? event.affectedCount : 0) ??
+      (selector.basis === 'buffInstances'
         ? count + Number(localAttacker) + Number(localTarget)
-        : count;
+        : count);
     if (
       operation.mutation === 'unsupported' &&
       count + Number(localAttacker) + Number(localTarget) > 0

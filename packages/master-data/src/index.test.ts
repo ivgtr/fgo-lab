@@ -638,3 +638,64 @@ describe('master validation', () => {
     expect(() => naturalServantLevel(6)).toThrow('unsupported servant rarity:6');
   });
 });
+
+it('rejects unbound target-function inputs and mixed aggregate/actor shapes', () => {
+  const effect = masterEffectSchema.parse(inertEffect);
+  effect.execution = [
+    {
+      kind: 'populationFunction',
+      scope: 'enemies',
+      position: 0,
+      action: { kind: 'removeOne', trait: 'beneficial', inputKeys: ['a', 'b', 'c'] },
+    },
+  ];
+  effect.requirement.expression = { kind: 'always' };
+  effect.proc = { kind: 'guaranteed' };
+  effect.inputDefinitions = [
+    {
+      kind: 'populationSize',
+      side: 'enemies',
+      key: 'population:enemies:additional',
+      owner: 'field',
+      label: 'enemies',
+      description: 'enemies',
+      minimum: 0,
+      maximum: 2,
+      step: 1,
+      defaultValue: 0,
+      defaultReason: 'none',
+    },
+    ...['a', 'b', 'c'].map((key, actorIndex) => ({
+      kind: 'populationActorValue' as const,
+      quantity: 'removableBuffs' as const,
+      trait: 'beneficial',
+      actorIndex,
+      key,
+      owner: 'target' as const,
+      label: key,
+      description: key,
+      minimum: 0,
+      maximum: 2,
+      step: 1,
+      defaultValue: 0,
+      defaultReason: 'none',
+    })),
+  ];
+  expect(masterEffectSchema.safeParse(effect).success).toBe(true);
+  expect(
+    masterEffectSchema.safeParse({
+      ...effect,
+      inputDefinitions: effect.inputDefinitions.slice(0, 3),
+    }).success,
+  ).toBe(false);
+  expect(
+    masterEffectSchema.safeParse({
+      ...effect,
+      inputDefinitions: effect.inputDefinitions.map((input) =>
+        input.kind === 'populationActorValue'
+          ? { ...input, selector: { scope: 'allActors' } }
+          : input,
+      ),
+    }).success,
+  ).toBe(false);
+});

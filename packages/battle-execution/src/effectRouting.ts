@@ -53,6 +53,7 @@ export function operationRecipient(
   if (
     operation.kind === 'buffInstanceMutation' ||
     operation.kind === 'populationMutation' ||
+    operation.kind === 'populationFunction' ||
     operation.kind === 'resourceMutation' ||
     operation.kind === 'stateMutation' ||
     operation.kind === 'boundedPhaseIrrelevant'
@@ -73,6 +74,7 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
       operation.kind === 'ocStateNonIntersection' ||
       operation.kind === 'buffInstanceMutation' ||
       operation.kind === 'populationMutation' ||
+      operation.kind === 'populationFunction' ||
       operation.kind === 'resourceMutation' ||
       operation.kind === 'stateMutation' ||
       operation.kind === 'boundedPhaseIrrelevant'

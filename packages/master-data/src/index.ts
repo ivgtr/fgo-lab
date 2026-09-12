@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(51),
+  schemaVersion: z.literal(52),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -383,6 +383,15 @@ export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
   matchingActorCountCanonicalInputDefinitionSchema,
   populationSizeInputSchema,
   populationCountInputSchema,
+  canonicalInputBaseSchema
+    .extend({
+      kind: z.literal('populationActorValue'),
+      actorIndex: z.number().int().min(0).max(2),
+      quantity: z.enum(['removableBuffs', 'traitPresence']),
+      trait: z.string().min(1),
+      defaultValue: z.number().int().nullable(),
+    })
+    .strict(),
 ]);
 export type CanonicalInputDefinition = z.infer<typeof canonicalInputDefinitionSchema>;
 export type ActorCountPredicate = z.infer<typeof actorCountPredicateSchema>;
@@ -669,6 +678,36 @@ const effectExecutionOperationSchema = z.union([
     ),
   z
     .object({
+      kind: z.literal('populationFunction'),
+      scope: z.literal('enemies'),
+      position: z.number().int().nonnegative(),
+      action: z.discriminatedUnion('kind', [
+        z
+          .object({
+            kind: z.literal('removeOne'),
+            trait: z.string().min(1),
+            inputKeys: z.tuple([z.string(), z.string(), z.string()]),
+          })
+          .strict(),
+        z
+          .object({
+            kind: z.literal('grant'),
+            traits: z.array(z.string()).min(1),
+            previousSuccess: z.boolean(),
+            condition: z
+              .object({
+                trait: z.string(),
+                inputKeys: z.tuple([z.string(), z.string(), z.string()]),
+              })
+              .strict()
+              .nullable(),
+          })
+          .strict(),
+      ]),
+    })
+    .strict(),
+  z
+    .object({
       kind: z.literal('populationMutation'),
       mutation: z.enum(['grant', 'remove', 'unsupported']),
       basis: z.enum(['actorTraits', 'buffInstances']),
@@ -874,6 +913,42 @@ export const masterEffectSchema = z
   .strict()
   .superRefine((effect, context) => {
     for (const operation of effect.execution) {
+      if (operation.kind === 'populationFunction') {
+        const action = operation.action;
+        const keys =
+          action.kind === 'removeOne' ? action.inputKeys : (action.condition?.inputKeys ?? []);
+        const trait = action.kind === 'removeOne' ? action.trait : action.condition?.trait;
+        if (
+          effect.requirement.expression.kind !== 'always' ||
+          effect.proc.kind !== 'guaranteed' ||
+          !effect.inputDefinitions.some(
+            (input) =>
+              input.kind === 'populationSize' &&
+              input.side === 'enemies' &&
+              input.minimum === 0 &&
+              input.maximum === 2 &&
+              input.defaultValue === 0,
+          ) ||
+          keys.some(
+            (key, actorIndex) =>
+              !effect.inputDefinitions.some(
+                (input) =>
+                  input.kind === 'populationActorValue' &&
+                  input.key === key &&
+                  input.actorIndex === actorIndex &&
+                  input.trait === trait &&
+                  input.quantity ===
+                    (action.kind === 'removeOne' ? 'removableBuffs' : 'traitPresence') &&
+                  input.minimum === 0 &&
+                  input.step === 1 &&
+                  input.defaultValue === 0 &&
+                  input.maximum > 0 &&
+                  (action.kind === 'removeOne' || input.maximum === 1),
+              ),
+          )
+        )
+          context.addIssue({ code: 'custom', message: 'unbound_population_function_input' });
+      }
       if (operation.kind === 'resourceMutation' && operation.amount.kind === 'populationCount') {
         const amount = operation.amount;
         const selector = amount.selector;

@@ -76,7 +76,7 @@
     }
   ],
   "populationCountFollowup": {
-    "baseCommit": "dc87dc1221e55bf2753d76a089a16bd84346e1c9",
+    "baseCommit": "0cf5a367d4d0cb786140ce257f0af36d8a4db2a0",
     "referenceCommit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
     "scopeByValue2": {
       "0": "recipient",
@@ -91,9 +91,8 @@
     },
     "identity": "Actor individuality (including addIndividuality Value) and buff identity (buff.vals) are separate canonical selector bases. Mixed identity/unknown overlap remains unsupported. canBeInBattle is normalized only in the pipeline to a population-presence selector.",
     "input": "Initial additional ally/enemy population is 0..2 each, excluding the attacker/current NP target. Actor-trait counts concern only these additional actors; buff counts concern the entire selected scope. Known actors are read from current canonical traits. Impossible initial counts are repairable inputRequired.",
-    "execution": "Selected sources append ordered population events inside the existing NP/OC transaction. Full cohort grants can be counted exactly. Unknown partial actor overlap, conditional/finite/opaque writers and relevant unbound removals fail closed; rejected transactions preserve prior state.",
-    "ranking": "Legal joint count/population tuples; capacity saturation of positive gain readers and a shared-execution terminal OC interval may prove input equivalence. Per-profile cap4096 is unchanged. Baseline6 profiles pass; the remaining count profile and satisfied-policy candidate limits are not closed.",
-    "unresolved502600": "Negative Rate in add_state.dart requires the immediately preceding per-target function result. Counter20887 additionally requires happyHalloween. Current aggregate inputs cannot justify unconditional all-target marker grants, so execution remains unsupported.",
+    "execution": "Selected sources append ordered population events inside the existing NP/OC transaction. Full cohort mutations and the normalized bounded per-target function slice use the same state owner. Receipts retain affected count and target-state snapshot; unknown overlap, unsupported metadata/lifetime, unbound writers and uncertain removed identities fail closed. Rejected transactions preserve prior state.",
+    "ranking": "Legal population tuples preserve every read/writer overlap. Duplicate empty quantity worlds are removed. Shared NP interval and terminal OC independence may prove damage equivalence with explicit observer/reachability guards. Per-profile cap4096 unchanged; all seven profiles pass baseline NP1/2/5 and NP2 four policies (49 records).",
     "sources": [
       {
         "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/gain_np_target_sum.dart",
@@ -110,7 +109,34 @@
           175,
           180
         ]
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/lib/app/battle/functions/sub_state.dart",
+        "sha256": "8d2dbb1fbdc1473329820a6351e8d7cfa445f20d063bb1f809099c5b7802d757",
+        "lines": [
+          20,
+          66,
+          84,
+          88
+        ]
+      },
+      {
+        "url": "https://raw.githubusercontent.com/chaldea-center/chaldea/9fa75655c07ecd76168b1ccf5b8232e8d64664cf/test/app/battle/functions/function_executor_test.dart",
+        "sha256": "db8a1c4f673bdae3c164a421a8161f26d837846b94d44f7b341334877f636ce8",
+        "lines": [
+          617,
+          1240,
+          1275
+        ]
       }
-    ]
+    ],
+    "resolved502600": {
+      "removal": "sub_state.dart sets the function result for a target only when removeCount > 0. The supported slice removes one eligible ordinary buff per function and tracks success separately per enemy and function position.",
+      "negativeRate": "add_state.dart requires the immediately previous result for that same target. No success for another enemy or previous action may be used. A failed second removal does not erase the first successful marker.",
+      "conditionalCounter": "Counter20887 requires happyHalloween on that particular enemy; each matching target receives one counter instance. The subsequent count reads those instances and later removal updates both receipts and canonical target traits.",
+      "inputs": "Each of the three enemy slots has a typed initial removableBuffs stage and traitPresence flag, linked to additionalEnemies. Absent targets require zero. The stage saturates at the number of one-removal operations in this source (two in production); it counts eligible successful-removal ordinary buffs, excluding unremovable/resisted failures. Arbitrary buff lists, resistance simulation and residual buff identity are outside this bounded representation; a relevant residual identity reader is uncertain and fails closed.",
+      "normalization": "Only the backward slice from count-observed conditional marker writers is compiled. Unsupported metadata, finite-use policies, damage-modifier grants, signed predicates or cyclic prerequisites reject the slice; raw IDs are evidence only.",
+      "sourceTest": "Fixed function_executor_test.dart gainNpIndividualSum (lines1240-1275) exercises 502600 with one then all three enemy buffs: NP0 -> 2000 -> 8000 across two skill uses. This is reference-contract evidence, not a local multi-turn simulator test or an in-game measurement. Local independent oracle separately covers 216 initial combinations."
+    }
   }
 }

@@ -242,11 +242,11 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(14828);
+    expect(operations).toHaveLength(14826);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       boundedPhaseIrrelevant: 2726,
-      buffInstanceMutation: 200,
-      contextMutation: 1491,
+      buffInstanceMutation: 198,
+      contextMutation: 1489,
       damageModifier: 3885,
       grantOcApplicationRate: 29,
       grantOcBoost: 97,
@@ -254,8 +254,9 @@ describe('production canonical execution semantics', () => {
       ignoreDefense: 39,
       modifierRateChange: 1,
       ocRemovalResistance: 60,
-      ocStateNonIntersection: 131,
-      populationMutation: 5,
+      ocStateNonIntersection: 129,
+      populationMutation: 4,
+      populationFunction: 5,
       removeOcState: 75,
       resourceMutation: 1174,
       selectNoblePhantasmVariant: 22,
@@ -436,7 +437,7 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      enemyApplied: 1900,
+      enemyApplied: 1896,
       partyOther: 51,
       partyWide: 1010,
       personal: 2874,
@@ -736,7 +737,7 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts).toEqual({
-      'activeOnly:exclude:include': 2_606,
+      'activeOnly:exclude:include': 2_605,
       'activeAndPassive:exclude:include': 7,
       'activeOnly:include:include': 6,
       'activeOnly:exclude:exclude': 1,

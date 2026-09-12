@@ -87,7 +87,8 @@ function relatedDamageEffects(
     (effect) =>
       (effect.modifier !== null ||
         definition.kind === 'populationCount' ||
-        definition.kind === 'populationSize') &&
+        definition.kind === 'populationSize' ||
+        definition.kind === 'populationActorValue') &&
       effect.executionSupport === 'supported' &&
       effect.explanation.code !== 'cardMismatch' &&
       effect.requiredInputs.some((input) => input.key === definition.key),

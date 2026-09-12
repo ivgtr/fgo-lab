@@ -1069,4 +1069,145 @@ describe('population count through shared preparation transaction', () => {
       'applied',
     );
   });
+  it('executes per-enemy function outcomes inside NP transaction, repairs inputs and rolls back a later failure', () => {
+    const { actor, context, initial } = populationFixture();
+    const template = structuredClone(actor.skills[1]!.effects[0]!);
+    const keys = ['target:0', 'target:1', 'target:2'] as [string, string, string];
+    const definitions = [
+      {
+        kind: 'populationSize' as const,
+        side: 'enemies' as const,
+        key: 'population:enemies:additional',
+        owner: 'field' as const,
+        label: 'enemies',
+        description: 'enemies',
+        minimum: 0,
+        maximum: 2,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'none',
+      },
+      ...keys.map((key, actorIndex) => ({
+        kind: 'populationActorValue' as const,
+        actorIndex,
+        quantity: 'removableBuffs' as const,
+        trait: 'beneficial',
+        key,
+        owner: 'target' as const,
+        label: key,
+        description: key,
+        minimum: 0,
+        maximum: 2,
+        step: 1,
+        defaultValue: 0,
+        defaultReason: 'none',
+      })),
+    ];
+    const operations: MasterEffect['execution'][number][] = [
+      {
+        kind: 'populationFunction',
+        scope: 'enemies',
+        position: 0,
+        action: { kind: 'removeOne', trait: 'beneficial', inputKeys: keys },
+      },
+      {
+        kind: 'populationFunction',
+        scope: 'enemies',
+        position: 1,
+        action: { kind: 'grant', traits: ['counter'], previousSuccess: true, condition: null },
+      },
+      {
+        kind: 'resourceMutation',
+        resource: 'npGauge',
+        direction: 'gain',
+        recipient: 'sourceSelf',
+        unit: 'fixed',
+        subjectId: null,
+        amount: {
+          kind: 'populationCount',
+          selector: {
+            scope: 'enemies',
+            counting: 'individualities',
+            basis: 'buffInstances',
+            traits: ['counter'],
+            includePassive: false,
+          },
+          inputKey: 'counter',
+          values: [[5000], [], [], [], []],
+        },
+      },
+    ];
+    actor.skills[1]!.effects = operations.map((operation, index) => ({
+      ...template,
+      id: `function-${index}`,
+      occurrenceId: `function-${index}:0`,
+      inputDefinitions: definitions,
+      execution: [operation],
+    }));
+    const command = {
+      kind: 'useSkillSlot' as const,
+      slot: 2 as const,
+      skillLevel: 1,
+      choice: null,
+    };
+    const good = {
+      ...context,
+      canonicalInputValues: {
+        'population:enemies:additional': 2,
+        'target:0': 0,
+        'target:1': 1,
+        'target:2': 2,
+      },
+    };
+    const applied = reducePreNoblePhantasmAction(actor, initial, command, good);
+    if (applied.status !== 'applied') throw new Error(applied.code);
+    expect(applied.state.npResource.gauge).toBe(20000);
+    expect(applied.state.stateTraits.targetState.has('counter')).toBe(false);
+    expect(applied.state.populationEvents[1]!.targetState?.succeeded).toEqual([false, true, true]);
+    const bad = {
+      ...good,
+      canonicalInputValues: { ...good.canonicalInputValues, 'population:enemies:additional': 0 },
+    };
+    const failed = reducePreNoblePhantasmAction(actor, initial, command, bad);
+    expect(failed).toMatchObject({ status: 'rejected', code: 'preparationInputRequired' });
+    expect(failed.state).toBe(initial);
+    expect(reducePreNoblePhantasmAction(actor, failed.state, command, good).status).toBe('applied');
+    const opaque = {
+      ...initial,
+      populationEvents: [
+        {
+          operation: {
+            kind: 'populationMutation' as const,
+            mutation: 'unsupported' as const,
+            basis: 'buffInstances' as const,
+            scope: 'enemies' as const,
+            traits: ['beneficial'],
+            includePassive: false,
+          },
+          source: { origin: 'attacker' as const, sourceInstanceId: 'prior' },
+        },
+      ],
+    };
+    const refused = reducePreNoblePhantasmAction(actor, opaque, command, good);
+    expect(refused.status).toBe('rejected');
+    expect(refused.state).toBe(opaque);
+    actor.skills[1]!.effects.push({
+      ...template,
+      execution: [
+        {
+          kind: 'resourceMutation',
+          resource: 'npGauge',
+          direction: 'gain',
+          recipient: 'sourceSelf',
+          unit: 'fixed',
+          subjectId: null,
+          amount: { kind: 'dependent', reason: 'dependentTargetResult' },
+        },
+      ],
+    });
+    const rollback = reducePreNoblePhantasmAction(actor, initial, command, good);
+    expect(rollback).toMatchObject({ status: 'rejected', code: 'unsupportedResourceMutation' });
+    expect(rollback.state).toBe(initial);
+    expect(initial.populationEvents).toEqual([]);
+  });
 });

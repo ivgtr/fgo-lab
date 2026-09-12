@@ -1,15 +1,15 @@
 {
   "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
-  "head": "dc87dc1221e55bf2753d76a089a16bd84346e1c9",
-  "diffHash": "8016a2fdf865b6b1fd76212696e9b06dfc725636a6a31fc10904ef63673ca900",
+  "head": "0cf5a367d4d0cb786140ce257f0af36d8a4db2a0",
+  "diffHash": "701779ed47b143fc177a5106e97ade0c6abff978e6b28c7f4f88331f7ee68c2a",
   "node": "v26.3.1",
   "platform": "linux",
   "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
   "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
-  "masterHash": "53a6d3d24c9e8bc4efdbe3eb2fc3dff8e825958f11f83ca50b0214b748983364",
+  "masterHash": "6416419b2a183d7f64cbf8be56a146828f3d618dac5c8e3375c4c50688f48c3a",
   "versions": {
-    "masterDataVersion": "20260913.10",
-    "engineVersion": "41.0.0"
+    "masterDataVersion": "20260913.12",
+    "engineVersion": "42.0.0"
   },
   "conditions": {
     "population": "all",
@@ -25,23 +25,115 @@
   },
   "samples": [
     {
-      "milliseconds": 3616.9379629999994,
-      "rows": 421,
-      "exclusions": 12,
-      "digest": "1d013d0a0886b2c1ed94edb2edf5129c09a08a04e6cc3cfb2c31f87953232f36"
+      "milliseconds": 3726.072013,
+      "rows": 422,
+      "exclusions": 11,
+      "digest": "2d6eb2b0e7d042d08dd5e530d8e10bf50abc539963a87e3f678f79cb0a2187b2"
     },
     {
-      "milliseconds": 3429.1588730000003,
-      "rows": 421,
-      "exclusions": 12,
-      "digest": "1d013d0a0886b2c1ed94edb2edf5129c09a08a04e6cc3cfb2c31f87953232f36"
+      "milliseconds": 3715.939364,
+      "rows": 422,
+      "exclusions": 11,
+      "digest": "2d6eb2b0e7d042d08dd5e530d8e10bf50abc539963a87e3f678f79cb0a2187b2"
     },
     {
-      "milliseconds": 3403.717974000001,
-      "rows": 421,
-      "exclusions": 12,
-      "digest": "1d013d0a0886b2c1ed94edb2edf5129c09a08a04e6cc3cfb2c31f87953232f36"
+      "milliseconds": 3630.7879649999995,
+      "rows": 422,
+      "exclusions": 11,
+      "digest": "2d6eb2b0e7d042d08dd5e530d8e10bf50abc539963a87e3f678f79cb0a2187b2"
     }
   ],
-  "medianMs": 3429.1588730000003
+  "medianMs": 3715.939364,
+  "baseline": {
+    "commit": "0cf5a367d4d0cb786140ce257f0af36d8a4db2a0",
+    "evidenceAtCommit": "docs/evidence/tsk-06-45-population-count-performance.json",
+    "measurement": {
+      "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+      "head": "dc87dc1221e55bf2753d76a089a16bd84346e1c9",
+      "diffHash": "8016a2fdf865b6b1fd76212696e9b06dfc725636a6a31fc10904ef63673ca900",
+      "node": "v26.3.1",
+      "platform": "linux",
+      "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+      "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+      "masterHash": "53a6d3d24c9e8bc4efdbe3eb2fc3dff8e825958f11f83ca50b0214b748983364",
+      "versions": {
+        "masterDataVersion": "20260913.10",
+        "engineVersion": "41.0.0"
+      },
+      "conditions": {
+        "population": "all",
+        "initialOvercharge": 1,
+        "levelBasis": "naturalLimit",
+        "npLevelBasis": {
+          "kind": "specified",
+          "npLevel": 1
+        },
+        "classAffinity": "neutral",
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline"
+      },
+      "samples": [
+        {
+          "milliseconds": 3616.9379629999994,
+          "rows": 421,
+          "exclusions": 12,
+          "digest": "1d013d0a0886b2c1ed94edb2edf5129c09a08a04e6cc3cfb2c31f87953232f36"
+        },
+        {
+          "milliseconds": 3429.1588730000003,
+          "rows": 421,
+          "exclusions": 12,
+          "digest": "1d013d0a0886b2c1ed94edb2edf5129c09a08a04e6cc3cfb2c31f87953232f36"
+        },
+        {
+          "milliseconds": 3403.717974000001,
+          "rows": 421,
+          "exclusions": 12,
+          "digest": "1d013d0a0886b2c1ed94edb2edf5129c09a08a04e6cc3cfb2c31f87953232f36"
+        }
+      ],
+      "medianMs": 3429.1588730000003
+    }
+  },
+  "comparison": {
+    "warmupRuns": 1,
+    "serialMeasuredRuns": 3,
+    "changePercent": 8.362998088481955,
+    "conditionsMatch": true,
+    "scriptAndEnvironmentMatch": true,
+    "note": "Serial standalone runs after quality, same script and conditions. One newly calculated default ranking profile and per-target transaction processing are added. This measurement does not isolate their cost from timing variation. No cap, timeout or performance ratchet was relaxed; diffHash covers tracked files, validation implementationSnapshot covers new files too."
+  },
+  "production": {
+    "beforeManifest": ".test-results/2026-09-12T18-48-08-385Z-16-f49268/manifest.json",
+    "afterManifest": ".test-results/2026-09-12T19-46-29-367Z-46-6620ae/manifest.json",
+    "beforeStepMs": 38663,
+    "afterStepMs": 52140,
+    "affectedFileElapsedMs": [
+      {
+        "file": "productionExecutionParity.test.ts",
+        "before": 24735.597900390625,
+        "after": 47913.46044921875
+      },
+      {
+        "file": "productionMasterInventory.test.ts",
+        "before": 35288.6630859375,
+        "after": 38342.9560546875
+      },
+      {
+        "file": "executionSemanticsProduction.test.ts",
+        "before": 29115.15478515625,
+        "after": 31318.1005859375
+      },
+      {
+        "file": "rankingCandidateSpace.test.ts",
+        "before": 28391.4921875,
+        "after": 28839.33349609375
+      }
+    ],
+    "populationAcceptanceTestMs": {
+      "before": 4305.597984,
+      "after": 32108.460395
+    },
+    "interpretation": "File elapsed times include shared setup and parallel suite effects; they are not isolated per-file costs. The seven-profile test now executes all formerly rejected candidates and replays all four policies through calculator and portable; 49 outcomes move from 40 calculated / 9 unsupported to 49 calculated. This added acceptance work dominates the suite increase; the standalone default ranking benchmark is reported separately."
+  }
 }

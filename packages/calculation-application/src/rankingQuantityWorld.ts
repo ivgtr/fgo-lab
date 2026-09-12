@@ -55,6 +55,7 @@ export function createRankingQuantityCandidatesForConditions(
     for (const value of boundaryValues(condition)) values.add(value);
     byQuantity.set(condition.quantity, values);
   }
+  if (byQuantity.size === 0) return [baseline];
   const combinations = finiteSemanticProduct(
     [...byQuantity].map(([key, values]) => ({
       key,

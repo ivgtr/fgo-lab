@@ -39,7 +39,11 @@ function effectChangesStructure(effect: MasterEffect, origin: Origin = 'attacker
   return effect.execution.some((operation) => {
     if (operation.kind === 'transformActorForm' || operation.kind === 'selectNoblePhantasmVariant')
       return true;
-    if (operation.kind === 'buffInstanceMutation' || operation.kind === 'populationMutation')
+    if (
+      operation.kind === 'buffInstanceMutation' ||
+      operation.kind === 'populationMutation' ||
+      operation.kind === 'populationFunction'
+    )
       return true;
     return (
       operation.kind === 'contextMutation' &&
@@ -67,6 +71,7 @@ export function effectRequiresPreparationDecision(
     effect.execution.some(
       (operation) =>
         operation.kind === 'populationMutation' ||
+        operation.kind === 'populationFunction' ||
         (operation.kind === 'resourceMutation' &&
           operation.resource === 'npGauge' &&
           transitionTargetsAttacker(operation.recipient, origin)) ||

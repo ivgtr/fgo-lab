@@ -26,7 +26,7 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '2d285c4e1cc6f497337c716523741440c7b91c0d2df9a7ae537d658039f5c583',
+          digest: '2ad45d145654c423b432856bab12bec0f27609204fa882d2e64a8bc00100a557',
           inventory: {
             hpGrowth: {
               servantCells: 56250,
@@ -41,7 +41,7 @@ describe('shared data-pipeline production audit', () => {
               grantOcBoost: 97,
               grantOcApplicationRate: 29,
               removeOcState: 75,
-              ocStateNonIntersection: 131,
+              ocStateNonIntersection: 129,
               ocRemovalResistance: 60,
               grantCells: 868,
               resistanceCells: 514,
@@ -56,7 +56,7 @@ describe('shared data-pipeline production audit', () => {
               },
               nonIntersectionProofs: {
                 stateSelector: 32,
-                enemyRecipient: 99,
+                enemyRecipient: 97,
               },
             },
             resources: {
@@ -200,7 +200,7 @@ describe('shared data-pipeline production audit', () => {
               },
               battlePointMissingAmounts: 10,
             },
-            operations: 14828,
+            operations: 14826,
             damageFunctions: 630,
             noblePhantasmVariantIdentities: 706,
             rawFunctionTypes: 54,

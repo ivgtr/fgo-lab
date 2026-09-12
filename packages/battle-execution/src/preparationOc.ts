@@ -1,3 +1,7 @@
+import {
+  applyPopulationFunctionToState,
+  removePopulationFunctionState,
+} from './populationFunctions';
 import { isBuffCountInput, projectBuffInstanceCounts } from './buffInstances';
 import { populationInputIssue } from './populationCounts';
 import { resolveResourceTargetPolicy } from './effectRouting';
@@ -238,6 +242,57 @@ export function executePreparationOc(args: {
     const firstStep = steps.length;
     let ocIndex = 0;
     for (const [operationIndex, operation] of source.effect.execution.entries()) {
+      if (operation.kind === 'populationFunction') {
+        steps.push(() => {
+          if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
+          const readTraits =
+            operation.action.kind === 'removeOne'
+              ? [operation.action.trait]
+              : operation.action.condition
+                ? [operation.action.condition.trait]
+                : [];
+          if (
+            current.populationEvents.some(
+              (event) =>
+                event.operation.mutation === 'unsupported' &&
+                event.operation.traits.some((trait) => readTraits.includes(trait)),
+            )
+          )
+            return {
+              kind: 'reject',
+              status: 'unsupported',
+              reason: 'populationFunctionOpaqueInput',
+            };
+          const definitions = sources.flatMap((source) => source.effect.inputDefinitions);
+          const values = {
+            ...Object.fromEntries(
+              definitions
+                .filter((input) => input.defaultValue !== null)
+                .map((input) => [input.key, input.defaultValue!]),
+            ),
+            ...args.context.canonicalInputValues,
+          };
+          const issue = populationInputIssue(definitions, values);
+          if (issue) {
+            requiredInput = issue;
+            occurrenceId = source.effect.occurrenceId;
+            return {
+              kind: 'reject',
+              status: 'inputRequired',
+              reason: 'preparationPopulationInput',
+            };
+          }
+          current = applyPopulationFunctionToState(
+            operation,
+            current,
+            values,
+            args.actionId,
+            source,
+          );
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
       if (operation.kind === 'populationMutation') {
         steps.push(() => {
           const outcome = activation.get(source.effect);
@@ -264,6 +319,7 @@ export function executePreparationOc(args: {
               },
             ],
           };
+          current = removePopulationFunctionState(current, event);
           // fieldOther has an explicit population scope; the current NP target is one member.
           if (
             operation.scope === 'otherActors' &&

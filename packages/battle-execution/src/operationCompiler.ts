@@ -561,12 +561,14 @@ export function compileEffect(
           | 'stateMutation'
           | 'boundedPhaseIrrelevant'
           | 'buffInstanceMutation'
-          | 'populationMutation';
+          | 'populationMutation'
+          | 'populationFunction';
       }
     > =>
       (semantic.kind === 'resourceMutation' && semantic.resource === 'npGauge') ||
       semantic.kind === 'buffInstanceMutation' ||
       semantic.kind === 'populationMutation' ||
+      semantic.kind === 'populationFunction' ||
       semantic.kind === 'stateMutation' ||
       semantic.kind === 'boundedPhaseIrrelevant',
   );
@@ -615,6 +617,7 @@ export function compileEffect(
       semantic.kind === 'resourceMutation' ||
       semantic.kind === 'buffInstanceMutation' ||
       semantic.kind === 'populationMutation' ||
+      semantic.kind === 'populationFunction' ||
       semantic.kind === 'stateMutation' ||
       semantic.kind === 'boundedPhaseIrrelevant'
     )
