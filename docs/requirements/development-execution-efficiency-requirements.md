@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab 開発実行効率要件・統合実装計画"
-document_version: "1.2.0"
+document_version: "1.3.0"
 status: "Active"
-approved_at: "2026-08-30"
-updated_at: "2026-09-12"
+approved_at: "2026-09-19"
+updated_at: "2026-09-19"
 implementation_tasks: "docs/tasks/development-redesign-tasks.md"
 created_at: "2026-08-30"
 related_documents:
@@ -102,15 +102,21 @@ operator設定や個人のsession履歴をproduct testの入力にしない。re
 ```text
 phase requirement
   -> bounded discovery
-  -> typed implementation slice
+  -> typed implementation slice + representative path
   -> focused semantic tests
-  -> production inventory/parity gate
+  -> scoped review + final quality (including production inventory/parity)
   -> bounded result summary + full artifact
   -> canonical handoff record
   -> next phase or new thread
 ```
 
-同じ検査を「調査command」「個別test」「quality」「CI」「Pages」で重複実行しない。各gateは一つの実行結果とartifactを正本にし、後続stepはmanifestを参照する。
+変更境界、守る契約、必要な検証を説明できたら実装へ進む。複数層の変更は、関係する入力、実行、通信、表示、保存復元・入力修復の代表経路を早期に接続する。全体理解や全経路の事前完成は要求しない。
+
+不具合発見時は共通原因と直接の生成・利用経路を確認し、未達条件の解消に必要な工程へ戻る。再調査は関連変更・新しい反例・根拠不足で見直す必要がある範囲に限り、有効なbaselineと証拠は継承する。無関係な既存不具合や別sessionの変更は自動的に修正対象へ含めず、影響と検証上の障害を記録する。必須ゲートが失敗したまま完了とはしない。
+
+同条件で有効な検査結果はartifact manifestから再利用し、追加の診断目的なく再実行しない。ただしREADMEの必須qualityとCIの検査は省略しない。局所診断は失敗原因や変更境界に絞り、最終qualityの前に全件検証一式を重複実行しない。
+
+製品実装の最終qualityは、既知の対象内Blockingを解消し、必要な局所検証と差分レビューを終えてから開始する。qualityで新しい不具合が見つかった場合は影響範囲の修正・局所検証へ戻り、差分が固まってから最終qualityを再実行する。成功した最終差分、対象内Blocking 0、正本記録の一致が揃えば終了し、新しい根拠のない再レビューを追加しない。
 
 ### 5.1 Command出力契約
 
@@ -141,12 +147,12 @@ phase requirement
 
 ### 5.4 Thread／compaction契約
 
-依頼された成果と現在の未達条件を維持する。compactionや長い調査が必要なら正本へcheckpointを残す。
-新しい依存経路や再指摘の発見だけで実装依頼を終了しない。通常の技術判断は同じsessionで解消して進める。
+依頼された成果と現在の未達条件を維持する。判断の確定、代表経路の検証完了などの区切りで、進捗は既存Task、系統の判断・実行経路は既存flow noteへ差分を更新する。完了時やcompaction直前だけの記録に依存せず、小patchやtool callごとの更新は要求しない。
+新しい依存経路や再指摘の発見だけで実装依頼を終了しない。通常の技術判断は依頼の中で解消し、session上限に達した場合は未完了として引き継ぐ。
 
 FGO Labのsession上限は60分でcheckpoint、90分で新しいsemantic family・子調査を開始せず、現在のatomic actionを終えて引き継ぐ。
-checkpointは成果、変更family、検証証拠、未達条件、次の操作を既存正本へ一度記録する。
-引継ぎはcommitまたは差分、worktree状態、未完了gate、artifact manifest、次のcommandを残す。完了済み調査は再実行しない。
+checkpointは成果、変更family、確定判断と根拠、有効な検証証拠、未達条件、次の操作を既存正本へ更新する。TaskのHandoffからflow noteとartifactを参照し、内容を複製しない。再検討されやすい棄却案だけは理由を残す。
+引継ぎはcommitまたは差分、worktree状態、未完了gate、artifact manifest、次のcommandを残す。圧縮・再開後は記録と現在差分を照合し、未達条件から続ける。関連変更・新しい反例・根拠不足がなければ完了済み調査を再実行しない。
 
 ### 5.5 単独実行と例外的な調査
 
@@ -156,6 +162,14 @@ checkpointは成果、変更family、検証証拠、未達条件、次の操作�
 子は編集・artifact作成・test/build・外部変更・承認・再委譲をしない。結論、不確実性、必要なfile/symbolだけを返す。
 親の独立作業を終えてから合流し、同じ待機を短周期で繰り返さない。通知を利用し、予算超過時は調査を中止・縮小するか親で完了する。
 モデル・read-only設定の正本は`.codex/config.toml`と`.codex/agents/fgo-readonly-researcher.toml`とする。
+
+### 5.6 並行sessionと検証対象
+
+独立したsessionで並行編集する場合は別worktreeを使う。同じworktreeの読み取り専用調査には分離を要求しない。すでに共有worktreeに差分がある場合は、担当範囲外の変更を移動・上書きせず、共有fileへの同時編集を避けて担当範囲だけ統合する。
+
+最終qualityは統合後のworktreeで実行し、HEADと対象差分を特定できる状態を保つ。実行中は検証対象のsource、test、設定、文書を編集しない。対象変更が必要になった場合は実行を安全に終了または中断し、修正後の差分で検証する。実行中に対象が変わった結果を最終差分の成功証拠にせず、変更前と同条件と説明できる局所証拠だけを再利用する。無関係な改善を先送りできても、最終qualityの失敗は無視しない。
+
+成功後にTask／flowへ検証結果の記録だけを追記する場合は、実装・検証入力・期待値・設定が同一であることを確認し、READMEの文書検証で閉じる。実行結果を参照するHandoffの更新だけを理由に全体qualityを再実行しない。testが読むevidenceやdigestの変更は記録のみの変更に含めず、影響する検証を行う。
 
 ## 6. 設定推奨値
 
@@ -187,6 +201,7 @@ handoff recordには次だけを残す。
 
 - phaseと受入条件
 - commitまたはdiff identity
+- 確定判断・根拠の正本pathと今回のdelta
 - canonical schema／digest version
 - 実行済みcommandとartifact manifest
 - damage／inventory／parity差分
@@ -218,6 +233,8 @@ modelやCodex versionに依存するため、当面は観測指標とし、produ
 - tool resultのtext／image bytesと最大値
 - compaction回数
 - handoffなしに継続したtask数
+- 最終quality開始後に実装修正へ戻った回数と理由
+- 同じ原因の再発見、圧縮・再開後の確定事項の再調査とその根拠
 
 初期目標:
 
@@ -229,6 +246,8 @@ modelやCodex versionに依存するため、当面は観測指標とし、produ
 - phase完了後に別semantic familyを同一threadへ追加しない。
 
 exact token総量は、model、tool schema、cache、managed instructionsで変動する。過去値との比較は同一Codex version、model、設定で行い、cached inputを分離する。
+
+実装フローの改善は次の変更で既存session logとartifactから確認する。新しい計測基盤や毎回の集計報告は要求せず、必要な不具合修正と根拠のない再調査を区別する。
 
 ## 9. 停止条件
 
@@ -263,7 +282,7 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 | --- | --- | --- |
 | `DX-CMD-001` | 5、6 | bounded command、30秒以上のempty poll、artifact参照により無条件再実行と巨大出力を避ける。 |
 | `DX-ART-001` | 6、7 | compact summaryと完全artifactを両立し、failureやstderrを失わない。 |
-| `DX-HANDOFF-001` | 7 | phase closureをcommit、canonical evidence、差分、残課題、次commandだけで再開可能にする。 |
+| `DX-HANDOFF-001` | 5.4、7 | 作業途中とphase closureの確定判断、commitまたは差分、canonical evidence、残課題、次commandを正本から再開可能にする。 |
 | `DX-PERF-001` | 8 | product quality指標をblocking、model call／poll／tool outputを観測指標として分離する。 |
 | `DX-FINAL-001` | 10 | canonical quality／ranking pathとrepository内handoffだけでproject closureできる。 |
 
@@ -273,3 +292,4 @@ exact token総量は、model、tool schema、cache、managed instructionsで変�
 | --- | --- | --- | --- | --- |
 | 1.1.0 | phase closureとproject closureをstable Contract IDで参照可能にした | retained: 実行効率とproduct qualityの意味は不変 | TSK-02.1〜09 | none: 観測baselineとratchet値は不変 |
 | 1.2.0 | 指示見直し依頼に基づき、技術的な再判断から実装を継続する境界、文書変更の比例検証、単独実行とsession上限の正本を整理。実行コード・既存Contract IDは不変 | approved 2026-09-12 | 全Taskの作業運用。個別受入条件とclosure matrixは不変 | none: damage／digest／artifact schemaは不変 |
+| 1.3.0 | 実装フロー改善の依頼に基づき、調査・再検証の範囲、最終qualityの開始と終了、途中checkpoint、並行sessionの作業分離を明確化（`DX-CMD-001`、`DX-HANDOFF-001`、`DX-PERF-001`） | approved 2026-09-19 | 全Taskの共通実行手順。既存Contractの適用先と個別Done gate・closure matrixは不変 | none: 作業運用の変更のみ。damage／digest／artifact schema、product検証・ratchetは不変 |

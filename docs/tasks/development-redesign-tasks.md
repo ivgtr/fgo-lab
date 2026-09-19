@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.8"
+document_version: "1.7.9"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-13"
+updated_at: "2026-09-19"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -2197,20 +2197,22 @@ Handoff: 未記録
 
 ### 4.1 Task実行手順
 
+以下は製品実装に適用する。文書・指示だけの変更はREADMEの文書検証範囲で閉じ、production監査や全体qualityを追加しない。途中記録と再開は実行効率要件5.4節に従う。
+
 1. Task indexから`ready`なTaskを一件選び、依存TaskのDone gateとHandoff、Contract closure matrixを確認する。
 2. 作業開始時のHEAD、作業ツリー、対象family、利用者成果、domain invariant、semantic ownerを確認する。
 3. 開始commitで対象Taskを`in_progress`へ変更し、Handoffの`Next command`に最初のbounded commandを記録する。
-4. production familyをread-onlyで監査し、変更前baselineとfail-closed条件を固定する。
-5. 一つの責務単位で実装し、関係する小さいsemantic testから検証する。
-6. production inventory、calculator/ranking parity、UI、performanceをTaskのriskに応じて検証する。
-7. 対象fileだけをstageし、staged diff、file list、format、必要なtest結果を確認してcommitする。
-8. Done gateを満たすまで手順4〜7を繰り返す。新しい例外familyを発見した場合は局所分岐を追加せず、modelまたはTask分割を再検討する。
-9. Handoffへ実装commit、canonical evidence、検証commandと結果、残課題、次のentry conditionを記録する。
+4. 対象production familyの変更前baselineとfail-closed条件を確認する。同条件で有効な証拠は継承し、不足する範囲だけ監査する。変更境界と必要な検証を説明できたら実装へ進む。
+5. 一つの責務単位で実装し、関係する小さいsemantic testから検証する。複数層の変更は代表経路を早期に接続し、部品の成功と利用者経路の完成を区別する。
+6. 既知の対象内Blockingを解消し、必要な局所検証と差分レビューを終えてからREADMEの最終qualityへ進む。production inventory、calculator/ranking parity、UI、performanceは適用契約に従って確認し、全件検証を事前に重複実行しない。開始条件と検証対象の固定は実行効率要件5節に従う。
+7. 未達条件や不具合があれば、共通原因と影響範囲の解消に必要な工程へ戻る。有効なbaseline・確定判断・証拠は継承し、手順4から一律に繰り返さない。新しい例外familyは局所分岐を追加せず、既存責務と対象範囲から修正境界を再判断する。Done gateに必要な経路を対象外へ移さない。
+8. 判断や実装の区切りで既存Task／flowを更新し、Handoffへ確定判断の参照先、有効な検証、残課題、次の操作を残す。これは手順7の完了を待たず、実行効率要件5.4節に従って行う。
+9. 対象fileだけをstageし、staged diff、file list、必要な検証結果を確認してcommitする。Handoffへ実装commitまたは対象差分、canonical evidence、次のentry conditionを記録する。最終差分の必須ゲートが成功し、対象内Blocking 0と記録の一致が揃えば、新しい根拠のない再レビューを追加しない。
 10. completion commitで対象Taskを`done`、直接の後続Taskを`ready`へ変更する。
 
 ### 4.2 中断・再開手順
 
 - authority競合、damage根拠不足、部分適用可能な意味論、想定外のruntime増加を検出したら変更を拡張せず停止する。
 - Handoffへblocking condition、確認済み事実、未確定事項、影響path、安全な再開commandを記録する。
-- 次のsessionは会話履歴ではなく、Task、Handoff、記録済みcommit、canonical evidenceから再開する。
+- 次のsessionはTask、Handoff、記録済みcommitまたは差分、canonical evidenceを現在のworktreeと照合し、未達条件から再開する。関連変更・新しい反例・根拠不足がなければ確定済みの調査を繰り返さない。
 - 一時的なraw logや巨大なtool outputをHandoffへ貼らず、必要なpath、digest、要約だけを残す。
