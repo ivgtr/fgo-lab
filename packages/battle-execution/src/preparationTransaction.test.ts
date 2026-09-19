@@ -2036,3 +2036,171 @@ it.each(['fixed', 'currentGaugeRatio'] as const)(
     }
   },
 );
+
+it('executes marker grant, duplicate, read, remove and negative read in one transaction and rolls every state back on failure', () => {
+  const marker = {
+    kind: 'buffInstanceMutation' as const,
+    mutation: 'grant' as const,
+    recipient: 'sourceSelf' as const,
+    traits: ['marker-buff'],
+    lifetime: 'active' as const,
+    marker: {
+      actorTrait: 'marker-actor',
+      buffIdentity: 'marker-identity',
+      removable: true,
+      onField: false,
+      recipientSide: 'both' as const,
+    },
+  };
+  const condition = (present: boolean): MasterEffect['requirement']['expression'] => ({
+    kind: 'trait',
+    scope: 'recipientState',
+    trait: 'marker-actor',
+    present,
+    provenance: {
+      stateSources: 'activeOnly',
+      ignoredStateTraits: 'exclude',
+      unremovableStateTraits: 'include',
+    },
+  });
+  const gain = (id: string, present: boolean) =>
+    effect(
+      id,
+      {
+        kind: 'fixed',
+        recipient: 'sourceActor',
+        direction: 'gain',
+        amounts: [[1000], [], [], [], []],
+        overflow: 'clampToCapacity',
+        underflow: 'clampToZero',
+      },
+      [],
+      condition(present),
+    );
+  const effects = [
+    effect('grant1', null, [marker]),
+    effect('grant2', null, [marker]),
+    gain('positive-reader', true),
+    effect('remove', null, [
+      {
+        kind: 'buffInstanceMutation',
+        mutation: 'remove',
+        recipient: 'sourceSelf',
+        traits: ['marker-buff'],
+        lifetime: 'active',
+      },
+    ]),
+    gain('negative-reader', false),
+    effect('hp', null, [
+      {
+        kind: 'resourceMutation',
+        resource: 'hp',
+        direction: 'loss',
+        unit: 'fixed',
+        lossFloor: 'oneIfAlive',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[1000], [], [], [], []] },
+      },
+    ]),
+  ];
+  const actor = servantWithSkill(effects);
+  const ctx = { ...context, initialMaximumHp: 10000, attackerHpPermille: 1000 };
+  const initial = createPreNoblePhantasmState(actor, baseForm, ctx);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const command = { kind: 'useSkillSlot' as const, slot: 1 as const, skillLevel: 1, choice: null };
+  const result = reducePreNoblePhantasmAction(actor, initial.state, command, ctx);
+  expect(result.status).toBe('applied');
+  expect(result.state.npResource.gauge).toBe(12000);
+  expect(result.state.stackCounts.attackerState['marker-actor']).toBe(0);
+  expect(result.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
+  expect(initial.state.buffInstances).toEqual([]);
+  const invalidActor = servantWithSkill([
+    ...effects,
+    effect('invalid-child', { kind: 'unsupported', recipient: 'sourceActor', family: 'unknown' }),
+  ]);
+  const rejected = reducePreNoblePhantasmAction(invalidActor, initial.state, command, ctx);
+  expect(rejected.status).toBe('rejected');
+  expect(rejected.state).toEqual(initial.state);
+  expect(reducePreNoblePhantasmAction(actor, rejected.state, command, ctx).state).toEqual(
+    result.state,
+  );
+});
+
+it('repairs the originating condition of an unknown marker reader and rolls back the whole attempt', () => {
+  const trait = (
+    scope: 'field' | 'recipientState',
+    name: string,
+  ): MasterEffect['requirement']['expression'] => ({
+    kind: 'trait',
+    scope,
+    trait: name,
+    present: true,
+    provenance: {
+      stateSources: 'activeOnly',
+      ignoredStateTraits: 'exclude',
+      unremovableStateTraits: 'include',
+    },
+  });
+  const marker = effect(
+    'unknown-marker',
+    null,
+    [
+      {
+        kind: 'buffInstanceMutation',
+        mutation: 'grant',
+        recipient: 'sourceSelf',
+        traits: ['marker-buff'],
+        lifetime: 'active',
+        marker: {
+          actorTrait: 'marker-actor',
+          buffIdentity: 'marker',
+          removable: true,
+          onField: false,
+          recipientSide: 'both',
+        },
+      },
+    ],
+    trait('field', 'unknown-field'),
+  );
+  const gain = effect(
+    'marker-reader',
+    {
+      kind: 'fixed',
+      recipient: 'sourceActor',
+      direction: 'gain',
+      amounts: [[1000], [], [], [], []],
+      overflow: 'clampToCapacity',
+      underflow: 'clampToZero',
+    },
+    [],
+    trait('recipientState', 'marker-actor'),
+  );
+  const servant = servantWithSkill([marker, gain]);
+  const initial = createPreNoblePhantasmState(servant, baseForm, context);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null } as const;
+  const missing = reducePreNoblePhantasmAction(servant, initial.state, command, context);
+  expect(missing).toMatchObject({
+    status: 'rejected',
+    code: 'preparationInputRequired',
+    state: initial.state,
+  });
+  if (missing.status !== 'rejected' || !missing.requiredInput)
+    throw new Error('missing repair input');
+  expect(missing.requiredInput.key).toContain('unknown-field');
+  for (const value of [0, 1]) {
+    const repaired = reducePreNoblePhantasmAction(servant, initial.state, command, {
+      ...context,
+      canonicalInputValues: { [missing.requiredInput.key]: value },
+      worldFacts: [
+        {
+          decisionKey: 'fixture',
+          fact: { kind: 'trait', scope: 'field', trait: 'unknown-field', present: value === 1 },
+        },
+      ],
+    });
+    expect(repaired.status, JSON.stringify({ value, repaired })).toBe('applied');
+    expect(repaired.state.npResource.gauge).toBe(10000 + 1000 * value);
+  }
+});

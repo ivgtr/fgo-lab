@@ -4,10 +4,14 @@ import { resolveResourceTargetPolicy } from './effectRouting';
 
 export interface CountedBuffInstance {
   identity: string;
-  actor: 'attacker' | 'target';
+  actor: string;
   traits: readonly string[];
   lifetime: 'active' | 'constant';
   count: number;
+  marker?: Extract<EffectExecutionOperation, { kind: 'buffInstanceMutation' }>['marker'];
+  uncertain?: boolean;
+  requiredInput?: CanonicalInputDefinition | null;
+  constantFormKey?: string;
 }
 export type BuffCountInput = Extract<CanonicalInputDefinition, { kind: 'effectStackCount' }> & {
   instanceTraits: string[];
@@ -60,23 +64,50 @@ export function seedBuffInstances(
 export function applyBuffInstanceMutation(
   instances: readonly CountedBuffInstance[],
   operation: Extract<EffectExecutionOperation, { kind: 'buffInstanceMutation' }>,
-  source: Pick<SourceEffect, 'origin'>,
+  source: Pick<SourceEffect, 'origin'> &
+    Partial<Pick<SourceEffect, 'sourceInstanceId' | 'constantFormKey'>>,
   identity: string,
 ): readonly CountedBuffInstance[] | null {
   if (operation.mutation === 'move' || operation.mutation === 'unsupported') return null;
-  const recipient = resolveResourceTargetPolicy(source.origin, operation.recipient);
+  const recipient =
+    operation.marker &&
+    ['sourceSelf', 'sourceActor'].includes(operation.recipient) &&
+    (source.origin === 'support' || source.origin === 'mysticCode')
+      ? (source.sourceInstanceId ?? 'unresolved')
+      : resolveResourceTargetPolicy(source.origin, operation.recipient);
   if (recipient === 'unresolved') return null;
-  if (recipient !== 'attacker' && recipient !== 'target') return instances;
+  if (recipient === null) return instances;
+  if (
+    operation.marker &&
+    operation.marker.recipientSide !== 'both' &&
+    operation.marker.recipientSide !== (recipient === 'target' ? 'opponent' : 'ally')
+  )
+    return instances;
   if (operation.mutation === 'remove')
-    return instances.filter(
-      (instance) =>
+    return instances.flatMap((instance) => {
+      if (
         instance.actor !== recipient ||
         instance.lifetime === 'constant' ||
-        !instance.traits.some((trait) => operation.traits.includes(trait)),
-    );
+        instance.marker?.removable === false ||
+        !instance.traits.some((trait) => operation.traits.includes(trait))
+      )
+        return [instance];
+      // Keep the known absence after removal; initial facts must not resurrect it.
+      return instance.marker ? [{ ...instance, count: 0 }] : [];
+    });
   if (
     operation.grantLimit &&
-    countBuffInstances(instances, operation.grantLimit.trait, recipient, 'all') >=
+    instances.some(
+      (instance) =>
+        instance.actor === recipient &&
+        instance.uncertain &&
+        instance.traits.includes(operation.grantLimit!.trait),
+    )
+  )
+    return null;
+  if (
+    operation.grantLimit &&
+    countBuffInstances(instances, operation.grantLimit.trait, recipient, 'all')! >=
       operation.grantLimit.maximum
   )
     return instances;
@@ -88,6 +119,8 @@ export function applyBuffInstanceMutation(
       traits: operation.traits,
       lifetime: operation.lifetime,
       count: 1,
+      ...(operation.marker ? { marker: operation.marker } : {}),
+      ...(source.constantFormKey ? { constantFormKey: source.constantFormKey } : {}),
     },
   ];
 }
@@ -95,9 +128,20 @@ export function applyBuffInstanceMutation(
 export function countBuffInstances(
   instances: readonly CountedBuffInstance[],
   trait: string,
-  actor: 'attacker' | 'target' = 'attacker',
+  actor: string = 'attacker',
   lifetime: 'active' | 'all' = 'active',
-): number {
+): number | null {
+  if (
+    instances.some(
+      (instance) =>
+        instance.actor === actor &&
+        instance.uncertain &&
+        instance.count > 0 &&
+        (lifetime === 'all' || instance.lifetime === 'active') &&
+        instance.traits.includes(trait),
+    )
+  )
+    return null;
   return instances.reduce(
     (count, instance) =>
       instance.actor === actor &&
@@ -121,9 +165,20 @@ export function projectBuffInstanceCounts<
     stateTraits: { attackerState: ReadonlySet<string>; targetState: ReadonlySet<string> };
   },
 >(state: T, inputs: readonly BuffCountInput[]): T {
-  if (!inputs.length) return state;
+  if (!inputs.length && !state.buffInstances.some((instance) => instance.marker)) return state;
   const stackCounts = { ...state.stackCounts };
   const stateTraits = { ...state.stateTraits };
+  for (const actor of ['attacker', 'target'] as const) {
+    const scope = actor === 'attacker' ? 'attackerState' : 'targetState';
+    const counts = markerTraitCounts(state.buffInstances, actor);
+    stackCounts[scope] = { ...stackCounts[scope], ...counts };
+    const traits = new Set(stateTraits[scope]);
+    for (const [trait, count] of Object.entries(counts)) {
+      if (count) traits.add(trait);
+      else traits.delete(trait);
+    }
+    stateTraits[scope] = traits;
+  }
   for (const input of inputs) {
     const { scope, trait } = input.quantitySource;
     if (scope === 'field') throw new TypeError('invalid_buff_count_scope');
@@ -133,6 +188,7 @@ export function projectBuffInstanceCounts<
       scope === 'attackerState' ? 'attacker' : 'target',
       'all',
     );
+    if (count === null) continue;
     stackCounts[scope] = { ...stackCounts[scope], [trait]: count };
     const traits = new Set(stateTraits[scope]);
     if (count) traits.add(trait);
@@ -140,4 +196,51 @@ export function projectBuffInstanceCounts<
     stateTraits[scope] = traits;
   }
   return { ...state, stackCounts, stateTraits };
+}
+
+/** Both read kinds retain multiplicity and observe the same actor-qualified instances. */
+export function markerTraitCounts(
+  instances: readonly CountedBuffInstance[],
+  actor: string,
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const instance of instances) {
+    if (!instance.marker || instance.actor !== actor || instance.uncertain) continue;
+    for (const trait of new Set([...instance.traits, instance.marker.actorTrait]))
+      result[trait] = (result[trait] ?? 0) + instance.count;
+  }
+  return result;
+}
+
+export function markerTraitRead(
+  instances: readonly CountedBuffInstance[],
+  actor: string,
+  trait: string,
+): { known: boolean; count: number } | null {
+  if (instances.length === 0) return null;
+  const matching = instances.filter(
+    (instance) =>
+      instance.actor === actor &&
+      (instance.traits.includes(trait) || instance.marker?.actorTrait === trait),
+  );
+  if (!matching.some((instance) => instance.marker)) return null;
+  return {
+    known: !matching.some((instance) => instance.uncertain && instance.count > 0),
+    count: matching
+      .filter((instance) => !instance.uncertain)
+      .reduce((sum, instance) => sum + instance.count, 0),
+  };
+}
+
+export function reconcileMarkerForm(
+  instances: readonly CountedBuffInstance[],
+  formKey: string,
+): readonly CountedBuffInstance[] {
+  return instances.map((instance) =>
+    instance.marker &&
+    instance.constantFormKey !== undefined &&
+    instance.constantFormKey !== formKey
+      ? { ...instance, count: 0, uncertain: false }
+      : instance,
+  );
 }

@@ -18,6 +18,7 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/productionAudit.test.ts',
   'packages/calculation-application/src/productionExecutionParity.test.ts',
   'packages/calculation-application/src/productionHpPaths.test.ts',
+  'packages/calculation-application/src/productionMarkerPaths.test.ts',
   'packages/calculation-application/src/productionMasterAudit.test.ts',
   'packages/calculation-application/src/productionMasterInventory.test.ts',
   'packages/calculation-application/src/rankingCandidateSpace.test.ts',

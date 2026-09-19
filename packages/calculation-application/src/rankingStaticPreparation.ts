@@ -1,4 +1,5 @@
 import {
+  terminalMarkerReads,
   noblePhantasmReadsOc,
   npProgramEffects,
   terminalHpReaders,
@@ -52,6 +53,7 @@ export interface StaticRankingPreparationProgram {
   sourceUses: readonly RankingPreparationSourceUse[];
   terminalReadsOc?: boolean;
   terminalHpReaders?: readonly ResourceActor[];
+  terminalMarkerReads?: readonly string[];
 }
 
 interface StaticState {
@@ -258,6 +260,7 @@ export function compileStaticRankingPreparationPrograms(
         sourceUses: state.sourceUses,
         terminalReadsOc: variant ? noblePhantasmReadsOc(variant) : false,
         terminalHpReaders: variant ? terminalHpReaders(variant) : [],
+        terminalMarkerReads: variant ? terminalMarkerReads(variant) : [],
       });
     for (const command of skillCommands(servant, state)) {
       const skill = getSkillsForActorForm(servant, state.currentFormId).find(

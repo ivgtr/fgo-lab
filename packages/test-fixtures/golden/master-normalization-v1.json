@@ -1,11 +1,11 @@
 {
-  "caseId": "master-normalization-v73",
-  "reviewedAt": "2026-09-13",
-  "masterSchemaVersion": 54,
-  "masterDataVersion": "20260913.27",
+  "caseId": "master-normalization-v74",
+  "reviewedAt": "2026-09-20",
+  "masterSchemaVersion": 55,
+  "masterDataVersion": "20260919.4",
   "artifact": {
-    "bytes": 32932358,
-    "sha256": "d9980b546f7e6a114caba2a0f0fb6046f53909fe087f1bc487981207f8c037f8"
+    "bytes": 32940890,
+    "sha256": "436d90bc0df3350af7802f6a078a1efa71dd749d252b1acd2a9c66f557d075cd"
   },
   "counts": {
     "sourceAttackFunctions": 627,

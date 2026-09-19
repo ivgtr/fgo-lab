@@ -26,19 +26,19 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'd75843b4b1949ea2d9d2285b23bc432e44f806d582a7eb22305bd6da8e9a95d7',
+          digest: '738fd152099a338ce6119832c6b65a63dd13bab7b22e3887854565c1810ce37c',
           inventory: {
             attackServants: 422,
             attackProfiles: 433,
-            preparationPlans: 3510,
+            preparationPlans: 3628,
             calculatorScenarios: 422,
-            rankingRows: 427,
+            rankingRows: 432,
             rankingPolicy: 'current-default',
             resourcePrograms: {
               programs: 7255,
               mutations: 15949,
-              opaqueOperations: 53012,
-              digest: '8b1050ce05de594f8bf0d3298bc31131f451c09b44cbda19fb3e3292b1d62066',
+              opaqueOperations: 52299,
+              digest: '94bcde6c3b3d7dfde49bcdd66cb6df9221dba600311b4dedcf76f27a5a74f784',
             },
             calculated: 421,
             inputRequired: 0,
@@ -77,7 +77,7 @@ describe('shared calculation-application production audit', () => {
         counts[kind] = (counts[kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ unsupported: 1, rankingFailure: 6 });
+    ).toEqual({ unsupported: 1, rankingFailure: 1 });
     expect(
       audit.failures.filter(({ kind }) => kind === 'unsupported').map(({ identity }) => identity),
     ).toEqual(['calculator:705300']);
@@ -87,7 +87,7 @@ describe('shared calculation-application production audit', () => {
         .map(({ reason }) => reason)
         .sort(),
     ).toEqual(
-      [...Array.from({ length: 6 }, () => 'unsupported:unsupportedActionAdmission')].sort(),
+      [...Array.from({ length: 1 }, () => 'unsupported:unsupportedActionAdmission')].sort(),
     );
     expect(actual, formatCanonicalAuditMismatch(expected, actual)).toEqual(expected);
   }, 120_000);

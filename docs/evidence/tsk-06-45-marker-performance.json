@@ -1,0 +1,95 @@
+{
+  "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+  "head": "538b83a0fc2d7cb1f166d61bdeb28984197fe6b2",
+  "diffHash": "5b7fa70a2b4e85fc1ef9d762e6ba7caa8d9bfe81fd898dad1dfc29f0218f4dff",
+  "node": "v26.3.1",
+  "platform": "linux",
+  "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+  "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+  "masterHash": "436d90bc0df3350af7802f6a078a1efa71dd749d252b1acd2a9c66f557d075cd",
+  "versions": {
+    "masterDataVersion": "20260919.4",
+    "engineVersion": "45.0.0"
+  },
+  "conditions": {
+    "population": "all",
+    "initialOvercharge": 1,
+    "levelBasis": "naturalLimit",
+    "npLevelBasis": {
+      "kind": "specified",
+      "npLevel": 1
+    },
+    "classAffinity": "neutral",
+    "selfBuffs": "included",
+    "conditionalEffects": "baseline"
+  },
+  "samples": [
+    {
+      "milliseconds": 6207.296348,
+      "rows": 432,
+      "exclusions": 1,
+      "digest": "3305b4986399a1a537ee0f2648a6399b3e19a1f0162234a814bc186f342be81b"
+    },
+    {
+      "milliseconds": 4999.986048000001,
+      "rows": 432,
+      "exclusions": 1,
+      "digest": "3305b4986399a1a537ee0f2648a6399b3e19a1f0162234a814bc186f342be81b"
+    },
+    {
+      "milliseconds": 4810.572035999998,
+      "rows": 432,
+      "exclusions": 1,
+      "digest": "3305b4986399a1a537ee0f2648a6399b3e19a1f0162234a814bc186f342be81b"
+    }
+  ],
+  "medianMs": 4999.986048000001,
+  "baseline": {
+    "commit": "538b83a",
+    "artifact": "tsk-06-45-hp-performance.json",
+    "sha256": "8027be61aaf64136032231a5c6a39020dc6cdac43e6e554ef41eb1fcda187923",
+    "medianMs": 4795.090993999998,
+    "comparison": "The HP implementation already belongs to baseline 538b83a. Do not combine its prior delta with this marker delta."
+  },
+  "candidates": {
+    "before": {
+      "generated": 6516,
+      "deduplicated": 4043,
+      "damageRequests": 2377,
+      "distinctDamageRequests": 1451,
+      "preparationPlans": 3510
+    },
+    "after": {
+      "generated": 6658,
+      "deduplicated": 4182,
+      "damageRequests": 2591,
+      "distinctDamageRequests": 1485,
+      "preparationPlans": 3628
+    },
+    "reason": "Marker dependencies retain writers and readers across skill orders; unknown preparation marker guards retain both structural branches. Five newly calculable profiles add evaluated programs. cap4096 and timeouts unchanged."
+  },
+  "production": {
+    "before": {
+      "path": ".test-results/2026-09-19T13-54-00-780Z-45-f19bd9/manifest.json",
+      "durationMs": 71083,
+      "tests": 130
+    },
+    "after": {
+      "artifact": {
+        "path": ".test-results/2026-09-19T15-59-14-750Z-15-7cc0c3/production/manifest.json",
+        "sha256": "633ce0b77a282e34a4ade59e5a02190c822e002bfe2057617f66025e30d48069"
+      },
+      "durationMs": 72209,
+      "tests": 133
+    },
+    "reason": "Three new shared-master production tests cover 35 acceptance, 60 policy/level/owned and 220 shared actor/CE/support execution paths."
+  },
+  "deltaMs": 204.89505400000235,
+  "deltaPercent": 4.273017013783131,
+  "markerEmptyPath": "Skip reader/admission analysis when the selected program contains no buff-instance mutation; empty instance queries return without allocating filters. This preserves the existing HP path and all candidate sets.",
+  "quality": {
+    "path": ".test-results/2026-09-19T15-59-14-750Z-15-7cc0c3/manifest.json",
+    "sha256": "9338d3b79e100f5c194b85487466d013b850032a3b1ef802557203f9fd3e39ef"
+  },
+  "limits": "Single environment, warm1 plus serial3 samples. The final runtime source was timed. Three samples include environmental and GC variation; no exact per-feature latency allocation is claimed. No attribution of the prior HP implementation latency is made to this marker change."
+}

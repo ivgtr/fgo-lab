@@ -1,4 +1,4 @@
-import { QUANTITY_FACT_DOMAINS, type DamageResolutionInput } from '@fgo-lab/schema';
+import type { DamageResolutionInput } from '@fgo-lab/schema';
 import { defaultTargetClassRelation } from '@fgo-lab/calc-core';
 import type {
   BattleOperation,
@@ -8,6 +8,7 @@ import type {
   OperationResult,
 } from './contracts';
 import { evaluateCondition } from './condition';
+import { markerOperationDisposition, applyOrderedMarkerMutation } from './markerExecution';
 import { fixedConstraintFactsFromState, validateConstraintSet } from './constraints';
 import { createOperationProjection, resolveOperationProjectionEvaluation } from './projection';
 import {
@@ -29,6 +30,7 @@ import { assembleInvalidActivationResult } from './candidateFailure';
 import { markOperationGroupUnsupported } from './candidateRollback';
 import {
   applyOrderedCriticalStarsMutation,
+  applyOrderedQuantityMutation,
   operationHasNoRuntimeDamageImpact,
 } from './resourceSemantics';
 import {
@@ -159,6 +161,7 @@ export function executeOrderedScenarioCandidate(
       const decisionConditionSatisfied = userConditionMet(operation, condition, choice, state);
       const localConditionSatisfied =
         decisionConditionSatisfied || activation.assumesLocalCondition;
+      const markerDisposition = markerOperationDisposition(operation, state, condition);
       let outcome: OperationResult['outcome'] = 'applied';
       let code: EffectProjection['explanation']['code'] = 'applied';
       let issue: ExecutionIssue | null = null;
@@ -171,6 +174,8 @@ export function executeOrderedScenarioCandidate(
       } else if (!enabled) {
         outcome = 'notApplied';
         code = 'disabled';
+      } else if (markerDisposition) {
+        [outcome, code] = markerDisposition;
       } else if (quantityOperationIsNotRelevant(operation, candidateInput, damage, baseInput)) {
         outcome = 'notRelevant';
         code = 'disabled';
@@ -227,14 +232,24 @@ export function executeOrderedScenarioCandidate(
       } else if (!condition && !localConditionSatisfied) {
         outcome = 'notApplied';
         code = 'conditionNotMet';
-      } else if (operationHasNoRuntimeDamageImpact(operation)) {
+      } else if (
+        operationHasNoRuntimeDamageImpact(operation) &&
+        !(operation.kind === 'preserveSemanticEffect' && operation.buffMutation)
+      ) {
         [outcome, code] = ['notRelevant', 'stateMutationOnly'];
       }
       if (outcome === 'applied') {
         const candidateState = cloneBattleState(state);
-        const contributes = contributionIncluded;
         if (preappliedOperationIds.has(operation.operationId)) {
           // Preparation already committed this canonical form/variant mutation.
+        } else if (operation.kind === 'preserveSemanticEffect' && operation.buffMutation) {
+          issue = applyOrderedMarkerMutation(
+            operation,
+            candidateState,
+            condition,
+            prepared.inputDefinitions,
+          );
+          if (issue) [outcome, code] = ['unsupported', 'unresolved'];
         } else if (operation.kind === 'resourceMutation') {
           issue = applyOrderedCriticalStarsMutation(operation, candidateState);
           if (issue) [outcome, code] = ['unsupported', 'unresolved'];
@@ -257,21 +272,9 @@ export function executeOrderedScenarioCandidate(
             operation.trait,
           ]);
         } else if (operation.kind === 'addQuantity') {
-          const current = candidateState.quantities[operation.quantity];
-          if (current === null) {
-            outcome = 'unsupported';
-            code = 'unresolved';
-            issue = {
-              kind: 'unsupportedOperation',
-              operationId: operation.operationId,
-              detail: `quantity_missing:${operation.quantity}`,
-            };
-          } else
-            candidateState.quantities[operation.quantity] = Math.min(
-              QUANTITY_FACT_DOMAINS[operation.quantity].max,
-              Math.max(QUANTITY_FACT_DOMAINS[operation.quantity].min, current + operation.amount),
-            );
-        } else if (operation.kind === 'addModifier' && contributes)
+          issue = applyOrderedQuantityMutation(operation, candidateState);
+          if (issue) [outcome, code] = ['unsupported', 'unresolved'];
+        } else if (operation.kind === 'addModifier' && contributionIncluded)
           candidateState.modifiers = [
             ...candidateState.modifiers,
             {
@@ -283,7 +286,7 @@ export function executeOrderedScenarioCandidate(
               order: operation.order,
             },
           ];
-        else if (operation.kind === 'changeModifierRate' && contributes)
+        else if (operation.kind === 'changeModifierRate' && contributionIncluded)
           candidateState.modifierRates = {
             ...candidateState.modifierRates,
             [operation.modifier]: Math.max(
@@ -309,11 +312,11 @@ export function executeOrderedScenarioCandidate(
             candidateState.noblePhantasmVariant = selection.state.noblePhantasmVariant;
           }
         } else if (operation.kind === 'ignoreDefense') {
-          if (contributes) candidateState.ignoreDefense = true;
+          if (contributionIncluded) candidateState.ignoreDefense = true;
         } else if (operation.kind === 'ignoreDamageCut') {
-          if (contributes) candidateState.ignoreDamageCut = true;
+          if (contributionIncluded) candidateState.ignoreDamageCut = true;
         } else if (operation.kind === 'executeNpDamage') {
-          if (contributes)
+          if (contributionIncluded)
             input = applyNoblePhantasmDamage(
               input,
               operation,

@@ -5,6 +5,7 @@ import type { OcSourceProgram } from './ocSourceProgram';
 import { activationFactKey, analyzeActivationFactSet, type ActivationFact } from '@fgo-lab/schema';
 import { findActorForm, findNoblePhantasmVariant, type ServantMaster } from '@fgo-lab/master-data';
 import { createConditionState } from './conditionState';
+import { markerTraitCounts } from './buffInstances';
 import type { ConditionEvaluationState } from './condition';
 import type { PreNoblePhantasmState, PreparationExecutionContext } from './preparationContracts';
 
@@ -75,6 +76,7 @@ export function preparationConditionState(
     ),
   };
   facts.hp = state.hp;
+  facts.buffInstances = state.buffInstances;
   facts.initialTraitSuppressions = state.initialTraitSuppressions;
   return facts;
 }
@@ -93,6 +95,13 @@ export function preparationSourceConditionState(
     traitCounts: { ...facts.traitCounts, attacker: traitCounts(traits), attackerState: {} },
     actorPredicates: { ...facts.actorPredicates, attacker: new Map() },
     initialTraitSuppressions: { ...facts.initialTraitSuppressions, attacker: new Set() },
+    buffInstances: (facts.buffInstances ?? [])
+      .filter((instance) => instance.actor !== 'attacker')
+      .map((instance) =>
+        instance.actor === program.source.sourceInstanceId
+          ? { ...instance, actor: 'attacker' }
+          : instance,
+      ),
     quantities: {
       ...facts.quantities,
       attackerHpPermille: hpPermille(facts.hp?.actors[program.source.sourceInstanceId]),
@@ -128,6 +137,11 @@ export function preparationSourceConditionState(
     } catch {
       continue;
     }
+  }
+  const live = markerTraitCounts(facts.buffInstances ?? [], program.source.sourceInstanceId);
+  for (const [trait, count] of Object.entries(live)) {
+    (bound.traits.attackerState as Map<string, boolean>).set(trait, count > 0);
+    bound.traitCounts.attackerState = { ...bound.traitCounts.attackerState, [trait]: count };
   }
   return bound;
 }

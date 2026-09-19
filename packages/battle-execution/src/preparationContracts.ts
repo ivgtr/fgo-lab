@@ -20,7 +20,7 @@ import type { PopulationEvent } from './populationCounts';
 
 export interface PreparationExecutionContext {
   planningOnly?: boolean;
-  planningHpChoices?: ReadonlyMap<string, boolean>;
+  planningConditionChoices?: ReadonlyMap<string, boolean>;
   resourceSemantics: CanonicalNpResourceSemantics;
   npLevel: NpResourceState['npLevel'];
   initialGauge: number;

@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('427件表示 / 427件を計算・順位外 6件', {
+  await expect(page.getByRole('status')).toContainText('432件表示 / 432件を計算・順位外 1件', {
     timeout: 30_000,
   });
   const first = page
@@ -526,4 +526,53 @@ test('[E2E-052] HP preparation, transfer, death repair and saved replay @desktop
   await page.reload();
   await expect(formHp).toHaveValue('50');
   await expect(formDisplay).toHaveText(formExecuted!);
+});
+
+test('[E2E-053] independent marker profiles retain calculator state across saved replay @desktop @journey', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+    }),
+  );
+  await openTestHome(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  // E2E-A053-MARKER-REPLAY
+  for (const name of ['ヤマトタケル', 'バーゲスト', 'ネモ／ノア', '蒼崎青子']) {
+    await page.getByRole('button', { name: '攻撃役を変更' }).click();
+    const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+    await picker.getByRole('tab', { name: '全DB' }).click();
+    await picker.getByLabel('名前で検索').fill(name);
+    await picker
+      .getByRole('button', {
+        name: name === 'バーゲスト' ? /バーゲスト.*アーチャー/ : new RegExp(name + '.*Lv'),
+      })
+      .first()
+      .click();
+    const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+    await expect(table).toBeVisible();
+    await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('2');
+    await page.getByRole('combobox', { name: '初期OC', exact: true }).selectOption('2');
+    await expect
+      .poll(
+        async () =>
+          JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.initialOvercharge,
+      )
+      .toBe(2);
+    const damage = await table.textContent();
+    await page.reload();
+    await expect(table).toHaveText(damage!);
+    await expect(page.getByRole('combobox', { name: '初期OC', exact: true })).toHaveValue('2');
+    await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('1');
+    await expect(page.getByRole('combobox', { name: '初期OC', exact: true })).toHaveValue('1');
+    await expect(table).toBeVisible();
+    await table.screenshot({ path: test.info().outputPath(`marker-${name}.png`) });
+  }
 });

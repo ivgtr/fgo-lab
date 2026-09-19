@@ -242,29 +242,29 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(15204);
+    expect(operations).toHaveLength(15257);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       boundedPhaseIrrelevant: 3008,
-      buffInstanceMutation: 198,
-      contextMutation: 1489,
+      buffInstanceMutation: 311,
+      contextMutation: 1448,
       damageModifier: 3885,
       grantOcApplicationRate: 29,
       grantOcBoost: 97,
       hpModifier: 107,
-      removeHpModifiers: 198,
       ignoreDamageCut: 1,
       ignoreDefense: 39,
       modifierRateChange: 1,
       ocRemovalResistance: 60,
       ocStateNonIntersection: 129,
-      populationMutation: 4,
       populationFunction: 5,
+      populationMutation: 4,
+      removeHpModifiers: 198,
       removeOcState: 75,
       resourceMutation: 1179,
       selectNoblePhantasmVariant: 22,
       stateMutation: 4621,
       transformActorForm: 10,
-      unsupported: 47,
+      unsupported: 28,
     });
     const occurrenceFamilies = {
       resource: new Set([
@@ -439,10 +439,10 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      enemyApplied: 2001,
-      partyOther: 55,
-      partyWide: 1069,
-      personal: 3011,
+      enemyApplied: 1984,
+      partyOther: 51,
+      partyWide: 1059,
+      personal: 3001,
     });
     expect(counts(terminal)).toEqual({
       personal: 2_593,
@@ -604,7 +604,7 @@ describe('production canonical execution semantics', () => {
             !operation.damageRelevant,
         ),
       ),
-    ).toHaveLength(23);
+    ).toHaveLength(4);
   });
 
   it('ratchets build-time referenced skills and their ordered canonical operations', async () => {

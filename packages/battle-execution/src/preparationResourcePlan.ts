@@ -49,6 +49,16 @@ function selectedNpMutation(
   const countAmount = operation.amount;
   if (
     countAmount.kind === 'buffCount' &&
+    instances.some(
+      (instance) =>
+        instance.actor === recipient &&
+        instance.uncertain &&
+        instance.traits.includes(countAmount.trait),
+    )
+  )
+    return { kind: 'unsupported', family: 'unknownBuffCount' };
+  if (
+    countAmount.kind === 'buffCount' &&
     !source.effect.inputDefinitions.some(
       (input) =>
         isBuffCountInput(input) &&
@@ -77,7 +87,7 @@ function selectedNpMutation(
   }
   const selected =
     operation.amount.kind === 'buffCount' && amount !== null && amount !== undefined
-      ? amount * countBuffInstances(instances, operation.amount.trait, recipient)
+      ? amount * countBuffInstances(instances, operation.amount.trait, recipient)!
       : amount;
   if (selected !== null && selected !== undefined && !Number.isSafeInteger(selected))
     return { kind: 'gain', amount: Number.NaN };

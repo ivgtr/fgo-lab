@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(54),
+  schemaVersion: z.literal(55),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -573,6 +573,16 @@ const effectExecutionOperationSchema = z.union([
       recipient: canonicalTargetPolicySchema,
       traits: z.array(z.string().min(1)).min(1),
       lifetime: z.enum(['active', 'constant']),
+      marker: z
+        .object({
+          actorTrait: z.string().min(1),
+          buffIdentity: z.string().min(1),
+          removable: z.boolean(),
+          onField: z.boolean(),
+          recipientSide: z.enum(['ally', 'opponent', 'both']),
+        })
+        .strict()
+        .optional(),
       grantLimit: z
         .object({ trait: z.string().min(1), maximum: z.number().int().positive() })
         .strict()

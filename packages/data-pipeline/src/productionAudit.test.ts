@@ -26,7 +26,7 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '6b85d81b49b8a1f9891fd6d7cc2193515cdba976483af28cc37adc5816c1b23c',
+          digest: 'ca2fe0682054eca8c98bef3676dcda3ba1be01dcce9946086d6f3e38df7ddd65',
           inventory: {
             hpGrowth: {
               servantCells: 56250,
@@ -77,7 +77,7 @@ describe('shared data-pipeline production audit', () => {
               unsupported: {
                 '["addStateShort","operationSemantics","commandCardAttack",true]': 17,
                 '["replaceMember","partyCompositionMutation",null,true]': 3,
-                '["addState","contextReference",null,false]': 23,
+                '["addState","contextReference",null,false]': 4,
                 '["addState","operationSemantics",null,true]': 1,
                 '["moveToLastSubmember","partyCompositionMutation",null,true]': 1,
                 '["gainNp","unresolvedTarget",null,true]': 2,
@@ -201,7 +201,7 @@ describe('shared data-pipeline production audit', () => {
               },
               battlePointMissingAmounts: 10,
             },
-            operations: 15204,
+            operations: 15257,
             damageFunctions: 630,
             noblePhantasmVariantIdentities: 706,
             rawFunctionTypes: 54,

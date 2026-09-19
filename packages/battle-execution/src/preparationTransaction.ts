@@ -76,6 +76,7 @@ export function effectRequiresPreparationDecision(
           operation.proof === 'enemyChargeOutsideDamage') ||
         operation.kind === 'populationMutation' ||
         operation.kind === 'populationFunction' ||
+        (operation.kind === 'buffInstanceMutation' && operation.marker !== undefined) ||
         isHpOperation(operation) ||
         (operation.kind === 'unsupported' && operation.reason === 'resourceExecutionSemantics') ||
         (operation.kind === 'resourceMutation' &&

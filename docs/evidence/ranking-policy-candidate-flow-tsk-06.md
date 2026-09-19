@@ -1,12 +1,12 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-19"
+updated_at: "2026-09-20"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-19追記。HP系全体と直接必要な併存処理は実装・検証完了、通常ranking427/433・calculator421/422。TSK-06.45はin_progress。独立marker／BP・非HP回復／UI・全条件closureは未完了。以下の過去deltaは当時の根拠であり、HPの旧Blocking／Deferredは最新checkpointの完了証拠で閉じる。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20追記。HP系全体に続き、独立marker／admissionの対象4系統5profileと共有経路は実装・検証完了、通常ranking432/433・calculator421/422。TSK-06.45はin_progress。BPの生成→利用→回復、今回と独立した非HP回復／UI、U5全条件closureは未完了。以下の過去deltaは当時の根拠であり、HP・独立markerの旧Blocking／Deferredは最新checkpointの完了証拠で閉じる。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -441,6 +441,16 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 単発3標本の揺れを含むため原因不明の増加を許容済みとはしない。量query収集のallocationと再測定を後続で確認する。
 
 ### canonical checkpoint（2026-09-13、フォローアップ）
+
+**2026-09-20独立marker／admission完了（基点538b83a、対象内Blocking0）:** actor individuality（Value）とbuff trait／buff identityをcanonical instanceへ分離。固定Chaldeaの`getTraits`／`getBuffTraits`／`countBuffWithTrait`／`subState`を照合し、付与・重複・解除・別actor・既知の不在を共通reducerへ接続した。Value 0／9999もbuff自身のtraitと区別し、族連動・finite-use・BP activationの未確定cellは推測しない。根拠は[marker source](tsk-06-45-marker-source.json)。
+
+- 対象105900、204900×2、405700、2501400の35条件は33 calculated、青子の自己バフ除外2条件だけNP不足のtyped unavailable。採用scenario・calculator／portable parityを記録。自然上限／Lv.90／stable owned・合法OC2・四policyの60条件も通過した。
+- source inventoryは33actor／55occurrenceとCE2effect。同programのcanonical reader・全NP cellと結び付けた非交差proofを使用し、opaque readerでは禁止。source列を実行順と誤認せず候補順序を保持する。共通cohort writerを未解決actorへの二重writeにしない。
+- 同commandの付与→解除、重複instance、別actor、条件不成立／未知、NP・HP・context／receipt rollbackとretryを検証。未知markerは不明状態と元の修復inputを保持し、実寄与するreaderで要求する。飽和・空解除のno-opで不要な入力を要求しない。62件のtransaction／独立oracleが成功（`.test-results/2026-09-19T15-04-36-018Z-16-ec9e47`）。
+- 小型oracleは2skillの全subset／全順序を独立列挙し、baseline／satisfiedの最大値と採用順序を照合。実行中に成立したmarker条件をbaselineで除外しない。403700／405300の初期passive未知条件は構造探索で両branchを保持し、実行時は確定factsで再評価する。
+- 共有auditは通常ranking432/433・calculator421/422、残る拒否は対象外705300 BP。差分は[marker delta](tsk-06-45-marker-delta.json)。数値差は203500／205500／2501400のcalculator、203500／605100／2300600のranking。marker付与後のNP特攻倍率／状態数／攻撃buffで説明する。
+- E2E-053は4系統の実画面・保存再読込・NP2/OC2→NP1/OC1修復を実行し成功（`.test-results/2026-09-19T15-07-24-555Z-15-4f842e`）。共有markerの220経路（NP／合法OC、CE normal/LB、支援とrecipient）も成功。106400／2800600のNP2/5・OC1は初期trait／stateの不足をtyped inputRequiredで返し、初期なしを入力して修復・再実行した。入力事実が後続marker更新を上書きしない。formに属する常時instanceはform変更で失効し、active／CE instanceを保持する。
+- 差分レビューで生成・実行・候補・回復の局所反例を解消し、最終qualityと結果記録まで完了。性能はwarm1＋serial3で中央値4999.986ms、538b83a収録4795.091ms比+4.27%。候補6516→6658、dedup4043→4182、要求2377→2591、distinct1451→1485。前回HP増加とは別比較。[validation](tsk-06-45-marker-validation.json)／[performance](tsk-06-45-marker-performance.json)参照。対象4系統5profileと直接共有する経路のU1-R／U2／U3-A／U3-Q／U4は完了。最終`pnpm quality`はunit834／production133／E2E28成功、warning・unexpected observation・retry0、324.726秒（`.test-results/2026-09-19T15-59-14-750Z-15-7cc0c3`）。productionは538b83a収録71,083ms→72,209ms。追加3testで35＋60＋220条件を検証。master20260919.4/schema55、engine45.0.0、portable schema40。BP実量・独立した非HP回復／UI・U5全条件は未完了。
 
 **2026-09-19追記: HP系全体は完了、scoped Blocking0。TSK全体は未完了。** 基点`645a3ee`、引継ぎclean。前回NP／charge transferの成功済みbeforeは再利用した。
 

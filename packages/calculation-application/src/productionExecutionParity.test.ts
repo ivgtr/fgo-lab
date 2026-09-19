@@ -83,7 +83,7 @@ describe('production execution parity ratchet', () => {
         .map(({ attackerId }) => attackerId),
     ).toEqual(['705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('9499b537f5221ee9c0873d48839d2d89afddd334aac566f0e61a513b7367cc03');
+    expect(digest).toBe('4ed777c19baab1d46e289c1fa3f86a571b5a055b59d1f7849dd61431dfd97386');
   }, 60_000);
 });
 

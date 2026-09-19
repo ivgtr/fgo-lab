@@ -124,3 +124,134 @@ it('keeps recipient counts separate, applies the grant cap live, and projects re
   expect(projected.stateTraits.targetState.has('a')).toBe(false);
   expect(countBuffInstances(instances, 'a', 'target')).toBe(5);
 });
+
+it('retains marker instances, actor individuality, recipient identity, removal and known absence independently', () => {
+  const operation = {
+    kind: 'buffInstanceMutation' as const,
+    mutation: 'grant' as const,
+    recipient: 'sourceSelf' as const,
+    traits: ['marker', 'positive'],
+    lifetime: 'active' as const,
+    marker: {
+      actorTrait: 'actor-trait',
+      buffIdentity: 'buff',
+      removable: true,
+      onField: false,
+      recipientSide: 'both' as const,
+    },
+  };
+  let instances = applyBuffInstanceMutation([], operation, { origin: 'attacker' }, 'first')!;
+  instances = applyBuffInstanceMutation(instances, operation, { origin: 'attacker' }, 'second')!;
+  instances = applyBuffInstanceMutation(
+    instances,
+    operation,
+    { origin: 'support', sourceInstanceId: 'support:a' },
+    'third',
+  )!;
+  expect(countBuffInstances(instances, 'marker')).toBe(2);
+  expect(countBuffInstances(instances, 'actor-trait')).toBe(0);
+  expect(countBuffInstances(instances, 'marker', 'support:a')).toBe(1);
+  const removed = applyBuffInstanceMutation(
+    instances,
+    { ...operation, marker: undefined, mutation: 'remove', traits: ['positive'] },
+    { origin: 'attacker' },
+    'remove',
+  )!;
+  const projected = projectBuffInstanceCounts(
+    {
+      buffInstances: removed,
+      stackCounts: { attackerState: { 'actor-trait': 10 }, targetState: {}, field: {} },
+      stateTraits: { attackerState: new Set(['actor-trait']), targetState: new Set<string>() },
+    },
+    [],
+  );
+  expect(projected.stackCounts.attackerState['actor-trait']).toBe(0);
+  expect(projected.stateTraits.attackerState.has('actor-trait')).toBe(false);
+  expect(countBuffInstances(removed, 'marker', 'support:a')).toBe(1);
+  expect(countBuffInstances(instances, 'marker')).toBe(2);
+});
+
+it('keeps unknown multiplicity nonnumeric and excludes the wrong recipient side', async () => {
+  const { markerTraitRead } = await import('./buffInstances');
+  const marker = {
+    actorTrait: 'actor',
+    buffIdentity: 'buff',
+    removable: true,
+    onField: true,
+    recipientSide: 'ally' as const,
+  };
+  const op = {
+    kind: 'buffInstanceMutation' as const,
+    mutation: 'grant' as const,
+    recipient: 'enemy' as const,
+    traits: ['buff'],
+    lifetime: 'active' as const,
+    marker,
+  };
+  expect(applyBuffInstanceMutation([], op, { origin: 'attacker' }, 'enemy')).toEqual([]);
+  const instances = [
+    {
+      identity: 'unknown',
+      actor: 'attacker',
+      count: 1,
+      traits: ['buff'],
+      lifetime: 'active' as const,
+      marker,
+      uncertain: true,
+    },
+  ];
+  expect(countBuffInstances(instances, 'buff')).toBeNull();
+  expect(markerTraitRead(instances, 'attacker', 'actor')).toEqual({ known: false, count: 0 });
+  expect(markerTraitRead(instances, 'target', 'actor')).toBeNull();
+  const removed = applyBuffInstanceMutation(
+    instances,
+    { ...op, mutation: 'remove', recipient: 'sourceSelf', marker: undefined },
+    { origin: 'attacker' },
+    'remove',
+  )!;
+  expect(countBuffInstances(removed, 'buff')).toBe(0);
+  expect(markerTraitRead(removed, 'attacker', 'actor')?.known).toBe(true);
+});
+
+it('reconciles form-owned constants while retaining active and equipment instances', async () => {
+  const { reconcileMarkerForm, markerTraitRead } = await import('./buffInstances');
+  const marker = {
+    actorTrait: 'old-actor',
+    buffIdentity: 'old',
+    removable: false,
+    onField: true,
+    recipientSide: 'both' as const,
+  };
+  const old = {
+    identity: 'old',
+    actor: 'attacker',
+    traits: ['old'],
+    lifetime: 'constant' as const,
+    marker,
+    count: 1,
+    constantFormKey: 'old-form',
+  };
+  const { constantFormKey, ...portable } = old;
+  expect(constantFormKey).toBe('old-form');
+  const instances = [
+    old,
+    {
+      ...portable,
+      identity: 'active',
+      lifetime: 'active' as const,
+      traits: ['active'],
+      marker: { ...marker, actorTrait: 'active-actor' },
+    },
+    {
+      ...portable,
+      identity: 'ce',
+      traits: ['ce'],
+      marker: { ...marker, actorTrait: 'ce-actor' },
+    },
+  ];
+  const changed = reconcileMarkerForm(instances, 'new-form');
+  expect(markerTraitRead(changed, 'attacker', 'old-actor')?.count).toBe(0);
+  expect(countBuffInstances(changed, 'active', 'attacker', 'all')).toBe(1);
+  expect(countBuffInstances(changed, 'ce', 'attacker', 'all')).toBe(1);
+  expect(old.count).toBe(1);
+});

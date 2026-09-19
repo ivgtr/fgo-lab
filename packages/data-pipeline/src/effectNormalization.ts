@@ -1,5 +1,6 @@
 import { normalizeHpTransfer } from './hpNormalization';
 import { isUnreferencedDefensiveMarker } from './defensiveMarkerNormalization';
+import { normalizeMarkerInstance } from './markerNormalization';
 import { normalizeNpTransfer } from './npTransferNormalization';
 import { normalizePopulationFunctions } from './populationFunctionNormalization';
 import { isOcRateFunction, ocConditionParameterKeys } from './ocSemantics';
@@ -1185,6 +1186,7 @@ function procRateSeries(
   const terminal = execution.some(
     (operation) =>
       operation.kind === 'populationMutation' ||
+      (operation.kind === 'buffInstanceMutation' && operation.marker !== undefined) ||
       (operation.kind === 'resourceMutation' &&
         (operation.resource === 'hp' ||
           ['populationCount', 'npTransfer', 'hpTransfer'].includes(operation.amount.kind))) ||
@@ -1778,6 +1780,24 @@ export function normalizeFunctions(
       stateCatalog.countedBuffDefinitions ?? new Map(),
       source === 'passive' || source === 'craftEssence',
     );
+    // Cohort writes already have a canonical owner; do not also emit an unbound actor write.
+    const markerInstances = populationMutations.some(
+      (operation) => operation.kind === 'populationMutation' && operation.scope === 'otherActors',
+    )
+      ? null
+      : normalizeMarkerInstance(
+          fn,
+          traitNameById,
+          source === 'passive' || source === 'craftEssence',
+        );
+    if (
+      markerInstances?.some(
+        (operation) => operation.kind === 'buffInstanceMutation' && operation.marker,
+      )
+    ) {
+      contextChanges.addedRecipientTraits = [];
+      contextChanges.addedRecipientStateTraits = [];
+    }
     let execution = normalizeExecutionSemantics({
       fn,
       source,
@@ -1791,7 +1811,7 @@ export function normalizeFunctions(
         ...(hpTransfer ? [hpTransfer.operation] : []),
         ...(npPopulation ? [npPopulation.operation] : []),
         ...populationMutations,
-        ...countedBuffMutations,
+        ...(markerInstances ?? countedBuffMutations),
         ...(npBuffCount ? [npBuffCount.operation] : []),
       ],
       contextChanges,

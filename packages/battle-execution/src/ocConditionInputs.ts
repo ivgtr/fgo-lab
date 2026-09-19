@@ -70,8 +70,22 @@ export function requiredOcConditionInput(
       }
       return null;
     }
-    if (condition.kind !== 'trait' || traitConditionEvaluationSource(condition) !== 'worldFacts')
-      return null;
+    if (condition.kind !== 'trait') return null;
+    const markerActor =
+      condition.scope === 'attacker' || condition.scope === 'attackerState'
+        ? 'attacker'
+        : condition.scope === 'target' || condition.scope === 'targetState'
+          ? 'target'
+          : null;
+    const unresolvedMarker = (facts.buffInstances ?? []).find(
+      (instance) =>
+        instance.actor === markerActor &&
+        instance.uncertain &&
+        (instance.traits.includes(condition.trait) ||
+          instance.marker?.actorTrait === condition.trait),
+    );
+    if (unresolvedMarker) return unresolvedMarker.requiredInput ?? null;
+    if (traitConditionEvaluationSource(condition) !== 'worldFacts') return null;
     const sourceFact =
       program.conditionActor === 'source' &&
       (condition.scope === 'attacker' || condition.scope === 'attackerState');

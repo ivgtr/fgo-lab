@@ -199,6 +199,16 @@ export function readPopulationCount(args: {
   events: readonly PopulationEvent[];
 }): number | null {
   const { selector, values, facts } = args;
+  if (
+    (facts.buffInstances ?? []).some(
+      (instance) =>
+        instance.uncertain &&
+        selector.traits.some(
+          (trait) => instance.traits.includes(trait) || instance.marker?.actorTrait === trait,
+        ),
+    )
+  )
+    return null;
   const querySides = sides(selector.scope);
   const externalSize = querySides.reduce((sum, side) => sum + size(side, values), 0);
   let external = selector.basis === 'inBattle' ? externalSize : (values[args.inputKey] ?? 0);

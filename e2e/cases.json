@@ -528,5 +528,15 @@
     "replacement": "one HP browser journey; arithmetic and candidate oracle in shared execution fixtures",
     "costMs": 0,
     "status": "retained"
+  },
+  {
+    "id": "E2E-053",
+    "title": "Independent marker saved replay",
+    "owner": "web/package connection",
+    "failure": "marker preparation diverges after NP/OC changes or saved replay",
+    "project": "desktop",
+    "replacement": "one browser journey; instance semantics and maximum oracle in shared fixtures",
+    "costMs": 0,
+    "status": "retained"
   }
 ]

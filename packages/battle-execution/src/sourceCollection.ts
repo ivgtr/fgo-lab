@@ -1,4 +1,6 @@
 import { hpEffectKey } from './preparationHp';
+import { markerEffectReads, terminalMarkerReads, markerHasOpaqueReads } from './markerDependency';
+import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import { actorFormKey, resolveInitialMaximumHp } from '@fgo-lab/master-data';
 import { preparationTargetFacts } from './preparationTargetFacts';
 import { compileOcSourceProgram } from './ocSourceProgram';
@@ -32,6 +34,8 @@ import {
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface SourceEffect {
+  markerReaders?: ReadonlySet<string>;
+  markerProgram?: readonly string[];
   hpExecutionCommitted?: boolean;
   phase: ExecutionPhase;
   origin: Origin;
@@ -415,9 +419,34 @@ export function collectOperationSources(
       });
     }
   }
+  const markerReaders =
+    !sources.some((source) => markerHasOpaqueReads(source.effect)) &&
+    sources.some((source) =>
+      source.effect.execution.some(
+        (operation) => operation.kind === 'buffInstanceMutation' && operation.marker,
+      ),
+    )
+      ? new Set([
+          ...sources.flatMap((source) => markerEffectReads(source.effect)),
+          ...getNoblePhantasmVariants(attacker).flatMap(terminalMarkerReads),
+        ])
+      : undefined;
   return {
     sources: sources.map((source) => ({
       ...source,
+      ...(markerReaders
+        ? {
+            markerReaders,
+            markerProgram: sources.map((selected) =>
+              JSON.stringify([
+                selected.origin,
+                selected.sourceInstanceId,
+                selected.skillId,
+                selected.effect.occurrenceId,
+              ]),
+            ),
+          }
+        : {}),
       preparationStochasticOutcome:
         formExecution.state.ocState.sourceOutcomes.get(
           ocSourceOperationKey(compileOcSourceProgram(source), 0),

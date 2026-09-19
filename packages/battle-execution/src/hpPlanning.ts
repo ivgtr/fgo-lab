@@ -1,9 +1,9 @@
 import type { ConditionExpression } from './contracts';
 
-/** A structural search must retain both HP outcomes. These branches are never execution proof. */
-export class UnresolvedPlanningHpRead extends Error {
+/** A structural search must retain both unresolved preparation outcomes. These branches are never execution proof. */
+export class UnresolvedPreparationPlanningRead extends Error {
   constructor(readonly key: string) {
-    super('unresolved_structural_hp_read');
+    super('unresolved_structural_preparation_read');
   }
 }
 export function projectPlanningHpCondition(
@@ -18,7 +18,7 @@ export function projectPlanningHpCondition(
   ) {
     const key = JSON.stringify([clock, condition]);
     const outcome = choices.get(key);
-    if (outcome === undefined) throw new UnresolvedPlanningHpRead(key);
+    if (outcome === undefined) throw new UnresolvedPreparationPlanningRead(key);
     return outcome ? { kind: 'always' } : { kind: 'not', expression: { kind: 'always' } };
   }
   if (condition.kind === 'all' || condition.kind === 'any')

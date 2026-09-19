@@ -1,3 +1,4 @@
+import { QUANTITY_FACT_DOMAINS } from '@fgo-lab/schema';
 import {
   conditionQuantityReads,
   expressionQuantityReads,
@@ -93,4 +94,22 @@ export function unresolvedResourceIssue(
     operationId: operation.operationId,
     detail: `${operation.resolution}:${operation.resource}`,
   };
+}
+
+export function applyOrderedQuantityMutation(
+  operation: Extract<BattleOperation, { kind: 'addQuantity' }>,
+  state: ExecutableBattleState,
+): ExecutionIssue | null {
+  const current = state.quantities[operation.quantity];
+  if (current === null)
+    return {
+      kind: 'unsupportedOperation',
+      operationId: operation.operationId,
+      detail: `quantity_missing:${operation.quantity}`,
+    };
+  state.quantities[operation.quantity] = Math.min(
+    QUANTITY_FACT_DOMAINS[operation.quantity].max,
+    Math.max(QUANTITY_FACT_DOMAINS[operation.quantity].min, current + operation.amount),
+  );
+  return null;
 }

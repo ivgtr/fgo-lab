@@ -1,4 +1,11 @@
-import { projectPlanningHpCondition } from './hpPlanning';
+import { projectPlanningHpCondition, UnresolvedPreparationPlanningRead } from './hpPlanning';
+import {
+  markerEffectReads,
+  terminalMarkerReads,
+  markerIntersects,
+  markerHasOpaqueReads,
+} from './markerDependency';
+import { getNoblePhantasmVariants } from '@fgo-lab/master-data';
 import { hpPermille } from './hpResource';
 import { isHpOperation, executeHpOperation, hpEffectKey } from './preparationHp';
 import { applyNpTransfer } from './npTransfer';
@@ -104,10 +111,52 @@ export function executePreparationOc(args: {
   const readsBuffMutation = (
     operation: Extract<MasterEffect['execution'][number], { kind: 'buffInstanceMutation' }>,
   ) =>
+    operation.marker !== undefined ||
+    (operation.mutation === 'remove' &&
+      (args.state.buffInstances.some(
+        (instance) =>
+          instance.marker && instance.traits.some((trait) => operation.traits.includes(trait)),
+      ) ||
+        args.sources.some((source) =>
+          source.effect.execution.some(
+            (writer) =>
+              writer.kind === 'buffInstanceMutation' &&
+              writer.marker &&
+              writer.traits.some((trait) => operation.traits.includes(trait)),
+          ),
+        ))) ||
     buffInputs.some((input) =>
       input.instanceTraits.some((trait) => operation.traits.includes(trait)),
     );
   let current = args.state;
+  let markerReaders: ReadonlySet<string> | undefined;
+  const markerIsUnobserved = (
+    operation: Extract<MasterEffect['execution'][number], { kind: 'buffInstanceMutation' }>,
+  ) => {
+    if (!operation.marker) return false;
+    const effects = [
+      ...[...args.servant.skills, ...args.servant.passives].flatMap((source) => source.effects),
+      ...getNoblePhantasmVariants(args.servant).flatMap((variant) => variant.effects),
+      ...[
+        ...(args.context.initialSources ?? []),
+        ...(args.context.terminalSources ?? []),
+        ...args.sources,
+      ].map((source) => source.effect),
+    ];
+    if (effects.some(markerHasOpaqueReads)) return false;
+    markerReaders ??= new Set([
+      ...[...args.servant.skills, ...args.servant.passives].flatMap((source) =>
+        source.effects.flatMap(markerEffectReads),
+      ),
+      ...getNoblePhantasmVariants(args.servant).flatMap(terminalMarkerReads),
+      ...[
+        ...(args.context.initialSources ?? []),
+        ...(args.context.terminalSources ?? []),
+        ...args.sources,
+      ].flatMap((source) => markerEffectReads(source.effect)),
+    ]);
+    return !markerIntersects(operation, markerReaders);
+  };
   let factsState: PreNoblePhantasmState | null = null;
   let sharedFacts: ConditionEvaluationState | null = null;
   const currentFacts = () => {
@@ -265,7 +314,7 @@ export function executePreparationOc(args: {
               source.skillId,
               source.effect.occurrenceId,
             ]),
-            args.context.planningHpChoices ?? new Map(),
+            args.context.planningConditionChoices ?? new Map(),
           ),
         };
       const boundFacts = preparationSourceConditionState(program, facts);
@@ -456,9 +505,54 @@ export function executePreparationOc(args: {
       if (operation.kind === 'buffInstanceMutation') {
         if (!readsBuffMutation(operation)) continue;
         steps.push(() => {
-          if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
-          if (activation.get(source.effect)?.conditionOutcome !== true)
-            return { kind: 'reject', status: 'unsupported', reason: 'unknownBuffInstanceMutation' };
+          let uncertainMarker = false;
+          if (!sourceApplies) {
+            if (operation.marker && operation.mutation === 'grant') {
+              const absent = applyBuffInstanceMutation(
+                current.buffInstances,
+                operation,
+                source,
+                `absent:${source.effect.occurrenceId}`,
+              );
+              if (absent)
+                current = projectBuffInstanceCounts(
+                  {
+                    ...current,
+                    buffInstances: absent.map((instance) =>
+                      current.buffInstances.includes(instance)
+                        ? instance
+                        : { ...instance, count: 0 },
+                    ),
+                  },
+                  buffInputs,
+                );
+            }
+            return { kind: 'skip', outcome: 'notApplicable' };
+          }
+          if (
+            args.context.planningOnly &&
+            activation.get(source.effect)?.conditionOutcome === null
+          ) {
+            const key = JSON.stringify([
+              args.actionId,
+              source.sourceInstanceId,
+              source.effect.occurrenceId,
+              operationIndex,
+              'marker-condition',
+            ]);
+            const outcome = args.context.planningConditionChoices?.get(key);
+            if (outcome === undefined) throw new UnresolvedPreparationPlanningRead(key);
+            if (!outcome) return { kind: 'skip', outcome: 'notApplicable' };
+          } else if (activation.get(source.effect)?.conditionOutcome !== true) {
+            if (markerIsUnobserved(operation)) return { kind: 'skip', outcome: 'notApplicable' };
+            if (operation.marker) uncertainMarker = true;
+            else
+              return {
+                kind: 'reject',
+                status: 'unsupported',
+                reason: 'unknownBuffInstanceMutation',
+              };
+          }
           const instances = applyBuffInstanceMutation(
             current.buffInstances,
             operation,
@@ -477,7 +571,28 @@ export function executePreparationOc(args: {
               status: 'unsupported',
               reason: 'unboundBuffInstanceRecipient',
             };
-          current = projectBuffInstanceCounts({ ...current, buffInstances: instances }, buffInputs);
+          current = projectBuffInstanceCounts(
+            {
+              ...current,
+              buffInstances: uncertainMarker
+                ? instances.map((instance) =>
+                    current.buffInstances.includes(instance)
+                      ? instance
+                      : {
+                          ...instance,
+                          uncertain: true,
+                          requiredInput: sourceFacts.get(source.effect)
+                            ? requiredOcConditionInput(
+                                compileOcSourceProgram(source),
+                                sourceFacts.get(source.effect)!,
+                              )
+                            : null,
+                        },
+                  )
+                : instances,
+            },
+            buffInputs,
+          );
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -614,6 +729,32 @@ export function executePreparationOc(args: {
           if (
             sourceApplies &&
             operation.kind === 'resourceMutation' &&
+            (operation.amount.kind === 'buffCount' || operation.amount.kind === 'populationCount')
+          ) {
+            const amount = operation.amount;
+            const traits = amount.kind === 'buffCount' ? [amount.trait] : amount.selector.traits;
+            const unknown = current.buffInstances.find(
+              (instance) =>
+                instance.uncertain &&
+                instance.count > 0 &&
+                (amount.kind !== 'buffCount' || instance.actor === 'attacker') &&
+                traits.some(
+                  (trait) =>
+                    instance.traits.includes(trait) || instance.marker?.actorTrait === trait,
+                ),
+            );
+            if (unknown) {
+              requiredInput = unknown.requiredInput ?? null;
+              return {
+                kind: 'reject',
+                status: requiredInput ? 'inputRequired' : 'unsupported',
+                reason: 'unknownMarkerRead',
+              };
+            }
+          }
+          if (
+            sourceApplies &&
+            operation.kind === 'resourceMutation' &&
             resolveResourceTargetPolicy(source.origin, operation.recipient) === 'attacker' &&
             operation.amount.kind === 'populationCount'
           ) {
@@ -698,6 +839,18 @@ export function executePreparationOc(args: {
               : undefined,
           });
           if (resource.status === 'rejected') {
+            if (resource.code === 'ambiguousCondition') {
+              const facts = sourceFacts.get(source.effect);
+              const markerInput = facts ? requiredOcConditionInput(program, facts) : null;
+              if (markerInput) {
+                requiredInput = markerInput;
+                return {
+                  kind: 'reject',
+                  status: 'inputRequired',
+                  reason: 'unknownMarkerCondition',
+                };
+              }
+            }
             resourceOutcome.failure = resource;
             return {
               kind: 'reject',

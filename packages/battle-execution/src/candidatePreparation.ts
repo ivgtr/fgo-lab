@@ -1,4 +1,5 @@
 import { hpPermille } from './hpResource';
+import { seedBuffInstances, isBuffCountInput } from './buffInstances';
 import { seedStackQuantities } from './stackQuantities';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
@@ -107,6 +108,10 @@ function prepareExecutableCandidate(
     activationContext,
   );
   initialState.hp = prepared.hp;
+  initialState.buffInstances = seedBuffInstances(
+    prepared.inputDefinitions.filter(isBuffCountInput),
+    resolvedInputs.values,
+  );
   if (prepared.hp)
     initialState.quantities.attackerHpPermille = hpPermille(prepared.hp.actors.attacker);
   seedStackQuantities(initialState, prepared.inputDefinitions);

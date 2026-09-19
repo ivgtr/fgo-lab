@@ -1,4 +1,5 @@
 import type { HpState } from './hpResource';
+import type { CountedBuffInstance } from './buffInstances';
 import type { StackSource } from '@fgo-lab/master-data';
 import type {
   CanonicalInputDefinition,
@@ -178,6 +179,14 @@ export type BattleOperation =
       })
   | (OperationBase & {
       kind: 'preserveSemanticEffect';
+      buffMutation?: Extract<EffectExecutionOperation, { kind: 'buffInstanceMutation' }>;
+      markerNonIntersection?: {
+        kind: 'boundedMarkerNonIntersection';
+        readTraits: readonly string[];
+        selectedProgram: readonly string[];
+        recipientCoverage: 'allRepresentedActors';
+        readTiming: 'entireBoundedProgram';
+      };
       semanticKind:
         | 'hpModifier'
         | 'removeHpModifiers'
@@ -254,6 +263,7 @@ export interface AppliedModifier {
 }
 
 export interface BattleStateBase {
+  buffInstances?: readonly CountedBuffInstance[];
   hp?: HpState | undefined;
   actorFormId: ActorFormId;
   noblePhantasmVariant: NoblePhantasmVariant;

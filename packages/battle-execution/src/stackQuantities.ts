@@ -1,4 +1,4 @@
-import { isBuffCountInput } from './buffInstances';
+import { isBuffCountInput, markerTraitRead } from './buffInstances';
 import type {
   CanonicalInputDefinition,
   StackInputDefinition,
@@ -59,11 +59,21 @@ export function seedStackQuantities(
 export function liveInputQuantity(
   state: Pick<
     ExecutableBattleState,
-    'stackQuantitySources' | 'traitCounts' | 'resolvedInputValues'
+    'stackQuantitySources' | 'traitCounts' | 'resolvedInputValues' | 'buffInstances'
   >,
   key: string,
 ): number | undefined {
   const source = state.stackQuantitySources[key];
+  if (
+    source &&
+    source.scope !== 'field' &&
+    markerTraitRead(
+      state.buffInstances ?? [],
+      source.scope === 'attackerState' ? 'attacker' : 'target',
+      source.trait,
+    )?.known === false
+  )
+    return undefined;
   return source
     ? (state.traitCounts[source.scope][source.trait] ?? 0)
     : state.resolvedInputValues[key];

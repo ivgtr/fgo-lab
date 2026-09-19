@@ -601,5 +601,14 @@
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
     "replacementTest": "[E2E-052] HP preparation, transfer, death repair and saved replay @desktop @journey"
+  },
+  {
+    "id": "E2E-A053-MARKER-REPLAY",
+    "caseId": "E2E-053",
+    "outcome": "browserConnection",
+    "oldAssertion": "independent marker profiles retain ordered preparation through NP/OC changes and saved replay",
+    "disposition": "retained",
+    "replacementFile": "e2e/ranking-baseline.spec.ts",
+    "replacementTest": "[E2E-053] independent marker profiles retain calculator state across saved replay @desktop @journey"
   }
 ]

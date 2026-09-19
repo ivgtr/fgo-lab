@@ -8,6 +8,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   ocRelevantSourceIndexes,
+  markerRelevantSourceIndexes,
   hpRelevantSourceIndexes,
   npProgramEffects,
   type OcResourceDependencyContext,
@@ -52,6 +53,11 @@ function classifyPrograms(
       program.terminalHpReaders ?? [],
       resources?.automaticEffects,
     );
+    const markerRelevant = markerRelevantSourceIndexes(
+      program.sourceUses,
+      program.terminalMarkerReads ?? [],
+      resources?.automaticEffects,
+    );
     return {
       program,
       admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
@@ -61,7 +67,7 @@ function classifyPrograms(
               { ...source, effects: npProgramEffects(source.effects) },
               conditions,
               program,
-              ocRelevant.has(index) || hpRelevant.has(index),
+              ocRelevant.has(index) || hpRelevant.has(index) || markerRelevant.has(index),
             ),
       ),
     };
@@ -217,7 +223,7 @@ function optionalAdmission(
       effect.execution.some(
         (operation) =>
           operation.kind === 'contextMutation' ||
-          operation.kind === 'buffInstanceMutation' ||
+          (operation.kind === 'buffInstanceMutation' && !operation.marker) ||
           operation.kind === 'stateMutation' ||
           operation.kind === 'resourceMutation',
       ),

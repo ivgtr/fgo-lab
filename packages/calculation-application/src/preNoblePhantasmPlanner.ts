@@ -1,5 +1,5 @@
 import {
-  UnresolvedPlanningHpRead,
+  UnresolvedPreparationPlanningRead,
   availablePreparationSkillCommands,
   availableTransformNoblePhantasmCommand,
   createPreNoblePhantasmState,
@@ -23,7 +23,7 @@ import {
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { CalculationScenario } from '@fgo-lab/schema';
 
-function hpPlanningAlternatives<T>(
+function preparationPlanningAlternatives<T>(
   context: PreparationExecutionContext,
   run: (context: PreparationExecutionContext) => T,
 ): T[] {
@@ -34,9 +34,9 @@ function hpPlanningAlternatives<T>(
     if (++branches > 4096) throw new TypeError('hp_structural_branch_limit');
     const choices = pending.pop()!;
     try {
-      results.push(run({ ...context, planningHpChoices: choices }));
+      results.push(run({ ...context, planningConditionChoices: choices }));
     } catch (error) {
-      if (!(error instanceof UnresolvedPlanningHpRead)) throw error;
+      if (!(error instanceof UnresolvedPreparationPlanningRead)) throw error;
       pending.push(
         new Map([...choices, [error.key, false]]),
         new Map([...choices, [error.key, true]]),
@@ -201,7 +201,7 @@ export function planPreNoblePhantasmCandidates(
     commands: readonly PreNoblePhantasmCommand[];
   }> = [];
   for (const form of getInitialActorForms(servant)) {
-    for (const created of hpPlanningAlternatives(context, (branch) =>
+    for (const created of preparationPlanningAlternatives(context, (branch) =>
       createPreNoblePhantasmState(servant, form.id, branch),
     )) {
       if (created.status === 'rejected') throw new TypeError(created.code);
@@ -226,7 +226,7 @@ export function planPreNoblePhantasmCandidates(
     }
     visited.set(stateKey, item.commands);
     maximumPreparationActionCount = Math.max(maximumPreparationActionCount, item.commands.length);
-    for (const attack of hpPlanningAlternatives(context, (branch) =>
+    for (const attack of preparationPlanningAlternatives(context, (branch) =>
       reducePreNoblePhantasmAction(
         servant,
         item.state,
@@ -244,7 +244,7 @@ export function planPreNoblePhantasmCandidates(
       }
     }
     for (const command of preparationCommands(servant, item.state, context)) {
-      for (const result of hpPlanningAlternatives(context, (branch) =>
+      for (const result of preparationPlanningAlternatives(context, (branch) =>
         reducePreNoblePhantasmAction(servant, item.state, command, branch),
       )) {
         if (result.status === 'rejected') {

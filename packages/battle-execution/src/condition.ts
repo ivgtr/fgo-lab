@@ -1,4 +1,5 @@
 import { liveInputQuantity } from './stackQuantities';
+import { markerTraitRead } from './buffInstances';
 import type { ConditionExpression, ExecutableBattleState, TraitScope } from './contracts';
 import {
   canonicalExclusiveGroup,
@@ -55,6 +56,7 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
 export type ConditionEvaluationState = Pick<
   ExecutableBattleState,
   | 'hp'
+  | 'buffInstances'
   | 'traits'
   | 'initialTraitSuppressions'
   | 'actorPredicates'
@@ -71,6 +73,15 @@ export function evaluateCondition(
   state: ConditionEvaluationState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
+    if (scope !== 'field') {
+      const actor = scope === 'attacker' || scope === 'attackerState' ? 'attacker' : 'target';
+      const marker = markerTraitRead(state.buffInstances ?? [], actor, trait);
+      if (marker) {
+        if (marker.count > 0) return true;
+        if (!marker.known) return undefined;
+        if (scope === 'attackerState' || scope === 'targetState') return false;
+      }
+    }
     const readScopes = traitConditionReadScopes(scope);
     if (scope === 'attacker' || scope === 'target') {
       const stateScope = scope === 'attacker' ? 'attackerState' : 'targetState';

@@ -44,6 +44,11 @@ export type {
   WorldFactAssertion,
 } from './contracts';
 export { canNormalizeDamageEffect, resolveResourceTargetPolicy } from './effectRouting';
+export {
+  markerEffectReads,
+  terminalMarkerReads,
+  markerRelevantSourceIndexes,
+} from './markerDependency';
 export { isConsistentNpOcUseReceipt } from './ocState';
 export {
   contributionIsIncluded,
@@ -183,4 +188,4 @@ export { npTransferInputSaturation } from './npTransfer';
 export * from './hpResource';
 export * from './preparationHp';
 
-export { UnresolvedPlanningHpRead } from './hpPlanning';
+export { UnresolvedPreparationPlanningRead } from './hpPlanning';

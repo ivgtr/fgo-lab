@@ -1,3 +1,4 @@
+import { reconcileMarkerForm, projectBuffInstanceCounts, isBuffCountInput } from './buffInstances';
 import { rebaseHpMaximum, changeHpModifiers } from './hpResource';
 import { resourceFailureCode } from './preparationTransaction';
 import {
@@ -74,6 +75,10 @@ export function activatePreparationForm(
   const original = state;
   const formKey = actorFormKey(state.currentFormId);
   if (state.ocState.activeFormKey === formKey) return { status: 'applied', state };
+  state = projectBuffInstanceCounts(
+    { ...state, buffInstances: reconcileMarkerForm(state.buffInstances, formKey) },
+    (context.stackInputs ?? []).filter(isBuffCountInput),
+  );
   try {
     if (state.hp) {
       let hp = state.hp;

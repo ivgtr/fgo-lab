@@ -1,4 +1,5 @@
 import type { ResourceMutationIdentity } from './contracts';
+import { markerIntersects } from './markerDependency';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { actorFormEquals, canonicalRequirementLeaves } from '@fgo-lab/master-data';
 import type {
@@ -517,6 +518,14 @@ function compilationCacheKey(
     origin: source.origin,
     ocExecutionCommitted: source.ocExecutionCommitted,
     hpExecutionCommitted: source.hpExecutionCommitted,
+    markerProgram: source.markerProgram,
+    markerReaders: source.effect.execution.some(
+      (operation) => operation.kind === 'buffInstanceMutation' && operation.marker,
+    )
+      ? source.markerReaders
+        ? [...source.markerReaders].sort()
+        : null
+      : undefined,
     compilationPurpose: source.compilationPurpose,
     preparationStochasticOutcome: source.preparationStochasticOutcome,
     sourceInstanceId: source.sourceInstanceId,
@@ -840,7 +849,10 @@ export function compileEffect(
   for (const semantic of retained) {
     const suffix = uniqueSuffix(`evidence:${semantic.kind}`);
     if (
-      retainedNeedsExecution &&
+      (retainedNeedsExecution ||
+        (semantic.kind === 'buffInstanceMutation' &&
+          semantic.mutation !== 'unsupported' &&
+          semantic.mutation !== 'move')) &&
       !(
         source.hpExecutionCommitted &&
         (semantic.kind === 'hpModifier' ||
@@ -851,6 +863,25 @@ export function compileEffect(
       operations.push({
         ...baseOperation(source, 'personal', order++, suffix),
         kind: 'preserveSemanticEffect',
+        ...(semantic.kind === 'buffInstanceMutation' &&
+        semantic.mutation !== 'unsupported' &&
+        semantic.mutation !== 'move'
+          ? { buffMutation: semantic }
+          : {}),
+        ...(semantic.kind === 'buffInstanceMutation' &&
+        semantic.marker &&
+        source.markerReaders &&
+        !markerIntersects(semantic, source.markerReaders)
+          ? {
+              markerNonIntersection: {
+                kind: 'boundedMarkerNonIntersection' as const,
+                readTraits: [...source.markerReaders],
+                selectedProgram: source.markerProgram ?? [],
+                recipientCoverage: 'allRepresentedActors' as const,
+                readTiming: 'entireBoundedProgram' as const,
+              },
+            }
+          : {}),
         semanticKind: semantic.kind,
       });
     else {
