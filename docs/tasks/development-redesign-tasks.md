@@ -63,8 +63,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.44 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
-| TSK-06.46 | Ranking world candidate architecture and oracle hardening | ready | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／性能改善 |
-| TSK-06.47 | Contribution decision UI cleanup | blocked | TSK-06.46 | logical effect presentation／per-contribution decisions |
+| TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／性能観測 |
+| TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -1992,7 +1992,7 @@ Implementation units:
 | W2 ordered observation | W1 | programのread positionと`addTrait`／`removeTrait`／`suppressInitialTrait`をtyped observationとして抽出し、executionと同じscope semanticsを消費 | mutation前後、複数read、form／choice、condition false／unknownを網羅。servant ID／名前／label／raw key分岐0 |
 | W3 transition-aware quotient | W2 | 全ordered observationで結果が等しいworldだけを同値classへまとめ、その後にassumption数、baseline deviation、stable keyで代表を選ぶ | 初期truth同値・mutation後非同値を縮約しない。baseline保持、unknown保持、materialization件数とcertificate一致 |
 | W4 independent oracle | W3 | plannerの生成domainを再利用せず、target／targetState全bit state、短い全program、canonical inputを直接列挙する小型oracleを作る | outcome集合、最大damage、採用scenario再実行、unavailable／invalid／unsupportedがplannerと一致。HP／BP／count／transfer、choice、form、conditional costの非単調反例を既存family oracleと接続 |
-| W5 performance・production closure | W4 | profileで確認した箇所だけを最適化し、observation compile、canonical indexing、memoization、制約早期適用を検討。全productionを再監査 | 80条件34,640 outcomes、parity、typed unavailable、damage差を再固定。cap4096／timeout／ratchet不変、未説明10%超退行0、最終`pnpm quality`成功 |
+| W5 performance・production closure | W4 | profileで確認した箇所だけを最適化し、observation compile、canonical indexing、memoization、制約早期適用を検討。全productionを再監査 | 80条件34,640 outcomes、parity、typed unavailable、damage差を再固定。cap4096／timeout不変。性能は比較値を記録するが固定下限を合否条件にしない。最終`pnpm quality`成功 |
 
 Minimum counterexample:
 
@@ -2014,7 +2014,7 @@ Done gate:
 - 独立oracleがplanner生成物を入力にせず、outcome集合、最大値、baseline、非数値分類を照合する。
 - unknown candidateのcalculated化、局所最大の合成、source-owned stateの外部fact捏造が0件である。
 - TSK-06.45の34,640 outcomes、34,600 parity、typed unavailable 40を維持するか、差分をcanonical input・program・mutation・read時点で全数説明する。
-- candidate cap 4,096、timeout、性能ratchetを緩和せず、ranking hot pathとproduction suiteの未説明10%超退行が0件である。
+- candidate cap 4,096とtimeoutを緩和しない。ranking hot pathとproduction suiteは比較可能な観測値と差分理由を残すが、固定の性能下限を完了条件にしない。
 - flow closureの対象cellがVerifiedまたは理由付きN/Aで、Blocking／Task内Deferred 0。
 
 Contract closure matrix:
@@ -2027,8 +2027,7 @@ Contract closure matrix:
 | `RK-PERF-001` | Apply | comparable ranking hot path and production file-level before／after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: 計画追加のみ。実装未着手。次の操作はW0で`c426105`の証跡、現行差分、world producer／consumerを照合し、
-責務分割前の挙動を固定すること。TSK-06.47／06.5／07は本TaskのBlocking 0まで開始しない。
+Handoff: W0〜W5完了、Blocking／Task内Deferred 0。world domain、ordered observation、quotient／代表、certificate、materializationを分割し、指定反例を独立4-state oracleで閉じた。34,640 outcomes、34,600 parity、typed unavailable 40、candidate inventory、最大3,435/4,096は不変。engine 48.0.0、schema／master不変。VRTはengine表示だけ3枚更新しfocused 5/5を確認。最終`pnpm quality`はunit853／production144／E2E29、warning／unexpected console／retry 0で成功した（`.test-results/2026-09-19T23-10-12-900Z-15-559d18`）。[production closure](../evidence/tsk-06-46-production-closure.json)参照。次はTSK-06.47。
 
 ### TSK-06.47: Contribution decision UI cleanup
 

@@ -1,6 +1,7 @@
 import { rankingHpInitialBoundaries } from './rankingHpBoundary';
 import { resolveInitialMaximumHp } from '@fgo-lab/master-data';
 import {
+  targetConditionWitnessSpace,
   traitConditionEvaluationSource,
   traitConditionReadScopes,
   npTransferInputSaturation,
@@ -19,11 +20,12 @@ import {
 } from '@fgo-lab/master-data';
 import { attackProfileKey, type AttackProfile } from './attackProfile';
 import { applyCanonicalInputCommand } from './canonicalInputs';
+import { finiteSemanticProduct, type FiniteSemanticDimension } from './finiteSemanticProduct';
 import {
-  finiteSemanticProduct,
-  finiteSemanticProductBound,
-  type FiniteSemanticDimension,
-} from './finiteSemanticProduct';
+  assertRankingCandidateMaterialization,
+  certifyRankingProgramDomain,
+  type FiniteRankingDomainCertificate,
+} from './rankingCandidateCertificate';
 import { createCanonicalInputValueDomains } from './rankingCanonicalInputs';
 import { compileRankingComparisonPolicy } from './rankingComparisonPolicy';
 import {
@@ -52,11 +54,10 @@ import {
   compileStaticRankingSemantics,
   type StaticRankingSemantics,
 } from './rankingStaticSemantics';
-import {
-  createRankingWorldCandidatesForConditions,
-  materializeRankingWorld,
-  type RankingWorldCandidate,
-} from './rankingWorld';
+import { materializeRankingWorld, type RankingWorldCandidate } from './rankingWorld';
+import { enumerateRankingWorldDomain } from './rankingWorldDomain';
+import { compileRankingWorldObservationPlan } from './rankingWorldObservation';
+import { quotientRankingWorldDomain } from './rankingWorldQuotient';
 
 export const MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE = 4_096;
 
@@ -67,15 +68,7 @@ export type CandidateSpaceIssue =
   | { kind: 'unsupportedActionAdmission'; attackProfileKey: string }
   | { kind: 'unsupportedFiniteDomain'; upperBound: number; supportedMaximum: 4_096 };
 
-export interface FiniteRankingDomainCertificate {
-  supportedMaximum: 4_096;
-  programBounds: readonly {
-    programKey: string;
-    dimensions: readonly { key: string; cardinality: number }[];
-    upperBound: number;
-  }[];
-  completeUpperBound: number;
-}
+export type { FiniteRankingDomainCertificate } from './rankingCandidateCertificate';
 
 export interface RankingCandidateEvidence {
   policyKey: string;
@@ -110,6 +103,7 @@ interface ProgramCandidateDomain {
   targets: readonly (RankingWorldCandidate | null)[];
   fields: readonly RankingFieldCandidate[];
   quantities: readonly RankingQuantityCandidate[];
+  rawWorldCardinality: number;
   upperBound: number;
 }
 
@@ -270,18 +264,43 @@ function compileProgramDomain(input: {
         : [],
     ),
   );
-  const generatedTargets = active
-    ? createRankingWorldCandidatesForConditions(
+  const observationPlan = compileRankingWorldObservationPlan(
+    semantics.operations,
+    semantics.conditions,
+  );
+  const transitionTraits = new Set<string>();
+  observationPlan.steps.forEach((step, index) => {
+    if (
+      step.kind !== 'mutation' ||
+      (step.mutation !== 'removeTrait' && step.mutation !== 'suppressInitialTrait')
+    )
+      return;
+    const readAfterMutation = observationPlan.steps
+      .slice(index + 1)
+      .some((candidate) =>
+        candidate.kind === 'read'
+          ? targetConditionWitnessSpace(candidate.condition).traitFacts.some(
+              ({ trait }) => trait === step.trait,
+            )
+          : false,
+      );
+    if (readAfterMutation) transitionTraits.add(step.trait);
+  });
+  const rawTargets = active
+    ? enumerateRankingWorldDomain({
         servant,
         master,
-        base,
-        semantics.conditions,
-        [],
+        scenario: base,
+        conditions: semantics.conditions,
         ownedTraitFacts,
-        true,
-        true,
-      )
+        canonicalCombinedState: { transitionTraits },
+      })
     : [];
+  const worldClasses = quotientRankingWorldDomain(rawTargets, observationPlan);
+  const coveredWorlds = worldClasses.reduce((sum, candidate) => sum + candidate.members.length, 0);
+  if (coveredWorlds !== rawTargets.length)
+    throw new TypeError(`ranking_world_quotient_coverage:${coveredWorlds}:${rawTargets.length}`);
+  const generatedTargets = worldClasses.map(({ representative }) => representative);
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
   const hasPopulation = semantics.inputDefinitions.some(
@@ -401,6 +420,7 @@ function compileProgramDomain(input: {
       active,
       hpBoundaries,
     ),
+    rawWorldCardinality: rawTargets.length + 1,
   };
 }
 
@@ -467,27 +487,26 @@ export function compileRankingCandidateSpaces(
       let upperBound = 0;
       for (const domain of domains) {
         const remaining = MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE - upperBound;
-        const bound = finiteSemanticProductBound(programDimensions(domain), remaining);
-        if (bound.status === 'limitExceeded')
+        const bound = certifyRankingProgramDomain({
+          programKey: domain.program.key,
+          rawWorldCardinality: domain.rawWorldCardinality,
+          worldEquivalenceClasses: domain.targets.length,
+          dimensions: programDimensions(domain),
+          remaining,
+        });
+        if ('limitExceeded' in bound)
           return {
             status: 'unsupported',
             attackProfile,
             issue: {
               kind: 'unsupportedFiniteDomain',
-              upperBound: upperBound + bound.upperBound,
+              upperBound: upperBound + bound.limitExceeded,
               supportedMaximum: MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
             },
           };
         upperBound += bound.upperBound;
         readyPrograms.push({ ...domain, upperBound: bound.upperBound });
-        programBounds.push({
-          programKey: domain.program.key,
-          dimensions: programDimensions(domain).map(({ key, values }) => ({
-            key,
-            cardinality: values.length,
-          })),
-          upperBound: bound.upperBound,
-        });
+        programBounds.push(bound);
       }
       return {
         status: 'ready',
@@ -643,9 +662,6 @@ export function materializeRankingCandidateSpace(input: {
       attackProfile: input.space.attackProfile,
     }),
   );
-  if (candidates.length !== input.space.certificate.completeUpperBound)
-    throw new TypeError(
-      `ranking_candidate_space_materialization_mismatch:${candidates.length}:${input.space.certificate.completeUpperBound}`,
-    );
+  assertRankingCandidateMaterialization(candidates.length, input.space.certificate);
   return candidates;
 }

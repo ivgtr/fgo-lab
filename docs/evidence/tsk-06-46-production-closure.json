@@ -1,0 +1,106 @@
+{
+  "task": "TSK-06.46",
+  "status": "verified",
+  "baseline": {
+    "implementationCommit": "c4261054a8e7f82076b44aecb5e4b4d31458a6ad",
+    "planningCommit": "470093285e9783d37db173407d7ac16f681bfa92",
+    "productionClosure": "docs/evidence/tsk-06-45-production-closure.json",
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "candidateUpperBound": 1028810,
+    "maximumSingleProfileProduct": 3435
+  },
+  "architecture": {
+    "worldDomain": "packages/calculation-application/src/rankingWorldDomain.ts",
+    "orderedObservation": "packages/calculation-application/src/rankingWorldObservation.ts",
+    "quotientAndRepresentative": "packages/calculation-application/src/rankingWorldQuotient.ts",
+    "finiteCertificate": "packages/calculation-application/src/rankingCandidateCertificate.ts",
+    "materialization": "packages/calculation-application/src/rankingWorld.ts",
+    "orchestration": "packages/calculation-application/src/rankingCandidateSpace.ts",
+    "removedFallback": "the former condition-only generator and inline initial-truth quotient were removed"
+  },
+  "soundness": {
+    "counterexample": {
+      "initialTarget": false,
+      "initialTargetState": true,
+      "initialCombinedRead": true,
+      "mutation": "remove targetState trait",
+      "laterCombinedRead": false
+    },
+    "fix": "combined reads retain independent initial/state physical axes when a later remove or initial suppression can distinguish them; equivalence is derived from ordered observations and unknown mutation guards retain physical identity",
+    "addTrait": "an ordinary state addition converges worlds that already have the same combined observation and does not create an extra quotient axis",
+    "effectLocalDecisionMaterializedAsWorldFact": false,
+    "sourceOwnedStateMaterializedAsExternalFact": false,
+    "independentOracleReusesPlannerDomain": false
+  },
+  "productionMatrix": {
+    "artifactRoot": ".test-results/tsk-06-46-production-closure",
+    "manifestSha256": "684e6d0c226457ef2b7314a1dd2e311e9175c777ce7c8ac2b9b0952abb798854",
+    "digest": "876c004910ed61296fc71f10da45e7b416b0b2c316f6f482b3e189a332011205",
+    "conditions": 80,
+    "attackProfilesPerCondition": 433,
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "inputRequired": 0,
+    "invalid": 0,
+    "unsupported": 0,
+    "parityCompared": 34600,
+    "parityFailures": 0,
+    "artifactSizeMiB": 435,
+    "candidateInventory": {
+      "semanticUpperBound": 1028810,
+      "generated": 1028810,
+      "deduplicated": 1028810,
+      "damageRequestUpperBound": 1028810,
+      "damageRequests": 967810,
+      "distinctDamageInputs": 233100,
+      "maximumSingleProfileProduct": 3435,
+      "maximumSingleProfileServantId": "2801300",
+      "cap": 4096
+    }
+  },
+  "performanceObservation": {
+    "acceptanceFloor": null,
+    "reason": "the user explicitly excluded a fixed performance lower bound; measurements remain diagnostic evidence",
+    "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+    "baselineMedianMs": 5231.173416000001,
+    "samplesMs": [4736.462582, 4733.670161, 4724.426808],
+    "medianMs": 4733.670161,
+    "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
+    "artifactSha256": "33c942cd9dab664881355ea01494352ccf07c38c5af3768be9324667bc462ff2",
+    "attribution": "candidate inventory is unchanged; the observed wall-time improvement is recorded but not attributed solely to this refactor"
+  },
+  "versions": {
+    "masterDataVersion": "20260920.3",
+    "masterSchemaVersion": 56,
+    "engineVersion": "48.0.0",
+    "portableSchemaVersion": 40,
+    "reason": "ranking candidate equivalence semantics changed without changing persisted shape"
+  },
+  "focusedVerification": {
+    "artifact": ".test-results/2026-09-19T22-57-35-126Z-126-8d0a74",
+    "tests": 41,
+    "failed": 0,
+    "warnings": 0
+  },
+  "qualityGate": {
+    "status": "success",
+    "command": "pnpm quality",
+    "artifact": ".test-results/2026-09-19T23-10-12-900Z-15-559d18",
+    "manifestSha256": "6b1803d45fcd2762c6fb3a4ab7cfc0f3f4d31a79123aa89688090ee1da8198b8",
+    "durationMs": 344409,
+    "unit": { "passed": 853, "skipped": 0, "todo": 0 },
+    "production": { "passed": 144, "skipped": 0, "todo": 0, "durationMs": 69974 },
+    "e2e": { "passed": 29, "skipped": 0, "retries": 0, "durationMs": 167421 },
+    "warnings": 0,
+    "unexpectedConsole": 0
+  },
+  "closure": {
+    "blocking": 0,
+    "deferredWithinTask": 0,
+    "taskStatus": "done",
+    "nextTask": "TSK-06.47"
+  }
+}

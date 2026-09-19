@@ -36,7 +36,30 @@ describe('ranking architecture', () => {
       'utf8',
     );
     expect(world).not.toMatch(/function targetCompatibility|switch \(condition\.kind\)/);
-    expect(world).toContain('validateTargetCandidateConstraint');
+    expect(world).toContain('materializeRankingWorld');
+    expect(world).not.toContain('targetConditionWitnessSpace');
+    const domain = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingWorldDomain.ts'),
+      'utf8',
+    );
+    const observation = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingWorldObservation.ts'),
+      'utf8',
+    );
+    const quotient = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingWorldQuotient.ts'),
+      'utf8',
+    );
+    const certificate = await readFile(
+      resolve(root, 'packages/calculation-application/src/rankingCandidateCertificate.ts'),
+      'utf8',
+    );
+    expect(domain).toContain('targetConditionWitnessSpace');
+    expect(domain).not.toContain('observeRankingWorld');
+    expect(observation).toContain('RankingWorldObservationStep');
+    expect(observation).not.toContain('selectRankingWorldRepresentative');
+    expect(quotient).toContain('selectRankingWorldRepresentative');
+    expect(certificate).toContain('finiteSemanticProductBound');
     expect(factory).not.toMatch(/for \(const .*effectControls[\s\S]*calculateScenario/);
     expect(factory).not.toContain('MAX_SPECIAL_ATTACK_SCENARIOS');
     expect(factory).not.toContain("from './effectDecision'");

@@ -136,7 +136,7 @@
       "beforeMs": 84677,
       "afterMs": 109147,
       "deltaPercent": 28.898048,
-      "explanation": "the final suite adds four production closure tests and exact shared audit assertions, and fixes production workers at four so exhaustive master inventories retain the unchanged five-second test timeout under CPU contention; candidate hot-path work is independently unchanged at -0.04%"
+      "explanation": "the final suite adds four production closure tests and exact shared audit assertions. Unit uses maxWorkers=4 while production uses maxWorkers='50%'; the former claim that production workers were fixed at four was incorrect. File-level evidence is needed to interpret the wall-time increase, while the independently measured candidate hot path was unchanged at -0.04%."
     }
   },
   "focusedVerification": {

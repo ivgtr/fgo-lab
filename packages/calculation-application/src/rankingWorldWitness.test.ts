@@ -18,11 +18,10 @@ import { createRankingBaseScenario } from './rankingPolicy';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from './rankingContracts';
 import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import { compileStaticRankingSemantics } from './rankingStaticSemantics';
-import {
-  createRankingWorldCandidatesForConditions,
-  type RankingTraitFact,
-  type RankingWorldCandidate,
-} from './rankingWorld';
+import type { RankingTraitFact, RankingWorldCandidate } from './rankingWorld';
+import { enumerateRankingWorldDomain } from './rankingWorldDomain';
+import { compileRankingWorldObservationPlan } from './rankingWorldObservation';
+import { quotientRankingWorldDomain } from './rankingWorldQuotient';
 
 const root = resolve(import.meta.dirname, '../../..');
 
@@ -138,21 +137,23 @@ describe('ranking target witness completeness', () => {
   });
 
   function candidates(conditions: readonly ConditionExpression[], quotient = false) {
-    return createRankingWorldCandidatesForConditions(
+    const domain = enumerateRankingWorldDomain({
       servant,
       master,
-      createRankingBaseScenario(
+      scenario: createRankingBaseScenario(
         servant,
         master,
         rankingBasisFixture(servant),
         DEFAULT_RANKING_POLICY_CONDITIONS,
       ),
       conditions,
-      [],
-      new Set(),
-      quotient,
-      quotient,
-    );
+      ...(quotient ? { canonicalCombinedState: { transitionTraits: new Set<string>() } } : {}),
+    });
+    return quotient
+      ? quotientRankingWorldDomain(domain, compileRankingWorldObservationPlan([], conditions)).map(
+          ({ representative }) => representative,
+        )
+      : domain;
   }
 
   it('shares provenance eligibility across executor, audit, and planner axes', () => {
@@ -352,6 +353,29 @@ describe('ranking target witness completeness', () => {
     ).toBe(true);
   });
 
+  it('enumerates initial and state facts independently for a combined target read', () => {
+    const generated = candidates([
+      { kind: 'trait', scope: 'target', trait: 'orderedTrait', present: true },
+    ]);
+    expect(
+      new Set(
+        generated.map((candidate) =>
+          candidate.traitFacts
+            .filter(({ trait }) => trait === 'orderedTrait')
+            .map(({ scope, present }) => `${scope}:${present}`)
+            .join('|'),
+        ),
+      ),
+    ).toEqual(
+      new Set([
+        'target:false|targetState:false',
+        'target:false|targetState:true',
+        'target:true|targetState:false',
+        'target:true|targetState:true',
+      ]),
+    );
+  });
+
   it('keeps exclusive positive, negative, and mixed facts sound while retaining witnesses', () => {
     const mixed: ConditionExpression = {
       kind: 'all',
@@ -487,18 +511,18 @@ describe('ranking target witness completeness', () => {
           : [],
     );
     const missing = inventory.flatMap(({ servant: candidateServant, program, condition }) => {
-      const generated = createRankingWorldCandidatesForConditions(
-        candidateServant,
+      const generated = enumerateRankingWorldDomain({
+        servant: candidateServant,
         master,
-        createRankingBaseScenario(
+        scenario: createRankingBaseScenario(
           candidateServant,
           master,
           rankingBasisFixture(candidateServant),
           DEFAULT_RANKING_POLICY_CONDITIONS,
           program.initialFormId,
         ),
-        [condition],
-      );
+        conditions: [condition],
+      });
       return generated.some(
         (candidate) =>
           evaluateConditionExpression(condition, stateFor(candidateServant, candidate, master)) ===
