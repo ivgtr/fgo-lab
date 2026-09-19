@@ -54,6 +54,7 @@ export interface StaticRankingPreparationProgram {
   terminalReadsOc?: boolean;
   terminalHpReaders?: readonly ResourceActor[];
   terminalMarkerReads?: readonly string[];
+  terminalBattlePointDomainIds?: readonly string[];
 }
 
 interface StaticState {
@@ -261,6 +262,22 @@ export function compileStaticRankingPreparationPrograms(
         terminalReadsOc: variant ? noblePhantasmReadsOc(variant) : false,
         terminalHpReaders: variant ? terminalHpReaders(variant) : [],
         terminalMarkerReads: variant ? terminalMarkerReads(variant) : [],
+        terminalBattlePointDomainIds:
+          variant?.kind === 'attack'
+            ? [
+                ...new Set(
+                  variant.damage.flatMap((damage) =>
+                    damage.kind === 'battlePointPhase'
+                      ? damage.parametersByOvercharge
+                          .flat()
+                          .flatMap((cell) =>
+                            cell.targetId === undefined ? [] : [String(cell.targetId)],
+                          )
+                      : [],
+                  ),
+                ),
+              ]
+            : [],
       });
     for (const command of skillCommands(servant, state)) {
       const skill = getSkillsForActorForm(servant, state.currentFormId).find(

@@ -21,6 +21,7 @@ import type {
   PreparationFailureCode,
   PreparationTransitionResult,
 } from './preparationContracts';
+import { emptyBattlePointState, reconcilePreparationBattlePoints } from './battlePointResource';
 import { rejectPreparation } from './preparationContracts';
 import { resolveTargetPolicy, type Origin } from './effectRouting';
 
@@ -232,6 +233,7 @@ export function createPreparationState(
 ): PreparationTransitionResult {
   const form = findActorForm(servant, initialFormId);
   const placeholder: PreNoblePhantasmState = {
+    battlePoints: emptyBattlePointState(),
     hp: {
       actors: {
         attacker: seedHp(context.initialMaximumHp, context.attackerHpPermille ?? null),
@@ -272,6 +274,11 @@ export function createPreparationState(
     appliedActions: [],
     terminated: false,
   };
+  placeholder.battlePoints = reconcilePreparationBattlePoints(
+    servant,
+    placeholder,
+    context,
+  ).battlePoints;
   if (context.initialGauge > placeholder.npResource.capacity)
     return rejectPreparation(placeholder, 'resourceRequirementExceedsCapacity');
   if (!Number.isInteger(context.initialGauge) || context.initialGauge < 0)

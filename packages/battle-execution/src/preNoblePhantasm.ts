@@ -15,6 +15,7 @@ import {
 import { reducePreparationSkillAction } from './preparationSkillReducer';
 import { createPreparationState } from './preparationState';
 import { reducePreparationTransformNoblePhantasmAction } from './preparationTransformNpReducer';
+import { reconcilePreparationBattlePoints } from './battlePointResource';
 
 export type {
   AppliedPreparationAction,
@@ -43,7 +44,9 @@ export function createPreNoblePhantasmState(
     'initial',
     context.initialSources ?? [],
   );
-  return initial.status === 'rejected' ? { ...initial, state: created.state } : initial;
+  return initial.status === 'rejected'
+    ? { ...initial, state: created.state }
+    : { ...initial, state: reconcilePreparationBattlePoints(servant, initial.state, context) };
 }
 
 export function reducePreNoblePhantasmAction(
@@ -90,7 +93,9 @@ export function reducePreNoblePhantasmAction(
   const result = reduce();
   if (result.status === 'rejected' || result.state.terminated) return result;
   const form = activatePreparationForm(servant, result.state, context);
-  return form.status === 'rejected' ? { ...form, state } : form;
+  return form.status === 'rejected'
+    ? { ...form, state }
+    : { ...form, state: reconcilePreparationBattlePoints(servant, form.state, context) };
 }
 
 export function availableTransformNoblePhantasmCommand(

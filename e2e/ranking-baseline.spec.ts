@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('432件表示 / 432件を計算・順位外 1件', {
+  await expect(page.getByRole('status')).toContainText('433件表示 / 433件を計算', {
     timeout: 30_000,
   });
   const first = page
@@ -575,4 +575,70 @@ test('[E2E-053] independent marker profiles retain calculator state across saved
     await expect(table).toBeVisible();
     await table.screenshot({ path: test.info().outputPath(`marker-${name}.png`) });
   }
+});
+
+test('[E2E-054] battle-point phase intent survives replay and resets with attacker @desktop @journey', async ({
+  page,
+}) => {
+  // E2E-A054-BP-REPLAY
+  test.setTimeout(60_000);
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+    }),
+  );
+  await openTestHome(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  let picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await picker.getByRole('tab', { name: '全DB' }).click();
+  await picker.getByLabel('名前で検索').fill('紅閻魔');
+  await picker
+    .getByRole('button', { name: /紅閻魔.*Lv/ })
+    .nth(1)
+    .click();
+
+  const phase = page.getByRole('spinbutton', { name: 'バトルポイント段階' });
+  const table = page.getByRole('table', { name: '宝具レベル別のダメージ' });
+  await expect(phase).toHaveValue('0');
+  await phase.fill('2');
+  await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('2');
+  await page.getByRole('combobox', { name: '初期OC', exact: true }).selectOption('2');
+  await expect(table).toBeVisible();
+  const damage = await table.textContent();
+  await expect
+    .poll(
+      async () =>
+        JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.battleState
+          ?.battlePointPhase,
+    )
+    .toBe(2);
+  await page.reload();
+  await expect(phase).toHaveValue('2');
+  await expect(table).toHaveText(damage!);
+  await phase.locator('..').screenshot({ path: test.info().outputPath('battle-point-replay.png') });
+
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await picker.getByRole('tab', { name: '全DB' }).click();
+  await picker.getByLabel('名前で検索').fill('エレシュキガル');
+  await picker
+    .getByRole('button', { name: /エレシュキガル.*Lv/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await picker.getByRole('tab', { name: '全DB' }).click();
+  await picker.getByLabel('名前で検索').fill('紅閻魔');
+  await picker
+    .getByRole('button', { name: /紅閻魔.*Lv/ })
+    .nth(1)
+    .click();
+  await expect(phase).toHaveValue('0');
+  await expect(table).toBeVisible();
 });

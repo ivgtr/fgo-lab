@@ -108,6 +108,9 @@ function prepareExecutableCandidate(
     activationContext,
   );
   initialState.hp = prepared.hp;
+  if (prepared.battlePoints) initialState.battlePoints = prepared.battlePoints;
+  initialState.battlePointDomains = prepared.battlePointDomains;
+  initialState.resourceActor = 'attacker';
   initialState.buffInstances = seedBuffInstances(
     prepared.inputDefinitions.filter(isBuffCountInput),
     resolvedInputs.values,

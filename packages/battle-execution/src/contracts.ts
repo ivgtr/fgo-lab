@@ -1,4 +1,6 @@
 import type { HpState } from './hpResource';
+import type { BattlePointState } from './battlePointResource';
+import type { BattlePointDomain } from '@fgo-lab/master-data';
 import type { CountedBuffInstance } from './buffInstances';
 import type { StackSource } from '@fgo-lab/master-data';
 import type {
@@ -263,6 +265,9 @@ export interface AppliedModifier {
 }
 
 export interface BattleStateBase {
+  battlePoints?: BattlePointState;
+  battlePointDomains?: readonly BattlePointDomain[];
+  resourceActor?: string;
   buffInstances?: readonly CountedBuffInstance[];
   hp?: HpState | undefined;
   actorFormId: ActorFormId;

@@ -518,6 +518,7 @@ function compilationCacheKey(
     origin: source.origin,
     ocExecutionCommitted: source.ocExecutionCommitted,
     hpExecutionCommitted: source.hpExecutionCommitted,
+    battlePointExecutionCommitted: source.battlePointExecutionCommitted,
     markerProgram: source.markerProgram,
     markerReaders: source.effect.execution.some(
       (operation) => operation.kind === 'buffInstanceMutation' && operation.marker,
@@ -599,7 +600,8 @@ export function compileEffect(
     } =>
       semantic.kind === 'resourceMutation' &&
       semantic.resource !== 'npGauge' &&
-      !(semantic.resource === 'hp' && source.hpExecutionCommitted),
+      !(semantic.resource === 'hp' && source.hpExecutionCommitted) &&
+      !(semantic.resource === 'battlePoint' && source.battlePointExecutionCommitted),
   );
   const retained = source.effect.execution.filter(
     (
@@ -620,7 +622,8 @@ export function compileEffect(
     > =>
       (semantic.kind === 'resourceMutation' &&
         (semantic.resource === 'npGauge' ||
-          (semantic.resource === 'hp' && source.hpExecutionCommitted))) ||
+          (semantic.resource === 'hp' && source.hpExecutionCommitted) ||
+          (semantic.resource === 'battlePoint' && source.battlePointExecutionCommitted))) ||
       ((semantic.kind === 'hpModifier' || semantic.kind === 'removeHpModifiers') &&
         (source.hpExecutionCommitted || source.compilationPurpose === 'dependency')) ||
       semantic.kind === 'buffInstanceMutation' ||
@@ -682,6 +685,7 @@ export function compileEffect(
     }
     if (
       semantic.kind === 'resourceMutation' ||
+      semantic.kind === 'battlePointCapacityModifier' ||
       semantic.kind === 'buffInstanceMutation' ||
       semantic.kind === 'populationMutation' ||
       semantic.kind === 'populationFunction' ||

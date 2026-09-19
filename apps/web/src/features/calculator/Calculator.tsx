@@ -170,6 +170,15 @@ export function Calculator({
       : naturalAttackerLevel;
   const attackerNp = attacker ? getPrimaryNpPresentation(attacker) : null;
   const attackerDamage = attacker ? getPrimaryNpDamage(attacker) : null;
+  const attackerBattlePointMaximumPhase = attacker?.battlePointDomains?.length
+    ? Math.min(
+        ...attacker.battlePointDomains.map(
+          (domain) => domain.phases.at(-1)?.phase ?? Number.POSITIVE_INFINITY,
+        ),
+      )
+    : attackerDamage?.kind === 'battlePointPhase'
+      ? attackerDamage.maximumBattlePointPhase
+      : null;
   const initialActorForms = attacker
     ? getAttackReachableInitialActorForms(
         attacker,
@@ -437,7 +446,9 @@ export function Calculator({
               effectDecisions: [],
               worldFactAssertions: [],
               attackerHpPermille: 1000,
-              battleState: { battlePointPhase: null },
+              battleState: {
+                battlePointPhase: candidate.battlePointDomains?.length ? 0 : null,
+              },
               canonicalInputValues: {},
               explicitOverrides: {},
             },
@@ -940,13 +951,13 @@ export function Calculator({
               </button>
             </label>
           ) : null}
-          {attackerDamage?.kind === 'battlePointPhase' ? (
+          {attackerBattlePointMaximumPhase !== null ? (
             <label className="damage-context-input form-grid-wide">
               バトルポイント段階
               <input
                 type="number"
                 min="0"
-                max={attackerDamage.maximumBattlePointPhase}
+                max={attackerBattlePointMaximumPhase}
                 step="1"
                 required
                 value={input.battlePointPhase ?? ''}
@@ -957,14 +968,14 @@ export function Calculator({
                       ? null
                       : Math.round(
                           Math.min(
-                            attackerDamage.maximumBattlePointPhase,
+                            attackerBattlePointMaximumPhase,
                             Math.max(0, Number(event.target.value)),
                           ),
                         ),
                   )
                 }
               />
-              <small>0〜{attackerDamage.maximumBattlePointPhase}の現在段階を入力します</small>
+              <small>0〜{attackerBattlePointMaximumPhase}の開始段階を入力します</small>
             </label>
           ) : null}
           {mode === 'direct' && (

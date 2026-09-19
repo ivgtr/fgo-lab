@@ -55,6 +55,11 @@ import {
   effectRequiresPreparationDecision,
   type PreparationEffectActivation,
 } from './preparationTransaction';
+import {
+  applyBattlePointOperation,
+  battlePointEffectKey,
+  reconcilePreparationBattlePoints,
+} from './battlePointResource';
 
 export function preparationEffectSource(args: {
   servant: ServantMaster;
@@ -593,6 +598,54 @@ export function executePreparationOc(args: {
             },
             buffInputs,
           );
+          current = reconcilePreparationBattlePoints(args.servant, current, args.context);
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
+      if (
+        operation.kind === 'battlePointCapacityModifier' ||
+        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
+      ) {
+        steps.push(() => {
+          if (!sourceApplies) return { kind: 'skip', outcome: 'notApplicable' };
+          if (activation.get(source.effect)?.conditionOutcome !== true) {
+            if (
+              args.context.planningOnly &&
+              activation.get(source.effect)?.conditionOutcome === null
+            ) {
+              const key = JSON.stringify([
+                args.actionId,
+                source.sourceInstanceId,
+                source.effect.occurrenceId,
+                operationIndex,
+                'battle-point-condition',
+              ]);
+              const outcome = args.context.planningConditionChoices?.get(key);
+              if (outcome === undefined) throw new UnresolvedPreparationPlanningRead(key);
+              if (!outcome) return { kind: 'skip', outcome: 'notApplicable' };
+            } else if (
+              args.context.policy?.kind !== 'ranking' ||
+              args.context.policy.conditionalEffects !== 'satisfied'
+            )
+              return { kind: 'skip', outcome: 'notApplicable' };
+          }
+          const applied = applyBattlePointOperation({
+            state: current.battlePoints,
+            domains: args.context.battlePointDomains ?? [],
+            operation,
+            source,
+            valueSetIndex: source.valueSetIndex,
+            identity: JSON.stringify([
+              args.actionId,
+              source.sourceInstanceId,
+              source.effect.occurrenceId,
+              operationIndex,
+            ]),
+          });
+          if (applied.status !== 'applied')
+            return { kind: 'reject', status: applied.status, reason: 'battlePointMutation' };
+          current = { ...current, battlePoints: applied.state };
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -976,6 +1029,7 @@ export function executePreparationOc(args: {
         initialTraitSuppressions: structural.initialTraitSuppressions,
       };
       current = projectBuffInstanceCounts(current, buffInputs);
+      current = reconcilePreparationBattlePoints(args.servant, current, args.context);
       return { kind: 'skip', outcome: 'notApplicable' };
     });
   }
@@ -1040,6 +1094,26 @@ export function executePreparationOc(args: {
     }
   }
   if (result.status === 'committed') {
+    current = {
+      ...current,
+      battlePoints: {
+        ...current.battlePoints,
+        executedEffects: [
+          ...new Set([
+            ...current.battlePoints.executedEffects,
+            ...sources
+              .filter((source) =>
+                source.effect.execution.some(
+                  (operation) =>
+                    operation.kind === 'battlePointCapacityModifier' ||
+                    (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint'),
+                ),
+              )
+              .map(battlePointEffectKey),
+          ]),
+        ],
+      },
+    };
     if (!args.context.planningOnly && current.hp)
       current = {
         ...current,

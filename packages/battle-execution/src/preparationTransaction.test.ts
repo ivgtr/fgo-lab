@@ -2204,3 +2204,86 @@ it('repairs the originating condition of an unknown marker reader and rolls back
     expect(repaired.state.npResource.gauge).toBe(10000 + 1000 * value);
   }
 });
+
+it('rolls BP, HP, NP, context and receipts back together when a later effect fails', () => {
+  const domain = {
+    id: 'bp',
+    phaseScale: 'point' as const,
+    phases: [
+      { phase: 0, threshold: -1 },
+      { phase: 1, threshold: 0 },
+      { phase: 2, threshold: 1 },
+    ],
+    eligibility: [{ kind: 'actor' as const, actorId: 'servant' }],
+    capacity: { default: 4, maximum: 8, traitOverrides: [] },
+  };
+  const applied = effect(
+    'bp-and-hp',
+    {
+      kind: 'fixed',
+      recipient: 'sourceActor',
+      direction: 'gain',
+      amounts: [[1000], [], [], [], []],
+      overflow: 'clampToCapacity',
+      underflow: 'clampToZero',
+    },
+    [
+      {
+        kind: 'resourceMutation',
+        resource: 'battlePoint',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        amount: { kind: 'fixed', values: [[2], [], [], [], []] },
+        subjectId: 'bp',
+      },
+      {
+        kind: 'resourceMutation',
+        resource: 'hp',
+        direction: 'loss',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        selection: 'direct',
+        lossFloor: 'oneIfAlive',
+        amount: { kind: 'fixed', values: [[1000], [], [], [], []] },
+        subjectId: null,
+      },
+      {
+        kind: 'contextMutation',
+        mutation: 'addTrait',
+        scope: 'recipientState',
+        route,
+        trait: 'temporary',
+        damageRelevant: true,
+      },
+    ],
+  );
+  const invalid = effect('invalid-after-bp', {
+    kind: 'unsupported',
+    recipient: 'sourceActor',
+    family: 'unknown',
+  });
+  const actor = { ...servantWithSkill([applied, invalid]), battlePointDomains: [domain] };
+  const ctx = {
+    ...context,
+    initialMaximumHp: 10_000,
+    attackerHpPermille: 1000,
+    battlePointDomains: [domain],
+    initialBattlePointPoints: { bp: 0 },
+  };
+  const initial = createPreNoblePhantasmState(actor, baseForm, ctx);
+  if (initial.status !== 'applied') throw new Error(initial.code);
+  const command = { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null } as const;
+  const rejected = reducePreNoblePhantasmAction(actor, initial.state, command, ctx);
+  expect(rejected.status).toBe('rejected');
+  expect(rejected.state).toEqual(initial.state);
+  expect(initial.state.battlePoints.receipts).toEqual([]);
+
+  const validActor = { ...servantWithSkill([applied]), battlePointDomains: [domain] };
+  const committed = reducePreNoblePhantasmAction(validActor, initial.state, command, ctx);
+  expect(committed.status).toBe('applied');
+  expect(committed.state.battlePoints.actors.attacker?.domains.bp).toMatchObject({ point: 2 });
+  expect(committed.state.hp?.actors.attacker).toMatchObject({ current: 9000 });
+  expect(committed.state.npResource.gauge).toBe(11_000);
+  expect(committed.state.stateTraits.attackerState.has('temporary')).toBe(true);
+});

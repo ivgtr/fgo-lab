@@ -31,7 +31,7 @@ export function collectAuxiliarySources(
     sourceEnabled: boolean,
     defaultInclusion: 'master' | 'exclude' = 'master',
     actorFormId?: ActorFormId,
-    hpResourceSourceOnly = false,
+    resourceSourceOnly = false,
   ) => {
     const servant = master.servants.find((candidate) => candidate.id === sourceId);
     const resolvedActorFormId =
@@ -52,8 +52,28 @@ export function collectAuxiliarySources(
       });
       return;
     }
+    const battlePointEligibilityTraits = new Set(
+      master.battlePointDomains.flatMap((domain) =>
+        domain.eligibility.flatMap((entry) => (entry.kind === 'traits' ? entry.all : [])),
+      ),
+    );
     for (const effect of skill.effects.filter(
-      (effect) => !hpResourceSourceOnly || effect.execution.some(isHpOperation),
+      (effect) =>
+        !resourceSourceOnly ||
+        effect.execution.some(
+          (operation) =>
+            isHpOperation(operation) ||
+            operation.kind === 'battlePointCapacityModifier' ||
+            (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint') ||
+            (operation.kind === 'buffInstanceMutation' &&
+              operation.marker !== undefined &&
+              [operation.marker.actorTrait, ...operation.traits].some((trait) =>
+                battlePointEligibilityTraits.has(trait),
+              )) ||
+            (operation.kind === 'contextMutation' &&
+              'trait' in operation &&
+              battlePointEligibilityTraits.has(operation.trait)),
+        ),
     ))
       sources.push({
         phase,

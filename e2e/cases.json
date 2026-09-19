@@ -538,5 +538,15 @@
     "replacement": "one browser journey; instance semantics and maximum oracle in shared fixtures",
     "costMs": 0,
     "status": "retained"
+  },
+  {
+    "id": "E2E-054",
+    "title": "Battle-point intent and replay",
+    "owner": "web/package connection",
+    "failure": "battle-point phase intent is replaced by execution state or survives an attacker reset",
+    "project": "desktop",
+    "replacement": "one BP browser journey; point/capacity arithmetic and maximum oracle in shared fixtures",
+    "costMs": 0,
+    "status": "retained"
   }
 ]

@@ -87,6 +87,7 @@ export function reducePreparationTransformNoblePhantasmAction(
         resource.activation,
       ),
       ...resource.contextState,
+      battlePoints: resource.battlePoints,
       npResource: resource.resource.state,
       populationEvents: resource.populationEvents,
       hp: resource.hp,

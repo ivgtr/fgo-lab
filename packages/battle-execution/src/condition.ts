@@ -10,6 +10,13 @@ import {
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
 import { noblePhantasmVariantKey } from '@fgo-lab/master-data';
+import type { BattlePointDomain } from '@fgo-lab/master-data';
+import {
+  battlePointPhase,
+  battlePointRate,
+  readBattlePoint,
+  type BattlePointState,
+} from './battlePointResource';
 
 export function conditionRequiresQuantity(
   condition: ConditionExpression,
@@ -66,7 +73,12 @@ export type ConditionEvaluationState = Pick<
   | 'quantities'
   | 'noblePhantasmVariant'
   | 'activationContext'
-> & { card: ExecutableBattleState['card'] | null };
+> & {
+  card: ExecutableBattleState['card'] | null;
+  battlePoints?: BattlePointState;
+  battlePointDomains?: readonly BattlePointDomain[];
+  resourceActor?: string;
+};
 
 export function evaluateCondition(
   condition: ConditionExpression,
@@ -148,11 +160,46 @@ export function evaluateCondition(
     }
     case 'operationTrigger':
       return evaluateActivationRequirement(condition, state.activationContext);
-    case 'sourceQuantity':
+    case 'sourceQuantity': {
+      if (state.battlePoints && state.battlePointDomains) {
+        const actor = ['attacker', 'passive', 'np', 'craftEssence'].includes(
+          condition.source.origin,
+        )
+          ? 'attacker'
+          : condition.source.sourceInstanceId;
+        const actual = battlePointRate(
+          readBattlePoint(state.battlePoints, actor, condition.subjectId),
+        );
+        if (actual === null) return null;
+        return condition.comparison === 'atLeast'
+          ? actual >= condition.value
+          : actual <= condition.value;
+      }
       return evaluateActivationRequirement(condition, state.activationContext);
+    }
     case 'quantity': {
-      if (condition.subjectId !== undefined) return null;
-      const actual = state.quantities[condition.quantity];
+      const actual =
+        condition.quantity === 'battlePointPhase' &&
+        condition.subjectId !== undefined &&
+        state.battlePoints
+          ? (() => {
+              const domain = state.battlePointDomains?.find(
+                (candidate) => candidate.id === condition.subjectId,
+              );
+              return domain
+                ? battlePointPhase(
+                    domain,
+                    readBattlePoint(
+                      state.battlePoints,
+                      state.resourceActor ?? 'attacker',
+                      condition.subjectId,
+                    ),
+                  )
+                : null;
+            })()
+          : condition.subjectId !== undefined
+            ? null
+            : state.quantities[condition.quantity];
       if (actual === null) return null;
       if (condition.comparison === 'lessThan') return actual < condition.value;
       if (condition.comparison === 'atMost') return actual <= condition.value;

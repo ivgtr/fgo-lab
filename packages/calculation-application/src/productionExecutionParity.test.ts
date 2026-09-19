@@ -48,7 +48,7 @@ describe('production execution parity ratchet', () => {
       masterDataLocale: 'ja-JP' as const,
       masterDataVersion: master.version,
     };
-    const typedUnsupported = new Set(['705300']);
+    const typedUnsupported = new Set<string>();
     const records = master.servants.flatMap((servant) => {
       if (
         planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1).candidates
@@ -81,9 +81,9 @@ describe('production execution parity ratchet', () => {
       records
         .filter(({ attackerId }) => typedUnsupported.has(attackerId))
         .map(({ attackerId }) => attackerId),
-    ).toEqual(['705300']);
+    ).toEqual([]);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('4ed777c19baab1d46e289c1fa3f86a571b5a055b59d1f7849dd61431dfd97386');
+    expect(digest).toBe('ec4689d058e5eba034f9aafa905c1b5c9c3295369aeeccdc98334551a7fc6538');
   }, 60_000);
 });
 

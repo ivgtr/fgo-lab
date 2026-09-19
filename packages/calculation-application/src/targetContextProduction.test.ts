@@ -69,7 +69,7 @@ describe('production canonical target context', () => {
     const cases = [
       ['700100', [43_170.205, 57_493.875, 64_655.655, 68_236.565, 71_817.46]],
       ['800100', [16_104.32, 20_130.525, 22_143.64, 23_150.195, 24_156.735]],
-      ['3300200', [19_422.77, 25_850.53, 29_064.41, 30_671.35, 32_278.29]],
+      ['3300200', [21_351.055, 28_421.63, 31_956.83, 33_724.525, 35_492.17]],
     ] as const;
     for (const [servantId, expected] of cases) {
       const servant = master.servants.find((candidate) => candidate.id === servantId)!;

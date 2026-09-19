@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(55),
+  schemaVersion: z.literal(56),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -564,6 +564,16 @@ const effectExecutionOperationSchema = z.union([
       selection: z.enum(['direct', 'selectedAlly', 'allEnemies']).optional(),
       route: canonicalEffectRouteSchema,
       traits: z.array(z.string()).min(1),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('battlePointCapacityModifier'),
+      recipient: canonicalTargetPolicySchema,
+      subjectId: z.string().min(1),
+      values: canonicalValueSetsSchema,
+      lifetime: z.enum(['active', 'constant']),
+      traits: z.array(z.string()),
     })
     .strict(),
   z
@@ -1589,6 +1599,51 @@ export type ActorFormGraph = z.infer<typeof actorFormGraphSchema>;
 export type ActorFormNode = ActorFormGraph['forms'][number];
 export type ActorFormTransition = ActorFormGraph['transitions'][number];
 
+export const battlePointDomainSchema = z
+  .object({
+    id: z.string().min(1),
+    phaseScale: z.enum(['point', 'permille']),
+    phases: z
+      .array(
+        z.object({
+          phase: z.number().int().nonnegative(),
+          threshold: z.number().int(),
+        }),
+      )
+      .min(1),
+    eligibility: z
+      .array(
+        z.discriminatedUnion('kind', [
+          z.object({ kind: z.literal('actor'), actorId: z.string().min(1) }).strict(),
+          z.object({ kind: z.literal('traits'), all: z.array(z.string().min(1)).min(1) }).strict(),
+        ]),
+      )
+      .min(1),
+    capacity: z.object({
+      default: z.number().int().nonnegative().nullable(),
+      maximum: z.number().int().positive().nullable(),
+      traitOverrides: z.array(
+        z.object({ all: z.array(z.string().min(1)).min(1), value: z.number().int().nonnegative() }),
+      ),
+    }),
+  })
+  .strict()
+  .superRefine((domain, context) => {
+    for (let index = 1; index < domain.phases.length; index++)
+      if (
+        domain.phases[index]!.phase <= domain.phases[index - 1]!.phase ||
+        domain.phases[index]!.threshold <= domain.phases[index - 1]!.threshold
+      )
+        context.addIssue({ code: 'custom', message: 'battle_point_phases_not_ordered' });
+    if (
+      domain.capacity.default !== null &&
+      domain.capacity.maximum !== null &&
+      domain.capacity.default > domain.capacity.maximum
+    )
+      context.addIssue({ code: 'custom', message: 'battle_point_capacity_exceeds_maximum' });
+  });
+export type BattlePointDomain = z.infer<typeof battlePointDomainSchema>;
+
 export const servantMasterSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -1605,6 +1660,7 @@ export const servantMasterSchema = z.object({
   imageKey: z.string().nullable(),
   skills: z.array(activeServantSkillSchema).default([]),
   passives: z.array(passiveSkillSchema).default([]),
+  battlePointDomains: z.array(battlePointDomainSchema).optional(),
   growth: z.array(
     z.object({
       from: z.string(),
@@ -1992,12 +2048,14 @@ const masterSnapshotHeaderSchema = z.object({
   }),
 });
 export type MasterDataSnapshot = z.infer<typeof masterSnapshotHeaderSchema> & {
+  battlePointDomains: BattlePointDomain[];
   servants: ServantMaster[];
   craftEssences: CraftEssenceMaster[];
   mysticCodes: MysticCodeMaster[];
   materials: MaterialMaster[];
 };
 const masterSnapshotBaseSchema: z.ZodType<MasterDataSnapshot> = masterSnapshotHeaderSchema.extend({
+  battlePointDomains: z.array(battlePointDomainSchema).default([]),
   servants: z.array(servantMasterSchema),
   craftEssences: z.array(craftEssenceMasterSchema),
   mysticCodes: z.array(mysticCodeMasterSchema),

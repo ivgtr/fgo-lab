@@ -73,9 +73,7 @@ function loadProductionMaster() {
   return productionMaster;
 }
 
-const expectedUnsupportedFamilies = {
-  '705300': ['unsupportedOperation'],
-} as const;
+const expectedUnsupportedFamilies = {} as const;
 
 const expectedUnresolvedDamageSemantics = {
   parameters: {},
@@ -655,8 +653,8 @@ describe('production master inventory ratchet', () => {
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
     }).toEqual({
       automaticVisible: 0,
-      hidden: 5959,
-      user: 1591,
+      hidden: 5960,
+      user: 1590,
     });
     expect(
       allProjections.filter(
@@ -687,14 +685,7 @@ describe('production master inventory ratchet', () => {
     expect(missingCandidateValues).toEqual([]);
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
-    expect(selectedUnsupportedProjections).toEqual([
-      '705300:attacker:attacker:705300:2655650:110:0',
-      '705300:attacker:attacker:705300:2655650:23460:0',
-      '705300:attacker:attacker:705300:2657650:248:0',
-      '705300:attacker:attacker:705300:2657650:248:1',
-      '705300:np:np:["705300",0,"705301"]:np:["705300",0,"705301"]:523:0',
-      '705300:np:["705300",0,"705301"]:17:damage',
-    ]);
+    expect(selectedUnsupportedProjections).toEqual([]);
     expect(targetContextRequiredProjections).toEqual([]);
     expect(
       Object.fromEntries(
@@ -706,7 +697,7 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({ '705300': 6 });
+    ).toEqual({});
     expect(declaredExclusivePairCount).toBe(4);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',

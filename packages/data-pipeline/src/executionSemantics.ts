@@ -530,13 +530,56 @@ export function normalizeExecutionSemantics(input: {
       ];
     return [
       {
-        kind: 'contextMutation',
-        mutation: 'addQuantity',
-        quantity: 'battlePointPhase',
+        kind: 'resourceMutation',
+        resource: 'battlePoint',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: policy,
+        amount: {
+          kind: 'fixed',
+          values: input.parameterSets.map((set) =>
+            set.map((value) =>
+              typeof value.BattlePointValue === 'number' ? value.BattlePointValue : null,
+            ),
+          ) as ValueSets,
+        },
         subjectId: subjectIds[0]!,
-        amount: quantities[0]!,
-        applicationTiming: input.quantityApplicationTiming,
-        damageRelevant: true,
+      },
+    ];
+  }
+
+  if (buffTypes.includes('addMaxBattlePoint')) {
+    const subjectIds = [
+      ...new Set(
+        input.parameterSets.flatMap((set) =>
+          set.flatMap((value) =>
+            typeof value.BattlePointId === 'number' ? [String(value.BattlePointId)] : [],
+          ),
+        ),
+      ),
+    ];
+    if (subjectIds.length !== 1 || policy === 'unresolved')
+      return [
+        {
+          kind: 'unsupported',
+          route: unresolvedRoute(),
+          reason: 'resourceExecutionSemantics',
+          damageRelevant: true,
+        },
+      ];
+    return [
+      {
+        kind: 'battlePointCapacityModifier',
+        recipient: policy,
+        subjectId: subjectIds[0]!,
+        values: modifierValues(input.parameterSets),
+        lifetime:
+          input.source === 'passive' || input.source === 'craftEssence' ? 'constant' : 'active',
+        traits: (input.fn.buffs ?? []).flatMap((buff) =>
+          (buff.vals ?? []).flatMap((entry) =>
+            typeof entry.id === 'number' ? [`buffTrait:${entry.id}`] : [],
+          ),
+        ),
       },
     ];
   }
@@ -709,7 +752,17 @@ export function normalizeExecutionSemantics(input: {
         kind: 'resourceMutation',
         ...mutation,
         recipient: policy,
-        amount: { kind: amountKind, values: modifierValues(input.parameterSets) },
+        amount: {
+          kind: amountKind,
+          values:
+            resource.resource === 'battlePoint'
+              ? (input.parameterSets.map((set) =>
+                  set.map((value) =>
+                    typeof value.BattlePointValue === 'number' ? value.BattlePointValue : null,
+                  ),
+                ) as ValueSets)
+              : modifierValues(input.parameterSets),
+        },
         subjectId: subjectIds.length === 1 ? subjectIds[0]! : null,
       });
     } else if (dependentNp)

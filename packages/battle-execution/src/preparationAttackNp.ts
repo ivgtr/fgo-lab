@@ -55,6 +55,7 @@ export function prepareAttackNoblePhantasm(
       terminated: true,
       npResource: resource.resource.state,
       populationEvents: resource.populationEvents,
+      battlePoints: resource.battlePoints,
       hp: resource.hp,
       npTransfers: resource.npTransfers,
       uncertainEnemyCharge: resource.uncertainEnemyCharge,

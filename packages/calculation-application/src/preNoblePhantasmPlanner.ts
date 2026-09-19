@@ -98,6 +98,7 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
     usedSkillSlots: [...state.usedSkillSlots].sort((left, right) => left - right),
     transformNoblePhantasmUsed: state.transformNoblePhantasmUsed,
     activeEffects: state.activeEffects.map(canonicalEffectKey).sort(),
+    battlePoints: state.battlePoints.actors,
     ...(state.buffInstances.length ? { buffInstances: state.buffInstances } : {}),
     stateTraits: {
       attackerState: [...state.stateTraits.attackerState].sort(),
@@ -195,6 +196,7 @@ export function planPreNoblePhantasmCandidates(
     overcharge,
     canonicalInputValues,
     stackInputs: servantStackInputs(servant),
+    battlePointDomains: servant.battlePointDomains ?? [],
   };
   const pending: Array<{
     state: PreNoblePhantasmState;

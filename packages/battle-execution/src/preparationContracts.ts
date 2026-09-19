@@ -6,6 +6,7 @@ import type {
   ActorFormTransition,
   CanonicalNpResourceSemantics,
   CanonicalInputDefinition,
+  BattlePointDomain,
   MasterEffect,
   NoblePhantasmVariantRef,
 } from '@fgo-lab/master-data';
@@ -17,6 +18,7 @@ import type { WorldFactAssertion, TargetPredicateAssertion } from './contracts';
 import type { SourceEffect } from './sourceCollection';
 import type { CountedBuffInstance } from './buffInstances';
 import type { PopulationEvent } from './populationCounts';
+import type { BattlePointState } from './battlePointResource';
 
 export interface PreparationExecutionContext {
   planningOnly?: boolean;
@@ -31,6 +33,8 @@ export interface PreparationExecutionContext {
   maximumHpByForm?: ReadonlyMap<string, number>;
   attackerHpPermille?: number;
   battlePointPhase?: number | null;
+  battlePointDomains?: readonly BattlePointDomain[];
+  initialBattlePointPoints?: Readonly<Record<string, number>>;
   worldFacts?: readonly WorldFactAssertion[];
   targetPredicates?: readonly TargetPredicateAssertion[];
   attackerPredicates?: readonly TargetPredicateAssertion[];
@@ -73,6 +77,7 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState {
+  battlePoints: BattlePointState;
   hp?: HpState | undefined;
   populationEvents: readonly PopulationEvent[];
   npTransfers?: readonly NpTransferReceipt[];

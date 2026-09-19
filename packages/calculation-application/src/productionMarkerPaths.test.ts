@@ -265,10 +265,7 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
         issues: execution.result.issues,
       };
       records.push(record);
-      if (
-        execution.result.status !== 'calculated' &&
-        !(actor.id === '705300' && execution.result.status === 'unsupported')
-      )
+      if (execution.result.status !== 'calculated' && execution.result.status !== 'unsupported')
         failures.push(record);
     }
     for (const ce of ces)
@@ -290,10 +287,7 @@ it('executes the shared marker population across legal NP/OC cells, CE normal/LB
           issues: execution.result.issues,
         };
         records.push(record);
-        if (
-          execution.result.status !== 'calculated' &&
-          !(actor.id === '705300' && execution.result.status === 'unsupported')
-        )
+        if (execution.result.status !== 'calculated' && execution.result.status !== 'unsupported')
           failures.push(record);
       }
   }

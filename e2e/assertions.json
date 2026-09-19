@@ -610,5 +610,14 @@
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
     "replacementTest": "[E2E-053] independent marker profiles retain calculator state across saved replay @desktop @journey"
+  },
+  {
+    "id": "E2E-A054-BP-REPLAY",
+    "caseId": "E2E-054",
+    "outcome": "browserConnection",
+    "oldAssertion": "battle-point phase intent persists without serializing internal point state and resets with a new attacker",
+    "disposition": "retained",
+    "replacementFile": "e2e/ranking-baseline.spec.ts",
+    "replacementTest": "[E2E-054] battle-point phase intent survives replay and resets with attacker @desktop @journey"
   }
 ]

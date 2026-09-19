@@ -120,7 +120,7 @@ describe('E0 production master execution inventory', () => {
     expect(contextProducers.length).toBeGreaterThan(0);
     expect(contextConsumers.length).toBeGreaterThan(0);
     expect(resourceCounts).toEqual({
-      battlePoint: 1,
+      battlePoint: 7,
       criticalStars: 255,
       hp: 181,
       npGauge: 742,

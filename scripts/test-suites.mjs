@@ -16,6 +16,7 @@ export const PRODUCTION_TEST_INCLUDES = [
   'packages/calculation-application/src/npFunctionGolden.test.ts',
   'packages/calculation-application/src/procEffectsGolden.test.ts',
   'packages/calculation-application/src/productionAudit.test.ts',
+  'packages/calculation-application/src/productionBattlePointPaths.test.ts',
   'packages/calculation-application/src/productionExecutionParity.test.ts',
   'packages/calculation-application/src/productionHpPaths.test.ts',
   'packages/calculation-application/src/productionMarkerPaths.test.ts',

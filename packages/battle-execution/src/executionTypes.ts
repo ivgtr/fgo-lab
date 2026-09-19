@@ -1,6 +1,8 @@
 import type { HpState } from './hpResource';
+import type { BattlePointState } from './battlePointResource';
 import type {
   CanonicalInputDefinition,
+  BattlePointDomain,
   CanonicalTargetDomain,
   NoblePhantasmVariant,
   NpDamageSpec,
@@ -29,6 +31,8 @@ export interface OrderedScenarioExecution extends BattleExecutionResult {
 
 export interface PreparedOrderedScenario {
   hp?: HpState | undefined;
+  battlePoints?: BattlePointState | undefined;
+  battlePointDomains: readonly BattlePointDomain[];
   baseInput: DamageResolutionInput;
   scenario: ResolvedScenario;
   attackerTraits: readonly string[];

@@ -1,6 +1,7 @@
-import type { MasterDataSnapshot } from '@fgo-lab/master-data';
+import type { BattlePointDomain, MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
   actorFormKey,
+  canonicalRequirementLeaves,
   canonicalNoblePhantasmVariantSemanticsKey,
   masterSnapshotSchema,
 } from '@fgo-lab/master-data';
@@ -12,6 +13,7 @@ import type {
   AtlasMysticCode,
   AtlasReferencedSkill,
   AtlasServant,
+  AtlasBattlePoint,
 } from './atlasContract';
 import { inventoryAtlasAttackFunctions } from './atlasInventory';
 import { cardMap, normalizeFunctions, normalizeNpDamageFunction } from './effectNormalization';
@@ -97,6 +99,7 @@ export function normalizeAtlasSnapshot(input: {
   mysticCodes: unknown;
   items: unknown;
   referencedSkills?: unknown;
+  battlePoints?: unknown;
 }): MasterDataSnapshot {
   if (
     !Array.isArray(input.servants) ||
@@ -109,6 +112,53 @@ export function normalizeAtlasSnapshot(input: {
   const atlasEquips = input.equips as AtlasEquip[];
   const atlasMysticCodes = input.mysticCodes as AtlasMysticCode[];
   const atlasReferencedSkills = (input.referencedSkills ?? []) as AtlasReferencedSkill[];
+  if (!Array.isArray(input.battlePoints ?? []))
+    throw new TypeError('atlas_battle_points_must_be_array');
+  const battlePointDomains = ((input.battlePoints ?? []) as unknown[]).map(
+    (value): BattlePointDomain => {
+      const battlePoint = value as AtlasBattlePoint;
+      if (typeof battlePoint.id !== 'number' || !(battlePoint.phases?.length ?? 0))
+        throw new TypeError('invalid_battle_point_domain');
+      const percentage = battlePoint.flags?.includes('battlePointCheckAsPercentage') ?? false;
+      const trait = (id: number, name?: string) =>
+        name && name !== 'unknown' ? name : `traitId:${id}`;
+      const eligibility: BattlePointDomain['eligibility'] = [];
+      for (const svt of battlePoint.svts ?? []) {
+        if (typeof svt.svtId !== 'number') continue;
+        if (svt.svtId >= 0) eligibility.push({ kind: 'actor', actorId: String(svt.svtId) });
+        else
+          for (const group of svt.individuality ?? [])
+            eligibility.push({
+              kind: 'traits',
+              all: group.flatMap((entry) =>
+                typeof entry.id === 'number' ? [trait(entry.id, entry.name)] : [],
+              ),
+            });
+      }
+      if (
+        eligibility.length === 0 ||
+        eligibility.some((entry) => entry.kind === 'traits' && !entry.all.length)
+      )
+        throw new TypeError(`invalid_battle_point_eligibility:${battlePoint.id}`);
+      return {
+        id: String(battlePoint.id),
+        phaseScale: percentage ? 'permille' : 'point',
+        phases: battlePoint.phases!.map((phase) => ({
+          phase: phase.phase!,
+          threshold: phase.value!,
+        })),
+        eligibility,
+        capacity: {
+          default: battlePoint.script?.defaultMax ?? null,
+          maximum: battlePoint.script?.maxLimit ?? null,
+          traitOverrides: (battlePoint.script?.maxChange ?? []).map((change) => ({
+            all: (change.individuality ?? []).map((entry) => trait(entry.id!, entry.name)),
+            value: change.value!,
+          })),
+        },
+      };
+    },
+  );
   const referencedSkills = new Map(
     atlasReferencedSkills.flatMap((skill) =>
       typeof skill.id === 'number' ? ([[skill.id, skill]] as const) : [],
@@ -350,6 +400,36 @@ export function normalizeAtlasSnapshot(input: {
         operations,
       };
     });
+    const referencedBattlePointDomains = new Set<string>();
+    const battlePointEffects = [
+      ...skills.flatMap((skill) => skill.effects),
+      ...passives.flatMap((skill) => skill.effects),
+      ...noblePhantasmVariantGroups.flatMap((group) =>
+        group.variants.flatMap((variant) => variant.effects),
+      ),
+    ];
+    for (const variant of noblePhantasmVariantGroups.flatMap((group) => group.variants))
+      if (variant.kind === 'attack')
+        for (const damage of variant.damage)
+          if (damage.kind === 'battlePointPhase')
+            for (const row of damage.parametersByOvercharge)
+              for (const cell of row)
+                if (cell.targetId !== undefined)
+                  referencedBattlePointDomains.add(String(cell.targetId));
+    for (const effect of battlePointEffects) {
+      for (const leaf of canonicalRequirementLeaves(effect.requirement.expression))
+        if (
+          (leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase') ||
+          leaf.kind === 'sourceQuantity'
+        )
+          if (leaf.subjectId !== undefined) referencedBattlePointDomains.add(leaf.subjectId);
+      for (const operation of effect.execution)
+        if (
+          operation.kind === 'battlePointCapacityModifier' ||
+          (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
+        )
+          if (operation.subjectId !== null) referencedBattlePointDomains.add(operation.subjectId);
+    }
     return [
       {
         id: String(servant.id),
@@ -393,6 +473,9 @@ export function normalizeAtlasSnapshot(input: {
         imageKey: image,
         skills,
         passives,
+        battlePointDomains: battlePointDomains.filter((domain) =>
+          referencedBattlePointDomains.has(domain.id),
+        ),
         growth: [
           ...growthSteps(servant.ascensionMaterials, 'ascension'),
           ...growthSteps(servant.skillMaterials, 'skill', 3),
@@ -571,6 +654,7 @@ export function normalizeAtlasSnapshot(input: {
       },
     },
     targetSemantics,
+    battlePointDomains,
     servants,
     craftEssences,
     mysticCodes,

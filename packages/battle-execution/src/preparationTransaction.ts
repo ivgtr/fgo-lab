@@ -78,6 +78,8 @@ export function effectRequiresPreparationDecision(
         operation.kind === 'populationFunction' ||
         (operation.kind === 'buffInstanceMutation' && operation.marker !== undefined) ||
         isHpOperation(operation) ||
+        operation.kind === 'battlePointCapacityModifier' ||
+        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint') ||
         (operation.kind === 'unsupported' && operation.reason === 'resourceExecutionSemantics') ||
         (operation.kind === 'resourceMutation' &&
           operation.resource === 'npGauge' &&
@@ -126,6 +128,7 @@ export type PreparationResourcePlanResult =
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
       ocState: OcState;
       hp: PreNoblePhantasmState['hp'];
+      battlePoints: PreNoblePhantasmState['battlePoints'];
       populationEvents: PreNoblePhantasmState['populationEvents'];
       npTransfers: NonNullable<PreNoblePhantasmState['npTransfers']>;
       uncertainEnemyCharge: boolean;
@@ -301,6 +304,7 @@ export function planPreparationResourceTransaction(args: {
     activation,
     ocState: oc.result.state,
     hp: oc.structuralState.hp,
+    battlePoints: oc.structuralState.battlePoints,
     populationEvents: oc.structuralState.populationEvents,
     npTransfers: oc.structuralState.npTransfers ?? [],
     uncertainEnemyCharge: oc.structuralState.uncertainEnemyCharge ?? false,

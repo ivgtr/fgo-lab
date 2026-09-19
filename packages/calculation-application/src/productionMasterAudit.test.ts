@@ -173,9 +173,9 @@ describe('production preparation semantics audit', () => {
       actorFormNodes: 484,
       actorFormProfiles: 484,
       attackVariants: 626,
-      deduplicated: 4182,
-      exactDuplicates: 2476,
-      generated: 6658,
+      deduplicated: 4194,
+      exactDuplicates: 2479,
+      generated: 6673,
       maximumActorFormNodes: 7,
       maximumActorFormProfiles: 7,
       maximumInitialForms: 7,
@@ -189,10 +189,10 @@ describe('production preparation semantics audit', () => {
       },
       rejectedActions: 7,
       servants: 422,
-      terminal: 3628,
+      terminal: 3640,
       transformNoblePhantasmServants: 1,
     });
-    expect(terminalKeys).toHaveLength(3628);
+    expect(terminalKeys).toHaveLength(3640);
   }, 30_000);
 
   it('keeps applied choice and transition evidence local to its source action', async () => {

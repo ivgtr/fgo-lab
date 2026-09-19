@@ -187,5 +187,6 @@ export { npTransferInputSaturation } from './npTransfer';
 
 export * from './hpResource';
 export * from './preparationHp';
+export * from './battlePointResource';
 
 export { UnresolvedPreparationPlanningRead } from './hpPlanning';

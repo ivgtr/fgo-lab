@@ -302,14 +302,14 @@ describe('unsupported convergence production golden', () => {
             "passive:passive:3300200:30149:265:0:modifier:flatDamage",
             "np:["3300200",0,"3300201"]:21836:damage",
           ],
-          "inputDigest": "2f633b96d596a2189e0a826dd30cb34a17ca968cbfedc960a7e3999b01dc6984",
+          "inputDigest": "fc0505479449feaad855576234240c6db03a57d3547648135869a06e16e49838",
           "name": "エレシュキガル",
           "np1To5Average": [
-            19422.77,
-            25850.53,
-            29064.41,
-            30671.35,
-            32278.29,
+            21351.055,
+            28421.63,
+            31956.83,
+            33724.525,
+            35492.17,
           ],
           "servantId": "3300200",
         },
@@ -416,7 +416,7 @@ describe('unsupported convergence production golden', () => {
         selected.effects.find((effect) => effect.projectionKey === projection!.projectionKey)
           ?.outcome,
         `${servantId}:${occurrenceId}`,
-      ).toBe(occurrenceId === 'automaticReference' ? 'notRelevant' : 'applied');
+      ).toBe(occurrenceId === 'automaticReference' ? 'notApplied' : 'applied');
       if (occurrenceId === 'linkedTraitFamily')
         expect(
           selected.effects
@@ -712,11 +712,11 @@ describe('unsupported convergence production golden', () => {
         },
         {
           "np1To5Average": [
-            19422.77,
-            25850.53,
-            29064.41,
-            30671.35,
-            32278.29,
+            21351.055,
+            28421.63,
+            31956.83,
+            33724.525,
+            35492.17,
           ],
           "occurrenceId": "automaticReference",
           "servantId": "3300200",
@@ -724,7 +724,7 @@ describe('unsupported convergence production golden', () => {
       ]
     `);
     expect(createHash('sha256').update(JSON.stringify(records)).digest('hex')).toBe(
-      '112076266237524b463fac93dc9705a716d6af9554b23e02b39244c52afe3d8c',
+      '94fcb0acfd65c242f3dbedae63e739981f25e572b737752c4a341ae032e72f6d',
     );
   }, 30_000);
 

@@ -26,7 +26,7 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: 'ca2fe0682054eca8c98bef3676dcda3ba1be01dcce9946086d6f3e38df7ddd65',
+          digest: 'f7f2610d809b52ae3f249b01ca22190879b36ead370ce619e4c006d7165455c8',
           inventory: {
             hpGrowth: {
               servantCells: 56250,
@@ -66,7 +66,7 @@ describe('shared data-pipeline production audit', () => {
                 npGauge: 742,
                 hp: 181,
                 criticalStars: 255,
-                battlePoint: 1,
+                battlePoint: 7,
               },
               triggerOperations: {
                 '["commandCardAttack","unsupported",null]': 17,
@@ -199,7 +199,7 @@ describe('shared data-pipeline production audit', () => {
                 '["TriggeredTargetBattlePointRateRange",[{"battlePointId":705300,"range":["<=999"]}]]': 120,
                 '["CheckBattlePointPhaseRange",[{"battlePointId":705300,"range":["<=1"]}]]': 10,
               },
-              battlePointMissingAmounts: 10,
+              battlePointMissingAmounts: 0,
             },
             operations: 15257,
             damageFunctions: 630,

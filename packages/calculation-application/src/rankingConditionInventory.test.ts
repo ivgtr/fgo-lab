@@ -88,19 +88,19 @@ describe('production ranking condition provenance', () => {
     const fieldOccurrences = [
       ...new Set(field.map(({ servantId, occurrenceId }) => `${servantId}:${occurrenceId}`)),
     ].sort();
-    expect(inventory).toHaveLength(118);
-    expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(32);
+    expect(inventory).toHaveLength(121);
+    expect(inventory.filter(({ activationLocal }) => activationLocal)).toHaveLength(34);
     expect(byKind).toEqual({
       intrinsic: 70,
-      derivedOrExternalField: 36,
-      externalScenarioFact: 34,
+      derivedOrExternalField: 37,
+      externalScenarioFact: 36,
       target: 5,
-      procOrQuantity: 10,
+      procOrQuantity: 12,
     });
-    expect(field).toHaveLength(36);
-    expect(fieldOccurrences).toHaveLength(36);
+    expect(field).toHaveLength(37);
+    expect(fieldOccurrences).toHaveLength(37);
     expect(inventory.filter(({ negativeField }) => negativeField)).toHaveLength(0);
-    expect(new Set(field.map(({ servantId }) => servantId)).size).toBe(26);
+    expect(new Set(field.map(({ servantId }) => servantId)).size).toBe(27);
     expect(fieldOccurrences).toMatchInlineSnapshot(`
       [
         "100500:3370:0",
@@ -122,6 +122,7 @@ describe('production ranking condition provenance', () => {
         "2801000:22552:0",
         "305500:7616:0",
         "305600:22299:0",
+        "3300200:21814:0",
         "402400:9158:0",
         "403700:6010:0",
         "403700:6013:0",

@@ -245,8 +245,9 @@ describe('production canonical execution semantics', () => {
     expect(operations).toHaveLength(15257);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
       boundedPhaseIrrelevant: 3008,
+      battlePointCapacityModifier: 1,
       buffInstanceMutation: 311,
-      contextMutation: 1448,
+      contextMutation: 1442,
       damageModifier: 3885,
       grantOcApplicationRate: 29,
       grantOcBoost: 97,
@@ -260,9 +261,9 @@ describe('production canonical execution semantics', () => {
       populationMutation: 4,
       removeHpModifiers: 198,
       removeOcState: 75,
-      resourceMutation: 1179,
+      resourceMutation: 1185,
       selectNoblePhantasmVariant: 22,
-      stateMutation: 4621,
+      stateMutation: 4620,
       transformActorForm: 10,
       unsupported: 28,
     });
@@ -309,7 +310,7 @@ describe('production canonical execution semantics', () => {
             operation.kind === 'resourceMutation' || operation.kind === 'boundedPhaseIrrelevant',
         ),
     );
-    expect(referencedStateWrappers).toHaveLength(1);
+    expect(referencedStateWrappers).toHaveLength(2);
     const wrapperOperations = new Set(
       referencedStateWrappers.flatMap(({ execution }) => execution),
     );
@@ -342,7 +343,7 @@ describe('production canonical execution semantics', () => {
       ).length,
     };
     expect(closedOccurrences).toEqual({
-      resource: 1_178,
+      resource: 1_183,
       unresolvedResourceTargets: 2,
       state: 4_622,
       unsupported: 4,
@@ -718,7 +719,7 @@ describe('production canonical execution semantics', () => {
           levelSource: 'secondaryValueParameter',
           defaultLevel: 1,
         },
-        operations: ['contextMutation'],
+        operations: ['resourceMutation'],
       },
     ]);
   });

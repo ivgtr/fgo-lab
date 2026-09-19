@@ -81,6 +81,7 @@ export function reducePreparationSkillAction(
         resource.activation,
       ),
       ...resource.contextState,
+      battlePoints: resource.battlePoints,
       npResource: resource.resource.state,
       populationEvents: resource.populationEvents,
       hp: resource.hp,

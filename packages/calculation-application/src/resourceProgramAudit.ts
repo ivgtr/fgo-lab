@@ -85,6 +85,7 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
           : null;
     case 'hpModifier':
     case 'removeHpModifiers':
+    case 'battlePointCapacityModifier':
     case 'damageModifier':
     case 'modifierRateChange':
     case 'ignoreDefense':

@@ -4,6 +4,10 @@ import {
   executeOrderedScenario,
   prepareOrderedScenario,
   resolveAttackerFormExecution,
+  battlePointPhase,
+  battlePointPhaseCandidates,
+  readBattlePoint,
+  type BattlePointState,
   type ActivationRequirementOwner,
   type AppliedPreparationAction,
   type ContributionApplicationPolicy,
@@ -25,6 +29,8 @@ import { createDefaultTargetContext } from './targetContext';
 import {
   deriveCraftEssenceAtk,
   deriveNpMultipliers,
+  canonicalRequirementLeaves,
+  findActorForm,
   findNoblePhantasmVariant,
   naturalServantLevel,
   type MasterDataSnapshot,
@@ -33,12 +39,13 @@ import {
   type CanonicalInputDefinition,
   type NoblePhantasmVariant,
 } from '@fgo-lab/master-data';
-import type {
-  CalculationResult,
-  CalculationScenario,
-  DamageResolutionInput,
-  ServantBuild,
-  VersionContext,
+import {
+  SCHEMA_VERSION,
+  type CalculationResult,
+  type CalculationScenario,
+  type DamageResolutionInput,
+  type ServantBuild,
+  type VersionContext,
 } from '@fgo-lab/schema';
 import { calculateDamageResolution } from './damageResolution';
 import { evaluateCalculationEvidence } from './evidence';
@@ -303,6 +310,8 @@ export type ScenarioPreparationOutcome =
 
 export interface CalculationPreparationOptions {
   initialNpGauge?: number;
+  /** Internal witness selected from the user's phase intent; never persisted. */
+  initialBattlePointPoints?: Readonly<Record<string, number>>;
 }
 
 function damageResolutionInputForNoblePhantasm(
@@ -312,6 +321,7 @@ function damageResolutionInputForNoblePhantasm(
   master: MasterDataSnapshot,
   attackerAtk: number,
   effectiveOvercharge: number,
+  battlePoints?: BattlePointState,
 ): DamageResolutionInput {
   const damage = noblePhantasm.damage[0];
   if (!damage) throw new TypeError(`attack_np_damage_missing:${servant.id}`);
@@ -365,7 +375,21 @@ function damageResolutionInputForNoblePhantasm(
     attackerHpPermille: scenario.attackerHpPermille,
     targetRarity: null,
     targetStateTraits: [],
-    battlePointPhase: scenario.battleState.battlePointPhase,
+    battlePointPhase:
+      damage.kind === 'battlePointPhase' && battlePoints
+        ? (() => {
+            const parameter =
+              damage.parametersByOvercharge[effectiveOvercharge - 1]?.[
+                scenario.attacker.npLevel - 1
+              ];
+            const domain = master.battlePointDomains.find(
+              (candidate) => candidate.id === String(parameter?.targetId),
+            );
+            return domain
+              ? battlePointPhase(domain, readBattlePoint(battlePoints, 'attacker', domain.id))
+              : null;
+          })()
+        : scenario.battleState.battlePointPhase,
     target: {
       classId:
         scenario.targetContext.class.kind === 'concrete'
@@ -428,7 +452,14 @@ export function resolveScenarioPreparationOutcome(
     servant,
     master.npResourceSemantics,
     preparation.initialNpGauge,
-    { master, policy, initialMaximumHp: initialHp.maximum },
+    {
+      master,
+      policy,
+      initialMaximumHp: initialHp.maximum,
+      ...(preparation.initialBattlePointPoints
+        ? { initialBattlePointPoints: preparation.initialBattlePointPoints }
+        : {}),
+    },
   );
   const selected = formExecution.state.selectedNoblePhantasmVariant
     ? findNoblePhantasmVariant(servant, formExecution.state.selectedNoblePhantasmVariant)
@@ -468,6 +499,7 @@ export function resolveScenarioPreparationOutcome(
       master,
       attackerAtk,
       formExecution.state.ocState.receipts.at(-1)!.effectiveOc,
+      formExecution.state.battlePoints,
     ),
     formExecution,
   };
@@ -954,7 +986,7 @@ export function prepareCalculationScenario(
   );
 }
 
-export function prepareCalculationScenarioWithPolicy(
+function prepareConcreteCalculationScenarioWithPolicy(
   scenario: CalculationScenario,
   master: MasterDataSnapshot,
   contributionPolicy: ContributionApplicationPolicy,
@@ -1025,6 +1057,123 @@ export function prepareCalculationScenarioWithPolicy(
     contributionPolicy,
     preparation,
   };
+}
+
+function battlePointWitnesses(
+  scenario: ResolvedCalculationScenario,
+  master: MasterDataSnapshot,
+): Readonly<Record<string, number>>[] {
+  const phase = scenario.battleState.battlePointPhase;
+  if (phase === null) return [{}];
+  const servant = master.servants.find((candidate) => candidate.id === scenario.attacker.servantId);
+  if (!servant) return [{}];
+  if (!(servant.battlePointDomains?.length ?? 0)) return [{}];
+  const referenced = new Set<string>();
+  const collectRequirementDomains = (
+    effect: MasterDataSnapshot['servants'][number]['skills'][number]['effects'][number],
+  ) => {
+    for (const leaf of canonicalRequirementLeaves(effect.requirement.expression))
+      if (
+        (leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase') ||
+        leaf.kind === 'sourceQuantity'
+      )
+        if (leaf.subjectId !== undefined) referenced.add(leaf.subjectId);
+  };
+  for (const variant of servant.noblePhantasmVariantGroups.flatMap((group) => group.variants)) {
+    if (variant.kind === 'attack')
+      for (const damage of variant.damage)
+        if (damage.kind === 'battlePointPhase')
+          for (const row of damage.parametersByOvercharge)
+            for (const cell of row)
+              if (cell.targetId !== undefined) referenced.add(String(cell.targetId));
+    for (const effect of variant.effects) {
+      collectRequirementDomains(effect);
+      for (const operation of effect.execution)
+        if (
+          operation.kind === 'battlePointCapacityModifier' ||
+          (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
+        )
+          if (operation.subjectId !== null) referenced.add(operation.subjectId);
+    }
+  }
+  for (const effect of [...servant.skills, ...servant.passives].flatMap((skill) => skill.effects)) {
+    collectRequirementDomains(effect);
+    for (const operation of effect.execution)
+      if (
+        operation.kind === 'battlePointCapacityModifier' ||
+        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
+      )
+        if (operation.subjectId !== null) referenced.add(operation.subjectId);
+  }
+  const traits = new Set(
+    findActorForm(servant, scenario.attacker.initialActorFormId)?.traits ?? servant.traits,
+  );
+  let witnesses: Readonly<Record<string, number>>[] = [{}];
+  for (const domain of master.battlePointDomains.filter((candidate) =>
+    referenced.has(candidate.id),
+  )) {
+    const capacity =
+      domain.capacity.traitOverrides.find((entry) => entry.all.every((trait) => traits.has(trait)))
+        ?.value ?? domain.capacity.default;
+    const points = phase === 0 ? [-1] : battlePointPhaseCandidates(domain, phase, capacity);
+    if (!points.length) continue;
+    witnesses = witnesses.flatMap((prior) =>
+      points.map((point) => ({ ...prior, [domain.id]: point })),
+    );
+  }
+  return witnesses;
+}
+
+export function prepareCalculationScenarioWithPolicy(
+  scenario: CalculationScenario,
+  master: MasterDataSnapshot,
+  contributionPolicy: ContributionApplicationPolicy,
+  preparation: CalculationPreparationOptions = {},
+): PreparedCalculationScenario {
+  if (scenario.mode === 'manual' || preparation.initialBattlePointPoints)
+    return prepareConcreteCalculationScenarioWithPolicy(
+      scenario,
+      master,
+      contributionPolicy,
+      preparation,
+    );
+  const witnesses = battlePointWitnesses(scenario, master);
+  if (witnesses.length === 1)
+    return prepareConcreteCalculationScenarioWithPolicy(scenario, master, contributionPolicy, {
+      ...preparation,
+      initialBattlePointPoints: witnesses[0]!,
+    });
+  const candidates = witnesses.map((initialBattlePointPoints) =>
+    prepareConcreteCalculationScenarioWithPolicy(scenario, master, contributionPolicy, {
+      ...preparation,
+      initialBattlePointPoints,
+    }),
+  );
+  const executable = candidates.filter(
+    (candidate): candidate is Extract<PreparedCalculationScenario, { status: 'executable' }> =>
+      candidate.status === 'executable',
+  );
+  const unresolved = candidates.find((candidate) => candidate.status !== 'executable');
+  if (unresolved) return { ...unresolved, scenario, preparation };
+  if (!executable.length) return { ...candidates[0]!, scenario, preparation };
+  const selected = executable
+    .map((candidate) => {
+      const result = calculateDamageResolution(candidate.resolved.input, {
+        schemaVersion: SCHEMA_VERSION,
+        appVersion: 'bp-witness',
+        masterDataVersion: master.version,
+        engineVersion: 'bp-witness',
+        gameRegion: 'JP',
+        masterDataLocale: 'ja-JP',
+      });
+      return {
+        candidate,
+        maximum:
+          result.status === 'calculated' ? result.rows[scenario.attacker.npLevel - 1]!.maximum : -1,
+      };
+    })
+    .sort((left, right) => right.maximum - left.maximum)[0]!.candidate;
+  return { ...selected, scenario, preparation };
 }
 
 export function rematerializePreparedCalculationInputs(

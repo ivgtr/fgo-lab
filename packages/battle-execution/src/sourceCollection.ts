@@ -11,6 +11,7 @@ import {
   getBaseNoblePhantasmGroup,
   getSkillsForActorForm,
   findActorForm,
+  canonicalRequirementLeaves,
   noblePhantasmVariantKey,
   type NoblePhantasmVariantRef,
   type ActorFormId,
@@ -19,6 +20,8 @@ import {
   type CanonicalInputDefinition,
   type CanonicalNpResourceSemantics,
 } from '@fgo-lab/master-data';
+import { battlePointPhaseCandidates } from './battlePointResource';
+import { battlePointEffectKey } from './battlePointResource';
 import type { CalculationScenario, DamageResolutionInput } from '@fgo-lab/schema';
 import type { ExecutionIssue, ExecutionPhase } from './contracts';
 import type { Origin } from './effectRouting';
@@ -37,6 +40,7 @@ export interface SourceEffect {
   markerReaders?: ReadonlySet<string>;
   markerProgram?: readonly string[];
   hpExecutionCommitted?: boolean;
+  battlePointExecutionCommitted?: boolean;
   phase: ExecutionPhase;
   origin: Origin;
   sourceInstanceId: string;
@@ -91,11 +95,29 @@ export function resolveAttackerFormExecution(
     master?: MasterDataSnapshot;
     initialMaximumHp?: number;
     policy?: PreparationExecutionContext['policy'];
+    initialBattlePointPoints?: Readonly<Record<string, number>>;
   } = {},
 ): ResolvedAttackerFormExecution {
   const auxiliary = options.master
     ? collectAuxiliarySources(scenario, options.master, scenario.attacker.initialActorFormId)
     : null;
+  const battlePointDomainIds = new Set(attacker.battlePointDomains?.map(({ id }) => id) ?? []);
+  for (const source of auxiliary?.sources ?? []) {
+    for (const leaf of canonicalRequirementLeaves(source.effect.requirement.expression))
+      if (
+        (leaf.kind === 'quantity' && leaf.quantity === 'battlePointPhase') ||
+        leaf.kind === 'sourceQuantity'
+      )
+        if (leaf.subjectId !== undefined) battlePointDomainIds.add(leaf.subjectId);
+    for (const operation of source.effect.execution)
+      if (
+        operation.kind === 'battlePointCapacityModifier' ||
+        (operation.kind === 'resourceMutation' && operation.resource === 'battlePoint')
+      )
+        if (operation.subjectId !== null) battlePointDomainIds.add(operation.subjectId);
+  }
+  const battlePointDomains =
+    options.master?.battlePointDomains.filter(({ id }) => battlePointDomainIds.has(id)) ?? [];
   const resolvedHp =
     options.master && options.initialMaximumHp === undefined
       ? resolveInitialMaximumHp(scenario, options.master)
@@ -167,6 +189,25 @@ export function resolveAttackerFormExecution(
       ? {}
       : { attackerHpPermille: scenario.attackerHpPermille }),
     battlePointPhase: scenario.battleState.battlePointPhase,
+    battlePointDomains,
+    initialBattlePointPoints:
+      options.initialBattlePointPoints ??
+      Object.fromEntries(
+        battlePointDomains.flatMap((domain) => {
+          const phase = scenario.battleState.battlePointPhase;
+          if (phase === null) return [];
+          if (phase === 0) return [[domain.id, -1] as const];
+          const traits = new Set(
+            findActorForm(attacker, scenario.attacker.initialActorFormId)?.traits ?? [],
+          );
+          const capacity =
+            domain.capacity.traitOverrides.find((entry) =>
+              entry.all.every((trait) => traits.has(trait)),
+            )?.value ?? domain.capacity.default;
+          const candidates = battlePointPhaseCandidates(domain, phase, capacity);
+          return candidates.length ? [[domain.id, candidates.at(-1)!] as const] : [];
+        }),
+      ),
   };
   const created = createPreNoblePhantasmState(
     attacker,
@@ -453,6 +494,9 @@ export function collectOperationSources(
         ) ?? source.preparationStochasticOutcome,
       hpExecutionCommitted:
         formExecution.state.hp?.executedEffects?.includes(hpEffectKey(source)) ?? false,
+      battlePointExecutionCommitted: formExecution.state.battlePoints.executedEffects.includes(
+        battlePointEffectKey(source),
+      ),
       ocExecutionCommitted: formExecution.state.ocState.executedSources.has(
         ocSourceOperationKey(compileOcSourceProgram(source), 0),
       ),

@@ -77,6 +77,9 @@ export function preparationConditionState(
   };
   facts.hp = state.hp;
   facts.buffInstances = state.buffInstances;
+  facts.battlePoints = state.battlePoints;
+  if (context.battlePointDomains) facts.battlePointDomains = context.battlePointDomains;
+  facts.resourceActor = 'attacker';
   facts.initialTraitSuppressions = state.initialTraitSuppressions;
   return facts;
 }
@@ -91,6 +94,7 @@ export function preparationSourceConditionState(
   const bound: ConditionEvaluationState = {
     ...facts,
     card: null,
+    resourceActor: program.source.sourceInstanceId,
     traits: { ...facts.traits, attacker: traitFacts(traits), attackerState: new Map() },
     traitCounts: { ...facts.traitCounts, attacker: traitCounts(traits), attackerState: {} },
     actorPredicates: { ...facts.actorPredicates, attacker: new Map() },

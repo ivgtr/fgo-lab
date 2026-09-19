@@ -52,6 +52,7 @@ export function operationRecipient(
     return 'attacker';
   if (
     operation.kind === 'buffInstanceMutation' ||
+    operation.kind === 'battlePointCapacityModifier' ||
     operation.kind === 'populationMutation' ||
     operation.kind === 'populationFunction' ||
     operation.kind === 'resourceMutation' ||
@@ -73,6 +74,7 @@ export function canNormalizeDamageEffect(effect: MasterEffect, origin: Origin): 
       operation.kind === 'removeOcState' ||
       operation.kind === 'ocStateNonIntersection' ||
       operation.kind === 'buffInstanceMutation' ||
+      operation.kind === 'battlePointCapacityModifier' ||
       operation.kind === 'populationMutation' ||
       operation.kind === 'populationFunction' ||
       operation.kind === 'resourceMutation' ||

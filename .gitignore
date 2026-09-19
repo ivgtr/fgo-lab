@@ -24,6 +24,7 @@ Thumbs.db
 .local-docs/docs/**
 data/raw/*
 !data/raw/referenced_skills.json
+!data/raw/battle_points.json
 data/cache/
 *.sqlite
 *.sqlite3

@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20追記。HP系全体に続き、独立marker／admissionの対象4系統5profileと共有経路は実装・検証完了、通常ranking432/433・calculator421/422。TSK-06.45はin_progress。BPの生成→利用→回復、今回と独立した非HP回復／UI、U5全条件closureは未完了。以下の過去deltaは当時の根拠であり、HP・独立markerの旧Blocking／Deferredは最新checkpointの完了証拠で閉じる。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20追記。HP系全体、独立marker／admissionに続き、BPの生成→利用→回復も実装と局所・production・実画面検証を完了し、通常ranking433/433・calculator422/422。最終qualityは実行待ち。TSK-06.45はin_progressで、今回と独立した非HP回復／UIとU5全条件closureは未完了。以下の過去deltaは当時の根拠であり、HP・独立marker・BPの旧Blocking／Deferredは最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -451,6 +451,16 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 - 共有auditは通常ranking432/433・calculator421/422、残る拒否は対象外705300 BP。差分は[marker delta](tsk-06-45-marker-delta.json)。数値差は203500／205500／2501400のcalculator、203500／605100／2300600のranking。marker付与後のNP特攻倍率／状態数／攻撃buffで説明する。
 - E2E-053は4系統の実画面・保存再読込・NP2/OC2→NP1/OC1修復を実行し成功（`.test-results/2026-09-19T15-07-24-555Z-15-4f842e`）。共有markerの220経路（NP／合法OC、CE normal/LB、支援とrecipient）も成功。106400／2800600のNP2/5・OC1は初期trait／stateの不足をtyped inputRequiredで返し、初期なしを入力して修復・再実行した。入力事実が後続marker更新を上書きしない。formに属する常時instanceはform変更で失効し、active／CE instanceを保持する。
 - 差分レビューで生成・実行・候補・回復の局所反例を解消し、最終qualityと結果記録まで完了。性能はwarm1＋serial3で中央値4999.986ms、538b83a収録4795.091ms比+4.27%。候補6516→6658、dedup4043→4182、要求2377→2591、distinct1451→1485。前回HP増加とは別比較。[validation](tsk-06-45-marker-validation.json)／[performance](tsk-06-45-marker-performance.json)参照。対象4系統5profileと直接共有する経路のU1-R／U2／U3-A／U3-Q／U4は完了。最終`pnpm quality`はunit834／production133／E2E28成功、warning・unexpected observation・retry0、324.726秒（`.test-results/2026-09-19T15-59-14-750Z-15-7cc0c3`）。productionは538b83a収録71,083ms→72,209ms。追加3testで35＋60＋220条件を検証。master20260919.4/schema55、engine45.0.0、portable schema40。BP実量・独立した非HP回復／UI・U5全条件は未完了。
+
+**2026-09-20 BP縦断単位完了（基点0d279c0、対象内Blocking0）:** Atlasの705300／3300200定義を固定取得し、pipelineだけがactor eligibility、trait capacity、point／permille phaseをcanonical domainへ変換する。actor×domainのstateは定義不明、eligible absent、present point0を分離し、phase/rateをlive point/capacityから導出する。3300200の最終閾値90はcapacityへ読み替えない。[source](tsk-06-45-bp-source.json)参照。
+
+- point gain/loss、capacity instance、trait／marker／form変更後のreconcileを既存preparation transactionへ統合。失敗時はBP・HP・NP・OC・form・instance・context・receiptをcommand前へ戻し、前commandのcommitは保持する。終端damage後の直接capacity25 cellsと、後続readへ影響する間接trait writerを分離した。
+- 初期入力は従来どおり段階intent。合法pointの逆像を列挙し、同段階のpoint4/5等を一代表へ縮約せず全application/execution後の最大値を比較する。単一witnessでは二重damage評価を省略。小型oracleはcapacity1〜12の全pointを独立列挙し、actor/domain、支援recipient、飽和・端数・境界、trait解除、未知capacity writerの更新前拒否を検証した。
+- 705300の通常NP1/2/5とNP2四policyは7/7 calculated。calculator最大44,251／59,002／73,752、ranking NP2最大33,715／106,204／21,612／48,628。成立込みはskill1のchoice candidate2を採用し、残る拒否0。共有3300200も同7条件をcalculatedとし、calculator最大33,725／44,920／56,115、capacityなし、終端phase1を確認。[validation](tsk-06-45-bp-validation.json)参照。
+- portableは初期段階だけを保存し内部pointを保存しない。装備・Lv・form・NP・OC・policy変更は同じconstructorから再実行。E2E-054で705300の段階2、NP2/OC2、保存再読込、攻撃役変更時の段階0 resetを実画面確認した。NP damage型だけを見て入力を隠していたUI漏れは、pipeline済みdomain参照へ置換した。
+- 通常ranking432→433/433、calculator421→422/422。候補2660→2665、damage request2591→2596、distinct1485→1489、preparation plan3628→3640。3300200 calculator NP1はpre-damage gain後のphase1を読むため平均27,907.42→30,684.20、default ranking NP1は既存と同値。damage根拠は[delta](tsk-06-45-bp-delta.json)。ranking中央値5227.85→5233.42ms（+0.11%）でcap／timeout／ratchet変更なし。[performance](tsk-06-45-bp-performance.json)参照。
+- 3300200のNP2四policy最大は27,279／54,419／18,987／37,834。成立込みの有限候補上限3,840と採用witnessを固定し、採用scenarioを共通executionで再生する。未知witnessを残りの数値候補から捨てず、選択NP Lvの行で最大値を比較する。
+- 今回のU0-B／U1-B／U2-BとBPに直接必要なU1-R／U3-A／U3-Q／U4はBlocking0。最終`pnpm quality`はunit840／production139／E2E29、skip／todo／retry／warning／unexpected console 0、369.017秒で成功（`.test-results/2026-09-19T18-26-32-399Z-15-4b8408`）。U5の全433profile×422calculator×80合法条件・stable owned closure、TSK-06.45全体完了は宣言しない。
 
 **2026-09-19追記: HP系全体は完了、scoped Blocking0。TSK全体は未完了。** 基点`645a3ee`、引継ぎclean。前回NP／charge transferの成功済みbeforeは再利用した。
 

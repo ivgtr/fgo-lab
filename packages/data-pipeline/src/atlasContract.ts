@@ -3,6 +3,18 @@ export type AtlasMaterialStep = Record<
   { items?: { item?: { id?: number }; amount?: number }[]; qp?: number }
 >;
 export type AtlasTraitRef = { id?: number; name?: string; negative?: boolean };
+export type AtlasBattlePoint = {
+  id?: number;
+  name?: string;
+  flags?: string[];
+  phases?: { phase?: number; value?: number }[];
+  svts?: { svtId?: number; individuality?: AtlasTraitRef[][] }[];
+  script?: {
+    defaultMax?: number;
+    maxLimit?: number;
+    maxChange?: { individuality?: AtlasTraitRef[]; value?: number }[];
+  };
+};
 export type AtlasBuff = {
   id?: number;
   buffGroup?: number;
@@ -51,6 +63,8 @@ export type AtlasFunctionValue = Record<string, unknown> & {
   AndCheckIndividualityList?: number[];
   AddIndividualty?: number;
   AddIndividualtyList?: number[];
+  BattlePointId?: number;
+  BattlePointValue?: number;
   IncludeIgnoreIndividuality?: number;
   IgnoreIndivUnreleaseable?: number;
   CheckDead?: number;
@@ -90,7 +104,7 @@ export type AtlasServant = {
   atkGrowth?: number[];
   hpGrowth?: number[];
   traits?: { id?: number; name?: string }[];
-  battlePoints?: { id?: number; phases?: { phase?: number }[] }[];
+  battlePoints?: AtlasBattlePoint[];
   skills?: {
     id?: number;
     num?: number;

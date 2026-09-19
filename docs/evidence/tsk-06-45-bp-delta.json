@@ -1,0 +1,55 @@
+{
+  "baselineCommit": "0d279c04345b21a296bd3c7340931420be721110",
+  "before": {
+    "ranking": { "calculated": 432, "profiles": 433, "705300": "unsupportedActionAdmission" },
+    "calculator": { "calculated": 421, "profiles": 422, "705300": "resourceStateUnavailable" },
+    "preparationPlans": 3628,
+    "candidateInventory": {
+      "generated": 2660,
+      "deduplicated": 2660,
+      "damageRequests": 2591,
+      "distinctDamageInputs": 1485
+    }
+  },
+  "after": {
+    "ranking": { "calculated": 433, "profiles": 433, "nonnumeric": 0 },
+    "calculator": { "calculated": 422, "profiles": 422, "nonnumeric": 0 },
+    "preparationPlans": 3640,
+    "candidateInventory": {
+      "generated": 2665,
+      "deduplicated": 2665,
+      "damageRequests": 2596,
+      "distinctDamageInputs": 1489
+    }
+  },
+  "damage": {
+    "705300": "newly calculated; values are listed in tsk-06-45-bp-validation.json",
+    "3300200CalculatorNP1": {
+      "before": { "minimum": 25143, "average": 27907.42, "maximum": 30672 },
+      "after": { "minimum": 27643, "average": 30684.2, "maximum": 33725 },
+      "canonicalExplanation": "initial phase intent 0 resolves to an eligible absent gauge; the selected pre-damage gain creates point state and terminal phase 1, which the BP-phase damage reads"
+    },
+    "3300200DefaultRankingNP1": {
+      "before": { "minimum": 16809, "average": 18651.445, "maximum": 20494 },
+      "after": { "minimum": 16809, "average": 18651.445, "maximum": 20494 },
+      "explanation": "the previously selected ranking scenario already represented the same terminal phase; numeric result is unchanged"
+    }
+  },
+  "candidateDelta": {
+    "generated": 5,
+    "deduplicated": 5,
+    "damageRequests": 5,
+    "distinctDamageInputs": 4,
+    "preparationPlans": 12,
+    "reason": "legal BP branches for 705300 and the shared 3300200 path; no effect-subset search, cap or timeout change"
+  },
+  "affectedProductionStep": {
+    "beforeMs": 72209,
+    "afterMs": 84677,
+    "deltaPercent": 17.26656718619507,
+    "addedAcceptanceTests": 6,
+    "rankingHotPathDeltaPercent": 0.10664195425341862
+  },
+  "exclusionsRemoved": ["705300 ranking unsupportedActionAdmission", "705300 calculator resourceStateUnavailable"],
+  "markerAndHpBaseline": "all marker and HP changes are already contained in 0d279c0 and are excluded from this delta"
+}

@@ -259,6 +259,8 @@ export function compileExecutionPlan(
       ...(collected.formExecution?.requiredInputs.map(({ key }) => key) ?? []),
     ]),
     hp: collected.formExecution?.state.hp,
+    battlePoints: collected.formExecution?.state.battlePoints,
+    battlePointDomains: master.battlePointDomains,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };
 }

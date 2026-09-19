@@ -58,6 +58,23 @@ function classifyPrograms(
       program.terminalMarkerReads ?? [],
       resources?.automaticEffects,
     );
+    const battlePointRelevant = new Set(
+      program.sourceUses.flatMap((source, index) =>
+        source.effects.some((effect) =>
+          effect.execution.some(
+            (operation) =>
+              (operation.kind === 'resourceMutation' &&
+                operation.resource === 'battlePoint' &&
+                operation.subjectId !== null &&
+                (program.terminalBattlePointDomainIds ?? []).includes(operation.subjectId)) ||
+              (operation.kind === 'battlePointCapacityModifier' &&
+                (program.terminalBattlePointDomainIds ?? []).includes(operation.subjectId)),
+          ),
+        )
+          ? [index]
+          : [],
+      ),
+    );
     return {
       program,
       admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
@@ -67,7 +84,10 @@ function classifyPrograms(
               { ...source, effects: npProgramEffects(source.effects) },
               conditions,
               program,
-              ocRelevant.has(index) || hpRelevant.has(index) || markerRelevant.has(index),
+              ocRelevant.has(index) ||
+                hpRelevant.has(index) ||
+                markerRelevant.has(index) ||
+                battlePointRelevant.has(index),
             ),
       ),
     };
@@ -182,7 +202,11 @@ function effectHasDamageContribution(effect: MasterEffect): boolean {
 }
 
 function unsupportedEffect(effect: MasterEffect): CandidateLocalActionAdmission | null {
-  if (effect.execution.some((operation) => operation.kind === 'unsupported'))
+  if (
+    effect.execution.some(
+      (operation) => operation.kind === 'unsupported' && operation.damageRelevant,
+    )
+  )
     return { kind: 'unsupported', reason: 'unresolvedOperation' };
   if (
     effect.execution.some(
