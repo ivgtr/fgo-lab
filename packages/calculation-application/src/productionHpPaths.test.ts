@@ -107,6 +107,7 @@ it('joins all production HP cells to source, recipient and observation time, and
     ),
   ];
   const records: unknown[] = [];
+  const failures: string[] = [];
   let cells = 0;
   for (const record of sources)
     for (const [operationIndex, operation] of record.effect.execution.entries()) {
@@ -161,14 +162,17 @@ it('joins all production HP cells to source, recipient and observation time, and
                 actionId: 'cell',
                 valueSetIndex,
               });
-              expect(
-                result.status,
-                `${record.owner}/${record.skill}/${record.effect.occurrenceId}/${valueSetIndex}/${valueIndex}/${limitBreak}/${origin}`,
-              ).toBe('applied');
-              if (result.status !== 'applied') continue;
+              const identity = `${record.owner}/${record.skill}/${record.effect.occurrenceId}/${valueSetIndex}/${valueIndex}/${limitBreak}/${origin}`;
+              if (result.status !== 'applied') {
+                failures.push(`${identity}:${result.status}`);
+                continue;
+              }
               for (const actor of Object.values(result.state.actors))
                 if (actor.kind === 'absolute')
-                  expect(actor.current >= 0 && actor.current <= actor.maximum).toBe(true);
+                  if (actor.current < 0 || actor.current > actor.maximum)
+                    failures.push(
+                      `${identity}:${actor.current.toString()}/${actor.maximum.toString()}`,
+                    );
               cells++;
               records.push({
                 owner: record.owner,
@@ -199,6 +203,7 @@ it('joins all production HP cells to source, recipient and observation time, and
     digest: createHash('sha256').update(JSON.stringify(records)).digest('hex'),
     records,
   });
+  expect(failures).toEqual([]);
   expect(cells).toBeGreaterThan(1000);
 });
 it('executes every HP-producing calculator actor across NP capacity, initial OC, level and portable boundaries', async () => {

@@ -25,6 +25,15 @@ export interface RankingCandidateCalculation {
   details: ReadonlyMap<string, RankingPolicyDetail>;
 }
 
+function isTypedUnreachableCandidate(candidate: CalculationExecution): boolean {
+  return (
+    candidate.result.status === 'unavailable' ||
+    (candidate.result.status === 'unsupported' &&
+      candidate.result.missingEvidence.length === 1 &&
+      candidate.result.missingEvidence[0] === 'preparation:attackNoblePhantasmUnavailable')
+  );
+}
+
 export function calculateRankingCandidateSet(
   servant: ServantMaster,
   master: MasterDataSnapshot,
@@ -52,7 +61,7 @@ export function calculateRankingCandidateSet(
     [...selected].flatMap(([profileKey, selectedIndex]) => {
       const blocking = candidates.some((candidate, index) => {
         if (attackProfileKey(plan.attackProfiles[index]!) !== profileKey) return false;
-        if (candidate.result.status === 'unavailable') return false;
+        if (isTypedUnreachableCandidate(candidate)) return false;
         return candidate.result.status !== 'calculated';
       });
       if (blocking) return [];

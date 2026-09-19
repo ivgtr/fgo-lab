@@ -144,6 +144,25 @@ describe('static ranking candidate space', () => {
     }
   });
 
+  it.each(['106400', '401300', '500400', '2800600'])(
+    'materializes fixed preparation world facts for %s without repair input',
+    (id) => {
+      const servant = master.servants.find((item) => item.id === id)!;
+      const outcome = calculateRankingPolicyDetail(
+        servant,
+        master,
+        profile,
+        {
+          ...DEFAULT_RANKING_POLICY_CONDITIONS,
+          npLevelBasis: { kind: 'specified', npLevel: 2 },
+          initialOvercharge: 1,
+        },
+        versions(),
+      );
+      expect(outcome.status, JSON.stringify(outcome)).toBe('calculated');
+    },
+  );
+
   it('matches an independent exhaustive oracle for a small prepared context', () => {
     const servant = master.servants.find(({ id }) => id === '403700')!;
     const space = compileRankingCandidateSpaces(
@@ -601,7 +620,7 @@ describe('static ranking candidate space', () => {
         servantId,
         upperBound: space.upperBound,
       }));
-    expect(largest).toEqual([{ servantId: '3300200', upperBound: 3_840 }]);
+    expect(largest).toEqual([{ servantId: '2801300', upperBound: 3_435 }]);
     expect(largest[0]!.upperBound).toBeLessThanOrEqual(4_096);
     if (process.env.FGO_TEST_ARTIFACT_DIR)
       await writeFile(

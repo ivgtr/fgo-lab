@@ -2615,8 +2615,8 @@ describe('scenario calculation facade', () => {
         transitionedProfile,
       ),
     ).toMatchObject({
-      status: 'unsupported',
-      reason: 'candidateExecutionUnsupported',
+      status: 'unavailableUnderPolicy',
+      reason: 'attackProfileNotReachable',
     });
   });
 

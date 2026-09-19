@@ -8,7 +8,9 @@ function alignedBoundaryValues(
 ): readonly number[] {
   const values = new Set<number>([definition.minimum, definition.maximum]);
   for (const boundary of boundaries)
-    for (const candidate of [boundary - definition.step, boundary, boundary + definition.step]) {
+    // Boundary and its predecessor are complete representatives for ordered integer predicates;
+    // the next boundary predecessor (or the domain maximum) represents the open interval above.
+    for (const candidate of [boundary - definition.step, boundary]) {
       const offset = candidate - definition.minimum;
       if (
         candidate >= definition.minimum &&

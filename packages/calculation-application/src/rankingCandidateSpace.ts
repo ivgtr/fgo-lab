@@ -1,6 +1,8 @@
 import { rankingHpInitialBoundaries } from './rankingHpBoundary';
 import { resolveInitialMaximumHp } from '@fgo-lab/master-data';
 import {
+  traitConditionEvaluationSource,
+  traitConditionReadScopes,
   npTransferInputSaturation,
   populationInputIssue,
   populationInputEquivalenceKey,
@@ -8,7 +10,7 @@ import {
   populationInputsHaveEquivalentTerminalDamage,
 } from '@fgo-lab/battle-execution';
 import { UnsupportedStackQuantity } from './rankingStackDomain';
-import type { ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
+import type { ConditionExpression, ContributionApplicationPolicy } from '@fgo-lab/battle-execution';
 import {
   findNoblePhantasmVariant,
   type ActorFormId,
@@ -100,6 +102,7 @@ export interface RankingCandidate {
 interface ProgramCandidateDomain {
   program: StaticRankingPreparationProgram;
   semantics: StaticRankingSemantics;
+  baseScenario: ResolvedScenario;
   initialNpGauge: number;
   canonicalInputs: readonly { key: string; values: readonly number[] }[];
   populationInputKeys: ReadonlySet<string>;
@@ -108,6 +111,69 @@ interface ProgramCandidateDomain {
   fields: readonly RankingFieldCandidate[];
   quantities: readonly RankingQuantityCandidate[];
   upperBound: number;
+}
+
+function worldTraitFacts(conditions: readonly (ConditionExpression | null)[]): readonly {
+  scope: 'attacker' | 'attackerState' | 'target' | 'targetState' | 'field';
+  trait: string;
+}[] {
+  const facts = new Map<
+    string,
+    { scope: 'attacker' | 'attackerState' | 'target' | 'targetState' | 'field'; trait: string }
+  >();
+  const visit = (condition: ConditionExpression): void => {
+    if (condition.kind === 'all' || condition.kind === 'any') {
+      condition.expressions.forEach(visit);
+      return;
+    }
+    if (condition.kind === 'not') {
+      visit(condition.expression);
+      return;
+    }
+    if (
+      (condition.kind !== 'trait' && condition.kind !== 'traitCount') ||
+      traitConditionEvaluationSource(condition) !== 'worldFacts'
+    )
+      return;
+    const traits = condition.kind === 'trait' ? [condition.trait] : condition.traits;
+    for (const scope of traitConditionReadScopes(condition.scope))
+      for (const trait of traits) facts.set(`${scope}:${trait}`, { scope, trait });
+  };
+  for (const condition of conditions) if (condition) visit(condition);
+  return [...facts.values()];
+}
+
+function materializeFixedRankingWorld(
+  scenario: ResolvedScenario,
+  semantics: StaticRankingSemantics,
+  intrinsicTraits: ReadonlySet<string>,
+): ResolvedScenario {
+  const owned = new Set(
+    semantics.inputDefinitions.flatMap((definition) =>
+      definition.kind === 'effectStackCount'
+        ? [`${definition.quantitySource.scope}:${definition.quantitySource.trait}`]
+        : [],
+    ),
+  );
+  const assertions = worldTraitFacts(semantics.conditions).flatMap(({ scope, trait }) => {
+    if (owned.has(`${scope}:${trait}`)) return [];
+    const present = scope === 'attacker' && intrinsicTraits.has(trait);
+    return [
+      {
+        decisionKey: `ranking:${scope}:${trait}`,
+        fact: { kind: 'trait' as const, scope, trait, present },
+      },
+    ];
+  });
+  return {
+    ...scenario,
+    worldFactAssertions: [
+      ...scenario.worldFactAssertions.filter(
+        ({ decisionKey }) => !decisionKey.startsWith('ranking:'),
+      ),
+      ...assertions,
+    ],
+  };
 }
 
 export type RankingCandidateSpace =
@@ -177,7 +243,11 @@ function compileProgramDomain(input: {
       semantics.unsupported.map(({ projectionKey }) => projectionKey),
     );
   const active = conditions.conditionalEffects === 'satisfied';
-  const base = createRankingBaseScenario(servant, master, basis, conditions, program.initialFormId);
+  const base = materializeFixedRankingWorld(
+    createRankingBaseScenario(servant, master, basis, conditions, program.initialFormId),
+    semantics,
+    new Set(program.attackProfile.id.terminalActorFormProfileId.semantics.intrinsicTraits),
+  );
   const initialHp = active ? resolveInitialMaximumHp(base, master) : null;
   const hpAttackVariant = findNoblePhantasmVariant(
     servant,
@@ -193,8 +263,24 @@ function compileProgramDomain(input: {
             hpAttackVariant.damage.some((damage) => damage.kind === 'hpRatioLow'),
         )
       : [];
+  const ownedTraitFacts = new Set(
+    semantics.inputDefinitions.flatMap((definition) =>
+      definition.kind === 'effectStackCount'
+        ? [`${definition.quantitySource.scope}:${definition.quantitySource.trait}`]
+        : [],
+    ),
+  );
   const generatedTargets = active
-    ? createRankingWorldCandidatesForConditions(servant, master, base, semantics.conditions)
+    ? createRankingWorldCandidatesForConditions(
+        servant,
+        master,
+        base,
+        semantics.conditions,
+        [],
+        ownedTraitFacts,
+        true,
+        true,
+      )
     : [];
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
@@ -293,6 +379,7 @@ function compileProgramDomain(input: {
   return {
     program,
     semantics,
+    baseScenario: base,
     initialNpGauge: policy.initialNpGauge,
     canonicalInputs,
     populationInputKeys,
@@ -449,7 +536,7 @@ function materializeProgramCandidates(input: {
   attackProfile: AttackProfile;
   domain: ProgramCandidateDomain;
 }): RankingCandidate[] {
-  const { servant, master, basis, conditions, policyKey, attackProfile, domain } = input;
+  const { conditions, policyKey, attackProfile, domain } = input;
   const product = finiteSemanticProduct(
     programDimensions(domain),
     domain.upperBound,
@@ -468,14 +555,10 @@ function materializeProgramCandidates(input: {
     const target = domain.targets[indexes.target ?? 0] ?? null;
     const field = domain.fields[indexes.field ?? 0]!;
     const quantity = domain.quantities[indexes.quantity ?? 0]!;
-    let scenario = createRankingBaseScenario(
-      servant,
-      master,
-      basis,
-      conditions,
-      domain.program.initialFormId,
-    );
-    scenario = { ...scenario, preNoblePhantasmPlan: [...domain.program.commands] };
+    let scenario = {
+      ...domain.baseScenario,
+      preNoblePhantasmPlan: [...domain.program.commands],
+    };
     for (const [key, value] of Object.entries(canonicalInputValues))
       scenario = applyCanonicalInputCommand(scenario, {
         kind: 'setCanonicalIntegerInput',

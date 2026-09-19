@@ -130,6 +130,12 @@ export function unresolvedProfileResult(
     const candidateKey = candidateSet.plan.candidateKeys[index] ?? `candidate:${String(index)}`;
     if (execution.result.status === 'unavailable') {
       records.unavailableUnderPolicy.push({ candidateKey, reason: execution.result.reason });
+    } else if (
+      execution.result.status === 'unsupported' &&
+      execution.result.missingEvidence.length === 1 &&
+      execution.result.missingEvidence[0] === 'preparation:attackNoblePhantasmUnavailable'
+    ) {
+      records.unavailableUnderPolicy.push({ candidateKey, reason: 'attackProfileNotReachable' });
     } else if (execution.result.status === 'invalid') {
       records.invalid.push({
         candidateKey,

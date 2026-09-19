@@ -6,6 +6,7 @@ import {
 import {
   canonicalExclusiveGroup,
   targetConditionWitnessSpace,
+  traitConditionEvaluationSource,
   validateTargetCandidateConstraint,
 } from '@fgo-lab/battle-execution';
 import type { MasterDataSnapshot, ServantMaster } from '@fgo-lab/master-data';
@@ -139,6 +140,9 @@ export function createRankingWorldCandidatesForConditions(
   scenario: ResolvedScenario,
   conditions: readonly (ConditionExpression | null)[],
   selectionControls: readonly EffectControlViewModel[] = [],
+  ownedTraitFacts: ReadonlySet<string> = new Set(),
+  canonicalInitialTargetWitness = false,
+  quotientEquivalentTargetTruth = false,
 ): RankingWorldCandidate[] {
   const witnessSpaces = conditions.map(targetConditionWitnessSpace);
   const predicates = [
@@ -176,10 +180,36 @@ export function createRankingWorldCandidatesForConditions(
   const familyCandidates = familyProduct.candidates.map((candidate) =>
     referencedFamilyIds.filter((familyId) => candidate[familyId]),
   );
+  const explicitTargetStateTraits = new Set<string>();
+  const collectExplicitTargetState = (condition: ConditionExpression | null): void => {
+    if (!condition) return;
+    if (condition.kind === 'all' || condition.kind === 'any') {
+      condition.expressions.forEach(collectExplicitTargetState);
+      return;
+    }
+    if (condition.kind === 'not') {
+      collectExplicitTargetState(condition.expression);
+      return;
+    }
+    if (
+      (condition.kind === 'trait' || condition.kind === 'traitCount') &&
+      condition.scope === 'targetState'
+    )
+      for (const trait of condition.kind === 'trait' ? [condition.trait] : condition.traits)
+        explicitTargetStateTraits.add(trait);
+  };
+  conditions.forEach(collectExplicitTargetState);
   const targetTraits = [
     ...new Map(
       witnessSpaces
         .flatMap(({ traitFacts }) => traitFacts)
+        .filter((fact) => !ownedTraitFacts.has(`${fact.scope}:${fact.trait}`))
+        .filter(
+          (fact) =>
+            !canonicalInitialTargetWitness ||
+            fact.scope !== 'targetState' ||
+            explicitTargetStateTraits.has(fact.trait),
+        )
         .map((fact) => [`${fact.scope}:${fact.trait}`, fact]),
     ).values(),
   ].sort((left, right) =>
@@ -232,22 +262,120 @@ export function createRankingWorldCandidatesForConditions(
     traitFacts.length;
   if (candidateCount > MAX_RANKING_WORLD_CANDIDATES)
     throw new RangeError(`ranking_world_candidate_limit:${String(candidateCount)}`);
-  return classes.flatMap((classId) =>
+  const candidates = classes.flatMap((classId) =>
     attributes.flatMap((attribute) =>
       familyCandidates.flatMap((familyIds) =>
         selections.flatMap((selected) =>
-          traitFacts.map((facts) => ({
-            key: JSON.stringify({ classId, attribute, familyIds, selected, facts }),
-            classId,
-            attribute,
-            familyIds,
-            selections: selected,
-            traitFacts: facts,
-          })),
+          traitFacts.map((facts) => {
+            const canonicalFacts = canonicalInitialTargetWitness
+              ? [
+                  ...facts,
+                  ...facts.flatMap((fact) =>
+                    fact.scope === 'target' &&
+                    !explicitTargetStateTraits.has(fact.trait) &&
+                    !ownedTraitFacts.has(`targetState:${fact.trait}`)
+                      ? [{ scope: 'targetState' as const, trait: fact.trait, present: false }]
+                      : [],
+                  ),
+                ].sort((left, right) =>
+                  `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
+                )
+              : facts;
+            return {
+              key: JSON.stringify({
+                classId,
+                attribute,
+                familyIds,
+                selected,
+                facts: canonicalFacts,
+              }),
+              classId,
+              attribute,
+              familyIds,
+              selections: selected,
+              traitFacts: canonicalFacts,
+            };
+          }),
         ),
       ),
     ),
   );
+  if (!quotientEquivalentTargetTruth) return candidates;
+  const simplify = (
+    condition: ConditionExpression | null,
+    facts: ReadonlyMap<string, boolean>,
+  ): unknown => {
+    if (!condition) return null;
+    if (
+      condition.kind === 'trait' &&
+      ['target', 'targetState'].includes(condition.scope) &&
+      traitConditionEvaluationSource(condition) === 'worldFacts'
+    ) {
+      const initial = facts.get(`target:${condition.trait}`) ?? false;
+      const state = facts.get(`targetState:${condition.trait}`) ?? false;
+      const present = condition.scope === 'target' ? initial || state : state;
+      return present === condition.present;
+    }
+    if (condition.kind === 'traitCount' && ['target', 'targetState'].includes(condition.scope)) {
+      const count = condition.traits.filter((trait) => {
+        const initial = facts.get(`target:${trait}`) ?? false;
+        const state = facts.get(`targetState:${trait}`) ?? false;
+        return condition.scope === 'target' ? initial || state : state;
+      }).length;
+      return condition.comparison === 'atLeast'
+        ? count >= condition.count
+        : condition.comparison === 'atMost'
+          ? count <= condition.count
+          : count === condition.count;
+    }
+    if (condition.kind === 'all' || condition.kind === 'any') {
+      const expressions = condition.expressions.map((expression) => simplify(expression, facts));
+      if (condition.kind === 'all') {
+        if (expressions.includes(false)) return false;
+        const unresolved = expressions.filter((expression) => expression !== true);
+        return unresolved.length === 0
+          ? true
+          : unresolved.length === 1
+            ? unresolved[0]
+            : { ...condition, expressions: unresolved };
+      }
+      if (expressions.includes(true)) return true;
+      const unresolved = expressions.filter((expression) => expression !== false);
+      return unresolved.length === 0
+        ? false
+        : unresolved.length === 1
+          ? unresolved[0]
+          : { ...condition, expressions: unresolved };
+    }
+    if (condition.kind === 'not') {
+      const expression = simplify(condition.expression, facts);
+      return typeof expression === 'boolean' ? !expression : { ...condition, expression };
+    }
+    return condition;
+  };
+  const representatives = new Map<string, RankingWorldCandidate>();
+  for (const candidate of candidates) {
+    const facts = new Map(
+      candidate.traitFacts.map((fact) => [`${fact.scope}:${fact.trait}`, fact.present] as const),
+    );
+    const signature = JSON.stringify({
+      classId: candidate.classId,
+      attribute: candidate.attribute,
+      familyIds: candidate.familyIds,
+      selections: candidate.selections,
+      conditions: conditions.map((condition) => simplify(condition, facts)),
+    });
+    const previous = representatives.get(signature);
+    const assumptions = (value: RankingWorldCandidate) =>
+      value.traitFacts.filter(({ present }) => present).length;
+    if (
+      !previous ||
+      assumptions(candidate) < assumptions(previous) ||
+      (assumptions(candidate) === assumptions(previous) && candidate.key < previous.key)
+    )
+      representatives.set(signature, candidate);
+  }
+  return [...representatives.values()];
 }
 
 export function materializeRankingWorld(

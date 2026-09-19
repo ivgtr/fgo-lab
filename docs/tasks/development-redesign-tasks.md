@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.9"
+document_version: "1.7.10"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-19"
+updated_at: "2026-09-20"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -62,8 +62,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.48 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
-| TSK-06.45 | All attack-NP execution closure | in_progress | TSK-06.48 | count seven-profile slice complete; 422/433; whole execution closure pending |
-| TSK-06.44 | Contribution decision UI cleanup | blocked | TSK-06.45 | logical effect presentation／per-contribution decisions |
+| TSK-06.45 | All attack-NP execution closure | done | TSK-06.48 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
+| TSK-06.44 | Contribution decision UI cleanup | ready | TSK-06.45 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -1795,7 +1795,7 @@ artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Bloc
 
 Depends on: TSK-06.48
 
-現在のフォローアップ（`0d279c0`基点）: **BP縦断単位の実装・705300／3300200各7条件・回復／UI・最終quality・性能比較まで完了、scoped Blocking0。TSK全体は未完了。** 開始clean。前回marker／HPの成功qualityと証跡をbeforeとして再利用した。
+最終フォローアップ（`654634075f0acf245a48e2d54fc1ce526f2ac0ac`基点）: **独立非HPとU5を閉じ、U0〜U5、80条件34,640 outcomes、stable owned、最終qualityまで完了。Blocking 0、Task内Deferred 0。** 開始clean。BP完了時の成功qualityと性能をbeforeとして再利用した。
 
 | 成果／未達 | 現在地 | 判定 |
 | --- | --- | --- |
@@ -1803,9 +1803,13 @@ Depends on: TSK-06.48
 | U3-Qの対象5profile | NP2成立込みの候補上限を解消。306200×2各2860、502600は43、1001800は912、2501600は2064 | cap4096とスキル順序を保持。合法tuple／全read同値性とOC非依存proofを使用 |
 | count7profileの受入 | 通常NP1/2/5・NP2四policyの49条件はcalculated、calculator/ranking/portable一致 | 小型oracle・rollback・修復・支援source・実画面、quality unit790/production122/E2E26成功 |
 | NP/charge transfer3profileの受入 | 21条件calculated、calculator/ranking/portable一致、rollback/修復・実画面・quality成功 | scoped Blocking0 |
-| 全Taskの残り | 独立した非HP回復、全80合法条件／stable ownedのU5 closure | 完了したcount／transfer／HP／marker／BP各単位とは区別しin_progressを維持 |
+| 全Taskの結果 | critical-star全production経路、全80合法条件／stable ownedのU5 closure | 34,600 calculated／typed unavailable 40、nonnumeric 0、parity差分0 |
 
-完了済み単位は攻撃NP buff count、target/individual count、NP/charge transfer、HP、独立marker／admission、BP縦断。Taskは`in_progress`を維持し、通常433/433・422/422をU5完了へ読み替えない。
+攻撃NP buff count、target/individual count、NP/charge transfer、HP、独立marker／admission、BP縦断に加え、critical starsと全体U5を完了した。通常433/433・422/422だけでなく、80条件・stable owned・回復・性能・最終qualityを完了根拠とする。
+
+最終`pnpm quality`はunit 841／production 143／E2E 29、skip／todo／retry／warning／unexpected console 0で成功。artifact `.test-results/2026-09-19T21-07-48-452Z-15-1f2e41`、manifest SHA-256 `a6d892985cfe34f977c36d5581878ac9fb677a4e36b95c38800f5133ad12b8b1`。production stepは84,677→109,147ms（+28.90%）で、closure test 4件とshared audit assertion追加、既定5秒timeoutを維持するproduction worker 4固定によるwall time差。ranking hot pathは5,233.421→5,231.173ms（-0.04%）で、cap／timeout／性能ratchetの緩和なし。
+
+UI componentは変更していないが、engine 47.0.0表示と固定world fact／選択witnessの現在結果によりVRT 4枚を更新。desktop／390px／320pxのfocused 5/5と最終E2E 29/29で確認した。
 
 実装責務、証跡と全Taskの未達gateは[canonical checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)。
 
@@ -1882,12 +1886,12 @@ HP数値3件はChaldea参照契約を採用済み。2026-09-19にHP系、2026-09
 | U0-D: 残る5依存量契約 | U0-Rの依存分類。current-NP量式は完了済み | target／individual／buff計数とtransferを別に確定。selectorと重複計数、donor resource、read snapshot／child commit／抵抗・clampの根拠を記録 | C5/C6。16 occurrence、全cell、量不足／child失敗の非同値反例。現行admit対象の未確定branchを完了へ隠さない |
 | U1-D → U2-D.count: 計数量 | U0-Dのcount契約、U1-R | recipientと計数scopeを分離したtyped selectorをIRへ保持。既存population／stackで表現できるqueryだけ再利用し、不足する付与特性instanceを同ownerへ拡張。target人数・individual一致数・buff instance数を別量式として共通NP mutationへ渡す | C5/C8/C9。count0/1/cap、同actor複数一致、解除後count、source違い、既存input修復、normal/LB/NP cell。HP/BPを読まないbranchはそれらの実装完了を待たない |
 | U1-D → U2-D.transfer: 依存transfer | U0-Dのtransfer契約、U1-R、HPを読むbranchはU2-H.2 | pipelineでnested childを解決し、同じsource transactionにsnapshot／gain／child結果を保持。enemy charge・player NP・HPを分離 | C6/C8。gain算定量とchild実減少量の差、clamp、既知parent不発。未知の抵抗／自己donor／child procを更新前拒否し、semantic invalid・循環／欠損と区別。対象別量制約の修復とrollback/retry **NP／chargeは既存完了、HPも2026-09-19完了。** |
-| U3-A: admissionとoutcome | U1-Rから着手可、完了はU2各branch | applicationがprogram-bound proofとpolicyを合成。optional／structural／automaticを区別し、到達不能・不使用・未知をprofileへ正しく集約 | C1/C2/C9。trigger非関連、contextReference→countの間接寄与、unknown sibling、非選択variant、effective contribution＋cost、HP0到達不能。未知最大候補を落としてcalculatedにする差分0 **HP・独立marker・BP範囲は完了、独立した非HPは継続。** |
-| U3-Q: 有限quantity候補 | U2各branch、U3-A、D1/D2/D3/D7 | 対象/domain/時点付き初期intentへordered境界の逆像を生成。効果量の組合せから合法な共有stateを解決し、単独効果の最大値を合成しない。amount-only reader／非単調更新を含め、小domainは独立全探索。repair／policy reapplyは既存constructorへ戻す | C7/C9/C10。四policy最大値・採用witness・baseline包含、候補certificate、calculator/ranking input・outcome・receipt parity。段階内非同値・同actor異domain・異actor同domain。4096/cap/timeout緩和0 **HP・独立marker・BP範囲は完了（BPは最終quality待ち）、独立した非HPは継続。** |
-| U4: identityと回復／UI | U3、各branchのstate契約 | portable／draft／history／worker／cacheをcanonical initial intentへcutover。旧runtime ratio/phase writerを除去。schema／engine／必要なmaster版を同期 | C8/C9/C11。old-only/canonical-only/mixed、stale拒否、reset／装備・Lv・NP・OC・form変更、upgrade失敗時旧request保持、without-areaとfresh再実行一致。7入力・自動再計算・NP1〜5・desktop/390px/320px/keyboard維持 **HP・独立marker・BP範囲は完了（BPは最終quality待ち）、独立した非HPは継続。** |
+| U3-A: admissionとoutcome | U1-Rから着手可、完了はU2各branch | applicationがprogram-bound proofとpolicyを合成。optional／structural／automaticを区別し、到達不能・不使用・未知をprofileへ正しく集約 | **完了。** critical-starを含む全production経路、typed reachability、unknown sibling／非選択variantを検証。合法条件のunsupported／invalid／inputRequired 0 |
+| U3-Q: 有限quantity候補 | U2各branch、U3-A、D1/D2/D3/D7 | 対象/domain/時点付き初期intentへordered境界の逆像を生成。効果量の組合せから合法な共有stateを解決し、単独効果の最大値を合成しない。amount-only reader／非単調更新を含め、小domainは独立全探索。repair／policy reapplyは既存constructorへ戻す | **完了。** schema-legal小型全探索、baseline保持、最大profile 3,435/4,096、全80条件で候補切捨て0。cap／timeout／ratchet緩和0 |
+| U4: identityと回復／UI | U3、各branchのstate契約 | portable／draft／history／worker／cacheをcanonical initial intentへcutover。旧runtime ratio/phase writerを除去。schema／engine／必要なmaster版を同期 | **完了。** repair／policy off-on／without-area／reset／保存復元／upgrade失敗時保持／stale worker／全resource rollbackを同じconstructor・executionで検証。UI変更なし、既存E2Eを維持 |
 | U5: 全production数値closure | U4 | 全profile／全variant／80合法条件／stable owned basisをshared auditで検証。現在数値のprofileも含め全damage差を入力・順序・ruleで説明 | C12とDone gate全項目。default433/433・422/422、現行unsupported/invalid/inputRequired0。typed unavailableの全数説明、before比の未説明10%超退行0、最終pnpm quality成功、Task内Deferred／Blocking0 |
 
-- [ ] U0の資料・inventory・before測定を完了する（shared resource auditを検証。HP条件は承認済み。全playable servantの対応Lv HP完全性は検証済み。dependent gain read順序等の技術根拠は未完了）。
+- [x] U0の資料・inventory・before測定を完了する（全source／variant／cell、selected program、first reader、state mutation、outcome、recoveryを既存family証跡とcritical-star production joinで閉じた）。
 - [x] U0／HP条件: ランキングは選択Lvのmaster HP＋固定HPフォウ1000、通常計算機はさらに装備礼装HPを加算する条件を要件へ反映した。HPフォウ編集UIなし。
 - [x] U1／HPデータ: servant／CEのraw HP成長表をcanonicalへ保持し、装備ID・Lv・限界突破から初期最大HPを解決する。欠損の0補完・ATK推定なし。共有inventoryで全対応Lvを検証済み。
 - [x] U0-R先行: HP buffの全source・normal/LB cell監査を既存shared inventoryへ追加した。first reader全joinは未完了。
@@ -1896,13 +1900,13 @@ HP数値3件はChaldea参照契約を採用済み。2026-09-19にHP系、2026-09
 - [x] U2／HP実行接続: actor別HPを共通transaction・条件／値式／NP係数・生存guardへ接続。HP transfer、最大HP変更・解除、失敗時の全resource rollbackまで検証済み（2026-09-19）。
 - [x] U3〜U4／HP回復経路: HP候補最大値・入力修復・保存／portable・workerと装備／Lv／NP／OC／form／reset再解決を検証。未装備・明示HP0・不足・不正入力・staleを区別し、desktop／390px／320px実画面を確認（2026-09-19）。
 - [x] 独立marker／admissionのU1-R／U2／U3-A／U3-Q／U4（2026-09-20）: 4系統5profileと直接共有する経路の生成→付与・解除／form→時点別読取→候補最大値→damage→回復を接続。35受入・60交差・220共有条件、独立oracle、全resource rollback、実画面、最終qualityを完了。対象内Blocking0。以下の全体チェックは未完了を維持する。
-- [x] U0-B／U1-B／U2-Bと該当U1-R／U3-A／U3-Q／U4（2026-09-20、最終quality待ち）: 705300と共有3300200の定義→actor state→transaction→live read→候補最大値→portable／UIを接続。14条件、全BP cell inventory、独立oracle、全resource rollback、E2E-054を検証。対象内Blocking0。
-- [ ] U0-D: BP以外の残るdependent read／commit順を全体closureで再確認する。
-- [ ] U1のIR／read contractを完了する。
-- [ ] U2のordered transactionを完了する。
-- [ ] U3のapplication／ranking共通経路を完了する。
-- [ ] U4のidentity／回復／UI不変条件を完了する。
-- [ ] U5のproduction／performance／quality gateを完了する。
+- [x] U0-B／U1-B／U2-Bと該当U1-R／U3-A／U3-Q／U4（2026-09-20）: 705300と共有3300200の定義→actor state→transaction→live read→候補最大値→portable／UIを接続。14条件、全BP cell inventory、独立oracle、全resource rollback、E2E-054、最終qualityを検証。対象内Blocking0。
+- [x] U0-D: BP以外のdependent read／commit順を全体closureで再確認し、未所有経路0。独立非HPはcritical-starの5 lineage／174 selected-program mutation／16 writer-reader関係を共通transactionへjoinした。
+- [x] U1のIR／read contractを完了した。pipeline以外のraw Atlas解釈、ID／名前／label／raw key runtime分岐0。
+- [x] U2のordered transactionを完了した。command失敗時のNP／HP／BP／OC／form／instance／context／receipt一括rollback、前command保持、retry二重適用0。
+- [x] U3のapplication／ranking共通経路を完了した。typed unreachable以外のunknown candidateを最大値へ採用せず、小型独立全探索と全productionで最大値を確認。
+- [x] U4のidentity／回復／UI不変条件を完了した。UI component変更なし。stable owned、portable／worker／保存復元／reset／upgrade拒否を既存実経路で確認し、engine／scenario evidence差のVRT 4枚を更新。
+- [x] U5のproduction／performance／quality gateを完了した。80条件34,640 outcomes、stable owned、parity差分0、candidate hot path退行なし、production wall time差は説明済み、最終quality成功。
 
 実行中の実HPが0になった場合は攻撃不可とする（2026-09-08利用者確認）。表示割合の丸めで0%になったHP正値とは区別する。
 初期最大HPと初期0%の製品条件は確定済み。初期0%も死亡・攻撃不可で、分析値として許容しない。
@@ -1991,10 +1995,16 @@ Handoff: BP縦断単位の実装・検証完了（2026-09-20、基点0d279c0）
 - 最終`pnpm quality`成功: unit840／production139／E2E29、skip／todo／retry／warning／unexpected console 0、369.017秒。run `.test-results/2026-09-19T18-26-32-399Z-15-4b8408`、manifest SHA256 `4a8ad3e5e01c8965d41697ad97a0a63054cb61fca28d7c05730b1ba0f04570dd`。master20260920.3/schema56、engine46.0.0。
 - 正本は[checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)とBP [source](../evidence/tsk-06-45-bp-source.json)／[validation](../evidence/tsk-06-45-bp-validation.json)／[delta](../evidence/tsk-06-45-bp-delta.json)／[performance](../evidence/tsk-06-45-bp-performance.json)。次は下記U5／独立非HP経路だけを未達条件から再開し、BPの成功済み同条件を再実行しない。
 
-残る実経路と完了ゲート（部品数・profile率による工数推定はしない）:
+Handoff: TSK-06.45全体完了（2026-09-20、基点6546340）
 
-1. 独立した非HPのU3/U4: 完了済み縦断単位と別のstate変化について候補最大値、修復・reset・portable／worker identity・UIを閉じる。完了したHP・count・NP／charge・独立marker・BPの回復経路は再実装しない。
-2. U5: 全433profile／422calculator・80合法比較条件・stable owned basisを共有auditで検証する。全damage差説明、typed unavailable全数根拠、性能、最終quality、Task全体のBlocking/Deferred0がclosure gate。通常433/433・422/422という率を全体完了の代用にしない。
+- **U0〜U5完了、Task内Blocking 0／Deferred 0。** critical-starの全production経路は5 lineage、174 selected-program mutation、16 writer-reader関係で既存共通transactionへjoinした。別executorやID分岐は追加していない。
+- `audit-oc-matrix.ts`はmasterをworkerごとに一度だけload／compileし、80条件を8 shardで監査した。34,640 outcomesは34,600 calculated／40 `unavailableUnderPolicy`、unsupported／invalid／inputRequired 0。40件は全て2501400・自己バフ除外・`insufficientNpGauge`で、両level basis・両conditional policy・合法NP/OC 10組の全数。calculator／ranking／portable parityは34,600/34,600、差分0。
+- stable ownedは保有母集団、自然上限／Lv.90／保有Lv、指定／保有NP Lv、NP0、build／ATK欠落、canonical zero、OC capacity、pinned replay、forged／mixed／旧version拒否と旧request/result保持を検証。UI componentは変更なし。engine 47.0.0表示と固定world fact／選択witnessの現在結果に合わせVRT 4枚を更新し、desktop／390px／320pxを確認した。既存E2Eの保存復元・reset・stale worker・回復実経路を再利用した。
+- 候補はschema-legal小型全探索とproduction certificateを照合。最大productは2801300の3,435/4,096。80条件合計generated／deduplicated 1,028,810、damage request 967,810、distinct input 233,100、cache hit 734,710。cap／timeout／ratchet緩和なし。
+- 06.48 matrixの32,640 calculated／1,960 unsupported／40 unavailableは、現行34,600 calculated／unsupported 0／同じtyped unavailable 40へ収束した。1,960件の数値化は既存count／transfer／HP／marker／BP deltaが説明済みで、本最終closureはdamage式を変更せず重複計上しない。
+- ranking hot pathはbefore中央値5,233.421msに対し、warm-up後5,785.606／5,178.735／5,231.173ms、中央値5,231.173ms（-0.04%）。production matrix artifactは`.test-results/tsk-06-45-production-closure`、digest `fec70e2662234685a06819122dedc93a476dc1aba93c904b456388228de46d5b`、manifest SHA-256 `7c2b72b567cd1afae1ee64b9f001002ba136dd637f59411116531602c8127871`。
+- master `20260920.3`／master schema56／portable schema40は不変。候補列挙とtyped reachabilityの実行意味が変わるためengineのみ47.0.0へ更新した。最終`pnpm quality`のartifact／件数／hashは実行結果記録として下記machine evidenceへ保持する。
+- 正本は[canonical checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)と[production closure machine evidence](../evidence/tsk-06-45-production-closure.json)。TSK-06.45をdone、依存先TSK-06.44をreadyとする。commitは作成していない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

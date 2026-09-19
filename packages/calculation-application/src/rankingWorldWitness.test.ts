@@ -137,7 +137,7 @@ describe('ranking target witness completeness', () => {
     servant = master.servants.find(({ id }) => id === '1102300')!;
   });
 
-  function candidates(conditions: readonly ConditionExpression[]) {
+  function candidates(conditions: readonly ConditionExpression[], quotient = false) {
     return createRankingWorldCandidatesForConditions(
       servant,
       master,
@@ -148,6 +148,10 @@ describe('ranking target witness completeness', () => {
         DEFAULT_RANKING_POLICY_CONDITIONS,
       ),
       conditions,
+      [],
+      new Set(),
+      quotient,
+      quotient,
     );
   }
 
@@ -277,6 +281,13 @@ describe('ranking target witness completeness', () => {
       ).toBe(false);
     }
     expect(targetConditionWitnessSpace(negatedEffectLocal).traitFacts).toEqual([]);
+    const outcomes = (quotient: boolean) =>
+      new Set(
+        candidates([mixedAll], quotient).map((candidate) =>
+          evaluateConditionExpression(mixedAll, stateFor(servant, candidate, master)),
+        ),
+      );
+    expect(outcomes(true)).toEqual(outcomes(false));
   });
 
   it('provides a canonical true witness for leaf polarity, traitCount, and nested boolean forms', () => {
@@ -386,6 +397,10 @@ describe('ranking target witness completeness', () => {
     const generatedMaximum = Math.max(
       ...candidates(conditions).map((candidate) => score(stateFor(servant, candidate, master))),
     );
+    const quotient = candidates(conditions, true);
+    const quotientMaximum = Math.max(
+      ...quotient.map((candidate) => score(stateFor(servant, candidate, master))),
+    );
     const bruteMaximum = Math.max(
       ...Array.from({ length: 16 }, (_, mask) => {
         const facts = (['target', 'targetState'] as const).flatMap((scope, scopeIndex) =>
@@ -412,6 +427,8 @@ describe('ranking target witness completeness', () => {
       }),
     );
     expect(generatedMaximum).toBe(bruteMaximum);
+    expect(quotientMaximum).toBe(bruteMaximum);
+    expect(quotient.length).toBeLessThan(candidates(conditions).length);
   });
 
   it('enumerates both target-predicate polarities within canonical identity constraints', () => {

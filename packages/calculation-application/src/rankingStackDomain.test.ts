@@ -280,19 +280,6 @@ describe('stack domain completeness proofs', () => {
         const semantics = compileStaticRankingSemantics(actor, program, 1);
         expect(semantics.stackWitnesses.size).toBe(0);
       }
-      if (kind === 'trait') {
-        // Combined target-world witnesses currently conflict with independently assigned
-        // state counts. Preserve that explicit support boundary, never a reduced maximum.
-        const result = calculateRankingPolicyDetail(
-          actor,
-          changed,
-          { servantBuilds: {} },
-          policy,
-          versionContext,
-        );
-        expect(result.status).toBe('unsupported');
-        return;
-      }
       const detail = maximum(changed);
       const all: number[] = [];
       for (let a = 0; a <= 2; a++)

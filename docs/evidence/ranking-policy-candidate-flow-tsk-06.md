@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20追記。HP系全体、独立marker／admissionに続き、BPの生成→利用→回復も実装と局所・production・実画面検証を完了し、通常ranking433/433・calculator422/422。最終qualityは実行待ち。TSK-06.45はin_progressで、今回と独立した非HP回復／UIとU5全条件closureは未完了。以下の過去deltaは当時の根拠であり、HP・独立marker・BPの旧Blocking／Deferredは最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.45はU0〜U5、80条件34,640 outcomes、stable owned、回復、性能、最終qualityを完了しdone。Blocking 0、Task内Deferred 0。依存先TSK-06.44はready。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／in_progress記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -441,6 +441,20 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 単発3標本の揺れを含むため原因不明の増加を許容済みとはしない。量query収集のallocationと再測定を後続で確認する。
 
 ### canonical checkpoint（2026-09-13、フォローアップ）
+
+**2026-09-20 TSK-06.45最終closure（基点6546340、U0〜U5完了、Blocking 0／Task内Deferred 0）:** BP完了時の433/433・422/422、quality、性能をbeforeとして再利用し、現行production inventoryから独立非HPとU5だけを閉じた。機械正本は[production closure](tsk-06-45-production-closure.json)、全80条件のper-condition／per-profile recordは`.test-results/tsk-06-45-production-closure`。
+
+- D1／D2: familyごとの局所最大は合成せず、一つのordered program、canonical input、target／field／quantity worldから合法candidateを生成する。整数境界は境界値と直前値、target worldはcanonical initial stateと全condition truthで同値化し、小型独立全探索で最大damageとbaseline保持を照合した。3300200成立込みは3,840→3,072へ縮約して同じ最大値を保持し、最大productは2801300の3,435/4,096。
+- D3／D7: source-owned target-stateと外部world factを別domainとし、effect-local provenanceは未知のまま保持する。schema-legal混合条件のoutcome集合を全探索と照合し、現行productionの混合ownership 0件ratchetを確認した。unknown candidateを除外してcalculatedへ変換しない。
+- D4／D5: 攻撃NPが選択profileへ到達しない一候補の既存unsupported diagnosticをtyped reachabilityへ集約し、他のcalculated candidateをblockしない。同じ理由で全候補が失敗した場合だけ`unavailableUnderPolicy`。unknown／invalid／inputRequired／一般unsupportedは従来どおり別class。
+- D6: 準備OC sourceが最初に読む固定world traitをdomain discoveryだけでなく実行scenarioにもmaterializeする。106400／401300／500400／2800600のNP2/OC1は修復inputなしでcalculated。付与instanceが所有するtraitは外部factで上書きしない。
+- D8: critical-starは別実装を追加せず、既存canonical reducerをproduction joinで閉じた。203700／305600／2300700／2300800／2801300の174 selected-program mutation、16 writer-reader関係を、ordered/deferred reader、receipt、全resource rollback／retry、portable／worker回復へ対応させた。
+
+80条件は自然上限／Lv.90 × 自己buffあり／なし × 条件通常／成立込み × 合法NP/OC 10組。34,640 outcomesは34,600 calculated、2501400の自己buffなし40条件だけ`insufficientNpGauge`のtyped unavailable。unsupported／invalid／inputRequired 0、calculator／ranking／portable parity 34,600/34,600、差分0。masterは各shard一度だけloadし、同じinventoryをcondition assertionsへ再利用した。06.48の1,960 unsupported解消はcount／transfer／HP／marker／BPの既存deltaへ対応し、今回damage差として重複計上しない。
+
+stable ownedは自然上限／Lv.90／保有Lv、指定／保有NP Lv、NP0、build／ATK欠落、canonical zero、capacity内外OC、profile変更後pinned replay、forged／mixed／旧version拒否、拒否時旧pair保持を検証。inputRequired→修復、policy off/on、without-area、装備／Lv／form／NP／OC、reset、保存復元、upgrade失敗、stale worker、全state rollback／前command保持／retry二重適用0も同じapplication constructor／executionで成功。UI componentは変更なし。engine 47.0.0表示と固定world fact／選択witnessの現在結果に合わせVRT 4枚だけを更新し、desktop／390px／320pxをfocused 5/5と最終E2Eで確認した。
+
+候補全80条件合計はgenerated／deduplicated 1,028,810、damage request 967,810、distinct 233,100、cache hit 734,710。hot path中央値は5,233.421→5,231.173ms（-0.04%）。production stepは84,677→109,147ms（+28.90%）。closure test 4件とshared audit assertionを追加し、既定5秒timeout維持のためproduction workerを4に固定したwall time差であり、candidate hot pathの退行ではない。cap4096、timeout、性能ratchetは不変。engine 47.0.0、master20260920.3／master schema56／portable schema40は不変。最終`pnpm quality`はunit841／production143／E2E29、skip／todo／retry／warning／unexpected console 0、435.211秒で成功（`.test-results/2026-09-19T21-07-48-452Z-15-1f2e41`、manifest SHA-256 `a6d892985cfe34f977c36d5581878ac9fb677a4e36b95c38800f5133ad12b8b1`）。これより下の`Deferred: TSK-06.45/U*`は実装前のhistorical planning記録であり、このcheckpointが現行DispositionをVerifiedへ上書きする。
 
 **2026-09-20独立marker／admission完了（基点538b83a、対象内Blocking0）:** actor individuality（Value）とbuff trait／buff identityをcanonical instanceへ分離。固定Chaldeaの`getTraits`／`getBuffTraits`／`countBuffWithTrait`／`subState`を照合し、付与・重複・解除・別actor・既知の不在を共通reducerへ接続した。Value 0／9999もbuff自身のtraitと区別し、族連動・finite-use・BP activationの未確定cellは推測しない。根拠は[marker source](tsk-06-45-marker-source.json)。
 
@@ -2472,23 +2486,22 @@ battlePoints定義は3300200のphase0〜10（value -1,0,10,…,90）で、別sub
 
 ### 直接producer／reader／writer／recovery inventory
 
-以下は06.48までのVerifiedを今回のruntime証明に流用しない。`Deferred: TSK-06.45/U*`は
-Task内未実装であり、06.45完了時は全てVerifiedまたは理由付きN/Aへ更新する。
+以下は06.48時点の計画表を最終結果へ更新したもの。完了根拠は最新checkpointとmachine evidenceに集約する。
 
 | Path | 現在の直接node／変更契約 | Status |
 | --- | --- | --- |
-| raw → canonical artifact | `executionSemantics.ts`、`effectNormalization.ts`、`snapshotNormalization.ts`、`atlasContract.ts`、`master-data/src/index.ts`。trigger、six families、HP growth、BP values/domainをlosslessにする | Deferred: TSK-06.45/U0,U1 |
-| initial basis → preparation | `scenario.ts`、`rankingPolicy.ts`、`rankingQuantityWorld.ts`、`sourceCollection.ts`、`preparationContracts.ts`。level／form／NP／OC／quantityから一度seed | Deferred: TSK-06.45/U2,U3 |
-| optional／structural admission → space | `rankingStaticPreparation.ts`、`rankingActionAdmission.ts`、`rankingCandidateSpace.ts`。program-bound relevance、typed omissionを消費 | Deferred: TSK-06.45/U1,U3 |
-| skill／transform NP／attack NP | `preparationTransaction.ts`、`preparationResourcePlan.ts`、`npResource.ts`。condition・dependent amount・消費・OC receiptを順序評価しatomic commit | Deferred: TSK-06.45/U2 |
-| passive／form activation／CE／support／mystic | `preparationPhases.ts`、`preparationOc.ts`、`ocSourceProgram.ts`、`ocSourceBinding.ts`。同じresource read、source HPとrecipient HPを分離 | Deferred: TSK-06.45/U2 |
-| preparation → damage／preapply | `operationCompiler.ts`、`resourceSemantics.ts`、`candidatePreparation.ts`、`candidateExecution.ts`、`npDamageOperation.ts`。receipt移送、ratio／phase派生、二重実行防止 | Deferred: TSK-06.45/U2 |
-| OC間接read | `ocDependency.ts`、`ocResourceDependencies.ts`、`ocTerminalDependencies.ts`、`ocState.ts`。HP write markerをsupported state readへ収束、飽和proof／NP-use時点を保持 | Deferred: TSK-06.45/U1,U2 |
-| repair／policy reapply → rebuild | `scenario.ts:rematerializePreparedCalculationInputs/reapplyPreparedCalculationPolicy`、`executionPlan.ts`のinput定義。新resource inputを準備依存へ含める | Deferred: TSK-06.45/U3 |
-| portable／draft／history／reset／upgrade | `portableCalculation.ts`、`schema/src/index.ts`、Web `portableDraft.ts`。初期値を保存、mutationを復元しない、失敗時prior requestを維持 | Deferred: TSK-06.45/U4 |
-| ranking result／worker／cache／detail → calculator | `rankingProfileOutcome.ts`、`rankingPortableBasis.ts`、`preparedDamageInputCache.ts`、`rankingWorkerProtocol.ts`。outcomeとbasis検証、stale拒否、同一採用scenario再現 | Deferred: TSK-06.45/U3,U4 |
-| Web input／表示 | `Calculator.tsx`、`EffectInlineInput.tsx`、`CalculationContextNotice.tsx`の既存表示契約。typed input修復と自動再計算、7 ranking入力を維持 | Deferred: TSK-06.45/U4 |
-| production／性能 | shared `productionAudit.ts`、`productionMasterInventory.test.ts`、既存matrix script。raw → first reader → outcome／input差分を共有inventoryで検証 | Deferred: TSK-06.45/U0,U5 |
+| raw → canonical artifact | `executionSemantics.ts`、`effectNormalization.ts`、`snapshotNormalization.ts`、`atlasContract.ts`、`master-data/src/index.ts`。trigger、six families、HP growth、BP values/domainをlosslessにする | Verified: U0/U1、family source evidence |
+| initial basis → preparation | `scenario.ts`、`rankingPolicy.ts`、`rankingQuantityWorld.ts`、`sourceCollection.ts`、`preparationContracts.ts`。level／form／NP／OC／quantityから一度seed | Verified: U2/U3、stable owned／80条件 |
+| optional／structural admission → space | `rankingStaticPreparation.ts`、`rankingActionAdmission.ts`、`rankingCandidateSpace.ts`。program-bound relevance、typed omissionを消費 | Verified: U1/U3、小型oracle／全profile |
+| skill／transform NP／attack NP | `preparationTransaction.ts`、`preparationResourcePlan.ts`、`npResource.ts`。condition・dependent amount・消費・OC receiptを順序評価しatomic commit | Verified: U2、rollback／retry |
+| passive／form activation／CE／support／mystic | `preparationPhases.ts`、`preparationOc.ts`、`ocSourceProgram.ts`、`ocSourceBinding.ts`。同じresource read、source HPとrecipient HPを分離 | Verified: U2、production source inventory |
+| preparation → damage／preapply | `operationCompiler.ts`、`resourceSemantics.ts`、`candidatePreparation.ts`、`candidateExecution.ts`、`npDamageOperation.ts`。receipt移送、ratio／phase派生、二重実行防止 | Verified: U2、calculator/ranking/portable parity |
+| OC間接read | `ocDependency.ts`、`ocResourceDependencies.ts`、`ocTerminalDependencies.ts`、`ocState.ts`。HP write markerをsupported state readへ収束、飽和proof／NP-use時点を保持 | Verified: U1/U2、全合法OC |
+| repair／policy reapply → rebuild | `scenario.ts:rematerializePreparedCalculationInputs/reapplyPreparedCalculationPolicy`、`executionPlan.ts`のinput定義。新resource inputを準備依存へ含める | Verified: U3、focused recovery |
+| portable／draft／history／reset／upgrade | `portableCalculation.ts`、`schema/src/index.ts`、Web `portableDraft.ts`。初期値を保存、mutationを復元しない、失敗時prior requestを維持 | Verified: U4、stable owned／旧pair保持 |
+| ranking result／worker／cache／detail → calculator | `rankingProfileOutcome.ts`、`rankingPortableBasis.ts`、`preparedDamageInputCache.ts`、`rankingWorkerProtocol.ts`。outcomeとbasis検証、stale拒否、同一採用scenario再現 | Verified: U3/U4、34,600 parity／stale拒否 |
+| Web input／表示 | `Calculator.tsx`、`EffectInlineInput.tsx`、`CalculationContextNotice.tsx`の既存表示契約。typed input修復と自動再計算、7 ranking入力を維持 | Verified: U4。UI変更なし、既存E2E維持 |
+| production／性能 | shared `productionAudit.ts`、`productionMasterInventory.test.ts`、既存matrix script。raw → first reader → outcome／input差分を共有inventoryで検証 | Verified: U0/U5、80条件／性能／quality |
 | turn／AI／一般battle simulation | 有限phaseの外 | N/A: 現要件外 |
 | contribution UI再設計／最終最大値証明 | 同familyで変わるinput／outcome parityは06.45で検証し、後続Taskの独自完了条件だけを残す | Deferred: TSK-06.44／TSK-06.5 |
 
@@ -2500,8 +2513,7 @@ NP基本capacityの正本は`np-resource-semantics-flow-tsk-04.md`、transaction
 ### State-by-path反例と検証方法
 
 全Cartesian productのtest増殖は避け、次の境界を小型fixtureで交差させる。
-production occurrence0もfixtureまたは根拠付きN/Aで閉じる。各行の現在statusは
-**Deferred: TSK-06.45**（U1〜U5の完了時に証拠を追記）。
+production occurrence0もfixtureまたは根拠付きN/Aで閉じる。各行は最新checkpointのfocused fixture、family evidence、80条件matrixで**Verified**。
 
 | ID | State／反例 | 交差するpath・期待結果 |
 | --- | --- | --- |

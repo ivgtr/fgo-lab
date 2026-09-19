@@ -36,6 +36,13 @@ export interface CalculationApplicationProductionAudit {
   engineVersion: string;
   records: readonly CanonicalAuditRecord[];
   resourcePrograms: readonly CanonicalAuditRecord[];
+  criticalStarPaths: readonly {
+    servantId: string;
+    writer: string;
+    firstReader: string | null;
+    deferredReader: string | null;
+    cells: number;
+  }[];
   digest: string;
   inventory: {
     attackServants: number;
@@ -114,6 +121,7 @@ export function compileCalculationApplicationProductionAudit(
   };
   const candidateRecords: CanonicalAuditRecord[] = [];
   const resourceObservations: {
+    servantId: string;
     identity: string;
     profileKey: string;
     observation: ResourceProgramObservation;
@@ -146,6 +154,7 @@ export function compileCalculationApplicationProductionAudit(
       resourceMutationCount += observed.mutations.length;
       opaqueOperationCount += observed.opaqueOperations.length;
       resourceObservations.push({
+        servantId: servant.id,
         profileKey: attackProfileKey(program.attackProfile),
         identity: `resource-program:${attackProfileKey(program.attackProfile)}:${program.key}`,
         observation: observed,
@@ -225,6 +234,23 @@ export function compileCalculationApplicationProductionAudit(
         }),
       };
     },
+  );
+  const criticalStarPaths = resourceObservations.flatMap(({ servantId, observation }) =>
+    observation.mutations.flatMap((mutation) =>
+      mutation.resource === 'criticalStars' &&
+      mutation.writer.effect !== null &&
+      (mutation.firstPotentialReader || mutation.deferredReader)
+        ? [
+            {
+              servantId,
+              writer: mutation.writer.effect,
+              firstReader: mutation.firstPotentialReader?.effect ?? null,
+              deferredReader: mutation.deferredReader?.effect ?? null,
+              cells: mutation.cells,
+            },
+          ]
+        : [],
+    ),
   );
   for (const exclusion of ranking.exclusions)
     if (exclusion.status !== 'unavailableUnderPolicy')
@@ -348,6 +374,7 @@ export function compileCalculationApplicationProductionAudit(
     engineVersion: ENGINE_VERSION,
     records,
     resourcePrograms,
+    criticalStarPaths,
     digest: canonicalAuditDigest(records),
     inventory,
     failures,

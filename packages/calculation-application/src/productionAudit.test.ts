@@ -26,7 +26,7 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '99be26044e385be6409c6d4db8e6b884b6790517e50b9364888d8b3255fc23f9',
+          digest: '292dbbf9ef855d275eadb9bfed702396a830f8446d7f2fe85127b895655f3968',
           inventory: {
             attackServants: 422,
             attackProfiles: 433,
@@ -87,6 +87,77 @@ describe('shared calculation-application production audit', () => {
         .map(({ reason }) => reason)
         .sort(),
     ).toEqual([]);
+    const uniqueCriticalStarPaths = [
+      ...new Map(
+        audit.criticalStarPaths.map((path) => [
+          JSON.stringify([path.servantId, path.writer, path.firstReader, path.deferredReader]),
+          path,
+        ]),
+      ).values(),
+    ].sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+    expect(audit.criticalStarPaths).toHaveLength(174);
+    expect(uniqueCriticalStarPaths).toEqual(
+      [
+        ...(['475:0', '475:1', '475:2', '475:3', '475:4'] as const).flatMap((writer) => [
+          {
+            servantId: '203700',
+            writer,
+            firstReader: '463:0',
+            deferredReader: '4817:0',
+            cells: 10,
+          },
+          {
+            servantId: '203700',
+            writer,
+            firstReader: null,
+            deferredReader: '4817:0',
+            cells: 10,
+          },
+        ]),
+        {
+          servantId: '2300700',
+          writer: '475:0',
+          firstReader: null,
+          deferredReader: '22020:0',
+          cells: 10,
+        },
+        {
+          servantId: '2300800',
+          writer: '475:0',
+          firstReader: null,
+          deferredReader: '22020:0',
+          cells: 10,
+        },
+        {
+          servantId: '2801300',
+          writer: '476:0',
+          firstReader: null,
+          deferredReader: '23594:0',
+          cells: 10,
+        },
+        {
+          servantId: '305600',
+          writer: '21522:0',
+          firstReader: null,
+          deferredReader: '22305:0',
+          cells: 10,
+        },
+        {
+          servantId: '305600',
+          writer: '22299:0',
+          firstReader: null,
+          deferredReader: '22305:0',
+          cells: 10,
+        },
+        {
+          servantId: '305600',
+          writer: '476:0',
+          firstReader: null,
+          deferredReader: '22305:0',
+          cells: 10,
+        },
+      ].sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+    );
     expect(actual, formatCanonicalAuditMismatch(expected, actual)).toEqual(expected);
   }, 120_000);
 });

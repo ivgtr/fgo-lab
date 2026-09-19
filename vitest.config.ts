@@ -14,6 +14,9 @@ export default defineConfig({
           name: 'unit',
           include: ALL_TEST_INCLUDES,
           exclude: [...configDefaults.exclude, ...PRODUCTION_TEST_INCLUDES],
+          // Bound CPU contention for exhaustive candidate oracles while preserving the shared 5s
+          // timeout; oversubscribing all cores makes their runtime depend on unrelated test files.
+          maxWorkers: 4,
           sequence: { groupOrder: 0 },
         },
       },

@@ -218,7 +218,7 @@ describe('production battle-point paths', () => {
         );
         expect(
           spaces.reduce((sum, space) => sum + (space.status === 'ready' ? space.upperBound : 0), 0),
-        ).toBe(3840);
+        ).toBe(3072);
         const candidates = spaces.flatMap((space) =>
           space.status === 'ready'
             ? materializeRankingCandidateSpace({ servant, master, basis, conditions, space })

@@ -749,8 +749,9 @@ it('keeps an interior maximum when increasing HP power competes with an inverse 
     await import('@fgo-lab/calc-core');
   const full = calculateScenario({ ...scenario, attackerHpPermille: 1000 }, master, versions);
   if (!('input' in full)) throw new Error('fixture input unavailable');
-  let maximum = -Infinity,
-    best = 0;
+  let maximumScore = -Infinity,
+    best = 0,
+    bestKernel: ReturnType<typeof compileDamageKernelInput> | null = null;
   // Independent finite oracle changes only the two governed canonical factors. Reuse the
   // fixture's other constants, without repeating preparation/master compilation 1000 times.
   for (let initial = 1; initial <= 1000; initial++) {
@@ -767,13 +768,22 @@ it('keeps an interior maximum when increasing HP power competes with an inverse 
       1,
       false,
     );
-    const distribution = calculateDamageDistribution(kernel);
-    const average = distribution.reduce((sum, n) => sum + n, 0) / distribution.length;
-    if (average > maximum) {
-      maximum = average;
+    // Only these two non-negative factors vary in this fixture. Their product orders every
+    // random damage point, so enumerate all 1,000 legal HP values and expand only the maximum.
+    const attackFactor = Math.max(
+      1000 + Math.min(Math.max(kernel.attackModifierPermille, -1000), 5000),
+      0,
+    );
+    const score = attackFactor * kernel.npMultiplierPermille;
+    if (score > maximumScore) {
+      maximumScore = score;
       best = initial;
+      bestKernel = kernel;
     }
   }
+  if (!bestKernel) throw new Error('fixture maximum unavailable');
+  const distribution = calculateDamageDistribution(bestKernel);
+  const maximum = distribution.reduce((sum, n) => sum + n, 0) / distribution.length;
   expect(best).toBeGreaterThan(100);
   expect(best).toBeLessThan(900);
   const ranked = calculateRankingPolicyDetail(
