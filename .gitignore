@@ -28,3 +28,6 @@ data/cache/
 *.sqlite
 *.sqlite3
 *.db
+# Share Serena project settings; keep memories, caches and local overrides private.
+/.serena/*
+!/.serena/project.yml

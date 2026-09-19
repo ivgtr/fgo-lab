@@ -18,6 +18,7 @@
 ## 必要な資料と検証
 
 - 文書入口は[docs/README.md](docs/README.md)。要件・ADR・Task・evidenceは今回の判断に必要なものだけ読む。進捗は既存Task、系統の実行経路は既存flow noteへ差分を更新する。
+- Serena接続時はコードの定義・参照をシンボル単位で取得する。文書入口は上記と共通とし、ローカルmemoryは任意の参照補助に留める。全体onboardingや正本のmemoryへの複製は行わず、文字列・JSON・Git・検証には既存toolを使う。
 - canonical state、outcome分類、複数の実行／書込経路を変える作業と構造的レビューには[体系レビューガイド](docs/guides/systematic-review-guidelines.md)を使う。forward／recovery、alternate path、productionにないschema-legal stateまで反証し、対象内のBlockingを残して完了としない。小さな文言修正に全体監査や記録を要求しない。
 - 通常作業は親が担当する。子は独立した読み取り専用調査1つまでとし、起動する場合は下記の実行効率要件を読む。
 - 検証commandと完了ゲートは[README](README.md)、長時間command・単独実行・session上限は[実行効率要件](docs/requirements/development-execution-efficiency-requirements.md)を参照する。成功済みの同条件の証拠を再利用する。
