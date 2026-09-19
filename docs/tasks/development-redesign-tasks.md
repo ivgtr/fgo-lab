@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.10"
+document_version: "1.7.11"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -57,14 +57,15 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.3 | Test observability and artifact closure | done | TSK-06.2 | test strategy T4 execution observability |
 | TSK-06.4 | Ranking policy semantic design closure | done | TSK-06.3 | source-program／finite domain／ADR-028 design closure |
 | TSK-06.41 | Ranking contribution and portable atomic cutover | done | TSK-06.4 | contribution／action admission／outcome／portable runtime |
-| TSK-06.46 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
-| TSK-06.47 | Profile servant-record identity fail-closed | done | TSK-06.41 | profile map identity／persistence／shared consumers |
-| TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.46, TSK-06.47 | comparison scenario／owned data／URL・worker identity |
+| TSK-06.411 | Resolved attacker level-stat fail-closed | done | TSK-06.41 | resolved scenario／master ATK join／recovery |
+| TSK-06.412 | Profile servant-record identity fail-closed | done | TSK-06.41 | profile map identity／persistence／shared consumers |
+| TSK-06.42 | Ranking population, level, and NP-level basis cutover | done | TSK-06.411, TSK-06.412 | comparison scenario／owned data／URL・worker identity |
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
-| TSK-06.48 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
-| TSK-06.45 | All attack-NP execution closure | done | TSK-06.48 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
-| TSK-06.44 | Contribution decision UI cleanup | ready | TSK-06.45 | logical effect presentation／per-contribution decisions |
-| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.44 | final candidate／maximum／legacy-removal proof |
+| TSK-06.44 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
+| TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
+| TSK-06.46 | Ranking world candidate architecture and oracle hardening | ready | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／性能改善 |
+| TSK-06.47 | Contribution decision UI cleanup | blocked | TSK-06.46 | logical effect presentation／per-contribution decisions |
+| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
@@ -72,9 +73,9 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 
 ```text
 TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TSK-02.1 -> TSK-03 -> TSK-04 -> TSK-05 -> TSK-06 -> TSK-06.1 -> TSK-06.2 -> TSK-06.3 -> TSK-06.4 -> TSK-06.41
-TSK-06.41 -> TSK-06.46
-TSK-06.41 -> TSK-06.47
-TSK-06.46 + TSK-06.47 -> TSK-06.42 -> TSK-06.43 -> TSK-06.48 -> TSK-06.45 -> TSK-06.44 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-06.41 -> TSK-06.411
+TSK-06.41 -> TSK-06.412
+TSK-06.411 + TSK-06.412 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.45 -> TSK-06.46 -> TSK-06.47 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
 ```
 
 ## 3. Tasks
@@ -1243,11 +1244,11 @@ Completion:
   Deferred to TSK-06.5. Final `pnpm quality` passed with 406 unit／116 production／25 Playwright tests and
   skip／todo／retry／warning／unexpected-console 0; artifact
   `.test-results/2026-09-04T15-08-22-027Z-15-a59fec`. At this historical boundary TSK-06.41 was `done` and
-  TSK-06.5 was `ready`; requirement v0.10.0 inserted TSK-06.42〜06.44. TSK-06.42 Step 1 subsequently found
-  the shared resolved-level ATK fallback and servant-build record identity gap, and inserted TSK-06.46／06.47 as
+  TSK-06.5 was `ready`; requirement v0.10.0 inserted TSK-06.42〜06.47. TSK-06.42 Step 1 subsequently found
+  the shared resolved-level ATK fallback and servant-build record identity gap, and inserted TSK-06.411／06.412 as
   independent `ready` prerequisites.
 
-### TSK-06.46: Resolved attacker level-stat fail-closed
+### TSK-06.411: Resolved attacker level-stat fail-closed
 
 Depends on: TSK-06.41
 
@@ -1307,7 +1308,7 @@ Contract closure matrix:
 Handoff:
 
 - Step 1 baseline: `907f2514f0f1c06d30d9d39419ba843a35ca043e`、`main`。TSK-06.41はDone gate、
-  Contract matrix、Handoff、final qualityが完了しており、TSK-06.46の依存条件を満たす。
+  Contract matrix、Handoff、final qualityが完了しており、TSK-06.411の依存条件を満たす。
 - Step 1 scope: production／test code変更0。正本は
   `docs/evidence/resolved-attacker-level-stat-flow-tsk-06-46.md`。user-visible outcome、owner、
   full producer／reader／writer／recovery inventory、state-by-path counterexample、実装単位、検証順を確定し、
@@ -1319,16 +1320,16 @@ Handoff:
   natural／Lv.90 missing 0、Lv.120まで421、MashだけLv.90まで。shared audit 3回のapplication compileは
   5,358／5,491／5,081 ms（median 5,358 ms）、bounded command median 9.99 s。candidate 6,360、
   deduplicated 3,949、damage request 1,924、distinct 1,298。
-- Step 2 entry condition: このplanning commitを含むHEAD、TSK-06.46 `ready`、planning Blocking 0、
-  TSK-06.41 `done`を再確認し、開始commitでTSK-06.46だけを`in_progress`へ変更する。production／test codeの
+- Step 2 entry condition: このplanning commitを含むHEAD、TSK-06.411 `ready`、planning Blocking 0、
+  TSK-06.41 `done`を再確認し、開始commitでTSK-06.411だけを`in_progress`へ変更する。production／test codeの
   新規差分があれば開始しない。
 - Allowed worktree: 本Step開始時から存在する
   `docs/README.md`、`docs/evidence/README.md`、`docs/evidence/ranking-policy-candidate-flow-tsk-06.md`、
   `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md`、および
-  `docs/tasks/development-redesign-tasks.md`のTSK-06.47／06.42 planning hunksだけ。これらをrevert、
+  `docs/tasks/development-redesign-tasks.md`のTSK-06.412／06.42 planning hunksだけ。これらをrevert、
   stage、commitしない。
 - Step 2 start: `e86e3ec013e139d88fbdbabebed4029fe0d94d68`、`main`でentry conditionを再確認し、
-  TSK-06.46だけを`in_progress`へ変更した。production／test codeの開始前差分は0。
+  TSK-06.411だけを`in_progress`へ変更した。production／test codeの開始前差分は0。
 - Implementation: `e16e5b0`。application-only typed invalidによりschema／engine versionを変更せず、exact
   level-stat join、ranking cache前invalid aggregation、portable retained-state、handoff no-write、Home nullable
   presentationを一つのcanonical pathへ収束した。別semantic familyの新規problemは0。
@@ -1341,11 +1342,11 @@ Handoff:
   Final `pnpm quality`はunit 426、production 116、Playwright 25、skip／todo／retry／warning／
   unexpected-console 0でpass。artifact `.test-results/2026-09-05T06-10-14-911Z-15-1eec02`。
 - Completion classification: canonical flow noteはimplemented path `Verified`、manual／downstream numeric family
-  `N/A`、TSK-06.47／06.42／07 scope `Deferred`、Blocking 0。TSK-06.42はTSK-06.47待ちのため`blocked`を維持する。
-- Next entry condition: TSK-06.47のStep 1 planning handoffを確定し、そのentry conditionとallowed worktreeを
+  `N/A`、TSK-06.412／06.42／07 scope `Deferred`、Blocking 0。TSK-06.42はTSK-06.412待ちのため`blocked`を維持する。
+- Next entry condition: TSK-06.412のStep 1 planning handoffを確定し、そのentry conditionとallowed worktreeを
   満たす独立sessionで開始する。
 
-### TSK-06.47: Profile servant-record identity fail-closed
+### TSK-06.412: Profile servant-record identity fail-closed
 
 Depends on: TSK-06.41
 
@@ -1377,7 +1378,7 @@ Contract closure matrix:
 
 Handoff:
 
-- Step 1 baseline: `07b260147c8c27e1047043d081478ebdbc0fbcff`、`main`。TSK-06.41／06.46は`done`、
+- Step 1 baseline: `07b260147c8c27e1047043d081478ebdbc0fbcff`、`main`。TSK-06.41／06.411は`done`、
   PIR-001はreviewer承認後にcommit済み、TSK-06.42は本Task待ちのため`blocked`を維持する。
 - Step 1 scope: production／test code変更0。正本
   `docs/evidence/servant-build-record-identity-flow-tsk-06-47.md`へoutcome、profile schema／persistence owner、
@@ -1387,8 +1388,8 @@ Handoff:
   `servantId`の矛盾を許す。通常profile-domain writerは一致を維持し、current load／migration output／backup
   importはcurrent schemaへ収束するため、v35への一度のbumpとv34 migration inputで一つのfail-closed invariantを
   適用する。consumer側のrepair／alternate lookupは追加しない。
-- Step 2 entry condition: このplanning commitを含むHEAD、TSK-06.47 `ready`、planning Blocking 0、
-  TSK-06.41／06.46 `done`、TSK-06.42 `blocked`を確認し、開始commitでTSK-06.47だけを`in_progress`へ変更する。
+- Step 2 entry condition: このplanning commitを含むHEAD、TSK-06.412 `ready`、planning Blocking 0、
+  TSK-06.41／06.411 `done`、TSK-06.42 `blocked`を確認し、開始commitでTSK-06.412だけを`in_progress`へ変更する。
   production／test codeの開始前差分があれば開始しない。
 - Allowed worktree: なし。別Taskのsource、test、fixture、snapshot、baseline、configuration差分を同じ実装境界へ
   入れない。以後のuser changeがあれば保持して新しい境界を明記する。
@@ -1396,7 +1397,7 @@ Handoff:
   ranking readerのfocused diagnosticからunit、productionへ拡張し、phase completionは`pnpm quality`だけで閉じる。
   詳細なstate-by-pathと完了分類はcanonical flow noteを参照する。
 - Step 2 start: `e78fd1414f1ae2ca333e9d12087ba6f83dc056a9`、clean `main`で依存条件とplanning Blocking 0を
-  再確認し、`17b26ce`でTSK-06.47だけを`in_progress`にした。
+  再確認し、`17b26ce`でTSK-06.412だけを`in_progress`にした。
 - Implementation: `911753c`。schema v35の一つのprofile identity refinementへcurrent load／replaceと
   v32／v33／v34 migration／backup importを収束した。v34 draft／historyは破棄せずcurrent result envelopeへ移行し、
   mismatchはkey／embedded IDの選択・修復・削除なしで同じinvalidとなる。通常writer、NP0 retained／unowned、
@@ -1408,11 +1409,11 @@ Handoff:
   unit 435、production 117、Playwright 25、skip／todo／retry／warning／unexpected-console 0でpass。artifact
   `.test-results/2026-09-05T08-09-19-780Z-15-ce996e`。
 - Completion: canonical flow noteは全runtime pathを`Verified`、`N/A`、またはTSK-06.42へ明示的に`Deferred`し、
-  Blocking 0。TSK-06.47は`done`、両prerequisiteが完了したTSK-06.42を`ready`へ進める。
+  Blocking 0。TSK-06.412は`done`、両prerequisiteが完了したTSK-06.42を`ready`へ進める。
 
 ### TSK-06.42: Ranking population, level, and NP-level basis cutover
 
-Depends on: TSK-06.46, TSK-06.47
+Depends on: TSK-06.411, TSK-06.412
 
 - [x] 旧`comparisonMode: standard | owned`を削除し、母集団`all | owned`、レベル基準
       `naturalLimit | uniformLevel90 | ownedLevel`、宝具レベル基準`specified(NP1〜5) | owned`を
@@ -1420,9 +1421,9 @@ Depends on: TSK-06.46, TSK-06.47
       six-field selection全体をvalid／request-level invalidへcompileする。
 - [x] `owned`母集団はprofile-domainのcanonical ownership fact（NP1〜5）だけでentryを絞り、自然上限／Lv.90統一／
       保有レベルと指定NP／保有宝具Lvをentryごとに独立解決する。NP0／record欠落はunownedで、保存record自体は変更しない。
-      key／embedded identityの整合はTSK-06.47を消費し、ranking内へ第二のvalidatorを追加しない。
+      key／embedded identityの整合はTSK-06.412を消費し、ranking内へ第二のvalidatorを追加しない。
 - [x] downstreamのstatic semantics、NP capacity、candidate construction／selectionへresolved numeric NP levelを一度だけ渡し、
-      basisやsaved buildを再読させない。levelもexact `atkByLevel`だけを使用し、TSK-06.46のfail-closed ownerへ収束させる。
+      basisやsaved buildを再読させない。levelもexact `atkByLevel`だけを使用し、TSK-06.411のfail-closed ownerへ収束させる。
 - [x] `ownedLevel`／owned NPはowned母集団だけで有効とする。NP0／missing buildはどのNP basisでもowned母集団へ列挙せず、
       fabricated exclusionを作らない。allとの不正組合せ、malformed worker payload、ATK欠落を標準値へfallbackしない。
 - [x] ranking scenarioの`attacker.source`をpopulationから導出せず`master`に固定し、Fou ATK+1,000、skill Lv10、OC1等の
@@ -1446,7 +1447,7 @@ Depends on: TSK-06.46, TSK-06.47
       notice／normal reset interaction、cache lifetime、responsive／a11yはTSK-07へDeferredする。
 - [x] low-rarity自然上限、自然上限Lv.90、Lv.90統一、低いowned level、specified／owned NP、NP0、no-build、empty owned population、
       profile mutation後のpinned replay、invalid URL／worker／portableをstate-by-path fixtureへ固定する。record identity反例は
-      TSK-06.47のfixtureを参照し、重複させない。
+      TSK-06.412のfixtureを参照し、重複させない。
 - [x] production 469 servants／422 attack servants／433 AttackProfilesについて自然上限／Lv.90 ATK可用性をshared inventoryで確認し、
       owned axesは一つのstable profile fixtureから合法product、NP0／no-build membership proof、invalid productを監査する。
       full maximumはTSK-06.5へDeferredする。
@@ -1458,7 +1459,7 @@ Implementation and verification order (Step 1 revalidated at `255464b`):
 
 | Unit | Depends on | Ownership / deliverable | Bounded verification before proceeding |
 | --- | --- | --- | --- |
-| 42-A | Step 2 entry | 変更前のshared production auditを3回計測後、schemaの共有selection shape、applicationのvalidated selection／command／resolverを定義。既存record schemaをworkerから再利用可能にし、`isOwned`とATK ownerは変更しない | 合法product、非法product、atomic population transition、NP0／missing、selected値だけのコピー。共通06.46／47 fixtureを再利用 |
+| 42-A | Step 2 entry | 変更前のshared production auditを3回計測後、schemaの共有selection shape、applicationのvalidated selection／command／resolverを定義。既存record schemaをworkerから再利用可能にし、`isOwned`とATK ownerは変更しない | 合法product、非法product、atomic population transition、NP0／missing、selected値だけのコピー。共通06.411／06.412 fixtureを再利用 |
 | 42-B | 42-A | `rankingPolicy`／`rankingRows`／`rankingCandidateSpace`の全scenario構築、static semantics／capacity／candidate selection／summary／direct detail／NP matrixをresolved basisへ統一。row/detailへselectionとprovenanceを保持 | `pnpm test:diagnostic -- rankingPolicy`、`-- rankingRows`、`-- rankingProfileOutcome`を各々実行。owned NPとglobal指定値が違う反例、baseline/materialized path、NP1〜5完全実行 |
 | 42-C | 42-B | detail → portable constructor／execute／replace／recover／upgradeとCalculatorRouteのscenario-change attempt、schema v36／engine 31.0.0、v34/v35 ranking historical migration。repository／backup／share／draft／history writerを同じ契約へ切替 | `pnpm test:diagnostic -- portableCalculation`、`-- packages/schema/src/index.test.ts`、`-- repository`、`-- share`、`-- rankingHandoff`を各々実行。pinned replay、旧/current/mixed、failed attemptのno-write |
 | 42-D | 42-B, 42-C | URL六keyのstrict read/write、application command dispatch、六controlとsummary、worker request/response validation、context/selection/request identity、summary/detail cache guard。detailはcanonical entryから解決 | `pnpm test:diagnostic -- rankingState`、`-- rankingWorkerRuntime`、`-- useRanking`、`-- RankingConditions`を各々実行。invalid URLのfilter/popstate/reset、stale response、cache hit/miss identity、礼装/support変更時no-reinitialize |
@@ -1499,13 +1500,13 @@ Contract closure matrix:
 Handoff: Step 1 only, 2026-09-05
 
 - 調査基点: `main` / `255464b2dc6219df7be0032bd46d45d279bbb30c`、開始worktree clean。
-  AGENTS、systematic review guide、関連requirements、ranking／portable／06.46／06.47 flow noteをコードへ照合した。
-- 06.46のexact ATK invalidと06.47のraw-key保存／record identityは実装済み。旧計画の未完了記述は
+  AGENTS、systematic review guide、関連requirements、ranking／portable／06.411／06.412 flow noteをコードへ照合した。
+- 06.411のexact ATK invalidと06.412のraw-key保存／record identityは実装済み。旧計画の未完了記述は
   canonical flow noteの最新deltaで上書きし、worker ingressと新basisの接続検証だけを本Taskへ残す。
 - 今回の追加はdetail entry対応／遅延response、strict URLのpartialとdefault writer整合、v35基点の移行、
   portable provenance整合の反例。根拠と前回inventoryの不足は同じflow noteへ一度だけ記録した。
 - Step 2 entry: 次の明示的な実装依頼を受け、このhandoffと`255464b`の祖先関係、TSK-06.42 `ready`、
-  TSK-06.46／06.47 `done`、planning Blocking 0を確認する。許容開始差分は未commitの場合の
+  TSK-06.411／06.412 `done`、planning Blocking 0を確認する。許容開始差分は未commitの場合の
   `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`と本Task正本の今回Step 1変更だけ。
   source／test／configuration／fixture／snapshot差分は許容しない。後発ユーザー変更は保持し、開始境界を再記録する。
   planning差分を必要に応じてcommitした後、Taskだけを`in_progress`にする開始commitを作ってから実装する。
@@ -1535,7 +1536,7 @@ Handoff: Step 2 completed, 2026-09-06
   5,479 → 5,224 ms（同一command各3回、-4.6%）。owned axesはsmall stable fixtureで別途検証した。
 - runtime Blocking 0、仕様上の未解決事項なし。旧ranking draftは破棄、historyはhistorical-only、旧shareはreject。
   全攻撃NP numeric closure、maximum stack、寄与表示、full maximum、cache lifecycle／notice／responsive polishは
-  既存TSK-06.45／06.43／06.44／06.5／07へDeferredのまま。
+  既存TSK-06.45／06.43／06.47／06.5／07へDeferredのまま。
 - 次の実行単位は`ready`のTSK-06.43。本Taskの実装commitとclean worktreeを開始基点として記録し、
   Task・関連requirements・canonical flow noteを再読する。後続実装は別の明示依頼から開始する。
 
@@ -1554,7 +1555,7 @@ Handoff: post-implementation review completed, 2026-09-06
   count 0／1／maximum、比較演算、上限欠落・矛盾、複数familyの共存を扱い、production代表の平景清4／ワンジナ10を
   inventoryで確認する。servant固有runtime分岐、一般turn simulation、candidate上限緩和は行わない。
 - 検証は小さい反例fixture、共有production inventory、変更前後各3回のhot-path／candidate計測、最終`pnpm quality`。
-  TSK-06.43の実装は未着手。後続順序は06.43 → 06.45 → 06.44 → 06.5 → 07のまま。
+  TSK-06.43の実装は未着手。現行番号での後続順序は06.43 → 06.44 → 06.45 → 06.46 → 06.47 → 06.5 → 07。
 
 ### TSK-06.43: Canonical maximum stack quantity
 
@@ -1630,7 +1631,7 @@ Handoff: Step 2 completed（2026-09-06）。`pnpm quality` PASS、269.27s。
 | A1 canonical quantity IR | A0 | master-data／schema／data-pipeline。有限特性集合とstack instanceを型で分離し、source／baseline／maximum／support evidenceを供給。NPとeffectStackCountの二重model・推測fallbackを解消 | 全production source分類、全OC/NP cell、missing／conflict／aggregate source focused fixture、共有inventoryが閉じる。旧仕様の数値を温存するためのfallbackなし |
 | A2 finite application witness | A1 | static semantics／canonical input domain／candidate certificate。live sourceを集め、共有sourceをdedupし、baselineを包含する有限回数候補を既存productへ統合 | 0／1／max、比較演算とnested条件、複数familyの独立oracle一致。4,096以下のcomplete certificate、超過時fail-closed、上限緩和なし |
 | A3 shared execution closure | A1, A2 | scenario preparation、global constraints、count readers／writers、preapply／rollback、NP damageとprojection、policy再適用 | assumptionを準備前に一度seed。add/remove/suppress/form変更を一度だけ適用。calculator／ranking／without-areaで同一count・damage input・outcome、invalid／unsupported fallbackなし |
-| A4 evidence・commands・portable cutover | A3 | application commands、最小count/origin表示、worker response schema、portable request、draft/history/share/backupとversion/cache境界 | countと出典が表示・保存・復元される。canonical-only／old-only／mixed payload fixture、同条件計算機・replay parity、拒否時の旧request/result保持。寄与UI全体の整理は06.44 |
+| A4 evidence・commands・portable cutover | A3 | application commands、最小count/origin表示、worker response schema、portable request、draft/history/share/backupとversion/cache境界 | countと出典が表示・保存・復元される。canonical-only／old-only／mixed payload fixture、同条件計算機・replay parity、拒否時の旧request/result保持。寄与UI全体の整理は06.47 |
 | A5 production・性能・完了監査 | A1–A4 | shared production auditとfocused fixtureを確定。意図したdamage差分をcanonical inputsとruleで記録。flow noteの現Task Deferredを閉じる | production欠落0、代表4/10回、一般quantity非回帰、candidate／hot-path説明、Blocking 0、`pnpm quality`成功 |
 
 検証・性能計測計画:
@@ -1655,45 +1656,12 @@ Step 1 verification: `pnpm test:docs`（6 tests＋repository integrity）と`git
 Handoff (Step 1 only): 計画文書更新まで。未解決の仕様質問なし。実装・最終damage／性能測定・runtime flow closureは未実施。
 本Taskを完了し、次の実行単位06.45をreadyへ更新した。後続実装は未着手で、別の依頼を受けて開始する。
 
-### TSK-06.44: Contribution decision UI cleanup
-
-Depends on: TSK-06.45
-
-- [ ] rowはdistinct `presentationGroupId`によるlogical effect countを維持し、detailは同じgroup配下で各contributionの
-      self／condition／areaView decisionとfinal applied outcomeを独立表示する。
-- [ ] raw `contributionId`、内部enum、operation IDを利用者向け文言として表示せず、canonical presentation metadataと
-      exhaustiveなtyped reason-to-label mappingから短い日本語label／説明を生成する。
-- [ ] policy除外、条件不成立、確率失敗、実行不能、invalid、unsupportedを一つの「計算外」へ潰さず、
-      action／state／condition evidenceをfilterせず保持する。
-- [ ] stack count assumptionを成立条件へ回数付きで表示し、同一logical effectの内部contribution分割を重複計数しない。
-- [ ] detail開閉、寄与表示切替、一覧filterでdamageを再計算せず、desktop／390px／320pxの密度、overflow、keyboard、
-      accessible name、expanded state、focus orderを維持する。
-
-Done gate:
-
-- row count、badge、detail decision、damageが同じeffective contribution集合から導出される。
-- raw identity／内部enum露出0件で、各policy axisとfinal outcomeを失わない。
-- logical effectとinternal contributionの階層が明確で、NP base sentinelをeffect件数へ含めない。
-- component／E2Eでcollapsed／expanded、除外／適用混在、stack count、responsive／a11yを固定する。
-- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.44 deltaがBlocking 0。
-
-Contract closure matrix:
-
-| Contract ID | Disposition | Verification command | Artifact |
-| --- | --- | --- | --- |
-| `RK-UI-001` | Apply | focused row／detail／badge component tests and Playwright | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-POLICY-001` | Apply | contribution decision／final outcome presentation parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-CACHE-001` | N/A: detail interactionは既存request-on-demand contractを消費し、cache lifetime変更はTSK-07 | - | TSK-07 |
-| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
-
-Handoff: 未記録
-
-### TSK-06.48: Initial OC selection and canonical OC boost closure
+### TSK-06.44: Initial OC selection and canonical OC boost closure
 
 最新判定（2026-09-08）: 独立再レビューApproved、PIR-001／002 Resolved、Blocking 0。
 最終qualityはunit637／production119／Playwright26成功。承認根拠は既存flow noteの
 「独立再レビュー承認・commit handoff」。以下のChanges required／再レビュー待ちは経緯として保持する。
-06.48はdone、後続06.45はready。
+06.44はdone、後続06.45はready。
 
 
 
@@ -1734,7 +1702,7 @@ A0の性能baselineは同一environment・同一policy/NP/OC・同じ測定方�
 旧探索の削除による件数減とOC加算の新寄与による増加を分ける。
 
 - [x] requirements v0.10.2 §4／9を実装する。flow inventoryと反例の正本は
-      `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`の06.48 deltaとし、開始時に直接reader／writerを全検索して更新する。
+      `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`の06.44 deltaとし、開始時に直接reader／writerを全検索して更新する。
 - [x] pipelineでOC加算family全体を再集計し、段階、recipient、条件、duration／countをlosslessなcanonical IRへ正規化する。
       skillだけでなくNP／passive／既存calculatorの礼装経路を監査する。ランキングに外部支援入力は追加しない。
 - [x] executorでgauge由来base OC、OC加算、実効OC、NP使用時の消費を分離する。準備／変身NP／攻撃NP、
@@ -1749,7 +1717,7 @@ A0の性能baselineは同一environment・同一policy/NP/OC・同じ測定方�
 Done gate:
 
 - 初期OC1／2／3とresolved NP capacity、四policy、保有混在、発動時OC表示がrequirements §9.1を満たす。
-- flow noteの全06.48行がVerifiedまたは理由付きN/AとなりBlocking／Task内延期0件。OC加算production familyの
+- flow noteの全06.44行がVerifiedまたは理由付きN/AとなりBlocking／Task内延期0件。OC加算production familyの
   未分類・無効果fallback 0件、calculator／ranking／portableのdamage・outcome・OC evidence parity差分0件。
 - 初期OCを探索次元として増やさず、OC状態依存のcandidate reductionをfocused oracleで反証する。
   production件数、damage差分、candidate数、suite／hot-path時間の変化を説明し、未説明の10%超退行や上限緩和がない。
@@ -1775,7 +1743,7 @@ Contract closure matrix:
 Handoff: （2026-09-08）単独実装とA5検証を完了。A1〜A4の実経路とversion cutoverを接続し、
 共有production全119 testsと全80条件32,640件のparity差分0を確認済み。
 最終`pnpm quality`はunit621／production119／Playwright26、warning・unexpected console・retry 0で成功。
-artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Blocking／Deferred 0。
+artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.44 scoped Blocking／Deferred 0。
 性能とcanonical input差分は既存flow noteと同noteから参照する機械証拠へ確定した。06.45はready。
 過去の保留・途中監査はflow noteに履歴として保持する。次のStep 1調査記録も履歴である。
 
@@ -1789,11 +1757,11 @@ artifact: `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1`。06.48 scoped Bloc
 
 - 基点は06.43完了commit `c555e4f`。既存レビュー承認を改変せず、追加調査の検出漏れと再発範囲をflow noteへ記録した。
 - 実装順は上記A0〜A5。具体reader／writer、確定事項と未解決事項は既存flow noteだけで管理する。
-- 後続は06.45 → 06.44 → 06.5 → 07。06.45開始値は本Task完了後に再集計する。
+- 後続は06.45 → 06.46 → 06.47 → 06.5 → 07。06.45開始値は本Task完了後に再集計する。
 
 ### TSK-06.45: All attack-NP execution closure
 
-Depends on: TSK-06.48
+Depends on: TSK-06.44
 
 最終フォローアップ（`654634075f0acf245a48e2d54fc1ce526f2ac0ac`基点）: **独立非HPとU5を閉じ、U0〜U5、80条件34,640 outcomes、stable owned、最終qualityまで完了。Blocking 0、Task内Deferred 0。** 開始clean。BP完了時の成功qualityと性能をbeforeとして再利用した。
 
@@ -1960,7 +1928,7 @@ Handoff: NP／charge transfer単位の実装・検証完了（2026-09-13）
 - 通常NP1/2/5・NP2四policyの21条件は全calculated、calculator/ranking/portable一致。小型oracle、clamp・不足・複数donor、rollback／入力修復と3profile実画面を検証。対象内の残拒否・未達gateなし、scoped Blocking0。
 - 最終`pnpm quality`成功: unit802／production124／E2E26、warning・unexpected console・retry0。run `.test-results/2026-09-12T20-50-16-144Z-15-170467`。master20260913.16/schema53、engine43.0.0、portable schema40。
 - ranking422→425/433、calculator420/422。既存ranking数値差0件、calculator3件は新たに適用された攻撃50%／Buster20%／防御ダウン20%で説明。候補6476→6500、damage要求2332→2351。hot path中央値3,715.939→3,542.927ms（-4.66%）、production52,140→49,139ms。cap/timeout/性能ratchet緩和なし。
-- 正本は[checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)とnp-transferのsource／validation／delta／performance。残ranking8／calculator2、HP transfer204300・403600、その他marker／HP／BP、全条件・owned／全体回復/UIは別未完。次は既存U2/U3の残reader/writerへ対応させ、成功済み同条件証拠を再利用する。TSK全体in_progress、06.44 blockedを維持。
+- 正本は[checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)とnp-transferのsource／validation／delta／performance。残ranking8／calculator2、HP transfer204300・403600、その他marker／HP／BP、全条件・owned／全体回復/UIは別未完。次は既存U2/U3の残reader/writerへ対応させ、成功済み同条件証拠を再利用する。TSK全体in_progress、06.47 blockedを維持。
 - 次の作業候補はU2-D.transferのHP transfer（204300・403600）。選択source・nested child・併存拒否理由を現行inventoryへ対応させ、必要なU2-H.2のHP実state／最大HP／生存・下限を直接経路に限って接続する。採用済みChaldea固定commitの該当処理・呼出元・testを使い、donor snapshotからのgain、receiver実回復、donor実減少を区別する。
 - 次単位の受入は対象profileの通常NP1/2/5・NP2四policy、calculator/ranking/portable一致、合法候補の最大damage、上限・不足・複数donor・rollback/修復、必要なUI実画面。damage・候補数・影響production／性能を今回証跡と比較する。他のmarker／HP／BP、全条件・owned／全体回復/UIとTask全体の完了へ広げない。既存計画は現行要件で再判断する。
 - Git: 検証時は`b1759b7`＋今回差分。2026-09-13の利用者依頼に従い、このHandoffを含むcommitへ実装・test・VRT・証跡を収録する。利用者変更の上書きなし。
@@ -2001,14 +1969,103 @@ Handoff: TSK-06.45全体完了（2026-09-20、基点6546340）
 - `audit-oc-matrix.ts`はmasterをworkerごとに一度だけload／compileし、80条件を8 shardで監査した。34,640 outcomesは34,600 calculated／40 `unavailableUnderPolicy`、unsupported／invalid／inputRequired 0。40件は全て2501400・自己バフ除外・`insufficientNpGauge`で、両level basis・両conditional policy・合法NP/OC 10組の全数。calculator／ranking／portable parityは34,600/34,600、差分0。
 - stable ownedは保有母集団、自然上限／Lv.90／保有Lv、指定／保有NP Lv、NP0、build／ATK欠落、canonical zero、OC capacity、pinned replay、forged／mixed／旧version拒否と旧request/result保持を検証。UI componentは変更なし。engine 47.0.0表示と固定world fact／選択witnessの現在結果に合わせVRT 4枚を更新し、desktop／390px／320pxを確認した。既存E2Eの保存復元・reset・stale worker・回復実経路を再利用した。
 - 候補はschema-legal小型全探索とproduction certificateを照合。最大productは2801300の3,435/4,096。80条件合計generated／deduplicated 1,028,810、damage request 967,810、distinct input 233,100、cache hit 734,710。cap／timeout／ratchet緩和なし。
-- 06.48 matrixの32,640 calculated／1,960 unsupported／40 unavailableは、現行34,600 calculated／unsupported 0／同じtyped unavailable 40へ収束した。1,960件の数値化は既存count／transfer／HP／marker／BP deltaが説明済みで、本最終closureはdamage式を変更せず重複計上しない。
+- 06.44 matrixの32,640 calculated／1,960 unsupported／40 unavailableは、現行34,600 calculated／unsupported 0／同じtyped unavailable 40へ収束した。1,960件の数値化は既存count／transfer／HP／marker／BP deltaが説明済みで、本最終closureはdamage式を変更せず重複計上しない。
 - ranking hot pathはbefore中央値5,233.421msに対し、warm-up後5,785.606／5,178.735／5,231.173ms、中央値5,231.173ms（-0.04%）。production matrix artifactは`.test-results/tsk-06-45-production-closure`、digest `fec70e2662234685a06819122dedc93a476dc1aba93c904b456388228de46d5b`、manifest SHA-256 `7c2b72b567cd1afae1ee64b9f001002ba136dd637f59411116531602c8127871`。
 - master `20260920.3`／master schema56／portable schema40は不変。候補列挙とtyped reachabilityの実行意味が変わるためengineのみ47.0.0へ更新した。最終`pnpm quality`のartifact／件数／hashは実行結果記録として下記machine evidenceへ保持する。
-- 正本は[canonical checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)と[production closure machine evidence](../evidence/tsk-06-45-production-closure.json)。TSK-06.45をdone、依存先TSK-06.44をreadyとする。commitは作成していない。
+- 正本は[canonical checkpoint](../evidence/ranking-policy-candidate-flow-tsk-06.md#canonical-checkpoint2026-09-13フォローアップ)と[production closure machine evidence](../evidence/tsk-06-45-production-closure.json)。TSK-06.45をdone、依存先TSK-06.46をreadyとする。commitは作成していない。
+
+### TSK-06.46: Ranking world candidate architecture and oracle hardening
+
+Depends on: TSK-06.45
+
+TSK-06.45の現行master production closureを変更前baselineとして再利用し、world候補生成、ordered observation、
+同値縮約、代表選択、finite certificateの責務を分離する。後続Taskへ進む前に、初期condition truthだけの縮約では
+保証できないmutation後のmaximum completenessを独立oracleで反証し、発見した同familyの不具合と性能要因を閉じる。
+新しいdamage rule、UI機能、battle simulator、cap／timeout緩和は対象外とする。
+
+Implementation units:
+
+| Unit | Depends on | 変更責務 | 検証方法・単位完了条件 |
+| --- | --- | --- | --- |
+| W0 ownership・baseline | TSK-06.45 evidence | `rankingWorld`／candidate space／condition read scope／ordered mutation／certificateのproducer・owner・consumerを確定。34,640 outcomes、candidate inventory、hot path、production file別時間を再利用可能なbeforeとして固定 | 既存artifact hashと対象commitを照合。production再実行は新しい疑義がある条件だけ。誤っていたproduction worker 4固定の説明を実設定とfile別時間へ訂正 |
+| W1 world domain | W0 | conditionから必要な物理scopeを収集し、target initial／targetState、exclusive trait、class／attribute／family、external assumption、source-owned state、effect-local decisionを純粋なdomainへ分離 | initial／state／combined、positive／negative、traitCount、all／any／not、production-zeroを小fixtureで固定。effect-localをworld factへ変換しない |
+| W2 ordered observation | W1 | programのread positionと`addTrait`／`removeTrait`／`suppressInitialTrait`をtyped observationとして抽出し、executionと同じscope semanticsを消費 | mutation前後、複数read、form／choice、condition false／unknownを網羅。servant ID／名前／label／raw key分岐0 |
+| W3 transition-aware quotient | W2 | 全ordered observationで結果が等しいworldだけを同値classへまとめ、その後にassumption数、baseline deviation、stable keyで代表を選ぶ | 初期truth同値・mutation後非同値を縮約しない。baseline保持、unknown保持、materialization件数とcertificate一致 |
+| W4 independent oracle | W3 | plannerの生成domainを再利用せず、target／targetState全bit state、短い全program、canonical inputを直接列挙する小型oracleを作る | outcome集合、最大damage、採用scenario再実行、unavailable／invalid／unsupportedがplannerと一致。HP／BP／count／transfer、choice、form、conditional costの非単調反例を既存family oracleと接続 |
+| W5 performance・production closure | W4 | profileで確認した箇所だけを最適化し、observation compile、canonical indexing、memoization、制約早期適用を検討。全productionを再監査 | 80条件34,640 outcomes、parity、typed unavailable、damage差を再固定。cap4096／timeout／ratchet不変、未説明10%超退行0、最終`pnpm quality`成功 |
+
+Minimum counterexample:
+
+```text
+initial target trait = false
+initial targetState trait = true
+combined target condition = true
+ordered remove targetState trait
+later combined target condition = false contribution
+```
+
+現行のinitial truthだけのsignatureでは、永続target traitと除去可能なtargetStateを同値にできない。この反例を
+単独patchにせず、同じscope × mutation × read-position familyの最小oracleとして扱う。
+
+Done gate:
+
+- world domain、ordered observation、同値class、representative、certificateのsemantic ownerが分離される。
+- 同値判定は全read時点で同じ結果となるworldだけを縮約し、mutation後に非同値となる候補を保持する。
+- 独立oracleがplanner生成物を入力にせず、outcome集合、最大値、baseline、非数値分類を照合する。
+- unknown candidateのcalculated化、局所最大の合成、source-owned stateの外部fact捏造が0件である。
+- TSK-06.45の34,640 outcomes、34,600 parity、typed unavailable 40を維持するか、差分をcanonical input・program・mutation・read時点で全数説明する。
+- candidate cap 4,096、timeout、性能ratchetを緩和せず、ranking hot pathとproduction suiteの未説明10%超退行が0件である。
+- flow closureの対象cellがVerifiedまたは理由付きN/Aで、Blocking／Task内Deferred 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-POLICY-001` | Apply | focused world-domain／transition-aware quotient／independent oracle | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-EXEC-001` | Apply | ordered trait mutation・read-position parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | 80-condition production closure and calculator／ranking／portable parity | `docs/evidence/tsk-06-45-production-closure.json` successor record |
+| `RK-PERF-001` | Apply | comparable ranking hot path and production file-level before／after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff: 計画追加のみ。実装未着手。次の操作はW0で`c426105`の証跡、現行差分、world producer／consumerを照合し、
+責務分割前の挙動を固定すること。TSK-06.47／06.5／07は本TaskのBlocking 0まで開始しない。
+
+### TSK-06.47: Contribution decision UI cleanup
+
+Depends on: TSK-06.46
+
+- [ ] rowはdistinct `presentationGroupId`によるlogical effect countを維持し、detailは同じgroup配下で各contributionの
+      self／condition／areaView decisionとfinal applied outcomeを独立表示する。
+- [ ] raw `contributionId`、内部enum、operation IDを利用者向け文言として表示せず、canonical presentation metadataと
+      exhaustiveなtyped reason-to-label mappingから短い日本語label／説明を生成する。
+- [ ] policy除外、条件不成立、確率失敗、実行不能、invalid、unsupportedを一つの「計算外」へ潰さず、
+      action／state／condition evidenceをfilterせず保持する。
+- [ ] stack count assumptionを成立条件へ回数付きで表示し、同一logical effectの内部contribution分割を重複計数しない。
+- [ ] detail開閉、寄与表示切替、一覧filterでdamageを再計算せず、desktop／390px／320pxの密度、overflow、keyboard、
+      accessible name、expanded state、focus orderを維持する。
+
+Done gate:
+
+- row count、badge、detail decision、damageが同じeffective contribution集合から導出される。
+- raw identity／内部enum露出0件で、各policy axisとfinal outcomeを失わない。
+- logical effectとinternal contributionの階層が明確で、NP base sentinelをeffect件数へ含めない。
+- component／E2Eでcollapsed／expanded、除外／適用混在、stack count、responsive／a11yを固定する。
+- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.47 deltaがBlocking 0。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-UI-001` | Apply | focused row／detail／badge component tests and Playwright | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-POLICY-001` | Apply | contribution decision／final outcome presentation parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-CACHE-001` | N/A: detail interactionは既存request-on-demand contractを消費し、cache lifetime変更はTSK-07 | - | TSK-07 |
+| `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
+
+Handoff: 未記録
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 
-Depends on: TSK-06.44
+Depends on: TSK-06.47
 
 - [ ] requirement v0.10.2までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
       production全skillのstatic semanticsと、action × initial resource × ordered path × AttackProfileの
@@ -2040,7 +2097,7 @@ Done gate:
 - compatibleな特攻／条件効果／fieldの欠落と、共存不能な局所最大の合算がともに0件である。
 - calculator／ranking parityとTSK-06.41のoperation／state preservation invariantを維持する。
 - TSK-06.41 cutover後のcandidate soundness、finite maximum oracle、四policy production inventoryが最終値として閉じる。
-- TSK-06.42の母集団／レベル／宝具Lv、TSK-06.43のmaximum stack、TSK-06.44のpresentationを含む最終matrixが閉じる。
+- TSK-06.42の母集団／レベル／宝具Lv、TSK-06.43のmaximum stack、TSK-06.44の初期OC、TSK-06.46のworld候補proof、TSK-06.47のpresentationを含む最終matrixが閉じる。
 - TSK-06.45で現行masterの全playable攻撃宝具が計算可能となり、unsupported／invalid／inputRequired順位外0件を維持する。
 
 Contract closure matrix:
@@ -2066,7 +2123,7 @@ Depends on: TSK-06.5
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
 - [x] 旧special attack／field入力、reader、fallbackを削除する。
 - [x] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
-- [ ] TSK-06.42の比較条件とTSK-06.48の初期OC追加によるv0.10.2の7入力を前提にnotice、cache lifetime、
+- [ ] TSK-06.42の比較条件とTSK-06.44の初期OC追加によるv0.10.2の7入力を前提にnotice、cache lifetime、
       stale response rejection、responsive／a11yを再検証する。旧5-field fingerprintを互換pathとして残さない。
 - [ ] TSK-06.41でVerifiedとなったselected ranking → calculator immediate handoffを前提に、二軸noticeと
       result／effect parityのUI表示を再検証する。
@@ -2134,7 +2191,7 @@ Handoff:
   二軸schemaのdirect Web writerとminimal handoff parityはTSK-06.41、notice／reset interaction／cache／UI品質は
   TSK-07が所有し、schema cutover後のproduction writerを未検証のまま後段へ渡さない。
 - Requirement v0.10.0 planning delta: 母集団／レベル／宝具Lvの6-input cutoverはTSK-06.42、maximum stack
-  semanticsはTSK-06.43、contribution decision表示はTSK-06.44が所有する。TSK-07はこれらを再実装せず、
+  semanticsはTSK-06.43、contribution decision表示はTSK-06.47が所有する。TSK-07はこれらを再実装せず、
   notice／recovery interaction／bounded cache／responsive／a11yの最終closureだけを所有する。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics

@@ -13,15 +13,15 @@ updated_at: "2026-09-05"
   inventory, and Handoff are recorded in `docs/tasks/development-redesign-tasks.md`.
 - Start worktree: documentation-only changes for the TSK-06.42 Step 1 split already existed in
   `docs/README.md`, `docs/evidence/README.md`, `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`,
-  `docs/tasks/development-redesign-tasks.md`, and the new TSK-06.46／06.47 notes. They are treated as
+  `docs/tasks/development-redesign-tasks.md`, and the new TSK-06.411／06.412 notes. They are treated as
   pre-existing user changes; this review changes no production or test code.
-- Governing sources: `AGENTS.md`, TSK-06.46, ranking requirements 2／3.2／4.2／11／12／15／17 and
+- Governing sources: `AGENTS.md`, TSK-06.411, ranking requirements 2／3.2／4.2／11／12／15／17 and
   `RK-EXEC-001`／`RK-POLICY-001`／`RK-HANDOFF-001`／`RK-AUDIT-001`／`RK-PERF-001`, product requirements
   6.9〜6.11／8.2／9 and `CALC-PORTABLE-001`, UI `UI-CALC-001`, test strategy `TS-PERF-002`, and
   `docs/guides/systematic-review-guidelines.md`.
 
 The entry condition is satisfied. No product decision is missing, and no separate semantic-family blocker was
-found. Runtime work remains unstarted; Step 2 must first mark TSK-06.46 `in_progress` at the recorded HEAD and
+found. Runtime work remains unstarted; Step 2 must first mark TSK-06.411 `in_progress` at the recorded HEAD and
 must preserve the allowed documentation-only worktree listed in the Handoff.
 
 ## User-visible outcome, invariant, and semantic owner
@@ -128,7 +128,7 @@ decision. The smaller complete change after compile errors reveal the direct rea
 | home last-calculation summary | replace `non-calculated -> 0` with explicit unavailable presentation／nullable value | Verified: newly discovered numeric consumer delta |
 | manual scenario and manual level editor fallbacks | explicit `DamageResolutionInput.attackerAtk`; no resolved master-stat contract | N/A: separate canonical manual-input family |
 | unknown servant reference | already fails before numeric input; exact missing-subject taxonomy is not changed here | N/A: separate servant-reference identity family, no numeric fallback found |
-| profile record key／embedded ID validation | determines whether the correct build is selected before scenario construction | Deferred: TSK-06.47 |
+| profile record key／embedded ID validation | determines whether the correct build is selected before scenario construction | Deferred: TSK-06.412 |
 | owned／uniform level selection, URL, worker protocol, cache identity | consumes this owner after the comparison-basis cutover | Deferred: TSK-06.42 |
 | notice copy, responsive and a11y revalidation beyond the changed invalid/home assertion | presentation polish after semantic cutover | Deferred: TSK-07 |
 
@@ -266,7 +266,7 @@ unexpected-console, and the artifact path.
 - Legacy／alternate lookup: resolved application runtime has one exact `atkByLevel[String(level)]` reader and no
   `?? 0`, interpolation, ranking precheck, servant ID／name／label branch, or override repair. The remaining Web
   `atkByLevel` fallbacks belong only to the explicit manual-input editor family and remain `N/A` for this flow.
-- Deferred paths remain TSK-06.47 profile record identity, TSK-06.42 owned／uniform basis and worker／URL/cache
+- Deferred paths remain TSK-06.412 profile record identity, TSK-06.42 owned／uniform basis and worker／URL/cache
   identity, and TSK-07 presentation polish. No new separate semantic-family problem was found.
 - Flow classification: implemented producer／consumer／writer／recovery rows and schema-legal counterexamples are
   `Verified`; unchanged manual／battle-execution paths are `N/A` as recorded; future ranking／profile／UI paths are
@@ -287,7 +287,7 @@ unexpected-console, and the artifact path.
   zero UUID/session/workspace/durable/route calls; successful handoff is `Verified` by one fixture asserting the
   same request/result/session across durable draft and workspace plus commit order; durable rejection is
   `Verified` by a no-partial-publication fixture. Unrelated Calculator presentation is `N/A: failed handoff does
-  not transition to the Calculator route`. TSK-06.47 identity and TSK-06.42 selection／worker paths remain
+  not transition to the Calculator route`. TSK-06.412 identity and TSK-06.42 selection／worker paths remain
   `Deferred`; Blocking: **0**.
 - Pre-final verification: focused ranking handoff 3／3, portable calculation 11／11, shared production audit 6／6,
   full unit 78 files／428 tests, and full production 24 files／116 tests passed with warning／skip／todo 0. The

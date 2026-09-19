@@ -169,6 +169,6 @@
     "updatedVisualBaselines": 4,
     "visualCoverage": ["desktop", "390px", "320px"],
     "taskStatus": "done",
-    "nextTask": "TSK-06.44"
+    "nextTask": "TSK-06.46"
   }
 }

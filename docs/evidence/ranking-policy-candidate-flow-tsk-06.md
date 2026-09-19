@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.45はU0〜U5、80条件34,640 outcomes、stable owned、回復、性能、最終qualityを完了しdone。Blocking 0、Task内Deferred 0。依存先TSK-06.44はready。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／in_progress記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.45はU0〜U5、80条件34,640 outcomes、stable owned、回復、性能、最終qualityを完了しdone。Blocking 0、Task内Deferred 0。依存先TSK-06.46はready。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／in_progress記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -450,11 +450,13 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 - D6: 準備OC sourceが最初に読む固定world traitをdomain discoveryだけでなく実行scenarioにもmaterializeする。106400／401300／500400／2800600のNP2/OC1は修復inputなしでcalculated。付与instanceが所有するtraitは外部factで上書きしない。
 - D8: critical-starは別実装を追加せず、既存canonical reducerをproduction joinで閉じた。203700／305600／2300700／2300800／2801300の174 selected-program mutation、16 writer-reader関係を、ordered/deferred reader、receipt、全resource rollback／retry、portable／worker回復へ対応させた。
 
-80条件は自然上限／Lv.90 × 自己buffあり／なし × 条件通常／成立込み × 合法NP/OC 10組。34,640 outcomesは34,600 calculated、2501400の自己buffなし40条件だけ`insufficientNpGauge`のtyped unavailable。unsupported／invalid／inputRequired 0、calculator／ranking／portable parity 34,600/34,600、差分0。masterは各shard一度だけloadし、同じinventoryをcondition assertionsへ再利用した。06.48の1,960 unsupported解消はcount／transfer／HP／marker／BPの既存deltaへ対応し、今回damage差として重複計上しない。
+80条件は自然上限／Lv.90 × 自己buffあり／なし × 条件通常／成立込み × 合法NP/OC 10組。34,640 outcomesは34,600 calculated、2501400の自己buffなし40条件だけ`insufficientNpGauge`のtyped unavailable。unsupported／invalid／inputRequired 0、calculator／ranking／portable parity 34,600/34,600、差分0。masterは各shard一度だけloadし、同じinventoryをcondition assertionsへ再利用した。06.44の1,960 unsupported解消はcount／transfer／HP／marker／BPの既存deltaへ対応し、今回damage差として重複計上しない。
 
 stable ownedは自然上限／Lv.90／保有Lv、指定／保有NP Lv、NP0、build／ATK欠落、canonical zero、capacity内外OC、profile変更後pinned replay、forged／mixed／旧version拒否、拒否時旧pair保持を検証。inputRequired→修復、policy off/on、without-area、装備／Lv／form／NP／OC、reset、保存復元、upgrade失敗、stale worker、全state rollback／前command保持／retry二重適用0も同じapplication constructor／executionで成功。UI componentは変更なし。engine 47.0.0表示と固定world fact／選択witnessの現在結果に合わせVRT 4枚だけを更新し、desktop／390px／320pxをfocused 5/5と最終E2Eで確認した。
 
 候補全80条件合計はgenerated／deduplicated 1,028,810、damage request 967,810、distinct 233,100、cache hit 734,710。hot path中央値は5,233.421→5,231.173ms（-0.04%）。production stepは84,677→109,147ms（+28.90%）。closure test 4件とshared audit assertionを追加し、既定5秒timeout維持のためproduction workerを4に固定したwall time差であり、candidate hot pathの退行ではない。cap4096、timeout、性能ratchetは不変。engine 47.0.0、master20260920.3／master schema56／portable schema40は不変。最終`pnpm quality`はunit841／production143／E2E29、skip／todo／retry／warning／unexpected console 0、435.211秒で成功（`.test-results/2026-09-19T21-07-48-452Z-15-1f2e41`、manifest SHA-256 `a6d892985cfe34f977c36d5581878ac9fb677a4e36b95c38800f5133ad12b8b1`）。これより下の`Deferred: TSK-06.45/U*`は実装前のhistorical planning記録であり、このcheckpointが現行DispositionをVerifiedへ上書きする。
+
+**2026-09-20 TSK-06.46計画checkpoint（TSK-06.45後、実装未着手）:** TSK-06.45の完了判定は維持し、次の所有Taskをworld候補生成の責務分割と独立oracle強化へ変更した。現行の初期truth signatureだけでは、同じ開始truthを持つ永続target traitと除去可能なtargetState traitがmutation後に非同値となる反例を表現できない。06.46はworld domain、ordered observation、transition-aware quotient、representative、certificateを分離し、plannerの生成domainを使わない小型全探索で最大値と非数値outcomeを照合する。TSK-06.45の34,640 outcomes、typed unavailable 40、candidate cap 4,096、timeout、性能ratchetをbaselineとして固定し、新damage ruleやUI変更は含めない。詳細なW0〜W5とDone gateは[Task正本](../tasks/development-redesign-tasks.md#tsk-0646-ranking-world-candidate-architecture-and-oracle-hardening)。Blocking 0、status `ready`。後続はTSK-06.47（contribution UI）→TSK-06.5。
 
 **2026-09-20独立marker／admission完了（基点538b83a、対象内Blocking0）:** actor individuality（Value）とbuff trait／buff identityをcanonical instanceへ分離。固定Chaldeaの`getTraits`／`getBuffTraits`／`countBuffWithTrait`／`subState`を照合し、付与・重複・解除・別actor・既知の不在を共通reducerへ接続した。Value 0／9999もbuff自身のtraitと区別し、族連動・finite-use・BP activationの未確定cellは推測しない。根拠は[marker source](tsk-06-45-marker-source.json)。
 
@@ -556,7 +558,7 @@ E2E-052のHP修復・保存復元・装備／Lv／NP／OC／form／resetを実�
 
 最終`pnpm quality`成功: unit802／production124／E2E26、warning・unexpected console・retry0、281.360秒。manifest `.test-results/2026-09-12T20-50-16-144Z-15-170467/manifest.json`、SHA256 `1ed2ea19bc9098648cae4addc56219ce15509d46b3a9233fd6688cdffbbd2b02`。master20260913.16/schema53、engine43.0.0、portable schema40。現行pipeline再生成とpublished masterのhash一致も確認。実装file hash、source join、追加修復test、UI artifactsはvalidationに保持した。
 
-今回の対象3profileに残る拒否理由・未達gateはなし。残ranking8profile（105900、204300、204900×2、403600、405700、705300、2501400）はunsupportedActionAdmission、calculatorは702500・705300がunsupported。HP transfer204300／403600、その他marker／HP／BP、全条件・owned／全体回復/UIとTSK-06.45全体は未完了、06.44はblockedを維持する。次は残profileを既存U2/U3の直接reader/writerへ対応させる。今回の成功before/afterを再検証しない。検証時のGitは`b1759b7`＋今回差分。2026-09-13の利用者依頼で本記録を含むcommitへ収録する。次単位候補のHP transfer（204300・403600）と直接必要なU2-H.2、受入条件はTaskの最新Handoffへ記録した。quality後は文書・証跡だけを更新し、docs整合性・JSON/hash・差分を確認した。
+今回の対象3profileに残る拒否理由・未達gateはなし。残ranking8profile（105900、204300、204900×2、403600、405700、705300、2501400）はunsupportedActionAdmission、calculatorは702500・705300がunsupported。HP transfer204300／403600、その他marker／HP／BP、全条件・owned／全体回復/UIとTSK-06.45全体は未完了、06.47はblockedを維持する。次は残profileを既存U2/U3の直接reader/writerへ対応させる。今回の成功before/afterを再検証しない。検証時のGitは`b1759b7`＋今回差分。2026-09-13の利用者依頼で本記録を含むcommitへ収録する。次単位候補のHP transfer（204300・403600）と直接必要なU2-H.2、受入条件はTaskの最新Handoffへ記録した。quality後は文書・証跡だけを更新し、docs整合性・JSON/hash・差分を確認した。
 
 以下は`b1759b7`に収録済みのcount7profile完了証跡。
 
@@ -611,7 +613,7 @@ beforeは基点のprogram別dimensionから求めた全productであり、上限
 
 最終`pnpm quality`はunit790／production122／E2E26、warning・unexpected console・retry0、273.759秒で成功。manifestは`.test-results/2026-09-12T19-46-29-367Z-46-6620ae/manifest.json`、SHA256 `77d06a907a9040c14a3b9e5a52247c74d01f0aba1fcc3eb398714fa6f2f7e3c6`。application audit digestは`ba4d2186e3e1be6233625d157acfd6b05a5d67f9f6ee446b2a6c0ec66c1f521d`。master20260913.12/schema52、engine42.0.0、portable schema40（保存shape不変）。quality後は文書・証跡だけを更新し、docs整合性・差分・JSON/hash照合を通した（docsは既存format除外対象）。
 
-このcount単位の未達gateはなし。検証時のGitは`0cf5a36`＋dirty。2026-09-13の利用者依頼で、この記録を含むcommitへ実装/test/VRT/証跡を収録する。次回は残ranking11／calculator2件を既存U2-D.transfer・marker/admission・HP/BPのreader/writerへ対応させ、必要な参照契約から始める。同じbefore/qualityを再実行しない。全条件/owned・全体回復/UIを含むTSK-06.45全体はin_progress、06.44はblockedを維持する。
+このcount単位の未達gateはなし。検証時のGitは`0cf5a36`＋dirty。2026-09-13の利用者依頼で、この記録を含むcommitへ実装/test/VRT/証跡を収録する。次回は残ranking11／calculator2件を既存U2-D.transfer・marker/admission・HP/BPのreader/writerへ対応させ、必要な参照契約から始める。同じbefore/qualityを再実行しない。全条件/owned・全体回復/UIを含むTSK-06.45全体はin_progress、06.47はblockedを維持する。
 
 以下は`dc87dc1`までの完了済み証跡と採用契約。
 
@@ -827,7 +829,7 @@ before hot pathは消失scriptと同条件を証明できないため、永続�
 
 **前回フォローアップの成果と範囲**。当時の利用者依頼は前sessionの現状整理と進行の立て直し。実装や追加のゲーム規則調査は開始していない。
 基点`c167e63`→現在`07ddfe1`のcommit差分は文書・指示だけ。開始時の未コミット変更はTaskと本flowで、保持して現状記録を修正した。
-TSK-06.45はin_progress、06.44はblocked。全Taskの完了と、今回のフォローアップの完了は別判定。
+TSK-06.45はin_progress、06.47はblocked。全Taskの完了と、今回のフォローアップの完了は別判定。
 
 **前sessionの経過と停滞要因**。
 session `01a081fb-ff44-7f33-873b-2655e583d589`の利用者メッセージ8件と完了イベントをread-onlyで確認。
@@ -1129,9 +1131,9 @@ artifact: `.test-results/2026-09-08T15-24-47-050Z-16-3e376c`。
 製品code・tests・master・schema変更なし。Taskと本noteの2ファイルのみ変更、stage/commitなし。
 Step 1を完了してここで停止する。
 
-## TSK-06.48 — initial OC and own OC boost closure (2026-09-08)
+## TSK-06.44 — initial OC and own OC boost closure (2026-09-08)
 
-Current sequence: **06.43 done → 06.48 done → 06.45 ready → 06.44 → 06.5 → 07**.
+Current sequence: **06.43 done → 06.44 done → 06.45 ready → 06.46 → 06.47 → 06.5 → 07**.
 Requirements v0.10.2 §4／9 own the approved product contract. This section owns the additional
 flow inventory and counterexamples; it supersedes the next-task statement in the historical
 06.43 approval below. Current implementation and verification are recorded in the 2026-09-08 section; earlier checkpoints below remain historical evidence.
@@ -1141,11 +1143,11 @@ flow inventory and counterexamples; it supersedes the next-task statement in the
 独立再レビューの判定は **Approved**。PIR-001／002はreviewerがResolvedと判定し、
 scoped Blocking 0、追加の採用指摘なし。以下の実装中記録は履歴として保持する。
 レビュー正本: `/tmp/fgo-lab-review-tsk-06-48-20260908/review.md` のCurrent verdict。
-レビュー対象はHEAD `5faf7ec`＋TSK-06.48全152ファイルのworktreeで、commit準備時に全SHA256一致を確認。
+レビュー対象はHEAD `5faf7ec`＋TSK-06.44全152ファイルのworktreeで、commit準備時に全SHA256一致を確認。
 最終qualityは `.test-results/2026-09-08T04-05-59-492Z-15-5a229b` で成功
 （unit637／production119／Playwright26、247.59秒、skip／todo／retry／warning／unexpected console 0）。
 全80条件matrixと独立性能の再測定はせず、変更のない既存証拠を照合した。
-06.48をdone、06.45をreadyへ戻す。解除耐性の明示unsupportedと06.45の既存残存範囲は変更しない。
+06.44をdone、06.45をreadyへ戻す。解除耐性の明示unsupportedと06.45の既存残存範囲は変更しない。
 
 ### PIR-001／002 implementation delta（2026-09-08）
 
@@ -1184,7 +1186,7 @@ Taskはin_progress、06.45はblockedに維持する。
 今回の完了依頼で過去の保留を解除。専用OC IR、executorのinstance／NP-use receipt、初期OC intentは
 利用者の比較・再現目的に一致するため維持する。新しいHP実行モデルや探索軸は追加しない。
 準備の不確定writeは実際のreaderとの交差で判定し、通常projectionはcommit済み成否を再解釈しない。
-全経路parity、production差分・性能と最終qualityを確認し、06.48を完了した。
+全経路parity、production差分・性能と最終qualityを確認し、06.44を完了した。
 
 追加確認: portableの固定basis validatorが成立込みHP witnessまでHP100%へ限定していた。
 過去の監査は一例の基点再現に留まり、同じquantity producerが書くBattle Pointを含む
@@ -1249,7 +1251,7 @@ unit621／production119／Playwright26、warning・unexpected console・retry 0�
 最終matrix・性能証拠と不要引数の整理を含む最新差分も、
 `.test-results/2026-09-08T03-10-01-607Z-15-c1fff1` の最終`pnpm quality`で成功（234.64秒）。
 unit621／production119／Playwright26、skip・todo・retry・warning・unexpected console 0、
-artifact integrity errors 0。06.48の全scoped pathはVerifiedまたは理由付きN/A、Blocking／Task内Deferred 0。
+artifact integrity errors 0。06.44の全scoped pathはVerifiedまたは理由付きN/A、Blocking／Task内Deferred 0。
 残存production unsupportedの数値化は06.45の既存受入条件であり、本Taskの延期へ読み替えない。
 
 ### Production差分と06.45へのbaseline（2026-09-08）
@@ -1386,7 +1388,7 @@ rate解除後、外部source HP不明、command拒否後retryも同じ反例fami
 製品コード・master・schema versionは変更していない。上記audit scriptと正本文書のみを変更した。
 `pnpm quality`はphase未完了のため未実行。Done gateやruntime closureの成立は主張しない。
 停止時の文書検証は`pnpm test:docs`（6 tests＋integrity）と`git diff --check`が成功。
-06.45の既存trigger／dependent resource問題は未変更で、開始値の更新は06.48完了後に行う。
+06.45の既存trigger／dependent resource問題は未変更で、開始値の更新は06.44完了後に行う。
 
 ### OC-RATE-HP-001 continuation contract（利用者確認後）
 
@@ -1438,7 +1440,7 @@ HEADはc555e4ff、local master .03のSHA-256は65add07d7b3c81927fd147e632ceea0c2
 同じHP0・同じ拒否を再現した。分類は`baselineReproducedUnchanged`。現行master .03/schema38/engine33と
 基点master .01/schema37/engine32の差はOC切替に伴うもので、HP固定validatorの拒否条件は同じ。
 証拠: `.test-results/tsk-06-48-a5/portable-basis-attribution.json`。
-この比較は全profileの不変性を証明しない。06.48の変更によるdamage差分へ混ぜず、既存HP witnessの
+この比較は全profileの不変性を証明しない。06.44の変更によるdamage差分へ混ぜず、既存HP witnessの
 portable basis契約の独立した引継ぎ候補として残す。A5の全経路parity gateは未成立のまま保持する。
 
 ### Step 2 implementation checkpoint（A0／A1とA2接続用fixture）
@@ -1838,7 +1840,7 @@ Planning closure: 上の調査・設計判断はVerified、未決定のowner/順
   operationCompilerの汎用state保持は量も回数も実行せず、policy再適用はその既存base inputを再利用する。
 - 実装とのズレ［推論］: gauge由来base OC修正を全OC closureと捉えると、effect付与からNP使用receiptまでのowner不在が残る。
   根拠は上記scenario/preparation/sourceCollectionの異なるOC reader。
-- 検出漏れ［確認済み］: 既存06.48計画は具体reader/writerが未記入で、変身NPのcell再選択、constant CEの初回消費、
+- 検出漏れ［確認済み］: 既存06.44計画は具体reader/writerが未記入で、変身NPのcell再選択、constant CEの初回消費、
   policy再適用、population変更によるNP1復帰、保存migrationの交差が明示されていなかった。
 - 再発範囲［推論］: 同じpathを通る全OC付与とOC-sensitive効果。最小guardrailは下記追加matrixとStep 1の母集団対応表。
   特定servantの期待damageだけを修正単位にしない。既存06.43承認の取消やregression帰属は主張しない。
@@ -1897,7 +1899,7 @@ Additional Step 1 counterexamples（既存matrixへのdelta、実装単位はTas
 
 The current dispositions above supersede the planning-only status. Runtime counterexamples are
 Verified by the evidence groups in the 2026-09-08 closure section. The 80-condition production matrix also passes with zero selected-result parity failures.
-The performance comparison and final quality gate pass. All TSK-06.48 scoped paths are Verified
+The performance comparison and final quality gate pass. All TSK-06.44 scoped paths are Verified
 or justified N/A, with Blocking and task-local Deferred both zero.
 
 
@@ -1934,7 +1936,7 @@ execution/recovery. Its default 433/433 ranking and 422/422 calculator goals mus
 with the satisfied-policy 385-ready/48-unsupported inventory measured for 06.43. Stack preparation
 support and combined target-world/count conflicts remain explicit unsupported until their scoped
 owners provide a proof; no numeric fallback or partial maximum is accepted. Later owners remain
-06.44 contribution presentation, 06.5 final maximum and 07 Web/worker cutover.
+06.47 contribution presentation, 06.5 final maximum and 07 Web/worker cutover.
 
 The implementation/verification sections below are historical; their pending-review statements
 are superseded by this approval.
@@ -2300,7 +2302,7 @@ Units A0–A5 remain in the Task source; final quality is tracked separately.
 | `portableCalculation.ts`, `rankingHandoff.ts`, draft/history/share/backup adapters and schema migrations | full request survives handoff, same-version replay and stored-result comparison; rejected edits/upgrades retain prior request/result | Verified: Step 2 scoped fixtures / production evidence |
 | version/cache recovery → application/UI | bump schema/engine for semantic cutover; old ambiguous ranking requests historical-only/discard/reject per existing boundary, never invent maximum; migrate unaffected data only when identity is provable | Verified: Step 2 scoped fixtures / production evidence |
 | complete production inventory/damage/performance proof | one shared load/compile per audit; capture changed inputs and outcomes, including newly unsupported missing-cap case | Verified: Step 2 scoped fixtures / production evidence |
-| general resource numeric closure / logical contribution UI redesign / final maximum | existing later owners; stack data and minimal count/origin display must already work in 06.43 | Deferred: TSK-06.45 / TSK-06.44 / TSK-06.5 |
+| general resource numeric closure / logical contribution UI redesign / final maximum | existing later owners; stack data and minimal count/origin display must already work in 06.43 | Deferred: TSK-06.45 / TSK-06.47 / TSK-06.5 |
 | general prior-turn simulation and skill reuse | outside approved finite preparation semantics | N/A: explicitly outside requirement |
 
 ### State-by-path counterexamples and expected outcomes
@@ -2337,7 +2339,7 @@ final phase completion is verified by the passing `pnpm quality` above. Later ta
 承認済みの7入力・初期OC契約を用いる。damage-effect-execution要件§3の入力・結果UIも維持する。
 
 - AttackProfileをform／variant／scope間で混成せず、全variantのdamage joinを母集団にする。
-- 初期OCとNP-use時点のOCを区別し、capacity／消費／OC receiptは06.48の契約を保持する。
+- 初期OCとNP-use時点のOCを区別し、capacity／消費／OC receiptは06.44の契約を保持する。
 - skill各slot最大1回、transform NP最大1回、終端attack NP1回の有限phaseに限定する。
 - policyは合法candidateと寄与を選ぶ。resource cost、条件truth、状態変化、確率結果を上書きしない。
 - raw語彙の解釈はpipeline、初期inputとcommandはapplication、状態read／mutation／rollbackはexecutionが所有する。
@@ -2356,7 +2358,7 @@ admit対象の未解釈candidateを無視して最大値確定とはしない。
 基点／調査HEAD: `e354764a6ad32aedf215c7fc7b785c73331d6f35`。開始時worktree clean。
 master `20260906.03`、schema45／portable38／engine33、master SHA-256
 `65add07d7b3c81927fd147e632ceea0c22ed0f7cb7f95079db4c6fc750ed6098`。
-06.48の機械証拠は本note冒頭の`oc-execution-diff-tsk-06-48.json`を再利用し、別の正本を作らない。
+06.44の機械証拠は本note冒頭の`oc-execution-diff-tsk-06-48.json`を再利用し、別の正本を作らない。 path名は旧Task番号を保持する。
 
 | 母集団／測定 | e354764での確認 | 証拠 |
 | --- | --- | --- |
@@ -2364,7 +2366,7 @@ master `20260906.03`、schema45／portable38／engine33、master SHA-256
 | default ranking（自然上限・自バフ込み・通常・NP1・初期OC1） | 433 profiles、393 calculated、40 unsupportedActionAdmission、他の非数値0 | shared production audit、既存`audit-oc-matrix.ts`のdefault実行 |
 | 母集団の差 | 469 servants中422が準備経由で攻撃可、47は非攻撃。422はdefault scenario数、433はform-qualified profile数 | shared production audit／`attackProfile.ts`。default422件だけでは全variant closureを証明しない |
 | raw damage join | 既存pipeline／master inventoryの全攻撃family・除外分類をproduction suiteで再確認 | `executionBaselineInventory.test.ts`、`productionMasterInventory.test.ts`、pipeline inventory。非playableとcanonicalへ統合済みidentityは欠落扱いしない |
-| 全80条件 | 34,640 outcomes＝32,640 calculated／1,960 unsupported／40 unavailable、invalid／inputRequired 0 | 同じHEAD・masterの06.48保存証拠を継承。今回はdefault以外の80条件を再実行したとは扱わない |
+| 全80条件 | 34,640 outcomes＝32,640 calculated／1,960 unsupported／40 unavailable、invalid／inputRequired 0 | 同じHEAD・masterの06.44保存証拠を継承。今回はdefault以外の80条件を再実行したとは扱わない |
 
 再実行: `pnpm test:diagnostic -- packages/calculation-application/src/productionExecutionParity.test.ts packages/calculation-application/src/executionBaselineInventory.test.ts`
 は2 files／3 tests成功、6.53秒、artifact `.test-results/2026-09-08T04-20-27-414Z-15-71d73d`。
@@ -2469,13 +2471,13 @@ battlePoints定義は3300200のphase0〜10（value -1,0,10,…,90）で、別sub
    ratio／phase／rateはcurrent stateから導出し独立writerを削除する。
 3. **必要な状態だけを保持。** HPは選択actor/form・levelから解決したmaxとcurrent、
    NPは既存capacityとcurrent、BPはsubject-qualified currentと確認済みdomain／threshold、
-   countは既存canonical数量とprovenanceを使う。HP成長は06.46のlevel解決責務を拡張し、
+   countは既存canonical数量とprovenanceを使う。HP成長は06.411のlevel解決責務を拡張し、
    ATKからの推定や最も近いlevelへfallbackしない。current HPのinput精度と補正basisはU0で固定する。
    BPのpoint／phase／rateを一つの無名numberへ潰さない。未解釈stateは実行可能型と分離する。
 4. **ordered transactionを共通ownerへ収束。** `preparationTransaction`と`preparationPhases`の
    既存source順を用い、resource・condition・OC・contextを同じ時点のstateで評価する。
    全resourceだけを先に処理する独立passは依存readerの前後を跨がせない。
-   NP-use receiptを消費前に固定する06.48契約は維持し、攻撃宝具中の後続chargeで遡及変更しない。
+   NP-use receiptを消費前に固定する06.44契約は維持し、攻撃宝具中の後続chargeで遡及変更しない。
    `operationCompiler`／preapply／ordinary executionへのhandoffは適用済みreceiptを受け、二重mutationを防ぐ。
    skill失敗は全commandをrollbackし、automatic sourceは既存phase境界を保持する。
 5. **applicationから回復まで一括cutover。** 初期inputと採用worldをscenarioへ保存し、
@@ -2486,7 +2488,7 @@ battlePoints定義は3300200のphase0〜10（value -1,0,10,…,90）で、別sub
 
 ### 直接producer／reader／writer／recovery inventory
 
-以下は06.48時点の計画表を最終結果へ更新したもの。完了根拠は最新checkpointとmachine evidenceに集約する。
+以下は06.44時点の計画表を最終結果へ更新したもの。完了根拠は最新checkpointとmachine evidenceに集約する。
 
 | Path | 現在の直接node／変更契約 | Status |
 | --- | --- | --- |
@@ -2503,7 +2505,7 @@ battlePoints定義は3300200のphase0〜10（value -1,0,10,…,90）で、別sub
 | Web input／表示 | `Calculator.tsx`、`EffectInlineInput.tsx`、`CalculationContextNotice.tsx`の既存表示契約。typed input修復と自動再計算、7 ranking入力を維持 | Verified: U4。UI変更なし、既存E2E維持 |
 | production／性能 | shared `productionAudit.ts`、`productionMasterInventory.test.ts`、既存matrix script。raw → first reader → outcome／input差分を共有inventoryで検証 | Verified: U0/U5、80条件／性能／quality |
 | turn／AI／一般battle simulation | 有限phaseの外 | N/A: 現要件外 |
-| contribution UI再設計／最終最大値証明 | 同familyで変わるinput／outcome parityは06.45で検証し、後続Taskの独自完了条件だけを残す | Deferred: TSK-06.44／TSK-06.5 |
+| contribution UI再設計／最終最大値証明 | 同familyで変わるinput／outcome parityは06.45で検証し、後続Taskの独自完了条件だけを残す | Deferred: TSK-06.47／TSK-06.5 |
 
 旧planningの「URL／workerはN/A」は撤回する。Webがsemantic ownerでないことは、
 canonical stateのreader／writer／recovery検証を省く理由にはならない。
@@ -2890,7 +2892,7 @@ unit660／production119／Playwright26、288.37秒、warning・unexpected consol
 開始時の全dirty／untrackedファイルのSHA-256と比較し、今回更新したのはTaskと本noteだけ、
 新しいworktreeファイル0を確認。製品コード・既存master／fixture／画面期待値は保持した。
 このrunはStep 1の文書更新gateで、runtime性能のbefore/after測定や全攻撃宝具closureではない。
-TSK-06.45は未完了、06.44は引き続きblocked。
+TSK-06.45は未完了、06.47は引き続きblocked。
 
 ### Step 2再開・共通transactionの先行単位（2026-09-08）
 
@@ -3517,7 +3519,7 @@ unavailableへ後付け変換する二重意味論は作らない。単なるwit
 **Step 2開始条件／停止点:** 次の利用者の実装依頼後にGit・manifest・本節を再照合し、TaskのU0-Rから
 beforeと共有join、U1-RとU0-Hの独立した契約確定へ進む。数値branchは自身のgateが閉じた順に実装する。
 旧NP後置pass削除／HP成長表再実装／全HP完了を待ってからcount着手という旧順序は採用しない。
-今回のStep 1が終わってもTaskはin_progress、06.44はblocked。全U0〜U5、全scopeのBlocking／Task内Deferred0、
+今回のStep 1が終わってもTaskはin_progress、06.47はblocked。全U0〜U5、全scopeのBlocking／Task内Deferred0、
 全production数値化・parity・fail-closed・性能・UI不変条件と最終qualityがTask完了条件である。
 
 検証記録は以下へ追記する。今回の編集対象は既存Taskと本noteのみ。製品code／master／fixture／画像、
@@ -3759,15 +3761,15 @@ was introduced. NP matrices explicitly compile five specified bases, rather than
 | --- | --- |
 | six-input command, legal/illegal products, selected values only | Verified: `rankingBasis.test.ts`, `RankingConditions.test.tsx`; explicit owned → all changes only illegal axes |
 | baseline/materialization, summary/direct detail, NP1–5 | Verified: ranking policy/candidate-space/rows fixtures and new owned-NP parity; one resolved NP reaches all consumers |
-| NP0/no-build/empty population, missing ATK/present zero | Verified: stable owned fixture; 06.46 scenario fixtures reused; empty success remains distinct from request invalid |
-| raw record key/embedded identity and worker initialize | Verified: exposed existing `servantBuildRecordSchema`; shared 06.47 current/v32/v33/v34 matrix extended to v35, worker lost-key fixture; failed context replacement clears the old context |
+| NP0/no-build/empty population, missing ATK/present zero | Verified: stable owned fixture; 06.411 scenario fixtures reused; empty success remains distinct from request invalid |
+| raw record key/embedded identity and worker initialize | Verified: exposed existing `servantBuildRecordSchema`; shared 06.412 current/v32/v33/v34 matrix extended to v35, worker lost-key fixture; failed context replacement clears the old context |
 | URL parse/write, partial/duplicate/old/mixed input, filter edit/reset | Verified: `rankingState.test.ts`; no invalid-state worker initialization; invalid UI does not claim a zero-row calculation |
 | worker summary/detail/cache/response identity | Verified: `rankingWorkerRuntime.test.ts` and `useRanking.test.tsx`; detail resolves only a canonical summary entry, cache hit/miss reject contradictory input, old-context replies cannot publish, unrelated CE/support edits do not recreate worker |
-| portable constructor/schema/execute/recover/upgrade | Verified: strict basis ↔ scenario checks and master-dependent natural limit/fixed input check; replay reads no mutable build; 06.46 failed-attempt/handoff tests preserved |
+| portable constructor/schema/execute/recover/upgrade | Verified: strict basis ↔ scenario checks and master-dependent natural limit/fixed input check; replay reads no mutable build; 06.411 failed-attempt/handoff tests preserved |
 | v34/v35 load/backup migration, old share, v33 historical retention | Verified: schema/repository/share fixtures; exact calculator/manual requests keep identity and runtime version; two-policy ranking draft discarded/history historical-only; no executable compatibility adapter |
 | row/detail/request/calculator and profile mutation | Verified: stable owned product fixture, existing policy parity, real-worker E2E handoff and failed subject reset |
 | current production inventory and default damage | Verified: shared audit records and counters agree with baseline except schema trace text; exact natural/Lv.90 availability reused |
-| full policy maximum/all-current-NP numeric/stack/contribution presentation | Deferred: TSK-06.5 / TSK-06.45 / TSK-06.43 / TSK-06.44 |
+| full policy maximum/all-current-NP numeric/stack/contribution presentation | Deferred: TSK-06.5 / TSK-06.45 / TSK-06.43 / TSK-06.47 |
 | cache lifetime/cardinality, notice design and broader responsive/a11y polish | Deferred: TSK-07; this cutover only adjusts the expanded mobile summary and preserves existing layout limits |
 
 Portable fixed-input validation deliberately permits canonical concrete target facts selected by the existing
@@ -3795,7 +3797,7 @@ Verification and diagnostic attribution:
   New application digest: `482e10bb1fc7be056d6fa122bf57c3ff594fcf48dd4e794f0f6b20aec364eff9`.
 - Golden engine envelopes were advanced to 31.0.0 without changing inputs or expected damage. Their initial
   version assertions are explained by the explicit engine bump; baseline rerun of those individual tests was
-  not performed (`unverified` diagnostic provenance beyond the recorded prior 06.47 quality evidence).
+  not performed (`unverified` diagnostic provenance beyond the recorded prior 06.412 quality evidence).
 - `environmentDependent`: the production run overlapping the Next build reports six execution failures
   (`2026-09-05T14-06-07…`); the same suite succeeds sequentially with no semantic/test-limit changes at
   `14-08-13-979Z-16-20dbc0`. This is not used as a performance comparison or a reason to relax limits.
@@ -3837,10 +3839,10 @@ UI v1.5.0 section 12; no product decision changes are needed.
 
 #### Confirmed code delta and prerequisite reuse
 
-- TSK-06.46 is complete: `scenario.ts:prepareCalculationScenario` checks the exact selected-level stat before
+- TSK-06.411 is complete: `scenario.ts:prepareCalculationScenario` checks the exact selected-level stat before
   preparation, accepts a present zero, and rejects missing ATK even with an override. Reuse its application
   invalid outcome and its scenario／portable／handoff fixtures; do not add an ATK lookup to the basis resolver.
-- TSK-06.47 is complete in the Task source. `schema/src/index.ts:servantIdentityRecordSchema` now conserves raw
+- TSK-06.412 is complete in the Task source. `schema/src/index.ts:servantIdentityRecordSchema` now conserves raw
   own keys and validates embedded identity in current and v32/v33/v34 records, including PIR-002 at this HEAD.
   The record schema is currently private: expose/reuse that existing schema at the worker trust boundary rather
   than parse a synthetic LocalProfile or implement a new record refinement. `profile-domain:isOwned` remains
@@ -3859,7 +3861,7 @@ UI v1.5.0 section 12; no product decision changes are needed.
   `executePortableCalculation` validates schema/version/capacity but has no comparison-basis coherence check.
   `replacePortableCalculationScenario`, version upgrade, recover, and direct execution must share the new
   validation; recovery must retain the previous request/result on a failed attempt. `rankingHandoff` already
-  executes before durable/workspace/session/route publication (TSK-06.46 PIR-001); preserve that transaction.
+  executes before durable/workspace/session/route publication (TSK-06.411 PIR-001); preserve that transaction.
 
 #### Review gap: detail identity and transport composition
 
@@ -3914,8 +3916,8 @@ never repairs profile maps. Apply the same disposition through stored load and b
 | --- | --- | --- |
 | selected owned NP differs from specified default × baseline/materialized candidate, summary/direct detail, matrix | one resolved NP drives coefficients, capacity, winner and selected damage row; each specified matrix column executes fully | Deferred: TSK-06.42 |
 | NP0/missing build × membership and row ownership | both consume `isOwned`; no synthetic exclusions or record changes | Deferred: TSK-06.42 |
-| missing exact ATK / present zero / override × new owned/uniform basis | reuse TSK-06.46 outcome and fixtures; add only basis integration parity | Deferred: TSK-06.42 |
-| raw lost key or identity mismatch × worker initialize | reuse TSK-06.47 record parser and fixture family; no partial context publication or old-context calculation after failed replacement | Deferred: TSK-06.42 |
+| missing exact ATK / present zero / override × new owned/uniform basis | reuse TSK-06.411 outcome and fixtures; add only basis integration parity | Deferred: TSK-06.42 |
+| raw lost key or identity mismatch × worker initialize | reuse TSK-06.412 record parser and fixture family; no partial context publication or old-context calculation after failed replacement | Deferred: TSK-06.42 |
 | old-only / canonical-only / mixed / duplicate / partial axes × URL, worker, portable | strict boundary; numeric calculation only for complete legal canonical input (or empty URL defaults) | Deferred: TSK-06.42 |
 | invalid URL × filter edit / popstate / reset | no dispatch or implicit repair; explicit reset recovers with synchronized controls/summary | Deferred: TSK-06.42 |
 | mismatched entry / nonmember entry × cached and uncached detail | reject before cache read or execution; no handoff | Deferred: TSK-06.42 |
@@ -3930,7 +3932,7 @@ Planning Blocking is **0**; implementation rows remain Deferred, not Verified. E
 in the Task source in dependency order. Before source edits in Step 2, measure the existing shared
 `productionAudit.test.ts` compile/hot-path with three comparable bounded runs and record median, inventory,
 candidate/damage counters and artifacts here; repeat after implementation under the same conditions. Previous
-TSK-06.47 evidence (not remeasured here) is 469 servants / 422 attack servants / 433 profiles, default ranking
+TSK-06.412 evidence (not remeasured here) is 469 servants / 422 attack servants / 433 profiles, default ranking
 393 rows, candidate 6,360 / deduplicated 3,949 / damage requests 1,924 / distinct 1,298. Reuse the existing shared
 natural/Lv.90 availability inventory; owned inputs use one stable fixture, not full-master reload per combination.
 Record intentional changes by selection, resolved inputs, governing rule, outcome and rank; do not only update a
@@ -3966,10 +3968,10 @@ Confirmed fallback paths are `ranking_owned_build_missing` being caught as gener
 URL values becoming standard／NP1, and missing `atkByLevel[level]` becoming numeric ATK 0 in shared scenario
 preparation. NP0 is currently excluded from the ranking population, which agrees with the approved profile-wide
 ownership rule; the defect is that ranking repeats the `npLevel > 0` rule instead of consuming its canonical owner.
-The ATK item is not owned by comparison-basis selection and is split into TSK-06.46 and its own flow note. The audit
+The ATK item is not owned by comparison-basis selection and is split into TSK-06.411 and its own flow note. The audit
 also found that a map key／embedded `ServantBuild.servantId` contradiction is accepted by the current profile schema
 and can apply one servant's saved values to another across calculator, ranking, and profile readers. That separate
-identity family is split into TSK-06.47. The earlier TSK-06.42 plan gap was listing endpoints without inventorying
+identity family is split into TSK-06.412. The earlier TSK-06.42 plan gap was listing endpoints without inventorying
 the application command boundary, per-entry NP consumers, mixed `attacker.source` semantics, request-level invalid
 outcome, persistence migration, irrelevant profile inputs in worker identity, or the two shared fallback families.
 
@@ -3986,7 +3988,7 @@ Owned membership consumes the profile-domain ownership fact: NP1〜5 is owned an
 The saved record remains intact when NP is returned to 0, but an owned-population ranking does not enumerate it;
 specified NP must not turn an unowned record into a member. For an enumerated owned servant, level and NP level are
 both present in the validated build; unavailable exact level ATK is `invalid`, never a numeric fallback. A malformed
-worker payload is rejected at its runtime boundary. Map-key／`servantId` coherence is guaranteed by TSK-06.47 rather
+worker payload is rejected at its runtime boundary. Map-key／`servantId` coherence is guaranteed by TSK-06.412 rather
 than reimplemented in the ranking resolver. `all + ownedLevel` and `all + owned NP` are request-level invalid states.
 
 Application commands are the only normal-state writers. `setPopulation(all)` is an explicit atomic transition: it
@@ -4030,9 +4032,9 @@ audit outside planning documents.
 
 | Path | Confirmed current reader／writer and required transition | Status |
 | --- | --- | --- |
-| master ATK production | pipeline emits level-addressable `atkGrowth`; master-data owns natural level; no Web interpolation | Verified: production natural／Lv.90 availability; schema-legal absence is Deferred: TSK-06.46 |
+| master ATK production | pipeline emits level-addressable `atkGrowth`; master-data owns natural level; no Web interpolation | Verified: production natural／Lv.90 availability; schema-legal absence is Deferred: TSK-06.411 |
 | six-field type／defaults／command | `rankingContracts` currently owns five fields; add raw-input validation, validated selection, explicit command reducer, and request-level invalid outcome | Deferred: TSK-06.42 |
-| profile identity | profile schema permits record-key／embedded-ID contradiction; all build consumers need one fail-closed trust boundary | Deferred: TSK-06.47 |
+| profile identity | profile schema permits record-key／embedded-ID contradiction; all build consumers need one fail-closed trust boundary | Deferred: TSK-06.412 |
 | population | `includedRankingServants` repeats `npLevel > 0`; consume the canonical profile ownership classifier and keep NP0／missing records outside owned population | Deferred: TSK-06.42 |
 | per-entry level／NP resolution | `rankingPolicy` currently couples mode, level, NP, Fou, and source; replace with the single application resolver | Deferred: TSK-06.42 |
 | candidate compilation／selection | `rankingStaticSemantics`, `rankingComparisonPolicy`, `rankingPolicyScenario`, and `rankingPolicyCandidates` read global `conditions.npLevel`; consume resolved per-entry NP exactly once | Deferred: TSK-06.42 |
@@ -4048,12 +4050,13 @@ audit outside planning documents.
 | immediate ranking → calculator replay | `rankingHandoff` already uses the application constructor and executor; prove row/detail/request/result parity for every basis family | Deferred: TSK-06.42 |
 | calculator notice／normal reset interaction | consumes the new portable identity but does not own its semantics | Deferred: TSK-07 |
 | filter／sort／metric | display-only state neither writes nor transforms comparison bases | N/A: no scenario or identity change |
-| stack maximum／logical-effect presentation／all attack-NP closure | separate semantic owners remain unchanged by this cutover | Deferred: TSK-06.43／TSK-06.44／TSK-06.45 |
+| stack maximum／logical-effect presentation／all attack-NP closure | separate semantic owners remain unchanged by this cutover | Deferred: TSK-06.43／TSK-06.47／TSK-06.45 |
 | final natural／Lv.90 × NP1〜5 × four-policy maximum and performance | consumes the closed basis resolver and stable owned fixture | Deferred: TSK-06.5 |
 
-Planning Blocking is **0**. Implementation order is TSK-06.46 and TSK-06.47 → TSK-06.42 → TSK-06.43 → TSK-06.45 →
-TSK-06.44 → TSK-06.5. TSK-07 retains only cache lifecycle, notice／reset interaction, outcome presentation, and
-responsive／a11y closure; it must not add a second basis parser or portable adapter.
+Planning Blocking is **0**. Current numbering maps the original prerequisite pair to TSK-06.411 and
+TSK-06.412 → TSK-06.42 → TSK-06.43 → TSK-06.44 → TSK-06.45 → TSK-06.46 → TSK-06.47 → TSK-06.5.
+TSK-07 retains only cache lifecycle, notice／reset interaction, outcome presentation, and responsive／a11y closure;
+it must not add a second basis parser or portable adapter.
 
 ### State-by-path counterexamples
 
@@ -4072,9 +4075,9 @@ responsive／a11y closure; it must not add a second basis parser or portable ada
 | all＋owned level or owned NP from URL／worker／portable | reject product before enumeration／execution | no cache write, handoff, or numeric scenario | request-level `invalid` | Deferred: TSK-06.42 |
 | explicit UI change owned → all while owned bases selected | application command changes only illegal axes to documented defaults | serialized result is legal; no hidden fallback reader | valid all＋natural＋specified NP1 | Deferred: TSK-06.42 |
 | unknown axis or removed `rMode` URL | parser retains typed invalid state | worker not called; explicit reset is offered | request-level `invalid` | Deferred: TSK-06.42 |
-| record key and `ServantBuild.servantId` disagree | reject the profile at its shared schema／persistence trust boundary | calculator, ranking, and reset cannot apply it to either identity | retained data is not guessed or rewritten | Deferred: TSK-06.47 |
+| record key and `ServantBuild.servantId` disagree | reject the profile at its shared schema／persistence trust boundary | calculator, ranking, and reset cannot apply it to either identity | retained data is not guessed or rewritten | Deferred: TSK-06.412 |
 | worker build or condition payload is structurally malformed | runtime parse before cache lookup or calculation | no partial context installation or generic exception fallback | request-level typed `invalid` | Deferred: TSK-06.42 |
-| selected owned level lacks canonical ATK | basis resolver does not guess/interpolate | shared scenario preparation also rejects missing stat | `invalid: attackerLevelStatUnavailable` | Deferred: TSK-06.46 then TSK-06.42 parity |
+| selected owned level lacks canonical ATK | basis resolver does not guess/interpolate | shared scenario preparation also rejects missing stat | `invalid: attackerLevelStatUnavailable` | Deferred: TSK-06.411 then TSK-06.42 parity |
 | owned profile changes after detail／handoff | existing detail retains copied values and provenance | portable replay uses pinned scenario; new ranking request gets new context identity | old replay stable; new result recalculated | Deferred: TSK-06.42 |
 | prior-schema ranking snapshot／share | axes cannot be reconstructed | draft discard／history historical-only; share rejected | no executable compatibility fallback | Deferred: TSK-06.42 |
 | display filter／metric only | unchanged six-field state | no worker calculation or portable rewrite | presentation-only change | Verified: current boundary; reverify in TSK-06.42 |

@@ -106,7 +106,7 @@ Deferred to TSK-06.42 and any new recovery wording or interaction remains Deferr
    only implementation phase-completion gate.
 5. Search all direct `servantBuilds`／`servantTargets` readers and legacy v32／v33／v34 parsers. Close each path as
    `Verified`, `N/A`, or `Deferred`, update this note with the implementation delta, and require Blocking 0 before
-   changing TSK-06.47 to `done`.
+   changing TSK-06.412 to `done`.
 
 The identity refinement is one linear validation pass at each profile trust boundary. Consumers must not rescan
 the maps, and production master compilation／ranking candidate cardinality is unchanged. Schema-legal focused
@@ -114,7 +114,7 @@ fixtures own the mismatch proof because production user profiles are not reposit
 
 ## Step 1 planning handoff
 
-- Baseline: `07b260147c8c27e1047043d081478ebdbc0fbcff` on `main`. TSK-06.41 and TSK-06.46 are `done`; PIR-001 is
+- Baseline: `07b260147c8c27e1047043d081478ebdbc0fbcff` on `main`. TSK-06.41 and TSK-06.411 are `done`; PIR-001 is
   reviewer-approved and committed. TSK-06.42 remains `blocked` on this Task.
 - Planning scope: production and test changes are 0. This note is the canonical flow record; the Task source and
   documentation indexes only record dependency, status, contract closure, and the current delta. Product
@@ -124,9 +124,9 @@ fixtures own the mismatch proof because production user profiles are not reposit
   record values independently from their keys. Migration output already converges through the current
   `profileCollectionSchema`, while repository load／replace and backup import are the persistence trust boundaries.
   Normal profile-domain writers are coherent; the gap is accepted contradictory input before shared consumers.
-- Entry condition for Step 2: begin from the commit containing this handoff with TSK-06.47 `ready`, planning
-  Blocking 0, TSK-06.41／06.46 `done`, TSK-06.42 `blocked`, and no staged, unstaged, or untracked production／test
-  changes. Create a start commit that changes only TSK-06.47 to `in_progress` before source edits.
+- Entry condition for Step 2: begin from the commit containing this handoff with TSK-06.412 `ready`, planning
+  Blocking 0, TSK-06.41／06.411 `done`, TSK-06.42 `blocked`, and no staged, unstaged, or untracked production／test
+  changes. Create a start commit that changes only TSK-06.412 to `in_progress` before source edits.
 - Allowed worktree at Step 2 start: none. If another source, test, fixture, snapshot, baseline, or configuration
   delta exists, do not begin implementation. Preserve any later user change and record a new explicit boundary.
 - Planned completion: all current／v32／v33／v34 load and backup paths reject build or target identity mismatch
@@ -158,4 +158,4 @@ fixtures own the mismatch proof because production user profiles are not reposit
   some quality runs, passed standalone and final quality without source／snapshot changes, and is classified
   `environmentDependent`.
 - Completion classification: all scoped paths above are `Verified`, `N/A`, or explicitly `Deferred`; Blocking is
-  **0**. TSK-06.47 is `done`; both prerequisites are complete and TSK-06.42 is now `ready` for its own start boundary.
+  **0**. TSK-06.412 is `done`; both prerequisites are complete and TSK-06.42 is now `ready` for its own start boundary.

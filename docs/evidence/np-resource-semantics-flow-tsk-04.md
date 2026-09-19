@@ -6,16 +6,16 @@ updated_at: "2026-09-08"
 
 # TSK-04 NP resource semantics flow closure
 
-## TSK-06.48 interface delta (verified 2026-09-08)
+## TSK-06.44 interface delta (verified 2026-09-08)
 
 The Verified status below applies to the completed TSK-04 gauge scope. Requirements v0.10.2 now
 replace ranking's implicit initial-gauge search with explicit initial OC selection. The added OC boost
 state, NP-use timing/count, rollback and presentation inventory is owned once in
-`docs/evidence/ranking-policy-candidate-flow-tsk-06.md`, section TSK-06.48.
+`docs/evidence/ranking-policy-candidate-flow-tsk-06.md`, section TSK-06.44.
 NP capacity, gain/loss and all-consume remain owned here; their interface supplies the pre-consumption
 gauge to the shared OC executor, which freezes the NP-use receipt before consuming gauge.
 Status: Verified by `ocState.test.ts`, `preparationTransaction.test.ts`, and `ocExecutionParity.test.ts`;
-the additional family inventory and final production evidence remain in the linked 06.48 flow note.
+the additional family inventory and final production evidence remain in the linked 06.44 flow note.
 
 ## Outcome and ownership
 

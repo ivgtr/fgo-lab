@@ -5543,7 +5543,7 @@
     "U0-B/U1-B/U2-B actor/domain BP point/capacity/phase/rate and its downstream readers",
     "independent marker/state activation paths for 105900,204900 (two profiles),405700,2501400",
     "non-HP U3 and U4 global recovery/UI closure",
-    "U5 all433 profiles/422 calculators across80 legal conditions and stable owned basis; TSK-06.44/06.45 final closure"
+    "U5 all433 profiles/422 calculators across80 legal conditions and stable owned basis; TSK-06.47/06.45 final closure"
   ],
   "blockingWithinScope": 0,
   "sourceConditionBoundary": [

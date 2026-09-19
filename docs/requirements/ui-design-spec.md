@@ -658,5 +658,5 @@ R1は個人・非営利用途としてAtlas Academy由来のサーヴァント�
 | --- | --- | --- | --- | --- |
 | 1.4.0 | ダメージ計算、ranking、管理、育成計画、homeの承認済みUI基準 | approved 2026-08-24 | current product baseline | none |
 | 1.4.1 | portable calculation identityのversion／intent表示と明示的なreset／upgrade／invalid recoveryを追加（`UI-CALC-001`） | approved 2026-09-01: design review at `245d1ee`; approval commitはsemantics不変 | TSK-06.1、TSK-07 | docs phaseはnone。implementationでcalculator context notice、focus、responsive artifactが変わる |
-| 1.5.0 | rankingの母集団、自然上限／Lv.90統一／保有レベル、指定NP／保有宝具Lvを独立controlへ変更し、寄与判定detailの表示境界を追加 | approved 2026-09-05: user confirmed the comparison labels and owned level／NP behavior | TSK-06.42、TSK-06.44、TSK-07 | ranking controls、summary、responsive／a11y fixtureが変わる。保存済みFou／skill Lvは反映しない |
-| 1.5.1 | 初期OC選択と発動時OCの表示を追加（RK-UI-001、UI-CALC-001） | approved 2026-09-06: user confirmed initial OC only and requested planning | TSK-06.48、TSK-07 | docs phaseはruntime不変。実装時はranking controls／summary／detail／calculator noticeとresponsive fixtureが変わる |
+| 1.5.0 | rankingの母集団、自然上限／Lv.90統一／保有レベル、指定NP／保有宝具Lvを独立controlへ変更し、寄与判定detailの表示境界を追加 | approved 2026-09-05: user confirmed the comparison labels and owned level／NP behavior | TSK-06.42、TSK-06.47、TSK-07 | ranking controls、summary、responsive／a11y fixtureが変わる。保存済みFou／skill Lvは反映しない |
+| 1.5.1 | 初期OC選択と発動時OCの表示を追加（RK-UI-001、UI-CALC-001） | approved 2026-09-06: user confirmed initial OC only and requested planning | TSK-06.44、TSK-07 | docs phaseはruntime不変。実装時はranking controls／summary／detail／calculator noticeとresponsive fixtureが変わる |
