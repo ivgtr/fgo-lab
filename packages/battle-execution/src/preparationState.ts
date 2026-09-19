@@ -1,3 +1,5 @@
+import { sourceMaximumHpInputKey, sourceHpInputKey } from './operationCompiler';
+import { seedHp } from './hpResource';
 import { npProgramEffects } from './npProgramScope';
 import { canonicalExclusiveGroup, canonicalExclusiveTraits } from './conditionSemantics';
 import {
@@ -230,6 +232,23 @@ export function createPreparationState(
 ): PreparationTransitionResult {
   const form = findActorForm(servant, initialFormId);
   const placeholder: PreNoblePhantasmState = {
+    hp: {
+      actors: {
+        attacker: seedHp(context.initialMaximumHp, context.attackerHpPermille ?? null),
+        ...Object.fromEntries(
+          [...(context.initialSources ?? []), ...(context.terminalSources ?? [])]
+            .filter((source) => source.origin === 'support')
+            .map((source) => [
+              source.sourceInstanceId,
+              seedHp(
+                validSourceMaximum(context.canonicalInputValues?.[sourceMaximumHpInputKey(source)]),
+                context.canonicalInputValues?.[sourceHpInputKey(source)] ?? 1000,
+              ),
+            ]),
+        ),
+      },
+      receipts: [],
+    },
     initialFormId,
     currentFormId: initialFormId,
     selectedNoblePhantasmVariant: form?.baseNoblePhantasmVariant ?? null,
@@ -303,4 +322,8 @@ export function createPreparationState(
   )
     return rejectPreparation(placeholder, 'unknownInitialForm');
   return { status: 'applied', state: placeholder };
+}
+
+function validSourceMaximum(value: number | undefined): number | undefined {
+  return value !== undefined && Number.isSafeInteger(value) && value > 0 ? value : undefined;
 }

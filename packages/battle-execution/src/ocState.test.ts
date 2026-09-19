@@ -292,66 +292,32 @@ describe('HP → live rate query → OC grant dependency', () => {
       outcomes: [{ outcome: 'stochasticFailure', effectiveRate: 800 }],
     });
   });
-  it('rejects rate grant → HP change → OC grant and restores original state', () => {
-    const prior = createOcState();
+  it('reads the current HP query at each grant and keeps missing owners unresolved', () => {
+    let hp = 500;
     const result = executeOcAction(
-      prior,
-      'failed',
-      [grant(rate()), { kind: 'hpWrite', actor: 'attacker' }, grant(boost(), 'oc')],
-      { attacker: 500 },
-    );
-    expect(result).toMatchObject({ status: 'unsupported', reason: 'ocRateHpStateUnavailable' });
-    expect(result.state).toBe(prior);
-    expect(committed([grant(rate()), grant(boost(), 'retry')], prior).boosts).toHaveLength(1);
-  });
-  it('tracks a write across actions until the later rate query', () => {
-    const prior = committed([grant(rate()), { kind: 'hpWrite', actor: 'attacker' }]);
-    expect(executeOcAction(prior, 'later', [grant(boost(), 'oc')], { attacker: 500 }).status).toBe(
-      'unsupported',
-    );
-  });
-  it('permits a write after the last rate query', () => {
-    expect(
-      committed([grant(rate()), grant(boost(), 'oc'), { kind: 'hpWrite', actor: 'attacker' }])
-        .boosts,
-    ).toHaveLength(1);
-  });
-  it('does not resurrect a removed rate dependency', () => {
-    expect(
-      committed([
+      createOcState(),
+      'live',
+      [
         grant(rate()),
-        remove,
-        { kind: 'hpWrite', actor: 'attacker' },
+        () => {
+          hp = 1000;
+          return { kind: 'skip', outcome: 'notApplicable' };
+        },
         grant(boost(), 'oc'),
-      ]).boosts,
-    ).toHaveLength(1);
+      ],
+      {
+        get attacker() {
+          return hp;
+        },
+      },
+    );
+    expect(result.status).toBe('committed');
   });
   it('separates source HP and requests missing HP rather than defaulting', () => {
     const prior = committed([grant(rate(), 'other-rate', 'other')]);
     const read = grant(boost(), 'other-oc', 'other');
     expect(executeOcAction(prior, 'read', [read], { attacker: 500 }).status).toBe('inputRequired');
-    const changed = committed([{ kind: 'hpWrite', actor: 'attacker' }], prior);
+    const changed = prior;
     expect(executeOcAction(changed, 'read', [read], { other: 500 }).status).toBe('committed');
-  });
-});
-
-describe('HP writer recipient scopes at the live read', () => {
-  it.each([
-    ['attacker', 'attacker', 'committed'],
-    ['attacker', 'support', 'unsupported'],
-    [null, 'attacker', 'unsupported'],
-    [null, 'support', 'unsupported'],
-  ] as const)('excludes %s and queries %s', (excludedActor, actor, status) => {
-    const prior = createOcState();
-    const written = executeOcAction(prior, 'write', [{ kind: 'hpWriteOthers', excludedActor }], {});
-    expect(written.status).toBe('committed');
-    // The later source need not have been present in the HP input map at the write.
-    const steps = [grant(rate(), 'rate', actor), grant(boost(), 'boost', actor)];
-    const read = executeOcAction(written.state, 'read', steps, { [actor]: 500 });
-    expect(read.status).toBe(status);
-    if (status === 'unsupported') {
-      expect(read.state).toBe(written.state);
-      expect(executeOcAction(prior, 'retry', steps, { [actor]: 500 }).status).toBe('committed');
-    }
   });
 });

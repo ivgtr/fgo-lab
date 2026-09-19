@@ -55,27 +55,6 @@ export function bindOcSourceOperation(
   if (!operation) return { kind: 'reject', status: 'invalid', reason: 'missingOcOperation' };
   if (!source.sourceEnabled || operation.kind === 'ocStateNonIntersection')
     return { kind: 'skip', outcome: 'notApplicable' };
-  if (operation.kind === 'resourceMutation') {
-    const condition = evaluateOcSourceCondition(program, context.facts);
-    if (condition === false) return { kind: 'skip', outcome: 'conditionFalse' };
-    const recipient =
-      operation.recipient === 'partyOther'
-        ? null
-        : (resolveTargetPolicy(source.origin, operation.recipient) ??
-          (operation.recipient === 'sourceSelf' ? sourceActor(program) : null));
-    const receipt = state.receipts.find(({ actionId }) => actionId === context.npActionId);
-    const row = source.origin === 'np' ? receipt?.effectiveOc : source.valueSetIndex + 1;
-    const cells = source.limitBreak ? operation.amount.limitBreakValues : operation.amount.values;
-    if (row !== undefined && cells?.[row - 1]?.[source.valueIndex] === 0)
-      return { kind: 'skip', outcome: 'notApplicable' };
-    // A possible write is kept until a live rate query. It is not an eager HP reader.
-    return recipient === null
-      ? {
-          kind: 'hpWriteOthers',
-          excludedActor: operation.recipient === 'partyOther' ? sourceActor(program) : null,
-        }
-      : { kind: 'hpWrite', actor: recipient };
-  }
   if (operation.kind === 'unsupported')
     return { kind: 'reject', status: 'unsupported', reason: operation.reason };
   const recipient = recipientActor(program, operation);

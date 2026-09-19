@@ -1,3 +1,4 @@
+import { normalizeHpTransfer } from './hpNormalization';
 import { isUnreferencedDefensiveMarker } from './defensiveMarkerNormalization';
 import { normalizeNpTransfer } from './npTransferNormalization';
 import { normalizePopulationFunctions } from './populationFunctionNormalization';
@@ -342,6 +343,7 @@ function uniqueTraits(traits: NormalizedTraitCondition['traits']) {
 
 const VALUE_PARAMETER_KEYS = new Set(['Rate', 'Value']);
 const LIFECYCLE_PARAMETER_KEYS = new Set([
+  'EvenIfWinDie',
   'CheckDead',
   'Count',
   'ExcludeUnSubStateIndiv',
@@ -1184,8 +1186,11 @@ function procRateSeries(
     (operation) =>
       operation.kind === 'populationMutation' ||
       (operation.kind === 'resourceMutation' &&
-        ['populationCount', 'npTransfer'].includes(operation.amount.kind)) ||
+        (operation.resource === 'hp' ||
+          ['populationCount', 'npTransfer', 'hpTransfer'].includes(operation.amount.kind))) ||
       [
+        'hpModifier',
+        'removeHpModifiers',
         'damageModifier',
         'modifierRateChange',
         'ignoreDefense',
@@ -1723,6 +1728,7 @@ export function normalizeFunctions(
     )
       ? ['Target', 'Value', 'SetLimitCount', 'CancelTransform', 'UseUserSpecifiedLimitCount']
       : [];
+    const hpTransfer = normalizeHpTransfer(fn, parameterSets);
     const parameterSemantics = classifyParameterSemantics(
       parameterSets,
       quantityConditions,
@@ -1732,7 +1738,16 @@ export function normalizeFunctions(
       operationTrigger,
       hasNormalizedConditionRouting,
       [...canonicalInput.recognizedKeys, ...canonicalOperationKeys],
-      referenceRecognizedKeys,
+      [
+        ...referenceRecognizedKeys,
+        ...(hpTransfer ? ['DependFunc', 'DependFuncId', 'DependFuncVals'] : []),
+        ...(fn.funcType === 'subState' &&
+        parameterSets.every((row) =>
+          row.every((cell) => cell.ForceSubState === undefined || cell.ForceSubState === 1),
+        )
+          ? ['ForceSubState']
+          : []),
+      ],
       ocConditionParameterKeys(fn, parameterSets),
     );
     const npTransfer = normalizeNpTransfer(
@@ -1773,6 +1788,7 @@ export function normalizeFunctions(
       canonicalOperations: [
         ...canonicalOperations,
         ...(npTransfer ? [npTransfer.operation] : []),
+        ...(hpTransfer ? [hpTransfer.operation] : []),
         ...(npPopulation ? [npPopulation.operation] : []),
         ...populationMutations,
         ...countedBuffMutations,
@@ -1885,6 +1901,12 @@ export function normalizeFunctions(
     ];
     if (
       canonicalInput.unsupported ||
+      (execution.some(
+        (operation) =>
+          operation.kind === 'hpModifier' ||
+          (operation.kind === 'resourceMutation' && operation.resource === 'hp'),
+      ) &&
+        parameterSets.some((row) => row.some((cell) => cell.Value2 !== undefined))) ||
       parameterSemantics.unresolved.length > 0 ||
       unresolvedSemanticKeys.length > 0
     )
@@ -1899,12 +1921,25 @@ export function normalizeFunctions(
               reason: 'ocExecutionSemantics' as const,
               damageRelevant: true,
             }
-          : operation.kind === 'damageModifier' ||
-              operation.kind === 'modifierRateChange' ||
-              operation.kind === 'ignoreDefense' ||
-              operation.kind === 'ignoreDamageCut'
-            ? { ...operation, semanticSupport: 'unresolved' as const }
-            : operation,
+          : operation.kind === 'hpModifier' ||
+              operation.kind === 'removeHpModifiers' ||
+              (operation.kind === 'resourceMutation' && operation.resource === 'hp')
+            ? {
+                kind: 'unsupported' as const,
+                route: {
+                  target: 'unresolved' as const,
+                  contributionScope: 'personal' as const,
+                  eligibility: { kind: 'anyRecipient' as const, onMissing: 'unsupported' as const },
+                },
+                reason: 'resourceExecutionSemantics' as const,
+                damageRelevant: true,
+              }
+            : operation.kind === 'damageModifier' ||
+                operation.kind === 'modifierRateChange' ||
+                operation.kind === 'ignoreDefense' ||
+                operation.kind === 'ignoreDamageCut'
+              ? { ...operation, semanticSupport: 'unresolved' as const }
+              : operation,
       );
     const rateSelector = isOcRateFunction(fn);
     const conditions = {
@@ -1922,7 +1957,12 @@ export function normalizeFunctions(
           : [
               {
                 operator: 'any' as const,
-                traits: signedTraits(fn.functvals, traitNameById, false, stateCatalog),
+                traits: signedTraits(
+                  fn.functvals,
+                  traitNameById,
+                  execution.some((op) => op.kind === 'hpModifier'),
+                  stateCatalog,
+                ),
               },
             ],
       holder: {
@@ -2059,6 +2099,7 @@ export function normalizeFunctions(
           ...canonicalInput.inputs,
           ...(populationFunction?.inputs ?? []),
           ...(npTransfer?.inputs ?? []),
+          ...(hpTransfer?.inputs ?? []),
           ...(npBuffCount ? [npBuffCount.input] : []),
           ...(npPopulation?.inputs ?? []),
         ],

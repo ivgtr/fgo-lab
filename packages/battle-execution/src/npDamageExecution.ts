@@ -1,3 +1,4 @@
+import { hpRatio } from './hpResource';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type { BattleOperation, EffectDecision, ExecutableBattleState } from './contracts';
 import type { ContributionApplicationPolicy } from './executionTypes';
@@ -43,7 +44,7 @@ export function applyNoblePhantasmDamage(
     targetPredicateValues: new Map(
       [...state.actorPredicates.target].map(([key, value]) => [key, value.present]),
     ),
-    attackerHpPermille: state.quantities.attackerHpPermille,
+    attackerHpRatio: state.hp ? hpRatio(state.hp.actors.attacker) : null,
     targetRarity: state.quantities.targetRarity,
     battlePointPhase: state.quantities.battlePointPhase,
     effectLocalConditionSatisfied: specialIncluded && effectLocalConditionSatisfied,

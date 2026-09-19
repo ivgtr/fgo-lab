@@ -8,14 +8,14 @@ import ts from 'typescript';
 const root = resolve(import.meta.dirname, '..');
 const catalog = JSON.parse(readFileSync(resolve(root, 'e2e/cases.json'), 'utf8'));
 const assertions = JSON.parse(readFileSync(resolve(root, 'e2e/assertions.json'), 'utf8'));
-const migrationManifestDigest = '8c94578887b7916382110551f54ecb53cc668c1d99e2a11b6dec7bafdc312201';
+const migrationManifestDigest = 'd21db407c92701f5afefd7083620308603ebaf44e2451510ab06e9b07d267dcb';
 const specSource = readdirSync(resolve(root, 'e2e'))
   .filter((name) => name.endsWith('.spec.ts') || name.endsWith('.setup.ts'))
   .map((name) => readFileSync(resolve(root, 'e2e', name), 'utf8'))
   .join('\n');
 
 test('E2E catalog closes every legacy case and every retained case has executable metadata', () => {
-  assert.equal(catalog.filter(({ id }) => /^E2E-\d{3}$/.test(id)).length, 51);
+  assert.equal(catalog.filter(({ id }) => /^E2E-\d{3}$/.test(id)).length, 52);
   assert.equal(new Set(catalog.map(({ id }) => id)).size, catalog.length);
   for (const item of catalog) {
     assert.match(item.id, /^E2E-(?:SETUP-)?\d{3}$/);
@@ -103,7 +103,7 @@ function containsExactAssertionMarker(source, assertionId) {
 
 function assertMigrationManifest(manifest, expectedDigest = migrationManifestDigest) {
   assert.equal(digestManifest(manifest), expectedDigest, 'migration manifest digest');
-  assert.equal(manifest.length, 66, 'migration manifest observation count');
+  assert.equal(manifest.length, 67, 'migration manifest observation count');
   const caseIds = new Set(catalog.map(({ id }) => id));
   assert.equal(new Set(manifest.map(({ id }) => id)).size, manifest.length);
   const assertionsByCase = Map.groupBy(manifest, ({ caseId }) => caseId);

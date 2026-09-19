@@ -45,14 +45,23 @@ export function createRankingQuantityCandidates(
 export function createRankingQuantityCandidatesForConditions(
   conditions: readonly (ConditionExpression | null)[],
   active: boolean,
+  initialHpBoundaries: readonly number[] = [],
 ): readonly RankingQuantityCandidate[] {
   const baseline: RankingQuantityCandidate = { key: 'quantity:baseline', values: {} };
   if (!active) return [baseline];
   const byQuantity = new Map<Quantity, Set<number>>();
   for (const condition of conditions.flatMap(leaves)) {
     const domain = QUANTITY_FACT_DOMAINS[condition.quantity];
-    const values = byQuantity.get(condition.quantity) ?? new Set<number>([domain.min, domain.max]);
+    const values =
+      byQuantity.get(condition.quantity) ??
+      new Set<number>([
+        domain.min,
+        ...(condition.quantity === 'attackerHpPermille' ? [1] : []),
+        domain.max,
+      ]);
     for (const value of boundaryValues(condition)) values.add(value);
+    if (condition.quantity === 'attackerHpPermille')
+      for (const value of initialHpBoundaries) values.add(value);
     byQuantity.set(condition.quantity, values);
   }
   if (byQuantity.size === 0) return [baseline];

@@ -33,7 +33,7 @@ export const masterManifestSchema = z.object({
   }),
   artifactKind: z.enum(['production', 'diagnostic']),
   minimalAppVersion: z.string().regex(/^\d+\.\d+\.\d+$/),
-  schemaVersion: z.literal(53),
+  schemaVersion: z.literal(54),
   files: z.array(masterFileSchema).min(1),
   imagesEnabled: z.boolean(),
 });
@@ -312,8 +312,10 @@ const fixedCanonicalInputDefinitionSchema = canonicalInputBaseSchema.extend({
     'availableSkillCount',
     'friendshipLevel',
     'sourceHpPermille',
+    'sourceMaximumHp',
     'procSuccessCount',
     'worldTraitPresence',
+    'sourceChoice',
   ]),
   defaultValue: z.number().int().nullable(),
 });
@@ -386,7 +388,7 @@ export const canonicalInputDefinitionSchema = z.discriminatedUnion('kind', [
   canonicalInputBaseSchema
     .extend({
       kind: z.literal('transferDonor'),
-      resource: z.enum(['playerNp', 'enemyCharge']),
+      resource: z.enum(['playerNp', 'enemyCharge', 'enemyHp']),
       actorIndex: z.number().int().min(0).max(2),
       defaultValue: z.number().int().nullable(),
     })
@@ -502,22 +504,68 @@ export type OcLifetimeLimit = z.infer<typeof ocLifetimeLimitSchema>;
 export type OcStateTrait = z.infer<typeof ocStateTraitSchema>;
 
 const hpMutationShape = {
+  selection: z.enum(['direct', 'lowestHpRatio', 'selectedAlly', 'allEnemies']).optional(),
   kind: z.literal('resourceMutation'),
   resource: z.literal('hp'),
   direction: z.enum(['gain', 'loss']),
   unit: z.enum(['fixed', 'percent']),
   recipient: canonicalTargetPolicySchema,
-  amount: z
-    .object({
-      kind: z.literal('fixed'),
-      values: canonicalValueSetsSchema,
-      limitBreakValues: canonicalValueSetsSchema.optional(),
-    })
-    .strict(),
+  amount: z.discriminatedUnion('kind', [
+    z
+      .object({
+        kind: z.literal('fixed'),
+        values: canonicalValueSetsSchema,
+        limitBreakValues: canonicalValueSetsSchema.optional(),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal('hpTransfer'),
+        donors: z.enum(['selectedEnemy', 'otherEnemy', 'allEnemies']),
+        inputKeys: z.array(z.string().min(1)).length(3),
+        values: canonicalValueSetsSchema,
+        limitBreakValues: canonicalValueSetsSchema.optional(),
+        child: z.literal('unconditionalUnresistedDisjoint'),
+      })
+      .strict(),
+  ]),
   subjectId: z.null(),
 };
 
 const effectExecutionOperationSchema = z.union([
+  z
+    .object({
+      kind: z.literal('hpModifier'),
+      useCondition: canonicalEffectRequirementSchema.optional(),
+      selection: z.enum(['direct', 'selectedAlly', 'allEnemies']).optional(),
+      route: canonicalEffectRouteSchema,
+      action: z.enum([
+        'maximumFixed',
+        'maximumRate',
+        'baseFixed',
+        'baseRate',
+        'receive',
+        'give',
+        'noHealing',
+      ]),
+      sign: z.union([z.literal(1), z.literal(-1)]),
+      bounds: z
+        .object({ minimum: z.number().int().nullable(), maximum: z.number().int().nullable() })
+        .strict(),
+      values: canonicalValueSetsSchema,
+      limitBreakValues: canonicalValueSetsSchema.optional(),
+      traits: z.array(z.string()),
+      lifetime: z.enum(['active', 'constant']),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('removeHpModifiers'),
+      selection: z.enum(['direct', 'selectedAlly', 'allEnemies']).optional(),
+      route: canonicalEffectRouteSchema,
+      traits: z.array(z.string()).min(1),
+    })
+    .strict(),
   z
     .object({
       kind: z.literal('buffInstanceMutation'),
@@ -757,6 +805,8 @@ const effectExecutionOperationSchema = z.union([
         'cooldownWithoutReuse',
         'commandCardOutsideTerminalNp',
         'enemyChargeOutsideDamage',
+        'enemyActorHpFunction',
+        'turnEndHpOutsideDamage',
         'enemySourceChargeExcluded',
         'postTerminalDamageOnly',
         'presentationOnly',
@@ -775,12 +825,74 @@ const effectExecutionOperationSchema = z.union([
         'ocExecutionSemantics',
         'unresolvedTarget',
         'dependentResourceAmount',
+        'resourceExecutionSemantics',
         'partyCompositionMutation',
       ]),
       damageRelevant: z.boolean(),
     })
     .strict(),
 ]);
+export const hpActorStateSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('absolute'),
+      baseMaximum: z.number().int().positive(),
+      maximum: z.number().int().positive(),
+      current: z.number().int().nonnegative(),
+    })
+    .strict()
+    .refine((a) => a.current <= a.maximum),
+  z.object({ kind: z.literal('currentOnly'), current: z.number().int().nonnegative() }).strict(),
+  z.object({ kind: z.literal('ratioOnly'), permille: z.number().int().min(0).max(1000) }).strict(),
+  z.object({ kind: z.literal('missing') }).strict(),
+]);
+export const hpModifierInstanceSchema = z
+  .object({
+    id: z.string(),
+    actor: z.string(),
+    formKey: z.string().nullable(),
+    unresolvedCondition: canonicalInputDefinitionSchema.nullable().optional(),
+    operation: effectExecutionOperationSchema
+      .refine((op) => op.kind === 'hpModifier')
+      .transform((op) => op),
+    value: z.number().int(),
+  })
+  .strict();
+export const hpStateSchema = z
+  .object({
+    inputDefinitions: z.array(canonicalInputDefinitionSchema).optional(),
+    executedEffects: z.array(z.string()).optional(),
+    modifiers: z.array(hpModifierInstanceSchema).optional(),
+    donorReceipts: z
+      .array(
+        z
+          .object({
+            actor: z.string(),
+            snapshot: z.number().int().nonnegative(),
+            calculatedGain: z.number().int().nonnegative(),
+            actualLoss: z.number().int().nonnegative(),
+            remaining: z.number().int().nonnegative(),
+          })
+          .strict(),
+      )
+      .optional(),
+    actors: z.record(z.string(), hpActorStateSchema),
+    receipts: z.array(
+      z
+        .object({
+          actionId: z.string(),
+          occurrenceId: z.string(),
+          actor: z.string(),
+          before: hpActorStateSchema,
+          after: hpActorStateSchema,
+          attempted: z.number().int().nullable(),
+          actual: z.number().int().nonnegative().nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 export type EffectExecutionOperation = z.infer<typeof effectExecutionOperationSchema>;
 
 const procRateSetsSchema = z.tuple([
@@ -1347,14 +1459,16 @@ export const noblePhantasmVariantRefSchema = z.object({
 });
 export type NoblePhantasmVariantRef = z.infer<typeof noblePhantasmVariantRefSchema>;
 
+export const noblePhantasmEffectSchema = masterEffectSchema.safeExtend({
+  timing: z.enum(['beforeDamage', 'afterDamage']),
+});
+
 const noblePhantasmVariantBaseSchema = z.object({
   canonicalId: z.string().regex(/^[a-f0-9]{64}$/),
   ref: noblePhantasmVariantRefSchema,
   name: z.string(),
   priority: z.number().int(),
-  effects: z
-    .array(masterEffectSchema.safeExtend({ timing: z.enum(['beforeDamage', 'afterDamage']) }))
-    .max(20),
+  effects: z.array(noblePhantasmEffectSchema).max(20),
 });
 export const noblePhantasmVariantSchema = z
   .discriminatedUnion('kind', [
@@ -1424,6 +1538,15 @@ export const noblePhantasmVariantGroupSchema = z.object({
 export type NoblePhantasmVariantGroup = z.infer<typeof noblePhantasmVariantGroupSchema>;
 
 const actorFormNodeSchema = z.object({
+  baseHp: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('lineage') }).strict(),
+    z
+      .object({
+        kind: z.literal('form'),
+        hpByLevel: z.record(z.string(), z.number().int().positive()),
+      })
+      .strict(),
+  ]),
   id: actorFormIdSchema,
   name: z.string(),
   traits: z.array(z.string()),
@@ -2341,3 +2464,9 @@ export function deriveCraftEssenceAtk(
       ((master.atkMax - master.atkMin) * (level - 1)) / (master.maxLevelByLimitBreak[4] - 1),
   );
 }
+
+export {
+  resolveInitialMaximumHp,
+  type InitialHpUnavailableIssue,
+  type InitialMaximumHpResolution,
+} from './initialHp';

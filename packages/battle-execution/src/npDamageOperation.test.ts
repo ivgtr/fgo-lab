@@ -26,7 +26,7 @@ const context: NpDamageOperationContext = {
   targetCombinedTraitCounts: {},
   targetStateTraitCounts: {},
   targetPredicateValues: new Map(),
-  attackerHpPermille: null,
+  attackerHpRatio: null,
   targetRarity: null,
   battlePointPhase: null,
 };
@@ -135,8 +135,15 @@ describe('NP damage operation', () => {
       rawFunctionType: 'damageNpHpratioLow',
       parametersByOvercharge: matrix({ targetId: 6_000 }),
     } as NpDamageSpec;
-    expect(evaluateNpDamageOperation(hp, { ...context, attackerHpPermille: 500 })).toMatchObject({
+    expect(evaluateNpDamageOperation(hp, { ...context, attackerHpRatio: 0.5 })).toMatchObject({
       npMultipliers: [600, 700, 800, 900, 1000],
+    });
+    expect(evaluateNpDamageOperation(hp, { ...context, attackerHpRatio: 1 / 11000 })).toMatchObject(
+      { npMultipliers: [899.9, 999.9, 1099.9, 1199.9, 1299.9] },
+    );
+    expect(evaluateNpDamageOperation(hp, { ...context, attackerHpRatio: NaN })).toEqual({
+      status: 'unsupported',
+      missingEvidence: 'invalid_attacker_hp_ratio',
     });
     expect(evaluateNpDamageOperation(hp, context)).toEqual({
       status: 'unsupported',

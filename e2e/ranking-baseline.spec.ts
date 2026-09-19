@@ -155,7 +155,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await openTestHome(page);
   await page.getByRole('button', { name: '火力ランキング' }).click();
   // E2E-A050-SUMMARY
-  await expect(page.getByRole('status')).toContainText('425件表示 / 425件を計算・順位外 8件', {
+  await expect(page.getByRole('status')).toContainText('427件表示 / 427件を計算・順位外 6件', {
     timeout: 30_000,
   });
   const first = page
@@ -392,4 +392,138 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     await donor.locator('..').locator('..').getByRole('button', { name: '自動値へ戻す' }).click();
     await expect(donor).toHaveValue('0');
   }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: '火力ランキング', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('件を計算', { timeout: 30000 });
+  await page.getByPlaceholder('名前で検索').fill('土方歳三');
+  const hpRow = page
+    .getByRole('list', { name: '宝具火力ランキング' })
+    .getByRole('listitem')
+    .first();
+  await expect(hpRow).toContainText('土方歳三');
+  await hpRow.getByRole('button', { name: /の計算詳細を開く/ }).click();
+  await expect(hpRow.getByLabel('宝具実行時のHP')).toHaveText('HP 92%');
+  await hpRow.getByRole('button', { name: /の計算詳細を閉じる/ }).click();
+  await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('2');
+  await expect(hpRow.locator('.ranking-primary-damage strong')).toHaveText('65,870', {
+    timeout: 30_000,
+  });
+  await hpRow.getByRole('button', { name: /の計算詳細を開く/ }).click();
+  await expect(hpRow.getByLabel('宝具実行時のHP')).toHaveText('HP 92%');
+  await hpRow.screenshot({ path: test.info().outputPath('ranking-executed-hp.png') });
+});
+
+test('[E2E-052] HP preparation, transfer, death repair and saved replay @desktop @journey', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await page.route('https://static.atlasacademy.io/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+    }),
+  );
+  await openTestHome(page);
+  await page
+    .getByRole('button', { name: /^(ダメージ計算|計算)$/ })
+    .first()
+    .click();
+  // E2E-A052-HP-RECOVERY
+  for (const [name, choice] of [
+    ['バーヴァン・シー', /バーヴァン・シー.*Lv/],
+    ['カーミラ', /カーミラ.*ライダー/],
+    ['土方歳三', /土方歳三.*Lv/],
+  ] as const) {
+    await page.getByRole('button', { name: '攻撃役を変更' }).click();
+    const picker = page.getByRole('dialog', { name: '攻撃役を選択' });
+    await picker.getByRole('tab', { name: '全DB' }).click();
+    await picker.getByLabel('名前で検索').fill(name);
+    await picker.getByRole('button', { name: choice }).first().click();
+    await expect(page.getByRole('button', { name: '攻撃役を変更' })).toContainText(name);
+    const hp = page.getByRole('spinbutton', { name: /準備開始時のHP/ });
+    await hp.fill('0');
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+    await expect(
+      page.getByText(
+        'HPが0のため宝具を使用できません。準備開始時のHPと準備操作を確認してください。',
+      ),
+    ).toBeVisible();
+    await hp.fill('50');
+    await expect(hp).toHaveValue('50');
+    if (name !== '土方歳三') {
+      const donor = page.getByRole('spinbutton', { name: '吸収元の敵1のHP', exact: true });
+      await donor.fill('-1');
+      await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toHaveCount(0);
+      await donor.fill('2000');
+    }
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+    const display = page.getByText(/^実行後HP:/);
+    const executed = await display.textContent();
+    await expect
+      .poll(
+        async () =>
+          JSON.parse((await storedDraftJson(page)) ?? '{}').request?.scenario?.attackerHpPermille,
+      )
+      .toBe(500);
+    await page.reload();
+    await expect(hp).toHaveValue('50');
+    await expect(display).toHaveText(executed!);
+    await page.getByRole('combobox', { name: '宝具Lv', exact: true }).selectOption('2');
+    await page.getByRole('combobox', { name: '初期OC', exact: true }).selectOption('2');
+    await expect(hp).toHaveValue('50');
+    await expect(display).toHaveText(executed!);
+    const level = page.getByRole('spinbutton', { name: 'サーヴァントLv', exact: true });
+    const originalLevel = await level.inputValue();
+    await level.fill('100');
+    await expect(hp).toHaveValue('50');
+    await expect(display).not.toHaveText(executed!);
+    await level.fill(originalLevel);
+    await expect(display).toHaveText(executed!);
+    if (name === 'バーヴァン・シー') {
+      await page.getByRole('button', { name: /礼装なし・選択する/ }).click();
+      const equip = page.getByRole('dialog', { name: '概念礼装を選択' });
+      await equip.getByRole('tab', { name: '全DB', exact: true }).click();
+      await equip.getByLabel('礼装名').fill('プリズマコスモス');
+      await equip.getByRole('button', { name: /プリズマコスモス.*Lv1/ }).click();
+      await expect(hp).toHaveValue('50');
+      await expect(display).not.toHaveText(executed!);
+      await page.getByRole('button', { name: '外す', exact: true }).click();
+      await expect(display).toHaveText(executed!);
+    }
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+      .toBe(true);
+    await hp.locator('..').screenshot({ path: test.info().outputPath(`hp-${name}.png`) });
+    await page.getByRole('button', { name: '初期HPを100%へ戻す', exact: true }).click();
+    await expect(hp).toHaveValue('100');
+    await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  }
+  await page.getByRole('button', { name: '攻撃役を変更' }).click();
+  const formPicker = page.getByRole('dialog', { name: '攻撃役を選択' });
+  await formPicker.getByRole('tab', { name: '全DB' }).click();
+  await formPicker.getByLabel('名前で検索').fill('フランソワ');
+  await formPicker
+    .getByRole('button', { name: /フランソワ.*Lv/ })
+    .first()
+    .click();
+  await expect(page.getByRole('button', { name: '攻撃役を変更' })).toContainText('フランソワ');
+  const formHp = page.getByRole('spinbutton', { name: /準備開始時のHP/ });
+  await formHp.fill('50');
+  const formDisplay = page.getByText(/^実行後HP:/);
+  const formExecuted = await formDisplay.textContent();
+  const form = page.getByRole('combobox', { name: '初期形態', exact: true });
+  await form.selectOption({ index: 1 });
+  await expect(formHp).toHaveValue('50');
+  await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await form.selectOption({ index: 0 });
+  await expect(formDisplay).toHaveText(formExecuted!);
+  await page.reload();
+  await expect(formHp).toHaveValue('50');
+  await expect(formDisplay).toHaveText(formExecuted!);
 });

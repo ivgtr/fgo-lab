@@ -163,9 +163,10 @@ export {
 } from './stackQuantities';
 
 export { effectReadsOc, noblePhantasmReadsOc, ocRelevantSourceIndexes } from './ocDependency';
+export { hpRelevantSourceIndexes, terminalHpReaders } from './hpDependency';
 export { compileOcSourceProgram, hasOcExecution, hasOcConditionReader } from './ocSourceProgram';
 
-export { OC_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
+export { SOURCE_CHOICE_INPUT_PREFIX, OC_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
 
 export type { OcResourceDependencyContext } from './ocResourceDependencies';
 
@@ -178,3 +179,8 @@ export {
 export { populationInputsHaveEquivalentTerminalDamage } from './populationGaugeEquivalence';
 
 export { npTransferInputSaturation } from './npTransfer';
+
+export * from './hpResource';
+export * from './preparationHp';
+
+export { UnresolvedPlanningHpRead } from './hpPlanning';

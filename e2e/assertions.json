@@ -592,5 +592,14 @@
     "disposition": "retained",
     "replacementFile": "e2e/ranking-baseline.spec.ts",
     "replacementTest": "[E2E-050] real ranking module worker and detail @desktop @journey"
+  },
+  {
+    "id": "E2E-A052-HP-RECOVERY",
+    "caseId": "E2E-052",
+    "outcome": "browserConnection",
+    "oldAssertion": "HP initial intent, transfer donor repair, death recovery and saved replay retain ordered HP without duplicate application",
+    "disposition": "retained",
+    "replacementFile": "e2e/ranking-baseline.spec.ts",
+    "replacementTest": "[E2E-052] HP preparation, transfer, death repair and saved replay @desktop @journey"
   }
 ]

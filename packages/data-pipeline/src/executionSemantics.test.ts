@@ -105,6 +105,7 @@ describe('canonical HP mutation boundary', () => {
       expect(normalized.execution).toEqual([
         {
           kind: 'resourceMutation',
+          selection: 'direct',
           resource: 'hp',
           direction,
           unit,
@@ -144,4 +145,60 @@ describe('canonical HP mutation boundary', () => {
       ).toBe(false);
     },
   );
+});
+it('keeps probabilistic HP writers explicit and rejects partial value metadata', () => {
+  const raw = {
+    funcId: 91,
+    funcType: 'gainHp',
+    funcTargetType: 'self',
+    svals: [{ Rate: 500, Value: 1000 }],
+  };
+  const probabilistic = normalizeFunctions([raw], new Map())[0]!;
+  expect(probabilistic.proc.kind).not.toBe('guaranteed');
+  for (const cell of [
+    { Rate: 1000, Value: 1000, Value2: 1 },
+    { Rate: 1000, Value: 1000, UnknownHpWriter: 1 },
+  ]) {
+    const normalized = normalizeFunctions([{ ...raw, svals: [cell] }], new Map())[0]!;
+    expect(normalized.execution).toContainEqual(
+      expect.objectContaining({ kind: 'unsupported', reason: 'resourceExecutionSemantics' }),
+    );
+  }
+});
+it('keeps HP transfer child selection and rejects alias, resistance and ambiguous nested writers', async () => {
+  const { normalizeHpTransfer } = await import('./hpNormalization');
+  const child = {
+    funcId: 710,
+    funcType: 'lossHpSafe',
+    funcTargetType: 'enemyAll',
+    funcTargetTeam: 'enemy' as const,
+  };
+  const cell = {
+    Rate: 1000,
+    DependFuncId: 710,
+    DependFunc: child,
+    DependFuncVals: { Rate: 1000, Value: 2000 },
+  };
+  const parent = {
+    funcId: 3966,
+    funcType: 'gainHpFromTargets',
+    funcTargetType: 'self',
+    funcTargetTeam: 'playerAndEnemy' as const,
+    svals: [cell],
+  };
+  expect(normalizeHpTransfer(parent, [[cell], [], [], [], []])?.operation).toMatchObject({
+    kind: 'resourceMutation',
+    resource: 'hp',
+    amount: { kind: 'hpTransfer', donors: 'allEnemies', values: [[2000], [], [], [], []] },
+  });
+  for (const replacement of [
+    { DependFuncId: 999 },
+    { DependFunc: { ...child, funcTargetType: 'self' } },
+    { DependFunc: { ...child, funcType: 'lossHp' } },
+    { DependFuncVals: { Rate: 500, Value: 2000 } },
+    { DependFuncVals: { Rate: 1000, Value: 2000, Value2: 1 } },
+    { DependFunc: { ...child, script: { unknownResistance: true } } },
+  ]) {
+    expect(normalizeHpTransfer(parent, [[{ ...cell, ...replacement }], [], [], [], []])).toBeNull();
+  }
 });

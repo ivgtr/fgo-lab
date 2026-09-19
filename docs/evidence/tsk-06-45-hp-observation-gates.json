@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-09-12",
-  "status": "referenceSpecified",
-  "classification": "User-approved Chaldea reference contracts; raw evidence and historical arithmetic predictions retained; FGO Lab execution not yet implemented or verified; no in-game measurement claimed",
+  "status": "implementedAndVerifiedAgainstReference",
+  "classification": "User-approved Chaldea reference contracts implemented and verified in FGO Lab; raw evidence and historical arithmetic predictions retained; no in-game measurement claimed",
   "inputs": [
     {
       "path": "data/raw/nice_servant.json",
@@ -198,7 +198,8 @@
           }
         ],
         "knownDisagreement": "The earlier published clamp-only description conflicts with the reference addition path. The 2026-09-13 user-approved reference policy selects the Chaldea behavior; the discrepancy is retained rather than described as experimentally resolved."
-      }
+      },
+      "executionStatus": "implementedAndVerifiedAgainstReference"
     },
     {
       "id": "healingPrecision",
@@ -377,7 +378,8 @@
             ]
           }
         ]
-      }
+      },
+      "executionStatus": "implementedAndVerifiedAgainstReference"
     },
     {
       "id": "hpReaders",
@@ -776,7 +778,8 @@
             ]
           }
         ]
-      }
+      },
+      "executionStatus": "implementedAndVerifiedAgainstReference"
     }
   ],
   "sourcesChecked": [
@@ -789,11 +792,15 @@
       "role": "damage/buff formula documentation; no healing-specific rounding oracle recovered"
     }
   ],
-  "updatedAt": "2026-09-13",
+  "updatedAt": "2026-09-19",
   "referencePolicy": {
     "approvedAt": "2026-09-13",
     "repository": "https://github.com/chaldea-center/chaldea",
     "commit": "9fa75655c07ecd76168b1ccf5b8232e8d64664cf",
     "decision": "Use the matching Chaldea implementation, callers and tests as the reference for TSK-06.45 resource behavior. In-game measurement is additional validation, not a prerequisite for implementation. Preserve explicit FGO Lab product requirements and typed failures for missing or contradictory inputs."
+  },
+  "executionValidation": {
+    "path": "docs/evidence/tsk-06-45-hp-validation.json",
+    "sha256": "51be2acb4a74af9ee97eba6b5022366b51ceed5729e74f4bdac98b78815d161d"
   }
 }

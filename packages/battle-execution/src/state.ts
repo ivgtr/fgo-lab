@@ -125,8 +125,10 @@ export function applyWorldFacts(
   const candidate = cloneBattleState(state);
   for (const assertion of assertions) {
     const fact = assertion.fact;
-    if (fact.kind === 'quantity') candidate.quantities[fact.quantity] = fact.value;
-    else {
+    if (fact.kind === 'quantity') {
+      if (fact.quantity !== 'attackerHpPermille' || !state.hp)
+        candidate.quantities[fact.quantity] = fact.value;
+    } else {
       (candidate.traits[fact.scope] as Map<string, boolean>).set(fact.trait, fact.present);
       candidate.traitCounts[fact.scope] = fact.present
         ? {

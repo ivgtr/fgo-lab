@@ -18,10 +18,7 @@ function withResourceLimitBreakValues(
   if (operation.amount.kind === 'dependent')
     throw new TypeError('dependent_resource_has_no_values');
   if (operation.resource === 'hp')
-    return {
-      ...operation,
-      amount: { kind: 'fixed', values: operation.amount.values, limitBreakValues },
-    };
+    return { ...operation, amount: { ...operation.amount, limitBreakValues } };
   return { ...operation, amount: { ...operation.amount, limitBreakValues } };
 }
 
@@ -66,6 +63,8 @@ function operationSemanticIdentity(operation: EffectExecutionOperation): string 
           : undefined,
     });
   }
+  if (operation.kind === 'hpModifier')
+    return JSON.stringify({ ...operation, values: undefined, limitBreakValues: undefined });
   if (operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent')
     return JSON.stringify({
       ...operation,
@@ -124,25 +123,27 @@ function withExplicitLimitBreakValues(effect: MasterEffect): MasterEffect {
   return {
     ...effect,
     execution: effect.execution.map((operation) =>
-      operation.kind === 'ocRemovalResistance'
-        ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
-        : operation.kind === 'grantOcBoost'
+      operation.kind === 'hpModifier'
+        ? { ...operation, limitBreakValues: operation.values }
+        : operation.kind === 'ocRemovalResistance'
           ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
-          : operation.kind === 'grantOcApplicationRate'
+          : operation.kind === 'grantOcBoost'
             ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
-            : operation.kind === 'damageModifier' || operation.kind === 'modifierRateChange'
-              ? {
-                  ...operation,
-                  limitBreakValues: operation.limitBreakValues ?? operation.values,
-                  limitBreakValueExpressions:
-                    operation.limitBreakValueExpressions ?? operation.valueExpressions,
-                }
-              : operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent'
-                ? withResourceLimitBreakValues(
-                    operation,
-                    operation.amount.limitBreakValues ?? operation.amount.values,
-                  )
-                : operation,
+            : operation.kind === 'grantOcApplicationRate'
+              ? { ...operation, limitBreakCells: operation.limitBreakCells ?? operation.cells }
+              : operation.kind === 'damageModifier' || operation.kind === 'modifierRateChange'
+                ? {
+                    ...operation,
+                    limitBreakValues: operation.limitBreakValues ?? operation.values,
+                    limitBreakValueExpressions:
+                      operation.limitBreakValueExpressions ?? operation.valueExpressions,
+                  }
+                : operation.kind === 'resourceMutation' && operation.amount.kind !== 'dependent'
+                  ? withResourceLimitBreakValues(
+                      operation,
+                      operation.amount.limitBreakValues ?? operation.amount.values,
+                    )
+                  : operation,
     ),
   };
 }
@@ -159,6 +160,11 @@ function mergeSharedEffect(
   return {
     ...normal,
     execution: normal.execution.map((operation, index) => {
+      if (operation.kind === 'hpModifier') {
+        const lb = limitBreak.execution[index];
+        if (lb?.kind !== 'hpModifier') throw new TypeError('hp_limit_break_shape');
+        return { ...operation, limitBreakValues: lb.values };
+      }
       if (
         operation.kind === 'grantOcBoost' ||
         operation.kind === 'grantOcApplicationRate' ||

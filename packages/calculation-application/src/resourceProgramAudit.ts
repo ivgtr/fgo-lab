@@ -83,6 +83,8 @@ function opaqueReason(operation: MasterEffect['execution'][number]): string | nu
         : ['populationCount', 'npTransfer'].includes(operation.amount.kind)
           ? 'populationStateDependency'
           : null;
+    case 'hpModifier':
+    case 'removeHpModifiers':
     case 'damageModifier':
     case 'modifierRateChange':
     case 'ignoreDefense':

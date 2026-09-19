@@ -1321,7 +1321,7 @@ describe('scenario calculation facade', () => {
                       direction: 'loss' as const,
                       lossFloor: 'oneIfAlive' as const,
                       unit: 'fixed' as const,
-                      recipient: 'sourceSelf' as const,
+                      recipient: 'unresolved' as const,
                       amount: {
                         kind: 'fixed' as const,
                         values: [Array<number>(10).fill(100), [], [], [], []] as [
@@ -1350,7 +1350,7 @@ describe('scenario calculation facade', () => {
       ],
     };
 
-    const execution = calculateScenario(scenario, resourceMaster, {
+    const execution = calculateScenarioOutcome(scenario, resourceMaster, {
       ...versions,
       masterDataVersion: resourceMaster.version,
     });
@@ -1358,15 +1358,9 @@ describe('scenario calculation facade', () => {
     expect(execution.result.status).toBe('unsupported');
     if (execution.result.status !== 'unsupported') throw new Error(execution.result.status);
     expect(execution.result.rows).toEqual([]);
-    expect(
-      execution.result.missingEvidence.some((item) => item.includes('resourceStateUnavailable:hp')),
-    ).toBe(true);
-    expect(execution.input.powerMod).toBe(0);
-    expect(
-      execution.effectiveContributions.contributions.find(
-        ({ source }) => source.effectOccurrenceId === 'resource-transaction:0',
-      )?.effective,
-    ).toBe(false);
+    expect(execution.result.missingEvidence).toContain('preparation:unsupportedHpExecution');
+    expect(execution.status).toBe('rejected');
+    expect(execution.appliedPreparationActions).toEqual([]);
   });
 
   it.each(['gain', 'loss'] as const)(

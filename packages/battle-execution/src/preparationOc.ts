@@ -1,3 +1,6 @@
+import { projectPlanningHpCondition } from './hpPlanning';
+import { hpPermille } from './hpResource';
+import { isHpOperation, executeHpOperation, hpEffectKey } from './preparationHp';
 import { applyNpTransfer } from './npTransfer';
 import {
   applyPopulationFunctionToState,
@@ -9,13 +12,17 @@ import { resolveResourceTargetPolicy } from './effectRouting';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import { applyBuffInstanceMutation } from './buffInstances';
 import { servantBuffCountInputs } from './stackQuantities';
-import { requiredOcConditionInput } from './ocConditionInputs';
+import { requiredOcConditionInput, providedSourceConditionInputs } from './ocConditionInputs';
 import {
   closePreparationConditionReads,
   closeUncertainPreparationWrites,
   uncertainPreparationWrites,
 } from './preparationContextWrites';
-import { sourceHpInputKey } from './operationCompiler';
+import {
+  compileEffectCondition,
+  sourceMaximumHpInput,
+  sourceHpInputKey,
+} from './operationCompiler';
 import {
   findActorForm,
   type CanonicalInputDefinition,
@@ -27,10 +34,10 @@ import type { PreparationExecutionContext, PreNoblePhantasmState } from './prepa
 import { preparationConditionState, preparationSourceConditionState } from './preparationFacts';
 import { compileOcSourceProgram } from './ocSourceProgram';
 import { bindOcSourceOperation, ocSourceOperationKey } from './ocSourceBinding';
-import { executeOcAction, hasOcHpWrite, type OcActionStep, type OcActionOutcome } from './ocState';
+import { executeOcAction, type OcActionStep, type OcActionOutcome } from './ocState';
 import type { SourceEffect } from './sourceCollection';
 import { resolvePreparationStructuralOutcome } from './preparationState';
-import type { ConditionEvaluationState } from './condition';
+import { evaluateCondition, type ConditionEvaluationState } from './condition';
 import { resolvePreparationSourceFacts } from './preparationSourceFacts';
 import {
   applyPreparationNpOperation,
@@ -153,17 +160,47 @@ export function executePreparationOc(args: {
   );
   for (const source of sources) {
     let program = compileOcSourceProgram(source);
+    if (source.effect.selection?.kind === 'playerChoice') {
+      const family = source.effect.selection.group.key;
+      program = {
+        ...program,
+        choiceCandidates: [
+          ...new Set(
+            sources
+              .filter(
+                (candidate) =>
+                  candidate.origin === source.origin &&
+                  candidate.sourceInstanceId === source.sourceInstanceId &&
+                  candidate.skillId === source.skillId,
+              )
+              .flatMap((candidate) =>
+                candidate.effect.selection?.kind === 'playerChoice' &&
+                candidate.effect.selection.group.key === family
+                  ? [candidate.effect.selection.group.candidate]
+                  : [],
+              ),
+          ),
+        ].sort(),
+      };
+    }
     if (!hasOcTransaction)
       program = {
         ...program,
         operations: program.operations.filter(
           (operation) =>
-            operation.kind !== 'unsupported' || operation.reason === 'ocExecutionSemantics',
+            operation.kind !== 'unsupported' ||
+            operation.reason === 'ocExecutionSemantics' ||
+            operation.reason === 'resourceExecutionSemantics',
         ),
       };
+    const deferrableHpCondition = source.effect.execution.every(
+      (operation) =>
+        operation.kind === 'hpModifier' &&
+        ['receive', 'give', 'noHealing'].includes(operation.action),
+    );
     let sourceApplies = true;
     let sourceState = current;
-    steps.push((ocState) => {
+    steps.push(() => {
       sourceState = current;
       if (!source.sourceEnabled) {
         sourceApplies = false;
@@ -172,8 +209,33 @@ export function executePreparationOc(args: {
       }
       const facts = currentFacts();
       if (!facts) return { kind: 'reject', status: 'invalid', reason: 'invalidPreparationFacts' };
+      if (
+        source.effect.selection?.kind === 'playerChoice' &&
+        source.effect.execution.some(isHpOperation)
+      ) {
+        const choice = {
+          kind: 'choice' as const,
+          source: {
+            origin: source.origin,
+            sourceInstanceId: source.sourceInstanceId,
+            skillId: source.skillId || null,
+          },
+          family: source.effect.selection.group.key,
+          candidate: source.effect.selection.group.candidate,
+        };
+        if (
+          evaluateCondition(choice, facts) === null &&
+          evaluateCondition(program.condition, preparationSourceConditionState(program, facts)) !==
+            false
+        ) {
+          occurrenceId = source.effect.occurrenceId;
+          requiredInput = requiredOcConditionInput({ ...program, condition: choice }, facts);
+          return { kind: 'reject', status: 'inputRequired', reason: 'preparationConditionInput' };
+        }
+      }
       const requiresExecution =
-        effectRequiresPreparationDecision(source.effect, source.origin) ||
+        (effectRequiresPreparationDecision(source.effect, source.origin) &&
+          !(args.context.planningOnly && source.effect.execution.every(isHpOperation))) ||
         source.effect.execution.some(
           (operation) => operation.kind === 'buffInstanceMutation' && readsBuffMutation(operation),
         ) ||
@@ -185,6 +247,27 @@ export function executePreparationOc(args: {
       );
       if (!requiresExecution && effectWrites.length === 0)
         return { kind: 'skip', outcome: 'notApplicable' };
+      for (const input of providedSourceConditionInputs(
+        program,
+        facts,
+        args.context.canonicalInputValues ?? {},
+      ))
+        inputDefinitions.set(input.key, input);
+      if (args.context.planningOnly)
+        program = {
+          ...program,
+          condition: projectPlanningHpCondition(
+            program.condition,
+            JSON.stringify([
+              args.actionId,
+              source.origin,
+              source.sourceInstanceId,
+              source.skillId,
+              source.effect.occurrenceId,
+            ]),
+            args.context.planningHpChoices ?? new Map(),
+          ),
+        };
       const boundFacts = preparationSourceConditionState(program, facts);
       const actor = program.conditionActor === 'source' ? source.sourceInstanceId : 'attacker';
       const writes = current.uncertainContextWrites.filter(
@@ -193,12 +276,7 @@ export function executePreparationOc(args: {
       const resolved = resolvePreparationSourceFacts(
         {
           ...program,
-          condition: closePreparationConditionReads(
-            program.condition,
-            writes,
-            boundFacts,
-            hasOcHpWrite(ocState, actor),
-          ),
+          condition: closePreparationConditionReads(program.condition, writes, boundFacts),
         },
         boundFacts,
       );
@@ -209,6 +287,7 @@ export function executePreparationOc(args: {
       occurrenceId = source.effect.occurrenceId;
       if (
         resolved.missingCondition &&
+        !deferrableHpCondition &&
         effectRequiresPreparationDecision(source.effect, source.origin)
       ) {
         requiredInput = resolved.missingCondition;
@@ -399,6 +478,124 @@ export function executePreparationOc(args: {
               reason: 'unboundBuffInstanceRecipient',
             };
           current = projectBuffInstanceCounts({ ...current, buffInstances: instances }, buffInputs);
+          return { kind: 'skip', outcome: 'notApplicable' };
+        });
+        continue;
+      }
+      if (isHpOperation(operation)) {
+        if (args.context.planningOnly) continue;
+        steps.push((ocState) => {
+          if (!source.sourceEnabled || activation.get(source.effect)?.procOutcome === 'failure')
+            return { kind: 'skip', outcome: 'notApplicable' };
+          if (!current.hp)
+            return { kind: 'reject', status: 'unsupported', reason: 'missingHpState' };
+          const receipt = args.npUse
+            ? ocState.receipts.find((receipt) => receipt.actionId === args.actionId)
+            : null;
+          const result = executeHpOperation({
+            state: current.hp,
+            operation,
+            source,
+            values: args.context.canonicalInputValues ?? {},
+            actionId: args.actionId,
+            valueSetIndex: receipt ? receipt.effectiveOc - 1 : source.valueSetIndex,
+            modifierCondition: (instance) => {
+              const condition = compileEffectCondition(
+                {
+                  ...source.effect,
+                  requirement: {
+                    recipient: 'sourceSelf',
+                    expression: instance.operation.useCondition!,
+                  },
+                },
+                'attacker',
+                source.sourceId,
+                source.sourceInstanceId,
+                source.skillId,
+                true,
+              );
+              const queryProgram = {
+                ...program,
+                condition,
+                conditionActor:
+                  instance.actor === 'attacker' ? ('attacker' as const) : ('source' as const),
+                source: {
+                  ...source,
+                  sourceInstanceId: instance.actor,
+                  sourceTraits:
+                    [
+                      ...(args.context.initialSources ?? []),
+                      ...(args.context.terminalSources ?? []),
+                      ...args.sources,
+                    ].find((s) => s.sourceInstanceId === instance.actor)?.sourceTraits ?? [],
+                },
+              };
+              const facts = preparationSourceConditionState(queryProgram, currentFacts()!);
+              return {
+                outcome: evaluateCondition(condition, facts),
+                input: requiredOcConditionInput(queryProgram, facts),
+              };
+            },
+            conditionForRecipient: (actor) => {
+              const facts = currentFacts()!;
+              if (actor === 'attacker')
+                return {
+                  outcome: evaluateCondition(program.condition, facts),
+                  input: requiredOcConditionInput(
+                    { ...program, conditionActor: 'attacker' },
+                    facts,
+                  ),
+                };
+              if (actor.startsWith('enemy:'))
+                return {
+                  outcome: activation.get(source.effect)?.conditionOutcome ?? null,
+                  input: requiredOcConditionInput(program, sourceFacts.get(source.effect)!),
+                };
+              const recipientSource = [
+                ...(args.context.initialSources ?? []),
+                ...(args.context.terminalSources ?? []),
+                ...args.sources,
+              ].find((candidate) => candidate.sourceInstanceId === actor);
+              const recipientProgram = {
+                ...program,
+                conditionActor: 'source' as const,
+                source: {
+                  ...program.source,
+                  sourceInstanceId: actor,
+                  sourceTraits: recipientSource?.sourceTraits ?? [],
+                },
+              };
+              const bound = preparationSourceConditionState(recipientProgram, facts);
+              return {
+                outcome: evaluateCondition(program.condition, bound),
+                input: requiredOcConditionInput(recipientProgram, bound),
+              };
+            },
+          });
+          if (result.status !== 'applied') {
+            if (result.status === 'inputRequired') {
+              requiredInput = result.requiredInput;
+              return { kind: 'reject', status: 'inputRequired', reason: 'unknownHpCondition' };
+            }
+            if (current.hp.actors.attacker?.kind === 'missing') {
+              requiredInput = requiredOcConditionInput(
+                {
+                  ...program,
+                  conditionActor: 'attacker',
+                  condition: {
+                    kind: 'quantity',
+                    quantity: 'attackerHpPermille',
+                    comparison: 'atLeast',
+                    value: 0,
+                  },
+                },
+                currentFacts()!,
+              );
+              return { kind: 'reject', status: 'inputRequired', reason: 'missingInitialHp' };
+            }
+            return { kind: 'reject', status: result.status, reason: 'hpMutation' };
+          }
+          current = { ...current, hp: result.state };
           return { kind: 'skip', outcome: 'notApplicable' };
         });
         continue;
@@ -630,7 +827,9 @@ export function executePreparationOc(args: {
     });
   }
   const hp: Record<string, number | null> = {
-    attacker: args.context.attackerHpPermille ?? null,
+    get attacker() {
+      return hpPermille(current.hp?.actors.attacker);
+    },
   };
   for (const source of [
     ...(args.context.initialSources ?? []),
@@ -638,8 +837,10 @@ export function executePreparationOc(args: {
     ...args.sources,
   ]) {
     if (source.origin !== 'support' && source.origin !== 'mysticCode') continue;
-    hp[source.sourceInstanceId] =
-      args.context.canonicalInputValues?.[sourceHpInputKey(source)] ?? 1000;
+    Object.defineProperty(hp, source.sourceInstanceId, {
+      configurable: true,
+      get: () => hpPermille(current.hp?.actors[source.sourceInstanceId]),
+    });
   }
   let result = executeOcAction(args.state.ocState, args.actionId, steps, hp, {
     hasFutureNpUse: args.terminalNp !== true,
@@ -651,23 +852,30 @@ export function executePreparationOc(args: {
   if (result.status === 'inputRequired' && result.reason.startsWith('ocRateHp:')) {
     const actor = result.reason.slice('ocRateHp:'.length);
     const source = args.sources.find((source) => source.sourceInstanceId === actor);
-    requiredInput = {
-      key:
-        actor === 'attacker'
-          ? 'oc:hp:attacker'
-          : source
-            ? sourceHpInputKey(source)
-            : `source:${actor}:hpPermille`,
-      kind: 'sourceHpPermille',
-      owner: 'source',
-      label: '付与元のHP割合',
-      description: 'OC付与率の評価に用いる現在HP割合',
-      minimum: 0,
-      maximum: 1000,
-      step: 10,
-      defaultValue: null,
-      defaultReason: null,
-    };
+    if (
+      actor !== 'attacker' &&
+      source &&
+      current.hp?.receipts.some((receipt) => receipt.actor === actor)
+    )
+      requiredInput = sourceMaximumHpInput(source);
+    else
+      requiredInput = {
+        key:
+          actor === 'attacker'
+            ? 'oc:hp:attacker'
+            : source
+              ? sourceHpInputKey(source)
+              : `source:${actor}:hpPermille`,
+        kind: 'sourceHpPermille',
+        owner: 'source',
+        label: '付与元のHP割合',
+        description: 'OC付与率の評価に用いる現在HP割合',
+        minimum: 0,
+        maximum: 1000,
+        step: 10,
+        defaultValue: null,
+        defaultReason: null,
+      };
   }
   for (const outcome of result.outcomes) {
     const effect = effectSteps.get(outcome.step);
@@ -679,6 +887,21 @@ export function executePreparationOc(args: {
     }
   }
   if (result.status === 'committed') {
+    if (!args.context.planningOnly && current.hp)
+      current = {
+        ...current,
+        hp: {
+          ...current.hp,
+          executedEffects: [
+            ...new Set([
+              ...(current.hp.executedEffects ?? []),
+              ...sources
+                .filter((source) => source.effect.execution.some(isHpOperation))
+                .map(hpEffectKey),
+            ]),
+          ],
+        },
+      };
     const sourceOutcomes = new Map(result.state.sourceOutcomes);
     for (const source of sources) {
       const outcome = activation.get(source.effect)?.procOutcome;
@@ -691,16 +914,7 @@ export function executePreparationOc(args: {
   return {
     result,
     resourceFailure: resourceOutcome.failure,
-    requiredInput:
-      (result.status === 'inputRequired' &&
-        (result.reason.startsWith('ocCondition:') ||
-          result.reason.startsWith('ocProc:') ||
-          result.reason.startsWith('ocRemovalProc:') ||
-          result.reason.startsWith('preparation') ||
-          result.reason.startsWith('ocRateHp:'))) ||
-      (result.status === 'inputRequired' && result.reason.startsWith('ocRateCondition:'))
-        ? requiredInput
-        : null,
+    requiredInput: result.status === 'inputRequired' ? requiredInput : null,
     occurrenceId,
     recoveryInputDefinitions:
       result.status === 'inputRequired' && requiredInput

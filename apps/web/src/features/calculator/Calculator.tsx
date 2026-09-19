@@ -38,6 +38,7 @@ import {
   initialOcOptions,
   changeResolvedNpLevel,
   changeResolvedInitialOc,
+  setInitialHp,
   setAttackerSkillLevel,
   setCalculationSupportSkillLevel,
   setCalculationSupportSkillEnabled,
@@ -135,6 +136,9 @@ export function Calculator({
   onResetPortableRequest: () => Promise<void>;
 }) {
   const input = resolvedInput;
+  const initialHpPermille =
+    scenario.mode === 'resolved' ? scenario.attackerHpPermille : input.attackerHpPermille;
+  const executedHp = appliedPreparationActions.at(-1)?.hpAfter?.actors.attacker;
   const resolvedScenario = scenario.mode === 'resolved' ? scenario : null;
   const lastResolvedScenario = useRef<Extract<CalculationScenario, { mode: 'resolved' }> | null>(
     resolvedScenario,
@@ -261,7 +265,7 @@ export function Calculator({
       return;
     }
     if (key === 'attackerHpPermille') {
-      void onScenarioChange({ ...scenario, attackerHpPermille: value });
+      void onScenarioChange(setInitialHp(scenario, value));
       return;
     }
     void onScenarioChange({
@@ -412,7 +416,7 @@ export function Calculator({
         excludeDefaultAttackerSkillContributions(
           resetTargetClassContextForAttacker(
             {
-              ...scenario,
+              ...changeResolvedNpLevel(scenario, master.npResourceSemantics, candidateNpLevel),
               attacker: {
                 servantId: candidate.id,
                 initialActorFormId: defaultPlan.terminalState.initialFormId,
@@ -432,7 +436,7 @@ export function Calculator({
               ),
               effectDecisions: [],
               worldFactAssertions: [],
-              attackerHpPermille: null,
+              attackerHpPermille: 1000,
               battleState: { battlePointPhase: null },
               canonicalInputValues: {},
               explicitOverrides: {},
@@ -907,16 +911,16 @@ export function Calculator({
               ) : null}
             </select>
           </label>
-          {requiresAttackerHp ? (
+          {requiresAttackerHp || scenario.mode === 'resolved' ? (
             <label className="damage-context-input form-grid-wide">
-              自身の残りHP（%）
+              準備開始時のHP（%）
               <input
                 type="number"
                 min="0"
                 max="100"
-                step="1"
+                step="0.1"
                 required
-                value={input.attackerHpPermille === null ? '' : input.attackerHpPermille / 10}
+                value={initialHpPermille === null ? '' : initialHpPermille / 10}
                 onChange={(event) =>
                   changeDamageContext(
                     'attackerHpPermille',
@@ -927,10 +931,13 @@ export function Calculator({
                 }
               />
               <small>
-                {attackerDamage?.kind === 'hpRatioLow'
-                  ? 'HPが少ないほど威力が上がる宝具の計算に必要です'
-                  : 'HPに応じて変化する火力効果の計算に必要です'}
+                {executedHp?.kind === 'absolute'
+                  ? `実行後HP: ${executedHp.current.toLocaleString()} / ${executedHp.maximum.toLocaleString()}（${Math.round((executedHp.current / executedHp.maximum) * 100)}%）`
+                  : 'スキル・宝具による回復や減少を適用する前のHPです'}
               </small>
+              <button type="button" onClick={() => changeDamageContext('attackerHpPermille', 1000)}>
+                初期HPを100%へ戻す
+              </button>
             </label>
           ) : null}
           {attackerDamage?.kind === 'battlePointPhase' ? (
@@ -1388,6 +1395,8 @@ export function RejectedCalculator({
       }),
     );
   }
+  const hpUnavailable = result.status === 'unavailable' && result.reason === 'attackerDead';
+  const hpRepair = hpUnavailable || scenario.attackerHpPermille === null;
   return (
     <div className="worksheet">
       <section>
@@ -1397,6 +1406,39 @@ export function RejectedCalculator({
             <h2>攻撃準備を完了できません</h2>
           </div>
         </div>
+        {hpUnavailable ? (
+          <p role="alert">
+            HPが0のため宝具を使用できません。準備開始時のHPと準備操作を確認してください。
+          </p>
+        ) : null}
+        {hpRepair && !effectInputs.some((input) => input.key === 'oc:hp:attacker') ? (
+          <label className="damage-context-input">
+            準備開始時のHP（%）
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={scenario.attackerHpPermille === null ? '' : scenario.attackerHpPermille / 10}
+              onChange={(event) =>
+                void onScenarioChange(
+                  setInitialHp(
+                    scenario,
+                    event.target.value === ''
+                      ? null
+                      : Math.round(Math.min(100, Math.max(0, Number(event.target.value))) * 10),
+                  ),
+                )
+              }
+            />
+            <button
+              type="button"
+              onClick={() => void onScenarioChange(setInitialHp(scenario, 1000))}
+            >
+              初期HPを100%へ戻す
+            </button>
+          </label>
+        ) : null}
         <p>準備状態を修正すると再計算します。この状態から直接入力へは切り替えられません。</p>
         {effectInputs.map((input) => (
           <EffectInlineInput key={input.key} input={input} onChange={changeCanonicalInput} />

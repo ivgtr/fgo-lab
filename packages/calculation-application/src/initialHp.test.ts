@@ -136,3 +136,15 @@ describe('approved initial maximum HP basis', () => {
     });
   });
 });
+it('requires explicit canonical form HP ownership and never falls back from a missing form cell', () => {
+  const input = structuredClone(fixture);
+  const form = input.servants[0]!.actorFormGraph.forms[0]!;
+  delete (form as Partial<typeof form>).baseHp;
+  expect(masterSnapshotSchema.safeParse(input).success).toBe(false);
+  const modified = structuredClone(master);
+  modified.servants[0]!.actorFormGraph.forms[0]!.baseHp = { kind: 'form', hpByLevel: { '1': 500 } };
+  expect(resolveInitialMaximumHp(scenario, modified)).toMatchObject({
+    status: 'invalid',
+    issue: { reason: 'missingHp' },
+  });
+});

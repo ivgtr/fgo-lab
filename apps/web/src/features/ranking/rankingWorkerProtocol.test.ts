@@ -7,6 +7,7 @@ import {
   executePortableCalculation,
   type RankingPolicyDetail,
 } from '@fgo-lab/calculation-application';
+import { noblePhantasmEffectSchema } from '@fgo-lab/master-data';
 import { parseRankingWorkerResponse } from './rankingWorkerProtocol';
 import { rankingResponseFixture } from './rankingResponseFixture';
 import { RankingEffectDetails } from './RankingEffectDetails';
@@ -266,4 +267,86 @@ describe('ranking response consumer contract', () => {
     expect(parseRankingWorkerResponse({ ...detailError, entryId: undefined })).toBeNull();
     expect(parseRankingWorkerResponse({ ...detailError, fingerprint: null })).toBeNull();
   });
+});
+
+it('retains canonical NP effect timing in preparation receipts and rejects unknown metadata', () => {
+  const response = structuredClone(fixture.detail);
+  const action = response.detail.appliedPreparationActions.at(-1)!;
+  const npEffect = noblePhantasmEffectSchema.parse({
+    id: 'hp-recovery',
+    occurrenceId: 'hp-recovery',
+    label: 'HP recovery',
+    timing: 'beforeDamage',
+    availability: 'allLimitBreakStates',
+    inclusionPolicy: { default: 'include' },
+    gameActivation: 'npBeforeDamage',
+    proc: { kind: 'guaranteed' },
+    selection: null,
+    interaction: null,
+    triggerScope: null,
+    operationTrigger: null,
+    operationReference: null,
+    stateIdentity: null,
+    inputDefinitions: [],
+    requirement: { recipient: 'sourceSelf', expression: { kind: 'always' } },
+    execution: [
+      {
+        kind: 'resourceMutation',
+        resource: 'hp',
+        direction: 'gain',
+        unit: 'fixed',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        amount: { kind: 'fixed', values: [[1000], [], [], [], []] },
+      },
+    ],
+    atlasEvidence: {
+      functionType: 'gainHp',
+      target: 'self',
+      parameterSets: [[], [], [], [], []],
+      parameterSemantics: {
+        value: [],
+        lifecycle: [],
+        presentation: [],
+        condition: [],
+        contextMutation: [],
+        choice: [],
+        valueExpression: [],
+        buffIdentity: [],
+        unresolved: [],
+      },
+      unresolvedSemanticKeys: [],
+      buffTypes: [],
+      buffRateTargets: [],
+      buffConditionKeys: [],
+    },
+  });
+  action.selectedEffects = [
+    {
+      sourceKind: 'noblePhantasm',
+      sourceId: action.sourceId,
+      actorFormId: action.actorFormId,
+      occurrenceId: npEffect.occurrenceId,
+      effect: npEffect,
+      stochasticOutcome: null,
+    },
+  ];
+  expect(parseRankingWorkerResponse(response)).toEqual(response);
+  expect(
+    parseRankingWorkerResponse(
+      corrupted(
+        response,
+        [
+          'detail',
+          'appliedPreparationActions',
+          String(response.detail.appliedPreparationActions.length - 1),
+          'selectedEffects',
+          '0',
+          'effect',
+          'unknownTiming',
+        ],
+        'later',
+      ),
+    ),
+  ).toBeNull();
 });

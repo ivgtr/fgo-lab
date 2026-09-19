@@ -1,3 +1,4 @@
+import type { HpState } from './hpResource';
 import type { NpTransferReceipt } from './npTransfer';
 import type {
   ActorFormId,
@@ -18,16 +19,21 @@ import type { CountedBuffInstance } from './buffInstances';
 import type { PopulationEvent } from './populationCounts';
 
 export interface PreparationExecutionContext {
+  planningOnly?: boolean;
+  planningHpChoices?: ReadonlyMap<string, boolean>;
   resourceSemantics: CanonicalNpResourceSemantics;
   npLevel: NpResourceState['npLevel'];
   initialGauge: number;
   overcharge: 1 | 2 | 3 | 4 | 5;
   stackInputs?: readonly StackInputDefinition[];
   canonicalInputValues?: Readonly<Record<string, number>>;
+  initialMaximumHp?: number;
+  maximumHpByForm?: ReadonlyMap<string, number>;
   attackerHpPermille?: number;
   battlePointPhase?: number | null;
   worldFacts?: readonly WorldFactAssertion[];
   targetPredicates?: readonly TargetPredicateAssertion[];
+  attackerPredicates?: readonly TargetPredicateAssertion[];
   activationFacts?: readonly ActivationFact[];
   policy?: ContributionApplicationPolicy;
   initialSources?: readonly SourceEffect[];
@@ -50,6 +56,8 @@ export interface AppliedPreparationEffect {
 }
 
 export interface AppliedPreparationAction {
+  hpBefore?: HpState | undefined;
+  hpAfter?: HpState | undefined;
   command: PreNoblePhantasmCommand;
   actorFormId: ActorFormId;
   sourceKind: 'skill' | 'noblePhantasm' | 'attackNoblePhantasm';
@@ -65,6 +73,7 @@ export interface AppliedPreparationAction {
 }
 
 export interface PreNoblePhantasmState {
+  hp?: HpState | undefined;
   populationEvents: readonly PopulationEvent[];
   npTransfers?: readonly NpTransferReceipt[];
   uncertainEnemyCharge?: boolean;
@@ -96,6 +105,7 @@ export interface PreNoblePhantasmState {
 }
 
 export type PreparationFailureCode =
+  | 'attackerDead'
   | 'unknownInitialForm'
   | 'actionAfterAttack'
   | 'skillSlotReused'
@@ -115,6 +125,8 @@ export type PreparationFailureCode =
   | 'insufficientNpGauge'
   | 'invalidResourceMutation'
   | 'unsupportedResourceMutation'
+  | 'unsupportedHpExecution'
+  | 'invalidHpExecution'
   | 'unsupportedOcExecution'
   | 'invalidOcExecution'
   | 'invalidPreparationActivation'

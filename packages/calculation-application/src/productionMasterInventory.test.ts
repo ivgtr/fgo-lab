@@ -1,3 +1,4 @@
+import { applyCanonicalInputCommand } from './canonicalInputs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -73,16 +74,11 @@ function loadProductionMaster() {
 }
 
 const expectedUnsupportedFamilies = {
-  '702500': ['unsupportedOperation'],
   '705300': ['unsupportedOperation'],
 } as const;
 
 const expectedUnresolvedDamageSemantics = {
-  parameters: {
-    DependFunc: 3,
-    DependFuncId: 3,
-    DependFuncVals: 3,
-  },
+  parameters: {},
   scripts: {},
 } as const;
 
@@ -659,8 +655,8 @@ describe('production master inventory ratchet', () => {
       hidden: allProjections.filter((effect) => effect.visibility === 'hidden').length,
     }).toEqual({
       automaticVisible: 0,
-      hidden: 5740,
-      user: 1592,
+      hidden: 5917,
+      user: 1591,
     });
     expect(
       allProjections.filter(
@@ -692,10 +688,6 @@ describe('production master inventory ratchet', () => {
     expect(invalidAutomaticConditions).toEqual([]);
     expect(inertUserProjections).toEqual([]);
     expect(selectedUnsupportedProjections).toEqual([
-      '702500:attacker:attacker:702500:343450:125:0',
-      '702500:attacker:attacker:702500:789451:439:0',
-      '702500:attacker:attacker:702500:344655:21449:0',
-      '702500:passive:passive:702500:54251:118:0',
       '705300:attacker:attacker:705300:2655650:110:0',
       '705300:attacker:attacker:705300:2655650:23460:0',
       '705300:attacker:attacker:705300:2657650:248:0',
@@ -714,7 +706,7 @@ describe('production master inventory ratchet', () => {
               .length,
           ]),
       ),
-    ).toEqual({ '702500': 4, '705300': 6 });
+    ).toEqual({ '705300': 6 });
     expect(declaredExclusivePairCount).toBe(4);
     expect(skippedExclusivePairs).toEqual([
       '2301100:attacker:attacker:2301100:2536550:22883:0|attacker:attacker:2301100:2536550:22887:0',
@@ -795,7 +787,7 @@ describe('production master inventory ratchet', () => {
     const preparationRejected: string[] = [];
     for (const source of master.servants) {
       for (const skill of source.skills) {
-        const scenario: ResolvedScenario = {
+        let scenario: ResolvedScenario = {
           ...createDefaultResolvedScenario(master, undefined, attacker),
           preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
           support: {
@@ -812,7 +804,23 @@ describe('production master inventory ratchet', () => {
             },
           },
         };
-        const baseline = calculateScenarioOutcome(scenario, master, versions);
+        let baseline = calculateScenarioOutcome(scenario, master, versions);
+        const repaired = new Set<string>();
+        while (baseline.result.status === 'inputRequired') {
+          const input = baseline.inputDefinitions.find(
+            (input) =>
+              ['worldTraitPresence', 'sourceMaximumHp', 'sourceChoice'].includes(input.kind) &&
+              !repaired.has(input.key),
+          );
+          if (!input) break;
+          repaired.add(input.key);
+          scenario = applyCanonicalInputCommand(scenario, {
+            kind: 'setCanonicalIntegerInput',
+            key: input.key,
+            value: input.kind === 'sourceMaximumHp' ? 10000 : 0,
+          });
+          baseline = calculateScenarioOutcome(scenario, master, versions);
+        }
         if (baseline.status === 'rejected') {
           preparationRejected.push(
             `${source.id}:${skill.id}:${baseline.result.issues.map((issue) => issue.code).join(',')}`,
@@ -833,10 +841,15 @@ describe('production master inventory ratchet', () => {
           const scenarioWithInputs = {
             ...scenario,
             canonicalInputValues: Object.fromEntries(
-              Object.entries(values).map(([key, value]) => [
-                key,
-                { kind: 'integer' as const, value },
-              ]),
+              Object.entries({
+                ...Object.fromEntries(
+                  Object.entries(scenario.canonicalInputValues).map(([key, input]) => [
+                    key,
+                    input.value,
+                  ]),
+                ),
+                ...values,
+              }).map(([key, value]) => [key, { kind: 'integer' as const, value }]),
             ),
           };
           const withInputs = calculateScenario(scenarioWithInputs, master, versions);
@@ -899,13 +912,13 @@ describe('production master inventory ratchet', () => {
     if (process.env['FGO_TEST_ARTIFACT_DIR'])
       await writeFile(
         resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'oc-support-dispositions.json'),
-        JSON.stringify(supportDispositions),
+        JSON.stringify({ supportDispositions, preparationRejected }),
       );
     expect(preparationRejected).toEqual([
       '102800:165551:preparation:insufficientNpGauge',
       '304000:671650:preparation:unsupportedOcExecution',
     ]);
-    expect(projectionCount).toBe(380);
+    expect(projectionCount).toBe(379);
     expect(intrinsicRecipientConflicts).toEqual([]);
     // Exclusive intrinsic attributes are proven false by the shared condition owner.
     for (const key of [
@@ -918,7 +931,7 @@ describe('production master inventory ratchet', () => {
         explanation: { code: 'conditionNotMet' },
       });
     }
-    expect(typedUnsupported).toEqual(['204300:885550:support:audit:204300:885550:885550:7415:0']);
+    expect(typedUnsupported).toEqual([]);
     expect(failures).toEqual([]);
   }, 120_000);
 

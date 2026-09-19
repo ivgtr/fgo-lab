@@ -368,7 +368,8 @@ export function normalizeAtlasSnapshot(input: {
         actorFormGraph: {
           actorId: String(servant.id),
           forms: noblePhantasmModel.actorForms.map(
-            ({ id, name, traits, skillIds, passiveIds, baseNoblePhantasmVariant }) => ({
+            ({ id, baseHp, name, traits, skillIds, passiveIds, baseNoblePhantasmVariant }) => ({
+              baseHp,
               id,
               name,
               traits,

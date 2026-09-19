@@ -1,3 +1,5 @@
+import { isHpOperation } from './preparationHp';
+import { hpAlive } from './hpResource';
 import { effectExecutesInNpProgram } from './npProgramScope';
 import type { PreparationSourceResourceResult } from './preparationResourcePlan';
 import type {
@@ -74,6 +76,8 @@ export function effectRequiresPreparationDecision(
           operation.proof === 'enemyChargeOutsideDamage') ||
         operation.kind === 'populationMutation' ||
         operation.kind === 'populationFunction' ||
+        isHpOperation(operation) ||
+        (operation.kind === 'unsupported' && operation.reason === 'resourceExecutionSemantics') ||
         (operation.kind === 'resourceMutation' &&
           operation.resource === 'npGauge' &&
           (operation.amount.kind === 'npTransfer' ||
@@ -120,6 +124,7 @@ export type PreparationResourcePlanResult =
       preparationEffects: readonly MasterEffect[];
       activation: ReadonlyMap<MasterEffect, PreparationEffectActivation>;
       ocState: OcState;
+      hp: PreNoblePhantasmState['hp'];
       populationEvents: PreNoblePhantasmState['populationEvents'];
       npTransfers: NonNullable<PreNoblePhantasmState['npTransfers']>;
       uncertainEnemyCharge: boolean;
@@ -159,6 +164,13 @@ export function planPreparationResourceTransaction(args: {
   consumeNoblePhantasm: boolean;
   inputSource: PreparationInputSource;
 }): PreparationResourcePlanResult {
+  if (args.consumeNoblePhantasm && hpAlive(args.state.hp?.actors.attacker) === false)
+    return {
+      status: 'rejected',
+      code: 'attackerDead',
+      requiredInput: null,
+      requiredInputEffectOccurrenceId: null,
+    };
   const requirement = args.skill?.resourceRequirement
     ? {
         kind: 'atLeast' as const,
@@ -239,13 +251,29 @@ export function planPreparationResourceTransaction(args: {
           : oc.result.status === 'invalid'
             ? oc.result.reason === 'invalidPreparationActivation'
               ? 'invalidPreparationActivation'
-              : 'invalidOcExecution'
-            : 'unsupportedOcExecution',
+              : oc.result.reason === 'hpMutation'
+                ? 'invalidHpExecution'
+                : 'invalidOcExecution'
+            : [
+                  'unknownHpCondition',
+                  'missingHpState',
+                  'hpMutation',
+                  'resourceExecutionSemantics',
+                ].includes(oc.result.reason)
+              ? 'unsupportedHpExecution'
+              : 'unsupportedOcExecution',
       requiredInput: oc.requiredInput,
       requiredInputEffectOccurrenceId: oc.requiredInput ? oc.occurrenceId : null,
       ...(oc.recoveryInputDefinitions.length
         ? { recoveryInputDefinitions: oc.recoveryInputDefinitions }
         : {}),
+    };
+  if (args.consumeNoblePhantasm && hpAlive(oc.structuralState.hp?.actors.attacker) === false)
+    return {
+      status: 'rejected',
+      code: 'attackerDead',
+      requiredInput: null,
+      requiredInputEffectOccurrenceId: null,
     };
   const ocUse = oc.result.state.receipts.find((receipt) => receipt.actionId === actionId) ?? null;
   const activation = oc.activation;
@@ -271,6 +299,7 @@ export function planPreparationResourceTransaction(args: {
     preparationEffects,
     activation,
     ocState: oc.result.state,
+    hp: oc.structuralState.hp,
     populationEvents: oc.structuralState.populationEvents,
     npTransfers: oc.structuralState.npTransfers ?? [],
     uncertainEnemyCharge: oc.structuralState.uncertainEnemyCharge ?? false,

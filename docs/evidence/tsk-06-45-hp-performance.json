@@ -1,0 +1,1267 @@
+{
+  "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+  "head": "9a866b7b7b2b506e49b64a32dbc9f6f852ca95db",
+  "diffHash": "7908dd6b39ee7115a77451beb52eb176f4cdce74c368353543c05fdc4b3d3e42",
+  "node": "v26.3.1",
+  "platform": "linux",
+  "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+  "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+  "masterHash": "d9980b546f7e6a114caba2a0f0fb6046f53909fe087f1bc487981207f8c037f8",
+  "versions": {
+    "masterDataVersion": "20260913.27",
+    "engineVersion": "44.0.0"
+  },
+  "conditions": {
+    "population": "all",
+    "initialOvercharge": 1,
+    "levelBasis": "naturalLimit",
+    "npLevelBasis": {
+      "kind": "specified",
+      "npLevel": 1
+    },
+    "classAffinity": "neutral",
+    "selfBuffs": "included",
+    "conditionalEffects": "baseline"
+  },
+  "samples": [
+    {
+      "milliseconds": 4503.525296000001,
+      "rows": 427,
+      "exclusions": 6,
+      "digest": "1f70ccd310333ab5b080aa27cc742fd55e19e19aba104642f8cc6e1931cabc4d"
+    },
+    {
+      "milliseconds": 4795.090993999998,
+      "rows": 427,
+      "exclusions": 6,
+      "digest": "1f70ccd310333ab5b080aa27cc742fd55e19e19aba104642f8cc6e1931cabc4d"
+    },
+    {
+      "milliseconds": 5260.313586,
+      "rows": 427,
+      "exclusions": 6,
+      "digest": "1f70ccd310333ab5b080aa27cc742fd55e19e19aba104642f8cc6e1931cabc4d"
+    }
+  ],
+  "medianMs": 4795.090993999998,
+  "baseline": {
+    "historical": {
+      "path": "docs/evidence/tsk-06-45-np-transfer-performance.json",
+      "sha256": "90467e75976814d0a3414947cfbee79a36f73ec7c011feefb538e0eae4193027",
+      "medianMs": 3542.9265099999993
+    },
+    "sameEnvironmentReproduction": {
+      "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+      "head": "645a3ee852e2bb383068c350d3d5c4d29f74f0cd",
+      "diffHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "node": "v26.3.1",
+      "platform": "linux",
+      "cpu": "AMD Ryzen 7 3800X 8-Core Processor",
+      "scriptHash": "71b93ec9eaf96d43decd0b1012053aa11185b656256aa26c500b14bd38dc1c63",
+      "masterHash": "f2cdfc393126ac10b8600371c531fac6089228db0547178f3a10116fb68c37b9",
+      "versions": {
+        "masterDataVersion": "20260913.16",
+        "engineVersion": "43.0.0"
+      },
+      "conditions": {
+        "population": "all",
+        "initialOvercharge": 1,
+        "levelBasis": "naturalLimit",
+        "npLevelBasis": {
+          "kind": "specified",
+          "npLevel": 1
+        },
+        "classAffinity": "neutral",
+        "selfBuffs": "included",
+        "conditionalEffects": "baseline"
+      },
+      "samples": [
+        {
+          "milliseconds": 4081.0665019999988,
+          "rows": 425,
+          "exclusions": 8,
+          "digest": "e18cb7c0d1d98fd7f0b99d4c8b9a96cd3793492fcea4ff1ad3f1d31c507b2818"
+        },
+        {
+          "milliseconds": 4277.316313000001,
+          "rows": 425,
+          "exclusions": 8,
+          "digest": "e18cb7c0d1d98fd7f0b99d4c8b9a96cd3793492fcea4ff1ad3f1d31c507b2818"
+        },
+        {
+          "milliseconds": 3823.5537109999987,
+          "rows": 425,
+          "exclusions": 8,
+          "digest": "e18cb7c0d1d98fd7f0b99d4c8b9a96cd3793492fcea4ff1ad3f1d31c507b2818"
+        }
+      ],
+      "medianMs": 4081.0665019999988
+    },
+    "isolation": "git archive 645a3ee into /tmp/fgo-hp-baseline; identical installed external dependencies; workspace links point to baseline packages; no changes to active checkout"
+  },
+  "comparison": {
+    "historicalPercent": 35.342660381628946,
+    "reproducedPercent": 17.49602687557479,
+    "rowsBefore": 425,
+    "rowsAfter": 427,
+    "exclusionsBefore": 8,
+    "exclusionsAfter": 6,
+    "candidateBefore": 6500,
+    "candidateAfter": 6516,
+    "deduplicatedBefore": 4035,
+    "deduplicatedAfter": 4043,
+    "baselineScenarioCandidatesBeforeHpAdmission": 2412,
+    "baselineScenarioCandidatesAfterHpAdmission": 2434,
+    "damageRequestsBefore": 2351,
+    "damageRequestsAfter": 2377,
+    "distinctDamageRequestsBefore": 1445,
+    "distinctDamageRequestsAfter": 1451,
+    "capOrTimeoutChanges": 0
+  },
+  "diagnosticAttribution": {
+    "historicalTiming": "environmentDependent",
+    "sameEnvironmentChange": "changedByChange",
+    "evidence": "The unchanged baseline code/output digest reproduces at a different median from the historical run. Current execution adds actor HP state, ordered updates, receipts and two admitted profiles. HP reader admission also retains22 additional executable default scenarios (2412 to2434) and corrects the NP1 HP coefficient of702500; it is independent of NP capacity. Initial maximum resolution now reuses its supplied result and lineage form values. Profiled timing is diagnostic only; the final comparison uses unprofiled warm1/serial3 runs.",
+    "profileSummary": {
+      "self": [
+        {
+          "function": "analyzeLiterals",
+          "file": "constraints.ts",
+          "milliseconds": 2059.64
+        },
+        {
+          "function": "(garbage collector)",
+          "file": "",
+          "milliseconds": 1305.692
+        },
+        {
+          "function": "compilationCacheKey",
+          "file": "operationCompiler.ts",
+          "milliseconds": 952.21
+        },
+        {
+          "function": "validateConstraintSet",
+          "file": "constraints.ts",
+          "milliseconds": 938.234
+        },
+        {
+          "function": "inst._zod.parse",
+          "file": "schemas.js",
+          "milliseconds": 852.836
+        },
+        {
+          "function": "",
+          "file": "measure-ranking-resources.ts",
+          "milliseconds": 749.874
+        },
+        {
+          "function": "stableStringify",
+          "file": "candidateComparison.ts",
+          "milliseconds": 536.339
+        },
+        {
+          "function": "cloneBattleState",
+          "file": "state.ts",
+          "milliseconds": 532.679
+        },
+        {
+          "function": "spawnSync",
+          "file": "child_process",
+          "milliseconds": 521.544
+        },
+        {
+          "function": "",
+          "file": "",
+          "milliseconds": 405.836
+        },
+        {
+          "function": "",
+          "file": "auxiliarySources.ts",
+          "milliseconds": 398.035
+        },
+        {
+          "function": "update",
+          "file": "hash",
+          "milliseconds": 392.606
+        },
+        {
+          "function": "executePreparationOc",
+          "file": "preparationOc.ts",
+          "milliseconds": 366.283
+        },
+        {
+          "function": "attackProfileKey",
+          "file": "attackProfile.ts",
+          "milliseconds": 337.05
+        },
+        {
+          "function": "set toTemporalInstant",
+          "file": "",
+          "milliseconds": 326.46
+        },
+        {
+          "function": "compileOcSourceProgram",
+          "file": "ocSourceProgram.ts",
+          "milliseconds": 313.176
+        },
+        {
+          "function": "calculateDamageDistribution",
+          "file": "formula.ts",
+          "milliseconds": 312.17
+        },
+        {
+          "function": "",
+          "file": "constraints.ts",
+          "milliseconds": 302.217
+        },
+        {
+          "function": "makeSyncRequest",
+          "file": "hooks",
+          "milliseconds": 272.045
+        },
+        {
+          "function": "inst._zod.run",
+          "file": "schemas.js",
+          "milliseconds": 265.168
+        },
+        {
+          "function": "resolveTargetCandidates",
+          "file": "targetContext.ts",
+          "milliseconds": 233.994
+        },
+        {
+          "function": "compileEffectCached",
+          "file": "operationCompiler.ts",
+          "milliseconds": 226.81
+        },
+        {
+          "function": "compileExecutionPlan",
+          "file": "executionPlan.ts",
+          "milliseconds": 218.141
+        },
+        {
+          "function": "",
+          "file": "preparationOc.ts",
+          "milliseconds": 214.397
+        },
+        {
+          "function": "",
+          "file": "scenario.ts",
+          "milliseconds": 211.558
+        },
+        {
+          "function": "createConditionState",
+          "file": "conditionState.ts",
+          "milliseconds": 203.493
+        },
+        {
+          "function": "fixedLiterals",
+          "file": "constraints.ts",
+          "milliseconds": 201.168
+        },
+        {
+          "function": "executeOrderedScenarioCandidate",
+          "file": "candidateExecution.ts",
+          "milliseconds": 195.379
+        },
+        {
+          "function": "",
+          "file": "candidateComparison.ts",
+          "milliseconds": 177.584
+        },
+        {
+          "function": "actorFormKey",
+          "file": "index.ts",
+          "milliseconds": 172.959
+        }
+      ],
+      "inclusive": [
+        {
+          "function": "",
+          "file": "measure-ranking-resources.ts",
+          "milliseconds": 22898.027
+        },
+        {
+          "function": "calculateRankingPolicy",
+          "file": "rankingPolicyCalculation.ts",
+          "milliseconds": 19468.34
+        },
+        {
+          "function": "calculateRankingCandidateSet",
+          "file": "rankingPolicyCandidates.ts",
+          "milliseconds": 19258.536
+        },
+        {
+          "function": "compileRankingExecutionPlan",
+          "file": "rankingPolicyScenario.ts",
+          "milliseconds": 17249.504
+        },
+        {
+          "function": "",
+          "file": "rankingPolicyScenario.ts",
+          "milliseconds": 14030.626
+        },
+        {
+          "function": "prepareCalculationScenarioWithPolicy",
+          "file": "scenario.ts",
+          "milliseconds": 13827.366
+        },
+        {
+          "function": "compileExecutionPlan",
+          "file": "executionPlan.ts",
+          "milliseconds": 5101.107
+        },
+        {
+          "function": "executeOrderedScenario",
+          "file": "engine.ts",
+          "milliseconds": 4696.095
+        },
+        {
+          "function": "executeOrderedScenarioCandidates",
+          "file": "candidateExecution.ts",
+          "milliseconds": 3890.459
+        },
+        {
+          "function": "",
+          "file": "candidateExecution.ts",
+          "milliseconds": 3887.113
+        },
+        {
+          "function": "executeOrderedScenarioCandidate",
+          "file": "candidateExecution.ts",
+          "milliseconds": 3859.483
+        },
+        {
+          "function": "resolveScenarioPreparationOutcome",
+          "file": "scenario.ts",
+          "milliseconds": 3842.288
+        },
+        {
+          "function": "validateConstraintSet",
+          "file": "constraints.ts",
+          "milliseconds": 3655.357
+        },
+        {
+          "function": "resolveAttackerFormExecution",
+          "file": "sourceCollection.ts",
+          "milliseconds": 3496.321
+        },
+        {
+          "function": "resolveTargetCandidates",
+          "file": "targetContext.ts",
+          "milliseconds": 3222.29
+        },
+        {
+          "function": "compileRankingCandidateSpaces",
+          "file": "rankingCandidateSpace.ts",
+          "milliseconds": 3133.319
+        },
+        {
+          "function": "analyzeLiterals",
+          "file": "constraints.ts",
+          "milliseconds": 2216.109
+        },
+        {
+          "function": "executePreparationOc",
+          "file": "preparationOc.ts",
+          "milliseconds": 1953.732
+        },
+        {
+          "function": "",
+          "file": "rankingCandidateSpace.ts",
+          "milliseconds": 1934.048
+        },
+        {
+          "function": "",
+          "file": "rankingExecution.ts",
+          "milliseconds": 1898.313
+        },
+        {
+          "function": "executeRankingScenarios",
+          "file": "rankingExecution.ts",
+          "milliseconds": 1896.057
+        },
+        {
+          "function": "reducePreNoblePhantasmAction",
+          "file": "preNoblePhantasm.ts",
+          "milliseconds": 1855.022
+        },
+        {
+          "function": "",
+          "file": "preNoblePhantasm.ts",
+          "milliseconds": 1778.619
+        },
+        {
+          "function": "compileProgramDomain",
+          "file": "rankingCandidateSpace.ts",
+          "milliseconds": 1683.928
+        },
+        {
+          "function": "getOrCreate",
+          "file": "preparedDamageInputCache.ts",
+          "milliseconds": 1682.743
+        },
+        {
+          "function": "calculateDamageResolution",
+          "file": "damageResolution.ts",
+          "milliseconds": 1588.639
+        },
+        {
+          "function": "",
+          "file": "index.ts",
+          "milliseconds": 1554.817
+        },
+        {
+          "function": "planPreparationResourceTransaction",
+          "file": "preparationTransaction.ts",
+          "milliseconds": 1456.748
+        },
+        {
+          "function": "compileEffectCached",
+          "file": "operationCompiler.ts",
+          "milliseconds": 1425.976
+        },
+        {
+          "function": "reducePreparationSkillAction",
+          "file": "preparationSkillReducer.ts",
+          "milliseconds": 1316.963
+        },
+        {
+          "function": "compileStaticRankingSemantics",
+          "file": "rankingStaticSemantics.ts",
+          "milliseconds": 1304.088
+        },
+        {
+          "function": "evaluateDamageRows",
+          "file": "index.ts",
+          "milliseconds": 1204.098
+        },
+        {
+          "function": "executeOcAction",
+          "file": "ocState.ts",
+          "milliseconds": 1181.738
+        },
+        {
+          "function": "calculateDamageDistribution",
+          "file": "formula.ts",
+          "milliseconds": 1154.233
+        },
+        {
+          "function": "evaluateConditionAgainstKnownFacts",
+          "file": "candidateExecution.ts",
+          "milliseconds": 1110.964
+        },
+        {
+          "function": "",
+          "file": "preparationOc.ts",
+          "milliseconds": 1024.406
+        },
+        {
+          "function": "createPreNoblePhantasmState",
+          "file": "preNoblePhantasm.ts",
+          "milliseconds": 978.077
+        },
+        {
+          "function": "",
+          "file": "rankingStaticSemantics.ts",
+          "milliseconds": 966.158
+        },
+        {
+          "function": "compilationCacheKey",
+          "file": "operationCompiler.ts",
+          "milliseconds": 955.524
+        },
+        {
+          "function": "prepareCandidateExecution",
+          "file": "candidatePreparation.ts",
+          "milliseconds": 889.07
+        },
+        {
+          "function": "compileCandidateLocalActionAdmission",
+          "file": "rankingActionAdmission.ts",
+          "milliseconds": 859.149
+        },
+        {
+          "function": "",
+          "file": "rankingActionAdmission.ts",
+          "milliseconds": 852.257
+        },
+        {
+          "function": "classifyPrograms",
+          "file": "rankingActionAdmission.ts",
+          "milliseconds": 850.703
+        },
+        {
+          "function": "activatePreparationForm",
+          "file": "preparationPhases.ts",
+          "milliseconds": 769.171
+        },
+        {
+          "function": "executePreparationPhase",
+          "file": "preparationPhases.ts",
+          "milliseconds": 751.61
+        }
+      ]
+    },
+    "finalBaselineProfileComparison": {
+      "beforeProfiles": [
+        {
+          "path": "/tmp/hp-profile-before/CPU.20260919.230451.2.0.001.cpuprofile",
+          "sha256": "0a848ddbea760745546cff3c3be9ee5928c891c90d46931437081992384196a9"
+        }
+      ],
+      "afterProfiles": [
+        {
+          "path": "/tmp/hp-profile-final/CPU.20260919.230331.2.0.001.cpuprofile",
+          "sha256": "6444eb5049e40666b94d352850eccc811c11eed10bd92ac6f40d91064404b1a4"
+        }
+      ],
+      "method": "CPU sampling across master parsing, one warmup and three ranking runs. Self/inclusive costs are diagnostics, not the unprofiled ranking median and not exact attribution of wall-clock delta. Inclusive values overlap. Baseline is isolated645a3ee; after is final HP code.",
+      "topSelfTimeIncreases": [
+        {
+          "function": "(garbage collector)",
+          "file": "",
+          "beforeSelfMs": 889.674,
+          "afterSelfMs": 1297.974,
+          "deltaSelfMs": 408.3,
+          "beforeInclusiveMs": 889.674,
+          "afterInclusiveMs": 1297.974
+        },
+        {
+          "function": "spawnSync",
+          "file": "child_process",
+          "beforeSelfMs": 159.239,
+          "afterSelfMs": 505.76,
+          "deltaSelfMs": 346.521,
+          "beforeInclusiveMs": 159.239,
+          "afterInclusiveMs": 618.831
+        },
+        {
+          "function": "update",
+          "file": "hash",
+          "beforeSelfMs": 210.278,
+          "afterSelfMs": 452.933,
+          "deltaSelfMs": 242.655,
+          "beforeInclusiveMs": 210.278,
+          "afterInclusiveMs": 452.933
+        },
+        {
+          "function": "analyzeLiterals",
+          "file": "constraints.ts",
+          "beforeSelfMs": 1897.483,
+          "afterSelfMs": 2051.224,
+          "deltaSelfMs": 153.741,
+          "beforeInclusiveMs": 2056.683,
+          "afterInclusiveMs": 2205.667
+        },
+        {
+          "function": "createConditionState",
+          "file": "conditionState.ts",
+          "beforeSelfMs": 68.577,
+          "afterSelfMs": 215.719,
+          "deltaSelfMs": 147.142,
+          "beforeInclusiveMs": 219.193,
+          "afterInclusiveMs": 433.419
+        },
+        {
+          "function": "executePreparationOc",
+          "file": "preparationOc.ts",
+          "beforeSelfMs": 185.209,
+          "afterSelfMs": 321.865,
+          "deltaSelfMs": 136.656,
+          "beforeInclusiveMs": 1216.322,
+          "afterInclusiveMs": 1775.206
+        },
+        {
+          "function": "(anonymous)",
+          "file": "auxiliarySources.ts",
+          "beforeSelfMs": 264.118,
+          "afterSelfMs": 392.006,
+          "deltaSelfMs": 127.888,
+          "beforeInclusiveMs": 352.941,
+          "afterInclusiveMs": 464.019
+        },
+        {
+          "function": "utf8Slice",
+          "file": "",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 113.071,
+          "deltaSelfMs": 113.071,
+          "beforeInclusiveMs": 0,
+          "afterInclusiveMs": 113.071
+        },
+        {
+          "function": "compilationCacheKey",
+          "file": "operationCompiler.ts",
+          "beforeSelfMs": 854.225,
+          "afterSelfMs": 952.404,
+          "deltaSelfMs": 98.179,
+          "beforeInclusiveMs": 857.652,
+          "afterInclusiveMs": 955.688
+        },
+        {
+          "function": "resolveAttackerFormExecution",
+          "file": "sourceCollection.ts",
+          "beforeSelfMs": 43.946,
+          "afterSelfMs": 134.834,
+          "deltaSelfMs": 90.888,
+          "beforeInclusiveMs": 2223.181,
+          "afterInclusiveMs": 3312.401
+        },
+        {
+          "function": "(anonymous)",
+          "file": "measure-ranking-resources.ts",
+          "beforeSelfMs": 772.09,
+          "afterSelfMs": 849.771,
+          "deltaSelfMs": 77.681,
+          "beforeInclusiveMs": 19504.757,
+          "afterInclusiveMs": 22922.138
+        },
+        {
+          "function": "validateConstraintSet",
+          "file": "constraints.ts",
+          "beforeSelfMs": 908.192,
+          "afterSelfMs": 983.791,
+          "deltaSelfMs": 75.599,
+          "beforeInclusiveMs": 3437.947,
+          "afterInclusiveMs": 3693.371
+        },
+        {
+          "function": "(anonymous)",
+          "file": "preparationOc.ts",
+          "beforeSelfMs": 117.391,
+          "afterSelfMs": 183.202,
+          "deltaSelfMs": 65.811,
+          "beforeInclusiveMs": 566.755,
+          "afterInclusiveMs": 920.923
+        },
+        {
+          "function": "cloneBattleState",
+          "file": "state.ts",
+          "beforeSelfMs": 490.564,
+          "afterSelfMs": 551.043,
+          "deltaSelfMs": 60.479,
+          "beforeInclusiveMs": 490.564,
+          "afterInclusiveMs": 551.043
+        },
+        {
+          "function": "(anonymous)",
+          "file": "scenario.ts",
+          "beforeSelfMs": 158.427,
+          "afterSelfMs": 215.372,
+          "deltaSelfMs": 56.945,
+          "beforeInclusiveMs": 158.427,
+          "afterInclusiveMs": 215.372
+        },
+        {
+          "function": "(anonymous)",
+          "file": "conditionState.ts",
+          "beforeSelfMs": 8.882,
+          "afterSelfMs": 62.144,
+          "deltaSelfMs": 53.262,
+          "beforeInclusiveMs": 9.1,
+          "afterInclusiveMs": 72.187
+        },
+        {
+          "function": "compileEffectCached",
+          "file": "operationCompiler.ts",
+          "beforeSelfMs": 179.638,
+          "afterSelfMs": 231.874,
+          "deltaSelfMs": 52.236,
+          "beforeInclusiveMs": 1231.815,
+          "afterInclusiveMs": 1418.128
+        },
+        {
+          "function": "hpEffectKey",
+          "file": "preparationHp.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 51.27,
+          "deltaSelfMs": 51.27,
+          "beforeInclusiveMs": 0,
+          "afterInclusiveMs": 51.27
+        },
+        {
+          "function": "(anonymous)",
+          "file": "sourceCollection.ts",
+          "beforeSelfMs": 84.769,
+          "afterSelfMs": 132.919,
+          "deltaSelfMs": 48.15,
+          "beforeInclusiveMs": 314.358,
+          "afterInclusiveMs": 421.809
+        },
+        {
+          "function": "planPreparationResourceTransaction",
+          "file": "preparationTransaction.ts",
+          "beforeSelfMs": 54.869,
+          "afterSelfMs": 98.995,
+          "deltaSelfMs": 44.126,
+          "beforeInclusiveMs": 917.018,
+          "afterInclusiveMs": 1393.637
+        },
+        {
+          "function": "preparationConditionState",
+          "file": "preparationFacts.ts",
+          "beforeSelfMs": 41.724,
+          "afterSelfMs": 85.143,
+          "deltaSelfMs": 43.419,
+          "beforeInclusiveMs": 249.92,
+          "afterInclusiveMs": 490.682
+        },
+        {
+          "function": "compileExecutionPlan",
+          "file": "executionPlan.ts",
+          "beforeSelfMs": 188.143,
+          "afterSelfMs": 230.819,
+          "deltaSelfMs": 42.676,
+          "beforeInclusiveMs": 4602.43,
+          "afterInclusiveMs": 5076.957
+        },
+        {
+          "function": "compileOcSourceProgram",
+          "file": "ocSourceProgram.ts",
+          "beforeSelfMs": 289.895,
+          "afterSelfMs": 329.747,
+          "deltaSelfMs": 39.852,
+          "beforeInclusiveMs": 296.625,
+          "afterInclusiveMs": 339.366
+        },
+        {
+          "function": "(anonymous)",
+          "file": "executionPlan.ts",
+          "beforeSelfMs": 116.072,
+          "afterSelfMs": 154.595,
+          "deltaSelfMs": 38.523,
+          "beforeInclusiveMs": 149.11,
+          "afterInclusiveMs": 181.857
+        },
+        {
+          "function": "(anonymous)",
+          "file": "hpDependency.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 37.793,
+          "deltaSelfMs": 37.793,
+          "beforeInclusiveMs": 0,
+          "afterInclusiveMs": 61.354
+        },
+        {
+          "function": "(anonymous)",
+          "file": "stackQuantities.ts",
+          "beforeSelfMs": 51.803,
+          "afterSelfMs": 89.03,
+          "deltaSelfMs": 37.227,
+          "beforeInclusiveMs": 54.152,
+          "afterInclusiveMs": 93.276
+        },
+        {
+          "function": "set toTemporalInstant",
+          "file": "",
+          "beforeSelfMs": 313.095,
+          "afterSelfMs": 349.387,
+          "deltaSelfMs": 36.292,
+          "beforeInclusiveMs": 313.095,
+          "afterInclusiveMs": 349.387
+        },
+        {
+          "function": "compileStaticRankingPreparationPrograms",
+          "file": "rankingStaticPreparation.ts",
+          "beforeSelfMs": 113.414,
+          "afterSelfMs": 148.194,
+          "deltaSelfMs": 34.78,
+          "beforeInclusiveMs": 448.614,
+          "afterInclusiveMs": 514.524
+        },
+        {
+          "function": "(anonymous)",
+          "file": "",
+          "beforeSelfMs": 409.995,
+          "afterSelfMs": 442.785,
+          "deltaSelfMs": 32.79,
+          "beforeInclusiveMs": 1925.019,
+          "afterInclusiveMs": 1875.353
+        },
+        {
+          "function": "contribution",
+          "file": "effectiveContributions.ts",
+          "beforeSelfMs": 42.381,
+          "afterSelfMs": 71.884,
+          "deltaSelfMs": 29.503,
+          "beforeInclusiveMs": 108.058,
+          "afterInclusiveMs": 152.674
+        },
+        {
+          "function": "compileStaticRankingSemantics",
+          "file": "rankingStaticSemantics.ts",
+          "beforeSelfMs": 151.686,
+          "afterSelfMs": 180.02,
+          "deltaSelfMs": 28.334,
+          "beforeInclusiveMs": 1196.119,
+          "afterInclusiveMs": 1339.547
+        },
+        {
+          "function": "findNoblePhantasmVariant",
+          "file": "index.ts",
+          "beforeSelfMs": 66.002,
+          "afterSelfMs": 94.053,
+          "deltaSelfMs": 28.051,
+          "beforeInclusiveMs": 127.43,
+          "afterInclusiveMs": 165.175
+        },
+        {
+          "function": "resolveTargetCandidates",
+          "file": "targetContext.ts",
+          "beforeSelfMs": 192.436,
+          "afterSelfMs": 219.732,
+          "deltaSelfMs": 27.296,
+          "beforeInclusiveMs": 2952.213,
+          "afterInclusiveMs": 3154.493
+        },
+        {
+          "function": "compileProgramDomain",
+          "file": "rankingCandidateSpace.ts",
+          "beforeSelfMs": 66.604,
+          "afterSelfMs": 93.495,
+          "deltaSelfMs": 26.891,
+          "beforeInclusiveMs": 1529.412,
+          "afterInclusiveMs": 1706.345
+        },
+        {
+          "function": "compileRankingExecutionPlan",
+          "file": "rankingPolicyScenario.ts",
+          "beforeSelfMs": 11.061,
+          "afterSelfMs": 37.885,
+          "deltaSelfMs": 26.824,
+          "beforeInclusiveMs": 14626.236,
+          "afterInclusiveMs": 17216.794
+        }
+      ],
+      "topAfterSelfTimes": [
+        {
+          "function": "analyzeLiterals",
+          "file": "constraints.ts",
+          "beforeSelfMs": 1897.483,
+          "afterSelfMs": 2051.224,
+          "deltaSelfMs": 153.741,
+          "beforeInclusiveMs": 2056.683,
+          "afterInclusiveMs": 2205.667
+        },
+        {
+          "function": "(garbage collector)",
+          "file": "",
+          "beforeSelfMs": 889.674,
+          "afterSelfMs": 1297.974,
+          "deltaSelfMs": 408.3,
+          "beforeInclusiveMs": 889.674,
+          "afterInclusiveMs": 1297.974
+        },
+        {
+          "function": "validateConstraintSet",
+          "file": "constraints.ts",
+          "beforeSelfMs": 908.192,
+          "afterSelfMs": 983.791,
+          "deltaSelfMs": 75.599,
+          "beforeInclusiveMs": 3437.947,
+          "afterInclusiveMs": 3693.371
+        },
+        {
+          "function": "compilationCacheKey",
+          "file": "operationCompiler.ts",
+          "beforeSelfMs": 854.225,
+          "afterSelfMs": 952.404,
+          "deltaSelfMs": 98.179,
+          "beforeInclusiveMs": 857.652,
+          "afterInclusiveMs": 955.688
+        },
+        {
+          "function": "(anonymous)",
+          "file": "measure-ranking-resources.ts",
+          "beforeSelfMs": 772.09,
+          "afterSelfMs": 849.771,
+          "deltaSelfMs": 77.681,
+          "beforeInclusiveMs": 19504.757,
+          "afterInclusiveMs": 22922.138
+        },
+        {
+          "function": "inst._zod.parse",
+          "file": "schemas.js",
+          "beforeSelfMs": 835.562,
+          "afterSelfMs": 798.217,
+          "deltaSelfMs": -37.345,
+          "beforeInclusiveMs": 1977.435,
+          "afterInclusiveMs": 1942.123
+        },
+        {
+          "function": "cloneBattleState",
+          "file": "state.ts",
+          "beforeSelfMs": 490.564,
+          "afterSelfMs": 551.043,
+          "deltaSelfMs": 60.479,
+          "beforeInclusiveMs": 490.564,
+          "afterInclusiveMs": 551.043
+        },
+        {
+          "function": "stableStringify",
+          "file": "candidateComparison.ts",
+          "beforeSelfMs": 513.624,
+          "afterSelfMs": 508.667,
+          "deltaSelfMs": -4.957,
+          "beforeInclusiveMs": 687.076,
+          "afterInclusiveMs": 667.591
+        },
+        {
+          "function": "spawnSync",
+          "file": "child_process",
+          "beforeSelfMs": 159.239,
+          "afterSelfMs": 505.76,
+          "deltaSelfMs": 346.521,
+          "beforeInclusiveMs": 159.239,
+          "afterInclusiveMs": 618.831
+        },
+        {
+          "function": "update",
+          "file": "hash",
+          "beforeSelfMs": 210.278,
+          "afterSelfMs": 452.933,
+          "deltaSelfMs": 242.655,
+          "beforeInclusiveMs": 210.278,
+          "afterInclusiveMs": 452.933
+        },
+        {
+          "function": "(anonymous)",
+          "file": "",
+          "beforeSelfMs": 409.995,
+          "afterSelfMs": 442.785,
+          "deltaSelfMs": 32.79,
+          "beforeInclusiveMs": 1925.019,
+          "afterInclusiveMs": 1875.353
+        },
+        {
+          "function": "(anonymous)",
+          "file": "auxiliarySources.ts",
+          "beforeSelfMs": 264.118,
+          "afterSelfMs": 392.006,
+          "deltaSelfMs": 127.888,
+          "beforeInclusiveMs": 352.941,
+          "afterInclusiveMs": 464.019
+        },
+        {
+          "function": "set toTemporalInstant",
+          "file": "",
+          "beforeSelfMs": 313.095,
+          "afterSelfMs": 349.387,
+          "deltaSelfMs": 36.292,
+          "beforeInclusiveMs": 313.095,
+          "afterInclusiveMs": 349.387
+        },
+        {
+          "function": "compileOcSourceProgram",
+          "file": "ocSourceProgram.ts",
+          "beforeSelfMs": 289.895,
+          "afterSelfMs": 329.747,
+          "deltaSelfMs": 39.852,
+          "beforeInclusiveMs": 296.625,
+          "afterInclusiveMs": 339.366
+        },
+        {
+          "function": "attackProfileKey",
+          "file": "attackProfile.ts",
+          "beforeSelfMs": 303.225,
+          "afterSelfMs": 324.293,
+          "deltaSelfMs": 21.068,
+          "beforeInclusiveMs": 303.225,
+          "afterInclusiveMs": 324.293
+        },
+        {
+          "function": "(anonymous)",
+          "file": "constraints.ts",
+          "beforeSelfMs": 302.65,
+          "afterSelfMs": 322.461,
+          "deltaSelfMs": 19.811,
+          "beforeInclusiveMs": 328.21,
+          "afterInclusiveMs": 365.62
+        },
+        {
+          "function": "executePreparationOc",
+          "file": "preparationOc.ts",
+          "beforeSelfMs": 185.209,
+          "afterSelfMs": 321.865,
+          "deltaSelfMs": 136.656,
+          "beforeInclusiveMs": 1216.322,
+          "afterInclusiveMs": 1775.206
+        },
+        {
+          "function": "calculateDamageDistribution",
+          "file": "formula.ts",
+          "beforeSelfMs": 270.331,
+          "afterSelfMs": 294.432,
+          "deltaSelfMs": 24.101,
+          "beforeInclusiveMs": 1057.783,
+          "afterInclusiveMs": 1115.085
+        },
+        {
+          "function": "makeSyncRequest",
+          "file": "hooks",
+          "beforeSelfMs": 296.108,
+          "afterSelfMs": 268.007,
+          "deltaSelfMs": -28.101,
+          "beforeInclusiveMs": 392.387,
+          "afterInclusiveMs": 361.548
+        },
+        {
+          "function": "inst._zod.run",
+          "file": "schemas.js",
+          "beforeSelfMs": 227.619,
+          "afterSelfMs": 243.565,
+          "deltaSelfMs": 15.946,
+          "beforeInclusiveMs": 2118.293,
+          "afterInclusiveMs": 2031.287
+        },
+        {
+          "function": "compileEffectCached",
+          "file": "operationCompiler.ts",
+          "beforeSelfMs": 179.638,
+          "afterSelfMs": 231.874,
+          "deltaSelfMs": 52.236,
+          "beforeInclusiveMs": 1231.815,
+          "afterInclusiveMs": 1418.128
+        },
+        {
+          "function": "compileExecutionPlan",
+          "file": "executionPlan.ts",
+          "beforeSelfMs": 188.143,
+          "afterSelfMs": 230.819,
+          "deltaSelfMs": 42.676,
+          "beforeInclusiveMs": 4602.43,
+          "afterInclusiveMs": 5076.957
+        },
+        {
+          "function": "resolveTargetCandidates",
+          "file": "targetContext.ts",
+          "beforeSelfMs": 192.436,
+          "afterSelfMs": 219.732,
+          "deltaSelfMs": 27.296,
+          "beforeInclusiveMs": 2952.213,
+          "afterInclusiveMs": 3154.493
+        },
+        {
+          "function": "createConditionState",
+          "file": "conditionState.ts",
+          "beforeSelfMs": 68.577,
+          "afterSelfMs": 215.719,
+          "deltaSelfMs": 147.142,
+          "beforeInclusiveMs": 219.193,
+          "afterInclusiveMs": 433.419
+        },
+        {
+          "function": "(anonymous)",
+          "file": "scenario.ts",
+          "beforeSelfMs": 158.427,
+          "afterSelfMs": 215.372,
+          "deltaSelfMs": 56.945,
+          "beforeInclusiveMs": 158.427,
+          "afterInclusiveMs": 215.372
+        },
+        {
+          "function": "executeOrderedScenarioCandidate",
+          "file": "candidateExecution.ts",
+          "beforeSelfMs": 177.981,
+          "afterSelfMs": 196.013,
+          "deltaSelfMs": 18.032,
+          "beforeInclusiveMs": 3482.216,
+          "afterInclusiveMs": 3869.232
+        },
+        {
+          "function": "fixedLiterals",
+          "file": "constraints.ts",
+          "beforeSelfMs": 177.551,
+          "afterSelfMs": 191.33,
+          "deltaSelfMs": 13.779,
+          "beforeInclusiveMs": 185.293,
+          "afterInclusiveMs": 199.899
+        },
+        {
+          "function": "(anonymous)",
+          "file": "preparationOc.ts",
+          "beforeSelfMs": 117.391,
+          "afterSelfMs": 183.202,
+          "deltaSelfMs": 65.811,
+          "beforeInclusiveMs": 566.755,
+          "afterInclusiveMs": 920.923
+        },
+        {
+          "function": "compileStaticRankingSemantics",
+          "file": "rankingStaticSemantics.ts",
+          "beforeSelfMs": 151.686,
+          "afterSelfMs": 180.02,
+          "deltaSelfMs": 28.334,
+          "beforeInclusiveMs": 1196.119,
+          "afterInclusiveMs": 1339.547
+        },
+        {
+          "function": "(anonymous)",
+          "file": "candidateComparison.ts",
+          "beforeSelfMs": 184.395,
+          "afterSelfMs": 174.253,
+          "deltaSelfMs": -10.142,
+          "beforeInclusiveMs": 640.393,
+          "afterInclusiveMs": 607.036
+        }
+      ],
+      "hpAndSharedModules": [
+        {
+          "file": "hpResource.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 48.87
+        },
+        {
+          "file": "hpDependency.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 116.678
+        },
+        {
+          "file": "hpPlanning.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 0
+        },
+        {
+          "file": "preparationHp.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 89.072
+        },
+        {
+          "file": "preparationOc.ts",
+          "beforeSelfMs": 340.632,
+          "afterSelfMs": 550.772
+        },
+        {
+          "file": "preparationState.ts",
+          "beforeSelfMs": 69.022,
+          "afterSelfMs": 117.696
+        },
+        {
+          "file": "preparationTransaction.ts",
+          "beforeSelfMs": 148.568,
+          "afterSelfMs": 201.75
+        },
+        {
+          "file": "state.ts",
+          "beforeSelfMs": 641.993,
+          "afterSelfMs": 736.764
+        },
+        {
+          "file": "sourceCollection.ts",
+          "beforeSelfMs": 187.26,
+          "afterSelfMs": 314.913
+        },
+        {
+          "file": "operationCompiler.ts",
+          "beforeSelfMs": 1323.148,
+          "afterSelfMs": 1495.679
+        },
+        {
+          "file": "constraints.ts",
+          "beforeSelfMs": 3445.958,
+          "afterSelfMs": 3713.156
+        },
+        {
+          "file": "candidateComparison.ts",
+          "beforeSelfMs": 753.879,
+          "afterSelfMs": 730.262
+        }
+      ],
+      "selectedInclusive": [
+        {
+          "function": "createConditionState",
+          "file": "conditionState.ts",
+          "beforeSelfMs": 68.577,
+          "afterSelfMs": 215.719,
+          "deltaSelfMs": 147.142,
+          "beforeInclusiveMs": 219.193,
+          "afterInclusiveMs": 433.419
+        },
+        {
+          "function": "executePreparationOc",
+          "file": "preparationOc.ts",
+          "beforeSelfMs": 185.209,
+          "afterSelfMs": 321.865,
+          "deltaSelfMs": 136.656,
+          "beforeInclusiveMs": 1216.322,
+          "afterInclusiveMs": 1775.206
+        },
+        {
+          "function": "resolveAttackerFormExecution",
+          "file": "sourceCollection.ts",
+          "beforeSelfMs": 43.946,
+          "afterSelfMs": 134.834,
+          "deltaSelfMs": 90.888,
+          "beforeInclusiveMs": 2223.181,
+          "afterInclusiveMs": 3312.401
+        },
+        {
+          "function": "cloneBattleState",
+          "file": "state.ts",
+          "beforeSelfMs": 490.564,
+          "afterSelfMs": 551.043,
+          "deltaSelfMs": 60.479,
+          "beforeInclusiveMs": 490.564,
+          "afterInclusiveMs": 551.043
+        },
+        {
+          "function": "hpRelevantSourceIndexes",
+          "file": "hpDependency.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 25.597,
+          "deltaSelfMs": 25.597,
+          "beforeInclusiveMs": 0,
+          "afterInclusiveMs": 131.39
+        },
+        {
+          "function": "executeHpOperation",
+          "file": "preparationHp.ts",
+          "beforeSelfMs": 0,
+          "afterSelfMs": 20.634,
+          "deltaSelfMs": 20.634,
+          "beforeInclusiveMs": 0,
+          "afterInclusiveMs": 44.621
+        },
+        {
+          "function": "calculateRankingPolicy",
+          "file": "rankingPolicyCalculation.ts",
+          "beforeSelfMs": 44.544,
+          "afterSelfMs": 56.033,
+          "deltaSelfMs": 11.489,
+          "beforeInclusiveMs": 16638.137,
+          "afterInclusiveMs": 19412.915
+        }
+      ]
+    },
+    "interpretation": {
+      "rankingInclusiveAcrossFourCalls": {
+        "beforeMs": 16638.137,
+        "afterMs": 19412.915,
+        "percent": 16.677215724332605
+      },
+      "observedCost": "HP dependency analysis, actor HP state and receipts add work to common preparation, condition state construction and compilation keys. The final-vs-baseline CPU profile shows the same direction and similar ranking inclusive increase as the unprofiled median.",
+      "limits": "Sampling is diagnostic and inclusive times overlap. GC self time increased889.674 to1297.974ms across the process. spawnSync, hash and JSON output run outside the timed ranking region and do not explain its measured latency. Three unprofiled samples4503.525/4795.091/5260.314ms retain environmental and GC variability; no exact per-feature latency allocation is claimed.",
+      "optimizationsApplied": "Initial maximum HP resolution reuses the supplied canonical result and lineage form values. HP read dependency analysis caches immutable effect and terminal variant descriptors. No cap, timeout or performance acceptance threshold was relaxed."
+    }
+  },
+  "production": {
+    "before": {
+      "manifest": {
+        "path": ".test-results/2026-09-12T20-50-16-144Z-15-170467/manifest.json",
+        "sha256": "1ed2ea19bc9098648cae4addc56219ce15509d46b3a9233fd6688cdffbbd2b02"
+      },
+      "durationMs": 49139,
+      "tests": 124
+    },
+    "after": {
+      "manifest": {
+        "path": ".test-results/2026-09-19T13-54-00-780Z-45-f19bd9/manifest.json",
+        "sha256": "8d1479ca5e5ad0a1e0abd1a2393b6a5f4c830bd87cc557be197016f5aca18983"
+      },
+      "durationMs": 71083,
+      "tests": 130
+    },
+    "reason": "Six new production tests cover HP acceptance and all HP cell, calculator, ranking/owned, CE normal/LB and support/choice paths. Master read/parse/compile remain once in each shared audit."
+  }
+}

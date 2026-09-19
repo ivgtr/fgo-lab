@@ -1,5 +1,6 @@
 import type {
   ActorFormId,
+  ActorFormNode,
   EffectExecutionOperation,
   NoblePhantasmVariantRef,
 } from '@fgo-lab/master-data';
@@ -9,6 +10,7 @@ import type { RawVariantGroup } from './rawActorFormExtraction';
 
 export interface NoblePhantasmVariantNormalization {
   actorForms: {
+    baseHp: ActorFormNode['baseHp'];
     id: ActorFormId;
     name: string;
     initial: boolean;

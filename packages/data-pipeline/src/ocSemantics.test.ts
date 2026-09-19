@@ -243,10 +243,12 @@ describe('lossless OC IR', () => {
       svals: [{ Rate: 5000, NoCheckIndividualityIfNotUnit: 1 }],
     };
     expect(normalizeFunctions([value], new Map())[0]!.execution).toMatchObject([
+      { kind: 'removeHpModifiers' },
       { kind: 'removeOcState' },
     ]);
     value.functvals = [{ name: 'dragon' }];
     expect(normalizeFunctions([value], new Map())[0]!.execution).toMatchObject([
+      { kind: 'unsupported' },
       { kind: 'unsupported' },
     ]);
   });

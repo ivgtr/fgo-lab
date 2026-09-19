@@ -1,4 +1,4 @@
-import { OC_WORLD_TRAIT_INPUT_PREFIX } from '@fgo-lab/battle-execution';
+import { SOURCE_CHOICE_INPUT_PREFIX, OC_WORLD_TRAIT_INPUT_PREFIX } from '@fgo-lab/battle-execution';
 import { resolvedScenarioSchema } from '@fgo-lab/schema';
 import type { EffectProjection, ResolvedCanonicalInputSet } from '@fgo-lab/battle-execution';
 import type { CanonicalInputDefinition, PopulationCountSelector } from '@fgo-lab/master-data';
@@ -153,6 +153,40 @@ export function applyCanonicalInputCommand(
   const values = Object.fromEntries(
     Object.entries(scenario.canonicalInputValues).filter(([key]) => key !== command.key),
   );
+  if (command.key.startsWith(SOURCE_CHOICE_INPUT_PREFIX)) {
+    const parsed: unknown = JSON.parse(command.key.slice(SOURCE_CHOICE_INPUT_PREFIX.length));
+    if (!Array.isArray(parsed)) throw new TypeError('invalid_source_choice');
+    const [source, family, candidates] = parsed as unknown[];
+    if (
+      !Array.isArray(candidates) ||
+      !candidates.length ||
+      candidates.some((candidate) => typeof candidate !== 'string') ||
+      (command.value !== null &&
+        (!Number.isInteger(command.value) ||
+          command.value < 0 ||
+          command.value >= candidates.length))
+    )
+      throw new TypeError('invalid_source_choice');
+    const choice = resolvedScenarioSchema.shape.activationFacts.element.parse({
+      kind: 'choice',
+      source,
+      family,
+      candidate: (candidates as unknown[])[command.value ?? 0],
+    });
+    return {
+      ...scenario,
+      canonicalInputValues: values,
+      activationFacts: [
+        ...scenario.activationFacts.filter(
+          (fact) =>
+            fact.kind !== 'choice' ||
+            fact.family !== family ||
+            JSON.stringify(fact.source) !== JSON.stringify(source),
+        ),
+        ...(command.value === null ? [] : [choice]),
+      ],
+    };
+  }
   if (command.key.startsWith(OC_WORLD_TRAIT_INPUT_PREFIX)) {
     const fact: unknown = JSON.parse(command.key.slice(OC_WORLD_TRAIT_INPUT_PREFIX.length));
     const assertion = resolvedScenarioSchema.shape.worldFactAssertions.element.parse({
@@ -177,7 +211,14 @@ export function applyCanonicalInputCommand(
     };
   }
   if (command.key === 'oc:hp:attacker')
-    return { ...scenario, attackerHpPermille: command.value, canonicalInputValues: values };
+    return {
+      ...scenario,
+      attackerHpPermille: command.value,
+      canonicalInputValues: values,
+      worldFactAssertions: scenario.worldFactAssertions.filter(
+        ({ fact }) => fact.kind !== 'quantity' || fact.quantity !== 'attackerHpPermille',
+      ),
+    };
   return {
     ...scenario,
     canonicalInputValues:

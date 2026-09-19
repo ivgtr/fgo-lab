@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { isConsistentNpOcUseReceipt } from '@fgo-lab/calculation-application';
 import {
+  hpStateSchema,
   actorFormGraphSchema,
   actorFormIdSchema,
   canonicalInputDefinitionSchema,
   canonicalInputBaseSchema,
   populationCountSelectorSchema,
   masterEffectSchema,
+  noblePhantasmEffectSchema,
   noblePhantasmVariantRefSchema,
   ocLifetimeLimitSchema,
 } from '@fgo-lab/master-data';
@@ -156,6 +158,8 @@ const resourceSchema = z.object({
   gauge: z.number(),
 });
 const preparationActionSchema = z.object({
+  hpBefore: hpStateSchema.optional(),
+  hpAfter: hpStateSchema.optional(),
   command: preNoblePhantasmCommandSchema,
   actorFormId: actorFormIdSchema,
   sourceKind: z.enum(['skill', 'noblePhantasm', 'attackNoblePhantasm']),
@@ -166,7 +170,7 @@ const preparationActionSchema = z.object({
       sourceId: z.string(),
       actorFormId: actorFormIdSchema,
       occurrenceId: z.string(),
-      effect: masterEffectSchema,
+      effect: z.union([masterEffectSchema, noblePhantasmEffectSchema]),
       stochasticOutcome: z.enum(['success', 'failure']).nullable(),
     }),
   ),

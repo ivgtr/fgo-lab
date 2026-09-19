@@ -71,6 +71,7 @@ describe('profile domain', () => {
               traits: [],
               skillIds: [],
               passiveIds: [],
+              baseHp: { kind: 'lineage' as const },
               baseNoblePhantasmVariant: null,
             },
           ],

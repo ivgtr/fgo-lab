@@ -19,6 +19,28 @@ const excluded = (
   reason: Extract<ContributionPolicyDecision, { kind: 'excluded' }>['reason'],
 ): ContributionPolicyDecision => ({ kind: 'excluded', reason });
 
+/** HP is a canonical execution quantity: policy selects its initial intent and operations.
+ * Once executed, its condition is evaluated normally, including HP changed by a cost. */
+function hpExecutionDependency(
+  condition: ConditionExpression,
+  state?: ConditionEvaluationState,
+): ConditionExpression {
+  if (
+    condition.kind === 'quantity' &&
+    condition.quantity === 'attackerHpPermille' &&
+    state?.quantities.attackerHpPermille !== null &&
+    state?.quantities.attackerHpPermille !== undefined
+  )
+    return { kind: 'always' };
+  if (condition.kind === 'all' || condition.kind === 'any')
+    return {
+      ...condition,
+      expressions: condition.expressions.map((child) => hpExecutionDependency(child, state)),
+    };
+  if (condition.kind === 'not')
+    return { ...condition, expression: hpExecutionDependency(condition.expression, state) };
+  return condition;
+}
 export function contributionPolicyDecisions(
   operation: Pick<BattleOperation, 'source' | 'gameActivation' | 'contributionScope'>,
   condition: ConditionExpression,
@@ -42,7 +64,7 @@ export function contributionPolicyDecisions(
       policy.conditionalEffects === 'baseline' &&
       ['conditional', 'unsupported'].includes(
         classifyContributionCondition(
-          condition,
+          hpExecutionDependency(condition, state),
           state
             ? {
                 card: state.card,

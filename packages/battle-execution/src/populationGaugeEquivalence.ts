@@ -16,6 +16,39 @@ export function populationInputsHaveEquivalentTerminalDamage(
   context: Pick<OcResourceDependencyContext, 'semantics' | 'npLevel' | 'initialGauge'>,
   terminalVariant?: NoblePhantasmVariant,
 ): boolean {
+  const hpTransfers = sources.some((source) =>
+    source.effect.execution.some(
+      (op) =>
+        op.kind === 'resourceMutation' && op.resource === 'hp' && op.amount.kind === 'hpTransfer',
+    ),
+  );
+  if (
+    hpTransfers &&
+    (terminalVariant?.kind !== 'attack' ||
+      terminalVariant.damage.some((damage) => damage.kind === 'hpRatioLow') ||
+      sources.some(
+        (source) =>
+          canonicalRequirementLeaves(source.effect.requirement.expression).some(
+            (leaf) => leaf.kind === 'quantity' && leaf.quantity === 'attackerHpPermille',
+          ) ||
+          source.effect.execution.some(
+            (op) =>
+              (op.kind === 'resourceMutation' &&
+                op.resource === 'hp' &&
+                op.direction === 'loss' &&
+                op.lossFloor === 'zero') ||
+              ((op.kind === 'damageModifier' || op.kind === 'modifierRateChange') &&
+                op.valueExpressions
+                  .flat()
+                  .some(
+                    (expression) =>
+                      expression?.kind === 'inverseHpLinear' ||
+                      expression?.kind === 'hpRangeLinear',
+                  )),
+          ),
+      ))
+  )
+    return false;
   const terminalInsensitive =
     terminalVariant?.kind === 'attack' &&
     terminalVariant.damage.every(
@@ -53,7 +86,7 @@ export function populationInputsHaveEquivalentTerminalDamage(
       source.effect.inputDefinitions
         .filter(
           (input) =>
-            input.kind === 'transferDonor' ||
+            (input.kind === 'transferDonor' && input.resource !== 'enemyHp') ||
             input.kind === 'populationSize' ||
             input.kind === 'populationCount' ||
             input.kind === 'populationActorValue',

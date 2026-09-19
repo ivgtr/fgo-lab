@@ -1,3 +1,4 @@
+import type { HpState } from './hpResource';
 import type { StackSource } from '@fgo-lab/master-data';
 import type {
   CanonicalInputDefinition,
@@ -153,7 +154,9 @@ export type ModifierKind =
 export type OperationModifierValueExpression =
   | Extract<ModifierValueExpression, { kind: 'inputLinear' | 'stackLinear' }>
   | (Extract<ModifierValueExpression, { kind: 'inverseHpLinear' | 'hpRangeLinear' }> & {
-      quantitySource: { kind: 'attackerHpPermille' } | { kind: 'canonicalInput'; inputKey: string };
+      quantitySource:
+        | { kind: 'attackerHpPermille' }
+        | { kind: 'actorHpPermille'; actorId: string; inputKey: string };
     });
 
 export type ResourceMutationIdentity =
@@ -176,6 +179,8 @@ export type BattleOperation =
   | (OperationBase & {
       kind: 'preserveSemanticEffect';
       semanticKind:
+        | 'hpModifier'
+        | 'removeHpModifiers'
         | 'resourceMutation'
         | 'stateMutation'
         | 'boundedPhaseIrrelevant'
@@ -249,6 +254,7 @@ export interface AppliedModifier {
 }
 
 export interface BattleStateBase {
+  hp?: HpState | undefined;
   actorFormId: ActorFormId;
   noblePhantasmVariant: NoblePhantasmVariant;
   card: CardType;

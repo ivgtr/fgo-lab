@@ -1,3 +1,5 @@
+import { hpEffectKey } from './preparationHp';
+import { actorFormKey, resolveInitialMaximumHp } from '@fgo-lab/master-data';
 import { preparationTargetFacts } from './preparationTargetFacts';
 import { compileOcSourceProgram } from './ocSourceProgram';
 import { ocSourceOperationKey } from './ocSourceBinding';
@@ -30,6 +32,7 @@ import {
 type ResolvedScenario = Extract<CalculationScenario, { mode: 'resolved' }>;
 
 export interface SourceEffect {
+  hpExecutionCommitted?: boolean;
   phase: ExecutionPhase;
   origin: Origin;
   sourceInstanceId: string;
@@ -80,12 +83,52 @@ export function resolveAttackerFormExecution(
   resourceSemantics: CanonicalNpResourceSemantics,
   initialGauge: number = scenario.initialOvercharge *
     resourceSemantics.noblePhantasmUse.baseOvercharge.gaugePerStage,
-  options: { master?: MasterDataSnapshot; policy?: PreparationExecutionContext['policy'] } = {},
+  options: {
+    master?: MasterDataSnapshot;
+    initialMaximumHp?: number;
+    policy?: PreparationExecutionContext['policy'];
+  } = {},
 ): ResolvedAttackerFormExecution {
   const auxiliary = options.master
     ? collectAuxiliarySources(scenario, options.master, scenario.attacker.initialActorFormId)
     : null;
+  const resolvedHp =
+    options.master && options.initialMaximumHp === undefined
+      ? resolveInitialMaximumHp(scenario, options.master)
+      : null;
+  const maximum =
+    options.initialMaximumHp ??
+    (resolvedHp?.status === 'resolved' ? resolvedHp.maximum : undefined);
   const context: PreparationExecutionContext = {
+    ...(maximum === undefined ? {} : { initialMaximumHp: maximum }),
+    ...(options.master
+      ? {
+          maximumHpByForm: new Map(
+            attacker.actorFormGraph.forms.flatMap((form) => {
+              const initialForm = findActorForm(attacker, scenario.attacker.initialActorFormId);
+              if (
+                maximum !== undefined &&
+                (actorFormKey(form.id) === actorFormKey(scenario.attacker.initialActorFormId) ||
+                  (form.baseHp.kind === 'lineage' && initialForm?.baseHp.kind === 'lineage'))
+              )
+                return [[actorFormKey(form.id), maximum] as const];
+              const hp = resolveInitialMaximumHp(
+                { ...scenario, attacker: { ...scenario.attacker, initialActorFormId: form.id } },
+                options.master!,
+              );
+              return hp.status === 'resolved' ? [[actorFormKey(form.id), hp.maximum] as const] : [];
+            }),
+          ),
+        }
+      : {}),
+    attackerPredicates:
+      options.master?.targetSemantics.execution.classIdentities.map((classId) => ({
+        sourceKey: 'initial:attackerClass',
+        predicate: { kind: 'classIdentity' as const, classId },
+        present: attacker.predicates.some(
+          (predicate) => predicate.kind === 'classIdentity' && predicate.classId === classId,
+        ),
+      })) ?? [],
     worldFacts: scenario.worldFactAssertions,
     targetPredicates: options.master
       ? preparationTargetFacts(
@@ -96,10 +139,17 @@ export function resolveAttackerFormExecution(
       : [],
     activationFacts: scenario.activationFacts,
     ...(options.policy ? { policy: options.policy } : {}),
-    initialSources: auxiliary?.sources.filter((source) => source.origin === 'craftEssence') ?? [],
+    initialSources:
+      auxiliary?.sources.filter(
+        (source) =>
+          source.origin === 'craftEssence' ||
+          (source.origin === 'support' && source.effect.gameActivation === 'constant'),
+      ) ?? [],
     terminalSources:
       auxiliary?.sources.filter(
-        (source) => source.origin === 'support' || source.origin === 'mysticCode',
+        (source) =>
+          (source.origin === 'support' && source.effect.gameActivation !== 'constant') ||
+          source.origin === 'mysticCode',
       ) ?? [],
     stackInputs: servantStackInputs(attacker),
     resourceSemantics,
@@ -372,6 +422,8 @@ export function collectOperationSources(
         formExecution.state.ocState.sourceOutcomes.get(
           ocSourceOperationKey(compileOcSourceProgram(source), 0),
         ) ?? source.preparationStochasticOutcome,
+      hpExecutionCommitted:
+        formExecution.state.hp?.executedEffects?.includes(hpEffectKey(source)) ?? false,
       ocExecutionCommitted: formExecution.state.ocState.executedSources.has(
         ocSourceOperationKey(compileOcSourceProgram(source), 0),
       ),

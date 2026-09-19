@@ -495,7 +495,7 @@ describe('ranking target witness completeness', () => {
       conditions: inventory.length,
       servants: new Set(inventory.map(({ servant: candidateServant }) => candidateServant.id)).size,
     }).toEqual({
-      conditions: 13599,
+      conditions: 13615,
       servants: 212,
     });
     const canonicalDefaultProvenance = inventory.filter(({ condition }) =>
@@ -512,7 +512,7 @@ describe('ranking target witness completeness', () => {
         conditionLeaves(condition).some((leaf) => leaf.kind === 'trait' && !leaf.present),
       ).length,
     }).toEqual({
-      conditions: 1916,
+      conditions: 1932,
       negativeTraits: 60,
     });
     const productionNegative = inventory.filter(({ condition }) =>

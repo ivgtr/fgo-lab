@@ -518,5 +518,15 @@
     "replacement": "bounded command journey with real worker; semantic matrix in shared execution tests",
     "costMs": 0,
     "status": "retained"
+  },
+  {
+    "id": "E2E-052",
+    "title": "HP preparation and recovery",
+    "owner": "web/package connection",
+    "failure": "initial HP, execution HP, donor repair or saved replay diverges",
+    "project": "desktop",
+    "replacement": "one HP browser journey; arithmetic and candidate oracle in shared execution fixtures",
+    "costMs": 0,
+    "status": "retained"
   }
 ]

@@ -26,10 +26,12 @@ describe('shared data-pipeline production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '44b981df8d09e873ff56d9f6e36c1322943c152e752e7566037d9a834c2a9aa8',
+          digest: '6b85d81b49b8a1f9891fd6d7cc2193515cdba976483af28cc37adc5816c1b23c',
           inventory: {
             hpGrowth: {
               servantCells: 56250,
+              formCells: 120,
+              formsWithIndependentGrowth: 1,
               craftEssenceCells: 213176,
               zeroCraftEssenceCells: 70536,
             },
@@ -62,7 +64,7 @@ describe('shared data-pipeline production audit', () => {
             resources: {
               mutations: {
                 npGauge: 742,
-                hp: 179,
+                hp: 181,
                 criticalStars: 255,
                 battlePoint: 1,
               },
@@ -76,7 +78,6 @@ describe('shared data-pipeline production audit', () => {
                 '["addStateShort","operationSemantics","commandCardAttack",true]': 17,
                 '["replaceMember","partyCompositionMutation",null,true]': 3,
                 '["addState","contextReference",null,false]': 23,
-                '["gainHpFromTargets","dependentResourceAmount",null,true]': 3,
                 '["addState","operationSemantics",null,true]': 1,
                 '["moveToLastSubmember","partyCompositionMutation",null,true]': 1,
                 '["gainNp","unresolvedTarget",null,true]': 2,
@@ -104,6 +105,7 @@ describe('shared data-pipeline production audit', () => {
                 '["lossHpSafe","loss","fixed","oneIfAlive"]': 245,
                 '["lossHp","loss","fixed","zero"]': 275,
                 '["lossHpPerSafe","loss","percent","oneIfAlive"]': 10,
+                '["gainHpFromTargets","gain","fixed",null]': 20,
                 '["gainHpPer","gain","percent",null]': 50,
               },
               hpBuffEffects: {
@@ -199,7 +201,7 @@ describe('shared data-pipeline production audit', () => {
               },
               battlePointMissingAmounts: 10,
             },
-            operations: 14826,
+            operations: 15204,
             damageFunctions: 630,
             noblePhantasmVariantIdentities: 706,
             rawFunctionTypes: 54,

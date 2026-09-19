@@ -242,14 +242,16 @@ describe('production canonical execution semantics', () => {
     }, {});
 
     expect(effects).toHaveLength(13_875);
-    expect(operations).toHaveLength(14826);
+    expect(operations).toHaveLength(15204);
     expect(Object.fromEntries(Object.entries(counts).sort())).toEqual({
-      boundedPhaseIrrelevant: 2727,
+      boundedPhaseIrrelevant: 3008,
       buffInstanceMutation: 198,
       contextMutation: 1489,
       damageModifier: 3885,
       grantOcApplicationRate: 29,
       grantOcBoost: 97,
+      hpModifier: 107,
+      removeHpModifiers: 198,
       ignoreDamageCut: 1,
       ignoreDefense: 39,
       modifierRateChange: 1,
@@ -258,11 +260,11 @@ describe('production canonical execution semantics', () => {
       populationMutation: 4,
       populationFunction: 5,
       removeOcState: 75,
-      resourceMutation: 1177,
+      resourceMutation: 1179,
       selectNoblePhantasmVariant: 22,
-      stateMutation: 4828,
+      stateMutation: 4621,
       transformActorForm: 10,
-      unsupported: 50,
+      unsupported: 47,
     });
     const occurrenceFamilies = {
       resource: new Set([
@@ -340,11 +342,11 @@ describe('production canonical execution semantics', () => {
       ).length,
     };
     expect(closedOccurrences).toEqual({
-      resource: 1_176,
+      resource: 1_178,
       unresolvedResourceTargets: 2,
-      state: 4_829,
-      unsupported: 7,
-      boundedPhaseIrrelevant: 2_726,
+      state: 4_622,
+      unsupported: 4,
+      boundedPhaseIrrelevant: 3_007,
     });
 
     const variantOperations = master.servants.flatMap((servant) =>
@@ -437,10 +439,10 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts(scoped)).toEqual({
-      enemyApplied: 1896,
-      partyOther: 51,
-      partyWide: 1010,
-      personal: 2874,
+      enemyApplied: 2001,
+      partyOther: 55,
+      partyWide: 1069,
+      personal: 3011,
     });
     expect(counts(terminal)).toEqual({
       personal: 2_593,
@@ -514,7 +516,7 @@ describe('production canonical execution semantics', () => {
           (operation) =>
             operation.kind === 'unsupported' && operation.reason === 'dependentResourceAmount',
         ),
-    ).toHaveLength(3);
+    ).toHaveLength(0);
     expect(
       master.servants
         .flatMap(({ skills }) => skills)
@@ -626,7 +628,7 @@ describe('production canonical execution semantics', () => {
           levelSource: 'secondaryValueParameter',
           defaultLevel: 1,
         },
-        operations: ['contextMutation', 'contextMutation'],
+        operations: ['boundedPhaseIrrelevant', 'contextMutation', 'contextMutation'],
       },
       {
         effectId: '20955',
@@ -738,7 +740,7 @@ describe('production canonical execution semantics', () => {
         return result;
       }, {});
     expect(counts).toEqual({
-      'activeOnly:exclude:include': 2_605,
+      'activeOnly:exclude:include': 2_604,
       'activeAndPassive:exclude:include': 7,
       'activeOnly:include:include': 6,
       'activeOnly:exclude:exclude': 1,

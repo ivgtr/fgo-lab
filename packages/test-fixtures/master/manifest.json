@@ -8,15 +8,15 @@
     "retrievedAt": "2026-08-24T00:00:00.000Z"
   },
   "minimalAppVersion": "0.1.0",
-  "schemaVersion": 53,
+  "schemaVersion": 54,
   "artifactKind": "diagnostic",
   "imagesEnabled": false,
   "files": [
     {
       "key": "master",
       "file": "fixture.json",
-      "bytes": 13043,
-      "sha256": "7ccb5d6f7a52136728e3c17ad0fb085c8518fa82f632a53f605c8285a9910e26",
+      "bytes": 13312,
+      "sha256": "d7130732e300b49dbf95880a47a297adbcaa11481d8c00946f7a2a761109f9cb",
       "required": true
     }
   ]

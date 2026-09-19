@@ -1,5 +1,11 @@
+import { rebaseHpMaximum, changeHpModifiers } from './hpResource';
 import { resourceFailureCode } from './preparationTransaction';
-import { actorFormKey, getPassivesForActorForm, type ServantMaster } from '@fgo-lab/master-data';
+import {
+  actorFormKey,
+  findActorForm,
+  getPassivesForActorForm,
+  type ServantMaster,
+} from '@fgo-lab/master-data';
 import { executePreparationOc, preparationEffectSource } from './preparationOc';
 import {
   rejectPreparation,
@@ -35,8 +41,17 @@ export function executePreparationPhase(
         : execution.result.status === 'inputRequired'
           ? 'preparationInputRequired'
           : execution.result.status === 'invalid'
-            ? 'invalidOcExecution'
-            : 'unsupportedOcExecution',
+            ? execution.result.reason === 'hpMutation'
+              ? 'invalidHpExecution'
+              : 'invalidOcExecution'
+            : [
+                  'unknownHpCondition',
+                  'missingHpState',
+                  'hpMutation',
+                  'resourceExecutionSemantics',
+                ].includes(execution.result.reason)
+              ? 'unsupportedHpExecution'
+              : 'unsupportedOcExecution',
       execution.requiredInput,
       execution.requiredInput ? execution.occurrenceId : null,
       execution.recoveryInputDefinitions,
@@ -56,8 +71,40 @@ export function activatePreparationForm(
   state: PreNoblePhantasmState,
   context: PreparationExecutionContext,
 ): PreparationTransitionResult {
+  const original = state;
   const formKey = actorFormKey(state.currentFormId);
   if (state.ocState.activeFormKey === formKey) return { status: 'applied', state };
+  try {
+    if (state.hp) {
+      let hp = state.hp;
+      if (context.maximumHpByForm) {
+        const maximum = context.maximumHpByForm.get(formKey);
+        if (maximum === undefined) return rejectPreparation(original, 'invalidHpExecution');
+        hp = rebaseHpMaximum(
+          hp,
+          'attacker',
+          maximum,
+          `form:${state.appliedActions.length}:${formKey}`,
+        );
+      } else if (
+        !context.planningOnly &&
+        findActorForm(servant, state.currentFormId)?.baseHp.kind === 'form'
+      )
+        return rejectPreparation(original, 'invalidHpExecution');
+      for (const actor of Object.keys(hp.actors))
+        hp = changeHpModifiers(
+          hp,
+          actor,
+          null,
+          (instance) =>
+            instance.actor === actor && instance.formKey !== null && instance.formKey !== formKey,
+        );
+      state = { ...state, hp };
+    }
+  } catch (error) {
+    if (error instanceof RangeError) return rejectPreparation(original, 'invalidHpExecution');
+    throw error;
+  }
   const sources = getPassivesForActorForm(servant, state.currentFormId).flatMap((skill) =>
     skill.effects.map((effect) => ({
       ...preparationEffectSource({
@@ -74,7 +121,7 @@ export function activatePreparationForm(
       constantFormKey: formKey,
     })),
   );
-  return executePreparationPhase(
+  const result = executePreparationPhase(
     servant,
     state,
     context,
@@ -82,4 +129,5 @@ export function activatePreparationForm(
     sources,
     formKey,
   );
+  return result.status === 'rejected' ? { ...result, state: original } : result;
 }

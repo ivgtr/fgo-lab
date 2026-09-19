@@ -10,6 +10,7 @@ export function evaluateHpValueExpression(expression: HpValueExpression, hp: num
       expression.basePermille +
       Math.trunc((expression.bonusAtZeroHpPermille * (1_000 - hp)) / 1_000)
     );
+  if (hp > expression.maximumHpPermille) return expression.basePermille;
   const clampedHp = Math.min(
     expression.maximumHpPermille,
     Math.max(expression.minimumHpPermille, hp),

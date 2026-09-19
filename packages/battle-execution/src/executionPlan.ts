@@ -6,11 +6,20 @@ import {
   type MasterDataSnapshot,
 } from '@fgo-lab/master-data';
 import { servantAttribute } from '@fgo-lab/calc-core';
-import { activationFactKey, type DamageResolutionInput } from '@fgo-lab/schema';
+import {
+  activationFactKey,
+  analyzeActivationFactSet,
+  type DamageResolutionInput,
+} from '@fgo-lab/schema';
+import { analyzeActivationCondition } from './activationCondition';
 import { planOperationActivations } from './activation';
 import type { BattleOperation, EffectProjection, ExecutionPhase } from './contracts';
 import type { PreparedOrderedScenario, ResolvedScenario } from './executionTypes';
-import { compileEffectCached, runtimeInputDefinitionsForSource } from './operationCompiler';
+import {
+  compileEffectCached,
+  compileEffectCondition,
+  runtimeInputDefinitionsForSource,
+} from './operationCompiler';
 import { collectOperationSources } from './sourceCollection';
 import {
   activationRequirementOwnerSelected,
@@ -95,6 +104,53 @@ export function compileExecutionPlan(
   const requiredFactKeys = new Set(
     activationRequirements.flatMap(({ facts }) => facts.map(activationFactKey)),
   );
+  // A committed preparation choice may select an effect on the source actor only.
+  // Validate its original family before removing facts with no damage-phase reader.
+  const committedChoiceFamilies = new Set(
+    collected.sources.flatMap((source) =>
+      source.hpExecutionCommitted && source.effect.selection?.kind === 'playerChoice'
+        ? [
+            JSON.stringify([
+              source.origin,
+              source.sourceInstanceId,
+              source.skillId,
+              source.effect.selection.group.key,
+            ]),
+          ]
+        : [],
+    ),
+  );
+  const preparationChoiceKeys = new Set(
+    collected.sources.flatMap((source) => {
+      const selection = source.effect.selection;
+      if (
+        selection?.kind !== 'playerChoice' ||
+        !committedChoiceFamilies.has(
+          JSON.stringify([
+            source.origin,
+            source.sourceInstanceId,
+            source.skillId,
+            selection.group.key,
+          ]),
+        )
+      )
+        return [];
+      const analysis = analyzeActivationCondition(
+        compileEffectCondition(
+          source.effect,
+          source.origin,
+          source.sourceId,
+          source.sourceInstanceId,
+          source.skillId,
+        ),
+      );
+      return analysis.status === 'supported'
+        ? analysis.atoms.filter((fact) => fact.kind === 'choice').map(activationFactKey)
+        : [];
+    }),
+  );
+  const validPreparationChoices =
+    analyzeActivationFactSet(scenario.activationFacts).status === 'valid';
   const preparationFacts =
     collected.formExecution?.actions.flatMap(({ activationFacts }) =>
       activationFacts.filter((fact) => requiredFactKeys.has(activationFactKey(fact))),
@@ -132,7 +188,15 @@ export function compileExecutionPlan(
     activationFacts: [
       ...new Map(
         [
-          ...scenario.activationFacts.filter(({ source }) => source.origin !== 'attacker'),
+          ...scenario.activationFacts.filter(
+            (fact) =>
+              fact.source.origin !== 'attacker' &&
+              !(
+                validPreparationChoices &&
+                preparationChoiceKeys.has(activationFactKey(fact)) &&
+                !requiredFactKeys.has(activationFactKey(fact))
+              ),
+          ),
           ...derivedFacts.values(),
         ].map((fact) => [activationFactKey(fact), fact]),
       ).values(),
@@ -167,6 +231,7 @@ export function compileExecutionPlan(
     ...operations.flatMap((operation) => operation.inputDefinitions),
     ...preparationInputDefinitions,
     ...(collected.formExecution?.state.ocInputDefinitions ?? []),
+    ...(collected.formExecution?.state.hp?.inputDefinitions ?? []),
     ...(collected.formExecution?.requiredInputs ?? []),
   ]);
   return {
@@ -189,9 +254,11 @@ export function compileExecutionPlan(
     preparationRequiredInputs: collected.formExecution?.requiredInputs ?? [],
     preparationInputKeys: new Set([
       ...preparationInputDefinitions.map(({ key }) => key),
+      ...(collected.formExecution?.state.hp?.inputDefinitions?.map(({ key }) => key) ?? []),
       ...(collected.formExecution?.state.ocInputDefinitions.map(({ key }) => key) ?? []),
       ...(collected.formExecution?.requiredInputs.map(({ key }) => key) ?? []),
     ]),
+    hp: collected.formExecution?.state.hp,
     appliedPreparationActions: collected.formExecution?.actions ?? [],
   };
 }

@@ -108,6 +108,9 @@
                 "limitCount": 0
               },
               "noblePhantasmId": "fixture-np"
+            },
+            "baseHp": {
+              "kind": "lineage"
             }
           }
         ],

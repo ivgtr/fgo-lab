@@ -78,6 +78,7 @@ const supportCaster: ServantMaster = {
         traits: [],
         skillIds: [],
         passiveIds: [],
+        baseHp: { kind: 'lineage' as const },
         baseNoblePhantasmVariant: null,
       },
     ],

@@ -158,7 +158,9 @@ export function CalculationResult({
             {result.status === 'inputRequired'
               ? '正確な計算に必要な戦闘情報を入力してください。'
               : result.status === 'unavailable'
-                ? '現在の準備状態では宝具を使用できません。NPゲージと準備操作を確認してください。'
+                ? result.reason === 'attackerDead'
+                  ? 'HPが0のため宝具を使用できません。準備開始時のHPと準備操作を確認してください。'
+                  : '現在の準備状態では宝具を使用できません。NPゲージと準備操作を確認してください。'
                 : '現在の条件は正確に計算できないため、ダメージ値を表示していません。'}
           </p>
         ) : (

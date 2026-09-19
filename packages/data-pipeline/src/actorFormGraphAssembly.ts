@@ -2,6 +2,7 @@ import {
   actorFormKey,
   noblePhantasmVariantKey,
   type NoblePhantasmVariantRef,
+  type ActorFormNode,
 } from '@fgo-lab/master-data';
 import type { AtlasServant } from './atlasContract';
 import type { RawSkill } from './actorFormSkillNormalization';
@@ -17,6 +18,7 @@ import {
 export interface AssembledActorFormGraph {
   actorForms: {
     id: RawActorForm['id'];
+    baseHp: ActorFormNode['baseHp'];
     name: string;
     initial: boolean;
     defaultInitial: boolean;
@@ -128,6 +130,17 @@ export function assembleActorFormGraph(input: {
   return {
     actorForms: input.forms.map((form) => ({
       id: form.id,
+      baseHp:
+        JSON.stringify(form.actor.hpGrowth ?? []) === JSON.stringify(input.servant.hpGrowth ?? [])
+          ? { kind: 'lineage' as const }
+          : {
+              kind: 'form' as const,
+              hpByLevel: Object.fromEntries(
+                (form.actor.hpGrowth ?? []).flatMap((hp, index) =>
+                  Number.isInteger(hp) && hp > 0 ? [[String(index + 1), hp]] : [],
+                ),
+              ),
+            },
       name: form.name,
       initial: form.initial,
       defaultInitial: actorFormKey(form.id) === actorFormKey(defaultInitialForm.id),

@@ -1,3 +1,4 @@
+import { hpPermille } from './hpResource';
 import { evaluateHpValueExpression } from './hpValueExpression';
 import type { NpDamageSpec } from '@fgo-lab/master-data';
 import type {
@@ -114,7 +115,7 @@ export function resolveModifierValue(
   const hp =
     expression.quantitySource.kind === 'attackerHpPermille'
       ? state.quantities.attackerHpPermille
-      : (state.resolvedInputValues[expression.quantitySource.inputKey] ?? null);
+      : hpPermille(state.hp?.actors[expression.quantitySource.actorId]);
   if (hp === null) return null;
   return evaluateHpValueExpression(expression, hp);
 }

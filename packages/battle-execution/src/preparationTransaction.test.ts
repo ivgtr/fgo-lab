@@ -169,6 +169,7 @@ function servantWithSkill(effects: readonly MasterEffect[]): ServantMaster {
           traits: ['base-trait'],
           skillIds: ['skill'],
           passiveIds: [],
+          baseHp: { kind: 'lineage' as const },
           baseNoblePhantasmVariant: baseAttack.ref,
         },
         {
@@ -177,6 +178,7 @@ function servantWithSkill(effects: readonly MasterEffect[]): ServantMaster {
           traits: ['changed-trait'],
           skillIds: [],
           passiveIds: [],
+          baseHp: { kind: 'lineage' as const },
           baseNoblePhantasmVariant: changedAttack.ref,
         },
       ],
@@ -279,7 +281,7 @@ describe('transactional preparation execution', () => {
       expect(result.status).toBe('applied');
       if (result.status !== 'applied') return;
       expect(result.state.npResource).toEqual(created.state.npResource);
-      expect(result.state.ocState.hpWrites.size).toBe(0);
+      expect(result.state.hp?.receipts.length).toBe(0);
       expect(result.state.currentFormId).toEqual(baseForm);
       expect(result.state.activeEffects).toEqual([]);
       for (const origin of ['passive', 'craftEssence', 'support', 'mysticCode', 'np'] as const) {
@@ -297,7 +299,7 @@ describe('transactional preparation execution', () => {
         const phase = executePreparationPhase(servant, created.state, context, origin, [source]);
         expect(phase.status).toBe('applied');
         expect(phase.state.npResource).toEqual(created.state.npResource);
-        expect(phase.state.ocState.hpWrites.size).toBe(0);
+        expect(phase.state.hp?.receipts.length).toBe(0);
         expect(phase.state.currentFormId).toEqual(baseForm);
       }
       const attack = reducePreNoblePhantasmAction(
@@ -512,7 +514,10 @@ describe('transactional preparation execution', () => {
       },
     );
     const servant = servantWithSkill([conditional]);
-    const created = createPreNoblePhantasmState(servant, baseForm, context);
+    const created = createPreNoblePhantasmState(servant, baseForm, {
+      ...context,
+      attackerHpPermille: 100,
+    });
     if (created.status !== 'applied') throw new Error(created.code);
     const result = reducePreNoblePhantasmAction(
       servant,
@@ -568,15 +573,28 @@ describe('transactional preparation execution', () => {
       recipient: 'sourceActor',
       family: 'dependentTargetResult',
     });
-    const servant = servantWithSkill([structural, unsupported]);
-    const created = createPreNoblePhantasmState(servant, baseForm, context);
+    const hp = effect('hp-before-failure', null, [
+      {
+        kind: 'resourceMutation',
+        resource: 'hp',
+        direction: 'loss',
+        lossFloor: 'oneIfAlive',
+        recipient: 'sourceSelf',
+        subjectId: null,
+        unit: 'fixed',
+        amount: { kind: 'fixed', values: [[3000], [], [], [], []] },
+      },
+    ]);
+    const servant = servantWithSkill([hp, structural, unsupported]);
+    const hpContext = { ...context, initialMaximumHp: 10000, attackerHpPermille: 1000 };
+    const created = createPreNoblePhantasmState(servant, baseForm, hpContext);
     if (created.status !== 'applied') throw new Error(created.code);
 
     const result = reducePreNoblePhantasmAction(
       servant,
       created.state,
       { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
-      context,
+      hpContext,
     );
 
     expect(result).toEqual({
@@ -592,6 +610,9 @@ describe('transactional preparation execution', () => {
       npResource: { gauge: 10_000 },
       appliedActions: [],
     });
+    expect(result.state.hp).toEqual(created.state.hp);
+    expect(result.state.ocState).toEqual(created.state.ocState);
+    expect(result.state.hp?.actors.attacker).toMatchObject({ current: 10000 });
     expect(result.state.stateTraits.attackerState.has('prepared-trait')).toBe(false);
   });
 
@@ -1302,7 +1323,7 @@ describe('OC on the preparation command path', () => {
               ? [rate, hp, removal, ocEffect('boost')]
               : [rate, hp, ocEffect('boost')];
       const servant = servantWithSkill(effects);
-      const hpContext = { ...context, attackerHpPermille: 500 };
+      const hpContext = { ...context, attackerHpPermille: 500, initialMaximumHp: 10000 };
       const initial = createPreNoblePhantasmState(servant, baseForm, hpContext);
       if (initial.status !== 'applied') throw new Error(initial.code);
       const result = reducePreNoblePhantasmAction(
@@ -1311,7 +1332,7 @@ describe('OC on the preparation command path', () => {
         { kind: 'useSkillSlot', slot: 1, skillLevel: 1, choice: null },
         hpContext,
       );
-      expect(result.status).toBe(position === 'between' ? 'rejected' : 'applied');
+      expect(result.status).toBe('applied');
       if (result.status === 'rejected')
         expect(result).toMatchObject({ code: 'unsupportedOcExecution', state: initial.state });
       else expect(result.state.ocState.boosts).toHaveLength(1);

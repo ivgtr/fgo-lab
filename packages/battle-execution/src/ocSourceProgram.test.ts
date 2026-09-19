@@ -292,9 +292,9 @@ describe('OC source program and common condition owner', () => {
       });
       const prior = createOcState();
       const result = executeOcAction(prior, 'action', instructions, { attacker: 500 });
-      expect(result.status).toBe(position === 'between' ? 'unsupported' : 'committed');
-      if (position === 'between') expect(result.state).toBe(prior);
-      else expect(result.state.boosts).toHaveLength(1);
+      expect(result.status).toBe('committed');
+      expect(result.state.boosts).toHaveLength(1);
+      // HP transitions belong to the common source transaction, not the OC-only executor.
     },
   );
   it.each([
@@ -564,6 +564,10 @@ describe('OC support condition actor', () => {
     expect(program.conditionActor).toBe('source');
     const original = facts();
     original.quantities.attackerHpPermille = 100;
+    original.hp = {
+      actors: { [support.sourceInstanceId]: { kind: 'ratioOnly', permille: 1000 } },
+      receipts: [],
+    };
     const bound = preparationSourceConditionState(program, original);
     expect(evaluateOcSourceCondition(program, bound)).toBe(true);
     expect(original.traits.attacker.has('genderFemale')).toBe(false);
@@ -868,9 +872,7 @@ it.each(['hp', 'criticalStars', 'battlePoint'] as const)(
           ...(resource === 'hp' ? { lossFloor } : {}),
         });
         if (resource === 'hp')
-          expect(compileOcSourceProgram({ ...input, limitBreak }).operations).toEqual(
-            input.effect.execution,
-          );
+          expect(compileOcSourceProgram({ ...input, limitBreak }).operations).toEqual([]);
         const missingLb = masterEffectSchema.parse({
           ...input.effect,
           execution: input.effect.execution.map((operation) =>

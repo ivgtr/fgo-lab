@@ -85,8 +85,6 @@ export interface OcState {
   rates: readonly OcRateInstance[];
   uncertainRates: readonly UncertainOcRate[];
   nextInstanceId: number;
-  hpWrites: ReadonlySet<string>;
-  hpWriteExclusions: readonly (string | null)[];
   removalResistance: readonly { actor: string; formKey?: string }[];
   constantSources: ReadonlySet<string>;
   executedSources: ReadonlySet<string>;
@@ -100,8 +98,6 @@ export const createOcState = (): OcState => ({
   rates: [],
   uncertainRates: [],
   nextInstanceId: 1,
-  hpWrites: new Set(),
-  hpWriteExclusions: [],
   removalResistance: [],
   constantSources: new Set(),
   executedSources: new Set(),
@@ -137,8 +133,6 @@ export type OcActionStep =
       applicationRate: number;
       procWitness?: 0 | 1;
     }
-  | { kind: 'hpWrite'; actor: string }
-  | { kind: 'hpWriteOthers'; excludedActor: string | null }
   | { kind: 'removalResistance'; actor: string; formKey?: string }
   | { kind: 'npUse'; actor: string; gaugeBefore: number; baseOc: number }
   | { kind: 'reject'; status: 'invalid' | 'unsupported' | 'inputRequired'; reason: string };
@@ -188,22 +182,10 @@ const consume = <T extends InstanceBase>(instance: T, used: ReadonlySet<number>)
   used.has(instance.instanceId) && instance.uses.kind === 'finite'
     ? { ...instance, uses: { kind: 'finite', remaining: Math.max(0, instance.uses.remaining - 1) } }
     : instance;
-export function hasOcHpWrite(state: OcState, actor: string): boolean {
-  return (
-    state.hpWrites.has(actor) || state.hpWriteExclusions.some((excluded) => excluded !== actor)
-  );
-}
-function rateValue(
-  rate: OcRateInstance,
-  state: OcState,
-  hp: Readonly<Record<string, number | null>>,
-) {
+function rateValue(rate: OcRateInstance, hp: Readonly<Record<string, number | null>>) {
   if (rate.amount.kind === 'fixed') return { status: 'value' as const, value: rate.amount.value };
   if (rate.amount.kind !== 'inverseHpLinear' && rate.amount.kind !== 'hpRangeLinear')
     return { status: 'unsupported' as const, reason: 'unsupportedOcRateExpression' };
-  // Keep write provenance until the actual query, including writes between grant and use.
-  if (hasOcHpWrite(state, rate.valueOwner))
-    return { status: 'unsupported' as const, reason: 'ocRateHpStateUnavailable' };
   const value = hp[rate.valueOwner];
   if (value === undefined || value === null)
     return { status: 'inputRequired' as const, reason: `ocRateHp:${rate.valueOwner}` };
@@ -227,7 +209,6 @@ export function executeOcAction(
     ...prior,
     boosts: [...prior.boosts],
     rates: [...prior.rates],
-    hpWrites: new Set(prior.hpWrites),
     constantSources: new Set(prior.constantSources),
     receipts: [...prior.receipts],
   };
@@ -278,14 +259,6 @@ export function executeOcAction(
           { actor: step.actor, ...(step.formKey === undefined ? {} : { formKey: step.formKey }) },
         ],
       };
-      continue;
-    }
-    if (step.kind === 'hpWriteOthers') {
-      state = { ...state, hpWriteExclusions: [...state.hpWriteExclusions, step.excludedActor] };
-      continue;
-    }
-    if (step.kind === 'hpWrite') {
-      state = { ...state, hpWrites: new Set([...state.hpWrites, step.actor]) };
       continue;
     }
     if (step.kind === 'npUse') {
@@ -409,7 +382,7 @@ export function executeOcAction(
         if (!step.grant.stateTraits.includes('positive')) continue;
         used.add(rate.instanceId);
         if (!rate.included) continue;
-        const value = rateValue(rate, state, hp);
+        const value = rateValue(rate, hp);
         if (value.status !== 'value') return reject(value.status, value.reason);
         effectiveRate += value.value * rate.sign * (rate.role === 'casterGrant' ? 1 : -1);
       }

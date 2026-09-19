@@ -232,7 +232,11 @@ describe('canonical physical resource reads', () => {
       kind: 'inverseHpLinear',
       basePermille: 0,
       bonusAtZeroHpPermille: 1000,
-      quantitySource: { kind: 'canonicalInput', inputKey: 'source:support:support:a:hpPermille' },
+      quantitySource: {
+        kind: 'actorHpPermille',
+        actorId: 'support:a',
+        inputKey: 'source:support:support:a:hpPermille',
+      },
     };
     expect(
       expressionQuantityReads(expression, {
@@ -337,7 +341,7 @@ describe('canonical physical resource reads', () => {
         kind: 'inverseHpLinear',
         basePermille: 0,
         bonusAtZeroHpPermille: 1000,
-        quantitySource: { kind: 'canonicalInput', inputKey: 'sourceHp' },
+        quantitySource: { kind: 'actorHpPermille', actorId: 'support:a', inputKey: 'sourceHp' },
       },
     };
     expect(operationReadsResource(modifier, 'hp')).toBe(true);

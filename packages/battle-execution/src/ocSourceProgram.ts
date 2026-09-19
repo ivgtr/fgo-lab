@@ -1,3 +1,4 @@
+import { isHpOperation } from './preparationHp';
 import { effectExecutesInNpProgram, npProgramEffects } from './npProgramScope';
 import type { MasterEffect, OcExecutionOperation } from '@fgo-lab/master-data';
 import type { ConditionExpression } from './contracts';
@@ -6,11 +7,10 @@ import { compileEffectCondition } from './operationCompiler';
 import type { SourceEffect } from './sourceCollection';
 
 export type OcSourceOperation =
-  | OcExecutionOperation
-  | Extract<MasterEffect['execution'][number], { kind: 'unsupported' }>
-  | (Extract<MasterEffect['execution'][number], { kind: 'resourceMutation' }> & { resource: 'hp' });
+  OcExecutionOperation | Extract<MasterEffect['execution'][number], { kind: 'unsupported' }>;
 export interface OcSourceProgram {
   source: SourceEffect;
+  choiceCandidates?: readonly string[];
   condition: ConditionExpression;
   conditionActor: 'attacker' | 'source';
   operations: readonly OcSourceOperation[];
@@ -72,8 +72,7 @@ export function compileOcSourceProgram(source: SourceEffect): OcSourceProgram {
         operation.kind === 'grantOcBoost' ||
         operation.kind === 'grantOcApplicationRate' ||
         operation.kind === 'removeOcState' ||
-        operation.kind === 'ocStateNonIntersection' ||
-        (operation.kind === 'resourceMutation' && operation.resource === 'hp'),
+        operation.kind === 'ocStateNonIntersection',
     ),
   };
   programs.set(key, program);
@@ -105,6 +104,11 @@ export function terminalOcPreparationEffects(
       );
     if (
       oc ||
+      effect.execution.some(
+        (operation) =>
+          isHpOperation(operation) ||
+          (operation.kind === 'unsupported' && operation.reason === 'resourceExecutionSemantics'),
+      ) ||
       invalidBeforeDamage ||
       (laterOc &&
         effect.execution.some(

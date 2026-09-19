@@ -55,23 +55,20 @@ export function closePreparationConditionReads(
   condition: ConditionExpression,
   writes: Writes,
   facts: ConditionEvaluationState,
-  hpUnknown = false,
 ): ConditionExpression {
-  if (writes.length === 0 && !hpUnknown) return condition;
+  if (writes.length === 0) return condition;
   if (condition.kind === 'all' || condition.kind === 'any')
     return {
       ...condition,
       expressions: condition.expressions.map((child) =>
-        closePreparationConditionReads(child, writes, facts, hpUnknown),
+        closePreparationConditionReads(child, writes, facts),
       ),
     };
   if (condition.kind === 'not')
     return {
       ...condition,
-      expression: closePreparationConditionReads(condition.expression, writes, facts, hpUnknown),
+      expression: closePreparationConditionReads(condition.expression, writes, facts),
     };
-  if (condition.kind === 'quantity' && condition.quantity === 'attackerHpPermille' && hpUnknown)
-    return { kind: 'unsupported', reason: 'unresolvedPreparationWrite', readDependency: condition };
   const read =
     condition.kind === 'trait' || condition.kind === 'traitCount'
       ? writes.some(

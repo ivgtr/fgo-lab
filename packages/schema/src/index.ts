@@ -30,7 +30,7 @@ export {
 } from './quantityFacts';
 
 export const SCHEMA_VERSION = 40 as const;
-export const ENGINE_VERSION = '43.0.0' as const;
+export const ENGINE_VERSION = '44.0.0' as const;
 export const APP_VERSION = '0.1.0' as const;
 
 export const versionContextSchema = z.object({
@@ -728,6 +728,7 @@ const unsupportedResultSchema = resultBaseSchema.extend({
 export const calculationUnavailabilityReasonSchema = z.enum([
   'insufficientNpGauge',
   'npCapacityExceeded',
+  'attackerDead',
 ]);
 export type CalculationUnavailabilityReason = z.infer<typeof calculationUnavailabilityReasonSchema>;
 const unavailableResultSchema = resultBaseSchema.extend({

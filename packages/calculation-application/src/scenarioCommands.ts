@@ -331,3 +331,19 @@ export function setCalculationSupportSkillEnabled(
     },
   };
 }
+
+/** Replace the initial intent and discard obsolete duplicate HP assertions. Execution always reseeds. */
+export function setInitialHp(
+  scenario: ResolvedScenario,
+  permille: number | null,
+): ResolvedScenario {
+  if (permille !== null && (!Number.isInteger(permille) || permille < 0 || permille > 1000))
+    throw new TypeError('invalid_initial_hp_ratio');
+  return {
+    ...scenario,
+    attackerHpPermille: permille,
+    worldFactAssertions: scenario.worldFactAssertions.filter(
+      ({ fact }) => fact.kind !== 'quantity' || fact.quantity !== 'attackerHpPermille',
+    ),
+  };
+}

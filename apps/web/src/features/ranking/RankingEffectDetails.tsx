@@ -55,6 +55,7 @@ export function RankingEffectDetails({
         : 'excludedByRankingPolicy',
   });
   const evidence = presentRankingDetailEvidence(detail, master);
+  const executedHp = detail.appliedPreparationActions.at(-1)?.hpAfter?.actors.attacker;
   return (
     <div className="ranking-row-detail">
       <>
@@ -92,11 +93,11 @@ export function RankingEffectDetails({
               相性 クラス{detail.input.classAffinity.toFixed(2)}倍・属性
               {detail.input.attributeAffinity.toFixed(2)}倍
             </span>
-            <span>
+            <span aria-label="宝具実行時のHP">
               HP{' '}
-              {detail.input.attackerHpPermille === null
-                ? '未入力'
-                : `${String(detail.input.attackerHpPermille / 10)}%`}
+              {executedHp?.kind === 'absolute'
+                ? `${String(Math.round((executedHp.current / executedHp.maximum) * 100))}%`
+                : '未確定'}
             </span>
           </p>
         </div>

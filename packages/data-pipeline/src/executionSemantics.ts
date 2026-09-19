@@ -95,6 +95,7 @@ const hpResourceFamilies = new Map<
 >([
   ['gainHp', { direction: 'gain', unit: 'fixed' }],
   ['gainHpPer', { direction: 'gain', unit: 'percent' }],
+  ['lossHpPer', { direction: 'loss', unit: 'percent', lossFloor: 'zero' }],
   ['lossHp', { direction: 'loss', unit: 'fixed', lossFloor: 'zero' }],
   ['lossHpSafe', { direction: 'loss', unit: 'fixed', lossFloor: 'oneIfAlive' }],
   ['lossHpPerSafe', { direction: 'loss', unit: 'percent', lossFloor: 'oneIfAlive' }],
@@ -370,6 +371,122 @@ export function normalizeExecutionSemantics(input: {
     eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
   });
 
+  const hpActions: Record<
+    string,
+    [Extract<EffectExecutionOperation, { kind: 'hpModifier' }>['action'], 1 | -1]
+  > = {
+    addMaxhp: ['maximumFixed', 1],
+    subMaxhp: ['maximumFixed', -1],
+    upMaxhp: ['maximumRate', 1],
+    downMaxhp: ['maximumRate', -1],
+    addBaseHp: ['baseFixed', 1],
+    subBaseHp: ['baseFixed', -1],
+    upBaseHp: ['baseRate', 1],
+    upGainHp: ['receive', 1],
+    downGainHp: ['receive', -1],
+    upGivegainHp: ['give', 1],
+    downGivegainHp: ['give', -1],
+    donotRecovery: ['noHealing', 1],
+  };
+  if (
+    buffTypes.length &&
+    buffTypes.every((type) =>
+      ['upFuncHpReduce', 'subFuncHpReduce', 'hpReduceToRegain', 'reduceHp', 'regainHp'].includes(
+        type,
+      ),
+    )
+  )
+    operations.push({ kind: 'boundedPhaseIrrelevant', proof: 'turnEndHpOutsideDamage' });
+  const hpBuffs = (input.fn.buffs ?? []).filter((buff) => hpActions[buff.type ?? '']);
+  if (hpBuffs.length && policy !== 'unresolved') {
+    for (const buff of hpBuffs) {
+      const [action, sign] = hpActions[buff.type!]!;
+      const limited = action === 'receive' || action === 'give' || action === 'maximumRate';
+      const script = buff.script as Record<string, unknown> | undefined;
+      const extension = script?.extendLowerLimit ?? 0;
+      if (
+        (limited && (!Number.isSafeInteger(buff.maxRate) || buff.maxRate! < 0)) ||
+        !Number.isSafeInteger(extension) ||
+        Number(extension) < 0 ||
+        (buff.vals ?? []).some((trait) => !Number.isSafeInteger(trait.id)) ||
+        Object.keys(script ?? {}).some(
+          (key) => !['ProgressSelfTurn', 'extendLowerLimit', 'INDIVIDUALITIE'].includes(key),
+        )
+      ) {
+        operations.push({
+          kind: 'unsupported',
+          route: canonicalRoute(null, 'unsupported'),
+          reason: 'resourceExecutionSemantics',
+          damageRelevant: true,
+        });
+        continue;
+      }
+      const ownerTrait = script?.INDIVIDUALITIE as { id?: number; name?: string } | undefined;
+      const trait =
+        ownerTrait?.id === undefined ? undefined : input.traitNameById?.get(ownerTrait.id);
+      if (
+        ownerTrait &&
+        (!trait || trait === 'unknown' || !['receive', 'give', 'noHealing'].includes(action))
+      ) {
+        operations.push({
+          kind: 'unsupported',
+          route: canonicalRoute(null, 'unsupported'),
+          reason: 'resourceExecutionSemantics',
+          damageRelevant: true,
+        });
+        continue;
+      }
+      operations.push({
+        kind: 'hpModifier',
+        ...(trait
+          ? {
+              useCondition: {
+                kind: 'trait' as const,
+                scope: 'recipient' as const,
+                trait,
+                present: true,
+                provenance: {
+                  stateSources: 'activeOnly' as const,
+                  ignoredStateTraits: 'exclude' as const,
+                  unremovableStateTraits: 'include' as const,
+                },
+              },
+            }
+          : {}),
+        selection:
+          target === 'ptOne' ? 'selectedAlly' : target === 'enemyAll' ? 'allEnemies' : 'direct',
+        bounds: {
+          minimum: limited ? -Number(extension) - (action === 'maximumRate' ? 1000 : 0) : null,
+          maximum: limited ? buff.maxRate! : null,
+        },
+        route: canonicalRoute(null, 'unsupported'),
+        action,
+        sign,
+        values: modifierValues(input.parameterSets).map((row) =>
+          row.map((value) => value ?? (action === 'noHealing' ? 1 : null)),
+        ) as ValueSets,
+        traits: (buff.vals ?? [])
+          .map((trait) => `buffTrait:${trait.id}`)
+          .filter((trait): trait is string => typeof trait === 'string'),
+        lifetime:
+          input.source === 'passive' || input.source === 'craftEssence' ? 'constant' : 'active',
+      });
+    }
+  }
+  if (input.fn.funcType === 'subState' && policy !== 'unresolved') {
+    const traits = (input.fn.traitVals ?? [])
+      .map((trait) => `buffTrait:${trait.id}`)
+      .filter((trait): trait is string => typeof trait === 'string');
+    if (traits.length)
+      operations.push({
+        kind: 'removeHpModifiers',
+        selection:
+          target === 'ptOne' ? 'selectedAlly' : target === 'enemyAll' ? 'allEnemies' : 'direct',
+        route: canonicalRoute(null, 'unsupported'),
+        traits,
+      });
+  }
+
   if (
     contributionScope === null &&
     (potentiallyDamageRelevant ||
@@ -558,7 +675,15 @@ export function normalizeExecutionSemantics(input: {
         kind: 'resourceMutation',
         resource: 'hp',
         ...hp,
-        recipient: policy,
+        selection:
+          target === 'ptOneHpLowestRate'
+            ? 'lowestHpRatio'
+            : target === 'ptOne'
+              ? 'selectedAlly'
+              : target === 'enemyAll'
+                ? 'allEnemies'
+                : 'direct',
+        recipient: target === 'ptOneHpLowestRate' ? 'partyMember' : policy,
         amount: { kind: 'fixed', values: modifierValues(input.parameterSets) },
         subjectId: null,
       });

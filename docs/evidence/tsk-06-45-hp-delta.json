@@ -1,0 +1,1069 @@
+{
+  "baselineCommit": "645a3ee852e2bb383068c350d3d5c4d29f74f0cd",
+  "before": {
+    "path": ".test-results/2026-09-12T20-50-16-144Z-15-170467/production/production-audit-calculation-application.json",
+    "sha256": "4d56c21e4428fcf45e10f673cd97876a9af11c5bd7742c3f6712d24d825acec9",
+    "inventory": {
+      "attackServants": 422,
+      "attackProfiles": 433,
+      "preparationPlans": 3502,
+      "calculatorScenarios": 422,
+      "rankingRows": 425,
+      "rankingPolicy": "current-default",
+      "resourcePrograms": {
+        "programs": 7255,
+        "mutations": 15927,
+        "opaqueOperations": 54097,
+        "digest": "de4cc8a0bfad0ca45b187f829944d1c8643f167efa5bab74b2d396f352aede80"
+      },
+      "calculated": 420,
+      "inputRequired": 0,
+      "unsupported": 2,
+      "unavailable": 0,
+      "invalid": 0,
+      "levelStatAvailability": {
+        "naturalPairs": 422,
+        "naturalMissing": 0,
+        "level90Pairs": 422,
+        "level90Missing": 0,
+        "referencedPairs": 422,
+        "referencedMissing": 0,
+        "missing": []
+      }
+    },
+    "counters": {
+      "masterReadCount": 1,
+      "masterParseCount": 1,
+      "compileCount": 1,
+      "candidateCount": 6500,
+      "deduplicatedCandidateCount": 4035,
+      "damageRequestCount": 2351,
+      "distinctDamageRequestCount": 1445
+    }
+  },
+  "after": {
+    "path": ".test-results/2026-09-19T13-54-00-780Z-45-f19bd9/production/production-audit-calculation-application.json",
+    "sha256": "6c5e989349ab3fd13fcde78bb6d7d2d05f45755c2aa0d28c962065d4b698a87c",
+    "inventory": {
+      "attackServants": 422,
+      "attackProfiles": 433,
+      "preparationPlans": 3510,
+      "calculatorScenarios": 422,
+      "rankingRows": 427,
+      "rankingPolicy": "current-default",
+      "resourcePrograms": {
+        "programs": 7255,
+        "mutations": 15949,
+        "opaqueOperations": 53012,
+        "digest": "8b1050ce05de594f8bf0d3298bc31131f451c09b44cbda19fb3e3292b1d62066"
+      },
+      "calculated": 421,
+      "inputRequired": 0,
+      "unsupported": 1,
+      "unavailable": 0,
+      "invalid": 0,
+      "levelStatAvailability": {
+        "naturalPairs": 422,
+        "naturalMissing": 0,
+        "level90Pairs": 422,
+        "level90Missing": 0,
+        "referencedPairs": 422,
+        "referencedMissing": 0,
+        "missing": []
+      }
+    },
+    "counters": {
+      "masterReadCount": 1,
+      "masterParseCount": 1,
+      "compileCount": 1,
+      "candidateCount": 6516,
+      "deduplicatedCandidateCount": 4043,
+      "damageRequestCount": 2377,
+      "distinctDamageRequestCount": 1451
+    }
+  },
+  "join": {
+    "calculator": 422,
+    "ranking": 433,
+    "missing": 0,
+    "extra": 0,
+    "rankingCanonicalRekeys": 144,
+    "rule": "lineage + skill slots + passive variants + intrinsic traits + canonical NP reference; NP operation identity hashes change when HP IR changes"
+  },
+  "calculatorChanges": [
+    {
+      "identityBefore": "calculator:403600",
+      "identityAfter": "calculator:403600",
+      "outcomeBefore": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 21165,
+            "average": 23505.15,
+            "maximum": 25845
+          },
+          {
+            "npLevel": 2,
+            "minimum": 28220,
+            "average": 31340.365,
+            "maximum": 34460
+          },
+          {
+            "npLevel": 3,
+            "minimum": 31748,
+            "average": 35257.975,
+            "maximum": 38768
+          },
+          {
+            "npLevel": 4,
+            "minimum": 33512,
+            "average": 37216.785,
+            "maximum": 40922
+          },
+          {
+            "npLevel": 5,
+            "minimum": 35276,
+            "average": 39175.59,
+            "maximum": 43076
+          }
+        ]
+      },
+      "outcomeAfter": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 27515,
+            "average": 30556.84,
+            "maximum": 33599
+          },
+          {
+            "npLevel": 2,
+            "minimum": 36687,
+            "average": 40742.625,
+            "maximum": 44799
+          },
+          {
+            "npLevel": 3,
+            "minimum": 41273,
+            "average": 45835.515,
+            "maximum": 50398
+          },
+          {
+            "npLevel": 4,
+            "minimum": 43565,
+            "average": 48381.96,
+            "maximum": 53198
+          },
+          {
+            "npLevel": 5,
+            "minimum": 45858,
+            "average": 50928.4,
+            "maximum": 55998
+          }
+        ]
+      },
+      "inputChanges": {
+        "targetStateTraits": {
+          "before": [
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "skillSeal"
+          ],
+          "after": [
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "skillSeal"
+          ]
+        },
+        "attackBuff": {
+          "before": 0,
+          "after": 0.3
+        }
+      },
+      "executionTraceAfter": [
+        {
+          "step": "validate",
+          "detail": "damage_resolution_schema_v40"
+        },
+        {
+          "step": "attack-np-function",
+          "detail": "standard"
+        },
+        {
+          "step": "random",
+          "detail": "evaluated_200_final_floors"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "transfer:enemyHp:0:0:default"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "transfer:enemyHp:1:0:default"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "transfer:enemyHp:2:0:default"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "0:attacker:attacker:403600:672550:360:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "1:attacker:attacker:403600:672550:360:0:addTrait-target:skillSeal:applied"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "2:attacker:attacker:403600:672550:3964:0:addTrait-target:buffNegativeEffect:notApplied"
+        },
+        {
+          "step": "attackerSkill:addModifier",
+          "detail": "3:attacker:attacker:403600:672550:3964:0:modifier:attackBuff:notApplied"
+        },
+        {
+          "step": "attackerSkill:resourceMutation",
+          "detail": "4:attacker:attacker:403600:672550:476:0:unsupported-resource:criticalStars:notRelevant"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "5:attacker:attacker:403600:673550:3965:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "6:attacker:attacker:403600:673550:3998:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "7:attacker:attacker:403600:673550:225:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "8:attacker:attacker:403600:673550:306:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "9:attacker:attacker:403600:674650:197:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addModifier",
+          "detail": "10:attacker:attacker:403600:674650:197:0:modifier:attackBuff:applied"
+        },
+        {
+          "step": "npDamage:executeNpDamage",
+          "detail": "11:np:[\"403600\",0,\"403601\"]:13:damage:applied"
+        }
+      ],
+      "candidateEvidence": null
+    },
+    {
+      "identityBefore": "calculator:702500",
+      "identityAfter": "calculator:702500",
+      "outcomeBefore": {
+        "status": "unsupported",
+        "issues": [
+          {
+            "code": "unsupportedOperation:attacker:attacker:702500:789451:439:0:unsupported-resource:hp:resourceStateUnavailable:hp",
+            "detail": "unsupportedOperation:attacker:attacker:702500:789451:439:0:unsupported-resource:hp:resourceStateUnavailable:hp"
+          },
+          {
+            "code": "unsupportedOperation:attacker:attacker:702500:344655:21449:0:unsupported-resource:hp:resourceStateUnavailable:hp",
+            "detail": "unsupportedOperation:attacker:attacker:702500:344655:21449:0:unsupported-resource:hp:resourceStateUnavailable:hp"
+          }
+        ]
+      },
+      "outcomeAfter": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 72204,
+            "average": 80187.1,
+            "maximum": 88170
+          },
+          {
+            "npLevel": 2,
+            "minimum": 88969,
+            "average": 98805.085,
+            "maximum": 108641
+          },
+          {
+            "npLevel": 3,
+            "minimum": 97351,
+            "average": 108114.06,
+            "maximum": 118877
+          },
+          {
+            "npLevel": 4,
+            "minimum": 101542,
+            "average": 112768.55,
+            "maximum": 123995
+          },
+          {
+            "npLevel": 5,
+            "minimum": 105734,
+            "average": 117423.045,
+            "maximum": 129113
+          }
+        ]
+      },
+      "inputChanges": {
+        "npMultipliers": {
+          "before": [
+            800,
+            1000,
+            1100,
+            1150,
+            1200
+          ],
+          "after": [
+            861.4,
+            1061.4,
+            1161.4,
+            1211.4,
+            1261.4
+          ]
+        }
+      },
+      "executionTraceAfter": [
+        {
+          "step": "validate",
+          "detail": "damage_resolution_schema_v40"
+        },
+        {
+          "step": "attack-np-function",
+          "detail": "hpRatioLow"
+        },
+        {
+          "step": "random",
+          "detail": "evaluated_200_final_floors"
+        },
+        {
+          "step": "attackerSkill:addModifier",
+          "detail": "0:attacker:attacker:702500:343450:125:0:modifier:cardBuff:applied"
+        },
+        {
+          "step": "attackerSkill:preserveSemanticEffect",
+          "detail": "1:attacker:attacker:702500:789451:5835:0:evidence:stateMutation:notApplied"
+        },
+        {
+          "step": "damageEvaluation:addModifier",
+          "detail": "2:passive:passive:702500:54251:118:0:modifier:cardBuff:applied"
+        },
+        {
+          "step": "npDamage:executeNpDamage",
+          "detail": "3:np:[\"702500\",0,\"702502\"]:22:damage:applied"
+        }
+      ],
+      "candidateEvidence": null
+    }
+  ],
+  "rankingChanges": [
+    {
+      "identityBefore": "ranking:[\"204300\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"883550\"},{\"slot\":2,\"skillVariantId\":\"884650\"},{\"slot\":3,\"skillVariantId\":\"885550\"}],\"passiveVariantIds\":[\"34650\",\"83550\",\"88550\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeEarth\",\"canBeInBattle\",\"classArcher\",\"demonic\",\"fae\",\"fourStarServant\",\"genderFemale\",\"humanoid\",\"knightsOfTheRound\",\"riding\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"0a78819dc10140bf0dd4edf2c5974626be9f345f097aa553ddbc7207cce92dbc\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"0a78819dc10140bf0dd4edf2c5974626be9f345f097aa553ddbc7207cce92dbc\"]},\"0a78819dc10140bf0dd4edf2c5974626be9f345f097aa553ddbc7207cce92dbc\"]",
+      "identityAfter": "ranking:[\"204300\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"883550\"},{\"slot\":2,\"skillVariantId\":\"884650\"},{\"slot\":3,\"skillVariantId\":\"885550\"}],\"passiveVariantIds\":[\"34650\",\"83550\",\"88550\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeEarth\",\"canBeInBattle\",\"classArcher\",\"demonic\",\"fae\",\"fourStarServant\",\"genderFemale\",\"humanoid\",\"knightsOfTheRound\",\"riding\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\"]},\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\"]",
+      "outcomeBefore": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "outcomeAfter": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 39474,
+            "average": 43838.4,
+            "maximum": 48203
+          },
+          {
+            "npLevel": 2,
+            "minimum": 49343,
+            "average": 54798.11,
+            "maximum": 60253
+          },
+          {
+            "npLevel": 3,
+            "minimum": 54277,
+            "average": 60277.97,
+            "maximum": 66279
+          },
+          {
+            "npLevel": 4,
+            "minimum": 56744,
+            "average": 63017.9,
+            "maximum": 69291
+          },
+          {
+            "npLevel": 5,
+            "minimum": 59212,
+            "average": 65757.83,
+            "maximum": 72304
+          }
+        ]
+      },
+      "inputChanges": {
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            1600,
+            2000,
+            2200,
+            2300,
+            2400
+          ]
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 0.95
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "traitCount",
+            "ignoreDefense": false
+          }
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 80
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "attackerId": {
+          "before": null,
+          "after": "204300"
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": [
+            "buffNegativeEffect",
+            "buffNegativeEffect",
+            "buffCurse"
+          ]
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 9455
+        },
+        "stackStateCounts": {
+          "before": null,
+          "after": {
+            "attackerState": {},
+            "targetState": {
+              "buffCurse": 1
+            },
+            "field": {}
+          }
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "cardType": {
+          "before": null,
+          "after": "quick"
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0.5
+        },
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      },
+      "executionTraceAfter": [
+        {
+          "step": "validate",
+          "detail": "damage_resolution_schema_v40"
+        },
+        {
+          "step": "attack-np-function",
+          "detail": "traitCount"
+        },
+        {
+          "step": "random",
+          "detail": "evaluated_200_final_floors"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "stack:targetState:buffCurse:0:explicit"
+        },
+        {
+          "step": "attackerSkill:addModifier",
+          "detail": "0:attacker:attacker:204300:883550:101:0:modifier:cardBuff:applied"
+        },
+        {
+          "step": "beforeNpDamage:preserveSemanticEffect",
+          "detail": "1:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:288:0:evidence:stateMutation:notRelevant"
+        },
+        {
+          "step": "beforeNpDamage:preserveSemanticEffect",
+          "detail": "2:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:320:0:evidence:buffInstanceMutation:notRelevant"
+        },
+        {
+          "step": "beforeNpDamage:preserveSemanticEffect",
+          "detail": "3:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:320:0:evidence:boundedPhaseIrrelevant:notRelevant"
+        },
+        {
+          "step": "beforeNpDamage:addTrait",
+          "detail": "4:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:320:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "beforeNpDamage:addTrait",
+          "detail": "5:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:320:0:addTrait-target:buffCurse:applied"
+        },
+        {
+          "step": "beforeNpDamage:preserveSemanticEffect",
+          "detail": "6:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:3102:0:evidence:boundedPhaseIrrelevant:notRelevant"
+        },
+        {
+          "step": "beforeNpDamage:addTrait",
+          "detail": "7:np:np:[\"204300\",0,\"204302\"]:np:[\"204300\",0,\"204302\"]:3102:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "damageEvaluation:preserveSemanticEffect",
+          "detail": "8:passive:passive:204300:34650:388:0:evidence:stateMutation:notRelevant"
+        },
+        {
+          "step": "damageEvaluation:addModifier",
+          "detail": "9:passive:passive:204300:88550:100:0:modifier:cardBuff:applied"
+        },
+        {
+          "step": "damageEvaluation:addModifier",
+          "detail": "10:passive:passive:204300:83550:109:0:modifier:cardBuff:notApplied"
+        },
+        {
+          "step": "npDamage:executeNpDamage",
+          "detail": "11:np:[\"204300\",0,\"204302\"]:5336:damage:applied"
+        }
+      ],
+      "candidateEvidence": {
+        "policyKey": "included:baseline",
+        "candidateKey": "{\"policyKey\":\"included:baseline\",\"attackProfileKey\":\"[\\\"204300\\\",{\\\"skillSlots\\\":[{\\\"slot\\\":1,\\\"skillVariantId\\\":\\\"883550\\\"},{\\\"slot\\\":2,\\\"skillVariantId\\\":\\\"884650\\\"},{\\\"slot\\\":3,\\\"skillVariantId\\\":\\\"885550\\\"}],\\\"passiveVariantIds\\\":[\\\"34650\\\",\\\"83550\\\",\\\"88550\\\"],\\\"intrinsicTraits\\\":[\\\"alignmentChaotic\\\",\\\"alignmentEvil\\\",\\\"attributeEarth\\\",\\\"canBeInBattle\\\",\\\"classArcher\\\",\\\"demonic\\\",\\\"fae\\\",\\\"fourStarServant\\\",\\\"genderFemale\\\",\\\"humanoid\\\",\\\"knightsOfTheRound\\\",\\\"riding\\\",\\\"servant\\\",\\\"skyOrEarthExceptPseudoAndDemiServant\\\",\\\"skyOrEarthServant\\\",\\\"standardClassServant\\\",\\\"weakToEnumaElish\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\\\"]},\\\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\\\"]\",\"preparationPlanKey\":\"[\\\"204300\\\",0]|{\\\"kind\\\":\\\"useSkillSlot\\\",\\\"slot\\\":1,\\\"skillLevel\\\":10,\\\"choice\\\":null}\",\"startNpGauge\":10000,\"canonicalInputValues\":{\"stack:targetState:buffCurse\":0},\"canonicalInputBaselineDeviation\":0,\"targetCandidateKey\":\"target:baseline\",\"fieldCandidateKey\":\"field:none\",\"quantityCandidateKey\":\"quantity:baseline\"}",
+        "preparationPlanKey": "[\"204300\",0]|{\"kind\":\"useSkillSlot\",\"slot\":1,\"skillLevel\":10,\"choice\":null}",
+        "startNpGauge": 10000,
+        "baselineInputDeviation": 0,
+        "attackProfileKey": "[\"204300\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"883550\"},{\"slot\":2,\"skillVariantId\":\"884650\"},{\"slot\":3,\"skillVariantId\":\"885550\"}],\"passiveVariantIds\":[\"34650\",\"83550\",\"88550\"],\"intrinsicTraits\":[\"alignmentChaotic\",\"alignmentEvil\",\"attributeEarth\",\"canBeInBattle\",\"classArcher\",\"demonic\",\"fae\",\"fourStarServant\",\"genderFemale\",\"humanoid\",\"knightsOfTheRound\",\"riding\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\"]},\"1a66bb8aaf420760d6be250d18aefa085af2d07830cda1cf12ad14f0ca53979f\"]",
+        "canonicalInputValues": {
+          "stack:targetState:buffCurse": 0
+        },
+        "targetCandidateKey": "target:baseline",
+        "fieldCandidateKey": "field:none",
+        "quantityCandidateKey": "quantity:baseline"
+      }
+    },
+    {
+      "identityBefore": "ranking:[\"403600\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"672550\"},{\"slot\":2,\"skillVariantId\":\"673550\"},{\"slot\":3,\"skillVariantId\":\"674650\"}],\"passiveVariantIds\":[\"20550\",\"50450\"],\"intrinsicTraits\":[\"alignmentEvil\",\"alignmentNeutral\",\"attributeEarth\",\"canBeInBattle\",\"classRider\",\"fourStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"standardClassServant\",\"summerModeServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\"]},\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\"]",
+      "identityAfter": "ranking:[\"403600\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"672550\"},{\"slot\":2,\"skillVariantId\":\"673550\"},{\"slot\":3,\"skillVariantId\":\"674650\"}],\"passiveVariantIds\":[\"20550\",\"50450\"],\"intrinsicTraits\":[\"alignmentEvil\",\"alignmentNeutral\",\"attributeEarth\",\"canBeInBattle\",\"classRider\",\"fourStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"standardClassServant\",\"summerModeServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\"]},\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\"]",
+      "outcomeBefore": {
+        "status": "unsupported",
+        "reason": "unsupportedActionAdmission"
+      },
+      "outcomeAfter": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 13757,
+            "average": 15278.175,
+            "maximum": 16799
+          },
+          {
+            "npLevel": 2,
+            "minimum": 18343,
+            "average": 20371.065,
+            "maximum": 22399
+          },
+          {
+            "npLevel": 3,
+            "minimum": 20636,
+            "average": 22917.51,
+            "maximum": 25199
+          },
+          {
+            "npLevel": 4,
+            "minimum": 21782,
+            "average": 24190.735,
+            "maximum": 26599
+          },
+          {
+            "npLevel": 5,
+            "minimum": 22929,
+            "average": 25463.95,
+            "maximum": 27999
+          }
+        ]
+      },
+      "inputChanges": {
+        "npMultipliers": {
+          "before": null,
+          "after": [
+            600,
+            800,
+            900,
+            950,
+            1000
+          ]
+        },
+        "overcharge": {
+          "before": null,
+          "after": 1
+        },
+        "npSpecialMultipliers": {
+          "before": null,
+          "after": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "classAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "classAttackRate": {
+          "before": null,
+          "after": 1
+        },
+        "damageFunction": {
+          "before": null,
+          "after": {
+            "status": "resolved",
+            "kind": "standard",
+            "ignoreDefense": false
+          }
+        },
+        "battlePointPhase": {
+          "before": null,
+          "after": 0
+        },
+        "target": {
+          "before": null,
+          "after": {
+            "classId": null,
+            "attribute": "unknown",
+            "traits": []
+          }
+        },
+        "attackerStateTraits": {
+          "before": null,
+          "after": []
+        },
+        "specialDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "fouAtk": {
+          "before": null,
+          "after": 1000
+        },
+        "craftEssenceAtk": {
+          "before": null,
+          "after": 0
+        },
+        "ignoreDamageCut": {
+          "before": null,
+          "after": false
+        },
+        "fieldTraits": {
+          "before": null,
+          "after": []
+        },
+        "flatDamage": {
+          "before": null,
+          "after": 0
+        },
+        "attackerHpPermille": {
+          "before": null,
+          "after": 1000
+        },
+        "attackerLevel": {
+          "before": null,
+          "after": 80
+        },
+        "powerMod": {
+          "before": null,
+          "after": 0
+        },
+        "damageCut": {
+          "before": null,
+          "after": 0
+        },
+        "defenseBuff": {
+          "before": null,
+          "after": 0
+        },
+        "attackerId": {
+          "before": null,
+          "after": "403600"
+        },
+        "cardResistance": {
+          "before": null,
+          "after": 0
+        },
+        "targetStateTraits": {
+          "before": null,
+          "after": [
+            "buffNegativeEffect"
+          ]
+        },
+        "attackerAtk": {
+          "before": null,
+          "after": 9651
+        },
+        "npLevel": {
+          "before": null,
+          "after": 1
+        },
+        "attributeAffinity": {
+          "before": null,
+          "after": 1
+        },
+        "cardType": {
+          "before": null,
+          "after": "quick"
+        },
+        "attackBuff": {
+          "before": null,
+          "after": 0.3
+        },
+        "specialResistance": {
+          "before": null,
+          "after": 0
+        },
+        "npResistance": {
+          "before": null,
+          "after": 0
+        },
+        "cardBuff": {
+          "before": null,
+          "after": 0
+        },
+        "eventDamageBuff": {
+          "before": null,
+          "after": 0
+        },
+        "npDamageBuff": {
+          "before": null,
+          "after": 0
+        }
+      },
+      "executionTraceAfter": [
+        {
+          "step": "validate",
+          "detail": "damage_resolution_schema_v40"
+        },
+        {
+          "step": "attack-np-function",
+          "detail": "standard"
+        },
+        {
+          "step": "random",
+          "detail": "evaluated_200_final_floors"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "transfer:enemyHp:0:0:explicit"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "transfer:enemyHp:1:0:explicit"
+        },
+        {
+          "step": "canonical-input",
+          "detail": "transfer:enemyHp:2:0:explicit"
+        },
+        {
+          "step": "attackerSkill:addTrait",
+          "detail": "0:attacker:attacker:403600:674650:197:0:addTrait-target:buffNegativeEffect:applied"
+        },
+        {
+          "step": "attackerSkill:addModifier",
+          "detail": "1:attacker:attacker:403600:674650:197:0:modifier:attackBuff:applied"
+        },
+        {
+          "step": "npDamage:executeNpDamage",
+          "detail": "2:np:[\"403600\",0,\"403601\"]:13:damage:applied"
+        }
+      ],
+      "candidateEvidence": {
+        "policyKey": "included:baseline",
+        "candidateKey": "{\"policyKey\":\"included:baseline\",\"attackProfileKey\":\"[\\\"403600\\\",{\\\"skillSlots\\\":[{\\\"slot\\\":1,\\\"skillVariantId\\\":\\\"672550\\\"},{\\\"slot\\\":2,\\\"skillVariantId\\\":\\\"673550\\\"},{\\\"slot\\\":3,\\\"skillVariantId\\\":\\\"674650\\\"}],\\\"passiveVariantIds\\\":[\\\"20550\\\",\\\"50450\\\"],\\\"intrinsicTraits\\\":[\\\"alignmentEvil\\\",\\\"alignmentNeutral\\\",\\\"attributeEarth\\\",\\\"canBeInBattle\\\",\\\"classRider\\\",\\\"fourStarServant\\\",\\\"genderFemale\\\",\\\"hominidaeServant\\\",\\\"humanoid\\\",\\\"servant\\\",\\\"skyOrEarthExceptPseudoAndDemiServant\\\",\\\"skyOrEarthServant\\\",\\\"standardClassServant\\\",\\\"summerModeServant\\\",\\\"weakToEnumaElish\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\\\"]},\\\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\\\"]\",\"preparationPlanKey\":\"[\\\"403600\\\",0]|{\\\"kind\\\":\\\"useSkillSlot\\\",\\\"slot\\\":3,\\\"skillLevel\\\":10,\\\"choice\\\":null}\",\"startNpGauge\":10000,\"canonicalInputValues\":{\"transfer:enemyHp:0\":0,\"transfer:enemyHp:1\":0,\"transfer:enemyHp:2\":0},\"canonicalInputBaselineDeviation\":0,\"targetCandidateKey\":\"target:baseline\",\"fieldCandidateKey\":\"field:none\",\"quantityCandidateKey\":\"quantity:baseline\"}",
+        "preparationPlanKey": "[\"403600\",0]|{\"kind\":\"useSkillSlot\",\"slot\":3,\"skillLevel\":10,\"choice\":null}",
+        "startNpGauge": 10000,
+        "baselineInputDeviation": 0,
+        "attackProfileKey": "[\"403600\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"672550\"},{\"slot\":2,\"skillVariantId\":\"673550\"},{\"slot\":3,\"skillVariantId\":\"674650\"}],\"passiveVariantIds\":[\"20550\",\"50450\"],\"intrinsicTraits\":[\"alignmentEvil\",\"alignmentNeutral\",\"attributeEarth\",\"canBeInBattle\",\"classRider\",\"fourStarServant\",\"genderFemale\",\"hominidaeServant\",\"humanoid\",\"servant\",\"skyOrEarthExceptPseudoAndDemiServant\",\"skyOrEarthServant\",\"standardClassServant\",\"summerModeServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\"]},\"affaa137e4c004c6a99c347bf1305d3ea7e495b75f9311e426793f79e4ad233c\"]",
+        "canonicalInputValues": {
+          "transfer:enemyHp:0": 0,
+          "transfer:enemyHp:1": 0,
+          "transfer:enemyHp:2": 0
+        },
+        "targetCandidateKey": "target:baseline",
+        "fieldCandidateKey": "field:none",
+        "quantityCandidateKey": "quantity:baseline"
+      }
+    },
+    {
+      "identityBefore": "ranking:[\"702500\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"343450\"},{\"slot\":2,\"skillVariantId\":\"789451\"},{\"slot\":3,\"skillVariantId\":\"344655\"}],\"passiveVariantIds\":[\"54251\"],\"intrinsicTraits\":[\"alignmentEvil\",\"alignmentLawful\",\"attributeHuman\",\"canBeInBattle\",\"classBerserker\",\"fiveStarServant\",\"genderMale\",\"hasCostume\",\"hominidaeServant\",\"humanoid\",\"servant\",\"shinsengumiServant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\"]},\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\"]",
+      "identityAfter": "ranking:[\"702500\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"343450\"},{\"slot\":2,\"skillVariantId\":\"789451\"},{\"slot\":3,\"skillVariantId\":\"344655\"}],\"passiveVariantIds\":[\"54251\"],\"intrinsicTraits\":[\"alignmentEvil\",\"alignmentLawful\",\"attributeHuman\",\"canBeInBattle\",\"classBerserker\",\"fiveStarServant\",\"genderMale\",\"hasCostume\",\"hominidaeServant\",\"humanoid\",\"servant\",\"shinsengumiServant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\"]},\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\"]",
+      "outcomeBefore": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 44705,
+            "average": 49647.41,
+            "maximum": 54590
+          },
+          {
+            "npLevel": 2,
+            "minimum": 55881,
+            "average": 62059.405,
+            "maximum": 68237
+          },
+          {
+            "npLevel": 3,
+            "minimum": 61470,
+            "average": 68265.4,
+            "maximum": 75061
+          },
+          {
+            "npLevel": 4,
+            "minimum": 64264,
+            "average": 71368.385,
+            "maximum": 78473
+          },
+          {
+            "npLevel": 5,
+            "minimum": 67058,
+            "average": 74471.37,
+            "maximum": 81885
+          }
+        ]
+      },
+      "outcomeAfter": {
+        "status": "calculated",
+        "rows": [
+          {
+            "npLevel": 1,
+            "minimum": 48136,
+            "average": 53457.9,
+            "maximum": 58780
+          },
+          {
+            "npLevel": 2,
+            "minimum": 59313,
+            "average": 65869.885,
+            "maximum": 72427
+          },
+          {
+            "npLevel": 3,
+            "minimum": 64901,
+            "average": 72075.875,
+            "maximum": 79251
+          },
+          {
+            "npLevel": 4,
+            "minimum": 67695,
+            "average": 75178.865,
+            "maximum": 82663
+          },
+          {
+            "npLevel": 5,
+            "minimum": 70489,
+            "average": 78281.86,
+            "maximum": 86075
+          }
+        ]
+      },
+      "inputChanges": {
+        "npMultipliers": {
+          "before": [
+            800,
+            1000,
+            1100,
+            1150,
+            1200
+          ],
+          "after": [
+            861.4,
+            1061.4,
+            1161.4,
+            1211.4,
+            1261.4
+          ]
+        }
+      },
+      "executionTraceAfter": [
+        {
+          "step": "validate",
+          "detail": "damage_resolution_schema_v40"
+        },
+        {
+          "step": "attack-np-function",
+          "detail": "hpRatioLow"
+        },
+        {
+          "step": "random",
+          "detail": "evaluated_200_final_floors"
+        },
+        {
+          "step": "attackerSkill:addModifier",
+          "detail": "0:attacker:attacker:702500:343450:125:0:modifier:cardBuff:applied"
+        },
+        {
+          "step": "damageEvaluation:addModifier",
+          "detail": "1:passive:passive:702500:54251:118:0:modifier:cardBuff:applied"
+        },
+        {
+          "step": "npDamage:executeNpDamage",
+          "detail": "2:np:[\"702500\",0,\"702502\"]:22:damage:applied"
+        }
+      ],
+      "candidateEvidence": {
+        "policyKey": "included:baseline",
+        "candidateKey": "{\"policyKey\":\"included:baseline\",\"attackProfileKey\":\"[\\\"702500\\\",{\\\"skillSlots\\\":[{\\\"slot\\\":1,\\\"skillVariantId\\\":\\\"343450\\\"},{\\\"slot\\\":2,\\\"skillVariantId\\\":\\\"789451\\\"},{\\\"slot\\\":3,\\\"skillVariantId\\\":\\\"344655\\\"}],\\\"passiveVariantIds\\\":[\\\"54251\\\"],\\\"intrinsicTraits\\\":[\\\"alignmentEvil\\\",\\\"alignmentLawful\\\",\\\"attributeHuman\\\",\\\"canBeInBattle\\\",\\\"classBerserker\\\",\\\"fiveStarServant\\\",\\\"genderMale\\\",\\\"hasCostume\\\",\\\"hominidaeServant\\\",\\\"humanoid\\\",\\\"servant\\\",\\\"shinsengumiServant\\\",\\\"standardClassServant\\\",\\\"weakToEnumaElish\\\"],\\\"baseNoblePhantasmVariantCanonicalId\\\":\\\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\\\",\\\"reachableAttackNoblePhantasmVariantCanonicalIds\\\":[\\\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\\\"]},\\\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\\\"]\",\"preparationPlanKey\":\"[\\\"702500\\\",0]|{\\\"kind\\\":\\\"useSkillSlot\\\",\\\"slot\\\":1,\\\"skillLevel\\\":10,\\\"choice\\\":null}|{\\\"kind\\\":\\\"useSkillSlot\\\",\\\"slot\\\":3,\\\"skillLevel\\\":10,\\\"choice\\\":null}\",\"startNpGauge\":10000,\"canonicalInputValues\":{},\"canonicalInputBaselineDeviation\":0,\"targetCandidateKey\":\"target:baseline\",\"fieldCandidateKey\":\"field:none\",\"quantityCandidateKey\":\"quantity:baseline\"}",
+        "preparationPlanKey": "[\"702500\",0]|{\"kind\":\"useSkillSlot\",\"slot\":1,\"skillLevel\":10,\"choice\":null}|{\"kind\":\"useSkillSlot\",\"slot\":3,\"skillLevel\":10,\"choice\":null}",
+        "startNpGauge": 10000,
+        "baselineInputDeviation": 0,
+        "attackProfileKey": "[\"702500\",{\"skillSlots\":[{\"slot\":1,\"skillVariantId\":\"343450\"},{\"slot\":2,\"skillVariantId\":\"789451\"},{\"slot\":3,\"skillVariantId\":\"344655\"}],\"passiveVariantIds\":[\"54251\"],\"intrinsicTraits\":[\"alignmentEvil\",\"alignmentLawful\",\"attributeHuman\",\"canBeInBattle\",\"classBerserker\",\"fiveStarServant\",\"genderMale\",\"hasCostume\",\"hominidaeServant\",\"humanoid\",\"servant\",\"shinsengumiServant\",\"standardClassServant\",\"weakToEnumaElish\"],\"baseNoblePhantasmVariantCanonicalId\":\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\",\"reachableAttackNoblePhantasmVariantCanonicalIds\":[\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\"]},\"59115cbbcd764df1ba0f493486ff0ce7075e3423db67e8c41b998debfd91436d\"]",
+        "canonicalInputValues": {},
+        "targetCandidateKey": "target:baseline",
+        "fieldCandidateKey": "field:none",
+        "quantityCandidateKey": "quantity:baseline"
+      }
+    }
+  ],
+  "governingRules": {
+    "403600": "The admitted HP transfer skill commits the coexisting 30% defense decrease. Donor input 0 causes no HP gain but does not cancel the defense operation. Calculator uses class affinity 2; ranking uses 1.",
+    "702500": "Initial max HP is master level HP + fixed Fou 1000. Heal 1500 clamps at max, then safe loss 1000 precedes HP-low NP ratio; old resourceStateUnavailable becomes calculated. Satisfied policy chooses initial 1 permille and an ordered legal scenario.",
+    "204300": "The player HP transfer and nested safe donor loss are represented. Enemy-only sibling function 7415 cannot execute from the selected player actor. Existing NP damage semantics are unchanged.",
+    "unchangedNumericalRanking": "424 previously calculated profiles retain their default damage. 702500 increases from49647.410 to53457.900 at NP1 because HP loss remains a damage contribution even when accompanying NP gain caps; NP multipliers are read from updated absolute HP. The two newly calculated profiles have no previous numerical result.",
+    "702500Ranking": {
+      "level": 90,
+      "baseHp": 12028,
+      "fixedHpFou": 1000,
+      "initialMaximum": 13028,
+      "initialPermille": 1000,
+      "safeLoss": 1000,
+      "currentAtNp": 12028,
+      "buffPermille": 923,
+      "displayPercent": 92,
+      "npRatio": "12028/13028",
+      "np1MultiplierPercent": "(8000 + trunc((1 - 12028/13028)*8000))/10 =861.4",
+      "npGauge": "NP1 caps the gain at10000; this does not remove the HP writer from admission",
+      "np1AverageBefore": 49647.41,
+      "np1AverageAfter": 53457.9
+    },
+    "receiptProjection": "Committed HP effects are preserved as execution evidence rather than re-evaluated at damage time. Source choice facts are validated against the committed family. The corresponding projection/trace changes preserve 424 previously calculated ranking values. The independent HP-reader admission fix changes 702500 as documented in the numerical delta."
+  }
+}

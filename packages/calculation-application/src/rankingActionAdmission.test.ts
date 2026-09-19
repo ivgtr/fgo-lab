@@ -339,3 +339,27 @@ describe('candidate-local action admission', () => {
     ]);
   });
 });
+
+it('joins HP admission to the affected actor instead of admitting an unrelated ally writer', () => {
+  for (const recipient of ['sourceSelf', 'partyOther'] as const) {
+    const writer = program([
+      effect('hp-writer', [
+        {
+          kind: 'resourceMutation',
+          resource: 'hp',
+          direction: 'loss',
+          unit: 'fixed',
+          recipient,
+          subjectId: null,
+          amount: { kind: 'fixed', values: [[1000], [], [], [], []] },
+          lossFloor: 'oneIfAlive',
+        },
+      ]),
+    ]);
+    writer.terminalHpReaders = [{ kind: 'attacker' }];
+    const admission = compileCandidateLocalActionAdmission([withoutAction, writer], baseline);
+    expect(admission.programs.some(({ key }) => key === writer.key)).toBe(
+      recipient === 'sourceSelf',
+    );
+  }
+});

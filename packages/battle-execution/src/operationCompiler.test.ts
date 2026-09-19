@@ -4,7 +4,7 @@ import type {
   ModifierValueExpression,
 } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
-import { compileEffect } from './operationCompiler';
+import { compileEffect, compileEffectCached } from './operationCompiler';
 import { resolveStochasticOutcomes } from './stochasticOutcomes';
 import type { SourceEffect } from './sourceCollection';
 
@@ -418,7 +418,7 @@ describe('canonical operation compilation', () => {
     ]);
   });
 
-  it('binds a support-owned HP expression to a typed source context input', () => {
+  it('binds a party HP expression to the recipient current HP', () => {
     const hpModifier: EffectExecutionOperation = {
       kind: 'damageModifier',
       route: {
@@ -452,20 +452,31 @@ describe('canonical operation compilation', () => {
         valueExpression: {
           kind: 'inverseHpLinear',
           quantitySource: {
-            kind: 'canonicalInput',
-            inputKey: 'source:support:support:leonidas:hpPermille',
+            kind: 'attackerHpPermille',
           },
         },
-        inputDefinitions: [
-          {
-            kind: 'sourceHpPermille',
-            owner: 'source',
-            minimum: 0,
-            maximum: 1_000,
-            defaultValue: 1_000,
-          },
-        ],
+        inputDefinitions: [],
       },
     ]);
   });
+});
+
+it('does not reuse HP execution proof across committed and uncommitted source cache entries', () => {
+  const hpSource = source([
+    {
+      kind: 'resourceMutation',
+      resource: 'hp',
+      direction: 'loss',
+      unit: 'fixed',
+      lossFloor: 'oneIfAlive',
+      recipient: 'sourceSelf',
+      subjectId: null,
+      amount: { kind: 'fixed', values: values(1000) },
+    },
+  ]);
+  const uncommitted = compileEffectCached(hpSource, 0);
+  const committed = compileEffectCached({ ...hpSource, hpExecutionCommitted: true }, 0);
+  expect(committed.operations).not.toEqual(uncommitted.operations);
+  expect(compileEffectCached(hpSource, 0)).toEqual(uncommitted);
+  expect(compileEffectCached({ ...hpSource, hpExecutionCommitted: true }, 0)).toEqual(committed);
 });

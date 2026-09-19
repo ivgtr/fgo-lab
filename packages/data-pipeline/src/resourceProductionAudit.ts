@@ -54,7 +54,13 @@ export function resourceProductionInventory(effects: readonly ResourceAuditEffec
         if (operation.resource === 'hp') {
           const expectedValues = (sets: typeof evidence.parameterSets) =>
             sets.map((row) =>
-              row.map((cell) => (typeof cell['Value'] === 'number' ? cell['Value'] : null)),
+              row.map((cell) => {
+                const value =
+                  operation.amount.kind === 'hpTransfer'
+                    ? (cell['DependFuncVals'] as Record<string, unknown> | undefined)?.['Value']
+                    : cell['Value'];
+                return typeof value === 'number' ? value : null;
+              }),
             );
           if (
             (evidence.limitBreakParameterSets !== undefined &&
@@ -176,6 +182,8 @@ export function hpGrowthProductionInventory(
   master: Pick<MasterDataSnapshot, 'servants' | 'craftEssences'>,
 ) {
   let servantCells = 0;
+  let formCells = 0;
+  let formsWithIndependentGrowth = 0;
   let craftEssenceCells = 0;
   let zeroCraftEssenceCells = 0;
   for (const servant of master.servants) {
@@ -185,6 +193,16 @@ export function hpGrowthProductionInventory(
         throw new TypeError(`hp_growth_unavailable:servant:${servant.id}:${level}`);
     }
     servantCells += Object.keys(servant.hpByLevel).length;
+    for (const form of servant.actorFormGraph.forms) {
+      if (form.baseHp.kind !== 'form') continue;
+      formsWithIndependentGrowth++;
+      for (const level of Object.keys(servant.atkByLevel)) {
+        const hp = readHpAtLevel(form.baseHp.hpByLevel, Number(level));
+        if (hp === null || hp === 0)
+          throw new TypeError(`hp_growth_unavailable:form:${JSON.stringify(form.id)}:${level}`);
+        formCells++;
+      }
+    }
   }
   for (const equip of master.craftEssences) {
     const maximum = Math.max(...equip.maxLevelByLimitBreak);
@@ -196,5 +214,11 @@ export function hpGrowthProductionInventory(
       craftEssenceCells++;
     }
   }
-  return { servantCells, craftEssenceCells, zeroCraftEssenceCells };
+  return {
+    servantCells,
+    formCells,
+    formsWithIndependentGrowth,
+    craftEssenceCells,
+    zeroCraftEssenceCells,
+  };
 }

@@ -1,3 +1,4 @@
+import type { HpState } from './hpResource';
 import type {
   CanonicalInputDefinition,
   CanonicalTargetDomain,
@@ -27,6 +28,7 @@ export interface OrderedScenarioExecution extends BattleExecutionResult {
 }
 
 export interface PreparedOrderedScenario {
+  hp?: HpState | undefined;
   baseInput: DamageResolutionInput;
   scenario: ResolvedScenario;
   attackerTraits: readonly string[];

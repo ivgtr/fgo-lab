@@ -10,7 +10,7 @@ const empty = (value: unknown) =>
   (Array.isArray(value)
     ? value.length === 0
     : typeof value === 'object' && value !== null && Object.keys(value).length === 0);
-function plainFunction(fn: AtlasFunction): boolean {
+export function plainFunction(fn: AtlasFunction): boolean {
   if (
     Object.keys(fn).some(
       (key) =>

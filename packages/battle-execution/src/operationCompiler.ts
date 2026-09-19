@@ -41,6 +41,29 @@ type ValuedOperation = Extract<
   { kind: 'damageModifier' | 'modifierRateChange' }
 >;
 
+export function sourceMaximumHpInputKey(
+  source: Pick<SourceEffect, 'origin' | 'sourceInstanceId'>,
+): string {
+  return `source:${source.origin}:${source.sourceInstanceId}:maximumHp`;
+}
+
+export function sourceMaximumHpInput(
+  source: Pick<SourceEffect, 'origin' | 'sourceInstanceId'>,
+): CanonicalInputDefinition {
+  return {
+    key: sourceMaximumHpInputKey(source),
+    kind: 'sourceMaximumHp',
+    owner: 'source',
+    label: '支援元の準備開始時の最大HP',
+    description: 'HP更新と割合読取を初期状態から計算するための最大HP',
+    minimum: 1,
+    maximum: Number.MAX_SAFE_INTEGER,
+    step: 1,
+    defaultValue: null,
+    defaultReason: null,
+  };
+}
+
 export function sourceHpInputKey(source: SourceEffect): string {
   return `source:${source.origin}:${source.sourceInstanceId}:hpPermille`;
 }
@@ -128,7 +151,10 @@ export function runtimeInputDefinitionsForSource(source: SourceEffect) {
         if (operation.kind !== 'damageModifier' && operation.kind !== 'modifierRateChange')
           return false;
         const expression = selectedValueExpression(source, operation);
-        return expression?.kind === 'inverseHpLinear' || expression?.kind === 'hpRangeLinear';
+        return (
+          (expression?.kind === 'inverseHpLinear' || expression?.kind === 'hpRangeLinear') &&
+          expression.quantitySource.kind === 'actorHpPermille'
+        );
       }));
   return requiresSourceHp
     ? [
@@ -237,7 +263,11 @@ export function compileEffectCondition(
     }
     if (requirement.kind === 'quantity') {
       const currentAttackerSource =
-        sourceActorIsCurrent || ['attacker', 'passive', 'np', 'craftEssence'].includes(origin);
+        sourceActorIsCurrent ||
+        ['attacker', 'passive', 'np', 'craftEssence'].includes(origin) ||
+        (requirement.quantity === 'attackerHpPermille' &&
+          requirement.subjectId === undefined &&
+          recipient === 'attacker');
       const subjectId =
         currentAttackerSource &&
         (requirement.subjectId === undefined || requirement.subjectId === sourceId)
@@ -345,9 +375,17 @@ function selectedValueExpression(
     };
   return {
     ...expression,
-    quantitySource: ['attacker', 'passive', 'np', 'craftEssence'].includes(source.origin)
-      ? ({ kind: 'attackerHpPermille' } as const)
-      : ({ kind: 'canonicalInput', inputKey: sourceHpInputKey(source) } as const),
+    quantitySource:
+      operationRecipient(operation, source.origin) === 'attacker'
+        ? ({ kind: 'attackerHpPermille' } as const)
+        : ({
+            kind: 'actorHpPermille',
+            actorId:
+              operationRecipient(operation, source.origin) === 'target'
+                ? 'enemy:0'
+                : source.sourceInstanceId,
+            inputKey: sourceHpInputKey(source),
+          } as const),
   };
 }
 
@@ -478,6 +516,7 @@ function compilationCacheKey(
     phase: source.phase,
     origin: source.origin,
     ocExecutionCommitted: source.ocExecutionCommitted,
+    hpExecutionCommitted: source.hpExecutionCommitted,
     compilationPurpose: source.compilationPurpose,
     preparationStochasticOutcome: source.preparationStochasticOutcome,
     sourceInstanceId: source.sourceInstanceId,
@@ -548,7 +587,10 @@ export function compileEffect(
       semantic,
     ): semantic is Extract<EffectExecutionOperation, { kind: 'resourceMutation' }> & {
       resource: 'hp' | 'criticalStars' | 'battlePoint';
-    } => semantic.kind === 'resourceMutation' && semantic.resource !== 'npGauge',
+    } =>
+      semantic.kind === 'resourceMutation' &&
+      semantic.resource !== 'npGauge' &&
+      !(semantic.resource === 'hp' && source.hpExecutionCommitted),
   );
   const retained = source.effect.execution.filter(
     (
@@ -559,13 +601,19 @@ export function compileEffect(
         kind:
           | 'resourceMutation'
           | 'stateMutation'
+          | 'hpModifier'
+          | 'removeHpModifiers'
           | 'boundedPhaseIrrelevant'
           | 'buffInstanceMutation'
           | 'populationMutation'
           | 'populationFunction';
       }
     > =>
-      (semantic.kind === 'resourceMutation' && semantic.resource === 'npGauge') ||
+      (semantic.kind === 'resourceMutation' &&
+        (semantic.resource === 'npGauge' ||
+          (semantic.resource === 'hp' && source.hpExecutionCommitted))) ||
+      ((semantic.kind === 'hpModifier' || semantic.kind === 'removeHpModifiers') &&
+        (source.hpExecutionCommitted || source.compilationPurpose === 'dependency')) ||
       semantic.kind === 'buffInstanceMutation' ||
       semantic.kind === 'populationMutation' ||
       semantic.kind === 'populationFunction' ||
@@ -576,6 +624,16 @@ export function compileEffect(
     source.effect.proc.kind !== 'guaranteed' || condition.kind !== 'always';
 
   for (const semantic of source.effect.execution) {
+    if (semantic.kind === 'hpModifier' || semantic.kind === 'removeHpModifiers') {
+      if (!source.hpExecutionCommitted && source.compilationPurpose !== 'dependency')
+        applicable.push({
+          kind: 'unsupported',
+          route: semantic.route,
+          reason: 'resourceExecutionSemantics',
+          damageRelevant: true,
+        });
+      continue;
+    }
     if (semantic.kind === 'ocStateNonIntersection') continue;
     if (
       semantic.kind === 'ocRemovalResistance' ||
@@ -781,7 +839,15 @@ export function compileEffect(
   }
   for (const semantic of retained) {
     const suffix = uniqueSuffix(`evidence:${semantic.kind}`);
-    if (retainedNeedsExecution)
+    if (
+      retainedNeedsExecution &&
+      !(
+        source.hpExecutionCommitted &&
+        (semantic.kind === 'hpModifier' ||
+          semantic.kind === 'removeHpModifiers' ||
+          (semantic.kind === 'resourceMutation' && semantic.resource === 'hp'))
+      )
+    )
       operations.push({
         ...baseOperation(source, 'personal', order++, suffix),
         kind: 'preserveSemanticEffect',

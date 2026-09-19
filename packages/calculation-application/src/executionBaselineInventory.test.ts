@@ -122,7 +122,7 @@ describe('E0 production master execution inventory', () => {
     expect(resourceCounts).toEqual({
       battlePoint: 1,
       criticalStars: 255,
-      hp: 179,
+      hp: 181,
       npGauge: 742,
     });
     expect(

@@ -26,23 +26,23 @@ describe('shared calculation-application production audit', () => {
       {
         identity: 'manifest',
         value: {
-          digest: '4777702988bce623912bbbafa9887cff6360cacb5cc3116a66aa1f6388b85e70',
+          digest: 'd75843b4b1949ea2d9d2285b23bc432e44f806d582a7eb22305bd6da8e9a95d7',
           inventory: {
             attackServants: 422,
             attackProfiles: 433,
-            preparationPlans: 3502,
+            preparationPlans: 3510,
             calculatorScenarios: 422,
-            rankingRows: 425,
+            rankingRows: 427,
             rankingPolicy: 'current-default',
             resourcePrograms: {
               programs: 7255,
-              mutations: 15927,
-              opaqueOperations: 54097,
-              digest: 'de4cc8a0bfad0ca45b187f829944d1c8643f167efa5bab74b2d396f352aede80',
+              mutations: 15949,
+              opaqueOperations: 53012,
+              digest: '8b1050ce05de594f8bf0d3298bc31131f451c09b44cbda19fb3e3292b1d62066',
             },
-            calculated: 420,
+            calculated: 421,
             inputRequired: 0,
-            unsupported: 2,
+            unsupported: 1,
             unavailable: 0,
             invalid: 0,
             levelStatAvailability: {
@@ -77,17 +77,17 @@ describe('shared calculation-application production audit', () => {
         counts[kind] = (counts[kind] ?? 0) + 1;
         return counts;
       }, {}),
-    ).toEqual({ unsupported: 2, rankingFailure: 8 });
+    ).toEqual({ unsupported: 1, rankingFailure: 6 });
     expect(
       audit.failures.filter(({ kind }) => kind === 'unsupported').map(({ identity }) => identity),
-    ).toEqual(['calculator:702500', 'calculator:705300']);
+    ).toEqual(['calculator:705300']);
     expect(
       audit.failures
         .filter(({ kind }) => kind === 'rankingFailure')
         .map(({ reason }) => reason)
         .sort(),
     ).toEqual(
-      [...Array.from({ length: 8 }, () => 'unsupported:unsupportedActionAdmission')].sort(),
+      [...Array.from({ length: 6 }, () => 'unsupported:unsupportedActionAdmission')].sort(),
     );
     expect(actual, formatCanonicalAuditMismatch(expected, actual)).toEqual(expected);
   }, 120_000);

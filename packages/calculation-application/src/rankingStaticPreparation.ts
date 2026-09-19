@@ -1,4 +1,9 @@
-import { noblePhantasmReadsOc, npProgramEffects } from '@fgo-lab/battle-execution';
+import {
+  noblePhantasmReadsOc,
+  npProgramEffects,
+  terminalHpReaders,
+  type ResourceActor,
+} from '@fgo-lab/battle-execution';
 import { STANDARD_RANKING_SCENARIO_POLICY } from './rankingContracts';
 import {
   actorFormEquals,
@@ -46,6 +51,7 @@ export interface StaticRankingPreparationProgram {
   commands: readonly PreNoblePhantasmCommand[];
   sourceUses: readonly RankingPreparationSourceUse[];
   terminalReadsOc?: boolean;
+  terminalHpReaders?: readonly ResourceActor[];
 }
 
 interface StaticState {
@@ -251,6 +257,7 @@ export function compileStaticRankingPreparationPrograms(
         commands: [...state.commands, { kind: 'executeAttackNoblePhantasm' }],
         sourceUses: state.sourceUses,
         terminalReadsOc: variant ? noblePhantasmReadsOc(variant) : false,
+        terminalHpReaders: variant ? terminalHpReaders(variant) : [],
       });
     for (const command of skillCommands(servant, state)) {
       const skill = getSkillsForActorForm(servant, state.currentFormId).find(

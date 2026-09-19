@@ -19,7 +19,7 @@ const productionMaster = readFile(resolve(root, 'apps/web/public/master/master.j
 );
 
 describe('production preparation semantics audit', () => {
-  it('admits intrinsic card buffs and fails closed for unrepresented HP costs', async () => {
+  it('admits intrinsic card buffs and executes canonical HP costs', async () => {
     const master = await productionMaster;
     const versions = {
       schemaVersion: SCHEMA_VERSION,
@@ -73,9 +73,11 @@ describe('production preparation semantics audit', () => {
       { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
       versions,
     );
-    expect(hijikataResult.status).toBe('unsupported');
-    if (hijikataResult.status !== 'unsupported') throw new Error(hijikataResult.status);
-    expect(hijikataResult.reason).toMatch(/unsupported/i);
+    expect(hijikataResult.status).toBe('calculated');
+    if (hijikataResult.status !== 'calculated') throw new Error(hijikataResult.status);
+    expect(
+      hijikataResult.detail.appliedPreparationActions.at(-1)?.hpAfter?.actors.attacker,
+    ).toMatchObject({ kind: 'absolute', current: 1 });
   }, 120_000);
 
   it('ratchets the finite preparation-state inventory and every legal terminal', async () => {
@@ -171,9 +173,9 @@ describe('production preparation semantics audit', () => {
       actorFormNodes: 484,
       actorFormProfiles: 484,
       attackVariants: 626,
-      deduplicated: 4035,
-      exactDuplicates: 2465,
-      generated: 6500,
+      deduplicated: 4043,
+      exactDuplicates: 2473,
+      generated: 6516,
       maximumActorFormNodes: 7,
       maximumActorFormProfiles: 7,
       maximumInitialForms: 7,
@@ -184,14 +186,13 @@ describe('production preparation semantics audit', () => {
       nonAttackWithoutAttack: 47,
       rejectedActionCounts: {
         insufficientNpGauge: 6,
-        unsupportedResourceMutation: 8,
       },
-      rejectedActions: 14,
+      rejectedActions: 6,
       servants: 422,
-      terminal: 3502,
+      terminal: 3510,
       transformNoblePhantasmServants: 1,
     });
-    expect(terminalKeys).toHaveLength(3502);
+    expect(terminalKeys).toHaveLength(3510);
   }, 30_000);
 
   it('keeps applied choice and transition evidence local to its source action', async () => {

@@ -1,4 +1,5 @@
 import {
+  UnresolvedPlanningHpRead,
   availablePreparationSkillCommands,
   availableTransformNoblePhantasmCommand,
   createPreNoblePhantasmState,
@@ -21,6 +22,29 @@ import {
 } from '@fgo-lab/master-data';
 import type { PreNoblePhantasmCommand } from '@fgo-lab/schema';
 import type { CalculationScenario } from '@fgo-lab/schema';
+
+function hpPlanningAlternatives<T>(
+  context: PreparationExecutionContext,
+  run: (context: PreparationExecutionContext) => T,
+): T[] {
+  const pending: ReadonlyMap<string, boolean>[] = [new Map()];
+  const results: T[] = [];
+  let branches = 0;
+  while (pending.length) {
+    if (++branches > 4096) throw new TypeError('hp_structural_branch_limit');
+    const choices = pending.pop()!;
+    try {
+      results.push(run({ ...context, planningHpChoices: choices }));
+    } catch (error) {
+      if (!(error instanceof UnresolvedPlanningHpRead)) throw error;
+      pending.push(
+        new Map([...choices, [error.key, false]]),
+        new Map([...choices, [error.key, true]]),
+      );
+    }
+  }
+  return results;
+}
 
 const productionPlanCache = new WeakMap<
   ServantMaster,
@@ -100,8 +124,6 @@ export function preNoblePhantasmSemanticStateKey(state: PreNoblePhantasmState): 
       rates: state.ocState.rates,
       uncertainRates: state.ocState.uncertainRates,
       activeFormKey: state.ocState.activeFormKey,
-      hpWrites: [...state.ocState.hpWrites].sort(),
-      hpWriteExclusions: [...new Set(state.ocState.hpWriteExclusions)].sort(),
       sourceOutcomes: [...state.ocState.sourceOutcomes].sort(([left], [right]) =>
         left.localeCompare(right),
       ),
@@ -166,6 +188,7 @@ export function planPreNoblePhantasmCandidates(
   const cached = servantCache.get(cacheKey);
   if (cached) return cached;
   const context: PreparationExecutionContext = {
+    planningOnly: true,
     resourceSemantics,
     npLevel,
     initialGauge,
@@ -178,9 +201,12 @@ export function planPreNoblePhantasmCandidates(
     commands: readonly PreNoblePhantasmCommand[];
   }> = [];
   for (const form of getInitialActorForms(servant)) {
-    const created = createPreNoblePhantasmState(servant, form.id, context);
-    if (created.status === 'rejected') throw new TypeError(created.code);
-    pending.push({ state: created.state, commands: [] });
+    for (const created of hpPlanningAlternatives(context, (branch) =>
+      createPreNoblePhantasmState(servant, form.id, branch),
+    )) {
+      if (created.status === 'rejected') throw new TypeError(created.code);
+      pending.push({ state: created.state, commands: [] });
+    }
   }
   const visited = new Map<string, readonly PreNoblePhantasmCommand[]>();
   const candidates: PreNoblePhantasmPlanCandidate[] = [];
@@ -200,28 +226,34 @@ export function planPreNoblePhantasmCandidates(
     }
     visited.set(stateKey, item.commands);
     maximumPreparationActionCount = Math.max(maximumPreparationActionCount, item.commands.length);
-    const attack = reducePreNoblePhantasmAction(
-      servant,
-      item.state,
-      { kind: 'executeAttackNoblePhantasm' },
-      context,
-    );
-    if (attack.status === 'applied') {
-      const commands = [...item.commands, { kind: 'executeAttackNoblePhantasm' as const }];
-      candidates.push({
-        commands,
-        terminalState: attack.state,
-        semanticStateKey: preNoblePhantasmSemanticStateKey(attack.state),
-      });
+    for (const attack of hpPlanningAlternatives(context, (branch) =>
+      reducePreNoblePhantasmAction(
+        servant,
+        item.state,
+        { kind: 'executeAttackNoblePhantasm' },
+        branch,
+      ),
+    )) {
+      if (attack.status === 'applied') {
+        const commands = [...item.commands, { kind: 'executeAttackNoblePhantasm' as const }];
+        candidates.push({
+          commands,
+          terminalState: attack.state,
+          semanticStateKey: preNoblePhantasmSemanticStateKey(attack.state),
+        });
+      }
     }
     for (const command of preparationCommands(servant, item.state, context)) {
-      const result = reducePreNoblePhantasmAction(servant, item.state, command, context);
-      if (result.status === 'rejected') {
-        rejectedActionCount += 1;
-        rejectedActionCounts[result.code] = (rejectedActionCounts[result.code] ?? 0) + 1;
-        continue;
+      for (const result of hpPlanningAlternatives(context, (branch) =>
+        reducePreNoblePhantasmAction(servant, item.state, command, branch),
+      )) {
+        if (result.status === 'rejected') {
+          rejectedActionCount += 1;
+          rejectedActionCounts[result.code] = (rejectedActionCounts[result.code] ?? 0) + 1;
+          continue;
+        }
+        pending.push({ state: result.state, commands: [...item.commands, command] });
       }
-      pending.push({ state: result.state, commands: [...item.commands, command] });
     }
   }
   const stableCandidates = [

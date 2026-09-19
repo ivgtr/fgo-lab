@@ -398,6 +398,28 @@ export function resolveScenarioPreparationOutcome(
         level: scenario.attacker.level,
       },
     };
+  const assertedHp = scenario.worldFactAssertions.flatMap(({ fact }) =>
+    fact.kind === 'quantity' && fact.quantity === 'attackerHpPermille' ? [fact.value] : [],
+  );
+  const initialIntents = [
+    ...new Set([
+      ...(scenario.attackerHpPermille === null ? [] : [scenario.attackerHpPermille]),
+      ...assertedHp,
+    ]),
+  ];
+  if (initialIntents.length > 1)
+    return {
+      status: 'invalid',
+      issue: {
+        kind: 'initialHpUnavailable',
+        servantId: servant.id,
+        level: scenario.attacker.level,
+        source: 'servant',
+        reason: 'conflictingInitialIntent',
+      },
+    };
+  if (scenario.attackerHpPermille === null && initialIntents.length === 1)
+    scenario = { ...scenario, attackerHpPermille: initialIntents[0]! };
   const initialHp = resolveInitialMaximumHp(scenario, master);
   if (initialHp.status === 'invalid') return initialHp;
   const attackerAtk = scenario.explicitOverrides.attackerAtk ?? canonicalAttackerAtk;
@@ -406,7 +428,7 @@ export function resolveScenarioPreparationOutcome(
     servant,
     master.npResourceSemantics,
     preparation.initialNpGauge,
-    { master, policy },
+    { master, policy, initialMaximumHp: initialHp.maximum },
   );
   const selected = formExecution.state.selectedNoblePhantasmVariant
     ? findNoblePhantasmVariant(servant, formExecution.state.selectedNoblePhantasmVariant)
@@ -724,11 +746,20 @@ function resolvedCalculationResult(
       evidence: evidence.evidence,
     };
     const rejection = resolved.preparationRejection.code;
-    if (rejection === 'insufficientNpGauge' || rejection === 'resourceRequirementExceedsCapacity')
+    if (
+      rejection === 'attackerDead' ||
+      rejection === 'insufficientNpGauge' ||
+      rejection === 'resourceRequirementExceedsCapacity'
+    )
       return {
         ...common,
         status: 'unavailable',
-        reason: rejection === 'insufficientNpGauge' ? 'insufficientNpGauge' : 'npCapacityExceeded',
+        reason:
+          rejection === 'attackerDead'
+            ? 'attackerDead'
+            : rejection === 'insufficientNpGauge'
+              ? 'insufficientNpGauge'
+              : 'npCapacityExceeded',
       };
     return resolved.preparationRejection.code === 'preparationInputRequired'
       ? {

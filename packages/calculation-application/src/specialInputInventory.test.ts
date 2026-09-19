@@ -65,11 +65,11 @@ describe('production special input inventory', () => {
         : [],
     );
     expect(statusCounts, JSON.stringify(criticalStarUnsupported)).toEqual({
-      calculated: 420,
-      unsupported: 2,
+      calculated: 421,
+      unsupported: 1,
     });
     expect(criticalStarUnsupported).toEqual([]);
-    expect(inputs).toHaveLength(58);
+    expect(inputs).toHaveLength(64);
     expect(counts).toEqual({
       availableSkillCount: 1,
       criticalStars: 1,
@@ -78,13 +78,13 @@ describe('production special input inventory', () => {
       fieldActorCount: 1,
       matchingActorCount: 3,
       populationCount: 5,
-      transferDonor: 8,
+      transferDonor: 14,
       populationSize: 10,
       populationActorValue: 6,
       procSuccessCount: 1,
     });
     expect(inputs.filter((input) => input.control === 'segmented')).toHaveLength(19);
-    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(39);
+    expect(inputs.filter((input) => input.control === 'stepper')).toHaveLength(45);
     expect(inputs.filter((input) => input.section === 'support')).toHaveLength(0);
     expect(duplicateControls).toEqual([]);
     expect(inputs.some((input) => input.kind === 'friendshipLevel')).toBe(false);

@@ -1,3 +1,4 @@
+import { isHpOperation } from './preparationHp';
 import {
   actorFormKey,
   findActorForm,
@@ -30,6 +31,7 @@ export function collectAuxiliarySources(
     sourceEnabled: boolean,
     defaultInclusion: 'master' | 'exclude' = 'master',
     actorFormId?: ActorFormId,
+    hpResourceSourceOnly = false,
   ) => {
     const servant = master.servants.find((candidate) => candidate.id === sourceId);
     const resolvedActorFormId =
@@ -50,7 +52,9 @@ export function collectAuxiliarySources(
       });
       return;
     }
-    for (const effect of skill.effects)
+    for (const effect of skill.effects.filter(
+      (effect) => !hpResourceSourceOnly || effect.execution.some(isHpOperation),
+    ))
       sources.push({
         phase,
         origin,
@@ -124,7 +128,23 @@ export function collectAuxiliarySources(
       }
   }
   if (scenario.support)
-    for (const source of scenario.support.composition.sources)
+    for (const source of scenario.support.composition.sources) {
+      const actor = master.servants.find((actor) => actor.id === source.servantId);
+      const form = actor ? getDefaultInitialActorForm(actor) : undefined;
+      if (actor && form)
+        for (const passive of getPassivesForActorForm(actor, form.id))
+          appendSkill(
+            'support',
+            'passive',
+            source.sourceInstanceId,
+            source.servantId,
+            passive.id,
+            1,
+            true,
+            'master',
+            form.id,
+            true,
+          );
       for (const skill of source.skills)
         appendSkill(
           'support',
@@ -135,6 +155,7 @@ export function collectAuxiliarySources(
           skill.skillLevel,
           skill.enabled,
         );
+    }
   if (scenario.mysticCode) {
     const code = master.mysticCodes.find(
       (candidate) => candidate.id === scenario.mysticCode?.mysticCodeId,

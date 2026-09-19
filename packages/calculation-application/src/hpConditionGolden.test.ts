@@ -48,7 +48,7 @@ describe('production HP condition golden', () => {
       masterDataVersion: master.version,
     };
     const records = [0, 4].flatMap((limitBreak) =>
-      [1_000, 501, 500, 0].map((hp) => {
+      [1_000, 501, 500, 1].map((hp) => {
         const calculation = calculateScenario(
           {
             ...createDefaultResolvedScenario(master, undefined, servant),
@@ -116,15 +116,15 @@ describe('production HP condition golden', () => {
           "interaction": null,
           "limitBreak": 0,
           "np1To5Average": [
-            33988.47,
-            42485.7,
-            46734.315,
-            48858.635,
-            50982.965,
+            44185.155,
+            55231.56,
+            60754.785,
+            63516.365,
+            66277.97,
           ],
-          "npDamageBuff": 0,
+          "npDamageBuff": 0.3,
           "operationId": "craftEssence:craftEssence:9307920:ce:9307920:21041:0:modifier:npDamageBuff",
-          "outcome": "notApplied",
+          "outcome": "applied",
         },
         {
           "hp": 500,
@@ -142,7 +142,7 @@ describe('production HP condition golden', () => {
           "outcome": "applied",
         },
         {
-          "hp": 0,
+          "hp": 1,
           "interaction": null,
           "limitBreak": 0,
           "np1To5Average": [
@@ -176,15 +176,15 @@ describe('production HP condition golden', () => {
           "interaction": null,
           "limitBreak": 4,
           "np1To5Average": [
-            33988.47,
-            42485.7,
-            46734.315,
-            48858.635,
-            50982.965,
+            44185.155,
+            55231.56,
+            60754.785,
+            63516.365,
+            66277.97,
           ],
-          "npDamageBuff": 0,
+          "npDamageBuff": 0.3,
           "operationId": "craftEssence:craftEssence:9307920:ce:9307920:21041:0:modifier:npDamageBuff",
-          "outcome": "notApplied",
+          "outcome": "applied",
         },
         {
           "hp": 500,
@@ -202,7 +202,7 @@ describe('production HP condition golden', () => {
           "outcome": "applied",
         },
         {
-          "hp": 0,
+          "hp": 1,
           "interaction": null,
           "limitBreak": 4,
           "np1To5Average": [

@@ -140,7 +140,10 @@ function context(testCase: GoldenCase): NpDamageOperationContext {
     targetCombinedTraitCounts: counts([...targetTraits, ...targetStateTraits]),
     targetStateTraitCounts: counts(targetStateTraits),
     targetPredicateValues: new Map(),
-    attackerHpPermille: testCase.context.attackerHpPermille ?? null,
+    attackerHpRatio:
+      testCase.context.attackerHpPermille === undefined
+        ? null
+        : testCase.context.attackerHpPermille / 1000,
     targetRarity: testCase.context.targetRarity ?? null,
     battlePointPhase: testCase.context.battlePointPhase ?? null,
   };

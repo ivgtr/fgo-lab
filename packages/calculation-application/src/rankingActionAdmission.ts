@@ -8,6 +8,7 @@ import {
 } from '@fgo-lab/schema';
 import {
   ocRelevantSourceIndexes,
+  hpRelevantSourceIndexes,
   npProgramEffects,
   type OcResourceDependencyContext,
   classifyContributionCondition,
@@ -46,6 +47,11 @@ function classifyPrograms(
       program.terminalReadsOc ?? false,
       resources,
     );
+    const hpRelevant = hpRelevantSourceIndexes(
+      program.sourceUses,
+      program.terminalHpReaders ?? [],
+      resources?.automaticEffects,
+    );
     return {
       program,
       admissions: program.sourceUses.map((source, index): CandidateLocalActionAdmission =>
@@ -55,7 +61,7 @@ function classifyPrograms(
               { ...source, effects: npProgramEffects(source.effects) },
               conditions,
               program,
-              ocRelevant.has(index),
+              ocRelevant.has(index) || hpRelevant.has(index),
             ),
       ),
     };
@@ -185,13 +191,13 @@ function optionalAdmission(
   source: RankingPreparationSourceUse,
   conditions: Pick<RankingPolicyConditions, 'selfBuffs' | 'conditionalEffects'>,
   program: StaticRankingPreparationProgram,
-  ocRelevant: boolean,
+  resourceRelevant: boolean,
 ): CandidateLocalActionAdmission {
   if (conditions.selfBuffs === 'excluded')
     return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };
   const unsupported = source.effects.map(unsupportedEffect).find((item) => item !== null);
   if (unsupported !== undefined) return unsupported;
-  if (ocRelevant) return { kind: 'admitted', role: 'optional' };
+  if (resourceRelevant) return { kind: 'admitted', role: 'optional' };
   if (conditions.conditionalEffects === 'baseline') {
     const attackFacts = intrinsicFactsForSource(source, program);
     if (!attackFacts) return { kind: 'policyNoOp', proof: 'noEffectiveContributionUnderPolicy' };

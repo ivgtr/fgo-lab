@@ -54,6 +54,7 @@ export function requiresUserAssumption(condition: ConditionExpression): boolean 
 
 export type ConditionEvaluationState = Pick<
   ExecutableBattleState,
+  | 'hp'
   | 'traits'
   | 'initialTraitSuppressions'
   | 'actorPredicates'

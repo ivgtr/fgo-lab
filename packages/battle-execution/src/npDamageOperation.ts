@@ -10,7 +10,7 @@ export interface NpDamageOperationContext {
   targetCombinedTraitCounts: Readonly<Record<string, number>>;
   targetStateTraitCounts: Readonly<Record<string, number>>;
   targetPredicateValues: ReadonlyMap<string, boolean>;
-  attackerHpPermille: number | null;
+  attackerHpRatio: number | null;
   targetRarity: number | null;
   battlePointPhase: number | null;
   effectLocalConditionSatisfied?: boolean;
@@ -97,15 +97,17 @@ export function evaluateNpDamageOperation(
 
   if (damage.kind === 'standard' || damage.kind === 'defensePiercing') return resolved();
   if (damage.kind === 'hpRatioLow') {
-    if (context.attackerHpPermille === null)
+    const ratio = context.attackerHpRatio;
+    if (ratio === null)
       return { status: 'unsupported', missingEvidence: 'missing_attacker_hp_ratio' };
-    const attackerHpPermille = context.attackerHpPermille;
+    if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1)
+      return { status: 'unsupported', missingEvidence: 'invalid_attacker_hp_ratio' };
+    if (parameters.some((parameter) => parameter.targetId == null))
+      return { status: 'unsupported', missingEvidence: 'missing_hp_ratio_coefficient' };
     return resolved(
       parameters.map(
         (parameter) =>
-          (parameter.valuePermille +
-            Math.trunc(((1_000 - attackerHpPermille) * (parameter.targetId ?? 0)) / 1_000)) /
-          10,
+          (parameter.valuePermille + Math.trunc((1 - ratio) * parameter.targetId!)) / 10,
       ) as [number, number, number, number, number],
     );
   }

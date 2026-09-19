@@ -1,3 +1,5 @@
+import { rankingHpInitialBoundaries } from './rankingHpBoundary';
+import { resolveInitialMaximumHp } from '@fgo-lab/master-data';
 import {
   npTransferInputSaturation,
   populationInputIssue,
@@ -176,6 +178,21 @@ function compileProgramDomain(input: {
     );
   const active = conditions.conditionalEffects === 'satisfied';
   const base = createRankingBaseScenario(servant, master, basis, conditions, program.initialFormId);
+  const initialHp = active ? resolveInitialMaximumHp(base, master) : null;
+  const hpAttackVariant = findNoblePhantasmVariant(
+    servant,
+    program.attackProfile.noblePhantasmVariant,
+  );
+  const hpBoundaries =
+    initialHp?.status === 'resolved'
+      ? rankingHpInitialBoundaries(
+          initialHp.maximum,
+          semantics.sources,
+          semantics.conditions,
+          hpAttackVariant?.kind === 'attack' &&
+            hpAttackVariant.damage.some((damage) => damage.kind === 'hpRatioLow'),
+        )
+      : [];
   const generatedTargets = active
     ? createRankingWorldCandidatesForConditions(servant, master, base, semantics.conditions)
     : [];
@@ -202,7 +219,11 @@ function compileProgramDomain(input: {
       },
       findNoblePhantasmVariant(servant, program.attackProfile.noblePhantasmVariant) ?? undefined,
     );
-  const transferSaturation = npTransferInputSaturation(semantics.sources);
+  const transferSaturation = new Map(npTransferInputSaturation(semantics.sources));
+  if (populationIndependent)
+    for (const input of semantics.inputDefinitions)
+      if (input.kind === 'transferDonor' && input.resource === 'enemyHp')
+        transferSaturation.set(input.key, 0);
   const inputDomains = createCanonicalInputValueDomains(
     semantics.inputDefinitions,
     semantics.conditions,
@@ -288,7 +309,11 @@ function compileProgramDomain(input: {
         ]),
       ).values(),
     ],
-    quantities: createRankingQuantityCandidatesForConditions(semantics.conditions, active),
+    quantities: createRankingQuantityCandidatesForConditions(
+      semantics.conditions,
+      active,
+      hpBoundaries,
+    ),
   };
 }
 

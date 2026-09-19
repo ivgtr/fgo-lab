@@ -1,12 +1,12 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-13"
+updated_at: "2026-09-19"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)。TSK-06.45はin_progress。ab5d77dの限定接続と83b4db2の採用方針を基点に、攻撃NP buff count2profileは検証済み。target/individual count7profileも49条件・最終quality・性能比較まで完了し、通常ranking422/433。HP数値3件はChaldea参照契約を採用済み。下記2026-09-09のdeltaは既存の調査根拠を保持する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-19追記。HP系全体と直接必要な併存処理は実装・検証完了、通常ranking427/433・calculator421/422。TSK-06.45はin_progress。独立marker／BP・非HP回復／UI・全条件closureは未完了。以下の過去deltaは当時の根拠であり、HPの旧Blocking／Deferredは最新checkpointの完了証拠で閉じる。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -441,6 +441,49 @@ artifact `.test-results/2026-09-08T15-51-08-390Z-41-6cbbcc`。
 単発3標本の揺れを含むため原因不明の増加を許容済みとはしない。量query収集のallocationと再測定を後続で確認する。
 
 ### canonical checkpoint（2026-09-13、フォローアップ）
+
+**2026-09-19追記: HP系全体は完了、scoped Blocking0。TSK全体は未完了。** 基点`645a3ee`、引継ぎclean。前回NP／charge transferの成功済みbeforeは再利用した。
+
+今回のHP完了境界はU0-H／U1-H／U2-H.1〜3／U2-D.transferのHP／HPに関係するU3-A・U3-Q・U4。初期intent→actor別HP→共通transaction→条件・値式・NP係数の時点別query→生存guard→damage→修復・保存復元・UIを接続した。固定Chaldea参照の採用契約を使用し、ゲーム実測済みとはしていない。TSK-06.45全体は継続中。
+
+- actor別absolute／current-only／ratio-only／不足を区別。初期0と実行中0は攻撃不可、正値で表示だけ0%は攻撃可。buff整数permille、NPのcurrent/max、表示丸めは別query。
+- fixed／percent gain・loss、safe下限、回復modifier、最大HP付与・解除・form再解決を順序付きで実行。減少modifier・変換・再生のturn-end処理はcanonicalな時点非交差proofで区別し、NP前のlossへ混用しない。失敗時はHP・NP・OC・context・全receiptをrollbackする。
+- 204300の7414→710、403600の3966→711をcurrent inventoryへjoin。204300の7415はenemy actor専用の非交差proof。donor snapshotの算定gain、receiver実回復、donor実減少を分離し、403600の併存防御低下も同じadmissionから実行する。702500は回復→safe loss→HP依存NPへ接続。
+- 条件付き回復補正は付与時に固定せず利用時に再評価する。実行済みHP効果をdamage時点で再判定せず、正当な支援の選択を元のfamilyで検証して引き継ぐ。未知のchoice・writer・child抵抗・aliasはfail closed。条件のない値への置換やID/name runtime分岐はない。
+- rankingは合法な初期入力と順序を共通executorで評価。更新後thresholdの逆像、HP→NP/OC依存、逆HPと正HPの競合による区間内部最大を小型全探索と照合。cap4096・timeout・性能ratchetの緩和なし。
+- HP修復は初期factを追加して全体を再実行し、実行途中を上書きしない。保存／portableは初期intentを保持。reset／装備・Lv・NP・OC・form変更で再解決する。攻撃役変更時は新NP容量へ初期OCも揃える。E2E-052とdesktop／390px／320pxの実画面を確認。
+
+整数permilleだけの観測は連続比率の値を確定しない（0／1000の端点を除く）。最低HP対象の選択には不明なsource最大HPを初期入力として要求し、mutation／OC readerと同じ定義で修復する。NP係数は実current/maxだけを受け入れ、整数permille fallbackを廃止した。workerはNP効果のcanonical timingを保持し、未知metadataを拒否する。ranking表示もterminal receiptの実HPを使う。
+
+採用仕様・11参照file／定数hash・全source joinは[source](tsk-06-45-hp-source.json)、実行matrix／UI／qualityは[validation](tsk-06-45-hp-validation.json)、855 identityの欠落・追加0と数値差は[delta](tsk-06-45-hp-delta.json)、前後測定は[performance](tsk-06-45-hp-performance.json)。ゲーム実測値への格上げはしていない。
+
+| profile | 通常NP1／NP2／NP5平均 | NP2四policy平均（自己あり通常／成立、なし通常／成立） | NP2候補数 | 残るprofile拒否 |
+| --- | --- | --- | --- | --- |
+| 204300 | 43,838.400／54,798.110／65,757.830 | 54,798.110／109,596.735／40,185.155／80,370.800 | 2／352／1／22 | なし |
+| 403600 | 15,278.175／20,371.065／25,463.950 | 20,371.065／20,371.065／15,669.935／15,669.935 | 2／32／1／2 | なし |
+| 702500 | 53,457.900／65,869.885／78,281.860 | 65,869.885／111,701.120／52,129.810／93,792.370 | 16／226／1／10 | なし |
+
+21条件の採用scenario／canonical input／全NP rows／候補根拠をvalidationに保存した。通常transfer donor0でも同sourceの合法効果を保持する。702500通常NP1／NP2は合法な開始NPとスキル3を選んでsafe loss後の約92%をNPが読む。NP1でNP増加が容量上限にclipされても、HP減少から宝具係数への依存をadmissionに保持する。修正前はこの候補がpolicyNoOpで欠落していた。Lv.90 HP12,028＋固定フォウ1,000で初期最大13,028、safe loss後12,028。buff値923permille、表示92%、NP1倍率は`(8000+trunc((1-12028/13028)*8000))/10=861.4%`となり、丸め済みbuff割合をNP係数へ流用しない。成立込みは初期HP permille1から、更新後の生存境界と実比率を用いて最大値を選ぶ。HP0は`attackerDead`、修復可能な不足は`inputRequired`、未知writer／child／抵抗／aliasはtyped unsupported／invalidであり、通常条件の拒否とは区別する。
+
+- 最終`pnpm quality`成功: unit826／production130／E2E27、warning・unexpected console・retry0、336.078秒。run `.test-results/2026-09-19T13-54-00-780Z-45-f19bd9`。master20260913.27/schema54、engine44.0.0、portable schema40。
+- ranking425→427/433、calculator420→421/422。既存424 rankingの数値は不変、702500のNP1平均49,647.410→53,457.900はNP上限と独立したHP減少のadmission／NP係数読取による。calculator403600のNP1平均23,505.15→30,556.84は併存防御ダウン30%の適用、702500はHP更新後の連続NP係数によりunsupported→80,187.10。calculator既定相性は403600が2、702500が1.5で、ranking等倍とは別条件。
+- 候補生成6,500→6,516、dedup4,035→4,043、damage要求2,351→2,377、distinct1,445→1,451。HP dependency追加で通常scenario候補は2,412→2,434。ranking中央値4795.091ms、645a3ee収録3,542.927ms比+35.34%、同環境で再現した基点4,081.067ms比+17.50%。各warm1＋serial3、非並行。処理追加と環境変動を分けて記録し、cap4096・timeoutの緩和なし。CPU profileのranking本体inclusive時間（warmup＋3回）は16,638→19,413ms（+16.7%）で、HP依存解析／共通準備・条件state／GCの増加を確認。区間外のhash処理を遅延理由に含めず、feature別の厳密な時間配賦とはしない。
+- 共有HP inventory486 source／7,470 cell。990 calculator条件（987 calculated、独立BPの3条件のみtyped unsupported）、108 ranking条件、900 normal/LB礼装条件、211支援・選択branchのcalculator／portable一致。自己／支援、自然上限／Lv.90、NP1/2/5・合法初期OC、四policy・ownedを検証した。HP sourceが既にcalculatedの経路も含む。
+
+支援HP211経路には選択familyの全HP branchを含む。705300のHP消費条件は既存canonical sourceQuantity factがあれば実行でき、不明ならunsupportedのまま。これはBP point／capacityの実装代替ではない。独立BP条件のcalculator3件は今回のHP Blockingに隠さずvalidationへ残した。支援projectionは378→379（101000 skill945650 branch4の攻撃buffが選択修復後に到達）、その他既存のNP不足／未知OC拒否はtyped理由を維持する。
+
+E2E-052のHP修復・保存復元・装備／Lv／NP／OC／form／resetを実画面で確認。E2E-050は土方歳三NP1／NP2の実行時HP92%、E2E-051は初期OC3でNP効果timingを含むworker応答を確認した。HP1/11000の生存・表示・buff／NP精度差、未知比率からの最低HP対象修復、途中失敗の全transaction rollbackも小型fixtureで成功。HPの旧Deferred表は本証拠により閉じる。BPを含む行の非HP部分とU5は継続する。
+
+残る実経路と完了ゲート:
+
+1. 独立marker/admission: 105900の21300/21301、204900の21148（2profile）、405700の22977〜22979、2501400の21660と関連trigger。canonical marker producer→実reader→admissionを閉じ、未知の最大候補を落とさず四policy／portable／小型oracleで受け入れる。
+2. BP: 705300のmarkerとactor/domain別point→capacity→phase/rate→HP以外も含む後続条件・damage。U0-B→U1-B/U2-Bで初期basis、trait変更／解除、合法段階、飽和・端数・rollbackを閉じる。支援のHP条件ではBP事実が不明なら拒否し、既存のsourceQuantity factで事実を与えた実行と区別して記録した。BP値をHP側で捏造しない。
+3. 非HPのU3/U4: 上記stateが変わる候補の最大値保持、修復・reset・portable／worker identity・UIを同じ縦断単位で閉じる。今回HPで成功した回復経路は再実装しない。
+4. U5: 残6 ranking profiles／1 calculatorを解消後、全433／422と80合法比較条件・stable owned basisを共有auditで検証。差分説明、typed unavailable全数根拠、性能、最終quality、Task全体のBlocking/Deferred0がclosure gate。profile率から残工数を推定しない。
+
+比較基点は`645a3ee`。検証時HEADは並行する規約更新commit `9a866b7`（Serena設定`600af5c`を含む）＋今回HP差分（未commit）。Serena設定・AGENTS・README変更は保持。quality後は文書・証跡のみを確定し、docs整合性／JSON hash／git diffを確認済み。今回の成功済みHP実行matrixは後続のbeforeとして再利用する。2026-09-19の利用者依頼により本記録とHP実装・検証・証跡を同じcommitへ収録。
+
+以下は2026-09-13時点のNP／charge transfer完了記録（当時のHP未完了記述は上記で更新済み）。
 
 **`b1759b7`基点のU2-D.transfer（304000・1102300・2500400）は実装・検証完了、scoped Blocking0。TSK全体は未完了。** 開始clean。今回の範囲はplayer NP／enemy chargeと1102300の直接併存marker。以下のcount7profile証跡を有効なbeforeとして再利用した。
 

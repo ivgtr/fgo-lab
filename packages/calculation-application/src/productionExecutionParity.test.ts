@@ -1,3 +1,5 @@
+import { calculateScenarioWithPolicy } from './scenario';
+import { createRankingPortableRequest } from './portableCalculation';
 import { createStaticAttackProfiles } from './attackProfile';
 import {
   createPreNoblePhantasmState,
@@ -46,7 +48,7 @@ describe('production execution parity ratchet', () => {
       masterDataLocale: 'ja-JP' as const,
       masterDataVersion: master.version,
     };
-    const typedUnsupported = new Set(['702500', '705300']);
+    const typedUnsupported = new Set(['705300']);
     const records = master.servants.flatMap((servant) => {
       if (
         planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1).candidates
@@ -79,9 +81,9 @@ describe('production execution parity ratchet', () => {
       records
         .filter(({ attackerId }) => typedUnsupported.has(attackerId))
         .map(({ attackerId }) => attackerId),
-    ).toEqual(['702500', '705300']);
+    ).toEqual(['705300']);
     const digest = createHash('sha256').update(JSON.stringify(records)).digest('hex');
-    expect(digest).toBe('2a55c890f3453f14df034b281ebd475c2e3b5c6b7e531ae6502784f8543945b9');
+    expect(digest).toBe('9499b537f5221ee9c0873d48839d2d89afddd334aac566f0e61a513b7367cc03');
   }, 60_000);
 });
 
@@ -603,3 +605,87 @@ it('replays nonzero transfer inputs and repairs invalid portable donor quantitie
       JSON.stringify(records, null, 2) + '\n',
     );
 });
+
+it('accepts HP profiles through all seven conditions and portable replay', async () => {
+  const master = await loadMaster();
+  const versions = {
+    ...currentCalculationVersionContext(master),
+    schemaVersion: SCHEMA_VERSION,
+    appVersion: '0.1.0',
+    gameRegion: 'JP' as const,
+    masterDataLocale: 'ja-JP' as const,
+  };
+  const records = [];
+  const conditions = [
+    ...([1, 2, 5] as const).map((npLevel) => ({
+      ...DEFAULT_RANKING_POLICY_CONDITIONS,
+      npLevelBasis: { kind: 'specified' as const, npLevel },
+    })),
+    ...(['included', 'excluded'] as const).flatMap((selfBuffs) =>
+      (['baseline', 'satisfied'] as const).map((conditionalEffects) => ({
+        ...DEFAULT_RANKING_POLICY_CONDITIONS,
+        npLevelBasis: { kind: 'specified' as const, npLevel: 2 as const },
+        selfBuffs,
+        conditionalEffects,
+      })),
+    ),
+  ];
+  for (const id of ['204300', '403600', '702500']) {
+    const actor = master.servants.find((actor) => actor.id === id)!;
+    for (const profile of createStaticAttackProfiles(actor))
+      for (const condition of conditions) {
+        const ranking = calculateRankingPolicyDetail(
+          actor,
+          master,
+          { servantBuilds: {} },
+          condition,
+          versions,
+          profile,
+        );
+        records.push({
+          id,
+          profile,
+          condition,
+          status: ranking.status,
+          ...('reason' in ranking ? { reason: ranking.reason } : {}),
+          ...(ranking.status === 'calculated'
+            ? {
+                input: ranking.detail.input,
+                rows: ranking.detail.result.rows,
+                scenario: ranking.detail.scenario,
+                candidateCount: ranking.detail.executionMetrics.worldCandidateCount,
+                evidence: ranking.detail.candidateEvidence,
+              }
+            : {}),
+        });
+        if (ranking.status === 'calculated') {
+          const replay = requireExecutableCalculation(
+            calculateScenarioWithPolicy(
+              ranking.detail.scenario,
+              master,
+              versions,
+              ranking.detail.contributionPolicy,
+              { initialNpGauge: ranking.detail.candidateEvidence.startNpGauge },
+            ),
+          );
+          expect(
+            replay.result.rows,
+            JSON.stringify({ id, condition, scenario: ranking.detail.scenario }),
+          ).toEqual(ranking.detail.result.rows);
+          const portable = executePortableCalculation(
+            createRankingPortableRequest(ranking.detail, currentCalculationVersionContext(master)),
+            master,
+          );
+          expect(portable.status).toBe('executed');
+          if (portable.status === 'executed')
+            expect(portable.execution.result).toEqual(replay.result);
+        }
+      }
+  }
+  if (process.env['FGO_TEST_ARTIFACT_DIR'])
+    await writeFile(
+      resolve(process.env['FGO_TEST_ARTIFACT_DIR'], 'hp-acceptance.json'),
+      JSON.stringify(records, null, 2) + '\n',
+    );
+  expect(records.filter((record) => record.status !== 'calculated')).toEqual([]);
+}, 60000);

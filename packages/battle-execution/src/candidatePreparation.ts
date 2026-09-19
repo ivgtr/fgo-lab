@@ -1,3 +1,4 @@
+import { hpPermille } from './hpResource';
 import { seedStackQuantities } from './stackQuantities';
 import type { DamageResolutionInput } from '@fgo-lab/schema';
 import type {
@@ -105,6 +106,9 @@ function prepareExecutableCandidate(
     })),
     activationContext,
   );
+  initialState.hp = prepared.hp;
+  if (prepared.hp)
+    initialState.quantities.attackerHpPermille = hpPermille(prepared.hp.actors.attacker);
   seedStackQuantities(initialState, prepared.inputDefinitions);
   const selections = resolveCandidateSelections(
     prepared,

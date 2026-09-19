@@ -1,4 +1,5 @@
-import { sourceHpInputKey } from './operationCompiler';
+import { SOURCE_WORLD_TRAIT_INPUT_PREFIX } from './ocConditionInputs';
+import { hpPermille } from './hpResource';
 import { traitFacts, traitCounts } from './conditionState';
 import type { OcSourceProgram } from './ocSourceProgram';
 import { activationFactKey, analyzeActivationFactSet, type ActivationFact } from '@fgo-lab/schema';
@@ -39,7 +40,7 @@ export function preparationConditionState(
       targetStateTraits: [],
       fieldTraits: [],
       target: { traits: [] },
-      attackerHpPermille: context.attackerHpPermille ?? null,
+      attackerHpPermille: hpPermille(state.hp?.actors.attacker),
       targetRarity: null,
       battlePointPhase: context.battlePointPhase ?? null,
     },
@@ -47,12 +48,13 @@ export function preparationConditionState(
     findActorForm(servant, state.currentFormId)?.traits ?? [],
     context.canonicalInputValues ?? {},
     context.targetPredicates ?? [],
-    [],
+    context.attackerPredicates ?? [],
     activation.factSet,
   );
   for (const { fact } of context.worldFacts ?? []) {
-    if (fact.kind === 'quantity') facts.quantities[fact.quantity] = fact.value;
-    else {
+    if (fact.kind === 'quantity') {
+      if (fact.quantity !== 'attackerHpPermille') facts.quantities[fact.quantity] = fact.value;
+    } else {
       (facts.traits[fact.scope] as Map<string, boolean>).set(fact.trait, fact.present);
       facts.traitCounts[fact.scope] = {
         ...facts.traitCounts[fact.scope],
@@ -72,6 +74,7 @@ export function preparationConditionState(
       (context.stackInputs ?? []).map((input) => [input.key, input.quantitySource]),
     ),
   };
+  facts.hp = state.hp;
   facts.initialTraitSuppressions = state.initialTraitSuppressions;
   return facts;
 }
@@ -83,7 +86,7 @@ export function preparationSourceConditionState(
 ): ConditionEvaluationState {
   if (program.conditionActor === 'attacker') return facts;
   const traits = program.source.sourceTraits;
-  return {
+  const bound: ConditionEvaluationState = {
     ...facts,
     card: null,
     traits: { ...facts.traits, attacker: traitFacts(traits), attackerState: new Map() },
@@ -92,7 +95,7 @@ export function preparationSourceConditionState(
     initialTraitSuppressions: { ...facts.initialTraitSuppressions, attacker: new Set() },
     quantities: {
       ...facts.quantities,
-      attackerHpPermille: facts.resolvedInputValues[sourceHpInputKey(program.source)] ?? 1000,
+      attackerHpPermille: hpPermille(facts.hp?.actors[program.source.sourceInstanceId]),
     },
     stackQuantitySources: Object.fromEntries(
       Object.entries(facts.stackQuantitySources).filter(
@@ -100,4 +103,31 @@ export function preparationSourceConditionState(
       ),
     ),
   };
+  for (const [key, value] of Object.entries(facts.resolvedInputValues)) {
+    if (!key.startsWith(SOURCE_WORLD_TRAIT_INPUT_PREFIX) || (value !== 0 && value !== 1)) continue;
+    try {
+      const parsed: unknown = JSON.parse(key.slice(SOURCE_WORLD_TRAIT_INPUT_PREFIX.length));
+      if (!Array.isArray(parsed)) continue;
+      const [actor, fact] = parsed as unknown[];
+      if (
+        actor !== program.source.sourceInstanceId ||
+        typeof fact !== 'object' ||
+        fact === null ||
+        !('kind' in fact) ||
+        !('scope' in fact) ||
+        !('trait' in fact) ||
+        fact.kind !== 'trait' ||
+        (fact.scope !== 'attacker' && fact.scope !== 'attackerState') ||
+        typeof fact.trait !== 'string'
+      )
+        continue;
+      (bound.traits[fact.scope] as Map<string, boolean>).set(fact.trait, value === 1);
+      // A combined actor assertion includes the absence/presence of represented initial state.
+      if (fact.scope === 'attacker')
+        (bound.traits.attackerState as Map<string, boolean>).set(fact.trait, value === 1);
+    } catch {
+      continue;
+    }
+  }
+  return bound;
 }
