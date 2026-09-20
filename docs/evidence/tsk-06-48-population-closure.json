@@ -1,7 +1,8 @@
 {
   "task": "TSK-06.48",
   "status": "bounded_unit_complete",
-  "unit": "data-pipeline population-function normalization and population trait catalog",
+  "unit": "population-count selector, live-read equivalence, and candidate input ownership",
+  "priorBoundedUnit": "data-pipeline population-function normalization and population trait catalog",
   "baseline": {
     "planningCommit": "fd0ac2df1aaa4a750b88946f7b9a1cf840f205b9",
     "w7CodeBaseline": "0c12261",
@@ -12,6 +13,14 @@
     "engineVersion": "48.0.0",
     "portableSchemaVersion": 40
   },
+  "implementationBase": "49efe62e9d544dc294ea898142b90f5e77303f0c",
+  "changedFiles": [
+    "packages/data-pipeline/src/npPopulationNormalization.ts",
+    "packages/data-pipeline/src/npPopulationNormalization.test.ts",
+    "packages/battle-execution/src/populationCounts.ts",
+    "packages/battle-execution/src/populationCounts.test.ts",
+    "packages/calculation-application/src/rankingCandidateSpace.ts"
+  ],
   "semanticOwners": {
     "populationCells": "packages/data-pipeline/src/populationFunctionNormalization.ts::populationCells",
     "populationEligibility": "packages/data-pipeline/src/populationFunctionNormalization.ts::isEligiblePopulationFunction",
@@ -22,6 +31,26 @@
     "populationTraitGrantability": "packages/data-pipeline/src/targetStateNormalization.ts::classifyPopulationTraitGrantability",
     "populationTraitCatalog": "packages/data-pipeline/src/targetStateNormalization.ts::buildPopulationTraitCatalog"
   },
+  "currentSemanticOwners": {
+    "populationCountSelector": "packages/data-pipeline/src/npPopulationNormalization.ts::classifyPopulationCount",
+    "populationCountOperationInput": "packages/data-pipeline/src/npPopulationNormalization.ts::populationCountInputs",
+    "populationScopeSides": "packages/battle-execution/src/populationCounts.ts::populationScopeSides",
+    "populationInputLegality": "packages/battle-execution/src/populationCounts.ts::populationInputIssue",
+    "populationEventObservation": "packages/battle-execution/src/populationCounts.ts::observePopulationEvent",
+    "populationLiveRead": "packages/battle-execution/src/populationCounts.ts::readPopulationCount",
+    "populationInputSaturation": "packages/battle-execution/src/populationCounts.ts::populationCountSaturation",
+    "populationInputDefinitionDomain": "packages/calculation-application/src/rankingCanonicalInputs.ts::isPopulationInputDefinition",
+    "populationCandidateInputOwnership": "packages/calculation-application/src/rankingCandidateSpace.ts::buildPopulationCandidateInputs"
+  },
+  "directConsumers": [
+    "packages/data-pipeline/src/effectNormalization.ts",
+    "packages/battle-execution/src/preparationOc.ts",
+    "packages/battle-execution/src/operationCompiler.ts",
+    "packages/calculation-application/src/rankingWorldObservation.ts",
+    "packages/calculation-application/src/scenario.ts",
+    "packages/data-pipeline/src/npCountNormalization.ts",
+    "packages/data-pipeline/src/markerNormalization.ts"
+  ],
   "logicalDisjunctionDisposition": {
     "centralized": "actorReference | populationRead | stateOnly population-trait exclusion is owned by the typed target-state catalog",
     "retained": [
@@ -38,6 +67,36 @@
       "NP population/count and marker instance semantics"
     ]
   },
+  "currentLogicalDisjunctionDisposition": {
+    "centralized": [
+      "data-pipeline raw function type and Atlas scope classification are returned as PopulationCountPlan",
+      "battle-execution scope-to-side mapping and event observation are typed population read stages",
+      "calculation-application population tuple legality, equivalence, and representative selection are owned by buildPopulationCandidateInputs"
+    ],
+    "typedConversions": [
+      "PopulationCountPlan",
+      "PopulationEventObservation",
+      "PopulationCandidateInputs"
+    ],
+    "retainedExhaustiveUnions": [
+      "population scope switches",
+      "population input definition switches",
+      "canonical operation and input union branches"
+    ],
+    "retainedBooleanSemantics": [
+      "zero-capacity and actor-capacity legality rejection",
+      "unknown or unsupported overlapping population writer fail-closed read",
+      "in-battle read rejection after a matching mutation",
+      "local attacker/target contribution and full-query coverage checks"
+    ],
+    "notChanged": [
+      "all/any condition traversal",
+      "provenance boolean semantics",
+      "stable comparator fallback",
+      "schema narrowing",
+      "marker instance, NP transfer, HP, and operation compiler semantics"
+    ]
+  },
   "fixtures": {
     "focusedArtifacts": [
       ".test-results/2026-09-20T07-15-11-589Z-15-36c97e",
@@ -51,6 +110,19 @@
       "actor, population-read, and state-only addIndividuality exclusion",
       "operation position, operation order, and input key order",
       "0/1/2 target outcomes and mutation-after-read ordered preparation"
+    ]
+  },
+  "currentFixtures": {
+    "focusedArtifact": ".test-results/2026-09-20T08-15-57-588Z-15-7fa28b",
+    "covered": [
+      "Atlas population scope 0/1/2/3/4 mapped to recipient/allies/enemies/allActors/otherActors",
+      "actorTraits, buffInstances, and inBattle basis separation",
+      "includePassive filtering for buffInstances",
+      "mixed intrinsic/buff identity and unsupported/invalid input rejection",
+      "population input key and populationSize/populationCount input definitions",
+      "population grant/remove live read and mutation-after-read behavior",
+      "population input legality, saturation/maximum, and fail-closed unknown overlap",
+      "candidate equivalence, representative dedupe, cardinality, cap, calculator/ranking parity"
     ]
   },
   "productionMatrix": {
@@ -89,30 +161,81 @@
       "canonicalOutputChanged": false
     }
   },
+  "currentProductionMatrix": {
+    "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts .test-results/tsk-06-48-population-count-closure; pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts .test-results/tsk-06-48-population-count-closure",
+    "artifactRoot": ".test-results/tsk-06-48-population-count-closure",
+    "manifestSha256": "e3ebc1ab1546460a67c450030b988f4ec0395df9dd225e6bd2bb1fd76fbc0f68",
+    "productionSuiteArtifact": ".test-results/2026-09-20T07-43-52-762Z-15-c7cb2f",
+    "productionSuiteManifestSha256": "171c13f425e8848f1f889a3dd79ab669886f15d248880837f3432fe077a41648",
+    "conditionCount": 80,
+    "attackProfilesPerCondition": 433,
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "inputRequired": 0,
+    "invalid": 0,
+    "unsupported": 0,
+    "parityCompared": 34600,
+    "parityFailures": 0,
+    "candidateInventory": {
+      "generated": 1028810,
+      "deduplicated": 1028810,
+      "damageRequests": 967810,
+      "distinctDamageInputs": 233100,
+      "maximumSingleProfileProduct": 3435,
+      "maximumSingleProfileServantId": "2801300",
+      "cap": 4096,
+      "candidateDomainArtifact": ".test-results/2026-09-20T07-43-52-762Z-15-c7cb2f/stack-candidate-domains.json",
+      "candidateDomainArtifactSha256": "701760aea4b5e2dd983170c82c34646d028a67ea2568d3d212de70da16ec5a16"
+    },
+    "observedDigest": "5785027abb0d06c15fed11d074161d1f835214fa99572914d4e96c82281c38fd",
+    "semanticDigest": "2cc31c8b0cdabc6d12a1cc97a8218c859866149ee4a4ad19c3ec0d313b0702e0",
+    "comparison": {
+      "oldArtifact": ".test-results/tsk-06-46-w6-production-closure",
+      "newRecords": 34640,
+      "recordMismatches": 0,
+      "conditionSummarySemanticMismatches": 0,
+      "unavailableSetEqual": true,
+      "candidateInventoryEqual": true,
+      "differenceFromPreviousUnitDigest": "top-level digest includes elapsedMs; normalized semantic digest excluding elapsedMs and top-level digest is identical",
+      "canonicalOutputChanged": false
+    }
+  },
   "verification": {
-    "focusedUnitTests": "54/54 (population/catalog 9, direct consumer and ordered runtime 45)",
+    "focusedUnitTests": "81/81 (data-pipeline 10, battle-execution population 6, ranking candidate 19, ordered runtime 46)",
     "productionSuite": "144/144",
     "lint": "targeted eslint passed",
     "typecheck": "pnpm typecheck passed",
     "quality": "not run; bounded unit handoff, not full TSK-06.48 completion",
-    "performance": "no comparable hot-path diagnostic attributed; matrix was sharded and no performance target is accepted"
+    "prettier": "targeted check passed",
+    "performance": {
+      "artifact": ".test-results/tsk-06-48-population-count-hot-path/measure.json",
+      "artifactSha256": "78badefa3c9c443c36a77b810140e76e42c2ec3769e74fdaaeea77b9e23c9fe7",
+      "samplesMs": [6146.356158, 5721.045579, 5748.843991],
+      "medianMs": 5748.843991,
+      "previousW7DiagnosticMedianMs": 5978.003656,
+      "rows": 433,
+      "exclusions": 0,
+      "resultDigestUnchanged": true,
+      "acceptanceFloor": null,
+      "interpretation": "diagnostic only; no fixed performance lower bound, candidate cap, timeout, or ratchet was changed"
+    }
   },
   "remainingUnits": [
-    "data-pipeline population-count selector/read equivalence with battle-execution populationCounts",
     "dependent resource transfer and HP semantic families",
     "effect normalization and execution-semantics boundaries",
     "battle-execution ordered operation/compiler boundaries",
     "calculation-application candidate/world/scenario boundaries"
   ],
   "nextBoundedUnit": {
-    "scope": "packages/data-pipeline/src/npPopulationNormalization.ts, packages/battle-execution/src/populationCounts.ts, packages/calculation-application/src/rankingCandidateSpace.ts",
-    "purpose": "converge population-count selector, input legality, live-read equivalence, and candidate input ownership without changing marker, transfer, or HP semantics",
+    "scope": "packages/data-pipeline/src/npTransferNormalization.ts, packages/data-pipeline/src/hpNormalization.ts",
+    "purpose": "converge dependent resource transfer and HP semantic ownership while preserving population-count canonical output",
     "requiredChecks": "reuse this evidence only if canonical operation/input inventory, support classification, order, parity, and candidate inventory remain equal"
   },
   "handoff": {
     "taskStatus": "in_progress",
     "blocking": 0,
     "finalQualityPending": true,
-    "nextOperation": "review the current diff, then implement the next bounded population-count unit; do not mark TSK-06.48 done"
+    "nextOperation": "review the current diff and implement the dependent resource transfer/HP bounded unit; do not mark TSK-06.48 done"
   }
 }

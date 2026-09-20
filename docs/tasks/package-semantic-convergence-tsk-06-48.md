@@ -1,11 +1,12 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.1"
+document_version: "1.0.2"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
 task: "TSK-06.48"
 baseline_commit: "0c12261"
+current_worktree_base: "49efe62"
 ---
 
 # TSK-06.48 パッケージ別semantic complexity convergence計画
@@ -72,6 +73,28 @@ package全体の機械的な分割、行数削減、構文を隠す汎用helper�
 追加または拡張する小fixtureは、remove target／targetState、grantのpreviousSuccess、condition producer、
 cycle、actor／field／addTrait除外、trait／traitCount scope、mutation後read、operation position／input keyを対象とする。
 
+### 3.4 population-count bounded unit（2026-09-20完了）
+
+今回のbounded unitは、次の3ファイルだけを変更範囲とした。marker instance、NP transfer、HP、effect normalization全体、
+battle operation compiler全体は対象外である。
+
+| semantic | 現在／変更後のowner | 直接consumer |
+| --- | --- | --- |
+| raw Atlasのfunction type、scope、counting、basis、includePassive、mixed intrinsic／buff identity | `npPopulationNormalization.ts::classifyPopulationCount`、`populationCountInputs` | `effectNormalization.ts`、`npCountNormalization.ts`、`markerNormalization.ts`はcanonical outputのconsumerとして確認のみ |
+| canonical scope、input legality、saturation、population event observation、live read | `populationCounts.ts::populationScopeSides`、`populationInputIssue`、`observePopulationEvent`、`readPopulationCount`、既存`populationCountSaturation` | `preparationOc.ts`、`operationCompiler.ts` |
+| input definition domain、population tupleのequivalence／representative／dedupe | `rankingCanonicalInputs.ts::isPopulationInputDefinition`、`rankingCandidateSpace.ts::buildPopulationCandidateInputs` | `rankingWorldObservation.ts`、`scenario.ts`、calculator／ranking共通path |
+
+反復unionの分類は、raw function/scope→`PopulationCountPlan`、event→`PopulationEventObservation`、candidate tuple→
+`PopulationCandidateInputs`へ集約した。scope、input definition、operationの網羅的union switch、容量0／actor最大値、
+未知writer／unsupported overlap、inBattleのmatching mutation拒否、local attacker／targetとquery coverageのboolean条件は
+fail-closedまたは網羅性を表すため残した。`all`／`any`再帰、provenance、stable comparator fallback、schema narrowingは削除していない。
+
+fixtureはAtlas scope 0〜4、actorTraits／buffInstances／inBattle、includePassive、mixed identity、grant／remove後live read、
+input key／values／operation order、saturation／maximum、candidate equivalence／dedupe／cardinality／cap、calculator／ranking parity、
+unsupported／invalid／inputRequiredのfail-closedを固定した。旧W6 recordと80条件×433 profileを比較し、canonical output、condition truth、
+operation order、mutation後read、input inventory、candidate inventoryに差分がないことを確認した。詳細なmachine-readable結果は
+`docs/evidence/tsk-06-48-population-closure.json`の`currentSemanticOwners`、`currentFixtures`、`currentProductionMatrix`を参照する。
+
 ## 4. 後続のパッケージ波
 
 | 波 | パッケージ／主対象 | 所有する意味 | 実装境界 |
@@ -120,3 +143,6 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
 - 第1 bounded unitの完了後は、canonical output／operation／input inventoryとW7 closureの一致を確認できた場合だけ
   production closureを再利用し、差分または意味論上の疑義がある場合だけ影響行列を再実行する。
 - 第1 bounded unitのhandoff、実施した検証、未達条件、次のbounded unitはTSK-06.48のTaskとactive evidenceへ追記する。
+- population-count bounded unitは`49efe62`をworktree基点として完了した。focused 81/81、production 144/144、80×433 matrix、
+  targeted lint／Prettier／typecheckを通過し、最終`pnpm quality`は未実施である。次はdependent resource transfer／HP familyで、
+  marker／NP transfer以外のsemantic familyへ無断拡張しない。

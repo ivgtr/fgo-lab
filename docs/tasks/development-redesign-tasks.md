@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.13"
+document_version: "1.7.14"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -65,7 +65,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
 | TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
 | TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
-| TSK-06.48 | Package semantic complexity convergence | ready | TSK-06.46 | package別semantic owner／population family convergence |
+| TSK-06.48 | Package semantic complexity convergence | in_progress | TSK-06.46 | package別semantic owner／population family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -2098,15 +2098,15 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-IR-001` | Apply | symbol inventory／owner boundaryのplan review、`git diff --check` | `docs/tasks/package-semantic-convergence-tsk-06-48.md` |
-| `RK-EXEC-001` | N/A: 本commitはruntime executionを変更せず、実装波で影響範囲を適用判定する | - | 実装時のTSK-06.48 evidence |
-| `RK-AUDIT-001` | Apply | 80条件×433 profile audit／旧W7 record比較、`pnpm test:production` | `docs/evidence/tsk-06-48-population-closure.json`／W7 closure |
-| `RK-PERF-001` | N/A: 本commitはhot pathを変更せず、実装時も影響時の診断観測だけを行う | - | 実装時のTSK-06.48 evidence |
+| `RK-IR-001` | Apply | symbol inventory／owner boundaryの差分レビュー、`git diff --check` | `docs/tasks/package-semantic-convergence-tsk-06-48.md`／`docs/evidence/tsk-06-48-population-closure.json` |
+| `RK-EXEC-001` | Apply | population selector／legality／live-read／candidate ownershipのfocused fixture、ordered read確認 | `docs/evidence/tsk-06-48-population-closure.json` |
+| `RK-AUDIT-001` | Apply | 80条件×433 profile audit／旧W6 record比較、`pnpm test:production` | `docs/evidence/tsk-06-48-population-closure.json`／W7 closure |
+| `RK-PERF-001` | Apply | hot-path 3-sample diagnostic、candidate cap／timeout／ratchet不変 | `docs/evidence/tsk-06-48-population-closure.json` |
 | `DOC-CLOSE-001` | Apply | `pnpm test:docs` | `docs/tasks/package-semantic-convergence-tsk-06-48.md`／Handoff |
 | `DOC-LINT-001` | Apply | `pnpm test:docs` | Handoff |
 | `DX-HANDOFF-001` | Apply | `pnpm test:docs` | Handoff |
 
-Handoff: 2026-09-20に計画確認済みのため`in_progress`へ移行して第1 bounded unitへ着手した。基点は`fd0ac2d`、TSK-06.46 W7のproduction closureは変更せず、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。第1 bounded unitは`populationFunctionNormalization.ts`と`targetStateNormalization.ts`のpopulation-function／population-trait catalog境界で、公開Map、position、input key、operation順序、W7 closureのcanonical outputを維持する。focused test、lint、typecheck、production suiteとclosure照合を完了し、詳細は[TSK-06.48 population closure](../evidence/tsk-06-48-population-closure.json)へ記録した。次のbounded unitはpopulation-count selector／input legality／live-read equivalence。最終quality未実施の途中段階ではTSK-06.48をdoneへ変更しない。
+Handoff: 2026-09-20に計画確認済みのため`in_progress`を維持する。worktree基点は`49efe62`（未コミット差分）で、TSK-06.46 W7のcanonical closureをbefore baselineとして保持し、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。population-count bounded unitでは、data-pipelineのselector／scope／counting／basis／includePassive／input builder、battle-executionのscope／legality／saturation／live-read、calculation-applicationのcandidate tuple／equivalence／representative ownershipを明確化した。focused 81/81、production 144/144、80条件×433 profile matrix、34,640 outcomes／34,600 parity、candidate 1,028,810／最大3,435／cap 4,096、targeted lint／Prettier／typecheckを確認し、旧W6 record差分0、semantic digest不変を[TSK-06.48 population closure](../evidence/tsk-06-48-population-closure.json)へ記録した。hot-path診断は3サンプル中央値5,748.844msで、固定性能下限は設けない。次のbounded unitはdependent resource transfer／HP semantic family。最終quality未実施の途中段階ではTSK-06.48をdoneへ変更しない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

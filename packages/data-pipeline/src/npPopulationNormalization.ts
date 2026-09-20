@@ -11,29 +11,57 @@ import {
 } from './targetStateNormalization';
 import { normalizeTargetPolicy } from './executionSemantics';
 
-const scopes: PopulationCountSelector['scope'][] = [
+type PopulationSide = 'allies' | 'enemies';
+type NpPopulationFunctionType = 'gainNpTargetSum' | 'gainNpIndividualSum';
+
+interface PopulationCountPlan {
+  selector: PopulationCountSelector;
+  values: CanonicalValueSets;
+  inputKey: string;
+  externalSides: readonly PopulationSide[];
+  countMaximum: number;
+}
+
+const atlasPopulationScopes: readonly PopulationCountSelector['scope'][] = [
   'recipient',
   'allies',
   'enemies',
   'allActors',
   'otherActors',
 ];
-const sides = (scope: PopulationCountSelector['scope']) =>
-  scope === 'recipient'
-    ? []
-    : scope === 'enemies'
-      ? (['enemies'] as const)
-      : scope === 'allies'
-        ? (['allies'] as const)
-        : (['allies', 'enemies'] as const);
 
-export function normalizeNpPopulationCount(
+function populationCountFunctionType(value: string | undefined): NpPopulationFunctionType | null {
+  switch (value) {
+    case 'gainNpTargetSum':
+    case 'gainNpIndividualSum':
+      return value;
+    default:
+      return null;
+  }
+}
+
+function populationScopeSides(scope: PopulationCountSelector['scope']): readonly PopulationSide[] {
+  switch (scope) {
+    case 'recipient':
+      return [];
+    case 'allies':
+      return ['allies'];
+    case 'enemies':
+      return ['enemies'];
+    case 'allActors':
+    case 'otherActors':
+      return ['allies', 'enemies'];
+  }
+}
+
+function classifyPopulationCount(
   fn: AtlasFunction,
   rows: readonly (readonly AtlasFunctionValue[])[],
   names: ReadonlyMap<number, string>,
   catalog: DamageReachableStateCatalog,
-): { operation: EffectExecutionOperation; inputs: CanonicalInputDefinition[] } | null {
-  if (!['gainNpTargetSum', 'gainNpIndividualSum'].includes(fn.funcType ?? '')) return null;
+): PopulationCountPlan | null {
+  const functionType = populationCountFunctionType(fn.funcType);
+  if (!functionType) return null;
   const cells = rows.flat();
   if (
     !cells.length ||
@@ -53,7 +81,7 @@ export function normalizeNpPopulationCount(
   )
     return null;
   const first = cells[0]!;
-  const scope = scopes[first.Value2 ?? 0];
+  const scope = atlasPopulationScopes[first.Value2 ?? 0];
   if (
     !scope ||
     cells.some(
@@ -84,7 +112,7 @@ export function normalizeNpPopulationCount(
     buff.length &&
     (buff.length !== named.length ||
       named.length !== 1 ||
-      fn.funcType === 'gainNpTargetSum' ||
+      functionType === 'gainNpTargetSum' ||
       named.some((trait) => catalog.populationIntrinsicTraits?.has(trait)))
   )
     return null;
@@ -93,7 +121,7 @@ export function normalizeNpPopulationCount(
     return null;
   const selector: PopulationCountSelector = {
     scope,
-    counting: fn.funcType === 'gainNpTargetSum' ? 'actors' : 'individualities',
+    counting: functionType === 'gainNpTargetSum' ? 'actors' : 'individualities',
     basis:
       fn.traitVals?.length === 1 && fn.traitVals[0]?.id === 5000
         ? 'inBattle'
@@ -103,15 +131,21 @@ export function normalizeNpPopulationCount(
     traits: named,
     includePassive: first.GainNpTargetPassiveIndividuality === 1,
   };
-  const key = `population:count:${encodeURIComponent(JSON.stringify(selector))}`;
-  const externalMaximum = sides(scope).length * 2;
+  const inputKey = `population:count:${encodeURIComponent(JSON.stringify(selector))}`;
+  const externalSides = populationScopeSides(scope);
+  const externalMaximum = externalSides.length * 2;
   const countMaximum =
     selector.counting === 'actors' || selector.basis === 'inBattle'
       ? externalMaximum
       : Math.ceil(
           30000 / Math.min(...values.flat().filter((value): value is number => value !== null)),
         );
-  const inputs: CanonicalInputDefinition[] = sides(scope).map((side) => ({
+  return { selector, values, inputKey, externalSides, countMaximum };
+}
+
+function populationCountInputs(plan: PopulationCountPlan): CanonicalInputDefinition[] {
+  const { selector, inputKey, externalSides, countMaximum } = plan;
+  const inputs: CanonicalInputDefinition[] = externalSides.map((side) => ({
     kind: 'populationSize',
     side,
     key: `population:${side}:additional`,
@@ -125,11 +159,11 @@ export function normalizeNpPopulationCount(
     defaultValue: 0,
     defaultReason: '追加の対象を指定しない',
   }));
-  if (selector.basis !== 'inBattle' && externalMaximum > 0)
+  if (selector.basis !== 'inBattle' && externalSides.length > 0)
     inputs.push({
       kind: 'populationCount',
       selector,
-      key,
+      key: inputKey,
       owner: 'field',
       label:
         selector.basis === 'buffInstances'
@@ -147,6 +181,17 @@ export function normalizeNpPopulationCount(
       defaultValue: 0,
       defaultReason: '外部の該当状態を追加しない',
     });
+  return inputs;
+}
+
+export function normalizeNpPopulationCount(
+  fn: AtlasFunction,
+  rows: readonly (readonly AtlasFunctionValue[])[],
+  names: ReadonlyMap<number, string>,
+  catalog: DamageReachableStateCatalog,
+): { operation: EffectExecutionOperation; inputs: CanonicalInputDefinition[] } | null {
+  const plan = classifyPopulationCount(fn, rows, names, catalog);
+  if (!plan) return null;
   return {
     operation: {
       kind: 'resourceMutation',
@@ -155,9 +200,14 @@ export function normalizeNpPopulationCount(
       unit: 'fixed',
       recipient: normalizeTargetPolicy(fn.funcTargetType ?? '', fn.funcTargetTeam),
       subjectId: null,
-      amount: { kind: 'populationCount', selector, inputKey: key, values },
+      amount: {
+        kind: 'populationCount',
+        selector: plan.selector,
+        inputKey: plan.inputKey,
+        values: plan.values,
+      },
     },
-    inputs,
+    inputs: populationCountInputs(plan),
   };
 }
 

@@ -28,6 +28,7 @@ import {
 import {
   createCanonicalInputValueDomains,
   isPopulationInputDefinition,
+  type PopulationInputDefinition,
 } from './rankingCanonicalInputs';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import { compileRankingComparisonPolicy } from './rankingComparisonPolicy';
@@ -109,6 +110,47 @@ interface ProgramCandidateDomain {
   quantities: readonly RankingQuantityCandidate[];
   rawWorldCardinality: number;
   upperBound: number;
+}
+
+interface PopulationCandidateInputs {
+  keys: ReadonlySet<string>;
+  values: readonly Readonly<Record<string, number>>[];
+}
+
+function buildPopulationCandidateInputs(input: {
+  canonicalInputs: readonly { key: string; values: readonly number[] }[];
+  populationDefinitions: readonly PopulationInputDefinition[];
+  inputDefinitions: readonly CanonicalInputDefinition[];
+  definitionsByKey: ReadonlyMap<string, CanonicalInputDefinition>;
+  sources: Parameters<typeof populationInputEquivalenceKey>[0];
+}): PopulationCandidateInputs {
+  const { canonicalInputs, populationDefinitions, inputDefinitions, definitionsByKey, sources } =
+    input;
+  const populationInputKeys = new Set(populationDefinitions.map((definition) => definition.key));
+  const legalPopulationInputs = finiteSemanticProduct(
+    canonicalInputs.filter((candidate) => populationInputKeys.has(candidate.key)),
+    MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
+    'population_input_product_limit',
+  ).candidates.filter((values) => !populationInputIssue(inputDefinitions, values));
+  const transferDonorDefinitions = populationDefinitions.filter(
+    (definition): definition is Extract<PopulationInputDefinition, { kind: 'transferDonor' }> =>
+      definition.kind === 'transferDonor',
+  );
+  const deviation = (tuple: Readonly<Record<string, number>>) =>
+    Object.entries(tuple).reduce(
+      (sum, [key, value]) => sum + Math.abs(value - (definitionsByKey.get(key)?.defaultValue ?? 0)),
+      0,
+    );
+  const representatives = new Map<string, Readonly<Record<string, number>>>();
+  for (const values of legalPopulationInputs) {
+    const key = JSON.stringify([
+      populationInputEquivalenceKey(sources, values),
+      transferDonorDefinitions.map((definition) => values[definition.key]),
+    ]);
+    const prior = representatives.get(key);
+    if (!prior || deviation(values) < deviation(prior)) representatives.set(key, values);
+  }
+  return { keys: populationInputKeys, values: [...representatives.values()] };
 }
 
 function worldTraitFacts(conditions: readonly (ConditionExpression | null)[]): readonly {
@@ -334,40 +376,21 @@ function compileProgramDomain(input: {
         return { ...domain, values: [definition.defaultValue ?? definition.minimum] };
       })
     : inputDomains;
-  const populationInputKeys = new Set(populationDefinitions.map((input) => input.key));
-  const legalPopulationInputs = finiteSemanticProduct(
-    canonicalInputs.filter((input) => populationInputKeys.has(input.key)),
-    MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
-    'population_input_product_limit',
-  ).candidates.filter((values) => !populationInputIssue(semantics.inputDefinitions, values));
-  const representatives = new Map<string, Readonly<Record<string, number>>>();
-  const transferDonorDefinitions = populationDefinitions.filter(
-    (definition): definition is Extract<CanonicalInputDefinition, { kind: 'transferDonor' }> =>
-      definition.kind === 'transferDonor',
-  );
-  const deviation = (tuple: Readonly<Record<string, number>>) =>
-    Object.entries(tuple).reduce(
-      (sum, [key, value]) =>
-        sum + Math.abs(value - (inputDefinitionsByKey.get(key)?.defaultValue ?? 0)),
-      0,
-    );
-  for (const values of legalPopulationInputs) {
-    const key = JSON.stringify([
-      populationInputEquivalenceKey(semantics.sources, values),
-      transferDonorDefinitions.map((input) => values[input.key]),
-    ]);
-    const prior = representatives.get(key);
-    if (!prior || deviation(values) < deviation(prior)) representatives.set(key, values);
-  }
-  const populationInputs = [...representatives.values()];
+  const populationCandidateInputs = buildPopulationCandidateInputs({
+    canonicalInputs,
+    populationDefinitions,
+    inputDefinitions: semantics.inputDefinitions,
+    definitionsByKey: inputDefinitionsByKey,
+    sources: semantics.sources,
+  });
   return {
     program,
     semantics,
     baseScenario: base,
     initialNpGauge: policy.initialNpGauge,
     canonicalInputs,
-    populationInputKeys,
-    populationInputs,
+    populationInputKeys: populationCandidateInputs.keys,
+    populationInputs: populationCandidateInputs.values,
     canonicalInputDefaults: new Map(
       semantics.inputDefinitions.map((definition) => [definition.key, definition.defaultValue]),
     ),

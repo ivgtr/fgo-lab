@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48は第1 bounded unitを完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count bounded unitまで完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -509,6 +509,18 @@ top-level digestは`elapsedMs`を含むため旧`28135f...`と新`63a85d...`が�
 本unitの再実行artifactを追加証拠として扱う。focused 9＋consumer/runtime 45、production 144、lint、typecheckは成功。最終`pnpm quality`は未実施。
 次のbounded unitはpopulation-count selector／input legality／live-read equivalence（`npPopulationNormalization.ts`、`populationCounts.ts`、
 `rankingCandidateSpace.ts`）で、marker／transfer／HP semanticsは対象外とする。
+
+**2026-09-20 TSK-06.48 population-count bounded unit完了（worktree基点`49efe62`、TSK内Blocking 0、Taskは`in_progress`）:**
+`npPopulationNormalization.ts`でAtlasのpopulation-count selectorとcanonical inputを`PopulationCountPlan`へ、`populationCounts.ts`でscope／
+legality／event observation／live readをtyped stageへ、`rankingCandidateSpace.ts`でpopulation tupleのequivalence／representative／dedupeを
+専用ownerへ整理した。canonical operation、input key、values、includePassive、mixed identity拒否、saturation、ordered mutation後readは不変。
+
+current matrix（`.test-results/tsk-06-48-population-count-closure`）は80条件×433 profile、34,640 outcomes、34,600 calculated、typed unavailable 40、
+unsupported／invalid／inputRequired 0、parity 34,600、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct damage inputs
+233,100、最大3,435／cap 4,096。旧W6 record差分0、condition summary semantic差分0、unavailable set／candidate inventory一致、semantic digest
+`2cc31c8b0cdabc6d12a1cc97a8218c859866149ee4a4ad19c3ec0d313b0702e0`を維持した。focused 81/81、production 144/144、targeted lint／Prettier／
+typecheck成功。hot-path診断は中央値5,748.844ms（rows 433、exclusions 0）で、固定性能下限・cap・timeout・ratchetは変更していない。次はdependent
+resource transfer／HP familyであり、詳細は[TSK-06.48 population closure](tsk-06-48-population-closure.json)を参照する。
 
 - point gain/loss、capacity instance、trait／marker／form変更後のreconcileを既存preparation transactionへ統合。失敗時はBP・HP・NP・OC・form・instance・context・receiptをcommand前へ戻し、前commandのcommitは保持する。終端damage後の直接capacity25 cellsと、後続readへ影響する間接trait writerを分離した。
 - 初期入力は従来どおり段階intent。合法pointの逆像を列挙し、同段階のpoint4/5等を一代表へ縮約せず全application/execution後の最大値を比較する。単一witnessでは二重damage評価を省略。小型oracleはcapacity1〜12の全pointを独立列挙し、actor/domain、支援recipient、飽和・端数・境界、trait解除、未知capacity writerの更新前拒否を検証した。

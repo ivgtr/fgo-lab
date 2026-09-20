@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab documentation registry"
-document_version: "1.5.46"
+document_version: "1.5.47"
 status: "Active"
 updated_at: "2026-09-20"
 ---
@@ -28,7 +28,7 @@ updated_at: "2026-09-20"
 
 | Path | Kind／status | Authority／scope |
 | --- | --- | --- |
-| [docs/README.md](README.md) | registry／Active v1.5.46 | 唯一のdocumentation navigation entry |
+| [docs/README.md](README.md) | registry／Active v1.5.47 | 唯一のdocumentation navigation entry |
 | [FGO Lab product requirements](requirements/fgo-lab-requirements-v0.3.md) | requirement／Active v0.3.8／approved | product目的、機能範囲、portable calculation identity、データ境界、横断受入条件 |
 | [UI design specification](requirements/ui-design-spec.md) | requirement／Active v1.5.1／approved | 画面構造、ranking comparison controls、versioned calculator recovery、responsive、a11y、UI受入条件 |
 | [damage calculation review](requirements/damage-calculation-review.md) | requirement／Active v1.0.1 | damage式の一次根拠、float32境界、検証方針 |
@@ -36,11 +36,11 @@ updated_at: "2026-09-20"
 | [ranking requirements](requirements/ranking-self-and-conditional-effects-requirements.md) | requirement／Active v0.10.3／approved | comparison axes、all attack-NP coverage、maximum stack、contribution UI、source-program、portable handoff、candidate、parity |
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.3.0 | bounded output、artifact、実装修正と検証の範囲、session分離・上限、handoff |
-| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.13 | 唯一の実装順序、依存、status、handoff |
-| [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Active v1.0.1 | パッケージ別semantic owner、population family、検証範囲、性能・テスト境界 |
+| [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.14 | 唯一の実装順序、依存、status、handoff |
+| [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Active v1.0.2 | パッケージ別semantic owner、population family、検証範囲、性能・テスト境界 |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
-| [evidence index](evidence/README.md) | sub-index／Active v1.4.35 | damage／production／documentation evidence |
+| [evidence index](evidence/README.md) | sub-index／Active v1.4.36 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
 | [canonical data flow](guides/data-flow.md) | guide／Guideline v1.0.0 | master、calculation／ranking、user stateの依存方向 |
 | [document governance contract](guides/document-governance.md) | guide／Guideline v1.0.1 | Contract ID、Task closure、要件改訂、ADR lifecycle、docs lint |

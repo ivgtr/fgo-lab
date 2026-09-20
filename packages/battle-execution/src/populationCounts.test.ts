@@ -4,7 +4,11 @@ import type { PopulationCountSelector } from '@fgo-lab/master-data';
 import fixture from '../../test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { createConditionState } from './conditionState';
-import { readPopulationCount, type PopulationEvent } from './populationCounts';
+import {
+  populationInputIssue,
+  readPopulationCount,
+  type PopulationEvent,
+} from './populationCounts';
 
 const selector: PopulationCountSelector = {
   scope: 'allActors',
@@ -145,6 +149,98 @@ describe('live actor population count', () => {
       readPopulationCount({
         ...input,
         events: [{ ...event, operation: { ...event.operation, mutation: 'unsupported' } }],
+      }),
+    ).toBeNull();
+  });
+
+  it('applies includePassive only to buff-instance reads and keeps legality fail-closed', () => {
+    const passiveGrant: PopulationEvent = {
+      source,
+      operation: {
+        kind: 'populationMutation',
+        basis: 'buffInstances',
+        scope: 'enemies',
+        mutation: 'grant',
+        traits: ['a'],
+        includePassive: true,
+      },
+    };
+    const input = {
+      selector: {
+        ...selector,
+        scope: 'enemies' as const,
+        basis: 'buffInstances' as const,
+        counting: 'individualities' as const,
+        includePassive: false,
+      },
+      inputKey: 'initial',
+      values: { 'population:enemies:additional': 2, initial: 1 },
+      facts: facts(),
+      events: [passiveGrant],
+    };
+    expect(readPopulationCount(input)).toBe(1);
+    expect(
+      readPopulationCount({
+        ...input,
+        selector: { ...input.selector, includePassive: true },
+      }),
+    ).toBe(4);
+
+    const definition = {
+      kind: 'populationCount' as const,
+      selector,
+      key: 'initial',
+      owner: 'field' as const,
+      label: 'count',
+      description: 'count',
+      minimum: 0,
+      maximum: 4,
+      step: 1,
+      defaultValue: 0,
+      defaultReason: 'none',
+    };
+    expect(populationInputIssue([definition], { initial: 1 })).toBe(definition);
+    expect(
+      populationInputIssue([definition], {
+        'population:allies:additional': 1,
+        initial: 1,
+      }),
+    ).toBe(null);
+    expect(
+      populationInputIssue([definition], {
+        'population:allies:additional': 1,
+        'population:enemies:additional': 1,
+        initial: 3,
+      }),
+    ).toBe(definition);
+  });
+
+  it('refuses a matching mutation for an in-battle read', () => {
+    const inBattleSelector: PopulationCountSelector = {
+      scope: 'allActors',
+      counting: 'actors',
+      basis: 'inBattle',
+      traits: ['a', 'b'],
+      includePassive: true,
+    };
+    const event: PopulationEvent = {
+      source,
+      operation: {
+        kind: 'populationMutation',
+        basis: 'actorTraits',
+        scope: 'allActors',
+        mutation: 'grant',
+        traits: ['a'],
+        includePassive: false,
+      },
+    };
+    expect(
+      readPopulationCount({
+        selector: inBattleSelector,
+        inputKey: 'unused',
+        values: { 'population:allies:additional': 1 },
+        facts: facts(),
+        events: [event],
       }),
     ).toBeNull();
   });
