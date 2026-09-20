@@ -24,12 +24,19 @@ function candidate(key: string, initial: boolean, state: boolean): RankingWorldC
   };
 }
 
-function mutation(kind: 'addTrait' | 'removeTrait' | 'suppressInitialTrait'): BattleOperation {
+function mutation(
+  kind: 'addTrait' | 'removeTrait' | 'suppressInitialTrait',
+  scope: 'attacker' | 'attackerState' | 'target' | 'targetState' | 'field' = kind ===
+  'suppressInitialTrait'
+    ? 'target'
+    : 'targetState',
+  operationId: string = kind,
+): BattleOperation {
   return {
     kind,
-    operationId: kind,
+    operationId,
     order: 0,
-    scope: kind === 'suppressInitialTrait' ? 'target' : 'targetState',
+    scope,
     trait: 'orderedTrait',
     condition: { kind: 'always' },
   } as BattleOperation;
@@ -82,6 +89,39 @@ describe('ordered ranking world observation', () => {
       'state:after:suppressInitialTrait:0',
       false,
     ]);
+  });
+
+  it('compiles only target mutations and preserves read/mutation order', () => {
+    const operations = [
+      mutation('removeTrait', 'target', 'remove-target'),
+      mutation('removeTrait', 'targetState', 'remove-state'),
+      mutation('suppressInitialTrait', 'target', 'suppress-target'),
+      mutation('removeTrait', 'attacker', 'remove-attacker'),
+      mutation('removeTrait', 'field', 'remove-field'),
+      mutation('suppressInitialTrait', 'attacker', 'suppress-attacker'),
+      mutation('addTrait', 'target', 'add-target'),
+    ];
+    const plan = compileRankingWorldObservationPlan(operations, [combined]);
+
+    expect(
+      plan.steps
+        .filter((step) => step.key.includes('remove-') || step.key.includes('suppress-'))
+        .map((step) => step.key),
+    ).toEqual([
+      'operation:remove-target',
+      'mutation:remove-target',
+      'state:after:remove-target:0',
+      'operation:remove-state',
+      'mutation:remove-state',
+      'state:after:remove-state:0',
+      'operation:suppress-target',
+      'mutation:suppress-target',
+      'state:after:suppress-target:0',
+    ]);
+    expect(plan.steps.some((step) => step.key.includes('remove-attacker'))).toBe(false);
+    expect(plan.steps.some((step) => step.key.includes('remove-field'))).toBe(false);
+    expect(plan.steps.some((step) => step.key.includes('suppress-attacker'))).toBe(false);
+    expect(plan.steps.some((step) => step.key.includes('add-target'))).toBe(false);
   });
 
   it('refuses to merge a physical state across an unresolved mutation guard', () => {

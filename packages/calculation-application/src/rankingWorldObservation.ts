@@ -2,6 +2,7 @@ import {
   compareTraitCount,
   decisiveConditionGroup,
   resolveCombinedTraitValue,
+  traitConditionScopeSemantics,
   targetConditionWitnessSpace,
   traitConditionEvaluationSource,
   type BattleOperation,
@@ -30,6 +31,42 @@ export interface RankingWorldObservation {
   indeterminateMutation: boolean;
 }
 
+type RankingTargetMutationStep = Extract<RankingWorldObservationStep, { kind: 'mutation' }>;
+
+function targetMutationObservationStep(
+  operation: BattleOperation,
+): RankingTargetMutationStep | null {
+  switch (operation.kind) {
+    case 'removeTrait': {
+      switch (operation.scope) {
+        case 'target':
+        case 'targetState':
+          return {
+            kind: 'mutation',
+            key: `mutation:${operation.operationId}`,
+            mutation: operation.kind,
+            scope: operation.scope,
+            trait: operation.trait,
+          };
+        default:
+          return null;
+      }
+    }
+    case 'suppressInitialTrait':
+      return operation.scope === 'target'
+        ? {
+            kind: 'mutation',
+            key: `mutation:${operation.operationId}`,
+            mutation: operation.kind,
+            scope: operation.scope,
+            trait: operation.trait,
+          }
+        : null;
+    default:
+      return null;
+  }
+}
+
 export function compileRankingWorldObservationPlan(
   operations: readonly BattleOperation[],
   terminalConditions: readonly ConditionExpression[],
@@ -52,36 +89,15 @@ export function compileRankingWorldObservationPlan(
     });
   appendStateReads('initial');
   for (const operation of operations) {
-    const targetMutation =
-      (operation.kind === 'removeTrait' &&
-        (operation.scope === 'target' || operation.scope === 'targetState')) ||
-      (operation.kind === 'suppressInitialTrait' && operation.scope === 'target');
-    if (!targetMutation) continue;
+    const mutationStep = targetMutationObservationStep(operation);
+    if (mutationStep === null) continue;
     steps.push({
       kind: 'read',
       key: `operation:${operation.operationId}`,
       condition: operation.condition,
     });
-    if (
-      operation.kind === 'removeTrait' &&
-      (operation.scope === 'target' || operation.scope === 'targetState')
-    )
-      steps.push({
-        kind: 'mutation',
-        key: `mutation:${operation.operationId}`,
-        mutation: operation.kind,
-        scope: operation.scope,
-        trait: operation.trait,
-      });
-    if (operation.kind === 'suppressInitialTrait' && operation.scope === 'target')
-      steps.push({
-        kind: 'mutation',
-        key: `mutation:${operation.operationId}`,
-        mutation: operation.kind,
-        scope: 'target',
-        trait: operation.trait,
-      });
-    appendStateReads(`after:${operation.operationId}`, operation.trait);
+    steps.push(mutationStep);
+    appendStateReads(`after:${operation.operationId}`, mutationStep.trait);
   }
   return { steps, transitionTraits: transitionTraitsAfterMutation(steps) };
 }
@@ -129,18 +145,17 @@ function simplify(
 ): unknown {
   if (
     condition.kind === 'trait' &&
-    (condition.scope === 'target' || condition.scope === 'targetState')
+    traitConditionScopeSemantics(condition.scope).actor === 'target'
   ) {
     if (traitConditionEvaluationSource(condition) === 'effectLocalDecision') return condition;
-    return (
-      targetTraitValue(facts, suppressed, condition.scope, condition.trait) === condition.present
-    );
+    const scope = condition.scope as 'target' | 'targetState';
+    return targetTraitValue(facts, suppressed, scope, condition.trait) === condition.present;
   }
   if (
     condition.kind === 'traitCount' &&
-    (condition.scope === 'target' || condition.scope === 'targetState')
+    traitConditionScopeSemantics(condition.scope).actor === 'target'
   ) {
-    const scope = condition.scope;
+    const scope = condition.scope as 'target' | 'targetState';
     const count = condition.traits.filter((trait) =>
       targetTraitValue(facts, suppressed, scope, trait),
     ).length;

@@ -8,7 +8,7 @@ import {
   decisiveConditionGroup,
   resolveCombinedTraitValue,
   traitConditionEvaluationSource,
-  traitConditionReadScopes,
+  traitConditionScopeSemantics,
 } from './conditionSemantics';
 import { targetPredicateKey } from './targetPredicate';
 import { evaluateActivationRequirement } from './activationCondition';
@@ -88,22 +88,37 @@ export function evaluateCondition(
   state: ConditionEvaluationState,
 ): boolean | null {
   const traitValue = (scope: TraitScope, trait: string): boolean | undefined => {
-    if (scope !== 'field') {
-      const actor = scope === 'attacker' || scope === 'attackerState' ? 'attacker' : 'target';
-      const marker = markerTraitRead(state.buffInstances ?? [], actor, trait);
+    const scopeSemantics = traitConditionScopeSemantics(scope);
+    if (scopeSemantics.actor !== 'field') {
+      const marker = markerTraitRead(state.buffInstances ?? [], scopeSemantics.actor, trait);
       if (marker) {
         if (marker.count > 0) return true;
         if (!marker.known) return undefined;
-        if (scope === 'attackerState' || scope === 'targetState') return false;
+        if (scopeSemantics.layer === 'state') return false;
       }
     }
-    const readScopes = traitConditionReadScopes(scope);
-    const combinedScope = scope === 'attacker' || scope === 'target';
-    const stateScope = scope === 'attacker' ? 'attackerState' : 'targetState';
-    const stateValue = combinedScope ? state.traits[stateScope].get(trait) : undefined;
-    const initialValue = combinedScope ? state.traits[scope].get(trait) : undefined;
+    const readScopes = scopeSemantics.readScopes;
+    const combinedScope = scopeSemantics.layer === 'combined';
+    const combinedActor = scopeSemantics.actor === 'field' ? undefined : scopeSemantics.actor;
+    const stateScope =
+      combinedActor === undefined
+        ? undefined
+        : combinedActor === 'attacker'
+          ? 'attackerState'
+          : 'targetState';
+    const stateValue =
+      combinedScope && stateScope !== undefined ? state.traits[stateScope].get(trait) : undefined;
+    const initialValue =
+      combinedScope && combinedActor !== undefined
+        ? state.traits[combinedActor].get(trait)
+        : undefined;
     if (combinedScope && stateValue === true) return true;
-    if (combinedScope && state.initialTraitSuppressions[scope].has(trait)) return false;
+    if (
+      combinedScope &&
+      combinedActor !== undefined &&
+      state.initialTraitSuppressions[combinedActor].has(trait)
+    )
+      return false;
     const values = readScopes.flatMap((candidate) => {
       const value = state.traits[candidate].get(trait);
       return value === undefined ? [] : [value];
@@ -120,15 +135,13 @@ export function evaluateCondition(
     )
       return false;
     if (values.length === readScopes.length && values.every((value) => !value)) return false;
-    if (scope === 'field') return undefined;
+    if (combinedActor === undefined) return undefined;
+    const readableScope = scope as Exclude<TraitScope, 'field'>;
     return resolveCombinedTraitValue({
-      scope,
+      scope: readableScope,
       initial: initialValue,
       state: stateValue,
-      suppressed:
-        scope === 'attacker' || scope === 'target'
-          ? state.initialTraitSuppressions[scope].has(trait)
-          : false,
+      suppressed: combinedScope ? state.initialTraitSuppressions[combinedActor].has(trait) : false,
     });
   };
   switch (condition.kind) {

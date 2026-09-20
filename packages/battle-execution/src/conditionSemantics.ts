@@ -120,49 +120,60 @@ export type TraitConstraintScope =
   | 'targetCombined'
   | 'field';
 
+export type TraitConditionScopeLayer = 'state' | 'combined' | 'field';
+
+export interface TraitConditionScopeSemantics {
+  readonly readScopes: readonly TraitScope[];
+  readonly factScope: TraitConstraintScope;
+  readonly conditionScope: TraitConstraintScope;
+  readonly actor: ActorScope | 'field';
+  readonly layer: TraitConditionScopeLayer;
+}
+
 const TRAIT_SCOPE_SEMANTICS = {
   attacker: {
     readScopes: ['attacker', 'attackerState'],
     factScope: 'attackerInitial',
     conditionScope: 'attackerCombined',
     actor: 'attacker',
+    layer: 'combined',
   },
   attackerState: {
     readScopes: ['attackerState'],
     factScope: 'attackerState',
     conditionScope: 'attackerState',
     actor: 'attacker',
+    layer: 'state',
   },
   target: {
     readScopes: ['target', 'targetState'],
     factScope: 'targetInitial',
     conditionScope: 'targetCombined',
     actor: 'target',
+    layer: 'combined',
   },
   targetState: {
     readScopes: ['targetState'],
     factScope: 'targetState',
     conditionScope: 'targetState',
     actor: 'target',
+    layer: 'state',
   },
   field: {
     readScopes: ['field'],
     factScope: 'field',
     conditionScope: 'field',
     actor: 'field',
+    layer: 'field',
   },
-} as const satisfies Record<
-  TraitScope,
-  {
-    readScopes: readonly TraitScope[];
-    factScope: TraitConstraintScope;
-    conditionScope: TraitConstraintScope;
-    actor: ActorScope | 'field';
-  }
->;
+} as const satisfies Record<TraitScope, TraitConditionScopeSemantics>;
+
+export function traitConditionScopeSemantics(scope: TraitScope): TraitConditionScopeSemantics {
+  return TRAIT_SCOPE_SEMANTICS[scope];
+}
 
 export function traitConditionReadScopes(scope: TraitScope): readonly TraitScope[] {
-  return TRAIT_SCOPE_SEMANTICS[scope].readScopes;
+  return traitConditionScopeSemantics(scope).readScopes;
 }
 
 /** Resolves the initial/state portion of a combined actor trait read. */
@@ -172,7 +183,7 @@ export function resolveCombinedTraitValue(input: {
   state: boolean | undefined;
   suppressed: boolean;
 }): boolean | undefined {
-  if (input.scope === 'targetState' || input.scope === 'attackerState') return input.state;
+  if (traitConditionScopeSemantics(input.scope).layer === 'state') return input.state;
   if (input.state === true) return true;
   if (input.suppressed) return false;
   if (input.initial === true) return true;
@@ -226,11 +237,18 @@ export function targetConditionWitnessSpace(
   const visit = (expression: ConditionExpression): void => {
     if (expression.kind === 'trait' || expression.kind === 'traitCount') {
       if (traitConditionEvaluationSource(expression) !== 'worldFacts') return;
-      if (expression.scope !== 'target' && expression.scope !== 'targetState') return;
+      const scopeSemantics = traitConditionScopeSemantics(expression.scope);
+      if (scopeSemantics.actor !== 'target') return;
       const traits = expression.kind === 'trait' ? [expression.trait] : expression.traits;
-      for (const scope of traitConditionReadScopes(expression.scope)) {
-        if (scope !== 'target' && scope !== 'targetState') continue;
-        for (const trait of traits) traitFacts.set(`${scope}:${trait}`, { scope, trait });
+      for (const scope of scopeSemantics.readScopes) {
+        switch (scope) {
+          case 'target':
+          case 'targetState':
+            for (const trait of traits) traitFacts.set(`${scope}:${trait}`, { scope, trait });
+            break;
+          default:
+            throw new TypeError(`target_condition_scope_mismatch:${scope}`);
+        }
       }
       return;
     }
@@ -288,7 +306,7 @@ export function traitConstraintPublicScope(scope: TraitConstraintScope): TraitSc
 }
 
 function actorScopeForTrait(scope: TraitScope): ActorScope | 'field' {
-  return TRAIT_SCOPE_SEMANTICS[scope].actor;
+  return traitConditionScopeSemantics(scope).actor;
 }
 
 const EXCLUSIVE_TRAIT_GROUPS = {
@@ -321,11 +339,8 @@ export function canonicalExclusiveTraits(
   const canonical = actorScopeForTrait(scope);
   if (group === 'fieldRealm')
     return canonical === 'field' ? [...EXCLUSIVE_TRAIT_GROUPS.fieldRealm] : [];
-  if (group === 'npCardForm')
-    return canonical === 'attacker' || canonical === 'target'
-      ? [...EXCLUSIVE_TRAIT_GROUPS.npCardForm]
-      : [];
-  return canonical === 'attacker' || canonical === 'target'
-    ? [...EXCLUSIVE_TRAIT_GROUPS.worldAttribute]
-    : [];
+  if (canonical === 'field') return [];
+  return group === 'npCardForm'
+    ? [...EXCLUSIVE_TRAIT_GROUPS.npCardForm]
+    : [...EXCLUSIVE_TRAIT_GROUPS.worldAttribute];
 }

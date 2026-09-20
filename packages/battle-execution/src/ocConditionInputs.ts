@@ -2,7 +2,7 @@ import { sourceMaximumHpInput } from './operationCompiler';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import type { ConditionEvaluationState } from './condition';
 import { evaluateCondition } from './condition';
-import { traitConditionEvaluationSource } from './conditionSemantics';
+import { traitConditionEvaluationSource, traitConditionScopeSemantics } from './conditionSemantics';
 import type { ConditionExpression } from './contracts';
 import type { OcSourceProgram } from './ocSourceProgram';
 
@@ -71,12 +71,8 @@ export function requiredOcConditionInput(
       return null;
     }
     if (condition.kind !== 'trait') return null;
-    const markerActor =
-      condition.scope === 'attacker' || condition.scope === 'attackerState'
-        ? 'attacker'
-        : condition.scope === 'target' || condition.scope === 'targetState'
-          ? 'target'
-          : null;
+    const scopeSemantics = traitConditionScopeSemantics(condition.scope);
+    const markerActor = scopeSemantics.actor === 'field' ? null : scopeSemantics.actor;
     const unresolvedMarker = (facts.buffInstances ?? []).find(
       (instance) =>
         instance.actor === markerActor &&
@@ -86,15 +82,15 @@ export function requiredOcConditionInput(
     );
     if (unresolvedMarker) return unresolvedMarker.requiredInput ?? null;
     if (traitConditionEvaluationSource(condition) !== 'worldFacts') return null;
-    const sourceFact =
-      program.conditionActor === 'source' &&
-      (condition.scope === 'attacker' || condition.scope === 'attackerState');
+    const sourceFact = program.conditionActor === 'source' && scopeSemantics.actor === 'attacker';
     const stateScope =
-      condition.scope === 'attacker'
-        ? 'attackerState'
-        : condition.scope === 'target'
-          ? 'targetState'
-          : null;
+      scopeSemantics.layer === 'combined'
+        ? scopeSemantics.actor === 'attacker'
+          ? 'attackerState'
+          : scopeSemantics.actor === 'target'
+            ? 'targetState'
+            : null
+        : null;
     const scope =
       stateScope &&
       facts.traits[condition.scope].get(condition.trait) === false &&
@@ -107,11 +103,7 @@ export function requiredOcConditionInput(
       trait: condition.trait,
       present: true,
     };
-    const owner = condition.scope.startsWith('attacker')
-      ? 'attacker'
-      : condition.scope.startsWith('target')
-        ? 'target'
-        : 'field';
+    const owner = scopeSemantics.actor;
     return {
       key: sourceFact
         ? SOURCE_WORLD_TRAIT_INPUT_PREFIX + JSON.stringify([program.source.sourceInstanceId, fact])

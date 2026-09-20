@@ -1,6 +1,6 @@
 {
   "task": "TSK-06.46",
-  "status": "in_progress",
+  "status": "done",
   "baseline": {
     "implementationCommit": "c4261054a8e7f82076b44aecb5e4b4d31458a6ad",
     "planningCommit": "470093285e9783d37db173407d7ac16f681bfa92",
@@ -46,25 +46,35 @@
   },
   "logicalDisjunctionConvergencePlan": {
     "unit": "W7",
-    "status": "planned",
-    "implementationStarted": false,
+    "status": "complete",
+    "implementationStarted": true,
     "scope": [
       "repeated target mutation operation/scope classification in rankingWorldObservation",
       "repeated target and combined trait-scope classification in direct observer/execution consumers",
       "compound logical OR inventory in the W6 production scope and its canonical semantic owners"
     ],
     "semanticOwners": {
-      "targetMutationObservation": "packages/calculation-application/src/rankingWorldObservation.ts",
-      "traitScopeClassification": "packages/battle-execution/src/conditionSemantics.ts"
+      "targetMutationObservation": "packages/calculation-application/src/rankingWorldObservation.ts::targetMutationObservationStep",
+      "traitScopeClassification": "packages/battle-execution/src/conditionSemantics.ts::traitConditionScopeSemantics",
+      "traitFactProvenance": "packages/calculation-application/src/conditionProvenance.ts::traitFactKind",
+      "directConsumers": [
+        "packages/battle-execution/src/condition.ts",
+        "packages/battle-execution/src/activation.ts",
+        "packages/battle-execution/src/ocConditionInputs.ts",
+        "packages/battle-execution/src/operationCompiler.ts",
+        "packages/battle-execution/src/effectiveContributions.ts"
+      ]
     },
     "retainedWithReason": [
       "all/any recursive union traversal inside the canonical condition owner",
       "genuine boolean conditions such as provenance compatibility",
-      "stable comparator fallback"
+      "stable comparator fallback",
+      "canonical exhaustive union branches for condition kinds and schema narrowing"
     ],
     "verification": [
       "focused remove target/targetState, suppress target, rejected attacker/field/addTrait, trait/traitCount, and post-mutation read fixtures",
       "lint and typecheck",
+      "production suite 144/144",
       "reuse the W6 production matrix only when semantic outputs, candidate cardinality, and execution order are unchanged; otherwise rerun and explain every delta",
       "pnpm quality"
     ],
@@ -120,14 +130,17 @@
   },
   "performanceObservation": {
     "acceptanceFloor": null,
-    "reason": "the user explicitly excluded a fixed performance lower bound; measurements remain diagnostic evidence",
+    "reason": "the user explicitly excluded a fixed performance lower bound; W7 changes the condition hot-path classification structure, so measurements remain diagnostic evidence",
     "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
     "baselineMedianMs": 5231.173416000001,
-    "samplesMs": [5151.091826, 4806.581632, 4954.093081],
-    "medianMs": 4954.093081,
+    "previousW6MedianMs": 4954.093081,
+    "samplesMs": [5978.003656, 5960.474214, 6220.964629],
+    "medianMs": 5978.003656,
     "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
-    "artifactSha256": "20ea83baca57e7df4affd8ea02650a8e5299a50af3ddc817c860b6be574d97e2",
-    "attribution": "candidate inventory is unchanged; the observed wall-time difference is diagnostic and not attributed solely to this refactor"
+    "artifactSha256": "5f49840bee810edfd5977ff2ba4fde0114651cf9f52288456ca8204850adba23",
+    "artifact": ".test-results/tsk-06-46-w7-hot-path/measure-2.json",
+    "priorDiagnosticSamplesMs": [5810.371763, 5484.929448, 5499.035713],
+    "attribution": "rows 433, exclusions 0, and result digest are unchanged; the measured increase is diagnostic and not attributed solely to this refactor"
   },
   "versions": {
     "masterDataVersion": "20260920.3",
@@ -141,33 +154,38 @@
       ".test-results/2026-09-19T23-49-42-277Z-15-c6c6c0",
       ".test-results/2026-09-19T23-50-40-028Z-44-723845",
       ".test-results/2026-09-20T00-10-16-035Z-15-b53cbc",
-      ".test-results/2026-09-20T00-41-39-562Z-15-733d86"
+      ".test-results/2026-09-20T00-41-39-562Z-15-733d86",
+      ".test-results/2026-09-20T05-27-59-478Z-15-f9af14",
+      ".test-results/2026-09-20T05-28-45-556Z-15-957127",
+      ".test-results/2026-09-20T05-29-01-330Z-15-8365c5",
+      ".test-results/2026-09-20T05-32-20-434Z-15-8dcd58",
+      ".test-results/2026-09-20T05-49-26-869Z-16-2eb487"
     ],
-    "tests": 82,
+    "tests": 191,
     "failed": 0,
     "warnings": 0
   },
   "qualityGate": {
     "status": "success",
     "command": "pnpm quality",
-    "artifact": ".test-results/2026-09-20T00-52-28-335Z-15-94a396",
-    "manifestSha256": "8483185b39c0c827685073bd024054daa816889d525e83e37710e909c6b2a2db",
-    "durationMs": 297600,
-    "unit": { "passed": 853, "skipped": 0, "todo": 0 },
-    "production": { "passed": 144, "skipped": 0, "todo": 0, "durationMs": 69974 },
-    "e2e": { "passed": 29, "skipped": 0, "retries": 0, "durationMs": 167421 },
+    "artifact": ".test-results/2026-09-20T05-50-19-679Z-15-a655ca",
+    "manifestSha256": "787cf6e0c7d6630360fd44e9992037f73d1ba64489f46aa43aaf84d50cf2f38d",
+    "durationMs": 389736,
+    "unit": { "passed": 864, "skipped": 0, "todo": 0 },
+    "production": { "passed": 144, "skipped": 0, "todo": 0, "durationMs": 81173 },
+    "e2e": { "passed": 29, "skipped": 0, "retries": 0, "durationMs": 183669 },
     "warnings": 0,
     "unexpectedConsole": 0
   },
   "closure": {
     "blocking": 0,
     "deferredWithinTask": 0,
-    "remainingUnits": 1,
-    "taskStatus": "in_progress",
-    "nextTask": null,
-    "verifiedBaseline": "W0-W6 production closure remains valid as the before baseline for the unimplemented W7 plan",
-    "remainingUnit": "W7 logical-disjunction convergence",
-    "reopenedReason": "repeated operation/scope classification remains expressed through compound logical OR in observer and direct semantic consumers",
-    "resolution": "planned; implementation has not started"
+    "remainingUnits": 0,
+    "taskStatus": "done",
+    "nextTask": "TSK-06.47",
+    "verifiedBaseline": "W0-W6 production closure remains valid as the before baseline; W7 observer and scope-owner transformations preserve semantic outputs, candidate inventory, and operation order",
+    "remainingUnit": null,
+    "reopenedReason": "W7 was opened to remove repeated operation/scope union classification after W6 convergence",
+    "resolution": "typed target mutation observation and shared trait scope semantics completed; W6 production matrix reused with no semantic delta"
   }
 }

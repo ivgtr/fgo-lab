@@ -4,6 +4,7 @@ import {
   resolvedStochasticOutcomeForOperation,
   type ResolvedStochasticOutcome,
 } from './stochasticOutcomes';
+import { traitConditionReadScopes } from './conditionSemantics';
 
 export function conditionRequiresTrait(
   expression: ConditionExpression,
@@ -15,16 +16,9 @@ export function conditionRequiresTrait(
   if (expression.kind === 'trait') {
     const effectivePresent = negated ? !expression.present : expression.present;
     if (effectivePresent !== present || expression.trait !== trait) return false;
-    if (scope === 'field') return expression.scope === 'field';
-    if (scope === 'attackerState')
-      return present
-        ? expression.scope === 'attacker' || expression.scope === 'attackerState'
-        : expression.scope === 'attackerState';
-    if (scope === 'targetState')
-      return present
-        ? expression.scope === 'target' || expression.scope === 'targetState'
-        : expression.scope === 'targetState';
-    return expression.scope === scope;
+    return present
+      ? traitConditionReadScopes(expression.scope).includes(scope)
+      : expression.scope === scope;
   }
   if (expression.kind === 'not')
     return conditionRequiresTrait(expression.expression, scope, trait, present, !negated);

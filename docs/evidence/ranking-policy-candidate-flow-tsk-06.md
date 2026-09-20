@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureを有効なbaselineとして保持し、複合論理和の反復分類を収束するW7を計画した。TSK-06.46は`in_progress`、TSK-06.47は`blocked`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.46は`done`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -475,6 +475,12 @@ focusedはworld／oracle系36件、execution condition semantics 22件、archite
 **2026-09-20 TSK-06.46 W7 logical-disjunction convergence計画（実装未着手）:** W6後の対象production codeを再確認し、`rankingWorldObservation`でtarget mutationの採否とstep生成が同じoperation／scope unionを複数回分類し、target trait scope判定がobserverとexecutionの直接consumerに反復していることを追加収束対象とした。W7は出現する`||`の一律除去ではない。反復union分類はcanonical ownerへ集約し、異なるdomain判断を一式で返すtyped変換へ置き換える一方、`all`／`any`の再帰走査、provenanceの真のboolean条件、stable comparator fallbackなどowner内で意味が明瞭な論理和は理由付きで残す。`isOneOf`や`processValues`のように構文だけを隠すhelperは追加しない。
 
 変更ownerは、target mutation observationを`BattleOperation`からread後mutation stepへ変換する`rankingWorldObservation`内の名前付き境界と、target／combined trait scopeを分類する`battle-execution/conditionSemantics`の既存scope tableとする。`conditionProvenance`など直接consumerは後者を利用し、observerとexecutionが同じscope membershipを再実装しない。remove target／targetState、suppress target、attacker／field／addTrait除外、trait／traitCount、mutation後readをfocused fixtureで固定する。局所lint／typecheckを通し、semantic output、candidate cardinality、execution順序に差がなければ上記80条件closureをbaselineとして再利用する。差分または疑義が出た場合だけproduction matrixを再実行し、canonical input／program／mutation／read時点で全数説明する。candidate cap 4,096とtimeoutは不変、最後に`pnpm quality`を行う。現時点のsource変更は0、Blocking 0、残Unit W7、TSK-06.46は`in_progress`、TSK-06.47は`blocked`。
+
+**2026-09-20 TSK-06.46 W7 final closure（Blocking 0／Task内Deferred 0）:** `rankingWorldObservation`の`targetMutationObservationStep`がremove target／targetStateとsuppress targetだけをtyped observationへ変換し、採否とstep生成の二重分類を除去した。`conditionSemantics`の`traitConditionScopeSemantics`をscopeのactor／layer／read ownerとし、condition evaluator、target witness、condition provenance、activation、OC input、operation compiler、effective contributionの再分類を共有tableへ収束した。`isOneOf`等の汎用helperは追加していない。
+
+focused fixtureはscope table 5種、remove target／targetState、suppress target、attacker／field／addTrait除外、trait／traitCount provenance、mutation後readと順序を固定した。focused実行は191 assertions、失敗0。lint、typecheck、`pnpm test:production` 144/144、最終`pnpm quality`はunit864／production144／Playwright29、skip／todo／retry／warning／unexpected console 0、389.736秒で成功（`.test-results/2026-09-20T05-50-19-679Z-15-a655ca`、manifest SHA-256 `787cf6e0c7d6630360fd44e9992037f73d1ba64489f46aa43aaf84d50cf2f38d`）。
+
+W6 production matrixは、observer outcome、condition truth、mutation／read順序、candidate inventoryに差分がなく、hot-path測定のrows433／exclusions0とresult digest `a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`が一致したため再利用した。34,640 outcomes、34,600 calculated、typed unavailable40、unsupported／invalid／inputRequired0、parity34,600/34,600、最大3,435/4,096、cap4,096、timeout不変。hot pathは追加診断で中央値5,499ms（別serial測定5,978ms）となったが、固定性能下限はなく、候補意味論不変の環境依存観測として記録する。残す`||`はall／any等のcanonical exhaustive union、provenance互換等の真のboolean semantics、stable comparator fallback、schema narrowingであり、同じscope／operation unionの反復は対象familyで0件。TSK-06.46を`done`、TSK-06.47を`ready`とする。
 
 **2026-09-20独立marker／admission完了（基点538b83a、対象内Blocking0）:** actor individuality（Value）とbuff trait／buff identityをcanonical instanceへ分離。固定Chaldeaの`getTraits`／`getBuffTraits`／`countBuffWithTrait`／`subState`を照合し、付与・重複・解除・別actor・既知の不在を共通reducerへ接続した。Value 0／9999もbuff自身のtraitと区別し、族連動・finite-use・BP activationの未確定cellは推測しない。根拠は[marker source](tsk-06-45-marker-source.json)。
 

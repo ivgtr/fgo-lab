@@ -26,6 +26,7 @@ import {
   containsUnsupportedCondition,
   requiresUserAssumption,
 } from './condition';
+import { traitConditionScopeSemantics } from './conditionSemantics';
 import {
   canNormalizeDamageEffect,
   operationRecipient,
@@ -215,8 +216,9 @@ export function compileEffectCondition(
     if (requirement.kind === 'trait') {
       const scope = actorScope(requirement.scope);
       if (scope === null) return { kind: 'unsupported', reason: 'unresolvedRecipient' };
+      const scopeSemantics = traitConditionScopeSemantics(scope);
       if (
-        (scope === 'attacker' || scope === 'attackerState') &&
+        scopeSemantics.actor === 'attacker' &&
         ['cardNP', 'faceCard', 'cardExtra'].includes(requirement.trait)
       ) {
         const actual = !sourceActorIsCurrent && requirement.trait === 'cardNP';
@@ -225,7 +227,7 @@ export function compileEffectCondition(
           : { kind: 'not', expression: { kind: 'always' } };
       }
       const card =
-        scope === 'attacker' || scope === 'attackerState'
+        scopeSemantics.actor === 'attacker'
           ? ({ cardArts: 'arts', cardBuster: 'buster', cardQuick: 'quick' } as const)[
               requirement.trait as 'cardArts' | 'cardBuster' | 'cardQuick'
             ]

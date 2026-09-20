@@ -10,7 +10,7 @@ import type {
   EffectiveContribution,
   EffectiveContributionSet,
 } from './executionTypes';
-import { classifyContributionCondition } from './conditionSemantics';
+import { classifyContributionCondition, traitConditionScopeSemantics } from './conditionSemantics';
 import { markerTraitRead } from './buffInstances';
 import { contributionId } from './contributionIdentity';
 import type { ConditionEvaluationState } from './condition';
@@ -26,9 +26,9 @@ function hpExecutionDependency(
   condition: ConditionExpression,
   state?: ConditionEvaluationState,
 ): ConditionExpression {
-  if (condition.kind === 'trait' && condition.scope !== 'field') {
-    const actor =
-      condition.scope === 'attacker' || condition.scope === 'attackerState' ? 'attacker' : 'target';
+  if (condition.kind === 'trait') {
+    const actor = traitConditionScopeSemantics(condition.scope).actor;
+    if (actor === 'field') return condition;
     if (markerTraitRead(state?.buffInstances ?? [], actor, condition.trait)?.known)
       return { kind: 'always' };
   }

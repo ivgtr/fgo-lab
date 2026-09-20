@@ -1,4 +1,8 @@
-import type { ConditionExpression } from '@fgo-lab/battle-execution';
+import {
+  traitConditionScopeSemantics,
+  type ConditionExpression,
+  type TraitScope,
+} from '@fgo-lab/battle-execution';
 
 export type ConditionFactKind =
   'intrinsic' | 'derivedOrExternalField' | 'externalScenarioFact' | 'target' | 'procOrQuantity';
@@ -13,17 +17,8 @@ function leafKind(
   condition: Exclude<ConditionExpression, { kind: 'all' | 'any' | 'not' }>,
 ): ConditionFactKind {
   if (condition.kind === 'targetPredicate') return 'target';
-  if (condition.kind === 'trait') {
-    if (condition.scope === 'field') return 'derivedOrExternalField';
-    if (condition.scope === 'target' || condition.scope === 'targetState') return 'target';
-    return condition.scope === 'attacker' ? 'intrinsic' : 'derivedOrExternalField';
-  }
-  if (condition.kind === 'traitCount')
-    return condition.scope === 'target' || condition.scope === 'targetState'
-      ? 'target'
-      : condition.scope === 'field' || condition.scope === 'attackerState'
-        ? 'derivedOrExternalField'
-        : 'intrinsic';
+  if (condition.kind === 'trait' || condition.kind === 'traitCount')
+    return traitFactKind(condition.scope);
   if (
     condition.kind === 'quantity' ||
     condition.kind === 'inputQuantity' ||
@@ -32,6 +27,14 @@ function leafKind(
   )
     return 'procOrQuantity';
   if (condition.kind === 'choice') return 'externalScenarioFact';
+  return 'intrinsic';
+}
+
+function traitFactKind(scope: TraitScope): ConditionFactKind {
+  const semantics = traitConditionScopeSemantics(scope);
+  if (semantics.actor === 'target') return 'target';
+  if (semantics.actor === 'field') return 'derivedOrExternalField';
+  if (semantics.layer === 'state') return 'derivedOrExternalField';
   return 'intrinsic';
 }
 

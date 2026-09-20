@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeActivationFactSet, type ActivationFact } from '@fgo-lab/schema';
 import type { ConditionExpression } from './contracts';
-import { classifyContributionCondition, targetConditionWitnessSpace } from './conditionSemantics';
+import {
+  classifyContributionCondition,
+  targetConditionWitnessSpace,
+  traitConditionScopeSemantics,
+} from './conditionSemantics';
+
+describe('trait condition scope semantics', () => {
+  it.each([
+    ['attacker', 'attacker', 'combined', ['attacker', 'attackerState']],
+    ['attackerState', 'attacker', 'state', ['attackerState']],
+    ['target', 'target', 'combined', ['target', 'targetState']],
+    ['targetState', 'target', 'state', ['targetState']],
+    ['field', 'field', 'field', ['field']],
+  ] as const)('classifies %s from the canonical scope table', (scope, actor, layer, readScopes) => {
+    expect(traitConditionScopeSemantics(scope)).toMatchObject({ actor, layer, readScopes });
+  });
+});
 
 describe('target condition witness space', () => {
   it('simplifies nested intrinsic attack facts before classifying external dependencies', () => {
