@@ -1,13 +1,13 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.3"
+document_version: "1.0.4"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
 task: "TSK-06.48"
 baseline_commit: "0c12261"
-current_worktree_base: "46f30a7"
-previous_bounded_unit_base: "49efe62"
+current_worktree_base: "128189f"
+previous_bounded_unit_base: "46f30a7"
 ---
 
 # TSK-06.48 パッケージ別semantic complexity convergence計画
@@ -125,12 +125,57 @@ hot pathの3サンプル診断は`4518.134／4367.958／4437.614ms`、中央値`
 このbounded unitでTSK-06.48全体を完了とはせず、次はeffect normalization／execution-semantics境界とする。最終`pnpm quality`は未実施で、
 `TSK-06.47=ready`、`TSK-06.5=blocked`を維持する。
 
+### 3.6 effect normalization／execution-semantics bounded unit（2026-09-20完了）
+
+今回の最小bounded unitは、`effectNormalization.ts::normalizeFunctions`が参照skillのoperation展開後に行っていた
+未解決semantic supportの再分類を、`executionSemantics.ts::resolveExecutionSemanticSupport`へ集約した。開始時のGit HEADは
+`128189f`であり、直前dependent resource transfer／HP unitの実装基点`46f30a7`とは別の基点として記録する。
+
+| semantic | 現在／変更後のowner | 直接consumer |
+| --- | --- | --- |
+| canonical input、parameter／scriptのraw evidence、`Value2`の検出 | `effectNormalization.ts::normalizeCanonicalInputSemantics`／`classifyParameterSemantics`／`unresolvedFunctionScriptKeys` | `executionSemantics.ts::resolveExecutionSemanticSupport`、canonical effect record |
+| target policy、contribution scope、route | `executionSemantics.ts::normalizeTargetPolicy`／`normalizeContributionScope` | `effectNormalization.ts`、specialized normalizers、`operationCompiler.ts` |
+| composed canonical operationのsupport境界 | `executionSemantics.ts::resolveExecutionSemanticSupport` | `effectNormalization.ts`、`operationCompiler.ts`、ordered preparation |
+| specialized operation／input domain | 各既存owner（NP／HP／population／marker） | `effectNormalization.ts`、battle-execution |
+| ordered operation適用、condition、mutation後read | `preparationOc.ts`、resource／condition owners | `scenario.ts`、`rankingWorldObservation.ts`、ranking |
+
+`effectNormalization.ts`にはraw evidenceの収集と、canonical input→context→specialized operation→condition→recordの合成順だけを残し、
+execution semanticsのoperation family分類を再実装しない。support resolutionは参照operation展開後に一度だけ実行するため、参照先の
+damage／modifier valuesのlevel selection、operation order、condition truthを変えない。公開normalizer API、canonical effect record、
+canonical operation shape、input definition、schema versionは変更していない。
+
+複合`||`の分類は、未解決evidenceをoperation supportへ変換するtyped判断を`resolveExecutionSemanticSupport`へ集約したものが
+共通semantic ownerである。OC family、HP modifier／remove／HP resource、damage modifier／rate／ignoreの分類をeffect側から削除し、
+`switch`による網羅的operation union分岐はowner内に残した。`canonicalInput.unsupported`、unresolved parameter／script key、HPにおける
+secondary `Value2`のtriggerは意味を持つboolean semanticsとして残し、`removeHpModifiers`単独を`Value2`だけでdowngradeしない境界もfixtureで固定した。
+`all`／`any`再帰、provenance、stable comparator、schema narrowing、raw Atlas vocabularyのdata-pipeline所有は変更していない。
+
+対象外は、target／recipient／routeの新分類、NP／HP／population／markerのdomain再実装、`operationCompiler.ts`全体、battle-executionの
+ordered transaction、calculation-applicationのcandidate／world／scenario semantics、schema変更、TSK-06.47 UI、TSK-06.5 theoretical
+maximumである。data-pipelineはraw Atlasをcanonical IRへ解釈し、battle-executionはcanonical operationをorderedに適用し、
+calculation-applicationはcalculator／ranking共通pathを使うというpackage間の意味論は維持した。
+
+fixtureはOC／HP／damage／ignore／未関連operationのsupport分類、order保持、evidence complete時のno-downgrade、remove-only HP metadata、
+canonical effect record／reference、直接consumerのcondition／mutation後read／rollback、calculator／ranking parity、candidate dedupe／
+cardinality／cap、fail-closed outcomeを固定した。focused data-pipeline `23/23`、直接consumer `229/229`（14 files）、production semantic
+inventory `14/14`、targeted lint／typecheck／Prettierを通過した。operation `15,257`、effect `13,875`、support分類、canonical input
+definition、operation order、condition truth、mutation後read、candidate inventoryに差分はない。
+
+そのため、既存の80条件×433 profile closureを再利用し、34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／
+inputRequired 0、parity 34,600/34,600、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct 233,100、
+最大3,435、cap 4,096を維持する。新しいbattle-execution／calculation-application hot pathを変更していないため、performance diagnosticは再実行せず、
+candidate cardinality、timeout、既存ratchetを再利用した。差分、digest mismatch、support／condition／candidate inventory差分が出た場合だけ、
+影響matrixを再実行する。詳細は[effect／execution closure](../evidence/tsk-06-48-effect-execution-closure.json)を参照する。
+
+このbounded unitのhandoffは、Taskを`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施、commitなしのまま維持すること。
+次のbounded unitはbattle-executionのoperation compiler／ordered execution境界とし、その後にcalculation-applicationのcandidate／world／scenario境界を扱う。
+
 ## 4. 後続のパッケージ波
 
 | 波 | パッケージ／主対象 | 所有する意味 | 実装境界 |
 | --- | --- | --- | --- |
 | 2 | data-pipeline: `npTransferNormalization.ts`、`hpNormalization.ts` | dependent child shapeとtransfer domain | `plainFunction`をNP側の偶然のownerにせず、共有する判断だけをtyped descriptor化 |
-| 3 | data-pipeline: `effectNormalization.ts`、`executionSemantics.ts` | effect recordの段階合成、target／route分類 | canonical input→context→specialized operation→condition→recordの順序を明示。raw targetの異なる意味は無理に統合しない |
+| 3 | data-pipeline: `effectNormalization.ts`、`executionSemantics.ts` | effect recordの段階合成、target／route分類、composed operation support境界 | canonical input→context→specialized operation→condition→recordの順序と、参照展開後のsupport resolutionを明示。raw targetの異なる意味は無理に統合しない |
 | 4 | battle-execution: `populationFunctions.ts`、`populationCounts.ts`、`preparationOc.ts` | population state transition、input legality、ordered preparation step | execution側でAtlas vocabularyを解釈せず、population stepだけを明示的なdomain ownerへ収束 |
 | 5 | battle-execution: `operationCompiler.ts`、`preparationTransaction.ts` | canonical operationからBattleOperation／projectionへの変換 | resource、state、context、damageのtyped operation familyを整理するが、transaction順序は変更しない |
 | 6 | calculation-application: `rankingCandidateSpace.ts`、`rankingWorldObservation.ts`、`scenario.ts` | candidate domain、world observation、scenario composition | data-pipeline／executionの出力が安定した後だけ着手し、candidate cardinalityに影響する変更は独立に証明する |
@@ -145,7 +190,7 @@ hot pathの3サンプル診断は`4518.134／4367.958／4437.614ms`、中央値`
 - condition truth、operation order、mutation後read、input definition、calculator／ranking parity不変。
 - raw Atlas vocabularyはdata-pipelineだけが解釈し、ranking policyはexecution semanticsを再実装しない。
 
-W6／W7のproduction closureは、canonical output digest、operation/input inventory、support分類、順序、parityが
+W6／W7およびbounded unitのproduction closureは、canonical output digest、operation/input inventory、support分類、順序、parityが
 完全一致する場合だけ再利用する。digest、operation、condition、support status、candidate inventoryのいずれかが
 変わる、または意味論に疑義が出る場合は、影響するproduction matrixを再実行し、canonical input・program・
 mutation・read位置単位で差分を説明する。
@@ -178,3 +223,8 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
   marker／NP transfer以外のsemantic familyへ無断拡張しない。
 - dependent resource transfer／HP bounded unitは現行HEAD `46f30a7`を実装基点として完了した。共通dependent-function descriptor、
   NP／HP domain owner、直接consumer、focused／production matrix、candidate inventoryは[transfer／HP closure](../evidence/tsk-06-48-transfer-hp-closure.json)へ記録した。次のbounded unitはeffect normalization／execution-semanticsであり、TSK-06.48は`in_progress`を維持する。
+- effect normalization／execution-semantics bounded unitは開始時HEAD `128189f`で完了した。`effectNormalization.ts`の参照展開後support再分類を
+  `executionSemantics.ts::resolveExecutionSemanticSupport`へ集約し、focused `23/23`、直接consumer `229/229`、production semantic inventory
+  `14/14`、operation／input／support／order／condition／candidate parity差分0を確認した。80×433 closureは既存evidenceを再利用し、machine-readable結果を
+  [effect／execution closure](../evidence/tsk-06-48-effect-execution-closure.json)へ記録した。次はbattle-execution operation compiler／ordered execution境界で、
+  TSK-06.48は`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施を維持する。

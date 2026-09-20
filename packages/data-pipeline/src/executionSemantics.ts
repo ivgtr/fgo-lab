@@ -164,6 +164,13 @@ const boundedProofByFamily = new Map<
   ['none', 'noBattleStateChange'],
 ]);
 
+export type ExecutionSemanticResolution = {
+  canonicalInputUnsupported?: string;
+  unresolvedParameterKeys: readonly string[];
+  unresolvedSemanticKeys: readonly string[];
+  hasSecondaryValue: boolean;
+};
+
 type DamageRoute = Pick<
   Extract<EffectExecutionOperation, { kind: 'damageModifier' }>,
   'modifier' | 'sign' | 'card'
@@ -313,6 +320,77 @@ function isPotentiallyDamageRelevant(target: string, buffTypes: readonly string[
   );
 }
 
+function unresolvedSemanticRoute(): CanonicalEffectRoute {
+  return {
+    target: 'unresolved',
+    contributionScope: 'personal',
+    eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
+  };
+}
+
+function hasSecondaryValueSensitiveHpOperation(operation: EffectExecutionOperation): boolean {
+  return (
+    operation.kind === 'hpModifier' ||
+    (operation.kind === 'resourceMutation' && operation.resource === 'hp')
+  );
+}
+
+/**
+ * Resolve operation support after all effect-local and referenced operations are composed.
+ * Raw parameter/script evidence stays in effect normalization; this owner only applies the
+ * resulting semantic boundary to canonical operation families.
+ */
+export function resolveExecutionSemanticSupport(
+  operations: readonly EffectExecutionOperation[],
+  resolution: ExecutionSemanticResolution,
+): EffectExecutionOperation[] {
+  const requiresResolution =
+    Boolean(resolution.canonicalInputUnsupported) ||
+    resolution.unresolvedParameterKeys.length > 0 ||
+    resolution.unresolvedSemanticKeys.length > 0 ||
+    (resolution.hasSecondaryValue && operations.some(hasSecondaryValueSensitiveHpOperation));
+  if (!requiresResolution) return [...operations];
+
+  return operations.map((operation) => {
+    switch (operation.kind) {
+      case 'ocRemovalResistance':
+      case 'grantOcBoost':
+      case 'grantOcApplicationRate':
+      case 'removeOcState':
+        return {
+          kind: 'unsupported' as const,
+          route: operation.route,
+          reason: 'ocExecutionSemantics' as const,
+          damageRelevant: true,
+        };
+      case 'hpModifier':
+      case 'removeHpModifiers':
+        return {
+          kind: 'unsupported' as const,
+          route: unresolvedSemanticRoute(),
+          reason: 'resourceExecutionSemantics' as const,
+          damageRelevant: true,
+        };
+      case 'resourceMutation':
+        return operation.resource === 'hp'
+          ? {
+              kind: 'unsupported' as const,
+              route: unresolvedSemanticRoute(),
+              reason: 'resourceExecutionSemantics' as const,
+              damageRelevant: true,
+            }
+          : operation;
+      case 'damageModifier':
+      case 'modifierRateChange':
+      case 'ignoreDefense':
+      case 'ignoreDamageCut':
+        return { ...operation, semanticSupport: 'unresolved' as const };
+      default:
+        return operation;
+    }
+  });
+}
+
 export function normalizeExecutionSemantics(input: {
   fn: AtlasFunction;
   source?: 'skill' | 'passive' | 'np' | 'reference' | 'craftEssence' | 'mysticCode';
@@ -365,11 +443,7 @@ export function normalizeExecutionSemantics(input: {
           : { kind: 'requiredRecipient', recipient, onMissing: 'ignore', onMismatch: mismatch },
     };
   };
-  const unresolvedRoute = (): CanonicalEffectRoute => ({
-    target: 'unresolved',
-    contributionScope: 'personal',
-    eligibility: { kind: 'anyRecipient', onMissing: 'unsupported' },
-  });
+  const unresolvedRoute = unresolvedSemanticRoute;
 
   const hpActions: Record<
     string,

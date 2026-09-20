@@ -24,7 +24,11 @@ import type {
   AtlasTraitRef,
 } from './atlasContract';
 import { canonicalTargetPredicate } from './targetTaxonomy';
-import { normalizeExecutionSemantics, normalizeTargetPolicy } from './executionSemantics';
+import {
+  normalizeExecutionSemantics,
+  normalizeTargetPolicy,
+  resolveExecutionSemanticSupport,
+} from './executionSemantics';
 import { normalizeNpBuffCount, normalizeCountedBuffMutation } from './npCountNormalization';
 import {
   normalizeNpPopulationCount,
@@ -1919,48 +1923,14 @@ export function normalizeFunctions(
         (key) => key !== 'script:funcIndividuality',
       ),
     ];
-    if (
-      canonicalInput.unsupported ||
-      (execution.some(
-        (operation) =>
-          operation.kind === 'hpModifier' ||
-          (operation.kind === 'resourceMutation' && operation.resource === 'hp'),
-      ) &&
-        parameterSets.some((row) => row.some((cell) => cell.Value2 !== undefined))) ||
-      parameterSemantics.unresolved.length > 0 ||
-      unresolvedSemanticKeys.length > 0
-    )
-      execution = execution.map((operation) =>
-        operation.kind === 'ocRemovalResistance' ||
-        operation.kind === 'grantOcBoost' ||
-        operation.kind === 'grantOcApplicationRate' ||
-        operation.kind === 'removeOcState'
-          ? {
-              kind: 'unsupported' as const,
-              route: operation.route,
-              reason: 'ocExecutionSemantics' as const,
-              damageRelevant: true,
-            }
-          : operation.kind === 'hpModifier' ||
-              operation.kind === 'removeHpModifiers' ||
-              (operation.kind === 'resourceMutation' && operation.resource === 'hp')
-            ? {
-                kind: 'unsupported' as const,
-                route: {
-                  target: 'unresolved' as const,
-                  contributionScope: 'personal' as const,
-                  eligibility: { kind: 'anyRecipient' as const, onMissing: 'unsupported' as const },
-                },
-                reason: 'resourceExecutionSemantics' as const,
-                damageRelevant: true,
-              }
-            : operation.kind === 'damageModifier' ||
-                operation.kind === 'modifierRateChange' ||
-                operation.kind === 'ignoreDefense' ||
-                operation.kind === 'ignoreDamageCut'
-              ? { ...operation, semanticSupport: 'unresolved' as const }
-              : operation,
-      );
+    execution = resolveExecutionSemanticSupport(execution, {
+      ...(canonicalInput.unsupported
+        ? { canonicalInputUnsupported: canonicalInput.unsupported }
+        : {}),
+      unresolvedParameterKeys: parameterSemantics.unresolved,
+      unresolvedSemanticKeys,
+      hasSecondaryValue: parameterSets.some((row) => row.some((cell) => cell.Value2 !== undefined)),
+    });
     const rateSelector = isOcRateFunction(fn);
     const conditions = {
       recipient:

@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-countとdependent resource／HP bounded unitまで完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count、dependent resource／HP、effect normalization／execution-semantics bounded unitまで完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -5350,3 +5350,27 @@ hot pathの3サンプル診断は`4518.134／4367.958／4437.614ms`、中央値`
 `a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`で、固定性能下限は設けず診断値として記録した。
 詳細は[TSK-06.48 transfer／HP closure](tsk-06-48-transfer-hp-closure.json)とTask正本を参照する。次の bounded unitはeffect normalization／
 execution-semantics、TSK-06.48全体の最終qualityは未実施である。
+
+### TSK-06.48 effect normalization／execution-semantics bounded unit（2026-09-20）
+
+開始時Git HEADは`128189f`であり、直前dependent resource transfer／HP unitの実装基点`46f30a7`とは分離して記録した。
+今回の変更は、`effectNormalization.ts::normalizeFunctions`が参照operationのlevel selectionを終えた後に実施していた未解決semantic supportの
+再分類を、`executionSemantics.ts::resolveExecutionSemanticSupport`へ集約するbounded unitである。raw Atlasのcanonical input／parameter／script
+evidenceはdata-pipeline内で解釈し、target／contribution routeは既存のexecution semantics ownerが分類する。specializedなNP transfer、HP transfer、
+population、marker operation／input ownerは変更せず、battle-executionはcanonical operationをorderedに適用し、calculator／rankingは共通pathを使う。
+
+削除した重複は、OC operation、HP modifier／remove／HP resource、damage modifier／rate／ignoreのsupport downgrade分類である。`switch`による
+canonical operation familyの網羅分岐、canonical input unsupported／unresolved parameter／script key、HP secondary `Value2`のfail-closed trigger、
+`all`／`any`、provenance、stable comparator、schema narrowingは意味を持つため残した。reference expansionはsupport resolutionより前に完了し、
+operation order、condition truth、input key、mutation後readを維持する。`removeHpModifiers`単独をsecondary `Value2`だけでdowngradeしない反例をfixtureへ追加した。
+
+focused data-pipeline `23/23`、直接consumer `229/229`（14 files）、production semantic inventory `14/14`、targeted lint／typecheck／Prettierが成功した。
+production operation inventoryは15,257、effect inventoryは13,875で、canonical effect record／operation／input definition／support分類に差分はない。
+直接consumerでもordered operation、condition truth、mutation後read、calculator／ranking parity、candidate dedupe／cardinality／capに差分はなかった。
+
+意味論差分がないため、既存の80条件×433 profile closureを再利用した。34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／
+inputRequired 0、parity 34,600/34,600、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct 233,100、最大3,435／cap 4,096を維持する。
+新しいbattle-execution／calculation-application hot pathを変更していないためperformance diagnosticは再実行せず、差分、digest mismatch、condition／support／candidate
+inventory差分が出た場合だけ影響matrixを再実行する。機械証跡は[TSK-06.48 effect／execution closure](tsk-06-48-effect-execution-closure.json)である。
+TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`、最終`pnpm quality`は未実施、commitは未作成で、次のbounded unitはbattle-execution
+operation compiler／ordered execution境界とする。

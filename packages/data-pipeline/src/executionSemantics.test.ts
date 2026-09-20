@@ -1,7 +1,11 @@
-import { masterEffectSchema } from '@fgo-lab/master-data';
+import { masterEffectSchema, type EffectExecutionOperation } from '@fgo-lab/master-data';
 import { normalizeFunctions } from './effectNormalization';
 import { describe, expect, it } from 'vitest';
-import { normalizeContributionScope, normalizeExecutionSemantics } from './executionSemantics';
+import {
+  normalizeContributionScope,
+  normalizeExecutionSemantics,
+  resolveExecutionSemanticSupport,
+} from './executionSemantics';
 
 describe('canonical effect contribution scope', () => {
   it.each([
@@ -55,6 +59,134 @@ describe('canonical effect contribution scope', () => {
         damageRelevant: true,
       },
     ]);
+  });
+});
+
+describe('execution semantic support boundary', () => {
+  const route = {
+    target: 'unresolved' as const,
+    contributionScope: 'personal' as const,
+    eligibility: { kind: 'anyRecipient' as const, onMissing: 'unsupported' as const },
+  };
+  const values = [[], [], [], [], []] as [number[], number[], number[], number[], number[]];
+  const valueExpressions = [[], [], [], [], []] as [null[], null[], null[], null[], null[]];
+
+  it('classifies unresolved operation families after composition without changing order', () => {
+    const operations: EffectExecutionOperation[] = [
+      {
+        kind: 'ocRemovalResistance' as const,
+        route,
+        cells: [
+          [
+            {
+              applicationRatePermille: 1000,
+              turns: { kind: 'unlimited' as const },
+              uses: { kind: 'unlimited' as const },
+              amount: { kind: 'fixed' as const, value: 1 },
+            },
+          ],
+          [],
+          [],
+          [],
+          [],
+        ],
+      },
+      {
+        kind: 'hpModifier' as const,
+        selection: 'direct' as const,
+        route,
+        action: 'receive' as const,
+        sign: 1 as const,
+        bounds: { minimum: null, maximum: null },
+        values,
+        traits: [],
+        lifetime: 'active' as const,
+      },
+      {
+        kind: 'resourceMutation' as const,
+        resource: 'npGauge' as const,
+        direction: 'gain' as const,
+        unit: 'fixed' as const,
+        recipient: 'unresolved' as const,
+        amount: { kind: 'fixed' as const, values },
+        subjectId: null,
+      },
+      {
+        kind: 'damageModifier' as const,
+        modifier: 'powerMod' as const,
+        sign: 1 as const,
+        card: null,
+        route,
+        values,
+        valueExpressions,
+        semanticSupport: 'supported' as const,
+      },
+      {
+        kind: 'ignoreDefense' as const,
+        route,
+        semanticSupport: 'supported' as const,
+      },
+      { kind: 'boundedPhaseIrrelevant' as const, proof: 'noBattleStateChange' as const },
+    ];
+
+    const resolved = resolveExecutionSemanticSupport(operations, {
+      canonicalInputUnsupported: 'missing_or_unsupported_stack_maximum',
+      unresolvedParameterKeys: [],
+      unresolvedSemanticKeys: [],
+      hasSecondaryValue: false,
+    });
+
+    expect(resolved.map((operation) => operation.kind)).toEqual([
+      'unsupported',
+      'unsupported',
+      'resourceMutation',
+      'damageModifier',
+      'ignoreDefense',
+      'boundedPhaseIrrelevant',
+    ]);
+    expect(resolved[0]).toMatchObject({ reason: 'ocExecutionSemantics', damageRelevant: true });
+    expect(resolved[1]).toMatchObject({
+      reason: 'resourceExecutionSemantics',
+      route: { target: 'unresolved', contributionScope: 'personal' },
+    });
+    expect(resolved[3]).toMatchObject({ semanticSupport: 'unresolved' });
+    expect(resolved[4]).toMatchObject({ semanticSupport: 'unresolved' });
+  });
+
+  it('does not downgrade operations when semantic evidence is complete', () => {
+    const operation = {
+      kind: 'damageModifier' as const,
+      modifier: 'powerMod' as const,
+      sign: 1 as const,
+      card: null,
+      route,
+      values,
+      valueExpressions,
+      semanticSupport: 'supported' as const,
+    };
+    expect(
+      resolveExecutionSemanticSupport([operation], {
+        unresolvedParameterKeys: [],
+        unresolvedSemanticKeys: [],
+        hasSecondaryValue: false,
+      }),
+    ).toEqual([operation]);
+  });
+
+  it('keeps remove-only HP metadata outside the secondary-value trigger', () => {
+    const operation = {
+      kind: 'removeHpModifiers' as const,
+      selection: 'direct' as const,
+      route,
+      traits: ['buffTrait:1'],
+    };
+    expect(
+      resolveExecutionSemanticSupport([operation], {
+        unresolvedParameterKeys: [],
+        unresolvedSemanticKeys: [],
+        hasSecondaryValue: true,
+      }),
+    ).toEqual([operation]);
   });
 });
 

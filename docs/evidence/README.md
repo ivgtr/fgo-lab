@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.37"
+document_version: "1.4.38"
 status: "Active"
 updated_at: "2026-09-20"
 ---
@@ -53,6 +53,7 @@ updated_at: "2026-09-20"
 | [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Active | canonical: source program／finite certificate／application policy／outcome。TSK-06.45 U0〜U5、TSK-06.46 W0〜W7の検証済みclosureを保持。06.46機械証跡は[production closure](tsk-06-46-production-closure.json) | TSK-06〜08 | TSK-06.46 done、TSK-06.47 ready |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Active | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 dependent resource／HP bounded unit | `49efe62`／TSK-06.48 in_progress |
 | [tsk-06-48-transfer-hp-closure](tsk-06-48-transfer-hp-closure.json) | Active | canonical: TSK-06.48 dependent-function descriptor、NP／HP transfer domain ownership、ordered execution preservation、production matrix／candidate inventory／parity | TSK-06.48 effect normalization／execution-semantics bounded unit | `46f30a7`／TSK-06.48 in_progress |
+| [tsk-06-48-effect-execution-closure](tsk-06-48-effect-execution-closure.json) | Active | canonical: TSK-06.48 effect composition／execution support owner、canonical operation／input／support preservation、direct consumer order／condition／parity、reused production closure | TSK-06.48 battle-execution operation compiler／ordered execution bounded unit | `128189f`／TSK-06.48 in_progress |
 | [resolved-attacker-level-stat-flow-tsk-06-46](resolved-attacker-level-stat-flow-tsk-06-46.md) | Active | canonical: resolved servant／level ATK join、numeric-zero fallback removal、calculator／ranking／portable recovery。path名は旧Task番号を保持 | TSK-06.411、06.42〜08 | TSK-06.42 Step 1 planning |
 | [servant-build-record-identity-flow-tsk-06-47](servant-build-record-identity-flow-tsk-06-47.md) | Complete | canonical: build／target map key and embedded servant identity coherence、profile persistence／recovery fail-closed。path名は旧Task番号を保持 | TSK-06.412、06.42〜08 | `911753c`／TSK-06.412 completion |
 | [ranking-adverse-action-diff-tsk-06-41](ranking-adverse-action-diff-tsk-06-41.json) | Complete | machine-readable: full 433-profile join with 348 direct result changes＋85 rank-only changes; inputs／actions／resources／NP1〜5 damage／ranks／reasons | TSK-06.41〜06.5 | `bb1df1b` before／after audit |
