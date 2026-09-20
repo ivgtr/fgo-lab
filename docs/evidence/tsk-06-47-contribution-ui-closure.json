@@ -85,6 +85,15 @@
     "TSK-06.47": "done",
     "TSK-06.48": "done",
     "TSK-06.5": "blocked",
-    "commit": "not created"
+    "commit": "not created at 06.47 closure",
+    "currentCompletionBaseline": "197ff30247a09c5f0280b039cb88a7ec7c33a3a4"
+  },
+  "currentRegistryStatus": {
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-06.5": "done",
+    "TSK-07": "blocked",
+    "completionBaseline": "197ff30247a09c5f0280b039cb88a7ec7c33a3a4",
+    "newCommit": false
   }
 }

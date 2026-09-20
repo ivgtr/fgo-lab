@@ -1,9 +1,9 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.20"
+document_version: "1.7.21"
 status: "Active"
 created_at: "2026-08-30"
-updated_at: "2026-09-20"
+updated_at: "2026-09-21"
 source_requirements:
   - "docs/requirements/fgo-lab-requirements-v0.3.md"
   - "docs/requirements/ui-design-spec.md"
@@ -66,7 +66,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
 | TSK-06.47 | Contribution decision UI cleanup | done | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.48 | Package semantic complexity convergence | done | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
-| TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
+| TSK-06.5 | Ranking theoretical maximum and production closure | done | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
@@ -2070,7 +2070,7 @@ Contract closure matrix:
 
 Handoff: TSK-06.46のworld candidate semantic owner、production parity、quality gate完了を前提に着手可能。UIのlogical effect／per-contribution presentationだけを対象とし、ranking damage semantics、candidate generation、execution ownerは再実装しない。
 
-Current bounded-unit handoff（2026-09-21）: UI presentation ownerへgroup／decision／outcomeのtyped日本語mapping、寄与filter、responsive／keyboard表示を接続した。既存calculation cacheの`profileResults`をdetail requestから再利用し、初回detail開閉、寄与filter、一覧filter、再開閉でdamage計算を発生させない。focused unit、typecheck、対象eslint、E2E-050（desktop detail、Enter操作、390px／320px expanded overflow、handoff）と最終`pnpm quality`を通過した（unit 884／production 144／Playwright 29、retry／unexpected console 0、artifact `.test-results/2026-09-20T15-48-05-943Z-15-da4a84`）。詳細は[TSK-06.47 contribution UI closure](../evidence/tsk-06-47-contribution-ui-closure.json)と[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)を参照する。canonical output／digest／support／candidate inventory／parityはTSK-06.48 closureを再利用できる。TSK-06.47は`done`、TSK-06.48は`done`、TSK-06.5は`blocked`、commit未作成である。
+Current bounded-unit handoff（2026-09-21）: UI presentation ownerへgroup／decision／outcomeのtyped日本語mapping、寄与filter、responsive／keyboard表示を接続した。既存calculation cacheの`profileResults`をdetail requestから再利用し、初回detail開閉、寄与filter、一覧filter、再開閉でdamage計算を発生させない。focused unit、typecheck、対象eslint、E2E-050（desktop detail、Enter操作、390px／320px expanded overflow、handoff）と最終`pnpm quality`を通過した（unit 884／production 144／Playwright 29、retry／unexpected console 0、artifact `.test-results/2026-09-20T15-48-05-943Z-15-da4a84`）。詳細は[TSK-06.47 contribution UI closure](../evidence/tsk-06-47-contribution-ui-closure.json)と[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)を参照する。canonical output／digest／support／candidate inventory／parityはTSK-06.48 closureを再利用できる。TSK-06.47は`done`、TSK-06.48は`done`、TSK-06.5は実装開始前の`blocked`だった。06.47 closure時点の実装commitは未作成だったが、現在のcompletion baselineは`197ff30247a09c5f0280b039cb88a7ec7c33a3a4`であり、TSK-06.5の新規commitは作成しない。
 
 ### TSK-06.48: Package semantic complexity convergence
 
@@ -2130,21 +2130,21 @@ Completed bounded-unit handoff（2026-09-20、calculation-application candidate�
 
 Depends on: TSK-06.47
 
-- [ ] requirement v0.10.2までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
+- [x] requirement v0.10.2までにcutoverしたcanonical comparison／contribution／action admission／outcome／portable runtimeを変更せず、
       production全skillのstatic semanticsと、action × initial resource × ordered path × AttackProfileの
       candidate-local eligibility inventoryを最終固定する。
-- [ ] 自己バフありでは選択policy上の実効寄与を持つ任意skillをadmitし、表現済みデメリットを全operation込みで実行する。
+- [x] 自己バフありでは選択policy上の実効寄与を持つ任意skillをadmitし、表現済みデメリットを全operation込みで実行する。
       通常のみ／成立込みの各合法initial stateで完遂不能なcandidateだけを落とし、compatibleな特攻／条件効果／field／costを
       一つの合法scenarioで最大化することを全数監査する。
-- [ ] 排他的player choiceが一branchだけを選び、cost、後続state、attack NP到達可能性込みの最終平均damage最大branchと
+- [x] 排他的player choiceが一branchだけを選び、cost、後続state、attack NP到達可能性込みの最終平均damage最大branchと
       small exhaustive oracleで一致することをproduction inventoryへ固定する。
-- [ ] conditional-only skill、unconditional＋conditional sibling、NP消費／増加、beneficial／detrimental state、trait grant、
+- [x] conditional-only skill、unconditional＋conditional sibling、NP消費／増加、beneficial／detrimental state、trait grant、
       form transition、branchごとにcostが異なるplayer choice、action後にattack NPへ到達不能となるpathのfocused fixtureを
       production occurrence／0件ratchetへ接続する。
-- [ ] candidate soundness、small exhaustive finite maximum oracle、自然上限／Lv.90統一 × 四policy × NP1〜5 × 合法初期OC、
+- [x] candidate soundness、small exhaustive finite maximum oracle、自然上限／Lv.90統一 × 四policy × NP1〜5 × 合法初期OC、
       stable owned fixture、production contamination／omission、portable／calculator parity、candidate数／performanceを
       最終baselineとして再固定する。
-- [ ] 旧operation-ID projection、旧portable reader、compatibility flag、parallel compiler、旧policy fallbackがproduction／
+- [x] 旧operation-ID projection、旧portable reader、compatibility flag、parallel compiler、旧policy fallbackがproduction／
       test fixture／schemaから0件であることを確認し、発見時はadapterを追加せずTSK-06.41のcanonical ownerへ戻して削除する。
 
 Done gate:
@@ -2170,13 +2170,13 @@ Contract closure matrix:
 | `RK-IR-001` | Apply | canonical source-program／step-operation／candidate-local role production inventory; nested IR is consumed unchanged | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-EXEC-001` | Apply | production transaction／resource reachability ratchet＋focused regression | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-POLICY-001` | Apply | four-policy contamination／omission and theoretical-maximum oracle | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-AUDIT-001` | Apply | `pnpm test:production` final level basis × four-policy × NP1〜5 × legal initial OC maximum／eligibility／damage delta inventory | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-AUDIT-001` | Apply | `audit-oc-matrix.ts`／`merge-oc-matrix.ts` final level basis × four-policy × NP1〜5 × legal initial OC maximum／eligibility／damage delta inventory | `docs/evidence/tsk-06-5-production-closure.json` |
 | `RK-HANDOFF-001` | Apply | final selected scenarioのportable replay／minimal Web handoff regression | `docs/evidence/portable-calculation-identity-flow-tsk-06-1.md` |
-| `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
+| `RK-PERF-001` | Apply | ranking hot pathを変更前後各3回 | `docs/evidence/tsk-06-5-production-closure.json` |
 | `DOC-REV-001` | Apply | `pnpm test:docs` | approved ranking requirement v0.10.2 |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: 未記録
+Handoff: 2026-09-21にproduction全数inventory／finite maximum／parity／legacy-removal／quality／docs gateを完了した。static semanticsは469 servants／433 AttackProfiles／7,255 source programs／15,172 source uses／36,275 semantic programs／347,595 operations／485,895 conditions／4,930 input definitions、unsupported／invalid program 0、digest `a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d`で閉じた。candidate-local admissionは33,760 observations／580,400 dispositions（optional 496,398、structuralRequired 11,840、policyNoOp 705,522、unsupported 0）、candidateはgenerated／deduplicated／upper bound 1,028,810、最大3,435／cap 4,096、calculated 967,810／unreachable 55,090／unsupported 5,910／invalid・inputRequired 0、digest `27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18`である。80条件×433 profileは34,640 outcomes／34,600 calculated／typed unavailable 40／unsupported・invalid・inputRequired 0／parity 34,600、qualityはunit 884／production 144／Playwright 29、warnings／retry／unexpected console 0、artifact `.test-results/2026-09-20T17-46-02-843Z-15-496d83`で成功した。machine-readable evidenceは[TSK-06.5 production closure](../evidence/tsk-06-5-production-closure.json)、flowは[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)を参照する。TSK-06.47／06.48は`done`を維持し、TSK-07は`blocked`のまま、このinventory／digest／handoffを唯一の入力として再開する。新規commitは作成しない。
 
 ### TSK-07: Web／worker一括切替
 

@@ -1,8 +1,8 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.42"
+document_version: "1.4.43"
 status: "Active"
-updated_at: "2026-09-20"
+updated_at: "2026-09-21"
 ---
 
 # Evidence report index
@@ -50,8 +50,9 @@ updated_at: "2026-09-20"
 | [np-resource-semantics-flow-tsk-04](np-resource-semantics-flow-tsk-04.md) | Complete | canonical: NP capacity／requirement／gain-loss／all-consume／base OC | TSK-04〜08 | TSK-04 Phase 2 |
 | [legacy-runtime-removal-tsk-04](legacy-runtime-removal-tsk-04.md) | Complete | canonical: old schema reader／raw fallback／dual runtime branch removal | TSK-04〜08 | TSK-04 Phase 3 |
 | [transactional-preparation-flow-tsk-05](transactional-preparation-flow-tsk-05.md) | Complete | canonical: ordered condition／choice／NP resource／state／form／variant action transaction、typed outcome、full recovery | TSK-05〜08 | `69f8207e` baseline／second review resolution |
-| [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Active | canonical: source program／finite certificate／application policy／outcome。TSK-06.45 U0〜U5、TSK-06.46 W0〜W7、TSK-06.47 UI bounded unitのclosureを保持。06.47機械証跡は[contribution UI closure](tsk-06-47-contribution-ui-closure.json) | TSK-06〜08 | TSK-06.46 done、TSK-06.47 done |
-| [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／commit未作成 |
+| [ranking-policy-candidate-flow-tsk-06](ranking-policy-candidate-flow-tsk-06.md) | Active | canonical: source program／finite certificate／application policy／outcome。TSK-06.45 U0〜U5、TSK-06.46 W0〜W7、TSK-06.47 UI bounded unit、TSK-06.5 production eligibility／maximum closureを保持。機械証跡は[TSK-06.5 production closure](tsk-06-5-production-closure.json)ほか各bounded unitへリンクする | TSK-06〜08 | TSK-06.5 done、TSK-06.47／06.48 done |
+| [tsk-06-5-production-closure](tsk-06-5-production-closure.json) | Complete | machine-readable: production static semantics／candidate-local admission／finite candidate eligibility、80-condition × 433-profile maximum matrix、typed outcomes、calculator／ranking／portable parity、legacy-removal audit、quality gate | TSK-06.5 | `197ff30` baseline／no new commit |
+| [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |
 | [tsk-06-48-transfer-hp-closure](tsk-06-48-transfer-hp-closure.json) | Complete | canonical: TSK-06.48 dependent-function descriptor、NP／HP transfer domain ownership、ordered execution preservation、production matrix／candidate inventory／parity | TSK-06.48 final closure | `46f30a7`／TSK-06.48 complete |
 | [tsk-06-48-effect-execution-closure](tsk-06-48-effect-execution-closure.json) | Complete | canonical: TSK-06.48 effect composition／execution support owner、canonical operation／input／support preservation、direct consumer order／condition／parity、reused production closure | TSK-06.48 final closure | `128189f`／TSK-06.48 complete |

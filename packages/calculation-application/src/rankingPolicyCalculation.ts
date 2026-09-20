@@ -18,6 +18,17 @@ import {
   includedRankingServants,
 } from './rankingRows';
 import { unresolvedProfileResult } from './rankingProfileOutcome';
+import type { RankingCandidateCalculation } from './rankingPolicyCandidates';
+
+export interface RankingPolicyCandidateObservation {
+  servant: ServantMaster;
+  conditions: RankingPolicyConditions;
+  candidateSet: RankingCandidateCalculation;
+}
+
+export type RankingPolicyCandidateObserver = (
+  observation: RankingPolicyCandidateObservation,
+) => void;
 
 export function calculateRankingPolicyDetail(
   servant: ServantMaster,
@@ -74,6 +85,7 @@ export function calculateRankingPolicy(
   profile: RankingProfileInput,
   conditions: RankingPolicyConditions,
   versions: VersionContext,
+  observeCandidate?: RankingPolicyCandidateObserver,
 ): RankingPolicyCalculation {
   const rows: RankingRowSummary[] = [];
   const profileResults: Record<string, RankingProfileResult> = {};
@@ -89,8 +101,9 @@ export function calculateRankingPolicy(
       : [];
   for (const servant of population) {
     const inventory = createStaticAttackProfiles(servant);
+    let candidateSet: RankingCandidateCalculation;
     try {
-      const candidateSet = calculateRankingCandidateSet(
+      candidateSet = calculateRankingCandidateSet(
         servant,
         master,
         profile,
@@ -99,6 +112,23 @@ export function calculateRankingPolicy(
         false,
         damageCache,
       );
+    } catch (error) {
+      for (const attackProfile of inventory) {
+        const profileKey = attackProfileKey(attackProfile);
+        const result: RankingProfileResult = {
+          status: 'invalid',
+          attackProfile,
+          issues: [],
+          reason: 'unexpectedRankingFailure',
+          detail: error instanceof Error ? error.message : String(error),
+        };
+        profileResults[profileKey] = result;
+        exclusions.push(createRankingPolicyExclusion(servant, profileKey, result));
+      }
+      continue;
+    }
+    observeCandidate?.({ servant, conditions, candidateSet });
+    try {
       const { plan } = candidateSet;
       generatedCount += plan.candidateKeys.length;
       semanticUpperBound += plan.candidateUpperBound;

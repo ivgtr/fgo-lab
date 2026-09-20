@@ -13,6 +13,10 @@ import {
   currentCalculationVersionContext,
   executePortableCalculation,
 } from './portableCalculation';
+import {
+  RankingEligibilityAuditAccumulator,
+  type RankingEligibilityAudit,
+} from './rankingEligibilityAudit';
 
 export interface ProductionClosureConditionRecord {
   key: string;
@@ -59,6 +63,7 @@ export interface ProductionClosureAudit {
   parityFailures: readonly ProductionClosureParityFailure[];
   unavailable: readonly ProductionClosureUnavailable[];
   conditionSummaries: readonly Omit<ProductionClosureConditionRecord, 'records'>[];
+  eligibility: RankingEligibilityAudit;
   digest: string;
 }
 
@@ -177,11 +182,18 @@ export async function auditProductionClosure(
   };
   let parityCount = 0;
   let attackProfileCount: number | null = null;
+  const eligibility = new RankingEligibilityAuditAccumulator(master);
 
   for (const conditions of selectedConditions) {
     const key = productionClosureConditionKey(conditions);
     const startedAt = performance.now();
-    const result = calculateRankingPolicy(master, profile, conditions, versions);
+    const result = calculateRankingPolicy(
+      master,
+      profile,
+      conditions,
+      versions,
+      ({ servant, candidateSet }) => eligibility.observe(master, servant, conditions, candidateSet),
+    );
     const elapsedMs = performance.now() - startedAt;
     const entries = Object.entries(result.profileResults);
     attackProfileCount ??= entries.length;
@@ -338,6 +350,7 @@ export async function auditProductionClosure(
     parityFailures,
     unavailable,
     conditionSummaries: summaries,
+    eligibility: eligibility.finalize(),
   };
   return { ...result, digest: digest(result) };
 }

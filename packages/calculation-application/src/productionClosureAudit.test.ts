@@ -41,4 +41,13 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
     parityFailures: [],
   });
   expect(audit.parityCount).toBe(audit.outcomes.calculated);
+  expect(audit.eligibility.conditionCount).toBe(1);
+  expect(audit.eligibility.staticSemantics.servants).toBe(master.servants.length);
+  expect(audit.eligibility.staticSemantics.digest).toMatch(/^[a-f0-9]{64}$/);
+  expect(audit.eligibility.admissions.digest).toMatch(/^[a-f0-9]{64}$/);
+  expect(audit.eligibility.candidates.digest).toMatch(/^[a-f0-9]{64}$/);
+  expect(audit.eligibility.digest).toMatch(/^[a-f0-9]{64}$/);
+  expect(audit.eligibility.staticSemantics.sourcePrograms).toBeGreaterThan(0);
+  expect(audit.eligibility.admissions.dispositions).toBeGreaterThan(0);
+  expect(audit.eligibility.candidates.generated).toBeGreaterThan(0);
 });

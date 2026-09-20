@@ -1,0 +1,255 @@
+{
+  "task": "TSK-06.5",
+  "status": "complete",
+  "unit": "production static-semantics, candidate-local eligibility, theoretical-maximum and legacy-removal closure",
+  "baseline": {
+    "headAtStart": "197ff30247a09c5f0280b039cb88a7ec7c33a3a4",
+    "worktreeAtStart": "clean",
+    "entryConditions": {
+      "TSK-06.47": "done",
+      "TSK-06.48": "done",
+      "TSK-06.5": "blocked"
+    },
+    "requirements": [
+      "docs/requirements/ranking-self-and-conditional-effects-requirements.md",
+      "docs/requirements/development-execution-efficiency-requirements.md",
+      "docs/requirements/ui-design-spec.md"
+    ],
+    "taskSource": "docs/tasks/development-redesign-tasks.md",
+    "flowEvidence": "docs/evidence/ranking-policy-candidate-flow-tsk-06.md"
+  },
+  "changedFiles": [
+    "packages/calculation-application/src/rankingEligibilityAudit.ts",
+    "packages/calculation-application/src/rankingPolicyCalculation.ts",
+    "packages/calculation-application/src/rankingCandidateSpace.ts",
+    "packages/calculation-application/src/productionClosureAudit.ts",
+    "packages/calculation-application/src/productionClosureAudit.test.ts",
+    "packages/calculation-application/scripts/merge-oc-matrix.ts",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/evidence/ranking-policy-candidate-flow-tsk-06.md",
+    "docs/evidence/tsk-06-5-production-closure.json",
+    "docs/evidence/tsk-06-47-contribution-ui-closure.json",
+    "docs/evidence/README.md",
+    "docs/README.md"
+  ],
+  "semanticOwners": {
+    "rawToCanonical": "data-pipeline snapshotNormalization/effectNormalization",
+    "staticSourceProgram": "packages/calculation-application/src/rankingStaticPreparation.ts::compileStaticRankingPreparationPrograms",
+    "staticSemantics": "packages/calculation-application/src/rankingStaticSemantics.ts::compileStaticRankingSemantics",
+    "actionAdmission": "packages/calculation-application/src/rankingActionAdmission.ts::compileCandidateLocalActionAdmissionDispositions",
+    "candidateInventory": "packages/calculation-application/src/rankingCandidateSpace.ts and rankingPolicyCandidates.ts",
+    "orderedExecution": "packages/calculation-application/src/rankingExecution.ts and battle-execution ordered executor",
+    "profileOutcome": "packages/calculation-application/src/rankingProfileOutcome.ts::unresolvedProfileResult",
+    "auditObserver": "packages/calculation-application/src/rankingEligibilityAudit.ts",
+    "directConsumers": [
+      "productionClosureAudit.ts",
+      "calculator/ranking shared scenario preparation",
+      "portableCalculation.ts"
+    ]
+  },
+  "boundedUnit": {
+    "scope": "observe existing canonical static programs, typed admission, finite candidate certificate, ordered execution and profile outcomes",
+    "outOfScope": [
+      "damage semantics",
+      "canonical comparison/contribution/action admission/outcome/portable runtime semantics",
+      "raw Atlas interpretation",
+      "battle execution order, condition truth, rollback and mutation-after-read",
+      "candidate meaning, dedupe, cardinality, cap 4096 or timeout",
+      "TSK-06.47 presentation owner",
+      "TSK-07 worker/cache/URL/notice/responsive cutover"
+    ],
+    "publicApiChange": false,
+    "canonicalOperationChange": false,
+    "canonicalInputChange": false,
+    "productionOutputChange": false,
+    "operationOrderChange": false,
+    "observerFailure": "audit observer errors propagate instead of being converted into profile invalidity"
+  },
+  "staticSemantics": {
+    "servants": 469,
+    "attackProfiles": 433,
+    "sourcePrograms": 7255,
+    "sourceUses": 15172,
+    "sourceKinds": {
+      "skill": 15123,
+      "noblePhantasm": 49
+    },
+    "automaticSourcePath": "servant.passives.flatMap(passive => passive.effects) is supplied as automaticEffects to candidate-local admission and HP/marker relevance; it is not recompiled as a second ranking source program",
+    "effects": 59689,
+    "semanticPrograms": 36275,
+    "operations": 347595,
+    "conditions": 485895,
+    "inputDefinitions": 4930,
+    "unsupportedPrograms": 0,
+    "invalidPrograms": 0,
+    "operationKinds": {
+      "preserveSemanticEffect": 104280,
+      "addModifier": 189095,
+      "resourceMutation": 16860,
+      "addTrait": 32555,
+      "ignoreDefense": 1620,
+      "selectNoblePhantasmVariant": 1700,
+      "transformActorForm": 685,
+      "removeTrait": 500,
+      "suppressInitialTrait": 55,
+      "ignoreDamageCut": 190,
+      "changeModifierRate": 55
+    },
+    "digest": "a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d"
+  },
+  "admission": {
+    "observations": 33760,
+    "dispositions": 580400,
+    "byKind": {
+      "admitted:optional": 496398,
+      "admitted:structuralRequired": 11840,
+      "policyNoOp": 705522,
+      "unsupported": 0
+    },
+    "responsibilityBoundary": "admission classifies candidate-local action role and policy relevance; contribution projection remains the existing effective contribution owner",
+    "digest": "760d07ed2451ab42b959538431f02af5d76784f6b0a3619f91ccc72118b92cdd"
+  },
+  "candidateEligibility": {
+    "conditionCount": 80,
+    "observations": 33760,
+    "candidatePlans": 33760,
+    "generated": 1028810,
+    "deduplicated": 1028810,
+    "finiteUpperBound": 1028810,
+    "maximumSingleProfileUpperBound": 3435,
+    "maximumSingleProfileGenerated": 3435,
+    "cap": 4096,
+    "byStatus": {
+      "calculated": 967810,
+      "unreachable": 55090,
+      "inputRequired": 0,
+      "invalid": 0,
+      "unsupported": 5910
+    },
+    "candidateSpaceStatus": {
+      "ready": 34640
+    },
+    "digest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18"
+  },
+  "productionMatrix": {
+    "dimensions": "naturalLimit|uniformLevel90 × selfBuffs included|excluded × conditionalEffects baseline|satisfied × NP1..5 × legal initial OC",
+    "conditionCount": 80,
+    "attackProfileCount": 433,
+    "outcomeCount": 34640,
+    "outcomes": {
+      "calculated": 34600,
+      "unavailableUnderPolicy": 40,
+      "inputRequired": 0,
+      "invalid": 0,
+      "unsupported": 0
+    },
+    "parityCount": 34600,
+    "parityFailures": 0,
+    "mergedDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+    "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+    "artifact": ".test-results/tsk-06-5-production-closure-final/manifest.json",
+    "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts <output> followed by merge-oc-matrix.ts",
+    "reuseAfterObserverBoundaryPatch": "The final observer exception boundary was moved outside canonical result classification after this matrix run. It changes only audit-failure propagation; successful canonical output, support status, operation order, candidate inventory and parity are unchanged. Focused production closure and the final quality production suite passed after the patch, so the matrix artifact is reused under the approved no-semantic-delta condition."
+  },
+  "oracleAndFixtures": {
+    "finiteMaximumOracle": "rankingCandidateSpace.test.ts independent exhaustive oracle and finite-domain certificate",
+    "worldOracle": "rankingWorldOracle.test.ts and rankingWorldWitness.test.ts",
+    "fixtures": {
+      "conditionalOnlyAndSibling": "rankingActionAdmission.test.ts and rankingCandidateSpace.test.ts",
+      "npCostAndGain": "rankingCandidateSpace.test.ts and productionExecutionParity.test.ts",
+      "beneficialDetrimental": "rankingActionAdmission.test.ts and preparationTransaction.test.ts",
+      "traitAndFormTransition": "rankingWorldWitness.test.ts and rankingCandidateSpace.test.ts",
+      "exclusiveChoiceAndBranchCost": "productionMasterAudit.test.ts and preparationTransaction.test.ts",
+      "attackNpUnreachable": "rankingCandidateSpace.test.ts unavailable candidate assertions"
+    },
+    "stableOwnedFixture": "rankingBasis.test.ts canonical owned NP1/2/5 capacity and fixed-input replay"
+  },
+  "parityAndLegacy": {
+    "calculatorRankingPortable": "productionExecutionParity.test.ts, portableCalculation.test.ts and rankingCandidateSpace.test.ts use the shared application/execution path",
+    "statePreservation": "rankingBasis.test.ts and portableCalculation.test.ts",
+    "legacyRemoval": {
+      "architectureScan": "rankingArchitecture.test.ts and battle-execution architecture.test.ts",
+      "schemaBoundary": "schema index.test.ts rejects old envelopes and legacy profiles while preserving the approved historical migration field",
+      "oldOperationIdProjection": 0,
+      "oldPortableReader": 0,
+      "compatibilityFlag": 0,
+      "parallelCompiler": 0,
+      "oldPolicyFallback": 0,
+      "approvedHistoricalMigration": "legacyRankingIntent remains only in schema historicalization; it is not a production runtime reader or fallback"
+    }
+  },
+  "performance": {
+    "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts .test-results/tsk-06-5-ranking-hot-path-final.json",
+    "samplesMilliseconds": [
+      5773.584996000001,
+      5560.169106000001,
+      5540.913670000002
+    ],
+    "medianMilliseconds": 5560.169106000001,
+    "rows": 433,
+    "exclusions": 0,
+    "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
+    "fixedTarget": false,
+    "candidateRatchet": false,
+    "artifact": ".test-results/tsk-06-5-ranking-hot-path-final.json"
+  },
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- productionClosureAudit.test.ts rankingCandidateSpace.test.ts rankingActionAdmission.test.ts rankingProfileOutcome.test.ts rankingWorldOracle.test.ts rankingWorldWitness.test.ts rankingArchitecture.test.ts",
+      "status": "passed",
+      "tests": 50,
+      "artifact": ".test-results/2026-09-20T17-35-34-508Z-15-1bf978"
+    },
+    "directConsumers": {
+      "command": "pnpm test:diagnostic -- rankingBasis.test.ts portableCalculation.test.ts productionExecutionParity.test.ts productionMasterAudit.test.ts productionHpPaths.test.ts",
+      "status": "passed",
+      "tests": 33,
+      "artifact": ".test-results/2026-09-20T17-37-10-827Z-15-df5e1e"
+    },
+    "legacyAndSchema": {
+      "command": "pnpm test:diagnostic -- packages/schema/src/index.test.ts packages/battle-execution/src/architecture.test.ts",
+      "status": "passed",
+      "tests": 34,
+      "artifact": ".test-results/2026-09-20T17-38-20-746Z-15-7289ff"
+    },
+    "typecheck": {
+      "command": "pnpm exec tsc -b --pretty false",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint packages/calculation-application/src/rankingEligibilityAudit.ts packages/calculation-application/src/rankingPolicyCalculation.ts packages/calculation-application/src/productionClosureAudit.ts packages/calculation-application/src/productionClosureAudit.test.ts packages/calculation-application/src/rankingCandidateSpace.ts --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --write <changed source and script files>",
+      "status": "passed"
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 884,
+      "production": 144,
+      "playwright": 29,
+      "retries": 0,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "durationSeconds": 370.884,
+      "artifact": ".test-results/2026-09-20T17-46-02-843Z-15-496d83",
+      "manifestSha256": "9f2a60895216b9a3ed5e64329a46279d57ecf549b29ba4274a9d4aef718d0859"
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    }
+  },
+  "statusInvariants": {
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-06.5": "done",
+    "TSK-07": "blocked",
+    "head": "197ff30247a09c5f0280b039cb88a7ec7c33a3a4",
+    "newCommit": false
+  },
+  "unresolved": [],
+  "nextTask": "TSK-07 starts from this closed inventory only after its own worker/cache/URL/notice/responsive cutover scope is reopened"
+}

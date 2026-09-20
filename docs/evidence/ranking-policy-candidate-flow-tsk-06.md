@@ -6,7 +6,7 @@ updated_at: "2026-09-21"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は2026-09-21のTSK-06.47 UI closure追記。TSK-06.46、TSK-06.47、TSK-06.48は各Done gateを完了して`done`、TSK-06.5は`blocked`である。以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は2026-09-21のTSK-06.5 production eligibility／theoretical maximum closure追記。TSK-06.46、TSK-06.47、TSK-06.48、TSK-06.5は各Done gateを完了して`done`、TSK-07は`blocked`である。以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -5403,10 +5403,26 @@ ranking static compilation pathを変更したため、比較可能な診断値�
 
 Webのpresentation ownerへ、canonical `presentationGroupId`単位のgroup表示、各contributionのself／condition／areaView decision、execution outcome／projection explanationのtyped日本語mappingを集約した。raw `contributionId`、operation ID、internal enumは表示しない。policy exclusion、condition不成立、実行不能、invalid、unsupportedをgenericな「計算外」へ統合せず、action／state／condition evidenceは従来どおり保持した。row／badgeは既存のeffective contribution＋`presentationCounted`＋distinct group集合を参照し、NP baseは件数から除外する。stack countは既存のeffect input evidence（回数、準備開始時仮定、origin）をそのまま表示する。
 
-寄与表示filterはコンポーネントstateだけを更新し、worker request、scenario command、damage計算を発行しない。一覧filterとrow disclosureのaccessible name／`aria-expanded`を維持し、native buttonのkeyboard focus／`aria-pressed`を追加した。PlaywrightのE2E-050で実Worker detail、desktop snapshot、Enter操作、390px／320px expanded detailのhorizontal overflow 0、calculator handoffを確認した。更新snapshotのSHA-256は`408d0412fdc7d2730d1fb09776d86ec29510759c2a95351ce3e07325fcff18d8`である。
+寄与表示filterはコンポーネントstateだけを更新し、worker request、scenario command、damage計算を発行しない。一覧filterとrow disclosureのaccessible name／`aria-expanded`を維持し、native buttonのkeyboard focus／`aria-pressed`を追加した。PlaywrightのE2E-050で実Worker detail、desktop snapshot、Enter操作、390px／320px expanded detailのhorizontal overflow 0、calculator handoffを確認した。更新snapshotのSHA-256は`f26da475bf107d6eb9bafe72c6223954da08e206db8e64472ebbd6055a06a649`である。
 
 focused unitは26/26、`pnpm typecheck`、対象eslintが成功し、機械証跡は[TSK-06.47 contribution UI closure](tsk-06-47-contribution-ui-closure.json)へ記録した。TSK-06.48のcanonical output／operation・effect・input inventory／support status／candidate inventory／parity／digestはproduction sourceが不変のため再利用した。既存calculation cacheの`profileResults`をdetail requestから再利用し、初回detail開閉、寄与filter、一覧filter、再開閉でdamage計算を発生させない。非保証procの`disabled` projectionはcanonical proc kind／decision state／explanationを使って`確率不成立`として表示し、ユーザーによる明示的な無効化は`無効化`として保持する。UI表示経路と既存cache読取だけの変更なので性能診断とproduction matrixは再実行していない。
 
 反証matrixの対象であるpolicy除外、条件不成立、確率不成立、実行不能、invalid、unsupported、NP base、stack count、trait-count sibling、calculator／ranking parity、responsive／keyboard、detail request cacheにBlockingはない。最終`pnpm quality`は`.test-results/2026-09-20T15-48-05-943Z-15-da4a84`で成功し、unit 884、production 144、Playwright 29、retry／unexpected console 0を記録した。
 
-TSK-06.47は`done`、TSK-06.48は`done`、TSK-06.5は`blocked`、commitは未作成である。Done gate 1〜5を満たし、証跡のstatusとregistryを同じ記録更新で閉じた。
+TSK-06.47は`done`、TSK-06.48は`done`、TSK-06.5は実装開始前の`blocked`だった。06.47 closure時点の実装commitは未作成だったが、現在のcompletion baselineは`197ff30247a09c5f0280b039cb88a7ec7c33a3a4`である。TSK-06.5の新規commitは作成しない。
+
+### TSK-06.5 production eligibility／theoretical maximum bounded unit（2026-09-21）
+
+開始時に`git status --short`がclean、`git rev-parse HEAD`が`197ff30247a09c5f0280b039cb88a7ec7c33a3a4`であることを再確認し、TSK-06.47／06.48のDone gate、canonical output、support status、candidate inventory、parityを再利用条件と照合した。実装開始時にTSK-06.5だけを`in_progress`へ遷移し、06.47／06.48は`done`のまま維持した。
+
+変更ownerは新設の`rankingEligibilityAudit.ts`と既存`productionClosureAudit.ts`のaudit observer境界である。static source program／action option／automatic effectはそれぞれ`rankingStaticPreparation.ts`、`rankingActionAdmission.ts`、既存passive `automaticEffects`入力を参照し、static semanticsは`rankingStaticSemantics.ts`、candidate-local eligibilityは`rankingCandidateSpace.ts`、ordered outcomeは既存application／battle-execution、profile typed outcomeは`rankingProfileOutcome.ts`が引き続き所有する。action admissionはpolicy上のrole／resource relevance／unsupportedを分類し、contribution projectionは既存effective contribution ownerに残した。observerはcanonical outputを変更せず、observer例外はprofile invalidへ潰さず監査失敗として伝播する。
+
+production static inventoryは469 servants／433 AttackProfiles、7,255 source programs、15,172 source uses（skill 15,123、NP 49）、59,689 effects、36,275 NP-level semantic programs、347,595 operations、485,895 conditions、4,930 input definitionsで、unsupported／invalid programは0件、static digestは`a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d`である。admissionは33,760 observations／580,400 dispositions、admitted optional 496,398、structuralRequired 11,840、policyNoOp 705,522、unsupported 0、digest `760d07ed2451ab42b959538431f02af5d76784f6b0a3619f91ccc72118b92cdd`となった。
+
+80 legal conditions（naturalLimit／uniformLevel90 × selfBuffs × conditionalEffects × NP1〜5 × legal initial OC）でcandidate plan 33,760件、generated／deduplicated／finite upper boundはすべて1,028,810、最大単一profileは3,435（cap 4,096以下）である。candidate-local statusはcalculated 967,810、unreachable 55,090、unsupported 5,910、inputRequired／invalid 0、candidate-space ready 34,640、digest `27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18`である。
+
+最終production matrixは34,640 outcomes、calculated 34,600、typed `unavailableUnderPolicy` 40、`inputRequired`／`invalid`／`unsupported` 0、calculator／ranking／portable parity 34,600、parity failure 0となった。small exhaustive finite maximumは既存`rankingCandidateSpace.test.ts`／`rankingWorldOracle.test.ts`／`rankingWorldWitness.test.ts`を再利用し、conditional-only／sibling、NP cost／gain、beneficial／detrimental、trait／form、exclusive branch cost、attack-NP unreachableはadmission／candidate／transaction／world／production fixturesで確認した。production artifactは[TSK-06.5 production closure](tsk-06-5-production-closure.json)、matrix manifestは`.test-results/tsk-06-5-production-closure-final/manifest.json`、merged diagnostic digestは`c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120`である。matrix後に行ったobserver例外境界の修正はcanonical成功経路を変更しないため、focused production closure／最終qualityで確認してmatrixを再実行せず再利用した。
+
+calculator／ranking／portable direct consumer 33 tests、eligibility／oracle／architecture focused 50 tests、schema／legacy architecture 34 tests、typecheck、source eslint、Prettierが成功した。旧operation-ID projection／旧portable reader／compatibility flag／parallel compiler／旧policy fallbackはproduction／test runtime scanで0件で、schemaに残る`legacyRankingIntent`はapproved historical migration fieldだけであり、runtime reader／fallbackではない。production sourceの複合`||`はcategory 1の共通semantic ownerへ集約済みの反復union、category 2のtyped変換、category 3の網羅union、category 4のboolean／fail-closed条件として既存owner内に分類され、今回のaudit層へwrapper／`isOneOf`／名前のないpredicateは追加していない。
+
+ranking hot pathは3回`5773.585／5560.169／5540.914ms`、中央値`5560.169ms`、rows 433／exclusions 0、digest `a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`の診断値である。固定wall-clock目標、candidate削減目標、cap／timeoutのratchet緩和は設定していない。最終`pnpm quality`は`.test-results/2026-09-20T17-46-02-843Z-15-496d83`で成功し、unit 884／production 144／Playwright 29、retry／warning／unexpected console 0、duration 370.884秒、manifest SHA-256 `9f2a60895216b9a3ed5e64329a46279d57ecf549b29ba4274a9d4aef718d0859`を記録した。`pnpm test:docs`も成功し、TSK-06.5 Done gate 1〜5、技術的Blocking／Task内Deferred 0を確認したため、TSK-06.5を`done`へ遷移する。TSK-06.47／06.48は`done`を維持し、次のTSK-07はこの唯一のinventory／digestとhandoffを入力として再開する。新規commitは作成しない。詳細は[TSK-06.5 production closure](tsk-06-5-production-closure.json)を参照する。

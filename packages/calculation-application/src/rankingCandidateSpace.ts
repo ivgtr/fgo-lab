@@ -49,11 +49,11 @@ import {
   materializeRankingQuantity,
   type RankingQuantityCandidate,
 } from './rankingQuantityWorld';
+import { compileStaticRankingPreparationPrograms } from './rankingStaticPreparation';
 import {
-  compileStaticRankingPreparationPrograms,
-  type StaticRankingPreparationProgram,
-} from './rankingStaticPreparation';
-import { compileCandidateLocalActionAdmission } from './rankingActionAdmission';
+  compileCandidateLocalActionAdmission,
+  type AdmittedStaticRankingPreparationProgram,
+} from './rankingActionAdmission';
 import {
   compileStaticRankingSemantics,
   type StaticRankingSemantics,
@@ -97,7 +97,7 @@ export interface RankingCandidate {
 }
 
 interface ProgramCandidateDomain {
-  program: StaticRankingPreparationProgram;
+  program: AdmittedStaticRankingPreparationProgram;
   semantics: StaticRankingSemantics;
   baseScenario: ResolvedScenario;
   initialNpGauge: number;
@@ -273,7 +273,7 @@ function compileProgramDomain(input: {
     RankingPolicyConditions,
     'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
   >;
-  program: StaticRankingPreparationProgram;
+  program: AdmittedStaticRankingPreparationProgram;
 }): Omit<ProgramCandidateDomain, 'upperBound'> {
   const { servant, master, basis, conditions, program } = input;
   const policy = compileRankingComparisonPolicy(conditions, master);
@@ -438,7 +438,7 @@ export function compileRankingCandidateSpaces(
   >,
   attackProfiles: readonly AttackProfile[],
 ): readonly RankingCandidateSpace[] {
-  let programs: readonly StaticRankingPreparationProgram[];
+  let programs: readonly AdmittedStaticRankingPreparationProgram[];
   let unsupportedAttackProfileKeys: ReadonlySet<string> = new Set();
   try {
     const admission = compileCandidateLocalActionAdmission(
