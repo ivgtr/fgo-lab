@@ -211,7 +211,6 @@ describe('ranking target witness completeness', () => {
         classId: 'saber',
         attribute: 'man',
         familyIds: [],
-        selections: {},
         traitFacts: [
           { scope: 'target', trait: 'dragon', present: true },
           { scope: 'targetState', trait: 'dragon', present: false },
@@ -442,7 +441,6 @@ describe('ranking target witness completeness', () => {
               classId: 'saber',
               attribute: 'man',
               familyIds: [],
-              selections: {},
               traitFacts: facts,
             },
             master,

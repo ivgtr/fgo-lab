@@ -4,6 +4,9 @@ import type { ConditionExpression, ExecutableBattleState, TraitScope } from './c
 import {
   canonicalExclusiveGroup,
   canonicalExclusiveTraits,
+  compareTraitCount,
+  decisiveConditionGroup,
+  resolveCombinedTraitValue,
   traitConditionEvaluationSource,
   traitConditionReadScopes,
 } from './conditionSemantics';
@@ -95,12 +98,12 @@ export function evaluateCondition(
       }
     }
     const readScopes = traitConditionReadScopes(scope);
-    if (scope === 'attacker' || scope === 'target') {
-      const stateScope = scope === 'attacker' ? 'attackerState' : 'targetState';
-      const stateValue = state.traits[stateScope].get(trait);
-      if (stateValue === true) return true;
-      if (state.initialTraitSuppressions[scope].has(trait)) return false;
-    }
+    const combinedScope = scope === 'attacker' || scope === 'target';
+    const stateScope = scope === 'attacker' ? 'attackerState' : 'targetState';
+    const stateValue = combinedScope ? state.traits[stateScope].get(trait) : undefined;
+    const initialValue = combinedScope ? state.traits[scope].get(trait) : undefined;
+    if (combinedScope && stateValue === true) return true;
+    if (combinedScope && state.initialTraitSuppressions[scope].has(trait)) return false;
     const values = readScopes.flatMap((candidate) => {
       const value = state.traits[candidate].get(trait);
       return value === undefined ? [] : [value];
@@ -117,7 +120,16 @@ export function evaluateCondition(
     )
       return false;
     if (values.length === readScopes.length && values.every((value) => !value)) return false;
-    return undefined;
+    if (scope === 'field') return undefined;
+    return resolveCombinedTraitValue({
+      scope,
+      initial: initialValue,
+      state: stateValue,
+      suppressed:
+        scope === 'attacker' || scope === 'target'
+          ? state.initialTraitSuppressions[scope].has(trait)
+          : false,
+    });
   };
   switch (condition.kind) {
     case 'always':
@@ -142,11 +154,7 @@ export function evaluateCondition(
       const values = condition.traits.map((trait) => traitValue(condition.scope, trait));
       if (values.includes(undefined)) return null;
       const count = values.filter(Boolean).length;
-      return condition.comparison === 'atLeast'
-        ? count >= condition.count
-        : condition.comparison === 'atMost'
-          ? count <= condition.count
-          : count === condition.count;
+      return compareTraitCount(condition.comparison, count, condition.count);
     }
     case 'card':
       return state.card === null ? null : state.card === condition.card;
@@ -218,11 +226,13 @@ export function evaluateCondition(
     }
     case 'all': {
       const values = condition.expressions.map((value) => evaluateCondition(value, state));
-      return values.includes(false) ? false : values.includes(null) ? null : true;
+      const decisive = decisiveConditionGroup('all', values);
+      return decisive ?? (values.includes(null) ? null : true);
     }
     case 'any': {
       const values = condition.expressions.map((value) => evaluateCondition(value, state));
-      return values.includes(true) ? true : values.includes(null) ? null : false;
+      const decisive = decisiveConditionGroup('any', values);
+      return decisive ?? (values.includes(null) ? null : false);
     }
     case 'not': {
       const value = evaluateCondition(condition.expression, state);

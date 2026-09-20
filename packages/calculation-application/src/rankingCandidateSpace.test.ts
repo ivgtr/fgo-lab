@@ -104,9 +104,6 @@ describe('static ranking candidate space', () => {
       );
       expect(space.upperBound).toBe(expectedBound);
       const candidates = materializeRankingCandidateSpace({
-        servant,
-        master,
-        basis: rankingBasisFixture(servant),
         conditions: {
           ...DEFAULT_RANKING_POLICY_CONDITIONS,
           conditionalEffects: 'satisfied',
@@ -199,9 +196,6 @@ describe('static ranking candidate space', () => {
               visitInputs(0, {});
             }
     const materialized = materializeRankingCandidateSpace({
-      servant,
-      master,
-      basis: rankingBasisFixture(servant),
       conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
       space,
     }).map(({ evidence }) =>

@@ -17,7 +17,6 @@ function candidate(key: string, initial: boolean, state: boolean): RankingWorldC
     classId: 'saber',
     attribute: 'man',
     familyIds: [],
-    selections: {},
     traitFacts: [
       { scope: 'target', trait: 'orderedTrait', present: initial },
       { scope: 'targetState', trait: 'orderedTrait', present: state },

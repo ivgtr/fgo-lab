@@ -1,6 +1,6 @@
 {
   "task": "TSK-06.46",
-  "status": "verified",
+  "status": "done",
   "baseline": {
     "implementationCommit": "c4261054a8e7f82076b44aecb5e4b4d31458a6ad",
     "planningCommit": "470093285e9783d37db173407d7ac16f681bfa92",
@@ -20,6 +20,30 @@
     "orchestration": "packages/calculation-application/src/rankingCandidateSpace.ts",
     "removedFallback": "the former condition-only generator and inline initial-truth quotient were removed"
   },
+  "implementationConvergence": {
+    "semanticOwners": {
+      "canonicalInputOrigin": "packages/calculation-application/src/rankingCandidateSpace.ts::resolveCanonicalInputOrigin",
+      "populationInputClassification": "packages/calculation-application/src/rankingCanonicalInputs.ts::isPopulationInputDefinition",
+      "transitionTraitExtraction": "packages/calculation-application/src/rankingWorldObservation.ts::transitionTraitsAfterMutation",
+      "worldDomainAnalysis": "packages/calculation-application/src/rankingWorldQuotient.ts::analyzeRankingWorldDomain",
+      "traitConditionSemantics": "packages/battle-execution/src/conditionSemantics.ts"
+    },
+    "removed": [
+      "inline transition-trait scan and repeated canonical-input definition lookup",
+      "repeated population union classification and representative lookup",
+      "always-empty target selections field and post-materialization target re-deduplication",
+      "unreachable addTrait observation branch",
+      "unused servant/master/basis arguments from materializeRankingCandidateSpace"
+    ],
+    "productionComparison": {
+      "records": 34640,
+      "rawRecordMismatches": 34620,
+      "calculatedEngineVersionOnly": 34600,
+      "unavailableDiagnosticKeyOnly": 20,
+      "semanticRecordMismatches": 0,
+      "normalization": "candidateKey/targetCandidateKey evidence fields and engineVersion metadata are excluded; canonical input, program, mutation, read position, status, damage, and parity are unchanged"
+    }
+  },
   "soundness": {
     "counterexample": {
       "initialTarget": false,
@@ -35,9 +59,10 @@
     "independentOracleReusesPlannerDomain": false
   },
   "productionMatrix": {
-    "artifactRoot": ".test-results/tsk-06-46-production-closure",
-    "manifestSha256": "684e6d0c226457ef2b7314a1dd2e311e9175c777ce7c8ac2b9b0952abb798854",
-    "digest": "876c004910ed61296fc71f10da45e7b416b0b2c316f6f482b3e189a332011205",
+    "artifactRoot": ".test-results/tsk-06-46-w6-production-closure",
+    "manifestSha256": "734eb8ad6e85793713c4b31cebea23bc0ffc4b4ffc6427fcba68e6042d45b28c",
+    "baselineDigest": "876c004910ed61296fc71f10da45e7b416b0b2c316f6f482b3e189a332011205",
+    "digest": "28135f4344a23b33a00ca299a2a3f5866bf954e6cc6aba885705d2e77b4985ef",
     "conditions": 80,
     "attackProfilesPerCondition": 433,
     "outcomes": 34640,
@@ -66,11 +91,11 @@
     "reason": "the user explicitly excluded a fixed performance lower bound; measurements remain diagnostic evidence",
     "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
     "baselineMedianMs": 5231.173416000001,
-    "samplesMs": [4736.462582, 4733.670161, 4724.426808],
-    "medianMs": 4733.670161,
+    "samplesMs": [5151.091826, 4806.581632, 4954.093081],
+    "medianMs": 4954.093081,
     "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
-    "artifactSha256": "33c942cd9dab664881355ea01494352ccf07c38c5af3768be9324667bc462ff2",
-    "attribution": "candidate inventory is unchanged; the observed wall-time improvement is recorded but not attributed solely to this refactor"
+    "artifactSha256": "20ea83baca57e7df4affd8ea02650a8e5299a50af3ddc817c860b6be574d97e2",
+    "attribution": "candidate inventory is unchanged; the observed wall-time difference is diagnostic and not attributed solely to this refactor"
   },
   "versions": {
     "masterDataVersion": "20260920.3",
@@ -80,17 +105,22 @@
     "reason": "ranking candidate equivalence semantics changed without changing persisted shape"
   },
   "focusedVerification": {
-    "artifact": ".test-results/2026-09-19T22-57-35-126Z-126-8d0a74",
-    "tests": 41,
+    "artifacts": [
+      ".test-results/2026-09-19T23-49-42-277Z-15-c6c6c0",
+      ".test-results/2026-09-19T23-50-40-028Z-44-723845",
+      ".test-results/2026-09-20T00-10-16-035Z-15-b53cbc",
+      ".test-results/2026-09-20T00-41-39-562Z-15-733d86"
+    ],
+    "tests": 82,
     "failed": 0,
     "warnings": 0
   },
   "qualityGate": {
     "status": "success",
     "command": "pnpm quality",
-    "artifact": ".test-results/2026-09-19T23-10-12-900Z-15-559d18",
-    "manifestSha256": "6b1803d45fcd2762c6fb3a4ab7cfc0f3f4d31a79123aa89688090ee1da8198b8",
-    "durationMs": 344409,
+    "artifact": ".test-results/2026-09-20T00-52-28-335Z-15-94a396",
+    "manifestSha256": "8483185b39c0c827685073bd024054daa816889d525e83e37710e909c6b2a2db",
+    "durationMs": 297600,
     "unit": { "passed": 853, "skipped": 0, "todo": 0 },
     "production": { "passed": 144, "skipped": 0, "todo": 0, "durationMs": 69974 },
     "e2e": { "passed": 29, "skipped": 0, "retries": 0, "durationMs": 167421 },
@@ -100,7 +130,12 @@
   "closure": {
     "blocking": 0,
     "deferredWithinTask": 0,
+    "remainingUnits": 0,
     "taskStatus": "done",
-    "nextTask": "TSK-06.47"
+    "nextTask": "TSK-06.47",
+    "verifiedBaseline": "W0-W5 production closure remains valid; W6 implementation convergence preserves semantic outputs and candidate bounds",
+    "remainingUnit": null,
+    "reopenedReason": "responsibility splitting exposed but did not remove expression-level branching, repeated classification and lookup, orchestration detail, and duplicated semantic interpretation",
+    "resolution": "named semantic owners and shared execution condition semantics removed the W6 complexity without changing canonical outcomes"
   }
 }

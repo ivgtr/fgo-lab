@@ -165,6 +165,46 @@ export function traitConditionReadScopes(scope: TraitScope): readonly TraitScope
   return TRAIT_SCOPE_SEMANTICS[scope].readScopes;
 }
 
+/** Resolves the initial/state portion of a combined actor trait read. */
+export function resolveCombinedTraitValue(input: {
+  scope: 'target' | 'targetState' | 'attacker' | 'attackerState';
+  initial: boolean | undefined;
+  state: boolean | undefined;
+  suppressed: boolean;
+}): boolean | undefined {
+  if (input.scope === 'targetState' || input.scope === 'attackerState') return input.state;
+  if (input.state === true) return true;
+  if (input.suppressed) return false;
+  if (input.initial === true) return true;
+  if (input.initial === false && input.state === false) return false;
+  return undefined;
+}
+
+export function compareTraitCount(
+  comparison: 'atLeast' | 'atMost' | 'equal',
+  actual: number,
+  expected: number,
+): boolean {
+  switch (comparison) {
+    case 'atLeast':
+      return actual >= expected;
+    case 'atMost':
+      return actual <= expected;
+    case 'equal':
+      return actual === expected;
+  }
+}
+
+/** Returns a decisive all/any result, or undefined when unresolved members remain. */
+export function decisiveConditionGroup(
+  kind: 'all' | 'any',
+  members: readonly unknown[],
+): boolean | undefined {
+  if (kind === 'all' && members.includes(false)) return false;
+  if (kind === 'any' && members.includes(true)) return true;
+  return undefined;
+}
+
 export interface TargetConditionWitnessSpace {
   traitFacts: readonly {
     scope: 'target' | 'targetState';

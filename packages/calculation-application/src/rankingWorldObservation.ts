@@ -1,6 +1,7 @@
 import {
-  canonicalExclusiveGroup,
-  canonicalExclusiveTraits,
+  compareTraitCount,
+  decisiveConditionGroup,
+  resolveCombinedTraitValue,
   targetConditionWitnessSpace,
   traitConditionEvaluationSource,
   type BattleOperation,
@@ -13,13 +14,14 @@ export type RankingWorldObservationStep =
   | {
       kind: 'mutation';
       key: string;
-      mutation: 'addTrait' | 'removeTrait' | 'suppressInitialTrait';
+      mutation: 'removeTrait' | 'suppressInitialTrait';
       scope: 'target' | 'targetState';
       trait: string;
     };
 
 export interface RankingWorldObservationPlan {
   steps: readonly RankingWorldObservationStep[];
+  transitionTraits: ReadonlySet<string>;
 }
 
 export interface RankingWorldObservation {
@@ -81,7 +83,27 @@ export function compileRankingWorldObservationPlan(
       });
     appendStateReads(`after:${operation.operationId}`, operation.trait);
   }
-  return { steps };
+  return { steps, transitionTraits: transitionTraitsAfterMutation(steps) };
+}
+
+function transitionTraitsAfterMutation(
+  steps: readonly RankingWorldObservationStep[],
+): ReadonlySet<string> {
+  const traits = new Set<string>();
+  steps.forEach((step, index) => {
+    if (step.kind !== 'mutation') return;
+    const readAfterMutation = steps
+      .slice(index + 1)
+      .some(
+        (candidate) =>
+          candidate.kind === 'read' &&
+          targetConditionWitnessSpace(candidate.condition).traitFacts.some(
+            ({ trait }) => trait === step.trait,
+          ),
+      );
+    if (readAfterMutation) traits.add(step.trait);
+  });
+  return traits;
 }
 
 type Facts = Map<string, boolean>;
@@ -91,15 +113,17 @@ function targetTraitValue(
   suppressed: ReadonlySet<string>,
   scope: 'target' | 'targetState',
   trait: string,
-) {
-  const state = facts.get(`targetState:${trait}`) ?? false;
-  if (scope === 'targetState') return state;
-  return state || (!suppressed.has(trait) && (facts.get(`target:${trait}`) ?? false));
+): boolean | undefined {
+  return resolveCombinedTraitValue({
+    scope,
+    initial: facts.get(`target:${trait}`) ?? false,
+    state: facts.get(`targetState:${trait}`) ?? false,
+    suppressed: suppressed.has(trait),
+  });
 }
 
 function simplify(
   condition: ConditionExpression,
-  candidate: RankingWorldCandidate,
   facts: Facts,
   suppressed: ReadonlySet<string>,
 ): unknown {
@@ -120,39 +144,26 @@ function simplify(
     const count = condition.traits.filter((trait) =>
       targetTraitValue(facts, suppressed, scope, trait),
     ).length;
-    return condition.comparison === 'atLeast'
-      ? count >= condition.count
-      : condition.comparison === 'atMost'
-        ? count <= condition.count
-        : count === condition.count;
+    return compareTraitCount(condition.comparison, count, condition.count);
   }
   if (condition.kind === 'targetPredicate' && condition.scope === 'target') {
     return condition;
   }
   if (condition.kind === 'all' || condition.kind === 'any') {
-    const members = condition.expressions.map((child) =>
-      simplify(child, candidate, facts, suppressed),
+    const members = condition.expressions.map((child) => simplify(child, facts, suppressed));
+    const decisive = decisiveConditionGroup(condition.kind, members);
+    if (decisive !== undefined) return decisive;
+    const unresolved = members.filter((member) =>
+      condition.kind === 'all' ? member !== true : member !== false,
     );
-    if (condition.kind === 'all') {
-      if (members.includes(false)) return false;
-      const unresolved = members.filter((member) => member !== true);
-      return unresolved.length === 0
-        ? true
-        : unresolved.length === 1
-          ? unresolved[0]
-          : { ...condition, expressions: unresolved as ConditionExpression[] };
-    }
-    if (members.includes(true)) return true;
-    const unresolved = members.filter((member) => member !== false);
-    return unresolved.length === 0
-      ? false
-      : unresolved.length === 1
-        ? unresolved[0]
-        : { ...condition, expressions: unresolved as ConditionExpression[] };
+    if (unresolved.length === 0) return condition.kind === 'all';
+    if (unresolved.length === 1) return unresolved[0];
+    return { ...condition, expressions: unresolved as ConditionExpression[] };
   }
   if (condition.kind === 'not') {
-    const member = simplify(condition.expression, candidate, facts, suppressed);
-    return typeof member === 'boolean' ? !member : { ...condition, expression: member };
+    const member = simplify(condition.expression, facts, suppressed);
+    if (typeof member === 'boolean') return !member;
+    return { ...condition, expression: member as ConditionExpression };
   }
   if (condition.kind === 'always') return true;
   return condition;
@@ -167,15 +178,7 @@ function applyMutation(
     suppressed.add(step.trait);
     return;
   }
-  if (step.mutation === 'removeTrait') {
-    facts.set(`${step.scope}:${step.trait}`, false);
-    return;
-  }
-  const group = canonicalExclusiveGroup(step.scope, step.trait);
-  if (group)
-    for (const sibling of canonicalExclusiveTraits(step.scope, group))
-      if (sibling !== step.trait) facts.set(`${step.scope}:${sibling}`, false);
-  facts.set(`${step.scope}:${step.trait}`, true);
+  facts.set(`${step.scope}:${step.trait}`, false);
 }
 
 export function observeRankingWorld(
@@ -191,7 +194,7 @@ export function observeRankingWorld(
   let indeterminateMutation = false;
   for (const step of plan.steps) {
     if (step.kind === 'read') {
-      lastRead = simplify(step.condition, candidate, facts, suppressed);
+      lastRead = simplify(step.condition, facts, suppressed);
       outcomes.push([step.key, lastRead]);
       continue;
     }
@@ -199,7 +202,7 @@ export function observeRankingWorld(
     else if (lastRead !== false) indeterminateMutation = true;
   }
   const key = JSON.stringify({
-    identity: [candidate.classId, candidate.attribute, candidate.familyIds, candidate.selections],
+    identity: [candidate.classId, candidate.attribute, candidate.familyIds],
     outcomes,
     unresolvedState: indeterminateMutation ? candidate.traitFacts : null,
   });

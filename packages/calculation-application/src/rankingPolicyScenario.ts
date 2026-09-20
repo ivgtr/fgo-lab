@@ -56,9 +56,7 @@ export function compileRankingExecutionPlan(
     inventory,
   );
   const candidates = candidateSpaces.flatMap((space) =>
-    space.status === 'ready'
-      ? materializeRankingCandidateSpace({ servant, master, basis, conditions, space })
-      : [],
+    space.status === 'ready' ? materializeRankingCandidateSpace({ conditions, space }) : [],
   );
   const preparedRankingScenarios = candidates.map((candidate) =>
     prepareCalculationScenarioWithPolicy(candidate.scenario, master, candidate.contributionPolicy, {

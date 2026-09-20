@@ -7,6 +7,12 @@ export interface RankingWorldEquivalenceClass {
   members: readonly RankingWorldCandidate[];
 }
 
+export interface RankingWorldQuotient {
+  classes: readonly RankingWorldEquivalenceClass[];
+  representatives: readonly RankingWorldCandidate[];
+  rawWorldCardinality: number;
+}
+
 function positiveAssumptions(candidate: RankingWorldCandidate): number {
   return candidate.traitFacts.filter(({ present }) => present).length;
 }
@@ -22,18 +28,36 @@ export function selectRankingWorldRepresentative(
   return sorted[0];
 }
 
-export function quotientRankingWorldDomain(
+export function analyzeRankingWorldDomain(
   candidates: readonly RankingWorldCandidate[],
   plan: RankingWorldObservationPlan,
-): readonly RankingWorldEquivalenceClass[] {
+): RankingWorldQuotient {
   const classes = new Map<string, RankingWorldCandidate[]>();
   for (const candidate of candidates) {
     const key = observeRankingWorld(plan, candidate).key;
     classes.set(key, [...(classes.get(key) ?? []), candidate]);
   }
-  return [...classes].map(([key, members]) => ({
+  const equivalenceClasses = [...classes].map(([key, members]) => ({
     key,
     representative: selectRankingWorldRepresentative(members),
     members,
   }));
+  const coveredWorlds = equivalenceClasses.reduce(
+    (sum, equivalenceClass) => sum + equivalenceClass.members.length,
+    0,
+  );
+  if (coveredWorlds !== candidates.length)
+    throw new TypeError(`ranking_world_quotient_coverage:${coveredWorlds}:${candidates.length}`);
+  return {
+    classes: equivalenceClasses,
+    representatives: equivalenceClasses.map(({ representative }) => representative),
+    rawWorldCardinality: candidates.length,
+  };
+}
+
+export function quotientRankingWorldDomain(
+  candidates: readonly RankingWorldCandidate[],
+  plan: RankingWorldObservationPlan,
+): readonly RankingWorldEquivalenceClass[] {
+  return analyzeRankingWorldDomain(candidates, plan).classes;
 }

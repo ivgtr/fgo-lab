@@ -1,7 +1,6 @@
 import { rankingHpInitialBoundaries } from './rankingHpBoundary';
 import { resolveInitialMaximumHp } from '@fgo-lab/master-data';
 import {
-  targetConditionWitnessSpace,
   traitConditionEvaluationSource,
   traitConditionReadScopes,
   npTransferInputSaturation,
@@ -26,7 +25,11 @@ import {
   certifyRankingProgramDomain,
   type FiniteRankingDomainCertificate,
 } from './rankingCandidateCertificate';
-import { createCanonicalInputValueDomains } from './rankingCanonicalInputs';
+import {
+  createCanonicalInputValueDomains,
+  isPopulationInputDefinition,
+} from './rankingCanonicalInputs';
+import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 import { compileRankingComparisonPolicy } from './rankingComparisonPolicy';
 import {
   compileRankingContributionPolicy,
@@ -57,7 +60,7 @@ import {
 import { materializeRankingWorld, type RankingWorldCandidate } from './rankingWorld';
 import { enumerateRankingWorldDomain } from './rankingWorldDomain';
 import { compileRankingWorldObservationPlan } from './rankingWorldObservation';
-import { quotientRankingWorldDomain } from './rankingWorldQuotient';
+import { analyzeRankingWorldDomain } from './rankingWorldQuotient';
 
 export const MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE = 4_096;
 
@@ -100,6 +103,7 @@ interface ProgramCandidateDomain {
   canonicalInputs: readonly { key: string; values: readonly number[] }[];
   populationInputKeys: ReadonlySet<string>;
   populationInputs: readonly Readonly<Record<string, number>>[];
+  canonicalInputDefaults: ReadonlyMap<string, number | null>;
   targets: readonly (RankingWorldCandidate | null)[];
   fields: readonly RankingFieldCandidate[];
   quantities: readonly RankingQuantityCandidate[];
@@ -268,24 +272,6 @@ function compileProgramDomain(input: {
     semantics.operations,
     semantics.conditions,
   );
-  const transitionTraits = new Set<string>();
-  observationPlan.steps.forEach((step, index) => {
-    if (
-      step.kind !== 'mutation' ||
-      (step.mutation !== 'removeTrait' && step.mutation !== 'suppressInitialTrait')
-    )
-      return;
-    const readAfterMutation = observationPlan.steps
-      .slice(index + 1)
-      .some((candidate) =>
-        candidate.kind === 'read'
-          ? targetConditionWitnessSpace(candidate.condition).traitFacts.some(
-              ({ trait }) => trait === step.trait,
-            )
-          : false,
-      );
-    if (readAfterMutation) transitionTraits.add(step.trait);
-  });
   const rawTargets = active
     ? enumerateRankingWorldDomain({
         servant,
@@ -293,23 +279,18 @@ function compileProgramDomain(input: {
         scenario: base,
         conditions: semantics.conditions,
         ownedTraitFacts,
-        canonicalCombinedState: { transitionTraits },
+        canonicalCombinedState: { transitionTraits: observationPlan.transitionTraits },
       })
     : [];
-  const worldClasses = quotientRankingWorldDomain(rawTargets, observationPlan);
-  const coveredWorlds = worldClasses.reduce((sum, candidate) => sum + candidate.members.length, 0);
-  if (coveredWorlds !== rawTargets.length)
-    throw new TypeError(`ranking_world_quotient_coverage:${coveredWorlds}:${rawTargets.length}`);
-  const generatedTargets = worldClasses.map(({ representative }) => representative);
+  const worldDomain = analyzeRankingWorldDomain(rawTargets, observationPlan);
+  const generatedTargets = worldDomain.representatives;
   const generatedFields = createRankingFieldCandidatesForConditions(semantics.conditions, active);
   const baselineField: RankingFieldCandidate = { key: 'field:none', facts: [] };
-  const hasPopulation = semantics.inputDefinitions.some(
-    (input) =>
-      input.kind === 'transferDonor' ||
-      input.kind === 'populationCount' ||
-      input.kind === 'populationSize' ||
-      input.kind === 'populationActorValue',
+  const inputDefinitionsByKey = new Map(
+    semantics.inputDefinitions.map((definition) => [definition.key, definition] as const),
   );
+  const populationDefinitions = semantics.inputDefinitions.filter(isPopulationInputDefinition);
+  const hasPopulation = populationDefinitions.length > 0;
   const populationIndependent =
     hasPopulation &&
     program.sourceUses.every(
@@ -348,50 +329,34 @@ function compileProgramDomain(input: {
   );
   const canonicalInputs = populationIndependent
     ? inputDomains.map((domain) => {
-        const definition = semantics.inputDefinitions.find((input) => input.key === domain.key);
-        return definition?.kind === 'transferDonor' ||
-          definition?.kind === 'populationCount' ||
-          definition?.kind === 'populationSize' ||
-          definition?.kind === 'populationActorValue'
-          ? { ...domain, values: [definition.defaultValue ?? definition.minimum] }
-          : domain;
+        const definition = inputDefinitionsByKey.get(domain.key);
+        if (!definition || !isPopulationInputDefinition(definition)) return domain;
+        return { ...domain, values: [definition.defaultValue ?? definition.minimum] };
       })
     : inputDomains;
-  const populationInputKeys = new Set(
-    semantics.inputDefinitions
-      .filter(
-        (input) =>
-          input.kind === 'transferDonor' ||
-          input.kind === 'populationCount' ||
-          input.kind === 'populationSize' ||
-          input.kind === 'populationActorValue',
-      )
-      .map((input) => input.key),
-  );
+  const populationInputKeys = new Set(populationDefinitions.map((input) => input.key));
   const legalPopulationInputs = finiteSemanticProduct(
     canonicalInputs.filter((input) => populationInputKeys.has(input.key)),
     MAX_RANKING_CANDIDATES_PER_ATTACK_PROFILE,
     'population_input_product_limit',
   ).candidates.filter((values) => !populationInputIssue(semantics.inputDefinitions, values));
   const representatives = new Map<string, Readonly<Record<string, number>>>();
+  const transferDonorDefinitions = populationDefinitions.filter(
+    (definition): definition is Extract<CanonicalInputDefinition, { kind: 'transferDonor' }> =>
+      definition.kind === 'transferDonor',
+  );
+  const deviation = (tuple: Readonly<Record<string, number>>) =>
+    Object.entries(tuple).reduce(
+      (sum, [key, value]) =>
+        sum + Math.abs(value - (inputDefinitionsByKey.get(key)?.defaultValue ?? 0)),
+      0,
+    );
   for (const values of legalPopulationInputs) {
     const key = JSON.stringify([
       populationInputEquivalenceKey(semantics.sources, values),
-      semantics.inputDefinitions
-        .filter((input) => input.kind === 'transferDonor')
-        .map((input) => values[input.key]),
+      transferDonorDefinitions.map((input) => values[input.key]),
     ]);
     const prior = representatives.get(key);
-    const deviation = (tuple: Readonly<Record<string, number>>) =>
-      Object.entries(tuple).reduce(
-        (sum, [key, value]) =>
-          sum +
-          Math.abs(
-            value -
-              (semantics.inputDefinitions.find((input) => input.key === key)?.defaultValue ?? 0),
-          ),
-        0,
-      );
     if (!prior || deviation(values) < deviation(prior)) representatives.set(key, values);
   }
   const populationInputs = [...representatives.values()];
@@ -403,10 +368,10 @@ function compileProgramDomain(input: {
     canonicalInputs,
     populationInputKeys,
     populationInputs,
-    targets: [
-      null,
-      ...new Map(generatedTargets.map((candidate) => [candidate.key, candidate])).values(),
-    ],
+    canonicalInputDefaults: new Map(
+      semantics.inputDefinitions.map((definition) => [definition.key, definition.defaultValue]),
+    ),
+    targets: [null, ...generatedTargets],
     fields: [
       ...new Map(
         [baselineField, ...(active ? generatedFields : [])].map((candidate) => [
@@ -420,7 +385,7 @@ function compileProgramDomain(input: {
       active,
       hpBoundaries,
     ),
-    rawWorldCardinality: rawTargets.length + 1,
+    rawWorldCardinality: worldDomain.rawWorldCardinality + 1,
   };
 }
 
@@ -428,6 +393,16 @@ class UnsupportedStaticSemantics extends Error {
   constructor(readonly projectionKeys: readonly string[]) {
     super('unsupported_canonical_semantics');
   }
+}
+
+function resolveCanonicalInputOrigin(
+  mode: 'baseline' | 'satisfied',
+  value: number,
+  definition: Extract<CanonicalInputDefinition, { kind: 'effectStackCount' }>,
+): 'baseline' | 'maximum' | 'witness' {
+  if (mode === 'baseline' || value === definition.defaultValue) return 'baseline';
+  if (value === definition.maximum) return 'maximum';
+  return 'witness';
 }
 
 export function compileRankingCandidateSpaces(
@@ -544,9 +519,6 @@ export function compileRankingCandidateSpaces(
 }
 
 function materializeProgramCandidates(input: {
-  servant: ServantMaster;
-  master: MasterDataSnapshot;
-  basis: ResolvedRankingBasis;
   conditions: Pick<
     RankingPolicyConditions,
     'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
@@ -560,6 +532,11 @@ function materializeProgramCandidates(input: {
     programDimensions(domain),
     domain.upperBound,
     'ranking_candidate_space_materialization_mismatch',
+  );
+  const contributionPolicy = compileRankingContributionPolicy(conditions, 'included');
+  const withoutAreaContributionPolicy = compileRankingContributionPolicy(conditions, 'excluded');
+  const hasAreaContribution = domain.semantics.operations.some(
+    (operation) => isAttackerDamageContribution(operation) && isAreaDamageContribution(operation),
   );
   return product.candidates.map((indexes) => {
     const startNpGauge = domain.initialNpGauge;
@@ -590,12 +567,7 @@ function materializeProgramCandidates(input: {
       scenario.canonicalInputValues[definition.key] = {
         kind: 'integer',
         value,
-        origin:
-          conditions.conditionalEffects === 'baseline' || value === definition.defaultValue
-            ? 'baseline'
-            : value === definition.maximum
-              ? 'maximum'
-              : 'witness',
+        origin: resolveCanonicalInputOrigin(conditions.conditionalEffects, value, definition),
       };
     }
     if (target) scenario = materializeRankingWorld(scenario, target);
@@ -616,10 +588,7 @@ function materializeProgramCandidates(input: {
           sum +
           Math.abs(
             canonicalInputValues[key]! -
-              (domain.semantics.inputDefinitions.find((definition) => definition.key === key)
-                ?.defaultValue ??
-                values[0] ??
-                canonicalInputValues[key]!),
+              (domain.canonicalInputDefaults.get(key) ?? values[0] ?? canonicalInputValues[key]!),
           ),
         0,
       ),
@@ -627,11 +596,6 @@ function materializeProgramCandidates(input: {
       fieldCandidateKey: field.key,
       quantityCandidateKey: quantity.key,
     };
-    const contributionPolicy = compileRankingContributionPolicy(conditions, 'included');
-    const withoutAreaContributionPolicy = compileRankingContributionPolicy(conditions, 'excluded');
-    const hasAreaContribution = domain.semantics.operations.some(
-      (operation) => isAttackerDamageContribution(operation) && isAreaDamageContribution(operation),
-    );
     return {
       key: JSON.stringify(evidence),
       attackProfile: domain.program.attackProfile,
@@ -645,9 +609,6 @@ function materializeProgramCandidates(input: {
 }
 
 export function materializeRankingCandidateSpace(input: {
-  servant: ServantMaster;
-  master: MasterDataSnapshot;
-  basis: ResolvedRankingBasis;
   conditions: Pick<
     RankingPolicyConditions,
     'classAffinity' | 'selfBuffs' | 'conditionalEffects' | 'initialOvercharge'
@@ -656,7 +617,7 @@ export function materializeRankingCandidateSpace(input: {
 }): readonly RankingCandidate[] {
   const candidates = input.space.programs.flatMap((domain) =>
     materializeProgramCandidates({
-      ...input,
+      conditions: input.conditions,
       domain,
       policyKey: input.space.policyKey,
       attackProfile: input.space.attackProfile,

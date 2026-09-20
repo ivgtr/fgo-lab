@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.11"
+document_version: "1.7.12"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -63,7 +63,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.44 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
-| TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／性能観測 |
+| TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
 | TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
@@ -1993,6 +1993,7 @@ Implementation units:
 | W3 transition-aware quotient | W2 | 全ordered observationで結果が等しいworldだけを同値classへまとめ、その後にassumption数、baseline deviation、stable keyで代表を選ぶ | 初期truth同値・mutation後非同値を縮約しない。baseline保持、unknown保持、materialization件数とcertificate一致 |
 | W4 independent oracle | W3 | plannerの生成domainを再利用せず、target／targetState全bit state、短い全program、canonical inputを直接列挙する小型oracleを作る | outcome集合、最大damage、採用scenario再実行、unavailable／invalid／unsupportedがplannerと一致。HP／BP／count／transfer、choice、form、conditional costの非単調反例を既存family oracleと接続 |
 | W5 performance・production closure | W4 | profileで確認した箇所だけを最適化し、observation compile、canonical indexing、memoization、制約早期適用を検討。全productionを再監査 | 80条件34,640 outcomes、parity、typed unavailable、damage差を再固定。cap4096／timeout不変。性能は比較値を記録するが固定下限を合否条件にしない。最終`pnpm quality`成功 |
+| W6 implementation convergence | W5 | W0〜W5の正しさを維持したまま、candidate pipelineの式・分岐・lookup・中間表現を意味のある小単位へ収束する。ネスト三項演算子、同じunion判定の反復、loop内の定義探索、多段collection変換、到達不能／常時空の中間状態を対象とし、単なる別fileへの移動は行わない | 完了: 名前付きsemantic owner、execution共有判定、常時空／到達不能／反復lookup／未使用引数の削除をfocused 82 tests、80条件closure、最終`pnpm quality`で確認 |
 
 Minimum counterexample:
 
@@ -2015,6 +2016,9 @@ Done gate:
 - unknown candidateのcalculated化、局所最大の合成、source-owned stateの外部fact捏造が0件である。
 - TSK-06.45の34,640 outcomes、34,600 parity、typed unavailable 40を維持するか、差分をcanonical input・program・mutation・read時点で全数説明する。
 - candidate cap 4,096とtimeoutを緩和しない。ranking hot pathとproduction suiteは比較可能な観測値と差分理由を残すが、固定の性能下限を完了条件にしない。
+- 対象production codeのネスト三項演算子が0件で、入力origin、trait count比較、all／any簡約、population input分類が名前付きの網羅的判断として読める。
+- `compileProgramDomain`はdomainの合成を担当し、transition trait抽出、canonical input分類、代表選択の詳細をinlineで再解釈しない。同じdefinitionの反復検索と同じunion判定の複製が0件である。
+- extractionは行数移動ではなく、呼出側がdomain operationの順序を読める境界を作る。未使用引数、到達不能branch、常時空の互換fieldを残さず、observerとexecutionで同じ意味を再実装する場合は共通ownerへ戻すか独立性が必要な根拠を記録する。
 - flow closureの対象cellがVerifiedまたは理由付きN/Aで、Blocking／Task内Deferred 0。
 
 Contract closure matrix:
@@ -2023,11 +2027,11 @@ Contract closure matrix:
 | --- | --- | --- | --- |
 | `RK-POLICY-001` | Apply | focused world-domain／transition-aware quotient／independent oracle | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-EXEC-001` | Apply | ordered trait mutation・read-position parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-AUDIT-001` | Apply | 80-condition production closure and calculator／ranking／portable parity | `docs/evidence/tsk-06-45-production-closure.json` successor record |
+| `RK-AUDIT-001` | Apply | 80-condition production closure and calculator／ranking／portable parity | `docs/evidence/tsk-06-46-production-closure.json` |
 | `RK-PERF-001` | Apply | comparable ranking hot path and production file-level before／after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: W0〜W5完了、Blocking／Task内Deferred 0。world domain、ordered observation、quotient／代表、certificate、materializationを分割し、指定反例を独立4-state oracleで閉じた。34,640 outcomes、34,600 parity、typed unavailable 40、candidate inventory、最大3,435/4,096は不変。engine 48.0.0、schema／master不変。VRTはengine表示だけ3枚更新しfocused 5/5を確認。最終`pnpm quality`はunit853／production144／E2E29、warning／unexpected console／retry 0で成功した（`.test-results/2026-09-19T23-10-12-900Z-15-559d18`）。[production closure](../evidence/tsk-06-46-production-closure.json)参照。次はTSK-06.47。
+Handoff: W0〜W5のcorrectness／production closureを有効なbaselineとして保持したまま、W6を完了した。`resolveCanonicalInputOrigin`、population input type guard、transition trait extraction、world domain analysisをsemantic ownerとして確定し、trait condition semanticsはexecution側へ共有した。`compileProgramDomain`のinline判断、反復union判定／lookup、常時空／到達不能branch、候補後再dedupe、materialize APIの未使用引数を削除し、独立oracleはplanner domainを再利用しないまま維持する。focused 82 tests、production 144/144、80条件34,640 outcomes、34,600 parity、typed unavailable 40、最大3,435/4,096、最終`pnpm quality`成功を[production closure](../evidence/tsk-06-46-production-closure.json)へ記録した。Blocking／Task内Deferredは0、TSK-06.46は`done`、TSK-06.47は`ready`。
 
 ### TSK-06.47: Contribution decision UI cleanup
 
@@ -2060,7 +2064,7 @@ Contract closure matrix:
 | `RK-CACHE-001` | N/A: detail interactionは既存request-on-demand contractを消費し、cache lifetime変更はTSK-07 | - | TSK-07 |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: 未記録
+Handoff: TSK-06.46のworld candidate semantic owner、production parity、quality gate完了を前提に着手可能。UIのlogical effect／per-contribution presentationだけを対象とし、ranking damage semantics、candidate generation、execution ownerは再実装しない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

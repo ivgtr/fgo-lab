@@ -2,6 +2,27 @@ import { UnsupportedStackQuantity } from './rankingStackDomain';
 import type { ConditionExpression } from '@fgo-lab/battle-execution';
 import type { CanonicalInputDefinition } from '@fgo-lab/master-data';
 
+export type PopulationInputDefinition = Extract<
+  CanonicalInputDefinition,
+  {
+    kind: 'transferDonor' | 'populationCount' | 'populationSize' | 'populationActorValue';
+  }
+>;
+
+export function isPopulationInputDefinition(
+  definition: CanonicalInputDefinition,
+): definition is PopulationInputDefinition {
+  switch (definition.kind) {
+    case 'transferDonor':
+    case 'populationCount':
+    case 'populationSize':
+    case 'populationActorValue':
+      return true;
+    default:
+      return false;
+  }
+}
+
 function alignedBoundaryValues(
   definition: CanonicalInputDefinition,
   boundaries: readonly number[],
@@ -33,6 +54,38 @@ function conditionInputBoundaries(
   return condition.kind === 'not' ? conditionInputBoundaries(condition.expression) : [];
 }
 
+function resolveCanonicalInputValues(
+  definition: CanonicalInputDefinition,
+  mode: 'baseline' | 'satisfied',
+  boundaries: ReadonlyMap<string, readonly number[]>,
+  stackWitnesses: ReadonlyMap<string, readonly number[]>,
+  populationSaturation: ReadonlyMap<string, number>,
+): readonly number[] {
+  if (mode === 'baseline') return [definition.defaultValue ?? definition.minimum];
+  if (isPopulationInputDefinition(definition))
+    return Array.from(
+      {
+        length:
+          Math.min(
+            definition.maximum,
+            populationSaturation.get(definition.key) ?? definition.maximum,
+          ) -
+          definition.minimum +
+          1,
+      },
+      (_, index) => definition.minimum + index,
+    );
+  if (definition.kind === 'effectStackCount') {
+    if (definition.instanceTraits === undefined && stackWitnesses.has(definition.key))
+      return stackWitnesses.get(definition.key)!;
+    return Array.from({ length: definition.maximum + 1 }, (_, count) => count);
+  }
+  const inputBoundaries = boundaries.get(definition.key);
+  return inputBoundaries
+    ? alignedBoundaryValues(definition, inputBoundaries)
+    : [definition.maximum];
+}
+
 export function createCanonicalInputValueDomains(
   definitions: readonly CanonicalInputDefinition[],
   conditions: readonly (ConditionExpression | null)[],
@@ -60,31 +113,12 @@ export function createCanonicalInputValueDomains(
     .sort((left, right) => left.key.localeCompare(right.key))
     .map((definition) => ({
       key: definition.key,
-      values:
-        mode === 'baseline'
-          ? [definition.defaultValue ?? definition.minimum]
-          : definition.kind === 'transferDonor' ||
-              definition.kind === 'populationCount' ||
-              definition.kind === 'populationSize' ||
-              definition.kind === 'populationActorValue'
-            ? Array.from(
-                {
-                  length:
-                    Math.min(
-                      definition.maximum,
-                      populationSaturation.get(definition.key) ?? definition.maximum,
-                    ) -
-                    definition.minimum +
-                    1,
-                },
-                (_, index) => definition.minimum + index,
-              )
-            : definition.kind === 'effectStackCount'
-              ? definition.instanceTraits === undefined && stackWitnesses.has(definition.key)
-                ? stackWitnesses.get(definition.key)!
-                : Array.from({ length: definition.maximum + 1 }, (_, count) => count)
-              : boundaries.has(definition.key)
-                ? alignedBoundaryValues(definition, boundaries.get(definition.key)!)
-                : [definition.maximum],
+      values: resolveCanonicalInputValues(
+        definition,
+        mode,
+        boundaries,
+        stackWitnesses,
+        populationSaturation,
+      ),
     }));
 }

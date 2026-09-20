@@ -29,27 +29,35 @@ export interface RankingWorldCandidate {
   classId: CanonicalTargetClassId;
   attribute: CanonicalTargetAttribute;
   familyIds: readonly CanonicalTargetFamilyId[];
-  selections: Readonly<Record<string, string>>;
   traitFacts: readonly RankingTraitFact[];
 }
 
 function traitFactCandidates(
   traits: readonly Omit<RankingTraitFact, 'present'>[],
 ): readonly RankingTraitFact[][] {
-  const byDimension = new Map<string, Omit<RankingTraitFact, 'present'>[]>();
+  type TraitDimension = {
+    key: string;
+    kind: 'independent' | 'exclusive';
+    facts: Omit<RankingTraitFact, 'present'>[];
+  };
+  const byDimension = new Map<string, TraitDimension>();
   for (const fact of traits) {
     const exclusiveGroup = canonicalExclusiveGroup(fact.scope, fact.trait);
-    const key = exclusiveGroup
-      ? `exclusive:target:${exclusiveGroup}`
-      : `trait:${fact.scope}:${fact.trait}`;
-    byDimension.set(key, [...(byDimension.get(key) ?? []), fact]);
+    const kind = exclusiveGroup === null ? 'independent' : 'exclusive';
+    const key =
+      kind === 'independent'
+        ? `trait:${fact.scope}:${fact.trait}`
+        : `exclusive:target:${exclusiveGroup}`;
+    const dimension = byDimension.get(key) ?? { key, kind, facts: [] };
+    dimension.facts.push(fact);
+    byDimension.set(key, dimension);
   }
   return finiteSemanticProduct(
-    [...byDimension].map(([key, facts]) => {
+    [...byDimension.values()].map(({ key, kind, facts }) => {
       const unique = [
         ...new Map(facts.map((fact) => [`${fact.scope}:${fact.trait}`, fact])).values(),
       ];
-      if (!key.startsWith('exclusive:'))
+      if (kind === 'independent')
         return { key, values: [false, true].map((present) => [{ ...unique[0]!, present }]) };
       const traitsInGroup = [...new Set(unique.map(({ trait }) => trait))];
       const absent = unique.map((fact) => ({ ...fact, present: false }));
@@ -71,6 +79,121 @@ function traitFactCandidates(
   ).candidates.map((candidate) => Object.values(candidate).flat());
 }
 
+function collectPredicateReferences(
+  witnessSpaces: readonly ReturnType<typeof targetConditionWitnessSpace>[],
+) {
+  const classes = new Set<CanonicalTargetClassId>();
+  const attributes = new Set<CanonicalTargetAttribute>();
+  const familyIds = new Set<CanonicalTargetFamilyId>();
+  for (const { predicates } of witnessSpaces)
+    for (const predicate of predicates) {
+      switch (predicate.kind) {
+        case 'classIdentity':
+          classes.add(predicate.classId);
+          break;
+        case 'attributeIdentity':
+          attributes.add(predicate.attribute);
+          break;
+        case 'familyMembership':
+          familyIds.add(predicate.familyId);
+          break;
+      }
+    }
+  return { classes, attributes, familyIds: [...familyIds].sort() };
+}
+
+function collectExplicitTargetStateTraits(
+  conditions: readonly (ConditionExpression | null)[],
+): ReadonlySet<string> {
+  const traits = new Set<string>();
+  const visit = (condition: ConditionExpression): void => {
+    switch (condition.kind) {
+      case 'all':
+      case 'any':
+        condition.expressions.forEach(visit);
+        return;
+      case 'not':
+        visit(condition.expression);
+        return;
+      case 'trait':
+        if (condition.scope === 'targetState') traits.add(condition.trait);
+        return;
+      case 'traitCount':
+        if (condition.scope === 'targetState')
+          condition.traits.forEach((trait) => traits.add(trait));
+        return;
+      default:
+        return;
+    }
+  };
+  conditions
+    .filter((condition): condition is ConditionExpression => condition !== null)
+    .forEach(visit);
+  return traits;
+}
+
+function collectTargetTraitFacts(
+  witnessSpaces: readonly ReturnType<typeof targetConditionWitnessSpace>[],
+  ownedTraitFacts: ReadonlySet<string>,
+  transitionTraits: ReadonlySet<string> | undefined,
+  explicitTargetStateTraits: ReadonlySet<string>,
+): readonly { scope: 'target' | 'targetState'; trait: string }[] {
+  const facts = new Map<string, { scope: 'target' | 'targetState'; trait: string }>();
+  for (const { traitFacts } of witnessSpaces)
+    for (const fact of traitFacts) {
+      if (ownedTraitFacts.has(`${fact.scope}:${fact.trait}`)) continue;
+      if (
+        transitionTraits !== undefined &&
+        fact.scope === 'targetState' &&
+        !explicitTargetStateTraits.has(fact.trait) &&
+        !transitionTraits.has(fact.trait)
+      )
+        continue;
+      facts.set(`${fact.scope}:${fact.trait}`, fact);
+    }
+  return [...facts.values()].sort((left, right) =>
+    `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
+  );
+}
+
+function selectTargetClasses(
+  relationClasses: readonly CanonicalTargetClassId[],
+  referencedClasses: ReadonlySet<CanonicalTargetClassId>,
+  allClasses: readonly CanonicalTargetClassId[],
+): readonly CanonicalTargetClassId[] {
+  const selected = [
+    ...relationClasses.slice(0, 1),
+    ...relationClasses.filter((classId) => referencedClasses.has(classId)),
+    ...allClasses.filter((classId) => referencedClasses.has(classId)),
+  ];
+  const neutral = relationClasses[0];
+  if (referencedClasses.size > 0 && (neutral === undefined || referencedClasses.has(neutral))) {
+    const fallback = allClasses.find((classId) => !referencedClasses.has(classId));
+    if (fallback !== undefined) selected.push(fallback);
+  }
+  return [...new Set(selected)];
+}
+
+function selectTargetAttributes(
+  neutralAttributes: readonly CanonicalTargetAttribute[],
+  referencedAttributes: ReadonlySet<CanonicalTargetAttribute>,
+  allAttributes: readonly CanonicalTargetAttribute[],
+): readonly CanonicalTargetAttribute[] {
+  const selected = [
+    ...neutralAttributes.slice(0, 1),
+    ...allAttributes.filter((attribute) => referencedAttributes.has(attribute)),
+  ];
+  const neutral = neutralAttributes[0];
+  if (
+    referencedAttributes.size > 0 &&
+    (neutral === undefined || referencedAttributes.has(neutral))
+  ) {
+    const fallback = allAttributes.find((attribute) => !referencedAttributes.has(attribute));
+    if (fallback !== undefined) selected.push(fallback);
+  }
+  return [...new Set(selected)];
+}
+
 /** Enumerates physical target facts only. It intentionally does not evaluate conditions. */
 export function enumerateRankingWorldDomain(input: {
   servant: ServantMaster;
@@ -82,71 +205,23 @@ export function enumerateRankingWorldDomain(input: {
 }): RankingWorldCandidate[] {
   const { servant, master, scenario, conditions } = input;
   const witnessSpaces = conditions.map(targetConditionWitnessSpace);
-  const predicates = [
-    ...new Map(
-      witnessSpaces.flatMap(({ predicates: values }) =>
-        values.map((predicate) => [JSON.stringify(predicate), predicate] as const),
-      ),
-    ).values(),
-  ];
-  const referencedClasses = new Set(
-    predicates.flatMap((predicate) =>
-      predicate.kind === 'classIdentity' ? [predicate.classId] : [],
-    ),
-  );
-  const referencedAttributes = new Set(
-    predicates.flatMap((predicate) =>
-      predicate.kind === 'attributeIdentity' ? [predicate.attribute] : [],
-    ),
-  );
-  const referencedFamilyIds = [
-    ...new Set(
-      predicates.flatMap((predicate) =>
-        predicate.kind === 'familyMembership' ? [predicate.familyId] : [],
-      ),
-    ),
-  ].sort();
+  const {
+    classes: referencedClasses,
+    attributes: referencedAttributes,
+    familyIds: referencedFamilyIds,
+  } = collectPredicateReferences(witnessSpaces);
   const familyCandidates = finiteSemanticProduct(
     referencedFamilyIds.map((familyId) => ({ key: familyId, values: [false, true] })),
     MAX_RANKING_WORLD_CANDIDATES,
     'ranking_world_candidate_limit',
   ).candidates.map((candidate) => referencedFamilyIds.filter((familyId) => candidate[familyId]));
   const ownedTraitFacts = input.ownedTraitFacts ?? new Set<string>();
-  const explicitTargetStateTraits = new Set<string>();
-  const collectExplicitTargetState = (condition: ConditionExpression | null): void => {
-    if (!condition) return;
-    if (condition.kind === 'all' || condition.kind === 'any') {
-      condition.expressions.forEach(collectExplicitTargetState);
-      return;
-    }
-    if (condition.kind === 'not') {
-      collectExplicitTargetState(condition.expression);
-      return;
-    }
-    if (
-      (condition.kind === 'trait' || condition.kind === 'traitCount') &&
-      condition.scope === 'targetState'
-    )
-      for (const trait of condition.kind === 'trait' ? [condition.trait] : condition.traits)
-        explicitTargetStateTraits.add(trait);
-  };
-  conditions.forEach(collectExplicitTargetState);
-  const targetTraits = [
-    ...new Map(
-      witnessSpaces
-        .flatMap(({ traitFacts }) => traitFacts)
-        .filter((fact) => !ownedTraitFacts.has(`${fact.scope}:${fact.trait}`))
-        .filter(
-          (fact) =>
-            !input.canonicalCombinedState ||
-            fact.scope !== 'targetState' ||
-            explicitTargetStateTraits.has(fact.trait) ||
-            input.canonicalCombinedState.transitionTraits.has(fact.trait),
-        )
-        .map((fact) => [`${fact.scope}:${fact.trait}`, fact]),
-    ).values(),
-  ].sort((left, right) =>
-    `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
+  const explicitTargetStateTraits = collectExplicitTargetStateTraits(conditions);
+  const targetTraits = collectTargetTraitFacts(
+    witnessSpaces,
+    ownedTraitFacts,
+    input.canonicalCombinedState?.transitionTraits,
+    explicitTargetStateTraits,
   );
   const relationClasses = targetClassCandidates(
     servant.classId,
@@ -156,82 +231,59 @@ export function enumerateRankingWorldDomain(input: {
     servantAttribute(servant.traits),
     scenario.targetContext.attribute,
   ).filter((attribute) => master.targetSemantics.execution.attributeIdentities.includes(attribute));
-  const classes = [
-    ...new Set([
-      ...relationClasses.slice(0, 1),
-      ...relationClasses.filter((classId) => referencedClasses.has(classId)),
-      ...[...referencedClasses].filter((classId) =>
-        master.targetSemantics.execution.classIdentities.includes(classId),
-      ),
-      ...(referencedClasses.size > 0 &&
-      relationClasses.slice(0, 1).every((classId) => referencedClasses.has(classId))
-        ? master.targetSemantics.execution.classIdentities
-            .filter((classId) => !referencedClasses.has(classId))
-            .slice(0, 1)
-        : []),
-    ]),
-  ];
-  const attributes = [
-    ...new Set([
-      ...neutralAttributes.slice(0, 1),
-      ...[...referencedAttributes].filter((attribute) =>
-        master.targetSemantics.execution.attributeIdentities.includes(attribute),
-      ),
-      ...(referencedAttributes.size > 0 &&
-      neutralAttributes.slice(0, 1).every((attribute) => referencedAttributes.has(attribute))
-        ? master.targetSemantics.execution.attributeIdentities
-            .filter((attribute) => !referencedAttributes.has(attribute))
-            .slice(0, 1)
-        : []),
-    ]),
-  ];
-  const selections = [{}] as const;
+  const classes = selectTargetClasses(
+    relationClasses,
+    referencedClasses,
+    master.targetSemantics.execution.classIdentities,
+  );
+  const attributes = selectTargetAttributes(
+    neutralAttributes,
+    referencedAttributes,
+    master.targetSemantics.execution.attributeIdentities,
+  );
   const traitFacts = traitFactCandidates(targetTraits);
   const candidateCount =
-    classes.length *
-    attributes.length *
-    familyCandidates.length *
-    selections.length *
-    traitFacts.length;
+    classes.length * attributes.length * familyCandidates.length * traitFacts.length;
   if (candidateCount > MAX_RANKING_WORLD_PHYSICAL_STATES)
     throw new RangeError(`ranking_world_physical_state_limit:${String(candidateCount)}`);
-  return classes.flatMap((classId) =>
-    attributes.flatMap((attribute) =>
-      familyCandidates.flatMap((familyIds) =>
-        selections.flatMap((selected) =>
-          traitFacts.map((facts) => {
-            const canonicalFacts = [
-              ...facts,
-              ...(input.canonicalCombinedState
-                ? facts.flatMap((fact) =>
-                    fact.scope === 'target' &&
-                    !explicitTargetStateTraits.has(fact.trait) &&
-                    !input.canonicalCombinedState!.transitionTraits.has(fact.trait) &&
-                    !ownedTraitFacts.has(`targetState:${fact.trait}`)
-                      ? [{ scope: 'targetState' as const, trait: fact.trait, present: false }]
-                      : [],
-                  )
-                : []),
-            ].sort((left, right) =>
-              `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
-            );
-            return {
-              key: JSON.stringify({
-                classId,
-                attribute,
-                familyIds,
-                selected,
-                facts: canonicalFacts,
-              }),
-              classId,
-              attribute,
-              familyIds,
-              selections: selected,
-              traitFacts: canonicalFacts,
-            };
-          }),
-        ),
-      ),
-    ),
+  const candidates: RankingWorldCandidate[] = [];
+  for (const classId of classes)
+    for (const attribute of attributes)
+      for (const familyIds of familyCandidates)
+        for (const facts of traitFacts) {
+          const canonicalFacts = completeTargetStateFacts(
+            facts,
+            input.canonicalCombinedState?.transitionTraits,
+            explicitTargetStateTraits,
+            ownedTraitFacts,
+          );
+          candidates.push({
+            key: JSON.stringify({ classId, attribute, familyIds, facts: canonicalFacts }),
+            classId,
+            attribute,
+            familyIds,
+            traitFacts: canonicalFacts,
+          });
+        }
+  return candidates;
+}
+
+function completeTargetStateFacts(
+  facts: readonly RankingTraitFact[],
+  transitionTraits: ReadonlySet<string> | undefined,
+  explicitTargetStateTraits: ReadonlySet<string>,
+  ownedTraitFacts: ReadonlySet<string>,
+): readonly RankingTraitFact[] {
+  const completed = [...facts];
+  if (transitionTraits === undefined) return completed;
+  for (const fact of facts) {
+    if (fact.scope !== 'target') continue;
+    if (explicitTargetStateTraits.has(fact.trait)) continue;
+    if (transitionTraits.has(fact.trait)) continue;
+    if (ownedTraitFacts.has(`targetState:${fact.trait}`)) continue;
+    completed.push({ scope: 'targetState', trait: fact.trait, present: false });
+  }
+  return completed.sort((left, right) =>
+    `${left.scope}:${left.trait}`.localeCompare(`${right.scope}:${right.trait}`),
   );
 }

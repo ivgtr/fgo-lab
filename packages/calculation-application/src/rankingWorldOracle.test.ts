@@ -25,7 +25,6 @@ function worlds(): RankingWorldCandidate[] {
     classId: 'saber' as const,
     attribute: 'man' as const,
     familyIds: [],
-    selections: {},
     traitFacts: [
       { scope: 'target' as const, trait: 'oracleTrait', present: (mask & 1) !== 0 },
       { scope: 'targetState' as const, trait: 'oracleTrait', present: (mask & 2) !== 0 },
