@@ -1,6 +1,6 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.5"
+document_version: "1.0.6"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
@@ -230,3 +230,5 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
   [effect／execution closure](../evidence/tsk-06-48-effect-execution-closure.json)へ記録した。次はbattle-execution operation compiler／ordered execution境界で、
   TSK-06.48は`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施を維持する。残り2 bounded unitの
   対象・停止条件・過度な性能ゴール／テストを求めない方針は[bounded completion plan](package-semantic-convergence-tsk-06-48-completion-plan.md)を正本とする。
+- battle-execution operation compiler／ordered execution bounded unitは、開始HEAD `ad786f0`とproduction code基点`00ad5db`を分離して監査した。`compileEffectCached`／`compileEffect`、`compileExecutionPlan`、`executePreparationOc`、resource query／suffix closure、candidate transaction rollbackのownerは一意であり、OC kind列挙の反復もcompiler projection、preparation program、runtime binding、preparation gateでtyped outputが異なるため統合しなかった。production sourceの変更はなく、`isOneOf`、`processValues`、条件wrapper、汎用helperは追加していない。
+- focused battle-execution／直接application `158/158`、candidate／world／resource audit `34/34`、targeted eslint、`pnpm typecheck`を通過した。operation `15,257`、effect `13,875`、canonical input／support分類、order、condition truth、mutation後read、calculator／ranking／portable parityに差分はなく、既存の80条件×433 profile closureを再利用した。34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／inputRequired 0、candidate 1,028,810／最大3,435／cap 4,096を維持した。machine-readable結果は[TSK-06.48 battle-execution closure](../evidence/tsk-06-48-battle-execution-closure.json)、flow差分は[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ記録した。次はcalculation-application candidate／world／scenario boundaryであり、TSK-06.48全体の最終`pnpm quality`は未実施である。

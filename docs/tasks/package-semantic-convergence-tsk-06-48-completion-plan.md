@@ -1,6 +1,6 @@
 ---
 title: "TSK-06.48 bounded completion plan"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
@@ -44,6 +44,14 @@ bounded unitで確立したcanonical output、ordered execution、ranking candid
 重複分類がコード根拠で確認できた場合だけ、既存のbattle-execution ownerへ集約する。重複がなくcanonical operationをそのまま
 orderedに適用している場合は、コードを変更せず、owner確認・focused fixture・evidence更新でbounded unitを閉じる。
 schema、public API、operation shape、input definition、raw Atlas解釈のdata-pipeline ownerは変更しない。
+
+### A実施結果（2026-09-20）
+
+開始時HEADは`ad786f014d89263fed04d1217260b1f2463edaba`、production code基点は直前コード変更の`00ad5dbeccd91813c04a6f53a53633576e2c9b26`と分離した。対象symbolの定義・参照・直接consumerを監査した結果、canonical operationからruntime projection、ordered preparation、resource read closure、candidate rollbackのownerは重複していなかった。OC operationの論理和はcompiler support、preparation program、runtime binding、preparation gateのtyped outputが異なるため、分類を共通helperへ移していない。
+
+production sourceは変更せず、focused battle-execution／直接application `158/158`、candidate／world／resource audit `34/34`、targeted lint、typecheckを通過した。canonical output、operation／input inventory、support分類、operation order、condition truth、mutation後read、calculator／ranking parity、candidate inventoryに差分がないため、既存の80条件×433 profile closureを再利用する。machine-readable結果は`docs/evidence/tsk-06-48-battle-execution-closure.json`である。Prettier、`git diff --check`、docs integrityは記録更新後に実行する。
+
+このbounded unitでTSK-06.48全体を完了とはせず、次はcalculation-application candidate／world／scenario boundaryとする。最終`pnpm quality`、TSK-06.47、TSK-06.5のstatusは変更しない。
 
 ## 3. bounded unit B: calculation-application boundary
 

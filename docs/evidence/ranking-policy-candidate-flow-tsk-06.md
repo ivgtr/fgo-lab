@@ -5374,3 +5374,13 @@ inputRequired 0、parity 34,600/34,600、candidate generated／deduplicated 1,02
 inventory差分が出た場合だけ影響matrixを再実行する。機械証跡は[TSK-06.48 effect／execution closure](tsk-06-48-effect-execution-closure.json)である。
 TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`、最終`pnpm quality`は未実施、commitは未作成で、次のbounded unitはbattle-execution
 operation compiler／ordered execution境界とする。
+
+### TSK-06.48 battle-execution operation compiler／ordered execution bounded unit（2026-09-20）
+
+開始時HEADは`ad786f014d89263fed04d1217260b1f2463edaba`、production code基点は`00ad5dbeccd91813c04a6f53a53633576e2c9b26`であり、直前effect／execution bounded unitの開始基点`128189f`とは分離した。`operationCompiler.ts`のcanonical operation／runtime projection、`executionPlan.ts`のphase／order／resource closure、`preparationOc.ts`のordered preparation、`preparationTransaction.ts`のtyped rejection、`resourceQueries.ts`／`resourceSemantics.ts`のread timing、`candidateExecution.ts`のtransaction rollbackを監査した。
+
+同じOC kindの論理和は、compiler support projection、preparation program、runtime binding、preparation gateの異なるtyped outputを返しており、共通semantic ownerへ集約すべき反復union分類ではなかった。canonical operation／condition／input／resourceの網羅的union、`all`／`any`、provenance、stable comparator、schema narrowing、unknown／unresolvedのfail-closed、suffix reader、mutation-after-read、rollbackは維持した。raw Atlas vocabularyはdata-pipelineだけが解釈し、calculator／ranking／portableは共通scenario／execution pathを使用する。
+
+focused battle-execution／直接application `158/158`、candidate／world／resource audit `34/34`、targeted eslint、`pnpm typecheck`が成功した。`00ad5db..ad786f0`にはbattle-execution／calculation-applicationのproduction source差分がなく、canonical output、operation `15,257`、effect `13,875`、input／support分類、order、condition truth、mutation-after-read、calculator／ranking parity、candidate inventoryに差分はないため、既存の80条件×433 profile closureを再利用した。34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／inputRequired 0、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct 233,100、最大3,435／cap 4,096を維持する。production matrixと性能診断は再実行していない。
+
+詳細は[TSK-06.48 battle-execution closure](tsk-06-48-battle-execution-closure.json)を参照する。Prettier、`git diff --check`、docs integrity完了後もTSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`、最終`pnpm quality`は未実施で、次はcalculation-application candidate／world／scenario bounded unitとする。

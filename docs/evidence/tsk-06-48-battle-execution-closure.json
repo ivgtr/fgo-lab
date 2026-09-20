@@ -1,0 +1,184 @@
+{
+  "task": "TSK-06.48",
+  "status": "bounded_unit_complete",
+  "unit": "battle-execution operation compiler and ordered execution boundary",
+  "baseline": {
+    "currentHeadAtStart": "ad786f014d89263fed04d1217260b1f2463edaba",
+    "productionCodeBaseline": "00ad5dbeccd91813c04a6f53a53633576e2c9b26",
+    "previousBoundedUnitBase": "128189fc831e1ed4a301637ee66bc047de744b9b",
+    "previousBoundedUnitEvidence": "docs/evidence/tsk-06-48-effect-execution-closure.json",
+    "transferHpEvidence": "docs/evidence/tsk-06-48-transfer-hp-closure.json",
+    "populationEvidence": "docs/evidence/tsk-06-48-population-closure.json",
+    "w7Evidence": "docs/evidence/tsk-06-46-production-closure.json",
+    "masterDataVersion": "20260920.3",
+    "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+    "masterSchemaVersion": 56,
+    "engineVersion": "48.0.0",
+    "portableSchemaVersion": 40
+  },
+  "sourceDiff": {
+    "productionSourceChangedSinceCodeBaseline": false,
+    "filesChanged": [],
+    "docsOnlyHeadAdvance": true,
+    "ownerConclusion": "no_duplicate_semantic_owner_found"
+  },
+  "semanticOwners": {
+    "canonicalCompilation": "packages/battle-execution/src/operationCompiler.ts::compileEffectCached／compileEffect",
+    "runtimeInputProjection": "packages/battle-execution/src/operationCompiler.ts::runtimeInputDefinitionsForSource",
+    "orderedPlan": "packages/battle-execution/src/executionPlan.ts::compileExecutionPlan",
+    "resourceReadAccess": "packages/battle-execution/src/resourceQueries.ts::mutationResourceAccess／conditionQuantityReads",
+    "resourceMutationClosure": "packages/battle-execution/src/resourceSemantics.ts::closeResourceMutationSemantics",
+    "preparationDecision": "packages/battle-execution/src/preparationTransaction.ts::effectRequiresPreparationDecision／planPreparationResourceTransaction",
+    "orderedPreparation": "packages/battle-execution/src/preparationOc.ts::executePreparationOc",
+    "candidateExecutionAndRollback": "packages/battle-execution/src/candidateExecution.ts::executeOrderedScenarioCandidate",
+    "calculatorScenario": "packages/calculation-application/src/scenario.ts::resolveScenario／calculateScenario",
+    "rankingScenarioPreparation": "packages/calculation-application/src/rankingPolicyScenario.ts::compileRankingExecutionPlan",
+    "rankingWorldObservation": "packages/calculation-application/src/rankingWorldObservation.ts::compileRankingWorldObservationPlan",
+    "rankingCandidateDomain": "packages/calculation-application/src/rankingCandidateSpace.ts::buildPopulationCandidateInputs"
+  },
+  "directConsumers": [
+    "packages/battle-execution/src/executionPlan.ts",
+    "packages/battle-execution/src/preparationPhases.ts",
+    "packages/battle-execution/src/ocSourceProgram.ts",
+    "packages/battle-execution/src/ocSourceBinding.ts",
+    "packages/battle-execution/src/candidateExecution.ts",
+    "packages/calculation-application/src/scenario.ts",
+    "packages/calculation-application/src/rankingStaticSemantics.ts",
+    "packages/calculation-application/src/rankingPolicyScenario.ts",
+    "packages/calculation-application/src/rankingExecution.ts",
+    "packages/calculation-application/src/portableCalculation.ts",
+    "packages/calculation-application/src/resourceProgramAudit.ts"
+  ],
+  "logicalDisjunctionDisposition": {
+    "centralized": [],
+    "typedConversions": [
+      "canonical effect execution operation to BattleOperation／EffectProjection",
+      "canonical source effect to preparation gate and OC source program",
+      "canonical resource mutation to physical write and amount-read descriptors",
+      "BattleOperation to ranking world observation step",
+      "population input tuple to equivalence representative"
+    ],
+    "retainedExhaustiveUnions": [
+      "operation, condition, input definition, resource, OC, HP, and preparation operation kind branches",
+      "phase order comparator stable fallback using left.order",
+      "typed outcome and candidate-domain status unions"
+    ],
+    "retainedBooleanSemantics": [
+      "all／any／not composition, condition truth, provenance, and schema narrowing",
+      "unknown, unresolved, missing-value, unsupported, and invalid fail-closed guards",
+      "resource actor intersection, suffix reader proof, mutation-after-read, and transaction rollback",
+      "candidate first representative selection and finite-domain admission",
+      "ranking source inclusion joins for preparation and OC condition readers"
+    ],
+    "repeatedUnionClassification": "The repeated OC kind lists have different typed outputs and evaluation times: compiler support projection, preparation program selection, runtime binding, and preparation gate. They are retained as independent owners; no generic predicate was added."
+  },
+  "canonicalContract": {
+    "publicBattleExecutionApisUnchanged": true,
+    "canonicalEffectRecordShapeChanged": false,
+    "canonicalOperationShapeChanged": false,
+    "inputDefinitionShapeChanged": false,
+    "supportClassificationChanged": false,
+    "operationOrderConditionTruthMutationAfterReadUnchanged": true,
+    "rawAtlasVocabularyOwner": "data-pipeline",
+    "battleExecutionConsumesCanonicalOperationsInOrder": true,
+    "calculatorRankingPortableShareApplicationExecutionPath": true,
+    "rankingOwnsDamageOrResourceSemantics": false
+  },
+  "semanticInventory": {
+    "effects": 13875,
+    "operations": 15257,
+    "operationInventoryUnchanged": true,
+    "canonicalInputInventoryUnchanged": true,
+    "supportClassificationUnchanged": true,
+    "candidateInventoryUnchanged": true
+  },
+  "fixtures": {
+    "battleExecutionArtifact": ".test-results/2026-09-20T13-34-06-720Z-15-d55cab",
+    "applicationCandidateArtifact": ".test-results/2026-09-20T13-34-22-586Z-15-75f994",
+    "covered": [
+      "canonical operation compilation order, route eligibility, missing values, and unresolved fail-closed projection",
+      "preparation condition truth, source order, live facts, NP／HP／population／marker mutation, rollback, and retry",
+      "resource query actor binding, amount dependencies, suffix reader timing, and ordered critical-star mutation",
+      "candidate group rollback of state, input, and operation results",
+      "calculator／ranking／portable parity through the common scenario and ordered execution path",
+      "world observation order, resource audit boundaries, candidate representative／dedupe／cardinality／cap, and typed outcome status"
+    ]
+  },
+  "verification": {
+    "focusedBattleExecution": "158/158 across 8 files",
+    "focusedApplicationAndCandidate": "34/34 across 5 files",
+    "targetedLint": "pnpm exec eslint ... --max-warnings=0 passed",
+    "typecheck": "pnpm typecheck passed",
+    "prettier": "targeted check passed",
+    "gitDiffCheck": "passed",
+    "docsIntegrity": "pnpm test:docs passed",
+    "finalQuality": "not run; TSK-06.48 remains in_progress"
+  },
+  "productionMatrix": {
+    "status": "reused",
+    "sourceEvidence": "docs/evidence/tsk-06-48-effect-execution-closure.json",
+    "sourceMatrixArtifactRoot": ".test-results/tsk-06-48-transfer-hp-closure",
+    "sourceMergedDigest": "b215695142f2e966d203eb8aab47b2f6fe725109eee349e6bce5605f541c2a0d",
+    "conditionCount": 80,
+    "attackProfilesPerCondition": 433,
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "inputRequired": 0,
+    "invalid": 0,
+    "unsupported": 0,
+    "parityCompared": 34600,
+    "parityFailures": 0,
+    "candidateInventory": {
+      "generated": 1028810,
+      "deduplicated": 1028810,
+      "damageRequests": 967810,
+      "distinctDamageInputs": 233100,
+      "maximumSingleProfileProduct": 3435,
+      "maximumSingleProfileServantId": "2801300",
+      "cap": 4096
+    },
+    "semanticDigest": "2cc31c8b0cdabc6d12a1cc97a8218c859866149ee4a4ad19c3ec0d313b0702e0",
+    "comparison": {
+      "canonicalOutputChanged": false,
+      "canonicalEffectRecordChanged": false,
+      "canonicalOperationChanged": false,
+      "canonicalInputDefinitionChanged": false,
+      "supportClassificationChanged": false,
+      "operationOrderChanged": false,
+      "conditionTruthChanged": false,
+      "mutationAfterReadChanged": false,
+      "candidateInventoryChanged": false,
+      "calculatorRankingParityChanged": false,
+      "rerunRequired": false,
+      "reuseBasis": "No battle-execution or calculation-application production source changed since 00ad5db; focused direct-consumer and candidate/world fixtures passed."
+    }
+  },
+  "performanceObservation": {
+    "status": "not_rerun",
+    "candidateDomainAndHotPathChanged": false,
+    "acceptanceFloor": null,
+    "interpretation": "The bounded unit made no production source change. Candidate cardinality, cap, timeout, and existing performance ratchet remain unchanged."
+  },
+  "recordFiles": [
+    "docs/tasks/package-semantic-convergence-tsk-06-48.md",
+    "docs/tasks/package-semantic-convergence-tsk-06-48-completion-plan.md",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/evidence/ranking-policy-candidate-flow-tsk-06.md",
+    "docs/evidence/README.md",
+    "docs/README.md"
+  ],
+  "remainingUnits": [
+    "calculation-application candidate／world／scenario boundary"
+  ],
+  "handoff": {
+    "taskStatus": "in_progress",
+    "tsk0647Status": "ready",
+    "tsk065Status": "blocked",
+    "blocking": 0,
+    "finalQualityPending": true,
+    "commitCreated": false,
+    "nextBoundedUnit": "calculation-application candidate／world／scenario boundary",
+    "unmetCompletion": "TSK-06.48 overall closure, bounded unit B, and final pnpm quality remain pending"
+  }
+}
