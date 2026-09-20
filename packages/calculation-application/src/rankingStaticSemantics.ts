@@ -87,6 +87,9 @@ export function compileStaticRankingSemantics(
         )
       : [];
   const plannedOperations = planOperationActivations(operations);
+  const preparationSources = sources.filter(
+    ({ effect }) => effectChangesPreparation(effect) || hasOcConditionReader(effect),
+  );
   const liveDefinitions = [
     ...(attackVariant?.kind === 'attack'
       ? attackVariant.damage.flatMap((damage) => {
@@ -99,9 +102,7 @@ export function compileStaticRankingSemantics(
         })
       : []),
     ...plannedOperations.flatMap((operation) => operation.inputDefinitions),
-    ...sources
-      .filter(({ effect }) => effectChangesPreparation(effect) || hasOcConditionReader(effect))
-      .flatMap(runtimeInputDefinitionsForSource),
+    ...preparationSources.flatMap(runtimeInputDefinitionsForSource),
   ];
   const definitions = mergeInputDefinitions(liveDefinitions);
   return {
@@ -113,9 +114,7 @@ export function compileStaticRankingSemantics(
         operation.kind === 'preserveSemanticEffect' ? [] : [operation.condition],
       ),
       ...damageConditions,
-      ...sources
-        .filter(({ effect }) => effectChangesPreparation(effect) || hasOcConditionReader(effect))
-        .map((source) => compileOcSourceProgram(source).condition),
+      ...preparationSources.map((source) => compileOcSourceProgram(source).condition),
     ].map((condition) => stackOwnedWitnessCondition(condition, definitions)),
     stackWitnesses: uncertainOcCell
       ? new Map()
@@ -127,13 +126,10 @@ export function compileStaticRankingSemantics(
             ),
           ].filter(
             ([key]) =>
-              !sources.some(
-                (source) =>
-                  (effectChangesPreparation(source.effect) ||
-                    hasOcConditionReader(source.effect)) &&
-                  runtimeInputDefinitionsForSource(source).some(
-                    (definition) => definition.key === key,
-                  ),
+              !preparationSources.some((source) =>
+                runtimeInputDefinitionsForSource(source).some(
+                  (definition) => definition.key === key,
+                ),
               ),
           ),
         ),

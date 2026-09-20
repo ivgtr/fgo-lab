@@ -1,0 +1,229 @@
+{
+  "task": "TSK-06.48",
+  "status": "bounded_unit_complete",
+  "unit": "calculation-application candidate／world／scenario boundary",
+  "baseline": {
+    "currentHeadAtStart": "ee9f00fbdfa56a3293d9ba1000a5068388cd15c8",
+    "productionCodeBaseline": "00ad5dbeccd91813c04a6f53a53633576e2c9b26",
+    "previousBoundedUnitCommit": "ee9f00fbdfa56a3293d9ba1000a5068388cd15c8",
+    "previousBoundedUnitBase": "ad786f014d89263fed04d1217260b1f2463edaba",
+    "previousBoundedUnitEvidence": "docs/evidence/tsk-06-48-battle-execution-closure.json",
+    "effectExecutionEvidence": "docs/evidence/tsk-06-48-effect-execution-closure.json",
+    "transferHpEvidence": "docs/evidence/tsk-06-48-transfer-hp-closure.json",
+    "populationEvidence": "docs/evidence/tsk-06-48-population-closure.json",
+    "w7Evidence": "docs/evidence/tsk-06-46-production-closure.json",
+    "masterDataVersion": "20260920.3",
+    "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+    "masterSchemaVersion": 56,
+    "engineVersion": "48.0.0",
+    "portableSchemaVersion": 40
+  },
+  "changedFiles": [
+    "packages/calculation-application/src/rankingStaticSemantics.ts"
+  ],
+  "sourceChange": {
+    "kind": "local semantic inventory convergence",
+    "removedRepeatedClassification": "three repeated effectChangesPreparation(effect) || hasOcConditionReader(effect) filters in static ranking input, condition, and witness construction",
+    "newOwner": "compileStaticRankingSemantics::preparationSources",
+    "ownerConclusion": "one local source inventory is sufficient; no cross-package public helper or production semantic owner was added"
+  },
+  "semanticOwners": {
+    "scenarioIntentAndCanonicalInput": "packages/calculation-application/src/scenario.ts::resolveScenario／prepareCalculationScenarioWithPolicy",
+    "rankingStaticSemantics": "packages/calculation-application/src/rankingStaticSemantics.ts::compileStaticRankingSemantics",
+    "preparationSourceInventory": "packages/calculation-application/src/rankingStaticSemantics.ts::compileStaticRankingSemantics::preparationSources",
+    "rankingWorldObservation": "packages/calculation-application/src/rankingWorldObservation.ts::compileRankingWorldObservationPlan／observeRankingWorld",
+    "rankingWorldDomain": "packages/calculation-application/src/rankingWorldDomain.ts::enumerateRankingWorldDomain",
+    "rankingWorldQuotient": "packages/calculation-application/src/rankingWorldQuotient.ts::analyzeRankingWorldDomain",
+    "canonicalInputDomain": "packages/calculation-application/src/rankingCanonicalInputs.ts::createCanonicalInputValueDomains／isPopulationInputDefinition",
+    "candidateDomain": "packages/calculation-application/src/rankingCandidateSpace.ts::buildPopulationCandidateInputs／compileRankingCandidateSpaces／materializeRankingCandidateSpace",
+    "rankingPolicyScenario": "packages/calculation-application/src/rankingPolicyScenario.ts::compileRankingExecutionPlan",
+    "rankingExecution": "packages/calculation-application/src/rankingExecution.ts::executeRankingScenarios",
+    "canonicalOperationAndExecution": "packages/battle-execution/src/operationCompiler.ts／executionPlan.ts／candidateExecution.ts"
+  },
+  "directConsumers": [
+    "packages/calculation-application/src/scenario.ts",
+    "packages/calculation-application/src/rankingProgramSources.ts",
+    "packages/calculation-application/src/rankingConditionInventory.ts",
+    "packages/calculation-application/src/rankingPolicyScenario.ts",
+    "packages/calculation-application/src/rankingExecution.ts",
+    "packages/calculation-application/src/portableCalculation.ts",
+    "packages/calculation-application/src/rankingCandidateSpace.ts",
+    "packages/calculation-application/src/rankingWorldObservation.ts",
+    "packages/calculation-application/src/resourceProgramAudit.ts",
+    "packages/calculation-application/src/rankingPolicyCandidates.ts",
+    "packages/battle-execution/src/operationCompiler.ts",
+    "packages/battle-execution/src/candidateExecution.ts"
+  ],
+  "dependencyDirection": {
+    "dataPipeline": "raw Atlas vocabulary is interpreted only into canonical effect, operation, and input records",
+    "battleExecution": "canonical operations are compiled and applied in order, with condition truth, rollback, and mutation-after-read",
+    "calculationApplication": "scenario owns user intent and canonical input composition; ranking observes execution and selects finite candidates",
+    "rankingDoesNotOwn": [
+      "damage semantics",
+      "resource mutation semantics",
+      "raw Atlas vocabulary interpretation",
+      "an alternate operation compiler"
+    ]
+  },
+  "logicalDisjunctionDisposition": {
+    "centralized": [
+      "preparationSources now owns the repeated typed inclusion rule effectChangesPreparation(effect) || hasOcConditionReader(effect) within static ranking compilation"
+    ],
+    "typedConversions": [
+      "canonical operation to ranking static operation／condition projection",
+      "BattleOperation mutation to ranking world observation step",
+      "canonical input definition to finite candidate value domain",
+      "population input tuple to representative／equivalence key",
+      "resolved execution result to typed public outcome status"
+    ],
+    "retainedExhaustiveUnions": [
+      "canonical operation, condition, input definition, candidate, and outcome status branches",
+      "isPopulationInputDefinition schema narrowing",
+      "stable ranking-world comparator fallback"
+    ],
+    "retainedBooleanSemantics": [
+      "uncertainOcCell ||= alternate condition-cell detection",
+      "all／any／not recursive condition composition",
+      "unresolved mutation and missing witness fail-closed guards",
+      "!prior || deviation representative selection and finite-product/cap admission",
+      "typed unsupported／invalid／inputRequired／unavailable joins"
+    ],
+    "forbiddenPatternsAdded": [],
+    "classification": {
+      "category1RepeatedUnionOwner": "one local preparation-source inventory was converged; no cross-domain duplicate owner was found",
+      "category2TypedDomainConversion": "canonical operation／input／execution results are converted into distinct typed application projections",
+      "category3ExhaustiveUnion": "operation, condition, schema, status, and comparator branches remain where exhaustiveness is their meaning",
+      "category4BooleanOrFailClosed": "condition composition, uncertainty, mutation deviation, finite admission, and typed failure joins remain"
+    }
+  },
+  "canonicalContract": {
+    "publicApplicationApisChanged": false,
+    "canonicalEffectRecordShapeChanged": false,
+    "canonicalOperationShapeChanged": false,
+    "inputDefinitionShapeChanged": false,
+    "inputKeysChanged": false,
+    "supportClassificationChanged": false,
+    "operationOrderConditionTruthMutationAfterReadUnchanged": true,
+    "candidateDeduplicationCardinalityAndCapUnchanged": true,
+    "calculatorRankingParityUnchanged": true,
+    "rawAtlasVocabularyOwner": "data-pipeline",
+    "battleExecutionRemainsOrderedCanonicalOwner": true,
+    "calculatorRankingPortableShareApplicationExecutionPath": true,
+    "rankingOwnsDamageOrResourceSemantics": false
+  },
+  "semanticInventory": {
+    "effects": 13875,
+    "operations": 15257,
+    "operationInventoryUnchanged": true,
+    "canonicalInputInventoryUnchanged": true,
+    "supportClassificationUnchanged": true,
+    "conditionTruthUnchanged": true,
+    "operationOrderUnchanged": true,
+    "mutationAfterReadUnchanged": true,
+    "candidateInventoryUnchanged": true
+  },
+  "fixtures": {
+    "artifact": ".test-results/2026-09-20T13-45-58-266Z-15-4cb2e0",
+    "tests": "38/38 across 6 files",
+    "focusedFiles": [
+      "packages/calculation-application/src/rankingCandidateSpace.test.ts",
+      "packages/calculation-application/src/rankingWorldObservation.test.ts",
+      "packages/calculation-application/src/rankingProgramSources.test.ts",
+      "packages/calculation-application/src/rankingConditionInventory.test.ts",
+      "packages/calculation-application/src/resourceProgramAudit.test.ts",
+      "packages/calculation-application/src/rankingPolicy.test.ts"
+    ],
+    "covered": [
+      "scenario canonical input and typed rejected／invalid／unsupported／inputRequired outcomes",
+      "static preparation and OC source inventory used for runtime input definitions, conditions, and stack witnesses",
+      "ranking world observation of ordered BattleOperation mutations and unresolved state",
+      "canonical input domains, population equivalence／representative／dedupe, cardinality, and cap",
+      "candidate policy compilation and calculator／ranking parity through the common ordered execution path",
+      "resource program audit and raw Atlas vocabulary exclusion from application semantics"
+    ]
+  },
+  "verification": {
+    "focusedApplicationAndCandidate": "38/38 across 6 files",
+    "targetedLint": "pnpm exec eslint packages/calculation-application/src/rankingStaticSemantics.ts --max-warnings=0 passed",
+    "typecheck": "pnpm typecheck passed",
+    "prettier": "targeted source and documentation check passed",
+    "gitDiffCheck": "passed",
+    "docsIntegrity": "pnpm test:docs passed",
+    "finalQuality": "pending; TSK-06.48 remains in_progress"
+  },
+  "productionMatrix": {
+    "status": "reused",
+    "sourceEvidence": "docs/evidence/tsk-06-48-battle-execution-closure.json",
+    "sourceMatrixArtifactRoot": ".test-results/tsk-06-48-transfer-hp-closure",
+    "sourceMergedDigest": "b215695142f2e966d203eb8aab47b2f6fe725109eee349e6bce5605f541c2a0d",
+    "conditionCount": 80,
+    "attackProfilesPerCondition": 433,
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "inputRequired": 0,
+    "invalid": 0,
+    "unsupported": 0,
+    "parityCompared": 34600,
+    "parityFailures": 0,
+    "candidateInventory": {
+      "generated": 1028810,
+      "deduplicated": 1028810,
+      "damageRequests": 967810,
+      "distinctDamageInputs": 233100,
+      "maximumSingleProfileProduct": 3435,
+      "maximumSingleProfileServantId": "2801300",
+      "cap": 4096
+    },
+    "semanticDigest": "2cc31c8b0cdabc6d12a1cc97a8218c859866149ee4a4ad19c3ec0d313b0702e0",
+    "comparison": {
+      "canonicalOutputChanged": false,
+      "canonicalEffectRecordChanged": false,
+      "canonicalOperationChanged": false,
+      "canonicalInputDefinitionChanged": false,
+      "inputKeysChanged": false,
+      "supportClassificationChanged": false,
+      "operationOrderChanged": false,
+      "conditionTruthChanged": false,
+      "mutationAfterReadChanged": false,
+      "candidateInventoryChanged": false,
+      "calculatorRankingParityChanged": false,
+      "rerunRequired": false,
+      "reuseBasis": "The only production source change creates one local preparation source inventory; focused direct-consumer tests pass, output digest and candidate inventory are unchanged, and no new semantic ambiguity was found."
+    }
+  },
+  "performanceObservation": {
+    "status": "diagnostic_only",
+    "candidateDomainAndRankingStaticCompilationPathChanged": true,
+    "acceptanceFloor": null,
+    "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+    "artifact": ".test-results/tsk-06-48-calculation-application-ranking-hot-path.json",
+    "baselineArtifact": ".test-results/tsk-06-48-transfer-hp-ranking-hot-path.json",
+    "baselineMedianMs": 4437.613980000002,
+    "samplesMs": [6280.809696000002, 6061.904071000001, 6069.753780999999],
+    "medianMs": 6069.753780999999,
+    "rows": 433,
+    "exclusions": 0,
+    "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
+    "interpretation": "The path was measured because ranking static candidate compilation changed. The output digest, rows, and exclusions are unchanged; the wall-clock difference is diagnostic only, is not attributed solely to this local convergence, and does not relax or establish a performance ratchet."
+  },
+  "recordFiles": [
+    "docs/tasks/package-semantic-convergence-tsk-06-48.md",
+    "docs/tasks/package-semantic-convergence-tsk-06-48-completion-plan.md",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/evidence/ranking-policy-candidate-flow-tsk-06.md",
+    "docs/evidence/README.md",
+    "docs/README.md"
+  ],
+  "remainingUnits": [],
+  "handoff": {
+    "taskStatus": "in_progress",
+    "tsk0647Status": "ready",
+    "tsk065Status": "blocked",
+    "blocking": 0,
+    "finalQualityPending": true,
+    "commitCreated": false,
+    "nextBoundedUnit": "final pnpm quality and overall TSK-06.48 closure record",
+    "unmetCompletion": "Final pnpm quality and final closure record remain pending; task status is intentionally kept in_progress"
+  }
+}

@@ -1,6 +1,6 @@
 ---
 title: "TSK-06.48 bounded completion plan"
-document_version: "1.0.1"
+document_version: "1.0.2"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
@@ -75,6 +75,18 @@ production sourceは変更せず、focused battle-execution／直接application 
 application側に重複したsemantic判断がある場合だけ、既存のcanonical input／battle-execution結果を参照する名前付き境界へ整理する。
 rankingへdamage／resource semantics、raw key／servant ID／label分岐、別compiler、別candidate generatorを追加しない。
 candidate capを緩和せず、schema変更は既存unionで表現できない実証がある場合だけ別Taskへ戻す。
+
+### B実施結果（2026-09-20）
+
+開始時HEADは`ee9f00fbdfa56a3293d9ba1000a5068388cd15c8`、直前A bounded unitの開始HEADは`ad786f0`、production code基点は`00ad5db`である。監査の結果、scenarioは利用者意図とcanonical input、ranking worldはordered execution結果の観測、candidate spaceはcanonical input domainの有限化、ranking executionは共通scenario／ordered executorの実行を所有していた。ranking側にdamage／resource semantics、raw Atlas vocabulary、別compiler、独自candidate generatorの重複ownerはなかった。
+
+変更は`packages/calculation-application/src/rankingStaticSemantics.ts`の最小1ファイルに限定した。`effectChangesPreparation(effect) || hasOcConditionReader(effect)`を3箇所で繰り返していたため、`compileStaticRankingSemantics`内の`preparationSources` inventoryへ一度だけ集約し、runtime input definitions、condition collection、stack witness exclusionが同じsource集合を参照するようにした。これはcategory 1の局所反復union分類だけを削除したもので、package横断helper、`isOneOf`、`processValues`、条件wrapperは追加していない。
+
+canonical effect／operation／input definition／input key、support分類、operation order、condition truth、mutation後read、candidate representative／dedupe／cardinality／cap、calculator／ranking parity、public APIは不変である。data-pipelineのraw Atlas解釈、battle-executionのordered transaction／rollback／resource read、calculation-applicationのscenario／candidate／world compositionという責務境界も維持した。category 2のtyped変換、category 3の網羅union、category 4の`all`／`any`／`not`、不確実性、mutation deviation、有限product／cap、typed fail-closedは意図的に残した。
+
+focused testは6 files／38 testsが成功し、candidate／world／scenario、condition truth、mutation後read、candidate equivalence／representative／dedupe／cardinality／cap、calculator／ranking parity、typed outcomeを確認した。canonical output、effect 13,875、operation 15,257、input／support分類、candidate inventoryに差分がないため、34,640 outcomes／34,600 parity／typed unavailable 40／unsupported・invalid・inputRequired 0、candidate最大3,435／cap 4,096を含む80条件×433 profile closureを再利用した。ranking static compilation pathを変更したため、比較可能な診断値として3サンプル`6280.810／6061.904／6069.754ms`、中央値`6069.754ms`、rows 433、exclusions 0、result digest `a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`を記録した。これは受入条件やratchetではない。
+
+machine-readable結果は[TSK-06.48 calculation-application closure](../evidence/tsk-06-48-calculation-application-closure.json)、flow差分は[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)である。B bounded unitの実装範囲は閉じたが、TSK-06.48は`in_progress`のまま、最終`pnpm quality`と最終記録整合を残す。`TSK-06.47=ready`、`TSK-06.5=blocked`、candidate cap／timeout／性能ratchetは変更しない。
 
 ## 4. 共通の不変条件
 

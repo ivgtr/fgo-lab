@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count、dependent resource／HP、effect normalization／execution-semantics bounded unitまで完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count、dependent resource／HP、effect normalization／execution-semantics、battle-execution、calculation-applicationのbounded unitまで完了して`in_progress`、TSK-06.47は`ready`。最終`pnpm quality`は未実施であり、以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -5384,3 +5384,15 @@ operation compiler／ordered execution境界とする。
 focused battle-execution／直接application `158/158`、candidate／world／resource audit `34/34`、targeted eslint、`pnpm typecheck`が成功した。`00ad5db..ad786f0`にはbattle-execution／calculation-applicationのproduction source差分がなく、canonical output、operation `15,257`、effect `13,875`、input／support分類、order、condition truth、mutation-after-read、calculator／ranking parity、candidate inventoryに差分はないため、既存の80条件×433 profile closureを再利用した。34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／inputRequired 0、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct 233,100、最大3,435／cap 4,096を維持する。production matrixと性能診断は再実行していない。
 
 詳細は[TSK-06.48 battle-execution closure](tsk-06-48-battle-execution-closure.json)を参照する。Prettier、`git diff --check`、docs integrity完了後もTSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`、最終`pnpm quality`は未実施で、次はcalculation-application candidate／world／scenario bounded unitとする。
+
+### TSK-06.48 calculation-application candidate／world／scenario bounded unit（2026-09-20）
+
+開始時HEADは`ee9f00fbdfa56a3293d9ba1000a5068388cd15c8`、直前battle-execution bounded unitの開始HEADは`ad786f0`、production code基点は`00ad5db`である。`scenario.ts::resolveScenario／prepareCalculationScenarioWithPolicy`が利用者意図とcanonical inputを所有し、`rankingWorldObservation.ts`はbattle-executionのordered結果を観測し、`rankingCanonicalInputs.ts`／`rankingCandidateSpace.ts`はcanonical inputから有限candidate domainを作り、`rankingPolicyScenario.ts`／`rankingExecution.ts`はcalculator／ranking／portableで共通のapplication／execution pathを使うことをコード根拠で確認した。ranking側にdamage／resource semantics、raw Atlas vocabulary、別compiler、独自candidate generatorの重複ownerはなかった。
+
+唯一のproduction変更は`packages/calculation-application/src/rankingStaticSemantics.ts`の`compileStaticRankingSemantics`内で、3箇所に反復していた`effectChangesPreparation(effect) || hasOcConditionReader(effect)`を`preparationSources`へ集約したことだった。runtime input definitions、condition collection、stack witness exclusionが同じsource inventoryを参照するため、これはcategory 1の局所反復union分類の収束である。canonical operation→static projection、BattleOperation→world observation、canonical input definition→finite domain、resolved execution→typed outcomeはcategory 2として保持した。網羅union、schema narrowing、stable comparator fallbackはcategory 3、`uncertainOcCell ||= ...`、`all`／`any`／`not`、unresolved mutation、`!prior || deviation`、有限product／cap、typed unsupported／invalid／inputRequired／unavailableはcategory 4として残した。禁止された汎用helper、raw key／ID／label分岐、ranking独自semantic、cap／timeout緩和はない。
+
+public API、canonical effect／operation／input definition／input key、support分類、operation order、condition truth、mutation後read、candidate representative／dedupe／cardinality／cap、calculator／ranking parityは不変である。focused 6 files／38 tests、targeted eslint、`pnpm typecheck`、targeted Prettier、`git diff --check`を通過し、docs integrityはrecord更新後に確認する。既存closureとのcanonical output／effect 13,875／operation 15,257／input inventory／support status／candidate inventoryの一致により、80条件×433 profileを再利用する。34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／inputRequired 0、parity 34,600、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct 233,100、最大3,435／cap 4,096は維持され、production matrixの再実行は不要と判断した。
+
+ranking static compilation pathを変更したため、比較可能な診断値を3回取得した。`6280.810／6061.904／6069.754ms`、中央値`6069.754ms`、rows 433、exclusions 0、結果digestは`a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`である。前回中央値`4437.614ms`との差は診断値に留め、性能受入条件、candidate cap、timeout、ratchetの変更根拠にはしない。詳細は[TSK-06.48 calculation-application closure](tsk-06-48-calculation-application-closure.json)を参照する。
+
+TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。B bounded unitの実装範囲は閉じたが、最終`pnpm quality`と最終記録整合は未実施であり、追加bounded unitやUI／theoretical maximumへの拡張は行わない。
