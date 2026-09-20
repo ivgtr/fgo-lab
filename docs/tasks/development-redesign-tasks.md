@@ -63,8 +63,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.43 | Canonical maximum stack quantity | done | TSK-06.42 | satisfied quantity witness／stack maximum semantics |
 | TSK-06.44 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
-| TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
-| TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
+| TSK-06.46 | Ranking world candidate architecture and oracle hardening | in_progress | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
+| TSK-06.47 | Contribution decision UI cleanup | blocked | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -1994,6 +1994,7 @@ Implementation units:
 | W4 independent oracle | W3 | plannerの生成domainを再利用せず、target／targetState全bit state、短い全program、canonical inputを直接列挙する小型oracleを作る | outcome集合、最大damage、採用scenario再実行、unavailable／invalid／unsupportedがplannerと一致。HP／BP／count／transfer、choice、form、conditional costの非単調反例を既存family oracleと接続 |
 | W5 performance・production closure | W4 | profileで確認した箇所だけを最適化し、observation compile、canonical indexing、memoization、制約早期適用を検討。全productionを再監査 | 80条件34,640 outcomes、parity、typed unavailable、damage差を再固定。cap4096／timeout不変。性能は比較値を記録するが固定下限を合否条件にしない。最終`pnpm quality`成功 |
 | W6 implementation convergence | W5 | W0〜W5の正しさを維持したまま、candidate pipelineの式・分岐・lookup・中間表現を意味のある小単位へ収束する。ネスト三項演算子、同じunion判定の反復、loop内の定義探索、多段collection変換、到達不能／常時空の中間状態を対象とし、単なる別fileへの移動は行わない | 完了: 名前付きsemantic owner、execution共有判定、常時空／到達不能／反復lookup／未使用引数の削除をfocused 82 tests、80条件closure、最終`pnpm quality`で確認 |
+| W7 logical-disjunction convergence | W6 | 対象production codeと直接のcanonical semantic ownerに残る複合`||`を、同じunion分類の反復、異なる判断の短絡合成、正当なboolean semanticsへ分類する。target mutationの採否とstep生成、target trait scope、combined actor scopeを名前付きdomain境界へ集約し、構文だけを隠す汎用helperは追加しない | 計画済み・実装未着手。対象fixture、局所lint／typecheck、production差分条件、最終qualityを通し、残す`||`はowner内の網羅的union分岐またはboolean semanticsとして理由を記録する |
 
 Minimum counterexample:
 
@@ -2019,6 +2020,7 @@ Done gate:
 - 対象production codeのネスト三項演算子が0件で、入力origin、trait count比較、all／any簡約、population input分類が名前付きの網羅的判断として読める。
 - `compileProgramDomain`はdomainの合成を担当し、transition trait抽出、canonical input分類、代表選択の詳細をinlineで再解釈しない。同じdefinitionの反復検索と同じunion判定の複製が0件である。
 - extractionは行数移動ではなく、呼出側がdomain operationの順序を読める境界を作る。未使用引数、到達不能branch、常時空の互換fieldを残さず、observerとexecutionで同じ意味を再実装する場合は共通ownerへ戻すか独立性が必要な根拠を記録する。
+- 対象production codeで同じscope／operation unionを分類する複合`||`の反復が0件である。`all`／`any`などcanonical owner内の網羅的union分岐、真のboolean条件、stable comparator fallbackは一律禁止せず、残置理由をW7 evidenceへ記録する。
 - flow closureの対象cellがVerifiedまたは理由付きN/Aで、Blocking／Task内Deferred 0。
 
 Contract closure matrix:
@@ -2031,7 +2033,7 @@ Contract closure matrix:
 | `RK-PERF-001` | Apply | comparable ranking hot path and production file-level before／after | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: W0〜W5のcorrectness／production closureを有効なbaselineとして保持したまま、W6を完了した。`resolveCanonicalInputOrigin`、population input type guard、transition trait extraction、world domain analysisをsemantic ownerとして確定し、trait condition semanticsはexecution側へ共有した。`compileProgramDomain`のinline判断、反復union判定／lookup、常時空／到達不能branch、候補後再dedupe、materialize APIの未使用引数を削除し、独立oracleはplanner domainを再利用しないまま維持する。focused 82 tests、production 144/144、80条件34,640 outcomes、34,600 parity、typed unavailable 40、最大3,435/4,096、最終`pnpm quality`成功を[production closure](../evidence/tsk-06-46-production-closure.json)へ記録した。Blocking／Task内Deferredは0、TSK-06.46は`done`、TSK-06.47は`ready`。
+Handoff: W0〜W6のcorrectness／production closureと最終qualityは有効なbaselineとして保持する。追加W7では、まず対象production codeと直接ownerの複合`||`を「反復union分類」「異なるdomain判断の短絡合成」「正当なboolean semantics」に棚卸しする。`rankingWorldObservation`のtarget mutation採否とstep生成は1つのtyped変換へ、target／combined trait scope分類は`battle-execution/conditionSemantics`の既存scope tableへ集約する。`conditionProvenance`など直接consumerは共有ownerを利用し、`all`／`any`走査やstable comparator fallbackは理由付きで残す。remove target／targetState、suppress target、attacker／field／addTrait除外、trait／traitCount scopeをfocused fixtureで固定し、lint／typecheckを実行する。semantic output、candidate cardinality、execution順序に差がなければ既存80条件closureを再利用し、疑義または差分があればproduction matrixを再実行してcanonical input／program／mutation／read時点で説明する。最後に`pnpm quality`と正本更新を行う。現時点は計画のみで実装未着手、Blocking 0、残Unit W7、TSK-06.46は`in_progress`、TSK-06.47は`blocked`。
 
 ### TSK-06.47: Contribution decision UI cleanup
 

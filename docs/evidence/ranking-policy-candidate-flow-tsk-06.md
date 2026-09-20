@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W5のcorrectness／production closureを有効なbaselineとして再利用し、W6 implementation convergenceを完了した。TSK-06.46は`done`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureを有効なbaselineとして保持し、複合論理和の反復分類を収束するW7を計画した。TSK-06.46は`in_progress`、TSK-06.47は`blocked`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -471,6 +471,10 @@ stable ownedは自然上限／Lv.90／保有Lv、指定／保有NP Lv、NP0、bu
 production closureは80条件・34,640 outcomes（34,600 calculated、typed unavailable 40、unsupported／invalid／inputRequired 0）、parity 34,600/34,600、generated／deduplicated 1,028,810、damage request 967,810、distinct 233,100、最大3,435/4,096でW0〜W5と一致した。新artifactは`.test-results/tsk-06-46-w6-production-closure`、digest `28135f4344a23b33a00ca299a2a3f5866bf954e6cc6aba885705d2e77b4985ef`（baseline `876c004910ed61296fc71f10da45e7b416b0b2c316f6f482b3e189a332011205`）。34,640レコードの意味比較は、calculated 34,600件がengineVersion metadata（47→48）のみ、unavailable 20件が恒常空`candidateKey`除去に伴うdiagnostic digestのみで、canonical input／program／mutation／read position／damage／statusに差分0だった。候補cap 4,096とtimeoutは不変。
 
 focusedはworld／oracle系36件、execution condition semantics 22件、architecture 4件、API境界20件（計82件、失敗0）。`pnpm test:production`は144/144、最終`pnpm quality`はunit 853、production 144、Playwright 29、skip／todo／retry／warning／unexpected console 0、297.600秒で成功（`.test-results/2026-09-20T00-52-28-335Z-15-94a396`、manifest SHA-256 `8483185b39c0c827685073bd024054daa816889d525e83e37710e909c6b2a2db`）。共有環境の4174番ポートが別Vite serverで占有されていたためqualityのE2Eだけ4175番で実行し、runtime contract／allowance／テスト固定値は終了後4174番へ復元した。ranking hot pathの診断中央値は4,954.093ms（5,151.092／4,806.582／4,954.093）、candidate inventory不変のため性能差を本変更へ帰属しない。TSK-06.46を`done`、TSK-06.47を`ready`へ更新した。
+
+**2026-09-20 TSK-06.46 W7 logical-disjunction convergence計画（実装未着手）:** W6後の対象production codeを再確認し、`rankingWorldObservation`でtarget mutationの採否とstep生成が同じoperation／scope unionを複数回分類し、target trait scope判定がobserverとexecutionの直接consumerに反復していることを追加収束対象とした。W7は出現する`||`の一律除去ではない。反復union分類はcanonical ownerへ集約し、異なるdomain判断を一式で返すtyped変換へ置き換える一方、`all`／`any`の再帰走査、provenanceの真のboolean条件、stable comparator fallbackなどowner内で意味が明瞭な論理和は理由付きで残す。`isOneOf`や`processValues`のように構文だけを隠すhelperは追加しない。
+
+変更ownerは、target mutation observationを`BattleOperation`からread後mutation stepへ変換する`rankingWorldObservation`内の名前付き境界と、target／combined trait scopeを分類する`battle-execution/conditionSemantics`の既存scope tableとする。`conditionProvenance`など直接consumerは後者を利用し、observerとexecutionが同じscope membershipを再実装しない。remove target／targetState、suppress target、attacker／field／addTrait除外、trait／traitCount、mutation後readをfocused fixtureで固定する。局所lint／typecheckを通し、semantic output、candidate cardinality、execution順序に差がなければ上記80条件closureをbaselineとして再利用する。差分または疑義が出た場合だけproduction matrixを再実行し、canonical input／program／mutation／read時点で全数説明する。candidate cap 4,096とtimeoutは不変、最後に`pnpm quality`を行う。現時点のsource変更は0、Blocking 0、残Unit W7、TSK-06.46は`in_progress`、TSK-06.47は`blocked`。
 
 **2026-09-20独立marker／admission完了（基点538b83a、対象内Blocking0）:** actor individuality（Value）とbuff trait／buff identityをcanonical instanceへ分離。固定Chaldeaの`getTraits`／`getBuffTraits`／`countBuffWithTrait`／`subState`を照合し、付与・重複・解除・別actor・既知の不在を共通reducerへ接続した。Value 0／9999もbuff自身のtraitと区別し、族連動・finite-use・BP activationの未確定cellは推測しない。根拠は[marker source](tsk-06-45-marker-source.json)。
 

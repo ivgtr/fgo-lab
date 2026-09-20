@@ -1,6 +1,6 @@
 {
   "task": "TSK-06.46",
-  "status": "done",
+  "status": "in_progress",
   "baseline": {
     "implementationCommit": "c4261054a8e7f82076b44aecb5e4b4d31458a6ad",
     "planningCommit": "470093285e9783d37db173407d7ac16f681bfa92",
@@ -42,6 +42,38 @@
       "unavailableDiagnosticKeyOnly": 20,
       "semanticRecordMismatches": 0,
       "normalization": "candidateKey/targetCandidateKey evidence fields and engineVersion metadata are excluded; canonical input, program, mutation, read position, status, damage, and parity are unchanged"
+    }
+  },
+  "logicalDisjunctionConvergencePlan": {
+    "unit": "W7",
+    "status": "planned",
+    "implementationStarted": false,
+    "scope": [
+      "repeated target mutation operation/scope classification in rankingWorldObservation",
+      "repeated target and combined trait-scope classification in direct observer/execution consumers",
+      "compound logical OR inventory in the W6 production scope and its canonical semantic owners"
+    ],
+    "semanticOwners": {
+      "targetMutationObservation": "packages/calculation-application/src/rankingWorldObservation.ts",
+      "traitScopeClassification": "packages/battle-execution/src/conditionSemantics.ts"
+    },
+    "retainedWithReason": [
+      "all/any recursive union traversal inside the canonical condition owner",
+      "genuine boolean conditions such as provenance compatibility",
+      "stable comparator fallback"
+    ],
+    "verification": [
+      "focused remove target/targetState, suppress target, rejected attacker/field/addTrait, trait/traitCount, and post-mutation read fixtures",
+      "lint and typecheck",
+      "reuse the W6 production matrix only when semantic outputs, candidate cardinality, and execution order are unchanged; otherwise rerun and explain every delta",
+      "pnpm quality"
+    ],
+    "constraints": {
+      "candidateCap": 4096,
+      "timeoutRelaxed": false,
+      "newDamageRule": false,
+      "newUiFeature": false,
+      "battleSimulator": false
     }
   },
   "soundness": {
@@ -130,12 +162,12 @@
   "closure": {
     "blocking": 0,
     "deferredWithinTask": 0,
-    "remainingUnits": 0,
-    "taskStatus": "done",
-    "nextTask": "TSK-06.47",
-    "verifiedBaseline": "W0-W5 production closure remains valid; W6 implementation convergence preserves semantic outputs and candidate bounds",
-    "remainingUnit": null,
-    "reopenedReason": "responsibility splitting exposed but did not remove expression-level branching, repeated classification and lookup, orchestration detail, and duplicated semantic interpretation",
-    "resolution": "named semantic owners and shared execution condition semantics removed the W6 complexity without changing canonical outcomes"
+    "remainingUnits": 1,
+    "taskStatus": "in_progress",
+    "nextTask": null,
+    "verifiedBaseline": "W0-W6 production closure remains valid as the before baseline for the unimplemented W7 plan",
+    "remainingUnit": "W7 logical-disjunction convergence",
+    "reopenedReason": "repeated operation/scope classification remains expressed through compound logical OR in observer and direct semantic consumers",
+    "resolution": "planned; implementation has not started"
   }
 }
