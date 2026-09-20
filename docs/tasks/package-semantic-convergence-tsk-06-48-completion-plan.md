@@ -1,0 +1,109 @@
+---
+title: "TSK-06.48 bounded completion plan"
+document_version: "1.0.0"
+status: "Active"
+created_at: "2026-09-20"
+updated_at: "2026-09-20"
+task: "TSK-06.48"
+parent_plan: "docs/tasks/package-semantic-convergence-tsk-06-48.md"
+baseline_commit: "00ad5db"
+---
+
+# TSK-06.48 bounded completion plan
+
+## 1. 目的と停止境界
+
+TSK-06.48は、W0〜W7と既完了のpopulation、dependent resource／HP、effect normalization／execution-semantics
+bounded unitで確立したcanonical output、ordered execution、ranking candidate、production closureを維持したまま、
+残る直接consumerのsemantic owner境界だけを確認する。開始基点は`00ad5db`とし、直前のeffect／execution bounded unitの
+基点`128189f`、さらに前のdependent resource／HP基点`46f30a7`と混同しない。
+
+この計画の完了点は、次の2 bounded unit、必要な記録更新、最終`pnpm quality`までである。これを超えて、コードベース全体の
+機械的な整理、汎用helper追加、性能最適化、UI改善、theoretical maximum実装へ拡張しない。
+
+## 2. bounded unit A: battle-execution operation boundary
+
+### 対象
+
+- `packages/battle-execution/src/operationCompiler.ts`
+- `packages/battle-execution/src/preparationOc.ts`
+- `packages/battle-execution/src/preparationTransaction.ts`
+- `packages/battle-execution/src/resourceSemantics.ts`
+- `packages/battle-execution/src/resourceQueries.ts`
+- 上記の直接consumer focused test
+
+### 判断すること
+
+- canonical operationから`BattleOperation`／runtime projectionへの変換をbattle-executionだけが所有しているか。
+- operation order、condition truth、transaction rollback、mutation後read、resource queryの時点が一意か。
+- operation family、route、support statusをoperation compilerまたはruntimeがraw Atlas vocabularyから再分類していないか。
+- calculatorとrankingが同じordered execution経路を通り、resource／damage semanticsを独自実装していないか。
+
+### 変更境界
+
+重複分類がコード根拠で確認できた場合だけ、既存のbattle-execution ownerへ集約する。重複がなくcanonical operationをそのまま
+orderedに適用している場合は、コードを変更せず、owner確認・focused fixture・evidence更新でbounded unitを閉じる。
+schema、public API、operation shape、input definition、raw Atlas解釈のdata-pipeline ownerは変更しない。
+
+## 3. bounded unit B: calculation-application boundary
+
+### 対象
+
+- `packages/calculation-application/src/scenario.ts`
+- `packages/calculation-application/src/rankingWorldObservation.ts`
+- `packages/calculation-application/src/rankingCandidateSpace.ts`
+- 必要な範囲の`rankingStaticSemantics.ts`と直接consumer focused test
+
+### 判断すること
+
+- scenarioは利用者の意図とcanonical inputを所有し、effect／resource／damage semanticsを再実装していないか。
+- ranking world observationはbattle-executionの結果を観測するだけで、独自のmutation／condition semanticsを持っていないか。
+- candidate生成、equivalence、representative、dedupe、cardinality、capがcanonical inputとordered executorに一致するか。
+- calculator／ranking／portableが同じapplication／execution経路を使い、candidateの都合でunsupported、invalid、inputRequiredを
+  calculatedへ変換していないか。
+
+### 変更境界
+
+application側に重複したsemantic判断がある場合だけ、既存のcanonical input／battle-execution結果を参照する名前付き境界へ整理する。
+rankingへdamage／resource semantics、raw key／servant ID／label分岐、別compiler、別candidate generatorを追加しない。
+candidate capを緩和せず、schema変更は既存unionで表現できない実証がある場合だけ別Taskへ戻す。
+
+## 4. 共通の不変条件
+
+- 34,640 outcomes、34,600 calculated parity、typed unavailable 40。
+- unsupported／invalid／inputRequired 0、candidate最大3,435、cap 4,096。
+- canonical output、operation／input inventory、support分類、operation order、condition truth、mutation後read不変。
+- calculator／ranking parity不変、raw Atlas vocabularyはdata-pipelineだけが解釈する。
+- `TSK-06.48=in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`を維持する。
+
+既存closureは、canonical output、digest、operation／input inventory、support status、condition truth、candidate inventoryに差分がなく、
+意味論上の疑義がない場合だけ再利用する。いずれかに差分または疑義があれば、影響するproduction matrixだけを再実行し、差分を
+canonical input、ordered program、mutation、read位置で説明する。
+
+## 5. 検証方針
+
+各bounded unitでは、変更したsemantic familyの小さいfixture、直接consumerのfocused test、targeted lint、typecheck、Prettierを行う。
+既存の有効なproduction／parity／quality artifactを同条件で無条件に再実行しない。コード変更がなく、既存evidenceの再利用条件を
+満たす場合は、監査結果と再利用根拠を記録して停止する。
+
+この計画では、過度な性能ゴールやテスト量を受入条件にしない。
+
+- wall-clock改善、固定性能下限、candidate削減、timeout短縮を要求しない。
+- hot pathを変更した場合だけ、比較可能な診断値を記録する。性能値は意味論の受入条件ではなく、候補数・timeout・ratchetを緩和しない。
+- bounded unitごとの全体suite、独立benchmark、全E2E、全production matrixの反復実行を要求しない。
+- production matrixと最終`pnpm quality`は、2 bounded unitの変更・局所検証・差分レビューが完了した後に一度だけ必要性を判断する。
+- 新しいテストは、owner境界、fail-closed、ordered execution、parity、候補同値性を反証する最小fixtureに限る。
+
+## 6. 完了条件とhandoff
+
+次を満たした時点でTSK-06.48を完了とする。
+
+1. battle-executionとcalculation-applicationのsemantic owner、変更有無、対象外がTaskとevidenceに記録されている。
+2. canonical output、operation／input inventory、support分類、order、condition、mutation後read、candidate inventory、parityの差分が
+   ないか、差分があれば全数説明されている。
+3. focused verification、必要なproduction確認、targeted lint／typecheck／Prettier、docs integrityが成功している。
+4. 最終`pnpm quality`が一度成功し、TSK-06.48内のBlocking／Deferredが残っていない。
+5. Task、flow evidence、machine-readable evidence、docs registryが同じ停止境界を参照し、commit前のworktree差分が説明可能である。
+
+完了後は、TSK-06.47とTSK-06.5の依存を暗黙に変更せず、追加のrefactorは具体的な不具合、意味論差分、性能回帰、または新要件が
+発生した場合だけ別Taskとして計画する。

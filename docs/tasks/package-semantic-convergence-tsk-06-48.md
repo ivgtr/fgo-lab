@@ -1,13 +1,13 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.4"
+document_version: "1.0.5"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
 task: "TSK-06.48"
 baseline_commit: "0c12261"
-current_worktree_base: "128189f"
-previous_bounded_unit_base: "46f30a7"
+current_worktree_base: "00ad5db"
+previous_bounded_unit_base: "128189f"
 ---
 
 # TSK-06.48 パッケージ別semantic complexity convergence計画
@@ -167,8 +167,9 @@ inputRequired 0、parity 34,600/34,600、candidate generated／deduplicated 1,02
 candidate cardinality、timeout、既存ratchetを再利用した。差分、digest mismatch、support／condition／candidate inventory差分が出た場合だけ、
 影響matrixを再実行する。詳細は[effect／execution closure](../evidence/tsk-06-48-effect-execution-closure.json)を参照する。
 
-このbounded unitのhandoffは、Taskを`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施、commitなしのまま維持すること。
-次のbounded unitはbattle-executionのoperation compiler／ordered execution境界とし、その後にcalculation-applicationのcandidate／world／scenario境界を扱う。
+このbounded unitのhandoffは、Taskを`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施のまま維持した。
+実装・記録のcommitは`00ad5db`である。次のbounded unitはbattle-executionのoperation compiler／ordered execution境界とし、その後に
+calculation-applicationのcandidate／world／scenario境界を扱う。完了までの検証量と停止境界は、追加の[bounded completion plan](package-semantic-convergence-tsk-06-48-completion-plan.md)に分離して記録する。
 
 ## 4. 後続のパッケージ波
 
@@ -223,8 +224,9 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
   marker／NP transfer以外のsemantic familyへ無断拡張しない。
 - dependent resource transfer／HP bounded unitは現行HEAD `46f30a7`を実装基点として完了した。共通dependent-function descriptor、
   NP／HP domain owner、直接consumer、focused／production matrix、candidate inventoryは[transfer／HP closure](../evidence/tsk-06-48-transfer-hp-closure.json)へ記録した。次のbounded unitはeffect normalization／execution-semanticsであり、TSK-06.48は`in_progress`を維持する。
-- effect normalization／execution-semantics bounded unitは開始時HEAD `128189f`で完了した。`effectNormalization.ts`の参照展開後support再分類を
+- effect normalization／execution-semantics bounded unitは開始時HEAD `128189f`で完了し、実装・記録を`00ad5db`へcommitした。`effectNormalization.ts`の参照展開後support再分類を
   `executionSemantics.ts::resolveExecutionSemanticSupport`へ集約し、focused `23/23`、直接consumer `229/229`、production semantic inventory
   `14/14`、operation／input／support／order／condition／candidate parity差分0を確認した。80×433 closureは既存evidenceを再利用し、machine-readable結果を
   [effect／execution closure](../evidence/tsk-06-48-effect-execution-closure.json)へ記録した。次はbattle-execution operation compiler／ordered execution境界で、
-  TSK-06.48は`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施を維持する。
+  TSK-06.48は`in_progress`、`TSK-06.47=ready`、`TSK-06.5=blocked`、最終`pnpm quality`未実施を維持する。残り2 bounded unitの
+  対象・停止条件・過度な性能ゴール／テストを求めない方針は[bounded completion plan](package-semantic-convergence-tsk-06-48-completion-plan.md)を正本とする。
