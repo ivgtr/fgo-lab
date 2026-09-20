@@ -4,7 +4,10 @@ import type {
   EffectExecutionOperation,
 } from '@fgo-lab/master-data';
 import type { AtlasFunction, AtlasFunctionValue } from './atlasContract';
-import { plainFunction } from './npTransferNormalization';
+import {
+  isPlainDependentFunction,
+  parseDependentFunctionCell,
+} from './dependentFunctionNormalization';
 export function normalizeHpTransfer(
   fn: AtlasFunction,
   rows: readonly (readonly AtlasFunctionValue[])[],
@@ -13,8 +16,7 @@ export function normalizeHpTransfer(
     fn.funcType !== 'gainHpFromTargets' ||
     fn.funcTargetType !== 'self' ||
     !['player', 'enemy', 'playerAndEnemy'].includes(fn.funcTargetTeam ?? '') ||
-    !plainFunction({ ...fn, script: {} }) ||
-    Object.keys(fn.script ?? {}).some((key) => key !== 'funcIndividuality') ||
+    !isPlainDependentFunction(fn, 'funcIndividualityOnly') ||
     !rows.flat().length
   )
     return null;
@@ -28,27 +30,10 @@ export function normalizeHpTransfer(
   for (const row of rows) {
     const costs: number[] = [];
     for (const cell of row) {
+      const dependentCell = parseDependentFunctionCell(cell);
+      if (!dependentCell) return null;
+      const { child, values: val } = dependentCell;
       if (
-        Object.keys(cell).some(
-          (key) =>
-            ![
-              'Rate',
-              'DependFuncId',
-              'DependFunc',
-              'DependFuncVals',
-              'HideMiss',
-              'HideNoEffect',
-            ].includes(key),
-        )
-      )
-        return null;
-      const child = cell.DependFunc as AtlasFunction | undefined;
-      const val = cell.DependFuncVals as AtlasFunctionValue | undefined;
-      if (
-        !child ||
-        !val ||
-        !plainFunction(child) ||
-        cell.DependFuncId !== child.funcId ||
         child.funcType !== 'lossHpSafe' ||
         !['enemy', 'playerAndEnemy'].includes(child.funcTargetTeam ?? '') ||
         cell.Rate !== 1000 ||

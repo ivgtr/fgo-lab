@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.14"
+document_version: "1.7.15"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -65,7 +65,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
 | TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
 | TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
-| TSK-06.48 | Package semantic complexity convergence | in_progress | TSK-06.46 | package別semantic owner／population family convergence |
+| TSK-06.48 | Package semantic complexity convergence | in_progress | TSK-06.46 | package別semantic owner／population・dependent resource／HP family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -2079,6 +2079,7 @@ Plan: [package semantic convergence plan](package-semantic-convergence-tsk-06-48
 - [ ] package全体の機械的分割ではなく、semantic family × package境界で複雑性を収束させる。
 - [ ] 第1波はdata-pipelineのpopulation familyとし、`normalizePopulationFunctions`のAtlas shape、dependency slice、
       canonical operation／input生成、population trait catalogのownerを分離する。
+- [x] dependent resource transfer／HP bounded unitでは、plain dependent-functionの共通shapeをdata-pipeline内のtyped descriptorへ収束し、NP／HP固有のdomain、canonical operation、input definition、ordered execution、candidate semanticsは既存ownerへ残す。
 - [ ] 第2波以降はdependent resource、effect normalization、battle-execution、calculation-applicationの順に、
       前段のcanonical outputが安定した場合だけ着手する。
 - [ ] `isOneOf`、`processValues`、条件式wrapper、単なるfile split／行数移動を追加しない。
@@ -2106,7 +2107,9 @@ Contract closure matrix:
 | `DOC-LINT-001` | Apply | `pnpm test:docs` | Handoff |
 | `DX-HANDOFF-001` | Apply | `pnpm test:docs` | Handoff |
 
-Handoff: 2026-09-20に計画確認済みのため`in_progress`を維持する。worktree基点は`49efe62`（未コミット差分）で、TSK-06.46 W7のcanonical closureをbefore baselineとして保持し、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。population-count bounded unitでは、data-pipelineのselector／scope／counting／basis／includePassive／input builder、battle-executionのscope／legality／saturation／live-read、calculation-applicationのcandidate tuple／equivalence／representative ownershipを明確化した。focused 81/81、production 144/144、80条件×433 profile matrix、34,640 outcomes／34,600 parity、candidate 1,028,810／最大3,435／cap 4,096、targeted lint／Prettier／typecheckを確認し、旧W6 record差分0、semantic digest不変を[TSK-06.48 population closure](../evidence/tsk-06-48-population-closure.json)へ記録した。hot-path診断は3サンプル中央値5,748.844msで、固定性能下限は設けない。次のbounded unitはdependent resource transfer／HP semantic family。最終quality未実施の途中段階ではTSK-06.48をdoneへ変更しない。
+Handoff: 2026-09-20に計画確認済みのため`in_progress`を維持する。population-count bounded unitの開始基点は`49efe62`で、TSK-06.46 W7のcanonical closureをbefore baselineとして保持する。TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。population-count bounded unitでは、data-pipelineのselector／scope／counting／basis／includePassive／input builder、battle-executionのscope／legality／saturation／live-read、calculation-applicationのcandidate tuple／equivalence／representative ownershipを明確化した。focused 81/81、production 144/144、80条件×433 profile matrix、34,640 outcomes／34,600 parity、candidate 1,028,810／最大3,435／cap 4,096、targeted lint／Prettier／typecheckを確認し、旧W6 record差分0、semantic digest不変を[TSK-06.48 population closure](../evidence/tsk-06-48-population-closure.json)へ記録した。hot-path診断は3サンプル中央値5,748.844msで、固定性能下限は設けない。次のbounded unitはdependent resource transfer／HP semantic familyとした。最終quality未実施の途中段階ではTSK-06.48をdoneへ変更しない。
+
+Current bounded-unit handoff（2026-09-20）: 現行HEAD `46f30a7`を実装基点として、`dependentFunctionNormalization.ts`を共通semantic ownerに追加し、NP／HP normalizerの重複したplain function／cell／child shape分類を削除した。NPのplayer NP／enemy charge、HPのselectedEnemy／otherEnemy／allEnemies、scope、input key、Value／Value2、donor混在、resistance、condition、proc、alias、unknown metadataは各domain ownerに残し、effect normalizationの呼出し順、canonical operation、input definition、ordered execution、mutation後read、calculator／ranking parityは変更していない。focused 47/47、直接consumer 65/65、NP／HP production audit・parity・path 27/27、80条件×433 profile matrixを確認し、34,640 outcomes／34,600 calculated／typed unavailable 40／unsupported・invalid・inputRequired 0／parity 34,600、candidate 1,028,810／最大3,435／cap 4,096を維持した。machine-readable結果は[TSK-06.48 transfer／HP closure](../evidence/tsk-06-48-transfer-hp-closure.json)、flow差分は[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ記録した。次のbounded unitはeffect normalization／execution-semanticsで、TSK-06.48は`in_progress`、最終`pnpm quality`は未実施である。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

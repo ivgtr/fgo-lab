@@ -1,12 +1,13 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.2"
+document_version: "1.0.3"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
 task: "TSK-06.48"
 baseline_commit: "0c12261"
-current_worktree_base: "49efe62"
+current_worktree_base: "46f30a7"
+previous_bounded_unit_base: "49efe62"
 ---
 
 # TSK-06.48 パッケージ別semantic complexity convergence計画
@@ -95,6 +96,35 @@ unsupported／invalid／inputRequiredのfail-closedを固定した。旧W6 recor
 operation order、mutation後read、input inventory、candidate inventoryに差分がないことを確認した。詳細なmachine-readable結果は
 `docs/evidence/tsk-06-48-population-closure.json`の`currentSemanticOwners`、`currentFixtures`、`currentProductionMatrix`を参照する。
 
+### 3.5 dependent resource transfer／HP bounded unit（2026-09-20完了）
+
+今回のbounded unitは、population-countのcanonical outputとordered executionを維持したまま、NP transferとHP transferの
+raw dependent-function共通判定だけをdata-pipeline内へ収束した。現在の実装基点は`46f30a7`であり、直前population unitの
+実装基点`49efe62`、W7 baseline、過去evidenceのplanning commitとは分離して記録する。
+
+| semantic | 現在／変更後のowner | 直接consumer |
+| --- | --- | --- |
+| plain functionのraw key、empty metadata、script policy、cell envelope、child identity、nested value rate／keys | `dependentFunctionNormalization.ts::isPlainDependentFunction`／`parseDependentFunctionCell` | `npTransferNormalization.ts`、`hpNormalization.ts` |
+| NP donor、cost／gain、Value／Value2、charge resistance、input cardinality／maximum | `npTransferNormalization.ts::normalizeNpTransfer` | `effectNormalization.ts`、`executionSemantics.ts`、`preparationOc.ts`、`npTransfer.ts` |
+| HP scope、enemy-only phase irrelevance、selector、Value、input key／maximum | `hpNormalization.ts::normalizeHpTransfer` | `effectNormalization.ts`、`preparationOc.ts`、`preparationHp.ts` |
+
+NP／HP固有のdomain union、canonical operation、input definition、donor消費、生存下限、receipt、candidate saturationは各packageの
+ownerに残した。`effectNormalization.ts`の呼出し順、`DependFunc*`認識、operation/input順序は変更していない。canonical schema、
+公開normalizer API、ranking独自semanticsは変更していない。HP childの欠落／非正値`funcId`だけは、NPと同じfail-closed identity境界へ
+明示化した。
+
+focused `47/47`、直接consumer `65/65`、NP／HP production audit・parity・path `27/27`、targeted lint、Prettier、typecheckを確認した。
+影響matrixは80条件×433 profileを8 shardで実行し、34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／
+inputRequired 0、parity 34,600/34,600となった。candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct
+damage inputs 233,100、最大3,435、cap 4,096で直前closureと一致した。matrix digestはelapsedMsを含む診断値のため、semantic digestと
+直接同一視せず、固定production digest・operation/input inventory・support分類・順序・condition truth・candidate inventory・parityの
+一致を再利用根拠とする。詳細は[transfer／HP closure](../evidence/tsk-06-48-transfer-hp-closure.json)を参照する。
+
+hot pathの3サンプル診断は`4518.134／4367.958／4437.614ms`、中央値`4437.614ms`、rows 433、exclusions 0、結果digest不変だった。固定性能下限、candidate cap、timeout、既存ratchetは変更していない。
+
+このbounded unitでTSK-06.48全体を完了とはせず、次はeffect normalization／execution-semantics境界とする。最終`pnpm quality`は未実施で、
+`TSK-06.47=ready`、`TSK-06.5=blocked`を維持する。
+
 ## 4. 後続のパッケージ波
 
 | 波 | パッケージ／主対象 | 所有する意味 | 実装境界 |
@@ -143,6 +173,8 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
 - 第1 bounded unitの完了後は、canonical output／operation／input inventoryとW7 closureの一致を確認できた場合だけ
   production closureを再利用し、差分または意味論上の疑義がある場合だけ影響行列を再実行する。
 - 第1 bounded unitのhandoff、実施した検証、未達条件、次のbounded unitはTSK-06.48のTaskとactive evidenceへ追記する。
-- population-count bounded unitは`49efe62`をworktree基点として完了した。focused 81/81、production 144/144、80×433 matrix、
+- population-count bounded unitは`49efe62`を開始基点として完了した。focused 81/81、production 144/144、80×433 matrix、
   targeted lint／Prettier／typecheckを通過し、最終`pnpm quality`は未実施である。次はdependent resource transfer／HP familyで、
   marker／NP transfer以外のsemantic familyへ無断拡張しない。
+- dependent resource transfer／HP bounded unitは現行HEAD `46f30a7`を実装基点として完了した。共通dependent-function descriptor、
+  NP／HP domain owner、直接consumer、focused／production matrix、candidate inventoryは[transfer／HP closure](../evidence/tsk-06-48-transfer-hp-closure.json)へ記録した。次のbounded unitはeffect normalization／execution-semanticsであり、TSK-06.48は`in_progress`を維持する。

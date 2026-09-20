@@ -1,0 +1,160 @@
+{
+  "task": "TSK-06.48",
+  "status": "bounded_unit_complete",
+  "unit": "dependent resource transfer and HP semantic family",
+  "baseline": {
+    "currentHeadAtStart": "46f30a782bddd260fe71c32addbc6532c40cf15c",
+    "populationEvidence": "docs/evidence/tsk-06-48-population-closure.json",
+    "populationImplementationBase": "49efe62e9d544dc294ea898142b90f5e77303f0c",
+    "w7Evidence": "docs/evidence/tsk-06-46-production-closure.json",
+    "masterDataVersion": "20260920.3",
+    "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+    "masterSchemaVersion": 56,
+    "engineVersion": "48.0.0",
+    "portableSchemaVersion": 40
+  },
+  "changedFiles": [
+    "packages/data-pipeline/src/dependentFunctionNormalization.ts",
+    "packages/data-pipeline/src/npTransferNormalization.ts",
+    "packages/data-pipeline/src/hpNormalization.ts",
+    "packages/data-pipeline/src/dependentFunctionNormalization.test.ts",
+    "packages/data-pipeline/src/hpNormalization.test.ts",
+    "packages/data-pipeline/src/executionSemantics.test.ts"
+  ],
+  "semanticOwners": {
+    "sharedDependentFunctionEnvelope": "packages/data-pipeline/src/dependentFunctionNormalization.ts::parseDependentFunctionCell",
+    "plainFunctionContract": "packages/data-pipeline/src/dependentFunctionNormalization.ts::isPlainDependentFunction",
+    "npTransferDomain": "packages/data-pipeline/src/npTransferNormalization.ts::normalizeNpTransfer",
+    "hpTransferDomain": "packages/data-pipeline/src/hpNormalization.ts::normalizeHpTransfer",
+    "effectComposition": "packages/data-pipeline/src/effectNormalization.ts::normalizeFunctions",
+    "orderedExecution": "packages/battle-execution/src/preparationOc.ts::executePreparationOc",
+    "npMutation": "packages/battle-execution/src/npTransfer.ts::applyNpTransfer",
+    "hpMutation": "packages/battle-execution/src/preparationHp.ts::executeHpOperation",
+    "candidateInputDomain": "packages/calculation-application/src/rankingCandidateSpace.ts::buildPopulationCandidateInputs"
+  },
+  "directConsumers": [
+    "packages/data-pipeline/src/effectNormalization.ts",
+    "packages/data-pipeline/src/executionSemantics.ts",
+    "packages/battle-execution/src/operationCompiler.ts",
+    "packages/battle-execution/src/preparationOc.ts",
+    "packages/battle-execution/src/resourceSemantics.ts",
+    "packages/battle-execution/src/resourceQueries.ts",
+    "packages/calculation-application/src/scenario.ts",
+    "packages/calculation-application/src/rankingWorldObservation.ts",
+    "packages/calculation-application/src/rankingCandidateSpace.ts"
+  ],
+  "logicalDisjunctionDisposition": {
+    "centralized": [
+      "plain-function raw key and empty metadata validation",
+      "dependent cell envelope and nested value key/rate validation",
+      "positive child identity and DependFuncId equality"
+    ],
+    "typedConversions": [
+      "NP lossNp/ptOther/player to playerNp",
+      "NP delayNpturn/enemyAll/enemy to enemyCharge",
+      "HP enemy selector to selectedEnemy, otherEnemy, or allEnemies",
+      "HP enemy-only parent scope to boundedPhaseIrrelevant"
+    ],
+    "retainedExhaustiveUnions": [
+      "canonical operation and resource amount unions",
+      "NP/HP input definition domains",
+      "execution operation families and ranking candidate domains"
+    ],
+    "retainedBooleanSemantics": [
+      "script, buff, condition, resistance, unknown metadata, and nested writer fail-closed checks",
+      "mixed donor rejection, charge resistance, condition truth, alive floor, transaction rollback",
+      "all/any recursion, provenance semantics, stable comparator fallback, and schema narrowing"
+    ]
+  },
+  "canonicalContract": {
+    "publicNormalizerApisUnchanged": true,
+    "canonicalOperationShapeChanged": false,
+    "inputDefinitionShapeChanged": false,
+    "effectNormalizationOrderUnchanged": true,
+    "rawAtlasVocabularyOwner": "data-pipeline",
+    "rankingOwnsTransferSemantics": false,
+    "operationOrderConditionTruthMutationAfterReadUnchanged": true
+  },
+  "fixtures": {
+    "focusedArtifact": ".test-results/2026-09-20T10-30-49-384Z-15-8131e9",
+    "covered": [
+      "plainFunction allowlist, empty metadata, svals preservation, and HP funcIndividuality-only script",
+      "unknown metadata, buff/condition/proc, resistance, nested writer, unresolved child identity, and invalid rates",
+      "NP playerNp/enemyCharge, lossNp/delayNpturn, Rate/Value/Value2, cost/gain, donor mixing, and charge resistance",
+      "HP selectedEnemy/otherEnemy/allEnemies, player/enemy/playerAndEnemy scope, and enemy-only phase irrelevance",
+      "HP input keys, three donor actors, maximum, absent/dead donor, alive floor, and sequential shared state",
+      "canonical effect record connection, input order, ordered execution, mutation-after-read, condition, and rollback",
+      "candidate dedupe, representative, cardinality, saturation, cap, and calculator/ranking parity",
+      "unsupported, invalid, and inputRequired fail-closed classification"
+    ]
+  },
+  "verification": {
+    "focusedDataPipeline": "47/47",
+    "focusedDirectConsumers": "65/65",
+    "productionTransferAndHp": "27/27",
+    "typecheck": "pnpm typecheck passed",
+    "lint": "targeted eslint passed",
+    "prettier": "targeted check passed",
+    "finalQuality": "not run; TSK-06.48 remains in_progress"
+  },
+  "productionMatrix": {
+    "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts .test-results/tsk-06-48-transfer-hp-closure; pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts .test-results/tsk-06-48-transfer-hp-closure",
+    "artifactRoot": ".test-results/tsk-06-48-transfer-hp-closure",
+    "manifestSha256": "2debd3019561701ff840424a71fb4a815780b99809ab6a706bb4a8a642ff253a",
+    "mergedDigest": "b215695142f2e966d203eb8aab47b2f6fe725109eee349e6bce5605f541c2a0d",
+    "conditionCount": 80,
+    "attackProfilesPerCondition": 433,
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "inputRequired": 0,
+    "invalid": 0,
+    "unsupported": 0,
+    "parityCompared": 34600,
+    "parityFailures": 0,
+    "candidateInventory": {
+      "generated": 1028810,
+      "deduplicated": 1028810,
+      "damageRequests": 967810,
+      "distinctDamageInputs": 233100,
+      "maximumSingleProfileProduct": 3435,
+      "maximumSingleProfileServantId": "2801300",
+      "cap": 4096
+    },
+    "comparisonWithPopulationClosure": {
+      "outcomeCountsEqual": true,
+      "candidateInventoryEqual": true,
+      "supportClassificationEqual": true,
+      "parityEqual": true,
+      "canonicalOutputChanged": false,
+      "digestInterpretation": "merged matrix digest includes elapsedMs and is diagnostic; fixed production digests, operation/input inventory, support classes, order, condition truth, candidate inventory, and parity remain unchanged"
+    }
+  },
+  "performanceObservation": {
+    "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts .test-results/tsk-06-48-transfer-hp-ranking-hot-path.json",
+    "artifact": ".test-results/tsk-06-48-transfer-hp-ranking-hot-path.json",
+    "samplesMs": [4518.133691, 4367.958282, 4437.61398],
+    "medianMs": 4437.61398,
+    "rows": 433,
+    "exclusions": 0,
+    "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
+    "acceptanceFloor": null,
+    "interpretation": "diagnostic only; the result digest, candidate cap, timeout, and performance ratchet are unchanged, and the measurement is not treated as an attributed speedup"
+  },
+  "remainingUnits": [
+    "effect normalization and execution-semantics boundaries",
+    "battle-execution ordered operation/compiler boundaries",
+    "calculation-application candidate/world/scenario boundaries"
+  ],
+  "handoff": {
+    "taskStatus": "in_progress",
+    "blocking": 0,
+    "finalQualityPending": true,
+    "nextBoundedUnit": "effectNormalization.ts and executionSemantics.ts",
+    "statusPreserved": {
+      "TSK-06.47": "ready",
+      "TSK-06.5": "blocked"
+    },
+    "commitCreated": false
+  }
+}

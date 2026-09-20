@@ -4,49 +4,10 @@ import type {
   EffectExecutionOperation,
 } from '@fgo-lab/master-data';
 import type { AtlasFunction, AtlasFunctionValue } from './atlasContract';
-
-const empty = (value: unknown) =>
-  value === undefined ||
-  (Array.isArray(value)
-    ? value.length === 0
-    : typeof value === 'object' && value !== null && Object.keys(value).length === 0);
-export function plainFunction(fn: AtlasFunction): boolean {
-  if (
-    Object.keys(fn).some(
-      (key) =>
-        ![
-          'funcId',
-          'funcType',
-          'funcTargetType',
-          'funcTargetTeam',
-          'funcPopupText',
-          'funcPopupIcon',
-          'functvals',
-          'funcquestTvals',
-          'traitVals',
-          'script',
-          'buffs',
-          'overWriteTvalsList',
-          'funcGroup',
-          'svals',
-          'svals2',
-          'svals3',
-          'svals4',
-          'svals5',
-        ].includes(key),
-    ) ||
-    !empty((fn as Record<string, unknown>).funcGroup)
-  )
-    return false;
-  return [
-    fn.functvals,
-    fn.funcquestTvals,
-    fn.traitVals,
-    fn.script,
-    fn.buffs,
-    fn.overWriteTvalsList,
-  ].every(empty);
-}
+import {
+  isPlainDependentFunction,
+  parseDependentFunctionCell,
+} from './dependentFunctionNormalization';
 /** Fixed reference contract: no probabilistic/conditional/reactive child is admitted. */
 export function normalizeNpTransfer(
   fn: AtlasFunction,
@@ -57,7 +18,7 @@ export function normalizeNpTransfer(
     fn.funcType !== 'gainNpFromTargets' ||
     fn.funcTargetType !== 'self' ||
     fn.funcTargetTeam !== 'player' ||
-    !plainFunction(fn) ||
+    !isPlainDependentFunction(fn) ||
     !rows.flat().length
   )
     return null;
@@ -68,35 +29,9 @@ export function normalizeNpTransfer(
     const costRow: number[] = [],
       gainRow: number[] = [];
     for (const cell of row) {
-      if (cell.Rate !== undefined && (!Number.isSafeInteger(cell.Rate) || cell.Rate < 0))
-        return null;
-      if (
-        Object.keys(cell).some(
-          (key) =>
-            ![
-              'Rate',
-              'DependFuncId',
-              'DependFunc',
-              'DependFuncVals',
-              'HideMiss',
-              'HideNoEffect',
-            ].includes(key),
-        )
-      )
-        return null;
-      const child = cell.DependFunc as AtlasFunction | undefined;
-      const val = cell.DependFuncVals as AtlasFunctionValue | undefined;
-      if (
-        !child ||
-        !val ||
-        !plainFunction(child) ||
-        !Number.isSafeInteger(child.funcId) ||
-        child.funcId! <= 0 ||
-        cell.DependFuncId !== child.funcId ||
-        val.Rate !== 1000 ||
-        Object.keys(val).some((key) => !['Rate', 'Value', 'Value2'].includes(key))
-      )
-        return null;
+      const dependentCell = parseDependentFunctionCell(cell);
+      if (!dependentCell) return null;
+      const { child, values: val } = dependentCell;
       const kind =
         child.funcType === 'lossNp' &&
         child.funcTargetType === 'ptOther' &&

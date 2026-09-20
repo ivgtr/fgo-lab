@@ -202,3 +202,78 @@ it('keeps HP transfer child selection and rejects alias, resistance and ambiguou
     expect(normalizeHpTransfer(parent, [[{ ...cell, ...replacement }], [], [], [], []])).toBeNull();
   }
 });
+
+it('connects NP and HP transfer descriptors to one canonical effect record', () => {
+  const npChild = {
+    funcId: 801,
+    funcType: 'lossNp',
+    funcTargetType: 'ptOther',
+    funcTargetTeam: 'player' as const,
+  };
+  const npCell = {
+    Rate: 1000,
+    DependFuncId: 801,
+    DependFunc: npChild,
+    DependFuncVals: { Rate: 1000, Value: 2800 },
+  };
+  const hpChild = {
+    funcId: 802,
+    funcType: 'lossHpSafe',
+    funcTargetType: 'enemyAll',
+    funcTargetTeam: 'enemy' as const,
+  };
+  const hpCell = {
+    Rate: 1000,
+    DependFuncId: 802,
+    DependFunc: hpChild,
+    DependFuncVals: { Rate: 1000, Value: 2000 },
+  };
+  const [np, hp] = normalizeFunctions(
+    [
+      {
+        funcId: 8010,
+        funcType: 'gainNpFromTargets',
+        funcTargetType: 'self',
+        funcTargetTeam: 'player' as const,
+        svals: [npCell],
+      },
+      {
+        funcId: 8020,
+        funcType: 'gainHpFromTargets',
+        funcTargetType: 'self',
+        funcTargetTeam: 'playerAndEnemy' as const,
+        svals: [hpCell],
+      },
+    ],
+    new Map(),
+  );
+  expect(masterEffectSchema.parse(np)).toBeTruthy();
+  expect(masterEffectSchema.parse(hp)).toBeTruthy();
+  expect(
+    np?.execution.some(
+      (operation) =>
+        operation.kind === 'resourceMutation' &&
+        operation.resource === 'npGauge' &&
+        operation.amount.kind === 'npTransfer' &&
+        operation.amount.donor === 'playerNp',
+    ),
+  ).toBe(true);
+  expect(
+    hp?.execution.some(
+      (operation) =>
+        operation.kind === 'resourceMutation' &&
+        operation.resource === 'hp' &&
+        operation.amount.kind === 'hpTransfer' &&
+        operation.amount.donors === 'allEnemies',
+    ),
+  ).toBe(true);
+  expect(np?.inputDefinitions.map((input) => input.key)).toEqual([
+    'transfer:playerNp:0',
+    'transfer:playerNp:1',
+  ]);
+  expect(hp?.inputDefinitions.map((input) => input.key)).toEqual([
+    'transfer:enemyHp:0',
+    'transfer:enemyHp:1',
+    'transfer:enemyHp:2',
+  ]);
+});

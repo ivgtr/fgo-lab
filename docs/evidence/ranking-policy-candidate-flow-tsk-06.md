@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count bounded unitまで完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-countとdependent resource／HP bounded unitまで完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -5329,3 +5329,24 @@ focused fixtures. Production direct negative-field occurrence remains an explici
 production maximum remains `Deferred: TSK-06.5`; cache/notice interaction remains `Deferred: TSK-07`; the changed
 paths have no remaining `Blocking` classification pending the implementation verification recorded in the review
 run.
+
+### TSK-06.48 dependent resource transfer／HP bounded unit（2026-09-20）
+
+現行HEAD `46f30a7`を実装基点とし、直前population bounded unitの基点`49efe62`およびW7のhistorical baselineとは分離した。
+data-pipelineの`dependentFunctionNormalization.ts`へplain functionのraw key／empty metadata／script policy、dependent cell envelope、
+child identity、nested value rate／keysを集約し、`npTransferNormalization.ts`と`hpNormalization.ts`はNP／HP固有のdomain変換と
+canonical operation／input定義だけを所有する。HP childの欠落／非正値`funcId`はNPと同じfail-closed identity境界へ明示化した。
+
+`effectNormalization.ts`のHP→parameter semantics→NP呼出し順、`DependFunc*`認識、canonical operation／input順序、
+`preparationOc.ts`のordered transaction、condition truth、mutation後read、`npTransfer.ts`／`preparationHp.ts`のdonor receipt・
+生存下限・連続transfer、calculator／ranking共通pathは変更していない。rankingへ独自のtransfer／HP semanticsは追加していない。
+
+focused data-pipeline 47/47、direct consumer 65/65、NP／HP production audit・parity・path 27/27、targeted lint／typecheck／Prettierが成功。
+影響matrixは80条件×433 profileを8 shardで実行し、34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／
+inputRequired 0、parity 34,600/34,600となった。candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct
+damage inputs 233,100、最大3,435、cap 4,096でpopulation closureと一致した。matrixのmerged digestは実行時間を含む診断値のため、
+固定production digest・operation/input inventory・support分類・order・condition truth・candidate inventory・parityを一致根拠とする。
+hot pathの3サンプル診断は`4518.134／4367.958／4437.614ms`、中央値`4437.614ms`、rows 433、exclusions 0、結果digestは
+`a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`で、固定性能下限は設けず診断値として記録した。
+詳細は[TSK-06.48 transfer／HP closure](tsk-06-48-transfer-hp-closure.json)とTask正本を参照する。次の bounded unitはeffect normalization／
+execution-semantics、TSK-06.48全体の最終qualityは未実施である。
