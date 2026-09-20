@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.19"
+document_version: "1.7.20"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -65,7 +65,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
 | TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
 | TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
-| TSK-06.48 | Package semantic complexity convergence | in_progress | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
+| TSK-06.48 | Package semantic complexity convergence | done | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -2076,18 +2076,18 @@ Depends on: TSK-06.46
 
 Plan: [package semantic convergence plan](package-semantic-convergence-tsk-06-48.md)
 
-- [ ] package全体の機械的分割ではなく、semantic family × package境界で複雑性を収束させる。
-- [ ] 第1波はdata-pipelineのpopulation familyとし、`normalizePopulationFunctions`のAtlas shape、dependency slice、
+- [x] package全体の機械的分割ではなく、semantic family × package境界で複雑性を収束させる。
+- [x] 第1波はdata-pipelineのpopulation familyとし、`normalizePopulationFunctions`のAtlas shape、dependency slice、
       canonical operation／input生成、population trait catalogのownerを分離する。
 - [x] dependent resource transfer／HP bounded unitでは、plain dependent-functionの共通shapeをdata-pipeline内のtyped descriptorへ収束し、NP／HP固有のdomain、canonical operation、input definition、ordered execution、candidate semanticsは既存ownerへ残す。
 - [x] effect normalization／execution-semantics bounded unitでは、参照operation展開後の未解決support再分類をexecution semantics ownerへ収束し、canonical effect／operation／input、ordered execution、condition、candidate semanticsは変更しない。
 - [x] battle-execution operation boundaryでは、canonical operation compiler、ordered preparation、resource read closure、candidate rollbackのowner重複がないことを確認し、production sourceを変更せずfocused consumer fixtureと既存production closureを再利用した。
 - [x] calculation-application candidate／world／scenario boundaryでは、scenario／world observation／candidate domain／common execution pathのowner重複を監査し、ranking static semantics内のpreparation source分類だけを局所inventoryへ収束した。
-- [ ] 第2波以降はdependent resource、effect normalization、battle-execution、calculation-applicationの順に、
+- [x] 第2波以降はdependent resource、effect normalization、battle-execution、calculation-applicationの順に、
       前段のcanonical outputが安定した場合だけ着手する。
-- [ ] `isOneOf`、`processValues`、条件式wrapper、単なるfile split／行数移動を追加しない。
-- [ ] absolute speedup、固定wall-clock下限、candidate削減を目標にせず、hot pathへ影響する場合だけ診断値を記録する。
-- [ ] focused testは変更したsemantic familyに限定し、既存production／parity／quality artifactを無条件に重複実行しない。
+- [x] `isOneOf`、`processValues`、条件式wrapper、単なるfile split／行数移動を追加しない。
+- [x] absolute speedup、固定wall-clock下限、candidate削減を目標にせず、hot pathへ影響する場合だけ診断値を記録する。
+- [x] focused testは変更したsemantic familyに限定し、既存production／parity／quality artifactを無条件に重複実行しない。
 
 Done gate:
 
@@ -2118,11 +2118,11 @@ Current bounded-unit handoff（2026-09-20、effect normalization／execution-sem
 
 Completed bounded-unit handoff（2026-09-20、battle-execution operation compiler／ordered execution）: 開始時HEADは`ad786f0`、production code基点は`00ad5db`であり、docs-onlyのHEAD advanceと混同しない。`operationCompiler.ts::compileEffectCached／compileEffect`、`executionPlan.ts::compileExecutionPlan`、`preparationOc.ts::executePreparationOc`、`resourceQueries.ts`／`resourceSemantics.ts`、`candidateExecution.ts::executeOrderedScenarioCandidate`のsemantic ownerは一意だった。compiler projection、preparation program、runtime binding、preparation gateの反復OC union分類はtyped outputが異なるため残し、production sourceの機械的refactorは行っていない。focused battle-execution／直接application `158/158`、candidate／world／resource audit `34/34`、targeted lint／typecheckを通過し、operation 15,257、effect 13,875、80条件×433 profileの34,640 outcomes／34,600 calculated／typed unavailable 40／unsupported・invalid・inputRequired 0／parity 34,600、candidate 1,028,810／最大3,435／cap 4,096を維持した。machine-readable結果は[TSK-06.48 battle-execution closure](../evidence/tsk-06-48-battle-execution-closure.json)、flow差分は[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)へ記録する。TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`、最終`pnpm quality`は未実施、次はcalculation-application candidate／world／scenario boundaryとする。
 
-Current bounded-unit handoff（2026-09-20、calculation-application candidate／world／scenario）: 開始時HEADは`ee9f00f`、production code基点は`00ad5db`、変更は`packages/calculation-application/src/rankingStaticSemantics.ts`だけである。`scenario.ts::resolveScenario／prepareCalculationScenarioWithPolicy`が利用者意図・canonical input・typed outcomeを、`rankingWorldObservation.ts`がBattleOperationのordered結果観測を、`rankingCanonicalInputs.ts`／`rankingCandidateSpace.ts`がcanonical input domain・population tupleのequivalence／representative・dedupe／capを、`rankingPolicyScenario.ts`／`rankingExecution.ts`が共通ordered executionを所有する。rankingにdamage／resource semantics、raw Atlas vocabulary、別compiler、別candidate generatorの重複ownerはなかった。
+Completed bounded-unit handoff（2026-09-20、calculation-application candidate／world／scenario）: 開始時HEADは`ee9f00f`、production code基点は`00ad5db`、変更は`packages/calculation-application/src/rankingStaticSemantics.ts`だけである。`scenario.ts::resolveScenario／prepareCalculationScenarioWithPolicy`が利用者意図・canonical input・typed outcomeを、`rankingWorldObservation.ts`がBattleOperationのordered結果観測を、`rankingCanonicalInputs.ts`／`rankingCandidateSpace.ts`がcanonical input domain・population tupleのequivalence／representative・dedupe／capを、`rankingPolicyScenario.ts`／`rankingExecution.ts`が共通ordered executionを所有する。rankingにdamage／resource semantics、raw Atlas vocabulary、別compiler、別candidate generatorの重複ownerはなかった。
 
 `rankingStaticSemantics.ts::compileStaticRankingSemantics`内の`effectChangesPreparation(effect) || hasOcConditionReader(effect)`の3箇所反復だけを`preparationSources`へ局所収束した。これはcategory 1の反復union分類であり、category 2のtyped変換、category 3の網羅union、category 4のcondition／uncertainty／mutation／finite admission／typed fail-closedは残した。public API、canonical effect／operation／input key、support分類、order、condition truth、mutation-after-read、calculator／ranking parity、candidate inventoryに差分はない。focused 6 files／38 tests、targeted eslint、typecheck、Prettier、git diff、docs integrityを確認対象とし、matrix再実行不要の根拠と診断値は[TSK-06.48 calculation-application closure](../evidence/tsk-06-48-calculation-application-closure.json)へ記録する。80×433 closureは34,640 outcomes／34,600 calculated／typed unavailable 40／unsupported・invalid・inputRequired 0／parity 34,600、candidate generated／deduplicated 1,028,810／最大3,435／cap 4,096を維持する。hot-path診断中央値は`6069.754ms`だが、固定受入条件・ratchetではない。
 
-最終`pnpm quality`はartifact `.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で成功した。unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0、duration 408.29秒、manifest SHA-256 `82e55ed669cfa31f0b53cf6716479c36d63140d69a848af737e4dd4348b1e1fc`である。実装・記録commitは`3e98828`。技術的Blockingと残りbounded unitはなく、利用者指定によりTSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。追加のrefactorや別Taskへの拡張は行わない。
+最終`pnpm quality`はartifact `.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で成功した。unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0、duration 408.29秒、manifest SHA-256 `82e55ed669cfa31f0b53cf6716479c36d63140d69a848af737e4dd4348b1e1fc`である。実装・記録commitは`3e98828`。技術的Blockingと残りbounded unitはなく、Done gate 1〜5を満たしたためTSK-06.48を`done`へ遷移する。TSK-06.47は`ready`、TSK-06.5は`blocked`を維持し、追加のrefactorや別Taskへの拡張は行わない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

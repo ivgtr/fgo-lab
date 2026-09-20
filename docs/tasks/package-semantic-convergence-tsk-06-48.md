@@ -1,7 +1,7 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.8"
-status: "Active"
+document_version: "1.0.9"
+status: "Complete"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
 task: "TSK-06.48"
@@ -252,4 +252,4 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
 
 80条件×433 profileは34,640 outcomes、34,600 calculated、typed unavailable 40、unsupported／invalid／inputRequired 0、parity 34,600、candidate generated／deduplicated 1,028,810、damage requests 967,810、distinct 233,100、最大3,435／cap 4,096を維持した。ranking static candidate compilation pathを変更したため、hot-path診断を3回実行し、`6280.810／6061.904／6069.754ms`、中央値`6069.754ms`、rows 433、exclusions 0、result digest `a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`を記録した。前回診断との差は受入条件やratchetにせず、意味論差分の不在を優先する。詳細は[TSK-06.48 calculation-application closure](../evidence/tsk-06-48-calculation-application-closure.json)を参照する。
 
-このbounded unitでTSK-06.48のproduction／semantic実装範囲は閉じ、最終`pnpm quality`も成功した。artifactは`.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で、unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0だった。Bの実装・記録commitは`3e98828`である。ただし、利用者指定によりTSK-06.48は完了扱いへ遷移させず`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。技術的Blockingと残りbounded unitはなく、追加のrefactorは行わない。
+このbounded unitでTSK-06.48のproduction／semantic実装範囲は閉じ、最終`pnpm quality`も成功した。artifactは`.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で、unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0だった。Bの実装・記録commitは`3e98828`である。Done gate 1〜5を満たしたためTSK-06.48を`done`へ遷移し、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。技術的Blockingと残りbounded unitはなく、追加のrefactorは行わない。
