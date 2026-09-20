@@ -37,6 +37,7 @@ export function calculateRankingPolicyDetail(
   conditions: RankingPolicyConditions,
   versions: VersionContext,
   attackProfile?: AttackProfile,
+  includeAreaSupport = true,
 ): RankingProfileResult {
   const selection = compileRankingSelection(conditions);
   if (selection.status === 'invalid') return { ...selection, attackProfile: null, issues: [] };
@@ -58,7 +59,7 @@ export function calculateRankingPolicyDetail(
       profile,
       conditions,
       versions,
-      true,
+      includeAreaSupport,
     );
     const requested = attackProfile ?? createStaticAttackProfiles(servant)[0];
     if (!requested)

@@ -103,6 +103,22 @@ describe('ranking worker canonical runtime', () => {
     expect(first.exclusions).toEqual([]);
     expect(first.rows.length).toBeGreaterThan(0);
 
+    const alternate = runtime.handle({
+      kind: 'calculate',
+      contextId: 'context',
+      requestId: 'summary-3',
+      conditions: { ...DEFAULT_RANKING_POLICY_CONDITIONS, conditionalEffects: 'satisfied' },
+    });
+    expect(alternate.kind).toBe('result');
+    const restored = runtime.handle({
+      kind: 'calculate',
+      contextId: 'context',
+      requestId: 'summary-4',
+      conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+    });
+    expect(restored.kind).toBe('result');
+    expect(calculate).toHaveBeenCalledTimes(3);
+
     const row = first.rows[0]!;
     const detailResponse = runtime.handle({
       kind: 'detail',
@@ -118,7 +134,7 @@ describe('ranking worker canonical runtime', () => {
       fingerprint: first.fingerprint,
       entryId: row.entryId,
     });
-    expect(detail).toHaveBeenCalledTimes(0);
+    expect(detail).toHaveBeenCalledTimes(2);
     expect(detailResponse.kind).toBe('detail');
     expect(parseRankingWorkerResponse(detailResponse)).toEqual(detailResponse);
     if (detailResponse.kind !== 'detail') throw new TypeError('expected ranking detail');

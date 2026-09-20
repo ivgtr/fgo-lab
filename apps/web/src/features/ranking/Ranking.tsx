@@ -41,6 +41,7 @@ export function Ranking({
     const next = openEntryId === row.entryId ? null : row.entryId;
     setOpenEntryId(next);
     if (next) ranking.requestDetail(row);
+    else ranking.clearDetail();
   };
   return (
     <section className="ranking-page">

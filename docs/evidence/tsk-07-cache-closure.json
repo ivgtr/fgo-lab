@@ -1,0 +1,175 @@
+{
+  "task": "TSK-07",
+  "status": "complete",
+  "unit": "RK-CACHE-001 evidence-free worker summary cache, bounded detail state, and stale response rejection",
+  "baseline": {
+    "headAtStart": "597d7791f1c2bf0b7facf13af09141a7e18fa66f",
+    "worktreeAtStart": "clean",
+    "entryConditions": {
+      "TSK-06.5": "done",
+      "TSK-06.47": "done",
+      "TSK-06.48": "done",
+      "TSK-07": "blocked"
+    },
+    "taskSource": "docs/tasks/development-redesign-tasks.md",
+    "historicalEvidence": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "canonicalProductionEvidence": "docs/evidence/tsk-06-5-production-closure.json"
+  },
+  "changedFiles": [
+    "apps/web/src/features/ranking/Ranking.tsx",
+    "apps/web/src/features/ranking/rankingWorkerRuntime.test.ts",
+    "apps/web/src/features/ranking/rankingWorkerRuntime.ts",
+    "apps/web/src/features/ranking/useRanking.test.tsx",
+    "apps/web/src/features/ranking/useRanking.ts",
+    "packages/calculation-application/src/rankingPolicyCalculation.ts",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "docs/evidence/tsk-07-cache-closure.json",
+    "docs/evidence/README.md",
+    "docs/README.md"
+  ],
+  "semanticOwners": {
+    "canonicalInput": "packages/schema rankingSelectionSchema and calculation-application compileRankingSelection",
+    "fingerprint": "apps/web/src/features/ranking/rankingWorkerProtocol.ts::rankingConditionsFingerprint",
+    "summaryCache": "apps/web/src/features/ranking/rankingWorkerRuntime.ts::createRankingWorkerRuntime",
+    "detailMaterialization": "packages/calculation-application/src/rankingPolicyCalculation.ts::calculateRankingPolicyDetail",
+    "responseGate": "apps/web/src/features/ranking/useRanking.ts::useRanking",
+    "presentation": "apps/web/src/features/ranking/Ranking.tsx and RankingList.tsx"
+  },
+  "canonicalFlow": [
+    "canonical seven-field RankingPolicyConditions including selfBuffs and conditionalEffects",
+    "rankingConditionsFingerprint serializes the ordered typed identity",
+    "worker context owns one successful summary value: rows and typed exclusions only",
+    "detail request validates current context, summary fingerprint, and entry before materializing",
+    "React applies a response only when request ID, fingerprint, and entry ID are all current",
+    "Ranking close clears the active detail and the next row replaces it"
+  ],
+  "cacheContract": {
+    "summary": {
+      "owner": "worker",
+      "key": "context identity + canonical seven-field fingerprint",
+      "value": ["rows", "typed exclusions"],
+      "evidenceFree": true,
+      "lifetime": "latest successful fingerprint in the current worker context",
+      "maximumCardinality": 1
+    },
+    "workerDetail": {
+      "owner": "worker",
+      "value": "none; detail is materialized per request",
+      "lifetime": "request lifetime",
+      "maximumCardinality": 0
+    },
+    "reactActiveDetail": {
+      "owner": "React",
+      "key": "request ID + fingerprint + entry ID",
+      "value": "one detail or typed error",
+      "lifetime": "close, row replacement, condition change, or context change",
+      "maximumCardinality": 1
+    }
+  },
+  "staleRejection": {
+    "worker": "detail lookup rejects non-current summary fingerprint and context before materialization",
+    "react": "summary and detail responses require current worker instance/context plus request ID and fingerprint; detail also requires entry ID",
+    "afterClose": "pending identity is cleared and a later response cannot populate detail state"
+  },
+  "typedOutcomeBoundary": {
+    "numericRows": "calculated only",
+    "typedExclusions": [
+      "inputRequired",
+      "unsupported",
+      "invalid",
+      "unavailableUnderPolicy"
+    ],
+    "fallback": "none; cache and response handling do not coerce typed outcomes to numeric values"
+  },
+  "applicationBoundary": {
+    "workerDetailAreaSupport": "false, matching the existing summary calculation boundary and preserving production detail output",
+    "damageSemantics": "unchanged",
+    "candidateMeaning": "unchanged",
+    "portableIdentity": "unchanged",
+    "legacyRuntime": "no old reader, operation-ID projection, compatibility flag, fallback, or parallel compiler added"
+  },
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- apps/web/src/features/ranking/rankingWorkerRuntime.test.ts apps/web/src/features/ranking/useRanking.test.tsx apps/web/src/features/ranking/Ranking.integration.test.tsx",
+      "status": "passed",
+      "tests": 11,
+      "artifact": ".test-results/2026-09-20T18-30-40-265Z-15-9d59d5"
+    },
+    "directConsumers": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/rankingPolicy.test.ts packages/calculation-application/src/productionExecutionParity.test.ts packages/calculation-application/src/portableCalculation.test.ts apps/web/src/features/ranking/rankingWorkerProtocol.test.ts packages/calculation-application/src/rankingArchitecture.test.ts",
+      "status": "passed",
+      "tests": 33,
+      "artifact": ".test-results/2026-09-20T18-16-48-566Z-15-6ee177",
+      "reusedProductionEvidence": "TSK-06.5 candidate inventory, support status, output digest, and parity remain unchanged"
+    },
+    "playwright": {
+      "command": "pnpm test:e2e -- e2e/ranking-baseline.spec.ts --grep 'E2E-050'",
+      "status": "passed",
+      "tests": 2,
+      "artifact": ".test-results/2026-09-20T18-19-04-287Z-15-16a08b",
+      "coverage": "real worker summary/detail, desktop detail snapshot, keyboard contribution filter, 390px/320px overflow, calculator handoff"
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint <changed source and test files> --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --check <changed source and test files>",
+      "status": "passed"
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 885,
+      "production": 144,
+      "playwright": 29,
+      "retries": 0,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "durationSeconds": 322.78,
+      "artifact": ".test-results/2026-09-20T18-30-46-341Z-15-f4fdde"
+    },
+    "performance": {
+      "command": "pnpm --filter @fgo-lab/data-pipeline exec tsx ../../scripts/measure-ranking-resources.ts <output.json>",
+      "samplesMilliseconds": [
+        5779.623176000001,
+        5826.462065,
+        5672.170376999999
+      ],
+      "medianMilliseconds": 5779.623176000001,
+      "baselineMedianMilliseconds": 5560.169106000001,
+      "deltaPercent": 3.95,
+      "rows": 433,
+      "exclusions": 0,
+      "resultDigest": "a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f",
+      "fixedTarget": false,
+      "candidateRatchet": false,
+      "timeoutRelaxation": false
+    }
+  },
+  "reusedEvidence": {
+    "tsk06_5": "canonical production inventory, candidate inventory, support status, 80-condition matrix, calculator/ranking/portable parity, and legacy scan",
+    "historicalTsk07": "five-field cutover and historical response ordering only; historical evidence does not prove bounded cache value"
+  },
+  "unresolved": [
+    "TSK-07 notice and five-outcome presentation",
+    "TSK-07 normal-condition reset interaction",
+    "TSK-07 responsive and accessibility closure beyond E2E-050",
+    "TSK-08 production audit"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "in_progress",
+    "head": "597d7791f1c2bf0b7facf13af09141a7e18fa66f",
+    "newCommit": false
+  },
+  "nextBoundedUnit": "TSK-07 notice and normal-condition reset interaction",
+  "stopCondition": "Stop after RK-CACHE-001 evidence and required focused/direct-consumer checks are recorded; reopen TSK-06.41 or TSK-06.5 if canonical fingerprint, support status, candidate inventory, production output, or parity changes."
+}

@@ -7,6 +7,7 @@ import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application';
 import {
   rankingConditionsFingerprint,
+  parseRankingWorkerResponse,
   type RankingWorkerRequest,
   type RankingWorkerResponse,
 } from './rankingWorkerProtocol';
@@ -304,4 +305,76 @@ it('never publishes malformed current detail and accepts a subsequent valid repl
   expect(() =>
     presentRankingDetailEvidence(result.current.details[row.entryId]!, fixture.master),
   ).not.toThrow();
+});
+
+it('keeps one active detail and rejects a superseded response after row replacement or close', async () => {
+  vi.stubGlobal('Worker', FakeWorker);
+  const fixture = rankingResponseFixture();
+  const { result } = renderHook(() =>
+    useRanking({
+      master: fixture.master,
+      profile: fixture.profile,
+      versions: fixture.versions,
+      conditions: DEFAULT_RANKING_POLICY_CONDITIONS,
+    }),
+  );
+  const worker = FakeWorker.instance!;
+  const initialize = worker.requests[0]!;
+  act(() =>
+    worker.emit({
+      ...fixture.ready,
+      requestId: initialize.requestId,
+      contextId: initialize.contextId,
+    }),
+  );
+  await waitFor(() => expect(worker.requests).toHaveLength(2));
+  const calculate = worker.requests[1]!;
+  act(() =>
+    worker.emit({
+      ...fixture.summary,
+      requestId: calculate.requestId,
+      contextId: calculate.contextId,
+    }),
+  );
+  const firstRow = result.current.rows[0]!;
+  const secondRow = { ...firstRow, entryId: `${firstRow.entryId}:second` };
+  act(() => result.current.requestDetail(firstRow));
+  const firstRequest = worker.requests[2]!;
+  act(() => result.current.requestDetail(secondRow));
+  const secondRequest = worker.requests[3]!;
+  if (firstRequest.kind !== 'detail' || secondRequest.kind !== 'detail')
+    throw new TypeError('expected detail requests');
+
+  act(() =>
+    worker.emit({
+      ...fixture.detail,
+      requestId: firstRequest.requestId,
+      contextId: firstRequest.contextId,
+    }),
+  );
+  expect(result.current.details).toEqual({});
+  const secondResponse = {
+    ...fixture.detail,
+    requestId: secondRequest.requestId,
+    contextId: secondRequest.contextId,
+    entryId: secondRow.entryId,
+    detail: { ...fixture.detail.detail, entryId: secondRow.entryId },
+  };
+  expect(secondResponse.contextId).toBe(secondRequest.contextId);
+  expect(secondResponse.fingerprint).toBe(secondRequest.fingerprint);
+  expect(secondResponse.entryId).toBe(secondRequest.entryId);
+  expect(parseRankingWorkerResponse(secondResponse)).not.toBeNull();
+  act(() => worker.emit(secondResponse));
+  expect(Object.keys(result.current.details)).toEqual([secondRow.entryId]);
+
+  act(() => result.current.clearDetail());
+  expect(result.current.details).toEqual({});
+  act(() =>
+    worker.emit({
+      ...fixture.detail,
+      requestId: firstRequest.requestId,
+      contextId: firstRequest.contextId,
+    }),
+  );
+  expect(result.current.details).toEqual({});
 });

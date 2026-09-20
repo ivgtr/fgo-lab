@@ -1,7 +1,7 @@
 ---
 title: "TSK-07 ranking Web and worker canonical cutover"
 status: "Active"
-updated_at: "2026-09-02"
+updated_at: "2026-09-21"
 ---
 
 # TSK-07 ranking Web and worker canonical cutover
@@ -157,3 +157,53 @@ bounded cache／stale response rejection.
 
 Current dependency: TSK-07 waits for TSK-06.5, and TSK-08 may not start. Cross-level optimization and
 the full production digest remain deferred to TSK-08 after TSK-07 closes.
+
+## Current RK-CACHE-001 bounded closure (2026-09-21)
+
+The historical five-field evidence above remains unchanged. This section records only the current
+bounded unit after the seven-field, two-axis identity and TSK-06.5 production closure were available.
+
+Ownership is now separated at the cache boundary. `rankingConditionsFingerprint` remains the sole
+identity producer for the canonical seven inputs, including `selfBuffs` and `conditionalEffects`.
+`createRankingWorkerRuntime` retains one successful summary for the current worker context, with only
+`rows` and typed `exclusions`. A new successful fingerprint replaces that value; initialization clears
+it. A failed calculation cannot make an older summary serve a new fingerprint. The worker has no detail
+cache. A detail request first proves the current context, summary fingerprint, and entry membership,
+then calls the existing application detail owner with the same area-support boundary used by summary
+calculation. This preserves the prior production detail output while avoiding evidence retention in the
+worker summary value.
+
+`useRanking` owns one pending detail identity and one active detail value. A new row replaces the
+pending identity and clears the previous value; close, condition change, context replacement, and
+unmount clear it. Responses are applied only when worker instance, context ID, request ID, fingerprint,
+and (for detail) entry ID all match. Stale summary, detail, and typed error responses therefore cannot
+populate rows, active detail, or detail errors. The ranking component dispatches `clearDetail` when an
+open row closes, so repeated open/close cannot accumulate values.
+
+The bounded counterexample matrix is:
+
+| Path | Expected result | Evidence |
+| --- | --- | --- |
+| same seven-field request twice | one summary calculation; identical rows/exclusions | focused worker test |
+| A → B → A | one summary value at a time; A is recalculated after B replaces it | focused worker test |
+| summary value inspection | no profile result, scenario, effect, trace, projection, or detail value | worker implementation and response schema |
+| detail open twice | worker detail cache remains zero; each request uses current fingerprint | focused worker test |
+| detail row replacement | first response is rejected; second response yields exactly one active value | focused React test |
+| close before response | pending identity is invalidated and response is ignored | focused React test |
+| old context or old summary response | no row/detail/error mutation | existing response-ordering tests |
+| filter, metric, or handoff | no new ranking calculation request from presentation-only changes | direct Web consumer and E2E-050 |
+
+Focused verification passed 11 unit tests, 33 direct calculator/ranking/portable tests, typecheck,
+targeted lint and format, and E2E-050 (2/2). The final `pnpm quality` also passed with unit 885,
+production 144, Playwright 29, retry 0, warnings 0, and unexpected console 0. The E2E path covered the real worker, detail snapshot,
+keyboard contribution filter, 390px/320px expanded overflow, and calculator handoff. The ranking hot
+path remained 433 rows / 0 exclusions with digest
+`a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`; three samples had a median of
+5779.623 ms against the TSK-06.5 baseline median 5560.169 ms (+3.95%). No fixed wall-clock target,
+cache-reduction ratchet, or timeout relaxation was introduced.
+
+TSK-06.5 candidate inventory, support status, production output, calculator/ranking/portable parity,
+and legacy-removal evidence are reused because the canonical input and production digest are unchanged.
+The machine-readable record is [TSK-07 cache closure](tsk-07-cache-closure.json). The unit is complete,
+but TSK-07 remains `in_progress`; notice/five-outcome presentation, normal reset interaction, and full
+responsive/a11y closure remain for the next bounded unit. TSK-08 remains blocked.

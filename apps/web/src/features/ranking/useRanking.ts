@@ -55,7 +55,7 @@ export function useRanking({
   const workerRef = useRef<Worker | undefined>(undefined);
   const activeRequestRef = useRef('');
   const activeFingerprintRef = useRef('');
-  const detailRequestsRef = useRef(new Map<string, string>());
+  const detailRequestRef = useRef<{ entryId: string; requestId: string } | null>(null);
   const [initializedFingerprint, setInitializedFingerprint] = useState('');
   const [state, setState] = useState<RankingState>({
     rows: [],
@@ -100,13 +100,17 @@ export function useRanking({
       }
       if (response.kind === 'detail') {
         if (response.fingerprint !== activeFingerprintRef.current) return;
-        if (detailRequestsRef.current.get(response.entryId) !== response.requestId) return;
-        detailRequestsRef.current.delete(response.entryId);
+        if (
+          detailRequestRef.current?.entryId !== response.entryId ||
+          detailRequestRef.current.requestId !== response.requestId
+        )
+          return;
+        detailRequestRef.current = null;
         setDetails((current) =>
           current.fingerprint === `${contextFingerprint}:${response.fingerprint}`
             ? {
                 ...current,
-                values: { ...current.values, [response.entryId]: response.detail },
+                values: { [response.entryId]: response.detail },
               }
             : current,
         );
@@ -126,9 +130,13 @@ export function useRanking({
       }
       if (response.kind === 'error' && response.stage === 'detail') {
         if (response.fingerprint !== activeFingerprintRef.current) return;
-        if (detailRequestsRef.current.get(response.entryId) !== response.requestId) return;
-        detailRequestsRef.current.delete(response.entryId);
-        setDetailErrors((current) => ({ ...current, [response.entryId]: response.reason }));
+        if (
+          detailRequestRef.current?.entryId !== response.entryId ||
+          detailRequestRef.current.requestId !== response.requestId
+        )
+          return;
+        detailRequestRef.current = null;
+        setDetailErrors({ [response.entryId]: response.reason });
         return;
       }
       if (
@@ -153,6 +161,7 @@ export function useRanking({
     worker.postMessage(request);
     return () => {
       worker.terminate();
+      detailRequestRef.current = null;
       if (workerRef.current === worker) workerRef.current = undefined;
     };
   }, [contextFingerprint, master, stableProfile, stableVersions, enabled]);
@@ -163,7 +172,14 @@ export function useRanking({
     const requestId = crypto.randomUUID();
     activeRequestRef.current = requestId;
     activeFingerprintRef.current = conditionsFingerprint;
-    detailRequestsRef.current.clear();
+    detailRequestRef.current = null;
+    setDetails({ fingerprint: '', values: {} });
+    setDetailErrors({});
+    setState((current) =>
+      current.fingerprint === `${contextFingerprint}:${conditionsFingerprint}`
+        ? { ...current, fingerprint: '' }
+        : current,
+    );
     const request: RankingWorkerRequest = {
       kind: 'calculate',
       requestId,
@@ -185,10 +201,9 @@ export function useRanking({
       )
         return;
       const requestId = crypto.randomUUID();
-      setDetailErrors((current) =>
-        Object.fromEntries(Object.entries(current).filter(([key]) => key !== row.entryId)),
-      );
-      detailRequestsRef.current.set(row.entryId, requestId);
+      detailRequestRef.current = { entryId: row.entryId, requestId };
+      setDetails({ fingerprint: `${contextFingerprint}:${conditionsFingerprint}`, values: {} });
+      setDetailErrors({});
       const request: RankingWorkerRequest = {
         kind: 'detail',
         requestId,
@@ -200,6 +215,12 @@ export function useRanking({
     },
     [conditionsFingerprint, contextFingerprint, details, initializedFingerprint, state.fingerprint],
   );
+
+  const clearDetail = useCallback(() => {
+    detailRequestRef.current = null;
+    setDetails({ fingerprint: '', values: {} });
+    setDetailErrors({});
+  }, []);
 
   const current =
     !!conditions && state.fingerprint === `${contextFingerprint}:${conditionsFingerprint}`;
@@ -220,6 +241,7 @@ export function useRanking({
         : {},
     detailErrors: current ? detailErrors : {},
     requestDetail,
+    clearDetail,
     loading:
       !!conditions &&
       !error &&

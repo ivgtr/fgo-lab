@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.21"
+document_version: "1.7.22"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-21"
@@ -67,7 +67,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.47 | Contribution decision UI cleanup | done | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.48 | Package semantic complexity convergence | done | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | done | TSK-06.47 | final candidate／maximum／legacy-removal proof |
-| TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
+| TSK-07 | Web／worker一括切替 | in_progress | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
@@ -2194,7 +2194,7 @@ Depends on: TSK-06.5
       target／field facts、conditional inputs、stochastic outcome、ordered actions／choice、candidate evidenceも
       application baseline constructorのfield-by-field dispositionどおり除去し、hidden ranking stateを残さないことを
       再検証する。
-- [ ] 二軸intentを含むfingerprintでsummary／detail cacheとstale response rejectionを閉じ、worker detail 0件、
+- [x] 二軸intentを含むfingerprintでsummary／detail cacheとstale response rejectionを閉じ、worker detail 0件、
       React active detail最大1件を実装・検証する。
 - [ ] Webの順位外表示を5 outcome classへ切り替え、`inputRequired`、`unsupported`、`invalid`、
       `unavailableUnderPolicy`を別文言で表示する。`inputRequired`だけは同じAttackProfileのnormal calculatorを開き、
@@ -2256,6 +2256,17 @@ Handoff:
 - Requirement v0.10.0 planning delta: 母集団／レベル／宝具Lvの6-input cutoverはTSK-06.42、maximum stack
   semanticsはTSK-06.43、contribution decision表示はTSK-06.47が所有する。TSK-07はこれらを再実装せず、
   notice／recovery interaction／bounded cache／responsive／a11yの最終closureだけを所有する。
+- Current bounded-unit handoff (2026-09-21): `RK-CACHE-001`を実装し、worker summary cacheをcontext内の直近成功1件
+  （rows＋typed exclusionsのみ）へ制限した。worker detail cacheは0件とし、detailはsummaryのcurrent fingerprintと
+  entryを検証してrequestごとにmaterializeする。Reactはrequest ID／fingerprint／entry IDを一つだけ保持し、close、
+  row置換、条件／context変更後の古いdetail／errorを適用しない。7入力fingerprint、candidate／calculator／ranking／
+  portable outputは不変で、worker detailは既存summaryと同じarea-support境界を使用する。focused 11/11、直接consumer
+  33/33、typecheck、対象lint／format、E2E-050 2/2、hot-path 3サンプル（中央値5,779.623ms、rows 433、exclusions 0）を
+  通過した。最終`pnpm quality`もunit 885／production 144／Playwright 29、retry 0、warnings 0、unexpected console 0、
+  artifact `.test-results/2026-09-20T18-30-46-341Z-15-f4fdde`で成功した。machine-readable結果は[TSK-07 cache closure](../evidence/tsk-07-cache-closure.json)、flow deltaは
+  [ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ記録する。TSK-07は`in_progress`のまま、
+  TSK-06.5／06.47／06.48は`done`を維持する。次のbounded unitはnotice／normal reset interactionであり、
+  five-outcome全画面表示、normal reset、responsive／a11y全体、TSK-08は未達である。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

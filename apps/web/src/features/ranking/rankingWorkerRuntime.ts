@@ -1,9 +1,7 @@
 import {
   calculateRankingPolicy,
   calculateRankingPolicyDetail,
-  type RankingPolicyCalculation,
   type RankingPolicyConditions,
-  type RankingPolicyDetail,
   type RankingProfileInput,
 } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -28,6 +26,12 @@ interface RankingWorkerContext {
   versions: VersionContext;
 }
 
+interface RankingWorkerSummary {
+  fingerprint: string;
+  rows: ReturnType<typeof calculateRankingPolicy>['rows'];
+  exclusions: ReturnType<typeof calculateRankingPolicy>['exclusions'];
+}
+
 export function createRankingWorkerRuntime(
   calculators: RankingWorkerCalculators = {
     calculate: calculateRankingPolicy,
@@ -35,15 +39,15 @@ export function createRankingWorkerRuntime(
   },
 ) {
   let context: RankingWorkerContext | undefined;
-  const conditionsByFingerprint = new Map<string, RankingPolicyConditions>();
-  const calculationCache = new Map<string, RankingPolicyCalculation>();
-  const detailCache = new Map<string, Map<string, RankingPolicyDetail>>();
+  let summaryCache: RankingWorkerSummary | undefined;
+  let activeSummaryFingerprint = '';
+  let activeConditions: RankingPolicyConditions | undefined;
 
   const clear = () => {
     context = undefined;
-    conditionsByFingerprint.clear();
-    calculationCache.clear();
-    detailCache.clear();
+    summaryCache = undefined;
+    activeSummaryFingerprint = '';
+    activeConditions = undefined;
   };
   const handle = (value: unknown): RankingWorkerResponse => {
     const parsed = rankingWorkerRequestSchema.safeParse(value);
@@ -96,15 +100,17 @@ export function createRankingWorkerRuntime(
         throw new RankingWorkerInvalid('rankingContextUnavailable');
       if (request.kind === 'calculate') {
         const fingerprint = rankingConditionsFingerprint(request.conditions);
-        const calculation =
-          calculationCache.get(fingerprint) ??
-          calculators.calculate(
-            context.master,
-            context.profile,
-            request.conditions,
-            context.versions,
-          );
-        if (calculation.status === 'invalid')
+        activeSummaryFingerprint = fingerprint;
+        const cached = summaryCache?.fingerprint === fingerprint ? summaryCache : undefined;
+        const calculation = cached
+          ? null
+          : calculators.calculate(
+              context.master,
+              context.profile,
+              request.conditions,
+              context.versions,
+            );
+        if (calculation?.status === 'invalid')
           return {
             kind: 'error',
             stage: 'summary',
@@ -113,45 +119,45 @@ export function createRankingWorkerRuntime(
             fingerprint,
             reason: calculation.reason,
           };
-        conditionsByFingerprint.set(fingerprint, request.conditions);
-        calculationCache.set(fingerprint, calculation);
+        if (calculation) {
+          summaryCache = {
+            fingerprint,
+            rows: calculation.rows,
+            exclusions: calculation.exclusions,
+          };
+          activeConditions = request.conditions;
+        }
+        const summary = summaryCache;
+        if (!summary || summary.fingerprint !== fingerprint || !activeConditions)
+          throw new RankingWorkerInvalid('ranking_summary_unavailable');
         return {
           kind: 'result',
           ...identity,
           fingerprint,
-          rows: calculation.rows,
-          exclusions: calculation.exclusions,
+          rows: summary.rows,
+          exclusions: summary.exclusions,
         };
       }
-      const conditions = conditionsByFingerprint.get(request.fingerprint);
-      const row = calculationCache
-        .get(request.fingerprint)
-        ?.rows.find(({ entryId }) => entryId === request.entryId);
+      const summary =
+        activeSummaryFingerprint === request.fingerprint &&
+        summaryCache?.fingerprint === request.fingerprint
+          ? summaryCache
+          : undefined;
+      const conditions =
+        activeSummaryFingerprint === request.fingerprint ? activeConditions : undefined;
+      const row = summary?.rows.find(({ entryId }) => entryId === request.entryId);
       const servant = context.master.servants.find(({ id }) => id === row?.servantId);
       if (!conditions || !servant || !row)
         throw new RankingWorkerInvalid('ranking_detail_context_missing');
-      const cached = detailCache.get(request.fingerprint)?.get(request.entryId);
-      if (cached)
-        return {
-          kind: 'detail',
-          ...identity,
-          fingerprint: request.fingerprint,
-          entryId: request.entryId,
-          detail: cached,
-        };
-      const cachedResult = calculationCache.get(request.fingerprint)?.profileResults[
-        request.entryId
-      ];
-      const result =
-        cachedResult ??
-        calculators.detail(
-          servant,
-          context.master,
-          context.profile,
-          conditions,
-          context.versions,
-          row.attackProfile,
-        );
+      const result = calculators.detail(
+        servant,
+        context.master,
+        context.profile,
+        conditions,
+        context.versions,
+        row.attackProfile,
+        false,
+      );
       if (result.status !== 'calculated') {
         const reason =
           result.status === 'inputRequired'
@@ -167,10 +173,6 @@ export function createRankingWorkerRuntime(
           reason,
         };
       }
-      const details =
-        detailCache.get(request.fingerprint) ?? new Map<string, RankingPolicyDetail>();
-      details.set(request.entryId, result.detail);
-      detailCache.set(request.fingerprint, details);
       return {
         kind: 'detail',
         ...identity,
