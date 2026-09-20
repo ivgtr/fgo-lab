@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.12"
+document_version: "1.7.13"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -65,6 +65,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
 | TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
 | TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
+| TSK-06.48 | Package semantic complexity convergence | ready | TSK-06.46 | package別semantic owner／population family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
 | TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
@@ -76,6 +77,7 @@ TSK-00.1 -> TSK-00.2 -> TSK-00.3 -> TSK-00.4 -> TSK-00 -> TSK-01 -> TSK-02 -> TS
 TSK-06.41 -> TSK-06.411
 TSK-06.41 -> TSK-06.412
 TSK-06.411 + TSK-06.412 -> TSK-06.42 -> TSK-06.43 -> TSK-06.44 -> TSK-06.45 -> TSK-06.46 -> TSK-06.47 -> TSK-06.5 -> TSK-07 -> TSK-08 -> TSK-09.1 -> TSK-09
+TSK-06.46 -> TSK-06.48（TSK-06.47／TSK-06.5とは独立したpackage convergence follow-up）
 ```
 
 ## 3. Tasks
@@ -2067,6 +2069,44 @@ Contract closure matrix:
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: TSK-06.46のworld candidate semantic owner、production parity、quality gate完了を前提に着手可能。UIのlogical effect／per-contribution presentationだけを対象とし、ranking damage semantics、candidate generation、execution ownerは再実装しない。
+
+### TSK-06.48: Package semantic complexity convergence
+
+Depends on: TSK-06.46
+
+Plan: [package semantic convergence plan](package-semantic-convergence-tsk-06-48.md)
+
+- [ ] package全体の機械的分割ではなく、semantic family × package境界で複雑性を収束させる。
+- [ ] 第1波はdata-pipelineのpopulation familyとし、`normalizePopulationFunctions`のAtlas shape、dependency slice、
+      canonical operation／input生成、population trait catalogのownerを分離する。
+- [ ] 第2波以降はdependent resource、effect normalization、battle-execution、calculation-applicationの順に、
+      前段のcanonical outputが安定した場合だけ着手する。
+- [ ] `isOneOf`、`processValues`、条件式wrapper、単なるfile split／行数移動を追加しない。
+- [ ] absolute speedup、固定wall-clock下限、candidate削減を目標にせず、hot pathへ影響する場合だけ診断値を記録する。
+- [ ] focused testは変更したsemantic familyに限定し、既存production／parity／quality artifactを無条件に重複実行しない。
+
+Done gate:
+
+- 対象familyごとに現在owner、変更後owner、削除する重複分類、意図的に残す論理和がplanへ記録されている。
+- 第1波のpopulation fixture、fail-closed条件、operation order、mutation後read、input keyの境界が実装前に確定している。
+- code変更時はcanonical output、operation／input inventory、condition truth、parity、candidate capへの影響を説明できる。
+- performanceは影響時の比較可能な診断値だけを記録し、固定性能ゴールを受入条件にしない。
+- focused verification、必要時のproduction matrix、lint／typecheck、最終qualityの適用条件がevidenceへ記録される。
+- `TSK-06.47`と`TSK-06.5`の既存owner／依存を暗黙に変更しない。
+
+Contract closure matrix:
+
+| Contract ID | Disposition | Verification command | Artifact |
+| --- | --- | --- | --- |
+| `RK-IR-001` | Apply | symbol inventory／owner boundaryのplan review、`git diff --check` | `docs/tasks/package-semantic-convergence-tsk-06-48.md` |
+| `RK-EXEC-001` | N/A: 本commitはruntime executionを変更せず、実装波で影響範囲を適用判定する | - | 実装時のTSK-06.48 evidence |
+| `RK-AUDIT-001` | N/A: 本commitはcanonical outputとproduction inventoryを変更しない | - | 実装時のTSK-06.48 evidence |
+| `RK-PERF-001` | N/A: 本commitはhot pathを変更せず、実装時も影響時の診断観測だけを行う | - | 実装時のTSK-06.48 evidence |
+| `DOC-CLOSE-001` | Apply | `pnpm test:docs` | `docs/tasks/package-semantic-convergence-tsk-06-48.md`／Handoff |
+| `DOC-LINT-001` | Apply | `pnpm test:docs` | Handoff |
+| `DX-HANDOFF-001` | Apply | `pnpm test:docs` | Handoff |
+
+Handoff: 計画追加のみ。基点は`0c12261`、TSK-06.46 W7のproduction closureは変更せず、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。第1波は`populationFunctionNormalization.ts`を起点に、target state catalog、NP population／count、marker、effect normalizationの直接経路を確認してから実装する。過度な性能ゴールや全体テストの追加は求めず、意味論またはhot pathに差分がある場合だけ必要な検証へ拡張する。source、test、production artifact、engine／schema versionは未変更で、次は本計画の確認後にTSK-06.48を`in_progress`へ変更して着手する。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 
