@@ -1,0 +1,118 @@
+{
+  "task": "TSK-06.48",
+  "status": "bounded_unit_complete",
+  "unit": "data-pipeline population-function normalization and population trait catalog",
+  "baseline": {
+    "planningCommit": "fd0ac2df1aaa4a750b88946f7b9a1cf840f205b9",
+    "w7CodeBaseline": "0c12261",
+    "w7ProductionClosure": "docs/evidence/tsk-06-46-production-closure.json",
+    "w7Digest": "28135f4344a23b33a00ca299a2a3f5866bf954e6cc6aba885705d2e77b4985ef",
+    "masterDataVersion": "20260920.3",
+    "masterSchemaVersion": 56,
+    "engineVersion": "48.0.0",
+    "portableSchemaVersion": 40
+  },
+  "semanticOwners": {
+    "populationCells": "packages/data-pipeline/src/populationFunctionNormalization.ts::populationCells",
+    "populationEligibility": "packages/data-pipeline/src/populationFunctionNormalization.ts::isEligiblePopulationFunction",
+    "removeCandidate": "packages/data-pipeline/src/populationFunctionNormalization.ts::classifyRemoveCandidate",
+    "grantCandidate": "packages/data-pipeline/src/populationFunctionNormalization.ts::classifyGrantCandidate",
+    "dependencySlice": "packages/data-pipeline/src/populationFunctionNormalization.ts::compilePopulationFunction",
+    "operationAndInput": "packages/data-pipeline/src/populationFunctionNormalization.ts::buildPopulationFunction",
+    "populationTraitGrantability": "packages/data-pipeline/src/targetStateNormalization.ts::classifyPopulationTraitGrantability",
+    "populationTraitCatalog": "packages/data-pipeline/src/targetStateNormalization.ts::buildPopulationTraitCatalog"
+  },
+  "logicalDisjunctionDisposition": {
+    "centralized": "actorReference | populationRead | stateOnly population-trait exclusion is owned by the typed target-state catalog",
+    "retained": [
+      "previousSuccess and immediate-predecessor dependency",
+      "cycle and producer absence fail-closed checks",
+      "raw Atlas traitVals shape identity used only for the existing remove maximum",
+      "canonical operation and input union branches"
+    ],
+    "notChanged": [
+      "all/any condition traversal",
+      "provenance boolean semantics",
+      "stable comparator fallback",
+      "schema narrowing",
+      "NP population/count and marker instance semantics"
+    ]
+  },
+  "fixtures": {
+    "focusedArtifacts": [
+      ".test-results/2026-09-20T07-15-11-589Z-15-36c97e",
+      ".test-results/2026-09-20T07-09-07-054Z-15-1f28a0"
+    ],
+    "covered": [
+      "remove target-specific function and canonical remove target/targetState boundary",
+      "grant previousSuccess and immediate predecessor",
+      "condition producer and cyclic dependency rollback",
+      "partial slice rollback and unsupported/finite/negative branches",
+      "actor, population-read, and state-only addIndividuality exclusion",
+      "operation position, operation order, and input key order",
+      "0/1/2 target outcomes and mutation-after-read ordered preparation"
+    ]
+  },
+  "productionMatrix": {
+    "command": "FGO_AUDIT_SHARDS=8 FGO_AUDIT_SHARD=<0..7> pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts <shard-output>; pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/merge-oc-matrix.ts <merged-output>",
+    "artifactRoot": ".test-results/tsk-06-48-population-closure-merged",
+    "manifestSha256": "540d764465fd52f68cc6c49200fc9d27344a7957a44b58acc6968dfee81e267f",
+    "masterSha256": "2d9f1b19ed40452fda3571932ee1e37bf9fe85fdfa903404c853d7cde269e46a",
+    "conditionCount": 80,
+    "attackProfilesPerCondition": 433,
+    "outcomes": 34640,
+    "calculated": 34600,
+    "unavailableUnderPolicy": 40,
+    "inputRequired": 0,
+    "invalid": 0,
+    "unsupported": 0,
+    "parityCompared": 34600,
+    "parityFailures": 0,
+    "candidateInventory": {
+      "generated": 1028810,
+      "deduplicated": 1028810,
+      "damageRequests": 967810,
+      "distinctDamageInputs": 233100,
+      "maximumSingleProfileProduct": 3435,
+      "cap": 4096
+    },
+    "observedDigest": "63a85d26376d45cf173d691149712351700a29c8afbad1d9c4c29d129b5c8af0",
+    "semanticDigest": "2cc31c8b0cdabc6d12a1cc97a8218c859866149ee4a4ad19c3ec0d313b0702e0",
+    "comparison": {
+      "oldArtifact": ".test-results/tsk-06-46-w6-production-closure",
+      "newRecords": 34640,
+      "recordMismatches": 0,
+      "conditionSummarySemanticMismatches": 0,
+      "unavailableSetEqual": true,
+      "candidateInventoryEqual": true,
+      "differenceFromW7Digest": "top-level digest includes elapsedMs; normalized semantic digest excluding elapsedMs and top-level digest is identical",
+      "canonicalOutputChanged": false
+    }
+  },
+  "verification": {
+    "focusedUnitTests": "54/54 (population/catalog 9, direct consumer and ordered runtime 45)",
+    "productionSuite": "144/144",
+    "lint": "targeted eslint passed",
+    "typecheck": "pnpm typecheck passed",
+    "quality": "not run; bounded unit handoff, not full TSK-06.48 completion",
+    "performance": "no comparable hot-path diagnostic attributed; matrix was sharded and no performance target is accepted"
+  },
+  "remainingUnits": [
+    "data-pipeline population-count selector/read equivalence with battle-execution populationCounts",
+    "dependent resource transfer and HP semantic families",
+    "effect normalization and execution-semantics boundaries",
+    "battle-execution ordered operation/compiler boundaries",
+    "calculation-application candidate/world/scenario boundaries"
+  ],
+  "nextBoundedUnit": {
+    "scope": "packages/data-pipeline/src/npPopulationNormalization.ts, packages/battle-execution/src/populationCounts.ts, packages/calculation-application/src/rankingCandidateSpace.ts",
+    "purpose": "converge population-count selector, input legality, live-read equivalence, and candidate input ownership without changing marker, transfer, or HP semantics",
+    "requiredChecks": "reuse this evidence only if canonical operation/input inventory, support classification, order, parity, and candidate inventory remain equal"
+  },
+  "handoff": {
+    "taskStatus": "in_progress",
+    "blocking": 0,
+    "finalQualityPending": true,
+    "nextOperation": "review the current diff, then implement the next bounded population-count unit; do not mark TSK-06.48 done"
+  }
+}

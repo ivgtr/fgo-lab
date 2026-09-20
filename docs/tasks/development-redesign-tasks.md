@@ -2100,13 +2100,13 @@ Contract closure matrix:
 | --- | --- | --- | --- |
 | `RK-IR-001` | Apply | symbol inventory／owner boundaryのplan review、`git diff --check` | `docs/tasks/package-semantic-convergence-tsk-06-48.md` |
 | `RK-EXEC-001` | N/A: 本commitはruntime executionを変更せず、実装波で影響範囲を適用判定する | - | 実装時のTSK-06.48 evidence |
-| `RK-AUDIT-001` | N/A: 本commitはcanonical outputとproduction inventoryを変更しない | - | 実装時のTSK-06.48 evidence |
+| `RK-AUDIT-001` | Apply | 80条件×433 profile audit／旧W7 record比較、`pnpm test:production` | `docs/evidence/tsk-06-48-population-closure.json`／W7 closure |
 | `RK-PERF-001` | N/A: 本commitはhot pathを変更せず、実装時も影響時の診断観測だけを行う | - | 実装時のTSK-06.48 evidence |
 | `DOC-CLOSE-001` | Apply | `pnpm test:docs` | `docs/tasks/package-semantic-convergence-tsk-06-48.md`／Handoff |
 | `DOC-LINT-001` | Apply | `pnpm test:docs` | Handoff |
 | `DX-HANDOFF-001` | Apply | `pnpm test:docs` | Handoff |
 
-Handoff: 計画追加のみ。基点は`0c12261`、TSK-06.46 W7のproduction closureは変更せず、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。第1波は`populationFunctionNormalization.ts`を起点に、target state catalog、NP population／count、marker、effect normalizationの直接経路を確認してから実装する。過度な性能ゴールや全体テストの追加は求めず、意味論またはhot pathに差分がある場合だけ必要な検証へ拡張する。source、test、production artifact、engine／schema versionは未変更で、次は本計画の確認後にTSK-06.48を`in_progress`へ変更して着手する。
+Handoff: 2026-09-20に計画確認済みのため`in_progress`へ移行して第1 bounded unitへ着手した。基点は`fd0ac2d`、TSK-06.46 W7のproduction closureは変更せず、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。第1 bounded unitは`populationFunctionNormalization.ts`と`targetStateNormalization.ts`のpopulation-function／population-trait catalog境界で、公開Map、position、input key、operation順序、W7 closureのcanonical outputを維持する。focused test、lint、typecheck、production suiteとclosure照合を完了し、詳細は[TSK-06.48 population closure](../evidence/tsk-06-48-population-closure.json)へ記録した。次のbounded unitはpopulation-count selector／input legality／live-read equivalence。最終quality未実施の途中段階ではTSK-06.48をdoneへ変更しない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

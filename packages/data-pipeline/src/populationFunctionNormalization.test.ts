@@ -39,6 +39,31 @@ it('compiles the marker backwards slice into positioned per-target functions and
     position: 1,
     action: { kind: 'grant', previousSuccess: true, traits: ['marker'] },
   });
+  expect([...result.values()].map((entry) => entry.operation)).toEqual([
+    expect.objectContaining({ position: 0 }),
+    expect.objectContaining({ position: 1 }),
+    expect.objectContaining({ position: 2 }),
+  ]);
+  expect(result.get(f[0]!)?.operation).toMatchObject({
+    action: {
+      inputKeys: [
+        'population:enemy:0:removableBuffs:beneficial',
+        'population:enemy:1:removableBuffs:beneficial',
+        'population:enemy:2:removableBuffs:beneficial',
+      ],
+    },
+  });
+  expect(result.get(f[2]!)?.operation).toMatchObject({
+    action: {
+      condition: {
+        inputKeys: [
+          'population:enemy:0:traitPresence:marker',
+          'population:enemy:1:traitPresence:marker',
+          'population:enemy:2:traitPresence:marker',
+        ],
+      },
+    },
+  });
   expect(
     result
       .get(f[0]!)
@@ -48,6 +73,29 @@ it('compiles the marker backwards slice into positioned per-target functions and
   expect(result.get(f[2]!)?.operation).toMatchObject({
     action: { condition: { trait: 'marker' } },
   });
+});
+
+it('excludes actor, population-read, and state-only identities from individuality grants', () => {
+  for (const catalog of [
+    {
+      stateOnlyTraits: new Set(['counter']),
+      populationBuffTraits: new Set(['counter']),
+    },
+    {
+      stateOnlyTraits: new Set<string>(),
+      populationReadTraits: new Set(['counter']),
+      populationBuffTraits: new Set(['counter']),
+    },
+    {
+      stateOnlyTraits: new Set<string>(),
+      actorTraitReferences: new Set([3]),
+      populationBuffTraits: new Set(['counter']),
+    },
+  ]) {
+    const f = functions();
+    f[2]!.svals![0]!.Value = 3;
+    expect(normalizePopulationFunctions(f, names, catalog).size).toBe(0);
+  }
 });
 it('refuses partial/unknown, damage-affecting, finite-use and negative-predicate branches as one slice', () => {
   for (const mutate of [

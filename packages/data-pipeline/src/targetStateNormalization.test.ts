@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AtlasFunction, AtlasServant } from './atlasContract';
 import { normalizeFunctions, normalizeNpDamageFunction } from './effectNormalization';
 import {
+  classifyPopulationTraitGrantability,
   collectDamageReachableStateCatalog,
   normalizeDamageReachableStateMutations,
 } from './targetStateNormalization';
@@ -54,6 +55,14 @@ describe('damage-reachable target-state normalization', () => {
       traitNames,
     );
     expect([...catalog.stateOnlyTraits]).toEqual(['buffPoison']);
+    expect(catalog.populationTraitCatalog?.get('buffPoison')).toMatchObject({
+      grantable: false,
+    });
+    expect(catalog.populationTraitCatalog?.get('buffPoison')?.roles).toContain('stateOnly');
+    expect(classifyPopulationTraitGrantability({ id: 3_017 }, traitNames, catalog)).toMatchObject({
+      name: 'buffPoison',
+      grantable: false,
+    });
     expect(normalizeDamageReachableStateMutations(poisonGrant, catalog, traitNames)).toEqual({
       added: ['buffPoison'],
       removed: [],

@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.46は`done`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48は第1 bounded unitを完了して`in_progress`、TSK-06.47は`ready`。以下の過去deltaは当時の根拠であり、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -493,6 +493,22 @@ W6 production matrixは、observer outcome、condition truth、mutation／read�
 - 差分レビューで生成・実行・候補・回復の局所反例を解消し、最終qualityと結果記録まで完了。性能はwarm1＋serial3で中央値4999.986ms、538b83a収録4795.091ms比+4.27%。候補6516→6658、dedup4043→4182、要求2377→2591、distinct1451→1485。前回HP増加とは別比較。[validation](tsk-06-45-marker-validation.json)／[performance](tsk-06-45-marker-performance.json)参照。対象4系統5profileと直接共有する経路のU1-R／U2／U3-A／U3-Q／U4は完了。最終`pnpm quality`はunit834／production133／E2E28成功、warning・unexpected observation・retry0、324.726秒（`.test-results/2026-09-19T15-59-14-750Z-15-7cc0c3`）。productionは538b83a収録71,083ms→72,209ms。追加3testで35＋60＋220条件を検証。master20260919.4/schema55、engine45.0.0、portable schema40。BP実量・独立した非HP回復／UI・U5全条件は未完了。
 
 **2026-09-20 BP縦断単位完了（基点0d279c0、対象内Blocking0）:** Atlasの705300／3300200定義を固定取得し、pipelineだけがactor eligibility、trait capacity、point／permille phaseをcanonical domainへ変換する。actor×domainのstateは定義不明、eligible absent、present point0を分離し、phase/rateをlive point/capacityから導出する。3300200の最終閾値90はcapacityへ読み替えない。[source](tsk-06-45-bp-source.json)参照。
+
+**2026-09-20 TSK-06.48 第1 bounded unit完了（基点`fd0ac2d`、TSK内Blocking 0、Taskは`in_progress`）:**
+`populationFunctionNormalization.ts`のcell抽出、eligibility、remove／grant候補、dependency slice、operation／input builderを
+意味のある内部段階へ分離し、`targetStateNormalization.ts`のtyped population trait catalogへactor reference／population read／state-onlyの
+grantabilityを集約した。`normalizePopulationFunctions`の公開引数、返却Map、position、input key、operation順序は不変。
+remove targetとcanonical target/targetState、grant previousSuccess、condition producer／cycle／partial rollback、actor／field／addTrait除外、
+trait／traitCount scope、mutation後readをfocused fixtureで固定した。根拠は[TSK-06.48 population closure](tsk-06-48-population-closure.json)。
+
+production matrixは80条件×433 profileを8 shardで再実行し、34,640 outcomes、34,600 calculated、typed unavailable 40、
+unsupported／invalid／inputRequired 0、parity 34,600、candidate generated／deduplicated 1,028,810、damage requests 967,810、
+distinct damage inputs 233,100、最大3,435／cap 4,096を確認した。旧W7とのrecord差分は0、condition summaryのsemantic差分0、unavailable setとcandidate inventoryは一致。
+top-level digestは`elapsedMs`を含むため旧`28135f...`と新`63a85d...`が異なるが、`elapsedMs`とtop-level digestを除くsemantic digestは双方
+`2cc31c8b0cdabc6d12a1cc97a8218c859866149ee4a4ad19c3ec0d313b0702e0`である。したがってW7 canonical closureをbefore baselineとして保持し、
+本unitの再実行artifactを追加証拠として扱う。focused 9＋consumer/runtime 45、production 144、lint、typecheckは成功。最終`pnpm quality`は未実施。
+次のbounded unitはpopulation-count selector／input legality／live-read equivalence（`npPopulationNormalization.ts`、`populationCounts.ts`、
+`rankingCandidateSpace.ts`）で、marker／transfer／HP semanticsは対象外とする。
 
 - point gain/loss、capacity instance、trait／marker／form変更後のreconcileを既存preparation transactionへ統合。失敗時はBP・HP・NP・OC・form・instance・context・receiptをcommand前へ戻し、前commandのcommitは保持する。終端damage後の直接capacity25 cellsと、後続readへ影響する間接trait writerを分離した。
 - 初期入力は従来どおり段階intent。合法pointの逆像を列挙し、同段階のpoint4/5等を一代表へ縮約せず全application/execution後の最大値を比較する。単一witnessでは二重damage評価を省略。小型oracleはcapacity1〜12の全pointを独立列挙し、actor/domain、支援recipient、飽和・端数・境界、trait解除、未知capacity writerの更新前拒否を検証した。

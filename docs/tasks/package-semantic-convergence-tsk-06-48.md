@@ -1,6 +1,6 @@
 ---
 title: "TSK-06.48 パッケージ別semantic complexity convergence計画"
-document_version: "1.0.0"
+document_version: "1.0.1"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
@@ -113,6 +113,10 @@ testを行い、最後に必要な`pnpm quality`を一度実行する。計画�
 
 - Taskの進捗・依存は`docs/tasks/development-redesign-tasks.md`が所有する。
 - 本計画はsemantic boundaryと検証方針を所有し、runtime evidenceを先取りしない。
-- 実装開始時はTSK-06.48を`in_progress`へ変更し、最初に第1波のbaselineと反例を記録する。
+- 2026-09-20に計画確認済みとしてTSK-06.48を`in_progress`へ変更し、第1 bounded unitのbefore baselineを
+  `fd0ac2d`（W7 code baseline `0c12261`、production closure digestは06-46 JSON）へ固定する。反例は
+  partial slice rollback、cycle／producer不在、previousSuccess、actor／field／addTrait除外、mutation後readとする。
 - 第1波の実装、focused検証、必要なproduction確認、evidence更新、final qualityは別の実装段階で行う。
-- 本コミットではsource、test、production artifact、engine／schema versionを変更しない。
+- 第1 bounded unitの完了後は、canonical output／operation／input inventoryとW7 closureの一致を確認できた場合だけ
+  production closureを再利用し、差分または意味論上の疑義がある場合だけ影響行列を再実行する。
+- 第1 bounded unitのhandoff、実施した検証、未達条件、次のbounded unitはTSK-06.48のTaskとactive evidenceへ追記する。

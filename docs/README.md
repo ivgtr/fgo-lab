@@ -37,7 +37,7 @@ updated_at: "2026-09-20"
 | [test strategy redesign](requirements/test-strategy-redesign.md) | requirement／Active v1.3.0 | test suite、runner、quality gate、diagnostics |
 | [development execution efficiency](requirements/development-execution-efficiency-requirements.md) | requirement／Active v1.3.0 | bounded output、artifact、実装修正と検証の範囲、session分離・上限、handoff |
 | [development redesign Tasks](tasks/development-redesign-tasks.md) | Tasks／Active v1.7.13 | 唯一の実装順序、依存、status、handoff |
-| [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Active v1.0.0 | パッケージ別semantic owner、population family、検証範囲、性能・テスト境界 |
+| [TSK-06.48 package semantic convergence plan](tasks/package-semantic-convergence-tsk-06-48.md) | task plan／Active v1.0.1 | パッケージ別semantic owner、population family、検証範囲、性能・テスト境界 |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
 | [evidence index](evidence/README.md) | sub-index／Active v1.4.35 | damage／production／documentation evidence |

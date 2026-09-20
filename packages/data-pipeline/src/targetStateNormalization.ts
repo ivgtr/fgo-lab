@@ -10,10 +10,24 @@ import { functionReachesDamageModifier, normalizeTargetPolicy } from './executio
 
 const STATE_GRANT_FUNCTIONS = new Set(['addState', 'addStateShort']);
 
+export type PopulationTraitRole = 'actorReference' | 'populationRead' | 'stateOnly';
+
+export interface PopulationTraitCatalogEntry {
+  readonly roles: ReadonlySet<PopulationTraitRole>;
+  readonly grantable: boolean;
+}
+
+export interface PopulationTraitGrantability {
+  readonly name: string | null;
+  readonly roles: ReadonlySet<PopulationTraitRole>;
+  readonly grantable: boolean;
+}
+
 export interface DamageReachableStateCatalog {
   readonly npTransferChargeResistance?: boolean;
   readonly attackReadTraits?: ReadonlySet<string>;
   readonly populationTraitGrantSelectors?: ReadonlyMap<string, readonly string[]>;
+  readonly populationTraitCatalog?: ReadonlyMap<string, PopulationTraitCatalogEntry>;
   readonly populationReadTraits?: ReadonlySet<string>;
   readonly populationBuffTraits?: ReadonlySet<string>;
   readonly populationIntrinsicTraits?: ReadonlySet<string>;
@@ -32,6 +46,22 @@ export function stateMutationTraitName(
   if (trait.name && trait.name !== 'unknown') return trait.name;
   if (typeof trait.id !== 'number') return null;
   return traitNameById.get(trait.id) ?? `traitId:${String(trait.id)}`;
+}
+
+export function classifyPopulationTraitGrantability(
+  trait: AtlasTraitRef,
+  traitNameById: ReadonlyMap<number, string>,
+  catalog: DamageReachableStateCatalog,
+): PopulationTraitGrantability {
+  const name = stateMutationTraitName(trait, traitNameById);
+  const roles = new Set<PopulationTraitRole>(
+    name ? (catalog.populationTraitCatalog?.get(name)?.roles ?? []) : [],
+  );
+  if (name && catalog.populationReadTraits?.has(name)) roles.add('populationRead');
+  if (name && catalog.stateOnlyTraits.has(name)) roles.add('stateOnly');
+  if (typeof trait.id === 'number' && catalog.actorTraitReferences?.has(trait.id))
+    roles.add('actorReference');
+  return { name, roles, grantable: roles.size === 0 };
 }
 
 function allFunctions(input: {
@@ -120,6 +150,27 @@ function noblePhantasmDamageTraits(
       const name = stateMutationTraitName({ id }, traitNameById);
       return name ? [name] : [];
     });
+}
+
+function buildPopulationTraitCatalog(
+  populationReadTraits: ReadonlySet<string>,
+  stateOnlyTraits: ReadonlySet<string>,
+  actorTraitReferences: ReadonlySet<number>,
+  traitNameById: ReadonlyMap<number, string>,
+): ReadonlyMap<string, PopulationTraitCatalogEntry> {
+  const rolesByName = new Map<string, Set<PopulationTraitRole>>();
+  for (const name of populationReadTraits)
+    rolesByName.set(name, new Set([...(rolesByName.get(name) ?? []), 'populationRead']));
+  for (const name of stateOnlyTraits)
+    rolesByName.set(name, new Set([...(rolesByName.get(name) ?? []), 'stateOnly']));
+  for (const id of actorTraitReferences) {
+    const name = stateMutationTraitName({ id }, traitNameById);
+    if (!name) continue;
+    rolesByName.set(name, new Set([...(rolesByName.get(name) ?? []), 'actorReference']));
+  }
+  return new Map(
+    [...rolesByName].map(([name, roles]) => [name, { roles, grantable: roles.size === 0 }]),
+  );
 }
 
 export function collectDamageReachableStateCatalog(
@@ -251,6 +302,24 @@ export function collectDamageReachableStateCatalog(
         values.add(buff.name);
         labels.set(name, values);
       }
+  const actorTraitReferences = new Set(
+    [
+      ...input.servants.flatMap((servant) => servant.traits ?? []),
+      ...functions.flatMap((fn) => [
+        ...(fn.functvals ?? []),
+        ...(['gainNpTargetSum', 'gainNpIndividualSum'].includes(fn.funcType ?? '')
+          ? (fn.traitVals ?? [])
+          : []),
+        ...(fn.buffs ?? []).flatMap((buff) => [
+          ...(buff.ckSelfIndv ?? []),
+          ...(buff.ckOpIndv ?? []),
+        ]),
+      ]),
+    ].flatMap((trait) => (typeof trait.id === 'number' && trait.id > 0 ? [trait.id] : [])),
+  );
+  const stateOnlyTraits = new Set(
+    [...stateIdentities].filter((trait) => consumers.has(trait) && !permanentTraits.has(trait)),
+  );
   return {
     npTransferChargeResistance: functions.some((fn) =>
       (fn.buffs ?? []).some((buff) => /resistanceDelayNpturn/i.test(buff.type ?? '')),
@@ -280,32 +349,22 @@ export function collectDamageReachableStateCatalog(
     ]),
     populationReadTraits,
     populationTraitGrantSelectors,
+    populationTraitCatalog: buildPopulationTraitCatalog(
+      populationReadTraits,
+      stateOnlyTraits,
+      actorTraitReferences,
+      traitNameById,
+    ),
     populationBuffTraits,
     populationIntrinsicTraits: permanentTraits,
     countedBuffTraits,
     countedBuffDefinitions,
     countedBuffMaximums,
-    actorTraitReferences: new Set(
-      [
-        ...input.servants.flatMap((servant) => servant.traits ?? []),
-        ...functions.flatMap((fn) => [
-          ...(fn.functvals ?? []),
-          ...(['gainNpTargetSum', 'gainNpIndividualSum'].includes(fn.funcType ?? '')
-            ? (fn.traitVals ?? [])
-            : []),
-          ...(fn.buffs ?? []).flatMap((buff) => [
-            ...(buff.ckSelfIndv ?? []),
-            ...(buff.ckOpIndv ?? []),
-          ]),
-        ]),
-      ].flatMap((trait) => (typeof trait.id === 'number' && trait.id > 0 ? [trait.id] : [])),
-    ),
+    actorTraitReferences,
     stackLabels: new Map(
       [...labels].flatMap(([key, values]) => (values.size === 1 ? [[key, [...values][0]!]] : [])),
     ),
-    stateOnlyTraits: new Set(
-      [...stateIdentities].filter((trait) => consumers.has(trait) && !permanentTraits.has(trait)),
-    ),
+    stateOnlyTraits,
   };
 }
 
