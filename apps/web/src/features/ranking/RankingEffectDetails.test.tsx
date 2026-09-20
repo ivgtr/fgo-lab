@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '../../../../../packages/test-fixtures/master/fixture.json';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
@@ -11,12 +11,24 @@ import {
 } from '@fgo-lab/calculation-application';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { RankingEffectDetails } from './RankingEffectDetails';
+import { projectionOutcomeLabel } from './rankingDetailPresentation';
 
 type EffectiveContribution = RankingPolicyDetail['effectiveContributions']['contributions'][number];
 
 afterEach(cleanup);
 
 describe('ranking contribution detail', () => {
+  it('keeps a stochastic failure distinct from a policy exclusion', () => {
+    const stochastic = {
+      proc: { kind: 'singleRoll', ratePermille: [] },
+      outcome: 'notApplied',
+      sourceActive: true,
+      decision: { state: 'none' },
+      explanation: { code: 'disabled', condition: null },
+    } as unknown as EffectProjection;
+    expect(projectionOutcomeLabel(stochastic)).toBe('確率不成立');
+  });
+
   it('shows independent self, condition, and area decisions from the canonical result', () => {
     const master = masterSnapshotSchema.parse(fixture);
     const result = calculateRankingPolicyDetail(
@@ -42,6 +54,9 @@ describe('ranking contribution detail', () => {
     expect(decisions.textContent).toContain('条件: 適用');
     expect(decisions.textContent).toContain('エリア: 適用');
     expect(decisions.textContent).toContain('damageへ適用');
+    expect(decisions.textContent).not.toContain(
+      result.detail.effectiveContributions.contributions[0]!.contributionId,
+    );
   });
 
   it('renders mixed trait-count projections from each final outcome over one contribution', () => {
@@ -135,11 +150,16 @@ describe('ranking contribution detail', () => {
       />,
     );
 
-    const burnChip = screen.getByText('burn特攻').closest('li');
-    const poisonChip = screen.getByText('poison特攻').closest('li');
+    const [burnChip] = screen.getAllByText('burn特攻').map((node) => node.closest('li'));
+    const [poisonChip] = screen.getAllByText('poison特攻').map((node) => node.closest('li'));
     expect(burnChip?.getAttribute('data-active')).toBe('true');
     expect(burnChip?.textContent).toContain('1.20倍');
     expect(poisonChip?.getAttribute('data-active')).toBe('false');
-    expect(poisonChip?.textContent).toContain('条件未選択');
+    expect(poisonChip?.textContent).toContain('条件不成立');
+
+    const decisions = screen.getByRole('region', { name: '寄与ごとのpolicy判定' });
+    fireEvent.click(screen.getByRole('button', { name: '適用外のみ' }));
+    expect(decisions.textContent).not.toContain('damageへ適用');
+    expect(decisions.querySelectorAll('.ranking-contribution-group')).toHaveLength(0);
   });
 });

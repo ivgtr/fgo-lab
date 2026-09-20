@@ -118,7 +118,7 @@ describe('ranking worker canonical runtime', () => {
       fingerprint: first.fingerprint,
       entryId: row.entryId,
     });
-    expect(detail).toHaveBeenCalledTimes(1);
+    expect(detail).toHaveBeenCalledTimes(0);
     expect(detailResponse.kind).toBe('detail');
     expect(parseRankingWorkerResponse(detailResponse)).toEqual(detailResponse);
     if (detailResponse.kind !== 'detail') throw new TypeError('expected ranking detail');

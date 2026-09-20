@@ -173,6 +173,21 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     timeout: 15_000,
   });
   await expect(page).toHaveScreenshot('ranking-detail-desktop.png');
+  const contributionRegion = first.getByRole('region', { name: '寄与ごとのpolicy判定' });
+  await expect(contributionRegion).toBeVisible();
+  const excludedFilter = contributionRegion.getByRole('button', { name: '適用外のみ' });
+  await excludedFilter.focus();
+  await page.keyboard.press('Enter');
+  await expect(excludedFilter).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Tab');
+  for (const width of [390, 320] as const) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 700 });
+    const overflow = await first.evaluate(
+      (row) => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, `${String(width)}px expanded detail horizontal overflow`).toBe(0);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
   // E2E-A050-HANDOFF
   await first.getByRole('button', { name: '同じ条件で計算機を開く' }).click();
   await expect(page.getByRole('heading', { name: 'ダメージ計算' })).toBeVisible();

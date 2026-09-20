@@ -1,4 +1,4 @@
-import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
+import type { EffectProjection, RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import { findActorForm, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { servantClassLabels } from '../../ui/servantFilterOptions';
 import { traitLabel } from '../calculator/traitPresentation';
@@ -8,6 +8,204 @@ export interface RankingEvidenceItem {
   key: string;
   label: string;
   value: string;
+}
+
+type RankingContribution = RankingPolicyDetail['effectiveContributions']['contributions'][number];
+type ContributionComponent = RankingContribution['component'];
+type ContributionPolicyDecision = RankingContribution['selfDecision'];
+type OperationOutcome = RankingContribution['executionOutcome'];
+
+const CONTRIBUTION_COMPONENT_LABELS: Record<ContributionComponent, string> = {
+  modifier: '効果倍率',
+  modifierRate: '効果加算',
+  ignore: '貫通効果',
+  npBase: '宝具基礎ダメージ',
+  npSpecial: '特攻効果',
+};
+
+const POLICY_REASON_LABELS: Record<
+  Extract<ContributionPolicyDecision, { kind: 'excluded' }>['reason'],
+  string
+> = {
+  selfBuffPolicy: '自己バフ設定により除外',
+  conditionalEffectPolicy: '条件効果設定により除外',
+  areaView: 'エリア表示設定により除外',
+};
+
+const OUTCOME_LABELS: Record<OperationOutcome, string> = {
+  applied: '実行済み',
+  notApplied: '適用されません',
+  notRelevant: '今回の計算対象外',
+  impossible: '実行不能',
+  unsupported: '未対応',
+};
+
+const EXPLANATION_LABELS: Record<EffectProjection['explanation']['code'], string> = {
+  applied: '実行済み',
+  disabled: '無効化',
+  conditionNotMet: '条件不成立',
+  cardMismatch: 'カード条件不一致',
+  targetMismatch: '対象条件不一致',
+  stateMutationOnly: '状態反映のみ',
+  unresolved: '判定未確定',
+};
+
+export function contributionDecisionLabel(decision: ContributionPolicyDecision): string {
+  return decision.kind === 'included' ? '適用' : POLICY_REASON_LABELS[decision.reason];
+}
+
+export function contributionComponentLabel(component: ContributionComponent): string {
+  return CONTRIBUTION_COMPONENT_LABELS[component];
+}
+
+export function operationOutcomeLabel(outcome: OperationOutcome): string {
+  return OUTCOME_LABELS[outcome];
+}
+
+export function explanationLabel(code: EffectProjection['explanation']['code']): string {
+  return EXPLANATION_LABELS[code];
+}
+
+export function projectionOutcomeLabel(effect: EffectProjection): string {
+  if (effect.outcome === 'unsupported') return OUTCOME_LABELS.unsupported;
+  if (
+    effect.outcome !== 'applied' &&
+    effect.proc.kind !== 'guaranteed' &&
+    effect.explanation.code === 'disabled' &&
+    effect.sourceActive &&
+    effect.decision.state !== 'disabled'
+  )
+    return '確率不成立';
+  return explanationLabel(effect.explanation.code);
+}
+
+export function rankingExclusionLabel(
+  status: 'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported',
+  reason?: string,
+): string {
+  if (reason?.startsWith('inputRequired:')) return '追加の入力が必要です';
+  const reasonLabels: Record<string, string> = {
+    attackProfileNotReachable: '攻撃宝具へ到達する準備手順がありません',
+    noSatisfiableCandidate: '条件を満たす実行候補がありません',
+    npCapacityExceeded: '開始NPまたは必要NPがNP上限を超えています',
+    candidateExecutionUnsupported: '候補の実行意味論に未対応部分があります',
+    unsupportedActionAdmission: '実行条件を判定できない候補があります',
+    unexpectedRankingFailure: 'ランキング計算で予期しない失敗が発生しました',
+  };
+  if (reason && reasonLabels[reason]) return reasonLabels[reason];
+  const labels: Record<typeof status, string> = {
+    unavailableUnderPolicy: 'この条件では実行可能な候補がありません',
+    inputRequired: '追加の入力が必要です',
+    invalid: '入力または条件が不正です',
+    unsupported: '対応していない意味論が含まれます',
+  };
+  return labels[status];
+}
+
+export function calculationIssueLabel(code: string): string {
+  if (code.startsWith('preparation:')) return '準備手順を適用できません';
+  if (code.includes('input') || code.includes('required')) return '必要な入力を解決できません';
+  if (code.includes('unsupported')) return '対応していない意味論が含まれます';
+  if (code.includes('invalid') || code.includes('conflict')) return '入力または条件が不正です';
+  return '計算上の問題があります';
+}
+
+export function warningLabel(_warning: string): string {
+  return '計算上の警告があります';
+}
+
+export function detailErrorLabel(_reason: string): string {
+  return '詳細を読み込めませんでした';
+}
+
+export interface RankingContributionView {
+  key: string;
+  component: string;
+  selfDecision: string;
+  conditionDecision: string;
+  areaViewDecision: string;
+  outcome: string;
+  effective: boolean;
+  presentationCounted: boolean;
+}
+
+export interface RankingContributionGroupView {
+  key: string;
+  label: string;
+  source: string;
+  contributions: RankingContributionView[];
+}
+
+function finalContributionOutcome(
+  contribution: RankingContribution,
+  relatedEffects: readonly EffectProjection[],
+): string {
+  if (contribution.effective) return 'damageへ適用';
+  if (contribution.executionOutcome === 'unsupported') return OUTCOME_LABELS.unsupported;
+  if (contribution.executionOutcome === 'impossible') return OUTCOME_LABELS.impossible;
+  if (contribution.executionOutcome === 'notRelevant') return OUTCOME_LABELS.notRelevant;
+  const policyExclusions = [
+    contribution.selfDecision,
+    contribution.conditionDecision,
+    contribution.areaViewDecision,
+  ]
+    .filter((decision) => decision.kind === 'excluded')
+    .map((decision) => contributionDecisionLabel(decision));
+  if (contribution.executionOutcome === 'applied' && policyExclusions.length > 0)
+    return `実行済み・${policyExclusions.join('／')}`;
+  const relatedOutcome = relatedEffects.find(
+    (effect) => effect.explanation.code !== 'applied' || effect.outcome !== 'applied',
+  );
+  if (relatedOutcome) return projectionOutcomeLabel(relatedOutcome);
+  return OUTCOME_LABELS[contribution.executionOutcome];
+}
+
+export function presentRankingContributionGroups(
+  detail: RankingPolicyDetail,
+): RankingContributionGroupView[] {
+  const groups = new Map<string, RankingContributionGroupView>();
+  for (const contribution of detail.effectiveContributions.contributions) {
+    const relatedEffects = detail.effects.filter(
+      (effect) => effect.contributionId === contribution.contributionId,
+    );
+    const firstEffect = relatedEffects[0];
+    const key = contribution.presentationGroupId;
+    const group = groups.get(key) ?? {
+      key,
+      label: firstEffect?.label ?? contributionComponentLabel(contribution.component),
+      source: firstEffect?.sourceName ?? '実行結果',
+      contributions: [],
+    };
+    group.contributions.push({
+      key: contribution.contributionId,
+      component: contributionComponentLabel(contribution.component),
+      selfDecision: contributionDecisionLabel(contribution.selfDecision),
+      conditionDecision: contributionDecisionLabel(contribution.conditionDecision),
+      areaViewDecision: contributionDecisionLabel(contribution.areaViewDecision),
+      outcome: finalContributionOutcome(contribution, relatedEffects),
+      effective: contribution.effective,
+      presentationCounted: contribution.presentationCounted,
+    });
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+export function rankingEffectStateLabel(
+  detail: RankingPolicyDetail,
+  effect: EffectProjection | undefined,
+  fallback: string,
+): string {
+  if (!effect) return fallback;
+  const policyReasons = detail.effectiveContributions.contributions
+    .filter((contribution) => contribution.contributionId === effect.contributionId)
+    .flatMap((contribution) =>
+      [contribution.selfDecision, contribution.conditionDecision, contribution.areaViewDecision]
+        .filter((decision) => decision.kind === 'excluded')
+        .map((decision) => contributionDecisionLabel(decision)),
+    );
+  if (effect.outcome === 'applied' && policyReasons.length > 0) return policyReasons.join('／');
+  return effect.outcome === 'applied' ? fallback : projectionOutcomeLabel(effect);
 }
 
 export function presentRankingDetailEvidence(

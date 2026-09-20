@@ -64,7 +64,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.44 | Initial OC selection and canonical OC boost closure | done | TSK-06.43 | initial OC／own OC boost／shared execution／UI handoff |
 | TSK-06.45 | All attack-NP execution closure | done | TSK-06.44 | 433/433、422/422、80条件34,640 outcomes、stable owned、U0〜U5 closure |
 | TSK-06.46 | Ranking world candidate architecture and oracle hardening | done | TSK-06.45 | world責務分割／transition-aware同値性／独立oracle／implementation convergence |
-| TSK-06.47 | Contribution decision UI cleanup | ready | TSK-06.46 | logical effect presentation／per-contribution decisions |
+| TSK-06.47 | Contribution decision UI cleanup | done | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.48 | Package semantic complexity convergence | done | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | blocked | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | blocked | TSK-06.5 | ranking UI／handoff／cache |
@@ -2041,23 +2041,23 @@ Handoff: W0〜W6のcorrectness／production closureをbefore baselineとして�
 
 Depends on: TSK-06.46
 
-- [ ] rowはdistinct `presentationGroupId`によるlogical effect countを維持し、detailは同じgroup配下で各contributionの
+- [x] rowはdistinct `presentationGroupId`によるlogical effect countを維持し、detailは同じgroup配下で各contributionの
       self／condition／areaView decisionとfinal applied outcomeを独立表示する。
-- [ ] raw `contributionId`、内部enum、operation IDを利用者向け文言として表示せず、canonical presentation metadataと
+- [x] raw `contributionId`、内部enum、operation IDを利用者向け文言として表示せず、canonical presentation metadataと
       exhaustiveなtyped reason-to-label mappingから短い日本語label／説明を生成する。
-- [ ] policy除外、条件不成立、確率失敗、実行不能、invalid、unsupportedを一つの「計算外」へ潰さず、
+- [x] policy除外、条件不成立、確率失敗、実行不能、invalid、unsupportedを一つの「計算外」へ潰さず、
       action／state／condition evidenceをfilterせず保持する。
-- [ ] stack count assumptionを成立条件へ回数付きで表示し、同一logical effectの内部contribution分割を重複計数しない。
-- [ ] detail開閉、寄与表示切替、一覧filterでdamageを再計算せず、desktop／390px／320pxの密度、overflow、keyboard、
+- [x] stack count assumptionを成立条件へ回数付きで表示し、同一logical effectの内部contribution分割を重複計数しない。
+- [x] detail開閉、寄与表示切替、一覧filterでdamageを再計算せず、desktop／390px／320pxの密度、overflow、keyboard、
       accessible name、expanded state、focus orderを維持する。
 
 Done gate:
 
-- row count、badge、detail decision、damageが同じeffective contribution集合から導出される。
-- raw identity／内部enum露出0件で、各policy axisとfinal outcomeを失わない。
-- logical effectとinternal contributionの階層が明確で、NP base sentinelをeffect件数へ含めない。
-- component／E2Eでcollapsed／expanded、除外／適用混在、stack count、responsive／a11yを固定する。
-- flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.47 deltaがBlocking 0。
+- [x] row count、badge、detail decision、damageが同じeffective contribution集合から導出される。
+- [x] raw identity／内部enum露出0件で、各policy axisとfinal outcomeを失わない。
+- [x] logical effectとinternal contributionの階層が明確で、NP base sentinelをeffect件数へ含めない。
+- [x] component／E2Eでcollapsed／expanded、除外／適用混在、stack count、responsive／a11yを固定する。
+- [x] flow closure: `docs/evidence/ranking-policy-candidate-flow-tsk-06.md`のTSK-06.47 deltaがBlocking 0。
 
 Contract closure matrix:
 
@@ -2065,10 +2065,12 @@ Contract closure matrix:
 | --- | --- | --- | --- |
 | `RK-UI-001` | Apply | focused row／detail／badge component tests and Playwright | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
 | `RK-POLICY-001` | Apply | contribution decision／final outcome presentation parity | `docs/evidence/ranking-policy-candidate-flow-tsk-06.md` |
-| `RK-CACHE-001` | N/A: detail interactionは既存request-on-demand contractを消費し、cache lifetime変更はTSK-07 | - | TSK-07 |
+| `RK-CACHE-001` | Apply | focused worker test and E2E-050; existing calculation cache `profileResults` reuse without cache lifetime／URL change | Handoff |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
 Handoff: TSK-06.46のworld candidate semantic owner、production parity、quality gate完了を前提に着手可能。UIのlogical effect／per-contribution presentationだけを対象とし、ranking damage semantics、candidate generation、execution ownerは再実装しない。
+
+Current bounded-unit handoff（2026-09-21）: UI presentation ownerへgroup／decision／outcomeのtyped日本語mapping、寄与filter、responsive／keyboard表示を接続した。既存calculation cacheの`profileResults`をdetail requestから再利用し、初回detail開閉、寄与filter、一覧filter、再開閉でdamage計算を発生させない。focused unit、typecheck、対象eslint、E2E-050（desktop detail、Enter操作、390px／320px expanded overflow、handoff）と最終`pnpm quality`を通過した（unit 884／production 144／Playwright 29、retry／unexpected console 0、artifact `.test-results/2026-09-20T15-48-05-943Z-15-da4a84`）。詳細は[TSK-06.47 contribution UI closure](../evidence/tsk-06-47-contribution-ui-closure.json)と[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)を参照する。canonical output／digest／support／candidate inventory／parityはTSK-06.48 closureを再利用できる。TSK-06.47は`done`、TSK-06.48は`done`、TSK-06.5は`blocked`、commit未作成である。
 
 ### TSK-06.48: Package semantic complexity convergence
 

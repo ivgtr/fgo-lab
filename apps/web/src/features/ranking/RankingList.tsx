@@ -6,6 +6,7 @@ import { ServantFilterIcon } from '../../ui/ServantFilterIcon';
 import { numberFormatter } from '../../ui/i18n';
 import { npCardIconUrl, npCardLabel, servantClassLabels } from '../../ui/servantFilterOptions';
 import type { RankingPresentedRow } from './rankingPresentation';
+import { detailErrorLabel } from './rankingDetailPresentation';
 
 const RankingEffectDetails = lazy(async () => ({
   default: (await import('./RankingEffectDetails')).RankingEffectDetails,
@@ -100,7 +101,7 @@ export function RankingList({
                   </Suspense>
                 ) : detailError ? (
                   <p role="alert" className="notice">
-                    詳細を読み込めませんでした: {detailError}{' '}
+                    {detailErrorLabel(detailError)}{' '}
                     <button type="button" onClick={() => onRetryDetail(row)}>
                       再試行
                     </button>

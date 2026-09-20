@@ -369,6 +369,76 @@
   overflow-wrap: anywhere;
 }
 
+.ranking-contribution-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.ranking-contribution-filter button {
+  min-height: 1.9rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.ranking-contribution-filter button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+  color: var(--ink);
+}
+
+.ranking-contribution-groups,
+.ranking-contribution-group > ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking-contribution-group {
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--paper) 88%, var(--canvas));
+}
+
+.ranking-contribution-group-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.55rem;
+  margin-bottom: 0.3rem;
+}
+
+.ranking-contribution-group-heading small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.ranking-contribution-group > ul > li {
+  display: grid;
+  grid-template-columns: auto repeat(3, minmax(0, 1fr)) minmax(8rem, auto);
+  gap: 0.25rem 0.55rem;
+  align-items: baseline;
+  font-size: 0.72rem;
+}
+
+.ranking-contribution-group > ul > li > span {
+  color: var(--muted);
+}
+
+.ranking-contribution-group > ul > li > strong {
+  color: var(--ink);
+  text-align: right;
+}
+
 .ranking-detail-summary {
   grid-column: 1;
   grid-row: 1;
@@ -622,6 +692,14 @@
     grid-row: auto;
     justify-self: end;
   }
+
+  .ranking-contribution-group > ul > li {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ranking-contribution-group > ul > li > strong {
+    text-align: left;
+  }
 }
 
 @media (max-width: 360px) {
@@ -658,6 +736,14 @@
 
   .ranking-primary-damage strong {
     font-size: 0.92rem;
+  }
+
+  .ranking-contribution-group > ul > li {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ranking-contribution-group > ul > li > strong {
+    text-align: left;
   }
 
   .ranking-damage-summary {

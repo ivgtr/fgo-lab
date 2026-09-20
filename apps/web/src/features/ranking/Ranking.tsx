@@ -7,6 +7,7 @@ import type { VersionContext } from '@fgo-lab/schema';
 import { RankingConditions } from './RankingConditions';
 import { RankingFilters } from './RankingFilters';
 import { RankingList } from './RankingList';
+import { rankingExclusionLabel } from './rankingDetailPresentation';
 import { filterAndRankRows, rankingPolicyLabel } from './rankingPresentation';
 import { useRankingUrlState } from './rankingState';
 import { useRanking } from './useRanking';
@@ -123,10 +124,7 @@ export function Ranking({
             {ranking.exclusions.map((exclusion) => (
               <li key={exclusion.entryId}>
                 <strong>{exclusion.name}</strong> —{' '}
-                {exclusion.status === 'unavailableUnderPolicy' ? '条件下で実行不可' : '無効'}:{' '}
-                {exclusion.reason === 'npCapacityExceeded'
-                  ? '開始NPまたは必要NPが、この宝具LvのNP上限を超えています'
-                  : exclusion.reason}
+                {rankingExclusionLabel(exclusion.status, exclusion.reason)}
               </li>
             ))}
           </ul>

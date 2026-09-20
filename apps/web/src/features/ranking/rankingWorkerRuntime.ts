@@ -139,14 +139,19 @@ export function createRankingWorkerRuntime(
           entryId: request.entryId,
           detail: cached,
         };
-      const result = calculators.detail(
-        servant,
-        context.master,
-        context.profile,
-        conditions,
-        context.versions,
-        row.attackProfile,
-      );
+      const cachedResult = calculationCache.get(request.fingerprint)?.profileResults[
+        request.entryId
+      ];
+      const result =
+        cachedResult ??
+        calculators.detail(
+          servant,
+          context.master,
+          context.profile,
+          conditions,
+          context.versions,
+          row.attackProfile,
+        );
       if (result.status !== 'calculated') {
         const reason =
           result.status === 'inputRequired'

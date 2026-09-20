@@ -1,12 +1,12 @@
 ---
 title: "TSK-06 ranking policy and finite candidate flow closure"
 status: "Active"
-updated_at: "2026-09-20"
+updated_at: "2026-09-21"
 ---
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count、dependent resource／HP、effect normalization／execution-semantics、battle-execution、calculation-applicationのbounded unitと最終qualityを完了して`done`、TSK-06.47は`ready`、TSK-06.5は`blocked`である。以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は2026-09-21のTSK-06.47 UI closure追記。TSK-06.46、TSK-06.47、TSK-06.48は各Done gateを完了して`done`、TSK-06.5は`blocked`である。以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -5396,3 +5396,17 @@ public API、canonical effect／operation／input definition／input key、suppo
 ranking static compilation pathを変更したため、比較可能な診断値を3回取得した。`6280.810／6061.904／6069.754ms`、中央値`6069.754ms`、rows 433、exclusions 0、結果digestは`a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`である。前回中央値`4437.614ms`との差は診断値に留め、性能受入条件、candidate cap、timeout、ratchetの変更根拠にはしない。詳細は[TSK-06.48 calculation-application closure](tsk-06-48-calculation-application-closure.json)を参照する。
 
 最終`pnpm quality`は`.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で成功し、unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0を記録した。Bの実装・記録commitは`3e98828`である。Done gate 1〜5を満たしたためTSK-06.48は`done`、TSK-06.47は`ready`、TSK-06.5は`blocked`である。技術的Blockingと残りbounded unitはなく、追加bounded unitやUI／theoretical maximumへの拡張は行わない。
+
+### TSK-06.47 logical effect／per-contribution presentation bounded unit（2026-09-21）
+
+開始時HEADは`d765ad56c4694c7576bdcd94e12711aa2a34354c`で、既存worktree差分は0件だった。battle-executionの`createEffectiveContributionSet`／final projection、calculation-applicationの`createRankingRow`、Webのranking detail／worker／handoffを直接consumerとして確認し、canonical contribution、presentation group、row、badge、detailのownerを分離した。production sourceのdamage semantics、candidate generation、canonical operation／input／output、worker protocolは変更していない。
+
+Webのpresentation ownerへ、canonical `presentationGroupId`単位のgroup表示、各contributionのself／condition／areaView decision、execution outcome／projection explanationのtyped日本語mappingを集約した。raw `contributionId`、operation ID、internal enumは表示しない。policy exclusion、condition不成立、実行不能、invalid、unsupportedをgenericな「計算外」へ統合せず、action／state／condition evidenceは従来どおり保持した。row／badgeは既存のeffective contribution＋`presentationCounted`＋distinct group集合を参照し、NP baseは件数から除外する。stack countは既存のeffect input evidence（回数、準備開始時仮定、origin）をそのまま表示する。
+
+寄与表示filterはコンポーネントstateだけを更新し、worker request、scenario command、damage計算を発行しない。一覧filterとrow disclosureのaccessible name／`aria-expanded`を維持し、native buttonのkeyboard focus／`aria-pressed`を追加した。PlaywrightのE2E-050で実Worker detail、desktop snapshot、Enter操作、390px／320px expanded detailのhorizontal overflow 0、calculator handoffを確認した。更新snapshotのSHA-256は`408d0412fdc7d2730d1fb09776d86ec29510759c2a95351ce3e07325fcff18d8`である。
+
+focused unitは26/26、`pnpm typecheck`、対象eslintが成功し、機械証跡は[TSK-06.47 contribution UI closure](tsk-06-47-contribution-ui-closure.json)へ記録した。TSK-06.48のcanonical output／operation・effect・input inventory／support status／candidate inventory／parity／digestはproduction sourceが不変のため再利用した。既存calculation cacheの`profileResults`をdetail requestから再利用し、初回detail開閉、寄与filter、一覧filter、再開閉でdamage計算を発生させない。非保証procの`disabled` projectionはcanonical proc kind／decision state／explanationを使って`確率不成立`として表示し、ユーザーによる明示的な無効化は`無効化`として保持する。UI表示経路と既存cache読取だけの変更なので性能診断とproduction matrixは再実行していない。
+
+反証matrixの対象であるpolicy除外、条件不成立、確率不成立、実行不能、invalid、unsupported、NP base、stack count、trait-count sibling、calculator／ranking parity、responsive／keyboard、detail request cacheにBlockingはない。最終`pnpm quality`は`.test-results/2026-09-20T15-48-05-943Z-15-da4a84`で成功し、unit 884、production 144、Playwright 29、retry／unexpected console 0を記録した。
+
+TSK-06.47は`done`、TSK-06.48は`done`、TSK-06.5は`blocked`、commitは未作成である。Done gate 1〜5を満たし、証跡のstatusとregistryを同じ記録更新で閉じた。

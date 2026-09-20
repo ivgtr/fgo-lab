@@ -101,7 +101,7 @@ describe('ranking row detail state', () => {
     );
 
     expect(queryByText('詳細を読み込み中…')).toBeNull();
-    expect(getByRole('alert').textContent).toContain('detail_fixture_failure');
+    expect(getByRole('alert').textContent).toContain('詳細を読み込めませんでした');
     fireEvent.click(getByRole('button', { name: '再試行' }));
     expect(retry).toHaveBeenCalledWith(row);
   });

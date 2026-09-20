@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { rankingEffectContributes } from '@fgo-lab/calculation-application/ranking-contribution';
 import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
@@ -8,7 +9,13 @@ import {
 } from '../../presentation/damageEffectStacks';
 import { numberFormatter } from '../../ui/i18n';
 import { ModifierChip } from '../calculator/ModifierChip';
-import { presentRankingDetailEvidence } from './rankingDetailPresentation';
+import {
+  calculationIssueLabel,
+  presentRankingContributionGroups,
+  presentRankingDetailEvidence,
+  rankingEffectStateLabel,
+  warningLabel,
+} from './rankingDetailPresentation';
 
 function AreaContributionSummary({ detail }: { detail: RankingPolicyDetail }) {
   const area = detail.areaContribution;
@@ -30,9 +37,7 @@ function AreaContributionSummary({ detail }: { detail: RankingPolicyDetail }) {
   );
 }
 
-function decisionLabel(decision: { kind: 'included' } | { kind: 'excluded'; reason: string }) {
-  return decision.kind === 'included' ? '適用' : `除外 (${decision.reason})`;
-}
+type ContributionDisplayFilter = 'all' | 'effective' | 'excluded';
 
 export function RankingEffectDetails({
   detail,
@@ -43,6 +48,7 @@ export function RankingEffectDetails({
   master: MasterDataSnapshot;
   onOpenCalculator: (detail: RankingPolicyDetail) => void;
 }) {
+  const [contributionFilter, setContributionFilter] = useState<ContributionDisplayFilter>('all');
   const craftEssenceId = detail.scenario.craftEssence?.craftEssenceId;
   const craftEssence = master.craftEssences.find((candidate) => candidate.id === craftEssenceId);
   const stacks = collectDamageEffectStacks({
@@ -54,6 +60,22 @@ export function RankingEffectDetails({
         ? 'included'
         : 'excludedByRankingPolicy',
   });
+  const contributionGroups = useMemo(() => presentRankingContributionGroups(detail), [detail]);
+  const visibleContributionGroups = contributionGroups
+    .map((group) => ({
+      ...group,
+      contributions: group.contributions.filter((contribution) =>
+        contributionFilter === 'all'
+          ? true
+          : contributionFilter === 'effective'
+            ? contribution.effective
+            : !contribution.effective,
+      ),
+    }))
+    .filter((group) => group.contributions.length > 0);
+  const effectsByProjectionKey = new Map(
+    detail.effects.map((effect) => [effect.projectionKey, effect]),
+  );
   const evidence = presentRankingDetailEvidence(detail, master);
   const executedHp = detail.appliedPreparationActions.at(-1)?.hpAfter?.actors.attacker;
   return (
@@ -111,7 +133,11 @@ export function RankingEffectDetails({
                   key={`${stack.kind}:${source.key}`}
                   active={damageEffectContributes(source)}
                   label={source.effectLabel}
-                  detail={`${damageEffectStateLabel(source)}・${source.effectName || source.sourceName}`}
+                  detail={`${rankingEffectStateLabel(
+                    detail,
+                    effectsByProjectionKey.get(source.key),
+                    damageEffectStateLabel(source),
+                  )}・${source.effectName || source.sourceName}`}
                   sources={[
                     {
                       key: source.key,
@@ -126,14 +152,42 @@ export function RankingEffectDetails({
         </section>
         <section className="ranking-contribution-decisions" aria-label="寄与ごとのpolicy判定">
           <h4>寄与ごとの判定</h4>
-          <ul>
-            {detail.effectiveContributions.contributions.map((contribution) => (
-              <li key={contribution.contributionId}>
-                <code>{contribution.contributionId}</code>
-                <span>自己: {decisionLabel(contribution.selfDecision)}</span>
-                <span>条件: {decisionLabel(contribution.conditionDecision)}</span>
-                <span>エリア: {decisionLabel(contribution.areaViewDecision)}</span>
-                <strong>{contribution.effective ? 'damageへ適用' : 'damage対象外'}</strong>
+          <div className="ranking-contribution-filter" role="group" aria-label="寄与表示">
+            {(
+              [
+                ['all', 'すべて'],
+                ['effective', '適用のみ'],
+                ['excluded', '適用外のみ'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={contributionFilter === value}
+                onClick={() => setContributionFilter(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <ul className="ranking-contribution-groups">
+            {visibleContributionGroups.map((group) => (
+              <li key={group.key} className="ranking-contribution-group">
+                <div className="ranking-contribution-group-heading">
+                  <strong>{group.label}</strong>
+                  <small>{group.source}</small>
+                </div>
+                <ul>
+                  {group.contributions.map((contribution) => (
+                    <li key={contribution.key}>
+                      <span>{contribution.component}</span>
+                      <span>自己: {contribution.selfDecision}</span>
+                      <span>条件: {contribution.conditionDecision}</span>
+                      <span>エリア: {contribution.areaViewDecision}</span>
+                      <strong>{contribution.outcome}</strong>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
@@ -174,14 +228,14 @@ export function RankingEffectDetails({
       {detail.result.issues.length > 0 ? (
         <ul className="ranking-issues">
           {detail.result.issues.map((issue) => (
-            <li key={`${issue.code}:${issue.detail}`}>{issue.code}</li>
+            <li key={`${issue.code}:${issue.detail}`}>{calculationIssueLabel(issue.code)}</li>
           ))}
         </ul>
       ) : null}
       {detail.warnings.length > 0 ? (
         <ul className="ranking-issues" aria-label="計算上の警告">
           {detail.warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
+            <li key={warning}>{warningLabel(warning)}</li>
           ))}
         </ul>
       ) : null}
