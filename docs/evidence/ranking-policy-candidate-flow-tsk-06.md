@@ -6,7 +6,7 @@ updated_at: "2026-09-20"
 
 # TSK-06 ranking policy and finite candidate flow closure
 
-最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count、dependent resource／HP、effect normalization／execution-semantics、battle-execution、calculation-applicationのbounded unitまで完了して`in_progress`、TSK-06.47は`ready`。最終`pnpm quality`は未実施であり、以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
+最新の進捗は[canonical checkpoint](#canonical-checkpoint2026-09-13フォローアップ)の2026-09-20最終追記。TSK-06.46はW0〜W6のcorrectness／production closureをbefore baselineとして保持し、W7 logical-disjunction convergenceを完了した。TSK-06.48はpopulation-count、dependent resource／HP、effect normalization／execution-semantics、battle-execution、calculation-applicationのbounded unitまで完了して`in_progress`、TSK-06.47は`ready`。最終`pnpm quality`も成功済みだが、Task statusは利用者指定により`in_progress`を維持する。以下の過去deltaは当時の根拠として扱い、旧Blocking／Deferred／done記述は最新checkpointを優先する。
 
 ## c167e63再開delta（2026-09-09）
 
@@ -5395,4 +5395,4 @@ public API、canonical effect／operation／input definition／input key、suppo
 
 ranking static compilation pathを変更したため、比較可能な診断値を3回取得した。`6280.810／6061.904／6069.754ms`、中央値`6069.754ms`、rows 433、exclusions 0、結果digestは`a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`である。前回中央値`4437.614ms`との差は診断値に留め、性能受入条件、candidate cap、timeout、ratchetの変更根拠にはしない。詳細は[TSK-06.48 calculation-application closure](tsk-06-48-calculation-application-closure.json)を参照する。
 
-TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。B bounded unitの実装範囲は閉じたが、最終`pnpm quality`と最終記録整合は未実施であり、追加bounded unitやUI／theoretical maximumへの拡張は行わない。
+最終`pnpm quality`は`.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で成功し、unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0を記録した。Bの実装・記録commitは`3e98828`である。TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。技術的Blockingと残りbounded unitはなく、追加bounded unitやUI／theoretical maximumへの拡張は行わない。

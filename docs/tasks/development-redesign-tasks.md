@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.18"
+document_version: "1.7.19"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-20"
@@ -2122,7 +2122,7 @@ Current bounded-unit handoff（2026-09-20、calculation-application candidate／
 
 `rankingStaticSemantics.ts::compileStaticRankingSemantics`内の`effectChangesPreparation(effect) || hasOcConditionReader(effect)`の3箇所反復だけを`preparationSources`へ局所収束した。これはcategory 1の反復union分類であり、category 2のtyped変換、category 3の網羅union、category 4のcondition／uncertainty／mutation／finite admission／typed fail-closedは残した。public API、canonical effect／operation／input key、support分類、order、condition truth、mutation-after-read、calculator／ranking parity、candidate inventoryに差分はない。focused 6 files／38 tests、targeted eslint、typecheck、Prettier、git diff、docs integrityを確認対象とし、matrix再実行不要の根拠と診断値は[TSK-06.48 calculation-application closure](../evidence/tsk-06-48-calculation-application-closure.json)へ記録する。80×433 closureは34,640 outcomes／34,600 calculated／typed unavailable 40／unsupported・invalid・inputRequired 0／parity 34,600、candidate generated／deduplicated 1,028,810／最大3,435／cap 4,096を維持する。hot-path診断中央値は`6069.754ms`だが、固定受入条件・ratchetではない。
 
-TSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`、最終`pnpm quality`と最終記録整合は未実施である。次の操作は今回のB差分をcommitした後、最終qualityを一度実行し、結果を同じ正本へ追記する。
+最終`pnpm quality`はartifact `.test-results/2026-09-20T13-57-20-457Z-15-8ba814`で成功した。unit 883、production 144、Playwright 29、warnings／unexpected console／retry 0、duration 408.29秒、manifest SHA-256 `82e55ed669cfa31f0b53cf6716479c36d63140d69a848af737e4dd4348b1e1fc`である。実装・記録commitは`3e98828`。技術的Blockingと残りbounded unitはなく、利用者指定によりTSK-06.48は`in_progress`、TSK-06.47は`ready`、TSK-06.5は`blocked`を維持する。追加のrefactorや別Taskへの拡張は行わない。
 
 ### TSK-06.5: Ranking theoretical maximum and production closure
 

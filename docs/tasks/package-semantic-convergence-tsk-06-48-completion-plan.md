@@ -1,6 +1,6 @@
 ---
 title: "TSK-06.48 bounded completion plan"
-document_version: "1.0.2"
+document_version: "1.0.3"
 status: "Active"
 created_at: "2026-09-20"
 updated_at: "2026-09-20"
@@ -86,7 +86,7 @@ canonical effect／operation／input definition／input key、support分類、op
 
 focused testは6 files／38 testsが成功し、candidate／world／scenario、condition truth、mutation後read、candidate equivalence／representative／dedupe／cardinality／cap、calculator／ranking parity、typed outcomeを確認した。canonical output、effect 13,875、operation 15,257、input／support分類、candidate inventoryに差分がないため、34,640 outcomes／34,600 parity／typed unavailable 40／unsupported・invalid・inputRequired 0、candidate最大3,435／cap 4,096を含む80条件×433 profile closureを再利用した。ranking static compilation pathを変更したため、比較可能な診断値として3サンプル`6280.810／6061.904／6069.754ms`、中央値`6069.754ms`、rows 433、exclusions 0、result digest `a9cee3d7a5ec35a30f9ef2b2fdc97ab0c00aa27d6593ba70e02eb4f0f6c5626f`を記録した。これは受入条件やratchetではない。
 
-machine-readable結果は[TSK-06.48 calculation-application closure](../evidence/tsk-06-48-calculation-application-closure.json)、flow差分は[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)である。B bounded unitの実装範囲は閉じたが、TSK-06.48は`in_progress`のまま、最終`pnpm quality`と最終記録整合を残す。`TSK-06.47=ready`、`TSK-06.5=blocked`、candidate cap／timeout／性能ratchetは変更しない。
+machine-readable結果は[TSK-06.48 calculation-application closure](../evidence/tsk-06-48-calculation-application-closure.json)、flow差分は[ranking policy candidate flow](../evidence/ranking-policy-candidate-flow-tsk-06.md)である。B bounded unitの実装範囲と最終qualityは閉じ、`pnpm quality`はartifact `.test-results/2026-09-20T13-57-20-457Z-15-8ba814`でunit 883、production 144、Playwright 29、warnings／unexpected console／retry 0として成功した。実装・記録commitは`3e98828`である。利用者指定によりTSK-06.48は`in_progress`のまま保持し、`TSK-06.47=ready`、`TSK-06.5=blocked`、candidate cap／timeout／性能ratchetは変更しない。技術的Blockingと残りbounded unitはない。
 
 ## 4. 共通の不変条件
 
