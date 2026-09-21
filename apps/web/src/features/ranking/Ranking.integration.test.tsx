@@ -115,6 +115,7 @@ describe('ranking loading presentation', () => {
       versions,
     ).rows[0]!;
     const openCalculator = vi.fn();
+    const reload = vi.fn();
     const view = render(
       <Ranking
         master={master}
@@ -122,6 +123,7 @@ describe('ranking loading presentation', () => {
         versions={versions}
         onOpenCalculator={vi.fn()}
         onOpenCalculatorForAttackProfile={openCalculator}
+        onReload={reload}
       />,
     );
     const worker = FakeWorker.instance!;
@@ -145,12 +147,12 @@ describe('ranking loading presentation', () => {
         requestId: calculate.requestId,
         contextId: calculate.contextId,
         fingerprint: rankingConditionsFingerprint(DEFAULT_RANKING_POLICY_CONDITIONS),
-        rows: [],
+        rows: [source],
         exclusions: [
           {
-            entryId: source.entryId,
+            entryId: `${source.entryId}:required`,
             servantId: source.servantId,
-            name: source.name,
+            name: `${source.name} 必須入力`,
             attackProfile: source.attackProfile,
             status: 'inputRequired',
             reason: 'inputRequired:target.hp',
@@ -169,17 +171,70 @@ describe('ranking loading presentation', () => {
             recovery: { kind: 'openCalculator' },
             issues: [],
           },
+          {
+            entryId: `${source.entryId}:unsupported`,
+            servantId: source.servantId,
+            name: `${source.name} 未対応`,
+            attackProfile: source.attackProfile,
+            status: 'unsupported',
+            reason: 'candidateExecutionUnsupported',
+            requiredInputs: [],
+            recovery: { kind: 'none' },
+            issues: [],
+          },
+          {
+            entryId: `${source.entryId}:invalid`,
+            servantId: source.servantId,
+            name: `${source.name} 不正`,
+            attackProfile: source.attackProfile,
+            status: 'invalid',
+            reason: 'rankingSelectionInvalid',
+            requiredInputs: [],
+            recovery: { kind: 'resetRankingConditions' },
+            issues: [],
+          },
+          {
+            entryId: `${source.entryId}:unavailable`,
+            servantId: source.servantId,
+            name: `${source.name} 到達不能`,
+            attackProfile: source.attackProfile,
+            status: 'unavailableUnderPolicy',
+            reason: 'attackProfileNotReachable',
+            requiredInputs: [],
+            recovery: { kind: 'none' },
+            issues: [],
+          },
         ],
       }),
     );
     await waitFor(() =>
       expect(view.container.querySelector('[data-outcome-status="inputRequired"]')).not.toBeNull(),
     );
-    expect(view.container.querySelector('.ranking-list')).toBeNull();
+    expect(view.container.querySelector('.ranking-list')).not.toBeNull();
+    expect(
+      view.container.querySelector('[data-outcome-status="inputRequired"]')?.textContent,
+    ).toContain('入力が必要');
+    expect(
+      view.container.querySelector('[data-outcome-status="unsupported"]')?.textContent,
+    ).toContain('未対応のため対象外');
+    expect(view.container.querySelector('[data-outcome-status="invalid"]')?.textContent).toContain(
+      '条件が不正',
+    );
+    expect(
+      view.container.querySelector('[data-outcome-status="unavailableUnderPolicy"]')?.textContent,
+    ).toContain('この条件では対象外');
+    expect(
+      view.container.querySelector('[data-outcome-status="inputRequired"]')?.textContent,
+    ).toContain('対象HP');
+    expect(view.queryByText('0 damage')).toBeNull();
     fireEvent.click(view.getByRole('button', { name: '通常の計算機で入力を補う' }));
     expect(openCalculator).toHaveBeenCalledWith({
       servantId: source.servantId,
       attackProfile: source.attackProfile,
     });
+    fireEvent.click(view.getByRole('button', { name: 'ランキング条件をリセット' }));
+    expect(document.activeElement).toBe(view.getByRole('status'));
+    expect(reload).not.toHaveBeenCalled();
+    expect(view.queryByRole('button', { name: 'ページを再読み込み' })).toBeNull();
   });
 });

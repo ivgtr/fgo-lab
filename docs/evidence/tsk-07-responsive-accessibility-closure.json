@@ -1,0 +1,214 @@
+{
+  "task": "TSK-07",
+  "status": "complete",
+  "unit": "final responsive and accessibility closure for ranking outcomes, detail, recovery, and calculator notice",
+  "baseline": {
+    "headAtStart": "b9c323a1a80186c904adea10f2aadb487c5ad1a5",
+    "worktreeAtStart": "clean",
+    "entryConditions": {
+      "TSK-06.5": "done",
+      "TSK-06.47": "done",
+      "TSK-06.48": "done",
+      "TSK-07": "in_progress",
+      "TSK-08": "blocked; not started"
+    },
+    "taskSource": "docs/tasks/development-redesign-tasks.md",
+    "historicalFlow": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "outcomeEvidence": "docs/evidence/tsk-07-outcome-closure.json",
+    "cacheEvidence": "docs/evidence/tsk-07-cache-closure.json",
+    "noticeResetEvidence": "docs/evidence/tsk-07-notice-reset-closure.json",
+    "canonicalProductionEvidence": "docs/evidence/tsk-06-5-production-closure.json"
+  },
+  "changedFiles": [
+    "apps/web/src/features/ranking/Ranking.tsx",
+    "apps/web/src/features/ranking/RankingList.tsx",
+    "apps/web/src/features/ranking/rankingDetailPresentation.ts",
+    "apps/web/src/features/ranking/ranking.css",
+    "apps/web/src/features/ranking/Ranking.integration.test.tsx",
+    "apps/web/src/features/ranking/RankingList.test.tsx",
+    "apps/web/src/features/calculator/CalculationContextNotice.tsx",
+    "apps/web/src/features/calculator/calculator.css",
+    "apps/web/src/features/calculator/CalculationContextNotice.test.tsx",
+    "e2e/a11y.spec.ts",
+    "e2e/initial-oc.spec.ts",
+    "e2e/ranking-baseline.spec.ts",
+    "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "docs/evidence/tsk-07-responsive-accessibility-closure.json",
+    "docs/evidence/README.md",
+    "docs/README.md",
+    "docs/tasks/development-redesign-tasks.md"
+  ],
+  "semanticOwners": {
+    "rankingPresentation": "apps/web/src/features/ranking/Ranking.tsx and RankingList.tsx",
+    "typedOutcomeLabels": "apps/web/src/features/ranking/rankingDetailPresentation.ts::rankingExclusionStatusLabel",
+    "rankingResponsiveLayout": "apps/web/src/features/ranking/ranking.css",
+    "calculatorNoticePresentation": "apps/web/src/features/calculator/CalculationContextNotice.tsx and calculator.css",
+    "keyboardAndFocus": "Ranking.tsx status focus after reset, existing global :focus-visible, and E2E keyboard assertions",
+    "identityAndRecovery": "existing application ranking outcome and portable AttackProfile handoff owners; presentation only dispatches commands"
+  },
+  "responsive": {
+    "desktop": "ranking row keeps position, portrait, name/NP, numeric damage, and disclosure in one bounded grid; expanded detail and exclusion lists wrap long labels and reasons; calculator notice keeps readable heading, identity, version, and reset command",
+    "390px": "row detail switches to one column, recovery button fills available width, contribution cells wrap, required-input and exclusion text remain inside the viewport, and keyboard focus remains visible",
+    "320px": "condition controls and calculation basis collapse, common equipment stacks, row columns reduce, long reasons/labels/buttons wrap, and calculator reset becomes a full-width left-aligned command",
+    "overflow": "min-width: 0, max-width: 100%, overflow-wrap:anywhere, bounded primary grids, and direct-child failure-list scrolling prevent horizontal overflow without making nested required-input lists scroll containers"
+  },
+  "accessibility": {
+    "accessibleNames": "ranking row controls include servant and Noble Phantasm names plus open/close action; exclusion recovery buttons reference their reason and required-input description",
+    "rolesAndState": "row disclosure uses button aria-expanded and aria-controls; exclusion collection has an accessible list label; calculator inherited-context notice has a heading, described reset, live status, and alert error",
+    "liveRegion": "ranking calculation status remains role=status aria-live=polite and is programmatically focusable after invalid-condition reset",
+    "keyboard": "E2E-050 verifies Enter on contribution filter and calculator reset, E2E-051 verifies reset focus, and E2E-050 verifies expanded detail state and focus order",
+    "focusVisibility": "existing global :focus-visible outline is preserved; condition overflow clipping was removed and status focus uses tabIndex=-1 without adding a tab stop"
+  },
+  "outcomeBoundary": {
+    "numericRows": ["calculated"],
+    "typedExclusions": [
+      "inputRequired",
+      "unsupported",
+      "invalid",
+      "unavailableUnderPolicy"
+    ],
+    "recovery": {
+      "inputRequired": "same AttackProfile normal calculator command with required inputs exposed",
+      "unsupported": "distinct non-recoverable reason only",
+      "invalid": "cause-specific ranking-condition reset or reload only",
+      "unavailableUnderPolicy": "policy reachability reason only"
+    },
+    "numericFallback": "none; no zero-damage or baseline row is created"
+  },
+  "staleAndCache": {
+    "workerSummaryMaximum": 1,
+    "workerDetailMaximum": 0,
+    "reactActiveDetailMaximum": 1,
+    "identityGate": [
+      "worker instance",
+      "context ID",
+      "request ID",
+      "canonical fingerprint",
+      "entry ID"
+    ],
+    "presentationImpact": "DOM IDs, labels, wrapping, focus, and aria relationships do not enter worker requests, canonical fingerprint construction, cache keys, or response gates",
+    "staleRejection": "existing worker and React gates reject stale summary/detail/error before React state, display, or cache mutation"
+  },
+  "responsibilityBoundary": {
+    "application": "owns ranking policy, typed outcomes, exact AttackProfile recovery, and calculator/ranking shared execution",
+    "worker": "owns one evidence-free summary cache and stale identity checks; detail remains request-lifetime materialization",
+    "reactWeb": "owns canonical presentation, accessible command dispatch, active detail state, and reset focus",
+    "calculatorWorkspace": "owns two-axis notice, normal reset transaction, portable identity, durable publication, and reset stale guard",
+    "cssPresentation": "owns responsive grid/flex layout, wrapping, viewport containment, and visual focus preservation"
+  },
+  "parity": {
+    "fingerprint": "unchanged seven-field ranking identity",
+    "candidateInventory": "unchanged; reused TSK-06.5",
+    "supportStatus": "unchanged; reused TSK-06.5",
+    "productionOutput": "unchanged; no numeric fallback",
+    "calculatorRankingPortable": "existing same AttackProfile handoff and shared executor parity retained",
+    "reopen": "TSK-06.41 and TSK-06.5 remain closed; reopen only if fingerprint, support status, candidate inventory, production output, or parity differs"
+  },
+  "verification": {
+    "focusedComponent": {
+      "command": "pnpm test:diagnostic -- apps/web/src/features/ranking/RankingList.test.tsx apps/web/src/features/ranking/Ranking.integration.test.tsx apps/web/src/features/calculator/CalculationContextNotice.test.tsx",
+      "status": "passed",
+      "files": 3,
+      "tests": 10,
+      "artifact": ".test-results/2026-09-21T03-36-55-745Z-15-455798"
+    },
+    "directConsumers": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/portableCalculation.test.ts packages/calculation-application/src/rankingRows.test.ts packages/calculation-application/src/productionExecutionParity.test.ts packages/calculation-application/src/rankingBasis.test.ts apps/web/src/app/rankingHandoff.test.ts apps/web/src/features/ranking/rankingWorkerProtocol.test.ts apps/web/src/features/ranking/rankingWorkerRuntime.test.ts apps/web/src/features/ranking/useRanking.test.tsx apps/web/src/features/ranking/RankingEffectDetails.test.tsx apps/web/src/features/ranking/RankingConditions.test.tsx",
+      "status": "passed",
+      "files": 10,
+      "tests": 55,
+      "artifact": ".test-results/2026-09-21T03-38-36-868Z-15-846e45"
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint <changed TS/TSX files> --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --check <changed source, test, CSS, and E2E files>",
+      "status": "passed"
+    },
+    "playwright": {
+      "status": "passed",
+      "coverage": [
+        "E2E-050 real ranking worker, detail aria-expanded/aria-controls, keyboard filter/reset, 390px/320px overflow",
+        "E2E-051 invalid ranking reset and status focus",
+        "E2E-014/015/016 desktop/mobile visual and overflow regression",
+        "E2E-002 ranking overview and expanded detail serious/critical axe audit"
+      ],
+      "results": "E2E-050 2/2, E2E-051 2/2, E2E-014/015/016 4/4, E2E-002 2/2",
+      "focusedArtifacts": {
+        "E2E-050": ".test-results/2026-09-21T03-39-19-919Z-15-8730c4",
+        "E2E-051": ".test-results/2026-09-21T03-53-55-456Z-15-eee864",
+        "integrated": ".test-results/2026-09-21T03-55-07-915Z-15-120d12/playwright"
+      }
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "durationSeconds": 353.71,
+      "artifact": ".test-results/2026-09-21T03-55-07-915Z-15-120d12",
+      "unit": "890 passed, 0 skipped/todo",
+      "production": "144 passed, 0 skipped/todo",
+      "playwright": "29 passed, 0 skipped, 0 retries",
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "steps": [
+        "format",
+        "lint",
+        "typecheck",
+        "runner",
+        "docs",
+        "unit",
+        "production",
+        "master",
+        "build",
+        "playwright"
+      ],
+      "reason": "integrated gate passed; no performance ratchet or timeout relaxation was introduced"
+    }
+  },
+  "performance": {
+    "status": "N/A: UI/presentation-only bounded unit",
+    "reused": "TSK-06.5 hot-path and candidate evidence",
+    "policy": "no candidate reduction ratchet, fixed wall-clock target, or timeout relaxation"
+  },
+  "legacyAndOrAudit": {
+    "oldFiveFieldReader": "not added",
+    "oldOperationIdReader": "not added",
+    "fallbackOrCompatibilityFlag": "not added",
+    "parallelCompiler": "not added",
+    "compoundOr": "no new production occurrence; existing occurrences remain owned typed/boolean/canonical-union branches"
+  },
+  "reusedEvidence": {
+    "tsk06_41": "same current schema, portable handoff, shared executor, and direct parity",
+    "tsk06_5": "candidate inventory, support status, production output, and legacy-removal evidence",
+    "rkCache001": "worker summary/detail cache cardinality and request/context/fingerprint/entry stale rejection",
+    "noticeReset": "two-axis notice, calculator normal reset, durable publication, and mutation stale rejection",
+    "outcomeClosure": "typed five-outcome display and exact AttackProfile recovery"
+  },
+  "stopConditions": [
+    "semantic mismatch or a new producer/consumer for canonical identity",
+    "responsive or accessibility failure that cannot be closed by the presentation owners",
+    "stale response or cache cardinality regression",
+    "any numeric fallback, changed candidate inventory, support status, production output, fingerprint, or calculator/ranking/portable parity"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "in_progress",
+    "TSK-08": "blocked; not_started",
+    "head": "b9c323a1a80186c904adea10f2aadb487c5ad1a5",
+    "newCommit": false
+  },
+  "nextBoundedUnit": "No additional TSK-07 semantic unit; keep TSK-07 in_progress for the task sequencing boundary, then hand off to the existing blocked TSK-08 boundary without starting it",
+  "stopCondition": "If final quality or docs integrity fails, fix only the directly affected presentation/evidence owner and rerun proportional gates; reopen TSK-06.41 or TSK-06.5 only after a canonical identity, candidate, production, support, or parity difference is proven."
+}

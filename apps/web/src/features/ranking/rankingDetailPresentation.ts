@@ -106,6 +106,18 @@ export function rankingExclusionLabel(
   return labels[status];
 }
 
+export function rankingExclusionStatusLabel(
+  status: 'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported',
+): string {
+  const labels: Record<typeof status, string> = {
+    unavailableUnderPolicy: 'この条件では対象外',
+    inputRequired: '入力が必要',
+    invalid: '条件が不正',
+    unsupported: '未対応のため対象外',
+  };
+  return labels[status];
+}
+
 export function rankingExclusionRecoveryLabel(recovery: RankingExclusionRecovery): string {
   switch (recovery.kind) {
     case 'openCalculator':

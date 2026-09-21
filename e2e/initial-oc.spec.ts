@@ -46,6 +46,7 @@ test('[E2E-051] initial OC commands, keyboard, responsive detail and reset @desk
   invalid.searchParams.set('rOc', '5');
   await page.goto(invalid.toString());
   await page.getByRole('button', { name: '計算条件をリセット' }).click();
+  await expect(page.getByRole('status')).toBeFocused();
   await expect(page.getByRole('combobox', { name: '初期OC', exact: true })).toHaveValue('1');
   await expect(page.getByRole('combobox', { name: '宝具Lv', exact: true })).toHaveValue('1');
 });

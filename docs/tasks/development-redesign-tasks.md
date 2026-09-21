@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.23"
+document_version: "1.7.24"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-21"
@@ -2294,6 +2294,22 @@ Handoff:
   support status、数値output、calculator／ranking／portable parity、fingerprintは不変条件を満たして再利用する。
   TSK-07は`in_progress`、TSK-06.5／06.47／06.48は`done`、TSK-08は未開始、commitは作成しない。全responsive／a11y closureと
   最終`pnpm quality`はTSK-07統合closureで実行する。
+
+- Current bounded-unit handoff (2026-09-21): desktop、390px、320pxのranking row／expanded detail／順位外exclusion／required
+  input／recovery command／calculator noticeを、既存のsemantic ownerのまま横overflowなく表示できるようにした。rowの
+  `aria-expanded`／`aria-controls`、servant＋NPを含むaccessible name、typed exclusionのstatus／reason、required-input listと
+  recovery buttonの`aria-describedby`、calculator noticeのheading／version／reset descriptionを追加し、既存のglobal
+  `:focus-visible`を維持した。invalid reset後は`role=status`へfocusを戻し、keyboard Enter、focus order、390px／320pxの
+  expanded detail／長いreason／複数buttonをE2Eで確認した。`calculated`だけのnumeric row、4つのtyped exclusion、同じ
+  AttackProfile handoff、二軸notice／normal reset、worker summary 1件／detail 0件／React detail 1件、stale gateは不変である。
+  変更はpresentation／CSS／test／E2Eに限定し、application、worker protocol、canonical fingerprint、candidate inventory、
+  production output、calculator／ranking／portable parityへ影響しない。machine-readable結果は[TSK-07 responsive／accessibility closure](../evidence/tsk-07-responsive-accessibility-closure.json)、
+  historical flowは[ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ追記する。focused 10 tests、
+  direct consumer 55 tests、typecheck、対象lint／format、E2E-050 2/2、E2E-051 2/2、E2E-014／015／016 4/4、E2E-002 2/2
+  （overview／expanded detail axe serious／critical）を通過した。`pnpm test:docs`と最終`pnpm quality`は通過し、最終quality artifactは
+  `.test-results/2026-09-21T03-55-07-915Z-15-120d12`、unit 890／production 144／Playwright 29、retry 0、warnings 0、unexpected console 0
+  である。TSK-06.5／06.47／06.48は`done`、TSK-07は`in_progress`、TSK-08は開始しない。性能診断、
+  candidate削減ratchet、固定wall-clock目標、timeout緩和はUI-onlyのため設定しない。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

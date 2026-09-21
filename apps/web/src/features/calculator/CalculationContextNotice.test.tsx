@@ -88,7 +88,7 @@ describe('calculation context recovery presentation', () => {
   it('keeps inherited ranking intent visible and exposes only the explicit reset command', () => {
     const onReset = vi.fn(() => Promise.resolve());
     render(<CalculationContextNotice state="current" request={rankingRequest} onReset={onReset} />);
-    expect(screen.getByText('ランキングから引き継いだ計算条件')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'ランキングから引き継いだ計算条件' })).toBeTruthy();
     expect(screen.getByText(/開始NP 200%/)).toBeTruthy();
     expect(screen.getByText(/自己バフ: 除外/)).toBeTruthy();
     expect(screen.getByText(/条件効果: 成立込み/)).toBeTruthy();

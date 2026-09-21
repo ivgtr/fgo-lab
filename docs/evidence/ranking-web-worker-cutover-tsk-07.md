@@ -309,3 +309,55 @@ wall-clock target, candidate ratchet, or timeout relaxation was introduced.
 
 This bounded unit is complete with TSK-07 still `in_progress`. Remaining work is the final responsive
 and accessibility closure and integrated TSK-07 quality gate. TSK-08 remains blocked.
+
+## Current responsive, accessibility, and integrated-quality closure (2026-09-21)
+
+This section records the final responsive/accessibility bounded unit. The historical five-field cutover,
+RK-CACHE-001 cache closure, two-axis notice/normal-reset closure, and typed-outcome closure above remain
+unchanged. The machine-readable evidence is [TSK-07 responsive/accessibility closure](tsk-07-responsive-accessibility-closure.json).
+
+The presentation owners now keep ranking rows, expanded detail, typed exclusions, required-input lists,
+recovery commands, and the calculator-origin notice bounded at desktop, 390px, and 320px widths. Row
+disclosures retain `aria-expanded`/`aria-controls` and an accessible name containing the servant and Noble
+Phantasm. Exclusion status is presented with distinct human labels; reason and required-input descriptions
+are associated with each recovery button. The ranking status remains a polite live region and receives
+focus after an invalid-condition reset. The calculator-origin notice has a heading, readable version
+metadata, a reset description, and a keyboard-operable command. The existing global `:focus-visible`
+outline remains the focus-visibility owner.
+
+| Path | Expected result | Evidence |
+| --- | --- | --- |
+| desktop ranking row/detail | position, portrait, name/NP, numeric damage, disclosure, detail evidence, and recovery remain readable without horizontal overflow | E2E-050 detail state and direct consumer tests |
+| 390px ranking row/detail | detail becomes one column; contribution cells, long reasons, required inputs, and recovery commands wrap; recovery commands use available width | E2E-050 390px viewport |
+| 320px ranking row/detail and calculator notice | condition/basis controls collapse, common equipment stacks, row columns reduce, long labels/reasons/buttons wrap, and reset is full-width | E2E-050 320px viewport and E2E-014/015/016 |
+| typed exclusion list | `calculated` is the only numeric row; inputRequired exposes the same AttackProfile calculator command; unsupported/unavailable are non-recoverable; invalid exposes only reset/reload | Ranking integration fixture and outcome closure evidence |
+| keyboard/focus | Enter dispatches existing commands, focus order is preserved, expanded state is announced, invalid reset returns focus to the status region | E2E-050, E2E-051 |
+| accessibility | overview and expanded ranking detail have no serious/critical axe violations | E2E-002 overview/detail axe audit |
+
+The CSS changes are presentation-only: `min-width: 0`, `max-width: 100%`, `overflow-wrap: anywhere`,
+bounded grids, and direct-child failure-list scrolling contain long content without turning nested
+required-input lists into an inaccessible scroll region. No DOM change enters the ranking request,
+canonical fingerprint, worker cache key, stale-response identity, or durable calculator publication.
+Worker summary remains maximum one, worker detail remains zero, and React active detail remains maximum
+one. The five typed outcomes, exact AttackProfile calculator handoff, two-axis notice/normal reset,
+calculator/ranking/portable parity, and `calculated`-only numeric boundary are reused unchanged.
+
+Focused component verification passed 3 files/10 tests (artifact
+`.test-results/2026-09-21T03-36-55-745Z-15-455798`); direct consumers passed 10 files/55 tests
+(artifact `.test-results/2026-09-21T03-38-36-868Z-15-846e45`). Typecheck, changed-file ESLint,
+Prettier, E2E-050 (2/2), E2E-051 (2/2), E2E-014/015/016 (4/4), and E2E-002 (2/2, overview and
+expanded-detail serious/critical axe checks) passed. This is a UI/presentation-only unit, so no candidate
+reduction ratchet, fixed wall-clock target, timeout relaxation, or new production hot-path measurement
+was introduced; TSK-06.5 production and parity evidence is reused.
+
+The integrated `pnpm test:docs` passed. The final `pnpm quality` passed with unit 890, production 144,
+Playwright 29, retry 0, warnings 0, and unexpected console 0; its manifest is
+`.test-results/2026-09-21T03-55-07-915Z-15-120d12` and the machine-readable evidence records the step list
+and duration. No canonical identity, support status, candidate inventory, production output, or parity
+difference was found; therefore TSK-06.41 and TSK-06.5 remain closed. If any such difference appears,
+the next bounded unit must stop and record the canonical owner, impact, rerun scope, and reopen decision
+before further work.
+
+This bounded unit is complete, with TSK-07 intentionally still `in_progress` for the task sequencing
+boundary despite the integrated quality/evidence record being accepted. TSK-06.5, TSK-06.47, and
+TSK-06.48 remain `done`; TSK-08 is not started.

@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab evidence report index"
-document_version: "1.4.46"
+document_version: "1.4.47"
 status: "Active"
 updated_at: "2026-09-21"
 ---
@@ -55,6 +55,7 @@ updated_at: "2026-09-21"
 | [tsk-07-cache-closure](tsk-07-cache-closure.json) | Complete | machine-readable: RK-CACHE-001 summary value／lifetime／cardinality、worker detail 0、React active detail 1、fingerprint／request stale rejection、focused／direct-consumer／E2E evidence | TSK-07 | `597d779` baseline／no new commit |
 | [tsk-07-notice-reset-closure](tsk-07-notice-reset-closure.json) | Complete | machine-readable: two-axis ranking notice／calculator handoff parity、atomic normal reset、field-by-field hidden-state removal、new baseline fingerprint、reset failure and stale publication rejection | TSK-07 | `f9c56da` baseline／no new commit |
 | [tsk-07-outcome-closure](tsk-07-outcome-closure.json) | Complete | machine-readable: five typed outcome presentation、numeric-row boundary、exact AttackProfile normal-calculator recovery、typed invalid reset/reload、unsupported／policy-unavailable non-recovery、focused consumer checks | TSK-07 | `3ec65cd` baseline／no new commit |
+| [tsk-07-responsive-accessibility-closure](tsk-07-responsive-accessibility-closure.json) | Complete | machine-readable: desktop／390px／320px responsive containment、accessible names／roles／keyboard／focus、five-outcome recovery presentation、stale/cache identity preservation、integrated quality evidence | TSK-07 | `b9c323a` baseline／no new commit |
 | [tsk-06-47-contribution-ui-closure](tsk-06-47-contribution-ui-closure.json) | Complete | machine-readable: logical effect group／per-contribution policy decisions／typed presentation labels／responsive and keyboard evidence／detail cache reuse／quality gate | TSK-06.47 | done／historical closure had no commit; current baseline `197ff30` |
 | [tsk-06-48-population-closure](tsk-06-48-population-closure.json) | Complete | canonical: TSK-06.48 population-function／trait catalogとpopulation-count selector／live-read／candidate ownership、production record parity、candidate inventory | TSK-06.48 final closure | `49efe62`／TSK-06.48 complete |
 | [tsk-06-48-transfer-hp-closure](tsk-06-48-transfer-hp-closure.json) | Complete | canonical: TSK-06.48 dependent-function descriptor、NP／HP transfer domain ownership、ordered execution preservation、production matrix／candidate inventory／parity | TSK-06.48 final closure | `46f30a7`／TSK-06.48 complete |

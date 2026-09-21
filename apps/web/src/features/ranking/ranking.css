@@ -35,7 +35,7 @@
   align-items: end;
   gap: 0.55rem;
   padding: 0.65rem;
-  overflow: hidden;
+  min-width: 0;
 }
 
 .ranking-condition-primary label,
@@ -342,6 +342,7 @@
 
 .ranking-primary-damage {
   justify-items: end;
+  min-width: 0;
   font-variant-numeric: tabular-nums;
 }
 
@@ -359,9 +360,11 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.55rem;
+  min-width: 0;
   padding: 0.65rem 0.8rem 0.8rem;
   border-top: 1px dashed var(--line);
   background: var(--paper);
+  overflow-wrap: anywhere;
 }
 
 .ranking-contribution-decisions {
@@ -425,9 +428,15 @@
 .ranking-contribution-group > ul > li {
   display: grid;
   grid-template-columns: auto repeat(3, minmax(0, 1fr)) minmax(8rem, auto);
+  min-width: 0;
   gap: 0.25rem 0.55rem;
   align-items: baseline;
   font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.ranking-contribution-group > ul > li > * {
+  min-width: 0;
 }
 
 .ranking-contribution-group > ul > li > span {
@@ -443,6 +452,7 @@
   grid-column: 1;
   grid-row: 1;
   display: grid;
+  min-width: 0;
   gap: 0.25rem;
 }
 
@@ -542,8 +552,10 @@
 
 .ranking-execution-evidence dl > div {
   display: flex;
+  min-width: 0;
   gap: 0.3rem;
   font-size: 0.76rem;
+  overflow-wrap: anywhere;
 }
 
 .ranking-execution-evidence dt {
@@ -575,8 +587,10 @@
 
 .ranking-context-evidence li {
   display: flex;
+  min-width: 0;
   gap: 0.35rem;
   font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 .ranking-context-evidence li span {
@@ -584,12 +598,35 @@
 }
 
 .ranking-issues,
-.ranking-failures ul {
+.ranking-failures > ul {
+  min-width: 0;
   display: grid;
   gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.ranking-exclusion {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ranking-exclusion > p {
+  margin-block: 0.2rem;
+}
+
+.ranking-required-inputs {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  list-style: disc;
+}
+
+.ranking-required-inputs li {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ranking-effect-list .modifier-chip {
@@ -600,6 +637,8 @@
   grid-column: 2;
   grid-row: 1;
   align-self: center;
+  max-width: 100%;
+  white-space: normal;
   min-height: 2rem;
   padding: 0.25rem 0;
   border: 0;
@@ -614,7 +653,7 @@
   text-decoration: underline;
 }
 
-.ranking-failures ul {
+.ranking-failures > ul {
   max-height: 16rem;
   padding: 0 0.7rem 0.7rem;
   overflow: auto;
@@ -690,7 +729,9 @@
   .ranking-open-calculator {
     grid-column: 1;
     grid-row: auto;
-    justify-self: end;
+    justify-self: stretch;
+    width: 100%;
+    text-align: left;
   }
 
   .ranking-contribution-group > ul > li {

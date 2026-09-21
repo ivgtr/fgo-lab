@@ -105,15 +105,12 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
     >
       {ranking && (
         <>
-          <strong>ランキングから引き継いだ計算条件</strong>
-          <span>
+          <h2 className="calculation-context-title">ランキングから引き継いだ計算条件</h2>
+          <p id="calculation-context-description">
             開始NP {ranking.initialNpGauge / 100}% ／ 自己バフ:{' '}
             {ranking.policy.selfBuffs === 'included' ? '込み' : '除外'} ／ 条件効果:{' '}
             {ranking.policy.conditionalEffects === 'satisfied' ? '成立込み' : '通常のみ'}
-          </span>
-          <button type="button" disabled={props.resetPending} onClick={() => void props.onReset()}>
-            通常の計算条件へ戻す
-          </button>
+          </p>
         </>
       )}
       {props.resetError && (
@@ -121,14 +118,24 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
           {props.resetError}
         </p>
       )}
-      <VersionMetadata request={request} />
+      <VersionMetadata request={request} id="calculation-context-version" />
+      {ranking && (
+        <button
+          type="button"
+          aria-describedby="calculation-context-description calculation-context-version"
+          disabled={props.resetPending}
+          onClick={() => void props.onReset()}
+        >
+          通常の計算条件へ戻す
+        </button>
+      )}
     </section>
   );
 }
 
-function VersionMetadata({ request }: { request: PortableCalculationRequest }) {
+function VersionMetadata({ request, id }: { request: PortableCalculationRequest; id?: string }) {
   return (
-    <small>
+    <small id={id} className="calculation-context-version">
       マスター {request.versionContext.masterDataVersion} ／ エンジン{' '}
       {request.versionContext.engineVersion}
     </small>

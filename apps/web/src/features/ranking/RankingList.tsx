@@ -9,6 +9,10 @@ import type { RankingPresentedRow } from './rankingPresentation';
 import { detailErrorLabel } from './rankingDetailPresentation';
 import type { RankingDetailError as HookRankingDetailError } from './useRanking';
 
+function rankingDomKey(entryId: string): string {
+  return entryId.replaceAll(/[^a-zA-Z0-9_-]/g, '-');
+}
+
 const RankingEffectDetails = lazy(async () => ({
   default: (await import('./RankingEffectDetails')).RankingEffectDetails,
 }));
@@ -51,13 +55,15 @@ export function RankingList({
           typeof detailError === 'string'
             ? { status: 'failed', reason: detailError }
             : (detailError ?? { status: 'failed', reason: '' });
-        const detailId = `ranking-detail-${row.entryId.replace(':', '-')}`;
+        const domKey = rankingDomKey(row.entryId);
+        const detailId = `ranking-detail-${domKey}`;
+        const detailErrorId = `ranking-detail-error-${domKey}`;
         return (
           <li key={row.entryId} className={row.rank <= 3 ? 'ranking-top' : undefined}>
             <button
               type="button"
               className="ranking-row"
-              aria-label={`${row.name}の計算詳細を${expanded ? '閉じる' : '開く'}`}
+              aria-label={`${row.name}・${row.noblePhantasmName}の計算詳細を${expanded ? '閉じる' : '開く'}`}
               aria-expanded={expanded}
               aria-controls={detailId}
               onClick={() => onToggle(row)}
@@ -112,11 +118,12 @@ export function RankingList({
                     />
                   </Suspense>
                 ) : detailError ? (
-                  <p role="alert" className="notice">
+                  <p id={detailErrorId} role="alert" className="notice">
                     {detailErrorLabel(detailErrorInfo)}{' '}
                     {detailErrorInfo.status === 'inputRequired' ? (
                       <button
                         type="button"
+                        aria-describedby={detailErrorId}
                         onClick={() =>
                           onOpenCalculatorForAttackProfile?.({
                             servantId: row.servantId,
@@ -127,11 +134,19 @@ export function RankingList({
                         通常の計算機を開く
                       </button>
                     ) : detailErrorInfo.status === 'invalid' ? (
-                      <button type="button" onClick={() => onReload?.()}>
+                      <button
+                        type="button"
+                        aria-describedby={detailErrorId}
+                        onClick={() => onReload?.()}
+                      >
                         ページを再読み込み
                       </button>
                     ) : detailErrorInfo.status === 'failed' ? (
-                      <button type="button" onClick={() => onRetryDetail(row)}>
+                      <button
+                        type="button"
+                        aria-describedby={detailErrorId}
+                        onClick={() => onRetryDetail(row)}
+                      >
                         再試行
                       </button>
                     ) : null}

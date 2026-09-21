@@ -78,7 +78,7 @@ describe('ranking row detail state', () => {
       />,
     );
 
-    const disclosure = getByRole('button', { name: `${row.name}の計算詳細を開く` });
+    const disclosure = getByRole('button', { name: new RegExp(`${row.name}.*計算詳細を開く`) });
     expect(disclosure.getAttribute('aria-expanded')).toBe('false');
     expect(queryByRole('button', { name: '詳細' })).toBeNull();
     fireEvent.click(disclosure);

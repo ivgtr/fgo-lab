@@ -45,6 +45,19 @@ test('[E2E-002] major desktop screens @desktop @a11y', async ({ page }) => {
     await page.getByRole('button', { name }).click();
     await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     await expectNoSeriousViolations(page);
+    if (name === '火力ランキング') {
+      await expect(page.getByRole('status')).toContainText('件を計算', { timeout: 30_000 });
+      const first = page
+        .getByRole('list', { name: '宝具火力ランキング' })
+        .getByRole('listitem')
+        .first();
+      await first.getByRole('button', { name: /の計算詳細を開く/ }).click();
+      await expect(first.getByRole('region', { name: /の計算詳細/ })).toBeVisible({
+        timeout: 15_000,
+      });
+      await expectNoSeriousViolations(page);
+      await first.getByRole('button', { name: /の計算詳細を閉じる/ }).click();
+    }
   }
 });
 

@@ -172,6 +172,9 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await expect(first.getByRole('region', { name: /の計算詳細/ })).toContainText('最低', {
     timeout: 15_000,
   });
+  const rowToggle = first.getByRole('button', { name: /の計算詳細を閉じる/ });
+  await expect(rowToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(rowToggle).toHaveAttribute('aria-controls', /ranking-detail-/);
   await expect(page).toHaveScreenshot('ranking-detail-desktop.png');
   const contributionRegion = first.getByRole('region', { name: '寄与ごとのpolicy判定' });
   await expect(contributionRegion).toBeVisible();
@@ -179,6 +182,7 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await excludedFilter.focus();
   await page.keyboard.press('Enter');
   await expect(excludedFilter).toHaveAttribute('aria-pressed', 'true');
+  await expect(excludedFilter).toBeFocused();
   await page.keyboard.press('Tab');
   for (const width of [390, 320] as const) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 700 });
@@ -252,7 +256,10 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
     timeout: 30_000,
   });
   // E2E-A050-RESET
-  await restoredNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
+  const resetButton = restoredNotice.getByRole('button', { name: '通常の計算条件へ戻す' });
+  await expect(resetButton).toHaveAttribute('aria-describedby', /calculation-context-description/);
+  await resetButton.focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByText('ランキングから引き継いだ計算条件')).toHaveCount(0);
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
   await expect.poll(() => storedDraftJson(page)).not.toBe(originalDraft);
