@@ -9,8 +9,8 @@
       "TSK-06.5": "done",
       "TSK-06.47": "done",
       "TSK-06.48": "done",
-      "TSK-07": "in_progress",
-      "TSK-08": "blocked; not started"
+      "TSK-07": "historical pre-closure baseline",
+      "TSK-08": "historical dependency not yet released"
     },
     "taskSource": "docs/tasks/development-redesign-tasks.md",
     "historicalFlow": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
@@ -153,9 +153,9 @@
     "quality": {
       "command": "pnpm quality",
       "status": "passed",
-      "durationSeconds": 353.71,
-      "artifact": ".test-results/2026-09-21T03-55-07-915Z-15-120d12",
-      "unit": "890 passed, 0 skipped/todo",
+      "durationSeconds": 320.38,
+      "artifact": ".test-results/2026-09-21T05-40-21-470Z-15-a881eb",
+      "unit": "895 passed, 0 skipped/todo",
       "production": "144 passed, 0 skipped/todo",
       "playwright": "29 passed, 0 skipped, 0 retries",
       "warnings": 0,
@@ -204,11 +204,11 @@
     "TSK-06.5": "done",
     "TSK-06.47": "done",
     "TSK-06.48": "done",
-    "TSK-07": "in_progress",
-    "TSK-08": "blocked; not_started",
+    "TSK-07": "done",
+    "TSK-08": "ready",
     "head": "b9c323a1a80186c904adea10f2aadb487c5ad1a5",
     "newCommit": false
   },
-  "nextBoundedUnit": "No additional TSK-07 semantic unit; keep TSK-07 in_progress for the task sequencing boundary, then hand off to the existing blocked TSK-08 boundary without starting it",
+  "nextBoundedUnit": "TSK-08 production audit",
   "stopCondition": "If final quality or docs integrity fails, fix only the directly affected presentation/evidence owner and rerun proportional gates; reopen TSK-06.41 or TSK-06.5 only after a canonical identity, candidate, production, support, or parity difference is proven."
 }

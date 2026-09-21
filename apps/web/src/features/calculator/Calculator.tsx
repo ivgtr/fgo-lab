@@ -142,6 +142,12 @@ export function Calculator({
   const input = resolvedInput;
   const initialHpPermille =
     scenario.mode === 'resolved' ? scenario.attackerHpPermille : input.attackerHpPermille;
+  const effectiveInitialOvercharge =
+    scenario.mode === 'resolved' && request.executionIntent.kind !== 'manual'
+      ? request.executionIntent.initialNpGauge / 10_000
+      : scenario.mode === 'resolved'
+        ? scenario.initialOvercharge
+        : input.overcharge;
   const executedHp = appliedPreparationActions.at(-1)?.hpAfter?.actors.attacker;
   const resolvedScenario = scenario.mode === 'resolved' ? scenario : null;
   const lastResolvedScenario = useRef<Extract<CalculationScenario, { mode: 'resolved' }> | null>(
@@ -744,7 +750,7 @@ export function Calculator({
           <label>
             {scenario.mode === 'manual' ? '最終OC' : '初期OC'}
             <select
-              value={scenario.mode === 'manual' ? input.overcharge : scenario.initialOvercharge}
+              value={effectiveInitialOvercharge}
               onChange={(event) => {
                 const overcharge = Number(event.target.value);
                 if (scenario.mode === 'manual') changeManualInput({ overcharge });
@@ -771,7 +777,7 @@ export function Calculator({
                 .map((receipt, index, receipts) => (
                   <div key={receipt.actionId}>
                     <p>
-                      {index === 0 ? `開始NP ${scenario.initialOvercharge * 100}% ／ ` : ''}
+                      {index === 0 ? `開始NP ${effectiveInitialOvercharge * 100}% ／ ` : ''}
                       {receipts.length > 1 ? `宝具${index + 1}：` : ''}
                       {ocUseSummary(receipt)}
                     </p>

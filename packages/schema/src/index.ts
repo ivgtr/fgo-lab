@@ -602,8 +602,8 @@ const resolvedPortableCalculationRequestSchema = z
   .strict()
   .refine(
     ({ scenario, executionIntent: intent }) => {
-      if (intent.initialNpGauge !== scenario.initialOvercharge * 10000) return false;
       if (intent.kind !== 'ranking') return true;
+      if (intent.initialNpGauge !== scenario.initialOvercharge * 10000) return false;
       const { basis, policy } = intent;
       return (
         basis.initialOvercharge === scenario.initialOvercharge &&

@@ -7,6 +7,11 @@ export type UpdateActiveProfile = (
   update: (profile: LocalProfile) => LocalProfile,
 ) => Promise<void>;
 
+export type CalculationMutationGate = {
+  begin: () => number;
+  isCurrent: (token: number) => boolean;
+};
+
 export async function commitPortableDraft({
   request,
   result,
@@ -14,6 +19,8 @@ export async function commitPortableDraft({
   updateActiveProfile,
   setCalculation,
   source = 'draft',
+  mutationToken,
+  isCurrent,
 }: {
   request: PortableCalculationRequest;
   result: CalculationResult;
@@ -21,24 +28,34 @@ export async function commitPortableDraft({
   source?: 'draft' | 'history';
   updateActiveProfile: UpdateActiveProfile;
   setCalculation: Dispatch<SetStateAction<CalculationWorkspace>>;
-}) {
+  mutationToken: number;
+  isCurrent: (token: number) => boolean;
+}): Promise<boolean> {
   const fingerprint = await portableCalculationFingerprint(request, async (data: Uint8Array) =>
     crypto.subtle.digest('SHA-256', new Uint8Array(data)),
   );
+  if (!isCurrent(mutationToken)) return false;
   const now = new Date().toISOString();
-  await updateActiveProfile((current) => ({
-    ...current,
-    draft: {
-      profileId: current.profileId,
-      calculationSessionId: sessionId,
-      request,
-      result,
-      requestFingerprint: fingerprint,
+  let accepted: true | undefined;
+  await updateActiveProfile((current) => {
+    if (!isCurrent(mutationToken)) return current;
+    accepted = true;
+    return {
+      ...current,
+      draft: {
+        profileId: current.profileId,
+        calculationSessionId: sessionId,
+        request,
+        result,
+        requestFingerprint: fingerprint,
+        updatedAt: now,
+      },
       updatedAt: now,
-    },
-    updatedAt: now,
-  }));
+    };
+  });
+  if (accepted !== true || !isCurrent(mutationToken)) return false;
   setCalculation({ request, storedResult: result, source });
+  return true;
 }
 
 /** Start a separate calculation only after its durable draft has been committed. */
@@ -49,6 +66,7 @@ export async function startPortableDraft({
   setCalculationSessionId: Dispatch<SetStateAction<string>>;
 }) {
   const sessionId = crypto.randomUUID();
-  await commitPortableDraft({ ...draft, sessionId });
-  setCalculationSessionId(sessionId);
+  const committed = await commitPortableDraft({ ...draft, sessionId });
+  if (committed && draft.isCurrent(draft.mutationToken)) setCalculationSessionId(sessionId);
+  return committed;
 }

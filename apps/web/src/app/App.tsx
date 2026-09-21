@@ -37,6 +37,7 @@ import { t } from '../ui/i18n';
 import { bootstrapApplication, setupApplication, type ReadyStartupResult } from './startup';
 import { StartupScreen } from './StartupScreen';
 import { useProfileCollection } from './useProfileCollection';
+import type { CalculationMutationGate } from './portableDraft';
 
 export type Page =
   'home' | 'calculate' | 'ranking' | 'servants' | 'ce' | 'support' | 'growth' | 'data';
@@ -168,6 +169,14 @@ export function App() {
   );
   const [recoveryFocus, setRecoveryFocus] = useState<'result' | 'error' | null>(null);
   const [calculationSessionId, setCalculationSessionId] = useState(() => crypto.randomUUID());
+  const calculationMutationRef = useRef(0);
+  const calculationMutation: CalculationMutationGate = {
+    begin: () => {
+      calculationMutationRef.current += 1;
+      return calculationMutationRef.current;
+    },
+    isCurrent: (token) => calculationMutationRef.current === token,
+  };
   const calculationFinalizer = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => {
     async function bootstrap() {
@@ -326,6 +335,7 @@ export function App() {
     );
   }
   async function navigate(nextPage: Page) {
+    calculationMutation.begin();
     if (page === 'calculate' && nextPage !== 'calculate') await calculationFinalizer.current?.();
     if (page !== 'calculate' && nextPage === 'calculate')
       setCalculationSessionId(crypto.randomUUID());
@@ -366,7 +376,13 @@ export function App() {
             </>
           )}
         </p>
-        <button disabled={!undoSnapshot} onClick={() => void undoLastChange()}>
+        <button
+          disabled={!undoSnapshot}
+          onClick={() => {
+            calculationMutation.begin();
+            void undoLastChange();
+          }}
+        >
           直前の操作を元に戻す
         </button>
       </aside>
@@ -398,6 +414,7 @@ export function App() {
               }}
               recoveryFocus={recoveryFocus}
               setRecoveryFocus={setRecoveryFocus}
+              calculationMutation={calculationMutation}
             />
           )}{' '}
           {page === 'ranking' && (
@@ -408,6 +425,7 @@ export function App() {
               setCalculationSessionId={setCalculationSessionId}
               updateActiveProfile={updateActiveProfile}
               replaceRoute={(nextPage) => router.push(pagePaths[nextPage])}
+              calculationMutation={calculationMutation}
             />
           )}{' '}
           {page === 'servants' && (
@@ -447,7 +465,10 @@ export function App() {
             <DataPage
               profiles={profiles}
               masterVersion={currentMaster.version}
-              onImport={replaceProfiles}
+              onImport={async (next) => {
+                calculationMutation.begin();
+                await replaceProfiles(next);
+              }}
             />
           )}{' '}
         </Suspense>

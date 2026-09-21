@@ -268,28 +268,21 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   const resetPayload = JSON.parse(resetDraft) as {
     request: {
       executionIntent: { kind: string; initialNpGauge?: number; policy?: unknown };
-      scenario: {
-        canonicalInputValues: Record<string, unknown>;
-        activationFacts: unknown[];
-        worldFactAssertions: unknown[];
-        effectDecisions: Array<{ decisionKey: string }>;
-      };
+      scenario: Record<string, unknown>;
+      versionContext: Record<string, unknown>;
     };
     requestFingerprint: string;
   };
-  const originalPayload = JSON.parse(originalDraft) as { requestFingerprint: string };
+  const originalPayload = JSON.parse(originalDraft) as {
+    request: { scenario: Record<string, unknown>; versionContext: Record<string, unknown> };
+    requestFingerprint: string;
+  };
   expect(resetPayload.request.executionIntent).toEqual({
     kind: 'calculator',
     initialNpGauge: 10_000,
   });
-  expect(resetPayload.request.scenario.canonicalInputValues).toEqual({});
-  expect(resetPayload.request.scenario.activationFacts).toEqual([]);
-  expect(resetPayload.request.scenario.worldFactAssertions).toEqual([]);
-  expect(
-    resetPayload.request.scenario.effectDecisions.every(
-      ({ decisionKey }) => !decisionKey.startsWith('ranking:'),
-    ),
-  ).toBe(true);
+  expect(resetPayload.request.scenario).toEqual(originalPayload.request.scenario);
+  expect(resetPayload.request.versionContext).toEqual(originalPayload.request.versionContext);
   expect(resetPayload.requestFingerprint).not.toBe(originalPayload.requestFingerprint);
   // E2E-A050-COUNT-RECOVERY
   for (const [name, label, maximum] of [

@@ -115,7 +115,7 @@ describe('portable calculation application owner', () => {
     expect(executePortableCalculation(request, master).status).toBe('executed');
   });
 
-  it('changes initial OC and calculator start NP together, rejecting contradictory payloads', () => {
+  it('changes initial OC and calculator start NP together while reset permits a retained scenario OC', () => {
     const initial = createDefaultResolvedScenario(master, undefined);
     const request = createCalculatorPortableRequest(initial, versionContext);
     const changed = replacePortableCalculationScenario(request, {
@@ -137,7 +137,7 @@ describe('portable calculation application owner', () => {
         ...changed,
         executionIntent: { kind: 'calculator', initialNpGauge: 10000 },
       }).success,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       portableCalculationRequestSchema.safeParse({
         ...changed,
@@ -222,18 +222,7 @@ describe('portable calculation application owner', () => {
       request,
     });
 
-    const reset = attemptPortableCalculationReset(request, retainedResult, missingMaster, {
-      [request.scenario.attacker.servantId]: {
-        servantId: request.scenario.attacker.servantId,
-        level: request.scenario.attacker.level,
-        ascension: 4,
-        npLevel: 1,
-        fouAtk: 1_000,
-        skills: {},
-        appends: {},
-        updatedAt: '2026-09-05T00:00:00.000Z',
-      },
-    });
+    const reset = attemptPortableCalculationReset(request, retainedResult, missingMaster);
     expect(reset).toMatchObject({
       status: 'rejected',
       retainedRequest: request,
@@ -349,31 +338,15 @@ describe('portable calculation application owner', () => {
       ...contaminated,
       versionContext: historicalRequest.versionContext,
     });
-    const reset = resetPortableCalculationRequest(
-      historicalContaminated,
-      master,
-      undefined,
-      master.servants[0]!,
-    );
-    expect(reset.versionContext).toEqual(currentCalculationVersionContext(master));
+    const reset = resetPortableCalculationRequest(historicalContaminated);
+    expect(reset.versionContext).toEqual(historicalContaminated.versionContext);
     expect(reset.executionIntent).toEqual({
       kind: 'calculator',
       initialNpGauge: 10_000,
     });
-    expect(reset.scenario).toMatchObject({
-      attackerHpPermille: 1_000,
-      battleState: { battlePointPhase: 0 },
-      canonicalInputValues: {},
-      activationFacts: [],
-      worldFactAssertions: [],
-      effectDecisions: [],
-      explicitOverrides: {},
-      craftEssence: null,
-      mysticCode: null,
-      support: null,
-      preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
-    });
-    expect(JSON.stringify(reset)).not.toContain('ranking:');
+    expect(reset.scenario).toEqual(historicalContaminated.scenario);
+    expect(reset.executionIntent).not.toHaveProperty('policy');
+    expect(reset.executionIntent).not.toHaveProperty('basis');
   });
 
   it('resolves reset from the retained request subject and ignores any other selected build', () => {
@@ -384,39 +357,34 @@ describe('portable calculation application owner', () => {
     const retained = executePortableCalculation(retainedRequest, master);
     if (retained.status !== 'executed') throw new Error('retained result required');
     if (retainedRequest.scenario.mode !== 'resolved') throw new Error('resolved request required');
-    const retainedId = retainedRequest.scenario.attacker.servantId;
-    const unrelatedId = 'mutable-ui-selection';
     const attempt = attemptPortableCalculationReset(
       retainedRequest,
       retained.execution.result,
       master,
-      {
-        [retainedId]: {
-          servantId: retainedId,
-          level: 1,
-          ascension: 0,
-          npLevel: 1,
-          fouAtk: 0,
-          skills: {},
-          appends: {},
-          updatedAt: '2026-09-04T00:00:00.000Z',
-        },
-        [unrelatedId]: {
-          servantId: unrelatedId,
-          level: 120,
-          ascension: 4,
-          npLevel: 5,
-          fouAtk: 3_000,
-          skills: {},
-          appends: {},
-          updatedAt: '2026-09-04T00:00:00.000Z',
-        },
-      },
     );
 
     expect(attempt.status).toBe('committed');
     if (attempt.status !== 'committed' || attempt.request.scenario.mode !== 'resolved') return;
-    expect(attempt.request.scenario.attacker).toMatchObject({ servantId: retainedId, level: 1 });
+    expect(attempt.request.scenario.attacker).toEqual(retainedRequest.scenario.attacker);
+  });
+
+  it('keeps a nonbaseline scenario while normalizing calculator execution to NP100 and OC1', () => {
+    const scenario = {
+      ...createDefaultResolvedScenario(master, undefined),
+      initialOvercharge: 2 as const,
+    };
+    const request = createCalculatorPortableRequest(scenario, versionContext);
+    const reset = resetPortableCalculationRequest(request);
+    expect(reset.versionContext).toEqual(request.versionContext);
+    expect(reset.scenario).toEqual(request.scenario);
+    expect(reset.executionIntent).toEqual({ kind: 'calculator', initialNpGauge: 10_000 });
+    const outcome = executePortableCalculation(reset, master);
+    expect(outcome.status).toBe('executed');
+    if (outcome.status !== 'executed') return;
+    expect(outcome.execution.appliedPreparationActions.at(-1)?.ocUse).toMatchObject({
+      gaugeBefore: 10_000,
+      baseOc: 1,
+    });
   });
 
   it('rejects a missing retained request subject before constructing a reset', () => {
@@ -439,7 +407,6 @@ describe('portable calculation application owner', () => {
       missingRequest,
       retained.execution.result,
       master,
-      {},
     );
 
     expect(attempt).toMatchObject({

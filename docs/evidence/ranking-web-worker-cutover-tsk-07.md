@@ -1,21 +1,21 @@
 ---
 title: "TSK-07 ranking Web and worker canonical cutover"
-status: "Active"
+status: "Complete"
 updated_at: "2026-09-21"
 ---
 
 # TSK-07 ranking Web and worker canonical cutover
 
-> Structural review reopened this flow. The five-field URL/protocol cutover evidence below remains
-> historical verification. TSK-06.4／06.41 reopened portable identity for a two-axis contribution intent,
-> TSK-06.4 owns source-program／action-admission design, TSK-06.41 owns its implementation, and TSK-06.5 owns
-> final maximum／production closure. TSK-06.4 design is done; runtime remains ordered through TSK-06.41 and
-> TSK-06.5 before this Web task.
-> TSK-06.41 owns the breaking two-axis schema cutover, every direct Web request writer, and minimal handoff
-> parity. TSK-07 waits for TSK-06.5, then closes notice／reset interaction, five-outcome presentation,
-> evidence-cache scope, responsive layout, and accessibility.
+> Historical entry audit: the five-field URL/protocol cutover evidence below records the original
+> dependency sequence. TSK-06.4／06.41 reopened portable identity for a two-axis contribution intent,
+> TSK-06.4 owned source-program／action-admission design, TSK-06.41 owned its implementation, and TSK-06.5
+> owned final maximum／production closure. The final integrated closure at the end of this flow supersedes
+> that historical sequencing record and is the current TSK-07 status.
 
 ## Outcome and ownership
+
+The following ownership snapshot is retained as historical entry evidence; the integrated closure at the
+end is authoritative for the completed task.
 
 The ranking screen, public URL state, worker protocol, worker cache, response ordering, and detail
 evidence use one `RankingPolicyConditions` contract with exactly five fields:
@@ -93,7 +93,7 @@ five Web commands
 | compatibility adapter or dual runtime | N/A: prohibited by destructive cutover |
 | nonbaseline two-axis request through draft/history/share/backup/fingerprint | Deferred: TSK-06.41 portable identity implementation |
 | selected ranking two-axis intent → calculator replay | Deferred: TSK-06.41 direct writer／minimal parity |
-| notice／true normal reset interaction | Deferred: TSK-07 after TSK-06.5; target／field／input／stochastic／action facts must not survive reset |
+| notice／true normal reset interaction | Deferred at this historical checkpoint; final closure retains target／field／input／stochastic／action facts and changes only execution intent |
 | repeated detail open/close/condition/context changes | Deferred: TSK-07 evidence-free bounded cache implementation |
 
 ## Inventory and parity
@@ -148,14 +148,14 @@ not runtime readers.
 
 The recorded test and performance results are historical evidence for the five-field cutover. They do not prove portable restore parity or bounded cache values because those cases were absent from the gate design.
 
-Historical closure: Blocking 0, Deferred 2. Current reopening leaves the direct two-axis writer／minimal
+Historical closure: Blocking 0, Deferred 2. At that historical checkpoint, the current reopening left the direct two-axis writer／minimal
 handoff in TSK-06.41 and three TSK-07 paths: notice／five-outcome presentation, atomic reset interaction, and
 bounded cache／stale response rejection.
 
 - Verified: TSK-06.2 closed E2E case ownership, project assignment, setup/ranking repetition, and the current performance baseline.
 - Deferred: TSK-07 separates summary/detail evidence and enforces maximum cardinality.
 
-Current dependency: TSK-07 waits for TSK-06.5, and TSK-08 may not start. Cross-level optimization and
+Historical dependency: TSK-07 waited for TSK-06.5, and TSK-08 could not start. Cross-level optimization and
 the full production digest remain deferred to TSK-08 after TSK-07 closes.
 
 ## Current RK-CACHE-001 bounded closure (2026-09-21)
@@ -204,9 +204,9 @@ cache-reduction ratchet, or timeout relaxation was introduced.
 
 TSK-06.5 candidate inventory, support status, production output, calculator/ranking/portable parity,
 and legacy-removal evidence are reused because the canonical input and production digest are unchanged.
-The machine-readable record is [TSK-07 cache closure](tsk-07-cache-closure.json). The unit is complete,
-but TSK-07 remains `in_progress`; notice/five-outcome presentation, normal reset interaction, and full
-responsive/a11y closure remain for the next bounded unit. TSK-08 remains blocked.
+The machine-readable record is [TSK-07 cache closure](tsk-07-cache-closure.json). At this historical
+checkpoint the task sequencing record was still `in_progress`; the later integrated closure below is the
+current status.
 
 ## Current notice and normal-reset bounded closure (2026-09-21)
 
@@ -221,15 +221,14 @@ the requirement vocabulary `自己バフ` and `条件効果` and keeps the reset
 notice. The selected ranking result and effect evidence continue to be replayed by the shared
 application executor; Web does not reconstruct policy semantics from labels or IDs.
 
-The normal-reset command is an application-owned transaction. It resolves the servant from the retained
-request, uses the matching current build, constructs the calculator baseline, executes it, and publishes
-the new request/result/fingerprint only after the durable draft write succeeds. The resulting request has
-calculator intent with `initialNpGauge: 10000`; ranking policy, target/field facts, canonical conditional
-inputs, stochastic activation facts, ordered choice/action witness, ranking-origin effect decisions,
-explicit overrides, and candidate evidence are removed by the baseline constructor, while any
-constructor-owned default decisions are rebuilt. A reset attempt that cannot resolve the
-subject, execute the baseline, or persist the pair leaves the retained request/result/fingerprint intact
-and reports the typed failure in the notice.
+The normal-reset command is an application-owned transaction. It validates the retained request subject,
+keeps the request's scenario and version context unchanged, changes only the execution intent to
+`calculator` with `initialNpGauge: 10000` and standard calculator policy, executes it, and publishes
+the new request/result/fingerprint only after the durable draft write succeeds. Target/field facts,
+canonical inputs, stochastic activation facts, ordered choice/action witness, effect decisions, and
+candidate evidence remain in the scenario; ranking policy and intent are removed from the request intent.
+A reset attempt that cannot resolve the subject, execute the retained scenario, or persist the pair leaves
+the retained request/result/fingerprint intact and reports the typed failure in the notice.
 
 `CalculatorRoute` gives each scenario/reset publication a mutation identity. When a newer mutation starts,
 an older asynchronous fingerprint or durable-write completion cannot publish its workspace state or
@@ -240,9 +239,9 @@ summary. This is a Web publication guard and does not change the ranking worker 
 | --- | --- | --- |
 | selected ranking detail with `selfBuffs` and `conditionalEffects` | current portable request and replayed calculator result/effects remain equal | ranking handoff, portable reconstruction, E2E-050 |
 | ranking-origin notice | start NP, both policy axes, version, and explicit reset are visible | CalculationContextNotice unit and E2E-050 |
-| reset with target/field/input/activation/action/effect state | one calculator baseline request replaces the ranking request; hidden ranking state is absent | portable reset fixture and E2E-050 draft inspection |
+| reset with target/field/input/activation/action/effect state | same scenario/version context is retained; only calculator intent/result/fingerprint replace the ranking identity | portable reset fixture and E2E-050 draft inspection |
 | reset failure or durable write failure | old request/result/fingerprint remains; typed error is visible | portable reset failure tests and notice fixture |
-| reset before an older async publication completes | old mutation cannot publish after the newer mutation token | CalculatorRoute mutation guard; RK-CACHE-001 stale-gate fixtures |
+| scenario edit, reset, current history copy, historical regeneration | one App-owned mutation gate prevents a later-completed older publication from changing workspace or durable draft | portable draft stale-publication fixtures and route handoff tests |
 | ranking worker response after condition/context/detail replacement | no stale rows/detail/error enter current UI state | RK-CACHE-001 focused `useRanking` and worker tests, reused |
 | calculator reset fingerprint | new calculator request identity is stored; ranking fingerprint is not reused | E2E-050 draft inspection and portable draft writer |
 
@@ -258,8 +257,8 @@ Playwright 29, zero retries/warnings/unexpected console observations); its manif
 `.test-results/2026-09-20T19-18-55-246Z-73-bbda97`. The remaining five-outcome and responsive/a11y
 bounded units still require the final TSK-07 integrated closure.
 
-This bounded unit is complete with TSK-07 still `in_progress`. The next bounded unit is the five typed
-outcome presentation and recovery interaction. TSK-08 remains blocked.
+This bounded unit was complete at its historical checkpoint; the integrated closure below supersedes its
+temporary `in_progress` sequencing status.
 
 ## Current five-outcome presentation and recovery bounded closure (2026-09-21)
 
@@ -307,8 +306,8 @@ evidence. The full `pnpm quality` gate is deferred to final TSK-07 integrated cl
 unit leaves candidate generation, production matrix, and hot-path calculation unchanged; no fixed
 wall-clock target, candidate ratchet, or timeout relaxation was introduced.
 
-This bounded unit is complete with TSK-07 still `in_progress`. Remaining work is the final responsive
-and accessibility closure and integrated TSK-07 quality gate. TSK-08 remains blocked.
+This bounded unit is a historical checkpoint; the final responsive/accessibility closure and integrated
+quality gate are recorded below.
 
 ## Current responsive, accessibility, and integrated-quality closure (2026-09-21)
 
@@ -358,6 +357,35 @@ difference was found; therefore TSK-06.41 and TSK-06.5 remain closed. If any suc
 the next bounded unit must stop and record the canonical owner, impact, rerun scope, and reopen decision
 before further work.
 
-This bounded unit is complete, with TSK-07 intentionally still `in_progress` for the task sequencing
-boundary despite the integrated quality/evidence record being accepted. TSK-06.5, TSK-06.47, and
-TSK-06.48 remain `done`; TSK-08 is not started.
+This bounded unit was the final pre-closure checkpoint. The integrated closure below sets TSK-07 to `done`
+and releases TSK-08 to `ready`; TSK-06.5, TSK-06.47, and TSK-06.48 remain `done`.
+
+## Final integrated TSK-07 closure (2026-09-21)
+
+The portable normal reset now retains the ranking request's exact scenario and version context and changes
+only the execution intent to `calculator + initialNpGauge 10000 + standard`. Target/field facts, canonical
+inputs, stochastic facts, ordered actions/choice, effect decisions, and candidate evidence remain scenario
+state; ranking intent and policy are removed from the request rather than retained as hidden state. The
+execution boundary uses the intent's standard OC1 without rewriting the persisted scenario.
+
+`portableDraft.ts::commitPortableDraft` is the single Web workspace publication owner. An App-owned mutation
+gate covers scenario edits, reset, current-history copy, historical regeneration, version upgrade, ranking
+handoff, finalizer, navigation, undo, and profile import. Every durable write and workspace/session/route
+publication checks the token before and after the asynchronous write, so a later-completing stale operation
+cannot overwrite the last-started valid user operation. Reset executes before publication and retains the old
+request/result/fingerprint/draft on subject, execution, or durable-write failure.
+
+| Closure | Evidence |
+| --- | --- |
+| scenario/version retention and calculator intent normalization | `portableCalculation.test.ts`, focused 34-test artifact |
+| failure retention of request/result/fingerprint/draft | portable reset and durable-write failure fixtures |
+| scenario edit → reset ordering | stale-publication fixture |
+| reset → current history copy ordering | stale-publication fixture |
+| current history copy → historical regeneration ordering | stale-publication fixture |
+| ranking worker, notice, keyboard, responsive, and calculator parity | E2E-050 2/2 and E2E-051 2/2 artifacts |
+
+Focused tests (34), typecheck, targeted lint/format, and `pnpm test:docs` passed. The final `pnpm quality`
+gate passed with unit 895, production 144, Playwright 29, retry 0, warnings 0, and unexpected console 0;
+artifact: `.test-results/2026-09-21T05-40-21-470Z-15-a881eb`. Production inventory, candidate count,
+support status, calculator/ranking/portable parity, fingerprint contract, cache cardinality, and worker
+stale gates are unchanged. Blocking is 0, TSK-07 is `done`, TSK-08 is `ready`, and no commit was created.

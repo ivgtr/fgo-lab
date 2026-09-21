@@ -198,8 +198,17 @@ export function replacePortableCalculationScenario(
   request: PortableCalculationRequest,
   scenario: CalculationScenario,
 ): PortableCalculationRequest {
-  if (request.scenario.mode !== scenario.mode || request.executionIntent.kind === 'calculator')
+  if (request.scenario.mode !== scenario.mode)
     return createCalculatorPortableRequest(scenario, request.versionContext);
+  if (request.executionIntent.kind === 'calculator') {
+    if (
+      scenario.mode === 'resolved' &&
+      request.scenario.mode === 'resolved' &&
+      scenario.initialOvercharge === request.scenario.initialOvercharge
+    )
+      return portableCalculationRequestSchema.parse({ ...request, scenario });
+    return createCalculatorPortableRequest(scenario, request.versionContext);
+  }
   return portableCalculationRequestSchema.parse({ ...request, scenario });
 }
 
@@ -245,21 +254,18 @@ export function attemptPortableCalculationScenarioChange(
 
 export function resetPortableCalculationRequest(
   request: PortableCalculationRequest,
-  master: MasterDataSnapshot,
-  build: ServantBuild | undefined,
-  servant: ServantMaster,
 ): PortableCalculationRequest {
-  return createCalculatorPortableRequest(
-    createDefaultCalculatorScenario(master, build, servant),
-    currentCalculationVersionContext(master),
-  );
+  if (request.scenario.mode !== 'resolved') throw new TypeError('resolved_scenario_required');
+  return portableCalculationRequestSchema.parse({
+    ...request,
+    executionIntent: { kind: 'calculator', initialNpGauge: 10_000 },
+  });
 }
 
 export function attemptPortableCalculationReset(
   retainedRequest: PortableCalculationRequest,
   retainedResult: CalculationResult,
   master: MasterDataSnapshot,
-  servantBuilds: Readonly<Record<string, ServantBuild>>,
 ): PortableCalculationAttemptResult {
   const retainedScenario = retainedRequest.scenario;
   const retainedAttackerId =
@@ -284,12 +290,7 @@ export function attemptPortableCalculationReset(
     };
   let attemptedRequest: PortableCalculationRequest;
   try {
-    attemptedRequest = resetPortableCalculationRequest(
-      retainedRequest,
-      master,
-      servantBuilds[servant.id],
-      servant,
-    );
+    attemptedRequest = resetPortableCalculationRequest(retainedRequest);
   } catch (cause) {
     return {
       status: 'rejected',
@@ -396,7 +397,14 @@ export function executePortableCalculation(
     const versions = resultVersions(request);
     const preparation =
       request.executionIntent.kind !== 'manual'
-        ? { initialNpGauge: request.executionIntent.initialNpGauge }
+        ? {
+            initialNpGauge: request.executionIntent.initialNpGauge,
+            ...(request.executionIntent.kind === 'calculator'
+              ? {
+                  initialOvercharge: (request.executionIntent.initialNpGauge / 10_000) as 1 | 2 | 3,
+                }
+              : {}),
+          }
         : undefined;
     const executable = prepareCalculationScenarioWithPolicy(
       request.scenario,

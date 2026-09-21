@@ -310,6 +310,8 @@ export type ScenarioPreparationOutcome =
 
 export interface CalculationPreparationOptions {
   initialNpGauge?: number;
+  /** Effective starting OC selected by the execution intent. */
+  initialOvercharge?: 1 | 2 | 3 | 4 | 5;
   /** Internal witness selected from the user's phase intent; never persisted. */
   initialBattlePointPoints?: Readonly<Record<string, number>>;
 }
@@ -455,6 +457,9 @@ export function resolveScenarioPreparationOutcome(
     {
       master,
       policy,
+      ...(preparation.initialOvercharge === undefined
+        ? {}
+        : { initialOvercharge: preparation.initialOvercharge }),
       initialMaximumHp: initialHp.maximum,
       ...(preparation.initialBattlePointPoints
         ? { initialBattlePointPoints: preparation.initialBattlePointPoints }

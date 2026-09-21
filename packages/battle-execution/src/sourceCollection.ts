@@ -94,6 +94,7 @@ export function resolveAttackerFormExecution(
   options: {
     master?: MasterDataSnapshot;
     initialMaximumHp?: number;
+    initialOvercharge?: 1 | 2 | 3 | 4 | 5;
     policy?: PreparationExecutionContext['policy'];
     initialBattlePointPoints?: Readonly<Record<string, number>>;
   } = {},
@@ -181,7 +182,7 @@ export function resolveAttackerFormExecution(
     resourceSemantics,
     npLevel: scenario.attacker.npLevel as PreparationExecutionContext['npLevel'],
     initialGauge,
-    overcharge: scenario.initialOvercharge,
+    overcharge: options.initialOvercharge ?? scenario.initialOvercharge,
     canonicalInputValues: Object.fromEntries(
       Object.entries(scenario.canonicalInputValues).map(([key, value]) => [key, value.value]),
     ),

@@ -13,6 +13,14 @@ import type { UpdateActiveProfile } from './portableDraft';
 const master = masterSnapshotSchema.parse(fixture);
 const sessionId = '00000000-0000-4000-8000-000000000046';
 
+function calculationMutation() {
+  let current = 0;
+  return {
+    begin: () => ++current,
+    isCurrent: (token: number) => token === current,
+  };
+}
+
 function calculatedRankingDetail() {
   const ranking = calculateRankingPolicy(
     master,
@@ -57,6 +65,7 @@ describe('ranking handoff', () => {
     const setCalculationSessionId = vi.fn();
     const updateActiveProfile = vi.fn();
     const replaceRoute = vi.fn();
+    const mutation = calculationMutation();
     const randomUUID = vi.spyOn(crypto, 'randomUUID').mockReturnValue(sessionId);
 
     const outcome = await handoffRankingCalculation({
@@ -66,6 +75,7 @@ describe('ranking handoff', () => {
       setCalculationSessionId,
       updateActiveProfile,
       replaceRoute,
+      calculationMutation: mutation,
     });
 
     expect(outcome).toMatchObject({
@@ -96,6 +106,7 @@ describe('ranking handoff', () => {
     const setCalculation = vi.fn(() => events.push('workspace'));
     const setCalculationSessionId = vi.fn(() => events.push('session'));
     const replaceRoute = vi.fn(() => events.push('route'));
+    const mutation = calculationMutation();
     vi.spyOn(crypto, 'randomUUID').mockReturnValue(sessionId);
 
     const outcome = await handoffRankingCalculation({
@@ -105,6 +116,7 @@ describe('ranking handoff', () => {
       setCalculationSessionId,
       updateActiveProfile,
       replaceRoute,
+      calculationMutation: mutation,
     });
 
     expect(outcome.status).toBe('executed');
@@ -129,6 +141,7 @@ describe('ranking handoff', () => {
     const setCalculation = vi.fn();
     const setCalculationSessionId = vi.fn();
     const replaceRoute = vi.fn();
+    const mutation = calculationMutation();
     vi.spyOn(crypto, 'randomUUID').mockReturnValue(sessionId);
 
     await expect(
@@ -139,6 +152,7 @@ describe('ranking handoff', () => {
         setCalculationSessionId,
         updateActiveProfile,
         replaceRoute,
+        calculationMutation: mutation,
       }),
     ).rejects.toThrow('durable-write-failed');
 

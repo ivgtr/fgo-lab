@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.24"
+document_version: "1.7.25"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-21"
@@ -67,8 +67,8 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.47 | Contribution decision UI cleanup | done | TSK-06.46 | logical effect presentation／per-contribution decisions |
 | TSK-06.48 | Package semantic complexity convergence | done | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | done | TSK-06.47 | final candidate／maximum／legacy-removal proof |
-| TSK-07 | Web／worker一括切替 | in_progress | TSK-06.5 | ranking UI／handoff／cache |
-| TSK-08 | Production audit最終収束とfailure diagnostics | blocked | TSK-07 | test strategy T3/T4／ranking test gate |
+| TSK-07 | Web／worker一括切替 | done | TSK-06.5 | ranking UI／handoff／cache |
+| TSK-08 | Production audit最終収束とfailure diagnostics | ready | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
@@ -1119,9 +1119,10 @@ Done gate:
 - schema 33 manualはcurrent manual、calculatorはcurrent calculator intentへ決定的に移行し、rankingはmatching resultだけ
   historical-only、不正／混成はrejectまたはsnapshot破棄する。
   どのoriginでもscenario／world／damageから欠落したranking condition policyを推測しない。
-- calculator intentはranking policyを流用せず、scenarioで成立した寄与を通常評価する。
-  resetはapplication baseline constructorでranking由来world facts／inputs／stochastic／actions／choice／evidenceを
-  除去し、scenario、開始NP、intent、result、fingerprintを一transactionで置換する。
+- calculator intentはranking policyを流用せず、保持したscenarioで成立した寄与を通常評価する。
+  resetは同じscenario／version contextを保持したまま、execution intentだけを`calculator + initialNpGauge 10000 + standard`へ
+  置換し、request、result、fingerprint、durable draftを一transactionで公開する。target／field facts、canonical inputs、
+  stochastic facts、ordered actions／choice、effect decisionsは削除せず、ranking policy／intentをhidden stateとして残さない。
 - normal modifier loop、NP damage内部倍率、state-derived reader、without-area projection、portable
   recompilation、invalid／unsupported recoveryの全pathでstate-by-path matrixの`Blocking`が0件になる。
 - current schemaのdirect reader／writer、draft／history／share／backup、reset command、minimal Web handoffに旧intent、
@@ -2186,14 +2187,14 @@ Depends on: TSK-06.5
 - [x] worker protocol、URL、cache key、detail evidenceを同じcontractへ切り替える。
 - [x] 旧special attack／field入力、reader、fallbackを削除する。
 - [x] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
-- [ ] TSK-06.42の比較条件とTSK-06.44の初期OC追加によるv0.10.2の7入力を前提にnotice、cache lifetime、
+- [x] TSK-06.42の比較条件とTSK-06.44の初期OC追加によるv0.10.2の7入力を前提にnotice、cache lifetime、
       stale response rejection、responsive／a11yを再検証する。旧5-field fingerprintを互換pathとして残さない。
 - [x] TSK-06.41でVerifiedとなったselected ranking → calculator immediate handoffを前提に、二軸noticeと
       result／effect parityのUI表示を再検証する。
-- [x] calculatorの「通常の計算条件へ戻す」が開始NP、自己バフpolicy、条件効果policyを同時に通常値へ戻し、
-      target／field facts、conditional inputs、stochastic outcome、ordered actions／choice、candidate evidenceも
-      application baseline constructorのfield-by-field dispositionどおり除去し、hidden ranking stateを残さないことを
-      再検証する。
+- [x] calculatorの「通常の計算条件へ戻す」が同じscenario／version contextを保持し、execution intentだけを
+      `calculator + initialNpGauge 10000 + standard`へ置換することを再検証する。target／field facts、canonical inputs、
+      stochastic facts、ordered actions／choiceなどscenarioの状態は保持し、ranking policy／intentはrequestのhidden stateへ
+      残さない。
 - [x] 二軸intentを含むfingerprintでsummary／detail cacheとstale response rejectionを閉じ、worker detail 0件、
       React active detail最大1件を実装・検証する。
 - [x] Webの順位外表示を5 outcome classへ切り替え、`inputRequired`、`unsupported`、`invalid`、
@@ -2204,10 +2205,10 @@ Done gate:
 
 - 新旧policy、URL、worker protocolをruntimeで併存させていない。
 - selected candidateの二軸版付きWeb handoff／immediate parityをcurrent schemaで回帰させず、noticeが両軸を表示する。
-- ranking由来noticeが両policy軸を表示し、通常条件resetがbaseline scenario、開始NP、origin、両軸、result、
+- ranking由来noticeが両policy軸を表示し、通常条件resetが同じscenario／version contextのままexecution intent、result、
   fingerprintをatomicに置換する。
-- true normal reset後にranking由来world facts／inputs／stochastic／actions／choiceがscenarioへ残らず、result／
-  fingerprint／cacheが新baseline identityへ切り替わる。
+- true normal reset後にscenarioのworld facts／inputs／stochastic／actions／choiceが保持され、ranking policy／intentだけが
+  requestから除去される。result／fingerprintはcalculator identityへ切り替わる。
 - `inputRequired`／`unsupported`／`invalid`／`unavailableUnderPolicy`が別表示され、numeric fallback rowが0件である。
 - worker summaryはevidence-free、worker detail cacheは0、React detailは最大1件である。
 - desktop、390px、320pxでoverflowがない。
@@ -2264,22 +2265,22 @@ Handoff:
   33/33、typecheck、対象lint／format、E2E-050 2/2、hot-path 3サンプル（中央値5,779.623ms、rows 433、exclusions 0）を
   通過した。最終`pnpm quality`もunit 885／production 144／Playwright 29、retry 0、warnings 0、unexpected console 0、
   artifact `.test-results/2026-09-20T18-30-46-341Z-15-f4fdde`で成功した。machine-readable結果は[TSK-07 cache closure](../evidence/tsk-07-cache-closure.json)、flow deltaは
-  [ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ記録する。TSK-07は`in_progress`のまま、
-  TSK-06.5／06.47／06.48は`done`を維持する。上記はRK-CACHE-001完了時点のhandoffであり、今回のnotice／normal
+  [ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ記録した。これはRK-CACHE-001完了時点の
+  historical handoffであり、最終統合closureでTSK-07は`done`へ更新した。上記のnotice／normal
   reset bounded unitの差分は次のhandoffへ記録する。five-outcome全画面表示、responsive／a11y全体、TSK-08は未達である。
 
 - Current bounded-unit handoff (2026-09-21): 二軸ranking noticeとcalculator handoff parityを現行schemaで再検証し、
   `CalculationContextNotice`は開始NP、`selfBuffs`、`conditionalEffects`、versionを表示する。明示的normal resetは
-  application baseline constructorをexecute-before-publishで呼び、calculator intent／開始NP100%／新fingerprintへ
-  atomicに切り替える。target／field facts、canonical inputs、activation／stochastic facts、ordered choice/actions、
-  ranking-origin effect decisions、candidate evidence、ranking policyを新requestへ持ち込まず、baseline-owned default
-  decisionsはconstructorで再構築する。reset失敗時は旧request／result／
+  retained scenario executorをexecute-before-publishで呼び、calculator intent／開始NP100%／新fingerprintへ
+  atomicに切り替える。同じscenario／version contextを保持し、target／field facts、canonical inputs、activation／stochastic facts、
+  ordered choice/actions、effect decisions、candidate evidenceはscenarioに残したまま、ranking policy／intentだけをrequestから除去する。
+  reset失敗時は旧request／result／
   fingerprintを保持し、typed errorをnoticeへ表示する。CalculatorRouteのmutation identityで古い非同期commitの
   workspace再公開を拒否し、成功時はresult focusへ戻す。RK-CACHE-001のworker summary 1件／detail 0件／React detail
   1件とrequest／fingerprint／entry stale rejectionは維持する。focused 42 tests、typecheck、対象lint／format、
   E2E-050／E2E-051（各2/2）を通過した。machine-readable結果は[TSK-07 notice/reset closure](../evidence/tsk-07-notice-reset-closure.json)、
-  flow deltaは[ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ追記する。TSK-07は`in_progress`、
-  TSK-06.5／06.47／06.48は`done`のまま、commitは作成しない。次のbounded unitは5 outcome表示／recoveryであり、
+  flow deltaは[ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ追記した。これは統合前の
+  historical handoffであり、TSK-06.5／06.47／06.48は`done`のまま、commitは作成していない。次のbounded unitは5 outcome表示／recoveryであり、
   full `pnpm quality`は`.test-results/2026-09-20T19-18-55-246Z-73-bbda97`でunit 886／production 144／Playwright 29、
   retry 0、warnings 0、unexpected console 0として通過した。responsive／a11y全体、TSK-08は未達である。
 
@@ -2292,7 +2293,7 @@ Handoff:
   focused 37 tests、typecheck、対象lint／formatを通過し、machine-readable結果は[TSK-07 outcome closure](../evidence/tsk-07-outcome-closure.json)、
   flow deltaは[ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ追記する。production candidate inventory、
   support status、数値output、calculator／ranking／portable parity、fingerprintは不変条件を満たして再利用する。
-  TSK-07は`in_progress`、TSK-06.5／06.47／06.48は`done`、TSK-08は未開始、commitは作成しない。全responsive／a11y closureと
+  これは統合前のhistorical handoffであり、TSK-06.5／06.47／06.48は`done`、TSK-08は未開始、commitは作成していない。全responsive／a11y closureと
   最終`pnpm quality`はTSK-07統合closureで実行する。
 
 - Current bounded-unit handoff (2026-09-21): desktop、390px、320pxのranking row／expanded detail／順位外exclusion／required
@@ -2308,8 +2309,25 @@ Handoff:
   direct consumer 55 tests、typecheck、対象lint／format、E2E-050 2/2、E2E-051 2/2、E2E-014／015／016 4/4、E2E-002 2/2
   （overview／expanded detail axe serious／critical）を通過した。`pnpm test:docs`と最終`pnpm quality`は通過し、最終quality artifactは
   `.test-results/2026-09-21T03-55-07-915Z-15-120d12`、unit 890／production 144／Playwright 29、retry 0、warnings 0、unexpected console 0
-  である。TSK-06.5／06.47／06.48は`done`、TSK-07は`in_progress`、TSK-08は開始しない。性能診断、
+  である。これは統合前のhistorical handoffであり、TSK-06.5／06.47／06.48は`done`、TSK-08は開始していない。性能診断、
   candidate削減ratchet、固定wall-clock目標、timeout緩和はUI-onlyのため設定しない。
+
+- Final integrated closure (2026-09-21): portable reset now preserves the retained scenario and version context and
+  changes only execution intent to `calculator + initialNpGauge 10000 + standard`; the calculator execution boundary
+  derives effective OC1 from that intent while the scenario remains unchanged. Reset, scenario edit, current history copy,
+  historical regeneration, version upgrade, ranking handoff, finalizer, navigation, undo, and profile import all share the
+  App-owned calculation mutation gate. A stale fingerprint or durable-write completion is rejected before workspace/session/
+  route publication, and the durable profile queue publishes request/result/fingerprint/draft as one replacement. The
+  focused reset fixture verifies scenario/version retention and failure retention; four stale-publication order cases cover
+  scenario edit, reset, current history copy, and historical regeneration. Changed source/test paths are
+  `packages/schema/src/index.ts`, `packages/calculation-application/src/{portableCalculation.ts,scenario.ts}`,
+  `packages/battle-execution/src/sourceCollection.ts`, `apps/web/src/app/{App.tsx,CalculatorRoute.tsx,RankingRoute.tsx,
+  rankingHandoff.ts,portableDraft.ts}`, `apps/web/src/features/calculator/Calculator.tsx`, and their focused/E2E tests.
+  Focused tests (34), E2E-050 (2/2), E2E-051 (2/2), typecheck, targeted lint/format, and `pnpm test:docs` passed.
+  Final `pnpm quality` passed with unit 895, production 144, Playwright 29, retry 0, warnings 0, unexpected console 0;
+  artifact `.test-results/2026-09-21T05-40-21-470Z-15-a881eb`. Production inventory, candidate count, support status,
+  calculator/ranking/portable parity, fingerprint contract, cache cardinality, and worker stale gates remain unchanged.
+  TSK-07 is `done`; TSK-08 is `ready`; no commit was created.
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

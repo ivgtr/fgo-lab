@@ -9,7 +9,7 @@
       "TSK-06.5": "done",
       "TSK-06.47": "done",
       "TSK-06.48": "done",
-      "TSK-07": "blocked"
+      "TSK-07": "historical dependency checkpoint"
     },
     "taskSource": "docs/tasks/development-redesign-tasks.md",
     "historicalEvidence": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
@@ -156,20 +156,22 @@
     "tsk06_5": "canonical production inventory, candidate inventory, support status, 80-condition matrix, calculator/ranking/portable parity, and legacy scan",
     "historicalTsk07": "five-field cutover and historical response ordering only; historical evidence does not prove bounded cache value"
   },
-  "unresolved": [
+  "historicalUnresolvedAtCheckpoint": [
     "TSK-07 notice and five-outcome presentation",
     "TSK-07 normal-condition reset interaction",
     "TSK-07 responsive and accessibility closure beyond E2E-050",
     "TSK-08 production audit"
   ],
+  "unresolved": [],
   "statusInvariants": {
     "TSK-06.5": "done",
     "TSK-06.47": "done",
     "TSK-06.48": "done",
-    "TSK-07": "in_progress",
+    "TSK-07": "done",
+    "TSK-08": "ready",
     "head": "597d7791f1c2bf0b7facf13af09141a7e18fa66f",
     "newCommit": false
   },
-  "nextBoundedUnit": "TSK-07 notice and normal-condition reset interaction",
+  "nextBoundedUnit": "TSK-08 production audit",
   "stopCondition": "Stop after RK-CACHE-001 evidence and required focused/direct-consumer checks are recorded; reopen TSK-06.41 or TSK-06.5 if canonical fingerprint, support status, candidate inventory, production output, or parity changes."
 }

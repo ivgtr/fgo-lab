@@ -109,6 +109,11 @@ async function setup(
     } as CalculationWorkspace,
   };
   let finalizer: (() => Promise<void>) | null = null;
+  let mutation = 0;
+  const calculationMutation = {
+    begin: () => ++mutation,
+    isCurrent: (token: number) => token === mutation,
+  };
   function Harness() {
     const [profile, setProfile] = useState(initialProfile);
     const [session, setSession] = useState(sessionA);
@@ -134,6 +139,7 @@ async function setup(
         }}
         recoveryFocus={null}
         setRecoveryFocus={() => {}}
+        calculationMutation={calculationMutation}
       />
     );
   }

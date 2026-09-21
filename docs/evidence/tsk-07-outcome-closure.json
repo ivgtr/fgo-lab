@@ -9,7 +9,7 @@
       "TSK-06.5": "done",
       "TSK-06.47": "done",
       "TSK-06.48": "done",
-      "TSK-07": "in_progress"
+      "TSK-07": "historical pre-closure baseline"
     },
     "taskSource": "docs/tasks/development-redesign-tasks.md",
     "historicalFlow": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
@@ -124,8 +124,16 @@
       "status": "passed"
     },
     "quality": {
-      "status": "deferred to final TSK-07 integrated closure",
-      "reason": "candidate generation, production matrix, damage semantics, cache cardinality, and hot path are unchanged; final closure remains required"
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 895,
+      "production": 144,
+      "playwright": 29,
+      "retries": 0,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "durationSeconds": 320.38,
+      "artifact": ".test-results/2026-09-21T05-40-21-470Z-15-a881eb"
     }
   },
   "reusedEvidence": {
@@ -134,20 +142,16 @@
     "rkCache001": "summary/detail cache cardinality and request/context/fingerprint/entry stale rejection",
     "noticeReset": "two-axis notice, normal reset transaction, durable publication, and mutation stale rejection"
   },
-  "unresolved": [
-    "final responsive and accessibility closure beyond the focused outcome path",
-    "final TSK-07 integrated pnpm quality gate",
-    "TSK-08 production audit"
-  ],
+  "unresolved": [],
   "statusInvariants": {
     "TSK-06.5": "done",
     "TSK-06.47": "done",
     "TSK-06.48": "done",
-    "TSK-07": "in_progress",
-    "TSK-08": "not_started",
+    "TSK-07": "done",
+    "TSK-08": "ready",
     "head": "3ec65cd26c85ddb56490362cff7fe6a72b59fbec",
     "newCommit": false
   },
-  "nextBoundedUnit": "TSK-07 final responsive/accessibility and integrated quality closure",
+  "nextBoundedUnit": "TSK-08 production audit",
   "stopCondition": "Stop this unit after final focused/direct-consumer, E2E, typecheck/lint/format/docs, and evidence consistency checks; reopen TSK-06.41 or TSK-06.5 if fingerprint, support status, candidate inventory, production output, or parity changes."
 }

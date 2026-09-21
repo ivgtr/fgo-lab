@@ -6,7 +6,7 @@ import type { LocalProfile } from '@fgo-lab/schema';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { Ranking } from '../features/ranking/Ranking';
 import type { CalculationWorkspace, Page } from './App';
-import type { UpdateActiveProfile } from './portableDraft';
+import type { CalculationMutationGate, UpdateActiveProfile } from './portableDraft';
 
 export function RankingRoute({
   master,
@@ -15,6 +15,7 @@ export function RankingRoute({
   setCalculationSessionId,
   updateActiveProfile,
   replaceRoute,
+  calculationMutation,
 }: {
   master: MasterDataSnapshot;
   profile: LocalProfile;
@@ -22,6 +23,7 @@ export function RankingRoute({
   setCalculationSessionId: Dispatch<SetStateAction<string>>;
   updateActiveProfile: UpdateActiveProfile;
   replaceRoute: (page: Page) => void;
+  calculationMutation: CalculationMutationGate;
 }) {
   return (
     <Ranking
@@ -38,6 +40,7 @@ export function RankingRoute({
         masterDataLocale: 'ja-JP',
       }}
       onOpenCalculator={(detail) => {
+        const mutationToken = calculationMutation.begin();
         void import('./rankingHandoff').then(({ handoffRankingCalculation }) =>
           handoffRankingCalculation({
             detail,
@@ -46,10 +49,13 @@ export function RankingRoute({
             setCalculationSessionId,
             updateActiveProfile,
             replaceRoute,
+            calculationMutation,
+            mutationToken,
           }),
         );
       }}
       onOpenCalculatorForAttackProfile={(target) => {
+        const mutationToken = calculationMutation.begin();
         void import('./rankingHandoff').then(({ handoffRankingAttackProfileCalculation }) =>
           handoffRankingAttackProfileCalculation({
             ...target,
@@ -59,6 +65,8 @@ export function RankingRoute({
             setCalculationSessionId,
             updateActiveProfile,
             replaceRoute,
+            calculationMutation,
+            mutationToken,
           }),
         );
       }}

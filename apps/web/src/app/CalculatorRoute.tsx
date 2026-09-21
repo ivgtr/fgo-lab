@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
@@ -36,6 +36,7 @@ import type { CalculationWorkspace } from './App';
 import {
   commitPortableDraft as commitPortableDraftRecord,
   startPortableDraft,
+  type CalculationMutationGate,
   type UpdateActiveProfile,
 } from './portableDraft';
 
@@ -54,6 +55,7 @@ interface CalculatorRouteProps {
   registerFinalizer: (finalizer: (() => Promise<void>) | null) => void;
   recoveryFocus: 'result' | 'error' | null;
   setRecoveryFocus: Dispatch<SetStateAction<'result' | 'error' | null>>;
+  calculationMutation: CalculationMutationGate;
 }
 
 function supportDecisionKeys(effects: readonly EffectProjection[]) {
@@ -90,6 +92,7 @@ export function CalculatorRoute({
   registerFinalizer,
   recoveryFocus,
   setRecoveryFocus,
+  calculationMutation,
 }: CalculatorRouteProps) {
   const defaultServant = master.servants[0]!;
   const defaultBuild = profile.servantBuilds[defaultServant.id];
@@ -97,7 +100,6 @@ export function CalculatorRoute({
     calculation.request ??
     createDefaultCalculatorPortableRequest(master, defaultBuild, defaultServant);
   const currentScenario = currentRequest.scenario;
-  const calculationMutationRef = useRef(0);
   const [resetPending, setResetPending] = useState(false);
   const [resetError, setResetError] = useState('');
   const portableOutcome = calculation.storedResult
@@ -118,32 +120,30 @@ export function CalculatorRoute({
       : resolvedCalculation?.result;
 
   function beginCalculationMutation() {
-    calculationMutationRef.current += 1;
+    const token = calculationMutation.begin();
     setResetPending(false);
     setResetError('');
-    return calculationMutationRef.current;
-  }
-
-  function isCurrentCalculationMutation(token: number) {
-    return calculationMutationRef.current === token;
+    return token;
   }
 
   async function commitPortableDraft(
     request: PortableCalculationRequest,
     nextResult: CalculationResult,
     sessionId = calculationSessionId,
-    mutationToken = calculationMutationRef.current,
+    mutationToken = calculationMutation.begin(),
   ) {
-    await commitPortableDraftRecord({
+    return commitPortableDraftRecord({
       request,
       result: nextResult,
       sessionId,
+      mutationToken,
+      isCurrent: calculationMutation.isCurrent,
       updateActiveProfile: (update) =>
-        isCurrentCalculationMutation(mutationToken)
+        calculationMutation.isCurrent(mutationToken)
           ? updateActiveProfile(update)
           : Promise.resolve(),
       setCalculation: (next) => {
-        if (isCurrentCalculationMutation(mutationToken)) setCalculation(next);
+        if (calculationMutation.isCurrent(mutationToken)) setCalculation(next);
       },
     });
   }
@@ -167,20 +167,15 @@ export function CalculatorRoute({
     const retainedResult = calculation.storedResult ?? result;
     try {
       if (!retainedResult) {
-        if (isCurrentCalculationMutation(mutationToken)) {
+        if (calculationMutation.isCurrent(mutationToken)) {
           setResetError('計算結果がないため通常条件へ戻せません');
           setRecoveryFocus('error');
         }
         return;
       }
-      const attempt = attemptPortableCalculationReset(
-        currentRequest,
-        retainedResult,
-        master,
-        profile.servantBuilds,
-      );
+      const attempt = attemptPortableCalculationReset(currentRequest, retainedResult, master);
       if (attempt.status !== 'committed') {
-        if (isCurrentCalculationMutation(mutationToken)) {
+        if (calculationMutation.isCurrent(mutationToken)) {
           setResetError(
             attempt.failure.status === 'invalid'
               ? [attempt.failure.reason, attempt.failure.detail].filter(Boolean).join(': ')
@@ -190,37 +185,39 @@ export function CalculatorRoute({
         }
         return;
       }
-      await commitPortableDraft(
+      const committed = await commitPortableDraft(
         attempt.request,
         attempt.result,
         calculationSessionId,
         mutationToken,
       );
-      if (isCurrentCalculationMutation(mutationToken)) setRecoveryFocus('result');
+      if (committed && calculationMutation.isCurrent(mutationToken)) setRecoveryFocus('result');
     } catch (cause) {
-      if (isCurrentCalculationMutation(mutationToken)) {
+      if (calculationMutation.isCurrent(mutationToken)) {
         setResetError(cause instanceof Error ? cause.message : String(cause));
         setRecoveryFocus('error');
       }
     } finally {
-      if (isCurrentCalculationMutation(mutationToken)) setResetPending(false);
+      if (calculationMutation.isCurrent(mutationToken)) setResetPending(false);
     }
   }
 
   async function regenerateHistory(
     entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
   ) {
+    const mutationToken = beginCalculationMutation();
     const request = regenerateHistoricalCalculatorRequest(entry, master, profile.servantBuilds);
     if (!request) return;
     const outcome = executePortableCalculation(request, master);
     if (outcome.status !== 'executed' && outcome.status !== 'unsupported') return;
-    await startHistoryDraft(request, outcome.execution.result, 'draft');
+    await startHistoryDraft(request, outcome.execution.result, 'draft', mutationToken);
   }
 
   async function startHistoryDraft(
     request: PortableCalculationRequest,
     result: CalculationResult,
     source: 'draft' | 'history',
+    mutationToken = beginCalculationMutation(),
   ) {
     await startPortableDraft({
       request,
@@ -229,6 +226,8 @@ export function CalculatorRoute({
       setCalculation,
       setCalculationSessionId,
       updateActiveProfile,
+      mutationToken,
+      isCurrent: calculationMutation.isCurrent,
     });
   }
 
@@ -237,21 +236,25 @@ export function CalculatorRoute({
   }
 
   async function finalizeCurrentCalculation() {
+    const mutationToken = beginCalculationMutation();
     if (!result) return;
     const fingerprint = await portableCalculationFingerprint(
       currentRequest,
       async (data: Uint8Array) => crypto.subtle.digest('SHA-256', new Uint8Array(data)),
     );
     const now = new Date().toISOString();
+    if (!calculationMutation.isCurrent(mutationToken)) return;
     await updateActiveProfile((current) =>
-      finalizeHistory(current, {
-        sessionId: calculationSessionId,
-        request: currentRequest,
-        result,
-        fingerprint,
-        now,
-        historyId: crypto.randomUUID(),
-      }),
+      calculationMutation.isCurrent(mutationToken)
+        ? finalizeHistory(current, {
+            sessionId: calculationSessionId,
+            request: currentRequest,
+            result,
+            fingerprint,
+            now,
+            historyId: crypto.randomUUID(),
+          })
+        : current,
     );
   }
 
@@ -287,6 +290,7 @@ export function CalculatorRoute({
           result={portableOutcome.result}
           {...(calculation.upgradeAttempt ? { upgradeAttempt: calculation.upgradeAttempt } : {})}
           onUpgrade={async () => {
+            const mutationToken = beginCalculationMutation();
             const attempt = attemptPortableCalculationVersionUpgrade(
               currentRequest,
               portableOutcome.result,
@@ -294,12 +298,20 @@ export function CalculatorRoute({
               master,
             );
             if (attempt.status === 'committed') {
-              await commitPortableDraft(attempt.request, attempt.result);
-              setRecoveryFocus('result');
+              const committed = await commitPortableDraft(
+                attempt.request,
+                attempt.result,
+                calculationSessionId,
+                mutationToken,
+              );
+              if (committed && calculationMutation.isCurrent(mutationToken))
+                setRecoveryFocus('result');
               return;
             }
-            setCalculation((current) => ({ ...current, upgradeAttempt: attempt }));
-            setRecoveryFocus('error');
+            if (calculationMutation.isCurrent(mutationToken)) {
+              setCalculation((current) => ({ ...current, upgradeAttempt: attempt }));
+              setRecoveryFocus('error');
+            }
           }}
         />
       )}

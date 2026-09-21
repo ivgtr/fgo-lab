@@ -254,7 +254,7 @@ it('connects attack buff counts through selected variants, NP/OC, portable recov
           if (invalidAttempt.status !== 'rejected') throw new Error('malformed count');
           expect(invalidAttempt.retainedRequest).toBe(request);
           expect(invalidAttempt.retainedResult).toBe(replay.result);
-          const reset = resetPortableCalculationRequest(request, master, undefined, actor);
+          const reset = resetPortableCalculationRequest(request);
           const resetResult = executePortableCalculation(reset, master);
           expect(resetResult.status).toBe('executed');
         }
@@ -372,10 +372,7 @@ it('accepts all seven population-count profiles through calculator, four ranking
           );
           expect(retry).toMatchObject({ status: 'committed', result: { status: 'calculated' } });
           expect(
-            executePortableCalculation(
-              resetPortableCalculationRequest(request, master, undefined, actor),
-              master,
-            ).status,
+            executePortableCalculation(resetPortableCalculationRequest(request), master).status,
           ).toBe('executed');
         }
       }
