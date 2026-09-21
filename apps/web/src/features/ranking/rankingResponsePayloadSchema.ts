@@ -70,6 +70,22 @@ const attackMetadata = {
   npCard: card,
   npTarget: target,
 };
+const requiredInputResponseSchema = z.object({
+  key: z.string().min(1),
+  owner: z.enum(['attacker', 'target', 'field', 'party', 'source']),
+  label: z.string().min(1),
+  description: z.string().min(1),
+  minimum: z.number().int(),
+  maximum: z.number().int(),
+  step: z.number().int().positive(),
+  effectOccurrenceIds: z.array(z.string().min(1)).min(1),
+});
+const rankingExclusionRecoverySchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('openCalculator') }),
+  z.object({ kind: z.literal('resetRankingConditions') }),
+  z.object({ kind: z.literal('reload') }),
+  z.object({ kind: z.literal('none') }),
+]);
 export const rankingRowResponseSchema: z.ZodType<RankingRowSummary> = z.object({
   ...attackMetadata,
   name: z.string(),
@@ -92,8 +108,11 @@ export const rankingExclusionResponseSchema: z.ZodType<RankingPolicyExclusion> =
   entryId: z.string(),
   servantId: z.string(),
   name: z.string(),
+  attackProfile: attackProfileSchema.nullable(),
   status: z.enum(['invalid', 'unsupported', 'inputRequired', 'unavailableUnderPolicy']),
   reason: z.string(),
+  requiredInputs: z.array(requiredInputResponseSchema),
+  recovery: rankingExclusionRecoverySchema,
   issues: calculationResultSchema.options[0].shape.issues,
 });
 const contributionPolicySchema = z.discriminatedUnion('kind', [

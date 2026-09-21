@@ -2,7 +2,7 @@ import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { describe, expect, it } from 'vitest';
 import fixture from '../../test-fixtures/master/fixture.json';
 import type { RankingPolicyDetail } from './rankingContracts';
-import { createRankingRow } from './rankingRows';
+import { createRankingPolicyExclusion, createRankingRow } from './rankingRows';
 
 describe('ranking row canonical contribution derivation', () => {
   it('counts distinct presentation groups, ignores NP base, and derives the badge from that set', () => {
@@ -62,5 +62,64 @@ describe('ranking row canonical contribution derivation', () => {
     });
     expect(row.appliedEffectCount).toBe(1);
     expect(row.specialDamageApplied).toBe(true);
+  });
+
+  it('keeps typed exclusion recovery and the exact AttackProfile out of numeric rows', () => {
+    const servant = masterSnapshotSchema.parse(fixture).servants[0]!;
+    const attackProfile = {
+      id: {
+        servantLineageId: servant.id,
+        terminalActorFormProfileId: {
+          servantLineageId: servant.id,
+          semantics: {
+            skillSlots: [],
+            passiveVariantIds: [],
+            intrinsicTraits: [],
+            baseNoblePhantasmVariantCanonicalId: 'fixture-np',
+            reachableAttackNoblePhantasmVariantCanonicalIds: ['fixture-np'],
+          },
+        },
+        attackNoblePhantasmVariantCanonicalId: 'fixture-np',
+      },
+      noblePhantasmVariant: {
+        actorFormId: { actorId: servant.id, limitCount: 0 },
+        noblePhantasmId: 'fixture-np',
+      },
+      noblePhantasmVariantCanonicalId: 'fixture-np',
+      targetScope: 'single' as const,
+      cardType: 'buster' as const,
+      terminalFormLabel: null,
+    };
+    const input = {
+      key: 'target.hp',
+      owner: 'target' as const,
+      label: '対象HP',
+      description: '対象の現在HP',
+      minimum: 1,
+      maximum: 100,
+      step: 1,
+      effectOccurrenceIds: ['effect:0'],
+    };
+    const inputRequired = createRankingPolicyExclusion(servant, 'entry:input', {
+      status: 'inputRequired',
+      attackProfile,
+      inputs: [input],
+      issues: [],
+      diagnostics: {} as never,
+    });
+    expect(inputRequired).toMatchObject({
+      attackProfile,
+      status: 'inputRequired',
+      requiredInputs: [input],
+      recovery: { kind: 'openCalculator' },
+    });
+
+    const invalid = createRankingPolicyExclusion(servant, 'entry:invalid', {
+      status: 'invalid',
+      attackProfile,
+      issues: [],
+      reason: 'invalidCalculation',
+    });
+    expect(invalid.recovery).toEqual({ kind: 'reload' });
   });
 });

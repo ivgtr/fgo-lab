@@ -14,13 +14,25 @@ import {
   type VersionContext,
 } from '@fgo-lab/schema';
 import type { RankingPolicyDetail } from './rankingContracts';
+import {
+  attackProfileForTerminalState,
+  attackProfileKey,
+  createStaticActorFormProfiles,
+  type AttackProfile,
+} from './attackProfile';
 import { compileRankingContributionPolicy } from './contributionPolicy';
 import {
+  createDefaultResolvedScenario,
   createDefaultCalculatorScenario,
+  excludeDefaultAttackerSkillContributions,
   evaluatePreparedCalculationScenario,
   prepareCalculationScenarioWithPolicy,
   type CalculationExecution,
 } from './scenario';
+import {
+  materializePreNoblePhantasmPlan,
+  planPreNoblePhantasmCandidates,
+} from './preNoblePhantasmPlanner';
 
 type PortableCalculationExecution = Exclude<CalculationExecution, { status: 'invalid' }>;
 
@@ -123,6 +135,47 @@ export function createDefaultCalculatorPortableRequest(
     createDefaultCalculatorScenario(master, build, servant),
     currentCalculationVersionContext(master),
   );
+}
+
+export function createCalculatorPortableRequestForAttackProfile(
+  master: MasterDataSnapshot,
+  build: ServantBuild | undefined,
+  servant: ServantMaster,
+  attackProfile: AttackProfile,
+): PortableCalculationRequest {
+  if (attackProfile.id.servantLineageId !== servant.id)
+    throw new TypeError('attack_profile_servant_mismatch');
+  const npLevel = Math.max(1, build?.npLevel ?? 1) as 1 | 2 | 3 | 4 | 5;
+  const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, npLevel, 1);
+  const profiles = createStaticActorFormProfiles(servant);
+  const targetKey = attackProfileKey(attackProfile);
+  const candidate = planned.candidates.find((item) => {
+    try {
+      return (
+        attackProfileKey(attackProfileForTerminalState(servant, profiles, item.terminalState)) ===
+        targetKey
+      );
+    } catch {
+      return false;
+    }
+  });
+  if (!candidate) throw new TypeError('attack_profile_not_reachable');
+  const base = createDefaultResolvedScenario(master, build, servant);
+  const scenario = excludeDefaultAttackerSkillContributions(
+    materializePreNoblePhantasmPlan(base, {
+      ...candidate,
+      commands: candidate.commands.map((command) =>
+        command.kind === 'useSkillSlot'
+          ? {
+              ...command,
+              skillLevel: build?.npLevel ? (build.skills[String(command.slot)] ?? 1) : 10,
+            }
+          : command,
+      ),
+    }),
+    master,
+  );
+  return createCalculatorPortableRequest(scenario, currentCalculationVersionContext(master));
 }
 
 export function createRankingPortableRequest(

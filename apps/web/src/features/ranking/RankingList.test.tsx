@@ -105,4 +105,47 @@ describe('ranking row detail state', () => {
     fireEvent.click(getByRole('button', { name: '再試行' }));
     expect(retry).toHaveBeenCalledWith(row);
   });
+
+  it('routes inputRequired detail to the same AttackProfile calculator and reloads invalid detail', () => {
+    const openCalculator = vi.fn();
+    const reload = vi.fn();
+    const { getByRole, rerender } = render(
+      <RankingList
+        rows={[row]}
+        openEntryId={row.entryId}
+        details={{}}
+        detailErrors={{
+          [row.entryId]: { status: 'inputRequired', reason: 'target.hp' },
+        }}
+        master={master}
+        onToggle={vi.fn()}
+        onRetryDetail={vi.fn()}
+        onOpenCalculator={vi.fn()}
+        onOpenCalculatorForAttackProfile={openCalculator}
+        onReload={reload}
+      />,
+    );
+    expect(getByRole('alert').textContent).toContain('追加の入力');
+    fireEvent.click(getByRole('button', { name: '通常の計算機を開く' }));
+    expect(openCalculator).toHaveBeenCalledWith({
+      servantId: row.servantId,
+      attackProfile: row.attackProfile,
+    });
+
+    rerender(
+      <RankingList
+        rows={[row]}
+        openEntryId={row.entryId}
+        details={{}}
+        detailErrors={{ [row.entryId]: { status: 'invalid', reason: 'invalidCalculation' } }}
+        master={master}
+        onToggle={vi.fn()}
+        onRetryDetail={vi.fn()}
+        onOpenCalculator={vi.fn()}
+        onReload={reload}
+      />,
+    );
+    fireEvent.click(getByRole('button', { name: 'ページを再読み込み' }));
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
 });

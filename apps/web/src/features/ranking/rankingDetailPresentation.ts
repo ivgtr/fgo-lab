@@ -1,4 +1,5 @@
 import type { EffectProjection, RankingPolicyDetail } from '@fgo-lab/calculation-application';
+import type { RankingExclusionRecovery } from '@fgo-lab/calculation-application';
 import { findActorForm, type MasterDataSnapshot } from '@fgo-lab/master-data';
 import { servantClassLabels } from '../../ui/servantFilterOptions';
 import { traitLabel } from '../calculator/traitPresentation';
@@ -91,6 +92,9 @@ export function rankingExclusionLabel(
     candidateExecutionUnsupported: '候補の実行意味論に未対応部分があります',
     unsupportedActionAdmission: '実行条件を判定できない候補があります',
     unexpectedRankingFailure: 'ランキング計算で予期しない失敗が発生しました',
+    staticPreparationInvalid: '準備手順の定義が不正です',
+    semanticDomainInvalid: '計算条件の意味領域が不正です',
+    invalidCalculation: '計算結果を検証できません',
   };
   if (reason && reasonLabels[reason]) return reasonLabels[reason];
   const labels: Record<typeof status, string> = {
@@ -100,6 +104,19 @@ export function rankingExclusionLabel(
     unsupported: '対応していない意味論が含まれます',
   };
   return labels[status];
+}
+
+export function rankingExclusionRecoveryLabel(recovery: RankingExclusionRecovery): string {
+  switch (recovery.kind) {
+    case 'openCalculator':
+      return '通常の計算機で入力を補う';
+    case 'resetRankingConditions':
+      return 'ランキング条件をリセット';
+    case 'reload':
+      return 'ページを再読み込み';
+    case 'none':
+      return '';
+  }
 }
 
 export function calculationIssueLabel(code: string): string {
@@ -114,7 +131,19 @@ export function warningLabel(_warning: string): string {
   return '計算上の警告があります';
 }
 
-export function detailErrorLabel(_reason: string): string {
+export function detailErrorLabel(
+  error:
+    | string
+    | {
+        status: 'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported' | 'failed';
+        reason: string;
+      },
+): string {
+  if (typeof error === 'string') return '詳細を読み込めませんでした';
+  if (error.status === 'inputRequired') return '同じ攻撃宝具に追加の入力が必要です';
+  if (error.status === 'unsupported') return 'この意味論は未対応のため詳細を表示できません';
+  if (error.status === 'unavailableUnderPolicy') return 'この条件では攻撃宝具へ到達できません';
+  if (error.status === 'invalid') return calculationIssueLabel(error.reason);
   return '詳細を読み込めませんでした';
 }
 

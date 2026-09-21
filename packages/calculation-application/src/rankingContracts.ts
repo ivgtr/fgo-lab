@@ -134,6 +134,12 @@ export type PolicyUnavailabilityReason =
 export type RankingBlockerClass =
   'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported';
 
+export type RankingExclusionRecovery =
+  | { kind: 'openCalculator' }
+  | { kind: 'resetRankingConditions' }
+  | { kind: 'reload' }
+  | { kind: 'none' };
+
 export interface RankingBlockerDiagnostics {
   classes: Record<
     RankingBlockerClass,
@@ -182,8 +188,11 @@ export interface RankingPolicyExclusion {
   entryId: string;
   servantId: string;
   name: string;
+  attackProfile: AttackProfile | null;
   status: 'unavailableUnderPolicy' | 'inputRequired' | 'invalid' | 'unsupported';
   reason: string;
+  requiredInputs: Extract<CalculationResult, { status: 'inputRequired' }>['requiredInputs'];
+  recovery: RankingExclusionRecovery;
   issues: CalculationResult['issues'];
 }
 

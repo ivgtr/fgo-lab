@@ -49,6 +49,19 @@ export function RankingRoute({
           }),
         );
       }}
+      onOpenCalculatorForAttackProfile={(target) => {
+        void import('./rankingHandoff').then(({ handoffRankingAttackProfileCalculation }) =>
+          handoffRankingAttackProfileCalculation({
+            ...target,
+            master,
+            profile: { servantBuilds: profile.servantBuilds },
+            setCalculation,
+            setCalculationSessionId,
+            updateActiveProfile,
+            replaceRoute,
+          }),
+        );
+      }}
     />
   );
 }

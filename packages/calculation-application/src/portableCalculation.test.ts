@@ -21,7 +21,14 @@ import {
   recoverPortableCalculation,
   resetPortableCalculationRequest,
   upgradePortableCalculationRequestVersion,
+  createCalculatorPortableRequestForAttackProfile,
 } from './portableCalculation';
+import {
+  attackProfileForTerminalState,
+  attackProfileKey,
+  createStaticActorFormProfiles,
+} from './attackProfile';
+import { planPreNoblePhantasmCandidates } from './preNoblePhantasmPlanner';
 import { createDefaultResolvedScenario } from './scenario';
 import { calculateRankingPolicy } from './rankingPolicyCalculation';
 import { DEFAULT_RANKING_POLICY_CONDITIONS, type RankingProfileInput } from './rankingContracts';
@@ -66,6 +73,45 @@ describe('portable calculation application owner', () => {
       kind: 'calculator',
       initialNpGauge: 10_000,
     });
+    expect(executePortableCalculation(request, master).status).toBe('executed');
+  });
+
+  it('constructs a normal calculator request for the selected AttackProfile', () => {
+    const ranking = calculateRankingPolicy(
+      master,
+      profile,
+      DEFAULT_RANKING_POLICY_CONDITIONS,
+      versions,
+    );
+    const selected = Object.values(ranking.profileResults).find(
+      (candidate) => candidate.status === 'calculated',
+    );
+    if (!selected) throw new Error('calculated profile missing');
+    const servant = master.servants.find(({ id }) => id === selected.detail.servantId);
+    if (!servant) throw new Error('servant missing');
+    const request = createCalculatorPortableRequestForAttackProfile(
+      master,
+      undefined,
+      servant,
+      selected.detail.attackProfile,
+    );
+    expect(request.executionIntent).toEqual({ kind: 'calculator', initialNpGauge: 10_000 });
+    if (request.scenario.mode !== 'resolved') throw new Error('resolved request required');
+    const planned = planPreNoblePhantasmCandidates(servant, master.npResourceSemantics, 1, 1);
+    const profiles = createStaticActorFormProfiles(servant);
+    const expected = planned.candidates.find((candidate) => {
+      try {
+        return (
+          attackProfileKey(
+            attackProfileForTerminalState(servant, profiles, candidate.terminalState),
+          ) === attackProfileKey(selected.detail.attackProfile)
+        );
+      } catch {
+        return false;
+      }
+    });
+    expect(expected).toBeDefined();
+    expect(request.scenario.preNoblePhantasmPlan).toEqual(expected?.commands);
     expect(executePortableCalculation(request, master).status).toBe('executed');
   });
 

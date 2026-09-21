@@ -260,3 +260,52 @@ bounded units still require the final TSK-07 integrated closure.
 
 This bounded unit is complete with TSK-07 still `in_progress`. The next bounded unit is the five typed
 outcome presentation and recovery interaction. TSK-08 remains blocked.
+
+## Current five-outcome presentation and recovery bounded closure (2026-09-21)
+
+This section records the bounded outcome unit only. The historical five-field cutover, RK-CACHE-001
+closure, and notice/normal-reset closure above remain unchanged. The machine-readable evidence is
+[TSK-07 outcome closure](tsk-07-outcome-closure.json).
+
+The application already owns the five-way profile result and the numeric boundary remains explicit:
+only `calculated` is passed to `createRankingRow`; `inputRequired`, `unsupported`, `invalid`, and
+`unavailableUnderPolicy` are retained as typed exclusions. `RankingPolicyExclusion` now carries the
+exact `AttackProfile`, required inputs, reason, and a typed recovery disposition. The worker summary
+and response schema carry those fields without scenario, effect, candidate, or detail evidence.
+
+`inputRequired` is the only exclusion with a recovery command. It resolves the same AttackProfile
+through the application preparation planner and constructs a normal calculator portable request with
+calculator intent. The command does not select a default form or another profile. `unsupported` and
+`unavailableUnderPolicy` display their distinct reason and have no input-change or numeric recovery.
+`invalid` maps its known cause to a ranking-condition reset or page reload; no invalid reason is
+silently converted to a retry or baseline damage. Detail errors preserve their typed status so the
+same command boundary also applies when detail materialization rejects a profile.
+
+| Path | Expected result | Evidence |
+| --- | --- | --- |
+| calculated profile | one numeric ranking row | `calculateRankingPolicy`, `rankingRows` focused fixture |
+| inputRequired exclusion | required input and same AttackProfile calculator command | `rankingRows` fixture, Ranking integration fixture, portable request fixture |
+| unsupported exclusion | reason shown; no command or numeric row | typed exclusion/recovery fixture |
+| invalid exclusion | reason plus cause-specific reset/reload only | typed recovery fixture |
+| unavailableUnderPolicy exclusion | policy reachability reason only | existing profile outcome owner plus typed exclusion fixture |
+| inputRequired detail error | same row AttackProfile calculator command | RankingList focused fixture |
+| invalid detail error | reload command; unsupported/unavailable remain non-recoverable | RankingList focused fixture |
+| stale summary/detail/error | no current React state mutation | RK-CACHE-001 focused response-ordering evidence, reused |
+
+The exact-profile calculator command reuses the existing preparation planner, scenario constructor,
+portable schema, shared executor, and durable draft publication order. It does not change canonical
+input, ranking fingerprint, candidate inventory, production output, or damage semantics. Existing
+TSK-06.41 handoff/parity, TSK-06.5 production inventory/support status, RK-CACHE-001 cardinality and
+stale rejection, and notice/reset evidence are reused under those unchanged identities. No adapter,
+compatibility flag, legacy reader, numeric fallback, 0-damage fallback, or parallel compiler was added.
+
+Focused verification passed 37 tests across outcome conversion, exact-profile portable construction,
+worker protocol/runtime, React response ordering, ranking integration, and direct presentation
+consumers. Typecheck, targeted lint, and format passed. The required browser path is the existing
+real-worker ranking/handoff journey; final artifact paths are recorded in the machine-readable
+evidence. The full `pnpm quality` gate is deferred to final TSK-07 integrated closure because this
+unit leaves candidate generation, production matrix, and hot-path calculation unchanged; no fixed
+wall-clock target, candidate ratchet, or timeout relaxation was introduced.
+
+This bounded unit is complete with TSK-07 still `in_progress`. Remaining work is the final responsive
+and accessibility closure and integrated TSK-07 quality gate. TSK-08 remains blocked.

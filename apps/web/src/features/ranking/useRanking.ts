@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  RankingBlockerClass,
   RankingPolicyConditions,
   RankingPolicyDetail,
   RankingPolicyExclusion,
@@ -21,6 +22,11 @@ interface RankingState {
   fingerprint: string;
   error: string;
   errorIdentity: string;
+}
+
+export interface RankingDetailError {
+  status: RankingBlockerClass | 'failed';
+  reason: string;
 }
 
 export function useRanking({
@@ -68,7 +74,7 @@ export function useRanking({
     fingerprint: string;
     values: Record<string, RankingPolicyDetail>;
   }>({ fingerprint: '', values: {} });
-  const [detailErrors, setDetailErrors] = useState<Record<string, string>>({});
+  const [detailErrors, setDetailErrors] = useState<Record<string, RankingDetailError | string>>({});
 
   const enabled = !!conditions;
   useEffect(() => {
@@ -136,7 +142,9 @@ export function useRanking({
         )
           return;
         detailRequestRef.current = null;
-        setDetailErrors({ [response.entryId]: response.reason });
+        setDetailErrors({
+          [response.entryId]: { status: response.status, reason: response.reason },
+        });
         return;
       }
       if (

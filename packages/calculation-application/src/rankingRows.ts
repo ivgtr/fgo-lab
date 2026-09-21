@@ -69,15 +69,26 @@ export function createRankingPolicyExclusion(
   entryId: string,
   result: Exclude<RankingProfileResult, { status: 'calculated' }>,
 ): RankingPolicyExclusion {
+  const recovery: RankingPolicyExclusion['recovery'] =
+    result.status === 'inputRequired'
+      ? { kind: 'openCalculator' }
+      : result.status === 'invalid'
+        ? result.reason === 'rankingSelectionInvalid'
+          ? { kind: 'resetRankingConditions' }
+          : { kind: 'reload' }
+        : { kind: 'none' };
   return {
     entryId,
     servantId: servant.id,
     name: servant.name,
+    attackProfile: result.attackProfile,
     status: result.status,
     reason:
       result.status === 'inputRequired'
         ? `inputRequired:${result.inputs.map(({ key }) => key).join(',')}`
         : result.reason,
+    requiredInputs: result.status === 'inputRequired' ? result.inputs : [],
+    recovery,
     issues:
       result.status === 'invalid' ||
       result.status === 'unsupported' ||

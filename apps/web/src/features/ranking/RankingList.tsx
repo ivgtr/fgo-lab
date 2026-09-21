@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import type { RankingPolicyDetail } from '@fgo-lab/calculation-application';
+import type { AttackProfile, RankingPolicyDetail } from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import { MasterImage } from '../../ui/MasterImage';
 import { ServantFilterIcon } from '../../ui/ServantFilterIcon';
@@ -7,6 +7,7 @@ import { numberFormatter } from '../../ui/i18n';
 import { npCardIconUrl, npCardLabel, servantClassLabels } from '../../ui/servantFilterOptions';
 import type { RankingPresentedRow } from './rankingPresentation';
 import { detailErrorLabel } from './rankingDetailPresentation';
+import type { RankingDetailError as HookRankingDetailError } from './useRanking';
 
 const RankingEffectDetails = lazy(async () => ({
   default: (await import('./RankingEffectDetails')).RankingEffectDetails,
@@ -21,15 +22,22 @@ export function RankingList({
   onToggle,
   onRetryDetail,
   onOpenCalculator,
+  onOpenCalculatorForAttackProfile,
+  onReload,
 }: {
   rows: readonly RankingPresentedRow[];
   openEntryId: string | null;
   details: Readonly<Record<string, RankingPolicyDetail>>;
-  detailErrors: Readonly<Record<string, string>>;
+  detailErrors: Readonly<Record<string, HookRankingDetailError | string>>;
   master: MasterDataSnapshot;
   onToggle: (row: RankingPresentedRow) => void;
   onRetryDetail: (row: RankingPresentedRow) => void;
   onOpenCalculator: (detail: RankingPolicyDetail) => void;
+  onOpenCalculatorForAttackProfile?: (target: {
+    servantId: string;
+    attackProfile: AttackProfile;
+  }) => void;
+  onReload?: () => void;
 }) {
   return rows.length === 0 ? (
     <p className="empty">条件に一致する計算済みサーヴァントはいません。</p>
@@ -39,6 +47,10 @@ export function RankingList({
         const expanded = openEntryId === row.entryId;
         const detail = details[row.entryId];
         const detailError = detailErrors[row.entryId];
+        const detailErrorInfo: HookRankingDetailError =
+          typeof detailError === 'string'
+            ? { status: 'failed', reason: detailError }
+            : (detailError ?? { status: 'failed', reason: '' });
         const detailId = `ranking-detail-${row.entryId.replace(':', '-')}`;
         return (
           <li key={row.entryId} className={row.rank <= 3 ? 'ranking-top' : undefined}>
@@ -101,10 +113,28 @@ export function RankingList({
                   </Suspense>
                 ) : detailError ? (
                   <p role="alert" className="notice">
-                    {detailErrorLabel(detailError)}{' '}
-                    <button type="button" onClick={() => onRetryDetail(row)}>
-                      再試行
-                    </button>
+                    {detailErrorLabel(detailErrorInfo)}{' '}
+                    {detailErrorInfo.status === 'inputRequired' ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenCalculatorForAttackProfile?.({
+                            servantId: row.servantId,
+                            attackProfile: row.attackProfile,
+                          })
+                        }
+                      >
+                        通常の計算機を開く
+                      </button>
+                    ) : detailErrorInfo.status === 'invalid' ? (
+                      <button type="button" onClick={() => onReload?.()}>
+                        ページを再読み込み
+                      </button>
+                    ) : detailErrorInfo.status === 'failed' ? (
+                      <button type="button" onClick={() => onRetryDetail(row)}>
+                        再試行
+                      </button>
+                    ) : null}
                   </p>
                 ) : (
                   <p role="status" className="notice">

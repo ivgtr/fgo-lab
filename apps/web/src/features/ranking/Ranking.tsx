@@ -1,13 +1,17 @@
 import { applyRankingSelectionCommand } from '@fgo-lab/calculation-application';
 import { DEFAULT_RANKING_POLICY_CONDITIONS } from '@fgo-lab/calculation-application/ranking-contracts';
 import { useMemo, useState } from 'react';
-import type { RankingPolicyDetail, RankingProfileInput } from '@fgo-lab/calculation-application';
+import type {
+  AttackProfile,
+  RankingPolicyDetail,
+  RankingProfileInput,
+} from '@fgo-lab/calculation-application';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import type { VersionContext } from '@fgo-lab/schema';
 import { RankingConditions } from './RankingConditions';
 import { RankingFilters } from './RankingFilters';
 import { RankingList } from './RankingList';
-import { rankingExclusionLabel } from './rankingDetailPresentation';
+import { rankingExclusionLabel, rankingExclusionRecoveryLabel } from './rankingDetailPresentation';
 import { filterAndRankRows, rankingPolicyLabel } from './rankingPresentation';
 import { useRankingUrlState } from './rankingState';
 import { useRanking } from './useRanking';
@@ -24,11 +28,18 @@ export function Ranking({
   profile,
   versions,
   onOpenCalculator,
+  onOpenCalculatorForAttackProfile,
+  onReload,
 }: {
   master: MasterDataSnapshot;
   profile: RankingProfileInput;
   versions: VersionContext;
   onOpenCalculator: (detail: RankingPolicyDetail) => void;
+  onOpenCalculatorForAttackProfile?: (target: {
+    servantId: string;
+    attackProfile: AttackProfile;
+  }) => void;
+  onReload?: () => void;
 }) {
   const [urlState, setUrlState] = useRankingUrlState();
   const [openEntryId, setOpenEntryId] = useState<string | null>(null);
@@ -43,6 +54,16 @@ export function Ranking({
     if (next) ranking.requestDetail(row);
     else ranking.clearDetail();
   };
+  const resetRankingConditions = () => {
+    setOpenEntryId(null);
+    setUrlState((current) => ({
+      ...current,
+      conditions: resetConditions(),
+      invalidCalculationQuery: undefined,
+    }));
+  };
+  const reloadRanking = onReload ?? (() => window.location.reload());
+  const openAttackProfile = onOpenCalculatorForAttackProfile ?? (() => undefined);
   return (
     <section className="ranking-page">
       <div className="section-heading ranking-heading">
@@ -116,6 +137,8 @@ export function Ranking({
           onToggle={toggleDetail}
           onRetryDetail={ranking.requestDetail}
           onOpenCalculator={onOpenCalculator}
+          onOpenCalculatorForAttackProfile={openAttackProfile}
+          onReload={reloadRanking}
         />
       )}
       {ranking.exclusions.length > 0 ? (
@@ -123,9 +146,40 @@ export function Ranking({
           <summary>順位外 {ranking.exclusions.length}件</summary>
           <ul>
             {ranking.exclusions.map((exclusion) => (
-              <li key={exclusion.entryId}>
-                <strong>{exclusion.name}</strong> —{' '}
-                {rankingExclusionLabel(exclusion.status, exclusion.reason)}
+              <li key={exclusion.entryId} data-outcome-status={exclusion.status}>
+                <strong>{exclusion.name}</strong>
+                <span> — {exclusion.status}</span>
+                <p>{rankingExclusionLabel(exclusion.status, exclusion.reason)}</p>
+                {exclusion.requiredInputs.length > 0 ? (
+                  <ul>
+                    {exclusion.requiredInputs.map((input) => (
+                      <li key={input.key}>
+                        {input.label}: {input.description}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {exclusion.recovery.kind === 'openCalculator' && exclusion.attackProfile ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenCalculatorForAttackProfile?.({
+                        servantId: exclusion.servantId,
+                        attackProfile: exclusion.attackProfile!,
+                      })
+                    }
+                  >
+                    {rankingExclusionRecoveryLabel(exclusion.recovery)}
+                  </button>
+                ) : exclusion.recovery.kind === 'resetRankingConditions' ? (
+                  <button type="button" onClick={resetRankingConditions}>
+                    {rankingExclusionRecoveryLabel(exclusion.recovery)}
+                  </button>
+                ) : exclusion.recovery.kind === 'reload' ? (
+                  <button type="button" onClick={reloadRanking}>
+                    {rankingExclusionRecoveryLabel(exclusion.recovery)}
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>

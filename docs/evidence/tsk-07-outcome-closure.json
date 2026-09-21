@@ -1,0 +1,153 @@
+{
+  "task": "TSK-07",
+  "status": "complete",
+  "unit": "five typed ranking outcome presentation, exact AttackProfile calculator recovery, and non-numeric exclusion boundary",
+  "baseline": {
+    "headAtStart": "3ec65cd26c85ddb56490362cff7fe6a72b59fbec",
+    "worktreeAtStart": "clean",
+    "entryConditions": {
+      "TSK-06.5": "done",
+      "TSK-06.47": "done",
+      "TSK-06.48": "done",
+      "TSK-07": "in_progress"
+    },
+    "taskSource": "docs/tasks/development-redesign-tasks.md",
+    "historicalFlow": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "cacheEvidence": "docs/evidence/tsk-07-cache-closure.json",
+    "noticeResetEvidence": "docs/evidence/tsk-07-notice-reset-closure.json",
+    "canonicalProductionEvidence": "docs/evidence/tsk-06-5-production-closure.json"
+  },
+  "changedFiles": [
+    "packages/calculation-application/src/rankingContracts.ts",
+    "packages/calculation-application/src/rankingRows.ts",
+    "packages/calculation-application/src/portableCalculation.ts",
+    "apps/web/src/features/ranking/rankingResponsePayloadSchema.ts",
+    "apps/web/src/features/ranking/useRanking.ts",
+    "apps/web/src/features/ranking/rankingDetailPresentation.ts",
+    "apps/web/src/features/ranking/Ranking.tsx",
+    "apps/web/src/features/ranking/RankingList.tsx",
+    "apps/web/src/app/rankingHandoff.ts",
+    "apps/web/src/app/RankingRoute.tsx",
+    "packages/calculation-application/src/portableCalculation.test.ts",
+    "packages/calculation-application/src/rankingRows.test.ts",
+    "apps/web/src/features/ranking/RankingList.test.tsx",
+    "apps/web/src/features/ranking/Ranking.integration.test.tsx",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "docs/evidence/tsk-07-outcome-closure.json",
+    "docs/evidence/README.md",
+    "docs/README.md"
+  ],
+  "semanticOwners": {
+    "profileOutcome": "packages/calculation-application/src/rankingProfileOutcome.ts::unresolvedProfileResult",
+    "numericBoundary": "packages/calculation-application/src/rankingPolicyCalculation.ts and rankingRows.ts::createRankingRow",
+    "typedExclusion": "packages/calculation-application/src/rankingContracts.ts::RankingPolicyExclusion and rankingRows.ts::createRankingPolicyExclusion",
+    "exactProfileCalculatorRequest": "packages/calculation-application/src/portableCalculation.ts::createCalculatorPortableRequestForAttackProfile",
+    "workerProtocol": "apps/web/src/features/ranking/rankingWorkerProtocol.ts and rankingResponsePayloadSchema.ts",
+    "presentationAndRecovery": "apps/web/src/features/ranking/Ranking.tsx, RankingList.tsx, and rankingDetailPresentation.ts",
+    "handoffPublication": "apps/web/src/app/rankingHandoff.ts and portableDraft.ts",
+    "staleResponseGate": "apps/web/src/features/ranking/useRanking.ts and rankingWorkerRuntime.ts"
+  },
+  "outcomeBoundary": {
+    "numericRows": ["calculated"],
+    "typedExclusions": [
+      "inputRequired",
+      "unsupported",
+      "invalid",
+      "unavailableUnderPolicy"
+    ],
+    "fallback": "none",
+    "preservedFields": ["attackProfile", "requiredInputs", "reason", "recovery", "issues"],
+    "recovery": {
+      "inputRequired": "open same AttackProfile in normal calculator",
+      "unsupported": "non-recoverable reason display",
+      "invalid": "typed cause maps only to resetRankingConditions or reload",
+      "unavailableUnderPolicy": "policy reachability reason display only"
+    }
+  },
+  "calculatorHandoff": {
+    "identity": "AttackProfile key is matched against canonical preparation planner candidates",
+    "intent": "calculator with initialNpGauge 10000; no ranking policy or candidate evidence persisted",
+    "execution": "shared portableCalculation executor",
+    "publication": "durable draft before workspace/session/route publication",
+    "failure": "no default-profile fallback and no publication on unresolved profile"
+  },
+  "cacheAndStale": {
+    "workerSummaryMaximum": 1,
+    "workerDetailMaximum": 0,
+    "reactActiveDetailMaximum": 1,
+    "identity": ["worker instance", "context ID", "request ID", "canonical fingerprint", "entry ID"],
+    "typedErrors": "stale typed summary/detail/error responses are rejected before React state mutation"
+  },
+  "parity": {
+    "candidateInventory": "unchanged; reuse TSK-06.5",
+    "supportStatus": "unchanged; reuse TSK-06.5",
+    "productionOutput": "unchanged; no numeric fallback introduced",
+    "calculatorRankingPortable": "existing shared executor and handoff parity retained",
+    "fingerprint": "unchanged seven-field ranking identity; normal calculator command has calculator identity"
+  },
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/portableCalculation.test.ts packages/calculation-application/src/rankingRows.test.ts apps/web/src/features/ranking/RankingList.test.tsx apps/web/src/features/ranking/Ranking.integration.test.tsx apps/web/src/features/ranking/rankingWorkerProtocol.test.ts apps/web/src/features/ranking/rankingWorkerRuntime.test.ts apps/web/src/features/ranking/useRanking.test.tsx",
+      "status": "passed",
+      "tests": 37,
+      "artifact": ".test-results/2026-09-21T02-08-44-518Z-15-9b440e"
+    },
+    "directConsumers": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/productionExecutionParity.test.ts packages/calculation-application/src/rankingBasis.test.ts apps/web/src/app/rankingHandoff.test.ts",
+      "status": "passed",
+      "tests": 15,
+      "artifact": ".test-results/2026-09-21T02-11-14-687Z-15-287287",
+      "coverage": "calculator/ranking/portable execution parity, ranking basis, and durable Web handoff"
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint <changed source and focused test files> --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --check <changed source and focused test files>",
+      "status": "passed"
+    },
+    "playwright": {
+      "command": "existing E2E-050 real ranking worker/detail/calculator handoff journey",
+      "status": "passed",
+      "tests": 2,
+      "artifact": ".test-results/2026-09-21T02-09-20-083Z-15-3bc48b",
+      "coverage": "real worker, ranking detail, calculator handoff, stale response, keyboard contribution filter, 390px/320px overflow"
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    },
+    "quality": {
+      "status": "deferred to final TSK-07 integrated closure",
+      "reason": "candidate generation, production matrix, damage semantics, cache cardinality, and hot path are unchanged; final closure remains required"
+    }
+  },
+  "reusedEvidence": {
+    "tsk06_41": "current schema, shared contribution compiler, ranking-to-calculator portable parity",
+    "tsk06_5": "candidate inventory, support status, production output, legacy removal, and parity",
+    "rkCache001": "summary/detail cache cardinality and request/context/fingerprint/entry stale rejection",
+    "noticeReset": "two-axis notice, normal reset transaction, durable publication, and mutation stale rejection"
+  },
+  "unresolved": [
+    "final responsive and accessibility closure beyond the focused outcome path",
+    "final TSK-07 integrated pnpm quality gate",
+    "TSK-08 production audit"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "in_progress",
+    "TSK-08": "not_started",
+    "head": "3ec65cd26c85ddb56490362cff7fe6a72b59fbec",
+    "newCommit": false
+  },
+  "nextBoundedUnit": "TSK-07 final responsive/accessibility and integrated quality closure",
+  "stopCondition": "Stop this unit after final focused/direct-consumer, E2E, typecheck/lint/format/docs, and evidence consistency checks; reopen TSK-06.41 or TSK-06.5 if fingerprint, support status, candidate inventory, production output, or parity changes."
+}

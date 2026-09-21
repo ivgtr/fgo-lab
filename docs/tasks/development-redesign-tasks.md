@@ -2196,7 +2196,7 @@ Depends on: TSK-06.5
       再検証する。
 - [x] 二軸intentを含むfingerprintでsummary／detail cacheとstale response rejectionを閉じ、worker detail 0件、
       React active detail最大1件を実装・検証する。
-- [ ] Webの順位外表示を5 outcome classへ切り替え、`inputRequired`、`unsupported`、`invalid`、
+- [x] Webの順位外表示を5 outcome classへ切り替え、`inputRequired`、`unsupported`、`invalid`、
       `unavailableUnderPolicy`を別文言で表示する。`inputRequired`だけは同じAttackProfileのnormal calculatorを開き、
       `invalid`は原因別reset／reload、`unsupported`は非回復として扱い、いずれも数値rowを生成しない。
 
@@ -2282,6 +2282,18 @@ Handoff:
   TSK-06.5／06.47／06.48は`done`のまま、commitは作成しない。次のbounded unitは5 outcome表示／recoveryであり、
   full `pnpm quality`は`.test-results/2026-09-20T19-18-55-246Z-73-bbda97`でunit 886／production 144／Playwright 29、
   retry 0、warnings 0、unexpected console 0として通過した。responsive／a11y全体、TSK-08は未達である。
+
+- Current bounded-unit handoff (2026-09-21): 順位外のcanonical exclusionがAttackProfile、required input、reason、typed
+  recoveryを保持するようにし、`calculated`だけがnumeric rowを生成する境界をworker payload／React表示まで維持した。
+  `inputRequired`は同じAttackProfileをapplicationのpreparation plannerで解決して通常calculator intentを構築し、
+  `unsupported`／`unavailableUnderPolicy`は原因表示だけ、`invalid`は原因分類に応じたresetまたはreloadだけを提示する。
+  detail errorもstatusを保持し、同じprofile handoff、reload、再試行のcommandを混同しない。worker summary最大1件、
+  worker detail 0件、React active detail最大1件、request／context／fingerprint／entry stale rejectionは維持した。
+  focused 37 tests、typecheck、対象lint／formatを通過し、machine-readable結果は[TSK-07 outcome closure](../evidence/tsk-07-outcome-closure.json)、
+  flow deltaは[ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ追記する。production candidate inventory、
+  support status、数値output、calculator／ranking／portable parity、fingerprintは不変条件を満たして再利用する。
+  TSK-07は`in_progress`、TSK-06.5／06.47／06.48は`done`、TSK-08は未開始、commitは作成しない。全responsive／a11y closureと
+  最終`pnpm quality`はTSK-07統合closureで実行する。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 
