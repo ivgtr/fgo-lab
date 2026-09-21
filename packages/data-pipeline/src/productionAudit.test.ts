@@ -2,11 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import {
+  connectProductionAuditBoundary,
+  createTsk065ProductionAuditSource,
   formatCanonicalAuditMismatch,
   measureProductionAuditLifecycle,
   type CanonicalAuditRecord,
 } from '@fgo-lab/master-data/production-audit';
 import { describe, expect, it } from 'vitest';
+import tsk065Evidence from '../../../docs/evidence/tsk-06-5-production-closure.json';
 import { compileDataPipelineProductionAudit } from './productionAudit';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -19,6 +22,15 @@ describe('shared data-pipeline production audit', () => {
       compile: compileDataPipelineProductionAudit,
     });
     const { audit } = measured;
+    const source = createTsk065ProductionAuditSource(tsk065Evidence, {
+      masterDataVersion: audit.masterDataVersion,
+      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+    });
+    const sharedAuditModel = connectProductionAuditBoundary(
+      source,
+      audit,
+      'compileDataPipelineProductionAudit',
+    );
     const actual: CanonicalAuditRecord[] = [
       { identity: 'manifest', value: { digest: audit.digest, inventory: audit.inventory } },
     ];
@@ -224,6 +236,7 @@ describe('shared data-pipeline production audit', () => {
         `${JSON.stringify(
           {
             ...audit,
+            sharedAuditModel,
             runtimeCounters: { ...measured.runtimeCounters, ...audit.counters },
             timings: measured.timings,
           },
@@ -231,6 +244,12 @@ describe('shared data-pipeline production audit', () => {
           2,
         )}\n`,
       );
+    expect(sharedAuditModel.payload).toMatchObject({
+      boundary: 'data-pipeline',
+      producer: 'compileDataPipelineProductionAudit',
+      digest: audit.digest,
+      masterDataVersion: audit.masterDataVersion,
+    });
     expect(audit.failures).toHaveLength(6);
     expect(actual, formatCanonicalAuditMismatch(expected, actual)).toEqual(expected);
   }, 120_000);

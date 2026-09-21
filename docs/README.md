@@ -41,7 +41,7 @@ updated_at: "2026-09-21"
 | [TSK-06.48 bounded completion plan](tasks/package-semantic-convergence-tsk-06-48-completion-plan.md) | task plan／Complete v1.0.4 | A／B bounded unitのowner audit、最終qualityまでの停止境界、限定的検証、過度な性能ゴール／テストを求めない方針 |
 | [documentation maintenance phases](tasks/documentation-maintenance-phases.md) | phase plan／Active v1.3.2 | 文書整備固有の判断規則とDone gate |
 | [ADR index](adr/README.md) | sub-index／Active | 採用済みarchitecture／semantic decision |
-| [evidence index](evidence/README.md) | sub-index／Active v1.4.47 | damage／production／documentation evidence |
+| [evidence index](evidence/README.md) | sub-index／Active v1.4.48 | damage／production／documentation evidence |
 | [historical documentation index](archive/README.md) | sub-index／Active v1.0.0 | historical decision chain、現在status、Git-only復元情報 |
 | [canonical data flow](guides/data-flow.md) | guide／Guideline v1.0.0 | master、calculation／ranking、user stateの依存方向 |
 | [document governance contract](guides/document-governance.md) | guide／Guideline v1.0.1 | Contract ID、Task closure、要件改訂、ADR lifecycle、docs lint |

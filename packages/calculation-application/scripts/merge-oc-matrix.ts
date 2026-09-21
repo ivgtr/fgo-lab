@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
+  connectProductionAuditMatrix,
+  createTsk065ProductionAuditSource,
+} from '@fgo-lab/master-data/production-audit';
+import {
   productionClosureConditionKey,
   productionClosureConditions,
   type ProductionClosureAudit,
@@ -150,9 +154,21 @@ if (
   eligibility.candidates.maximumSingleProfileGenerated > 4_096
 )
   throw new TypeError('production_eligibility_candidate_cap_exceeded');
+const sharedAuditModel = connectProductionAuditMatrix(
+  createTsk065ProductionAuditSource(
+    JSON.parse(
+      await readFile(resolve(root, 'docs/evidence/tsk-06-5-production-closure.json'), 'utf8'),
+    ),
+    {
+      masterDataVersion: identity.masterDataVersion,
+      artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+    },
+  ),
+  audit,
+);
 await writeFile(
   resolve(output, 'manifest.json'),
-  `${JSON.stringify({ identity, audit }, null, 2)}\n`,
+  `${JSON.stringify({ identity, audit, sharedAuditModel }, null, 2)}\n`,
 );
 console.log(
   JSON.stringify({ output, digest: audit.digest, outcomes, parityCount: audit.parityCount }),

@@ -1,0 +1,178 @@
+{
+  "task": "TSK-08",
+  "status": "bounded-unit-complete",
+  "unit": "TSK-06.5 source reference connected to data-pipeline, calculation-application, and full-matrix audit models",
+  "baseline": {
+    "headAtStart": "5d82e380593987a602af2214dd35d9e220fd1b1a",
+    "worktreeAtStart": [
+      "apps/web/next-env.d.ts"
+    ],
+    "canonicalSource": "docs/evidence/tsk-06-5-production-closure.json",
+    "previousBoundedUnit": "docs/evidence/tsk-08-parity-diagnostics.json",
+    "taskSource": "docs/tasks/development-redesign-tasks.md"
+  },
+  "changedFiles": [
+    "packages/master-data/src/productionAudit.ts",
+    "packages/master-data/src/productionAudit.test.ts",
+    "packages/data-pipeline/src/productionAudit.test.ts",
+    "packages/calculation-application/src/productionAudit.test.ts",
+    "packages/calculation-application/scripts/audit-oc-matrix.ts",
+    "packages/calculation-application/scripts/merge-oc-matrix.ts",
+    "docs/evidence/tsk-08-shared-audit-model.json",
+    "docs/evidence/README.md",
+    "docs/tasks/development-redesign-tasks.md"
+  ],
+  "semanticOwners": {
+    "canonicalRecords": "packages/master-data/src/productionAudit.ts::CanonicalAuditRecord / firstCanonicalAuditDifference",
+    "tsk065Source": "packages/master-data/src/productionAudit.ts::createTsk065ProductionAuditSource",
+    "sharedBoundary": "packages/master-data/src/productionAudit.ts::connectProductionAuditBoundary",
+    "sharedMatrix": "packages/master-data/src/productionAudit.ts::connectProductionAuditMatrix",
+    "dataPipelineProducer": "packages/data-pipeline/src/productionAudit.ts::compileDataPipelineProductionAudit",
+    "calculationApplicationProducer": "packages/calculation-application/src/productionAudit.ts::compileCalculationApplicationProductionAudit",
+    "matrixProducer": "packages/calculation-application/src/productionClosureAudit.ts::auditProductionClosure",
+    "artifactVerification": "scripts/test-observation-lib.mjs::verifyArtifactFiles"
+  },
+  "canonicalSource": {
+    "task": "TSK-06.5",
+    "evidence": "docs/evidence/tsk-06-5-production-closure.json",
+    "staticSemanticsDigest": "a1dc814fb04c5ed67ea86606590bf317fb37639ccbe77efa028b6401f3a24f2d",
+    "candidateEligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+    "matrix": {
+      "conditionCount": 80,
+      "attackProfileCount": 433,
+      "outcomeCount": 34640,
+      "calculated": 34600,
+      "unavailableUnderPolicy": 40,
+      "inputRequired": 0,
+      "invalid": 0,
+      "unsupported": 0,
+      "parityCount": 34600,
+      "parityFailures": 0,
+      "mergedDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+      "eligibilityDigest": "27671eea7012e2b145ceb6575c498e8261a23ac3f949dfaa12a554bf83a76f18",
+      "artifact": ".test-results/tsk-06-5-production-closure-final/manifest.json"
+    }
+  },
+  "connection": {
+    "boundaryModel": "Each existing package audit keeps its own records, inventory, failure union, counters, and digest; the shared model attaches the TSK-06.5 source reference and producer identity without recomputing or replacing those values.",
+    "matrixModel": "audit-oc-matrix.ts (single run) and merge-oc-matrix.ts (sharded run) compare the complete matrix summary and eligibility digest to the TSK-06.5 source and fail closed on the first canonical field difference.",
+    "runnerBoundary": "The runner receives the existing generic audit artifacts and verifies reachability/checksum; it does not interpret FGO domain reasons.",
+    "sourceDigestProducerCount": 1,
+    "newGenerator": false,
+    "numericFallback": false
+  },
+  "invariants": {
+    "publicApiChanged": false,
+    "canonicalInputChanged": false,
+    "fingerprintChanged": false,
+    "candidateInventoryChanged": false,
+    "productionOutputChanged": false,
+    "calculatorRankingPortableParityChanged": false,
+    "tsk06_5Reopened": false,
+    "tsk0641Reopened": false,
+    "legacyReaderAdded": false,
+    "compatibilityFlagAdded": false,
+    "parallelCompilerAdded": false,
+    "sourceDigestChanged": false
+  },
+  "failureFixtures": [
+    "TSK-06.5 source evidence with an invalid task/status/digest/count",
+    "boundary masterDataVersion mismatch",
+    "matrix conditionCount mismatch",
+    "matrix outcome/digest/eligibility mismatch",
+    "duplicate canonical boundary records"
+  ],
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- packages/master-data/src/productionAudit.test.ts",
+      "status": "passed",
+      "tests": 6,
+      "artifact": ".test-results/2026-09-21T14-47-17-682Z-15-3b8c72"
+    },
+    "directConsumers": {
+      "command": "pnpm test:diagnostic -- packages/data-pipeline/src/productionAudit.test.ts packages/calculation-application/src/productionAudit.test.ts packages/calculation-application/src/productionClosureAudit.test.ts",
+      "status": "passed",
+      "tests": 3,
+      "artifact": ".test-results/2026-09-21T14-55-36-672Z-15-ce7f10",
+      "boundaryArtifacts": [
+        "production-audit-data-pipeline.json::sharedAuditModel",
+        "production-audit-calculation-application.json::sharedAuditModel"
+      ]
+    },
+    "production": {
+      "command": "pnpm test:production",
+      "status": "passed",
+      "files": 27,
+      "tests": 144,
+      "artifact": ".test-results/2026-09-21T14-47-32-244Z-15-9cf21f",
+      "warnings": 0,
+      "retries": 0,
+      "sourceDigest": "c70909a19909b838b9b645a95567136d9875252cfd36170481834854c1d05120",
+      "boundaryDigests": {
+        "dataPipeline": "f7f2610d809b52ae3f249b01ca22190879b36ead370ce619e4c006d7165455c8",
+        "calculationApplication": "292dbbf9ef855d275eadb9bfed702396a830f8446d7f2fe85127b895655f3968"
+      }
+    },
+    "runner": {
+      "command": "pnpm test:runner",
+      "status": "passed",
+      "tests": 53
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint packages/master-data/src/productionAudit.ts packages/master-data/src/productionAudit.test.ts packages/data-pipeline/src/productionAudit.test.ts packages/calculation-application/src/productionAudit.test.ts --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --check packages/master-data/src/productionAudit.ts packages/master-data/src/productionAudit.test.ts packages/data-pipeline/src/productionAudit.test.ts packages/calculation-application/src/productionAudit.test.ts packages/calculation-application/scripts/audit-oc-matrix.ts packages/calculation-application/scripts/merge-oc-matrix.ts",
+      "status": "passed"
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 897,
+      "production": 144,
+      "playwright": 29,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "retries": 0,
+      "durationSeconds": 379.31,
+      "artifact": ".test-results/2026-09-21T14-48-58-184Z-15-00d5e2",
+      "manifestSha256": "764c0ff9b0068cd0a6da45ebfb743f03843ffe646d3f3095c4c0401134d7d2d"
+    }
+  },
+  "reusedEvidence": {
+    "tsk06_5": "static inventory, candidate eligibility, 80-condition matrix, support status, production output, and calculator/ranking/portable parity",
+    "tsk06_3": "parent/child manifest, bounded summary, generic artifact declaration, and checksum verification",
+    "tsk07": "worker/cache, fingerprint, stale mutation, responsive/accessibility, and presentation evidence"
+  },
+  "unresolved": [
+    "ratchet unsupported, invalid, partial commit, inert control, and stale mutation across the full production audit",
+    "remove the deferred legacy aggregate auditor and old loader/scan/candidate-list/duplicate fixtures"
+  ],
+  "stopConditions": [
+    "TSK-06.5 source digest, candidate inventory, support status, production output, or parity differs",
+    "matrix first canonical difference is unavailable",
+    "boundary artifact is missing, outside the run directory, empty, invalid, or checksum-mismatched",
+    "failure is converted to numeric fallback or success",
+    "runner interprets FGO domain reasons",
+    "a new producer, generator, compatibility path, or semantic owner is required"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "done",
+    "TSK-08": "in_progress",
+    "TSK-09.1": "blocked",
+    "TSK-09": "blocked"
+  },
+  "nextBoundedUnit": "ratchet the remaining typed full-production outcomes and mutation gates using this shared source and boundary artifact model"
+}

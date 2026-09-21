@@ -3,6 +3,10 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
+import {
+  connectProductionAuditMatrix,
+  createTsk065ProductionAuditSource,
+} from '@fgo-lab/master-data/production-audit';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
 import { auditProductionClosure, productionClosureConditions } from '../src/productionClosureAudit';
 
@@ -18,6 +22,7 @@ const master = masterSnapshotSchema.parse(JSON.parse(bytes.toString()));
 const identity = {
   head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   worktree: execFileSync('git', ['status', '--short'], { cwd: root, encoding: 'utf8' }),
+  masterDataVersion: master.version,
   masterSha256: createHash('sha256').update(bytes).digest('hex'),
   command:
     'pnpm --filter @fgo-lab/data-pipeline exec tsx ../calculation-application/scripts/audit-oc-matrix.ts <output>',
@@ -60,9 +65,24 @@ const audit = await auditProductionClosure(
   },
   selectedConditions,
 );
+const sharedAuditModel =
+  shardCount === 1
+    ? connectProductionAuditMatrix(
+        createTsk065ProductionAuditSource(
+          JSON.parse(
+            await readFile(resolve(root, 'docs/evidence/tsk-06-5-production-closure.json'), 'utf8'),
+          ),
+          {
+            masterDataVersion: master.version,
+            artifact: 'docs/evidence/tsk-06-5-production-closure.json',
+          },
+        ),
+        audit,
+      )
+    : null;
 await writeFile(
   resolve(output, shardCount === 1 ? 'manifest.json' : `manifest-shard-${String(shardIndex)}.json`),
-  `${JSON.stringify({ identity, audit }, null, 2)}\n`,
+  `${JSON.stringify({ identity, audit, ...(sharedAuditModel ? { sharedAuditModel } : {}) }, null, 2)}\n`,
 );
 
 if (audit.conditionCount !== selectedConditions.length)

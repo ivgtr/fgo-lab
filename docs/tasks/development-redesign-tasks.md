@@ -2333,7 +2333,7 @@ Handoff:
 
 Depends on: TSK-07
 
-- [ ] TSK-06.5が生成した唯一の全AttackProfile × NP1〜5 × 四policy inventory／digestを、data-pipelineと
+- [x] TSK-06.5が生成した唯一の全AttackProfile × NP1〜5 × 四policy inventory／digestを、data-pipelineと
       calculation-applicationの共有audit modelへ接続する。別generatorや並行digest正本を作らない。
 - [ ] parity、unsupported、invalid、partial commit、inert control、stale mutationをratchet化する。
 - [ ] TSK-06.3の共通manifest／artifact ownerを再実装せず、domain typed reason、canonical identity、
@@ -2376,6 +2376,18 @@ focused／unit／production、runner fixture、typecheck、targeted lint／forma
 未達は、TSK-06.5の全80条件inventory／digestをdata-pipelineとcalculation-applicationの共有audit modelへ接続すること、全production parity／unsupported／invalid／partial commit／inert control／stale mutationのratchet化、Deferredのlegacy aggregate auditor（`quantityConditions`前提）とold loader／scan／candidate list／duplicate fixtureの削除である。次のbounded unitは、既存producerを一つに保ったままfull matrixとpackage audit modelの到達性を接続する。candidate生成、damage semantics、canonical input、別digest正本、別generator、TSK-09系は開始しない。
 
 差分がcanonical identity、support status、candidate inventory、production output、parityへ及んだ場合は、このTaskを停止し、canonical owner・影響範囲・再実行範囲とTSK-06.41／TSK-06.5 reopen要否をevidenceへ記録する。TSK-06.5／06.47／06.48／TSK-07は`done`、TSK-09.1／09は`blocked`のまま維持する。
+
+Current bounded-unit handoff（2026-09-21、TSK-06.5 source／shared audit model connection）:
+
+開始HEADは`5d82e380593987a602af2214dd35d9e220fd1b1a`、利用者差分は`apps/web/next-env.d.ts`だけである。TSK-06.5の`docs/evidence/tsk-06-5-production-closure.json`を唯一のsource referenceとして検証・投影する`@fgo-lab/master-data/production-audit`の共有modelを追加した。`createTsk065ProductionAuditSource`はstatic semantics digest、candidate eligibility digest、80条件×433profileのmatrix digest／outcome／parityを再計算せず保持し、candidate／damage semanticsのproducerにはなっていない。
+
+既存`compileDataPipelineProductionAudit`と`compileCalculationApplicationProductionAudit`のartifactへ、同じsource referenceとproducer identityを持つ`connectProductionAuditBoundary`のboundary modelを接続した。`audit-oc-matrix.ts`（single run）と`merge-oc-matrix.ts`（sharded run）は`connectProductionAuditMatrix`でTSK-06.5のmatrix digest、eligibility digest、outcome、parity、condition/profile countを比較し、最初のcanonical field差分でfail closedする。runnerは引き続きgeneric artifact declaration／checksumだけを扱い、FGO reasonを解釈しない。
+
+public API、canonical input、fingerprint、candidate inventory、production output、calculator／ranking／portable parity、TSK-06.5／TSK-06.41 statusに差分はない。intentional failure fixtureはsource invalid、master version mismatch、duplicate canonical identity、matrix condition／digest mismatchを固定した。machine-readable evidenceは[TSK-08 shared audit model](../evidence/tsk-08-shared-audit-model.json)、boundary artifactは`.test-results/2026-09-21T14-55-36-672Z-15-ce7f10`内の`production-audit-data-pipeline.json`／`production-audit-calculation-application.json`を参照する。
+
+focused 6、direct consumer 3、runner 53、production 144、typecheck、targeted lint／Prettier、`pnpm test:docs`、最終`pnpm quality`は成功している。qualityはunit 897／production 144／Playwright 29、warnings／unexpected console／retry 0、artifact `.test-results/2026-09-21T14-48-58-184Z-15-00d5e2`、manifest SHA-256 `764c0ff9b0068cd0a6da45ebfb743f03843ffe646d3f3095c4c0401134d7d2d`である。production matrixは既存TSK-06.5 artifactを再計算せず、接続関数とfuture single／merge producer pathへ接続したため、性能計測、candidate ratchet、timeout緩和は追加していない。
+
+未達は全production parity／unsupported／invalid／partial commit／inert control／stale mutationのratchet化と、Deferredのlegacy aggregate auditor（`quantityConditions`前提）・old loader／scan／candidate list／duplicate fixtureの整理・削除である。次の作業者は`packages/master-data/src/productionAudit.ts`のsource／boundary／matrix connector、両packageのproduction audit test、`audit-oc-matrix.ts`／`merge-oc-matrix.ts`、および本evidenceを最初に確認する。source digest、inventory、support status、production output、parity、first difference、artifact checksumに差分が出た場合は停止し、影響範囲とTSK-06.41／TSK-06.5 reopen要否を記録する。TSK-06.5／06.47／06.48／TSK-07は`done`、TSK-08は`in_progress`、TSK-09.1／09は`blocked`を維持する。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 
