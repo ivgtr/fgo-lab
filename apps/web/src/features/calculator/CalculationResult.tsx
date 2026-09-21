@@ -31,6 +31,8 @@ export function CalculationResult({
   effectInputs,
   onFinalize,
   onResetPortableRequest,
+  resetPending,
+  resetError,
 }: {
   input: DamageResolutionInput;
   result: CalculationResultValue;
@@ -44,6 +46,8 @@ export function CalculationResult({
   effectInputs: readonly EffectInputViewModel[];
   onFinalize: () => Promise<void>;
   onResetPortableRequest: () => Promise<void>;
+  resetPending?: boolean | undefined;
+  resetError?: string | undefined;
 }) {
   const [message, setMessage] = useState('');
   const resultCardRef = useRef<HTMLElement>(null);
@@ -106,6 +110,8 @@ export function CalculationResult({
         state="current"
         request={request}
         onReset={onResetPortableRequest}
+        resetPending={resetPending}
+        resetError={resetError}
       />
       <article
         ref={resultCardRef}

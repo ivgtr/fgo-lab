@@ -105,6 +105,8 @@ export function Calculator({
   onHistorySelect,
   onRegenerateHistory,
   onResetPortableRequest,
+  resetPending,
+  resetError,
 }: {
   master: MasterDataSnapshot;
   resolvedInput: DamageResolutionInput;
@@ -134,6 +136,8 @@ export function Calculator({
     entry: Extract<CalculationHistoryEntry, { disposition: 'historicalOnly' }>,
   ) => Promise<void>;
   onResetPortableRequest: () => Promise<void>;
+  resetPending?: boolean | undefined;
+  resetError?: string | undefined;
 }) {
   const input = resolvedInput;
   const initialHpPermille =
@@ -1261,6 +1265,8 @@ export function Calculator({
         result={result}
         request={request}
         onResetPortableRequest={onResetPortableRequest}
+        resetPending={resetPending}
+        resetError={resetError}
         attackerName={attacker?.name ?? input.attackerId}
         attackerImage={attacker?.imageKey ?? null}
         targetSummary={targetSummary}

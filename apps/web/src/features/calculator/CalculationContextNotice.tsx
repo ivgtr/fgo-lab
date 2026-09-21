@@ -6,6 +6,8 @@ type CalculationContextNoticeProps =
       state: 'current';
       request: PortableCalculationRequest;
       onReset: () => Promise<void>;
+      resetPending?: boolean | undefined;
+      resetError?: string | undefined;
     }
   | {
       state: 'historicalOnly';
@@ -19,11 +21,15 @@ type CalculationContextNoticeProps =
       request: PortableCalculationRequest;
       reason: string;
       onReset: () => Promise<void>;
+      resetPending?: boolean | undefined;
+      resetError?: string | undefined;
     }
   | {
       state: 'unsupported';
       request: PortableCalculationRequest;
       onReset: () => Promise<void>;
+      resetPending?: boolean | undefined;
+      resetError?: string | undefined;
     };
 
 export function CalculationContextNotice(props: CalculationContextNoticeProps) {
@@ -68,6 +74,7 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
         role="alert"
         tabIndex={-1}
         data-calculation-error-summary
+        aria-busy={props.resetPending || undefined}
       >
         <h2>
           {props.state === 'invalid'
@@ -75,28 +82,44 @@ export function CalculationContextNotice(props: CalculationContextNoticeProps) {
             : '現在のエンジンでは実行できません'}
         </h2>
         {props.state === 'invalid' && <p>{props.reason}</p>}
+        {props.resetError && (
+          <p role="alert" data-calculation-reset-error>
+            {props.resetError}
+          </p>
+        )}
         <VersionMetadata request={request} />
         {ranking && (
-          <button type="button" onClick={() => void props.onReset()}>
+          <button type="button" disabled={props.resetPending} onClick={() => void props.onReset()}>
             通常の計算条件へ戻す
           </button>
         )}
       </section>
     );
   return (
-    <section className="notice calculation-context-notice" aria-label="計算条件の版情報">
+    <section
+      className="notice calculation-context-notice"
+      aria-label="計算条件の版情報"
+      aria-live="polite"
+      aria-busy={props.resetPending || undefined}
+      {...(props.resetError ? { 'data-calculation-error-summary': true, tabIndex: -1 } : {})}
+    >
       {ranking && (
         <>
           <strong>ランキングから引き継いだ計算条件</strong>
           <span>
-            開始NP {ranking.initialNpGauge / 100}% ／ 自己強化:{' '}
+            開始NP {ranking.initialNpGauge / 100}% ／ 自己バフ:{' '}
             {ranking.policy.selfBuffs === 'included' ? '込み' : '除外'} ／ 条件効果:{' '}
             {ranking.policy.conditionalEffects === 'satisfied' ? '成立込み' : '通常のみ'}
           </span>
-          <button type="button" onClick={() => void props.onReset()}>
+          <button type="button" disabled={props.resetPending} onClick={() => void props.onReset()}>
             通常の計算条件へ戻す
           </button>
         </>
+      )}
+      {props.resetError && (
+        <p role="alert" data-calculation-reset-error>
+          {props.resetError}
+        </p>
       )}
       <VersionMetadata request={request} />
     </section>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { MasterDataSnapshot } from '@fgo-lab/master-data';
 import {
@@ -97,6 +97,9 @@ export function CalculatorRoute({
     calculation.request ??
     createDefaultCalculatorPortableRequest(master, defaultBuild, defaultServant);
   const currentScenario = currentRequest.scenario;
+  const calculationMutationRef = useRef(0);
+  const [resetPending, setResetPending] = useState(false);
+  const [resetError, setResetError] = useState('');
   const portableOutcome = calculation.storedResult
     ? recoverPortableCalculation(currentRequest, calculation.storedResult, master)
     : executePortableCalculation(currentRequest, master);
@@ -114,21 +117,39 @@ export function CalculatorRoute({
       ? portableOutcome.result
       : resolvedCalculation?.result;
 
+  function beginCalculationMutation() {
+    calculationMutationRef.current += 1;
+    setResetPending(false);
+    setResetError('');
+    return calculationMutationRef.current;
+  }
+
+  function isCurrentCalculationMutation(token: number) {
+    return calculationMutationRef.current === token;
+  }
+
   async function commitPortableDraft(
     request: PortableCalculationRequest,
     nextResult: CalculationResult,
     sessionId = calculationSessionId,
+    mutationToken = calculationMutationRef.current,
   ) {
     await commitPortableDraftRecord({
       request,
       result: nextResult,
       sessionId,
-      updateActiveProfile,
-      setCalculation,
+      updateActiveProfile: (update) =>
+        isCurrentCalculationMutation(mutationToken)
+          ? updateActiveProfile(update)
+          : Promise.resolve(),
+      setCalculation: (next) => {
+        if (isCurrentCalculationMutation(mutationToken)) setCalculation(next);
+      },
     });
   }
 
   async function saveScenarioDraft(scenario: CalculationScenario) {
+    const mutationToken = beginCalculationMutation();
     const retainedResult = calculation.storedResult ?? result;
     const attempt = attemptPortableCalculationScenarioChange(
       currentRequest,
@@ -137,20 +158,53 @@ export function CalculatorRoute({
       master,
     );
     if (attempt.status !== 'committed') return;
-    await commitPortableDraft(attempt.request, attempt.result);
+    await commitPortableDraft(attempt.request, attempt.result, calculationSessionId, mutationToken);
   }
 
   async function resetPortableDraft() {
+    const mutationToken = beginCalculationMutation();
+    setResetPending(true);
     const retainedResult = calculation.storedResult ?? result;
-    if (!retainedResult) return;
-    const attempt = attemptPortableCalculationReset(
-      currentRequest,
-      retainedResult,
-      master,
-      profile.servantBuilds,
-    );
-    if (attempt.status !== 'committed') return;
-    await commitPortableDraft(attempt.request, attempt.result);
+    try {
+      if (!retainedResult) {
+        if (isCurrentCalculationMutation(mutationToken)) {
+          setResetError('計算結果がないため通常条件へ戻せません');
+          setRecoveryFocus('error');
+        }
+        return;
+      }
+      const attempt = attemptPortableCalculationReset(
+        currentRequest,
+        retainedResult,
+        master,
+        profile.servantBuilds,
+      );
+      if (attempt.status !== 'committed') {
+        if (isCurrentCalculationMutation(mutationToken)) {
+          setResetError(
+            attempt.failure.status === 'invalid'
+              ? [attempt.failure.reason, attempt.failure.detail].filter(Boolean).join(': ')
+              : '現在のエンジンでは通常条件へ戻せません',
+          );
+          setRecoveryFocus('error');
+        }
+        return;
+      }
+      await commitPortableDraft(
+        attempt.request,
+        attempt.result,
+        calculationSessionId,
+        mutationToken,
+      );
+      if (isCurrentCalculationMutation(mutationToken)) setRecoveryFocus('result');
+    } catch (cause) {
+      if (isCurrentCalculationMutation(mutationToken)) {
+        setResetError(cause instanceof Error ? cause.message : String(cause));
+        setRecoveryFocus('error');
+      }
+    } finally {
+      if (isCurrentCalculationMutation(mutationToken)) setResetPending(false);
+    }
   }
 
   async function regenerateHistory(
@@ -255,6 +309,8 @@ export function CalculatorRoute({
           request={currentRequest}
           reason={portableOutcome.reason}
           onReset={resetPortableDraft}
+          resetPending={resetPending}
+          resetError={resetError || undefined}
         />
       )}
       {portableOutcome.status === 'unsupported' && resolvedCalculation?.status === 'rejected' && (
@@ -262,6 +318,8 @@ export function CalculatorRoute({
           state="unsupported"
           request={currentRequest}
           onReset={resetPortableDraft}
+          resetPending={resetPending}
+          resetError={resetError || undefined}
         />
       )}
       {(portableOutcome.status === 'executed' || portableOutcome.status === 'unsupported') &&
@@ -353,6 +411,8 @@ export function CalculatorRoute({
             onHistorySelect={copyHistoryToDraft}
             onRegenerateHistory={regenerateHistory}
             onResetPortableRequest={resetPortableDraft}
+            resetPending={resetPending}
+            resetError={resetError || undefined}
           />
         )}
     </>

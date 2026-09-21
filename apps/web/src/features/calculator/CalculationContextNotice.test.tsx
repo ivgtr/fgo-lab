@@ -90,10 +90,43 @@ describe('calculation context recovery presentation', () => {
     render(<CalculationContextNotice state="current" request={rankingRequest} onReset={onReset} />);
     expect(screen.getByText('ランキングから引き継いだ計算条件')).toBeTruthy();
     expect(screen.getByText(/開始NP 200%/)).toBeTruthy();
-    expect(screen.getByText(/自己強化: 除外/)).toBeTruthy();
+    expect(screen.getByText(/自己バフ: 除外/)).toBeTruthy();
     expect(screen.getByText(/条件効果: 成立込み/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '通常の計算条件へ戻す' }));
     expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the ranking notice visible while reset is pending and reports a failed reset', () => {
+    const onReset = vi.fn(() => Promise.resolve());
+    const { rerender } = render(
+      <CalculationContextNotice
+        state="current"
+        request={rankingRequest}
+        onReset={onReset}
+        resetPending
+      />,
+    );
+    expect(
+      screen.getByRole('button', { name: '通常の計算条件へ戻す' }).getAttribute('disabled'),
+    ).not.toBeNull();
+    expect(screen.getByRole('region', { name: '計算条件の版情報' }).getAttribute('aria-busy')).toBe(
+      'true',
+    );
+
+    rerender(
+      <CalculationContextNotice
+        state="current"
+        request={rankingRequest}
+        onReset={onReset}
+        resetError="requestResultVersionMismatch"
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('requestResultVersionMismatch');
+    expect(
+      screen
+        .getByRole('region', { name: '計算条件の版情報' })
+        .getAttribute('data-calculation-error-summary'),
+    ).toBe('true');
   });
 
   it('labels an unavailable runtime as historical and warns before explicit upgrade', () => {

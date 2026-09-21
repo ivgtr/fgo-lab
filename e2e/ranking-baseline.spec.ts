@@ -232,6 +232,9 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await expect(rejectedNotice).toContainText('計算条件を復元できません', { timeout: 30_000 });
   await rejectedNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
   await expect(rejectedNotice).toContainText('計算条件を復元できません');
+  await expect(rejectedNotice.locator('[data-calculation-reset-error]')).toContainText(
+    'retained_request_subject_unavailable',
+  );
   await expect.poll(() => storedDraftJson(page)).toBe(missingSubjectDraft);
   await page.reload();
   await expect(page.locator('[data-calculation-error-summary]')).toContainText(
@@ -252,6 +255,35 @@ test('[E2E-050] real ranking module worker and detail @desktop @journey', async 
   await restoredNotice.getByRole('button', { name: '通常の計算条件へ戻す' }).click();
   await expect(page.getByText('ランキングから引き継いだ計算条件')).toHaveCount(0);
   await expect(page.getByRole('table', { name: '宝具レベル別のダメージ' })).toBeVisible();
+  await expect.poll(() => storedDraftJson(page)).not.toBe(originalDraft);
+  const resetDraft = await storedDraftJson(page);
+  if (!resetDraft) throw new Error('normal reset draft missing');
+  const resetPayload = JSON.parse(resetDraft) as {
+    request: {
+      executionIntent: { kind: string; initialNpGauge?: number; policy?: unknown };
+      scenario: {
+        canonicalInputValues: Record<string, unknown>;
+        activationFacts: unknown[];
+        worldFactAssertions: unknown[];
+        effectDecisions: Array<{ decisionKey: string }>;
+      };
+    };
+    requestFingerprint: string;
+  };
+  const originalPayload = JSON.parse(originalDraft) as { requestFingerprint: string };
+  expect(resetPayload.request.executionIntent).toEqual({
+    kind: 'calculator',
+    initialNpGauge: 10_000,
+  });
+  expect(resetPayload.request.scenario.canonicalInputValues).toEqual({});
+  expect(resetPayload.request.scenario.activationFacts).toEqual([]);
+  expect(resetPayload.request.scenario.worldFactAssertions).toEqual([]);
+  expect(
+    resetPayload.request.scenario.effectDecisions.every(
+      ({ decisionKey }) => !decisionKey.startsWith('ranking:'),
+    ),
+  ).toBe(true);
+  expect(resetPayload.requestFingerprint).not.toBe(originalPayload.requestFingerprint);
   // E2E-A050-COUNT-RECOVERY
   for (const [name, label, maximum] of [
     ['キングプロテア', '増殖の付与数', 10],

@@ -252,12 +252,51 @@ describe('portable calculation application owner', () => {
       scenario: {
         ...request.scenario,
         attackerHpPermille: 123,
+        battleState: { battlePointPhase: 3 },
+        canonicalInputValues: {
+          'ranking:quantity': { kind: 'integer', value: 3, origin: 'maximum' },
+        },
+        preNoblePhantasmPlan: [
+          {
+            kind: 'useSkillSlot',
+            slot: 1,
+            skillLevel: 1,
+            choice: {
+              groupKey: 'ranking-choice',
+              candidateKey: 'ranking-candidate',
+            },
+          },
+          { kind: 'executeAttackNoblePhantasm' },
+        ],
+        effectDecisions: [
+          {
+            decisionKey: 'ranking:effect',
+            operationEnabled: true,
+            conditionSatisfaction: 'assumeSatisfied',
+          },
+        ],
+        activationFacts: [
+          {
+            kind: 'operationTrigger',
+            source: {
+              origin: 'attacker',
+              sourceInstanceId: 'ranking:action',
+              skillId: 'ranking:skill',
+            },
+            position: 0,
+          },
+        ],
         worldFactAssertions: [
+          {
+            decisionKey: 'ranking:target',
+            fact: { kind: 'trait', scope: 'target', trait: 'chaotic', present: true },
+          },
           {
             decisionKey: 'ranking:hp',
             fact: { kind: 'quantity', quantity: 'attackerHpPermille', value: 123 },
           },
         ],
+        explicitOverrides: { attackerAtk: 1234 },
       },
     });
     const historicalContaminated = portableCalculationRequestSchema.parse({
@@ -277,11 +316,18 @@ describe('portable calculation application owner', () => {
     });
     expect(reset.scenario).toMatchObject({
       attackerHpPermille: 1_000,
+      battleState: { battlePointPhase: 0 },
       canonicalInputValues: {},
       activationFacts: [],
       worldFactAssertions: [],
+      effectDecisions: [],
+      explicitOverrides: {},
+      craftEssence: null,
+      mysticCode: null,
+      support: null,
       preNoblePhantasmPlan: [{ kind: 'executeAttackNoblePhantasm' }],
     });
+    expect(JSON.stringify(reset)).not.toContain('ranking:');
   });
 
   it('resolves reset from the retained request subject and ignores any other selected build', () => {

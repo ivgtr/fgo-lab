@@ -1,6 +1,6 @@
 ---
 title: "FGO Lab テスト・ランキング再設計 Tasks"
-document_version: "1.7.22"
+document_version: "1.7.23"
 status: "Active"
 created_at: "2026-08-30"
 updated_at: "2026-09-21"
@@ -2188,9 +2188,9 @@ Depends on: TSK-06.5
 - [x] Webをcanonical presentation modelの描画とcommand dispatchへ限定する。
 - [ ] TSK-06.42の比較条件とTSK-06.44の初期OC追加によるv0.10.2の7入力を前提にnotice、cache lifetime、
       stale response rejection、responsive／a11yを再検証する。旧5-field fingerprintを互換pathとして残さない。
-- [ ] TSK-06.41でVerifiedとなったselected ranking → calculator immediate handoffを前提に、二軸noticeと
+- [x] TSK-06.41でVerifiedとなったselected ranking → calculator immediate handoffを前提に、二軸noticeと
       result／effect parityのUI表示を再検証する。
-- [ ] calculatorの「通常の計算条件へ戻す」が開始NP、自己バフpolicy、条件効果policyを同時に通常値へ戻し、
+- [x] calculatorの「通常の計算条件へ戻す」が開始NP、自己バフpolicy、条件効果policyを同時に通常値へ戻し、
       target／field facts、conditional inputs、stochastic outcome、ordered actions／choice、candidate evidenceも
       application baseline constructorのfield-by-field dispositionどおり除去し、hidden ranking stateを残さないことを
       再検証する。
@@ -2218,12 +2218,12 @@ Contract closure matrix:
 
 | Contract ID | Disposition | Verification command | Artifact |
 | --- | --- | --- | --- |
-| `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `RK-HANDOFF-001` | Apply | TSK-06.41 minimal handoff regression＋two-axis notice／interaction E2E | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `RK-UI-001` | Apply | focused component test、`pnpm test:e2e` | `docs/evidence/tsk-07-notice-reset-closure.json` |
+| `RK-HANDOFF-001` | Apply | TSK-06.41 minimal handoff regression＋two-axis notice／interaction E2E | `docs/evidence/tsk-07-notice-reset-closure.json` |
 | `RK-CACHE-001` | Apply | worker／React cache cardinality、stale detail tests | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `UI-CALC-001` | Apply | context notice／two-axis normal reset／focus E2E | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
-| `TS-PERF-002` | Apply | build変更前後各3回／変更後E2E 1回 | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
+| `UI-CALC-001` | Apply | context notice／two-axis normal reset／focus E2E | `docs/evidence/tsk-07-notice-reset-closure.json` |
+| `RK-AUDIT-001` | Apply | worker／calculator／ranking parity check | `docs/evidence/tsk-07-notice-reset-closure.json` |
+| `TS-PERF-002` | N/A: UI／reset publication only; worker／candidate hot path unchanged | - | `docs/evidence/tsk-07-notice-reset-closure.json` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 | `TS-ART-001` | Apply | Playwright manifest／artifact check | `docs/evidence/ranking-web-worker-cutover-tsk-07.md` |
 
@@ -2265,8 +2265,23 @@ Handoff:
   通過した。最終`pnpm quality`もunit 885／production 144／Playwright 29、retry 0、warnings 0、unexpected console 0、
   artifact `.test-results/2026-09-20T18-30-46-341Z-15-f4fdde`で成功した。machine-readable結果は[TSK-07 cache closure](../evidence/tsk-07-cache-closure.json)、flow deltaは
   [ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ記録する。TSK-07は`in_progress`のまま、
-  TSK-06.5／06.47／06.48は`done`を維持する。次のbounded unitはnotice／normal reset interactionであり、
-  five-outcome全画面表示、normal reset、responsive／a11y全体、TSK-08は未達である。
+  TSK-06.5／06.47／06.48は`done`を維持する。上記はRK-CACHE-001完了時点のhandoffであり、今回のnotice／normal
+  reset bounded unitの差分は次のhandoffへ記録する。five-outcome全画面表示、responsive／a11y全体、TSK-08は未達である。
+
+- Current bounded-unit handoff (2026-09-21): 二軸ranking noticeとcalculator handoff parityを現行schemaで再検証し、
+  `CalculationContextNotice`は開始NP、`selfBuffs`、`conditionalEffects`、versionを表示する。明示的normal resetは
+  application baseline constructorをexecute-before-publishで呼び、calculator intent／開始NP100%／新fingerprintへ
+  atomicに切り替える。target／field facts、canonical inputs、activation／stochastic facts、ordered choice/actions、
+  ranking-origin effect decisions、candidate evidence、ranking policyを新requestへ持ち込まず、baseline-owned default
+  decisionsはconstructorで再構築する。reset失敗時は旧request／result／
+  fingerprintを保持し、typed errorをnoticeへ表示する。CalculatorRouteのmutation identityで古い非同期commitの
+  workspace再公開を拒否し、成功時はresult focusへ戻す。RK-CACHE-001のworker summary 1件／detail 0件／React detail
+  1件とrequest／fingerprint／entry stale rejectionは維持する。focused 42 tests、typecheck、対象lint／format、
+  E2E-050／E2E-051（各2/2）を通過した。machine-readable結果は[TSK-07 notice/reset closure](../evidence/tsk-07-notice-reset-closure.json)、
+  flow deltaは[ranking Web／worker cutover](../evidence/ranking-web-worker-cutover-tsk-07.md)へ追記する。TSK-07は`in_progress`、
+  TSK-06.5／06.47／06.48は`done`のまま、commitは作成しない。次のbounded unitは5 outcome表示／recoveryであり、
+  full `pnpm quality`は`.test-results/2026-09-20T19-18-55-246Z-73-bbda97`でunit 886／production 144／Playwright 29、
+  retry 0、warnings 0、unexpected console 0として通過した。responsive／a11y全体、TSK-08は未達である。
 
 ### TSK-08: Production audit最終収束とfailure diagnostics
 

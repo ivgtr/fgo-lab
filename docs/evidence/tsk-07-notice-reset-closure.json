@@ -1,0 +1,144 @@
+{
+  "task": "TSK-07",
+  "status": "complete",
+  "unit": "RK-UI-001 and RK-HANDOFF-001 two-axis notice, calculator normal reset, and post-reset stale-state rejection",
+  "baseline": {
+    "headAtStart": "f9c56dad75d37f4a2fb274ccc2fd7352c160896d",
+    "worktreeAtStart": "clean",
+    "entryConditions": {
+      "TSK-06.5": "done",
+      "TSK-06.47": "done",
+      "TSK-06.48": "done",
+      "TSK-07": "in_progress"
+    },
+    "taskSource": "docs/tasks/development-redesign-tasks.md",
+    "historicalFlow": "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "cacheEvidence": "docs/evidence/tsk-07-cache-closure.json",
+    "canonicalProductionEvidence": "docs/evidence/tsk-06-5-production-closure.json"
+  },
+  "changedFiles": [
+    "apps/web/src/app/CalculatorRoute.tsx",
+    "apps/web/src/features/calculator/CalculationContextNotice.tsx",
+    "apps/web/src/features/calculator/CalculationContextNotice.test.tsx",
+    "apps/web/src/features/calculator/Calculator.tsx",
+    "apps/web/src/features/calculator/CalculationResult.tsx",
+    "packages/calculation-application/src/portableCalculation.test.ts",
+    "e2e/ranking-baseline.spec.ts",
+    "docs/tasks/development-redesign-tasks.md",
+    "docs/evidence/ranking-web-worker-cutover-tsk-07.md",
+    "docs/evidence/tsk-07-notice-reset-closure.json",
+    "docs/evidence/README.md",
+    "docs/README.md"
+  ],
+  "semanticOwners": {
+    "twoAxisIntent": "packages/schema rankingSelectionSchema and ranking executionIntent union",
+    "rankingHandoff": "packages/calculation-application/src/portableCalculation.ts::createRankingPortableRequest and apps/web/src/app/rankingHandoff.ts",
+    "baselineReset": "packages/calculation-application/src/portableCalculation.ts::attemptPortableCalculationReset and createDefaultCalculatorScenario",
+    "fingerprint": "apps/web/src/app/portableDraft.ts::commitPortableDraft and workspace-domain portableCalculationFingerprint",
+    "noticeAndRecovery": "apps/web/src/features/calculator/CalculationContextNotice.tsx and CalculatorRoute.tsx",
+    "staleResponseGate": "apps/web/src/features/ranking/useRanking.ts and worker runtime identity checks"
+  },
+  "canonicalFlow": [
+    "selected RankingPolicyDetail carries selfBuffs and conditionalEffects in current schema",
+    "handoff constructs ranking PortableCalculationRequest and replays it through the shared application executor",
+    "CalculationContextNotice renders start NP, self-buff policy, conditional-effects policy, and version metadata",
+    "explicit normal reset resolves the retained request subject, constructs calculator baseline, executes before publish, and commits request/result/fingerprint together",
+    "successful reset replaces the workspace with calculator intent, removes ranking-origin state, and rebuilds constructor-owned defaults",
+    "reset failure leaves the retained durable and in-memory pair unchanged and reports a typed reason",
+    "mutation token prevents an older asynchronous draft/reset publication from replacing a newer calculator state"
+  ],
+  "resetDisposition": {
+    "preserved": [
+      "retained request servant identity and the matching current build subject"
+    ],
+    "removed": [
+      "ranking execution intent and both policy axes",
+      "ranking target and field facts",
+      "canonical conditional inputs",
+      "stochastic activation facts and ordered choice/action witness",
+      "ranking-origin effect decisions and candidate evidence (baseline-owned defaults are rebuilt by the constructor)",
+      "ranking result identity"
+    ],
+    "baseline": "calculator intent with initialNpGauge 10000, baseline scenario facts, and a newly computed portable fingerprint",
+    "failure": "typed rejection or durable-write failure retains the old request/result/fingerprint"
+  },
+  "staleRejection": {
+    "ranking": "worker instance, context ID, request ID, fingerprint, and detail entry ID gates remain unchanged",
+    "reset": "older mutation tokens cannot publish workspace state or reset error after a newer mutation begins",
+    "cache": "RK-CACHE-001 contract is reused: worker summary maximum 1, worker detail 0, React active detail maximum 1"
+  },
+  "parity": {
+    "calculatorRankingPortable": "existing ranking worker detail parity and portableCalculation reconstruction tests remain valid; E2E compares selected ranking average with calculator result",
+    "productionOutput": "unchanged",
+    "candidateInventory": "unchanged",
+    "supportStatus": "unchanged",
+    "fingerprint": "ranking and calculator identities remain distinct; reset produces a new calculator request fingerprint"
+  },
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/portableCalculation.test.ts apps/web/src/features/calculator/CalculationContextNotice.test.tsx apps/web/src/app/rankingHandoff.test.ts apps/web/src/features/ranking/rankingWorkerRuntime.test.ts apps/web/src/features/ranking/useRanking.test.tsx apps/web/src/features/ranking/Ranking.integration.test.tsx apps/web/src/app/CalculatorRoute.history.test.tsx",
+      "status": "passed",
+      "tests": 42,
+      "artifact": ".test-results/2026-09-20T19-29-31-794Z-15-5b4ac6"
+    },
+    "playwright": {
+      "command": "pnpm test:e2e -- e2e/ranking-baseline.spec.ts --grep 'E2E-050' and pnpm test:e2e -- e2e/initial-oc.spec.ts --grep 'E2E-051'",
+      "status": "passed",
+      "coverage": "real ranking worker, two-axis notice, calculator result parity, normal reset, failed reset retention, reload, keyboard reset, 390px/320px overflow",
+      "tests": 4,
+      "artifacts": [
+        ".test-results/2026-09-20T19-15-42-386Z-44-873fcd",
+        ".test-results/2026-09-20T19-16-59-236Z-15-5a4544"
+      ]
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint <changed source and unit test files> --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --check <changed source, test, and E2E files>",
+      "status": "passed"
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed",
+      "artifact": ".test-results/2026-09-20T19-18-55-246Z-73-bbda97/steps/docs.stdout.log"
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 886,
+      "production": 144,
+      "playwright": 29,
+      "retries": 0,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "durationSeconds": 296.747,
+      "artifact": ".test-results/2026-09-20T19-18-55-246Z-73-bbda97"
+    }
+  },
+  "reusedEvidence": {
+    "tsk06_41": "current schema direct writer, ranking-to-calculator replay, typed contribution compilation, and portable parity",
+    "tsk06_5": "candidate inventory, support status, production output, calculator/ranking/portable parity, and legacy removal",
+    "rkCache001": "summary/detail cache cardinality and request/context/fingerprint stale rejection"
+  },
+  "unresolved": [
+    "five outcome class full-screen presentation and recovery commands",
+    "full responsive and accessibility closure beyond the focused reset path",
+    "TSK-08 production audit"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "in_progress",
+    "head": "f9c56dad75d37f4a2fb274ccc2fd7352c160896d",
+    "newCommit": false
+  },
+  "nextBoundedUnit": "TSK-07 five typed outcome presentation and recovery interaction",
+  "stopCondition": "Stop this bounded unit after focused/direct-consumer checks, final E2E assertions, typecheck/lint/format/docs checks, and evidence consistency pass. Reopen TSK-06.41 or TSK-06.5 if canonical fingerprint, support status, candidate inventory, production output, or parity changes."
+}

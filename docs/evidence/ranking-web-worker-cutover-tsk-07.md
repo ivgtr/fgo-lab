@@ -207,3 +207,56 @@ and legacy-removal evidence are reused because the canonical input and productio
 The machine-readable record is [TSK-07 cache closure](tsk-07-cache-closure.json). The unit is complete,
 but TSK-07 remains `in_progress`; notice/five-outcome presentation, normal reset interaction, and full
 responsive/a11y closure remain for the next bounded unit. TSK-08 remains blocked.
+
+## Current notice and normal-reset bounded closure (2026-09-21)
+
+This section records the next bounded unit only. The historical five-field cutover and the preceding
+RK-CACHE-001 section remain unchanged. The machine-readable evidence is
+[TSK-07 notice/reset closure](tsk-07-notice-reset-closure.json).
+
+The selected ranking detail still enters the calculator through the current discriminated portable
+request. `CalculationContextNotice` now presents the complete ranking-origin identity that affects the
+handoff: start NP, self-buff policy, conditional-effects policy, and version metadata. The notice uses
+the requirement vocabulary `自己バフ` and `条件効果` and keeps the reset command in the result-adjacent
+notice. The selected ranking result and effect evidence continue to be replayed by the shared
+application executor; Web does not reconstruct policy semantics from labels or IDs.
+
+The normal-reset command is an application-owned transaction. It resolves the servant from the retained
+request, uses the matching current build, constructs the calculator baseline, executes it, and publishes
+the new request/result/fingerprint only after the durable draft write succeeds. The resulting request has
+calculator intent with `initialNpGauge: 10000`; ranking policy, target/field facts, canonical conditional
+inputs, stochastic activation facts, ordered choice/action witness, ranking-origin effect decisions,
+explicit overrides, and candidate evidence are removed by the baseline constructor, while any
+constructor-owned default decisions are rebuilt. A reset attempt that cannot resolve the
+subject, execute the baseline, or persist the pair leaves the retained request/result/fingerprint intact
+and reports the typed failure in the notice.
+
+`CalculatorRoute` gives each scenario/reset publication a mutation identity. When a newer mutation starts,
+an older asynchronous fingerprint or durable-write completion cannot publish its workspace state or
+replace a newer reset error. Successful reset focuses the result heading; failure focuses the error
+summary. This is a Web publication guard and does not change the ranking worker cache contract.
+
+| Path | Expected result | Evidence |
+| --- | --- | --- |
+| selected ranking detail with `selfBuffs` and `conditionalEffects` | current portable request and replayed calculator result/effects remain equal | ranking handoff, portable reconstruction, E2E-050 |
+| ranking-origin notice | start NP, both policy axes, version, and explicit reset are visible | CalculationContextNotice unit and E2E-050 |
+| reset with target/field/input/activation/action/effect state | one calculator baseline request replaces the ranking request; hidden ranking state is absent | portable reset fixture and E2E-050 draft inspection |
+| reset failure or durable write failure | old request/result/fingerprint remains; typed error is visible | portable reset failure tests and notice fixture |
+| reset before an older async publication completes | old mutation cannot publish after the newer mutation token | CalculatorRoute mutation guard; RK-CACHE-001 stale-gate fixtures |
+| ranking worker response after condition/context/detail replacement | no stale rows/detail/error enter current UI state | RK-CACHE-001 focused `useRanking` and worker tests, reused |
+| calculator reset fingerprint | new calculator request identity is stored; ranking fingerprint is not reused | E2E-050 draft inspection and portable draft writer |
+
+The bounded unit changes presentation and calculator publication state only. Candidate generation,
+ranking worker protocol/cache cardinality, damage semantics, canonical production output, support status,
+and production parity remain unchanged. TSK-06.41, TSK-06.5, and RK-CACHE-001 evidence are therefore
+reused under their existing identity conditions. No fixed wall-clock target, candidate ratchet, timeout
+relaxation, or compatibility path was introduced.
+
+Focused unit/direct-consumer checks and the required E2E paths are recorded in the machine-readable
+evidence. The full `pnpm quality` gate also passed for this final source state (unit 886, production 144,
+Playwright 29, zero retries/warnings/unexpected console observations); its manifest is
+`.test-results/2026-09-20T19-18-55-246Z-73-bbda97`. The remaining five-outcome and responsive/a11y
+bounded units still require the final TSK-07 integrated closure.
+
+This bounded unit is complete with TSK-07 still `in_progress`. The next bounded unit is the five typed
+outcome presentation and recovery interaction. TSK-08 remains blocked.
