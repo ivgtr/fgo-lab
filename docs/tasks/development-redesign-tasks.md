@@ -68,7 +68,7 @@ flow closure noteはfamilyごとにtracked正本を一つだけ置く。Tasksは
 | TSK-06.48 | Package semantic complexity convergence | done | TSK-06.46 | package別semantic owner／population・dependent resource／HP・effect/execution family convergence |
 | TSK-06.5 | Ranking theoretical maximum and production closure | done | TSK-06.47 | final candidate／maximum／legacy-removal proof |
 | TSK-07 | Web／worker一括切替 | done | TSK-06.5 | ranking UI／handoff／cache |
-| TSK-08 | Production audit最終収束とfailure diagnostics | ready | TSK-07 | test strategy T3/T4／ranking test gate |
+| TSK-08 | Production audit最終収束とfailure diagnostics | in_progress | TSK-07 | test strategy T3/T4／ranking test gate |
 | TSK-09.1 | Documentation evidence／archive finalization | blocked | TSK-08 | documentation maintenance DOC-P4〜P6 |
 | TSK-09 | Performance、運用移行、旧経路削除 | blocked | TSK-09.1 | test strategy T5／全完了条件 |
 
@@ -2361,7 +2361,21 @@ Contract closure matrix:
 | `TS-PERF-002` | Apply | production gateを変更前後各3回 | `docs/evidence/<tsk-08-report>.md` |
 | `DX-HANDOFF-001` | Apply | `pnpm quality` | Handoff |
 
-Handoff: 未記録
+Handoff:
+
+Current bounded-unit handoff（2026-09-21、production parity diagnostics／artifact reachability）:
+
+開始HEADは`34828eaa03500d3688ab7af7f9a39d3a1649d639`、既存の利用者差分は`apps/web/next-env.d.ts`だけである。TSK-06.5のinventory／digest／candidate／production output／parity、TSK-06.3のparent／child manifest・checksum・bounded summary、TSK-07のworker／cache／stale mutation evidenceを再利用条件として固定した。
+
+今回のbounded unitは、`packages/calculation-application/src/productionParityDiagnostics.ts::compareProductionParity`をsemantic ownerとし、`productionClosureAudit.ts::auditProductionClosure`のcalculator／portable比較へ接続した。失敗は`executionNotExecutable`と`canonicalMismatch`のtyped reasonへ分類し、`conditionKey`・profile identity・path・canonical identity・`firstCanonicalAuditDifference`のidentity／path／expected／actualを保持する。expected／actualの完全値はartifactへ残し、runnerのsummaryは既存の上限を維持する。public API、canonical input、fingerprint、candidate inventory、production output、calculator／ranking／portable parityの成功値は変更していない。
+
+runnerはFGO reasonを解釈せず、genericな`artifact-declarations.json`を読み、宣言artifactの相対path・形式・存在・bytes・SHA-256を既存`verifyArtifactFiles`へ渡す。outside path、欠落、改変は`artifact_failure`へfail closedする。intentional failure fixtureはcanonical field差分とnon-executable status差分を一件ずつ固定した。
+
+focused／unit／production、runner fixture、typecheck、targeted lint／format、docs、最終`pnpm quality`を通過した。最終qualityはunit 895／production 144／Playwright 29、warnings／unexpected console／retry 0、artifact `.test-results/2026-09-21T06-56-31-238Z-15-f189f7`、manifest SHA-256 `d431fd4a87b46772606027a151d077bedc0912628589aff3074f896ec08b2bd3`である。diagnostic artifactは`unit/production-closure-parity-diagnostics.json`、SHA-256 `c8573b8951847b2280f05d20334b4352b1c8a182e0d86ce66dd48740a3dbe65c`で、machine-readable evidenceは[TSK-08 parity diagnostics](../evidence/tsk-08-parity-diagnostics.json)へ記録した。
+
+未達は、TSK-06.5の全80条件inventory／digestをdata-pipelineとcalculation-applicationの共有audit modelへ接続すること、全production parity／unsupported／invalid／partial commit／inert control／stale mutationのratchet化、Deferredのlegacy aggregate auditor（`quantityConditions`前提）とold loader／scan／candidate list／duplicate fixtureの削除である。次のbounded unitは、既存producerを一つに保ったままfull matrixとpackage audit modelの到達性を接続する。candidate生成、damage semantics、canonical input、別digest正本、別generator、TSK-09系は開始しない。
+
+差分がcanonical identity、support status、candidate inventory、production output、parityへ及んだ場合は、このTaskを停止し、canonical owner・影響範囲・再実行範囲とTSK-06.41／TSK-06.5 reopen要否をevidenceへ記録する。TSK-06.5／06.47／06.48／TSK-07は`done`、TSK-09.1／09は`blocked`のまま維持する。
 
 ### TSK-09.1: Documentation evidence／archive finalization
 

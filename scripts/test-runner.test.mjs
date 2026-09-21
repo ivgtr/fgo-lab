@@ -417,6 +417,53 @@ test('a declared missing artifact overrides a passing child', async () => {
   assert.deepEqual(result.manifest.artifactVerification.errors, ['required.json:missing']);
 });
 
+test('a test-owned artifact declaration is checksum-verified and reachable from the child manifest', async () => {
+  const result = await runFixture(
+    'declared-artifact-file',
+    `
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const artifact = path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'diagnostic.json');
+      fs.writeFileSync(artifact, JSON.stringify({ boundary: 'fixture' }));
+      fs.writeFileSync(
+        path.join(process.env.FGO_TEST_ARTIFACT_DIR, 'artifact-declarations.json'),
+        JSON.stringify([{ path: 'diagnostic.json', format: 'json' }]),
+      );
+      fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+      process.exit(0);
+    `,
+    2_000,
+    { observationName: null },
+  );
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.manifest.outcome, 'success');
+  const artifact = result.manifest.artifacts.find(({ path }) => path === 'diagnostic.json');
+  assert.equal(artifact?.format, 'json');
+  assert.equal(typeof artifact?.sha256, 'string');
+  assert.equal(result.manifest.artifactVerification.errors.length, 0);
+});
+
+test('a test-owned artifact declaration fails closed on an outside path', async () => {
+  const result = await runFixture(
+    'declared-artifact-outside',
+    `
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const root = process.env.FGO_TEST_ARTIFACT_DIR;
+      fs.writeFileSync(path.join(root, 'artifact-declarations.json'), JSON.stringify([{ path: '../outside.json' }]));
+      fs.writeFileSync(process.env.FGO_TEST_REPORT_PATH, ${JSON.stringify(JSON.stringify(report(true)))});
+      process.exit(0);
+    `,
+    2_000,
+    { observationName: null },
+  );
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.manifest.outcome, 'artifact_failure');
+  assert.deepEqual(result.manifest.artifactVerification.errors, [
+    'artifact-declarations.json:[0]:outside_run_directory',
+  ]);
+});
+
 test('the quality parent rejects missing and changed child artifacts', () => {
   const runDirectory = mkdtempSync(resolve(tmpdir(), 'fgo-lab-parent-'));
   const childDirectory = resolve(runDirectory, 'unit');

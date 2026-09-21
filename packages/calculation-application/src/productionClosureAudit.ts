@@ -17,6 +17,11 @@ import {
   RankingEligibilityAuditAccumulator,
   type RankingEligibilityAudit,
 } from './rankingEligibilityAudit';
+import {
+  compareProductionParity,
+  type ProductionParityFailure,
+  type ProductionParityPath,
+} from './productionParityDiagnostics';
 
 export interface ProductionClosureConditionRecord {
   key: string;
@@ -36,9 +41,15 @@ export interface ProductionClosureConditionRecord {
 }
 
 export interface ProductionClosureParityFailure {
+  conditionKey: string;
   profileKey: string;
-  path: 'calculator' | 'portable';
+  path: ProductionParityPath;
+  reason: ProductionParityFailure['reason'];
+  canonicalIdentity: string;
   mismatch: string;
+  firstDifference: ProductionParityFailure['firstDifference'];
+  expected: ProductionParityFailure['expected'];
+  actual: ProductionParityFailure['actual'];
 }
 
 export interface ProductionClosureUnavailable {
@@ -139,30 +150,6 @@ function compactCalculatedResult(
   };
 }
 
-function firstMismatch(left: unknown, right: unknown, path = '$'): string | null {
-  if (Object.is(left, right)) return null;
-  if (typeof left !== typeof right || left === null || right === null) return `${path}:value`;
-  if (Array.isArray(left) || Array.isArray(right)) {
-    if (!Array.isArray(left) || !Array.isArray(right)) return `${path}:type`;
-    if (left.length !== right.length) return `${path}:length`;
-    for (let index = 0; index < left.length; index++) {
-      const mismatch = firstMismatch(left[index], right[index], `${path}[${String(index)}]`);
-      if (mismatch) return mismatch;
-    }
-    return null;
-  }
-  if (typeof left !== 'object') return `${path}:value`;
-  const leftRecord = left as Record<string, unknown>;
-  const rightRecord = right as Record<string, unknown>;
-  const keys = [...new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)])].sort();
-  for (const key of keys) {
-    if (!(key in leftRecord) || !(key in rightRecord)) return `${path}.${key}:missing`;
-    const mismatch = firstMismatch(leftRecord[key], rightRecord[key], `${path}.${key}`);
-    if (mismatch) return mismatch;
-  }
-  return null;
-}
-
 export async function auditProductionClosure(
   master: MasterDataSnapshot,
   profile: RankingProfileInput,
@@ -242,26 +229,20 @@ export async function auditProductionClosure(
       ] as const;
       let matched = true;
       for (const [path, execution] of executions) {
-        if (execution?.status !== 'executable') {
-          const failure = {
-            profileKey,
-            path,
-            mismatch: `status:${execution?.status ?? portable.status}`,
-          };
-          localFailures.push(failure);
-          parityFailures.push(failure);
-          matched = false;
-          continue;
-        }
-        const comparable = {
-          scenario: execution.scenario,
-          input: execution.input,
-          result: execution.result,
-          effects: execution.effects,
-          effectInputs: execution.effectInputs,
-          warnings: execution.effectWarnings,
-          appliedPreparationActions: execution.appliedPreparationActions,
-        };
+        const actualStatus =
+          execution?.status ?? (path === 'portable' ? portable.status : 'missing');
+        const comparable =
+          execution?.status === 'executable'
+            ? {
+                scenario: execution.scenario,
+                input: execution.input,
+                result: execution.result,
+                effects: execution.effects,
+                effectInputs: execution.effectInputs,
+                warnings: execution.effectWarnings,
+                appliedPreparationActions: execution.appliedPreparationActions,
+              }
+            : null;
         const expected = {
           scenario: detail.scenario,
           input: detail.input,
@@ -271,9 +252,15 @@ export async function auditProductionClosure(
           warnings: detail.warnings,
           appliedPreparationActions: detail.appliedPreparationActions,
         };
-        const mismatch = firstMismatch(comparable, expected);
-        if (mismatch) {
-          const failure = { profileKey, path, mismatch };
+        const failure = compareProductionParity({
+          conditionKey: key,
+          profileKey,
+          path,
+          actualStatus,
+          expected,
+          actual: comparable,
+        });
+        if (failure) {
           localFailures.push(failure);
           parityFailures.push(failure);
           matched = false;

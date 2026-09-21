@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { masterSnapshotSchema } from '@fgo-lab/master-data';
 import { APP_VERSION, ENGINE_VERSION, SCHEMA_VERSION } from '@fgo-lab/schema';
@@ -7,6 +9,30 @@ import {
   productionClosureConditionKey,
   productionClosureConditions,
 } from './productionClosureAudit';
+import { compareProductionParity } from './productionParityDiagnostics';
+
+async function writeParityDiagnosticArtifact(value: unknown): Promise<void> {
+  const artifactDirectory = process.env['FGO_TEST_ARTIFACT_DIR'];
+  if (!artifactDirectory) return;
+  await writeFile(
+    resolve(artifactDirectory, 'production-closure-parity-diagnostics.json'),
+    `${JSON.stringify(value, null, 2)}\n`,
+  );
+  await writeFile(
+    resolve(artifactDirectory, 'artifact-declarations.json'),
+    `${JSON.stringify(
+      [
+        {
+          path: 'production-closure-parity-diagnostics.json',
+          format: 'json',
+          allowEmpty: false,
+        },
+      ],
+      null,
+      2,
+    )}\n`,
+  );
+}
 
 it('constructs exactly the 80 legal production conditions and reuses one supplied inventory', async () => {
   const conditions = productionClosureConditions();
@@ -50,4 +76,52 @@ it('constructs exactly the 80 legal production conditions and reuses one supplie
   expect(audit.eligibility.staticSemantics.sourcePrograms).toBeGreaterThan(0);
   expect(audit.eligibility.admissions.dispositions).toBeGreaterThan(0);
   expect(audit.eligibility.candidates.generated).toBeGreaterThan(0);
+
+  const canonicalFailure = compareProductionParity({
+    conditionKey: 'fixture-condition',
+    profileKey: 'fixture-profile',
+    path: 'portable',
+    actualStatus: 'executable',
+    expected: { scenario: { phase: 'expected', value: 1 } },
+    actual: { scenario: { phase: 'actual', value: 1 } },
+  });
+  const statusFailure = compareProductionParity({
+    conditionKey: 'fixture-condition',
+    profileKey: 'fixture-profile',
+    path: 'calculator',
+    actualStatus: 'rejected',
+    expected: { scenario: { phase: 'expected', value: 1 } },
+    actual: null,
+  });
+  expect(canonicalFailure).toMatchObject({
+    reason: 'canonicalMismatch',
+    canonicalIdentity: 'production:fixture-condition:profile:fixture-profile:parity:portable',
+    firstDifference: {
+      identity: 'production:fixture-condition:profile:fixture-profile:parity:portable',
+      path: 'scenario.phase',
+      expected: 'expected',
+      actual: 'actual',
+    },
+  });
+  expect(statusFailure).toMatchObject({
+    reason: 'executionNotExecutable',
+    firstDifference: { path: 'status', expected: 'executable', actual: 'rejected' },
+  });
+  expect(
+    compareProductionParity({
+      conditionKey: 'fixture-condition',
+      profileKey: 'fixture-profile',
+      path: 'calculator',
+      actualStatus: 'executable',
+      expected: { scenario: { phase: 'same' } },
+      actual: { scenario: { phase: 'same' } },
+    }),
+  ).toBeNull();
+  await writeParityDiagnosticArtifact({
+    schemaVersion: 1,
+    boundary: 'calculation-application-production-parity',
+    source: 'productionClosureAudit.test.ts',
+    audit,
+    intentionalFailures: [canonicalFailure, statusFailure],
+  });
 });

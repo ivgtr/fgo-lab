@@ -1,0 +1,140 @@
+{
+  "task": "TSK-08",
+  "status": "bounded-unit-complete",
+  "unit": "production audit parity diagnostics and generic artifact reachability",
+  "baseline": {
+    "headAtStart": "34828eaa03500d3688ab7af7f9a39d3a1649d639",
+    "worktreeAtStart": [
+      "apps/web/next-env.d.ts"
+    ],
+    "canonicalProductionEvidence": "docs/evidence/tsk-06-5-production-closure.json",
+    "observabilityEvidence": "docs/evidence/test-observability-flow-tsk-06-3.md",
+    "taskSource": "docs/tasks/development-redesign-tasks.md"
+  },
+  "changedFiles": [
+    "packages/calculation-application/src/productionParityDiagnostics.ts",
+    "packages/calculation-application/src/productionClosureAudit.ts",
+    "packages/calculation-application/src/productionClosureAudit.test.ts",
+    "scripts/test-runner-lib.mjs",
+    "scripts/test-runner.test.mjs",
+    "docs/evidence/tsk-08-parity-diagnostics.json",
+    "docs/evidence/README.md",
+    "docs/tasks/development-redesign-tasks.md"
+  ],
+  "semanticOwners": {
+    "parityComparison": "packages/calculation-application/src/productionParityDiagnostics.ts::compareProductionParity",
+    "productionClosure": "packages/calculation-application/src/productionClosureAudit.ts::auditProductionClosure",
+    "canonicalDiff": "packages/master-data/src/productionAudit.ts::firstCanonicalAuditDifference",
+    "genericArtifactDeclaration": "scripts/test-runner-lib.mjs::declaredArtifactFiles",
+    "artifactVerification": "scripts/test-observation-lib.mjs::verifyArtifactFiles"
+  },
+  "diagnosticContract": {
+    "failureReasons": [
+      "executionNotExecutable",
+      "canonicalMismatch"
+    ],
+    "identity": "production:<conditionKey>:profile:<profileKey>:parity:<calculator|portable>",
+    "firstDifference": "canonical identity, path, expected, and actual are retained",
+    "completeArtifact": "production-closure-parity-diagnostics.json",
+    "boundedSummary": "runner summary remains bounded; full diagnostics remain in the declared artifact",
+    "numericFallback": "none"
+  },
+  "invariants": {
+    "publicApiChanged": false,
+    "canonicalInputChanged": false,
+    "fingerprintChanged": false,
+    "candidateInventoryChanged": false,
+    "productionOutputChanged": false,
+    "calculatorRankingPortableParityChanged": false,
+    "tsk06_5Reopened": false,
+    "tsk0641Reopened": false,
+    "legacyReaderAdded": false,
+    "compatibilityFlagAdded": false,
+    "parallelCompilerAdded": false
+  },
+  "verification": {
+    "focused": {
+      "command": "pnpm test:diagnostic -- packages/calculation-application/src/productionClosureAudit.test.ts",
+      "status": "passed",
+      "tests": 1,
+      "artifact": ".test-results/2026-09-21T06-53-17-062Z-15-dd3d33",
+      "artifactSha256": "d1b678bfffe2472ee4875d23143b4fc3a1f0cf23ce0136b089ad75a661e0b56d"
+    },
+    "unit": {
+      "command": "pnpm test:unit",
+      "status": "passed",
+      "tests": 895,
+      "artifact": ".test-results/2026-09-21T06-54-27-345Z-15-9585a6",
+      "declaredDiagnosticArtifact": "production-closure-parity-diagnostics.json",
+      "declaredArtifactSha256": "62231ef7311b7b78e6341db22dbd1a45507ed76f616bf06d8c46f7ed7c243dd5"
+    },
+    "production": {
+      "command": "pnpm test:production",
+      "status": "passed",
+      "tests": 144,
+      "artifact": ".test-results/2026-09-21T06-54-58-892Z-15-0cad12"
+    },
+    "runner": {
+      "command": "pnpm test:runner",
+      "status": "passed",
+      "tests": 53
+    },
+    "typecheck": {
+      "command": "pnpm typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "pnpm exec eslint <changed TypeScript files> --max-warnings=0",
+      "status": "passed"
+    },
+    "format": {
+      "command": "pnpm exec prettier --check <changed files>",
+      "status": "passed"
+    },
+    "docs": {
+      "command": "pnpm test:docs",
+      "status": "passed"
+    },
+    "quality": {
+      "command": "pnpm quality",
+      "status": "passed",
+      "unit": 895,
+      "production": 144,
+      "playwright": 29,
+      "warnings": 0,
+      "unexpectedConsole": 0,
+      "retries": 0,
+      "durationSeconds": 408.05,
+      "artifact": ".test-results/2026-09-21T06-56-31-238Z-15-f189f7",
+      "manifestSha256": "d431fd4a87b46772606027a151d077bedc0912628589aff3074f896ec08b2bd3",
+      "diagnosticArtifactSha256": "c8573b8951847b2280f05d20334b4352b1c8a182e0d86ce66dd48740a3dbe65c"
+    }
+  },
+  "reusedEvidence": {
+    "tsk06_5": "inventory, candidate digest, support status, production output, and calculator/ranking/portable parity remain unchanged",
+    "tsk06_3": "parent/child outcome reconciliation, bounded output, and checksum verification remain the generic runner owners",
+    "tsk07": "worker/cache, mutation gate, responsive/accessibility, and stale identity evidence remain unchanged"
+  },
+  "unresolved": [
+    "connect the TSK-06.5 full 80-condition inventory and digest to one shared cross-package audit model",
+    "ratchet unsupported, invalid, partial commit, inert control, and stale mutation across the full production audit",
+    "remove the deferred legacy aggregate auditor and old loader/scan/candidate-list/duplicate fixtures after shared audit convergence"
+  ],
+  "stopConditions": [
+    "canonical identity, support status, candidate inventory, production output, or parity differs from TSK-06.5",
+    "first canonical difference is unavailable",
+    "declared artifact is missing, outside the run directory, empty, invalid, or checksum-mismatched",
+    "failure is converted to numeric fallback or success",
+    "runner begins interpreting FGO domain reasons"
+  ],
+  "statusInvariants": {
+    "TSK-06.5": "done",
+    "TSK-06.47": "done",
+    "TSK-06.48": "done",
+    "TSK-07": "done",
+    "TSK-08": "in_progress",
+    "TSK-09.1": "blocked",
+    "TSK-09": "blocked"
+  },
+  "nextBoundedUnit": "connect the existing TSK-06.5 full matrix and data-pipeline/application audit models without creating a second inventory or digest producer"
+}
